@@ -507,16 +507,16 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
   getParentHierarchy(source_db_module, source_parent_tree);
   getParentHierarchy(dest_db_module, dest_parent_tree);
 
-  dbModule* highest_common_module
+  dbModule* lowest_common_module
       = findLowestCommonModule(source_parent_tree, dest_parent_tree);
 
   // 3.3. Make source hierarchy (bottom to top).
   dbModNet* top_source_mod_net = nullptr;
   dbModITerm* top_source_mod_iterm = nullptr;
-  if (source_db_module != highest_common_module) {
-    dlogHierConnCreatingSrcHierarchy(source_pin, highest_common_module);
+  if (source_db_module != lowest_common_module) {
+    dlogHierConnCreatingSrcHierarchy(source_pin, lowest_common_module);
     createHierarchyBottomUp(db_network_->dbToSta(source_pin),
-                            highest_common_module,
+                            lowest_common_module,
                             dbIoType::OUTPUT,
                             connection_name,
                             top_source_mod_net,
@@ -532,11 +532,11 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
   // 3.4. Make dest hierarchy (bottom to top)
   dbModNet* top_dest_mod_net = nullptr;
   dbModITerm* top_dest_mod_iterm = dest_pin;
-  if (dest_db_module != highest_common_module) {
+  if (dest_db_module != lowest_common_module) {
     dlogHierConnCreatingDstHierarchy(db_network_->dbToSta(dest_pin),
-                                     highest_common_module);
+                                     lowest_common_module);
     createHierarchyBottomUp(db_network_->dbToSta(dest_pin),
-                            highest_common_module,
+                            lowest_common_module,
                             dbIoType::INPUT,
                             connection_name,
                             top_dest_mod_net,
