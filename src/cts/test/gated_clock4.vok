@@ -3,12 +3,12 @@ module multi_sink (clk);
 
  wire delaynet_3_core;
  wire clknet_1_1__leaf_clk;
- wire clknet_1_0__leaf_clk;
  wire gclk1;
  wire gclk3;
  wire gclk4;
  wire gclk4_regs;
  wire clknet_0_clk;
+ wire clknet_1_0__leaf_clk;
  wire \clknet_4_0__leaf_/gclk5 ;
  wire \clknet_4_1__leaf_/gclk5 ;
  wire \clknet_4_2__leaf_/gclk5 ;
