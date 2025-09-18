@@ -3268,28 +3268,101 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
       continue;
     }
 
-    dbNet* db_net = db_network_->flatNet(drvr_pin);
-    if (!db_net) {
+    dbNet* drvr_db_net = db_network_->flatNet(drvr_pin);
+    if (!drvr_db_net) {
       continue;
     }
 
-    Net* net = db_network_->dbToSta(db_net);
-    if (net == nullptr || dontTouch(net)) {
+    Net* drvr_net = db_network_->dbToSta(drvr_db_net);
+    if (drvr_net == nullptr || dontTouch(drvr_net)) {
       continue;
     }
 
     // Collect all loads on the net
-    PinSeq loads;
+    std::set<Pin*> load_pins;
     std::unique_ptr<NetConnectedPinIterator> pin_iter(
-        network_->connectedPinIterator(net));
+        network_->connectedPinIterator(drvr_net));
     while (pin_iter->hasNext()) {
       const Pin* load_pin = pin_iter->next();
-      if (load_pin != drvr_pin && db_network_->isFlat(load_pin)) {
-        loads.push_back(const_cast<Pin*>(load_pin));
+      if (load_pin == drvr_pin) {
+        continue;
       }
-    }
 
-    if (loads.size() <= 1) {
+      if (db_network_->isFlat(load_pin) == false) {
+        load_pins.insert(const_cast<Pin*>(load_pin));
+        continue;
+      }
+
+      // load_inst is not in any arithmetic module
+      Instance* load_inst = network_->instance(load_pin);
+      odb::dbModInst* arith_mod_inst = nullptr;
+      if (swap_arith_modules_->isArithInstance(load_inst, arith_mod_inst)
+              == false
+          || arith_mod_inst == nullptr) {
+        load_pins.insert(const_cast<Pin*>(load_pin));
+        continue;
+      }
+
+      // If the load pin is part of an arithmetic module, find the
+      // hierarchical port of the module and add it to the load_pins.
+      // Otherwise, add the load_pin directly.
+      odb::dbITerm* leaf_iterm = db_network_->flatPin(load_pin);
+      odb::dbModITerm* hier_iterm = nullptr;
+      if (leaf_iterm) {
+        odb::dbInst* current_inst = leaf_iterm->getInst();
+        odb::dbModule* parent_module = current_inst->getModule();
+        odb::dbModInst* parent_mod_inst = parent_module->getModInst();
+        if (parent_mod_inst == arith_mod_inst) {
+          // Found the pin on the boundary of the arithmetic module
+          odb::dbModNet* mod_net = leaf_iterm->getModNet();
+          if (mod_net) {
+            for (odb::dbModBTerm* mod_bterm : mod_net->getModBTerms()) {
+              odb::dbModITerm* mod_iterm = mod_bterm->getParentModITerm();
+              if (mod_iterm && mod_iterm->getParent() == arith_mod_inst) {
+                load_pins.insert(
+                    const_cast<Pin*>(db_network_->dbToSta(mod_iterm)));
+                break;  // Found it, break from for loop
+              }
+            }
+          }
+        } else {
+          // Traverse up the hierarchy
+          odb::dbModNet* mod_net = leaf_iterm->getModNet();
+          if (mod_net && !mod_net->getModBTerms().empty()) {
+            // Assuming a single port connection upwards for simplicity
+            odb::dbModBTerm* mod_bterm = *(mod_net->getModBTerms().begin());
+            hier_iterm = mod_bterm->getParentModITerm();
+          }
+        }
+      }
+
+      while (hier_iterm) {
+        odb::dbModInst* parent_mod_inst = hier_iterm->getParent();
+        if (parent_mod_inst == arith_mod_inst) {
+          // Found the pin on the boundary of the arithmetic module
+          load_pins.insert(const_cast<Pin*>(db_network_->dbToSta(hier_iterm)));
+          break;
+        }
+
+        odb::dbModule* parent_module = parent_mod_inst->getParent();
+        if (parent_module->getModInst()) {
+          odb::dbModNet* mod_net = hier_iterm->getModNet();
+          if (mod_net && !mod_net->getModBTerms().empty()) {
+            odb::dbModBTerm* mod_bterm = *(mod_net->getModBTerms().begin());
+            hier_iterm = mod_bterm->getParentModITerm();
+          } else {
+            assert(false);
+            hier_iterm = nullptr;  // Error
+          }
+        } else {
+          // Top-level or error
+          assert(false);
+          hier_iterm = nullptr;
+        }
+      }
+    }  // for each load_pin
+
+    if (load_pins.size() <= 1) {
       continue;  // No need to repair if only one load
     }
 
@@ -3297,8 +3370,11 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
 
     // The first load reuses the existing tie cell.
     // For other loads, create a new tie cell for each.
-    for (size_t i = 1; i < loads.size(); ++i) {
-      const Pin* load_pin = loads[i];
+    for (Pin* load_pin : load_pins) {
+      if (load_pin == *(load_pins.begin())) {
+        continue;  // The first load pin will reuse the existing tie cell.
+      }
+
       Instance* load_inst = network_->instance(load_pin);
       if (dontTouch(load_inst)) {
         continue;
@@ -3312,7 +3388,7 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
       designAreaIncr(area(db_network_->cell(tie_cell)));
       tie_count++;
     }
-  }
+  }  // for each tie_inst
 
   if (tie_count > 0) {
     logger_->info(
@@ -3338,37 +3414,62 @@ void Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
                      new_tie_loc,
                      odb::dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
 
-  // Get the output pin of new_tie_inst
   Pin* new_tie_out_pin = network_->findPin(new_tie_inst, tie_port);
   assert(new_tie_out_pin != nullptr);
-
-  // Get dbITerm of new_tie_inst output pin
   odb::dbITerm* new_tie_iterm = db_network_->flatPin(new_tie_out_pin);
-  if (new_tie_iterm == nullptr) {
-    logger_->error(RSZ,
-                   168,
-                   "Cannot find dbITerm for the output pin of new tie cell {}",
-                   db_network_->name(new_tie_out_pin));
+
+  odb::dbITerm* load_iterm = nullptr;
+  odb::dbBTerm* load_bterm = nullptr;
+  odb::dbModITerm* load_mod_iterm = nullptr;
+  db_network_->staToDb(load_pin, load_iterm, load_bterm, load_mod_iterm);
+
+  // load_pin is a flat pin
+  if (load_iterm) {
+    // Connect the tie instance output pin to the load pin.
+    // - It automatically disconnects the existing connection of load pin
+    std::string connection_name
+        = fmt::format("{}_{}",
+                      db_network_->name(new_tie_inst),
+                      new_tie_iterm->getMTerm()->getName());
+    load_iterm->disconnect();
+    db_network_->hierarchicalConnect(
+        new_tie_iterm, load_iterm, connection_name.c_str());
+    return;
   }
 
-  // Get dbITerm of load_pin
-  odb::dbITerm* load_iterm = db_network_->flatPin(load_pin);
-  if (load_iterm == nullptr) {
-    logger_->error(RSZ,
-                   169,
-                   "Cannot find dbITerm for load pin {}",
-                   db_network_->name(load_pin));
+  // load_pin is a hier pin
+  if (load_mod_iterm) {
+    // Connect the tie instance output pin to the load pin.
+    // - It automatically disconnects the existing connection of load pin
+    std::string connection_name
+        = fmt::format("{}_{}",
+                      db_network_->name(new_tie_inst),
+                      new_tie_iterm->getMTerm()->getName());
+
+    // Should not disconnect load_mod_iterm first. hierarchicalConnect() will
+    // handle it. If load_mod_iterm is disconnected first, hierarchicalConnect()
+    // cannot find the matching flat net with the load_mod_iterm.
+    db_network_->hierarchicalConnect(
+        new_tie_iterm, load_mod_iterm, connection_name.c_str());
+    return;
   }
 
-  // Connect the tie instance output pin to the load pin.
-  // - It automatically disconnects the existing connection of load pin
-  std::string connection_name
-      = fmt::format("{}_{}",
-                    db_network_->name(new_tie_inst),
-                    new_tie_iterm->getMTerm()->getName());
-  load_iterm->disconnect();
-  db_network_->hierarchicalConnect(
-      new_tie_iterm, load_iterm, connection_name.c_str());
+  // load_pin is an output port
+  if (load_bterm) {
+    // Create a new net and connect both the tie cell output and the top-level
+    // port to it.
+    std::string connection_name
+        = fmt::format("{}_{}",
+                      db_network_->name(new_tie_inst),
+                      new_tie_iterm->getMTerm()->getName());
+    Net* new_net = db_network_->makeNet(
+        connection_name.c_str(), parent, odb::dbNameUniquifyType::IF_NEEDED);
+    new_tie_iterm->connect(db_network_->staToDb(new_net));
+    load_bterm->connect(db_network_->staToDb(new_net));
+    return;
+  }
+
+  assert(false);  // Should not reach here
 }
 
 void Resizer::findCellInstances(LibertyCell* cell,
