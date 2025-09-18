@@ -754,12 +754,17 @@ std::vector<Point> IOPlacer::findLayerSlots(const int layer,
 {
   bool vertical_pin;
   int min, max;
-  odb::Point edge_start, edge_end, lb, ub;
-  int lb_x, lb_y, ub_x, ub_y;
+
+  odb::Point lb = core_->getBoundary().ll();
+  odb::Point ub = core_->getBoundary().ur();
+  int lb_x = lb.x();
+  int lb_y = lb.y();
+  int ub_x = ub.x();
+  int ub_y = ub.y();
 
   if (is_die_polygon) {
-    edge_start = line.pt0();
-    edge_end = line.pt1();
+    const odb::Point& edge_start = line.pt0();
+    const odb::Point& edge_end = line.pt1();
 
     vertical_pin = (edge_start.getY() == edge_end.getY());
     min = vertical_pin ? std::min(edge_start.getX(), edge_end.getX())
@@ -767,14 +772,6 @@ std::vector<Point> IOPlacer::findLayerSlots(const int layer,
     max = vertical_pin ? std::max(edge_start.getX(), edge_end.getX())
                        : std::max(edge_start.getY(), edge_end.getY());
   } else {
-    lb = core_->getBoundary().ll();
-    ub = core_->getBoundary().ur();
-
-    lb_x = lb.x();
-    lb_y = lb.y();
-    ub_x = ub.x();
-    ub_y = ub.y();
-
     vertical_pin = (edge == Edge::top || edge == Edge::bottom);
     min = vertical_pin ? lb_x : lb_y;
     max = vertical_pin ? ub_x : ub_y;
@@ -847,7 +844,7 @@ std::vector<Point> IOPlacer::findLayerSlots(const int layer,
       int curr_y;
       curr_x = init_tracks + start_idx * min_dst_pins;
       if (is_die_polygon) {
-        curr_y = edge_start.getY();
+        curr_y = line.pt0().getY();
       } else {
         curr_y = (edge == Edge::bottom) ? lb_y : ub_y;
       }
@@ -862,7 +859,7 @@ std::vector<Point> IOPlacer::findLayerSlots(const int layer,
       int curr_y;
       curr_y = init_tracks + start_idx * min_dst_pins;
       if (is_die_polygon) {
-        curr_x = edge_start.getX();
+        curr_x = line.pt0().getX();
       } else {
         curr_x = (edge == Edge::left) ? lb_x : ub_x;
       }
