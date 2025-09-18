@@ -2961,19 +2961,23 @@ void dbNetwork::staToDb(const Cell* cell,
 //
 dbMaster* dbNetwork::staToDb(const Cell* cell) const
 {
-  const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
-  auto master = reinterpret_cast<dbMaster*>(ccell->extCell());
-  assert(!master || master->getObjectType() == odb::dbMasterObj);
+  if (isConcreteCell(cell)) {
+    const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
+    auto master = reinterpret_cast<dbMaster*>(ccell->extCell());
+    assert(!master || master->getObjectType() == odb::dbMasterObj);
+    return master;
+  }
+
+  dbMaster* master = nullptr;
+  dbModule* module = nullptr;
+  staToDb(cell, master, module);
   return master;
 }
 
 // called only on db cells.
 dbMaster* dbNetwork::staToDb(const LibertyCell* cell) const
 {
-  const ConcreteCell* ccell = cell;
-  auto master = reinterpret_cast<dbMaster*>(ccell->extCell());
-  assert(!master || master->getObjectType() == odb::dbMasterObj);
-  return master;
+  return staToDb(reinterpret_cast<const Cell*>(cell));
 }
 
 dbMTerm* dbNetwork::staToDb(const Port* port) const
@@ -3171,6 +3175,26 @@ PortDirection* dbNetwork::dbToSta(const dbSigType& sig_type,
 }
 
 ////////////////////////////////////////////////////////////////
+
+LibertyCell* dbNetwork::libertyCell(Cell* cell) const
+{
+  if (isConcreteCell(cell) == false) {
+    dbMaster* master = nullptr;
+    dbModule* module = nullptr;
+    staToDb(cell, master, module);
+    if (master) {
+      cell = reinterpret_cast<Cell*>(master->staCell());
+    } else if (module) {
+      return nullptr;  // dbModule does not have the corresponding LibertyCell
+    }
+  }
+  return ConcreteNetwork::libertyCell(cell);
+}
+
+const LibertyCell* dbNetwork::libertyCell(const Cell* cell) const
+{
+  return libertyCell(const_cast<Cell*>(cell));
+}
 
 LibertyCell* dbNetwork::libertyCell(dbInst* inst)
 {
