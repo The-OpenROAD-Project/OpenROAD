@@ -614,6 +614,14 @@ void PadDirectConnectionStraps::initialize(ConnectionType type)
       pins_ = getPinsFormingRing();
       break;
   }
+
+  debugPrint(getLogger(),
+             utl::PDN,
+             "Pad",
+             2,
+             "{} has {} pins",
+             getName(),
+             pins_.size());
 }
 
 std::map<odb::dbTechLayer*, std::vector<odb::dbBox*>>
@@ -653,8 +661,6 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore()
 
   const bool is_horizontal = is_west || is_east;
 
-  std::vector<odb::dbBox*> pins;
-
   auto pins_by_layer = getPinsByLayer();
   if (!layers_.empty()) {
     // remove unspecified layers
@@ -667,37 +673,6 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore()
         itr++;
       }
     }
-  }
-
-  // check for pin directions
-  bool has_horizontal_pins = false;
-  bool has_vertical_pins = false;
-  for (const auto& [layer, layer_pins] : pins_by_layer) {
-    if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      has_horizontal_pins = true;
-    }
-    if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-      has_vertical_pins = true;
-    }
-  }
-
-  const bool has_multiple_directions = has_horizontal_pins && has_vertical_pins;
-
-  for (const auto& [layer, layer_pins] : pins_by_layer) {
-    if (has_multiple_directions) {
-      // only add pins that would yield correct routing directions,
-      // otherwise keep non-preferred directions too
-      if (is_horizontal) {
-        if (layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL) {
-          continue;
-        }
-      } else {
-        if (layer->getDirection() != odb::dbTechLayerDir::VERTICAL) {
-          continue;
-        }
-      }
-    }
-    pins.insert(pins.end(), layer_pins.begin(), layer_pins.end());
   }
 
   const odb::dbTransform transform = inst->getTransform();
@@ -730,8 +705,52 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore()
     };
   }
 
-  pins.erase(std::remove_if(pins.begin(), pins.end(), std::move(remove_func)),
-             pins.end());
+  for (auto& [layer, layerpins] : pins_by_layer) {
+    layerpins.erase(
+        std::remove_if(layerpins.begin(), layerpins.end(), remove_func),
+        layerpins.end());
+  }
+
+  for (auto itr = pins_by_layer.begin(); itr != pins_by_layer.end();) {
+    if (itr->second.empty()) {
+      // remove empty layer
+      itr = pins_by_layer.erase(itr);
+    } else {
+      itr++;
+    }
+  }
+
+  // check for pin directions
+  bool has_horizontal_pins = false;
+  bool has_vertical_pins = false;
+  for (const auto& [layer, layer_pins] : pins_by_layer) {
+    if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+      has_horizontal_pins = true;
+    }
+    if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+      has_vertical_pins = true;
+    }
+  }
+
+  const bool has_multiple_directions = has_horizontal_pins && has_vertical_pins;
+
+  std::vector<odb::dbBox*> pins;
+  for (const auto& [layer, layer_pins] : pins_by_layer) {
+    if (has_multiple_directions) {
+      // only add pins that would yield correct routing directions,
+      // otherwise keep non-preferred directions too
+      if (is_horizontal) {
+        if (layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL) {
+          continue;
+        }
+      } else {
+        if (layer->getDirection() != odb::dbTechLayerDir::VERTICAL) {
+          continue;
+        }
+      }
+    }
+    pins.insert(pins.end(), layer_pins.begin(), layer_pins.end());
+  }
 
   if (!pins.empty()) {
     type_ = ConnectionType::Edge;
