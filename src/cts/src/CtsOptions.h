@@ -282,7 +282,20 @@ class CtsOptions : public odb::dbBlockCallBackObj
   // NDR strategies
   void setApplyNDR(NdrStrategy strategy) { ndrStrategy_ = strategy; }
   NdrStrategy getApplyNdr() const { return ndrStrategy_; }
-  const char* getApplyNdrName() const { return ndr_names_[1].c_str(); }
+  const char* getApplyNdrName() const
+  {
+    switch (ndrStrategy_) {
+      case NdrStrategy::NONE:
+        return "NONE";
+      case NdrStrategy::ROOT_ONLY:
+        return "ROOT_ONLY";
+      case NdrStrategy::HALF:
+        return "HALF";
+      case NdrStrategy::FULL:
+        return "FULL";
+    }
+    return "";
+  }
 
  private:
   std::string clockNets_;
