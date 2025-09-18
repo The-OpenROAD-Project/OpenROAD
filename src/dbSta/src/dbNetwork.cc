@@ -3454,6 +3454,13 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
   hierarchy_editor_->hierarchicalConnect(source_pin, dest_pin, connection_name);
 }
 
+void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
+                                    dbModITerm* dest_pin,
+                                    const char* connection_name)
+{
+  hierarchy_editor_->hierarchicalConnect(source_pin, dest_pin, connection_name);
+}
+
 /*
 Get the dbModule driving a net.
 
@@ -3793,6 +3800,21 @@ void dbNetwork::reassociateFromDbNetView(dbNet* flat_net, dbModNet* mod_net)
   DbModNetAssociation visitordb(this, mod_net);
   NetSet visited_dbnets(this);
   visitConnectedPins(dbToSta(flat_net), visitordb, visited_dbnets);
+}
+
+void dbNetwork::reassociatePinConnection(Pin* pin)
+{
+  // Ensure that a pin is consistently connected to both its hierarchical
+  // (dbModNet) and flat (dbNet) representations. This is often needed after
+  // complex hierarchical edits.
+  dbModNet* mod_net = hierNet(pin);
+  if (mod_net) {
+    dbNet* flat_net = this->flatNet(pin);
+    // Disconnect both flat and hierarchical nets before reconnecting
+    // to ensure a clean state.
+    disconnectPin(pin);
+    connectPin(pin, dbToSta(flat_net), dbToSta(mod_net));
+  }
 }
 
 void dbNetwork::replaceHierModule(dbModInst* mod_inst, dbModule* module)

@@ -34,7 +34,7 @@ void dbEditHierarchy::getParentHierarchy(
   }
 }
 
-dbModule* dbEditHierarchy::findHighestCommonModule(
+dbModule* dbEditHierarchy::findLowestCommonModule(
     std::vector<dbModule*>& itree1,
     std::vector<dbModule*>& itree2) const
 {
@@ -133,7 +133,7 @@ bool dbEditHierarchy::ConnectionToModuleExists(dbITerm* source_pin,
 // connection_name: name for the new pins & nets
 // top_mod_net: newly created ModNet in the highest common hierarchy
 // top_mod_iterm: newly created ModITerm in the highest common hierarchy
-void dbEditHierarchy::createHierarchyBottomUp(dbITerm* pin,
+void dbEditHierarchy::createHierarchyBottomUp(Pin* pin,
                                               dbModule* highest_common_module,
                                               const dbIoType& io_type,
                                               const char* connection_name,
@@ -141,7 +141,25 @@ void dbEditHierarchy::createHierarchyBottomUp(dbITerm* pin,
                                               dbModITerm*& top_mod_iterm) const
 {
   int level = 0;
-  dbModule* cur_module = pin->getInst()->getModule();
+  dbITerm* iterm = nullptr;
+  dbModITerm* moditerm = nullptr;
+  dbBTerm* bterm = nullptr;
+  db_network_->staToDb(pin, iterm, bterm, moditerm);
+
+  dbModule* cur_module = nullptr;
+  if (iterm) {
+    cur_module = iterm->getInst()->getModule();
+  } else if (moditerm) {
+    cur_module = moditerm->getParent()->getParent();
+  }
+
+  if (cur_module == nullptr) {
+    logger_->error(utl::ORD,
+                   69,
+                   "Module of Pin '{}' cannot be null.",
+                   db_network_->name(pin));
+  }
+
   dbModNet* db_mod_net = nullptr;
   const char* io_type_str = (io_type == dbIoType::OUTPUT) ? "o" : "i";
 
@@ -168,15 +186,14 @@ void dbEditHierarchy::createHierarchyBottomUp(dbITerm* pin,
 
     // Make connection at leaf level
     if (level == 0) {
-      Pin* sta_pin = db_network_->dbToSta(pin);
-      dbModNet* pin_mod_net = db_network_->hierNet(sta_pin);
+      dbModNet* pin_mod_net = db_network_->hierNet(pin);
       if (pin_mod_net) {
         // if pin is already connected. disconnect it
         dlogCreateHierDisconnectingPin(level, cur_module, pin, pin_mod_net);
-        db_network_->disconnectPin(sta_pin, (Net*) pin_mod_net);
+        db_network_->disconnectPin(pin, (Net*) pin_mod_net);
       }
       dlogCreateHierConnectingPin(level, cur_module, pin, db_mod_net);
-      db_network_->connectPin(sta_pin, (Net*) db_mod_net);
+      db_network_->connectPin(pin, (Net*) db_mod_net);
     }
 
     // Set next target hierarchy (goes up to the parent)
@@ -220,22 +237,13 @@ connection_name should be a base name, not a full name.
 */
 void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
                                           dbITerm* dest_pin,
-                                          const char* connection_name) const
+                                          const char* connection_name)
 {
   assert(source_pin != nullptr);
   assert(dest_pin != nullptr);
-
-  // If connect_name contains the hierarchy delimiter, use the partial string
-  // after the last occurrence of the hierarchy delimiter.
-  // This prevents a very long term/net name creation when the connection_name
-  // begins with a back-slackslash as "\soc/module1/instance_a/.../clk_port"
-  const char* last_hier_delimiter
-      = strrchr(connection_name, db_network_->block()->getHierarchyDelimiter());
-  if (last_hier_delimiter != nullptr) {
-    connection_name = last_hier_delimiter + 1;
-  }
-
-  dlogHierConnStart(source_pin, dest_pin, connection_name);
+  connection_name = getBaseName(connection_name);
+  dlogHierConnStart(
+      source_pin, db_network_->dbToSta(dest_pin), connection_name);
 
   //
   // 1. Connect source and dest pins directly in flat flow
@@ -327,56 +335,57 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
       }
     }
 
-    // No existing connection. Find highest common module, traverse up
+    // 3.2. No existing connection. Find highest common module, traverse up
     // adding pins/nets and make connection in highest common module
     std::vector<dbModule*> source_parent_tree;
     std::vector<dbModule*> dest_parent_tree;
     getParentHierarchy(source_db_module, source_parent_tree);
     getParentHierarchy(dest_db_module, dest_parent_tree);
 
-    dbModule* highest_common_module
-        = findHighestCommonModule(source_parent_tree, dest_parent_tree);
-    dbModNet* top_net = source_db_mod_net;
-    dbModNet* top_mod_net_dest = nullptr;
-    dbModITerm* top_mod_source = nullptr;
-    dbModITerm* top_mod_dest = nullptr;
+    dbModule* lowest_common_module
+        = findLowestCommonModule(source_parent_tree, dest_parent_tree);
 
-    // 3.2. Make source hierarchy (bottom to top).
+    // 3.3. Make source hierarchy (bottom to top).
     // - source_pin -> highest_common_module
     // - Make output pins and nets intermediate hierarchies
     // - Goes up from source hierarchy to highest common hierarchy
-    if (source_db_module != highest_common_module) {
-      dlogHierConnCreatingSrcHierarchy(source_pin, highest_common_module);
-      createHierarchyBottomUp(source_pin,
-                              highest_common_module,
+    dbModNet* top_source_mod_net = source_db_mod_net;
+    dbModITerm* top_source_mod_iterm = nullptr;
+    if (source_db_module != lowest_common_module) {
+      dlogHierConnCreatingSrcHierarchy(source_pin, lowest_common_module);
+      createHierarchyBottomUp(db_network_->dbToSta(source_pin),
+                              lowest_common_module,
                               dbIoType::OUTPUT,
                               connection_name,
-                              top_net,
-                              top_mod_source);
+                              top_source_mod_net,
+                              top_source_mod_iterm);
     }
 
-    // 3.3. Make dest hierarchy (bottom to top)
+    // 3.4. Make dest hierarchy (bottom to top)
     // - highest_common_module -> destination_pin
     // - Make input pins and nets intermediate hierarchies
     // - Goes up from source hierarchy to highest common hierarchy
-    if (dest_db_module != highest_common_module) {
-      dlogHierConnCreatingDstHierarchy(dest_pin, highest_common_module);
-      createHierarchyBottomUp(dest_pin,
-                              highest_common_module,
+    dbModNet* top_dest_mod_net = nullptr;
+    dbModITerm* top_dest_mod_iterm = nullptr;
+    if (dest_db_module != lowest_common_module) {
+      dlogHierConnCreatingDstHierarchy(db_network_->dbToSta(dest_pin),
+                                       lowest_common_module);
+      createHierarchyBottomUp(db_network_->dbToSta(dest_pin),
+                              lowest_common_module,
                               dbIoType::INPUT,
                               connection_name,
-                              top_mod_net_dest,
-                              top_mod_dest);
+                              top_dest_mod_net,
+                              top_dest_mod_iterm);
     }
 
-    // 3.4. Finally do the connection in the highest common module
-    if (top_mod_dest) {
-      dlogHierConnConnectingInCommon(connection_name, highest_common_module);
+    // 3.5. Finally do the connection in the highest common module
+    if (top_dest_mod_iterm) {
+      dlogHierConnConnectingInCommon(connection_name, lowest_common_module);
 
       // if we don't have a top net (case when we are connecting source at top
       // to hierarchically created pin), create one in the highest module
-      if (!top_net) {
-        dlogHierConnCreatingTopNet(connection_name, highest_common_module);
+      if (!top_source_mod_net) {
+        dlogHierConnCreatingTopNet(connection_name, lowest_common_module);
 
         // Get base name of source_pin_flat_net
         Pin* sta_source_pin = db_network_->dbToSta(source_pin);
@@ -385,93 +394,224 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
             = db_network_->name(db_network_->dbToSta(source_pin_flat_net));
 
         // Create and connect dbModNet
-        source_db_mod_net = dbModNet::create(highest_common_module, base_name);
-        top_mod_dest->connect(source_db_mod_net);
+        source_db_mod_net = dbModNet::create(lowest_common_module, base_name);
+        top_dest_mod_iterm->connect(source_db_mod_net);
         db_network_->disconnectPin(sta_source_pin);
         db_network_->connectPin(sta_source_pin,
                                 (Net*) source_pin_flat_net,
                                 (Net*) source_db_mod_net);
-        top_net = source_db_mod_net;
+        top_source_mod_net = source_db_mod_net;
       } else {
-        top_mod_dest->connect(top_net);
+        top_dest_mod_iterm->connect(top_source_mod_net);
       }
-      dlogHierConnConnectingTopDstPin(top_mod_dest, top_net);
+      dlogHierConnConnectingTopDstPin(top_dest_mod_iterm, top_source_mod_net);
     } else {
-      dest_pin->connect(top_net);
-      dlogHierConnConnectingDstPin(dest_pin, top_net);
+      dest_pin->connect(top_source_mod_net);
+      dlogHierConnConnectingDstPin(dest_pin, top_source_mod_net);
     }
 
-    // 3.5. What we are doing here is making sure that the
+    // 3.6. What we are doing here is making sure that the
     // hierarchical nets at the source and the destination
     // are correctly associated. In the above code
     // we are wiring/unwiring modnets without regard to the
     // flat net association. We clean that up here.
     // Note we cannot reassociate until after we have built
     // the hiearchy tree
-
-    // reassociate the dest pin
-
-    Pin* sta_dest_pin = db_network_->dbToSta(dest_pin);
-    dbModNet* dest_pin_mod_net = db_network_->hierNet(sta_dest_pin);
-    if (dest_pin_mod_net) {
-      dbNet* dest_pin_flat_net = db_network_->flatNet(sta_dest_pin);
-      dlogHierConnReassociatingDstPin(dest_pin_flat_net, dest_pin_mod_net);
-      dest_pin->disconnect();
-      db_network_->connectPin(
-          sta_dest_pin, (Net*) dest_pin_flat_net, (Net*) dest_pin_mod_net);
-    }
-
-    // reassociate the source pin
     Pin* sta_source_pin = db_network_->dbToSta(source_pin);
-    dbModNet* source_pin_mod_net = db_network_->hierNet(sta_source_pin);
-    if (source_pin_mod_net) {
-      dbNet* source_pin_flat_net = db_network_->flatNet(sta_source_pin);
-      dlogHierConnReassociatingSrcPin(source_pin_flat_net, source_pin_mod_net);
-      source_pin->disconnect();
-      db_network_->connectPin(sta_source_pin,
-                              (Net*) source_pin_flat_net,
-                              (Net*) source_pin_mod_net);
-    }
+    Pin* sta_dest_pin = db_network_->dbToSta(dest_pin);
+    db_network_->reassociatePinConnection(sta_source_pin);
+    db_network_->reassociatePinConnection(sta_dest_pin);
 
-    // 3.6. During the addition of new ports and new wiring we may
+    // 3.7. During the addition of new ports and new wiring we may
     // leave orphaned pins, clean them up.
-    std::set<dbModInst*> cleaned_up;
-    for (auto module_to_clean_up : source_parent_tree) {
-      dbModInst* mi = module_to_clean_up->getModInst();
-      if (mi) {
-        dlogHierConnCleaningUpSrc(mi);
-        mi->removeUnusedPortsAndPins();
-        cleaned_up.insert(mi);
-      }
-    }
-    for (auto module_to_clean_up : dest_parent_tree) {
-      dbModInst* mi = module_to_clean_up->getModInst();
-      if (mi) {
-        if (cleaned_up.find(mi) == cleaned_up.end()) {
-          dlogHierConnCleaningUpDst(mi);
-          mi->removeUnusedPortsAndPins();
-          cleaned_up.insert(mi);
-        }
-      }
-    }
+    cleanUnusedHierPins(source_parent_tree, dest_parent_tree);
   }
 
   dlogHierConnDone();
 }
 
+void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
+                                          dbModITerm* dest_pin,
+                                          const char* connection_name)
+{
+  assert(source_pin != nullptr);
+  assert(dest_pin != nullptr);
+  connection_name = getBaseName(connection_name);
+  dlogHierConnStart(
+      source_pin, db_network_->dbToSta(dest_pin), connection_name);
+
+  //
+  // 1. Get necessary information before netlist editing
+  //
+
+  // 1.1. Get the flat net connected to the dest hier pin.
+  dbModNet* dest_mod_net = dest_pin->getModNet();
+  dbNet* dest_flat_net = db_network_->findRelatedDbNet(dest_mod_net);
+  assert(dest_flat_net != nullptr);
+
+  // 1.2. Get the load pins through the dest_pin
+  // - for each input dbITerm, check if the instance of the dbIterm belongs to
+  // the dest_pin hierarchy.
+  std::set<dbITerm*> load_iterms;
+  dbModInst* dest_mod_inst = dest_pin->getParent();
+  for (dbITerm* iterm : dest_flat_net->getITerms()) {
+    if (iterm == source_pin) {
+      continue;  // Skip the source pin
+    }
+
+    dbInst* load_inst = iterm->getInst();
+    if (dest_mod_inst->hasDbInst(load_inst)) {
+      load_iterms.insert(iterm);
+    }
+  }
+
+  //
+  // 2. Reconnect flat net
+  //
+
+  // 2.1. Disconnect the leaf-level load pins of the dest_pin
+  for (dbITerm* load_iterm : load_iterms) {
+    load_iterm->disconnectDbNet();
+  }
+
+  // 2.2. Create a new flat net
+  Net* new_flat_net_sta
+      = db_network_->makeNet(connection_name,
+                             db_network_->topInstance(),
+                             odb::dbNameUniquifyType::IF_NEEDED);
+  dbNet* new_flat_net = db_network_->staToDb(new_flat_net_sta);
+
+  // 2.3. Connect: driver pin -> new flat net
+  source_pin->connect(new_flat_net);
+
+  // 2.4. Connect: New flat net -> leaf-level load pins
+  for (dbITerm* load_iterm : load_iterms) {
+    load_iterm->connect(new_flat_net);
+  }
+
+  //
+  // 3. Reconnect hier net
+  //
+
+  // 3.1. Disconnect dest_pin from its old hier net.
+  if (dest_mod_net) {
+    dest_pin->disconnect();
+  }
+
+  // 3.2. Get the scope (dbModule*) of the source and destination pins
+  dbModule* source_db_module = source_pin->getInst()->getModule();
+  dbModule* dest_db_module = dest_pin->getParent()->getParent();
+
+  std::vector<dbModule*> source_parent_tree;
+  std::vector<dbModule*> dest_parent_tree;
+  getParentHierarchy(source_db_module, source_parent_tree);
+  getParentHierarchy(dest_db_module, dest_parent_tree);
+
+  dbModule* highest_common_module
+      = findLowestCommonModule(source_parent_tree, dest_parent_tree);
+
+  // 3.3. Make source hierarchy (bottom to top).
+  dbModNet* top_source_mod_net = nullptr;
+  dbModITerm* top_source_mod_iterm = nullptr;
+  if (source_db_module != highest_common_module) {
+    dlogHierConnCreatingSrcHierarchy(source_pin, highest_common_module);
+    createHierarchyBottomUp(db_network_->dbToSta(source_pin),
+                            highest_common_module,
+                            dbIoType::OUTPUT,
+                            connection_name,
+                            top_source_mod_net,
+                            top_source_mod_iterm);
+  } else {
+    top_source_mod_net = source_pin->getModNet();
+    if (!top_source_mod_net) {
+      top_source_mod_net = dbModNet::create(source_db_module, connection_name);
+      source_pin->connect(top_source_mod_net);
+    }
+  }
+
+  // 3.4. Make dest hierarchy (bottom to top)
+  dbModNet* top_dest_mod_net = nullptr;
+  dbModITerm* top_dest_mod_iterm = dest_pin;
+  if (dest_db_module != highest_common_module) {
+    dlogHierConnCreatingDstHierarchy(db_network_->dbToSta(dest_pin),
+                                     highest_common_module);
+    createHierarchyBottomUp(db_network_->dbToSta(dest_pin),
+                            highest_common_module,
+                            dbIoType::INPUT,
+                            connection_name,
+                            top_dest_mod_net,
+                            top_dest_mod_iterm);
+  }
+
+  // 3.5. Finally do the connection in the highest common module
+  top_dest_mod_iterm->connect(top_source_mod_net);
+
+  // 3.6. Reassociate the pins to ensure consistency between flat and
+  // hierarchical nets.
+  Pin* sta_source_pin = db_network_->dbToSta(source_pin);
+  Pin* sta_dest_pin = db_network_->dbToSta(dest_pin);
+  db_network_->reassociatePinConnection(sta_source_pin);
+  db_network_->reassociatePinConnection(sta_dest_pin);
+
+  // 3.7. During the addition of new ports and new wiring we may
+  // leave orphaned pins, clean them up.
+  cleanUnusedHierPins(source_parent_tree, dest_parent_tree);
+
+  dlogHierConnDone();
+}
+
+void dbEditHierarchy::cleanUnusedHierPins(
+    const std::vector<dbModule*>& source_parent_tree,
+    const std::vector<dbModule*>& dest_parent_tree) const
+{
+  std::set<dbModInst*> cleaned_up;
+  for (auto module_to_clean_up : source_parent_tree) {
+    dbModInst* mi = module_to_clean_up->getModInst();
+    if (mi) {
+      dlogHierConnCleaningUpSrc(mi);
+      mi->removeUnusedPortsAndPins();
+      cleaned_up.insert(mi);
+    }
+  }
+
+  for (auto module_to_clean_up : dest_parent_tree) {
+    dbModInst* mi = module_to_clean_up->getModInst();
+    if (mi) {
+      if (cleaned_up.find(mi) == cleaned_up.end()) {
+        dlogHierConnCleaningUpDst(mi);
+        mi->removeUnusedPortsAndPins();
+        cleaned_up.insert(mi);
+      }
+    }
+  }
+}
+
+const char* dbEditHierarchy::getBaseName(const char* connection_name) const
+{
+  // If connect_name contains the hierarchy delimiter, use the partial string
+  // after the last occurrence of the hierarchy delimiter.
+  // This prevents a very long term/net name creation when the connection_name
+  // begins with a back-slash as "\soc/module1/instance_a/.../clk_port"
+  const char* last_hier_delimiter
+      = strrchr(connection_name, db_network_->block()->getHierarchyDelimiter());
+  if (last_hier_delimiter != nullptr) {
+    return last_hier_delimiter + 1;
+  }
+  return connection_name;
+}
+
 void dbEditHierarchy::dlogHierConnStart(dbITerm* source_pin,
-                                        dbITerm* dest_pin,
+                                        Pin* dest_pin,
                                         const char* connection_name) const
 {
   debugPrint(logger_,
              utl::ORD,
              "hierarchicalConnect",
              1,
-             "1. Start: {}/{} -> {}/{} (net: {})",
+             "1. Start: {}/{} -> {} (net: {})",
              source_pin->getInst()->getName(),
              source_pin->getMTerm()->getName(),
-             dest_pin->getInst()->getName(),
-             dest_pin->getMTerm()->getName(),
+             db_network_->pathName(dest_pin),
              connection_name);
 }
 
@@ -542,17 +682,16 @@ void dbEditHierarchy::dlogHierConnCreatingSrcHierarchy(
 }
 
 void dbEditHierarchy::dlogHierConnCreatingDstHierarchy(
-    dbITerm* dest_pin,
+    Pin* dest_pin,
     dbModule* highest_common_module) const
 {
   debugPrint(logger_,
              utl::ORD,
              "hierarchicalConnect",
              3,
-             "3.3. Creating hierarchy: common module '{}' -> dst '{}/{}':",
+             "3.3. Creating hierarchy: common module '{}' -> dst '{}':",
              highest_common_module->getHierarchicalName(),
-             dest_pin->getInst()->getName(),
-             dest_pin->getMTerm()->getName());
+             db_network_->pathName(dest_pin));
 }
 
 void dbEditHierarchy::dlogHierConnConnectingInCommon(
@@ -684,36 +823,34 @@ void dbEditHierarchy::dlogCreateHierBTermAndModNet(
 void dbEditHierarchy::dlogCreateHierDisconnectingPin(
     int level,
     dbModule* cur_module,
-    dbITerm* pin,
+    Pin* pin,
     dbModNet* pin_mod_net) const
 {
   debugPrint(logger_,
              utl::ORD,
              "hierarchicalConnect",
              4,
-             "  Hier(lv {}, {}): pin '{}/{}' is already connected to "
+             "  Hier(lv {}, {}): pin '{}' is already connected to "
              "'{}', disconnecting.",
              level,
              cur_module->getHierarchicalName(),
-             pin->getInst()->getName(),
-             pin->getMTerm()->getName(),
+             db_network_->pathName(pin),
              pin_mod_net->getName());
 }
 
 void dbEditHierarchy::dlogCreateHierConnectingPin(int level,
                                                   dbModule* cur_module,
-                                                  dbITerm* pin,
+                                                  Pin* pin,
                                                   dbModNet* db_mod_net) const
 {
   debugPrint(logger_,
              utl::ORD,
              "hierarchicalConnect",
              4,
-             "  Hier(lv {}, {}): Connecting pin '{}/{}' to ModNet '{}'",
+             "  Hier(lv {}, {}): Connecting pin '{}' to ModNet '{}'",
              level,
              cur_module->getHierarchicalName(),
-             pin->getInst()->getName(),
-             pin->getMTerm()->getName(),
+             db_network_->pathName(pin),
              db_mod_net->getName());
 }
 

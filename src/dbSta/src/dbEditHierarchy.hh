@@ -25,6 +25,7 @@ using odb::dbModule;
 using odb::dbNet;
 
 class dbNetwork;
+class Pin;
 
 // This class manipulates hierarchical relationships with pins, nets, and
 // instances.
@@ -40,26 +41,39 @@ class dbEditHierarchy
   void setLogger(Logger* logger) { logger_ = logger; }
   void getParentHierarchy(dbModule* start_module,
                           std::vector<dbModule*>& parent_hierarchy) const;
-  dbModule* findHighestCommonModule(std::vector<dbModule*>& itree1,
-                                    std::vector<dbModule*>& itree2) const;
+  dbModule* findLowestCommonModule(std::vector<dbModule*>& itree1,
+                                   std::vector<dbModule*>& itree2) const;
   bool ConnectionToModuleExists(dbITerm* source_pin,
                                 dbModule* dest_module,
                                 dbModBTerm*& dest_modbterm,
                                 dbModITerm*& dest_moditerm) const;
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
-                           const char* connection_name = "net") const;
+                           const char* connection_name = "net");
+  void hierarchicalConnect(dbITerm* source_pin,
+                           dbModITerm* dest_pin,
+                           const char* connection_name = "net");
 
  private:
-  void createHierarchyBottomUp(dbITerm* pin,
+  void createHierarchyBottomUp(Pin* pin,
                                dbModule* highest_common_module,
                                const dbIoType& io_type,
                                const char* connection_name,
                                dbModNet*& top_mod_net,
                                dbModITerm*& top_mod_iterm) const;
+  void reassociatePinConnection(Pin* pin);
+
+  // During the addition of new ports and new wiring we may
+  // leave orphaned pins, clean them up.
+  void cleanUnusedHierPins(
+      const std::vector<dbModule*>& source_parent_tree,
+      const std::vector<dbModule*>& dest_parent_tree) const;
+
+  const char* getBaseName(const char* connection_name) const;
+
   // Debug log methods
   void dlogHierConnStart(dbITerm* source_pin,
-                         dbITerm* dest_pin,
+                         Pin* dest_pin,
                          const char* connection_name) const;
   void dlogHierConnCreateFlatNet(const std::string& flat_name) const;
   void dlogHierConnConnectSrcToFlatNet(dbITerm* source_pin,
@@ -70,7 +84,7 @@ class dbEditHierarchy
                                      dbModNet* dest_mod_net) const;
   void dlogHierConnCreatingSrcHierarchy(dbITerm* source_pin,
                                         dbModule* highest_common_module) const;
-  void dlogHierConnCreatingDstHierarchy(dbITerm* dest_pin,
+  void dlogHierConnCreatingDstHierarchy(Pin* dest_pin,
                                         dbModule* highest_common_module) const;
   void dlogHierConnConnectingInCommon(const char* connection_name,
                                       dbModule* highest_common_module) const;
@@ -92,11 +106,11 @@ class dbEditHierarchy
       const std::string& new_term_net_name_i) const;
   void dlogCreateHierDisconnectingPin(int level,
                                       dbModule* cur_module,
-                                      dbITerm* pin,
+                                      Pin* pin,
                                       dbModNet* pin_mod_net) const;
   void dlogCreateHierConnectingPin(int level,
                                    dbModule* cur_module,
-                                   dbITerm* pin,
+                                   Pin* pin,
                                    dbModNet* db_mod_net) const;
   void dlogCreateHierCreatingITerm(
       int level,
