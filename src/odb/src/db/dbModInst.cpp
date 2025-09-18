@@ -658,6 +658,47 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   return new_mod_inst;
 }
 
+bool dbModInst::hasDbInst(dbInst* inst) const
+{
+  dbModule* master = getMaster();
+  if (master == nullptr) {
+    return false;
+  }
+
+  // Check direct child dbInsts
+  for (dbInst* child_inst : master->getInsts()) {
+    if (child_inst == inst) {
+      return true;
+    }
+  }
+
+  // Recursively check child dbModInsts
+  for (dbModInst* child_mod_inst : master->getModInsts()) {
+    if (child_mod_inst->hasDbInst(inst)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool dbModInst::hasDbModInst(dbModInst* inst) const
+{
+  dbModule* master = getMaster();
+  if (master == nullptr) {
+    return false;
+  }
+
+  // Recursively check child dbModInsts
+  for (dbModInst* child_mod_inst : master->getModInsts()) {
+    if (child_mod_inst == inst || child_mod_inst->hasDbModInst(inst)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 // User Code End dbModInstPublicMethods
 }  // namespace odb
 // Generator Code End Cpp
