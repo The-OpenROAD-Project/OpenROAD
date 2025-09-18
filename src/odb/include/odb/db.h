@@ -8290,15 +8290,16 @@ class dbModNet : public dbObject
   dbModule* getParent() const;
 
   // User Code Begin dbModNet
-  dbSet<dbModITerm> getModITerms();
-  dbSet<dbModBTerm> getModBTerms();
-  dbSet<dbITerm> getITerms();
-  dbSet<dbBTerm> getBTerms();
+  dbSet<dbModITerm> getModITerms() const;
+  dbSet<dbModBTerm> getModBTerms() const;
+  dbSet<dbITerm> getITerms() const;
+  dbSet<dbBTerm> getBTerms() const;
   unsigned connectionCount();
   std::string getName() const;
   const char* getConstName() const;
   void rename(const char* new_name);
   void disconnectAllTerms();
+  void dump() const;
 
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);
