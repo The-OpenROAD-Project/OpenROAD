@@ -848,22 +848,26 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
 {
   TilingList tight_packing_tilings;
 
-  int divider = 1;
-  int columns = 0, rows = 0;
+  int num_macro = static_cast<int>(macro_array->getNumMacro());
+  float macro_width = macro_array->getHardMacros().front()->getWidth();
+  float macro_height = macro_array->getHardMacros().front()->getHeight();
 
-  while (divider <= macro_array->getNumMacro()) {
-    if (macro_array->getNumMacro() % divider == 0) {
-      columns = macro_array->getNumMacro() / divider;
-      rows = divider;
+  const auto outline = tree_->root->getBBox();
+
+  int columns = 0;
+  for (int rows = 1; rows < std::sqrt(num_macro) + 1; rows++) {
+    if (num_macro % rows == 0) {
+      columns = num_macro / rows;
 
       // We don't consider tilings for right angle rotation orientations,
       // because they're not allowed in our macro placer.
-      tight_packing_tilings.emplace_back(
-          columns * macro_array->getHardMacros().front()->getWidth(),
-          rows * macro_array->getHardMacros().front()->getHeight());
+      // Tiling needs to fit inside outline
+      if (columns * macro_width <= outline.getWidth()
+          && rows * macro_height <= outline.getHeight()) {
+        tight_packing_tilings.emplace_back(columns * macro_width,
+                                           rows * macro_height);
+      }
     }
-
-    ++divider;
   }
 
   macro_array->setTilings(tight_packing_tilings);
@@ -1800,7 +1804,7 @@ void HierRTLMP::blockagesAsFixedSoftMacros(
     const int macro_id = static_cast<int>(macros.size());
     std::string macro_name = fmt::format("blockage_{}", macro_id);
     soft_macro_id_map[macro_name] = macro_id;
-    
+
     macros.emplace_back(blockage, macro_name);
   }
 }
