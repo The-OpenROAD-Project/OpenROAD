@@ -187,7 +187,107 @@ proc report_cts_config {args} {
   puts "-sink_clustering_size:               $sink_cluster_size"
   puts "-tree_buf:                           $tree_buffer"
   puts "-wire_unit:                          $wire_segment_unit"
-  puts "*******************************************"
+  puts "****'***************************************"
+}
+
+sta::define_cmd_args "reset_cts_config" {[-apply_ndr] \
+                                         [-branching_point_buffers_distance] \
+                                         [-clustering_exponent] \
+                                         [-clustering_unbalance_ratio] \
+                                         [-delay_buffer_derate] \
+                                         [-distance_between_buffers] \
+                                         [-library] \
+                                         [-macro_clustering_max_diameter] \
+                                         [-macro_clustering_size] \
+                                         [-num_static_layers] \
+                                         [-sink_buffer_max_cap_derate] \
+                                         [-sink_clustering_levels] \
+                                         [-sink_clustering_max_diameter] \
+                                         [-sink_clustering_size] \
+                                         [-tree_buf] \
+	                                 [-wire_unit]}
+
+proc reset_cts_config { args } {
+  sta::parse_key_args "reset_cts_config" args \
+    keys {} \
+    flags {-apply_ndr -branching_point_buffers_distance] -clustering_exponent \
+           -clustering_unbalance_ratio -delay_buffer_derate -distance_between_buffers \
+           -library -macro_clustering_max_diameter -macro_clustering_size \
+           -num_static_layers -sink_buffer_max_cap_derate -sink_clustering_levels \
+           -sink_clustering_max_diameter -sink_clustering_size -tree_buf -wire_unit}
+
+  set reset_all [expr { [array size flags] == 0 }]
+
+  if { $reset_all || [info exists flags(-apply_ndr)] } {
+    cts::reset_apply_ndr
+    utl::info CTS 211 "NDR strategy has been removed."
+  }
+  if { $reset_all || [info exists flags(-branching_point_buffers_distance)] } {
+    cts::reset_branching_point_buffers_distance
+    utl::info CTS 212 "Branch buffer distance has been removed."
+  }
+  if { $reset_all || [info exists flags(-clustering_exponent)] } {
+    cts::reset_clustering_exponent
+    utl::info CTS 213 "Clustering power has been removed."
+  }
+  if { $reset_all || [info exists flags(-clustering_unbalance_ratio)] } {
+    cts::reset_clustering_unbalance_ratio
+    utl::info CTS 214 "Clustering unbalance ratio has been removed."
+  }
+  if { $reset_all || [info exists flags(-delay_buffer_derate)] } {
+    cts::reset_delay_buffer_derate
+    utl::info CTS 215 "Delay buffer derate has been removed."
+  }
+  if { $reset_all || [info exists flags(-distance_between_buffers)] } {
+    cts::reset_distance_between_buffers
+    utl::info CTS 216 "Distance between buffers has been removed."
+  }
+  if { $reset_all || [info exists flags(-library)] } {
+    cts::reset_cts_library
+    utl::info CTS 217 "CTS library has been removed."
+  }
+  if { $reset_all || [info exists flags(-macro_clustering_max_diameter)] } {
+    cts::reset_macro_clustering_diameter
+    utl::info CTS 218 "Macro clustering max diameter has been removed."
+  }
+  if { $reset_all || [info exists flags(-macro_clustering_size)] } {
+    cts::reset_macro_clustering_size
+    utl::info CTS 219 "Macro clustering size has been removed."
+  }
+  if { $reset_all || [info exists flags(-num_static_layers)] } {
+    cts::reset_num_static_layers
+    utl::info CTS 220 "Number of static layers has been removed."
+  }
+  if { $reset_all || [info exists flags(-sink_buffer_max_cap_derate)] } {
+    cts::reset_sink_buffer_max_cap_derate
+    utl::info CTS 221 "Sink buffer max cap derate has been removed."
+  }
+  if { $reset_all || [info exists flags(-sink_clustering_levels)] } {
+    cts::reset_sink_clustering_levels
+    utl::info CTS 222 "Sink clustering levels has been removed."
+  }
+  if { $reset_all || [info exists flags(-sink_clustering_max_diameter)] } {
+    cts::reset_clustering_diameter
+    utl::info CTS 223 "Sink clustering max diameter has been removed."
+  }
+  if { $reset_all || [info exists flags(-sink_clustering_size)] } {
+    cts::reset_sink_clustering_size
+    utl::info CTS 224 "Sink clustering size has been removed."
+  }
+  if { $reset_all || [info exists flags(-tree_buf)] } {
+    cts::reset_tree_buf
+    utl::info CTS 225 "Tree buffer has been removed."
+  }
+  if { $reset_all || [info exists flags(-wire_unit)] } {
+    cts::reset_wire_segment_distance_unit
+    utl::info CTS 226 "Wire segment unit has been removed."
+  }
+  #if { $reset_all || [info exists flags(-apply_ndr)] } {
+  #  utl::info CTS 227 "NDR strategy has been removed."
+  #}
+  #if { $reset_all || [info exists flags(-apply_ndr)] } {
+  #  utl::info CTS 228 "NDR strategy has been removed."
+  #}
 }
 
 sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]

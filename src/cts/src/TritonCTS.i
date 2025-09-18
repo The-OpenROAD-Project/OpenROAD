@@ -386,4 +386,84 @@ set_db_unit(bool reset)
     getTritonCts()->getParms()->setDbUnits(block->getDbUnitsPerMicron());
   }
 }
+void
+reset_apply_ndr()
+{
+  getTritonCts()->getParms()->resetApplyNDR();
+}
+void
+reset_branching_point_buffers_distance()
+{
+  getTritonCts()->getParms()->resetVertexBufferDistance();
+}
+void
+reset_clustering_exponent()
+{
+  getTritonCts()->getParms()->resetClusteringPower();
+}
+void
+reset_clustering_unbalance_ratio()
+{
+  getTritonCts()->getParms()->resetClusteringCapacity();
+}
+void
+reset_delay_buffer_derate()
+{
+  getTritonCts()->getParms()->resetDelayBufferDerate();
+}
+void
+reset_distance_between_buffers()
+{
+  getTritonCts()->getParms()->resetBufferDistance();
+}
+void
+reset_cts_library()
+{
+  getTritonCts()->getParms()->resetCtsLibrary();
+}
+void
+reset_macro_clustering_diameter()
+{
+  getTritonCts()->getParms()->resetMacroMaxDiameter();
+}
+void
+reset_macro_clustering_size()
+{
+  getTritonCts()->getParms()->resetMacroClusteringSize();
+}
+void
+reset_num_static_layers()
+{
+  getTritonCts()->getParms()->resetNumStaticLayers();
+}
+void
+reset_sink_buffer_max_cap_derate()
+{
+  getTritonCts()->getParms()->resetSinkBufferMaxCapDerate();
+}
+void
+reset_sink_clustering_levels()
+{
+  getTritonCts()->getParms()->resetSinkClusteringLevels();
+}
+void
+reset_clustering_diameter()
+{
+  getTritonCts()->getParms()->resetMaxDiameter();
+}
+void
+reset_sink_clustering_size()
+{
+  getTritonCts()->getParms()->resetSinkClusteringSize();
+}
+void
+reset_tree_buf()
+{
+  getTritonCts()->getParms()->resetTreeBuffer();
+}
+void
+reset_wire_segment_distance_unit()
+{
+  getTritonCts()->getParms()->resetWireSegmentUnit();
+}
 %} //inline
