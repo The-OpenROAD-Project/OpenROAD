@@ -34,10 +34,10 @@ cc_library(
     ],
     deps = [
         "//:ord",
-        "//src/odb",
-        "//src/dbSta",
-        "//src/sta:opensta_lib",
         "//src/cut",
+        "//src/dbSta",
+        "//src/odb",
+        "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
         "@edu_berkeley_abc//:abc-lib",

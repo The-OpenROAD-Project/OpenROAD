@@ -8,7 +8,6 @@
 #include <set>
 #include <string>
 #include <tuple>
-#include <unordered_map>
 #include <vector>
 
 namespace ord {
@@ -258,7 +257,7 @@ class PartitionMgr
                                              sta::NetworkReader* network);
   // ArtNet SpecGen
   void printMemoryUsage();
-  void getFromODB(std::unordered_map<std::string, MasterInfo>& onlyUseMasters,
+  void getFromODB(std::map<std::string, MasterInfo>& onlyUseMasters,
                   std::string& top_name,
                   int& numInsts,
                   int& numPIs,
@@ -289,7 +288,7 @@ class PartitionMgr
                     const std::shared_ptr<Cluster>& cluster,
                     SharedClusterVector& resultCV);
   void writeFile(
-      const std::unordered_map<std::string, MasterInfo>& onlyUseMasters,
+      const std::map<std::string, MasterInfo>& onlyUseMasters,
       const std::string& top_name,
       int numInsts,
       int numPIs,

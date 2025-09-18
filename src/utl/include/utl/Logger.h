@@ -256,6 +256,8 @@ class Logger
   void teeStringBegin();
   std::string teeStringEnd();
 
+  static Logger* defaultLogger();
+
   // Progress interface
   Progress* progress() const { return progress_.get(); }
   std::unique_ptr<Progress> swapProgress(Progress* progress);

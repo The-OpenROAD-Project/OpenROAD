@@ -73,8 +73,11 @@ void PartitionMgr::writeArtNetSpec(const char* fileName)
   if (!getDbBlock()) {
     logger_->error(PAR, 53, "Design not loaded.");
   }
+  if (db_->getLibs().empty()) {
+    logger_->error(PAR, 55, "Libs not loaded.");
+  }
 
-  std::unordered_map<std::string, MasterInfo> onlyUseMasters;
+  std::map<std::string, MasterInfo> onlyUseMasters;
   std::string top_name;
   int numInsts = 0;
   int numPIs = 0;
@@ -131,16 +134,20 @@ void PartitionMgr::getFromODB(
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
     bool isMacro = (master->getType() == dbMasterType::BLOCK ? 1 : 0);
-    if (const sta::LibertyCell* lib_cell = db_network_->libertyCell(inst)) {
-      if (lib_cell->hasSequentials()) {
-        numSeq++;
-      }
+    const sta::LibertyCell* lib_cell = db_network_->libertyCell(inst);
+    if (!lib_cell) {
+      logger_->error(PAR, 56, "Liberty cell not found: {}", inst->getName());
+    }
+    if (lib_cell->hasSequentials()) {
+      numSeq++;
     }
     auto [it, inserted]
         = onlyUseMasters.try_emplace(master->getName(), MasterInfo{});
     MasterInfo& info = it->second;
-    info.isMacro = isMacro;
     ++info.count;
+    if (inserted) {
+      info.isMacro = isMacro;
+    }
   }
 }
 
@@ -679,7 +686,7 @@ void PartitionMgr::fit_mul(const double* x,
 }
 
 void PartitionMgr::writeFile(
-    const std::unordered_map<std::string, MasterInfo>& onlyUseMasters,
+    const std::map<std::string, MasterInfo>& onlyUseMasters,
     const std::string& top_name,
     const int numInsts,
     const int numPIs,
@@ -701,7 +708,7 @@ void PartitionMgr::writeFile(
   outFile << "LIBRARY\n";
   outFile << "NAME lib\n";
 
-  // unordered_map<string, MasterInfo> --> cellName / cellCount, isMacro
+  // map<string, MasterInfo> --> cellName / cellCount, isMacro
   for (const auto& [name, info] : onlyUseMasters) {
     if (!info.isMacro) {
       outFile << "STD_CELL " << name << '\n';
