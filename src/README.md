@@ -215,10 +215,10 @@ write_cdl
 
 ### Examples
 ```
-write_cdl -master {netlist1.cdl netlist2.cdl ...} -include_fillers netlist.cdl
+write_cdl -masters {netlist1.cdl netlist2.cdl ...} -include_fillers netlist.cdl
 
 # To write a database file with gzip compression.
-write_cdl -master {netlist1.cdl netlist2.cdl ...} -include_fillers netlist.cdl.gz
+write_cdl -masters {netlist1.cdl netlist2.cdl ...} -include_fillers netlist.cdl.gz
 ```
 
 ### Global Connections
