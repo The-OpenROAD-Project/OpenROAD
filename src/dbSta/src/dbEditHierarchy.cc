@@ -441,20 +441,16 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
       source_pin, db_network_->dbToSta(dest_pin), connection_name);
 
   //
-  // 1. Get necessary information before netlist editing
-  //
-
-  // 1.1. Get the flat net connected to the dest hier pin.
-  dbModNet* dest_mod_net = dest_pin->getModNet();
-  dbNet* dest_flat_net = db_network_->findRelatedDbNet(dest_mod_net);
-  assert(dest_flat_net != nullptr);
-
-  // 1.2. Get the load pins through the dest_pin
+  // 1. Get the load pins through the dest_pin
   // - for each input dbITerm, check if the instance of the dbIterm belongs to
   // the dest_pin hierarchy.
+  dbModNet* dest_mod_net = dest_pin->getModNet();
+  dbModBTerm* dest_mod_bterm = dest_pin->getChildModBTerm();
+  dbModNet* dest_mod_bterm_net = dest_mod_bterm->getModNet();
+
   std::set<dbITerm*> load_iterms;
   dbModInst* dest_mod_inst = dest_pin->getParent();
-  for (dbITerm* iterm : dest_flat_net->getITerms()) {
+  for (dbITerm* iterm : dest_mod_bterm_net->getITerms()) {
     if (iterm == source_pin) {
       continue;  // Skip the source pin
     }
