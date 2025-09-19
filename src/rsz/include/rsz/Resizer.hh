@@ -680,6 +680,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool isLogicStdCell(const Instance* inst);
 
   bool okToBufferNet(const Pin* driver_pin) const;
+  bool checkAndMarkVTSwappable(Instance* inst,
+                               std::unordered_set<Instance*>& notSwappable,
+                               LibertyCell*& best_lib_cell);
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes

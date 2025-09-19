@@ -112,7 +112,13 @@ class RepairSetup : public sta::dbStaState
                          int endpt_index,
                          int num_endpts);
   void repairSetupLastGasp(const OptoParams& params, int& num_viols);
-  bool swapVTCritCells(const OptoParams& params, const int& num_viols);
+  bool swapVTCritCells(const OptoParams& params, int& num_viols);
+  void traverseFaninCone(Vertex* endpoint,
+                         std::unordered_map<Instance*, float>& crit_insts,
+                         std::unordered_set<Vertex*>& visited,
+                         std::unordered_set<Instance*>& notSwappable,
+                         const OptoParams& params);
+  Slack getInstanceSlack(Instance* inst);
 
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;

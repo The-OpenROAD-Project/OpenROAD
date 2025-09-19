@@ -115,7 +115,11 @@ class BaseMove : public sta::dbStaState
     return false;
   }
 
-  virtual bool doMove(Instance* drvr) { return false; }
+  virtual bool doMove(Instance* drvr,
+                      std::unordered_set<Instance*>& unSwappable)
+  {
+    return false;
+  }
 
   virtual const char* name() = 0;
 

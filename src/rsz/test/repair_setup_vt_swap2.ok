@@ -185,9 +185,9 @@
       107 |       0 |      47 |        0 |      1 |    16 |    +0.7% |   -4.375 |       -4.8 |      0 | resp_msg[13]
       108 |       0 |      47 |        0 |      1 |    16 |    +0.7% |   -4.375 |       -4.8 |      0 | resp_msg[13]
       109 |       0 |      47 |        0 |      1 |    16 |    +0.7% |   -4.375 |       -4.8 |      0 | resp_msg[13]
-    final |       0 |      54 |        0 |      1 |    16 |    +0.7% |   -4.375 |       -4.4 |      0 | resp_msg[13]
+    final |       0 |      58 |        0 |      1 |    16 |    +0.7% |   -4.375 |       -4.4 |      1 | resp_msg[13]
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 54 instances: 4 up, 0 up match, 0 down, 50 VT
+[INFO RSZ-0051] Resized 58 instances: 4 up, 0 up match, 0 down, 54 VT
 [INFO RSZ-0043] Swapped pins on 16 instances.
 [INFO RSZ-0049] Cloned 1 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
