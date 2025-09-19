@@ -5022,37 +5022,37 @@ bool Resizer::okToBufferNet(const Pin* driver_pin) const
 // Check if current instance can be swapped to the
 // fastest VT variant.  If not, mark it as such.
 bool Resizer::checkAndMarkVTSwappable(
-    Instance* drvr,
+    Instance* inst,
     std::unordered_set<Instance*>& notSwappable,
     LibertyCell*& best_lib_cell)
 {
   best_lib_cell = nullptr;
-  if (notSwappable.find(drvr) != notSwappable.end()) {
+  if (notSwappable.find(inst) != notSwappable.end()) {
     return false;
   }
-  if (dontTouch(drvr) || !isLogicStdCell(drvr)) {
-    notSwappable.insert(drvr);
+  if (dontTouch(inst) || !isLogicStdCell(inst)) {
+    notSwappable.insert(inst);
     return false;
   }
-  Cell* cell = network_->cell(drvr);
+  Cell* cell = network_->cell(inst);
   if (!cell) {
-    notSwappable.insert(drvr);
+    notSwappable.insert(inst);
     return false;
   }
   LibertyCell* curr_lib_cell = network_->libertyCell(cell);
   if (!curr_lib_cell) {
-    notSwappable.insert(drvr);
+    notSwappable.insert(inst);
     return false;
   }
   LibertyCellSeq equiv_cells = getVTEquivCells(curr_lib_cell);
   if (equiv_cells.empty()) {
-    notSwappable.insert(drvr);
+    notSwappable.insert(inst);
     return false;
   }
   best_lib_cell = equiv_cells.back();
   if (best_lib_cell == curr_lib_cell) {
     best_lib_cell = nullptr;
-    notSwappable.insert(drvr);
+    notSwappable.insert(inst);
     return false;
   }
 
