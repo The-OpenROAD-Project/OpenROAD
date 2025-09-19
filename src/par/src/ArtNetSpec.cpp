@@ -110,7 +110,7 @@ void PartitionMgr::writeArtNetSpec(const char* fileName)
 }
 
 void PartitionMgr::getFromODB(
-    std::unordered_map<std::string, MasterInfo>& onlyUseMasters,
+    std::map<std::string, MasterInfo>& onlyUseMasters,
     std::string& top_name,
     int& numInsts,
     int& numPIs,
