@@ -11,8 +11,6 @@
 [INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
 [INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
 Derived GENLIB library "asap7sc7p5t_AO_RVT_FF_nldm_211120" with 169 gates.
-Warning: Detected 2 multi-output gates (for example, "FAx1_ASAP7_75t_R").
-SC library cannot be found.
 [INFO CGT-0003] Clock gating instance 0/3
 [INFO CGT-0004] Accepted clock enable '_05_ | _02_ | _01_ | _10_ | _03_' for instance val\[0\]$_DFF_PP1_
 No differences found.

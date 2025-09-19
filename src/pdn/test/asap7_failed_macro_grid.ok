@@ -11,8 +11,8 @@
 [INFO PDN-0001] Inserting grid: CORE_macro_grid_1 - dmem/dmem1
 [INFO PDN-0001] Inserting grid: CORE_macro_grid_1 - dmem/dmem2
 [INFO PDN-0001] Inserting grid: CORE_macro_grid_1 - dmem/dmem3
-[WARNING PDN-0232] CORE_macro_grid_1 - dmem/dmem0 does not contain any shapes or vias.
-[WARNING PDN-0232] CORE_macro_grid_1 - dmem/dmem1 does not contain any shapes or vias.
-[WARNING PDN-0232] CORE_macro_grid_1 - dmem/dmem2 does not contain any shapes or vias.
+[WARNING PDN-0232] The grid "CORE_macro_grid_1 - dmem/dmem0" (Instance) does not contain any shapes or vias.
+[WARNING PDN-0232] The grid "CORE_macro_grid_1 - dmem/dmem1" (Instance) does not contain any shapes or vias.
+[WARNING PDN-0232] The grid "CORE_macro_grid_1 - dmem/dmem2" (Instance) does not contain any shapes or vias.
 [ERROR PDN-0233] Failed to generate full power grid.
 PDN-0233

@@ -286,6 +286,12 @@ std::string Logger::teeStringEnd()
   return redirectStringEnd();
 }
 
+Logger* Logger::defaultLogger()
+{
+  static Logger default_logger;
+  return &default_logger;
+}
+
 void Logger::assertNoRedirect()
 {
   if (string_redirect_ != nullptr || file_redirect_ != nullptr) {

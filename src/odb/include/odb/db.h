@@ -18,17 +18,17 @@
 #include <variant>
 #include <vector>
 
-#include "dbBlockSet.h"
-#include "dbCCSegSet.h"
-#include "dbDatabaseObserver.h"
-#include "dbMatrix.h"
-#include "dbNetSet.h"
-#include "dbObject.h"
-#include "dbSet.h"
-#include "dbTypes.h"
-#include "dbViaParams.h"
-#include "geom.h"
-#include "odb.h"
+#include "odb/dbBlockSet.h"
+#include "odb/dbCCSegSet.h"
+#include "odb/dbDatabaseObserver.h"
+#include "odb/dbMatrix.h"
+#include "odb/dbNetSet.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/dbViaParams.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
 
 constexpr int ADS_MAX_CORNER = 10;
 
@@ -1736,12 +1736,12 @@ class dbNet : public dbObject
   ///
   /// Get the net name.
   ///
-  std::string getName();
+  std::string getName() const;
 
   ///
   /// Get the net name.
   ///
-  const char* getConstName();
+  const char* getConstName() const;
 
   ///
   /// Print net name with or without id and newline
@@ -1949,7 +1949,7 @@ class dbNet : public dbObject
   ///
   /// Get the block this net belongs to.
   ///
-  dbBlock* getBlock();
+  dbBlock* getBlock() const;
 
   ///
   /// Get all the instance-terminals of this net.
@@ -2427,6 +2427,20 @@ class dbNet : public dbObject
   /// Merge the iterms and bterms of the in_net with this net
   ///
   void mergeNet(dbNet* in_net);
+
+  ///
+  /// Find the parent module instance of this net by parsing its hierarchical
+  /// name.
+  /// Returns nullptr if the parent is the top module.
+  /// Note that a dbNet can be located at multiple hierarchical modules.
+  ///
+  dbModInst* findMainParentModInst() const;
+
+  ///
+  /// Find the parent module of this net by parsing its hierarchical name.
+  /// Returns the top module if the parent is the top module.
+  ///
+  dbModule* findMainParentModule() const;
 
   dbSet<dbGuide> getGuides() const;
 
@@ -8245,6 +8259,12 @@ class dbModInst : public dbObject
 
   void removeUnusedPortsAndPins();
 
+  dbModNet* findHierNet(const char* base_name) const;
+  dbNet* findFlatNet(const char* base_name) const;
+  bool findNet(const char* base_name,
+               dbNet*& flat_net,
+               dbModNet*& hier_net) const;
+
   /// Swap the module of this instance.
   /// Returns new mod inst if the operations succeeds.
   /// Old mod inst is deleted along with its child insts.
@@ -10966,4 +10986,4 @@ class dbDoubleProperty : public dbProperty
 }  // namespace odb
 
 // Overload std::less for these types
-#include "dbCompare.h"
+#include "odb/dbCompare.h"

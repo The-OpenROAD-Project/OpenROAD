@@ -60,6 +60,7 @@ cc_library(
     ],
     deps = [
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/dpl",
         "//src/est",
         "//src/grt",
@@ -77,6 +78,7 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
+        "src/BufferedNet.hh",
         "src/Graphics.cc",
         "src/Graphics.hh",
         "src/MakeResizer.cc",
@@ -97,6 +99,7 @@ cc_library(
         ":rsz",
         "//:ord",
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/dpl",
         "//src/est",
         "//src/grt",

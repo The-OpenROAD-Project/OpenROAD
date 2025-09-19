@@ -11,6 +11,7 @@
 #include <ctime>
 #include <fstream>
 #include <functional>
+#include <iostream>
 #include <limits>
 #include <map>
 #include <memory>
@@ -1683,6 +1684,41 @@ int TritonCTS::applyNDRToFirstHalfLevels(Clock& clockNet,
   return applyNDRToClockLevels(clockNet, clockNDR, firstHalfLevels);
 }
 
+// Priority for minSpc rule is SPACINGTABLE TWOWIDTHS > SPACINGTABLE PRL >
+// SPACING
+int TritonCTS::getNetSpacing(odb::dbTechLayer* layer,
+                             const int width1,
+                             const int width2)
+{
+  int min_spc = 0;
+  if (layer->hasTwoWidthsSpacingRules()) {
+    min_spc = layer->findTwSpacing(width1, width2, 0);
+  } else if (layer->hasV55SpacingRules()) {
+    min_spc = layer->findV55Spacing(std::max(width1, width2), 0);
+  } else if (!layer->getV54SpacingRules().empty()) {
+    for (auto rule : layer->getV54SpacingRules()) {
+      if (rule->hasRange()) {
+        uint rmin;
+        uint rmax;
+        rule->getRange(rmin, rmax);
+        if (width1 < rmin || width2 > rmax) {
+          continue;
+        }
+      }
+      min_spc = std::max<int>(min_spc, rule->getSpacing());
+    }
+  } else {
+    min_spc = layer->getSpacing();
+  }
+
+  // Last resort, get pitch - minWidth
+  if (min_spc == 0) {
+    min_spc = layer->getPitch() - layer->getMinWidth();
+  }
+
+  return min_spc;
+}
+
 void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
 {
   char ruleName[64];
@@ -1709,10 +1745,26 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
       layerRule = odb::dbTechLayerRule::create(clockNDR, layer);
     }
     assert(layerRule != nullptr);
-    int defaultSpace = layer->getSpacing();
+
     int defaultWidth = layer->getWidth();
-    layerRule->setSpacing(defaultSpace * 2);
-    layerRule->setWidth(defaultWidth);
+    int defaultSpace = getNetSpacing(layer, defaultWidth, defaultWidth);
+
+    // If width or space is 0, something is not right
+    if (defaultWidth == 0 || defaultSpace == 0) {
+      logger_->warn(CTS,
+                    208,
+                    "Clock NDR settings for layer {}: defaultSpace: {} - "
+                    "defaultWidth: {}",
+                    layer->getName(),
+                    defaultSpace,
+                    defaultWidth);
+    }
+
+    // Set NDR settings
+    int ndr_width = defaultWidth;
+    layerRule->setWidth(ndr_width);
+    int ndr_space = 2 * getNetSpacing(layer, ndr_width, ndr_width);
+    layerRule->setSpacing(ndr_space);
 
     debugPrint(logger_,
                CTS,

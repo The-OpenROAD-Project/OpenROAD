@@ -20,11 +20,9 @@ using utl::format_as;
 class PointT
 {
  public:
-  PointT(int x = std::numeric_limits<int>::max(),
-         int y = std::numeric_limits<int>::max())
-      : x_(x), y_(y)
-  {
-  }
+  PointT() = default;
+  PointT(int x, int y) : x_(x), y_(y) {}
+
   bool IsValid() { return *this != PointT(); }
 
   int x() const { return x_; }
@@ -71,8 +69,8 @@ class PointT
   }
 
  private:
-  int x_;
-  int y_;
+  int x_{std::numeric_limits<int>::max()};
+  int y_{std::numeric_limits<int>::max()};
 };
 
 // Interval template

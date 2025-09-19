@@ -1,0 +1,15 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 676 components and 2850 component-terminals.
+[INFO ODB-0133]     Created 579 nets and 1498 connections.
+[INFO GRT-0279] Detailed route wire length by layer:
+Layer    Wire length  Percentage
+--------------------------------
+metal1   1127.44um    15%
+metal2   3512.99um    47%
+metal3   2307.72um    31%
+metal4     77.61um     1%
+metal5    125.86um     1%
+metal6    168.28um     2%
+--------------------------------
