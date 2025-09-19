@@ -78,10 +78,16 @@ class FlexPA
 {
  public:
   // If something is not required it should be marked as true
-  struct pa_requirements_met
+  struct Requirement
   {
-    bool sparse_points = false;
-    bool far_from_edge = false;
+    int current = 0;
+    int goal = 0;
+  };
+
+  struct PARequirements
+  {
+    Requirement sparse_points;
+    Requirement far_from_edge;
   };
 
   enum PatternType
@@ -199,45 +205,43 @@ class FlexPA
   int genPinAccess(T* pin, frInstTerm* inst_term = nullptr);
 
   /**
-   * @brief determines if the current access points are enough to say PA is done
-   * with this pin.
-   *
-   * for the access points to be considered enough there must exist a minimum of
-   * aps:
-   * 1. far enough from each other greater than the minimum specified in
-   * router_cfg.
-   * 2. far enough from the cell edge.
+   * @brief determines if ALL requirements were met.
    *
    * @param aps the list of candidate access points
    * @param inst_term terminal related to the pin
+   * @param reqs Pin Access Requirements Structure
    *
-   * @returns True if the current aps are enough for the pin
+   * @returns True if ALL requirements were met
    */
   bool EnoughAccessPoints(std::vector<std::unique_ptr<frAccessPoint>>& aps,
                           frInstTerm* inst_term,
-                          pa_requirements_met& reqs);
+                          PARequirements& reqs);
+
+  bool improveAnyRequirements(frAccessPoint* candidate_ap,
+                              std::vector<std::unique_ptr<frAccessPoint>>& aps,
+                              frInstTerm* inst_term,
+                              PARequirements& reqs,
+                              bool accept_progress = false);
 
   /**
-   * @brief determines if the current access points meet the minimum sparse
-   * points requirement.
-   * @param aps the list of candidate access points
-   * @param inst_term terminal related to the pin
+   * @brief determines if a candidate access point is far away enough from all
+   * the others.
+   * @param ap the candidate access point
+   * @param aps access points the candidate is compared to
    *
-   * @returns True if the requirement is met
+   * @returns True if the candidate is consideres sparses
    */
-  bool EnoughSparsePoints(std::vector<std::unique_ptr<frAccessPoint>>& aps,
-                          frInstTerm* inst_term);
+  bool isPointSparse(frAccessPoint* ap,
+                     std::vector<std::unique_ptr<frAccessPoint>>& aps);
 
   /**
-   * @brief determines if the current access points meet the minimum aps far
-   * from edge requirement.
-   * @param aps the list of candidate access points
+   * @brief determines if the access point is far enough from edge
+   * @param ap the list of candidate access points
    * @param inst_term terminal related to the pin
    *
-   * @returns True if the requirement is met
+   * @returns True if the access point is far enough from the inst edge
    */
-  bool EnoughPointsFarFromEdge(std::vector<std::unique_ptr<frAccessPoint>>& aps,
-                               frInstTerm* inst_term);
+  bool isPointFarFromEdge(frAccessPoint* ap, frInstTerm* inst_term);
 
   /**
    * @brief initializes the pin accesses of a given pin only considering a given
@@ -264,7 +268,7 @@ class FlexPA
       frInstTerm* inst_term,
       frAccessPointEnum lower_type,
       frAccessPointEnum upper_type,
-      pa_requirements_met& reqs);
+      PARequirements& reqs);
 
   void getViasFromMetalWidthMap(
       const Point& pt,
