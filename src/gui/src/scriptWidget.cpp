@@ -1,38 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include "scriptWidget.h"
 
-#include <errno.h>
 #include <unistd.h>
 
 #include <QCoreApplication>
@@ -41,7 +11,12 @@
 #include <QThread>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <cerrno>
+#include <functional>
+#include <memory>
 #include <mutex>
+#include <stdexcept>
+#include <string>
 
 #include "gui/gui.h"
 #include "spdlog/formatter.h"
@@ -56,6 +31,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       input_(new TclCmdInputWidget(this)),
       pauser_(new QPushButton("Idle", this)),
       pause_timer_(std::make_unique<QTimer>()),
+      report_timer_(std::make_unique<QTimer>()),
       paused_(false),
       logger_(nullptr),
       buffer_outputs_(false),
@@ -67,6 +43,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   output_->setReadOnly(true);
   pauser_->setEnabled(false);
   pauser_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
+  pause_timer_->setSingleShot(true);
 
   QHBoxLayout* inner_layout = new QHBoxLayout;
   inner_layout->addWidget(pauser_);
@@ -102,6 +79,11 @@ ScriptWidget::ScriptWidget(QWidget* parent)
           this,
           &ScriptWidget::addResultToOutput);
   connect(input_,
+          &TclCmdInputWidget::addTextToOutput,
+          this,
+          &ScriptWidget::addTextToOutput,
+          Qt::QueuedConnection);
+  connect(input_,
           &TclCmdInputWidget::commandFinishedExecuting,
           this,
           &ScriptWidget::resetPauser);
@@ -109,12 +91,20 @@ ScriptWidget::ScriptWidget(QWidget* parent)
           &TclCmdInputWidget::commandFinishedExecuting,
           this,
           &ScriptWidget::commandExecuted);
+  connect(input_,
+          &TclCmdInputWidget::commandFinishedExecuting,
+          this,
+          &ScriptWidget::flushReportBufferToOutput);
   connect(output_,
           &QPlainTextEdit::textChanged,
           this,
           &ScriptWidget::outputChanged);
   connect(pauser_, &QPushButton::pressed, this, &ScriptWidget::pauserClicked);
   connect(pause_timer_.get(), &QTimer::timeout, this, &ScriptWidget::unpause);
+  connect(report_timer_.get(),
+          &QTimer::timeout,
+          this,
+          &ScriptWidget::flushReportBufferToOutput);
 
   connect(this,
           &ScriptWidget::addToOutput,
@@ -123,6 +113,28 @@ ScriptWidget::ScriptWidget(QWidget* parent)
           Qt::QueuedConnection);
 
   setWidget(container);
+}
+
+// When displaying text in Scripting, processing events in order to
+// ensure the text is visible to the user can considerably slow down
+// the logging, so, for reports, we use a buffer.
+void ScriptWidget::flushReportBufferToOutput()
+{
+  std::unique_lock guard(reporting_, std::try_to_lock);
+  if (!guard.owns_lock()) {
+    // failed to aquire lock
+    // return and this will be called at some point later
+    QTimer::singleShot(
+        kReportDisplayInterval, this, &ScriptWidget::flushReportBufferToOutput);
+    return;
+  }
+  if (report_buffer_.isEmpty()) {
+    return;
+  }
+
+  // this comes from a ->report
+  addTextToOutput(report_buffer_, buffer_msg_);
+  report_buffer_.clear();
 }
 
 ScriptWidget::~ScriptWidget()
@@ -142,7 +154,7 @@ ScriptWidget::~ScriptWidget()
 void ScriptWidget::setupTcl(Tcl_Interp* interp,
                             bool interactive,
                             bool do_init_openroad,
-                            const std::function<void(void)>& post_or_init)
+                            const std::function<void()>& post_or_init)
 {
   is_interactive_ = interactive;
   input_->setTclInterp(interp, do_init_openroad, post_or_init);
@@ -191,11 +203,13 @@ void ScriptWidget::addResultToOutput(const QString& result, bool is_ok)
     addToOutput(result, ok_msg_);
   } else {
     try {
-      logger_->error(utl::GUI, 70, result.toStdString());
+      auto msg = result.toStdString();
+      if (msg.find(TclCmdInputWidget::kExitString) == std::string::npos) {
+        logger_->error(utl::GUI, 70, msg);
+      }
     } catch (const std::runtime_error& e) {
       if (!is_interactive_) {
-        // rethrow error
-        throw e;
+        throw;
       }
     }
   }
@@ -206,9 +220,15 @@ void ScriptWidget::addLogToOutput(const QString& text, const QColor& color)
   addToOutput(text, color);
 }
 
-void ScriptWidget::addReportToOutput(const QString& text)
+void ScriptWidget::startReportTimer()
 {
-  addToOutput(text, buffer_msg_);
+  report_timer_->start(kReportDisplayInterval);
+}
+
+void ScriptWidget::addMsgToReportBuffer(const QString& text)
+{
+  std::lock_guard guard(reporting_);
+  report_buffer_ += text;
 }
 
 void ScriptWidget::addTextToOutput(const QString& text, const QColor& color)
@@ -319,10 +339,12 @@ void ScriptWidget::updatePauseTimeout()
 
   const int one_second = 1000;
 
-  int seconds = pause_timer_->remainingTime() / one_second;
-  pauser_->setText("Continue (" + QString::number(seconds) + "s)");
+  if (pause_timer_->isActive()) {
+    const int seconds = pause_timer_->remainingTime() / one_second;
+    pauser_->setText("Continue (" + QString::number(seconds) + "s)");
 
-  QTimer::singleShot(one_second, this, &ScriptWidget::updatePauseTimeout);
+    QTimer::singleShot(one_second, this, &ScriptWidget::updatePauseTimeout);
+  }
 }
 
 void ScriptWidget::pauserClicked()
@@ -383,14 +405,24 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
         std::string(formatted.data(), formatted.size()));
 
     if (msg.level == spdlog::level::level_enum::off) {
-      // this comes from a ->report
-      widget_->addReportToOutput(formatted_msg);
+      widget_->addMsgToReportBuffer(formatted_msg);
+
+      if (QThread::currentThread() == widget_->thread()) {
+        if (!widget_->report_timer_->isActive()) {
+          widget_->startReportTimer();
+        }
+
+        // the event loop is blocked so we need to manually process
+        // events so that the timer keeps going
+        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+      }
     } else {
       // select error message color if message level is error or above.
       const QColor& msg_color = msg.level >= spdlog::level::level_enum::err
                                     ? widget_->error_msg_
                                     : widget_->buffer_msg_;
 
+      widget_->flushReportBufferToOutput();
       widget_->addLogToOutput(formatted_msg, msg_color);
     }
 

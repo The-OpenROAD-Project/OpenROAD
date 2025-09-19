@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 
 %{
@@ -71,6 +39,12 @@ have_routes()
   return getGlobalRouter()->haveRoutes();
 }
 
+bool
+have_detailed_routes()
+{
+  return getGlobalRouter()->haveDetailedRoutes();
+}
+
 void
 set_capacity_adjustment(float adjustment)
 {
@@ -96,27 +70,15 @@ add_region_adjustment(int minX,
 }
 
 void
-set_min_layer(int minLayer)
-{
-  getGlobalRouter()->setMinRoutingLayer(minLayer);
-}
-
-void
-set_max_layer(int maxLayer)
-{
-  getGlobalRouter()->setMaxRoutingLayer(maxLayer);
-}
-
-void
 set_verbose(bool v)
 {
   getGlobalRouter()->setVerbose(v);
 }
 
 void
-set_overflow_iterations(int iterations)
+set_congestion_iterations(int iterations)
 {
-  getGlobalRouter()->setOverflowIterations(iterations);
+  getGlobalRouter()->setCongestionIterations(iterations);
 }
 
 void
@@ -143,13 +105,6 @@ set_allow_congestion(bool allowCongestion)
 }
 
 void
-set_clock_layer_range(int minLayer, int maxLayer)
-{
-  getGlobalRouter()->setMinLayerForClock(minLayer);
-  getGlobalRouter()->setMaxLayerForClock(maxLayer);
-}
-
-void
 set_critical_nets_percentage(float criticalNetsPercentage)
 {
   getGlobalRouter()->setCriticalNetsPercentage(criticalNetsPercentage);
@@ -159,12 +114,6 @@ void
 set_macro_extension(int macroExtension)
 {
   getGlobalRouter()->setMacroExtension(macroExtension);
-}
-
-void
-set_pin_offset(int pin_offset)
-{
-  getGlobalRouter()->setPinOffset(pin_offset);
 }
 
 void
@@ -186,15 +135,15 @@ set_perturbation_amount(int perturbation)
 }
 
 void
-global_route(bool start_incremental, bool end_incremental)
+set_use_cugr(bool use_cugr)
 {
-  getGlobalRouter()->globalRoute(true, start_incremental, end_incremental);
+  getGlobalRouter()->setUseCUGR(use_cugr);
 }
 
 void
-estimate_rc()
+global_route(bool start_incremental, bool end_incremental)
 {
-  getGlobalRouter()->estimateRC();
+  getGlobalRouter()->globalRoute(true, start_incremental, end_incremental);
 }
 
 std::vector<int>
@@ -203,10 +152,11 @@ route_layer_lengths(odb::dbNet* db_net)
   return getGlobalRouter()->routeLayerLengths(db_net);
 }
 
-void
+int
 repair_antennas(odb::dbMTerm* diode_mterm, int iterations, float ratio_margin)
 {
-  getGlobalRouter()->repairAntennas(diode_mterm, iterations, ratio_margin);
+  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
+  return getGlobalRouter()->repairAntennas(diode_mterm, iterations, ratio_margin, num_threads);
 }
 
 void
@@ -216,7 +166,7 @@ add_net_to_route(odb::dbNet* net)
 }
 
 void
-highlight_net_route(odb::dbNet *net, bool show_pin_locations)
+highlight_net_route(odb::dbNet *net, bool show_segments, bool show_pin_locations)
 {
   if (!gui::Gui::enabled()) {
     return;
@@ -227,7 +177,7 @@ highlight_net_route(odb::dbNet *net, bool show_pin_locations)
     router->setRenderer(std::make_unique<GrouteRenderer>(router, router->db()->getTech()));
   }
 
-  router->getRenderer()->highlightRoute(net, show_pin_locations);
+  router->getRenderer()->highlightRoute(net, show_segments, show_pin_locations);
 }
 
 void
@@ -287,9 +237,24 @@ clear_route_guides()
 }
 
 void
-report_layer_wire_lengths()
+report_layer_wire_lengths(bool global_route, bool detailed_route)
 {
-  getGlobalRouter()->reportLayerWireLengths();
+  getGlobalRouter()->reportLayerWireLengths(global_route, detailed_route);
+}
+
+void write_segments(const char* file_name)
+{
+  getGlobalRouter()->writeSegments(file_name);
+}
+
+void read_segments(const char* file_name)
+{
+  getGlobalRouter()->readSegments(file_name);
+}
+
+void write_pin_locations(const char* file_name)
+{
+  getGlobalRouter()->writePinLocations(file_name);
 }
 
 } // namespace

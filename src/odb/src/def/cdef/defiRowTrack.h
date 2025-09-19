@@ -33,7 +33,7 @@
 #ifndef CDEFIROWTRACK_H
 #define CDEFIROWTRACK_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 
@@ -54,7 +54,7 @@ EXTERN int defiRow_numProps(const defiRow* obj);
 EXTERN const char* defiRow_propName(const defiRow* obj, int index);
 EXTERN const char* defiRow_propValue(const defiRow* obj, int index);
 EXTERN double defiRow_propNumber(const defiRow* obj, int index);
-EXTERN const char defiRow_propType(const defiRow* obj, int index);
+EXTERN char defiRow_propType(const defiRow* obj, int index);
 EXTERN int defiRow_propIsNumber(const defiRow* obj, int index);
 EXTERN int defiRow_propIsString(const defiRow* obj, int index);
 

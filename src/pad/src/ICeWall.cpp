@@ -1,46 +1,27 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2023, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include "pad/ICeWall.h"
 
-#include <boost/icl/interval_set.hpp>
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
+#include <utility>
+#include <vector>
 
+#include "RDLGui.h"
 #include "RDLRouter.h"
 #include "Utilities.h"
+#include "boost/icl/interval_set.hpp"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
@@ -207,7 +188,7 @@ void ICeWall::assignBump(odb::dbInst* inst,
   const odb::dbTransform xform = inst->getTransform();
 
   odb::dbTechLayer* top_layer = nullptr;
-  odb::Rect top_shape;
+  std::set<odb::Rect> top_shapes;
   for (auto* iterm : inst->getITerms()) {
     if (iterm->getNet() != net) {
       iterm->connect(net);
@@ -246,15 +227,35 @@ void ICeWall::assignBump(odb::dbInst* inst,
         }
 
         if (top_layer == nullptr
-            || top_layer->getRoutingLevel() < layer->getRoutingLevel()) {
+            || top_layer->getRoutingLevel() <= layer->getRoutingLevel()) {
           top_layer = layer;
-          top_shape = geom->getBox();
+          if (top_layer->getRoutingLevel() < layer->getRoutingLevel()) {
+            top_shapes.clear();
+          }
+          top_shapes.insert(geom->getBox());
         }
       }
     }
   }
 
   if (top_layer != nullptr) {
+    odb::Rect master_box;
+    inst->getMaster()->getPlacementBoundary(master_box);
+    const odb::Point center = master_box.center();
+
+    const odb::Rect* top_shape_ptr = nullptr;
+    for (const odb::Rect& shape : top_shapes) {
+      if (shape.intersects(center)) {
+        top_shape_ptr = &shape;
+      }
+    }
+
+    if (top_shape_ptr == nullptr) {
+      top_shape_ptr = &(*top_shapes.begin());
+    }
+
+    odb::Rect top_shape = *top_shape_ptr;
+
     xform.apply(top_shape);
     makeBTerm(net, top_layer, top_shape);
   }
@@ -262,9 +263,9 @@ void ICeWall::assignBump(odb::dbInst* inst,
 
 void ICeWall::makeFakeSite(const std::string& name, int width, int height)
 {
-  auto* lib = db_->findLib(fake_library_name_);
+  auto* lib = db_->findLib(kFakeLibraryName);
   if (lib == nullptr) {
-    lib = odb::dbLib::create(db_, fake_library_name_, db_->getTech());
+    lib = odb::dbLib::create(db_, kFakeLibraryName, db_->getTech());
   }
 
   auto* site = odb::dbSite::create(lib, name.c_str());
@@ -315,29 +316,81 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
                      die.xMax() - east_offset,
                      die.yMax() - north_offset);
 
+  const double dbus = block->getDbUnitsPerMicron();
+  debugPrint(logger_,
+             utl::PAD,
+             "Rows",
+             1,
+             "Outer bounds ({:.4f}, {:.4f}) - ({:.4f}, {:.4f})",
+             outer_io.xMin() / dbus,
+             outer_io.yMin() / dbus,
+             outer_io.xMax() / dbus,
+             outer_io.yMax() / dbus);
+
+  const odb::Rect corner_box(
+      0, 0, corner_site->getWidth(), corner_site->getHeight());
+  const odb::Rect horizontal_box(
+      0, 0, horizontal_site->getWidth(), horizontal_site->getHeight());
+  const odb::Rect vertical_box(
+      0, 0, vertical_site->getWidth(), vertical_site->getHeight());
+
   const int cheight = corner_site->getHeight();
   const int cwidth
       = std::max(horizontal_site->getHeight(), corner_site->getWidth());
 
   const int x_sites = std::floor(static_cast<double>(outer_io.dx() - 2 * cwidth)
-                                 / vertical_site->getWidth());
+                                 / vertical_box.minDXDY());
   outer_io.set_xhi(outer_io.xMin() + 2 * cwidth
-                   + x_sites * vertical_site->getWidth());
+                   + x_sites * vertical_box.minDXDY());
   const int y_sites
       = std::floor(static_cast<double>(outer_io.dy() - 2 * cheight)
-                   / horizontal_site->getWidth());
+                   / horizontal_box.minDXDY());
   outer_io.set_yhi(outer_io.yMin() + 2 * cheight
-                   + y_sites * horizontal_site->getWidth());
+                   + y_sites * horizontal_box.minDXDY());
 
   const odb::Rect corner_origins(outer_io.xMin(),
                                  outer_io.yMin(),
                                  outer_io.xMax() - cwidth,
                                  outer_io.yMax() - cheight);
 
+  debugPrint(logger_,
+             utl::PAD,
+             "Rows",
+             2,
+             "x-sites {} at {:.4f}",
+             x_sites,
+             vertical_box.minDXDY() / dbus);
+
+  debugPrint(logger_,
+             utl::PAD,
+             "Rows",
+             2,
+             "y-sites {} at {:.4f}",
+             y_sites,
+             horizontal_box.minDXDY() / dbus);
+
+  debugPrint(logger_,
+             utl::PAD,
+             "Rows",
+             1,
+             "Corner origins ({:.4f}, {:.4f}) - ({:.4f}, {:.4f})",
+             corner_origins.xMin() / dbus,
+             corner_origins.yMin() / dbus,
+             corner_origins.xMax() / dbus,
+             corner_origins.yMax() / dbus);
+
   // Create corners
   const int corner_sites
-      = std::max(horizontal_site->getHeight(), corner_site->getWidth())
+      = std::max(horizontal_box.maxDXDY(), corner_site->getWidth())
         / corner_site->getWidth();
+  debugPrint(logger_,
+             utl::PAD,
+             "Rows",
+             1,
+             "corner-sites {} at {:.4f}",
+             corner_sites,
+             corner_site->getWidth() / dbus);
+
   auto create_corner
       = [this, block, corner_site, corner_sites, ring_index, &rotation_cor](
             const std::string& name,
@@ -357,12 +410,12 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
                               corner_site->getWidth());
   };
   auto* nw
-      = create_corner(corner_nw_, corner_origins.ul(), odb::dbOrientType::MX);
-  create_corner(corner_ne_, corner_origins.ur(), odb::dbOrientType::R180);
+      = create_corner(kCornerNw, corner_origins.ul(), odb::dbOrientType::MX);
+  create_corner(kCornerNe, corner_origins.ur(), odb::dbOrientType::R180);
   auto* se
-      = create_corner(corner_se_, corner_origins.lr(), odb::dbOrientType::MY);
+      = create_corner(kCornerSe, corner_origins.lr(), odb::dbOrientType::MY);
   auto* sw
-      = create_corner(corner_sw_, corner_origins.ll(), odb::dbOrientType::R0);
+      = create_corner(kCornerSw, corner_origins.ll(), odb::dbOrientType::R0);
 
   // Create rows
   auto create_row
@@ -372,10 +425,11 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
                                   const odb::Point& origin,
                                   const odb::dbOrientType& orient,
                                   const odb::dbOrientType& row_rotation,
-                                  const odb::dbRowDir& direction) {
+                                  const odb::dbRowDir& direction,
+                                  int site_width) {
           const std::string row_name = getRowName(name, ring_index);
-          odb::dbTransform rotation(orient);
-          rotation.concat(row_rotation);
+          odb::dbTransform rotation(row_rotation);
+          rotation.concat(orient);
           odb::dbRow::create(block,
                              row_name.c_str(),
                              site,
@@ -384,43 +438,49 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
                              rotation.getOrient(),
                              direction,
                              sites,
-                             site->getWidth());
+                             site_width);
         };
-  create_row(row_north_,
+  const odb::dbOrientType south_rotation_ver = odb::dbOrientType::R0;
+  const odb::dbOrientType north_rotation_ver = south_rotation_ver.flipX();
+  odb::dbOrientType west_rotation_hor = odb::dbOrientType::MXR90;
+  if (vertical_site != horizontal_site) {
+    west_rotation_hor = odb::dbOrientType::R0;
+  }
+  const odb::dbOrientType east_rotation_hor = west_rotation_hor.flipY();
+  create_row(kRowNorth,
              vertical_site,
              x_sites,
              {nw->getBBox().xMax(),
-              outer_io.yMax() - static_cast<int>(vertical_site->getHeight())},
-             odb::dbOrientType::MX,
+              outer_io.yMax() - static_cast<int>(vertical_box.maxDXDY())},
+             north_rotation_ver,
              rotation_ver,
-             odb::dbRowDir::HORIZONTAL);
-  odb::dbOrientType east_rotation_hor = odb::dbOrientType::R90;
-  if (vertical_site != horizontal_site) {
-    east_rotation_hor = odb::dbOrientType::R0;
-  }
-  create_row(row_east_,
+             odb::dbRowDir::HORIZONTAL,
+             vertical_box.minDXDY());
+  create_row(kRowEast,
              horizontal_site,
              y_sites,
-             {outer_io.xMax() - static_cast<int>(horizontal_site->getHeight()),
+             {outer_io.xMax() - static_cast<int>(horizontal_box.maxDXDY()),
               se->getBBox().yMax()},
              east_rotation_hor,
              rotation_hor,
-             odb::dbRowDir::VERTICAL);
-  create_row(row_south_,
+             odb::dbRowDir::VERTICAL,
+             horizontal_box.minDXDY());
+  create_row(kRowSouth,
              vertical_site,
              x_sites,
              {sw->getBBox().xMax(), outer_io.yMin()},
-             odb::dbOrientType::R0,
+             south_rotation_ver,
              rotation_ver,
-             odb::dbRowDir::HORIZONTAL);
-  const odb::dbOrientType west_rotation_hor = east_rotation_hor.flipY();
-  create_row(row_west_,
+             odb::dbRowDir::HORIZONTAL,
+             vertical_box.minDXDY());
+  create_row(kRowWest,
              horizontal_site,
              y_sites,
              {outer_io.xMin(), sw->getBBox().yMax()},
              west_rotation_hor,
              rotation_hor,
-             odb::dbRowDir::VERTICAL);
+             odb::dbRowDir::VERTICAL,
+             horizontal_box.minDXDY());
 }
 
 void ICeWall::removeIORows()
@@ -446,8 +506,7 @@ void ICeWall::placeCorner(odb::dbMaster* master, int ring_index)
     logger_->error(utl::PAD, 28, "Corner master must be specified.");
   }
 
-  for (const char* row_name :
-       {corner_nw_, corner_ne_, corner_sw_, corner_se_}) {
+  for (const char* row_name : {kCornerNw, kCornerNe, kCornerSw, kCornerSe}) {
     odb::dbRow* row = findRow(getRowName(row_name, ring_index));
     if (row == nullptr) {
       logger_->error(utl::PAD,
@@ -505,11 +564,412 @@ void ICeWall::placePad(odb::dbMaster* master,
 
   odb::dbTransform orient(odb::dbOrientType::R0);
   if (mirror) {
-    const odb::dbTransform mirror_transform(odb::dbOrientType::MY);
-    orient.concat(mirror_transform);
+    const auto row_edge = getRowEdge(row);
+    switch (row_edge) {
+      case odb::Direction2D::North:
+      case odb::Direction2D::South: {
+        orient.concat({odb::dbOrientType::MY});
+        break;
+      }
+      case odb::Direction2D::West:
+      case odb::Direction2D::East: {
+        if (row->getSite()->getHeight() < row->getSite()->getWidth()) {
+          orient.concat({odb::dbOrientType::MX});
+        } else {
+          orient.concat({odb::dbOrientType::MY});
+        }
+        break;
+      }
+    }
   }
 
   placeInstance(row, snapToRowSite(row, location), inst, orient.getOrient());
+}
+
+int64_t ICeWall::estimateWirelengths(
+    odb::dbInst* inst,
+    const std::set<odb::dbITerm*>& iterms) const
+{
+  std::map<odb::dbITerm*, odb::dbITerm*> terms;
+  for (auto* iterm : iterms) {
+    for (auto* net_iterm : iterm->getNet()->getITerms()) {
+      if (net_iterm->getInst() == inst) {
+        terms[net_iterm] = iterm;
+      }
+    }
+  }
+
+  int64_t dist = 0;
+
+  for (const auto& [term0, term1] : terms) {
+    dist += odb::Point::manhattanDistance(term0->getBBox().center(),
+                                          term1->getBBox().center());
+  }
+
+  return dist;
+}
+
+int64_t ICeWall::computePadBumpDistance(odb::dbInst* inst,
+                                        int inst_width,
+                                        odb::dbITerm* bump,
+                                        odb::dbRow* row,
+                                        int center_pos) const
+{
+  const odb::Point row_center = row->getBBox().center();
+  const odb::Point center = bump->getBBox().center();
+
+  switch (getRowEdge(row)) {
+    case odb::Direction2D::North:
+    case odb::Direction2D::South:
+      return odb::Point::squaredDistance(
+          odb::Point(center_pos + inst_width / 2, row_center.y()), center);
+    case odb::Direction2D::West:
+    case odb::Direction2D::East:
+      return odb::Point::squaredDistance(
+          odb::Point(row_center.x(), center_pos + inst_width / 2), center);
+  }
+
+  return std::numeric_limits<int64_t>::max();
+}
+
+void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
+{
+  auto* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  const odb::Rect row_bbox = row->getBBox();
+  const odb::dbTransform xform(row->getOrient());
+  const odb::Direction2D::Value row_dir = getRowEdge(row);
+
+  // Check total width
+  int total_width = 0;
+  std::map<odb::dbInst*, int> inst_widths;
+  for (auto* inst : insts) {
+    auto* master = inst->getMaster();
+    odb::Rect inst_bbox;
+    master->getPlacementBoundary(inst_bbox);
+    xform.apply(inst_bbox);
+
+    switch (row_dir) {
+      case odb::Direction2D::North:
+      case odb::Direction2D::South:
+        total_width += inst_bbox.dx();
+        inst_widths[inst] = inst_bbox.dx();
+        break;
+      case odb::Direction2D::West:
+      case odb::Direction2D::East:
+        total_width += inst_bbox.dy();
+        inst_widths[inst] = inst_bbox.dy();
+        break;
+    }
+  }
+
+  int row_width = 0;
+  int row_start = 0;
+  switch (row_dir) {
+    case odb::Direction2D::North:
+    case odb::Direction2D::South:
+      row_width = row_bbox.dx();
+      row_start = row_bbox.xMin();
+      break;
+    case odb::Direction2D::West:
+    case odb::Direction2D::East:
+      row_width = row_bbox.dy();
+      row_start = row_bbox.yMin();
+      break;
+  }
+
+  if (total_width > row_width) {
+    const double dbus = block->getDbUnitsPerMicron();
+    logger_->error(
+        utl::PAD,
+        40,
+        "Total pad width ({:.4f}um) cannot fit into {} with width {:.4f}um.",
+        total_width / dbus,
+        row->getName(),
+        row_width / dbus);
+  }
+
+  // Check if bumps are present and have assignments
+  std::map<odb::dbInst*, std::set<odb::dbITerm*>> iterm_connections;
+  for (auto* inst : insts) {
+    for (auto* iterm : inst->getITerms()) {
+      odb::dbNet* net = iterm->getNet();
+      if (net == nullptr) {
+        continue;
+      }
+      if (net->getSigType().isSupply()) {
+        // ignore supply nets as these can likely be connected via the power
+        // grid
+        continue;
+      }
+      for (auto* net_iterm : net->getITerms()) {
+        auto* master = net_iterm->getInst()->getMaster();
+        if (master->isCover()) {
+          iterm_connections[inst].insert(net_iterm);
+        }
+      }
+    }
+  }
+
+  if (!iterm_connections.empty()) {
+    placePadsBumpAligned(insts,
+                         row,
+                         inst_widths,
+                         total_width,
+                         row_width,
+                         row_start,
+                         iterm_connections);
+  } else {
+    placePadsUniform(
+        insts, row, inst_widths, total_width, row_width, row_start);
+  }
+
+  logger_->info(
+      utl::PAD, 41, "Placed {} pads in {}.", insts.size(), row->getName());
+}
+
+std::map<odb::dbInst*, odb::dbITerm*> ICeWall::getBumpAlignmentGroup(
+    odb::dbRow* row,
+    int offset,
+    const std::map<odb::dbInst*, int>& inst_widths,
+    const std::map<odb::dbInst*, std::set<odb::dbITerm*>>& iterm_connections,
+    const std::vector<odb::dbInst*>::const_iterator& itr,
+    const std::vector<odb::dbInst*>::const_iterator& inst_end) const
+{
+  const odb::Direction2D::Value row_dir = getRowEdge(row);
+  odb::dbInst* inst = *itr;
+
+  // build map of bump aligned pads (ie. pads connected to bumps in the same row
+  // or column)
+  std::map<odb::dbInst*, odb::dbITerm*> min_terms;
+  auto sitr = itr;
+  for (; sitr != inst_end; sitr++) {
+    odb::dbInst* check_inst = *sitr;
+
+    auto find_assignment = iterm_connections.find(check_inst);
+    if (find_assignment != iterm_connections.end()) {
+      odb::dbITerm* min_dist = *find_assignment->second.begin();
+
+      // find closest bump to the current offset in the row
+      for (auto* iterm : find_assignment->second) {
+        if (computePadBumpDistance(
+                check_inst, inst_widths.at(check_inst), min_dist, row, offset)
+            > computePadBumpDistance(
+                check_inst, inst_widths.at(check_inst), iterm, row, offset)) {
+          min_dist = iterm;
+        }
+      }
+
+      if (sitr != itr) {
+        // no longer the first pad in group, check if bumps are in same
+        // column/row
+        bool keep = true;
+        switch (row_dir) {
+          case odb::Direction2D::North:
+          case odb::Direction2D::South:
+            keep = min_terms[inst]->getBBox().xCenter()
+                   == min_dist->getBBox().xCenter();
+            break;
+          case odb::Direction2D::West:
+          case odb::Direction2D::East:
+            keep = min_terms[inst]->getBBox().yCenter()
+                   == min_dist->getBBox().yCenter();
+            break;
+        }
+
+        if (!keep) {
+          break;
+        }
+      }
+
+      min_terms[check_inst] = min_dist;
+    } else {
+      break;
+    }
+  }
+
+  if (logger_->debugCheck(utl::PAD, "Place", 1)) {
+    logger_->debug(utl::PAD, "Place", "Pad group size {}", min_terms.size());
+    for (const auto& [dinst, diterm] : min_terms) {
+      logger_->debug(
+          utl::PAD, "Place", " {} -> {}", dinst->getName(), diterm->getName());
+    }
+  }
+
+  return min_terms;
+}
+
+void ICeWall::performPadFlip(
+    odb::dbRow* row,
+    odb::dbInst* inst,
+    const std::map<odb::dbInst*, std::set<odb::dbITerm*>>& iterm_connections)
+    const
+{
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+
+  // check if flipping improves wirelength
+  auto find_assignment = iterm_connections.find(inst);
+  if (find_assignment != iterm_connections.end()) {
+    const auto& pins = find_assignment->second;
+    if (pins.size() > 1) {
+      // only need to check if pad has more than one connection
+      const int64_t start_wirelength = estimateWirelengths(inst, pins);
+      const auto start_orient = inst->getOrient();
+
+      // try flipping pad
+      inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+      switch (getRowEdge(row)) {
+        case odb::Direction2D::North:
+        case odb::Direction2D::South:
+          inst->setLocationOrient(start_orient.flipY());
+          break;
+        case odb::Direction2D::West:
+        case odb::Direction2D::East:
+          inst->setLocationOrient(start_orient.flipX());
+          break;
+      }
+
+      // get new wirelength
+      const int64_t flipped_wirelength = estimateWirelengths(inst, pins);
+      const bool undo = flipped_wirelength > start_wirelength;
+
+      if (undo) {
+        // since new wirelength was longer, restore the original orientation
+        inst->setLocationOrient(start_orient);
+      }
+      debugPrint(logger_,
+                 utl::PAD,
+                 "Place",
+                 1,
+                 "Flip check for {}: non flipped wirelength {:.4f}um: "
+                 "flipped wirelength {:.4f}um: {}",
+                 inst->getName(),
+                 start_wirelength / dbus,
+                 flipped_wirelength / dbus,
+                 undo ? "undo" : "keep");
+      inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+    }
+  }
+}
+
+void ICeWall::placePadsBumpAligned(
+    const std::vector<odb::dbInst*>& insts,
+    odb::dbRow* row,
+    const std::map<odb::dbInst*, int>& inst_widths,
+    int pads_width,
+    int row_width,
+    int row_start,
+    const std::map<odb::dbInst*, std::set<odb::dbITerm*>>& iterm_connections)
+    const
+{
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+  const odb::Direction2D::Value row_dir = getRowEdge(row);
+
+  int offset = row_start;
+
+  int max_travel = row_width - pads_width;
+  // iterate over pads in order
+  for (auto itr = insts.begin(); itr != insts.end();) {
+    // get bump aligned pad group
+    const std::map<odb::dbInst*, odb::dbITerm*> min_terms
+        = getBumpAlignmentGroup(
+            row, offset, inst_widths, iterm_connections, itr, insts.end());
+
+    // build position map
+    // for pads connected to bumps, this will ensure they are centered by the
+    // bump if pad is not connected to a bump, place in the next available
+    // position
+    odb::dbInst* inst = *itr;
+    std::map<odb::dbInst*, int> inst_pos;
+    if (!min_terms.empty()) {
+      int group_center = 0;
+      switch (row_dir) {
+        case odb::Direction2D::North:
+        case odb::Direction2D::South:
+          group_center = min_terms.at(inst)->getBBox().xCenter();
+          break;
+        case odb::Direction2D::West:
+        case odb::Direction2D::East:
+          group_center = min_terms.at(inst)->getBBox().yCenter();
+          break;
+      }
+
+      // group width
+      int group_width = 0;
+      for (const auto& [ginst, giterm] : min_terms) {
+        group_width += inst_widths.at(ginst);
+      }
+
+      // build positions with bump as the center
+      int target_offset = group_center - group_width / 2;
+      for (const auto& [ginst, giterm] : min_terms) {
+        inst_pos[ginst] = target_offset;
+        target_offset += inst_widths.at(ginst);
+      }
+    } else {
+      // request next availble position
+      inst_pos[inst] = 0;
+    }
+
+    // place pads
+    for (const auto& [ginst, pos] : inst_pos) {
+      // compute next available position
+      const int select_pos
+          = offset + std::min(max_travel, std::max(pos - offset, 0));
+
+      // adjust max travel to remove the slack used by this pad
+      max_travel -= select_pos - offset;
+
+      debugPrint(logger_,
+                 utl::PAD,
+                 "Place",
+                 1,
+                 "Placing {} at {:.4f}um with a remaining spare gap {:.4f}um",
+                 inst->getName(),
+                 select_pos / dbus,
+                 max_travel / dbus);
+
+      offset = row_start;
+      offset += placeInstance(row,
+                              snapToRowSite(row, select_pos),
+                              ginst,
+                              odb::dbOrientType::R0)
+                * row->getSpacing();
+
+      performPadFlip(row, ginst, iterm_connections);
+    }
+
+    // more iterator to next unplaced pad
+    std::advance(itr, inst_pos.size());
+  }
+}
+
+void ICeWall::placePadsUniform(const std::vector<odb::dbInst*>& insts,
+                               odb::dbRow* row,
+                               const std::map<odb::dbInst*, int>& inst_widths,
+                               int pads_width,
+                               int row_width,
+                               int row_start) const
+{
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+  const int target_spacing = (row_width - pads_width) / (insts.size() + 1);
+  int offset = row_start + target_spacing;
+  for (auto* inst : insts) {
+    debugPrint(logger_,
+               utl::PAD,
+               "Place",
+               1,
+               "Placing {} at {:.4f}um",
+               inst->getName(),
+               offset / dbus);
+
+    placeInstance(row, snapToRowSite(row, offset), inst, odb::dbOrientType::R0);
+    offset += inst_widths.at(inst);
+    offset += target_spacing;
+  }
 }
 
 int ICeWall::snapToRowSite(odb::dbRow* row, int location) const
@@ -547,26 +1007,26 @@ odb::Direction2D::Value ICeWall::getRowEdge(odb::dbRow* row) const
   auto check_name = [&row_name](const std::string& check) -> bool {
     return row_name.substr(0, check.length()) == check;
   };
-  if (check_name(row_north_)) {
+  if (check_name(kRowNorth)) {
     return odb::Direction2D::North;
   }
-  if (check_name(row_south_)) {
+  if (check_name(kRowSouth)) {
     return odb::Direction2D::South;
   }
-  if (check_name(row_east_)) {
+  if (check_name(kRowEast)) {
     return odb::Direction2D::East;
   }
-  if (check_name(row_west_)) {
+  if (check_name(kRowWest)) {
     return odb::Direction2D::West;
   }
   logger_->error(utl::PAD, 29, "{} is not a recognized IO row.", row_name);
 }
 
-void ICeWall::placeInstance(odb::dbRow* row,
-                            int index,
-                            odb::dbInst* inst,
-                            const odb::dbOrientType& base_orient,
-                            bool allow_overlap) const
+int ICeWall::placeInstance(odb::dbRow* row,
+                           int index,
+                           odb::dbInst* inst,
+                           const odb::dbOrientType& base_orient,
+                           bool allow_overlap) const
 {
   const int origin_offset = index * row->getSpacing();
 
@@ -577,8 +1037,10 @@ void ICeWall::placeInstance(odb::dbRow* row,
   inst->setOrient(xform.getOrient());
   const odb::Rect inst_bbox = inst->getBBox()->getBox();
 
+  const auto row_edge = getRowEdge(row);
+
   odb::Point index_pt;
-  switch (getRowEdge(row)) {
+  switch (row_edge) {
     case odb::Direction2D::North:
       index_pt = odb::Point(row_bbox.xMin() + origin_offset,
                             row_bbox.yMax() - inst_bbox.dy());
@@ -602,7 +1064,7 @@ void ICeWall::placeInstance(odb::dbRow* row,
 
   // Check if its in the row
   bool outofrow = false;
-  switch (getRowEdge(row)) {
+  switch (row_edge) {
     case odb::Direction2D::North:
     case odb::Direction2D::South:
       if (row_bbox.xMin() > inst_rect.xMin()
@@ -650,6 +1112,9 @@ void ICeWall::placeInstance(odb::dbRow* row,
     if (!check_inst->isFixed()) {
       continue;
     }
+    if (check_inst->getMaster()->isCover()) {
+      continue;
+    }
     const odb::Rect check_rect = check_inst->getBBox()->getBox();
     if (!allow_overlap && inst_rect.overlaps(check_rect)) {
       logger_->error(utl::PAD,
@@ -673,6 +1138,21 @@ void ICeWall::placeInstance(odb::dbRow* row,
     }
   }
   inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+
+  int next_pos = index;
+  switch (row_edge) {
+    case odb::Direction2D::North:
+    case odb::Direction2D::South:
+      next_pos += static_cast<int>(
+          std::ceil(static_cast<double>(inst_bbox.dx()) / row->getSpacing()));
+      break;
+    case odb::Direction2D::West:
+    case odb::Direction2D::East:
+      next_pos += static_cast<int>(
+          std::ceil(static_cast<double>(inst_bbox.dy()) / row->getSpacing()));
+      break;
+  }
+  return next_pos;
 }
 
 void ICeWall::placeFiller(
@@ -717,9 +1197,8 @@ void ICeWall::placeFiller(
         // sort biggest to smallest
         if (use_height) {
           return r_bbox.dy() > l_bbox.dy();
-        } else {
-          return r_bbox.dx() > l_bbox.dx();
         }
+        return r_bbox.dx() > l_bbox.dx();
       });
 
   const odb::Rect rowbbox = row->getBBox();
@@ -761,7 +1240,8 @@ void ICeWall::placeFiller(
 
   row_interval -= placed_io;
 
-  const int site_width = row->getSite()->getWidth();
+  const int site_width
+      = std::min(row->getSite()->getWidth(), row->getSite()->getHeight());
   int fill_group = 0;
   for (Interval::iterator it = row_interval.begin(); it != row_interval.end();
        it++) {
@@ -821,11 +1301,8 @@ void ICeWall::placeFiller(
                    sites,
                    allow_overlap);
 
-        const std::string name = fmt::format("{}{}_{}_{}",
-                                             fill_prefix_,
-                                             row->getName(),
-                                             fill_group,
-                                             site_offset);
+        const std::string name = fmt::format(
+            "{}{}_{}_{}", kFillPrefix, row->getName(), fill_group, site_offset);
         auto* fill_inst = odb::dbInst::create(block, filler, name.c_str());
 
         placeInstance(row,
@@ -867,7 +1344,7 @@ void ICeWall::removeFiller(odb::dbRow* row)
     logger_->error(utl::PAD, 21, "Row must be specified to remove IO filler");
   }
 
-  const std::string prefix = fmt::format("{}{}_", fill_prefix_, row->getName());
+  const std::string prefix = fmt::format("{}{}_", kFillPrefix, row->getName());
 
   for (auto* inst : block->getInsts()) {
     const std::string name = inst->getName();
@@ -1112,6 +1589,26 @@ std::set<odb::dbNet*> ICeWall::connectByAbutment(
   std::set<odb::dbNet*> special_nets;
   bool changed = false;
   int iter = 0;
+
+  // remove nets with a single iterm/bterm connection
+  for (const auto& [iterm0, iterm1] : connections) {
+    auto* net0 = iterm0->getNet();
+    if (net0 != nullptr) {
+      const int connections = net0->getITermCount() + net0->getBTermCount();
+      if (connections == 1) {
+        odb::dbNet::destroy(net0);
+      }
+    }
+
+    auto* net1 = iterm1->getNet();
+    if (net1 != nullptr) {
+      const int connections = net1->getITermCount() + net1->getBTermCount();
+      if (connections == 1) {
+        odb::dbNet::destroy(net1);
+      }
+    }
+  }
+
   do {
     changed = false;
     debugPrint(logger_,
@@ -1318,7 +1815,8 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
                        int width,
                        int spacing,
                        bool allow45,
-                       float turn_penalty)
+                       float turn_penalty,
+                       int max_iterations)
 {
   if (layer == nullptr) {
     logger_->error(utl::PAD, 22, "Layer must be specified to perform routing.");
@@ -1333,7 +1831,9 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
                                         width,
                                         spacing,
                                         allow45,
-                                        turn_penalty);
+                                        turn_penalty,
+                                        max_iterations);
+  router_->setRDLDebugNet(rdl_net_debug_);
   if (router_gui_ != nullptr) {
     router_gui_->setRouter(router_.get());
   }
@@ -1345,10 +1845,6 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
 
 void ICeWall::routeRDLDebugGUI(bool enable)
 {
-  if (router_ == nullptr) {
-    return;
-  }
-
   if (enable) {
     if (router_gui_ == nullptr) {
       router_gui_ = std::make_unique<RDLGui>();
@@ -1358,7 +1854,24 @@ void ICeWall::routeRDLDebugGUI(bool enable)
     }
     gui::Gui::get()->registerRenderer(router_gui_.get());
   } else {
-    gui::Gui::get()->unregisterRenderer(router_gui_.get());
+    if (router_gui_ != nullptr) {
+      gui::Gui::get()->unregisterRenderer(router_gui_.get());
+      router_gui_ = nullptr;
+    }
+  }
+}
+
+void ICeWall::routeRDLDebugNet(const char* net)
+{
+  auto* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  rdl_net_debug_ = block->findNet(net);
+
+  if (router_ != nullptr) {
+    router_->setRDLDebugNet(rdl_net_debug_);
   }
 }
 

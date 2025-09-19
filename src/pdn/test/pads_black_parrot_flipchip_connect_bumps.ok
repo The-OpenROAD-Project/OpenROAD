@@ -1,11 +1,5 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0222] Reading LEF file: nangate_bsg_black_parrot/dummy_pads.lef
-[INFO ODB-0225]     Created 24 library cells
-[INFO ODB-0226] Finished LEF file:  nangate_bsg_black_parrot/dummy_pads.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: nangate_bsg_black_parrot/dummy_pads.lef, created 24 library cells
 [INFO ODB-0128] Design: soc_bsg_black_parrot
 [INFO ODB-0130]     Created 139 pins.
 [INFO ODB-0131]     Created 1489 components and 1523 component-terminals.
@@ -301,12 +295,4 @@
 [INFO PDN-0001] Inserting grid: Bumps - bump_9_7_VSS
 [INFO PDN-0001] Inserting grid: Bumps - bump_9_8_VDD
 [INFO PDN-0001] Inserting grid: Bumps - bump_9_9_VSS
-[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2174.0000, 183.7000) - (2174.6250, 188.7000) on VSS
-[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2174.0000, 222.2000) - (2174.6250, 223.6000) on VSS
-[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2174.0000, 542.2000) - (2174.6250, 543.6000) on VSS
-[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2425.3750, 1662.2000) - (2426.0000, 1663.6000) on VSS
-[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2425.3750, 2302.2000) - (2426.0000, 2303.6000) on VSS
-[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2425.3750, 2462.2000) - (2426.0000, 2463.6000) on VSS
-[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2425.3750, 2782.2000) - (2426.0000, 2783.6000) on VSS
-[WARNING PDN-0110] No via inserted between metal8 and metal9 at (2425.3750, 2811.5000) - (2426.0000, 2816.5000) on VSS
 No differences found.

@@ -1,59 +1,17 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "definNonDefaultRule.h"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 
-#include "db.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 #include "utl/Logger.h"
+
 namespace odb {
-
-definNonDefaultRule::definNonDefaultRule()
-    : _cur_rule(nullptr), _cur_layer_rule(nullptr)
-{
-  init();
-}
-
-definNonDefaultRule::~definNonDefaultRule()
-{
-}
-
-void definNonDefaultRule::init()
-{
-  definBase::init();
-}
 
 void definNonDefaultRule::beginRule(const char* name)
 {
@@ -68,16 +26,18 @@ void definNonDefaultRule::beginRule(const char* name)
 
 void definNonDefaultRule::hardSpacing()
 {
-  if (_cur_rule == nullptr)
+  if (_cur_rule == nullptr) {
     return;
+  }
 
   _cur_rule->setHardSpacing(true);
 }
 
 void definNonDefaultRule::via(const char* name)
 {
-  if (_cur_rule == nullptr)
+  if (_cur_rule == nullptr) {
     return;
+  }
 
   dbTechVia* via = _tech->findVia(name);
 
@@ -92,8 +52,9 @@ void definNonDefaultRule::via(const char* name)
 
 void definNonDefaultRule::viaRule(const char* name)
 {
-  if (_cur_rule == nullptr)
+  if (_cur_rule == nullptr) {
     return;
+  }
 
   dbTechViaGenerateRule* rule = _tech->findViaGenerateRule(name);
 
@@ -109,8 +70,9 @@ void definNonDefaultRule::viaRule(const char* name)
 
 void definNonDefaultRule::minCuts(const char* name, int count)
 {
-  if (_cur_rule == nullptr)
+  if (_cur_rule == nullptr) {
     return;
+  }
 
   dbTechLayer* layer = _tech->findLayer(name);
 
@@ -125,8 +87,9 @@ void definNonDefaultRule::minCuts(const char* name, int count)
 
 void definNonDefaultRule::beginLayerRule(const char* name, int width)
 {
-  if (_cur_rule == nullptr)
+  if (_cur_rule == nullptr) {
     return;
+  }
 
   dbTechLayer* layer = _tech->findLayer(name);
 
@@ -153,16 +116,18 @@ void definNonDefaultRule::beginLayerRule(const char* name, int width)
 
 void definNonDefaultRule::spacing(int s)
 {
-  if (_cur_layer_rule == nullptr)
+  if (_cur_layer_rule == nullptr) {
     return;
+  }
 
   _cur_layer_rule->setSpacing(dbdist(s));
 }
 
 void definNonDefaultRule::wireExt(int e)
 {
-  if (_cur_layer_rule == nullptr)
+  if (_cur_layer_rule == nullptr) {
     return;
+  }
 
   _cur_layer_rule->setWireExtension(dbdist(e));
 }
@@ -173,37 +138,43 @@ void definNonDefaultRule::endLayerRule()
 
 void definNonDefaultRule::property(const char* name, const char* value)
 {
-  if (_cur_rule == nullptr)
+  if (_cur_rule == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_rule, name);
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbStringProperty::create(_cur_rule, name, value);
 }
 
 void definNonDefaultRule::property(const char* name, int value)
 {
-  if (_cur_rule == nullptr)
+  if (_cur_rule == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_rule, name);
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbIntProperty::create(_cur_rule, name, value);
 }
 
 void definNonDefaultRule::property(const char* name, double value)
 {
-  if (_cur_rule == nullptr)
+  if (_cur_rule == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_rule, name);
 
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbDoubleProperty::create(_cur_rule, name, value);
 }
@@ -213,8 +184,9 @@ void definNonDefaultRule::endRule()
   if (_cur_rule) {
     dbSet<dbProperty> props = dbProperty::getProperties(_cur_rule);
 
-    if (!props.empty() && props.orderReversed())
+    if (!props.empty() && props.orderReversed()) {
       props.reverse();
+    }
 
     // Verify all routing layers have a rule
     for (int level = 1; level < _tech->getRoutingLayerCount(); ++level) {

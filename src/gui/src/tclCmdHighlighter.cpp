@@ -1,38 +1,14 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "tclCmdHighlighter.h"
 
 #include <QTextDocument>
+#include <memory>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace gui {
 
@@ -105,6 +81,7 @@ void TclCmdHighlighter::initOpenRoad(
   std::vector<std::string> cmds_list_no_args;
   for (const auto& [cmd, or_cmd, args] : or_cmds) {
     std::vector<std::string> args_regex;
+    args_regex.reserve(args.size());
     for (const std::string& arg : args) {
       args_regex.push_back(escape(arg) + end_of_command);
     }
@@ -254,13 +231,13 @@ void TclCmdHighlighter::initOther()
   std::string not_escaped = "(?<!\\\\)";
 
   // string
-  string_rule.rules.push_back(
-      buildRule("\".*?" + not_escaped + "\""));        // complete string
-  string_rule.rules.push_back(buildRule("(\".*?$)"));  // string at end of line
-  string_rule.rules.push_back(
-      buildRule("^.*?" + not_escaped + "\""));   // start of line
-  string_rule.rules.push_back(buildRule(".*"));  // whole line
-  string_rule.format = &string_format_;
+  string_rule_.rules.push_back(
+      buildRule("\".*?" + not_escaped + "\""));         // complete string
+  string_rule_.rules.push_back(buildRule("(\".*?$)"));  // string at end of line
+  string_rule_.rules.push_back(
+      buildRule("^.*?" + not_escaped + "\""));    // start of line
+  string_rule_.rules.push_back(buildRule(".*"));  // whole line
+  string_rule_.format = &string_format_;
 
   std::vector<CommandRulePtr> rules;
 
@@ -280,7 +257,7 @@ void TclCmdHighlighter::initOther()
   addRuleGroup(syntax_rules_, rules, &comment_format_);
 }
 
-const std::string TclCmdHighlighter::escape(const std::string& preregex)
+std::string TclCmdHighlighter::escape(const std::string& preregex)
 {
   QString escaped = QRegularExpression::escape(preregex.c_str());
 
@@ -421,7 +398,7 @@ void TclCmdHighlighter::highlightBlock(const QString& text)
     command_data = new TclCmdUserData();
   }
   command_data->line_continued = true;
-  command_data->commands = matched_commands;
+  command_data->commands = std::move(matched_commands);
   if (text.size() > 0 && text.at(text.size() - 1).toLatin1() != '\\') {
     command_data->line_continued = false;
   }
@@ -435,25 +412,25 @@ void TclCmdHighlighter::highlightBlockWithString(const QString& text)
   if (previousBlockState() > 0) {
     // check if string ended
     offset = highlightBlockWithRule(
-        text, 0, string_rule.rules[2]->pattern, string_rule.format);
+        text, 0, string_rule_.rules[2]->pattern, string_rule_.format);
     if (offset != -1) {
       setCurrentBlockState(-1);
     } else {
       highlightBlockWithRule(
-          text, 0, string_rule.rules[3]->pattern, string_rule.format);
+          text, 0, string_rule_.rules[3]->pattern, string_rule_.format);
       setCurrentBlockState(2);
     }
   }
 
   if (currentBlockState() != 2) {
     int complete_offset = highlightBlockWithRule(
-        text, offset, string_rule.rules[0]->pattern, string_rule.format);
+        text, offset, string_rule_.rules[0]->pattern, string_rule_.format);
     if (complete_offset != -1) {
       offset = complete_offset;
     }
 
     if (highlightBlockWithRule(
-            text, offset, string_rule.rules[1]->pattern, string_rule.format)
+            text, offset, string_rule_.rules[1]->pattern, string_rule_.format)
         != -1) {
       setCurrentBlockState(1);
     } else {
@@ -470,11 +447,11 @@ int TclCmdHighlighter::highlightBlockWithRule(const QString& text,
                                               const QTextCharFormat* format)
 {
   int last_match = -1;
-  QRegularExpressionMatchIterator matchIterator
+  QRegularExpressionMatchIterator match_iterator
       = rule->globalMatch(text, start_idx);
 
-  while (matchIterator.hasNext()) {
-    QRegularExpressionMatch match = matchIterator.next();
+  while (match_iterator.hasNext()) {
+    QRegularExpressionMatch match = match_iterator.next();
 
     int groups_start = 0;
     if (match.lastCapturedIndex() > 0) {

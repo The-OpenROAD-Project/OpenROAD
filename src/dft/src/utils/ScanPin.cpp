@@ -1,12 +1,16 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
+
 #include "ScanPin.hh"
+
+#include <string_view>
+#include <variant>
+
+#include "odb/db.h"
 
 namespace dft {
 
-ScanPin::ScanPin(odb::dbITerm* iterm) : value_(iterm)
-{
-}
-
-ScanPin::ScanPin(odb::dbBTerm* bterm) : value_(bterm)
+ScanPin::ScanPin(std::variant<odb::dbBTerm*, odb::dbITerm*> term) : value_(term)
 {
 }
 
@@ -27,24 +31,18 @@ std::string_view ScanPin::getName() const
       value_);
 }
 
-const std::variant<odb::dbITerm*, odb::dbBTerm*>& ScanPin::getValue() const
+const std::variant<odb::dbBTerm*, odb::dbITerm*>& ScanPin::getValue() const
 {
   return value_;
 }
 
-ScanLoad::ScanLoad(odb::dbITerm* iterm) : ScanPin(iterm)
+ScanLoad::ScanLoad(std::variant<odb::dbBTerm*, odb::dbITerm*> term)
+    : ScanPin(term)
 {
 }
 
-ScanLoad::ScanLoad(odb::dbBTerm* bterm) : ScanPin(bterm)
-{
-}
-
-ScanDriver::ScanDriver(odb::dbITerm* iterm) : ScanPin(iterm)
-{
-}
-
-ScanDriver::ScanDriver(odb::dbBTerm* bterm) : ScanPin(bterm)
+ScanDriver::ScanDriver(std::variant<odb::dbBTerm*, odb::dbITerm*> term)
+    : ScanPin(term)
 {
 }
 

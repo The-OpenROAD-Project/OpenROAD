@@ -1,44 +1,14 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include "CtsGraphics.h"
 
-#include <algorithm>
+#include <cmath>
 #include <cstdio>
-#include <limits>
+#include <string>
+#include <vector>
 
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace cts {
@@ -70,16 +40,16 @@ void CtsGraphics::initializeWithPoints(SinkClustering* SinkClustering,
 
 void CtsGraphics::drawCluster(gui::Painter& painter)
 {
-  std::vector<gui::Painter::Color> colors{gui::Painter::red,
-                                          gui::Painter::yellow,
-                                          gui::Painter::green,
-                                          gui::Painter::dark_red,
-                                          gui::Painter::magenta,
-                                          gui::Painter::dark_yellow,
-                                          gui::Painter::blue,
-                                          gui::Painter::dark_gray,
-                                          gui::Painter::dark_green,
-                                          gui::Painter::cyan};
+  std::vector<gui::Painter::Color> colors{gui::Painter::kRed,
+                                          gui::Painter::kYellow,
+                                          gui::Painter::kGreen,
+                                          gui::Painter::kDarkRed,
+                                          gui::Painter::kMagenta,
+                                          gui::Painter::kDarkYellow,
+                                          gui::Painter::kBlue,
+                                          gui::Painter::kDarkGray,
+                                          gui::Painter::kDarkGreen,
+                                          gui::Painter::kCyan};
 
   unsigned clusterCounter = 0;
   bool first = true;
@@ -104,7 +74,7 @@ void CtsGraphics::drawCluster(gui::Painter& painter)
       } else {
         if (first_in_cluster) {
           first_in_cluster = false;
-          painter.setPen(gui::Painter::white, /* cosmetic */ true);
+          painter.setPen(gui::Painter::kWhite, /* cosmetic */ true);
         } else {
           painter.setPen(colors[color], /* cosmetic */ true);
         }
@@ -122,7 +92,7 @@ void CtsGraphics::drawCluster(gui::Painter& painter)
 
 void CtsGraphics::drawHTree(gui::Painter& painter)
 {
-  auto color = gui::Painter::red;
+  auto color = gui::Painter::kRed;
   color.a = 180;
   painter.setPen(color, /* cosmetic */ true);
 
@@ -153,9 +123,9 @@ void CtsGraphics::drawHTree(gui::Painter& painter)
           Point<double> parentPoint
               = h_tree_builder_->getTopologyVector()[levelIdx - 1]
                     .getBranchingPoint(parentIdx);
-          auto color = gui::Painter::yellow;
+          auto color = gui::Painter::kYellow;
           if (levelIdx % 2 == 0) {
-            color = gui::Painter::red;
+            color = gui::Painter::kRed;
           }
           color.a = 180;
           painter.setPen(color, /* cosmetic */ true);

@@ -1,45 +1,26 @@
-///////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
+
 #include "Evaluator.h"
 
+#include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <functional>
+#include <iomanip>
+#include <ios>
+#include <limits>
+#include <map>
 #include <numeric>
+#include <ostream>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "Hypergraph.h"
 #include "Utilities.h"
+#include "boost/range/iterator_range_core.hpp"
 #include "utl/Logger.h"
 
 // ------------------------------------------------------------------------------
@@ -262,8 +243,9 @@ void GoldenEvaluator::PrintPathStats(const PathStats& path_stats) const
                   path_stats.tot_num_noncritical_path);
   logger_->report("\tThe worst number of cuts on timing-critical paths = {}",
                   path_stats.worst_cut_critical_path);
-  logger_->report("\tThe average number of cuts on timing-critical paths = {}",
-                  path_stats.avg_cut_critical_path);
+  logger_->report(
+      "\tThe average number of cuts on timing-critical paths = {:.2f}",
+      path_stats.avg_cut_critical_path);
   logger_->report(
       "\tTotal number of timing-noncritical to timing critical paths = {}",
       path_stats.number_non2critical_path);
@@ -271,7 +253,7 @@ void GoldenEvaluator::PrintPathStats(const PathStats& path_stats) const
       "\tThe worst number of cuts on timing-non2critical paths = {}",
       path_stats.worst_cut_non2critical_path);
   logger_->report(
-      "\tThe average number of cuts on timing-non2critical paths = {}",
+      "\tThe average number of cuts on timing-non2critical paths = {:.2f}",
       path_stats.avg_cut_non2critical_path);
 }
 
@@ -737,7 +719,7 @@ void GoldenEvaluator::UpdateTiming(const HGraphPtr& hgraph,
     // the remaining vertices are all sinks
     // It will stop if the sink vertex is a FF or IO
     for (const int v : timing_graph_->Vertices(e)) {
-      if (timing_graph_->GetVertexType(v) != COMB_STD_CELL) {
+      if (timing_graph_->GetVertexType(v) != kCombStdCell) {
         continue;  // the current vertex is port or seq_std_cell or macro
       }
       // find all the hyperedges connected to this hyperedge
@@ -767,7 +749,7 @@ void GoldenEvaluator::UpdateTiming(const HGraphPtr& hgraph,
     const int src_id = *range.begin();
     // Stop backward traversing if the current vertex is port or seq_std_cell or
     // macro
-    if (timing_graph_->GetVertexType(src_id) != COMB_STD_CELL) {
+    if (timing_graph_->GetVertexType(src_id) != kCombStdCell) {
       return;  // the current vertex is port or seq_std_cell or macro
     }
     // find all the hyperedges driving this vertex

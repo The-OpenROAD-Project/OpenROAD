@@ -29,27 +29,16 @@
 
 #include "lefiProp.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 lefiProp::lefiProp()
-    : propType_(NULL),
-      propName_(NULL),
-      nameSize_(0),
-      hasRange_(0),
-      hasNumber_(0),
-      hasNameMapString_(0),
-      dataType_(0),
-      stringData_(NULL),
-      stringLength_(0),
-      left_(0.0),
-      right_(0.0),
-      d_(0.0)
 {
   Init();
 }
@@ -78,8 +67,9 @@ void lefiProp::setPropType(const char* typ, const char* string)
 {
   int len;
   propType_ = (char*) typ;
-  if ((len = strlen(string) + 1) > nameSize_)
+  if ((len = strlen(string) + 1) > nameSize_) {
     bumpName(len);
+  }
   strcpy(propName_, CASE(string));
 }
 
@@ -115,8 +105,9 @@ void lefiProp::setPropQString(const char* string)
 {
   int len;
   dataType_ = 'Q';
-  if ((len = strlen(string) + 1) > stringLength_)
+  if ((len = strlen(string) + 1) > stringLength_) {
     bumpSize(len);
+  }
   strcpy(stringData_, CASE(string));
 }
 
@@ -125,8 +116,9 @@ void lefiProp::setPropNameMapString(const char* string)
   int len;
   dataType_ = 'N';
   hasNameMapString_ = 1;
-  if ((len = strlen(string) + 1) > stringLength_)
+  if ((len = strlen(string) + 1) > stringLength_) {
     bumpSize(len);
+  }
   strcpy(stringData_, CASE(string));
 }
 
@@ -183,11 +175,13 @@ void lefiProp::bumpName(int size)
 
 void lefiProp::clear()
 {
-  if (stringData_)
+  if (stringData_) {
     *(stringData_) = '\0';
-  if (stringData_)
+  }
+  if (stringData_) {
     *(propName_) = '\0';
-  propType_ = 0;
+  }
+  propType_ = nullptr;
   hasRange_ = 0;
   hasNumber_ = 0;
   hasNameMapString_ = 0;
@@ -229,4 +223,4 @@ void lefiProp::print(FILE* f) const
   }
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

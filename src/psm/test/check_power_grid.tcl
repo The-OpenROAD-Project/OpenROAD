@@ -4,4 +4,4 @@ source helpers.tcl
 
 read_lef Nangate45/Nangate45.lef
 read_def Nangate45_data/gcd.def
-check_power_grid -net VDD
+check_power_grid -net VDD -dont_require_terminals

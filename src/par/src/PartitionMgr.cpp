@@ -1,52 +1,26 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "par/PartitionMgr.h"
 
-#include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <map>
+#include <memory>
+#include <set>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 #include "TritonPart.h"
-#include "Utilities.h"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "sta/ConcreteNetwork.hh"
+#include "sta/Liberty.hh"
 #include "sta/MakeConcreteNetwork.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/ParseBus.hh"
 #include "sta/PortDirection.hh"
 #include "sta/VerilogWriter.hh"
@@ -77,6 +51,13 @@ using sta::writeVerilog;
 using utl::PAR;
 
 namespace par {
+
+bool CompareInstancePtr::operator()(const sta::Instance* lhs,
+                                    const sta::Instance* rhs) const
+{
+  return db_network_->staToDb(lhs)->getName()
+         < db_network_->staToDb(rhs)->getName();
+}
 
 void PartitionMgr::init(odb::dbDatabase* db,
                         sta::dbNetwork* db_network,
@@ -427,9 +408,10 @@ std::vector<int> PartitionMgr::PartitionKWaySimpleMode(
 }
 
 // determine the required direction of a port.
-static PortDirection* determinePortDirection(const Net* net,
-                                             const std::set<Instance*>* insts,
-                                             const dbNetwork* db_network)
+static PortDirection* determinePortDirection(
+    const Net* net,
+    const std::set<Instance*, CompareInstancePtr>* insts,
+    const dbNetwork* db_network)
 {
   bool local_only = true;
   bool locally_driven = false;
@@ -507,7 +489,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
     sta::Library* library,
     sta::NetworkReader* network,
     sta::Instance* parent,
-    const std::set<Instance*>* insts,
+    const std::set<Instance*, CompareInstancePtr>* insts,
     std::map<Net*, Port*>* port_map)
 {
   // build cell
@@ -746,8 +728,10 @@ Instance* PartitionMgr::buildPartitionedTopInstance(const char* name,
 odb::dbBlock* PartitionMgr::getDbBlock() const
 {
   odb::dbChip* chip = db_->getChip();
-  odb::dbBlock* block = chip->getBlock();
-  return block;
+  if (!chip) {
+    return nullptr;
+  }
+  return chip->getBlock();
 }
 
 void PartitionMgr::writePartitionVerilog(const char* file_name,
@@ -764,7 +748,7 @@ void PartitionMgr::writePartitionVerilog(const char* file_name,
   const std::string top_name = db_network_->name(db_network_->topInstance());
 
   // build partition instance map
-  std::map<int, std::set<Instance*>> instance_map;
+  std::map<int, std::set<Instance*, CompareInstancePtr>> instance_map;
   for (dbInst* inst : block->getInsts()) {
     dbIntProperty* prop_id = dbIntProperty::find(inst, "partition_id");
     if (!prop_id) {
@@ -774,6 +758,10 @@ void PartitionMgr::writePartitionVerilog(const char* file_name,
                     inst->getName());
     } else {
       const int partition = prop_id->getValue();
+      if (instance_map.find(partition) == instance_map.end()) {
+        instance_map.insert(
+            {partition, std::set<Instance*, CompareInstancePtr>(db_network_)});
+      }
       instance_map[partition].insert(db_network_->dbToSta(inst));
     }
   }

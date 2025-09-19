@@ -33,11 +33,12 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <cstdio>
 #include <string>
 #include <vector>
 
-#include "db.h"
-#include "dbBlockCallBackObj.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "spdlog/fmt/fmt.h"
 
 namespace odb {
@@ -229,6 +230,12 @@ class CallBack : public dbBlockCallBackObj
             box->xMax(),
             box->yMax());
     events.emplace_back(buffer);
+  }
+  void inDbBlockageDestroy(dbBlockage* blockage) override
+  {
+    if (!_pause) {
+      events.emplace_back("Destroy blockage");
+    }
   }
   // dbBlockage End
 

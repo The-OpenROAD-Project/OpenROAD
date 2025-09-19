@@ -30,12 +30,12 @@
 #ifndef lefiMacro_h
 #define lefiMacro_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 #include "lefiMisc.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 class lefiObstruction
 {
@@ -54,7 +54,7 @@ class lefiObstruction
   void print(FILE* f) const;
 
  protected:
-  lefiGeometries* geometries_;
+  lefiGeometries* geometries_{nullptr};
 };
 
 // 5.5
@@ -100,28 +100,28 @@ class lefiPinAntennaModel
   int hasReturn() const;
 
  protected:
-  char* oxide_;
-  int hasReturn_;
+  char* oxide_{nullptr};
+  int hasReturn_{0};
 
-  int numAntennaGateArea_;
-  int antennaGateAreaAllocated_;
-  double* antennaGateArea_;
-  char** antennaGateAreaLayer_;
+  int numAntennaGateArea_{0};
+  int antennaGateAreaAllocated_{0};
+  double* antennaGateArea_{nullptr};
+  char** antennaGateAreaLayer_{nullptr};
 
-  int numAntennaMaxAreaCar_;
-  int antennaMaxAreaCarAllocated_;
-  double* antennaMaxAreaCar_;
-  char** antennaMaxAreaCarLayer_;
+  int numAntennaMaxAreaCar_{0};
+  int antennaMaxAreaCarAllocated_{0};
+  double* antennaMaxAreaCar_{nullptr};
+  char** antennaMaxAreaCarLayer_{nullptr};
 
-  int numAntennaMaxSideAreaCar_;
-  int antennaMaxSideAreaCarAllocated_;
-  double* antennaMaxSideAreaCar_;
-  char** antennaMaxSideAreaCarLayer_;
+  int numAntennaMaxSideAreaCar_{0};
+  int antennaMaxSideAreaCarAllocated_{0};
+  double* antennaMaxSideAreaCar_{nullptr};
+  char** antennaMaxSideAreaCarLayer_{nullptr};
 
-  int numAntennaMaxCutCar_;
-  int antennaMaxCutCarAllocated_;
-  double* antennaMaxCutCar_;
-  char** antennaMaxCutCarLayer_;
+  int numAntennaMaxCutCar_{0};
+  int antennaMaxCutCarAllocated_{0};
+  double* antennaMaxCutCar_{nullptr};
+  char** antennaMaxCutCarLayer_{nullptr};
 };
 
 class lefiPin
@@ -319,150 +319,150 @@ class lefiPin
   const char* propName(int index) const;
   const char* propValue(int index) const;
   double propNum(int index) const;
-  const char propType(int index) const;
+  char propType(int index) const;
   int propIsNumber(int index) const;
   int propIsString(int index) const;
 
   void print(FILE* f) const;
 
  protected:
-  int nameSize_;
-  char* name_;
+  int nameSize_{0};
+  char* name_{nullptr};
 
-  char hasLEQ_;
-  char hasDirection_;
-  char hasUse_;
-  char hasShape_;
-  char hasMustjoin_;
-  char hasOutMargin_;
-  char hasOutResistance_;
-  char hasInMargin_;
-  char hasPower_;
-  char hasLeakage_;
-  char hasMaxload_;
-  char hasMaxdelay_;
-  char hasCapacitance_;
-  char hasResistance_;
-  char hasPulldownres_;
-  char hasTieoffr_;
-  char hasVHI_;
-  char hasVLO_;
-  char hasRiseVoltage_;
-  char hasFallVoltage_;
-  char hasRiseThresh_;
-  char hasFallThresh_;
-  char hasRiseSatcur_;
-  char hasFallSatcur_;
-  char hasCurrentSource_;
-  char hasTables_;
-  char hasAntennasize_;
-  char hasRiseSlewLimit_;
-  char hasFallSlewLimit_;
+  char hasLEQ_{0};
+  char hasDirection_{0};
+  char hasUse_{0};
+  char hasShape_{0};
+  char hasMustjoin_{0};
+  char hasOutMargin_{0};
+  char hasOutResistance_{0};
+  char hasInMargin_{0};
+  char hasPower_{0};
+  char hasLeakage_{0};
+  char hasMaxload_{0};
+  char hasMaxdelay_{0};
+  char hasCapacitance_{0};
+  char hasResistance_{0};
+  char hasPulldownres_{0};
+  char hasTieoffr_{0};
+  char hasVHI_{0};
+  char hasVLO_{0};
+  char hasRiseVoltage_{0};
+  char hasFallVoltage_{0};
+  char hasRiseThresh_{0};
+  char hasFallThresh_{0};
+  char hasRiseSatcur_{0};
+  char hasFallSatcur_{0};
+  char hasCurrentSource_{0};
+  char hasTables_{0};
+  char hasAntennasize_{0};
+  char hasRiseSlewLimit_{0};
+  char hasFallSlewLimit_{0};
 
-  int numForeigns_;
-  int foreignAllocated_;
-  int* hasForeignOrient_;
-  int* hasForeignPoint_;
-  int* foreignOrient_;
-  double* foreignX_;
-  double* foreignY_;
-  char** foreign_;
+  int numForeigns_{0};
+  int foreignAllocated_{0};
+  int* hasForeignOrient_{nullptr};
+  int* hasForeignPoint_{nullptr};
+  int* foreignOrient_{nullptr};
+  double* foreignX_{nullptr};
+  double* foreignY_{nullptr};
+  char** foreign_{nullptr};
 
-  int LEQSize_;
-  char* LEQ_;
-  int mustjoinSize_;
-  char* mustjoin_;
-  double outMarginH_;
-  double outMarginL_;
-  double outResistanceH_;
-  double outResistanceL_;
-  double inMarginH_;
-  double inMarginL_;
-  double power_;
-  double leakage_;
-  double maxload_;
-  double maxdelay_;
-  double capacitance_;
-  double resistance_;
-  double pulldownres_;
-  double tieoffr_;
-  double VHI_;
-  double VLO_;
-  double riseVoltage_;
-  double fallVoltage_;
-  double riseThresh_;
-  double fallThresh_;
-  double riseSatcur_;
-  double fallSatcur_;
-  int lowTableSize_;
-  char* lowTable_;
-  int highTableSize_;
-  char* highTable_;
-  double riseSlewLimit_;
-  double fallSlewLimit_;
+  int LEQSize_{0};
+  char* LEQ_{nullptr};
+  int mustjoinSize_{0};
+  char* mustjoin_{nullptr};
+  double outMarginH_{0.0};
+  double outMarginL_{0.0};
+  double outResistanceH_{0.0};
+  double outResistanceL_{0.0};
+  double inMarginH_{0.0};
+  double inMarginL_{0.0};
+  double power_{0.0};
+  double leakage_{0.0};
+  double maxload_{0.0};
+  double maxdelay_{0.0};
+  double capacitance_{0.0};
+  double resistance_{0.0};
+  double pulldownres_{0.0};
+  double tieoffr_{0.0};
+  double VHI_{0.0};
+  double VLO_{0.0};
+  double riseVoltage_{0.0};
+  double fallVoltage_{0.0};
+  double riseThresh_{0.0};
+  double fallThresh_{0.0};
+  double riseSatcur_{0.0};
+  double fallSatcur_{0.0};
+  int lowTableSize_{0};
+  char* lowTable_{nullptr};
+  int highTableSize_{0};
+  char* highTable_{nullptr};
+  double riseSlewLimit_{0.0};
+  double fallSlewLimit_{0.0};
 
   // 5.5 AntennaModel
-  int numAntennaModel_;
-  int antennaModelAllocated_;
-  int curAntennaModelIndex_;  // save the current index of the antenna
-  lefiPinAntennaModel** pinAntennaModel_;
+  int numAntennaModel_{0};
+  int antennaModelAllocated_{0};
+  int curAntennaModelIndex_{0};  // save the current index of the antenna
+  lefiPinAntennaModel** pinAntennaModel_{nullptr};
 
-  int numAntennaSize_;
-  int antennaSizeAllocated_;
-  double* antennaSize_;
-  char** antennaSizeLayer_;
+  int numAntennaSize_{0};
+  int antennaSizeAllocated_{0};
+  double* antennaSize_{nullptr};
+  char** antennaSizeLayer_{nullptr};
 
-  int numAntennaMetalArea_;
-  int antennaMetalAreaAllocated_;
-  double* antennaMetalArea_;
-  char** antennaMetalAreaLayer_;
+  int numAntennaMetalArea_{0};
+  int antennaMetalAreaAllocated_{0};
+  double* antennaMetalArea_{nullptr};
+  char** antennaMetalAreaLayer_{nullptr};
 
-  int numAntennaMetalLength_;
-  int antennaMetalLengthAllocated_;
-  double* antennaMetalLength_;
-  char** antennaMetalLengthLayer_;
+  int numAntennaMetalLength_{0};
+  int antennaMetalLengthAllocated_{0};
+  double* antennaMetalLength_{nullptr};
+  char** antennaMetalLengthLayer_{nullptr};
 
-  int numAntennaPartialMetalArea_;
-  int antennaPartialMetalAreaAllocated_;
-  double* antennaPartialMetalArea_;
-  char** antennaPartialMetalAreaLayer_;
+  int numAntennaPartialMetalArea_{0};
+  int antennaPartialMetalAreaAllocated_{0};
+  double* antennaPartialMetalArea_{nullptr};
+  char** antennaPartialMetalAreaLayer_{nullptr};
 
-  int numAntennaPartialMetalSideArea_;
-  int antennaPartialMetalSideAreaAllocated_;
-  double* antennaPartialMetalSideArea_;
-  char** antennaPartialMetalSideAreaLayer_;
+  int numAntennaPartialMetalSideArea_{0};
+  int antennaPartialMetalSideAreaAllocated_{0};
+  double* antennaPartialMetalSideArea_{nullptr};
+  char** antennaPartialMetalSideAreaLayer_{nullptr};
 
-  int numAntennaPartialCutArea_;
-  int antennaPartialCutAreaAllocated_;
-  double* antennaPartialCutArea_;
-  char** antennaPartialCutAreaLayer_;
+  int numAntennaPartialCutArea_{0};
+  int antennaPartialCutAreaAllocated_{0};
+  double* antennaPartialCutArea_{nullptr};
+  char** antennaPartialCutAreaLayer_{nullptr};
 
-  int numAntennaDiffArea_;
-  int antennaDiffAreaAllocated_;
-  double* antennaDiffArea_;
-  char** antennaDiffAreaLayer_;
+  int numAntennaDiffArea_{0};
+  int antennaDiffAreaAllocated_{0};
+  double* antennaDiffArea_{nullptr};
+  char** antennaDiffAreaLayer_{nullptr};
 
-  char* taperRule_;
+  char* taperRule_{nullptr};
 
-  char* netEpxr_;
-  char* ssPinName_;
-  char* gsPinName_;
+  char* netEpxr_{nullptr};
+  char* ssPinName_{nullptr};
+  char* gsPinName_{nullptr};
 
   char direction_[32];
   char use_[12];
   char shape_[12];
   char currentSource_[12];
 
-  int numProperties_;
-  int propertiesAllocated_;
-  char** propNames_;
-  char** propValues_;
-  double* propNums_;
-  char* propTypes_;
+  int numProperties_{0};
+  int propertiesAllocated_{0};
+  char** propNames_{nullptr};
+  char** propValues_{nullptr};
+  double* propNums_{nullptr};
+  char* propTypes_{nullptr};
 
-  int numPorts_;
-  int portsAllocated_;
-  lefiGeometries** ports_;
+  int numPorts_{0};
+  int portsAllocated_{0};
+  lefiGeometries** ports_{nullptr};
 };
 
 // 5.6
@@ -488,13 +488,13 @@ class lefiDensity
   void print(FILE* f) const;
 
  protected:
-  int numLayers_;
-  int layersAllocated_;
-  char** layerName_;
-  int* numRects_;
-  int* rectsAllocated_;
-  struct lefiGeomRect** rects_;
-  double** densityValue_;
+  int numLayers_{0};
+  int layersAllocated_{0};
+  char** layerName_{nullptr};
+  int* numRects_{nullptr};
+  int* rectsAllocated_{nullptr};
+  lefiGeomRect** rects_{nullptr};
+  double** densityValue_{nullptr};
 };
 
 class lefiMacro
@@ -566,7 +566,7 @@ class lefiMacro
   const char* propName(int index) const;
   const char* propValue(int index) const;
   double propNum(int index) const;
-  const char propType(int index) const;
+  char propType(int index) const;
   int propIsNumber(int index) const;
   int propIsString(int index) const;
 
@@ -596,70 +596,70 @@ class lefiMacro
   void print(FILE* f) const;
 
  protected:
-  int nameSize_;
-  char* name_;
+  int nameSize_{0};
+  char* name_{nullptr};
   char macroClass_[32];
   char source_[12];
 
-  int generatorSize_;
-  char* generator_;
+  int generatorSize_{0};
+  char* generator_{nullptr};
 
-  char hasClass_;
-  char hasGenerator_;
-  char hasGenerate_;
-  char hasPower_;
-  char hasOrigin_;
-  char hasSource_;
-  char hasEEQ_;
-  char hasLEQ_;
-  char hasSymmetry_;  // X=1  Y=2  R90=4  (can be combined)
-  char hasSiteName_;
-  char hasSize_;
-  char hasClockType_;
-  char isBuffer_;
-  char isInverter_;
+  char hasClass_{0};
+  char hasGenerator_{0};
+  char hasGenerate_{0};
+  char hasPower_{0};
+  char hasOrigin_{0};
+  char hasSource_{0};
+  char hasEEQ_{0};
+  char hasLEQ_{0};
+  char hasSymmetry_{0};  // X=1  Y=2  R90=4  (can be combined)
+  char hasSiteName_{0};
+  char hasSize_{0};
+  char hasClockType_{0};
+  char isBuffer_{0};
+  char isInverter_{0};
 
-  char* EEQ_;
-  int EEQSize_;
-  char* LEQ_;
-  int LEQSize_;
-  char* gen1_;
-  int gen1Size_;
-  char* gen2_;
-  int gen2Size_;
-  double power_;
-  double originX_;
-  double originY_;
-  double sizeX_;
-  double sizeY_;
+  char* EEQ_{nullptr};
+  int EEQSize_{0};
+  char* LEQ_{nullptr};
+  int LEQSize_{0};
+  char* gen1_{nullptr};
+  int gen1Size_{0};
+  char* gen2_{nullptr};
+  int gen2Size_{0};
+  double power_{0.0};
+  double originX_{0.0};
+  double originY_{0.0};
+  double sizeX_{0.0};
+  double sizeY_{0.0};
 
-  int numSites_;
-  int sitesAllocated_;
-  lefiSitePattern** pattern_;
+  int numSites_{0};
+  int sitesAllocated_{0};
+  lefiSitePattern** pattern_{nullptr};
 
-  int numForeigns_;
-  int foreignAllocated_;
-  int* hasForeignOrigin_;
-  int* hasForeignPoint_;
-  int* foreignOrient_;
-  double* foreignX_;
-  double* foreignY_;
-  char** foreign_;
+  int numForeigns_{0};
+  int foreignAllocated_{0};
+  int* hasForeignOrigin_{nullptr};
+  int* hasForeignPoint_{nullptr};
+  int* foreignOrient_{nullptr};
+  double* foreignX_{nullptr};
+  double* foreignY_{nullptr};
+  char** foreign_{nullptr};
 
-  int siteNameSize_;
-  char* siteName_;
+  int siteNameSize_{0};
+  char* siteName_{nullptr};
 
-  char* clockType_;
-  int clockTypeSize_;
+  char* clockType_{nullptr};
+  int clockTypeSize_{0};
 
-  int numProperties_;
-  int propertiesAllocated_;
-  char** propNames_;
-  char** propValues_;
-  double* propNums_;
-  char* propTypes_;
+  int numProperties_{0};
+  int propertiesAllocated_{0};
+  char** propNames_{nullptr};
+  char** propValues_{nullptr};
+  double* propNums_{nullptr};
+  char* propTypes_{nullptr};
 
-  int isFixedMask_;
+  int isFixedMask_{0};
 };
 
 class lefiTiming
@@ -809,107 +809,107 @@ class lefiTiming
   const char* SDFcond();
 
  protected:
-  int numFrom_;
-  char** from_;
-  int fromAllocated_;
-  int numTo_;
-  char** to_;
-  int toAllocated_;
+  int numFrom_{0};
+  char** from_{nullptr};
+  int fromAllocated_{0};
+  int numTo_{0};
+  char** to_{nullptr};
+  int toAllocated_{0};
 
-  int hasTransition_;
-  int hasDelay_;
-  int hasRiseSlew_;
-  int hasRiseSlew2_;
-  int hasFallSlew_;
-  int hasFallSlew2_;
-  int hasRiseIntrinsic_;
-  int hasFallIntrinsic_;
-  int hasRiseRS_;
-  int hasRiseCS_;
-  int hasFallRS_;
-  int hasFallCS_;
-  int hasUnateness_;
-  int hasFallAtt1_;
-  int hasRiseAtt1_;
-  int hasFallTo_;
-  int hasRiseTo_;
-  int hasStableTiming_;
-  int hasSDFonePinTrigger_;
-  int hasSDFtwoPinTrigger_;
-  int hasSDFcondStart_;
-  int hasSDFcondEnd_;
-  int hasSDFcond_;
-  int nowRise_;
+  int hasTransition_{0};
+  int hasDelay_{0};
+  int hasRiseSlew_{0};
+  int hasRiseSlew2_{0};
+  int hasFallSlew_{0};
+  int hasFallSlew2_{0};
+  int hasRiseIntrinsic_{0};
+  int hasFallIntrinsic_{0};
+  int hasRiseRS_{0};
+  int hasRiseCS_{0};
+  int hasFallRS_{0};
+  int hasFallCS_{0};
+  int hasUnateness_{0};
+  int hasFallAtt1_{0};
+  int hasRiseAtt1_{0};
+  int hasFallTo_{0};
+  int hasRiseTo_{0};
+  int hasStableTiming_{0};
+  int hasSDFonePinTrigger_{0};
+  int hasSDFtwoPinTrigger_{0};
+  int hasSDFcondStart_{0};
+  int hasSDFcondEnd_{0};
+  int hasSDFcond_{0};
+  int nowRise_{0};
 
-  int numOfAxisNumbers_;
-  double* axisNumbers_;
-  int axisNumbersAllocated_;
+  int numOfAxisNumbers_{0};
+  double* axisNumbers_{nullptr};
+  int axisNumbersAllocated_{0};
 
-  int numOfTableEntries_;
-  int tableEntriesAllocated_;
-  double* table_;  // three numbers per entry
+  int numOfTableEntries_{0};
+  int tableEntriesAllocated_{0};
+  double* table_{nullptr};  // three numbers per entry
 
-  char* delayRiseOrFall_;
-  char* delayUnateness_;
-  double delayTableOne_;
-  double delayTableTwo_;
-  double delayTableThree_;
-  char* transitionRiseOrFall_;
-  char* transitionUnateness_;
-  double transitionTableOne_;
-  double transitionTableTwo_;
-  double transitionTableThree_;
-  double riseIntrinsicOne_;
-  double riseIntrinsicTwo_;
-  double riseIntrinsicThree_;
-  double riseIntrinsicFour_;
-  double fallIntrinsicOne_;
-  double fallIntrinsicTwo_;
-  double fallIntrinsicThree_;
-  double fallIntrinsicFour_;
-  double riseSlewOne_;
-  double riseSlewTwo_;
-  double riseSlewThree_;
-  double riseSlewFour_;
-  double riseSlewFive_;
-  double riseSlewSix_;
-  double riseSlewSeven_;
-  double fallSlewOne_;
-  double fallSlewTwo_;
-  double fallSlewThree_;
-  double fallSlewFour_;
-  double fallSlewFive_;
-  double fallSlewSix_;
-  double fallSlewSeven_;
-  double riseRSOne_;
-  double riseRSTwo_;
-  double riseCSOne_;
-  double riseCSTwo_;
-  double fallRSOne_;
-  double fallRSTwo_;
-  double fallCSOne_;
-  double fallCSTwo_;
-  char* unateness_;
-  double riseAtt1One_;
-  double riseAtt1Two_;
-  double fallAtt1One_;
-  double fallAtt1Two_;
-  double fallToOne_;
-  double fallToTwo_;
-  double riseToOne_;
-  double riseToTwo_;
-  double stableSetup_;
-  double stableHold_;
-  char* stableRiseFall_;
-  char* SDFtriggerType_;
-  char* SDFfromTrigger_;
-  char* SDFtoTrigger_;
-  double SDFtriggerTableOne_;
-  double SDFtriggerTableTwo_;
-  double SDFtriggerTableThree_;
-  char* SDFcondStart_;
-  char* SDFcondEnd_;
-  char* SDFcond_;
+  char* delayRiseOrFall_{nullptr};
+  char* delayUnateness_{nullptr};
+  double delayTableOne_{0.0};
+  double delayTableTwo_{0.0};
+  double delayTableThree_{0.0};
+  char* transitionRiseOrFall_{nullptr};
+  char* transitionUnateness_{nullptr};
+  double transitionTableOne_{0.0};
+  double transitionTableTwo_{0.0};
+  double transitionTableThree_{0.0};
+  double riseIntrinsicOne_{0.0};
+  double riseIntrinsicTwo_{0.0};
+  double riseIntrinsicThree_{0.0};
+  double riseIntrinsicFour_{0.0};
+  double fallIntrinsicOne_{0.0};
+  double fallIntrinsicTwo_{0.0};
+  double fallIntrinsicThree_{0.0};
+  double fallIntrinsicFour_{0.0};
+  double riseSlewOne_{0.0};
+  double riseSlewTwo_{0.0};
+  double riseSlewThree_{0.0};
+  double riseSlewFour_{0.0};
+  double riseSlewFive_{0.0};
+  double riseSlewSix_{0.0};
+  double riseSlewSeven_{0.0};
+  double fallSlewOne_{0.0};
+  double fallSlewTwo_{0.0};
+  double fallSlewThree_{0.0};
+  double fallSlewFour_{0.0};
+  double fallSlewFive_{0.0};
+  double fallSlewSix_{0.0};
+  double fallSlewSeven_{0.0};
+  double riseRSOne_{0.0};
+  double riseRSTwo_{0.0};
+  double riseCSOne_{0.0};
+  double riseCSTwo_{0.0};
+  double fallRSOne_{0.0};
+  double fallRSTwo_{0.0};
+  double fallCSOne_{0.0};
+  double fallCSTwo_{0.0};
+  char* unateness_{nullptr};
+  double riseAtt1One_{0.0};
+  double riseAtt1Two_{0.0};
+  double fallAtt1One_{0.0};
+  double fallAtt1Two_{0.0};
+  double fallToOne_{0.0};
+  double fallToTwo_{0.0};
+  double riseToOne_{0.0};
+  double riseToTwo_{0.0};
+  double stableSetup_{0.0};
+  double stableHold_{0.0};
+  char* stableRiseFall_{nullptr};
+  char* SDFtriggerType_{nullptr};
+  char* SDFfromTrigger_{nullptr};
+  char* SDFtoTrigger_{nullptr};
+  double SDFtriggerTableOne_{0.0};
+  double SDFtriggerTableTwo_{0.0};
+  double SDFtriggerTableThree_{0.0};
+  char* SDFcondStart_{nullptr};
+  char* SDFcondEnd_{nullptr};
+  char* SDFcond_{nullptr};
 };
 
 // 5.8
@@ -952,8 +952,6 @@ class lefiMacroForeign
   int cellOrient_;
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

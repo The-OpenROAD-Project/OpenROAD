@@ -1,4 +1,5 @@
 import helpers
+
 # A minimal LEF file that has been modified to include particular
 # antenna values for testing
 from openroad import Design, Tech
@@ -7,7 +8,7 @@ import ant
 tech = Tech()
 tech.readLef("ant_check.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("ant_check.def")
 ack = design.getAntennaChecker()
 

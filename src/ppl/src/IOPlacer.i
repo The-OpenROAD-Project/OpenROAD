@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 %{
 #include "ppl/IOPlacer.h"
@@ -126,18 +94,6 @@ tclSetStdSeq(Tcl_Obj *const source,
 namespace ppl {
 
 void
-set_num_slots(int numSlots)
-{
-  getIOPlacer()->getParameters()->setNumSlots(numSlots);
-}
-
-void
-set_slots_factor(float factor)
-{
-  getIOPlacer()->getParameters()->setSlotsFactor(factor);
-}
-
-void
 set_slots_per_section(int slots_per_section)
 {
   getIOPlacer()->getParameters()->setSlotsPerSection(slots_per_section);
@@ -159,32 +115,6 @@ void
 exclude_interval(Edge edge, int begin, int end)
 {
   getIOPlacer()->excludeInterval(edge, begin, end);
-}
-
-void
-add_names_constraint(PinSet *pin_list, Edge edge, int begin, int end)
-{
-  getIOPlacer()->addNamesConstraint(pin_list, edge, begin, end);
-}
-
-void add_direction_constraint(Direction direction, Edge edge,
-                               int begin, int end)
-{
-  getIOPlacer()->addDirectionConstraint(direction, edge, begin, end);
-}
-
-void
-add_top_layer_constraint(PinSet *pin_list,
-                         int x1, int y1,
-                         int x2, int y2)
-{
-  getIOPlacer()->addTopLayerConstraint(pin_list, odb::Rect(x1, y1, x2, y2));
-}
-
-void
-add_mirrored_pins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2)
-{
-  getIOPlacer()->addMirroredPins(bterm1, bterm2);
 }
 
 void
@@ -224,15 +154,9 @@ add_ver_layer(odb::dbTechLayer* layer)
 }
 
 void
-add_pin_group(PinList *pin_list, bool order)
+run_hungarian_matching()
 {
-  getIOPlacer()->addPinGroup(pin_list, order);
-}
-
-void
-run_io_placement(bool randomMode)
-{
-  getIOPlacer()->run(randomMode);
+  getIOPlacer()->runHungarianMatching();
 }
 
 void
@@ -245,12 +169,6 @@ int
 compute_io_nets_hpwl()
 {
   return getIOPlacer()->computeIONetsHPWL();
-}
-
-void
-set_rand_seed(double seed)
-{
-  getIOPlacer()->getParameters()->setRandSeed(seed);
 }
 
 void
@@ -289,26 +207,11 @@ void set_pin_placement_file(const char* file_name)
 }
 
 void
-create_pin_shape_pattern(odb::dbTechLayer* layer, int x_step, int y_step,
-                         const odb::Rect& region,
-                         int pin_width, int pin_height, int keepout)
-{
-  getIOPlacer()->addTopLayerPinPattern(layer, x_step, y_step, region,
-                                       pin_width, pin_height, keepout);
-}
-
-odb::dbTechLayer*
-get_top_layer()
-{
-  return getIOPlacer()->getTopLayer();
-}
-
-void
 place_pin(odb::dbBTerm* bterm, odb::dbTechLayer* layer,
           int x, int y, int width, int height,
-          bool force_to_die_bound)
+          bool force_to_die_bound, bool placed_status)
 {
-  getIOPlacer()->placePin(bterm, layer, x, y, width, height, force_to_die_bound);
+  getIOPlacer()->placePin(bterm, layer, x, y, width, height, force_to_die_bound, placed_status);
 }
 
 void
@@ -351,15 +254,15 @@ simulated_annealing_debug(int iters_between_paintings,
 }
 
 void
-run_annealing(bool random)
+run_annealing()
 {
-  getIOPlacer()->runAnnealing(random);
+  getIOPlacer()->runAnnealing();
 }
 
 void
-write_pin_placement(const char* file_name)
+write_pin_placement(const char* file_name, bool placed)
 {
-  getIOPlacer()->writePinPlacement(file_name);
+  getIOPlacer()->writePinPlacement(file_name, placed);
 }
 
 } // namespace

@@ -29,15 +29,15 @@
 
 #include "defiPinProp.hpp"
 
-#include <stdlib.h>
-#include <string.h>
-
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <sstream>
 
 #include "defiDebug.hpp"
-#include "lex.h"
+#include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 namespace {
 
@@ -246,7 +246,7 @@ const char* defiPinProp::propName(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6120(index, numProps_, defData);
-    return 0;
+    return nullptr;
   }
   return propNames_[index];
 }
@@ -255,7 +255,7 @@ const char* defiPinProp::propValue(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6120(index, numProps_, defData);
-    return 0;
+    return nullptr;
   }
   return propValues_[index];
 }
@@ -269,7 +269,7 @@ double defiPinProp::propNumber(int index) const
   return propDValues_[index];
 }
 
-const char defiPinProp::propType(int index) const
+char defiPinProp::propType(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6120(index, numProps_, defData);
@@ -307,4 +307,4 @@ void defiPinProp::print(FILE* f) const
   }
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

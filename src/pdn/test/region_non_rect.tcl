@@ -16,5 +16,5 @@ add_global_connection -net VSS -inst_pattern {.*} -pin_pattern VGND -ground
 add_global_connection -net VSS -inst_pattern {.*} -pin_pattern VNB
 
 set_voltage_domain -power VDD -ground VSS
-catch {set_voltage_domain -power VIN -ground VSS -region "TEMP_ANALOG"} err
+catch { set_voltage_domain -power VIN -ground VSS -region "TEMP_ANALOG" } err
 puts $err

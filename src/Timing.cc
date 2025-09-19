@@ -1,51 +1,27 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2023, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include "ord/Timing.h"
 
 #include <tcl.h>
 
+#include <algorithm>
+#include <array>
+#include <cstring>
+#include <set>
+#include <utility>
+#include <vector>
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
-#include "sta/Search.hh"
-//#include "ord/Tech.h"
 #include "ord/Design.h"
+#include "ord/OpenRoad.hh"
+#include "ord/Tech.h"
+#include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/Liberty.hh"
+#include "sta/Search.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
 #include "utl/Logger.h"
@@ -58,17 +34,16 @@ Timing::Timing(Design* design) : design_(design)
 
 sta::dbSta* Timing::getSta()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getSta();
+  return design_->getTech()->getSta();
 }
 
 std::pair<odb::dbITerm*, odb::dbBTerm*> Timing::staToDBPin(const sta::Pin* pin)
 {
-  ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
-  sta::dbNetwork* db_network = openroad->getDbNetwork();
+  sta::dbNetwork* db_network = getSta()->getDbNetwork();
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
-  db_network->staToDb(pin, iterm, bterm);
+  odb::dbModITerm* moditerm;
+  db_network->staToDb(pin, iterm, bterm, moditerm);
   return std::make_pair(iterm, bterm);
 }
 
@@ -96,7 +71,7 @@ bool Timing::isEndpoint(sta::Pin* sta_pin)
   return false;
 }
 
-float Timing::slewAllCorners(sta::Vertex* vertex, sta::MinMax* minmax)
+float Timing::slewAllCorners(sta::Vertex* vertex, const sta::MinMax* minmax)
 {
   auto sta = getSta();
   bool max = (minmax == sta::MinMax::max());
@@ -127,15 +102,15 @@ float Timing::getPinSlew(odb::dbBTerm* db_pin, MinMax minmax)
 float Timing::getPinSlew(sta::Pin* sta_pin, MinMax minmax)
 {
   auto vertex_array = vertices(sta_pin);
-  float pinSlew = (minmax == Max) ? -sta::INF : sta::INF;
+  float pin_slew = (minmax == Max) ? -sta::INF : sta::INF;
   for (auto vertex : vertex_array) {
     if (vertex != nullptr) {
-      float pinSlewTemp = slewAllCorners(vertex, getMinMax(minmax));
-      pinSlew = (minmax == Max) ? std::max(pinSlew, pinSlewTemp)
-                                : std::min(pinSlew, pinSlewTemp);
+      const float pin_slew_temp = slewAllCorners(vertex, getMinMax(minmax));
+      pin_slew = (minmax == Max) ? std::max(pin_slew, pin_slew_temp)
+                                 : std::min(pin_slew, pin_slew_temp);
     }
   }
-  return pinSlew;
+  return pin_slew;
 }
 
 sta::Network* Timing::cmdLinkedNetwork()
@@ -232,7 +207,7 @@ float Timing::getPinArrival(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
   auto vertex_array = vertices(sta_pin);
   float delay = (minmax == Max) ? -sta::INF : sta::INF;
   float d1, d2;
-  sta::Clock* defaultArrivalClock = getSta()->sdc()->defaultArrivalClock();
+  sta::Clock* default_arrival_clock = getSta()->sdc()->defaultArrivalClock();
   for (auto vertex : vertex_array) {
     if (vertex == nullptr) {
       continue;
@@ -241,7 +216,7 @@ float Timing::getPinArrival(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
     const sta::RiseFall* clk_f = sta::RiseFall::fall();
     const sta::RiseFall* arrive_hold = (rf == Rise) ? clk_r : clk_f;
     d1 = getPinArrivalTime(nullptr, clk_r, vertex, arrive_hold);
-    d2 = getPinArrivalTime(defaultArrivalClock, clk_r, vertex, arrive_hold);
+    d2 = getPinArrivalTime(default_arrival_clock, clk_r, vertex, arrive_hold);
     delay = (minmax == Max) ? std::max({d1, d2, delay})
                             : std::min({d1, d2, delay});
     for (auto clk : findClocksMatching("*", false, false)) {
@@ -258,6 +233,22 @@ std::vector<sta::Corner*> Timing::getCorners()
 {
   sta::Corners* corners = getSta()->corners();
   return {corners->begin(), corners->end()};
+}
+
+sta::Corner* Timing::cmdCorner()
+{
+  return getSta()->cmdCorner();
+}
+
+sta::Corner* Timing::findCorner(const char* name)
+{
+  for (auto* corner : getCorners()) {
+    if (strcmp(corner->name(), name) == 0) {
+      return corner;
+    }
+  }
+
+  return nullptr;
 }
 
 float Timing::getPinSlack(odb::dbITerm* db_pin, RiseFall rf, MinMax minmax)
@@ -304,7 +295,7 @@ std::vector<odb::dbMTerm*> Timing::getTimingFanoutFrom(odb::dbMTerm* input)
 
   std::set<odb::dbMTerm*> outputs;
   for (auto arc_set : lib_cell->timingArcSets(lib_port, /* to */ nullptr)) {
-    sta::TimingRole* role = arc_set->role();
+    const sta::TimingRole* role = arc_set->role();
     if (role->isTimingCheck() || role->isAsyncTimingCheck()
         || role->isNonSeqTimingCheck() || role->isDataCheck()) {
       continue;
@@ -318,7 +309,7 @@ std::vector<odb::dbMTerm*> Timing::getTimingFanoutFrom(odb::dbMTerm* input)
   return {outputs.begin(), outputs.end()};
 }
 
-sta::MinMax* Timing::getMinMax(MinMax type)
+const sta::MinMax* Timing::getMinMax(MinMax type)
 {
   return type == Max ? sta::MinMax::max() : sta::MinMax::min();
 }
@@ -341,6 +332,42 @@ float Timing::getPortCap(odb::dbITerm* pin, sta::Corner* corner, MinMax minmax)
   sta::Pin* sta_pin = network->dbToSta(pin);
   sta::LibertyPort* lib_port = network->libertyPort(sta_pin);
   return sta->capacitance(lib_port, corner, getMinMax(minmax));
+}
+
+float Timing::getMaxCapLimit(odb::dbMTerm* pin)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Port* port = network->dbToSta(pin);
+  sta::LibertyPort* lib_port = network->libertyPort(port);
+  sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
+  float max_cap = 0.0;
+  bool max_cap_exists = false;
+  if (!pin->getSigType().isSupply()) {
+    lib_port->capacitanceLimit(sta::MinMax::max(), max_cap, max_cap_exists);
+    if (!max_cap_exists) {
+      lib->defaultMaxCapacitance(max_cap, max_cap_exists);
+    }
+  }
+  return max_cap;
+}
+
+float Timing::getMaxSlewLimit(odb::dbMTerm* pin)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Port* port = network->dbToSta(pin);
+  sta::LibertyPort* lib_port = network->libertyPort(port);
+  sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
+  float max_slew = 0.0;
+  bool max_slew_exists = false;
+  if (!pin->getSigType().isSupply()) {
+    lib_port->slewLimit(sta::MinMax::max(), max_slew, max_slew_exists);
+    if (!max_slew_exists) {
+      lib->defaultMaxSlew(max_slew, max_slew_exists);
+    }
+  }
+  return max_slew;
 }
 
 float Timing::staticPower(odb::dbInst* inst, sta::Corner* corner)
@@ -369,4 +396,30 @@ float Timing::dynamicPower(odb::dbInst* inst, sta::Corner* corner)
   return (power.internal() + power.switching());
 }
 
+void Timing::makeEquivCells()
+{
+  rsz::Resizer* resizer = design_->getResizer();
+  resizer->makeEquivCells();
+}
+
+std::vector<odb::dbMaster*> Timing::equivCells(odb::dbMaster* master)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Cell* cell = network->dbToSta(master);
+  std::vector<odb::dbMaster*> master_seq;
+  if (cell) {
+    sta::LibertyCell* libcell = network->libertyCell(cell);
+    sta::LibertyCellSeq* equiv_cells = sta->equivCells(libcell);
+    if (equiv_cells) {
+      for (sta::LibertyCell* equiv_cell : *equiv_cells) {
+        odb::dbMaster* equiv_master = network->staToDb(equiv_cell);
+        master_seq.emplace_back(equiv_master);
+      }
+    } else {
+      master_seq.emplace_back(master);
+    }
+  }
+  return master_seq;
+}
 }  // namespace ord

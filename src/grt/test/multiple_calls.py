@@ -4,7 +4,7 @@ import grt_aux
 
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("multiple_calls.def")
 
 guide_file1 = helpers.make_result_file("mc1_route.guide")

@@ -1,47 +1,26 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "TechChar.h"
 
 #include <algorithm>
-#include <fstream>
-#include <iomanip>
+#include <bitset>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <deque>
+#include <functional>
+#include <iterator>
+#include <limits>
 #include <ostream>
 #include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 #include "rsz/Resizer.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
@@ -61,11 +40,13 @@ TechChar::TechChar(CtsOptions* options,
                    odb::dbDatabase* db,
                    sta::dbSta* sta,
                    rsz::Resizer* resizer,
+                   est::EstimateParasitics* estimate_parasitics,
                    sta::dbNetwork* db_network,
                    Logger* logger)
     : options_(options),
       db_(db),
       resizer_(resizer),
+      estimate_parasitics_(estimate_parasitics),
       openSta_(sta),
       openStaChar_(nullptr),
       db_network_(db_network),
@@ -443,8 +424,10 @@ void TechChar::initClockLayerResCap(float dbUnitsPerMicron)
   sta::Corner* corner = openSta_->cmdCorner();
 
   // convert from per meter to per dbu
-  capPerDBU_ = resizer_->wireClkCapacitance(corner) * 1e-6 / dbUnitsPerMicron;
-  resPerDBU_ = resizer_->wireClkResistance(corner) * 1e-6 / dbUnitsPerMicron;
+  capPerDBU_ = estimate_parasitics_->wireClkCapacitance(corner) * 1e-6
+               / dbUnitsPerMicron;
+  resPerDBU_ = estimate_parasitics_->wireClkResistance(corner) * 1e-6
+               / dbUnitsPerMicron;
 
   if (resPerDBU_ == 0.0 || capPerDBU_ == 0.0) {
     logger_->warn(CTS,
@@ -479,32 +462,34 @@ void TechChar::initCharacterization()
   float maxBuffCap = 0.0;
   std::string bufMasterName;
   std::vector<float> axisSlews, axisLoads;
-  for (int i = 0; i < masterVector.size(); i++) {
+  for (const std::string& master_name : masterVector) {
     float maxCap = 0.0;
     bool maxCapExist = false;
-    odb::dbMaster* buf = db_->findMaster(masterVector[i].c_str());
+    odb::dbMaster* buf = db_->findMaster(master_name.c_str());
     sta::Cell* masterCell = db_network_->dbToSta(buf);
     sta::LibertyCell* libertyCell = db_network_->libertyCell(masterCell);
     sta::LibertyPort *input, *output;
     libertyCell->bufferPorts(input, output);
     output->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExist);
     sta::LibertyLibrary* lib = libertyCell->libertyLibrary();
-    if (!maxCapExist)
+    if (!maxCapExist) {
       lib->defaultMaxCapacitance(maxCap, maxCapExist);
-    if (!maxCapExist)
+    }
+    if (!maxCapExist) {
       logger_->error(
-          CTS, 111, "No max capacitance found for cell {}.", masterVector[i]);
+          CTS, 111, "No max capacitance found for cell {}.", master_name);
+    }
     if (maxCap >= maxBuffCap) {
       maxBuffCap = maxCap;
       charBuf_ = buf;
-      bufMasterName = masterVector[i];
+      bufMasterName = master_name;
     }
     // collect slews and caps from NLDM table axis from all buffers in list
     collectSlewsLoadsFromTableAxis(
         libertyCell, input, output, axisSlews, axisLoads);
   }
 
-  if (bufMasterName == "") {
+  if (bufMasterName.empty()) {
     logger_->error(
         CTS,
         113,
@@ -572,7 +557,7 @@ void TechChar::initCharacterization()
     wirelengthsToTest_.push_back(wirelengthInter);
   }
 
-  if (wirelengthsToTest_.size() < 1) {
+  if (wirelengthsToTest_.empty()) {
     logger_->error(
         CTS,
         75,
@@ -607,16 +592,19 @@ void TechChar::initCharacterization()
       if (!maxSlewExist) {
         lib->defaultMaxSlew(maxSlew, maxSlewExist);
       }
-      if (!maxSlewExist)
+      if (!maxSlewExist) {
         logger_->error(
             CTS, 107, "No max slew found for cell {}.", bufMasterName);
+      }
 
       output->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExist);
-      if (!maxCapExist)
+      if (!maxCapExist) {
         lib->defaultMaxCapacitance(maxCap, maxCapExist);
-      if (!maxCapExist)
+      }
+      if (!maxCapExist) {
         logger_->error(
             CTS, 108, "No max capacitance found for cell {}.", bufMasterName);
+      }
       options_->setMaxCharSlew(maxSlew);
       options_->setMaxCharCap(maxCap);
     }
@@ -719,7 +707,7 @@ void TechChar::trimSortBufferList(std::vector<std::string>& buffers)
       if (cap < lowCap || cap > highCap) {
         it = buffers.erase(it);
         // clang-format off
-        debugPrint(logger_, CTS, "buffering", 1, "  removing {}", buf);
+        debugPrint(logger_, CTS, "buffering", 1, "  removing {} outside of low/high max cap", buf);
         // clang-format on
       } else {
         ++it;
@@ -740,9 +728,13 @@ void TechChar::trimSortBufferList(std::vector<std::string>& buffers)
     float prev = getMaxCapLimit(*it);
     ++it;
     while (it != buffers.end()) {
-      float curr = getMaxCapLimit(*it);
+      std::string buf = *it;
+      float curr = getMaxCapLimit(buf);
       if (std::abs(prev - curr) / curr < 0.1) {
         it = buffers.erase(it);
+        // clang-format off
+        debugPrint(logger_, CTS, "buffering", 1, "  removing {} within 10% of prev neighbor's max cap", buf);
+        // clang-format on
       } else {
         ++it;
         prev = curr;
@@ -811,17 +803,17 @@ void TechChar::collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
         }
       }
       if (slews) {
-        for (size_t i = 0; i < slews->size(); ++i) {
-          axisSlews.push_back((*slews)[i]);
+        for (const float slew : *slews) {
+          axisSlews.push_back(slew);
         }
       }
       if (loads) {
-        for (size_t i = 0; i < loads->size(); ++i) {
-          axisLoads.push_back((*loads)[i]);
+        for (const float load : *loads) {
+          axisLoads.push_back(load);
         }
       }
-    }  // if (gateModel)
-  }    // for each arc
+    }
+  }
 
   if (logger_->debugCheck(utl::CTS, "tech char", 2)) {
     logger_->report("axis slews at {}", libCell->name());
@@ -959,18 +951,19 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
        solutionCounterInt++) {
     // Creates a bitset that represents the buffer locations.
     const std::bitset<5> solutionCounter(solutionCounterInt);
-    unsigned short int wireCounter = 0;
+    int wireCounter = 0;
     SolutionData topology;
     // Creates the starting net.
-    const std::string netName = "net_" + std::to_string(setupWirelength) + "_"
-                                + solutionCounter.to_string() + "_"
-                                + std::to_string(wireCounter);
+    const std::string netName = fmt::format("net_{}_{}_{}",
+                                            setupWirelength,
+                                            solutionCounter.to_string(),
+                                            wireCounter);
     net = odb::dbNet::create(charBlock_, netName.c_str());
     odb::dbWire::create(net);
     net->setSigType(odb::dbSigType::SIGNAL);
     // Creates the input port.
     const std::string inPortName
-        = "in_" + std::to_string(setupWirelength) + solutionCounter.to_string();
+        = fmt::format("in_{}{}", setupWirelength, solutionCounter.to_string());
     odb::dbBTerm* inPort = odb::dbBTerm::create(
         net, inPortName.c_str());  // sig type is signal by default
     inPort->setIoType(odb::dbIoType::INPUT);
@@ -992,9 +985,10 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
         // Buffer, need to create the instance and a new net.
         nodesWithoutBuf++;
         // Creates a new buffer instance.
-        const std::string bufName = "buf_" + std::to_string(setupWirelength)
-                                    + "_" + solutionCounter.to_string() + "_"
-                                    + std::to_string(wireCounter);
+        const std::string bufName = fmt::format("buf_{}_{}_{}",
+                                                setupWirelength,
+                                                solutionCounter.to_string(),
+                                                wireCounter);
         // clang-format off
         debugPrint(logger_, CTS, "tech char", 1, "  buffer {} at node:{} "
                    "topo:{}", bufName, nodeIndex, solutionCounterInt);
@@ -1010,9 +1004,10 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
         topology.nodesWithoutBufVector.push_back(nodesWithoutBuf);
         // Creates a new net.
         wireCounter++;
-        const std::string netName = "net_" + std::to_string(setupWirelength)
-                                    + "_" + solutionCounter.to_string() + "_"
-                                    + std::to_string(wireCounter);
+        const std::string netName = fmt::format("net_{}_{}_{}",
+                                                setupWirelength,
+                                                solutionCounter.to_string(),
+                                                wireCounter);
         net = odb::dbNet::create(charBlock_, netName.c_str());
         odb::dbWire::create(net);
         bufInstanceOutPin->connect(net);
@@ -1033,8 +1028,8 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
       }
     }
     // Finishing up the topology with the output port.
-    const std::string outPortName = "out_" + std::to_string(setupWirelength)
-                                    + solutionCounter.to_string();
+    const std::string outPortName
+        = fmt::format("out_{}{}", setupWirelength, solutionCounter.to_string());
     odb::dbBTerm* outPort = odb::dbBTerm::create(
         net, outPortName.c_str());  // sig type is signal by default
     outPort->setIoType(odb::dbIoType::OUTPUT);
@@ -1453,7 +1448,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
   // select only 3 of them.
   for (auto& keyResults : solutionMap_) {
     std::vector<ResultData> resultVector = keyResults.second;
-    for (ResultData selectedResults : resultVector) {
+    for (const ResultData& selectedResults : resultVector) {
       selectedSolutions.push_back(selectedResults);
     }
   }
@@ -1505,8 +1500,8 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
         if (std::find(masterNames_.begin(), masterNames_.end(), topologyS)
             == masterNames_.end()) {
           // Is a number (i.e. a wire segment).
-          topologyResult.push_back(std::to_string(
-              std::stod(topologyS) / static_cast<float>(solution.wirelength)));
+          topologyResult.push_back(
+              std::to_string(std::stod(topologyS) / solution.wirelength));
         } else {
           topologyResult.push_back(topologyS);
         }
@@ -1543,9 +1538,22 @@ unsigned TechChar::normalizeCharResults(float value,
 
 void TechChar::create()
 {
+  //
+  // Note that none of the techchar uses anything hierarchical.
+  // Techchar builds intermediate structures of (liberty) gates in a separate
+  // block Rather than register them as concrete we simply turn off hierarchy
+  // here so that the default (flat) dbNetwork apis are used
+  // during characterization. This pattern is likely to repeat
+  // whenever a "scratchpad" dbBlock and sta are created for characterizing
+  // structures.
+  //
+  bool is_hierarchical = db_network_->hasHierarchy();
+  if (is_hierarchical) {
+    db_network_->disableHierarchy();
+  }
   // Setup of the attributes required to run the characterization.
   initCharacterization();
-  long unsigned int topologiesCreated = 0;
+  int64_t topologiesCreated = 0;
   for (unsigned setupWirelength : wirelengthsToTest_) {
     // Creates the topologies for the current wirelength.
     std::vector<SolutionData> topologiesVector
@@ -1606,6 +1614,11 @@ void TechChar::create()
                  masterNames_.size(), solution.instVector.size(),
                  buffersUpdate, topologiesCreated);
       // clang-format on
+
+      if (buffersUpdate == 0) {
+        continue;
+      }
+
       do {
         // For each possible load.
         for (float load : loadsToTest_) {
@@ -1662,8 +1675,8 @@ void TechChar::create()
                          "Number of created patterns = {}.",
                          topologiesCreated);
             }
-          }  // for each slew
-        }    // for each load
+          }
+        }
         // If the solution is not a pure-wire, update the buffer topologies.
         if (!solution.isPureWire) {
           updateBufferTopologies(solution);
@@ -1687,6 +1700,9 @@ void TechChar::create()
     printSolution();
   }
   odb::dbBlock::destroy(charBlock_);
+  if (is_hierarchical) {
+    db_network_->setHierarchy();
+  }
 }
 
 // Compute possible buffering solution combinations given #buffers and
@@ -1721,7 +1737,7 @@ unsigned TechChar::getBufferingCombo(size_t numBuffers, size_t numNodes)
   auto iter = bufferingComboTable_.find(iPair);
   if (iter != bufferingComboTable_.end()) {
     if (logger_->debugCheck(CTS, "tech char", 1)) {
-      tmp << "Monotonic entries (hashed): " << iter->second << std::endl;
+      tmp << "Monotonic entries (hashed): " << iter->second << '\n';
       logger_->report(tmp.str());
     }
     return iter->second;

@@ -11,10 +11,14 @@ entries:
     title: Tutorials
   - file: contrib/GitGuide
     title: Git Quickstart
+  - file: main/src/utl/README
+    title: Man pages
 
-- file: main/src/README
+- file: main/README2
   title: OpenROAD User Guide
   entries:
+  - file: main/src/README
+    title: OpenROAD APIs
   - file: main/src/odb/README
     title: Database
     entries:
@@ -34,12 +38,12 @@ entries:
     title: Floorplan Initialization
   - file: main/src/ppl/README
     title: Pin Placement
+  - file: main/src/dft/README
+    title: Design for Test
   - file: main/src/pad/README
     title: Chip-level Connections
   - file: main/src/mpl/README
     title: Macro Placement
-  - file: main/src/mpl2/README
-    title: Hierarchical Macro Placement
   - file: main/src/tap/README
     title: Tapcell Insertion
   - file: main/src/pdn/README
@@ -58,6 +62,8 @@ entries:
     title: Static Timing Analyzer (external)
   - file: main/src/rsz/README
     title: Gate Resizing
+  - file: main/src/cgt/README
+    title: Clock gating
   - file: main/src/dpl/README
     title: Detailed Placement
   - file: main/src/cts/README
@@ -92,6 +98,12 @@ entries:
     title: Logger
   - file: contrib/CI
     title: CI
+  - file: contrib/ReadmeFormat
+    title: README Format
+  - file: contrib/TclFormat
+    title: Tcl Format
+  - file: src/test/README
+    title: Man pages Test Framework
 
 - file: main/CODE_OF_CONDUCT
   title: Code of Conduct   

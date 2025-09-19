@@ -178,7 +178,7 @@ PINS 54 ;
     - req_msg[22] + NET req_msg[22] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 172800 9600 ) N ;
+        + PLACED ( 172800 67200 ) N ;
     - req_msg[23] + NET req_msg[23] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -270,7 +270,7 @@ PINS 54 ;
     - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 172800 67200 ) N ;
+        + PLACED ( 172800 76800 ) N ;
     - resp_msg[12] + NET resp_msg[12] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )

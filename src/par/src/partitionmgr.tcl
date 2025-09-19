@@ -1,37 +1,5 @@
-###############################################################################
-##
-## BSD 3-Clause License
-##
-## Copyright (c) 2019, The Regents of the University of California
-## All rights reserved.
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are met:
-##
-## * Redistributions of source code must retain the above copyright notice, this
-##   list of conditions and the following disclaimer.
-##
-## * Redistributions in binary form must reproduce the above copyright notice,
-##   this list of conditions and the following disclaimer in the documentation
-##   and#or other materials provided with the distribution.
-##
-## * Neither the name of the copyright holder nor the names of its
-##   contributors may be used to endorse or promote products derived from
-##   this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-## POSSIBILITY OF SUCH DAMAGE.
-##
-################################################################################
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2019-2025, The OpenROAD Authors
 
 #--------------------------------------------------------------------
 # Partition netlist command
@@ -514,6 +482,11 @@ proc triton_part_design { args } {
           -num_vertices_threshold_ilp \
           -global_net_threshold } \
     flags {}
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error PAR 103 "No design block found."
+  }
+
   set num_parts 2
   set balance_constraint 1.0
   set base_balance { 1.0 }
@@ -591,11 +564,13 @@ proc triton_part_design { args } {
     set placement_flag $keys(-placement_flag)
   }
 
-  if { [info exists keys(-fence_flag)] &&
-       [info exists keys(-fence_lx)] &&
-       [info exists keys(-fence_ly)] &&
-       [info exists keys(-fence_ux)] &&
-       [info exists keys(-fence_uy)] } {
+  if {
+    [info exists keys(-fence_flag)] &&
+    [info exists keys(-fence_lx)] &&
+    [info exists keys(-fence_ly)] &&
+    [info exists keys(-fence_ux)] &&
+    [info exists keys(-fence_uy)]
+  } {
     set fence_flag $keys(-fence_flag)
     set fence_lx $keys(-fence_lx)
     set fence_ly $keys(-fence_ly)
@@ -727,7 +702,6 @@ proc triton_part_design { args } {
     set global_net_threshold $keys(-global_net_threshold)
   }
 
-
   par::triton_part_design $num_parts \
     $balance_constraint \
     $base_balance \
@@ -829,6 +803,11 @@ proc evaluate_part_design_solution { args } {
           -e_wt_factors \
           -v_wt_factors  } \
     flags {}
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error PAR 104 "No design block found."
+  }
+
   set num_parts 2
   set balance_constraint 1.0
   set base_balance { 1.0 }
@@ -880,11 +859,13 @@ proc evaluate_part_design_solution { args } {
     set top_n $keys(-top_n)
   }
 
-  if { [info exists keys(-fence_flag)] &&
-       [info exists keys(-fence_lx)] &&
-       [info exists keys(-fence_ly)] &&
-       [info exists keys(-fence_ux)] &&
-       [info exists keys(-fence_uy)] } {
+  if {
+    [info exists keys(-fence_flag)] &&
+    [info exists keys(-fence_lx)] &&
+    [info exists keys(-fence_ly)] &&
+    [info exists keys(-fence_ux)] &&
+    [info exists keys(-fence_uy)]
+  } {
     set fence_flag $keys(-fence_flag)
     set fence_lx $keys(-fence_lx)
     set fence_ly $keys(-fence_ly)
@@ -981,7 +962,7 @@ proc evaluate_part_design_solution { args } {
 #--------------------------------------------------------------------
 
 sta::define_cmd_args "write_partition_verilog" { \
-  [-port_prefix prefix] [-module_suffix suffix] [file]
+  [-port_prefix prefix] [-module_suffix suffix] [-partitioning_id id] [file]
 }
 
 proc write_partition_verilog { args } {

@@ -29,9 +29,12 @@
 
 #include "defiAlias.hpp"
 
+#include <map>
+#include <string>
+
 #include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 extern defrContext defContext;
 
@@ -42,7 +45,7 @@ class defAliasIterator
 };
 
 defiAlias_itr::defiAlias_itr(defrData* data)
-    : first(1), iterator(NULL), defData(data ? data : defContext.data)
+    : defData(data ? data : defContext.data)
 {
   defiAlias_itr::Init();
 }
@@ -56,7 +59,7 @@ void defiAlias_itr::Init()
 void defiAlias_itr::Destroy()
 {
   delete iterator;
-  iterator = NULL;
+  iterator = nullptr;
 }
 
 defiAlias_itr::~defiAlias_itr()
@@ -83,7 +86,7 @@ int defiAlias_itr::Next()
 const char* defiAlias_itr::Key()
 {
   if (iterator->me == defData->def_alias_set.end()) {
-    return NULL;
+    return nullptr;
   }
 
   return iterator->me->first.c_str();
@@ -92,7 +95,7 @@ const char* defiAlias_itr::Key()
 const char* defiAlias_itr::Data()
 {
   if (iterator->me == defData->def_alias_set.end()) {
-    return NULL;
+    return nullptr;
   }
 
   // First char is reserved for 'marked' symbol ('0' or '1')
@@ -103,11 +106,7 @@ int defiAlias_itr::Marked()
 {
   const char* value = iterator->me->second.c_str();
 
-  if ((value == NULL) || (value[0] == '0')) {
-    return 0;
-  } else {
-    return 1;
-  }
+  return value && value[0] != '0';
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

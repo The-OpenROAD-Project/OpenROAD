@@ -1,44 +1,18 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "db.h"
+#include <cassert>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbNet.h"
-#include "dbShape.h"
 #include "dbTable.h"
 #include "dbWire.h"
-#include "dbWireCodec.h"
 #include "dbWireOpcode.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/dbWireCodec.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -118,14 +92,16 @@ bool dbWirePathItr::getNextPath(dbWirePath& path)
       _prev_ext = 0;
       _has_prev_ext = false;
 
-      if (path.is_branch == false)
+      if (path.is_branch == false) {
         path.junction_id = _decoder.getJunctionId();
+      }
     } else if (_opcode == dbWireDecoder::POINT_EXT) {
       _decoder.getPoint(_prev_x, _prev_y, _prev_ext);
       _has_prev_ext = true;
 
-      if (path.is_branch == false)
+      if (path.is_branch == false) {
         path.junction_id = _decoder.getJunctionId();
+      }
 
     } else if (_opcode == dbWireDecoder::RULE) {
       lyr_rule = _decoder.getRule();
@@ -164,10 +140,11 @@ bool dbWirePathItr::getNextPath(dbWirePath& path)
     }
 
     path.rule = _rule;
-    if (lyr_rule)
+    if (lyr_rule) {
       _dw = lyr_rule->getWidth() >> 1;
-    else
+    } else {
       _dw = _decoder.getLayer()->getWidth() >> 1;
+    }
     _opcode = _decoder.next();
     return true;
   }
@@ -308,8 +285,9 @@ nextOpCode:
       _dw = _decoder.getLayer()->getWidth() >> 1;
       if (_rule) {
         dbTechLayerRule* lyr_rule = _rule->getLayerRule(_decoder.getLayer());
-        if (lyr_rule)
+        if (lyr_rule) {
           _dw = lyr_rule->getWidth() >> 1;
+        }
       }
       _prev_ext = 0;
       _prev_ext = 0;
@@ -335,8 +313,9 @@ nextOpCode:
       _dw = _decoder.getLayer()->getWidth() >> 1;
       if (_rule) {
         dbTechLayerRule* lyr_rule = _rule->getLayerRule(_decoder.getLayer());
-        if (lyr_rule)
+        if (lyr_rule) {
           _dw = lyr_rule->getWidth() >> 1;
+        }
       }
       _prev_ext = 0;
       _has_prev_ext = false;
@@ -378,39 +357,45 @@ void dbWirePath::dump(utl::Logger* logger, const char* group, int level) const
              point.getY());
   if (layer) {
     debugPrint(logger, utl::ODB, group, level, "layer {}  ", layer->getName());
-  } else
+  } else {
     debugPrint(logger, utl::ODB, group, level, "NO LAYER  ");
+  }
 
-  if (rule)
+  if (rule) {
     debugPrint(logger,
                utl::ODB,
                group,
                level,
                "non-default rule {} ",
                rule->getName());
+  }
 
-  if (iterm)
+  if (iterm) {
     debugPrint(logger,
                utl::ODB,
                group,
                level,
                "Connects to Iterm {}  ",
                iterm->getMTerm()->getName());
+  }
 
-  if (bterm)
+  if (bterm) {
     debugPrint(logger,
                utl::ODB,
                group,
                level,
                "Connects to Bterm {}  ",
                bterm->getName());
+  }
 
-  if (is_branch)
+  if (is_branch) {
     debugPrint(logger, utl::ODB, group, level, "is branch  ");
+  }
 
-  if (is_short)
+  if (is_short) {
     debugPrint(
         logger, utl::ODB, group, level, "is short to {} ", short_junction);
+  }
 }
 
 //
@@ -431,10 +416,11 @@ void dbWirePathShape::dump(utl::Logger* logger,
 
   if (layer) {
     debugPrint(logger, utl::ODB, group, level, "layer {}  ", layer->getName());
-  } else
+  } else {
     debugPrint(logger, utl::ODB, group, level, "NO LAYER  ");
+  }
 
-  if (iterm)
+  if (iterm) {
     debugPrint(logger,
                utl::ODB,
                group,
@@ -442,8 +428,9 @@ void dbWirePathShape::dump(utl::Logger* logger,
                "Connects to Iterm {} {}  ",
                iterm->getId(),
                iterm->getMTerm()->getName());
+  }
 
-  if (bterm)
+  if (bterm) {
     debugPrint(logger,
                utl::ODB,
                group,
@@ -451,6 +438,7 @@ void dbWirePathShape::dump(utl::Logger* logger,
                "Connects to Bterm {} {}  ",
                bterm->getId(),
                bterm->getName());
+  }
 
   shape.dump(logger, group, level);
 }
@@ -505,8 +493,9 @@ void dbShape::dump(utl::Logger* logger, const char* group, int level) const
 //
 void dumpWirePaths4Net(dbNet* innet, const char* group, int level)
 {
-  if (!innet)
+  if (!innet) {
     return;
+  }
   utl::Logger* logger = innet->getImpl()->getLogger();
 
   const char* prfx = "dumpWirePaths:";
@@ -530,8 +519,9 @@ void dumpWirePaths4Net(dbNet* innet, const char* group, int level)
 
   while (pitr.getNextPath(curpath)) {
     curpath.dump(logger, group, level);
-    while (pitr.getNextShape(curshp))
+    while (pitr.getNextShape(curshp)) {
       curshp.dump(logger, group, level);
+    }
   }
 }
 

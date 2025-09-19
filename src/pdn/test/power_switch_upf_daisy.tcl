@@ -27,7 +27,7 @@ map_power_switch PS_1 \
   -lib_cells POWER_SWITCH \
   -port_map {{vout VPWR} {vin VDDG} {sleep SLEEP} {acknowledge SLEEP_OUT} {ground VGND}}
 
-initialize_floorplan -utilization 10 -site unithd
+initialize_floorplan -utilization 10 -core_space 0.0 -site unithd -additional_site unithddbl
 tapcell \
   -distance 14 \
   -tapcell_master "sky130_fd_sc_hd__tapvpwrvgnd_1"
@@ -45,7 +45,6 @@ add_pdn_stripe -layer met1 -width 0.48 -offset 0 -followpins
 add_pdn_stripe -layer met4 -width 1.600 -pitch 27.140 -offset 13.570
 add_pdn_stripe -layer met5 -width 1.600 -pitch 27.200 -offset 13.600
 add_pdn_connect -layers {met1 met4}
-add_pdn_connect -layers {met2 met4}
 add_pdn_connect -layers {met4 met5}
 
 pdngen

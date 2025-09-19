@@ -1,44 +1,26 @@
-//////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include "shape.h"
 
-#include <boost/polygon/polygon.hpp>
+#include <algorithm>
+#include <array>
+#include <functional>
+#include <memory>
+#include <set>
+#include <utility>
+#include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "grid.h"
 #include "grid_component.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
+#include "via.h"
 
 namespace pdn {
 
@@ -52,6 +34,7 @@ Shape::Shape(odb::dbTechLayer* layer,
       type_(type),
       shape_type_(SHAPE),
       allow_non_preferred_change_(false),
+      is_locked_(false),
       obs_(rect_),
       grid_component_(nullptr)
 {
@@ -66,6 +49,7 @@ Shape::Shape(odb::dbTechLayer* layer,
       type_(odb::dbWireShapeType::NONE),
       shape_type_(shape_type),
       allow_non_preferred_change_(false),
+      is_locked_(false),
       obs_(rect_),
       grid_component_(nullptr)
 {
@@ -97,21 +81,6 @@ void Shape::merge(Shape* shape)
   bterm_connections_.insert(shape->bterm_connections_.begin(),
                             shape->bterm_connections_.end());
   generateObstruction();
-}
-
-Box Shape::rectToBox(const odb::Rect& rect)
-{
-  return Box(Point(rect.xMin(), rect.yMin()), Point(rect.xMax(), rect.yMax()));
-}
-
-Box Shape::getRectBox() const
-{
-  return rectToBox(rect_);
-}
-
-Box Shape::getObstructionBox() const
-{
-  return rectToBox(obs_);
 }
 
 Shape::ObstructionHalo Shape::getObstructionHalo() const
@@ -208,7 +177,7 @@ void Shape::updateTermConnections()
 
 bool Shape::hasTermConnections() const
 {
-  return !bterm_connections_.empty() || !iterm_connections_.empty();
+  return hasITermConnections() || hasBTermConnections();
 }
 
 odb::Rect Shape::getMinimumRect() const
@@ -233,26 +202,23 @@ odb::Rect Shape::getMinimumRect() const
   return intersected_rect;
 }
 
-bool Shape::cut(const ShapeTree& obstructions,
+bool Shape::cut(const ObstructionTree& obstructions,
                 const Grid* ignore_grid,
                 std::vector<Shape*>& replacements) const
 {
-  return cut(obstructions,
-             replacements,
-             [ignore_grid](const ShapeValue& other) -> bool {
-               const auto obs = other.second;
-               if (obs->shapeType() != GRID_OBS) {
-                 return true;
-               }
-               const GridObsShape* shape
-                   = static_cast<GridObsShape*>(obs.get());
-               return !shape->belongsTo(ignore_grid);
-             });
+  return cut(
+      obstructions, replacements, [ignore_grid](const ShapePtr& other) -> bool {
+        if (other->shapeType() != GRID_OBS) {
+          return true;
+        }
+        const GridObsShape* shape = static_cast<GridObsShape*>(other.get());
+        return !shape->belongsTo(ignore_grid);
+      });
 }
 
-bool Shape::cut(const ShapeTree& obstructions,
+bool Shape::cut(const ObstructionTree& obstructions,
                 std::vector<Shape*>& replacements,
-                const std::function<bool(const ShapeValue&)>& obs_filter) const
+                const std::function<bool(const ShapePtr&)>& obs_filter) const
 {
   using namespace boost::polygon::operators;
   using Rectangle = boost::polygon::rectangle_data<int>;
@@ -265,17 +231,16 @@ bool Shape::cut(const ShapeTree& obstructions,
   const ObstructionHalo obs_halo = getObstructionHalo();
 
   std::vector<Polygon90> shape_violations;
-  for (auto it
-       = obstructions.qbegin(bgi::intersects(getObstructionBox())
-                             && bgi::satisfies([&](const auto& other) {
-                                  const auto& other_shape = other.second;
-                                  return layer_ == other_shape->getLayer()
-                                         || other_shape->getLayer() == nullptr;
-                                })
-                             && bgi::satisfies(obs_filter));
+  for (auto it = obstructions.qbegin(bgi::intersects(getObstruction())
+                                     && bgi::satisfies([&](const auto& other) {
+                                          return layer_ == other->getLayer()
+                                                 || other->getLayer()
+                                                        == nullptr;
+                                        })
+                                     && bgi::satisfies(obs_filter));
        it != obstructions.qend();
        it++) {
-    auto other_shape = it->second;
+    const auto& other_shape = *it;
     odb::Rect vio_rect
         = other_shape->getRectWithLargestObstructionHalo(obs_halo);
 
@@ -368,44 +333,79 @@ bool Shape::hasDBConnectivity() const
   return false;
 }
 
-void Shape::writeToDb(odb::dbSWire* swire,
-                      bool add_pins,
-                      bool make_rect_as_pin) const
+bool Shape::hasInternalConnections() const
+{
+  if (hasITermConnections() || type_ == odb::dbWireShapeType::FOLLOWPIN) {
+    // if shape is connected to an instance or block pin allow it is valid
+    // if shape is a followpin assume it will be connected
+    return true;
+  }
+
+  for (const auto& via : vias_) {
+    if (!via->isFailed()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+std::vector<odb::dbBox*> Shape::writeToDb(odb::dbSWire* swire,
+                                          bool add_pins,
+                                          bool make_rect_as_pin) const
 {
   debugPrint(getLogger(),
              utl::PDN,
              "Shape",
              5,
-             "Adding shape {} with pins {} and rect as pin {}",
+             "Adding shape {} with pins {} and rect as pin {} / {} {} - {}",
              getReportText(),
              add_pins,
-             make_rect_as_pin);
+             make_rect_as_pin,
+             is_locked_,
+             hasITermConnections(),
+             hasBTermConnections());
 
-  if (!hasDBConnectivity()) {
+  if (!is_locked_ && !hasDBConnectivity()) {
     getLogger()->warn(
         utl::PDN, 200, "Removing floating shape: {}", getReportText());
-    return;
+    return {};
   }
 
-  odb::dbSBox::create(swire,
-                      layer_,
-                      rect_.xMin(),
-                      rect_.yMin(),
-                      rect_.xMax(),
-                      rect_.yMax(),
-                      type_);
+  std::vector<odb::dbBox*> objs;
+
+  objs.push_back(odb::dbSBox::create(swire,
+                                     layer_,
+                                     rect_.xMin(),
+                                     rect_.yMin(),
+                                     rect_.xMax(),
+                                     rect_.yMax(),
+                                     type_));
 
   if (add_pins) {
     if (make_rect_as_pin) {
-      addBPinToDb(rect_);
+      objs.push_back(addBPinToDb(rect_));
     }
+    const odb::Rect block_area = getGridComponent()->getBlock()->getDieArea();
     for (const auto& bterm : bterm_connections_) {
-      addBPinToDb(bterm);
+      odb::Rect bterm_shape = bterm;
+      // Adjust width of shape when bterm is on the edge of the die area
+      if (bterm.xMin() == block_area.xMin()
+          || bterm.xMax() == block_area.xMax()) {
+        bterm_shape.set_ylo(rect_.yMin());
+        bterm_shape.set_yhi(rect_.yMax());
+      } else if (bterm.yMin() == block_area.yMin()
+                 || bterm.yMax() == block_area.yMax()) {
+        bterm_shape.set_xlo(rect_.xMin());
+        bterm_shape.set_xhi(rect_.xMax());
+      }
+      objs.push_back(addBPinToDb(bterm_shape));
     }
   }
+  return objs;
 }
 
-void Shape::addBPinToDb(const odb::Rect& rect) const
+odb::dbBox* Shape::addBPinToDb(const odb::Rect& rect) const
 {
   // find existing bterm, else make it
   odb::dbBTerm* bterm = nullptr;
@@ -417,6 +417,8 @@ void Shape::addBPinToDb(const odb::Rect& rect) const
   }
   bterm->setSigType(net_->getSigType());
   bterm->setSpecial();
+
+  odb::dbBox* box = nullptr;
 
   odb::dbBPin* pin = nullptr;
   auto pins = bterm->getBPins();
@@ -437,14 +439,16 @@ void Shape::addBPinToDb(const odb::Rect& rect) const
     } else {
       pin = *pins.begin();
     }
-    odb::dbBox::create(
+    box = odb::dbBox::create(
         pin, layer_, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
   }
 
   pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+
+  return box;
 }
 
-void Shape::populateMapFromDb(odb::dbNet* net, ShapeTreeMap& map)
+void Shape::populateMapFromDb(odb::dbNet* net, ShapeVectorMap& map)
 {
   for (auto* swire : net->getSWires()) {
     for (auto* box : swire->getWires()) {
@@ -464,7 +468,7 @@ void Shape::populateMapFromDb(odb::dbNet* net, ShapeTreeMap& map)
         shape->setShapeType(Shape::OBS);
       }
       shape->generateObstruction();
-      map[layer].insert({shape->getRectBox(), shape});
+      map[layer].push_back(std::move(shape));
     }
   }
 }
@@ -540,13 +544,18 @@ std::string Shape::getDisplayText() const
   return text;
 }
 
-bool Shape::isRemovable() const
+bool Shape::isRemovable(bool assume_bterm) const
 {
   if (!isModifiable()) {
     return false;
   }
 
-  if (getNumberOfConnections() < 2) {
+  int min_conns = 2;
+  if (assume_bterm) {
+    min_conns = 1;
+  }
+
+  if (getNumberOfConnections() < min_conns) {
     // floating shape with one or zero connections
     return true;
   }
@@ -556,6 +565,9 @@ bool Shape::isRemovable() const
 
 bool Shape::isModifiable() const
 {
+  if (is_locked_) {
+    return false;
+  }
   return shape_type_ == SHAPE;
 }
 
@@ -583,8 +595,8 @@ std::string Shape::getRectText(const odb::Rect& rect, double dbu_to_micron)
 
 Shape* Shape::extendTo(
     const odb::Rect& rect,
-    const ShapeTree& obstructions,
-    const std::function<bool(const ShapeValue&)>& obs_filter) const
+    const ObstructionTree& obstructions,
+    const std::function<bool(const ShapePtr&)>& obs_filter) const
 {
   std::unique_ptr<Shape> new_shape(copy());
 
@@ -603,10 +615,10 @@ Shape* Shape::extendTo(
     return nullptr;
   }
 
-  if (obstructions.qbegin(bgi::intersects(new_shape->getRectBox())
+  if (obstructions.qbegin(bgi::intersects(new_shape->getRect())
                           && bgi::satisfies([this](const auto& other) {
                                // ignore violations that results from itself
-                               return other.second.get() != this;
+                               return other.get() != this;
                              })
                           && bgi::satisfies(obs_filter))
       != obstructions.qend()) {
@@ -615,6 +627,40 @@ Shape* Shape::extendTo(
   }
 
   return new_shape.release();
+}
+
+Shape::ShapeTreeMap Shape::convertVectorToTree(ShapeVectorMap& vec)
+{
+  ShapeTreeMap trees;
+
+  for (auto& [layer, vals] : vec) {
+    trees[layer] = ShapeTree(vals.begin(), vals.end());
+  }
+
+  ShapeVectorMap empty;
+  vec.swap(empty);
+
+  return trees;
+}
+
+Shape::ObstructionTreeMap Shape::convertVectorToObstructionTree(
+    ShapeVectorMap& vec)
+{
+  ObstructionTreeMap trees;
+
+  for (auto& [layer, vals] : vec) {
+    trees[layer] = ObstructionTree(vals.begin(), vals.end());
+  }
+
+  ShapeVectorMap empty;
+  vec.swap(empty);
+
+  return trees;
+}
+
+odb::dbTechLayerDir Shape::getLayerDirection() const
+{
+  return layer_->getDirection();
 }
 
 /////////
@@ -695,18 +741,31 @@ odb::Rect FollowPinShape::getMinimumRect() const
   return min_shape;
 }
 
-bool FollowPinShape::cut(const ShapeTree& obstructions,
+bool FollowPinShape::cut(const ObstructionTree& obstructions,
                          const Grid* ignore_grid,
                          std::vector<Shape*>& replacements) const
 {
   return Shape::cut(
-      obstructions, replacements, [](const ShapeValue& other) -> bool {
+      obstructions, replacements, [](const ShapePtr& other) -> bool {
         // followpins can ignore grid level obstructions
         // grid level obstructions represent the other grids defined
         // followpins should only get cut from real obstructions and
         // not estimated obstructions
-        return other.second->shapeType() != GRID_OBS;
+        return other->shapeType() != GRID_OBS;
       });
+}
+
+odb::dbTechLayerDir FollowPinShape::getLayerDirection() const
+{
+  if (isSquare()) {
+    return getLayer()->getDirection();
+  }
+
+  if (isHorizontal()) {
+    return odb::dbTechLayerDir::HORIZONTAL;
+  }
+
+  return odb::dbTechLayerDir::VERTICAL;
 }
 
 /////////////////////////////////////

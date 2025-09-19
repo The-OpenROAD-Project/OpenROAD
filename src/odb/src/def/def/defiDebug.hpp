@@ -32,7 +32,7 @@
 
 #include "defiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 class defrData;
 
@@ -52,8 +52,6 @@ extern void defiError(int check,
 extern const char* upperCase(const char* c, defrData* defData = nullptr);
 extern const char* DEFCASE(const char* ch, defrData* defData = nullptr);
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

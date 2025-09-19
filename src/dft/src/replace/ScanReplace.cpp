@@ -1,42 +1,24 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2023, Google LLC
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include "ScanReplace.hh"
 
-#include <iostream>
+#include <algorithm>
+#include <cmath>
+#include <cstring>
 #include <limits>
+#include <memory>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "Utils.hh"
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/EquivCells.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
@@ -45,18 +27,6 @@
 namespace dft {
 
 namespace {
-
-// Checks if the given LibertyCell is really a Scan Cell with a Scan In and a
-// Scan Enable
-bool IsScanCell(const sta::LibertyCell* libertyCell)
-{
-  const sta::TestCell* test_cell = libertyCell->testCell();
-  if (test_cell) {
-    return test_cell->scanIn() != nullptr && test_cell->scanEnable() != nullptr;
-  }
-  return false;
-}
-
 // Checks the ports
 sta::LibertyPort* FindEquivalentPortInScanCell(
     const sta::LibertyPort* non_scan_cell_port,
@@ -115,6 +85,7 @@ bool IsScanEquivalent(
     const sta::LibertyCell* scan_cell,
     std::unordered_map<std::string, std::string>& port_mapping)
 {
+  std::set<sta::LibertyPort*> seen_on_scan_cell;
   sta::LibertyCellPortIterator non_scan_cell_ports_iter(non_scan_cell);
   while (non_scan_cell_ports_iter.hasNext()) {
     sta::LibertyPort* non_scan_cell_port = non_scan_cell_ports_iter.next();
@@ -125,6 +96,7 @@ bool IsScanEquivalent(
     }
 
     port_mapping.insert({non_scan_cell_port->name(), scan_equiv_port->name()});
+    seen_on_scan_cell.insert(scan_equiv_port);
   }
 
   sta::LibertyCellPgPortIterator non_scan_cell_pg_ports_iter(non_scan_cell);
@@ -141,6 +113,29 @@ bool IsScanEquivalent(
         {non_scan_cell_pg_port->name(), scan_equiv_port->name()});
   }
 
+  // Check there are no extra signals on the scan flop not present
+  // on the non-scan flop (e.g. preset, clear, or enable)
+  sta::TestCell* test_cell = scan_cell->testCell();
+  sta::LibertyCellPortIterator scan_cell_ports_iter(scan_cell);
+  while (scan_cell_ports_iter.hasNext()) {
+    sta::LibertyPort* scan_cell_port = scan_cell_ports_iter.next();
+    if (seen_on_scan_cell.find(scan_cell_port) != seen_on_scan_cell.end()) {
+      continue;
+    }
+    // Extra scan related pins are ok
+    if (test_cell) {
+      sta::LibertyPort* test_port
+          = test_cell->findLibertyPort(scan_cell_port->name());
+      if (!test_port) {
+        return false;
+      }
+
+      if (test_port->scanSignalType() != sta::ScanSignalType::none) {
+        continue;
+      }
+    }
+    return false;
+  }
   return true;
 }
 
@@ -260,16 +255,16 @@ void ScanReplace::collectScanCellAvailable()
   // Let's collect scan lib cells and non-scan lib cells availables
   for (odb::dbLib* lib : db_->getLibs()) {
     for (odb::dbMaster* master : lib->getMasters()) {
-      // We only care about sequential cells in DFT
-      if (!master->isSequential()) {
-        continue;
-      }
-
       sta::Cell* master_cell = db_network->dbToSta(master);
       sta::LibertyCell* liberty_cell = db_network->libertyCell(master_cell);
 
       if (!liberty_cell) {
         // Without info about the cell we can't do any replacement
+        continue;
+      }
+
+      // We only care about sequential cells in DFT
+      if (!liberty_cell->hasSequentials()) {
         continue;
       }
 
@@ -283,7 +278,7 @@ void ScanReplace::collectScanCellAvailable()
         continue;
       }
 
-      if (IsScanCell(liberty_cell)) {
+      if (utils::IsScanCell(liberty_cell)) {
         available_scan_lib_cells_.insert(liberty_cell);
       } else {
         non_scan_cells.push_back(liberty_cell);
@@ -339,6 +334,8 @@ void ScanReplace::scanReplace()
 void ScanReplace::scanReplace(odb::dbBlock* block)
 {
   std::unordered_set<odb::dbInst*> already_replaced;
+  std::unordered_set<odb::dbMaster*> no_lib_warned;
+
   for (odb::dbInst* inst : block->getInsts()) {
     // The instances already scan replaced are skipped
     if (already_replaced.find(inst) != already_replaced.end()) {
@@ -360,14 +357,29 @@ void ScanReplace::scanReplace(odb::dbBlock* block)
       continue;
     }
 
-    if (!utils::IsSequentialCell(db_network_, inst)) {
-      // If the cell is not sequential, then there is nothing to replace
-      continue;
-    }
-
     odb::dbMaster* master = inst->getMaster();
     sta::Cell* master_cell = db_network_->dbToSta(master);
     sta::LibertyCell* from_liberty_cell = db_network_->libertyCell(master_cell);
+
+    if (from_liberty_cell == nullptr) {
+      // cell doesn't exist in lib, no timing info
+      if (master->getType() == odb::dbMasterType::CORE
+          && no_lib_warned.find(master) == no_lib_warned.end()) {
+        logger_->warn(
+            utl::DFT,
+            12,
+            "Cell master '{:s}' has no lib info. Can't create scan cell(s)",
+            master->getName());
+        no_lib_warned.insert(master);
+      }
+      continue;
+    }
+
+    if (!from_liberty_cell->hasSequentials()
+        || from_liberty_cell->isClockGate()) {
+      // If the cell is not sequential, then there is nothing to replace
+      continue;
+    }
 
     if (available_scan_lib_cells_.find(from_liberty_cell)
         != available_scan_lib_cells_.end()) {

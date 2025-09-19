@@ -29,16 +29,16 @@
 
 #include "defiRowTrack.hpp"
 
-#include <stdlib.h>
-#include <string.h>
-
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <sstream>
 
 #include "defiDebug.hpp"
 #include "defiUtil.hpp"
-#include "lex.h"
+#include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 namespace {
 
@@ -71,9 +71,9 @@ defiRow::defiRow(defrData* data) : defData(data)
 void defiRow::Init()
 {
   nameLength_ = 0;
-  name_ = 0;
+  name_ = nullptr;
   macroLength_ = 0;
-  macro_ = 0;
+  macro_ = nullptr;
   orient_ = 0;
   x_ = 0.0;
   y_ = 0.0;
@@ -99,10 +99,12 @@ defiRow::~defiRow()
 void defiRow::Destroy()
 {
   clear();
-  if (name_)
+  if (name_) {
     free(name_);
-  if (macro_)
+  }
+  if (macro_) {
     free(macro_);
+  }
   free((char*) (propNames_));
   free((char*) (propValues_));
   free((char*) (propDValues_));
@@ -133,8 +135,9 @@ void defiRow::setup(const char* name,
   clear();
 
   if (len > nameLength_) {
-    if (name_)
+    if (name_) {
       free(name_);
+    }
     nameLength_ = len;
     name_ = (char*) malloc(len);
   }
@@ -142,8 +145,9 @@ void defiRow::setup(const char* name,
 
   len = strlen(macro) + 1;
   if (len > macroLength_) {
-    if (macro_)
+    if (macro_) {
       free(macro_);
+    }
     macroLength_ = len;
     macro_ = (char*) malloc(len);
   }
@@ -264,7 +268,7 @@ const char* defiRow::propName(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6140(index, numProps_, defData);
-    return 0;
+    return nullptr;
   }
   return propNames_[index];
 }
@@ -273,7 +277,7 @@ const char* defiRow::propValue(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6140(index, numProps_, defData);
-    return 0;
+    return nullptr;
   }
   return propValues_[index];
 }
@@ -287,7 +291,7 @@ double defiRow::propNumber(int index) const
   return propDValues_[index];
 }
 
-const char defiRow::propType(int index) const
+char defiRow::propType(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6140(index, numProps_, defData);
@@ -402,14 +406,14 @@ defiTrack::defiTrack(defrData* data) : defData(data)
 
 void defiTrack::Init()
 {
-  macro_ = 0;
+  macro_ = nullptr;
   macroLength_ = 0;
   x_ = 0.0;
   xNum_ = 0.0;
   xStep_ = 0.0;
   layersLength_ = 0;
   numLayers_ = 0;
-  layers_ = 0;
+  layers_ = nullptr;
   firstTrackMask_ = 0;
   samemask_ = 0;
 }
@@ -423,13 +427,16 @@ void defiTrack::Destroy()
 {
   int i;
 
-  if (macro_)
+  if (macro_) {
     free(macro_);
+  }
 
   if (layers_) {
-    for (i = 0; i < numLayers_; i++)
-      if (layers_[i])
+    for (i = 0; i < numLayers_; i++) {
+      if (layers_[i]) {
         free(layers_[i]);
+      }
+    }
     free((char*) (layers_));
   }
 }
@@ -440,19 +447,21 @@ void defiTrack::setup(const char* macro)
   int len = strlen(macro) + 1;
 
   if (len > macroLength_) {
-    if (macro_)
+    if (macro_) {
       free(macro_);
+    }
     macroLength_ = len;
     macro_ = (char*) malloc(len);
   }
   strcpy(macro_, defData->DEFCASE(macro));
 
   if (layers_) {
-    for (i = 0; i < numLayers_; i++)
+    for (i = 0; i < numLayers_; i++) {
       if (layers_[i]) {
         free(layers_[i]);
-        layers_[i] = 0;
+        layers_[i] = nullptr;
       }
+    }
   }
   numLayers_ = 0;
   x_ = 0.0;
@@ -480,10 +489,12 @@ void defiTrack::addLayer(const char* layer)
     char** newl;
     layersLength_ = layersLength_ ? 2 * layersLength_ : 8;
     newl = (char**) malloc(layersLength_ * sizeof(char*));
-    for (i = 0; i < numLayers_; i++)
+    for (i = 0; i < numLayers_; i++) {
       newl[i] = layers_[i];
-    if (layers_)
+    }
+    if (layers_) {
       free((char*) (layers_));
+    }
     layers_ = newl;
   }
 
@@ -530,7 +541,7 @@ const char* defiTrack::layer(int index) const
     return layers_[index];
   }
 
-  return 0;
+  return nullptr;
 }
 
 int defiTrack::firstTrackMask() const
@@ -571,7 +582,7 @@ defiGcellGrid::defiGcellGrid(defrData* data) : defData(data)
 
 void defiGcellGrid::Init()
 {
-  macro_ = 0;
+  macro_ = nullptr;
   macroLength_ = 0;
   x_ = 0;
   xNum_ = 0;
@@ -585,16 +596,18 @@ defiGcellGrid::~defiGcellGrid()
 
 void defiGcellGrid::Destroy()
 {
-  if (macro_)
+  if (macro_) {
     free(macro_);
+  }
 }
 
 void defiGcellGrid::setup(const char* macro, int x, int xNum, double xStep)
 {
   int len = strlen(macro) + 1;
   if (len > macroLength_) {
-    if (macro_)
+    if (macro_) {
       free(macro_);
+    }
     macroLength_ = len;
     macro_ = (char*) malloc(len);
   }
@@ -631,4 +644,4 @@ void defiGcellGrid::print(FILE* f) const
   fprintf(f, "  DO %d %d STEP %5.1f\n", x(), xNum(), xStep());
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

@@ -1,8 +1,4 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: long_wire
 [INFO ODB-0130]     Created 3 pins.
 [INFO ODB-0131]     Created 4 components and 16 component-terminals.
@@ -14,14 +10,21 @@ u3/Z manhtn 1.1 steiner 1.1 0.00
 u4/Z manhtn 1.1 steiner 1.1 0.00
 in1 manhtn 0.7 steiner 0.7 0.00
 u1/Z manhtn 0.4 steiner 0.4 0.00
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |         5
+    final |   +241.7% |       1 |       5 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0037] Found 1 long wires.
-[INFO RSZ-0038] Inserted 3 buffers in 1 nets.
-[INFO RSZ-0039] Resized 2 instances.
+[INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0038] Inserted 5 buffers in 1 nets.
 Driver    length delay
-wire1/Z manhtn 858.7 steiner 858.7 0.10
-wire2/Z manhtn 857.7 steiner 857.7 0.10
-u2/Z manhtn 650.2 steiner 650.2 0.06
-max_length3/Z manhtn 648.4 steiner 648.4 0.06
+wire1/Z manhtn 591.2 steiner 591.2 0.05
+wire3/Z manhtn 590.0 steiner 590.0 0.05
+u2/Z manhtn 478.8 steiner 478.8 0.03
+max_length5/Z manhtn 478.6 steiner 478.6 0.03
+wire2/Z manhtn 432.8 steiner 432.8 0.03
+wire4/Z manhtn 432.8 steiner 432.8 0.03
 u3/Z manhtn 1.1 steiner 1.1 0.00
-u4/Z manhtn 1.1 steiner 1.1 0.00
-u1/Z manhtn 0.8 steiner 0.8 0.00

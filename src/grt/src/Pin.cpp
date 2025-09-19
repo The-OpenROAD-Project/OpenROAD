@@ -1,41 +1,17 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "Pin.h"
 
+#include <algorithm>
+#include <map>
+#include <string>
+#include <vector>
+
 #include "grt/GlobalRouter.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace grt {
 
@@ -45,7 +21,7 @@ Pin::Pin(
     const std::vector<odb::dbTechLayer*>& layers,
     const std::map<odb::dbTechLayer*, std::vector<odb::Rect>>& boxes_per_layer,
     bool connected_to_pad_or_macro)
-    : iterm_(iterm),
+    : iterm(iterm),
       position_(position),
       edge_(PinEdge::none),
       is_port_(false),
@@ -73,7 +49,7 @@ Pin::Pin(
     const std::vector<odb::dbTechLayer*>& layers,
     const std::map<odb::dbTechLayer*, std::vector<odb::Rect>>& boxes_per_layer,
     const odb::Point& die_center)
-    : bterm_(bterm),
+    : bterm(bterm),
       position_(position),
       edge_(PinEdge::none),
       is_port_(true),
@@ -157,42 +133,56 @@ void Pin::determineEdge(const odb::Rect& bounds,
 
 odb::dbITerm* Pin::getITerm() const
 {
-  if (is_port_)
+  if (is_port_) {
     return nullptr;
-  else
-    return iterm_;
+  }
+
+  return iterm;
 }
 
 odb::dbBTerm* Pin::getBTerm() const
 {
-  if (is_port_)
-    return bterm_;
-  else
-    return nullptr;
+  if (is_port_) {
+    return bterm;
+  }
+
+  return nullptr;
 }
 
 std::string Pin::getName() const
 {
-  if (is_port_)
-    return bterm_->getName();
-  else
-    return getITermName(iterm_);
+  if (is_port_) {
+    return bterm->getName();
+  }
+
+  return getITermName(iterm);
 }
 
 bool Pin::isDriver()
 {
   if (is_port_) {
-    return (bterm_->getIoType() == odb::dbIoType::INPUT);
-  } else {
-    odb::dbMTerm* mterm = iterm_->getMTerm();
-    odb::dbIoType type = mterm->getIoType();
-    return type == odb::dbIoType::OUTPUT || type == odb::dbIoType::INOUT;
+    return (bterm->getIoType() == odb::dbIoType::INPUT);
   }
+  odb::dbMTerm* mterm = iterm->getMTerm();
+  odb::dbIoType type = mterm->getIoType();
+  return type == odb::dbIoType::OUTPUT || type == odb::dbIoType::INOUT;
 }
 
-int Pin::getConnectionLayer() const
+odb::Point Pin::getPositionNearInstEdge(const odb::Rect& pin_box,
+                                        const odb::Point& rect_middle) const
 {
-  return connection_layer_;
+  odb::Point pin_pos = rect_middle;
+  if (getEdge() == PinEdge::north) {
+    pin_pos.setY(pin_box.yMax());
+  } else if (getEdge() == PinEdge::south) {
+    pin_pos.setY(pin_box.yMin());
+  } else if (getEdge() == PinEdge::east) {
+    pin_pos.setX(pin_box.xMax());
+  } else if (getEdge() == PinEdge::west) {
+    pin_pos.setX(pin_box.xMin());
+  }
+
+  return pin_pos;
 }
 
 }  // namespace grt

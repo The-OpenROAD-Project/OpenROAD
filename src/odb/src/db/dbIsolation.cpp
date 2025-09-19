@@ -1,48 +1,20 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbIsolation.h"
 
-#include "db.h"
+#include <string>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbMaster.h"
 #include "dbNet.h"
 #include "dbPowerDomain.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbIsolation>;
 
@@ -81,51 +53,9 @@ bool _dbIsolation::operator<(const _dbIsolation& rhs) const
   return true;
 }
 
-void _dbIsolation::differences(dbDiff& diff,
-                               const char* field,
-                               const _dbIsolation& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_applies_to);
-  DIFF_FIELD(_clamp_value);
-  DIFF_FIELD(_isolation_signal);
-  DIFF_FIELD(_isolation_sense);
-  DIFF_FIELD(_location);
-  DIFF_FIELD(_power_domain);
-  DIFF_END
-}
-
-void _dbIsolation::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_applies_to);
-  DIFF_OUT_FIELD(_clamp_value);
-  DIFF_OUT_FIELD(_isolation_signal);
-  DIFF_OUT_FIELD(_isolation_sense);
-  DIFF_OUT_FIELD(_location);
-  DIFF_OUT_FIELD(_power_domain);
-
-  DIFF_END
-}
-
 _dbIsolation::_dbIsolation(_dbDatabase* db)
 {
-}
-
-_dbIsolation::_dbIsolation(_dbDatabase* db, const _dbIsolation& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  _applies_to = r._applies_to;
-  _clamp_value = r._clamp_value;
-  _isolation_signal = r._isolation_signal;
-  _isolation_sense = r._isolation_sense;
-  _location = r._location;
-  _power_domain = r._power_domain;
+  _name = nullptr;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbIsolation& obj)
@@ -154,6 +84,22 @@ dbOStream& operator<<(dbOStream& stream, const _dbIsolation& obj)
   stream << obj._isolation_cells;
   stream << obj._power_domain;
   return stream;
+}
+
+void _dbIsolation::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  info.children_["applies_to"].add(_applies_to);
+  info.children_["clamp_value"].add(_clamp_value);
+  info.children_["isolation_signal"].add(_isolation_signal);
+  info.children_["isolation_sense"].add(_isolation_sense);
+  info.children_["location"].add(_location);
+  info.children_["isolation_cells"].add(_isolation_cells);
+  // User Code End collectMemInfo
 }
 
 _dbIsolation::~_dbIsolation()
@@ -226,11 +172,11 @@ dbPowerDomain* dbIsolation::getPowerDomain() const
 dbIsolation* dbIsolation::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_isolation_hash.hasMember(name))
+  if (_block->_isolation_hash.hasMember(name)) {
     return nullptr;
+  }
   _dbIsolation* iso = _block->_isolation_tbl->create();
-  iso->_name = strdup(name);
-  ZALLOCATED(iso->_name);
+  iso->_name = safe_strdup(name);
 
   _block->_isolation_hash.insert(iso);
   return (dbIsolation*) iso;
@@ -271,7 +217,7 @@ void dbIsolation::setLocation(const std::string& location)
   obj->_location = location;
 }
 
-void dbIsolation::addIsolationCell(std::string& master)
+void dbIsolation::addIsolationCell(const std::string& master)
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   obj->_isolation_cells.push_back(master);
@@ -288,6 +234,25 @@ std::vector<dbMaster*> dbIsolation::getIsolationCells()
 
   return masters;
 }
+
+bool dbIsolation::appliesTo(const dbIoType& io)
+{
+  _dbIsolation* obj = (_dbIsolation*) this;
+
+  if (io == dbIoType::OUTPUT) {
+    if (obj->_applies_to == "inputs") {
+      return false;
+    }
+  } else if (io == dbIoType::INPUT) {
+    if (obj->_applies_to == "outputs") {
+      return false;
+    }
+  }
+
+  // default "both"
+  return true;
+}
+
 // User Code End dbIsolationPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

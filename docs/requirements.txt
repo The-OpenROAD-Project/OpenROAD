@@ -5,3 +5,4 @@ myst-parser
 sphinxcontrib-mermaid
 sphinx-book-theme
 sphinx-copybutton
+sphinx-tabs

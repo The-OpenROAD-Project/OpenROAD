@@ -1,15 +1,16 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: top
 [INFO ODB-0130]     Created 4 pins.
 [INFO ODB-0131]     Created 13 components and 59 component-terminals.
 [INFO ODB-0133]     Created 16 nets and 30 connections.
-worst slack -0.09
-worst slack 1.84
+worst slack min -0.08
+worst slack max 1.85
 [INFO RSZ-0046] Found 4 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 38 hold buffers.
-worst slack 0.21
-worst slack 1.64
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |  -0.083 |  -0.138 | r2/D
+    final |       0 |      39 |            0 |  +142.7% |   0.207 |   0.000 | r2/D
+--------------------------------------------------------------------------------------
+[INFO RSZ-0032] Inserted 39 hold buffers.
+worst slack min 0.21
+worst slack max 1.64

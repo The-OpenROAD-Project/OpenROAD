@@ -1,44 +1,12 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "Netlist.h"
 
 #include <algorithm>
+#include <cmath>
+#include <vector>
 
-#include "Slots.h"
-#include "iostream"
 #include "ppl/IOPlacer.h"
 
 namespace ppl {
@@ -51,7 +19,7 @@ Netlist::Netlist()
 void Netlist::addIONet(const IOPin& io_pin,
                        const std::vector<InstancePin>& inst_pins)
 {
-  _db_pin_idx_map[io_pin.getBTerm()] = io_pins_.size();
+  db_pin_idx_map_[io_pin.getBTerm()] = io_pins_.size();
   io_pins_.push_back(io_pin);
   inst_pins_.insert(inst_pins_.end(), inst_pins.begin(), inst_pins.end());
   net_pointer_.push_back(inst_pins_.size());
@@ -64,7 +32,7 @@ int Netlist::createIOGroup(const std::vector<odb::dbBTerm*>& pin_list,
   int pin_cnt = 0;
   std::vector<int> pin_indices;
   for (odb::dbBTerm* bterm : pin_list) {
-    int pin_idx = _db_pin_idx_map[bterm];
+    int pin_idx = db_pin_idx_map_[bterm];
     if (pin_idx < 0) {
       return pin_cnt;
     }
@@ -184,7 +152,7 @@ void Netlist::reset()
   net_pointer_.clear();
   io_pins_.clear();
   io_groups_.clear();
-  _db_pin_idx_map.clear();
+  db_pin_idx_map_.clear();
   net_pointer_.push_back(0);
 }
 

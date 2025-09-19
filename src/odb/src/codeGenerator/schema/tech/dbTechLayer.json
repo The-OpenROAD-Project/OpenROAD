@@ -40,66 +40,59 @@
     },
     {
       "name": "has_max_width_",
-      "type": "uint",
+      "type": "bit",
       "flags": [
         "no-set",
         "no-get"
-      ],
-      "bits": 1
+      ]
     },
     {
       "name": "has_thickness_",
-      "type": "uint",
+      "type": "bit",
       "flags": [
         "no-set",
         "no-get"
-      ],
-      "bits": 1
+      ]
     },
     {
       "name": "has_area_",
-      "type": "uint",
+      "type": "bit",
       "flags": [
         "no-set",
         "no-get"
-      ],
-      "bits": 1
+      ]
     },
     {
       "name": "has_protrusion_",
-      "type": "uint",
+      "type": "bit",
       "flags": [
         "no-set",
         "no-get"
-      ],
-      "bits": 1
+      ]
     },
     {
       "name": "has_alias_",
-      "type": "uint",
+      "type": "bit",
       "flags": [
         "no-set",
         "no-get"
-      ],
-      "bits": 1
+      ]
     },
     {
       "name": "has_xy_pitch_",
-      "type": "uint",
+      "type": "bit",
       "flags": [
         "no-set",
         "no-get"
-      ],
-      "bits": 1
+      ]
     },
     {
       "name": "has_xy_offset_",
-      "type": "uint",
+      "type": "bit",
       "flags": [
         "no-set",
         "no-get"
-      ],
-      "bits": 1
+      ]
     },
     {
       "name": "rect_only_",
@@ -132,9 +125,27 @@
     },
     {
       "type": "uint",
+      "default": "0",
       "name": "wrong_way_width_",
       "flags":[
         "no-serial"
+      ]
+    },
+    {
+      "name":"layer_adjustment_",
+      "default": "0",
+      "type":"float",
+      "flags":[
+        "no-serial"
+      ]
+    },
+    {
+      "name" : "orth_spacing_tbl_",
+      "type":"std::vector<std::pair<int, int>>",
+      "schema" : "db_schema_orth_spc_tbl",
+      "flags":[
+        "no-template",
+        "no-set"
       ]
     }
   ],
@@ -167,8 +178,8 @@
     }
   ],
   "h_includes": [
-    "dbMatrix.h",
-    "dbTypes.h",
+    "odb/dbMatrix.h",
+    "odb/dbTypes.h",
     "dbVector.h"
   ]
 }

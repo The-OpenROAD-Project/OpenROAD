@@ -1,16 +1,21 @@
 #define BOOST_TEST_MODULE TestLef58Properties
 #include <libgen.h>
 
-#include <boost/test/included/unit_test.hpp>
 #include <fstream>
 #include <iostream>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "db.h"
-#include "defin.h"
-#include "defout.h"
+#include "boost/test/included/unit_test.hpp"
 #include "env.h"
-#include "lefin.h"
-#include "lefout.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/defin.h"
+#include "odb/defout.h"
+#include "odb/lefin.h"
+#include "odb/lefout.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -25,18 +30,28 @@ BOOST_AUTO_TEST_CASE(lef58_class)
   lefin lefParser(db1, logger, false);
 
   const char* libname = "gscl45nm.lef";
-  std::string path = testTmpPath("/data/gscl45nm.lef");
+  std::string path = testTmpPath("data", "gscl45nm.lef");
   lefParser.createTechAndLib("tech", libname, path.c_str());
 
   odb::dbLib* dbLib = db1->findLib(libname);
 
-  path = testTmpPath("/data/lef58class_gscl45nm.lef");
+  path = testTmpPath("data", "lef58class_gscl45nm.lef");
   lefParser.updateLib(dbLib, path.c_str());
 
   odb::dbMaster* endcap = db1->findMaster("ENDCAP_BOTTOMEDGE_NOT_A_REAL_CELL");
   BOOST_CHECK(endcap);
 
   BOOST_TEST(endcap->getType() == odb::dbMasterType::ENDCAP_LEF58_BOTTOMEDGE);
+  BOOST_TEST(endcap->getEdgeTypes().size() == 2);
+
+  auto edge_type_itr = endcap->getEdgeTypes().begin();
+  BOOST_TEST((*edge_type_itr)->getEdgeDir()
+             == odb::dbMasterEdgeType::EdgeDir::LEFT);
+  BOOST_TEST((*edge_type_itr)->getEdgeType() == "TYPE1");
+  ++edge_type_itr;
+  BOOST_TEST((*edge_type_itr)->getEdgeDir()
+             == odb::dbMasterEdgeType::EdgeDir::RIGHT);
+  BOOST_TEST((*edge_type_itr)->getEdgeType() == "TYPE2");
 }
 
 BOOST_AUTO_TEST_CASE(test_default)
@@ -49,11 +64,11 @@ BOOST_AUTO_TEST_CASE(test_default)
   lefin lefParser(db1, logger, false);
   const char* libname = "gscl45nm.lef";
 
-  std::string path = testTmpPath("/data/gscl45nm.lef");
+  std::string path = testTmpPath("data", "gscl45nm.lef");
 
   lefParser.createTechAndLib("tech", libname, path.c_str());
 
-  path = testTmpPath("/results/TestLef58PropertiesDbRW");
+  path = testTmpPath("results", "TestLef58PropertiesDbRW");
 
   std::ofstream write;
   write.exceptions(std::ifstream::failbit | std::ifstream::badbit
@@ -331,6 +346,14 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(kozrule->getSideForwardExtension() == 0.2 * distFactor);
   BOOST_TEST(kozrule->getSpiralExtension() == 0.05 * distFactor);
 
+  auto maxSpacingRules = cutLayer->getTechLayerMaxSpacingRules();
+  BOOST_TEST(maxSpacingRules.size() == 1);
+  auto maxSpcRule
+      = (odb::dbTechLayerMaxSpacingRule*) *(maxSpacingRules.begin());
+  BOOST_TEST(maxSpcRule->getMaxSpacing() == 2 * distFactor);
+  BOOST_TEST(maxSpcRule->hasCutClass());
+  BOOST_TEST(maxSpcRule->getCutClass() == "VA");
+
   layer = dbTech->findLayer("contact");
   BOOST_TEST(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::HIGHR);
   layer = dbTech->findLayer("metal2");
@@ -479,6 +502,60 @@ BOOST_AUTO_TEST_CASE(test_default)
     }
     c++;
   }
+  // check LEF58_TWOWIRESFORBIDDENSPACING
+  layer = dbTech->findLayer("metal2");
+  auto TWforbiddenSpacingRules = layer->getTechLayerTwoWiresForbiddenSpcRules();
+  BOOST_TEST(TWforbiddenSpacingRules.size() == 2);
+  c = 0;
+  for (auto* subRule : TWforbiddenSpacingRules) {
+    if (c == 0) {
+      BOOST_TEST(subRule->getMinSpacing() == 0.16 * distFactor);
+      BOOST_TEST(subRule->getMaxSpacing() == 0.2 * distFactor);
+      BOOST_TEST(subRule->getMinSpanLength() == 0.05 * distFactor);
+      BOOST_TEST(subRule->getMaxSpanLength() == 0.08 * distFactor);
+      BOOST_TEST(subRule->getPrl() == 0);
+      BOOST_TEST(subRule->isMinExactSpanLength());
+      BOOST_TEST(subRule->isMaxExactSpanLength());
+    } else {
+      BOOST_TEST(subRule->getPrl() == -0.5 * distFactor);
+      BOOST_TEST(!subRule->isMinExactSpanLength());
+      BOOST_TEST(!subRule->isMaxExactSpanLength());
+    }
+    c++;
+  }
+
+  // LEF58_CELLEDGESPACINGTABLE
+  auto cell_edge_spacing_tbl = dbTech->getCellEdgeSpacingTable();
+  BOOST_TEST(cell_edge_spacing_tbl.size() == 4);
+  auto edge_spc_it = cell_edge_spacing_tbl.begin();
+  auto edge_spc = *edge_spc_it;
+  BOOST_TEST(edge_spc->getFirstEdgeType() == "GROUP1");
+  BOOST_TEST(edge_spc->getSecondEdgeType() == "GROUP2");
+  BOOST_TEST(edge_spc->getSpacing() == 0.1 * 2000);
+  BOOST_TEST((!edge_spc->isExact() && edge_spc->isExceptAbutted()
+              && !edge_spc->isExceptNonFillerInBetween()
+              && !edge_spc->isOptional() && !edge_spc->isSoft()));
+  edge_spc = *(++edge_spc_it);
+  BOOST_TEST(edge_spc->getFirstEdgeType() == "GROUP1");
+  BOOST_TEST(edge_spc->getSecondEdgeType() == "GROUP1");
+  BOOST_TEST(edge_spc->getSpacing() == 0.2 * 2000);
+  BOOST_TEST((!edge_spc->isExact() && !edge_spc->isExceptAbutted()
+              && !edge_spc->isExceptNonFillerInBetween()
+              && edge_spc->isOptional() && !edge_spc->isSoft()));
+  edge_spc = *(++edge_spc_it);
+  BOOST_TEST(edge_spc->getFirstEdgeType() == "GROUP2");
+  BOOST_TEST(edge_spc->getSecondEdgeType() == "DEFAULT");
+  BOOST_TEST(edge_spc->getSpacing() == 0.3 * 2000);
+  BOOST_TEST((edge_spc->isExact() && !edge_spc->isExceptAbutted()
+              && !edge_spc->isExceptNonFillerInBetween()
+              && !edge_spc->isOptional() && !edge_spc->isSoft()));
+  edge_spc = *(++edge_spc_it);
+  BOOST_TEST(edge_spc->getFirstEdgeType() == "GROUP2");
+  BOOST_TEST(edge_spc->getSecondEdgeType() == "GROUP2");
+  BOOST_TEST(edge_spc->getSpacing() == 0.4 * 2000);
+  BOOST_TEST((!edge_spc->isExact() && !edge_spc->isExceptAbutted()
+              && !edge_spc->isExceptNonFillerInBetween()
+              && !edge_spc->isOptional() && !edge_spc->isSoft()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -1,63 +1,23 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <array>
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/index/rtree.hpp>
 #include <map>
 #include <memory>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include "boost/geometry/geometries/point_xy.hpp"
+#include "boost/geometry/geometry.hpp"
+#include "boost/geometry/index/rtree.hpp"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-
-namespace odb {
-class dbBlock;
-class dbNet;
-class dbTech;
-class dbTechLayer;
-class dbTechLayerCutClassRule;
-class dbViaVia;
-class dbTechVia;
-class dbTechViaGenerateRule;
-class dbTechViaLayerRule;
-class dbSBox;
-class dbSWire;
-class dbVia;
-class dbViaParams;
-class dbTechLayerCutEnclosureRule;
-}  // namespace odb
+#include "shape.h"
 
 namespace utl {
 class Logger;
@@ -65,7 +25,6 @@ class Logger;
 
 namespace pdn {
 
-namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
 
 class Connect;
@@ -73,15 +32,8 @@ class Shape;
 class Via;
 class ViaGenerator;
 
-using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
-using Box = bg::model::box<Point>;
-using ShapePtr = std::shared_ptr<Shape>;
 using ViaPtr = std::shared_ptr<Via>;
-using ShapeValue = std::pair<Box, ShapePtr>;
-using ViaValue = std::pair<Box, ViaPtr>;
-using ShapeTree = bgi::rtree<ShapeValue, bgi::quadratic<16>>;
-using ViaTree = bgi::rtree<ViaValue, bgi::quadratic<16>>;
-using ShapeTreeMap = std::map<odb::dbTechLayer*, ShapeTree>;
+
 using uint = odb::uint;
 
 using ViaReport = std::map<std::string, int>;
@@ -196,7 +148,8 @@ class DbBaseVia : public DbVia
   virtual odb::Rect getViaRect(bool include_enclosure,
                                bool include_via_shape,
                                bool include_bottom = true,
-                               bool include_top = true) const = 0;
+                               bool include_top = true) const
+      = 0;
 
   int getCount() const { return count_; }
 
@@ -204,6 +157,7 @@ class DbBaseVia : public DbVia
 
  protected:
   void incrementCount() { count_++; }
+  void incrementCount(int count) { count_ += count; }
 
  private:
   int count_ = 0;
@@ -239,12 +193,14 @@ class DbTechVia : public DbBaseVia
 
  private:
   odb::dbTechVia* via_;
+  odb::dbTechLayer* cut_layer_;
   int rows_;
   int row_pitch_;
   int cols_;
   int col_pitch_;
 
   odb::Rect via_rect_;
+  odb::Rect single_via_rect_;
   odb::Rect enc_bottom_rect_;
   odb::Rect enc_top_rect_;
 
@@ -252,6 +208,10 @@ class DbTechVia : public DbBaseVia
   odb::Rect required_top_rect_;
 
   odb::Point via_center_;
+  std::set<odb::Point> via_centers_;
+
+  std::string getViaName(const std::set<odb::dbTechLayer*>& ongrid) const;
+  bool isArray() const { return rows_ > 1 || cols_ > 1; }
 };
 
 // Wrapper to handle building dbTechViaGenerate vias (GENERATE vias) as
@@ -317,8 +277,10 @@ class DbSplitCutVia : public DbVia
   DbSplitCutVia(DbBaseVia* via,
                 int rows,
                 int row_pitch,
+                int row_offset,
                 int cols,
                 int col_pitch,
+                int col_offset,
                 odb::dbBlock* block,
                 odb::dbTechLayer* bottom,
                 bool snap_bottom,
@@ -342,8 +304,10 @@ class DbSplitCutVia : public DbVia
   std::unique_ptr<DbBaseVia> via_;
   int rows_;
   int row_pitch_;
+  int row_offset_;
   int cols_;
   int col_pitch_;
+  int col_offset_;
 };
 
 // Wrapper to build via arrays according to ARRAYSPACING rules
@@ -418,7 +382,8 @@ class DbGenerateDummyVia : public DbVia
                      const odb::Rect& shape,
                      odb::dbTechLayer* bottom,
                      odb::dbTechLayer* top,
-                     bool add_report);
+                     bool add_report,
+                     const std::string& reason);
 
   ViaLayerShape generate(odb::dbBlock* block,
                          odb::dbSWire* wire,
@@ -436,6 +401,7 @@ class DbGenerateDummyVia : public DbVia
   const odb::Rect shape_;
   odb::dbTechLayer* bottom_;
   odb::dbTechLayer* top_;
+  std::string reason_;
 };
 
 // Class to build a generate via, either as a single group or as an array
@@ -469,6 +435,10 @@ class ViaGenerator
   int getCutPitchX() const { return cut_pitch_x_; }
   void setCutPitchY(int pitch) { cut_pitch_y_ = pitch; }
   int getCutPitchY() const { return cut_pitch_y_; }
+  void setCutOffsetX(int pitch) { cut_offset_y_ = pitch; }
+  int getCutOffsetX() const { return cut_offset_y_; }
+  void setCutOffsetY(int pitch) { cut_offset_y_ = pitch; }
+  int getCutOffsetY() const { return cut_offset_y_; }
 
   void setMaxRows(int rows) { max_rows_ = rows; }
   void setMaxColumns(int columns) { max_cols_ = columns; }
@@ -492,7 +462,8 @@ class ViaGenerator
   virtual DbBaseVia* makeBaseVia(int rows,
                                  int row_pitch,
                                  int cols,
-                                 int col_pitch) const = 0;
+                                 int col_pitch) const
+      = 0;
 
   const odb::Rect& getLowerRect() const { return lower_rect_; }
   const odb::Rect& getUpperRect() const { return upper_rect_; }
@@ -577,6 +548,8 @@ class ViaGenerator
 
   int cut_pitch_x_ = 0;
   int cut_pitch_y_ = 0;
+  int cut_offset_x_ = 0;
+  int cut_offset_y_ = 0;
 
   int max_rows_ = 0;
   int max_cols_ = 0;
@@ -729,6 +702,13 @@ class TechViaGenerator : public ViaGenerator
 class Via
 {
  public:
+  struct ViaIndexableGetter
+  {
+    using result_type = odb::Rect;
+    odb::Rect operator()(const ViaPtr& via) const { return via->getArea(); }
+  };
+  using ViaTree = bgi::rtree<ViaPtr, bgi::quadratic<16>, ViaIndexableGetter>;
+
   Via(Connect* connect,
       odb::dbNet* net,
       const odb::Rect& area,
@@ -737,7 +717,6 @@ class Via
 
   odb::dbNet* getNet() const { return net_; }
   const odb::Rect& getArea() const { return area_; }
-  Box getBox() const;
   void setLowerShape(const ShapePtr& shape) { lower_ = shape; }
   const ShapePtr& getLowerShape() const { return lower_; }
   void setUpperShape(const ShapePtr& shape) { upper_ = shape; }
@@ -757,7 +736,7 @@ class Via
 
   void writeToDb(odb::dbSWire* wire,
                  odb::dbBlock* block,
-                 const ShapeTreeMap& obstructions);
+                 const Shape::ObstructionTreeMap& obstructions);
 
   Grid* getGrid() const;
 
@@ -767,6 +746,8 @@ class Via
 
   void markFailed(failedViaReason reason);
   bool isFailed() const { return failed_; }
+
+  static ViaTree convertVectorToTree(std::vector<ViaPtr>& vec);
 
  private:
   odb::dbNet* net_;

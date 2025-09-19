@@ -37,7 +37,7 @@
 #include "defiPropType.hpp"
 
 // Wrappers definitions.
-const char defiPropType_propType(const ::defiPropType* obj, char* name)
+char defiPropType_propType(const ::defiPropType* obj, char* name)
 {
-  return ((const LefDefParser::defiPropType*) obj)->propType(name);
+  return ((const DefParser::defiPropType*) obj)->propType(name);
 }

@@ -1,18 +1,10 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0222] Reading LEF file: nangate_macros/fakeram45_64x32.lef
-[INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  nangate_macros/fakeram45_64x32.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: nangate_macros/fakeram45_64x32.lef, created 1 library cells
 [INFO ODB-0128] Design: RocketTile
 [INFO ODB-0130]     Created 269 pins.
 [INFO ODB-0131]     Created 547 components and 1304 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 1094 connections.
 [INFO ODB-0133]     Created 269 nets and 0 connections.
-[WARNING ODB-0383] dcache.data.data_arrays_0.data_arrays_0_ext.mem is marked do not touch and will be skipped in global connections.
-[WARNING ODB-0383] dcache.data.data_arrays_0.data_arrays_0_ext.mem is marked do not touch and will be skipped in global connections.
 [WARNING ODB-0383] dcache.data.data_arrays_0.data_arrays_0_ext.mem is marked do not touch and will be skipped in global connections.
 [WARNING ODB-0383] dcache.data.data_arrays_0.data_arrays_0_ext.mem is marked do not touch and will be skipped in global connections.
 [WARNING ODB-0380] PHY_0/VSS is connected to VSS which is marked do not touch, this connection will not be modified.
@@ -561,5 +553,4 @@
 [WARNING ODB-0380] TAP_543/VSS is connected to VSS which is marked do not touch, this connection will not be modified.
 [WARNING ODB-0380] TAP_544/VSS is connected to VSS which is marked do not touch, this connection will not be modified.
 [WARNING ODB-0380] frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem/VSS is connected to VSS which is marked do not touch, this connection will not be modified.
-[WARNING ODB-0383] dcache.data.data_arrays_0.data_arrays_0_ext.mem is marked do not touch and will be skipped in global connections.
 No differences found.

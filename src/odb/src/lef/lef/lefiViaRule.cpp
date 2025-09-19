@@ -29,31 +29,21 @@
 
 #include "lefiViaRule.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // *****************************************************************************
 // lefiViaRuleLayer
 // *****************************************************************************
 
 lefiViaRuleLayer::lefiViaRuleLayer()
-    : name_(NULL),
-      direction_(0),
-      overhang1_(0.0),
-      overhang2_(0.0),
-      hasWidth_(0),
-      hasResistance_(0),
-      hasOverhang_(0),
-      hasMetalOverhang_(0),
-      hasSpacing_(0),
-      hasRect_(0),
-      widthMin_(0.0),
+    : widthMin_(0.0),
       widthMax_(0.0),
       overhang_(0.0),
       metalOverhang_(0.0),
@@ -70,7 +60,7 @@ lefiViaRuleLayer::lefiViaRuleLayer()
 
 void lefiViaRuleLayer::Init()
 {
-  name_ = 0;
+  name_ = nullptr;
   overhang1_ = -1;
   overhang2_ = -1;
 }
@@ -84,8 +74,9 @@ void lefiViaRuleLayer::clearLayerOverhang()
 void lefiViaRuleLayer::setName(const char* name)
 {
   int len = strlen(name) + 1;
-  if (name_)
+  if (name_) {
     lefFree(name_);
+  }
   name_ = (char*) lefMalloc(len);
   strcpy(name_, CASE(name));
   direction_ = '\0';
@@ -101,8 +92,9 @@ void lefiViaRuleLayer::setName(const char* name)
 
 void lefiViaRuleLayer::Destroy()
 {
-  if (name_)
+  if (name_) {
     lefFree(name_);
+  }
 }
 
 lefiViaRuleLayer::~lefiViaRuleLayer()
@@ -144,12 +136,14 @@ void lefiViaRuleLayer::setOverhang(double d)
 // 5.6
 void lefiViaRuleLayer::setOverhangToEnclosure(double d)
 {
-  if ((overhang1_ != -1) && (overhang2_ != -1))
+  if ((overhang1_ != -1) && (overhang2_ != -1)) {
     return;  // both overhang1_ & overhang2_ are set
-  if (overhang1_ == -1)
+  }
+  if (overhang1_ == -1) {
     overhang1_ = d;  // set value to overhang1_
-  else
+  } else {
     overhang2_ = d;  // overhang1_ already set, set to overhang2_
+  }
   return;
 }
 
@@ -309,29 +303,37 @@ void lefiViaRuleLayer::print(FILE* f) const
 {
   fprintf(f, "  Layer %s", name_);
 
-  if (isHorizontal())
+  if (isHorizontal()) {
     fprintf(f, " HORIZONTAL");
-  if (isVertical())
+  }
+  if (isVertical()) {
     fprintf(f, " VERTICAL");
+  }
   fprintf(f, "\n");
 
-  if (hasWidth())
+  if (hasWidth()) {
     fprintf(f, "    WIDTH %g %g\n", widthMin(), widthMax());
+  }
 
-  if (hasResistance())
+  if (hasResistance()) {
     fprintf(f, "    RESISTANCE %g\n", resistance());
+  }
 
-  if (hasOverhang())
+  if (hasOverhang()) {
     fprintf(f, "    OVERHANG %g\n", overhang());
+  }
 
-  if (hasMetalOverhang())
+  if (hasMetalOverhang()) {
     fprintf(f, "    METALOVERHANG %g\n", metalOverhang());
+  }
 
-  if (hasSpacing())
+  if (hasSpacing()) {
     fprintf(f, "    SPACING %g %g\n", spacingStepX(), spacingStepY());
+  }
 
-  if (hasRect())
+  if (hasRect()) {
     fprintf(f, "    RECT %g,%g %g,%g\n", xl(), yl(), xh(), yh());
+  }
 }
 
 // *****************************************************************************
@@ -339,20 +341,6 @@ void lefiViaRuleLayer::print(FILE* f) const
 // *****************************************************************************
 
 lefiViaRule::lefiViaRule()
-    : name_(NULL),
-      nameSize_(0),
-      hasGenerate_(0),
-      hasDefault_(0),
-      numLayers_(0),
-      numVias_(0),
-      viasAllocated_(0),
-      vias_(NULL),
-      numProps_(0),
-      propsAllocated_(0),
-      names_(NULL),
-      values_(NULL),
-      dvalues_(NULL),
-      types_(NULL)
 {
   Init();
 }
@@ -416,11 +404,11 @@ void lefiViaRule::Destroy()
 {
   clear();
   lefFree(name_);
-  lefFree((char*) (vias_));
-  lefFree((char*) (names_));
-  lefFree((char*) (values_));
-  lefFree((char*) (dvalues_));
-  lefFree((char*) (types_));
+  lefFree(vias_);
+  lefFree(names_);
+  lefFree(values_);
+  lefFree(dvalues_);
+  lefFree(types_);
   layers_[0].Destroy();
   layers_[1].Destroy();
   layers_[2].Destroy();
@@ -448,14 +436,16 @@ void lefiViaRule::addViaName(const char* name)
   if (numVias_ == viasAllocated_) {
     int i;
     char** nn;
-    if (viasAllocated_ == 0)
+    if (viasAllocated_ == 0) {
       viasAllocated_ = 2;
-    else
+    } else {
       viasAllocated_ *= 2;
+    }
     nn = (char**) lefMalloc(sizeof(char*) * viasAllocated_);
-    for (i = 0; i < numVias_; i++)
+    for (i = 0; i < numVias_; i++) {
       nn[i] = vias_[i];
-    lefFree((char*) (vias_));
+    }
+    lefFree(vias_);
     vias_ = nn;
   }
   vias_[numVias_] = (char*) lefMalloc(len);
@@ -546,8 +536,9 @@ int lefiViaRule::numLayers() const
 
 lefiViaRuleLayer* lefiViaRule::layer(int index) const
 {
-  if (index < 0 || index > 2)
-    return 0;
+  if (index < 0 || index > 2) {
+    return nullptr;
+  }
   return (lefiViaRuleLayer*) &(layers_[index]);
 }
 
@@ -560,8 +551,9 @@ void lefiViaRule::print(FILE* f) const
 {
   int i;
   fprintf(f, "VIA RULE %s", name());
-  if (hasGenerate())
+  if (hasGenerate()) {
     fprintf(f, " GENERATE");
+  }
   fprintf(f, "\n");
 
   for (i = 0; i < numLayers(); i++) {
@@ -580,8 +572,9 @@ int lefiViaRule::numVias() const
 
 char* lefiViaRule::viaName(int index) const
 {
-  if (index < 0 || index >= numVias_)
-    return 0;
+  if (index < 0 || index >= numVias_) {
+    return nullptr;
+  }
   return vias_[index];
 }
 
@@ -602,8 +595,9 @@ void lefiViaRule::addProp(const char* name, const char* value, const char type)
     double* nd;
     char* nt;
 
-    if (propsAllocated_ == 0)
+    if (propsAllocated_ == 0) {
       propsAllocated_ = 1;  // initialize propsAllocated_
+    }
     max = propsAllocated_ *= 2;
     lim = numProps_;
     nn = (char**) lefMalloc(sizeof(char*) * max);
@@ -616,10 +610,10 @@ void lefiViaRule::addProp(const char* name, const char* value, const char type)
       nd[i] = dvalues_[i];
       nt[i] = types_[i];
     }
-    lefFree((char*) (names_));
-    lefFree((char*) (values_));
-    lefFree((char*) (dvalues_));
-    lefFree((char*) (types_));
+    lefFree(names_);
+    lefFree(values_);
+    lefFree(dvalues_);
+    lefFree(types_);
     names_ = nn;
     values_ = nv;
     dvalues_ = nd;
@@ -650,8 +644,9 @@ void lefiViaRule::addNumProp(const char* name,
     double* nd;
     char* nt;
 
-    if (propsAllocated_ == 0)
+    if (propsAllocated_ == 0) {
       propsAllocated_ = 1;  // initialize propsAllocated_
+    }
     max = propsAllocated_ *= 2;
     lim = numProps_;
     nn = (char**) lefMalloc(sizeof(char*) * max);
@@ -664,10 +659,10 @@ void lefiViaRule::addNumProp(const char* name,
       nd[i] = dvalues_[i];
       nt[i] = types_[i];
     }
-    lefFree((char*) (names_));
-    lefFree((char*) (values_));
-    lefFree((char*) (dvalues_));
-    lefFree((char*) (types_));
+    lefFree(names_);
+    lefFree(values_);
+    lefFree(dvalues_);
+    lefFree(types_);
     names_ = nn;
     values_ = nv;
     dvalues_ = nd;
@@ -693,7 +688,7 @@ const char* lefiViaRule::propName(int i) const
             i,
             numProps_);
     lefiError(0, 1431, msg);
-    return 0;
+    return nullptr;
   }
   return names_[i];
 }
@@ -708,7 +703,7 @@ const char* lefiViaRule::propValue(int i) const
             i,
             numProps_);
     lefiError(0, 1431, msg);
-    return 0;
+    return nullptr;
   }
   return values_[i];
 }
@@ -728,7 +723,7 @@ double lefiViaRule::propNumber(int i) const
   return dvalues_[i];
 }
 
-const char lefiViaRule::propType(int i) const
+char lefiViaRule::propType(int i) const
 {
   char msg[160];
   if (i < 0 || i >= numProps_) {
@@ -772,4 +767,4 @@ int lefiViaRule::propIsString(int i) const
   }
   return dvalues_[i] ? 0 : 1;
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

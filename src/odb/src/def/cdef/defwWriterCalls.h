@@ -33,7 +33,7 @@
 #ifndef CDEFWWRITERCALLS_H
 #define CDEFWWRITERCALLS_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 
@@ -69,7 +69,7 @@ EXTERN defiUserData defwGetUserData();
 /*
  * An enum describing all of the types of writer callbacks.
  */
-typedef enum
+enum defwCallbackType_e
 {
   defwUnspecifiedCbkType = 0,
   defwVersionCbkType = 1,
@@ -109,7 +109,7 @@ typedef enum
   /* NEW CALLBACKS - each callback has its own type.  For each callback
    * that you add, you must add an item to this enum. */
 
-} defwCallbackType_e;
+};
 
 /* Declarations of function signatures for each type of callback.
  * These declarations are type-safe when compiling with ANSI C
@@ -145,7 +145,7 @@ typedef enum
  */
 
 /* A declaration of the signature of all callbacks that return nothing. */
-typedef int (*defwVoidCbkFnType)(defwCallbackType_e, defiUserData);
+using defwVoidCbkFnType = int (*)(defwCallbackType_e, defiUserData);
 
 /* Functions to call to register a callback function.
  */
@@ -194,13 +194,13 @@ EXTERN void defwSetViaCbk(defwVoidCbkFnType p0);
 EXTERN void defwSetUnusedCallbacks(defwVoidCbkFnType func);
 
 /* Routine to set the message logging routine for errors */
-typedef void (*DEFI_LOG_FUNCTION)(const char*);
+using DEFI_LOG_FUNCTION = void (*)(const char*);
 
 EXTERN void defwSetLogFunction(DEFI_LOG_FUNCTION p0);
 
 /* Routine to set the message logging routine for warnings */
 #ifndef DEFI_WARNING_LOG_FUNCTION
-typedef void (*DEFI_WARNING_LOG_FUNCTION)(const char*);
+using DEFI_WARNING_LOG_FUNCTION = void (*)(const char*);
 #endif
 
 EXTERN void defwSetWarningLogFunction(DEFI_WARNING_LOG_FUNCTION p0);

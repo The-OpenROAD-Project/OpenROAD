@@ -1,79 +1,82 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "TreeBuilder.h"
 
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <map>
-#include <memory>
+#include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <limits>
+#include <string>
+#include <vector>
 
+#include "boost/polygon/polygon.hpp"
+#include "odb/db.h"
+#include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "utl/Logger.h"
 
 namespace cts {
 
 using utl::CTS;
 
+void TreeBuilder::mergeBlockages()
+{
+  namespace gtl = boost::polygon;
+  using boost::polygon::operators::operator+=;
+
+  uint macros_max_dx = 0, macros_max_dy = 0;
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  gtl::polygon_90_set_data<int> blockage_polygons;
+  // Add the macros into the polygon set
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (inst->getMaster()->getType().isBlock()
+        && inst->getPlacementStatus().isPlaced()) {
+      macros_max_dx = std::max(macros_max_dx, inst->getBBox()->getDX());
+      macros_max_dy = std::max(macros_max_dy, inst->getBBox()->getDY());
+      blockage_polygons += inst->getBBox()->getBox();
+    }
+  }
+
+  // Set macros clustering diameter as 2 * macros highest dimention.
+  double max_diameter
+      = block->dbuToMicrons(2 * std::max(macros_max_dx, macros_max_dy));
+
+  if (max_diameter && !options_->isMacroMaxDiameterSet()) {
+    options_->setMacroMaxDiameter(
+        std::max(max_diameter, options_->getMacroMaxDiameter()));
+  }
+
+  // Add the hard blockages into the polygon set
+  for (odb::dbBlockage* blockage : block->getBlockages()) {
+    if (!blockage->isSoft()) {
+      blockage_polygons += blockage->getBBox()->getBox();
+    }
+  }
+
+  // bloat blockages to merge if there is not enough space between them
+  const int bloat_h
+      = std::ceil(bufferHeight_ * techChar_->getLengthUnit() / 2.0);
+  const int bloat_w
+      = std::ceil(bufferWidth_ * techChar_->getLengthUnit() / 2.0);
+
+  // Remove the gaps less than twice the bloat dimension
+  gtl::bloat(blockage_polygons, bloat_w, bloat_w, bloat_h, bloat_h);
+  gtl::shrink(blockage_polygons, bloat_w, bloat_w, bloat_h, bloat_h);
+
+  std::vector<odb::Rect> blockage_rects;
+  std::vector<gtl::polygon_90_with_holes_data<int>> blockage_rects_polygon;
+  blockage_polygons.get_polygons(blockage_rects_polygon);
+
+  for (const auto& poly : blockage_rects_polygon) {
+    odb::Rect rect;
+    gtl::extents(rect, poly);
+    blockages_.emplace_back(rect);
+  }
+}
+
 void TreeBuilder::initBlockages()
 {
-  for (odb::dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
-    odb::dbBox* bbox = blockage->getBBox();
-    bboxList_.emplace_back(bbox);
-  }
-  logger_->info(CTS,
-                200,
-                "{} placement blockages have been identified.",
-                bboxList_.size());
-
-  if (bboxList_.empty()) {
-    // Some HMs may not have explicit blockages
-    // Treat them as such only if they are placed
-    for (odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
-      if (inst->getMaster()->getType().isBlock()
-          && inst->getPlacementStatus().isPlaced()) {
-        odb::dbBox* bbox = inst->getBBox();
-        bboxList_.emplace_back(bbox);
-      }
-    }
-    logger_->info(CTS,
-                  201,
-                  "{} placed hard macros will be treated like blockages.",
-                  bboxList_.size());
-  }
-
   // add tree buffer width and height for legalization
   std::string buffer;
   if (!options_->getTreeBuffer().empty()) {
@@ -94,6 +97,25 @@ void TreeBuilder::initBlockages()
     logger_->error(
         CTS, 77, "No physical master cell found for cell {}.", buffer);
   }
+
+  mergeBlockages();
+
+  logger_->info(CTS,
+                201,
+                "{} blockages from hard placement blockages and placed macros "
+                "will be used.",
+                blockages_.size());
+}
+
+// Returns true if the tree has no sub-trees.
+bool TreeBuilder::isLeafTree()
+{
+  if (type_ == TreeType::MacroTree) {
+    // Because the register tree is a child of the macro tree
+    // but it is not a sub-tree ignore the first child.
+    return children_.size() == 1;
+  }
+  return children_.empty();
 }
 
 // Check if location (x, y) is legal by checking if
@@ -131,11 +153,11 @@ bool TreeBuilder::findBlockage(const Point<double>& bufferLoc,
   double bx = bufferLoc.getX() * scalingUnit;
   double by = bufferLoc.getY() * scalingUnit;
 
-  for (odb::dbBox* bbox : bboxList_) {
-    x1 = bbox->xMin();
-    y1 = bbox->yMin();
-    x2 = bbox->xMax();
-    y2 = bbox->yMax();
+  for (odb::Rect bbox : blockages_) {
+    x1 = bbox.xMin();
+    y1 = bbox.yMin();
+    x2 = bbox.xMax();
+    y2 = bbox.yMax();
 
     if (isInsideBbox(bx, by, x1, y1, x2, y2)) {
       x1 = x1 / scalingUnit;

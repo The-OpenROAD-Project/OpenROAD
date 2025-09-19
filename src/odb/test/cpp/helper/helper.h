@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "db.h"
+#include "odb/db.h"
 
 namespace odb {
 
@@ -40,6 +40,13 @@ odb::dbMaster* createMaster2X1(odb::dbLib* lib,
                                uint height,
                                const char* in1,
                                const char* in2,
+                               const char* out);
+
+odb::dbMaster* createMaster1X1(dbLib* lib,
+                               const char* name,
+                               uint width,
+                               uint height,
+                               const char* in1,
                                const char* out);
 
 odb::dbDatabase* createSimpleDB();

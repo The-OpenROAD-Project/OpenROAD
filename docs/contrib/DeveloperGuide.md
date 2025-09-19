@@ -20,7 +20,7 @@ and headers together.
 
 - `src/`
    This folder contains the source files for individual tools.
- 
+
 | `src`           | Purpose |
 |-----------------|--------------|
 | `CMakeLists.txt`  | `add_subdirectory` for each tool|
@@ -134,6 +134,13 @@ examples. Use swig to define internal functions to C++ functionality.
 Tcl files can be included by encoding them in CMake into a string that
 is evaluated at run time (See [`Resizer::init()`](../main/src/rsz/src/Resizer.cc)).
 
+:::{Note}
+Please refer to the top-level Tcl formatting [guide](TclFormat.md).
+Our top-level Tcl files, in particular, have to be formatted in this specific
+manner because of the automatic parsing used to convert the READMEs into
+manpages.
+:::
+
 ## Errors
 
 Tools should report errors to the user using the `ord::error` function
@@ -192,51 +199,35 @@ Instructions for building are available [here](../user/Build.md).
 
 ## Example of Adding a Tool to OpenROAD
 
-The patch file "AddTool.patch" illustrates how to add a tool to
-OpenROAD. Use the following commands to add a sample tool:
-
-``` shell
-# first, update existing config files
-patch -p1 < docs/misc/AddTool.patch
-
-# next, create the additional source files of the tool using this command
-patch -p1 < docs/misc/AddToolFiles.patch
-
-# finally, create the regression tests as follows
-cd src/tool/test
-ln -s ../../../test/regression.tcl regression.tcl
-```
-
-This adds a directory `OpenRoad/src/tool` that
-illustrates a tool named "Tool" that uses the file structure described above
-and defines a command to run the tool with keyword and flag arguments as
-illustrated below:
+The directory `OpenRoad/src/example` 
+illustrates a tool named "Example" that uses the file structure described above.
+ It defines a command to run the tool as illustrated below:
 
 ```tcl
-> toolize foo
-Helping 23/6
-Gotta positional_argument1 foo
-Gotta param1 0.000000
-Gotta flag1 false
+> example_instance -name test
+[INFO EXA-0001] Making an example instance named test
 
-> toolize -flag1 -key1 2.0 bar
-Helping 23/6
-Gotta positional_argument2 bar
-Gotta param1 2.000000
-Gotta flag1 true
-
-> help toolize
-toolize [-key1 key1] [-flag1] positional_argument1
+> help example_instance
+example_instance [-name name] 
 ```
+
+The example include TCL & Python APIs with unit tests.  Also demonstrated is how to create debug graphics for algorithm visualization.  Running `openroad -gui basic.tcl` in `src/exa/test` will demonstrate the capability.
 
 ## Documentation
 
 Tool commands should be documented in the top-level OpenROAD `README.md`
 file. Detailed documentation should be the `tool/README.md` file.
 
+:::{Note}
+Please refer to the README formatting [guide](ReadmeFormat.md).
+Our top-level READMEs, in particular, have to be formatted in this specific
+manner because of the automatic parsing used to convert the READMEs into
+manpages.
+:::
+
 ## Tool Flow Namespace
 
-Tool namespaces are usually three-lettered lowercase letters. 
+Tool namespaces are usually three-lettered lowercase letters.
 
 - Verilog to DB (dbSTA)
 - OpenDB: Open Database ([odb](../main/src/odb/README.md))
@@ -246,10 +237,10 @@ Tool namespaces are usually three-lettered lowercase letters.
 - I/O Placement ([ppl](../main/src/ppl/README.md))
 - PDN Generation ([pdn](../main/src/pdn/README.md))
 - Tapcell and Welltie Insertion ([tap](../main/src/tap/README.md))
-- Triton Macro Placer ([mpl](../main/src/mpl/README.md))
-- Hierarchical Automatic Macro Placer ([mpl2](../main/src/mpl2/README.md))
+- Macro Placer ([mpl](../main/src/mpl/README.md))
 - RePlAce Global Placer ([gpl](../main/src/gpl/README.md))
 - Gate resizing and buffering ([rsz](../main/src/rsz/README.md))
+- Parasitics estimation ([est](../main/src/est/README.md))
 - Detailed placement ([dpl](../main/src/dpl/README.md))
 - Clock tree synthesis ([cts](../main/src/cts/README.md))
 - FastRoute Global routing ([grt](../main/src/grt/README.md))
@@ -258,9 +249,10 @@ Tool namespaces are usually three-lettered lowercase letters.
 - Metal fill insertion ([fin](../main/src/fin/README.md))
 - Design for Test ([dft](../main/src/dft/README.md))
 - OpenRCX Parasitic Extraction ([rcx](../main/src/rcx/README.md))
-- OpenSTA timing/power analyzer ([sta](https://github.com/The-OpenROAD-Project/OpenSTA/blob/master/README.md)
+- OpenSTA timing/power analyzer ([sta](https://github.com/The-OpenROAD-Project/OpenSTA/blob/master/README.md))
 - Graphical User Interface ([gui](../main/src/gui/README.md))
 - Static IR analyzer ([psm](../main/src/psm/README.md))
+- Example tool ([exa](../main/src/exa/README.md))
 
 ## Tool Checklist
 
@@ -291,8 +283,10 @@ dependencies make this vastly more complicated.
 1. `regression` script should only write files in a directory that is in the tool's `.gitignore` so the hierarchy does not have modified files in it as a result or running the regressions.
 1. Regressions report no memory errors with `valgrind` (stretch goal).
 1. Regressions report no memory leaks with `valgrind` (difficult).
+1. Ensure the top-level README and Tcl format are compliant.
 
 ## Code Linting and Formatting
+
 OpenROAD uses both `clang-tidy` and `clang-format` to perform automatic linting and formatting whenever a pull request is submitted. To run these locally, please first setup Clang Tooling using this [guide](https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html). Thereafter, you may run these commands:
 
 ```shell
@@ -300,6 +294,50 @@ cmake . -B build  # generate build files
 # typically only run these commands on files you changed.
 clang-tidy -p ./build source_file.cpp
 clang-format -i -style=file:.clang-format source_file.cpp
+```
+
+To run `clang-tidy` on all files, you can use the following script that runs
+`clang-tidy` in parallel and also caches the results, so subsequent runs
+only have to operate on changed files.
+
+```shell
+cmake . -B build  # generate build files
+ln -sf build/compile_commands.json .  # make compilation db visible
+/bin/sh etc/run-clang-tidy-cached.cc
+```
+
+## Doxygen
+
+OpenROAD uses Doxygen style comments to generate documentation.
+See the generated documentation <a href="../doxygen_output/html/index.html">here</a>.
+Our preferred syntax for Doxygen comments can be found in this
+[file](../../src/odb/include/odb/odb.h). Also, do refer to the official Doxygen
+documentation for more information on what you can include in your Doxygen
+comments [here](https://www.doxygen.nl/manual/docblocks.html).
+
+Below shows an example snippet taken from `./src/odb/include/odb/db.h`:
+
+```cpp
+///
+/// dbProperty - Int property.
+///
+class dbIntProperty : public dbProperty
+{
+ public:
+  /// Get the value of this property.
+  int getValue();
+
+  /// Set the value of this property.
+  void setValue(int value);
+
+  /// Create a int property. Returns nullptr if a property with the same name
+  /// already exists.
+  static dbIntProperty* create(dbObject* object, const char* name, int value);
+
+  /// Find the named property of type int. Returns nullptr if the property does
+  /// not exist.
+  static dbIntProperty* find(dbObject* object, const char* name);
+};
 ```
 
 ## Guidelines

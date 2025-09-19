@@ -53,4 +53,3 @@ set_output_delay 0.0920 -clock [get_clocks {core_clock}] -add_delay [get_ports {
 set_output_delay 0.0920 -clock [get_clocks {core_clock}] -add_delay [get_ports {resp_msg[8]}]
 set_output_delay 0.0920 -clock [get_clocks {core_clock}] -add_delay [get_ports {resp_msg[9]}]
 set_output_delay 0.0920 -clock [get_clocks {core_clock}] -add_delay [get_ports {resp_val}]
-

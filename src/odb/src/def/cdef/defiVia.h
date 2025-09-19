@@ -33,7 +33,7 @@
 #ifndef CDEFIVIA_H
 #define CDEFIVIA_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

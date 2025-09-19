@@ -33,16 +33,13 @@
 #ifndef CLEFIUTIL_H
 #define CLEFIUTIL_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 
 /* Structure to return Macro data to FE                                       */
 
 /*int lefiValidTime();                                                        */
-EXTERN int lefiValidUser();
-
-EXTERN char* lefiUser();
 
 EXTERN char* lefiOrientStr(int orient);
 

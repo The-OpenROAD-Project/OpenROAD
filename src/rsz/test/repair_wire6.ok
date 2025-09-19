@@ -1,8 +1,4 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: long_wire
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 2 components and 8 component-terminals.
@@ -32,14 +28,19 @@ u2/Z manhtn 1500.3 steiner 1500.3 0.30
 in1 manhtn 0.7 steiner 0.7 0.00
 u1/Z manhtn 0.4 steiner 0.4 0.00
 [WARNING RSZ-0065] max wire length less than 693u increases wire delays.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |         3
+    final |   +283.3% |       0 |       3 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0037] Found 1 long wires.
-[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
-[INFO RSZ-0039] Resized 2 instances.
+[INFO RSZ-0038] Inserted 3 buffers in 1 nets.
 Driver    length delay
-wire2/Z manhtn 568.6 steiner 568.6 0.04
-wire1/Z manhtn 567.3 steiner 567.3 0.04
-u2/Z manhtn 357.8 steiner 357.8 0.02
-in1 manhtn 0.7 steiner 0.7 0.00
+wire1/Z manhtn 569.8 steiner 569.8 0.04
+wire3/Z manhtn 487.9 steiner 487.9 0.03
+wire2/Z manhtn 441.4 steiner 441.4 0.03
+u2/Z manhtn 0.7 steiner 0.7 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: unconstrained
@@ -48,19 +49,21 @@ Path Type: max
      Cap     Slew    Delay     Time   Description
 ---------------------------------------------------------------------------
                      0.000    0.000 ^ input external delay
-   1.456    0.000    0.000    0.000 ^ in1 (in)
-            0.000    0.000    0.000 ^ u1/A (CLKBUF_X2)
-  12.443    0.017    0.035    0.035 ^ u1/Z (CLKBUF_X2)
-            0.017    0.000    0.035 ^ u2/A (BUF_X16)
-  33.478    0.006    0.023    0.058 ^ u2/Z (BUF_X16)
-            0.024    0.019    0.077 ^ wire2/A (BUF_X8)
-  55.143    0.011    0.029    0.107 ^ wire2/Z (BUF_X8)
-            0.065    0.052    0.159 ^ wire1/A (BUF_X16)
-  42.637    0.009    0.031    0.189 ^ wire1/Z (BUF_X16)
-            0.039    0.032    0.221 ^ out1 (out)
-                              0.221   data arrival time
+   1.024    0.000    0.000    0.000 ^ in1 (in)
+            0.000    0.000    0.000 ^ u1/A (BUF_X1)
+   1.008    0.006    0.016    0.016 ^ u1/Z (BUF_X1)
+            0.006    0.000    0.016 ^ u2/A (BUF_X1)
+   1.477    0.007    0.020    0.036 ^ u2/Z (BUF_X1)
+            0.007    0.000    0.036 ^ wire3/A (CLKBUF_X3)
+  38.090    0.025    0.048    0.085 ^ wire3/Z (CLKBUF_X3)
+            0.043    0.030    0.114 ^ wire2/A (CLKBUF_X3)
+  36.574    0.025    0.061    0.175 ^ wire2/Z (CLKBUF_X3)
+            0.040    0.027    0.202 ^ wire1/A (BUF_X4)
+  42.829    0.020    0.041    0.243 ^ wire1/Z (BUF_X4)
+            0.047    0.036    0.279 ^ out1 (out)
+                              0.279   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
 
-[INFO RSZ-0026] Removed 3 buffers.
+[INFO RSZ-0026] Removed 4 buffers.

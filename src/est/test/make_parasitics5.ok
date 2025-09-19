@@ -1,0 +1,34 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: reg1
+[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0131]     Created 8 components and 39 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 16 connections.
+[INFO ODB-0133]     Created 10 nets and 20 connections.
+Net r1q
+ Pin capacitance: 0.92-0.92
+ Wire capacitance: 9.76-9.76
+ Total capacitance: 10.68-10.68
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ r1/Q output (DFF_X1) (103, 201)
+
+Load pins
+ u2/A1 input (AND2_X1) 0.92-0.92 (100, 401)
+
+Net r1q
+ Pin capacitance: 0.83-0.89
+ Wire capacitance: 14.64
+ Total capacitance: 15.47-15.54
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ r1/Q output (DFF_X1) (103, 201)
+
+Load pins
+ u2/A1 input (AND2_X1) 0.83-0.89 (100, 401)
+

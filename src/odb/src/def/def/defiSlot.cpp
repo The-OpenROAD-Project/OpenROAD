@@ -29,16 +29,15 @@
 
 #include "defiSlot.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <sstream>
 
 #include "defiDebug.hpp"
-#include "lex.h"
+#include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 namespace {
 
@@ -79,8 +78,8 @@ void defiSlot::Init()
   yh_ = (int*) malloc(sizeof(int) * 1);
   rectsAllocated_ = 1;  // At least 1 rectangle will define
   polysAllocated_ = 0;
-  polygons_ = 0;
-  layerName_ = 0;
+  polygons_ = nullptr;
+  layerName_ = nullptr;
 }
 
 defiSlot::~defiSlot()
@@ -110,21 +109,23 @@ void defiSlot::clearPoly()
 
 void defiSlot::Destroy()
 {
-  if (layerName_)
+  if (layerName_) {
     free(layerName_);
+  }
   free((char*) (xl_));
   free((char*) (yl_));
   free((char*) (xh_));
   free((char*) (yh_));
   rectsAllocated_ = 0;
-  xl_ = 0;
-  yl_ = 0;
-  xh_ = 0;
-  yh_ = 0;
+  xl_ = nullptr;
+  yl_ = nullptr;
+  xh_ = nullptr;
+  yh_ = nullptr;
   clearPoly();
-  if (polygons_)
+  if (polygons_) {
     free((char*) (polygons_));
-  polygons_ = 0;
+  }
+  polygons_ = nullptr;
   clear();
 }
 
@@ -132,8 +133,9 @@ void defiSlot::setLayer(const char* name)
 {
   int len = strlen(name) + 1;
   if (layerNameLength_ < len) {
-    if (layerName_)
+    if (layerName_) {
       free(layerName_);
+    }
     layerName_ = (char*) malloc(len);
     layerNameLength_ = len;
   }
@@ -184,10 +186,12 @@ void defiSlot::addPolygon(defiGeometries* geom)
     polysAllocated_ = (polysAllocated_ == 0) ? 2 : polysAllocated_ * 2;
     poly = (struct defiPoints**) malloc(sizeof(struct defiPoints*)
                                         * polysAllocated_);
-    for (i = 0; i < numPolys_; i++)
+    for (i = 0; i < numPolys_; i++) {
       poly[i] = polygons_[i];
-    if (polygons_)
+    }
+    if (polygons_) {
       free((char*) (polygons_));
+    }
     polygons_ = poly;
   }
   p = (struct defiPoints*) malloc(sizeof(struct defiPoints));
@@ -271,8 +275,9 @@ void defiSlot::print(FILE* f) const
   int i, j;
   struct defiPoints points;
 
-  if (hasLayer())
+  if (hasLayer()) {
     fprintf(f, "- LAYER %s\n", layerName());
+  }
 
   for (i = 0; i < numRectangles(); i++) {
     fprintf(f, "   RECT %d %d %d %d\n", xl(i), yl(i), xh(i), yh(i));
@@ -281,10 +286,11 @@ void defiSlot::print(FILE* f) const
   for (i = 0; i < numPolygons(); i++) {
     fprintf(f, "   POLYGON ");
     points = getPolygon(i);
-    for (j = 0; j < points.numPoints; j++)
+    for (j = 0; j < points.numPoints; j++) {
       fprintf(f, "%d %d ", points.x[j], points.y[j]);
+    }
     fprintf(f, "\n");
   }
   fprintf(f, "\n");
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

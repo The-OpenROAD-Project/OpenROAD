@@ -1,0 +1,53 @@
+{
+  "name": "dbMasterEdgeType",
+  "type": "dbObject",
+  "enums": [
+    {
+      "name": "EdgeDir",
+      "values": [
+        "TOP",
+        "RIGHT",
+        "LEFT",
+        "BOTTOM"
+      ],
+      "public": true
+    }
+  ],
+  "fields": [
+    {
+      "type": "uint",
+      "name": "edge_dir_",
+      "flags":[
+        "no-set",
+        "no-get"
+      ]
+    },
+    {
+      "type": "std::string",
+      "name": "edge_type_"
+    },
+    {
+      "type": "int",
+      "name": "cell_row_",
+      "default" : -1
+    },
+    {
+      "type": "int",
+      "name": "half_row_",
+      "default" : -1
+    },
+    {
+      "type": "int",
+      "name": "range_begin_",
+      "default" : -1
+    },
+    {
+      "type": "int",
+      "name": "range_end_",
+      "default" : -1
+    }
+  ],
+  "cpp_includes": [
+    "dbMaster.h"
+  ]
+}

@@ -1,32 +1,5 @@
-#BSD 3-Clause License
-#
-#Copyright (c) 2023, The Regents of the University of California
-#All rights reserved.
-#
-#Redistribution and use in source and binary forms, with or without
-#modification, are permitted provided that the following conditions are met:
-#
-#1. Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-#2. Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-#3. Neither the name of the copyright holder nor the names of its
-#   contributors may be used to endorse or promote products derived from
-#   this software without specific prior written permission.
-#
-#THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-#AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-#IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-#DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-#FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-#DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-#SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-#CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-#OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-#OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2023-2025, The OpenROAD Authors
 
 sta::define_cmd_args "make_io_bump_array" {-bump master \
                                            -origin {x y} \
@@ -35,7 +8,7 @@ sta::define_cmd_args "make_io_bump_array" {-bump master \
                                            -pitch {x y} \
                                            [-prefix prefix]}
 
-proc make_io_bump_array {args} {
+proc make_io_bump_array { args } {
   sta::parse_key_args "make_io_bump_array" args \
     keys {-bump -origin -rows -columns -pitch -prefix} \
     flags {}
@@ -54,8 +27,18 @@ proc make_io_bump_array {args} {
   set pitch $keys(-pitch)
 
   set cmd_args []
-  if {[info exists keys(-prefix)]} {
+  if { [info exists keys(-prefix)] } {
     lappend cmd_args $keys(-prefix)
+  }
+
+  if { [llength $origin] != 2 } {
+    utl::error PAD 17 "-origin must be specified as {x y}"
+  }
+
+  if { [llength $pitch] == 1 } {
+    lappend pitch $pitch
+  } elseif { [llength $pitch] != 2 } {
+    utl::error PAD 38 "-pitch must be specified as {deltax deltay} or {delta}"
   }
 
   pad::make_bump_array \
@@ -71,7 +54,7 @@ proc make_io_bump_array {args} {
 
 sta::define_cmd_args "remove_io_bump_array" {-bump master}
 
-proc remove_io_bump_array {args} {
+proc remove_io_bump_array { args } {
   sta::parse_key_args "remove_io_bump_array" args \
     keys {-bump} \
     flags {}
@@ -85,7 +68,7 @@ proc remove_io_bump_array {args} {
 
 sta::define_cmd_args "remove_io_bump" {inst}
 
-proc remove_io_bump {args} {
+proc remove_io_bump { args } {
   sta::parse_key_args "remove_io_bump" args \
     keys {} \
     flags {}
@@ -100,7 +83,7 @@ sta::define_cmd_args "assign_io_bump" {-net net \
                                        [-dont_route] \
                                        inst}
 
-proc assign_io_bump {args} {
+proc assign_io_bump { args } {
   sta::parse_key_args "assign_io_bump" args \
     keys {-net -terminal} \
     flags {-dont_route}
@@ -138,35 +121,36 @@ sta::define_cmd_args "make_io_sites" {-horizontal_site site \
                                       [-rotation_horizontal rotation] \
                                       [-rotation_vertical rotation] \
                                       [-rotation_corner rotation] \
-                                      [-ring_index index]}
+                                      [-ring_index index]
+} ;# checker off
 
-proc make_io_sites {args} {
+proc make_io_sites { args } {
   sta::parse_key_args "make_io_sites" args \
     keys {-horizontal_site -vertical_site -corner_site -offset -rotation \
       -rotation_horizontal -rotation_vertical -rotation_corner -ring_index} \
-    flags {}
+    flags {} ;# checker off
 
   sta::check_argc_eq0 "make_io_sites" $args
   set index -1
-  if {[info exists keys(-ring_index)]} {
+  if { [info exists keys(-ring_index)] } {
     set index $keys(-ring_index)
   }
   set rotation_hor "R0"
   set rotation_ver "R0"
   set rotation_cor "R0"
-  if {[info exists keys(-rotation)]} {
+  if { [info exists keys(-rotation)] } {
     utl::warn PAD 112 "Use of -rotation is deprecated"
     set rotation_hor $keys(-rotation)
     set rotation_ver $keys(-rotation)
     set rotation_cor $keys(-rotation)
   }
-  if {[info exists keys(-rotation_horizontal)]} {
+  if { [info exists keys(-rotation_horizontal)] } {
     set rotation_hor $keys(-rotation_horizontal)
   }
-  if {[info exists keys(-rotation_vertical)]} {
+  if { [info exists keys(-rotation_vertical)] } {
     set rotation_ver $keys(-rotation_vertical)
   }
-  if {[info exists keys(-rotation_corner)]} {
+  if { [info exists keys(-rotation_corner)] } {
     set rotation_cor $keys(-rotation_corner)
   }
 
@@ -191,7 +175,7 @@ proc make_io_sites {args} {
 
 sta::define_cmd_args "remove_io_rows" {}
 
-proc remove_io_rows {args} {
+proc remove_io_rows { args } {
   sta::parse_key_args "remove_io_rows" args \
     keys {} \
     flags {}
@@ -204,16 +188,15 @@ proc remove_io_rows {args} {
 sta::define_cmd_args "place_corners" {[-ring_index index] \
                                       master}
 
-proc place_corners {args} {
+proc place_corners { args } {
   sta::parse_key_args "place_corners" args \
-    keys {} \
-    flags {}
+    keys {-ring_index} flags {}
 
   sta::check_argc_eq1 "place_corners" $args
 
   set master [pad::find_master [lindex $args 0]]
   set index -1
-  if {[info exists keys(-ring_index)]} {
+  if { [info exists keys(-ring_index)] } {
     set index $keys(-ring_index)
   }
 
@@ -226,7 +209,7 @@ sta::define_cmd_args "place_pad" {[-master master] \
                                   -mirror \
                                   name}
 
-proc place_pad {args} {
+proc place_pad { args } {
   sta::parse_key_args "place_pad" args \
     keys {-master -location -row} \
     flags {-mirror}
@@ -234,7 +217,7 @@ proc place_pad {args} {
   sta::check_argc_eq1 "place_pad" $args
 
   set master "NULL"
-  if {[info exists keys(-master)]} {
+  if { [info exists keys(-master)] } {
     set master [pad::find_master $keys(-master)]
   }
   set name [lindex $args 0]
@@ -250,11 +233,38 @@ proc place_pad {args} {
     [info exists flags(-mirror)]
 }
 
+sta::define_cmd_args "place_pads" {-row row_name \
+                                   pads}
+
+proc place_pads { args } {
+  sta::parse_key_args "place_pads" args \
+    keys {-row} \
+    flags {}
+
+  if { $args == {} } {
+    utl::error PAD 39 "place_pads requires a list of instances."
+  }
+
+  if { [llength $args] == 1 } {
+    set args [lindex $args 0]
+  }
+
+  set insts []
+  foreach inst $args {
+    lappend insts [pad::find_instance $inst]
+  }
+
+  pad::assert_required place_pads -row
+  pad::place_pads \
+    $insts \
+    [pad::get_row $keys(-row)]
+}
+
 sta::define_cmd_args "place_io_fill" {-row row_name \
                                       [-permit_overlaps masters] \
                                       masters}
 
-proc place_io_fill {args} {
+proc place_io_fill { args } {
   sta::parse_key_args "place_io_fill" args \
     keys {-row -permit_overlaps} \
     flags {}
@@ -280,7 +290,7 @@ proc place_io_fill {args} {
 
 sta::define_cmd_args "connect_by_abutment" {}
 
-proc connect_by_abutment {args} {
+proc connect_by_abutment { args } {
   sta::parse_key_args "connect_by_abutment" args \
     keys {} \
     flags {}
@@ -295,7 +305,7 @@ sta::define_cmd_args "place_bondpad" {-bond master \
                                       [-rotation rotation] \
                                       ioinsts}
 
-proc place_bondpad {args} {
+proc place_bondpad { args } {
   sta::parse_key_args "place_bondpad" args \
     keys {-bond -offset -rotation} \
     flags {}
@@ -304,7 +314,7 @@ proc place_bondpad {args} {
   foreach inst [get_cells {*}$args] {
     lappend insts [sta::sta_to_db_inst $inst]
   }
-  if { [llength $insts] == 0} {
+  if { [llength $insts] == 0 } {
     utl::error PAD 117 "No instances matched $args"
   }
   pad::assert_required place_bondpad -bond
@@ -331,26 +341,31 @@ proc place_bondpad {args} {
     $offset_y
 }
 
-sta::define_cmd_args "place_io_terminals" {inst_terms}
+sta::define_cmd_args "place_io_terminals" {inst_terms
+                                        [-allow_non_top_layer]}
 
-proc place_io_terminals {args} {
+proc place_io_terminals { args } {
   sta::parse_key_args "place_io_terminals" args \
     keys {} \
     flags {-allow_non_top_layer}
 
+  if { [llength $args] == 0 } {
+    utl::error PAD 8 "place_io_terminals requires at least one terminal"
+  }
+
   set iterms []
   foreach pin [get_pins {*}$args] {
-    lappend iterms [ sta::sta_to_db_pin $pin]
+    lappend iterms [sta::sta_to_db_pin $pin]
   }
 
   pad::place_terminals $iterms [info exists flags(-allow_non_top_layer)]
 }
 
-sta::define_hidden_cmd_args "make_fake_io_site" {-name name \
-                                                 -width width \
-                                                 -height height}
+sta::define_cmd_args "make_fake_io_site" {-name name \
+                                          -width width \
+                                          -height height}
 
-proc make_fake_io_site {args} {
+proc make_fake_io_site { args } {
   sta::parse_key_args "make_fake_io_site" args \
     keys {-name -width -height} \
     flags {}
@@ -375,70 +390,94 @@ sta::define_cmd_args "rdl_route" {-layer layer \
                                   [-spacing spacing] \
                                   [-turn_penalty penalty] \
                                   [-allow45] \
+                                  [-max_iterations iterations] \
                                   nets}
 
-proc rdl_route {args} {
+proc rdl_route { args } {
   sta::parse_key_args "rdl_route" args \
-    keys {-layer -width -spacing -bump_via -pad_via -turn_penalty} \
+    keys {-layer -width -spacing -bump_via -pad_via -turn_penalty -max_iterations} \
     flags {-allow45}
 
+  if { [llength $args] == 1 } {
+    set args [lindex $args 0]
+  }
+
+  sta::parse_port_net_args $args sta_ports sta_nets
   set nets []
-  foreach net [get_nets {*}$args] {
-    lappend nets [sta::sta_to_db_net $net]
+  foreach net $sta_nets {
+    lappend [sta::sta_to_db_net $net]
+  }
+  foreach port $sta_ports {
+    set bterm [sta::sta_to_db_port $port]
+    set net [$bterm getNet]
+    if { $net != "NULL" } {
+      lappend nets $net
+    }
+  }
+
+  if { [llength $nets] == 0 } {
+    utl::error PAD 42 "No nets found to route"
   }
 
   pad::assert_required rdl_route -layer
   set layer [[ord::get_db_tech] findLayer $keys(-layer)]
-  if {$layer == "NULL"} {
+  if { $layer == "NULL" } {
     utl::error PAD 105 "Unable to find layer: $keys(-layer)"
   }
   set bump_via "NULL"
-  if {[info exists keys(-bump_via)]} {
+  if { [info exists keys(-bump_via)] } {
     set bump_via [[ord::get_db_tech] findVia $keys(-bump_via)]
-    if {$bump_via == "NULL"} {
+    if { $bump_via == "NULL" } {
       utl::error PAD 107 "Unable to find techvia: $keys(-bump_via)"
     }
   }
   set pad_via "NULL"
-  if {[info exists keys(-pad_via)]} {
+  if { [info exists keys(-pad_via)] } {
     set pad_via [[ord::get_db_tech] findVia $keys(-pad_via)]
-    if {$pad_via == "NULL"} {
+    if { $pad_via == "NULL" } {
       utl::error PAD 108 "Unable to find techvia: $keys(-pad_via)"
     }
   }
 
   set width 0
-  if {[info exists keys(-width)]} {
+  if { [info exists keys(-width)] } {
     sta::check_positive_float "-width" $keys(-width)
     set width [ord::microns_to_dbu $keys(-width)]
   }
   set spacing 0
-  if {[info exists keys(-spacing)]} {
+  if { [info exists keys(-spacing)] } {
     sta::check_positive_float "-spacing" $keys(-spacing)
     set spacing [ord::microns_to_dbu $keys(-spacing)]
   }
 
   set penalty 2.0
-  if {[info exists keys(-turn_penalty)]} {
+  if { [info exists keys(-turn_penalty)] } {
     set penalty $keys(-turn_penalty)
   }
   sta::check_positive_float "-turn_penalty" $penalty
+
+  set max_iterations 10
+  if { [info exists keys(-max_iterations)] } {
+    set max_iterations $keys(-max_iterations)
+  }
+  sta::check_positive_int "-max_iterations" $max_iterations
 
   pad::route_rdl $layer \
     $bump_via $pad_via \
     $nets \
     $width $spacing \
     [info exists flags(-allow45)] \
-    $penalty
+    $penalty \
+    $max_iterations
 }
 
 namespace eval pad {
-proc find_site {name} {
+proc find_site { name } {
   set site "NULL"
 
   foreach lib [[ord::get_db] getLibs] {
     set site [$lib findSite $name]
-    if {$site != "NULL"} {
+    if { $site != "NULL" } {
       return $site
     }
   }
@@ -449,7 +488,7 @@ proc find_site {name} {
   return $site
 }
 
-proc find_master {name} {
+proc find_master { name } {
   set master [[ord::get_db] findMaster $name]
   if { $master == "NULL" } {
     utl::error PAD 101 "Unable to find master: $name"
@@ -457,7 +496,7 @@ proc find_master {name} {
   return $master
 }
 
-proc find_instance {name} {
+proc find_instance { name } {
   set inst [[ord::get_db_block] findInst $name]
   if { $inst == "NULL" } {
     utl::error PAD 102 "Unable to find instance: $name"
@@ -465,7 +504,7 @@ proc find_instance {name} {
   return $inst
 }
 
-proc find_net {name} {
+proc find_net { name } {
   set net [[ord::get_db_block] findNet $name]
   if { $net == "NULL" } {
     utl::error PAD 103 "Unable to find net: $name"
@@ -475,7 +514,7 @@ proc find_net {name} {
 
 proc assert_required { cmd arg } {
   upvar keys keys
-  if {![info exists keys($arg)]} {
+  if { ![info exists keys($arg)] } {
     utl::error PAD 104 "$arg is required for $cmd"
   }
 }
@@ -500,12 +539,12 @@ proc connect_iterm { inst_name iterm_name net_name } {
   $iterm connect $net
 }
 
-proc convert_tcl {} {
+proc convert_tcl { } {
   set cmds []
   set cmds_assign []
 
   set rows 0
-  if {[dict exists $ICeWall::library bump array_size rows]} {
+  if { [dict exists $ICeWall::library bump array_size rows] } {
     set rows [dict get $ICeWall::library bump array_size rows]
   }
 
@@ -514,16 +553,16 @@ proc convert_tcl {} {
 
     set origin [dict get $param cell scaled_origin]
     set side [dict get $param side]
-    if {$side == "top"} {
+    if { $side == "top" } {
       set side "IO_NORTH"
       set location [ord::dbu_to_microns [lindex $origin 1]]
-    } elseif {$side == "left"} {
+    } elseif { $side == "left" } {
       set side "IO_WEST"
       set location [ord::dbu_to_microns [lindex $origin 3]]
-    } elseif {$side == "bottom"} {
+    } elseif { $side == "bottom" } {
       set side "IO_SOUTH"
       set location [ord::dbu_to_microns [lindex $origin 1]]
-    } elseif {$side == "right"} {
+    } elseif { $side == "right" } {
       set side "IO_EAST"
       set location [ord::dbu_to_microns [lindex $origin 3]]
     }
@@ -536,18 +575,18 @@ proc convert_tcl {} {
 
     set icewall_type [dict get $param type]
     set icewall_cell [dict get $ICeWall::library types $icewall_type]
-    if {![dict exists $ICeWall::library cells $icewall_cell pad_pin_name]} {
+    if { ![dict exists $ICeWall::library cells $icewall_cell pad_pin_name] } {
       continue
     }
     set pad_term [dict get $ICeWall::library cells $icewall_cell pad_pin_name]
 
     set iterm [$inst findITerm $pad_term]
-    if {$iterm != "NULL"} {
+    if { $iterm != "NULL" } {
       set net [$iterm getNet]
-      if {$net != "NULL"} {
+      if { $net != "NULL" } {
         lappend cmds "pad::connect_iterm {$inst_name} [[$iterm getMTerm] getName] [$net getName]"
 
-        if {[dict exists $param bump]} {
+        if { [dict exists $param bump] } {
           set bump [dict get $param bump]
           set row [expr $rows - [dict get $bump row]]
           set col [expr [dict get $bump col] - 1]

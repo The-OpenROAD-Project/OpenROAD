@@ -1,11 +1,18 @@
+#include <cstdint>
+#include <memory>
 #include <sstream>
+#include <string>
+#include <string_view>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "ClockDomain.hh"
 #include "ScanArchitect.hh"
 #include "ScanArchitectConfig.hh"
 #include "ScanCellMock.hh"
 #include "gtest/gtest.h"
+#include "utl/Logger.h"
 
 namespace dft::test {
 namespace {
@@ -35,8 +42,8 @@ TEST(TestScanArchitectHeuristic, ArchitectWithOneClockDomainNoMix)
   scan_cells_bucket->init(config, scan_cells);
 
   std::unique_ptr<ScanArchitect> scan_architect
-      = ScanArchitect::ConstructScanScanArchitect(config,
-                                                  std::move(scan_cells_bucket));
+      = ScanArchitect::ConstructScanScanArchitect(
+          config, std::move(scan_cells_bucket), logger);
   scan_architect->init();
   scan_architect->architect();
   std::vector<std::unique_ptr<ScanChain>> scan_chains
@@ -99,8 +106,8 @@ TEST(TestScanArchitectHeuristic, ArchitectWithTwoClockDomainNoMix)
   scan_cells_bucket->init(config, scan_cells);
 
   std::unique_ptr<ScanArchitect> scan_architect
-      = ScanArchitect::ConstructScanScanArchitect(config,
-                                                  std::move(scan_cells_bucket));
+      = ScanArchitect::ConstructScanScanArchitect(
+          config, std::move(scan_cells_bucket), logger);
   scan_architect->init();
   scan_architect->architect();
   std::vector<std::unique_ptr<ScanChain>> scan_chains
@@ -156,8 +163,8 @@ TEST(TestScanArchitectHeuristic, ArchitectWithTwoEdgesNoMix)
   scan_cells_bucket->init(config, scan_cells);
 
   std::unique_ptr<ScanArchitect> scan_architect
-      = ScanArchitect::ConstructScanScanArchitect(config,
-                                                  std::move(scan_cells_bucket));
+      = ScanArchitect::ConstructScanScanArchitect(
+          config, std::move(scan_cells_bucket), logger);
   scan_architect->init();
   scan_architect->architect();
   std::vector<std::unique_ptr<ScanChain>> scan_chains

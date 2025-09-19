@@ -1,40 +1,20 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <memory>
+#include <utility>
+#include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcBlockObject.h"
 #include "db/gcObj/gcPin.h"
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frBlockage.h"
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frNet.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frNet;
@@ -48,8 +28,8 @@ class gcNet : public gcBlockObject
         fixedRectangles_(numLayers),
         routeRectangles_(numLayers),
         pins_(numLayers),
-        taperedRects(numLayers),
-        nonTaperedRects(numLayers)
+        taperedRects_(numLayers),
+        nonTaperedRects_(numLayers)
   {
   }
   // setters
@@ -99,11 +79,11 @@ class gcNet : public gcBlockObject
     routePolygons_.resize(size);
     routeRectangles_.clear();
     routeRectangles_.resize(size);
-    taperedRects.clear();
-    taperedRects.resize(size);
-    nonTaperedRects.clear();
-    nonTaperedRects.resize(size);
-    specialSpacingRects.clear();
+    taperedRects_.clear();
+    taperedRects_.resize(size);
+    nonTaperedRects_.clear();
+    nonTaperedRects_.resize(size);
+    specialSpacingRects_.clear();
     for (auto& layerPins : pins_) {
       layerPins.clear();
     }
@@ -193,19 +173,19 @@ class gcNet : public gcBlockObject
   }
   void addTaperedRect(const Rect& bx, int zIdx)
   {
-    taperedRects[zIdx].push_back(bx);
+    taperedRects_[zIdx].push_back(bx);
   }
   const std::vector<Rect>& getTaperedRects(int z) const
   {
-    return taperedRects[z];
+    return taperedRects_[z];
   }
   void addNonTaperedRect(const Rect& bx, int zIdx)
   {
-    nonTaperedRects[zIdx].push_back(bx);
+    nonTaperedRects_[zIdx].push_back(bx);
   }
   const std::vector<Rect>& getNonTaperedRects(int z) const
   {
-    return nonTaperedRects[z];
+    return nonTaperedRects_[z];
   }
   void addSpecialSpcRect(const Rect& bx,
                          frLayerNum lNum,
@@ -217,11 +197,11 @@ class gcNet : public gcBlockObject
     sp->addToNet(net);
     sp->addToPin(pin);
     sp->setRect(bx);
-    specialSpacingRects.push_back(std::move(sp));
+    specialSpacingRects_.push_back(std::move(sp));
   }
   const std::vector<std::unique_ptr<gcRect>>& getSpecialSpcRects() const
   {
-    return specialSpacingRects;
+    return specialSpacingRects_;
   }
   bool hasPolyCornerAt(frCoord x, frCoord y, frLayerNum ln) const
   {
@@ -261,11 +241,11 @@ class gcNet : public gcBlockObject
       routeRectangles_;  // only cut layer
   std::vector<std::vector<std::unique_ptr<gcPin>>> pins_;
   frBlockObject* owner_{nullptr};
-  std::vector<std::vector<Rect>> taperedRects;     //(only routing layer)
-  std::vector<std::vector<Rect>> nonTaperedRects;  //(only routing layer)
+  std::vector<std::vector<Rect>> taperedRects_;     //(only routing layer)
+  std::vector<std::vector<Rect>> nonTaperedRects_;  //(only routing layer)
   // A non-tapered rect within a tapered max rectangle still require nondefault
   // spacing. This list hold these rectangles
-  std::vector<std::unique_ptr<gcRect>> specialSpacingRects;
+  std::vector<std::unique_ptr<gcRect>> specialSpacingRects_;
 
   void init();
 };

@@ -1,41 +1,15 @@
-///////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include "Partitioner.h"
 
+#include <algorithm>
+#include <map>
+#include <numeric>
 #include <random>
+#include <set>
+#include <utility>
+#include <vector>
 
 #include "Evaluator.h"
 #include "Hypergraph.h"
@@ -91,20 +65,20 @@ void Partitioner::Partition(const HGraphPtr& hgraph,
     std::fill(solution.begin(), solution.end(), -1);
   }
   switch (partitioner_choice) {
-    case PartitionType::INIT_RANDOM:
+    case PartitionType::kInitRandom:
       RandomPart(hgraph, upper_block_balance, lower_block_balance, solution);
       break;
 
-    case PartitionType::INIT_RANDOM_VILE:
+    case PartitionType::kInitRandomVile:
       RandomPart(
           hgraph, upper_block_balance, lower_block_balance, solution, true);
       break;
 
-    case PartitionType::INIT_VILE:
+    case PartitionType::kInitVile:
       VilePart(hgraph, solution);
       break;
 
-    case PartitionType::INIT_DIRECT_ILP:
+    case PartitionType::kInitDirectIlp:
       ILPPart(hgraph, upper_block_balance, lower_block_balance, solution);
       break;
 
@@ -157,7 +131,7 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
           path_vertices.push_back(v);
         }
       }  // finish current path
-    }    // finish all the paths
+    }  // finish all the paths
     std::shuffle(path_vertices.begin(),
                  path_vertices.end(),
                  std::default_random_engine(seed_));
@@ -250,7 +224,7 @@ void Partitioner::ILPPart(const HGraphPtr& hgraph,
     std::iota(edge_mask.begin(), edge_mask.end(), 0);
   } else if (ilp_accelerator_factor_ > 0.0) {
     // define comp structure to compare hyperedge ( function: >)
-    struct comp
+    struct Comp
     {
       // comparator function
       bool operator()(const std::pair<int, float>& l,
@@ -263,7 +237,7 @@ void Partitioner::ILPPart(const HGraphPtr& hgraph,
       }
     };
     // use set data structure to sort hyperedges
-    std::set<std::pair<int, float>, comp> unvisited_hyperedges;
+    std::set<std::pair<int, float>, Comp> unvisited_hyperedges;
     float tot_cost = 0.0;  // total hyperedge cut
     for (auto e = 0; e < hgraph->GetNumHyperedges(); ++e) {
       const float score = evaluator_->CalculateHyperedgeCost(e, hgraph);

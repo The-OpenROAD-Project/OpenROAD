@@ -1,39 +1,23 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2023, Google LLC
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include "ScanArchitect.hh"
 
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
+#include <map>
+#include <memory>
+#include <optional>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
 #include "ClockDomain.hh"
+#include "ClockDomainHash.hh"
 #include "ScanArchitectHeuristic.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 
@@ -60,7 +44,7 @@ bool CompareScanCells(const std::unique_ptr<ScanCell>& lhs,
 
 void SortScanCells(std::vector<std::unique_ptr<ScanCell>>& scan_cells)
 {
-  std::sort(scan_cells.begin(), scan_cells.end(), CompareScanCells);
+  std::stable_sort(scan_cells.begin(), scan_cells.end(), CompareScanCells);
 }
 
 }  // namespace
@@ -68,6 +52,21 @@ void SortScanCells(std::vector<std::unique_ptr<ScanCell>>& scan_cells)
 ScanCellsBucket::ScanCellsBucket(utl::Logger* logger) : logger_(logger)
 {
 }
+
+namespace {
+void showBuckets(
+    utl::Logger* logger,
+    const std::unordered_map<size_t, std::vector<std::unique_ptr<ScanCell>>>&
+        buckets)
+{
+  for (auto& bucket : buckets) {
+    debugPrint(logger, utl::DFT, "buckets", 2, "Bucket {}", bucket.first);
+    for (auto& scan_cell : bucket.second) {
+      debugPrint(logger, utl::DFT, "buckets", 2, "\t{}", scan_cell->getName());
+    }
+  }
+}
+};  // namespace
 
 void ScanCellsBucket::init(const ScanArchitectConfig& config,
                            std::vector<std::unique_ptr<ScanCell>>& scan_cells)
@@ -82,6 +81,8 @@ void ScanCellsBucket::init(const ScanArchitectConfig& config,
   for (auto& [hash_domain, scan_cells] : buckets_) {
     SortScanCells(scan_cells);
   }
+
+  showBuckets(logger_, buckets_);
 }
 
 std::unordered_map<size_t, uint64_t>
@@ -111,10 +112,11 @@ uint64_t ScanCellsBucket::numberOfCells(size_t hash_domain) const
 
 std::unique_ptr<ScanArchitect> ScanArchitect::ConstructScanScanArchitect(
     const ScanArchitectConfig& config,
-    std::unique_ptr<ScanCellsBucket> scan_cells_bucket)
+    std::unique_ptr<ScanCellsBucket> scan_cells_bucket,
+    utl::Logger* logger)
 {
-  return std::make_unique<ScanArchitectHeuristic>(config,
-                                                  std::move(scan_cells_bucket));
+  return std::make_unique<ScanArchitectHeuristic>(
+      config, std::move(scan_cells_bucket), logger);
 }
 
 ScanArchitect::ScanArchitect(const ScanArchitectConfig& config,
@@ -133,22 +135,22 @@ void ScanArchitect::inferChainCount()
   std::unordered_map<size_t, uint64_t> hash_domains_total_bits
       = scan_cells_bucket_->getTotalBitsPerHashDomain();
 
-  // TODO(fgaray): Handle more options like a specific chain_count
-  if (config_.getMaxLength().has_value()) {
+  if (auto max_length = config_.getMaxLength(); max_length.has_value()) {
     // The user is saying that we should respect this max_length
     hash_domain_to_limits_ = inferChainCountFromMaxLength(
-        hash_domains_total_bits, config_.getMaxLength().value());
+        hash_domains_total_bits, max_length.value(), config_.getMaxChains());
   } else {
     // The user did not specify any max_length, let's use a default of 200
-    hash_domain_to_limits_
-        = inferChainCountFromMaxLength(hash_domains_total_bits, 200);
+    hash_domain_to_limits_ = inferChainCountFromMaxLength(
+        hash_domains_total_bits, 200, config_.getMaxChains());
   }
 }
 
 std::map<size_t, ScanArchitect::HashDomainLimits>
 ScanArchitect::inferChainCountFromMaxLength(
     const std::unordered_map<size_t, uint64_t>& hash_domains_total_bit,
-    uint64_t max_length)
+    uint64_t max_length,
+    const std::optional<uint64_t>& max_chains)
 {
   std::map<size_t, HashDomainLimits> hash_domain_to_limits;
   for (const auto& [hash_domain, bits] : hash_domains_total_bit) {
@@ -158,6 +160,10 @@ ScanArchitect::inferChainCountFromMaxLength(
       domain_chain_count = bits / max_length + 1;
     } else {
       domain_chain_count = bits / max_length;
+    }
+
+    if (max_chains.has_value()) {
+      domain_chain_count = std::min(domain_chain_count, max_chains.value());
     }
 
     uint64_t domain_max_length = 0;

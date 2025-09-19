@@ -1,35 +1,64 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
+#include <cstdlib>
+#include <iostream>
+#include <limits>
+#include <memory>
+#include <set>
+#include <utility>
+#include <vector>
+
+#include "db/obj/frAccess.h"
+#include "db/obj/frBTerm.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frInst.h"
+#include "db/obj/frInstBlockage.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frShape.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "ta/FlexTA.h"
 
 namespace drt {
 
+bool FlexTAWorker::outOfDieVia(frLayerNum layer_num,
+                               const Point& pt,
+                               const Rect& die_box) const
+{
+  if (router_cfg_->USENONPREFTRACKS
+      && !getTech()->getLayer(layer_num)->isUnidirectional()) {
+    return false;
+  }
+  Rect test_box_up;
+  if (layer_num + 1 <= getTech()->getTopLayerNum()) {
+    const frViaDef* via
+        = getTech()->getLayer(layer_num + 1)->getDefaultViaDef();
+    if (via) {
+      test_box_up = via->getLayer1ShapeBox();
+      test_box_up.merge(via->getLayer2ShapeBox());
+      test_box_up.moveDelta(pt.x(), pt.y());
+    } else {
+      // artificial value to indicate no via in test below
+      die_box.bloat(1, test_box_up);
+    }
+  }
+  Rect test_box_down;
+  if (layer_num - 1 >= getTech()->getBottomLayerNum()) {
+    const frViaDef* via
+        = getTech()->getLayer(layer_num - 1)->getDefaultViaDef();
+    if (via) {
+      test_box_down = via->getLayer1ShapeBox();
+      test_box_down.merge(via->getLayer2ShapeBox());
+      test_box_down.moveDelta(pt.x(), pt.y());
+    } else {
+      // artificial value to indicate no via in test below
+      die_box.bloat(1, test_box_down);
+    }
+  }
+  return !die_box.contains(test_box_up) && !die_box.contains(test_box_down);
+}
 void FlexTAWorker::initTracks()
 {
   trackLocs_.clear();
@@ -37,6 +66,8 @@ void FlexTAWorker::initTracks()
   trackLocs_.resize(numLayers);
   std::vector<std::set<frCoord>> trackCoordSets(numLayers);
   // uPtr for tp
+  auto die_box = getDesign()->getTopBlock()->getDieBox();
+  auto die_center = die_box.center();
   for (int lNum = 0; lNum < (int) numLayers; lNum++) {
     auto layer = getDesign()->getTech()->getLayer(lNum);
     if (layer->getType() != dbTechLayerType::ROUTING) {
@@ -68,6 +99,15 @@ void FlexTAWorker::initTracks()
              trackNum++) {
           frCoord trackCoord
               = trackNum * tp->getTrackSpacing() + tp->getStartCoord();
+          Point via_pt(die_center);
+          if (isH) {
+            via_pt.setY(trackCoord);
+          } else {
+            via_pt.setX(trackCoord);
+          }
+          if (outOfDieVia(lNum, via_pt, die_box)) {
+            continue;
+          }
           trackCoordSets[lNum].insert(trackCoord);
         }
       }
@@ -105,7 +145,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
   Rect box;
   box = Rect(bp, bp);
   nbrGuides.clear();
-  if (layerNum - 2 >= BOTTOM_ROUTING_LAYER) {
+  if (layerNum - 2 >= router_cfg_->BOTTOM_ROUTING_LAYER) {
     rq->queryGuide(box, layerNum - 2, nbrGuides);
     for (auto& nbrGuide : nbrGuides) {
       if (nbrGuide->getNet() == net) {
@@ -137,8 +177,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
           continue;
         }
         frInst* inst = iterm->getInst();
-        dbTransform shiftXform = inst->getTransform();
-        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+        dbTransform shiftXform = inst->getNoRotationTransform();
         frMTerm* mterm = iterm->getTerm();
         int pinIdx = 0;
         for (auto& pin : mterm->getPins()) {
@@ -259,8 +298,7 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
           continue;
         }
         frInst* inst = iterm->getInst();
-        dbTransform shiftXform = inst->getTransform();
-        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+        dbTransform shiftXform = inst->getNoRotationTransform();
         frMTerm* mterm = iterm->getTerm();
         int pinIdx = 0;
         for (auto& pin : mterm->getPins()) {
@@ -358,7 +396,7 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
       box = Rect(ep, ep);
       cp = ep;
     }
-    if (layerNum - 2 >= BOTTOM_ROUTING_LAYER) {
+    if (layerNum - 2 >= router_cfg_->BOTTOM_ROUTING_LAYER) {
       rq->queryGuide(box, layerNum - 2, nbrGuides);
     }
     if (layerNum + 2 < (int) design_->getTech()->getLayers().size()) {
@@ -489,13 +527,12 @@ void FlexTAWorker::initIroute(frGuide* guide)
   }
   // owner set when add to taPin
   iroute->addPinFig(std::move(ps));
-  frViaDef* viaDef;
+  const frViaDef* viaDef;
   for (auto coord : upViaCoordSet) {
     if (guide->getNet()->getNondefaultRule()
-        && guide->getNet()->getNondefaultRule()->getPrefVia((layerNum + 2) / 2
-                                                            - 1)) {
-      viaDef = guide->getNet()->getNondefaultRule()->getPrefVia(
-          (layerNum + 2) / 2 - 1);
+        && guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1)) {
+      viaDef
+          = guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1);
     } else {
       viaDef
           = getDesign()->getTech()->getLayer(layerNum + 1)->getDefaultViaDef();
@@ -508,9 +545,10 @@ void FlexTAWorker::initIroute(frGuide* guide)
   }
   for (auto coord : downViaCoordSet) {
     if (guide->getNet()->getNondefaultRule()
-        && guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1)) {
-      viaDef
-          = guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1);
+        && guide->getNet()->getNondefaultRule()->getPrefVia((layerNum - 2) / 2
+                                                            - 1)) {
+      viaDef = guide->getNet()->getNondefaultRule()->getPrefVia(
+          (layerNum - 2) / 2 - 1);
     } else {
       viaDef
           = getDesign()->getTech()->getLayer(layerNum - 1)->getDefaultViaDef();
@@ -617,14 +655,14 @@ void FlexTAWorker::sortIroutes()
   // init cost
   if (isInitTA()) {
     for (auto& iroute : iroutes_) {
-      if (hardIroutesMode == iroute->getGuide()->getNet()->isClock()) {
+      if (hardIroutesMode_ == iroute->getGuide()->getNet()->isClock()) {
         addToReassignIroutes(iroute.get());
       }
     }
   } else {
     for (auto& iroute : iroutes_) {
       if (iroute->getCost()) {
-        if (hardIroutesMode == iroute->getGuide()->getNet()->isClock()) {
+        if (hardIroutesMode_ == iroute->getGuide()->getNet()->isClock()) {
           addToReassignIroutes(iroute.get());
         }
       }
@@ -695,7 +733,7 @@ void FlexTAWorker::initFixedObjs()
       auto type = obj->typeId();
       // instterm term
       if (type == frcInstTerm || type == frcBTerm) {
-        bloatDist = TASHAPEBLOATWIDTH * width;
+        bloatDist = router_cfg_->TASHAPEBLOATWIDTH * width;
         frNet* netPtr = nullptr;
         if (type == frcBTerm) {
           netPtr = static_cast<frBTerm*>(obj)->getNet();
@@ -817,7 +855,7 @@ void FlexTAWorker::initFixedObjs()
   }
 }
 
-frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
+frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(const frViaDef* viaDef,
                                                         const frLayerNum lNum,
                                                         const Rect& box,
                                                         bool isOBS)
@@ -834,12 +872,16 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
   frCoord viaLength = viaBox.maxDXDY();
 
   frCoord obsWidth = box.minDXDY();
-  if (USEMINSPACING_OBS && isOBS) {
+  if (router_cfg_->USEMINSPACING_OBS && isOBS) {
     obsWidth = layer->getWidth();
   }
 
   frCoord bloatDist
       = layer->getMinSpacingValue(obsWidth, viaWidth, viaWidth, false);
+  if (bloatDist < 0) {
+    logger_->error(
+        DRT, 140, "Layer {} has negative min spacing value.", layer->getName());
+  }
   auto& eol = layer->getDrEolSpacingConstraint();
   if (viaBox.minDXDY() < eol.eolWidth) {
     bloatDist = std::max(bloatDist, eol.eolSpace);
@@ -865,7 +907,7 @@ frCoord FlexTAWorker::initFixedObjs_calcBloatDist(frBlockObject* obj,
   frCoord prl
       = (layer->getDir() == dbTechLayerDir::HORIZONTAL) ? box.dx() : box.dy();
   if (obj->typeId() == frcBlockage || obj->typeId() == frcInstBlockage) {
-    if (USEMINSPACING_OBS) {
+    if (router_cfg_->USEMINSPACING_OBS) {
       objWidth = width;
     }
   }
@@ -874,6 +916,12 @@ frCoord FlexTAWorker::initFixedObjs_calcBloatDist(frBlockObject* obj,
   frCoord bloatDist = width;
   if (layer->hasMinSpacing()) {
     bloatDist = layer->getMinSpacingValue(objWidth, width, prl, false);
+    if (bloatDist < 0) {
+      logger_->error(DRT,
+                     144,
+                     "Layer {} has negative min spacing value.",
+                     layer->getName());
+    }
   }
   // assuming the wire width is width
   bloatDist += width / 2;

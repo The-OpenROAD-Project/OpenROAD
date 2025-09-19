@@ -1,39 +1,22 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <algorithm>
+#include <cstdlib>
 #include <iostream>
+#include <iterator>
 #include <memory>
+#include <set>
+#include <stdexcept>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "db/obj/frShape.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace drt {
@@ -76,6 +59,66 @@ class frViaDef
   // constructors
   frViaDef() = default;
   frViaDef(const std::string& nameIn) : name_(nameIn) {}
+  // operators
+  bool operator==(const frViaDef& in) const
+  {
+    if (name_ != in.name_) {
+      return false;
+    }
+    if (cutClassIdx_ != in.cutClassIdx_) {
+      return false;
+    }
+    if (cutClass_ != in.cutClass_) {
+      return false;
+    }
+    if (isDefault_ != in.isDefault_) {
+      return false;
+    }
+    auto equalFigs = [](const std::vector<std::unique_ptr<frShape>>& val1,
+                        const std::vector<std::unique_ptr<frShape>>& val2) {
+      std::multiset<std::pair<frLayerNum, odb::Rect>> val1set;
+      std::multiset<std::pair<frLayerNum, odb::Rect>> val2set;
+      std::transform(val1.begin(),
+                     val1.end(),
+                     std::inserter(val1set, val1set.begin()),
+                     [](const std::unique_ptr<frShape>& val) {
+                       return std::make_pair(val->getLayerNum(),
+                                             val->getBBox());
+                     });
+      std::transform(val2.begin(),
+                     val2.end(),
+                     std::inserter(val2set, val2set.begin()),
+                     [](const std::unique_ptr<frShape>& val) {
+                       return std::make_pair(val->getLayerNum(),
+                                             val->getBBox());
+                     });
+      if (val1set.size() != val2set.size()) {
+        return false;
+      }
+      auto it1 = val1set.begin();
+      auto it2 = val2set.begin();
+      while (it1 != val1set.end()) {
+        if (*it1 != *it2) {
+          return false;
+        }
+        it1++;
+        it2++;
+      }
+      return true;
+    };
+    if (!equalFigs(layer1Figs_, in.layer1Figs_)) {
+      return false;
+    }
+    if (!equalFigs(layer2Figs_, in.layer2Figs_)) {
+      return false;
+    }
+    if (!equalFigs(cutFigs_, in.cutFigs_)) {
+      return false;
+    }
+    return true;
+  }
+  bool operator!=(const frViaDef& in) const { return !(*this == in); }
+  bool operator<(const frViaDef& rhs) const { return id_ < rhs.id_; }
   // getters
   void getName(std::string& nameIn) const { nameIn = name_; }
   std::string getName() const { return name_; }
@@ -176,5 +219,12 @@ class frViaDef
   Rect layer1ShapeBox_;
   Rect layer2ShapeBox_;
   Rect cutShapeBox_;
+};
+struct frViaDefComp
+{
+  bool operator()(const frViaDef* lhs, const frViaDef* rhs) const
+  {
+    return *lhs < *rhs;
+  }
 };
 }  // namespace drt

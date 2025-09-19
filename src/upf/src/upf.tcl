@@ -1,37 +1,5 @@
-############################################################################
-##
-## Copyright (c) 2022, The Regents of the University of California
-## All rights reserved.
-##
-## BSD 3-Clause License
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are met:
-##
-## * Redistributions of source code must retain the above copyright notice, this
-##   list of conditions and the following disclaimer.
-##
-## * Redistributions in binary form must reproduce the above copyright notice,
-##   this list of conditions and the following disclaimer in the documentation
-##   and/or other materials provided with the distribution.
-##
-## * Neither the name of the copyright holder nor the names of its
-##   contributors may be used to endorse or promote products derived from
-##   this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-## POSSIBILITY OF SUCH DAMAGE.
-##
-############################################################################
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022-2025, The OpenROAD Authors
 
 sta::define_cmd_args "read_upf" { [-file file] }
 proc read_upf { args } {
@@ -45,6 +13,7 @@ sta::define_cmd_args "write_upf" {file}
 proc write_upf { args } {
   upf::check_block_exists
   sta::check_argc_eq1 "write_upf" $args
+  sta::parse_key_args "write_upf" args keys {} flags {}
 
   upf::write_upf_cmd [lindex $args 0]
 }
@@ -53,7 +22,7 @@ proc write_upf { args } {
 #
 # Arguments:
 #
-# - elements: list of module paths that belong to this domain OR '*' for top domain
+# - elements: list of module paths that belong to this domain OR '.' for top domain
 # - name: domain name
 sta::define_cmd_args "create_power_domain" { [-elements elements] name }
 proc create_power_domain { args } {
@@ -119,14 +88,14 @@ sta::define_cmd_args "create_power_switch" { \
     [-control_port control_port] \
     [-on_state on_state] \
     name
-}
+} ;# checker off
 proc create_power_switch { args } {
   upf::check_block_exists
 
   ord::parse_list_args "create_power_switch" args \
     list {-input_supply_port -control_port -ack_port -on_state}
   sta::parse_key_args "create_power_switch" args \
-    keys {-domain -output_supply_port} flags {}
+    keys {-domain -output_supply_port} flags {} ;# checker off
 
   sta::check_argc_eq1 "create_power_switch" $args
 
@@ -207,9 +176,10 @@ proc set_isolation { args } {
   set location ""
   set update 0
 
-  if { [info exists keys(-domain)] } {
-    set domain $keys(-domain)
+  if { ![info exists keys(-domain)] } {
+    utl::error UPF 73 "-domain is required for set_isolation"
   }
+  set domain $keys(-domain)
 
   if { [info exists keys(-applies_to)] } {
     set applies_to $keys(-applies_to)
@@ -223,6 +193,13 @@ proc set_isolation { args } {
     set isolation_signal $keys(-isolation_signal)
   }
 
+  if { [info exists flags(-update)] } {
+    set update 1
+  } else {
+    set isolation_sense "high"
+    set location "self"
+  }
+
   if { [info exists keys(-isolation_sense)] } {
     set isolation_sense $keys(-isolation_sense)
   }
@@ -231,13 +208,8 @@ proc set_isolation { args } {
     set location $keys(-location)
   }
 
-  if { [info exists flags(-update)] } {
-    set update 1
-  }
-
   upf::set_isolation_cmd $name $domain $update $applies_to $clamp_value \
     $isolation_signal $isolation_sense $location
-
 }
 
 # Specifies the cells to be used for an isolation strategy
@@ -247,11 +219,13 @@ proc set_isolation { args } {
 # - domain: power domain
 # - strategy: isolation strategy name
 # - lib_cells: list of lib cells that could be used
+# - interface_implementation_name: for compatibility only. OpenRoad doesn't use it.
 
 sta::define_cmd_args "use_interface_cell" { \
-    [-domain domain] \
-    [-strategy strategy] \
-    [-lib_cells lib_cells]
+    -domain domain \
+    -strategy strategy \
+    -lib_cells lib_cells \
+    interface_implementation_name
 }
 proc use_interface_cell { args } {
   upf::check_block_exists
@@ -259,7 +233,7 @@ proc use_interface_cell { args } {
   sta::parse_key_args "use_interface_cell" args \
     keys {-domain -strategy -lib_cells} flags {}
 
-  sta::check_argc_eq0 "use_interface_cell" $args
+  sta::check_argc_eq1 "use_interface_cell" $args
 
   set domain ""
   set strategy ""
@@ -267,18 +241,26 @@ proc use_interface_cell { args } {
 
   if { [info exists keys(-domain)] } {
     set domain $keys(-domain)
+  } else {
+    utl::error UPF 75 "-domain is required for use_interface_cell"
   }
 
   if { [info exists keys(-strategy)] } {
     set strategy $keys(-strategy)
+  } else {
+    utl::error UPF 76 "-strategy is required for use_interface_cell"
   }
 
   if { [info exists keys(-lib_cells)] } {
     set lib_cells $keys(-lib_cells)
+  } else {
+    utl::error UPF 77 "-lib_cells is required for use_interface_cell"
   }
 
-  foreach {cell} $lib_cells {
-    upf::use_interface_cell_cmd $domain $strategy $cell
+  foreach {strat} $strategy {
+    foreach {cell} $lib_cells {
+      upf::use_interface_cell_cmd $domain $strat $cell
+    }
   }
 }
 
@@ -302,18 +284,23 @@ proc set_domain_area { args } {
     if { [llength $area] != 4 } {
       utl::error UPF 36 "-area is a list of 4 coordinates"
     }
-    lassign $area llx lly urx ury
-    sta::check_positive_float "-area" $llx
-    sta::check_positive_float "-area" $lly
-    sta::check_positive_float "-area" $urx
-    sta::check_positive_float "-area" $ury
+    lassign $area lx ly ux uy
+    sta::check_positive_float "-area" $lx
+    sta::check_positive_float "-area" $ly
+    sta::check_positive_float "-area" $ux
+    sta::check_positive_float "-area" $uy
   } else {
     utl::error UPF 37 "please define area"
   }
   sta::check_argc_eq1 "set_domain_area" $args
   set domain_name $args
 
-  upf::set_domain_area_cmd $domain_name $llx $lly $urx $ury
+  set lx [ord::microns_to_dbu $lx]
+  set ly [ord::microns_to_dbu $ly]
+  set ux [ord::microns_to_dbu $ux]
+  set uy [ord::microns_to_dbu $uy]
+  set area [odb::new_Rect $lx $ly $ux $uy]
+  upf::set_domain_area_cmd $domain_name $area
 }
 
 # Specify which power-switch model is to be used for the implementation of the corresponding switch
@@ -340,7 +327,7 @@ proc map_power_switch { args } {
   upf::check_block_exists
 
   sta::parse_key_args "map_power_switch" args \
-    keys {switch_name_list -lib_cells -port_map} flags {}
+    keys {-switch_name_list -lib_cells -port_map} flags {}
 
   sta::check_argc_eq1 "map_power_switch" $args
 
@@ -363,7 +350,7 @@ proc map_power_switch { args } {
     upf::set_power_switch_cell $switch $cell
 
     foreach {port} $port_map {
-      if {[llength $port] != 2} {
+      if { [llength $port] != 2 } {
         utl::error UPF 40 "The port map should be a list of exactly 2 elements"
       }
       upf::set_power_switch_port $switch [lindex $port 0] [lindex $port 1]
@@ -519,9 +506,9 @@ proc set_level_shifter { args } {
   }
 
   set ok [upf::create_or_update_level_shifter_cmd $name $domain $source \
-          $sink $use_functional_equivalence $applies_to $applies_to_boundary \
-          $rule $threshold $no_shift $force_shift $location $input_supply \
-          $output_supply $internal_supply $name_prefix $name_suffix $update]
+    $sink $use_functional_equivalence $applies_to $applies_to_boundary \
+    $rule $threshold $no_shift $force_shift $location $input_supply \
+    $output_supply $internal_supply $name_prefix $name_suffix $update]
 
   if { $ok == 0 } {
     return
@@ -639,5 +626,4 @@ proc check_block_exists { } {
     utl::error UPF 34 "No block exists"
   }
 }
-
 }

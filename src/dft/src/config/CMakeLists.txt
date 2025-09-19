@@ -1,7 +1,11 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2023-2025, The OpenROAD Authors
+
 add_library(dft_config_lib
   # Keep sorted
   DftConfig.cpp
   ScanArchitectConfig.cpp
+  ScanStitchConfig.cpp
 )
 
 target_include_directories(dft_config_lib

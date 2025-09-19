@@ -1,45 +1,20 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2023, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include "bufferTreeDescriptor.h"
+
+#include <algorithm>
+#include <any>
+#include <functional>
+#include <set>
+#include <string>
 
 #include "colorGenerator.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "sta/Liberty.hh"
 
 namespace gui {
@@ -145,9 +120,9 @@ BufferTreeDescriptor::BufferTreeDescriptor(
   BufferTree::setSTA(sta);
 }
 
-std::string BufferTreeDescriptor::getName(std::any object) const
+std::string BufferTreeDescriptor::getName(const std::any& object) const
 {
-  BufferTree* bnet = std::any_cast<BufferTree>(&object);
+  const BufferTree* bnet = std::any_cast<BufferTree>(&object);
   return bnet->getName();
 }
 
@@ -156,9 +131,10 @@ std::string BufferTreeDescriptor::getTypeName() const
   return "Buffer Tree";
 }
 
-bool BufferTreeDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool BufferTreeDescriptor::getBBox(const std::any& object,
+                                   odb::Rect& bbox) const
 {
-  BufferTree* bnet = std::any_cast<BufferTree>(&object);
+  const BufferTree* bnet = std::any_cast<BufferTree>(&object);
   bbox.mergeInit();
   for (auto* net : bnet->getNets()) {
     odb::Rect box;
@@ -169,9 +145,10 @@ bool BufferTreeDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   return true;
 }
 
-void BufferTreeDescriptor::highlight(std::any object, Painter& painter) const
+void BufferTreeDescriptor::highlight(const std::any& object,
+                                     Painter& painter) const
 {
-  BufferTree* bnet = std::any_cast<BufferTree>(&object);
+  const BufferTree* bnet = std::any_cast<BufferTree>(&object);
 
   ColorGenerator generator;
   painter.saveState();
@@ -183,9 +160,9 @@ void BufferTreeDescriptor::highlight(std::any object, Painter& painter) const
 }
 
 Descriptor::Properties BufferTreeDescriptor::getProperties(
-    std::any object) const
+    const std::any& object) const
 {
-  BufferTree* bnet = std::any_cast<BufferTree>(&object);
+  const BufferTree* bnet = std::any_cast<BufferTree>(&object);
   Properties props;
 
   auto gui = Gui::get();
@@ -214,7 +191,7 @@ Descriptor::Properties BufferTreeDescriptor::getProperties(
   return props;
 }
 
-Selected BufferTreeDescriptor::makeSelected(std::any object) const
+Selected BufferTreeDescriptor::makeSelected(const std::any& object) const
 {
   if (auto* bnet = std::any_cast<BufferTree>(&object)) {
     return Selected(*bnet, this);
@@ -222,34 +199,34 @@ Selected BufferTreeDescriptor::makeSelected(std::any object) const
   return Selected();
 }
 
-bool BufferTreeDescriptor::lessThan(std::any l, std::any r) const
+bool BufferTreeDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
-  BufferTree* l_bnet = std::any_cast<BufferTree>(&l);
-  BufferTree* r_bnet = std::any_cast<BufferTree>(&r);
+  const BufferTree* l_bnet = std::any_cast<BufferTree>(&l);
+  const BufferTree* r_bnet = std::any_cast<BufferTree>(&r);
   return l_bnet->getName() < r_bnet->getName();
 }
 
-bool BufferTreeDescriptor::getAllObjects(SelectionSet& objects) const
+void BufferTreeDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
-    return false;
+    return;
   }
   auto* block = chip->getBlock();
   if (block == nullptr) {
-    return false;
+    return;
   }
 
   for (auto* net : block->getNets()) {
     if (BufferTree::isAggregate(net)) {
-      objects.insert(makeSelected(BufferTree(net)));
+      func({BufferTree(net), this});
     }
   }
-
-  return true;
 }
 
-Descriptor::Actions BufferTreeDescriptor::getActions(std::any object) const
+Descriptor::Actions BufferTreeDescriptor::getActions(
+    const std::any& object) const
 {
   BufferTree bnet = *std::any_cast<BufferTree>(&object);
 
@@ -260,14 +237,14 @@ Descriptor::Actions BufferTreeDescriptor::getActions(std::any object) const
     is_focus &= focus_nets_.count(net) != 0;
   }
   if (!is_focus) {
-    actions.push_back(Descriptor::Action{"Focus", [this, gui, bnet]() {
+    actions.push_back(Descriptor::Action{"Focus", [this, gui, &bnet]() {
                                            for (auto* net : bnet.getNets()) {
                                              gui->addFocusNet(net);
                                            }
                                            return makeSelected(bnet);
                                          }});
   } else {
-    actions.push_back(Descriptor::Action{"De-focus", [this, gui, bnet]() {
+    actions.push_back(Descriptor::Action{"De-focus", [this, gui, &bnet]() {
                                            for (auto* net : bnet.getNets()) {
                                              gui->removeFocusNet(net);
                                            }
@@ -279,7 +256,7 @@ Descriptor::Actions BufferTreeDescriptor::getActions(std::any object) const
     has_guides |= !net->getGuides().empty();
   }
   if (has_guides) {
-    actions.push_back(Descriptor::Action{"Route Guides", [this, gui, bnet]() {
+    actions.push_back(Descriptor::Action{"Route Guides", [this, gui, &bnet]() {
                                            bool guides_on = false;
                                            for (auto* net : bnet.getNets()) {
                                              guides_on
@@ -301,7 +278,7 @@ Descriptor::Actions BufferTreeDescriptor::getActions(std::any object) const
   }
   if (has_net_tracks) {
     actions.push_back(
-        Descriptor::Action{"Tracks", [this, gui, bnet]() {
+        Descriptor::Action{"Tracks", [this, gui, &bnet]() {
                              bool tracks_on = false;
                              for (auto* net : bnet.getNets()) {
                                tracks_on |= tracks_nets_.count(net) != 0;

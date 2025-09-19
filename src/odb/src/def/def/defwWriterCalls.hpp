@@ -30,14 +30,14 @@
 #ifndef DEFI_WRITER_H
 #define DEFI_WRITER_H
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <cstdarg>
+#include <cstdio>
 
 #include "defiDefs.hpp"
 #include "defiKRDefs.hpp"
 #include "defiUser.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 /*
  * The main writer function.
@@ -54,7 +54,7 @@ extern int defwWrite(FILE* file, const char* fileName, defiUserData userData);
  * that will add up how many times a given def data type was ignored
  * (ie no callback was done).  The statistics can later be printed out.
  */
-extern void defwSetRegisterUnusedCallbacks(void);
+extern void defwSetRegisterUnusedCallbacks();
 extern void defwPrintUnusedCallbacks(FILE* log);
 
 /*
@@ -66,12 +66,12 @@ extern void defwPrintUnusedCallbacks(FILE* log);
  * user data pointers.
  */
 extern void defwSetUserData(defiUserData);
-extern defiUserData defwGetUserData(void);
+extern defiUserData defwGetUserData();
 
 /*
  * An enum describing all of the types of writer callbacks.
  */
-typedef enum
+enum defwCallbackType_e
 {
   defwUnspecifiedCbkType = 0,
   defwVersionCbkType,
@@ -111,7 +111,7 @@ typedef enum
   /* NEW CALLBACKS - each callback has its own type.  For each callback
    * that you add, you must add an item to this enum. */
 
-} defwCallbackType_e;
+};
 
 /* Declarations of function signatures for each type of callback.
  * These declarations are type-safe when compiling with ANSI C
@@ -147,7 +147,7 @@ typedef enum
  */
 
 /* A declaration of the signature of all callbacks that return nothing. */
-typedef int (*defwVoidCbkFnType)(defwCallbackType_e, defiUserData);
+using defwVoidCbkFnType = int (*)(defwCallbackType_e, defiUserData);
 
 /* Functions to call to register a callback function.
  */
@@ -197,20 +197,18 @@ extern void defwSetUnusedCallbacks(defwVoidCbkFnType func);
 
 /* Routine to set the message logging routine for errors */
 #ifndef DEFI_LOG_FUNCTION
-typedef void (*DEFI_LOG_FUNCTION)(const char*);
+using DEFI_LOG_FUNCTION = void (*)(const char*);
 #endif
 
 extern void defwSetLogFunction(DEFI_LOG_FUNCTION);
 
 /* Routine to set the message logging routine for warnings */
 #ifndef DEFI_WARNING_LOG_FUNCTION
-typedef void (*DEFI_WARNING_LOG_FUNCTION)(const char*);
+using DEFI_WARNING_LOG_FUNCTION = void (*)(const char*);
 #endif
 
 extern void defwSetWarningLogFunction(DEFI_WARNING_LOG_FUNCTION);
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

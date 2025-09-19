@@ -1,38 +1,11 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbSBox.h"
 
-#include "db.h"
+#include <string>
+#include <vector>
+
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbDatabase.h"
@@ -43,6 +16,10 @@
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbVia.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace odb {
 
@@ -50,8 +27,9 @@ template class dbTable<_dbSBox>;
 
 bool _dbSBox::operator==(const _dbSBox& rhs) const
 {
-  if (_sflags._wire_type != rhs._sflags._wire_type)
+  if (_sflags._wire_type != rhs._sflags._wire_type) {
     return false;
+  }
 
   if (_sflags._direction != rhs._sflags._direction) {
     return false;
@@ -69,16 +47,18 @@ bool _dbSBox::operator==(const _dbSBox& rhs) const
     return false;
   }
 
-  if (_dbBox::operator!=(rhs))
+  if (_dbBox::operator!=(rhs)) {
     return false;
+  }
 
   return true;
 }
 
 int _dbSBox::equal(const _dbSBox& rhs) const
 {
-  if (_sflags._wire_type != rhs._sflags._wire_type)
+  if (_sflags._wire_type != rhs._sflags._wire_type) {
     return false;
+  }
 
   if (_sflags._direction != rhs._sflags._direction) {
     return false;
@@ -101,8 +81,9 @@ int _dbSBox::equal(const _dbSBox& rhs) const
 
 bool _dbSBox::operator<(const _dbSBox& rhs) const
 {
-  if (_sflags._wire_type < rhs._sflags._wire_type)
+  if (_sflags._wire_type < rhs._sflags._wire_type) {
     return true;
+  }
 
   if (_sflags._direction < rhs._sflags._direction) {
     return true;
@@ -120,8 +101,9 @@ bool _dbSBox::operator<(const _dbSBox& rhs) const
     return true;
   }
 
-  if (_sflags._wire_type > rhs._sflags._wire_type)
+  if (_sflags._wire_type > rhs._sflags._wire_type) {
     return false;
+  }
 
   if (_sflags._direction > rhs._sflags._direction) {
     return false;
@@ -140,88 +122,6 @@ bool _dbSBox::operator<(const _dbSBox& rhs) const
   }
 
   return _dbBox::operator<(rhs);
-}
-
-void _dbSBox::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbSBox& rhs) const
-{
-  if (diff.deepDiff())
-    return;
-
-  DIFF_BEGIN
-  DIFF_FIELD(_sflags._wire_type);
-  DIFF_FIELD(_sflags._direction);
-  DIFF_FIELD(_sflags._via_bottom_mask);
-  DIFF_FIELD(_sflags._via_cut_mask);
-  DIFF_FIELD(_sflags._via_top_mask);
-  DIFF_FIELD(_sflags._wire_type);
-  DIFF_FIELD(_sflags._wire_type);
-  DIFF_FIELD(_flags._owner_type);
-  DIFF_FIELD(_flags._is_tech_via);
-  DIFF_FIELD(_flags._is_block_via);
-  DIFF_FIELD(_flags._layer_id);
-  DIFF_FIELD(_flags._via_id);
-  if (!isOct())
-    DIFF_FIELD(_shape._rect);
-  DIFF_FIELD_NO_DEEP(_owner);
-  DIFF_FIELD_NO_DEEP(_next_box);
-  DIFF_END
-}
-
-void _dbSBox::out(dbDiff& diff, char side, const char* field) const
-{
-  if (!diff.deepDiff()) {
-    DIFF_OUT_BEGIN
-    DIFF_OUT_FIELD(_sflags._wire_type);
-    DIFF_OUT_FIELD(_sflags._direction);
-    DIFF_OUT_FIELD(_sflags._via_bottom_mask);
-    DIFF_OUT_FIELD(_sflags._via_cut_mask);
-    DIFF_OUT_FIELD(_sflags._via_top_mask);
-    DIFF_OUT_FIELD(_flags._owner_type);
-    DIFF_OUT_FIELD(_flags._is_tech_via);
-    DIFF_OUT_FIELD(_flags._is_block_via);
-    DIFF_OUT_FIELD(_flags._layer_id);
-    DIFF_OUT_FIELD(_flags._via_id);
-    if (!isOct())
-      DIFF_OUT_FIELD(_shape._rect);
-    DIFF_OUT_FIELD(_owner);
-    DIFF_END
-  } else {
-    DIFF_OUT_BEGIN
-    DIFF_OUT_FIELD(_sflags._wire_type);
-
-    switch (getType()) {
-      case BLOCK_VIA: {
-        int x, y;
-        getViaXY(x, y);
-        _dbVia* via = getBlockVia();
-        diff.report("%c BLOCK-VIA %s (%d %d)\n", side, via->_name, x, y);
-        break;
-      }
-
-      case TECH_VIA: {
-        int x, y;
-        getViaXY(x, y);
-        _dbTechVia* via = getTechVia();
-        diff.report("%c TECH-VIA %s (%d %d)\n", side, via->_name, x, y);
-        break;
-      }
-
-      case BOX: {
-        //_dbTechLayer * lay = getTechLayer();
-        diff.report("%c BOX (%d %d) (%d %d)\n",
-                    side,
-                    _shape._rect.xMin(),
-                    _shape._rect.yMin(),
-                    _shape._rect.xMax(),
-                    _shape._rect.yMax());
-        break;
-      }
-    }
-
-    DIFF_END
-  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -305,36 +205,42 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   _dbSBox* box = block->_sbox_tbl->create();
 
   uint dx;
-  if (x2 > x1)
+  if (x2 > x1) {
     dx = x2 - x1;
-  else
+  } else {
     dx = x1 - x2;
+  }
 
   uint dy;
-  if (y2 > y1)
+  if (y2 > y1) {
     dy = y2 - y1;
-  else
+  } else {
     dy = y1 - y2;
+  }
 
   switch (dir) {
     case UNDEFINED:
-      if ((dx & 1) && (dy & 1))  // both odd
+      if ((dx & 1) && (dy & 1)) {  // both odd
         return nullptr;
+      }
 
       break;
 
     case HORIZONTAL:
-      if (dy & 1)  // dy odd
+      if (dy & 1) {  // dy odd
         return nullptr;
+      }
       break;
 
     case VERTICAL:
-      if (dx & 1)  // dy odd
+      if (dx & 1) {  // dy odd
         return nullptr;
+      }
       break;
     case OCTILINEAR:
-      if (dx != dy)
+      if (dx != dy) {
         return nullptr;
+      }
       break;
   }
 
@@ -371,8 +277,9 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   _dbVia* via = (_dbVia*) via_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
 
-  if (via->_bbox == 0)
+  if (via->_bbox == 0) {
     return nullptr;
+  }
 
   _dbBox* vbbox = block->_box_tbl->getPtr(via->_bbox);
   int xmin = vbbox->_shape._rect.xMin() + x;
@@ -403,8 +310,9 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   _dbTechVia* via = (_dbTechVia*) via_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
 
-  if (via->_bbox == 0)
+  if (via->_bbox == 0) {
     return nullptr;
+  }
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   _dbBox* vbbox = tech->_box_tbl->getPtr(via->_bbox);
@@ -443,6 +351,70 @@ void dbSBox::destroy(dbSBox* box_)
   block->remove_rect(box->_shape._rect);
   dbProperty::destroyProperties(box);
   block->_sbox_tbl->destroy(box);
+}
+
+std::vector<dbSBox*> dbSBox::smashVia()
+{
+  if (!isVia()) {
+    return {};
+  }
+
+  auto* block_via = getBlockVia();
+
+  if (block_via == nullptr) {
+    return {};
+  }
+
+  if (block_via->getTechVia() != nullptr) {
+    return {};
+  }
+
+  auto params = block_via->getViaParams();
+
+  if (params.getNumCutCols() == 1 && params.getNumCutRows() == 1) {
+    // nothing to do
+    return {};
+  }
+
+  const std::string name = block_via->getName() + "_smashed";
+
+  _dbSWire* wire = (_dbSWire*) getSWire();
+  dbBlock* block = (dbBlock*) wire->getOwner();
+  dbSWire* swire = (dbSWire*) wire;
+
+  odb::dbVia* new_block_via = block->findVia(name.c_str());
+
+  if (new_block_via == nullptr) {
+    new_block_via = odb::dbVia::create(block, name.c_str());
+
+    params.setNumCutCols(1);
+    params.setNumCutRows(1);
+
+    new_block_via->setViaParams(params);
+  }
+
+  std::vector<dbSBox*> new_boxes;
+
+  std::vector<odb::dbShape> via_boxes;
+  getViaBoxes(via_boxes);
+  for (const auto& via_box : via_boxes) {
+    auto* layer = via_box.getTechLayer();
+    if (layer->getType() != odb::dbTechLayerType::CUT) {
+      continue;
+    }
+
+    const auto& box = via_box.getBox();
+    auto* sbox_via = odb::dbSBox::create(
+        swire, new_block_via, box.xCenter(), box.yCenter(), getWireShapeType());
+    new_boxes.push_back(sbox_via);
+
+    if (hasViaLayerMasks()) {
+      sbox_via->setViaLayerMask(
+          getViaBottomLayerMask(), getViaCutLayerMask(), getViaTopLayerMask());
+    }
+  }
+
+  return new_boxes;
 }
 
 }  // namespace odb

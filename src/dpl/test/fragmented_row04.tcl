@@ -2,7 +2,7 @@
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_def fragmented_row04.def
-catch {check_placement -verbose} error
+catch { check_placement -verbose } error
 puts $error
 detailed_placement
 check_placement -verbose

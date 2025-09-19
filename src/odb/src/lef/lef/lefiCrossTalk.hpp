@@ -30,11 +30,11 @@
 #ifndef lefiCrossTalk_h
 #define lefiCrossTalk_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // Structure returned for the noise margin callback.
 // This lef construct has two floating point numbers.
@@ -62,11 +62,11 @@ class lefiNoiseVictim
   double noise(int index) const;
 
  protected:
-  double length_;
+  double length_{0.0};
 
-  int numNoises_;
-  int noisesAllocated_;
-  double* noises_;
+  int numNoises_{0};
+  int noisesAllocated_{0};
+  double* noises_{nullptr};
 };
 
 class lefiNoiseResistance
@@ -91,13 +91,13 @@ class lefiNoiseResistance
   lefiNoiseVictim* victim(int index) const;
 
  protected:
-  int numNums_;
-  int numsAllocated_;
-  double* nums_;
+  int numNums_{0};
+  int numsAllocated_{0};
+  double* nums_{nullptr};
 
-  int numVictims_;
-  int victimsAllocated_;
-  lefiNoiseVictim** victims_;
+  int numVictims_{0};
+  int victimsAllocated_{0};
+  lefiNoiseVictim** victims_{nullptr};
 };
 
 class lefiNoiseEdge
@@ -276,8 +276,6 @@ class lefiCorrectionTable
   lefiCorrectionEdge** edges_;
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

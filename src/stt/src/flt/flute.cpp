@@ -1,34 +1,5 @@
-////////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2018, Iowa State University All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-// this list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-// this list of conditions and the following disclaimer in the documentation
-// and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its contributors
-// may be used to endorse or promote products derived from this software
-// without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-////////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include "stt/flute.h"
 
@@ -39,7 +10,12 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 #include <string>
+#include <utility>
+#include <vector>
+
+#include "utl/decode.h"
 
 // Use flute LUT file reader.
 #define LUT_FILE 1
@@ -54,10 +30,6 @@
 // #define LUT_SOURCE LUT_VAR_CHECK
 #define LUT_SOURCE LUT_VAR
 
-namespace stt {
-
-namespace flt {
-
 #if FLUTE_D <= 7
 #define MGROUP 5040 / 4  // Max. # of groups, 7! = 5040
 #define MPOWV 15         // Max. # of POWVs per group
@@ -68,9 +40,12 @@ namespace flt {
 #define MGROUP 362880 / 4  // Max. # of groups, 9! = 362880
 #define MPOWV 79           // Max. # of POWVs per group
 #endif
-int numgrp[10] = {0, 0, 0, 0, 6, 30, 180, 1260, 10080, 90720};
 
-struct csoln
+namespace stt {
+
+namespace flt {
+
+struct Flute::csoln
 {
   unsigned char parent;
   unsigned char seg[11];  // Add: 0..i, Sub: j..10; seg[i+1]=seg[j-1]=0
@@ -78,26 +53,11 @@ struct csoln
   unsigned char neighbor[2 * FLUTE_D - 2];
 };
 
-// struct csoln *LUT[FLUTE_D + 1][MGROUP];  // storing 4 .. FLUTE_D
-// int numsoln[FLUTE_D + 1][MGROUP];
-
-using LUT_TYPE = struct csoln***;
-using NUMSOLN_TYPE = int**;
-
-// Dynamically allocate LUTs.
-LUT_TYPE LUT = nullptr;
-NUMSOLN_TYPE numsoln;
-
 struct point
 {
   int x, y;
   int o;
 };
-
-Tree dmergetree(Tree t1, Tree t2);
-Tree hmergetree(Tree t1, Tree t2, const std::vector<int>& s);
-Tree vmergetree(Tree t1, Tree t2);
-void local_refinement(int deg, Tree* tp, int p);
 
 template <class T>
 inline T ADIFF(T x, T y)
@@ -115,16 +75,16 @@ static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
 {
   unsigned char charnum[256], line[32], *linep, c;
   FILE *fpwv, *fprt;
-  struct csoln* p;
   int d, i, j, k, kk, ns, nn;
 
   for (i = 0; i <= 255; i++) {
-    if ('0' <= i && i <= '9')
+    if ('0' <= i && i <= '9') {
       charnum[i] = i - '0';
-    else if (i >= 'A')
+    } else if (i >= 'A') {
       charnum[i] = i - 'A' + 10;
-    else  // if (i=='$' || i=='\n' || ... )
+    } else {  // if (i=='$' || i=='\n' || ... )
       charnum[i] = 0;
+    }
   }
 
   fpwv = fopen(FLUTE_POWVFILE, "r");
@@ -155,12 +115,11 @@ static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
         fscanf(fpwv, "%d", &kk);
         fgetc(fpwv);  // '/n'
         numsoln[d][k] = numsoln[d][kk];
-        LUT[d][k] = LUT[d][kk];
+        (*LUT)[d][k] = (*LUT)[d][kk];
       } else {
         fgetc(fpwv);  // '\n'
         numsoln[d][k] = ns;
-        p = (struct csoln*) malloc(ns * sizeof(struct csoln));
-        LUT[d][k] = p;
+        auto p = std::make_shared<struct csoln[]>(ns);
         for (i = 1; i <= ns; i++) {
           linep = (unsigned char*) fgets((char*) line, 32, fpwv);
           p->parent = charnum[*(linep++)];
@@ -188,6 +147,7 @@ static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
 #endif
           p++;
         }
+        (*LUT)[d][k] = std::move(p);
       }
     }
   }
@@ -200,12 +160,6 @@ static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
 
 ////////////////////////////////////////////////////////////////
 
-static void readLUT();
-static void makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln);
-static void deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln);
-static void initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln);
-static void ensureLUT(int d);
-static std::string base64_decode(std::string const& encoded_string);
 #if LUT_SOURCE == LUT_VAR_CHECK
 static void checkLUT(LUT_TYPE LUT1,
                      NUMSOLN_TYPE numsoln1,
@@ -213,16 +167,12 @@ static void checkLUT(LUT_TYPE LUT1,
                      NUMSOLN_TYPE numsoln2);
 #endif
 
-// LUTs are initialized to this order at startup.
-static constexpr int lut_initial_d = 8;
-static int lut_valid_d = 0;
+extern const char* post9[];
+extern const char* powv9[];
 
-extern std::string post9;
-extern std::string powv9;
-
-static void readLUT()
+void Flute::readLUT()
 {
-  makeLUT(LUT, numsoln);
+  makeLUT(LUT_, numsoln_);
 
 #if LUT_SOURCE == LUT_FILE
   readLUTfiles(LUT, numsoln);
@@ -230,7 +180,7 @@ static void readLUT()
 
 #elif LUT_SOURCE == LUT_VAR
   // Only init to d=8 on startup because d=9 is big and slow.
-  initLUT(lut_initial_d, LUT, numsoln);
+  initLUT(lut_initial_d, LUT_, numsoln_);
 
 #elif LUT_SOURCE == LUT_VAR_CHECK
   readLUTfiles(LUT, numsoln);
@@ -240,33 +190,33 @@ static void readLUT()
   makeLUT(LUT_, numsoln_);
   initLUT(FLUTE_D, LUT_, numsoln_);
   checkLUT(LUT, numsoln, LUT_, numsoln_);
+  deleteLUT(LUT_, numsoln_);
 #endif
 }
 
-static void makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
+void Flute::makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
 {
-  LUT = new struct csoln**[FLUTE_D + 1];
+  LUT = new boost::multi_array<std::shared_ptr<struct csoln[]>, 2>(
+      boost::extents[FLUTE_D + 1][MGROUP]);
   numsoln = new int*[FLUTE_D + 1];
   for (int d = 4; d <= FLUTE_D; d++) {
-    LUT[d] = new struct csoln*[MGROUP];
     numsoln[d] = new int[MGROUP];
   }
 }
 
-void deleteLUT()
+void Flute::deleteLUT()
 {
-  deleteLUT(LUT, numsoln);
+  deleteLUT(LUT_, numsoln_);
 }
 
-static void deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
+void Flute::deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
 {
   if (LUT) {
+    delete LUT;
     for (int d = 4; d <= FLUTE_D; d++) {
-      delete[] LUT[d];
       delete[] numsoln[d];
     }
     delete[] numsoln;
-    delete[] LUT;
   }
 }
 
@@ -300,13 +250,13 @@ inline const char* readDecimalInt(const char* s, int& value)
 }
 
 // Init LUTs from base64 encoded string variables.
-static void initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
+void Flute::initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
 {
-  std::string pwv_string = base64_decode(powv9);
+  std::string pwv_string = utl::base64_decode(powv9);
   const char* pwv = pwv_string.c_str();
 
 #if FLUTE_ROUTING == 1
-  std::string prt_string = base64_decode(post9);
+  std::string prt_string = utl::base64_decode(post9);
   const char* prt = prt_string.c_str();
 #endif
 
@@ -327,12 +277,12 @@ static void initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
         int kk;
         pwv = readDecimalInt(pwv, kk) + 1;
         numsoln[d][k] = numsoln[d][kk];
-        LUT[d][k] = LUT[d][kk];
+        (*LUT)[d][k] = (*LUT)[d][kk];
       } else {
         pwv++;  // '\n'
         numsoln[d][k] = ns;
         struct csoln* p = new struct csoln[ns];
-        LUT[d][k] = p;
+        (*LUT)[d][k] = std::shared_ptr<struct csoln[]>(p);
         for (int i = 1; i <= ns; i++) {
           p->parent = charNum(*pwv++);
 
@@ -373,16 +323,16 @@ static void initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
       }
     }
   }
-  lut_valid_d = to_d;
+  lut_valid_d_ = to_d;
 }
 
-static void ensureLUT(int d)
+void Flute::ensureLUT(int d)
 {
-  if (LUT == nullptr) {
+  if (LUT_ == nullptr) {
     readLUT();
   }
-  if (d > lut_valid_d && d <= FLUTE_D) {
-    initLUT(FLUTE_D, LUT, numsoln);
+  if (d > lut_valid_d_ && d <= FLUTE_D) {
+    initLUT(FLUTE_D, LUT_, numsoln_);
   }
 }
 
@@ -396,130 +346,46 @@ static void checkLUT(LUT_TYPE LUT1,
     for (int k = 0; k < numgrp[d]; k++) {
       int ns1 = numsoln1[d][k];
       int ns2 = numsoln2[d][k];
-      if (ns1 != ns2)
+      if (ns1 != ns2) {
         printf("numsoln[%d][%d] mismatch\n", d, k);
-      struct csoln* soln1 = LUT1[d][k];
-      struct csoln* soln2 = LUT2[d][k];
-      if (soln1->parent != soln2->parent)
+      }
+      struct csoln* soln1 = LUT1[d][k].get();
+      struct csoln* soln2 = LUT2[d][k].get();
+      if (soln1->parent != soln2->parent) {
         printf("LUT[%d][%d]->parent mismatch\n", d, k);
+      }
       for (int j = 0; soln1->seg[j] != 0; j++) {
-        if (soln1->seg[j] != soln2->seg[j])
+        if (soln1->seg[j] != soln2->seg[j]) {
           printf("LUT[%d][%d]->seg[%d] mismatch\n", d, k, j);
+        }
       }
       for (int j = 10; soln1->seg[j] != 0; j--) {
-        if (soln1->seg[j] != soln2->seg[j])
+        if (soln1->seg[j] != soln2->seg[j]) {
           printf("LUT[%d][%d]->seg[%d] mismatch\n", d, k, j);
+        }
       }
       int nn = 2 * d - 2;
       for (int j = d; j < nn; j++) {
-        if (soln1->rowcol[j - d] != soln2->rowcol[j - d])
+        if (soln1->rowcol[j - d] != soln2->rowcol[j - d]) {
           printf("LUT[%d][%d]->rowcol[%d] mismatch\n", d, k, j);
+        }
       }
       for (int j = 0; j < nn; j++) {
-        if (soln1->neighbor[j] != soln2->neighbor[j])
+        if (soln1->neighbor[j] != soln2->neighbor[j]) {
           printf("LUT[%d][%d]->neighbor[%d] mismatch\n", d, k, j);
+        }
       }
     }
   }
 }
 #endif
 
-/*
-   base64.cpp and base64.h
-
-   Copyright (C) 2004-2008 René Nyffenegger
-
-   This source code is provided 'as-is', without any express or implied
-   warranty. In no event will the author be held liable for any damages
-   arising from the use of this software.
-
-   Permission is granted to anyone to use this software for any purpose,
-   including commercial applications, and to alter it and redistribute it
-   freely, subject to the following restrictions:
-
-   1. The origin of this source code must not be misrepresented; you must not
-   claim that you wrote the original source code. If you use this source code
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-
-   2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original source code.
-
-   3. This notice may not be removed or altered from any source distribution.
-
-   René Nyffenegger rene.nyffenegger@adp-gmbh.ch
-
-*/
-
-static const std::string base64_chars
-    = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "abcdefghijklmnopqrstuvwxyz"
-      "0123456789+/";
-
-static inline bool is_base64(unsigned char c)
-{
-  return (isalnum(c) || (c == '+') || (c == '/'));
-}
-
-static std::string base64_decode(std::string const& encoded_string)
-{
-  int in_len = encoded_string.size();
-  int i = 0;
-  int j = 0;
-  int in_ = 0;
-  char char_array_4[4], char_array_3[3];
-  std::string ret;
-
-  while (in_len-- && (encoded_string[in_] != '=')
-         && is_base64(encoded_string[in_])) {
-    char_array_4[i++] = encoded_string[in_];
-    in_++;
-    if (i == 4) {
-      for (i = 0; i < 4; i++) {
-        char_array_4[i] = base64_chars.find(char_array_4[i]);
-      }
-
-      char_array_3[0]
-          = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-      char_array_3[1]
-          = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-      char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
-
-      for (i = 0; (i < 3); i++) {
-        ret += char_array_3[i];
-      }
-      i = 0;
-    }
-  }
-
-  if (i) {
-    for (j = i; j < 4; j++) {
-      char_array_4[j] = 0;
-    }
-
-    for (j = 0; j < 4; j++) {
-      char_array_4[j] = base64_chars.find(char_array_4[j]);
-    }
-
-    char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-    char_array_3[1]
-        = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-    char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
-
-    for (j = 0; (j < i - 1); j++) {
-      ret += char_array_3[j];
-    }
-  }
-
-  return ret;
-}
-
 ////////////////////////////////////////////////////////////////
 
-int flute_wl(int d,
-             const std::vector<int>& x,
-             const std::vector<int>& y,
-             int acc)
+int Flute::flute_wl(int d,
+                    const std::vector<int>& x,
+                    const std::vector<int>& y,
+                    int acc)
 {
   int minval, l, xu, xl, yu, yl;
   std::vector<int> xs, ys;
@@ -582,11 +448,14 @@ int flute_wl(int d,
     ptp[d]->x = ptp[d]->y = -999999;
     j = 0;
     for (i = 0; i < d; i++) {
-      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++)
-        if (ptp[k]->y == ptp[i]->y)  // pins k and i are the same
+      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++) {
+        if (ptp[k]->y == ptp[i]->y) {  // pins k and i are the same
           break;
-      if (ptp[k]->x != ptp[i]->x)
+        }
+      }
+      if (ptp[k]->x != ptp[i]->x) {
         ptp[j++] = ptp[i];
+      }
     }
     d = j;
 #endif
@@ -628,11 +497,11 @@ int flute_wl(int d,
 // The points are (xs[s[i]], ys[i]) for i=0..d-1
 //             or (xs[i], ys[si[i]]) for i=0..d-1
 
-int flutes_wl_RDP(int d,
-                  std::vector<int> xs,
-                  std::vector<int> ys,
-                  std::vector<int> s,
-                  int acc)
+int Flute::flutes_wl_RDP(int d,
+                         std::vector<int> xs,
+                         std::vector<int> ys,
+                         std::vector<int> s,
+                         int acc)
 {
   int i, j, ss;
 
@@ -666,10 +535,10 @@ int flutes_wl_RDP(int d,
 }
 
 // For low-degree, i.e., 2 <= d <= FLUTE_D
-int flutes_wl_LD(int d,
-                 const std::vector<int>& xs,
-                 const std::vector<int>& ys,
-                 const std::vector<int>& s)
+int Flute::flutes_wl_LD(int d,
+                        const std::vector<int>& xs,
+                        const std::vector<int>& ys,
+                        const std::vector<int>& s)
 {
   int k, pi, i, j;
   struct csoln* rlist;
@@ -713,14 +582,14 @@ int flutes_wl_LD(int d,
     }
 
     minl = l[0] = xs[d - 1] - xs[0] + ys[d - 1] - ys[0];
-    rlist = LUT[d][k];
+    rlist = (*LUT_)[d][k].get();
     for (i = 0; rlist->seg[i] > 0; i++) {
       minl += dd[rlist->seg[i]];
     }
 
     l[1] = minl;
     j = 2;
-    while (j <= numsoln[d][k]) {
+    while (j <= numsoln_[d][k]) {
       rlist++;
       sum = l[rlist->parent];
       for (i = 0; rlist->seg[i] > 0; i++) {
@@ -738,11 +607,11 @@ int flutes_wl_LD(int d,
 }
 
 // For medium-degree, i.e., FLUTE_D+1 <= d
-int flutes_wl_MD(int d,
-                 const std::vector<int>& xs,
-                 const std::vector<int>& ys,
-                 const std::vector<int>& s,
-                 int acc)
+int Flute::flutes_wl_MD(int d,
+                        const std::vector<int>& xs,
+                        const std::vector<int>& ys,
+                        const std::vector<int>& s,
+                        int acc)
 {
   float pnlty, dx, dy;
   float *score, *penalty;
@@ -1044,7 +913,7 @@ static bool ordery(const point* a, const point* b)
   return a->y < b->y;
 }
 
-Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc)
+Tree Flute::flute(const std::vector<int>& x, const std::vector<int>& y, int acc)
 {
   std::vector<int> xs, ys;
   int minval;
@@ -1110,11 +979,14 @@ Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc)
     ptp[d]->x = ptp[d]->y = -999999;
     j = 0;
     for (i = 0; i < d; i++) {
-      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++)
-        if (ptp[k]->y == ptp[i]->y)  // pins k and i are the same
+      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++) {
+        if (ptp[k]->y == ptp[i]->y) {  // pins k and i are the same
           break;
-      if (ptp[k]->x != ptp[i]->x)
+        }
+      }
+      if (ptp[k]->x != ptp[i]->x) {
         ptp[j++] = ptp[i];
+      }
     }
     d = j;
 #endif
@@ -1164,11 +1036,11 @@ Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc)
 // The points are (xs[s[i]], ys[i]) for i=0..d-1
 //             or (xs[i], ys[si[i]]) for i=0..d-1
 
-Tree flutes_RDP(int d,
-                std::vector<int> xs,
-                std::vector<int> ys,
-                std::vector<int> s,
-                int acc)
+Tree Flute::flutes_RDP(int d,
+                       std::vector<int> xs,
+                       std::vector<int> ys,
+                       std::vector<int> s,
+                       int acc)
 {
   int i, j, ss;
 
@@ -1202,10 +1074,10 @@ Tree flutes_RDP(int d,
 }
 
 // For low-degree, i.e., 2 <= d <= FLUTE_D
-Tree flutes_LD(int d,
-               const std::vector<int>& xs,
-               const std::vector<int>& ys,
-               const std::vector<int>& s)
+Tree Flute::flutes_LD(int d,
+                      const std::vector<int>& xs,
+                      const std::vector<int>& ys,
+                      const std::vector<int>& s)
 {
   int k, pi, i, j;
   struct csoln *rlist, *bestrlist;
@@ -1275,14 +1147,14 @@ Tree flutes_LD(int d,
     }
 
     minl = l[0] = xs[d - 1] - xs[0] + ys[d - 1] - ys[0];
-    rlist = LUT[d][k];
+    rlist = (*LUT_)[d][k].get();
     for (i = 0; rlist->seg[i] > 0; i++) {
       minl += dd[rlist->seg[i]];
     }
     bestrlist = rlist;
     l[1] = minl;
     j = 2;
-    while (j <= numsoln[d][k]) {
+    while (j <= numsoln_[d][k]) {
       rlist++;
       sum = l[rlist->parent];
       for (i = 0; rlist->seg[i] > 0; i++) {
@@ -1359,11 +1231,11 @@ Tree flutes_LD(int d,
 }
 
 // For medium-degree, i.e., FLUTE_D+1 <= d
-Tree flutes_MD(int d,
-               const std::vector<int>& xs,
-               const std::vector<int>& ys,
-               const std::vector<int>& s,
-               int acc)
+Tree Flute::flutes_MD(int d,
+                      const std::vector<int>& xs,
+                      const std::vector<int>& ys,
+                      const std::vector<int>& s,
+                      int acc)
 {
   float *score, *penalty, pnlty, dx, dy;
   int ms, mins, maxs, minsi, maxsi;
@@ -1697,7 +1569,7 @@ Tree flutes_MD(int d,
   return t;
 }
 
-Tree dmergetree(Tree t1, Tree t2)
+Tree Flute::dmergetree(Tree t1, Tree t2)
 {
   int i, d, prev, curr, next, offset1, offset2;
   Tree t;
@@ -1743,7 +1615,7 @@ Tree dmergetree(Tree t1, Tree t2)
   return t;
 }
 
-Tree hmergetree(Tree t1, Tree t2, const std::vector<int>& s)
+Tree Flute::hmergetree(Tree t1, Tree t2, const std::vector<int>& s)
 {
   int i, prev, curr, next, extra, offset1, offset2;
   int p, n1, n2;
@@ -1824,7 +1696,7 @@ Tree hmergetree(Tree t1, Tree t2, const std::vector<int>& s)
   return t;
 }
 
-Tree vmergetree(Tree t1, Tree t2)
+Tree Flute::vmergetree(Tree t1, Tree t2)
 {
   int i, prev, curr, next, extra, offset1, offset2;
   int coord1, coord2;
@@ -1886,7 +1758,7 @@ Tree vmergetree(Tree t1, Tree t2)
   return t;
 }
 
-void local_refinement(int deg, Tree* tp, int p)
+void Flute::local_refinement(int deg, Tree* tp, int p)
 {
   int d, dd, i, ii, j, prev, curr, next, root;
   std::vector<int> SteinerPin, index, ss;
@@ -2003,7 +1875,7 @@ void local_refinement(int deg, Tree* tp, int p)
   }
 }
 
-int wirelength(Tree t)
+int Flute::wirelength(Tree t)
 {
   int i, j;
   int l = 0;
@@ -2018,57 +1890,13 @@ int wirelength(Tree t)
 }
 
 // Output in a format that can be plotted by gnuplot
-void plottree(Tree t)
+void Flute::plottree(Tree t)
 {
   int i;
 
   for (i = 0; i < 2 * t.deg - 2; i++) {
     printf("%d %d\n", t.branch[i].x, t.branch[i].y);
     printf("%d %d\n\n", t.branch[t.branch[i].n].x, t.branch[t.branch[i].n].y);
-  }
-}
-
-// Write svg file viewable in a web browser.
-void write_svg(Tree t, const char* filename)
-{
-  int x_min = INT_MAX;
-  int y_min = INT_MAX;
-  int x_max = INT_MIN;
-  int y_max = INT_MIN;
-  for (int i = 0; i < 2 * t.deg - 2; i++) {
-    x_min = std::min(x_min, t.branch[i].x);
-    y_min = std::min(y_min, t.branch[i].y);
-    x_max = std::max(x_max, t.branch[i].x);
-    y_max = std::max(y_max, t.branch[i].y);
-  }
-
-  int dx = x_max - x_min;
-  int dy = y_max - y_min;
-  const double sz = std::max(std::max(dx, dy) / 400.0, 1.0);
-  const double hsz = sz / 2;
-
-  FILE* stream = fopen(filename, "w");
-  if (stream) {
-    fprintf(stream,
-            "<svg xmlns=\"http://www.w3.org/2000/svg\" "
-            "viewBox=\"%d %d %d %d\">\n",
-            x_min,
-            y_min,
-            dx,
-            dy);
-
-    for (int i = 0; i < 2 * t.deg - 2; i++) {
-      fprintf(stream,
-              "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" "
-              "style=\"stroke: black; stroke-width: %lf\"/>\n",
-              t.branch[i].x,
-              t.branch[i].y,
-              t.branch[t.branch[i].n].x,
-              t.branch[t.branch[i].n].y,
-              hsz / 2);
-    }
-    fprintf(stream, "</svg>\n");
-    fclose(stream);
   }
 }
 

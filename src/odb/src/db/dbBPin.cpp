@@ -1,49 +1,24 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbBPin.h"
 
-#include <iostream>
+#include <vector>
 
-#include "db.h"
 #include "dbAccessPoint.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbSet.h"
+#include "odb/geom.h"
+
 namespace odb {
 
 template class dbTable<_dbBPin>;
@@ -69,70 +44,45 @@ _dbBPin::_dbBPin(_dbDatabase*, const _dbBPin& p)
 {
 }
 
-_dbBPin::~_dbBPin()
-{
-}
-
 bool _dbBPin::operator==(const _dbBPin& rhs) const
 {
-  if (_flags._status != rhs._flags._status)
+  if (_flags._status != rhs._flags._status) {
     return false;
+  }
 
-  if (_flags._has_min_spacing != rhs._flags._has_min_spacing)
+  if (_flags._has_min_spacing != rhs._flags._has_min_spacing) {
     return false;
+  }
 
-  if (_flags._has_effective_width != rhs._flags._has_effective_width)
+  if (_flags._has_effective_width != rhs._flags._has_effective_width) {
     return false;
+  }
 
-  if (_bterm != rhs._bterm)
+  if (_bterm != rhs._bterm) {
     return false;
+  }
 
-  if (_boxes != rhs._boxes)
+  if (_boxes != rhs._boxes) {
     return false;
+  }
 
-  if (_next_bpin != rhs._next_bpin)
+  if (_next_bpin != rhs._next_bpin) {
     return false;
+  }
 
-  if (_min_spacing != rhs._min_spacing)
+  if (_min_spacing != rhs._min_spacing) {
     return false;
+  }
 
-  if (_effective_width != rhs._effective_width)
+  if (_effective_width != rhs._effective_width) {
     return false;
+  }
 
-  if (aps_ != rhs.aps_)
+  if (aps_ != rhs.aps_) {
     return false;
+  }
 
   return true;
-}
-
-void _dbBPin::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbBPin& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._status);
-  DIFF_FIELD(_flags._has_min_spacing);
-  DIFF_FIELD(_flags._has_effective_width);
-  DIFF_FIELD(_bterm);
-  DIFF_FIELD(_boxes);
-  DIFF_FIELD(_next_bpin);
-  DIFF_FIELD(_min_spacing);
-  DIFF_FIELD(_effective_width);
-  DIFF_END
-}
-
-void _dbBPin::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._status);
-  DIFF_OUT_FIELD(_flags._has_min_spacing);
-  DIFF_OUT_FIELD(_flags._has_effective_width);
-  DIFF_OUT_FIELD(_bterm);
-  DIFF_OUT_FIELD(_boxes);
-  DIFF_OUT_FIELD(_next_bpin);
-  DIFF_OUT_FIELD(_min_spacing);
-  DIFF_OUT_FIELD(_effective_width);
-  DIFF_END
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbBPin& bpin)
@@ -266,8 +216,9 @@ dbBPin* dbBPin::create(dbBTerm* bterm_)
   bpin->_bterm = bterm->getOID();
   bpin->_next_bpin = bterm->_bpins;
   bterm->_bpins = bpin->getOID();
-  for (auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks) {
     callback->inDbBPinCreate((dbBPin*) bpin);
+  }
   return (dbBPin*) bpin;
 }
 
@@ -276,8 +227,9 @@ void dbBPin::destroy(dbBPin* bpin_)
   _dbBPin* bpin = (_dbBPin*) bpin_;
   _dbBlock* block = (_dbBlock*) bpin->getOwner();
   _dbBTerm* bterm = (_dbBTerm*) bpin_->getBTerm();
-  for (auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks) {
     callback->inDbBPinDestroy(bpin_);
+  }
   // unlink bpin from bterm
   uint id = bpin->getOID();
   _dbBPin* prev = nullptr;
@@ -285,10 +237,11 @@ void dbBPin::destroy(dbBPin* bpin_)
   while (cur) {
     _dbBPin* c = block->_bpin_tbl->getPtr(cur);
     if (cur == id) {
-      if (prev == nullptr)
+      if (prev == nullptr) {
         bterm->_bpins = bpin->_next_bpin;
-      else
+      } else {
         prev->_next_bpin = bpin->_next_bpin;
+      }
       break;
     }
     prev = c;
@@ -302,6 +255,10 @@ void dbBPin::destroy(dbBPin* bpin_)
     dbProperty::destroyProperties(b);
     block->remove_rect(b->_shape._rect);
     block->_box_tbl->destroy(b);
+  }
+
+  for (auto ap : bpin_->getAccessPoints()) {
+    odb::dbAccessPoint::destroy(ap);
   }
 
   dbProperty::destroyProperties(bpin);
@@ -320,6 +277,42 @@ dbBPin* dbBPin::getBPin(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbBPin*) block->_bpin_tbl->getPtr(dbid_);
+}
+
+void _dbBPin::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["ap"].add(aps_);
+}
+
+void _dbBPin::removeBox(_dbBox* box)
+{
+  _dbBlock* block = (_dbBlock*) getOwner();
+
+  dbId<_dbBox> boxid = box->getOID();
+  if (boxid == _boxes) {
+    // at head of list, need to move head
+    _boxes = box->_next_box;
+  } else {
+    // in the middle of the list, need to iterate and relink
+    dbId<_dbBox> id = _boxes;
+    if (id == 0) {
+      return;
+    }
+    while (id != 0) {
+      _dbBox* nbox = block->_box_tbl->getPtr(id);
+      dbId<_dbBox> nid = nbox->_next_box;
+
+      if (nid == boxid) {
+        nbox->_next_box = box->_next_box;
+        break;
+      }
+
+      id = nid;
+    }
+  }
 }
 
 }  // namespace odb

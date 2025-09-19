@@ -3,14 +3,12 @@
   "type": "dbObject",
   "fields": [
     {
-      "type": "bool",
-      "name": "wrong_direction_",
-      "bits": 1
+      "type": "bit",
+      "name": "wrong_direction_"
     },
     {
-      "type": "bool",
-      "name": "orthogonal_",
-      "bits": 1
+      "type": "bit",
+      "name": "orthogonal_"
     },
     {
       "type": "dbVector<int>",

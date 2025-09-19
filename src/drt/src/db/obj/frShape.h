@@ -1,35 +1,15 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frFig.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frNet;
@@ -97,6 +77,7 @@ class frRect : public frShape
   // constructors
   frRect() = default;
   frRect(const frRect& in) : frShape(in), box_(in.box_), layer_(in.layer_) {}
+  frRect& operator=(const frRect&) = default;
   frRect(int xl, int yl, int xh, int yh, frLayerNum lNum, frBlockObject* owner)
       : frShape(owner), box_(xl, yl, xh, yh), layer_(lNum)
   {
@@ -625,6 +606,13 @@ class frPathSeg : public frShape
     return pt.x() >= begin_.x() && pt.x() <= end_.x() && pt.y() >= begin_.y()
            && pt.y() <= end_.y();
   }
+  void setApPathSeg(Point pt)
+  {
+    is_ap_pathseg_ = true;
+    ap_loc_ = pt;
+  }
+  bool isApPathSeg() const { return is_ap_pathseg_; }
+  Point getApLoc() const { return ap_loc_; }
 
  protected:
   Point begin_;  // begin always smaller than end, assumed
@@ -632,6 +620,8 @@ class frPathSeg : public frShape
   frLayerNum layer_{0};
   frSegStyle style_;
   bool tapered_{false};
+  bool is_ap_pathseg_{false};
+  Point ap_loc_;
   frListIter<std::unique_ptr<frShape>> iter_;
 
   template <class Archive>
@@ -643,6 +633,8 @@ class frPathSeg : public frShape
     (ar) & layer_;
     (ar) & style_;
     (ar) & tapered_;
+    (ar) & is_ap_pathseg_;
+    (ar) & ap_loc_;
     // iter is handled by the owner
   }
 

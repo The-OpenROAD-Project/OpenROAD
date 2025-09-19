@@ -15,17 +15,34 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 %{
+#include <boost/stacktrace.hpp>
+#include <cstdlib>
 #include <new>
+#include <sstream>
+
+#include "ord/OpenRoad.hh"
+#include "utl/Logger.h"
 %}
 
 %exception {
   try { $function }
   catch (std::bad_alloc &) {
     fprintf(stderr, "Error: out of memory.");
-    exit(1);
+    abort();
   }
   // This catches std::runtime_error (utl::error) and sta::Exception.
   catch (std::exception &excp) {
+    auto* openroad = ord::OpenRoad::openRoad();
+    if (openroad != nullptr) {
+      auto* logger = openroad->getLogger();
+      if (logger->debugCheck(utl::ORD, "trace", 1)) {
+        std::stringstream trace;
+        trace << boost::stacktrace::stacktrace();
+        logger->report("Stack trace");
+        logger->report(trace.str());
+      }
+    }
+
     Tcl_ResetResult(interp);
     Tcl_AppendResult(interp, excp.what(), nullptr);
     return TCL_ERROR;

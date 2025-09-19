@@ -1,41 +1,12 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "Grid.h"
 
-#include <complex>
+#include <cmath>
+
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace grt {
 
@@ -54,14 +25,14 @@ void Grid::init(const odb::Rect& die_area,
   perfect_regular_x_ = perfect_regular_x;
   perfect_regular_y_ = perfect_regular_y;
   num_layers_ = num_layers;
-  track_pitches.resize(num_layers);
+  track_pitches_.resize(num_layers);
   horizontal_edges_capacities_.resize(num_layers);
   vertical_edges_capacities_.resize(num_layers);
 }
 
 void Grid::clear()
 {
-  track_pitches.clear();
+  track_pitches_.clear();
   horizontal_edges_capacities_.clear();
   vertical_edges_capacities_.clear();
 }
@@ -72,14 +43,16 @@ odb::Point Grid::getPositionOnGrid(const odb::Point& position)
   int y = position.y();
 
   // Computing x and y center:
-  int gcell_id_x = floor((float) ((x - die_area_.xMin()) / tile_size_));
-  int gcell_id_y = floor((float) ((y - die_area_.yMin()) / tile_size_));
+  int gcell_id_x = (x - die_area_.xMin()) / tile_size_;
+  int gcell_id_y = (y - die_area_.yMin()) / tile_size_;
 
-  if (gcell_id_x >= x_grids_)
+  if (gcell_id_x >= x_grids_) {
     gcell_id_x--;
+  }
 
-  if (gcell_id_y >= y_grids_)
+  if (gcell_id_y >= y_grids_) {
     gcell_id_y--;
+  }
 
   int center_x
       = (gcell_id_x * tile_size_) + (tile_size_ / 2) + die_area_.xMin();
@@ -106,12 +79,12 @@ void Grid::getBlockedTiles(const odb::Rect& obstruction,
                                    // the center of the tile where it is inside
 
   // Get x and y indices of first blocked tile
-  first_tile = {(lower.x() - (getTileSize() / 2)) / getTileSize(),
-                (lower.y() - (getTileSize() / 2)) / getTileSize()};
+  first_tile = {(lower.x() - getXMin()) / getTileSize(),
+                (lower.y() - getYMin()) / getTileSize()};
 
   // Get x and y indices of last blocked tile
-  last_tile = {(upper.x() - (getTileSize() / 2)) / getTileSize(),
-               (upper.y() - (getTileSize() / 2)) / getTileSize()};
+  last_tile = {(upper.x() - getXMin()) / getTileSize(),
+               (upper.y() - getYMin()) / getTileSize()};
 
   odb::Point ll_first_tile = odb::Point(lower.x() - (getTileSize() / 2),
                                         lower.y() - (getTileSize() / 2));
@@ -139,7 +112,9 @@ interval<int>::type Grid::computeTileReduceInterval(
     const odb::Rect& tile,
     int track_space,
     bool first,
-    odb::dbTechLayerDir direction)
+    const odb::dbTechLayerDir& direction,
+    const int layer_cap,
+    const bool is_macro)
 {
   int start_point, end_point;
   if (direction == odb::dbTechLayerDir::VERTICAL) {
@@ -163,6 +138,15 @@ interval<int>::type Grid::computeTileReduceInterval(
     } else {
       start_point = tile.yMin();
       end_point = obs.yMax();
+    }
+  }
+  int interval_length = std::abs(end_point - start_point);
+  if (is_macro) {
+    int blocked_tracks
+        = std::ceil(static_cast<float>(interval_length) / track_space);
+    const int resources_left = layer_cap - blocked_tracks;
+    if (resources_left == 1) {
+      end_point += track_space;
     }
   }
   interval<int>::type reduce_interval(start_point, end_point);

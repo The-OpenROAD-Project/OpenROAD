@@ -1,37 +1,30 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <cstdlib>
 #include <iostream>
+#include <map>
+#include <memory>
+#include <set>
+#include <utility>
+#include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "db/drObj/drNet.h"
+#include "db/obj/frBTerm.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frFig.h"
+#include "db/obj/frInstBlockage.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frShape.h"
+#include "db/obj/frVia.h"
 #include "dr/FlexDR.h"
+#include "frBaseTypes.h"
+#include "frDesign.h"
 #include "frProfileTask.h"
+#include "frRegionQuery.h"
 #include "gc/FlexGC_impl.h"
+#include "odb/dbTypes.h"
 
 namespace drt {
 
@@ -283,39 +276,39 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
   if (currNet == nullptr) {
     currNet = getNet(obj);
   }
-  dbTransform xform;
   frLayerNum layerNum;
   if (obj->typeId() == drcPathSeg) {
     auto pathSeg = static_cast<drPathSeg*>(obj);
     Rect box = pathSeg->getBBox();
-    currNet->addPolygon(box, pathSeg->getLayerNum());
+    currNet->addPolygon(
+        box, pathSeg->getLayerNum(), pathSeg->getNet()->isFixed());
     if (pathSeg->isTapered()) {
       currNet->addTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
     } else if (pathSeg->hasNet() && pathSeg->getNet()->hasNDR()
-               && AUTO_TAPER_NDR_NETS) {
+               && router_cfg_->AUTO_TAPER_NDR_NETS) {
       currNet->addNonTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
     }
   } else if (obj->typeId() == drcVia) {
     auto via = static_cast<drVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
-    xform = via->getTransform();
+    dbTransform xform = via->getTransform();
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       } else if (via->hasNet() && via->getNet()->hasNDR()
-                 && AUTO_TAPER_NDR_NETS) {
+                 && router_cfg_->AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
       }
-      currNet->addPolygon(box, layerNum);
+      currNet->addPolygon(box, layerNum, via->getNet()->isFixed());
     }
     // push cut layer rect
     layerNum = via->getViaDef()->getCutLayerNum();
     for (auto& fig : via->getViaDef()->getCutFigs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
-      currNet->addRectangle(box, layerNum);
+      currNet->addRectangle(box, layerNum, via->getNet()->isFixed());
     }
     // push layer2 rect
     layerNum = via->getViaDef()->getLayer2Num();
@@ -325,14 +318,15 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       } else if (via->hasNet() && via->getNet()->hasNDR()
-                 && AUTO_TAPER_NDR_NETS) {
+                 && router_cfg_->AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
       }
-      currNet->addPolygon(box, layerNum);
+      currNet->addPolygon(box, layerNum, via->getNet()->isFixed());
     }
   } else if (obj->typeId() == drcPatchWire) {
     auto pwire = static_cast<drPatchWire*>(obj);
-    currNet->addPolygon(pwire->getBBox(), pwire->getLayerNum());
+    currNet->addPolygon(
+        pwire->getBBox(), pwire->getLayerNum(), pwire->getNet()->isFixed());
   }
   return currNet;
 }
@@ -341,7 +335,6 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
   if (currNet == nullptr) {
     currNet = getNet(obj);
   }
-  dbTransform xform;
   frLayerNum layerNum;
   if (obj->typeId() == frcPathSeg) {
     auto pathSeg = static_cast<frPathSeg*>(obj);
@@ -350,20 +343,20 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
     if (pathSeg->isTapered()) {
       currNet->addTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
     } else if (pathSeg->hasNet() && pathSeg->getNet()->hasNDR()
-               && AUTO_TAPER_NDR_NETS) {
+               && router_cfg_->AUTO_TAPER_NDR_NETS) {
       currNet->addNonTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
     }
   } else if (obj->typeId() == frcVia) {
     auto via = static_cast<frVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
-    xform = via->getTransform();
+    dbTransform xform = via->getTransform();
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       } else if (via->hasNet() && via->getNet()->hasNDR()
-                 && AUTO_TAPER_NDR_NETS) {
+                 && router_cfg_->AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
       }
       currNet->addPolygon(box, layerNum);
@@ -383,7 +376,7 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       } else if (via->hasNet() && via->getNet()->hasNDR()
-                 && AUTO_TAPER_NDR_NETS) {
+                 && router_cfg_->AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
       }
       currNet->addPolygon(box, layerNum);
@@ -716,7 +709,31 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges(gcNet* net)
     }
   }
 }
-
+namespace {
+bool isPolygonCorner(const frCoord x,
+                     const frCoord y,
+                     const gtl::polygon_90_set_data<frCoord>& poly_set)
+{
+  std::vector<gtl::polygon_90_with_holes_data<frCoord>> polygons;
+  poly_set.get(polygons);
+  for (const auto& polygon : polygons) {
+    for (const auto& pt : polygon) {
+      if (pt.x() == x && pt.y() == y) {
+        return true;
+      }
+    }
+    for (auto hole_itr = polygon.begin_holes(); hole_itr != polygon.end_holes();
+         ++hole_itr) {
+      for (const auto& pt : (*hole_itr)) {
+        if (pt.x() == x && pt.y() == y) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+}  // namespace
 void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
                                                             gcPin* pin)
 {
@@ -733,8 +750,10 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
       prevEdge->setHighCorner(currCorner);
       nextEdge->setLowCorner(currCorner);
       // set currCorner attributes
+      currCorner->addToPin(pin);
       currCorner->setPrevEdge(prevEdge);
       currCorner->setNextEdge(nextEdge.get());
+      currCorner->setLayerNum(layerNum);
       currCorner->x(prevEdge->high().x());
       currCorner->y(prevEdge->high().y());
       int orient = gtl::orientation(*prevEdge, *nextEdge);
@@ -767,26 +786,32 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
                      && nextEdge->getDir() == frDirEnum::E)) {
         currCorner->setDir(frCornerDirEnum::SE);
       }
+      if (getTech()->getLayer(layerNum)->getType()
+          == odb::dbTechLayerType::CUT) {
+        if (currCorner->getType() == frCornerTypeEnum::CONVEX) {
+          currCorner->setFixed(false);
+          for (auto& rect : net->getRectangles(true)[layerNum]) {
+            if (isCornerOverlap(currCorner, rect)) {
+              currCorner->setFixed(true);
+              break;
+            }
+          }
+        } else if (currCorner->getType() == frCornerTypeEnum::CONCAVE) {
+          currCorner->setFixed(true);
+          auto cornerPt = currCorner->getNextEdge()->low();
+          for (auto& rect : net->getRectangles(false)[layerNum]) {
+            if (gtl::contains(rect, cornerPt, true)
+                && !gtl::contains(rect, cornerPt, false)) {
+              currCorner->setFixed(false);
+              break;
+            }
+          }
+        }
 
-      // set fixed / route status
-      if (currCorner->getType() == frCornerTypeEnum::CONVEX) {
-        currCorner->setFixed(false);
-        for (auto& rect : net->getRectangles(true)[layerNum]) {
-          if (isCornerOverlap(currCorner, rect)) {
-            currCorner->setFixed(true);
-            break;
-          }
-        }
-      } else if (currCorner->getType() == frCornerTypeEnum::CONCAVE) {
-        currCorner->setFixed(true);
-        auto cornerPt = currCorner->getNextEdge()->low();
-        for (auto& rect : net->getRectangles(false)[layerNum]) {
-          if (gtl::contains(rect, cornerPt, true)
-              && !gtl::contains(rect, cornerPt, false)) {
-            currCorner->setFixed(false);
-            break;
-          }
-        }
+      } else {
+        currCorner->setFixed(isPolygonCorner(currCorner->x(),
+                                             currCorner->y(),
+                                             net->getPolygons(true)[layerNum]));
       }
       // currCorner->setFixed(prevEdge->isFixed() && nextEdge->isFixed());
 
@@ -959,7 +984,7 @@ void FlexGCWorker::Impl::updateGCWorker()
   }
 
   // get all frNets, must be sorted by id
-  std::set<frNet*, frBlockObjectComp> fnets;
+  frOrderedIdSet<frNet*> fnets;
   for (auto dnet : modifiedDRNets_) {
     fnets.insert(dnet->getFrNet());
   }

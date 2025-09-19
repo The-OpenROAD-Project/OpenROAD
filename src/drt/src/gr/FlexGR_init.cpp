@@ -1,36 +1,22 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
+#include <cstdlib>
 #include <deque>
+#include <iomanip>
 #include <iostream>
+#include <map>
+#include <memory>
+#include <utility>
+#include <vector>
 
-#include "FlexGR.h"
-#include "FlexGRCMap.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
+#include "gr/FlexGR.h"
+#include "gr/FlexGRCMap.h"
 
 namespace drt {
 
@@ -82,8 +68,8 @@ void FlexGR::initLayerPitch()
     }
 
     // calculate line-2-via pitch
-    frViaDef* downVia = nullptr;
-    frViaDef* upVia = nullptr;
+    const frViaDef* downVia = nullptr;
+    const frViaDef* upVia = nullptr;
     if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1) {
       downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
     }
@@ -258,12 +244,12 @@ void FlexGR::initGCell()
 void FlexGR::initCMap()
 {
   std::cout << std::endl << "initializing congestion map...\n";
-  auto cmap = std::make_unique<FlexGRCMap>(design_);
+  auto cmap = std::make_unique<FlexGRCMap>(design_, router_cfg_);
   cmap->setLayerTrackPitches(trackPitches_);
   cmap->setLayerLine2ViaPitches(line2ViaPitches_);
   cmap->setLayerPitches(layerPitches_);
   cmap->init();
-  auto cmap2D = std::make_unique<FlexGRCMap>(design_);
+  auto cmap2D = std::make_unique<FlexGRCMap>(design_, router_cfg_);
   cmap2D->initFrom3D(cmap.get());
   // cmap->print2D(true);
   // cmap->print();
@@ -454,8 +440,8 @@ void FlexGRWorker::init()
 
 void FlexGRWorker::initNets()
 {
-  std::set<frNet*, frBlockObjectComp> nets;
-  std::map<frNet*, std::vector<frNode*>, frBlockObjectComp> netRoots;
+  frOrderedIdSet<frNet*> nets;
+  frOrderedIdMap<frNet*, std::vector<frNode*>> netRoots;
 
   initNets_roots(nets, netRoots);
   initNets_searchRepair(nets, netRoots);
@@ -464,8 +450,8 @@ void FlexGRWorker::initNets()
 
 // get all roots of subnets
 void FlexGRWorker::initNets_roots(
-    std::set<frNet*, frBlockObjectComp>& nets,
-    std::map<frNet*, std::vector<frNode*>, frBlockObjectComp>& netRoots)
+    frOrderedIdSet<frNet*>& nets,
+    frOrderedIdMap<frNet*, std::vector<frNode*>>& netRoots)
 {
   std::vector<grBlockObject*> result;
   getRegionQuery()->queryGRObj(routeBox_, result);
@@ -496,8 +482,8 @@ void FlexGRWorker::initNets_roots(
 // root (i.e., outgoing edge)
 void FlexGRWorker::initNetObjs_roots_pathSeg(
     grPathSeg* pathSeg,
-    std::set<frNet*, frBlockObjectComp>& nets,
-    std::map<frNet*, std::vector<frNode*>, frBlockObjectComp>& netRoots)
+    frOrderedIdSet<frNet*>& nets,
+    frOrderedIdMap<frNet*, std::vector<frNode*>>& netRoots)
 {
   auto net = pathSeg->getNet();
   nets.insert(net);
@@ -522,8 +508,8 @@ void FlexGRWorker::initNetObjs_roots_pathSeg(
 // grandparent is a subnet root
 void FlexGRWorker::initNetObjs_roots_via(
     grVia* via,
-    std::set<frNet*, frBlockObjectComp>& nets,
-    std::map<frNet*, std::vector<frNode*>, frBlockObjectComp>& netRoots)
+    frOrderedIdSet<frNet*>& nets,
+    frOrderedIdMap<frNet*, std::vector<frNode*>>& netRoots)
 {
   auto net = via->getNet();
   nets.insert(net);
@@ -536,8 +522,8 @@ void FlexGRWorker::initNetObjs_roots_via(
 }
 
 void FlexGRWorker::initNets_searchRepair(
-    std::set<frNet*, frBlockObjectComp>& nets,
-    std::map<frNet*, std::vector<frNode*>, frBlockObjectComp>& netRoots)
+    frOrderedIdSet<frNet*>& nets,
+    frOrderedIdMap<frNet*, std::vector<frNode*>>& netRoots)
 {
   for (auto net : nets) {
     initNet(net, netRoots[net]);
@@ -546,7 +532,7 @@ void FlexGRWorker::initNets_searchRepair(
 
 void FlexGRWorker::initNet(frNet* net, const std::vector<frNode*>& netRoots)
 {
-  std::set<frNode*, frBlockObjectComp> uniqueRoots;
+  frOrderedIdSet<frNode*> uniqueRoots;
   for (auto fRoot : netRoots) {
     if (uniqueRoots.find(fRoot) != uniqueRoots.end()) {
       continue;
@@ -575,7 +561,7 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
   // map from loc to gcell node
   // std::map<std::pair<Point, frlayerNum>, grNode*> loc2GCellNode;
   std::vector<std::pair<frNode*, grNode*>> pinNodePairs;
-  std::map<grNode*, frNode*, frBlockObjectComp> gr2FrPinNode;
+  frOrderedIdMap<grNode*, frNode*> gr2FrPinNode;
   // parent grNode to children frNode
   std::deque<std::pair<grNode*, frNode*>> nodeQ;
   nodeQ.emplace_back(nullptr, fRoot);
@@ -815,7 +801,7 @@ void FlexGRWorker::initNet_updateCMap(grNet* net, bool isAdd)
 void FlexGRWorker::initNet_initPinGCellNodes(grNet* net)
 {
   std::vector<std::pair<grNode*, grNode*>> pinGCellNodePairs;
-  std::map<grNode*, std::vector<grNode*>, frBlockObjectComp> gcell2PinNodes;
+  frOrderedIdMap<grNode*, std::vector<grNode*>> gcell2PinNodes;
   std::vector<grNode*> pinGCellNodes;
   std::map<FlexMazeIdx, grNode*> midx2PinGCellNode;
   grNode* rootGCellNode = nullptr;
@@ -1047,7 +1033,7 @@ void FlexGRWorker::initNets_printNet(grNet* net)
 }
 
 void FlexGRWorker::initNets_printFNets(
-    std::map<frNet*, std::vector<frNode*>, frBlockObjectComp>& netRoots)
+    frOrderedIdMap<frNet*, std::vector<frNode*>>& netRoots)
 {
   std::cout << std::endl << "printing frNets\n";
   for (auto& [net, roots] : netRoots) {

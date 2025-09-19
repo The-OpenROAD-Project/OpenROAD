@@ -31,6 +31,7 @@ Checks: >
   -google-runtime-references,
   -google-explicit-constructor,
   performance-*,
+  -performance-enum-size,
   bugprone-*,
   -bugprone-branch-clone,
   -bugprone-easily-swappable-parameters,
@@ -56,10 +57,15 @@ Checks: >
   -misc-non-private-member-variables-in-classes,
   -misc-redundant-expression,
   -misc-unused-parameters,
+  -misc-use-anonymous-namespace,
 
 CheckOptions:
    - key:             google-runtime-int.TypeSuffix
      value:           _t
+
+# All modules but sta
+# Exclude build as there is too much noise from swig generated code
+HeaderFilterRegex: "(?!build/.*)/(ant|cts|dbSta|dft|dpl|drt|dst|est|exa|fin|gpl|grt|gui|ifp|mpl|odb|ord|pad|par|pdn|ppl|psm|rcx|rmp|rsz|stt|tap|upf|utl)/.*"
 
 # Not currently handling identifier naming
 # WarningsAsErrors: "*"

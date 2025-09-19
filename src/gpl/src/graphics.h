@@ -1,42 +1,19 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <cstddef>
+#include <limits>
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "gui/gui.h"
 #include "gui/heatMap.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace utl {
 class Logger;
@@ -51,6 +28,7 @@ class NesterovPlace;
 class PlacerBaseCommon;
 class PlacerBase;
 class GCell;
+class GCellHandle;
 
 // This class draws debugging graphics on the layout
 class Graphics : public gui::Renderer, public gui::HeatMapDataSource
@@ -80,8 +58,15 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
   // Draw the graphics; optionally pausing afterwards
   void cellPlot(bool pause = false);
 
+  // Update the chart for the current iter
+  void addIter(int iter, double overflow);
+  void addTimingDrivenIter(int iter);
+  void addRoutabilitySnapshot(int iter);
+  void addRoutabilityIter(int iter, bool revert);
+
   // Draw the MBFF mapping
-  void mbff_mapping(const LineSegs& segs);
+  void mbffMapping(const LineSegs& segs);
+  void mbffFlopClusters(const std::vector<odb::dbInst*>& ffs);
 
   // Show a message in the status bar
   void status(const std::string& message);
@@ -103,15 +88,31 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
                       double data_area,
                       double intersection_area,
                       double rect_area) override;
+  void populateXYGrid() override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
+
+  void addFrameLabel(gui::Gui* gui,
+                     const odb::Rect& bbox,
+                     const std::string& label,
+                     const std::string& label_name,
+                     int image_width_px = 500);
+
+  void saveLabeledImage(const std::string& path,
+                        const std::string& label,
+                        bool select_buffers,
+                        const std::string& heatmap_control = "",
+                        int image_width_px = 500);
+
+  gui::Gui* getGuiObjectFromGraphics() { return gui::Gui::get(); }
 
  private:
   enum HeatMapType
   {
     Density,
-    Overflow
+    Overflow,
+    OverflowMinMax
   };
 
   enum Mode
@@ -121,17 +122,25 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
     Nesterov
   };
 
+  void drawForce(gui::Painter& painter);
+  void drawCells(const std::vector<GCell*>& cells, gui::Painter& painter);
+  void drawCells(const std::vector<GCellHandle>& cells, gui::Painter& painter);
+  void drawSingleGCell(const GCell* gCell, gui::Painter& painter);
+
   std::shared_ptr<PlacerBaseCommon> pbc_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
   std::vector<std::shared_ptr<PlacerBase>> pbVec_;
   std::vector<std::shared_ptr<NesterovBase>> nbVec_;
   NesterovPlace* np_ = nullptr;
-  GCell* selected_ = nullptr;
+  static constexpr size_t kInvalidIndex = std::numeric_limits<size_t>::max();
+  size_t selected_ = kInvalidIndex;
   bool draw_bins_ = false;
   utl::Logger* logger_ = nullptr;
   HeatMapType heatmap_type_ = Density;
   LineSegs mbff_edges_;
+  std::vector<odb::dbInst*> mbff_cluster_;
   Mode mode_;
+  gui::Chart* chart_{nullptr};
 
   void initHeatmap();
   void drawNesterov(gui::Painter& painter);

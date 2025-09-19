@@ -1,50 +1,22 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <cstdint>
 #include <iostream>
+#include <map>
+#include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "CtsObserver.h"
 #include "Util.h"
-#include "db.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "utl/Logger.h"
 
 namespace stt {
@@ -52,9 +24,24 @@ class SteinerTreeBuilder;
 }
 namespace cts {
 
-class CtsOptions
+class CtsOptions : public odb::dbBlockCallBackObj
 {
  public:
+  enum class NdrStrategy
+  {
+    NONE,
+    ROOT_ONLY,
+    HALF,
+    FULL
+  };
+
+  enum class MasterType
+  {
+    DUMMY,
+    TREE
+  };
+  using MasterCount = std::map<odb::dbMaster*, int>;
+
   CtsOptions(utl::Logger* logger, stt::SteinerTreeBuilder* sttBuildder)
       : logger_(logger), sttBuilder_(sttBuildder)
   {
@@ -151,6 +138,9 @@ class CtsOptions
     clusteringCapacity_ = capacity;
   }
 
+  void setMaxFanout(unsigned maxFanout) { maxFanout_ = maxFanout; }
+  unsigned getMaxFanout() const { return maxFanout_; }
+
   // BufferDistance is in DBU
   int32_t getBufferDistance() const
   {
@@ -197,6 +187,10 @@ class CtsOptions
     maxDiameterSet_ = true;
   }
   bool isMaxDiameterSet() const { return maxDiameterSet_; }
+  const std::vector<unsigned>& getSinkClusteringDiameters()
+  {
+    return sinkClusteringDiameters_;
+  }
   unsigned getSinkClusteringSize() const { return sinkClustersSize_; }
   void setSinkClusteringSize(unsigned size)
   {
@@ -205,10 +199,33 @@ class CtsOptions
     sinkClustersSizeSet_ = true;
   }
   bool isSinkClusteringSizeSet() const { return sinkClustersSizeSet_; }
+  const std::vector<unsigned>& getSinkClusteringSizes()
+  {
+    return sinkClusteringSizes_;
+  }
+  void limitSinkClusteringSizes(unsigned limit);
   unsigned getSinkClusteringLevels() const { return sinkClusteringLevels_; }
   void setSinkClusteringLevels(unsigned levels)
   {
     sinkClusteringLevels_ = levels;
+  }
+
+  double getMacroMaxDiameter() const { return macroMaxDiameter_; }
+  void setMacroMaxDiameter(double distance)
+  {
+    macroMaxDiameter_ = distance;
+    macroMaxDiameterSet_ = true;
+  }
+  bool isMacroMaxDiameterSet() const { return macroMaxDiameterSet_; }
+  unsigned getMacroSinkClusteringSize() const { return macroSinkClustersSize_; }
+  void setMacroClusteringSize(unsigned size)
+  {
+    macroSinkClustersSize_ = size;
+    macroSinkClustersSizeSet_ = true;
+  }
+  bool isMacroSinkClusteringSizeSet() const
+  {
+    return macroSinkClustersSizeSet_;
   }
   unsigned getNumStaticLayers() const { return numStaticLayers_; }
   void setBalanceLevels(bool balance) { balanceLevels_ = balance; }
@@ -222,8 +239,6 @@ class CtsOptions
   stt::SteinerTreeBuilder* getSttBuilder() const { return sttBuilder_; }
   void setObstructionAware(bool obs) { obsAware_ = obs; }
   bool getObstructionAware() const { return obsAware_; }
-  void setApplyNDR(bool ndr) { applyNDR_ = ndr; }
-  bool applyNDR() const { return applyNDR_; }
   void enableInsertionDelay(bool insDelay) { insertionDelay_ = insDelay; }
   bool insertionDelayEnabled() const { return insertionDelay_; }
   void setBufferListInferred(bool inferred) { bufferListInferred_ = inferred; }
@@ -246,13 +261,34 @@ class CtsOptions
   float getDelayBufferDerate() const { return delayBufferDerate_; }
   void enableDummyLoad(bool dummyLoad) { dummyLoad_ = dummyLoad; }
   bool dummyLoadEnabled() const { return dummyLoad_; }
+  std::string getDummyLoadPrefix() const { return dummyload_prefix_; }
+  void setCtsLibrary(const char* name) { ctsLibrary_ = name; }
+  const char* getCtsLibrary() { return ctsLibrary_.c_str(); }
+  bool isCtsLibrarySet() { return !ctsLibrary_.empty(); }
+
+  void recordBuffer(odb::dbMaster* master, MasterType type);
+  const MasterCount& getBufferCount() const { return buffer_count_; }
+  const MasterCount& getDummyCount() const { return dummy_count_; }
+
+  MasterType getType(odb::dbInst* inst) const;
+
+  // Callbacks
+  void inDbInstCreate(odb::dbInst* inst) override;
+  void inDbInstCreate(odb::dbInst* inst, odb::dbRegion* region) override;
+
+  void setRepairClockNets(bool value) { repairClockNets_ = value; }
+  bool getRepairClockNets() { return repairClockNets_; }
+
+  // NDR strategies
+  void setApplyNDR(NdrStrategy strategy) { ndrStrategy_ = strategy; }
+  NdrStrategy getApplyNdr() const { return ndrStrategy_; }
 
  private:
-  std::string clockNets_ = "";
-  std::string rootBuffer_ = "";
-  std::string sinkBuffer_ = "";
-  std::string treeBuffer_ = "";
-  std::string metricFile_ = "";
+  std::string clockNets_;
+  std::string rootBuffer_;
+  std::string sinkBuffer_;
+  std::string treeBuffer_;
+  std::string metricFile_;
   int dbUnits_ = -1;
   unsigned wireSegmentUnit_ = 0;
   bool plotSolution_ = false;
@@ -266,6 +302,7 @@ class CtsOptions
   double clusteringCapacity_ = 0.6;
   unsigned clusteringPower_ = 4;
   unsigned numMaxLeafSinks_ = 15;
+  unsigned maxFanout_ = 0;
   unsigned maxSlew_ = 4;
   double maxCharSlew_ = 0;
   double maxCharCap_ = 0;
@@ -283,8 +320,14 @@ class CtsOptions
   int sinks_ = 0;
   double maxDiameter_ = 50;
   bool maxDiameterSet_ = false;
+  std::vector<unsigned> sinkClusteringDiameters_ = {50, 100, 200};
   unsigned sinkClustersSize_ = 20;
   bool sinkClustersSizeSet_ = false;
+  std::vector<unsigned> sinkClusteringSizes_ = {10, 20, 30};
+  double macroMaxDiameter_ = 50;
+  bool macroMaxDiameterSet_ = false;
+  unsigned macroSinkClustersSize_ = 4;
+  bool macroSinkClustersSizeSet_ = true;
   bool balanceLevels_ = false;
   unsigned sinkClusteringLevels_ = 0;
   unsigned numStaticLayers_ = 0;
@@ -292,17 +335,22 @@ class CtsOptions
   std::vector<odb::dbNet*> clockNetsObjs_;
   utl::Logger* logger_ = nullptr;
   stt::SteinerTreeBuilder* sttBuilder_ = nullptr;
-  bool obsAware_ = false;
-  bool applyNDR_ = false;
-  bool insertionDelay_ = false;
+  bool obsAware_ = true;
+  bool insertionDelay_ = true;
   bool bufferListInferred_ = false;
   bool sinkBufferInferred_ = false;
   bool rootBufferInferred_ = false;
   bool sinkBufferMaxCapDerateSet_ = false;
   float sinkBufferMaxCapDerateDefault_ = 0.01;
   float sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
-  bool dummyLoad_ = false;
+  bool dummyLoad_ = true;
   float delayBufferDerate_ = 1.0;  // no derate
+  std::string ctsLibrary_;
+  MasterCount buffer_count_;
+  std::string dummyload_prefix_ = "clkload";
+  MasterCount dummy_count_;
+  bool repairClockNets_ = false;
+  NdrStrategy ndrStrategy_ = NdrStrategy::HALF;
 };
 
 }  // namespace cts

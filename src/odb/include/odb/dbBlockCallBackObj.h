@@ -1,61 +1,40 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <list>
 
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 
+class dbBPin;
+class dbBTerm;
 class dbBlock;
+class dbBlockage;
 class dbBox;
 class dbFill;
-class dbInst;
-class dbMaster;
-class dbNet;
-class dbIoType;
 class dbITerm;
-class dbWire;
-class dbBTerm;
-class dbBPin;
-class dbBlockage;
-class dbPlacementStatus;
+class dbInst;
+class dbIoType;
+class dbMarker;
+class dbMarkerCategory;
+class dbMaster;
+class dbModBTerm;
+class dbModule;
+class dbModInst;
+class dbModITerm;
+class dbModNet;
+class dbNet;
 class dbObstruction;
+class dbPlacementStatus;
 class dbRegion;
 class dbRow;
 class dbSBox;
 class dbSWire;
+class dbSigType;
+class dbWire;
 
 ///////////////////////////////////////////////////////////////////////////////
 ///
@@ -82,19 +61,45 @@ class dbBlockCallBackObj
   virtual void inDbPostMoveInst(dbInst*) {}
   // dbInst End
 
+  // dbModInst Start
+  virtual void inDbModInstCreate(dbModInst*) {}
+  virtual void inDbModInstDestroy(dbModInst*) {}
+  // dbModInst End
+
+  // dbModule Start
+  virtual void inDbModuleCreate(dbModule*) {}
+  virtual void inDbModuleDestroy(dbModule*) {}
+  // dbModule End
+
   // dbNet Start
   virtual void inDbNetCreate(dbNet*) {}
   virtual void inDbNetDestroy(dbNet*) {}
+  virtual void inDbNetPreMerge(dbNet*, dbNet*) {}
   // dbNet End
+
+  // dbModNet Start
+  virtual void inDbModNetCreate(dbModNet*) {}
+  virtual void inDbModNetDestroy(dbModNet*) {}
+  // dbModNet End
 
   // dbITerm Start
   virtual void inDbITermCreate(dbITerm*) {}
-  virtual void inDbITermDestroy(dbITerm*) {}  // Bugzilla #7 - payam
+  virtual void inDbITermDestroy(dbITerm*) {}
   virtual void inDbITermPreDisconnect(dbITerm*) {}
   virtual void inDbITermPostDisconnect(dbITerm*, dbNet*) {}
   virtual void inDbITermPreConnect(dbITerm*, dbNet*) {}
   virtual void inDbITermPostConnect(dbITerm*) {}
+  virtual void inDbITermPostSetAccessPoints(dbITerm*) {}
   // dbITerm End
+
+  // dbModITerm Start
+  virtual void inDbModITermCreate(dbModITerm*) {}
+  virtual void inDbModITermDestroy(dbModITerm*) {}
+  virtual void inDbModITermPreDisconnect(dbModITerm*) {}
+  virtual void inDbModITermPostDisconnect(dbModITerm*, dbModNet*) {}
+  virtual void inDbModITermPreConnect(dbModITerm*, dbModNet*) {}
+  virtual void inDbModITermPostConnect(dbModITerm*) {}
+  // dbModITerm End
 
   // dbBTerm Start
   virtual void inDbBTermCreate(dbBTerm*) {}
@@ -104,7 +109,17 @@ class dbBlockCallBackObj
   virtual void inDbBTermPreDisconnect(dbBTerm*) {}
   virtual void inDbBTermPostDisConnect(dbBTerm*, dbNet*) {}
   virtual void inDbBTermSetIoType(dbBTerm*, const dbIoType&) {}
+  virtual void inDbBTermSetSigType(dbBTerm*, const dbSigType&) {}
   // dbBTerm End
+
+  // dbModBTerm Start
+  virtual void inDbModBTermCreate(dbModBTerm*) {}
+  virtual void inDbModBTermDestroy(dbModBTerm*) {}
+  virtual void inDbModBTermPreConnect(dbModBTerm*, dbModNet*) {}
+  virtual void inDbModBTermPostConnect(dbModBTerm*) {}
+  virtual void inDbModBTermPreDisconnect(dbModBTerm*) {}
+  virtual void inDbModBTermPostDisConnect(dbModBTerm*, dbModNet*) {}
+  // dbModBTerm End
 
   // dbBPin Start
   virtual void inDbBPinCreate(dbBPin*) {}
@@ -113,6 +128,7 @@ class dbBlockCallBackObj
 
   // dbBlockage Start
   virtual void inDbBlockageCreate(dbBlockage*) {}
+  virtual void inDbBlockageDestroy(dbBlockage*) {}
   // dbBlockage End
 
   // dbObstruction Start
@@ -161,6 +177,16 @@ class dbBlockCallBackObj
   // dbFill Start
   virtual void inDbFillCreate(dbFill*) {}
   // dbFill End
+
+  // dbMarkerCategory Start
+  virtual void inDbMarkerCategoryCreate(dbMarkerCategory*) {}
+  virtual void inDbMarkerCategoryDestroy(dbMarkerCategory*) {}
+  // dbMarkerCategory End
+
+  // dbMarker Start
+  virtual void inDbMarkerCreate(dbMarker*) {}
+  virtual void inDbMarkerDestroy(dbMarker*) {}
+  // dbMarker End
 
   virtual void inDbBlockStreamOutBefore(dbBlock*) {}
   virtual void inDbBlockStreamOutAfter(dbBlock*) {}

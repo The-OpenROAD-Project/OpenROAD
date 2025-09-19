@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2023-2025, The OpenROAD Authors
+
 add_library(dft_stitch_lib
   # Keep sorted
   ScanStitch.cpp
@@ -13,8 +16,9 @@ target_link_libraries(dft_stitch_lib
     odb
     dbSta
     OpenSTA
-    utl
+    utl_lib
     dft_cells_lib
     dft_architect_lib
     dft_utils_lib
+    dft_config_lib
 )

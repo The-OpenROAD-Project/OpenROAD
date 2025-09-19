@@ -30,14 +30,14 @@
 #ifndef DEFW_WRITER_H
 #define DEFW_WRITER_H
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <cstdarg>
+#include <cstdio>
 
 #include "defiDefs.hpp"
 #include "defiKRDefs.hpp"
 #include "defiUser.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 /* Return codes for writing functions: */
 #define DEFW_OK 0
@@ -158,7 +158,7 @@ extern int defwHistory(const char* string);
  * This routine is optional.
  * Returns 0 if successful.
  * The routine can be called only once. */
-extern int defwStartPropDef(void);
+extern int defwStartPropDef();
 
 /* This routine must be called after defwStartPropDef.
  * This routine can be called multiple times.
@@ -204,7 +204,7 @@ extern int defwStringPropDef(
  * If you called defwPropertyDefinitions then this routine is NOT optional.
  * Returns 0 if successful.
  * The routine can be called only once. */
-extern int defwEndPropDef(void);
+extern int defwEndPropDef();
 
 /* This routine can be called after defwRow, defwRegion, defwComponent,
  * defwPin, defwSpecialNet, defwNet, and defwGroup
@@ -322,7 +322,7 @@ extern int defwDefaultCap(int pins,    /* MINPINS */
  * calls to DefaultCap then DEFW_BAD_DATA will return returned.
  * The routine can be called only once.
  * This api is obsolete in 5.4. */
-extern int defwEndDefaultCap(void);
+extern int defwEndDefaultCap();
 
 /* This routine must be called after the defwDefaultCap calls (if any).
  * The operation of the do is explained in the documentation.
@@ -473,7 +473,7 @@ extern int defwOneViaEnd();
  * If the count in StartVias is not the same as the number of
  * calls to Via or ViaPattern then DEFW_BAD_DATA will return returned.
  * The routine can be called only once. */
-extern int defwEndVias(void);
+extern int defwEndVias();
 
 /* This routine must be called after via section (if any).
  * This section of routines is optional.
@@ -507,7 +507,7 @@ extern int defwRegionType(const char* type); /* FENCE | GUIDE */
  * If the count in StartRegions is not the same as the number of
  * calls to Region or RegionPattern then DEFW_BAD_DATA will return returned.
  * The routine can be called only once. */
-extern int defwEndRegions(void);
+extern int defwEndRegions();
 
 /* This is a 5.8 syntax.
  * Returns 0 if successful.
@@ -636,7 +636,7 @@ extern int defwComponentRouteHalo(int haloDist,
  * If the count in StartComponents is not the same as the number of
  * calls to Component then DEFW_BAD_DATA will return returned.
  * The routine can be called only once. */
-extern int defwEndComponents(void);
+extern int defwEndComponents();
 
 /* This routine must be called after the components section (if any).
  * This section of routines is optional.
@@ -886,7 +886,7 @@ extern int defwPinAntennaPinMaxCutCar(
  * If the count in StartPins is not the same as the number of
  * calls to Pin then DEFW_BAD_DATA will return returned.
  * The routine can be called only once. */
-extern int defwEndPins(void);
+extern int defwEndPins();
 
 /* This routine must be called after the pin section (if any).
  * This section of routines is optional.
@@ -910,7 +910,7 @@ extern int defwPinProperty(const char* name,     /* compName | PIN */
  * If the count in StartPins is not the same as the number of
  * calls to Pin then DEFW_BAD_DATA will return returned.
  * The routine can be called only once. */
-extern int defwEndPinProperties(void);
+extern int defwEndPinProperties();
 
 /* Routines to enter a special net or nets into the file.
  * You must first call defwStartSpecialNets with the number of
@@ -1799,19 +1799,19 @@ extern int defwEndBeginext();
 /* End the DEF file.
  * This routine IS NOT OPTIONAL.
  * The routine must be called LAST. */
-extern int defwEnd(void);
+extern int defwEnd();
 
 /* General routines that can be called anytime after the Init is called.
  */
-extern int defwCurrentLineNumber(void);
+extern int defwCurrentLineNumber();
 
 /*
  * extern void defwError ( const char *, ... );
  * extern void defwWarning ( const char *, ... );
  * extern void defwVError ( const char *, va_list );
  * extern void defwVWarning ( const char *, va_list );
- * extern int  defwGetCurrentLineNumber (void);
- * extern const char *defwGetCurrentFileName (void);
+ * extern int  defwGetCurrentLineNumber ();
+ * extern const char *defwGetCurrentFileName ();
  */
 
 /* This routine will print the error message. */
@@ -1825,8 +1825,6 @@ extern void defwAddComment(const char* comment);
 /* This routine will indent 3 blank spaces */
 extern void defwAddIndent();
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

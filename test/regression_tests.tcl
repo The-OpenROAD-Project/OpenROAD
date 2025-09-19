@@ -1,19 +1,3 @@
-record_tests {
-  error1
-  get_core_die_areas
-  timing_api
-  timing_api_2
-  timing_api_3
-  upf_test
-  upf_aes
-  two_designs
-}
-
-define_test_group "non_flow" {
-  error1
-  get_core_die_areas
-}
-
 # Flow tests only check the last line in the log (pass/fail).
 # Ordered by instance count.
 record_flow_tests {
@@ -33,6 +17,3 @@ record_flow_tests {
   jpeg_sky130hs
   jpeg_sky130hd
 }
-
-# sidelined because drt blows chow
-

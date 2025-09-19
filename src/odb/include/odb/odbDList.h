@@ -1,38 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -46,9 +17,8 @@ template <class T>
 class DListEntry
 {
  public:
-  DListEntry() : _next(nullptr), _prev(nullptr) {}
-  T* _next;
-  T* _prev;
+  T* _next{nullptr};
+  T* _prev{nullptr};
 };
 
 template <class T, DListEntry<T>*(T*)>
@@ -57,17 +27,16 @@ class DList;
 template <class T, DListEntry<T>* ENTRY(T*)>
 class DListIterator
 {
-  T* _cur;
-
-  void incr() { _cur = NEXT(_cur); }
-  T*& NEXT(T* n) { return ENTRY(n)->_next; }
-
  public:
-  DListIterator() { _cur = nullptr; }
+  DListIterator() = default;
   DListIterator(T* cur) { _cur = cur; }
   DListIterator(const DListIterator& i) { _cur = i._cur; }
   DListIterator& operator=(const DListIterator& i)
   {
+    if (this == &i) {
+      return *this;
+    }
+
     _cur = i._cur;
     return *this;
   }
@@ -87,28 +56,20 @@ class DListIterator
     return i;
   }
 
+ private:
+  void incr() { _cur = next(_cur); }
+  T*& next(T* n) { return ENTRY(n)->_next; }
+
+  T* _cur{nullptr};
+
   friend class DList<T, ENTRY>;
 };
 
 template <class T, DListEntry<T>* ENTRY(T*)>
 class DList
 {
- private:
-  T* _head;
-  T* _tail;
-
-  T*& NEXT(T* n) { return ENTRY(n)->_next; }
-
-  T*& PREV(T* n) { return ENTRY(n)->_prev; }
-
  public:
   using iterator = DListIterator<T, ENTRY>;
-
-  DList()
-  {
-    _head = nullptr;
-    _tail = nullptr;
-  }
 
   T* front() { return _head; }
   T* back() { return _tail; }
@@ -118,12 +79,12 @@ class DList
     if (_head == nullptr) {
       _head = p;
       _tail = p;
-      NEXT(p) = nullptr;
-      PREV(p) = nullptr;
+      next(p) = nullptr;
+      prev(p) = nullptr;
     } else {
-      PREV(_head) = p;
-      NEXT(p) = _head;
-      PREV(p) = nullptr;
+      prev(_head) = p;
+      next(p) = _head;
+      prev(p) = nullptr;
       _head = p;
     }
   }
@@ -133,12 +94,12 @@ class DList
     if (_head == nullptr) {
       _head = p;
       _tail = p;
-      NEXT(p) = nullptr;
-      PREV(p) = nullptr;
+      next(p) = nullptr;
+      prev(p) = nullptr;
     } else {
-      NEXT(_tail) = p;
-      PREV(p) = _tail;
-      NEXT(p) = nullptr;
+      next(_tail) = p;
+      prev(p) = _tail;
+      next(p) = nullptr;
       _tail = p;
     }
   }
@@ -156,26 +117,27 @@ class DList
       if (*cur == _tail) {
         _head = nullptr;
         _tail = nullptr;
+      } else {
+        _head = next(*cur);
+        prev(_head) = nullptr;
       }
-
-      else {
-        _head = NEXT(*cur);
-        PREV(_head) = nullptr;
-      }
+    } else if (*cur == _tail) {
+      _tail = prev(*cur);
+      next(_tail) = nullptr;
+    } else {
+      next(prev(*cur)) = next(*cur);
+      prev(next(*cur)) = prev(*cur);
     }
 
-    else if (*cur == _tail) {
-      _tail = PREV(*cur);
-      NEXT(_tail) = nullptr;
-    }
-
-    else {
-      NEXT(PREV(*cur)) = NEXT(*cur);
-      PREV(NEXT(*cur)) = PREV(*cur);
-    }
-
-    return iterator(NEXT(*cur));
+    return iterator(next(*cur));
   }
+
+ private:
+  T*& next(T* n) { return ENTRY(n)->_next; }
+  T*& prev(T* n) { return ENTRY(n)->_prev; }
+
+  T* _head{nullptr};
+  T* _tail{nullptr};
 };
 
 }  // namespace odb

@@ -30,11 +30,11 @@
 #ifndef defiPropType_h
 #define defiPropType_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 // Struct holds the data type for one property, if the property is
 // either REAL or INTEGER.
@@ -50,7 +50,7 @@ class defiPropType
   void setPropType(const char* name, const char type);
   void Clear();
 
-  const char propType(char* name) const;
+  char propType(char* name) const;
   void bumpProps();
 
  protected:
@@ -60,8 +60,6 @@ class defiPropType
   char* propTypes_;   // 'R' == "REAL", 'I' == "INTEGER"
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

@@ -4,6 +4,7 @@
   "fields": [
     {
       "type": "bool",
+      "default": "false",
       "name": "via_cut_class_"
     },
     {

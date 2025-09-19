@@ -29,13 +29,14 @@
 
 #include "defiProp.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
-#include "lex.h"
+#include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 defiProp::defiProp(defrData* data) : defData(data)
 {
@@ -66,8 +67,9 @@ void defiProp::setPropType(const char* typ, const char* string)
 {
   int len;
   propType_ = (char*) typ;
-  if ((len = strlen(string) + 1) > nameSize_)
+  if ((len = strlen(string) + 1) > nameSize_) {
     bumpName(len);
+  }
   strcpy(propName_, defData->DEFCASE(string));
 }
 
@@ -104,8 +106,9 @@ void defiProp::setPropNameMapString(const char* string)
   int len;
   dataType_ = 'N';
   hasNameMapString_ = 1;
-  if ((len = strlen(string) + 1) > stringLength_)
+  if ((len = strlen(string) + 1) > stringLength_) {
     bumpSize(len);
+  }
   strcpy(stringData_, defData->DEFCASE(string));
 }
 
@@ -113,8 +116,9 @@ void defiProp::setPropQString(const char* string)
 {
   int len;
   dataType_ = 'Q';
-  if ((len = strlen(string) + 1) > stringLength_)
+  if ((len = strlen(string) + 1) > stringLength_) {
     bumpSize(len);
+  }
   strcpy(stringData_, defData->DEFCASE(string));
 }
 
@@ -176,11 +180,13 @@ void defiProp::bumpName(int size)
 
 void defiProp::clear()
 {
-  if (stringData_)
+  if (stringData_) {
     *(stringData_) = '\0';
-  if (propName_)
+  }
+  if (propName_) {
     *(propName_) = '\0';
-  propType_ = 0;
+  }
+  propType_ = nullptr;
   hasRange_ = 0;
   hasNumber_ = 0;
   hasNameMapString_ = 0;
@@ -217,4 +223,4 @@ void defiProp::print(FILE* f) const
   }
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

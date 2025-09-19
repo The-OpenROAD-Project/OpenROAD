@@ -50,7 +50,7 @@ and
 [hybrid bonding](https://www.3dincites.com/2018/04/hybrid-bonding-from-concept-to-commercialization/)
 for high density face-to-face interconnect.
 
-### Set IO Pin Constraint
+### Set IO Pin Constraints
 
 The `set_io_pin_constraint` command sets region constraints for pins according
 to the pin direction or the pin name. This command can be called multiple
@@ -79,7 +79,7 @@ set_io_pin_constraint
 | ----- | ----- |
 | `-direction` | Pin direction (`input`, `output`, `inout`, or `feedthrough`). |
 | `-pin_names` | List of names. Only one of (`-direction`, `-pin_names`) should be used in a single call for the `set_io_pin_constraint` command. |
-| `-region` | Syntax is `-region edge:interval`. The `edge` values are (`top\|bottom\|left\|right`). The `interval` can be the whole edge with the wildcard `*` value or a range of values. |
+| `-region` | Syntax is `-region edge:interval`. The `edge` values are (`top\|bottom\|left\|right`). The `interval` can be the whole edge with the wildcard `*` value or a range of values `begin-end` in microns. For example, in `-region right:15-60` the interval is on the right edge from 15 microns to 60 microns.|
 | `-mirrored_pins` | List of pins that sets pairs of pins that will be symmetrically placed in the vertical or the horizontal edges. The number of pins in this list **must be even**. For example, in `set_io_pin_constraint -mirrored_pins {pin1 pin2 pin3 pin4 pin5 pin6}`, the pins `pin1` and `pin2` will be placed symmetrically to each other. Same for `pin3` and `pin4`, and for `pin5` and `pin6`. |
 | `-group` | Flag places together on the die boundary the pin list defined in `-pin_names,` similar to the `-group_pins` option on the `place_pins` command. |
 | `-order` | Flag places the pins ordered in ascending x/y position and must be used only when `-group` is also used. |
@@ -94,6 +94,25 @@ pin placement grid defined with `define_pin_shape_pattern` use:
 
 The `up` option is only available when the pin placement grid is created with
 the `define_pin_shape_pattern` command.
+
+### Exclude IO Pin Region
+
+The `exclude_io_pin_region` command sets regions in the die edges where pins
+cannot be placed.
+
+It is possible to use the `-region` argument multiple times in a single call
+of `exclude_io_pin_region`.
+
+```tcl
+exclude_io_pin_region 
+    -region edge:interval
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-region` | Syntax is `-region edge:interval`. The `edge` values are (`top\|bottom\|left\|right`). The `interval` can be the whole edge with the wildcard `*` value or a range of values. |
 
 ### Clear IO Pin Constraints
 
@@ -123,7 +142,11 @@ set_pin_length
 | `-hor_length` | The length (in microns) of the horizontal pins. |
 | `-ver_length` | The length (in microns) of the vertical pins. |
 
-### Set Pin Extension
+The default length of the pins is the minimum length necessary to respect the
+minimum area defined in the routing layer they were placed. The width of the
+pins is the minimum width defined in the routing layer.
+
+### Set Pin Length Extension
 
 The `set_pin_length_extension` command defines the an extension of the length
 of all vertical and horizontal pins. Note that this command may generate pins
@@ -142,7 +165,7 @@ set_pin_length_extension
 | `-hor_extension` | The length (in microns) for the horizontal pins. |
 | `-ver_extension` | The length (in microns) for the vertical pins. |
 
-### Set Pin Thick Multiplier
+### Set Pin Thickness Multiplier
 
 The `set_pin_thick_multiplier` command defines a multiplier for the thickness of all
 vertical and horizontal pins.
@@ -160,7 +183,7 @@ set_pin_thick_multiplier
 | `-hor_multiplier` | The thickness multiplier for the horizontal pins. |
 | `-ver_multiplier` | The thickness multiplier for the vertical pins. |
 
-### Set Simulated Annealing Parameters
+### Set Simulated Annealing
 
 The `set_simulated_annealing` command defines the parameters for simulated annealing pin placement.
 
@@ -181,7 +204,25 @@ set_simulated_annealing
 | `-perturb_per_iter` | The number of perturbations per iteration. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-alpha` | The temperature decay factor. The default value is `0.985`, and the allowed values are floats `(0, 1]`. |
 
-### Place Individual Pin
+### Simulated Annealing Debug Mode
+
+The `simulated_annealing_debug` command allows you to debug the simulated
+annealing pin placement with a pause mode.
+
+```tcl
+simulated_annealing_debug
+    [-iters_between_paintings iters]
+    [-no_pause_mode no_pause_mode]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |                                    
+| `-iters_between_paintings` | Determines the number of iterations between updates. |
+| `-no_pause_mode` | Print solver state every second based on `iters_between_paintings`. |
+                                    
+### Place specific Pin
 
 The `place_pin` command places a specific pin in the specified location with the specified size.
 It is recommended that individual pins be placed before the `place_pins` command,
@@ -196,6 +237,7 @@ place_pin
     -location {x y}
     [-pin_size {width height}]
     [-force_to_die_boundary]
+    [-placed_status]
 ```
 
 #### Options
@@ -207,17 +249,17 @@ place_pin
 | `-location` | The center of the pin (in microns). |
 | `-pin_size` | The width and height of the pin (in microns). |
 | `-force_to_die_boundary` | When this flag is enabled, the pin will be snapped to the nearest routing track, next to the die boundary. |
+| `-placed_status` | When this flag is enabled, the pin will have PLACED as its placement status, instead of the FIXED status. |
 
-### Place All Pins
+### Place all Pins
 
-Use the following command to perform pin placement:
+The `place_pins` command places all pins together. Use the following command to perform pin placement:
+
 
 ```tcl
 place_pins 
     -hor_layers h_layers
     -ver_layers v_layers
-    [-random_seed seed]
-    [-random]
     [-corner_avoidance length]
     [-min_distance distance]
     [-min_distance_in_tracks]
@@ -234,9 +276,9 @@ place_pins
 | `-hor_layers` | The layers to create the metal shapes of pins placed in horizontal tracks. It can be a single layer or a list of layer names. |
 | `-ver_layers` | The layers to create the metal shapes of pins placed in vertical tracks. It can be a single layer or a list of layer names. |
 | `-corner_avoidance` | The distance (in microns) from each corner within which pin placement should be avoided. |
-| `-min_distance` | The minimum distance between pins on the die boundary. This distance can be in microns (default) or in number of tracks between each pin. |
+| `-min_distance` | The minimum distance between pins on the die boundary. This distance can be in microns (default) or in number of tracks between each pin. The default value is the length of two routing tracks between each pin. |
 | `-min_distance_in_tracks` | Flag that allows setting the min distance in number of tracks instead of microns. |
-| `-exclude` | A region where pins cannot be placed. Either `top|bottom|left|right:edge_interval`, which is the edge interval from the selected edge; `begin:end` for begin-end of all edges. |
+| `-exclude` | A region where pins cannot be placed. Either `top\|bottom\|left\|right:edge_interval`, which is the edge interval from the selected edge; `begin:end` for begin-end of all edges. |
 | `-group_pins` | A list of pins to be placed together on the die boundary. |
 | `-annealing` | Flag to enable simulated annealing pin placement. |
 | `-write_pin_placement` | A file with the pin placement generated in the format of multiple calls for the `place_pin` command. |
@@ -248,19 +290,14 @@ value, or a range of values. For example, in `place_pins -hor_layers metal2
 three intervals are excluded: the whole top edge, the right edge from 15
 microns to 60.5 microns, and the left edge from its beginning to 50 microns.
 
-#### Developer Arguments
-
-| Switch Name | Description |
-| ----- | ----- |
-| `-random_seed` | Specify the seed for random operations. |
-| `-random` | When this flag is enabled, the pin placement is random. |
-
 ### Write Pin Placement
 
-Use the following command to write a file with the pin placement in the format of multiple calls for the `place_pin` command:
+The `write_pin_placement` command writes a file with the pin placement in the format of multiple calls for the `place_pin` command:
 
 ```tcl
-write_pin_placement file_name
+write_pin_placement 
+    file_name
+    -placed_status
 ```
 
 #### Options
@@ -268,8 +305,9 @@ write_pin_placement file_name
 | Switch Name | Description |
 | ----- | ----- |
 | `file_name` | The name of the file with the pin placement. |
+| `-placed_status` | When this flag is enabled, the file will be generated´with the `-placed_status` flag in each `place_pin` command call. |
 
-### Useful Developer Commands
+## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/IOPlacer.cpp) or the [swig file](./src/IOPlacer.i).
 
@@ -283,15 +321,13 @@ If you are a developer, you might find these useful. More details can be found i
 | `parse_pin_names` | Parse pin names. |
 | `get_edge_extreme` | Get extremes of edge. |
 | `exclude_intervals` | Set exclude interval. |
-| `add_pins_to_constraint` | Add pins to constrained region. |
 | `add_pins_to_top_layer` | Add pins to top layer. | 
-
 
 ## Example scripts
 
 Example scripts of `ppl` running on a sample design of `gcd` as follows:
 
-```tcl
+```
 ./test/gcd.tcl
 ```
 

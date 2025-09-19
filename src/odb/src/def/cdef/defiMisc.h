@@ -33,7 +33,7 @@
 #ifndef CDEFIMISC_H
 #define CDEFIMISC_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

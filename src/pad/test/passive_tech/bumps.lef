@@ -1,0 +1,39 @@
+VERSION 5.7 ;
+NAMESCASESENSITIVE ON ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+PROPERTYDEFINITIONS
+END PROPERTYDEFINITIONS
+
+
+MACRO BUMP10
+    CLASS COVER BUMP ;
+    ORIGIN 5 5 ;
+    SIZE 10 BY 10 ;
+    SYMMETRY X Y ;
+    PIN PAD
+        DIRECTION INOUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER topmetal ;
+              POLYGON  2 -5 -2 -5 -5 -2 -5 2 -2 5 2 5 5 2 5 -2 2 -5 ;
+        END
+    END PAD
+END BUMP10
+
+MACRO BUMP45
+    CLASS COVER BUMP ;
+    ORIGIN 14 14 ;
+    SIZE 28 BY 28 ;
+    SYMMETRY X Y ;
+    PIN PAD
+        DIRECTION INOUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER topmetal ;
+              POLYGON  6 -14 -6 -14 -14 -6 -14 6 -6 14 6 14 14 6 14 -6 6 -14 ;
+        END
+    END PAD
+END BUMP45
+END LIBRARY

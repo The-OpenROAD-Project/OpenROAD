@@ -4,7 +4,7 @@ import grt_aux
 
 tech = Tech()
 tech.readLef("macro_obs_not_aligned.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("macro_obs_not_aligned.def")
 gr = design.getGlobalRouter()
 

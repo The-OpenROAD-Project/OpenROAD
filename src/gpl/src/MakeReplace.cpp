@@ -1,69 +1,37 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2018-2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include "gpl/MakeReplace.h"
 
 #include <tcl.h>
 
 #include "gpl/Replace.h"
-#include "ord/OpenRoad.hh"
-#include "sta/StaMain.hh"
-
-namespace sta {
-extern const char* gpl_tcl_inits[];
-}
+#include "utl/decode.h"
 
 extern "C" {
 extern int Gpl_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace gpl {
+
+extern const char* gpl_tcl_inits[];
 
 gpl::Replace* makeReplace()
 {
   return new gpl::Replace();
 }
 
-void initReplace(OpenRoad* openroad)
+void initReplace(gpl::Replace* replace,
+                 odb::dbDatabase* db,
+                 sta::dbSta* sta,
+                 rsz::Resizer* resizer,
+                 grt::GlobalRouter* global_route,
+                 utl::Logger* logger,
+                 Tcl_Interp* tcl_interp)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
   Gpl_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::gpl_tcl_inits);
-  openroad->getReplace()->init(openroad->getDb(),
-                               openroad->getSta(),
-                               openroad->getResizer(),
-                               openroad->getGlobalRouter(),
-                               openroad->getLogger());
+  utl::evalTclInit(tcl_interp, gpl::gpl_tcl_inits);
+  replace->init(db, sta, resizer, global_route, logger);
 }
 
 void deleteReplace(gpl::Replace* replace)
@@ -71,4 +39,4 @@ void deleteReplace(gpl::Replace* replace)
   delete replace;
 }
 
-}  // namespace ord
+}  // namespace gpl

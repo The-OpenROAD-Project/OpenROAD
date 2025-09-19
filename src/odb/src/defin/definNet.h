@@ -1,43 +1,15 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <map>
 #include <string>
 
-#include "dbWireCodec.h"
 #include "definBase.h"
-#include "odb.h"
+#include "odb/dbTypes.h"
+#include "odb/dbWireCodec.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -51,25 +23,21 @@ class dbTechNonDefaultRule;
 
 class definNet : public definBase
 {
-  bool _skip_signal_connections;
-  bool _skip_wires;
-  bool _replace_wires;
-  bool _names_are_ids;
-  bool _assembly_mode;
-  bool _found_new_routing;
-  dbNet* _cur_net;
-  dbTechLayer* _cur_layer;
+  bool _skip_signal_connections{false};
+  bool _skip_wires{false};
+  dbNet* _cur_net{nullptr};
+  dbTechLayer* _cur_layer{nullptr};
   dbWireEncoder _wire_encoder;
-  dbWire* _wire;
-  dbWireType _wire_type;
-  dbWireShapeType _wire_shape_type;
-  int _prev_x;
-  int _prev_y;
-  int _width;
-  int _point_cnt;
-  dbTechLayerRule* _taper_rule;
-  dbTechNonDefaultRule* _non_default_rule;
-  dbTechNonDefaultRule* _rule_for_path;
+  dbWire* _wire{nullptr};
+  dbWireType _wire_type{dbWireType::NONE};
+  dbWireShapeType _wire_shape_type{dbWireShapeType::NONE};
+  int _prev_x{0};
+  int _prev_y{0};
+  int _width{0};
+  int _point_cnt{0};
+  dbTechLayerRule* _taper_rule{nullptr};
+  dbTechNonDefaultRule* _non_default_rule{nullptr};
+  dbTechNonDefaultRule* _rule_for_path{nullptr};
   std::map<std::string, dbVia*> _rotated_vias;
 
   void getUniqueViaName(std::string& viaName);
@@ -77,9 +45,9 @@ class definNet : public definBase
   dbTechNonDefaultRule* findNonDefaultRule(const char* name);
 
  public:
-  int _net_cnt;
-  uint _update_cnt;
-  int _net_iterm_cnt;
+  int _net_cnt{0};
+  uint _update_cnt{0};
+  int _net_iterm_cnt{0};
 
   /// Net interface methods
   void begin(const char* name);
@@ -115,14 +83,8 @@ class definNet : public definBase
 
   dbTechLayer* getLayer() const { return _cur_layer; }
 
-  definNet();
-  virtual ~definNet();
-  virtual void init() override;
   void skipWires() { _skip_wires = true; }
   void skipConnections() { _skip_signal_connections = true; }
-  void replaceWires() { _replace_wires = true; }
-  void setAssemblyMode() { _assembly_mode = true; }
-  void namesAreDBIDs() { _names_are_ids = true; }
 };
 
 }  // namespace odb

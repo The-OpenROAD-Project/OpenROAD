@@ -1,62 +1,52 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <algorithm>
 #include <memory>
 #include <set>
+#include <utility>
+#include <vector>
 
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frVia.h"
 #include "db/taObj/taPin.h"
+#include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "frRegionQuery.h"
+#include "global.h"
+#include "utl/Logger.h"
 
 namespace drt {
 class FlexTAGraphics;
+class AbstractTAGraphics;
 
 class FlexTA
 {
  public:
   // constructors
-  FlexTA(frDesign* in, Logger* logger, bool save_updates_);
+  FlexTA(frDesign* in,
+         utl::Logger* logger,
+         RouterConfiguration* router_cfg,
+         bool save_updates_);
   ~FlexTA();
   // getters
   frTechObject* getTech() const { return tech_; }
   frDesign* getDesign() const { return design_; }
   // others
   int main();
-  void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
+  void setDebug(std::unique_ptr<AbstractTAGraphics> ta_graphics);
 
  private:
   frTechObject* tech_;
   frDesign* design_;
-  Logger* logger_;
+  utl::Logger* logger_;
+  RouterConfiguration* router_cfg_;
   bool save_updates_;
-  std::unique_ptr<FlexTAGraphics> graphics_;
+  std::unique_ptr<AbstractTAGraphics> graphics_;
   // others
   void main_helper(frLayerNum lNum, int maxOffsetIter, int panelWidth);
   void initTA(int size);
@@ -77,7 +67,7 @@ class FlexTAWorkerRegionQuery
   void remove(taPinFig* fig);
   void query(const Rect& box,
              frLayerNum layerNum,
-             std::set<taPin*, frBlockObjectComp>& result) const;
+             frOrderedIdSet<taPin*>& result) const;
 
   void addCost(const Rect& box,
                frLayerNum layerNum,
@@ -117,9 +107,13 @@ class FlexTAWorker
 {
  public:
   // constructors
-  FlexTAWorker(frDesign* designIn, Logger* logger, bool save_updates)
+  FlexTAWorker(frDesign* designIn,
+               utl::Logger* logger,
+               RouterConfiguration* router_cfg,
+               bool save_updates)
       : design_(designIn),
         logger_(logger),
+        router_cfg_(router_cfg),
         save_updates_(save_updates),
         dir_(dbTechLayerDir::NONE),
         taIter_(0),
@@ -127,7 +121,9 @@ class FlexTAWorker
         numAssigned_(0),
         totCost_(0),
         maxRetry_(1),
-        hardIroutesMode(false){};
+        hardIroutesMode_(false)
+  {
+  }
   // setters
   void setRouteBox(const Rect& boxIn) { routeBox_ = boxIn; }
   void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }
@@ -195,7 +191,8 @@ class FlexTAWorker
 
  private:
   frDesign* design_;
-  Logger* logger_;
+  utl::Logger* logger_;
+  RouterConfiguration* router_cfg_;
   bool save_updates_;
   Rect routeBox_;
   Rect extBox_;
@@ -211,7 +208,7 @@ class FlexTAWorker
   int numAssigned_;
   int totCost_;
   int maxRetry_;
-  bool hardIroutesMode;
+  bool hardIroutesMode_;
 
   //// others
   void init();
@@ -219,7 +216,7 @@ class FlexTAWorker
   frCoord initFixedObjs_calcBloatDist(frBlockObject* obj,
                                       frLayerNum lNum,
                                       const Rect& box);
-  frCoord initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
+  frCoord initFixedObjs_calcOBSBloatDistVia(const frViaDef* viaDef,
                                             frLayerNum lNum,
                                             const Rect& box,
                                             bool isOBS = true);
@@ -255,44 +252,42 @@ class FlexTAWorker
                              frCoord& pinCoord);
   void initCosts();
   void sortIroutes();
+  bool outOfDieVia(frLayerNum layer_num,
+                   const Point& pt,
+                   const Rect& die_box) const;
 
   // quick drc
   frSquaredDistance box2boxDistSquare(const Rect& box1,
                                       const Rect& box2,
                                       frCoord& dx,
                                       frCoord& dy);
-  void addCost(taPinFig* fig,
-               std::set<taPin*, frBlockObjectComp>* pinS = nullptr);
-  void subCost(taPinFig* fig,
-               std::set<taPin*, frBlockObjectComp>* pinS = nullptr);
+  void addCost(taPinFig* fig, frOrderedIdSet<taPin*>* pinS = nullptr);
+  void subCost(taPinFig* fig, frOrderedIdSet<taPin*>* pinS = nullptr);
   void modCost(taPinFig* fig,
                bool isAddCost,
-               std::set<taPin*, frBlockObjectComp>* pinS = nullptr);
+               frOrderedIdSet<taPin*>* pinS = nullptr);
   void modMinSpacingCostPlanar(const Rect& box,
                                frLayerNum lNum,
                                taPinFig* fig,
                                bool isAddCost,
-                               std::set<taPin*, frBlockObjectComp>* pinS
-                               = nullptr);
+                               frOrderedIdSet<taPin*>* pinS = nullptr);
   void modMinSpacingCostVia(const Rect& box,
                             frLayerNum lNum,
                             taPinFig* fig,
                             bool isAddCost,
                             bool isUpperVia,
                             bool isCurrPs,
-                            std::set<taPin*, frBlockObjectComp>* pinS
-                            = nullptr);
+                            frOrderedIdSet<taPin*>* pinS = nullptr);
   void modCutSpacingCost(const Rect& box,
                          frLayerNum lNum,
                          taPinFig* fig,
                          bool isAddCost,
-                         std::set<taPin*, frBlockObjectComp>* pinS = nullptr);
+                         frOrderedIdSet<taPin*>* pinS = nullptr);
 
   // initTA
   void assign();
   void assignIroute(taPin* iroute);
-  void assignIroute_init(taPin* iroute,
-                         std::set<taPin*, frBlockObjectComp>* pinS);
+  void assignIroute_init(taPin* iroute, frOrderedIdSet<taPin*>* pinS);
   void assignIroute_availTracks(taPin* iroute,
                                 frLayerNum& lNum,
                                 int& idx1,
@@ -320,8 +315,8 @@ class FlexTAWorker
                                          frLayerNum lNum);
   void assignIroute_updateIroute(taPin* iroute,
                                  frCoord bestTrackLoc,
-                                 std::set<taPin*, frBlockObjectComp>* pinS);
-  void assignIroute_updateOthers(std::set<taPin*, frBlockObjectComp>& pinS);
+                                 frOrderedIdSet<taPin*>* pinS);
+  void assignIroute_updateOthers(frOrderedIdSet<taPin*>& pinS);
 
   // end
   void end();

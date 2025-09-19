@@ -1,42 +1,28 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "frRegionQuery.h"
 
-#include <boost/polygon/polygon.hpp>
-#include <iostream>
+#include <algorithm>
+#include <iterator>
+#include <memory>
+#include <utility>
+#include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frInstBlockage.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRTree.h"
 #include "global.h"
+#include "utl/Logger.h"
 #include "utl/algorithms.h"
 
 namespace drt {
+
+class FlexDR;
 
 using utl::enumerate;
 namespace gtl = boost::polygon;
@@ -49,24 +35,24 @@ struct frRegionQuery::Impl
   template <typename T>
   using ObjectsByLayer = std::vector<Objects<T>>;
 
-  frDesign* design_;
-  Logger* logger_;
+  frDesign* design;
+  utl::Logger* logger;
+  RouterConfiguration* router_cfg;
   // only for pin shapes, obs and snet
-  RTreesByLayer<frBlockObject*> shapes_;
-  RTreesByLayer<frGuide*> guides_;
-  RTreesByLayer<frNet*> origGuides_;  // non-processed guides;
-  RTree<frBlockObject*> grPins_;
-  RTreesByLayer<frRPin*> rpins_;  // only for rpins
+  RTreesByLayer<frBlockObject*> shapes;
+  RTreesByLayer<frGuide*> guides;
+  RTreesByLayer<frNet*> origGuides;  // non-processed guides;
+  RTree<frBlockObject*> grPins;
+  RTreesByLayer<frRPin*> rpins;  // only for rpins
   // only for gr objs, via only in via layer
-  RTreesByLayer<grBlockObject*> grObjs_;
+  RTreesByLayer<grBlockObject*> grObjs;
   // only for dr objs, via only in via layer
-  RTreesByLayer<frBlockObject*> drObjs_;
-  RTreesByLayer<frMarker*> markers_;  // use init()
+  RTreesByLayer<frBlockObject*> drObjs;
+  RTreesByLayer<frMarker*> markers;  // use init()
 
   Impl() = default;
   void init();
-  void initOrigGuide(
-      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& tmpGuides);
+  void initOrigGuide(frOrderedIdMap<frNet*, std::vector<frRect>>& tmpGuides);
   void initGuide();
   void initRPin();
   void initGRPin(std::vector<std::pair<frBlockObject*, Point>>& in);
@@ -92,11 +78,14 @@ struct frRegionQuery::Impl
   void addGRObj(grVia* via);
 };
 
-frRegionQuery::frRegionQuery(frDesign* design, Logger* logger)
+frRegionQuery::frRegionQuery(frDesign* design,
+                             utl::Logger* logger,
+                             RouterConfiguration* router_cfg)
     : impl_(std::make_unique<Impl>())
 {
-  impl_->design_ = design;
-  impl_->logger_ = logger;
+  impl_->design = design;
+  impl_->logger = logger;
+  impl_->router_cfg = router_cfg;
 }
 
 frRegionQuery::frRegionQuery() : impl_(nullptr)
@@ -107,7 +96,7 @@ frRegionQuery::~frRegionQuery() = default;
 
 frDesign* frRegionQuery::getDesign() const
 {
-  return impl_->design_;
+  return impl_->design;
 }
 
 void frRegionQuery::Impl::add(frShape* shape,
@@ -117,7 +106,7 @@ void frRegionQuery::Impl::add(frShape* shape,
     Rect frb = shape->getBBox();
     allShapes.at(shape->getLayerNum()).push_back(std::make_pair(frb, shape));
   } else {
-    logger_->error(DRT, 5, "Unsupported region query add.");
+    logger->error(DRT, 5, "Unsupported region query add.");
   }
 }
 
@@ -126,16 +115,16 @@ void frRegionQuery::addDRObj(frShape* shape)
   if (shape->typeId() == frcPathSeg || shape->typeId() == frcRect
       || shape->typeId() == frcPatchWire) {
     Rect frb = shape->getBBox();
-    impl_->drObjs_.at(shape->getLayerNum()).insert(std::make_pair(frb, shape));
+    impl_->drObjs.at(shape->getLayerNum()).insert(std::make_pair(frb, shape));
   } else {
-    impl_->logger_->error(DRT, 6, "Unsupported region query add.");
+    impl_->logger->error(DRT, 6, "Unsupported region query add.");
   }
 }
 
 void frRegionQuery::addMarker(frMarker* in)
 {
   Rect frb = in->getBBox();
-  impl_->markers_.at(in->getLayerNum()).insert(std::make_pair(frb, in));
+  impl_->markers.at(in->getLayerNum()).insert(std::make_pair(frb, in));
 }
 
 void frRegionQuery::Impl::addDRObj(frShape* shape,
@@ -146,7 +135,7 @@ void frRegionQuery::Impl::addDRObj(frShape* shape,
     Rect frb = shape->getBBox();
     allShapes.at(shape->getLayerNum()).push_back(std::make_pair(frb, shape));
   } else {
-    logger_->error(DRT, 7, "Unsupported region query add.");
+    logger->error(DRT, 7, "Unsupported region query add.");
   }
 }
 
@@ -155,10 +144,25 @@ void frRegionQuery::removeDRObj(frShape* shape)
   if (shape->typeId() == frcPathSeg || shape->typeId() == frcRect
       || shape->typeId() == frcPatchWire) {
     Rect frb = shape->getBBox();
-    impl_->drObjs_.at(shape->getLayerNum()).remove(std::make_pair(frb, shape));
+    impl_->drObjs.at(shape->getLayerNum()).remove(std::make_pair(frb, shape));
   } else {
-    impl_->logger_->error(DRT, 31, "Unsupported region query add.");
+    impl_->logger->error(DRT, 31, "Unsupported region query add.");
   }
+}
+
+std::vector<std::pair<frBlockObject*, Rect>> frRegionQuery::getVias(
+    frLayerNum layer_num)
+{
+  std::vector<std::pair<frBlockObject*, Rect>> result;
+  result.reserve(impl_->shapes.at(layer_num).size()
+                 + impl_->drObjs.at(layer_num).size());
+  for (auto [box, obj] : impl_->shapes.at(layer_num)) {
+    result.emplace_back(obj, box);
+  }
+  for (auto [box, obj] : impl_->drObjs.at(layer_num)) {
+    result.emplace_back(obj, box);
+  }
+  return result;
 }
 
 void frRegionQuery::addBlockObj(frBlockObject* obj)
@@ -166,13 +170,13 @@ void frRegionQuery::addBlockObj(frBlockObject* obj)
   switch (obj->typeId()) {
     case frcInstTerm: {
       auto instTerm = static_cast<frInstTerm*>(obj);
-      dbTransform xform = instTerm->getInst()->getUpdatedXform();
+      dbTransform xform = instTerm->getInst()->getDBTransform();
       for (auto& pin : instTerm->getTerm()->getPins()) {
         for (auto& uFig : pin->getFigs()) {
           auto shape = uFig.get();
           Rect frb = shape->getBBox();
           xform.apply(frb);
-          impl_->shapes_.at(static_cast<frShape*>(shape)->getLayerNum())
+          impl_->shapes.at(static_cast<frShape*>(shape)->getLayerNum())
               .insert(std::make_pair(frb, instTerm));
         }
       }
@@ -180,15 +184,15 @@ void frRegionQuery::addBlockObj(frBlockObject* obj)
     }
     case frcInstBlockage: {
       auto instBlk = static_cast<frInstBlockage*>(obj);
-      dbTransform xform = instBlk->getInst()->getUpdatedXform();
+      dbTransform xform = instBlk->getInst()->getDBTransform();
       auto blk = instBlk->getBlockage();
       auto pin = blk->getPin();
       for (auto& uFig : pin->getFigs()) {
         auto shape = uFig.get();
-        if (shape->typeId() == frcPathSeg || shape->typeId() == frcRect) {
+        if (shape->typeId() == frcRect) {
           Rect frb = shape->getBBox();
           xform.apply(frb);
-          impl_->shapes_.at(static_cast<frShape*>(shape)->getLayerNum())
+          impl_->shapes.at(static_cast<frShape*>(shape)->getLayerNum())
               .insert(std::make_pair(frb, instBlk));
         } else if (shape->typeId() == frcPolygon) {
           // Decompose the polygon to rectangles and store those
@@ -212,7 +216,7 @@ void frRegionQuery::addBlockObj(frBlockObject* obj)
           // Store the rectangles with this blockage
           for (auto& rect : rects) {
             Rect box(xl(rect), yl(rect), xh(rect), yh(rect));
-            impl_->shapes_.at(static_cast<frShape*>(shape)->getLayerNum())
+            impl_->shapes.at(static_cast<frShape*>(shape)->getLayerNum())
                 .insert(std::make_pair(box, instBlk));
           }
         }
@@ -230,7 +234,7 @@ void frRegionQuery::addBlockObj(frBlockObject* obj)
       break;
     }
     default:
-      impl_->logger_->error(DRT, 513, "Unsupported region addBlockObj");
+      impl_->logger->error(DRT, 513, "Unsupported region addBlockObj");
   }
 }
 
@@ -239,13 +243,13 @@ void frRegionQuery::removeBlockObj(frBlockObject* obj)
   switch (obj->typeId()) {
     case frcInstTerm: {
       auto instTerm = static_cast<frInstTerm*>(obj);
-      dbTransform xform = instTerm->getInst()->getUpdatedXform();
+      dbTransform xform = instTerm->getInst()->getDBTransform();
       for (auto& pin : instTerm->getTerm()->getPins()) {
         for (auto& uFig : pin->getFigs()) {
           auto shape = uFig.get();
           Rect frb = shape->getBBox();
           xform.apply(frb);
-          impl_->shapes_.at(static_cast<frShape*>(shape)->getLayerNum())
+          impl_->shapes.at(static_cast<frShape*>(shape)->getLayerNum())
               .remove(std::make_pair(frb, instTerm));
         }
       }
@@ -253,7 +257,7 @@ void frRegionQuery::removeBlockObj(frBlockObject* obj)
     }
     case frcInstBlockage: {
       auto instBlk = static_cast<frInstBlockage*>(obj);
-      dbTransform xform = instBlk->getInst()->getUpdatedXform();
+      dbTransform xform = instBlk->getInst()->getDBTransform();
       auto blk = instBlk->getBlockage();
       auto pin = blk->getPin();
       for (auto& uFig : pin->getFigs()) {
@@ -261,7 +265,7 @@ void frRegionQuery::removeBlockObj(frBlockObject* obj)
         if (shape->typeId() == frcPathSeg || shape->typeId() == frcRect) {
           Rect frb = shape->getBBox();
           xform.apply(frb);
-          impl_->shapes_.at(static_cast<frShape*>(shape)->getLayerNum())
+          impl_->shapes.at(static_cast<frShape*>(shape)->getLayerNum())
               .remove(std::make_pair(frb, instBlk));
         } else if (shape->typeId() == frcPolygon) {
           // Decompose the polygon to rectangles and store those
@@ -285,7 +289,7 @@ void frRegionQuery::removeBlockObj(frBlockObject* obj)
           // Store the rectangles with this blockage
           for (auto& rect : rects) {
             Rect box(xl(rect), yl(rect), xh(rect), yh(rect));
-            impl_->shapes_.at(static_cast<frShape*>(shape)->getLayerNum())
+            impl_->shapes.at(static_cast<frShape*>(shape)->getLayerNum())
                 .remove(std::make_pair(box, instBlk));
           }
         }
@@ -303,7 +307,7 @@ void frRegionQuery::removeBlockObj(frBlockObject* obj)
       break;
     }
     default:
-      impl_->logger_->error(DRT, 512, "Unsupported region removeBlockObj");
+      impl_->logger->error(DRT, 512, "Unsupported region removeBlockObj");
   }
 }
 
@@ -316,9 +320,9 @@ void frRegionQuery::Impl::addGRObj(grShape* shape)
 {
   if (shape->typeId() == grcPathSeg) {
     Rect frb = shape->getBBox();
-    grObjs_.at(shape->getLayerNum()).insert(std::make_pair(frb, shape));
+    grObjs.at(shape->getLayerNum()).insert(std::make_pair(frb, shape));
   } else {
-    logger_->error(DRT, 8, "Unsupported region query add.");
+    logger->error(DRT, 8, "Unsupported region query add.");
   }
 }
 
@@ -333,7 +337,7 @@ void frRegionQuery::Impl::addGRObj(grVia* via,
 void frRegionQuery::removeGRObj(grVia* via)
 {
   Rect frb = via->getBBox();
-  impl_->grObjs_.at(via->getViaDef()->getCutLayerNum())
+  impl_->grObjs.at(via->getViaDef()->getCutLayerNum())
       .remove(std::make_pair(frb, via));
 }
 
@@ -344,7 +348,7 @@ void frRegionQuery::Impl::addGRObj(grShape* shape,
     Rect frb = shape->getBBox();
     allShapes.at(shape->getLayerNum()).push_back(std::make_pair(frb, shape));
   } else {
-    logger_->error(DRT, 9, "Unsupported region query add.");
+    logger->error(DRT, 9, "Unsupported region query add.");
   }
 }
 
@@ -352,24 +356,22 @@ void frRegionQuery::removeGRObj(grShape* shape)
 {
   if (shape->typeId() == grcPathSeg) {
     Rect frb = shape->getBBox();
-    impl_->grObjs_.at(shape->getLayerNum()).remove(std::make_pair(frb, shape));
+    impl_->grObjs.at(shape->getLayerNum()).remove(std::make_pair(frb, shape));
   } else {
-    impl_->logger_->error(DRT, 10, "Unsupported region query add.");
+    impl_->logger->error(DRT, 10, "Unsupported region query add.");
   }
 }
 
 void frRegionQuery::removeMarker(frMarker* in)
 {
   Rect frb = in->getBBox();
-  impl_->markers_.at(in->getLayerNum()).remove(std::make_pair(frb, in));
+  impl_->markers.at(in->getLayerNum()).remove(std::make_pair(frb, in));
 }
 
 void frRegionQuery::Impl::add(frVia* via,
                               ObjectsByLayer<frBlockObject>& allShapes)
 {
-  dbTransform xform;
-  Point origin = via->getOrigin();
-  xform.setOffset(origin);
+  dbTransform xform = via->getTransform();
   for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
     auto shape = uShape.get();
     if (shape->typeId() == frcRect) {
@@ -378,7 +380,7 @@ void frRegionQuery::Impl::add(frVia* via,
       allShapes.at(via->getViaDef()->getLayer1Num())
           .push_back(std::make_pair(frb, via));
     } else {
-      logger_->error(DRT, 11, "Unsupported region query add.");
+      logger->error(DRT, 11, "Unsupported region query add.");
     }
   }
   for (auto& uShape : via->getViaDef()->getLayer2Figs()) {
@@ -389,7 +391,7 @@ void frRegionQuery::Impl::add(frVia* via,
       allShapes.at(via->getViaDef()->getLayer2Num())
           .push_back(std::make_pair(frb, via));
     } else {
-      logger_->error(DRT, 12, "Unsupported region query add.");
+      logger->error(DRT, 12, "Unsupported region query add.");
     }
   }
   for (auto& uShape : via->getViaDef()->getCutFigs()) {
@@ -400,7 +402,7 @@ void frRegionQuery::Impl::add(frVia* via,
       allShapes.at(via->getViaDef()->getCutLayerNum())
           .push_back(std::make_pair(frb, via));
     } else {
-      logger_->error(DRT, 13, "Unsupported region query add.");
+      logger->error(DRT, 13, "Unsupported region query add.");
     }
   }
 }
@@ -408,7 +410,7 @@ void frRegionQuery::Impl::add(frVia* via,
 void frRegionQuery::addDRObj(frVia* via)
 {
   Rect frb = via->getBBox();
-  impl_->drObjs_.at(via->getViaDef()->getCutLayerNum())
+  impl_->drObjs.at(via->getViaDef()->getCutLayerNum())
       .insert(std::make_pair(frb, via));
 }
 
@@ -423,21 +425,21 @@ void frRegionQuery::Impl::addDRObj(frVia* via,
 void frRegionQuery::removeDRObj(frVia* via)
 {
   Rect frb = via->getBBox();
-  impl_->drObjs_.at(via->getViaDef()->getCutLayerNum())
+  impl_->drObjs.at(via->getViaDef()->getCutLayerNum())
       .remove(std::make_pair(frb, via));
 }
 
 void frRegionQuery::addGRObj(grVia* via)
 {
   Rect frb = via->getBBox();
-  impl_->grObjs_.at(via->getViaDef()->getCutLayerNum())
+  impl_->grObjs.at(via->getViaDef()->getCutLayerNum())
       .insert(std::make_pair(frb, via));
 }
 
 void frRegionQuery::Impl::add(frInstTerm* instTerm,
                               ObjectsByLayer<frBlockObject>& allShapes)
 {
-  dbTransform xform = instTerm->getInst()->getUpdatedXform();
+  dbTransform xform = instTerm->getInst()->getDBTransform();
 
   for (auto& pin : instTerm->getTerm()->getPins()) {
     for (auto& uFig : pin->getFigs()) {
@@ -448,7 +450,7 @@ void frRegionQuery::Impl::add(frInstTerm* instTerm,
         allShapes.at(static_cast<frShape*>(shape)->getLayerNum())
             .push_back(std::make_pair(frb, instTerm));
       } else {
-        logger_->error(DRT, 14, "Unsupported region query add.");
+        logger->error(DRT, 14, "Unsupported region query add.");
       }
     }
   }
@@ -465,7 +467,7 @@ void frRegionQuery::Impl::add(frBTerm* term,
         allShapes.at(static_cast<frShape*>(shape)->getLayerNum())
             .push_back(std::make_pair(frb, term));
       } else {
-        logger_->error(DRT, 15, "Unsupported region query add.");
+        logger->error(DRT, 15, "Unsupported region query add.");
       }
     }
   }
@@ -474,7 +476,7 @@ void frRegionQuery::Impl::add(frBTerm* term,
 void frRegionQuery::Impl::add(frInstBlockage* instBlk,
                               ObjectsByLayer<frBlockObject>& allShapes)
 {
-  dbTransform xform = instBlk->getInst()->getUpdatedXform();
+  dbTransform xform = instBlk->getInst()->getDBTransform();
   auto blk = instBlk->getBlockage();
   auto pin = blk->getPin();
   for (auto& uFig : pin->getFigs()) {
@@ -510,10 +512,10 @@ void frRegionQuery::Impl::add(frInstBlockage* instBlk,
             .push_back(std::make_pair(box, instBlk));
       }
     } else {
-      logger_->error(DRT,
-                     16,
-                     "Unsupported region query add of blockage in instance {}.",
-                     instBlk->getInst()->getName());
+      logger->error(DRT,
+                    16,
+                    "Unsupported region query add of blockage in instance {}.",
+                    instBlk->getInst()->getName());
     }
   }
 }
@@ -529,7 +531,7 @@ void frRegionQuery::Impl::add(frBlockage* blk,
       allShapes.at(static_cast<frShape*>(shape)->getLayerNum())
           .push_back(std::make_pair(frb, blk));
     } else {
-      logger_->error(DRT, 17, "Unsupported region query add.");
+      logger->error(DRT, 17, "Unsupported region query add.");
     }
   }
 }
@@ -563,31 +565,29 @@ void frRegionQuery::query(const box_t& boostb,
                           const frLayerNum layerNum,
                           Objects<frBlockObject>& result) const
 {
-  impl_->shapes_.at(layerNum).query(bgi::intersects(boostb),
-                                    back_inserter(result));
+  impl_->shapes.at(layerNum).query(bgi::intersects(boostb),
+                                   back_inserter(result));
 }
 
 void frRegionQuery::query(const Rect& box,
                           const frLayerNum layerNum,
                           Objects<frBlockObject>& result) const
 {
-  impl_->shapes_.at(layerNum).query(bgi::intersects(box),
-                                    back_inserter(result));
+  impl_->shapes.at(layerNum).query(bgi::intersects(box), back_inserter(result));
 }
 
 void frRegionQuery::queryRPin(const Rect& box,
                               const frLayerNum layerNum,
                               Objects<frRPin>& result) const
 {
-  impl_->rpins_.at(layerNum).query(bgi::intersects(box), back_inserter(result));
+  impl_->rpins.at(layerNum).query(bgi::intersects(box), back_inserter(result));
 }
 
 void frRegionQuery::queryGuide(const Rect& box,
                                const frLayerNum layerNum,
                                Objects<frGuide>& result) const
 {
-  impl_->guides_.at(layerNum).query(bgi::intersects(box),
-                                    back_inserter(result));
+  impl_->guides.at(layerNum).query(bgi::intersects(box), back_inserter(result));
 }
 
 void frRegionQuery::queryGuide(const Rect& box,
@@ -605,7 +605,7 @@ void frRegionQuery::queryGuide(const Rect& box,
                                std::vector<frGuide*>& result) const
 {
   Objects<frGuide> temp;
-  for (auto& m : impl_->guides_) {
+  for (auto& m : impl_->guides) {
     m.query(bgi::intersects(box), back_inserter(temp));
   }
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
@@ -617,15 +617,15 @@ void frRegionQuery::queryOrigGuide(const Rect& box,
                                    const frLayerNum layerNum,
                                    Objects<frNet>& result) const
 {
-  impl_->origGuides_.at(layerNum).query(bgi::intersects(box),
-                                        back_inserter(result));
+  impl_->origGuides.at(layerNum).query(bgi::intersects(box),
+                                       back_inserter(result));
 }
 
 void frRegionQuery::queryGRPin(const Rect& box,
                                std::vector<frBlockObject*>& result) const
 {
   Objects<frBlockObject> temp;
-  impl_->grPins_.query(bgi::intersects(box), back_inserter(temp));
+  impl_->grPins.query(bgi::intersects(box), back_inserter(temp));
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
   });
@@ -635,16 +635,15 @@ void frRegionQuery::queryDRObj(const box_t& boostb,
                                const frLayerNum layerNum,
                                Objects<frBlockObject>& result) const
 {
-  impl_->drObjs_.at(layerNum).query(bgi::intersects(boostb),
-                                    back_inserter(result));
+  impl_->drObjs.at(layerNum).query(bgi::intersects(boostb),
+                                   back_inserter(result));
 }
 
 void frRegionQuery::queryDRObj(const Rect& box,
                                const frLayerNum layerNum,
                                Objects<frBlockObject>& result) const
 {
-  impl_->drObjs_.at(layerNum).query(bgi::intersects(box),
-                                    back_inserter(result));
+  impl_->drObjs.at(layerNum).query(bgi::intersects(box), back_inserter(result));
 }
 
 void frRegionQuery::queryDRObj(const Rect& box,
@@ -652,7 +651,7 @@ void frRegionQuery::queryDRObj(const Rect& box,
                                std::vector<frBlockObject*>& result) const
 {
   Objects<frBlockObject> temp;
-  impl_->drObjs_.at(layerNum).query(bgi::intersects(box), back_inserter(temp));
+  impl_->drObjs.at(layerNum).query(bgi::intersects(box), back_inserter(temp));
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
   });
@@ -662,7 +661,7 @@ void frRegionQuery::queryDRObj(const Rect& box,
                                std::vector<frBlockObject*>& result) const
 {
   Objects<frBlockObject> temp;
-  for (auto& m : impl_->drObjs_) {
+  for (auto& m : impl_->drObjs) {
     m.query(bgi::intersects(box), back_inserter(temp));
   }
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
@@ -674,7 +673,7 @@ void frRegionQuery::queryGRObj(const Rect& box,
                                std::vector<grBlockObject*>& result) const
 {
   Objects<grBlockObject> temp;
-  for (auto& m : impl_->grObjs_) {
+  for (auto& m : impl_->grObjs) {
     m.query(bgi::intersects(box), back_inserter(temp));
   }
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
@@ -687,7 +686,7 @@ void frRegionQuery::queryMarker(const Rect& box,
                                 std::vector<frMarker*>& result) const
 {
   Objects<frMarker> temp;
-  impl_->markers_.at(layerNum).query(bgi::intersects(box), back_inserter(temp));
+  impl_->markers.at(layerNum).query(bgi::intersects(box), back_inserter(temp));
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
   });
@@ -697,7 +696,7 @@ void frRegionQuery::queryMarker(const Rect& box,
                                 std::vector<frMarker*>& result) const
 {
   Objects<frMarker> temp;
-  for (auto& m : impl_->markers_) {
+  for (auto& m : impl_->markers) {
     m.query(bgi::intersects(box), back_inserter(temp));
   }
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
@@ -712,17 +711,17 @@ void frRegionQuery::init()
 
 void frRegionQuery::Impl::init()
 {
-  const frLayerNum numLayers = design_->getTech()->getLayers().size();
-  shapes_.clear();
-  shapes_.resize(numLayers);
+  const frLayerNum numLayers = design->getTech()->getLayers().size();
+  shapes.clear();
+  shapes.resize(numLayers);
 
-  markers_.clear();
-  markers_.resize(numLayers);
+  markers.clear();
+  markers.resize(numLayers);
 
   ObjectsByLayer<frBlockObject> allShapes(numLayers);
 
   int cnt = 0;
-  for (auto& inst : design_->getTopBlock()->getInsts()) {
+  for (auto& inst : design->getTopBlock()->getInsts()) {
     for (auto& instTerm : inst->getInstTerms()) {
       add(instTerm.get(), allShapes);
     }
@@ -730,37 +729,37 @@ void frRegionQuery::Impl::init()
       add(instBlk.get(), allShapes);
     }
     cnt++;
-    if (VERBOSE > 0) {
-      if (cnt < 100000) {
-        if (cnt % 10000 == 0) {
-          logger_->info(DRT, 18, "  Complete {} insts.", cnt);
+    if (router_cfg->VERBOSE > 0) {
+      if (cnt < 1000000) {
+        if (cnt % 100000 == 0) {
+          logger->info(DRT, 18, "  Complete {} insts.", cnt);
         }
       } else {
-        if (cnt % 100000 == 0) {
-          logger_->info(DRT, 19, "  Complete {} insts.", cnt);
+        if (cnt % 1000000 == 0) {
+          logger->info(DRT, 19, "  Complete {} insts.", cnt);
         }
       }
     }
   }
   cnt = 0;
-  for (auto& term : design_->getTopBlock()->getTerms()) {
+  for (auto& term : design->getTopBlock()->getTerms()) {
     add(term.get(), allShapes);
     cnt++;
-    if (VERBOSE > 0) {
+    if (router_cfg->VERBOSE > 0) {
       if (cnt < 100000) {
         if (cnt % 10000 == 0) {
-          logger_->info(DRT, 20, "  Complete {} terms.", cnt);
+          logger->info(DRT, 20, "  Complete {} terms.", cnt);
         }
       } else {
         if (cnt % 100000 == 0) {
-          logger_->info(DRT, 21, "  Complete {} terms.", cnt);
+          logger->info(DRT, 21, "  Complete {} terms.", cnt);
         }
       }
     }
   }
 
   cnt = 0;
-  for (auto& net : design_->getTopBlock()->getSNets()) {
+  for (auto& net : design->getTopBlock()->getSNets()) {
     for (auto& shape : net->getShapes()) {
       add(shape.get(), allShapes);
     }
@@ -768,49 +767,47 @@ void frRegionQuery::Impl::init()
       add(via.get(), allShapes);
     }
     cnt++;
-    if (VERBOSE > 0) {
+    if (router_cfg->VERBOSE > 0) {
       if (cnt % 10000 == 0) {
-        logger_->info(DRT, 22, "  Complete {} snets.", cnt);
+        logger->info(DRT, 22, "  Complete {} snets.", cnt);
       }
     }
   }
 
   cnt = 0;
-  for (auto& blk : design_->getTopBlock()->getBlockages()) {
+  for (auto& blk : design->getTopBlock()->getBlockages()) {
     add(blk.get(), allShapes);
     cnt++;
-    if (VERBOSE > 0) {
+    if (router_cfg->VERBOSE > 0) {
       if (cnt % 10000 == 0) {
-        logger_->info(DRT, 23, "  Complete {} blockages.", cnt);
+        logger->info(DRT, 23, "  Complete {} blockages.", cnt);
       }
     }
   }
 
   for (auto i = 0; i < numLayers; i++) {
-    shapes_.at(i) = boost::move(RTree<frBlockObject*>(allShapes.at(i)));
+    shapes.at(i) = boost::move(RTree<frBlockObject*>(allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
-    if (VERBOSE > 0) {
-      logger_->info(DRT,
-                    24,
-                    "  Complete {}.",
-                    design_->getTech()->getLayer(i)->getName());
+    if (router_cfg->VERBOSE > 0) {
+      logger->info(
+          DRT, 24, "  Complete {}.", design->getTech()->getLayer(i)->getName());
     }
   }
 }
 
 void frRegionQuery::initOrigGuide(
-    std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& tmpGuides)
+    frOrderedIdMap<frNet*, std::vector<frRect>>& tmpGuides)
 {
   impl_->initOrigGuide(tmpGuides);
 }
 
 void frRegionQuery::Impl::initOrigGuide(
-    std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& tmpGuides)
+    frOrderedIdMap<frNet*, std::vector<frRect>>& tmpGuides)
 {
-  const frLayerNum numLayers = design_->getTech()->getLayers().size();
-  origGuides_.clear();
-  origGuides_.resize(numLayers);
+  const frLayerNum numLayers = design->getTech()->getLayers().size();
+  origGuides.clear();
+  origGuides.resize(numLayers);
   ObjectsByLayer<frNet> allShapes(numLayers);
 
   int cnt = 0;
@@ -818,28 +815,26 @@ void frRegionQuery::Impl::initOrigGuide(
     for (auto& rect : rects) {
       addOrigGuide(net, rect, allShapes);
       cnt++;
-      if (VERBOSE > 0) {
-        if (cnt < 100000) {
-          if (cnt % 10000 == 0) {
-            logger_->info(DRT, 26, "  Complete {} origin guides.", cnt);
+      if (router_cfg->VERBOSE > 0) {
+        if (cnt < 1000000) {
+          if (cnt % 100000 == 0) {
+            logger->info(DRT, 26, "  Complete {} origin guides.", cnt);
           }
         } else {
-          if (cnt % 100000 == 0) {
-            logger_->info(DRT, 27, "  Complete {} origin guides.", cnt);
+          if (cnt % 1000000 == 0) {
+            logger->info(DRT, 27, "  Complete {} origin guides.", cnt);
           }
         }
       }
     }
   }
   for (auto i = 0; i < numLayers; i++) {
-    origGuides_.at(i) = boost::move(RTree<frNet*>(allShapes.at(i)));
+    origGuides.at(i) = boost::move(RTree<frNet*>(allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
-    if (VERBOSE > 0) {
-      logger_->info(DRT,
-                    28,
-                    "  Complete {}.",
-                    design_->getTech()->getLayer(i)->getName());
+    if (router_cfg->VERBOSE > 0) {
+      logger->info(
+          DRT, 28, "  Complete {}.", design->getTech()->getLayer(i)->getName());
     }
   }
 }
@@ -851,38 +846,38 @@ void frRegionQuery::initGuide()
 
 void frRegionQuery::Impl::initGuide()
 {
-  const frLayerNum numLayers = design_->getTech()->getLayers().size();
-  guides_.clear();
-  guides_.resize(numLayers);
+  const frLayerNum numLayers = design->getTech()->getLayers().size();
+  guides.clear();
+  guides.resize(numLayers);
   ObjectsByLayer<frGuide> allGuides(numLayers);
 
   int cnt = 0;
-  for (auto& net : design_->getTopBlock()->getNets()) {
+  for (auto& net : design->getTopBlock()->getNets()) {
     for (auto& guide : net->getGuides()) {
       addGuide(guide.get(), allGuides);
     }
     cnt++;
-    if (VERBOSE > 0) {
-      if (cnt < 100000) {
-        if (cnt % 10000 == 0) {
-          logger_->info(DRT, 29, "  Complete {} nets (guide).", cnt);
+    if (router_cfg->VERBOSE > 0) {
+      if (cnt < 1000000) {
+        if (cnt % 100000 == 0) {
+          logger->info(DRT, 29, "  Complete {} nets (guide).", cnt);
         }
       } else {
-        if (cnt % 100000 == 0) {
-          logger_->info(DRT, 30, "  Complete {} nets (guide).", cnt);
+        if (cnt % 1000000 == 0) {
+          logger->info(DRT, 30, "  Complete {} nets (guide).", cnt);
         }
       }
     }
   }
   for (auto i = 0; i < numLayers; i++) {
-    guides_.at(i) = boost::move(RTree<frGuide*>(allGuides.at(i)));
+    guides.at(i) = boost::move(RTree<frGuide*>(allGuides.at(i)));
     allGuides.at(i).clear();
     allGuides.at(i).shrink_to_fit();
-    if (VERBOSE > 0) {
-      logger_->info(DRT,
-                    35,
-                    "  Complete {} (guide).",
-                    design_->getTech()->getLayer(i)->getName());
+    if (router_cfg->VERBOSE > 0) {
+      logger->info(DRT,
+                   35,
+                   "  Complete {} (guide).",
+                   design->getTech()->getLayer(i)->getName());
     }
   }
 }
@@ -895,7 +890,7 @@ void frRegionQuery::initGRPin(std::vector<std::pair<frBlockObject*, Point>>& in)
 void frRegionQuery::Impl::initGRPin(
     std::vector<std::pair<frBlockObject*, Point>>& in)
 {
-  grPins_.clear();
+  grPins.clear();
   Objects<frBlockObject> allGRPins;
   for (auto& [obj, pt] : in) {
     Rect frb(pt.x(), pt.y(), pt.x(), pt.y());
@@ -903,7 +898,7 @@ void frRegionQuery::Impl::initGRPin(
   }
   in.clear();
   in.shrink_to_fit();
-  grPins_ = boost::move(RTree<frBlockObject*>(allGRPins));
+  grPins = boost::move(RTree<frBlockObject*>(allGRPins));
 }
 
 void frRegionQuery::initRPin()
@@ -913,20 +908,20 @@ void frRegionQuery::initRPin()
 
 void frRegionQuery::Impl::initRPin()
 {
-  const frLayerNum numLayers = design_->getTech()->getLayers().size();
-  rpins_.clear();
-  rpins_.resize(numLayers);
+  const frLayerNum numLayers = design->getTech()->getLayers().size();
+  rpins.clear();
+  rpins.resize(numLayers);
 
   ObjectsByLayer<frRPin> allRPins(numLayers);
 
-  for (auto& net : design_->getTopBlock()->getNets()) {
+  for (auto& net : design->getTopBlock()->getNets()) {
     for (auto& rpin : net->getRPins()) {
       addRPin(rpin.get(), allRPins);
     }
   }
 
   for (auto i = 0; i < numLayers; i++) {
-    rpins_.at(i) = boost::move(RTree<frRPin*>(allRPins.at(i)));
+    rpins.at(i) = boost::move(RTree<frRPin*>(allRPins.at(i)));
     allRPins.at(i).clear();
     allRPins.at(i).shrink_to_fit();
   }
@@ -939,24 +934,27 @@ void frRegionQuery::initDRObj()
 
 void frRegionQuery::Impl::initDRObj()
 {
-  const frLayerNum numLayers = design_->getTech()->getLayers().size();
-  drObjs_.clear();
-  drObjs_.shrink_to_fit();
-  drObjs_.resize(numLayers);
+  const frLayerNum numLayers = design->getTech()->getLayers().size();
+  drObjs.clear();
+  drObjs.shrink_to_fit();
+  drObjs.resize(numLayers);
 
   ObjectsByLayer<frBlockObject> allShapes(numLayers);
 
-  for (auto& net : design_->getTopBlock()->getNets()) {
+  for (auto& net : design->getTopBlock()->getNets()) {
     for (auto& shape : net->getShapes()) {
       addDRObj(shape.get(), allShapes);
     }
     for (auto& via : net->getVias()) {
       addDRObj(via.get(), allShapes);
     }
+    for (auto& pwire : net->getPatchWires()) {
+      addDRObj(pwire.get(), allShapes);
+    }
   }
 
   for (auto i = 0; i < numLayers; i++) {
-    drObjs_.at(i) = boost::move(RTree<frBlockObject*>(allShapes.at(i)));
+    drObjs.at(i) = boost::move(RTree<frBlockObject*>(allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
   }
@@ -964,14 +962,14 @@ void frRegionQuery::Impl::initDRObj()
 
 void frRegionQuery::Impl::initGRObj()
 {
-  const frLayerNum numLayers = design_->getTech()->getLayers().size();
-  grObjs_.clear();
-  grObjs_.shrink_to_fit();
-  grObjs_.resize(numLayers);
+  const frLayerNum numLayers = design->getTech()->getLayers().size();
+  grObjs.clear();
+  grObjs.shrink_to_fit();
+  grObjs.resize(numLayers);
 
   ObjectsByLayer<grBlockObject> allShapes(numLayers);
 
-  for (auto& net : design_->getTopBlock()->getNets()) {
+  for (auto& net : design->getTopBlock()->getNets()) {
     for (auto& shape : net->getGRShapes()) {
       addGRObj(shape.get(), allShapes);
     }
@@ -981,7 +979,7 @@ void frRegionQuery::Impl::initGRObj()
   }
 
   for (auto i = 0; i < numLayers; i++) {
-    grObjs_.at(i) = boost::move(RTree<grBlockObject*>(allShapes.at(i)));
+    grObjs.at(i) = boost::move(RTree<grBlockObject*>(allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
   }
@@ -994,63 +992,63 @@ void frRegionQuery::initGRObj()
 
 void frRegionQuery::printGRObj()
 {
-  auto& layers = impl_->design_->getTech()->getLayers();
+  auto& layers = impl_->design->getTech()->getLayers();
   for (auto [i, layer] : enumerate(layers)) {
     frString layerName;
     layer->getName(layerName);
-    impl_->logger_->info(DRT,
-                         32,
-                         "{} grObj region query size = {}.",
-                         layerName,
-                         impl_->grObjs_.at(i).size());
+    impl_->logger->info(DRT,
+                        32,
+                        "{} grObj region query size = {}.",
+                        layerName,
+                        impl_->grObjs.at(i).size());
   }
 }
 
 void frRegionQuery::print()
 {
-  auto& layers = impl_->design_->getTech()->getLayers();
+  auto& layers = impl_->design->getTech()->getLayers();
   for (auto [i, layer] : enumerate(layers)) {
     frString layerName;
     layer->getName(layerName);
-    impl_->logger_->info(DRT,
-                         33,
-                         "{} shape region query size = {}.",
-                         layerName,
-                         impl_->shapes_.at(i).size());
+    impl_->logger->info(DRT,
+                        33,
+                        "{} shape region query size = {}.",
+                        layerName,
+                        impl_->shapes.at(i).size());
   }
 }
 
 void frRegionQuery::printGuide()
 {
-  auto& layers = impl_->design_->getTech()->getLayers();
+  auto& layers = impl_->design->getTech()->getLayers();
   for (auto [i, layer] : enumerate(layers)) {
     frString layerName;
     layer->getName(layerName);
-    impl_->logger_->info(DRT,
-                         36,
-                         "{} guide region query size = {}.",
-                         layerName,
-                         impl_->guides_.at(i).size());
+    impl_->logger->info(DRT,
+                        36,
+                        "{} guide region query size = {}.",
+                        layerName,
+                        impl_->guides.at(i).size());
   }
 }
 
 void frRegionQuery::printDRObj()
 {
-  auto& layers = impl_->design_->getTech()->getLayers();
+  auto& layers = impl_->design->getTech()->getLayers();
   for (auto [i, layer] : enumerate(layers)) {
     frString layerName;
     layer->getName(layerName);
-    impl_->logger_->info(DRT,
-                         34,
-                         "{} drObj region query size = {}.",
-                         layerName,
-                         impl_->drObjs_.at(i).size());
+    impl_->logger->info(DRT,
+                        34,
+                        "{} drObj region query size = {}.",
+                        layerName,
+                        impl_->drObjs.at(i).size());
   }
 }
 
 void frRegionQuery::clearGuides()
 {
-  for (auto& m : impl_->guides_) {
+  for (auto& m : impl_->guides) {
     m.clear();
   }
 }

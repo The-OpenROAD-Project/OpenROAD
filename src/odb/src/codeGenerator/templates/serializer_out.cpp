@@ -1,6 +1,11 @@
+{% macro serializer_out(klass, parent=None, comment_tag = "") %}
+  {% set sname = (parent.name + "::" if parent else '_') + klass.name %}
   dbOStream& operator<<(dbOStream& stream, const {{sname}}& obj)
   {
-    {% for field in sklass.fields %}
+    {% if klass.ostream_scope %}
+    dbOStreamScope scope(stream, "{{klass.name}}");
+    {% endif %}
+    {% for field in klass.fields %}
       {% if field.bitFields %}
         {% if field.numBits == 32 %}
           uint32_t {{field.name}}bit_field;
@@ -12,13 +17,7 @@
         stream << {{field.name}}bit_field;
       {% else %}
         {% if 'no-serial' not in field.flags %}
-          {% if 'schema' in field %}
-          if (obj.getDatabase()->isSchema({{field.schema}})) {
-          {% endif %}
           stream << {% if field.table %}*{% endif %}obj.{{field.name}};
-          {% if 'schema' in field %}
-          }
-          {% endif %}
         {% endif %}
       {% endif %}
     {% endfor %}
@@ -26,4 +25,5 @@
     //User Code End <<{{ comment_tag }}
     return stream;
   }
+{%- endmacro %}
 

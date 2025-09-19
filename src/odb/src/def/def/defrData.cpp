@@ -29,84 +29,23 @@
 
 #include "defrData.hpp"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
+
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "defrSettings.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 defrData::defrData(const defrCallbacks* pCallbacks,
                    const defrSettings* pSettings,
                    defrSession* pSession)
-    : assertionWarnings(0),
-      bit_is_keyword(0),
-      bitsNum(0),
-      blockageWarnings(0),
-      by_is_keyword(0),
-      caseSensitiveWarnings(0),
-      componentWarnings(0),
-      constraintWarnings(0),
-      cover_is_keyword(0),
-      defMsgCnt(5500),
-      defMsgPrinted(0),
-      defRetVal(0),
-      def_warnings(0),
-      do_is_keyword(0),
-      dumb_mode(0),
-      errors(0),
-      fillWarnings(0),
-      first_buffer(0),
-      fixed_is_keyword(0),
-      gcellGridWarnings(0),
-      hasBlkLayerComp(0),
-      hasBlkLayerSpac(0),
-      hasBlkLayerTypeComp(0),
-      hasBlkPlaceComp(0),
-      hasBlkPlaceTypeComp(0),
-      hasBusBit(0),
-      hasDes(0),
-      hasDivChar(0),
-      hasDoStep(0),
-      hasNameCase(0),
-      hasOpenedDefLogFile(0),
-      hasPort(0),
-      hadPortOnce(0),
-      hasVer(0),
-      hasFatalError(0),
-      mask_is_keyword(0),
-      mustjoin_is_keyword(0),
-      names_case_sensitive(1),
-      needNPCbk(0),
-      needSNPCbk(0),
-      nl_token(FALSE),
-      no_num(0),
-      nonDefaultWarnings(0),
-      nondef_is_keyword(0),
-      ntokens(0),
-      orient_is_keyword(0),
-      pinExtWarnings(0),
-      pinWarnings(0),
-      real_num(0),
-      rect_is_keyword(0),
-      regTypeDef(0),
-      regionWarnings(0),
-      ringPlace(0),
-      routed_is_keyword(0),
-      scanchainWarnings(0),
-      specialWire_mask(0),
-      step_is_keyword(0),
-      stylesWarnings(0),
-      trackWarnings(0),
-      unitsWarnings(0),
-      versionWarnings(0),
-      viaRule(0),
-      viaWarnings(0),
-      specialWire_routeStatus((char*) "ROUTED"),
+    : specialWire_routeStatus((char*) "ROUTED"),
       specialWire_routeStatusName((char*) ""),
       specialWire_shapeType((char*) ""),
-      VersionNum(5.7),
       // defrReader vars
       PathObj(this),
       Prop(this),
@@ -117,7 +56,6 @@ defrData::defrData(const defrCallbacks* pCallbacks,
       PinCap(),
       CannotOccupy(this),
       Canplace(this),
-      DieArea(),
       Pin(this),
       Row(this),
       Track(this),
@@ -136,48 +74,11 @@ defrData::defrData(const defrCallbacks* pCallbacks,
       Slot(this),
       Fill(this),
       NonDefault(this),
-      Styles(),
       Geometries(this),
-      File(0),
       session(pSession),
-      Subnet(0),
       settings(pSettings),
-      aOxide(0),
-      defInvalidChar(0),
-      defIgnoreVersion(0),
-      defMsg(NULL),
-      defPrintTokens(0),
-      defPropDefType('\0'),
-      defaultCapWarnings(0),
-      defrLog(0),
-      input_level(-1),
-      last(NULL),
-      new_is_keyword(0),
-      nlines(1),
-      rowName(NULL),
-      iOTimingWarnings(0),
       magic((char*) malloc(1)),
-      netWarnings(0),
-      save_x(0.0),
-      save_y(0.0),
-      sNetWarnings(0),
-      netOsnet(0),
-      next(NULL),
-      rowWarnings(0),
-      shieldName(NULL),
-      deftokenLength(TOKEN_SIZE),
-      xStep(0),
-      yStep(0),
-      NeedPathData(0),
-      shield(FALSE),
-      shiftBuf(0),
-      shiftBufLength(0),
-      virtual_is_keyword(0),
-      warningMsg(NULL),
-      lVal(0.0),
-      rVal(0.0),
       deftoken((char*) malloc(TOKEN_SIZE)),
-      doneDesign(0),
       uc_token((char*) malloc(TOKEN_SIZE)),
       pv_deftoken((char*) malloc(TOKEN_SIZE)),
       callbacks(pCallbacks)
@@ -201,12 +102,11 @@ defrData::defrData(const defrCallbacks* pCallbacks,
   }
 
   nlines = 1;
-  last = buffer - 1;
   next = buffer;
   first_buffer = 1;
 
-  lVal = strtod("-2147483648", NULL);
-  rVal = strtod("2147483647", NULL);
+  lVal = strtod("-2147483648", nullptr);
+  rVal = strtod("2147483647", nullptr);
 }
 
 defrData::~defrData()
@@ -215,7 +115,7 @@ defrData::~defrData()
   /* Close the file */
   if (defrLog) {
     fclose(defrLog);
-    defrLog = 0;
+    defrLog = nullptr;
   }
 
   free(deftoken);
@@ -238,11 +138,13 @@ void defrData::defiError(int check, int msgNum, const char* mess)
 
   if (!check) {
     if ((settings->totalDefMsgLimit > 0)
-        && (defMsgPrinted >= settings->totalDefMsgLimit))
+        && (defMsgPrinted >= settings->totalDefMsgLimit)) {
       return;
+    }
     if (settings->MsgLimit[msgNum - 5000] > 0) {
-      if (msgLimit[msgNum - 5000] >= settings->MsgLimit[msgNum - 5000])
+      if (msgLimit[msgNum - 5000] >= settings->MsgLimit[msgNum - 5000]) {
         return; /*over the limit*/
+      }
       msgLimit[msgNum - 5000] = msgLimit[msgNum - 5000] + 1;
     }
     defMsgPrinted++;
@@ -288,7 +190,7 @@ const char* defrData::upperCase(const char* str)
   int len = strlen(str) + 1;
 
   if (len > shiftBufLength) {
-    if (shiftBuf == 0) {
+    if (shiftBuf == nullptr) {
       len = len < 64 ? 64 : len;
       shiftBuf = (char*) malloc(len);
       shiftBufLength = len;
@@ -301,7 +203,7 @@ const char* defrData::upperCase(const char* str)
 
   to = shiftBuf;
   while (*place) {
-    int i = (int) *place;
+    int i = static_cast<unsigned char>(*place);
     place++;
     *to++ = defiShift[i];
   }
@@ -343,7 +245,7 @@ int defrData::validateMaskShiftInput(const char* shiftMask,
 
   // Verification of the mask string
   for (int i = 0; i < shiftMaskLength; i++) {
-    int curShift = shiftMask[i];
+    int curShift = static_cast<unsigned char>(shiftMask[i]);
 
     if (curShift < '0' || curShift > '9') {
       hasError = 1;
@@ -396,7 +298,7 @@ double defrData::convert_defname2num(char* versionName)
 {
   char majorNm[80];
   char minorNm[80];
-  char* subMinorNm = NULL;
+  char* subMinorNm = nullptr;
   char* versionNm = strdup(versionName);
 
   double major = 0, minor = 0, subMinor = 0;
@@ -411,16 +313,19 @@ double defrData::convert_defname2num(char* versionName)
   }
   major = atof(majorNm);
   minor = atof(minorNm);
-  if (subMinorNm)
+  if (subMinorNm) {
     subMinor = atof(subMinorNm);
+  }
 
   version = major;
 
-  if (minor > 0)
+  if (minor > 0) {
     version = major + minor / 10;
+  }
 
-  if (subMinor > 0)
+  if (subMinor > 0) {
     version = version + subMinor / 1000;
+  }
 
   free(versionNm);
   return version;
@@ -428,10 +333,7 @@ double defrData::convert_defname2num(char* versionName)
 
 int defrData::numIsInt(char* volt)
 {
-  if (strchr(volt, '.'))  // a floating point
-    return 0;
-  else
-    return 1;
+  return strchr(volt, '.') == nullptr;  // a floating point
 }
 
 int defrData::defValidNum(int values)
@@ -488,16 +390,10 @@ int defrData::defValidNum(int values)
   return 0;
 }
 
-defrContext::defrContext(int ownConf)
-    : settings(0),
-      session(0),
-      data(0),
-      ownConfig(ownConf),
-      init_call_func(0),
-      callbacks(0)
+defrContext::defrContext(int ownConf) : ownConfig(ownConf)
 {
 }
 
 defrContext defContext;
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

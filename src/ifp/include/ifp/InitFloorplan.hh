@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, James Cherry, Parallax Software, Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -55,9 +23,19 @@ namespace ifp {
 using sta::dbNetwork;
 using utl::Logger;
 
+enum class RowParity
+{
+  NONE,
+  EVEN,
+  ODD
+};
+
 class InitFloorplan
 {
  public:
+  void makePolygonDie(const odb::Polygon& polygon);
+
+  InitFloorplan() = default;  // only for swig
   InitFloorplan(odb::dbBlock* block, Logger* logger, sta::dbNetwork* network);
 
   // utilization is in [0, 100]%
@@ -70,17 +48,63 @@ class InitFloorplan
                      int core_space_left,
                      int core_space_right,
                      odb::dbSite* base_site,
-                     const std::vector<odb::dbSite*>& additional_sites = {});
+                     const std::vector<odb::dbSite*>& additional_sites = {},
+                     RowParity row_parity = RowParity::NONE,
+                     const std::set<odb::dbSite*>& flipped_sites = {});
 
   // The base_site determines the single-height rows.  For hybrid rows it is
   // a site containing a row pattern.
   void initFloorplan(const odb::Rect& die,
                      const odb::Rect& core,
                      odb::dbSite* base_site,
-                     const std::vector<odb::dbSite*>& additional_sites = {});
+                     const std::vector<odb::dbSite*>& additional_sites = {},
+                     RowParity row_parity = RowParity::NONE,
+                     const std::set<odb::dbSite*>& flipped_sites = {});
 
   void insertTiecells(odb::dbMTerm* tie_term,
                       const std::string& prefix = "TIEOFF_");
+
+  // Rect in DBU to set the die area of the top level block.
+  void makeDie(const odb::Rect& die);
+
+  // utilization is in [0, 100]%. This routine will calculate the required
+  // core area for all the standard cells and macros based on the desired
+  // utilization. It will then add core space to each side, and will set
+  // the die area of the top level block to that calculated value.
+  void makeDieUtilization(double utilization,
+                          double aspect_ratio,
+                          int core_space_bottom,
+                          int core_space_top,
+                          int core_space_left,
+                          int core_space_right);
+
+  // The base_site determines the single-height rows.  For hybrid rows it is
+  // a site containing a row pattern. core space is the padding on each side
+  // to inset the rows.
+  void makeRowsWithSpacing(int core_space_bottom,
+                           int core_space_top,
+                           int core_space_left,
+                           int core_space_right,
+                           odb::dbSite* base_site,
+                           const std::vector<odb::dbSite*>& additional_sites
+                           = {},
+                           RowParity row_parity = RowParity::NONE,
+                           const std::set<odb::dbSite*>& flipped_sites = {});
+
+  // The base_site determines the single-height rows.  For hybrid rows it is
+  // a site containing a row pattern.
+  void makeRows(const odb::Rect& core,
+                odb::dbSite* base_site,
+                const std::vector<odb::dbSite*>& additional_sites = {},
+                RowParity row_parity = RowParity::NONE,
+                const std::set<odb::dbSite*>& flipped_sites = {});
+
+  // Create rows for a polygon core area using true polygon-aware generation
+  void makePolygonRows(const odb::Polygon& core_polygon,
+                       odb::dbSite* base_site,
+                       const std::vector<odb::dbSite*>& additional_sites = {},
+                       RowParity row_parity = RowParity::NONE,
+                       const std::set<odb::dbSite*>& flipped_sites = {});
 
   void makeTracks();
   void makeTracks(odb::dbTechLayer* layer,
@@ -102,10 +126,13 @@ class InitFloorplan
   using SitesByName = std::map<std::string, odb::dbSite*>;
 
   double designArea();
+  void checkInstanceDimensions(const odb::Rect& core) const;
   void makeRows(const odb::dbSite::RowPattern& pattern, const odb::Rect& core);
   void makeUniformRows(odb::dbSite* base_site,
                        const SitesByName& sites_by_name,
-                       const odb::Rect& core);
+                       const odb::Rect& core,
+                       RowParity row_parity,
+                       const std::set<odb::dbSite*>& flipped_sites);
   void makeHybridRows(odb::dbSite* base_hybrid_site,
                       const SitesByName& sites_by_name,
                       const odb::Rect& core);
@@ -118,9 +145,26 @@ class InitFloorplan
   void updateVoltageDomain(int core_lx, int core_ly, int core_ux, int core_uy);
   void addUsedSites(std::map<std::string, odb::dbSite*>& sites_by_name) const;
 
-  odb::dbBlock* block_;
-  Logger* logger_;
-  sta::dbNetwork* network_;
+  // Private methods for polygon-aware row generation using scanline
+  // intersection
+  void makePolygonRowsScanline(const odb::Polygon& core_polygon,
+                               odb::dbSite* base_site,
+                               const SitesByName& sites_by_name,
+                               RowParity row_parity,
+                               const std::set<odb::dbSite*>& flipped_sites);
+
+  std::vector<odb::Rect> intersectRowWithPolygon(const odb::Rect& row,
+                                                 const odb::Polygon& polygon);
+
+  void makeUniformRowsPolygon(odb::dbSite* site,
+                              const odb::Polygon& core_polygon,
+                              const odb::Rect& core_bbox,
+                              RowParity row_parity,
+                              const std::set<odb::dbSite*>& flipped_sites);
+
+  odb::dbBlock* block_{nullptr};
+  Logger* logger_{nullptr};
+  sta::dbNetwork* network_{nullptr};
 
   // this is a set of sets of all constructed site ids.
   std::set<std::set<int>> constructed_patterns_;

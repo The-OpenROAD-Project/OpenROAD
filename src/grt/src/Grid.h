@@ -1,52 +1,18 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
-#include <boost/icl/interval.hpp>
 #include <cmath>
-#include <iostream>
-#include <map>
 #include <vector>
 
-#include "RoutingTracks.h"
-#include "odb/db.h"
-
-using boost::icl::interval;
+#include "boost/icl/interval.hpp"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace grt {
+
+using boost::icl::interval;
 
 class Grid
 {
@@ -55,12 +21,12 @@ class Grid
   ~Grid() = default;
 
   void init(const odb::Rect& die_area,
-            const int tile_size,
-            const int x_grids,
-            const int y_grids,
-            const bool perfect_regular_x,
-            const bool perfectR_rgular_y,
-            const int num_layers);
+            int tile_size,
+            int x_grids,
+            int y_grids,
+            bool perfect_regular_x,
+            bool perfectR_rgular_y,
+            int num_layers);
 
   void clear();
 
@@ -86,16 +52,9 @@ class Grid
 
   int getNumLayers() const { return num_layers_; }
 
-  void setPitchesInTile(const int pitches_in_tile)
-  {
-    pitches_in_tile_ = pitches_in_tile;
-  }
+  const std::vector<int>& getTrackPitches() const { return track_pitches_; }
 
-  int getPitchesInTile() const { return pitches_in_tile_; }
-
-  const std::vector<int>& getTrackPitches() const { return track_pitches; }
-
-  void addTrackPitch(int value, int layer) { track_pitches[layer] = value; }
+  void addTrackPitch(int value, int layer) { track_pitches_[layer] = value; }
 
   const std::vector<int>& getHorizontalEdgesCapacities()
   {
@@ -130,11 +89,14 @@ class Grid
                         bool first,
                         odb::dbTechLayerDir direction);
 
-  interval<int>::type computeTileReduceInterval(const odb::Rect& obs,
-                                                const odb::Rect& tile,
-                                                int track_space,
-                                                bool first,
-                                                odb::dbTechLayerDir direction);
+  interval<int>::type computeTileReduceInterval(
+      const odb::Rect& obs,
+      const odb::Rect& tile,
+      int track_space,
+      bool first,
+      const odb::dbTechLayerDir& direction,
+      int layer_cap,
+      bool is_macro);
 
   odb::Point getMiddle();
   const odb::Rect& getGridArea() const;
@@ -147,8 +109,7 @@ class Grid
   bool perfect_regular_x_;
   bool perfect_regular_y_;
   int num_layers_;
-  int pitches_in_tile_ = 15;
-  std::vector<int> track_pitches;
+  std::vector<int> track_pitches_;
   std::vector<int> horizontal_edges_capacities_;
   std::vector<int> vertical_edges_capacities_;
 };

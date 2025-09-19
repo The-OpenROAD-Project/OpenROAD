@@ -33,7 +33,7 @@
 #ifndef CDEFINET_H
 #define CDEFINET_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 
@@ -124,7 +124,7 @@ EXTERN int defiNet_numProps(const defiNet* obj);
 EXTERN const char* defiNet_propName(const defiNet* obj, int index);
 EXTERN const char* defiNet_propValue(const defiNet* obj, int index);
 EXTERN double defiNet_propNumber(const defiNet* obj, int index);
-EXTERN const char defiNet_propType(const defiNet* obj, int index);
+EXTERN char defiNet_propType(const defiNet* obj, int index);
 EXTERN int defiNet_propIsNumber(const defiNet* obj, int index);
 EXTERN int defiNet_propIsString(const defiNet* obj, int index);
 EXTERN int defiNet_numConnections(const defiNet* obj);
@@ -233,11 +233,11 @@ EXTERN const char* defiNet_rectShapeType(const defiNet* obj, int index);
 EXTERN int defiNet_numViaSpecs(const defiNet* obj);
 EXTERN struct defiPoints defiNet_getViaPts(const defiNet* obj, int index);
 EXTERN const char* defiNet_viaName(const defiNet* obj, int index);
-EXTERN const int defiNet_viaOrient(const defiNet* obj, int index);
+EXTERN int defiNet_viaOrient(const defiNet* obj, int index);
 EXTERN const char* defiNet_viaOrientStr(const defiNet* obj, int index);
-EXTERN const int defiNet_topMaskNum(const defiNet* obj, int index);
-EXTERN const int defiNet_cutMaskNum(const defiNet* obj, int index);
-EXTERN const int defiNet_bottomMaskNum(const defiNet* obj, int index);
+EXTERN int defiNet_topMaskNum(const defiNet* obj, int index);
+EXTERN int defiNet_cutMaskNum(const defiNet* obj, int index);
+EXTERN int defiNet_bottomMaskNum(const defiNet* obj, int index);
 EXTERN const char* defiNet_viaRouteStatus(const defiNet* obj, int index);
 EXTERN const char* defiNet_viaRouteStatusShieldName(const defiNet* obj,
                                                     int index);

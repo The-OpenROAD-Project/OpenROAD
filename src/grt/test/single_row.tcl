@@ -7,6 +7,8 @@ read_def single_row.def
 
 set guide_file [make_result_file single_row.guide]
 
+set_routing_layers -signal li1-met1
+
 global_route -verbose
 
 write_guides $guide_file

@@ -1,48 +1,20 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbLevelShifter.h"
 
-#include "db.h"
+#include <string>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbMaster.h"
 #include "dbNet.h"
 #include "dbPowerDomain.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbLevelShifter>;
 
@@ -120,90 +92,13 @@ bool _dbLevelShifter::operator<(const _dbLevelShifter& rhs) const
   return true;
 }
 
-void _dbLevelShifter::differences(dbDiff& diff,
-                                  const char* field,
-                                  const _dbLevelShifter& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_domain);
-  DIFF_FIELD(_source);
-  DIFF_FIELD(_sink);
-  DIFF_FIELD(_use_functional_equivalence);
-  DIFF_FIELD(_applies_to);
-  DIFF_FIELD(_applies_to_boundary);
-  DIFF_FIELD(_rule);
-  DIFF_FIELD(_threshold);
-  DIFF_FIELD(_no_shift);
-  DIFF_FIELD(_force_shift);
-  DIFF_FIELD(_location);
-  DIFF_FIELD(_input_supply);
-  DIFF_FIELD(_output_supply);
-  DIFF_FIELD(_internal_supply);
-  DIFF_FIELD(_name_prefix);
-  DIFF_FIELD(_name_suffix);
-  DIFF_FIELD(_cell_name);
-  DIFF_FIELD(_cell_input);
-  DIFF_FIELD(_cell_output);
-  DIFF_END
-}
-
-void _dbLevelShifter::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_domain);
-  DIFF_OUT_FIELD(_source);
-  DIFF_OUT_FIELD(_sink);
-  DIFF_OUT_FIELD(_use_functional_equivalence);
-  DIFF_OUT_FIELD(_applies_to);
-  DIFF_OUT_FIELD(_applies_to_boundary);
-  DIFF_OUT_FIELD(_rule);
-  DIFF_OUT_FIELD(_threshold);
-  DIFF_OUT_FIELD(_no_shift);
-  DIFF_OUT_FIELD(_force_shift);
-  DIFF_OUT_FIELD(_location);
-  DIFF_OUT_FIELD(_input_supply);
-  DIFF_OUT_FIELD(_output_supply);
-  DIFF_OUT_FIELD(_internal_supply);
-  DIFF_OUT_FIELD(_name_prefix);
-  DIFF_OUT_FIELD(_name_suffix);
-  DIFF_OUT_FIELD(_cell_name);
-  DIFF_OUT_FIELD(_cell_input);
-  DIFF_OUT_FIELD(_cell_output);
-
-  DIFF_END
-}
-
 _dbLevelShifter::_dbLevelShifter(_dbDatabase* db)
 {
-}
-
-_dbLevelShifter::_dbLevelShifter(_dbDatabase* db, const _dbLevelShifter& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  _domain = r._domain;
-  _source = r._source;
-  _sink = r._sink;
-  _use_functional_equivalence = r._use_functional_equivalence;
-  _applies_to = r._applies_to;
-  _applies_to_boundary = r._applies_to_boundary;
-  _rule = r._rule;
-  _threshold = r._threshold;
-  _no_shift = r._no_shift;
-  _force_shift = r._force_shift;
-  _location = r._location;
-  _input_supply = r._input_supply;
-  _output_supply = r._output_supply;
-  _internal_supply = r._internal_supply;
-  _name_prefix = r._name_prefix;
-  _name_suffix = r._name_suffix;
-  _cell_name = r._cell_name;
-  _cell_input = r._cell_input;
-  _cell_output = r._cell_output;
+  _name = nullptr;
+  _use_functional_equivalence = false;
+  _threshold = 0;
+  _no_shift = false;
+  _force_shift = false;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj)
@@ -270,6 +165,33 @@ dbOStream& operator<<(dbOStream& stream, const _dbLevelShifter& obj)
   return stream;
 }
 
+void _dbLevelShifter::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  info.children_["_elements"].add(_elements);
+  info.children_["_exclude_elements"].add(_exclude_elements);
+  info.children_["_source"].add(_source);
+  info.children_["_sink"].add(_sink);
+  info.children_["_applies_to"].add(_applies_to);
+  info.children_["_applies_to_boundary"].add(_applies_to_boundary);
+  info.children_["_rule"].add(_rule);
+  info.children_["_location"].add(_location);
+  info.children_["_input_supply"].add(_input_supply);
+  info.children_["_output_supply"].add(_output_supply);
+  info.children_["_internal_supply"].add(_internal_supply);
+  info.children_["_name_prefix"].add(_name_prefix);
+  info.children_["_name_suffix"].add(_name_suffix);
+  info.children_["_instances"].add(_instances);
+  info.children_["_cell_name"].add(_cell_name);
+  info.children_["_cell_input"].add(_cell_input);
+  info.children_["_cell_output"].add(_cell_output);
+  // User Code End collectMemInfo
+}
+
 _dbLevelShifter::~_dbLevelShifter()
 {
   if (_name) {
@@ -299,7 +221,7 @@ dbPowerDomain* dbLevelShifter::getDomain() const
   return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_domain);
 }
 
-void dbLevelShifter::setSource(std::string source)
+void dbLevelShifter::setSource(const std::string& source)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
@@ -312,7 +234,7 @@ std::string dbLevelShifter::getSource() const
   return obj->_source;
 }
 
-void dbLevelShifter::setSink(std::string sink)
+void dbLevelShifter::setSink(const std::string& sink)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
@@ -339,7 +261,7 @@ bool dbLevelShifter::isUseFunctionalEquivalence() const
   return obj->_use_functional_equivalence;
 }
 
-void dbLevelShifter::setAppliesTo(std::string applies_to)
+void dbLevelShifter::setAppliesTo(const std::string& applies_to)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
@@ -352,7 +274,8 @@ std::string dbLevelShifter::getAppliesTo() const
   return obj->_applies_to;
 }
 
-void dbLevelShifter::setAppliesToBoundary(std::string applies_to_boundary)
+void dbLevelShifter::setAppliesToBoundary(
+    const std::string& applies_to_boundary)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
@@ -365,7 +288,7 @@ std::string dbLevelShifter::getAppliesToBoundary() const
   return obj->_applies_to_boundary;
 }
 
-void dbLevelShifter::setRule(std::string rule)
+void dbLevelShifter::setRule(const std::string& rule)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
@@ -417,7 +340,7 @@ bool dbLevelShifter::isForceShift() const
   return obj->_force_shift;
 }
 
-void dbLevelShifter::setLocation(std::string location)
+void dbLevelShifter::setLocation(const std::string& location)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
@@ -430,7 +353,7 @@ std::string dbLevelShifter::getLocation() const
   return obj->_location;
 }
 
-void dbLevelShifter::setInputSupply(std::string input_supply)
+void dbLevelShifter::setInputSupply(const std::string& input_supply)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
@@ -443,7 +366,7 @@ std::string dbLevelShifter::getInputSupply() const
   return obj->_input_supply;
 }
 
-void dbLevelShifter::setOutputSupply(std::string output_supply)
+void dbLevelShifter::setOutputSupply(const std::string& output_supply)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
@@ -456,7 +379,7 @@ std::string dbLevelShifter::getOutputSupply() const
   return obj->_output_supply;
 }
 
-void dbLevelShifter::setInternalSupply(std::string internal_supply)
+void dbLevelShifter::setInternalSupply(const std::string& internal_supply)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
@@ -469,7 +392,7 @@ std::string dbLevelShifter::getInternalSupply() const
   return obj->_internal_supply;
 }
 
-void dbLevelShifter::setNamePrefix(std::string name_prefix)
+void dbLevelShifter::setNamePrefix(const std::string& name_prefix)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
@@ -482,7 +405,7 @@ std::string dbLevelShifter::getNamePrefix() const
   return obj->_name_prefix;
 }
 
-void dbLevelShifter::setNameSuffix(std::string name_suffix)
+void dbLevelShifter::setNameSuffix(const std::string& name_suffix)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
@@ -495,7 +418,7 @@ std::string dbLevelShifter::getNameSuffix() const
   return obj->_name_suffix;
 }
 
-void dbLevelShifter::setCellName(std::string cell_name)
+void dbLevelShifter::setCellName(const std::string& cell_name)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
@@ -508,7 +431,7 @@ std::string dbLevelShifter::getCellName() const
   return obj->_cell_name;
 }
 
-void dbLevelShifter::setCellInput(std::string cell_input)
+void dbLevelShifter::setCellInput(const std::string& cell_input)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
@@ -521,7 +444,7 @@ std::string dbLevelShifter::getCellInput() const
   return obj->_cell_input;
 }
 
-void dbLevelShifter::setCellOutput(std::string cell_output)
+void dbLevelShifter::setCellOutput(const std::string& cell_output)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
@@ -550,8 +473,7 @@ dbLevelShifter* dbLevelShifter::create(dbBlock* block,
   }
 
   _dbLevelShifter* shifter = _block->_levelshifter_tbl->create();
-  shifter->_name = strdup(name);
-  ZALLOCATED(shifter->_name);
+  shifter->_name = safe_strdup(name);
 
   shifter->_domain = domain->getImpl()->getOID();
 

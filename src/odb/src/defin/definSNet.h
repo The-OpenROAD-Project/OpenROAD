@@ -1,43 +1,15 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <map>
 #include <vector>
 
-#include "db.h"
 #include "definBase.h"
-#include "odb.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -47,28 +19,26 @@ class dbTechLayer;
 
 class definSNet : public definBase
 {
-  bool _skip_special_wires;
-  bool _skip_shields;
-  bool _skip_block_wires;
-  bool _skip_fill_wires;
-  bool _replace_wires;
-  bool _names_are_ids;
-  dbNet* _cur_net;
-  dbTechLayer* _cur_layer;
-  dbSWire* _swire;
-  dbWireType _wire_type;
-  dbWireShapeType _wire_shape_type;
-  dbNet* _shield_net;
-  int _prev_x;
-  int _prev_y;
-  int _prev_ext;
-  bool _has_prev_ext;
-  int _width;
-  int _point_cnt;
+  bool _skip_special_wires{false};
+  bool _skip_shields{false};
+  bool _skip_block_wires{false};
+  bool _skip_fill_wires{false};
+  dbNet* _cur_net{nullptr};
+  dbTechLayer* _cur_layer{nullptr};
+  dbSWire* _swire{nullptr};
+  dbWireType _wire_type{dbWireType::NONE};
+  dbWireShapeType _wire_shape_type{dbWireShapeType::NONE};
+  dbNet* _shield_net{nullptr};
+  int _prev_x{0};
+  int _prev_y{0};
+  int _prev_ext{0};
+  bool _has_prev_ext{false};
+  int _width{0};
+  int _point_cnt{0};
 
  public:
-  int _snet_cnt;
-  int _snet_iterm_cnt;
+  int _snet_cnt{0};
+  int _snet_iterm_cnt{0};
 
   /// Special Net interface methods
   virtual void begin(const char* name);
@@ -110,16 +80,10 @@ class definSNet : public definBase
 
   void connect_all(dbNet*, const char* term);
 
-  definSNet();
-  virtual ~definSNet();
-  void init();
-
   void skipSpecialWires() { _skip_special_wires = true; }
   void skipShields() { _skip_shields = true; }
   void skipBlockWires() { _skip_block_wires = true; }
   void skipFillWires() { _skip_fill_wires = true; }
-  void replaceWires() { _replace_wires = true; }
-  void namesAreDBIDs() { _names_are_ids = true; }
 };
 
 }  // namespace odb

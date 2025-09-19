@@ -4,4 +4,3 @@ set_input_delay 5 -clock [get_clocks clk1] [get_ports in]
 set_input_delay 10 -clock [get_clocks clk2] [get_ports in]
 set_output_delay 5 -clock [get_clocks clk1] [get_ports out]
 set_output_delay 10 -clock [get_clocks clk2] [get_ports out]
-

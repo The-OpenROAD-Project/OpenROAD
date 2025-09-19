@@ -1,57 +1,38 @@
-/* Authors: Osama */
-/*
- * Copyright (c) 2021, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
 
-#include <boost/asio.hpp>
-#include <boost/asio/thread_pool.hpp>
-#include <boost/thread/thread.hpp>
+#include <atomic>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <queue>
+#include <string>
 #include <vector>
 
 #include "BalancerConnection.h"
+#include "boost/asio.hpp"
+#include "boost/asio/thread_pool.hpp"
+#include "boost/thread/thread.hpp"
 
 namespace utl {
 class Logger;
 }
 
 namespace dst {
-const int workers_discovery_period = 15;  // time in seconds between retrying to
-                                          // find new workers on the network
+
+namespace ip = asio::ip;
+
+const int kWorkersDiscoveryPeriod = 15;  // time in seconds between retrying to
+                                         // find new workers on the network
 class Distributed;
 class LoadBalancer
 {
  public:
   // constructor for accepting connection from client
   LoadBalancer(Distributed* dist,
-               asio::io_service& io_service,
+               asio::io_context& service,
                utl::Logger* logger,
                const char* ip,
                const char* workers_domain,
@@ -66,23 +47,23 @@ class LoadBalancer
   void punishWorker(const ip::address& ip, unsigned short port);
 
  private:
-  struct worker
+  struct Worker
   {
     ip::address ip;
     unsigned short port;
     unsigned short priority;
-    worker(ip::address ipIn, unsigned short portIn, unsigned short priorityIn)
-        : ip(ipIn), port(portIn), priority(priorityIn)
+    Worker(ip::address ip, unsigned short port, unsigned short priority)
+        : ip(ip), port(port), priority(priority)
     {
     }
-    bool operator==(const worker& rhs) const
+    bool operator==(const Worker& rhs) const
     {
       return (ip == rhs.ip && port == rhs.port && priority == rhs.priority);
     }
   };
   struct CompareWorker
   {
-    bool operator()(worker const& w1, worker const& w2)
+    bool operator()(Worker const& w1, Worker const& w2)
     {
       return w1.priority > w2.priority;
     }
@@ -90,19 +71,19 @@ class LoadBalancer
 
   Distributed* dist_;
   tcp::acceptor acceptor_;
-  asio::io_service* service;
+  asio::io_context* service_;
   utl::Logger* logger_;
-  std::priority_queue<worker, std::vector<worker>, CompareWorker> workers_;
+  std::priority_queue<Worker, std::vector<Worker>, CompareWorker> workers_;
   std::mutex workers_mutex_;
   std::unique_ptr<asio::thread_pool> pool_;
   std::mutex pool_mutex_;
   uint32_t jobs_;
-  std::atomic<bool> alive = true;
-  boost::thread workers_lookup_thread;
-  std::vector<std::string> broadcastData;
+  std::atomic<bool> alive_ = true;
+  boost::thread workers_lookup_thread_;
+  std::vector<std::string> broadcastData_;
 
   void start_accept();
-  void handle_accept(const BalancerConnection::pointer& connection,
+  void handle_accept(const BalancerConnection::Pointer& connection,
                      const boost::system::error_code& err);
   void lookUpWorkers(const char* domain, unsigned short port);
   friend class dst::BalancerConnection;

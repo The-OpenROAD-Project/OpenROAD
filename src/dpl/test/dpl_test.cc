@@ -1,5 +1,3 @@
-#include <unistd.h>
-
 #include <memory>
 
 #include "dpl/Opendp.h"
@@ -28,8 +26,8 @@ class OpendpTest : public ::testing::Test
                                     "sky130hd/sky130_fd_sc_hd_merged.lef"),
         &odb::dbLib::destroy);
 
-    chip_ = OdbUniquePtr<odb::dbChip>(odb::dbChip::create(db_.get()),
-                                      &odb::dbChip::destroy);
+    chip_ = OdbUniquePtr<odb::dbChip>(
+        odb::dbChip::create(db_.get(), db_->getTech()), &odb::dbChip::destroy);
     block_ = OdbUniquePtr<odb::dbBlock>(
         odb::dbBlock::create(chip_.get(), "top"), &odb::dbBlock::destroy);
     block_->setDefUnits(lib_->getTech()->getLefUnits());
@@ -42,21 +40,5 @@ class OpendpTest : public ::testing::Test
   OdbUniquePtr<odb::dbChip> chip_{nullptr, &odb::dbChip::destroy};
   OdbUniquePtr<odb::dbBlock> block_{nullptr, &odb::dbBlock::destroy};
 };
-
-TEST_F(OpendpTest, IsPlaced)
-{
-  odb::dbMaster* and_gate = lib_->findMaster("sky130_fd_sc_hd__and2_1");
-  auto and_placed = OdbUniquePtr<odb::dbInst>(
-      odb::dbInst::create(block_.get(), and_gate, "and_1"),
-      &odb::dbInst::destroy);
-
-  and_placed->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-
-  Cell placed;
-  placed.db_inst_ = and_placed.get();
-
-  // Act & Assert
-  ASSERT_TRUE(Opendp::isPlaced(&placed));
-}
 
 }  // namespace dpl

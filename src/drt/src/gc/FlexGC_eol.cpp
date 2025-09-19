@@ -1,34 +1,20 @@
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include <iostream>
+#include <algorithm>
+#include <cmath>
+#include <memory>
+#include <tuple>
+#include <utility>
+#include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
+#include "db/obj/frMarker.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
+#include "odb/dbTypes.h"
 
 namespace drt {
 
@@ -481,6 +467,9 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox(
       if (withinCon->hasEndToEndConstraint()) {
         auto endToEndCon = withinCon->getEndToEndConstraint();
         eolSpace = std::max(eolSpace, endToEndCon->getEndToEndSpace());
+        if (endToEndCon->hasExtension()) {
+          eolWithin = endToEndCon->getExtension() * 2;
+        }
       }
     } break;
     default:
@@ -604,18 +593,39 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_endToEndHelper(
   gtl::set_points(rect1, edge1->low(), edge1->high());
   gtl::rectangle_data<frCoord> rect2;
   gtl::set_points(rect2, edge2->low(), edge2->high());
-  frCoord dist = gtl::euclidean_distance(rect1, rect2);
   bool edge2isEol = checkMetalEndOfLine_eol_isEolEdge(edge2, constraint);
   if (con->getWithinConstraint()->hasEndToEndConstraint() && edge2isEol) {
     auto endToEndCon = con->getWithinConstraint()->getEndToEndConstraint();
-    frCoord endSpace = endToEndCon->getEndToEndSpace();
-    if (dist < endSpace) {
-      return true;
+    eolSpace = endToEndCon->getEndToEndSpace();
+    if (endToEndCon->hasExtension()) {
+      gtl::bloat(rect1, edge1->getOrientation(), endToEndCon->getExtension());
+      gtl::bloat(rect2, edge2->getOrientation(), endToEndCon->getExtension());
     }
   } else {
-    if (dist < eolSpace) {
-      return true;
-    }
+    gtl::bloat(rect1,
+               edge1->getOrientation(),
+               con->getWithinConstraint()->getEolWithin());
+  }
+  gtl::rectangle_data<frCoord> markerRect(rect1);
+  gtl::generalized_intersect(markerRect, rect2);
+  auto prlX = gtl::delta(markerRect, gtl::HORIZONTAL);
+  auto prlY = gtl::delta(markerRect, gtl::VERTICAL);
+  auto distX = gtl::euclidean_distance(rect1, rect2, gtl::HORIZONTAL);
+  auto distY = gtl::euclidean_distance(rect1, rect2, gtl::VERTICAL);
+  if (distX == 0 && distY == 0) {
+    return false;  // short handled elsewhere
+  }
+  if (distX) {
+    prlX = -prlX;
+  }
+  if (distY) {
+    prlY = -prlY;
+  }
+  if (std::max(prlX, prlY) <= 0) {
+    return false;
+  }
+  if (std::max(distX, distY) < eolSpace) {
+    return true;
   }
   return false;
 }
@@ -676,16 +686,14 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_check(
     const gtl::orientation_2d opp_orient{orient.get_perpendicular()};
     checkPrl
         = std::abs(edge->low().get(opp_orient) - ptr->low().get(opp_orient))
-          > eolNonPrlSpacing;
+          >= eolNonPrlSpacing;
     if (checkPrl) {
       const frCoord prl = getPrl(edge, ptr, orient);
-      if (prl < 0 || prl > endPrl) {
+      if (prl <= 0 || prl > endPrl) {
         return;
       }
     }
   }
-
-  // check endtoend
   if (!checkPrl
       && !checkMetalEndOfLine_eol_hasEol_endToEndHelper(
           edge, ptr, constraint)) {

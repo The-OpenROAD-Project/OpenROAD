@@ -1,38 +1,15 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <algorithm>
 #include <memory>
 
 #include "db/obj/frRef.h"
 #include "db/obj/frShape.h"
 #include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frNet;
@@ -42,7 +19,11 @@ class frVia : public frRef
  public:
   // constructors
   frVia() = default;
-  frVia(frViaDef* in) : viaDef_(in) {}
+  frVia(const frViaDef* in) : viaDef_(in) {}
+  frVia(const frViaDef* def_in, const Point& pt_in)
+      : origin_(pt_in), viaDef_(def_in)
+  {
+  }
   frVia(const frVia& in)
       : frRef(in),
         origin_(in.origin_),
@@ -50,12 +31,13 @@ class frVia : public frRef
         owner_(in.owner_),
         tapered_(in.tapered_),
         bottomConnected_(in.bottomConnected_),
-        topConnected_(in.topConnected_)
+        topConnected_(in.topConnected_),
+        isLonely_(in.isLonely_)
   {
   }
   frVia(const drVia& in);
   // getters
-  frViaDef* getViaDef() const { return viaDef_; }
+  const frViaDef* getViaDef() const { return viaDef_; }
   Rect getLayer1BBox() const
   {
     Rect box;
@@ -63,7 +45,7 @@ class frVia : public frRef
     for (auto& fig : viaDef_->getLayer1Figs()) {
       box.merge(fig->getBBox());
     }
-    dbTransform(origin_).apply(box);
+    getTransform().apply(box);
     return box;
   }
   Rect getCutBBox() const
@@ -73,7 +55,7 @@ class frVia : public frRef
     for (auto& fig : viaDef_->getCutFigs()) {
       box.merge(fig->getBBox());
     }
-    dbTransform(origin_).apply(box);
+    getTransform().apply(box);
     return box;
   }
   Rect getLayer2BBox() const
@@ -83,11 +65,11 @@ class frVia : public frRef
     for (auto& fig : viaDef_->getLayer2Figs()) {
       box.merge(fig->getBBox());
     }
-    dbTransform(origin_).apply(box);
+    getTransform().apply(box);
     return box;
   }
   // setters
-  void setViaDef(frViaDef* in) { viaDef_ = in; }
+  void setViaDef(const frViaDef* in) { viaDef_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return frcVia; }
 
@@ -104,7 +86,7 @@ class frVia : public frRef
   void setOrient(const dbOrientType& tmpOrient) override { ; }
   Point getOrigin() const override { return origin_; }
   void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
-  dbTransform getTransform() const override { return origin_; }
+  dbTransform getTransform() const override { return dbTransform(origin_); }
   void setTransform(const dbTransform& xformIn) override {}
 
   /* from frPinFig
@@ -208,9 +190,7 @@ class frVia : public frRef
       }
     }
     Rect box(xl, yl, xh, yh);
-    dbTransform xform;
-    xform.setOffset(origin_);
-    xform.apply(box);
+    getTransform().apply(box);
     return box;
   }
   void move(const dbTransform& xform) override { ; }
@@ -228,16 +208,19 @@ class frVia : public frRef
   void setTopConnected(bool c) { topConnected_ = c; }
   void setIndexInOwner(int idx) { index_in_owner_ = idx; }
   int getIndexInOwner() const { return index_in_owner_; }
+  void setIsLonely(bool in) { isLonely_ = in; }
+  bool isLonely() const { return isLonely_; }
 
  private:
   Point origin_;
-  frViaDef* viaDef_{nullptr};
+  const frViaDef* viaDef_{nullptr};
   frBlockObject* owner_{nullptr};
   frListIter<std::unique_ptr<frVia>> iter_;
   int index_in_owner_{0};
   bool tapered_{false};
   bool bottomConnected_{false};
   bool topConnected_{false};
+  bool isLonely_{false};
 
   template <class Archive>
   void serialize(Archive& ar, unsigned int version);

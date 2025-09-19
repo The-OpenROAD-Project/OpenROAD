@@ -71,7 +71,7 @@
 #include "defiTimingDisable.hpp"
 #include "defiVia.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 /* NEW CALLBACK - If you are creating a new .cpp and .hpp file to
  * describe a new class of object in the parser, then add a reference
@@ -80,8 +80,6 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
  *  You must also add an entry for the .h and the .hpp in the package_list
  * file of the ../../../release directory. */
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

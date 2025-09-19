@@ -1,38 +1,12 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include <map>
-#include <vector>
+#include <algorithm>
+#include <cassert>
+#include <cstdio>
 
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "rcx/extprocess.h"
@@ -501,24 +475,20 @@ uint extMain::benchWires(extMainOptions* opt)
   }
   extRCModel* m = _modelTable->get(0);
 
-  m->setOptions(opt->_topDir,
-                opt->_name,
-                opt->_write_to_solver,
-                opt->_read_from_solver,
-                opt->_run_solver);
+  m->setOptions(opt->_topDir, opt->_name);
 
   opt->_tech = _tech;
 
   if (_block == nullptr) {
-    dbChip* chip = dbChip::create(_db);
+    dbChip* chip = dbChip::create(_db, _tech);
     assert(chip);
-    _block = dbBlock::create(chip, opt->_name, _tech, '/');
+    _block = dbBlock::create(chip, opt->_name, '/');
     assert(_block);
     _prevControl = _block->getExtControl();
-    _block->setBusDelimeters('[', ']');
+    _block->setBusDelimiters('[', ']');
     _block->setDefUnits(1000);
     m->setExtMain(this);
-    setupMapping(0);
+    setupMapping();
     _noModelRC = true;
     _cornerCnt = 1;
     _extDbCnt = 1;
@@ -548,6 +518,14 @@ uint extMain::benchWires(extMainOptions* opt)
     m->linesOverUnderBench(opt);
     m->linesUnderBench(opt);
     m->linesDiagUnderBench(opt);
+
+    /* TODO for v1 vs. v12 patterns
+    int LL[2]= {opt->_ur[0], 0};
+    int UR[2]= {opt->_ur[0], 0};
+     m->ViaRulePat(opt, opt->_len, LL, UR, false, false, opt->_overDist); //
+    over
+    */
+
   } else {
     if (opt->_over) {
       m->linesOverBench(opt);
@@ -570,16 +548,6 @@ uint extMain::benchWires(extMainOptions* opt)
 
   return 0;
 }
-
-uint extMain::runSolver(extMainOptions* opt, uint netId, int shapeId)
-{
-  extRCModel* m = new extRCModel("TYPICAL", logger_);
-  m->setExtMain(this);
-  m->setOptions(opt->_topDir, "nets", false, false, true);
-  uint shapeCnt = m->runWiresSolver(netId, shapeId);
-  return shapeCnt;
-}
-
 uint extMeasure::getRSeg(dbNet* net, uint shapeId)
 {
   dbWire* w = net->getWire();
@@ -590,13 +558,4 @@ uint extMeasure::getRSeg(dbNet* net, uint shapeId)
   }
   return 0;
 }
-
-uint extRCModel::runWiresSolver(uint netId, int shapeId)
-{
-  sprintf(_wireDirName, "%s/%d/%d", _topDir, netId, shapeId);
-  strcpy(_wireFileName, "net_wires");
-  runSolver("rc3 -n -x");
-  return 0;
-}
-
 }  // namespace rcx

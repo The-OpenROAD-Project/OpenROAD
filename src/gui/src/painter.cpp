@@ -1,38 +1,139 @@
-//////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include "painter.h"
 
+#include <QFont>
+#include <algorithm>
+#include <cctype>
+#include <cmath>
+#include <map>
+#include <string>
+
+#include "odb/geom.h"
+#include "utl/Logger.h"
+
 namespace gui {
+
+std::map<std::string, Painter::Color> Painter::colors()
+{
+  return {{"black", Painter::kBlack},
+          {"white", Painter::kWhite},
+          {"dark_gray", Painter::kDarkGray},
+          {"gray", Painter::kGray},
+          {"light_gray", Painter::kLightGray},
+          {"red", Painter::kRed},
+          {"green", Painter::kGreen},
+          {"blue", Painter::kBlue},
+          {"cyan", Painter::kCyan},
+          {"magenta", Painter::kMagenta},
+          {"yellow", Painter::kYellow},
+          {"dark_red", Painter::kDarkRed},
+          {"dark_green", Painter::kDarkGreen},
+          {"dark_blue", Painter::kDarkBlue},
+          {"dark_cyan", Painter::kDarkCyan},
+          {"dark_magenta", Painter::kDarkMagenta},
+          {"dark_yellow", Painter::kDarkYellow},
+          {"orange", Painter::kOrange},
+          {"purple", Painter::kPurple},
+          {"lime", Painter::kLime},
+          {"teal", Painter::kTeal},
+          {"pink", Painter::kPink},
+          {"brown", Painter::kBrown},
+          {"indigo", Painter::kIndigo},
+          {"turquoise", Painter::kTurquoise},
+          {"transparent", Painter::kTransparent}};
+}
+
+Painter::Color Painter::stringToColor(const std::string& color,
+                                      utl::Logger* logger)
+{
+  const auto defined_colors = colors();
+  auto find_color = defined_colors.find(color);
+  if (find_color != defined_colors.end()) {
+    return find_color->second;
+  }
+
+  if (color[0] == '#' && (color.size() == 7 || color.size() == 9)) {
+    uint hex_color = 0;
+    for (int i = 1; i < color.size(); i++) {
+      const char c = std::tolower(color[i]);
+      hex_color *= 16;
+      if (c >= '0' && c <= '9') {
+        hex_color += c - '0';
+      } else if (c >= 'a' && c <= 'f') {
+        hex_color += c - 'a' + 10;
+      } else {
+        logger->error(utl::GUI, 43, "Unable to decode color: {}", color);
+      }
+    }
+    if (color.size() == 7) {
+      hex_color *= 256;
+      hex_color += 255;
+    }
+    Painter::Color new_color;
+    new_color.r = (hex_color & 0xff000000) >> 24;
+    new_color.g = (hex_color & 0x00ff0000) >> 16;
+    new_color.b = (hex_color & 0x0000ff00) >> 8;
+    new_color.a = hex_color & 0x000000ff;
+
+    return new_color;
+  }
+  logger->error(utl::GUI, 42, "Color not recognized: {}", color);
+
+  return Painter::kBlack;
+}
+
+std::string Painter::colorToString(const Color& color)
+{
+  for (const auto& [name, c] : colors()) {
+    if (c == color) {
+      return name;
+    }
+  }
+
+  return fmt::format(
+      "#{:02X}{:02X}{:02X}{:02X}", color.r, color.g, color.b, color.a);
+}
+
+std::map<std::string, Painter::Anchor> Painter::anchors()
+{
+  return {{"bottom left", Painter::Anchor::kBottomLeft},
+          {"bottom right", Painter::Anchor::kBottomRight},
+          {"top left", Painter::Anchor::kTopLeft},
+          {"top right", Painter::Anchor::kTopRight},
+          {"center", Painter::Anchor::kCenter},
+          {"bottom center", Painter::Anchor::kBottomCenter},
+          {"top center", Painter::Anchor::kTopCenter},
+          {"left center", Painter::Anchor::kLeftCenter},
+          {"right center", Painter::Anchor::kRightCenter}};
+}
+
+Painter::Anchor Painter::stringToAnchor(const std::string& anchor,
+                                        utl::Logger* logger)
+{
+  const auto defined_anchors = anchors();
+  auto find_anchor = defined_anchors.find(anchor);
+  if (find_anchor != defined_anchors.end()) {
+    return find_anchor->second;
+  }
+
+  logger->error(utl::GUI, 45, "Anchor not recognized: {}", anchor);
+
+  return Anchor::kCenter;
+}
+
+std::string Painter::anchorToString(const Anchor& anchor)
+{
+  for (const auto& [name, c] : anchors()) {
+    if (c == anchor) {
+      return name;
+    }
+  }
+
+  return "unknown";
+}
+//////////////////////////////////////////////////////////////////////////
 
 odb::Point GuiPainter::determineStringOrigin(int x,
                                              int y,
@@ -46,24 +147,24 @@ odb::Point GuiPainter::determineStringOrigin(int x,
   const qreal scale_adjust = 1.0 / getPixelsPerDBU();
   int sx = 0;
   int sy = 0;
-  if (anchor == BOTTOM_LEFT) {
+  if (anchor == kBottomLeft) {
     // default for Qt
-  } else if (anchor == BOTTOM_RIGHT) {
+  } else if (anchor == kBottomRight) {
     sx -= text_bbox.right();
-  } else if (anchor == TOP_LEFT) {
+  } else if (anchor == kTopLeft) {
     sy += text_bbox.top();
-  } else if (anchor == TOP_RIGHT) {
+  } else if (anchor == kTopRight) {
     sx -= text_bbox.right();
     sy += text_bbox.top();
-  } else if (anchor == CENTER) {
+  } else if (anchor == kCenter) {
     sx -= text_bbox_center.x();
     sy += text_bbox_center.y();
-  } else if (anchor == BOTTOM_CENTER) {
+  } else if (anchor == kBottomCenter) {
     sx -= text_bbox_center.x();
-  } else if (anchor == TOP_CENTER) {
+  } else if (anchor == kTopCenter) {
     sx -= text_bbox_center.x();
     sy += text_bbox.top();
-  } else if (anchor == LEFT_CENTER) {
+  } else if (anchor == kLeftCenter) {
     sy += text_bbox_center.y();
   } else {
     // RIGHT_CENTER
@@ -212,7 +313,7 @@ void GuiPainter::drawRuler(int x0,
     }
   }
 
-  setPen(white);
+  setPen(kWhite);
   painter_->setFont(ruler_font);
   painter_->translate(len / 2, 0);
   if (flip_direction) {
@@ -222,13 +323,20 @@ void GuiPainter::drawRuler(int x0,
   std::string text_length = Descriptor::Property::convert_dbu(len, false);
   if (!label.empty()) {
     // label on next to length
-    drawString(0, 0, BOTTOM_CENTER, label + ": " + text_length);
+    drawString(0, 0, kBottomCenter, label + ": " + text_length);
   } else {
-    drawString(0, 0, BOTTOM_CENTER, text_length);
+    drawString(0, 0, kBottomCenter, text_length);
   }
   painter_->setFont(restore_font);
 
   painter_->setTransform(initial_xfm);
+}
+
+void GuiPainter::setFont(const Font& font)
+{
+  const QFont qfont(QString::fromStdString(font.name), font.size);
+
+  painter_->setFont(qfont);
 }
 
 }  // namespace gui

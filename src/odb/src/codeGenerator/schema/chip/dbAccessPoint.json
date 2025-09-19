@@ -44,11 +44,13 @@
       {
         "name": "low_type_",
         "type": "dbAccessType::Value",
+        "default": "dbAccessType::OnGrid",
         "flags" : ["private","cmpgt","no-serial"]
       },
       {
         "name": "high_type_",
         "type": "dbAccessType::Value",
+        "default": "dbAccessType::OnGrid",
         "flags" : ["private","cmpgt","no-serial"]
       },
       {
@@ -72,5 +74,5 @@
     "h_includes": [
       "dbVector.h"
     ],
-    "cpp_includes": ["dbTypes.h"]
+    "cpp_includes": ["odb/dbTypes.h"]
   }

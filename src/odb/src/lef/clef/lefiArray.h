@@ -33,7 +33,7 @@
 #ifndef CLEFIARRAY_H
 #define CLEFIARRAY_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 

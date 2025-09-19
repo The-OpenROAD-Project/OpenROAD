@@ -29,7 +29,7 @@
 
 #ifndef LEFZLIB_H
 
-typedef void* lefGZFile;
+using lefGZFile = void*;
 
 /*
  * Name: lefGZipOpen

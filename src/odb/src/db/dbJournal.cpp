@@ -1,62 +1,30 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbJournal.h"
 
-#include "db.h"
+#include <cstdio>
+
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbCCSeg.h"
 #include "dbCapNode.h"
 #include "dbITerm.h"
 #include "dbInst.h"
+#include "dbModNet.h"
+#include "dbModule.h"
 #include "dbNet.h"
 #include "dbRSeg.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 #include "utl/Logger.h"
 
 namespace odb {
 
 dbJournal::dbJournal(dbBlock* block)
-    : _block(block),
-      _logger(block->getImpl()->getLogger()),
-      _start_action(false),
-      _action_idx(0),
-      _cur_action(0)
+    : _block(block), _logger(block->getImpl()->getLogger()), _log(_logger)
 {
-}
-
-dbJournal::~dbJournal()
-{
-  clear();
 }
 
 void dbJournal::clear()
@@ -179,7 +147,10 @@ void dbJournal::updateField(dbObject* obj,
 
 void dbJournal::beginAction(Action action)
 {
-  assert(_start_action == false);
+  if (_start_action != false) {
+    _logger->critical(
+        utl::ODB, 398, "In journal, nested actions are not allowed.");
+  }
   _start_action = true;
   _action_idx = _log.size();
   _log.push((unsigned char) action);
@@ -225,6 +196,11 @@ void dbJournal::pushParam(const char* value)
   _log.push(value);
 }
 
+void dbJournal::pushParam(const std::string& value)
+{
+  _log.push(value.c_str());
+}
+
 void dbJournal::endAction()
 {
   _start_action = false;
@@ -237,9 +213,7 @@ void dbJournal::redo()
   _log.begin();
 
   while (!_log.end()) {
-#ifndef NDEBUG
     uint s = _log.idx();
-#endif
     _log.pop(_cur_action);
 
     switch (_cur_action) {
@@ -267,8 +241,8 @@ void dbJournal::redo()
         redo_updateField();
         break;
 
-      default:
-        assert(0);
+      case END_ACTION:
+        _logger->critical(utl::ODB, 399, "In undo saw unexpected END_ACTION.");
         break;
     }
 
@@ -276,20 +250,22 @@ void dbJournal::redo()
     unsigned int action_idx;
     _log.pop(end_action);
     _log.pop(action_idx);
-    assert(end_action == END_ACTION);
-    assert(action_idx == s);
+    if (end_action != END_ACTION || action_idx != s) {
+      _logger->critical(utl::ODB, 419, "In undo, expected END_ACTION.");
+    }
   }
 }
 
 void dbJournal::redo_createObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     case dbNetObj: {
       std::string name;
+      uint net_id;
       _log.pop(name);
+      _log.pop(net_id);
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
@@ -321,10 +297,12 @@ void dbJournal::redo_createObject()
     case dbInstObj: {
       uint lib_id;
       uint master_id;
+      uint inst_id;
       std::string name;
       _log.pop(lib_id);
       _log.pop(master_id);
       _log.pop(name);
+      _log.pop(inst_id);
       dbLib* lib = dbLib::getLib(_block->getDb(), lib_id);
       dbMaster* master = dbMaster::getMaster(lib, master_id);
       debugPrint(_logger,
@@ -404,22 +382,99 @@ void dbJournal::redo_createObject()
                  b->getId(),
                  merge);
       dbCCSeg::create(a, b, merge);
+      break;
     }
 
-    default:
+    case dbModuleObj: {
+      std::string name;
+      uint obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      (void) obj_id;
+      dbModule::create(_block, name.c_str());
       break;
+    }
+
+    case dbModITermObj: {
+      std::string name;
+      uint obj_id;
+      uint modbterm_obj_id;
+      uint parent_obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(modbterm_obj_id);
+      _log.pop(parent_obj_id);
+      dbModInst* parent_mod_inst = dbModInst::getModInst(_block, parent_obj_id);
+      dbModBTerm* mod_bterm = nullptr;
+      if (modbterm_obj_id != 0) {
+        mod_bterm = dbModBTerm::getModBTerm(_block, modbterm_obj_id);
+      }
+      dbModITerm* mod_iterm
+          = dbModITerm::create(parent_mod_inst, name.c_str(), mod_bterm);
+      (void) mod_iterm;
+      break;
+    }
+
+    case dbModBTermObj: {
+      std::string name;
+      uint obj_id;
+      uint parent_obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(parent_obj_id);
+      dbModule* parent_module = dbModule::getModule(_block, parent_obj_id);
+      dbModBTerm::create(parent_module, name.c_str());
+      break;
+    }
+
+    case dbModInstObj: {
+      std::string name;
+      uint obj_id;
+      uint parent_obj_id;
+      uint master_obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(parent_obj_id);
+      _log.pop(master_obj_id);
+      dbModule* parent_module = dbModule::getModule(_block, parent_obj_id);
+      dbModule* master_module = dbModule::getModule(_block, master_obj_id);
+      dbModInst::create(parent_module, master_module, name.c_str());
+      break;
+    }
+
+    case dbModNetObj: {
+      std::string name;
+      uint obj_id;
+      uint parent_obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(parent_obj_id);
+      dbModule* parent_module = dbModule::getModule(_block, parent_obj_id);
+      dbModNet::create(parent_module, name.c_str());
+      break;
+    }
+    default: {
+      _logger->critical(
+          utl::ODB, 1107, "Unknown type of action for redo_createObject");
+      break;
+    }
   }
 }
 
 void dbJournal::redo_deleteObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     case dbNetObj: {
+      std::string name;
       uint net_id;
+      uint flags;
+      uint ndr_id;
+      _log.pop(name);
       _log.pop(net_id);
+      _log.pop(flags);
+      _log.pop(ndr_id);
       dbNet* net = dbNet::getNet(_block, net_id);
       debugPrint(_logger,
                  utl::ODB,
@@ -445,8 +500,26 @@ void dbJournal::redo_deleteObject()
       break;
     }
     case dbInstObj: {
+      uint lib_id;
+      uint master_id;
       uint inst_id;
+      uint flags;
+      std::string name;
+      int x;
+      int y;
+      uint group_id;
+      uint module_id;
+      uint region_id;
+      _log.pop(lib_id);
+      _log.pop(master_id);
+      _log.pop(name);
       _log.pop(inst_id);
+      _log.pop(flags);
+      _log.pop(x);
+      _log.pop(y);
+      _log.pop(group_id);
+      _log.pop(module_id);
+      _log.pop(region_id);
       dbInst* inst = dbInst::getInst(_block, inst_id);
       debugPrint(_logger,
                  utl::ODB,
@@ -526,32 +599,113 @@ void dbJournal::redo_deleteObject()
       }
       break;
     }
-    default:
+
+    case dbModuleObj: {
+      uint module_id;
+      std::string name;
+      _log.pop(name);
+      _log.pop(module_id);
+      (void) name;
+      auto module = dbModule::getModule(_block, module_id);
+      dbModule::destroy(module);
       break;
+    }
+
+    case dbModITermObj: {
+      uint obj_id;
+      uint modbterm_id;
+      std::string name;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(modbterm_id);
+      (void) name;
+      (void) modbterm_id;
+      auto moditerm = dbModITerm::getModITerm(_block, obj_id);
+      dbModITerm::destroy(moditerm);
+      break;
+    }
+
+    case dbModBTermObj: {
+      uint obj_id;
+      std::string name;
+      _log.pop(name);
+      _log.pop(obj_id);
+      (void) name;
+      auto modbterm = dbModBTerm::getModBTerm(_block, obj_id);
+      dbModBTerm::destroy(modbterm);
+      break;
+    }
+
+    case dbModInstObj: {
+      uint obj_id;
+      uint parent_id;
+      uint master_id;
+      std::string name;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(parent_id);
+      _log.pop(master_id);
+      (void) name;
+      auto modinst = dbModInst::getModInst(_block, obj_id);
+      dbModInst::destroy(modinst);
+      break;
+    }
+
+    case dbModNetObj: {
+      std::string name;
+      uint obj_id;
+      uint parent_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(parent_id);
+      (void) name;
+      auto modnet = dbModNet::getModNet(_block, obj_id);
+      dbModNet::destroy(modnet);
+      break;
+    }
+    default: {
+      _logger->critical(
+          utl::ODB, 1108, "Unknown type of action for redo_deleteObject");
+      break;
+    }
   }
 }
 
 void dbJournal::redo_connectObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     case dbITermObj: {
       uint iterm_id;
       _log.pop(iterm_id);
       dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
       uint net_id;
       _log.pop(net_id);
-      dbNet* net = dbNet::getNet(_block, net_id);
-      debugPrint(_logger,
-                 utl::ODB,
-                 "DB_ECO",
-                 2,
-                 "REDO ECO: connect dbITermObj, iterm_id {}, net_id {}",
-                 iterm_id,
-                 net_id);
-      iterm->connect(net);
+      if (net_id != 0) {
+        dbNet* net = dbNet::getNet(_block, net_id);
+        debugPrint(_logger,
+                   utl::ODB,
+                   "DB_ECO",
+                   2,
+                   "REDO ECO: connect dbITermObj, iterm_id {}, net_id {}",
+                   iterm_id,
+                   net_id);
+        iterm->connect(net);
+      }
+      uint mod_net_id;
+      _log.pop(mod_net_id);
+      if (mod_net_id != 0) {
+        dbModNet* mod_net = dbModNet::getModNet(_block, mod_net_id);
+        debugPrint(_logger,
+                   utl::ODB,
+                   "DB_ECO",
+                   2,
+                   "REDO ECO: connect dbITermObj, iterm_id {}, mod_net_id {}",
+                   iterm_id,
+                   mod_net_id);
+        iterm->connect(mod_net);
+      }
       break;
     }
 
@@ -572,28 +726,68 @@ void dbJournal::redo_connectObject()
       bterm->connect(net);
       break;
     }
-    default:
+
+    case dbModBTermObj: {
+      uint modbterm_id;
+      uint modnet_id;
+      _log.pop(modbterm_id);
+      _log.pop(modnet_id);
+      dbModBTerm* modbterm = dbModBTerm::getModBTerm(_block, modbterm_id);
+      if (modnet_id != 0) {
+        dbModNet* modnet = dbModNet::getModNet(_block, modnet_id);
+        modbterm->connect(modnet);
+      }
       break;
+    }
+
+    case dbModITermObj: {
+      uint moditerm_id;
+      uint modnet_id;
+      _log.pop(moditerm_id);
+      _log.pop(modnet_id);
+      dbModITerm* moditerm = dbModITerm::getModITerm(_block, moditerm_id);
+      if (modnet_id != 0) {
+        dbModNet* modnet = dbModNet::getModNet(_block, modnet_id);
+        moditerm->connect(modnet);
+      }
+      break;
+    }
+
+    default: {
+      _logger->critical(
+          utl::ODB, 1110, "Unknown type of object for redo_connectObject");
+      break;
+    }
   }
 }
 
 void dbJournal::redo_disconnectObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     case dbITermObj: {
       uint iterm_id;
       _log.pop(iterm_id);
       dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
+      uint net_id;
+      uint mnet_id;
+      _log.pop(net_id);
+      _log.pop(mnet_id);
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
                  2,
                  "REDO ECO: disconnect dbITermObj, iterm_id {}",
                  iterm_id);
-      iterm->disconnect();
+      if (net_id != 0 && mnet_id != 0) {
+        // note: this will disconnect the modnet and the dbNet
+        iterm->disconnect();
+      } else if (net_id != 0) {
+        iterm->disconnectDbNet();
+      } else if (mnet_id != 0) {
+        iterm->disconnectDbModNet();
+      }
       break;
     }
 
@@ -601,22 +795,54 @@ void dbJournal::redo_disconnectObject()
       uint bterm_id;
       _log.pop(bterm_id);
       dbBTerm* bterm = dbBTerm::getBTerm(_block, bterm_id);
-      bterm->disconnect();
-
+      uint net_id;
+      _log.pop(net_id);
+      if (net_id != 0U) {
+        bterm->disconnectDbNet();
+      }
+      uint mnet_id;
+      _log.pop(mnet_id);
+      if (mnet_id != 0U) {
+        bterm->disconnectDbModNet();
+      }
       break;
     }
 
-    default:
+    case dbModBTermObj: {
+      uint modbterm_id;
+      uint modnet_id;
+      _log.pop(modbterm_id);
+      _log.pop(modnet_id);
+      (void) modnet_id;
+      auto modbterm = dbModBTerm::getModBTerm(_block, modbterm_id);
+      modbterm->disconnect();
       break;
+    }
+
+    case dbModITermObj: {
+      uint moditerm_id;
+      uint modnet_id;
+      _log.pop(moditerm_id);
+      _log.pop(modnet_id);
+      (void) modnet_id;
+      auto moditerm = dbModITerm::getModITerm(_block, moditerm_id);
+      moditerm->disconnect();
+      break;
+    }
+
+    default: {
+      _logger->critical(
+          utl::ODB, 1109, "Unknown type of action for redo_disconnectObject");
+      break;
+    }
   }
 }
 
 void dbJournal::redo_swapObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     case dbInstObj: {
       uint inst_id;
       _log.pop(inst_id);
@@ -657,10 +883,9 @@ void dbJournal::redo_swapObject()
 
 void dbJournal::redo_updateField()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     case dbBlockObj:
       redo_updateBlockField();
       break;
@@ -691,6 +916,10 @@ void dbJournal::redo_updateField()
 
     case dbCapNodeObj:
       redo_updateCapNodeField();
+      break;
+
+    case dbModNetObj:
+      redo_updateModNetField();
       break;
 
     default:
@@ -806,13 +1035,14 @@ void dbJournal::redo_updateNetField()
                    2,
                    "REDO ECO: dbNetObj {} set term extId",
                    net_id);
-      } else
+      } else {
         debugPrint(_logger,
                    utl::ODB,
                    "DB_ECO",
                    2,
                    "REDO ECO: dbNetObj {} reset term extId",
                    net_id);
+      }
       break;
     }
 
@@ -862,6 +1092,55 @@ void dbJournal::redo_updateNetField()
       break;
     }
 
+    case _dbNet::NAME: {
+      std::string prev_name;
+      _log.pop(prev_name);
+      std::string new_name;
+      _log.pop(new_name);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 2,
+                 "REDO ECO: dbNetObj {}, updateName from {} to {}",
+                 net_id,
+                 prev_name.c_str(),
+                 new_name.c_str());
+      ((dbNet*) net)->rename(new_name.c_str());
+      break;
+    }
+
+    default:
+      break;
+  }
+}
+
+void dbJournal::redo_updateModNetField()
+{
+  uint modnet_id;
+  _log.pop(modnet_id);
+  _dbModNet* modnet = (_dbModNet*) dbModNet::getModNet(_block, modnet_id);
+
+  int field;
+  _log.pop(field);
+
+  switch ((_dbModNet::Field) field) {
+    case _dbModNet::NAME: {
+      std::string prev_name;
+      _log.pop(prev_name);
+      std::string new_name;
+      _log.pop(new_name);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 2,
+                 "REDO ECO: dbModNetObj {}, updateName from {} to {}",
+                 modnet_id,
+                 prev_name.c_str(),
+                 new_name.c_str());
+      ((dbModNet*) modnet)->rename(new_name.c_str());
+      break;
+    }
+
     default:
       break;
   }
@@ -882,6 +1161,14 @@ void dbJournal::redo_updateInstField()
       _log.pop(prev_flags);
       uint* flags = (uint*) &inst->_flags;
       _log.pop(*flags);
+
+      // Changing the orientation flag requires updating the cached bbox
+      _dbInstFlags* a = (_dbInstFlags*) flags;
+      _dbInstFlags* b = (_dbInstFlags*) &prev_flags;
+      if (a->_orient != b->_orient) {
+        _dbInst::setInstBBox(inst);
+      }
+
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
@@ -913,6 +1200,23 @@ void dbJournal::redo_updateInstField()
                  inst->_x,
                  inst->_y);
       ((dbInst*) inst)->setOrigin(current_x, current_y);
+      break;
+    }
+
+    case _dbInst::NAME: {
+      std::string prev_name;
+      _log.pop(prev_name);
+      std::string new_name;
+      _log.pop(new_name);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 2,
+                 "REDO ECO: dbInstObj {}, updateName from {} to {}",
+                 inst_id,
+                 prev_name.c_str(),
+                 new_name.c_str());
+      ((dbInst*) inst)->rename(new_name.c_str());
       break;
     }
 
@@ -1369,15 +1673,24 @@ void dbJournal::redo_updateCCSegField()
   }
 }
 
+dbObjectType dbJournal::popObjectType()
+{
+  int obj_type_value;
+  _log.pop(obj_type_value);
+  return static_cast<dbObjectType>(obj_type_value);
+}
+
 //
 // WORK-IN-PROGRESS undo does not yet work.
 //
 void dbJournal::undo()
 {
-  if (_log.empty())
+  if (_log.empty()) {
     return;
+  }
 
-  _log.set(_log.size() - sizeof(uint));
+  _log.moveToEnd();
+  _log.moveBackOneInt();
 
   for (;;) {
     uint action_idx;
@@ -1410,93 +1723,625 @@ void dbJournal::undo()
         undo_updateField();
         break;
 
-      default:
-        assert(0);
+      case END_ACTION:
         break;
     }
 
-    if (action_idx == 0)
+    if (action_idx == 0) {
       break;
+    }
 
-    _log.set(action_idx -= sizeof(uint));
+    _log.set(action_idx);
+    _log.moveBackOneInt();
   }
 }
 
 void dbJournal::undo_createObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
-    case dbNetObj:
-    case dbInstObj:
-    case dbRSegObj:
-    case dbCapNodeObj:
-    case dbCCSegObj:
-
-    default:
+  switch (obj_type) {
+    case dbGuideObj: {
+      uint guide_id;
+      _log.pop(guide_id);
+      dbGuide* guide = dbGuide::getGuide(_block, guide_id);
+      dbGuide::destroy(guide);
       break;
+    }
+
+    case dbInstObj: {
+      uint lib_id;
+      uint master_id;
+      uint inst_id;
+      std::string name;
+      _log.pop(lib_id);
+      _log.pop(master_id);
+      _log.pop(name);
+      _log.pop(inst_id);
+
+      dbInst* inst = dbInst::getInst(_block, inst_id);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: create instance {} at id {}",
+                 name,
+                 inst_id);
+
+      dbInst::destroy(inst);
+      break;
+    }
+
+    case dbNetObj: {
+      std::string name;
+      uint net_id;
+      _log.pop(name);
+      _log.pop(net_id);
+      dbNet* net = dbNet::getNet(_block, net_id);
+      dbNet::destroy(net);
+      break;
+    }
+
+    case dbModuleObj: {
+      std::string name;
+      uint obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      (void) name;
+      dbModule* mod = dbModule::getModule(_block, obj_id);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: create module {} at id {}",
+                 mod->getName(),
+                 obj_id);
+      dbModule::destroy(mod);
+      break;
+    }
+
+    case dbModInstObj: {
+      uint obj_id;
+      std::string name;
+      uint parent_id;
+      uint master_id;
+
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(parent_id);
+      _log.pop(master_id);
+
+      (void) name;
+      dbModInst* mod_inst = dbModInst::getModInst(_block, obj_id);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: create mod inst {} at id {}",
+                 mod_inst->getName(),
+                 obj_id);
+      dbModInst::destroy(mod_inst);
+      break;
+    }
+
+    case dbModNetObj: {
+      std::string name;
+      uint mod_net_id;
+      uint parent_id;
+      _log.pop(name);
+      _log.pop(mod_net_id);
+      _log.pop(parent_id);
+      (void) name;
+      dbModNet* mod_net = dbModNet::getModNet(_block, mod_net_id);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: create mod net {} at id {}",
+                 mod_net->getName(),
+                 mod_net_id);
+      dbModNet::destroy(mod_net);
+      break;
+    }
+
+    case dbModBTermObj: {
+      std::string name;
+      uint modbterm_id;
+      uint parent_id;
+      _log.pop(name);
+      _log.pop(modbterm_id);
+      _log.pop(parent_id);
+      (void) name;
+      (void) parent_id;
+      dbModBTerm* modbterm = dbModBTerm::getModBTerm(_block, modbterm_id);
+
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: create modbterm {} at id {}",
+                 modbterm->getName(),
+                 modbterm_id);
+      dbModBTerm::destroy(modbterm);
+      break;
+    }
+
+    case dbModITermObj: {
+      std::string name;
+      uint moditerm_id;
+      uint modbterm_id;
+      uint mod_inst_parent_id;
+      _log.pop(name);
+      _log.pop(moditerm_id);
+      _log.pop(modbterm_id);
+      _log.pop(mod_inst_parent_id);
+      dbModITerm* moditerm = dbModITerm::getModITerm(_block, moditerm_id);
+      (void) name;
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: create moditerm {} at id {}",
+                 moditerm->getName(),
+                 moditerm_id);
+      dbModITerm::destroy(moditerm);
+      break;
+    }
+
+    default: {
+      _logger->critical(utl::ODB,
+                        441,
+                        "No undo_createObject support for type {}",
+                        dbObject::getTypeName(obj_type));
+      break;
+    }
   }
 }
 
 void dbJournal::undo_deleteObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
-    case dbNetObj:
-    case dbInstObj:
-    case dbRSegObj:
-    case dbCapNodeObj:
-    case dbCCSegObj:
-    default:
+  switch (obj_type) {
+    case dbGuideObj: {
+      uint net_id;
+      int x_min;
+      int y_min;
+      int x_max;
+      int y_max;
+      uint layer_id;
+      uint via_layer_id;
+      bool is_congested;
+      _log.pop(net_id);
+      _log.pop(x_min);
+      _log.pop(y_min);
+      _log.pop(x_max);
+      _log.pop(y_max);
+      _log.pop(layer_id);
+      _log.pop(via_layer_id);
+      _log.pop(is_congested);
+      auto net = dbNet::getNet(_block, net_id);
+      auto layer = dbTechLayer::getTechLayer(_block->getTech(), layer_id);
+      auto via_layer
+          = dbTechLayer::getTechLayer(_block->getTech(), via_layer_id);
+      dbGuide::create(
+          net, layer, via_layer, {x_min, y_min, x_max, y_max}, is_congested);
       break;
+    }
+    case dbInstObj: {
+      uint lib_id;
+      uint master_id;
+      uint inst_id;
+      std::string name;
+      int x;
+      int y;
+      uint group_id;
+      uint module_id;
+      uint region_id;
+      _log.pop(lib_id);
+      _log.pop(master_id);
+      _log.pop(name);
+      _log.pop(inst_id);
+      dbLib* lib = dbLib::getLib(_block->getDb(), lib_id);
+      dbMaster* master = dbMaster::getMaster(lib, master_id);
+      auto inst = dbInst::create(_block, master, name.c_str());
+      _dbInst* impl = (_dbInst*) inst;
+      uint* flags = (uint*) &impl->_flags;
+      _log.pop(*flags);
+      _log.pop(x);
+      _log.pop(y);
+      _log.pop(group_id);
+      _log.pop(module_id);
+      _log.pop(region_id);
+      inst->setLocation(x, y);
+      if (group_id != 0) {
+        auto group = dbGroup::getGroup(_block, group_id);
+        group->addInst(inst);
+      }
+      if (module_id != 0) {
+        auto module = dbModule::getModule(_block, module_id);
+        module->addInst(inst);
+      }
+      if (region_id != 0) {
+        auto region = dbRegion::getRegion(_block, region_id);
+        region->addInst(inst);
+      }
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: delete dbInst {} {}",
+                 name.c_str(),
+                 master_id);
+
+      break;
+    }
+    case dbNetObj: {
+      std::string name;
+      uint net_id;
+      uint ndr_id;
+      _log.pop(name);
+      _log.pop(net_id);
+      auto net = dbNet::create(_block, name.c_str());
+      _dbNet* impl = (_dbNet*) net;
+      uint* flags = (uint*) &impl->_flags;
+      _log.pop(*flags);
+      _log.pop(ndr_id);
+      _dbNet* net_impl = (_dbNet*) net;
+      net_impl->_non_default_rule = ndr_id;
+      break;
+    }
+
+    case dbModuleObj: {
+      std::string name;
+      uint obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      dbModule::create(_block, name.c_str());
+      break;
+    }
+
+    case dbModInstObj: {
+      std::string name;
+      uint obj_id;
+      uint master_module_id;
+      uint parent_module_id;
+      uint group_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(parent_module_id);
+      _log.pop(master_module_id);
+      _log.pop(group_id);
+      dbModule* parent_module = dbModule::getModule(_block, parent_module_id);
+      dbModule* master_module = dbModule::getModule(_block, master_module_id);
+      auto mod_inst
+          = dbModInst::create(parent_module, master_module, name.c_str());
+      if (group_id != 0) {
+        auto group = dbGroup::getGroup(_block, group_id);
+        group->addModInst(mod_inst);
+      }
+      break;
+    }
+
+    case dbModNetObj: {
+      std::string name;
+      uint module_id;
+      uint obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(module_id);
+      // get the parent module
+      dbModule* module = dbModule::getModule(_block, module_id);
+      auto net = dbModNet::create(module, name.c_str());
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: delete dbModnet {} {}",
+                 name.c_str(),
+                 net->getId());
+      (void) net;
+      break;
+    }
+
+    case dbModBTermObj: {
+      std::string name;
+      uint module_id;
+      uint obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(module_id);
+      // get the parent module
+      dbModule* parent_module = dbModule::getModule(_block, module_id);
+      auto modbterm = dbModBTerm::create(parent_module, name.c_str());
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: delete dbModBTerm {} {}",
+                 name.c_str(),
+                 modbterm->getId());
+      (void) modbterm;
+      break;
+    }
+
+    case dbModITermObj: {
+      std::string name;
+      uint obj_id;
+      uint modinst_id;
+      uint modbterm_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(modbterm_id);
+      _log.pop(modinst_id);
+      // get the parent module
+      dbModInst* mod_inst = dbModInst::getModInst(_block, modinst_id);
+      dbModBTerm* mod_bterm = nullptr;
+      if (modbterm_id != 0U) {
+        mod_bterm = dbModBTerm::getModBTerm(_block, modbterm_id);
+      }
+      auto mod_iterm = dbModITerm::create(mod_inst, name.c_str(), mod_bterm);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: delete dbModiterm {} {}",
+                 name.c_str(),
+                 mod_iterm->getId());
+      break;
+    }
+
+    default: {
+      _logger->critical(utl::ODB,
+                        417,
+                        "No undo_deleteObject support for type {}",
+                        dbObject::getTypeName(obj_type));
+      break;
+    }
   }
 }
 
 void dbJournal::undo_connectObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
-    case dbITermObj:
-    default:
+  switch (obj_type) {
+    case dbModITermObj: {
+      uint moditerm_id;
+      _log.pop(moditerm_id);
+      dbModITerm* moditerm = dbModITerm::getModITerm(_block, moditerm_id);
+      uint net_id;
+      _log.pop(net_id);
+      moditerm->disconnect();
       break;
+    }
+
+    case dbModBTermObj: {
+      uint modbterm_id;
+      _log.pop(modbterm_id);
+      dbModBTerm* modbterm = dbModBTerm::getModBTerm(_block, modbterm_id);
+      uint net_id;
+      _log.pop(net_id);
+
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: connect dbModBTerm {} {}",
+                 modbterm->getName(),
+                 modbterm_id);
+
+      modbterm->disconnect();
+      break;
+    }
+
+    case dbITermObj: {
+      uint iterm_id;
+      _log.pop(iterm_id);
+      dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
+      uint net_id;
+      uint mnet_id;
+      _log.pop(net_id);   // the db net
+      _log.pop(mnet_id);  // the modnet
+      //
+      // we signal which net to disconnect
+      // by the id, if non zero. if zero
+      // do not disconnect. For example if we are just
+      // disconnecting the dbNet then in the journalling for
+      // the caller we set the mnet_id to zero.
+      //
+      if (net_id != 0) {
+        iterm->disconnectDbNet();
+      }
+      if (mnet_id != 0) {
+        iterm->disconnectDbModNet();
+      }
+      break;
+    }
+
+    case dbBTermObj: {
+      uint bterm_id;
+      _log.pop(bterm_id);
+      dbBTerm* bterm = dbBTerm::getBTerm(_block, bterm_id);
+      uint net_id;
+      uint mnet_id;
+      _log.pop(net_id);   // the db net
+      _log.pop(mnet_id);  // the modnet
+      (void) (net_id);
+      (void) (mnet_id);
+      bterm->disconnect();
+      break;
+    }
+
+    default: {
+      _logger->critical(utl::ODB,
+                        442,
+                        "No undo_connectObject support for type {}",
+                        dbObject::getTypeName(obj_type));
+      break;
+    }
   }
 }
 
 void dbJournal::undo_disconnectObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
-    case dbITermObj:
-    default:
+  switch (obj_type) {
+    case dbITermObj: {
+      uint iterm_id;
+      _log.pop(iterm_id);
+      dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
+      uint net_id = 0U;
+      _log.pop(net_id);
+      if (net_id != 0) {
+        dbNet* net = dbNet::getNet(_block, net_id);
+        iterm->connect(net);
+      }
+      uint mnet_id = 0U;
+      _log.pop(mnet_id);
+      if (mnet_id != 0) {
+        dbModNet* mod_net = dbModNet::getModNet(_block, mnet_id);
+        iterm->connect(mod_net);
+      }
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: disconnect dbITerm {} {} {}",
+                 iterm->getName(),
+                 net_id,
+                 mnet_id);
       break;
+    }
+
+    case dbBTermObj: {
+      uint bterm_id;
+      _log.pop(bterm_id);
+      dbBTerm* bterm = dbBTerm::getBTerm(_block, bterm_id);
+      uint net_id;
+      _log.pop(net_id);
+      if (net_id != 0) {
+        dbNet* net = dbNet::getNet(_block, net_id);
+        bterm->connect(net);
+      }
+      uint mnet_id;
+      _log.pop(mnet_id);
+      if (mnet_id != 0) {
+        dbModNet* mnet = dbModNet::getModNet(_block, mnet_id);
+        bterm->connect(mnet);
+      }
+      break;
+    }
+
+    case dbModBTermObj: {
+      uint modbterm_id;
+      uint modnet_id;
+      _log.pop(modbterm_id);
+      _log.pop(modnet_id);
+      dbModBTerm* mod_bterm = dbModBTerm::getModBTerm(_block, modbterm_id);
+      if (modnet_id != 0U) {
+        dbModNet* mnet = dbModNet::getModNet(_block, modnet_id);
+        mod_bterm->connect(mnet);
+      }
+      break;
+    }
+
+    case dbModITermObj: {
+      uint moditerm_id;
+      uint modnet_id;
+      _log.pop(moditerm_id);
+      _log.pop(modnet_id);
+      dbModITerm* mod_iterm = dbModITerm::getModITerm(_block, moditerm_id);
+      if (modnet_id != 0U) {
+        dbModNet* mnet = dbModNet::getModNet(_block, modnet_id);
+        mod_iterm->connect(mnet);
+      }
+
+      break;
+    }
+    default: {
+      _logger->critical(utl::ODB,
+                        443,
+                        "No undo_disconnectObject support for type {}",
+                        dbObject::getTypeName(obj_type));
+      break;
+    }
   }
 }
 
 void dbJournal::undo_swapObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
-    case dbInstObj:
-    default:
+  switch (obj_type) {
+    case dbNameObj: {
+      // name swapping undo
+      auto sub_obj_type = popObjectType();
+      switch (sub_obj_type) {
+        // net name swap
+        case dbNetObj: {
+          // assume source and destination
+          uint source_net_id;
+          uint dest_net_id;
+          _log.pop(source_net_id);
+          _log.pop(dest_net_id);
+          // note because we are undoing the source is the prior dest
+          //(we are move dest name back to source name).
+          dbNet* source_net = dbNet::getNet(_block, dest_net_id);
+          dbNet* dest_net = dbNet::getNet(_block, source_net_id);
+          // don't allow undo to be undone, turn off journaling doing swap
+          source_net->swapNetNames(dest_net, false);
+          break;
+        }
+        default: {
+          _logger->critical(utl::ODB,
+                            467,
+                            "No undo_swapObject Name support for type {}",
+                            dbObject::getTypeName(sub_obj_type));
+        }
+      }
       break;
+    }
+
+    case dbInstObj: {
+      uint inst_id;
+      _log.pop(inst_id);
+
+      uint prev_lib_id;
+      _log.pop(prev_lib_id);
+
+      uint prev_master_id;
+      _log.pop(prev_master_id);
+
+      uint lib_id;
+      _log.pop(lib_id);
+
+      uint master_id;
+      _log.pop(master_id);
+
+      dbInst* inst = dbInst::getInst(_block, inst_id);
+      dbLib* lib = dbLib::getLib(_block->getDb(), prev_lib_id);
+      dbMaster* master = dbMaster::getMaster(lib, prev_master_id);
+      inst->swapMaster(master);
+      break;
+    }
+
+    default: {
+      _logger->critical(utl::ODB,
+                        444,
+                        "No undo_swapObject support for type {}",
+                        dbObject::getTypeName(obj_type));
+      break;
+    }
   }
 }
 
 void dbJournal::undo_updateField()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     case dbNetObj:
       undo_updateNetField();
       break;
@@ -1517,8 +2362,17 @@ void dbJournal::undo_updateField()
       undo_updateCapNodeField();
       break;
 
-    default:
+    case dbModNetObj:
+      undo_updateModNetField();
       break;
+
+    default: {
+      _logger->critical(utl::ODB,
+                        445,
+                        "No undo_updateField support for type {}",
+                        dbObject::getTypeName(obj_type));
+      break;
+    }
   }
 }
 
@@ -1526,15 +2380,72 @@ void dbJournal::undo_updateNetField()
 {
   uint net_id;
   _log.pop(net_id);
-  //_dbNet * net = (_dbNet *) dbNet::getNet(_block, net_id );
+  _dbNet* net = (_dbNet*) dbNet::getNet(_block, net_id);
 
   int field;
   _log.pop(field);
 
   switch ((_dbNet::Field) field) {
-    case _dbNet::FLAGS:
-    case _dbNet::NON_DEFAULT_RULE:
+    case _dbNet::FLAGS: {
+      uint* flags = (uint*) &net->_flags;
+      _log.pop(*flags);
+      uint new_flags;
+      _log.pop(new_flags);
       break;
+    }
+
+    case _dbNet::NAME: {
+      std::string prev_name;
+      _log.pop(prev_name);
+      std::string new_name;
+      _log.pop(new_name);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 2,
+                 "UNDO ECO: dbNetObj {}, updateName from {} to {}",
+                 net_id,
+                 new_name.c_str(),
+                 prev_name.c_str());
+      ((dbNet*) net)->rename(prev_name.c_str());
+      break;
+    }
+
+    default: {
+      _logger->critical(
+          utl::ODB, 408, "No undo_updateNetField support for field {}", field);
+      break;
+    }
+  }
+}
+
+void dbJournal::undo_updateModNetField()
+{
+  uint modnet_id;
+  _log.pop(modnet_id);
+  _dbModNet* modnet = (_dbModNet*) dbModNet::getModNet(_block, modnet_id);
+
+  int field;
+  _log.pop(field);
+
+  switch ((_dbModNet::Field) field) {
+    case _dbModNet::NAME: {
+      std::string prev_name;
+      _log.pop(prev_name);
+      std::string new_name;
+      _log.pop(new_name);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: dbModNet {}, updateName from {} to {}",
+                 modnet_id,
+                 new_name.c_str(),
+                 prev_name.c_str());
+      ((dbModNet*) modnet)->rename(prev_name.c_str());
+      break;
+    }
+
     default:
       break;
   }
@@ -1544,19 +2455,63 @@ void dbJournal::undo_updateInstField()
 {
   uint inst_id;
   _log.pop(inst_id);
-  //_dbInst * inst = (_dbInst *) dbInst::getInst(_block, inst_id );
+  _dbInst* inst = (_dbInst*) dbInst::getInst(_block, inst_id);
 
   int field;
   _log.pop(field);
 
-#if 0  // dead code generates warnings -cherry
-    switch( (_dbInst::Field) field )
-    {
-        case _dbInst::FLAGS:
-        case _dbInst::ORIGIN:
-            break;
+  switch ((_dbInst::Field) field) {
+    case _dbInst::FLAGS: {
+      uint* flags = (uint*) &inst->_flags;
+      _log.pop(*flags);
+      uint new_flags;
+      _log.pop(new_flags);
+
+      // Changing the orientation flag requires updating the cached bbox
+      _dbInstFlags* a = (_dbInstFlags*) flags;
+      _dbInstFlags* b = (_dbInstFlags*) &new_flags;
+      if (a->_orient != b->_orient) {
+        _dbInst::setInstBBox(inst);
+      }
+      break;
     }
-#endif
+
+    case _dbInst::ORIGIN: {
+      int prev_x;
+      _log.pop(prev_x);
+      int prev_y;
+      _log.pop(prev_y);
+      int current_x;
+      _log.pop(current_x);
+      int current_y;
+      _log.pop(current_y);
+      ((dbInst*) inst)->setOrigin(prev_x, prev_y);
+      break;
+    }
+
+    case _dbInst::NAME: {
+      std::string prev_name;
+      _log.pop(prev_name);
+      std::string new_name;
+      _log.pop(new_name);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 2,
+                 "UNDO ECO: dbInstObj {}, updateName from {} to {}",
+                 inst_id,
+                 new_name.c_str(),
+                 prev_name.c_str());
+      ((dbInst*) inst)->rename(prev_name.c_str());
+      break;
+    }
+
+    default: {
+      _logger->critical(
+          utl::ODB, 409, "No undo_updateInstField support for field {}", field);
+      break;
+    }
+  }
 }
 
 void dbJournal::undo_updateITermField()
@@ -1569,8 +2524,13 @@ void dbJournal::undo_updateITermField()
   _log.pop(field);
 
   switch ((_dbITerm::Field) field) {
-    case _dbITerm::FLAGS:
+    default: {
+      _logger->critical(utl::ODB,
+                        410,
+                        "No undo_updateITermField support for field {}",
+                        field);
       break;
+    }
   }
 }
 
@@ -1584,14 +2544,10 @@ void dbJournal::undo_updateRSegField()
   _log.pop(field);
 
   switch ((_dbRSeg::Field) field) {
-    case _dbRSeg::FLAGS:
-    case _dbRSeg::SOURCE:
-    case _dbRSeg::TARGET:
-    case _dbRSeg::RESISTANCE:
-    case _dbRSeg::CAPACITANCE:
-      break;
-    default:
-      break;
+    default: {
+      _logger->critical(
+          utl::ODB, 411, "No undo_updateRSegField support for field {}", field);
+    } break;
   }
 }
 
@@ -1599,17 +2555,20 @@ void dbJournal::undo_updateCapNodeField()
 {
   uint node_id;
   _log.pop(node_id);
-  //_dbCapNode * node = (_dbCapNode *) dbCapNode::getCapNode(_block, node_id );
+  //_dbCapNode * node = (_dbCapNode *) dbCapNode::getCapNode(_block, node_id
+  //);
 
   int field;
   _log.pop(field);
 
   switch ((_dbCapNode::Fields) field) {
-    case _dbCapNode::FLAGS:
-    case _dbCapNode::CAPACITANCE:
+    default: {
+      _logger->critical(utl::ODB,
+                        412,
+                        "No undo_updateCapNodeField support for field {}",
+                        field);
       break;
-    default:
-      break;
+    }
   }
 }
 
@@ -1623,14 +2582,14 @@ void dbJournal::undo_updateCCSegField()
   _log.pop(field);
 
   switch ((_dbCCSeg::Fields) field) {
-    case _dbCCSeg::FLAGS:
-    case _dbCCSeg::CAPACITANCE:
-    case _dbCCSeg::ADDCCCAPACITANCE:
-    case _dbCCSeg::SWAPCAPNODE:
-    case _dbCCSeg::LINKCCSEG:
-    case _dbCCSeg::UNLINKCCSEG:
-    case _dbCCSeg::SETALLCCCAP:
+    default: {
+      _logger->critical(utl::ODB,
+                        413,
+                        "No undo_updateCCSegField support for field {}",
+                        field);
+
       break;
+    }
   }
 }
 

@@ -1,41 +1,9 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 %{
 #include "rmp/Restructure.h"
-#include "rmp/blif.h"
+#include "cut/blif.h"
 #include "ord/OpenRoad.hh"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
@@ -55,9 +23,11 @@ using ord::getRestructure;
 using ord::getOpenRoad;
 using odb::dbInst;
 using sta::LibertyPort;
+using sta::Corner;
 %}
 
 %include "../../Exception.i"
+%include "tcl/StaTclTypes.i"
 
 %inline %{
 
@@ -72,6 +42,10 @@ void set_tiehi_port_cmd(LibertyPort* tieHiport)
   getRestructure()->setTieHiPort(tieHiport);
 }
 
+void resynth_cmd(Corner* corner) {
+  getRestructure()->resynth(corner);
+}
+
 void
 restructure_cmd(char* liberty_file_name, char* target, float slack_threshold,
                 int depth_threshold, char* workdir_name, char* abc_logfile)
@@ -82,19 +56,19 @@ restructure_cmd(char* liberty_file_name, char* target, float slack_threshold,
 }
 
 // Locally Exposed for testing only..
-Blif* create_blif(const char* hicell, const char* hiport, const char* locell, const char* loport){
-  return new rmp::Blif(getOpenRoad()->getLogger(), getOpenRoad()->getSta(), locell, loport, hicell, hiport);
+cut::Blif* create_blif(const char* hicell, const char* hiport, const char* locell, const char* loport, const int call_id=1){
+  return new cut::Blif(getOpenRoad()->getLogger(), getOpenRoad()->getSta(), locell, loport, hicell, hiport, call_id);
 }
 
-void blif_add_instance(Blif* blif_, const char* inst_){
+void blif_add_instance(cut::Blif* blif_, const char* inst_){
   blif_->addReplaceableInstance(getOpenRoad()->getDb()->getChip()->getBlock()->findInst(inst_));
 }
 
-void blif_dump(Blif* blif_, const char* file_name){
+void blif_dump(cut::Blif* blif_, const char* file_name){
   blif_->writeBlif(file_name);
 }
 
-int blif_read(Blif* blif_, const char* file_name){
+int blif_read(cut::Blif* blif_, const char* file_name){
   return blif_->readBlif(file_name, getOpenRoad()->getDb()->getChip()->getBlock());
 }
 

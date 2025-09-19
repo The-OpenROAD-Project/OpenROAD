@@ -1,34 +1,22 @@
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-#include <boost/geometry.hpp>
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
+
+#include "boost/polygon/polygon.hpp"
+#include "db/obj/frMarker.h"
+#include "db/obj/frVia.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
+#include "global.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace drt {
 using LOOKUP_STRATEGY = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY;
@@ -372,11 +360,25 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
   }
 }
 
-inline bool isSkipVia(gcRect* rect)
+inline bool isSupplyVia(gcRect* rect)
 {
-  return rect->getLayerNum() == GC_IGNORE_PDN_LAYER && rect->isFixed()
-         && rect->hasNet() && rect->getNet()->getFrNet()
+  return rect->isFixed() && rect->hasNet() && rect->getNet()->getFrNet()
          && rect->getNet()->getFrNet()->getType().isSupply();
+}
+
+inline bool isSkipVia(gcRect* rect, RouterConfiguration* router_cfg)
+{
+  return rect->getLayerNum() == router_cfg->GC_IGNORE_PDN_LAYER_NUM
+         && isSupplyVia(rect);
+}
+
+inline bool isFixedVia(gcRect* rect, RouterConfiguration* router_cfg)
+{
+  if (rect->getLayerNum() == router_cfg->REPAIR_PDN_LAYER_NUM
+      && isSupplyVia(rect)) {
+    return false;
+  }
+  return rect->isFixed();
 }
 
 void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
@@ -394,7 +396,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
   }
 
   auto dbRule = con->getODBRule();
-  if (isSkipVia(viaRect)) {
+  if (isSkipVia(viaRect, router_cfg_)) {
     return;
   }
 
@@ -419,7 +421,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
   frCoord maxSpc;
 
   if (width == length) {
-    maxSpc = dbRule->getMaxSpacing(cutClass, false);
+    maxSpc = dbRule->getMaxSpacing(std::move(cutClass), false);
   } else {
     maxSpc = std::max(dbRule->getMaxSpacing(cutClass, true),
                       dbRule->getMaxSpacing(cutClass, false));
@@ -431,13 +433,13 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
   auto& workerRegionQuery = getWorkerRegionQuery();
   workerRegionQuery.queryMaxRectangle(queryBox, queryLayerNum, results);
   for (auto& [box, ptr] : results) {
-    if (ptr->isFixed() && viaRect->isFixed()) {
+    if (isFixedVia(ptr, router_cfg_) && isFixedVia(viaRect, router_cfg_)) {
       continue;
     }
     if (ptr->getPin() == viaRect->getPin()) {
       continue;
     }
-    if (isSkipVia(ptr)) {
+    if (isSkipVia(ptr, router_cfg_)) {
       continue;
     }
     if (isUpperVia) {
@@ -451,7 +453,7 @@ void FlexGCWorker::Impl::checKeepOutZone_main(gcRect* rect,
                                               frLef58KeepOutZoneConstraint* con)
 {
   auto layer = getTech()->getLayer(rect->getLayerNum());
-  if (isSkipVia(rect)) {
+  if (isSkipVia(rect, router_cfg_)) {
     return;
   }
   auto dbRule = con->getODBRule();
@@ -500,13 +502,13 @@ void FlexGCWorker::Impl::checKeepOutZone_main(gcRect* rect,
     allResults.insert(allResults.end(), results.begin(), results.end());
   }
   for (auto& [box, ptr] : allResults) {
-    if (ptr->isFixed() && rect->isFixed()) {
+    if (isFixedVia(ptr, router_cfg_) && isFixedVia(rect, router_cfg_)) {
       continue;
     }
     if (ptr->getPin() == rect->getPin()) {
       continue;
     }
-    if (isSkipVia(ptr)) {
+    if (isSkipVia(ptr, router_cfg_)) {
       continue;
     }
     auto via2CutClass = layer->getCutClass(ptr->width(), ptr->length());
@@ -544,7 +546,7 @@ void FlexGCWorker::Impl::checKeepOutZone_main(gcRect* rect,
 
 void FlexGCWorker::Impl::checkMetalWidthViaTable_main(gcRect* rect)
 {
-  if (rect->getLayerNum() > TOP_ROUTING_LAYER) {
+  if (rect->getLayerNum() > router_cfg_->TOP_ROUTING_LAYER) {
     return;
   }
   for (auto con : getTech()
@@ -679,4 +681,237 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable()
   }
 }
 
+void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* viaRect,
+                                                  gcRect* encRect)
+{
+  auto layer = getTech()->getLayer(viaRect->getLayerNum());
+  auto cutClassIdx = layer->getCutClassIdx(viaRect->width(), viaRect->length());
+  bool above = encRect->getLayerNum() > viaRect->getLayerNum();
+  frCoord sideOverhang = 0;
+  frCoord endOverhang = 0;
+  sideOverhang = std::min(gtl::xh(*encRect) - gtl::xh(*viaRect),
+                          gtl::xl(*viaRect) - gtl::xl(*encRect));
+  endOverhang = std::min(gtl::yh(*encRect) - gtl::yh(*viaRect),
+                         gtl::yl(*viaRect) - gtl::yl(*encRect));
+  if (gtl::delta(*viaRect, gtl::orientation_2d_enum::HORIZONTAL)
+      > gtl::delta(*viaRect, gtl::orientation_2d_enum::VERTICAL)) {
+    std::swap(sideOverhang, endOverhang);
+  }
+  frLef58EnclosureConstraint* lastCon = nullptr;
+  for (auto con : layer->getLef58EnclosureConstraints(
+           cutClassIdx, encRect->width(), above)) {
+    lastCon = con;
+    if (con->isValidOverhang(endOverhang, sideOverhang)) {
+      return;  // valid overhangs
+    }
+  }
+  Rect markerBox(gtl::xl(*viaRect),
+                 gtl::yl(*viaRect),
+                 gtl::xh(*viaRect),
+                 gtl::yh(*viaRect));
+  auto net = viaRect->getNet();
+  auto marker = std::make_unique<frMarker>();
+  marker->setBBox(markerBox);
+  marker->setLayerNum(encRect->getLayerNum());
+  marker->setConstraint(lastCon);
+  marker->addSrc(net->getOwner());
+  frCoord llx = gtl::xl(*encRect);
+  frCoord lly = gtl::yl(*encRect);
+  frCoord urx = gtl::xh(*encRect);
+  frCoord ury = gtl::xh(*encRect);
+  marker->addAggressor(net->getOwner(),
+                       std::make_tuple(encRect->getLayerNum(),
+                                       Rect(llx, lly, urx, ury),
+                                       encRect->isFixed()));
+  llx = gtl::xl(*viaRect);
+  lly = gtl::yl(*viaRect);
+  urx = gtl::xh(*viaRect);
+  ury = gtl::xh(*viaRect);
+  marker->addVictim(net->getOwner(),
+                    std::make_tuple(viaRect->getLayerNum(),
+                                    Rect(llx, lly, urx, ury),
+                                    viaRect->isFixed()));
+  marker->addSrc(net->getOwner());
+  addMarker(std::move(marker));
+}
+void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* rect)
+{
+  if (rect->isFixed()) {
+    return;
+  }
+  auto layer = getTech()->getLayer(rect->getLayerNum());
+  auto cutClassIdx = layer->getCutClassIdx(rect->width(), rect->length());
+  bool hasAboveConstraints
+      = layer->hasLef58EnclosureConstraint(cutClassIdx, true);
+  bool hasBelowConstraints
+      = layer->hasLef58EnclosureConstraint(cutClassIdx, false);
+  if (!hasAboveConstraints && !hasBelowConstraints) {
+    return;
+  }
+  auto getEnclosure = [this](gcRect* rect, frLayerNum layerNum) {
+    std::vector<rq_box_value_t<gcRect*>> results;
+    auto& workerRegionQuery = getWorkerRegionQuery();
+    workerRegionQuery.queryMaxRectangle(*rect, layerNum, results);
+    gcRect* encRect = nullptr;
+    for (auto& [box, ptr] : results) {
+      if (ptr->getNet() != rect->getNet()) {
+        continue;
+      }
+      if (!gtl::contains(*ptr, *rect)) {
+        continue;
+      }
+      if (encRect == nullptr) {
+        encRect = ptr;
+      } else if (ptr->width() > encRect->width()) {
+        encRect = ptr;
+      }
+    }
+    return encRect;
+  };
+  if (hasBelowConstraints) {
+    gcRect* belowEnc = getEnclosure(rect, layer->getLayerNum() - 1);
+    checkLef58Enclosure_main(rect, belowEnc);
+  }
+  if (hasAboveConstraints) {
+    gcRect* aboveEnc = getEnclosure(rect, layer->getLayerNum() + 1);
+    checkLef58Enclosure_main(rect, aboveEnc);
+  }
+}
+
+namespace orth {
+gtl::rectangle_data<frCoord> bloatRectangle(
+    const gtl::rectangle_data<frCoord>& rect,
+    const gtl::orientation_2d_enum dir,
+    const frCoord spacing)
+{
+  gtl::rectangle_data<frCoord> temp_rect(rect);
+  gtl::bloat(temp_rect, dir, spacing);
+  return temp_rect;
+}
+gtl::polygon_90_set_data<frCoord> getQueryPolygonSet(
+    const gtl::rectangle_data<frCoord>& marker_rect,
+    const gtl::rectangle_data<frCoord>& rect1,
+    const gtl::rectangle_data<frCoord>& rect2,
+    const gtl::orientation_2d_enum dir,
+    const frCoord spacing)
+{
+  gtl::polygon_90_set_data<frCoord> query_polygon_set;
+  query_polygon_set.insert(bloatRectangle(marker_rect, dir, spacing));
+  query_polygon_set.insert(bloatRectangle(rect1, dir, spacing));
+  query_polygon_set.insert(bloatRectangle(rect2, dir, spacing));
+  return query_polygon_set;
+}
+
+}  // namespace orth
+
+void FlexGCWorker::Impl::checkCutSpacingTableOrthogonal_helper(
+    gcRect* rect1,
+    gcRect* rect2,
+    const frCoord spacing)
+{
+  const auto [prl_x, prl_y] = getRectsPrl(rect1, rect2);
+  if (std::max(prl_x, prl_y) <= 0) {  // no prl
+    return;
+  }
+  if (std::min(prl_x, prl_y) > 0) {  // short
+    return;
+  }
+  auto con = getTech()
+                 ->getLayer(rect1->getLayerNum())
+                 ->getOrthSpacingTableConstraint();
+  // start checking orthogonal spacing
+  // initialize query area
+  gtl::rectangle_data<frCoord> prl_rect(*rect1);
+  gtl::generalized_intersect(prl_rect, *rect2);
+  gtl::polygon_90_set_data<frCoord> query_polygon_set
+      = orth::getQueryPolygonSet(prl_rect,
+                                 *rect1,
+                                 *rect2,
+                                 prl_x > 0 ? gtl::HORIZONTAL : gtl::VERTICAL,
+                                 spacing);
+  std::vector<gtl::rectangle_data<frCoord>> query_rects;
+  gtl::get_max_rectangles(query_rects, query_polygon_set);
+  std::vector<rq_box_value_t<gcRect*>> results;
+  for (const auto& query_rect : query_rects) {
+    getWorkerRegionQuery().queryMaxRectangle(
+        query_rect, rect1->getLayerNum(), results);
+  }
+  for (const auto& [box, rect3] : results) {
+    if (rect3 == rect1 || rect3 == rect2) {
+      continue;
+    }
+    if (rect1->isFixed() && rect2->isFixed() && rect3->isFixed()) {
+      continue;
+    }
+    bool is_violating = false;
+    for (const auto& query_rect : query_rects) {
+      if (gtl::intersects(query_rect, *rect3, false)) {
+        is_violating = true;
+        break;
+      }
+    }
+    if (!is_violating) {
+      continue;
+    }
+    // create violation
+    gtl::rectangle_data<frCoord> marker_rect(prl_rect);
+    gtl::generalized_intersect(marker_rect, *rect3);
+    Rect marker_box(gtl::xl(marker_rect),
+                    gtl::yl(marker_rect),
+                    gtl::xh(marker_rect),
+                    gtl::yh(marker_rect));
+    auto net = rect3->getNet();
+    auto marker = std::make_unique<frMarker>();
+    marker->setBBox(marker_box);
+    marker->setLayerNum(rect3->getLayerNum());
+    marker->setConstraint(con);
+    marker->addAggressor(
+        net->getOwner(),
+        std::make_tuple(rect3->getLayerNum(), box, rect3->isFixed()));
+    marker->addSrc(net->getOwner());
+
+    frCoord llx = gtl::xl(*rect1);
+    frCoord lly = gtl::yl(*rect1);
+    frCoord urx = gtl::xh(*rect1);
+    frCoord ury = gtl::xh(*rect1);
+    net = rect1->getNet();
+    marker->addVictim(
+        net->getOwner(),
+        std::make_tuple(
+            rect1->getLayerNum(), Rect(llx, lly, urx, ury), rect1->isFixed()));
+    marker->addSrc(net->getOwner());
+
+    llx = gtl::xl(*rect2);
+    lly = gtl::yl(*rect2);
+    urx = gtl::xh(*rect2);
+    ury = gtl::xh(*rect2);
+    net = rect2->getNet();
+    marker->addVictim(
+        net->getOwner(),
+        std::make_tuple(
+            rect2->getLayerNum(), Rect(llx, lly, urx, ury), rect2->isFixed()));
+    marker->addSrc(net->getOwner());
+
+    addMarker(std::move(marker));
+  }
+}
+
+void FlexGCWorker::Impl::checkCutSpacingTableOrthogonal(gcRect* rect)
+{
+  auto layer = getTech()->getLayer(rect->getLayerNum());
+  auto con = layer->getOrthSpacingTableConstraint();
+  for (const auto& [within, spacing] : con->getSpacingTable()) {
+    box_t query_box;
+    myBloat(*rect, within, query_box);
+    std::vector<rq_box_value_t<gcRect*>> results;
+    getWorkerRegionQuery().queryMaxRectangle(
+        query_box, rect->getLayerNum(), results);
+    for (auto& [box, via_rect] : results) {
+      if (via_rect == rect) {
+        continue;
+      }
+      checkCutSpacingTableOrthogonal_helper(rect, via_rect, spacing);
+    }
+  }
+}
 }  // namespace drt

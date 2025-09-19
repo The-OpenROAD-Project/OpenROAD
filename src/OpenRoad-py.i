@@ -1,37 +1,5 @@
- /////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 %include <std_string.i>
 %include <std_vector.i>
@@ -43,6 +11,7 @@
 #include "ord/Tech.h"
 #include "ord/Design.h"
 #include "ord/Timing.h"
+#include "ifp/InitFloorplan.hh"
 
 using odb::dbDatabase;
 using odb::dbBlock;
@@ -54,6 +23,15 @@ openroad_version();
 
 const char *
 openroad_git_describe();
+
+bool
+openroad_gpu_compiled();
+
+bool 
+openroad_python_compiled();
+
+bool
+openroad_gui_compiled();
 
 odb::dbDatabase *
 get_db();
@@ -71,11 +49,33 @@ get_db_block();
 
 %template(Corners) std::vector<sta::Corner*>;
 %template(MTerms) std::vector<odb::dbMTerm*>;
+%template(Masters) std::vector<odb::dbMaster*>;
 
 %include "Exception-py.i"
 %include "ord/Tech.h"
 %include "ord/Design.h"
 %include "ord/Timing.h"
+
+#ifdef BAZEL
+%include "src/gpl/src/replace-py.i"
+%include "src/ifp/src/InitFloorplan-py.i"
+%include "src/ant/src/AntennaChecker-py.i"
+%include "src/cts/src/TritonCTS-py.i"
+%include "src/dpl/src/Opendp-py.i"
+%include "src/drt/src/TritonRoute-py.i"
+%include "src/exa/src/example-py.i"
+%include "src/fin/src/finale-py.i"
+%include "src/grt/src/GlobalRouter-py.i"
+%include "src/par/src/partitionmgr-py.i"
+%include "src/pdn/src/PdnGen-py.i"
+%include "src/ppl/src/IOPlacer-py.i"
+%include "src/psm/src/pdnsim-py.i"
+%include "src/rcx/src/ext-py.i"
+%include "src/stt/src/SteinerTreeBuilder-py.i"
+%include "src/tap/src/tapcell-py.i"
+%import "src/odb/src/swig/common/odb.i"
+%import "src/utl/src/Logger-py.i"
+#endif
 
 %newobject Design::getFloorplan();
 

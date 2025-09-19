@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "Clustering.h"
 
@@ -41,17 +9,14 @@
 #include <sys/timeb.h>
 
 #include <algorithm>
-#include <array>
 #include <cfloat>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
-#include <fstream>
-#include <iostream>
-#include <list>
-#include <map>
-#include <stack>
+#include <limits>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "utl/Logger.h"
@@ -66,24 +31,33 @@ using utl::CTS;
 struct Sink
 {
   Sink(const float x, const float y, const unsigned idx)
-      : x(x), y(y), cluster_idx(-1), sink_idx(idx){};
+      : x(x), y(y), sink_idx(idx)
+  {
+  }
 
   // location
   const float x, y;
-  int cluster_idx;
+  int cluster_idx{-1};
   const unsigned sink_idx;  // index in sinks_
 };
+
+Clustering::Clustering(const std::vector<std::pair<float, float>>& sinks,
+                       Logger* logger)
+{
+  logger_ = logger;
+  sinks_.reserve(sinks.size());
+  for (size_t i = 0; i < sinks.size(); ++i) {
+    sinks_.emplace_back(sinks[i].first, sinks[i].second, i);
+  }
+}
 
 Clustering::Clustering(const std::vector<std::pair<float, float>>& sinks,
                        const float xBranch,
                        const float yBranch,
                        Logger* logger)
-    : logger_(logger), branching_point_(xBranch, yBranch)
+    : Clustering(sinks, logger)
 {
-  sinks_.reserve(sinks.size());
-  for (size_t i = 0; i < sinks.size(); ++i) {
-    sinks_.emplace_back(sinks[i].first, sinks[i].second, i);
-  }
+  branching_point_ = {xBranch, yBranch};
   srand(56);
 }
 
@@ -124,11 +98,15 @@ void Clustering::iterKmeans(const unsigned iter,
 
 void Clustering::fixSegmentLengths(std::vector<std::pair<float, float>>& means)
 {
+  if (!branching_point_) {
+    return;
+  }
   // First, fix the middle positions
   const unsigned midIdx = means.size() / 2 - 1;
 
-  fixSegment(branching_point_, segment_length_ / 2.0, means[midIdx]);
-  fixSegment(branching_point_, segment_length_ / 2.0, means[midIdx + 1]);
+  fixSegment(branching_point_.value(), segment_length_ / 2.0, means[midIdx]);
+  fixSegment(
+      branching_point_.value(), segment_length_ / 2.0, means[midIdx + 1]);
 
   // Fix lower branch
   for (unsigned i = midIdx; i > 0; --i) {
@@ -325,10 +303,10 @@ void Clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
     src_sink_edges.push_back(graph.addArc(src, sink));
   }
   // edges between sinks and clusters
-  std::vector<float> costs;
+  std::vector<double> costs;
   for (size_t i = 0; i < sinks_.size(); ++i) {
     for (size_t j = 0; j < means.size(); ++j) {
-      float d = calcDist(means[j], &sinks_[i]);
+      double d = calcDist(means[j], &sinks_[i]);
       if (d <= dist) {
         d = std::pow(d, power);
         if (d < std::numeric_limits<int>::max()) {

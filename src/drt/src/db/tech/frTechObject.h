@@ -1,37 +1,15 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <array>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "db/obj/frVia.h"
@@ -55,7 +33,14 @@ class frTechObject
   // getters
   frUInt4 getDBUPerUU() const { return dbUnit_; }
   frUInt4 getManufacturingGrid() const { return manufacturingGrid_; }
-  frLayer* getLayer(const frString& name) const { return name2layer_.at(name); }
+  frLayer* getLayer(const frString& name) const
+  {
+    auto it = name2layer_.find(name);
+    if (it == name2layer_.end()) {
+      return nullptr;
+    }
+    return it->second;
+  }
   frLayer* getLayer(frLayerNum in) const { return layers_.at(in).get(); }
   frLayerNum getBottomLayerNum() const { return 0; }
   frLayerNum getTopLayerNum() const { return layers_.size() - 1; }
@@ -77,6 +62,15 @@ class frTechObject
   {
     return unidirectional_layers_.find(dbLayer) != unidirectional_layers_.end();
   }
+  bool hasMaxSpacingConstraints() const
+  {
+    for (const auto& layer : layers_) {
+      if (layer->hasLef58MaxSpacingConstraints()) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   // setters
   void setDBUPerUU(frUInt4 uIn) { dbUnit_ = uIn; }
@@ -88,15 +82,19 @@ class frTechObject
     layer2Name2CutClass_.emplace_back();
     layerCutClass_.emplace_back();
   }
-  void addVia(std::unique_ptr<frViaDef> in)
+  frViaDef* addVia(std::unique_ptr<frViaDef> in)
   {
     in->setId(vias_.size());
     if (name2via_.find(in->getName()) != name2via_.end()) {
-      std::cout << "Error: duplicated via definition for " << in->getName()
-                << "\n";
+      if (*(name2via_[in->getName()]) == *in) {
+        return name2via_[in->getName()];
+      }
+      return nullptr;
     }
+    frViaDef* rptr = in.get();
     name2via_[in->getName()] = in.get();
     vias_.push_back(std::move(in));
+    return rptr;
   }
   void addCutClass(frLayerNum lNum, std::unique_ptr<frLef58CutClass> in)
   {
@@ -254,12 +252,12 @@ class frTechObject
     }
   }
 
-  void printDefaultVias(Logger* logger)
+  void printDefaultVias(utl::Logger* logger, RouterConfiguration* router_cfg)
   {
     logger->info(DRT, 167, "List of default vias:");
     for (auto& layer : layers_) {
       if (layer->getType() == dbTechLayerType::CUT
-          && layer->getLayerNum() >= BOTTOM_ROUTING_LAYER) {
+          && layer->getLayerNum() >= router_cfg->BOTTOM_ROUTING_LAYER) {
         logger->report("  Layer {}", layer->getName());
         if (layer->getDefaultViaDef() != nullptr) {
           logger->report("    default via: {}",

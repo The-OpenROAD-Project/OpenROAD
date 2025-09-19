@@ -30,8 +30,7 @@
 #ifndef defiKRDEFS_h
 #define defiKRDEFS_h
 
-#define BEGIN_LEFDEF_PARSER_NAMESPACE namespace LefDefParser {
-#define END_LEFDEF_PARSER_NAMESPACE }
-#define USE_LEFDEF_PARSER_NAMESPACE using namespace LefDefParser;
+#define BEGIN_DEF_PARSER_NAMESPACE namespace DefParser {
+#define END_DEF_PARSER_NAMESPACE }
 
 #endif /* defiKRDEFS_h */

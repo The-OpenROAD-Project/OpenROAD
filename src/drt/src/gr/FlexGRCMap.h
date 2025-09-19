@@ -1,40 +1,23 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
-#define CMAPHISTSIZE 8
-#define CMAPSUPPLYSIZE 8
-#define CMAPDEMANDSIZE 16
-#define CMAPFRACSIZE 1
+constexpr int CMAPHISTSIZE = 8;
+constexpr int CMAPSUPPLYSIZE = 8;
+constexpr int CMAPDEMANDSIZE = 16;
+constexpr int CMAPFRACSIZE = 1;
 
+#include <cstdint>
+#include <map>
+#include <memory>
+#include <set>
+#include <vector>
+
+#include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
 
 namespace drt {
 class frTrackPattern;
@@ -42,14 +25,15 @@ class FlexGRCMap
 {
  public:
   // constructors
-  FlexGRCMap(frDesign* designIn) : design_(designIn)
+  FlexGRCMap(frDesign* designIn, RouterConfiguration* router_cfg)
+      : design_(designIn), router_cfg_(router_cfg)
   {
     auto& gCellPatterns = design_->getTopBlock()->getGCellPatterns();
     numLayers_ = design_->getTech()->getLayers().size();
     xgp_ = &(gCellPatterns.at(0));
     ygp_ = &(gCellPatterns.at(1));
   }
-  FlexGRCMap(FlexGRCMap* in)
+  FlexGRCMap(FlexGRCMap* in, RouterConfiguration* router_cfg)
       : design_(in->design_),
         xgp_(in->xgp_),
         ygp_(in->ygp_),
@@ -58,7 +42,8 @@ class FlexGRCMap
         zMap_(in->zMap_),
         layerTrackPitches_(in->layerTrackPitches_),
         layerLine2ViaPitches_(in->layerLine2ViaPitches_),
-        layerPitches_(in->layerPitches_)
+        layerPitches_(in->layerPitches_),
+        router_cfg_(router_cfg)
   {
   }
   // getters
@@ -528,6 +513,8 @@ class FlexGRCMap
   std::vector<frCoord> layerTrackPitches_;
   std::vector<frCoord> layerLine2ViaPitches_;
   std::vector<frCoord> layerPitches_;
+
+  RouterConfiguration* router_cfg_;
 
   // internal getters
   bool getBit(unsigned idx, unsigned pos) const

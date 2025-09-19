@@ -1,48 +1,29 @@
-///////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include "Multilevel.h"
 
+#include <algorithm>
 #include <functional>
+#include <limits>
+#include <numeric>
 #include <queue>
 #include <random>
 #include <thread>
+#include <utility>
+#include <vector>
 
+#include "Coarsener.h"
 #include "Evaluator.h"
+#include "GreedyRefine.h"
 #include "Hypergraph.h"
+#include "ILPRefine.h"
+#include "KWayFMRefine.h"
+#include "KWayPMRefine.h"
 #include "Partitioner.h"
+#include "Utilities.h"
+#include "boost/random/uniform_int_distribution.hpp"
+#include "boost/range/iterator_range_core.hpp"
 #include "utl/Logger.h"
 
 namespace par {
@@ -263,7 +244,7 @@ std::vector<int> MultilevelPartitioner::SingleCycleRefinement(
                             upper_block_balance,
                             lower_block_balance,
                             top_solutions[best_solution_id],
-                            PartitionType::INIT_DIRECT_ILP);
+                            PartitionType::kInitDirectIlp);
   }
   // Here we need to do rebugetting on the best solution
   RefinePartition(hierarchy,
@@ -291,7 +272,8 @@ void MultilevelPartitioner::InitialPartition(
              "Running Initial Partitioning...");
   std::mt19937 gen;
   gen.seed(seed_);
-  std::uniform_real_distribution<> dist(0.0, 1.0);
+  boost::random::uniform_int_distribution<> dist(
+      0, std::numeric_limits<int>::max());
   std::vector<float> initial_solutions_cost;
   std::vector<bool>
       initial_solutions_flag;  // if the solutions statisfy balance constraint
@@ -307,7 +289,7 @@ void MultilevelPartitioner::InitialPartition(
   k_way_fm_refiner_->SetMaxMove(hgraph->GetNumVertices());
   // generate random seed
   for (int i = 0; i < num_initial_random_solutions_; ++i) {
-    const int seed = std::numeric_limits<int>::max() * dist(gen);
+    const int seed = dist(gen);
     auto& solution = initial_solutions[i];
     // call random partitioning
     partitioner_->SetRandomSeed(seed);
@@ -315,7 +297,7 @@ void MultilevelPartitioner::InitialPartition(
                             upper_block_balance,
                             lower_block_balance,
                             solution,
-                            PartitionType::INIT_RANDOM);
+                            PartitionType::kInitRandom);
     // call FM refiner to improve the solution
     k_way_fm_refiner_->Refine(
         hgraph, upper_block_balance, lower_block_balance, solution);
@@ -335,7 +317,7 @@ void MultilevelPartitioner::InitialPartition(
   }
   // generate random vile solution
   for (int i = 0; i < num_initial_random_solutions_; ++i) {
-    const int seed = std::numeric_limits<int>::max() * dist(gen);
+    const int seed = dist(gen);
     auto& solution = initial_solutions[i + num_initial_random_solutions_];
     // call random partitioning
     partitioner_->SetRandomSeed(seed);
@@ -343,7 +325,7 @@ void MultilevelPartitioner::InitialPartition(
                             upper_block_balance,
                             lower_block_balance,
                             solution,
-                            PartitionType::INIT_RANDOM_VILE);
+                            PartitionType::kInitRandomVile);
     // call FM refiner to improve the solution
     k_way_fm_refiner_->Refine(
         hgraph, upper_block_balance, lower_block_balance, solution);
@@ -369,7 +351,7 @@ void MultilevelPartitioner::InitialPartition(
                           upper_block_balance,
                           lower_block_balance,
                           vile_solution,
-                          PartitionType::INIT_VILE);
+                          PartitionType::kInitVile);
   // We need k_way_fm_refiner to generate a balanced partitioning
   k_way_fm_refiner_->Refine(
       hgraph, upper_block_balance, lower_block_balance, vile_solution);
@@ -404,7 +386,7 @@ void MultilevelPartitioner::InitialPartition(
                             upper_block_balance,
                             lower_block_balance,
                             ilp_solution,
-                            PartitionType::INIT_DIRECT_ILP);
+                            PartitionType::kInitDirectIlp);
     const auto ilp_token
         = evaluator_->CutEvaluator(hgraph, ilp_solution, false);
     initial_solutions_cost.push_back(ilp_token.cost);
@@ -669,7 +651,7 @@ std::vector<int> MultilevelPartitioner::CutOverlayILPPart(
                             upper_block_balance,
                             lower_block_balance,
                             init_solution,
-                            PartitionType::INIT_DIRECT_ILP);
+                            PartitionType::kInitDirectIlp);
   } else {
     clustered_hgraph->SetCommunity(init_solution);
     init_solution = SingleCycleRefinement(

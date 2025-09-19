@@ -223,8 +223,8 @@ PINS 54 ;
         + PLACED ( 167670 279887 ) N ;
     - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -242 ) ( 70 243 )
-        + PLACED ( 190670 279887 ) N ;
+        + LAYER met3 ( -400 -150 ) ( 400 150 )
+        + PLACED ( 279560 164900 ) N ;
     - req_msg[12] + NET req_msg[12] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -400 -150 ) ( 400 150 )

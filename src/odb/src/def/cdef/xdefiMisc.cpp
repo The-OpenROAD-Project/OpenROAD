@@ -38,14 +38,14 @@
 
 union udefiPoints
 {
-  LefDefParser::defiPoints cpp;
+  DefParser::defiPoints cpp;
   ::defiPoints c;
 };
 
 // Wrappers definitions.
 int defiGeometries_numPoints(const ::defiGeometries* obj)
 {
-  return ((LefDefParser::defiGeometries*) obj)->numPoints();
+  return ((DefParser::defiGeometries*) obj)->numPoints();
 }
 
 void defiGeometries_points(const ::defiGeometries* obj,
@@ -53,17 +53,17 @@ void defiGeometries_points(const ::defiGeometries* obj,
                            int* x,
                            int* y)
 {
-  ((LefDefParser::defiGeometries*) obj)->points(index, x, y);
+  ((DefParser::defiGeometries*) obj)->points(index, x, y);
 }
 
 int defiStyles_style(const ::defiStyles* obj)
 {
-  return ((LefDefParser::defiStyles*) obj)->style();
+  return ((DefParser::defiStyles*) obj)->style();
 }
 
 ::defiPoints defiStyles_getPolygon(const ::defiStyles* obj)
 {
   udefiPoints tmp;
-  tmp.cpp = ((LefDefParser::defiStyles*) obj)->getPolygon();
+  tmp.cpp = ((DefParser::defiStyles*) obj)->getPolygon();
   return tmp.c;
 }

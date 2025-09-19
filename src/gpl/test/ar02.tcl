@@ -1,5 +1,5 @@
 source helpers.tcl
-set test_name ar02 
+set test_name ar02
 read_lef ./nangate45.lef
 read_def ./$test_name.def
 

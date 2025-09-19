@@ -33,7 +33,7 @@
 #ifndef CDEFIREGION_H
 #define CDEFIREGION_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 
@@ -45,7 +45,7 @@ EXTERN int defiRegion_numProps(const defiRegion* obj);
 EXTERN const char* defiRegion_propName(const defiRegion* obj, int index);
 EXTERN const char* defiRegion_propValue(const defiRegion* obj, int index);
 EXTERN double defiRegion_propNumber(const defiRegion* obj, int index);
-EXTERN const char defiRegion_propType(const defiRegion* obj, int index);
+EXTERN char defiRegion_propType(const defiRegion* obj, int index);
 EXTERN int defiRegion_propIsNumber(const defiRegion* obj, int index);
 EXTERN int defiRegion_propIsString(const defiRegion* obj, int index);
 

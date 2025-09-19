@@ -29,36 +29,20 @@
 
 #include "lefiUnits.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // *****************************************************************************
 // lefiUnits
 // *****************************************************************************
 
 lefiUnits::lefiUnits()
-    : hasDatabase_(0),
-      hasCapacitance_(0),
-      hasResistance_(0),
-      hasTime_(0),
-      hasPower_(0),
-      hasCurrent_(0),
-      hasVoltage_(0),
-      hasFrequency_(0),
-      databaseName_(NULL),
-      databaseNumber_(0.0),
-      capacitance_(0.0),
-      resistance_(0.0),
-      power_(0.0),
-      time_(0.0),
-      current_(0.0),
-      voltage_(0.0),
-      frequency_(0.0)
 {
   Init();
 }
@@ -89,8 +73,9 @@ void lefiUnits::setDatabase(const char* name, double num)
 
 void lefiUnits::clear()
 {
-  if (databaseName_)
+  if (databaseName_) {
     lefFree(databaseName_);
+  }
   hasTime_ = 0;
   hasCapacitance_ = 0;
   hasResistance_ = 0;
@@ -99,7 +84,7 @@ void lefiUnits::clear()
   hasVoltage_ = 0;
   hasDatabase_ = 0;
   hasFrequency_ = 0;
-  databaseName_ = 0;
+  databaseName_ = nullptr;
 }
 
 void lefiUnits::setTime(double num)
@@ -232,22 +217,30 @@ double lefiUnits::frequency() const
 void lefiUnits::print(FILE* f) const
 {
   fprintf(f, "Units:\n");
-  if (hasTime())
+  if (hasTime()) {
     fprintf(f, "  %g nanoseconds\n", time());
-  if (hasCapacitance())
+  }
+  if (hasCapacitance()) {
     fprintf(f, "  %g picofarads\n", capacitance());
-  if (hasResistance())
+  }
+  if (hasResistance()) {
     fprintf(f, "  %g ohms\n", resistance());
-  if (hasPower())
+  }
+  if (hasPower()) {
     fprintf(f, "  %g milliwatts\n", power());
-  if (hasCurrent())
+  }
+  if (hasCurrent()) {
     fprintf(f, "  %g milliamps\n", current());
-  if (hasVoltage())
+  }
+  if (hasVoltage()) {
     fprintf(f, "  %g volts\n", voltage());
-  if (hasFrequency())
+  }
+  if (hasFrequency()) {
     fprintf(f, "  %g frequency\n", frequency());
-  if (hasDatabase())
+  }
+  if (hasDatabase()) {
     fprintf(f, "  %s %g\n", databaseName(), databaseNumber());
+  }
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

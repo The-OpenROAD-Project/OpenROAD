@@ -1,77 +1,62 @@
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include <iostream>
+// Parser for LEF58 wrong-direction spacing rules that define spacing
+// requirements for non-preferred direction shapes
 #include <string>
 
+#include "boost/bind/bind.hpp"
 #include "boostParser.h"
-#include "db.h"
 #include "lefLayerPropParser.h"
-#include "lefin.h"
+#include "odb/db.h"
+#include "odb/lefin.h"
 
-namespace lefTechLayerWrongDirSpacing {
+namespace odb::lefTechLayerWrongDirSpacing {
 
+// Set the base wrong-direction spacing value (converts to database units)
 void wrongDirParser(double value,
                     odb::dbTechLayerWrongDirSpacingRule* sc,
-                    odb::lefin* l)
+                    odb::lefinReader* l)
 {
   sc->setWrongdirSpace(l->dbdist(value));
 }
 
+// Set the non-end-of-line width parameter
 void noneolWidthParser(double value,
                        odb::dbTechLayerWrongDirSpacingRule* sc,
-                       odb::lefin* l)
+                       odb::lefinReader* l)
 {
   sc->setNoneolWidth(l->dbdist(value));
 }
 
+// Set the parallel run length parameter
 void prlLengthParser(double value,
                      odb::dbTechLayerWrongDirSpacingRule* sc,
-                     odb::lefin* l)
+                     odb::lefinReader* l)
 {
   sc->setPrlLength(l->dbdist(value));
 }
 
+// Set the length parameter
 void lengthParser(double value,
                   odb::dbTechLayerWrongDirSpacingRule* sc,
-                  odb::lefin* l)
+                  odb::lefinReader* l)
 {
   sc->setLength(l->dbdist(value));
 }
 
+// Parse a single wrong-direction spacing rule
+// Format: SPACING value WRONGDIRECTION [NONEOL width] [PRL length] [LENGTH
+// length] ;
 template <typename Iterator>
 bool parse(Iterator first,
            Iterator last,
            odb::dbTechLayer* layer,
-           odb::lefin* l)
+           odb::lefinReader* l)
 {
   odb::dbTechLayerWrongDirSpacingRule* sc
       = odb::dbTechLayerWrongDirSpacingRule::create(layer);
-  qi::rule<std::string::iterator, space_type> wrongDirSpacingRule
+  qi::rule<std::string::const_iterator, space_type> wrongDirSpacingRule
       = (lit("SPACING") >> (double_[boost::bind(&wrongDirParser, _1, sc, l)])
          >> lit("WRONGDIRECTION")
          >> -(lit("NONEOL")[boost::bind(
@@ -95,17 +80,18 @@ bool parse(Iterator first,
   }
   return valid;
 }
-}  // namespace lefTechLayerWrongDirSpacing
+}  // namespace odb::lefTechLayerWrongDirSpacing
 
 namespace odb {
 
-void lefTechLayerWrongDirSpacingParser::parse(std::string s,
+// Parse input string containing wrong-direction spacing rules for a layer
+void lefTechLayerWrongDirSpacingParser::parse(const std::string& s,
                                               dbTechLayer* layer,
-                                              odb::lefin* l)
+                                              odb::lefinReader* l)
 {
   if (!lefTechLayerWrongDirSpacing::parse(s.begin(), s.end(), layer, l)) {
     l->warning(355,
-               "parse mismatch in layer propery LEF58_SPACING WRONGDIRECTION "
+               "parse mismatch in layer property LEF58_SPACING WRONGDIRECTION "
                "for layer {}",
                layer->getName());
   }

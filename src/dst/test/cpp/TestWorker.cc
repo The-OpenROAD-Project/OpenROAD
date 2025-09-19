@@ -1,14 +1,15 @@
 #define BOOST_TEST_MODULE TestWorker
 
-#include <boost/asio.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/system/system_error.hpp>
-#include <boost/test/included/unit_test.hpp>
-#include <boost/thread/thread.hpp>
 #include <string>
 
 #include "HelperCallBack.h"
 #include "Worker.h"
+#include "boost/asio.hpp"
+#include "boost/asio/ip/tcp.hpp"
+#include "boost/bind/bind.hpp"
+#include "boost/system/system_error.hpp"
+#include "boost/test/included/unit_test.hpp"
+#include "boost/thread/thread.hpp"
 #include "dst/Distributed.h"
 #include "dst/JobMessage.h"
 #include "utl/Logger.h"
@@ -29,10 +30,10 @@ BOOST_AUTO_TEST_CASE(test_default)
 
   // Checking if the worker is up and calling callbacks correctly
   dist->addCallBack(new HelperCallBack(dist));
-  JobMessage msg(JobMessage::JobType::ROUTING);
+  JobMessage msg(JobMessage::JobType::kRouting);
   JobMessage result;
   BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), port, result));
-  BOOST_TEST(result.getJobType() == JobMessage::JobType::SUCCESS);
+  BOOST_TEST(result.getJobType() == JobMessage::JobType::kSuccess);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

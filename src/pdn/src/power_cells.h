@@ -1,54 +1,21 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <array>
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "pdn/PdnGen.hh"
 #include "shape.h"
-
-namespace odb {
-class dbMaster;
-class dbMTerm;
-class dbNet;
-class dbInst;
-class Rect;
-}  // namespace odb
 
 namespace utl {
 class Logger;
@@ -128,7 +95,7 @@ class GridSwitchedPower
   void build();
   void ripup();
 
-  ShapeTreeMap getShapes() const;
+  Shape::ShapeTreeMap getShapes() const;
 
  private:
   Grid* grid_;
@@ -150,17 +117,30 @@ class GridSwitchedPower
                                  int site_width,
                                  const odb::Rect& corearea) const;
 
-  using InstValue = std::pair<Box, odb::dbInst*>;
-  using InstTree = bgi::rtree<InstValue, bgi::quadratic<16>>;
+  struct InstIndexableGetter
+  {
+    using result_type = odb::Rect;
+    odb::Rect operator()(odb::dbInst* inst) const
+    {
+      return inst->getBBox()->getBox();
+    }
+  };
+  using InstTree
+      = bgi::rtree<odb::dbInst*, bgi::quadratic<16>, InstIndexableGetter>;
   InstTree buildInstanceSearchTree() const;
   odb::dbInst* checkOverlappingInst(odb::dbInst* cell,
                                     const InstTree& insts) const;
   void checkAndFixOverlappingInsts(const InstTree& insts);
 
-  ShapeTree buildStrapTargetList(Straps* target) const;
+  Shape::ShapeTree buildStrapTargetList(Straps* target) const;
 
-  using RowValue = std::pair<Box, odb::dbRow*>;
-  using RowTree = bgi::rtree<RowValue, bgi::quadratic<16>>;
+  struct RowIndexableGetter
+  {
+    using result_type = odb::Rect;
+    odb::Rect operator()(odb::dbRow* row) const { return row->getBBox(); }
+  };
+  using RowTree
+      = bgi::rtree<odb::dbRow*, bgi::quadratic<16>, RowIndexableGetter>;
   RowTree buildRowTree() const;
   std::set<odb::dbRow*> getInstanceRows(odb::dbInst* inst,
                                         const RowTree& row_search) const;

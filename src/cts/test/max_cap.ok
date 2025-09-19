@@ -1,10 +1,5 @@
-[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
-[INFO ODB-0223]     Created 13 technology layers
-[INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
-[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs_std_cell.lef
-[INFO ODB-0225]     Created 390 library cells
-[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
 [INFO ODB-0128] Design: hi_fanout
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 21 components and 146 component-terminals.
@@ -19,8 +14,7 @@
 [INFO CTS-0010]  Clock net "clk1" has 20 sinks.
 [INFO CTS-0008] TritonCTS found 1 clock nets.
 [INFO CTS-0097] Characterization used 1 buffer(s) types.
-[INFO CTS-0200] 0 placement blockages have been identified.
-[INFO CTS-0201] 0 placed hard macros will be treated like blockages.
+[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net clk1.
 [INFO CTS-0028]  Total number of sinks: 20.
 [INFO CTS-0030]  Number of static layers: 0.
@@ -47,6 +41,7 @@
 [INFO CTS-0100]  Leaf buffers 0
 [INFO CTS-0101]  Average sink wire length 1169.67 um
 [INFO CTS-0102]  Path depth 2 - 2
+[INFO CTS-0207]  Leaf load cells 0
 max slew
 
 Pin                                    Limit    Slew   Slack

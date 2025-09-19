@@ -8,11 +8,13 @@ tech.readLiberty("sky130hs/sky130hs_tt.lib")
 tech.readLef("sky130hs/sky130hs.tlef")
 tech.readLef("sky130hs/sky130hs_std_cell.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("pre_routed1.def")
 gr = design.getGlobalRouter()
 
-design.evalTclString("create_clock -name core_clock -period 2.0000 -waveform {0.0000 1.0000} [get_ports {clk}]")
+design.evalTclString(
+    "create_clock -name core_clock -period 2.0000 -waveform {0.0000 1.0000} [get_ports {clk}]"
+)
 design.evalTclString("set_propagated_clock [get_clocks {core_clock}]")
 
 guide_file = helpers.make_result_file("pre_routed1.guide")

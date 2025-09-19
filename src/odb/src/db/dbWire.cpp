@@ -1,131 +1,50 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbWire.h"
 
-#include <algorithm>
+#include <cassert>
+#include <cstdint>
+#include <optional>
+#include <vector>
 
-#include "db.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
+#include "dbCore.h"
 #include "dbNet.h"
-#include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayerRule.h"
 #include "dbVia.h"
 #include "dbWireOpcode.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 namespace odb {
 
 template class dbTable<_dbWire>;
-static void set_symmetric_diff(dbDiff& diff,
-                               std::vector<dbShape*>& lhs,
-                               std::vector<dbShape*>& rhs);
-static void out(dbDiff& diff, char side, dbShape* s);
 
 bool _dbWire::operator==(const _dbWire& rhs) const
 {
-  if (_flags._is_global != rhs._flags._is_global)
+  if (_flags._is_global != rhs._flags._is_global) {
     return false;
+  }
 
-  if (_data != rhs._data)
+  if (_data != rhs._data) {
     return false;
+  }
 
-  if (_opcodes != rhs._opcodes)
+  if (_opcodes != rhs._opcodes) {
     return false;
+  }
 
-  if (_net != rhs._net)
+  if (_net != rhs._net) {
     return false;
+  }
 
   return true;
-}
-
-void _dbWire::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbWire& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._is_global);
-  DIFF_FIELD_NO_DEEP(_net);
-
-  if (!diff.deepDiff()) {
-    DIFF_VECTOR(_data);
-    DIFF_VECTOR(_opcodes);
-  } else {
-    if ((_data != rhs._data) || (_opcodes != rhs._opcodes)) {
-      dbWireShapeItr itr;
-      dbShape s;
-
-      std::vector<dbShape*> lhs_vec;
-      for (itr.begin((dbWire*) this); itr.next(s);)
-        lhs_vec.push_back(new dbShape(s));
-
-      std::vector<dbShape*> rhs_vec;
-      for (itr.begin((dbWire*) &rhs); itr.next(s);)
-        rhs_vec.push_back(new dbShape(s));
-
-      set_symmetric_diff(diff, lhs_vec, rhs_vec);
-
-      std::vector<dbShape*>::iterator sitr;
-      for (sitr = lhs_vec.begin(); sitr != lhs_vec.begin(); ++sitr)
-        delete *sitr;
-
-      for (sitr = rhs_vec.begin(); sitr != rhs_vec.begin(); ++sitr)
-        delete *sitr;
-    }
-  }
-
-  DIFF_END
-}
-
-void _dbWire::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._is_global);
-  DIFF_OUT_FIELD_NO_DEEP(_net);
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_VECTOR(_data);
-    DIFF_OUT_VECTOR(_opcodes);
-  } else {
-    dbWireShapeItr itr;
-    dbShape s;
-    for (itr.begin((dbWire*) this); itr.next(s);) {
-      odb::out(diff, side, &s);
-    }
-  }
-
-  DIFF_END
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbWire& wire)
@@ -154,97 +73,6 @@ class dbDiffShapeCmp
   int operator()(dbShape* t1, dbShape* t2) { return *t1 < *t2; }
 };
 
-void set_symmetric_diff(dbDiff& diff,
-                        std::vector<dbShape*>& lhs,
-                        std::vector<dbShape*>& rhs)
-{
-  std::sort(lhs.begin(), lhs.end(), dbDiffShapeCmp());
-  std::sort(rhs.begin(), rhs.end(), dbDiffShapeCmp());
-
-  std::vector<dbShape*>::iterator end;
-  std::vector<dbShape*> symmetric_diff;
-
-  symmetric_diff.resize(lhs.size() + rhs.size());
-
-  end = std::set_symmetric_difference(lhs.begin(),
-                                      lhs.end(),
-                                      rhs.begin(),
-                                      rhs.end(),
-                                      symmetric_diff.begin(),
-                                      dbDiffShapeCmp());
-
-  std::vector<dbShape*>::iterator i1 = lhs.begin();
-  std::vector<dbShape*>::iterator i2 = rhs.begin();
-  std::vector<dbShape*>::iterator sd = symmetric_diff.begin();
-
-  while ((i1 != lhs.end()) && (i2 != rhs.end())) {
-    dbShape* o1 = *i1;
-    dbShape* o2 = *i2;
-
-    if (o1 == *sd) {
-      out(diff, dbDiff::LEFT, o1);
-      ++i1;
-      ++sd;
-    } else if (o2 == *sd) {
-      out(diff, dbDiff::RIGHT, o2);
-      ++i2;
-      ++sd;
-    } else  // equal keys
-    {
-      ++i1;
-      ++i2;
-    }
-  }
-
-  for (; i1 != lhs.end(); ++i1) {
-    dbShape* o1 = *i1;
-    out(diff, dbDiff::LEFT, o1);
-  }
-
-  for (; i2 != rhs.end(); ++i2) {
-    dbShape* o2 = *i2;
-    out(diff, dbDiff::RIGHT, o2);
-  }
-}
-
-void out(dbDiff& diff, char side, dbShape* s)
-{
-  switch (s->getType()) {
-    case dbShape::VIA: {
-      dbVia* v = s->getVia();
-      std::string n = v->getName();
-      int x, y;
-      s->getViaXY(x, y);
-      diff.report("%c VIA %s (%d %d)\n", side, n.c_str(), x, y);
-      break;
-    }
-
-    case dbShape::TECH_VIA: {
-      dbTechVia* v = s->getTechVia();
-      std::string n = v->getName();
-      int x, y;
-      s->getViaXY(x, y);
-      diff.report("%c VIA %s (%d %d)\n", side, n.c_str(), x, y);
-      break;
-    }
-
-    case dbShape::SEGMENT: {
-      dbTechLayer* l = s->getTechLayer();
-      std::string n = l->getName();
-      diff.report("%c BOX %s (%d %d) (%d %d)\n",
-                  side,
-                  n.c_str(),
-                  s->xMin(),
-                  s->yMin(),
-                  s->xMax(),
-                  s->yMax());
-      break;
-    }
-    default:
-      break;  // Wall
-  }
-}
-
 //
 // DB wire methods here
 //
@@ -258,8 +86,9 @@ dbNet* dbWire::getNet()
 {
   _dbWire* wire = (_dbWire*) this;
 
-  if (wire->_net == 0)
+  if (wire->_net == 0) {
     return nullptr;
+  }
 
   _dbBlock* block = (_dbBlock*) wire->getOwner();
   return (dbNet*) block->_net_tbl->getPtr(wire->_net);
@@ -271,70 +100,6 @@ bool dbWire::isGlobalWire()
   return wire->_flags._is_global == 1;
 }
 
-uint dbWire::equal(dbWire* target)
-{
-  _dbWire* src = (_dbWire*) this;
-  _dbWire* tgt = (_dbWire*) target;
-  // if (src->_flags != tgt->_flags)
-  //    return false;
-  uint wsize = src->_data.size();
-  if (wsize != tgt->_data.size())
-    return 10;
-  uint pjunction = 0;
-  for (uint idx = 0; idx < wsize; idx++) {
-    unsigned char src_op = src->_opcodes[idx] & WOP_OPCODE_MASK;
-    unsigned char tgt_op = tgt->_opcodes[idx] & WOP_OPCODE_MASK;
-
-    if (src_op != tgt_op)
-      return (1 + pjunction);
-
-    if (src_op == WOP_ITERM || src_op == WOP_BTERM)
-      continue;
-
-    if (src->_data[idx] != tgt->_data[idx])
-      return (2 + pjunction);
-
-    if (src_op == WOP_COLINEAR)
-      continue;
-
-    if (src_op == WOP_JUNCTION)
-      pjunction = 10;
-    else
-      pjunction = 0;
-  }
-  return 0;
-}
-
-/************************************************ dimitris_fix LOOK_AGAIN
-
-void dbWire::match(dbWire* target)
-{
-    _dbWire * src = (_dbWire *) this;
-    _dbWire * tgt = (_dbWire *) target;
-    uint pjunction = 0;
-    if (src->_data.size() != tgt->_data.size())
-        pjunction = 0;  // bp neq
-    uint wsize = src->_data.size()<tgt->_data.size() ? src->_data.size() :
-tgt->_data.size(); for (uint idx = 0; idx < wsize; idx++)
-    {
-        unsigned char src_op = src->_opcodes[idx]&WOP_OPCODE_MASK;
-        unsigned char tgt_op = tgt->_opcodes[idx]&WOP_OPCODE_MASK;
-
-        if (src_op != tgt_op )
-            continue;  // bp neq
-        if (src_op == WOP_ITERM || src_op  == WOP_BTERM || src_op ==
-WOP_BTERM_MAP ) continue; if (src->_data[idx] != tgt->_data[idx]) continue;  //
-bp neq if (src_op == WOP_COLINEAR) continue; if (src_op == WOP_JUNCTION)
-            pjunction = 10;
-        else
-            pjunction = 0;
-    }
-    return;
-}
-****************************************************************************************/
-
-//
-
 void dbWire::addOneSeg(unsigned char op,
                        int value,
                        uint jj,
@@ -343,10 +108,11 @@ void dbWire::addOneSeg(unsigned char op,
 {
   _dbWire* wire = (_dbWire*) this;
   did[jj] = wire->length();
-  if (new_rsegs && new_rsegs[jj])
+  if (new_rsegs && new_rsegs[jj]) {
     new_rsegs[jj]->updateShapeId(did[jj]);
-  else
+  } else {
     wire = (_dbWire*) this;  // zzzz bp
+  }
   wire->_data.push_back(value);
   wire->_opcodes.push_back(op);
 }
@@ -384,244 +150,6 @@ uint dbWire::getTermJid(const int termid) const
     jj--;
   }
   return jj;
-}
-
-void dbWire::donateWireSeg(dbWire* w1, dbRSeg** new_rsegs)
-{
-  _dbWire* wire = (_dbWire*) this;
-  //_dbWire * wire1 = (_dbWire *) w1;
-  uint wlen = wire->length();
-  int* destid = (int*) calloc(wlen, sizeof(int));
-  // uint jj, did;
-  uint jj;
-  int data;
-  unsigned char opcode;
-  int opcd;
-  // int xx, yy;
-  // dbTechLayer *layer;
-  // int njid;
-  for (jj = 0; jj < wlen; jj++) {
-    opcode = wire->_opcodes[jj];
-    opcd = opcode & WOP_OPCODE_MASK;
-    data = wire->_data[jj];
-    if (opcd == WOP_ITERM || opcd == WOP_BTERM || opcd == WOP_NOP)
-      continue;
-    if (opcd == WOP_JUNCTION) {
-      data = destid[data];
-    }
-    if ((opcd == WOP_SHORT) || (opcd == WOP_VWIRE)) {
-      jj++;  // discard the WOP_OPERAND (jid)
-      w1->addOneSeg(WOP_PATH | (opcode & WOP_WIRE_TYPE_MASK),
-                    data,
-                    jj,
-                    destid,
-                    new_rsegs);
-      continue;
-    }
-    w1->addOneSeg(opcode, data, jj, destid, new_rsegs);
-  }
-}
-
-void dbWire::shuffleWireSeg(dbNet** newNets, dbRSeg** new_rsegs)
-{
-  _dbWire* wire = (_dbWire*) this;
-  uint wlen = wire->length();
-  int* destid = (int*) calloc(wlen, sizeof(int));
-  // dbTechLayer *llayer;
-  // dimitri_fix
-  dbTechLayer* llayer = nullptr;
-  dbTechLayer** jlayer = (dbTechLayer**) calloc(wlen, sizeof(dbTechLayer*));
-  // int xx, yy;
-  // dimitri_fix
-  int xx = 0;
-  int yy = 0;
-
-  int* jxx = (int*) calloc(wlen, sizeof(int));
-  int* jyy = (int*) calloc(wlen, sizeof(int));
-  // int wwtype;
-  // dimitri_fix
-  int wwtype = 0;
-  int* jwtype = (int*) calloc(wlen, sizeof(int));
-  // int rrule;
-  // dimitri_fix
-  int rrule = 0;
-  int* jrule = (int*) calloc(wlen, sizeof(int));
-  int data;
-  unsigned char opcode;
-  int opcd;
-  // uint jj, j1, j2, did;
-  uint jj, j1, j2;
-
-  // int njid;
-  dbNet* leadNewNet = newNets[0];
-  dbWire* twire = leadNewNet->getWire();
-  if (twire == nullptr)
-    twire = dbWire::create(leadNewNet);
-  dbWire* rwire = nullptr;
-  dbWire* fwire = nullptr;
-  bool newWire = false;
-
-  if (twire == this) {
-    newWire = true;
-    rwire = dbWire::create(getBlock());
-  }
-  for (jj = 0; jj < wlen; jj++) {
-    opcode = wire->_opcodes[jj];
-    opcd = opcode & WOP_OPCODE_MASK;
-    if (opcd == WOP_ITERM || opcd == WOP_BTERM || opcd == WOP_NOP)
-      continue;
-    data = wire->_data[jj];
-    switch (opcd) {
-      case WOP_PATH:
-      case WOP_SHORT:
-      case WOP_VWIRE: {
-        rrule = 0;
-        llayer = dbTechLayer::getTechLayer(getDb()->getTech(), data);
-        // wwtype = dbWireType((dbWireType::value)opcode & WOP_WIRE_TYPE_MASK);
-        wwtype = opcode & WOP_WIRE_TYPE_MASK;
-        break;
-      }
-      case WOP_VIA: {
-        dbVia* via = dbVia::getVia(getBlock(), data);
-
-        if (opcode & WOP_VIA_EXIT_TOP)
-          llayer = via->getTopLayer();
-        else
-          llayer = via->getBottomLayer();
-        break;
-      }
-      case WOP_TECH_VIA: {
-        dbTechVia* via = dbTechVia::getTechVia(getDb()->getTech(), data);
-
-        if (opcode & WOP_VIA_EXIT_TOP)
-          llayer = via->getTopLayer();
-        else
-          llayer = via->getBottomLayer();
-        break;
-      }
-      case WOP_X: {
-        xx = data;
-        break;
-      }
-      case WOP_Y: {
-        yy = data;
-        break;
-      }
-      case WOP_RULE: {
-        rrule = data;
-        break;
-      }
-      case WOP_JUNCTION: {
-        j1 = data;
-        xx = jxx[j1];
-        yy = jyy[j1];
-        wwtype = jwtype[j1];
-        llayer = jlayer[j1];
-        rrule = jrule[j1];
-        data = destid[j1];
-        j2 = j1;
-        while (newNets[j2] == nullptr)
-          j2--;
-        newNets[j1] = newNets[j2];
-        newNets[jj - 1] = newNets[j2];  // not jj; avoid inducing WOP_PATH
-        twire = newNets[j2]->getWire();
-        break;
-      }
-    }
-    if ((opcd == WOP_SHORT) || (opcd == WOP_VWIRE)) {
-      j1 = wire->_data[++jj];
-      j2 = 0;
-      if (newNets[jj + 2])
-        j2 = jj + 2;
-      else if (newNets[jj + 3])
-        j2 = jj + 3;
-      if (j2) {
-        newNets[jj] = newNets[j2];
-        newNets[j2] = nullptr;
-      } else {
-        j2 = j1;
-        while (newNets[j2] == nullptr)
-          j2--;
-        newNets[j1] = newNets[j2];
-        newNets[jj] = newNets[j2];
-      }
-      twire = newNets[jj]->getWire();
-      fwire = twire == this ? rwire : twire;
-      fwire->addOneSeg(WOP_PATH | wwtype, data, jj, destid, new_rsegs);
-      continue;
-    } else if (opcd == WOP_PATH
-               && (newNets[jj + 2] != nullptr || newNets[jj + 3] != nullptr)) {
-      j2 = newNets[jj + 2] != nullptr ? jj + 2 : jj + 3;
-      newNets[jj] = newNets[j2];
-      newNets[j2] = nullptr;
-      twire = newNets[jj]->getWire();
-      if (twire == nullptr)
-        twire = dbWire::create(newNets[jj]);
-      fwire = twire == this ? rwire : twire;
-      fwire->addOneSeg(opcode, data, jj, destid, new_rsegs);
-      continue;
-    }
-    if (jj != 0 && newNets[jj] != nullptr) {
-      fwire = twire == this ? rwire : twire;
-      fwire->addOneSeg(opcode, data, jj, destid, new_rsegs);
-      j1 = jj + 1;
-      // bool extension = false;
-      if ((wire->_opcodes[j1] & WOP_OPCODE_MASK) == WOP_OPERAND) {
-        // extension = true;
-        fwire->addOneSeg(wire->_opcodes[j1], wire->_data[j1]);
-        j1++;
-      }
-      if ((wire->_opcodes[j1] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
-        fwire->addOneSeg(wire->_opcodes[j1], wire->_data[j1]);
-        j1++;
-      }
-      // new PATH for twire
-      twire = newNets[jj]->getWire();
-      if (twire == nullptr)
-        twire = dbWire::create(newNets[jj]);
-      fwire = twire == this ? rwire : twire;
-      fwire->addOneSeg(WOP_PATH | wwtype, llayer->getImpl()->getOID());
-      bool extension = false;
-      if ((wire->_opcodes[jj + 1] & WOP_OPCODE_MASK) == WOP_OPERAND)
-        extension = true;
-      if (rrule == 0) {
-        fwire->addOneSeg(WOP_X | WOP_DEFAULT_WIDTH, xx);
-        if (extension)
-          fwire->addOneSeg(WOP_Y | WOP_EXTENSION | WOP_DEFAULT_WIDTH,
-                           yy,
-                           jj,
-                           destid,
-                           new_rsegs);
-        else
-          fwire->addOneSeg(
-              WOP_Y | WOP_DEFAULT_WIDTH, yy, jj, destid, new_rsegs);
-      } else {
-        fwire->addOneSeg(WOP_RULE, rrule);
-        fwire->addOneSeg(WOP_X, xx);
-        if (extension)
-          fwire->addOneSeg(WOP_Y | WOP_EXTENSION, yy, jj, destid, new_rsegs);
-        else
-          fwire->addOneSeg(WOP_Y, yy, jj, destid, new_rsegs);
-      }
-      jxx[jj] = xx;
-      jyy[jj] = yy;
-      jlayer[jj] = llayer;
-      jwtype[jj] = wwtype;
-      jrule[jj] = rrule;
-      // jj = j1 - 1;
-      continue;
-    }
-    fwire = twire == this ? rwire : twire;
-    fwire->addOneSeg(opcode, data, jj, destid, new_rsegs);
-    jxx[jj] = xx;
-    jyy[jj] = yy;
-    jlayer[jj] = llayer;
-    jwtype[jj] = wwtype;
-    jrule[jj] = rrule;
-  }
-
-  if (newWire)
-    rwire->attach(leadNewNet);
 }
 
 std::optional<Rect> dbWire::getBBox()
@@ -664,8 +192,9 @@ void dbWire::getShape(int shape_id, dbShape& shape)
       dbVia* via = dbVia::getVia(block, operand);
       dbBox* box = via->getBBox();
 
-      if (box == nullptr)
+      if (box == nullptr) {
         return;
+      }
 
       WirePoint pnt;
       getPrevPoint(
@@ -687,8 +216,9 @@ void dbWire::getShape(int shape_id, dbShape& shape)
       dbTechVia* via = dbTechVia::getTechVia(tech, operand);
       dbBox* box = via->getBBox();
 
-      if (box == nullptr)
+      if (box == nullptr) {
         return;
+      }
 
       // dimitri_fix LOOK_AGAIN WirePoint pnt;
       WirePoint pnt;
@@ -752,8 +282,9 @@ bool dbWire::setProperty(int jid, int prpty)
   _dbWire* wire = (_dbWire*) this;
   int wlen = (int) wire->length();
   ZASSERT(0 <= jid && jid < wlen);
-  if ((wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_COLINEAR)
+  if ((wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_COLINEAR) {
     return true;
+  }
   ZASSERT((wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_X
           || (wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_Y);
   ZASSERT(jid + 1 < wlen);
@@ -783,148 +314,11 @@ unsigned char dbWire::getOpcode(int idx)
   return (wire->_opcodes[idx]);
 }
 
-void dbWire::printWire()
-{
-  _dbWire* wire = (_dbWire*) this;
-  int tid = (int) wire->length() - 1;
-  printWire(nullptr, 0, tid);
-}
-
-void dbWire::printWire(FILE* fp, int fid, int tid)
-{
-  if (!fp)
-    fp = stdout;
-  _dbWire* wire = (_dbWire*) this;
-  if (fid == 0 && tid == 0)
-    tid = (int) wire->length() - 1;
-  ZASSERT((0 <= fid) && (fid < (int) wire->length()));
-  ZASSERT((0 <= tid) && (tid < (int) wire->length()));
-  int jj, opcode;
-  dbTechLayer* llayer;
-  int data;
-  for (jj = fid; jj <= tid; jj++) {
-    opcode = wire->_opcodes[jj] & WOP_OPCODE_MASK;
-    data = wire->_data[jj];
-    fprintf(fp, "  %d    %d    ", jj, opcode);
-    switch (opcode) {
-      case WOP_PATH: {
-        fprintf(fp, "WOP_PATH :");
-        break;
-      }
-      case WOP_SHORT: {
-        fprintf(fp, "WOP_SHORT :");
-        break;
-      }
-      case WOP_VWIRE: {
-        fprintf(fp, "WOP_VWIRE :");
-        break;
-      }
-      case WOP_JUNCTION: {
-        fprintf(fp, "WOP_JUNCTION :");
-        break;
-      }
-      case WOP_RULE: {
-        fprintf(fp, "WOP_RULE :");
-        break;
-      }
-      case WOP_X: {
-        fprintf(fp, "WOP_X :");
-        break;
-      }
-      case WOP_Y: {
-        fprintf(fp, "WOP_Y :");
-        break;
-      }
-      case WOP_COLINEAR: {
-        fprintf(fp, "WOP_COLINEAR :");
-        break;
-      }
-      case WOP_VIA: {
-        fprintf(fp, "WOP_VIA :");
-        break;
-      }
-      case WOP_TECH_VIA: {
-        fprintf(fp, "WOP_TECH_VIA :");
-        break;
-      }
-      case WOP_ITERM: {
-        fprintf(fp, "WOP_ITERM :");
-        break;
-      }
-      case WOP_BTERM: {
-        fprintf(fp, "WOP_BTERM :");
-        break;
-      }
-      case WOP_RECT: {
-        fprintf(fp, "WOP_RECT :");
-        break;
-      }
-      case WOP_OPERAND: {
-        fprintf(fp, "WOP_OPERAND :");
-        break;
-      }
-      case WOP_PROPERTY: {
-        fprintf(fp, "WOP_PROPERTY :");
-        break;
-      }
-      case WOP_NOP: {
-        fprintf(fp, "WOP_NOP :");
-        break;
-      }
-    }
-    fprintf(fp, "    %d", data);
-    switch (opcode) {
-      case WOP_PATH:
-      case WOP_SHORT:
-      case WOP_VWIRE: {
-        llayer = dbTechLayer::getTechLayer(getDb()->getTech(), data);
-        fprintf(fp,
-                " ( %d %s )",
-                llayer->getRoutingLevel(),
-                llayer->getConstName());
-        break;
-      }
-      case WOP_VIA: {
-        dbVia* via = dbVia::getVia(getBlock(), data);
-        fprintf(fp,
-                " ( %d %d %s )",
-                via->getTopLayer()->getRoutingLevel(),
-                via->getBottomLayer()->getRoutingLevel(),
-                via->getConstName());
-        break;
-      }
-      case WOP_TECH_VIA: {
-        dbTechVia* via = dbTechVia::getTechVia(getDb()->getTech(), data);
-        fprintf(fp,
-                " ( %d %d %s )",
-                via->getTopLayer()->getRoutingLevel(),
-                via->getBottomLayer()->getRoutingLevel(),
-                via->getConstName());
-        break;
-      }
-      case WOP_ITERM: {
-        dbITerm* iterm = dbITerm::getITerm(getBlock(), data);
-        fprintf(fp,
-                " I%d/%s",
-                iterm->getInst()->getId(),
-                iterm->getMTerm()->getName().c_str());
-        break;
-      }
-      case WOP_BTERM: {
-        dbBTerm* bterm = dbBTerm::getBTerm(getBlock(), data);
-        fprintf(fp, " %s", bterm->getName().c_str());
-        break;
-      }
-    }
-    fprintf(fp, "\n");
-  }
-}
-
-uint64 dbWire::getLength()
+uint64_t dbWire::getLength()
 {
   dbWireShapeItr shapes;
   dbShape s;
-  uint64 rtlen = 0;
+  uint64_t rtlen = 0;
   for (shapes.begin(this); shapes.next(s);) {
     if (!s.isVia()) {
       rtlen += s.getLength();
@@ -948,8 +342,9 @@ uint dbWire::count()
   _dbWire* wire = (_dbWire*) this;
   for (jj = 0; jj < wire->length(); jj++) {
     opcode = wire->_opcodes[jj] & WOP_OPCODE_MASK;
-    if (opcode == WOP_X || opcode == WOP_Y)
+    if (opcode == WOP_X || opcode == WOP_Y) {
       cnt++;
+    }
   }
   return cnt - 2;
 }
@@ -972,7 +367,7 @@ enum Coord
   None = 2
 };
 
-static int nextState[13][3] = {
+static const int nextState[13][3] = {
     /*            X   Y   C */
     /*  0  */ {1, 2, 3},
     /*  1  */ {4, 5, 6},
@@ -988,7 +383,7 @@ static int nextState[13][3] = {
     /*  11 */ {13, 11, 11},
     /*  12 */ {10, 11, 12}};
 
-static Coord curCoord[13][3] = {
+static const Coord curCoord[13][3] = {
     /*            X        Y        C */
     /*  0  */ {None, None, None},
     /*  1  */ {XCoord, YCoord, None},
@@ -1004,7 +399,7 @@ static Coord curCoord[13][3] = {
     /*  11 */ {XCoord, None, None},
     /*  12 */ {XCoord, YCoord, None}};
 
-static Coord prevCoord[13][3] = {
+static const Coord prevCoord[13][3] = {
     /*            X        Y        C */
     /*  0  */ {XCoord, YCoord, None},
     /*  1  */ {None, YCoord, None},
@@ -1042,7 +437,7 @@ void dbWire::getSegment(int shape_id, dbShape& shape)
   bool has_cur_ext = false;
   bool ignore_ext = false;
 
-decode_loop : {
+decode_loop: {
   ZASSERT(idx >= 0);
   opcode = wire->_opcodes[idx];
 
@@ -1088,10 +483,11 @@ decode_loop : {
         dbBlock* block = (dbBlock*) wire->getOwner();
         dbVia* via = dbVia::getVia(block, wire->_data[idx]);
 
-        if (opcode & WOP_VIA_EXIT_TOP)
+        if (opcode & WOP_VIA_EXIT_TOP) {
           layer = via->getTopLayer();
-        else
+        } else {
           layer = via->getBottomLayer();
+        }
       }
       ignore_ext = true;
       break;
@@ -1101,10 +497,11 @@ decode_loop : {
         dbTech* tech = getDb()->getTech();
         dbTechVia* via = dbTechVia::getTechVia(tech, wire->_data[idx]);
 
-        if (opcode & WOP_VIA_EXIT_TOP)
+        if (opcode & WOP_VIA_EXIT_TOP) {
           layer = via->getTopLayer();
-        else
+        } else {
           layer = via->getBottomLayer();
+        }
       }
       ignore_ext = true;
       break;
@@ -1113,7 +510,7 @@ decode_loop : {
   --idx;
   goto decode_loop;
 
-state_machine_update : {
+state_machine_update: {
   if (state == 0) {
     if (opcode & WOP_DEFAULT_WIDTH) {
       found_width = true;
@@ -1137,8 +534,9 @@ state_machine_update : {
   state = nextState[state][input];
   --idx;
 
-  if (state < 13)
+  if (state < 13) {
     goto decode_loop;
+  }
 }
 }
 
@@ -1186,10 +584,11 @@ state_machine_update : {
           dbBlock* block = (dbBlock*) wire->getOwner();
           dbVia* via = dbVia::getVia(block, wire->_data[idx]);
 
-          if (opcode & WOP_VIA_EXIT_TOP)
+          if (opcode & WOP_VIA_EXIT_TOP) {
             layer = via->getTopLayer();
-          else
+          } else {
             layer = via->getBottomLayer();
+          }
         }
         --idx;
         break;
@@ -1200,10 +599,11 @@ state_machine_update : {
           dbTech* tech = getDb()->getTech();
           dbTechVia* via = dbTechVia::getTechVia(tech, wire->_data[idx]);
 
-          if (opcode & WOP_VIA_EXIT_TOP)
+          if (opcode & WOP_VIA_EXIT_TOP) {
             layer = via->getTopLayer();
-          else
+          } else {
             layer = via->getBottomLayer();
+          }
         }
         --idx;
         break;
@@ -1223,11 +623,12 @@ state_machine_update : {
     default_ext = dw;
     if (prev[0] != cur[0] || prev[1] != cur[1]) {
       if (prev[0] != cur[0]
-          && layer->getDirection() == dbTechLayerDir::VERTICAL)
+          && layer->getDirection() == dbTechLayerDir::VERTICAL) {
         dw = layer->getWrongWayWidth() >> 1;
-      else if (prev[1] != cur[1]
-               && layer->getDirection() == dbTechLayerDir::HORIZONTAL)
+      } else if (prev[1] != cur[1]
+                 && layer->getDirection() == dbTechLayerDir::HORIZONTAL) {
         dw = layer->getWrongWayWidth() >> 1;
+      }
     }
 
   } else {
@@ -1274,7 +675,7 @@ void dbWire::getSegment(int shape_id, dbTechLayer* layer, dbShape& shape)
   bool has_cur_ext = false;
   bool ignore_ext = false;
 
-decode_loop : {
+decode_loop: {
   ZASSERT(idx >= 0);
   opcode = wire->_opcodes[idx];
 
@@ -1319,7 +720,7 @@ decode_loop : {
   --idx;
   goto decode_loop;
 
-state_machine_update : {
+state_machine_update: {
   if (state == 0) {
     if (opcode & WOP_DEFAULT_WIDTH) {
       found_width = true;
@@ -1343,8 +744,9 @@ state_machine_update : {
   state = nextState[state][input];
   --idx;
 
-  if (state < 13)
+  if (state < 13) {
     goto decode_loop;
+  }
 }
 }
 
@@ -1387,11 +789,12 @@ state_machine_update : {
     default_ext = dw;
     if (prev[0] != cur[0] || prev[1] != cur[1]) {
       if (prev[0] != cur[0]
-          && layer->getDirection() == dbTechLayerDir::VERTICAL)
+          && layer->getDirection() == dbTechLayerDir::VERTICAL) {
         dw = layer->getWrongWayWidth() >> 1;
-      else if (prev[1] != cur[1]
-               && layer->getDirection() == dbTechLayerDir::HORIZONTAL)
+      } else if (prev[1] != cur[1]
+                 && layer->getDirection() == dbTechLayerDir::HORIZONTAL) {
         dw = layer->getWrongWayWidth() >> 1;
+      }
     }
 
   } else {
@@ -1452,8 +855,9 @@ inline bool createVia(_dbWire* wire, int idx, dbShape& shape)
   dbVia* via = dbVia::getVia(block, operand);
   dbBox* box = via->getBBox();
 
-  if (box == nullptr)
+  if (box == nullptr) {
     return false;
+  }
 
   WirePoint pnt;
   // dimitri_fix
@@ -1478,8 +882,9 @@ inline bool createTechVia(_dbWire* wire, int idx, dbShape& shape)
   dbTechVia* via = dbTechVia::getTechVia(tech, operand);
   dbBox* box = via->getBBox();
 
-  if (box == nullptr)
+  if (box == nullptr) {
     return false;
+  }
 
   WirePoint pnt;
   // dimitri_fix
@@ -1552,8 +957,9 @@ bool dbWire::getNextVia(int idx, dbShape& shape)
   ++idx;
 
 nextOpCode:
-  if ((uint) idx == wire->length())
+  if ((uint) idx == wire->length()) {
     return false;
+  }
 
   unsigned char opcode = wire->_opcodes[idx];
 
@@ -1592,8 +998,9 @@ bool dbWire::getViaBoxes(int via_shape_id, std::vector<dbShape>& shapes)
 
   getShape(via_shape_id, via);
 
-  if (!via.isVia())
+  if (!via.isVia()) {
     return false;
+  }
 
   dbShape::getViaBoxes(via, shapes);
   return true;
@@ -1616,12 +1023,14 @@ void dbWire::append(dbWire* src_, bool singleSegmentWire)
     for (i = 0; i < n; ++i) {
       unsigned char opcode = src->_opcodes[i] & WOP_OPCODE_MASK;
 
-      if (opcode == WOP_ITERM || opcode == WOP_BTERM)
+      if (opcode == WOP_ITERM || opcode == WOP_BTERM) {
         return;
+      }
     }
   }
-  for (auto callback : ((_dbBlock*) getBlock())->_callbacks)
+  for (auto callback : ((_dbBlock*) getBlock())->_callbacks) {
     callback->inDbWirePreAppend(src_, this);
+  }
   uint sz = dst->_opcodes.size();
   dst->_opcodes.insert(
       dst->_opcodes.end(), src->_opcodes.begin(), src->_opcodes.end());
@@ -1641,8 +1050,9 @@ void dbWire::append(dbWire* src_, bool singleSegmentWire)
         dbVia* dst_via = ((dbBlock*) dst_block)->findVia(src_via->_name);
 
         // duplicate src-via in dst-block if needed
-        if (dst_via == nullptr)
+        if (dst_via == nullptr) {
           dst_via = dbVia::copy((dbBlock*) dst_block, (dbVia*) src_via);
+        }
 
         dst->_data[i] = dst_via->getImpl()->getOID();
       }
@@ -1656,11 +1066,13 @@ void dbWire::append(dbWire* src_, bool singleSegmentWire)
   for (i = sz; i < n; ++i) {
     unsigned char opcode = dst->_opcodes[i] & WOP_OPCODE_MASK;
     if ((opcode == WOP_SHORT) || (opcode == WOP_JUNCTION)
-        || (opcode == WOP_VWIRE))
+        || (opcode == WOP_VWIRE)) {
       dst->_data[i] += sz;
+    }
   }
-  for (auto callback : ((_dbBlock*) getBlock())->_callbacks)
+  for (auto callback : ((_dbBlock*) getBlock())->_callbacks) {
     callback->inDbWirePostAppend(src_, this);
+  }
 }
 
 void dbWire::attach(dbNet* net_)
@@ -1669,23 +1081,28 @@ void dbWire::attach(dbNet* net_)
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) getBlock();
   assert(wire->_flags._is_global == 0);
-  if (wire->_net == net->getOID() && net->_wire == wire->getOID())
+  if (wire->_net == net->getOID() && net->_wire == wire->getOID()) {
     return;
-  for (auto callback : block->_callbacks)
+  }
+  for (auto callback : block->_callbacks) {
     callback->inDbWirePreAttach(this, net_);
+  }
 
   // dbWire * prev = net_->getWire();
 
-  if (net->_wire != 0)
+  if (net->_wire != 0) {
     dbWire::destroy(net_->getWire());
+  }
 
-  if (wire->_net != 0)
+  if (wire->_net != 0) {
     detach();
+  }
 
   wire->_net = net->getOID();
   net->_wire = wire->getOID();
-  for (auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks) {
     callback->inDbWirePostAttach(this);
+  }
 }
 
 void dbWire::detach()
@@ -1693,16 +1110,19 @@ void dbWire::detach()
   _dbWire* wire = (_dbWire*) this;
   _dbBlock* block = (_dbBlock*) getBlock();
   assert(wire->_flags._is_global == 0);
-  if (wire->_net == 0)
+  if (wire->_net == 0) {
     return;
-  for (auto callback : block->_callbacks)
+  }
+  for (auto callback : block->_callbacks) {
     callback->inDbWirePreDetach(this);
+  }
 
   _dbNet* net = (_dbNet*) getNet();
   net->_wire = 0;
   wire->_net = 0;
-  for (auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks) {
     callback->inDbWirePostDetach(this, (dbNet*) net);
+  }
 }
 
 dbWire* dbWire::create(dbNet* net_, bool global_wire)
@@ -1710,11 +1130,13 @@ dbWire* dbWire::create(dbNet* net_, bool global_wire)
   _dbNet* net = (_dbNet*) net_;
 
   if (global_wire) {
-    if (net->_global_wire != 0)
+    if (net->_global_wire != 0) {
       return nullptr;
+    }
   } else {
-    if (net->_wire != 0)
+    if (net->_wire != 0) {
       return nullptr;
+    }
   }
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
@@ -1724,13 +1146,15 @@ dbWire* dbWire::create(dbNet* net_, bool global_wire)
   if (global_wire) {
     net->_global_wire = wire->getOID();
     wire->_flags._is_global = 1;
-  } else
+  } else {
     net->_wire = wire->getOID();
+  }
 
   net->_flags._wire_ordered = 0;
   net->_flags._disconnected = 0;
-  for (auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks) {
     callback->inDbWireCreate((dbWire*) wire);
+  }
   return (dbWire*) wire;
 }
 
@@ -1738,8 +1162,9 @@ dbWire* dbWire::create(dbBlock* block_, bool /* unused: global_wire */)
 {
   _dbBlock* block = (_dbBlock*) block_;
   _dbWire* wire = block->_wire_tbl->create();
-  for (auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks) {
     callback->inDbWireCreate((dbWire*) wire);
+  }
   return (dbWire*) wire;
 }
 
@@ -1754,26 +1179,37 @@ void dbWire::destroy(dbWire* wire_)
   _dbWire* wire = (_dbWire*) wire_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
   _dbNet* net = (_dbNet*) wire_->getNet();
-  for (auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks) {
     callback->inDbWireDestroy(wire_);
+  }
   const auto opt_bbox = wire_->getBBox();
 
   if (opt_bbox) {
     block->remove_rect(opt_bbox.value());
   }
   if (net) {
-    if (wire->_flags._is_global)
+    if (wire->_flags._is_global) {
       net->_global_wire = 0;
-    else {
+    } else {
       net->_wire = 0;
       net->_flags._wire_ordered = 0;
       net->_flags._wire_altered = 1;
     }
-  } else
+  } else {
     wire_->getImpl()->getLogger()->warn(utl::ODB, 62, "This wire has no net");
+  }
 
   dbProperty::destroyProperties(wire);
   block->_wire_tbl->destroy(wire);
+}
+
+void _dbWire::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["data"].add(_data);
+  info.children_["opcodes"].add(_opcodes);
 }
 
 }  // namespace odb

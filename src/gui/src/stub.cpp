@@ -1,44 +1,27 @@
-//////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 // This file is only used when we can't find Qt5 and are thus
 // disabling the GUI.  It is not included when Qt5 is found.
 
 #include <tcl.h>
 
+#include <any>
 #include <cstdio>
+#include <map>
+#include <optional>
+#include <string>
+#include <typeinfo>
+#include <vector>
 
 #include "gui/gui.h"
-#include "ord/OpenRoad.hh"
+#include "odb/db.h"
+#include "odb/geom.h"
+
+// empty gif writer class
+struct GifWriter
+{
+};
 
 namespace gui {
 
@@ -51,28 +34,22 @@ StringToDBU Descriptor::Property::convert_string
     = [](const std::string& value, bool*) { return 0; };
 
 // empty heat map class
-class PlacementDensityDataSource
+class PinDensityDataSource
 {
- public:
-  PlacementDensityDataSource() {}
-  ~PlacementDensityDataSource() {}
 };
 
-class RUDYDataSource
+// empty heat map class
+class PlacementDensityDataSource
 {
- public:
-  RUDYDataSource() = default;
-  ~RUDYDataSource() = default;
+};
+
+class PowerDensityDataSource
+{
 };
 
 ////
 
-Gui::Gui()
-    : continue_after_close_(false),
-      logger_(nullptr),
-      db_(nullptr),
-      placement_density_heat_map_(nullptr),
-      rudy_heat_map_(nullptr)
+Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 {
 }
 
@@ -185,7 +162,9 @@ int startGui(int& argc,
              char* argv[],
              Tcl_Interp* interp,
              const std::string& script,
-             bool interactive)
+             bool interactive,
+             bool load_settings,
+             bool minimize)
 {
   printf(
       "[ERROR] This code was compiled with the GUI disabled.  Please recompile "
@@ -194,14 +173,11 @@ int startGui(int& argc,
   return 1;  // return unix err
 }
 
-}  // namespace gui
-
-namespace ord {
-
-class OpenRoad;
-void initGui(OpenRoad* openroad)
+void initGui(Tcl_Interp* interp,
+             odb::dbDatabase* db,
+             sta::dbSta* sta,
+             utl::Logger* logger)
 {
-  auto interp = openroad->tclInterp();
   // Tcl requires this to be a writable string
   std::string cmd_save_image(
       "proc save_image { args } {"
@@ -216,6 +192,76 @@ void initGui(OpenRoad* openroad)
       "  }"
       "}");
   Tcl_Eval(interp, cmd_supported.c_str());
+  std::string enabled_supported(
+      "namespace eval gui {"
+      "  proc enabled {} {"
+      "    return 0"
+      "  }"
+      "}");
+  Tcl_Eval(interp, enabled_supported.c_str());
 }
 
-}  // namespace ord
+void Gui::gifStart(const std::string& filename)
+{
+}
+
+void Gui::gifEnd()
+{
+}
+
+void Gui::gifAddFrame(const odb::Rect& region,
+                      int width_px,
+                      double dbu_per_pixel,
+                      std::optional<int> delay)
+{
+}
+
+void Gui::deleteLabel(const std::string& name)
+{
+}
+
+std::string Gui::addLabel(int x,
+                          int y,
+                          const std::string& text,
+                          std::optional<Painter::Color> color,
+                          std::optional<int> size,
+                          std::optional<Painter::Anchor> anchor,
+                          const std::optional<std::string>& name)
+{
+  return "";
+}
+
+Chart* Gui::addChart(const std::string& name,
+                     const std::string& x_label,
+                     const std::vector<std::string>& y_labels)
+{
+  return nullptr;
+}
+
+void Gui::saveImage(const std::string& filename,
+                    const odb::Rect& region,
+                    int width_px,
+                    double dbu_per_pixel,
+                    const std::map<std::string, bool>& display_settings)
+{
+}
+
+void Gui::clearSelections()
+{
+}
+
+int Gui::select(const std::string& type,
+                const std::string& name_filter,
+                const std::string& attribute,
+                const std::any& value,
+                bool filter_case_sensitive,
+                int highlight_group)
+{
+  return 0;
+}
+
+void Gui::setDisplayControlsVisible(const std::string& name, bool value)
+{
+}
+
+}  // namespace gui

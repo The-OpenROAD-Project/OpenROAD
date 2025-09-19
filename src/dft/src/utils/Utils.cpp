@@ -1,41 +1,18 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2023, Google LLC
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include "Utils.hh"
 
-#include <iostream>
 #include <optional>
+#include <string>
+#include <tuple>
+#include <unordered_map>
+#include <vector>
 
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 
 namespace dft::utils {
 
@@ -84,9 +61,29 @@ odb::dbInst* ReplaceCell(
   std::vector<std::tuple<std::string, odb::dbNet*>> port_name_to_net;
   PopulatePortNameToNet(old_instance, port_name_to_net);
 
-  odb::dbInst* new_instance
-      = odb::dbInst::create(top_block, new_master, /*name=*/"tmp_scan_flop");
-  std::string old_cell_name = old_instance->getName();
+  const std::string cell_name = old_instance->getName();
+  const odb::dbPlacementStatus placement_status
+      = old_instance->getPlacementStatus();
+  const odb::dbSourceType source_type = old_instance->getSourceType();
+  odb::dbRegion* region = old_instance->getRegion();
+  odb::dbGroup* group = old_instance->getGroup();
+  odb::dbModule* module = old_instance->getModule();
+
+  odb::dbInst* new_instance = odb::dbInst::create(top_block,
+                                                  new_master,
+                                                  /*name=*/"tmp_scan_flop",
+                                                  /*physical_only=*/false,
+                                                  module);
+
+  new_instance->setTransform(old_instance->getTransform());
+  new_instance->setPlacementStatus(placement_status);
+  new_instance->setSourceType(source_type);
+  if (region) {
+    region->addInst(new_instance);
+  }
+  if (group) {
+    group->addInst(new_instance);
+  }
 
   // Delete the old cell
   odb::dbInst::destroy(old_instance);
@@ -95,7 +92,7 @@ odb::dbInst* ReplaceCell(
   ConnectPinsToNets(new_instance, port_name_to_net, port_mapping);
 
   // Rename as the old cell
-  new_instance->rename(old_cell_name.c_str());
+  new_instance->rename(cell_name.c_str());
 
   return new_instance;
 }
@@ -124,6 +121,44 @@ std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm)
   }
 
   return std::nullopt;
+}
+
+bool IsScanCell(const sta::LibertyCell* liberty_cell)
+{
+  const sta::TestCell* test_cell = liberty_cell->testCell();
+  if (test_cell) {
+    return getLibertyScanIn(test_cell) != nullptr
+           && getLibertyScanEnable(test_cell) != nullptr;
+  }
+  return false;
+}
+
+odb::dbBTerm* CreateNewPort(odb::dbBlock* block,
+                            const std::string& port_name,
+                            utl::Logger* logger,
+                            odb::dbNet* net)
+{
+  if (!net) {
+    net = odb::dbNet::create(block, port_name.c_str());
+    if (!net) {
+      logger->error(utl::DFT,
+                    31,
+                    "Error while attempting to create new port {}: an "
+                    "unrelated net with the same name already exists",
+                    port_name);
+    }
+    net->setSigType(odb::dbSigType::SCAN);
+  }
+  auto port = odb::dbBTerm::create(net, port_name.c_str());
+  if (port == nullptr) {
+    logger->error(utl::DFT,
+                  18,
+                  "Failed to create port: a port named '{}' already exists",
+                  port_name);
+  }
+  port->setSigType(odb::dbSigType::SCAN);
+
+  return port;
 }
 
 }  // namespace dft::utils

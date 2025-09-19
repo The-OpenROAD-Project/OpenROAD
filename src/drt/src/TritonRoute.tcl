@@ -1,37 +1,5 @@
-#############################################################################
-#
-# BSD 3-Clause License
-#
-# Copyright (c) 2020, The Regents of the University of California
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# * Neither the name of the copyright holder nor the names of its
-#   contributors may be used to endorse or promote products derived from
-#   this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
-#############################################################################
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2020-2025, The OpenROAD Authors
 
 sta::define_cmd_args "detailed_route" {
     [-output_maze filename]
@@ -44,8 +12,9 @@ sta::define_cmd_args "detailed_route" {
     [-droute_end_iter iter]
     [-via_in_pin_bottom_layer layer]
     [-via_in_pin_top_layer layer]
+    [-via_access_layer layer]
     [-or_seed seed]
-    [-or_k_ k]
+    [-or_k k]
     [-bottom_routing_layer layer]
     [-top_routing_layer layer]
     [-verbose level]
@@ -59,13 +28,14 @@ sta::define_cmd_args "detailed_route" {
     [-min_access_points count]
     [-save_guide_updates]
     [-repair_pdn_vias layer]
+    [-single_step_dr]
 }
 
 proc detailed_route { args } {
   sta::parse_key_args "detailed_route" args \
     keys {-output_maze -output_drc -output_cmap -output_guide_coverage \
       -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
-      -via_in_pin_top_layer -or_seed -or_k -bottom_routing_layer \
+      -via_in_pin_top_layer -via_access_layer -or_seed -or_k -bottom_routing_layer \
       -top_routing_layer -verbose -remote_host -remote_port -shared_volume \
       -cloud_size -min_access_points -repair_pdn_vias -drc_report_iter_step} \
     flags {-disable_via_gen -distributed -clean_patches -no_pin_access \
@@ -117,7 +87,7 @@ proc detailed_route { args } {
   }
   if { [info exists keys(-droute_end_iter)] } {
     sta::check_positive_integer "-droute_end_iter" $keys(-droute_end_iter)
-    if {$keys(-droute_end_iter) > 64} {
+    if { $keys(-droute_end_iter) > 64 } {
       utl::warn "-droute_end_iter cannot be greater than 64. Setting -droute_end_iter to 64."
       set droute_end_iter 64
     } else {
@@ -136,6 +106,11 @@ proc detailed_route { args } {
   } else {
     set via_in_pin_top_layer ""
   }
+  if { [info exists keys(-via_access_layer)] } {
+    set via_access_layer $keys(-via_access_layer)
+  } else {
+    set via_access_layer ""
+  }
   if { [info exists keys(-or_seed)] } {
     set or_seed $keys(-or_seed)
   } else {
@@ -147,14 +122,12 @@ proc detailed_route { args } {
     set or_k 0
   }
   if { [info exists keys(-bottom_routing_layer)] } {
-    set bottom_routing_layer $keys(-bottom_routing_layer)
-  } else {
-    set bottom_routing_layer ""
+    utl::error DRT 509 "-bottom_routing_layer is deprecated.\
+        Use set_routing_layers command instead."
   }
   if { [info exists keys(-top_routing_layer)] } {
-    set top_routing_layer $keys(-top_routing_layer)
-  } else {
-    set top_routing_layer ""
+    utl::error DRT 510 "-top_routing_layer is deprecated.\
+      Use set_routing_layers command instead."
   }
   if { [info exists keys(-verbose)] } {
     sta::check_positive_integer "-verbose" $keys(-verbose)
@@ -194,7 +167,7 @@ proc detailed_route { args } {
   drt::detailed_route_cmd $output_maze $output_drc $output_cmap \
     $output_guide_coverage $db_process_node $enable_via_gen $droute_end_iter \
     $via_in_pin_bottom_layer $via_in_pin_top_layer \
-    $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose \
+    $via_access_layer $or_seed $or_k $verbose \
     $clean_patches $no_pin_access $single_step_dr $min_access_points \
     $save_guide_updates $repair_pdn_vias $drc_report_iter_step
 }
@@ -217,6 +190,7 @@ sta::define_cmd_args "detailed_route_debug" {
     [-pa_markers]
     [-dump_dr]
     [-dump_dir dir]
+    [-snapshot_dir dir]
     [-pa_edge]
     [-pa_commit]
     [-write_net_tracks]
@@ -224,7 +198,7 @@ sta::define_cmd_args "detailed_route_debug" {
 
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
-    keys {-net -iter -pin -dump_dir -box} \
+    keys {-net -iter -pin -dump_dir -snapshot_dir -box} \
     flags {-dr -maze -pa -pa_markers -pa_edge -pa_commit -dump_dr -ta \
            -write_net_tracks -dump_last_worker}
 
@@ -247,6 +221,12 @@ proc detailed_route_debug { args } {
     set net_name ""
   }
 
+  if { [info exists keys(-snapshot_dir)] } {
+    set snapshot_dir $keys(-snapshot_dir)
+  } else {
+    set snapshot_dir "."
+  }
+
   if { [info exists keys(-pin)] } {
     set pin_name $keys(-pin)
   } else {
@@ -265,7 +245,7 @@ proc detailed_route_debug { args } {
   set box_y1 -1
   set box_x2 -1
   set box_y2 -1
-  if {[info exists keys(-box)]} {
+  if { [info exists keys(-box)] } {
     set box $keys(-box)
     if { [llength $box] != 4 } {
       utl::error DRT 118 "-box is a list of 4 coordinates."
@@ -283,13 +263,16 @@ proc detailed_route_debug { args } {
 
   drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $dump_dr $pa $maze \
     $box_x1 $box_y1 $box_x2 $box_y2 $iter $pa_markers $pa_edge $pa_commit \
-    $dump_dir $ta $write_net_tracks $dump_last_worker
+    $dump_dir $snapshot_dir $ta $write_net_tracks $dump_last_worker
 }
 
 sta::define_cmd_args "pin_access" {
     [-db_process_node name]
     [-bottom_routing_layer layer]
     [-top_routing_layer layer]
+    [-via_access_layer layer]
+    [-via_in_pin_bottom_layer layer]
+    [-via_in_pin_top_layer layer]
     [-min_access_points count]
     [-verbose level]
     [-distributed]
@@ -301,23 +284,27 @@ sta::define_cmd_args "pin_access" {
 proc pin_access { args } {
   sta::parse_key_args "pin_access" args \
     keys {-db_process_node -bottom_routing_layer -top_routing_layer -verbose \
-          -min_access_points -remote_host -remote_port -shared_volume -cloud_size } \
+          -min_access_points -remote_host -remote_port -shared_volume -cloud_size \
+          -via_access_layer -via_in_pin_bottom_layer -via_in_pin_top_layer} \
     flags {-distributed}
-  sta::check_argc_eq0 "detailed_route_debug" $args
-  if {[info exists keys(-db_process_node)]} {
+  sta::check_argc_eq0 "pin_access" $args
+  if { [info exists keys(-db_process_node)] } {
     set db_process_node $keys(-db_process_node)
   } else {
     set db_process_node ""
   }
   if { [info exists keys(-bottom_routing_layer)] } {
-    set bottom_routing_layer $keys(-bottom_routing_layer)
-  } else {
-    set bottom_routing_layer ""
+    utl::error DRT 511 "-bottom_routing_layer is deprecated.\
+        Use set_routing_layers command instead."
   }
   if { [info exists keys(-top_routing_layer)] } {
-    set top_routing_layer $keys(-top_routing_layer)
+    utl::error DRT 514 "-top_routing_layer is deprecated.\
+        Use set_routing_layers command instead."
+  }
+  if { [info exists keys(-via_access_layer)] } {
+    set via_access_layer $keys(-via_access_layer)
   } else {
-    set top_routing_layer ""
+    set via_access_layer ""
   }
   if { [info exists keys(-verbose)] } {
     sta::check_positive_integer "-verbose" $keys(-verbose)
@@ -330,6 +317,16 @@ proc pin_access { args } {
     set min_access_points $keys(-min_access_points)
   } else {
     set min_access_points -1
+  }
+  if { [info exists keys(-via_in_pin_bottom_layer)] } {
+    set via_in_pin_bottom_layer $keys(-via_in_pin_bottom_layer)
+  } else {
+    set via_in_pin_bottom_layer ""
+  }
+  if { [info exists keys(-via_in_pin_top_layer)] } {
+    set via_in_pin_top_layer $keys(-via_in_pin_top_layer)
+  } else {
+    set via_in_pin_top_layer ""
   }
   if { [info exists flags(-distributed)] } {
     if { [info exists keys(-remote_host)] } {
@@ -354,20 +351,21 @@ proc pin_access { args } {
     }
     drt::detailed_route_distributed $rhost $rport $vol $cloudsz
   }
-  drt::pin_access_cmd $db_process_node $bottom_routing_layer \
-    $top_routing_layer $verbose $min_access_points
+  drt::pin_access_cmd $db_process_node \
+    $via_access_layer $verbose $min_access_points \
+    $via_in_pin_bottom_layer $via_in_pin_top_layer
 }
 
 sta::define_cmd_args "detailed_route_run_worker" {
     [-dump_dir dir]
     [-worker_dir dir]
     [-drc_rpt drc]
-}
+} ;# checker off
 
 proc detailed_route_run_worker { args } {
   sta::parse_key_args "detailed_route_run_worker" args \
     keys {-dump_dir -worker_dir -drc_rpt} \
-    flags {}
+    flags {} ;# checker off
   sta::check_argc_eq0 "detailed_route_run_worker" $args
   if { [info exists keys(-dump_dir)] } {
     set dump_dir $keys(-dump_dir)
@@ -397,50 +395,50 @@ sta::define_cmd_args "detailed_route_worker_debug" {
     [-marker_decay m_decay]
     [-ripup_mode mode]
     [-follow_guide f_guide]
-}
+} ;# checker off
 
 proc detailed_route_worker_debug { args } {
   sta::parse_key_args "detailed_route_worker_debug" args \
     keys {-maze_end_iter -drc_cost -marker_cost -fixed_shape_cost \
           -marker_decay -ripup_mode -follow_guide} \
-    flags {}
-  if {[info exists keys(-maze_end_iter)]} {
+    flags {} ;# checker off
+  if { [info exists keys(-maze_end_iter)] } {
     set maze_end_iter $keys(-maze_end_iter)
   } else {
     set maze_end_iter -1
   }
 
-  if {[info exists keys(-drc_cost)]} {
+  if { [info exists keys(-drc_cost)] } {
     set drc_cost $keys(-drc_cost)
   } else {
     set drc_cost -1
   }
 
-  if {[info exists keys(-marker_cost)]} {
+  if { [info exists keys(-marker_cost)] } {
     set marker_cost $keys(-marker_cost)
   } else {
     set marker_cost -1
   }
 
-  if {[info exists keys(-fixed_shape_cost)]} {
+  if { [info exists keys(-fixed_shape_cost)] } {
     set fixed_shape_cost $keys(-fixed_shape_cost)
   } else {
     set fixed_shape_cost -1
   }
 
-  if {[info exists keys(-marker_decay)]} {
+  if { [info exists keys(-marker_decay)] } {
     set marker_decay $keys(-marker_decay)
   } else {
     set marker_decay -1
   }
 
-  if {[info exists keys(-ripup_mode)]} {
+  if { [info exists keys(-ripup_mode)] } {
     set ripup_mode $keys(-ripup_mode)
   } else {
     set ripup_mode -1
   }
 
-  if {[info exists keys(-follow_guide)]} {
+  if { [info exists keys(-follow_guide)] } {
     set follow_guide $keys(-follow_guide)
   } else {
     set follow_guide -1
@@ -460,7 +458,6 @@ proc detailed_route_set_unidirectional_layer { args } {
 }
 
 namespace eval drt {
-
 proc step_dr { args } {
   # args match FlexDR::SearchRepairArgs
   if { [llength $args] != 9 } {
@@ -470,21 +467,26 @@ proc step_dr { args } {
   drt::detailed_route_step_drt {*}$args
 }
 
-sta::define_cmd_args "check_drc" {
+sta::define_hidden_cmd_args "check_drc" {
     [-box box]
     [-output_file filename]
-}
+    [-marker_name name]
+} ;# checker off
 proc check_drc { args } {
   sta::parse_key_args "check_drc" args \
-    keys { -box -output_file } \
-    flags {}
+    keys { -box -output_file -marker_name } \
+    flags {} ;# checker off
   sta::check_argc_eq0 "check_drc" $args
   set box { 0 0 0 0 }
-  if {[info exists keys(-box)]} {
+  if { [info exists keys(-box)] } {
     set box $keys(-box)
     if { [llength $box] != 4 } {
       utl::error DRT 612 "-box is a list of 4 coordinates."
     }
+  }
+  set marker_name "DRC"
+  if { [info exists keys(-marker_name)] } {
+    set marker_name $keys(-marker_name)
   }
   lassign $box x1 y1 x2 y2
   if { [info exists keys(-output_file)] } {
@@ -492,7 +494,11 @@ proc check_drc { args } {
   } else {
     utl::error DRT 613 "-output_file is required for check_drc command"
   }
-  drt::check_drc_cmd $output_file $x1 $y1 $x2 $y2
+  drt::check_drc_cmd $output_file $x1 $y1 $x2 $y2 $marker_name
 }
 
+proc fix_max_spacing { args } {
+  sta::check_argc_eq0 "fix_max_spacing" $args
+  drt::fix_max_spacing_cmd
+}
 }

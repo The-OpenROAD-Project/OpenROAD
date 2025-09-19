@@ -1,36 +1,10 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "dbUtil.h"
+#include <cstdio>
+
+#include "odb/db.h"
+#include "rcx/dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
@@ -303,10 +277,10 @@ bool extMeasure::ouRCvalues(const char* msg, uint jj)
       "{:g}\n\tdgCap : {:g}\n\tRes  : {:g}\n\n",
       msg,
       msg,
-      _rc[jj]->_fringe,
-      _rc[jj]->_coupling,
-      _rc[jj]->_diag,
-      _rc[jj]->_res);
+      _rc[jj]->fringe_,
+      _rc[jj]->coupling_,
+      _rc[jj]->diag_,
+      _rc[jj]->res_);
 
   return true;
 }
@@ -435,7 +409,7 @@ bool extMeasure::DebugStart(bool allNets)
              GetDBcoords(_ur[1]) - GetDBcoords(_ll[1]));
   return true;
 }
-
+/* DELETE ???
 bool extMeasure::DebugDiagCoords(int met,
                                  int targetMet,
                                  int len1,
@@ -452,12 +426,10 @@ bool extMeasure::DebugDiagCoords(int met,
       "debug_net",
       1,
       "[DIAG_EXT:C]"
-      "\t----- Diagonal Coupling Coords ----- \n\tDiag: M{} to M{}\n\tDist: {} {:.3f}\n\tLen : {} {:.3f} \
-        \n\tloX : {} {:.3f} \n\thiX : {} {:.3f} \n\tloY : {} {:.3f} \n\thiY : {} {:.3f} \
-        \n\tDX  : {} {:.3f} \n\tDY  : {} {:.3f} \n",
-      met,
-      targetMet,
-      diagDist,
+      "\t----- Diagonal Coupling Coords ----- \n\tDiag: M{} to M{}\n\tDist: {}
+{:.3f}\n\tLen : {} {:.3f} \
+        \n\tloX : {} {:.3f} \n\thiX : {} {:.3f} \n\tloY : {} {:.3f} \n\thiY : {}
+{:.3f} \ \n\tDX  : {} {:.3f} \n\tDY  : {} {:.3f} \n", met, targetMet, diagDist,
       GetDBcoords(diagDist),
       len1,
       GetDBcoords(len1),
@@ -475,7 +447,7 @@ bool extMeasure::DebugDiagCoords(int met,
       GetDBcoords(ur[1]) - GetDBcoords(ll[1]));
   return true;
 }
-
+*/
 // -----------------------------------------------------------------
 //
 // from extRCmodel.cpp
@@ -488,7 +460,7 @@ void extDistRC::printDebug(const char* from,
 {
   if (rcUnit != nullptr) {
     debugPrint(
-        logger_, RCX, "debug_net", 1, "[DistRC:C]\t--\trcUnit is not NULL");
+        logger_, RCX, "debug_net", 1, "[DistRC:C]\t--\trcUnit is not nullptr");
   }
 
   debugPrint(logger_,
@@ -499,14 +471,15 @@ void extDistRC::printDebug(const char* from,
              "\t{}: {} {:g} {:g} {:g} R {:g} {} {}",
              from,
              name,
-             _coupling,
-             _fringe,
-             _diag,
-             _res,
+             coupling_,
+             fringe_,
+             diag_,
+             res_,
              len,
              dist);
   if (rcUnit == nullptr) {
-    debugPrint(logger_, RCX, "debug_net", 1, "[DistRC:C]\t--\trcUnit is NULL");
+    debugPrint(
+        logger_, RCX, "debug_net", 1, "[DistRC:C]\t--\trcUnit is nullptr");
   } else {
     rcUnit->printDebugRC("   ", logger_);
   }
@@ -523,12 +496,12 @@ void extDistRC::printDebugRC(const char* from, Logger* logger)
              "{:g}\n\tDiagC "
              ": {:g}\n\ttotCap: {:g}\n\tRes  : {:g}\n",
              from,
-             _sep,
-             _coupling,
-             _fringe,
-             _diag,
-             _coupling + _fringe + _diag,
-             _res);
+             sep_,
+             coupling_,
+             fringe_,
+             diag_,
+             coupling_ + fringe_ + diag_,
+             res_);
 }
 
 double extDistRC::GetDBcoords(int x, int db_factor)
@@ -566,12 +539,12 @@ void extDistRC::printDebugRC_diag(int met,
              ": {:g}\n\t\t\ttotCap: {:g}\n\t\t\tRes   : {:g}\n",
              tmp,
              tmp1,
-             _sep,
-             _coupling,
-             _fringe,
-             _diag,
-             _coupling + _fringe + _diag,
-             _res);
+             sep_,
+             coupling_,
+             fringe_,
+             diag_,
+             coupling_ + fringe_ + diag_,
+             res_);
 }
 
 void extDistRC::printDebugRC(int met,
@@ -613,12 +586,12 @@ void extDistRC::printDebugRC(int met,
              ": {:g}\n\t\t\ttotCap: {:g}\n\t\t\tRes   : {:g}\n",
              tmp,
              tmp1,
-             _sep,
-             _coupling,
-             _fringe,
-             _diag,
-             _coupling + _fringe + _diag,
-             _res);
+             sep_,
+             coupling_,
+             fringe_,
+             diag_,
+             coupling_ + fringe_ + diag_,
+             res_);
 }
 
 void extDistRC::printDebugRC_sum(int len, int dbUnit, Logger* logger)
@@ -633,11 +606,11 @@ void extDistRC::printDebugRC_sum(int len, int dbUnit, Logger* logger)
              ": {:.6f}\n\t\t\ttotCap: {:.6f}\n\t\t\tRes   : {:.6f}\n",
              len,
              GetDBcoords(len, dbUnit),
-             _coupling,
-             _fringe,
-             _diag,
-             _coupling + _fringe + _diag,
-             _res);
+             coupling_,
+             fringe_,
+             diag_,
+             coupling_ + fringe_ + diag_,
+             res_);
 }
 
 void extDistRC::printDebugRC_values(const char* msg)
@@ -651,11 +624,11 @@ void extDistRC::printDebugRC_values(const char* msg)
              "{:.6f}\n\t\t\tDiagC "
              ": {:.6f}\n\t\t\ttotCap: {:.6f}\n\t\t\tRes   : {:.6f}\n",
              msg,
-             _coupling,
-             _fringe,
-             _diag,
-             _coupling + _fringe + _diag,
-             _res);
+             coupling_,
+             fringe_,
+             diag_,
+             coupling_ + fringe_ + diag_,
+             res_);
 }
 
 }  // namespace rcx

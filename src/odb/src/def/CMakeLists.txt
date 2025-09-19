@@ -50,6 +50,10 @@ add_library(def
   ${BISON_def_parser_OUTPUT_SOURCE}
 )
 
+# Known false positive in g++ for bison generated parsers
+# (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98753)
+target_compile_options(def PRIVATE "-Wno-free-nonheap-object")
+
 add_library(defzlib
   defzlib/defzlib.cpp
 )

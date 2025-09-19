@@ -32,19 +32,14 @@
  *
  */
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <unistd.h>
+
+#include <cstdarg>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
-
-#ifdef WIN32
-#include <io.h>
-#else  // not WIN32
-#include <unistd.h>
-
-#endif  // WIN32
+BEGIN_LEF_PARSER_NAMESPACE
 
 FILE* encOpenFileForRead(char* filename)
 {
@@ -97,4 +92,4 @@ void encPrint(FILE* fp, char* format, ...)
   va_end(ap);
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

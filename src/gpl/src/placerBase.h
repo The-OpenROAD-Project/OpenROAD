@@ -1,51 +1,24 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2018-2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <climits>
+#include <cstdint>
 #include <memory>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace odb {
 class dbDatabase;
 
-class dbInst;
-class dbITerm;
 class dbBTerm;
-class dbNet;
 class dbGroup;
+class dbITerm;
+class dbInst;
+class dbNet;
+class dbObject;
 
 class dbPlacementStatus;
 class dbSigType;
@@ -66,16 +39,13 @@ namespace gpl {
 class Pin;
 class Net;
 class GCell;
+class PlacerBaseCommon;
 
 class Instance
 {
  public:
   Instance();
-  Instance(odb::dbInst* inst,
-           int padLeft,
-           int padRight,
-           int site_height,
-           utl::Logger* logger);
+  Instance(odb::dbInst* inst, PlacerBaseCommon* pbc, utl::Logger* logger);
   Instance(int lx, int ly, int ux, int uy);  // dummy instance
   ~Instance();
 
@@ -102,6 +72,7 @@ class Instance
   // unusable sites.  It will have inst_ as nullptr
   bool isDummy() const;
 
+  void copyDbLocation(PlacerBaseCommon* pbc);
   void setLocation(int x, int y);
   void setCenterLocation(int x, int y);
 
@@ -122,10 +93,10 @@ class Instance
   int64_t area() const;
 
   void setExtId(int extId);
-  int extId() const { return extId_; }
+  int getExtId() const { return extId_; }
 
   void addPin(Pin* pin);
-  const std::vector<Pin*>& pins() const { return pins_; }
+  const std::vector<Pin*>& getPins() const { return pins_; }
   void snapOutward(const odb::Point& origin, int step_x, int step_y);
 
  private:
@@ -145,11 +116,11 @@ class Pin
  public:
   Pin();
   Pin(odb::dbITerm* iTerm);
-  Pin(odb::dbBTerm* bTerm);
+  Pin(odb::dbBTerm* bTerm, utl::Logger* logger);
   ~Pin();
 
-  odb::dbITerm* dbITerm() const;
-  odb::dbBTerm* dbBTerm() const;
+  odb::dbITerm* getDbITerm() const;
+  odb::dbBTerm* getDbBTerm() const;
 
   bool isITerm() const;
   bool isBTerm() const;
@@ -172,8 +143,8 @@ class Pin
   int cx() const;
   int cy() const;
 
-  int offsetCx() const;
-  int offsetCy() const;
+  int getOffsetCx() const;
+  int getOffsetCy() const;
 
   void updateLocation(const Instance* inst);
 
@@ -182,12 +153,14 @@ class Pin
 
   bool isPlaceInstConnected() const;
 
-  Instance* instance() const { return inst_; }
-  Net* net() const { return net_; }
-  std::string name() const;
+  Instance* getInstance() const { return inst_; }
+  Net* getNet() const { return net_; }
+  std::string getName() const;
+
+  void updateCoordi(odb::dbITerm* iTerm);
 
  private:
-  void* term_ = nullptr;
+  odb::dbObject* term_ = nullptr;
   Instance* inst_ = nullptr;
   Net* net_ = nullptr;
 
@@ -210,8 +183,7 @@ class Pin
   unsigned char maxPinXField_ : 1;
   unsigned char maxPinYField_ : 1;
 
-  void updateCoordi(odb::dbITerm* iTerm);
-  void updateCoordi(odb::dbBTerm* bTerm);
+  void updateCoordi(odb::dbBTerm* bTerm, utl::Logger* logger);
 };
 
 class Net
@@ -229,13 +201,13 @@ class Net
   int cy() const;
 
   // HPWL: half-parameter-wire-length
-  int64_t hpwl() const;
+  int64_t getHpwl() const;
 
   void updateBox(bool skipIoMode = false);
 
-  const std::vector<Pin*>& pins() const { return pins_; }
+  const std::vector<Pin*>& getPins() const { return pins_; }
 
-  odb::dbNet* dbNet() const { return net_; }
+  odb::dbNet* getDbNet() const { return net_; }
   odb::dbSigType getSigType() const;
 
   void addPin(Pin* pin);
@@ -315,11 +287,11 @@ class PlacerBaseCommon
   ~PlacerBaseCommon();
 
   const std::vector<Instance*>& placeInsts() const { return placeInsts_; }
-  const std::vector<Instance*>& insts() const { return insts_; }
-  const std::vector<Pin*>& pins() const { return pins_; }
-  const std::vector<Net*>& nets() const { return nets_; }
+  const std::vector<Instance*>& getInsts() const { return insts_; }
+  const std::vector<Pin*>& getPins() const { return pins_; }
+  const std::vector<Net*>& getNets() const { return nets_; }
 
-  Die& die() { return die_; }
+  Die& getDie() { return die_; }
 
   // Pb : PlacerBase
   Instance* dbToPb(odb::dbInst* inst) const;
@@ -330,13 +302,14 @@ class PlacerBaseCommon
   int siteSizeX() const { return siteSizeX_; }
   int siteSizeY() const { return siteSizeY_; }
 
-  int padLeft() const { return pbVars_.padLeft; }
-  int padRight() const { return pbVars_.padRight; }
+  int getPadLeft() const { return pbVars_.padLeft; }
+  int getPadRight() const { return pbVars_.padRight; }
+  bool isSkipIoMode() const { return pbVars_.skipIoMode; }
 
-  int64_t hpwl() const;
+  int64_t getHpwl() const;
   void printInfo() const;
 
-  int64_t macroInstsArea() const { return macroInstsArea_; }
+  int64_t getMacroInstsArea() const { return macroInstsArea_; }
 
   odb::dbDatabase* db() const { return db_; }
 
@@ -361,7 +334,8 @@ class PlacerBaseCommon
   std::vector<Instance*> placeInsts_;
 
   std::unordered_map<odb::dbInst*, Instance*> instMap_;
-  std::unordered_map<void*, Pin*> pinMap_;
+  // The key is a dbITerm or a dbBTerm
+  std::unordered_map<odb::dbObject*, Pin*> pinMap_;
   std::unordered_map<odb::dbNet*, Net*> netMap_;
 
   int siteSizeX_ = 0;
@@ -384,7 +358,7 @@ class PlacerBase
              odb::dbGroup* group = nullptr);
   ~PlacerBase();
 
-  const std::vector<Instance*>& insts() const { return insts_; }
+  const std::vector<Instance*>& getInsts() const { return insts_; }
 
   //
   // placeInsts : a real instance that need to be placed
@@ -398,12 +372,12 @@ class PlacerBase
   const std::vector<Instance*>& dummyInsts() const { return dummyInsts_; }
   const std::vector<Instance*>& nonPlaceInsts() const { return nonPlaceInsts_; }
 
-  Die& die() { return die_; }
+  Die& getDie() { return die_; }
 
-  int siteSizeX() const { return siteSizeX_; }
-  int siteSizeY() const { return siteSizeY_; }
+  int getSiteSizeX() const { return siteSizeX_; }
+  int getSiteSizeY() const { return siteSizeY_; }
 
-  int64_t hpwl() const;
+  int64_t getHpwl() const;
   void printInfo() const;
 
   int64_t placeInstsArea() const { return placeInstsArea_; }

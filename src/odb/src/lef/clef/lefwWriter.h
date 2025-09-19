@@ -33,7 +33,7 @@
 #ifndef CLEFWWRITER_H
 #define CLEFWWRITER_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 

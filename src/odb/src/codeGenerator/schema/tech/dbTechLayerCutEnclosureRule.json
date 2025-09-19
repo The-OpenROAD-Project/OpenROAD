@@ -47,7 +47,7 @@
       "type":"bit"
     },
     {
-      "name":"short_edge_only_",
+      "name":"short_edge_on_eol_",
       "type":"bit"
     },
     {

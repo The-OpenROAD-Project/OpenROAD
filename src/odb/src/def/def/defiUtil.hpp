@@ -32,7 +32,7 @@
 
 #include "defiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 /* Return codes Orient and Rotation */
 #define DEF_ORIENT_N 0
@@ -46,6 +46,6 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 
 const char* defiOrientStr(int orient);
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

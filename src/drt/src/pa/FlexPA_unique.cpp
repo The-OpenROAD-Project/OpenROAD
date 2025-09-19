@@ -1,125 +1,155 @@
-/*
- * Copyright (c) 2023, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "FlexPA_unique.h"
+#include "pa/FlexPA_unique.h"
 
+#include <algorithm>
+#include <limits>
+#include <memory>
+#include <set>
+#include <utility>
+#include <vector>
+
+#include "db/obj/frAccess.h"
+#include "db/obj/frInst.h"
+#include "db/tech/frLayer.h"
 #include "distributed/frArchive.h"
+#include "frBaseTypes.h"
+#include "frDesign.h"
+#include "global.h"
+#include "odb/db.h"
 
 namespace drt {
 
+UniqueClass::UniqueClass(const UniqueClassKey& key) : key_(key)
+{
+  for (const auto& term : key_.master->getTerms()) {
+    skip_term_[term.get()] = false;
+  }
+}
+
+void UniqueClass::addInst(frInst* inst)
+{
+  insts_.insert(inst);
+}
+
+void UniqueClass::removeInst(frInst* inst)
+{
+  insts_.erase(inst);
+}
+
+bool UniqueClass::hasInst(frInst* inst) const
+{
+  return insts_.find(inst) != insts_.end();
+}
+
+frInst* UniqueClass::getFirstInst() const
+{
+  return *insts_.begin();
+}
+
+bool UniqueClass::isSkipTerm(frMTerm* term) const
+{
+  return skip_term_.at(term);
+}
+
+void UniqueClass::setSkipTerm(frMTerm* term, bool skip)
+{
+  skip_term_[term] = skip;
+}
+
 UniqueInsts::UniqueInsts(frDesign* design,
                          const frCollection<odb::dbInst*>& target_insts,
-                         Logger* logger)
-    : design_(design), target_insts_(target_insts), logger_(logger)
+                         utl::Logger* logger,
+                         RouterConfiguration* router_cfg)
+    : design_(design),
+      target_insts_(target_insts),
+      logger_(logger),
+      router_cfg_(router_cfg)
 {
 }
 
-void UniqueInsts::getPrefTrackPatterns(
-    std::vector<frTrackPattern*>& prefTrackPatterns)
+void UniqueInsts::computePrefTrackPatterns()
 {
-  for (const auto& trackPattern : design_->getTopBlock()->getTrackPatterns()) {
-    const bool isVerticalTrack = trackPattern->isHorizontal();
-    const frLayerNum layer_num = trackPattern->getLayerNum();
+  for (const auto& track_pattern : design_->getTopBlock()->getTrackPatterns()) {
+    const bool is_vertical_track = track_pattern->isHorizontal();
+    const frLayerNum layer_num = track_pattern->getLayerNum();
     const frLayer* layer = getTech()->getLayer(layer_num);
     if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
-      if (!isVerticalTrack) {
-        prefTrackPatterns.push_back(trackPattern);
+      if (!is_vertical_track) {
+        pref_track_patterns_.push_back(track_pattern);
       }
     } else {
-      if (isVerticalTrack) {
-        prefTrackPatterns.push_back(trackPattern);
+      if (is_vertical_track) {
+        pref_track_patterns_.push_back(track_pattern);
       }
     }
   }
 }
 
-void UniqueInsts::initMaster2PinLayerRange(
-    MasterLayerRange& master2PinLayerRange)
+void UniqueInsts::initMasterToPinLayerRange()
 {
   std::set<frString> masters;
   for (odb::dbInst* inst : target_insts_) {
     masters.insert(inst->getMaster()->getName());
   }
-  const int numLayers = getTech()->getLayers().size();
+  const int num_layers = getTech()->getLayers().size();
   const frLayerNum bottom_layer_num = getTech()->getBottomLayerNum();
   for (auto& uMaster : design_->getMasters()) {
     auto master = uMaster.get();
     if (!masters.empty() && masters.find(master->getName()) == masters.end()) {
       continue;
     }
-    frLayerNum minLayerNum = std::numeric_limits<frLayerNum>::max();
-    frLayerNum maxLayerNum = std::numeric_limits<frLayerNum>::min();
-    for (auto& uTerm : master->getTerms()) {
-      if (uTerm->getType().isSupply()) {
+    frLayerNum min_layer_num = std::numeric_limits<frLayerNum>::max();
+    frLayerNum max_layer_num = std::numeric_limits<frLayerNum>::min();
+    for (auto& u_term : master->getTerms()) {
+      if (u_term->getType().isSupply()) {
         continue;
       }
-      for (auto& uPin : uTerm->getPins()) {
-        for (auto& uPinFig : uPin->getFigs()) {
-          auto pinFig = uPinFig.get();
+      for (auto& u_pin : u_term->getPins()) {
+        for (auto& u_pin_fig : u_pin->getFigs()) {
+          auto pin_fig = u_pin_fig.get();
           frLayerNum lNum;
-          if (pinFig->typeId() == frcRect) {
-            lNum = static_cast<frRect*>(pinFig)->getLayerNum();
-          } else if (pinFig->typeId() == frcPolygon) {
-            lNum = static_cast<frPolygon*>(pinFig)->getLayerNum();
+          if (pin_fig->typeId() == frcRect) {
+            lNum = static_cast<frRect*>(pin_fig)->getLayerNum();
+          } else if (pin_fig->typeId() == frcPolygon) {
+            lNum = static_cast<frPolygon*>(pin_fig)->getLayerNum();
           } else {
-            logger_->error(DRT, 65, "instAnalysis unsupported pinFig.");
+            logger_->error(DRT, 65, "instAnalysis unsupported pin_fig.");
           }
-          minLayerNum = std::min(minLayerNum, std::max(bottom_layer_num, lNum));
-          maxLayerNum = std::max(maxLayerNum, lNum);
+          min_layer_num
+              = std::min(min_layer_num, std::max(bottom_layer_num, lNum));
+          max_layer_num = std::max(max_layer_num, lNum);
         }
       }
     }
-    if (minLayerNum < bottom_layer_num
-        || maxLayerNum > getTech()->getTopLayerNum()) {
+    if (min_layer_num < bottom_layer_num
+        || max_layer_num > getTech()->getTopLayerNum()) {
       logger_->warn(DRT,
                     66,
                     "instAnalysis skips {} due to no pin shapes.",
                     master->getName());
       continue;
     }
-    maxLayerNum = std::min(maxLayerNum + 2, numLayers);
-    master2PinLayerRange[master] = {minLayerNum, maxLayerNum};
+    max_layer_num = std::min(max_layer_num + 2, num_layers);
+    master_to_pin_layer_range_[master] = {min_layer_num, max_layer_num};
   }
 }
 
 bool UniqueInsts::hasTrackPattern(frTrackPattern* tp, const Rect& box) const
 {
-  const bool isVerticalTrack = tp->isHorizontal();
+  const bool is_vertical_track = tp->isHorizontal();
   const frCoord low = tp->getStartCoord();
   const frCoord high = low + tp->getTrackSpacing() * (tp->getNumTracks() - 1);
-  if (isVerticalTrack) {
+  if (is_vertical_track) {
     return !(low > box.xMax() || high < box.xMin());
   }
   return !(low > box.yMax() || high < box.yMin());
 }
 
-bool UniqueInsts::isNDRInst(frInst& inst)
+bool UniqueInsts::isNDRInst(frInst* inst) const
 {
-  for (auto& a : inst.getInstTerms()) {
+  for (const auto& a : inst->getInstTerms()) {
     if (a->getNet() && a->getNet()->getNondefaultRule()) {
       return true;
     }
@@ -127,87 +157,82 @@ bool UniqueInsts::isNDRInst(frInst& inst)
   return false;
 }
 
-// must init all unique, including filler, macro, etc. to ensure frInst
-// pinAccessIdx is active
-void UniqueInsts::computeUnique(
-    const MasterLayerRange& master2PinLayerRange,
-    const std::vector<frTrackPattern*>& prefTrackPatterns)
+UniqueClassKey UniqueInsts::computeUniqueClassKey(frInst* inst) const
 {
+  const Point origin = inst->getOrigin();
+  const Rect boundary_bbox = inst->getBoundaryBBox();
+  const dbOrientType orient = inst->getOrient();
+  auto it = master_to_pin_layer_range_.find(inst->getMaster());
+  if (it == master_to_pin_layer_range_.end()) {
+    logger_->error(DRT,
+                   146,
+                   "Master {} not found in master_to_pin_layer_range",
+                   inst->getMaster()->getName());
+  }
+  const auto [min_layer_num, max_layer_num] = it->second;
+  std::vector<frCoord> offset;
+  for (auto& tp : pref_track_patterns_) {
+    if (tp->getLayerNum() >= min_layer_num && tp->getLayerNum() <= max_layer_num
+        && hasTrackPattern(tp, boundary_bbox)) {
+      // vertical track
+      if (tp->isHorizontal()) {
+        offset.push_back(origin.x() % tp->getTrackSpacing());
+      } else {
+        offset.push_back(origin.y() % tp->getTrackSpacing());
+      }
+    } else {
+      offset.push_back(tp->getTrackSpacing());
+    }
+  }
+  // Special case for NDR instances, create a separate unique class for them
+  frInst* ndr_inst = nullptr;
+  if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(inst)) {
+    ndr_inst = inst;
+  }
+  return UniqueClassKey(inst->getMaster(), orient, offset, ndr_inst);
+}
+
+UniqueClass* UniqueInsts::computeUniqueClass(frInst* inst)
+{
+  const auto key = computeUniqueClassKey(inst);
+  if (unique_class_by_key_.find(key) == unique_class_by_key_.end()) {
+    // new unique class
+    auto unique_class = std::make_unique<UniqueClass>(key);
+    auto unique_class_ptr = unique_class.get();
+    unique_classes_.emplace_back(std::move(unique_class));
+    unique_class_by_key_[key] = unique_class_ptr;
+  }
+  return unique_class_by_key_.at(key);
+}
+
+bool UniqueInsts::addInst(frInst* inst)
+{
+  auto unique_class = computeUniqueClass(inst);
+  bool new_unique_class = unique_class->getInsts().empty();
+  unique_class->addInst(inst);
+  inst_to_unique_class_[inst] = unique_class;
+  return new_unique_class;
+}
+
+// must init all unique, including filler, macro, etc. to ensure frInst
+// pin_access_idx is active
+void UniqueInsts::computeUnique()
+{
+  computePrefTrackPatterns();
+  initMasterToPinLayerRange();
+
   std::set<frInst*> target_frinsts;
   for (auto inst : target_insts_) {
-    target_frinsts.insert(design_->getTopBlock()->findInst(inst->getName()));
+    target_frinsts.insert(design_->getTopBlock()->findInst(inst));
   }
 
-  std::vector<frInst*> ndrInsts;
-  std::vector<frCoord> offset;
   for (auto& inst : design_->getTopBlock()->getInsts()) {
     if (!target_insts_.empty()
         && target_frinsts.find(inst.get()) == target_frinsts.end()) {
       continue;
     }
-    if (!AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
-      ndrInsts.push_back(inst.get());
-      continue;
-    }
-    const Point origin = inst->getOrigin();
-    const Rect boundaryBBox = inst->getBoundaryBBox();
-    const dbOrientType orient = inst->getOrient();
-    const auto [minLayerNum, maxLayerNum]
-        = master2PinLayerRange.find(inst->getMaster())->second;
-    offset.clear();
-    for (auto& tp : prefTrackPatterns) {
-      if (tp->getLayerNum() >= minLayerNum
-          && tp->getLayerNum() <= maxLayerNum) {
-        if (hasTrackPattern(tp, boundaryBBox)) {
-          // vertical track
-          if (tp->isHorizontal()) {
-            offset.push_back(origin.x() % tp->getTrackSpacing());
-          } else {
-            offset.push_back(origin.y() % tp->getTrackSpacing());
-          }
-        } else {
-          offset.push_back(tp->getTrackSpacing());
-        }
-      } else {
-        offset.push_back(tp->getTrackSpacing());
-      }
-    }
-    masterOT2Insts_[inst->getMaster()][orient][offset].insert(inst.get());
+    addInst(inst.get());
   }
-
-  for (auto& [master, orientMap] : masterOT2Insts_) {
-    for (auto& [orient, offsetMap] : orientMap) {
-      for (auto& [vec, insts] : offsetMap) {
-        auto uniqueInst = *(insts.begin());
-        unique_.push_back(uniqueInst);
-        for (auto i : insts) {
-          inst2unique_[i] = uniqueInst;
-          inst2Class_[i] = &insts;
-        }
-      }
-    }
-  }
-  for (frInst* inst : ndrInsts) {
-    unique_.push_back(inst);
-    inst2unique_[inst] = inst;
-    inst2Class_[inst] = nullptr;
-  }
-
-  // init unique2Idx
-  for (int i = 0; i < (int) unique_.size(); i++) {
-    unique2Idx_[unique_[i]] = i;
-  }
-}
-
-void UniqueInsts::initUniqueInstance()
-{
-  std::vector<frTrackPattern*> prefTrackPatterns;
-  getPrefTrackPatterns(prefTrackPatterns);
-
-  MasterLayerRange master2PinLayerRange;
-  initMaster2PinLayerRange(master2PinLayerRange);
-
-  computeUnique(master2PinLayerRange, prefTrackPatterns);
 }
 
 void UniqueInsts::checkFigsOnGrid(const frMPin* pin)
@@ -237,38 +262,39 @@ void UniqueInsts::checkFigsOnGrid(const frMPin* pin)
         }
       }
     } else {
-      logger_->error(DRT, 322, "checkFigsOnGrid unsupported pinFig.");
+      logger_->error(DRT, 322, "checkFigsOnGrid unsupported pin_fig.");
     }
+  }
+}
+
+void UniqueInsts::initUniqueInstPinAccess(UniqueClass* unique_class)
+{
+  if (unique_class->getInsts().empty()) {
+    return;
+  }
+  for (auto& term : unique_class->getMaster()->getTerms()) {
+    for (auto& pin : term->getPins()) {
+      unique_class->setPinAccessIdx(pin->getNumPinAccess());
+      checkFigsOnGrid(pin.get());
+      pin->addPinAccess(std::make_unique<frPinAccess>());
+    }
+  }
+  for (frInst* inst : unique_class->getInsts()) {
+    inst->setPinAccessIdx(unique_class->getPinAccessIdx());
   }
 }
 
 void UniqueInsts::initPinAccess()
 {
-  for (auto& inst : unique_) {
-    for (auto& instTerm : inst->getInstTerms()) {
-      for (auto& pin : instTerm->getTerm()->getPins()) {
-        if (unique2paidx_.find(inst) == unique2paidx_.end()) {
-          unique2paidx_[inst] = pin->getNumPinAccess();
-        } else if (unique2paidx_[inst] != pin->getNumPinAccess()) {
-          logger_->error(DRT, 69, "initPinAccess error.");
-        }
-        checkFigsOnGrid(pin.get());
-        auto pa = std::make_unique<frPinAccess>();
-        pin->addPinAccess(std::move(pa));
-      }
-    }
-    inst->setPinAccessIdx(unique2paidx_[inst]);
-  }
-  for (auto& [inst, uniqueInst] : inst2unique_) {
-    inst->setPinAccessIdx(uniqueInst->getPinAccessIdx());
+  for (auto& unique_class : unique_classes_) {
+    initUniqueInstPinAccess(unique_class.get());
   }
 
   // IO terms
   if (target_insts_.empty()) {
     for (auto& term : getDesign()->getTopBlock()->getTerms()) {
       for (auto& pin : term->getPins()) {
-        auto pa = std::make_unique<frPinAccess>();
-        pin->addPinAccess(std::move(pa));
+        pin->addPinAccess(std::make_unique<frPinAccess>());
       }
     }
   }
@@ -276,45 +302,55 @@ void UniqueInsts::initPinAccess()
 
 void UniqueInsts::init()
 {
-  initUniqueInstance();
+  computeUnique();
   initPinAccess();
 }
 
 void UniqueInsts::report() const
 {
-  logger_->report("#scanned instances     = {}", inst2unique_.size());
-  logger_->report("#unique  instances     = {}", unique_.size());
+  logger_->report("#scanned instances     = {}", inst_to_unique_class_.size());
+  logger_->report("#unique  instances     = {}", unique_classes_.size());
 }
 
-std::set<frInst*, frBlockObjectComp>* UniqueInsts::getClass(frInst* inst) const
+UniqueClass* UniqueInsts::getUniqueClass(frInst* inst) const
 {
-  return inst2Class_.at(inst);
+  if (inst_to_unique_class_.find(inst) == inst_to_unique_class_.end()) {
+    return nullptr;
+  }
+  return inst_to_unique_class_.at(inst);
 }
 
 bool UniqueInsts::hasUnique(frInst* inst) const
 {
-  return inst2unique_.find(inst) != inst2unique_.end();
+  return inst_to_unique_class_.find(inst) != inst_to_unique_class_.end();
 }
 
-int UniqueInsts::getIndex(frInst* inst)
+// deleteInst has to be called both when an instance is deleted and might
+// be needed when moved
+void UniqueInsts::deleteInst(frInst* inst)
 {
-  frInst* unique_inst = inst2unique_[inst];
-  return unique2Idx_[unique_inst];
+  auto unique_class = getUniqueClass(inst);
+  if (!unique_class) {
+    return;
+  }
+  unique_class->removeInst(inst);
+  inst_to_unique_class_.erase(inst);
+  inst->deletePinAccessIdx();
 }
 
-int UniqueInsts::getPAIndex(frInst* inst) const
+void UniqueInsts::deleteUniqueClass(UniqueClass* unique_class)
 {
-  return unique2paidx_.at(inst);
+  unique_class_by_key_.erase(unique_class->key());
+  unique_classes_.erase(std::find_if(
+      unique_classes_.begin(),
+      unique_classes_.end(),
+      [unique_class](const auto& u) { return u.get() == unique_class; }));
 }
 
-const std::vector<frInst*>& UniqueInsts::getUnique() const
+const std::vector<std::unique_ptr<UniqueClass>>& UniqueInsts::getUniqueClasses()
+    const
 {
-  return unique_;
-}
-
-frInst* UniqueInsts::getUnique(int idx) const
-{
-  return unique_[idx];
+  return unique_classes_;
 }
 
 }  // namespace drt

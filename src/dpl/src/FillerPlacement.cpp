@@ -1,40 +1,15 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <string>
+#include <utility>
 
 #include "dpl/Opendp.h"
+#include "infrastructure/Grid.h"
+#include "infrastructure/Objects.h"
+#include "infrastructure/network.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -46,165 +21,216 @@ using utl::DPL;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
 
-void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
+using utl::format_as;
+
+static dbTechLayer* getImplant(dbMaster* master)
 {
-  if (cells_.empty()) {
-    importDb();
+  if (!master) {
+    return nullptr;
   }
 
-  std::sort(filler_masters->begin(),
-            filler_masters->end(),
-            [](dbMaster* master1, dbMaster* master2) {
-              return master1->getWidth() > master2->getWidth();
-            });
+  for (auto obs : master->getObstructions()) {
+    auto layer = obs->getTechLayer();
+    if (layer->getType() == odb::dbTechLayerType::IMPLANT) {
+      return layer;
+    }
+  }
+  return nullptr;
+}
+
+Opendp::MasterByImplant Opendp::splitByImplant(
+    const dbMasterSeq& filler_masters)
+{
+  MasterByImplant mapping;
+  for (auto master : filler_masters) {
+    mapping[getImplant(master)].emplace_back(master);
+  }
+
+  return mapping;
+}
+
+void Opendp::fillerPlacement(const dbMasterSeq& filler_masters,
+                             const char* prefix,
+                             bool verbose)
+{
+  if (network_->getNumCells() == 0) {
+    importDb();
+    adjustNodesOrient();
+  }
+
+  auto filler_masters_by_implant = splitByImplant(filler_masters);
+
+  for (auto& [layer, masters] : filler_masters_by_implant) {
+    std::sort(masters.begin(),
+              masters.end(),
+              [](dbMaster* master1, dbMaster* master2) {
+                return master1->getWidth() > master2->getWidth();
+              });
+  }
 
   gap_fillers_.clear();
-  filler_count_ = 0;
+  filler_count_.clear();
   initGrid();
   setGridCells();
 
-  if (!grid_info_map_.empty()) {
-    int min_height = std::numeric_limits<int>::max();
-    GridMapKey chosen_grid_key = {0};
-    // we will first try to find the grid with min height that is non hybrid, if
-    // that doesn't exist, we will pick the first hybrid grid.
-    for (auto [grid_idx, itr_grid_info] : grid_info_map_) {
-      int site_height = itr_grid_info.getSites()[0].site->getHeight();
-      if (!itr_grid_info.isHybrid() && site_height < min_height) {
-        min_height = site_height;
-        chosen_grid_key = grid_idx;
-      }
-    }
-    auto chosen_grid_info = grid_info_map_.at(chosen_grid_key);
-    int chosen_row_count = chosen_grid_info.getRowCount();
-    if (!chosen_grid_info.isHybrid()) {
-      int site_height = min_height;
-      for (int row = 0; row < chosen_row_count; row++) {
-        placeRowFillers(
-            row, prefix, filler_masters, site_height, chosen_grid_info);
-      }
-    } else {
-      const auto& hybrid_sites_vec = chosen_grid_info.getSites();
-      const int hybrid_sites_num = hybrid_sites_vec.size();
-      for (int row = 0; row < chosen_row_count; row++) {
-        placeRowFillers(
-            row,
-            prefix,
-            filler_masters,
-            hybrid_sites_vec[row % hybrid_sites_num].site->getHeight(),
-            chosen_grid_info);
-      }
-    }
+  for (GridY row{0}; row < grid_->getRowCount(); row++) {
+    placeRowFillers(row, prefix, filler_masters_by_implant);
   }
 
-  logger_->info(DPL, 1, "Placed {} filler instances.", filler_count_);
+  int filler_count = 0;
+  int max_filler_master = 0;
+  for (const auto& [master, count] : filler_count_) {
+    filler_count += count;
+    max_filler_master = std::max(max_filler_master, count);
+  }
+  logger_->info(DPL, 1, "Placed {} filler instances.", filler_count);
+
+  if (verbose) {
+    logger_->report("Filler usage:");
+    int max_master_len = 0;
+    for (const auto& [master, count] : filler_count_) {
+      max_master_len = std::max(max_master_len,
+                                static_cast<int>(master->getName().size()));
+    }
+    const int count_offset = fmt::format("{}", max_filler_master).size();
+    for (const auto& [master, count] : filler_count_) {
+      const int line_offset
+          = count_offset + max_master_len - master->getName().size();
+      logger_->report("  {}: {:>{}}", master->getName(), count, line_offset);
+    }
+  }
 }
 
 void Opendp::setGridCells()
 {
-  for (Cell& cell : cells_) {
-    visitCellPixels(
-        cell, false, [&](Pixel* pixel) { setGridCell(cell, pixel); });
+  for (auto& cell : network_->getNodes()) {
+    if (cell->getType() != Node::CELL) {
+      continue;
+    }
+    grid_->visitCellPixels(*cell, false, [&](Pixel* pixel, bool padded) {
+      setGridCell(*cell, pixel);
+    });
   }
 }
 
-void Opendp::placeRowFillers(int row,
-                             const char* prefix,
-                             dbMasterSeq* filler_masters,
-                             int row_height,
-                             GridInfo grid_info)
+void Opendp::placeRowFillers(GridY row,
+                             const std::string& prefix,
+                             const MasterByImplant& filler_masters_by_implant)
 {
-  int j = 0;
+  // DbuY row_height;
+  GridX j{0};
 
-  int row_site_count = divFloor(core_.dx(), site_width_);
+  const DbuX site_width = grid_->getSiteWidth();
+  GridX row_site_count = grid_->getRowSiteCount();
   while (j < row_site_count) {
-    Pixel* pixel = gridPixel(grid_info.getGridIndex(), j, row);
-    const dbOrientType orient = pixel->orient_;
-    if (pixel->cell == nullptr && pixel->is_valid) {
-      int k = j;
-      while (k < row_site_count
-             && gridPixel(grid_info.getGridIndex(), k, row)->cell == nullptr
-             && gridPixel(grid_info.getGridIndex(), k, row)->is_valid) {
-        k++;
-      }
+    Pixel* pixel = grid_->gridPixel(j, row);
+    if (pixel->cell || !pixel->is_valid) {
+      ++j;
+      continue;
+    }
+    // Select the site and orientation to fill this row with.  Use the shortest
+    // site.
+    auto [site, orient] = grid_->getShortestSite(j, row);
+    GridX k = j;
+    while (k < row_site_count && grid_->gridPixel(k, row)->cell == nullptr
+           && grid_->gridPixel(k, row)->is_valid) {
+      k++;
+    }
 
-      int gap = k - j;
-      // printf("filling row %d gap %d %d:%d\n", row, gap, j, k - 1);
-      dbMasterSeq& fillers = gapFillers(gap, filler_masters);
-      if (fillers.empty()) {
-        int x = core_.xMin() + j * site_width_;
-        int y = core_.yMin() + row * row_height;
-        logger_->error(
-            DPL,
-            2,
-            "could not fill gap of size {} at {},{} dbu between {} and {}",
-            gap,
-            x,
-            y,
-            gridInstName(row, j - 1, row_height, grid_info),
-            gridInstName(row, k + 1, row_height, grid_info));
-      } else {
-        k = j;
-        debugPrint(
-            logger_, DPL, "filler", 2, "fillers size is {}.", fillers.size());
-        for (dbMaster* master : fillers) {
-          string inst_name = prefix + to_string(grid_info.getGridIndex()) + "_"
-                             + to_string(row) + "_" + to_string(k);
-          // printf(" filler %s %d\n", inst_name.c_str(), master->getWidth() /
-          // site_width_);
-          dbInst* inst = dbInst::create(block_,
-                                        master,
-                                        inst_name.c_str(),
-                                        /* physical_only */ true);
-          int x = core_.xMin() + k * site_width_;
-          int y = core_.yMin() + row * row_height;
-          inst->setOrient(orient);
-          inst->setLocation(x, y);
-          inst->setPlacementStatus(dbPlacementStatus::PLACED);
-          inst->setSourceType(odb::dbSourceType::DIST);
-          filler_count_++;
-          k += master->getWidth() / site_width_;
-        }
-        j += gap;
+    dbTechLayer* implant = nullptr;
+    if (j > 0) {
+      auto pixel = grid_->gridPixel(j - 1, row);
+      if (pixel->cell && pixel->cell->getDbInst()) {
+        implant = getImplant(pixel->cell->getDbInst()->getMaster());
       }
+    } else if (k < row_site_count) {
+      auto pixel = grid_->gridPixel(k, row);
+      if (pixel->cell && pixel->cell->getDbInst()) {
+        implant = getImplant(pixel->cell->getDbInst()->getMaster());
+      }
+    } else {  // totally empty row - use anything
+      implant = filler_masters_by_implant.begin()->first;
+    }
+
+    GridX gap = k - j;
+    dbMasterSeq& fillers = gapFillers(implant, gap, filler_masters_by_implant);
+    if (fillers.empty()) {
+      DbuX x{core_.xMin() + gridToDbu(j, site_width)};
+      DbuY y{core_.yMin() + grid_->gridYToDbu(row)};
+      logger_->error(
+          DPL,
+          2,
+          "could not fill gap of size {} at {},{} dbu between {} and {}",
+          gap,
+          x,
+          y,
+          gridInstName(row, j - 1),
+          gridInstName(row, k + 1));
     } else {
-      j++;
+      k = j;
+      debugPrint(
+          logger_, DPL, "filler", 2, "fillers size is {}.", fillers.size());
+      for (dbMaster* master : fillers) {
+        std::string inst_name
+            = prefix + to_string(row.v) + "_" + to_string(k.v);
+        dbInst* inst = dbInst::create(block_,
+                                      master,
+                                      inst_name.c_str(),
+                                      /* physical_only */ true);
+        DbuX x{core_.xMin() + gridToDbu(k, site_width)};
+        DbuY y{core_.yMin() + grid_->gridYToDbu(row)};
+        inst->setOrient(orient);
+        inst->setLocation(x.v, y.v);
+        inst->setPlacementStatus(dbPlacementStatus::PLACED);
+        inst->setSourceType(odb::dbSourceType::DIST);
+        filler_count_[master]++;
+        k += master->getWidth() / site_width.v;
+      }
+      j += gap;
     }
   }
 }
 
-const char* Opendp::gridInstName(int row,
-                                 int col,
-                                 int row_height,
-                                 GridInfo grid_info)
+const char* Opendp::gridInstName(GridY row, GridX col)
 {
   if (col < 0) {
     return "core_left";
   }
-  if (col > grid_info.getSiteCount()) {
+  if (col > grid_->getRowSiteCount()) {
     return "core_right";
   }
 
-  const Cell* cell = gridPixel(grid_info.getGridIndex(), col, row)->cell;
+  const auto cell = grid_->gridPixel(col, row)->cell;
   if (cell) {
-    return cell->db_inst_->getConstName();
+    return cell->getDbInst()->getConstName();
   }
   return "?";
 }
 
 // Return list of masters to fill gap (in site width units).
-dbMasterSeq& Opendp::gapFillers(int gap, dbMasterSeq* filler_masters)
+dbMasterSeq& Opendp::gapFillers(
+    dbTechLayer* implant,
+    GridX gap,
+    const MasterByImplant& filler_masters_by_implant)
 {
-  if (gap_fillers_.size() < gap + 1) {
-    gap_fillers_.resize(gap + 1);
+  auto iter = filler_masters_by_implant.find(implant);
+  if (iter == filler_masters_by_implant.end()) {
+    logger_->error(DPL, 50, "No fillers found for {}.", implant->getName());
   }
-  dbMasterSeq& fillers = gap_fillers_[gap];
+  const dbMasterSeq& filler_masters = iter->second;
+
+  GapFillers& gap_fillers = gap_fillers_[implant];
+  if (gap_fillers.size() < gap + 1) {
+    gap_fillers.resize(gap.v + 1);
+  }
+  dbMasterSeq& fillers = gap_fillers[gap.v];
   if (fillers.empty()) {
     int width = 0;
-    dbMaster* smallest_filler = (*filler_masters)[filler_masters->size() - 1];
-    bool have_filler1 = smallest_filler->getWidth() == site_width_;
-    for (dbMaster* filler_master : *filler_masters) {
-      int filler_width = filler_master->getWidth() / site_width_;
+    dbMaster* smallest_filler = filler_masters[filler_masters.size() - 1];
+    const DbuX site_width = grid_->getSiteWidth();
+    bool have_filler1 = smallest_filler->getWidth() == site_width;
+    for (dbMaster* filler_master : filler_masters) {
+      int filler_width = filler_master->getWidth() / site_width.v;
       while ((width + filler_width) <= gap
              && (have_filler1 || (width + filler_width) != gap - 1)) {
         fillers.push_back(filler_master);
@@ -223,14 +249,15 @@ dbMasterSeq& Opendp::gapFillers(int gap, dbMasterSeq* filler_masters)
 void Opendp::removeFillers()
 {
   block_ = db_->getChip()->getBlock();
-  for (odb::dbInst* db_inst : block_->getInsts()) {
+  for (dbInst* db_inst : block_->getInsts()) {
     if (isFiller(db_inst)) {
       odb::dbInst::destroy(db_inst);
     }
   }
 }
 
-bool Opendp::isFiller(odb::dbInst* db_inst)
+/* static */
+bool Opendp::isFiller(dbInst* db_inst)
 {
   dbMaster* db_master = db_inst->getMaster();
   return db_master->getType() == odb::dbMasterType::CORE_SPACER
@@ -242,7 +269,7 @@ bool Opendp::isFiller(odb::dbInst* db_inst)
 bool Opendp::isOneSiteCell(odb::dbMaster* db_master) const
 {
   return db_master->getType() == odb::dbMasterType::CORE_SPACER
-         && db_master->getWidth() == site_width_;
+         && db_master->getWidth() == grid_->getSiteWidth();
 }
 
 }  // namespace dpl

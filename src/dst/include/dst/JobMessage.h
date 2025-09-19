@@ -1,34 +1,11 @@
-/* Authors: Osama */
-/*
- * Copyright (c) 2021, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
+#include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace boost::serialization {
@@ -58,21 +35,21 @@ class JobMessage
  public:
   enum JobType : int8_t
   {
-    ROUTING,
-    UPDATE_DESIGN,
-    BALANCER,
-    PIN_ACCESS,
-    GRDR_INIT,
-    SUCCESS,
-    ERROR,
-    NONE
+    kRouting,
+    kUpdateDesign,
+    kBalancer,
+    kPinAccess,
+    kGrdrInit,
+    kSuccess,
+    kError,
+    kNone
   };
   enum MessageType : int8_t
   {
-    UNICAST,
-    BROADCAST
+    kUnicast,
+    kBroadcast
   };
-  JobMessage(JobType job_type = NONE, MessageType msg_type = UNICAST)
+  JobMessage(JobType job_type = kNone, MessageType msg_type = kUnicast)
       : msg_type_(msg_type), job_type_(job_type)
   {
   }
@@ -101,7 +78,7 @@ class JobMessage
   std::unique_ptr<JobDescription> desc_;
   std::vector<std::unique_ptr<JobDescription>> descs_;
 
-  static constexpr const char* EOP
+  static constexpr const char* kEop
       = "\r\nENDOFPACKET\r\n";  // ENDOFPACKET SEQUENCE
 
   template <class Archive>
@@ -111,8 +88,8 @@ class JobMessage
 
   enum SerializeType
   {
-    READ,
-    WRITE
+    kRead,
+    kWrite
   };
   static bool serializeMsg(SerializeType type,
                            JobMessage& msg,

@@ -29,19 +29,15 @@
 
 #include "lefiPropType.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 lefiPropType::lefiPropType()
-    : numProperties_(0),
-      propertiesAllocated_(0),
-      propNames_(NULL),
-      propTypes_(NULL)
 {
   Init();
 }
@@ -50,8 +46,8 @@ void lefiPropType::Init()
 {
   numProperties_ = 0;
   propertiesAllocated_ = 0;
-  propNames_ = 0;
-  propTypes_ = 0;
+  propNames_ = nullptr;
+  propTypes_ = nullptr;
 }
 
 void lefiPropType::Clear()
@@ -68,10 +64,12 @@ void lefiPropType::Clear()
 void lefiPropType::Destroy()
 {
   Clear();
-  if (propNames_)
+  if (propNames_) {
     free(propNames_);
-  if (propTypes_)
+  }
+  if (propTypes_) {
     free(propTypes_);
+  }
 }
 
 lefiPropType::~lefiPropType()
@@ -83,8 +81,9 @@ void lefiPropType::setPropType(const char* name, const char type)
 {
   int len;
 
-  if (numProperties_ == propertiesAllocated_)
+  if (numProperties_ == propertiesAllocated_) {
     bumpProps();
+  }
   len = strlen(name) + 1;
   propNames_[numProperties_] = (char*) malloc(len);
   strcpy(propNames_[numProperties_], CASE(name));
@@ -119,18 +118,20 @@ void lefiPropType::bumpProps()
   propTypes_ = newt;
 }
 
-const char lefiPropType::propType(char* name) const
+char lefiPropType::propType(char* name) const
 {
   int i;
 
   // Name is NULL, error
-  if (!name)
+  if (!name) {
     return ('N');
+  }
 
   for (i = 0; i < numProperties_; i++) {
-    if (strcmp(name, propNames_[i]) == 0)
+    if (strcmp(name, propNames_[i]) == 0) {
       return (propTypes_[i]);  // found the prop name
+    }
   }
   return ('N');  // Can't found the name
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

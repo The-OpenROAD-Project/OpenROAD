@@ -1,39 +1,21 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include "mainWindow.h"
 
 #include <QDesktopServices>
+#include <algorithm>
+#include <any>
+#include <exception>
+#include <limits>
+#include <memory>
+#include <optional>
+#include <set>
+#include <variant>
+#include <vector>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QDesktopWidget>
+#endif
 #include <QFileDialog>
 #include <QFontDialog>
 #include <QInputDialog>
@@ -45,12 +27,11 @@
 #include <QToolButton>
 #include <QUrl>
 #include <QWidgetAction>
-#include <iomanip>
-#include <map>
-#include <sstream>
+#include <cmath>
 #include <string>
-#include <vector>
+#include <utility>
 
+#include "GUIProgress.h"
 #include "browserWidget.h"
 #include "bufferTreeDescriptor.h"
 #include "chartsWidget.h"
@@ -60,15 +41,21 @@
 #include "drcWidget.h"
 #include "globalConnectDialog.h"
 #include "gui/heatMap.h"
+#include "helpWidget.h"
 #include "highlightGroupDialog.h"
 #include "inspector.h"
 #include "layoutTabs.h"
 #include "layoutViewer.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
+#include "sta/Liberty.hh"
+#include "staDescriptors.h"
 #include "staGui.h"
 #include "timingWidget.h"
 #include "utl/Logger.h"
+#include "utl/Progress.h"
 #include "utl/algorithms.h"
 
 // must be loaded in global namespace
@@ -79,7 +66,7 @@ static void loadQTResources()
 
 namespace gui {
 
-MainWindow::MainWindow(QWidget* parent)
+MainWindow::MainWindow(bool load_settings, QWidget* parent)
     : QMainWindow(parent),
       db_(nullptr),
       logger_(nullptr),
@@ -92,9 +79,13 @@ MainWindow::MainWindow(QWidget* parent)
           selected_,
           highlighted_,
           rulers_,
+          labels_,
           Gui::get(),
           [this]() -> bool { return show_dbu_->isChecked(); },
+          [this]() -> bool { return show_poly_decomp_view_->isChecked(); },
           [this]() -> bool { return default_ruler_style_->isChecked(); },
+          [this]() -> bool { return default_mouse_wheel_zoom_->isChecked(); },
+          [this]() -> int { return arrow_keys_scroll_step_; },
           this)),
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
@@ -104,14 +95,12 @@ MainWindow::MainWindow(QWidget* parent)
       hierarchy_widget_(
           new BrowserWidget(viewers_->getModuleSettings(), controls_, this)),
       charts_widget_(new ChartsWidget(this)),
+      help_widget_(new HelpWidget(this)),
       find_dialog_(new FindObjectDialog(this)),
-      goto_dialog_(new GotoLocationDialog(this, viewers_))
+      goto_dialog_(new GotoLocationDialog(this, viewers_)),
+      selection_timer_(std::make_unique<QTimer>()),
+      highlight_timer_(std::make_unique<QTimer>())
 {
-  // Size and position the window
-  QSize size = QDesktopWidget().availableGeometry(this).size();
-  resize(size * 0.8);
-  move(size.width() * 0.1, size.height() * 0.1);
-
   QFont font("Monospace");
   font.setStyleHint(QFont::Monospace);
   script_->setWidgetFont(font);
@@ -126,6 +115,7 @@ MainWindow::MainWindow(QWidget* parent)
   addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, clock_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, charts_widget_);
+  addDockWidget(Qt::RightDockWidgetArea, help_widget_);
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
@@ -135,6 +125,8 @@ MainWindow::MainWindow(QWidget* parent)
   tabifyDockWidget(inspector_, drc_viewer_);
   tabifyDockWidget(inspector_, clock_viewer_);
   tabifyDockWidget(inspector_, charts_widget_);
+  tabifyDockWidget(inspector_, help_widget_);
+
   drc_viewer_->hide();
   clock_viewer_->hide();
 
@@ -167,6 +159,10 @@ MainWindow::MainWindow(QWidget* parent)
   connect(
       controls_, &DisplayControls::changed, viewers_, &LayoutTabs::fullRepaint);
   connect(controls_,
+          &DisplayControls::colorChanged,
+          viewers_,
+          &LayoutTabs::updateBackgroundColors);
+  connect(controls_,
           &DisplayControls::changed,
           hierarchy_widget_,
           &BrowserWidget::displayControlsUpdated);
@@ -177,23 +173,35 @@ MainWindow::MainWindow(QWidget* parent)
           qOverload<const Selected&, bool>(&MainWindow::setSelected));
   connect(viewers_,
           qOverload<const Selected&>(&LayoutTabs::addSelected),
-          this,
-          qOverload<const Selected&>(&MainWindow::addSelected));
+          [this](const Selected& selection) { addSelected(selection); });
   connect(viewers_,
           qOverload<const SelectionSet&>(&LayoutTabs::addSelected),
-          this,
-          qOverload<const SelectionSet&>(&MainWindow::addSelected));
+          [this](const SelectionSet& selections) { addSelected(selections); });
 
   connect(
       viewers_, &LayoutTabs::addRuler, [this](int x0, int y0, int x1, int y1) {
         addRuler(x0, y0, x1, y1, "", "", default_ruler_style_->isChecked());
       });
 
+  connect(viewers_,
+          &LayoutTabs::focusNetsChanged,
+          inspector_,
+          &Inspector::loadActions);
+  connect(viewers_,
+          &LayoutTabs::routeGuidesChanged,
+          inspector_,
+          &Inspector::loadActions);
+  connect(viewers_,
+          &LayoutTabs::netTracksChanged,
+          inspector_,
+          &Inspector::loadActions);
+
   connect(
       this, &MainWindow::selectionChanged, viewers_, &LayoutTabs::fullRepaint);
   connect(
       this, &MainWindow::highlightChanged, viewers_, &LayoutTabs::fullRepaint);
   connect(this, &MainWindow::rulersChanged, viewers_, &LayoutTabs::fullRepaint);
+  connect(this, &MainWindow::labelsChanged, viewers_, &LayoutTabs::fullRepaint);
 
   connect(controls_, &DisplayControls::selected, [=](const Selected& selected) {
     setSelected(selected);
@@ -205,8 +213,7 @@ MainWindow::MainWindow(QWidget* parent)
           qOverload<const Selected&, bool>(&MainWindow::setSelected));
   connect(inspector_,
           &Inspector::addSelected,
-          this,
-          qOverload<const Selected&>(&MainWindow::addSelected));
+          [this](const Selected& selection) { addSelected(selection); });
   connect(inspector_,
           &Inspector::removeSelected,
           this,
@@ -228,14 +235,12 @@ MainWindow::MainWindow(QWidget* parent)
   connect(inspector_, &Inspector::focus, viewers_, &LayoutTabs::selectionFocus);
   connect(
       drc_viewer_, &DRCWidget::focus, viewers_, &LayoutTabs::selectionFocus);
-  connect(this,
-          &MainWindow::highlightChanged,
-          inspector_,
-          &Inspector::highlightChanged);
+  connect(
+      this, &MainWindow::highlightChanged, inspector_, &Inspector::loadActions);
   connect(viewers_,
           &LayoutTabs::focusNetsChanged,
           inspector_,
-          &Inspector::focusNetsChanged);
+          &Inspector::loadActions);
   connect(inspector_,
           &Inspector::removeHighlight,
           [=](const QList<const Selected*>& selected) {
@@ -244,6 +249,16 @@ MainWindow::MainWindow(QWidget* parent)
   connect(inspector_,
           &Inspector::addHighlight,
           [=](const SelectionSet& selected) { addHighlighted(selected); });
+  connect(
+      inspector_, &Inspector::setCommand, script_, &ScriptWidget::setCommand);
+  connect(script_,
+          &ScriptWidget::commandAboutToExecute,
+          inspector_,
+          &Inspector::setReadOnly);
+  connect(script_,
+          &ScriptWidget::commandExecuted,
+          inspector_,
+          &Inspector::unsetReadOnly);
 
   connect(hierarchy_widget_,
           &BrowserWidget::select,
@@ -287,8 +302,15 @@ MainWindow::MainWindow(QWidget* parent)
           &SelectHighlightWindow::updateHighlightModel);
   connect(clock_viewer_,
           &ClockWidget::selected,
-          this,
-          qOverload<const Selected&>(&MainWindow::addSelected));
+          [this](const Selected& selection) { addSelected(selection); });
+  connect(this,
+          qOverload<const Selected&>(&MainWindow::findInCts),
+          clock_viewer_,
+          qOverload<const Selected&>(&ClockWidget::findInCts));
+  connect(this,
+          qOverload<const SelectionSet&>(&MainWindow::findInCts),
+          clock_viewer_,
+          qOverload<const SelectionSet&>(&ClockWidget::findInCts));
 
   connect(selection_browser_,
           &SelectHighlightWindow::clearAllSelections,
@@ -327,6 +349,10 @@ MainWindow::MainWindow(QWidget* parent)
           &TimingWidget::setCommand,
           script_,
           &ScriptWidget::setCommand);
+  connect(charts_widget_,
+          &ChartsWidget::endPointsToReport,
+          this,
+          &MainWindow::reportSlackHistogramPaths);
 
   connect(this, &MainWindow::blockLoaded, this, &MainWindow::setBlock);
   connect(this, &MainWindow::blockLoaded, drc_viewer_, &DRCWidget::setBlock);
@@ -362,36 +388,53 @@ MainWindow::MainWindow(QWidget* parent)
           &MainWindow::displayUnitsChanged,
           goto_dialog_,
           &GotoLocationDialog::updateUnits);
+  connect(selection_timer_.get(), &QTimer::timeout, [this]() {
+    emit selectionChanged();
+  });
+  connect(highlight_timer_.get(),
+          &QTimer::timeout,
+          this,
+          &MainWindow::highlightChanged);
 
   createActions();
   createToolbars();
   createMenus();
   createStatusBar();
 
-  // Restore the settings (if none this is a no-op)
-  QSettings settings("OpenRoad Project", "openroad");
-  settings.beginGroup("main");
-  restoreGeometry(settings.value("geometry").toByteArray());
-  restoreState(settings.value("state").toByteArray());
-  QApplication::setFont(
-      settings.value("font", QApplication::font()).value<QFont>());
-  hide_option_->setChecked(
-      settings.value("check_exit", hide_option_->isChecked()).toBool());
-  show_dbu_->setChecked(
-      settings.value("use_dbu", show_dbu_->isChecked()).toBool());
-  default_ruler_style_->setChecked(
-      settings.value("ruler_style", default_ruler_style_->isChecked())
-          .toBool());
-  script_->readSettings(&settings);
-  controls_->readSettings(&settings);
-  timing_widget_->readSettings(&settings);
-  hierarchy_widget_->readSettings(&settings);
-  settings.endGroup();
+  if (load_settings) {
+    // Restore the settings (if none this is a no-op)
+    QSettings settings("OpenRoad Project", "openroad");
+    settings.beginGroup("main");
+    // Save these for the showEvent as the window manager may not respect them
+    // if restore here.
+    saved_geometry_ = settings.value("geometry").toByteArray();
+    saved_state_ = settings.value("state").toByteArray();
+    QApplication::setFont(
+        settings.value("font", QApplication::font()).value<QFont>());
+    hide_option_->setChecked(
+        settings.value("check_exit", hide_option_->isChecked()).toBool());
+    show_dbu_->setChecked(
+        settings.value("use_dbu", show_dbu_->isChecked()).toBool());
+    default_ruler_style_->setChecked(
+        settings.value("ruler_style", default_ruler_style_->isChecked())
+            .toBool());
+    default_mouse_wheel_zoom_->setChecked(
+        settings
+            .value("mouse_wheel_zoom", default_mouse_wheel_zoom_->isChecked())
+            .toBool());
+    arrow_keys_scroll_step_
+        = settings.value("arrow_keys_scroll_step", arrow_keys_scroll_step_)
+              .toInt();
+    script_->readSettings(&settings);
+    controls_->readSettings(&settings);
+    timing_widget_->readSettings(&settings);
+    hierarchy_widget_->readSettings(&settings);
+    settings.endGroup();
+  }
 
-  // load resources and set window icon and title
+  // load resources and set window icon
   loadQTResources();
   setWindowIcon(QIcon(":/icon.png"));
-  setWindowTitle(window_title_);
 
   Descriptor::Property::convert_dbu
       = [this](int value, bool add_units) -> std::string {
@@ -401,6 +444,37 @@ MainWindow::MainWindow(QWidget* parent)
       = [this](const std::string& value, bool* ok) -> int {
     return convertStringToDBU(value, ok);
   };
+
+  selection_timer_->setSingleShot(true);
+  highlight_timer_->setSingleShot(true);
+
+  selection_timer_->setInterval(100 /* ms */);
+  highlight_timer_->setInterval(100 /* ms */);
+}
+
+void MainWindow::showEvent(QShowEvent* event)
+{
+  QWidget::showEvent(event);
+
+  if (!first_show_) {
+    return;
+  }
+
+  if (saved_geometry_.has_value() && saved_state_.has_value()) {
+    restoreGeometry(saved_geometry_.value());
+    restoreState(saved_state_.value());
+  } else {
+    // Default size and position the window
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QSize size = screen()->availableGeometry().size();
+#else
+    QSize size = QDesktopWidget().availableGeometry(this).size();
+#endif
+
+    resize(size * 0.8);
+    move(size.width() * 0.1, size.height() * 0.1);
+  }
+  first_show_ = false;
 }
 
 MainWindow::~MainWindow()
@@ -408,9 +482,16 @@ MainWindow::~MainWindow()
   auto* gui = Gui::get();
   // unregister descriptors with GUI dependencies
   gui->unregisterDescriptor<Ruler*>();
+  gui->unregisterDescriptor<Label*>();
   gui->unregisterDescriptor<odb::dbNet*>();
   gui->unregisterDescriptor<DbNetDescriptor::NetWithSink>();
   gui->unregisterDescriptor<BufferTree>();
+  gui->unregisterDescriptor<odb::dbITerm*>();
+  gui->unregisterDescriptor<odb::dbMTerm*>();
+
+  if (cli_progress_ != nullptr) {
+    logger_->swapProgress(cli_progress_.release());
+  }
 }
 
 void MainWindow::setDatabase(odb::dbDatabase* db)
@@ -418,12 +499,31 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
   db_ = db;
 }
 
+void MainWindow::setTitle(const std::string& title)
+{
+  window_title_ = title;
+  updateTitle();
+}
+
+void MainWindow::updateTitle()
+{
+  if (!window_title_.empty()) {
+    odb::dbBlock* block = getBlock();
+    if (block != nullptr) {
+      const std::string title
+          = fmt::format("{} - {}", window_title_, block->getName());
+      setWindowTitle(QString::fromStdString(title));
+    } else {
+      setWindowTitle(QString::fromStdString(window_title_));
+    }
+  }
+}
+
 void MainWindow::setBlock(odb::dbBlock* block)
 {
+  updateTitle();
   if (block != nullptr) {
-    const std::string title
-        = fmt::format("{} - {}", window_title_, block->getName());
-    setWindowTitle(QString::fromStdString(title));
+    save_->setEnabled(true);
   }
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
     heat_map->setBlock(block);
@@ -431,16 +531,15 @@ void MainWindow::setBlock(odb::dbBlock* block)
   hierarchy_widget_->setBlock(block);
 }
 
-void MainWindow::init(sta::dbSta* sta)
+void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
 {
   // Setup widgets
   timing_widget_->init(sta);
   controls_->setSTA(sta);
   hierarchy_widget_->setSTA(sta);
   clock_viewer_->setSTA(sta);
-#ifdef ENABLE_CHARTS
   charts_widget_->setSTA(sta);
-#endif
+  help_widget_->init(help_path);
 
   // register descriptors
   auto* gui = Gui::get();
@@ -459,8 +558,12 @@ void MainWindow::init(sta::dbSta* sta)
                           viewers_->getFocusNets(),
                           viewers_->getRouteGuides(),
                           viewers_->getNetTracks()));
-  gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
+  gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(
+      db_, [this]() -> bool { return show_poly_decomp_view_->isChecked(); }));
+  gui->registerDescriptor<odb::dbMTerm*>(new DbMTermDescriptor(
+      db_, [this]() -> bool { return show_poly_decomp_view_->isChecked(); }));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
+  gui->registerDescriptor<odb::dbBPin*>(new DbBPinDescriptor(db_));
   gui->registerDescriptor<odb::dbVia*>(new DbViaDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
   gui->registerDescriptor<odb::dbObstruction*>(
@@ -481,7 +584,7 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTechNonDefaultRule*>(
       new DbNonDefaultRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechLayerRule*>(
-      new DbTechLayerRuleDescriptor());
+      new DbTechLayerRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechSameNetRule*>(
       new DbTechSameNetRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbSite*>(new DbSiteDescriptor(db_));
@@ -489,10 +592,32 @@ void MainWindow::init(sta::dbSta* sta)
       new DbSiteDescriptor(db_));
   gui->registerDescriptor<odb::dbRow*>(new DbRowDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
+  gui->registerDescriptor<Label*>(new LabelDescriptor(labels_, db_, logger_));
   gui->registerDescriptor<odb::dbBlock*>(new DbBlockDescriptor(db_));
   gui->registerDescriptor<odb::dbTech*>(new DbTechDescriptor(db_));
   gui->registerDescriptor<odb::dbMetalWidthViaMap*>(
       new DbMetalWidthViaMapDescriptor(db_));
+  gui->registerDescriptor<odb::dbMarkerCategory*>(
+      new DbMarkerCategoryDescriptor(db_));
+  gui->registerDescriptor<odb::dbMarker*>(new DbMarkerDescriptor(db_));
+  gui->registerDescriptor<odb::dbScanInst*>(new DbScanInstDescriptor(db_));
+  gui->registerDescriptor<odb::dbScanList*>(new DbScanListDescriptor(db_));
+  gui->registerDescriptor<odb::dbScanPartition*>(
+      new DbScanPartitionDescriptor(db_));
+  gui->registerDescriptor<odb::dbScanChain*>(new DbScanChainDescriptor(db_));
+  gui->registerDescriptor<odb::dbBox*>(new DbBoxDescriptor(db_));
+  gui->registerDescriptor<DbBoxDescriptor::BoxWithTransform>(
+      new DbBoxDescriptor(db_));
+
+  gui->registerDescriptor<sta::Corner*>(new CornerDescriptor(sta));
+  gui->registerDescriptor<sta::LibertyLibrary*>(
+      new LibertyLibraryDescriptor(sta));
+  gui->registerDescriptor<sta::LibertyCell*>(new LibertyCellDescriptor(sta));
+  gui->registerDescriptor<sta::LibertyPort*>(new LibertyPortDescriptor(sta));
+  gui->registerDescriptor<sta::LibertyPgPort*>(
+      new LibertyPgPortDescriptor(sta));
+  gui->registerDescriptor<sta::Instance*>(new StaInstanceDescriptor(sta));
+  gui->registerDescriptor<sta::Clock*>(new ClockDescriptor(sta));
 
   gui->registerDescriptor<BufferTree>(
       new BufferTreeDescriptor(db_,
@@ -540,6 +665,8 @@ void MainWindow::createActions()
   exit_ = new QAction("Exit", this);
 
   open_ = new QAction("Open DB", this);
+  save_ = new QAction("Save DB", this);
+  save_->setEnabled(false);
 
   fit_ = new QAction("Fit", this);
   fit_->setShortcut(QString("F"));
@@ -572,9 +699,24 @@ void MainWindow::createActions()
   show_dbu_->setCheckable(true);
   show_dbu_->setChecked(false);
 
+  enable_developer_mode_ = new QShortcut(QKeySequence("Ctrl+="), this);
+
+  show_poly_decomp_view_ = new QAction("Show polygon decomposition", this);
+  show_poly_decomp_view_->setCheckable(true);
+  show_poly_decomp_view_->setChecked(false);
+  show_poly_decomp_view_->setVisible(false);
+
   default_ruler_style_ = new QAction("Make euclidian rulers", this);
   default_ruler_style_->setCheckable(true);
   default_ruler_style_->setChecked(true);
+
+  default_mouse_wheel_zoom_
+      = new QAction("Mouse wheel mapped to zoom by default", this);
+  default_mouse_wheel_zoom_->setCheckable(true);
+  default_mouse_wheel_zoom_->setChecked(false);
+
+  arrow_keys_scroll_step_dialog_ = new QAction("Arrow keys scroll step", this);
+  arrow_keys_scroll_step_ = 20;
 
   font_ = new QAction("Application font", this);
 
@@ -582,6 +724,7 @@ void MainWindow::createActions()
   global_connect_->setShortcut(QString("Ctrl+G"));
 
   connect(open_, &QAction::triggered, this, &MainWindow::openDesign);
+  connect(save_, &QAction::triggered, this, &MainWindow::saveDesign);
   connect(
       this, &MainWindow::blockLoaded, [this]() { open_->setEnabled(false); });
   connect(hide_, &QAction::triggered, this, &MainWindow::hide);
@@ -618,6 +761,21 @@ void MainWindow::createActions()
   connect(show_dbu_, &QAction::toggled, this, &MainWindow::setUseDBU);
   connect(show_dbu_, &QAction::toggled, this, &MainWindow::setClearLocation);
 
+  connect(enable_developer_mode_,
+          &QShortcut::activated,
+          this,
+          &MainWindow::enableDeveloper);
+
+  connect(show_poly_decomp_view_,
+          &QAction::toggled,
+          viewers_,
+          &LayoutTabs::resetCache);
+
+  connect(arrow_keys_scroll_step_dialog_,
+          &QAction::triggered,
+          this,
+          &MainWindow::showArrowKeysScrollStep);
+
   connect(font_, &QAction::triggered, this, &MainWindow::showApplicationFont);
 
   connect(global_connect_,
@@ -649,10 +807,30 @@ void MainWindow::showApplicationFont()
   }
 }
 
+void MainWindow::showArrowKeysScrollStep()
+{
+  bool okay = false;
+  int arrow_keys_scroll_step
+      = QInputDialog::getInt(this,
+                             tr("Configure arrow keys"),
+                             tr("Arrow keys scrool step value"),
+                             arrow_keys_scroll_step_,
+                             10,
+                             1000,
+                             1,
+                             &okay);
+
+  if (okay) {
+    arrow_keys_scroll_step_ = arrow_keys_scroll_step;
+    update();
+  }
+}
+
 void MainWindow::createMenus()
 {
   file_menu_ = menuBar()->addMenu("&File");
   file_menu_->addAction(open_);
+  file_menu_->addAction(save_);
   file_menu_->addAction(hide_);
   file_menu_->addAction(exit_);
 
@@ -683,12 +861,16 @@ void MainWindow::createMenus()
   windows_menu_->addAction(clock_viewer_->toggleViewAction());
   windows_menu_->addAction(hierarchy_widget_->toggleViewAction());
   windows_menu_->addAction(charts_widget_->toggleViewAction());
+  windows_menu_->addAction(help_widget_->toggleViewAction());
 
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);
   option_menu->addAction(show_dbu_);
   option_menu->addAction(default_ruler_style_);
+  option_menu->addAction(default_mouse_wheel_zoom_);
+  option_menu->addAction(arrow_keys_scroll_step_dialog_);
   option_menu->addAction(font_);
+  option_menu->addAction(show_poly_decomp_view_);
 
   menuBar()->addAction(help_);
 }
@@ -758,14 +940,19 @@ QMenu* MainWindow::findMenu(QStringList& path, QMenu* parent)
     return parent;
   }
 
-  auto cleanupText = [](const QString& text) -> QString {
+  auto cleanup_text = [](const QString& text) -> QString {
     QString text_cpy = text;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    text_cpy.replace(QRegularExpression("&(?!&)"),
+                     "");  // remove single &, but keep &&
+#else
     text_cpy.replace(QRegExp("&(?!&)"), "");  // remove single &, but keep &&
+#endif
     return text_cpy;
   };
 
   const QString top_name = path[0];
-  const QString compare_name = cleanupText(top_name);
+  const QString compare_name = cleanup_text(top_name);
   path.pop_front();
 
   QList<QAction*> actions;
@@ -777,7 +964,7 @@ QMenu* MainWindow::findMenu(QStringList& path, QMenu* parent)
 
   QMenu* menu = nullptr;
   for (auto* action : actions) {
-    if (cleanupText(action->text()) == compare_name) {
+    if (cleanup_text(action->text()) == compare_name) {
       menu = action->menu();
     }
   }
@@ -908,11 +1095,14 @@ void MainWindow::updateSelectedStatus(const Selected& selection)
   status(selection ? selection.getName() : "");
 }
 
-void MainWindow::addSelected(const Selected& selection)
+void MainWindow::addSelected(const Selected& selection, bool find_in_cts)
 {
   if (selection) {
     selected_.emplace(selection);
     emit selectionChanged(selection);
+    if (find_in_cts) {
+      emit findInCts(selection);
+    }
   }
   emit updateSelectedStatus(selection);
 }
@@ -956,7 +1146,7 @@ void MainWindow::removeSelectedByType(const std::string& type)
   }
 }
 
-void MainWindow::addSelected(const SelectionSet& selections)
+void MainWindow::addSelected(const SelectionSet& selections, bool find_in_cts)
 {
   int prev_selected_size = selected_.size();
   for (const auto& selection : selections) {
@@ -966,7 +1156,11 @@ void MainWindow::addSelected(const SelectionSet& selections)
   }
   status(std::string("Added ")
          + std::to_string(selected_.size() - prev_selected_size));
-  emit selectionChanged();
+  selection_timer_->start();
+
+  if (find_in_cts) {
+    emit findInCts(selections);
+  }
 }
 
 void MainWindow::setSelected(const SelectionSet& selections)
@@ -1006,7 +1200,56 @@ void MainWindow::addHighlighted(const SelectionSet& highlights,
       group.insert(highlight);
     }
   }
-  emit highlightChanged();
+  highlight_timer_->start();
+}
+
+std::string MainWindow::addLabel(int x,
+                                 int y,
+                                 const std::string& text,
+                                 std::optional<Painter::Color> color,
+                                 std::optional<int> size,
+                                 std::optional<Painter::Anchor> anchor,
+                                 std::optional<std::string> name)
+{
+  auto new_label
+      = std::make_unique<Label>(odb::Point(x, y),
+                                text,
+                                anchor.value_or(Painter::Anchor::kCenter),
+                                color.value_or(gui::Painter::kWhite),
+                                size,
+                                std::move(name));
+  std::string new_name = new_label->getName();
+
+  // check if ruler name is unique
+  for (const auto& label : labels_) {
+    if (new_name == label->getName()) {
+      logger_->warn(
+          utl::GUI, 44, "Label with name \"{}\" already exists", new_name);
+      return "";
+    }
+  }
+
+  labels_.push_back(std::move(new_label));
+  emit labelsChanged();
+  return new_name;
+}
+
+void MainWindow::deleteLabel(const std::string& name)
+{
+  auto label_find
+      = std::find_if(labels_.begin(), labels_.end(), [name](const auto& l) {
+          return l->getName() == name;
+        });
+  if (label_find != labels_.end()) {
+    // remove from selected set
+    auto remove_selected = Gui::get()->makeSelected(label_find->get());
+    if (selected_.find(remove_selected) != selected_.end()) {
+      selected_.erase(remove_selected);
+      emit selectionChanged();
+    }
+    labels_.erase(label_find);
+    emit labelsChanged();
+  }
 }
 
 std::string MainWindow::addRuler(int x0,
@@ -1110,6 +1353,16 @@ void MainWindow::clearHighlighted(int highlight_group)
   }
 }
 
+void MainWindow::clearLabels()
+{
+  if (labels_.empty()) {
+    return;
+  }
+  Gui::get()->removeSelected<Label*>();
+  labels_.clear();
+  emit labelsChanged();
+}
+
 void MainWindow::clearRulers()
 {
   if (rulers_.empty()) {
@@ -1193,8 +1446,9 @@ void MainWindow::showFindDialog()
 
 void MainWindow::showGotoDialog()
 {
-  if (getBlock() == nullptr)
+  if (getBlock() == nullptr) {
     return;
+  }
 
   goto_dialog_->show_init();
 }
@@ -1342,6 +1596,8 @@ void MainWindow::saveSettings()
   settings.setValue("check_exit", hide_option_->isChecked());
   settings.setValue("use_dbu", show_dbu_->isChecked());
   settings.setValue("ruler_style", default_ruler_style_->isChecked());
+  settings.setValue("mouse_wheel_zoom", default_mouse_wheel_zoom_->isChecked());
+  settings.setValue("arrow_keys_scroll_step", arrow_keys_scroll_step_);
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
   timing_widget_->writeSettings(&settings);
@@ -1379,14 +1635,17 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
 void MainWindow::setLogger(utl::Logger* logger)
 {
   logger_ = logger;
+
+  auto progress = std::make_unique<GUIProgress>(logger_, this);
+  cli_progress_ = logger_->swapProgress(progress.release());
+
   controls_->setLogger(logger);
   script_->setLogger(logger);
   viewers_->setLogger(logger);
   drc_viewer_->setLogger(logger);
   clock_viewer_->setLogger(logger);
-#ifdef ENABLE_CHARTS
   charts_widget_->setLogger(logger);
-#endif
+  timing_widget_->setLogger(logger);
 }
 
 void MainWindow::fit()
@@ -1436,6 +1695,12 @@ void MainWindow::closeEvent(QCloseEvent* event)
   exit_check.exec();
 
   if (exit_check.clickedButton() == exit_button) {
+    // close all dialogs
+    for (QWidget* w : QApplication::topLevelWidgets()) {
+      if (w != this) {
+        w->close();
+      }
+    }
     // exit selected so go ahead and close
     event->accept();
   } else if (exit_check.clickedButton() == hide_button) {
@@ -1494,7 +1759,7 @@ std::string MainWindow::convertDBUToString(int value, bool add_units) const
   auto str = utl::to_numeric_string(micron_value, precision);
 
   if (add_units) {
-    str += " \u03BCm";  // micro meter
+    str += " μm";
   }
 
   return str;
@@ -1508,8 +1773,8 @@ int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
     new_value = new_value.left(new_value.indexOf(" "));
   } else if (new_value.contains("u")) {
     new_value = new_value.left(new_value.indexOf("u"));
-  } else if (new_value.contains("\u03BC")) {
-    new_value = new_value.left(new_value.indexOf("\u03BC"));
+  } else if (new_value.contains("μ")) {
+    new_value = new_value.left(new_value.indexOf("μ"));
   }
 
   if (show_dbu_->isChecked()) {
@@ -1524,7 +1789,7 @@ int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
   return new_value.toDouble(ok) * dbu_per_micron;
 }
 
-void MainWindow::timingCone(Gui::odbTerm term, bool fanin, bool fanout)
+void MainWindow::timingCone(Gui::Term term, bool fanin, bool fanout)
 {
   auto* renderer = timing_widget_->getConeRenderer();
 
@@ -1535,7 +1800,7 @@ void MainWindow::timingCone(Gui::odbTerm term, bool fanin, bool fanout)
   }
 }
 
-void MainWindow::timingPathsThrough(const std::set<Gui::odbTerm>& terms)
+void MainWindow::timingPathsThrough(const std::set<Gui::Term>& terms)
 {
   auto* settings = timing_widget_->getSettings();
   settings->setFromPin({});
@@ -1543,7 +1808,7 @@ void MainWindow::timingPathsThrough(const std::set<Gui::odbTerm>& terms)
   for (const auto& term : terms) {
     pins.insert(settings->convertTerm(term));
   }
-  settings->setThruPin({pins});
+  settings->setThruPin({std::move(pins)});
   settings->setToPin({});
 
   timing_widget_->updatePaths();
@@ -1606,4 +1871,41 @@ void MainWindow::openDesign()
   }
 }
 
+void MainWindow::saveDesign()
+{
+  const QString filefilter = "OpenDB (*.odb *.ODB)";
+  const QString file = QFileDialog::getSaveFileName(
+      this, "Save Design", QString(), filefilter);
+
+  if (file.isEmpty()) {
+    return;
+  }
+
+  try {
+    ord::OpenRoad::openRoad()->writeDb(file.toStdString().c_str());
+  } catch (const std::exception&) {
+  }
+}
+
+void MainWindow::enableDeveloper()
+{
+  show_poly_decomp_view_->setVisible(true);
+}
+
+void MainWindow::reportSlackHistogramPaths(
+    const std::set<const sta::Pin*>& report_pins,
+    const std::string& path_group_name)
+{
+  if (!timing_widget_->isVisible()) {
+    timing_widget_->show();
+  }
+
+  // In Qt, an enabled tabified widget is visible, so
+  // we need to make it the active tab.
+  if (timing_widget_->visibleRegion().isEmpty()) {
+    timing_widget_->raise();
+  }
+
+  timing_widget_->reportSlackHistogramPaths(report_pins, path_group_name);
+}
 }  // namespace gui

@@ -1,34 +1,5 @@
-//////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include "layoutViewer.h"
 
@@ -51,20 +22,33 @@
 #include <QToolButton>
 #include <QToolTip>
 #include <QTranslator>
-#include <boost/geometry.hpp>
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstdint>
 #include <deque>
+#include <functional>
 #include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <tuple>
+#include <utility>
 #include <vector>
 
-#include "db.h"
+#include "boost/geometry/geometry.hpp"
 #include "dbDescriptors.h"
-#include "dbShape.h"
-#include "dbTransform.h"
 #include "gui/gui.h"
 #include "gui_utils.h"
 #include "highlightGroupDialog.h"
+#include "label.h"
 #include "mainWindow.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbShape.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "painter.h"
 #include "ruler.h"
 #include "scriptWidget.h"
@@ -94,6 +78,7 @@ using odb::dbMaster;
 using odb::dbMPin;
 using odb::dbMTerm;
 using odb::dbOrientType;
+using odb::dbPolygon;
 using odb::dbRowDir;
 using odb::dbSite;
 using odb::dbTech;
@@ -112,13 +97,15 @@ LayoutViewer::LayoutViewer(
     const SelectionSet& selected,
     const HighlightSet& highlighted,
     const std::vector<std::unique_ptr<Ruler>>& rulers,
+    const std::vector<std::unique_ptr<Label>>& labels,
     const std::map<odb::dbModule*, ModuleSettings>& module_settings,
     const std::set<odb::dbNet*>& focus_nets,
     const std::set<odb::dbNet*>& route_guides,
     const std::set<odb::dbNet*>& net_tracks,
     Gui* gui,
-    const std::function<bool(void)>& usingDBU,
-    const std::function<bool(void)>& showRulerAsEuclidian,
+    const std::function<bool()>& using_dbu,
+    const std::function<bool()>& show_ruler_as_euclidian,
+    const std::function<bool()>& show_db_view,
     QWidget* parent)
     : QWidget(parent),
       block_(nullptr),
@@ -127,6 +114,7 @@ LayoutViewer::LayoutViewer(
       selected_(selected),
       highlighted_(highlighted),
       rulers_(rulers),
+      labels_(labels),
       scroller_(nullptr),
       pixels_per_dbu_(1.0),
       fit_pixels_per_dbu_(1.0),
@@ -135,8 +123,9 @@ LayoutViewer::LayoutViewer(
       rubber_band_showing_(false),
       is_view_dragging_(false),
       gui_(gui),
-      usingDBU_(usingDBU),
-      showRulerAsEuclidian_(showRulerAsEuclidian),
+      using_dbu_(using_dbu),
+      show_ruler_as_euclidian_(show_ruler_as_euclidian),
+      show_db_view_(show_db_view),
       modules_(module_settings),
       building_ruler_(false),
       ruler_start_(nullptr),
@@ -278,14 +267,14 @@ void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
                             this->size().height() / pixels_per_dbu_);
 
   // ensure max size is not exceeded
-  qreal maximum_pixels_per_dbu_
+  qreal maximum_pixels_per_dbu
       = 0.98
         * computePixelsPerDBU(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX),
                               current_viewer);
   qreal target_pixels_per_dbu
-      = std::min(pixels_per_dbu, maximum_pixels_per_dbu_);
+      = std::min(pixels_per_dbu, maximum_pixels_per_dbu);
 
-  if (target_pixels_per_dbu == maximum_pixels_per_dbu_) {
+  if (target_pixels_per_dbu == maximum_pixels_per_dbu) {
     return;
   }
 
@@ -330,7 +319,7 @@ void LayoutViewer::centerAt(const odb::Point& focus)
   // returns 0 if the value was possible
   // return the actual value of the center if the set point
   // was outside the range of the scrollbar
-  auto setScrollBar = [](QScrollBar* bar, int value) -> int {
+  auto set_scroll_bar = [](QScrollBar* bar, int value) -> int {
     const int max_value = bar->maximum();
     const int min_value = bar->minimum();
     if (value > max_value) {
@@ -345,13 +334,13 @@ void LayoutViewer::centerAt(const odb::Point& focus)
     return 0;
   };
 
-  const int x_val = setScrollBar(scroller_->horizontalScrollBar(), pt.x());
-  const int y_val = setScrollBar(scroller_->verticalScrollBar(), pt.y());
+  const int x_val = set_scroll_bar(scroller_->horizontalScrollBar(), pt.x());
+  const int y_val = set_scroll_bar(scroller_->verticalScrollBar(), pt.y());
   // set the center now, since center is modified by the updateCenter
   // we only care of the focus point
   center_ = focus;
 
-  // account for layout window edges from setScrollBar
+  // account for layout window edges from set_scroll_bar
   odb::Point adjusted_pt = screenToDBU(QPointF(x_val, y_val));
   if (x_val != 0) {
     center_.setX(adjusted_pt.x());
@@ -386,7 +375,7 @@ void LayoutViewer::zoomIn()
 
 void LayoutViewer::zoomIn(const odb::Point& focus, bool do_delta_focus)
 {
-  zoom(focus, 1 * zoom_scale_factor_, do_delta_focus);
+  zoom(focus, 1 * kZoomScaleFactor, do_delta_focus);
 }
 
 void LayoutViewer::zoomOut()
@@ -396,7 +385,7 @@ void LayoutViewer::zoomOut()
 
 void LayoutViewer::zoomOut(const odb::Point& focus, bool do_delta_focus)
 {
-  zoom(focus, 1 / zoom_scale_factor_, do_delta_focus);
+  zoom(focus, 1 / kZoomScaleFactor, do_delta_focus);
 }
 
 void LayoutViewer::zoom(const odb::Point& focus,
@@ -483,7 +472,7 @@ void LayoutViewer::searchNearestViaEdge(
                                                 search_line.yMax(),
                                                 shape_limit);
   std::vector<odb::dbShape> shapes;
-  for (auto& [box, sbox, net] : via_shapes) {
+  for (const auto& [sbox, net] : via_shapes) {
     if (isNetVisible(net)) {
       sbox->getViaLayerBoxes(search_layer, shapes);
       for (auto& shape : shapes) {
@@ -560,15 +549,6 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
           }
         };
 
-  auto convert_box_to_rect = [](const Search::Box& box) -> odb::Rect {
-    const auto min_corner = box.min_corner();
-    const auto max_corner = box.max_corner();
-    const odb::Point ll(min_corner.x(), min_corner.y());
-    const odb::Point ur(max_corner.x(), max_corner.y());
-
-    return odb::Rect(ll, ur);
-  };
-
   // get die bounding box
   Rect bbox = block_->getDieArea();
   check_rect(bbox);
@@ -611,13 +591,13 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
   // Cache the search results as we will iterate over the instances
   // for each layer.
   std::vector<dbInst*> insts;
-  for (auto& [box, inst] : inst_range) {
+  for (auto* inst : inst_range) {
     if (options_->isInstanceVisible(inst)) {
       if (inst_internals_visible) {
         // only add inst if it can be used for pin or obs search
         insts.push_back(inst);
       }
-      check_rect(convert_box_to_rect(box));
+      check_rect(inst->getBBox()->getBox());
     }
   }
 
@@ -641,23 +621,30 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
 
       if (inst_osb_visible) {
         for (auto& box : inst_boxes->obs) {
-          odb::Rect trans_box(box.left(), box.bottom(), box.right(), box.top());
+          const QRect rect = box.boundingRect();
+          odb::Rect trans_box(
+              rect.left(), rect.bottom(), rect.right(), rect.top());
           inst_xfm.apply(trans_box);
           check_rect(trans_box);
         }
       }
       if (inst_pins_visible) {
-        for (auto& box : inst_boxes->mterms) {
-          odb::Rect trans_box(box.left(), box.bottom(), box.right(), box.top());
-          inst_xfm.apply(trans_box);
-          check_rect(trans_box);
+        for (const auto& [mterm, boxes] : inst_boxes->mterms) {
+          for (const auto& box : boxes) {
+            const QRect rect = box.boundingRect();
+            odb::Rect trans_box(
+                rect.left(), rect.bottom(), rect.right(), rect.top());
+            inst_xfm.apply(trans_box);
+            check_rect(trans_box);
+          }
         }
       }
     }
 
     const bool routing_visible = options_->areRoutingSegmentsVisible();
     const bool vias_visible = options_->areRoutingViasVisible();
-    if (routing_visible || vias_visible) {
+    const bool io_pins_visible = options_->areIOPinsVisible();
+    if (routing_visible || vias_visible || io_pins_visible) {
       auto box_shapes = search_.searchBoxShapes(block_,
                                                 layer,
                                                 search_line.xMin(),
@@ -665,15 +652,18 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                                 search_line.xMax(),
                                                 search_line.yMax(),
                                                 shape_limit);
-      for (auto& [box, is_via, net] : box_shapes) {
-        if (!routing_visible && !is_via) {
+      for (const auto& [box, type, net] : box_shapes) {
+        if (!routing_visible && type == Search::WIRE) {
           continue;
         }
-        if (!vias_visible && is_via) {
+        if (!vias_visible && type == Search::VIA) {
+          continue;
+        }
+        if (!io_pins_visible && type == Search::BTERM) {
           continue;
         }
         if (isNetVisible(net)) {
-          check_rect(convert_box_to_rect(box));
+          check_rect(box);
         }
       }
     }
@@ -702,9 +692,9 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                                      search_line.xMax(),
                                                      search_line.yMax(),
                                                      shape_limit);
-      for (auto& [box, poly, net] : polygon_shapes) {
+      for (const auto& [box, poly, net] : polygon_shapes) {
         if (isNetVisible(net)) {
-          check_rect(convert_box_to_rect(box));
+          check_rect(box->getBox());
         }
       }
     }
@@ -717,8 +707,10 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                        search_line.xMax(),
                                        search_line.yMax(),
                                        shape_limit);
-      for (auto& [box, fill] : fills) {
-        check_rect(convert_box_to_rect(box));
+      for (auto* fill : fills) {
+        odb::Rect box;
+        fill->getRect(box);
+        check_rect(box);
       }
     }
 
@@ -730,8 +722,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                             search_line.xMax(),
                                             search_line.yMax(),
                                             shape_limit);
-      for (auto& [box, ob] : obs) {
-        check_rect(convert_box_to_rect(box));
+      for (auto* ob : obs) {
+        check_rect(ob->getBBox()->getBox());
       }
     }
   }
@@ -743,13 +735,14 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                          search_line.xMax(),
                                          search_line.yMax(),
                                          shape_limit);
-    for (auto& [box, blck] : blcks) {
-      check_rect(convert_box_to_rect(box));
+    for (auto* blck : blcks) {
+      check_rect(blck->getBBox()->getBox());
     }
   }
 
   if (options_->areSitesVisible()) {
-    for (const auto& [row, row_site] : getRowRects(block_, search_line)) {
+    for (const auto& [row, row_site, index] :
+         getRowRects(block_, search_line)) {
       odb::dbSite* site = nullptr;
       if (row->getObjectType() == odb::dbObjectType::dbSiteObj) {
         site = static_cast<odb::dbSite*>(row);
@@ -805,7 +798,7 @@ void LayoutViewer::selectViaShapesAt(dbTechLayer* cut_layer,
                                                 shape_limit);
 
   std::vector<odb::dbShape> shapes;
-  for (auto& [box, sbox, net] : via_shapes) {
+  for (const auto& [sbox, net] : via_shapes) {
     if (isNetVisible(net) && options_->isNetSelectable(net)) {
       sbox->getViaLayerBoxes(select_layer, shapes);
       for (auto& shape : shapes) {
@@ -836,7 +829,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                              region.xMax(),
                                              region.yMax(),
                                              shape_limit);
-    for (auto& [box, blockage] : blockages) {
+    for (auto* blockage : blockages) {
       selections.push_back(gui_->makeSelected(blockage));
     }
   }
@@ -868,14 +861,15 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                             region.xMax(),
                                             region.yMax(),
                                             shape_limit);
-      for (auto& [box, obs] : obs) {
-        selections.push_back(gui_->makeSelected(obs));
+      for (auto* ob : obs) {
+        selections.push_back(gui_->makeSelected(ob));
       }
     }
 
     const bool routing_visible = options_->areRoutingSegmentsVisible();
     const bool vias_visible = options_->areRoutingViasVisible();
-    if (routing_visible || vias_visible) {
+    const bool io_pins_visible = options_->areIOPinsVisible();
+    if (routing_visible || vias_visible || io_pins_visible) {
       auto box_shapes = search_.searchBoxShapes(block_,
                                                 layer,
                                                 region.xMin(),
@@ -884,11 +878,14 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                                 region.yMax(),
                                                 shape_limit);
 
-      for (auto& [box, is_via, net] : box_shapes) {
-        if (!routing_visible && !is_via) {
+      for (auto& [box, type, net] : box_shapes) {
+        if (!routing_visible && type == Search::WIRE) {
           continue;
         }
-        if (!vias_visible && is_via) {
+        if (!vias_visible && type == Search::VIA) {
+          continue;
+        }
+        if (!io_pins_visible && type == Search::BTERM) {
           continue;
         }
         if (isNetVisible(net) && options_->isNetSelectable(net)) {
@@ -942,7 +939,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                    region.yMax(),
                                    instanceSizeLimit());
 
-  for (auto& [box, inst] : insts) {
+  for (auto* inst : insts) {
     if (options_->isInstanceVisible(inst)) {
       if (options_->isInstanceSelectable(inst)) {
         selections.push_back(gui_->makeSelected(inst));
@@ -950,17 +947,18 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       if (options_->areInstancePinsVisible()
           && options_->areInstancePinsSelectable()) {
         const odb::dbTransform xform = inst->getTransform();
-        for (auto* iterm : inst->getITerms()) {
-          for (auto* mpin : iterm->getMTerm()->getMPins()) {
-            for (auto* geom : mpin->getGeometry()) {
-              const auto layer = geom->getTechLayer();
-              if (layer == nullptr) {
-                continue;
-              }
-              if (options_->isVisible(layer) && options_->isSelectable(layer)) {
-                Rect pin_rect = geom->getBox();
-                xform.apply(pin_rect);
-                if (region.intersects(pin_rect)) {
+        for (const auto& [layer, boxes] : cell_boxes_[inst->getMaster()]) {
+          if (options_->isVisible(layer) && options_->isSelectable(layer)) {
+            for (const auto& [mterm, geoms] : boxes.mterms) {
+              odb::dbITerm* iterm = inst->getITerm(mterm);
+              for (const auto& geom : geoms) {
+                std::vector<odb::Point> points(geom.size());
+                for (const auto& pt : geom) {
+                  points.emplace_back(pt.x(), pt.y());
+                }
+                odb::Polygon poly(points);
+                xform.apply(poly);
+                if (boost::geometry::intersects(poly, region)) {
                   selections.push_back(gui_->makeSelected(iterm));
                 }
               }
@@ -983,6 +981,14 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     }
   }
 
+  if (options_->areLabelsVisible() && options_->areLabelsSelectable()) {
+    for (auto& label : labels_) {
+      if (label->getOutline().intersects(region)) {
+        selections.push_back(gui_->makeSelected(label.get()));
+      }
+    }
+  }
+
   if (options_->areRegionsVisible() && options_->areRegionsSelectable()) {
     for (auto db_region : block_->getRegions()) {
       for (auto box : db_region->getBoundaries()) {
@@ -994,7 +1000,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
   }
 
   if (options_->areSitesVisible() && options_->areSitesSelectable()) {
-    for (const auto& [row_obj, rect] : getRowRects(block_, region)) {
+    for (const auto& [row_obj, rect, index] : getRowRects(block_, region)) {
       odb::dbSite* site = nullptr;
       if (row_obj->getObjectType() == odb::dbObjectType::dbSiteObj) {
         site = static_cast<odb::dbSite*>(row_obj);
@@ -1010,8 +1016,8 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
         selections.push_back(
             gui_->makeSelected(static_cast<odb::dbRow*>(row_obj)));
       } else {
-        selections.push_back(
-            gui_->makeSelected(DbSiteDescriptor::SpecificSite{site, rect}));
+        selections.push_back(gui_->makeSelected(
+            DbSiteDescriptor::SpecificSite{site, rect, index}));
       }
     }
   }
@@ -1324,26 +1330,52 @@ void LayoutViewer::updateScaleAndCentering(const QSize& new_size)
 // drawing performance
 void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
 {
-  auto box_to_qrect = [](odb::dbBox* box) -> QRect {
-    return QRect(box->xMin(),
-                 box->yMin(),
-                 box->xMax() - box->xMin(),
-                 box->yMax() - box->yMin());
+  const bool is_db_view = show_db_view_();
+  auto box_to_qpolygon = [](odb::dbBox* box) -> QPolygon {
+    QPolygon poly;
+    for (const auto& pt : box->getBox().getPoints()) {
+      poly.append(QPoint(pt.x(), pt.y()));
+    }
+    return poly;
+  };
+  auto pbox_to_qpolygon = [](odb::dbPolygon* box) -> QPolygon {
+    QPolygon poly;
+    for (const auto& pt : box->getPolygon().getPoints()) {
+      poly.append(QPoint(pt.x(), pt.y()));
+    }
+    return poly;
   };
 
   // store obstructions
-  for (dbBox* box : master->getObstructions()) {
-    dbTechLayer* layer = box->getTechLayer();
-    dbTechLayerType type = layer->getType();
-    if (type != dbTechLayerType::ROUTING && type != dbTechLayerType::CUT) {
-      continue;
+  if (!is_db_view) {
+    for (dbPolygon* box : master->getPolygonObstructions()) {
+      dbTechLayer* layer = box->getTechLayer();
+      boxes[layer].obs.emplace_back(pbox_to_qpolygon(box));
     }
-    boxes[layer].obs.emplace_back(box_to_qrect(box));
+    for (dbBox* box : master->getObstructions(false)) {
+      dbTechLayer* layer = box->getTechLayer();
+      boxes[layer].obs.emplace_back(box_to_qpolygon(box));
+    }
+  } else {
+    for (dbBox* box : master->getObstructions()) {
+      dbTechLayer* layer = box->getTechLayer();
+      boxes[layer].obs.emplace_back(box_to_qpolygon(box));
+    }
   }
 
   // store mterms
   for (dbMTerm* mterm : master->getMTerms()) {
     for (dbMPin* mpin : mterm->getMPins()) {
+      if (!is_db_view) {
+        for (dbPolygon* box : mpin->getPolygonGeometry()) {
+          dbTechLayer* layer = box->getTechLayer();
+          boxes[layer].mterms[mterm].emplace_back(pbox_to_qpolygon(box));
+        }
+        for (dbBox* box : mpin->getGeometry(false)) {
+          dbTechLayer* layer = box->getTechLayer();
+          boxes[layer].mterms[mterm].emplace_back(box_to_qpolygon(box));
+        }
+      }
       for (dbBox* box : mpin->getGeometry()) {
         if (box->isVia()) {
           odb::dbTechVia* tech_via = box->getTechVia();
@@ -1355,26 +1387,21 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
           for (auto* via_box : tech_via->getBoxes()) {
             odb::Rect box_rect = via_box->getBox();
             dbTechLayer* layer = via_box->getTechLayer();
-            dbTechLayerType type = layer->getType();
-            if (type != dbTechLayerType::ROUTING
-                && type != dbTechLayerType::CUT) {
-              continue;
-            }
             via_transform.apply(box_rect);
-            boxes[layer].mterms.emplace_back(
+            boxes[layer].mterms[mterm].emplace_back(
                 QRect{box_rect.xMin(),
                       box_rect.yMin(),
                       box_rect.xMax() - box_rect.xMin(),
                       box_rect.yMax() - box_rect.yMin()});
           }
-        } else {
+        } else if (is_db_view) {
+          odb::Rect box_rect = box->getBox();
           dbTechLayer* layer = box->getTechLayer();
-          dbTechLayerType type = layer->getType();
-          if (type != dbTechLayerType::ROUTING
-              && type != dbTechLayerType::CUT) {
-            continue;
-          }
-          boxes[layer].mterms.emplace_back(box_to_qrect(box));
+          boxes[layer].mterms[mterm].emplace_back(
+              QRect{box_rect.xMin(),
+                    box_rect.yMin(),
+                    box_rect.xMax() - box_rect.xMin(),
+                    box_rect.yMax() - box_rect.yMin()});
         }
       }
     }
@@ -1401,9 +1428,8 @@ const LayoutViewer::Boxes* LayoutViewer::boxesByLayer(dbMaster* master,
   return nullptr;
 }
 
-std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
-    odb::dbBlock* block,
-    const odb::Rect& bounds)
+std::vector<std::tuple<odb::dbObject*, odb::Rect, int>>
+LayoutViewer::getRowRects(odb::dbBlock* block, const odb::Rect& bounds)
 {
   const int min_resolution_site = nominalViewableResolution();
   int min_resolution_row = min_resolution_site;
@@ -1420,11 +1446,11 @@ std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
                                  bounds.yMax(),
                                  min_resolution_row);
 
-  std::vector<std::pair<odb::dbObject*, odb::Rect>> rects;
+  std::vector<std::tuple<odb::dbObject*, odb::Rect, int>> rects;
   for (auto& [box, row] : rows) {
     odb::Point pt = row->getOrigin();
 
-    rects.emplace_back(row, row->getBBox());
+    rects.emplace_back(row, row->getBBox(), 0);
 
     dbSite* site = row->getSite();
     int spacing = row->getSpacing();
@@ -1469,7 +1495,7 @@ std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
         const Rect row_rect(pt.x(), pt.y(), pt.x() + w, pt.y() + h);
         if (row_rect.intersects(bounds)) {
           // only paint rows that can be seen
-          rects.emplace_back(obj, row_rect);
+          rects.emplace_back(obj, row_rect, i);
         }
 
         if (dir == dbRowDir::HORIZONTAL) {
@@ -1622,7 +1648,7 @@ void LayoutViewer::drawScaleBar(QPainter* painter, const QRect& rect)
 
   double scale_unit;
   QString unit_text;
-  if (usingDBU_()) {
+  if (using_dbu_()) {
     scale_unit = block_->getDbUnitsPerMicron();
     unit_text = "";
   } else {
@@ -1631,7 +1657,7 @@ void LayoutViewer::drawScaleBar(QPainter* painter, const QRect& rect)
       unit_text = "mm";
     } else if (bar_size > 1) {
       scale_unit = 1;
-      unit_text = "\u03bcm";  // um
+      unit_text = "μm";
     } else if (bar_size > 0.001) {
       scale_unit = 1000;
       unit_text = "nm";
@@ -1735,10 +1761,15 @@ void LayoutViewer::updatePixmap(const QImage& image, const QRect& bounds)
 void LayoutViewer::drawLoadingIndicator(QPainter* painter, const QRect& bounds)
 {
   const QRect background = computeIndicatorBackground(painter, bounds);
+  const QColor background_color = options_->background();
 
-  painter->fillRect(background, Qt::black);  // to help visualize
+  painter->fillRect(background, background_color);  // to help visualize
 
-  painter->setPen(QPen(Qt::white, 2));
+  const QColor text_color(255 - background_color.red(),
+                          255 - background_color.green(),
+                          255 - background_color.blue());
+
+  painter->setPen(QPen(text_color, 2));
   painter->drawText(background.left(),
                     background.bottom(),
                     QString::fromStdString(loading_indicator_));
@@ -1789,6 +1820,28 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
   const QRect draw_bounds = event->rect();
 
+  GuiPainter gui_painter(&painter,
+                         options_,
+                         screenToDBU(draw_bounds),
+                         pixels_per_dbu_,
+                         block_->getDbUnitsPerMicron());
+
+  // update label outlines
+  for (const auto& label : labels_) {
+    painter.save();
+    const auto size = label->getSize();
+    QFont font = options_->labelFont();
+    if (size) {
+      font.setPixelSize(size.value());
+    }
+    painter.setFont(font);
+    label->setOutline(gui_painter.stringBoundaries(label->getPt().x(),
+                                                   label->getPt().y(),
+                                                   label->getAnchor(),
+                                                   label->getText()));
+    painter.restore();
+  }
+
   if (viewer_thread_.isRendering()) {
     drawLoadingIndicator(&painter, draw_bounds);
   } else {
@@ -1811,26 +1864,20 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   painter.translate(centering_shift_);
   painter.scale(pixels_per_dbu_, -pixels_per_dbu_);
 
-  GuiPainter gui_painter(&painter,
-                         options_,
-                         screenToDBU(draw_bounds),
-                         pixels_per_dbu_,
-                         block_->getDbUnitsPerMicron());
-
   if (animate_selection_ != nullptr) {
-    auto brush = Painter::transparent;
+    auto brush = Painter::kTransparent;
 
     const int pen_width
         = animate_selection_->state_count % animate_selection_->state_modulo
           + 1;
     if (pen_width == 1) {
       // flash with brush, since pen width is the same as normal
-      brush = Painter::highlight;
+      brush = Painter::kHighlight;
       brush.a = 100;
     }
 
     animate_selection_->selection.highlight(
-        gui_painter, Painter::highlight, pen_width, brush);
+        gui_painter, Painter::kHighlight, pen_width, brush);
   }
 
   // draw partial ruler if present
@@ -1841,7 +1888,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
                           ruler_start_->y(),
                           snapped_mouse_pos.x(),
                           snapped_mouse_pos.y(),
-                          showRulerAsEuclidian_());
+                          show_ruler_as_euclidian_());
   }
 
   // draw edge currently considered snapped to
@@ -1876,7 +1923,8 @@ void LayoutViewer::fullRepaint()
     QRect rect = scroller_->viewport()->geometry();
     rect.translate(scroller_->horizontalScrollBar()->value(),
                    scroller_->verticalScrollBar()->value());
-    viewer_thread_.render(rect, selected_, highlighted_, rulers_);
+    setLoadingState();
+    viewer_thread_.render(rect, selected_, highlighted_, rulers_, labels_);
   }
 }
 
@@ -1927,34 +1975,34 @@ void LayoutViewer::updateContextMenuItems()
   if (Gui::get()->anyObjectInSet(true /*selection set*/, odb::dbInstObj)
       == false)  // No Instance in selected set
   {
-    menu_actions_[SELECT_OUTPUT_NETS_ACT]->setDisabled(true);
-    menu_actions_[SELECT_INPUT_NETS_ACT]->setDisabled(true);
-    menu_actions_[SELECT_ALL_NETS_ACT]->setDisabled(true);
-    menu_actions_[SELECT_ALL_BUFFER_TREES_ACT]->setDisabled(true);
+    menu_actions_[kSelectOutputNetsAct]->setDisabled(true);
+    menu_actions_[kSelectInputNetsAct]->setDisabled(true);
+    menu_actions_[kSelectAllNetsAct]->setDisabled(true);
+    menu_actions_[kSelectAllBufferTreesAct]->setDisabled(true);
 
-    menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]->setDisabled(true);
-    menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]->setDisabled(true);
-    menu_actions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(true);
-    highlight_color_menu->setDisabled(true);
+    menu_actions_[kHighlightOutputNetsAct]->setDisabled(true);
+    menu_actions_[kHighlightInputNetsAct]->setDisabled(true);
+    menu_actions_[kHighlightAllNetsAct]->setDisabled(true);
+    highlight_color_menu_->setDisabled(true);
   } else {
-    menu_actions_[SELECT_OUTPUT_NETS_ACT]->setDisabled(false);
-    menu_actions_[SELECT_INPUT_NETS_ACT]->setDisabled(false);
-    menu_actions_[SELECT_ALL_NETS_ACT]->setDisabled(false);
-    menu_actions_[SELECT_ALL_BUFFER_TREES_ACT]->setDisabled(false);
+    menu_actions_[kSelectOutputNetsAct]->setDisabled(false);
+    menu_actions_[kSelectInputNetsAct]->setDisabled(false);
+    menu_actions_[kSelectAllNetsAct]->setDisabled(false);
+    menu_actions_[kSelectAllBufferTreesAct]->setDisabled(false);
 
-    menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]->setDisabled(false);
-    menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]->setDisabled(false);
-    menu_actions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(false);
-    highlight_color_menu->setDisabled(false);
+    menu_actions_[kHighlightOutputNetsAct]->setDisabled(false);
+    menu_actions_[kHighlightInputNetsAct]->setDisabled(false);
+    menu_actions_[kHighlightAllNetsAct]->setDisabled(false);
+    highlight_color_menu_->setDisabled(false);
   }
 
   if (Gui::get()->anyObjectInSet(true, odb::dbNetObj)
       == false) {  // No Net in selected set
-    menu_actions_[SELECT_CONNECTED_INST_ACT]->setDisabled(true);
-    menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT]->setDisabled(true);
+    menu_actions_[kSelectConnectedInstAct]->setDisabled(true);
+    menu_actions_[kHighlightConnectedInstAct]->setDisabled(true);
   } else {
-    menu_actions_[SELECT_CONNECTED_INST_ACT]->setDisabled(false);
-    menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT]->setDisabled(false);
+    menu_actions_[kSelectConnectedInstAct]->setDisabled(false);
+    menu_actions_[kHighlightConnectedInstAct]->setDisabled(false);
   }
 }
 
@@ -2009,25 +2057,13 @@ void LayoutViewer::viewportUpdated()
   fullRepaint();
 }
 
-void LayoutViewer::saveImage(const QString& filepath,
-                             const Rect& region,
-                             int width_px,
-                             double dbu_per_pixel)
+QImage LayoutViewer::createImage(const Rect& region,
+                                 int width_px,
+                                 double dbu_per_pixel)
 {
   if (!hasDesign()) {
-    return;
+    return QImage();
   }
-
-  QString save_filepath = filepath;
-  if (filepath.isEmpty()) {
-    save_filepath = Utils::requestImageSavePath(this, "Save layout");
-  }
-
-  if (save_filepath.isEmpty()) {
-    return;
-  }
-
-  save_filepath = Utils::fixImagePath(save_filepath, logger_);
 
   Rect save_area = region;
   if (region.dx() == 0 || region.dy() == 0) {
@@ -2068,7 +2104,7 @@ void LayoutViewer::saveImage(const QString& filepath,
                   94,
                   "Resolution results in illegal size (max width/height "
                   "is {} pixels). Saving image with dimensions = {} x {}.",
-                  Utils::MAX_IMAGE_SIZE,
+                  Utils::kMaxImageSize,
                   img_size.width(),
                   img_size.height());
 
@@ -2096,9 +2132,34 @@ void LayoutViewer::saveImage(const QString& filepath,
                       selected_,
                       highlighted_,
                       rulers_,
+                      labels_,
                       render_ratio,
-                      background());
+                      options_->background());
   pixels_per_dbu_ = old_pixels_per_dbu;
+
+  return img;
+}
+
+void LayoutViewer::saveImage(const QString& filepath,
+                             const Rect& region,
+                             int width_px,
+                             double dbu_per_pixel)
+{
+  if (!hasDesign()) {
+    return;
+  }
+
+  QString save_filepath = filepath;
+  if (filepath.isEmpty()) {
+    save_filepath = Utils::requestImageSavePath(this, "Save layout");
+  }
+
+  if (save_filepath.isEmpty()) {
+    return;
+  }
+  save_filepath = Utils::fixImagePath(save_filepath, logger_);
+
+  QImage img = createImage(region, width_px, dbu_per_pixel);
 
   if (!img.save(save_filepath)) {
     logger_->warn(
@@ -2117,155 +2178,157 @@ void LayoutViewer::addMenuAndActions()
   // Create Actions
 
   // Select Actions
-  menu_actions_[SELECT_CONNECTED_INST_ACT]
+  menu_actions_[kSelectConnectedInstAct]
       = select_menu->addAction(tr("Connected Insts"));
-  menu_actions_[SELECT_OUTPUT_NETS_ACT]
+  menu_actions_[kSelectOutputNetsAct]
       = select_menu->addAction(tr("Output Nets"));
-  menu_actions_[SELECT_INPUT_NETS_ACT]
-      = select_menu->addAction(tr("Input Nets"));
-  menu_actions_[SELECT_ALL_NETS_ACT] = select_menu->addAction(tr("All Nets"));
-  menu_actions_[SELECT_ALL_BUFFER_TREES_ACT]
+  menu_actions_[kSelectInputNetsAct] = select_menu->addAction(tr("Input Nets"));
+  menu_actions_[kSelectAllNetsAct] = select_menu->addAction(tr("All Nets"));
+  menu_actions_[kSelectAllBufferTreesAct]
       = select_menu->addAction(tr("All buffer trees"));
 
   // Highlight Actions
-  menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT]
+  menu_actions_[kHighlightConnectedInstAct]
       = highlight_menu->addAction(tr("Connected Insts"));
-  menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]
+  menu_actions_[kHighlightOutputNetsAct]
       = highlight_menu->addAction(tr("Output Nets"));
-  menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]
+  menu_actions_[kHighlightInputNetsAct]
       = highlight_menu->addAction(tr("Input Nets"));
-  menu_actions_[HIGHLIGHT_ALL_NETS_ACT]
+  menu_actions_[kHighlightAllNetsAct]
       = highlight_menu->addAction(tr("All Nets"));
 
-  highlight_color_menu = highlight_menu->addMenu(tr("All buffer trees"));
-  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_0]
-      = highlight_color_menu->addAction(tr("green"));
-  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_1]
-      = highlight_color_menu->addAction(tr("yellow"));
-  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_2]
-      = highlight_color_menu->addAction(tr("cyan"));
-  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_3]
-      = highlight_color_menu->addAction(tr("magenta"));
-  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_4]
-      = highlight_color_menu->addAction(tr("red"));
-  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_5]
-      = highlight_color_menu->addAction(tr("dark_green"));
-  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_6]
-      = highlight_color_menu->addAction(tr("dark_magenta"));
-  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_7]
-      = highlight_color_menu->addAction(tr("blue"));
+  highlight_color_menu_ = highlight_menu->addMenu(tr("All buffer trees"));
+  menu_actions_[kHighlightAllBufferTreesAct0]
+      = highlight_color_menu_->addAction(tr("green"));
+  menu_actions_[kHighlightAllBufferTreesAct1]
+      = highlight_color_menu_->addAction(tr("yellow"));
+  menu_actions_[kHighlightAllBufferTreesAct2]
+      = highlight_color_menu_->addAction(tr("cyan"));
+  menu_actions_[kHighlightAllBufferTreesAct3]
+      = highlight_color_menu_->addAction(tr("magenta"));
+  menu_actions_[kHighlightAllBufferTreesAct4]
+      = highlight_color_menu_->addAction(tr("red"));
+  menu_actions_[kHighlightAllBufferTreesAct5]
+      = highlight_color_menu_->addAction(tr("dark_green"));
+  menu_actions_[kHighlightAllBufferTreesAct6]
+      = highlight_color_menu_->addAction(tr("dark_magenta"));
+  menu_actions_[kHighlightAllBufferTreesAct7]
+      = highlight_color_menu_->addAction(tr("blue"));
 
   // for { highlightColor : Painter::highlightColors[highlight_group]} {
-  //   menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_7]
-  //       = highlight_color_menu->addAction(tr("blue"));
+  //   menu_actions_[kHighlightAllBufferTreesAct7]
+  //       = highlight_color_menu_->addAction(tr("blue"));
   // }
 
   // View Actions
-  menu_actions_[VIEW_ZOOMIN_ACT] = view_menu->addAction(tr("Zoom In"));
-  menu_actions_[VIEW_ZOOMOUT_ACT] = view_menu->addAction(tr("Zoom Out"));
-  menu_actions_[VIEW_ZOOMFIT_ACT] = view_menu->addAction(tr("Fit"));
+  menu_actions_[kViewZoominAct] = view_menu->addAction(tr("Zoom In"));
+  menu_actions_[kViewZoomoutAct] = view_menu->addAction(tr("Zoom Out"));
+  menu_actions_[kViewZoomfitAct] = view_menu->addAction(tr("Fit"));
 
   // Save actions
-  menu_actions_[SAVE_VISIBLE_IMAGE_ACT]
+  menu_actions_[kSaveVisibleImageAct]
       = save_menu->addAction(tr("Visible layout"));
-  menu_actions_[SAVE_WHOLE_IMAGE_ACT]
-      = save_menu->addAction(tr("Entire layout"));
+  menu_actions_[kSaveWholeImageAct] = save_menu->addAction(tr("Entire layout"));
 
   // Clear Actions
-  menu_actions_[CLEAR_SELECTIONS_ACT] = clear_menu->addAction(tr("Selections"));
-  menu_actions_[CLEAR_HIGHLIGHTS_ACT] = clear_menu->addAction(tr("Highlights"));
-  menu_actions_[CLEAR_RULERS_ACT] = clear_menu->addAction(tr("Rulers"));
-  menu_actions_[CLEAR_FOCUS_ACT] = clear_menu->addAction(tr("Focus nets"));
-  menu_actions_[CLEAR_GUIDES_ACT] = clear_menu->addAction(tr("Route Guides"));
-  menu_actions_[CLEAR_NET_TRACKS_ACT] = clear_menu->addAction(tr("Net Tracks"));
-  menu_actions_[CLEAR_ALL_ACT] = clear_menu->addAction(tr("All"));
+  menu_actions_[kClearSelectionsAct] = clear_menu->addAction(tr("Selections"));
+  menu_actions_[kClearHighlightsAct] = clear_menu->addAction(tr("Highlights"));
+  menu_actions_[kClearRulersAct] = clear_menu->addAction(tr("Rulers"));
+  menu_actions_[kClearLabelsAct] = clear_menu->addAction(tr("Labels"));
+  menu_actions_[kClearFocusAct] = clear_menu->addAction(tr("Focus nets"));
+  menu_actions_[kClearGuidesAct] = clear_menu->addAction(tr("Route Guides"));
+  menu_actions_[kClearNetTracksAct] = clear_menu->addAction(tr("Net Tracks"));
+  menu_actions_[kClearAllAct] = clear_menu->addAction(tr("All"));
 
   // Connect Slots to Actions...
-  connect(menu_actions_[SELECT_CONNECTED_INST_ACT],
+  connect(menu_actions_[kSelectConnectedInstAct],
           &QAction::triggered,
           [this]() { selectHighlightConnectedInst(true); });
-  connect(menu_actions_[SELECT_OUTPUT_NETS_ACT], &QAction::triggered, [this]() {
+  connect(menu_actions_[kSelectOutputNetsAct], &QAction::triggered, [this]() {
     selectHighlightConnectedNets(true, true, false);
   });
-  connect(menu_actions_[SELECT_INPUT_NETS_ACT], &QAction::triggered, [this]() {
+  connect(menu_actions_[kSelectInputNetsAct], &QAction::triggered, [this]() {
     selectHighlightConnectedNets(true, false, true);
   });
-  connect(menu_actions_[SELECT_ALL_NETS_ACT], &QAction::triggered, [this]() {
+  connect(menu_actions_[kSelectAllNetsAct], &QAction::triggered, [this]() {
     selectHighlightConnectedNets(true, true, true);
   });
-  connect(menu_actions_[SELECT_ALL_BUFFER_TREES_ACT],
+  connect(menu_actions_[kSelectAllBufferTreesAct],
           &QAction::triggered,
           [this]() { selectHighlightConnectedBufferTrees(true); });
 
-  connect(menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT],
+  connect(menu_actions_[kHighlightConnectedInstAct],
           &QAction::triggered,
           [this]() { selectHighlightConnectedInst(false); });
-  connect(menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT],
+  connect(menu_actions_[kHighlightOutputNetsAct],
           &QAction::triggered,
           [this]() { selectHighlightConnectedNets(false, true, false); });
-  connect(menu_actions_[HIGHLIGHT_INPUT_NETS_ACT],
-          &QAction::triggered,
-          [this]() { this->selectHighlightConnectedNets(false, false, true); });
-  connect(menu_actions_[HIGHLIGHT_ALL_NETS_ACT], &QAction::triggered, [this]() {
+  connect(menu_actions_[kHighlightInputNetsAct], &QAction::triggered, [this]() {
+    this->selectHighlightConnectedNets(false, false, true);
+  });
+  connect(menu_actions_[kHighlightAllNetsAct], &QAction::triggered, [this]() {
     selectHighlightConnectedNets(false, true, true);
   });
-  connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_0],
+  connect(menu_actions_[kHighlightAllBufferTreesAct0],
           &QAction::triggered,
           [this]() { selectHighlightConnectedBufferTrees(false, 0); });
-  connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_1],
+  connect(menu_actions_[kHighlightAllBufferTreesAct1],
           &QAction::triggered,
           [this]() { selectHighlightConnectedBufferTrees(false, 1); });
-  connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_2],
+  connect(menu_actions_[kHighlightAllBufferTreesAct2],
           &QAction::triggered,
           [this]() { selectHighlightConnectedBufferTrees(false, 2); });
-  connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_3],
+  connect(menu_actions_[kHighlightAllBufferTreesAct3],
           &QAction::triggered,
           [this]() { selectHighlightConnectedBufferTrees(false, 3); });
 
-  connect(menu_actions_[VIEW_ZOOMIN_ACT], &QAction::triggered, [this]() {
+  connect(menu_actions_[kViewZoominAct], &QAction::triggered, [this]() {
     zoomIn();
   });
-  connect(menu_actions_[VIEW_ZOOMOUT_ACT], &QAction::triggered, [this]() {
+  connect(menu_actions_[kViewZoomoutAct], &QAction::triggered, [this]() {
     zoomOut();
   });
-  connect(menu_actions_[VIEW_ZOOMFIT_ACT], &QAction::triggered, [this]() {
-    fit();
-  });
+  connect(
+      menu_actions_[kViewZoomfitAct], &QAction::triggered, [this]() { fit(); });
 
-  connect(menu_actions_[SAVE_VISIBLE_IMAGE_ACT], &QAction::triggered, [this]() {
+  connect(menu_actions_[kSaveVisibleImageAct], &QAction::triggered, [this]() {
     saveImage("");
   });
-  connect(menu_actions_[SAVE_WHOLE_IMAGE_ACT], &QAction::triggered, [this]() {
+  connect(menu_actions_[kSaveWholeImageAct], &QAction::triggered, [this]() {
     const QSize whole_size = size();
     saveImage(
         "", screenToDBU(QRectF(0, 0, whole_size.width(), whole_size.height())));
   });
 
-  connect(menu_actions_[CLEAR_SELECTIONS_ACT], &QAction::triggered, this, []() {
+  connect(menu_actions_[kClearSelectionsAct], &QAction::triggered, this, []() {
     Gui::get()->clearSelections();
   });
-  connect(menu_actions_[CLEAR_HIGHLIGHTS_ACT], &QAction::triggered, this, []() {
+  connect(menu_actions_[kClearHighlightsAct], &QAction::triggered, this, []() {
     Gui::get()->clearHighlights(-1);
   });
-  connect(menu_actions_[CLEAR_RULERS_ACT], &QAction::triggered, this, []() {
+  connect(menu_actions_[kClearRulersAct], &QAction::triggered, this, []() {
     Gui::get()->clearRulers();
   });
-  connect(menu_actions_[CLEAR_FOCUS_ACT], &QAction::triggered, this, []() {
+  connect(menu_actions_[kClearLabelsAct], &QAction::triggered, this, []() {
+    Gui::get()->clearLabels();
+  });
+  connect(menu_actions_[kClearFocusAct], &QAction::triggered, this, []() {
     Gui::get()->clearFocusNets();
   });
-  connect(menu_actions_[CLEAR_GUIDES_ACT], &QAction::triggered, this, []() {
+  connect(menu_actions_[kClearGuidesAct], &QAction::triggered, this, []() {
     Gui::get()->clearRouteGuides();
   });
-  connect(menu_actions_[CLEAR_NET_TRACKS_ACT], &QAction::triggered, this, []() {
+  connect(menu_actions_[kClearNetTracksAct], &QAction::triggered, this, []() {
     Gui::get()->clearNetTracks();
   });
-  connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, [this]() {
-    menu_actions_[CLEAR_SELECTIONS_ACT]->trigger();
-    menu_actions_[CLEAR_HIGHLIGHTS_ACT]->trigger();
-    menu_actions_[CLEAR_RULERS_ACT]->trigger();
-    menu_actions_[CLEAR_FOCUS_ACT]->trigger();
-    menu_actions_[CLEAR_GUIDES_ACT]->trigger();
-    menu_actions_[CLEAR_NET_TRACKS_ACT]->trigger();
+  connect(menu_actions_[kClearAllAct], &QAction::triggered, [this]() {
+    menu_actions_[kClearSelectionsAct]->trigger();
+    menu_actions_[kClearHighlightsAct]->trigger();
+    menu_actions_[kClearRulersAct]->trigger();
+    menu_actions_[kClearLabelsAct]->trigger();
+    menu_actions_[kClearFocusAct]->trigger();
+    menu_actions_[kClearGuidesAct]->trigger();
+    menu_actions_[kClearNetTracksAct]->trigger();
   });
 }
 
@@ -2374,7 +2437,7 @@ void LayoutViewer::generateCutLayerMaximumSizes()
 
 int LayoutViewer::instanceSizeLimit() const
 {
-  if (options_->isDetailedVisibility()) {
+  if (options_->isDetailedVisibility() || options_->isModuleView()) {
     return 0;
   }
 
@@ -2430,9 +2493,23 @@ void LayoutViewer::executionPaused()
   paused_ = true;
 }
 
+void LayoutViewer::resetCache()
+{
+  cell_boxes_.clear();
+  fullRepaint();
+}
+
 ////// LayoutScroll ///////
-LayoutScroll::LayoutScroll(LayoutViewer* viewer, QWidget* parent)
-    : QScrollArea(parent), viewer_(viewer), scrolling_with_cursor_(false)
+LayoutScroll::LayoutScroll(
+    LayoutViewer* viewer,
+    const std::function<bool()>& default_mouse_wheel_zoom,
+    const std::function<int()>& arrow_keys_scroll_step,
+    QWidget* parent)
+    : QScrollArea(parent),
+      default_mouse_wheel_zoom_(default_mouse_wheel_zoom),
+      arrow_keys_scroll_step_(arrow_keys_scroll_step),
+      viewer_(viewer),
+      scrolling_with_cursor_(false)
 {
   setWidgetResizable(false);
   setWidget(viewer);
@@ -2456,10 +2533,12 @@ void LayoutScroll::scrollContentsBy(int dx, int dy)
   widget()->update();
 }
 
-// Handles zoom in/out on ctrl-wheel
+// Handles zoom in/out on ctrl-wheel when option mouse_wheel_zoom is not set and
+// vice-versa
 void LayoutScroll::wheelEvent(QWheelEvent* event)
 {
-  if (!event->modifiers().testFlag(Qt::ControlModifier)) {
+  if (default_mouse_wheel_zoom_()
+      == event->modifiers().testFlag(Qt::ControlModifier)) {
     QScrollArea::wheelEvent(event);
     return;
   }
@@ -2504,6 +2583,30 @@ bool LayoutScroll::eventFilter(QObject* object, QEvent* event)
   }
 
   return QScrollArea::eventFilter(object, event);
+}
+
+void LayoutScroll::keyPressEvent(QKeyEvent* event)
+{
+  switch (event->key()) {
+    case Qt::Key_Up:
+      verticalScrollBar()->setValue(verticalScrollBar()->value()
+                                    - arrow_keys_scroll_step_());
+      break;
+    case Qt::Key_Down:
+      verticalScrollBar()->setValue(verticalScrollBar()->value()
+                                    + arrow_keys_scroll_step_());
+      break;
+    case Qt::Key_Left:
+      horizontalScrollBar()->setValue(horizontalScrollBar()->value()
+                                      - arrow_keys_scroll_step_());
+      break;
+    case Qt::Key_Right:
+      horizontalScrollBar()->setValue(horizontalScrollBar()->value()
+                                      + arrow_keys_scroll_step_());
+      break;
+    default:
+      QScrollArea::keyPressEvent(event);
+  }
 }
 
 bool LayoutScroll::isScrollingWithCursor()

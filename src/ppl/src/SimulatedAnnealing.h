@@ -1,48 +1,18 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2023, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #pragma once
 
-#include <algorithm>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_int_distribution.hpp>
-#include <random>
+#include <limits>
+#include <memory>
+#include <set>
+#include <utility>
+#include <vector>
 
 #include "Core.h"
 #include "Netlist.h"
 #include "Slots.h"
+#include "boost/random/mersenne_twister.hpp"
 #include "odb/geom.h"
 #include "ppl/IOPlacer.h"
 
@@ -78,8 +48,7 @@ class SimulatedAnnealing
   void run(float init_temperature,
            int max_iterations,
            int perturb_per_iter,
-           float alpha,
-           bool random);
+           float alpha);
   void getAssignment(std::vector<IOPin>& assignment);
 
   // debug functions
@@ -116,12 +85,15 @@ class SimulatedAnnealing
   int rearrangeConstrainedGroups(int constraint_idx);
   int moveGroup(int pin_idx);
   void restorePreviousAssignment();
-  double dbuToMicrons(int64_t dbu);
   bool isFreeForGroup(int& slot_idx, int group_size, int last_slot);
   void getSlotsRange(const IOPin& io_pin, int& first_slot, int& last_slot);
   int getSlotIdxByPosition(const odb::Point& position, int layer) const;
   bool isFreeForMirrored(int slot_idx, int& mirrored_idx) const;
   int getMirroredSlotIdx(int slot_idx) const;
+  void getMirroredSlotRange(int slot_idx1,
+                            int slot_idx2,
+                            int& mirrored_slot1,
+                            int& mirrored_slot2) const;
   void updateSlotsFromGroup(const std::vector<int>& prev_slots_, bool block);
   int computeGroupPrevCost(int group_idx);
   void updateGroupSlots(const std::vector<int>& pin_indices, int& new_slot);

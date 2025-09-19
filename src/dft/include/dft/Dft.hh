@@ -1,36 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2023, Google LLC
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
+
 #pragma once
 
+#include "ClockDomain.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -84,7 +57,7 @@ class Dft
   //
   // If verbose is true, then we show all the cells that are inside the scan
   // chains
-  void preview_dft(bool verbose);
+  void reportDftPlan(bool verbose);
 
   // Inserts the scan chains into the design. For now this just replace the
   // cells in the design with scan equivalent. This functions mutates the
@@ -92,11 +65,17 @@ class Dft
   //
   // Here we do:
   //  - Scan Replace
-  //  - Scan Architect
   //
-  // TODO (and not implemented yet)
-  // - scan stitching
-  void insert_dft();
+  void scanReplace();
+
+  // Runs the complete flow for scan insertion based on the user's settings
+  //
+  // Here we do:
+  //  - Scan Replace
+  //  - Scan Architect
+  //  - Scan Insertion
+  //  - Store the inserted DFT (scan chains) into odb for later optimization
+  void executeDftPlan();
 
   // Returns a mutable version of DftConfig
   DftConfig* getMutableDftConfig();
@@ -107,6 +86,9 @@ class Dft
   // Prints to stdout
   void reportDftConfig() const;
 
+  // Performs scan optimizations on the netlist
+  void scanOpt();
+
  private:
   // If we need to run pre_dft to create the internal state
   bool need_to_run_pre_dft_;
@@ -115,8 +97,8 @@ class Dft
   void reset();
 
   // Common function to perform scan replace and scan architect. Shared between
-  // preview_dft and insert_dft
-  std::vector<std::unique_ptr<ScanChain>> replaceAndArchitect();
+  // report_dft_plan and execute_dft_plan
+  std::vector<std::unique_ptr<ScanChain>> scanArchitect();
 
   // Global state
   odb::dbDatabase* db_;

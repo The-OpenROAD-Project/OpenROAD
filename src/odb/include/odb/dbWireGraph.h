@@ -1,42 +1,15 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <vector>
 
-#include "dbTypes.h"
-#include "odb.h"
-#include "odbDList.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
+#include "odb/odbDList.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -62,7 +35,7 @@ class dbWireEncoder;
 //                    |
 //                    +----->o
 //
-//   The graph may contains a fortest of trees.
+//   The graph may contains a forest of trees.
 //
 //   This graph may be edited and encoded back to the wire.
 //
@@ -76,16 +49,14 @@ class dbWireGraph
   class EndStyle
   {
    public:
-    // End-Types:
-    //     EXTENDED - segment extended 1/2 path-width
-    //     VARIABLE - segment extended variable amount
     enum Type
     {
-      EXTENDED,
-      VARIABLE
+      EXTENDED,  // segment extended 1/2 path-width
+      VARIABLE   // segment extended variable amount
     };
 
-    EndStyle() : _type(EXTENDED), _ext(0) {}
+    Type getType() const { return _type; }
+    int getExt() const { return _ext; }
 
     void setExtended()
     {
@@ -110,10 +81,8 @@ class dbWireGraph
     }
 
    private:
-    Type _type;
-    int _ext;
-
-    friend class dbWireGraph;
+    Type _type{EXTENDED};
+    int _ext{0};
   };
 
   class Node;
@@ -131,15 +100,6 @@ class dbWireGraph
       VWIRE
     };
 
-    Edge(Type type, dbWireType::Value wire_type, dbTechLayerRule* rule)
-        : _type(type),
-          _src(nullptr),
-          _tgt(nullptr),
-          _wire_type(wire_type),
-          _non_default_rule(rule)
-    {
-    }
-
     virtual ~Edge() = default;
 
     Type type() const { return _type; }
@@ -147,6 +107,12 @@ class dbWireGraph
     Node* target() const { return _tgt; }
     dbWireType::Value wireType() const { return _wire_type; }
     dbTechLayerRule* nonDefaultRule() const { return _non_default_rule; }
+
+   protected:
+    Edge(Type type, dbWireType::Value wire_type, dbTechLayerRule* rule)
+        : _type(type), _wire_type(wire_type), _non_default_rule(rule)
+    {
+    }
 
    private:
     static DListEntry<Edge>* edgeEntry(Edge* edge)
@@ -160,8 +126,8 @@ class dbWireGraph
     }
 
     const Type _type;
-    Node* _src;
-    Node* _tgt;
+    Node* _src{nullptr};
+    Node* _tgt{nullptr};
     dbWireType::Value _wire_type;
     dbTechLayerRule* _non_default_rule;
     DListEntry<Edge> _edge_entry;
@@ -176,21 +142,14 @@ class dbWireGraph
    public:
     using edge_iterator = DList<Edge, &Edge::outEdgeEntry>::iterator;
 
-    Node(int x, int y, dbTechLayer* layer)
-        : _x(x),
-          _y(y),
-          _jct_id(-1),
-          _layer(layer),
-          _in_edge(nullptr),
-          _object(nullptr)
-    {
-    }
+    Node(int x, int y, dbTechLayer* layer) : _x(x), _y(y), _layer(layer) {}
 
     void xy(int& x, int& y) const
     {
       x = _x;
       y = _y;
     }
+    Point point() const { return {_x, _y}; }
     dbTechLayer* layer() const { return _layer; }
     Edge* in_edge() const { return _in_edge; }
     edge_iterator begin() { return _out_edges.begin(); }
@@ -206,10 +165,10 @@ class dbWireGraph
 
     int _x;
     int _y;
-    int _jct_id;
+    int _jct_id{-1};
     dbTechLayer* _layer;
-    Edge* _in_edge;
-    dbObject* _object;
+    Edge* _in_edge{nullptr};
+    dbObject* _object{nullptr};
     DList<Edge, &Edge::outEdgeEntry> _out_edges;
     DListEntry<Node> _node_entry;
 
@@ -386,6 +345,8 @@ class dbWireGraph
   // The deletion of a edge WILL NOT delete the src/tgt node.
   void deleteEdge(Edge* e);
   edge_iterator deleteEdge(edge_iterator itr);
+
+  void dump(utl::Logger* logger);
 
  private:
   void encodePath(dbWireEncoder& encoder,

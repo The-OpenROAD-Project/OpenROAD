@@ -1,48 +1,20 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "HTreeBuilder.h"
 
+#include <algorithm>
+#include <cmath>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
-#include <map>
-#include <memory>
+#include <limits>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "Clustering.h"
 #include "SinkClustering.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace cts {
@@ -56,6 +28,17 @@ void HTreeBuilder::preSinkClustering(
     const unsigned clusterSize,
     const bool secondLevel)
 {
+  bool maxDiameterSet = (type_ == TreeType::MacroTree)
+                            ? options_->isMacroMaxDiameterSet()
+                            : options_->isMaxDiameterSet();
+  bool clusterSizeSet = (type_ == TreeType::MacroTree)
+                            ? options_->isMacroSinkClusteringSizeSet()
+                            : options_->isSinkClusteringSizeSet();
+
+  unsigned min_clustering_sinks = (type_ == TreeType::MacroTree)
+                                      ? min_clustering_macro_sinks_
+                                      : min_clustering_sinks_;
+
   const std::vector<std::pair<float, float>>& points = sinks;
   if (!secondLevel) {
     clock_.forEachSink([&](ClockInst& inst) {
@@ -63,8 +46,8 @@ void HTreeBuilder::preSinkClustering(
                                        (float) inst.getY() / wireSegmentUnit_);
       mapLocationToSink_[normLocation] = &inst;
       if (!fuzzyEqual(inst.getInsertionDelay(), 0.0, 1e-6)) {
-        setSinkInsertionDelay(
-            normLocation, (double) inst.getInsertionDelay() / wireSegmentUnit_);
+        setSinkInsertionDelay(normLocation,
+                              inst.getInsertionDelay() / wireSegmentUnit_);
         // clang-format off
 	debugPrint(logger_, CTS, "clustering", 1, "sink {} has insDelay {} at {}",
 		   inst.getName(), getSinkInsertionDelay(normLocation),
@@ -74,7 +57,7 @@ void HTreeBuilder::preSinkClustering(
     });
   }
 
-  if (sinks.size() <= min_clustering_sinks_
+  if (sinks.size() <= min_clustering_sinks
       || !(options_->getSinkClustering())) {
     topLevelSinksClustered_ = sinks;
     return;
@@ -96,23 +79,22 @@ void HTreeBuilder::preSinkClustering(
 
   unsigned bestClusterSize = 0;
   float bestDiameter = 0.0;
-  if (options_->isSinkClusteringSizeSet() && options_->isMaxDiameterSet()) {
+  if (clusterSizeSet && maxDiameterSet) {
     // clang-format off
       debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
-                 clusterSize, options_->getMaxDiameter(), wireSegmentUnit_);
+                 clusterSize, maxDiameter, wireSegmentUnit_);
     // clang-format on
     matching.run(clusterSize,
                  maxDiameter,
                  wireSegmentUnit_,
                  bestClusterSize,
                  bestDiameter);
-  } else if (!options_->isSinkClusteringSizeSet()
-             && options_->isMaxDiameterSet()) {
+  } else if (!clusterSizeSet && maxDiameterSet) {
     // only diameter is set, try clustering sizes of 10, 20 and 30
-    for (unsigned clusterSize2 : clusterSizes()) {
+    for (unsigned clusterSize2 : options_->getSinkClusteringSizes()) {
       // clang-format off
       debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
-                 clusterSize2, options_->getMaxDiameter(), wireSegmentUnit_);
+                 clusterSize2, maxDiameter, wireSegmentUnit_);
       // clang-format on
       matching.run(clusterSize2,
                    maxDiameter,
@@ -120,10 +102,9 @@ void HTreeBuilder::preSinkClustering(
                    bestClusterSize,
                    bestDiameter);
     }
-  } else if (options_->isSinkClusteringSizeSet()
-             && !options_->isMaxDiameterSet()) {
+  } else if (clusterSizeSet && !maxDiameterSet) {
     // only clustering size is set, try diameters of 50, 100 and 200 um
-    for (unsigned clusterDiameter2 : clusterDiameters()) {
+    for (unsigned clusterDiameter2 : options_->getSinkClusteringDiameters()) {
       // clang-format off
       debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
                  clusterSize, clusterDiameter2, wireSegmentUnit_);
@@ -140,7 +121,7 @@ void HTreeBuilder::preSinkClustering(
     // try diameters of 50, 100 and 200 um
     for (unsigned clusterDiameter2 : clusterDiameters()) {
       // try clustering sizes of 10, 20 and 30
-      for (unsigned clusterSize2 : clusterSizes()) {
+      for (unsigned clusterSize2 : options_->getSinkClusteringSizes()) {
         // clang-format off
         debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
                    clusterSize2, clusterDiameter2, wireSegmentUnit_);
@@ -156,7 +137,7 @@ void HTreeBuilder::preSinkClustering(
     }
   }
 
-  if (options_->isSinkClusteringSizeSet() || options_->isMaxDiameterSet()) {
+  if (clusterSizeSet || maxDiameterSet) {
     logger_->info(
         CTS,
         204,
@@ -192,28 +173,14 @@ void HTreeBuilder::preSinkClustering(
       std::vector<ClockInst*> clusterClockInsts;  // sink clock insts
       float xSum = 0;
       float ySum = 0;
-      double insDelay = 0.0;
       for (auto point_idx : cluster) {
         const std::pair<double, double>& point = points[point_idx];
         const Point<double> mapPoint(point.first, point.second);
         if (mapLocationToSink_.find(mapPoint) == mapLocationToSink_.end()) {
           logger_->error(CTS, 79, "Sink not found.");
         }
-        // add 4 points to account for insertion delay
-        if (sinkHasInsertionDelay(mapPoint)) {
-          insDelay = getSinkInsertionDelay(mapPoint);
-          xSum += point.first + insDelay;
-          xSum += point.first - insDelay;
-          ySum += point.second + insDelay;
-          ySum += point.second - insDelay;
-          // clang-format off
-          debugPrint(logger_, CTS, "clustering", 1, "added extra ins delay weights "
-                     "at sink {}: {:0.3f}", mapPoint, insDelay);
-          // clang-format on
-        } else {
-          xSum += point.first;
-          ySum += point.second;
-        }
+        xSum += point.first;
+        ySum += point.second;
         clusterClockInsts.push_back(mapLocationToSink_[mapPoint]);
         // clock inst needs to be added to the new subnet
       }
@@ -280,6 +247,16 @@ void HTreeBuilder::initSinkRegion()
   const int dbUnits = options_->getDbUnits();
   wireSegmentUnit_ = wireSegmentUnitInDbu;
 
+  double clusterDiameter = (type_ == TreeType::MacroTree)
+                               ? options_->getMacroMaxDiameter()
+                               : options_->getMaxDiameter();
+  unsigned clusterSize = (type_ == TreeType::MacroTree)
+                             ? options_->getMacroSinkClusteringSize()
+                             : options_->getSinkClusteringSize();
+  unsigned min_clustering_sinks = (type_ == TreeType::MacroTree)
+                                      ? min_clustering_macro_sinks_
+                                      : min_clustering_sinks_;
+
   logger_->info(CTS,
                 20,
                 " Wire segment unit: {}  dbu ({} um).",
@@ -310,18 +287,16 @@ void HTreeBuilder::initSinkRegion()
   std::vector<const ClockInst*> sinkInsts;
   initTopLevelSinks(topLevelSinks, sinkInsts);
 
-  const float maxDiameter
-      = (options_->getMaxDiameter() * dbUnits) / wireSegmentUnit_;
+  const float maxDiameter = (clusterDiameter * dbUnits) / wireSegmentUnit_;
   // clang-format off
   debugPrint(logger_, CTS, "clustering", 1, "maxDiameter={:0.3f} = "
              "origMaxDiam={} * dbUnits={} / wireSegmentUnit_={}",
-             maxDiameter, options_->getMaxDiameter(), dbUnits,
+             maxDiameter, clusterDiameter, dbUnits,
              wireSegmentUnit_);
   // clang-format on
 
-  preSinkClustering(
-      topLevelSinks, sinkInsts, maxDiameter, options_->getSinkClusteringSize());
-  if (topLevelSinks.size() <= min_clustering_sinks_
+  preSinkClustering(topLevelSinks, sinkInsts, maxDiameter, clusterSize);
+  if (topLevelSinks.size() <= min_clustering_sinks
       || !(options_->getSinkClustering())) {
     Box<int> sinkRegionDbu = clock_.computeSinkRegion();
     logger_->info(CTS, 23, " Original sink region: {}.", sinkRegionDbu);
@@ -336,7 +311,7 @@ void HTreeBuilder::initSinkRegion()
       preSinkClustering(secondLevelLocs,
                         secondLevelInsts,
                         maxDiameter * 4,
-                        std::ceil(std::sqrt(options_->getSinkClusteringSize())),
+                        std::ceil(std::sqrt(clusterSize)),
                         true);
     }
     sinkRegion_ = clock_.computeSinkRegionClustered(topLevelSinksClustered_);
@@ -357,7 +332,7 @@ void plotBlockage(std::ofstream& file, odb::dbDatabase* db_, int scalingFactor)
     int h = bbox->yMax() / scalingFactor - bbox->yMin() / scalingFactor;
     file << i++ << " " << x << " " << y << " " << w << " " << h
          << " block  scalingFactor=";
-    file << scalingFactor << " " << blockage->getId() << std::endl;
+    file << scalingFactor << " " << blockage->getId() << '\n';
   }
 }
 
@@ -384,7 +359,7 @@ void plotSinks(std::ofstream& file, const std::vector<Point<double>>& sinks)
     double h = 1;
     auto name = "sink_";
     file << cnt++ << " " << x << " " << y << " " << w << " " << h;
-    file << " " << name << " " << std::endl;
+    file << " " << name << '\n';
   }
 }
 
@@ -512,12 +487,14 @@ Point<double> HTreeBuilder::findBestLegalLocation(
     double y1,
     double x2,
     double y2,
-    int scalingFactor)
+    int scalingFactor,
+    odb::Direction2D direction)
 {
   Point<double> best(0.0, 0.0);
   double minDiff = std::numeric_limits<double>::max();
   for (const Point<double>& loc : legalLocations) {
     double dist = computeDist(loc, parentPoint);
+    dist += computeDist(loc, branchPoint);
     double diff = abs(dist - targetDist);
     // clang-format off
     if (logger_->debugCheck(utl::CTS, "legalizer", 3)) {
@@ -532,8 +509,16 @@ Point<double> HTreeBuilder::findBestLegalLocation(
     }
   }
 
-  return adjustBestLegalLocation(
-      targetDist, best, parentPoint, sinks, x1, y1, x2, y2, scalingFactor);
+  return adjustBestLegalLocation(targetDist,
+                                 best,
+                                 parentPoint,
+                                 sinks,
+                                 x1,
+                                 y1,
+                                 x2,
+                                 y2,
+                                 scalingFactor,
+                                 direction);
 }
 
 // Adjust buffer location in two steps:
@@ -551,7 +536,8 @@ Point<double> HTreeBuilder::adjustBestLegalLocation(
     double y1,
     double x2,
     double y2,
-    int scalingFactor)
+    int scalingFactor,
+    odb::Direction2D direction)
 {
   if (fuzzyEqual(targetDist, computeDist(currLoc, parentPoint))) {
     return currLoc;
@@ -574,7 +560,7 @@ Point<double> HTreeBuilder::adjustBestLegalLocation(
 
   // try moving beyond blockage boundary
   return adjustBeyondBlockage(
-      currLoc, parentPoint, targetDist, sinks, scalingFactor);
+      currLoc, parentPoint, targetDist, sinks, scalingFactor, direction);
 }
 
 bool HTreeBuilder::adjustAlongBlockage(double targetDist,
@@ -693,7 +679,8 @@ Point<double> HTreeBuilder::adjustBeyondBlockage(
     const Point<double>& parentPoint,
     double targetDist,
     const std::vector<Point<double>>& sinks,
-    int scalingFactor)
+    int scalingFactor,
+    odb::Direction2D direction)
 {
   double px = parentPoint.getX();
   double py = parentPoint.getY();
@@ -709,69 +696,91 @@ Point<double> HTreeBuilder::adjustBeyondBlockage(
   //         p14             p11
   //           p7           p6
   //              p13 p3 p12
-  addCandidatePoint(px, py + targetDist, point, candidates);  // p1
-  addCandidatePoint(px + targetDist, py, point, candidates);  // p2
-  addCandidatePoint(px, py - targetDist, point, candidates);  // p3
-  addCandidatePoint(px - targetDist, py, point, candidates);  // p4
-
   double leng50 = targetDist * 0.5;
-  addCandidatePoint(px + leng50, py + leng50, point, candidates);  // p5
-  addCandidatePoint(px + leng50, py - leng50, point, candidates);  // p6
-  addCandidatePoint(px - leng50, py - leng50, point, candidates);  // p7
-  addCandidatePoint(px - leng50, py + leng50, point, candidates);  // p8
-
   double leng25 = targetDist * 0.25;
   double leng75 = targetDist * 0.75;
-  addCandidatePoint(px + leng25, py + leng75, point, candidates);  // p9
-  addCandidatePoint(px + leng75, py + leng25, point, candidates);  // p10
-  addCandidatePoint(px + leng75, py - leng25, point, candidates);  // p11
-  addCandidatePoint(px + leng25, py - leng75, point, candidates);  // p12
-  addCandidatePoint(px - leng25, py - leng75, point, candidates);  // p13
-  addCandidatePoint(px - leng75, py - leng25, point, candidates);  // p14
-  addCandidatePoint(px - leng75, py + leng25, point, candidates);  // p15
-  addCandidatePoint(px - leng25, py + leng75, point, candidates);  // p16
+  switch (direction) {
+    case odb::Direction2D::North:
+      addCandidatePoint(px, py + targetDist, point, candidates);       // p1
+      addCandidatePoint(px + leng50, py + leng50, point, candidates);  // p5
+      addCandidatePoint(px - leng50, py + leng50, point, candidates);  // p8
+      addCandidatePoint(px + leng25, py + leng75, point, candidates);  // p9
+      addCandidatePoint(px - leng25, py + leng75, point, candidates);  // p16
+      break;
+    case odb::Direction2D::East:
+      addCandidatePoint(px + targetDist, py, point, candidates);       // p2
+      addCandidatePoint(px + leng50, py + leng50, point, candidates);  // p5
+      addCandidatePoint(px + leng50, py - leng50, point, candidates);  // p6
+      addCandidatePoint(px + leng75, py + leng25, point, candidates);  // p10
+      addCandidatePoint(px + leng75, py - leng25, point, candidates);  // p11
+      break;
+    case odb::Direction2D::South:
+      addCandidatePoint(px, py - targetDist, point, candidates);       // p3
+      addCandidatePoint(px + leng50, py - leng50, point, candidates);  // p6
+      addCandidatePoint(px - leng50, py - leng50, point, candidates);  // p7
+      addCandidatePoint(px + leng25, py - leng75, point, candidates);  // p12
+      addCandidatePoint(px - leng25, py - leng75, point, candidates);  // p13
+      break;
+    default:
+      addCandidatePoint(px - targetDist, py, point, candidates);       // p4
+      addCandidatePoint(px - leng50, py - leng50, point, candidates);  // p7
+      addCandidatePoint(px - leng50, py + leng50, point, candidates);  // p8
+      addCandidatePoint(px - leng75, py - leng25, point, candidates);  // p14
+      addCandidatePoint(px - leng75, py + leng25, point, candidates);  // p15
+      // odb::Direction2D::West
+      break;
+  }
 
   // check if any corners of Manhanttan square are inside some blockage
   // if so add candidate points that intersect blockage and Manhattan square
   // p1 is top corner
-  point.setX(px);
-  point.setY(py + targetDist);
-  addCandidatePointsAlongBlockage(point,
-                                  parentPoint,
-                                  targetDist,
-                                  scalingFactor,
-                                  candidates,
-                                  odb::Direction2D::North);
+
+  if (direction == odb::Direction2D(odb::Direction2D::North)) {
+    point.setX(px);
+    point.setY(py + targetDist);
+    addCandidatePointsAlongBlockage(point,
+                                    parentPoint,
+                                    targetDist,
+                                    scalingFactor,
+                                    candidates,
+                                    odb::Direction2D::North);
+  }
 
   // p2 is right corner
-  point.setX(px + targetDist);
-  point.setY(py);
-  addCandidatePointsAlongBlockage(point,
-                                  parentPoint,
-                                  targetDist,
-                                  scalingFactor,
-                                  candidates,
-                                  odb::Direction2D::East);
+  if (direction == odb::Direction2D(odb::Direction2D::East)) {
+    point.setX(px + targetDist);
+    point.setY(py);
+    addCandidatePointsAlongBlockage(point,
+                                    parentPoint,
+                                    targetDist,
+                                    scalingFactor,
+                                    candidates,
+                                    odb::Direction2D::East);
+  }
 
   // p3 is bottom corner
-  point.setX(px);
-  point.setY(py - targetDist);
-  addCandidatePointsAlongBlockage(point,
-                                  parentPoint,
-                                  targetDist,
-                                  scalingFactor,
-                                  candidates,
-                                  odb::Direction2D::South);
+  if (direction == odb::Direction2D(odb::Direction2D::South)) {
+    point.setX(px);
+    point.setY(py - targetDist);
+    addCandidatePointsAlongBlockage(point,
+                                    parentPoint,
+                                    targetDist,
+                                    scalingFactor,
+                                    candidates,
+                                    odb::Direction2D::South);
+  }
 
   // p4 is left corner
-  point.setX(px - targetDist);
-  point.setY(py);
-  addCandidatePointsAlongBlockage(point,
-                                  parentPoint,
-                                  targetDist,
-                                  scalingFactor,
-                                  candidates,
-                                  odb::Direction2D::West);
+  if (direction == odb::Direction2D(odb::Direction2D::West)) {
+    point.setX(px - targetDist);
+    point.setY(py);
+    addCandidatePointsAlongBlockage(point,
+                                    parentPoint,
+                                    targetDist,
+                                    scalingFactor,
+                                    candidates,
+                                    odb::Direction2D::West);
+  }
 
   // try moving cell along x or y, with some offset
   double bx = branchPoint.getX();
@@ -791,38 +800,54 @@ Point<double> HTreeBuilder::adjustBeyondBlockage(
   double newY = py - targetDist + abs(px - newX);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  candidates.emplace_back(newLoc);  // trial x#1
+  if (direction == odb::Direction2D(odb::Direction2D::South)) {
+    candidates.emplace_back(newLoc);  // trial x#1
+  }
 
   newLoc.setY(py + targetDist - abs(px - newX));
-  candidates.emplace_back(newLoc);  // trial x#2
+  if (direction == odb::Direction2D(odb::Direction2D::North)) {
+    candidates.emplace_back(newLoc);  // trial x#2
+  }
 
   newX = bx - minX;
   newY = py - targetDist + abs(px - newX);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  candidates.emplace_back(newLoc);  // trial x#3
+  if (direction == odb::Direction2D(odb::Direction2D::South)) {
+    candidates.emplace_back(newLoc);  // trial x#3
+  }
 
   newLoc.setY(py + targetDist - abs(px - newX));
-  candidates.emplace_back(newLoc);  // trial x#4
+  if (direction == odb::Direction2D(odb::Direction2D::North)) {
+    candidates.emplace_back(newLoc);  // trial x#4
+  }
 
   // try small offset in y direction
   newY = by + minY;
   newX = px - targetDist + abs(py - newY);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  candidates.emplace_back(newLoc);  // trial y#1
+  if (direction == odb::Direction2D(odb::Direction2D::West)) {
+    candidates.emplace_back(newLoc);  // trial y#1
+  }
 
   newLoc.setX(px + targetDist - abs(py - newY));
-  candidates.emplace_back(newLoc);  // trial y#2
+  if (direction == odb::Direction2D(odb::Direction2D::East)) {
+    candidates.emplace_back(newLoc);  // trial y#2
+  }
 
   newY = by - minY;
   newX = px - targetDist + abs(py - newY);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  candidates.emplace_back(newLoc);  // trial y#3
+  if (direction == odb::Direction2D(odb::Direction2D::West)) {
+    candidates.emplace_back(newLoc);  // trial y#3
+  }
 
   newLoc.setX(px + targetDist - abs(py - newY));
-  candidates.emplace_back(newLoc);  // trial y#4
+  if (direction == odb::Direction2D(odb::Direction2D::East)) {
+    candidates.emplace_back(newLoc);  // trial y#4
+  }
 
   for (const Point<double>& candidate : candidates) {
     checkLegalityAndCost(branchPoint,
@@ -953,11 +978,13 @@ void HTreeBuilder::legalizeDummy()
       Point<double>& branchPoint = topology.getBranchingPoint(idx);
       unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
 
+      // clang-format off
       Point<double> parentPoint
           = (levelIdx == 0)
                 ? topLevelBufferLoc
                 : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
-                    parentIdx);
+                      parentIdx);
+      // clang-format on
 
       const std::vector<Point<double>>& sinks
           = topology.getBranchSinksLocations(idx);
@@ -997,7 +1024,8 @@ void HTreeBuilder::legalizeDummy()
                                                  y2,
                                                  x2,
                                                  y2,
-                                                 scalingFactor);
+                                                 scalingFactor,
+                                                 odb::Direction2D::North);
         double d = computeDist(legalBranchPoint, parentPoint);
         // clang-format off
         debugPrint(logger_, CTS, "legalizer", 1,
@@ -1038,11 +1066,28 @@ void HTreeBuilder::legalize()
       Point<double>& branchPoint = topology.getBranchingPoint(bufferIdx);
       unsigned parentIdx = topology.getBranchingPointParentIdx(bufferIdx);
 
+      // clang-format off
       Point<double> parentPoint
           = (levelIdx == 0)
                 ? newTopBufferLoc
                 : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
-                    parentIdx);
+                      parentIdx);
+      // clang-format on
+
+      odb::Direction2D::Value branch_point_dir;
+      if (isHorizontal(levelIdx + 1)) {
+        if (branchPoint.getX() - parentPoint.getX() > 0) {
+          branch_point_dir = odb::Direction2D::East;
+        } else {
+          branch_point_dir = odb::Direction2D::West;
+        }
+      } else {
+        if (branchPoint.getY() - parentPoint.getY() > 0) {
+          branch_point_dir = odb::Direction2D::North;
+        } else {
+          branch_point_dir = odb::Direction2D::South;
+        }
+      }
 
       const std::vector<Point<double>>& sinks
           = topology.getBranchSinksLocations(bufferIdx);
@@ -1074,7 +1119,8 @@ void HTreeBuilder::legalize()
                                                  y1,
                                                  x2,
                                                  y2,
-                                                 scalingFactor);
+                                                 scalingFactor,
+                                                 branch_point_dir);
         // clang-format off
 	debugPrint(logger_, CTS, "legalizer", 1,
 		   "findBestLegalLocation branchPt:{}=>{} parentPt:{} new "
@@ -1095,11 +1141,12 @@ void HTreeBuilder::legalize()
                                            parentPoint,
                                            topology.getLength(),
                                            sinks,
-                                           scalingFactor);
+                                           scalingFactor,
+                                           branch_point_dir);
         // clang-format off
 	debugPrint(logger_, CTS, "legalizer", 3,
-		   "adjustBeyondBlockage applied to legal branchPt:{}=>{} "
-		   "parentPt:{} newDist={:0.3f}", branchPoint, newLocation,
+		   "adjustBeyondBlockage applied to legal branchPt:"
+		   "{}=>{} parentPt:{} newDist={:0.3f}", branchPoint, newLocation,
 		   parentPoint, computeDist(newLocation, parentPoint));
         // clang-format on
         commitMoveLoc(branchPoint, newLocation);
@@ -1122,20 +1169,32 @@ void HTreeBuilder::legalize()
 
 void HTreeBuilder::run()
 {
+  double clusterDiameter = (type_ == TreeType::MacroTree)
+                               ? options_->getMacroMaxDiameter()
+                               : options_->getMaxDiameter();
+  unsigned clusterSize = (type_ == TreeType::MacroTree)
+                             ? options_->getMacroSinkClusteringSize()
+                             : options_->getSinkClusteringSize();
+  bool useMaxCap = (type_ == TreeType::MacroTree)
+                       ? false
+                       : options_->getSinkClusteringUseMaxCap();
+
   logger_->info(
       CTS, 27, "Generating H-Tree topology for net {}.", clock_.getName());
   logger_->info(CTS, 28, " Total number of sinks: {}.", clock_.getNumSinks());
   if (options_->getSinkClustering()) {
-    if (options_->getSinkClusteringUseMaxCap()) {
+    if (useMaxCap) {
       logger_->info(
           CTS, 90, " Sinks will be clustered based on buffer max cap.");
     } else {
-      logger_->info(CTS,
-                    29,
-                    " Sinks will be clustered in groups of up to {} and with "
-                    "maximum cluster diameter of {:.1f} um.",
-                    options_->getSinkClusteringSize(),
-                    options_->getMaxDiameter());
+      logger_->info(
+          CTS,
+          29,
+          " {} sinks will be clustered in groups of up to {} and with "
+          "maximum cluster diameter of {:.1f} um.",
+          type_ == TreeType::MacroTree ? "Macro " : "Register",
+          clusterSize,
+          clusterDiameter);
     }
   }
   logger_->info(
@@ -1175,7 +1234,8 @@ void HTreeBuilder::run()
       logger_->info(CTS,
                     32,
                     " Stop criterion found. Max number of sinks is {}.",
-                    numMaxLeafSinks_);
+                    options_->getMaxFanout() ? options_->getMaxFanout()
+                                             : numMaxLeafSinks_);
       break;
     }
   }
@@ -1209,6 +1269,14 @@ void HTreeBuilder::run()
   // clang-format on
 }
 
+bool HTreeBuilder::isNumberOfSinksTooSmall(unsigned numSinksPerSubRegion) const
+{
+  if (options_->getMaxFanout()) {
+    return numSinksPerSubRegion < options_->getMaxFanout();
+  }
+  return numSinksPerSubRegion < numMaxLeafSinks_;
+}
+
 std::string HTreeBuilder::plotHTree()
 {
   auto name = std::string("cts.") + clock_.getName() + ".buffer";
@@ -1221,6 +1289,7 @@ std::string HTreeBuilder::plotHTree()
   for (int levelIdx = 0; levelIdx < topologyForEachLevel_.size(); ++levelIdx) {
     LevelTopology& topology = topologyForEachLevel_[levelIdx];
 
+    // clang-format off
     topology.forEachBranchingPoint(
         [&](unsigned idx, Point<double> branchPoint) {
           unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
@@ -1229,7 +1298,7 @@ std::string HTreeBuilder::plotHTree()
               = (levelIdx == 0)
                     ? topLevelBufferLoc
                     : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
-                        parentIdx);
+                          parentIdx);
 
           const std::vector<Point<double>>& sinks
               = topology.getBranchSinksLocations(idx);
@@ -1242,8 +1311,9 @@ std::string HTreeBuilder::plotHTree()
           double y2 = branchPoint.getY();
           std::string name = "buffer";
           file << levelIdx << " " << x1 << " " << y1 << " " << x2 << " " << y2;
-          file << " " << name << std::endl;
+          file << " " << name << '\n';
         });
+    // clang-format on
   }
 
   LevelTopology& leafTopology = topologyForEachLevel_.back();
@@ -1261,7 +1331,7 @@ std::string HTreeBuilder::plotHTree()
 
           file << numSinks << " " << loc.getX() << " " << loc.getY();
           file << " " << px << " " << py << " leafbuffer " << name2;
-          file << " z=" << wireSegmentUnit_ << std::endl;
+          file << " z=" << wireSegmentUnit_ << '\n';
           ++numSinks;
         }
       });
@@ -1272,8 +1342,11 @@ std::string HTreeBuilder::plotHTree()
 unsigned HTreeBuilder::computeNumberOfSinksPerSubRegion(
     const unsigned level) const
 {
+  unsigned min_clustering_sinks = (type_ == TreeType::MacroTree)
+                                      ? min_clustering_macro_sinks_
+                                      : min_clustering_sinks_;
   unsigned totalNumSinks = 0;
-  if (clock_.getNumSinks() > min_clustering_sinks_
+  if (clock_.getNumSinks() > min_clustering_sinks
       && options_->getSinkClustering()) {
     totalNumSinks = topLevelSinksClustered_.size();
   } else {
@@ -1697,7 +1770,9 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
   means.emplace_back(branchPt2.getX(), branchPt2.getY());
 
   const unsigned cap
-      = (unsigned) (sinks.size() * options_->getClusteringCapacity());
+      = options_->getMaxFanout()
+            ? (unsigned) (sinks.size() * 0.5)
+            : (unsigned) (sinks.size() * options_->getClusteringCapacity());
   clusteringEngine.iterKmeans(
       1, means.size(), cap, 5, options_->getClusteringPower(), means);
 
@@ -1756,6 +1831,10 @@ void HTreeBuilder::createClockSubNets()
   ClockInst& rootBuffer = clock_.addClockBuffer(
       "clkbuf_0", options_->getRootBuffer(), centerX, centerY);
 
+  if (topBufferName_.empty()) {
+    topBufferName_ = rootBuffer.getName();
+  }
+
   // clang-format off
   if (center != legalCenter) {
     debugPrint(logger_, CTS, "legalizer", 2, "createClockSubNets: "
@@ -1768,6 +1847,7 @@ void HTreeBuilder::createClockSubNets()
 
   addTreeLevelBuffer(&rootBuffer);
   ClockSubNet& rootClockSubNet = clock_.addSubNet("clknet_0");
+  rootClockSubNet.setTreeLevel(0);
   rootClockSubNet.addInst(rootBuffer);
   treeBufLevels_++;
 
@@ -1776,6 +1856,11 @@ void HTreeBuilder::createClockSubNets()
   bool isFirstPoint = true;
   topLevelTopology.forEachBranchingPoint([&](unsigned idx,
                                              Point<double> branchPoint) {
+    // If the branch point has no sinks that will be connected to
+    // it don't create a clock sub net for it
+    if (topLevelTopology.getBranchSinksLocations(idx).empty()) {
+      return;
+    }
     Point<double> legalBranchPoint
         = legalizeOneBuffer(branchPoint, options_->getRootBuffer());
     commitMoveLoc(branchPoint, legalBranchPoint);
@@ -1824,6 +1909,11 @@ void HTreeBuilder::createClockSubNets()
     isFirstPoint = true;
     topology.forEachBranchingPoint([&](unsigned idx,
                                        Point<double> branchPoint) {
+      // If the branch point has no sinks that will be connected
+      // to it don't create a clock sub net for it
+      if (topology.getBranchSinksLocations(idx).empty()) {
+        return;
+      }
       unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
       LevelTopology& parentTopology = topologyForEachLevel_[levelIdx - 1];
       Point<double> parentPoint = parentTopology.getBranchingPoint(parentIdx);
@@ -1859,6 +1949,11 @@ void HTreeBuilder::createClockSubNets()
                              wireSegmentUnit_,
                              this);
 
+      // Set clock tree level the first time only.
+      if (builder.getDrivingSubNet()->getTreeLevel() < 0) {
+        builder.getDrivingSubNet()->setTreeLevel(levelIdx);
+      }
+
       if (!options_->getTreeBuffer().empty()) {
         builder.build(options_->getTreeBuffer());
       } else {
@@ -1880,6 +1975,12 @@ void HTreeBuilder::createClockSubNets()
   leafTopology.forEachBranchingPoint(
       [&](unsigned idx, Point<double> branchPoint) {
         ClockSubNet* subNet = leafTopology.getBranchDrivingSubNet(idx);
+        // If no clock sub net was created for a leaf branch point no sinks
+        // connect to it, so just skip.
+        if (subNet == nullptr) {
+          return;
+        }
+
         subNet->setLeafLevel(true);
 
         const std::vector<Point<double>>& sinkLocs
@@ -1920,6 +2021,7 @@ void HTreeBuilder::createSingleBufferClockNet()
 
   addTreeLevelBuffer(&rootBuffer);
   ClockSubNet& clockSubNet = clock_.addSubNet("clknet_0");
+  clockSubNet.setTreeLevel(0);
   clockSubNet.addInst(rootBuffer);
 
   clock_.forEachSink([&](ClockInst& inst) { clockSubNet.addInst(inst); });
@@ -1927,8 +2029,7 @@ void HTreeBuilder::createSingleBufferClockNet()
 
 void HTreeBuilder::plotSolution()
 {
-  static int cnt = 0;
-  auto name = std::string("plot") + std::to_string(cnt++) + ".py";
+  auto name = std::string("plot_") + clock_.getName() + ".py";
   std::ofstream file(name);
   file << "import numpy as np\n";
   file << "import matplotlib.pyplot as plt\n";
@@ -1998,11 +2099,13 @@ void HTreeBuilder::printHTree()
       Point<double>& branchPoint = topology.getBranchingPoint(idx);
       unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
 
+      // clang-format off
       Point<double> parentPoint
           = (levelIdx == 0)
                 ? topLevelBufferLoc
                 : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
-                    parentIdx);
+                      parentIdx);
+      // clang-format on
 
       const std::vector<Point<double>>& sinks
           = topology.getBranchSinksLocations(idx);

@@ -5,7 +5,7 @@ import odb
 tech = Tech()
 tech.readLef("sky130hd/sky130hd.tlef")
 tech.readLef("sky130hd/sky130_fd_sc_hd_merged.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("gcd_prefill.def")
 
 dfl = design.getFinale()

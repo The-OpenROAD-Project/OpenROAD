@@ -26,7 +26,20 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "db/obj/frInst.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
+#include "odb/db.h"
+#include "utl/Logger.h"
 
 namespace odb {
 class dbTechLayerCutSpacingTableDefRule;
@@ -46,15 +59,17 @@ class Fixture
                 dbTechLayerType type,
                 dbTechLayerDir dir = dbTechLayerDir::NONE);
 
+  odb::dbInst* createDummyInst(odb::dbMaster* master);
+
   void setupTech(frTechObject* tech);
 
   void makeDesign();
 
-  frMaster* makeMacro(const char* name,
-                      frCoord originX = 0,
-                      frCoord originY = 0,
-                      frCoord sizeX = 0,
-                      frCoord sizeY = 0);
+  std::pair<frMaster*, odb::dbMaster*> makeMacro(const char* name,
+                                                 frCoord originX = 0,
+                                                 frCoord originY = 0,
+                                                 frCoord sizeX = 0,
+                                                 frCoord sizeY = 0);
 
   frBlockage* makeMacroObs(frMaster* master,
                            frCoord xl,
@@ -72,7 +87,9 @@ class Fixture
                        frCoord yh,
                        frLayerNum lNum = 2);
 
-  frInst* makeInst(const char* name, frMaster* master, frCoord x, frCoord y);
+  frInst* makeInst(const char* name,
+                   frMaster* master,
+                   odb::dbMaster* db_master);
 
   frLef58CornerSpacingConstraint* makeCornerConstraint(
       frLayerNum layer_num,
@@ -151,7 +168,18 @@ class Fixture
 
   void makeLef58CutSpcTbl(frLayerNum layer_num,
                           odb::dbTechLayerCutSpacingTableDefRule* dbRule);
+  void makeLef58TwoWiresForbiddenSpc(
+      frLayerNum layer_num,
+      odb::dbTechLayerTwoWiresForbiddenSpcRule* dbRule);
+  void makeLef58ForbiddenSpc(frLayerNum layer_num,
+                             odb::dbTechLayerForbiddenSpacingRule* dbRule);
 
+  frLef58EnclosureConstraint* makeLef58EnclosureConstrainut(
+      frLayerNum layer_num,
+      int cut_class_idx,
+      frCoord width,
+      frCoord firstOverhang,
+      frCoord secondOverhang);
   void makeMinimumCut(frLayerNum layerNum,
                       frCoord width,
                       frCoord length,
@@ -208,6 +236,11 @@ class Fixture
       std::vector<frCoord> widthTbl,
       std::vector<frCoord> prlTbl,
       std::vector<std::vector<frCoord>> spacingTbl);
+
+  frLef58WidthTableOrthConstraint* makeWidthTblOrthConstraint(
+      frLayerNum layer_num,
+      frCoord horz_spc,
+      frCoord vert_spc);
   void initRegionQuery();
   frLef58CutSpacingConstraint* makeLef58CutSpacingConstraint_parallelOverlap(
       frLayerNum layer_num,
@@ -221,11 +254,18 @@ class Fixture
   void makeLef58WrongDirSpcConstraint(
       frLayerNum layer_num,
       odb::dbTechLayerWrongDirSpacingRule* dbRule);
+  void makeSpacingTableOrthConstraint(frLayerNum layer_num,
+                                      frCoord within,
+                                      frCoord spc);
   // Public data members are accessible from inside the test function
-  std::unique_ptr<Logger> logger;
+  std::unique_ptr<utl::Logger> logger;
+  std::unique_ptr<RouterConfiguration> router_cfg;
   std::unique_ptr<frDesign> design;
   frUInt4 numBlockages, numTerms, numMasters, numInsts;
   odb::dbTech* db_tech;
+
+ private:
+  odb::dbDatabase* db_;
 };
 
 // BOOST_TEST wants an operator<< for any type it compares.  We

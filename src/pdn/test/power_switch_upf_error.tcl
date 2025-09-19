@@ -13,7 +13,7 @@ link_design gcd
 create_power_domain PD_TOP \
   -elements {.}
 
-initialize_floorplan -utilization 10 -site unithd
+initialize_floorplan -utilization 10 -core_space 0.0 -site unithd -additional_site unithddbl
 tapcell \
   -distance 14 \
   -tapcell_master "sky130_fd_sc_hd__tapvpwrvgnd_1"
@@ -24,5 +24,5 @@ add_global_connection -net VDD_SW -pin_pattern "^VPWR$"
 add_global_connection -net VSS -power -pin_pattern "^VGND$"
 add_global_connection -net VSS -power -pin_pattern "^VNB$"
 
-catch {set_voltage_domain -power VDD -ground VSS -switched_power VDD_SW} err
+catch { set_voltage_domain -power VDD -ground VSS -switched_power VDD_SW } err
 puts $err

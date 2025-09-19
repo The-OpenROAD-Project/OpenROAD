@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 ////////////////////////////////////////////////////////////////
 //
@@ -55,6 +23,7 @@ utl::Logger* getLogger();
 %import <std_vector.i>
 %import "dbtypes.i"
 %import "dbenums.i"
+%include "exception.i"
 %include "../../Exception.i"
 
 
@@ -108,6 +77,11 @@ void place_pad(odb::dbMaster* master, const char* name, odb::dbRow* row, int loc
   ord::getICeWall()->placePad(master, name, row, location, mirror);
 }
 
+void place_pads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
+{
+  ord::getICeWall()->placePads(insts, row);
+}
+
 void place_corner(odb::dbMaster* master, int ring_index)
 {
   ord::getICeWall()->placeCorner(master, ring_index);
@@ -144,14 +118,20 @@ void route_rdl(odb::dbTechLayer* layer,
                odb::dbTechVia* pad_via,
                const std::vector<odb::dbNet*>& nets,
                int width = 0, int spacing = 0, bool allow45 = false,
-               float penalty = 2.0)
+               float penalty = 2.0,
+               int max_iterations = 10)
 {
-  ord::getICeWall()->routeRDL(layer, bump_via, pad_via, nets, width, spacing, allow45, penalty);
+  ord::getICeWall()->routeRDL(layer, bump_via, pad_via, nets, width, spacing, allow45, penalty, max_iterations);
 }
 
 void route_rdl_gui(bool enable)
 {
   ord::getICeWall()->routeRDLDebugGUI(enable);
+}
+
+void route_rdl_debug_net(const char* name)
+{
+  ord::getICeWall()->routeRDLDebugNet(name);
 }
 
 odb::dbRow* get_row(const char* name)

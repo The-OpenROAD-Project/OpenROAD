@@ -29,21 +29,20 @@
 
 #include "lefiCrossTalk.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // *****************************************************************************
 // lefiNoiseVictim
 // *****************************************************************************
 
 lefiNoiseVictim::lefiNoiseVictim(double d)
-    : length_(0.0), numNoises_(0), noisesAllocated_(0), noises_(NULL)
 {
   Init(d);
 }
@@ -65,7 +64,7 @@ void lefiNoiseVictim::clear()
 void lefiNoiseVictim::Destroy()
 {
   clear();
-  lefFree((char*) (noises_));
+  lefFree(noises_);
 }
 
 lefiNoiseVictim::~lefiNoiseVictim()
@@ -83,13 +82,15 @@ void lefiNoiseVictim::addVictimNoise(double d)
     if (noisesAllocated_ == 0) {
       max = noisesAllocated_ = 2;
       numNoises_ = 0;
-    } else
+    } else {
       max = noisesAllocated_ = numNoises_ * 2;
+    }
     ne = (double*) lefMalloc(sizeof(double) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = noises_[i];
-    lefFree((char*) (noises_));
+    }
+    lefFree(noises_);
     noises_ = ne;
   }
   noises_[numNoises_] = d;
@@ -116,12 +117,6 @@ double lefiNoiseVictim::length() const
 // *****************************************************************************
 
 lefiNoiseResistance::lefiNoiseResistance()
-    : numNums_(0),
-      numsAllocated_(0),
-      nums_(NULL),
-      numVictims_(0),
-      victimsAllocated_(0),
-      victims_(NULL)
 {
   Init();
 }
@@ -146,7 +141,7 @@ void lefiNoiseResistance::clear()
   for (i = 0; i < max; i++) {
     r = victims_[i];
     r->Destroy();
-    lefFree((char*) r);
+    lefFree(r);
   }
   numVictims_ = 0;
   numNums_ = 0;
@@ -155,8 +150,8 @@ void lefiNoiseResistance::clear()
 void lefiNoiseResistance::Destroy()
 {
   clear();
-  lefFree((char*) (nums_));
-  lefFree((char*) (victims_));
+  lefFree(nums_);
+  lefFree(victims_);
 }
 
 lefiNoiseResistance::~lefiNoiseResistance()
@@ -174,13 +169,15 @@ void lefiNoiseResistance::addResistanceNumber(double d)
     if (numsAllocated_ == 0) {
       max = numsAllocated_ = 2;
       numNums_ = 0;
-    } else
+    } else {
       max = numsAllocated_ = numNums_ * 2;
+    }
     ne = (double*) lefMalloc(sizeof(double) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = nums_[i];
-    lefFree((char*) (nums_));
+    }
+    lefFree(nums_);
     nums_ = ne;
   }
   nums_[numNums_] = d;
@@ -204,14 +201,16 @@ void lefiNoiseResistance::addVictimLength(double d)
     if (victimsAllocated_ == 0) {
       max = victimsAllocated_ = 2;
       numVictims_ = 0;
-    } else
+    } else {
       max = victimsAllocated_ = numVictims_ * 2;
+    }
 
     ne = (lefiNoiseVictim**) lefMalloc(sizeof(lefiNoiseVictim*) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = victims_[i];
-    lefFree((char*) (victims_));
+    }
+    lefFree(victims_);
     victims_ = ne;
   }
   r = (lefiNoiseVictim*) lefMalloc(sizeof(lefiNoiseVictim));
@@ -268,7 +267,7 @@ void lefiNoiseEdge::clear()
   for (i = 0; i < maxr; i++) {
     r = resistances_[i];
     r->Destroy();
-    lefFree((char*) r);
+    lefFree(r);
   }
 
   edge_ = 0;
@@ -278,7 +277,7 @@ void lefiNoiseEdge::clear()
 void lefiNoiseEdge::Destroy()
 {
   clear();
-  lefFree((char*) (resistances_));
+  lefFree(resistances_);
 }
 
 lefiNoiseEdge::~lefiNoiseEdge()
@@ -308,13 +307,15 @@ void lefiNoiseEdge::addResistance()
     if (resistancesAllocated_ == 0) {
       max = resistancesAllocated_ = 2;
       numResistances_ = 0;
-    } else
+    } else {
       max = resistancesAllocated_ = numResistances_ * 2;
+    }
     ne = (lefiNoiseResistance**) lefMalloc(sizeof(lefiNoiseResistance*) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = resistances_[i];
-    lefFree((char*) (resistances_));
+    }
+    lefFree(resistances_);
     resistances_ = ne;
   }
   r = (lefiNoiseResistance*) lefMalloc(sizeof(lefiNoiseResistance));
@@ -375,7 +376,7 @@ void lefiNoiseTable::clear()
   for (i = 0; i < max; i++) {
     r = edges_[i];
     r->Destroy();
-    lefFree((char*) r);
+    lefFree(r);
   }
   numEdges_ = 0;
 }
@@ -383,7 +384,7 @@ void lefiNoiseTable::clear()
 void lefiNoiseTable::Destroy()
 {
   clear();
-  lefFree((char*) (edges_));
+  lefFree(edges_);
 }
 
 lefiNoiseTable::~lefiNoiseTable()
@@ -408,13 +409,15 @@ void lefiNoiseTable::newEdge()
     if (edgesAllocated_ == 0) {
       max = edgesAllocated_ = 2;
       numEdges_ = 0;
-    } else
+    } else {
       max = edgesAllocated_ = numEdges_ * 2;
+    }
     ne = (lefiNoiseEdge**) lefMalloc(sizeof(lefiNoiseEdge*) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = edges_[i];
-    lefFree((char*) (edges_));
+    }
+    lefFree(edges_);
     edges_ = ne;
   }
   r = (lefiNoiseEdge*) lefMalloc(sizeof(lefiNoiseEdge));
@@ -494,7 +497,7 @@ void lefiCorrectionVictim::clear()
 void lefiCorrectionVictim::Destroy()
 {
   clear();
-  lefFree((char*) (corrections_));
+  lefFree(corrections_);
 }
 
 lefiCorrectionVictim::~lefiCorrectionVictim()
@@ -512,13 +515,15 @@ void lefiCorrectionVictim::addVictimCorrection(double d)
     if (correctionsAllocated_ == 0) {
       max = correctionsAllocated_ = 2;
       numCorrections_ = 0;
-    } else
+    } else {
       max = correctionsAllocated_ = numCorrections_ * 2;
+    }
     ne = (double*) lefMalloc(sizeof(double) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = corrections_[i];
-    lefFree((char*) (corrections_));
+    }
+    lefFree(corrections_);
     corrections_ = ne;
   }
   corrections_[numCorrections_] = d;
@@ -570,7 +575,7 @@ void lefiCorrectionResistance::clear()
   for (i = 0; i < max; i++) {
     r = victims_[i];
     r->Destroy();
-    lefFree((char*) r);
+    lefFree(r);
   }
   numVictims_ = 0;
   numNums_ = 0;
@@ -579,8 +584,8 @@ void lefiCorrectionResistance::clear()
 void lefiCorrectionResistance::Destroy()
 {
   clear();
-  lefFree((char*) (nums_));
-  lefFree((char*) (victims_));
+  lefFree(nums_);
+  lefFree(victims_);
 }
 
 lefiCorrectionResistance::~lefiCorrectionResistance()
@@ -598,13 +603,15 @@ void lefiCorrectionResistance::addResistanceNumber(double d)
     if (numsAllocated_) {
       max = numsAllocated_ = 2;
       numNums_ = 0;
-    } else
+    } else {
       max = numsAllocated_ = numNums_ * 2;
+    }
     ne = (double*) lefMalloc(sizeof(double) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = nums_[i];
-    lefFree((char*) (nums_));
+    }
+    lefFree(nums_);
     nums_ = ne;
   }
   nums_[numNums_] = d;
@@ -628,14 +635,16 @@ void lefiCorrectionResistance::addVictimLength(double d)
     if (victimsAllocated_ == 0) {
       max = victimsAllocated_ = 2;
       numVictims_ = 0;
-    } else
+    } else {
       max = victimsAllocated_ = numVictims_ * 2;
+    }
     ne = (lefiCorrectionVictim**) lefMalloc(sizeof(lefiCorrectionVictim*)
                                             * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = victims_[i];
-    lefFree((char*) (victims_));
+    }
+    lefFree(victims_);
     victims_ = ne;
   }
   r = (lefiCorrectionVictim*) lefMalloc(sizeof(lefiCorrectionVictim));
@@ -692,7 +701,7 @@ void lefiCorrectionEdge::clear()
   for (i = 0; i < maxr; i++) {
     r = resistances_[i];
     r->Destroy();
-    lefFree((char*) r);
+    lefFree(r);
   }
 
   edge_ = 0;
@@ -702,7 +711,7 @@ void lefiCorrectionEdge::clear()
 void lefiCorrectionEdge::Destroy()
 {
   clear();
-  lefFree((char*) (resistances_));
+  lefFree(resistances_);
 }
 
 lefiCorrectionEdge::~lefiCorrectionEdge()
@@ -732,14 +741,16 @@ void lefiCorrectionEdge::addResistance()
     if (resistancesAllocated_ == 0) {
       max = resistancesAllocated_ = 2;
       numResistances_ = 0;
-    } else
+    } else {
       max = resistancesAllocated_ = numResistances_ * 2;
+    }
     ne = (lefiCorrectionResistance**) lefMalloc(
         sizeof(lefiCorrectionResistance*) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = resistances_[i];
-    lefFree((char*) (resistances_));
+    }
+    lefFree(resistances_);
     resistances_ = ne;
   }
   r = (lefiCorrectionResistance*) lefMalloc(sizeof(lefiCorrectionResistance));
@@ -800,7 +811,7 @@ void lefiCorrectionTable::clear()
   for (i = 0; i < max; i++) {
     r = edges_[i];
     r->Destroy();
-    lefFree((char*) r);
+    lefFree(r);
   }
   numEdges_ = 0;
 }
@@ -808,7 +819,7 @@ void lefiCorrectionTable::clear()
 void lefiCorrectionTable::Destroy()
 {
   clear();
-  lefFree((char*) (edges_));
+  lefFree(edges_);
 }
 
 lefiCorrectionTable::~lefiCorrectionTable()
@@ -833,13 +844,15 @@ void lefiCorrectionTable::newEdge()
     if (edgesAllocated_ == 0) {
       max = edgesAllocated_ = 2;
       numEdges_ = 0;
-    } else
+    } else {
       max = edgesAllocated_ = numEdges_ * 2;
+    }
     ne = (lefiCorrectionEdge**) lefMalloc(sizeof(lefiCorrectionEdge*) * max);
     max /= 2;
-    for (i = 0; i < max; i++)
+    for (i = 0; i < max; i++) {
       ne[i] = edges_[i];
-    lefFree((char*) (edges_));
+    }
+    lefFree(edges_);
     edges_ = ne;
   }
   r = (lefiCorrectionEdge*) lefMalloc(sizeof(lefiCorrectionEdge));
@@ -892,4 +905,4 @@ lefiCorrectionEdge* lefiCorrectionTable::edge(int index)
 {
   return edges_[index];
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

@@ -1,34 +1,10 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <iostream>
+#include <list>
 #include <memory>
 
 #include "db/infra/frPoint.h"
@@ -46,23 +22,23 @@ class frNode : public frBlockObject
   frNode(frNode& in) = delete;
   frNode(grNode& in);
   // setters
-  void addToNet(frNet* in) { net = in; }
-  void setLoc(const Point& in) { loc = in; }
-  void setLayerNum(frLayerNum in) { layerNum = in; }
-  void setConnFig(frBlockObject* in) { connFig = in; }
-  void setPin(frBlockObject* in) { pin = in; }
-  void setType(frNodeTypeEnum in) { type = in; }
-  void setParent(frNode* in) { parent = in; }
+  void addToNet(frNet* in) { net_ = in; }
+  void setLoc(const Point& in) { loc_ = in; }
+  void setLayerNum(frLayerNum in) { layerNum_ = in; }
+  void setConnFig(frBlockObject* in) { connFig_ = in; }
+  void setPin(frBlockObject* in) { pin_ = in; }
+  void setType(frNodeTypeEnum in) { type_ = in; }
+  void setParent(frNode* in) { parent_ = in; }
   void addChild(frNode* in)
   {
     bool exist = false;
-    for (auto child : children) {
+    for (auto child : children_) {
       if (child == in) {
         exist = true;
       }
     }
     if (!exist) {
-      children.push_back(in);
+      children_.push_back(in);
     } else {
       std::cout << "Warning: child already exists\n";
     }
@@ -93,52 +69,52 @@ class frNode : public frBlockObject
   //     std::cout << "Warning2: child already exists\n";
   //   }
   // }
-  void clearChildren() { children.clear(); }
+  void clearChildren() { children_.clear(); }
   void removeChild(frNode* in)
   {
-    for (auto it = children.begin(); it != children.end(); it++) {
+    for (auto it = children_.begin(); it != children_.end(); it++) {
       if (*it == in) {
-        children.erase(it);
+        children_.erase(it);
         break;
       }
     }
   }
-  void setIter(frListIter<std::unique_ptr<frNode>>& in) { iter = in; }
+  void setIter(frListIter<std::unique_ptr<frNode>>& in) { iter_ = in; }
   void reset()
   {
-    parent = nullptr;
-    children.clear();
+    parent_ = nullptr;
+    children_.clear();
   }
 
   // getters
-  bool hasNet() { return (net != nullptr); }
-  frNet* getNet() { return net; }
-  Point getLoc() { return loc; }
-  frLayerNum getLayerNum() { return layerNum; }
-  frBlockObject* getConnFig() { return connFig; }
-  frBlockObject* getPin() { return pin; }
-  frNodeTypeEnum getType() { return type; }
-  bool hasParent() { return (parent != nullptr); }
-  frNode* getParent() { return parent; }
-  std::list<frNode*>& getChildren() { return children; }
-  const std::list<frNode*>& getChildren() const { return children; }
-  frListIter<std::unique_ptr<frNode>> getIter() { return iter; }
+  bool hasNet() { return net_; }
+  frNet* getNet() { return net_; }
+  Point getLoc() { return loc_; }
+  frLayerNum getLayerNum() { return layerNum_; }
+  frBlockObject* getConnFig() { return connFig_; }
+  frBlockObject* getPin() { return pin_; }
+  frNodeTypeEnum getType() { return type_; }
+  bool hasParent() { return parent_; }
+  frNode* getParent() { return parent_; }
+  std::list<frNode*>& getChildren() { return children_; }
+  const std::list<frNode*>& getChildren() const { return children_; }
+  frListIter<std::unique_ptr<frNode>> getIter() { return iter_; }
 
   frBlockObjectEnum typeId() const override { return frcNode; }
 
  protected:
-  frNet* net{nullptr};
-  Point loc;                        // == prefAP bp if exist for pin
-  frLayerNum layerNum{0};           // == prefAP bp if exist for pin
-  frBlockObject* connFig{nullptr};  // wire / via / patch to parent
-  frBlockObject* pin{
+  frNet* net_{nullptr};
+  Point loc_;                        // == prefAP bp if exist for pin
+  frLayerNum layerNum_{0};           // == prefAP bp if exist for pin
+  frBlockObject* connFig_{nullptr};  // wire / via / patch to parent
+  frBlockObject* pin_{
       nullptr};  // term / instTerm / null if boundary pin or steiner
-  frNodeTypeEnum type{frNodeTypeEnum::frcSteiner};
+  frNodeTypeEnum type_{frNodeTypeEnum::frcSteiner};
 
-  frNode* parent{nullptr};
-  std::list<frNode*> children;
+  frNode* parent_{nullptr};
+  std::list<frNode*> children_;
 
-  frListIter<std::unique_ptr<frNode>> iter;
+  frListIter<std::unique_ptr<frNode>> iter_;
 
   friend class grNode;
 };

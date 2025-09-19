@@ -7,7 +7,6 @@ def detailed_placement(
     design,
     *,
     max_displacement: t.Optional[t.Union[int, t.List[int]]] = None,
-    disallow_one_site_gaps: bool = False,
     report_file_name: str = "",
     suppress=False,
 ):
@@ -29,9 +28,7 @@ def detailed_placement(
         site = design.getBlock().getRows()[0].getSite()
         max_disp_x = int(design.micronToDBU(max_disp_x) / site.getWidth())
         max_disp_y = int(design.micronToDBU(max_disp_y) / site.getHeight())
-        dpl.detailedPlacement(
-            max_disp_x, max_disp_y, report_file_name, disallow_one_site_gaps
-        )
+        dpl.detailedPlacement(max_disp_x, max_disp_y, report_file_name)
         if not suppress:
             dpl.reportLegalizationStats()
     else:
@@ -63,7 +60,7 @@ def set_placement_padding(design, *, masters=None, right=None, left=None, globl=
         utl.warn(utl.DPL, 103, "No padding target specified")
 
 
-def filler_placement(design, prefix=None, masters=None):
+def filler_placement(design, prefix=None, masters=None, verbose=False):
     dpl = design.getOpendp()
     if prefix == None:
         prefix = "FILLER_"
@@ -73,7 +70,7 @@ def filler_placement(design, prefix=None, masters=None):
 
     filler_masters = get_masters(design, masters)
     if len(filler_masters) > 0:
-        dpl.fillerPlacement(filler_masters, prefix)
+        dpl.fillerPlacement(filler_masters, prefix, verbose)
 
 
 def get_masters(design, names):

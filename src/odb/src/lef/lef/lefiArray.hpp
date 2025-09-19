@@ -30,12 +30,12 @@
 #ifndef lefiArray_h
 #define lefiArray_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 #include "lefiMisc.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 class lefiArrayFloorPlan
 {
@@ -108,43 +108,41 @@ class lefiArray
   void print(FILE* f) const;
 
  protected:
-  int nameSize_;
-  char* name_;
+  int nameSize_{0};
+  char* name_{nullptr};
 
-  int patternsAllocated_;
-  int numPatterns_;
-  lefiSitePattern** pattern_;
+  int patternsAllocated_{0};
+  int numPatterns_{0};
+  lefiSitePattern** pattern_{nullptr};
 
-  int canAllocated_;
-  int numCan_;
-  lefiSitePattern** canPlace_;
+  int canAllocated_{0};
+  int numCan_{0};
+  lefiSitePattern** canPlace_{nullptr};
 
-  int cannotAllocated_;
-  int numCannot_;
-  lefiSitePattern** cannotOccupy_;
+  int cannotAllocated_{0};
+  int numCannot_{0};
+  lefiSitePattern** cannotOccupy_{nullptr};
 
-  int tracksAllocated_;
-  int numTracks_;
-  lefiTrackPattern** track_;
+  int tracksAllocated_{0};
+  int numTracks_{0};
+  lefiTrackPattern** track_{nullptr};
 
-  int gAllocated_;
-  int numG_;
-  lefiGcellPattern** gcell_;
+  int gAllocated_{0};
+  int numG_{0};
+  lefiGcellPattern** gcell_{nullptr};
 
-  int hasDefault_;
-  int tableSize_;
-  int numDefault_;
-  int defaultAllocated_;
-  int* minPins_;
-  double* caps_;
+  int hasDefault_{0};
+  int tableSize_{0};
+  int numDefault_{0};
+  int defaultAllocated_{0};
+  int* minPins_{nullptr};
+  double* caps_{nullptr};
 
-  int numFloorPlans_;
-  int floorPlansAllocated_;
-  lefiArrayFloorPlan** floors_;
+  int numFloorPlans_{0};
+  int floorPlansAllocated_{0};
+  lefiArrayFloorPlan** floors_{nullptr};
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

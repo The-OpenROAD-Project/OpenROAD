@@ -33,7 +33,7 @@
 #ifndef CLEFIENCRYPTINT_H
 #define CLEFIENCRYPTINT_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 

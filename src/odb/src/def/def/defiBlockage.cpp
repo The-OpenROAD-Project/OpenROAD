@@ -29,14 +29,14 @@
 
 #include "defiBlockage.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
-#include "lex.h"
+#include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
@@ -55,17 +55,17 @@ void defiBlockage::Init()
 {
   numPolys_ = 0;
   clear();
-  layerName_ = 0;
-  componentName_ = 0;
+  layerName_ = nullptr;
+  componentName_ = nullptr;
   layerNameLength_ = 0;
   componentNameLength_ = 0;
-  xl_ = 0;
-  yl_ = 0;
-  xh_ = 0;
-  yh_ = 0;
+  xl_ = nullptr;
+  yl_ = nullptr;
+  xh_ = nullptr;
+  yh_ = nullptr;
   rectsAllocated_ = 0;
   polysAllocated_ = 0;
-  polygons_ = 0;
+  polygons_ = nullptr;
 }
 
 defiBlockage::~defiBlockage()
@@ -106,26 +106,28 @@ void defiBlockage::clearPoly()
 
 void defiBlockage::Destroy()
 {
-  if (layerName_)
+  if (layerName_) {
     free(layerName_);
-  if (componentName_)
+  }
+  if (componentName_) {
     free(componentName_);
-  layerName_ = 0;
-  componentName_ = 0;
+  }
+  layerName_ = nullptr;
+  componentName_ = nullptr;
   if (rectsAllocated_) {
     free((char*) (xl_));
     free((char*) (yl_));
     free((char*) (xh_));
     free((char*) (yh_));
     rectsAllocated_ = 0;
-    xl_ = 0;
-    yl_ = 0;
-    xh_ = 0;
-    yh_ = 0;
+    xl_ = nullptr;
+    yl_ = nullptr;
+    xh_ = nullptr;
+    yh_ = nullptr;
   }
   clearPoly();
   free((char*) (polygons_));
-  polygons_ = 0;
+  polygons_ = nullptr;
   clear();
 }
 
@@ -133,8 +135,9 @@ void defiBlockage::setLayer(const char* name)
 {
   int len = strlen(name) + 1;
   if (layerNameLength_ < len) {
-    if (layerName_)
+    if (layerName_) {
       free(layerName_);
+    }
     layerName_ = (char*) malloc(len);
     layerNameLength_ = len;
   }
@@ -156,8 +159,9 @@ void defiBlockage::setComponent(const char* name)
   /* 10/29/2001 - Wanda da Rosa, component name is required */
   len = strlen(name) + 1;
   if (componentNameLength_ < len) {
-    if (componentName_)
+    if (componentName_) {
       free(componentName_);
+    }
     componentName_ = (char*) malloc(len);
     componentNameLength_ = len;
   }
@@ -257,10 +261,12 @@ void defiBlockage::addPolygon(defiGeometries* geom)
     polysAllocated_ = (polysAllocated_ == 0) ? 2 : polysAllocated_ * 2;
     poly = (struct defiPoints**) malloc(sizeof(struct defiPoints*)
                                         * polysAllocated_);
-    for (i = 0; i < numPolys_; i++)
+    for (i = 0; i < numPolys_; i++) {
       poly[i] = polygons_[i];
-    if (polygons_)
+    }
+    if (polygons_) {
       free((char*) (polygons_));
+    }
     polygons_ = poly;
   }
   p = (struct defiPoints*) malloc(sizeof(struct defiPoints));
@@ -321,8 +327,9 @@ int defiBlockage::hasSoft() const
 // 5.7
 int defiBlockage::hasPartial() const
 {
-  if (maxDensity_ == -1)
+  if (maxDensity_ == -1) {
     return 0;
+  }
   return 1;
 }
 
@@ -334,15 +341,17 @@ double defiBlockage::placementMaxDensity() const
 
 int defiBlockage::hasSpacing() const
 {
-  if (minSpacing_ == -1)
+  if (minSpacing_ == -1) {
     return 0;
+  }
   return 1;
 }
 
 int defiBlockage::hasDesignRuleWidth() const
 {
-  if (width_ == -1)
+  if (width_ == -1) {
     return 0;
+  }
   return 1;
 }
 
@@ -441,28 +450,37 @@ void defiBlockage::print(FILE* f) const
 
   if (hasLayer()) {
     fprintf(f, "- LAYER %s", layerName());
-    if (hasComponent())
+    if (hasComponent()) {
       fprintf(f, " + COMPONENT %s", layerComponentName());
-    if (hasSlots())
+    }
+    if (hasSlots()) {
       fprintf(f, " + SLOTS");
-    if (hasFills())
+    }
+    if (hasFills()) {
       fprintf(f, " + FILLS");
-    if (hasPushdown())
+    }
+    if (hasPushdown()) {
       fprintf(f, " + PUSHDOWN");
-    if (hasExceptpgnet())
+    }
+    if (hasExceptpgnet()) {
       fprintf(f, " + EXCEPTPGNET");
+    }
     fprintf(f, "\n");
   }
   if (hasPlacement()) {
     fprintf(f, "- PLACEMENT");
-    if (hasComponent())
+    if (hasComponent()) {
       fprintf(f, " + COMPONENT %s", layerComponentName());
-    if (hasPushdown())
+    }
+    if (hasPushdown()) {
       fprintf(f, " + PUSHDOWN");
-    if (hasSoft())
+    }
+    if (hasSoft()) {
       fprintf(f, " + SOFT");
-    if (hasPartial())
+    }
+    if (hasPartial()) {
       fprintf(f, " + PARTIAL %f", placementMaxDensity());
+    }
     fprintf(f, "\n");
   }
 
@@ -473,10 +491,11 @@ void defiBlockage::print(FILE* f) const
   for (i = 0; i < numPolygons(); i++) {
     fprintf(f, "   POLYGON ");
     points = getPolygon(i);
-    for (j = 0; j < points.numPoints; j++)
+    for (j = 0; j < points.numPoints; j++) {
       fprintf(f, "%d %d ", points.x[j], points.y[j]);
+    }
     fprintf(f, "\n");
   }
   fprintf(f, "\n");
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

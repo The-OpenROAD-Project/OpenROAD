@@ -1,43 +1,72 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
+
+#include <algorithm>
+#include <bitset>
+#include <cmath>
+#include <iostream>
+#include <iterator>
+#include <limits>
+#include <map>
+#include <string>
+#include <vector>
 
 #include "dr/FlexDR.h"
-#include "dr/FlexDR_graphics.h"
 #include "dr/FlexGridGraph.h"
+#include "frBaseTypes.h"
 
 namespace drt {
+const int debugMazeIter = std::numeric_limits<int>::max();
 
-int debugMazeIter = std::numeric_limits<int>::max();
+void FlexGridGraph::printExpansion(const FlexWavefrontGrid& currGrid,
+                                   const std::string& keyword)
+{
+  auto dir = currGrid.getLastDir();
+  auto gridX = currGrid.x();
+  auto gridY = currGrid.y();
+  auto gridZ = currGrid.z();
+  dir = (frDirEnum) (OPPOSITEDIR - (int) dir);
+  bool gridCost = hasGridCost(gridX, gridY, gridZ, dir);
+  bool drcCost = hasRouteShapeCostAdj(gridX, gridY, gridZ, dir, false);
+  bool markerCost = hasMarkerCostAdj(gridX, gridY, gridZ, dir);
+  bool shapeCost = hasFixedShapeCostAdj(gridX, gridY, gridZ, dir, false);
+  bool blockCost = isBlocked(gridX, gridY, gridZ, dir);
+  bool guideCost = hasGuide(gridX, gridY, gridZ, dir);
+  frCoord edgeLength = getEdgeLength(gridX, gridY, gridZ, dir);
+  Point pt;
+  getPoint(pt, currGrid.x(), currGrid.y());
+  dump_file_ << fmt::format(
+      "{} {} pt {} cost {} pathCost {} lastDir {} estCost {} gridX {} gridY "
+      "{} ",
+      keyword,
+      currGrid.z(),
+      pt,
+      currGrid.getCost(),
+      currGrid.getPathCost(),
+      currGrid.getLastDir(),
+      currGrid.getCost() - currGrid.getPathCost(),
+      gridX,
+      gridY);
+  dump_file_ << fmt::format(
+      "gridCost {} drcCost {} markerCost {} shapeCost {} blockCost {} "
+      "guideCost {} edgeLength {} ",
+      gridCost,
+      drcCost,
+      markerCost,
+      shapeCost,
+      blockCost,
+      guideCost,
+      edgeLength);
+  dump_file_ << fmt::format(
+      "id {} parent_id {}\n", currGrid.getId(), currGrid.getParentId());
+  dump_file_.flush();
+}
 void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
                            const frDirEnum& dir,
                            const FlexMazeIdx& dstMazeIdx1,
                            const FlexMazeIdx& dstMazeIdx2,
-                           const Point& centerPt)
+                           const Point& centerPt,
+                           bool route_with_jumpers)
 {
   frCost nextEstCost, nextPathCost;
   int gridX = currGrid.x();
@@ -53,7 +82,7 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
                    dstMazeIdx1,
                    dstMazeIdx2,
                    dir);
-  nextPathCost = getNextPathCost(currGrid, dir);
+  nextPathCost = getNextPathCost(currGrid, dir, route_with_jumpers);
   Point currPt;
   getPoint(currPt, gridX, gridY);
   frCoord currDist = Point::manhattanDistance(currPt, centerPt);
@@ -134,10 +163,20 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
     if (getPrevAstarNodeDir(tailIdx) == frDirEnum::UNKNOWN
         || getPrevAstarNodeDir(tailIdx) == tailDir) {
       setPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z(), tailDir);
+      if (debug_) {
+        nextWavefrontGrid.setId(curr_id_++);
+        nextWavefrontGrid.setParentId(currGrid.getId());
+        printExpansion(nextWavefrontGrid, "Pushing");
+      }
       wavefront_.push(nextWavefrontGrid);
     }
   } else {
     // add to wavefront
+    if (debug_) {
+      nextWavefrontGrid.setId(curr_id_++);
+      nextWavefrontGrid.setParentId(currGrid.getId());
+      printExpansion(nextWavefrontGrid, "Pushing");
+    }
     wavefront_.push(nextWavefrontGrid);
   }
   if (drWorker_->getDRIter() >= debugMazeIter) {
@@ -153,11 +192,17 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
 void FlexGridGraph::expandWavefront(FlexWavefrontGrid& currGrid,
                                     const FlexMazeIdx& dstMazeIdx1,
                                     const FlexMazeIdx& dstMazeIdx2,
-                                    const Point& centerPt)
+                                    const Point& centerPt,
+                                    bool route_with_jumpers)
 {
   for (const auto dir : frDirEnumAll) {
     if (isExpandable(currGrid, dir)) {
-      expand(currGrid, dir, dstMazeIdx1, dstMazeIdx2, centerPt);
+      expand(currGrid,
+             dir,
+             dstMazeIdx1,
+             dstMazeIdx2,
+             centerPt,
+             route_with_jumpers);
     }
   }
 }
@@ -216,31 +261,31 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   // avoid propagating to location that will cause forbidden via spacing to
   // boundary pin
   bool isForbidden = false;
-  if (dstMazeIdx1 == dstMazeIdx2 && gridZ == dstMazeIdx1.z()) {
+  if (dstMazeIdx1.z() == dstMazeIdx2.z() && gridZ == dstMazeIdx1.z()) {
     auto layerNum = (gridZ + 1) * 2;
     auto layer = getTech()->getLayer(layerNum);
-    if (layer->isUnidirectional()) {
+    if (!router_cfg_->USENONPREFTRACKS || layer->isUnidirectional()) {
       bool isH = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
-      if (isH) {
+      if (isH && dstMazeIdx1.y() == dstMazeIdx2.y()) {
         auto gap = abs(nextPoint.y() - dstPoint1.y());
         if (gap
-            && (getTech()->isVia2ViaForbiddenLen(
-                    gridZ, false, false, false, gap, ndr_)
-                || layerNum - 2 < BOTTOM_ROUTING_LAYER)
-            && (getTech()->isVia2ViaForbiddenLen(
-                    gridZ, true, true, false, gap, ndr_)
-                || layerNum + 2 > getTech()->getTopLayerNum())) {
+            && (layerNum - 2 < router_cfg_->BOTTOM_ROUTING_LAYER
+                || getTech()->isVia2ViaForbiddenLen(
+                    gridZ - 1, false, false, false, gap, ndr_))
+            && (layerNum + 2 > getTech()->getTopLayerNum()
+                || getTech()->isVia2ViaForbiddenLen(
+                    gridZ + 1, true, true, false, gap, ndr_))) {
           isForbidden = true;
         }
-      } else {
+      } else if (!isH && dstMazeIdx1.x() == dstMazeIdx2.x()) {
         auto gap = abs(nextPoint.x() - dstPoint1.x());
         if (gap
-            && (getTech()->isVia2ViaForbiddenLen(
-                    gridZ, false, false, true, gap, ndr_)
-                || layerNum - 2 < BOTTOM_ROUTING_LAYER)
-            && (getTech()->isVia2ViaForbiddenLen(
-                    gridZ, true, true, true, gap, ndr_)
-                || layerNum + 2 > getTech()->getTopLayerNum())) {
+            && (layerNum - 2 < router_cfg_->BOTTOM_ROUTING_LAYER
+                || getTech()->isVia2ViaForbiddenLen(
+                    gridZ - 1, false, false, true, gap, ndr_))
+            && (layerNum + 2 > getTech()->getTopLayerNum()
+                || getTech()->isVia2ViaForbiddenLen(
+                    gridZ + 1, true, true, true, gap, ndr_))) {
           isForbidden = true;
         }
       }
@@ -322,7 +367,8 @@ void FlexGridGraph::getPrevGrid(frMIdx& gridX,
 }
 
 frCost FlexGridGraph::getNextPathCost(const FlexWavefrontGrid& currGrid,
-                                      const frDirEnum& dir) const
+                                      const frDirEnum& dir,
+                                      bool route_with_jumpers) const
 {
   frMIdx gridX = currGrid.x();
   frMIdx gridY = currGrid.y();
@@ -473,222 +519,45 @@ frCost FlexGridGraph::getNextPathCost(const FlexWavefrontGrid& currGrid,
       }
     }
   }
-
-  if (useNDRCosts(currGrid)) {
-    nextPathCost += getCostsNDR(gridX, gridY, gridZ, dir, currDir, layer);
-  } else {
-    nextPathCost += getCosts(gridX, gridY, gridZ, dir, layer);
-  }
+  nextPathCost += getCosts(gridX,
+                           gridY,
+                           gridZ,
+                           dir,
+                           layer,
+                           useNDRCosts(currGrid),
+                           route_with_jumpers);
 
   return nextPathCost;
-}
-
-frCoord FlexGridGraph::getCostsNDR(frMIdx gridX,
-                                   frMIdx gridY,
-                                   frMIdx gridZ,
-                                   frDirEnum dir,
-                                   frDirEnum prevDir,
-                                   frLayer* layer) const
-{
-  if ((dir == frDirEnum::U || dir == frDirEnum::D)) {
-    return getViaCostsNDR(gridX, gridY, gridZ, dir, prevDir, layer);
-  }
-  frCoord el = getEdgeLength(gridX, gridY, gridZ, dir);
-  frCoord cost = el;
-  cost += (hasGridCost(gridX, gridY, gridZ, dir) ? GRIDCOST * el : 0);
-  cost += (!hasGuide(gridX, gridY, gridZ, dir) ? GUIDECOST * el : 0);
-  frMIdx startX, startY, endX, endY;
-  frCoord r, x1, x2, y1, y2;
-  frCoord sp, wext;
-  frCoord layerWidth = std::max((int) layer->getWidth(), ndr_->getWidth(gridZ));
-  sp = std::max(
-      ndr_->getSpacing(gridZ),
-      layer->getMinSpacingValue(layerWidth, layer->getWidth(), 0, false));
-  wext = std::max(ndr_->getWireExtension(gridZ), (int) layer->getWidth() / 2)
-         - layer->getWidth() / 2;
-
-  // get iteration bounds
-  r = layerWidth / 2 + sp + layer->getWidth() / 2 - 1;
-  if (dir == frDirEnum::N || dir == frDirEnum::S) {
-    startX = getLowerBoundIndex(xCoords_, x1 = (xCoords_[gridX] - r));
-    endX = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r));
-    startY = endY = gridY;
-    y1 = y2 = yCoords_[startY];
-    if (prevDir == frDirEnum::UNKNOWN || prevDir != dir) {
-      if (dir == frDirEnum::N) {
-        startY
-            = getLowerBoundIndex(yCoords_, y1 = (yCoords_[gridY] - r - wext));
-      } else {
-        endY = getUpperBoundIndex(yCoords_, y2 = (yCoords_[gridY] + r + wext));
-      }
-    }
-    if (prevDir != frDirEnum::UNKNOWN) {
-      getNextGrid(gridX, gridY, gridZ, dir);
-      if (isDst(gridX, gridY, gridZ)) {
-        if (dir == frDirEnum::N) {
-          endY
-              = getUpperBoundIndex(yCoords_, y2 = (yCoords_[gridY] + r + wext));
-        } else {
-          startY
-              = getLowerBoundIndex(yCoords_, y1 = (yCoords_[gridY] - r - wext));
-        }
-      }
-      getPrevGrid(gridX, gridY, gridZ, dir);
-    }
-  } else {
-    startY = getLowerBoundIndex(yCoords_, y1 = (yCoords_[gridY] - r));
-    endY = getUpperBoundIndex(yCoords_, y2 = (yCoords_[gridY] + r));
-    startX = endX = gridX;
-    x1 = x2 = xCoords_[startX];
-    if (prevDir == frDirEnum::UNKNOWN || prevDir != dir) {
-      if (dir == frDirEnum::E) {
-        startX
-            = getLowerBoundIndex(xCoords_, x1 = (xCoords_[gridX] - r - wext));
-      } else {
-        endX = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r + wext));
-      }
-    }
-    if (prevDir != frDirEnum::UNKNOWN) {
-      getNextGrid(gridX, gridY, gridZ, dir);
-      if (isDst(gridX, gridY, gridZ)) {
-        if (dir == frDirEnum::E) {
-          endX
-              = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r + wext));
-        } else {
-          startX
-              = getLowerBoundIndex(xCoords_, x1 = (xCoords_[gridX] - r - wext));
-        }
-      }
-      getPrevGrid(gridX, gridY, gridZ, dir);
-    }
-  }
-  if (xCoords_[startX] < x1) {
-    startX++;
-  }
-  if (xCoords_[endX] > x2) {
-    endX--;
-  }
-  if (yCoords_[startY] < y1) {
-    startY++;
-  }
-  if (yCoords_[endY] > y2) {
-    endY--;
-  }
-  // get costs
-  for (frMIdx x = startX; x <= endX; x++) {
-    for (frMIdx y = startY; y <= endY; y++) {
-      cost += (hasFixedShapeCostAdj(x, y, gridZ, dir) ? ggFixedShapeCost_ * el
-                                                      : 0);
-      cost += (hasRouteShapeCostAdj(x, y, gridZ, dir) ? ggDRCCost_ * el : 0);
-      cost += (hasMarkerCostAdj(x, y, gridZ, dir) ? ggMarkerCost_ * el : 0);
-      cost += (isBlocked(x, y, gridZ, dir)
-                   ? BLOCKCOST * layer->getMinWidth() * 20
-                   : 0);
-    }
-  }
-  return cost;
-}
-
-frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX,
-                                      frMIdx gridY,
-                                      frMIdx gridZ,
-                                      frDirEnum dir,
-                                      frDirEnum prevDir,
-                                      frLayer* layer) const
-{
-  if (ndr_->getPrefVia(dir == frDirEnum::U ? gridZ : gridZ - 1) == nullptr) {
-    return getCosts(gridX, gridY, gridZ, dir, layer);
-  }
-  frMIdx startX, startY, endX, endY;
-  frCoord x1, x2, y1, y2;
-  frCoord layerWidth = std::max((int) layer->getWidth(), ndr_->getWidth(gridZ));
-  frCoord r, sp;
-  sp = std::max(
-      ndr_->getSpacing(gridZ),
-      layer->getMinSpacingValue(layerWidth, layer->getWidth(), 0, false));
-
-  // get iteration bounds
-  r = layerWidth / 2 + sp + layer->getWidth() / 2 - 1;
-  frCoord el = getEdgeLength(gridX, gridY, gridZ, dir);
-  frCoord cost = el;
-
-  startX = getLowerBoundIndex(xCoords_, x1 = (xCoords_[gridX] - r));
-  endX = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r));
-  startY = getLowerBoundIndex(yCoords_, y1 = (yCoords_[gridY] - r));
-  endY = getUpperBoundIndex(yCoords_, y2 = (yCoords_[gridY] + r));
-  cost += (hasFixedShapeCostAdj(gridX, gridY, gridZ, dir)
-               ? ggFixedShapeCost_ * el
-               : 0);
-  cost
-      += (hasRouteShapeCostAdj(gridX, gridY, gridZ, dir) ? ggDRCCost_ * el : 0);
-  cost += (hasMarkerCostAdj(gridX, gridY, gridZ, dir) ? ggMarkerCost_ * el : 0);
-  cost += (isBlocked(gridX, gridY, gridZ, dir)
-               ? BLOCKCOST * layer->getMinWidth() * 20
-               : 0);
-  dir = frDirEnum::UNKNOWN;
-
-  if (xCoords_[startX] < x1) {
-    startX++;
-  }
-  if (xCoords_[endX] > x2) {
-    endX--;
-  }
-  if (yCoords_[startY] < y1) {
-    startY++;
-  }
-  if (yCoords_[endY] > y2) {
-    endY--;
-  }
-  switch (prevDir) {
-    case frDirEnum::N:
-      endY = gridY - 1;
-      break;
-    case frDirEnum::S:
-      startY = gridY + 1;
-      break;
-    case frDirEnum::E:
-      startX = gridX + 1;
-      break;
-    case frDirEnum::W:
-      endX = gridX - 1;
-      break;
-    default:
-      break;
-  }
-  // get costs
-  for (frMIdx x = startX; x <= endX; x++) {
-    for (frMIdx y = startY; y <= endY; y++) {
-      cost += (hasFixedShapeCostAdj(x, y, gridZ, dir) ? ggFixedShapeCost_ * el
-                                                      : 0);
-      cost += (hasRouteShapeCostAdj(x, y, gridZ, dir) ? ggDRCCost_ * el : 0);
-      cost += (hasMarkerCostAdj(x, y, gridZ, dir) ? ggMarkerCost_ * el : 0);
-    }
-  }
-  return cost;
 }
 
 frCost FlexGridGraph::getCosts(frMIdx gridX,
                                frMIdx gridY,
                                frMIdx gridZ,
                                frDirEnum dir,
-                               frLayer* layer) const
+                               frLayer* layer,
+                               bool considerNDR,
+                               bool route_with_jumpers) const
 {
   bool gridCost = hasGridCost(gridX, gridY, gridZ, dir);
-  bool drcCost = hasRouteShapeCostAdj(gridX, gridY, gridZ, dir);
+  bool drcCost = hasRouteShapeCostAdj(gridX, gridY, gridZ, dir, considerNDR);
   bool markerCost = hasMarkerCostAdj(gridX, gridY, gridZ, dir);
-  bool shapeCost = hasFixedShapeCostAdj(gridX, gridY, gridZ, dir);
+  bool shapeCost = hasFixedShapeCostAdj(gridX, gridY, gridZ, dir, considerNDR);
   bool blockCost = isBlocked(gridX, gridY, gridZ, dir);
   bool guideCost = hasGuide(gridX, gridY, gridZ, dir);
   frCoord edgeLength = getEdgeLength(gridX, gridY, gridZ, dir);
 
+  // increase cost when a net has jumper
+  frUInt4 jumper_cost = route_with_jumpers ? 10 : 1;
+
   // temporarily disable guideCost
   return getEdgeLength(gridX, gridY, gridZ, dir)
-         + (gridCost ? GRIDCOST * edgeLength : 0)
+         + (gridCost ? router_cfg_->GRIDCOST * edgeLength : 0)
          + (drcCost ? ggDRCCost_ * edgeLength : 0)
          + (markerCost ? ggMarkerCost_ * edgeLength : 0)
          + (shapeCost ? ggFixedShapeCost_ * edgeLength : 0)
-         + (blockCost ? BLOCKCOST * layer->getMinWidth() * 20 : 0)
-         + (!guideCost ? GUIDECOST * edgeLength : 0);
+         + (blockCost ? router_cfg_->BLOCKCOST * layer->getMinWidth() * 20 : 0)
+         + (!guideCost ? (router_cfg_->GUIDECOST * jumper_cost) * edgeLength
+                       : 0);
 }
 
 bool FlexGridGraph::useNDRCosts(const FlexWavefrontGrid& p) const
@@ -698,7 +567,7 @@ bool FlexGridGraph::useNDRCosts(const FlexWavefrontGrid& p) const
         && p.getSrcTaperBox()->contains(p.x(), p.y(), p.z())) {
       return false;
     }
-    if (dstTaperBox && dstTaperBox->contains(p.x(), p.y(), p.z())) {
+    if (dstTaperBox_ && dstTaperBox_->contains(p.x(), p.y(), p.z())) {
       return false;
     }
     return true;
@@ -846,8 +715,13 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
                            FlexMazeIdx& ccMazeIdx1,
                            FlexMazeIdx& ccMazeIdx2,
                            const Point& centerPt,
-                           std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox)
+                           std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox,
+                           bool route_with_jumpers)
 {
+  if (debug_) {
+    dump_file_.open("expansions.dump");
+  }
+  curr_id_ = 1;
   if (drWorker_->getDRIter() >= debugMazeIter) {
     std::cout << "INIT search: target pin " << nextPin->getName()
               << "\nsource points:\n";
@@ -893,16 +767,23 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
         currDist,
         0,
         getEstCost(idx, dstMazeIdx1, dstMazeIdx2, frDirEnum::UNKNOWN));
-    if (ndr_ && AUTO_TAPER_NDR_NETS) {
+    if (ndr_ && router_cfg_->AUTO_TAPER_NDR_NETS) {
       auto it = mazeIdx2TaperBox.find(idx);
       if (it != mazeIdx2TaperBox.end()) {
         currGrid.setSrcTaperBox(it->second);
       }
     }
+    if (debug_) {
+      currGrid.setId(curr_id_++);
+      printExpansion(currGrid, "Pushing");
+    }
     wavefront_.push(currGrid);
   }
   while (!wavefront_.empty()) {
     auto currGrid = wavefront_.top();
+    if (debug_) {
+      printExpansion(currGrid, "Popping");
+    }
     wavefront_.pop();
     if (getPrevAstarNodeDir({currGrid.x(), currGrid.y(), currGrid.z()})
         != frDirEnum::UNKNOWN) {
@@ -922,7 +803,8 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
       return true;
     }
     // expand and update wavefront
-    expandWavefront(currGrid, dstMazeIdx1, dstMazeIdx2, centerPt);
+    expandWavefront(
+        currGrid, dstMazeIdx1, dstMazeIdx2, centerPt, route_with_jumpers);
   }
   return false;
 }

@@ -30,11 +30,11 @@
 #ifndef defiPinProp_h
 #define defiPinProp_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 class defrData;
 
@@ -64,7 +64,7 @@ class defiPinProp
   const char* propName(int index) const;
   const char* propValue(int index) const;
   double propNumber(int index) const;
-  const char propType(int index) const;
+  char propType(int index) const;
   int propIsNumber(int index) const;
   int propIsString(int index) const;
 
@@ -87,8 +87,6 @@ class defiPinProp
   defrData* defData;
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

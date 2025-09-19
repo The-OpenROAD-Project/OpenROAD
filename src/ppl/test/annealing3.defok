@@ -118,7 +118,7 @@ PINS 54 ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal4 ( -140 -140 ) ( 140 140 )
-        + PLACED ( 146910 140 ) N ;
+        + PLACED ( 133470 140 ) N ;
     - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -70 -70 ) ( 70 70 )

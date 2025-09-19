@@ -1,41 +1,10 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbTechViaLayerRule.h"
 
-#include "db.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
-#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
@@ -43,6 +12,9 @@
 #include "dbTechVia.h"
 #include "dbTechViaGenerateRule.h"
 #include "dbTechViaRule.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 
 namespace odb {
 
@@ -56,116 +28,83 @@ template class dbTable<_dbTechViaLayerRule>;
 
 bool _dbTechViaLayerRule::operator==(const _dbTechViaLayerRule& rhs) const
 {
-  if (_flags._direction != rhs._flags._direction)
+  if (_flags._direction != rhs._flags._direction) {
     return false;
+  }
 
-  if (_flags._has_enclosure != rhs._flags._has_enclosure)
+  if (_flags._has_enclosure != rhs._flags._has_enclosure) {
     return false;
+  }
 
-  if (_flags._has_width != rhs._flags._has_width)
+  if (_flags._has_width != rhs._flags._has_width) {
     return false;
+  }
 
-  if (_flags._has_overhang != rhs._flags._has_overhang)
+  if (_flags._has_overhang != rhs._flags._has_overhang) {
     return false;
+  }
 
-  if (_flags._has_metal_overhang != rhs._flags._has_metal_overhang)
+  if (_flags._has_metal_overhang != rhs._flags._has_metal_overhang) {
     return false;
+  }
 
-  if (_flags._has_resistance != rhs._flags._has_resistance)
+  if (_flags._has_resistance != rhs._flags._has_resistance) {
     return false;
+  }
 
-  if (_flags._has_spacing != rhs._flags._has_spacing)
+  if (_flags._has_spacing != rhs._flags._has_spacing) {
     return false;
+  }
 
-  if (_flags._has_rect != rhs._flags._has_rect)
+  if (_flags._has_rect != rhs._flags._has_rect) {
     return false;
+  }
 
-  if (_overhang1 != rhs._overhang1)
+  if (_overhang1 != rhs._overhang1) {
     return false;
+  }
 
-  if (_overhang2 != rhs._overhang2)
+  if (_overhang2 != rhs._overhang2) {
     return false;
+  }
 
-  if (_min_width != rhs._min_width)
+  if (_min_width != rhs._min_width) {
     return false;
+  }
 
-  if (_max_width != rhs._max_width)
+  if (_max_width != rhs._max_width) {
     return false;
+  }
 
-  if (_overhang != rhs._overhang)
+  if (_overhang != rhs._overhang) {
     return false;
+  }
 
-  if (_metal_overhang != rhs._metal_overhang)
+  if (_metal_overhang != rhs._metal_overhang) {
     return false;
+  }
 
-  if (_spacing_x != rhs._spacing_x)
+  if (_spacing_x != rhs._spacing_x) {
     return false;
+  }
 
-  if (_spacing_y != rhs._spacing_y)
+  if (_spacing_y != rhs._spacing_y) {
     return false;
+  }
 
-  if (_resistance != rhs._resistance)
+  if (_resistance != rhs._resistance) {
     return false;
+  }
 
-  if (_rect != rhs._rect)
+  if (_rect != rhs._rect) {
     return false;
+  }
 
-  if (_layer != rhs._layer)
+  if (_layer != rhs._layer) {
     return false;
+  }
 
   return true;
-}
-
-void _dbTechViaLayerRule::differences(dbDiff& diff,
-                                      const char* field,
-                                      const _dbTechViaLayerRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._direction);
-  DIFF_FIELD(_flags._has_enclosure);
-  DIFF_FIELD(_flags._has_width);
-  DIFF_FIELD(_flags._has_overhang);
-  DIFF_FIELD(_flags._has_metal_overhang);
-  DIFF_FIELD(_flags._has_resistance);
-  DIFF_FIELD(_flags._has_spacing);
-  DIFF_FIELD(_flags._has_rect);
-  DIFF_FIELD(_overhang1);
-  DIFF_FIELD(_overhang2);
-  DIFF_FIELD(_min_width);
-  DIFF_FIELD(_max_width);
-  DIFF_FIELD(_overhang);
-  DIFF_FIELD(_metal_overhang);
-  DIFF_FIELD(_spacing_x);
-  DIFF_FIELD(_spacing_y);
-  DIFF_FIELD(_resistance);
-  DIFF_FIELD(_rect);
-  DIFF_FIELD(_layer);
-  DIFF_END
-}
-
-void _dbTechViaLayerRule::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._direction);
-  DIFF_OUT_FIELD(_flags._has_enclosure);
-  DIFF_OUT_FIELD(_flags._has_width);
-  DIFF_OUT_FIELD(_flags._has_overhang);
-  DIFF_OUT_FIELD(_flags._has_metal_overhang);
-  DIFF_OUT_FIELD(_flags._has_resistance);
-  DIFF_OUT_FIELD(_flags._has_spacing);
-  DIFF_OUT_FIELD(_flags._has_rect);
-  DIFF_OUT_FIELD(_overhang1);
-  DIFF_OUT_FIELD(_overhang2);
-  DIFF_OUT_FIELD(_min_width);
-  DIFF_OUT_FIELD(_max_width);
-  DIFF_OUT_FIELD(_overhang);
-  DIFF_OUT_FIELD(_metal_overhang);
-  DIFF_OUT_FIELD(_spacing_x);
-  DIFF_OUT_FIELD(_spacing_y);
-  DIFF_OUT_FIELD(_resistance);
-  DIFF_OUT_FIELD(_rect);
-  DIFF_OUT_FIELD(_layer);
-  DIFF_END
 }
 
 _dbTechViaLayerRule::_dbTechViaLayerRule(_dbDatabase*,
@@ -257,8 +196,9 @@ dbTechLayer* dbTechViaLayerRule::getLayer()
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
 
-  if (rule->_layer == 0)
+  if (rule->_layer == 0) {
     return nullptr;
+  }
 
   _dbTech* tech = (_dbTech*) rule->getOwner();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(rule->_layer);
@@ -445,6 +385,12 @@ dbTechViaLayerRule* dbTechViaLayerRule::getTechViaLayerRule(dbTech* tech_,
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbTechViaLayerRule*) tech->_via_layer_rule_tbl->getPtr(dbid_);
+}
+
+void _dbTechViaLayerRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 }  // namespace odb

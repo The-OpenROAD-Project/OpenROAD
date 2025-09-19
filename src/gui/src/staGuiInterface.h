@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -39,6 +7,8 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -46,6 +16,8 @@
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbObject.h"
+#include "odb/geom.h"
 
 namespace sta {
 class Corner;
@@ -60,6 +32,7 @@ class STAGuiInterface;
 using TimingPathList = std::vector<std::unique_ptr<TimingPath>>;
 using TimingNodeList = std::vector<std::unique_ptr<TimingPathNode>>;
 using StaPins = std::set<const sta::Pin*>;
+using EndPointSlackMap = std::map<const sta::Pin*, float>;
 using ConeDepthMapPinSet = std::map<int, StaPins>;
 using ConeDepthMap = std::map<int, TimingNodeList>;
 
@@ -114,8 +87,8 @@ class TimingPathNode
   const sta::Pin* getPinAsSTA() const { return stapin_; }
   odb::dbITerm* getPinAsITerm() const;
   odb::dbBTerm* getPinAsBTerm() const;
-  const odb::Rect getPinBBox() const;
-  const odb::Rect getPinLargestBox() const;
+  odb::Rect getPinBBox() const;
+  odb::Rect getPinLargestBox() const;
 
   bool isClock() const { return is_clock_; }
   bool isRisingEdge() const { return is_rising_; }
@@ -182,6 +155,11 @@ class TimingPath
   void setSlack(float slack) { slack_ = slack; }
   float getPathDelay() const { return path_delay_; }
   void setPathDelay(float del) { path_delay_ = del; }
+  float getSkew() const { return skew_; }
+  void setSkew(float skew) { skew_ = skew; }
+  float getLogicDelay() const { return logic_delay_; }
+  int getLogicDepth() const { return logic_depth_; }
+  int getFanout() const { return fanout_; }
 
   void computeClkEndIndex();
   void setSlackOnPathNodes();
@@ -194,6 +172,9 @@ class TimingPath
 
   std::string getStartStageName() const;
   std::string getEndStageName() const;
+
+  const std::unique_ptr<TimingPathNode>& getStartStageNode() const;
+  const std::unique_ptr<TimingPathNode>& getEndStageNode() const;
 
   void populatePath(sta::Path* path,
                     sta::dbSta* sta,
@@ -211,9 +192,13 @@ class TimingPath
   std::string start_clk_;
   std::string end_clk_;
   float slack_;
+  float skew_;
   float path_delay_;
   float arr_time_;
   float req_time_;
+  float logic_delay_;
+  int logic_depth_;
+  int fanout_;
   int clk_path_end_index_;
   int clk_capture_end_index_;
 
@@ -222,8 +207,21 @@ class TimingPath
                         sta::DcalcAnalysisPt* dcalc_ap,
                         float offset,
                         bool clock_expanded,
+                        bool is_capture_path,
                         TimingNodeList& list);
-
+  bool instanceIsLogic(sta::Instance* inst, sta::Network* network);
+  bool instancesAreInverterPair(sta::Instance* curr_inst,
+                                sta::Instance* prev_inst,
+                                sta::Network* network);
+  void updateLogicMetrics(sta::Network* network,
+                          sta::Instance* inst_of_curr_pin,
+                          sta::Instance* inst_of_prev_pin,
+                          sta::Instance* prev_inst,
+                          float pin_delay,
+                          std::set<sta::Instance*>& logic_insts,
+                          float& curr_inst_delay,
+                          float& prev_inst_delay,
+                          bool& pin_belongs_to_inverter_pair_instance);
   void computeClkEndIndex(TimingNodeList& nodes, int& index);
 };
 
@@ -243,8 +241,8 @@ class ClockTree
   int getLevel() const { return level_; }
   bool isRoot() const { return level_ == 0; }
 
-  std::set<const sta::Pin*> getDrivers() const;
-  std::set<const sta::Pin*> getLeaves() const;
+  std::set<const sta::Pin*> getDrivers(bool visibility) const;
+  std::set<const sta::Pin*> getLeaves(bool visibility) const;
 
   const std::vector<std::unique_ptr<ClockTree>>& getFanout() const
   {
@@ -260,15 +258,15 @@ class ClockTree
   std::pair<const sta::Pin*, sta::Delay> getPairedSink(
       const sta::Pin* paired_pin) const;
 
-  int getTotalFanout() const;
-  int getTotalLeaves() const;
-  int getMaxLeaves() const;
-  sta::Delay getMinimumArrival() const;
-  sta::Delay getMaximumArrival() const;
-  sta::Delay getMinimumDriverDelay() const;
+  int getTotalFanout(bool visibility) const;
+  int getTotalLeaves(bool visibility) const;
+  int getMaxLeaves(bool visibility) const;
+  sta::Delay getMinimumArrival(bool visibility) const;
+  sta::Delay getMaximumArrival(bool visibility) const;
+  sta::Delay getMinimumDriverDelay(bool visibility) const;
   int getSinkCount() const;
 
-  std::set<odb::dbNet*> getNets() const;
+  std::set<odb::dbNet*> getNets(bool visibility) const;
 
   void addPath(sta::PathExpanded& path, const sta::StaState* sta);
 
@@ -276,6 +274,13 @@ class ClockTree
       const sta::Pin* pin) const;
   ClockTree* findTree(odb::dbNet* net, bool include_children = true);
   ClockTree* findTree(sta::Net* net, bool include_children = true);
+
+  void setSubtreeVisibility(bool visibility);
+  bool getSubtreeVisibility() const { return subtree_visibility_; };
+  bool isVisible() const
+  {
+    return (parent_) ? parent_->getSubtreeVisibility() : true;
+  };
 
  private:
   ClockTree* parent_;
@@ -291,6 +296,8 @@ class ClockTree
   PinDelays leaves_;
 
   std::vector<std::unique_ptr<ClockTree>> fanout_;
+
+  bool subtree_visibility_;
 
   void addPath(sta::PathExpanded& path, int idx, const sta::StaState* sta);
   ClockTree* getTree(sta::Net* net);
@@ -316,6 +323,14 @@ class STAGuiInterface
 
   bool isUseMax() const { return use_max_; }
   void setUseMax(bool use_max) { use_max_ = use_max; }
+  const sta::MinMaxAll* minMaxAll() const
+  {
+    return use_max_ ? sta::MinMaxAll::max() : sta::MinMaxAll::min();
+  }
+  const sta::MinMax* minMax() const
+  {
+    return use_max_ ? sta::MinMax::max() : sta::MinMax::min();
+  }
 
   int getMaxPathCount() const { return max_path_count_; }
   void setMaxPathCount(int max_paths) { max_path_count_ = max_paths; }
@@ -334,7 +349,9 @@ class STAGuiInterface
 
   TimingPathList getTimingPaths(const StaPins& from,
                                 const std::vector<StaPins>& thrus,
-                                const StaPins& to) const;
+                                const StaPins& to,
+                                const std::string& path_group_name,
+                                sta::ClockSet* clks) const;
   TimingPathList getTimingPaths(const sta::Pin* thru) const;
 
   std::unique_ptr<TimingPathNode> getTimingNode(const sta::Pin* pin) const;
@@ -344,12 +361,20 @@ class STAGuiInterface
   ConeDepthMap buildConeConnectivity(const sta::Pin* pin,
                                      ConeDepthMapPinSet& depth_map) const;
 
+  sta::ClockSeq* getClocks() const;
   std::vector<std::unique_ptr<ClockTree>> getClockTrees() const;
 
   int getEndPointCount() const;
   StaPins getEndPoints() const;
+  StaPins getStartPoints() const;
 
   float getPinSlack(const sta::Pin* pin) const;
+  EndPointSlackMap getEndPointToSlackMap(const std::string& path_group_name,
+                                         const sta::Clock* clk = nullptr);
+  EndPointSlackMap getEndPointToSlackMap(const sta::Clock* clk);
+
+  std::set<std::string> getGroupPathsNames() const;
+  void updatePathGroups();
 
  private:
   sta::dbSta* sta_;

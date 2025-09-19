@@ -30,11 +30,11 @@
 #ifndef lefiViaRule_h
 #define lefiViaRule_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 class lefiViaRuleLayer
 {
@@ -88,24 +88,27 @@ class lefiViaRuleLayer
   void print(FILE* f) const;
 
  protected:
-  char* name_;
-  char direction_;
-  double overhang1_;  // 5.5
-  double overhang2_;  // 5.5
-  int hasWidth_;
-  int hasResistance_;
-  int hasOverhang_;
-  int hasMetalOverhang_;
-  int hasSpacing_;
-  int hasRect_;
-  double widthMin_;
-  double widthMax_;
-  double overhang_;
-  double metalOverhang_;
-  double resistance_;
-  double spacingStepX_;
-  double spacingStepY_;
-  double xl_, yl_, xh_, yh_;
+  char* name_{nullptr};
+  char direction_{0};
+  double overhang1_{0.0};  // 5.5
+  double overhang2_{0.0};  // 5.5
+  int hasWidth_{0};
+  int hasResistance_{0};
+  int hasOverhang_{0};
+  int hasMetalOverhang_{0};
+  int hasSpacing_{0};
+  int hasRect_{0};
+  double widthMin_{0.0};
+  double widthMax_{0.0};
+  double overhang_{0.0};
+  double metalOverhang_{0.0};
+  double resistance_{0.0};
+  double spacingStepX_{0.0};
+  double spacingStepY_{0.0};
+  double xl_{0.0};
+  double yl_{0.0};
+  double xh_{0.0};
+  double yh_{0.0};
 };
 
 class lefiViaRule
@@ -166,7 +169,7 @@ class lefiViaRule
   const char* propName(int index) const;
   const char* propValue(int index) const;
   double propNumber(int index) const;
-  const char propType(int index) const;
+  char propType(int index) const;
   int propIsNumber(int index) const;
   int propIsString(int index) const;
 
@@ -174,29 +177,27 @@ class lefiViaRule
   void print(FILE* f) const;
 
  protected:
-  char* name_;
-  int nameSize_;
+  char* name_{nullptr};
+  int nameSize_{0};
 
-  int hasGenerate_;
-  int hasDefault_;
+  int hasGenerate_{0};
+  int hasDefault_{0};
 
-  int numLayers_;
+  int numLayers_{0};
   lefiViaRuleLayer layers_[3];
 
-  int numVias_;
-  int viasAllocated_;
-  char** vias_;
+  int numVias_{0};
+  int viasAllocated_{0};
+  char** vias_{nullptr};
 
-  int numProps_;
-  int propsAllocated_;
-  char** names_;
-  char** values_;
-  double* dvalues_;
-  char* types_;
+  int numProps_{0};
+  int propsAllocated_{0};
+  char** names_{nullptr};
+  char** values_{nullptr};
+  double* dvalues_{nullptr};
+  char* types_{nullptr};
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

@@ -1,45 +1,19 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <cmath>
 #include <list>
+#include <mutex>
 #include <string>
+#include <utility>
 #include <vector>
 
-#include "odb.h"
+#include "odb/odb.h"
 #include "utl/Logger.h"
 
-namespace LefDefParser {
+namespace LefParser {
 class lefiArray;
 struct lefiNoiseMargin;
 class lefiNoiseTable;
@@ -64,8 +38,7 @@ class lefiMaxStackVia;
 class lefiObstruction;
 class lefiGeometries;
 struct lefiGeomPolygon;
-}  // namespace LefDefParser
-
+}  // namespace LefParser
 namespace odb {
 
 class dbObject;
@@ -77,9 +50,7 @@ class dbDatabase;
 class dbTechLayer;
 class dbSite;
 
-using namespace LefDefParser;
-
-class lefin
+class lefinReader
 {
   dbDatabase* _db;
   dbTech* _tech;
@@ -89,9 +60,9 @@ class lefin
   bool _create_tech;
   bool _create_lib;
   bool _skip_obstructions;
-  char _left_bus_delimeter;
-  char _right_bus_delimeter;
-  char _hier_delimeter;
+  char _left_bus_delimiter;
+  char _right_bus_delimiter;
+  char _hier_delimiter;
   int _layer_cnt;
   int _master_cnt;
   int _via_cnt;
@@ -109,44 +80,27 @@ class lefin
   void init();
   void setDBUPerMicron(int dbu);
 
-  // convert area value to db-units (1nm = 1db unit)
-  int dbarea(double value)
-  {
-    if (value < 0.0)
-      return (int) (value * _area_factor - 0.5);
-    else
-      return (int) (value * _area_factor + 0.5);
-  }
+  // convert area value to squared db-units
+  int dbarea(const double value) { return lround(value * _area_factor); }
 
-  int round(double value)
-  {
-    if (value < 0.0)
-      return (int) (value - 0.5);
-    else
-      return (int) (value + 0.5);
-  }
-
+  bool readLefInner(const char* lef_file);
   bool readLef(const char* lef_file);
-  bool addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry);
+  bool addGeoms(dbObject* object,
+                bool is_pin,
+                LefParser::lefiGeometries* geometry);
   void createLibrary();
   void createPolygon(dbObject* object,
                      bool is_pin,
                      dbTechLayer* layer,
-                     lefiGeomPolygon* p,
+                     LefParser::lefiGeomPolygon* p,
                      int design_rule_width,
                      double offset_x = 0.0,
                      double offset_y = 0.0);
   dbSite* findSite(const char* name);
 
  public:
-  // convert distance value to db-units (1nm = 1db unit)
-  int dbdist(double value)
-  {
-    if (value < 0.0)
-      return (int) (value * _dist_factor - 0.5);
-    else
-      return (int) (value * _dist_factor + 0.5);
-  }
+  // convert distance value to db-units
+  int dbdist(double value) { return lround(value * _dist_factor); }
 
   enum AntennaType
   {
@@ -160,63 +114,65 @@ class lefin
 
   void antenna(AntennaType type, double value);
   void arrayBegin(const char* name);
-  void array(lefiArray* a);
+  void array(LefParser::lefiArray* a);
   void arrayEnd(const char* name);
   int busBitChars(const char* busBit);
   void caseSense(int caseSense);
   void clearance(const char* name);
   void divider(const char* name);
   void noWireExt(const char* name);
-  void noiseMargin(lefiNoiseMargin* noise);
+  void noiseMargin(LefParser::lefiNoiseMargin* noise);
   void edge1(double value);
   void edge2(double value);
   void edgeScale(double value);
-  void noiseTable(lefiNoiseTable* noise);
-  void correction(lefiCorrectionTable* corr);
+  void noiseTable(LefParser::lefiNoiseTable* noise);
+  void correction(LefParser::lefiCorrectionTable* corr);
   void dielectric(double dielectric);
   void irdropBegin(void* ptr);
-  void irdrop(lefiIRDrop* irdrop);
+  void irdrop(LefParser::lefiIRDrop* irdrop);
   void irdropEnd(void* ptr);
-  void layer(lefiLayer* layer);
+  void layer(LefParser::lefiLayer* layer);
   void macroBegin(const char* macroName);
-  void macro(lefiMacro* macro);
+  void macro(LefParser::lefiMacro* macro);
   void macroEnd(const char* macroName);
   void manufacturing(double num);
-  void maxStackVia(lefiMaxStackVia* maxStack);
-  void minFeature(lefiMinFeature* min);
-  void nonDefault(lefiNonDefault* def);
-  void obstruction(lefiObstruction* obs);
-  void pin(lefiPin* pin);
+  void maxStackVia(LefParser::lefiMaxStackVia* maxStack);
+  void minFeature(LefParser::lefiMinFeature* min);
+  void nonDefault(LefParser::lefiNonDefault* def);
+  void obstruction(LefParser::lefiObstruction* obs);
+  void pin(LefParser::lefiPin* pin);
   void propDefBegin(void* ptr);
-  void propDef(lefiProp* prop);
+  void propDef(LefParser::lefiProp* prop);
   void propDefEnd(void* ptr);
-  void site(lefiSite* site);
+  void site(LefParser::lefiSite* site);
   void spacingBegin(void* ptr);
-  void spacing(lefiSpacing* spacing);
+  void spacing(LefParser::lefiSpacing* spacing);
   void spacingEnd(void* ptr);
-  void timing(lefiTiming* timing);
-  void units(lefiUnits* unit);
-  void useMinSpacing(lefiUseMinSpacing* spacing);
+  void timing(LefParser::lefiTiming* timing);
+  void units(LefParser::lefiUnits* unit);
+  void useMinSpacing(LefParser::lefiUseMinSpacing* spacing);
   void version(double num);
-  void via(lefiVia* via, dbTechNonDefaultRule* rule = nullptr);
-  void viaRule(lefiViaRule* viaRule);
-  void viaGenerateRule(lefiViaRule* viaRule);
+  void via(LefParser::lefiVia* via, dbTechNonDefaultRule* rule = nullptr);
+  void viaRule(LefParser::lefiViaRule* viaRule);
+  void viaGenerateRule(LefParser::lefiViaRule* viaRule);
   void done(void* ptr);
   template <typename... Args>
-  inline void warning(int id, std::string msg, const Args&... args)
+  void warning(int id, std::string msg, const Args&... args)
   {
     _logger->warn(utl::ODB, id, msg, args...);
   }
   template <typename... Args>
-  inline void errorTolerant(int id, std::string msg, const Args&... args)
+  void errorTolerant(int id, std::string msg, const Args&... args)
   {
     _logger->warn(utl::ODB, id, msg, args...);
     ++_errors;
   }
   void lineNumber(int lineNo);
 
-  lefin(dbDatabase* db, utl::Logger* logger, bool ignore_non_routing_layers);
-  ~lefin();
+  lefinReader(dbDatabase* db,
+              utl::Logger* logger,
+              bool ignore_non_routing_layers);
+  ~lefinReader() = default;
 
   // Skip macro-obstructions in the lef file.
   void skipObstructions() { _skip_obstructions = true; }
@@ -258,6 +214,42 @@ class lefin
 
   // Add macros to this library and the technology of this library
   bool updateTechAndLib(dbLib* lib, const char* lef_file);
+};
+
+class lefin
+{
+ public:
+  lefin(dbDatabase* db, utl::Logger* logger, bool ignore_non_routing_layers);
+  ~lefin();
+
+  // convert distance value to db-units
+  int dbdist(double value);
+
+  // Create a technology from the tech-data of this LEF file.
+  dbTech* createTech(const char* name, const char* lef_file);
+
+  // Create a library from the library-data of this LEF file.
+  dbLib* createLib(dbTech* tech, const char* name, const char* lef_file);
+
+  // Create a technology and library from the MACRO's in this LEF file.
+  dbLib* createTechAndLib(const char* tech_name,
+                          const char* lib_name,
+                          const char* lef_file);
+
+  // Add macros to this library
+  bool updateLib(dbLib* lib, const char* lef_file);
+
+  // Update a technology from the tech-data of this LEF file.
+  bool updateTech(dbTech* tech, const char* lef_file);
+
+  // Add macros to this library and the technology of this library
+  bool updateTechAndLib(dbLib* lib, const char* lef_file);
+
+ private:
+  lefinReader* _reader;
+
+  // Protects the LefParser namespace that has static variables
+  static std::mutex _lef_mutex;
 };
 
 }  // namespace odb

@@ -29,15 +29,16 @@
 
 #include "lefzlib.hpp"
 
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <zlib.h>
+
+#include <climits>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefrReader.hpp"
-#include "zlib.h"
 
 /*
  * Private functions:
@@ -52,26 +53,29 @@ size_t lefGZip_read(FILE* file, char* buf, size_t len)
  */
 lefGZFile lefGZipOpen(const char* gzipPath, const char* mode)
 {
-  if (!gzipPath)
-    return NULL;
+  if (!gzipPath) {
+    return nullptr;
+  }
 
   lefGZFile fptr = gzopen(gzipPath, mode);
   if (fptr) {
     /* successfully open the gzip file */
     /* set the read function to read from a compressed file */
-    lefrSetReadFunction(lefGZip_read);
+    LefParser::lefrSetReadFunction(lefGZip_read);
     return (lefGZFile) fptr;
-  } else
-    return NULL;
+  }
+  return nullptr;
 }
 
 int lefGZipClose(lefGZFile filePtr)
 {
-  lefrUnsetReadFunction();
+  LefParser::lefrUnsetReadFunction();
   return (gzclose((gzFile) filePtr));
 }
 
-int lefrReadGZip(lefGZFile file, const char* gzipFile, lefiUserData uData)
+int lefrReadGZip(lefGZFile file,
+                 const char* gzipFile,
+                 LefParser::lefiUserData uData)
 {
-  return lefrRead((FILE*) file, gzipFile, uData);
+  return LefParser::lefrRead((FILE*) file, gzipFile, uData);
 }

@@ -1,15 +1,15 @@
 [WARNING STA-1241] repair_design1.lib line 229, max_transition is 0.0.
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: hi_fanout
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 11 components and 66 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 22 connections.
 [INFO ODB-0133]     Created 2 nets and 22 connections.
-[INFO RSZ-0058] Using max wire length 850um.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        23
+    final |     +0.0% |       0 |       0 |             1 |         0
+---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 max slew
 

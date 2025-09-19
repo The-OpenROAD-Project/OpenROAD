@@ -1,48 +1,52 @@
-[INFO ODB-0222] Reading LEF file: ./nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 134 library cells
-[INFO ODB-0226] Finished LEF file:  ./nangate45.lef
+[INFO ODB-0227] LEF file: ./nangate45.lef, created 22 layers, 27 vias, 134 library cells
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 294 components and 1656 component-terminals.
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
+[INFO GPL-0005] Execute conjugate gradient initial placement.
 [INFO GPL-0002] DBU: 2000
-[INFO GPL-0003] SiteSize: 380 2800
-[INFO GPL-0004] CoreAreaLxLy: 0 0
-[INFO GPL-0005] CoreAreaUxUy: 61940 61600
-[INFO GPL-0006] NumInstances: 294
-[INFO GPL-0007] NumPlaceInstances: 294
-[INFO GPL-0008] NumFixedInstances: 0
-[INFO GPL-0009] NumDummyInstances: 0
-[INFO GPL-0010] NumNets: 364
-[INFO GPL-0011] NumPins: 1122
-[INFO GPL-0012] DieAreaLxLy: 0 0
-[INFO GPL-0013] DieAreaUxUy: 61940 61600
-[INFO GPL-0014] CoreAreaLxLy: 0 0
-[INFO GPL-0015] CoreAreaUxUy: 61940 61600
-[INFO GPL-0016] CoreArea: 3815504000
-[INFO GPL-0017] NonPlaceInstsArea: 0
-[INFO GPL-0018] PlaceInstsArea: 2279088000
-[INFO GPL-0019] Util(%): 59.73
-[INFO GPL-0020] StdInstsArea: 2279088000
-[INFO GPL-0021] MacroInstsArea: 0
-[INFO GPL-0031] FillerInit: NumGCells: 348
-[INFO GPL-0032] FillerInit: NumGNets: 364
-[INFO GPL-0033] FillerInit: NumGPins: 1122
-[INFO GPL-0023] TargetDensity: 0.70
-[INFO GPL-0024] AveragePlaceInstArea: 7752000
-[INFO GPL-0025] IdealBinArea: 11074286
-[INFO GPL-0026] IdealBinCnt: 344
-[INFO GPL-0027] TotalBinArea: 3815504000
-[INFO GPL-0028] BinCnt: 16 16
-[INFO GPL-0029] BinSize: 3872 3850
-[INFO GPL-0030] NumBins: 256
-[NesterovSolve] Iter: 1 overflow: 0.94271 HPWL: 3779352
-[NesterovSolve] Iter: 10 overflow: 0.248661 HPWL: 9105949
-[NesterovSolve] Iter: 20 overflow: 0.17497 HPWL: 6547448
-[NesterovSolve] Iter: 30 overflow: 0.143375 HPWL: 6019893
-[NesterovSolve] Iter: 40 overflow: 0.136144 HPWL: 5823323
-[NesterovSolve] Iter: 50 overflow: 0.105724 HPWL: 5780172
-[NesterovSolve] Finished with Overflow: 0.099589
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0006] Number of instances:               294
+[INFO GPL-0007] Movable instances:                 294
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                    364
+[INFO GPL-0011] Number of pins:                   1122
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0016] Core area:                     953.876 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:        569.772 um^2
+[INFO GPL-0019] Utilization:                    59.732 %
+[INFO GPL-0020] Standard cells area:           569.772 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0023] Placement target density:       0.7000
+[INFO GPL-0024] Movable insts average area:      1.938 um^2
+[INFO GPL-0025] Ideal bin area:                  2.769 um^2
+[INFO GPL-0026] Ideal bin count:                   344
+[INFO GPL-0027] Total bin area:                953.876 um^2
+[INFO GPL-0028] Bin count (X, Y):          16 ,     16
+[INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
+[INFO GPL-0030] Number of bins:                    256
+[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        0 |   0.9428 |  1.889676e+03 |   +0.00% |  1.15e-07 |      
+       10 |   0.2252 |  4.349466e+03 | +130.17% |  1.82e-07 |      
+       20 |   0.1706 |  3.226394e+03 |  -25.82% |  2.68e-07 |      
+       30 |   0.1493 |  2.989941e+03 |   -7.33% |  3.94e-07 |      
+       40 |   0.1338 |  2.910019e+03 |   -2.67% |  5.81e-07 |      
+       50 |   0.1026 |  2.888094e+03 |   -0.75% |  8.56e-07 |      
+       54 |   0.0984 |  2.888925e+03 |          |  1.04e-06 |      
+---------------------------------------------------------------
+[INFO GPL-1001] Global placement finished at iteration 54
+[INFO GPL-1002] Placed Cell Area              569.7720
+[INFO GPL-1003] Available Free Area           953.8760
+[INFO GPL-1004] Minimum Feasible Density        0.6000 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.6637
+[INFO GPL-1008]     - For 80% usage of free space: 0.7467
+[INFO GPL-1014] Final placement area: 569.77 (+0.00%)
 

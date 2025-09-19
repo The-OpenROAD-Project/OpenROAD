@@ -1,44 +1,14 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, James Cherry, Parallax Software, Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 %{
 
 #include "db_sta/dbSta.hh"
 #include "ifp/InitFloorplan.hh"
 #include "ord/OpenRoad.hh"
+#include "ord/Design.h"
 #include "utl/Logger.h"
+#include "odb/geom.h"
 
 // Defined by OpenRoad.i
 namespace ord {
@@ -57,19 +27,6 @@ static utl::Logger* getLogger() {
   return ord::OpenRoad::openRoad()->getLogger();
 }
  
-static ifp::InitFloorplan get_floorplan()
-{
-  auto app = ord::getOpenRoad();
-  auto chip = app->getDb()->getChip();
-  auto logger = app->getLogger();
-  if (!chip || !chip->getBlock()) {
-    logger->error(utl::IFP, 38, "No design is loaded.");
-  }
-  auto block = chip->getBlock();
-  auto network = app->getDbNetwork();
-  return ifp::InitFloorplan(block, logger, network);
-}
-
 %}
 
 ////////////////////////////////////////////////////////////////
@@ -82,73 +39,171 @@ static ifp::InitFloorplan get_floorplan()
 %import <std_vector.i>
 %import "dbtypes.i"
 %include "../../Exception.i"
+%include "../../Design.i"
+
+%typemap(in) ifp::RowParity {
+  char *str = Tcl_GetStringFromObj($input, 0);
+  if (strcasecmp(str, "NONE") == 0) {
+    $1 = ifp::RowParity::NONE;
+  } else if (strcasecmp(str, "EVEN") == 0) {
+    $1 = ifp::RowParity::EVEN;
+  } else if (strcasecmp(str, "ODD") == 0) {
+    $1 = ifp::RowParity::ODD;
+  } else {
+    $1 = ifp::RowParity::NONE;
+  }
+}
+
+// Typemap to convert TCL list of coordinates to std::vector<odb::Point>
+%typemap(in) std::vector<odb::Point>& (std::vector<odb::Point> temp_vector) {
+  Tcl_Obj **listobjv;
+  int nitems;
+  
+  if (Tcl_ListObjGetElements(interp, $input, &nitems, &listobjv) == TCL_ERROR) {
+    return TCL_ERROR;
+  }
+  
+  temp_vector.clear();
+  temp_vector.reserve(nitems / 2);
+  
+  for (int i = 0; i < nitems; i += 2) {
+    double x, y;
+    if (Tcl_GetDoubleFromObj(interp, listobjv[i], &x) != TCL_OK) {
+      return TCL_ERROR;
+    }
+    if (Tcl_GetDoubleFromObj(interp, listobjv[i+1], &y) != TCL_OK) {
+      return TCL_ERROR;
+    }
+    temp_vector.emplace_back(static_cast<int>(x), static_cast<int>(y));
+  }
+  
+  $1 = &temp_vector;
+}
 
 %inline %{
 
 namespace ifp {
 
-void
-init_floorplan_core(int die_lx,
-		    int die_ly,
-		    int die_ux,
-		    int die_uy,
-		    int core_lx,
-		    int core_ly,
-		    int core_ux,
-		    int core_uy,
-		    odb::dbSite* site,
-		    const std::vector<odb::dbSite*>& additional_sites)
+void make_die(ord::Design* design,
+                    int die_lx,
+                    int die_ly,
+                    int die_ux,
+                    int die_uy)
 {
-  get_floorplan().initFloorplan({die_lx, die_ly, die_ux, die_uy},
-                                {core_lx, core_ly, core_ux, core_uy},
-                                site, additional_sites);
+  design->getFloorplan().makeDie({die_lx, die_ly, die_ux, die_uy});
+}
+
+void make_die_util(ord::Design* design,
+                  double util,
+                  double aspect_ratio,
+                  int core_space_bottom,
+                  int core_space_top,
+                  int core_space_left,
+                  int core_space_right)
+{
+  design->getFloorplan().makeDieUtilization(util, 
+                                            aspect_ratio, 
+                                            core_space_bottom,
+                                            core_space_top,
+                                            core_space_left,
+                                            core_space_right);
 }
 
 void
-init_floorplan_util(double util,
-                    double aspect_ratio,
-                    int core_space_bottom,
-                     int core_space_top,
-                    int core_space_left,
-                    int core_space_right,
-		    odb::dbSite* site,
-		    const std::vector<odb::dbSite*>& additional_sites)
+insert_tiecells_cmd(ord::Design* design,
+                    odb::dbMTerm* tie_term, const char* prefix)
 {
-  get_floorplan().initFloorplan(util, aspect_ratio,
-                                core_space_bottom, core_space_top,
-                                core_space_left, core_space_right,
-                                site, additional_sites);
+  design->getFloorplan().insertTiecells(tie_term, prefix);
 }
 
 void
-insert_tiecells_cmd(odb::dbMTerm* tie_term, const char* prefix)
+make_layer_tracks(ord::Design* design)
 {
-  get_floorplan().insertTiecells(tie_term, prefix);
+  design->getFloorplan().makeTracks();
 }
 
 void
-make_layer_tracks()
+make_rows_with_spacing(ord::Design* design, 
+          int spacing_lx,
+          int spacing_ly,
+          int spacing_ux,
+          int spacing_uy,
+          odb::dbSite* site,
+          const std::vector<odb::dbSite*>& additional_sites,
+          ifp::RowParity row_parity,
+          const std::vector<odb::dbSite*>& flipped_sites)
 {
-  get_floorplan().makeTracks();
+  std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
+                                           flipped_sites.end());
+  design->getFloorplan().makeRowsWithSpacing(spacing_lx, spacing_ly, 
+                                             spacing_ux, spacing_uy,
+                                             site,
+                                             additional_sites,
+                                             row_parity,
+                                             flipped_sites_set);
 }
 
 void
-make_layer_tracks(odb::dbTechLayer* layer,
+make_rows(ord::Design* design, 
+          int core_lx,
+          int core_ly,
+          int core_ux,
+          int core_uy,
+          odb::dbSite* site,
+          const std::vector<odb::dbSite*>& additional_sites,
+          ifp::RowParity row_parity,
+          const std::vector<odb::dbSite*>& flipped_sites)
+{
+  
+  std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
+                                           flipped_sites.end());
+  design->getFloorplan().makeRows({core_lx, core_ly, core_ux, core_uy},
+                                  site,
+                                  additional_sites,
+                                  row_parity,
+                                  flipped_sites_set);
+}
+
+void
+make_layer_tracks(ord::Design* design,
+                  odb::dbTechLayer* layer,
                   int x_offset,
                   int x_pitch,
                   int y_offset,
                   int y_pitch)
 {
-  get_floorplan().makeTracks(layer, x_offset, x_pitch, y_offset, y_pitch);
+  design->getFloorplan().makeTracks(layer, x_offset, x_pitch,
+                                     y_offset, y_pitch);
 }
 
-odb::dbSite* find_site(const char* site_name)
+odb::dbSite* find_site(ord::Design* design,
+                       const char* site_name)
 {
-  auto site = get_floorplan().findSite(site_name);
+  auto site = design->getFloorplan().findSite(site_name);
   if (!site) {
     getLogger()->error(utl::IFP, 18, "Unable to find site: {}", site_name);
   }
   return site;
+}
+
+void make_polygon_die(ord::Design* design, std::vector<odb::Point>& points)
+{
+  odb::Polygon polygon(points);
+  design->getFloorplan().makePolygonDie(polygon);
+}
+
+
+void make_polygon_rows_simple(ord::Design* design, 
+                              std::vector<odb::Point>& core_polygon,
+                              odb::dbSite* base_site,
+                              const std::vector<odb::dbSite*>& additional_sites,
+                              ifp::RowParity row_parity,
+                              const std::vector<odb::dbSite*>& flipped_sites)
+{
+  odb::Polygon polygon(core_polygon);
+  std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
+                                           flipped_sites.end());
+  design->getFloorplan().makePolygonRows(polygon, base_site, additional_sites, row_parity, flipped_sites_set);
 }
 
 } // namespace

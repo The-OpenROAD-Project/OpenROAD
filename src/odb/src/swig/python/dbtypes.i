@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
+
 %rename(assign) *::operator=;
 %rename(_print) *::print;
 %rename(pre_inc) *::operator++();
@@ -21,6 +24,17 @@
     PyObject *y = PyInt_FromLong($1.getY());
     PyList_SetItem(list, 0, x);
     PyList_SetItem(list, 1, y);
+    $result = list;
+}
+
+%typemap(out) odb::Point3D, Point3D {
+    PyObject *list = PyList_New(3);
+    PyObject *x = PyInt_FromLong($1.x());
+    PyObject *y = PyInt_FromLong($1.y());
+    PyObject *z = PyInt_FromLong($1.z());
+    PyList_SetItem(list, 0, x);
+    PyList_SetItem(list, 1, y);
+    PyList_SetItem(list, 2, z);
     $result = list;
 }
 
@@ -62,6 +76,10 @@
     PyList_SetItem(list, 0, PyInt_FromLong((long)$1.first));
     PyList_SetItem(list, 1, PyInt_FromLong((long)$1.second));
     $result = list;
+}
+
+%typemap(out) uint64_t {
+    $result = PyLong_FromUnsignedLongLong($1);
 }
 
 %typemap(out) std::optional<uint8_t> {
@@ -134,6 +152,22 @@
         T* ptr2 = p.second;
         PyObject *obj1 = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
         PyObject *obj2 = SWIG_NewInstanceObj(ptr2, $descriptor(T *), 0);
+        PyList_SetItem(sub_list, 0, obj1);
+        PyList_SetItem(sub_list, 1, obj2);
+        PyList_SetItem(list, i, sub_list);
+    }
+    $result = list;
+}
+
+%typemap(out) std::vector< std::pair< T*, odb::Rect > > {
+    PyObject *list = PyList_New($1.size());
+    for (unsigned int i = 0; i < $1.size(); i++) {
+        PyObject *sub_list = PyList_New(2);
+        std::pair< T*, odb::Rect > p = $1.at(i);
+        T* ptr1 = p.first;
+        odb::Rect* ptr2 = new odb::Rect(p.second);
+        PyObject *obj1 = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
+        PyObject *obj2 = SWIG_NewInstanceObj(ptr2, $descriptor(odb::Rect *), 0);
         PyList_SetItem(sub_list, 0, obj1);
         PyList_SetItem(sub_list, 1, obj2);
         PyList_SetItem(list, i, sub_list);
@@ -242,21 +276,39 @@ WRAP_OBJECT_RETURN_REF(odb::dbViaParams, params_return)
 %typemap(in, numinputs=1) std::vector<odb::dbShape> &OUTPUT (std::vector<odb::dbShape> temp) {
    $1 = new std::vector<odb::dbShape>(temp);
 }
+
+%typemap(in, numinputs=0) std::vector<std::pair<double, odb::dbTechLayer*>> &OUTPUT (std::vector<std::pair<double, odb::dbTechLayer*>> temp) {
+   $1 = new std::vector<std::pair<double, dbTechLayer*>>(temp);
+}
+
 %typemap(argout) std::vector<odb::dbShape> &OUTPUT {
   swig_type_info *tf = SWIG_TypeQuery("odb::dbShape" "*");
   for(std::vector<odb::dbShape>::iterator it = $1->begin(); it != $1->end(); it++) {
     PyObject *o = SWIG_NewInstanceObj(&(*it), tf, 0);
-    $result = SWIG_Python_AppendOutput($result, o);
+    $result = SWIG_AppendOutput($result, o);
+  }
+}
+
+%typemap(argout) std::vector<std::pair<double, odb::dbTechLayer*>> &OUTPUT {
+  $result = PyList_New(0);
+  swig_type_info *tf = SWIG_TypeQuery("odb::dbTechLayer" "*");
+  for(auto it = $1->begin(); it != $1->end(); it++) {
+    auto value = it->first;
+    auto layer = it->second;
+    PyObject *layer_swig = SWIG_NewInstanceObj(layer, tf, 0);
+    PyObject *tuple = PyTuple_Pack(2, PyFloat_FromDouble(value), layer_swig);
+    $result = SWIG_AppendOutput($result, tuple);
   }
 }
 
 %typemap(argout) std::vector<int> &OUTPUT {
   for(auto it = $1->begin(); it != $1->end(); it++) {
     PyObject *obj = PyInt_FromLong((long)*it);
-    $result = SWIG_Python_AppendOutput($result, obj);
+    $result = SWIG_AppendOutput($result, obj);
   }
 }
 
 %apply std::vector<odb::dbShape> &OUTPUT { std::vector<odb::dbShape> & shapes };
+%apply std::vector<std::pair<double, odb::dbTechLayer*>> &OUTPUT { std::vector<std::pair<double, odb::dbTechLayer*>> & data };
 
 %include containers.i

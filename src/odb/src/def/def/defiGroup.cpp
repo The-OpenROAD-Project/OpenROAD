@@ -29,13 +29,14 @@
 
 #include "defiGroup.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
-#include "lex.h"
+#include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -52,9 +53,9 @@ defiGroup::defiGroup(defrData* data) : defData(data)
 
 void defiGroup::Init()
 {
-  name_ = 0;
+  name_ = nullptr;
   nameLength_ = 0;
-  region_ = 0;
+  region_ = nullptr;
   regionLength_ = 0;
 
   numRects_ = 0;
@@ -79,13 +80,15 @@ defiGroup::~defiGroup()
 
 void defiGroup::Destroy()
 {
-  if (name_)
+  if (name_) {
     free(name_);
-  if (region_)
+  }
+  if (region_) {
     free(region_);
-  name_ = 0;
+  }
+  name_ = nullptr;
   nameLength_ = 0;
-  region_ = 0;
+  region_ = nullptr;
   regionLength_ = 0;
 
   clear();
@@ -119,8 +122,9 @@ void defiGroup::setup(const char* name)
 {
   int len = strlen(name) + 1;
   if (len > nameLength_) {
-    if (name_)
+    if (name_) {
       free(name_);
+    }
     nameLength_ = len;
     name_ = (char*) malloc(len);
   }
@@ -180,8 +184,9 @@ void defiGroup::setRegionName(const char* region)
 {
   int len = strlen(region) + 1;
   if (len > regionLength_) {
-    if (region_)
+    if (region_) {
       free(region_);
+    }
     regionLength_ = len;
     region_ = (char*) malloc(len);
   }
@@ -309,7 +314,7 @@ const char* defiGroup::propName(int index) const
             index,
             numProps_);
     defiError(0, 6050, msg, defData);
-    return 0;
+    return nullptr;
   }
   return propNames_[index];
 }
@@ -324,7 +329,7 @@ const char* defiGroup::propValue(int index) const
             index,
             numProps_);
     defiError(0, 6050, msg, defData);
-    return 0;
+    return nullptr;
   }
   return propValues_[index];
 }
@@ -344,7 +349,7 @@ double defiGroup::propNumber(int index) const
   return propDValues_[index];
 }
 
-const char defiGroup::propType(int index) const
+char defiGroup::propType(int index) const
 {
   char msg[160];
   if (index < 0 || index >= numProps_) {
@@ -455,8 +460,9 @@ void defiGroup::print(FILE* f) const
     int* yl = yl_;
     int* xh = xh_;
     int* yh = yh_;
-    for (i = 0; i < size; i++)
+    for (i = 0; i < size; i++) {
       fprintf(f, "  region box %d,%d %d,%d\n", xl[i], yl[i], xh[i], yh[i]);
+    }
   }
 
   if (hasMaxX()) {
@@ -472,4 +478,4 @@ void defiGroup::print(FILE* f) const
   }
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

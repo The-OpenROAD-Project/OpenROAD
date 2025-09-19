@@ -33,7 +33,7 @@
 #ifndef CDEFIPARTITION_H
 #define CDEFIPARTITION_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

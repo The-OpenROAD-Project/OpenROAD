@@ -1,40 +1,20 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
+
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
+#include <cstring>
+#include <vector>
 
 #include "name.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
+#include "rcx/grids.h"
 #include "utl/Logger.h"
-#include "wire.h"
 
 namespace rcx {
 
@@ -47,7 +27,6 @@ using odb::dbNet;
 using odb::dbRSeg;
 using odb::dbSet;
 using odb::dbShape;
-using odb::dbSigType;
 using odb::dbWire;
 using odb::dbWirePath;
 using odb::dbWirePathItr;
@@ -57,7 +36,7 @@ using utl::RCX;
 dbInst* extSpef::getDbInst(const uint id)
 {
   uint ii = 0;
-  const char hierD = _block->getHierarchyDelimeter();
+  const char hierD = _block->getHierarchyDelimiter();
   const char* instName = _spefName;
   const char* iName;
   if (!_mMap && _divider[0] != hierD) {
@@ -524,6 +503,9 @@ uint extSpef::getCapNodeId(const char* nodeWord,
 
       if (!_testParsing && !_diff) {
         capId = getCapIdFromCapTable(nodeWord);
+        if (capId == 0 && cornerNet == nullptr) {
+          return 0;
+        }
 
         if (capId > 0) {
           cap = dbCapNode::getCapNode(_cornerBlock, capId);
@@ -733,7 +715,7 @@ dbNet* extSpef::getDbNet(uint* id, const uint spefId)
     return nullptr;
   }
 
-  const char hierD = _block->getHierarchyDelimeter();
+  const char hierD = _block->getHierarchyDelimiter();
   const char* netName = _spefName;
   const char* nName;
   if (!_mMap && _divider[0] != hierD) {
@@ -1516,7 +1498,7 @@ uint extSpef::sortRSegs()
   if (cnn > (int) _hcnrc->getSize()) {
     const int ocsz = _hcnrc->getSize();
     int ncsz = (cnn / 1024 + 1) * 1024;
-    _hcnrc->reSize(ncsz);
+    _hcnrc->resize(ncsz);
     ncsz = _hcnrc->getSize();
     for (int ii = ocsz; ii < ncsz; ii++) {
       Ath__array1D<int>* n1d = new Ath__array1D<int>(4);
@@ -2140,7 +2122,7 @@ void extSpef::setupMapping(uint itermCnt)
 void extSpef::resetNameTable(const uint n)
 {
   _nameMapTable = new Ath__array1D<const char*>(128000);
-  _nameMapTable->reSize(n);
+  _nameMapTable->resize(n);
   _lastNameMapIndex = 0;
 }
 
@@ -2500,7 +2482,7 @@ uint extSpef::readBlock(const uint debug,
     }
     setupMapping();
 
-    _idMapTable->reSize(_maxMapId + 1);
+    _idMapTable->resize(_maxMapId + 1);
     resetNameTable(_maxMapId + 1);
   }
   if (_nodeHashTable == nullptr) {

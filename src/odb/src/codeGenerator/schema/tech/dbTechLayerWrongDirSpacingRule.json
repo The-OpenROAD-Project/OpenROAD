@@ -8,9 +8,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "noneol_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "noneol_valid_"
     },
     {
       "type": "int",
@@ -18,9 +17,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "length_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "length_valid_"
     },
     {
       "type": "int",

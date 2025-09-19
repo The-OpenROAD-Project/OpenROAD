@@ -18,4 +18,4 @@ floorplan.initFloorplan(die_area, core_area, site)
 
 def_file = helpers.make_result_file("init_floorplan4.def")
 design.writeDef(def_file)
-helpers.diff_files('init_floorplan4.defok', def_file)
+helpers.diff_files("init_floorplan4.defok", def_file)

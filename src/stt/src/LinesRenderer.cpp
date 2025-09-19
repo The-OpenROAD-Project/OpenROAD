@@ -1,8 +1,5 @@
-// Copyright 2023 Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include "LinesRenderer.h"
 
@@ -46,7 +43,7 @@ void highlightSteinerTree(const Tree& tree, gui::Gui* gui)
       const int y2 = neighbor.y;
       lines.emplace_back(odb::Point(x1, y1), odb::Point(x2, y2));
     }
-    LinesRenderer::lines_renderer->highlight(lines, gui::Painter::red);
+    LinesRenderer::lines_renderer->highlight(lines, gui::Painter::kRed);
   }
 }
 

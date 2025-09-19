@@ -1,6 +1,6 @@
 source helpers.tcl
 
-read_lef sky130hs/sky130hs.tlef 
+read_lef sky130hs/sky130hs.tlef
 
 read_def generate_pattern.defok
 # generate_pattern.spef needs to be generated from an OSS tool (eg magic)

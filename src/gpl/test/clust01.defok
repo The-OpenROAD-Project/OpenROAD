@@ -8,13 +8,53 @@ COMPONENTS 2 ;
     - _tray_size2_6 DFFHQNV2Xx1_ASAP7_75t_L + PLACED ( 3350 3864 ) N ;
     - _tray_size2_7 DFFHQNV2Xx1_ASAP7_75t_L + PLACED ( 5350 3864 ) N ;
 END COMPONENTS
-PINS 1 ;
+PINS 9 ;
     - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 1000 1000 ) N ;
+        + LAYER M1 ( -90 -90 ) ( 90 90 )
+        + FIXED ( 90 90 ) N ;
+    - d1 + NET d1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M1 ( -90 -90 ) ( 90 90 )
+        + FIXED ( 450 90 ) N ;
+    - d2 + NET d2 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M1 ( -90 -90 ) ( 90 90 )
+        + FIXED ( 630 90 ) N ;
+    - d3 + NET d3 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M1 ( -90 -90 ) ( 90 90 )
+        + FIXED ( 810 90 ) N ;
+    - d4 + NET d4 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M1 ( -90 -90 ) ( 90 90 )
+        + FIXED ( 990 90 ) N ;
+    - o1 + NET o1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M1 ( -90 -90 ) ( 90 90 )
+        + FIXED ( 450 10090 ) N ;
+    - o2 + NET o2 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M1 ( -90 -90 ) ( 90 90 )
+        + FIXED ( 630 10090 ) N ;
+    - o3 + NET o3 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M1 ( -90 -90 ) ( 90 90 )
+        + FIXED ( 810 10090 ) N ;
+    - o4 + NET o4 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M1 ( -90 -90 ) ( 90 90 )
+        + FIXED ( 990 10090 ) N ;
 END PINS
-NETS 1 ;
+NETS 9 ;
     - clk1 ( PIN clk1 ) ( _tray_size2_6 CLK ) ( _tray_size2_7 CLK ) + USE SIGNAL ;
+    - d1 ( PIN d1 ) ( _tray_size2_7 D1 ) + USE SIGNAL ;
+    - d2 ( PIN d2 ) ( _tray_size2_6 D1 ) + USE SIGNAL ;
+    - d3 ( PIN d3 ) ( _tray_size2_6 D0 ) + USE SIGNAL ;
+    - d4 ( PIN d4 ) ( _tray_size2_7 D0 ) + USE SIGNAL ;
+    - o1 ( PIN o1 ) ( _tray_size2_7 QN1 ) + USE SIGNAL ;
+    - o2 ( PIN o2 ) ( _tray_size2_6 QN1 ) + USE SIGNAL ;
+    - o3 ( PIN o3 ) ( _tray_size2_6 QN0 ) + USE SIGNAL ;
+    - o4 ( PIN o4 ) ( _tray_size2_7 QN0 ) + USE SIGNAL ;
 END NETS
 END DESIGN

@@ -1,0 +1,2 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[ERROR ORD-2039] SanityCheck: Net 'out_unconnected' has less than 2 connections (# of ITerms = 0, # of BTerms = 1).

@@ -1,0 +1,162 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+cc_library(
+    name = "openmp",
+    hdrs = [
+        "runtime/src/include/omp.h",
+        "runtime/src/include/omp-tools.h",
+    ],
+    srcs = [
+        "runtime/src/kmp.h",
+        "runtime/src/kmp_affinity.cpp",
+        "runtime/src/kmp_affinity.h",
+        "runtime/src/kmp_alloc.cpp",
+        "runtime/src/kmp_atomic.cpp",
+        "runtime/src/kmp_atomic.h",
+        "runtime/src/kmp_barrier.cpp",
+        "runtime/src/kmp_barrier.h",
+        "runtime/src/kmp_cancel.cpp",
+        "runtime/src/kmp_collapse.cpp",
+        "runtime/src/kmp_collapse.h",
+        "runtime/src/kmp_csupport.cpp",
+        "runtime/src/kmp_debug.cpp",
+        "runtime/src/kmp_debug.h",
+        "runtime/src/kmp_debugger.cpp",
+        "runtime/src/kmp_debugger.h",
+        "runtime/src/kmp_dispatch.cpp",
+        "runtime/src/kmp_dispatch.h",
+        "runtime/src/kmp_dispatch_hier.h",
+        "runtime/src/kmp_environment.cpp",
+        "runtime/src/kmp_environment.h",
+        "runtime/src/kmp_error.cpp",
+        "runtime/src/kmp_error.h",
+        "runtime/src/kmp_ftn_cdecl.cpp",
+        "runtime/src/kmp_ftn_entry.h",
+        "runtime/src/kmp_ftn_extra.cpp",
+        "runtime/src/kmp_ftn_os.h",
+        "runtime/src/kmp_ftn_stdcall.cpp",
+        "runtime/src/kmp_global.cpp",
+        "runtime/src/kmp_gsupport.cpp",
+        "runtime/src/kmp_i18n.cpp",
+        "runtime/src/kmp_i18n.h",
+        "runtime/src/kmp_io.cpp",
+        "runtime/src/kmp_io.h",
+        "runtime/src/kmp_itt.cpp",
+        "runtime/src/kmp_itt.h",
+        "runtime/src/kmp_itt.inl",
+        "runtime/src/kmp_lock.cpp",
+        "runtime/src/kmp_lock.h",
+        "runtime/src/kmp_omp.h",
+        "runtime/src/kmp_os.h",
+        "runtime/src/kmp_platform.h",
+        "runtime/src/kmp_runtime.cpp",
+        "runtime/src/kmp_safe_c_api.h",
+        "runtime/src/kmp_sched.cpp",
+        "runtime/src/kmp_settings.cpp",
+        "runtime/src/kmp_settings.h",
+        "runtime/src/kmp_stats.h",
+        "runtime/src/kmp_str.cpp",
+        "runtime/src/kmp_str.h",
+        "runtime/src/kmp_taskdeps.cpp",
+        "runtime/src/kmp_taskdeps.h",
+        "runtime/src/kmp_tasking.cpp",
+        "runtime/src/kmp_threadprivate.cpp",
+        "runtime/src/kmp_utility.cpp",
+        "runtime/src/kmp_utils.h",
+        "runtime/src/kmp_version.cpp",
+        "runtime/src/kmp_version.h",
+        "runtime/src/kmp_wait_release.cpp",
+        "runtime/src/kmp_wait_release.h",
+        "runtime/src/kmp_wrapper_getpid.h",
+        "runtime/src/kmp_wrapper_malloc.h",
+        "runtime/src/ompd-specific.h",
+        "runtime/src/ompt-event-specific.h",
+        "runtime/src/ompt-general.cpp",
+        "runtime/src/ompt-internal.h",
+        "runtime/src/ompt-specific.h",
+        "runtime/src/test-touch.c",
+        "runtime/src/z_Linux_asm.S",
+        "runtime/src/z_Linux_util.cpp",
+    ] + [
+        ":kmp_config",
+        ":id_i18n",
+        ":default_i18n",
+    ],
+    data = [
+        "runtime/src/i18n/en_US.txt",
+    ],
+    textual_hdrs = [
+        "runtime/src/ompt-specific.cpp",
+    ],
+    includes = [
+        "runtime/src/include",
+        "runtime/src",
+        "runtime/src/thirdparty/ittnotify",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+genrule(
+    name = "omp_header",
+    srcs = [
+        "runtime/src/include/omp.h.var",
+    ],
+    outs = ["runtime/src/include/omp.h"],
+    cmd = (
+        "sed " +
+        "-e 's/@LIBOMP_VERSION_MAJOR@/5/g' " +
+        "-e 's/@LIBOMP_VERSION_MINOR@/0/g' " +
+        "-e 's/@LIBOMP_VERSION_BUILD@/0/g' " +
+        "-e 's/@LIBOMP_BUILD_DATE@/20200907/g' " +
+        "$(location runtime/src/include/omp.h.var) " +
+        "> $@"
+    ),
+)
+
+genrule(
+    name = "omp_tools_header",
+    srcs = [
+        "runtime/src/include/omp-tools.h.var",
+    ],
+    outs = ["runtime/src/include/omp-tools.h"],
+    cmd = (
+        "cat " +
+        "$(location runtime/src/include/omp-tools.h.var) " +
+        "> $@"
+    ),
+)
+
+genrule(
+    name = "default_i18n",
+    srcs = ["@openroad//bazel/openmp:kmp_i18n_default.inc"],
+    outs = ["runtime/src/kmp_i18n_default.inc"],
+    cmd = "cat $(location @openroad//bazel/openmp:kmp_i18n_default.inc) > $@",
+)
+
+genrule(
+    name = "id_i18n",
+    srcs = ["@openroad//bazel/openmp:kmp_i18n_id.inc"],
+    outs = ["runtime/src/kmp_i18n_id.inc"],
+    cmd = "cat $(location @openroad//bazel/openmp:kmp_i18n_id.inc) > $@",
+)
+
+genrule(
+    name = "kmp_config",
+    srcs = ["@openroad//bazel/openmp:kmp_config.h"],
+    outs = ["runtime/src/kmp_config.h"],
+    cmd = "cat $(location @openroad//bazel/openmp:kmp_config.h) > $@",
+)

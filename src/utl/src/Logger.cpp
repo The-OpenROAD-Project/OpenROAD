@@ -1,78 +1,64 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include "utl/Logger.h"
 
-#include <atomic>
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
 #include <fstream>
-#include <mutex>
+#include <memory>
+#include <ostream>
+#include <sstream>
+#include <stack>
+#include <string>
+#include <string_view>
+#include <utility>
 
+#include "CommandLineProgress.h"
+#if SPDLOG_VERSION < 10601
+#include "spdlog/details/pattern_formatter.h"
+#else
+#include "spdlog/pattern_formatter.h"
+#endif
 #include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/ostream_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
+#include "utl/Progress.h"
+#include "utl/prometheus/metrics_server.h"
+#include "utl/prometheus/registry.h"
 
 namespace utl {
 
-int Logger::max_message_print = 1000;
-
 Logger::Logger(const char* log_filename, const char* metrics_filename)
-    : debug_on_(false)
 {
-  // This ensures it is safe to update the message counters
-  // without using locks.
-  static_assert(std::atomic<MessageCounter::value_type>::is_always_lock_free,
-                "message counter should be atomic");
+  progress_ = std::make_unique<CommandLineProgress>(this);
 
   sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-  if (log_filename)
+  if (log_filename) {
     sinks_.push_back(
         std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_filename));
+  }
 
   logger_ = std::make_shared<spdlog::logger>(
       "logger", sinks_.begin(), sinks_.end());
-  logger_->set_pattern(pattern_);
+  setFormatter();
   logger_->set_level(spdlog::level::level_enum::debug);
 
-  if (metrics_filename)
+  if (metrics_filename) {
     addMetricsSink(metrics_filename);
+  }
 
   metrics_policies_ = MetricsPolicy::makeDefaultPolicies();
 
   for (auto& counters : message_counters_) {
-    counters.fill(0);
+    for (auto& counter : counters) {
+      counter = 0;
+    }
   }
+
+  prometheus_registry_ = std::make_shared<PrometheusRegistry>();
 }
 
 Logger::~Logger()
@@ -90,7 +76,7 @@ void Logger::removeMetricsSink(const char* metrics_filename)
   auto metrics_file = std::find(
       metrics_sinks_.begin(), metrics_sinks_.end(), metrics_filename);
   if (metrics_file == metrics_sinks_.end()) {
-    error(UTL, 2, "{} is not a metrics file", metrics_filename);
+    this->error(UTL, 11, "{} is not a metrics file", metrics_filename);
   }
   flushMetrics();
 
@@ -101,8 +87,9 @@ ToolId Logger::findToolId(const char* tool_name)
 {
   int tool_id = 0;
   for (const char* tool : tool_names_) {
-    if (strcmp(tool_name, tool) == 0)
+    if (strcmp(tool_name, tool) == 0) {
       return static_cast<ToolId>(tool_id);
+    }
     tool_id++;
   }
   return UKN;
@@ -129,7 +116,7 @@ void Logger::addSink(spdlog::sink_ptr sink)
 {
   sinks_.push_back(sink);
   logger_->sinks().push_back(sink);
-  logger_->set_pattern(pattern_);  // updates the new sink
+  setFormatter();  // updates the new sink
 }
 
 void Logger::removeSink(spdlog::sink_ptr sink)
@@ -149,10 +136,11 @@ void Logger::removeSink(spdlog::sink_ptr sink)
 
 void Logger::setMetricsStage(std::string_view format)
 {
-  if (metrics_stages_.empty())
+  if (metrics_stages_.empty()) {
     metrics_stages_.push(std::string(format));
-  else
+  } else {
     metrics_stages_.top() = format;
+  }
 }
 
 void Logger::clearMetricsStage()
@@ -172,27 +160,29 @@ std::string Logger::popMetricsStage()
     std::string stage = metrics_stages_.top();
     metrics_stages_.pop();
     return stage;
-  } else {
-    return "";
   }
+  return "";
 }
 
 void Logger::flushMetrics()
 {
   const std::string json = MetricsEntry::assembleJSON(metrics_entries_);
 
-  for (std::string sink_path : metrics_sinks_) {
+  for (const std::string& sink_path : metrics_sinks_) {
     std::ofstream sink_file(sink_path);
     if (sink_file) {
       sink_file << json;
     } else {
-      warn(UTL, 1, "Unable to open {} to write metrics", sink_path);
+      this->warn(UTL, 10, "Unable to open {} to write metrics", sink_path);
     }
   }
 }
 
 void Logger::finalizeMetrics()
 {
+  log_metric("flow__warnings__count", std::to_string(warning_count_));
+  log_metric("flow__errors__count", std::to_string(error_count_));
+
   for (MetricsPolicy policy : metrics_policies_) {
     policy.applyPolicy(metrics_entries_);
   }
@@ -208,6 +198,174 @@ void Logger::suppressMessage(ToolId tool, int id)
 void Logger::unsuppressMessage(ToolId tool, int id)
 {
   message_counters_[tool][id] = 0;
+}
+
+void Logger::redirectFileBegin(const std::string& filename)
+{
+  assertNoRedirect();
+
+  file_redirect_ = std::make_unique<std::ofstream>(filename);
+  setRedirectSink(*file_redirect_);
+}
+
+void Logger::redirectFileAppendBegin(const std::string& filename)
+{
+  assertNoRedirect();
+
+  file_redirect_
+      = std::make_unique<std::ofstream>(filename, std::ofstream::app);
+  setRedirectSink(*file_redirect_);
+}
+
+void Logger::redirectFileEnd()
+{
+  if (file_redirect_ == nullptr) {
+    return;
+  }
+
+  restoreFromRedirect();
+
+  file_redirect_->close();
+  file_redirect_ = nullptr;
+}
+
+void Logger::teeFileBegin(const std::string& filename)
+{
+  assertNoRedirect();
+
+  file_redirect_ = std::make_unique<std::ofstream>(filename);
+  setRedirectSink(*file_redirect_, true);
+}
+
+void Logger::teeFileAppendBegin(const std::string& filename)
+{
+  assertNoRedirect();
+
+  file_redirect_
+      = std::make_unique<std::ofstream>(filename, std::ofstream::app);
+  setRedirectSink(*file_redirect_, true);
+}
+
+void Logger::teeFileEnd()
+{
+  redirectFileEnd();
+}
+
+void Logger::redirectStringBegin()
+{
+  assertNoRedirect();
+
+  string_redirect_ = std::make_unique<std::ostringstream>();
+  setRedirectSink(*string_redirect_);
+}
+
+std::string Logger::redirectStringEnd()
+{
+  if (string_redirect_ == nullptr) {
+    return "";
+  }
+
+  restoreFromRedirect();
+
+  std::string string = string_redirect_->str();
+  string_redirect_ = nullptr;
+
+  return string;
+}
+
+void Logger::teeStringBegin()
+{
+  assertNoRedirect();
+
+  string_redirect_ = std::make_unique<std::ostringstream>();
+  setRedirectSink(*string_redirect_, true);
+}
+
+std::string Logger::teeStringEnd()
+{
+  return redirectStringEnd();
+}
+
+Logger* Logger::defaultLogger()
+{
+  static Logger default_logger;
+  return &default_logger;
+}
+
+void Logger::assertNoRedirect()
+{
+  if (string_redirect_ != nullptr || file_redirect_ != nullptr) {
+    this->error(
+        UTL, 102, "Unable to start new log redirect while another is active.");
+  }
+}
+
+void Logger::setRedirectSink(std::ostream& sink_stream, bool keep_sinks)
+{
+  if (!keep_sinks) {
+    logger_->sinks().clear();
+  }
+
+  logger_->sinks().push_back(
+      std::make_shared<spdlog::sinks::ostream_sink_mt>(sink_stream, true));
+  setFormatter();
+}
+
+void Logger::restoreFromRedirect()
+{
+  logger_->sinks().clear();
+  logger_->sinks().insert(
+      logger_->sinks().begin(), sinks_.begin(), sinks_.end());
+}
+
+void Logger::startPrometheusEndpoint(uint16_t port)
+{
+  if (prometheus_metrics_) {
+    return;
+  }
+
+  prometheus_metrics_ = std::make_unique<PrometheusMetricsServer>(
+      prometheus_registry_, this, port);
+}
+
+std::shared_ptr<PrometheusRegistry> Logger::getRegistry()
+{
+  return prometheus_registry_;
+}
+
+bool Logger::isPrometheusServerReadyToServe()
+{
+  if (!prometheus_metrics_) {
+    return false;
+  }
+
+  return prometheus_metrics_->is_ready() && prometheus_metrics_->port() != 0;
+}
+
+uint16_t Logger::getPrometheusPort()
+{
+  if (!prometheus_metrics_) {
+    return 0;
+  }
+
+  return prometheus_metrics_->port();
+}
+
+void Logger::setFormatter()
+{
+  // create formatter without a newline
+  std::unique_ptr<spdlog::formatter> formatter
+      = std::make_unique<spdlog::pattern_formatter>(
+          pattern_, spdlog::pattern_time_type::local, "");
+  logger_->set_formatter(std::move(formatter));
+}
+
+std::unique_ptr<Progress> Logger::swapProgress(Progress* progress)
+{
+  std::unique_ptr<Progress> current_progress = std::move(progress_);
+  progress_.reset(progress);
+
+  return current_progress;
 }
 
 }  // namespace utl

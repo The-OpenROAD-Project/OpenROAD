@@ -1,35 +1,11 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <cstdint>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -44,120 +20,119 @@ class Rect;
 
 namespace drt {
 
-extern std::string DBPROCESSNODE;
-extern std::string OUT_MAZE_FILE;
-extern std::string DRC_RPT_FILE;
-extern std::optional<int> DRC_RPT_ITER_STEP;
-extern std::string CMAP_FILE;
-extern std::string GUIDE_REPORT_FILE;
-// to be removed
-extern int OR_SEED;
-extern double OR_K;
+struct RouterConfiguration
+{
+  std::string DBPROCESSNODE;
+  std::string OUT_MAZE_FILE;
+  std::string DRC_RPT_FILE;
+  std::optional<int> DRC_RPT_ITER_STEP = std::nullopt;
+  std::string CMAP_FILE;
+  std::string GUIDE_REPORT_FILE;
 
-extern int MAX_THREADS;
-extern int BATCHSIZE;
-extern int BATCHSIZETA;
-extern int MTSAFEDIST;
-extern int DRCSAFEDIST;
-extern int VERBOSE;
-extern std::string BOTTOM_ROUTING_LAYER_NAME;
-extern std::string TOP_ROUTING_LAYER_NAME;
-extern int BOTTOM_ROUTING_LAYER;
-extern int TOP_ROUTING_LAYER;
-extern bool ALLOW_PIN_AS_FEEDTHROUGH;
-extern bool USENONPREFTRACKS;
-extern bool USEMINSPACING_OBS;
-extern bool ENABLE_BOUNDARY_MAR_FIX;
-extern bool ENABLE_VIA_GEN;
-extern bool CLEAN_PATCHES;
-extern bool DO_PA;
-extern bool SINGLE_STEP_DR;
-extern bool SAVE_GUIDE_UPDATES;
-// extern int TEST;
-extern std::string VIAINPIN_BOTTOMLAYER_NAME;
-extern std::string VIAINPIN_TOPLAYER_NAME;
-extern frLayerNum VIAINPIN_BOTTOMLAYERNUM;
-extern frLayerNum VIAINPIN_TOPLAYERNUM;
+  // to be removed
+  int OR_SEED = -1;
+  double OR_K = 0;
 
-extern frLayerNum VIA_ACCESS_LAYERNUM;
+  int MAX_THREADS = 1;
+  int BATCHSIZE = 1024;
+  int BATCHSIZETA = 8;
+  int MTSAFEDIST = 2000;
+  int DRCSAFEDIST = 500;
+  int VERBOSE = 1;
+  int BOTTOM_ROUTING_LAYER = 2;
+  int TOP_ROUTING_LAYER = std::numeric_limits<int>::max();
+  bool ALLOW_PIN_AS_FEEDTHROUGH = true;
+  bool USENONPREFTRACKS = true;
+  bool USEMINSPACING_OBS = true;
+  bool ENABLE_BOUNDARY_MAR_FIX = true;
+  bool ENABLE_VIA_GEN = true;
+  bool CLEAN_PATCHES = false;
+  bool DO_PA = true;
+  bool SINGLE_STEP_DR = false;
+  bool SAVE_GUIDE_UPDATES = false;
 
-extern int MINNUMACCESSPOINT_MACROCELLPIN;
-extern int MINNUMACCESSPOINT_STDCELLPIN;
-extern int ACCESS_PATTERN_END_ITERATION_NUM;
-extern float CONGESTION_THRESHOLD;
-extern int MAX_CLIPSIZE_INCREASE;
+  std::string VIAINPIN_BOTTOMLAYER_NAME;
+  std::string VIAINPIN_TOPLAYER_NAME;
+  frLayerNum VIAINPIN_BOTTOMLAYERNUM = std::numeric_limits<frLayerNum>::max();
+  frLayerNum VIAINPIN_TOPLAYERNUM = std::numeric_limits<frLayerNum>::max();
 
-extern int END_ITERATION;
+  std::string VIA_ACCESS_LAYER_NAME;
+  frLayerNum VIA_ACCESS_LAYERNUM = 2;
 
-extern int NDR_NETS_RIPUP_HARDINESS;  // max ripup avoids
-extern int CLOCK_NETS_TRUNK_RIPUP_HARDINESS;
-extern int CLOCK_NETS_LEAF_RIPUP_HARDINESS;
-extern bool AUTO_TAPER_NDR_NETS;
-extern int TAPERBOX_RADIUS;
-extern int NDR_NETS_ABS_PRIORITY;
-extern int CLOCK_NETS_ABS_PRIORITY;
+  int MINNUMACCESSPOINT_MACROCELLPIN = 3;
+  int MINNUMACCESSPOINT_STDCELLPIN = 3;
+  int ACCESS_PATTERN_END_ITERATION_NUM = 10;
+  float CONGESTION_THRESHOLD = 0.4;
+  int MAX_CLIPSIZE_INCREASE = 18;
 
-extern frUInt4 TAVIACOST;
-extern frUInt4 TAPINCOST;
-extern frUInt4 TAALIGNCOST;
-extern frUInt4 TADRCCOST;
-extern float TASHAPEBLOATWIDTH;
+  int END_ITERATION = 80;
 
-extern frUInt4 VIACOST;
+  int NDR_NETS_RIPUP_HARDINESS = 3;  // max ripup avoids
+  int CLOCK_NETS_TRUNK_RIPUP_HARDINESS = 100;
+  int CLOCK_NETS_LEAF_RIPUP_HARDINESS = 10;
+  bool AUTO_TAPER_NDR_NETS = true;
+  int TAPERBOX_RADIUS = 3;
+  int NDR_NETS_ABS_PRIORITY = 2;
+  int CLOCK_NETS_ABS_PRIORITY = 4;
 
-extern frUInt4 GRIDCOST;
-extern frUInt4 ROUTESHAPECOST;
-extern frUInt4 MARKERCOST;
-extern frUInt4 MARKERBLOATWIDTH;
-extern frUInt4 BLOCKCOST;
-extern frUInt4 GUIDECOST;
-extern float SHAPEBLOATWIDTH;
-extern int MISALIGNMENTCOST;
+  frUInt4 TAPINCOST = 4;
+  frUInt4 TAALIGNCOST = 4;
+  frUInt4 TADRCCOST = 32;
+  float TASHAPEBLOATWIDTH = 1.5;
+
+  frUInt4 VIACOST = 4;
+  // new cost used
+  frUInt4 GRIDCOST = 2;
+  frUInt4 ROUTESHAPECOST = 8;
+  frUInt4 MARKERCOST = 32;
+  frUInt4 MARKERBLOATWIDTH = 1;  // unused
+  frUInt4 BLOCKCOST = 32;
+  frUInt4 GUIDECOST = 1;      // disabled change getNextPathCost to enable
+  float SHAPEBLOATWIDTH = 3;  // unused
+
+  // GR
+  int CONGCOST = 8;
+  int HISTCOST = 32;
+
+  std::string REPAIR_PDN_LAYER_NAME;
+  frLayerNum REPAIR_PDN_LAYER_NUM = -1;
+  frLayerNum GC_IGNORE_PDN_LAYER_NUM = -1;
+};
+
+constexpr int DIRBITSIZE = 3;
+constexpr int WAVEFRONTBUFFERSIZE = 2;
+constexpr int WAVEFRONTBITSIZE = (WAVEFRONTBUFFERSIZE * DIRBITSIZE);
+constexpr int WAVEFRONTBUFFERHIGHMASK
+    = (111 << ((WAVEFRONTBUFFERSIZE - 1) * DIRBITSIZE));
 
 // GR
-extern int HISTCOST;
-extern int CONGCOST;
+constexpr int GRWAVEFRONTBUFFERSIZE = 2;
+constexpr int GRWAVEFRONTBITSIZE = (GRWAVEFRONTBUFFERSIZE * DIRBITSIZE);
+constexpr int GRWAVEFRONTBUFFERHIGHMASK
+    = (111 << ((GRWAVEFRONTBUFFERSIZE - 1) * DIRBITSIZE));
 
-extern std::string REPAIR_PDN_LAYER_NAME;
-extern frLayerNum GC_IGNORE_PDN_LAYER;
+constexpr int LARGE_NET_FANOUT_THRESHOLD = 100;
 
-#define DIRBITSIZE 3
-#define WAVEFRONTBUFFERSIZE 2
-#define WAVEFRONTBITSIZE (WAVEFRONTBUFFERSIZE * DIRBITSIZE)
-#define WAVEFRONTBUFFERHIGHMASK \
-  (111 << ((WAVEFRONTBUFFERSIZE - 1) * DIRBITSIZE))
-
-// GR
-#define GRWAVEFRONTBUFFERSIZE 2
-#define GRWAVEFRONTBITSIZE (GRWAVEFRONTBUFFERSIZE * DIRBITSIZE)
-#define GRWAVEFRONTBUFFERHIGHMASK \
-  (111 << ((GRWAVEFRONTBUFFERSIZE - 1) * DIRBITSIZE))
-
-frCoord getGCELLGRIDX();
-frCoord getGCELLGRIDY();
-frCoord getGCELLOFFSETX();
-frCoord getGCELLOFFSETY();
-
-class frViaDef;
+class drConnFig;
+class drNet;
+class frBPin;
+class frBTerm;
 class frBlock;
-class frMaster;
+class frBlockObject;
+class frConnFig;
+class frGuide;
 class frInst;
 class frInstTerm;
-class frTerm;
-class frBTerm;
 class frMTerm;
-class frPin;
-class frBPin;
-class frRect;
-class frPolygon;
+class frMaster;
 class frNet;
-class drNet;
-class drConnFig;
-class frShape;
-class frConnFig;
 class frPathSeg;
-class frGuide;
-class frBlockObject;
+class frPin;
+class frPolygon;
+class frRect;
+class frShape;
+class frTerm;
+class frViaDef;
 
 // These need to be in the fr namespace to support argument-dependent
 // lookup

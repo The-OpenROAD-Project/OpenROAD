@@ -30,14 +30,14 @@
 #ifndef lefiMisc_h
 #define lefiMisc_h
 
-#include <stdio.h>
-
+#include <cstdio>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // The different types of items in a geometry list.
 
@@ -511,8 +511,6 @@ class lefiMaxStackVia
   char* topLayer_;
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

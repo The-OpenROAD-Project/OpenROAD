@@ -33,7 +33,7 @@
 #ifndef CDEFIDEBUG_H
 #define CDEFIDEBUG_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

@@ -1,36 +1,20 @@
-/* Authors: Osama */
-/*
- * Copyright (c) 2021, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "LoadBalancer.h"
 
-#include <boost/bind/bind.hpp>
-#include <boost/thread/thread.hpp>
+#include <algorithm>
+#include <cstring>
+#include <exception>
+#include <limits>
+#include <mutex>
+#include <queue>
+#include <string>
+#include <vector>
 
+#include "boost/asio.hpp"
+#include "boost/bind/bind.hpp"
+#include "boost/thread/thread.hpp"
 #include "utl/Logger.h"
 
 using boost::asio::ip::udp;
@@ -52,8 +36,8 @@ void LoadBalancer::start_accept()
     }
   }
   jobs_++;
-  BalancerConnection::pointer connection
-      = BalancerConnection::create(*service, this, logger_);
+  BalancerConnection::Pointer connection
+      = BalancerConnection::create(*service_, this, logger_);
   acceptor_.async_accept(connection->socket(),
                          boost::bind(&LoadBalancer::handle_accept,
                                      this,
@@ -62,43 +46,43 @@ void LoadBalancer::start_accept()
 }
 
 LoadBalancer::LoadBalancer(Distributed* dist,
-                           asio::io_service& io_service,
+                           asio::io_context& service,
                            utl::Logger* logger,
                            const char* ip,
                            const char* workers_domain,
                            unsigned short port)
     : dist_(dist),
-      acceptor_(io_service, tcp::endpoint(ip::address::from_string(ip), port)),
+      acceptor_(service, tcp::endpoint(ip::make_address(ip), port)),
       logger_(logger),
       jobs_(0)
 {
   // pool_ = std::make_unique<asio::thread_pool>();
-  service = &io_service;
+  service_ = &service;
   start_accept();
   if (std::strcmp(workers_domain, "") != 0) {
-    workers_lookup_thread = boost::thread(
+    workers_lookup_thread_ = boost::thread(
         boost::bind(&LoadBalancer::lookUpWorkers, this, workers_domain, port));
   }
 }
 
 LoadBalancer::~LoadBalancer()
 {
-  alive = false;
-  if (workers_lookup_thread.joinable()) {
-    workers_lookup_thread.join();
+  alive_ = false;
+  if (workers_lookup_thread_.joinable()) {
+    workers_lookup_thread_.join();
   }
 }
 
 bool LoadBalancer::addWorker(const std::string& ip, unsigned short port)
 {
   std::lock_guard<std::mutex> lock(workers_mutex_);
-  bool validWorkerState = true;
-  if (!broadcastData.empty()) {
-    for (auto data : broadcastData) {
+  bool valid_worker_state = true;
+  if (!broadcastData_.empty()) {
+    for (auto data : broadcastData_) {
       try {
-        asio::io_service io_service;
-        tcp::socket socket(io_service);
-        socket.connect(tcp::endpoint(ip::address::from_string(ip), port));
+        asio::io_context service;
+        tcp::socket socket(service);
+        socket.connect(tcp::endpoint(ip::make_address(ip), port));
         asio::write(socket, asio::buffer(data));
         asio::streambuf receive_buffer;
         asio::read(socket, receive_buffer, asio::transfer_all());
@@ -107,36 +91,36 @@ bool LoadBalancer::addWorker(const std::string& ip, unsigned short port)
             == std::string::npos) {
           // Since asio::transfer_all() used with a stream buffer it
           // always reach an eof file exception!
-          validWorkerState = false;
+          valid_worker_state = false;
           break;
         }
       }
     }
   }
-  if (validWorkerState) {
-    workers_.push(worker(ip::address::from_string(ip), port, 0));
+  if (valid_worker_state) {
+    workers_.push(Worker(ip::make_address(ip), port, 0));
   }
-  return validWorkerState;
+  return valid_worker_state;
 }
 void LoadBalancer::updateWorker(const ip::address& ip, unsigned short port)
 {
   std::lock_guard<std::mutex> lock(workers_mutex_);
-  std::priority_queue<worker, std::vector<worker>, CompareWorker> newQueue;
+  std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
     workers_.pop();
     if (worker.ip == ip && worker.port == port) {
       worker.priority--;
     }
-    newQueue.push(worker);
+    new_queue.push(worker);
   }
-  workers_.swap(newQueue);
+  workers_.swap(new_queue);
 }
 void LoadBalancer::getNextWorker(ip::address& ip, unsigned short& port)
 {
   std::lock_guard<std::mutex> lock(workers_mutex_);
   if (!workers_.empty()) {
-    worker w = workers_.top();
+    Worker w = workers_.top();
     workers_.pop();
     ip = w.ip;
     port = w.port;
@@ -150,16 +134,16 @@ void LoadBalancer::getNextWorker(ip::address& ip, unsigned short& port)
 void LoadBalancer::punishWorker(const ip::address& ip, unsigned short port)
 {
   std::lock_guard<std::mutex> lock(workers_mutex_);
-  std::priority_queue<worker, std::vector<worker>, CompareWorker> newQueue;
+  std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
     workers_.pop();
     if (worker.ip == ip && worker.port == port) {
       worker.priority = worker.priority == 0 ? 2 : worker.priority * 2;
     }
-    newQueue.push(worker);
+    new_queue.push(worker);
   }
-  workers_.swap(newQueue);
+  workers_.swap(new_queue);
 }
 
 void LoadBalancer::removeWorker(const ip::address& ip,
@@ -169,16 +153,16 @@ void LoadBalancer::removeWorker(const ip::address& ip,
   if (lock) {
     workers_mutex_.lock();
   }
-  std::priority_queue<worker, std::vector<worker>, CompareWorker> newQueue;
+  std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
     workers_.pop();
     if (worker.ip == ip && worker.port == port) {
       continue;
     }
-    newQueue.push(worker);
+    new_queue.push(worker);
   }
-  workers_.swap(newQueue);
+  workers_.swap(new_queue);
   if (lock) {
     workers_mutex_.unlock();
   }
@@ -186,15 +170,14 @@ void LoadBalancer::removeWorker(const ip::address& ip,
 
 void LoadBalancer::lookUpWorkers(const char* domain, unsigned short port)
 {
-  asio::io_service ios;
-  std::vector<worker> workers_set;
-  udp::resolver::query resolver_query(
-      domain, std::to_string(port), udp::resolver::query::numeric_service);
+  asio::io_context ios;
+  std::vector<Worker> workers_set;
   udp::resolver resolver(ios);
-  while (alive) {
-    std::vector<worker> new_workers;
+  while (alive_) {
+    std::vector<Worker> new_workers;
     boost::system::error_code ec;
-    auto it = resolver.resolve(resolver_query, ec);
+    udp::resolver::results_type results
+        = resolver.resolve(domain, std::to_string(port), ec);
     if (ec) {
       logger_->warn(utl::DST,
                     203,
@@ -204,9 +187,8 @@ void LoadBalancer::lookUpWorkers(const char* domain, unsigned short port)
                     ec.message());
     }
     int new_workers_count = 0;
-    udp::resolver::iterator it_end;
-    for (; it != it_end; ++it) {
-      auto discovered_worker = worker(it->endpoint().address(), port, 0);
+    for (const auto& entry : results) {
+      auto discovered_worker = Worker(entry.endpoint().address(), port, 0);
       if (std::find(workers_set.begin(), workers_set.end(), discovered_worker)
           == workers_set.end()) {
         workers_set.push_back(discovered_worker);
@@ -239,11 +221,11 @@ void LoadBalancer::lookUpWorkers(const char* domain, unsigned short port)
     }
 
     boost::this_thread::sleep(
-        boost::posix_time::milliseconds(workers_discovery_period * 1000));
+        boost::posix_time::milliseconds(kWorkersDiscoveryPeriod * 1000));
   }
 }
 
-void LoadBalancer::handle_accept(const BalancerConnection::pointer& connection,
+void LoadBalancer::handle_accept(const BalancerConnection::Pointer& connection,
                                  const boost::system::error_code& err)
 {
   if (!err) {

@@ -2,7 +2,7 @@
 set tech [ord::get_db_tech]
 
 set layer [$tech findLayer via1]
-$layer setResistance 5 
+$layer setResistance 5
 
 set layer [$tech findLayer via2]
 $layer setResistance 5

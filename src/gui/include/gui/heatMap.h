@@ -1,53 +1,30 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <array>
-#include <boost/multi_array.hpp>
 #include <functional>
 #include <limits>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
+#include "boost/multi_array.hpp"
 #include "gui/gui.h"
 
 namespace odb {
 class dbBlock;
 class Rect;
 }  // namespace odb
+
+namespace sta {
+class dbSta;
+class Corner;
+}  // namespace sta
 
 namespace utl {
 class Logger;
@@ -64,15 +41,15 @@ class HeatMapDataSource
   {
     std::string name;
     std::string label;
-    std::function<bool(void)> getter;
+    std::function<bool()> getter;
     std::function<void(bool)> setter;
   };
   struct MapSettingMultiChoice
   {
     std::string name;
     std::string label;
-    std::function<std::vector<std::string>(void)> choices;
-    std::function<const std::string(void)> getter;
+    std::function<std::vector<std::string>()> choices;
+    std::function<const std::string()> getter;
     std::function<void(const std::string&)> setter;
   };
 
@@ -103,6 +80,8 @@ class HeatMapDataSource
 
   const std::string& getName() const { return name_; }
   const std::string& getShortName() const { return short_name_; }
+
+  utl::Logger* getLogger() const { return logger_; }
 
   void dumpToFile(const std::string& file);
 
@@ -187,16 +166,16 @@ class HeatMapDataSource
  protected:
   void addBooleanSetting(const std::string& name,
                          const std::string& label,
-                         const std::function<bool(void)>& getter,
+                         const std::function<bool()>& getter,
                          const std::function<void(bool)>& setter);
   void addMultipleChoiceSetting(
       const std::string& name,
       const std::string& label,
-      const std::function<std::vector<std::string>(void)>& choices,
-      const std::function<std::string(void)>& getter,
+      const std::function<std::vector<std::string>()>& choices,
+      const std::function<std::string()>& getter,
       const std::function<void(std::string)>& setter);
 
-  void setupMap();
+  bool setupMap();
   void clearMap();
   virtual bool populateMap() = 0;
   void addToMap(const odb::Rect& region, double value);
@@ -272,23 +251,20 @@ class HeatMapRenderer : public Renderer
  public:
   HeatMapRenderer(HeatMapDataSource& datasource);
 
-  virtual const char* getDisplayControlGroupName() override
-  {
-    return "Heat Maps";
-  }
+  const char* getDisplayControlGroupName() override { return "Heat Maps"; }
 
-  virtual void drawObjects(Painter& painter) override;
+  void drawObjects(Painter& painter) override;
 
-  virtual std::string getSettingsGroupName() override;
-  virtual Settings getSettings() override;
-  virtual void setSettings(const Settings& settings) override;
+  std::string getSettingsGroupName() override;
+  Settings getSettings() override;
+  void setSettings(const Settings& settings) override;
 
  private:
   HeatMapDataSource& datasource_;
   bool first_paint_;
 
-  static constexpr char datasource_prefix_[] = "data#";
-  static constexpr char groupname_prefix_[] = "HeatMap#";
+  static constexpr char kDatasourcePrefix[] = "data#";
+  static constexpr char kGroupnamePrefix[] = "HeatMap#";
 };
 
 class RealValueHeatMapDataSource : public HeatMapDataSource
@@ -299,20 +275,19 @@ class RealValueHeatMapDataSource : public HeatMapDataSource
                              const std::string& name,
                              const std::string& short_name,
                              const std::string& settings_group = "");
-  ~RealValueHeatMapDataSource() {}
 
-  virtual std::string formatValue(double value, bool legend) const override;
-  virtual std::string getValueUnits() const override;
-  virtual double convertValueToPercent(double value) const override;
-  virtual double convertPercentToValue(double percent) const override;
-  virtual double getDisplayRangeIncrement() const override;
+  std::string formatValue(double value, bool legend) const override;
+  std::string getValueUnits() const override;
+  double convertValueToPercent(double value) const override;
+  double convertPercentToValue(double percent) const override;
+  double getDisplayRangeIncrement() const override;
 
-  virtual double getDisplayRangeMaximumValue() const override { return 100.0; }
+  double getDisplayRangeMaximumValue() const override { return 100.0; }
 
  protected:
   void determineUnits();
 
-  virtual void correctMapScale(HeatMapDataSource::Map& map) override;
+  void correctMapScale(HeatMapDataSource::Map& map) override;
   virtual void determineMinMax(const HeatMapDataSource::Map& map);
 
   void setMinValue(double value) { min_ = value; }
@@ -347,9 +322,37 @@ class GlobalRoutingDataSource : public HeatMapDataSource
   void populateXYGrid() override;
 
  private:
-  static constexpr int default_grid_ = 10;
+  static constexpr int kDefaultGrid = 10;
 
   std::pair<double, double> getReportableXYGrid() const;
+};
+
+class PowerDensityDataSource : public RealValueHeatMapDataSource
+{
+ public:
+  PowerDensityDataSource(sta::dbSta* sta, utl::Logger* logger);
+
+  odb::Rect getBounds() const override { return getBlock()->getCoreArea(); }
+
+ protected:
+  bool populateMap() override;
+  void combineMapData(bool base_has_value,
+                      double& base,
+                      double new_data,
+                      double data_area,
+                      double intersection_area,
+                      double rect_area) override;
+
+ private:
+  sta::dbSta* sta_;
+
+  bool include_internal_ = true;
+  bool include_leakage_ = true;
+  bool include_switching_ = true;
+
+  std::string corner_;
+
+  sta::Corner* getCorner() const;
 };
 
 }  // namespace gui

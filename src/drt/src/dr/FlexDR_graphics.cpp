@@ -1,40 +1,25 @@
-/* Author: Matt Liberty */
-/*
- * Copyright (c) 2020, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "FlexDR_graphics.h"
+#include "dr/FlexDR_graphics.h"
 
-#include <algorithm>
+#include <any>
+#include <cassert>
 #include <cstdio>
-#include <limits>
+#include <functional>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 #include "../gc/FlexGC.h"
-#include "FlexDR.h"
-#include "ord/OpenRoad.hh"
+#include "db/obj/frShape.h"
+#include "db/obj/frVia.h"
+#include "dr/FlexDR.h"
+#include "frBaseTypes.h"
+#include "frRegionQuery.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -51,20 +36,21 @@ class GridGraphDescriptor : public gui::Descriptor
     const frDesign* design;
   };
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object, gui::Painter& painter) const override;
+  void highlight(const std::any& object, gui::Painter& painter) const override;
 
-  Properties getProperties(std::any object) const override;
-  gui::Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  Properties getProperties(const std::any& object) const override;
+  gui::Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
-  bool getAllObjects(gui::SelectionSet& objects) const override;
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>& func) const override;
 };
 
-std::string GridGraphDescriptor::getName(std::any object) const
+std::string GridGraphDescriptor::getName(const std::any& object) const
 {
   auto data = std::any_cast<Data>(object);
   return "<" + std::to_string(data.x) + ", " + std::to_string(data.y) + ", "
@@ -76,7 +62,7 @@ std::string GridGraphDescriptor::getTypeName() const
   return "Grid Graph Node";
 }
 
-bool GridGraphDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool GridGraphDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto data = std::any_cast<Data>(object);
   auto* graph = data.graph;
@@ -86,7 +72,7 @@ bool GridGraphDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   return true;
 }
 
-void GridGraphDescriptor::highlight(std::any object,
+void GridGraphDescriptor::highlight(const std::any& object,
                                     gui::Painter& painter) const
 {
   odb::Rect bbox;
@@ -98,7 +84,7 @@ void GridGraphDescriptor::highlight(std::any object,
 }
 
 gui::Descriptor::Properties GridGraphDescriptor::getProperties(
-    std::any object) const
+    const std::any& object) const
 {
   auto data = std::any_cast<Data>(object);
   auto* graph = data.graph;
@@ -156,7 +142,7 @@ gui::Descriptor::Properties GridGraphDescriptor::getProperties(
     }
 
     if (!graph->hasEdge(x, y, z, dir)) {
-      props.push_back({name, "<none>"});
+      props.push_back({std::move(name), "<none>"});
       continue;
     }
 
@@ -183,13 +169,15 @@ gui::Descriptor::Properties GridGraphDescriptor::getProperties(
     costs.push_back(
         {name + " edge length", graph->getEdgeLength(x, y, z, dir)});
     costs.push_back(
-        {name + " total cost", graph->getCosts(x, y, z, dir, layer)});
+        {name + " total cost",
+         graph->getCosts(
+             x, y, z, dir, layer, data.graph->getNDR() != nullptr, false)});
   }
   props.insert(props.end(), costs.begin(), costs.end());
   return props;
 }
 
-gui::Selected GridGraphDescriptor::makeSelected(std::any object) const
+gui::Selected GridGraphDescriptor::makeSelected(const std::any& object) const
 {
   if (auto data = std::any_cast<Data>(&object)) {
     return gui::Selected(*data, this);
@@ -197,7 +185,7 @@ gui::Selected GridGraphDescriptor::makeSelected(std::any object) const
   return gui::Selected();
 }
 
-bool GridGraphDescriptor::lessThan(std::any l, std::any r) const
+bool GridGraphDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_grid = std::any_cast<Data>(l);
   auto r_grid = std::any_cast<Data>(r);
@@ -208,9 +196,9 @@ bool GridGraphDescriptor::lessThan(std::any l, std::any r) const
          < std::tie(r_grid.x, r_grid.y, r_grid.z);
 }
 
-bool GridGraphDescriptor::getAllObjects(gui::SelectionSet& objects) const
+void GridGraphDescriptor::visitAllObjects(
+    const std::function<void(const gui::Selected&)>& func) const
 {
-  return false;
 }
 
 //////////////////////////////////////////////////
@@ -236,7 +224,7 @@ static std::string workerOrigin(FlexDRWorker* worker)
 FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
                                frDesign* design,
                                odb::dbDatabase* db,
-                               Logger* logger)
+                               utl::Logger* logger)
     : worker_(nullptr),
       design_(design),
       net_(nullptr),
@@ -428,14 +416,14 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     return;
   }
   // Draw markers
-  painter.setPen(gui::Painter::green, /* cosmetic */ true);
+  painter.setPen(gui::Painter::kGreen, /* cosmetic */ true);
   for (auto& marker : design_->getTopBlock()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       Rect box = marker->getBBox();
       drawMarker(box.xMin(), box.yMin(), box.xMax(), box.yMax(), painter);
     }
   }
-  painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
+  painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
   for (auto& marker : worker_->getGCWorker()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       Rect box = marker->getBBox();
@@ -574,8 +562,8 @@ void FlexDRGraphics::drawObjects(gui::Painter& painter)
     return;
   }
 
-  painter.setBrush(gui::Painter::transparent);
-  painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
+  painter.setBrush(gui::Painter::kTransparent);
+  painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
 
   Rect box;
   worker_->getRouteBox(box);
@@ -753,13 +741,13 @@ void FlexDRGraphics::endNet(drNet* net)
   net_ = nullptr;
 }
 
-void FlexDRGraphics::startIter(int iter)
+void FlexDRGraphics::startIter(int iter, RouterConfiguration* router_cfg)
 {
   current_iter_ = iter;
   if (iter >= settings_->iter) {
-    if (MAX_THREADS > 1) {
+    if (router_cfg->MAX_THREADS > 1) {
       logger_->info(DRT, 207, "Setting MAX_THREADS=1 for use with the DR GUI.");
-      MAX_THREADS = 1;
+      router_cfg->MAX_THREADS = 1;
     }
 
     status("Start iter: " + std::to_string(iter));
@@ -797,7 +785,6 @@ bool FlexDRGraphics::guiActive()
   return gui::Gui::enabled();
 }
 
-/* static */
 void FlexDRGraphics::init()
 {
   if (guiActive()) {

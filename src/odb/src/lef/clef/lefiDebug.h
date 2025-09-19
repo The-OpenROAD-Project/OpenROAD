@@ -33,7 +33,7 @@
 #ifndef CLEFIDEBUG_H
 #define CLEFIDEBUG_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 

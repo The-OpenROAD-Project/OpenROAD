@@ -33,7 +33,7 @@
 #ifndef CLEFIUNITS_H
 #define CLEFIUNITS_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 

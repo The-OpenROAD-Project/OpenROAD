@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2021-2025, The OpenROAD Authors
+
 include("openroad")
 
 swig_lib(NAME          odb_py
@@ -17,7 +20,7 @@ target_include_directories(odb_py
 target_link_libraries(odb_py
     PUBLIC
         odb
-        utl
+        utl_lib
         ${TCL_LIBRARY}
         cdl
         odb_swig_common

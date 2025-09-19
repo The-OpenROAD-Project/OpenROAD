@@ -30,13 +30,13 @@
 #ifndef lefiNonDefault_h
 #define lefiNonDefault_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 #include "lefiMisc.hpp"
 #include "lefiVia.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 class lefiNonDefault
 {
@@ -77,7 +77,7 @@ class lefiNonDefault
   const char* propName(int index) const;
   const char* propValue(int index) const;
   double propNumber(int index) const;
-  const char propType(int index) const;
+  char propType(int index) const;
   int propIsNumber(int index) const;
   int propIsString(int index) const;
 
@@ -122,61 +122,59 @@ class lefiNonDefault
   void print(FILE* f);
 
  protected:
-  int nameSize_;
-  char* name_;
+  int nameSize_{0};
+  char* name_{nullptr};
 
   // Layer information
-  int numLayers_;
-  int layersAllocated_;
-  char** layerName_;
-  double* width_;
-  double* spacing_;
-  double* wireExtension_;
-  char* hasWidth_;
-  char* hasSpacing_;
-  char* hasWireExtension_;
+  int numLayers_{0};
+  int layersAllocated_{0};
+  char** layerName_{nullptr};
+  double* width_{nullptr};
+  double* spacing_{nullptr};
+  double* wireExtension_{nullptr};
+  char* hasWidth_{nullptr};
+  char* hasSpacing_{nullptr};
+  char* hasWireExtension_{nullptr};
 
   // 5.4
-  double* resistance_;
-  double* capacitance_;
-  double* edgeCap_;
-  char* hasResistance_;
-  char* hasCapacitance_;
-  char* hasEdgeCap_;
+  double* resistance_{nullptr};
+  double* capacitance_{nullptr};
+  double* edgeCap_{nullptr};
+  char* hasResistance_{nullptr};
+  char* hasCapacitance_{nullptr};
+  char* hasEdgeCap_{nullptr};
 
-  double* diagWidth_;   // 5.6
-  char* hasDiagWidth_;  // 5.6
+  double* diagWidth_{nullptr};   // 5.6
+  char* hasDiagWidth_{nullptr};  // 5.6
 
-  int numVias_;
-  int allocatedVias_;
-  lefiVia** viaRules_;
+  int numVias_{0};
+  int allocatedVias_{0};
+  lefiVia** viaRules_{nullptr};
 
-  int numSpacing_;
-  int allocatedSpacing_;
-  lefiSpacing** spacingRules_;
+  int numSpacing_{0};
+  int allocatedSpacing_{0};
+  lefiSpacing** spacingRules_{nullptr};
 
-  int hardSpacing_;           // 5.6
-  int numUseVias_;            // 5.6
-  int allocatedUseVias_;      // 5.6
-  char** useViaName_;         // 5.6
-  int numUseViaRules_;        // 5.6
-  int allocatedUseViaRules_;  // 5.6
-  char** useViaRuleName_;     // 5.6
-  int numMinCuts_;            // 5.6
-  int allocatedMinCuts_;      // 5.6
-  char** cutLayerName_;       // 5.6
-  int* numCuts_;              // 5.6
+  int hardSpacing_{0};              // 5.6
+  int numUseVias_{0};               // 5.6
+  int allocatedUseVias_{0};         // 5.6
+  char** useViaName_{nullptr};      // 5.6
+  int numUseViaRules_{0};           // 5.6
+  int allocatedUseViaRules_{0};     // 5.6
+  char** useViaRuleName_{nullptr};  // 5.6
+  int numMinCuts_{0};               // 5.6
+  int allocatedMinCuts_{0};         // 5.6
+  char** cutLayerName_{nullptr};    // 5.6
+  int* numCuts_{nullptr};           // 5.6
 
-  int numProps_;
-  int propsAllocated_;
-  char** names_;
-  char** values_;
-  double* dvalues_;
-  char* types_;
+  int numProps_{0};
+  int propsAllocated_{0};
+  char** names_{nullptr};
+  char** values_{nullptr};
+  double* dvalues_{nullptr};
+  char* types_{nullptr};
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

@@ -1,46 +1,21 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <QDockWidget>
 #include <QItemDelegate>
 #include <QLabel>
+#include <QMenu>
 #include <QPushButton>
 #include <QStandardItemModel>
 #include <QTimer>
 #include <QTreeView>
 #include <QVBoxLayout>
+#include <any>
+#include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "gui/gui.h"
@@ -54,18 +29,18 @@ class EditorItemDelegate : public QItemDelegate
 
  public:
   // positions in ->data() where data is located
-  static const int editor_ = Qt::UserRole;
-  static const int editor_name_ = Qt::UserRole + 1;
-  static const int editor_type_ = Qt::UserRole + 2;
-  static const int editor_select_ = Qt::UserRole + 3;
-  static const int selected_ = Qt::UserRole + 4;
+  static const int kEditor = Qt::UserRole;
+  static const int kEditorName = Qt::UserRole + 1;
+  static const int kEditorType = Qt::UserRole + 2;
+  static const int kEditorSelect = Qt::UserRole + 3;
+  static const int kSelected = Qt::UserRole + 4;
 
   enum EditType
   {
-    NUMBER,
-    STRING,
-    BOOL,
-    LIST
+    kNumber,
+    kString,
+    kBool,
+    kList
   };
 
   EditorItemDelegate(SelectedItemModel* model, QObject* parent = nullptr);
@@ -113,7 +88,7 @@ class SelectedItemModel : public QStandardItemModel
                         QStandardItem*& name_item,
                         QStandardItem*& value_item);
   QStandardItem* makeItem(const QString& name);
-  QStandardItem* makeItem(const std::any& item, bool short_name = false);
+  QStandardItem* makeItem(const std::any& item_param, bool short_name = false);
 
   template <typename Iterator>
   QStandardItem* makeList(QStandardItem* name_item,
@@ -143,7 +118,7 @@ class ActionLayout : public QLayout
 
  public:
   ActionLayout(QWidget* parent = nullptr);
-  ~ActionLayout();
+  ~ActionLayout() override;
 
   void clear();
 
@@ -206,7 +181,7 @@ class Inspector : public QDockWidget
  signals:
   void addSelected(const Selected& selected);
   void removeSelected(const Selected& selected);
-  void selected(const Selected& selected, bool showConnectivity = false);
+  void selected(const Selected& selected, bool show_connectivity = false);
   void selectedItemChanged(const Selected& selected);
   void selection(const Selected& selected);
   void focus(const Selected& selected);
@@ -214,19 +189,24 @@ class Inspector : public QDockWidget
   void addHighlight(const SelectionSet& selection);
   void removeHighlight(const QList<const Selected*>& selected);
 
+  void setCommand(const QString& command);
+
  public slots:
   void inspect(const Selected& object);
   void clicked(const QModelIndex& index);
+  void doubleClicked(const QModelIndex& index);
   void update(const Selected& object = Selected());
-  void highlightChanged();
-  void focusNetsChanged();
 
   int selectNext();
   int selectPrevious();
 
   void updateSelectedFields(const QModelIndex& index);
 
+  void setReadOnly();
+  void unsetReadOnly();
+
   void reload();
+  void loadActions();
 
  private slots:
   void focusIndex(const QModelIndex& index);
@@ -235,9 +215,10 @@ class Inspector : public QDockWidget
   void indexClicked();
   void indexDoubleClicked(const QModelIndex& index);
 
+  void showCommandsMenu(const QPoint& pos);
+
  private:
   void handleAction(QWidget* action);
-  void loadActions();
 
   void adjustHeaders();
 
@@ -249,11 +230,14 @@ class Inspector : public QDockWidget
 
   void navigateBack();
 
+  void setCommandsMenu();
+  void writePathReportCommand();
+
   // The columns in the tree view
   enum Column
   {
-    Name,
-    Value
+    kName,
+    kValue
   };
 
   ObjectTree* view_;
@@ -269,6 +253,10 @@ class Inspector : public QDockWidget
   QLabel* selected_itr_label_;
   QTimer mouse_timer_;
   QModelIndex clicked_index_;
+  QMenu* commands_menu_;
+
+  std::string report_text_;
+  bool readonly_;
 
   const HighlightSet& highlighted_;
 
@@ -278,7 +266,7 @@ class Inspector : public QDockWidget
   Descriptor::ActionCallback deselect_action_;
 
   // used to finetune the double click interval
-  static constexpr double mouse_double_click_scale_ = 0.75;
+  static constexpr double kMouseDoubleClickScale = 0.75;
 };
 
 }  // namespace gui

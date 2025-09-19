@@ -1,47 +1,16 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "SinkClustering.h"
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
-#include <map>
-#include <string>
-#include <tuple>
+#include <limits>
+#include <sstream>
+#include <vector>
 
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
@@ -59,7 +28,9 @@ SinkClustering::SinkClustering(const CtsOptions* options,
       techChar_(techChar),
       maxInternalDiameter_(10),
       capPerUnit_(0.0),
-      useMaxCapLimit_(options->getSinkClusteringUseMaxCap()),
+      useMaxCapLimit_((HTree->getTreeType() == TreeType::MacroTree)
+                          ? false
+                          : options->getSinkClusteringUseMaxCap()),
       scaleFactor_(1),
       HTree_(HTree)
 {
@@ -85,15 +56,24 @@ void SinkClustering::normalizePoints(float maxDiameter)
     ySpan_ = ySpan;
     for (Point<double>& p : points_) {
       const double x = p.getX();
-      const double xNorm = (x - xMin) / xSpan;
+      const double xNorm = xSpan ? (x - xMin) / xSpan : 0;
       const double y = p.getY();
-      const double yNorm = (y - yMin) / ySpan;
+      const double yNorm = ySpan ? (y - yMin) / ySpan : 0;
       p = Point<double>(xNorm, yNorm);
     }
   }
-  maxInternalDiameter_ = maxDiameter / std::min(xSpan_, ySpan_);
-  capPerUnit_
-      = techChar_->getCapPerDBU() * scaleFactor_ * std::min(xSpan_, ySpan_);
+  double span;
+  if (xSpan_ == 0 && ySpan_ == 0) {
+    span = 1;  // arbitrary
+  } else if (xSpan_ == 0) {
+    span = ySpan_;
+  } else if (ySpan_ == 0) {
+    span = xSpan_;
+  } else {
+    span = std::min(xSpan_, ySpan_);
+  }
+  maxInternalDiameter_ = maxDiameter / span;
+  capPerUnit_ = techChar_->getCapPerDBU() * scaleFactor_ * span;
 
   // clang-format off
   debugPrint(logger_, CTS, "clustering", 1, "normalizePoints: "
@@ -306,9 +286,9 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
         // Add vectors in case they are no allocated yet. (Depends if a new
         // cluster was defined above)
         if (solutions[j].size() < (clusters[j] + 1)) {
-          solutions[j].push_back({});
-          solutionPoints[j].push_back({});
-          solutionPointsIdx[j].push_back({});
+          solutions[j].emplace_back();
+          solutionPoints[j].emplace_back();
+          solutionPointsIdx[j].emplace_back();
         }
         // Save the current Point in it's respective cluster. (Depends if a new
         // cluster was defined above)
@@ -325,9 +305,9 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
     // one late).
     for (unsigned j = (i + 1); j < groupSize; ++j) {
       if (solutions[j].size() < (clusters[j] + 1)) {
-        solutions[j].push_back({});
-        solutionPoints[j].push_back({});
-        solutionPointsIdx[j].push_back({});
+        solutions[j].emplace_back();
+        solutionPoints[j].emplace_back();
+        solutionPointsIdx[j].emplace_back();
       }
       // Thus here we will assign the Points missing from those solutions.
       const unsigned idx = thetaIndexVector_[i].second;
@@ -371,9 +351,9 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
         }
       }
       if (solutions[j].size() < (clusters[j] + 1)) {
-        solutions[j].push_back({});
-        solutionPoints[j].push_back({});
-        solutionPointsIdx[j].push_back({});
+        solutions[j].emplace_back();
+        solutionPoints[j].emplace_back();
+        solutionPointsIdx[j].emplace_back();
       }
       solutionPoints[j][clusters[j]].push_back(p);
       solutionPointsIdx[j][clusters[j]].push_back(idx);
@@ -416,11 +396,12 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
   if (logger_->debugCheck(CTS, "clustering", 2)) {
     size_t solnIndex = 0;
     for (const std::vector<unsigned>& soln : bestSolution_) {
-      std::cout << "Solution " << solnIndex << "[" << soln.size() << "]: ";
+      std::ostringstream s;
+      s << "Solution " << solnIndex << "[" << soln.size() << "]: ";
       for (const unsigned i : soln) {
-        std::cout << i << " ";
+        s << i << " ";
       }
-      std::cout << std::endl;
+      logger_->debug(CTS, "clustering", "{}", s.str());
       ++solnIndex;
     }
   }

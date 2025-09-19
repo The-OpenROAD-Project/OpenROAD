@@ -1,53 +1,24 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 // Generator Code Begin Header
 #pragma once
 
+#include <utility>
+#include <vector>
+
 #include "dbCore.h"
 #include "dbHashTable.h"
-#include "dbMatrix.h"
-#include "dbTypes.h"
 #include "dbVector.h"
-#include "odb.h"
+#include "odb/dbMatrix.h"
+#include "odb/dbTypes.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbTechLayerCutClassRule;
-template <class T>
-class dbTable;
 class _dbTechLayerSpacingEolRule;
 class _dbTechLayerCutSpacingRule;
 class _dbTechLayerMinStepRule;
@@ -59,12 +30,14 @@ class _dbTechLayerCutEnclosureRule;
 class _dbTechLayerEolExtensionRule;
 class _dbTechLayerArraySpacingRule;
 class _dbTechLayerEolKeepOutRule;
+class _dbTechLayerMaxSpacingRule;
 class _dbTechLayerWidthTableRule;
 class _dbTechLayerMinCutRule;
 class _dbTechLayerAreaRule;
 class _dbTechLayerForbiddenSpacingRule;
 class _dbTechLayerKeepOutZoneRule;
 class _dbTechLayerWrongDirSpacingRule;
+class _dbTechLayerTwoWiresForbiddenSpcRule;
 // User Code Begin Classes
 class _dbTechLayerSpacingRule;
 class _dbTechMinCutRule;
@@ -80,13 +53,13 @@ struct dbTechLayerFlags
   dbTechLayerType::Value type_ : 4;
   dbTechLayerDir::Value direction_ : 4;
   dbTechLayerMinStepType::Value minstep_type_ : 2;
-  uint has_max_width_ : 1;
-  uint has_thickness_ : 1;
-  uint has_area_ : 1;
-  uint has_protrusion_ : 1;
-  uint has_alias_ : 1;
-  uint has_xy_pitch_ : 1;
-  uint has_xy_offset_ : 1;
+  bool has_max_width_ : 1;
+  bool has_thickness_ : 1;
+  bool has_area_ : 1;
+  bool has_protrusion_ : 1;
+  bool has_alias_ : 1;
+  bool has_xy_pitch_ : 1;
+  bool has_xy_offset_ : 1;
   bool rect_only_ : 1;
   bool right_way_on_grid_only_ : 1;
   bool right_way_on_grid_only_check_mask_ : 1;
@@ -98,7 +71,6 @@ struct dbTechLayerFlags
 class _dbTechLayer : public _dbObject
 {
  public:
-  _dbTechLayer(_dbDatabase*, const _dbTechLayer& r);
   _dbTechLayer(_dbDatabase*);
 
   ~_dbTechLayer();
@@ -106,56 +78,40 @@ class _dbTechLayer : public _dbObject
   bool operator==(const _dbTechLayer& rhs) const;
   bool operator!=(const _dbTechLayer& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbTechLayer& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayer& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   uint getV55RowIdx(const int& rowVal) const;
   uint getV55ColIdx(const int& colVal) const;
-  uint getTwIdx(const int width, const int prl) const;
+  uint getTwIdx(int width, int prl) const;
   // User Code End Methods
 
   dbTechLayerFlags flags_;
   uint wrong_way_width_;
-
+  float layer_adjustment_;
+  std::vector<std::pair<int, int>> orth_spacing_tbl_;
   dbTable<_dbTechLayerCutClassRule>* cut_class_rules_tbl_;
   dbHashTable<_dbTechLayerCutClassRule> cut_class_rules_hash_;
-
   dbTable<_dbTechLayerSpacingEolRule>* spacing_eol_rules_tbl_;
-
   dbTable<_dbTechLayerCutSpacingRule>* cut_spacing_rules_tbl_;
-
   dbTable<_dbTechLayerMinStepRule>* minstep_rules_tbl_;
-
   dbTable<_dbTechLayerCornerSpacingRule>* corner_spacing_rules_tbl_;
-
   dbTable<_dbTechLayerSpacingTablePrlRule>* spacing_table_prl_rules_tbl_;
-
   dbTable<_dbTechLayerCutSpacingTableOrthRule>* cut_spacing_table_orth_tbl_;
-
   dbTable<_dbTechLayerCutSpacingTableDefRule>* cut_spacing_table_def_tbl_;
-
   dbTable<_dbTechLayerCutEnclosureRule>* cut_enc_rules_tbl_;
-
   dbTable<_dbTechLayerEolExtensionRule>* eol_ext_rules_tbl_;
-
   dbTable<_dbTechLayerArraySpacingRule>* array_spacing_rules_tbl_;
-
   dbTable<_dbTechLayerEolKeepOutRule>* eol_keep_out_rules_tbl_;
-
+  dbTable<_dbTechLayerMaxSpacingRule>* max_spacing_rules_tbl_;
   dbTable<_dbTechLayerWidthTableRule>* width_table_rules_tbl_;
-
   dbTable<_dbTechLayerMinCutRule>* min_cuts_rules_tbl_;
-
   dbTable<_dbTechLayerAreaRule>* area_rules_tbl_;
-
   dbTable<_dbTechLayerForbiddenSpacingRule>* forbidden_spacing_rules_tbl_;
-
   dbTable<_dbTechLayerKeepOutZoneRule>* keepout_zone_rules_tbl_;
-
   dbTable<_dbTechLayerWrongDirSpacingRule>* wrongdir_spacing_rules_tbl_;
+  dbTable<_dbTechLayerTwoWiresForbiddenSpcRule>*
+      two_wires_forbidden_spc_rules_tbl_;
 
   // User Code Begin Fields
 
@@ -192,9 +148,9 @@ class _dbTechLayer : public _dbObject
   dbId<_dbTechLayer> _lower;
   dbTable<_dbTechLayerSpacingRule>* _spacing_rules_tbl;
 
-  dbTable<_dbTechMinCutRule>* _min_cut_rules_tbl;
-  dbTable<_dbTechMinEncRule>* _min_enc_rules_tbl;
-  dbTable<_dbTechV55InfluenceEntry>* _v55inf_tbl;
+  dbTable<_dbTechMinCutRule, 8>* _min_cut_rules_tbl;
+  dbTable<_dbTechMinEncRule, 8>* _min_enc_rules_tbl;
+  dbTable<_dbTechV55InfluenceEntry, 8>* _v55inf_tbl;
   dbVector<uint> _v55sp_length_idx;
   dbVector<uint> _v55sp_width_idx;
   dbMatrix<uint> _v55sp_spacing;

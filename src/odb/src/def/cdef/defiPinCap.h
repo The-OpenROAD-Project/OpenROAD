@@ -33,7 +33,7 @@
 #ifndef CDEFIPINCAP_H
 #define CDEFIPINCAP_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

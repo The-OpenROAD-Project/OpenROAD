@@ -2,7 +2,8 @@
 
 set -euo pipefail
 
-cd "$(dirname $(readlink -f $0))/../"
+DIR="$(dirname $(readlink -f $0))"
+cd "$DIR/../"
 
 # default values, can be overwritten by cmdline args
 buildDir="build"
@@ -18,7 +19,9 @@ EOF
   numThreads=2
 fi
 cmakeOptions=""
+isNinja=no
 cleanBefore=no
+depsPrefixesFile=""
 keepLog=no
 compiler=gcc
 
@@ -30,7 +33,7 @@ OPTIONS:
   -cmake='-<key>=<value> [-<key>=<value> ...]'  User defined cmake options
                                                   Note: use single quote after
                                                   -cmake= and double quotes if
-                                                  <key> has muliple <values>
+                                                  <key> has multiple <values>
                                                   e.g.: -cmake='-DFLAGS="-a -b"'
   -compiler=COMPILER_NAME                       Compiler name: gcc or clang
                                                   Default: gcc
@@ -43,12 +46,21 @@ OPTIONS:
   -coverage                                     Enable cmake coverage options
   -clean                                        Remove build dir before compile
   -no-gui                                       Disable GUI support
+  -no-tests                                     Disable GTest
+  -ninja                                        Use Ninja build system
+  -cpp20                                        Use C++20 standard
+  -build-man                                    Build Man Pages (optional)
   -threads=NUM_THREADS                          Number of threads to use during
                                                   compile. Default: \`nproc\` on linux
                                                   or \`sysctl -n hw.logicalcpu\` on macOS
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
   -gpu                                          Enable GPU to accelerate the process
+  -deps-prefixes-file=FILE                      File with CMake packages roots,
+                                                  its content extends -cmake argument.
+                                                  By default, "openroad_deps_prefixes.txt"
+                                                  file from OpenROAD's "etc" directory
+                                                  or from system "/etc".
 
 EOF
     exit "${1:-1}"
@@ -71,6 +83,19 @@ while [ "$#" -gt 0 ]; do
             ;;
         -no-gui)
             cmakeOptions+=" -DBUILD_GUI=OFF"
+            ;;
+        -no-tests)
+            cmakeOptions+=" -DENABLE_TESTS=OFF"
+            ;;
+        -ninja)
+            cmakeOptions+=" -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja"
+            isNinja=yes
+            ;;
+        -cpp20)
+            cmakeOptions+=" -DCMAKE_CXX_STANDARD=20"
+            ;;
+        -build-man)
+            cmakeOptions+=" -DBUILD_MAN=ON"
             ;;
         -compiler=*)
             compiler="${1#*=}"
@@ -98,7 +123,15 @@ while [ "$#" -gt 0 ]; do
         -threads=* )
             numThreads="${1#*=}"
             ;;
-        -compiler | -cmake | -dir | -threads )
+        -deps-prefixes-file=*)
+            file="${1#-deps-prefixes-file=}"
+            if [[ ! -f "$file" ]]; then 
+                echo "${file} does not exist" >&2
+                _help
+            fi
+            depsPrefixesFile="$file"
+            ;;
+        -compiler | -cmake | -dir | -threads | -install | -deps-prefixes-file )
             echo "${1} requires an argument" >&2
             _help
             ;;
@@ -112,6 +145,20 @@ while [ "$#" -gt 0 ]; do
     esac
     shift 1
 done
+
+if [[ -z "$depsPrefixesFile" ]]; then
+    if [[ -f "$DIR/openroad_deps_prefixes.txt" ]]; then
+        depsPrefixesFile="$DIR/openroad_deps_prefixes.txt"
+    elif [[ -f "/etc/openroad_deps_prefixes.txt" ]]; then
+        depsPrefixesFile="/etc/openroad_deps_prefixes.txt"
+    fi
+fi
+if [[ -f "$depsPrefixesFile" ]]; then
+    cmakeOptions+=" $(cat "$depsPrefixesFile")"
+    echo "[INFO] Using additional CMake parameters from $depsPrefixesFile"
+else
+    echo "[INFO] Auto-generated prefix file does not exist - CMake will choose the dependencies automatically"
+fi
 
 case "${compiler}" in
     "gcc" )
@@ -160,5 +207,12 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     export CMAKE_PREFIX_PATH=$(brew --prefix or-tools)
 fi
 
+echo "[INFO] Using ${numThreads} threads."
+if [[ "$isNinja" == "yes" ]]; then
+    eval cmake "${cmakeOptions}" -B "${buildDir}" .
+    cd "${buildDir}"
+    CLICOLOR_FORCE=1 ninja build_and_test
+    exit 0
+fi
 eval cmake "${cmakeOptions}" -B "${buildDir}" .
 eval time cmake --build "${buildDir}" -j "${numThreads}"

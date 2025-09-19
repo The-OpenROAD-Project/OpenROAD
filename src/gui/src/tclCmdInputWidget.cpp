@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "tclCmdInputWidget.h"
 
@@ -37,7 +8,12 @@
 #include <QMimeData>
 #include <QScrollBar>
 #include <QTextStream>
+#include <functional>
+#include <memory>
 #include <regex>
+#include <set>
+#include <string>
+#include <utility>
 
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
@@ -86,20 +62,19 @@ TclCmdInputWidget::~TclCmdInputWidget()
   // restore old exit
   Tcl_DeleteCommand(interp_, "exit");
   std::string exit_rename
-      = fmt::format("rename {}exit exit", command_rename_prefix_);
+      = fmt::format("rename {}exit exit", kCommandRenamePrefix);
   Tcl_Eval(interp_, exit_rename.c_str());
 }
 
-void TclCmdInputWidget::setTclInterp(
-    Tcl_Interp* interp,
-    bool do_init_openroad,
-    const std::function<void(void)>& post_or_init)
+void TclCmdInputWidget::setTclInterp(Tcl_Interp* interp,
+                                     bool do_init_openroad,
+                                     const std::function<void()>& post_or_init)
 {
   interp_ = interp;
 
   // Overwrite exit to allow Qt to handle exit
   std::string exit_rename
-      = fmt::format("rename exit {}exit", command_rename_prefix_);
+      = fmt::format("rename exit {}exit", kCommandRenamePrefix);
   Tcl_Eval(interp_, exit_rename.c_str());
   Tcl_CreateCommand(
       interp_, "exit", TclCmdInputWidget::tclExitHandler, this, nullptr);
@@ -108,10 +83,10 @@ void TclCmdInputWidget::setTclInterp(
     // OpenRoad is not initialized
     emit commandAboutToExecute();
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-    const bool setup_tcl_result = ord::tclAppInit(interp_) == TCL_OK;
+    const int setup_tcl_result = ord::tclInit(interp_);
     post_or_init();
     processTclResult(setup_tcl_result);
-    emit commandFinishedExecuting(setup_tcl_result);
+    emit commandFinishedExecuting(setup_tcl_result == TCL_OK);
   } else {
     post_or_init();
   }
@@ -132,7 +107,8 @@ int TclCmdInputWidget::tclExitHandler(ClientData instance_data,
   // announces exit to Qt
   emit widget->exiting();
 
-  return TCL_OK;
+  Tcl_SetResult(interp, (char*) kExitString, TCL_STATIC);
+  return TCL_ERROR;
 }
 
 void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
@@ -184,10 +160,10 @@ void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
 
     bool show_popup = is_completer_shortcut;  // shortcut enabled it
     show_popup |= completion_prefix.length()
-                  >= completer_mimimum_length_;  // minimum length
-    show_popup |= is_argument;                   // is argument
-    show_popup |= is_variable;                   // is variable
-    show_popup |= is_swig;                       // is swig argument
+                  >= kCompleterMimimumLength;  // minimum length
+    show_popup |= is_argument;                 // is argument
+    show_popup |= is_variable;                 // is variable
+    show_popup |= is_swig;                     // is swig argument
     if (!show_popup) {
       completer_->popup()->hide();
     } else {
@@ -351,9 +327,9 @@ void TclCmdInputWidget::readSettings(QSettings* settings)
   CmdInputWidget::readSettings(settings);
 
   enable_highlighting_->setChecked(
-      settings->value(enable_highlighting_keyword_, true).toBool());
+      settings->value(kEnableHighlightingKeyword, true).toBool());
   enable_completion_->setChecked(
-      settings->value(enable_completion_keyword_, true).toBool());
+      settings->value(kEnableCompletionKeyword, true).toBool());
   settings->endGroup();
 }
 
@@ -362,10 +338,9 @@ void TclCmdInputWidget::writeSettings(QSettings* settings)
   settings->beginGroup(objectName());
   CmdInputWidget::writeSettings(settings);
 
-  settings->setValue(enable_highlighting_keyword_,
+  settings->setValue(kEnableHighlightingKeyword,
                      enable_highlighting_->isChecked());
-  settings->setValue(enable_completion_keyword_,
-                     enable_completion_->isChecked());
+  settings->setValue(kEnableCompletionKeyword, enable_completion_->isChecked());
   settings->endGroup();
 }
 
@@ -595,7 +570,7 @@ void TclCmdInputWidget::insertCompletion(const QString& text)
   setTextCursor(cursor);
 }
 
-const QString TclCmdInputWidget::wordUnderCursor()
+QString TclCmdInputWidget::wordUnderCursor()
 {
   // get line
   QTextCursor cursor = textCursor();
@@ -605,12 +580,11 @@ const QString TclCmdInputWidget::wordUnderCursor()
   const QString line = cursor.selectedText();
 
   int start_of_word
-      = line.lastIndexOf(*completer_start_of_command_.get(), cursor_position);
+      = line.lastIndexOf(*completer_start_of_command_, cursor_position);
   if (start_of_word == -1) {
     start_of_word = 0;
   }
-  int end_of_word
-      = line.indexOf(*completer_end_of_command_.get(), cursor_position);
+  int end_of_word = line.indexOf(*completer_end_of_command_, cursor_position);
   if (end_of_word == -1) {
     end_of_word = line.length();
   }
@@ -627,12 +601,12 @@ const swig_class* TclCmdInputWidget::swigBeforeCursor()
   const QString line = cursor.selectedText();
 
   int end_of_word
-      = line.lastIndexOf(*completer_end_of_command_.get(), cursor_position - 1);
+      = line.lastIndexOf(*completer_end_of_command_, cursor_position - 1);
   if (end_of_word == -1) {
     end_of_word = 0;
   }
   int start_of_word
-      = line.lastIndexOf(*completer_start_of_command_.get(), end_of_word);
+      = line.lastIndexOf(*completer_start_of_command_, end_of_word);
   if (start_of_word == -1) {
     start_of_word = 0;
   }
@@ -663,12 +637,12 @@ const swig_class* TclCmdInputWidget::swigBeforeCursor()
     variable_content = var_content;
   }
 
-  Tcl_CmdInfo infoPtr;
+  Tcl_CmdInfo info_ptr;
   // find command information
-  if (Tcl_GetCommandInfo(interp_, variable_content.c_str(), &infoPtr) != 0) {
-    if (infoPtr.isNativeObjectProc == 1) {
+  if (Tcl_GetCommandInfo(interp_, variable_content.c_str(), &info_ptr) != 0) {
+    if (info_ptr.isNativeObjectProc == 1) {
       // set to one if created by Tcl_CreateObjCommand()
-      swig_instance* inst = static_cast<swig_instance*>(infoPtr.objClientData);
+      swig_instance* inst = static_cast<swig_instance*>(info_ptr.objClientData);
       if (inst != nullptr && inst->classptr != nullptr) {
         // make sure cls is in the arguments
         if (swig_arguments_.count(inst->classptr) != 0) {
@@ -704,7 +678,7 @@ void TclCmdInputWidget::executeCommand(const QString& cmd,
 
   if (!silent) {
     // Show its output
-    processTclResult(is_ok);
+    processTclResult(return_code);
 
     if (is_ok) {
       // record the successful command to tcl history command
@@ -714,16 +688,35 @@ void TclCmdInputWidget::executeCommand(const QString& cmd,
   } else {
     if (!is_ok) {
       // Show output on error despite silent
-      processTclResult(is_ok);
+      processTclResult(return_code);
     }
   }
 
   emit commandFinishedExecuting(is_ok);
 }
 
-void TclCmdInputWidget::processTclResult(bool is_ok)
+void TclCmdInputWidget::processTclResult(const int tcl_result)
 {
+  const bool is_ok = (tcl_result == TCL_OK);
   emit addResultToOutput(Tcl_GetString(Tcl_GetObjResult(interp_)), is_ok);
+
+  if (!is_ok) {
+    // Tcl_GetReturnOptions returns an object with a ref count of 0.
+    // We DO NOT own it and MUST NOT decrement its ref count.
+    Tcl_Obj* options = Tcl_GetReturnOptions(interp_, tcl_result);
+
+    // Create a key to look up the stack trace in the options dictionary.
+    Tcl_Obj* key = Tcl_NewStringObj("-errorinfo", -1);  // refCount is now 1
+
+    // Look up the stack trace.
+    Tcl_Obj* stackTrace = nullptr;
+    if (Tcl_DictObjGet(nullptr, options, key, &stackTrace) == TCL_OK
+        && stackTrace) {
+      emit addTextToOutput(Tcl_GetString(stackTrace), Qt::red);
+    }
+
+    Tcl_DecrRefCount(key);
+  }
 }
 
 }  // namespace gui

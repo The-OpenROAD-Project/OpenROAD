@@ -1,47 +1,21 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbHier.h"
 
-#include "db.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbChip.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbHashTable.hpp"
 #include "dbInst.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 
@@ -49,36 +23,19 @@ template class dbTable<_dbHier>;
 
 bool _dbHier::operator==(const _dbHier& rhs) const
 {
-  if (_inst != rhs._inst)
+  if (_inst != rhs._inst) {
     return false;
+  }
 
-  if (_child_block != rhs._child_block)
+  if (_child_block != rhs._child_block) {
     return false;
+  }
 
-  if (_child_bterms != rhs._child_bterms)
+  if (_child_bterms != rhs._child_bterms) {
     return false;
+  }
 
   return true;
-}
-
-void _dbHier::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbHier& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_inst);
-  DIFF_FIELD(_child_block);
-  DIFF_VECTOR(_child_bterms);
-  DIFF_END
-}
-
-void _dbHier::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_inst);
-  DIFF_OUT_FIELD(_child_block);
-  DIFF_OUT_VECTOR(_child_bterms);
-  DIFF_END
 }
 
 _dbHier::_dbHier(_dbDatabase*)
@@ -123,8 +80,9 @@ _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
   dbSet<dbMTerm> mterms = ((dbMaster*) master)->getMTerms();
 
   // bterms do not map 1-to-1 to mterms.
-  if (mterms.size() != bterms.size())
+  if (mterms.size() != bterms.size()) {
     return nullptr;
+  }
 
   // initialize the hier structure
   _dbHier* hier = parent->_hier_tbl->create();
@@ -133,11 +91,8 @@ _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
   hier->_child_bterms.resize(child->_bterm_tbl->size());
 
   // create "down-hier" mapping to bterms
-  dbSet<dbBTerm>::iterator itr;
-
-  for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
-    _dbBTerm* bterm = (_dbBTerm*) *itr;
-    _dbMTerm* mterm = master->_mterm_hash.find(bterm->_name);
+  for (dbBTerm* bterm : bterms) {
+    _dbMTerm* mterm = master->_mterm_hash.find(bterm->getConstName());
 
     // bterms do not map 1-to-1 to mterms.
     if (mterm == nullptr) {
@@ -145,15 +100,15 @@ _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
       return nullptr;
     }
 
-    hier->_child_bterms[mterm->_order_id] = bterm->getOID();
+    hier->_child_bterms[mterm->_order_id] = bterm->getId();
   }
 
   // create "up-hier" mapping to iterms
-  for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
-    _dbBTerm* bterm = (_dbBTerm*) *itr;
-    _dbMTerm* mterm = master->_mterm_hash.find(bterm->_name);
-    bterm->_parent_block = parent->getOID();
-    bterm->_parent_iterm = inst->_iterms[mterm->_order_id];
+  for (dbBTerm* bterm : bterms) {
+    _dbBTerm* bterm_impl = (_dbBTerm*) bterm;
+    _dbMTerm* mterm = master->_mterm_hash.find(bterm_impl->_name);
+    bterm_impl->_parent_block = parent->getOID();
+    bterm_impl->_parent_iterm = inst->_iterms[mterm->_order_id];
   }
 
   // bind hier to inst
@@ -177,13 +132,10 @@ void _dbHier::destroy(_dbHier* hier)
   inst->_hierarchy = 0;
 
   // unbind child bterms from hier
-  dbSet<dbBTerm> bterms = ((dbBlock*) child)->getBTerms();
-  dbSet<dbBTerm>::iterator itr;
-
-  for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
-    _dbBTerm* bterm = (_dbBTerm*) *itr;
-    bterm->_parent_block = 0;
-    bterm->_parent_iterm = 0;
+  for (dbBTerm* bterm : ((dbBlock*) child)->getBTerms()) {
+    _dbBTerm* bterm_impl = (_dbBTerm*) bterm;
+    bterm_impl->_parent_block = 0;
+    bterm_impl->_parent_iterm = 0;
   }
 
   // unbind child block to inst
@@ -192,6 +144,14 @@ void _dbHier::destroy(_dbHier* hier)
 
   // destroy the hier object...
   parent->_hier_tbl->destroy(hier);
+}
+
+void _dbHier::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["child_bterms"].add(_child_bterms);
 }
 
 }  // namespace odb

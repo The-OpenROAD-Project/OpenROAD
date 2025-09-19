@@ -1,0 +1,126 @@
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
+-- Before --
+
+Cell type report:                       Count       Area
+  Buffer                                 1908    2138.64
+  Inverter                                225     139.92
+  Sequential cell                         530    2396.66
+  Multi-Input combinational cell        14095   17315.54
+  Total                                 16758   21990.75
+[-0.369, -0.296): ********************************************** (127)
+[-0.296, -0.223): ************************* (69)
+[-0.223, -0.150): ********************* (57)
+[-0.150, -0.076): ********************************************** (129)
+[-0.076, -0.003): * (2)
+[-0.003,  0.070):  (0)
+[ 0.070,  0.143): * (2)
+[ 0.143,  0.217): ************************************************** (139)
+[ 0.217,  0.290): * (4)
+[ 0.290,  0.363]: *********************************************** (130)
+Startpoint: _33243_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _33122_ (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ _33243_/CK (DFF_X1)
+   0.09    0.09 ^ _33243_/Q (DFF_X1)
+   0.03    0.12 ^ _29829_/Z (BUF_X2)
+   0.03    0.15 ^ _29921_/ZN (OR2_X1)
+   0.03    0.18 ^ _29922_/Z (BUF_X4)
+   0.02    0.20 v _29923_/ZN (NOR3_X2)
+   0.09    0.28 ^ _30031_/ZN (AOI222_X2)
+   0.04    0.33 v _30041_/ZN (OAI221_X1)
+   0.08    0.41 v _32345_/ZN (OR4_X2)
+   0.08    0.49 ^ _32346_/ZN (NOR4_X2)
+   0.05    0.54 v _32347_/ZN (NAND4_X2)
+   0.07    0.61 v _32588_/Z (XOR2_X2)
+   0.06    0.67 v _32661_/Z (XOR2_X1)
+   0.04    0.71 v _32662_/ZN (XNOR2_X1)
+   0.06    0.77 v _32663_/Z (MUX2_X1)
+   0.05    0.83 v _32664_/Z (XOR2_X1)
+   0.00    0.83 v _33122_/D (DFF_X1)
+           0.83   data arrival time
+
+   0.50    0.50   clock core_clock (rise edge)
+   0.00    0.50   clock network delay (ideal)
+   0.00    0.50   clock reconvergence pessimism
+           0.50 ^ _33122_/CK (DFF_X1)
+  -0.04    0.46   library setup time
+           0.46   data required time
+---------------------------------------------------------
+           0.46   data required time
+          -0.83   data arrival time
+---------------------------------------------------------
+          -0.37   slack (VIOLATED)
+
+
+wns max -0.37
+tns max -83.81
+-- After --
+
+[INFO RMP-0050] All candidate endpoints have positive slack, nothing to do.
+[-0.369, -0.296): ********************************************** (127)
+[-0.296, -0.223): ************************* (69)
+[-0.223, -0.150): ********************* (57)
+[-0.150, -0.076): ********************************************** (129)
+[-0.076, -0.003): * (2)
+[-0.003,  0.070):  (0)
+[ 0.070,  0.143): * (2)
+[ 0.143,  0.217): ************************************************** (139)
+[ 0.217,  0.290): * (4)
+[ 0.290,  0.363]: *********************************************** (130)
+Cell type report:                       Count       Area
+  Buffer                                 1908    2138.64
+  Inverter                                225     139.92
+  Sequential cell                         530    2396.66
+  Multi-Input combinational cell        14095   17315.54
+  Total                                 16758   21990.75
+Startpoint: _33243_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _33122_ (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ _33243_/CK (DFF_X1)
+   0.09    0.09 ^ _33243_/Q (DFF_X1)
+   0.03    0.12 ^ _29829_/Z (BUF_X2)
+   0.03    0.15 ^ _29921_/ZN (OR2_X1)
+   0.03    0.18 ^ _29922_/Z (BUF_X4)
+   0.02    0.20 v _29923_/ZN (NOR3_X2)
+   0.09    0.28 ^ _30031_/ZN (AOI222_X2)
+   0.04    0.33 v _30041_/ZN (OAI221_X1)
+   0.08    0.41 v _32345_/ZN (OR4_X2)
+   0.08    0.49 ^ _32346_/ZN (NOR4_X2)
+   0.05    0.54 v _32347_/ZN (NAND4_X2)
+   0.07    0.61 v _32588_/Z (XOR2_X2)
+   0.06    0.67 v _32661_/Z (XOR2_X1)
+   0.04    0.71 v _32662_/ZN (XNOR2_X1)
+   0.06    0.77 v _32663_/Z (MUX2_X1)
+   0.05    0.83 v _32664_/Z (XOR2_X1)
+   0.00    0.83 v _33122_/D (DFF_X1)
+           0.83   data arrival time
+
+   0.50    0.50   clock core_clock (rise edge)
+   0.00    0.50   clock network delay (ideal)
+   0.00    0.50   clock reconvergence pessimism
+           0.50 ^ _33122_/CK (DFF_X1)
+  -0.04    0.46   library setup time
+           0.46   data required time
+---------------------------------------------------------
+           0.46   data required time
+          -0.83   data arrival time
+---------------------------------------------------------
+          -0.37   slack (VIOLATED)
+
+
+wns max -0.37
+tns max -83.81

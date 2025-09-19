@@ -1,42 +1,20 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2022-2023, The Regents of the University of California,
-// Google LLC All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include "upf/upf.h"
 
+#include <cmath>
+#include <limits>
+#include <map>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "writer.h"
@@ -48,7 +26,7 @@ bool create_power_domain(utl::Logger* logger,
                          const std::string& name)
 {
   if (odb::dbPowerDomain::create(block, name.c_str()) == nullptr) {
-    logger->warn(utl::UPF, 1, "Creation of '%s' power domain failed", name);
+    logger->warn(utl::UPF, 1, "Creation of {} power domain failed", name);
     return false;
   }
 
@@ -64,12 +42,11 @@ bool update_power_domain(utl::Logger* logger,
   if (pd != nullptr) {
     pd->addElement(elements);
   } else {
-    logger->warn(
-        utl::UPF,
-        2,
-        "Couldn't retrieve power domain '%s' while adding element '%s'",
-        name,
-        elements);
+    logger->warn(utl::UPF,
+                 2,
+                 "Couldn't retrieve power domain {} while adding element {}",
+                 name,
+                 elements);
     return false;
   }
   return true;
@@ -81,7 +58,7 @@ bool create_logic_port(utl::Logger* logger,
                        const std::string& direction)
 {
   if (odb::dbLogicPort::create(block, name.c_str(), direction) == nullptr) {
-    logger->warn(utl::UPF, 3, "Creation of '%s' logic port failed", name);
+    logger->warn(utl::UPF, 3, "Creation of {} logic port failed", name);
     return false;
   }
   return true;
@@ -97,7 +74,7 @@ bool create_power_switch(utl::Logger* logger,
     logger->warn(
         utl::UPF,
         4,
-        "Couldn't retrieve power domain '%s' while creating power switch '%s'",
+        "Couldn't retrieve power domain {} while creating power switch {}",
         power_domain,
         name);
     return false;
@@ -105,7 +82,7 @@ bool create_power_switch(utl::Logger* logger,
 
   odb::dbPowerSwitch* ps = odb::dbPowerSwitch::create(block, name.c_str());
   if (ps == nullptr) {
-    logger->warn(utl::UPF, 5, "Creation of '%s' power switch failed", name);
+    logger->warn(utl::UPF, 5, "Creation of {} power switch failed", name);
     return false;
   }
 
@@ -125,7 +102,7 @@ bool update_power_switch_control(utl::Logger* logger,
     logger->warn(
         utl::UPF,
         6,
-        "Couldn't retrieve power switch '%s' while adding control port '%s'",
+        "Couldn't retrieve power switch {} while adding control port {}",
         name,
         control_port);
     return false;
@@ -146,8 +123,8 @@ bool update_power_switch_acknowledge(utl::Logger* logger,
   if (ps == nullptr) {
     logger->warn(utl::UPF,
                  61,
-                 "Couldn't retrieve power switch '%s' while adding acknowledge "
-                 "port '%s'",
+                 "Couldn't retrieve power switch {} while adding acknowledge "
+                 "port {}",
                  name,
                  port);
     return false;
@@ -166,12 +143,11 @@ bool update_power_switch_on(utl::Logger* logger,
 {
   odb::dbPowerSwitch* ps = block->findPowerSwitch(name.c_str());
   if (ps == nullptr) {
-    logger->warn(
-        utl::UPF,
-        7,
-        "Couldn't retrieve power switch '%s' while adding on state '%s'",
-        name,
-        on_state);
+    logger->warn(utl::UPF,
+                 7,
+                 "Couldn't retrieve power switch {} while adding on state {}",
+                 name,
+                 on_state);
     return false;
   }
   ps->addOnState(on_state, port_name, boolean);
@@ -186,12 +162,11 @@ bool update_power_switch_input(utl::Logger* logger,
 {
   odb::dbPowerSwitch* ps = block->findPowerSwitch(name.c_str());
   if (ps == nullptr) {
-    logger->warn(
-        utl::UPF,
-        8,
-        "Couldn't retrieve power switch '%s' while adding input port '%s'",
-        name,
-        in_port);
+    logger->warn(utl::UPF,
+                 8,
+                 "Couldn't retrieve power switch {} while adding input port {}",
+                 name,
+                 in_port);
     return false;
   }
   ps->addInSupplyPort(in_port, net);
@@ -209,7 +184,7 @@ bool update_power_switch_output(utl::Logger* logger,
     logger->warn(
         utl::UPF,
         9,
-        "Couldn't retrieve power switch '%s' while adding output port '%s'",
+        "Couldn't retrieve power switch {} while adding output port {}",
         name,
         out_port);
     return false;
@@ -227,7 +202,7 @@ bool update_power_switch_cell(utl::Logger* logger,
   if (ps == nullptr) {
     logger->warn(utl::UPF,
                  10,
-                 "Couldn't retrieve power switch '%s' while adding cell '%s'",
+                 "Couldn't retrieve power switch {} while adding cell {}",
                  name,
                  cell->getName().c_str());
     return false;
@@ -247,7 +222,7 @@ bool update_power_switch_port_map(utl::Logger* logger,
     logger->warn(
         utl::UPF,
         11,
-        "Couldn't retrieve power switch '%s' while updating port mapping",
+        "Couldn't retrieve power switch {} while updating port mapping",
         name);
     return false;
   }
@@ -270,8 +245,8 @@ bool set_isolation(utl::Logger* logger,
   if (pd == nullptr) {
     logger->warn(utl::UPF,
                  12,
-                 "Couldn't retrieve power domain '%s' while creating/updating "
-                 "isolation '%s'",
+                 "Couldn't retrieve power domain {} while creating/updating "
+                 "isolation {}",
                  power_domain,
                  name);
     return false;
@@ -280,7 +255,7 @@ bool set_isolation(utl::Logger* logger,
   odb::dbIsolation* iso = block->findIsolation(name.c_str());
   if (iso == nullptr && update) {
     logger->warn(
-        utl::UPF, 13, "Couldn't update a non existing isolation %s", name);
+        utl::UPF, 13, "Couldn't update a non existing isolation {}", name);
     return false;
   }
 
@@ -326,8 +301,8 @@ bool use_interface_cell(utl::Logger* logger,
   if (pd == nullptr) {
     logger->warn(utl::UPF,
                  14,
-                 "Couldn't retrieve power domain '%s' while updating "
-                 "isolation '%s'",
+                 "Couldn't retrieve power domain {} while updating "
+                 "isolation {}",
                  power_domain,
                  strategy);
     return false;
@@ -335,12 +310,11 @@ bool use_interface_cell(utl::Logger* logger,
 
   odb::dbIsolation* iso = block->findIsolation(strategy.c_str());
   if (iso == nullptr) {
-    logger->warn(utl::UPF, 15, "Couldn't find isolation %s", strategy);
+    logger->warn(utl::UPF, 15, "Couldn't find isolation {}", strategy);
     return false;
   }
 
-  std::string _cell(cell);
-  iso->addIsolationCell(_cell);
+  iso->addIsolationCell(cell);
 
   return true;
 }
@@ -348,21 +322,18 @@ bool use_interface_cell(utl::Logger* logger,
 bool set_domain_area(utl::Logger* logger,
                      odb::dbBlock* block,
                      const std::string& domain,
-                     float x1,
-                     float y1,
-                     float x2,
-                     float y2)
+                     const odb::Rect& area)
 {
   odb::dbPowerDomain* pd = block->findPowerDomain(domain.c_str());
   if (pd == nullptr) {
     logger->warn(utl::UPF,
                  16,
-                 "Couldn't retrieve power domain '%s' while updating its area ",
+                 "Couldn't retrieve power domain {} while updating its area ",
                  domain);
     return false;
   }
 
-  pd->setArea(x1, y1, x2, y2);
+  pd->setArea(area);
 
   return true;
 }
@@ -471,7 +442,7 @@ static bool associate_groups(
       } else {
         logger->error(utl::UPF,
                       19,
-                      "multiple power domain definitions for the same path %s",
+                      "multiple power domain definitions for the same path {}",
                       el.c_str());
       }
       if (el == ".") {
@@ -489,18 +460,19 @@ static bool associate_groups(
     auto region = odb::dbRegion::create(block, domain->getName());
     if (!region) {
       logger->warn(
-          utl::UPF, 20, "Creation of '%s' region failed", domain->getName());
+          utl::UPF, 20, "Creation of {} region failed", domain->getName());
       return false;
     }
     region->setRegionType(odb::dbRegionType::EXCLUSIVE);
     // Specifying region area
-    int x1, x2, y1, y2;
-    if (domain->getArea(x1, y1, x2, y2)) {
-      odb::dbBox::create(region, x1, y1, x2, y2);
+    odb::Rect area;
+    if (domain->getArea(area)) {
+      odb::dbBox::create(
+          region, area.xMin(), area.yMin(), area.xMax(), area.yMax());
     } else {
       logger->warn(utl::UPF,
                    21,
-                   "No area specified for '%s' power domain",
+                   "No area specified for {} power domain",
                    domain->getName());
     }
 
@@ -508,7 +480,7 @@ static bool associate_groups(
     if (!group) {
       logger->warn(utl::UPF,
                    22,
-                   "Creation of '%s' group failed, duplicate group exists.",
+                   "Creation of {} group failed, duplicate group exists.",
                    domain->getName());
       return false;
     }
@@ -524,10 +496,18 @@ static bool instantiate_logic_ports(utl::Logger* logger, odb::dbBlock* block)
   bool success = true;
   auto lps = block->getLogicPorts();
   for (auto&& port : lps) {
-    if (!odb::dbNet::create(block, port->getName())) {
+    auto net = odb::dbNet::create(block, port->getName());
+    if (!net) {
       logger->warn(utl::UPF,
                    23,
                    "Creation of '{}' dbNet from UPF Logic Port failed",
+                   port->getName());
+      success = false;
+    }
+    if (success && !odb::dbBTerm::create(net, port->getName())) {
+      logger->warn(utl::UPF,
+                   45,
+                   "Creation of '{}' dbBTerm from UPF Logic Port failed",
                    port->getName());
       success = false;
     }
@@ -562,8 +542,7 @@ static bool add_insts_to_group(
     if (mod == block->getTopModule()) {
       found = (module_to_domain.find(".") != module_to_domain.end());
     } else {
-      auto modInst = mod->getModInst();
-      path = modInst->getHierarchicalName();
+      path = mod->getModInst()->getHierarchicalName();
       found = (module_to_domain.find(path) != module_to_domain.end());
     }
 
@@ -595,13 +574,13 @@ static bool find_smallest_inverter(sta::dbNetwork* network,
   for (auto&& lib : libs) {
     auto masters = lib->getMasters();
     for (auto&& master : masters) {
-      auto master_cell_ = network->dbToSta(master);
-      auto libcell_ = network->libertyCell(master_cell_);
+      auto master_cell = network->dbToSta(master);
+      auto lib_cell = network->libertyCell(master_cell);
 
-      if (libcell_ && libcell_->isInverter()
-          && libcell_->area() < smallest_area) {
-        smallest_area = libcell_->area();
-        smallest_inverter = libcell_;
+      if (lib_cell && lib_cell->isInverter()
+          && lib_cell->area() < smallest_area) {
+        smallest_area = lib_cell->area();
+        smallest_inverter = lib_cell;
         smallest_inverter->bufferPorts(inverter_input, inverter_output);
         inverter_m = network->staToDb(smallest_inverter);
         input_m = network->staToDb(inverter_input);
@@ -617,6 +596,7 @@ static bool find_smallest_inverter(sta::dbNetwork* network,
 static bool find_smallest_isolation(sta::dbNetwork* network,
                                     utl::Logger* logger,
                                     odb::dbIsolation* iso,
+                                    odb::dbMaster* inverter_m,
                                     odb::dbMaster*& smallest_iso_m,
                                     odb::dbMTerm*& enable_term,
                                     odb::dbMTerm*& data_term,
@@ -631,82 +611,106 @@ static bool find_smallest_isolation(sta::dbNetwork* network,
   if (iso_cells.empty()) {
     logger->warn(utl::UPF,
                  24,
-                 "Isolation %s defined, but no cells defined.",
+                 "Isolation {} defined, but no cells defined.",
                  iso->getName());
     return false;
   }
 
-  // For now using the first defined isolaton cell
-
-  sta::LibertyCell* smallest_iso_l = nullptr;
+  // Search for the most appropriate isolation cell
   float smallest_area = std::numeric_limits<float>::max();
+  float inverter_area = 0;
+  if (inverter_m) {
+    inverter_area = inverter_m->getArea();
+  }
 
-  for (auto&& iso : iso_cells) {
-    sta::Cell* masterCell = network->dbToSta(iso);
-    sta::LibertyCell* libertyCell = network->libertyCell(masterCell);
+  for (auto&& iso_cell : iso_cells) {
+    sta::Cell* master_cell = network->dbToSta(iso_cell);
+    sta::LibertyCell* liberty_cell = network->libertyCell(master_cell);
 
-    if (libertyCell->area() < smallest_area) {
-      smallest_iso_l = libertyCell;
-      smallest_iso_m = iso;
-      smallest_area = libertyCell->area();
+    // Find enable & data pins for the isolation cell
+    sta::LibertyPort* tmp_enable_lib_port = nullptr;
+    sta::LibertyPort* tmp_out_lib_port = nullptr;
+    odb::dbMTerm* tmp_enable_term = nullptr;
+    odb::dbMTerm* tmp_data_term = nullptr;
+    odb::dbMTerm* tmp_output_term = nullptr;
+
+    for (auto&& term : iso_cell->getMTerms()) {
+      sta::LibertyPort* lib_port
+          = liberty_cell->findLibertyPort(term->getName().c_str());
+
+      if (!lib_port) {
+        continue;
+      }
+
+      if (lib_port->isolationCellData()) {
+        tmp_data_term = term;
+      }
+
+      if (lib_port->isolationCellEnable()) {
+        tmp_enable_term = term;
+        tmp_enable_lib_port = lib_port;
+      }
+
+      if (term->getIoType() == odb::dbIoType::OUTPUT) {
+        tmp_output_term = term;
+        tmp_out_lib_port = lib_port;
+      }
     }
-  }
 
-  if (smallest_iso_m == nullptr) {
-    logger->warn(utl::UPF,
-                 25,
-                 "Isolation %s cells defined, but can't find any in the lib.",
-                 iso->getName());
-    return false;
-  }
-
-  auto cell_terms = smallest_iso_m->getMTerms();
-
-  // Find enable & data pins for the isolation cell
-  sta::LibertyPort* out_lib_port = nullptr;
-  sta::LibertyPort* enable_lib_port = nullptr;
-  for (auto&& term : cell_terms) {
-    sta::LibertyPort* lib_port
-        = smallest_iso_l->findLibertyPort(term->getName().c_str());
-
-    if (!lib_port) {
+    if (!tmp_output_term || !tmp_data_term || !tmp_enable_term) {
+      // Isolation cell defined, but can't find one of output, data or enable
+      // terms.
       continue;
     }
 
-    if (lib_port->isolationCellData()) {
-      data_term = term;
+    // Determine if an inverter is needed for the control pin & output
+    bool tmp_invert_output = false;
+    bool tmp_invert_control = false;
+    bool matched = check_isolation_match(tmp_out_lib_port->function(),
+                                         tmp_enable_lib_port,
+                                         isolation_sense,
+                                         isolation_clamp_val,
+                                         logger,
+                                         tmp_invert_control,
+                                         tmp_invert_output);
+    if (!matched) {
+      continue;
     }
 
-    if (lib_port->isolationCellEnable()) {
-      enable_term = term;
-      enable_lib_port = lib_port;
+    // Update the smallest_area
+    float tmp_area = liberty_cell->area();
+    if (tmp_invert_control || tmp_invert_output) {
+      if (!inverter_m) {
+        continue;
+      }
+
+      if (tmp_invert_control) {
+        tmp_area += inverter_area;
+      }
+      if (tmp_invert_output) {
+        tmp_area += inverter_area;
+      }
     }
 
-    if (term->getIoType() == odb::dbIoType::OUTPUT) {
-      output_term = term;
-      out_lib_port = lib_port;
+    if (tmp_area < smallest_area) {
+      smallest_area = tmp_area;
+      smallest_iso_m = iso_cell;
+      enable_term = tmp_enable_term;
+      data_term = tmp_data_term;
+      output_term = tmp_output_term;
+      invert_control = tmp_invert_control;
+      invert_output = tmp_invert_output;
     }
   }
 
-  if (!output_term || !data_term || !enable_term || !out_lib_port) {
+  if (smallest_area == std::numeric_limits<float>::max()) {
     logger->warn(utl::UPF,
-                 26,
-                 "Isolation %s cells defined, but can't find one of output, "
-                 "data or enable terms.",
+                 25,
+                 "Isolation {} cells defined, but can't find any in the lib.",
                  iso->getName());
     return false;
   }
-
-  // Determine if an inverter is needed for the control pin & output
-  auto func = out_lib_port->function();
-
-  return check_isolation_match(func,
-                               enable_lib_port,
-                               isolation_sense,
-                               isolation_clamp_val,
-                               logger,
-                               invert_control,
-                               invert_output);
+  return true;
 }
 
 static bool insert_isolation_cell(odb::dbBlock* block,
@@ -757,6 +761,9 @@ static bool insert_isolation_cell(odb::dbBlock* block,
     inv_inst->getITerm(input_m)->connect(inverted_out_net);
     output_iterm->connect(inverted_out_net);
 
+    if (target_group) {
+      target_group->addInst(inv_inst);
+    }
   } else {
     output_iterm->connect(output_net);
   }
@@ -775,6 +782,9 @@ static bool insert_isolation_cell(odb::dbBlock* block,
     inv_inst->getITerm(output_m)->connect(inverted_control_net);
     enable_iterm->connect(inverted_control_net);
 
+    if (target_group) {
+      target_group->addInst(inv_inst);
+    }
   } else {
     enable_iterm->connect(control_net);
   }
@@ -863,7 +873,7 @@ static bool isolate_port(utl::Logger* logger,
     } else {
       logger->warn(utl::UPF,
                    28,
-                   "Isolation %s has location %s, but only self|parent|fanout"
+                   "Isolation {} has location {}, but only self|parent|fanout"
                    "supported, defaulting to self.",
                    iso->getName(),
                    iso->getLocation());
@@ -911,28 +921,28 @@ get_connected_terms(odb::dbBlock* block, odb::dbITerm* iterm)
     return external_iterms;
   }
 
-  auto connectedIterms = net->getITerms();
+  auto connected_iterms = net->getITerms();
 
-  if (connectedIterms.size() < 2) {
+  if (connected_iterms.size() < 2) {
     return external_iterms;
   }
 
-  for (auto&& connectedIterm : connectedIterms) {
-    if (connectedIterm == iterm) {
+  for (auto&& connected_iterm : connected_iterms) {
+    if (connected_iterm == iterm) {
       continue;
     }
 
-    auto connectedInst = connectedIterm->getInst();
-    // TODO: if connectedInst is isolation cell or level shifting cell
+    auto connected_inst = connected_iterm->getInst();
+    // TODO: if connected_inst is isolation cell or level shifting cell
     // then ignore it
 
-    if (connectedInst->getGroup() != iterm->getInst()->getGroup()) {
-      odb::dbPowerDomain* connectedDomain = nullptr;
-      if (connectedInst->getGroup()) {
-        connectedDomain
-            = block->findPowerDomain(connectedInst->getGroup()->getName());
+    if (connected_inst->getGroup() != iterm->getInst()->getGroup()) {
+      odb::dbPowerDomain* connected_domain = nullptr;
+      if (connected_inst->getGroup()) {
+        connected_domain
+            = block->findPowerDomain(connected_inst->getGroup()->getName());
       }
-      external_iterms.emplace_back(connectedIterm, connectedDomain);
+      external_iterms.emplace_back(connected_iterm, connected_domain);
     }
   }
 
@@ -948,27 +958,32 @@ static bool isolate_connection(odb::dbITerm* src_term,
 {
   odb::dbInst* src_inst = src_term->getInst();
 
+  auto isos = domain->getIsolations();
+  if (isos.empty()) {
+    return false;
+  }
+  if (isos.size() > 1) {
+    logger->warn(
+        utl::UPF,
+        30,
+        "Multiple isolation strategies defined for the same power domain {}.",
+        domain->getName());
+  }
+
+  odb::dbIsolation* iso = isos[0];
+  if (!iso->appliesTo(src_term->getIoType())) {
+    return false;
+  }
+
   // find the smallest possible inverter in advance
   odb::dbMaster* inverter_m = nullptr;
   odb::dbMTerm *input_m = nullptr, *output_m = nullptr;
   bool inverter_found
       = find_smallest_inverter(network, block, inverter_m, input_m, output_m);
 
-  auto isos = domain->getIsolations();
-
-  if (isos.empty()) {
-    return false;
+  if (!inverter_found) {
+    logger->warn(utl::UPF, 31, "can't find any inverters");
   }
-
-  if (isos.size() > 1) {
-    logger->warn(
-        utl::UPF,
-        30,
-        "Multiple isolation strategies defined for the same power domain %s.",
-        domain->getName());
-  }
-
-  odb::dbIsolation* iso = isos[0];
 
   odb::dbMTerm* enable_term = nullptr;
   odb::dbMTerm* data_term = nullptr;
@@ -979,17 +994,13 @@ static bool isolate_connection(odb::dbITerm* src_term,
   if (!find_smallest_isolation(network,
                                logger,
                                iso,
+                               inverter_m,
                                smallest_iso_m,
                                enable_term,
                                data_term,
                                output_term,
                                invert_output,
                                invert_control)) {
-    return false;
-  }
-
-  if ((invert_output || invert_control) && !inverter_found) {
-    logger->warn(utl::UPF, 31, "can't find any inverters");
     return false;
   }
 
@@ -1186,7 +1197,7 @@ static bool insert_level_shifter(utl::Logger* logger,
   } else {
     logger->warn(utl::UPF,
                  35,
-                 "Level Shifting strategy %s has location %s, but only "
+                 "Level Shifting strategy {} has location {}, but only "
                  "self|parent|fanout"
                  "supported, defaulting to self.",
                  shift->getName(),
@@ -1222,7 +1233,7 @@ static bool insert_level_shifter(utl::Logger* logger,
     logger->warn(
         utl::UPF,
         56,
-        "Level Shifting strategy %s has unknown io type, but only input|output"
+        "Level Shifting strategy {} has unknown io type, but only input|output"
         "supported.",
         shift->getName());
     return false;
@@ -1300,10 +1311,9 @@ bool eval_upf(sta::dbNetwork* network, utl::Logger* logger, odb::dbBlock* block)
             continue;
           }
 
-          // if iterm is output and both domains have same voltage then isolate
-          if (iterm->getIoType() == odb::dbIoType::OUTPUT
-              && (!target_domain
-                  || domain->getVoltage() == target_domain->getVoltage())) {
+          // if both domains have same voltage then isolate
+          if (!target_domain
+              || domain->getVoltage() == target_domain->getVoltage()) {
             isolate_connection(
                 iterm, target_iterm, domain, block, logger, network);
             continue;
@@ -1476,8 +1486,7 @@ bool add_level_shifter_element(utl::Logger* logger,
     return false;
   }
 
-  std::string _element(element);
-  ls->addElement(_element);
+  ls->addElement(element);
 
   return true;
 }

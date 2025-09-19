@@ -1,41 +1,17 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include "search.h"
 
-#include <tuple>
-#include <utility>
+#include <atomic>
+#include <mutex>
+#include <vector>
 
-#include "dbShape.h"
+#include "boost/geometry/geometry.hpp"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace gui {
 
@@ -80,6 +56,11 @@ void Search::inDbPostMoveInst(odb::dbInst* inst)
   }
 }
 
+void Search::inDbBPinCreate(odb::dbBPin* pin)
+{
+  clearShapes();
+}
+
 void Search::inDbBPinDestroy(odb::dbBPin* pin)
 {
   clearShapes();
@@ -121,6 +102,11 @@ void Search::inDbSWireRemoveSBox(odb::dbSBox* box)
 }
 
 void Search::inDbBlockageCreate(odb::dbBlockage* blockage)
+{
+  clearBlockages();
+}
+
+void Search::inDbBlockageDestroy(odb::dbBlockage* blockage)
 {
   clearBlockages();
 }
@@ -212,32 +198,32 @@ void Search::clear()
 
 void Search::clearShapes()
 {
-  announceModified(top_block_data_.shapes_init_);
+  announceModified(top_block_data_.shapes_init);
 }
 
 void Search::clearFills()
 {
-  announceModified(top_block_data_.fills_init_);
+  announceModified(top_block_data_.fills_init);
 }
 
 void Search::clearInsts()
 {
-  announceModified(top_block_data_.insts_init_);
+  announceModified(top_block_data_.insts_init);
 }
 
 void Search::clearBlockages()
 {
-  announceModified(top_block_data_.blockages_init_);
+  announceModified(top_block_data_.blockages_init);
 }
 
 void Search::clearObstructions()
 {
-  announceModified(top_block_data_.obstructions_init_);
+  announceModified(top_block_data_.obstructions_init);
 }
 
 void Search::clearRows()
 {
-  announceModified(top_block_data_.rows_init_);
+  announceModified(top_block_data_.rows_init);
 }
 
 Search::BlockData& Search::getData(odb::dbBlock* block)
@@ -248,28 +234,28 @@ Search::BlockData& Search::getData(odb::dbBlock* block)
 void Search::updateShapes(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  std::lock_guard<std::mutex> lock(data.shapes_init_mutex_);
-  if (data.shapes_init_) {
+  std::lock_guard<std::mutex> lock(data.shapes_init_mutex);
+  if (data.shapes_init) {
     return;  // already done by another thread
   }
 
-  data.box_shapes_.clear();
-  data.snet_via_shapes_.clear();
-  data.snet_shapes_.clear();
+  data.box_shapes.clear();
+  data.snet_via_shapes.clear();
+  data.snet_shapes.clear();
 
   LayerMap<std::vector<SNetValue<odb::dbNet*>>> snet_shapes;
-  LayerMap<std::vector<SNetSBoxValue<odb::dbNet*>>> snet_net_via_shapes;
+  LayerMap<std::vector<SNetDBoxValue<odb::dbNet*>>> snet_net_via_shapes;
   for (odb::dbNet* net : block->getNets()) {
     addSNet(net, snet_shapes, snet_net_via_shapes);
   }
   for (const auto& [layer, layer_shapes] : snet_shapes) {
-    data.snet_shapes_[layer] = RtreeSNetShapes<odb::dbNet*>(
-        layer_shapes.begin(), layer_shapes.end());
+    data.snet_shapes[layer] = RtreeSNetShapes<odb::dbNet*>(layer_shapes.begin(),
+                                                           layer_shapes.end());
   }
   snet_shapes.clear();
   for (const auto& [layer, layer_shapes] : snet_net_via_shapes) {
-    data.snet_via_shapes_[layer]
-        = RtreeSNetSBox<odb::dbNet*>(layer_shapes.begin(), layer_shapes.end());
+    data.snet_via_shapes[layer] = RtreeSNetDBoxShapes<odb::dbNet*>(
+        layer_shapes.begin(), layer_shapes.end());
   }
   snet_net_via_shapes.clear();
 
@@ -289,138 +275,127 @@ void Search::updateShapes(odb::dbBlock* block)
         if (!box) {
           continue;
         }
-        const Box bbox(Point(box->xMin(), box->yMin()),
-                       Point(box->xMax(), box->yMax()));
         odb::dbTechLayer* layer = box->getTechLayer();
-        net_shapes[layer].emplace_back(bbox, false, term->getNet());
+        net_shapes[layer].emplace_back(box->getBox(), BTERM, term->getNet());
       }
     }
   }
   for (const auto& [layer, layer_shapes] : net_shapes) {
-    data.box_shapes_[layer] = RtreeRoutingShapes<odb::dbNet*>(
+    data.box_shapes[layer] = RtreeRoutingShapes<odb::dbNet*>(
         layer_shapes.begin(), layer_shapes.end());
   }
 
-  data.shapes_init_ = true;
+  data.shapes_init = true;
 }
 
 void Search::updateFills(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  std::lock_guard<std::mutex> lock(data.fills_init_mutex_);
-  if (data.fills_init_) {
+  std::lock_guard<std::mutex> lock(data.fills_init_mutex);
+  if (data.fills_init) {
     return;  // already done by another thread
   }
 
-  data.fills_.clear();
+  data.fills.clear();
 
-  LayerMap<std::vector<BoxValue<odb::dbFill*>>> fills;
+  LayerMap<std::vector<odb::dbFill*>> fills;
   for (odb::dbFill* fill : block->getFills()) {
-    odb::Rect rect;
-    fill->getRect(rect);
-    fills[fill->getTechLayer()].emplace_back(convertRect(rect), fill);
+    fills[fill->getTechLayer()].push_back(fill);
   }
   for (const auto& [layer, layer_fill] : fills) {
-    data.fills_[layer]
-        = RtreeBox<odb::dbFill*>(layer_fill.begin(), layer_fill.end());
+    data.fills[layer] = RtreeFill(layer_fill.begin(), layer_fill.end());
   }
 
-  data.fills_init_ = true;
+  data.fills_init = true;
 }
 
 void Search::updateInsts(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  std::lock_guard<std::mutex> lock(data.insts_init_mutex_);
-  if (data.insts_init_) {
+  std::lock_guard<std::mutex> lock(data.insts_init_mutex);
+  if (data.insts_init) {
     return;  // already done by another thread
   }
 
-  data.insts_.clear();
+  data.insts.clear();
 
-  std::vector<BoxValue<odb::dbInst*>> insts;
+  std::vector<odb::dbInst*> insts;
   for (odb::dbInst* inst : block->getInsts()) {
     if (inst->isPlaced()) {
-      odb::dbBox* bbox = inst->getBBox();
-      const Point ll(bbox->xMin(), bbox->yMin());
-      const Point ur(bbox->xMax(), bbox->yMax());
-      const Box box(ll, ur);
-      insts.emplace_back(box, inst);
+      insts.push_back(inst);
     }
   }
-  data.insts_ = RtreeBox<odb::dbInst*>(insts.begin(), insts.end());
+  data.insts = RtreeDBox<odb::dbInst*>(insts.begin(), insts.end());
 
-  data.insts_init_ = true;
+  data.insts_init = true;
 }
 
 void Search::updateBlockages(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  std::lock_guard<std::mutex> lock(data.blockages_init_mutex_);
-  if (data.blockages_init_) {
+  std::lock_guard<std::mutex> lock(data.blockages_init_mutex);
+  if (data.blockages_init) {
     return;  // already done by another thread
   }
 
-  data.blockages_.clear();
+  data.blockages.clear();
 
-  std::vector<BoxValue<odb::dbBlockage*>> blockages;
+  std::vector<odb::dbBlockage*> blockages;
   for (odb::dbBlockage* blockage : block->getBlockages()) {
-    odb::dbBox* bbox = blockage->getBBox();
-    const Point ll(bbox->xMin(), bbox->yMin());
-    const Point ur(bbox->xMax(), bbox->yMax());
-    const Box box(ll, ur);
-    blockages.emplace_back(box, blockage);
+    if (blockage->isSystemReserved()) {
+      continue;
+    }
+    blockages.push_back(blockage);
   }
-  data.blockages_
-      = RtreeBox<odb::dbBlockage*>(blockages.begin(), blockages.end());
+  data.blockages
+      = RtreeDBox<odb::dbBlockage*>(blockages.begin(), blockages.end());
 
-  data.blockages_init_ = true;
+  data.blockages_init = true;
 }
 
 void Search::updateObstructions(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  std::lock_guard<std::mutex> lock(data.obstructions_init_mutex_);
-  if (data.obstructions_init_) {
+  std::lock_guard<std::mutex> lock(data.obstructions_init_mutex);
+  if (data.obstructions_init) {
     return;  // already done by another thread
   }
 
-  data.obstructions_.clear();
+  data.obstructions.clear();
 
-  LayerMap<std::vector<BoxValue<odb::dbObstruction*>>> obstructions;
+  LayerMap<std::vector<odb::dbObstruction*>> obstructions;
   for (odb::dbObstruction* obs : block->getObstructions()) {
+    if (obs->isSystemReserved()) {
+      continue;
+    }
     odb::dbBox* bbox = obs->getBBox();
-    const Point ll(bbox->xMin(), bbox->yMin());
-    const Point ur(bbox->xMax(), bbox->yMax());
-    const Box box(ll, ur);
-    obstructions[bbox->getTechLayer()].emplace_back(box, obs);
+    obstructions[bbox->getTechLayer()].push_back(obs);
   }
   for (const auto& [layer, layer_obs] : obstructions) {
-    data.obstructions_[layer]
-        = RtreeBox<odb::dbObstruction*>(layer_obs.begin(), layer_obs.end());
+    data.obstructions[layer]
+        = RtreeDBox<odb::dbObstruction*>(layer_obs.begin(), layer_obs.end());
   }
 
-  data.obstructions_init_ = true;
+  data.obstructions_init = true;
 }
 
 void Search::updateRows(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  std::lock_guard<std::mutex> lock(data.rows_init_mutex_);
-  if (data.rows_init_) {
+  std::lock_guard<std::mutex> lock(data.rows_init_mutex);
+  if (data.rows_init) {
     return;  // already done by another thread
   }
 
-  data.rows_.clear();
+  data.rows.clear();
 
-  std::vector<BoxValue<odb::dbRow*>> rows;
+  std::vector<RectValue<odb::dbRow*>> rows;
   for (odb::dbRow* row : block->getRows()) {
-    const odb::Rect bbox = row->getBBox();
-    rows.emplace_back(convertRect(bbox), row);
+    rows.emplace_back(row->getBBox(), row);
   }
-  data.rows_ = RtreeBox<odb::dbRow*>(rows.begin(), rows.end());
+  data.rows = RtreeRect<odb::dbRow*>(rows.begin(), rows.end());
 
-  data.rows_init_ = true;
+  data.rows_init = true;
 }
 
 void Search::addVia(
@@ -433,18 +408,16 @@ void Search::addVia(
   if (shape->getType() == odb::dbShape::TECH_VIA) {
     odb::dbTechVia* via = shape->getTechVia();
     for (odb::dbBox* box : via->getBoxes()) {
-      const Point ll(x + box->xMin(), y + box->yMin());
-      const Point ur(x + box->xMax(), y + box->yMax());
-      const Box bbox(ll, ur);
-      tree_shapes[box->getTechLayer()].emplace_back(bbox, true, net);
+      odb::Rect bbox = box->getBox();
+      bbox.moveDelta(x, y);
+      tree_shapes[box->getTechLayer()].emplace_back(bbox, VIA, net);
     }
   } else {
     odb::dbVia* via = shape->getVia();
     for (odb::dbBox* box : via->getBoxes()) {
-      const Point ll(x + box->xMin(), y + box->yMin());
-      const Point ur(x + box->xMax(), y + box->yMax());
-      const Box bbox(ll, ur);
-      tree_shapes[box->getTechLayer()].emplace_back(bbox, true, net);
+      odb::Rect bbox = box->getBox();
+      bbox.moveDelta(x, y);
+      tree_shapes[box->getTechLayer()].emplace_back(bbox, VIA, net);
     }
   }
 }
@@ -452,7 +425,7 @@ void Search::addVia(
 void Search::addSNet(
     odb::dbNet* net,
     LayerMap<std::vector<SNetValue<odb::dbNet*>>>& net_shapes,
-    LayerMap<std::vector<SNetSBoxValue<odb::dbNet*>>>& via_shapes)
+    LayerMap<std::vector<SNetDBoxValue<odb::dbNet*>>>& via_shapes)
 {
   for (odb::dbSWire* swire : net->getSWires()) {
     for (odb::dbSBox* box : swire->getWires()) {
@@ -464,22 +437,13 @@ void Search::addSNet(
           auto block_via = box->getBlockVia();
           layer = block_via->getBottomLayer()->getUpperLayer();
         }
-        via_shapes[layer].emplace_back(convertRect(box->getBox()), box, net);
+        via_shapes[layer].emplace_back(box, net);
       } else {
-        const Box bbox(Point(box->xMin(), box->yMin()),
-                       Point(box->xMax(), box->yMax()));
-        std::vector<odb::Point> points;
         if (box->getDirection() == odb::dbSBox::OCTILINEAR) {
-          points = box->getOct().getPoints();
+          net_shapes[box->getTechLayer()].emplace_back(box, box->getOct(), net);
         } else {
-          const odb::Rect rect = box->getBox();
-          points = rect.getPoints();
+          net_shapes[box->getTechLayer()].emplace_back(box, box->getBox(), net);
         }
-        Polygon poly;
-        for (const auto& point : points) {
-          bg::append(poly.outer(), Point(point.getX(), point.getY()));
-        }
-        net_shapes[box->getTechLayer()].emplace_back(bbox, poly, net);
       }
     }
   }
@@ -502,17 +466,9 @@ void Search::addNet(
     if (s.isVia()) {
       addVia(net, &s, itr._prev_x, itr._prev_y, tree_shapes);
     } else {
-      const Box box(Point(s.xMin(), s.yMin()), Point(s.xMax(), s.yMax()));
-      tree_shapes[s.getTechLayer()].emplace_back(box, false, net);
+      tree_shapes[s.getTechLayer()].emplace_back(s.getBox(), WIRE, net);
     }
   }
-}
-
-Search::Box Search::convertRect(const odb::Rect& box) const
-{
-  Point ll(box.xMin(), box.yMin());
-  Point ur(box.xMax(), box.yMax());
-  return Box(ll, ur);
 }
 
 template <typename T>
@@ -522,35 +478,66 @@ class Search::MinSizePredicate
   MinSizePredicate(int min_size) : min_size_(min_size) {}
   bool operator()(const SNetValue<T>& o) const
   {
-    return checkBox(std::get<0>(o));
+    return checkBox(std::get<0>(o)->getBox());
   }
 
-  bool operator()(const SNetSBoxValue<T>& o) const
-  {
-    return checkBox(std::get<0>(o));
-  }
-
-  bool operator()(const BoxValue<T>& o) const
-  {
-    return checkBox(std::get<0>(o));
-  }
+  bool operator()(const RectValue<T>& o) const { return checkBox(o.first); }
 
   bool operator()(const RouteBoxValue<T>& o) const
   {
     return checkBox(std::get<0>(o));
   }
 
-  bool checkBox(const Box& box) const
+  bool operator()(const SNetDBoxValue<T>& o) const
   {
-    const Point& ll = box.min_corner();
-    const Point& ur = box.max_corner();
-    int w = ur.x() - ll.x();
-    int h = ur.y() - ll.y();
-    return std::max(w, h) >= min_size_;
+    return checkBox(o.first->getBox());
+  }
+
+  bool operator()(odb::dbObstruction* o) const
+  {
+    return checkBox(o->getBBox()->getBox());
+  }
+
+  bool operator()(odb::dbFill* o) const
+  {
+    odb::Rect fill;
+    o->getRect(fill);
+    return checkBox(fill);
+  }
+
+  bool checkBox(const odb::Rect& box) const
+  {
+    return box.maxDXDY() >= min_size_;
   }
 
  private:
   int min_size_;
+};
+
+template <typename T>
+class Search::PolygonIntersectPredicate
+{
+ public:
+  PolygonIntersectPredicate(const odb::Rect& region) : region_(region) {}
+  bool operator()(const SNetValue<T>& o) const
+  {
+    return checkPolygon(std::get<1>(o));
+  }
+
+  bool operator()(const RectValue<T>& o) const { return checkPolygon(o.first); }
+
+  bool operator()(const RouteBoxValue<T>& o) const
+  {
+    return checkPolygon(std::get<0>(o));
+  }
+
+  bool checkPolygon(const odb::Polygon& poly) const
+  {
+    return boost::geometry::intersects(region_, poly);
+  }
+
+ private:
+  odb::Rect region_;
 };
 
 template <typename T>
@@ -568,18 +555,19 @@ class Search::MinHeightPredicate
     return checkBox(std::get<0>(o));
   }
 
-  bool operator()(const BoxValue<T>& o) const
+  bool operator()(const RectValue<T>& o) const { return checkBox(o.first); }
+
+  bool operator()(odb::dbInst* o) const
   {
-    return checkBox(std::get<0>(o));
+    return checkBox(o->getBBox()->getBox());
   }
 
-  bool checkBox(const Box& box) const
+  bool operator()(odb::dbBlockage* o) const
   {
-    const Point& ll = box.min_corner();
-    const Point& ur = box.max_corner();
-    int h = ur.y() - ll.y();
-    return h >= min_height_;
+    return checkBox(o->getBBox()->getBox());
   }
+
+  bool checkBox(const odb::Rect& box) const { return box.dy() >= min_height_; }
 
  private:
   int min_height_;
@@ -594,18 +582,18 @@ Search::RoutingRange Search::searchBoxShapes(odb::dbBlock* block,
                                              int min_size)
 {
   BlockData& data = getData(block);
-  if (!data.shapes_init_) {
+  if (!data.shapes_init) {
     updateShapes(block);
   }
 
-  auto it = data.box_shapes_.find(layer);
-  if (it == data.box_shapes_.end()) {
+  auto it = data.box_shapes.find(layer);
+  if (it == data.box_shapes.end()) {
     return RoutingRange();
   }
 
   auto& rtree = it->second;
 
-  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
   if (min_size > 0) {
     return RoutingRange(
         rtree.qbegin(
@@ -626,18 +614,18 @@ Search::SNetSBoxRange Search::searchSNetViaShapes(odb::dbBlock* block,
                                                   int min_size)
 {
   BlockData& data = getData(block);
-  if (!data.shapes_init_) {
+  if (!data.shapes_init) {
     updateShapes(block);
   }
 
-  auto it = data.snet_via_shapes_.find(layer);
-  if (it == data.snet_via_shapes_.end()) {
+  auto it = data.snet_via_shapes.find(layer);
+  if (it == data.snet_via_shapes.end()) {
     return SNetSBoxRange();
   }
 
   auto& rtree = it->second;
 
-  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
   if (min_size > 0) {
     return SNetSBoxRange(
         rtree.qbegin(
@@ -658,27 +646,32 @@ Search::SNetShapeRange Search::searchSNetShapes(odb::dbBlock* block,
                                                 int min_size)
 {
   BlockData& data = getData(block);
-  if (!data.shapes_init_) {
+  if (!data.shapes_init) {
     updateShapes(block);
   }
 
-  auto it = data.snet_shapes_.find(layer);
-  if (it == data.snet_shapes_.end()) {
+  auto it = data.snet_shapes.find(layer);
+  if (it == data.snet_shapes.end()) {
     return SNetShapeRange();
   }
 
   auto& rtree = it->second;
 
-  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
   if (min_size > 0) {
     return SNetShapeRange(
         rtree.qbegin(
             bgi::intersects(query)
-            && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size))),
+            && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size))
+            && bgi::satisfies(PolygonIntersectPredicate<odb::dbNet*>(query))),
         rtree.qend());
   }
 
-  return SNetShapeRange(rtree.qbegin(bgi::intersects(query)), rtree.qend());
+  return SNetShapeRange(
+      rtree.qbegin(
+          bgi::intersects(query)
+          && bgi::satisfies(PolygonIntersectPredicate<odb::dbNet*>(query))),
+      rtree.qend());
 }
 
 Search::FillRange Search::searchFills(odb::dbBlock* block,
@@ -690,17 +683,17 @@ Search::FillRange Search::searchFills(odb::dbBlock* block,
                                       int min_size)
 {
   BlockData& data = getData(block);
-  if (!data.fills_init_) {
+  if (!data.fills_init) {
     updateFills(block);
   }
 
-  auto it = data.fills_.find(layer);
-  if (it == data.fills_.end()) {
+  auto it = data.fills.find(layer);
+  if (it == data.fills.end()) {
     return FillRange();
   }
 
   auto& rtree = it->second;
-  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
   if (min_size > 0) {
     return FillRange(
         rtree.qbegin(
@@ -720,21 +713,21 @@ Search::InstRange Search::searchInsts(odb::dbBlock* block,
                                       int min_height)
 {
   BlockData& data = getData(block);
-  if (!data.insts_init_) {
+  if (!data.insts_init) {
     updateInsts(block);
   }
 
-  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
   if (min_height > 0) {
     return InstRange(
-        data.insts_.qbegin(
+        data.insts.qbegin(
             bgi::intersects(query)
             && bgi::satisfies(MinHeightPredicate<odb::dbInst*>(min_height))),
-        data.insts_.qend());
+        data.insts.qend());
   }
 
-  return InstRange(data.insts_.qbegin(bgi::intersects(query)),
-                   data.insts_.qend());
+  return InstRange(data.insts.qbegin(bgi::intersects(query)),
+                   data.insts.qend());
 }
 
 Search::BlockageRange Search::searchBlockages(odb::dbBlock* block,
@@ -745,22 +738,22 @@ Search::BlockageRange Search::searchBlockages(odb::dbBlock* block,
                                               int min_height)
 {
   BlockData& data = getData(block);
-  if (!data.blockages_init_) {
+  if (!data.blockages_init) {
     updateBlockages(block);
   }
 
-  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
   if (min_height > 0) {
     return BlockageRange(
-        data.blockages_.qbegin(
+        data.blockages.qbegin(
             bgi::intersects(query)
             && bgi::satisfies(
                 MinHeightPredicate<odb::dbBlockage*>(min_height))),
-        data.blockages_.qend());
+        data.blockages.qend());
   }
 
-  return BlockageRange(data.blockages_.qbegin(bgi::intersects(query)),
-                       data.blockages_.qend());
+  return BlockageRange(data.blockages.qbegin(bgi::intersects(query)),
+                       data.blockages.qend());
 }
 
 Search::ObstructionRange Search::searchObstructions(odb::dbBlock* block,
@@ -772,17 +765,17 @@ Search::ObstructionRange Search::searchObstructions(odb::dbBlock* block,
                                                     int min_size)
 {
   BlockData& data = getData(block);
-  if (!data.obstructions_init_) {
+  if (!data.obstructions_init) {
     updateObstructions(block);
   }
 
-  auto it = data.obstructions_.find(layer);
-  if (it == data.obstructions_.end()) {
+  auto it = data.obstructions.find(layer);
+  if (it == data.obstructions.end()) {
     return ObstructionRange();
   }
 
   auto& rtree = it->second;
-  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
   if (min_size > 0) {
     return ObstructionRange(
         rtree.qbegin(
@@ -802,20 +795,20 @@ Search::RowRange Search::searchRows(odb::dbBlock* block,
                                     int min_height)
 {
   BlockData& data = getData(block);
-  if (!data.rows_init_) {
+  if (!data.rows_init) {
     updateRows(block);
   }
 
-  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
   if (min_height > 0) {
     return RowRange(
-        data.rows_.qbegin(
+        data.rows.qbegin(
             bgi::intersects(query)
             && bgi::satisfies(MinHeightPredicate<odb::dbRow*>(min_height))),
-        data.rows_.qend());
+        data.rows.qend());
   }
 
-  return RowRange(data.rows_.qbegin(bgi::intersects(query)), data.rows_.qend());
+  return RowRange(data.rows.qbegin(bgi::intersects(query)), data.rows.qend());
 }
 
 }  // namespace gui

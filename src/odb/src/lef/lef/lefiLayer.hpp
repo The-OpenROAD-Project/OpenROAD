@@ -30,14 +30,14 @@
 #ifndef lefiLayer_h
 #define lefiLayer_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 #include "lefiMisc.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
-typedef enum lefiAntennaEnum
+enum lefiAntennaEnum
 {
   lefiAntennaAR,
   lefiAntennaDAR,
@@ -51,7 +51,7 @@ typedef enum lefiAntennaEnum
   lefiAntennaSAF,
   lefiAntennaO,
   lefiAntennaADR
-} lefiAntennaEnum;
+};
 
 class lefiAntennaPWL
 {
@@ -73,8 +73,8 @@ class lefiAntennaPWL
  protected:
   int numAlloc_;
   int numPWL_;
-  double* d_;
-  double* r_;
+  double* d_{nullptr};
+  double* r_{nullptr};
 };
 
 class lefiLayerDensity
@@ -570,7 +570,7 @@ class lefiLayer
   const char* propName(int index) const;
   const char* propValue(int index) const;
   double propNumber(int index) const;
-  const char propType(int index) const;
+  char propType(int index) const;
   int propIsNumber(int index) const;
   int propIsString(int index) const;
 
@@ -820,267 +820,266 @@ class lefiLayer
   void parseLayerWidthTable(int indxe);  // 5.8
 
  protected:
-  char* name_;
-  int nameSize_;
-  char* type_;
-  int typeSize_;
-  char* layerType_;  // 5.8 - POLYROUTING, MIMCAP, TSV, PASSIVATION, NWELL
+  char* name_{nullptr};
+  int nameSize_{0};
+  char* type_{nullptr};
+  int typeSize_{0};
+  // 5.8 - POLYROUTING, MIMCAP, TSV, PASSIVATION, NWELL
+  char* layerType_{nullptr};
 
-  int hasPitch_;
-  int hasMask_;  // 5.8 native
-  int hasOffset_;
-  int hasWidth_;
-  int hasArea_;
-  int hasSpacing_;
-  int hasDiagPitch_;                   // 5.6
-  int hasDiagWidth_;                   // 5.6
-  int hasDiagSpacing_;                 // 5.6
-  int* hasSpacingName_;                // 5.5
-  int* hasSpacingLayerStack_;          // 5.7
-  int* hasSpacingAdjacent_;            // 5.5
-  int* hasSpacingRange_;               // pcr 409334
-  int* hasSpacingUseLengthThreshold_;  // pcr 282799, due to mult. spacing allow
-  int* hasSpacingLengthThreshold_;     // pcr 409334
-  int* hasSpacingCenterToCenter_;      // 5.6
-  int* hasSpacingParallelOverlap_;     // 5.7
-  int* hasSpacingCutArea_;             // 5.7
-  int* hasSpacingEndOfLine_;           // 5.7
-  int* hasSpacingParellelEdge_;        // 5.7
-  int* hasSpacingTwoEdges_;            // 5.7
-  int* hasSpacingAdjacentExcept_;      // 5.7
-  int* hasSpacingSamenet_;             // 5.7
-  int* hasSpacingSamenetPGonly_;       // 5.7
-  int hasArraySpacing_;                // 5.7
-  int hasDirection_;
-  int hasResistance_;
-  int hasCapacitance_;
-  int hasHeight_;
-  int hasWireExtension_;
-  int hasThickness_;
-  int hasShrinkage_;
-  int hasCapMultiplier_;
-  int hasEdgeCap_;
-  int hasAntennaArea_;
-  int hasAntennaLength_;
-  int hasCurrentDensityPoint_;
+  int hasPitch_{0};
+  int hasMask_{0};  // 5.8 native
+  int hasOffset_{0};
+  int hasWidth_{0};
+  int hasArea_{0};
+  int hasSpacing_{0};
+  int hasDiagPitch_{0};                         // 5.6
+  int hasDiagWidth_{0};                         // 5.6
+  int hasDiagSpacing_{0};                       // 5.6
+  int* hasSpacingName_{nullptr};                // 5.5
+  int* hasSpacingLayerStack_{nullptr};          // 5.7
+  int* hasSpacingAdjacent_{nullptr};            // 5.5
+  int* hasSpacingRange_{nullptr};               // pcr 409334
+  int* hasSpacingUseLengthThreshold_{nullptr};  // due to mult. spacing allow
+  int* hasSpacingLengthThreshold_{nullptr};     // pcr 409334
+  int* hasSpacingCenterToCenter_{nullptr};      // 5.6
+  int* hasSpacingParallelOverlap_{nullptr};     // 5.7
+  int* hasSpacingCutArea_{nullptr};             // 5.7
+  int* hasSpacingEndOfLine_{nullptr};           // 5.7
+  int* hasSpacingParellelEdge_{nullptr};        // 5.7
+  int* hasSpacingTwoEdges_{nullptr};            // 5.7
+  int* hasSpacingAdjacentExcept_{nullptr};      // 5.7
+  int* hasSpacingSamenet_{nullptr};             // 5.7
+  int* hasSpacingSamenetPGonly_{nullptr};       // 5.7
+  int hasArraySpacing_{0};                      // 5.7
+  int hasDirection_{0};
+  int hasResistance_{0};
+  int hasCapacitance_{0};
+  int hasHeight_{0};
+  int hasWireExtension_{0};
+  int hasThickness_{0};
+  int hasShrinkage_{0};
+  int hasCapMultiplier_{0};
+  int hasEdgeCap_{0};
+  int hasAntennaArea_{0};
+  int hasAntennaLength_{0};
+  int hasCurrentDensityPoint_{0};
 
-  double currentDensity_;
-  double pitchX_;       // 5.6
-  double pitchY_;       // 5.6
-  double offsetX_;      // 5.6
-  double offsetY_;      // 5.6
-  double diagPitchX_;   // 5.6
-  double diagPitchY_;   // 5.6
-  double diagWidth_;    // 5.6
-  double diagSpacing_;  // 5.6
-  double width_;
-  double area_;
-  double wireExtension_;
-  int numSpacings_;
-  int spacingsAllocated_;
-  int maskNumber_;   // 5.8
-  double* spacing_;  // for Cut & routing Layer, spacing is multiple
-  char** spacingName_;
-  int* spacingAdjacentCuts_;       // 5.5
-  double* spacingAdjacentWithin_;  // 5.5
-  double* spacingCutArea_;         // 5.7
-  double* rangeMin_;        // pcr 282799 & 408930, due to mult spacing allow
-  double* rangeMax_;        // pcr 282799 & 408930, due to mult spacing allow
-  double* rangeInfluence_;  // pcr 282799 & 408930, due to mult spacing allow
-  double* rangeInfluenceRangeMin_;   // pcr 388183 & 408930
-  double* rangeInfluenceRangeMax_;   // pcr 388183 & 408930
-  double* rangeRangeMin_;            // pcr 408930
-  double* rangeRangeMax_;            // pcr 408930
-  double* lengthThreshold_;          // pcr 408930
-  double* lengthThresholdRangeMin_;  // pcr 408930
-  double* lengthThresholdRangeMax_;  // pcr 408930
+  double currentDensity_{0.0};
+  double pitchX_{0.0};       // 5.6
+  double pitchY_{0.0};       // 5.6
+  double offsetX_{0.0};      // 5.6
+  double offsetY_{0.0};      // 5.6
+  double diagPitchX_{0.0};   // 5.6
+  double diagPitchY_{0.0};   // 5.6
+  double diagWidth_{0.0};    // 5.6
+  double diagSpacing_{0.0};  // 5.6
+  double width_{0.0};
+  double area_{0.0};
+  double wireExtension_{0.0};
+  int numSpacings_{0};
+  int spacingsAllocated_{0};
+  int maskNumber_{0};         // 5.8
+  double* spacing_{nullptr};  // for Cut & routing Layer, spacing is multiple
+  char** spacingName_{nullptr};
+  int* spacingAdjacentCuts_{nullptr};       // 5.5
+  double* spacingAdjacentWithin_{nullptr};  // 5.5
+  double* spacingCutArea_{nullptr};         // 5.7
+  double* rangeMin_{nullptr};               // due to mult spacing allow
+  double* rangeMax_{nullptr};               // due to mult spacing allow
+  double* rangeInfluence_{nullptr};         // due to mult spacing allow
+  double* rangeInfluenceRangeMin_{nullptr};
+  double* rangeInfluenceRangeMax_{nullptr};
+  double* rangeRangeMin_{nullptr};
+  double* rangeRangeMax_{nullptr};
+  double* lengthThreshold_{nullptr};
+  double* lengthThresholdRangeMin_{nullptr};
+  double* lengthThresholdRangeMax_{nullptr};
 
   // 5.5
-  int numMinimumcut_;
-  int minimumcutAllocated_;
-  int* minimumcut_;           // pcr 409334
-  double* minimumcutWidth_;   // pcr 409334
-  int* hasMinimumcutWithin_;  // 5.7
-  double* minimumcutWithin_;  // 5.7
-  int* hasMinimumcutConnection_;
-  char** minimumcutConnection_;
-  int* hasMinimumcutNumCuts_;
-  double* minimumcutLength_;
-  double* minimumcutDistance_;
+  int numMinimumcut_{0};
+  int minimumcutAllocated_{0};
+  int* minimumcut_{nullptr};           // pcr 409334
+  double* minimumcutWidth_{nullptr};   // pcr 409334
+  int* hasMinimumcutWithin_{nullptr};  // 5.7
+  double* minimumcutWithin_{nullptr};  // 5.7
+  int* hasMinimumcutConnection_{nullptr};
+  char** minimumcutConnection_{nullptr};
+  int* hasMinimumcutNumCuts_{nullptr};
+  double* minimumcutLength_{nullptr};
+  double* minimumcutDistance_{nullptr};
 
-  double maxwidth_;               // 5.5
-  double minwidth_;               // 5.5
-  int numMinenclosedarea_;        // 5.5
-  int minenclosedareaAllocated_;  // 5.5
-  double* minenclosedarea_;       // 5.5
-  double* minenclosedareaWidth_;  // 5.5
-  double protrusionWidth1_;       // 5.5
-  double protrusionLength_;       // 5.5
-  double protrusionWidth2_;       // 5.5
+  double maxwidth_{0.0};                   // 5.5
+  double minwidth_{0.0};                   // 5.5
+  int numMinenclosedarea_{0};              // 5.5
+  int minenclosedareaAllocated_{0};        // 5.5
+  double* minenclosedarea_{nullptr};       // 5.5
+  double* minenclosedareaWidth_{nullptr};  // 5.5
+  double protrusionWidth1_{0.0};           // 5.5
+  double protrusionLength_{0.0};           // 5.5
+  double protrusionWidth2_{0.0};           // 5.5
 
-  int numMinstep_;       // 5.6
-  int numMinstepAlloc_;  // 5.6
-  double* minstep_;      // 5.6, switch to multiple
-  char** minstepType_;   // INSIDECORNER|OUTSIDECORNER|STEP
-  double* minstepLengthsum_;
-  int* minstepMaxEdges_;         // 5.7
-  double* minstepMinAdjLength_;  // 5.7
-  double* minstepMinBetLength_;  // 5.7
-  int* minstepXSameCorners_;     // 5.7
+  int numMinstep_{0};            // 5.6
+  int numMinstepAlloc_{0};       // 5.6
+  double* minstep_{nullptr};     // 5.6, switch to multiple
+  char** minstepType_{nullptr};  // INSIDECORNER|OUTSIDECORNER|STEP
+  double* minstepLengthsum_{nullptr};
+  int* minstepMaxEdges_{nullptr};         // 5.7
+  double* minstepMinAdjLength_{nullptr};  // 5.7
+  double* minstepMinBetLength_{nullptr};  // 5.7
+  int* minstepXSameCorners_{nullptr};     // 5.7
 
-  char* direction_;
-  double resistance_;
-  double capacitance_;
-  double height_;
-  double thickness_;
-  double shrinkage_;
-  double capMultiplier_;
-  double edgeCap_;
-  double antennaArea_;
-  double antennaLength_;
+  char* direction_{nullptr};
+  double resistance_{0.0};
+  double capacitance_{0.0};
+  double height_{0.0};
+  double thickness_{0.0};
+  double shrinkage_{0.0};
+  double capMultiplier_{0.0};
+  double edgeCap_{0.0};
+  double antennaArea_{0.0};
+  double antennaLength_{0.0};
 
-  int numCurrentPoints_;
-  int currentPointsAllocated_;
-  double* currentWidths_;
-  double* current_;
+  int numCurrentPoints_{0};
+  int currentPointsAllocated_{0};
+  double* currentWidths_{nullptr};
+  double* current_{nullptr};
 
-  int numCapacitancePoints_;
-  int capacitancePointsAllocated_;
-  double* capacitanceWidths_;
-  double* capacitances_;
+  int numCapacitancePoints_{0};
+  int capacitancePointsAllocated_{0};
+  double* capacitanceWidths_{nullptr};
+  double* capacitances_{nullptr};
 
-  int numResistancePoints_;
-  int resistancePointsAllocated_;
-  double* resistanceWidths_;
-  double* resistances_;
+  int numResistancePoints_{0};
+  int resistancePointsAllocated_{0};
+  double* resistanceWidths_{nullptr};
+  double* resistances_{nullptr};
 
-  int numProps_;
-  int propsAllocated_;
-  char** names_;
-  char** values_;
-  double* dvalues_;
-  char* types_;        // I: integer, R: real, S:string
-                       // Q: quotedstring
-  int numAccurrents_;  // number of ACCURRENTDENSITY
-  int accurrentAllocated_;
-  lefiLayerDensity** accurrents_;
-  int numDccurrents_;  // number of DCCURRENTDENSITY
-  int dccurrentAllocated_;
-  lefiLayerDensity** dccurrents_;
-  int numNums_;
-  int numAllocated_;
-  double* nums_;
+  int numProps_{0};
+  int propsAllocated_{0};
+  char** names_{nullptr};
+  char** values_{nullptr};
+  double* dvalues_{nullptr};
+  char* types_{nullptr};  // I: integer, R: real, S:string
+                          // Q: quotedstring
+  int numAccurrents_{0};  // number of ACCURRENTDENSITY
+  int accurrentAllocated_{0};
+  lefiLayerDensity** accurrents_{nullptr};
+  int numDccurrents_{0};  // number of DCCURRENTDENSITY
+  int dccurrentAllocated_{0};
+  lefiLayerDensity** dccurrents_{nullptr};
+  int numNums_{0};
+  int numAllocated_{0};
+  double* nums_{nullptr};
 
   // 3/23/2000 - Wanda da Rosa.  The following is for 5.4 ANTENNA.
   //             Either 5.4 or 5.3 are allowed, not both
-  int hasAntennaAreaRatio_;
-  int hasAntennaDiffAreaRatio_;
-  int hasAntennaDiffAreaRatioPWL_;
-  int hasAntennaCumAreaRatio_;
-  int hasAntennaCumDiffAreaRatio_;
-  int hasAntennaCumDiffAreaRatioPWL_;
-  int hasAntennaAreaFactor_;
-  int hasAntennaAreaFactorDUO_;
-  int hasAntennaSideAreaRatio_;
-  int hasAntennaDiffSideAreaRatio_;
-  int hasAntennaDiffSideAreaRatioPWL_;
-  int hasAntennaCumSideAreaRatio_;
-  int hasAntennaCumDiffSideAreaRatio_;
-  int hasAntennaCumDiffSideAreaRatioPWL_;
-  int hasAntennaSideAreaFactor_;
-  int hasAntennaSideAreaFactorDUO_;
+  int hasAntennaAreaRatio_{0};
+  int hasAntennaDiffAreaRatio_{0};
+  int hasAntennaDiffAreaRatioPWL_{0};
+  int hasAntennaCumAreaRatio_{0};
+  int hasAntennaCumDiffAreaRatio_{0};
+  int hasAntennaCumDiffAreaRatioPWL_{0};
+  int hasAntennaAreaFactor_{0};
+  int hasAntennaAreaFactorDUO_{0};
+  int hasAntennaSideAreaRatio_{0};
+  int hasAntennaDiffSideAreaRatio_{0};
+  int hasAntennaDiffSideAreaRatioPWL_{0};
+  int hasAntennaCumSideAreaRatio_{0};
+  int hasAntennaCumDiffSideAreaRatio_{0};
+  int hasAntennaCumDiffSideAreaRatioPWL_{0};
+  int hasAntennaSideAreaFactor_{0};
+  int hasAntennaSideAreaFactorDUO_{0};
 
   // 5.5 AntennaModel
-  lefiAntennaModel* currentAntennaModel_;
-  int numAntennaModel_;
-  int antennaModelAllocated_;
-  lefiAntennaModel** antennaModel_;
+  lefiAntennaModel* currentAntennaModel_{nullptr};
+  int numAntennaModel_{0};
+  int antennaModelAllocated_{0};
+  lefiAntennaModel** antennaModel_{nullptr};
 
   // 8/29/2001 - Wanda da Rosa.  The following is for 5.4 enhancements.
-  int hasSlotWireWidth_;
-  int hasSlotWireLength_;
-  int hasSlotWidth_;
-  int hasSlotLength_;
-  int hasMaxAdjacentSlotSpacing_;
-  int hasMaxCoaxialSlotSpacing_;
-  int hasMaxEdgeSlotSpacing_;
-  int hasSplitWireWidth_;
-  int hasMinimumDensity_;
-  int hasMaximumDensity_;
-  int hasDensityCheckWindow_;
-  int hasDensityCheckStep_;
-  int hasFillActiveSpacing_;
-  int hasTwoWidthPRL_;
+  int hasSlotWireWidth_{0};
+  int hasSlotWireLength_{0};
+  int hasSlotWidth_{0};
+  int hasSlotLength_{0};
+  int hasMaxAdjacentSlotSpacing_{0};
+  int hasMaxCoaxialSlotSpacing_{0};
+  int hasMaxEdgeSlotSpacing_{0};
+  int hasSplitWireWidth_{0};
+  int hasMinimumDensity_{0};
+  int hasMaximumDensity_{0};
+  int hasDensityCheckWindow_{0};
+  int hasDensityCheckStep_{0};
+  int hasFillActiveSpacing_{0};
+  int hasTwoWidthPRL_{0};
 
-  double slotWireWidth_;
-  double slotWireLength_;
-  double slotWidth_;
-  double slotLength_;
-  double maxAdjacentSlotSpacing_;
-  double maxCoaxialSlotSpacing_;
-  double maxEdgeSlotSpacing_;
-  double splitWireWidth_;
-  double minimumDensity_;
-  double maximumDensity_;
-  double densityCheckWindowLength_;
-  double densityCheckWindowWidth_;
-  double densityCheckStep_;
-  double fillActiveSpacing_;
+  double slotWireWidth_{0.0};
+  double slotWireLength_{0.0};
+  double slotWidth_{0.0};
+  double slotLength_{0.0};
+  double maxAdjacentSlotSpacing_{0.0};
+  double maxCoaxialSlotSpacing_{0.0};
+  double maxEdgeSlotSpacing_{0.0};
+  double splitWireWidth_{0.0};
+  double minimumDensity_{0.0};
+  double maximumDensity_{0.0};
+  double densityCheckWindowLength_{0.0};
+  double densityCheckWindowWidth_{0.0};
+  double densityCheckStep_{0.0};
+  double fillActiveSpacing_{0.0};
 
   // 5.5 SPACINGTABLE
-  int numSpacingTable_;
-  int spacingTableAllocated_;
-  lefiSpacingTable** spacingTable_;
+  int numSpacingTable_{0};
+  int spacingTableAllocated_{0};
+  lefiSpacingTable** spacingTable_{nullptr};
 
   // 5.6
-  int numEnclosure_;
-  int enclosureAllocated_;
-  char** enclosureRules_;
-  double* overhang1_;
-  double* overhang2_;
-  double* encminWidth_;
-  double* cutWithin_;
-  double* minLength_;
-  int numPreferEnclosure_;
-  int preferEnclosureAllocated_;
-  char** preferEnclosureRules_;
-  double* preferOverhang1_;
-  double* preferOverhang2_;
-  double* preferMinWidth_;
-  double resPerCut_;
-  double diagMinEdgeLength_;
-  int numMinSize_;
-  double* minSizeWidth_;
-  double* minSizeLength_;
+  int numEnclosure_{0};
+  int enclosureAllocated_{0};
+  char** enclosureRules_{nullptr};
+  double* overhang1_{nullptr};
+  double* overhang2_{nullptr};
+  double* encminWidth_{nullptr};
+  double* cutWithin_{nullptr};
+  double* minLength_{nullptr};
+  int numPreferEnclosure_{0};
+  int preferEnclosureAllocated_{0};
+  char** preferEnclosureRules_{nullptr};
+  double* preferOverhang1_{nullptr};
+  double* preferOverhang2_{nullptr};
+  double* preferMinWidth_{nullptr};
+  double resPerCut_{0.0};
+  double diagMinEdgeLength_{0.0};
+  int numMinSize_{0};
+  double* minSizeWidth_{nullptr};
+  double* minSizeLength_{nullptr};
 
   // 5.7
-  double* eolWidth_;
-  double* eolWithin_;
-  double* parSpace_;
-  double* parWithin_;
-  double maxArea_;
-  int hasLongArray_;
-  double viaWidth_;
-  double cutSpacing_;
-  int numArrayCuts_;
-  int arrayCutsAllocated_;
-  int* arrayCuts_;
-  double* arraySpacings_;
-  int hasSpacingTableOrtho_;
-  lefiOrthogonal* spacingTableOrtho_;
-  double* notchLength_;
-  double* endOfNotchWidth_;
-  double* minNotchSpacing_;
-  double* eonotchLength_;
+  double* eolWidth_{nullptr};
+  double* eolWithin_{nullptr};
+  double* parSpace_{nullptr};
+  double* parWithin_{nullptr};
+  double maxArea_{0.0};
+  int hasLongArray_{0};
+  double viaWidth_{0.0};
+  double cutSpacing_{0.0};
+  int numArrayCuts_{0};
+  int arrayCutsAllocated_{0};
+  int* arrayCuts_{nullptr};
+  double* arraySpacings_{nullptr};
+  int hasSpacingTableOrtho_{0};
+  lefiOrthogonal* spacingTableOrtho_{nullptr};
+  double* notchLength_{nullptr};
+  double* endOfNotchWidth_{nullptr};
+  double* minNotchSpacing_{nullptr};
+  double* eonotchLength_{nullptr};
 
-  int lef58WidthTableOrthoValues_;
-  int lef58WidthTableWrongDirValues_;
-  double* lef58WidthTableOrtho_;
-  double* lef58WidthTableWrongDir_;
+  int lef58WidthTableOrthoValues_{0};
+  int lef58WidthTableWrongDirValues_{0};
+  double* lef58WidthTableOrtho_{nullptr};
+  double* lef58WidthTableWrongDir_{nullptr};
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

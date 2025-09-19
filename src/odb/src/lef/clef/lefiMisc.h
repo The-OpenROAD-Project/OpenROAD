@@ -33,7 +33,7 @@
 #ifndef CLEFIMISC_H
 #define CLEFIMISC_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 

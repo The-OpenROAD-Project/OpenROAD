@@ -1,46 +1,22 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
-#include <boost/polygon/polygon.hpp>
+#include <cstdint>
+#include <map>
 #include <ostream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 
-#include "db.h"
-#include "dbObject.h"
-#include "odb.h"
+#include "boost/polygon/polygon.hpp"
+#include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -72,7 +48,7 @@ class lefout
   bool bloat_occupied_layers_;
 
   template <typename GenericBox>
-  void writeBoxes(dbSet<GenericBox>& boxes, const char* indent);
+  void writeBoxes(dbBlock* block, dbSet<GenericBox>& boxes, const char* indent);
 
   using ObstructionMap
       = std::map<dbTechLayer*, boost::polygon::polygon_90_set_data<int>>;
@@ -80,7 +56,7 @@ class lefout
   void writeTechBody(dbTech* tech);
   void writeLayer(dbTechLayer* layer);
   void writeVia(dbTechVia* via);
-  void writeBlockVia(dbVia* via);
+  void writeBlockVia(dbBlock* db_block, dbVia* via);
   void writeHeader(dbLib* lib);
   void writeHeader(dbBlock* db_block);
   void writeLibBody(dbLib* lib);
@@ -96,13 +72,14 @@ class lefout
   void writePropertyDefinition(dbProperty* prop);
   void writePropertyDefinitions(dbLib* lib);
   void writeVersion(const std::string& version);
-  void writeNameCaseSensitive(const dbOnOffType on_off_type);
-  void writeBusBitChars(char left_bus_delimeter, char right_bus_delimeter);
+  void writeNameCaseSensitive(dbOnOffType on_off_type);
+  void writeBusBitChars(char left_bus_delimiter, char right_bus_delimiter);
   void writeUnits(int database_units);
-  void writeDividerChar(char hier_delimeter);
+  void writeDividerChar(char hier_delimiter);
   void writeObstructions(dbBlock* db_block);
   void getObstructions(dbBlock* db_block, ObstructionMap& obstructions) const;
   void writeBox(const std::string& indent, dbBox* box);
+  void writePolygon(const std::string& indent, dbPolygon* polygon);
   void writeRect(const std::string& indent,
                  const boost::polygon::rectangle_data<int>& rect);
   void findInstsObstructions(ObstructionMap& obstructions,
@@ -129,9 +106,8 @@ class lefout
   void insertObstruction(dbBox* box, ObstructionMap& obstructions) const;
 
  public:
-  double lefdist(int value) { return ((double) value * _dist_factor); }
-
-  double lefarea(int value) { return ((double) value * _area_factor); }
+  double lefdist(int value) { return value * _dist_factor; }
+  double lefarea(int value) { return value * _area_factor; }
 
   lefout(utl::Logger* logger, std::ostream& out) : _out(out)
   {

@@ -33,7 +33,7 @@
 #ifndef CDEFISLOT_H
 #define CDEFISLOT_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 // dbSta, OpenSTA on OpenDB
 
@@ -44,31 +12,88 @@
 #include <tcl.h>
 
 #include <algorithm>  // min
+#include <cctype>
+#include <cmath>
+#include <cstdarg>
+#include <cstddef>
+#include <cstdint>
+#include <fstream>
+#include <map>
+#include <memory>
 #include <mutex>
+#include <regex>
+#include <set>
+#include <string>
+#include <vector>
 
-#include "AbstractPathRenderer.h"
-#include "AbstractPowerDensityDataSource.h"
+#include "boost/json.hpp"
+#include "boost/json/src.hpp"
 #include "dbSdcNetwork.hh"
-#include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
-#include "sta/Bfs.hh"
+#include "odb/dbTypes.h"
 #include "sta/Clock.hh"
+#include "sta/Delay.hh"
 #include "sta/EquivCells.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/PathRef.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/PatternMatch.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
-#include "sta/Search.hh"
 #include "sta/StaMain.hh"
+#include "sta/Units.hh"
 #include "utl/Logger.h"
+#include "utl/histogram.h"
 
 ////////////////////////////////////////////////////////////////
 
 namespace sta {
+
+dbSta* makeDbSta()
+{
+  return new dbSta;
+}
+
+namespace {
+// Holds the usage information of a specific cell which includes (i) name of
+// the cell, (ii) number of instances of the cell, and (iii) area of the cell
+// in microns^2.
+struct CellUsageInfo
+{
+  std::string name;
+  int count = 0;
+  double area = 0.0;
+};
+
+// Holds a snapshot of cell usage information at a given stage.
+struct CellUsageSnapshot
+{
+  std::string stage;
+  std::vector<CellUsageInfo> cells_usage_info;
+};
+
+void tag_invoke(boost::json::value_from_tag,
+                boost::json::value& json_value,
+                CellUsageInfo const& cell_usage_info)
+{
+  json_value = {{"name", cell_usage_info.name},
+                {"count", cell_usage_info.count},
+                {"area", cell_usage_info.area}};
+}
+
+void tag_invoke(boost::json::value_from_tag,
+                boost::json::value& json_value,
+                CellUsageSnapshot const& cell_usage_snapshot)
+{
+  json_value
+      = {{"stage", cell_usage_snapshot.stage},
+         {"cell_usage_info",
+          boost::json::value_from(cell_usage_snapshot.cells_usage_info)}};
+}
+}  // namespace
 
 using utl::Logger;
 using utl::STA;
@@ -76,7 +101,7 @@ using utl::STA;
 class dbStaReport : public sta::ReportTcl
 {
  public:
-  explicit dbStaReport(bool gui_is_on) : gui_is_on_(gui_is_on) {}
+  explicit dbStaReport() = default;
 
   void setLogger(Logger* logger);
   void warn(int id, const char* fmt, ...) override
@@ -109,15 +134,19 @@ class dbStaReport : public sta::ReportTcl
       __attribute__((format(printf, 3, 4)));
   size_t printString(const char* buffer, size_t length) override;
 
+  // Redirect output to filename until redirectFileEnd is called.
+  void redirectFileBegin(const char* filename) override;
+  // Redirect append output to filename until redirectFileEnd is called.
+  void redirectFileAppendBegin(const char* filename) override;
+  void redirectFileEnd() override;
+  // Redirect output to a string until redirectStringEnd is called.
+  void redirectStringBegin() override;
+  const char* redirectStringEnd() override;
+
  protected:
   void printLine(const char* line, size_t length) override;
 
   Logger* logger_ = nullptr;
-
- private:
-  // text buffer for tcl puts output when in GUI mode.
-  std::string tcl_buffer_;
-  bool gui_is_on_;
 };
 
 class dbStaCbk : public dbBlockCallBackObj
@@ -127,6 +156,8 @@ class dbStaCbk : public dbBlockCallBackObj
   void setNetwork(dbNetwork* network);
   void inDbInstCreate(dbInst* inst) override;
   void inDbInstDestroy(dbInst* inst) override;
+  void inDbModuleCreate(dbModule* module) override;
+  void inDbModuleDestroy(dbModule* module) override;
   void inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master) override;
   void inDbInstSwapMasterAfter(dbInst* inst) override;
   void inDbNetDestroy(dbNet* net) override;
@@ -138,12 +169,34 @@ class dbStaCbk : public dbBlockCallBackObj
   void inDbBTermCreate(dbBTerm*) override;
   void inDbBTermDestroy(dbBTerm* bterm) override;
   void inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type) override;
+  void inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type) override;
 
  private:
+  // for inDbInstSwapMasterBefore/inDbInstSwapMasterAfter
+  bool swap_master_arcs_equiv_ = false;
+
   dbSta* sta_;
   dbNetwork* network_ = nullptr;
   Logger* logger_;
 };
+
+////////////////////////////////////////////////////////////////
+
+void dbStaState::init(dbSta* sta)
+{
+  sta_ = sta;
+  copyState(sta);
+  sta->registerStaState(this);
+}
+
+dbStaState::~dbStaState()
+{
+  if (sta_) {
+    sta_->unregisterStaState(this);
+  }
+}
+
+////////////////////////////////////////////////////////////////
 
 dbSta::~dbSta() = default;
 
@@ -152,29 +205,39 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
                      utl::Logger* logger)
 {
   db_ = db;
+  db->addObserver(this);
   logger_ = logger;
   makeComponents();
-  setTclInterp(tcl_interp);
+  if (tcl_interp) {
+    setTclInterp(tcl_interp);
+  }
   db_report_->setLogger(logger);
   db_network_->init(db, logger);
-  db_cbk_ = new dbStaCbk(this, logger);
+  db_cbk_ = std::make_unique<dbStaCbk>(this, logger);
+  buffer_use_analyser_ = std::make_unique<BufferUseAnalyser>();
 }
 
-void dbSta::setPathRenderer(std::unique_ptr<AbstractPathRenderer> path_renderer)
+void dbSta::updateComponentsState()
 {
-  path_renderer_ = std::move(path_renderer);
+  Sta::updateComponentsState();
+  for (auto& state : sta_states_) {
+    state->copyState(this);
+  }
 }
 
-void dbSta::setPowerDensityDataSource(
-    std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source)
+void dbSta::registerStaState(dbStaState* state)
 {
-  power_density_data_source_ = std::move(power_density_data_source);
+  sta_states_.insert(state);
+}
+
+void dbSta::unregisterStaState(dbStaState* state)
+{
+  sta_states_.erase(state);
 }
 
 std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
 {
   auto clone = std::make_unique<dbSta>();
-  clone->makeComponents();
   clone->initVars(tclInterp(), db_, logger_);
   clone->getDbNetwork()->setBlock(block);
   clone->getDbNetwork()->setDefaultLibertyLibrary(
@@ -187,7 +250,7 @@ std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
 
 void dbSta::makeReport()
 {
-  db_report_ = new dbStaReport(/*gui_is_on=*/path_renderer_ != nullptr);
+  db_report_ = new dbStaReport();
   report_ = db_report_;
 }
 
@@ -245,9 +308,11 @@ std::set<dbNet*> dbSta::findClkNets()
     const PinSet* clk_pins = pins(clk);
     if (clk_pins) {
       for (const Pin* pin : *clk_pins) {
-        Net* net = network_->net(pin);
-        if (net) {
-          clk_nets.insert(db_network_->staToDb(net));
+        dbNet* db_net = nullptr;
+        sta::dbNetwork* db_network = getDbNetwork();
+        db_net = db_network->flatNet(pin);
+        if (db_net) {
+          clk_nets.insert(db_net);
         }
       }
     }
@@ -262,16 +327,28 @@ std::set<dbNet*> dbSta::findClkNets(const Clock* clk)
   const PinSet* clk_pins = pins(clk);
   if (clk_pins) {
     for (const Pin* pin : *clk_pins) {
-      Net* net = network_->net(pin);
-      if (net) {
-        clk_nets.insert(db_network_->staToDb(net));
+      dbNet* db_net = nullptr;
+      sta::dbNetwork* db_network = getDbNetwork();
+      // hierarchical fix
+      if (db_network->hasHierarchy()) {
+        db_net = db_network_->flatNet(pin);
+        if (db_net) {
+          clk_nets.insert(db_net);
+        }
+      }
+      // for backward compatibility with jpeg regression case.
+      else {
+        Net* net = network_->net(pin);
+        if (net) {
+          clk_nets.insert(db_network_->staToDb(net));
+        }
       }
     }
   }
   return clk_nets;
 }
 
-std::string dbSta::getInstanceTypeText(InstType type)
+std::string dbSta::getInstanceTypeText(InstType type) const
 {
   switch (type) {
     case BLOCK:
@@ -308,12 +385,18 @@ std::string dbSta::getInstanceTypeText(InstType type)
       return "Other";
     case STD_CELL:
       return "Standard cell";
-    case STD_BUFINV:
-      return "Buffer/inverter";
-    case STD_BUFINV_CLK_TREE:
-      return "Clock buffer/inverter";
-    case STD_BUFINV_TIMING_REPAIR:
-      return "Timing Repair Buffer/inverter";
+    case STD_BUF:
+      return "Buffer";
+    case STD_BUF_CLK_TREE:
+      return "Clock buffer";
+    case STD_BUF_TIMING_REPAIR:
+      return "Timing Repair Buffer";
+    case STD_INV:
+      return "Inverter";
+    case STD_INV_CLK_TREE:
+      return "Clock inverter";
+    case STD_INV_TIMING_REPAIR:
+      return "Timing Repair inverter";
     case STD_CLOCK_GATE:
       return "Clock gate cell";
     case STD_LEVEL_SHIFT:
@@ -401,7 +484,8 @@ dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
     return STD_OTHER;
   }
 
-  if (lib_cell->isInverter() || lib_cell->isBuffer()) {
+  const bool is_inverter = lib_cell->isInverter();
+  if (is_inverter || lib_cell->isBuffer()) {
     if (source_type == odb::dbSourceType::TIMING) {
       for (auto* iterm : inst->getITerms()) {
         // look through iterms and check for clock nets
@@ -410,12 +494,12 @@ dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
           continue;
         }
         if (net->getSigType() == odb::dbSigType::CLOCK) {
-          return STD_BUFINV_CLK_TREE;
+          return is_inverter ? STD_INV_CLK_TREE : STD_BUF_CLK_TREE;
         }
       }
-      return STD_BUFINV_TIMING_REPAIR;
+      return is_inverter ? STD_INV_TIMING_REPAIR : STD_BUF_TIMING_REPAIR;
     }
-    return STD_BUFINV;
+    return is_inverter ? STD_INV : STD_BUF;
   }
   if (lib_cell->isClockGate()) {
     return STD_CLOCK_GATE;
@@ -433,29 +517,206 @@ dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
   return STD_COMBINATIONAL;
 }
 
-std::map<dbSta::InstType, int> dbSta::countInstancesByType()
+void dbSta::addInstanceByTypeInstance(odb::dbInst* inst,
+                                      InstTypeMap& inst_type_stats)
 {
-  auto insts = db_->getChip()->getBlock()->getInsts();
-  std::map<InstType, int> inst_type_count;
-
-  for (auto inst : insts) {
-    InstType type = getInstanceType(inst);
-    inst_type_count[type] = inst_type_count[type] + 1;
-  }
-  return inst_type_count;
+  InstType type = getInstanceType(inst);
+  auto& stats = inst_type_stats[type];
+  stats.count++;
+  auto master = inst->getMaster();
+  stats.area += master->getArea();
 }
 
-void dbSta::report_cell_usage()
+void dbSta::countInstancesByType(odb::dbModule* module,
+                                 InstTypeMap& inst_type_stats,
+                                 std::vector<dbInst*>& insts)
 {
-  std::map<InstType, int> instances_types = countInstancesByType();
-  int total_usage = db_->getChip()->getBlock()->getInsts().size();
-
-  logger_->report("Cell usage report:");
-  for (auto [type, count] : instances_types) {
-    std::string type_name = getInstanceTypeText(type);
-    logger_->report("  {}s: {}", type_name, count);
+  for (auto inst : module->getLeafInsts()) {
+    addInstanceByTypeInstance(inst, inst_type_stats);
+    insts.push_back(inst);
   }
-  logger_->report("  Total: {}", total_usage);
+}
+
+void dbSta::countPhysicalOnlyInstancesByType(InstTypeMap& inst_type_stats,
+                                             std::vector<dbInst*>& insts)
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  for (auto inst : block->getInsts()) {
+    if (!inst->isPhysicalOnly()) {
+      continue;
+    }
+
+    addInstanceByTypeInstance(inst, inst_type_stats);
+    insts.push_back(inst);
+  }
+}
+
+std::string toLowerCase(std::string str)
+{
+  std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
+    return std::tolower(c);
+  });
+  return str;
+}
+
+void dbSta::reportCellUsage(odb::dbModule* module,
+                            const bool verbose,
+                            const char* file_name,
+                            const char* stage_name)
+{
+  InstTypeMap instances_types;
+  std::vector<dbInst*> insts;
+  countInstancesByType(module, instances_types, insts);
+  auto block = db_->getChip()->getBlock();
+  const double area_to_microns = std::pow(block->getDbUnitsPerMicron(), 2);
+
+  const char* header_format = "{:37} {:>7} {:>10}";
+  const char* format = "  {:35} {:>7} {:>10.2f}";
+  if (block->getTopModule() != module) {
+    logger_->report("Cell type report for {} ({})",
+                    module->getModInst()->getHierarchicalName(),
+                    module->getName());
+  } else {
+    countPhysicalOnlyInstancesByType(instances_types, insts);
+  }
+  logger_->report(header_format, "Cell type report:", "Count", "Area");
+
+  const std::regex regexp(" |/|-");
+  std::string metrics_suffix;
+  if (block->getTopModule() != module) {
+    metrics_suffix = fmt::format("__in_module:{}", module->getName());
+  }
+
+  int total_usage = 0;
+  int64_t total_area = 0;
+  for (auto [type, stats] : instances_types) {
+    total_usage += stats.count;
+  }
+
+  for (auto [type, stats] : instances_types) {
+    const std::string type_name = getInstanceTypeText(type);
+    logger_->report(
+        format, type_name, stats.count, stats.area / area_to_microns);
+    total_area += stats.area;
+
+    const std::string type_class
+        = toLowerCase(regex_replace(type_name, regexp, "_"));
+    const std::string metric_suffix = type_class + metrics_suffix;
+
+    logger_->metric("design__instance__count__class:" + metric_suffix,
+                    stats.count);
+    logger_->metric("design__instance__area__class:" + metric_suffix,
+                    stats.area / area_to_microns);
+  }
+  logger_->metric("design__instance__count" + metrics_suffix, total_usage);
+  logger_->metric("design__instance__area" + metrics_suffix,
+                  total_area / area_to_microns);
+  logger_->report(format, "Total", total_usage, total_area / area_to_microns);
+
+  if (verbose) {
+    logger_->report("\nCell instance report:");
+    std::map<dbMaster*, TypeStats> usage_count;
+    for (auto inst : insts) {
+      auto master = inst->getMaster();
+      auto& stats = usage_count[master];
+      stats.count++;
+      stats.area += master->getArea();
+    }
+    for (auto [master, stats] : usage_count) {
+      logger_->report(
+          format, master->getName(), stats.count, stats.area / area_to_microns);
+    }
+  }
+
+  std::string file(file_name);
+  if (!file.empty()) {
+    std::map<std::string, CellUsageInfo> name_to_cell_usage_info;
+    for (const dbInst* inst : insts) {
+      const std::string& cell_name = inst->getMaster()->getName();
+      auto [it, inserted] = name_to_cell_usage_info.insert(
+          {cell_name,
+           CellUsageInfo{
+               .name = cell_name,
+               .count = 1,
+               .area = inst->getMaster()->getArea() / area_to_microns,
+           }});
+      if (!inserted) {
+        it->second.count++;
+      }
+    }
+
+    CellUsageSnapshot cell_usage_snapshot{
+        .stage = std::string(stage_name),
+        .cells_usage_info = std::vector<CellUsageInfo>()};
+    cell_usage_snapshot.cells_usage_info.reserve(
+        name_to_cell_usage_info.size());
+    for (const auto& [cell_name, cell_usage_info] : name_to_cell_usage_info) {
+      cell_usage_snapshot.cells_usage_info.push_back(cell_usage_info);
+    }
+    boost::json::value output = boost::json::value_from(cell_usage_snapshot);
+
+    std::ofstream snapshot;
+    snapshot.open(file);
+    if (snapshot.fail()) {
+      logger_->error(STA, 1001, "Could not open snapshot file {}", file_name);
+    } else {
+      snapshot << output.as_object();
+      snapshot.close();
+    }
+  }
+}
+
+void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
+{
+  utl::Histogram<float> histogram(logger_);
+
+  sta::Unit* time_unit = sta_->units()->timeUnit();
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    float slack = sta_->vertexSlack(vertex, min_max);
+    if (slack != sta::INF) {  // Ignore unconstrained paths.
+      histogram.addData(time_unit->staToUser(slack));
+    }
+  }
+
+  histogram.generateBins(num_bins);
+  histogram.report(/*precision=*/3);
+}
+
+void dbSta::reportLogicDepthHistogram(int num_bins,
+                                      bool exclude_buffers,
+                                      bool exclude_inverters) const
+{
+  utl::Histogram<int> histogram(logger_);
+
+  sta_->worstSlack(MinMax::max());  // Update timing.
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    int path_length = 0;
+    Path* path = sta_->vertexWorstSlackPath(vertex, MinMax::max());
+    dbInst* prev_inst = nullptr;  // Used to count only unique OR instances.
+    while (path) {
+      Pin* pin = path->vertex(sta_)->pin();
+      Instance* sta_inst = sta_->cmdNetwork()->instance(pin);
+      dbInst* inst = db_network_->staToDb(sta_inst);
+      if (!network_->isTopLevelPort(pin) && inst != prev_inst) {
+        prev_inst = inst;
+        LibertyCell* lib_cell = db_network_->libertyCell(inst);
+        if (lib_cell && (!exclude_buffers || !lib_cell->isBuffer())
+            && (!exclude_inverters || !lib_cell->isInverter())) {
+          path_length++;
+        }
+      }
+      path = path->prevPath();
+    }
+    histogram.addData(path_length);
+  }
+
+  histogram.generateBins(num_bins);
+  histogram.report();
+}
+
+BufferUse dbSta::getBufferUse(sta::LibertyCell* buffer)
+{
+  return buffer_use_analyser_->getBufferUse(buffer);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -472,17 +733,10 @@ void dbSta::deleteInstance(Instance* inst)
 
 void dbSta::replaceCell(Instance* inst, Cell* to_cell, LibertyCell* to_lib_cell)
 {
+  // do not call `Sta::replaceCell` as sta's before/after hooks are called
+  // from db callbacks
   NetworkEdit* network = networkCmdEdit();
-  LibertyCell* from_lib_cell = network->libertyCell(inst);
-  if (sta::equivCells(from_lib_cell, to_lib_cell)) {
-    replaceEquivCellBefore(inst, to_lib_cell);
-    network->replaceCell(inst, to_cell);
-    replaceEquivCellAfter(inst);
-  } else {
-    replaceCellBefore(inst, to_lib_cell);
-    network->replaceCell(inst, to_cell);
-    replaceCellAfter(inst);
-  }
+  network->replaceCell(inst, to_cell);
 }
 
 void dbSta::deleteNet(Net* net)
@@ -519,69 +773,13 @@ void dbStaReport::setLogger(Logger* logger)
 // Line return \n is implicit.
 void dbStaReport::printLine(const char* line, size_t length)
 {
-  if (redirect_to_string_) {
-    redirectStringPrint(line, length);
-    redirectStringPrint("\n", 1);
-    return;
-  }
-  if (redirect_stream_) {
-    fwrite(line, sizeof(char), length, redirect_stream_);
-    fwrite("\n", sizeof(char), 1, redirect_stream_);
-    return;
-  }
-
   logger_->report("{}", line);
 }
 
 // Only used by encapsulated Tcl channels, ie puts and command prompt.
 size_t dbStaReport::printString(const char* buffer, size_t length)
 {
-  if (redirect_to_string_) {
-    redirectStringPrint(buffer, length);
-    return length;
-  }
-  if (redirect_stream_) {
-    size_t ret = fwrite(buffer, sizeof(char), length, redirect_stream_);
-    return std::min(ret, length);
-  }
-
-  // prepend saved buffer
-  string buf = tcl_buffer_ + string(buffer);
-  tcl_buffer_.clear();  // clear buffer
-
-  if (buffer[length - 1] != '\n') {
-    // does not end with a newline, so might need to buffer the information
-
-    auto last_newline = buf.find_last_of('\n');
-    if (last_newline == string::npos) {
-      // no newlines found, so add entire buf to tcl_buffer_
-      tcl_buffer_ = buf;
-      buf.clear();
-    } else {
-      // save partial line to buffer
-      tcl_buffer_ = buf.substr(last_newline + 1);
-      buf = buf.substr(0, last_newline + 1);
-    }
-  }
-
-  if (!buf.empty()) {
-    // Trim trailing \r\n.
-    buf.erase(buf.find_last_not_of("\r\n") + 1);
-    logger_->report("{}", buf.c_str());
-  }
-
-  // if gui enabled, keep tcl_buffer_ until a newline appears
-  // otherwise proceed to print directly to console
-  if (!gui_is_on_) {
-    // puts without a trailing \n in the string.
-    // Tcl command prompts get here.
-    // puts "xyz" makes a separate call for the '\n '.
-    // This seems to be the only way to get the output.
-    // It will not be logged.
-    printConsole(tcl_buffer_.c_str(), tcl_buffer_.length());
-    tcl_buffer_.clear();
-  }
-
+  logger_->reportLiteral(buffer);
   return length;
 }
 
@@ -674,6 +872,37 @@ void dbStaReport::critical(int id, const char* fmt, ...)
   va_end(args);
 }
 
+void dbStaReport::redirectFileBegin(const char* filename)
+{
+  flush();
+  logger_->redirectFileBegin(filename);
+}
+
+void dbStaReport::redirectFileAppendBegin(const char* filename)
+{
+  flush();
+  logger_->redirectFileAppendBegin(filename);
+}
+
+void dbStaReport::redirectFileEnd()
+{
+  flush();
+  logger_->redirectFileEnd();
+}
+
+void dbStaReport::redirectStringBegin()
+{
+  flush();
+  logger_->redirectStringBegin();
+}
+
+const char* dbStaReport::redirectStringEnd()
+{
+  flush();
+  const std::string string = logger_->redirectStringEnd();
+  return stringPrintTmp("%s", string.c_str());
+}
+
 ////////////////////////////////////////////////////////////////
 //
 // OpenDB callbacks to notify OpenSTA of network edits
@@ -701,25 +930,40 @@ void dbStaCbk::inDbInstDestroy(dbInst* inst)
   sta_->deleteLeafInstanceBefore(network_->dbToSta(inst));
 }
 
+void dbStaCbk::inDbModuleCreate(dbModule* module)
+{
+  network_->registerHierModule(network_->dbToSta(module));
+}
+
+void dbStaCbk::inDbModuleDestroy(dbModule* module)
+{
+  network_->unregisterHierModule(network_->dbToSta(module));
+}
+
 void dbStaCbk::inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master)
 {
   LibertyCell* to_lib_cell = network_->libertyCell(network_->dbToSta(master));
   LibertyCell* from_lib_cell = network_->libertyCell(inst);
   Instance* sta_inst = network_->dbToSta(inst);
-  if (sta::equivCells(from_lib_cell, to_lib_cell)) {
+
+  swap_master_arcs_equiv_ = sta::equivCellsArcs(from_lib_cell, to_lib_cell);
+
+  if (swap_master_arcs_equiv_) {
     sta_->replaceEquivCellBefore(sta_inst, to_lib_cell);
   } else {
-    logger_->error(STA,
-                   1000,
-                   "instance {} swap master {} is not equivalent",
-                   inst->getConstName(),
-                   master->getConstName());
+    sta_->replaceCellBefore(sta_inst, to_lib_cell);
   }
 }
 
 void dbStaCbk::inDbInstSwapMasterAfter(dbInst* inst)
 {
-  sta_->replaceEquivCellAfter(network_->dbToSta(inst));
+  Instance* sta_inst = network_->dbToSta(inst);
+
+  if (swap_master_arcs_equiv_) {
+    sta_->replaceEquivCellAfter(sta_inst);
+  } else {
+    sta_->replaceCellAfter(sta_inst);
+  }
 }
 
 void dbStaCbk::inDbNetDestroy(dbNet* db_net)
@@ -780,12 +1024,80 @@ void dbStaCbk::inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type)
   sta_->getDbNetwork()->setTopPortDirection(bterm, io_type);
 }
 
+void dbStaCbk::inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type)
+{
+  // sta can't handle such changes, see OpenROAD#6025, so just reset the whole
+  // thing.
+  sta_->networkChanged();
+  // The above is insufficient, see OpenROAD#6089, clear the vertex id as a
+  // workaround.
+  bterm->staSetVertexId(object_id_null);
+}
+
 ////////////////////////////////////////////////////////////////
 
-// Highlight path in the gui.
-void dbSta::highlight(PathRef* path)
+BufferUseAnalyser::BufferUseAnalyser()
 {
-  path_renderer_->highlight(path);
+  clkbuf_pattern_
+      = std::make_unique<sta::PatternMatch>(".*CLKBUF.*",
+                                            /* is_regexp */ true,
+                                            /* nocase */ true,
+                                            /* Tcl_interp* */ nullptr);
+}
+
+BufferUse BufferUseAnalyser::getBufferUse(sta::LibertyCell* buffer)
+{
+  // is_clock_cell is a custom lib attribute that may not exist,
+  // so we also use the name pattern to help
+  if (buffer->isClockCell() || clkbuf_pattern_->match(buffer->name())) {
+    return CLOCK;
+  }
+
+  return DATA;
+}
+
+////////////////////////////////////////////////////////////////
+
+sta::LibertyPort* getLibertyScanEnable(const sta::LibertyCell* lib_cell)
+{
+  sta::LibertyCellPortIterator iter(lib_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::enable
+        || signal_type == sta::ScanSignalType::enable_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
+}
+
+sta::LibertyPort* getLibertyScanIn(const sta::LibertyCell* lib_cell)
+{
+  sta::LibertyCellPortIterator iter(lib_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::input
+        || signal_type == sta::ScanSignalType::input_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
+}
+
+sta::LibertyPort* getLibertyScanOut(const sta::LibertyCell* lib_cell)
+{
+  sta::LibertyCellPortIterator iter(lib_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::output
+        || signal_type == sta::ScanSignalType::output_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
 }
 
 }  // namespace sta

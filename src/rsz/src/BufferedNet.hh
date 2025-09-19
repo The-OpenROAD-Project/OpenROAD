@@ -1,118 +1,156 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <memory>
 
-#include "utl/Logger.h"
-#include "spdlog/fmt/fmt.h"
 #include "odb/geom.h"
-
-#include "sta/Transition.hh"
-#include "sta/Network.hh"
+#include "spdlog/fmt/fmt.h"
 #include "sta/Delay.hh"
-#include "sta/PathRef.hh"
+#include "sta/Network.hh"
+#include "sta/Path.hh"
+#include "sta/Transition.hh"
+#include "utl/Logger.h"
+
+namespace est {
+class EstimateParasitics;
+}
 
 namespace rsz {
-
-using std::array;
-using std::string;
 
 using utl::Logger;
 
 using odb::Point;
 
+using sta::Corner;
+using sta::DcalcAnalysisPt;
+using sta::Delay;
 using sta::LibertyCell;
+using sta::Network;
+using sta::Path;
 using sta::Pin;
 using sta::Required;
 using sta::RiseFall;
-using sta::Network;
+using sta::StaState;
 using sta::Unit;
 using sta::Units;
-using sta::PathRef;
-using sta::Delay;
-using sta::StaState;
-using sta::DcalcAnalysisPt;
-using sta::Corner;
 
 class Resizer;
+class RepairSetup;
 
 class BufferedNet;
-using BufferedNetPtr = std::shared_ptr<BufferedNet> ;
-using Requireds = array<Required, RiseFall::index_count>;
+using BufferedNetPtr = std::shared_ptr<BufferedNet>;
+using Requireds = std::array<Required, RiseFall::index_count>;
 
-enum class BufferedNetType { load, junction, wire, buffer };
+class FixedDelay
+{
+ public:
+  FixedDelay();
+  explicit FixedDelay(sta::Delay float_value, Resizer* resizer);
+  sta::Delay toSeconds() const { return ((float) value_fs_) / second_; }
 
-// The routing tree is represented as a binary tree with the sinks being the leaves
-// of the tree, the junctions being the Steiner nodes and the root being the
-// source of the net.
+  // 100 seconds
+  static const FixedDelay INF;
+  // 0 seconds
+  static const FixedDelay ZERO;
+
+  bool operator<(const FixedDelay rhs) const
+  {
+    return value_fs_ < rhs.value_fs_;
+  }
+  bool operator>(const FixedDelay rhs) const
+  {
+    return value_fs_ > rhs.value_fs_;
+  }
+  bool operator<=(const FixedDelay rhs) const
+  {
+    return value_fs_ <= rhs.value_fs_;
+  }
+  bool operator>=(const FixedDelay rhs) const
+  {
+    return value_fs_ >= rhs.value_fs_;
+  }
+  FixedDelay operator+(const FixedDelay rhs) const
+  {
+    return fromFs(value_fs_ + rhs.value_fs_);
+  }
+  FixedDelay operator-(const FixedDelay rhs) const
+  {
+    return fromFs(value_fs_ - rhs.value_fs_);
+  }
+  FixedDelay operator-() const { return fromFs(-value_fs_); }
+
+  static FixedDelay lerp(FixedDelay a, FixedDelay b, float t)
+  {
+    if (t == 1.0f) {
+      return b;
+    }
+
+    return a + fromFs((float) (b.value_fs_ - a.value_fs_) * t);
+  }
+
+ private:
+  static FixedDelay fromFs(int64_t v)
+  {
+    FixedDelay ret;
+    ret.value_fs_ = v;
+    return ret;
+  }
+
+  static constexpr double second_ = 1.0e15;
+
+  // delay in femtoseconds
+  int64_t value_fs_;
+};
+
+enum class BufferedNetType
+{
+  load,
+  junction,
+  wire,
+  buffer
+};
+
+// The routing tree is represented as a binary tree with the sinks being the
+// leaves of the tree, the junctions being the Steiner nodes and the root being
+// the source of the net.
 class BufferedNet
 {
-public:
+ public:
   // load
   BufferedNet(BufferedNetType type,
               const Point& location,
-              const Pin *load_pin,
-              const Corner *corner,
-              const Resizer *resizer);
+              const Pin* load_pin,
+              const Corner* corner,
+              const Resizer* resizer);
   // wire
   BufferedNet(BufferedNetType type,
               const Point& location,
               int layer,
               const BufferedNetPtr& ref,
-              const Corner *corner,
-              const Resizer *resizer);
+              const Corner* corner,
+              const Resizer* resizer,
+              const est::EstimateParasitics* estimate_parasitics);
   // junc
   BufferedNet(BufferedNetType type,
               const Point& location,
               const BufferedNetPtr& ref,
               const BufferedNetPtr& ref2,
-              const Resizer *resizer);
+              const Resizer* resizer);
   // buffer
   BufferedNet(BufferedNetType type,
               const Point& location,
-              LibertyCell *buffer_cell,
+              LibertyCell* buffer_cell,
               const BufferedNetPtr& ref,
-              const Corner *corner,
-              const Resizer *resizer);
-  string to_string(const Resizer *resizer) const;
-  void reportTree(const Resizer *resizer) const;
-  void reportTree(int level,
-                  const Resizer *resizer) const;
+              const Corner* corner,
+              const Resizer* resizer,
+              const est::EstimateParasitics* estimate_parasitics);
+  std::string to_string(const Resizer* resizer) const;
+  void reportTree(const Resizer* resizer) const;
+  void reportTree(int level, const Resizer* resizer) const;
   BufferedNetType type() const { return type_; }
   // junction steiner point location connecting ref/ref2
   // wire     wire is from loc to location(ref_)
@@ -126,18 +164,19 @@ public:
   float maxLoadSlew() const { return max_load_slew_; }
   void setMaxLoadSlew(float max_slew);
   // load
-  const Pin *loadPin() const { return load_pin_; }
+  const Pin* loadPin() const { return load_pin_; }
   // wire
   int length() const;
   // routing level
   int layer() const { return layer_; }
-  void wireRC(const Corner *corner,
-              const Resizer *resizer,
+  void wireRC(const Corner* corner,
+              const Resizer* resizer,
+              const est::EstimateParasitics* estimate_parasitics,
               // Return values.
-              double &res,
-              double &cap);
+              double& res,
+              double& cap);
   // buffer
-  LibertyCell *bufferCell() const { return buffer_cell_; }
+  LibertyCell* bufferCell() const { return buffer_cell_; }
   // junction  left
   // buffer    wire
   // wire      end of wire
@@ -149,40 +188,101 @@ public:
   int maxLoadWireLength() const;
 
   // Rebuffer
-  Required required(const StaState *sta) const;
-  const PathRef &requiredPath() const { return required_path_; }
-  void setRequiredPath(const PathRef &path_ref);
-  Delay requiredDelay() const { return required_delay_; }
-  void setRequiredDelay(Delay delay);
+  const sta::RiseFallBoth* slackTransition() const
+  {
+    return slack_transitions_;
+  };
+  void setSlackTransition(const sta::RiseFallBoth* transitions);
+
+  FixedDelay slack() const { return slack_; };
+  void setSlack(FixedDelay slack);
+
+  FixedDelay delay() const { return delay_; }
+  void setDelay(FixedDelay delay);
+
+  FixedDelay arrivalDelay() const { return arrival_delay_; }
+  void setArrivalDelay(FixedDelay delay);
+
   // Downstream buffer count.
   int bufferCount() const;
 
+  float area() const { return area_; }
+
   static constexpr int null_layer = -1;
 
-private:
+  struct Metrics
+  {
+    int max_load_wl;
+    FixedDelay slack = FixedDelay::ZERO;
+    float cap;
+    float max_load_slew;
+    float fanout;
+
+    Metrics withMaxLoadWl(int max_load_wl)
+    {
+      Metrics ret = *this;
+      ret.max_load_wl = max_load_wl;
+      return ret;
+    }
+
+    Metrics withSlack(FixedDelay slack)
+    {
+      Metrics ret = *this;
+      ret.slack = slack;
+      return ret;
+    }
+
+    Metrics withCap(float cap)
+    {
+      Metrics ret = *this;
+      ret.cap = cap;
+      return ret;
+    }
+  };
+
+  Metrics metrics() const
+  {
+    return Metrics{
+        maxLoadWireLength(), slack(), cap(), maxLoadSlew(), fanout()};
+  }
+
+  bool fitsEnvelope(Metrics target);
+
+ private:
   BufferedNetType type_;
   Point location_;
   // only used by load type
-  const Pin *load_pin_;
+  const Pin* load_pin_{nullptr};
   // only used by buffer type
-  LibertyCell *buffer_cell_;
+  LibertyCell* buffer_cell_{nullptr};
   // only used by wire type
-  int layer_;
+  int layer_{null_layer};
   // only used by buffer, wire, and junc types
   BufferedNetPtr ref_;
   // only used by junc type
   BufferedNetPtr ref2_;
 
   // Capacitance looking downstream from here.
-  float cap_;
-  float fanout_;
-  float max_load_slew_;
+  float cap_{0.0};
+  float fanout_{1};
+  float max_load_slew_{sta::INF};
 
   // Rebuffer annotations
-  // PathRef for worst required path at load.
-  PathRef required_path_;
-  // Max delay from here to the loads.
-  Delay required_delay_;
+
+  // Area of buffers on the buffer tree looking downstream from here
+  float area_{0};
+
+  // Transition we need to consider for buffer delays
+  const sta::RiseFallBoth* slack_transitions_ = nullptr;
+
+  // Slack considering the buffer/wire delays downstream of here
+  FixedDelay slack_ = FixedDelay::ZERO;
+
+  // Computed delay of the buffer/wire
+  FixedDelay delay_ = FixedDelay::ZERO;
+
+  // Delay from driver pin to here
+  FixedDelay arrival_delay_ = FixedDelay::ZERO;
 };
 
-} // namespace rsz
+}  // namespace rsz

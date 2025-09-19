@@ -1,38 +1,13 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2023, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <QPainter>
+#include <algorithm>
+#include <cmath>
+#include <string>
+#include <vector>
 
 #include "gui/gui.h"
 #include "odb/geom.h"
@@ -96,29 +71,29 @@ class GuiPainter : public Painter
     painter_->setBrush(QBrush(color, brush_pattern));
   }
 
-  void setBrush(const Color& color, const Brush& style = Brush::SOLID) override
+  void setBrush(const Color& color, const Brush& style = Brush::kSolid) override
   {
     const QColor qcolor(color.r, color.g, color.b, color.a);
 
     Qt::BrushStyle brush_pattern;
-    if (color == Painter::transparent) {
+    if (color == Painter::kTransparent) {
       // if color is transparent, make it no brush
       brush_pattern = Qt::NoBrush;
     } else {
       switch (style) {
-        case NONE:
+        case kNone:
           brush_pattern = Qt::NoBrush;
           break;
-        case DIAGONAL:
+        case kDiagonal:
           brush_pattern = Qt::DiagCrossPattern;
           break;
-        case CROSS:
+        case kCross:
           brush_pattern = Qt::CrossPattern;
           break;
-        case DOTS:
+        case kDots:
           brush_pattern = Qt::Dense6Pattern;
           break;
-        case SOLID:
+        case kSolid:
         default:
           brush_pattern = Qt::SolidPattern;
           break;
@@ -127,6 +102,8 @@ class GuiPainter : public Painter
 
     painter_->setBrush(QBrush(qcolor, brush_pattern));
   }
+
+  void setFont(const Font& font) override;
 
   void saveState() override { painter_->save(); }
 
@@ -137,17 +114,21 @@ class GuiPainter : public Painter
     std::vector<odb::Point> points = oct.getPoints();
     drawPolygon(points);
   }
-  void drawRect(const odb::Rect& rect, int roundX = 0, int roundY = 0) override
+  void drawRect(const odb::Rect& rect, int round_x, int round_y) override
   {
-    if (roundX > 0 || roundY > 0) {
+    if (round_x > 0 || round_y > 0) {
       painter_->drawRoundedRect(
           QRect(rect.xMin(), rect.yMin(), rect.dx(), rect.dy()),
-          roundX,
-          roundY,
+          round_x,
+          round_y,
           Qt::RelativeSize);
     } else {
       painter_->drawRect(QRect(rect.xMin(), rect.yMin(), rect.dx(), rect.dy()));
     }
+  }
+  void drawPolygon(const odb::Polygon& polygon) override
+  {
+    drawPolygon(polygon.getPoints());
   }
   void drawPolygon(const std::vector<odb::Point>& points) override
   {
@@ -201,11 +182,11 @@ class GuiPainter : public Painter
     const qreal scale_adjust = 1.0 / getPixelsPerDBU();
 
     const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
-    const int xMin = origin.x() - text_bbox.left() * scale_adjust;
-    const int yMin = origin.y() - text_bbox.bottom() * scale_adjust;
-    const int xMax = xMin + text_bbox.width() * scale_adjust;
-    const int yMax = yMin + text_bbox.height() * scale_adjust;
-    return {xMin, yMin, xMax, yMax};
+    const int x_min = origin.x() - text_bbox.left() * scale_adjust;
+    const int y_min = origin.y() - text_bbox.bottom() * scale_adjust;
+    const int x_max = x_min + text_bbox.width() * scale_adjust;
+    const int y_max = y_min + text_bbox.height() * scale_adjust;
+    return {x_min, y_min, x_max, y_max};
   }
 
   void drawRuler(int x0,

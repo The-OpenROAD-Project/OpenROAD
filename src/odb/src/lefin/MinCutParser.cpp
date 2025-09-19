@@ -1,38 +1,14 @@
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include <functional>
-#include <iostream>
 #include <string>
 
+#include "boost/bind/bind.hpp"
 #include "boostParser.h"
-#include "db.h"
 #include "lefLayerPropParser.h"
-#include "lefin.h"
+#include "odb/db.h"
+#include "odb/lefin.h"
+#include "parserUtils.h"
 
 using namespace odb;
 
@@ -79,41 +55,36 @@ void MinCutParser::setAreaWithin(double within)
 
 void MinCutParser::parse(const std::string& s)
 {
-  std::vector<std::string> rules;
-  boost::split(rules, s, boost::is_any_of(";"));
-  for (auto& rule : rules) {
-    boost::algorithm::trim(rule);
-    if (rule.empty())
-      continue;
-    rule += " ; ";
-    if (!parseSubRule(rule))
+  processRules(s, [this](const std::string& rule) {
+    if (!parseSubRule(rule)) {
       lefin_->warning(299,
-                      "parse mismatch in layer propery LEF58_MINIMUMCUT for "
+                      "parse mismatch in layer property LEF58_MINIMUMCUT for "
                       "layer {} :\"{}\"",
                       layer_->getName(),
                       rule);
-  }
+    }
+  });
 }
 
-bool MinCutParser::parseSubRule(std::string s)
+bool MinCutParser::parseSubRule(const std::string& s)
 {
   rule_ = dbTechLayerMinCutRule::create(layer_);
-  qi::rule<std::string::iterator, space_type> CUTCLASS
+  qi::rule<std::string::const_iterator, space_type> CUTCLASS
       = (lit("CUTCLASS") >> _string
          >> int_)[boost::bind(&MinCutParser::addCutClass, this, _1)];
-  qi::rule<std::string::iterator, space_type> WITHIN
+  qi::rule<std::string::const_iterator, space_type> WITHIN
       = (lit("WITHIN")
          >> double_)[boost::bind(&MinCutParser::setWithinCutDist, this, _1)];
-  qi::rule<std::string::iterator, space_type> LENGTH
+  qi::rule<std::string::const_iterator, space_type> LENGTH
       = (lit("LENGTH")
          >> double_[boost::bind(&MinCutParser::setLength, this, _1)]
          >> lit("WITHIN")
          >> double_[boost::bind(&MinCutParser::setLengthWithin, this, _1)]);
-  qi::rule<std::string::iterator, space_type> AREA
+  qi::rule<std::string::const_iterator, space_type> AREA
       = (lit("AREA") >> double_[boost::bind(&MinCutParser::setArea, this, _1)]
          >> -(lit("WITHIN")
               >> double_[boost::bind(&MinCutParser::setAreaWithin, this, _1)]));
-  qi::rule<std::string::iterator, space_type> LEF58_MINCUT
+  qi::rule<std::string::const_iterator, space_type> LEF58_MINCUT
       = (lit("MINIMUMCUT")
          >> (int_[boost::bind(&dbTechLayerMinCutRule::setNumCuts, rule_, _1)]
              | +CUTCLASS)
@@ -134,7 +105,8 @@ bool MinCutParser::parseSubRule(std::string s)
   bool valid
       = qi::phrase_parse(first, last, LEF58_MINCUT, space) && first == last;
 
-  if (!valid && rule_ != nullptr)  // fail if we did not get a full match
+  if (!valid && rule_ != nullptr) {  // fail if we did not get a full match
     odb::dbTechLayerMinCutRule::destroy(rule_);
+  }
   return valid;
 }

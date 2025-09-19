@@ -1,49 +1,23 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbTrackGrid.h"
 
 #include <algorithm>
+#include <cmath>
+#include <vector>
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbChip.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
-#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 
 namespace odb {
 
@@ -51,61 +25,47 @@ template class dbTable<_dbTrackGrid>;
 
 bool _dbTrackGrid::operator==(const _dbTrackGrid& rhs) const
 {
-  if (_layer != rhs._layer)
+  if (_layer != rhs._layer) {
     return false;
+  }
 
-  if (_x_origin != rhs._x_origin)
+  if (_x_origin != rhs._x_origin) {
     return false;
+  }
 
-  if (_x_count != rhs._x_count)
+  if (_x_count != rhs._x_count) {
     return false;
+  }
 
-  if (_x_step != rhs._x_step)
+  if (_x_step != rhs._x_step) {
     return false;
+  }
 
-  if (_y_origin != rhs._y_origin)
+  if (_y_origin != rhs._y_origin) {
     return false;
+  }
 
-  if (_y_count != rhs._y_count)
+  if (_y_count != rhs._y_count) {
     return false;
+  }
 
-  if (_y_step != rhs._y_step)
+  if (_y_step != rhs._y_step) {
     return false;
+  }
 
-  if (_next_grid != rhs._next_grid)
+  if (_first_mask != rhs._first_mask) {
     return false;
+  }
+
+  if (_samemask != rhs._samemask) {
+    return false;
+  }
+
+  if (_next_grid != rhs._next_grid) {
+    return false;
+  }
 
   return true;
-}
-
-void _dbTrackGrid::differences(dbDiff& diff,
-                               const char* field,
-                               const _dbTrackGrid& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_layer);
-  DIFF_VECTOR(_x_origin);
-  DIFF_VECTOR(_x_count);
-  DIFF_VECTOR(_x_step);
-  DIFF_VECTOR(_y_origin);
-  DIFF_VECTOR(_y_count);
-  DIFF_VECTOR(_y_step);
-  DIFF_FIELD_NO_DEEP(_next_grid);
-  DIFF_END
-}
-
-void _dbTrackGrid::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_layer);
-  DIFF_OUT_VECTOR(_x_origin);
-  DIFF_OUT_VECTOR(_x_count);
-  DIFF_OUT_VECTOR(_x_step);
-  DIFF_OUT_VECTOR(_y_origin);
-  DIFF_OUT_VECTOR(_y_count);
-  DIFF_OUT_VECTOR(_y_step);
-  DIFF_OUT_FIELD_NO_DEEP(_next_grid);
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -143,15 +103,15 @@ void dbTrackGrid::getGridX(std::vector<int>& x_grid)
   }
 
   // empty grid
-  if (x_grid.begin() == x_grid.end())
+  if (x_grid.begin() == x_grid.end()) {
     return;
+  }
 
   // sort coords in asscending order
   std::sort(x_grid.begin(), x_grid.end());
 
   // remove any duplicates
-  std::vector<int>::iterator new_end;
-  new_end = std::unique(x_grid.begin(), x_grid.end());
+  auto new_end = std::unique(x_grid.begin(), x_grid.end());
   x_grid.erase(new_end, x_grid.end());
 }
 
@@ -177,15 +137,15 @@ void dbTrackGrid::getGridY(std::vector<int>& y_grid)
   }
 
   // empty grid
-  if (y_grid.begin() == y_grid.end())
+  if (y_grid.begin() == y_grid.end()) {
     return;
+  }
 
   // sort coords in asscending order
   std::sort(y_grid.begin(), y_grid.end());
 
   // remove any duplicates
-  std::vector<int>::iterator new_end;
-  new_end = std::unique(y_grid.begin(), y_grid.end());
+  auto new_end = std::unique(y_grid.begin(), y_grid.end());
   y_grid.erase(new_end, y_grid.end());
 }
 
@@ -194,20 +154,32 @@ dbBlock* dbTrackGrid::getBlock()
   return (dbBlock*) getImpl()->getOwner();
 }
 
-void dbTrackGrid::addGridPatternX(int origin_x, int line_count, int step)
+void dbTrackGrid::addGridPatternX(int origin_x,
+                                  int line_count,
+                                  int step,
+                                  int first_mask,
+                                  bool samemask)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
   grid->_x_origin.push_back(origin_x);
   grid->_x_count.push_back(line_count);
   grid->_x_step.push_back(step);
+  grid->_first_mask.push_back(first_mask);
+  grid->_samemask.push_back(samemask);
 }
 
-void dbTrackGrid::addGridPatternY(int origin_y, int line_count, int step)
+void dbTrackGrid::addGridPatternY(int origin_y,
+                                  int line_count,
+                                  int step,
+                                  int first_mask,
+                                  bool samemask)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
   grid->_y_origin.push_back(origin_y);
   grid->_y_count.push_back(line_count);
   grid->_y_step.push_back(step);
+  grid->_first_mask.push_back(first_mask);
+  grid->_samemask.push_back(samemask);
 }
 
 int dbTrackGrid::getNumGridPatternsX()
@@ -234,6 +206,22 @@ void dbTrackGrid::getGridPatternX(int i,
   step = grid->_x_step[i];
 }
 
+void dbTrackGrid::getGridPatternX(int i,
+                                  int& origin_x,
+                                  int& line_count,
+                                  int& step,
+                                  int& first_mask,
+                                  bool& samemask)
+{
+  _dbTrackGrid* grid = (_dbTrackGrid*) this;
+  ZASSERT(i < (int) grid->_x_origin.size());
+  origin_x = grid->_x_origin[i];
+  line_count = grid->_x_count[i];
+  step = grid->_x_step[i];
+  first_mask = grid->_first_mask[i];
+  samemask = grid->_samemask[i];
+}
+
 void dbTrackGrid::getGridPatternY(int i,
                                   int& origin_y,
                                   int& line_count,
@@ -244,6 +232,22 @@ void dbTrackGrid::getGridPatternY(int i,
   origin_y = grid->_y_origin[i];
   line_count = grid->_y_count[i];
   step = grid->_y_step[i];
+}
+
+void dbTrackGrid::getGridPatternY(int i,
+                                  int& origin_y,
+                                  int& line_count,
+                                  int& step,
+                                  int& first_mask,
+                                  bool& samemask)
+{
+  _dbTrackGrid* grid = (_dbTrackGrid*) this;
+  ZASSERT(i < (int) grid->_y_origin.size());
+  origin_y = grid->_y_origin[i];
+  line_count = grid->_y_count[i];
+  step = grid->_y_step[i];
+  first_mask = grid->_first_mask[i];
+  samemask = grid->_samemask[i];
 }
 
 void dbTrackGrid::getAverageTrackSpacing(int& track_step,
@@ -291,8 +295,9 @@ dbTrackGrid* dbTrackGrid::create(dbBlock* block_, dbTechLayer* layer_)
 {
   _dbBlock* block = (_dbBlock*) block_;
 
-  if (block_->findTrackGrid(layer_))
+  if (block_->findTrackGrid(layer_)) {
     return nullptr;
+  }
 
   _dbTrackGrid* grid = block->_track_grid_tbl->create();
   grid->_layer = layer_->getImpl()->getOID();
@@ -312,7 +317,21 @@ void dbTrackGrid::destroy(dbTrackGrid* grid_)
   block->_track_grid_tbl->destroy(grid);
 }
 
-// User Code Begin PrivateMethods
+void _dbTrackGrid::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["x_origin"].add(_x_origin);
+  info.children_["x_count"].add(_x_count);
+  info.children_["x_step"].add(_x_step);
+  info.children_["y_origin"].add(_y_origin);
+  info.children_["y_count"].add(_y_count);
+  info.children_["y_step"].add(_y_step);
+  info.children_["first_mask"].add(_first_mask);
+  info.children_["samemask"].add(_samemask);
+}
+
 void _dbTrackGrid::getAverageTrackPattern(bool is_x,
                                           int& track_init,
                                           int& num_tracks,
@@ -330,6 +349,5 @@ void _dbTrackGrid::getAverageTrackPattern(bool is_x,
   track_step = std::ceil((float) span / coordinates.size());
   num_tracks = coordinates.size();
 }
-// User Code End PrivateMethods
 
 }  // namespace odb

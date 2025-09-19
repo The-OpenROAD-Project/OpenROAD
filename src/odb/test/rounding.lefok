@@ -8,7 +8,7 @@ END UNITS
 MACRO rounding
   FOREIGN rounding 0 0 ;
   CLASS BLOCK ;
-  SIZE 0.006 BY 2000.172 ;
+  SIZE 2050 BY 500 ;
   PIN pin
     DIRECTION INPUT ;
     USE SIGNAL ;

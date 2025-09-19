@@ -1,47 +1,24 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbRSeg.h"
 
-#include "db.h"
+#include <algorithm>
+#include <cstdio>
+#include <vector>
+
 #include "dbBlock.h"
 #include "dbCapNode.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbJournal.h"
 #include "dbNet.h"
-#include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/dbShape.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -50,56 +27,35 @@ template class dbTable<_dbRSeg>;
 
 bool _dbRSeg::operator==(const _dbRSeg& rhs) const
 {
-  if (_flags._path_dir != rhs._flags._path_dir)
+  if (_flags._path_dir != rhs._flags._path_dir) {
     return false;
+  }
 
-  if (_flags._allocated_cap != rhs._flags._allocated_cap)
+  if (_flags._allocated_cap != rhs._flags._allocated_cap) {
     return false;
+  }
 
-  if (_source != rhs._source)
+  if (_source != rhs._source) {
     return false;
+  }
 
-  if (_target != rhs._target)
+  if (_target != rhs._target) {
     return false;
+  }
 
-  if (_xcoord != rhs._xcoord)
+  if (_xcoord != rhs._xcoord) {
     return false;
+  }
 
-  if (_ycoord != rhs._ycoord)
+  if (_ycoord != rhs._ycoord) {
     return false;
+  }
 
-  if (_next != rhs._next)
+  if (_next != rhs._next) {
     return false;
+  }
 
   return true;
-}
-
-void _dbRSeg::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbRSeg& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._path_dir);
-  DIFF_FIELD(_flags._allocated_cap);
-  DIFF_FIELD(_source);
-  DIFF_FIELD(_target);
-  DIFF_FIELD(_xcoord);
-  DIFF_FIELD(_ycoord);
-  DIFF_FIELD(_next);
-  DIFF_END
-}
-
-void _dbRSeg::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._path_dir);
-  DIFF_OUT_FIELD(_flags._allocated_cap);
-  DIFF_OUT_FIELD(_source);
-  DIFF_OUT_FIELD(_target);
-  DIFF_OUT_FIELD(_xcoord);
-  DIFF_OUT_FIELD(_ycoord);
-  DIFF_OUT_FIELD(_next);
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -124,8 +80,9 @@ void dbRSeg::getAllRes(double* res)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
 
-  for (uint ii = 0; ii < cornerCnt; ii++)
+  for (uint ii = 0; ii < cornerCnt; ii++) {
     res[ii] = (*block->_r_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
+  }
 }
 
 void dbRSeg::addAllRes(double* res)
@@ -134,8 +91,9 @@ void dbRSeg::addAllRes(double* res)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
 
-  for (uint ii = 0; ii < cornerCnt; ii++)
+  for (uint ii = 0; ii < cornerCnt; ii++) {
     res[ii] += (*block->_r_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
+  }
 }
 
 bool dbRSeg::updatedCap()
@@ -292,8 +250,9 @@ void dbRSeg::adjustResistance(float factor)
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
   uint cornerCnt = block->_corners_per_block;
   uint corner;
-  for (corner = 0; corner < cornerCnt; corner++)
+  for (corner = 0; corner < cornerCnt; corner++) {
     adjustResistance(factor, corner);
+  }
 }
 
 void dbRSeg::setCapacitance(double cap, int corner)
@@ -307,8 +266,9 @@ void dbRSeg::setCapacitance(double cap, int corner)
     return;
   }
   seg->_flags._update_cap = 1;
-  if (cap == 0.0)
+  if (cap == 0.0) {
     seg->_flags._update_cap = 0;
+  }
 
   ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
   float& value
@@ -341,8 +301,9 @@ void dbRSeg::adjustSourceCapacitance(float factor, uint corner)
   _dbRSeg* seg = (_dbRSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
 
-  if (seg->_flags._allocated_cap != 0)
+  if (seg->_flags._allocated_cap != 0) {
     return;
+  }
   dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_source);
   node->adjustCapacitance(factor, corner);
 }
@@ -389,8 +350,9 @@ void dbRSeg::adjustCapacitance(float factor)
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
   uint cornerCnt = block->_corners_per_block;
   uint corner;
-  for (corner = 0; corner < cornerCnt; corner++)
+  for (corner = 0; corner < cornerCnt; corner++) {
     adjustCapacitance(factor, corner);
+  }
 }
 
 double dbRSeg::getCapacitance(int corner)
@@ -403,10 +365,9 @@ double dbRSeg::getCapacitance(int corner)
     _dbBlock* block = (_dbBlock*) seg->getOwner();
     dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
     return node->getCapacitance(corner);
-  } else {
-    ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
-    return (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
   }
+  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  return (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
 }
 
 void dbRSeg::getGndCap(double* gndcap, double* totalcap)
@@ -421,10 +382,12 @@ void dbRSeg::getGndCap(double* gndcap, double* totalcap)
   } else {
     for (uint ii = 0; ii < cornerCnt; ii++) {
       gcap = (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
-      if (gndcap)
+      if (gndcap) {
         gndcap[ii] = gcap;
-      if (totalcap)
+      }
+      if (totalcap) {
         totalcap[ii] = gcap;
+      }
     }
   }
 }
@@ -441,10 +404,12 @@ void dbRSeg::addGndCap(double* gndcap, double* totalcap)
   } else {
     for (uint ii = 0; ii < cornerCnt; ii++) {
       gcap = (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
-      if (gndcap)
+      if (gndcap) {
         gndcap[ii] += gcap;
-      if (totalcap)
+      }
+      if (totalcap) {
         totalcap[ii] += gcap;
+      }
     }
   }
 }
@@ -459,9 +424,8 @@ double dbRSeg::getSourceCapacitance(int corner)
     _dbBlock* block = (_dbBlock*) seg->getOwner();
     dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_source);
     return node->getCapacitance(corner);
-  } else {
-    return 0.0;
   }
+  return 0.0;
 }
 
 dbCapNode* dbRSeg::getTargetCapNode()
@@ -469,8 +433,9 @@ dbCapNode* dbRSeg::getTargetCapNode()
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
   uint target = getTargetNode();
 
-  if (target == 0)
+  if (target == 0) {
     return nullptr;
+  }
 
   _dbCapNode* n = block->_cap_node_tbl->getPtr(target);
   return (dbCapNode*) n;
@@ -481,32 +446,30 @@ dbCapNode* dbRSeg::getSourceCapNode()
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
   uint source = getSourceNode();
 
-  if (source == 0)
+  if (source == 0) {
     return nullptr;
+  }
 
   _dbCapNode* n = block->_cap_node_tbl->getPtr(source);
   return (dbCapNode*) n;
 }
 
-double dbRSeg::getCapacitance(int corner, double MillerMult)
+double dbRSeg::getCapacitance(const int corner, const double MillerMult)
 {
-  double cap = getCapacitance(corner);
-  double ccCap = 0.0;
+  const double cap = getCapacitance(corner);
 
   dbCapNode* targetCapNode = getTargetCapNode();
 
-  if (targetCapNode == nullptr)
+  if (targetCapNode == nullptr) {
     return cap;
+  }
 
-  dbSet<dbCCSeg> ccSegs = targetCapNode->getCCSegs();
-  dbSet<dbCCSeg>::iterator ccitr;
-  for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
-    dbCCSeg* cc = *ccitr;
+  double ccCap = 0.0;
+  for (dbCCSeg* cc : targetCapNode->getCCSegs()) {
     ccCap += cc->getCapacitance(corner);
   }
 
-  cap += MillerMult * ccCap;
-  return cap;
+  return cap + MillerMult * ccCap;
 }
 
 void dbRSeg::getGndTotalCap(double* gndcap, double* totalcap, double MillerMult)
@@ -525,19 +488,11 @@ void dbRSeg::getCcSegs(std::vector<dbCCSeg*>& ccsegs)
 {
   ccsegs.clear();
 
-  dbSet<dbCapNode> capNodes = getNet()->getCapNodes();
-  dbSet<dbCapNode>::iterator citr;
+  const uint target = getTargetNode();
 
-  uint target = getTargetNode();
-
-  for (citr = capNodes.begin(); citr != capNodes.end(); ++citr) {
-    dbCapNode* n = *citr;
-    dbSet<dbCCSeg> ccSegs = n->getCCSegs();
-    dbSet<dbCCSeg>::iterator ccitr;
-
+  for (dbCapNode* n : getNet()->getCapNodes()) {
     if (n->getNode() == target) {
-      for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
-        dbCCSeg* cc = *ccitr;
+      for (dbCCSeg* cc : n->getCCSegs()) {
         ccsegs.push_back(cc);
       }
 
@@ -562,8 +517,7 @@ void dbRSeg::printCC()
 
 bool dbRSeg::checkCC()
 {
-  bool rc = getTargetCapNode()->checkCC();
-  return rc;
+  return getTargetCapNode()->checkCC();
 }
 
 void dbRSeg::getCapTable(double* cap)
@@ -577,8 +531,9 @@ void dbRSeg::getCapTable(double* cap)
     dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
     node->getCapTable(cap);
   } else {
-    for (uint ii = 0; ii < cornerCnt; ii++)
+    for (uint ii = 0; ii < cornerCnt; ii++) {
       cap[ii] = (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
+    }
   }
 }
 
@@ -713,8 +668,9 @@ void dbRSeg::updateShapeId(uint nsid)
   _dbRSeg* seg = (_dbRSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
-  if (node->isITerm() || node->isBTerm())
+  if (node->isITerm() || node->isBTerm()) {
     return;
+  }
   node->setNode(nsid);
 }
 
@@ -753,10 +709,11 @@ dbRSeg* dbRSeg::create(dbNet* net_,
   _dbRSeg* seg = block->_r_seg_tbl->create();
   uint valueMem = 0;
 
-  if (block->_maxRSegId >= seg->getOID())
+  if (block->_maxRSegId >= seg->getOID()) {
     valueMem = 1;
-  else
+  } else {
     block->_maxRSegId = seg->getOID();
+  }
 
   seg->_xcoord = x;
   seg->_ycoord = y;
@@ -765,8 +722,9 @@ dbRSeg* dbRSeg::create(dbNet* net_,
   // seg->_flags._cnt = block->_num_corners;
 
   if (valueMem) {
-    for (uint ii = 0; ii < cornerCnt; ii++)
+    for (uint ii = 0; ii < cornerCnt; ii++) {
       (*block->_r_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = 0.0;
+    }
   } else {
     uint resIdx = block->_r_val_tbl->getIdx(cornerCnt, (float) 0.0);
     ZASSERT((seg->getOID() - 1) * cornerCnt + 1 == resIdx);
@@ -783,8 +741,9 @@ dbRSeg* dbRSeg::create(dbNet* net_,
     seg->_flags._allocated_cap = 1;
 
     if (valueMem) {
-      for (uint ii = 0; ii < cornerCnt; ii++)
+      for (uint ii = 0; ii < cornerCnt; ii++) {
         (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = 0.0;
+      }
     } else {
       const uint capIdx = block->_c_val_tbl->getIdx(cornerCnt, (float) 0.0);
       ZASSERT((seg->getOID() - 1) * cornerCnt + 1 == capIdx);
@@ -798,8 +757,7 @@ dbRSeg* dbRSeg::create(dbNet* net_,
   }
 
   /* OPT-MEM
-  //    seg->_res = (float *) malloc(sizeof(float)*seg->_flags._cnt);
-  //    ZALLOCATED(seg->_res);
+  //    seg->_res = (float *) safe_malloc(sizeof(float)*seg->_flags._cnt);
   //
   //    int i;
   //
@@ -812,8 +770,8 @@ dbRSeg* dbRSeg::create(dbNet* net_,
   //    if (allocate_cap)
   //    {
   //        seg->_flags._allocated_cap= 1;
-  //        seg->_cap = (float *) malloc( sizeof(float) * seg->_flags._cnt );
-  //        ZALLOCATED( seg->_cap );
+  //        seg->_cap =
+  //             (float *) safe_malloc( sizeof(float) * seg->_flags._cnt );
   //
   //        int i;
   //        for( i = 0; i < seg->_flags._cnt; ++i )
@@ -889,10 +847,11 @@ void dbRSeg::destroy(dbRSeg* seg_, dbNet* net_)
     _dbRSeg* s = block->_r_seg_tbl->getPtr(c);
 
     if (s == seg) {
-      if (p == nullptr)
+      if (p == nullptr) {
         net->_r_segs = s->_next;
-      else
+      } else {
         p->_next = s->_next;
+      }
       break;
     }
     p = s;
@@ -976,21 +935,21 @@ void dbRSeg::mergeRCs(std::vector<dbRSeg*>& mrsegs)
       ccCapNode = ccSeg->getTheOtherCapn(tgtCapNode, cid);
       uint ccidx = ccCapNode->getSortIndex();
       if (ccidx == 0) {
-        if (tgtCapNode != finalCapNode)  // plug to finalCapNode
+        if (tgtCapNode != finalCapNode) {  // plug to finalCapNode
           ccSeg->swapCapnode(tgtCapNode, finalCapNode);
+        }
         mCcSegs.push_back(ccSeg);
         otherCapns.push_back(ccCapNode);
         ccCapNode->setSortIndex(mCcSegs.size() - 1);
         continue;
-      } else {
-        tccSeg = mCcSegs[ccidx];
-        tccSeg->addCcCapacitance(ccSeg);
-        // if (tgtCapNode != finalCapNode)
-        // destroy ccSeg - unlink only ccCapNode
-        // else
-        // destroy ccSeg
-        dbCCSeg::destroy(ccSeg);
       }
+      tccSeg = mCcSegs[ccidx];
+      tccSeg->addCcCapacitance(ccSeg);
+      // if (tgtCapNode != finalCapNode)
+      // destroy ccSeg - unlink only ccCapNode
+      // else
+      // destroy ccSeg
+      dbCCSeg::destroy(ccSeg);
     }
     if (tgtCapNode != finalCapNode) {
       finalRSeg->addRSegCapacitance(rseg);
@@ -999,8 +958,9 @@ void dbRSeg::mergeRCs(std::vector<dbRSeg*>& mrsegs)
       // dbCapNode::destroy(tgtCapNode, false/*destroyCC*/);
     }
   }
-  for (ii = 1; ii < (int) otherCapns.size(); ii++)
+  for (ii = 1; ii < (int) otherCapns.size(); ii++) {
     otherCapns[ii]->setSortIndex(0);
+  }
   // finalRSeg->setNext(0);
   setNext(finalRSeg->getId());
   finalRSeg->setSourceNode(mrsegs[0]->getSourceNode());
@@ -1010,6 +970,12 @@ void dbRSeg::mergeRCs(std::vector<dbRSeg*>& mrsegs)
     dbRSeg::destroy(rseg);
     dbCapNode::destroy(tgtCapNode, false /*destroyCC*/);
   }
+}
+
+void _dbRSeg::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 }  // namespace odb

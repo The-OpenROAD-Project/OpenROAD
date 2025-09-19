@@ -1,43 +1,32 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "FlexGR.h"
+#include "gr/FlexGR.h"
 
 #include <omp.h>
 
+#include <algorithm>
 #include <cmath>
-#include <fstream>
+#include <cstddef>
+#include <cstdlib>
+#include <deque>
+#include <iomanip>
 #include <iostream>
+#include <iterator>
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
 #include "db/infra/frTime.h"
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frGuide.h"
+#include "db/obj/frInst.h"
+#include "frBaseTypes.h"
 #include "odb/db.h"
 #include "utl/exception.h"
 
@@ -53,8 +42,8 @@ void FlexGR::main(odb::dbDatabase* db)
   ra();
   // cmap->print(true);
 
-  FlexGRCMap baseCMap(cmap_.get());
-  FlexGRCMap baseCMap2D(cmap2D_.get());
+  FlexGRCMap baseCMap(cmap_.get(), router_cfg_);
+  FlexGRCMap baseCMap2D(cmap2D_.get(), router_cfg_);
 
   // gen topology + pattern route for 2D connectivty
   initGR();
@@ -68,8 +57,8 @@ void FlexGR::main(odb::dbDatabase* db)
   searchRepairMacro(0,
                     10,
                     2,
-                    1 * CONGCOST,
-                    0.5 * HISTCOST,
+                    1 * router_cfg_->CONGCOST,
+                    0.5 * router_cfg_->HISTCOST,
                     1.0,
                     true,
                     /*mode*/ RipUpMode::ALL);
@@ -77,17 +66,29 @@ void FlexGR::main(odb::dbDatabase* db)
   searchRepairMacro(1,
                     30,
                     2,
-                    1 * CONGCOST,
-                    1 * HISTCOST,
+                    1 * router_cfg_->CONGCOST,
+                    1 * router_cfg_->HISTCOST,
                     0.9,
                     true,
                     /*mode*/ RipUpMode::ALL);
   // reportCong2D();
-  searchRepairMacro(
-      2, 50, 2, 1 * CONGCOST, 1.5 * HISTCOST, 0.9, true, RipUpMode::ALL);
+  searchRepairMacro(2,
+                    50,
+                    2,
+                    1 * router_cfg_->CONGCOST,
+                    1.5 * router_cfg_->HISTCOST,
+                    0.9,
+                    true,
+                    RipUpMode::ALL);
   // reportCong2D();
-  searchRepairMacro(
-      3, 80, 2, 2 * CONGCOST, 2 * HISTCOST, 0.9, true, RipUpMode::ALL);
+  searchRepairMacro(3,
+                    80,
+                    2,
+                    2 * router_cfg_->CONGCOST,
+                    2 * router_cfg_->HISTCOST,
+                    0.9,
+                    true,
+                    RipUpMode::ALL);
   // reportCong2D();
 
   //  reportCong2D();
@@ -95,8 +96,8 @@ void FlexGR::main(odb::dbDatabase* db)
                /*size*/ 200,
                /*offset*/ 0,
                /*mazeEndIter*/ 2,
-               /*workerCongCost*/ 1 * CONGCOST,
-               /*workerHistCost*/ 0.5 * HISTCOST,
+               /*workerCongCost*/ 1 * router_cfg_->CONGCOST,
+               /*workerHistCost*/ 0.5 * router_cfg_->HISTCOST,
                /*congThresh*/ 0.9,
                /*is2DRouting*/ true,
                /*mode*/ RipUpMode::ALL,
@@ -106,8 +107,8 @@ void FlexGR::main(odb::dbDatabase* db)
                /*size*/ 200,
                /*offset*/ -70,
                /*mazeEndIter*/ 2,
-               /*workerCongCost*/ 1 * CONGCOST,
-               /*workerHistCost*/ 1 * HISTCOST,
+               /*workerCongCost*/ 1 * router_cfg_->CONGCOST,
+               /*workerHistCost*/ 1 * router_cfg_->HISTCOST,
                /*congThresh*/ 0.9,
                /*is2DRouting*/ true,
                /*mode*/ RipUpMode::ALL,
@@ -117,8 +118,8 @@ void FlexGR::main(odb::dbDatabase* db)
                /*size*/ 200,
                /*offset*/ -150,
                /*mazeEndIter*/ 2,
-               /*workerCongCost*/ 2 * CONGCOST,
-               /*workerHistCost*/ 2 * HISTCOST,
+               /*workerCongCost*/ 2 * router_cfg_->CONGCOST,
+               /*workerHistCost*/ 2 * router_cfg_->HISTCOST,
                /*congThresh*/ 0.8,
                /*is2DRouting*/ true,
                /*mode*/ RipUpMode::ALL,
@@ -138,8 +139,8 @@ void FlexGR::main(odb::dbDatabase* db)
                /*size*/ 10,
                /*offset*/ 0,
                /*mazeEndIter*/ 2,
-               /*workerCongCost*/ 4 * CONGCOST,
-               /*workerHistCost*/ 0.25 * HISTCOST,
+               /*workerCongCost*/ 4 * router_cfg_->CONGCOST,
+               /*workerHistCost*/ 0.25 * router_cfg_->HISTCOST,
                /*congThresh*/ 1.0,
                /*is2DRouting*/ false,
                RipUpMode::ALL,
@@ -165,7 +166,7 @@ void FlexGR::searchRepairMacro(int iter,
 {
   frTime t;
 
-  if (VERBOSE > 1) {
+  if (router_cfg_->VERBOSE > 1) {
     std::cout << std::endl << "start " << iter;
     std::string suffix;
     if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
@@ -206,7 +207,7 @@ void FlexGR::searchRepairMacro(int iter,
 
   // create separate worker for each macro
   for (auto macro : macros) {
-    auto worker = std::make_unique<FlexGRWorker>(this);
+    auto worker = std::make_unique<FlexGRWorker>(this, router_cfg_);
     Rect macroBBox = macro->getBBox();
     Point macroLL(macroBBox.xMin(), macroBBox.yMin());
     Point macroUR(macroBBox.xMax(), macroBBox.yMax());
@@ -265,7 +266,7 @@ void FlexGR::searchRepair(int iter,
 {
   frTime t;
 
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     std::cout << std::endl << "start " << iter;
     std::string suffix;
     if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
@@ -287,7 +288,7 @@ void FlexGR::searchRepair(int iter,
   if (TEST) {
     std::cout << "search and repair test mode" << std::endl << std::flush;
 
-    FlexGRWorker worker(this);
+    FlexGRWorker worker(this, router_cfg_);
     Rect extBox(1847999, 440999, 1857000, 461999);
     Rect routeBox(1849499, 442499, 1855499, 460499);
     Point gcellIdxLL(616, 147);
@@ -323,7 +324,7 @@ void FlexGR::searchRepair(int iter,
     // sequential init
     for (int i = 0; i < (int) xgp.getCount(); i += size) {
       for (int j = 0; j < (int) ygp.getCount(); j += size) {
-        auto worker = std::make_unique<FlexGRWorker>(this);
+        auto worker = std::make_unique<FlexGRWorker>(this, router_cfg_);
         Point gcellIdxLL = Point(i, j);
         Point gcellIdxUR
             = Point(std::min((int) xgp.getCount() - 1, i + size - 1),
@@ -355,7 +356,8 @@ void FlexGR::searchRepair(int iter,
 
         int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
         if (workers[batchIdx].empty()
-            || (int) workers[batchIdx].back().size() >= BATCHSIZE) {
+            || (int) workers[batchIdx].back().size()
+                   >= router_cfg_->BATCHSIZE) {
           workers[batchIdx].push_back(
               std::vector<std::unique_ptr<FlexGRWorker>>());
         }
@@ -367,7 +369,7 @@ void FlexGR::searchRepair(int iter,
       xIdx++;
     }
 
-    omp_set_num_threads(std::min(8, MAX_THREADS));
+    omp_set_num_threads(std::min(8, router_cfg_->MAX_THREADS));
     // omp_set_num_threads(1);
 
     // parallel execution
@@ -404,7 +406,7 @@ void FlexGR::searchRepair(int iter,
 
 void FlexGR::reportCong2DGolden(FlexGRCMap* baseCMap2D)
 {
-  FlexGRCMap goldenCMap2D(baseCMap2D);
+  FlexGRCMap goldenCMap2D(baseCMap2D, router_cfg_);
 
   for (auto& net : design_->getTopBlock()->getNets()) {
     for (auto& uGRShape : net->getGRShapes()) {
@@ -436,7 +438,7 @@ void FlexGR::reportCong2DGolden(FlexGRCMap* baseCMap2D)
 
 void FlexGR::reportCong2D(FlexGRCMap* cmap2D)
 {
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     std::cout << std::endl << "start reporting 2D congestion ...\n\n";
   }
 
@@ -528,7 +530,7 @@ void FlexGR::reportCong2D(FlexGRCMap* cmap2D)
 
 void FlexGR::reportCong2D()
 {
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     std::cout << std::endl << "start reporting 2D congestion ...\n\n";
   }
 
@@ -620,7 +622,7 @@ void FlexGR::reportCong2D()
 
 void FlexGR::reportCong3DGolden(FlexGRCMap* baseCMap)
 {
-  FlexGRCMap goldenCMap3D(baseCMap);
+  FlexGRCMap goldenCMap3D(baseCMap, router_cfg_);
 
   for (auto& net : design_->getTopBlock()->getNets()) {
     for (auto& uGRShape : net->getGRShapes()) {
@@ -712,7 +714,7 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
 
 void FlexGR::reportCong3D(FlexGRCMap* cmap)
 {
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     std::cout << std::endl << "start reporting 3D congestion ...\n\n";
   }
 
@@ -786,7 +788,7 @@ void FlexGR::reportCong3D(FlexGRCMap* cmap)
 
 void FlexGR::reportCong3D()
 {
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     std::cout << std::endl << "start reporting 3D congestion ...\n\n";
   }
 
@@ -864,7 +866,7 @@ void FlexGR::reportCong3D()
 void FlexGR::ra()
 {
   frTime t;
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     std::cout << std::endl << "start routing resource analysis ...\n\n";
   }
 
@@ -961,7 +963,7 @@ void FlexGR::ra()
   std::cout << std::setw(5) << std::fixed << std::setprecision(2)
             << totNumBlockedGCell * 100.0 / totNumGCell << "%\n";
 
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     std::cout << std::endl;
     t.print(logger_);
   }
@@ -1242,10 +1244,10 @@ void FlexGR::patternRoute_LShape(frNode* child, frNode* parent)
     corner1Cost += getCongCost(rawSupply, rawDemand);
     if (cmap2D_->getRawDemand(xIdx, cornerGCellIdx1.y(), 0, frDirEnum::E)
         >= cmap2D_->getRawSupply(xIdx, cornerGCellIdx1.y(), 0, frDirEnum::E)) {
-      corner1Cost += BLOCKCOST;
+      corner1Cost += router_cfg_->BLOCKCOST;
     }
     if (cmap2D_->hasBlock(xIdx, cornerGCellIdx1.y(), 0, frDirEnum::E)) {
-      corner1Cost += BLOCKCOST * 100;
+      corner1Cost += router_cfg_->BLOCKCOST * 100;
     }
   }
   for (int yIdx = std::min(cornerGCellIdx1.y(), childGCellIdx.y());
@@ -1258,10 +1260,10 @@ void FlexGR::patternRoute_LShape(frNode* child, frNode* parent)
     corner1Cost += getCongCost(rawSupply, rawDemand);
     if (cmap2D_->getRawDemand(cornerGCellIdx1.x(), yIdx, 0, frDirEnum::N)
         >= cmap2D_->getRawSupply(cornerGCellIdx1.x(), yIdx, 0, frDirEnum::N)) {
-      corner1Cost += BLOCKCOST;
+      corner1Cost += router_cfg_->BLOCKCOST;
     }
     if (cmap2D_->hasBlock(cornerGCellIdx1.x(), yIdx, 0, frDirEnum::N)) {
-      corner1Cost += BLOCKCOST * 100;
+      corner1Cost += router_cfg_->BLOCKCOST * 100;
     }
   }
 
@@ -1277,10 +1279,10 @@ void FlexGR::patternRoute_LShape(frNode* child, frNode* parent)
     corner2Cost += getCongCost(rawSupply, rawDemand);
     if (cmap2D_->getRawDemand(xIdx, cornerGCellIdx2.y(), 0, frDirEnum::E)
         >= cmap2D_->getRawSupply(xIdx, cornerGCellIdx2.y(), 0, frDirEnum::E)) {
-      corner2Cost += BLOCKCOST;
+      corner2Cost += router_cfg_->BLOCKCOST;
     }
     if (cmap2D_->hasBlock(xIdx, cornerGCellIdx2.y(), 0, frDirEnum::E)) {
-      corner2Cost += BLOCKCOST * 100;
+      corner2Cost += router_cfg_->BLOCKCOST * 100;
     }
   }
   for (int yIdx = std::min(cornerGCellIdx2.y(), parentGCellIdx.y());
@@ -1293,10 +1295,10 @@ void FlexGR::patternRoute_LShape(frNode* child, frNode* parent)
     corner2Cost += getCongCost(rawSupply, rawDemand);
     if (cmap2D_->getRawDemand(cornerGCellIdx2.x(), yIdx, 0, frDirEnum::N)
         >= cmap2D_->getRawSupply(cornerGCellIdx2.x(), yIdx, 0, frDirEnum::N)) {
-      corner2Cost += BLOCKCOST;
+      corner2Cost += router_cfg_->BLOCKCOST;
     }
     if (cmap2D_->hasBlock(cornerGCellIdx2.x(), yIdx, 0, frDirEnum::N)) {
-      corner2Cost += BLOCKCOST * 100;
+      corner2Cost += router_cfg_->BLOCKCOST * 100;
     }
   }
 
@@ -1629,8 +1631,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
       Point pt;
       if (rpin->getFrTerm()->typeId() == frcInstTerm) {
         auto inst = static_cast<frInstTerm*>(rpin->getFrTerm())->getInst();
-        dbTransform shiftXform = inst->getTransform();
-        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+        dbTransform shiftXform = inst->getNoRotationTransform();
         pt = rpin->getAccessPoint()->getPoint();
         shiftXform.apply(pt);
       } else {
@@ -2139,7 +2140,7 @@ void FlexGR::layerAssign_node_compute(
           = (std::max(layerNum, std::max(maxPinLayerNum, downstreamMaxLayerNum))
              - std::min(layerNum,
                         std::min(minPinLayerNum, downstreamMinLayerNum)))
-            * VIACOST;
+            * router_cfg_->VIACOST;
 
       // get upstream edge congestion cost
       unsigned congestionCost = 0;
@@ -2155,8 +2156,8 @@ void FlexGR::layerAssign_node_compute(
         parentLoc = currLoc;
       }
 
-      if (layerNum <= (VIA_ACCESS_LAYERNUM / 2 - 1)) {
-        congestionCost += VIACOST * 8;
+      if (layerNum <= (router_cfg_->VIA_ACCESS_LAYERNUM / 2 - 1)) {
+        congestionCost += router_cfg_->VIACOST * 8;
       }
 
       Point beginIdx, endIdx;
@@ -2183,7 +2184,7 @@ void FlexGR::layerAssign_node_compute(
             // block cost
             if (isLayerBlocked
                 || cmap_->hasBlock(xIdx, yIdx, layerNum, frDirEnum::E)) {
-              congestionCost += BLOCKCOST * 100;
+              congestionCost += router_cfg_->BLOCKCOST * 100;
             }
             // congestion cost
             if (demand > supply / 4) {
@@ -2192,7 +2193,7 @@ void FlexGR::layerAssign_node_compute(
 
             // overflow
             if (demand >= supply) {
-              congestionCost += MARKERCOST * 8;
+              congestionCost += router_cfg_->MARKERCOST * 8;
             }
           }
         } else {
@@ -2208,7 +2209,7 @@ void FlexGR::layerAssign_node_compute(
                 = cmap_->getRawDemand(xIdx, yIdx, layerNum, frDirEnum::N);
             if (isLayerBlocked
                 || cmap_->hasBlock(xIdx, yIdx, layerNum, frDirEnum::N)) {
-              congestionCost += BLOCKCOST * 100;
+              congestionCost += router_cfg_->BLOCKCOST * 100;
             }
             // congestion cost
             if (demand > supply / 4) {
@@ -2216,7 +2217,7 @@ void FlexGR::layerAssign_node_compute(
             }
             // overflow
             if (demand >= supply) {
-              congestionCost += MARKERCOST * 8;
+              congestionCost += router_cfg_->MARKERCOST * 8;
             }
           }
         }
@@ -2508,7 +2509,6 @@ void FlexGR::updateDb()
   for (auto& net : design_->getTopBlock()->getNets()) {
     auto dbNet = block->findNet(net->getName().c_str());
     dbNet->clearGuides();
-    auto netName = net->getName();
     for (auto& guide : net->getGuides()) {
       auto [bp, ep] = guide->getPoints();
       Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);
@@ -2524,7 +2524,7 @@ void FlexGR::updateDb()
              lNum += 2) {
           auto layer = design_->getTech()->getLayer(lNum);
           auto dbLayer = dbTech->findLayer(layer->getName().c_str());
-          odb::dbGuide::create(dbNet, dbLayer, bbox);
+          odb::dbGuide::create(dbNet, dbLayer, dbLayer, bbox, false);
         }
       } else {
         auto layer = design_->getTech()->getLayer(bNum);
@@ -2532,7 +2532,9 @@ void FlexGR::updateDb()
         odb::dbGuide::create(
             dbNet,
             dbLayer,
-            {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
+            dbLayer,
+            {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()},
+            false);
       }
     }
     auto dbGuides = dbNet->getGuides();

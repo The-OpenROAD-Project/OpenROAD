@@ -33,7 +33,7 @@
 #ifndef CDEFIIOTIMING_H
 #define CDEFIIOTIMING_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

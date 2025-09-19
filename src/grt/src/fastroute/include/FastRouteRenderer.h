@@ -1,14 +1,14 @@
-// Copyright 2023 Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #pragma once
+
+#include <vector>
 
 #include "AbstractFastRouteRenderer.h"
 #include "FastRoute.h"
 #include "gui/gui.h"
+#include "odb/db.h"
 
 namespace grt {
 

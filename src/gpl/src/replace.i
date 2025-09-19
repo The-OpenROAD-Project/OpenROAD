@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
+
 %{
 #include "ord/OpenRoad.hh"
 #include "gpl/Replace.h"
@@ -18,9 +21,19 @@ using gpl::Replace;
 
 %}
 
+%import <std_vector.i>
+%import "dbtypes.i"
+%import "dbenums.i"
 %include "../../Exception.i"
 
 %inline %{
+
+void
+placement_cluster_cmd(const std::vector<odb::dbInst*>& cluster)
+{
+  Replace* replace = getReplace();
+  replace->addPlacementCluster(cluster);
+}
 
 void 
 replace_reset_cmd() 
@@ -33,7 +46,8 @@ void
 replace_initial_place_cmd()
 {
   Replace* replace = getReplace();
-  replace->doInitialPlace();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  replace->doInitialPlace(threads);
 }
 
 void 
@@ -147,19 +161,19 @@ replace_incremental_place_cmd()
 }
 
 
-void
-set_force_cpu(bool force_cpu)
-{
-  Replace* replace = getReplace();
-  replace->setForceCPU(force_cpu);
-}
-
 void set_timing_driven_mode(bool timing_driven)
 {
   Replace* replace = getReplace();
   replace->setTimingDrivenMode(timing_driven);
 }
 
+
+void
+set_keep_resize_below_overflow_cmd(float overflow) 
+{
+  Replace* replace = getReplace();
+  replace->setKeepResizeBelowOverflow(overflow);
+}
 
 void
 set_routability_driven_mode(bool routability_driven)
@@ -169,24 +183,24 @@ set_routability_driven_mode(bool routability_driven)
 }
 
 void
+set_routability_use_grt(bool use_grt)
+{
+  Replace* replace = getReplace();
+  replace->setRoutabilityUseGrt(use_grt);
+}
+
+void
 set_routability_check_overflow_cmd(float overflow) 
 {
   Replace* replace = getReplace();
   replace->setRoutabilityCheckOverflow(overflow);
 }
-
+ 
 void
 set_routability_max_density_cmd(float density) 
 {
   Replace* replace = getReplace();
   replace->setRoutabilityMaxDensity(density);
-}
-
-void
-set_routability_max_bloat_iter_cmd(int iter)
-{
-  Replace* replace = getReplace();
-  replace->setRoutabilityMaxBloatIter(iter);
 }
 
 void
@@ -249,6 +263,20 @@ set_skip_io_mode_cmd(bool mode)
   replace->setSkipIoMode(mode);
 }
 
+void
+set_disable_revert_if_diverge(bool disable_revert_if_diverge)
+{
+  Replace* replace = getReplace();
+  replace->setDisableRevertIfDiverge(disable_revert_if_diverge);
+}
+
+void
+set_enable_routing_congestion(bool enable_routing_congestion)
+{
+  Replace* replace = getReplace();
+  replace->setEnableRoutingCongestion(enable_routing_congestion);
+}
+
 float
 get_global_placement_uniform_density_cmd() 
 {
@@ -278,7 +306,10 @@ set_debug_cmd(int pause_iterations,
               int update_iterations,
               bool draw_bins,
               bool initial,
-              const char* inst_name)
+              const char* inst_name,
+              int start_iter,
+              bool generate_images,
+              const char* images_path)
 {
   Replace* replace = getReplace();
   odb::dbInst* inst = nullptr;
@@ -286,8 +317,14 @@ set_debug_cmd(int pause_iterations,
     auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
     inst = block->findInst(inst_name);
   }
+
+  std::string resolved_path = (images_path && *images_path)
+                                  ? images_path
+                                  : "REPORTS_DIR";
+
   replace->setDebug(pause_iterations, update_iterations, draw_bins,
-                    initial, inst);
+                    initial, inst, start_iter, generate_images,
+                    resolved_path);
 }
 
 %} // inline

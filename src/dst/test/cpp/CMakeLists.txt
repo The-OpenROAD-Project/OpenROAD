@@ -1,5 +1,6 @@
 set(TEST_LIBS
     dst
+    dl
     ${TCL_LIBRARY}
 )
 
@@ -27,4 +28,26 @@ target_include_directories(TestDistributed
   PRIVATE
   ${DST_HOME}/src
   ${OPENROAD_HOME}/include
+)
+
+add_test(
+  NAME "dst.TestWorker"
+  COMMAND TestWorker
+)
+
+add_test(
+  NAME "dst.TestBalancer"
+  COMMAND TestBalancer
+)
+
+# This test case appears to have an internal race condition
+#add_test(
+#  NAME "dst.TestDistributed"
+#  COMMAND TestDistributed
+#)
+
+add_dependencies(build_and_test 
+  TestWorker
+  TestBalancer
+  TestDistributed
 )

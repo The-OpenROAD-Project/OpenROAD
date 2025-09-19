@@ -1,45 +1,28 @@
-/* Author: Matt Liberty */
-/*
- * Copyright (c) 2020, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "FlexPA_graphics.h"
+#include "pa/FlexPA_graphics.h"
 
-#include <algorithm>
 #include <cstdio>
-#include <limits>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "FlexPA.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frMPin.h"
+#include "frBaseTypes.h"
+#include "global.h"
+#include "pa/FlexPA.h"
+#include "utl/Logger.h"
 
 namespace drt {
 
 FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
                                frDesign* design,
                                odb::dbDatabase* db,
-                               Logger* logger)
+                               utl::Logger* logger,
+                               RouterConfiguration* router_cfg)
     : logger_(logger),
       settings_(settings),
       inst_(nullptr),
@@ -53,18 +36,19 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
   // Build the layer map between opendb & tr
   auto odb_tech = db->getTech();
 
-  layer_map_.resize(odb_tech->getLayerCount(), -1);
+  layer_map_.resize(odb_tech->getLayerCount(), std::make_pair(-1, "none"));
 
   for (auto& tr_layer : design->getTech()->getLayers()) {
     auto odb_layer = tr_layer->getDbLayer();
     if (odb_layer) {
-      layer_map_[odb_layer->getNumber()] = tr_layer->getLayerNum();
+      layer_map_[odb_layer->getNumber()]
+          = std::make_pair(tr_layer->getLayerNum(), odb_layer->getName());
     }
   }
 
-  if (MAX_THREADS > 1) {
+  if (router_cfg->MAX_THREADS > 1) {
     logger_->info(DRT, 115, "Setting MAX_THREADS=1 for use with the PA GUI.");
-    MAX_THREADS = 1;
+    router_cfg->MAX_THREADS = 1;
   }
 
   if (!settings_->pinName.empty()) {
@@ -93,11 +77,11 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
 
 void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
-  frLayerNum layerNum;
+  frLayerNum layer_num;
   if (!shapes_.empty()) {
-    layerNum = layer_map_.at(layer->getNumber());
+    layer_num = layer_map_.at(layer->getNumber()).first;
     for (auto& b : shapes_) {
-      if (b.second != layerNum) {
+      if (b.second != layer_num) {
         continue;
       }
       painter.drawRect(
@@ -109,8 +93,8 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     return;
   }
 
-  layerNum = layer_map_.at(layer->getNumber());
-  if (layerNum < 0) {
+  layer_num = layer_map_.at(layer->getNumber()).first;
+  if (layer_num < 0) {
     return;
   }
 
@@ -118,9 +102,9 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     auto* via_def = via->getViaDef();
     Rect bbox;
     bool skip = false;
-    if (via_def->getLayer1Num() == layerNum) {
+    if (via_def->getLayer1Num() == layer_num) {
       bbox = via->getLayer1BBox();
-    } else if (via_def->getLayer2Num() == layerNum) {
+    } else if (via_def->getLayer2Num() == layer_num) {
       bbox = via->getLayer2BBox();
     } else {
       skip = true;
@@ -133,7 +117,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   for (auto seg : pa_segs_) {
-    if (seg->getLayerNum() == layerNum) {
+    if (seg->getLayerNum() == layer_num) {
       Rect bbox = seg->getBBox();
       painter.setPen(layer, /* cosmetic */ true);
       painter.setBrush(layer);
@@ -142,20 +126,20 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   if (pa_markers_) {
-    painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
-    painter.setBrush(gui::Painter::transparent);
+    painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
+    painter.setBrush(gui::Painter::kTransparent);
     for (auto& marker : *pa_markers_) {
-      if (marker->getLayerNum() == layerNum) {
+      if (marker->getLayerNum() == layer_num) {
         painter.drawRect(marker->getBBox());
       }
     }
   }
 
   for (const auto& ap : aps_) {
-    if (ap.getLayerNum() != layerNum) {
+    if (ap.getLayerNum() != layer_num) {
       continue;
     }
-    auto color = ap.hasAccess() ? gui::Painter::green : gui::Painter::red;
+    auto color = ap.hasAccess() ? gui::Painter::kGreen : gui::Painter::kRed;
     painter.setPen(color, /* cosmetic */ true);
 
     const Point& pt = ap.getPoint();
@@ -165,7 +149,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
 void FlexPAGraphics::startPin(frMPin* pin,
                               frInstTerm* inst_term,
-                              std::set<frInst*, frBlockObjectComp>* instClass)
+                              UniqueClass* inst_class)
 {
   pin_ = nullptr;
 
@@ -174,11 +158,14 @@ void FlexPAGraphics::startPin(frMPin* pin,
     if (term_name_ != "*" && term->getName() != term_name_) {
       return;
     }
-    if (instClass->find(inst_) == instClass->end()) {
+    if (!inst_class->hasInst(inst_)) {
       return;
     }
   }
 
+  if (inst_term == nullptr) {
+    logger_->error(DRT, 158, "Instance for MPin {} is null.", term->getName());
+  }
   const std::string name
       = inst_term->getInst()->getName() + ':' + term->getName();
   status("Start pin: " + name);
@@ -191,7 +178,7 @@ void FlexPAGraphics::startPin(frMPin* pin,
 
 void FlexPAGraphics::startPin(frBPin* pin,
                               frInstTerm* inst_term,
-                              std::set<frInst*, frBlockObjectComp>* instClass)
+                              UniqueClass* inst_class)
 {
   pin_ = nullptr;
 
@@ -261,13 +248,21 @@ void FlexPAGraphics::setViaAP(
   if (!pin_ || !settings_->paMarkers) {
     return;
   }
-
+  logger_->report(
+      "Via {} markers {}", via->getViaDef()->getName(), markers.size());
   pa_ap_ = ap;
   pa_vias_ = {via};
   pa_segs_.clear();
   pa_markers_ = &markers;
   for (auto& marker : markers) {
     Rect bbox = marker->getBBox();
+    std::string layer_name;
+    for (auto& layer : layer_map_) {
+      if (layer.first == marker->getLayerNum()) {
+        layer_name = layer.second;
+        break;
+      }
+    }
     logger_->info(DRT,
                   119,
                   "Marker ({}, {}) ({}, {}) on {}:",
@@ -275,7 +270,7 @@ void FlexPAGraphics::setViaAP(
                   bbox.yMin(),
                   bbox.xMax(),
                   bbox.yMax(),
-                  marker->getLayerNum());
+                  layer_name);
     marker->getConstraint()->report(logger_);
   }
 

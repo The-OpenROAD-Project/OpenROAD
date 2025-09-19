@@ -33,7 +33,7 @@
 #ifndef CDEFITIMINGDISABLE_H
 #define CDEFITIMINGDISABLE_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

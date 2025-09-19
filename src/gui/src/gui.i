@@ -1,39 +1,9 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 %{
+#include <optional>
+
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
 #include "gui/gui.h"
@@ -166,6 +136,58 @@ void highlight_net(const char* name, int highlight_group = 0)
   gui->addNetToHighlightSet(name, highlight_group);
 }
 
+const std::string add_label(
+  double x,
+  double y,
+  const std::string& text,
+  const std::string& anchor = "",
+  const std::string& color = "",
+  int size = 0,
+  const std::string& name = "")
+{
+  if (!check_gui("add_label")) {
+    return "";
+  }
+  odb::Point pt = make_point(x, y);
+  auto gui = gui::Gui::get();
+
+  std::optional<int> pass_size;
+  if (size > 0) {
+    pass_size = size;
+  }
+  std::optional<std::string> pass_name;
+  if (!name.empty()) {
+    pass_name = name;
+  }
+  std::optional<gui::Painter::Color> pass_color;
+  if (!color.empty()) {
+    pass_color = gui::Painter::stringToColor(color, ord::OpenRoad::openRoad()->getLogger());
+  }
+  std::optional<gui::Painter::Anchor> pass_anchor;
+  if (!anchor.empty()) {
+    pass_anchor = gui::Painter::stringToAnchor(anchor, ord::OpenRoad::openRoad()->getLogger());
+  }
+  return gui->addLabel(pt.x(), pt.y(), text, pass_color, pass_size, pass_anchor, pass_name);
+}
+
+void delete_label(const std::string& name)
+{
+  if (!check_gui("delete_label")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->deleteLabel(name);
+}
+
+void clear_labels()
+{
+  if (!check_gui("clear_labels")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->clearLabels();
+}
+
 const std::string add_ruler(
   double x0, 
   double y0, 
@@ -288,6 +310,28 @@ void save_clocktree_image(const char* filename, const char* clock_name, const ch
   gui->saveClockTreeImage(clock_name, filename, corner, width_px, height_px);
 }
 
+void select_clockviewer_clock(const char* clock_name, int depth = 0)
+{
+  if (!check_gui("select_clockviewer_clock")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  std::optional<int> clock_depth;
+  if (depth > 0) {
+    clock_depth = depth;
+  }
+  gui->selectClockviewerClock(clock_name, clock_depth);
+}
+
+void save_histogram_image(const char* filename, const char* mode, int width_px = 0, int height_px = 0)
+{
+  if (!check_gui("save_histogram_image")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->saveHistogramImage(filename, mode, width_px, height_px);
+}
+
 void clear_rulers()
 {
   if (!check_gui("clear_rulers")) {
@@ -315,25 +359,33 @@ void clear_highlights(int highlight_group = 0)
   gui->clearHighlights(highlight_group);
 }
 
-void set_display_controls(const char* name, const char* display_type, bool value)
+void set_display_controls(const char* name, const char* display_type, const char* value)
 {
   if (!check_gui("set_display_controls")) {
     return;
   }
   auto gui = gui::Gui::get();
+  auto logger = ord::OpenRoad::openRoad()->getLogger();
   
   std::string disp_type = display_type;
+  std::string str_value = value;
   // make lower case
   std::transform(disp_type.begin(), 
                  disp_type.end(), 
                  disp_type.begin(), 
                  [](char c) { return std::tolower(c); });
   if (disp_type == "visible") {
-    gui->setDisplayControlsVisible(name, value);
+    bool bval = str_value == "true" || str_value == "1";
+    gui->setDisplayControlsVisible(name, bval);
   } else if (disp_type == "selectable") {
-    gui->setDisplayControlsSelectable(name, value);
+    bool bval = str_value == "true" || str_value == "1";
+    gui->setDisplayControlsSelectable(name, bval);
+  } else if (disp_type == "color") {
+    if (str_value.empty()) {
+      logger->error(GUI, 41, "Color is required");
+    }
+    gui->setDisplayControlsColor(name, gui::Painter::stringToColor(str_value, logger));
   } else {
-    auto logger = ord::OpenRoad::openRoad()->getLogger();
     logger->error(GUI, 7, "Unknown display control type: {}", display_type);
   }
 }
@@ -442,13 +494,18 @@ void gui_pause(int timeout = 0)
   return gui->pause(timeout);
 }
 
-void load_drc(const char* filename)
+void select_marker_category(odb::dbMarkerCategory* category)
 {
-  if (!check_gui("load_drc")) {
+  if (!check_gui("select_marker_category")) {
     return;
   }
   auto gui = gui::Gui::get();
-  gui->loadDRC(filename);
+  gui->selectMarkers(category);
+}
+
+void select_marker_category(const char* name)
+{
+  select_marker_category(get_block()->findMarkerCategory(name));
 }
 
 void show_widget(const char* name)
@@ -469,10 +526,10 @@ void hide_widget(const char* name)
   return gui->showWidget(name, false);
 }
 
-void show(const char* script = "", bool interactive = true)
+void show(const char* script = "", bool interactive = true, bool load_settings = true)
 {
   auto gui = gui::Gui::get();
-  gui->showGui(script, interactive);
+  gui->showGui(script, interactive, load_settings);
 }
 
 void hide()
@@ -619,12 +676,12 @@ double get_heatmap_double(const std::string& name, const std::string& option)
   return 0.0;
 }
 
-const char* get_heatmap_string(const std::string& name, const std::string& option)
+std::string get_heatmap_string(const std::string& name, const std::string& option)
 {
   auto gui = gui::Gui::get();
   auto value = gui->getHeatMapSetting(name, option);
   if (std::holds_alternative<std::string>(value)) {
-    return std::get<std::string>(value).c_str();
+    return std::get<std::string>(value);
   } else {
     auto logger = ord::OpenRoad::openRoad()->getLogger();
     logger->error(GUI, 93, "Heatmap setting \"{}\" is not a string", option);
@@ -707,6 +764,88 @@ void trigger_action(const std::string& name)
 bool supported()
 {
   return true;
+}
+
+void minimize()
+{
+  if (!check_gui("minimize")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->minimize();
+}
+
+void unminimize()
+{
+  if (!check_gui("unminimize")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->unminimize();
+}
+
+void show_help(const std::string& item)
+{
+  if (!check_gui("show_help")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->selectHelp(item);
+}
+
+void select_chart(const std::string& name)
+{
+  if (!check_gui("select_chart")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->selectChart(name);
+}
+
+void update_timing_report()
+{
+  if (!check_gui("update_timing_report")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->updateTimingReport();
+}
+
+void set_title(std::string title)
+{
+  auto gui = gui::Gui::get();
+  gui->setMainWindowTitle(title);
+}
+
+void gif_start(const char* filename)
+{
+  if (!check_gui("gif_start")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->gifStart(filename);
+}
+
+void gif_add(double xlo, double ylo, double xhi, double yhi, int width_px = 0, double dbu_per_pixel = 0, int delay = 0)
+{
+  if (!check_gui("gif_add")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  std::optional<int> delay_pass;
+  if (delay > 0) {
+    delay_pass = delay;
+  }
+  gui->gifAddFrame(make_rect(xlo, ylo, xhi, yhi), width_px, dbu_per_pixel, delay_pass);
+}
+
+void gif_end()
+{
+  if (!check_gui("gif_end")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->gifEnd();
 }
 
 %} // inline

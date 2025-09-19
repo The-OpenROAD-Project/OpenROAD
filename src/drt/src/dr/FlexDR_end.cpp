@@ -1,36 +1,27 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
+#include <iostream>
+#include <memory>
+#include <set>
+#include <utility>
+#include <vector>
+
+#include "db/infra/frSegStyle.h"
+#include "db/obj/frBTerm.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frMarker.h"
+#include "db/obj/frShape.h"
+#include "db/obj/frVia.h"
 #include "dr/FlexDR.h"
+#include "frBaseTypes.h"
+#include "frDesign.h"
 
 namespace drt {
 
-void FlexDRWorker::endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets)
+void FlexDRWorker::endGetModNets(frOrderedIdSet<frNet*>& modNets)
 {
   for (auto& net : nets_) {
     if (net->isModified()) {
@@ -54,6 +45,19 @@ void FlexDRWorker::endRemoveNets_pathSeg(
   auto routeBox = getRouteBox();
   auto net = pathSeg->getNet();
   auto regionQuery = design->getRegionQuery();
+  if (pathSeg->isApPathSeg()) {
+    if (getRouteBox().intersects(pathSeg->getApLoc())) {
+      if (save_updates_) {
+        drUpdate update(drUpdate::REMOVE_FROM_NET);
+        update.setNet(net);
+        update.setIndexInOwner(pathSeg->getIndexInOwner());
+        design_->addUpdate(update);
+      }
+      regionQuery->removeDRObj(pathSeg);
+      net->removeShape(pathSeg);
+    }
+    return;
+  }
   // vertical seg
   if (begin.x() == end.x()) {
     // if cross routeBBox
@@ -66,11 +70,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
     // -------------------
     if (isInitDR()
         && (begin.x() == routeBox.xMin() || begin.x() == routeBox.xMax())) {
-      if (begin.y() < routeBox.yMin() || end.y() > routeBox.yMax()
-          || pathSeg->getBeginStyle() != frcTruncateEndStyle
-          || pathSeg->getEndStyle() != frcTruncateEndStyle) {
-        return;
-      }
+      return;
     }
     bool condition2 = (begin.y() <= routeBox.yMax());  // orthogonal to wire
     if (routeBox.xMin() <= begin.x() && begin.x() <= routeBox.xMax()
@@ -149,11 +149,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
   } else if (begin.y() == end.y()) {
     if (isInitDR()
         && (begin.y() == routeBox.yMin() || begin.y() == routeBox.yMax())) {
-      if (begin.x() < routeBox.xMin() || end.x() > routeBox.xMax()
-          || pathSeg->getBeginStyle() != frcTruncateEndStyle
-          || pathSeg->getEndStyle() != frcTruncateEndStyle) {
-        return;
-      }
+      return;
     }
     // if cross routeBBox
     bool condition2 = /*isInitDR() ? (begin.x() < routeBox.xMax()):*/ (
@@ -267,9 +263,8 @@ void FlexDRWorker::endRemoveNets_patchWire(frDesign* design, frPatchWire* pwire)
 
 void FlexDRWorker::endRemoveNets(
     frDesign* design,
-    std::set<frNet*, frBlockObjectComp>& modNets,
-    std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>&
-        boundPts)
+    frOrderedIdSet<frNet*>& modNets,
+    frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>& boundPts)
 {
   std::vector<frBlockObject*> result;
   design->getRegionQuery()->queryDRObj(getExtBox(), result);
@@ -514,10 +509,88 @@ void FlexDRWorker::endAddNets_merge(
   }
 }
 
+bool FlexDRWorker::endAddNets_updateExtFigs_pathSeg(drNet* net,
+                                                    const Point3D& update_pt,
+                                                    frPathSeg* path_seg)
+{
+  frNet* fr_net = net->getFrNet();
+  if (path_seg->getNet() != fr_net) {
+    return false;
+  }
+  const auto [bp, ep] = path_seg->getPoints();
+  if (bp != update_pt && ep != update_pt) {
+    return false;
+  }
+  // remove from rq before updating bbox
+  getDesign()->getRegionQuery()->removeDRObj(path_seg);
+  if (save_updates_) {
+    drUpdate update(
+        drUpdate::REMOVE_FROM_RQ, fr_net, path_seg->getIndexInOwner());
+    getDesign()->addUpdate(update);
+  }
+  // update path_seg style
+  frSegStyle updated_style;
+  net->getExtFigUpdate(update_pt, updated_style);
+  path_seg->setStyle(updated_style);
+  // add to rq after updating bbox
+  getDesign()->getRegionQuery()->addDRObj(path_seg);
+  if (save_updates_) {
+    drUpdate update(
+        drUpdate::UPDATE_SHAPE, fr_net, path_seg->getIndexInOwner());
+    // UPDATE_SHAPE with pathSeg adds to rq
+    update.setPathSeg(*path_seg);
+    getDesign()->addUpdate(update);
+  }
+  return true;
+}
+
+bool FlexDRWorker::endAddNets_updateExtFigs_via(drNet* net,
+                                                const Point3D& update_pt,
+                                                frVia* via)
+{
+  frNet* fr_net = net->getFrNet();
+  if (via->getNet() != fr_net || via->getOrigin() != update_pt) {
+    return false;
+  }
+  // update via connections
+  bool is_bottom_connected, is_top_connected;
+  net->getExtFigUpdate(update_pt, is_bottom_connected, is_top_connected);
+  via->setBottomConnected(is_bottom_connected);
+  via->setTopConnected(is_top_connected);
+  if (save_updates_) {
+    drUpdate update(drUpdate::UPDATE_SHAPE, fr_net, via->getIndexInOwner());
+    update.setVia(*via);
+    getDesign()->addUpdate(update);
+  }
+  return true;
+}
+
+void FlexDRWorker::endAddNets_updateExtFigs(drNet* net)
+{
+  const std::vector<Point3D> locs = net->getExtFigsUpdatesLocs();
+  auto region_query = design_->getRegionQuery();
+  for (const auto& pt : locs) {
+    frRegionQuery::Objects<frBlockObject> result;
+    region_query->queryDRObj({pt, pt}, pt.z(), result);
+    const bool is_via = net->isExtFigUpdateVia(pt);
+    for (const auto& [_, obj] : result) {
+      if (is_via && obj->typeId() == frcVia) {
+        auto via = static_cast<frVia*>(obj);
+        if (endAddNets_updateExtFigs_via(net, pt, via)) {
+          break;
+        }
+      } else if (!is_via && obj->typeId() == frcPathSeg) {
+        auto path_seg = static_cast<frPathSeg*>(obj);
+        if (endAddNets_updateExtFigs_pathSeg(net, pt, path_seg)) {
+          break;
+        }
+      }
+    }
+  }
+}
 void FlexDRWorker::endAddNets(
     frDesign* design,
-    std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>&
-        boundPts)
+    frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>& boundPts)
 {
   for (auto& net : nets_) {
     if (!net->isModified()) {
@@ -534,6 +607,9 @@ void FlexDRWorker::endAddNets(
       } else {
         std::cout << "Error: endAddNets unsupported type" << std::endl;
       }
+    }
+    if (net->hasExtFigUpdates()) {
+      endAddNets_updateExtFigs(net.get());
     }
   }
   for (auto& [net, bPts] : boundPts) {
@@ -593,7 +669,7 @@ void FlexDRWorker::cleanup()
   markers_.clear();
   markers_.shrink_to_fit();
   rq_.cleanup();
-  specialAccessAPs.clear();
+  specialAccessAPs_.clear();
 }
 
 bool FlexDRWorker::end(frDesign* design)
@@ -607,7 +683,8 @@ bool FlexDRWorker::end(frDesign* design)
     return false;
     // do not write back if current clip is worse than input
   }
-  if (getRipupMode() != RipUpMode::ALL
+  if ((getRipupMode() == RipUpMode::DRC || getRipupMode() == RipUpMode::NEARDRC
+       || getRipupMode() == RipUpMode::VIASWAP)
       && getBestNumMarkers() > getInitNumMarkers()) {
     // cout <<"skip clip with #init/final = " <<getInitNumMarkers() <<"/"
     // <<getNumMarkers() <<endl;
@@ -618,17 +695,15 @@ bool FlexDRWorker::end(frDesign* design)
     return false;
   }
   save_updates_ = dist_on_;
-  std::set<frNet*, frBlockObjectComp> modNets;
+  frOrderedIdSet<frNet*> modNets;
   endGetModNets(modNets);
   // get lock
-  std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
-      boundPts;
+  frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>> boundPts;
   endRemoveNets(design, modNets, boundPts);
   endAddNets(design, boundPts);  // if two subnets have diff isModified()
                                  // status, then should always write back
   endRemoveMarkers(design);
   endAddMarkers(design);
-  return true;
   // release lock
   return true;
 }

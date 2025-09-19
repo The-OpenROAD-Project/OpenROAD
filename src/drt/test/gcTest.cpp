@@ -31,16 +31,22 @@
 #ifdef HAS_BOOST_UNIT_TEST_LIBRARY
 // Shared library version
 #define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "boost/test/unit_test.hpp"
 #else
 // Header only version
-#include <boost/test/included/unit_test.hpp>
+#include "boost/test/included/unit_test.hpp"
 #endif
 
-#include <boost/test/data/test_case.hpp>
-#include <iostream>
+#include <map>
+#include <memory>
+#include <utility>
+#include <vector>
 
+#include "boost/test/data/test_case.hpp"
+#include "db/obj/frMarker.h"
+#include "db/tech/frViaDef.h"
 #include "fixture.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
 #include "odb/db.h"
@@ -52,7 +58,7 @@ namespace bdata = boost::unit_test::data;
 // Fixture for GC tests
 struct GCFixture : public Fixture
 {
-  GCFixture() : worker(design->getTech(), logger.get()) {}
+  GCFixture() : worker(design->getTech(), logger.get(), router_cfg.get()) {}
 
   void testMarker(frMarker* marker,
                   frLayerNum layer_num,
@@ -80,7 +86,6 @@ struct GCFixture : public Fixture
 
     worker.init(design.get());
     worker.main();
-    worker.end();
   }
 
   FlexGCWorker worker;
@@ -133,10 +138,10 @@ BOOST_AUTO_TEST_CASE(metal_short_obs)
   frNet* n1 = makeNet("n1");
 
   makePathseg(n1, 2, {0, 0}, {600, 0});
-  auto block = makeMacro("OBS");
+  auto [block, master] = makeMacro("OBS");
   makeMacroObs(block, 450, -50, 750, 200, 2);
   makeMacroPin(block, "in", 450, 40, 550, 90, 2);
-  auto i1 = makeInst("i1", block, 0, 0);
+  auto i1 = makeInst("i1", block, master);
   auto instTerm = i1->getInstTerms()[0].get();
   instTerm->addToNet(n1);
 
@@ -214,9 +219,9 @@ BOOST_DATA_TEST_CASE(min_cut,
 
   // Test the results
   auto& markers = worker.getMarkers();
-  if (legal)
+  if (legal) {
     BOOST_TEST(markers.size() == 0);
-  else {
+  } else {
     BOOST_TEST(markers.size() == 1);
     testMarker(markers[0].get(),
                2,
@@ -443,9 +448,9 @@ BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
   frNet* n1 = makeNet("n1");
 
   makePathseg(n1, 2, {0, 50}, {500, 50}, 100);
-  auto block = makeMacro("DRW");
+  auto [block, master] = makeMacro("DRW");
   makeMacroObs(block, 0, 140, 500, 340, 2, legal ? 100 : -1);
-  makeInst("i1", block, 0, 0);
+  makeInst("i1", block, master);
   /*
   If DESIGNRULEWIDTH is 100
     width(n1) = 100      width(obs) = 100 : reqSpcVal = 0
@@ -459,9 +464,9 @@ BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
 
   // Test the results
   auto& markers = worker.getMarkers();
-  if (legal)
+  if (legal) {
     BOOST_TEST(markers.size() == 0);
-  else {
+  } else {
     BOOST_TEST(markers.size() == 1);
     testMarker(markers[0].get(),
                2,
@@ -748,10 +753,11 @@ BOOST_DATA_TEST_CASE(spacing_range_same_diff_net,
 BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
 {
   // Setup
-  if (lef58)
+  if (lef58) {
     makeLef58SpacingEolConstraint(2);
-  else
+  } else {
     makeSpacingEndOfLineConstraint(2);
+  }
 
   frNet* n1 = makeNet("n1");
 
@@ -796,6 +802,32 @@ BOOST_AUTO_TEST_CASE(eol_endtoend)
              frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
              Rect(100, 0, 350, 100));
 }
+// Check for a basic end-of-line (EOL) spacing violation with extension.
+BOOST_AUTO_TEST_CASE(eol_endtoend_ext)
+{
+  // Setup
+  auto con = makeLef58SpacingEolConstraint(2);
+  auto endToEnd
+      = std::make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
+  endToEnd->setEndToEndSpace(300);
+  endToEnd->setExtension(50);
+  con->getWithinConstraint()->setEndToEndConstraint(endToEnd);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 50}, {100, 50});
+  makePathseg(n1, 2, {350, 200}, {1000, 200});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+  testMarker(markers[0].get(),
+             2,
+             frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
+             Rect(100, 100, 350, 150));
+}
 
 BOOST_AUTO_TEST_CASE(eol_wrongdirspc)
 {
@@ -832,15 +864,16 @@ BOOST_DATA_TEST_CASE(eol_ext_basic,
 
   // Test the results
   auto& markers = worker.getMarkers();
-  if (legal)
+  if (legal) {
     BOOST_TEST(markers.size() == 0);
-  else {
+  } else {
     BOOST_TEST(markers.size() == 1);
-    if (markers.size() == 1)
+    if (markers.size() == 1) {
       testMarker(markers[0].get(),
                  2,
                  frConstraintTypeEnum::frcLef58EolExtensionConstraint,
                  Rect(500, 50, 690, 150));
+    }
   }
 }
 
@@ -897,9 +930,9 @@ BOOST_DATA_TEST_CASE(eol_ext_paronly, (bdata::make({true, false})), parOnly)
 
   // Test the results
   auto& markers = worker.getMarkers();
-  if (parOnly)
+  if (parOnly) {
     BOOST_TEST(markers.size() == 0);
-  else {
+  } else {
     BOOST_TEST(markers.size() == 1);
     testMarker(markers[0].get(),
                2,
@@ -917,17 +950,18 @@ BOOST_DATA_TEST_CASE(eol_keepout, (bdata::make({true, false})), legal)
 
   makePathseg(n1, 2, {500, 0}, {500, 500});
   frCoord x_extra = 0;
-  if (legal)
+  if (legal) {
     x_extra = 200;
+  }
   makePathseg(n1, 2, {400 + x_extra, 700}, {700 + x_extra, 700});
 
   runGC();
 
   // Test the results
   auto& markers = worker.getMarkers();
-  if (legal)
+  if (legal) {
     BOOST_TEST(markers.size() == 0);
-  else {
+  } else {
     BOOST_TEST(markers.size() == 1);
     testMarker(markers[0].get(),
                2,
@@ -965,19 +999,21 @@ BOOST_DATA_TEST_CASE(eol_keepout_corner,
 
   makePathseg(n1, 2, {500, 0}, {500, 500});
   frCoord x_extra = 0;
-  if (concave && !legal)
+  if (concave && !legal) {
     makePathseg(n1, 2, {360, 400}, {360, 750});
-  if (!concave && !legal)
+  }
+  if (!concave && !legal) {
     x_extra = 10;
+  }
   makePathseg(n1, 2, {400 + x_extra, 700}, {600 + x_extra, 700});
 
   runGC();
 
   // Test the results
   auto& markers = worker.getMarkers();
-  if (legal)
+  if (legal) {
     BOOST_TEST(markers.size() == 0);
-  else {
+  } else {
     BOOST_TEST(markers.size() == 1);
     testMarker(markers[0].get(),
                2,
@@ -991,12 +1027,13 @@ BOOST_DATA_TEST_CASE(eol_keepout_corner,
 BOOST_DATA_TEST_CASE(eol_parallel_edge, (bdata::make({true, false})), lef58)
 {
   // Setup
-  if (lef58)
+  if (lef58) {
     makeLef58SpacingEolParEdgeConstraint(
         makeLef58SpacingEolConstraint(2), 200, 200);
-  else
+  } else {
     makeSpacingEndOfLineConstraint(
         2, /* par_space */ 200, /* par_within */ 200);
+  }
 
   frNet* n1 = makeNet("n1");
 
@@ -1021,14 +1058,15 @@ BOOST_DATA_TEST_CASE(eol_parallel_edge, (bdata::make({true, false})), lef58)
 BOOST_DATA_TEST_CASE(eol_parallel_two_edge, (bdata::make({true, false})), lef58)
 {
   // Setup
-  if (lef58)
+  if (lef58) {
     makeLef58SpacingEolParEdgeConstraint(
         makeLef58SpacingEolConstraint(2), 200, 200, true);
-  else
+  } else {
     makeSpacingEndOfLineConstraint(2,
                                    /* par_space */ 200,
                                    /* par_within */ 200,
                                    /* two_edges */ true);
+  }
 
   frNet* n1 = makeNet("n1");
 
@@ -1064,18 +1102,20 @@ BOOST_DATA_TEST_CASE(eol_min_max,
                  // triggered and one of them need to violate minMax for
                  // eolSpacing to be neglected
   {
-    if (max && legal)
+    if (max && legal) {
       y += 10;  // right(510) > std::max(500) --> minMax violated --> legal
-    else if (!max && !legal)
+    } else if (!max && !legal) {
       y += 100;  // right(600) & left(500) >= std::min(500) --> minMax is met
                  // --> illegal
+    }
   } else if (legal)  // both sides need to violate minMax to have no
                      // eolSpacing violations
   {
-    if (max)
+    if (max) {
       y += 110;  // right(610) & left(510) > std::max(500)
-    else
+    } else {
       y -= 10;  // right(490) & left(390) < std::min(500)
+    }
   }
   makePathseg(n1, 2, {500, 0}, {500, y});
   makePathseg(n1, 2, {0, 700}, {1000, 700});
@@ -1085,15 +1125,16 @@ BOOST_DATA_TEST_CASE(eol_min_max,
 
   // Test the results
   auto& markers = worker.getMarkers();
-  if (legal)
+  if (legal) {
     BOOST_TEST(markers.size() == 0);
-  else {
+  } else {
     BOOST_TEST(markers.size() == 1);
-    if (markers.size() == 1)
+    if (markers.size() == 1) {
       testMarker(markers[0].get(),
                  2,
                  frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
                  Rect(450, y, 550, 650));
+    }
   }
 }
 BOOST_DATA_TEST_CASE(eol_enclose_cut,
@@ -1112,15 +1153,16 @@ BOOST_DATA_TEST_CASE(eol_enclose_cut,
   makeVia(vd, n1, {400, y});
   runGC();
   auto& markers = worker.getMarkers();
-  if (legal)
+  if (legal) {
     BOOST_TEST(markers.size() == 0);
-  else {
+  } else {
     BOOST_TEST(markers.size() == 1);
-    if (markers.size() == 1)
+    if (markers.size() == 1) {
       testMarker(markers[0].get(),
                  4,
                  frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
                  Rect(450, 500, 550, 650));
+    }
   }
 }
 
@@ -1149,7 +1191,8 @@ BOOST_DATA_TEST_CASE(cut_spc_tbl, (bdata::make({true, false})), viol)
     table.push_back({{301, 301}, {301, 300}});
   }
 
-  dbRule->setSpacingTable(table, row_map, col_map);
+  dbRule->setSpacingTable(
+      std::move(table), std::move(row_map), std::move(col_map));
   makeLef58CutSpcTbl(3, dbRule);
   frNet* n1 = makeNet("n1");
 
@@ -1372,6 +1415,123 @@ BOOST_DATA_TEST_CASE(route_wrong_direction_spc,
                2,
                frConstraintTypeEnum::frcLef58SpacingWrongDirConstraint,
                Rect(0, 100, 100, 150));
+  }
+}
+
+BOOST_AUTO_TEST_CASE(twowires_forbidden_spc)
+{
+  // Setup
+  auto db_layer = db_tech->findLayer("m1");
+  auto rule = odb::dbTechLayerTwoWiresForbiddenSpcRule::create(db_layer);
+  rule->setMinSpacing(0);
+  rule->setMaxSpacing(300);
+  rule->setMinSpanLength(0);
+  rule->setMaxSpanLength(500);
+  rule->setPrl(0);
+  makeLef58TwoWiresForbiddenSpc(2, rule);
+  frNet* n1 = makeNet("n1");
+  makePathseg(n1, 2, {0, 50}, {500, 50});
+  makePathseg(n1, 2, {0, 200}, {500, 200});
+
+  runGC();
+
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+}
+
+BOOST_AUTO_TEST_CASE(forbidden_spc)
+{
+  // Setup
+  auto db_layer = db_tech->findLayer("m1");
+  auto rule = odb::dbTechLayerForbiddenSpacingRule::create(db_layer);
+  rule->setForbiddenSpacing({550, 800});
+  rule->setPrl(1);
+  rule->setWidth(300);
+  rule->setTwoEdges(300);
+  makeLef58ForbiddenSpc(2, rule);
+  frNet* n1 = makeNet("n1");
+  makePathseg(n1, 2, {0, 50}, {500, 50});
+  makePathseg(n1, 2, {0, 700}, {500, 700});
+  // wire in between
+  makePathseg(n1, 2, {0, 300}, {500, 300});
+  // wire above
+  makePathseg(n1, 2, {0, 900}, {500, 900});
+
+  runGC();
+
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+}
+
+BOOST_AUTO_TEST_CASE(lef58_enclosure)
+{
+  // Setup
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  makeCutClass(3, "Vx", 100, 200);
+  makeLef58EnclosureConstrainut(3, 0, 0, 0, 0);
+  makeLef58EnclosureConstrainut(3, 0, 200, 100, 50);
+
+  frViaDef* vd = makeViaDef("v", 3, {0, 0}, {200, 100});
+
+  frNet* n1 = makeNet("n1");
+  makeVia(vd, n1, {0, 0});
+  makePathseg(n1, 4, {-50, 50}, {250, 50}, 200);
+
+  runGC();
+  // BELOW ENC VALID, ABOVE ENCLOSURE VIOLATING
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+  if (!markers.empty()) {
+    testMarker(markers[0].get(),
+               4,
+               frConstraintTypeEnum::frcLef58EnclosureConstraint,
+               Rect(0, 0, 200, 100));
+  }
+}
+
+BOOST_DATA_TEST_CASE(cut_spc_tbl_orth,
+                     (bdata::make({true, false}) ^ bdata::make({140, 150})),
+                     violating,
+                     y)
+{
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  makeSpacingTableOrthConstraint(3, 150, 50);
+  frViaDef* vd = makeViaDef("v", 3, {0, 0}, {100, 100});
+  frNet* n1 = makeNet("n1");
+  makeVia(vd, n1, {0, 0});
+  makeVia(vd, n1, {0, 240});
+  makeVia(vd, n1, {y, 110});
+  runGC();
+  auto& markers = worker.getMarkers();
+  if (violating) {
+    BOOST_TEST(markers.size() == 1);
+  } else {
+    BOOST_TEST(markers.size() == 0);
+  }
+}
+
+BOOST_DATA_TEST_CASE(width_tbl_orth,
+                     (bdata::make({40, 50, 60}) * bdata::make({40, 50, 60})),
+                     horz_spc,
+                     vert_spc)
+{
+  makeWidthTblOrthConstraint(2, horz_spc, vert_spc);
+  design->getTech()->getLayer(2)->setMinWidth(
+      10);  // to ignore NSMetal violations
+  frNet* n1 = makeNet("n1");
+  makePathseg(n1, 2, {0, 100}, {200, 100}, 100);
+  makePathseg(n1, 2, {150, 50}, {350, 50}, 100);
+  const frCoord dx = 50;
+  const frCoord dy = 50;
+  const bool violating = dx < horz_spc && dy < vert_spc;
+  runGC();
+  auto& markers = worker.getMarkers();
+  if (violating) {
+    BOOST_TEST(markers.size() == 1);
+  } else {
+    BOOST_TEST(markers.size() == 0);
   }
 }
 

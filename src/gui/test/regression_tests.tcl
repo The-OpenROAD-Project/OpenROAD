@@ -1,3 +1,0 @@
-record_tests {
-  supported
-}

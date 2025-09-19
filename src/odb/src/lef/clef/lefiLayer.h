@@ -33,11 +33,11 @@
 #ifndef CLEFILAYER_H
 #define CLEFILAYER_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 
-typedef enum lefiAntennaEnum
+enum lefiAntennaEnum
 {
   lefiAntennaAR = 1,
   lefiAntennaDAR = 2,
@@ -51,7 +51,7 @@ typedef enum lefiAntennaEnum
   lefiAntennaSAF = 10,
   lefiAntennaO = 11,
   lefiAntennaADR = 12
-} lefiAntennaEnum;
+};
 
 EXTERN int lefiAntennaPWL_numPWL(const lefiAntennaPWL* obj);
 
@@ -257,7 +257,7 @@ EXTERN int lefiLayer_numProps(const lefiLayer* obj);
 EXTERN const char* lefiLayer_propName(const lefiLayer* obj, int index);
 EXTERN const char* lefiLayer_propValue(const lefiLayer* obj, int index);
 EXTERN double lefiLayer_propNumber(const lefiLayer* obj, int index);
-EXTERN const char lefiLayer_propType(const lefiLayer* obj, int index);
+EXTERN char lefiLayer_propType(const lefiLayer* obj, int index);
 EXTERN int lefiLayer_propIsNumber(const lefiLayer* obj, int index);
 EXTERN int lefiLayer_propIsString(const lefiLayer* obj, int index);
 

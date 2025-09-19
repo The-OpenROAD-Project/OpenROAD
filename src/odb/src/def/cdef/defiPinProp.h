@@ -33,7 +33,7 @@
 #ifndef CDEFIPINPROP_H
 #define CDEFIPINPROP_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 
@@ -45,7 +45,7 @@ EXTERN int defiPinProp_numProps(const defiPinProp* obj);
 EXTERN const char* defiPinProp_propName(const defiPinProp* obj, int index);
 EXTERN const char* defiPinProp_propValue(const defiPinProp* obj, int index);
 EXTERN double defiPinProp_propNumber(const defiPinProp* obj, int index);
-EXTERN const char defiPinProp_propType(const defiPinProp* obj, int index);
+EXTERN char defiPinProp_propType(const defiPinProp* obj, int index);
 EXTERN int defiPinProp_propIsNumber(const defiPinProp* obj, int index);
 EXTERN int defiPinProp_propIsString(const defiPinProp* obj, int index);
 

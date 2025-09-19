@@ -1,43 +1,15 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include "dpl/OptMirror.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <unordered_set>
+#include <vector>
 
 #include "dpl/Opendp.h"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
@@ -54,7 +26,7 @@ using odb::dbOrientType;
 
 static dbOrientType orientMirrorY(const dbOrientType& orient);
 
-NetBox::NetBox(dbNet* net, Rect box, bool ignore)
+NetBox::NetBox(dbNet* net, const Rect& box, bool ignore)
     : net_(net), box_(box), ignore_(ignore)
 {
 }
@@ -72,12 +44,6 @@ void NetBox::saveBox()
 void NetBox::restoreBox()
 {
   box_ = box_saved_;
-}
-
-double OptimizeMirroring::dbuToMicrons(int64_t dbu) const
-{
-  double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
-  return dbu / dbu_micron;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -103,7 +69,7 @@ void OptimizeMirroring::run()
          return net_box1->hpwl() > net_box2->hpwl();
        });
 
-  vector<dbInst*> mirror_candidates = findMirrorCandidates(sorted_boxes);
+  std::vector<dbInst*> mirror_candidates = findMirrorCandidates(sorted_boxes);
   odb::WireLengthEvaluator eval(block_);
   int64_t hpwl_before = eval.hpwl();
   int mirror_count = mirrorCandidates(mirror_candidates);
@@ -111,11 +77,15 @@ void OptimizeMirroring::run()
   if (mirror_count > 0) {
     logger_->info(DPL, 20, "Mirrored {} instances", mirror_count);
     double hpwl_after = eval.hpwl();
-    logger_->info(
-        DPL, 21, "HPWL before          {:8.1f} u", dbuToMicrons(hpwl_before));
-    logger_->info(
-        DPL, 22, "HPWL after           {:8.1f} u", dbuToMicrons(hpwl_after));
-    double hpwl_delta = (hpwl_before != 0.0)
+    logger_->info(DPL,
+                  21,
+                  "HPWL before          {:8.1f} u",
+                  block_->dbuToMicrons(hpwl_before));
+    logger_->info(DPL,
+                  22,
+                  "HPWL after           {:8.1f} u",
+                  block_->dbuToMicrons(hpwl_after));
+    double hpwl_delta = (hpwl_before != 0)
                             ? (hpwl_after - hpwl_before) / hpwl_before * 100
                             : 0.0;
     logger_->info(DPL, 23, "HPWL delta           {:8.1f} %", hpwl_delta);
@@ -143,15 +113,16 @@ void OptimizeMirroring::findNetBoxes()
   }
 }
 
-vector<dbInst*> OptimizeMirroring::findMirrorCandidates(NetBoxes& net_boxes)
+std::vector<dbInst*> OptimizeMirroring::findMirrorCandidates(
+    NetBoxes& net_boxes)
 {
-  vector<dbInst*> mirror_candidates;
+  std::vector<dbInst*> mirror_candidates;
   unordered_set<dbInst*> existing;
   // Find inst terms on the boundary of the net boxes.
   for (NetBox* net_box : net_boxes) {
-    if (!net_box->ignore_) {
-      dbNet* net = net_box->net_;
-      Rect& box = net_box->box_;
+    if (!net_box->isIgnore()) {
+      dbNet* net = net_box->getNet();
+      const Rect& box = net_box->getBox();
       for (dbITerm* iterm : net->getITerms()) {
         dbInst* inst = iterm->getInst();
         int x, y;
@@ -176,7 +147,7 @@ vector<dbInst*> OptimizeMirroring::findMirrorCandidates(NetBoxes& net_boxes)
   return mirror_candidates;
 }
 
-int OptimizeMirroring::mirrorCandidates(vector<dbInst*>& mirror_candidates)
+int OptimizeMirroring::mirrorCandidates(std::vector<dbInst*>& mirror_candidates)
 {
   int mirror_count = 0;
   for (dbInst* inst : mirror_candidates) {
@@ -205,7 +176,7 @@ int OptimizeMirroring::mirrorCandidates(vector<dbInst*>& mirror_candidates)
 // apply mirror about Y axis to orient
 static dbOrientType orientMirrorY(const dbOrientType& orient)
 {
-  switch (orient) {
+  switch (orient.getValue()) {
     case dbOrientType::R0:
       return dbOrientType::MY;
     case dbOrientType::MX:
@@ -235,7 +206,7 @@ int64_t OptimizeMirroring::hpwl(dbInst* inst)
     dbNet* net = iterm->getNet();
     if (net) {
       NetBox& net_box = net_box_map_[net];
-      if (!net_box.ignore_) {
+      if (!net_box.isIgnore()) {
         inst_hpwl += net_box.hpwl();
       }
     }
@@ -249,8 +220,8 @@ void OptimizeMirroring::updateNetBoxes(dbInst* inst)
     dbNet* net = iterm->getNet();
     if (net) {
       NetBox& net_box = net_box_map_[net];
-      if (!net_box.ignore_) {
-        net_box_map_[net].box_ = net->getTermBBox();
+      if (!net_box.isIgnore()) {
+        net_box_map_[net].setBox(net->getTermBBox());
       }
     }
   }

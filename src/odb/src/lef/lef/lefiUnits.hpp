@@ -30,11 +30,11 @@
 #ifndef lefiUnits_h
 #define lefiUnits_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 class lefiUnits
 {
@@ -78,27 +78,25 @@ class lefiUnits
   void print(FILE* f) const;
 
  protected:
-  int hasDatabase_;
-  int hasCapacitance_;
-  int hasResistance_;
-  int hasTime_;
-  int hasPower_;
-  int hasCurrent_;
-  int hasVoltage_;
-  int hasFrequency_;
-  char* databaseName_;
-  double databaseNumber_;
-  double capacitance_;
-  double resistance_;
-  double power_;
-  double time_;
-  double current_;
-  double voltage_;
-  double frequency_;
+  int hasDatabase_{0};
+  int hasCapacitance_{0};
+  int hasResistance_{0};
+  int hasTime_{0};
+  int hasPower_{0};
+  int hasCurrent_{0};
+  int hasVoltage_{0};
+  int hasFrequency_{0};
+  char* databaseName_{nullptr};
+  double databaseNumber_{0.0};
+  double capacitance_{0.0};
+  double resistance_{0.0};
+  double power_{0.0};
+  double time_{0.0};
+  double current_{0.0};
+  double voltage_{0.0};
+  double frequency_{0.0};
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

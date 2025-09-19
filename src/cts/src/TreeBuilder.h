@@ -1,52 +1,25 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
-#include <boost/functional/hash.hpp>
-#include <boost/unordered/unordered_map.hpp>
-#include <boost/unordered/unordered_set.hpp>
+#include <cstddef>
 #include <deque>
 #include <functional>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "Clock.h"
 #include "CtsOptions.h"
 #include "TechChar.h"
 #include "Util.h"
+#include "boost/functional/hash.hpp"
+#include "boost/unordered/unordered_map.hpp"
+#include "boost/unordered/unordered_set.hpp"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace utl {
 class Logger;
@@ -98,8 +71,10 @@ class TreeBuilder
       parent->children_.emplace_back(this);
     }
   }
+  virtual ~TreeBuilder() = default;
 
   virtual void run() = 0;
+  void mergeBlockages();
   void initBlockages();
   void setTechChar(TechChar& techChar) { techChar_ = &techChar; }
   const Clock& getClock() const { return clock_; }
@@ -107,6 +82,7 @@ class TreeBuilder
   void addChild(TreeBuilder* child) { children_.emplace_back(child); }
   std::vector<TreeBuilder*> getChildren() const { return children_; }
   TreeBuilder* getParent() const { return parent_; }
+  bool isLeafTree();
   unsigned getTreeBufLevels() const { return treeBufLevels_; }
   void addFirstLevelSinkDriver(ClockInst* inst)
   {
@@ -184,10 +160,11 @@ class TreeBuilder
                     double& y2);
   Point<double> legalizeOneBuffer(Point<double> bufferLoc,
                                   const std::string& bufferName);
-  inline void addCandidatePoint(double x,
-                                double y,
-                                Point<double>& point,
-                                std::vector<Point<double>>& candidates)
+
+  void addCandidatePoint(double x,
+                         double y,
+                         Point<double>& point,
+                         std::vector<Point<double>>& candidates)
   {
     point.setX(x);
     point.setY(y);
@@ -201,15 +178,15 @@ class TreeBuilder
   void commitLoc(const Point<double>& bufferLoc);
   void uncommitLoc(const Point<double>& bufferLoc);
   void commitMoveLoc(const Point<double>& oldLoc, const Point<double>& newLoc);
-  inline bool sinkHasInsertionDelay(const Point<double>& sink)
+  bool sinkHasInsertionDelay(const Point<double>& sink)
   {
     return (insertionDelays_.find(sink) != insertionDelays_.end());
   }
-  inline void setSinkInsertionDelay(const Point<double>& sink, double insDelay)
+  void setSinkInsertionDelay(const Point<double>& sink, double insDelay)
   {
     insertionDelays_[sink] = insDelay;
   }
-  inline double getSinkInsertionDelay(const Point<double>& sink)
+  double getSinkInsertionDelay(const Point<double>& sink)
   {
     auto it = insertionDelays_.find(sink);
     if (it != insertionDelays_.end()) {
@@ -221,7 +198,7 @@ class TreeBuilder
     }
     return 0.0;
   }
-  inline double computeDist(const Point<double>& x, const Point<double>& y)
+  double computeDist(const Point<double>& x, const Point<double>& y)
   {
     return x.computeDist(y) + getSinkInsertionDelay(x)
            + getSinkInsertionDelay(y);
@@ -247,6 +224,12 @@ class TreeBuilder
   void setTopBufferDelay(float delay) { topBufferDelay_ = delay; }
   odb::dbInst* getTopBuffer() const { return topBuffer_; }
   void setTopBuffer(odb::dbInst* inst) { topBuffer_ = inst; }
+  std::string getTopBufferName() const { return topBufferName_; }
+  void setTopBufferName(std::string name) { topBufferName_ = std::move(name); }
+  odb::dbNet* getTopInputNet() const { return topInputNet_; }
+  void setTopInputNet(odb::dbNet* net) { topInputNet_ = net; }
+  odb::dbNet* getDrivingNet() const { return drivingNet_; }
+  void setDrivingNet(odb::dbNet* net) { drivingNet_ = net; }
 
  protected:
   CtsOptions* options_ = nullptr;
@@ -263,7 +246,7 @@ class TreeBuilder
   std::set<ClockInst*> tree_level_buffers_;
   utl::Logger* logger_;
   odb::dbDatabase* db_;
-  std::vector<odb::dbBox*> bboxList_;
+  std::vector<odb::Rect> blockages_;
   double bufferWidth_ = 0.0;
   double bufferHeight_ = 0.0;
   // keep track of occupied cells to avoid overlap violations
@@ -276,6 +259,9 @@ class TreeBuilder
   float aveArrival_ = 0.0;
   float topBufferDelay_ = 0.0;
   odb::dbInst* topBuffer_ = nullptr;
+  std::string topBufferName_;
+  odb::dbNet* drivingNet_ = nullptr;
+  odb::dbNet* topInputNet_ = nullptr;
 };
 
 }  // namespace cts

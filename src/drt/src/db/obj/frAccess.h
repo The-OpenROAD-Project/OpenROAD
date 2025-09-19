@@ -1,38 +1,20 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <algorithm>
+#include <cstddef>
 #include <iostream>
+#include <map>
+#include <memory>
+#include <utility>
+#include <vector>
 
 #include "db/infra/frPoint.h"
 #include "db/obj/frBlockObject.h"
-#include "frShape.h"
+#include "db/obj/frShape.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frViaDef;
@@ -92,6 +74,10 @@ class frAccessPoint : public frBlockObject
         return false;
     }
   }
+  bool hasHorzAccess() const { return accesses_[0] || accesses_[2]; }
+  bool hasVertAccess() const { return accesses_[1] || accesses_[3]; }
+  bool hasViaAccess() const { return accesses_[4] || accesses_[5]; }
+  bool hasPlanarAccess() const { return hasVertAccess() || hasHorzAccess(); }
   const std::vector<bool>& getAccess() const { return accesses_; }
   bool hasViaDef(int numCut = 1, int idx = 0) const
   {
@@ -111,23 +97,33 @@ class frAccessPoint : public frBlockObject
   // e.g., getViaDefs()     --> get all one-cut viadefs
   // e.g., getViaDefs(1)    --> get all one-cut viadefs
   // e.g., getViaDefs(2)    --> get all two-cut viadefs
-  const std::vector<frViaDef*>& getViaDefs(int numCut = 1) const
+  const std::vector<const frViaDef*>& getViaDefs(int numCut = 1) const
   {
     return viaDefs_[numCut - 1];
   }
-  std::vector<frViaDef*>& getViaDefs(int numCut = 1)
+  std::vector<const frViaDef*>& getViaDefs(int numCut = 1)
   {
     return viaDefs_[numCut - 1];
   }
-  const std::vector<std::vector<frViaDef*>>& getAllViaDefs() const
+  const std::vector<std::vector<const frViaDef*>>& getAllViaDefs() const
   {
     return viaDefs_;
+  }
+  void sortViaDefs(const std::map<const frViaDef*, int> cost_map)
+  {
+    auto cmp = [&](const frViaDef* a, const frViaDef* b) {
+      return cost_map.at(a) < cost_map.at(b);
+    };
+
+    for (auto& viaDefsLayer : viaDefs_) {
+      std::sort(viaDefsLayer.begin(), viaDefsLayer.end(), cmp);
+    }
   }
   // e.g., getViaDef()     --> get best one-cut viadef
   // e.g., getViaDef(1)    --> get best one-cut viadef
   // e.g., getViaDef(2)    --> get best two-cut viadef
   // e.g., getViaDef(1, 1) --> get 1st alternative one-cut viadef
-  frViaDef* getViaDef(int numCut = 1, int idx = 0) const
+  const frViaDef* getViaDef(int numCut = 1, int idx = 0) const
   {
     return viaDefs_[numCut - 1][idx];
   }
@@ -169,7 +165,14 @@ class frAccessPoint : public frBlockObject
         std::cout << "Error: unexpected direction in setValidAccess\n";
     }
   }
-  void addViaDef(frViaDef* in);
+  template <std::size_t N>
+  void setMultipleAccesses(const frDirEnum (&dirArray)[N], bool isValid = true)
+  {
+    for (std::size_t i = 0; i < N; ++i) {
+      setAccess(dirArray[i], isValid);
+    }
+  }
+  void addViaDef(const frViaDef* in);
   void addToPinAccess(frPinAccess* in) { aps_ = in; }
   void setType(frAccessPointEnum in, bool isL = true)
   {
@@ -194,7 +197,7 @@ class frAccessPoint : public frBlockObject
   // 0 = E, 1 = S, 2 = W, 3 = N, 4 = U, 5 = D
   std::vector<bool> accesses_ = std::vector<bool>(6, false);
   // cut number -> up-via access map
-  std::vector<std::vector<frViaDef*>> viaDefs_;
+  std::vector<std::vector<const frViaDef*>> viaDefs_;
   frAccessPointEnum typeL_{frAccessPointEnum::OnGrid};
   frAccessPointEnum typeH_{frAccessPointEnum::OnGrid};
   frPinAccess* aps_{nullptr};

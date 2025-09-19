@@ -1,45 +1,5 @@
-###############################################################################
-##
-## BSD 3-Clause License
-##
-## Copyright (c) 2019, Parallax Software, Inc.
-## All rights reserved.
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are met:
-##
-## * Redistributions of source code must retain the above copyright notice, this
-##   list of conditions and the following disclaimer.
-##
-## * Redistributions in binary form must reproduce the above copyright notice,
-##   this list of conditions and the following disclaimer in the documentation
-##   and#or other materials provided with the distribution.
-##
-## * Neither the name of the copyright holder nor the names of its
-##   contributors may be used to endorse or promote products derived from
-##   this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-## POSSIBILITY OF SUCH DAMAGE.
-##
-###############################################################################
-
-# The location used by etc/DependencyInstaller.sh
-# lib64 is used for CentOS and openSUSE
-# lib is used for Ubuntu and MacOS
-list(APPEND CMAKE_INSTALL_RPATH
-  "/opt/or-tools/lib64"
-  "/opt/or-tools/lib"
-)
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2019-2025, The OpenROAD Authors
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/src/cmake")
 
@@ -48,6 +8,9 @@ list(APPEND CMAKE_PREFIX_PATH
   "/opt/or-tools/lib64/cmake"
   "/opt/or-tools/lib/cmake"
 )
+
+# Link to where ortools was found
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 include("openroad")
 
@@ -98,6 +61,15 @@ if(USE_SYSTEM_OPENSTA)
   endif()
   include_directories(${OPENSTA_INCLUDE_DIR})
   message(STATUS "Using OPENSTA_INCLUDE_DIR=${OPENSTA_INCLUDE_DIR}")
+  add_library(OpenSTA STATIC IMPORTED)
+  set_target_properties(OpenSTA PROPERTIES
+    IMPORTED_LOCATION "${OPENSTA_LIBRARY}"
+  )
+  if(CUDD_LIB)
+    set_target_properties(OpenSTA PROPERTIES 
+      INTERFACE_LINK_LIBRARIES "${CUDD_LIB}"
+    )
+  endif()
 else()
   # local build of opensta
   set(OPENSTA_LIBRARY "sta_swig")
@@ -172,8 +144,14 @@ if (SWIG_VERSION VERSION_GREATER_EQUAL "4.1.0")
 endif()
 include(UseSWIG)
 
-find_package(Boost REQUIRED)
+find_package(Boost CONFIG REQUIRED)
 message(STATUS "boost: ${Boost_VERSION}")
+
+if (ENABLE_TESTS)
+  find_package(GTest REQUIRED)
+  message(STATUS "GTest: ${GTest_VERSION}")
+endif()
+
 find_package(Python3 COMPONENTS Development REQUIRED)
 option(BUILD_PYTHON "Build the Python3 interface" ON)
 
@@ -200,24 +178,39 @@ add_compile_options(
   $<$<BOOL:${ASAN}>:-fsanitize=address>
   $<$<BOOL:${ASAN}>:-fno-omit-frame-pointer>
   $<$<BOOL:${ASAN}>:-g>
+  $<$<BOOL:${TSAN}>:-fsanitize=thread>
+  $<$<BOOL:${TSAN}>:-g>
+  $<$<BOOL:${UBSAN}>:-fsanitize=undefined>
+  $<$<BOOL:${UBSAN}>:-g>
+  $<$<BOOL:${UBSAN}>:-fno-omit-frame-pointer>
 )
 
 if (ASAN)
   add_link_options(-fsanitize=address)
+  message(STATUS "Address Sanitizer is enabled")
+endif()
+
+if (TSAN)
+  add_link_options(-fsanitize=thread)
+  message(STATUS "Thread Sanitizer is enabled")
+endif()
+
+if (UBSAN)
+  add_link_options(-fsanitize=undefined)
+  message(STATUS "Undefined Behavior Sanitizer is enabled")
 endif()
 
 ################################################################
 
-swig_lib(NAME      openroad_swig
+swig_lib(NAME      ord
          NAMESPACE ord
          I_FILE    OpenRoad.i
          SCRIPTS   ${OPENSTA_HOME}/tcl/Util.tcl
                    OpenRoad.tcl
                    Metrics.tcl
-                   ${ODB_HOME}/src/db/odb.tcl
 )
 
-target_link_libraries(openroad_swig
+target_link_libraries(ord
   PRIVATE
     dbSta
     odb
@@ -255,6 +248,11 @@ add_subdirectory(ifp)
 add_subdirectory(pad)
 add_subdirectory(odb)
 if (NOT USE_SYSTEM_OPENSTA)
+  if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)
+    # Pass along tcl readline enablement to OpenSTA build
+    set(USE_TCL_READLINE ON)
+    set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+  endif()
   add_subdirectory(sta)
 endif()
 add_subdirectory(dbSta)
@@ -262,15 +260,16 @@ add_subdirectory(rsz)
 add_subdirectory(stt)
 add_subdirectory(gpl)
 add_subdirectory(dpl)
-add_subdirectory(dpo)
+add_subdirectory(exa)
 add_subdirectory(fin)
 add_subdirectory(ram)
 add_subdirectory(ppl)
 add_subdirectory(rmp)
+add_subdirectory(cgt)
 add_subdirectory(cts)
+add_subdirectory(cut)
 add_subdirectory(grt)
 add_subdirectory(tap)
-add_subdirectory(mpl)
 add_subdirectory(rcx)
 add_subdirectory(psm)
 add_subdirectory(ant)
@@ -281,13 +280,18 @@ add_subdirectory(utl)
 add_subdirectory(dst)
 add_subdirectory(pdn)
 add_subdirectory(dft)
-# mpl2 and par add_subdirectory() statements are conditionally added below
-# due to issues with or-tools in macOS systems
+add_subdirectory(mpl)
+add_subdirectory(par)
+add_subdirectory(est)
 
 ################################################################
 
 add_executable(openroad
   ${OPENROAD_SOURCE}
+)
+
+set_target_properties(openroad PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
 target_compile_options(openroad
@@ -317,10 +321,10 @@ target_include_directories(openroad
 target_link_libraries(openroad
   ifp
   pad
-  openroad_swig
+  ord
   gpl
   dpl
-  dpo
+  exa
   fin
   ram
   rsz
@@ -332,34 +336,30 @@ target_link_libraries(openroad
   odbtcl
   rcx
   rmp
+  cgt
   cts
+  cut
   grt
   tap
   gui
   drt
   dst
-  mpl
   psm
   ant
   upf
   utl
   pdn
   dft
+  mpl
+  par
+  est
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
+  ${Boost_LIBRARIES}
 )
 
-if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  # mpl2 aborts with link error on darwin and par causes abseil link error at startup on apple silicon so do not link it.
-  target_link_libraries(openroad mpl2 par)
-  target_compile_definitions(openroad PRIVATE ENABLE_MPL2)
-  target_compile_definitions(openroad PRIVATE ENABLE_PAR)
-  add_subdirectory(mpl2)
-  add_subdirectory(par)
-else()
-  message(STATUS "Removing MPL2 and PAR to avoid run time fatal error.")
-endif()
+target_compile_definitions(openroad PRIVATE BUILD_TYPE="${CMAKE_BUILD_TYPE}")
 
 # tclReadline
 if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)
@@ -393,21 +393,22 @@ if (Python3_FOUND AND BUILD_PYTHON)
   message(STATUS "Python3 enabled")
   target_compile_definitions(openroad PRIVATE ENABLE_PYTHON3)
 
-  swig_lib(NAME      openroad_swig_py
+  swig_lib(NAME      ord_py
            NAMESPACE ord
            LANGUAGE  python
            I_FILE    OpenRoad-py.i
-           SCRIPTS   ${CMAKE_CURRENT_BINARY_DIR}/openroad_swig_py.py
+           SCRIPTS   ${CMAKE_CURRENT_BINARY_DIR}/ord_py.py
   )
 
-  target_link_libraries(openroad_swig_py
+  target_link_libraries(ord_py
     PRIVATE
       dbSta
       odb
       OpenSTA
+      ifp
   )
   target_link_libraries(openroad
-    openroad_swig_py
+    ord_py
     odb_py
     ifp_py
     utl_py
@@ -415,12 +416,12 @@ if (Python3_FOUND AND BUILD_PYTHON)
     grt_py
     gpl_py
     dpl_py
-    mpl_py
+    exa_py
     ppl_py
     tap_py
+    cgt_py
     cts_py
     drt_py
-    dpo_py
     fin_py
 #    ram_py
     rcx_py
@@ -429,14 +430,9 @@ if (Python3_FOUND AND BUILD_PYTHON)
     psm_py
     pdn_py
     dft_py
+    par_py
   )
 
-  if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    # par_py causes abseil link error at startup on apple silicon so do not link it.
-    target_link_libraries(openroad par_py)
-  else()
-    message(STATUS "Removing PAR_PY to avoid run time fatal error.")
-  endif()
 else()
   message(STATUS "Python3 disabled")
 endif()
@@ -446,13 +442,6 @@ messages(
   SOURCE_DIR .
   OUTPUT_DIR ..
   LOCAL
-)
-
-# pad isn't a proper module with its own CMakeLists.txt so it
-# is handled here (just like the tcl encoding).
-messages(
-  TARGET openroad
-  OUTPUT_DIR pad
 )
 
 # Ancient versions of glibc found on CentOS required librt.

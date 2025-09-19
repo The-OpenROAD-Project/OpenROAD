@@ -3,22 +3,19 @@
   "type": "dbObject",
   "fields": [
     {
-      "type": "uint",
+      "type": "bit",
       "name": "corner_type_",
       "flags": [
         "private"
-      ],
-      "bits": 1
+      ]
     },
     {
-      "type": "bool",
-      "name": "same_mask_",
-      "bits": 1
+      "type": "bit",
+      "name": "same_mask_"
     },
     {
-      "type": "bool",
-      "name": "corner_only_",
-      "bits": 1
+      "type": "bit",
+      "name": "corner_only_"
     },
     {
       "type": "int",
@@ -26,9 +23,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "except_eol_",
-      "bits": 1
+      "type": "bit",
+      "name": "except_eol_"
     },
     {
       "type": "int",
@@ -36,9 +32,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "except_jog_length_",
-      "bits": 1
+      "type": "bit",
+      "name": "except_jog_length_"
     },
     {
       "type": "int",
@@ -46,9 +41,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "edge_length_valid_",
-      "bits": 1
+      "type": "bit",
+      "name": "edge_length_valid_"
     },
     {
       "type": "int",
@@ -56,14 +50,12 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "include_shape_",
-      "bits": 1
+      "type": "bit",
+      "name": "include_shape_"
     },
     {
-      "type": "bool",
-      "name": "min_length_valid_",
-      "bits": 1
+      "type": "bit",
+      "name": "min_length_valid_"
     },
     {
       "type": "int",
@@ -71,14 +63,12 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "except_notch_",
-      "bits": 1
+      "type": "bit",
+      "name": "except_notch_"
     },
     {
-      "type": "bool",
-      "name": "except_notch_length_valid_",
-      "bits": 1
+      "type": "bit",
+      "name": "except_notch_length_valid_"
     },
     {
       "type": "int",
@@ -86,19 +76,16 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "except_same_net_",
-      "bits": 1
+      "type": "bit",
+      "name": "except_same_net_"
     },
     {
-      "type": "bool",
-      "name": "except_same_metal_",
-      "bits": 1
+      "type": "bit",
+      "name": "except_same_metal_"
     },
     {
-      "type": "bool",
-      "name": "corner_to_corner_",
-      "bits": 1
+      "type": "bit",
+      "name": "corner_to_corner_"
     }
   ],
   "enums": [

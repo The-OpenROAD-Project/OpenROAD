@@ -1,42 +1,18 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2023, Google LLC
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include "ScanCellFactory.hh"
 
-#include <iostream>
+#include <algorithm>
+#include <memory>
+#include <optional>
+#include <utility>
+#include <vector>
 
 #include "ClockDomain.hh"
 #include "Utils.hh"
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
 #include "sta/Clock.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
@@ -48,8 +24,8 @@ namespace {
 
 enum class TypeOfCell
 {
-  OneBitCell,
-  NotSupported
+  kOneBitCell,
+  kNotSupported
 };
 
 sta::LibertyCell* GetLibertyCell(odb::dbMaster* master,
@@ -59,26 +35,38 @@ sta::LibertyCell* GetLibertyCell(odb::dbMaster* master,
   return db_network->libertyCell(master_cell);
 }
 
-sta::TestCell* GetTestCell(odb::dbMaster* master, sta::dbNetwork* db_network)
+sta::TestCell* GetTestCell(odb::dbMaster* master,
+                           sta::dbNetwork* db_network,
+                           utl::Logger* logger)
 {
   sta::LibertyCell* liberty_cell = GetLibertyCell(master, db_network);
+  if (liberty_cell == nullptr) {
+    logger->warn(utl::DFT,
+                 11,
+                 "Cell master '{:s}' has no lib info. Can't find scan cell",
+                 master->getName());
+    return nullptr;
+  }
   sta::TestCell* test_cell = liberty_cell->testCell();
-  if (test_cell && test_cell->scanIn() != nullptr
-      && test_cell->scanEnable() != nullptr) {
+  if (test_cell && getLibertyScanIn(test_cell) != nullptr
+      && getLibertyScanEnable(test_cell) != nullptr) {
     return test_cell;
   }
   return nullptr;
 }
 
-TypeOfCell IdentifyCell(odb::dbInst* inst)
+TypeOfCell IdentifyCell(odb::dbInst* inst, sta::dbSta* sta)
 {
-  odb::dbMaster* master = inst->getMaster();
-  if (master->isSequential() && !master->isBlock()) {
+  sta::dbNetwork* db_network = sta->getDbNetwork();
+  sta::LibertyCell* liberty_cell
+      = GetLibertyCell(inst->getMaster(), db_network);
+  if (liberty_cell != nullptr && liberty_cell->hasSequentials()
+      && !inst->getMaster()->isBlock()) {
     // we assume that we are only dealing with one bit cells, but in the future
     // we could deal with multibit cells too
-    return TypeOfCell::OneBitCell;
+    return TypeOfCell::kOneBitCell;
   }
-  return TypeOfCell::NotSupported;
+  return TypeOfCell::kNotSupported;
 }
 
 std::unique_ptr<ClockDomain> GetClockDomainFromClock(
@@ -107,9 +95,17 @@ std::unique_ptr<ClockDomain> GetClockDomainFromClock(
 }
 
 std::unique_ptr<ClockDomain> FindOneBitCellClockDomain(odb::dbInst* inst,
-                                                       sta::dbSta* sta)
+                                                       sta::dbSta* sta,
+                                                       utl::Logger* logger)
 {
   std::vector<odb::dbITerm*> clock_pins = utils::GetClockPin(inst);
+  if (clock_pins.empty()) {
+    logger->warn(utl::DFT,
+                 49,
+                 "Can't find a clock pin for cell '{:s}'",
+                 inst->getName());
+    return nullptr;
+  }
   sta::dbNetwork* db_network = sta->getDbNetwork();
   // A one bit cell should only have one clock pin
 
@@ -130,8 +126,8 @@ std::unique_ptr<OneBitScanCell> CreateOneBitCell(odb::dbInst* inst,
 {
   sta::dbNetwork* db_network = sta->getDbNetwork();
   std::unique_ptr<ClockDomain> clock_domain
-      = FindOneBitCellClockDomain(inst, sta);
-  sta::TestCell* test_cell = GetTestCell(inst->getMaster(), db_network);
+      = FindOneBitCellClockDomain(inst, sta, logger);
+  sta::TestCell* test_cell = GetTestCell(inst->getMaster(), db_network, logger);
 
   if (!clock_domain) {
     logger->warn(utl::DFT,
@@ -165,10 +161,10 @@ std::unique_ptr<ScanCell> ScanCellFactory(odb::dbInst* inst,
                                           sta::dbSta* sta,
                                           utl::Logger* logger)
 {
-  TypeOfCell type_of_cell = IdentifyCell(inst);
+  TypeOfCell type_of_cell = IdentifyCell(inst, sta);
 
   switch (type_of_cell) {
-    case TypeOfCell::OneBitCell:
+    case TypeOfCell::kOneBitCell:
       return CreateOneBitCell(inst, sta, logger);
     default:
       return nullptr;

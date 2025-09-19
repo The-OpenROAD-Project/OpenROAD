@@ -33,7 +33,7 @@
 #ifndef CLEFIVIARULE_H
 #define CLEFIVIARULE_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 
@@ -92,7 +92,7 @@ EXTERN int lefiViaRule_numProps(const lefiViaRule* obj);
 EXTERN const char* lefiViaRule_propName(const lefiViaRule* obj, int index);
 EXTERN const char* lefiViaRule_propValue(const lefiViaRule* obj, int index);
 EXTERN double lefiViaRule_propNumber(const lefiViaRule* obj, int index);
-EXTERN const char lefiViaRule_propType(const lefiViaRule* obj, int index);
+EXTERN char lefiViaRule_propType(const lefiViaRule* obj, int index);
 EXTERN int lefiViaRule_propIsNumber(const lefiViaRule* obj, int index);
 EXTERN int lefiViaRule_propIsString(const lefiViaRule* obj, int index);
 

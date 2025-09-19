@@ -1,10 +1,9 @@
 #define BOOST_TEST_MODULE TestCallbacks
-#include <boost/test/included/unit_test.hpp>
-#include <iostream>
 
 #include "CallBack.h"
-#include "db.h"
+#include "boost/test/included/unit_test.hpp"
 #include "helper.h"
+#include "odb/db.h"
 
 namespace odb {
 namespace {
@@ -58,7 +57,10 @@ BOOST_AUTO_TEST_CASE(test_inst_and_iterm)
   BOOST_TEST(cb->events[1] == "PostMove inst i1");
   cb->clearEvents();
   i1->setOrigin(100, 100);
-  BOOST_TEST(cb->events.size() == 0);
+  BOOST_TEST(cb->events.size() == 2);
+  BOOST_TEST(cb->events[0] == "PreMove inst i1");
+  BOOST_TEST(cb->events[1] == "PostMove inst i1");
+  cb->clearEvents();
   i1->findITerm("a")->connect(n1);
   BOOST_TEST(cb->events.size() == 2);
   BOOST_TEST(cb->events[0] == "PreConnect iterm to net n1");
@@ -77,9 +79,9 @@ BOOST_AUTO_TEST_CASE(test_inst_and_iterm)
   dbInst::destroy(i1);
 
   BOOST_TEST(cb->events.size() == 4);
-  BOOST_TEST(cb->events[0] == "Destroy iterm a of inst i1");
+  BOOST_TEST(cb->events[0] == "Destroy iterm o of inst i1");
   BOOST_TEST(cb->events[1] == "Destroy iterm b of inst i1");
-  BOOST_TEST(cb->events[2] == "Destroy iterm o of inst i1");
+  BOOST_TEST(cb->events[2] == "Destroy iterm a of inst i1");
   BOOST_TEST(cb->events[3] == "Destroy inst i1");
   tearDown();
 }
@@ -144,9 +146,13 @@ BOOST_AUTO_TEST_CASE(test_blockage)
   db = create2LevetDbWithBTerms();
   block = db->getChip()->getBlock();
   cb->addOwner(block);
-  dbBlockage::create(block, 0, 0, 100, 100);
+  dbBlockage* blk = dbBlockage::create(block, 0, 0, 100, 100);
   BOOST_TEST(cb->events.size() == 1);
   BOOST_TEST(cb->events[0] == "Create blockage (0,0) (100,100)");
+  cb->clearEvents();
+  dbBlockage::destroy(blk);
+  BOOST_TEST(cb->events.size() == 1);
+  BOOST_TEST(cb->events[0] == "Destroy blockage");
   tearDown();
 }
 BOOST_AUTO_TEST_CASE(test_obstruction)
@@ -261,6 +267,35 @@ BOOST_AUTO_TEST_CASE(test_swire)
   BOOST_TEST(cb->events[0] == "PreDestroySBoxes");
   BOOST_TEST(cb->events[1] == "PostDestroySBoxes");
   BOOST_TEST(cb->events[2] == "Destroy swire");
+}
+BOOST_AUTO_TEST_CASE(test_findInst_in_callback)
+{
+  class FindCallback : public dbBlockCallBackObj
+  {
+   public:
+    void inDbITermDestroy(dbITerm* iterm) override
+    {
+      dbInst* inst = iterm->getInst();
+      if (auto it = inst->findITerm("a")) {
+        BOOST_TEST(it->getId() != 0);
+      }
+      if (auto it = inst->findITerm("b")) {
+        BOOST_TEST(it->getId() != 0);
+      }
+      if (auto it = inst->findITerm("o")) {
+        BOOST_TEST(it->getId() != 0);
+      }
+    }
+  };
+
+  db = createSimpleDB();
+  block = db->getChip()->getBlock();
+  FindCallback cb;
+  cb.addOwner(block);
+  dbLib* lib = db->findLib("lib1");
+  auto and2 = lib->findMaster("and2");
+  dbInst* i1 = dbInst::create(block, and2, "i1");
+  dbInst::destroy(i1);
 }
 BOOST_AUTO_TEST_SUITE_END()
 

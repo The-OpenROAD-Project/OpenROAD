@@ -1,39 +1,10 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2018-2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace odb {
@@ -69,6 +40,9 @@ class TimingBase;
 class InitialPlace;
 class NesterovPlace;
 
+using Cluster = std::vector<odb::dbInst*>;
+using Clusters = std::vector<Cluster>;
+
 class Replace
 {
  public:
@@ -83,9 +57,10 @@ class Replace
   void reset();
 
   void doIncrementalPlace(int threads);
-  void doInitialPlace();
+  void doInitialPlace(int threads);
   void runMBFF(int max_sz, float alpha, float beta, int threads, int num_paths);
 
+  void addPlacementCluster(const Cluster& cluster);
   int doNesterovPlace(int threads, int start_iter = 0);
 
   // Initial Place param settings
@@ -100,6 +75,7 @@ class Replace
   void setBinGridCnt(int binGridCntX, int binGridCntY);
 
   void setTargetDensity(float density);
+  // Execute gpl with uniform density as target density
   void setUniformTargetDensityMode(bool mode);
   void setTargetOverflow(float overflow);
   void setInitDensityPenalityFactor(float penaltyFactor);
@@ -107,6 +83,7 @@ class Replace
   void setMinPhiCoef(float minPhiCoef);
   void setMaxPhiCoef(float maxPhiCoef);
 
+  // Query for uniform density value
   float getUniformTargetDensity(int threads);
 
   // HPWL: half-parameter wire length.
@@ -116,32 +93,34 @@ class Replace
   void setPadLeft(int padding);
   void setPadRight(int padding);
 
-  void setForceCPU(bool force_cpu);
   void setTimingDrivenMode(bool mode);
 
   void setSkipIoMode(bool mode);
+  void setDisableRevertIfDiverge(bool mode);
 
   void setRoutabilityDrivenMode(bool mode);
+  void setRoutabilityUseGrt(bool mode);
   void setRoutabilityCheckOverflow(float overflow);
   void setRoutabilityMaxDensity(float density);
-
-  void setRoutabilityMaxBloatIter(int iter);
   void setRoutabilityMaxInflationIter(int iter);
-
   void setRoutabilityTargetRcMetric(float rc);
   void setRoutabilityInflationRatioCoef(float coef);
   void setRoutabilityMaxInflationRatio(float ratio);
-
   void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
+  void setEnableRoutingCongestion(bool mode);
 
   void addTimingNetWeightOverflow(int overflow);
   void setTimingNetWeightMax(float max);
+  void setKeepResizeBelowOverflow(float overflow);
 
   void setDebug(int pause_iterations,
                 int update_iterations,
                 bool draw_bins,
                 bool initial,
-                odb::dbInst* inst = nullptr);
+                odb::dbInst* inst,
+                int start_iter,
+                bool generate_images,
+                std::string images_path);
 
  private:
   bool initNesterovPlace(int threads);
@@ -167,7 +146,6 @@ class Replace
   int initialPlaceMaxSolverIter_ = 100;
   int initialPlaceMaxFanout_ = 200;
   float initialPlaceNetWeightScale_ = 800;
-  bool forceCPU_ = false;
 
   int total_placeable_insts_ = 0;
 
@@ -182,11 +160,12 @@ class Replace
   float maxPhiCoef_ = 1.05;
   float referenceHpwl_ = 446000000;
 
-  float routabilityCheckOverflow_ = 0.2;
+  float routabilityCheckOverflow_ = 0.3;
   float routabilityMaxDensity_ = 0.99;
-  float routabilityTargetRcMetric_ = 1.25;
-  float routabilityInflationRatioCoef_ = 2.5;
-  float routabilityMaxInflationRatio_ = 2.5;
+  float routabilityTargetRcMetric_ = 1.01;
+  float routabilityInflationRatioCoef_ = 3;
+  float routabilityMaxInflationRatio_ = 6;
+  int routabilityMaxInflationIter_ = 4;
 
   // routability RC metric coefficients
   float routabilityRcK1_ = 1.0;
@@ -194,17 +173,19 @@ class Replace
   float routabilityRcK3_ = 0.0;
   float routabilityRcK4_ = 0.0;
 
-  int routabilityMaxBloatIter_ = 1;
-  int routabilityMaxInflationIter_ = 4;
-
-  float timingNetWeightMax_ = 1.9;
+  float timingNetWeightMax_ = 5;
+  float keepResizeBelowOverflow_ = 1.0;
 
   bool timingDrivenMode_ = true;
   bool routabilityDrivenMode_ = true;
+  bool routabilityUseRudy_ = true;
   bool uniformTargetDensityMode_ = false;
   bool skipIoMode_ = false;
+  bool disableRevertIfDiverge_ = false;
+  bool enable_routing_congestion_ = false;
 
   std::vector<int> timingNetWeightOverflows_;
+  Clusters clusters_;
 
   // temp variable; OpenDB should have these values.
   int padLeft_ = 0;
@@ -215,5 +196,15 @@ class Replace
   int gui_debug_draw_bins_ = false;
   int gui_debug_initial_ = false;
   odb::dbInst* gui_debug_inst_ = nullptr;
+  int gui_debug_start_iter_ = 0;
+  bool gui_debug_generate_images_ = false;
+  std::string gui_debug_images_path_ = "REPORTS_DIR";
 };
+
+inline constexpr const char* format_label_int = "{:27} {:10}";
+inline constexpr const char* format_label_float = "{:27} {:10.4f}";
+inline constexpr const char* format_label_um2 = "{:27} {:10.3f} um^2";
+inline constexpr const char* format_label_percent = "{:27} {:10.2f} %";
+inline constexpr const char* format_label_um2_with_delta
+    = "{:27} {:10.3f} um^2 ({:+.2f}%)";
 }  // namespace gpl

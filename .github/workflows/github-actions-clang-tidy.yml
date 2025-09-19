@@ -2,29 +2,37 @@ name: clang-tidy-review
 
 on:
   pull_request:
+    branches:
+    - master
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  Clang-Tidy:
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: 'recursive'
       - name: ClangTidy Gen
         uses: The-OpenROAD-Project/clang-tidy-review@master
+        id: review
         with:
           build_dir: './build'
           cmake_command: cmake . -B build
           config_file: '.clang-tidy'
-          exclude: "*/codeGenerator/templates/*"
+          exclude: "*/codeGenerator/templates/*,*/third-party/*"
           split_workflow: true
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: clang-tidy-review
-          path: |
-            clang-tidy-review-output.json
-            clang-tidy-review-metadata.json
-
+          apt_packages: libomp-15-dev,libfl-dev
       - uses: The-OpenROAD-Project/clang-tidy-review/upload@master
+        id: upload-review
+      - name: Correct Build Directory Ownership
+        if: always()
+        run: |
+          echo "Attempting to change ownership of ${{ github.workspace }} back to runner user..."
+          sudo /usr/bin/chown -R $(id -u):$(id -g) ${{ github.workspace }}
+          echo "Ownership change attempt finished."
+        shell: bash
+      - if: steps.review.outputs.total_comments > 0
+        run: |
+          echo "Pending review comments. Please resolve all comments before merging."
+          exit 1

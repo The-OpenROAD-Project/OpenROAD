@@ -39,20 +39,20 @@
 // Wrappers definitions.
 void lefiSetDebug(int num, int value)
 {
-  LefDefParser::lefiSetDebug(num, value);
+  LefParser::lefiSetDebug(num, value);
 }
 
 int lefiDebug(int num)
 {
-  return LefDefParser::lefiDebug(num);
+  return LefParser::lefiDebug(num);
 }
 
 void lefiError(int check, int msgNum, const char* msg)
 {
-  LefDefParser::lefiError(check, msgNum, msg);
+  LefParser::lefiError(check, msgNum, msg);
 }
 
 const char* CASE(const char* x)
 {
-  return LefDefParser::CASE(x);
+  return LefParser::CASE(x);
 }

@@ -42,8 +42,7 @@ add_pdn_stripe \
   -grid stdcell_grid \
   -layer met1 \
   -width 0.48 \
-  -followpins \
-  -starts_with POWER
+  -followpins
 
 add_pdn_connect \
   -grid stdcell_grid \

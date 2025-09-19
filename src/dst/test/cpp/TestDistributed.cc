@@ -1,12 +1,13 @@
 #define BOOST_TEST_MODULE TestDistributed
 
-#include <boost/asio.hpp>
-#include <boost/test/included/unit_test.hpp>
-#include <boost/thread/thread.hpp>
 #include <string>
 #include <vector>
 
 #include "HelperCallBack.h"
+#include "boost/asio.hpp"
+#include "boost/bind/bind.hpp"
+#include "boost/test/included/unit_test.hpp"
+#include "boost/thread/thread.hpp"
 #include "dst/Distributed.h"
 #include "dst/JobMessage.h"
 #include "utl/Logger.h"
@@ -33,10 +34,10 @@ BOOST_AUTO_TEST_CASE(test_default)
 
   // Sending a job to worker to test if runWorker() correctly created a worker.
   // Note this test also tests sendJob().
-  JobMessage msg(JobMessage::JobType::ROUTING);
+  JobMessage msg(JobMessage::JobType::kRouting);
   JobMessage result;
   BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), worker_port, result));
-  BOOST_TEST(result.getJobType() == JobMessage::JobType::SUCCESS);
+  BOOST_TEST(result.getJobType() == JobMessage::JobType::kSuccess);
 
   // Running loadbalancer. Since now we know the worker is running correctly, we
   // test that runLoadBalancer() and addWorkerAddress() are working correctly
@@ -46,8 +47,8 @@ BOOST_AUTO_TEST_CASE(test_default)
                               local_ip.c_str(),
                               balancer_port,
                               ""));
-  result.setJobType(JobMessage::JobType::NONE);
+  result.setJobType(JobMessage::JobType::kNone);
   BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), balancer_port, result));
-  BOOST_TEST(result.getJobType() == JobMessage::JobType::SUCCESS);
+  BOOST_TEST(result.getJobType() == JobMessage::JobType::kSuccess);
 }
 BOOST_AUTO_TEST_SUITE_END()

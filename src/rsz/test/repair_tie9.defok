@@ -1,0 +1,17 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN top ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 40000 40000 ) ;
+COMPONENTS 4 ;
+    - t1 sky130_fd_sc_hd__conb_1 ;
+    - u0 sky130_fd_sc_hd__buf_4 ;
+    - u0_1 sky130_fd_sc_hd__conb_1 + SOURCE TIMING + PLACED ( 280 1195 ) N ;
+    - u1 sky130_fd_sc_hd__buf_4 ;
+END COMPONENTS
+NETS 2 ;
+    - n1 ( t1 HI ) ( u1 A ) + USE SIGNAL ;
+    - net1 ( u0 A ) ( u0_1 HI ) + USE SIGNAL ;
+END NETS
+END DESIGN

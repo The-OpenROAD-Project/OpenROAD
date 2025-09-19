@@ -5,11 +5,13 @@ import ppl_aux
 
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("gcd.def")
 
 design.evalTclString("set_io_pin_constraint -pin_names {req_msg*} -region bottom:0-18")
-design.evalTclString("set_io_pin_constraint -pin_names {resp_msg*} -region bottom:10-20")
+design.evalTclString(
+    "set_io_pin_constraint -pin_names {resp_msg*} -region bottom:10-20"
+)
 
 ppl_aux.place_pins(design, hor_layers="metal3", ver_layers="metal2")
 

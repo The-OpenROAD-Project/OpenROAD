@@ -1,34 +1,6 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2023, Google LLC
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
+
 #pragma once
 
 #include <iostream>
@@ -64,10 +36,15 @@ class ScanCell
   virtual void connectScanEnable(const ScanDriver& driver) const = 0;
   virtual void connectScanIn(const ScanDriver& driver) const = 0;
   virtual void connectScanOut(const ScanLoad& load) const = 0;
+  virtual ScanLoad getScanEnable() const = 0;
+  virtual ScanLoad getScanIn() const = 0;
   virtual ScanDriver getScanOut() const = 0;
 
   const ClockDomain& getClockDomain() const;
   std::string_view getName() const;
+
+  virtual odb::Point getOrigin() const = 0;
+  virtual bool isPlaced() const = 0;
 
  private:
   std::string name_;
@@ -124,8 +101,16 @@ class ScanCell
 
     odb::dbNet* driver_net = driver->getNet();
     if (!driver_net) {
-      driver_net = odb::dbNet::create(driver->getBlock(), GetTermName(driver));
+      driver_net
+          = odb::dbNet::create(driver->getBlock(), driver->getName().c_str());
+      if (!driver_net) {
+        logger_->error(utl::DFT,
+                       30,
+                       "Failed to create driver net named '{}'",
+                       driver->getName());
+      }
       driver_net->setSigType(odb::dbSigType::SCAN);
+      driver->connect(driver_net);
     }
     debugPrint(logger_,
                utl::DFT,

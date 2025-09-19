@@ -1,67 +1,81 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dr/FlexGridGraph.h"
 
+#include <algorithm>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <map>
+#include <vector>
 
+#include "db/obj/frTrackPattern.h"
+#include "db/tech/frViaDef.h"
 #include "dr/FlexDR.h"
+#include "frBaseTypes.h"
+#include "frDesign.h"
 
 namespace drt {
+void FlexGridGraph::addAccessPointLocation(frLayerNum layer_num,
+                                           frCoord x_coord,
+                                           frCoord y_coord)
+{
+  ap_locs_[layer_num].insert(Point(x_coord, y_coord));
+}
 
-void FlexGridGraph::initGrids(
-    const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-    const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-    const std::map<frLayerNum, dbTechLayerDir>& zMap,
-    bool followGuide)
+void initCoords(const frLayerCoordTrackPatternMap& map,
+                std::vector<frCoord>& coords)
+{
+  coords.clear();
+  for (auto& [l, m] : map) {
+    coords.reserve(m.size());
+    if (coords.empty()) {
+      std::transform(
+          m.begin(), m.end(), std::back_inserter(coords), [](const auto& kv) {
+            return kv.first;
+          });
+    } else {
+      auto it = coords.begin();
+      for (auto& [k, _] : m) {
+        it = std::lower_bound(it, coords.end(), k);
+        if (it == coords.end() || *it != k) {
+          it = coords.insert(it, k);
+        }
+      }
+    }
+  }
+}
+
+bool FlexGridGraph::isAccessPointLocation(frLayerNum layer_num,
+                                          frCoord x_coord,
+                                          frCoord y_coord) const
+{
+  if (ap_locs_.size() <= layer_num) {
+    return false;
+  }
+  const auto& layer_maze_locs = ap_locs_[layer_num];
+  return layer_maze_locs.find(Point(x_coord, y_coord)) != layer_maze_locs.end();
+}
+void FlexGridGraph::initGrids(const frLayerCoordTrackPatternMap& xMap,
+                              const frLayerCoordTrackPatternMap& yMap,
+                              const frLayerDirMap& zMap,
+                              bool followGuide)
 {
   // initialize coord vectors
-  xCoords_.clear();
-  yCoords_.clear();
+  initCoords(xMap, xCoords_);
+  initCoords(yMap, yCoords_);
   zCoords_.clear();
   zHeights_.clear();
   layerRouteDirections_.clear();
-  xCoords_.reserve(xMap.size());
-  for (auto& [k, v] : xMap) {
-    xCoords_.push_back(k);
-  }
-  yCoords_.reserve(yMap.size());
-  for (auto& [k, v] : yMap) {
-    yCoords_.push_back(k);
-  }
+
   frCoord zHeight = 0;
   // std::vector<frCoord> via2viaMinLenTmp(4, 0);
   zCoords_.reserve(zMap.size());
   for (auto& [k, v] : zMap) {
     zCoords_.push_back(k);
-    zHeight += getTech()->getLayer(k)->getPitch() * VIACOST;
+    zHeight += getTech()->getLayer(k)->getPitch() * router_cfg_->VIACOST;
     zHeights_.push_back(zHeight);
     layerRouteDirections_.push_back(v);
   }
@@ -97,7 +111,7 @@ bool FlexGridGraph::outOfDieVia(frMIdx x,
   if (lNum > getTech()->getTopLayerNum()) {
     return false;
   }
-  frViaDef* via = getTech()->getLayer(lNum)->getDefaultViaDef();
+  const frViaDef* via = getTech()->getLayer(lNum)->getDefaultViaDef();
   if (!via) {
     return true;
   }
@@ -114,7 +128,7 @@ bool FlexGridGraph::hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z)
   }
   Rect testBoxUp;
   if (lNum + 1 <= getTech()->getTopLayerNum()) {
-    frViaDef* via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+    const frViaDef* via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     if (via) {
       testBoxUp = via->getLayer1ShapeBox();
       testBoxUp.merge(via->getLayer2ShapeBox());
@@ -126,7 +140,7 @@ bool FlexGridGraph::hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z)
   }
   Rect testBoxDown;
   if (lNum - 1 >= getTech()->getBottomLayerNum()) {
-    frViaDef* via = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+    const frViaDef* via = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
     if (via) {
       testBoxDown = via->getLayer1ShapeBox();
       testBoxDown.merge(via->getLayer2ShapeBox());
@@ -182,18 +196,17 @@ bool FlexGridGraph::hasAlignedUpDefTrack(
   return false;
 }
 
-void FlexGridGraph::initEdges(
-    const frDesign* design,
-    std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-    std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-    const std::map<frLayerNum, dbTechLayerDir>& zMap,
-    const Rect& bbox,
-    bool initDR)
+void FlexGridGraph::initEdges(const frDesign* design,
+                              frLayerCoordTrackPatternMap& xMap,
+                              frLayerCoordTrackPatternMap& yMap,
+                              const frLayerDirMap& zMap,
+                              const Rect& bbox,
+                              bool initDR)
 {
   frMIdx xDim, yDim, zDim;
   getDim(xDim, yDim, zDim);
   // initialize grid graph
-  frMIdx xIdx = 0, yIdx = 0, zIdx = 0;
+  frMIdx zIdx = 0;
   dieBox_ = design->getTopBlock()->getDieBox();
   for (const auto& [layerNum, dir] : zMap) {
     frLayerNum nonPrefLayerNum;
@@ -205,28 +218,25 @@ void FlexGridGraph::initEdges(
     } else {
       nonPrefLayerNum = layerNum;
     }
-    yIdx = 0;
-    for (auto& [yCoord, ySubMap] : yMap) {
-      auto yIt = ySubMap.find(layerNum);
-      auto yIt2 = ySubMap.find(layerNum + 2);
-      auto yIt3 = ySubMap.find(nonPrefLayerNum);
-      bool yFound = (yIt != ySubMap.end());
-      bool yFound2 = (yIt2 != ySubMap.end());
-      bool yFound3 = (yIt3 != ySubMap.end());
-      xIdx = 0;
-      for (auto& [xCoord, xSubMap] : xMap) {
-        auto xIt = xSubMap.find(layerNum);
-        auto xIt2 = xSubMap.find(layerNum + 2);
-        auto xIt3 = xSubMap.find(nonPrefLayerNum);
-        bool xFound = (xIt != xSubMap.end());
-        bool xFound2 = (xIt2 != xSubMap.end());
-        bool xFound3 = (xIt3 != xSubMap.end());
-        // add cost to out-of-die edge
-        bool isOutOfDieVia = outOfDieVia(xIdx, yIdx, zIdx, dieBox_);
-        // add edge for preferred direction
-        if (dir == dbTechLayerDir::HORIZONTAL && yFound) {
-          if (layerNum >= BOTTOM_ROUTING_LAYER
-              && layerNum <= TOP_ROUTING_LAYER) {
+    auto& yLayerMap = yMap[layerNum];
+    auto& yLayer2Map = yMap[layerNum + 2];
+    auto& yNonPrefLayerMap = yMap[nonPrefLayerNum];
+    auto& xLayerMap = xMap[layerNum];
+    auto& xLayer2Map = xMap[layerNum + 2];
+    auto& xNonPrefLayerMap = xMap[nonPrefLayerNum];
+    if (dir == dbTechLayerDir::HORIZONTAL) {
+      for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
+        auto yCoord = yCoords_[yIdx];
+        auto yIt = yLayerMap.find(yCoord);
+        if (yIt == yLayerMap.end()) {
+          continue;
+        }
+        for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
+          // add cost to out-of-die edge
+          bool isOutOfDieVia = outOfDieVia(xIdx, yIdx, zIdx, dieBox_);
+          // add edge for preferred direction
+          if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
+              && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
             if ((!isOutOfDieVia || !hasOutOfDieViol(xIdx, yIdx, zIdx))
                 && (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
                     || yIt->second != nullptr)) {
@@ -236,20 +246,62 @@ void FlexGridGraph::initEdges(
               }
             }
           }
+          if (isOutOfDieVia) {
+            continue;
+          }
+          auto xCoord = xCoords_[xIdx];
+          auto xIt2 = xLayer2Map.find(xCoord);
+          if (xIt2 == xLayer2Map.end()) {
+            continue;
+          }
           // via to upper layer
-          if (xFound2) {
-            if (!isOutOfDieVia) {
-              addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
-              bool condition
-                  = (yIt->second == nullptr || xIt2->second == nullptr);
-              if (condition) {
-                setGridCostU(xIdx, yIdx, zIdx);
-              }
+          const bool is_on_grid
+              = yIt->second != nullptr && xIt2->second != nullptr;
+          const bool allow_off_grid
+              = layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
+                || isAccessPointLocation(layerNum, xCoord, yCoord);
+          if (is_on_grid || allow_off_grid) {
+            addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
+            if (!is_on_grid) {
+              setGridCostU(xIdx, yIdx, zIdx);
             }
           }
-        } else if (dir == dbTechLayerDir::VERTICAL && xFound) {
-          if (layerNum >= BOTTOM_ROUTING_LAYER
-              && layerNum <= TOP_ROUTING_LAYER) {
+        }
+      }
+      // get non pref track layer --> use upper layer pref dir track if
+      // possible
+      if (router_cfg_->USENONPREFTRACKS && !layer->isUnidirectional()) {
+        for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
+          auto xCoord = xCoords_[xIdx];
+          auto xIt3 = xNonPrefLayerMap.find(xCoord);
+          if (xIt3 == xNonPrefLayerMap.end()) {
+            continue;
+          }
+          for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
+            // add edge for non-preferred direction
+            // vertical non-pref track
+            if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
+                && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
+              addEdge(xIdx, yIdx, zIdx, frDirEnum::N, bbox, initDR);
+              setGridCostN(xIdx, yIdx, zIdx);
+            }
+            // horizontal non-pref track
+          }
+        }
+      }
+    } else if (dir == dbTechLayerDir::VERTICAL) {
+      for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
+        auto xCoord = xCoords_[xIdx];
+        auto xIt = xLayerMap.find(xCoord);
+        if (xIt == xLayerMap.end()) {
+          continue;
+        }
+        for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
+          // add cost to out-of-die edge
+          bool isOutOfDieVia = outOfDieVia(xIdx, yIdx, zIdx, dieBox_);
+          // add edge for preferred direction
+          if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
+              && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
             if ((!isOutOfDieVia || !hasOutOfDieViol(xIdx, yIdx, zIdx))
                 && (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
                     || xIt->second != nullptr)) {
@@ -259,41 +311,49 @@ void FlexGridGraph::initEdges(
               }
             }
           }
+          if (isOutOfDieVia) {
+            continue;
+          }
+          auto yCoord = yCoords_[yIdx];
+          auto yIt2 = yLayer2Map.find(yCoord);
+          if (yIt2 == yLayer2Map.end()) {
+            continue;
+          }
           // via to upper layer
-          if (yFound2) {
-            if (!isOutOfDieVia) {
-              addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
-              bool condition
-                  = (yIt2->second == nullptr || xIt->second == nullptr);
-              if (condition) {
-                setGridCostU(xIdx, yIdx, zIdx);
-              }
+          const bool is_on_grid
+              = xIt->second != nullptr && yIt2->second != nullptr;
+          const bool allow_off_grid
+              = layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
+                || isAccessPointLocation(layerNum, xCoord, yCoord);
+
+          if (is_on_grid || allow_off_grid) {
+            addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
+            if (!is_on_grid) {
+              setGridCostU(xIdx, yIdx, zIdx);
             }
           }
         }
-        // get non pref track layer --> use upper layer pref dir track if
-        // possible
-        if (USENONPREFTRACKS && !layer->isUnidirectional()) {
-          // add edge for non-preferred direction
-          // vertical non-pref track
-          if (dir == dbTechLayerDir::HORIZONTAL && xFound3) {
-            if (layerNum >= BOTTOM_ROUTING_LAYER
-                && layerNum <= TOP_ROUTING_LAYER) {
-              addEdge(xIdx, yIdx, zIdx, frDirEnum::N, bbox, initDR);
-              setGridCostN(xIdx, yIdx, zIdx);
-            }
-            // horizontal non-pref track
-          } else if (dir == dbTechLayerDir::VERTICAL && yFound3) {
-            if (layerNum >= BOTTOM_ROUTING_LAYER
-                && layerNum <= TOP_ROUTING_LAYER) {
+      }
+      // get non pref track layer --> use upper layer pref dir track if
+      // possible
+      if (router_cfg_->USENONPREFTRACKS && !layer->isUnidirectional()) {
+        for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
+          auto yCoord = yCoords_[yIdx];
+          auto yIt3 = yNonPrefLayerMap.find(yCoord);
+          if (yIt3 == yNonPrefLayerMap.end()) {
+            continue;
+          }
+          for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
+            // add edge for non-preferred direction
+            // vertical non-pref track
+            if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
+                && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::E, bbox, initDR);
               setGridCostE(xIdx, yIdx, zIdx);
             }
           }
         }
-        ++xIdx;
       }
-      ++yIdx;
     }
     ++zIdx;
   }
@@ -316,29 +376,31 @@ void FlexGridGraph::initEdges(
            zIdx += inc, nextLNum += inc * 2) {
         addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
         frLayer* nextLayer = getTech()->getLayer(nextLNum);
-        const bool restrictedRouting = nextLayer->isUnidirectional()
-                                       || nextLNum < BOTTOM_ROUTING_LAYER
-                                       || nextLNum > TOP_ROUTING_LAYER;
+        const bool restrictedRouting
+            = nextLayer->isUnidirectional()
+              || nextLNum < router_cfg_->BOTTOM_ROUTING_LAYER
+              || nextLNum > router_cfg_->TOP_ROUTING_LAYER;
         if (!restrictedRouting || nextLayer->isVertical()) {
-          auto& xSubMap = xMap[apPt.x()];
-          auto xTrack = xSubMap.find(nextLNum);
+          auto& xSubMap = xMap[nextLNum];
+          auto xTrack = xSubMap.find(apPt.x());
           if (xTrack != xSubMap.end() && xTrack->second != nullptr) {
             break;
           }
         }
         if (!restrictedRouting || nextLayer->isHorizontal()) {
-          auto& ySubMap = yMap[apPt.y()];
-          auto yTrack = ySubMap.find(nextLNum);
+          auto& ySubMap = yMap[nextLNum];
+          auto yTrack = ySubMap.find(apPt.y());
           if (yTrack != ySubMap.end() && yTrack->second != nullptr) {
             break;
           }
         }
         // didn't find default track, then create tracks if possible
-        if (!restrictedRouting && nextLNum >= VIA_ACCESS_LAYERNUM) {
+        if (!restrictedRouting
+            && nextLNum >= router_cfg_->VIA_ACCESS_LAYERNUM) {
           dbTechLayerDir prefDir
               = design->getTech()->getLayer(nextLNum)->getDir();
-          xMap[apPt.x()][nextLNum] = nullptr;  // to keep coherence
-          yMap[apPt.y()][nextLNum] = nullptr;
+          xMap[nextLNum][apPt.x()] = nullptr;  // to keep coherence
+          yMap[nextLNum][apPt.y()] = nullptr;
           frMIdx nextZ = up ? zIdx + 1 : zIdx;
           // This is a value to make sure the edges we are adding will
           // reach a track on the layer of interest.  It is simpler to
@@ -366,35 +428,36 @@ void FlexGridGraph::initEdges(
 }
 
 // initialization: update grid graph topology, does not assign edge cost
-void FlexGridGraph::init(
-    const frDesign* design,
-    const Rect& routeBBox,
-    const Rect& extBBox,
-    std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-    std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-    bool initDR,
-    bool followGuide)
+void FlexGridGraph::init(const frDesign* design,
+                         const Rect& routeBBox,
+                         const Rect& extBBox,
+                         frLayerCoordTrackPatternMap& xMap,
+                         frLayerCoordTrackPatternMap& yMap,
+                         bool initDR,
+                         bool followGuide)
 {
   auto* via_data = getDRWorker()->getViaData();
   halfViaEncArea_ = &via_data->halfViaEncArea;
 
   // get tracks intersecting with the Maze bbox
-  std::map<frLayerNum, dbTechLayerDir> zMap;
+  frLayerDirMap zMap;
+  size_t layerCount = design->getTech()->getLayers().size();
+  zMap.reserve(layerCount);
+
   initTracks(design, xMap, yMap, zMap, extBBox);
   initGrids(xMap, yMap, zMap, followGuide);  // buildGridGraph
   initEdges(
       design, xMap, yMap, zMap, routeBBox, initDR);  // add edges and edgeCost
+  ap_locs_.clear();
 }
 
 // initialization helpers
 // get all tracks intersecting with the Maze bbox, left/bottom are inclusive
 void FlexGridGraph::initTracks(
     const frDesign* design,
-    std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
-        horLoc2TrackPatterns,
-    std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
-        vertLoc2TrackPatterns,
-    std::map<frLayerNum, dbTechLayerDir>& layerNum2PreRouteDir,
+    frLayerCoordTrackPatternMap& horLoc2TrackPatterns,
+    frLayerCoordTrackPatternMap& vertLoc2TrackPatterns,
+    frLayerDirMap& layerNum2PreRouteDir,
     const Rect& bbox)
 {
   for (auto& layer : getTech()->getLayers()) {
@@ -406,7 +469,7 @@ void FlexGridGraph::initTracks(
     for (auto& tp : design->getTopBlock()->getTrackPatterns(currLayerNum)) {
       // allow wrongway if global variable and design rule allow
       bool flag
-          = (USENONPREFTRACKS && !layer->isUnidirectional())
+          = (router_cfg_->USENONPREFTRACKS && !layer->isUnidirectional())
                 ? (tp->isHorizontal()
                    && currPrefRouteDir == dbTechLayerDir::VERTICAL)
                       || (!tp->isHorizontal()
@@ -430,9 +493,9 @@ void FlexGridGraph::initTracks(
           frCoord trackLoc
               = trackNum * tp->getTrackSpacing() + tp->getStartCoord();
           if (tp->isHorizontal()) {
-            horLoc2TrackPatterns[trackLoc][currLayerNum] = tp.get();
+            horLoc2TrackPatterns[currLayerNum][trackLoc] = tp.get();
           } else {
-            vertLoc2TrackPatterns[trackLoc][currLayerNum] = tp.get();
+            vertLoc2TrackPatterns[currLayerNum][trackLoc] = tp.get();
           }
         }
       }
@@ -466,7 +529,7 @@ void FlexGridGraph::resetPrevNodeDir()
 // print the grid graph with edge and vertex for debug purpose
 void FlexGridGraph::print() const
 {
-  std::ofstream mazeLog(OUT_MAZE_FILE.c_str());
+  std::ofstream mazeLog(router_cfg_->OUT_MAZE_FILE.c_str());
   if (mazeLog.is_open()) {
     // print edges
     Rect gridBBox;

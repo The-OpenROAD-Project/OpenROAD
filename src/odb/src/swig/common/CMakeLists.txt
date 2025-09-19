@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2019-2025, The OpenROAD Authors
+
 add_library(odb_swig_common
     swig_common.cpp
 )
@@ -14,5 +17,5 @@ target_link_libraries(odb_swig_common
     lefin
     defout
     lefout
-    utl
+    utl_lib
 )

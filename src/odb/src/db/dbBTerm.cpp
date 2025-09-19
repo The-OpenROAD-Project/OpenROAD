@@ -1,49 +1,23 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbBTerm.h"
 
-#include "db.h"
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <optional>
+#include <string>
+
 #include "dbArrayTable.h"
 #include "dbBPinItr.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbChip.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
-#include "dbDiff.h"
-#include "dbDiff.hpp"
 #include "dbHier.h"
 #include "dbITerm.h"
 #include "dbInst.h"
@@ -51,11 +25,15 @@
 #include "dbJournal.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
+#include "dbModNet.h"
 #include "dbNet.h"
-#include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbTransform.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbSet.h"
+#include "odb/dbShape.h"
+#include "odb/dbTransform.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -64,6 +42,8 @@ template class dbTable<_dbBTerm>;
 
 _dbBTerm::_dbBTerm(_dbDatabase*)
 {
+  // For pointer tagging the bottom 3 bits.
+  static_assert(alignof(_dbBTerm) % 8 == 0);
   _flags._io_type = dbIoType::INPUT;
   _flags._sig_type = dbSigType::SIGNAL;
   _flags._orient = 0;
@@ -75,6 +55,8 @@ _dbBTerm::_dbBTerm(_dbDatabase*)
   _ext_id = 0;
   _name = nullptr;
   _sta_vertex_id = 0;
+  _constraint_region.mergeInit();
+  _is_mirrored = false;
 }
 
 _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
@@ -90,11 +72,11 @@ _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
       _bpins(b._bpins),
       _ground_pin(b._ground_pin),
       _supply_pin(b._supply_pin),
-      _sta_vertex_id(0)
+      _sta_vertex_id(0),
+      _constraint_region(b._constraint_region)
 {
   if (b._name) {
-    _name = strdup(b._name);
-    ZALLOCATED(_name);
+    _name = safe_strdup(b._name);
   }
 }
 
@@ -179,74 +161,6 @@ bool _dbBTerm::operator==(const _dbBTerm& rhs) const
   return true;
 }
 
-void _dbBTerm::differences(dbDiff& diff,
-                           const char* field,
-                           const _dbBTerm& rhs) const
-{
-  _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-  _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_flags._io_type);
-  DIFF_FIELD(_flags._sig_type);
-  DIFF_FIELD(_flags._spef);
-  DIFF_FIELD(_flags._special);
-  DIFF_FIELD(_ext_id);
-  DIFF_FIELD_NO_DEEP(_next_entry);
-
-  if (!diff.deepDiff()) {
-    DIFF_FIELD(_net);
-  } else {
-    _dbNet* lhs_net = lhs_blk->_net_tbl->getPtr(_net);
-    _dbNet* rhs_net = rhs_blk->_net_tbl->getPtr(rhs._net);
-
-    if (strcmp(lhs_net->_name, rhs_net->_name) != 0) {
-      diff.report("< _net %s\n", lhs_net->_name);
-      diff.report("> _net %s\n", rhs_net->_name);
-    }
-  }
-
-  DIFF_FIELD_NO_DEEP(_next_bterm);
-  DIFF_FIELD_NO_DEEP(_prev_bterm);
-  DIFF_FIELD_NO_DEEP(_parent_block);
-  DIFF_FIELD_NO_DEEP(_parent_iterm);
-  DIFF_FIELD_NO_DEEP(_bpins);
-  DIFF_FIELD_NO_DEEP(_ground_pin);
-  DIFF_FIELD_NO_DEEP(_supply_pin);
-  DIFF_END
-}
-
-void _dbBTerm::out(dbDiff& diff, char side, const char* field) const
-{
-  _dbBlock* blk = (_dbBlock*) getOwner();
-
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_flags._io_type);
-  DIFF_OUT_FIELD(_flags._sig_type);
-  DIFF_OUT_FIELD(_flags._spef);
-  DIFF_OUT_FIELD(_flags._special);
-  DIFF_OUT_FIELD(_ext_id);
-  DIFF_OUT_FIELD_NO_DEEP(_next_entry);
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_FIELD(_net);
-  } else {
-    _dbNet* net = blk->_net_tbl->getPtr(_net);
-    diff.report("%c _net %s\n", side, net->_name);
-  }
-
-  DIFF_OUT_FIELD_NO_DEEP(_next_bterm);
-  DIFF_OUT_FIELD_NO_DEEP(_prev_bterm);
-  DIFF_OUT_FIELD_NO_DEEP(_parent_block);
-  DIFF_OUT_FIELD_NO_DEEP(_parent_iterm);
-  DIFF_OUT_FIELD_NO_DEEP(_bpins);
-  DIFF_OUT_FIELD_NO_DEEP(_ground_pin);
-  DIFF_OUT_FIELD_NO_DEEP(_supply_pin);
-  DIFF_END
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
 {
   uint* bit_field = (uint*) &bterm._flags;
@@ -257,16 +171,25 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   stream << bterm._net;
   stream << bterm._next_bterm;
   stream << bterm._prev_bterm;
+  stream << bterm._mnet;
+  stream << bterm._next_modnet_bterm;
+  stream << bterm._prev_modnet_bterm;
   stream << bterm._parent_block;
   stream << bterm._parent_iterm;
   stream << bterm._bpins;
   stream << bterm._ground_pin;
   stream << bterm._supply_pin;
+  stream << bterm._constraint_region;
+  stream << bterm._mirrored_bterm;
+  stream << bterm._is_mirrored;
+
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
 {
+  dbBlock* block = (dbBlock*) (bterm.getOwner());
+  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   uint* bit_field = (uint*) &bterm._flags;
   stream >> *bit_field;
   stream >> bterm._ext_id;
@@ -275,11 +198,25 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   stream >> bterm._net;
   stream >> bterm._next_bterm;
   stream >> bterm._prev_bterm;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream >> bterm._mnet;
+    stream >> bterm._next_modnet_bterm;
+    stream >> bterm._prev_modnet_bterm;
+  }
   stream >> bterm._parent_block;
   stream >> bterm._parent_iterm;
   stream >> bterm._bpins;
   stream >> bterm._ground_pin;
   stream >> bterm._supply_pin;
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
+    stream >> bterm._constraint_region;
+  }
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_mirrored_pin)) {
+    stream >> bterm._mirrored_bterm;
+  }
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_is_mirrored)) {
+    stream >> bterm._is_mirrored;
+  }
 
   return stream;
 }
@@ -313,8 +250,7 @@ bool dbBTerm::rename(const char* name)
 
   block->_bterm_hash.remove(bterm);
   free((void*) bterm->_name);
-  bterm->_name = strdup(name);
-  ZALLOCATED(bterm->_name);
+  bterm->_name = safe_strdup(name);
   block->_bterm_hash.insert(bterm);
 
   return true;
@@ -337,6 +273,10 @@ void dbBTerm::setSigType(dbSigType type)
                type.getValue());
     block->_journal->updateField(
         this, _dbBTerm::FLAGS, prev_flags, flagsToUInt(bterm));
+  }
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbBTermSetSigType(this, type);
   }
 }
 
@@ -428,11 +368,42 @@ dbNet* dbBTerm::getNet()
   return nullptr;
 }
 
+dbModNet* dbBTerm::getModNet()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  if (bterm->_mnet) {
+    _dbBlock* block = (_dbBlock*) getBlock();
+    _dbModNet* net = block->_modnet_tbl->getPtr(bterm->_mnet);
+    return (dbModNet*) net;
+  }
+  return nullptr;
+}
+
+void dbBTerm::connect(dbModNet* mod_net)
+{
+  dbModule* parent_module = mod_net->getParent();
+  _dbBlock* block = (_dbBlock*) (parent_module->getOwner());
+  _dbModNet* _mod_net = (_dbModNet*) mod_net;
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  if (bterm->_mnet == _mod_net->getId()) {
+    return;
+  }
+  if (bterm->_mnet) {
+    bterm->disconnectModNet(bterm, block);
+  }
+  bterm->connectModNet(_mod_net, block);
+}
+
 void dbBTerm::connect(dbNet* net_)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
+
+  // Same net. Nothing to connect.
+  if (bterm->_net == net_->getId()) {
+    return;
+  }
 
   if (net->_flags._dont_touch) {
     net->getLogger()->error(utl::ODB,
@@ -441,23 +412,8 @@ void dbBTerm::connect(dbNet* net_)
                             net->_name);
   }
 
-  if (block->_journal) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: connect Bterm {} to net {}",
-               bterm->getId(),
-               net_->getId());
-    block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
-    block->_journal->pushParam(dbBTermObj);
-    block->_journal->pushParam(bterm->getId());
-    block->_journal->pushParam(net_->getId());
-    block->_journal->endAction();
-  }
-
   if (bterm->_net) {
-    bterm->disconnectNet(bterm, block);
+    disconnectDbNet();
   }
   bterm->connectNet(net, block);
 }
@@ -476,30 +432,42 @@ void dbBTerm::disconnect()
           "Attempt to disconnect bterm of dont_touch net {}",
           net->_name);
     }
-
-    if (block->_journal) {
-      debugPrint(block->getImpl()->getLogger(),
-                 utl::ODB,
-                 "DB_ECO",
-                 1,
-                 "ECO: disconnect Iterm {}",
-                 bterm->getId());
-      block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
-      block->_journal->pushParam(dbBTermObj);
-      block->_journal->pushParam(bterm->getId());
-      block->_journal->endAction();
+    bterm->disconnectNet(bterm, block);
+    if (bterm->_mnet) {
+      bterm->disconnectModNet(bterm, block);
     }
+  }
+}
 
+void dbBTerm::disconnectDbModNet()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  _dbBlock* block = (_dbBlock*) bterm->getOwner();
+  bterm->disconnectModNet(bterm, block);
+}
+
+void dbBTerm::disconnectDbNet()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  if (bterm->_net) {
+    _dbBlock* block = (_dbBlock*) bterm->getOwner();
+
+    _dbNet* net = block->_net_tbl->getPtr(bterm->_net);
+    if (net->_flags._dont_touch) {
+      net->getLogger()->error(
+          utl::ODB,
+          1106,
+          "Attempt to disconnect bterm of dont_touch net {}",
+          net->_name);
+    }
     bterm->disconnectNet(bterm, block);
   }
 }
 
 dbSet<dbBPin> dbBTerm::getBPins()
 {
-  //_dbBTerm * bterm = (_dbBTerm *) this;
   _dbBlock* block = (_dbBlock*) getBlock();
-  dbSet<dbBPin> bpins(this, block->_bpin_itr);
-  return bpins;
+  return dbSet<dbBPin>(this, block->_bpin_itr);
 }
 
 dbITerm* dbBTerm::getITerm()
@@ -533,11 +501,7 @@ Rect dbBTerm::getBBox()
 
 bool dbBTerm::getFirstPin(dbShape& shape)
 {
-  dbSet<dbBPin> bpins = getBPins();
-  dbSet<dbBPin>::iterator bpin_itr;
-  for (bpin_itr = bpins.begin(); bpin_itr != bpins.end(); ++bpin_itr) {
-    dbBPin* bpin = *bpin_itr;
-
+  for (dbBPin* bpin : getBPins()) {
     for (dbBox* box : bpin->getBoxes()) {
       if (bpin->getPlacementStatus() == dbPlacementStatus::UNPLACED
           || bpin->getPlacementStatus() == dbPlacementStatus::NONE
@@ -561,27 +525,16 @@ bool dbBTerm::getFirstPin(dbShape& shape)
 dbPlacementStatus dbBTerm::getFirstPinPlacementStatus()
 {
   dbSet<dbBPin> bpins = getBPins();
-  auto bpin_itr = bpins.begin();
-  if (bpin_itr != bpins.end()) {
-    dbBPin* bpin = *bpin_itr;
-    return bpin->getPlacementStatus();
+  if (bpins.empty()) {
+    return dbPlacementStatus::NONE;
   }
-
-  return dbPlacementStatus::NONE;
+  return bpins.begin()->getPlacementStatus();
 }
 
 bool dbBTerm::getFirstPinLocation(int& x, int& y)
 {
-  dbSet<dbBPin> bpins = getBPins();
-  dbSet<dbBPin>::iterator bpin_itr;
-  for (bpin_itr = bpins.begin(); bpin_itr != bpins.end(); ++bpin_itr) {
-    dbBPin* bpin = *bpin_itr;
-
-    dbSet<dbBox> boxes = bpin->getBoxes();
-    dbSet<dbBox>::iterator boxItr;
-
-    for (boxItr = boxes.begin(); boxItr != boxes.end(); ++boxItr) {
-      dbBox* box = *boxItr;
+  for (dbBPin* bpin : getBPins()) {
+    for (dbBox* box : bpin->getBoxes()) {
       if (bpin->getPlacementStatus() == dbPlacementStatus::UNPLACED
           || bpin->getPlacementStatus() == dbPlacementStatus::NONE
           || box == nullptr) {
@@ -672,8 +625,7 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
   }
 
   _dbBTerm* bterm = block->_bterm_tbl->create();
-  bterm->_name = strdup(name);
-  ZALLOCATED(bterm->_name);
+  bterm->_name = safe_strdup(name);
   block->_bterm_hash.insert(bterm);
 
   // If there is a parentInst then we need to update the dbMaster's
@@ -708,13 +660,69 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
   for (auto callback : block->_callbacks) {
     callback->inDbBTermCreate((dbBTerm*) bterm);
   }
+
   bterm->connectNet(net, block);
 
   return (dbBTerm*) bterm;
 }
 
+void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+
+  _mnet = mod_net->getOID();
+
+  if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: connect Bterm {} to modnet {}",
+               bterm->getId(),
+               mod_net->getId());
+
+    block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
+    block->_journal->pushParam(dbBTermObj);
+    block->_journal->pushParam(bterm->getId());
+    // the flat net is left out
+    block->_journal->pushParam(0U);
+    // modnet
+    block->_journal->pushParam(mod_net->getId());
+    block->_journal->endAction();
+  }
+
+  if (mod_net->_bterms != 0) {
+    _dbBTerm* head = block->_bterm_tbl->getPtr(mod_net->_bterms);
+    _next_modnet_bterm = mod_net->_bterms;
+    head->_prev_modnet_bterm = getOID();
+  } else {
+    _next_modnet_bterm = 0;
+  }
+  _prev_modnet_bterm = 0;
+  mod_net->_bterms = getOID();
+}
+
 void _dbBTerm::connectNet(_dbNet* net, _dbBlock* block)
 {
+  _dbBTerm* bterm = (_dbBTerm*) this;
+
+  if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: connect Bterm {} to net {}",
+               bterm->getId(),
+               net->getId());
+    block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
+    block->_journal->pushParam(dbBTermObj);
+    block->_journal->pushParam(bterm->getId());
+    block->_journal->pushParam(net->getId());
+    // modnet is left out, only flat net.
+    block->_journal->pushParam(0U);
+    block->_journal->endAction();
+  }
+
   for (auto callback : block->_callbacks) {
     callback->inDbBTermPreConnect((dbBTerm*) this, (dbNet*) net);
   }
@@ -781,35 +789,122 @@ void dbBTerm::destroy(dbBTerm* bterm_)
 
 void _dbBTerm::disconnectNet(_dbBTerm* bterm, _dbBlock* block)
 {
-  // unlink bterm from the net
-  for (auto callback : block->_callbacks) {
-    callback->inDbBTermPreDisconnect((dbBTerm*) this);
-  }
-  _dbNet* net = block->_net_tbl->getPtr(bterm->_net);
-  uint id = bterm->getOID();
+  if (bterm->_net) {
+    _dbNet* net = block->_net_tbl->getPtr(bterm->_net);
 
-  if (net->_bterms == id) {
-    net->_bterms = bterm->_next_bterm;
-
-    if (net->_bterms != 0) {
-      _dbBTerm* t = block->_bterm_tbl->getPtr(net->_bterms);
-      t->_prev_bterm = 0;
+    // Journal
+    if (block->_journal) {
+      debugPrint(block->getImpl()->getLogger(),
+                 utl::ODB,
+                 "DB_ECO",
+                 1,
+                 "ECO: disconnect bterm {}",
+                 bterm->getId());
+      block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+      block->_journal->pushParam(dbBTermObj);
+      block->_journal->pushParam(bterm->getId());
+      block->_journal->pushParam(net->getId());
+      block->_journal->pushParam(0U);  // no modnet
+      block->_journal->endAction();
     }
+
+    // unlink bterm from the net
+    for (auto callback : block->_callbacks) {
+      callback->inDbBTermPreDisconnect((dbBTerm*) this);
+    }
+
+    uint id = bterm->getOID();
+
+    if (net->_bterms == id) {
+      net->_bterms = bterm->_next_bterm;
+
+      if (net->_bterms != 0) {
+        _dbBTerm* t = block->_bterm_tbl->getPtr(net->_bterms);
+        t->_prev_bterm = 0;
+      }
+    } else {
+      if (bterm->_next_bterm != 0) {
+        _dbBTerm* next = block->_bterm_tbl->getPtr(bterm->_next_bterm);
+        next->_prev_bterm = bterm->_prev_bterm;
+      }
+
+      if (bterm->_prev_bterm != 0) {
+        _dbBTerm* prev = block->_bterm_tbl->getPtr(bterm->_prev_bterm);
+        prev->_next_bterm = bterm->_next_bterm;
+      }
+    }
+    _net = 0;
+    for (auto callback : block->_callbacks) {
+      callback->inDbBTermPostDisConnect((dbBTerm*) this, (dbNet*) net);
+    }
+  }
+}
+
+void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
+{
+  if (bterm->_mnet) {
+    _dbModNet* mod_net = block->_modnet_tbl->getPtr(bterm->_mnet);
+
+    if (block->_journal) {
+      debugPrint(block->getImpl()->getLogger(),
+                 utl::ODB,
+                 "DB_ECO",
+                 1,
+                 "ECO: disconnect bterm {}",
+                 bterm->getId());
+      block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+      block->_journal->pushParam(dbBTermObj);
+      block->_journal->pushParam(bterm->getId());
+      // we are not considering the dbNet
+      block->_journal->pushParam(0U);
+      block->_journal->pushParam(mod_net->getId());
+      block->_journal->endAction();
+    }
+
+    uint id = bterm->getOID();
+    if (mod_net->_bterms == id) {
+      mod_net->_bterms = bterm->_next_modnet_bterm;
+      if (mod_net->_bterms != 0) {
+        _dbBTerm* t = block->_bterm_tbl->getPtr(mod_net->_bterms);
+        t->_prev_modnet_bterm = 0;
+      }
+    } else {
+      if (bterm->_next_modnet_bterm != 0) {
+        _dbBTerm* next = block->_bterm_tbl->getPtr(bterm->_next_modnet_bterm);
+        next->_prev_modnet_bterm = bterm->_prev_modnet_bterm;
+      }
+      if (bterm->_prev_modnet_bterm != 0) {
+        _dbBTerm* prev = block->_bterm_tbl->getPtr(bterm->_prev_modnet_bterm);
+        prev->_next_modnet_bterm = bterm->_next_modnet_bterm;
+      }
+    }
+    _mnet = 0;
+  }
+}
+
+void _dbBTerm::setMirroredConstraintRegion(const Rect& region, _dbBlock* block)
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  const Rect& die_bounds = ((dbBlock*) block)->getDieArea();
+  int begin = region.dx() == 0 ? region.yMin() : region.xMin();
+  int end = region.dx() == 0 ? region.yMax() : region.xMax();
+  Direction2D edge;
+  if (region.dx() == 0) {
+    edge = region.xMin() == die_bounds.xMin() ? west : east;
   } else {
-    if (bterm->_next_bterm != 0) {
-      _dbBTerm* next = block->_bterm_tbl->getPtr(bterm->_next_bterm);
-      next->_prev_bterm = bterm->_prev_bterm;
-    }
+    edge = region.yMin() == die_bounds.yMin() ? south : north;
+  }
+  const Rect mirrored_region
+      = ((dbBlock*) block)->findConstraintRegion(edge, begin, end);
+  bterm->_constraint_region = mirrored_region;
+}
 
-    if (bterm->_prev_bterm != 0) {
-      _dbBTerm* prev = block->_bterm_tbl->getPtr(bterm->_prev_bterm);
-      prev->_next_bterm = bterm->_next_bterm;
-    }
-  }
-  _net = 0;
-  for (auto callback : block->_callbacks) {
-    callback->inDbBTermPostDisConnect((dbBTerm*) this, (dbNet*) net);
-  }
+void _dbBTerm::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
 }
 
 dbSet<dbBTerm>::iterator dbBTerm::destroy(dbSet<dbBTerm>::iterator& itr)
@@ -836,6 +931,84 @@ void dbBTerm::staSetVertexId(uint32_t id)
 {
   _dbBTerm* iterm = (_dbBTerm*) this;
   iterm->_sta_vertex_id = id;
+}
+
+void dbBTerm::setConstraintRegion(const Rect& constraint_region)
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  bterm->_constraint_region = constraint_region;
+
+  dbBTerm* mirrored_bterm = getMirroredBTerm();
+  if (mirrored_bterm != nullptr && !bterm->_constraint_region.isInverted()
+      && mirrored_bterm->getConstraintRegion() == std::nullopt) {
+    _dbBlock* block = (_dbBlock*) getBlock();
+    _dbBTerm* mirrored = (_dbBTerm*) mirrored_bterm;
+    mirrored->setMirroredConstraintRegion(bterm->_constraint_region, block);
+  }
+}
+
+std::optional<Rect> dbBTerm::getConstraintRegion()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  const auto& constraint_region = bterm->_constraint_region;
+  if (constraint_region.isInverted()) {
+    return std::nullopt;
+  }
+
+  return bterm->_constraint_region;
+}
+
+void dbBTerm::resetConstraintRegion()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  bterm->_constraint_region.mergeInit();
+}
+
+void dbBTerm::setMirroredBTerm(dbBTerm* mirrored_bterm)
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+
+  bterm->_mirrored_bterm = mirrored_bterm->getImpl()->getOID();
+  _dbBTerm* mirrored = (_dbBTerm*) mirrored_bterm;
+  mirrored->_is_mirrored = true;
+  mirrored->_mirrored_bterm = bterm->getImpl()->getOID();
+
+  if (!bterm->_constraint_region.isInverted()
+      && mirrored_bterm->getConstraintRegion() == std::nullopt) {
+    _dbBlock* block = (_dbBlock*) getBlock();
+    mirrored->setMirroredConstraintRegion(bterm->_constraint_region, block);
+  } else if (mirrored_bterm->getConstraintRegion() != std::nullopt) {
+    getImpl()->getLogger()->warn(utl::ODB,
+                                 26,
+                                 "Pin {} is mirrored with another pin. The "
+                                 "constraint for this pin will be dropped.",
+                                 mirrored_bterm->getName());
+  }
+}
+
+dbBTerm* dbBTerm::getMirroredBTerm()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  _dbBlock* block = (_dbBlock*) getBlock();
+
+  if (bterm->_mirrored_bterm == 0) {
+    return nullptr;
+  }
+
+  _dbBTerm* mirrored_bterm = block->_bterm_tbl->getPtr(bterm->_mirrored_bterm);
+  return (dbBTerm*) mirrored_bterm;
+}
+
+bool dbBTerm::hasMirroredBTerm()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  return bterm->_mirrored_bterm != 0 && !bterm->_is_mirrored;
+}
+
+bool dbBTerm::isMirrored()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  return bterm->_is_mirrored;
 }
 
 }  // namespace odb

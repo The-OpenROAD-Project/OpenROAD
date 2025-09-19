@@ -1,51 +1,28 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <string.h>
+
 #include <array>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <istream>
+#include <map>
 #include <ostream>
 #include <string>
+#include <tuple>
 #include <unordered_map>
+#include <utility>
 #include <variant>
+#include <vector>
 
-#include "ZException.h"
-#include "dbObject.h"
-#include "map"
-#include "odb.h"
-#include "tuple"
+#include "boost/container/flat_map.hpp"
+#include "odb/ZException.h"
+#include "odb/dbObject.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -167,12 +144,6 @@ class dbOStream
     return *this;
   }
 
-  dbOStream& operator<<(dbObjectType c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
   template <class T1, class T2>
   dbOStream& operator<<(const std::pair<T1, T2>& p)
   {
@@ -208,12 +179,35 @@ class dbOStream
   }
 
   template <class T1, class T2>
+  dbOStream& operator<<(const boost::container::flat_map<T1, T2>& m)
+  {
+    uint sz = m.size();
+    *this << sz;
+    for (auto const& [key, val] : m) {
+      *this << key;
+      *this << val;
+    }
+    return *this;
+  }
+
+  template <class T1, class T2>
   dbOStream& operator<<(const std::unordered_map<T1, T2>& m)
   {
     uint sz = m.size();
     *this << sz;
     for (auto const& [key, val] : m) {
       *this << key;
+      *this << val;
+    }
+    return *this;
+  }
+
+  template <class T1>
+  dbOStream& operator<<(const std::vector<T1>& m)
+  {
+    uint sz = m.size();
+    *this << sz;
+    for (auto val : m) {
       *this << val;
     }
     return *this;
@@ -254,7 +248,6 @@ class dbOStream
   }
 
   double lefarea(int value) { return ((double) value * _lef_area_factor); }
-
   double lefdist(int value) { return ((double) value * _lef_dist_factor); }
 
   Position pos() const { return _f.tellp(); }
@@ -300,7 +293,7 @@ class dbIStream
 
   dbIStream& operator>>(char& c)
   {
-    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
+    _f.read(&c, sizeof(c));
     return *this;
   }
 
@@ -373,15 +366,9 @@ class dbIStream
       c = nullptr;
     } else {
       c = (char*) malloc(l);
-      _f.read(reinterpret_cast<char*>(c), l);
+      _f.read(c, l);
     }
 
-    return *this;
-  }
-
-  dbIStream& operator>>(dbObjectType& c)
-  {
-    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
@@ -397,12 +384,28 @@ class dbIStream
   {
     uint sz;
     *this >> sz;
+    m.clear();
     for (uint i = 0; i < sz; i++) {
       T1 key;
       T2 val;
       *this >> key;
       *this >> val;
-      m[key] = val;
+      m[key] = std::move(val);
+    }
+    return *this;
+  }
+  template <class T1, class T2>
+  dbIStream& operator>>(boost::container::flat_map<T1, T2>& m)
+  {
+    uint sz;
+    *this >> sz;
+    m.clear();
+    for (uint i = 0; i < sz; i++) {
+      T1 key;
+      T2 val;
+      *this >> key;
+      *this >> val;
+      m[key] = std::move(val);
     }
     return *this;
   }
@@ -411,15 +414,32 @@ class dbIStream
   {
     uint sz;
     *this >> sz;
+    m.clear();
     for (uint i = 0; i < sz; i++) {
       T1 key;
       T2 val;
       *this >> key;
       *this >> val;
-      m[key] = val;
+      m[key] = std::move(val);
     }
     return *this;
   }
+
+  template <class T1>
+  dbIStream& operator>>(std::vector<T1>& m)
+  {
+    uint sz;
+    *this >> sz;
+    m.clear();
+    m.reserve(sz);
+    for (uint i = 0; i < sz; i++) {
+      T1 val;
+      *this >> val;
+      m.push_back(std::move(val));
+    }
+    return *this;
+  }
+
   template <class T, std::size_t SIZE>
   dbIStream& operator>>(std::array<T, SIZE>& a)
   {
@@ -439,7 +459,7 @@ class dbIStream
       return *this;
     } else {
       *this >> std::get<I>(tup);
-      return ((*this).operator>><I + 1>(tup));
+      return ((*this).operator>> <I + 1>(tup));
     }
   }
 
@@ -447,6 +467,10 @@ class dbIStream
   {
     char* tmp;
     *this >> tmp;
+    if (!tmp) {
+      s = "";
+      return *this;
+    }
     s = std::string(tmp);
     free((void*) tmp);
     return *this;
@@ -477,7 +501,7 @@ class dbIStream
       if (I == index) {
         std::variant_alternative_t<I, std::variant<Ts...>> val;
         *this >> val;
-        v = val;
+        v = std::move(val);
       }
       return (*this).variantHelper<I + 1>(index, v);
     }

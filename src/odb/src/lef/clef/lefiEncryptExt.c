@@ -10,7 +10,7 @@
  * For updates, support, or to become part of the LEF/DEF Community, check
  * www.openeda.org for details.
  */
-#include <stdlib.h>
+#include <cstdlib>
 
 /*
  * Global variables

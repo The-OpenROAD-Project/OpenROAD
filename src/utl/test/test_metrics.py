@@ -17,10 +17,10 @@ utl.metric_float("float4", float("inf"))
 utl.metric_float("float5", float("-inf"))
 
 utl.metric("string0", "")
-utl.metric("string1", "(one")
+utl.metric("string1", "one")
 
 utl.close_metrics(metrics_file)
-helpers.diff_files("metrics-py.jsonok", metrics_file)
+helpers.diff_files("metrics.jsonok", metrics_file)
 
 
 utl.metric_float("float6", float("-inf"))

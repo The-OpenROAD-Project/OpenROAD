@@ -25,7 +25,7 @@
 #ifndef CLEFDEFZIP_H
 #define CLEFDEFZIP_H
 
-typedef void* defGZFile;
+using defGZFile = void*;
 
 /*
  * Name: defGZipOpen

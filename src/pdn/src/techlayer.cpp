@@ -1,39 +1,18 @@
-//////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include "techlayer.h"
 
+#include <algorithm>
+#include <cmath>
 #include <limits>
+#include <optional>
+#include <string>
+#include <vector>
 
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace pdn {
@@ -82,7 +61,7 @@ int TechLayer::snapToGrid(int pos, int greater_than) const
     return pos;
   }
 
-  int delta_pos = 0;
+  std::optional<int> delta_pos;
   int delta = std::numeric_limits<int>::max();
   for (const int grid_pos : grid_) {
     if (grid_pos < greater_than) {
@@ -99,18 +78,58 @@ int TechLayer::snapToGrid(int pos, int greater_than) const
       break;
     }
   }
-  return delta_pos;
+
+  if (delta_pos.has_value()) {
+    return delta_pos.value();
+  }
+  return pos;
+}
+
+int TechLayer::snapToGridInterval(odb::dbBlock* block, int dist) const
+{
+  odb::dbTechLayerDir dir = layer_->getDirection();
+
+  int origin = 0;
+  int num = 0;
+  int step = 0;
+  for (auto* grid : block->getTrackGrids()) {
+    if (grid->getTechLayer() != layer_) {
+      continue;
+    }
+
+    if (dir == odb::dbTechLayerDir::VERTICAL) {
+      if (grid->getNumGridPatternsX() < 1) {
+        continue;
+      }
+
+      grid->getGridPatternX(0, origin, num, step);
+    } else {
+      if (grid->getNumGridPatternsY() < 1) {
+        continue;
+      }
+
+      grid->getGridPatternY(0, origin, num, step);
+    }
+  }
+
+  if (num == 0 || step == 0) {
+    return dist;
+  }
+
+  const int count = std::max(1, dist / step);
+  return count * step;
 }
 
 int TechLayer::snapToManufacturingGrid(odb::dbTech* tech,
                                        int pos,
-                                       bool round_up)
+                                       bool round_up,
+                                       int grid_multiplier)
 {
   if (!tech->hasManufacturingGrid()) {
     return pos;
   }
 
-  const int grid = tech->getManufacturingGrid();
+  const int grid = grid_multiplier * tech->getManufacturingGrid();
 
   if (pos % grid != 0) {
     int round_pos = pos / grid;
@@ -144,21 +163,25 @@ bool TechLayer::checkIfManufacturingGrid(int value,
 {
   auto* tech = layer_->getTech();
   if (!checkIfManufacturingGrid(tech, value)) {
-    logger->error(utl::PDN,
-                  191,
-                  "{} of {:.4f} does not fit the manufacturing grid of {:.4f}.",
-                  type,
-                  dbuToMicron(value),
-                  dbuToMicron(tech->getManufacturingGrid()));
+    logger->error(
+        utl::PDN,
+        191,
+        "{} of {:.4f} um does not fit the manufacturing grid of {:.4f} um.",
+        type,
+        dbuToMicron(value),
+        dbuToMicron(tech->getManufacturingGrid()));
     return false;
   }
 
   return true;
 }
 
-int TechLayer::snapToManufacturingGrid(int pos, bool round_up) const
+int TechLayer::snapToManufacturingGrid(int pos,
+                                       bool round_up,
+                                       int grid_multiplier) const
 {
-  return snapToManufacturingGrid(layer_->getTech(), pos, round_up);
+  return snapToManufacturingGrid(
+      layer_->getTech(), pos, round_up, grid_multiplier);
 }
 
 std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const

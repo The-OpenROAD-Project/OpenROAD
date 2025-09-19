@@ -1,43 +1,21 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <iterator>
 #include <map>
 #include <memory>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "db/tech/frLookupTbl.h"
+#include "db/tech/frViaDef.h"
+#include "db/tech/frViaRuleGenerate.h"
 #include "frBaseTypes.h"
-#include "frViaDef.h"
-#include "frViaRuleGenerate.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -386,11 +364,11 @@ class frAreaConstraint : public frConstraint
 {
  public:
   // constructor
-  frAreaConstraint(frCoord minAreaIn) : minArea(minAreaIn) {}
+  frAreaConstraint(frCoord minAreaIn) : minArea_(minAreaIn) {}
   // getter
-  frCoord getMinArea() { return minArea; }
+  frCoord getMinArea() { return minArea_; }
   // setter
-  void setMinArea(frCoord minAreaIn) { minArea = minAreaIn; }
+  void setMinArea(frCoord minAreaIn) { minArea_ = minAreaIn; }
 
   frConstraintTypeEnum typeId() const override
   {
@@ -398,11 +376,11 @@ class frAreaConstraint : public frConstraint
   }
   void report(utl::Logger* logger) const override
   {
-    logger->report("Area {}", minArea);
+    logger->report("Area {}", minArea_);
   }
 
  protected:
-  frCoord minArea;
+  frCoord minArea_;
 };
 
 // minWidth
@@ -410,11 +388,11 @@ class frMinWidthConstraint : public frConstraint
 {
  public:
   // constructor
-  frMinWidthConstraint(frCoord minWidthIn) : minWidth(minWidthIn) {}
+  frMinWidthConstraint(frCoord minWidthIn) : minWidth_(minWidthIn) {}
   // getter
-  frCoord getMinWidth() { return minWidth; }
+  frCoord getMinWidth() { return minWidth_; }
   // setter
-  void set(frCoord minWidthIn) { minWidth = minWidthIn; }
+  void set(frCoord minWidthIn) { minWidth_ = minWidthIn; }
 
   frConstraintTypeEnum typeId() const override
   {
@@ -422,11 +400,36 @@ class frMinWidthConstraint : public frConstraint
   }
   void report(utl::Logger* logger) const override
   {
-    logger->report("Width {}", minWidth);
+    logger->report("Width {}", minWidth_);
   }
 
  protected:
-  frCoord minWidth;
+  frCoord minWidth_;
+};
+
+class frOrthSpacingTableConstraint : public frConstraint
+{
+ public:
+  frOrthSpacingTableConstraint(const std::vector<std::pair<int, int>>& spc_tbl)
+      : spc_tbl_(spc_tbl)
+  {
+  }
+
+  const std::vector<std::pair<int, int>>& getSpacingTable() const
+  {
+    return spc_tbl_;
+  }
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcSpacingTableOrth;
+  }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("SPACINGTABLE ORTHOGONAL");
+  }
+
+ private:
+  std::vector<std::pair<int, int>> spc_tbl_;
 };
 
 class frLef58SpacingEndOfLineWithinEncloseCutConstraint : public frConstraint
@@ -435,22 +438,22 @@ class frLef58SpacingEndOfLineWithinEncloseCutConstraint : public frConstraint
   // constructors
   frLef58SpacingEndOfLineWithinEncloseCutConstraint(frCoord encloseDistIn,
                                                     frCoord cutToMetalSpaceIn)
-      : encloseDist(encloseDistIn), cutToMetalSpace(cutToMetalSpaceIn)
+      : encloseDist_(encloseDistIn), cutToMetalSpace_(cutToMetalSpaceIn)
   {
   }
   // setters
-  void setBelow(bool value) { below = value; }
-  void setAbove(bool value) { above = value; }
-  void setAllCuts(bool value) { allCuts = value; }
-  void setEncloseDist(frCoord value) { encloseDist = value; }
-  void setCutToMetalSpace(frCoord value) { cutToMetalSpace = value; }
+  void setBelow(bool value) { below_ = value; }
+  void setAbove(bool value) { above_ = value; }
+  void setAllCuts(bool value) { allCuts_ = value; }
+  void setEncloseDist(frCoord value) { encloseDist_ = value; }
+  void setCutToMetalSpace(frCoord value) { cutToMetalSpace_ = value; }
   // getters
-  bool isAboveOnly() const { return above; }
-  bool isBelowOnly() const { return below; }
-  bool isAboveAndBelow() const { return !(above ^ below); }
-  bool isAllCuts() const { return allCuts; }
-  frCoord getEncloseDist() const { return encloseDist; }
-  frCoord getCutToMetalSpace() const { return cutToMetalSpace; }
+  bool isAboveOnly() const { return above_; }
+  bool isBelowOnly() const { return below_; }
+  bool isAboveAndBelow() const { return !(above_ ^ below_); }
+  bool isAllCuts() const { return allCuts_; }
+  frCoord getEncloseDist() const { return encloseDist_; }
+  frCoord getCutToMetalSpace() const { return cutToMetalSpace_; }
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -462,19 +465,19 @@ class frLef58SpacingEndOfLineWithinEncloseCutConstraint : public frConstraint
     logger->report(
         "\t\tSPACING_WITHIN_ENCLOSECUT below {} above {} encloseDist "
         "{} cutToMetalSpace {} allCuts {}",
-        below,
-        above,
-        encloseDist,
-        cutToMetalSpace,
-        allCuts);
+        below_,
+        above_,
+        encloseDist_,
+        cutToMetalSpace_,
+        allCuts_);
   }
 
  private:
-  bool below{false};
-  bool above{false};
-  frCoord encloseDist;
-  frCoord cutToMetalSpace;
-  bool allCuts{false};
+  bool below_{false};
+  bool above_{false};
+  frCoord encloseDist_;
+  frCoord cutToMetalSpace_;
+  bool allCuts_{false};
 };
 
 class frLef58SpacingEndOfLineWithinEndToEndConstraint : public frConstraint
@@ -1013,25 +1016,25 @@ class frSpacingTableInfluenceConstraint : public frConstraint
  public:
   frSpacingTableInfluenceConstraint(
       const fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>>& in)
-      : tbl(in)
+      : tbl_(in)
   {
   }
   // getter
   const fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>>& getLookupTbl()
       const
   {
-    return tbl;
+    return tbl_;
   }
   std::pair<frCoord, frCoord> find(frCoord width) const
   {
-    return tbl.find(width);
+    return tbl_.find(width);
   }
-  frCoord getMinWidth() const { return tbl.getMinRow(); }
+  frCoord getMinWidth() const { return tbl_.getMinRow(); }
   // setter
   void setLookupTbl(
       const fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>>& in)
   {
-    tbl = in;
+    tbl_ = in;
   }
 
   frConstraintTypeEnum typeId() const override
@@ -1044,18 +1047,18 @@ class frSpacingTableInfluenceConstraint : public frConstraint
   }
 
  private:
-  fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> tbl;
+  fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> tbl_;
 };
 // range spacing
 class frSpacingRangeConstraint : public frSpacingConstraint
 {
  public:
   // getters
-  frCoord getMinWidth() const { return minWidth; }
-  frCoord getMaxWidth() const { return minWidth; }
+  frCoord getMinWidth() const { return minWidth_; }
+  frCoord getMaxWidth() const { return minWidth_; }
   // setters
-  void setMinWidth(frCoord in) { minWidth = in; }
-  void setMaxWidth(frCoord in) { maxWidth = in; }
+  void setMinWidth(frCoord in) { minWidth_ = in; }
+  void setMaxWidth(frCoord in) { maxWidth_ = in; }
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -1063,16 +1066,17 @@ class frSpacingRangeConstraint : public frSpacingConstraint
   }
   void report(utl::Logger* logger) const override
   {
-    logger->report("Spacing RANGE minWidth {} maxWidth {}", minWidth, maxWidth);
+    logger->report(
+        "Spacing RANGE minWidth {} maxWidth {}", minWidth_, maxWidth_);
   }
   bool inRange(frCoord width) const
   {
-    return width >= minWidth && width <= maxWidth;
+    return width >= minWidth_ && width <= maxWidth_;
   }
 
  private:
-  frCoord minWidth{0};
-  frCoord maxWidth{0};
+  frCoord minWidth_{0};
+  frCoord maxWidth_{0};
 };
 
 //
@@ -1081,18 +1085,18 @@ class frSpacingEndOfLineConstraint : public frSpacingConstraint
 {
  public:
   // getter
-  frCoord getEolWidth() const { return eolWidth; }
-  frCoord getEolWithin() const { return eolWithin; }
-  frCoord getParSpace() const { return parSpace; }
-  frCoord getParWithin() const { return parWithin; }
-  bool hasParallelEdge() const { return ((parSpace == -1) ? false : true); }
-  bool hasTwoEdges() const { return isTwoEdges; }
+  frCoord getEolWidth() const { return eolWidth_; }
+  frCoord getEolWithin() const { return eolWithin_; }
+  frCoord getParSpace() const { return parSpace_; }
+  frCoord getParWithin() const { return parWithin_; }
+  bool hasParallelEdge() const { return parSpace_ != -1; }
+  bool hasTwoEdges() const { return isTwoEdges_; }
   // setter
-  void setEolWithin(frCoord eolWithinIn) { eolWithin = eolWithinIn; }
-  void setEolWidth(frCoord eolWidthIn) { eolWidth = eolWidthIn; }
-  void setParSpace(frCoord parSpaceIn) { parSpace = parSpaceIn; }
-  void setParWithin(frCoord parWithinIn) { parWithin = parWithinIn; }
-  void setTwoEdges(bool isTwoEdgesIn) { isTwoEdges = isTwoEdgesIn; }
+  void setEolWithin(frCoord eolWithinIn) { eolWithin_ = eolWithinIn; }
+  void setEolWidth(frCoord eolWidthIn) { eolWidth_ = eolWidthIn; }
+  void setParSpace(frCoord parSpaceIn) { parSpace_ = parSpaceIn; }
+  void setParWithin(frCoord parWithinIn) { parWithin_ = parWithinIn; }
+  void setTwoEdges(bool isTwoEdgesIn) { isTwoEdges_ = isTwoEdgesIn; }
   frConstraintTypeEnum typeId() const override
   {
     return frConstraintTypeEnum::frcSpacingEndOfLineConstraint;
@@ -1102,19 +1106,19 @@ class frSpacingEndOfLineConstraint : public frSpacingConstraint
     logger->report(
         "Spacing EOL eolWidth {} eolWithin {} "
         "parSpace {} parWithin {} isTwoEdges {}",
-        eolWidth,
-        eolWithin,
-        parSpace,
-        parWithin,
-        isTwoEdges);
+        eolWidth_,
+        eolWithin_,
+        parSpace_,
+        parWithin_,
+        isTwoEdges_);
   }
 
  protected:
-  frCoord eolWidth{-1};
-  frCoord eolWithin{-1};
-  frCoord parSpace{-1};
-  frCoord parWithin{-1};
-  bool isTwoEdges{false};
+  frCoord eolWidth_{-1};
+  frCoord eolWithin_{-1};
+  frCoord parSpace_{-1};
+  frCoord parWithin_{-1};
+  bool isTwoEdges_{false};
 };
 
 class frLef58EolExtensionConstraint : public frSpacingConstraint
@@ -1408,7 +1412,93 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
   bool exceptEol_{false};
   frUInt4 eolWidth_{0};
 };
+// LEF58_TWOWIRESFORBIDDENSPACING
+class frLef58TwoWiresForbiddenSpcConstraint : public frConstraint
+{
+ public:
+  frLef58TwoWiresForbiddenSpcConstraint(
+      odb::dbTechLayerTwoWiresForbiddenSpcRule* db_rule)
+      : db_rule_(db_rule)
+  {
+  }
+  // getters
+  odb::dbTechLayerTwoWiresForbiddenSpcRule* getODBRule() const
+  {
+    return db_rule_;
+  }
+  // setters
+  void setODBRule(odb::dbTechLayerTwoWiresForbiddenSpcRule* in)
+  {
+    db_rule_ = in;
+  }
+  // others
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58TwoWiresForbiddenSpcConstraint;
+  }
+  bool isValidForMinSpanLength(frCoord width)
+  {
+    return db_rule_->isMinExactSpanLength()
+               ? (width == db_rule_->getMinSpanLength())
+               : (width >= db_rule_->getMinSpanLength());
+  }
+  bool isValidForMaxSpanLength(frCoord width)
+  {
+    return db_rule_->isMaxExactSpanLength()
+               ? (width == db_rule_->getMaxSpanLength())
+               : (width <= db_rule_->getMaxSpanLength());
+  }
+  bool isForbiddenSpacing(frCoord spc)
+  {
+    return spc >= db_rule_->getMinSpacing() && spc <= db_rule_->getMaxSpacing();
+  }
+  bool isValidPrl(frCoord prl) { return prl > db_rule_->getPrl(); }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("LEF58_TWOWIRESFORBIDDENSPACING");
+  }
 
+ private:
+  odb::dbTechLayerTwoWiresForbiddenSpcRule* db_rule_;
+};
+// LEF58_FORBIDDENSPACING
+class frLef58ForbiddenSpcConstraint : public frConstraint
+{
+ public:
+  frLef58ForbiddenSpcConstraint(odb::dbTechLayerForbiddenSpacingRule* db_rule)
+      : db_rule_(db_rule)
+  {
+  }
+  // getters
+  odb::dbTechLayerForbiddenSpacingRule* getODBRule() const { return db_rule_; }
+  frCoord getMinSpc() const { return db_rule_->getForbiddenSpacing().first; }
+  frCoord getMaxSpc() const { return db_rule_->getForbiddenSpacing().second; }
+  frCoord getTwoEdgesWithin() const { return db_rule_->getTwoEdges(); }
+  // setters
+  void setODBRule(odb::dbTechLayerForbiddenSpacingRule* in) { db_rule_ = in; }
+  // others
+  bool isPrlValid(frCoord prl) const { return prl > db_rule_->getPrl(); }
+  bool isWidthValid(frCoord width) const
+  {
+    return width < db_rule_->getWidth();
+  }
+  bool isForbiddenSpc(frCoord spc) const
+  {
+    return spc >= getMinSpc() && spc <= getMaxSpc();
+  }
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58ForbiddenSpcConstraint;
+  }
+
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("LEF58_FORBIDDENSPACING");
+  }
+
+ private:
+  odb::dbTechLayerForbiddenSpacingRule* db_rule_;
+};
 // ADJACENTCUTS
 class frCutSpacingConstraint : public frConstraint
 {
@@ -2137,6 +2227,106 @@ class frLef58KeepOutZoneConstraint : public frConstraint
  private:
   odb::dbTechLayerKeepOutZoneRule* db_rule_;
 };
+
+class frLef58EnclosureConstraint : public frConstraint
+{
+ public:
+  frLef58EnclosureConstraint(odb::dbTechLayerCutEnclosureRule* ruleIn)
+      : db_rule_(ruleIn), cut_class_idx_(-1)
+  {
+  }
+  void setCutClassIdx(int in) { cut_class_idx_ = in; }
+  int getCutClassIdx() const { return cut_class_idx_; }
+  bool isAboveOnly() const { return db_rule_->isAbove(); }
+  bool isBelowOnly() const { return db_rule_->isBelow(); }
+  bool isValidOverhang(frCoord endOverhang, frCoord sideOverhang) const
+  {
+    if (db_rule_->getType() == odb::dbTechLayerCutEnclosureRule::ENDSIDE) {
+      return endOverhang >= db_rule_->getFirstOverhang()
+             && sideOverhang >= db_rule_->getSecondOverhang();
+    }
+    return (endOverhang >= db_rule_->getFirstOverhang()
+            && sideOverhang >= db_rule_->getSecondOverhang())
+           || (endOverhang >= db_rule_->getSecondOverhang()
+               && sideOverhang >= db_rule_->getFirstOverhang());
+  }
+  frCoord getWidth() const { return db_rule_->getMinWidth(); }
+  bool isEol() const
+  {
+    return db_rule_->getType() == odb::dbTechLayerCutEnclosureRule::EOL;
+  }
+  bool isEolOnly() const { return db_rule_->isEolOnly(); }
+  frCoord getFirstOverhang() const { return db_rule_->getFirstOverhang(); }
+  frCoord getSecondOverhang() const { return db_rule_->getSecondOverhang(); }
+  frCoord getEolLength() const { return db_rule_->getEolWidth(); }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("LEF58_ENCLOSURE");
+  }
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58EnclosureConstraint;
+  }
+
+ private:
+  odb::dbTechLayerCutEnclosureRule* db_rule_;
+  int cut_class_idx_;
+};
+
+// LEF58_MAXSPACING rule
+class frLef58MaxSpacingConstraint : public frConstraint
+{
+ public:
+  frLef58MaxSpacingConstraint(odb::dbTechLayerMaxSpacingRule* ruleIn)
+      : db_rule_(ruleIn)
+  {
+  }
+  void setCutClassIdx(int in) { cut_class_idx_ = in; }
+  int getCutClassIdx() const { return cut_class_idx_; }
+  frCoord getMaxSpacing() const { return db_rule_->getMaxSpacing(); }
+  std::string getCutClass() const { return db_rule_->getCutClass(); }
+  bool hasCutClass() const { return db_rule_->hasCutClass(); }
+
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("LEF58_MAXSPACING");
+  }
+  // typeId
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58MaxSpacingConstraint;
+  }
+
+ private:
+  odb::dbTechLayerMaxSpacingRule* db_rule_{nullptr};
+  int cut_class_idx_{-1};
+};
+
+class frLef58WidthTableOrthConstraint : public frConstraint
+{
+ public:
+  frLef58WidthTableOrthConstraint(const frCoord horz_spc,
+                                  const frCoord vert_spc)
+      : horz_spc_(horz_spc), vert_spc_(vert_spc)
+  {
+  }
+  frCoord getHorzSpc() const { return horz_spc_; }
+  frCoord getVertSpc() const { return vert_spc_; }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("LEF58_WIDTHTABLE ORTH");
+  }
+  // typeId
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58WidthTableOrth;
+  }
+
+ private:
+  frCoord horz_spc_;
+  frCoord vert_spc_;
+};
+
 class frNonDefaultRule
 {
  public:

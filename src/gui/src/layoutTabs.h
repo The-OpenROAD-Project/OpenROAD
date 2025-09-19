@@ -1,43 +1,20 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2023, Precision Innovations Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <QTabWidget>
 #include <functional>
+#include <map>
 #include <memory>
+#include <set>
+#include <string>
+#include <vector>
 
 #include "gui/gui.h"
 #include "layoutViewer.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace gui {
 
@@ -45,6 +22,7 @@ class LayoutScroll;
 class LayoutViewer;
 class Options;
 class Ruler;
+class Label;
 class ScriptWidget;
 
 class LayoutTabs : public QTabWidget
@@ -57,9 +35,13 @@ class LayoutTabs : public QTabWidget
              const SelectionSet& selected,
              const HighlightSet& highlighted,
              const std::vector<std::unique_ptr<Ruler>>& rulers,
+             const std::vector<std::unique_ptr<Label>>& labels,
              Gui* gui,
-             std::function<bool(void)> usingDBU,
-             std::function<bool(void)> showRulerAsEuclidian,
+             std::function<bool()> using_dbu,
+             std::function<bool()> using_poly_decomp_view,
+             std::function<bool()> show_ruler_as_euclidian,
+             std::function<bool()> default_mouse_wheel_zoom,
+             std::function<int()> arrow_keys_scroll_step,
              QWidget* parent = nullptr);
 
   LayoutViewer* getCurrent() const { return current_viewer_; }
@@ -94,14 +76,18 @@ class LayoutTabs : public QTabWidget
   // active viewer should be emitting signals, but all are connected
   // as signal-to-signal connections.
   void location(int x, int y);
-  void selected(const Selected& selected, bool showConnectivity = false);
+  void selected(const Selected& selected, bool show_connectivity = false);
   void addSelected(const Selected& selected);
   void addSelected(const SelectionSet& selected);
   void addRuler(int x0, int y0, int x1, int y1);
   void focusNetsChanged();
+  void routeGuidesChanged();
+  void netTracksChanged();
 
  public slots:
   void tabChange(int index);
+  void updateBackgroundColors();
+  void updateBackgroundColor(LayoutViewer* viewer);
 
   // These are just forwarding to the current LayoutViewer
   void zoomIn();
@@ -122,6 +108,7 @@ class LayoutTabs : public QTabWidget
   void exit();
   void commandAboutToExecute();
   void commandFinishedExecuting();
+  void resetCache();
 
   // Method forwarding
   void restoreTclCommands(std::vector<std::string>& cmds);
@@ -136,10 +123,14 @@ class LayoutTabs : public QTabWidget
   const SelectionSet& selected_;
   const HighlightSet& highlighted_;
   const std::vector<std::unique_ptr<Ruler>>& rulers_;
+  const std::vector<std::unique_ptr<Label>>& labels_;
   std::map<odb::dbModule*, LayoutViewer::ModuleSettings> modules_;
   Gui* gui_;
-  std::function<bool(void)> usingDBU_;
-  std::function<bool(void)> showRulerAsEuclidian_;
+  std::function<bool()> using_dbu_;
+  std::function<bool()> using_poly_decomp_view_;
+  std::function<bool()> show_ruler_as_euclidian_;
+  std::function<bool()> default_mouse_wheel_zoom_;
+  std::function<int()> arrow_keys_scroll_step_;
   utl::Logger* logger_;
   bool command_executing_ = false;
 

@@ -1,44 +1,26 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
 #include <cfloat>
 #include <limits>
+#include <map>
+#include <memory>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
+#include "PlacementDRC.h"
 #include "dpl/Opendp.h"
+#include "infrastructure/Grid.h"
+#include "infrastructure/Objects.h"
+#include "infrastructure/architecture.h"
+#include "infrastructure/network.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/util.h"
+#include "util/symmetry.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -46,152 +28,57 @@ namespace dpl {
 using std::string;
 using std::vector;
 
-using utl::DPL;
-
 using odb::dbBox;
 using odb::dbMaster;
 using odb::dbOrientType;
 using odb::dbRegion;
 using odb::Rect;
 
-static bool swapWidthHeight(const dbOrientType& orient);
-
 void Opendp::importDb()
 {
   block_ = db_->getChip()->getBlock();
   core_ = block_->getCoreArea();
+  grid_->setCore(core_);
   have_fillers_ = false;
-  have_one_site_cells_ = false;
-
+  disallow_one_site_gaps_ = !odb::hasOneSiteMaster(db_);
   importClear();
-  examineRows();
-  checkOneSiteDbMaster();
-  makeMacros();
-  makeCells();
-  makeGroups();
+  grid_->examineRows(block_);
+  initPlacementDRC();
+  createNetwork();
+  createArchitecture();
+  setUpPlacementGroups();
 }
 
 void Opendp::importClear()
 {
-  db_master_map_.clear();
-  cells_.clear();
-  groups_.clear();
-  db_inst_map_.clear();
   deleteGrid();
   have_multi_row_cells_ = false;
+  network_->clear();
+  arch_->clear();
 }
 
-void Opendp::checkOneSiteDbMaster()
+void Opendp::initPlacementDRC()
 {
-  vector<dbMaster*> masters;
-  auto db_libs = db_->getLibs();
-  for (auto db_lib : db_libs) {
-    if (have_one_site_cells_) {
-      break;
-    }
-    auto masters = db_lib->getMasters();
-    for (auto db_master : masters) {
-      if (isOneSiteCell(db_master)) {
-        have_one_site_cells_ = true;
-        break;
-      }
-    }
-  }
+  drc_engine_ = std::make_unique<PlacementDRC>(
+      grid_.get(), db_->getTech(), padding_.get(), !odb::hasOneSiteMaster(db_));
 }
 
-void Opendp::makeMacros()
+static bool swapWidthHeight(const dbOrientType& orient)
 {
-  vector<dbMaster*> masters;
-  block_->getMasters(masters);
-  for (auto db_master : masters) {
-    struct Master& master = db_master_map_[db_master];
-    makeMaster(&master, db_master);
+  switch (orient.getValue()) {
+    case dbOrientType::R90:
+    case dbOrientType::MXR90:
+    case dbOrientType::R270:
+    case dbOrientType::MYR90:
+      return true;
+    case dbOrientType::R0:
+    case dbOrientType::R180:
+    case dbOrientType::MY:
+    case dbOrientType::MX:
+      return false;
   }
-}
-
-void Opendp::makeMaster(Master* master, dbMaster* db_master)
-{
-  const int master_height = db_master->getHeight();
-  master->is_multi_row
-      = (master_height != row_height_ && master_height % row_height_ == 0);
-}
-
-void Opendp::examineRows()
-{
-  std::vector<dbRow*> rows;
-  auto block_rows = block_->getRows();
-  rows.reserve(block_rows.size());
-
-  has_hybrid_rows_ = false;
-  bool has_non_hybrid_rows = false;
-
-  for (auto* row : block_rows) {
-    dbSite* site = row->getSite();
-    if (site->getClass() == odb::dbSiteClass::PAD) {
-      continue;
-    }
-    if (site->isHybrid()) {
-      has_hybrid_rows_ = true;
-    } else {
-      has_non_hybrid_rows = true;
-    }
-    rows.push_back(row);
-  }
-  if (rows.empty()) {
-    logger_->error(DPL, 12, "no rows found.");
-  }
-  if (has_hybrid_rows_ && has_non_hybrid_rows) {
-    logger_->error(
-        DPL, 49, "Mixing hybrid and non-hybrid rows is unsupported.");
-  }
-
-  int min_row_height_ = std::numeric_limits<int>::max();
-  int min_site_width_ = std::numeric_limits<int>::max();
-  for (dbRow* db_row : rows) {
-    dbSite* site = db_row->getSite();
-    min_site_width_
-        = std::min(min_site_width_, static_cast<int>(site->getWidth()));
-    min_row_height_
-        = std::min(min_row_height_, static_cast<int>(site->getHeight()));
-  }
-  row_height_ = min_row_height_;
-  site_width_ = min_site_width_;
-  row_site_count_ = divFloor(core_.dx(), site_width_);
-  row_count_ = divFloor(core_.dy(), row_height_);
-}
-
-void Opendp::makeCells()
-{
-  auto db_insts = block_->getInsts();
-  cells_.reserve(db_insts.size());
-  for (auto db_inst : db_insts) {
-    dbMaster* db_master = db_inst->getMaster();
-    if (db_master->isCoreAutoPlaceable()) {
-      cells_.emplace_back();
-      Cell& cell = cells_.back();
-      cell.db_inst_ = db_inst;
-      db_inst_map_[db_inst] = &cell;
-
-      Rect bbox = getBbox(db_inst);
-      cell.width_ = bbox.dx();
-      cell.height_ = bbox.dy();
-      cell.x_ = bbox.xMin();
-      cell.y_ = bbox.yMin();
-      cell.orient_ = db_inst->getOrient();
-      // Cell is already placed if it is FIXED.
-      cell.is_placed_ = isFixed(&cell);
-
-      Master& master = db_master_map_[db_master];
-      // We only want to set this if we have multi-row cells to
-      // place and not whenever we see a placed block.
-      if (master.is_multi_row && db_master->isCore()) {
-        have_multi_row_cells_ = true;
-      }
-    }
-    if (isFiller(db_inst)) {
-      have_fillers_ = true;
-    }
-  }
+  // gcc warning
+  return false;
 }
 
 Rect Opendp::getBbox(dbInst* inst)
@@ -212,91 +99,223 @@ Rect Opendp::getBbox(dbInst* inst)
 
   return Rect(loc_x, loc_y, loc_x + width, loc_y + height);
 }
-
-static bool swapWidthHeight(const dbOrientType& orient)
+void Opendp::createNetwork()
 {
-  switch (orient) {
-    case dbOrientType::R90:
-    case dbOrientType::MXR90:
-    case dbOrientType::R270:
-    case dbOrientType::MYR90:
-      return true;
-    case dbOrientType::R0:
-    case dbOrientType::R180:
-    case dbOrientType::MY:
-    case dbOrientType::MX:
-      return false;
+  dbBlock* block = db_->getChip()->getBlock();
+  network_->setCore(core_);
+  ///////////////////////////////////
+  auto min_row_height = std::numeric_limits<int>::max();
+  for (odb::dbRow* row : db_->getChip()->getBlock()->getRows()) {
+    min_row_height = std::min(min_row_height, row->getSite()->getHeight());
   }
-  // gcc warning
-  return false;
-}
+  ///////////////////////////////////
+  auto block_insts = block->getInsts();
+  std::vector<dbInst*> insts(block_insts.begin(), block_insts.end());
+  std::stable_sort(insts.begin(), insts.end(), [](dbInst* a, dbInst* b) {
+    return a->getName() < b->getName();
+  });
 
-void Opendp::makeGroups()
-{
-  regions_rtree.clear();
-  // preallocate groups so it does not grow when push_back is called
-  // because region cells point to them.
-  auto db_groups = block_->getGroups();
-  int reserve_size = 0;
-  for (auto db_group : db_groups) {
-    dbRegion* parent = db_group->getRegion();
-    std::unordered_set<int> unique_heights;
-    if (parent) {
-      for (auto db_inst : db_group->getInsts()) {
-        unique_heights.insert(db_inst_map_[db_inst]->height_);
-      }
-      reserve_size += unique_heights.size();
+  for (dbInst* inst : insts) {
+    // Skip instances which are not placeable.
+    if (!inst->getMaster()->isCoreAutoPlaceable()) {
+      continue;
+    }
+    network_->addMaster(inst->getMaster(), grid_.get(), drc_engine_.get());
+    network_->addNode(inst);
+    if (inst->getMaster()->isCore()
+        && network_->getMaster(inst->getMaster())->isMultiRow()) {
+      have_multi_row_cells_ = true;
+    }
+    if (isFiller(inst)) {
+      have_fillers_ = true;
     }
   }
-  reserve_size = std::max(reserve_size, (int) db_groups.size());
-  groups_.reserve(reserve_size);
+  for (odb::dbBTerm* bterm : block->getBTerms()) {
+    // Skip supply nets.
+    odb::dbNet* net = bterm->getNet();
+    if (!net || net->getSigType().isSupply()) {
+      continue;
+    }
+    if (bterm->getBBox().isInverted()) {
+      logger_->error(
+          utl::DPL, 386, "BTerm {} has no shapes.", bterm->getName());
+    }
 
-  for (auto db_group : db_groups) {
-    dbRegion* parent = db_group->getRegion();
-    if (parent) {
-      std::set<int> unique_heights;
-      map<int, Group*> cell_height_to_group_map;
-      for (auto db_inst : db_group->getInsts()) {
-        unique_heights.insert(db_inst_map_[db_inst]->height_);
+    network_->addNode(bterm);
+  }
+
+  auto nets = block->getNets();
+  for (odb::dbNet* net : nets) {
+    // Skip supply nets.
+    if (net->getSigType().isSupply()) {
+      continue;
+    }
+    network_->addEdge(net);
+  }
+
+  for (odb::dbBlockage* blockage : block->getBlockages()) {
+    if (!blockage->isSoft()) {
+      auto box = blockage->getBBox()->getBox();
+      box.moveDelta(-core_.xMin(), -core_.yMin());
+      network_->createAndAddBlockage(box);
+    }
+  }
+}
+////////////////////////////////////////////////////////////////
+void Opendp::createArchitecture()
+{
+  dbBlock* block = db_->getChip()->getBlock();
+
+  auto min_row_height = std::numeric_limits<int>::max();
+  for (odb::dbRow* row : block->getRows()) {
+    min_row_height = std::min(min_row_height, row->getSite()->getHeight());
+  }
+
+  std::map<int, std::unordered_set<std::string>> skip_list;
+
+  for (odb::dbRow* row : block->getRows()) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
+    if (row->getDirection() != odb::dbRowDir::HORIZONTAL) {
+      // error.
+      continue;
+    }
+    dbSite* site = row->getSite();
+    if (site->getHeight() > min_row_height) {
+      skip_list[site->getHeight()].insert(site->getName());
+      continue;
+    }
+    odb::Point origin = row->getOrigin();
+
+    Architecture::Row* archRow = arch_->createAndAddRow();
+
+    archRow->setSubRowOrigin(DbuX{origin.x() - core_.xMin()});
+    archRow->setBottom(DbuY{origin.y() - core_.yMin()});
+    archRow->setSiteSpacing(DbuX{row->getSpacing()});
+    archRow->setNumSites(row->getSiteCount());
+    archRow->setSiteWidth(DbuX{site->getWidth()});
+    archRow->setHeight(DbuY{site->getHeight()});
+
+    // Set defaults.  Top and bottom power is set below.
+    archRow->setBottomPower(Architecture::Row::Power_UNK);
+    archRow->setTopPower(Architecture::Row::Power_UNK);
+
+    // Symmetry.  From the site.
+    unsigned symmetry = 0x00000000;
+    if (site->getSymmetryX()) {
+      symmetry |= Symmetry_X;
+    }
+    if (site->getSymmetryY()) {
+      symmetry |= Symmetry_Y;
+    }
+    if (site->getSymmetryR90()) {
+      symmetry |= Symmetry_ROT90;
+    }
+    archRow->setSymmetry(symmetry);
+
+    // Orientation.  From the row.
+    archRow->setOrient(row->getOrient());
+  }
+  // Get surrounding box.
+  {
+    DbuX xmin = std::numeric_limits<DbuX>::max();
+    DbuX xmax = std::numeric_limits<DbuX>::lowest();
+    DbuY ymin = std::numeric_limits<DbuY>::max();
+    DbuY ymax = std::numeric_limits<DbuY>::lowest();
+    for (int r = 0; r < arch_->getNumRows(); r++) {
+      Architecture::Row* row = arch_->getRow(r);
+
+      xmin = std::min(xmin, row->getLeft());
+      xmax = std::max(xmax, row->getRight());
+      ymin = std::min(ymin, row->getBottom());
+      ymax = std::max(ymax, row->getTop());
+    }
+    arch_->setMinX(xmin);
+    arch_->setMaxX(xmax);
+    arch_->setMinY(ymin);
+    arch_->setMaxY(ymax);
+  }
+
+  for (int r = 0; r < arch_->getNumRows(); r++) {
+    int numSites = arch_->getRow(r)->getNumSites();
+    DbuX originX = arch_->getRow(r)->getLeft();
+    DbuX siteSpacing = arch_->getRow(r)->getSiteSpacing();
+    DbuX siteWidth = arch_->getRow(r)->getSiteWidth();
+    const DbuX endGap = siteWidth - siteSpacing;
+    if (originX < arch_->getMinX()) {
+      originX = arch_->getMinX();
+      if (arch_->getRow(r)->getLeft() != originX) {
+        arch_->getRow(r)->setSubRowOrigin(originX);
       }
-      int index = 0;
-      for (auto height : unique_heights) {
-        groups_.emplace_back(Group());
-        struct Group& group = groups_.back();
-        string group_name
-            = string(db_group->getName()) + "_" + std::to_string(index++);
-        group.name = group_name;
-        group.boundary.mergeInit();
-        cell_height_to_group_map[height] = &group;
-        auto boundaries = parent->getBoundaries();
+    }
+    if (originX + numSites * siteSpacing + endGap > arch_->getMaxX()) {
+      numSites = ((arch_->getMaxX() - endGap - originX) / siteSpacing).v;
+      if (arch_->getRow(r)->getNumSites() != numSites) {
+        arch_->getRow(r)->setNumSites(numSites);
+      }
+    }
+  }
+  // PADDING
+  arch_->setUsePadding(padding_ != nullptr);
+  arch_->setPadding(padding_.get());
+  arch_->setSiteWidth(grid_->getSiteWidth());
 
-        for (dbBox* boundary : boundaries) {
-          Rect box = boundary->getBox();
-          box = box.intersect(core_);
-          // offset region to core origin
-          box.moveDelta(-core_.xMin(), -core_.yMin());
-          if (height == *(unique_heights.begin())) {
-            bgBox bbox(
-                bgPoint(box.xMin(), box.yMin()),
-                bgPoint(box.xMax() - 1,
-                        box.yMax()
-                            - 1));  /// the -1 is to prevent imaginary overlaps
-                                    /// where a region ends and another starts
-            regions_rtree.insert(bbox);
+  arch_->postProcess(network_.get());
+}
+
+void Opendp::setUpPlacementGroups()
+{
+  regions_rtree_.clear();
+  dbBlock* block = db_->getChip()->getBlock();
+  int count = 0;
+  auto db_groups = block->getGroups();
+  for (auto db_group : db_groups) {
+    dbRegion* region = db_group->getRegion();
+    if (region) {
+      Group* rptr = arch_->createAndAddRegion();
+      rptr->setId(count++);
+      Rect bbox;
+      bbox.mergeInit();
+      for (dbBox* boundary : region->getBoundaries()) {
+        Rect box = boundary->getBox();
+        box = box.intersect(core_);
+        box.moveDelta(-core_.xMin(), -core_.yMin());
+
+        bgBox bgbox(
+            bgPoint(box.xMin(), box.yMin()),
+            bgPoint(
+                box.xMax() - 1,
+                box.yMax() - 1));  /// the -1 is to prevent imaginary overlaps
+                                   /// where a region ends and another starts
+        regions_rtree_.insert(bgbox);
+        rptr->addRect(box);
+        bbox.merge(box);
+      }
+      rptr->setBoundary(bbox);
+
+      // The instances within this region.
+      for (auto db_inst : db_group->getInsts()) {
+        Node* nd = network_->getNode(db_inst);
+        if (nd != nullptr) {
+          if (true) {
+            nd->setGroupId(rptr->getId());
+            nd->setGroup(rptr);
+            rptr->addCell(nd);
           }
-          group.regions.push_back(box);
-          group.boundary.merge(box);
         }
       }
-
-      for (auto db_inst : db_group->getInsts()) {
-        Cell* cell = db_inst_map_[db_inst];
-        Group* group = cell_height_to_group_map[cell->height_];
-        group->cells_.push_back(cell);
-        cell->group_ = group;
-      }
     }
   }
 }
-
+void Opendp::adjustNodesOrient()
+{
+  for (auto& node : network_->getNodes()) {
+    if (node->getType() != Node::CELL) {
+      continue;
+    }
+    auto inst = node->getDbInst();
+    node->adjustCurrOrient(inst->getOrient());
+  }
+}
 }  // namespace dpl

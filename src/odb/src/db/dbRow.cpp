@@ -1,48 +1,25 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbRow.h"
 
-#include "db.h"
+#include <cstring>
+#include <string>
+
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbLib.h"
-#include "dbSet.h"
 #include "dbSite.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbTransform.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbSet.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace odb {
 
@@ -50,35 +27,45 @@ template class dbTable<_dbRow>;
 
 bool _dbRow::operator==(const _dbRow& rhs) const
 {
-  if (_flags._orient != rhs._flags._orient)
+  if (_flags._orient != rhs._flags._orient) {
     return false;
+  }
 
-  if (_flags._dir != rhs._flags._dir)
+  if (_flags._dir != rhs._flags._dir) {
     return false;
+  }
 
   if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0)
+    if (strcmp(_name, rhs._name) != 0) {
       return false;
-  } else if (_name || rhs._name)
+    }
+  } else if (_name || rhs._name) {
     return false;
+  }
 
-  if (_lib != rhs._lib)
+  if (_lib != rhs._lib) {
     return false;
+  }
 
-  if (_site != rhs._site)
+  if (_site != rhs._site) {
     return false;
+  }
 
-  if (_x != rhs._x)
+  if (_x != rhs._x) {
     return false;
+  }
 
-  if (_y != rhs._y)
+  if (_y != rhs._y) {
     return false;
+  }
 
-  if (_site_cnt != rhs._site_cnt)
+  if (_site_cnt != rhs._site_cnt) {
     return false;
+  }
 
-  if (_spacing != rhs._spacing)
+  if (_spacing != rhs._spacing) {
     return false;
+  }
 
   return true;
 }
@@ -87,87 +74,71 @@ bool _dbRow::operator<(const _dbRow& rhs) const
 {
   int r = strcmp(_name, rhs._name);
 
-  if (r < 0)
+  if (r < 0) {
     return true;
+  }
 
-  if (r > 0)
+  if (r > 0) {
     return false;
+  }
 
-  if (_site < rhs._site)
+  if (_site < rhs._site) {
     return true;
+  }
 
-  if (_site > rhs._site)
+  if (_site > rhs._site) {
     return false;
+  }
 
-  if (_x < rhs._x)
+  if (_x < rhs._x) {
     return true;
+  }
 
-  if (_x > rhs._x)
+  if (_x > rhs._x) {
     return false;
+  }
 
-  if (_y < rhs._y)
+  if (_y < rhs._y) {
     return true;
+  }
 
-  if (_y > rhs._y)
+  if (_y > rhs._y) {
     return false;
+  }
 
-  if (_site_cnt < rhs._site_cnt)
+  if (_site_cnt < rhs._site_cnt) {
     return true;
+  }
 
-  if (_site_cnt > rhs._site_cnt)
+  if (_site_cnt > rhs._site_cnt) {
     return false;
+  }
 
-  if (_spacing < rhs._spacing)
+  if (_spacing < rhs._spacing) {
     return true;
+  }
 
-  if (_spacing > rhs._spacing)
+  if (_spacing > rhs._spacing) {
     return false;
+  }
 
-  if (_flags._orient < rhs._flags._orient)
+  if (_flags._orient < rhs._flags._orient) {
     return true;
+  }
 
-  if (_flags._orient > rhs._flags._orient)
+  if (_flags._orient > rhs._flags._orient) {
     return false;
+  }
 
-  if (_flags._dir < rhs._flags._dir)
+  if (_flags._dir < rhs._flags._dir) {
     return true;
+  }
 
-  if (_flags._dir > rhs._flags._dir)
+  if (_flags._dir > rhs._flags._dir) {
     return false;
+  }
 
   return false;
-}
-
-void _dbRow::differences(dbDiff& diff,
-                         const char* field,
-                         const _dbRow& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_flags._orient);
-  DIFF_FIELD(_flags._dir);
-  DIFF_FIELD(_lib);
-  DIFF_FIELD(_site);
-  DIFF_FIELD(_x);
-  DIFF_FIELD(_y);
-  DIFF_FIELD(_site_cnt);
-  DIFF_FIELD(_spacing);
-  DIFF_END
-}
-
-void _dbRow::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_flags._orient);
-  DIFF_OUT_FIELD(_flags._dir);
-  DIFF_OUT_FIELD(_lib);
-  DIFF_OUT_FIELD(_site);
-  DIFF_OUT_FIELD(_x);
-  DIFF_OUT_FIELD(_y);
-  DIFF_OUT_FIELD(_site_cnt);
-  DIFF_OUT_FIELD(_spacing);
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -251,11 +222,10 @@ Rect dbRow::getBBox()
     int xMax = origin.x() + (row->_site_cnt - 1) * row->_spacing + dx;
     int yMax = origin.y() + dy;
     return Rect(origin.x(), origin.y(), xMax, yMax);
-  } else {
-    int xMax = origin.x() + dx;
-    int yMax = origin.y() + (row->_site_cnt - 1) * row->_spacing + dy;
-    return Rect(origin.x(), origin.y(), xMax, yMax);
   }
+  int xMax = origin.x() + dx;
+  int yMax = origin.y() + (row->_site_cnt - 1) * row->_spacing + dy;
+  return Rect(origin.x(), origin.y(), xMax, yMax);
 }
 
 dbBlock* dbRow::getBlock()
@@ -277,8 +247,7 @@ dbRow* dbRow::create(dbBlock* block_,
   _dbSite* site = (_dbSite*) site_;
   _dbLib* lib = (_dbLib*) site->getOwner();
   _dbRow* row = block->_row_tbl->create();
-  row->_name = strdup(name);
-  ZALLOCATED(row->_name);
+  row->_name = safe_strdup(name);
   row->_lib = lib->getOID();
   row->_site = site->getOID();
   row->_flags._orient = orient;
@@ -287,8 +256,9 @@ dbRow* dbRow::create(dbBlock* block_,
   row->_y = origin_y;
   row->_site_cnt = num_sites;
   row->_spacing = spacing;
-  for (auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks) {
     callback->inDbRowCreate((dbRow*) row);
+  }
   return (dbRow*) row;
 }
 
@@ -296,8 +266,9 @@ void dbRow::destroy(dbRow* row_)
 {
   _dbRow* row = (_dbRow*) row_;
   _dbBlock* block = (_dbBlock*) row->getOwner();
-  for (auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks) {
     callback->inDbRowDestroy((dbRow*) row);
+  }
   dbProperty::destroyProperties(row);
   block->_row_tbl->destroy(row);
 }
@@ -314,6 +285,14 @@ dbRow* dbRow::getRow(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbRow*) block->_row_tbl->getPtr(dbid_);
+}
+
+void _dbRow::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
 }
 
 }  // namespace odb

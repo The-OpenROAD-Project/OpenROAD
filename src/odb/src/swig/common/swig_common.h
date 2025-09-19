@@ -1,38 +1,14 @@
-/*
- * Copyright (c) 2021, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include <boost/polygon/polygon.hpp>
+#include <string>
+#include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/defout.h"
-
-bool db_diff(odb::dbDatabase* db1, odb::dbDatabase* db2);
-
-bool db_def_diff(odb::dbDatabase* db1, const char* def_filename);
+#include "odb/geom.h"
 
 odb::dbLib* read_lef(odb::dbDatabase* db, const char* path);
 
@@ -46,7 +22,7 @@ odb::dbChip* read_def(odb::dbTech* tech, std::string path);
 
 int write_def(odb::dbBlock* block,
               const char* path,
-              odb::defout::Version version = odb::defout::Version::DEF_5_8);
+              odb::DefOut::Version version = odb::DefOut::Version::DEF_5_8);
 
 odb::dbDatabase* read_db(odb::dbDatabase* db, const char* db_path);
 
@@ -76,6 +52,10 @@ Polygon90Set* orSet(const Polygon90Set* set1, const Polygon90Set* set2);
 Polygon90Set* orSets(const std::vector<Polygon90Set>& sets);
 
 Polygon90Set* subtractSet(const Polygon90Set* set1, const Polygon90Set* set2);
+
+void destroySet(Polygon90Set* set);
+
+void destroyPolygon(Polygon90* polygon);
 
 std::vector<Polygon90> getPolygons(const Polygon90Set* set);
 
