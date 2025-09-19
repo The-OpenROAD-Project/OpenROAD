@@ -260,6 +260,7 @@ class PartitionMgr
   void getFromODB(std::map<std::string, MasterInfo>& onlyUseMasters,
                   std::string& top_name,
                   int& numInsts,
+                  int& numMacros,
                   int& numPIs,
                   int& numPOs,
                   int& numSeq);
@@ -290,6 +291,7 @@ class PartitionMgr
   void writeFile(const std::map<std::string, MasterInfo>& onlyUseMasters,
                  const std::string& top_name,
                  int numInsts,
+                 int numMacros,
                  int numPIs,
                  int numPOs,
                  int numSeq,

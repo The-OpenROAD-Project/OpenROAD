@@ -80,17 +80,19 @@ void PartitionMgr::writeArtNetSpec(const char* fileName)
   std::map<std::string, MasterInfo> onlyUseMasters;
   std::string top_name;
   int numInsts = 0;
+  int numMacros = 0;
   int numPIs = 0;
   int numPOs = 0;
   int numSeq = 0;
   int Dmax = -1;
   int MDmax = -1;
-  float Rratio;
-  float p;
-  float q;
-  float avgK;
+  float Rratio = 0.0;
+  float p = 0.0;
+  float q = 0.0;
+  float avgK = 0.0;
 
-  getFromODB(onlyUseMasters, top_name, numInsts, numPIs, numPOs, numSeq);
+  getFromODB(
+      onlyUseMasters, top_name, numInsts, numMacros, numPIs, numPOs, numSeq);
   logger_->report("getFromODB done");
   getFromSTA(Dmax, MDmax);
   logger_->report("getFromSTA done");
@@ -99,6 +101,7 @@ void PartitionMgr::writeArtNetSpec(const char* fileName)
   writeFile(onlyUseMasters,
             top_name,
             numInsts,
+            numMacros,
             numPIs,
             numPOs,
             numSeq,
@@ -114,6 +117,7 @@ void PartitionMgr::writeArtNetSpec(const char* fileName)
 void PartitionMgr::getFromODB(std::map<std::string, MasterInfo>& onlyUseMasters,
                               std::string& top_name,
                               int& numInsts,
+                              int& numMacros,
                               int& numPIs,
                               int& numPOs,
                               int& numSeq)
@@ -149,6 +153,9 @@ void PartitionMgr::getFromODB(std::map<std::string, MasterInfo>& onlyUseMasters,
     if (inserted) {
       info.isMacro = isMacro;
     }
+    if (isMacro) {
+      numMacros++;
+    }
   }
 }
 
@@ -171,7 +178,7 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
   // Timing paths are grouped into path groups according to the clock
   // associated with the endpoint of the path, for example, path group for clk
   // int group_count = top_n_;
-  int group_count = 1000;
+  int group_count = INT_MAX;
   int endpoint_count = 1;  // The number of paths to report for each endpoint.
   // Definition for findPathEnds function in Search.hh
   // PathEndSeq *findPathEnds(ExceptionFrom *from,
@@ -225,7 +232,6 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
 
   auto block = getDbBlock();
   std::map<std::string, int> pathDepthMap;
-
   // check all the timing paths
   for (auto& path_end : path_ends) {
     // Printing timing paths to logger
@@ -690,6 +696,7 @@ void PartitionMgr::writeFile(
     const std::map<std::string, MasterInfo>& onlyUseMasters,
     const std::string& top_name,
     const int numInsts,
+    const int numMacros,
     const int numPIs,
     const int numPOs,
     const int numSeq,
@@ -738,6 +745,7 @@ void PartitionMgr::writeFile(
   outFile << "END\n";
   outFile.close();
   logger_->report("#instances: {}", numInsts);
+  logger_->report("#macros: {}", numMacros);
   logger_->report("#primary inputs: {}", numPIs);
   logger_->report("#primary outputs: {}", numPOs);
   logger_->report("Ratio of Region I: {}", Rratio);
