@@ -320,8 +320,9 @@ void PartitionMgr::getRents(float& Rratio, float& p, float& q, float& avgK)
     odb::dbIntProperty::create(inst, "inst_id", id);
     ++id;
   }
-
-  avgK = totPins / block->getInsts().size();
+  if (id != 0) {
+    avgK = totPins / block->getInsts().size();
+  }
   bool flag = true;
   while (flag) {
     flag = partitionCluster(triton_part, modMgr, cv);
