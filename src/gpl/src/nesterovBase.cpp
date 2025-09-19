@@ -2971,14 +2971,14 @@ bool NesterovBase::checkDivergence()
   }
 
   // Check if both overflow and HPWL increase
-  if (sum_overflow_unscaled_ < 0.2f && prev_reported_overflow_unscaled_ > 0
+  if (minSumOverflow_ < 0.2f && prev_reported_overflow_unscaled_ > 0
       && prev_reported_hpwl_ > 0) {
     float overflow_change
         = sum_overflow_unscaled_ - prev_reported_overflow_unscaled_;
     float hpwl_increase = (static_cast<float>(prev_hpwl_ - prev_reported_hpwl_))
                           / static_cast<float>(prev_reported_hpwl_);
 
-    if (overflow_change >= 0.02f && hpwl_increase >= 0.1f) {
+    if (overflow_change >= 0.02f && hpwl_increase >= 0.05f) {
       isDiverged_ = true;
     }
   }
