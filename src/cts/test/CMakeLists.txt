@@ -26,6 +26,11 @@ or_integration_tests(
     dummy_load
     find_clock
     find_clock_pad
+    gated_clock1
+    gated_clock2
+    gated_clock3
+    gated_clock4
+    gated_clock5
     hier_insertion_delay
     insertion_delay
     inverters
