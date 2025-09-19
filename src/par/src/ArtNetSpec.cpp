@@ -756,7 +756,7 @@ void PartitionMgr::writeFile(
   logger_->report("Rent's exponent: {}", p);
   logger_->report("Average #pins per instances: {}", avgK);
   logger_->report("Ratio of #sequential instances to the #instances: {}",
-                  float(numSeq) / numInsts);
+                  Sratio);
   logger_->report("Maximum depth of any timing path: {}", Dmax);
   logger_->report("Maximum depth of macro path: {}", MDmax);
 }
