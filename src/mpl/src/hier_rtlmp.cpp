@@ -1486,7 +1486,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
   for (auto& cluster : parent->getChildren()) {
     const int src_id = cluster->getId();
     const std::string src_name = cluster->getName();
-    for (auto& [cluster_id, weight] : cluster->getConnection()) {
+    for (auto& [cluster_id, weight] : cluster->getConnectionsMap()) {
       debugPrint(logger_,
                  MPL,
                  "hierarchical_macro_placement",
@@ -2296,7 +2296,7 @@ void HierRTLMP::createFixedTerminals(const Rect& outline,
   std::set<int> clusters_ids;
 
   for (auto& macro_cluster : macro_clusters) {
-    for (auto [cluster_id, weight] : macro_cluster->getConnection()) {
+    for (auto [cluster_id, weight] : macro_cluster->getConnectionsMap()) {
       clusters_ids.insert(cluster_id);
     }
   }
@@ -2323,7 +2323,7 @@ std::vector<BundledNet> HierRTLMP::computeBundledNets(
   for (auto& macro_cluster : macro_clusters) {
     const int src_id = macro_cluster->getId();
 
-    for (auto [cluster_id, weight] : macro_cluster->getConnection()) {
+    for (auto [cluster_id, weight] : macro_cluster->getConnectionsMap()) {
       BundledNet net(
           cluster_to_macro.at(src_id), cluster_to_macro.at(cluster_id), weight);
 
