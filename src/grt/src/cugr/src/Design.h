@@ -64,6 +64,7 @@ class Design
   void readNetlist();
   void readInstanceObstructions();
   int readSpecialNetObstructions();
+  void readDesignObstructions();
   void computeGrid();
   void setUnitCosts();
 
