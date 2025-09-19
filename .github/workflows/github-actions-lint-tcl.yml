@@ -19,7 +19,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python3 -m venv venv
-          venv/bin/pip install tclint==0.4.2
+          venv/bin/pip install tclint==0.6.1
 
       - name: Lint
         run: |
@@ -27,5 +27,5 @@ jobs:
           tclfmt --version
           tclfmt --in-place .
           git diff --exit-code
-          tclint --no-check-style .
+          tclint .
 
