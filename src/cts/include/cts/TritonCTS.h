@@ -75,6 +75,8 @@ class TritonCTS
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
   void setRootBuffer(const char* buffers);
+  const char* getRootBufferToString();
+  void resetRootBuffer() { rootBuffers_.clear(); }
   void setSinkBuffer(const char* buffers);
 
  private:

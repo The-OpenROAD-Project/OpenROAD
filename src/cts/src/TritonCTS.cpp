@@ -834,6 +834,15 @@ bool TritonCTS::isClockCellCandidate(sta::LibertyCell* cell)
           && !cell->isIsolationCell() && !cell->isLevelShifter());
 }
 
+const char* TritonCTS::getRootBufferToString()
+{
+  std::ostringstream buffer_names;
+  for (const auto& buf : rootBuffers_) {
+    buffer_names << buf << " ";
+  }
+  return buffer_names.str().c_str();
+}
+
 void TritonCTS::setRootBuffer(const char* buffers)
 {
   std::stringstream ss(buffers);

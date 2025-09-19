@@ -292,6 +292,11 @@ get_branching_buffers_distance()
 {
   return getTritonCts()->getParms()->getVertexBufferDistance();
 }
+const char*
+get_buffer_list()
+{
+  return getTritonCts()->getParms()->getBufferListToString();
+}
 unsigned
 get_clustering_exponent()
 {
@@ -338,6 +343,12 @@ unsigned
 get_num_static_layers()
 {
   return getTritonCts()->getParms()->getNumStaticLayers();
+}
+
+const char*
+get_root_buffer()
+{
+  return getTritonCts()->getRootBufferToString();
 }
 
 float
@@ -392,6 +403,11 @@ reset_apply_ndr()
   getTritonCts()->getParms()->resetApplyNDR();
 }
 void
+reset_buffer_list()
+{
+  getTritonCts()->getParms()->resetBufferList();
+}
+void
 reset_branching_point_buffers_distance()
 {
   getTritonCts()->getParms()->resetVertexBufferDistance();
@@ -435,6 +451,11 @@ void
 reset_num_static_layers()
 {
   getTritonCts()->getParms()->resetNumStaticLayers();
+}
+void
+reset_root_buffer()
+{
+  getTritonCts()->resetRootBuffer();
 }
 void
 reset_sink_buffer_max_cap_derate()
