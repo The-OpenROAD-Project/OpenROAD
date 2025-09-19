@@ -5,11 +5,11 @@ read_def "no_clock.def"
 
 set_wire_rc -clock -layer metal5
 
-set_cts_config -wire_unit 20
-
-catch {
-  clock_tree_synthesis \
+set_cts_config -wire_unit 20 \
     -root_buf CLKBUF_X3 \
     -buf_list CLKBUF_X3
+
+catch {
+  clock_tree_synthesis
 } error
 puts $error

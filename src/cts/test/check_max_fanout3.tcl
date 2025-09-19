@@ -12,11 +12,11 @@ set_wire_rc -clock -layer Metal5
 
 set_cts_config -wire_unit 20 \
   -distance_between_buffers 100 \
-  -num_static_layers 1
+  -num_static_layers 1 \
+  -root_buf sg13g2_buf_4 \
+  -buf_list sg13g2_buf_4
 
-clock_tree_synthesis -root_buf sg13g2_buf_4 \
-  -buf_list sg13g2_buf_4 \
-  -sink_clustering_enable
+clock_tree_synthesis -sink_clustering_enable
 
 set_propagated_clock [all_clocks]
 estimate_parasitics -placement
