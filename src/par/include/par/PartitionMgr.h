@@ -265,8 +265,8 @@ class PartitionMgr
                   int& numSeq);
   void getFromSTA(int& Dmax, int& MDmax);
   void BuildTimingPath(int& Dmax, int& MDmax);
-  void getFromPAR(float& Rratio, float& p, float& q);
-  void getRents(float& Rratio, float& p, float& q);
+  void getFromPAR(float& Rratio, float& p, float& q, float& avgK);
+  void getRents(float& Rratio, float& p, float& q, float& avgK);
   std::tuple<double, double, double> fitRent(const double* x,
                                              const double* y,
                                              int n);
@@ -287,19 +287,19 @@ class PartitionMgr
   void Partitioning(const std::shared_ptr<TritonPart>& triton_part,
                     const std::shared_ptr<Cluster>& cluster,
                     SharedClusterVector& resultCV);
-  void writeFile(
-      const std::map<std::string, MasterInfo>& onlyUseMasters,
-      const std::string& top_name,
-      int numInsts,
-      int numPIs,
-      int numPOs,
-      int numSeq,
-      int Dmax,
-      int MDmax,
-      float Rratio,
-      float p,
-      float q,
-      const char* fileName);
+  void writeFile(const std::map<std::string, MasterInfo>& onlyUseMasters,
+                 const std::string& top_name,
+                 int numInsts,
+                 int numPIs,
+                 int numPOs,
+                 int numSeq,
+                 int Dmax,
+                 int MDmax,
+                 float Rratio,
+                 float p,
+                 float q,
+                 float avgK,
+                 const char* fileName);
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;

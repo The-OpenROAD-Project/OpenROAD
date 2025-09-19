@@ -88,12 +88,13 @@ void PartitionMgr::writeArtNetSpec(const char* fileName)
   float Rratio;
   float p;
   float q;
+  float avgK;
 
   getFromODB(onlyUseMasters, top_name, numInsts, numPIs, numPOs, numSeq);
   logger_->report("getFromODB done");
   getFromSTA(Dmax, MDmax);
   logger_->report("getFromSTA done");
-  getFromPAR(Rratio, p, q);
+  getFromPAR(Rratio, p, q, avgK);
   logger_->report("getFromPAR done");
   writeFile(onlyUseMasters,
             top_name,
@@ -106,16 +107,16 @@ void PartitionMgr::writeArtNetSpec(const char* fileName)
             Rratio,
             p,
             q,
+            avgK,
             fileName);
 }
 
-void PartitionMgr::getFromODB(
-    std::map<std::string, MasterInfo>& onlyUseMasters,
-    std::string& top_name,
-    int& numInsts,
-    int& numPIs,
-    int& numPOs,
-    int& numSeq)
+void PartitionMgr::getFromODB(std::map<std::string, MasterInfo>& onlyUseMasters,
+                              std::string& top_name,
+                              int& numInsts,
+                              int& numPIs,
+                              int& numPOs,
+                              int& numSeq)
 {
   auto block = getDbBlock();
   odb::dbSet<dbInst> insts = block->getInsts();
@@ -286,12 +287,12 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
   MDmax = mac_max;
 }
 
-void PartitionMgr::getFromPAR(float& Rratio, float& p, float& q)
+void PartitionMgr::getFromPAR(float& Rratio, float& p, float& q, float& avgK)
 {
-  getRents(Rratio, p, q);
+  getRents(Rratio, p, q, avgK);
 }
 
-void PartitionMgr::getRents(float& Rratio, float& p, float& q)
+void PartitionMgr::getRents(float& Rratio, float& p, float& q, float& avgK)
 {
   auto block = getDbBlock();
   ModuleMgr modMgr;
@@ -314,7 +315,7 @@ void PartitionMgr::getRents(float& Rratio, float& p, float& q)
     ++id;
   }
 
-  double avgK = totPins / block->getInsts().size();
+  avgK = totPins / block->getInsts().size();
   bool flag = true;
   while (flag) {
     flag = partitionCluster(triton_part, modMgr, cv);
@@ -697,6 +698,7 @@ void PartitionMgr::writeFile(
     const float Rratio,
     const float p,
     const float q,
+    const float avgK,
     const char* fileName)
 {
   std::ofstream outFile(fileName);
@@ -735,6 +737,16 @@ void PartitionMgr::writeFile(
   outFile << "O " << numPOs << '\n';
   outFile << "END\n";
   outFile.close();
+  logger_->report("#instances: {}", numInsts);
+  logger_->report("#primary inputs: {}", numPIs);
+  logger_->report("#primary outputs: {}", numPOs);
+  logger_->report("Ratio of Region I: {}", Rratio);
+  logger_->report("Rent's exponent: {}", p);
+  logger_->report("Average #pins per instances: {}", avgK);
+  logger_->report("Ratio of #sequential instances to the #instances: {}",
+                  float(numSeq) / numInsts);
+  logger_->report("Maximum depth of any timing path: {}", Dmax);
+  logger_->report("Maximum depth of macro path: {}", MDmax);
 }
 
 }  // namespace par
