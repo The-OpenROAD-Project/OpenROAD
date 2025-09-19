@@ -454,7 +454,12 @@ void PartitionMgr::Partitioning(const std::shared_ptr<TritonPart>& triton_part,
   // Make the iteration order stable
   std::vector<odb::dbNet*> cluster_nets_sorted(cluster_nets.begin(),
                                                cluster_nets.end());
-  std::sort(cluster_nets_sorted.begin(), cluster_nets_sorted.end());
+  // std::sort(cluster_nets_sorted.begin(), cluster_nets_sorted.end());
+  std::sort(
+      cluster_nets_sorted.begin(),
+      cluster_nets_sorted.end(),
+      [](odb::dbNet* a, odb::dbNet* b) { return a->getName() < b->getName(); });
+
   for (odb::dbNet* net : cluster_nets_sorted) {
     int driver_id = -1;
     std::set<int> loads_id;
