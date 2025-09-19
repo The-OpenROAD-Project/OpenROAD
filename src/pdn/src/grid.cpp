@@ -1295,6 +1295,13 @@ void CoreGrid::setupDirectConnect(
       if (pad_connect->canConnect()) {
         straps.insert(pad_connect.get());
         addStrap(std::move(pad_connect));
+      } else {
+        debugPrint(getLogger(),
+                   utl::PDN,
+                   "Pad",
+                   2,
+                   "Rejecting pad cell pin {} due to lack of connectivity",
+                   iterm->getName())
       }
     }
   }

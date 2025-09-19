@@ -639,7 +639,7 @@ bool RepairSetup::repairPath(Path* path,
       const Path* path = expanded.path(i);
       Vertex* path_vertex = path->vertex(sta_);
       const Pin* path_pin = path->pin(sta_);
-      if (i > 0 && network_->isDriver(path_pin)
+      if (i > 0 && path_vertex->isDriver(network_)
           && !network_->isTopLevelPort(path_pin)) {
         const TimingArc* prev_arc = path->prevArc(sta_);
         const TimingArc* corner_arc = prev_arc->cornerArc(lib_ap);

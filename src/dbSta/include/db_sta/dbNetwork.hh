@@ -103,6 +103,8 @@ class dbNetwork : public ConcreteNetwork
   Point location(const Pin* pin) const;
   bool isPlaced(const Pin* pin) const;
 
+  LibertyCell* libertyCell(Cell* cell) const override;
+  const LibertyCell* libertyCell(const Cell* cell) const override;
   LibertyCell* libertyCell(dbInst* inst);
   LibertyPort* libertyPort(const Pin*) const override;
   dbInst* staToDb(const Instance* instance) const;
