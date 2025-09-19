@@ -98,6 +98,7 @@ or_integration_tests(
     pads_black_parrot_max_width
     pads_black_parrot_no_connect
     pads_black_parrot_offset
+    pads_connect_from_non_pref_edge
     power_switch
     power_switch_cut_rows
     power_switch_daisy
