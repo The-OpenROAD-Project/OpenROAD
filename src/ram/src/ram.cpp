@@ -405,14 +405,14 @@ void RamGen::generate(const int bytes_per_word,
   vector<dbBTerm*> write_enable(bytes_per_word, nullptr);
   for (int byte = 0; byte < bytes_per_word; ++byte) {
     auto in_name = fmt::format("we[{}]", byte);
-    write_enable[byte] = makeBTerm(in_name);
+    write_enable[byte] = makeBTerm(in_name, dbIoType::INPUT);
   }
 
   // input bterms
   int num_inputs = std::ceil(std::log2(word_count));
   vector<dbBTerm*> addr(num_inputs, nullptr);
   for (int i = 0; i < num_inputs; ++i) {
-    addr[i] = makeBTerm(fmt::format("addr[{}]", i));
+    addr[i] = makeBTerm(fmt::format("addr[{}]", i), dbIoType::INPUT);
   }
 
   // vector of nets storing inverter nets
@@ -440,31 +440,32 @@ void RamGen::generate(const int bytes_per_word,
 
   vector<dbNet*> decoder_output_nets;
 
+
   for (int col = 0; col < bytes_per_word; ++col) {
-    array<dbBTerm*, 8> D;     // array for b-term for external inputs
+    array<dbBTerm*, 8> D_bTerms;     // array for b-term for external inputs
     array<dbNet*, 8> D_nets;  // net for buffers
     for (int bit = 0; bit < 8; ++bit) {
-      D[bit] = makeBTerm(fmt::format("D[{}]", bit + col * 8), dbIoType::INPUT);
+      D_bTerms[bit] = makeBTerm(fmt::format("D[{}]", bit + col * 8), dbIoType::INPUT);
       D_nets[bit] = makeNet(fmt::format("D_nets[{}]", bit + col * 8), "net");
     }
 
     vector<array<dbBTerm*, 8>> Q;
     // if readports == 1, only have Q outputs
     if (read_ports == 1) {
-      array<dbBTerm*, 8> q;
+      array<dbBTerm*, 8> q_bTerms;
       for (int bit = 0; bit < 8; ++bit) {
         auto out_name = fmt::format("Q[{}]", bit + col * 8);
-        q[bit] = makeBTerm(out_name, dbIoType::OUTPUT);
+        q_bTerms[bit] = makeBTerm(out_name, dbIoType::OUTPUT);
       }
-      Q.push_back(q);
+      Q.push_back(q_bTerms);
     } else {
       for (int read_port = 0; read_port < read_ports; ++read_port) {
-        array<dbBTerm*, 8> q;
+        array<dbBTerm*, 8> q_bTerms;
         for (int bit = 0; bit < 8; ++bit) {
           auto out_name = fmt::format("Q{}[{}]", read_port, bit + col * 8);
-          q[bit] = makeBTerm(out_name, dbIoType::OUTPUT);
+          q_bTerms[bit] = makeBTerm(out_name, dbIoType::OUTPUT);
         }
-        Q.push_back(q);
+        Q.push_back(q_bTerms);
       }
     }
 
@@ -503,7 +504,7 @@ void RamGen::generate(const int bytes_per_word,
                    "buffer",
                    fmt::format("in[{}]", bit),
                    buffer_cell_,
-                   {{"A", D[bit]->getNet()}, {"X", D_nets[bit]}});
+                   {{"A", D_bTerms[bit]->getNet()}, {"X", D_nets[bit]}});
       ram_grid.addCell(std::move(buffer_cell), bit);
     }
   }
@@ -563,10 +564,10 @@ void RamGen::generate(const int bytes_per_word,
                   sites_width);
   }
 
+  ram_grid.placeGrid();
+  
   int max_y_coord = ram_grid.getHeight() * (word_count + 1);
   int max_x_coord = ram_grid.getRowWidth();
-
-  ram_grid.placeGrid();
 
   block_->setDieArea(odb::Rect(0, 0, max_x_coord, max_y_coord));
 }
