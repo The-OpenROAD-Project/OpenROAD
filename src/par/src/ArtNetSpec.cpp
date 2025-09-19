@@ -744,6 +744,10 @@ void PartitionMgr::writeFile(
   outFile << "O " << numPOs << '\n';
   outFile << "END\n";
   outFile.close();
+  float Sratio = 0.0;
+  if (numInsts > 0) {
+    Sratio = float(numSeq) / numInsts;
+  }
   logger_->report("#instances: {}", numInsts);
   logger_->report("#macros: {}", numMacros);
   logger_->report("#primary inputs: {}", numPIs);
