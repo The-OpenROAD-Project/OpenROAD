@@ -1,35 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2023, Precision Innovations Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include "ram/ram.h"
 
@@ -49,6 +19,7 @@ using odb::dbInst;
 using odb::dbMaster;
 using odb::dbNet;
 using odb::dbRow;
+using odb::dbIoType;
 
 using utl::RAM;
 
@@ -97,22 +68,15 @@ dbNet* RamGen::makeNet(const std::string& prefix, const std::string& name)
   return dbNet::create(block_, net_name.c_str());
 }
 
-dbBTerm* RamGen::makeBTerm(const std::string& name)
+dbBTerm* RamGen::makeBTerm(const std::string& name, dbIoType io_type)
 {
   auto net = dbNet::create(block_, name.c_str());
   auto bTerm = dbBTerm::create(net, name.c_str());
+  bTerm->setIoType(io_type);
 
   return bTerm;
 }
 
-dbBTerm* RamGen::makeOutputBTerm(const std::string& name)
-{
-  auto net = dbNet::create(block_, name.c_str());
-  auto bTerm = dbBTerm::create(net, name.c_str());
-
-  bTerm->setIoType(odb::dbIoType::OUTPUT);
-  return bTerm;
-}
 std::unique_ptr<Cell> RamGen::makeCellBit(const std::string& prefix,
                                           const int read_ports,
                                           dbNet* clock,
@@ -430,13 +394,13 @@ void RamGen::generate(const int bytes_per_word,
     block_ = odb::dbBlock::create(chip, ram_name.c_str());
   }
 
-  // 9 tracks for 8 bits per word plus
+  // 9 columns for 8 bits per word plus
   // cell for WE AND gate/inverter
-  // extra 1 is for decoder cells
+  // extra column is for decoder cells
   int col_cell_count = bytes_per_word * 9;
   Grid ram_grid(odb::horizontal, col_cell_count + 1);
 
-  auto clock = makeBTerm("clk");
+  auto clock = makeBTerm("clk", dbIoType::INPUT);
 
   vector<dbBTerm*> write_enable(bytes_per_word, nullptr);
   for (int byte = 0; byte < bytes_per_word; ++byte) {
@@ -445,24 +409,24 @@ void RamGen::generate(const int bytes_per_word,
   }
 
   // input bterms
-  int numImputs = std::log2(word_count);
-  vector<dbBTerm*> addr(numImputs, nullptr);
-  for (int i = 0; i < numImputs; ++i) {
+  int num_inputs = std::ceil(std::log2(word_count));
+  vector<dbBTerm*> addr(num_inputs, nullptr);
+  for (int i = 0; i < num_inputs; ++i) {
     addr[i] = makeBTerm(fmt::format("addr[{}]", i));
   }
 
   // vector of nets storing inverter nets
-  vector<dbNet*> inv_addr(numImputs);
-  for (int i = 0; i < numImputs; ++i) {
+  vector<dbNet*> inv_addr(num_inputs);
+  for (int i = 0; i < num_inputs; ++i) {
     inv_addr[i] = makeNet("inv", fmt::format("addr[{}]", i));
   }
 
   // decoder_layer nets
   vector<vector<dbNet*>> decoder_input_nets(word_count,
-                                            vector<dbNet*>(numImputs));
+                                            vector<dbNet*>(num_inputs));
   for (int word = 0; word < word_count; ++word) {
     int word_num = word;
-    for (int input = 0; input < numImputs; ++input) {  // start at right most
+    for (int input = 0; input < num_inputs; ++input) {  // start at right most
                                                        // bit
       if (word_num % 2 == 0) {
         // places inverted address for each input
@@ -480,27 +444,27 @@ void RamGen::generate(const int bytes_per_word,
     array<dbBTerm*, 8> D;     // array for b-term for external inputs
     array<dbNet*, 8> D_nets;  // net for buffers
     for (int bit = 0; bit < 8; ++bit) {
-      D[bit] = makeBTerm(fmt::format("D[{}]", bit + col * 8));
+      D[bit] = makeBTerm(fmt::format("D[{}]", bit + col * 8), dbIoType::INPUT);
       D_nets[bit] = makeNet(fmt::format("D_nets[{}]", bit + col * 8), "net");
     }
 
     vector<array<dbBTerm*, 8>> Q;
     // if readports == 1, only have Q outputs
     if (read_ports == 1) {
-      array<dbBTerm*, 8> d;
+      array<dbBTerm*, 8> q;
       for (int bit = 0; bit < 8; ++bit) {
         auto out_name = fmt::format("Q[{}]", bit + col * 8);
-        d[bit] = makeOutputBTerm(out_name);
+        q[bit] = makeBTerm(out_name, dbIoType::OUTPUT);
       }
-      Q.push_back(d);
+      Q.push_back(q);
     } else {
       for (int read_port = 0; read_port < read_ports; ++read_port) {
-        array<dbBTerm*, 8> d;
+        array<dbBTerm*, 8> q;
         for (int bit = 0; bit < 8; ++bit) {
           auto out_name = fmt::format("Q{}[{}]", read_port, bit + col * 8);
-          d[bit] = makeOutputBTerm(out_name);
+          q[bit] = makeBTerm(out_name, dbIoType::OUTPUT);
         }
-        Q.push_back(d);
+        Q.push_back(q);
       }
     }
 
@@ -541,17 +505,13 @@ void RamGen::generate(const int bytes_per_word,
                    buffer_cell_,
                    {{"A", D[bit]->getNet()}, {"X", D_nets[bit]}});
       ram_grid.addCell(std::move(buffer_cell), bit);
-
-      // Work in Progress
-      auto bit_BPin = dbBPin::create(D[bit]);
-      auto access_pin = odb::dbAccessPoint::create(bit_BPin);
     }
   }
 
   auto cell_inv_layout = std::make_unique<Layout>(odb::vertical);
   // check for AND gate, specific case for 2 words
-  if (numImputs > 1) {
-    for (int i = numImputs - 1; i >= 0; --i) {
+  if (num_inputs > 1) {
+    for (int i = num_inputs - 1; i >= 0; --i) {
       auto inv_cell = std::make_unique<Cell>();
       makeCellInst(inv_cell.get(),
                    "decoder",
@@ -559,7 +519,7 @@ void RamGen::generate(const int bytes_per_word,
                    inv_cell_,
                    {{"A", addr[i]->getNet()}, {"Y", inv_addr[i]}});
       cell_inv_layout->addCell(std::move(inv_cell));
-      for (int filler_count = 0; filler_count < numImputs - 1; ++filler_count) {
+      for (int filler_count = 0; filler_count < num_inputs - 1; ++filler_count) {
         cell_inv_layout->addCell(nullptr);
       }
     }
@@ -603,7 +563,12 @@ void RamGen::generate(const int bytes_per_word,
                   sites_width);
   }
 
+  int max_y_coord = ram_grid.getHeight() * (word_count + 1);
+  int max_x_coord = ram_grid.getRowWidth();
+
   ram_grid.placeGrid();
+
+  block_->setDieArea(odb::Rect(0, 0, max_x_coord, max_y_coord));
 }
 
 }  // namespace ram
