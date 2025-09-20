@@ -7,9 +7,9 @@
 #include <string>
 
 #if defined(__APPLE__)
-#include <sys/param.h>
 #include <mach-o/dyld.h>
-#endif 
+#include <sys/param.h>
+#endif
 
 #include "rules_cc/cc/runfiles/runfiles.h"
 
