@@ -75,8 +75,8 @@ _installCommonDev() {
     spdlogVersion=1.15.0
     gtestVersion=1.13.0
     gtestChecksum="a1279c6fb5bf7d4a5e0d0b2a4adb39ac"
-    abslVersion=20250814.0
-    abslChecksum="016feacd6a6b3b9a47ab844e61f4f7bd"
+    abslVersion=20240722.0
+    abslChecksum="740fb8f35ebdf82740c294bde408b9c0"
     bisonVersion=3.8.2
     bisonChecksum="1e541a097cda9eca675d29dd2832921f"
     flexVersion=2.6.4
