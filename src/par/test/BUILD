@@ -6,6 +6,7 @@ load("//test:regression.bzl", "regression_test")
 COMPULSORY_TESTS = [
     "partition_gcd",
     "read_part",
+    "write_artnet",
 ]
 
 # Disabled in CMakeLists.txt

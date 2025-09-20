@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
+getFromODB done
+getFromSTA done
+getFromPAR done
+#instances: 415
+#macros: 0
+#primary inputs: 36
+#primary outputs: 18
+Ratio of Region I: 0.5
+Rent's exponent: 0.5446304
+Average #pins per instances: 3.2
+Ratio of #sequential instances to the #instances: 0.08192771
+Maximum depth of any timing path: 17
+Maximum depth of macro path: 0
+No differences found.

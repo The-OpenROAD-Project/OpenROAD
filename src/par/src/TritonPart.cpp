@@ -920,6 +920,8 @@ std::vector<int> TritonPart::PartitionKWaySimpleMode(
   placement_dimensions_ = 0;
   fence_flag_ = false;
   hyperedges_ = hyperedges;
+  vertex_weights_.clear();
+  hyperedge_weights_.clear();
   fixed_attr_.clear();
   community_attr_.clear();
   group_attr_.clear();
