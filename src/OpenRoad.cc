@@ -33,6 +33,7 @@
 #include "est/MakeEstimateParasitics.h"
 #include "exa/MakeExample.h"
 #include "fin/MakeFinale.h"
+#include "ram/MakeRam.h"
 #include "gpl/MakeReplace.h"
 #include "grt/GlobalRouter.h"
 #include "grt/MakeGlobalRouter.h"
@@ -115,6 +116,7 @@ OpenRoad::~OpenRoad()
   deleteReplace(replace_);
   deletePDNSim(pdnsim_);
   deleteFinale(finale_);
+  deleteRamGen(ram_gen_);
   deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
   deletePartitionMgr(partitionMgr_);
@@ -179,6 +181,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   resizer_ = rsz::makeResizer();
   opendp_ = dpl::makeOpendp();
   finale_ = fin::makeFinale();
+  ram_gen_ = ram::makeRamGen();
   global_router_ = grt::makeGlobalRouter();
   restructure_ = rmp::makeRestructure();
   clock_gating_ = cgt::makeClockGating();
@@ -205,6 +208,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   utl::evalTclInit(tcl_interp, ord::ord_tcl_inits);
 
   initLogger(logger_, tcl_interp);
+  
   // GUI first so we can register our sink with the logger
   gui::initGui(tcl_interp, db_, sta_, logger_);
   odb::initOdb(tcl_interp);
@@ -226,6 +230,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
       replace_, db_, sta_, resizer_, global_router_, logger_, tcl_interp);
   initOpendp(opendp_, db_, logger_, tcl_interp);
   initFinale(finale_, db_, logger_, tcl_interp);
+  initRamGen(ram_gen_, db_, logger_, tcl_interp);
   initGlobalRouter(global_router_,
                    db_,
                    sta_,
