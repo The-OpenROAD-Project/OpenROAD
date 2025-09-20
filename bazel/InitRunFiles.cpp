@@ -6,6 +6,11 @@
 #include <optional>
 #include <string>
 
+#if defined(__APPLE__)
+#include <mach-o/dyld.h>
+#include <sys/param.h>
+#endif
+
 #include "rules_cc/cc/runfiles/runfiles.h"
 
 // Avoid adding any dependencies like boost.filesystem
@@ -19,7 +24,7 @@ static std::optional<std::string> getProgramLocation()
   char result[MAXPATHLEN + 1] = {'\0'};
   uint32_t path_len = MAXPATHLEN;
   if (_NSGetExecutablePath(result, &path_len) != 0) {
-    path_len = readlink("/proc/self/exe", result, MAXPATHLEN);
+    path_len = readlink(result, result, MAXPATHLEN);
   }
 #else
   char result[PATH_MAX + 1] = {'\0'};

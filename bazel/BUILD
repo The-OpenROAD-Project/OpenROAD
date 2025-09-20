@@ -16,4 +16,5 @@ cc_library(
     deps = [
         "@rules_cc//cc/runfiles",
     ],
+    alwayslink = True,
 )
