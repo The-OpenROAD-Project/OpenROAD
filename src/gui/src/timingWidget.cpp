@@ -634,8 +634,9 @@ void TimingWidget::populatePaths()
   const auto to = settings_->getToPins();
   sta::ClockSet* clks = new sta::ClockSet;
   settings_->getClocks(clks);
+  const auto path_group = settings_->getPathGroup();
 
-  populateAndSortModels(from, thru, to, "" /* path group name */, clks);
+  populateAndSortModels(from, thru, to, path_group, clks);
 }
 
 void TimingWidget::populateAndSortModels(
