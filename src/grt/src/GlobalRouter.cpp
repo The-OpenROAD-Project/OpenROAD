@@ -415,7 +415,11 @@ void GlobalRouter::updateDbCongestion()
 {
   int min_layer, max_layer;
   getMinMaxLayer(min_layer, max_layer);
-  fastroute_->updateDbCongestion(min_layer, max_layer);
+  if (use_cugr_) {
+    cugr_->updateDbCongestion();
+  } else {
+    fastroute_->updateDbCongestion(min_layer, max_layer);
+  }
   heatmap_->update();
 }
 
