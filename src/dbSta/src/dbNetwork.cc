@@ -1582,6 +1582,51 @@ void dbNetwork::setVertexId(Pin* pin, VertexId id)
   }
 }
 
+dbModITerm* dbNetwork::findInputModITermInParent(const Pin* input_pin) const
+{
+  if (input_pin == nullptr) {
+    return nullptr;
+  }
+
+  dbITerm* iterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  dbModITerm* mod_iterm = nullptr;
+  staToDb(input_pin, iterm, bterm, mod_iterm);
+
+  // Get mod net
+  dbModNet* mod_net = nullptr;
+  if (iterm) {
+    assert(iterm->getIoType().getValue() != dbIoType::OUTPUT);
+    mod_net = iterm->getModNet();
+  } else if (mod_iterm) {
+    assert(mod_iterm->getChildModBTerm()->getIoType().getValue()
+           != dbIoType::OUTPUT);
+    mod_net = mod_iterm->getModNet();
+  }
+
+  if (mod_net == nullptr) {
+    return nullptr;
+  }
+
+  // Get the input modBTerm.
+  // - Typically, there will be one or zero input modBTerm.
+  dbModBTerm* input_mod_bterm = nullptr;
+  for (dbModBTerm* mod_bterm : mod_net->getModBTerms()) {
+    if (dbIoType::OUTPUT != mod_bterm->getIoType().getValue()) {
+      input_mod_bterm = mod_bterm;
+      break;
+    }
+  }
+
+  if (input_mod_bterm == nullptr) {
+    return nullptr;
+  }
+
+  // Found the target modITerm in parent.
+  dbModITerm* parent_mod_iterm = input_mod_bterm->getParentModITerm();
+  return parent_mod_iterm;
+}
+
 void dbNetwork::location(const Pin* pin,
                          // Return values.
                          double& x,

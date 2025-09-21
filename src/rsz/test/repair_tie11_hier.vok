@@ -1,15 +1,17 @@
 module top (top_in);
  input top_in;
 
+ wire tie0_1_H;
  wire tie0_H;
  wire main_net;
- wire tie0_1_H;
+ wire tie0_2_H;
 
+ TIEHIx1_ASAP7_75t_R tie0_2 (.H(tie0_2_H));
  TIEHIx1_ASAP7_75t_R tie0_1 (.H(tie0_1_H));
  TIEHIx1_ASAP7_75t_R tie0 (.H(tie0_H));
- BUFx2_ASAP7_75t_R load0 (.A(tie0_1_H));
- ALU_module alu0 (.MI1(main_net));
- ALU_module_alu1 alu1 (.MI1(tie0_H));
+ BUFx2_ASAP7_75t_R load0 (.A(tie0_2_H));
+ ALU_module alu0 (.MI1(tie0_H));
+ ALU_module_alu1 alu1 (.MI1(tie0_1_H));
  HIER1 hier1 (.in(top_in),
     .MI0(main_net));
 endmodule
@@ -45,5 +47,4 @@ module HIER1 (in,
  output MI0;
 
 
- TIEHIx1_ASAP7_75t_R tie0 (.H(MI0));
 endmodule

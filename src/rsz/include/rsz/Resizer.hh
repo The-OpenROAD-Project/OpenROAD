@@ -645,6 +645,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
                          const Point& loc,
                          const odb::dbNameUniquifyType& uniquify
                          = odb::dbNameUniquifyType::ALWAYS);
+  void deleteTieCellAndNet(const Instance* tie_inst, LibertyPort* tie_port);
+  const Pin* findArithBoundaryPin(const Pin* load_pin);
   void createNewTieCellForLoadPin(const Pin* load_pin,
                                   const char* new_inst_name,
                                   Instance* parent,

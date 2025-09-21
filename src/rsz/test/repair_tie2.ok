@@ -2,8 +2,8 @@
 [INFO ODB-0128] Design: top
 [INFO ODB-0131]     Created 5 components and 19 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 5 connections.
-[INFO RSZ-0042] Inserted 3 tie LOGIC1_X1 instances.
-0.0 0.0
-8.1 20.6
-52.4 10.6
-52.4 20.6
+[INFO RSZ-0042] Inserted 4 tie LOGIC1_X1 instances.
+10.1 10.6
+10.1 20.6
+50.4 10.6
+50.4 20.6

@@ -36,7 +36,7 @@ Hierarchical pins
  alu1/hier2/MI2 input
  hier1/MI0 output
 
-[INFO RSZ-0042] Inserted 2 tie TIEHIx1_ASAP7_75t_R instances.
+[INFO RSZ-0042] Inserted 3 tie TIEHIx1_ASAP7_75t_R instances.
 0.0 0.0
 0.0 0.0
 0.0 0.1
