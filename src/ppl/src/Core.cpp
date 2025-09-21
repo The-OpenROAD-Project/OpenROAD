@@ -3,6 +3,8 @@
 
 #include "Core.h"
 
+#include <vector>
+
 #include "odb/geom.h"
 
 namespace ppl {

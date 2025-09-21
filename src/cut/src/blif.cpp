@@ -3,6 +3,7 @@
 
 #include "cut/blif.h"
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <iterator>

@@ -16,6 +16,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <set>
 #include <sstream>
