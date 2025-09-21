@@ -119,6 +119,7 @@ class TritonCTS
   void writeClockNetsToDb(TreeBuilder* builder,
                           std::set<odb::dbNet*>& clkLeafNets);
   void writeClockNDRsToDb(TreeBuilder* builder);
+  int getNetSpacing(odb::dbTechLayer* layer, int width1, int width2);
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }

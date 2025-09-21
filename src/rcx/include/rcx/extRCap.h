@@ -1784,7 +1784,7 @@ class extMain
                    const char* old_new);
   dbRSeg* addRSeg_v2(dbNet* net,
                      uint& srcId,
-                     Point& prevPoint,
+                     odb::Point& prevPoint,
                      const dbWirePath& path,
                      const dbWirePathShape& pshape,
                      const bool isBranch,
@@ -1794,11 +1794,11 @@ class extMain
   void loopWarning(dbNet* net, const dbWirePathShape& pshape);
   void getShapeRC_v2(dbNet* net,
                      const dbShape& s,
-                     Point& prevPoint,
+                     odb::Point& prevPoint,
                      const dbWirePathShape& pshape);
   void getShapeRC_v3(dbNet* net,
                      const dbShape& s,
-                     Point& prevPoint,
+                     odb::Point& prevPoint,
                      const dbWirePathShape& pshape);
   double getViaRes_v2(dbNet* net, dbTechVia* tvia);
   double getDbViaRes_v2(dbNet* net, const dbShape& s);

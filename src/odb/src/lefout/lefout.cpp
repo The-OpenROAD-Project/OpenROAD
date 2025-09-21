@@ -3,8 +3,6 @@
 
 #include "odb/lefout.h"
 
-#include <spdlog/fmt/ostr.h>
-
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
@@ -21,6 +19,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "spdlog/fmt/ostr.h"
 #include "utl/scope.h"
 
 using namespace boost::polygon::operators;

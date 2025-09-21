@@ -19,9 +19,15 @@ def _tcl_encode_or_impl(ctx):
     args.add("--varname", ctx.attr.char_array_name)
     args.add("--namespace", ctx.attr.namespace)
 
+    # Only keep .tcl and .py files.
+    allowed_extensions = (".tcl", ".py")
+    filtered_sources = [
+        f for f in ctx.files.srcs if f.basename.endswith(allowed_extensions)
+    ]
+
     ctx.actions.run(
         outputs = [output_file],
-        inputs = ctx.files.srcs,
+        inputs = filtered_sources,
         arguments = [args],
         tools = [ctx.executable._encode_script],
         executable = ctx.toolchains["@rules_python//python:toolchain_type"].py3_runtime.interpreter,
@@ -44,7 +50,7 @@ tcl_encode = rule(
         ),
         "srcs": attr.label_list(
             allow_empty = False,
-            allow_files = [".tcl"],
+            allow_files = [".tcl", ".py"],
             doc = "Files to be wrapped.",
         ),
         "_encode_script": attr.label(

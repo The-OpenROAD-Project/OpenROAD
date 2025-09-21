@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -71,6 +72,8 @@ class GridGraph
   int getM2Pitch() const { return m2_pitch_; }
   int getNumLayers() const { return num_layers_; }
   int getSize(int dimension) const { return (dimension ? y_size_ : x_size_); }
+  int getXSize() const { return x_size_; }
+  int getYSize() const { return y_size_; }
   std::string getLayerName(int layer_index) const
   {
     return layer_names_[layer_index];
