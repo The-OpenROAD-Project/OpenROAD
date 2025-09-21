@@ -2,6 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
+
 #include <string>
 #include <vector>
 
@@ -19,6 +20,7 @@ class Connection;
 class DesignDef;
 class dbChipRegionInst;
 class dbChipInst;
+
 class ThreeDBlox
 {
  public:
@@ -28,9 +30,6 @@ class ThreeDBlox
   void readDbx(const std::string& dbx_file);
 
  private:
-  utl::Logger* logger_ = nullptr;
-  odb::dbDatabase* db_ = nullptr;
-
   void createChiplet(const ChipletDef& chiplet);
   void createRegion(const ChipletRegion& region, dbChip* chip);
   void createDesignTopChiplet(const DesignDef& design);
@@ -41,5 +40,8 @@ class ThreeDBlox
 
   std::string resolveIncludePath(const std::string& include_path,
                                  const std::string& current_file_path);
+
+  utl::Logger* logger_ = nullptr;
+  odb::dbDatabase* db_ = nullptr;
 };
 }  // namespace odb

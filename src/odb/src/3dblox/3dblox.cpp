@@ -3,11 +3,14 @@
 
 #include "odb/3dblox.h"
 
+#include <filesystem>
+
 #include "dbvParser.h"
 #include "dbxParser.h"
 #include "objects.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
+
 namespace odb {
 
 static std::map<std::string, std::string> dup_orient_map
@@ -55,22 +58,14 @@ void ThreeDBlox::readDbv(const std::string& dbv_file)
 std::string ThreeDBlox::resolveIncludePath(const std::string& include_path,
                                            const std::string& current_file_path)
 {
-  // If include_path is absolute, return as is
-  if (!include_path.empty() && include_path[0] == '/') {
-    return include_path;
+  std::filesystem::path include_fs_path(include_path);
+  if (include_fs_path.is_absolute()) {
+    return include_fs_path.string();
   }
-
-  // Get the directory of the current file
-  size_t last_slash = current_file_path.find_last_of('/');
-  if (last_slash == std::string::npos) {
-    // No directory in current file path, return include_path as is
-    return include_path;
-  }
-
-  std::string current_dir = current_file_path.substr(0, last_slash + 1);
-
-  // Combine directory with include path
-  return current_dir + include_path;
+  std::filesystem::path current_fs_path(current_file_path);
+  std::filesystem::path current_dir = current_fs_path.parent_path();
+  std::filesystem::path resolved_path = current_dir / include_fs_path;
+  return resolved_path.string();
 }
 
 void ThreeDBlox::readDbx(const std::string& dbx_file)
@@ -169,19 +164,11 @@ void ThreeDBlox::createRegion(const ChipletRegion& region, dbChip* chip)
   dbChipRegion* chip_region = dbChipRegion::create(
       chip, region.name, getChipRegionSide(region.side, logger_), layer);
   Rect box;
-  bool init = true;
+  box.mergeInit();
   for (const auto& coord : region.coords) {
-    if (init) {
-      box.init(coord.x * db_->getDbuPerMicron(),
-               coord.y * db_->getDbuPerMicron(),
-               coord.x * db_->getDbuPerMicron(),
-               coord.y * db_->getDbuPerMicron());
-      init = false;
-    } else {
-      box.merge(Point(coord.x * db_->getDbuPerMicron(),
-                      coord.y * db_->getDbuPerMicron()),
-                box);
-    }
+    box.merge(Point(coord.x * db_->getDbuPerMicron(),
+                    coord.y * db_->getDbuPerMicron()),
+              box);
   }
   chip_region->setBox(box);
 }
