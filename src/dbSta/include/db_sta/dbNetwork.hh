@@ -252,6 +252,7 @@ class dbNetwork : public ConcreteNetwork
   PortDirection* direction(const Pin* pin) const override;
   VertexId vertexId(const Pin* pin) const override;
   void setVertexId(Pin* pin, VertexId id) override;
+  // Find the connected dbModITerm in the parent module of the input pin.
   dbModITerm* findInputModITermInParent(const Pin* input_pin) const;
 
   ////////////////////////////////////////////////////////////////
