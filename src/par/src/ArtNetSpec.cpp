@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <ctime>
 #include <fstream>
 #include <iostream>
@@ -14,6 +15,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -22,6 +24,8 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 #include "par/PartitionMgr.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"

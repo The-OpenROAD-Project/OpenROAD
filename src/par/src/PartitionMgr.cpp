@@ -3,6 +3,7 @@
 
 #include "par/PartitionMgr.h"
 
+#include <algorithm>
 #include <cmath>
 #include <ctime>
 #include <fstream>

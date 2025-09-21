@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstddef>
 #include <vector>
 
 #include "boost/multi_array.hpp"
