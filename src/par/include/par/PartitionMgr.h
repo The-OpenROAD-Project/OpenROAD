@@ -3,9 +3,12 @@
 
 #pragma once
 
+#include <cstddef>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace ord {
@@ -16,6 +19,7 @@ namespace odb {
 class dbDatabase;
 class dbChip;
 class dbBlock;
+class dbInst;
 }  // namespace odb
 
 namespace sta {
@@ -33,6 +37,17 @@ class Logger;
 }
 
 namespace par {
+
+struct MasterInfo
+{
+  int count = 0;
+  bool isMacro = false;
+};
+
+class Cluster;
+using SharedClusterVector = std::vector<std::shared_ptr<Cluster>>;
+class ModuleMgr;
+class TritonPart;
 
 struct CompareInstancePtr
 {
@@ -225,6 +240,8 @@ class PartitionMgr
                              const char* port_prefix = "partition_",
                              const char* module_suffix = "_partition");
 
+  void writeArtNetSpec(const char* fileName);
+
  private:
   odb::dbBlock* getDbBlock() const;
   sta::Instance* buildPartitionedInstance(
@@ -239,6 +256,53 @@ class PartitionMgr
   sta::Instance* buildPartitionedTopInstance(const char* name,
                                              sta::Library* library,
                                              sta::NetworkReader* network);
+  // ArtNet SpecGen
+  void printMemoryUsage();
+  void getFromODB(std::map<std::string, MasterInfo>& onlyUseMasters,
+                  std::string& top_name,
+                  int& numInsts,
+                  int& numMacros,
+                  int& numPIs,
+                  int& numPOs,
+                  int& numSeq);
+  void getFromSTA(int& Dmax, int& MDmax);
+  void BuildTimingPath(int& Dmax, int& MDmax);
+  void getFromPAR(float& Rratio, float& p, float& q, float& avgK);
+  void getRents(float& Rratio, float& p, float& q, float& avgK);
+  std::tuple<double, double, double> fitRent(const double* x,
+                                             const double* y,
+                                             int n);
+  void linCurvFit(ModuleMgr& modMgr, float& Rratio, float& p, float& q);
+  void fit_mul(const double* x,
+               size_t xstride,
+               const double* y,
+               size_t ystride,
+               size_t n,
+               double* c1,
+               double* cov_11,
+               double* sumsq);
+  bool partitionCluster(const std::shared_ptr<TritonPart>& triton_part,
+                        ModuleMgr& modMgr,
+                        SharedClusterVector& cv);
+  int getClusterIONum(std::vector<bool>& inside,
+                      const std::shared_ptr<Cluster>& cluster);
+  void Partitioning(const std::shared_ptr<TritonPart>& triton_part,
+                    const std::shared_ptr<Cluster>& cluster,
+                    SharedClusterVector& resultCV);
+  void writeFile(const std::map<std::string, MasterInfo>& onlyUseMasters,
+                 const std::string& top_name,
+                 int numInsts,
+                 int numMacros,
+                 int numPIs,
+                 int numPOs,
+                 int numSeq,
+                 int Dmax,
+                 int MDmax,
+                 float Rratio,
+                 float p,
+                 float q,
+                 float avgK,
+                 const char* fileName);
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;

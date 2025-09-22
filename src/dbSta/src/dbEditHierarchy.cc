@@ -99,7 +99,7 @@ void PinModuleConnection::operator()(const Pin* pin)
   }
 }
 
-bool dbEditHierarchy::ConnectionToModuleExists(dbITerm* source_pin,
+bool dbEditHierarchy::connectionToModuleExists(dbITerm* source_pin,
                                                dbModule* dest_module,
                                                dbModBTerm*& dest_modbterm,
                                                dbModITerm*& dest_moditerm) const
@@ -122,19 +122,19 @@ bool dbEditHierarchy::ConnectionToModuleExists(dbITerm* source_pin,
 }
 
 // Create all intermediate hierarchical pin and net from the pin hierarchy to
-// the highest_common_module hierarchy
+// the lowest_common_module hierarchy
 //
 // pin: start pin at the bottom
-// highest_common_module: the target hierarchy for the bottom-up hierarchy
+// lowest_common_module: the target hierarchy for the bottom-up hierarchy
 //                        creation
 // io_type:
 //  - dbIoType::OUTPUT: create output pins from pin's module -> common module
 //  - dbIoType::INPUT:  create input pins from pin's module -> common module
 // connection_name: name for the new pins & nets
-// top_mod_net: newly created ModNet in the highest common hierarchy
-// top_mod_iterm: newly created ModITerm in the highest common hierarchy
+// top_mod_net: newly created ModNet in the lowest common hierarchy
+// top_mod_iterm: newly created ModITerm in the lowest common hierarchy
 void dbEditHierarchy::createHierarchyBottomUp(Pin* pin,
-                                              dbModule* highest_common_module,
+                                              dbModule* lowest_common_module,
                                               const dbIoType& io_type,
                                               const char* connection_name,
                                               dbModNet*& top_mod_net,
@@ -163,18 +163,17 @@ void dbEditHierarchy::createHierarchyBottomUp(Pin* pin,
   dbModNet* db_mod_net = nullptr;
   const char* io_type_str = (io_type == dbIoType::OUTPUT) ? "o" : "i";
 
-  while (cur_module != highest_common_module) {
-    // Decide a new unique pin/net name
-    std::string unique_name
-        = fmt::format("{}_{}", connection_name, io_type_str);
-    int id = 0;
-    while (cur_module->findModBTerm(unique_name.c_str())
-           || cur_module->getModNet(unique_name.c_str())) {
-      id++;
-      unique_name = fmt::format("{}_{}_{}", connection_name, io_type_str, id);
-    }
-    const char* new_term_net_name = unique_name.c_str();
+  // Decide a new unique pin/net name
+  std::string unique_name = fmt::format("{}_{}", connection_name, io_type_str);
+  int id = 0;
+  while (cur_module->findModBTerm(unique_name.c_str())
+         || cur_module->getModNet(unique_name.c_str())) {
+    id++;
+    unique_name = fmt::format("{}_{}_{}", connection_name, io_type_str, id);
+  }
+  const char* new_term_net_name = unique_name.c_str();
 
+  while (cur_module != lowest_common_module) {
     // Create BTerm & ModNet and connect them
     dlogCreateHierBTermAndModNet(level, cur_module, new_term_net_name);
     dbModBTerm* mod_bterm = dbModBTerm::create(cur_module, new_term_net_name);
@@ -207,10 +206,17 @@ void dbEditHierarchy::createHierarchyBottomUp(Pin* pin,
     dbModITerm* mod_iterm
         = dbModITerm::create(parent_inst, new_term_net_name, mod_bterm);
 
+    // Retry to get a new unique pin/net name in the new hierarchy
+    while (cur_module->findModBTerm(unique_name.c_str())
+           || cur_module->getModNet(unique_name.c_str())) {
+      id++;
+      unique_name = fmt::format("{}_{}_{}", connection_name, io_type_str, id);
+    }
+    new_term_net_name = unique_name.c_str();
+
     // Create ModNet for the ITerm
     if (io_type == dbIoType::OUTPUT
-        || (io_type == dbIoType::INPUT
-            && cur_module != highest_common_module)) {
+        || (io_type == dbIoType::INPUT && cur_module != lowest_common_module)) {
       db_mod_net = dbModNet::create(cur_module, new_term_net_name);
       mod_iterm->connect(db_mod_net);
       dlogCreateHierConnectingITerm(
@@ -316,7 +322,7 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
     dbModITerm* dest_moditerm = nullptr;
     // Check do we already have a connection between the source and destination
     // pins? If so, reuse it.
-    if (ConnectionToModuleExists(
+    if (connectionToModuleExists(
             source_pin, dest_db_module, dest_modbterm, dest_moditerm)) {
       dbModNet* dest_mod_net = nullptr;
       if (dest_modbterm) {
@@ -335,8 +341,8 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
       }
     }
 
-    // 3.2. No existing connection. Find highest common module, traverse up
-    // adding pins/nets and make connection in highest common module
+    // 3.2. No existing connection. Find lowest common module, traverse up
+    // adding pins/nets and make connection in lowest common module
     std::vector<dbModule*> source_parent_tree;
     std::vector<dbModule*> dest_parent_tree;
     getParentHierarchy(source_db_module, source_parent_tree);
@@ -346,9 +352,9 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
         = findLowestCommonModule(source_parent_tree, dest_parent_tree);
 
     // 3.3. Make source hierarchy (bottom to top).
-    // - source_pin -> highest_common_module
+    // - source_pin -> lowest_common_module
     // - Make output pins and nets intermediate hierarchies
-    // - Goes up from source hierarchy to highest common hierarchy
+    // - Goes up from source hierarchy to lowest common hierarchy
     dbModNet* top_source_mod_net = source_db_mod_net;
     dbModITerm* top_source_mod_iterm = nullptr;
     if (source_db_module != lowest_common_module) {
@@ -362,9 +368,9 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
     }
 
     // 3.4. Make dest hierarchy (bottom to top)
-    // - highest_common_module -> destination_pin
+    // - lowest_common_module -> destination_pin
     // - Make input pins and nets intermediate hierarchies
-    // - Goes up from source hierarchy to highest common hierarchy
+    // - Goes up from source hierarchy to lowest common hierarchy
     dbModNet* top_dest_mod_net = nullptr;
     dbModITerm* top_dest_mod_iterm = nullptr;
     if (dest_db_module != lowest_common_module) {
@@ -378,24 +384,33 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
                               top_dest_mod_iterm);
     }
 
-    // 3.5. Finally do the connection in the highest common module
+    // 3.5. Finally do the connection in the lowest common module
     if (top_dest_mod_iterm) {
       dlogHierConnConnectingInCommon(connection_name, lowest_common_module);
 
       // if we don't have a top net (case when we are connecting source at top
-      // to hierarchically created pin), create one in the highest module
+      // to hierarchically created pin), create one in the lowest module
       if (!top_source_mod_net) {
         dlogHierConnCreatingTopNet(connection_name, lowest_common_module);
 
         // Get base name of source_pin_flat_net
         Pin* sta_source_pin = db_network_->dbToSta(source_pin);
         dbNet* source_pin_flat_net = db_network_->flatNet(sta_source_pin);
-        const char* base_name
-            = db_network_->name(db_network_->dbToSta(source_pin_flat_net));
+        std::string base_name = fmt::format(
+            "{}", db_network_->name(db_network_->dbToSta(source_pin_flat_net)));
+
+        // Decide a new unique net name to avoid collisions.
+        std::string unique_name = base_name;
+        int id = 0;
+        while (lowest_common_module->findModBTerm(unique_name.c_str())
+               || lowest_common_module->getModNet(unique_name.c_str())) {
+          id++;
+          unique_name = fmt::format("{}_{}", base_name, id);
+        }
 
         // Create and connect dbModNet
         source_db_mod_net = dbModNet::create(lowest_common_module, base_name);
-        top_dest_mod_iterm->connect(source_db_mod_net);
+        top_mod_dest->connect(source_db_mod_net);
         db_network_->disconnectPin(sta_source_pin);
         db_network_->connectPin(sta_source_pin,
                                 (Net*) source_pin_flat_net,
@@ -539,7 +554,7 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
                             top_dest_mod_iterm);
   }
 
-  // 3.5. Finally do the connection in the highest common module
+  // 3.5. Finally do the connection in the lowest common module
   top_dest_mod_iterm->connect(top_source_mod_net);
 
   // 3.6. Reassociate the pins to ensure consistency between flat and
@@ -665,7 +680,7 @@ void dbEditHierarchy::dlogHierConnReusingConnection(
 
 void dbEditHierarchy::dlogHierConnCreatingSrcHierarchy(
     dbITerm* source_pin,
-    dbModule* highest_common_module) const
+    dbModule* lowest_common_module) const
 {
   debugPrint(logger_,
              utl::ORD,
@@ -674,25 +689,25 @@ void dbEditHierarchy::dlogHierConnCreatingSrcHierarchy(
              "3.2. Creating hierarchy: src '{}/{}' -> common module '{}':",
              source_pin->getInst()->getName(),
              source_pin->getMTerm()->getName(),
-             highest_common_module->getHierarchicalName());
+             lowest_common_module->getHierarchicalName());
 }
 
 void dbEditHierarchy::dlogHierConnCreatingDstHierarchy(
     Pin* dest_pin,
-    dbModule* highest_common_module) const
+    dbModule* lowest_common_module) const
 {
   debugPrint(logger_,
              utl::ORD,
              "hierarchicalConnect",
              3,
              "3.3. Creating hierarchy: common module '{}' -> dst '{}':",
-             highest_common_module->getHierarchicalName(),
+             lowest_common_module->getHierarchicalName(),
              db_network_->pathName(dest_pin));
 }
 
 void dbEditHierarchy::dlogHierConnConnectingInCommon(
     const char* connection_name,
-    dbModule* highest_common_module) const
+    dbModule* lowest_common_module) const
 {
   debugPrint(logger_,
              utl::ORD,
@@ -700,12 +715,12 @@ void dbEditHierarchy::dlogHierConnConnectingInCommon(
              2,
              "3.4. Connecting net '{}' in common module '{}'",
              connection_name,
-             highest_common_module->getHierarchicalName());
+             lowest_common_module->getHierarchicalName());
 }
 
 void dbEditHierarchy::dlogHierConnCreatingTopNet(
     const char* connection_name,
-    dbModule* highest_common_module) const
+    dbModule* lowest_common_module) const
 {
   debugPrint(logger_,
              utl::ORD,
@@ -713,7 +728,7 @@ void dbEditHierarchy::dlogHierConnCreatingTopNet(
              2,
              "  Creating top net '{}' in common module '{}'",
              connection_name,
-             highest_common_module->getHierarchicalName());
+             lowest_common_module->getHierarchicalName());
 }
 
 void dbEditHierarchy::dlogHierConnConnectingTopDstPin(dbModITerm* top_mod_dest,

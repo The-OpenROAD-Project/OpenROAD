@@ -3,6 +3,7 @@
 
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -26,6 +27,8 @@ cc_library(
         "src/KWayFMRefine.h",
         "src/KWayPMRefine.cpp",
         "src/KWayPMRefine.h",
+        "src/ArtNetSpec.cpp",
+        "src/ArtNetSpec.h",
         "src/Multilevel.cpp",
         "src/Multilevel.h",
         "src/PartitionMgr.cpp",
@@ -48,6 +51,8 @@ cc_library(
     ],
     deps = [
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dbSta:dbReadVerilog",
         "//src/gui",
         "//src/odb",
         "//src/sta:opensta_lib",
@@ -60,7 +65,7 @@ cc_library(
         "@boost.range",
         "@boost.tokenizer",
         "@boost.utility",
-        "@or-tools//ortools/linear_solver:linear_solver",
+        "@or-tools//ortools/linear_solver",
     ],
 )
 
@@ -124,5 +129,22 @@ tcl_wrap_cc(
     ],
     deps = [
         "//src/odb:swig",
+    ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/par/PartitionMgr.h",
+        "src/partitionmgr-py.i",
+        "//:error_swig-py",
+    ],
+    module = "par_py",
+    root_swig_src = "src/partitionmgr-py.i",
+    swig_includes = [
+        "include",
+    ],
+    deps = [
+        "//src/odb:swig-py",
     ],
 )

@@ -11,7 +11,7 @@ import unittest
 ##################
 class TestModule(odbUnitTest.TestCase):
     def setUp(self):
-        self.db, self.lib = helper.createSimpleDB()
+        self.db, self.lib, self.design, self.ord_tech = helper.createSimpleDB()
         self.block = helper.create1LevelBlock(self.db, self.lib, self.db.getChip())
         self.group = odb.dbGroup_create(self.block, "group")
         self.domain = odb.dbRegion_create(self.block, "domain")
@@ -22,9 +22,6 @@ class TestModule(odbUnitTest.TestCase):
         self.i1 = odb.dbModInst_create(self.parent_mod, self.master_mod, "i1")
         self.inst1 = self.block.findInst("inst")
         self.n1 = self.block.findNet("n1")
-
-    def tearDown(self):
-        self.db.destroy(self.db)
 
     def test_default(self):
         self.check(self.group, "getName", "group")

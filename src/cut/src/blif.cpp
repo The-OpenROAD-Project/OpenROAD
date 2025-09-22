@@ -3,6 +3,7 @@
 
 #include "cut/blif.h"
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -534,7 +535,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
           auto port_ = network_->libertyPort(pin_);
           if (port_->isClock()) {
             mtermName = mTerm->getName();
-            netName = connection;
+            netName = std::move(connection);
             break;
           }
         }

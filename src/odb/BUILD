@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, Precision Innovations Inc.
 
+load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -13,6 +14,14 @@ filegroup(
     name = "swig_imports",
     srcs = glob([
         "src/swig/tcl/*.i",
+        "src/swig/common/*.i",
+    ]),
+)
+
+filegroup(
+    name = "swig_imports_py",
+    srcs = glob([
+        "src/swig/python/*.i",
         "src/swig/common/*.i",
     ]),
 )
@@ -33,12 +42,11 @@ cc_library(
         "src/lefin/*.h",
         "src/lefout/*.cpp",
         "src/swig/common/swig_common.cpp",
-        "src/swig/common/swig_common.h",
     ]),
     hdrs = glob([
         "include/odb/*.h",
         "include/odb/*.hpp",
-    ]),
+    ]) + ["src/swig/common/swig_common.h"],
     features = [
         "-use_header_modules",
     ],
@@ -60,6 +68,7 @@ cc_library(
         "@boost.integer",
         "@boost.iostreams",
         "@boost.lambda",
+        "@boost.multi_array",
         "@boost.optional",
         "@boost.phoenix",
         "@boost.polygon",
@@ -70,6 +79,32 @@ cc_library(
         "@tk_tcl//:tcl",
         "@zlib",
     ],
+)
+
+# This target compiles the SWIG C++ wrapper into a shared library (.so)
+# that Python can load dynamically.
+cc_binary(
+    name = "_odb.so",
+    srcs = [":swig-py"],
+    defines = [PYTHON_STABLE_API_DEFINE],
+    includes = ["src/swig/common"],
+    linkshared = True,
+    deps = [
+        ":odb",  # Depends on the core odb C++ library
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
+    ],
+)
+
+# This packages the SWIG-generated Python wrapper (odb.py) and the
+# compiled C++ extension (_odb.so) together.
+py_library(
+    name = "odb_py",
+    srcs = [":swig-py"],  # Use the .py output from the swig-py rule
+    # The data attribute makes the .so file available at runtime.
+    data = [":_odb.so"],
+    # This allows imports relative to the workspace root.
+    imports = ["."],
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -99,6 +134,7 @@ cc_library(
         "//src/utl",
         "@boost.container",
         "@boost.geometry",
+        "@boost.multi_array",
         "@boost.polygon",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
@@ -138,4 +174,29 @@ tcl_encode(
     ],
     char_array_name = "odbtcl_tcl_inits",
     namespace = "odb",
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = glob([
+        "include/odb/*.h",
+    ]) + [
+        ":swig_imports_py",
+        "//:src/Design.i",
+        "//:src/Exception.i",
+    ],
+    module = "odb",
+    root_swig_src = "src/swig/common/odb.i",
+    swig_includes = [
+        "include",
+        "src/swig/common",
+        "src/swig/python",
+    ],
+    swig_options = [
+        # These values are derived from the CMakeList.txt and represent the "rules" this swig file
+        # breaks. Swig refuses to compile our swig files unless we acknowledge we are ignoring the
+        # following warnings. They can be derived by attemtpting to compile without them and fixing
+        # the warnings one by one.
+        "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201",
+    ],
 )

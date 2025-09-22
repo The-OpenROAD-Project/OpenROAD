@@ -10,17 +10,12 @@ class TestNet(odbUnitTest.TestCase):
     # This Function is called before each of the test cases defined below
     # You should use it to create the instances you need to test (in our case n1, n2, n3)
     def setUp(self):
-        self.db, lib = helper.createSimpleDB()
+        self.db, lib, self.design, self.ord_tech = helper.createSimpleDB()
         block = helper.create1LevelBlock(self.db, lib, self.db.getChip())
         inst = block.getInsts()[0]
         self.n1 = inst.findITerm("a").getNet()
         self.n2 = inst.findITerm("b").getNet()
         self.n3 = inst.findITerm("o").getNet()
-
-    # this function is called after each of the test cases
-    # you should free up space and destroy unneeded objects(cleanup step)
-    def tearDown(self):
-        self.db.destroy(self.db)
 
     # each test case should start with the name "test"
     def test_naming(self):

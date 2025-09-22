@@ -8,12 +8,12 @@
 #include <memory>
 #include <string>
 
-#include "extPattern.h"
-#include "extRCap.h"
-#include "ext_options.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "rcx/extModelGen.h"
+#include "rcx/extPattern.h"
+#include "rcx/extRCap.h"
+#include "rcx/ext_options.h"
 
 namespace utl {
 class Logger;

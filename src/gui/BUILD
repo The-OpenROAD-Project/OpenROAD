@@ -66,6 +66,7 @@ qt6_library(
         ":qt_resources",
         "//:ord",
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",

@@ -26,7 +26,7 @@
 #include <cstddef>
 #include <vector>
 
-#include "ckms_quantiles.h"
+#include "utl/prometheus/ckms_quantiles.h"
 
 namespace utl {
 namespace detail {

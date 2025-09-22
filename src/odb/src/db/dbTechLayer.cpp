@@ -35,14 +35,13 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
-#include <spdlog/fmt/ostr.h>
-
 #include "dbHashTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayerAntennaRule.h"
 #include "dbTechLayerSpacingRule.h"
 #include "dbTechMinCutOrAreaRule.h"
 #include "odb/lefout.h"
+#include "spdlog/fmt/ostr.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
