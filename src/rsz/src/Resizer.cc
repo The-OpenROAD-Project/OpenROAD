@@ -3384,6 +3384,25 @@ void Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
                      new_tie_loc,
                      odb::dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
 
+  // If the load pin is not in the top module, move the new tie instance
+  Instance* load_inst = network_->instance(load_pin);
+  if (network_->isTopInstance(load_inst) == false) {
+    dbInst* db_inst = nullptr;
+    dbModInst* db_mod_inst = nullptr;
+    odb::dbModule* module = nullptr;
+    db_network_->staToDb(load_inst, db_inst, db_mod_inst);
+    if (db_inst) {
+      module = db_inst->getModule();
+    } else if (db_mod_inst) {
+      module = db_mod_inst->getParent();
+    }
+
+    if (module) {
+      dbInst* new_tie_db_inst = db_network_->staToDb(new_tie_inst);
+      module->addInst(new_tie_db_inst);
+    }
+  }
+
   Pin* new_tie_out_pin = network_->findPin(new_tie_inst, tie_port);
   assert(new_tie_out_pin != nullptr);
   odb::dbITerm* new_tie_iterm = db_network_->flatPin(new_tie_out_pin);
