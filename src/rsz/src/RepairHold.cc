@@ -46,9 +46,7 @@ using sta::PathExpanded;
 using sta::Port;
 using sta::VertexOutEdgeIterator;
 
-RepairHold::RepairHold(Resizer* resizer,
-                       est::EstimateParasitics* estimate_parasitics)
-    : resizer_(resizer), estimate_parasitics_(estimate_parasitics)
+RepairHold::RepairHold(Resizer* resizer) : resizer_(resizer)
 {
 }
 
@@ -57,6 +55,7 @@ void RepairHold::init()
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
+  estimate_parasitics_ = resizer_->estimate_parasitics_;
   initial_design_area_ = resizer_->computeDesignArea();
 }
 
