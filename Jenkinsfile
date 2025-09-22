@@ -219,13 +219,13 @@ def bazelTest = {
         }
         withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: 'openroad/bazel-ci:latest') {
             stage('bazelisk test ...') {
-                withCredentials([file(credentialsId: 'bazel-cache-sa', variable: 'GCS_SA_KEY')]) {
+                withCredentials([string(credentialsId: 'bazel-auth-token-b64', variable: 'BAZEL_AUTH_TOKEN_B64')]) {
                     timeout(time: 120, unit: 'MINUTES') {
                         def cmd = 'bazelisk test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic';
-                        if (env.BRANCH_NAME != 'master') {
-                            cmd += ' --remote_upload_local_results=false';
+                        if (env.BRANCH_NAME == 'master') {
+                            cmd += ' --remote_upload_local_results=true';
+                            cmd += " --remote_header='Authorization=Basic ${BAZEL_AUTH_TOKEN_B64}'"
                         }
-                        cmd += ' --google_credentials=$GCS_SA_KEY';
                         try {
                             sh label: 'Bazel Build', script: cmd + ' ...';
                         } catch (e) {
