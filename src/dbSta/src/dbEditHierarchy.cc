@@ -409,8 +409,9 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
         }
 
         // Create and connect dbModNet
-        source_db_mod_net = dbModNet::create(lowest_common_module, base_name);
-        top_mod_dest->connect(source_db_mod_net);
+        source_db_mod_net
+            = dbModNet::create(lowest_common_module, unique_name.c_str());
+        top_dest_mod_iterm->connect(source_db_mod_net);
         db_network_->disconnectPin(sta_source_pin);
         db_network_->connectPin(sta_source_pin,
                                 (Net*) source_pin_flat_net,

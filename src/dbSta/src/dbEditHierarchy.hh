@@ -43,7 +43,7 @@ class dbEditHierarchy
                           std::vector<dbModule*>& parent_hierarchy) const;
   dbModule* findLowestCommonModule(std::vector<dbModule*>& itree1,
                                    std::vector<dbModule*>& itree2) const;
-  bool ConnectionToModuleExists(dbITerm* source_pin,
+  bool connectionToModuleExists(dbITerm* source_pin,
                                 dbModule* dest_module,
                                 dbModBTerm*& dest_modbterm,
                                 dbModITerm*& dest_moditerm) const;
@@ -56,7 +56,7 @@ class dbEditHierarchy
 
  private:
   void createHierarchyBottomUp(Pin* pin,
-                               dbModule* highest_common_module,
+                               dbModule* lowest_common_module,
                                const dbIoType& io_type,
                                const char* connection_name,
                                dbModNet*& top_mod_net,
@@ -83,13 +83,13 @@ class dbEditHierarchy
   void dlogHierConnReusingConnection(dbModule* dest_db_module,
                                      dbModNet* dest_mod_net) const;
   void dlogHierConnCreatingSrcHierarchy(dbITerm* source_pin,
-                                        dbModule* highest_common_module) const;
+                                        dbModule* lowest_common_module) const;
   void dlogHierConnCreatingDstHierarchy(Pin* dest_pin,
-                                        dbModule* highest_common_module) const;
+                                        dbModule* lowest_common_module) const;
   void dlogHierConnConnectingInCommon(const char* connection_name,
-                                      dbModule* highest_common_module) const;
+                                      dbModule* lowest_common_module) const;
   void dlogHierConnCreatingTopNet(const char* connection_name,
-                                  dbModule* highest_common_module) const;
+                                  dbModule* lowest_common_module) const;
   void dlogHierConnConnectingTopDstPin(dbModITerm* top_mod_dest,
                                        dbModNet* net) const;
   void dlogHierConnConnectingDstPin(dbITerm* dest_pin, dbModNet* top_net) const;
