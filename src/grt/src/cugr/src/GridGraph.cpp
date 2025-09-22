@@ -235,8 +235,7 @@ GridGraph::GridGraph(const Design* design,
     if (adjustment != 0.0) {
       for (size_t x = 0; x < x_size_; x++) {
         for (size_t y = 0; y < y_size_; y++) {
-          graph_edges_[layer_index][x][y].capacity
-              = graph_edges_[layer_index][x][y].capacity * (1.0 - adjustment);
+          graph_edges_[layer_index][x][y].capacity *= (1.0 - adjustment);
         }
       }
     }
