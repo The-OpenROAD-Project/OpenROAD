@@ -1903,6 +1903,8 @@ void ClusteringEngine::clearConnections()
 
 void ClusteringEngine::buildNetListConnections()
 {
+  const float connection_weight = 1.0;
+
   for (odb::dbNet* net : block_->getNets()) {
     if (!isValidNet(net)) {
       continue;
@@ -1922,11 +1924,9 @@ void ClusteringEngine::buildNetListConnections()
       }
     }
 
-    bool net_has_io_pin = false;
     if (tree_->io_pads.empty()) {
       for (odb::dbBTerm* bterm : net->getBTerms()) {
         const int cluster_id = tree_->maps.bterm_to_cluster_id.at(bterm);
-        net_has_io_pin = true;
 
         if (bterm->getIoType() == odb::dbIoType::INPUT) {
           driver_cluster_id = cluster_id;
@@ -1938,13 +1938,12 @@ void ClusteringEngine::buildNetListConnections()
 
     if (driver_cluster_id != -1 && !load_clusters_ids.empty()
         && load_clusters_ids.size() < tree_->large_net_threshold) {
-      const float weight = net_has_io_pin ? tree_->virtual_weight : 1.0;
       Cluster* driver_cluster = tree_->maps.id_to_cluster.at(driver_cluster_id);
 
       for (const int load_cluster_id : load_clusters_ids) {
         if (load_cluster_id != driver_cluster_id) {
           Cluster* load_cluster = tree_->maps.id_to_cluster.at(load_cluster_id);
-          connect(driver_cluster, load_cluster, weight);
+          connect(driver_cluster, load_cluster, connection_weight);
         }
       }
     }
