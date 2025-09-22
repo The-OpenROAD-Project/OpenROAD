@@ -43,7 +43,7 @@ cc_library(
         "@boost.system",
     ] + select({
         "@platforms//os:macos": ["@boost.thread//:thread_mac"],
-        "@platforms//os:linux": ["@boost.thread//:thread_posix"]
+         "//conditions:default": ["@boost.thread//:thread_posix"],
     }),
 )
 
