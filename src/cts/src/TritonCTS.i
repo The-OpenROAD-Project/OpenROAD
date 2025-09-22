@@ -22,6 +22,7 @@ using ord::getTritonCts;
 
 %include "../../Exception.i"
 %include "stdint.i"
+%include "std_string.i"
 
 %ignore cts::CtsOptions::setObserver;
 %ignore cts::CtsOptions::getObserver;
@@ -292,7 +293,7 @@ get_branching_buffers_distance()
 {
   return getTritonCts()->getParms()->getVertexBufferDistance();
 }
-const char*
+std::string
 get_buffer_list()
 {
   return getTritonCts()->getParms()->getBufferListToString();
@@ -345,7 +346,7 @@ get_num_static_layers()
   return getTritonCts()->getParms()->getNumStaticLayers();
 }
 
-const char*
+std::string
 get_root_buffer()
 {
   return getTritonCts()->getRootBufferToString();
@@ -375,10 +376,10 @@ get_sink_clustering_size()
   return getTritonCts()->getParms()->getSinkClusteringSize();
 }
 
-const char*
+std::string
 get_tree_buf()
 {
-  return getTritonCts()->getParms()->getTreeBuffer().c_str();
+  return getTritonCts()->getParms()->getTreeBuffer();
 }
 
 unsigned

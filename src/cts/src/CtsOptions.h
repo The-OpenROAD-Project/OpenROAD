@@ -56,13 +56,13 @@ class CtsOptions : public odb::dbBlockCallBackObj
     bufferList_ = buffers;
   }
   std::vector<std::string> getBufferList() const { return bufferList_; }
-  const char* getBufferListToString() const
+  std::string getBufferListToString() const
   {
     std::ostringstream buffer_names;
     for (const auto& buf : bufferList_) {
       buffer_names << buf << " ";
     }
-    return buffer_names.str().c_str();
+    return buffer_names.str();
   }
   void resetBufferList() { bufferList_.clear(); }
   void setDbUnits(int units) { dbUnits_ = units; }
