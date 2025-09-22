@@ -21,9 +21,9 @@
 #include "dbTech.h"
 #include "odb/db.h"
 // User Code Begin Includes
-#include <spdlog/fmt/ostr.h>
-
 #include <sstream>
+
+#include "spdlog/fmt/ostr.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbProperty>;

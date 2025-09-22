@@ -452,4 +452,39 @@ void CUGR::printStatistics() const
   logger_->report("bottleneck:   {}", bottleneck);
 }
 
+void CUGR::updateDbCongestion()
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  odb::dbGCellGrid* db_gcell = block->getGCellGrid();
+  if (db_gcell == nullptr) {
+    db_gcell = odb::dbGCellGrid::create(block);
+  } else {
+    db_gcell->resetGrid();
+  }
+
+  const int x_corner_ = design_->getDieRegion().lx();
+  const int y_corner_ = design_->getDieRegion().ly();
+  const int x_size_ = grid_graph_->getXSize();
+  const int y_size_ = grid_graph_->getYSize();
+  const int gridline_size = design_->getGridlineSize();
+  db_gcell->addGridPatternX(x_corner_, x_size_, gridline_size);
+  db_gcell->addGridPatternY(y_corner_, y_size_, gridline_size);
+
+  odb::dbTech* db_tech = db_->getTech();
+  for (int layer = 0; layer < grid_graph_->getNumLayers(); layer++) {
+    odb::dbTechLayer* db_layer = db_tech->findRoutingLayer(layer + 1);
+    if (db_layer == nullptr) {
+      continue;
+    }
+
+    for (int y = 0; y < y_size_; y++) {
+      for (int x = 0; x < x_size_; x++) {
+        const GraphEdge& edge = grid_graph_->getEdge(layer, x, y);
+        db_gcell->setCapacity(db_layer, x, y, edge.capacity);
+        db_gcell->setUsage(db_layer, x, y, edge.demand);
+      }
+    }
+  }
+}
+
 }  // namespace grt

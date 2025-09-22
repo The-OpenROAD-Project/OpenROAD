@@ -59,9 +59,7 @@ using sta::PathExpanded;
 using sta::Slew;
 using sta::VertexOutEdgeIterator;
 
-RepairSetup::RepairSetup(Resizer* resizer,
-                         est::EstimateParasitics* estimate_parasitics)
-    : resizer_(resizer), estimate_parasitics_(estimate_parasitics)
+RepairSetup::RepairSetup(Resizer* resizer) : resizer_(resizer)
 {
 }
 
@@ -70,7 +68,7 @@ void RepairSetup::init()
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
-
+  estimate_parasitics_ = resizer_->estimate_parasitics_;
   initial_design_area_ = resizer_->computeDesignArea();
 }
 

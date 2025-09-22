@@ -171,11 +171,11 @@ void Resizer::init(Logger* logger,
   vt_swap_speed_move_ = std::make_unique<VTSwapSpeedMove>(this);
   size_up_match_move_ = std::make_unique<SizeUpMatchMove>(this);
 
-  recover_power_ = std::make_unique<RecoverPower>(this, estimate_parasitics_);
-  repair_design_ = std::make_unique<RepairDesign>(this, estimate_parasitics_);
-  repair_setup_ = std::make_unique<RepairSetup>(this, estimate_parasitics_);
-  repair_hold_ = std::make_unique<RepairHold>(this, estimate_parasitics_);
-  rebuffer_ = std::make_unique<Rebuffer>(this, estimate_parasitics_);
+  recover_power_ = std::make_unique<RecoverPower>(this);
+  repair_design_ = std::make_unique<RepairDesign>(this);
+  repair_setup_ = std::make_unique<RepairSetup>(this);
+  repair_hold_ = std::make_unique<RepairHold>(this);
+  rebuffer_ = std::make_unique<Rebuffer>(this);
 }
 
 ////////////////////////////////////////////////////////////////
