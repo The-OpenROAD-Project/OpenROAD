@@ -3275,7 +3275,7 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
       continue;
     }
 
-    // For each load of the tie cell instance
+    // Find load pins
     bool keep_tie = false;
     std::set<const Pin*> load_pins;
     std::unique_ptr<NetConnectedPinIterator> pin_iter(
@@ -3304,11 +3304,12 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
       load_pins.insert(load_pin);
     }
 
+    // Create new TIE cell instances for each load pin
     for (const Pin* load_pin : load_pins) {
       Instance* load_inst = network_->instance(load_pin);
 
       // Create a new tie cell instance
-      const char* tie_inst_name = network_->name(tie_inst);
+      const char* tie_inst_name = network_->name(load_inst);
       createNewTieCellForLoadPin(load_pin,
                                  tie_inst_name,
                                  db_network_->parent(load_inst),
