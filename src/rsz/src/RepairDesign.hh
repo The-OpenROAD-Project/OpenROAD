@@ -54,8 +54,7 @@ class LoadRegion
 class RepairDesign : dbStaState
 {
  public:
-  explicit RepairDesign(Resizer* resizer,
-                        est::EstimateParasitics* estimate_parasitics);
+  explicit RepairDesign(Resizer* resizer);
   ~RepairDesign() override;
   void repairDesign(double max_wire_length,
                     double slew_margin,

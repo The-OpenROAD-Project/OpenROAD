@@ -45,7 +45,7 @@ using BufferedNetSeq = std::vector<BufferedNetPtr>;
 class Rebuffer : public sta::dbStaState
 {
  public:
-  Rebuffer(Resizer* resizer, est::EstimateParasitics* estimate_parasitics_);
+  Rebuffer(Resizer* resizer);
   void fullyRebuffer(Pin* user_pin = nullptr);
 
  protected:
