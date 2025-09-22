@@ -709,6 +709,7 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
     }
     make_rows(site);
   }
+  block_->setCoreArea(block_->computeCoreArea());
 }
 
 int InitFloorplan::getOffset(dbSite* base_hybrid_site,
@@ -831,6 +832,7 @@ void InitFloorplan::makeHybridRows(dbSite* base_hybrid_site,
       make_rows(site);
     }
   }
+  block_->setCoreArea(block_->computeCoreArea());
 }
 
 dbSite* InitFloorplan::findSite(const char* site_name)
@@ -1292,6 +1294,8 @@ void InitFloorplan::makeUniformRowsPolygon(
 
     y += site_dy;
   }
+
+  block_->setCoreArea(block_->computeCoreArea());
 
   logger_->info(IFP,
                 1002,
