@@ -286,7 +286,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   bool isSinkBufferInferred() const { return sinkBufferInferred_; }
   void setRootBufferInferred(bool inferred) { rootBufferInferred_ = inferred; }
   bool isRootBufferInferred() const { return rootBufferInferred_; }
-  void setSinkBufferMaxCapDerate(float derate)
+  void setSinkBufferMaxCapDerate(double derate)
   {
     sinkBufferMaxCapDerate_ = derate;
     sinkBufferMaxCapDerateSet_ = true;
@@ -296,7 +296,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
     sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
     sinkBufferMaxCapDerateSet_ = false;
   }
-  float getSinkBufferMaxCapDerate() const { return sinkBufferMaxCapDerate_; }
+  double getSinkBufferMaxCapDerate() const { return sinkBufferMaxCapDerate_; }
   bool isSinkBufferMaxCapDerateSet() const
   {
     return sinkBufferMaxCapDerateSet_;
@@ -402,8 +402,8 @@ class CtsOptions : public odb::dbBlockCallBackObj
   bool sinkBufferInferred_ = false;
   bool rootBufferInferred_ = false;
   bool sinkBufferMaxCapDerateSet_ = false;
-  float sinkBufferMaxCapDerateDefault_ = 0.01;
-  float sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
+  double sinkBufferMaxCapDerateDefault_ = 0.01;
+  double sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
   bool dummyLoad_ = true;
   float delayBufferDerate_ = 1.0;  // no derate
   std::string ctsLibrary_;

@@ -247,7 +247,7 @@ set_insertion_delay(bool insDelay)
 }
 
 void
-set_sink_buffer_max_cap_derate(float derate)
+set_sink_buffer_max_cap_derate(double derate)
 {
   getTritonCts()->getParms()->setSinkBufferMaxCapDerate(derate);
 }
@@ -352,7 +352,7 @@ get_root_buffer()
   return getTritonCts()->getRootBufferToString();
 }
 
-float
+double
 get_sink_buffer_max_cap_derate()
 {
   return getTritonCts()->getParms()->getSinkBufferMaxCapDerate();
