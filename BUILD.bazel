@@ -138,11 +138,13 @@ cc_binary(
     name = "openroad",
     srcs = [
         "src/Main.cc",
-        "//bazel:runfiles",
     ],
     copts = OPENROAD_COPTS,
     features = ["-use_header_modules"],
-    malloc = "@tcmalloc//tcmalloc",
+    malloc = select({
+        "@platforms//os:linux": "@tcmalloc//tcmalloc",
+        "@platforms//os:macos": "@bazel_tools//tools/cpp:malloc",
+    }),
     visibility = ["//visibility:public"],
     deps = [
         ":openroad_lib",
@@ -155,6 +157,7 @@ cc_binary(
         "@boost.stacktrace",
         "@rules_cc//cc/runfiles",
         "@tk_tcl//:tcl",
+        "//bazel:runfiles",
     ],
 )
 
