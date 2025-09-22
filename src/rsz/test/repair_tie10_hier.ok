@@ -60,7 +60,7 @@ Net gcd/ALU_16_0_16_0_16_unused_CO[14:0]_X_HAN_CARLSON/BI
  Number of pins: 2
 
 Driver pins
- _396__1/H output (TIEHIx1_ASAP7_75t_R) (0, 0)
+ _395__1/H output (TIEHIx1_ASAP7_75t_R) (0, 0)
 
 Load pins
  _395_/_087_/A input (BUFx2_ASAP7_75t_R) 0.44-0.58
@@ -77,7 +77,7 @@ Net gcd/ALU_16_0_16_0_16_unused_CO[14:0]_X_HAN_CARLSON/CI
  Number of pins: 2
 
 Driver pins
- _396__2/H output (TIEHIx1_ASAP7_75t_R) (0, 0)
+ _395__2/H output (TIEHIx1_ASAP7_75t_R) (0, 0)
 
 Load pins
  _395_/_153_/B input (FAx1_ASAP7_75t_R) 1.80-2.18

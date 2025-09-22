@@ -6,20 +6,20 @@ UNITS DISTANCE MICRONS 1000 ;
 COMPONENTS 8 ;
     - alu0/hier2/load1 BUFx2_ASAP7_75t_R ;
     - alu0/load2 BUFx2_ASAP7_75t_R ;
+    - alu0_1 TIEHIx1_ASAP7_75t_R + SOURCE TIMING + PLACED ( 0 0 ) N ;
     - alu1/hier2/load1 BUFx2_ASAP7_75t_R ;
     - alu1/load2 BUFx2_ASAP7_75t_R ;
+    - alu1_2 TIEHIx1_ASAP7_75t_R + SOURCE TIMING + PLACED ( 0 0 ) N ;
     - load0 BUFx2_ASAP7_75t_R ;
-    - tie0 TIEHIx1_ASAP7_75t_R + SOURCE TIMING + PLACED ( 0 0 ) N ;
-    - tie0_1 TIEHIx1_ASAP7_75t_R + SOURCE TIMING + PLACED ( 0 0 ) N ;
-    - tie0_2 TIEHIx1_ASAP7_75t_R + SOURCE TIMING + PLACED ( 36 135 ) N ;
+    - load0_3 TIEHIx1_ASAP7_75t_R + SOURCE TIMING + PLACED ( 36 135 ) N ;
 END COMPONENTS
 PINS 1 ;
     - top_in + NET top_in + DIRECTION INPUT + USE SIGNAL ;
 END PINS
 NETS 4 ;
-    - tie0_1_H ( alu1/hier2/load1 A ) ( tie0_1 H ) ( alu1/load2 A ) + USE SIGNAL ;
-    - tie0_2_H ( load0 A ) ( tie0_2 H ) + USE SIGNAL ;
-    - tie0_H ( alu0/hier2/load1 A ) ( tie0 H ) ( alu0/load2 A ) + USE SIGNAL ;
+    - net ( alu0/hier2/load1 A ) ( alu0_1 H ) ( alu0/load2 A ) + USE SIGNAL ;
+    - net1 ( alu1/hier2/load1 A ) ( alu1_2 H ) ( alu1/load2 A ) + USE SIGNAL ;
+    - net2 ( load0 A ) ( load0_3 H ) + USE SIGNAL ;
     - top_in ( PIN top_in ) + USE SIGNAL ;
 END NETS
 END DESIGN

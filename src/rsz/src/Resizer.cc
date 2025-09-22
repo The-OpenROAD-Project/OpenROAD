@@ -3413,15 +3413,12 @@ void Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
   odb::dbModITerm* load_mod_iterm = nullptr;
   db_network_->staToDb(load_pin, load_iterm, load_bterm, load_mod_iterm);
 
+  std::string connection_name = "net";
+
   // load_pin is a flat pin
   if (load_iterm) {
     // Connect the tie instance output pin to the load pin.
-    // - It automatically disconnects the existing connection of load pin
-    std::string connection_name
-        = fmt::format("{}_{}",
-                      db_network_->name(new_tie_inst),
-                      new_tie_iterm->getMTerm()->getName());
-    load_iterm->disconnect();
+    load_iterm->disconnect();  // This is required
     db_network_->hierarchicalConnect(
         new_tie_iterm, load_iterm, connection_name.c_str());
     return;
@@ -3429,13 +3426,6 @@ void Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
 
   // load_pin is a hier pin
   if (load_mod_iterm) {
-    // Connect the tie instance output pin to the load pin.
-    // - It automatically disconnects the existing connection of load pin
-    std::string connection_name
-        = fmt::format("{}_{}",
-                      db_network_->name(new_tie_inst),
-                      new_tie_iterm->getMTerm()->getName());
-
     // Should not disconnect load_mod_iterm first. hierarchicalConnect() will
     // handle it. If load_mod_iterm is disconnected first,
     // hierarchicalConnect() cannot find the matching flat net with the
@@ -3449,10 +3439,6 @@ void Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
   if (load_bterm) {
     // Create a new net and connect both the tie cell output and the top-level
     // port to it.
-    std::string connection_name
-        = fmt::format("{}_{}",
-                      db_network_->name(new_tie_inst),
-                      new_tie_iterm->getMTerm()->getName());
     Net* new_net = db_network_->makeNet(
         connection_name.c_str(), parent, odb::dbNameUniquifyType::IF_NEEDED);
     new_tie_iterm->connect(db_network_->staToDb(new_net));
