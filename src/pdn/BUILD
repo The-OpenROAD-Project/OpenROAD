@@ -103,5 +103,8 @@ python_wrap_cc(
     root_swig_src = "src/PdnGen-py.i",
     swig_includes = [
         "include",
-    ]
+    ],
+    deps = [
+        "//src/odb:swig-py",
+    ],
 )
