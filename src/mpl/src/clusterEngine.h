@@ -305,6 +305,8 @@ class ClusteringEngine
 
   int first_io_bundle_id_{-1};
   IOBundleSpans io_bundle_spans_;
+
+  const float base_weight_{1.0};
 };
 
 }  // namespace mpl
