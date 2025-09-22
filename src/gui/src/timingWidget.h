@@ -121,7 +121,7 @@ class TimingWidget : public QDockWidget
                              const std::vector<std::set<const sta::Pin*>>& thru,
                              const std::set<const sta::Pin*>& to,
                              const std::string& path_group_name,
-                             sta::ClockSet* clks = nullptr);
+                             const sta::ClockSet* clks = nullptr);
   void setInitialColumnsVisibility(const QVariant& columns_visibility);
   QVariantList getColumnsVisibility() const;
 

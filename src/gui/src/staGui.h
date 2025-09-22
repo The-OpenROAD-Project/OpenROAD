@@ -98,7 +98,7 @@ class TimingPathsModel : public QAbstractTableModel
                      const std::vector<std::set<const sta::Pin*>>& thru,
                      const std::set<const sta::Pin*>& to,
                      const std::string& path_group_name,
-                     sta::ClockSet* clks);
+                     const sta::ClockSet* clks);
 
  public slots:
   void sort(int col_index, Qt::SortOrder sort_order) override;
@@ -108,7 +108,7 @@ class TimingPathsModel : public QAbstractTableModel
                      const std::vector<std::set<const sta::Pin*>>& thru,
                      const std::set<const sta::Pin*>& to,
                      const std::string& path_group_name,
-                     sta::ClockSet* clks);
+                     const sta::ClockSet* clks);
 
   STAGuiInterface* sta_;
   bool is_setup_;
@@ -406,7 +406,7 @@ class TimingControlsDialog : public QDialog
   std::set<const sta::Pin*> getFromPins() const { return from_->getPins(); }
   std::vector<std::set<const sta::Pin*>> getThruPins() const;
   std::set<const sta::Pin*> getToPins() const { return to_->getPins(); }
-  void getClocks(sta::ClockSet* clock_set) const;
+  const sta::ClockSet* getClocks();
 
   const sta::Pin* convertTerm(Gui::Term term) const;
 
@@ -440,6 +440,8 @@ class TimingControlsDialog : public QDialog
   std::vector<PinSetWidget*> thru_;
   PinSetWidget* to_;
   QHash<QString, sta::Clock*> qstring_to_clk_;
+
+  sta::ClockSet selected_clocks_;
 
   static constexpr int kThruStartRow = 4;
 

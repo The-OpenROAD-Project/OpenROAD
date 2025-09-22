@@ -632,8 +632,7 @@ void TimingWidget::populatePaths()
   const auto from = settings_->getFromPins();
   const auto thru = settings_->getThruPins();
   const auto to = settings_->getToPins();
-  sta::ClockSet* clks = new sta::ClockSet;
-  settings_->getClocks(clks);
+  const sta::ClockSet* clks = settings_->getClocks();
 
   populateAndSortModels(from, thru, to, "" /* path group name */, clks);
 }
@@ -643,7 +642,7 @@ void TimingWidget::populateAndSortModels(
     const std::vector<std::set<const sta::Pin*>>& thru,
     const std::set<const sta::Pin*>& to,
     const std::string& path_group_name,
-    sta::ClockSet* clks)
+    const sta::ClockSet* clks)
 {
   setup_timing_paths_model_->populateModel(
       from, thru, to, path_group_name, clks);
