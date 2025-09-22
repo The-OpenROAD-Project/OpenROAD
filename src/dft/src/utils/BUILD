@@ -29,5 +29,6 @@ cc_library(
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "@spdlog",
     ],
 )

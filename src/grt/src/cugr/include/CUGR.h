@@ -64,6 +64,7 @@ class CUGR
   void route();
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
+  void updateDbCongestion();
 
  private:
   void updateOverflowNets(std::vector<int>& netIndices);

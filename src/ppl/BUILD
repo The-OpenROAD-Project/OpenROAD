@@ -110,5 +110,8 @@ python_wrap_cc(
     swig_includes = [
         "include",
         "src",
-    ]
+    ],
+    deps = [
+        "//src/odb:swig-py",
+    ],
 )

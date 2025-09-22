@@ -70,7 +70,7 @@ struct OptoParams
 class RepairSetup : public sta::dbStaState
 {
  public:
-  RepairSetup(Resizer* resizer, est::EstimateParasitics* estimate_parasitics);
+  RepairSetup(Resizer* resizer);
   bool repairSetup(float setup_slack_margin,
                    // Percent of violating ends to repair to
                    // reduce tns (0.0-1.0).

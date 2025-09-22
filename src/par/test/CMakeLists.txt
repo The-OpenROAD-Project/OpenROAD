@@ -3,6 +3,7 @@ or_integration_tests(
   TESTS
     partition_gcd
     read_part
+    write_artnet
 )
 
 # Skipped
