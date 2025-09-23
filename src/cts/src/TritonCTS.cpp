@@ -972,7 +972,7 @@ std::string TritonCTS::selectBestMaxCapBuffer(
     // clang-format off
     debugPrint(logger_, CTS, "buffering", 1, "{} has cap limit:{}"
                " vs. total cap:{}, derate:{}", name,
-               maxCap * options_->getSinkBufferMaxCapDerate(), totalCap,
+               maxCap * (float) options_->getSinkBufferMaxCapDerate(), totalCap,
                options_->getSinkBufferMaxCapDerate());
     // clang-format on
     if (maxCapExists
