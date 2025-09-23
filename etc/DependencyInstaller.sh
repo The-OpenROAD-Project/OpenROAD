@@ -75,8 +75,8 @@ _installCommonDev() {
     spdlogVersion=1.15.0
     gtestVersion=1.13.0
     gtestChecksum="a1279c6fb5bf7d4a5e0d0b2a4adb39ac"
-    abslVersion=20240722.0
-    abslChecksum="740fb8f35ebdf82740c294bde408b9c0"
+    abslVersion=20250512.0
+    abslChecksum="ecd64c3c38b20335c48e1ede28a8db90"
     bisonVersion=3.8.2
     bisonChecksum="1e541a097cda9eca675d29dd2832921f"
     flexVersion=2.6.4
@@ -324,8 +324,8 @@ _installOrTools() {
     arch=$3
     local skipSystemOrTools=$4
 
-    orToolsVersionBig=9.11
-    orToolsVersionSmall=${orToolsVersionBig}.4210
+    orToolsVersionBig=9.14
+    orToolsVersionSmall=${orToolsVersionBig}.6206
 
     rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
