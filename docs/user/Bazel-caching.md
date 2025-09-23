@@ -13,7 +13,7 @@ Our Bazel setup uses a multi-layered caching strategy to provide optimal perform
 
 ### 1. Local On-Disk Cache
 
-By default, all builds use a local on-disk cache to speed up incremental builds. The default location is `~/.cache/bazel-disk-cache` and is set inside the repo's `.bazelrc` file.
+All builds use a local on-disk cache to speed up incremental builds. The default location is `~/.cache/bazel-disk-cache` and is set inside the repo's `.bazelrc` file.
 
 You can override this config by setting a systemwide or home `.bazelrc` file. See more at [Write bazelrc configuration files](https://bazel.build/run/bazelrc) or by passing the `--disk_cache` argument to your bazel commands.
 
@@ -43,7 +43,7 @@ build --remote_cache_compression=true
 build --remote_upload_local_results=false
 ```
 
-This means that by default, all developer builds will **read from** the remote cache but will **not write to** it. This provides significant build speed improvements without requiring any authentication.
+This means that all developer builds will **read from** the public remote cache but **cannot write to** it. This provides significant build speed improvements without requiring any authentication.
 
 ---
 
