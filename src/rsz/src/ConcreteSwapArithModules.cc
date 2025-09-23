@@ -43,9 +43,14 @@ ConcreteSwapArithModules::ConcreteSwapArithModules(Resizer* resizer)
 
 void ConcreteSwapArithModules::init()
 {
+  if (init_) {
+    return;
+  }
+
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
+  init_ = true;
 }
 
 void ConcreteSwapArithModules::replaceArithModules(const int path_count,
@@ -162,6 +167,8 @@ bool ConcreteSwapArithModules::isArithInstance(const Instance* inst,
   if (inst == nullptr) {
     return false;
   }
+
+  init();
   mod_inst = nullptr;
 
   const Instance* curr_inst = inst;

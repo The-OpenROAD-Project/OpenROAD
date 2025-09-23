@@ -8247,13 +8247,9 @@ class dbModInst : public dbObject
   dbGroup* getGroup() const;
 
   // User Code Begin dbModInst
-
   std::string getHierarchicalName() const;
-
   dbModITerm* findModITerm(const char* name);
-
   dbSet<dbModITerm> getModITerms();
-
   void removeUnusedPortsAndPins();
 
   dbModNet* findHierNet(const char* base_name) const;
@@ -8266,6 +8262,12 @@ class dbModInst : public dbObject
   /// Returns new mod inst if the operations succeeds.
   /// Old mod inst is deleted along with its child insts.
   dbModInst* swapMaster(dbModule* module);
+
+  // Recursive search a given dbInst through child mod insts
+  bool containsDbInst(dbInst* inst) const;
+
+  // Recursive search a given dbModInst through child mod insts
+  bool containsDbModInst(dbModInst* mod_inst) const;
 
   static dbModInst* create(dbModule* parentModule,
                            dbModule* masterModule,
@@ -8309,15 +8311,16 @@ class dbModNet : public dbObject
   dbModule* getParent() const;
 
   // User Code Begin dbModNet
-  dbSet<dbModITerm> getModITerms();
-  dbSet<dbModBTerm> getModBTerms();
-  dbSet<dbITerm> getITerms();
-  dbSet<dbBTerm> getBTerms();
+  dbSet<dbModITerm> getModITerms() const;
+  dbSet<dbModBTerm> getModBTerms() const;
+  dbSet<dbITerm> getITerms() const;
+  dbSet<dbBTerm> getBTerms() const;
   unsigned connectionCount();
   std::string getName() const;
   const char* getConstName() const;
   void rename(const char* new_name);
   void disconnectAllTerms();
+  void dump() const;
 
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);

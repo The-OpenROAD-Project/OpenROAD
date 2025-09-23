@@ -1583,6 +1583,51 @@ void dbNetwork::setVertexId(Pin* pin, VertexId id)
   }
 }
 
+dbModITerm* dbNetwork::findInputModITermInParent(const Pin* input_pin) const
+{
+  if (input_pin == nullptr) {
+    return nullptr;
+  }
+
+  dbITerm* iterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  dbModITerm* mod_iterm = nullptr;
+  staToDb(input_pin, iterm, bterm, mod_iterm);
+
+  // Get mod net
+  dbModNet* mod_net = nullptr;
+  if (iterm) {
+    assert(iterm->getIoType().getValue() != dbIoType::OUTPUT);
+    mod_net = iterm->getModNet();
+  } else if (mod_iterm) {
+    assert(mod_iterm->getChildModBTerm()->getIoType().getValue()
+           != dbIoType::OUTPUT);
+    mod_net = mod_iterm->getModNet();
+  }
+
+  if (mod_net == nullptr) {
+    return nullptr;
+  }
+
+  // Get the input modBTerm.
+  // - Typically, there will be one or zero input modBTerm.
+  dbModBTerm* input_mod_bterm = nullptr;
+  for (dbModBTerm* mod_bterm : mod_net->getModBTerms()) {
+    if (dbIoType::OUTPUT != mod_bterm->getIoType().getValue()) {
+      input_mod_bterm = mod_bterm;
+      break;
+    }
+  }
+
+  if (input_mod_bterm == nullptr) {
+    return nullptr;
+  }
+
+  // Found the target modITerm in parent.
+  dbModITerm* parent_mod_iterm = input_mod_bterm->getParentModITerm();
+  return parent_mod_iterm;
+}
+
 void dbNetwork::location(const Pin* pin,
                          // Return values.
                          double& x,
@@ -3479,6 +3524,13 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
   hierarchy_editor_->hierarchicalConnect(source_pin, dest_pin, connection_name);
 }
 
+void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
+                                    dbModITerm* dest_pin,
+                                    const char* connection_name)
+{
+  hierarchy_editor_->hierarchicalConnect(source_pin, dest_pin, connection_name);
+}
+
 /*
 Get the dbModule driving a net.
 
@@ -3822,6 +3874,21 @@ void dbNetwork::reassociateFromDbNetView(dbNet* flat_net, dbModNet* mod_net)
   DbModNetAssociation visitordb(this, mod_net);
   NetSet visited_dbnets(this);
   visitConnectedPins(dbToSta(flat_net), visitordb, visited_dbnets);
+}
+
+void dbNetwork::reassociatePinConnection(Pin* pin)
+{
+  // Ensure that a pin is consistently connected to both its hierarchical
+  // (dbModNet) and flat (dbNet) representations. This is often needed after
+  // complex hierarchical edits.
+  dbModNet* mod_net = hierNet(pin);
+  if (mod_net) {
+    dbNet* flat_net = this->flatNet(pin);
+    // Disconnect both flat and hierarchical nets before reconnecting
+    // to ensure a clean state.
+    disconnectPin(pin);
+    connectPin(pin, dbToSta(flat_net), dbToSta(mod_net));
+  }
 }
 
 void dbNetwork::replaceHierModule(dbModInst* mod_inst, dbModule* module)

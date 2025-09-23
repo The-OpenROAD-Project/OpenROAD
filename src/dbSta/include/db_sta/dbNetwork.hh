@@ -178,6 +178,9 @@ class dbNetwork : public ConcreteNetwork
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
                            const char* connection_name = "net");
+  void hierarchicalConnect(dbITerm* source_pin,
+                           dbModITerm* dest_pin,
+                           const char* connection_name = "net");
   Instance* findHierInstance(const char* name);
   void replaceHierModule(dbModInst* mod_inst, dbModule* module);
   void removeUnusedPortsAndPinsOnModuleInstances();
@@ -251,6 +254,8 @@ class dbNetwork : public ConcreteNetwork
   PortDirection* direction(const Pin* pin) const override;
   VertexId vertexId(const Pin* pin) const override;
   void setVertexId(Pin* pin, VertexId id) override;
+  // Find the connected dbModITerm in the parent module of the input pin.
+  dbModITerm* findInputModITermInParent(const Pin* input_pin) const;
 
   ////////////////////////////////////////////////////////////////
   // Terminal functions
@@ -366,6 +371,7 @@ class dbNetwork : public ConcreteNetwork
                               dbNet* orig_flat_net);
 
   void reassociateFromDbNetView(dbNet* flat_net, dbModNet* mod_net);
+  void reassociatePinConnection(Pin* pin);
 
   void accumulateFlatLoadPinsOnNet(
       Net* net,
