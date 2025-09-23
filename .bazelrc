@@ -80,6 +80,7 @@ build --repository_cache=~/.cache/bazel-repository-cache
 
 # CI only needs to know if the build succeeded, not the artifacts themselves.
 build:ci --remote_download_minimal
+build:ci --remote_upload_local_results=true
 # Disable disk cache for CI builds
 build:ci --disk_cache=
 
