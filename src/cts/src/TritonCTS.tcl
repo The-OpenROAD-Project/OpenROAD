@@ -56,13 +56,13 @@ sta::define_cmd_args "set_cts_config" {[-apply_ndr strategy] \
 	                               [-wire_unit unit]
 }
 proc set_cts_config { args } {
-
   sta::parse_key_args "set_cts_config" args \
     keys {-apply_ndr -branching_point_buffers_distance -buf_list -clustering_exponent \
            -clustering_unbalance_ratio -delay_buffer_derate -distance_between_buffers \
            -library -macro_clustering_max_diameter -macro_clustering_size \
            -num_static_layers -sink_buffer_max_cap_derate -sink_clustering_levels -root_buf\
-           -sink_clustering_max_diameter -sink_clustering_size -tree_buf -wire_unit}
+           -sink_clustering_max_diameter -sink_clustering_size -tree_buf -wire_unit} \
+    flags {}
 
   sta::check_argc_eq0 "set_cts_config" $args
 
@@ -147,14 +147,15 @@ proc set_cts_config { args } {
 }
 
 sta::define_cmd_args "report_cts_config" {}
-proc report_cts_config {args} {
+
+proc report_cts_config { args } {
   sta::parse_key_args "report_cts_config" args keys {} flags {}
 
   # set the db unit
   cts::set_db_unit 0
   set ndr_strategy [cts::get_ndr_strategy]
   set buffer_list [cts::get_buffer_list]
-  if {$buffer_list eq ""} {
+  if { $buffer_list eq "" } {
     set buffer_list "undefined"
   }
   set vertex_buffer_distance [cts::get_branching_buffers_distance]
@@ -163,14 +164,14 @@ proc report_cts_config {args} {
   set delay_buffer_derate [cts::get_delay_buffer_derate]
   set buffer_distance [cts::get_distance_between_buffers]
   set cts_library [cts::get_library]
-  if {$cts_library eq ""} {
+  if { $cts_library eq "" } {
     set cts_library "undefined"
   }
   set macro_max_diameter [cts::get_macro_clustering_max_diameter]
   set macro_sink_cluster_size [cts::get_macro_clustering_size]
   set num_static_layers [cts::get_num_static_layers]
   set root_buffer [cts::get_root_buffer]
-  if {$root_buffer eq ""} {
+  if { $root_buffer eq "" } {
     set root_buffer "undefined"
   }
   set sink_buffer_max_cap_derate [cts::get_sink_buffer_max_cap_derate]
@@ -178,7 +179,7 @@ proc report_cts_config {args} {
   set sink_max_diameter [cts::get_sink_clustering_max_diameter]
   set sink_cluster_size [cts::get_sink_clustering_size]
   set tree_buffer [cts::get_tree_buf]
-  if {$tree_buffer eq ""} {
+  if { $tree_buffer eq "" } {
     set tree_buffer "undefined"
   }
   set wire_segment_unit [cts::get_wire_unit]
@@ -209,6 +210,7 @@ proc report_cts_config {args} {
 
 sta::define_cmd_args "reset_cts_config" {[-apply_ndr] \
                                          [-branching_point_buffers_distance] \
+					 [-buf_list] \
                                          [-clustering_exponent] \
                                          [-clustering_unbalance_ratio] \
                                          [-delay_buffer_derate] \
@@ -217,6 +219,7 @@ sta::define_cmd_args "reset_cts_config" {[-apply_ndr] \
                                          [-macro_clustering_max_diameter] \
                                          [-macro_clustering_size] \
                                          [-num_static_layers] \
+					 [-root_buf] \
                                          [-sink_buffer_max_cap_derate] \
                                          [-sink_clustering_levels] \
                                          [-sink_clustering_max_diameter] \
@@ -424,7 +427,7 @@ proc clock_tree_synthesis { args } {
     cts::set_buffer_list $buf_list
   } else {
     set buf_list [cts::get_buffer_list]
-    if {$buf_list eq ""} {
+    if { $buf_list eq "" } {
       cts::set_buffer_list ""
     }
   }
@@ -452,7 +455,7 @@ proc clock_tree_synthesis { args } {
     cts::set_root_buffer $root_buf
   } else {
     set root_buf [cts::get_root_buffer]
-    if {$root_buf eq ""} {
+    if { $root_buf eq "" } {
       cts::set_root_buffer ""
     }
   }
