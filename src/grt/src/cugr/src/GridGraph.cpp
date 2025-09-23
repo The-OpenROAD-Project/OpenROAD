@@ -228,6 +228,18 @@ GridGraph::GridGraph(const Design* design,
       }
     }
   }
+
+  // Apply user-defined capacity adjustment
+  for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
+    const float adjustment = design->getLayer(layer_index).getAdjustment();
+    if (adjustment != 0.0) {
+      for (size_t x = 0; x < x_size_; x++) {
+        for (size_t y = 0; y < y_size_; y++) {
+          graph_edges_[layer_index][x][y].capacity *= (1.0 - adjustment);
+        }
+      }
+    }
+  }
 }
 
 IntervalT GridGraph::rangeSearchGridlines(const int dimension,
