@@ -8265,8 +8265,12 @@ class dbModInst : public dbObject
   /// Returns new mod inst if the operations succeeds.
   /// Old mod inst is deleted along with its child insts.
   dbModInst* swapMaster(dbModule* module);
-  bool hasDbInst(dbInst* inst) const;
-  bool hasDbModInst(dbModInst* mod_inst) const;
+
+  // Recursive search a given dbInst through child mod insts
+  bool containsDbInst(dbInst* inst) const;
+
+  // Recursive search a given dbModInst through child mod insts
+  bool containsDbModInst(dbModInst* mod_inst) const;
 
   static dbModInst* create(dbModule* parentModule,
                            dbModule* masterModule,

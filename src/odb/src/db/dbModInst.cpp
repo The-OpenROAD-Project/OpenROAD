@@ -691,7 +691,7 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   return new_mod_inst;
 }
 
-bool dbModInst::hasDbInst(dbInst* inst) const
+bool dbModInst::containsDbInst(dbInst* inst) const
 {
   dbModule* master = getMaster();
   if (master == nullptr) {
@@ -707,7 +707,7 @@ bool dbModInst::hasDbInst(dbInst* inst) const
 
   // Recursively check child dbModInsts
   for (dbModInst* child_mod_inst : master->getModInsts()) {
-    if (child_mod_inst->hasDbInst(inst)) {
+    if (child_mod_inst->containsDbInst(inst)) {
       return true;
     }
   }
@@ -715,7 +715,7 @@ bool dbModInst::hasDbInst(dbInst* inst) const
   return false;
 }
 
-bool dbModInst::hasDbModInst(dbModInst* inst) const
+bool dbModInst::containsDbModInst(dbModInst* inst) const
 {
   dbModule* master = getMaster();
   if (master == nullptr) {
@@ -724,7 +724,7 @@ bool dbModInst::hasDbModInst(dbModInst* inst) const
 
   // Recursively check child dbModInsts
   for (dbModInst* child_mod_inst : master->getModInsts()) {
-    if (child_mod_inst == inst || child_mod_inst->hasDbModInst(inst)) {
+    if (child_mod_inst == inst || child_mod_inst->containsDbModInst(inst)) {
       return true;
     }
   }

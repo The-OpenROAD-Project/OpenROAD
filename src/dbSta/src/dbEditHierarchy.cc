@@ -472,7 +472,7 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
     }
 
     dbInst* load_inst = iterm->getInst();
-    if (dest_mod_inst->hasDbInst(load_inst)) {
+    if (dest_mod_inst->containsDbInst(load_inst)) {
       load_iterms.insert(iterm);
     }
   }
