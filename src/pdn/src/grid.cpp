@@ -1671,36 +1671,33 @@ void InstanceGrid::checkSetup() const
   Grid::checkSetup();
 
   // check blockages above pins
-  std::set<odb::dbBox*> obs;
-  odb::dbMaster* master = inst_->getMaster();
-  for (auto* box : master->getObstructions()) {
-    obs.insert(box);
-  }
-
   const auto nets = getNets(startsWithPower());
   for (auto* iterm : inst_->getITerms()) {
     if (std::find(nets.begin(), nets.end(), iterm->getNet()) == nets.end()) {
       continue;
     }
     odb::dbTechLayer* top = nullptr;
-    std::map<odb::dbTechLayer*, std::set<odb::Rect>> boxes;
+    std::set<odb::Rect> boxes;
     for (auto* mpin : iterm->getMTerm()->getMPins()) {
       for (auto* box : mpin->getGeometry()) {
         auto* layer = box->getTechLayer();
         if (layer == nullptr) {
           continue;
         }
-        boxes[layer].insert(box->getBox());
         if (top == nullptr
             || top->getRoutingLevel() < layer->getRoutingLevel()) {
           top = layer;
+          boxes.clear();
+        }
+        if (layer == top) {
+          boxes.insert(box->getBox());
         }
       }
     }
 
     if (top != nullptr) {
       const int top_idx = top->getNumber();
-      for (auto* master_obs : obs) {
+      for (auto* master_obs : inst_->getMaster()->getObstructions()) {
         auto* obs_layer = master_obs->getTechLayer();
         if (obs_layer == nullptr) {
           continue;
@@ -1709,7 +1706,7 @@ void InstanceGrid::checkSetup() const
           continue;
         }
         if (obs_layer->getNumber() > top_idx) {
-          for (const auto& pin : boxes[top]) {
+          for (const auto& pin : boxes) {
             if (pin.intersects(master_obs->getBox())) {
               getLogger()->error(
                   utl::PDN,
