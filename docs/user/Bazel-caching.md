@@ -45,6 +45,27 @@ build --remote_upload_local_results=false
 
 This means that all developer builds will **read from** the public remote cache but **cannot write to** it. This provides significant build speed improvements without requiring any authentication.
 
+#### Disabling the Remote Cache
+
+If you encounter issues with the remote cache, you can disable it by overriding the `--remote_cache` flag. You can do this in your `user.bazelrc` file or by passing the flag directly to your Bazel command:
+
+**Option 1: Using `user.bazelrc`**
+
+Add the following line to your `user.bazelrc` file:
+
+```
+build --remote_cache=
+```
+
+**Option 2: Command-Line Flag**
+
+Pass an empty `--remote_cache` flag to your build command:
+
+```bash
+bazel build --remote_cache= //...
+```
+
+This will cause Bazel to fall back to using only the local on-disk cache for the build
 ---
 
 ### 3. CI Access (Jenkins Pipeline)
