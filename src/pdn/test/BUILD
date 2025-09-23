@@ -273,6 +273,8 @@ filegroup(
                 "ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef",
                 "ihp_ethmac/floorplan.def",
             ],
+            "asap7_failed_macro_covered": ["asap7_failed_macro_grid.def"],
+            "asap7_macro_notcovered": ["asap7_failed_macro_grid.def"],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
