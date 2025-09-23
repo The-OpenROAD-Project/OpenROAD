@@ -9,6 +9,13 @@ package(
     features = ["layering_check"],
 )
 
+# TODO: there is a cyclic dependency between
+# some of these. dbSta depends on dbNetwork and
+# dbSdcNetwork, but these would need to include
+# dbSta.hh ...
+# So this probably needs to be broken into more
+# libraries.
+
 cc_library(
     name = "dbSta",
     srcs = [

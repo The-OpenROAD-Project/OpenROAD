@@ -13,6 +13,11 @@
 #include "sta/ParseBus.hh"
 #include "sta/PatternMatch.hh"
 
+// Circular dependency! We would need this for
+// e.g. sta::Cell, but that requires to depend on :dbSta
+// which in turn depends on :dbStaNetwork ...
+// #include "db_sta/dbSta.hh"
+
 namespace sta {
 
 static std::string escapeDividers(const char* token, const Network* network);

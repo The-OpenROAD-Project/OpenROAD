@@ -68,6 +68,11 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "sta/Search.hh"
 #include "utl/Logger.h"
 
+// Circular dependency! We need this header, but that
+// is provided by :dbSta which in turn depends
+// :dbNetwork ...
+// #include "db_sta/dbSta.hh"
+
 namespace sta {
 
 using utl::ORD;
