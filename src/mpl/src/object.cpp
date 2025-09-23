@@ -678,32 +678,6 @@ int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
   return -1;
 }
 
-// Print Basic Information
-// Normally we call this after macro placement is done
-void Cluster::printBasicInformation(utl::Logger* logger) const
-{
-  std::string line = "\n";
-  line += std::string(80, '*') + "\n";
-  line += "[INFO] cluster_name :  " + name_ + "  ";
-  line += "cluster_id : " + std::to_string(id_) + "  \n";
-  line += "num_std_cell : " + std::to_string(getNumStdCell()) + "  ";
-  line += "num_macro : " + std::to_string(getNumMacro()) + "\n";
-  line += "width : " + std::to_string(getWidth()) + "  ";
-  line += "height : " + std::to_string(getHeight()) + "  ";
-  line += "location :  ( " + std::to_string((getLocation()).first) + " , ";
-  line += std::to_string((getLocation()).second) + " )\n";
-  for (const auto& hard_macro : hard_macros_) {
-    line += "\t macro_name : " + hard_macro->getName();
-    line += "\t width : " + std::to_string(hard_macro->getRealWidth());
-    line += "\t height : " + std::to_string(hard_macro->getRealHeight());
-    line += "\t lx : " + std::to_string(hard_macro->getRealX());
-    line += "\t ly : " + std::to_string(hard_macro->getRealY());
-    line += "\n";
-  }
-
-  logger->report(line);
-}
-
 // Macro Placement Support
 void Cluster::setSoftMacro(std::unique_ptr<SoftMacro> soft_macro)
 {
@@ -1372,6 +1346,17 @@ void SoftMacro::setShapeF(float width, float height)
   width_ = width;
   height_ = height;
   area_ = width * height;
+}
+
+void Cluster::reportConnections() const
+{
+  logger_->report("{} ({}) Connections:", name_, id_);
+  logger_->report("\n  Cluster Id  |  Connection Weight  ");
+  logger_->report("------------------------------------");
+  for (const auto& [cluster_id, connections_weight] : connections_map_) {
+    logger_->report(" {:>12d} | {:>19.2f}", cluster_id, connections_weight);
+  }
+  logger_->report("");
 }
 
 }  // namespace mpl

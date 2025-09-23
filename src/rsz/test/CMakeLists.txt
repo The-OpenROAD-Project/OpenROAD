@@ -118,6 +118,9 @@ or_integration_tests(
     repair_tie7
     repair_tie8
     repair_tie9
+    repair_tie10_hier
+    repair_tie11_hier
+    repair_tie12_hier
     repair_wire1
     repair_wire2
     repair_wire3

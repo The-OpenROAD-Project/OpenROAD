@@ -34,6 +34,8 @@ class ConcreteSwapArithModules : public SwapArithModules
   void produceNewModuleName(const std::string& old_name,
                             std::string& new_name,
                             const std::string& target) override;
+
+  bool init_ = false;
 };
 
 }  // namespace rsz

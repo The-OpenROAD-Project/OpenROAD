@@ -17,6 +17,7 @@ class MetalLayer
   MetalLayer(odb::dbTechLayer* tech_layer, odb::dbTrackGrid* track_grid);
 
   std::string getName() const { return name_; }
+  int getIndex() const { return index_; }
   int getDirection() const { return direction_; }
   int getWidth() const { return width_; }
   int getPitch() const { return pitch_; }
@@ -29,6 +30,8 @@ class MetalLayer
   int getDefaultSpacing() const { return default_spacing_; }
   int getParallelSpacing(int width, int length = 0) const;
   int getMaxEolSpacing() const { return max_eol_spacing_; }
+  float getAdjustment() const { return adjustment_; }
+  void setAdjustment(float adjustment) { adjustment_ = adjustment; }
 
  private:
   std::string name_;
@@ -57,6 +60,9 @@ class MetalLayer
   int max_eol_spacing_ = 0;
   int max_eol_width_ = 0;
   int max_eol_within_ = 0;
+
+  // User-defined capacity adjustment
+  float adjustment_ = 0.0;
 
   // Corner spacing
 };

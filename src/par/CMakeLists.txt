@@ -32,6 +32,7 @@ add_library(par_lib
   src/KWayFMRefine.cpp
   src/KWayPMRefine.cpp
   src/PriorityQueue.cpp
+  src/ArtNetSpec.cpp
 )
 
 target_include_directories(par_lib
