@@ -222,15 +222,15 @@ class Cluster
   std::vector<std::pair<int, int>> getVirtualConnections() const;
   void addVirtualConnection(int src, int target);
 
-  // Print Basic Information
-  void printBasicInformation(utl::Logger* logger) const;
-
   // Macro Placement Support
   void setSoftMacro(std::unique_ptr<SoftMacro> soft_macro);
   SoftMacro* getSoftMacro() const;
 
   void setTilings(const TilingList& tilings);
   const TilingList& getTilings() const;
+
+  // For Debug
+  void reportConnections() const;
 
  private:
   int id_{-1};

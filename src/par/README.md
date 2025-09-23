@@ -598,10 +598,68 @@ Simply run the following script:
 ./test/regression
 ```
 
+# ArtNet Spec File Generation Flow
+
+ArtNet is the hierarchical clustering-based artificial netlist generator with the capability to support heterogeneous designs with macros. 
+ArtNet enables netlist generation from (1) user-specified parameters, and (2) from parameters of a given target design. 
+| <img src="doc/ArtNet_usecases.png" width=650px> |
+|:--:|
+| *Use Cases of ArtNet* |
+
+## Netlist Parameters
+
+| <img src="doc/ArtNet_ParamTable.png" width=550px> |
+|:--:|
+| *Description of Netlist Parameters* |
+
+What is Rent's exponent?
+- Rent's Rule [(*link*)](https://ieeexplore.ieee.org/document/1671752)
+  - A heuristic used to describe the relationship between the number of external pins (connections) and the size of a circuit (usually in terms of the number of gates). It provides a simple way to estimate how the complexity of a circuit grows as the number of components increases.
+  - **Region1** refers to the portion of the circuit where Rent's rule is typically valid. In this region, the relationship between internal and external connections follows the power-law form described by Rent's rule.
+  - In **Region 2**, the structure of the circuit may deviate from Rent¡¯s rule and the simple power-law relationship no longer holds as closely.
+| <img src="doc/RentsRule.png" width=750px> |
+|:--:|
+| *Region I and II in #Terminals-#Gate Plot* |
+
+## Spec File Description
+- The spec file, which is the input file for ArtNet, is structured as follows.
+| <img src="doc/ArtNet_specFile.png" width=550px> |
+|:--:|
+| *Example of SpecFile* |
+
+- **LIBRARY**: Defines the master names of all standard cells and macros used in the entire circuit.
+- **MODULE**: Specifies a submodule within the logical hierarchy under the top module. Multiple types of submodules can be defined; the example includes a single submodule named *sub_module*.
+- **LIBRARIES**: Lists the masters and MODULEs used within the circuit or submodule. MODULEs can also include LIBRARIES with other MODULE definitions, representing multi-level hierarchy..
+- **DISTRIBUTION**: Indicates the quantity of each master or MODULE defined in LIBRARIES.
+  - For example, in the top module, if LIBRARIES includes *lib* and *sub_module*, the first DISTRIBUTION line refers to the number of each cell in LIBRARY *lib* (e.g., 1200 DFFHQx4, 3000 INVx2, etc.).
+  - The second DISTRIBUTION line shows that 10 instances of *sub_module* are used under the top module.
+- **SIZE**: 
+  - The first SIZE defines the physical region size of Region 1 (recommended: 0.25x ~ 0.50x of total number of instances).
+  - The second SIZE indicates the total number of instances in the MODULE or CIRCUIT (recommended: 100 ~ 10^9).
+- **p/q**: Represent the interconnect complexity.
+  - p: Rent¡¯s exponent (recommended: 0.4 ~ 0.7)
+  - q: the standard deviation of Rent¡¯s exponent. (recommended: 0.01 ~ 0.2)
+- **I/O**: The number of primary inputs and outputs for the MODULE or CIRCUIT. (recommended: 10 ~ 1000)
+
+### Parameter Extraction Command
+
+This command performs ArtNet spec file generation.
+
+```tcl
+write_artnet_spec 
+      [ -out_file file ]
+```
+#### Options
+
+| Switch Name | Description | 
+| ----- | ----- |
+| `-out_file` | Name of output spec file. |
+
+
 ## References
 1. Bustany, I., Kahng, A. B., Koutis, I., Pramanik, B., & Wang, Z. (2023). K-SpecPart: A Supervised Spectral Framework for Multi-Way Hypergraph Partitioning Solution Improvement. arXiv preprint arXiv:2305.06167. [(.pdf)](https://arxiv.org/pdf/2305.06167)
 1. Bustany, I., Gasparyan, G., Kahng, A. B., Koutis, I., Pramanik, B., & Wang, Z. (2023). "An Open-Source Constraints-Driven General Partitioning Multi-Tool for VLSI Physical Design", Proc. ACM/IEEE International Conference of Computer-Aided Design 2023,[(.pdf)](https://vlsicad.ucsd.edu/Publications/Conferences/401/c401.pdf).
-
+1. Landman, B. S., & Russo, R. L. (1971). "On a Pin Versus Block Relationship for Partitions of Logic Graphs", IEEE Trans. on Computers, 20(12) pp.1469-1479,[(*link*)](https://ieeexplore.ieee.org/document/1671752).
 
 ## License
 

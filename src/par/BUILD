@@ -27,6 +27,8 @@ cc_library(
         "src/KWayFMRefine.h",
         "src/KWayPMRefine.cpp",
         "src/KWayPMRefine.h",
+        "src/ArtNetSpec.cpp",
+        "src/ArtNetSpec.h",
         "src/Multilevel.cpp",
         "src/Multilevel.h",
         "src/PartitionMgr.cpp",

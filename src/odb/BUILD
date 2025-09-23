@@ -43,10 +43,13 @@ cc_library(
         "src/lefout/*.cpp",
         "src/swig/common/swig_common.cpp",
     ]),
-    hdrs = glob([
-        "include/odb/*.h",
-        "include/odb/*.hpp",
-    ]) + ["src/swig/common/swig_common.h"],
+    hdrs = glob(
+        include = [
+            "include/odb/*.h",
+            "include/odb/*.hpp",
+        ],
+        exclude = ["include/odb/MakeOdb.h"],
+    ) + ["src/swig/common/swig_common.h"],
     features = [
         "-use_header_modules",
     ],
@@ -68,6 +71,7 @@ cc_library(
         "@boost.integer",
         "@boost.iostreams",
         "@boost.lambda",
+        "@boost.multi_array",
         "@boost.optional",
         "@boost.phoenix",
         "@boost.polygon",
@@ -115,10 +119,7 @@ cc_library(
         ":swig",
         ":tcl",
     ],
-    hdrs = glob([
-        "include/odb/*.h",
-        "include/odb/*.hpp",
-    ]),
+    hdrs = ["include/odb/MakeOdb.h"],
     copts = [
         "-Wno-missing-braces",  # from TCL swigging
         "-Isrc/odb/src/swig/common",
@@ -133,6 +134,7 @@ cc_library(
         "//src/utl",
         "@boost.container",
         "@boost.geometry",
+        "@boost.multi_array",
         "@boost.polygon",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
