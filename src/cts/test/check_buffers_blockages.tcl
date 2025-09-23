@@ -15,7 +15,7 @@ set_cts_config -wire_unit 20 \
   -sink_clustering_max_diameter 60 \
   -num_static_layers 1 \
   -root_buf CLKBUF_X3 \
-  -buf_list CLKBUF_X3 
+  -buf_list CLKBUF_X3
 
 clock_tree_synthesis -sink_clustering_enable
 

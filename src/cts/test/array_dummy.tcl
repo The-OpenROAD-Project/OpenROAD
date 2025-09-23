@@ -133,8 +133,8 @@ set_dont_use $dont_use
 set_debug_level CTS "dummy load" 2
 
 set_cts_config -root_buf $cts_buffer \
-               -buf_list $cts_buffer \
-               -sink_clustering_max_diameter $cts_cluster_diameter
+  -buf_list $cts_buffer \
+  -sink_clustering_max_diameter $cts_cluster_diameter
 
 clock_tree_synthesis -sink_clustering_enable \
   -balance_levels \

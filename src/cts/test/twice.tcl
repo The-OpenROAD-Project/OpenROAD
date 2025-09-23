@@ -14,7 +14,7 @@ set_cts_config -wire_unit 20 \
   -buf_list CLKBUF_X3
 
 clock_tree_synthesis
-  
+
 set_cts_config -wire_unit 20 \
   -apply_ndr root_only \
   -root_buf CLKBUF_X3 \

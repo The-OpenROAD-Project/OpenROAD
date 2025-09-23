@@ -18,7 +18,7 @@ set_cts_config -distance_between_buffers 100 \
   -wire_unit 20 \
   -num_static_layers 1 \
   -root_buf CLKBUF_X3 \
-  -buf_list CLKBUF_X3 
+  -buf_list CLKBUF_X3
 
 clock_tree_synthesis -sink_clustering_enable \
   -balance_levels
