@@ -26,6 +26,7 @@
 #include "Clock.h"
 #include "CtsOptions.h"
 #include "HTreeBuilder.h"
+#include "LatencyBalancer.h"
 #include "LevelBalancer.h"
 #include "TechChar.h"
 #include "TreeBuilder.h"
@@ -2416,23 +2417,30 @@ void TritonCTS::balanceMacroRegisterLatencies()
 
   // Visit builders from bottom up such that latencies are adjusted near bottom
   // trees first
-  est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
-  openSta_->ensureClkNetwork();
-  openSta_->ensureClkArrivals();
-  sta::Graph* graph = openSta_->graph();
-  for (auto& iter : builders_) {
-    TreeBuilder* registerBuilder = iter.get();
-    if (registerBuilder->getTreeType() == TreeType::RegisterTree) {
-      TreeBuilder* macroBuilder = registerBuilder->getParent();
-      if (macroBuilder) {
-        // Update graph information after possible buffers inserted
-        computeAveSinkArrivals(registerBuilder, graph);
-        computeAveSinkArrivals(macroBuilder, graph);
-        adjustLatencies(macroBuilder, registerBuilder);
-        parasitics_guard.update();
-        openSta_->updateTiming(false);
-      }
+  int totalDelayBuff = 0;
+
+  sta::Corner* corner = openSta_->cmdCorner();
+  // convert from per meter to per dbu
+  double capPerDBU = estimate_parasitics_->wireClkCapacitance(corner) * 1e-6
+                     / block_->getDbUnitsPerMicron();
+
+  for (auto iter = builders_.rbegin(); iter != builders_.rend(); ++iter) {
+    TreeBuilder* builder = iter->get();
+    if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
+      est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
+      LatencyBalancer balancer = LatencyBalancer(builder,
+                                                 options_,
+                                                 logger_,
+                                                 db_,
+                                                 network_,
+                                                 openSta_,
+                                                 techChar_->getLengthUnit(),
+                                                 capPerDBU);
+      totalDelayBuff += balancer.run();
     }
+  }
+  if (totalDelayBuff) {
+    logger_->info(CTS, 37, "Total number of delay buffers: {}", totalDelayBuff);
   }
 }
 

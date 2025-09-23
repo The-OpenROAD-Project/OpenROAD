@@ -1,5 +1,6 @@
-module reg1 (clk);
+module reg1 (clk, in);
  input clk;
+ input in;
 
  wire r1q;
  wire u1z;
@@ -9,6 +10,7 @@ module reg1 (clk);
  wire u5z;
 
  DFF_X1 r1 (.CK(clk),
+    .D(in),
     .Q(r1q));
  BUF_X1 u1 (.A(r1q),
     .Z(u1z));
@@ -32,9 +34,9 @@ module reg1 (clk);
     .CK(clk));
  DFF_X1 r7 (.D(r1q),
     .CK(clk));
- DFF_X1 r8 (.D(r1q));
- DFF_X1 r9 (.D(r1q));
- DFF_X1 r10 (.D(r1q));
- DFF_X1 r11 (.D(r1q));
- DFF_X1 r12 (.D(r1q));
+ DFF_X1 r8 (.D(r1q), .CK(clk));
+ DFF_X1 r9 (.D(r1q), .CK(clk));
+ DFF_X1 r10 (.D(r1q), .CK(clk));
+ DFF_X1 r11 (.D(r1q), .CK(clk));
+ DFF_X1 r12 (.D(r1q), .CK(clk));
 endmodule

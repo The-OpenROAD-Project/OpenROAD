@@ -3,10 +3,12 @@
  */
 
 
-module reg1 (clk);
+module reg1 (clk, in);
  input clk;
+ input in;
 
  DFF_X1 r1 (.CK(clk),
+    .D(in),
     .Q(r1q));
    
    submodule u1(.r1q(r1q),
@@ -138,9 +140,14 @@ module submodule(input r1q,
     .CK(clk));
  DFF_X1 r26 (.D(r1q),
     .CK(clk));
- DFF_X1 r27 (.D(r1q));
- DFF_X1 r28 (.D(r1q));
- DFF_X1 r29 (.D(r1q));
- DFF_X1 r30 (.D(r1q));
- DFF_X1 r31 (.D(r1q));
+ DFF_X1 r27 (.D(r1q),
+    .CK(clk));
+ DFF_X1 r28 (.D(r1q),
+    .CK(clk));
+ DFF_X1 r29 (.D(r1q),
+    .CK(clk));
+ DFF_X1 r30 (.D(r1q),
+    .CK(clk));
+ DFF_X1 r31 (.D(r1q),
+    .CK(clk));
 endmodule
