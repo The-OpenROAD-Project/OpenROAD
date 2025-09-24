@@ -71,19 +71,28 @@ void BaseParser::parseHeader(Header& header, const YAML::Node& header_node)
   }
 }
 
-void BaseParser::parseIncludes(std::vector<std::string>& includes,
-                               const std::string& content)
+void BaseParser::parseDefines(std::map<std::string, std::string>& defines,
+                              const std::string& content)
 {
-  includes.clear();
+  defines.clear();
 
   std::istringstream stream(content);
   std::string line;
 
   while (std::getline(stream, line)) {
-    if (line.find("#!include") == 0) {
-      std::string include_file = line.substr(9);  // Skip "#!include "
-      include_file = trim(include_file);
-      includes.push_back(include_file);
+    if (line.find("#!define") == 0) {
+      std::string define_statement = line.substr(8);
+      define_statement = trim(define_statement);
+
+      // Split the define statement into key and value
+      size_t space_pos = define_statement.find(' ');
+      if (space_pos != std::string::npos) {
+        std::string key = define_statement.substr(0, space_pos);
+        std::string value = define_statement.substr(space_pos + 1);
+        key = trim(key);
+        value = trim(value);
+        defines[key] = value;
+      }
     }
   }
 }

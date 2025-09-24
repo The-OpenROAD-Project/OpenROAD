@@ -5,6 +5,7 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -31,8 +32,8 @@ class BaseParser
   void parseCoordinates(std::vector<Coordinate>& coords,
                         const YAML::Node& coords_node);
   void parseHeader(Header& header, const YAML::Node& header_node);
-  void parseIncludes(std::vector<std::string>& includes,
-                     const std::string& content);
+  void parseDefines(std::map<std::string, std::string>& defines,
+                    const std::string& content);
 
   // Utility methods
   void logError(const std::string& message);

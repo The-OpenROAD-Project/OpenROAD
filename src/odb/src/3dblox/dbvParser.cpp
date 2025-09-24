@@ -28,9 +28,8 @@ DbvData DbvParser::parseFile(const std::string& filename)
   std::string content = buffer.str();
   file.close();
 
-  // Extract include directives from the content
   DbvData data;
-  parseIncludes(data.includes, content);
+  parseDefines(data.defines, content);
 
   parseYamlContent(data, content);
 
