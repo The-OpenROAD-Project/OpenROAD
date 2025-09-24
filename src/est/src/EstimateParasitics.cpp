@@ -892,33 +892,19 @@ void EstimateParasitics::parasiticNodeConnectPins(
     for (const Pin* pin : *pins) {
       ParasiticNode* pin_node
           = parasitics_->ensureParasiticNode(parasitic, pin, network_);
-      ParasiticNode* prev_node = nullptr;
       if (connected_pins.find(pin) == connected_pins.end()) {
         if (tree_layer != nullptr && !layer_res_.empty()) {
           odb::dbTechLayer* pin_layer = getPinLayer(pin);
-          for (int layer_number = pin_layer->getNumber();
-               layer_number < tree_layer->getNumber();
-               layer_number++) {
-            odb::dbTechLayer* cut_layer
-                = db_->getTech()->findLayer(layer_number);
-            if (cut_layer->getType() == odb::dbTechLayerType::CUT) {
-              ParasiticNode* mid_node = parasitics_->ensureParasiticNode(
-                  parasitic, net, ++max_node_index, network_);
-              double cut_res
-                  = std::max(layer_res_[layer_number][corner->index()], 1.0e-3);
-              if (layer_number - 1 == pin_layer->getNumber()) {
-                parasitics_->makeResistor(
-                    parasitic, resistor_id++, cut_res, pin_node, mid_node);
-              } else if (layer_number + 1 == tree_layer->getNumber()) {
-                parasitics_->makeResistor(
-                    parasitic, resistor_id++, cut_res, prev_node, node);
-              } else {
-                parasitics_->makeResistor(
-                    parasitic, resistor_id++, cut_res, prev_node, mid_node);
-              }
-              prev_node = mid_node;
-            }
-          }
+
+          insertViaResistances(pin_layer,
+                               tree_layer,
+                               parasitic,
+                               pin_node,
+                               node,
+                               resistor_id,
+                               corner,
+                               net,
+                               max_node_index);
         } else {
           double cut_res
               = std::max(computeAverageCutResistance(corner), 1.0e-3);
@@ -926,6 +912,96 @@ void EstimateParasitics::parasiticNodeConnectPins(
               parasitic, resistor_id++, cut_res, node, pin_node);
         }
         connected_pins.insert(pin);
+      }
+    }
+  }
+}
+
+void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
+                                              odb::dbTechLayer* tree_layer,
+                                              Parasitic* parasitic,
+                                              ParasiticNode* pin_node,
+                                              ParasiticNode* node,
+                                              size_t& resistor_id,
+                                              Corner* corner,
+                                              const Net* net,
+                                              int& max_node_index)
+{
+  ParasiticNode* prev_node = nullptr;
+
+  const int pin_layer_idx = pin_layer->getNumber();
+  const int tree_layer_idx = tree_layer->getNumber();
+  if (std::abs(pin_layer_idx - tree_layer->getNumber()) == 2) {
+    // Directly connect pin node and tree node if they are one cut layer apart
+    const int cut_layer_idx = pin_layer_idx < tree_layer_idx
+                                  ? pin_layer_idx + 1
+                                  : pin_layer_idx - 1;
+    double cut_res
+        = std::max(layer_res_[cut_layer_idx][corner->index()], 1.0e-3);
+    parasitics_->makeResistor(
+        parasitic, resistor_id++, cut_res, pin_node, node);
+  } else if (pin_layer_idx < tree_layer_idx) {
+    // Insert cut layer resistors between pin layer and tree layer where pin is
+    // below tree layer
+    for (int layer_number = pin_layer_idx; layer_number < tree_layer_idx;
+         layer_number++) {
+      odb::dbTechLayer* cut_layer = db_->getTech()->findLayer(layer_number);
+      if (cut_layer->getType() == odb::dbTechLayerType::CUT) {
+        ParasiticNode* mid_node = parasitics_->ensureParasiticNode(
+            parasitic, net, ++max_node_index, network_);
+
+        double cut_res
+            = std::max(layer_res_[layer_number][corner->index()], 1.0e-3);
+
+        if (layer_number - 1 == pin_layer_idx) {
+          // Add resistor between pin node and mid node
+          parasitics_->makeResistor(
+              parasitic, resistor_id++, cut_res, pin_node, mid_node);
+        } else if (layer_number + 1 == tree_layer_idx) {
+          // Add resistor between mid node and tree node
+          parasitics_->makeResistor(
+              parasitic, resistor_id++, cut_res, prev_node, node);
+        } else {
+          // Add resistor between two mid nodes
+          parasitics_->makeResistor(
+              parasitic, resistor_id++, cut_res, prev_node, mid_node);
+        }
+        prev_node = mid_node;
+      }
+    }
+  } else if (pin_layer_idx > tree_layer_idx) {
+    // Insert cut layer resistors between pin layer and tree layer where pin is
+    // above tree layer
+    for (int layer_number = tree_layer_idx; layer_number < pin_layer_idx;
+         layer_number++) {
+      odb::dbTechLayer* cut_layer = db_->getTech()->findLayer(layer_number);
+      if (cut_layer->getType() == odb::dbTechLayerType::CUT) {
+        ParasiticNode* mid_node = parasitics_->ensureParasiticNode(
+            parasitic, net, ++max_node_index, network_);
+
+        double cut_res
+            = std::max(layer_res_[layer_number][corner->index()], 1.0e-3);
+
+        if (layer_number - 1 == tree_layer_idx) {
+          // Add resistor between tree node and mid node
+          parasitics_->makeResistor(
+              parasitic, resistor_id++, cut_res, node, mid_node);
+        } else if (layer_number + 1 == pin_layer_idx) {
+          // Add resistor between mid node and pin node
+          parasitics_->makeResistor(
+              parasitic, resistor_id++, cut_res, prev_node, pin_node);
+        } else {
+          // Add resistor between two mid nodes
+          if (prev_node == nullptr) {
+            logger_->error(EST,
+                           165,
+                           "Unexpected null previous node when inserting via "
+                           "resistances");
+          }
+          parasitics_->makeResistor(
+              parasitic, resistor_id++, cut_res, prev_node, mid_node);
+        }
+        prev_node = mid_node;
       }
     }
   }

@@ -259,6 +259,15 @@ class EstimateParasitics : public dbStaState
                                 const Net* net,
                                 int& max_node_index,
                                 bool is_clk);
+  void insertViaResistances(odb::dbTechLayer* pin_layer,
+                            odb::dbTechLayer* tree_layer,
+                            Parasitic* parasitic,
+                            ParasiticNode* pin_node,
+                            ParasiticNode* node,
+                            size_t& resistor_id,
+                            Corner* corner,
+                            const Net* net,
+                            int& max_node_index);
   void net2Pins(const Net* net, const Pin*& pin1, const Pin*& pin2) const;
   double dbuToMeters(int dist) const;
 
