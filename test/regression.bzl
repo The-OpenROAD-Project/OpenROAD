@@ -104,6 +104,7 @@ def regression_test(
         name: The base name of the test (without extension).
         **kwargs: Additional keyword arguments to pass to the regression_rule_test.
     """
+
     # TODO: we should _not_ have the magic to figure out if tcl or py exists
     # in here but rather in the BUILD file and just pass the resulting
     # name = "foo-tcl", test_file = "foo.tcl" to this regression test macro.

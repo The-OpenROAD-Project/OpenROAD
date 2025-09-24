@@ -40,19 +40,19 @@ TESTS = [
 py_library(
     name = "helpers",
     srcs = ["helpers.py"],
+    imports = ["."],
     deps = [
         "//openroad:openroadpy",
     ],
-    imports = ["."],
 )
 
 py_library(
     name = "gpl_aux",
     srcs = ["gpl_aux.py"],
+    imports = ["."],
     deps = [
         "//openroad:openroadpy",
     ],
-    imports = ["."],
 )
 
 filegroup(
@@ -62,7 +62,7 @@ filegroup(
         "asap7/*.lib",
         "asap7/*.lef",
         "asap7/*.tcl",
-    ])
+    ]),
 )
 
 filegroup(
@@ -115,16 +115,17 @@ PY_TESTS = [
 ]
 
 [
-py_test(
-    name = test_name,
-    srcs = [test_name + ".py"],
-    deps = [
-        "//openroad:openroadpy",
-        ":helpers",
-        ":gpl_aux",
-    ],
-    data = [
-        ":test_resources"
-    ]
-)
-for test_name in PY_TESTS]
+    py_test(
+        name = test_name,
+        srcs = [test_name + ".py"],
+        data = [
+            ":test_resources",
+        ],
+        deps = [
+            ":gpl_aux",
+            ":helpers",
+            "//openroad:openroadpy",
+        ],
+    )
+    for test_name in PY_TESTS
+]

@@ -80,9 +80,9 @@ cc_library(
         "@boost.property_tree",
         "@boost.regex",
         "@boost.spirit",
-        "@yaml-cpp",
         "@spdlog",
         "@tk_tcl//:tcl",
+        "@yaml-cpp",
         "@zlib",
     ],
 )

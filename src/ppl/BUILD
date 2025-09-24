@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -100,8 +100,8 @@ tcl_wrap_cc(
 python_wrap_cc(
     name = "swig-py",
     srcs = [
-        "include/ppl/Parameters.h",
         "include/ppl/IOPlacer.h",
+        "include/ppl/Parameters.h",
         "src/IOPlacer-py.i",
         "//:error_swig-py",
     ],
