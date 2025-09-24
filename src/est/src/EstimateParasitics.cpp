@@ -940,69 +940,41 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
         = std::max(layer_res_[cut_layer_idx][corner->index()], 1.0e-3);
     parasitics_->makeResistor(
         parasitic, resistor_id++, cut_res, pin_node, node);
-  } else if (pin_layer_idx < tree_layer_idx) {
-    // Insert cut layer resistors between pin layer and tree layer where pin is
-    // below tree layer
-    for (int layer_number = pin_layer_idx; layer_number < tree_layer_idx;
-         layer_number++) {
-      odb::dbTechLayer* cut_layer = db_->getTech()->findLayer(layer_number);
-      if (cut_layer->getType() == odb::dbTechLayerType::CUT) {
-        ParasiticNode* mid_node = parasitics_->ensureParasiticNode(
-            parasitic, net, ++max_node_index, network_);
+  } else {
+    const auto [start_idx, end_idx]
+        = std::minmax(pin_layer_idx, tree_layer_idx);
+    const bool pin_is_below = (pin_layer_idx < tree_layer_idx);
 
-        double cut_res
-            = std::max(layer_res_[layer_number][corner->index()], 1.0e-3);
-
-        if (layer_number - 1 == pin_layer_idx) {
-          // Add resistor between pin node and mid node
-          parasitics_->makeResistor(
-              parasitic, resistor_id++, cut_res, pin_node, mid_node);
-        } else if (layer_number + 1 == tree_layer_idx) {
-          // Add resistor between mid node and tree node
-          parasitics_->makeResistor(
-              parasitic, resistor_id++, cut_res, prev_node, node);
-        } else {
-          // Add resistor between two mid nodes
-          parasitics_->makeResistor(
-              parasitic, resistor_id++, cut_res, prev_node, mid_node);
-        }
-        prev_node = mid_node;
+    for (int layer_idx = start_idx; layer_idx < end_idx; layer_idx++) {
+      odb::dbTechLayer* cut_layer = db_->getTech()->findLayer(layer_idx);
+      if (cut_layer->getType() != odb::dbTechLayerType::CUT) {
+        continue;
       }
-    }
-  } else if (pin_layer_idx > tree_layer_idx) {
-    // Insert cut layer resistors between pin layer and tree layer where pin is
-    // above tree layer
-    for (int layer_number = tree_layer_idx; layer_number < pin_layer_idx;
-         layer_number++) {
-      odb::dbTechLayer* cut_layer = db_->getTech()->findLayer(layer_number);
-      if (cut_layer->getType() == odb::dbTechLayerType::CUT) {
-        ParasiticNode* mid_node = parasitics_->ensureParasiticNode(
-            parasitic, net, ++max_node_index, network_);
+      ParasiticNode* mid_node = parasitics_->ensureParasiticNode(
+          parasitic, net, ++max_node_index, network_);
 
-        double cut_res
-            = std::max(layer_res_[layer_number][corner->index()], 1.0e-3);
+      double cut_res = std::max(layer_res_[layer_idx][corner->index()], 1.0e-3);
 
-        if (layer_number - 1 == tree_layer_idx) {
-          // Add resistor between tree node and mid node
-          parasitics_->makeResistor(
-              parasitic, resistor_id++, cut_res, node, mid_node);
-        } else if (layer_number + 1 == pin_layer_idx) {
-          // Add resistor between mid node and pin node
-          parasitics_->makeResistor(
-              parasitic, resistor_id++, cut_res, prev_node, pin_node);
-        } else {
-          // Add resistor between two mid nodes
-          if (prev_node == nullptr) {
-            logger_->error(EST,
-                           165,
-                           "Unexpected null previous node when inserting via "
-                           "resistances");
-          }
-          parasitics_->makeResistor(
-              parasitic, resistor_id++, cut_res, prev_node, mid_node);
+      ParasiticNode* from_node = prev_node;
+      ParasiticNode* to_node = mid_node;
+      if (pin_is_below) {
+        if (layer_idx - 1 == pin_layer_idx) {
+          from_node = pin_node;
+        } else if (layer_idx + 1 == tree_layer_idx) {
+          to_node = node;
         }
-        prev_node = mid_node;
+      } else {
+        if (layer_idx - 1 == tree_layer_idx) {
+          from_node = node;
+        } else if (layer_idx + 1 == pin_layer_idx) {
+          to_node = pin_node;
+        }
       }
+
+      parasitics_->makeResistor(
+          parasitic, resistor_id++, cut_res, from_node, to_node);
+
+      prev_node = mid_node;
     }
   }
 }
