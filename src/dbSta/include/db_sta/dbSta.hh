@@ -85,7 +85,6 @@ using utl::Logger;
 using odb::dbBlock;
 using odb::dbBlockCallBackObj;
 using odb::dbBTerm;
-using odb::dbChip;
 using odb::dbDatabase;
 using odb::dbInst;
 using odb::dbITerm;

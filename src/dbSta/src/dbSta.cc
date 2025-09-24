@@ -281,7 +281,7 @@ void dbSta::postReadDef(dbBlock* block)
   }
 }
 
-void dbSta::postRead3Dbx(dbChip* chip)
+void dbSta::postRead3Dbx(odb::dbChip* chip)
 {
   // TODO: we are not ready to do timing on chiplets yet
 }
