@@ -7416,6 +7416,7 @@ class dbDatabase : public dbObject
   void triggerPostReadLef(dbTech* tech, dbLib* library);
   void triggerPostReadDef(dbBlock* block, bool floorplan);
   void triggerPostReadDb();
+  void triggerPostRead3Dbx(dbChip* chip);
 
   ///
   /// Create an instance of a database

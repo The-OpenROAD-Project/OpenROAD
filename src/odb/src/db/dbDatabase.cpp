@@ -923,6 +923,14 @@ void dbDatabase::triggerPostReadDef(dbBlock* block, const bool floorplan)
   }
 }
 
+void dbDatabase::triggerPostRead3Dbx(dbChip* chip)
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  for (dbDatabaseObserver* observer : db->observers_) {
+    observer->postRead3Dbx(chip);
+  }
+}
+
 void dbDatabase::triggerPostReadDb()
 {
   _dbDatabase* db = (_dbDatabase*) this;

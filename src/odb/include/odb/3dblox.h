@@ -32,7 +32,7 @@ class ThreeDBlox
  private:
   void createChiplet(const ChipletDef& chiplet);
   void createRegion(const ChipletRegion& region, dbChip* chip);
-  void createDesignTopChiplet(const DesignDef& design);
+  dbChip* createDesignTopChiplet(const DesignDef& design);
   void createChipInst(const ChipletInst& chip_inst);
   void createConnection(const Connection& connection);
   dbChipRegionInst* resolvePath(const std::string& path,
