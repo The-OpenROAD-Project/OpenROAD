@@ -105,3 +105,29 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "dft_scan_architect_unittest",
+    srcs = ["cpp/TestScanArchitect.cpp"],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/dft",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "dft_scan_architect_heuristic_unittest",
+    srcs = [
+        "cpp/ScanCellMock.cpp",
+        "cpp/ScanCellMock.hh",
+        "cpp/TestScanArchitectHeuristic.cpp",
+    ],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/dft",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
