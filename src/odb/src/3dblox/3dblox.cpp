@@ -80,13 +80,15 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
       readDbx(resolved_path);
     }
   }
-  createDesignTopChiplet(data.design);
+  dbChip* chip = createDesignTopChiplet(data.design);
   for (const auto& [_, chip_inst] : data.chiplet_instances) {
     createChipInst(chip_inst);
   }
   for (const auto& [_, connection] : data.connections) {
     createConnection(connection);
   }
+
+  db_->triggerPostRead3Dbx(chip);
 }
 
 dbChip::ChipType getChipType(const std::string& type, utl::Logger* logger)
@@ -172,11 +174,12 @@ void ThreeDBlox::createRegion(const ChipletRegion& region, dbChip* chip)
   }
   chip_region->setBox(box);
 }
-void ThreeDBlox::createDesignTopChiplet(const DesignDef& design)
+dbChip* ThreeDBlox::createDesignTopChiplet(const DesignDef& design)
 {
   dbChip* chip
       = dbChip::create(db_, nullptr, design.name, dbChip::ChipType::HIER);
   db_->setTopChip(chip);
+  return chip;
 }
 void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
 {

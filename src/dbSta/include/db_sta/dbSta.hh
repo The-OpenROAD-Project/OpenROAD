@@ -85,6 +85,7 @@ using utl::Logger;
 using odb::dbBlock;
 using odb::dbBlockCallBackObj;
 using odb::dbBTerm;
+using odb::dbChip;
 using odb::dbDatabase;
 using odb::dbInst;
 using odb::dbITerm;
@@ -185,6 +186,7 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
   void postReadDef(odb::dbBlock* block) override;
   void postReadDb(odb::dbDatabase* db) override;
+  void postRead3Dbx(odb::dbChip* chip) override;
 
   // Find clock nets connected by combinational gates from the clock roots.
   std::set<dbNet*> findClkNets();
