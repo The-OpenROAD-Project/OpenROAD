@@ -1,0 +1,32 @@
+name: Bazel Format & Lint
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  check:
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
+    strategy:
+      matrix:
+        check_type: [format, lint]
+    env:
+      BUILDIFIER_VERSION: v8.2.1
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Download buildifier
+        run: |
+          wget https://github.com/bazelbuild/buildtools/releases/download/${BUILDIFIER_VERSION}/buildifier-linux-amd64 -O buildifier
+          chmod +x buildifier
+
+      - name: Run buildifier (format check)
+        if: matrix.check_type == 'format'
+        run: ./buildifier -r -mode=check .
+
+      - name: Run buildifier (lint)
+        if: matrix.check_type == 'lint'
+        run: ./buildifier -r -lint=warn .
