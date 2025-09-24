@@ -233,7 +233,7 @@ object parse {
 object GenerateMockArray extends App {
   val (c, chiselArgs, firtoolArgs) = parse(args)
 
-  ChiselStage.emitSystemVerilog(
+  ChiselStage.emitHWDialect(
     new MockArray(c.width, c.height, c.dataWidth),
     chiselArgs,
     firtoolArgs
