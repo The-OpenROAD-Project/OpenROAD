@@ -206,6 +206,10 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
   bool label = false;
   for (auto node : parasitics_->nodes(parasitic)) {
     if (parasitics_->pin(node) == nullptr) {
+      if (parasitics_->nodeGndCap(node) == 0) {
+        continue;
+      }
+
       if (!label) {
         label = true;
         stream << "*CAP" << '\n';
@@ -218,6 +222,9 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
     }
   }
   for (auto cap : parasitics_->capacitors(parasitic)) {
+    if (parasitics_->value(cap) == 0) {
+      continue;
+    }
     if (!label) {
       label = true;
       stream << "*CAP" << '\n';
