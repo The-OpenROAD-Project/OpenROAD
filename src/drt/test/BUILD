@@ -103,3 +103,19 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "gc_unittest",
+    srcs = [
+        "fixture.cpp",
+        "fixture.h",
+        "gcTest.cpp",
+    ],
+    includes = [
+        "../src",
+    ],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/drt",
+    ],
+)
