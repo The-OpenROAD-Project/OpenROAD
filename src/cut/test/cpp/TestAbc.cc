@@ -25,7 +25,6 @@
 #include "base/main/abcapis.h"
 #include "cut/abc_library_factory.h"
 #include "cut/logic_extractor.h"
-#include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
 #include "gmock/gmock.h"
@@ -73,7 +72,7 @@ class AbcTest : public ::testing::Test
       abc::Abc_Start();
     });
     db_->setLogger(&logger_);
-    sta_ = std::unique_ptr<sta::dbSta>(sta::makeDbSta());
+    sta_ = std::make_unique<sta::dbSta>();
     sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
     auto path = std::filesystem::canonical("./Nangate45/Nangate45_typ.lib");
     library_ = sta_->readLiberty(path.c_str(),
@@ -170,7 +169,7 @@ class AbcTestSky130 : public AbcTest
       abc::Abc_Start();
     });
     db_->setLogger(&logger_);
-    sta_ = std::unique_ptr<sta::dbSta>(sta::makeDbSta());
+    sta_ = std::make_unique<sta::dbSta>();
     sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
     auto path = std::filesystem::canonical(
         "./sky130/sky130_fd_sc_hd__ss_n40C_1v40.lib");
@@ -206,7 +205,7 @@ class AbcTestAsap7 : public AbcTest
       abc::Abc_Start();
     });
     db_->setLogger(&logger_);
-    sta_ = std::unique_ptr<sta::dbSta>(sta::makeDbSta());
+    sta_ = std::make_unique<sta::dbSta>();
     sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
 
     std::vector<std::string> liberty_paths
