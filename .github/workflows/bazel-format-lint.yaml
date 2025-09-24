@@ -1,4 +1,4 @@
-name: Bazel Format & Lint
+name: Buildifier
 
 on:
   pull_request:
@@ -25,8 +25,8 @@ jobs:
 
       - name: Run buildifier (format check)
         if: matrix.check_type == 'format'
-        run: ./buildifier -r -mode=check .
+        run: ./buildifier -r --mode=check .
 
       - name: Run buildifier (lint)
         if: matrix.check_type == 'lint'
-        run: ./buildifier -r -lint=warn .
+        run: ./buildifier -r --lint=warn .
