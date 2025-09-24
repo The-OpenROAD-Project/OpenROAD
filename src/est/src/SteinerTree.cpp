@@ -85,7 +85,7 @@ int SteinerTree::getMaxIndex() const
   for (int i = 0; i < branchCount(); i++) {
     const stt::Branch& branch_pt = tree_.branch[i];
     max_index = std::max(max_index, i);
-    max_index = std::max(max_index, branch_pt.n);
+    max_index = std::max({max_index, branch_pt.n});
   }
 
   return max_index;

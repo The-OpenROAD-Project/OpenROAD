@@ -970,7 +970,7 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
     const int cut_layer_idx = pin_layer_idx < tree_layer_idx
                                   ? pin_layer_idx + 1
                                   : pin_layer_idx - 1;
-    double cut_res
+    const double cut_res
         = std::max(layer_res_[cut_layer_idx][corner->index()], 1.0e-3);
     parasitics_->makeResistor(
         parasitic, resistor_id++, cut_res, pin_node, node);
@@ -991,7 +991,8 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
       ParasiticNode* mid_node = parasitics_->ensureParasiticNode(
           parasitic, net, ++max_node_index, network_);
 
-      double cut_res = std::max(layer_res_[layer_idx][corner->index()], 1.0e-3);
+      const double cut_res
+          = std::max(layer_res_[layer_idx][corner->index()], 1.0e-3);
 
       ParasiticNode* from_node = prev_node;
       ParasiticNode* to_node = mid_node;
