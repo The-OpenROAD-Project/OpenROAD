@@ -1,4 +1,4 @@
-name: Buildifier
+name: Lint Bazel (Buildifier)
 
 on:
   pull_request:
