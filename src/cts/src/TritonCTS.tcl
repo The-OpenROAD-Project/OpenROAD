@@ -151,6 +151,14 @@ sta::define_cmd_args "report_cts_config" {}
 proc report_cts_config { args } {
   sta::parse_key_args "report_cts_config" args keys {} flags {}
 
+  # Check if a design exists
+  set db [ord::get_db]
+  set chip [$db getChip]
+
+  if { "$chip" eq "NULL" } {
+    utl::error CTS 131 "No Chip exists"
+  }
+
   # set the db unit
   cts::set_db_unit 0
   set ndr_strategy [cts::get_ndr_strategy]
