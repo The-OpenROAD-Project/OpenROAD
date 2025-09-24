@@ -13,7 +13,6 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
-#include <mutex>
 #include <set>
 #include <sstream>
 #include <string>
@@ -23,11 +22,12 @@
 
 #include "base/abc/abc.h"
 #include "base/main/abcapis.h"
+#include "cut/abc_init.h"
+#include "cut/abc_library_factory.h"
 #include "cut/blif.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
@@ -59,7 +59,7 @@ void Restructure::init(utl::Logger* logger,
   resizer_ = resizer;
   estimate_parasitics_ = estimate_parasitics;
 
-  ord::abcInit();
+  cut::abcInit();
 }
 
 void Restructure::deleteComponents()

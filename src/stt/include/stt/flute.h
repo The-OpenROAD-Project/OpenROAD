@@ -4,8 +4,8 @@
 #include <memory>
 #include <vector>
 
-#include "SteinerTreeBuilder.h"
 #include "boost/multi_array.hpp"
+#include "stt/SteinerTreeBuilder.h"
 
 #pragma once
 

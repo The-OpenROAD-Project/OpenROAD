@@ -22,4 +22,3 @@ gtest_discover_tests(TestHconn
 
 add_dependencies(build_and_test TestHconn
 )
-

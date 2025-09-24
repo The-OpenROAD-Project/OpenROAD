@@ -9,8 +9,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using std::string;
-
 using sta::ArcDelay;
 using sta::Instance;
 using sta::InstancePinIterator;

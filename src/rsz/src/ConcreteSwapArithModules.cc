@@ -6,8 +6,8 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
+#include <set>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "odb/db.h"
@@ -43,9 +43,14 @@ ConcreteSwapArithModules::ConcreteSwapArithModules(Resizer* resizer)
 
 void ConcreteSwapArithModules::init()
 {
+  if (init_) {
+    return;
+  }
+
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
+  init_ = true;
 }
 
 void ConcreteSwapArithModules::replaceArithModules(const int path_count,
@@ -62,7 +67,7 @@ void ConcreteSwapArithModules::replaceArithModules(const int path_count,
 
   // Identify critical mod instances based on target, path_count and
   // slack_threshold
-  set<dbModInst*> arithInsts;
+  std::set<dbModInst*> arithInsts;
   findCriticalInstances(path_count, target, slack_threshold, arithInsts);
   if (arithInsts.empty()) {
     return;
@@ -76,7 +81,7 @@ void ConcreteSwapArithModules::findCriticalInstances(
     const int path_count,
     const std::string& target,
     const float slack_threshold,
-    set<dbModInst*>& insts)
+    std::set<dbModInst*>& insts)
 {
   logger_->info(RSZ,
                 152,
@@ -131,7 +136,7 @@ void ConcreteSwapArithModules::findCriticalInstances(
 
 void ConcreteSwapArithModules::collectArithInstsOnPath(
     const Path* path,
-    set<dbModInst*>& arithInsts)
+    std::set<dbModInst*>& arithInsts)
 {
   PathExpanded expanded(path, sta_);
   if (expanded.size() > 1) {
@@ -162,6 +167,8 @@ bool ConcreteSwapArithModules::isArithInstance(const Instance* inst,
   if (inst == nullptr) {
     return false;
   }
+
+  init();
   mod_inst = nullptr;
 
   const Instance* curr_inst = inst;
@@ -225,8 +232,9 @@ bool ConcreteSwapArithModules::hasArithOperatorProperty(
   return false;
 }
 
-void ConcreteSwapArithModules::doSwapInstances(const set<dbModInst*>& insts,
-                                               const std::string& target)
+void ConcreteSwapArithModules::doSwapInstances(
+    const std::set<dbModInst*>& insts,
+    const std::string& target)
 {
   int swapped_count = 0;
 

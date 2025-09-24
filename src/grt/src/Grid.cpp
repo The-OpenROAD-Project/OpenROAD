@@ -4,7 +4,6 @@
 #include "Grid.h"
 
 #include <cmath>
-#include <complex>
 
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

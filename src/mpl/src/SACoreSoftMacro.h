@@ -9,9 +9,9 @@
 #include "MplObserver.h"
 #include "SimulatedAnnealingCore.h"
 #include "clusterEngine.h"
+#include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
-#include "util.h"
 
 namespace utl {
 class Logger;
@@ -63,14 +63,12 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void initialize() override;
   // adjust the size of MixedCluster to fill the empty space
   void fillDeadSpace() override;
-  void alignMacroClusters();
+  void attemptMacroClusterAlignment();
   void addBlockages(const std::vector<Rect>& blockages);
 
   bool centralizationWasReverted() { return centralization_was_reverted_; }
-  void setCentralizationAttemptOn(bool centralization_on)
-  {
-    centralization_on_ = centralization_on;
-  };
+
+  void enableEnhancements() { enhancements_on_ = true; };
 
  private:
   float calNormCost() const override;
@@ -90,6 +88,9 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void calMacroBlockagePenalty();
   void calFixedMacrosPenalty();
 
+  std::vector<std::pair<float, float>> getClustersLocations() const;
+  void setClustersLocations(
+      const std::vector<std::pair<float, float>>& clusters_locations);
   // Only for Cluster Placement:
   void attemptCentralization(float pre_cost);
   void moveFloorplan(const std::pair<float, float>& offset);
@@ -135,7 +136,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   // action prob
   float resize_prob_ = 0.0;
 
-  bool centralization_on_ = false;
+  bool enhancements_on_ = false;
   bool centralization_was_reverted_ = false;
 };
 

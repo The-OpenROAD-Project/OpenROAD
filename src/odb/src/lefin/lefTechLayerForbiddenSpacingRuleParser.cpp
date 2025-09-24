@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include <functional>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "boost/bind/bind.hpp"
 #include "boostParser.h"

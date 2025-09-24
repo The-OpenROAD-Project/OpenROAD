@@ -20,7 +20,6 @@
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTransform.h"
-#include "ord/OpenRoad.hh"
 #include "power_cells.h"
 #include "renderer.h"
 #include "rings.h"
@@ -136,8 +135,9 @@ void PdnGen::buildGrids(bool trim)
     }
     logger_->warn(utl::PDN,
                   232,
-                  "{} does not contain any shapes or vias.",
-                  grid->getLongName());
+                  "The grid \"{}\" ({}) does not contain any shapes or vias.",
+                  grid->getLongName(),
+                  Grid::typeToString(grid->type()));
     failed = true;
   }
   if (failed) {

@@ -6,12 +6,12 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
-#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <ctime>
 #include <fstream>
 #include <functional>
+#include <iostream>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -26,6 +26,7 @@
 #include "Clock.h"
 #include "CtsOptions.h"
 #include "HTreeBuilder.h"
+#include "LatencyBalancer.h"
 #include "LevelBalancer.h"
 #include "TechChar.h"
 #include "TreeBuilder.h"
@@ -1392,6 +1393,18 @@ void TritonCTS::computeITermPosition(odb::dbITerm* term, int& x, int& y) const
   }
 };
 
+void TritonCTS::destroyClockModNet(sta::Pin* pin_driver)
+{
+  if (pin_driver == nullptr || network_->hasHierarchy() == false) {
+    return;
+  }
+
+  odb::dbModNet* mod_net = network_->hierNet(pin_driver);
+  if (mod_net) {
+    odb::dbModNet::destroy(mod_net);
+  }
+}
+
 void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
                                    std::set<odb::dbNet*>& clkLeafNets)
 {
@@ -1404,6 +1417,12 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
   (void) pin_driver;
 
   disconnectAllSinksFromNet(topClockNet);
+
+  // If exists, remove the dangling dbModNet related to the topClockNet because
+  // topClockNet has no load pin now.
+  // After CTS, the driver pin will drive only a few of root clock buffers.
+  // So the hierarchical net (dbModNet) is not needed any more.
+  destroyClockModNet(pin_driver);
 
   // re-connect top buffer that separates macros from registers
   if (builder->getTreeType() == TreeType::RegisterTree) {
@@ -1566,7 +1585,7 @@ std::vector<int> TritonCTS::getAllClockTreeLevels(Clock& clockNet)
   std::set<int> uniqueLevels;
 
   clockNet.forEachSubNet([&](ClockSubNet& subNet) {
-    if (!subNet.isLeafLevel()) {
+    if (!subNet.isLeafLevel() && subNet.getTreeLevel() != -1) {
       uniqueLevels.insert(subNet.getTreeLevel());
     }
   });
@@ -1658,6 +1677,41 @@ int TritonCTS::applyNDRToFirstHalfLevels(Clock& clockNet,
   return applyNDRToClockLevels(clockNet, clockNDR, firstHalfLevels);
 }
 
+// Priority for minSpc rule is SPACINGTABLE TWOWIDTHS > SPACINGTABLE PRL >
+// SPACING
+int TritonCTS::getNetSpacing(odb::dbTechLayer* layer,
+                             const int width1,
+                             const int width2)
+{
+  int min_spc = 0;
+  if (layer->hasTwoWidthsSpacingRules()) {
+    min_spc = layer->findTwSpacing(width1, width2, 0);
+  } else if (layer->hasV55SpacingRules()) {
+    min_spc = layer->findV55Spacing(std::max(width1, width2), 0);
+  } else if (!layer->getV54SpacingRules().empty()) {
+    for (auto rule : layer->getV54SpacingRules()) {
+      if (rule->hasRange()) {
+        uint rmin;
+        uint rmax;
+        rule->getRange(rmin, rmax);
+        if (width1 < rmin || width2 > rmax) {
+          continue;
+        }
+      }
+      min_spc = std::max<int>(min_spc, rule->getSpacing());
+    }
+  } else {
+    min_spc = layer->getSpacing();
+  }
+
+  // Last resort, get pitch - minWidth
+  if (min_spc == 0) {
+    min_spc = layer->getPitch() - layer->getMinWidth();
+  }
+
+  return min_spc;
+}
+
 void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
 {
   char ruleName[64];
@@ -1684,17 +1738,39 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
       layerRule = odb::dbTechLayerRule::create(clockNDR, layer);
     }
     assert(layerRule != nullptr);
-    int defaultSpace = layer->getSpacing();
+
     int defaultWidth = layer->getWidth();
-    layerRule->setSpacing(defaultSpace * 2);
-    layerRule->setWidth(defaultWidth);
-    // clang-format off
-    debugPrint(logger_, CTS, "clustering", 1, "  NDR rule set to layer {} {} as "
-	       "space={} width={} vs. default space={} width={}",
-	       i, layer->getName(),
-	       layerRule->getSpacing(), layerRule->getWidth(),
-	       defaultSpace, defaultWidth);
-    // clang-format on
+    int defaultSpace = getNetSpacing(layer, defaultWidth, defaultWidth);
+
+    // If width or space is 0, something is not right
+    if (defaultWidth == 0 || defaultSpace == 0) {
+      logger_->warn(CTS,
+                    208,
+                    "Clock NDR settings for layer {}: defaultSpace: {} - "
+                    "defaultWidth: {}",
+                    layer->getName(),
+                    defaultSpace,
+                    defaultWidth);
+    }
+
+    // Set NDR settings
+    int ndr_width = defaultWidth;
+    layerRule->setWidth(ndr_width);
+    int ndr_space = 2 * getNetSpacing(layer, ndr_width, ndr_width);
+    layerRule->setSpacing(ndr_space);
+
+    debugPrint(logger_,
+               CTS,
+               "clustering",
+               1,
+               "  NDR rule set to layer {} {} as space={} width={} vs. default "
+               "space={} width={}",
+               i,
+               layer->getName(),
+               layerRule->getSpacing(),
+               layerRule->getWidth(),
+               defaultSpace,
+               defaultWidth);
   }
 
   int clkNets = 0;
@@ -1716,12 +1792,14 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
       break;
   }
 
-  logger_->info(CTS,
-                202,
-                "Non-default rule {} for double spacing has been applied to {} "
-                "clock nets",
-                ruleName,
-                clkNets);
+  debugPrint(logger_,
+             CTS,
+             "clustering",
+             1,
+             "Non-default rule {} for double spacing has been applied to {} "
+             "clock nets",
+             ruleName,
+             clkNets);
 }
 
 std::pair<int, int> TritonCTS::branchBufferCount(ClockInst* inst,
@@ -2316,23 +2394,30 @@ void TritonCTS::balanceMacroRegisterLatencies()
 
   // Visit builders from bottom up such that latencies are adjusted near bottom
   // trees first
-  est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
-  openSta_->ensureClkNetwork();
-  openSta_->ensureClkArrivals();
-  sta::Graph* graph = openSta_->graph();
-  for (auto& iter : builders_) {
-    TreeBuilder* registerBuilder = iter.get();
-    if (registerBuilder->getTreeType() == TreeType::RegisterTree) {
-      TreeBuilder* macroBuilder = registerBuilder->getParent();
-      if (macroBuilder) {
-        // Update graph information after possible buffers inserted
-        computeAveSinkArrivals(registerBuilder, graph);
-        computeAveSinkArrivals(macroBuilder, graph);
-        adjustLatencies(macroBuilder, registerBuilder);
-        parasitics_guard.update();
-        openSta_->updateTiming(false);
-      }
+  int totalDelayBuff = 0;
+
+  sta::Corner* corner = openSta_->cmdCorner();
+  // convert from per meter to per dbu
+  double capPerDBU = estimate_parasitics_->wireClkCapacitance(corner) * 1e-6
+                     / block_->getDbUnitsPerMicron();
+
+  for (auto iter = builders_.rbegin(); iter != builders_.rend(); ++iter) {
+    TreeBuilder* builder = iter->get();
+    if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
+      est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
+      LatencyBalancer balancer = LatencyBalancer(builder,
+                                                 options_,
+                                                 logger_,
+                                                 db_,
+                                                 network_,
+                                                 openSta_,
+                                                 techChar_->getLengthUnit(),
+                                                 capPerDBU);
+      totalDelayBuff += balancer.run();
     }
+  }
+  if (totalDelayBuff) {
+    logger_->info(CTS, 37, "Total number of delay buffers: {}", totalDelayBuff);
   }
 }
 

@@ -87,13 +87,13 @@
       "fields": [
         {
           "name": "usage",
-          "type": "uint8_t",
+          "type": "float",
           "flags": [],
           "default": 0
         },
         {
           "name": "capacity",
-          "type": "uint8_t",
+          "type": "float",
           "flags": [],
           "default": 0
         }

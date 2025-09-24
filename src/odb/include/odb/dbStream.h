@@ -19,10 +19,10 @@
 #include <variant>
 #include <vector>
 
-#include "ZException.h"
 #include "boost/container/flat_map.hpp"
-#include "dbObject.h"
-#include "odb.h"
+#include "odb/ZException.h"
+#include "odb/dbObject.h"
+#include "odb/odb.h"
 
 namespace odb {
 

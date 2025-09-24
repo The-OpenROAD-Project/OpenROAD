@@ -17,6 +17,7 @@ class dbDatabase;
 class dbBlock;
 class dbTech;
 class dbLib;
+class dbChip;
 class Point;
 class Rect;
 }  // namespace odb
@@ -125,8 +126,6 @@ class EstimateParasitics;
 
 namespace ord {
 
-using std::string;
-
 class dbVerilogNetwork;
 
 // Only pointers to components so the header has no dependents.
@@ -190,11 +189,10 @@ class OpenRoad
                bool make_library);
 
   void readDef(const char* filename,
-               odb::dbTech* tech,
+               odb::dbChip* chip,
                bool continue_on_errors,
                bool floorplan_init,
-               bool incremental,
-               bool child);
+               bool incremental);
 
   void writeLef(const char* filename);
 
@@ -205,7 +203,7 @@ class OpenRoad
   void writeDef(const char* filename, const char* version);
   void writeDef(const char* filename,
                 // major.minor (avoid including defout.h)
-                const string& version);
+                const std::string& version);
 
   void writeCdl(const char* out_filename,
                 const std::vector<const char*>& masters_filenames,
@@ -284,6 +282,5 @@ class OpenRoad
 
 int tclAppInit(Tcl_Interp* interp);
 int tclInit(Tcl_Interp* interp);
-void abcInit();
 
 }  // namespace ord

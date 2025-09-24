@@ -4,10 +4,8 @@
 #include "ScanArchitectHeuristic.hh"
 
 #include <cstdint>
-#include <iostream>
 #include <iterator>
 #include <memory>
-#include <sstream>
 #include <utility>
 #include <vector>
 

@@ -24,7 +24,6 @@
 #include <regex>
 #include <set>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "boost/json.hpp"
@@ -157,6 +156,8 @@ class dbStaCbk : public dbBlockCallBackObj
   void setNetwork(dbNetwork* network);
   void inDbInstCreate(dbInst* inst) override;
   void inDbInstDestroy(dbInst* inst) override;
+  void inDbModuleCreate(dbModule* module) override;
+  void inDbModuleDestroy(dbModule* module) override;
   void inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master) override;
   void inDbInstSwapMasterAfter(dbInst* inst) override;
   void inDbNetDestroy(dbNet* net) override;
@@ -927,6 +928,16 @@ void dbStaCbk::inDbInstDestroy(dbInst* inst)
   // This is called after the iterms have been destroyed
   // so it side-steps Sta::deleteInstanceAfter.
   sta_->deleteLeafInstanceBefore(network_->dbToSta(inst));
+}
+
+void dbStaCbk::inDbModuleCreate(dbModule* module)
+{
+  network_->registerHierModule(network_->dbToSta(module));
+}
+
+void dbStaCbk::inDbModuleDestroy(dbModule* module)
+{
+  network_->unregisterHierModule(network_->dbToSta(module));
 }
 
 void dbStaCbk::inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master)

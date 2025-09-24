@@ -148,6 +148,10 @@ VARIANTS = [
         "SDC_FILE": [":mock-array-constraints"],
         "IO_CONSTRAINTS": [":mock-array-io"],
     },
+    tags = ["manual"],
+    test_kwargs = {
+        "tags": ["orfs"],
+    },
     variant = variant,
     verilog_files = [":verilog"],
 ) for variant in VARIANTS]
@@ -198,6 +202,7 @@ orfs_flow(
         "IO_CONSTRAINTS": [":mock-array-element-io"],
         "SDC_FILE": [":mock-array-constraints"],
     },
+    tags = ["manual"],
     verilog_files = [":verilog"],
 )
 
@@ -206,6 +211,7 @@ chisel_binary(
     srcs = glob(["src/main/scala/**/*.scala"]),
     main_class = "GenerateMockArray",
     resources = glob(["src/main/resources/**/*"]),
+    tags = ["manual"],
     deps = [
         "@openroad_maven//:com_github_scopt_scopt_2_13",
     ],
@@ -216,6 +222,7 @@ genrule(
     srcs = [],
     outs = ["array.sv"],
     cmd = "$(execpath :generate_verilog) --width 8 --height 8 --dataWidth 64 -- --firtool-binary-path $(execpath @circt//:bin/firtool) -- --default-layer-specialization=disable -o $(location :array.sv)",
+    tags = ["manual"],
     tools = [
         ":generate_verilog",
         "@circt//:bin/firtool",
@@ -228,6 +235,7 @@ filegroup(
         "src/main/resources/multiplier.v",
         ":genverilog",
     ],
+    tags = ["manual"],
 )
 
 MACROS = [
@@ -290,6 +298,7 @@ verilog_library(
         "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/dff.v",
         "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/empty.v",
     ],
+    tags = ["manual"],
 )
 
 verilator_cc_library(
@@ -300,6 +309,7 @@ verilator_cc_library(
     ],
     module = ":array",
     module_top = "MockArray",
+    tags = ["manual"],
     trace = True,
     vopts = [
         "--timescale 1ps/1ps",
@@ -323,6 +333,7 @@ cc_binary(
     cxxopts = [
         "-std=c++23",
     ],
+    tags = ["manual"],
     deps = [
         ":array_verilator",
     ],
@@ -336,6 +347,7 @@ genrule(
     ],
     outs = ["MockArrayTestbench.vcd"],
     cmd = "$(execpath :simulator) $(location :MockArrayTestbench.vcd)",
+    tags = ["manual"],
     tools = [
     ],
 )
@@ -393,6 +405,7 @@ sh_test(
     data = [
         ":MockArray_power",
     ],
+    tags = ["manual"],
 )
 
 # FIXME why is this needed to ensure that cfg=exec of OpenSTA has runfiles?
@@ -403,5 +416,6 @@ genrule(
     cmd = """
     $(location //src/sta:opensta) >$@
     """,
+    tags = ["manual"],
     tools = ["//src/sta:opensta"],
 )

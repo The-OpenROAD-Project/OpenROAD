@@ -279,9 +279,7 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   if (!obj.isSchema(db_schema_block_tech)) {
     if (obj._chip) {
       _dbChip* chip = obj.chip_tbl_->getPtr(obj._chip);
-      if (chip->_top) {
-        chip->_block_tbl->getPtr(chip->_top)->_tech = old_db_tech;
-      }
+      chip->tech_ = old_db_tech;
     }
 
     auto db_public = (dbDatabase*) &obj;

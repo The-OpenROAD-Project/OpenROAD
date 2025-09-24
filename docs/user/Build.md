@@ -50,7 +50,7 @@ Please refer to the instructions for installing prebuilt binaries
 ## Build Locally
 
 The default build type is `RELEASE` to compile optimized code.
-The resulting executable is in `build/src/openroad`.
+The resulting executable is in `build/bin/openroad`.
 
 Optional CMake variables passed as `-D<var>=<value>` arguments to CMake are show below.
 

@@ -25,9 +25,9 @@
 #include <chrono>
 #include <stdexcept>
 
-#include "client_metric.h"
-#include "family.h"
-#include "prometheus_metric.h"
+#include "utl/prometheus/client_metric.h"
+#include "utl/prometheus/family.h"
+#include "utl/prometheus/prometheus_metric.h"
 
 namespace utl {
 

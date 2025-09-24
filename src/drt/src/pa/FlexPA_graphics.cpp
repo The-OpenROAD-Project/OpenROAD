@@ -3,9 +3,7 @@
 
 #include "pa/FlexPA_graphics.h"
 
-#include <algorithm>
 #include <cstdio>
-#include <limits>
 #include <memory>
 #include <string>
 #include <utility>

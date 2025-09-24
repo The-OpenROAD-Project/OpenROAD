@@ -27,11 +27,11 @@
 #include <mutex>
 #include <vector>
 
-#include "builder.h"
-#include "ckms_quantiles.h"
-#include "family.h"
-#include "prometheus_metric.h"
-#include "time_window_quantiles.h"
+#include "utl/prometheus/builder.h"
+#include "utl/prometheus/ckms_quantiles.h"
+#include "utl/prometheus/family.h"
+#include "utl/prometheus/prometheus_metric.h"
+#include "utl/prometheus/time_window_quantiles.h"
 
 namespace utl {
 

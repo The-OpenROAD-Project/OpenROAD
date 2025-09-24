@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <queue>
-#include <utility>
 #include <vector>
 
 #include "DataType.h"

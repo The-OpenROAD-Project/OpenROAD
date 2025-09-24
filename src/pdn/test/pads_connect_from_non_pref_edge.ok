@@ -1,0 +1,18 @@
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via1 :"
+  	EOLENCLOSURE 0.34 0.06 ;"
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via2 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via3 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via4 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via5 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0227] LEF file: gf180/gf180mcu_6LM_1TM_9K_7t_tech.lef, created 15 layers, 74 vias
+[INFO ODB-0227] LEF file: gf180/gf180mcu_fd_sc_mcu7t5v0.lef, created 229 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file gf180/gf180mcu_fd_io.lef at line 2.
+
+[INFO ODB-0227] LEF file: gf180/gf180mcu_fd_io.lef, created 28 library cells
+[INFO ODB-0128] Design: gf_template_top
+[INFO ODB-0130]     Created 29 pins.
+[INFO ODB-0131]     Created 1328 components and 5484 component-terminals.
+[INFO ODB-0132]     Created 29 special nets and 5323 connections.
+[INFO PDN-0001] Inserting grid: stdcell_grid
+No differences found.

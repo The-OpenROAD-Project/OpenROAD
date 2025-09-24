@@ -28,10 +28,14 @@ report_layer_rc -corner ff
 puts "Corner: ss"
 report_layer_rc -corner ss
 
-estimate_parasitics -placement -spef_file results/make_parasitics6.spef
+set spef_file [make_result_file make_parasitics6.spef]
+# writes corners with _ff and _ss suffixes in the
+# same folder as $spef_file
+estimate_parasitics -placement -spef_file $spef_file
 
 report_net r1/Q -corner ff
 report_net r1/Q -corner ss
 
-diff_file make_parasitics6_ff.spefok results/make_parasitics6_ff.spef
-diff_file make_parasitics6_ss.spefok results/make_parasitics6_ss.spef
+set spef_file_folder [file dirname $spef_file]
+diff_file make_parasitics6_ff.spefok $spef_file_folder/make_parasitics6-tcl_ff.spef
+diff_file make_parasitics6_ss.spefok $spef_file_folder/make_parasitics6-tcl_ss.spef

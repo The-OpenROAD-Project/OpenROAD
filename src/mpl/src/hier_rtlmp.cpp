@@ -26,12 +26,12 @@
 #include "SimulatedAnnealingCore.h"
 #include "clusterEngine.h"
 #include "db_sta/dbNetwork.hh"
+#include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "odb/util.h"
 #include "par/PartitionMgr.h"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -1487,7 +1487,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
   for (auto& cluster : parent->getChildren()) {
     const int src_id = cluster->getId();
     const std::string src_name = cluster->getName();
-    for (auto& [cluster_id, weight] : cluster->getConnection()) {
+    for (auto& [cluster_id, weight] : cluster->getConnectionsMap()) {
       debugPrint(logger_,
                  MPL,
                  "hierarchical_macro_placement",
@@ -1652,7 +1652,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
                                               logger_,
                                               block_);
       sa->setNumberOfSequencePairMacros(number_of_sequence_pair_macros);
-      sa->setCentralizationAttemptOn(true);
+      sa->enableEnhancements();
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
@@ -1708,9 +1708,6 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
       logger_->error(MPL, 40, "Failed on cluster {}", parent->getName());
     }
   } else {
-    if (best_sa->centralizationWasReverted()) {
-      best_sa->alignMacroClusters();
-    }
     best_sa->fillDeadSpace();
 
     std::vector<SoftMacro> shaped_macros = best_sa->getMacros();
@@ -2300,7 +2297,7 @@ void HierRTLMP::createFixedTerminals(const Rect& outline,
   std::set<int> clusters_ids;
 
   for (auto& macro_cluster : macro_clusters) {
-    for (auto [cluster_id, weight] : macro_cluster->getConnection()) {
+    for (auto [cluster_id, weight] : macro_cluster->getConnectionsMap()) {
       clusters_ids.insert(cluster_id);
     }
   }
@@ -2327,7 +2324,7 @@ std::vector<BundledNet> HierRTLMP::computeBundledNets(
   for (auto& macro_cluster : macro_clusters) {
     const int src_id = macro_cluster->getId();
 
-    for (auto [cluster_id, weight] : macro_cluster->getConnection()) {
+    for (auto [cluster_id, weight] : macro_cluster->getConnectionsMap()) {
       BundledNet net(
           cluster_to_macro.at(src_id), cluster_to_macro.at(cluster_id), weight);
 

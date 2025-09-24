@@ -8,9 +8,9 @@
 #include <iostream>
 #include <iterator>
 #include <map>
-#include <streambuf>
+#include <set>
 #include <string>
-#include <tuple>
+#include <utility>
 #include <vector>
 
 #include "cut/blifParser.h"
@@ -535,7 +535,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
           auto port_ = network_->libertyPort(pin_);
           if (port_->isClock()) {
             mtermName = mTerm->getName();
-            netName = connection;
+            netName = std::move(connection);
             break;
           }
         }

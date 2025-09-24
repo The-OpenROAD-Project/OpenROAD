@@ -6,9 +6,7 @@
 #include <string.h>
 
 #include <cmath>
-#include <cstddef>
 #include <optional>
-#include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -33,6 +31,12 @@
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
 #include "utl/deleter.h"
+
+namespace abc {
+// Forward declare instead of including to avoid warnings from ABC
+void Abc_Start();
+void Abc_Stop();
+}  // namespace abc
 
 namespace cut {
 
@@ -678,6 +682,23 @@ bool AbcLibrary::IsConst1Cell(const std::string& cell_name)
 bool AbcLibrary::IsConstCell(const std::string& cell_name)
 {
   return IsConst1Cell(cell_name) || IsConst0Cell(cell_name);
+}
+
+static bool abc_initialized = false;
+
+void abcInit()
+{
+  if (!abc_initialized) {
+    abc::Abc_Start();
+    abc_initialized = true;
+  }
+}
+
+void abcStop()
+{
+  if (abc_initialized) {
+    abc::Abc_Stop();
+  }
 }
 
 }  // namespace cut

@@ -60,27 +60,10 @@ std::optional<dbOrientType::Value> dbOrientType::fromString(const char* orient)
   return ret;
 }
 
-const dbOrientType::Value dbOrientType::DEFAULT;
-
 dbOrientType::dbOrientType(const char* orient)
 {
   auto opt = fromString(orient);
   _value = opt.value_or(dbOrientType::DEFAULT);
-}
-
-dbOrientType::dbOrientType(Value orient)
-{
-  _value = orient;
-}
-
-dbOrientType::dbOrientType()
-{
-  _value = dbOrientType::DEFAULT;
-}
-
-dbOrientType::dbOrientType(const dbOrientType& orient)
-{
-  _value = orient._value;
 }
 
 const char* dbOrientType::getString() const
@@ -250,18 +233,9 @@ bool dbOrientType3D::isMirrorZ() const
   return mirror_z_;
 }
 
-dbGDSSTrans::dbGDSSTrans()
-{
-  _flipX = false;
-  _mag = 1.0;
-  _angle = 0.0;
-}
-
 dbGDSSTrans::dbGDSSTrans(bool flipX, double mag, double angle)
+    : _flipX(flipX), _mag(mag), _angle(angle)
 {
-  _flipX = flipX;
-  _mag = mag;
-  _angle = angle;
 }
 
 bool dbGDSSTrans::operator==(const dbGDSSTrans& rhs) const
@@ -288,17 +262,10 @@ bool dbGDSSTrans::identity() const
   return (!_flipX) && (_mag == 1.0) && (_angle == 0.0);
 }
 
-dbGDSTextPres::dbGDSTextPres()
-{
-  _vPres = dbGDSTextPres::VPres::TOP;
-  _hPres = dbGDSTextPres::HPres::LEFT;
-}
-
 dbGDSTextPres::dbGDSTextPres(dbGDSTextPres::VPres vPres,
                              dbGDSTextPres::HPres hPres)
+    : _vPres(vPres), _hPres(hPres)
 {
-  _vPres = vPres;
-  _hPres = hPres;
 }
 
 bool dbGDSTextPres::operator==(const dbGDSTextPres& rhs) const
@@ -325,7 +292,7 @@ dbIStream& operator>>(dbIStream& stream, dbGDSSTrans& t)
   return stream;
 }
 
-dbOStream& operator<<(dbOStream& stream, const dbGDSSTrans t)
+dbOStream& operator<<(dbOStream& stream, const dbGDSSTrans& t)
 {
   stream << t._flipX;
   stream << t._mag;
@@ -342,7 +309,7 @@ dbIStream& operator>>(dbIStream& stream, dbOrientType3D& t)
   return stream;
 }
 
-dbOStream& operator<<(dbOStream& stream, const dbOrientType3D t)
+dbOStream& operator<<(dbOStream& stream, const dbOrientType3D& t)
 {
   stream << static_cast<uint8_t>(t.value_);
   stream << t.mirror_z_;
@@ -359,42 +326,27 @@ dbIStream& operator>>(dbIStream& stream, dbGDSTextPres& t)
   return stream;
 }
 
-dbOStream& operator<<(dbOStream& stream, const dbGDSTextPres t)
+dbOStream& operator<<(dbOStream& stream, const dbGDSTextPres& t)
 {
   stream << static_cast<uint8_t>(t._vPres);
   stream << static_cast<uint8_t>(t._hPres);
   return stream;
 }
 
-dbGroupType::dbGroupType(const char* orient)
+dbGroupType::dbGroupType(const char* type)
 {
-  if (strcasecmp(orient, "PHYSICAL_CLUSTER") == 0) {
+  if (strcasecmp(type, "PHYSICAL_CLUSTER") == 0) {
     _value = PHYSICAL_CLUSTER;
 
-  } else if (strcasecmp(orient, "VOLTAGE_DOMAIN") == 0) {
+  } else if (strcasecmp(type, "VOLTAGE_DOMAIN") == 0) {
     _value = VOLTAGE_DOMAIN;
 
-  } else if (strcasecmp(orient, "POWER_DOMAIN") == 0) {
+  } else if (strcasecmp(type, "POWER_DOMAIN") == 0) {
     _value = POWER_DOMAIN;
 
   } else {
     _value = PHYSICAL_CLUSTER;
   }
-}
-
-dbGroupType::dbGroupType(Value orient)
-{
-  _value = orient;
-}
-
-dbGroupType::dbGroupType()
-{
-  _value = PHYSICAL_CLUSTER;
-}
-
-dbGroupType::dbGroupType(const dbGroupType& type)
-{
-  _value = type._value;
 }
 
 const char* dbGroupType::getString() const
@@ -451,21 +403,6 @@ dbSigType::dbSigType(const char* value)
   } else {
     _value = SIGNAL;
   }
-}
-
-dbSigType::dbSigType(Value value)
-{
-  _value = value;
-}
-
-dbSigType::dbSigType()
-{
-  _value = SIGNAL;
-}
-
-dbSigType::dbSigType(const dbSigType& value)
-{
-  _value = value._value;
 }
 
 bool dbSigType::isSupply() const
@@ -546,21 +483,6 @@ dbIoType::dbIoType(const char* value)
   }
 }
 
-dbIoType::dbIoType(Value value)
-{
-  _value = value;
-}
-
-dbIoType::dbIoType()
-{
-  _value = INPUT;
-}
-
-dbIoType::dbIoType(const dbIoType& value)
-{
-  _value = value._value;
-}
-
 const char* dbIoType::getString() const
 {
   const char* value = "";
@@ -612,21 +534,6 @@ dbPlacementStatus::dbPlacementStatus(const char* value)
   } else {
     _value = NONE;
   }
-}
-
-dbPlacementStatus::dbPlacementStatus(Value value)
-{
-  _value = value;
-}
-
-dbPlacementStatus::dbPlacementStatus()
-{
-  _value = NONE;
-}
-
-dbPlacementStatus::dbPlacementStatus(const dbPlacementStatus& value)
-{
-  _value = value._value;
 }
 
 const char* dbPlacementStatus::getString() const
@@ -821,21 +728,6 @@ dbMasterType::dbMasterType(const char* value)
   } else if (strcasecmp(value, "ENDCAP LEFTTOPCORNER") == 0) {
     _value = ENDCAP_LEF58_LEFTTOPCORNER;
   }
-}
-
-dbMasterType::dbMasterType(Value value)
-{
-  _value = value;
-}
-
-dbMasterType::dbMasterType()
-{
-  _value = CORE;
-}
-
-dbMasterType::dbMasterType(const dbMasterType& value)
-{
-  _value = value._value;
 }
 
 const char* dbMasterType::getString() const
@@ -1274,8 +1166,6 @@ std::optional<dbTechLayerType::Value> dbTechLayerType::fromString(
   return ret;
 }
 
-const dbTechLayerType::Value dbTechLayerType::DEFAULT;
-
 dbTechLayerType::dbTechLayerType(const char* value)
 {
   auto opt = fromString(value);
@@ -1368,22 +1258,6 @@ dbTechLayerMinStepType::dbTechLayerMinStepType(const char* value)
   }
 }
 
-dbTechLayerMinStepType::dbTechLayerMinStepType(Value value)
-{
-  _value = value;
-}
-
-dbTechLayerMinStepType::dbTechLayerMinStepType()
-{
-  _value = OUTSIDE_CORNER;
-}
-
-dbTechLayerMinStepType::dbTechLayerMinStepType(
-    const dbTechLayerMinStepType& value)
-{
-  _value = value._value;
-}
-
 const char* dbTechLayerMinStepType::getString() const
 {
   const char* value = "";
@@ -1453,21 +1327,6 @@ dbBoxOwner::dbBoxOwner(const char* value)
     // mismatch with noarg constructor: BLOCK
     _value = UNKNOWN;
   }
-}
-
-dbBoxOwner::dbBoxOwner(Value value)
-{
-  _value = value;
-}
-
-dbBoxOwner::dbBoxOwner()
-{
-  _value = BLOCK;
-}
-
-dbBoxOwner::dbBoxOwner(const dbBoxOwner& value)
-{
-  _value = value._value;
 }
 
 const char* dbBoxOwner::getString() const
@@ -1554,21 +1413,6 @@ dbPolygonOwner::dbPolygonOwner(const char* value)
   }
 }
 
-dbPolygonOwner::dbPolygonOwner(Value value)
-{
-  _value = value;
-}
-
-dbPolygonOwner::dbPolygonOwner()
-{
-  _value = UNKNOWN;
-}
-
-dbPolygonOwner::dbPolygonOwner(const dbPolygonOwner& value)
-{
-  _value = value._value;
-}
-
 const char* dbPolygonOwner::getString() const
 {
   const char* value = "";
@@ -1615,21 +1459,6 @@ dbWireType::dbWireType(const char* value)
   } else if (strcasecmp(value, "NOSHIELD") == 0) {
     _value = NOSHIELD;
   }
-}
-
-dbWireType::dbWireType(Value value)
-{
-  _value = value;
-}
-
-dbWireType::dbWireType()
-{
-  _value = NONE;
-}
-
-dbWireType::dbWireType(const dbWireType& value)
-{
-  _value = value._value;
 }
 
 const char* dbWireType::getString() const
@@ -1706,21 +1535,6 @@ dbWireShapeType::dbWireShapeType(const char* value)
   }
 }
 
-dbWireShapeType::dbWireShapeType(Value value)
-{
-  _value = value;
-}
-
-dbWireShapeType::dbWireShapeType()
-{
-  _value = NONE;
-}
-
-dbWireShapeType::dbWireShapeType(const dbWireShapeType& value)
-{
-  _value = value._value;
-}
-
 const char* dbWireShapeType::getString() const
 {
   const char* value = "";
@@ -1794,21 +1608,6 @@ dbSiteClass::dbSiteClass(const char* value)
   }
 }
 
-dbSiteClass::dbSiteClass(Value value)
-{
-  _value = value;
-}
-
-dbSiteClass::dbSiteClass()
-{
-  _value = NONE;
-}
-
-dbSiteClass::dbSiteClass(const dbSiteClass& value)
-{
-  _value = value._value;
-}
-
 const char* dbSiteClass::getString() const
 {
   const char* value = "";
@@ -1842,31 +1641,6 @@ dbOnOffType::dbOnOffType(const char* instr)
   } else {
     _value = OFF;
   }
-}
-
-dbOnOffType::dbOnOffType(Value inval)
-{
-  _value = inval;
-}
-
-dbOnOffType::dbOnOffType(const dbOnOffType& value)
-{
-  _value = value._value;
-}
-
-dbOnOffType::dbOnOffType(int innum)
-{
-  _value = (innum == 0) ? OFF : ON;
-}
-
-dbOnOffType::dbOnOffType(bool insw)
-{
-  _value = (insw) ? ON : OFF;
-}
-
-dbOnOffType::dbOnOffType()
-{
-  _value = OFF;
 }
 
 const char* dbOnOffType::getString() const
@@ -1942,21 +1716,6 @@ dbRowDir::dbRowDir(const char* value)
     // mismatch with noarg constructor: HORIZONTAL
     _value = VERTICAL;
   }
-}
-
-dbRowDir::dbRowDir(Value value)
-{
-  _value = value;
-}
-
-dbRowDir::dbRowDir()
-{
-  _value = HORIZONTAL;
-}
-
-dbRowDir::dbRowDir(const dbRowDir& value)
-{
-  _value = value._value;
 }
 
 const char* dbRowDir::getString() const
@@ -2204,21 +1963,6 @@ dbMTermShapeType::dbMTermShapeType(const char* value)
   }
 }
 
-dbMTermShapeType::dbMTermShapeType(Value value)
-{
-  _value = value;
-}
-
-dbMTermShapeType::dbMTermShapeType()
-{
-  _value = NONE;
-}
-
-dbMTermShapeType::dbMTermShapeType(const dbMTermShapeType& value)
-{
-  _value = value._value;
-}
-
 const char* dbMTermShapeType::getString() const
 {
   const char* value = "";
@@ -2264,16 +2008,6 @@ dbAccessType::dbAccessType(const char* type)
   } else {
     _value = OnGrid;
   }
-}
-
-dbAccessType::dbAccessType(Value type)
-{
-  _value = type;
-}
-
-dbAccessType::dbAccessType()
-{
-  _value = OnGrid;
 }
 
 const char* dbAccessType::getString() const

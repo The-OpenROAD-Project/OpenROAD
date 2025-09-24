@@ -16,7 +16,12 @@ set status [catch { sta::check_axioms } msg]
 # - It is because odb does not keep unused modules in its database.
 
 # Check for expected messages.
-#[WARNING ORD-2038] SanityCheck: Module i_empty has no instances.
-#[WARNING ORD-2038] SanityCheck: Module u1 has no instances.
-#[WARNING ORD-2038] SanityCheck: Module u2 has no instances.
-#[ERROR ORD-2039] SanityCheck: Net out_unconnected has less than 2 connections.
+#[WARNING ORD-2039] SanityCheck: Net 'out_unconnected' has less than
+# 2 connections (# of ITerms = 0, # of BTerms = 1).
+#[WARNING ORD-2039] SanityCheck: Net 'single_conn_wire' has less than
+# 2 connections (# of ITerms = 0, # of BTerms = 0).
+#[WARNING ORD-2039] SanityCheck: Net 'w2' has less than 2 connections
+# (# of ITerms = 0, # of BTerms = 1).
+#[WARNING ORD-2038] SanityCheck: Module 'i_empty' has no instances.
+#[WARNING ORD-2038] SanityCheck: Module 'u1' has no instances.
+#[WARNING ORD-2038] SanityCheck: Module 'u2' has no instances.

@@ -54,6 +54,7 @@ class TimingWidget : public QDockWidget
   ~TimingWidget() override;
 
   void init(sta::dbSta* sta);
+  void setLogger(utl::Logger* logger);
 
   TimingPathRenderer* getTimingRenderer() { return path_renderer_.get(); }
   TimingConeRenderer* getConeRenderer() { return cone_renderer_.get(); }
@@ -101,6 +102,7 @@ class TimingWidget : public QDockWidget
 
   void writePathReportCommand(const QModelIndex& selected_index,
                               const CommandType& type);
+  void writePathDef(const QModelIndex& selected_index, const CommandType& type);
   void showCommandsMenu(const QPoint& pos);
 
  private slots:
@@ -119,7 +121,7 @@ class TimingWidget : public QDockWidget
                              const std::vector<std::set<const sta::Pin*>>& thru,
                              const std::set<const sta::Pin*>& to,
                              const std::string& path_group_name,
-                             sta::ClockSet* clks = nullptr);
+                             const sta::ClockSet* clks = nullptr);
   void setInitialColumnsVisibility(const QVariant& columns_visibility);
   QVariantList getColumnsVisibility() const;
 
@@ -127,6 +129,7 @@ class TimingWidget : public QDockWidget
   QString generateFromStartToEndString(TimingPath* path);
   QString generateClosestMatchString(CommandType type, TimingPath* path);
 
+  utl::Logger* logger_{nullptr};
   QMenu* commands_menu_;
 
   QModelIndex timing_paths_table_index_;

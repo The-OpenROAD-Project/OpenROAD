@@ -403,13 +403,14 @@ sta::define_cmd_args "report_wire_length" { [-net net_list] \
                                             [-file file] \
                                             [-global_route] \
                                             [-detailed_route] \
-                                            [-verbose]
+                                            [-verbose] \
+                                            [-summary]
 }
 
 proc report_wire_length { args } {
   sta::parse_key_args "report_wire_length" args \
     keys {-net -file} \
-    flags {-global_route -detailed_route -verbose}
+    flags {-global_route -detailed_route -verbose -summary}
 
   set block [ord::get_db_block]
   if { $block == "NULL" } {
@@ -431,7 +432,9 @@ proc report_wire_length { args } {
     grt::create_wl_report_file $file $verbose
   }
 
-  if { [info exists keys(-net)] } {
+  if { [info exists flags(-summary)] } {
+    grt::report_layer_wire_lengths $global_route_wl $detailed_route_wl
+  } elseif { [info exists keys(-net)] } {
     foreach net [get_nets $keys(-net)] {
       set db_net [sta::sta_to_db_net $net]
       if {

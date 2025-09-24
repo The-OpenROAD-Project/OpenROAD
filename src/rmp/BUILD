@@ -34,6 +34,7 @@ cc_library(
         "//:ord",
         "//src/cut",
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/rsz",
         "//src/sta:opensta_lib",
@@ -58,7 +59,6 @@ cc_library(
     ],
     hdrs = [
         "include/rmp/MakeRestructure.h",
-        "include/rmp/Restructure.h",
     ],
     copts = [
         "-Isrc/rmp/src",
@@ -67,11 +67,11 @@ cc_library(
         "include",
     ],
     deps = [
+        ":rmp",
         "//:ord",
         "//src/cut",
         "//src/dbSta",
         "//src/odb",
-        "//src/rmp",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",

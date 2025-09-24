@@ -6,7 +6,6 @@
 #include <utility>
 #include <vector>
 
-#include "geo.h"
 #include "grt/GRoute.h"
 
 namespace odb {
@@ -26,6 +25,7 @@ namespace grt {
 class Design;
 class GridGraph;
 class GRNet;
+class BoxT;
 
 struct Constants
 {
@@ -64,8 +64,13 @@ class CUGR
   void route();
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
+  void updateDbCongestion();
 
  private:
+  void updateOverflowNets(std::vector<int>& netIndices);
+  void patternRoute(std::vector<int>& netIndices);
+  void patternRouteWithDetours(std::vector<int>& netIndices);
+  void mazeRoute(std::vector<int>& netIndices);
   void sortNetIndices(std::vector<int>& netIndices) const;
   void getGuides(const GRNet* net,
                  std::vector<std::pair<int, grt::BoxT>>& guides);

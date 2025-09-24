@@ -6,7 +6,7 @@
 [INFO ODB-0133]     Created 15 nets and 72 connections.
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
-[INFO GRT-0022] Global adjustment: 50%
+[INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
 [INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
@@ -26,7 +26,7 @@ num of nets :        15
 num of special nets: 0
 gcell grid:          38 x 38 x 6
 stage 1: pattern routing
-0 / 15 gr_nets_ have overflows.
+0 / 15 nets have overflow.
 routing statistics
 wire length (metric):  2918
 total via count:       169

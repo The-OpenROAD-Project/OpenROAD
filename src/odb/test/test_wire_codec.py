@@ -15,8 +15,10 @@ class TestWireCodec(odbUnitTest.TestCase):
             self.m3,
             self.v12,
             self.v23,
+            self.design,
+            self.ord_tech,
         ) = helper.createMultiLayerDB()
-        self.chip = odb.dbChip_create(self.db)
+        self.chip = odb.dbChip_create(self.db, self.tech)
         self.block = odb.dbBlock_create(self.chip, "chip")
         self.net = odb.dbNet_create(self.block, "net")
         self.wire = odb.dbWire_create(self.net)
@@ -35,10 +37,6 @@ class TestWireCodec(odbUnitTest.TestCase):
             "RULE",
             "END_DECODE",
         ]
-
-    # this function is called after each of the test cases
-    def tearDown(self):
-        self.db.destroy(self.db)
 
     def test_decoder(self):
         encoder = odb.dbWireEncoder()
