@@ -940,6 +940,10 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
         = std::max(layer_res_[cut_layer_idx][corner->index()], 1.0e-3);
     parasitics_->makeResistor(
         parasitic, resistor_id++, cut_res, pin_node, node);
+  } else if (pin_layer_idx == tree_layer_idx) {
+    // Add a small resistor between the pin node and tree node to keep
+    // connectivity
+    parasitics_->makeResistor(parasitic, resistor_id++, 1.0e-3, pin_node, node);
   } else {
     const auto [start_idx, end_idx]
         = std::minmax(pin_layer_idx, tree_layer_idx);
