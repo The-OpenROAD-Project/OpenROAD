@@ -670,7 +670,8 @@ void EstimateParasitics::estimateWireParasiticSteiner(const Pin* drvr_pin,
       bool is_clk = global_router_->isNonLeafClock(db_network_->staToDb(net));
       double wire_cap = 0.0;
       double wire_res = 0.0;
-      int branch_count = tree->branchCount();
+      const int branch_count = tree->branchCount();
+      int max_node_index = tree->getMaxIndex();
       size_t resistor_id = 1;
       for (int i = 0; i < branch_count; i++) {
         Point pt1, pt2;
@@ -734,6 +735,8 @@ void EstimateParasitics::estimateWireParasiticSteiner(const Pin* drvr_pin,
                                  resistor_id,
                                  corner,
                                  connected_pins,
+                                 net,
+                                 max_node_index,
                                  is_clk);
         parasiticNodeConnectPins(parasitic,
                                  n2,
@@ -742,6 +745,8 @@ void EstimateParasitics::estimateWireParasiticSteiner(const Pin* drvr_pin,
                                  resistor_id,
                                  corner,
                                  connected_pins,
+                                 net,
+                                 max_node_index,
                                  is_clk);
       }
       if (spef_writer) {
@@ -905,6 +910,8 @@ void EstimateParasitics::parasiticNodeConnectPins(
     size_t& resistor_id,
     Corner* corner,
     std::set<const Pin*>& connected_pins,
+    const Net* net,
+    int& max_node_index,
     const bool is_clk)
 {
   const PinSeq* pins = tree->pins(pt);
@@ -919,6 +926,7 @@ void EstimateParasitics::parasiticNodeConnectPins(
     for (const Pin* pin : *pins) {
       ParasiticNode* pin_node
           = parasitics_->ensureParasiticNode(parasitic, pin, network_);
+      ParasiticNode* prev_node = nullptr;
       if (connected_pins.find(pin) == connected_pins.end()) {
         if (tree_layer != nullptr && !layer_res_.empty()) {
           odb::dbTechLayer* pin_layer = getPinLayer(pin);
@@ -928,10 +936,21 @@ void EstimateParasitics::parasiticNodeConnectPins(
             odb::dbTechLayer* cut_layer
                 = db_->getTech()->findLayer(layer_number);
             if (cut_layer->getType() == odb::dbTechLayerType::CUT) {
+              ParasiticNode* mid_node = parasitics_->ensureParasiticNode(
+                  parasitic, net, ++max_node_index, network_);
               double cut_res
                   = std::max(layer_res_[layer_number][corner->index()], 1.0e-3);
-              parasitics_->makeResistor(
-                  parasitic, resistor_id++, cut_res, node, pin_node);
+              if (layer_number - 1 == pin_layer->getNumber()) {
+                parasitics_->makeResistor(
+                    parasitic, resistor_id++, cut_res, pin_node, mid_node);
+              } else if (layer_number + 1 == tree_layer->getNumber()) {
+                parasitics_->makeResistor(
+                    parasitic, resistor_id++, cut_res, prev_node, node);
+              } else {
+                parasitics_->makeResistor(
+                    parasitic, resistor_id++, cut_res, prev_node, mid_node);
+              }
+              prev_node = mid_node;
             }
           }
         } else {

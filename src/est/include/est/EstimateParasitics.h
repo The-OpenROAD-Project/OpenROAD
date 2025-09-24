@@ -264,6 +264,8 @@ class EstimateParasitics : public dbStaState
                                 size_t& resistor_id,
                                 Corner* corner,
                                 std::set<const Pin*>& connected_pins,
+                                const Net* net,
+                                int& max_node_index,
                                 bool is_clk);
   void net2Pins(const Net* net, const Pin*& pin1, const Pin*& pin2) const;
   double dbuToMeters(int dist) const;
