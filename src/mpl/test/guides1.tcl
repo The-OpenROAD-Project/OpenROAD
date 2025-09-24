@@ -16,7 +16,7 @@ set_io_pin_constraint -direction INPUT -region left:*
 
 set_macro_guidance_region -macro_name MACRO_1 -region {49 0 149 100}
 set_thread_count 0
-rtl_macro_placer -report_directory results/guides1 -halo_width 4.0
+rtl_macro_placer -report_directory [make_result_dir] -halo_width 4.0
 
 set def_file [make_result_file guides1.def]
 write_def $def_file

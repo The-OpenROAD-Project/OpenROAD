@@ -333,9 +333,9 @@ sky130_fd_sc_hd__and3b_2/C -> B
 sky130_fd_sc_hd__and3b_4/A_N ->
 sky130_fd_sc_hd__and3b_4/B -> C
 sky130_fd_sc_hd__and3b_4/C -> B
-sky130_fd_sc_hd__and4_1/A -> B C D
-sky130_fd_sc_hd__and4_1/B -> A C D
-sky130_fd_sc_hd__and4_1/C -> A B D
+sky130_fd_sc_hd__and4_1/A -> D B C
+sky130_fd_sc_hd__and4_1/B -> D A C
+sky130_fd_sc_hd__and4_1/C -> D A B
 sky130_fd_sc_hd__and4_1/D -> A B C
 sky130_fd_sc_hd__and4_2/A -> B C D
 sky130_fd_sc_hd__and4_2/B -> A C D
@@ -717,8 +717,8 @@ sky130_fd_sc_hd__nand4b_2/C -> B D
 sky130_fd_sc_hd__nand4b_2/D -> B C
 sky130_fd_sc_hd__nand4b_4/A_N ->
 sky130_fd_sc_hd__nand4b_4/B -> C D
-sky130_fd_sc_hd__nand4b_4/C -> B D
-sky130_fd_sc_hd__nand4b_4/D -> B C
+sky130_fd_sc_hd__nand4b_4/C -> D B
+sky130_fd_sc_hd__nand4b_4/D -> C B
 sky130_fd_sc_hd__nand4bb_1/A_N -> B_N
 sky130_fd_sc_hd__nand4bb_1/B_N -> A_N
 sky130_fd_sc_hd__nand4bb_1/C -> D

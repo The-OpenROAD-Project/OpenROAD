@@ -22,5 +22,6 @@ rmp::blif_add_instance $blif "_i8_"
 
 rmp::blif_read $blif "./blif_reader.blif"
 
-write_def "./results/blif_reader.def"
-diff_files "./results/blif_reader.def" "blif_reader.def.ok"
+set result_def [make_result_file "blif_reader.def"]
+write_def "$result_def"
+diff_files "$result_def" "blif_reader.def.ok"

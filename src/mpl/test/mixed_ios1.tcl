@@ -13,7 +13,7 @@ read_def "./testcases/mixed_ios1.def"
 set_io_pin_constraint -pin_names {io_1} -region right:70-90
 
 set_thread_count 0
-rtl_macro_placer -report_directory results/mixed_ios1 -halo_width 4.0
+rtl_macro_placer -report_directory [make_result_dir] -halo_width 4.0
 
 set def_file [make_result_file mixed_ios1.def]
 write_def $def_file

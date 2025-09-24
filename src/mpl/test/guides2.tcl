@@ -17,7 +17,7 @@ set_macro_guidance_region -macro_name U6 -region {220 5 328 442}
 set_macro_guidance_region -macro_name U1 -region {328 5 436 442}
 
 set_thread_count 0
-rtl_macro_placer -report_directory results/guides2 -halo_width 4.0 -guidance_weight 30.0
+rtl_macro_placer -report_directory [make_result_dir] -halo_width 4.0 -guidance_weight 30.0
 
 set def_file [make_result_file guides2.def]
 write_def $def_file

@@ -35,7 +35,7 @@ $wire_encoder newPath $jid2
 set jid3 [$wire_encoder addTechVia $via2]
 $wire_encoder end
 
-write_def "results/wire_encoder.def"
+write_def "[make_result_file wire_encoder.def]"
 
 puts "pass"
 exit 0

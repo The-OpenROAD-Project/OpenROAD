@@ -1,6 +1,6 @@
 [INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0227] LEF file: ./Nangate45/Nangate45_stdcell.lef, created 135 library cells
-[WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
+[WARNING STA-0441] aes_nangate45.sdc line 2, set_input_delay relative to a clock defined on the same port/pin not allowed.
 -- Before --
 
 Cell type report:                       Count       Area

@@ -12,7 +12,7 @@ read_lef "./testcases/orientation_improve1.lef"
 read_def "./testcases/centralization1.def"
 
 set_thread_count 0
-rtl_macro_placer -boundary_weight 0 -report_directory results/centralization1 -halo_width 0.3
+rtl_macro_placer -boundary_weight 0 -report_directory [make_result_dir] -halo_width 0.3
 
 set def_file [make_result_file centralization1.def]
 write_def $def_file

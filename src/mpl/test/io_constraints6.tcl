@@ -13,7 +13,7 @@ exclude_io_pin_region -region bottom:* -region left:* \
   -region top:40-150 -region right:40-125
 
 set_thread_count 0
-rtl_macro_placer -report_directory results/io_constraints6 -halo_width 4.0
+rtl_macro_placer -report_directory [make_result_dir] -halo_width 4.0
 
 set def_file [make_result_file "io_constraints6.def"]
 write_def $def_file

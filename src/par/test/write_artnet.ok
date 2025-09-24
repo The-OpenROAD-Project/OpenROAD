@@ -1,5 +1,5 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
+[WARNING STA-0441] gcd_nangate45.sdc line 60, set_input_delay relative to a clock defined on the same port/pin not allowed.
 getFromODB done
 getFromSTA done
 getFromPAR done

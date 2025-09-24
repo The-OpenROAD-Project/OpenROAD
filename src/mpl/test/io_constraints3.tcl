@@ -17,7 +17,7 @@ read_def "./testcases/io_constraints1.def" -floorplan_initialize
 exclude_io_pin_region -region right:10-125 -region top:10-150
 
 set_thread_count 0
-rtl_macro_placer -report_directory results/io_constraints3 \
+rtl_macro_placer -report_directory [make_result_dir] \
   -halo_width 4.0 -boundary_weight 0
 
 set def_file [make_result_file io_constraints3.def]

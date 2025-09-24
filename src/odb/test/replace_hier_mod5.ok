@@ -48,5 +48,4 @@ Cell type report:                       Count       Area
   Inverter                                  5      18.77
   Multi-Input combinational cell           82     384.12
   Total                                   103     523.00
-[ERROR STA-0201] module LCU_16_BRENT_KUNG cannot be found.
 Failed to replaced hier module

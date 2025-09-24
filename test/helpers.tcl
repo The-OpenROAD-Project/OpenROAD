@@ -7,11 +7,19 @@ if { [info exists ::env(TEST_TMPDIR)] } {
 }
 set result_dir [file join $test_dir "results"]
 
-proc make_result_file { filename } {
+proc make_result_dir { } {
   variable result_dir
   if { ![file exists $result_dir] } {
     file mkdir $result_dir
   }
+  return $result_dir
+}
+
+proc make_result_file { filename } {
+  variable result_dir
+
+  make_result_dir
+
   set root [file rootname $filename]
   set ext [file extension $filename]
   set filename "$root-tcl$ext"

@@ -23,35 +23,35 @@ count: 6
 clk
 count: 1
 
-[WARNING STA-0349] instance 'sub_inst' not found.
+[WARNING STA-0349] get_ports1.tcl line 1, instance 'sub_inst' not found.
 
 count: 0
 
-[WARNING STA-0363] pin 'sub_inst/in_bus*' not found.
+[WARNING STA-0363] get_ports1.tcl line 1, pin 'sub_inst/in_bus*' not found.
 
 count: 0
 
-[WARNING STA-0363] pin 'sub_inst/out_bus*' not found.
+[WARNING STA-0363] get_ports1.tcl line 1, pin 'sub_inst/out_bus*' not found.
 
 count: 0
 
-[WARNING STA-0363] pin 'sub_inst/in_single*' not found.
+[WARNING STA-0363] get_ports1.tcl line 1, pin 'sub_inst/in_single*' not found.
 
 count: 0
 
-[WARNING STA-0363] pin 'sub_inst/out_single*' not found.
+[WARNING STA-0363] get_ports1.tcl line 1, pin 'sub_inst/out_single*' not found.
 
 count: 0
 
-[WARNING STA-0363] pin 'sub_inst/in*' not found.
+[WARNING STA-0363] get_ports1.tcl line 1, pin 'sub_inst/in*' not found.
 
 count: 0
 
-[WARNING STA-0363] pin 'sub_inst/out*' not found.
+[WARNING STA-0363] get_ports1.tcl line 1, pin 'sub_inst/out*' not found.
 
 count: 0
 
-[WARNING STA-0363] pin 'sub_inst/*[1]' not found.
+[WARNING STA-0363] get_ports1.tcl line 1, pin 'sub_inst/*[1]' not found.
 
 count: 0
 
