@@ -128,3 +128,14 @@ py_test(
     ]
 )
 for test_name in PY_TESTS]
+
+cc_test(
+    name = "gpl_fft_unittest",
+    srcs = ["fft_test.cc"],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/gpl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

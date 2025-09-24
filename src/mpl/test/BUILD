@@ -130,3 +130,17 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "mpl_snapper_unittest",
+    srcs = [
+        "cpp/MplTest.h",
+        "cpp/TestSnapper.cpp",
+    ],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/mpl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

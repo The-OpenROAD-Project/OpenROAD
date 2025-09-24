@@ -52,6 +52,8 @@
 
 namespace sta {
 
+dbSta::dbSta() = default;
+
 dbSta* makeDbSta()
 {
   return new dbSta;

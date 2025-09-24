@@ -98,3 +98,12 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "rcx_unittest",
+    srcs = ["ext2dBoxTest.cpp"],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/rcx",
+    ],
+)

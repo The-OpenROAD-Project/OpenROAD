@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022-2025, The OpenROAD Authors
+
+cc_test(
+    name = "cut_abc_test",
+    srcs = ["cpp/TestAbc.cc"],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/cut",
+        "//src/dbSta",
+        "//src/dbSta:dbReadVerilog",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

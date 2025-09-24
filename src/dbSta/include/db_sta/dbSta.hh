@@ -124,6 +124,7 @@ class BufferUseAnalyser
 class dbSta : public Sta, public odb::dbDatabaseObserver
 {
  public:
+  dbSta();
   ~dbSta() override;
 
   enum InstType
