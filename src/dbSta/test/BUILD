@@ -168,3 +168,14 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "dbsta_hconn_unittest",
+    srcs = ["cpp/TestHconn.cpp"],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/dbSta",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

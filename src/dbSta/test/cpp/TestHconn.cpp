@@ -15,7 +15,6 @@
 #include <sstream>
 #include <string>
 
-#include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gmock/gmock.h"
@@ -279,7 +278,7 @@ class TestHconn : public ::testing::Test
     db_ = utl::UniquePtrWithDeleter<odb::dbDatabase>(odb::dbDatabase::create(),
                                                      &odb::dbDatabase::destroy);
     std::call_once(init_sta_flag, []() { sta::initSta(); });
-    sta_ = std::unique_ptr<sta::dbSta>(sta::makeDbSta());
+    sta_ = std::make_unique<sta::dbSta>();
     sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
     auto path = std::filesystem::canonical("./Nangate45/Nangate45_typ.lib");
     library_ = sta_->readLiberty(path.string().c_str(),
