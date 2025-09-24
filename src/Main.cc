@@ -88,6 +88,7 @@ int cmd_argc;
 char** cmd_argv;
 static const char* log_filename = nullptr;
 static const char* metrics_filename = nullptr;
+static const char* read_odb_filename = nullptr;
 static bool no_settings = false;
 static bool minimize = false;
 
@@ -243,6 +244,7 @@ int main(int argc, char* argv[])
     std::filesystem::remove(metrics_filename, err_ignored);
   }
 
+  read_odb_filename = findCmdLineKey(argc, argv, "--db");
   no_settings = findCmdLineFlag(argc, argv, "-no_settings");
   minimize = findCmdLineFlag(argc, argv, "-minimize");
 
@@ -438,6 +440,17 @@ static int tclAppInit(int& argc,
       showSplash();
     }
 
+    if (read_odb_filename) {
+      std::string cmd = std::string("read_db {") + read_odb_filename + "}";
+      if (Tcl_Eval(interp, cmd.c_str()) != TCL_OK) {
+        fprintf(stderr,
+                "Error: failed to read_db %s: %s\n",
+                read_odb_filename,
+                Tcl_GetStringResult(interp));
+        exit(1);
+      }
+    }
+
     const char* threads = findCmdLineKey(argc, argv, "-threads");
     if (threads) {
       ord::OpenRoad::openRoad()->setThreadCount(threads, !no_splash);
@@ -535,6 +548,7 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -gui                  start in gui mode\n");
   printf("  -minimize             start the gui minimized\n");
   printf("  -no_settings          do not load the previous gui settings\n");
+  printf("  --db <odb-file>       open a .odb database at startup\n");
 #ifdef ENABLE_PYTHON3
   printf(
       "  -python               start with python interpreter [limited to db "
