@@ -8,10 +8,6 @@ on:
 jobs:
   check:
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        check_type: [format, lint]
     env:
       BUILDIFIER_VERSION: v8.2.1
 
@@ -25,9 +21,8 @@ jobs:
           chmod +x buildifier
 
       - name: Run buildifier (format check)
-        if: matrix.check_type == 'format'
         run: ./buildifier -r -mode=check -lint=off .
 
       - name: Run buildifier (lint)
-        if: matrix.check_type == 'lint'
-        run: ./buildifier -r --lint=warn .
+        if: always()
+        run: ./buildifier -r -lint=warn .
