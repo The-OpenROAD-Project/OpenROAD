@@ -174,10 +174,10 @@ proc read_3dbv { args } {
   sta::check_argc_eq1 "read_3dbv" $args
   set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
-    utl::error "ORD" 69 "$filename does not exist."
+    utl::error "ORD" 70 "$filename does not exist."
   }
   if { ![file readable $filename] } {
-    utl::error "ORD" 70 "$filename is not readable."
+    utl::error "ORD" 71 "$filename is not readable."
   }
   ord::read_3dbv_cmd $filename
 }
@@ -189,10 +189,10 @@ proc read_3dbx { args } {
   sta::check_argc_eq1 "read_3dbx" $args
   set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
-    utl::error "ORD" 71 "$filename does not exist."
+    utl::error "ORD" 72 "$filename does not exist."
   }
   if { ![file readable $filename] } {
-    utl::error "ORD" 72 "$filename is not readable."
+    utl::error "ORD" 73 "$filename is not readable."
   }
   ord::read_3dbx_cmd $filename
 }
