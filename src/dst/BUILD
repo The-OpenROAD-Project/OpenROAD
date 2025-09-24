@@ -41,8 +41,10 @@ cc_library(
         "@boost.serialization",
         "@boost.smart_ptr",
         "@boost.system",
-        "@boost.thread//:thread_posix",
-    ],
+    ] + select({
+        "@platforms//os:macos": ["@boost.thread//:thread_mac"],
+         "//conditions:default": ["@boost.thread//:thread_posix"],
+    }),
 )
 
 cc_library(

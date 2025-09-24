@@ -7450,8 +7450,8 @@ class dbGCellGrid : public dbObject
  public:
   struct GCellData
   {
-    uint8_t usage = 0;
-    uint8_t capacity = 0;
+    float usage = 0;
+    float capacity = 0;
   };
 
   // User Code Begin dbGCellGrid
@@ -7515,16 +7515,13 @@ class dbGCellGrid : public dbObject
 
   uint getYIdx(int y);
 
-  uint8_t getCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+  float getCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
-  uint8_t getUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+  float getUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
-  void setCapacity(dbTechLayer* layer,
-                   uint x_idx,
-                   uint y_idx,
-                   uint8_t capacity);
+  void setCapacity(dbTechLayer* layer, uint x_idx, uint y_idx, float capacity);
 
-  void setUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint8_t use);
+  void setUsage(dbTechLayer* layer, uint x_idx, uint y_idx, float use);
 
   void resetCongestionMap();
 
@@ -8254,13 +8251,9 @@ class dbModInst : public dbObject
   dbGroup* getGroup() const;
 
   // User Code Begin dbModInst
-
   std::string getHierarchicalName() const;
-
   dbModITerm* findModITerm(const char* name);
-
   dbSet<dbModITerm> getModITerms();
-
   void removeUnusedPortsAndPins();
 
   dbModNet* findHierNet(const char* base_name) const;
@@ -8273,6 +8266,12 @@ class dbModInst : public dbObject
   /// Returns new mod inst if the operations succeeds.
   /// Old mod inst is deleted along with its child insts.
   dbModInst* swapMaster(dbModule* module);
+
+  // Recursive search a given dbInst through child mod insts
+  bool containsDbInst(dbInst* inst) const;
+
+  // Recursive search a given dbModInst through child mod insts
+  bool containsDbModInst(dbModInst* mod_inst) const;
 
   static dbModInst* create(dbModule* parentModule,
                            dbModule* masterModule,
@@ -8316,15 +8315,16 @@ class dbModNet : public dbObject
   dbModule* getParent() const;
 
   // User Code Begin dbModNet
-  dbSet<dbModITerm> getModITerms();
-  dbSet<dbModBTerm> getModBTerms();
-  dbSet<dbITerm> getITerms();
-  dbSet<dbBTerm> getBTerms();
+  dbSet<dbModITerm> getModITerms() const;
+  dbSet<dbModBTerm> getModBTerms() const;
+  dbSet<dbITerm> getITerms() const;
+  dbSet<dbBTerm> getBTerms() const;
   unsigned connectionCount();
   std::string getName() const;
   const char* getConstName() const;
   void rename(const char* new_name);
   void disconnectAllTerms();
+  void dump() const;
 
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);

@@ -45,10 +45,13 @@ cc_library(
         "src/3dblox/*.cpp",
         "src/3dblox/*.h",
     ]),
-    hdrs = glob([
-        "include/odb/*.h",
-        "include/odb/*.hpp",
-    ]) + ["src/swig/common/swig_common.h"],
+    hdrs = glob(
+        include = [
+            "include/odb/*.h",
+            "include/odb/*.hpp",
+        ],
+        exclude = ["include/odb/MakeOdb.h"],
+    ) + ["src/swig/common/swig_common.h"],
     features = [
         "-use_header_modules",
     ],
@@ -119,10 +122,7 @@ cc_library(
         ":swig",
         ":tcl",
     ],
-    hdrs = glob([
-        "include/odb/*.h",
-        "include/odb/*.hpp",
-    ]),
+    hdrs = ["include/odb/MakeOdb.h"],
     copts = [
         "-Wno-missing-braces",  # from TCL swigging
         "-Isrc/odb/src/swig/common",

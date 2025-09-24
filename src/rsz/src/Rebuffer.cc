@@ -98,9 +98,7 @@ decltype(auto) visitTree(F&& f, Args&&... args)
   return v(std::forward<Args>(args)...);
 }
 
-Rebuffer::Rebuffer(Resizer* resizer,
-                   est::EstimateParasitics* estimate_parasitics)
-    : resizer_(resizer), estimate_parasitics_(estimate_parasitics)
+Rebuffer::Rebuffer(Resizer* resizer) : resizer_(resizer)
 {
 }
 
@@ -1456,6 +1454,7 @@ void Rebuffer::init()
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
+  estimate_parasitics_ = resizer_->estimate_parasitics_;
   resizer_max_wire_length_
       = resizer_->metersToDbu(resizer_->findMaxWireLength());
   sta_->checkCapacitanceLimitPreamble();

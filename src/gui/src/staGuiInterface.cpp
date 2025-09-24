@@ -1046,21 +1046,31 @@ TimingPathList STAGuiInterface::getTimingPaths(
     const std::vector<StaPins>& thrus,
     const StaPins& to,
     const std::string& path_group_name,
-    sta::ClockSet* clks) const
+    const sta::ClockSet* clks) const
 {
   TimingPathList paths;
 
   initSTA();
 
+  sta::ClockSet* clks_from = nullptr;
+  sta::ClockSet* clks_to = nullptr;
+  if (clks) {
+    clks_from = new sta::ClockSet;
+    clks_to = new sta::ClockSet;
+    for (auto clk : *clks) {
+      clks_from->insert(clk);
+      clks_to->insert(clk);
+    }
+  }
   sta::ExceptionFrom* e_from = nullptr;
   if (!from.empty()) {
     sta::PinSet* pins = new sta::PinSet(getNetwork());
     pins->insert(from.begin(), from.end());
     e_from = sta_->makeExceptionFrom(
-        pins, clks, nullptr, sta::RiseFallBoth::riseFall());
-  } else if (clks) {
+        pins, clks_from, nullptr, sta::RiseFallBoth::riseFall());
+  } else if (clks_from) {
     e_from = sta_->makeExceptionFrom(
-        nullptr, clks, nullptr, sta::RiseFallBoth::riseFall());
+        nullptr, clks_from, nullptr, sta::RiseFallBoth::riseFall());
   }
 
   sta::ExceptionThruSeq* e_thrus = nullptr;
@@ -1083,13 +1093,13 @@ TimingPathList STAGuiInterface::getTimingPaths(
     sta::PinSet* pins = new sta::PinSet(getNetwork());
     pins->insert(to.begin(), to.end());
     e_to = sta_->makeExceptionTo(pins,
-                                 clks,
+                                 clks_to,
                                  nullptr,
                                  sta::RiseFallBoth::riseFall(),
                                  sta::RiseFallBoth::riseFall());
-  } else if (clks) {
+  } else if (clks_to) {
     e_to = sta_->makeExceptionTo(nullptr,
-                                 clks,
+                                 clks_to,
                                  nullptr,
                                  sta::RiseFallBoth::riseFall(),
                                  sta::RiseFallBoth::riseFall());

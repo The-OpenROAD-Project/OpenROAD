@@ -367,46 +367,52 @@ SPEFS_AND_NETLISTS = [
     ]
 ]
 
-orfs_run(
-    name = "MockArray_power",
+POWER_TESTS = [
+    "power",
+    "power_instances",
+]
+
+[orfs_run(
+    name = "MockArray_{name}".format(name = name),
     src = ":MockArray_{stage}".format(stage = POWER_STAGE_NAME),
     outs = [
-        "power.txt",
+        "{name}.txt".format(name = name),
     ],
     arguments = {
-        "OUTPUT": "$(location :power.txt)",
+        "OUTPUT": "$(location :{name}.txt)".format(name = name),
         "VCD_STIMULI": "$(location :vcd)",
         "OPENROAD_EXE": "$(location //src/sta:opensta)",
         "POWER_STAGE_NAME": POWER_STAGE_NAME,
         "POWER_STAGE_STEM": POWER_STAGE_STEM,
+        "LOAD_POWER_TCL": "$(location :load_power.tcl)",
     },
     data = [
                # FIXME this is a workaround to ensure that the OpenSTA runfiles are available
                ":opensta_runfiles",
                ":vcd",
+               ":load_power.tcl",
            ] + ["{macro}_{stage}".format(
                macro = macro,
                stage = POWER_STAGE_NAME,
            ) for macro in MACROS] +
            (["{macro}_parasitics".format(macro = macro) for macro in MACROS] if POWER_STAGE_NAME != "final" else []),
-    script = ":power.tcl",
+    script = ":{name}.tcl".format(name = name),
     tags = ["manual"],
     tools = ["//src/sta:opensta"],
     visibility = ["//visibility:public"],
-)
+) for name in POWER_TESTS]
 
-# FIXME an orfs_run_test() rule would be nicer
-sh_test(
-    name = "MockArray_power_test",
+[sh_test(
+    name = "MockArray_{name}_test".format(name = name),
     srcs = ["ok.sh"],
     args = [
-        "$(location :MockArray_power)",
+        "$(location :MockArray_{name})".format(name = name),
     ],
     data = [
-        ":MockArray_power",
+        ":MockArray_{name}".format(name = name),
     ],
-    tags = ["manual"],
-)
+    tags = ["manual"] if name == "power_instances" else [],
+) for name in POWER_TESTS]
 
 # FIXME why is this needed to ensure that cfg=exec of OpenSTA has runfiles?
 genrule(

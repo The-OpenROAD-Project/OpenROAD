@@ -23,6 +23,20 @@
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbGCellGrid>;
+// User Code Begin Static
+struct OldGCellData
+{
+  uint8_t usage = 0;
+  uint8_t capacity = 0;
+};
+
+dbIStream& operator>>(dbIStream& stream, OldGCellData& obj)
+{
+  stream >> obj.usage;
+  stream >> obj.capacity;
+  return stream;
+}
+// User Code End Static
 
 bool _dbGCellGrid::operator==(const _dbGCellGrid& rhs) const
 {
@@ -92,8 +106,24 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
   stream >> obj.y_grid_;
   // User Code Begin >>
   _dbDatabase* db = obj.getDatabase();
-  if (db->isSchema(db_schema_gcell_grid_matrix)) {
+  if (db->isSchema(db_schema_float_gcelldata)) {
     stream >> obj.congestion_map_;
+  } else if (db->isSchema(db_schema_gcell_grid_matrix)) {
+    std::map<dbId<_dbTechLayer>, dbMatrix<OldGCellData>> old_format;
+    stream >> old_format;
+    for (const auto& [lid, cells] : old_format) {
+      auto& matrix = obj.get(lid);
+      const uint num_rows = cells.numRows();
+      const uint num_cols = cells.numCols();
+      for (int row = 0; row < num_rows; ++row) {
+        for (int col = 0; col < num_cols; ++col) {
+          auto& old = cells(row, col);
+          const float usage = old.usage;
+          const float capacity = old.capacity;
+          matrix(row, col) = {usage, capacity};
+        }
+      }
+    }
   } else {
     std::map<dbId<_dbTechLayer>,
              std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>>
@@ -412,16 +442,14 @@ uint dbGCellGrid::getYIdx(int y)
   return (int) std::distance(grid.begin(), pos);
 }
 
-uint8_t dbGCellGrid::getCapacity(dbTechLayer* layer,
-                                 uint x_idx,
-                                 uint y_idx) const
+float dbGCellGrid::getCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
   return _grid->get(lid)(x_idx, y_idx).capacity;
 }
 
-uint8_t dbGCellGrid::getUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const
+float dbGCellGrid::getUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -431,7 +459,7 @@ uint8_t dbGCellGrid::getUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const
 void dbGCellGrid::setCapacity(dbTechLayer* layer,
                               uint x_idx,
                               uint y_idx,
-                              uint8_t capacity)
+                              float capacity)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -441,7 +469,7 @@ void dbGCellGrid::setCapacity(dbTechLayer* layer,
 void dbGCellGrid::setUsage(dbTechLayer* layer,
                            uint x_idx,
                            uint y_idx,
-                           uint8_t use)
+                           float use)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
