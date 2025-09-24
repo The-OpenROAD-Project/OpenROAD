@@ -885,12 +885,7 @@ void EstimateParasitics::parasiticNodeConnectPins(
     for (const Pin* pin : *pins) {
       ParasiticNode* pin_node
           = parasitics_->ensureParasiticNode(parasitic, pin, network_);
-      if (connected_pins.find(pin) != connected_pins.end()) {
-        // If pin was already connected with via resistances, use a small
-        // resistor to keep connectivity intact.
-        parasitics_->makeResistor(
-            parasitic, resistor_id++, 1.0e-3, node, pin_node);
-      } else {
+      if (connected_pins.find(pin) == connected_pins.end()) {
         if (tree_layer != nullptr && !layer_res_.empty()) {
           odb::dbTechLayer* pin_layer = getPinLayer(pin);
           for (int layer_number = pin_layer->getNumber();
