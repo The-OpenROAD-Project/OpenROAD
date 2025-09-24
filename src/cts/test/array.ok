@@ -136,8 +136,8 @@ legalized HPWL         193564.6 u
 delta HPWL                    0 %
 
 Clock clk
-   1.06 source latency inst_5_7/clk ^
-  -1.20 target latency inst_6_7/clk ^
+   1.07 source latency inst_5_7/clk ^
+  -1.21 target latency inst_6_7/clk ^
    0.00 CRPR
 --------------
   -0.14 setup skew
@@ -180,9 +180,9 @@ Path Type: max
    0.04    1.10 ^ wire9/Z (BUF_X8)
    0.05    1.15 ^ clkbuf_leaf_0_clk/Z (BUF_X4)
    0.00    1.15 ^ inst_1_1/clk (array_tile)
-   0.21    1.36 ^ inst_1_1/e_out (array_tile)
-   0.00    1.36 ^ inst_2_1/w_in (array_tile)
-           1.36   data arrival time
+   0.21    1.37 ^ inst_1_1/e_out (array_tile)
+   0.00    1.37 ^ inst_2_1/w_in (array_tile)
+           1.37   data arrival time
 
    5.00    5.00   clock clk (rise edge)
    0.00    5.00   clock source latency
@@ -219,7 +219,7 @@ Path Type: max
            6.05   data required time
 ---------------------------------------------------------
            6.05   data required time
-          -1.36   data arrival time
+          -1.37   data arrival time
 ---------------------------------------------------------
            4.69   slack (MET)
 
