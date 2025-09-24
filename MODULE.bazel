@@ -195,7 +195,7 @@ scala_deps.scalatest()
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(
-    name = "openroad_maven",
+    name = "maven",
     artifacts = [
         "org.chipsalliance:chisel_2.13:7.0.0",
         "org.chipsalliance:chisel-plugin_2.13.16:7.0.0",
@@ -206,7 +206,7 @@ maven.install(
         "https://s01.oss.sonatype.org/content/repositories/snapshots",
     ],
 )
-use_repo(maven, "openroad_maven")
+use_repo(maven, "maven")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
