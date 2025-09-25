@@ -50,32 +50,31 @@ module mid1 (clk,
  output out1;
  output out2;
 
- wire net_o_3;
  wire net_o_1;
  wire net_o;
  wire l2_out2;
  wire l2_out1;
  wire l1_out;
 
- DFF_X1 dff_load1 (.D(net_o_3),
+ DFF_X1 dff_load1 (.D(net_o),
     .CK(clk));
- DFF_X1 dff_load10 (.D(net_o_3),
+ DFF_X1 dff_load10 (.D(net_o),
     .CK(clk));
- DFF_X1 dff_load2 (.D(net_o_3),
+ DFF_X1 dff_load2 (.D(net_o),
     .CK(clk));
  DFF_X1 dff_load3 (.D(net_o_1),
     .CK(clk));
- DFF_X1 dff_load4 (.D(net_o_3),
+ DFF_X1 dff_load4 (.D(net_o),
     .CK(clk));
  DFF_X1 dff_load5 (.D(net_o_1),
     .CK(clk));
- DFF_X1 dff_load6 (.D(net_o_3),
+ DFF_X1 dff_load6 (.D(net_o),
     .CK(clk));
  DFF_X1 dff_load7 (.D(net_o_1),
     .CK(clk));
  DFF_X1 dff_load8 (.D(net_o_1),
     .CK(clk));
- DFF_X1 dff_load9 (.D(net_o_3),
+ DFF_X1 dff_load9 (.D(net_o),
     .CK(clk));
  DFF_X1 dff_out1 (.D(l1_out),
     .CK(clk),
@@ -86,8 +85,7 @@ module mid1 (clk,
  leaf1 u_leaf1 (.clk(clk),
     .in1(in1),
     .out1(l1_out));
- leaf2 u_leaf2 (.net_o_3(net_o_3),
-    .net_o_1(net_o_1),
+ leaf2 u_leaf2 (.net_o_1(net_o_1),
     .net_o(net_o),
     .clk(clk),
     .in1(in2),
@@ -116,14 +114,12 @@ module leaf1 (clk,
     .CK(clk),
     .Q(out1));
 endmodule
-module leaf2 (net_o_3,
-    net_o_1,
+module leaf2 (net_o_1,
     net_o,
     clk,
     in1,
     out1,
     out2);
- output net_o_3;
  output net_o_1;
  output net_o;
  input clk;
@@ -135,8 +131,6 @@ module leaf2 (net_o_3,
  wire n2;
  wire n3;
 
- BUF_X4 rebuffer9 (.A(net_o),
-    .Z(net_o_3));
  BUF_X4 split2 (.A(net_o),
     .Z(net_o_1));
  BUF_X4 rebuffer1 (.A(out1),

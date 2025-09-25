@@ -573,19 +573,10 @@ void EstimateParasitics::estimateWireParasitic(const Net* net,
                                                SpefWriter* spef_writer)
 {
   PinSet* drivers = network_->drivers(net);
-  if (drivers) {
-    if (drivers->size() == 1) {
-      PinSet::Iterator drvr_iter(drivers);
-      const Pin* drvr_pin = drvr_iter.next();
-      estimateWireParasitic(drvr_pin, net, spef_writer);
-    } else if (drivers->size() > 1) {
-      logger_->warn(
-          EST,
-          94,
-          "Parasitics are not updated at net {} because it has {} driver pins",
-          network_->name(net),
-          drivers->size());
-    }
+  if (drivers && !drivers->empty()) {
+    PinSet::Iterator drvr_iter(drivers);
+    const Pin* drvr_pin = drvr_iter.next();
+    estimateWireParasitic(drvr_pin, net, spef_writer);
   }
 }
 
