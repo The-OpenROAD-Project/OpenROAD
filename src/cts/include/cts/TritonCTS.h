@@ -206,22 +206,6 @@ class TritonCTS
   void setAllClocksPropagated();
   void repairClockNets();
   void balanceMacroRegisterLatencies();
-  float getVertexClkArrival(sta::Vertex* sinkVertex,
-                            odb::dbNet* topNet,
-                            odb::dbITerm* iterm);
-  void computeAveSinkArrivals(TreeBuilder* builder, sta::Graph* graph);
-  void computeSinkArrivalRecur(odb::dbNet* topClokcNet,
-                               odb::dbITerm* iterm,
-                               float& sumArrivals,
-                               unsigned& numSinks,
-                               sta::Graph* graph);
-  bool propagateClock(odb::dbITerm* input);
-  void adjustLatencies(TreeBuilder* macroBuilder, TreeBuilder* registerBuilder);
-  void computeTopBufferDelay(TreeBuilder* builder);
-  odb::dbInst* insertDelayBuffer(odb::dbInst* driver,
-                                 const std::string& clockName,
-                                 int locX,
-                                 int locY);
 
   sta::dbSta* openSta_ = nullptr;
   sta::dbNetwork* network_ = nullptr;
