@@ -38,11 +38,7 @@ class ThreeDBlox
   dbChipRegionInst* resolvePath(const std::string& path,
                                 std::vector<dbChipInst*>& path_insts);
 
-  std::string resolveIncludePath(const std::string& include_path,
-                                 const std::string& current_file_path);
-
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
-  std::string current_file_path_;
 };
 }  // namespace odb
