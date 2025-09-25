@@ -27,7 +27,6 @@
 #include "CtsOptions.h"
 #include "HTreeBuilder.h"
 #include "LatencyBalancer.h"
-#include "LevelBalancer.h"
 #include "TechChar.h"
 #include "TreeBuilder.h"
 #include "db_sta/dbNetwork.hh"
@@ -280,19 +279,6 @@ void TritonCTS::buildClockTrees()
     builder->initBlockages();
     builder->run();
   }
-
-  if (options_->getBalanceLevels()) {
-    for (auto& builder : builders_) {
-      if (!builder->getParent()
-          && !builder->getChildren().empty()
-          // don't balance levels for macro cell tree
-          && builder->getTreeType() != TreeType::MacroTree) {
-        LevelBalancer balancer(
-            builder.get(), options_, logger_, techChar_->getLengthUnit());
-        balancer.run();
-      }
-    }
-  }
 }
 
 void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
@@ -500,8 +486,7 @@ void TritonCTS::writeDataToDb()
     int minDepth = 0;
     int maxDepth = 0;
     bool reportFullTree = !builder->getParent()
-                          && !builder->getChildren().empty()
-                          && options_->getBalanceLevels();
+                          && !builder->getChildren().empty();
 
     std::unordered_set<odb::dbITerm*> sinks;
     builder->getClock().forEachSink([&sinks](const ClockInst& inst) {

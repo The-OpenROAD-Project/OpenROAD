@@ -222,9 +222,9 @@
 [INFO CTS-0016]     Fanout distribution for the current clock = 8:1, 9:2, 10:1..
 [INFO CTS-0017]     Max level of the clock tree: 2.
 [INFO CTS-0098] Clock net "clk"
-[INFO CTS-0099]  Sinks 5
+[INFO CTS-0099]  Sinks 3
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 60.40 um
+[INFO CTS-0101]  Average sink wire length 63.31 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Leaf load cells 27
 [INFO CTS-0098] Clock net "clk_regs"
