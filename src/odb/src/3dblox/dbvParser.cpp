@@ -150,6 +150,28 @@ void DbvParser::parseChiplet(ChipletDef& chiplet,
         }
       }
     }
+    if (chiplet_node["external"]["APR_tech_file"]) {
+      for (const auto& tech_lef_file :
+           chiplet_node["external"]["APR_tech_file"]) {
+        try {
+          chiplet.external.tech_lef_files.push_back(
+              tech_lef_file.as<std::string>());
+        } catch (const YAML::Exception& e) {
+          logError("3DBV Error parsing external APR tech file name for chiplet "
+                   + chiplet.name + ": " + std::string(e.what()));
+        }
+      }
+    }
+    if (chiplet_node["external"]["liberty_file"]) {
+      for (const auto& lib_file : chiplet_node["external"]["liberty_file"]) {
+        try {
+          chiplet.external.lib_files.push_back(lib_file.as<std::string>());
+        } catch (const YAML::Exception& e) {
+          logError("3DBV Error parsing external liberty file name for chiplet "
+                   + chiplet.name + ": " + std::string(e.what()));
+        }
+      }
+    }
     if (chiplet_node["external"]["DEF_file"]) {
       extractValue(
           chiplet_node["external"], "DEF_file", chiplet.external.def_file);

@@ -27,7 +27,9 @@ ChipletDef:
           - [0, 1082]
     external:
       thermal_name: [N5_1P15M]
-      APR_tech_file: [Collateral/SoC/tech/*.tlef]
+      APR_tech_file: [../Nangate45/Nangate45_tech.lef]
       RC_tech_file: [Collateral/SoC/tech/*.ircx]
       liberty_file: [Collateral/SoC/lib/*.lib]
       3dbf_file: [Feasibility/SoC.3dbf]
+      LEF_file: [../Nangate45/fake_macros.lef]
+      DEF_file: ../fake_macros.def
