@@ -12,6 +12,7 @@ jobs:
   buildifier:
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     strategy:
+      fail-fast: false
       matrix:
         check:
           - name: Run buildifier format
