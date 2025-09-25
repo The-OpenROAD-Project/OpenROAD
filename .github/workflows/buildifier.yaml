@@ -15,9 +15,9 @@ jobs:
       fail-fast: false
       matrix:
         check:
-          - name: Run buildifier format
+          - name: Buildifier format
             run: ./buildifier -r -mode=check -lint=off .
-          - name: Run buildifier lint
+          - name: Buildifier lint
             run: ./buildifier -r -lint=warn .
     name: ${{ matrix.check.name }}
     env:
