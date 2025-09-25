@@ -43,5 +43,6 @@ class ThreeDBlox
 
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
+  std::string current_file_path_;
 };
 }  // namespace odb

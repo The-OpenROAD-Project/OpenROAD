@@ -29,6 +29,8 @@ struct ChipletRegion
 struct ChipletExternal
 {
   std::vector<std::string> lef_files;
+  std::vector<std::string> tech_lef_files;
+  std::vector<std::string> lib_files;
   std::string def_file;
 };
 
