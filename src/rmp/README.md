@@ -66,6 +66,34 @@ resynth
 | ----- | ----- |
 | `-corner` | Process corner to use. |
 
+### Resynth with simulated annealing
+
+Resynthesize parts of the design with an ABC script found via simulated annealing.
+The script is a series of operations on ABC's internal AIG data structure.
+A neighboring solution is a script with one operation added, removed, or two operations swapped.
+The optimization function is defined as the worst slack.
+
+```tcl
+resynth_annealing
+    [-corner corner]
+    [-slack_threshold slack_threshold]
+    [-seed seed]
+    [-temp temp]
+    [-iters iters]
+    [-initial_ops initial_ops]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-corner` | Process corner to use. |
+| `-slack_threshold` | Specifies a (setup) timing slack value below which timing paths need to be analyzed for restructuring. The default value is `0`, and the allowed values are floats `[0, MAX_FLOAT]`. |
+| `-seed` | Seed to use for randomness in simulated annealing. |
+| `-temp` | Initial temperature for simulated annealing. The default is the required of the worst slack path. |
+| `-iters` | Number of iterations to run simulated annealing for. |
+| `-initial_ops` | Size of the initial random solution (number of commands in the script for ABC). |
+
 ## Example scripts
 
 Example scripts on running `rmp` for a sample design of `gcd` as follows:
