@@ -168,11 +168,15 @@ void dbEditHierarchy::createHierarchyBottomUp(Pin* pin,
       = makeUniqueName(cur_module, connection_name, io_type_str);
 
   while (cur_module != lowest_common_module) {
-    // Create BTerm & ModNet and connect them
+    // Create BTerm & ModNet (if not exist) and connect them
     dlogCreateHierBTermAndModNet(level, cur_module, new_term_net_name);
     dbModBTerm* mod_bterm
         = dbModBTerm::create(cur_module, new_term_net_name.c_str());
-    db_mod_net = dbModNet::create(cur_module, new_term_net_name.c_str());
+
+    db_mod_net = cur_module->getModNet(new_term_net_name.c_str());
+    if (db_mod_net == nullptr) {
+      db_mod_net = dbModNet::create(cur_module, new_term_net_name.c_str());
+    }
 
     mod_bterm->connect(db_mod_net);
     mod_bterm->setIoType(io_type);

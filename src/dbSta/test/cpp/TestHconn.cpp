@@ -309,7 +309,7 @@ class TestHconn : public ::testing::Test
     // register proper callbacks for timer like read_def
     sta_->postReadDef(block_);
 
-    root_mod_ = dbModule::create(block_, "root_mod");
+    root_mod_ = block_->getTopModule();
 
     // The bterms are created below during wiring
     // Note a bterm without a parent is a root bterm.
@@ -673,7 +673,7 @@ class TestHconn : public ::testing::Test
     inv4_mod_level0_master_i0_port_->connect(inv4_mod_level1_inst_i0_mnet_);
 
     inv4_mod_level1_inst_o0_mnet_ = dbModNet::create(
-        inv4_mod_level0_master_, "inv4_mod_level1_inst_o1_mnet");
+        inv4_mod_level0_master_, "inv4_mod_level1_inst_o0_mnet");
     inv4_mod_level1_inst_o0_miterm_->connect(inv4_mod_level1_inst_o0_mnet_);
     inv4_mod_level0_master_o0_port_->connect(inv4_mod_level1_inst_o0_mnet_);
 
@@ -1021,7 +1021,7 @@ TEST_F(TestHconn, ConnectionMade)
 
   EXPECT_EQ(initial_db_net_count, 6);
   EXPECT_EQ(initial_mod_net_count, 23);
-  EXPECT_EQ(final_mod_net_count, 27);
+  EXPECT_EQ(final_mod_net_count, 28);
   EXPECT_EQ(final_db_net_count, 7);
 
   //
