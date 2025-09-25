@@ -26,8 +26,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
-        with:
-          submodules: false
 
       - name: Cache buildifier
         id: cache-buildifier

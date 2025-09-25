@@ -2,5 +2,9 @@
     "type": "auto",
     "mode": "fix",
     "lint": "fix",
-    "warnings": "all"
+    "warnings": "all",
+    "exclude_patterns": [
+        "src/sta/**",
+        "third-party/abc/**"
+    ]
 }
