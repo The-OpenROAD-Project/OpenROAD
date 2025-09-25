@@ -1,3 +1,5 @@
+load("@openroad_rules_python//python:defs.bzl", "py_library", "py_test")
+
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 load("//test:regression.bzl", "regression_test")
@@ -339,17 +341,17 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
-            "read_abstract_lef": [
-                "gcd_abstract_lef.lefok",
-            ],
-            "replace_hier_mod4": [
-                "gcd_abstract_lef.lefok",
-            ],
             "dump_netlists": [
                 "dump_netlists_cdl.ok",
             ],
             "dump_netlists_withfill": [
                 "dump_netlists_withfill_cdl.ok",
+            ],
+            "read_abstract_lef": [
+                "gcd_abstract_lef.lefok",
+            ],
+            "replace_hier_mod4": [
+                "gcd_abstract_lef.lefok",
             ],
         }.get(
             test_name,
