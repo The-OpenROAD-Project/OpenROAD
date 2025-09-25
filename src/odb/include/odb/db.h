@@ -7238,6 +7238,10 @@ class dbChipRegionInst : public dbObject
 class dbDatabase : public dbObject
 {
  public:
+  void setDbuPerMicron(uint dbu_per_micron);
+
+  uint getDbuPerMicron() const;
+
   dbSet<dbChip> getChips() const;
 
   dbChip* findChip(const char* name) const;
@@ -7412,6 +7416,7 @@ class dbDatabase : public dbObject
   void triggerPostReadLef(dbTech* tech, dbLib* library);
   void triggerPostReadDef(dbBlock* block, bool floorplan);
   void triggerPostReadDb();
+  void triggerPostRead3Dbx(dbChip* chip);
 
   ///
   /// Create an instance of a database

@@ -1,8 +1,10 @@
+load("@bazel-orfs//:generate.bzl", "fir_library")
 load("@bazel-orfs//:openroad.bzl", "orfs_flow", "orfs_run")
+load("@bazel-orfs//:verilog.bzl", "verilog_directory", "verilog_single_file_library")
+load("@bazel-orfs//toolchains/scala:chisel.bzl", "chisel_binary")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
 load("@rules_verilator//verilog:defs.bzl", "verilog_library")
-load("chisel.bzl", "chisel_binary")
 
 POWER_STAGE_NAME = "cts"
 
@@ -213,27 +215,50 @@ chisel_binary(
     resources = glob(["src/main/resources/**/*"]),
     tags = ["manual"],
     deps = [
-        "@openroad_maven//:com_github_scopt_scopt_2_13",
+        "@maven//:com_github_scopt_scopt_2_13",
     ],
 )
 
-genrule(
-    name = "genverilog",
-    srcs = [],
-    outs = ["array.sv"],
-    cmd = "$(execpath :generate_verilog) --width 8 --height 8 --dataWidth 64 -- --firtool-binary-path $(execpath @circt//:bin/firtool) -- --default-layer-specialization=disable -o $(location :array.sv)",
-    tags = ["manual"],
-    tools = [
-        ":generate_verilog",
-        "@circt//:bin/firtool",
+fir_library(
+    name = "generate_fir",
+    data = [
     ],
+    generator = ":generate_verilog",
+    opts = [
+        "--width=8",
+        "--height=8",
+        "--dataWidth=64",
+        "--",
+        # Imagine Chisel arguments here
+        "--",
+        "-disable-all-randomization",
+        "-strip-debug-info",
+        "-enable-layers=Verification",
+        "-enable-layers=Verification.Assert",
+        "-enable-layers=Verification.Assume",
+        "-enable-layers=Verification.Cover",
+    ],
+    tags = ["manual"],
+)
+
+verilog_directory(
+    name = "generate_split",
+    srcs = [":generate_fir"],
+    tags = ["manual"],
+)
+
+verilog_single_file_library(
+    name = "array.sv",
+    srcs = [":generate_split"],
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
 )
 
 filegroup(
     name = "verilog",
     srcs = [
         "src/main/resources/multiplier.v",
-        ":genverilog",
+        ":array.sv",
     ],
     tags = ["manual"],
 )

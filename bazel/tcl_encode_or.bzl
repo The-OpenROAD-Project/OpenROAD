@@ -22,7 +22,9 @@ def _tcl_encode_or_impl(ctx):
     # Only keep .tcl and .py files.
     allowed_extensions = (".tcl", ".py")
     filtered_sources = [
-        f for f in ctx.files.srcs if f.basename.endswith(allowed_extensions)
+        f
+        for f in ctx.files.srcs
+        if f.basename.endswith(allowed_extensions)
     ]
 
     ctx.actions.run(

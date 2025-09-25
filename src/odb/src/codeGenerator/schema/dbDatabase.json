@@ -33,6 +33,12 @@
       "name": "_chip",
       "type": "dbId<_dbChip>",
       "flags": ["private", "no-serial"]
+    },
+    {
+      "name": "dbu_per_micron_",
+      "type": "uint",
+      "default": 0,
+      "flags": ["no-serial"]
     }
   ]
 }
