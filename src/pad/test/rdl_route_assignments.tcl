@@ -5,10 +5,10 @@ read_lef Nangate45_io/dummy_pads.lef
 
 read_def Nangate45_blackparrot/floorplan.def
 
-add_global_connect -pin_pattern "VDD" -net VDD -power
-add_global_connect -pin_pattern "DVDD" -net DVDD -power
-add_global_connect -pin_pattern "VSS" -net VSS -ground
-add_global_connect -pin_pattern "DVSS" -net DVSS -ground
+add_global_connection -pin_pattern "VDD" -net VDD -power
+add_global_connection -pin_pattern "DVDD" -net DVDD -power
+add_global_connection -pin_pattern "VSS" -net VSS -ground
+add_global_connection -pin_pattern "DVSS" -net DVSS -ground
 
 # Make IO Sites
 make_io_sites -horizontal_site IOSITE -vertical_site IOSITE -corner_site IOSITE -offset 35

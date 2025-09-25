@@ -30,11 +30,11 @@ py_wheel(
     abi = "abi3",
     distribution = "openroad",
     homepage = "https://github.com/The-OpenROAD-Project/OpenROAD",
+    platform = "linux_x86_64",
     python_requires = ">=3.10",
     python_tag = "cp310",
     version = "0.0.1",
     deps = [
         ":openroad_pkg",
     ],
-    platform = "linux_x86_64"
 )

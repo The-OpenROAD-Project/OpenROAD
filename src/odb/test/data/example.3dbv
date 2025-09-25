@@ -1,0 +1,35 @@
+Header:
+  version: 2.5
+  unit: micron
+  precision: 100000
+
+ChipletDef:
+  SoC:
+    type: die
+    design_area: [955, 1082]
+    shrink: 1
+    tsv: false
+    thickness: 300
+    offset: [0, 0]
+    cad_layer:
+      108;101:
+        type: design_area
+    regions:
+      r1:
+        side: front
+        bmap: Collateral/SoC/design/SoC_r1.bmap
+        pmap: Collateral/SoC/design/SoC_r1.pmap
+        layer: UBM
+        coords:
+          - [0, 0]
+          - [955, 0]
+          - [955, 1082]
+          - [0, 1082]
+    external:
+      thermal_name: [N5_1P15M]
+      APR_tech_file: [../Nangate45/Nangate45_tech.lef]
+      RC_tech_file: [Collateral/SoC/tech/*.ircx]
+      liberty_file: [Collateral/SoC/lib/*.lib]
+      3dbf_file: [Feasibility/SoC.3dbf]
+      LEF_file: [../Nangate45/fake_macros.lef]
+      DEF_file: ../fake_macros.def

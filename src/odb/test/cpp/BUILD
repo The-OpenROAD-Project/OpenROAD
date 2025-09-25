@@ -77,5 +77,4 @@ cc_test(
         "@boost.test",
     ],
 )
-
 # TODO: more to come.

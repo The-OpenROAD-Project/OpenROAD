@@ -8,11 +8,13 @@
  */
 
 
-module hi_fanout (clk1, net0);
+module hi_fanout (clk1, in, net0);
    input clk1;
+   input in;
    output net0;
 
    DFF_X1 drvr (.CK(clk1),
+      .D(in),
 		.Q(net0));
    
    hi_fanout_child hi_fanout_inst1(net0,clk1);

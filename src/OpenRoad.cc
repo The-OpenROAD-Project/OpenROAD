@@ -39,6 +39,7 @@
 #include "gui/MakeGui.h"
 #include "ifp/MakeInitFloorplan.hh"
 #include "mpl/MakeMacroPlacer.h"
+#include "odb/3dblox.h"
 #include "odb/MakeOdb.h"
 #include "odb/cdl.h"
 #include "odb/db.h"
@@ -480,6 +481,18 @@ void OpenRoad::writeCdl(const char* out_filename,
           getLogger(), block, out_filename, masters_filenames, include_fillers);
     }
   }
+}
+
+void OpenRoad::read3Dbv(const std::string& filename)
+{
+  odb::ThreeDBlox parser(logger_, db_);
+  parser.readDbv(filename);
+}
+
+void OpenRoad::read3Dbx(const std::string& filename)
+{
+  odb::ThreeDBlox parser(logger_, db_);
+  parser.readDbx(filename);
 }
 
 void OpenRoad::readDb(const char* filename, bool hierarchy)
