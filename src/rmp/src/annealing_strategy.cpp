@@ -27,6 +27,7 @@
 #include "sta/MinMax.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
+#include "utils.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 #include "utl/unique_name.h"
@@ -71,12 +72,6 @@ extern void Abc_NtkRedirectCiCo(Abc_Ntk_t* pNtk);
 namespace rmp {
 using utl::RMP;
 
-// TODO: Make this common in all of rmp
-static utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> WrapUnique(abc::Abc_Ntk_t* ntk)
-{
-  return utl::UniquePtrWithDeleter<abc::Abc_Ntk_t>(ntk, &abc::Abc_NtkDelete);
-}
-
 class SuppressStdout
 {
 #ifndef _WIN32
@@ -104,37 +99,6 @@ class SuppressStdout
   int saved_stdout_fd;
 #endif
 };
-
-static std::vector<sta::Vertex*> GetEndpoints(sta::dbSta* sta,
-                                              rsz::Resizer* resizer,
-                                              sta::Slack slack_threshold)
-{
-  std::vector<sta::Vertex*> result;
-
-  sta::dbNetwork* network = sta->getDbNetwork();
-  for (sta::Vertex* vertex : *sta->endpoints()) {
-    sta::Pin* pin = vertex->pin();
-    sta::PortDirection* direction = network->direction(vertex->pin());
-    if (!direction->isInput()) {
-      continue;
-    }
-
-    if (resizer != nullptr) {
-      if (resizer->dontTouch(pin) || resizer->dontTouch(network->net(pin))
-          || resizer->dontTouch(network->instance(pin))) {
-        continue;
-      }
-    }
-
-    const sta::Slack slack = sta->vertexSlack(vertex, sta::MinMax::max());
-
-    if (slack < slack_threshold) {
-      result.push_back(vertex);
-    }
-  }
-
-  return result;
-}
 
 static void replaceGia(abc::Gia_Man_t*& gia, abc::Gia_Man_t* new_gia)
 {
@@ -167,8 +131,9 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
 
   auto candidate_vertices = GetEndpoints(sta, resizer, slack_threshold_);
   if (candidate_vertices.empty()) {
-    logger->info(
-        utl::RMP, 51, "All endpoints have positive slack, nothing to do.");
+    logger->info(utl::RMP,
+                 51,
+                 "All endpoints have slack above threshold, nothing to do.");
     return;
   }
 

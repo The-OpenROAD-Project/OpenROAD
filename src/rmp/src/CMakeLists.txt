@@ -16,6 +16,7 @@ add_library(rmp_lib
     Restructure.cpp
     annealing_strategy.cpp
     delay_optimization_strategy.cpp
+    utils.cpp
     zero_slack_strategy.cpp
 )
 
