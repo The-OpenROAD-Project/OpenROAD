@@ -1,8 +1,10 @@
+load("@bazel-orfs//:generate.bzl", "fir_library")
 load("@bazel-orfs//:openroad.bzl", "orfs_flow", "orfs_run")
+load("@bazel-orfs//:verilog.bzl", "verilog_directory", "verilog_single_file_library")
+load("@bazel-orfs//toolchains/scala:chisel.bzl", "chisel_binary")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
 load("@rules_verilator//verilog:defs.bzl", "verilog_library")
-load("chisel.bzl", "chisel_binary")
 
 POWER_STAGE_NAME = "cts"
 
@@ -213,27 +215,50 @@ chisel_binary(
     resources = glob(["src/main/resources/**/*"]),
     tags = ["manual"],
     deps = [
-        "@openroad_maven//:com_github_scopt_scopt_2_13",
+        "@maven//:com_github_scopt_scopt_2_13",
     ],
 )
 
-genrule(
-    name = "genverilog",
-    srcs = [],
-    outs = ["array.sv"],
-    cmd = "$(execpath :generate_verilog) --width 8 --height 8 --dataWidth 64 -- --firtool-binary-path $(execpath @circt//:bin/firtool) -- --default-layer-specialization=disable -o $(location :array.sv)",
-    tags = ["manual"],
-    tools = [
-        ":generate_verilog",
-        "@circt//:bin/firtool",
+fir_library(
+    name = "generate_fir",
+    data = [
     ],
+    generator = ":generate_verilog",
+    opts = [
+        "--width=8",
+        "--height=8",
+        "--dataWidth=64",
+        "--",
+        # Imagine Chisel arguments here
+        "--",
+        "-disable-all-randomization",
+        "-strip-debug-info",
+        "-enable-layers=Verification",
+        "-enable-layers=Verification.Assert",
+        "-enable-layers=Verification.Assume",
+        "-enable-layers=Verification.Cover",
+    ],
+    tags = ["manual"],
+)
+
+verilog_directory(
+    name = "generate_split",
+    srcs = [":generate_fir"],
+    tags = ["manual"],
+)
+
+verilog_single_file_library(
+    name = "array.sv",
+    srcs = [":generate_split"],
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
 )
 
 filegroup(
     name = "verilog",
     srcs = [
         "src/main/resources/multiplier.v",
-        ":genverilog",
+        ":array.sv",
     ],
     tags = ["manual"],
 )
@@ -367,46 +392,52 @@ SPEFS_AND_NETLISTS = [
     ]
 ]
 
-orfs_run(
-    name = "MockArray_power",
+POWER_TESTS = [
+    "power",
+    "power_instances",
+]
+
+[orfs_run(
+    name = "MockArray_{name}".format(name = name),
     src = ":MockArray_{stage}".format(stage = POWER_STAGE_NAME),
     outs = [
-        "power.txt",
+        "{name}.txt".format(name = name),
     ],
     arguments = {
-        "OUTPUT": "$(location :power.txt)",
+        "OUTPUT": "$(location :{name}.txt)".format(name = name),
         "VCD_STIMULI": "$(location :vcd)",
         "OPENROAD_EXE": "$(location //src/sta:opensta)",
         "POWER_STAGE_NAME": POWER_STAGE_NAME,
         "POWER_STAGE_STEM": POWER_STAGE_STEM,
+        "LOAD_POWER_TCL": "$(location :load_power.tcl)",
     },
     data = [
                # FIXME this is a workaround to ensure that the OpenSTA runfiles are available
                ":opensta_runfiles",
                ":vcd",
+               ":load_power.tcl",
            ] + ["{macro}_{stage}".format(
                macro = macro,
                stage = POWER_STAGE_NAME,
            ) for macro in MACROS] +
            (["{macro}_parasitics".format(macro = macro) for macro in MACROS] if POWER_STAGE_NAME != "final" else []),
-    script = ":power.tcl",
+    script = ":{name}.tcl".format(name = name),
     tags = ["manual"],
     tools = ["//src/sta:opensta"],
     visibility = ["//visibility:public"],
-)
+) for name in POWER_TESTS]
 
-# FIXME an orfs_run_test() rule would be nicer
-sh_test(
-    name = "MockArray_power_test",
+[sh_test(
+    name = "MockArray_{name}_test".format(name = name),
     srcs = ["ok.sh"],
     args = [
-        "$(location :MockArray_power)",
+        "$(location :MockArray_{name})".format(name = name),
     ],
     data = [
-        ":MockArray_power",
+        ":MockArray_{name}".format(name = name),
     ],
-    tags = ["manual"],
-)
+    tags = ["manual"] if name == "power_instances" else [],
+) for name in POWER_TESTS]
 
 # FIXME why is this needed to ensure that cfg=exec of OpenSTA has runfiles?
 genrule(

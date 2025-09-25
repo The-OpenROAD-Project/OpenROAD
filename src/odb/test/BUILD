@@ -7,7 +7,7 @@ py_library(
     srcs = [
         "helper.py",
     ],
-    imports = ["."]
+    imports = ["."],
 )
 
 py_library(
@@ -15,9 +15,8 @@ py_library(
     srcs = [
         "odbUnitTest.py",
     ],
-    imports = ["."]
+    imports = ["."],
 )
-
 
 py_test(
     name = "test_block",
@@ -25,11 +24,11 @@ py_test(
         "test_block.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 py_test(
@@ -38,11 +37,11 @@ py_test(
         "test_bterm.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 py_test(
@@ -51,11 +50,11 @@ py_test(
         "test_destroy.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 py_test(
@@ -64,11 +63,11 @@ py_test(
         "test_group.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 py_test(
@@ -77,11 +76,11 @@ py_test(
         "test_inst.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 py_test(
@@ -90,11 +89,11 @@ py_test(
         "test_iterm.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 py_test(
@@ -103,11 +102,11 @@ py_test(
         "test_module.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 py_test(
@@ -116,11 +115,11 @@ py_test(
         "test_net.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 py_test(
@@ -129,11 +128,11 @@ py_test(
         "test_wire_codec.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 PASSFAIL_TESTS = [
@@ -188,6 +187,8 @@ COMPULSORY_TESTS = [
     "ndr",
     "polygon",
     "read_abstract_lef",
+    "read_3dbv",
+    "read_3dbx",
     "read_db",
     "read_def",
     "read_def58",
@@ -273,6 +274,8 @@ filegroup(
         "data/design.def.gz",
         "data/design.odb",
         "data/design58.def",
+        "data/example.3dbv",
+        "data/example.3dbx",
         "data/floorplan_initialize.def",
         "data/floorplan_initialize.v",
         "data/floorplan_initialize2.def",

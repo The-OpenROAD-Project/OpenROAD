@@ -281,6 +281,11 @@ void dbSta::postReadDef(dbBlock* block)
   }
 }
 
+void dbSta::postRead3Dbx(odb::dbChip* chip)
+{
+  // TODO: we are not ready to do timing on chiplets yet
+}
+
 void dbSta::postReadDb(dbDatabase* db)
 {
   db_network_->readDbAfter(db);

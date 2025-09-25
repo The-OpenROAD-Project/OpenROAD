@@ -42,6 +42,8 @@ cc_library(
         "src/lefin/*.h",
         "src/lefout/*.cpp",
         "src/swig/common/swig_common.cpp",
+        "src/3dblox/*.cpp",
+        "src/3dblox/*.h",
     ]),
     hdrs = glob(
         include = [
@@ -80,6 +82,7 @@ cc_library(
         "@boost.spirit",
         "@spdlog",
         "@tk_tcl//:tcl",
+        "@yaml-cpp",
         "@zlib",
     ],
 )
