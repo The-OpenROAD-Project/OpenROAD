@@ -523,7 +523,10 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
   } else {
     top_source_mod_net = source_pin->getModNet();
     if (!top_source_mod_net) {
-      top_source_mod_net = dbModNet::create(source_db_module, connection_name);
+      std::string unique_name
+          = makeUniqueName(lowest_common_module, connection_name);
+      top_source_mod_net
+          = dbModNet::create(source_db_module, unique_name.c_str());
       source_pin->connect(top_source_mod_net);
     }
   }
