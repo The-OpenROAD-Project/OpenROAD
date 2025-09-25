@@ -404,6 +404,12 @@ void EstimateParasitics::updateParasitics(bool save_guides)
         "updateParasitics() called with incremental parasitics disabled");
   }
 
+  // Call clearNetDrvrPinMap only without full blown ConcreteNetwork::clear()
+  // This is because netlist changes may invalidate cached net driver pin data
+  sta::LibertyLibrary* default_lib = network_->defaultLibertyLibrary();
+  network_->Network::clear();
+  network_->setDefaultLibertyLibrary(default_lib);
+
   switch (parasitics_src_) {
     case ParasiticsSrc::placement:
       for (const Net* net : parasitics_invalid_) {
@@ -567,10 +573,19 @@ void EstimateParasitics::estimateWireParasitic(const Net* net,
                                                SpefWriter* spef_writer)
 {
   PinSet* drivers = network_->drivers(net);
-  if (drivers && !drivers->empty()) {
-    PinSet::Iterator drvr_iter(drivers);
-    const Pin* drvr_pin = drvr_iter.next();
-    estimateWireParasitic(drvr_pin, net, spef_writer);
+  if (drivers) {
+    if (drivers->size() == 1) {
+      PinSet::Iterator drvr_iter(drivers);
+      const Pin* drvr_pin = drvr_iter.next();
+      estimateWireParasitic(drvr_pin, net, spef_writer);
+    } else if (drivers->size() > 1) {
+      logger_->warn(
+          EST,
+          94,
+          "Parasitics are not updated at net {} because it has {} driver pins",
+          network_->name(net),
+          drivers->size());
+    }
   }
 }
 
