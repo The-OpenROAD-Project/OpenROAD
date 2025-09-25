@@ -20,6 +20,8 @@ cc_library(
         "src/delay_optimization_strategy.h",
         "src/logic_optimization_strategy.h",
         "src/resynthesis_strategy.h",
+        "src/utils.cpp",
+        "src/utils.h",
         "src/zero_slack_strategy.cpp",
         "src/zero_slack_strategy.h",
     ],
