@@ -55,14 +55,13 @@ enum class Mode
 class Restructure
 {
  public:
-  Restructure() = default;
+  Restructure(utl::Logger* logger,
+              sta::dbSta* open_sta,
+              odb::dbDatabase* db,
+              rsz::Resizer* resizer,
+              est::EstimateParasitics* estimate_parasitics);
   ~Restructure();
 
-  void init(utl::Logger* logger,
-            sta::dbSta* open_sta,
-            odb::dbDatabase* db,
-            rsz::Resizer* resizer,
-            est::EstimateParasitics* estimate_parasitics);
   void reset();
   void resynth(sta::Corner* corner);
   void run(char* liberty_file_name,

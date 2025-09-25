@@ -22,37 +22,17 @@ namespace drt {
 // Tcl files encoded into strings.
 extern const char* drt_tcl_inits[];
 
-drt::TritonRoute* makeTritonRoute()
+void initGui(drt::TritonRoute* router)
 {
-  return new drt::TritonRoute();
+  auto graphics_factory = std::make_unique<drt::GraphicsFactory>();
+  router->initGraphics(std::move(graphics_factory));
 }
 
-void deleteTritonRoute(drt::TritonRoute* router)
-{
-  delete router;
-}
-
-void initTritonRoute(drt::TritonRoute* router,
-                     odb::dbDatabase* db,
-                     utl::Logger* logger,
-                     utl::CallBackHandler* callback_handler,
-                     dst::Distributed* dist,
-                     stt::SteinerTreeBuilder* stt_builder,
-                     Tcl_Interp* tcl_interp)
+void initTcl(Tcl_Interp* tcl_interp)
 {
   // Define swig TCL commands.
   Drt_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, drt::drt_tcl_inits);
-
-  std::unique_ptr<drt::AbstractGraphicsFactory> graphics_factory
-      = std::make_unique<drt::GraphicsFactory>();
-
-  router->init(db,
-               logger,
-               callback_handler,
-               dist,
-               stt_builder,
-               std::move(graphics_factory));
 }
 
 }  // namespace drt

@@ -3,7 +3,6 @@
 
 #include "ant/MakeAntennaChecker.hh"
 
-#include "ant/AntennaChecker.hh"
 #include "utl/decode.h"
 
 extern "C" {
@@ -15,24 +14,10 @@ namespace ant {
 // Tcl files encoded into strings.
 extern const char* ant_tcl_inits[];
 
-ant::AntennaChecker* makeAntennaChecker()
-{
-  return new ant::AntennaChecker;
-}
-
-void deleteAntennaChecker(ant::AntennaChecker* antenna_checker)
-{
-  delete antenna_checker;
-}
-
-void initAntennaChecker(ant::AntennaChecker* antenna_checker,
-                        odb::dbDatabase* db,
-                        utl::Logger* logger,
-                        Tcl_Interp* tcl_interp)
+void initAntennaChecker(Tcl_Interp* tcl_interp)
 {
   Ant_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, ant::ant_tcl_inits);
-  antenna_checker->init(db, logger);
 }
 
 }  // namespace ant

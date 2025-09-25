@@ -57,23 +57,25 @@ class HTreeBuilder;
 class TritonCTS
 {
  public:
-  TritonCTS();
-  ~TritonCTS();
-
-  void init(utl::Logger* logger,
+  TritonCTS(utl::Logger* logger,
             odb::dbDatabase* db,
             sta::dbNetwork* network,
             sta::dbSta* sta,
             stt::SteinerTreeBuilder* st_builder,
             rsz::Resizer* resizer,
             est::EstimateParasitics* estimate_parasitics);
+  ~TritonCTS();
+
   void runTritonCts();
   void reportCtsMetrics();
   CtsOptions* getParms() { return options_; }
   TechChar* getCharacterization() { return techChar_.get(); }
+  odb::dbBlock* getBlock() { return db_->getChip()->getBlock(); }
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
   void setRootBuffer(const char* buffers);
+  std::string getRootBufferToString();
+  void resetRootBuffer() { rootBuffers_.clear(); }
   void setSinkBuffer(const char* buffers);
 
  private:
