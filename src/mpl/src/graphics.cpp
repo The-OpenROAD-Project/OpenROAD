@@ -553,7 +553,8 @@ void Graphics::drawObjects(gui::Painter& painter)
 template <typename T>
 bool Graphics::isSkippable(const T& macro)
 {
-  return macro.getCluster() != nullptr && macro.getCluster()->isClusterOfUnplacedIOPins();
+  return macro.getCluster() != nullptr
+         && macro.getCluster()->isClusterOfUnplacedIOPins();
 }
 
 // Draw guidance regions for macros.
