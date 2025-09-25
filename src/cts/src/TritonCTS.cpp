@@ -485,8 +485,8 @@ void TritonCTS::writeDataToDb()
     double allSinkDistance = 0.0;
     int minDepth = 0;
     int maxDepth = 0;
-    bool reportFullTree = !builder->getParent()
-                          && !builder->getChildren().empty();
+    bool reportFullTree
+        = !builder->getParent() && !builder->getChildren().empty();
 
     std::unordered_set<odb::dbITerm*> sinks;
     builder->getClock().forEachSink([&sinks](const ClockInst& inst) {
