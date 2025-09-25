@@ -137,22 +137,6 @@ py_test(
     ],
 )
 
-PASSFAIL_TESTS = [
-    # FIXME not supported yet
-    # "cpp_tests",
-    "dump_netlists",
-    "dump_netlists_withfill",
-    "test_block",
-    "test_bterm",
-    "test_destroy",
-    "test_group",
-    "test_inst",
-    "test_iterm",
-    "test_module",
-    "test_net",
-    "test_wire_codec",
-]
-
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "abstract_origin",

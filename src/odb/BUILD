@@ -44,9 +44,10 @@ cc_library(
         "src/lefin/*.cpp",
         "src/lefin/*.h",
         "src/lefout/*.cpp",
-        "src/swig/common/swig_common.cpp",
         "src/3dblox/*.cpp",
         "src/3dblox/*.h",
+    ] + [
+        "src/swig/common/swig_common.cpp",
     ]),
     hdrs = glob(
         include = [

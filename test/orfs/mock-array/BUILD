@@ -380,6 +380,7 @@ genrule(
 
 # If we want to measure power after final, instead of with estimated parasitics,
 # we'll need this.
+# buildifier: disable=unused-variable
 SPEFS_AND_NETLISTS = [
     ":results/asap7/{macro}/{stem}.{ext}".format(
         ext = ext,
