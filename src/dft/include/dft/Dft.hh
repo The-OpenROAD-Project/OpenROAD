@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "ClockDomain.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -36,9 +35,8 @@ class ScanChain;
 class Dft
 {
  public:
-  Dft();
-
-  void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
+  Dft(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
+  ~Dft();
 
   // Pre-work for insert_dft. We collect the cells that need to be
   // scan replaced. This function doesn't mutate the design.
@@ -91,7 +89,7 @@ class Dft
 
  private:
   // If we need to run pre_dft to create the internal state
-  bool need_to_run_pre_dft_;
+  bool need_to_run_pre_dft_{true};
 
   // Resets the internal state
   void reset();

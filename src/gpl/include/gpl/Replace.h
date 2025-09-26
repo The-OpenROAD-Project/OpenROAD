@@ -46,14 +46,13 @@ using Clusters = std::vector<Cluster>;
 class Replace
 {
  public:
-  Replace();
+  Replace(odb::dbDatabase* odb,
+          sta::dbSta* sta,
+          rsz::Resizer* resizer,
+          grt::GlobalRouter* router,
+          utl::Logger* logger);
   ~Replace();
 
-  void init(odb::dbDatabase* odb,
-            sta::dbSta* sta,
-            rsz::Resizer* resizer,
-            grt::GlobalRouter* router,
-            utl::Logger* logger);
   void reset();
 
   void doIncrementalPlace(int threads);

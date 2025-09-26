@@ -35,22 +35,16 @@ namespace ppl {
 
 using utl::PPL;
 
-IOPlacer::IOPlacer() : top_grid_(nullptr), ioplacer_renderer_(nullptr)
+IOPlacer::IOPlacer(odb::dbDatabase* db, Logger* logger)
+    : logger_(logger), top_grid_(nullptr), ioplacer_renderer_(nullptr), db_(db)
 {
   netlist_ = std::make_unique<Netlist>();
   core_ = std::make_unique<Core>();
   parms_ = std::make_unique<Parameters>();
+  validator_ = std::make_unique<utl::Validator>(logger, PPL);
 }
 
 IOPlacer::~IOPlacer() = default;
-
-void IOPlacer::init(odb::dbDatabase* db, Logger* logger)
-{
-  db_ = db;
-  logger_ = logger;
-  parms_ = std::make_unique<Parameters>();
-  validator_ = std::make_unique<utl::Validator>(logger, PPL);
-}
 
 odb::dbBlock* IOPlacer::getBlock() const
 {

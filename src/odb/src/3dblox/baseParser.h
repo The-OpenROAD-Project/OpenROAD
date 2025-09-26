@@ -32,8 +32,9 @@ class BaseParser
   void parseCoordinates(std::vector<Coordinate>& coords,
                         const YAML::Node& coords_node);
   void parseHeader(Header& header, const YAML::Node& header_node);
-  void parseDefines(std::map<std::string, std::string>& defines,
-                    const std::string& content);
+  void parseDefines(std::string& content);
+  std::string resolvePath(const std::string& path);
+  void resolvePaths(const std::string& path, std::vector<std::string>& paths);
 
   // Utility methods
   void logError(const std::string& message);
@@ -41,6 +42,7 @@ class BaseParser
 
   // Member variables
   utl::Logger* logger_ = nullptr;
+  std::string current_file_path_;
 };
 
 }  // namespace odb

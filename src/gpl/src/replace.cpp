@@ -27,22 +27,16 @@ namespace gpl {
 
 using utl::GPL;
 
-Replace::Replace() = default;
+Replace::Replace(odb::dbDatabase* odb,
+                 sta::dbSta* sta,
+                 rsz::Resizer* resizer,
+                 grt::GlobalRouter* router,
+                 utl::Logger* logger)
+    : db_(odb), sta_(sta), rs_(resizer), fr_(router), log_(logger)
+{
+}
 
 Replace::~Replace() = default;
-
-void Replace::init(odb::dbDatabase* odb,
-                   sta::dbSta* sta,
-                   rsz::Resizer* resizer,
-                   grt::GlobalRouter* router,
-                   utl::Logger* logger)
-{
-  db_ = odb;
-  sta_ = sta;
-  rs_ = resizer;
-  fr_ = router;
-  log_ = logger;
-}
 
 void Replace::reset()
 {

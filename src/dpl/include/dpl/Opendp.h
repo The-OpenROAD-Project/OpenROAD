@@ -88,7 +88,7 @@ struct IRDrop;
 class Opendp
 {
  public:
-  Opendp();
+  Opendp(dbDatabase* db, Logger* logger);
   ~Opendp();
 
   Opendp(const Opendp&) = delete;
@@ -97,7 +97,6 @@ class Opendp
   void legalCellPos(dbInst* db_inst);  // call from rsz
   void initMacrosAndGrid();            // call from rsz
 
-  void init(dbDatabase* db, Logger* logger);
   // legalize/report
   // max_displacment is in sites. use zero for defaults.
   void detailedPlacement(int max_displacement_x,

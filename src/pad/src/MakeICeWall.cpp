@@ -5,7 +5,6 @@
 
 #include <tcl.h>
 
-#include "pad/ICeWall.h"
 #include "utl/decode.h"
 
 extern "C" {
@@ -16,27 +15,12 @@ namespace pad {
 
 extern const char* pad_tcl_inits[];
 
-pad::ICeWall* makeICeWall()
-{
-  return new pad::ICeWall();
-}
-
-void deleteICeWall(pad::ICeWall* icewall)
-{
-  delete icewall;
-}
-
-void initICeWall(pad::ICeWall* icewall,
-                 odb::dbDatabase* db,
-                 utl::Logger* logger,
-                 Tcl_Interp* tcl_interp)
+void initICeWall(Tcl_Interp* tcl_interp)
 {
   // Define swig TCL commands.
   Pad_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   utl::evalTclInit(tcl_interp, pad::pad_tcl_inits);
-
-  icewall->init(db, logger);
 }
 
 }  // namespace pad

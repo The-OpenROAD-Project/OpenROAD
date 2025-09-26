@@ -131,21 +131,15 @@ using sta::CLOCK;
 using sta::LeakagePower;
 using sta::LeakagePowerSeq;
 
-Resizer::Resizer()
+Resizer::Resizer(Logger* logger,
+                 dbDatabase* db,
+                 dbSta* sta,
+                 SteinerTreeBuilder* stt_builder,
+                 GlobalRouter* global_router,
+                 dpl::Opendp* opendp,
+                 est::EstimateParasitics* estimate_parasitics)
     : swap_arith_modules_(std::make_unique<ConcreteSwapArithModules>(this)),
       tgt_slews_{0.0, 0.0}
-{
-}
-
-Resizer::~Resizer() = default;
-
-void Resizer::init(Logger* logger,
-                   dbDatabase* db,
-                   dbSta* sta,
-                   SteinerTreeBuilder* stt_builder,
-                   GlobalRouter* global_router,
-                   dpl::Opendp* opendp,
-                   est::EstimateParasitics* estimate_parasitics)
 {
   opendp_ = opendp;
   logger_ = logger;
@@ -177,6 +171,8 @@ void Resizer::init(Logger* logger,
   repair_hold_ = std::make_unique<RepairHold>(this);
   rebuffer_ = std::make_unique<Rebuffer>(this);
 }
+
+Resizer::~Resizer() = default;
 
 ////////////////////////////////////////////////////////////////
 
@@ -4492,7 +4488,12 @@ void Resizer::swapArithModules(int path_count,
              == est::ParasiticsSrc::detailed_routing) {
     opendp_->initMacrosAndGrid();
   }
-  swap_arith_modules_->replaceArithModules(path_count, target, slack_margin);
+  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
+  if (swap_arith_modules_->replaceArithModules(
+          path_count, target, slack_margin)) {
+    estimate_parasitics_->updateParasitics();
+    sta_->findRequireds();
+  }
 }
 ////////////////////////////////////////////////////////////////
 // Journal to roll back changes
