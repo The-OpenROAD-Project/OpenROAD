@@ -76,6 +76,7 @@ or_integration_tests(
     macros_cells_overlapping_ports
     macros_cells_via_failure
     macros_different_nets
+    macros_grid_check
     macros_grid_through
     macros_grid_through_without_middle
     macros_narrow_channel
