@@ -244,7 +244,7 @@ int main(int argc, char* argv[])
     std::filesystem::remove(metrics_filename, err_ignored);
   }
 
-  read_odb_filename = findCmdLineKey(argc, argv, "--db");
+  read_odb_filename = findCmdLineKey(argc, argv, "-db");
   no_settings = findCmdLineFlag(argc, argv, "-no_settings");
   minimize = findCmdLineFlag(argc, argv, "-minimize");
 
@@ -560,7 +560,7 @@ static void showUsage(const char* prog, const char* init_filename)
     printf("  -log <file_name>      write a log in <file_name>\n");
     printf(
       "  -metrics <file_name>  write metrics in <file_name> in JSON format\n");
-    printf("  --db <file_name>      open a .odb database at startup\n");
+    printf("  -db <file_name>      open a .odb database at startup\n");
   printf("  cmd_file              source cmd_file\n");
 }
 
