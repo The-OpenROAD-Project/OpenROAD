@@ -14,7 +14,6 @@ add_library(cts_lib
     TechChar.cpp
     TritonCTS.cpp
     Clustering.cpp
-    LevelBalancer.cpp
     LatencyBalancer.cpp
     CtsOptions.cpp
 )

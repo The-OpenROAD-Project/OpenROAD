@@ -50,7 +50,6 @@ def clock_tree_synthesis(
     sink_clustering_size=None,
     sink_clustering_max_diameter=None,
     sink_clustering_enable=False,
-    balance_levels=False,
     sink_clustering_levels=None,
     num_static_layers=None,
     sink_clustering_buffer=None,
@@ -61,7 +60,6 @@ def clock_tree_synthesis(
 
     # Boolean
     parms.setSinkClustering(sink_clustering_enable)
-    parms.setBalanceLevels(balance_levels)
 
     if is_pos_int(sink_clustering_size):
         parms.setSinkClusteringSize(sink_clustering_size)

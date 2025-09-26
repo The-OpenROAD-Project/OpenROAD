@@ -137,7 +137,6 @@ set_cts_config -root_buf $cts_buffer \
   -sink_clustering_max_diameter $cts_cluster_diameter
 
 clock_tree_synthesis -sink_clustering_enable \
-  -balance_levels \
   -use_dummy_load
 
 set_propagated_clock [all_clocks]

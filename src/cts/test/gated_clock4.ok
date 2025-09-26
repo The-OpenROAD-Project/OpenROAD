@@ -298,13 +298,6 @@ delta HPWL              2575271 %
 [INFO CTS-0101]  Average sink wire length 41.68 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Leaf load cells 26
-[DEBUG CTS-insertion delay] top buffer delay for register tree clkbuf_0_clk is 2.666e-11
-[DEBUG CTS-insertion delay] top buffer delay for register tree clkbuf_0_h1\/gclk5 is 5.007e-11
-[DEBUG CTS-insertion delay] top buffer delay for register tree clkbuf_0_h1\/gclk2 is 3.354e-11
-[DEBUG CTS-insertion delay] top buffer delay for macro tree clkbuf_0_gclk4 is 2.938e-11
-[DEBUG CTS-insertion delay] top buffer delay for register tree clkbuf_regs_0_core is 2.938e-11
-[DEBUG CTS-insertion delay] top buffer delay for register tree clkbuf_0_gclk3 is 3.354e-11
-[DEBUG CTS-insertion delay] top buffer delay for register tree clkbuf_0_gclk1 is 3.354e-11
 [INFO CTS-0033] Balancing latency for clock core
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_0_core is inserted at (969790 1979318)
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_1_core is inserted at (986525 1980856)

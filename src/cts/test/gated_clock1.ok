@@ -130,9 +130,6 @@
 [INFO CTS-0101]  Average sink wire length 83.63 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Leaf load cells 29
-[DEBUG CTS-insertion delay] top buffer delay for macro tree clkbuf_0_clk is 2.480e-11
-[DEBUG CTS-insertion delay] top buffer delay for register tree clkbuf_regs_0_clk is 2.480e-11
-[DEBUG CTS-insertion delay] top buffer delay for register tree clkbuf_0_gclk1 is 5.007e-11
 [INFO CTS-0033] Balancing latency for clock clk
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_0_clk is inserted at (101013 149105)
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_1_clk is inserted at (102026 98350)
