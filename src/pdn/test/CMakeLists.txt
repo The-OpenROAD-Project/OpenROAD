@@ -2,6 +2,7 @@ or_integration_tests(
   "pdn"
   TESTS
     add_double_global_connection
+    asap7_failed_macro_covered
     asap7_failed_macro_grid
     asap7_no_via_generate
     asap7_no_via_generate_v1_snapped
@@ -18,6 +19,7 @@ or_integration_tests(
     asap7_vias_max_rows_columns
     asap7_M1_M3_followpins
     asap7_M1_M3_followpins_staggered
+    asap7_macro_notcovered
     bpin_removal
     core_grid
     core_grid_adjacentcuts
@@ -99,6 +101,7 @@ or_integration_tests(
     pads_black_parrot_max_width
     pads_black_parrot_no_connect
     pads_black_parrot_offset
+    pads_connect_from_non_pref_edge
     power_switch
     power_switch_cut_rows
     power_switch_daisy

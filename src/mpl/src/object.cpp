@@ -565,21 +565,26 @@ bool Cluster::attemptMerge(Cluster* incomer, bool& incomer_deleted)
 // Connection signature support
 void Cluster::initConnection()
 {
-  connection_map_.clear();
+  connections_map_.clear();
 }
 
 void Cluster::addConnection(int cluster_id, float weight)
 {
-  if (connection_map_.find(cluster_id) == connection_map_.end()) {
-    connection_map_[cluster_id] = weight;
+  if (connections_map_.find(cluster_id) == connections_map_.end()) {
+    connections_map_[cluster_id] = weight;
   } else {
-    connection_map_[cluster_id] += weight;
+    connections_map_[cluster_id] += weight;
   }
 }
 
-std::map<int, float> Cluster::getConnection() const
+void Cluster::removeConnection(int cluster_id)
 {
-  return connection_map_;
+  connections_map_.erase(cluster_id);
+}
+
+const ConnectionsMap& Cluster::getConnectionsMap() const
+{
+  return connections_map_;
 }
 
 // The connection signature is based on connection topology
@@ -590,7 +595,7 @@ bool Cluster::isSameConnSignature(const Cluster& cluster, float net_threshold)
 {
   std::vector<int> neighbors;          // neighbors of current cluster
   std::vector<int> cluster_neighbors;  // neighbors of the input cluster
-  for (auto& [cluster_id, weight] : connection_map_) {
+  for (auto& [cluster_id, weight] : connections_map_) {
     if ((cluster_id != id_) && (cluster_id != cluster.id_)
         && (weight >= net_threshold)) {
       neighbors.push_back(cluster_id);
@@ -601,7 +606,7 @@ bool Cluster::isSameConnSignature(const Cluster& cluster, float net_threshold)
     return false;
   }
 
-  for (auto& [cluster_id, weight] : cluster.connection_map_) {
+  for (auto& [cluster_id, weight] : cluster.connections_map_) {
     if ((cluster_id != id_) && (cluster_id != cluster.id_)
         && (weight >= net_threshold)) {
       cluster_neighbors.push_back(cluster_id);
@@ -629,7 +634,7 @@ bool Cluster::hasMacroConnectionWith(const Cluster& cluster,
                                      float net_threshold)
 {
   if (id_ != cluster.getId()) {
-    for (const auto& [cluster_id, num_of_conn] : connection_map_) {
+    for (const auto& [cluster_id, num_of_conn] : connections_map_) {
       if (cluster_id == cluster.getId() && num_of_conn > net_threshold) {
         return true;
       }
@@ -650,7 +655,7 @@ int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
 {
   int closely_cluster = -1;
   int num_closely_clusters = 0;
-  for (auto& [cluster_id, num_nets] : connection_map_) {
+  for (auto& [cluster_id, num_nets] : connections_map_) {
     debugPrint(logger_,
                MPL,
                "multilevel_autoclustering",
@@ -671,32 +676,6 @@ int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
     return closely_cluster;
   }
   return -1;
-}
-
-// Print Basic Information
-// Normally we call this after macro placement is done
-void Cluster::printBasicInformation(utl::Logger* logger) const
-{
-  std::string line = "\n";
-  line += std::string(80, '*') + "\n";
-  line += "[INFO] cluster_name :  " + name_ + "  ";
-  line += "cluster_id : " + std::to_string(id_) + "  \n";
-  line += "num_std_cell : " + std::to_string(getNumStdCell()) + "  ";
-  line += "num_macro : " + std::to_string(getNumMacro()) + "\n";
-  line += "width : " + std::to_string(getWidth()) + "  ";
-  line += "height : " + std::to_string(getHeight()) + "  ";
-  line += "location :  ( " + std::to_string((getLocation()).first) + " , ";
-  line += std::to_string((getLocation()).second) + " )\n";
-  for (const auto& hard_macro : hard_macros_) {
-    line += "\t macro_name : " + hard_macro->getName();
-    line += "\t width : " + std::to_string(hard_macro->getRealWidth());
-    line += "\t height : " + std::to_string(hard_macro->getRealHeight());
-    line += "\t lx : " + std::to_string(hard_macro->getRealX());
-    line += "\t ly : " + std::to_string(hard_macro->getRealY());
-    line += "\n";
-  }
-
-  logger->report(line);
 }
 
 // Macro Placement Support
@@ -1367,6 +1346,17 @@ void SoftMacro::setShapeF(float width, float height)
   width_ = width;
   height_ = height;
   area_ = width * height;
+}
+
+void Cluster::reportConnections() const
+{
+  logger_->report("{} ({}) Connections:", name_, id_);
+  logger_->report("\n  Cluster Id  |  Connection Weight  ");
+  logger_->report("------------------------------------");
+  for (const auto& [cluster_id, connections_weight] : connections_map_) {
+    logger_->report(" {:>12d} | {:>19.2f}", cluster_id, connections_weight);
+  }
+  logger_->report("");
 }
 
 }  // namespace mpl

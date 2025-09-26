@@ -60,9 +60,7 @@ using sta::TimingArcSet;
 using sta::TimingRole;
 using sta::VertexInEdgeIterator;
 
-RepairDesign::RepairDesign(Resizer* resizer,
-                           est::EstimateParasitics* estimate_parasitics)
-    : resizer_(resizer), estimate_parasitics_(estimate_parasitics)
+RepairDesign::RepairDesign(Resizer* resizer) : resizer_(resizer)
 {
 }
 
@@ -74,6 +72,7 @@ void RepairDesign::init()
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
   dbu_ = resizer_->dbu_;
+  estimate_parasitics_ = resizer_->estimate_parasitics_;
   pre_checks_ = std::make_unique<PreChecks>(resizer_);
   parasitics_src_ = estimate_parasitics_->getParasiticsSrc();
   initial_design_area_ = resizer_->computeDesignArea();

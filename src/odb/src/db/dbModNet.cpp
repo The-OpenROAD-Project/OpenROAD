@@ -23,6 +23,7 @@
 #include "dbModuleModNetModBTermItr.h"
 #include "dbModuleModNetModITermItr.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbModNet>;
@@ -218,6 +219,60 @@ void dbModNet::disconnectAllTerms()
   }
 }
 
+void dbModNet::dump() const
+{
+  utl::Logger* logger = getImpl()->getLogger();
+  logger->report("--------------------------------------------------");
+  logger->report("dbModNet: {} (id={})", getName(), getId());
+  logger->report("  Parent Module: {} (id={})",
+                 getParent()->getName(),
+                 getParent()->getId());
+
+  logger->report("  ModITerms ({}):", getModITerms().size());
+  for (dbModITerm* term : getModITerms()) {
+    // For dbModITerm, get types from child dbModBTerm
+    dbModBTerm* child_bterm = term->getChildModBTerm();
+    if (child_bterm) {
+      logger->report("    - {} ({}, {}, id={})",
+                     term->getName(),
+                     child_bterm->getSigType().getString(),
+                     child_bterm->getIoType().getString(),
+                     term->getId());
+    } else {
+      logger->report(
+          "    - {} (no child bterm, id={})", term->getName(), term->getId());
+    }
+  }
+
+  logger->report("  ModBTerms ({}):", getModBTerms().size());
+  for (dbModBTerm* term : getModBTerms()) {
+    logger->report("    - {} ({}, {}, id={})",
+                   term->getName(),
+                   term->getSigType().getString(),
+                   term->getIoType().getString(),
+                   term->getId());
+  }
+
+  logger->report("  ITerms ({}):", getITerms().size());
+  for (dbITerm* term : getITerms()) {
+    logger->report("    - {} ({}, {}, id={})",
+                   term->getName(),
+                   term->getSigType().getString(),
+                   term->getIoType().getString(),
+                   term->getId());
+  }
+
+  logger->report("  BTerms ({}):", getBTerms().size());
+  for (dbBTerm* term : getBTerms()) {
+    logger->report("    - {} ({}, {}, id={})",
+                   term->getName(),
+                   term->getSigType().getString(),
+                   term->getIoType().getString(),
+                   term->getId());
+  }
+  logger->report("--------------------------------------------------");
+}
+
 dbModNet* dbModNet::getModNet(dbBlock* block, uint id)
 {
   _dbBlock* block_ = (_dbBlock*) block;
@@ -227,6 +282,8 @@ dbModNet* dbModNet::getModNet(dbBlock* block, uint id)
 
 dbModNet* dbModNet::create(dbModule* parentModule, const char* base_name)
 {
+  assert(parentModule->getModNet(base_name) == nullptr);
+
   // give illusion of scoping.
   _dbModule* parent = (_dbModule*) parentModule;
   _dbBlock* block = (_dbBlock*) parent->getOwner();
@@ -307,28 +364,28 @@ dbSet<dbModNet>::iterator dbModNet::destroy(dbSet<dbModNet>::iterator& itr)
   return next;
 }
 
-dbSet<dbModITerm> dbModNet::getModITerms()
+dbSet<dbModITerm> dbModNet::getModITerms() const
 {
   _dbModNet* _mod_net = (_dbModNet*) this;
   _dbBlock* _block = (_dbBlock*) _mod_net->getOwner();
   return dbSet<dbModITerm>(_mod_net, _block->_module_modnet_moditerm_itr);
 }
 
-dbSet<dbModBTerm> dbModNet::getModBTerms()
+dbSet<dbModBTerm> dbModNet::getModBTerms() const
 {
   _dbModNet* _mod_net = (_dbModNet*) this;
   _dbBlock* _block = (_dbBlock*) _mod_net->getOwner();
   return dbSet<dbModBTerm>(_mod_net, _block->_module_modnet_modbterm_itr);
 }
 
-dbSet<dbBTerm> dbModNet::getBTerms()
+dbSet<dbBTerm> dbModNet::getBTerms() const
 {
   _dbModNet* _mod_net = (_dbModNet*) this;
   _dbBlock* _block = (_dbBlock*) _mod_net->getOwner();
   return dbSet<dbBTerm>(_mod_net, _block->_module_modnet_bterm_itr);
 }
 
-dbSet<dbITerm> dbModNet::getITerms()
+dbSet<dbITerm> dbModNet::getITerms() const
 {
   _dbModNet* _mod_net = (_dbModNet*) this;
   _dbBlock* _block = (_dbBlock*) _mod_net->getOwner();

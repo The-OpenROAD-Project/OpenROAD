@@ -222,15 +222,14 @@ class OdbCallBack;
 class Resizer : public dbStaState, public dbNetworkObserver
 {
  public:
-  Resizer();
+  Resizer(Logger* logger,
+          dbDatabase* db,
+          dbSta* sta,
+          SteinerTreeBuilder* stt_builder,
+          GlobalRouter* global_router,
+          dpl::Opendp* opendp,
+          est::EstimateParasitics* estimate_parasitics);
   ~Resizer() override;
-  void init(Logger* logger,
-            dbDatabase* db,
-            dbSta* sta,
-            SteinerTreeBuilder* stt_builder,
-            GlobalRouter* global_router,
-            dpl::Opendp* opendp,
-            est::EstimateParasitics* estimate_parasitics);
 
   // Core area (meters).
   double coreArea() const;
@@ -645,6 +644,13 @@ class Resizer : public dbStaState, public dbNetworkObserver
                          const Point& loc,
                          const odb::dbNameUniquifyType& uniquify
                          = odb::dbNameUniquifyType::ALWAYS);
+  void deleteTieCellAndNet(const Instance* tie_inst, LibertyPort* tie_port);
+  const Pin* findArithBoundaryPin(const Pin* load_pin);
+  void createNewTieCellForLoadPin(const Pin* load_pin,
+                                  const char* new_inst_name,
+                                  Instance* parent,
+                                  LibertyPort* tie_port,
+                                  int separation_dbu);
   void getBufferPins(Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
 
   Instance* makeBuffer(LibertyCell* cell,

@@ -5,6 +5,7 @@
 # is needed to handle Qt and build a working gui.
 
 load("@qt-bazel//:build_defs.bzl", "qt6_library", "qt6_resource_library")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -66,6 +67,7 @@ qt6_library(
         ":qt_resources",
         "//:ord",
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",

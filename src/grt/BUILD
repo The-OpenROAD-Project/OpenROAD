@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -52,6 +54,7 @@ cc_library(
         ":abstract-fastroute",
         ":groute",
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/gui",
         "//src/odb",
         "//src/stt",
@@ -65,7 +68,6 @@ cc_library(
 cc_library(
     name = "cugr",
     srcs = [
-        "src/cugr/src/geo.h",
         "src/cugr/src/CUGR.cpp",
         "src/cugr/src/Design.cpp",
         "src/cugr/src/Design.h",
@@ -85,6 +87,7 @@ cc_library(
         "src/cugr/src/Netlist.h",
         "src/cugr/src/PatternRoute.cpp",
         "src/cugr/src/PatternRoute.h",
+        "src/cugr/src/geo.h",
         "src/cugr/src/robin_hood.h",
     ],
     hdrs = [
@@ -139,6 +142,8 @@ cc_library(
         ":groute",
         "//src/ant",
         "//src/dbSta",
+        "//src/dbSta:SpefWriter",
+        "//src/dbSta:dbNetwork",
         "//src/dpl",
         "//src/gui",
         "//src/odb",
@@ -226,6 +231,21 @@ tcl_wrap_cc(
     namespace_prefix = "grt",
     root_swig_src = "src/GlobalRouter.i",
     swig_includes = [
+        "src",
+    ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/grt/GlobalRouter.h",
+        "src/GlobalRouter-py.i",
+        "//:error_swig-py",
+    ],
+    module = "grt_py",
+    root_swig_src = "src/GlobalRouter-py.i",
+    swig_includes = [
+        "include",
         "src",
     ],
 )

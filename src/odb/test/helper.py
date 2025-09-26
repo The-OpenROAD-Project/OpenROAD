@@ -1,10 +1,12 @@
 import odb
 import openroad
-from openroad import Design
+from openroad import Design, Tech
 
 
 def createSimpleDB():
-    db = Design.createDetachedDb()
+    ord_tech = Tech()
+    design = Design(ord_tech)
+    db = design.getDb()
     tech = odb.dbTech.create(db, "simple_tech")
     L1 = odb.dbTechLayer_create(tech, "L1", "ROUTING")
     lib = odb.dbLib.create(db, "lib", tech, "/")
@@ -12,11 +14,13 @@ def createSimpleDB():
     # Creating Master and2 and or2
     and2 = createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o")
     or2 = createMaster2X1(lib, "or2", 500, 500, "a", "b", "o")
-    return db, lib
+    return db, lib, design, ord_tech
 
 
 def createMultiLayerDB():
-    db = Design.createDetachedDb()
+    ord_tech = Tech()
+    design = Design(ord_tech)
+    db = design.getDb()
     tech = odb.dbTech.create(db, "multi_tech")
 
     m1 = odb.dbTechLayer_create(tech, "M1", "ROUTING")
@@ -34,7 +38,7 @@ def createMultiLayerDB():
     odb.dbBox_create(v23, m2, 0, 0, 2000, 2000)
     odb.dbBox_create(v23, m3, 0, 0, 2000, 2000)
 
-    return db, tech, m1, m2, m3, v12, v23
+    return db, tech, m1, m2, m3, v12, v23, design, ord_tech
 
 
 # logical expr OUT = (IN1&IN2)

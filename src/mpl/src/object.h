@@ -37,6 +37,7 @@ class HardMacro;
 class SoftMacro;
 class Cluster;
 
+using ConnectionsMap = std::map<int, float>;
 using IntervalList = std::vector<Interval>;
 using TilingList = std::vector<Tiling>;
 using TilingSet = std::set<Tiling>;
@@ -209,9 +210,8 @@ class Cluster
   // Connection signature support
   void initConnection();
   void addConnection(int cluster_id, float weight);
-  // TODO: this should return a const reference iff callers don't implicitly
-  // modify it. See comment in Cluster.
-  std::map<int, float> getConnection() const;
+  void removeConnection(int cluster_id);
+  const ConnectionsMap& getConnectionsMap() const;
   bool isSameConnSignature(const Cluster& cluster, float net_threshold);
   bool hasMacroConnectionWith(const Cluster& cluster, float net_threshold);
   int getCloseCluster(const std::vector<int>& candidate_clusters,
@@ -222,15 +222,15 @@ class Cluster
   std::vector<std::pair<int, int>> getVirtualConnections() const;
   void addVirtualConnection(int src, int target);
 
-  // Print Basic Information
-  void printBasicInformation(utl::Logger* logger) const;
-
   // Macro Placement Support
   void setSoftMacro(std::unique_ptr<SoftMacro> soft_macro);
   SoftMacro* getSoftMacro() const;
 
   void setTilings(const TilingList& tilings);
   const TilingList& getTilings() const;
+
+  // For Debug
+  void reportConnections() const;
 
  private:
   int id_{-1};
@@ -255,7 +255,7 @@ class Cluster
   Cluster* parent_{nullptr};
   UniqueClusterVector children_;
 
-  std::map<int, float> connection_map_;  // id -> connection weight
+  ConnectionsMap connections_map_;  // cluster id -> connection weight
   std::vector<std::pair<int, int>> virtual_connections_;  // id -> id
 
   utl::Logger* logger_;

@@ -1295,6 +1295,13 @@ void CoreGrid::setupDirectConnect(
       if (pad_connect->canConnect()) {
         straps.insert(pad_connect.get());
         addStrap(std::move(pad_connect));
+      } else {
+        debugPrint(getLogger(),
+                   utl::PDN,
+                   "Pad",
+                   2,
+                   "Rejecting pad cell pin {} due to lack of connectivity",
+                   iterm->getName())
       }
     }
   }
@@ -1657,6 +1664,63 @@ bool InstanceGrid::isValid() const
     return false;
   }
   return true;
+}
+
+void InstanceGrid::checkSetup() const
+{
+  Grid::checkSetup();
+
+  // check blockages above pins
+  const auto nets = getNets(startsWithPower());
+  for (auto* iterm : inst_->getITerms()) {
+    if (std::find(nets.begin(), nets.end(), iterm->getNet()) == nets.end()) {
+      continue;
+    }
+    odb::dbTechLayer* top = nullptr;
+    std::set<odb::Rect> boxes;
+    for (auto* mpin : iterm->getMTerm()->getMPins()) {
+      for (auto* box : mpin->getGeometry()) {
+        auto* layer = box->getTechLayer();
+        if (layer == nullptr) {
+          continue;
+        }
+        if (top == nullptr
+            || top->getRoutingLevel() < layer->getRoutingLevel()) {
+          top = layer;
+          boxes.clear();
+        }
+        if (layer == top) {
+          boxes.insert(box->getBox());
+        }
+      }
+    }
+
+    if (top != nullptr) {
+      const int top_idx = top->getNumber();
+      for (auto* master_obs : inst_->getMaster()->getObstructions()) {
+        auto* obs_layer = master_obs->getTechLayer();
+        if (obs_layer == nullptr) {
+          continue;
+        }
+        if (obs_layer->getType() != odb::dbTechLayerType::ROUTING) {
+          continue;
+        }
+        if (obs_layer->getNumber() > top_idx) {
+          for (const auto& pin : boxes) {
+            if (pin.intersects(master_obs->getBox())) {
+              getLogger()->error(
+                  utl::PDN,
+                  6,
+                  "Pins on {} are blocked by obstructions on {} for {}",
+                  top->getName(),
+                  obs_layer->getName(),
+                  inst_->getName());
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 ////////

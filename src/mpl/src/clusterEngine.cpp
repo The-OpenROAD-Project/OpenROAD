@@ -1061,6 +1061,7 @@ void ClusteringEngine::buildDataFlowConnections()
       const float conn_weight = computeConnWeight(hops);
       for (auto& sink : sink_clusters) {
         tree_->maps.id_to_cluster[driver_id]->addConnection(sink, conn_weight);
+        tree_->maps.id_to_cluster[sink]->addConnection(driver_id, conn_weight);
       }
     }
   }
@@ -1849,14 +1850,21 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
 
 bool ClusteringEngine::attemptMerge(Cluster* receiver, Cluster* incomer)
 {
-  // The incomer might be deleted so we need to cache
-  // its id in order to erase it from the map if so.
+  // Cache incomer data in case it is deleted.
   const int incomer_id = incomer->getId();
+  const ConnectionsMap incomer_connections = incomer->getConnectionsMap();
 
   bool incomer_deleted = false;
   if (receiver->attemptMerge(incomer, incomer_deleted)) {
     if (incomer_deleted) {
       tree_->maps.id_to_cluster.erase(incomer_id);
+
+      // Update connections of clusters connected to the deleted cluster.
+      for (const auto& [cluster_id, connection_weight] : incomer_connections) {
+        Cluster* cluster = tree_->maps.id_to_cluster.at(cluster_id);
+        cluster->removeConnection(incomer_id);
+        cluster->addConnection(receiver->getId(), connection_weight);
+      }
     }
 
     updateInstancesAssociation(receiver);
@@ -2194,7 +2202,7 @@ void ClusteringEngine::classifyMacrosByConnSignature(
     logger_->report("\nPrint Connection Signature\n");
     for (Cluster* cluster : macro_clusters) {
       logger_->report("Macro Signature: {}", cluster->getName());
-      for (auto& [cluster_id, weight] : cluster->getConnection()) {
+      for (auto& [cluster_id, weight] : cluster->getConnectionsMap()) {
         logger_->report(" {} {} ",
                         tree_->maps.id_to_cluster[cluster_id]->getName(),
                         weight);

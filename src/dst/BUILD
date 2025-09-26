@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -41,8 +42,10 @@ cc_library(
         "@boost.serialization",
         "@boost.smart_ptr",
         "@boost.system",
-        "@boost.thread//:thread_posix",
-    ],
+    ] + select({
+        "@platforms//os:macos": ["@boost.thread//:thread_mac"],
+        "//conditions:default": ["@boost.thread//:thread_posix"],
+    }),
 )
 
 cc_library(

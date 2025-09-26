@@ -3,6 +3,7 @@ load("//test:regression.bzl", "regression_test")
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "add_double_global_connection",
+    "asap7_failed_macro_covered",
     "asap7_failed_macro_grid",
     "asap7_no_via_generate",
     "asap7_no_via_generate_v1_snapped",
@@ -19,6 +20,7 @@ COMPULSORY_TESTS = [
     "asap7_vias_max_rows_columns",
     "asap7_M1_M3_followpins",
     "asap7_M1_M3_followpins_staggered",
+    "asap7_macro_notcovered",
     "bpin_removal",
     "core_grid",
     "core_grid_adjacentcuts",
@@ -100,6 +102,7 @@ COMPULSORY_TESTS = [
     "pads_black_parrot_max_width",
     "pads_black_parrot_no_connect",
     "pads_black_parrot_offset",
+    "pads_connect_from_non_pref_edge",
     "power_switch",
     "power_switch_cut_rows",
     "power_switch_daisy",
@@ -168,6 +171,8 @@ filegroup(
         "Nangate45/work_around_yosys/cells.v",
         "Nangate45_vias/Nangate45_adjacentcuts.lef",
         "asap7_data/fakeram7_256x32.lef",
+        "asap7_data/fakeram7_256x32_covered.lef",
+        "asap7_data/fakeram7_256x32_notcovered.lef",
         "asap7_vias/asap7_tech_1x.lef",
         "asap7_vias/asap7_tech_1x_arrayspacing.lef",
         "asap7_vias/asap7_tech_1x_arrayspacing_tightspacing.lef",
@@ -177,6 +182,10 @@ filegroup(
         "asap7_vias/asap7sc7p5t_27_R_1x.lef",
         "asap7_vias/floorplan.def",
         "asap7_vias/floorplan_repair.def",
+        "gf180/gf180mcu_6LM_1TM_9K_7t_tech.lef",
+        "gf180/gf180mcu_fd_io.lef",
+        "gf180/gf180mcu_fd_sc_mcu7t5v0.lef",
+        "gf180_data/floorplan.def",
         "helpers.tcl",
         "nangate_bsg_black_parrot/Nangate45_maxwidth.lef",
         "nangate_bsg_black_parrot/dummy_pads.lef",
@@ -257,6 +266,8 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "asap7_failed_macro_covered": ["asap7_failed_macro_grid.def"],
+            "asap7_macro_notcovered": ["asap7_failed_macro_grid.def"],
             "core_grid_auto_domain": ["core_grid.defok"],
             "core_grid_with_rings_connect": ["core_grid_with_rings.defok"],
             "macros_channel_recursive_repair": [

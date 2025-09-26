@@ -1,5 +1,7 @@
-module hi_fanout (clk1);
+module hi_fanout (clk1,
+    in);
  input clk1;
+ input in;
 
  wire net8;
  wire net7;
@@ -27,7 +29,8 @@ module hi_fanout (clk1);
     .Z(net2));
  BUF_X1 fanout1 (.A(net4),
     .Z(net1));
- DFF_X1 drvr (.CK(clk1),
+ DFF_X1 drvr (.D(in),
+    .CK(clk1),
     .Q(net0));
  hi_fanout_child hi_fanout_inst1 (.net_i_6(net7),
     .net_i_5(net6),
@@ -217,10 +220,10 @@ module hi_fanout_child_hi_fanout_inst2 (net_i_5,
     .CK(clk1));
  DFF_X1 load6 (.D(net0),
     .CK(clk1));
- DFF_X1 load7 (.D(net0),
+ DFF_X1 load7 (.D(net_i),
     .CK(clk1));
  DFF_X1 load8 (.D(net_i_4),
     .CK(clk1));
- DFF_X1 load9 (.D(net_i),
+ DFF_X1 load9 (.D(net0),
     .CK(clk1));
 endmodule

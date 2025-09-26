@@ -5,7 +5,6 @@
 
 #include <tcl.h>
 
-#include "dst/Distributed.h"
 #include "utl/decode.h"
 
 extern "C" {
@@ -17,24 +16,11 @@ namespace dst {
 // Tcl files encoded into strings.
 extern const char* dst_tcl_inits[];
 
-dst::Distributed* makeDistributed()
-{
-  return new dst::Distributed();
-}
-
-void deleteDistributed(dst::Distributed* dstr)
-{
-  delete dstr;
-}
-
-void initDistributed(dst::Distributed* distributer,
-                     utl::Logger* logger,
-                     Tcl_Interp* tcl_interp)
+void initDistributed(Tcl_Interp* tcl_interp)
 {
   // Define swig TCL commands.
   Dst_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, dst::dst_tcl_inits);
-  distributer->init(logger);
 }
 
 }  // namespace dst

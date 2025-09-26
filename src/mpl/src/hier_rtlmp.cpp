@@ -16,6 +16,7 @@
 #include <regex>
 #include <set>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -1486,7 +1487,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
   for (auto& cluster : parent->getChildren()) {
     const int src_id = cluster->getId();
     const std::string src_name = cluster->getName();
-    for (auto& [cluster_id, weight] : cluster->getConnection()) {
+    for (auto& [cluster_id, weight] : cluster->getConnectionsMap()) {
       debugPrint(logger_,
                  MPL,
                  "hierarchical_macro_placement",
@@ -2096,11 +2097,13 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
   const int number_of_sequence_pair_macros
       = static_cast<int>(hard_macros.size());
+  const int minimum_perturbations_per_step = num_perturb_per_step_ / 10;
+  const bool large_macro_cluster
+      = number_of_sequence_pair_macros > minimum_perturbations_per_step;
 
-  int num_perturb_per_step
-      = (number_of_sequence_pair_macros > num_perturb_per_step_ / 10)
-            ? number_of_sequence_pair_macros
-            : num_perturb_per_step_ / 10;
+  int perturbations_per_step = large_macro_cluster
+                                   ? number_of_sequence_pair_macros
+                                   : minimum_perturbations_per_step;
 
   SequencePair initial_seq_pair;
   if (cluster->isArrayOfInterconnectedMacros()) {
@@ -2113,8 +2116,8 @@ void HierRTLMP::placeMacros(Cluster* cluster)
     exchange_swap_prob = 1.0f;
 
     // Large arrays need more steps to properly converge.
-    if (number_of_sequence_pair_macros > num_perturb_per_step) {
-      num_perturb_per_step *= 2;
+    if (large_macro_cluster) {
+      perturbations_per_step *= 2;
     }
   }
 
@@ -2150,7 +2153,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
                                               exchange_swap_prob,
                                               init_prob_,
                                               max_num_step_,
-                                              num_perturb_per_step,
+                                              perturbations_per_step,
                                               random_seed_ + run_id,
                                               graphics_.get(),
                                               logger_,
@@ -2296,7 +2299,7 @@ void HierRTLMP::createFixedTerminals(const Rect& outline,
   std::set<int> clusters_ids;
 
   for (auto& macro_cluster : macro_clusters) {
-    for (auto [cluster_id, weight] : macro_cluster->getConnection()) {
+    for (auto [cluster_id, weight] : macro_cluster->getConnectionsMap()) {
       clusters_ids.insert(cluster_id);
     }
   }
@@ -2323,7 +2326,7 @@ std::vector<BundledNet> HierRTLMP::computeBundledNets(
   for (auto& macro_cluster : macro_clusters) {
     const int src_id = macro_cluster->getId();
 
-    for (auto [cluster_id, weight] : macro_cluster->getConnection()) {
+    for (auto [cluster_id, weight] : macro_cluster->getConnectionsMap()) {
       BundledNet net(
           cluster_to_macro.at(src_id), cluster_to_macro.at(cluster_id), weight);
 
