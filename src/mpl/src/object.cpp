@@ -949,6 +949,7 @@ SoftMacro::SoftMacro(const Rect& blockage, const std::string& name)
   area_ = width_ * height_;
   cluster_ = nullptr;
   fixed_ = true;
+  is_blockage_ = true;
 }
 
 // Represent an IO cluster or fixed terminal.
