@@ -111,8 +111,8 @@ bool SizeDownMove::doMove(const Path* drvr_path,
                delayAsString(drvr_slack, sta_, 3))
   }
 
-  // Try each one but only accept the first that we are able to size down.
-  // Many will not have smaller size options, most likely.
+  bool accept_move = false;
+
   for (auto& fanout_slack : fanout_slacks) {
     Vertex* load_vertex = fanout_slack.first;
 
@@ -155,21 +155,22 @@ bool SizeDownMove::doMove(const Path* drvr_path,
                  delayAsString(fanout_slack.second, sta_, 3));
 
       addMove(load_inst);
-      return true;
+      accept_move = true;
+    } else {
+      debugPrint(logger_,
+                 RSZ,
+                 "opt_moves",
+                 3,
+                 "REJECT size_down {} -> {} ({} -> {}) slack={}",
+                 network_->pathName(drvr_pin),
+                 network_->pathName(load_pin),
+                 load_cell->name(),
+                 new_cell ? new_cell->name() : "none",
+                 delayAsString(fanout_slack.second, sta_, 3));
     }
-    debugPrint(logger_,
-               RSZ,
-               "opt_moves",
-               3,
-               "REJECT size_down {} -> {} ({} -> {}) slack={}",
-               network_->pathName(drvr_pin),
-               network_->pathName(load_pin),
-               load_cell->name(),
-               new_cell ? new_cell->name() : "none",
-               delayAsString(fanout_slack.second, sta_, 3));
   }
 
-  return false;
+  return accept_move;
 }
 
 // This will downsize the gate to the smallest input capacitance that that
