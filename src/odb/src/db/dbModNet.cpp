@@ -282,6 +282,8 @@ dbModNet* dbModNet::getModNet(dbBlock* block, uint id)
 
 dbModNet* dbModNet::create(dbModule* parentModule, const char* base_name)
 {
+  assert(parentModule->getModNet(base_name) == nullptr);
+
   // give illusion of scoping.
   _dbModule* parent = (_dbModule*) parentModule;
   _dbBlock* block = (_dbBlock*) parent->getOwner();

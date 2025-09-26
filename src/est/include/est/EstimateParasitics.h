@@ -113,14 +113,13 @@ class EstimateParasiticsCallBack;
 class EstimateParasitics : public dbStaState
 {
  public:
-  EstimateParasitics();
+  EstimateParasitics(Logger* logger,
+                     utl::CallBackHandler* callback_handler,
+                     dbDatabase* db,
+                     dbSta* sta,
+                     SteinerTreeBuilder* stt_builder,
+                     GlobalRouter* global_router);
   ~EstimateParasitics() override;
-  void init(Logger* logger,
-            utl::CallBackHandler* callback_handler,
-            dbDatabase* db,
-            dbSta* sta,
-            SteinerTreeBuilder* stt_builder,
-            GlobalRouter* global_router);
   void initSteinerRenderer(
       std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer);
   void setLayerRC(dbTechLayer* layer,

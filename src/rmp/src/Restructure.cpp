@@ -47,11 +47,11 @@ using cut::Blif;
 
 namespace rmp {
 
-void Restructure::init(utl::Logger* logger,
-                       sta::dbSta* open_sta,
-                       odb::dbDatabase* db,
-                       rsz::Resizer* resizer,
-                       est::EstimateParasitics* estimate_parasitics)
+Restructure::Restructure(utl::Logger* logger,
+                         sta::dbSta* open_sta,
+                         odb::dbDatabase* db,
+                         rsz::Resizer* resizer,
+                         est::EstimateParasitics* estimate_parasitics)
 {
   logger_ = logger;
   db_ = db;

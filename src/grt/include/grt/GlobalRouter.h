@@ -112,20 +112,19 @@ using PointPair = std::pair<odb::Point, odb::Point>;
 class GlobalRouter
 {
  public:
-  GlobalRouter();
+  GlobalRouter(utl::Logger* logger,
+               utl::CallBackHandler* callback_handler,
+               stt::SteinerTreeBuilder* stt_builder,
+               odb::dbDatabase* db,
+               sta::dbSta* sta,
+               ant::AntennaChecker* antenna_checker,
+               dpl::Opendp* opendp);
   ~GlobalRouter();
 
-  void init(utl::Logger* logger,
-            utl::CallBackHandler* callback_handler,
-            stt::SteinerTreeBuilder* stt_builder,
-            odb::dbDatabase* db,
-            sta::dbSta* sta,
-            ant::AntennaChecker* antenna_checker,
-            dpl::Opendp* opendp,
-            std::unique_ptr<AbstractRoutingCongestionDataSource>
-                routing_congestion_data_source,
-            std::unique_ptr<AbstractRoutingCongestionDataSource>
-                routing_congestion_data_source_rudy);
+  void initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
+                   routing_congestion_data_source,
+               std::unique_ptr<AbstractRoutingCongestionDataSource>
+                   routing_congestion_data_source_rudy);
 
   void clear();
 

@@ -83,14 +83,14 @@ struct ParamStruct
 class TritonRoute
 {
  public:
-  TritonRoute();
+  TritonRoute(odb::dbDatabase* db,
+              utl::Logger* logger,
+              utl::CallBackHandler* callback_handler,
+              dst::Distributed* dist,
+              stt::SteinerTreeBuilder* stt_builder);
   ~TritonRoute();
-  void init(odb::dbDatabase* db,
-            utl::Logger* logger,
-            utl::CallBackHandler* callback_handler,
-            dst::Distributed* dist,
-            stt::SteinerTreeBuilder* stt_builder,
-            std::unique_ptr<AbstractGraphicsFactory> graphics_factory);
+
+  void initGraphics(std::unique_ptr<AbstractGraphicsFactory> graphics_factory);
 
   frDesign* getDesign() const { return design_.get(); }
   utl::Logger* getLogger() const { return logger_; }

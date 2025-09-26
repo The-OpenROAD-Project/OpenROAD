@@ -1,3 +1,4 @@
+load("@openroad_rules_python//python:defs.bzl", "py_library", "py_test")
 load("//test:regression.bzl", "regression_test")
 
 TESTS = [
