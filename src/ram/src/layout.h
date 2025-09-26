@@ -11,8 +11,9 @@ namespace ram {
 
 ////////////////////////////////////////////////////////////////
 
-class Cell {
-public:
+class Cell
+{
+ public:
   Cell();
 
   Cell(odb::Point position, odb::dbOrientType orient);
@@ -31,7 +32,7 @@ public:
 
   const int getWidth();
 
-private:
+ private:
   odb::Point origin_;
   odb::dbOrientType orient_;
   int height;
@@ -39,8 +40,9 @@ private:
   std::vector<odb::dbInst*> insts_;
 };
 
-class Layout {
-public:
+class Layout
+{
+ public:
   Layout(odb::Orientation2D orientation);
 
   Layout(odb::Orientation2D orientation, odb::Point origin);
@@ -56,7 +58,8 @@ public:
   const int getHeight();
 
   const int getWidth();
-private:
+
+ private:
   odb::Orientation2D orientation_;
   odb::Point origin_;
   int cell_height;
@@ -64,9 +67,9 @@ private:
   std::vector<std::unique_ptr<Cell>> cells_;
 };
 
-class Grid {
-public:
-
+class Grid
+{
+ public:
   Grid(odb::Orientation2D orientation);
 
   Grid(odb::Orientation2D orientation, int tracks);
@@ -90,17 +93,13 @@ public:
   const int numLayouts();
 
   const int getRowWidth();
-private:
+
+ private:
   odb::Orientation2D orientation_;
   odb::Point origin_;
   int cell_height;
   int cell_width;
   std::vector<std::unique_ptr<Layout>> layouts_;
-
-
-
 };
-
-
 
 }  // namespace ram

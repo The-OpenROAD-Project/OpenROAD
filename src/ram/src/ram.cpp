@@ -16,10 +16,10 @@ using odb::dbBlock;
 using odb::dbBPin;
 using odb::dbBTerm;
 using odb::dbInst;
+using odb::dbIoType;
 using odb::dbMaster;
 using odb::dbNet;
 using odb::dbRow;
-using odb::dbIoType;
 
 using utl::RAM;
 
@@ -28,16 +28,12 @@ using std::vector;
 
 ////////////////////////////////////////////////////////////////
 
-RamGen::RamGen() : db_(nullptr), logger_(nullptr)
+RamGen::RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger)
+    : network_(network), db_(db), logger_(logger)
 {
 }
 
-void RamGen::init(odb::dbDatabase* db, sta::dbNetwork* network, Logger* logger)
-{
-  db_ = db;
-  network_ = network;
-  logger_ = logger;
-}
+RamGen::~RamGen() = default;
 
 dbInst* RamGen::makeCellInst(
     Cell* cell,
@@ -386,7 +382,8 @@ void RamGen::generate(const int bytes_per_word,
 
   auto chip = db_->getChip();
   if (!chip) {
-    chip = odb::dbChip::create(db_, db_->getTech(), ram_name.c_str(), odb::dbChip::ChipType::DIE);
+    chip = odb::dbChip::create(
+        db_, db_->getTech(), ram_name.c_str(), odb::dbChip::ChipType::DIE);
   }
 
   block_ = chip->getBlock();
@@ -427,7 +424,7 @@ void RamGen::generate(const int bytes_per_word,
   for (int word = 0; word < word_count; ++word) {
     int word_num = word;
     for (int input = 0; input < num_inputs; ++input) {  // start at right most
-                                                       // bit
+                                                        // bit
       if (word_num % 2 == 0) {
         // places inverted address for each input
         decoder_input_nets[word][input] = inv_addr[input];
@@ -440,12 +437,12 @@ void RamGen::generate(const int bytes_per_word,
 
   vector<dbNet*> decoder_output_nets;
 
-
   for (int col = 0; col < bytes_per_word; ++col) {
-    array<dbBTerm*, 8> D_bTerms;     // array for b-term for external inputs
-    array<dbNet*, 8> D_nets;  // net for buffers
+    array<dbBTerm*, 8> D_bTerms;  // array for b-term for external inputs
+    array<dbNet*, 8> D_nets;      // net for buffers
     for (int bit = 0; bit < 8; ++bit) {
-      D_bTerms[bit] = makeBTerm(fmt::format("D[{}]", bit + col * 8), dbIoType::INPUT);
+      D_bTerms[bit]
+          = makeBTerm(fmt::format("D[{}]", bit + col * 8), dbIoType::INPUT);
       D_nets[bit] = makeNet(fmt::format("D_nets[{}]", bit + col * 8), "net");
     }
 
@@ -520,7 +517,8 @@ void RamGen::generate(const int bytes_per_word,
                    inv_cell_,
                    {{"A", addr[i]->getNet()}, {"Y", inv_addr[i]}});
       cell_inv_layout->addCell(std::move(inv_cell));
-      for (int filler_count = 0; filler_count < num_inputs - 1; ++filler_count) {
+      for (int filler_count = 0; filler_count < num_inputs - 1;
+           ++filler_count) {
         cell_inv_layout->addCell(nullptr);
       }
     }
@@ -565,7 +563,7 @@ void RamGen::generate(const int bytes_per_word,
   }
 
   ram_grid.placeGrid();
-  
+
   int max_y_coord = ram_grid.getHeight() * (word_count + 1);
   int max_x_coord = ram_grid.getRowWidth();
 

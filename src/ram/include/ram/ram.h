@@ -33,9 +33,9 @@ class Grid;
 class RamGen
 {
  public:
-  RamGen();
+  RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger);
+  ~RamGen();
 
-  void init(odb::dbDatabase* db, sta::dbNetwork* network, Logger* logger);
   void generate(const int bytes_per_word,
                 const int word_count,
                 const int read_ports,
@@ -60,35 +60,37 @@ class RamGen
       const std::string& name,
       odb::dbMaster* master,
       const std::vector<std::pair<std::string, odb::dbNet*>>& connections);
-std::unique_ptr<Cell> makeCellBit(
-       const std::string& prefix,
-       const int read_ports,
-       odb::dbNet* clock,
-       std::vector<odb::dbNet*>& select,
-       odb::dbNet* data_input,
-       std::vector<odb::dbNet*>& data_output);  
-  void makeCellByte(Grid& ram_grid,
-       const int byte_number,
-       const std::string& prefix,
-       const int read_ports,
-       odb::dbNet* clock,
-       odb::dbNet* write_enable,
-       const std::vector<odb::dbNet*>& selects,
-       const std::array<odb::dbNet*, 8>& data_input, 
-       const std::vector<std::array<odb::dbBTerm*, 8>>& data_output);
+  std::unique_ptr<Cell> makeCellBit(const std::string& prefix,
+                                    const int read_ports,
+                                    odb::dbNet* clock,
+                                    std::vector<odb::dbNet*>& select,
+                                    odb::dbNet* data_input,
+                                    std::vector<odb::dbNet*>& data_output);
+  void makeCellByte(
+      Grid& ram_grid,
+      const int byte_number,
+      const std::string& prefix,
+      const int read_ports,
+      odb::dbNet* clock,
+      odb::dbNet* write_enable,
+      const std::vector<odb::dbNet*>& selects,
+      const std::array<odb::dbNet*, 8>& data_input,
+      const std::vector<std::array<odb::dbBTerm*, 8>>& data_output);
 
   odb::dbBTerm* makeBTerm(const std::string& name, odb::dbIoType io_type);
 
-  std::unique_ptr<Cell> makeDecoder (const std::string& prefix,
-      const int num_word, const int read_ports, 
-      const std::vector<odb::dbNet*>& selects, const std::vector<odb::dbNet*>& ram_inputs
-  );
+  std::unique_ptr<Cell> makeDecoder(const std::string& prefix,
+                                    const int num_word,
+                                    const int read_ports,
+                                    const std::vector<odb::dbNet*>& selects,
+                                    const std::vector<odb::dbNet*>& ram_inputs);
 
-  std::vector<odb::dbNet*> selectNets(const std::string& prefix, const int read_ports);
-  
+  std::vector<odb::dbNet*> selectNets(const std::string& prefix,
+                                      const int read_ports);
+
+  sta::dbNetwork* network_;
   odb::dbDatabase* db_;
   odb::dbBlock* block_;
-  sta::dbNetwork* network_;
   Logger* logger_;
 
   odb::dbMaster* storage_cell_;
@@ -97,7 +99,6 @@ std::unique_ptr<Cell> makeCellBit(
   odb::dbMaster* and2_cell_;
   odb::dbMaster* clock_gate_cell_;
   odb::dbMaster* buffer_cell_;
-
 };
 
 }  // namespace ram
