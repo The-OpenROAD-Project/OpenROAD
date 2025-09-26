@@ -364,6 +364,7 @@ filegroup(
         name = test_name,
         data = [":" + test_name + "_resources"],
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

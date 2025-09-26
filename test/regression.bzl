@@ -18,6 +18,8 @@ export TEST_NAME_BAZEL={TEST_NAME_BAZEL}
 export TEST_FILE={TEST_FILE}
 export OPENROAD_EXE={OPENROAD_EXE}
 export REGRESSION_TEST={REGRESSION_TEST}
+export TEST_CHECK_LOG={TEST_CHECK_LOG}
+export TEST_CHECK_PASSFAIL={TEST_CHECK_PASSFAIL}
 exec "{bazel_test_sh}" "$@"
 """.format(
             bazel_test_sh = ctx.file.bazel_test_sh.short_path,
@@ -25,6 +27,8 @@ exec "{bazel_test_sh}" "$@"
             TEST_FILE = ctx.file.test_file.short_path,
             OPENROAD_EXE = ctx.executable.openroad.short_path,
             REGRESSION_TEST = ctx.file.regression_test.short_path,
+            TEST_CHECK_LOG = "True" if ctx.attr.check_log else "False",
+            TEST_CHECK_PASSFAIL = "True" if ctx.attr.check_passfail else "False",
         ),
         is_executable = True,
     )
@@ -66,6 +70,14 @@ regression_rule_test = rule(
         "bazel_test_sh": attr.label(
             doc = "The Bazel test shell script.",
             allow_single_file = True,
+        ),
+        "check_log": attr.bool(
+            doc = "Diff the output log against <test_name>.ok",
+            default = True,
+        ),
+        "check_passfail": attr.bool(
+            doc = "Check the output log contains pass or OK in the last line",
+            default = False,
         ),
         "openroad": attr.label(
             doc = "The OpenROAD executable.",
