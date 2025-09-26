@@ -38,11 +38,6 @@ Distributed::~Distributed()
   callbacks_.clear();
 }
 
-void Distributed::init(utl::Logger* logger)
-{
-  logger_ = logger;
-}
-
 void Distributed::runWorker(const char* ip,
                             unsigned short port,
                             bool interactive)

@@ -17,6 +17,7 @@ DbxParser::DbxParser(utl::Logger* logger) : BaseParser(logger)
 
 DbxData DbxParser::parseFile(const std::string& filename)
 {
+  current_file_path_ = filename;
   std::ifstream file(filename);
   if (!file.is_open()) {
     logError("DBX Parser Error: Cannot open file: " + filename);
@@ -28,7 +29,7 @@ DbxData DbxParser::parseFile(const std::string& filename)
   file.close();
 
   DbxData data;
-  parseDefines(data.defines, content);
+  parseDefines(content);
 
   parseYamlContent(data, content);
 
@@ -81,6 +82,7 @@ void DbxParser::parseDesignExternal(DesignExternal& external,
 {
   if (external_node["verilog_file"]) {
     extractValue(external_node, "verilog_file", external.verilog_file);
+    external.verilog_file = resolvePath(external.verilog_file);
   }
 }
 
@@ -124,14 +126,17 @@ void DbxParser::parseChipletInstExternal(ChipletInstExternal& external,
 {
   if (external_node["verilog_file"]) {
     extractValue(external_node, "verilog_file", external.verilog_file);
+    external.verilog_file = resolvePath(external.verilog_file);
   }
 
   if (external_node["sdc_file"]) {
     extractValue(external_node, "sdc_file", external.sdc_file);
+    external.sdc_file = resolvePath(external.sdc_file);
   }
 
   if (external_node["def_file"]) {
     extractValue(external_node, "def_file", external.def_file);
+    external.def_file = resolvePath(external.def_file);
   }
 }
 

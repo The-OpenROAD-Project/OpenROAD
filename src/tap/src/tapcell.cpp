@@ -27,15 +27,10 @@ namespace tap {
 using std::string;
 using std::vector;
 
-Tapcell::Tapcell()
+Tapcell::Tapcell(odb::dbDatabase* db, utl::Logger* logger)
+    : db_(db), logger_(logger)
 {
   reset();
-}
-
-void Tapcell::init(odb::dbDatabase* db, utl::Logger* logger)
-{
-  db_ = db;
-  logger_ = logger;
 }
 
 void Tapcell::reset()

@@ -54,10 +54,8 @@ class SRoute;
 class PdnGen
 {
  public:
-  PdnGen();
+  PdnGen(dbDatabase* db, Logger* logger);
   ~PdnGen();
-
-  void init(dbDatabase* db, Logger* logger);
 
   void reset();
   void resetShapes();

@@ -65,10 +65,10 @@ struct CompareInstancePtr
 class PartitionMgr
 {
  public:
-  void init(odb::dbDatabase* db,
-            sta::dbNetwork* db_network,
-            sta::dbSta* sta,
-            utl::Logger* logger);
+  PartitionMgr(odb::dbDatabase* db,
+               sta::dbNetwork* db_network,
+               sta::dbSta* sta,
+               utl::Logger* logger);
 
   // The function for partitioning a hypergraph
   // This is used for replacing hMETIS

@@ -29,6 +29,8 @@ struct ChipletRegion
 struct ChipletExternal
 {
   std::vector<std::string> lef_files;
+  std::vector<std::string> tech_lef_files;
+  std::vector<std::string> lib_files;
   std::string def_file;
 };
 
@@ -70,7 +72,6 @@ struct Header
 
 struct DbvData
 {
-  std::map<std::string, std::string> defines;
   Header header;
   std::map<std::string, ChipletDef> chiplet_defs;
 };
@@ -115,7 +116,6 @@ struct Connection
 
 struct DbxData
 {
-  std::map<std::string, std::string> defines;
   Header header;
   DesignDef design;
   std::map<std::string, ChipletInst> chiplet_instances;
