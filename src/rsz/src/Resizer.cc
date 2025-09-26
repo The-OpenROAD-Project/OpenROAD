@@ -4492,7 +4492,12 @@ void Resizer::swapArithModules(int path_count,
              == est::ParasiticsSrc::detailed_routing) {
     opendp_->initMacrosAndGrid();
   }
-  swap_arith_modules_->replaceArithModules(path_count, target, slack_margin);
+  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
+  if (swap_arith_modules_->replaceArithModules(
+          path_count, target, slack_margin)) {
+    estimate_parasitics_->updateParasitics();
+    sta_->findRequireds();
+  }
 }
 ////////////////////////////////////////////////////////////////
 // Journal to roll back changes
