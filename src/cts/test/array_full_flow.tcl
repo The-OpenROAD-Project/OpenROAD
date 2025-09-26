@@ -136,7 +136,7 @@ set_cts_config -root_buf $cts_buffer \
   -buf_list $cts_buffer \
   -sink_clustering_max_diameter $cts_cluster_diameter
 
-clock_tree_synthesis -sink_clustering_enable \
+clock_tree_synthesis -sink_clustering_enable
 
 set_propagated_clock [all_clocks]
 estimate_parasitics -placement
