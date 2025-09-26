@@ -222,15 +222,14 @@ class OdbCallBack;
 class Resizer : public dbStaState, public dbNetworkObserver
 {
  public:
-  Resizer();
+  Resizer(Logger* logger,
+          dbDatabase* db,
+          dbSta* sta,
+          SteinerTreeBuilder* stt_builder,
+          GlobalRouter* global_router,
+          dpl::Opendp* opendp,
+          est::EstimateParasitics* estimate_parasitics);
   ~Resizer() override;
-  void init(Logger* logger,
-            dbDatabase* db,
-            dbSta* sta,
-            SteinerTreeBuilder* stt_builder,
-            GlobalRouter* global_router,
-            dpl::Opendp* opendp,
-            est::EstimateParasitics* estimate_parasitics);
 
   // Core area (meters).
   double coreArea() const;

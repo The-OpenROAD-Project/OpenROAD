@@ -1,0 +1,6 @@
+{
+    "type": "auto",
+    "mode": "fix",
+    "lint": "fix",
+    "warnings": "all"
+}

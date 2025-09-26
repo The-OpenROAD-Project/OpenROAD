@@ -155,10 +155,10 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
-            "gcd": [],
             "blocked_region": [],
-            "large_groups1": [],
+            "gcd": [],
             "group_pins3": [],
+            "large_groups1": [],
             "multi_track_pattern1": ["multi_track_pattern2.lef"],
             "multi_track_pattern2": ["multi_track_pattern1.lef"],
             "pin_length_error": ["on_grid.def"],

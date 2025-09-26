@@ -222,6 +222,9 @@ class OpenRoad
   // to notify the tools (eg dbSta, gui).
   void designCreated();
 
+  void read3Dbv(const std::string& filename);
+  void read3Dbx(const std::string& filename);
+
   void readDb(std::istream& stream);
   void readDb(const char* filename, bool hierarchy = false);
   void writeDb(std::ostream& stream);

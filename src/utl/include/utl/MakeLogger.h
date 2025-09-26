@@ -8,9 +8,7 @@ struct Tcl_Interp;
 }
 
 namespace utl {
-class Logger;
 
-utl::Logger* makeLogger(const char* log_filename, const char* metrics_filename);
-void initLogger(utl::Logger* logger, Tcl_Interp* tcl_interp);
+void initLogger(Tcl_Interp* tcl_interp);
 
 }  // namespace utl

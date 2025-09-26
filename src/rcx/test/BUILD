@@ -82,8 +82,8 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
-            "gcd": ["ext_pattern.rules"],
             "ext_pattern": ["generate_pattern.defok"],
+            "gcd": ["ext_pattern.rules"],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS

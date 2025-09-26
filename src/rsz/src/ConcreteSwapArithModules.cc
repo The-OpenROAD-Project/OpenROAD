@@ -53,7 +53,7 @@ void ConcreteSwapArithModules::init()
   init_ = true;
 }
 
-void ConcreteSwapArithModules::replaceArithModules(const int path_count,
+bool ConcreteSwapArithModules::replaceArithModules(const int path_count,
                                                    const std::string& target,
                                                    const float slack_threshold)
 {
@@ -70,11 +70,11 @@ void ConcreteSwapArithModules::replaceArithModules(const int path_count,
   std::set<dbModInst*> arithInsts;
   findCriticalInstances(path_count, target, slack_threshold, arithInsts);
   if (arithInsts.empty()) {
-    return;
+    return false;
   }
 
   // Replace arithmetic instances to improve target QoR
-  doSwapInstances(arithInsts, target);
+  return doSwapInstances(arithInsts, target);
 }
 
 void ConcreteSwapArithModules::findCriticalInstances(
@@ -232,7 +232,7 @@ bool ConcreteSwapArithModules::hasArithOperatorProperty(
   return false;
 }
 
-void ConcreteSwapArithModules::doSwapInstances(
+bool ConcreteSwapArithModules::doSwapInstances(
     const std::set<dbModInst*>& insts,
     const std::string& target)
 {
@@ -278,6 +278,7 @@ void ConcreteSwapArithModules::doSwapInstances(
                 "{} arithmetic instances have swapped to improve '{}' target",
                 swapped_count,
                 target);
+  return (swapped_count > 0);
 }
 
 void ConcreteSwapArithModules::produceNewModuleName(const std::string& old_name,

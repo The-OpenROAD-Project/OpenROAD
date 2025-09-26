@@ -1615,6 +1615,11 @@ void MainWindow::postReadDef(odb::dbBlock* block)
   emit blockLoaded(block);
 }
 
+void MainWindow::postRead3Dbx(odb::dbChip* chip)
+{
+  // TODO: we are not ready to display chiplets yet
+}
+
 void MainWindow::postReadDb(odb::dbDatabase* db)
 {
   auto chip = db->getChip();
