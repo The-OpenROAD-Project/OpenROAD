@@ -47,36 +47,31 @@ using odb::dbInst;
 using odb::dbMasterType;
 using odb::dbModInst;
 
-EstimateParasitics::EstimateParasitics()
-    : estimate_parasitics_cbk_(
+EstimateParasitics::EstimateParasitics(Logger* logger,
+                                       utl::CallBackHandler* callback_handler,
+                                       dbDatabase* db,
+                                       dbSta* sta,
+                                       SteinerTreeBuilder* stt_builder,
+                                       GlobalRouter* global_router)
+    : logger_(logger),
+      estimate_parasitics_cbk_(
           std::make_unique<EstimateParasiticsCallBack>(this)),
+      stt_builder_(stt_builder),
+      global_router_(global_router),
+      db_network_(sta->getDbNetwork()),
+      db_(db),
+      db_cbk_(std::make_unique<OdbCallBack>(this, network_, db_network_)),
       wire_signal_res_(0.0),
       wire_signal_cap_(0.0),
       wire_clk_res_(0.0),
       wire_clk_cap_(0.0)
 {
+  estimate_parasitics_cbk_->setOwner(callback_handler);
+  dbStaState::init(sta);
+  db_cbk_ = std::make_unique<OdbCallBack>(this, network_, db_network_);
 }
 
 EstimateParasitics::~EstimateParasitics() = default;
-
-void EstimateParasitics::init(Logger* logger,
-                              utl::CallBackHandler* callback_handler,
-                              dbDatabase* db,
-                              dbSta* sta,
-                              SteinerTreeBuilder* stt_builder,
-                              GlobalRouter* global_router)
-{
-  logger_ = logger;
-  estimate_parasitics_cbk_->setOwner(callback_handler);
-  db_ = db;
-  block_ = nullptr;
-  dbStaState::init(sta);
-  stt_builder_ = stt_builder;
-  global_router_ = global_router;
-  incr_groute_ = nullptr;
-  db_network_ = sta->getDbNetwork();
-  db_cbk_ = std::make_unique<OdbCallBack>(this, network_, db_network_);
-}
 
 void EstimateParasitics::initSteinerRenderer(
     std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer)

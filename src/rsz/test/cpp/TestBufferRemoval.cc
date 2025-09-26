@@ -11,6 +11,7 @@
 #include <memory>
 #include <mutex>
 
+#include "ant/AntennaChecker.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -50,8 +51,8 @@ class BufRemTest : public ::testing::Test
     db_ = utl::UniquePtrWithDeleter<odb::dbDatabase>(odb::dbDatabase::create(),
                                                      &odb::dbDatabase::destroy);
     std::call_once(init_sta_flag, []() { sta::initSta(); });
-    sta_ = std::unique_ptr<sta::dbSta>(sta::makeDbSta());
-    sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
+    sta_
+        = std::make_unique<sta::dbSta>(Tcl_CreateInterp(), db_.get(), &logger_);
     auto path = std::filesystem::canonical("./Nangate45/Nangate45_typ.lib");
     library_ = sta_->readLiberty(path.string().c_str(),
                                  sta_->findCorner("default"),
@@ -203,37 +204,37 @@ class BufRemTest : public ::testing::Test
   utl::Logger logger_;
   sta::dbNetwork* db_network_;
   sta::PathAnalysisPt* pathAnalysisPt_;
-  rsz::Resizer* resizer_;
   sta::Vertex* outVertex_;
 };
 
 TEST_F(BufRemTest, SlackImproves)
 {
   // initializer resizer
-  resizer_ = new rsz::Resizer;
-  stt::SteinerTreeBuilder* stt = new stt::SteinerTreeBuilder;
-  grt::GlobalRouter* grt = new grt::GlobalRouter;
-  dpl::Opendp* dp = new dpl::Opendp;
-  est::EstimateParasitics* ep = new est::EstimateParasitics;
-  utl::CallBackHandler* callback_handler_ = new utl::CallBackHandler(&logger_);
-  ep->init(&logger_, callback_handler_, db_.get(), sta_.get(), stt, grt);
-  resizer_->init(&logger_, db_.get(), sta_.get(), stt, grt, dp, ep);
+  stt::SteinerTreeBuilder stt(db_.get(), &logger_);
+  utl::CallBackHandler callback_handler(&logger_);
+  dpl::Opendp dp(db_.get(), &logger_);
+  ant::AntennaChecker ant(db_.get(), &logger_);
+  grt::GlobalRouter grt(
+      &logger_, &callback_handler, &stt, db_.get(), sta_.get(), &ant, &dp);
+  est::EstimateParasitics ep(
+      &logger_, &callback_handler, db_.get(), sta_.get(), &stt, &grt);
+  rsz::Resizer resizer(&logger_, db_.get(), sta_.get(), &stt, &grt, &dp, &ep);
 
-  float origArrival
+  const float origArrival
       = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
 
   // Remove buffers 'b2' and 'b3' from the buffer chain
   odb::dbChip* chip = db_->getChip();
   odb::dbBlock* block = chip->getBlock();
 
-  resizer_->initBlock();
+  resizer.initBlock();
   db_->setLogger(&logger_);
 
   {
-    est::IncrementalParasiticsGuard guard(ep);
+    est::IncrementalParasiticsGuard guard(&ep);
 
-    resizer_->journalBeginTest();
-    resizer_->logger()->setDebugLevel(utl::RSZ, "journal", 1);
+    resizer.journalBeginTest();
+    resizer.logger()->setDebugLevel(utl::RSZ, "journal", 1);
 
     auto insts = std::make_unique<sta::InstanceSeq>();
     odb::dbInst* inst1 = block->findInst("b2");
@@ -244,8 +245,8 @@ TEST_F(BufRemTest, SlackImproves)
     sta::Instance* sta_inst2 = db_network_->dbToSta(inst2);
     insts->emplace_back(sta_inst2);
 
-    resizer_->removeBuffers(*insts);
-    resizer_->journalRestoreTest();
+    resizer.removeBuffers(*insts);
+    resizer.journalRestoreTest();
   }
 
   float newArrival

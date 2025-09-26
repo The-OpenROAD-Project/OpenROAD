@@ -5,20 +5,8 @@
 
 #include <tcl.h>
 
-namespace utl {
-class Logger;
-}
-
 namespace dst {
 
-class Distributed;
-
-dst::Distributed* makeDistributed();
-
-void deleteDistributed(dst::Distributed* dstr);
-
-void initDistributed(dst::Distributed* distributer,
-                     utl::Logger* logger,
-                     Tcl_Interp* tcl_interp);
+void initDistributed(Tcl_Interp* tcl_interp);
 
 }  // namespace dst

@@ -20,8 +20,8 @@ BOOST_AUTO_TEST_SUITE(test_suite)
 
 BOOST_AUTO_TEST_CASE(test_default)
 {
-  Distributed* dist = new Distributed();
   utl::Logger* logger = new utl::Logger();
+  Distributed* dist = new Distributed(logger);
   std::string local_ip = "127.0.0.1";
   unsigned short port = 1234;
 
