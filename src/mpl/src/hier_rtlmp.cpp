@@ -852,7 +852,7 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
   float macro_width = macro_array->getHardMacros().front()->getWidth();
   float macro_height = macro_array->getHardMacros().front()->getHeight();
 
-  const auto outline = tree_->root->getBBox();
+  const Rect outline = tree_->root->getBBox();
 
   int columns = 0;
   for (int rows = 1; rows < std::sqrt(num_macro) + 1; rows++) {
@@ -937,7 +937,7 @@ void HierRTLMP::computePinAccessDepthLimits()
   const float proportional_min_width = min_depth_proportion * die.getWidth();
   const float proportional_min_height = min_depth_proportion * die.getHeight();
 
-  const auto tiling = tree_->root->getTilings().front();
+  const Tiling tiling = tree_->root->getTilings().front();
   const float tiling_min_width = (die.getWidth() - tiling.width()) / 2;
   const float tiling_min_height = (die.getHeight() - tiling.height()) / 2;
 

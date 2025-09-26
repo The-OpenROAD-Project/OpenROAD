@@ -422,7 +422,7 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   int i = 0;
   for (const auto& macro : soft_macros_) {
-    if (isSkippable(macro)) {
+    if (!macro.isBlockage() && isSkippable(macro)) {
       continue;
     }
 
@@ -553,10 +553,6 @@ void Graphics::drawObjects(gui::Painter& painter)
 template <typename T>
 bool Graphics::isSkippable(const T& macro)
 {
-  if (macro.isBlockage()) {
-  return false;
-}
-
 Cluster* cluster = macro.getCluster();
 return !cluster || cluster->isClusterOfUnplacedIOPins();
 }

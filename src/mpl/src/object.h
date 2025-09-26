@@ -452,6 +452,7 @@ class SoftMacro
   void setLocationF(float x, float y);
   void setShapeF(float width, float height);
   int getNumMacro() const;
+  bool isBlockage() const;
   // Align Flag support
   void setAlignFlag(bool flag);
   bool getAlignFlag() const;

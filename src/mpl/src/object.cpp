@@ -1269,6 +1269,11 @@ void SoftMacro::resizeRandomly(
   height_ = area_ / width_;
 }
 
+bool SoftMacro::isBlockage() const
+{
+  return is_blockage_;
+}
+
 // Align Flag support
 void SoftMacro::setAlignFlag(bool flag)
 {
