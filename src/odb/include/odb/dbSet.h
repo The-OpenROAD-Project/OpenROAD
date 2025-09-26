@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <iterator>
 
-#include "dbIterator.h"
+#include "odb/dbIterator.h"
 
 namespace odb {
 

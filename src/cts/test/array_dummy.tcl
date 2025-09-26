@@ -19,7 +19,7 @@ read_lef array_tile.lef
 
 set db [ord::get_db]
 set tech [ord::get_db_tech]
-set chip [odb::dbChip_create $db]
+set chip [odb::dbChip_create $db $tech]
 set block [odb::dbBlock_create $chip "top"]
 $block setDefUnits 2000
 
@@ -132,10 +132,11 @@ set_dont_use $dont_use
 
 set_debug_level CTS "dummy load" 2
 
-clock_tree_synthesis -root_buf $cts_buffer \
+set_cts_config -root_buf $cts_buffer \
   -buf_list $cts_buffer \
-  -sink_clustering_enable \
-  -sink_clustering_max_diameter $cts_cluster_diameter \
+  -sink_clustering_max_diameter $cts_cluster_diameter
+
+clock_tree_synthesis -sink_clustering_enable \
   -balance_levels \
   -use_dummy_load
 

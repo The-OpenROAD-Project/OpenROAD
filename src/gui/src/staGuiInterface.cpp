@@ -1037,26 +1037,42 @@ std::unique_ptr<TimingPathNode> STAGuiInterface::getTimingNode(
 
 TimingPathList STAGuiInterface::getTimingPaths(const sta::Pin* thru) const
 {
-  return getTimingPaths({}, {{thru}}, {}, "" /* path group name */);
+  return getTimingPaths(
+      {}, {{thru}}, {}, "" /* path group name */, nullptr /* clockset */);
 }
 
 TimingPathList STAGuiInterface::getTimingPaths(
     const StaPins& from,
     const std::vector<StaPins>& thrus,
     const StaPins& to,
-    const std::string& path_group_name) const
+    const std::string& path_group_name,
+    const sta::ClockSet* clks) const
 {
   TimingPathList paths;
 
   initSTA();
 
+  sta::ClockSet* clks_from = nullptr;
+  sta::ClockSet* clks_to = nullptr;
+  if (clks) {
+    clks_from = new sta::ClockSet;
+    clks_to = new sta::ClockSet;
+    for (auto clk : *clks) {
+      clks_from->insert(clk);
+      clks_to->insert(clk);
+    }
+  }
   sta::ExceptionFrom* e_from = nullptr;
   if (!from.empty()) {
     sta::PinSet* pins = new sta::PinSet(getNetwork());
     pins->insert(from.begin(), from.end());
     e_from = sta_->makeExceptionFrom(
-        pins, nullptr, nullptr, sta::RiseFallBoth::riseFall());
+        pins, clks_from, nullptr, sta::RiseFallBoth::riseFall());
+  } else if (clks_from) {
+    e_from = sta_->makeExceptionFrom(
+        nullptr, clks_from, nullptr, sta::RiseFallBoth::riseFall());
   }
+
   sta::ExceptionThruSeq* e_thrus = nullptr;
   if (!thrus.empty()) {
     for (const auto& thru_set : thrus) {
@@ -1077,7 +1093,13 @@ TimingPathList STAGuiInterface::getTimingPaths(
     sta::PinSet* pins = new sta::PinSet(getNetwork());
     pins->insert(to.begin(), to.end());
     e_to = sta_->makeExceptionTo(pins,
+                                 clks_to,
                                  nullptr,
+                                 sta::RiseFallBoth::riseFall(),
+                                 sta::RiseFallBoth::riseFall());
+  } else if (clks_to) {
+    e_to = sta_->makeExceptionTo(nullptr,
+                                 clks_to,
                                  nullptr,
                                  sta::RiseFallBoth::riseFall(),
                                  sta::RiseFallBoth::riseFall());

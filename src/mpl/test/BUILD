@@ -29,6 +29,7 @@ COMPULSORY_TESTS = [
     "boundary_push3",
     "centralization1",
     "clocked_macro",
+    "fixed_macros",
 ]
 
 # Disabled in CMakeLists.txt
@@ -87,6 +88,7 @@ filegroup(
         "testcases/clocked_macro.lib",
         "testcases/clocked_macro.v",
         "testcases/fixed_ios1.def",
+        "testcases/fixed_macros.def",
         "testcases/guides1.def",
         "testcases/guides1.v",
         "testcases/io_constraints1.def",

@@ -80,6 +80,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   odb::dbNet* getDbNet() const { return db_net_; }
   int getDriverIdx() const { return driver_idx_; }
   int8_t getEdgeCost() const { return edge_cost_; }
+  void setEdgeCost(int cost) { edge_cost_ = cost; }
   const char* getName() const;
   int getMaxLayer() const { return max_layer_; }
   int getMinLayer() const { return min_layer_; }
@@ -106,6 +107,8 @@ struct FrNet  // A Net is a set of connected MazePoints
   void setMinLayer(int min_layer) { min_layer_ = min_layer; }
   void setSlack(float slack) { slack_ = slack; }
   void setIsCritical(bool is_critical) { is_critical_ = is_critical; }
+  void setIsSoftNDR(bool is_soft) { is_soft_ndr_ = is_soft; }
+  bool isSoftNDR() { return is_soft_ndr_; }
 
  private:
   odb::dbNet* db_net_;
@@ -119,6 +122,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   int min_layer_;
   int max_layer_;
   float slack_;
+  bool is_soft_ndr_ = false;
   // Non-null when an NDR has been applied to the net.
   std::unique_ptr<std::vector<int8_t>> edge_cost_per_layer_;
 };
@@ -130,6 +134,7 @@ struct Edge  // An Edge is the routing track holder between two adjacent
   uint16_t cap;    // the capacity of the edge
   uint16_t usage;  // the usage of the edge
   uint16_t red;
+  uint16_t real_cap;  // the real capacity without user adjustment
   int16_t last_usage;
   uint16_t ndr_overflow;  // number of NDR nets in congestion
   double est_usage;       // the estimated usage of the edge
@@ -140,9 +145,10 @@ struct Edge  // An Edge is the routing track holder between two adjacent
 
 struct Edge3D
 {
-  uint16_t cap;    // the capacity of the edge
-  uint16_t usage;  // the usage of the edge
-  uint16_t red;    // the reduction of capacity of the edge
+  uint16_t cap;       // the capacity of the edge
+  uint16_t usage;     // the usage of the edge
+  uint16_t red;       // the reduction of capacity of the edge
+  uint16_t real_cap;  // the real capacity without user adjustment
 };
 
 struct TreeNode

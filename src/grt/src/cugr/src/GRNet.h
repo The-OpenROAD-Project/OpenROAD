@@ -6,8 +6,10 @@
 #include <vector>
 
 #include "CUGR.h"
-#include "Design.h"
+#include "GRTree.h"
 #include "GridGraph.h"
+#include "Netlist.h"
+#include "geo.h"
 #include "odb/db.h"
 
 namespace grt {
@@ -15,12 +17,13 @@ namespace grt {
 class GRNet
 {
  public:
-  GRNet(const CUGRNet& baseNet, GridGraph* gridGraph);
+  GRNet(const CUGRNet& baseNet, const GridGraph* gridGraph);
 
   int getIndex() const { return index_; }
   odb::dbNet* getDbNet() const { return db_net_; }
   std::string getName() const { return db_net_->getName(); }
   int getNumPins() const { return pin_access_points_.size(); }
+  // vector foreach pin -> list of APs
   const std::vector<std::vector<GRPoint>>& getPinAccessPoints() const
   {
     return pin_access_points_;

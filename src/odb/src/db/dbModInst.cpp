@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <iterator>
 #include <map>
 #include <set>
 #include <string>
@@ -25,9 +25,11 @@
 // User Code Begin Includes
 #include "dbGroup.h"
 #include "dbModBTerm.h"
+#include "dbModNet.h"
 #include "dbModuleModInstItr.h"
 #include "dbModuleModInstModITermItr.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbModInst>;
@@ -327,12 +329,15 @@ std::string dbModInst::getHierarchicalName() const
 {
   _dbModInst* _obj = (_dbModInst*) this;
   dbBlock* block = (dbBlock*) _obj->getOwner();
-  std::string inst_name = std::string(getName());
+  const char* inst_name = getName();
   dbModule* parent = getParent();
   if (parent == block->getTopModule()) {
     return inst_name;
   }
-  return parent->getModInst()->getHierarchicalName() + "/" + inst_name;
+  return fmt::format("{}{}{}",
+                     parent->getModInst()->getHierarchicalName(),
+                     block->getHierarchyDelimiter(),
+                     inst_name);
 }
 
 dbModITerm* dbModInst::findModITerm(const char* name)
@@ -345,6 +350,37 @@ dbModITerm* dbModInst::findModITerm(const char* name)
     return (dbModITerm*) par->_moditerm_tbl->getPtr(db_id);
   }
   return nullptr;
+}
+
+dbModNet* dbModInst::findHierNet(const char* base_name) const
+{
+  dbModule* master = getMaster();
+  return master->getModNet(base_name);
+}
+
+dbNet* dbModInst::findFlatNet(const char* base_name) const
+{
+  dbModule* parent = getParent();
+  if (parent) {
+    dbBlock* block = parent->getOwner();
+    fmt::memory_buffer full_name_buf;
+    fmt::format_to(std::back_inserter(full_name_buf),
+                   "{}{}{}",
+                   getHierarchicalName(),
+                   block->getHierarchyDelimiter(),
+                   base_name);
+    return block->findNet(full_name_buf.data());
+  }
+  return nullptr;
+}
+
+bool dbModInst::findNet(const char* base_name,
+                        dbNet*& flat_net,
+                        dbModNet*& hier_net) const
+{
+  flat_net = findFlatNet(base_name);
+  hier_net = findHierNet(base_name);
+  return (flat_net || hier_net);
 }
 
 void dbModInst::removeUnusedPortsAndPins()
@@ -429,20 +465,16 @@ void dbModInst::removeUnusedPortsAndPins()
     mod_bterm->disconnect();
 
     // First destroy the net
-    if (moditerm_m_net && moditerm_m_net->getBTerms().size() == 0
-        && moditerm_m_net->getITerms().size() == 0
-        && moditerm_m_net->getModITerms().size() == 0
-        && moditerm_m_net->getModBTerms().size() == 0) {
+    if (moditerm_m_net && moditerm_m_net->getModITerms().empty()
+        && moditerm_m_net->getModBTerms().empty()) {
       dbModNet::destroy(moditerm_m_net);
     }
 
     // Now destroy the iterm
     dbModITerm::destroy(mod_iterm);
 
-    if (modbterm_m_net && modbterm_m_net->getBTerms().size() == 0
-        && modbterm_m_net->getITerms().size() == 0
-        && modbterm_m_net->getModITerms().size() == 0
-        && modbterm_m_net->getModBTerms().size() == 0) {
+    if (modbterm_m_net && modbterm_m_net->getModITerms().empty()
+        && modbterm_m_net->getModBTerms().empty()) {
       dbModNet::destroy(modbterm_m_net);
     }
 
@@ -587,7 +619,7 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
       // iterm may be connected to another hierarchical instance
       dbModNet* other_mod_net = old_iterm->getModNet();
       if (other_mod_net != old_mod_net) {
-        old_iterm->disconnectModNet();
+        old_iterm->disconnectDbModNet();
         old_iterm->connect(old_mod_net);  // Reconnect old mod net for later use
         debugRDPrint1("  disconnected old iterm {} from other mod net {}",
                       old_iterm->getName(),
@@ -657,6 +689,47 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   }
 
   return new_mod_inst;
+}
+
+bool dbModInst::containsDbInst(dbInst* inst) const
+{
+  dbModule* master = getMaster();
+  if (master == nullptr) {
+    return false;
+  }
+
+  // Check direct child dbInsts
+  for (dbInst* child_inst : master->getInsts()) {
+    if (child_inst == inst) {
+      return true;
+    }
+  }
+
+  // Recursively check child dbModInsts
+  for (dbModInst* child_mod_inst : master->getModInsts()) {
+    if (child_mod_inst->containsDbInst(inst)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool dbModInst::containsDbModInst(dbModInst* inst) const
+{
+  dbModule* master = getMaster();
+  if (master == nullptr) {
+    return false;
+  }
+
+  // Recursively check child dbModInsts
+  for (dbModInst* child_mod_inst : master->getModInsts()) {
+    if (child_mod_inst == inst || child_mod_inst->containsDbModInst(inst)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 // User Code End dbModInstPublicMethods

@@ -6,6 +6,7 @@
 #include "GeoTypes.h"
 #include "Layers.h"
 #include "Netlist.h"
+#include "geo.h"
 
 namespace odb {
 class dbDatabase;
@@ -57,12 +58,15 @@ class Design
 
   int getGridlineSize() const { return default_gridline_spacing_; }
 
+  BoxT getDieRegion() const { return die_region_; }
+
  private:
   void read();
   void readLayers();
   void readNetlist();
   void readInstanceObstructions();
-  void readSpecialNetObstructions(int& num_special_nets);
+  int readSpecialNetObstructions();
+  void readDesignObstructions();
   void computeGrid();
   void setUnitCosts();
 
@@ -89,9 +93,9 @@ class Design
   int default_gridline_spacing_;
   std::vector<std::vector<int>> gridlines_;
 
-  Constants constants_;
-  int min_routing_layer_;
-  int max_routing_layer_;
+  const Constants constants_;
+  const int min_routing_layer_;
+  const int max_routing_layer_;
 };
 
 }  // namespace grt

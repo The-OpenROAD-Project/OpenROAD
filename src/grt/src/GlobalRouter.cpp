@@ -10,7 +10,6 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
-#include <istream>
 #include <limits>
 #include <map>
 #include <memory>
@@ -189,6 +188,8 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   computeObstructionsAdjustments();
   std::vector<int> track_space = grid_->getTrackPitches();
   fastroute_->initBlockedIntervals(track_space);
+  // Save global resources before add adjustment by layer
+  fastroute_->saveResourcesBeforeAdjustments();
   computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
   computeUserLayerAdjustments(max_routing_layer);
 
@@ -368,6 +369,8 @@ void GlobalRouter::globalRoute(bool save_guides,
   }
 
   if (is_congested_) {
+    // Suggest adjustment value
+    suggestAdjustment();
     if (allow_congestion_) {
       logger_->warn(GRT,
                     115,
@@ -382,11 +385,41 @@ void GlobalRouter::globalRoute(bool save_guides,
   }
 }
 
+void GlobalRouter::suggestAdjustment()
+{
+  // Get min adjustment apply to layers
+  int min_routing_layer, max_routing_layer;
+  getMinMaxLayer(min_routing_layer, max_routing_layer);
+  float min_adjustment = 100;
+  for (int l = min_routing_layer; l <= max_routing_layer; l++) {
+    odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(l);
+    if (tech_layer->getLayerAdjustment() != 0.0) {
+      min_adjustment
+          = std::min(min_adjustment, tech_layer->getLayerAdjustment());
+    }
+  }
+  min_adjustment *= 100;
+  // Suggest new adjustment value
+  int suggest_adjustment;
+  bool has_sug_adj = fastroute_->computeSuggestedAdjustment(suggest_adjustment);
+  if (has_sug_adj && min_adjustment > suggest_adjustment) {
+    logger_->warn(GRT,
+                  704,
+                  "Try reduce the layer adjustment from {}% to {}%",
+                  min_adjustment,
+                  suggest_adjustment);
+  }
+}
+
 void GlobalRouter::updateDbCongestion()
 {
   int min_layer, max_layer;
   getMinMaxLayer(min_layer, max_layer);
-  fastroute_->updateDbCongestion(min_layer, max_layer);
+  if (use_cugr_) {
+    cugr_->updateDbCongestion();
+  } else {
+    fastroute_->updateDbCongestion(min_layer, max_layer);
+  }
   heatmap_->update();
 }
 
@@ -481,7 +514,6 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       for (odb::dbNet* db_net : dirty_nets_) {
         nets_to_repair.push_back(db_net);
       }
-      fastroute_->clearNDRnets();
       incr_groute.updateRoutes();
       saveGuides(nets_to_repair);
     }
@@ -1663,7 +1695,8 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
 bool GlobalRouter::hasAvailableResources(bool is_horizontal,
                                          const int& pos_x,
                                          const int& pos_y,
-                                         const int& layer_level)
+                                         const int& layer_level,
+                                         odb::dbNet* db_net)
 {
   // transform from real position to grid pos of fastroute
   int grid_x = (int) ((pos_x - grid_->getXMin()) / grid_->getTileSize());
@@ -1676,7 +1709,7 @@ bool GlobalRouter::hasAvailableResources(bool is_horizontal,
     cap = fastroute_->getAvailableResources(
         grid_x, grid_y, grid_x, grid_y + 1, layer_level);
   }
-  return cap > 0;
+  return cap >= fastroute_->getDbNetLayerEdgeCost(db_net, layer_level);
 }
 
 // Find the position of the middle of a GCell closest to the position
@@ -1690,7 +1723,8 @@ void GlobalRouter::updateResources(const int& init_x,
                                    const int& final_x,
                                    const int& final_y,
                                    const int& layer_level,
-                                   int used)
+                                   int used,
+                                   odb::dbNet* db_net)
 {
   // transform from real position to grid pos of fastrouter
   int grid_init_x = (int) ((init_x - grid_->getXMin()) / grid_->getTileSize());
@@ -1699,8 +1733,39 @@ void GlobalRouter::updateResources(const int& init_x,
       = (int) ((final_x - grid_->getXMin()) / grid_->getTileSize());
   int grid_final_y
       = (int) ((final_y - grid_->getYMin()) / grid_->getTileSize());
-  fastroute_->updateEdge2DAnd3DUsage(
-      grid_init_x, grid_init_y, grid_final_x, grid_final_y, layer_level, used);
+
+  fastroute_->updateEdge2DAnd3DUsage(grid_init_x,
+                                     grid_init_y,
+                                     grid_final_x,
+                                     grid_final_y,
+                                     layer_level,
+                                     used,
+                                     db_net);
+}
+
+void GlobalRouter::updateFastRouteGridsLayer(const int& init_x,
+                                             const int& init_y,
+                                             const int& final_x,
+                                             const int& final_y,
+                                             const int& layer_level,
+                                             const int& new_layer_level,
+                                             odb::dbNet* db_net)
+{
+  // transform from real position to grid pos of fastrouter
+  int grid_init_x = (int) ((init_x - grid_->getXMin()) / grid_->getTileSize());
+  int grid_init_y = (int) ((init_y - grid_->getYMin()) / grid_->getTileSize());
+  int grid_final_x
+      = (int) ((final_x - grid_->getXMin()) / grid_->getTileSize());
+  int grid_final_y
+      = (int) ((final_y - grid_->getYMin()) / grid_->getTileSize());
+  // update treeedges
+  fastroute_->updateRouteGridsLayer(grid_init_x,
+                                    grid_init_y,
+                                    grid_final_x,
+                                    grid_final_y,
+                                    layer_level - 1,
+                                    new_layer_level - 1,
+                                    db_net);
 }
 
 // Use release flag to increase rather than reduce resources on obstruction
@@ -4720,32 +4785,89 @@ void GlobalRouter::reportNetLayerWirelengths(odb::dbNet* db_net,
   }
 }
 
-void GlobalRouter::reportLayerWireLengths()
+void GlobalRouter::reportLayerWireLengths(bool global_route,
+                                          bool detailed_route)
 {
-  std::vector<int64_t> lengths(db_->getTech()->getRoutingLayerCount() + 1);
-  int64_t total_length = 0;
-  for (auto& net_route : routes_) {
-    GRoute& route = net_route.second;
-    for (GSegment& seg : route) {
-      int layer1 = seg.init_layer;
-      int layer2 = seg.final_layer;
-      if (layer1 == layer2) {
-        int seg_length = seg.length();
-        lengths[layer1] += seg_length;
-        total_length += seg_length;
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
+
+  if (global_route) {
+    logger_->info(GRT, 278, "Global route wire length by layer:");
+    std::vector<int64_t> lengths(db_->getTech()->getRoutingLayerCount() + 1);
+    int64_t total_length = 0;
+    for (auto& net_route : routes_) {
+      GRoute& route = net_route.second;
+      for (GSegment& seg : route) {
+        int layer1 = seg.init_layer;
+        int layer2 = seg.final_layer;
+        if (layer1 == layer2) {
+          int seg_length = seg.length();
+          lengths[layer1] += seg_length;
+          total_length += seg_length;
+        }
       }
     }
-  }
-  if (total_length > 0) {
-    for (size_t i = 0; i < lengths.size(); i++) {
-      int64_t length = lengths[i];
-      if (length > 0) {
-        odb::dbTechLayer* layer = routing_layers_[i];
-        logger_->report("{:5s} {:8d}um {:3d}%",
-                        layer->getName(),
-                        block_->dbuToMicrons(length),
-                        static_cast<int>((100.0 * length) / total_length));
+    if (total_length > 0) {
+      logger_->report("Layer    Wire length  Percentage");
+      logger_->report("--------------------------------");
+      for (size_t i = 0; i < lengths.size(); i++) {
+        int64_t length = lengths[i];
+        if (length > 0) {
+          odb::dbTechLayer* layer = routing_layers_[i];
+          logger_->report("{:7s} {:8.2f}um {:5}%",
+                          layer->getName(),
+                          block_->dbuToMicrons(length),
+                          static_cast<int>((100.0 * length) / total_length));
+        }
       }
+      logger_->report("--------------------------------");
+    }
+  }
+
+  if (detailed_route) {
+    logger_->info(GRT, 279, "Detailed route wire length by layer:");
+    std::vector<int64_t> lengths(db_->getTech()->getRoutingLayerCount() + 1);
+    int64_t total_length = 0;
+    odb::dbSet<odb::dbNet> nets = block_->getNets();
+    for (odb::dbNet* db_net : nets) {
+      odb::dbWire* wire = db_net->getWire();
+      if (wire == nullptr || db_net->getSigType().isSupply()
+          || db_net->isSpecial() || !db_net->getSWires().empty()
+          || db_net->isConnectedByAbutment()) {
+        continue;
+      }
+
+      odb::dbWirePath path;
+      odb::dbWirePathShape pshape;
+      odb::dbWirePathItr pitr;
+      for (pitr.begin(wire); pitr.getNextPath(path);) {
+        while (pitr.getNextShape(pshape)) {
+          const odb::dbShape& shape = pshape.shape;
+          if (!shape.isVia()) {
+            int layer = shape.getTechLayer()->getRoutingLevel();
+            int seg_length = shape.getLength();
+            lengths[layer] += seg_length;
+            total_length += seg_length;
+          }
+        }
+      }
+    }
+
+    if (total_length > 0) {
+      logger_->report("Layer    Wire length  Percentage");
+      logger_->report("--------------------------------");
+      for (size_t i = 0; i < lengths.size(); i++) {
+        int64_t length = lengths[i];
+        if (length > 0) {
+          odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
+          logger_->report("{:7s} {:8.2f}um {:5}%",
+                          layer->getName(),
+                          block_->dbuToMicrons(length),
+                          static_cast<int>((100.0 * length) / total_length));
+        }
+      }
+      logger_->report("--------------------------------");
     }
   }
 }
@@ -5084,6 +5206,8 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         is_congested_ = true;
         updateDbCongestion();
         saveCongestion();
+        // Suggest adjustment value
+        suggestAdjustment();
         logger_->error(GRT,
                        232,
                        "Routing congestion too high. Check the congestion "

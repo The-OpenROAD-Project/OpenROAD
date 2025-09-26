@@ -84,6 +84,9 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   if (_chip != rhs._chip) {
     return false;
   }
+  if (dbu_per_micron_ != rhs.dbu_per_micron_) {
+    return false;
+  }
   if (*chip_tbl_ != *rhs.chip_tbl_) {
     return false;
   }
@@ -149,6 +152,7 @@ bool _dbDatabase::operator<(const _dbDatabase& rhs) const
 
 _dbDatabase::_dbDatabase(_dbDatabase* db)
 {
+  dbu_per_micron_ = 0;
   chip_tbl_ = new dbTable<_dbChip, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
   chip_hash_.setTable(chip_tbl_);
@@ -275,13 +279,14 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   if (obj.isSchema(db_schema_chip_bump)) {
     stream >> *obj.chip_net_tbl_;
   }
+  if (obj.isSchema(db_schema_dbu_per_micron)) {
+    stream >> obj.dbu_per_micron_;
+  }
   // Set the _tech on the block & libs now they are loaded
   if (!obj.isSchema(db_schema_block_tech)) {
     if (obj._chip) {
       _dbChip* chip = obj.chip_tbl_->getPtr(obj._chip);
-      if (chip->_top) {
-        chip->_block_tbl->getPtr(chip->_top)->_tech = old_db_tech;
-      }
+      chip->tech_ = old_db_tech;
     }
 
     auto db_public = (dbDatabase*) &obj;
@@ -301,6 +306,19 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   // Set the revision of the database to the current revision
   obj._schema_major = db_schema_major;
   obj._schema_minor = db_schema_minor;
+
+  // Set the chipinsts_map_ of the chip
+  dbDatabase* db = (dbDatabase*) &obj;
+  for (const auto& inst : db->getChipInsts()) {
+    _dbChip* parent_chip = (_dbChip*) inst->getParentChip();
+    parent_chip->chipinsts_map_[inst->getName()] = inst->getId();
+  }
+  // Set the region_insts_map_ of the chipinst
+  for (const auto& chip_region_inst : db->getChipRegionInsts()) {
+    _dbChipInst* chipinst = (_dbChipInst*) chip_region_inst->getChipInst();
+    chipinst->region_insts_map_[chip_region_inst->getChipRegion()->getId()]
+        = chip_region_inst->getId();
+  }
   // User Code End >>
   return stream;
 }
@@ -327,6 +345,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
   stream << *obj.chip_conn_tbl_;
   stream << *obj.chip_bump_inst_tbl_;
   stream << *obj.chip_net_tbl_;
+  stream << obj.dbu_per_micron_;
   // User Code End <<
   return stream;
 }
@@ -428,6 +447,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   _master_id = 0;
   _logger = nullptr;
   _unique_id = id;
+  dbu_per_micron_ = 0;
 
   chip_tbl_ = new dbTable<_dbChip, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
@@ -482,6 +502,19 @@ utl::Logger* _dbObject::getLogger() const
 // dbDatabase - Methods
 //
 ////////////////////////////////////////////////////////////////////
+
+void dbDatabase::setDbuPerMicron(uint dbu_per_micron)
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+
+  obj->dbu_per_micron_ = dbu_per_micron;
+}
+
+uint dbDatabase::getDbuPerMicron() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return obj->dbu_per_micron_;
+}
 
 dbSet<dbChip> dbDatabase::getChips() const
 {
@@ -887,6 +920,14 @@ void dbDatabase::triggerPostReadDef(dbBlock* block, const bool floorplan)
     } else {
       observer->postReadDef(block);
     }
+  }
+}
+
+void dbDatabase::triggerPostRead3Dbx(dbChip* chip)
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  for (dbDatabaseObserver* observer : db->observers_) {
+    observer->postRead3Dbx(chip);
   }
 }
 

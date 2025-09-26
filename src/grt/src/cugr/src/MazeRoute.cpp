@@ -10,17 +10,23 @@
 #include <utility>
 #include <vector>
 
+#include "Design.h"
+#include "GridGraph.h"
+#include "Layers.h"
+#include "PatternRoute.h"
+#include "geo.h"
+#include "robin_hood.h"
+
 namespace grt {
 
-void SparseGraph::init(GridGraphView<CostT>& wire_cost_view, SparseGrid& grid)
+void SparseGraph::init(const GridGraphView<CostT>& wire_cost_view,
+                       const SparseGrid& grid)
 {
   // 0. Create pseudo pins
-  robin_hood::unordered_map<uint64_t, std::pair<PointT, IntervalT>>
-      selectedAccessPoints;
-  grid_graph_->selectAccessPoints(net_, selectedAccessPoints);
+  const auto selectedAccessPoints = grid_graph_->selectAccessPoints(net_);
   pseudo_pins_.reserve(selectedAccessPoints.size());
-  for (auto& selectedPoint : selectedAccessPoints) {
-    pseudo_pins_.push_back(selectedPoint.second);
+  for (const auto& selectedPoint : selectedAccessPoints) {
+    pseudo_pins_.push_back(selectedPoint);
   }
 
   // 1. Collect additional routing grid lines
@@ -29,19 +35,18 @@ void SparseGraph::init(GridGraphView<CostT>& wire_cost_view, SparseGrid& grid)
   pxs.reserve(net_->getNumPins());
   pys.reserve(net_->getNumPins());
   for (const auto& pin : pseudo_pins_) {
-    pxs.emplace_back(pin.first.x);
-    pys.emplace_back(pin.first.y);
+    pxs.emplace_back(pin.point.x());
+    pys.emplace_back(pin.point.y());
   }
   std::sort(pxs.begin(), pxs.end());
   std::sort(pys.begin(), pys.end());
 
   const int xSize = grid_graph_->getSize(0);
   const int ySize = grid_graph_->getSize(1);
-  xs_.reserve(xSize / grid.interval.x + pxs.size());
-  ys_.reserve(ySize / grid.interval.y + pys.size());
-  int j = 0;
-  for (int i = 0; true; i++) {
-    int x = i * grid.interval.x + grid.offset.x;
+  xs_.reserve(xSize / grid.interval.x() + pxs.size());
+  ys_.reserve(ySize / grid.interval.y() + pys.size());
+  for (int i = 0, j = 0; true; i++) {
+    const int x = i * grid.interval.x() + grid.offset.x();
     for (; j < pxs.size() && pxs[j] <= x; j++) {
       if ((!xs_.empty() && pxs[j] == xs_.back()) || pxs[j] == x) {
         continue;
@@ -54,9 +59,8 @@ void SparseGraph::init(GridGraphView<CostT>& wire_cost_view, SparseGrid& grid)
       break;
     }
   }
-  j = 0;
-  for (int i = 0; true; i++) {
-    int y = i * grid.interval.y + grid.offset.y;
+  for (int i = 0, j = 0; true; i++) {
+    const int y = i * grid.interval.y() + grid.offset.y();
     for (; j < pys.size() && pys[j] <= y; j++) {
       if ((!ys_.empty() && pys[j] == ys_.back()) || pys[j] == y) {
         continue;
@@ -72,7 +76,7 @@ void SparseGraph::init(GridGraphView<CostT>& wire_cost_view, SparseGrid& grid)
 
   // 2. Add vertices
   vertices_.reserve(2 * xs_.size() * ys_.size());
-  for (unsigned direction = 0; direction < 2; direction++) {
+  for (int direction = 0; direction < 2; direction++) {
     for (auto& y : ys_) {
       for (auto& x : xs_) {
         vertices_.emplace_back(direction, x, y);
@@ -83,19 +87,18 @@ void SparseGraph::init(GridGraphView<CostT>& wire_cost_view, SparseGrid& grid)
   // 3. Add same-layer connections
   edges_.resize(vertices_.size(), {-1, -1, -1});
   costs_.resize(vertices_.size(), {-1, -1, -1});
-  auto addSameLayerEdge
-      = [&](const unsigned direction, const int xi, const int yi) {
-          const int u = getVertexIndex(direction, xi, yi);
-          const int v = direction == MetalLayer::H ? u + 1 : u + xs_.size();
-          PointT U(xs_[xi], ys_[yi]);
-          PointT V(xs_[xi + 1 - direction], ys_[yi + direction]);
+  auto addSameLayerEdge = [&](const int direction, const int xi, const int yi) {
+    const int u = getVertexIndex(direction, xi, yi);
+    const int v = direction == MetalLayer::H ? u + 1 : u + xs_.size();
+    const PointT U(xs_[xi], ys_[yi]);
+    const PointT V(xs_[xi + 1 - direction], ys_[yi + direction]);
 
-          edges_[u][0] = v;
-          edges_[v][1] = u;
-          costs_[u][0] = costs_[v][1] = wire_cost_view.sum(U, V);
-        };
+    edges_[u][0] = v;
+    edges_[v][1] = u;
+    costs_[u][0] = costs_[v][1] = wire_cost_view.sum(U, V);
+  };
 
-  for (unsigned direction = 0; direction < 2; direction++) {
+  for (int direction = 0; direction < 2; direction++) {
     if (direction == MetalLayer::H) {
       for (int yi = 0; yi < ys_.size(); yi++) {
         for (int xi = 0; xi + 1 < xs_.size(); xi++) {
@@ -140,8 +143,8 @@ void SparseGraph::init(GridGraphView<CostT>& wire_cost_view, SparseGrid& grid)
   pin_vertex_.resize(pseudo_pins_.size(), -1);
   for (int pinIndex = 0; pinIndex < pseudo_pins_.size(); pinIndex++) {
     const auto& pin = pseudo_pins_[pinIndex];
-    const int xi = xtoxi[pin.first.x];
-    const int yi = ytoyi[pin.first.y];
+    const int xi = xtoxi[pin.point.x()];
+    const int yi = ytoyi[pin.point.y()];
     const int u = getVertexIndex(0, xi, yi);
     vertex_pin_.emplace(u, pinIndex);
     pin_vertex_[pinIndex] = u;
@@ -192,7 +195,7 @@ void MazeRoute::run()
       queue.pop();
       foundPinIndex = graph_.getVertexPin(solution->vertex);
       if (foundPinIndex != -1 && !visited[foundPinIndex]) {
-        foundSolution = solution;
+        foundSolution = std::move(solution);
         break;
       }
       // Pruning
@@ -200,12 +203,13 @@ void MazeRoute::run()
         continue;
       }
       for (int edgeIndex = 0; edgeIndex < 3; edgeIndex++) {
-        int nextVertex = graph_.getNextVertex(solution->vertex, edgeIndex);
+        const int nextVertex
+            = graph_.getNextVertex(solution->vertex, edgeIndex);
         if (nextVertex == -1
             || (solution->prev && nextVertex == solution->prev->vertex)) {
           continue;
         }
-        CostT nextCost
+        const CostT nextCost
             = solution->cost + graph_.getEdgeCost(solution->vertex, edgeIndex);
         if (nextCost < minCosts[nextVertex]) {
           updateSolution(
@@ -215,11 +219,12 @@ void MazeRoute::run()
     }
 
     solutions_.emplace_back(foundSolution);
+    assert(foundPinIndex >= 0);
     visited[foundPinIndex] = true;
     numDetached -= 1;
 
     // Update the cost of the vertices_ on the path
-    std::shared_ptr<Solution> temp = foundSolution;
+    std::shared_ptr<Solution> temp = std::move(foundSolution);
     while (temp && temp->cost != 0) {
       updateSolution(std::make_shared<Solution>(0, temp->vertex, temp->prev));
       temp = temp->prev;
@@ -227,7 +232,7 @@ void MazeRoute::run()
   }
 
   if (numDetached != 0) {
-    printf("Error: failed to connect all pins.");
+    logger_->error(utl::GRT, 275, "failed to connect all pins.");
   }
 }
 
@@ -236,7 +241,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
   std::shared_ptr<SteinerTreeNode> tree = nullptr;
   if (graph_.getNumPseudoPins() == 1) {
     const auto& pseudoPin = graph_.getPseudoPin(0);
-    tree = std::make_shared<SteinerTreeNode>(pseudoPin.first, pseudoPin.second);
+    tree = std::make_shared<SteinerTreeNode>(pseudoPin.point, pseudoPin.layers);
     return tree;
   }
 
@@ -248,7 +253,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
     while (temp) {
       auto it = created.find(temp->vertex);
       if (it == created.end()) {
-        PointT point = graph_.getPoint(temp->vertex);
+        const PointT point = graph_.getPoint(temp->vertex);
         auto node = std::make_shared<SteinerTreeNode>(point);
         created.emplace(temp->vertex, node);
         if (lastNode) {
@@ -259,11 +264,11 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
         }
         if (!lastNode || !temp->prev) {
           // Both the start and the end of the path should contain pins
-          int pinIndex = graph_.getVertexPin(temp->vertex);
+          const int pinIndex = graph_.getVertexPin(temp->vertex);
           assert(pinIndex != -1);
-          node->setFixedLayers(graph_.getPseudoPin(pinIndex).second);
+          node->setFixedLayers(graph_.getPseudoPin(pinIndex).layers);
         }
-        lastNode = node;
+        lastNode = std::move(node);
         temp = temp->prev;
       } else {
         if (lastNode) {
@@ -273,16 +278,17 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
       }
     }
   }
+  assert(tree);
 
   // Remove redundant tree nodes
   SteinerTreeNode::preorder(
       tree, [&](const std::shared_ptr<SteinerTreeNode>& node) {
         for (int childIndex = 0; childIndex < node->getNumChildren();
              childIndex++) {
-          std::shared_ptr<SteinerTreeNode> child
+          const std::shared_ptr<SteinerTreeNode> child
               = node->getChildren()[childIndex];
-          if (node->x == child->x && node->y == child->y) {
-            for (auto& gradchild : child->getChildren()) {
+          if (node->x() == child->x() && node->y() == child->y()) {
+            for (const auto& gradchild : child->getChildren()) {
               node->addChild(gradchild);
             }
             if (child->getFixedLayers().IsValid()) {
@@ -302,8 +308,8 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
   SteinerTreeNode::preorder(
       tree, [&](const std::shared_ptr<SteinerTreeNode>& node) {
         for (std::shared_ptr<SteinerTreeNode>& child : node->getChildren()) {
-          unsigned direction
-              = (node->y == child->y ? MetalLayer::H : MetalLayer::V);
+          const int direction
+              = (node->y() == child->y() ? MetalLayer::H : MetalLayer::V);
           std::shared_ptr<SteinerTreeNode> temp = child;
           while (!temp->getFixedLayers().IsValid()
                  && temp->getNumChildren() == 1
@@ -311,7 +317,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
                         == (*(temp->getChildren()[0]))[1 - direction]) {
             temp = temp->getChildren()[0];
           }
-          child = temp;
+          child = std::move(temp);
         }
       });
 
@@ -319,8 +325,8 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
   SteinerTreeNode::preorder(
       tree, [&](const std::shared_ptr<SteinerTreeNode>& node) {
         for (const auto& child : node->getChildren()) {
-          if (node->x == child->x && node->y == child->y) {
-            printf("Error: duplicate tree nodes encountered.");
+          if (node->x() == child->x() && node->y() == child->y()) {
+            logger_->error(utl::GRT, 276, "duplicate tree nodes encountered.");
           }
         }
       });

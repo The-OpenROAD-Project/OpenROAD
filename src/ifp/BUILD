@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -22,6 +23,7 @@ cc_library(
     ],
     deps = [
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/upf",
@@ -81,5 +83,23 @@ tcl_wrap_cc(
     ],
     deps = [
         "//src/odb:swig",
+    ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/ifp/InitFloorplan.hh",
+        "src/InitFloorplan-py.i",
+        "//:error_swig-py",
+    ],
+    module = "ifp_py",
+    root_swig_src = "src/InitFloorplan-py.i",
+    swig_includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        "//src/odb:swig-py",
     ],
 )

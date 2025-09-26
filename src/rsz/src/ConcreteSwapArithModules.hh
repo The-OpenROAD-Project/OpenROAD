@@ -15,18 +15,18 @@ class ConcreteSwapArithModules : public SwapArithModules
   explicit ConcreteSwapArithModules(Resizer* resizer);
   ~ConcreteSwapArithModules() override = default;
 
-  void replaceArithModules(int path_count,
+  bool replaceArithModules(int path_count,
                            const std::string& target,
                            float slack_threshold) override;
   void collectArithInstsOnPath(const Path* path,
-                               set<dbModInst*>& arithInsts) override;
+                               std::set<dbModInst*>& arithInsts) override;
   bool isArithInstance(const Instance* inst, dbModInst*& mod_inst) override;
   bool hasArithOperatorProperty(const dbModInst* mod_inst) override;
   void findCriticalInstances(int path_count,
                              const std::string& target,
                              float slack_threshold,
-                             set<dbModInst*>& insts) override;
-  void doSwapInstances(const set<dbModInst*>& insts,
+                             std::set<dbModInst*>& insts) override;
+  bool doSwapInstances(const std::set<dbModInst*>& insts,
                        const std::string& target) override;
 
  protected:
@@ -34,6 +34,8 @@ class ConcreteSwapArithModules : public SwapArithModules
   void produceNewModuleName(const std::string& old_name,
                             std::string& new_name,
                             const std::string& target) override;
+
+  bool init_ = false;
 };
 
 }  // namespace rsz

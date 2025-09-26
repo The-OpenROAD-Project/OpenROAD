@@ -25,8 +25,10 @@ cc_library(
     ],
     deps = [
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "@spdlog",
     ],
 )

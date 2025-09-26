@@ -156,7 +156,7 @@ write_db filename
 
 | Switch Name | Description |
 | ----- | ----- |
-| `filename` | Path to the file to be read, if the filename ends with `.gz` the file will be comprssed using gzip. |
+| `filename` | Path to the file to be written, if the filename ends with `.gz` the file will be compressed using gzip. |
 
 ### Examples
 ```
@@ -193,6 +193,32 @@ write_abstract_lef -bloat_factor 3 reg1_abstract.lef
 
 # Produce cover obstructions for each layer with shapes present
 write_abstract_lef -bloat_occupied_layers reg1_abstract.lef
+```
+
+## Write CDL netlist
+
+To export the CDL netlist to disk.
+
+``` tcl
+write_cdl
+  -masters list_of_cdl_files
+  [-include_fillers]
+  filename
+```
+### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-masters` | List of CDL netlist dependencies. |
+| `[-include_fillers]` | Export fillers to the CDL netlist |
+| `filename` | Path to the file to be written, if the filename ends with `.gz` the file will be compressed using gzip. |
+
+### Examples
+```
+write_cdl -masters {netlist1.cdl netlist2.cdl ...} -include_fillers netlist.cdl
+
+# To write a database file with gzip compression.
+write_cdl -masters {netlist1.cdl netlist2.cdl ...} -include_fillers netlist.cdl.gz
 ```
 
 ### Global Connections

@@ -9,6 +9,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace gui {

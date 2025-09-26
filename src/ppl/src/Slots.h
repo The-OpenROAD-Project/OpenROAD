@@ -3,9 +3,6 @@
 
 #pragma once
 
-#define MAX_SLOTS_RECOMMENDED 600
-#define MAX_SECTIONS_RECOMMENDED 600
-
 #include <algorithm>
 #include <cstddef>
 #include <numeric>
@@ -58,6 +55,7 @@ struct Slot
   odb::Point pos;
   int layer;
   Edge edge;
+  odb::Line containing_line;
 
   bool isAvailable() const { return (!blocked && !used); }
 };

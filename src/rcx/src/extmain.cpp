@@ -64,6 +64,9 @@ int extMain::getExtCornerIndex(dbBlock* block, const char* cornerName)
 
 void extMain::adjustRC(double resFactor, double ccFactor, double gndcFactor)
 {
+  if (!_block) {
+    logger_->error(RCX, 4, "Design not loaded.");
+  }
   double res_factor = resFactor / _resFactor;
   _resFactor = resFactor;
   _resModify = resFactor == 1.0 ? false : true;

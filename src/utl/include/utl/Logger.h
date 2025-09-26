@@ -45,7 +45,9 @@ class Progress;
 // Keep this sorted
 #define FOREACH_TOOL(X) \
   X(ANT)                \
+  X(CGT)                \
   X(CTS)                \
+  X(CUT)                \
   X(DFT)                \
   X(DPL)                \
   X(DRT)                \
@@ -253,6 +255,8 @@ class Logger
   // Redirect output to a string until teeStringEnd is called.
   void teeStringBegin();
   std::string teeStringEnd();
+
+  static Logger* defaultLogger();
 
   // Progress interface
   Progress* progress() const { return progress_.get(); }

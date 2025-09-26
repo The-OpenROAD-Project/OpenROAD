@@ -19,10 +19,10 @@
 #include <variant>
 #include <vector>
 
-#include "ZException.h"
 #include "boost/container/flat_map.hpp"
-#include "dbObject.h"
-#include "odb.h"
+#include "odb/ZException.h"
+#include "odb/dbObject.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -390,7 +390,7 @@ class dbIStream
       T2 val;
       *this >> key;
       *this >> val;
-      m[key] = val;
+      m[key] = std::move(val);
     }
     return *this;
   }
@@ -405,7 +405,7 @@ class dbIStream
       T2 val;
       *this >> key;
       *this >> val;
-      m[key] = val;
+      m[key] = std::move(val);
     }
     return *this;
   }
@@ -420,7 +420,7 @@ class dbIStream
       T2 val;
       *this >> key;
       *this >> val;
-      m[key] = val;
+      m[key] = std::move(val);
     }
     return *this;
   }
@@ -435,7 +435,7 @@ class dbIStream
     for (uint i = 0; i < sz; i++) {
       T1 val;
       *this >> val;
-      m.push_back(val);
+      m.push_back(std::move(val));
     }
     return *this;
   }
@@ -501,7 +501,7 @@ class dbIStream
       if (I == index) {
         std::variant_alternative_t<I, std::variant<Ts...>> val;
         *this >> val;
-        v = val;
+        v = std::move(val);
       }
       return (*this).variantHelper<I + 1>(index, v);
     }

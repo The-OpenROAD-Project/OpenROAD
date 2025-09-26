@@ -33,6 +33,8 @@ or_integration_tests(
     ndr
     polygon
     read_abstract_lef
+    read_3dbv
+    read_3dbx
     read_db
     read_def
     read_def58

@@ -3,20 +3,22 @@
 
 #pragma once
 
-#include "odb.h"
+#include <memory>
+
+#include "odb/odb.h"
+
 namespace utl {
 class Logger;
 }
+
 namespace odb {
 
-class defout_impl;
+class dbInst;
 class dbNet;
 class dbBlock;
 
-class defout
+class DefOut
 {
-  defout_impl* _writer;
-
  public:
   enum Version
   {
@@ -28,16 +30,19 @@ class defout
     DEF_5_8
   };
 
-  defout(utl::Logger* logger);
-  ~defout();
+  DefOut(utl::Logger* logger);
+  ~DefOut();
 
-  void setUseLayerAlias(bool value);
-  void setUseNetInstIds(bool value);
-  void setUseMasterIds(bool value);
   void selectNet(dbNet* net);
+  void selectInst(dbInst* inst);
+
   void setVersion(Version v);  // default is 5.8
 
   bool writeBlock(dbBlock* block, const char* def_file);
+
+ private:
+  class Impl;
+  std::unique_ptr<Impl> _writer;
 };
 
 }  // namespace odb

@@ -10,8 +10,6 @@
 #include <cstring>
 #include <filesystem>
 #include <limits>
-#include <map>
-#include <vector>
 
 #include "odb/db.h"
 #include "parse.h"

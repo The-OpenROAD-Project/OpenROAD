@@ -241,7 +241,8 @@ std::string generateMacroPlacementString(dbBlock* block)
   for (odb::dbInst* inst : block->getInsts()) {
     if (inst->isBlock()) {
       macro_placement += fmt::format(
-          "place_macro -macro_name {} -location {{{} {}}} -orientation {}\n",
+          "place_macro -macro_name {{{}}} -location {{{} {}}} -orientation "
+          "{}\n",
           inst->getName(),
           block->dbuToMicrons(inst->getLocation().x()),
           block->dbuToMicrons(inst->getLocation().y()),

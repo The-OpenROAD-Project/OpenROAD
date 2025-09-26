@@ -12,7 +12,6 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
-#include <list>
 #include <mutex>
 #include <sstream>
 #include <string>

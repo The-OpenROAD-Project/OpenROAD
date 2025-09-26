@@ -2,9 +2,7 @@
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include <cmath>
-#include <fstream>
 #include <functional>
-#include <limits>
 #include <string>
 #include <vector>
 

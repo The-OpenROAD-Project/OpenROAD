@@ -6,11 +6,8 @@
 #include <algorithm>
 #include <cmath>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <limits>
-#include <map>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -34,9 +31,9 @@ void HTreeBuilder::preSinkClustering(
   bool maxDiameterSet = (type_ == TreeType::MacroTree)
                             ? options_->isMacroMaxDiameterSet()
                             : options_->isMaxDiameterSet();
-  unsigned clusterSizeSet = (type_ == TreeType::MacroTree)
-                                ? options_->isMacroSinkClusteringSizeSet()
-                                : options_->isSinkClusteringSizeSet();
+  bool clusterSizeSet = (type_ == TreeType::MacroTree)
+                            ? options_->isMacroSinkClusteringSizeSet()
+                            : options_->isSinkClusteringSizeSet();
 
   unsigned min_clustering_sinks = (type_ == TreeType::MacroTree)
                                       ? min_clustering_macro_sinks_
@@ -94,7 +91,7 @@ void HTreeBuilder::preSinkClustering(
                  bestDiameter);
   } else if (!clusterSizeSet && maxDiameterSet) {
     // only diameter is set, try clustering sizes of 10, 20 and 30
-    for (unsigned clusterSize2 : clusterSizes()) {
+    for (unsigned clusterSize2 : options_->getSinkClusteringSizes()) {
       // clang-format off
       debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
                  clusterSize2, maxDiameter, wireSegmentUnit_);
@@ -107,7 +104,7 @@ void HTreeBuilder::preSinkClustering(
     }
   } else if (clusterSizeSet && !maxDiameterSet) {
     // only clustering size is set, try diameters of 50, 100 and 200 um
-    for (unsigned clusterDiameter2 : clusterDiameters()) {
+    for (unsigned clusterDiameter2 : options_->getSinkClusteringDiameters()) {
       // clang-format off
       debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
                  clusterSize, clusterDiameter2, wireSegmentUnit_);
@@ -124,7 +121,7 @@ void HTreeBuilder::preSinkClustering(
     // try diameters of 50, 100 and 200 um
     for (unsigned clusterDiameter2 : clusterDiameters()) {
       // try clustering sizes of 10, 20 and 30
-      for (unsigned clusterSize2 : clusterSizes()) {
+      for (unsigned clusterSize2 : options_->getSinkClusteringSizes()) {
         // clang-format off
         debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
                    clusterSize2, clusterDiameter2, wireSegmentUnit_);

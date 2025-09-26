@@ -3,8 +3,6 @@
 
 #include "dbTechLayerAntennaRule.h"
 
-#include <spdlog/fmt/ostr.h>
-
 #include <cassert>
 #include <utility>
 #include <vector>
@@ -19,6 +17,7 @@
 #include "dbVector.h"
 #include "odb/db.h"
 #include "odb/lefout.h"
+#include "spdlog/fmt/ostr.h"
 
 namespace odb {
 

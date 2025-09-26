@@ -14,13 +14,13 @@
 
 #include "MplObserver.h"
 #include "db_sta/dbNetwork.hh"
+#include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "par/PartitionMgr.h"
 #include "sta/Liberty.hh"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -174,6 +174,10 @@ void ClusteringEngine::searchForFixedInstsInsideFloorplanShape()
   odb::Rect floorplan_shape = micronsToDbu(block_, tree_->floorplan_shape);
 
   for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->isBlock()) {
+      continue;
+    }
+
     if (inst->isFixed()
         && inst->getBBox()->getBox().overlaps(floorplan_shape)) {
       logger_->error(MPL,
@@ -217,6 +221,10 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
             "Found macro that does not fit in the core.\nName: {}\n{}",
             inst->getName(),
             generateMacroAndCoreDimensionsTable(macro.get(), core));
+      }
+
+      if (macro->isFixed()) {
+        tree_->has_fixed_macros = true;
       }
 
       tree_->maps.inst_to_hard[inst] = std::move(macro);
@@ -326,6 +334,11 @@ void ClusteringEngine::createRoot()
 
 void ClusteringEngine::setBaseThresholds()
 {
+  // TODO: Allow hierarchical clustering (level > 1) with fixed macros.
+  if (tree_->has_fixed_macros) {
+    tree_->max_level = 1;
+  }
+
   if (tree_->base_max_macro <= 0 || tree_->base_min_macro <= 0
       || tree_->base_max_std_cell <= 0 || tree_->base_min_std_cell <= 0) {
     // From original implementation: Reset maximum level based on number
@@ -865,18 +878,11 @@ DataFlowHypergraph ClusteringEngine::computeHypergraph(
 }
 
 /* static */
-// Instance that should not be touched i.e., have its location
-// altered by the macro placer.
-// Note: This function also takes into account the placement status
-// of the instance, because, if it is placed outside the area that is
-// used for the macro placement, it can be safely ignored as there's
-// no risk to generate overlap.
 bool ClusteringEngine::isIgnoredInst(odb::dbInst* inst)
 {
   odb::dbMaster* master = inst->getMaster();
-
   return master->isPad() || master->isCover() || master->isEndCap()
-         || inst->isFixed();
+         || inst->getITerms().empty();
 }
 
 // Forward or Backward DFS search to find sequential paths from/to IO pins based
@@ -1843,14 +1849,21 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
 
 bool ClusteringEngine::attemptMerge(Cluster* receiver, Cluster* incomer)
 {
-  // The incomer might be deleted so we need to cache
-  // its id in order to erase it from the map if so.
+  // Cache incomer data in case it is deleted.
   const int incomer_id = incomer->getId();
+  const ConnectionsMap incomer_connections = incomer->getConnectionsMap();
 
   bool incomer_deleted = false;
   if (receiver->attemptMerge(incomer, incomer_deleted)) {
     if (incomer_deleted) {
       tree_->maps.id_to_cluster.erase(incomer_id);
+
+      // Update connections of clusters connected to the deleted cluster.
+      for (const auto& [cluster_id, connection_weight] : incomer_connections) {
+        Cluster* cluster = tree_->maps.id_to_cluster.at(cluster_id);
+        cluster->removeConnection(incomer_id);
+        cluster->addConnection(receiver->getId(), connection_weight);
+      }
     }
 
     updateInstancesAssociation(receiver);
@@ -2002,22 +2015,37 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
   clearConnections();
   buildNetListConnections();
 
-  const int number_of_macros = static_cast<int>(hard_macros.size());
-  std::vector<int> size_class(number_of_macros, -1);
-  std::vector<int> signature_class(number_of_macros, -1);
-  std::vector<int> interconn_class(number_of_macros, -1);
-  std::vector<int> macro_class(number_of_macros, -1);
+  std::vector<HardMacro*> movable_hard_macros;
+  std::vector<Cluster*> movable_macro_clusters;
+  std::vector<Cluster*> fixed_macro_clusters;
+  for (Cluster* macro_cluster : macro_clusters) {
+    odb::dbInst* macro = macro_cluster->getLeafMacros().front();
+    HardMacro* hard_macro = tree_->maps.inst_to_hard.at(macro).get();
+    if (!hard_macro->isFixed()) {
+      movable_hard_macros.push_back(hard_macro);
+      movable_macro_clusters.push_back(macro_cluster);
+    } else {
+      fixed_macro_clusters.push_back(macro_cluster);
+    }
+  }
 
-  if (number_of_macros == 1) {
+  const int number_of_movable_macros
+      = static_cast<int>(movable_hard_macros.size());
+  std::vector<int> size_class(number_of_movable_macros, -1);
+  std::vector<int> signature_class(number_of_movable_macros, -1);
+  std::vector<int> interconn_class(number_of_movable_macros, -1);
+  std::vector<int> macro_class(number_of_movable_macros, -1);
+
+  if (number_of_movable_macros == 1) {
     // We don't want the single-macro macro cluster to be treated
     // as an array of interconnected macros with one macro.
     interconn_class.front() = -1;
     macro_class.front() = 0;
   } else {
-    classifyMacrosBySize(hard_macros, size_class);
-    classifyMacrosByConnSignature(macro_clusters, signature_class);
-    classifyMacrosByInterconn(macro_clusters, interconn_class);
-    groupSingleMacroClusters(macro_clusters,
+    classifyMacrosBySize(movable_hard_macros, size_class);
+    classifyMacrosByConnSignature(movable_macro_clusters, signature_class);
+    classifyMacrosByInterconn(movable_macro_clusters, interconn_class);
+    groupSingleMacroClusters(movable_macro_clusters,
                              size_class,
                              signature_class,
                              interconn_class,
@@ -2035,20 +2063,26 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
 
   replaceByStdCellCluster(mixed_leaf, virtual_conn_clusters);
 
-  // Deal with the macros
+  // Deal with the movable macros.
   for (int i = 0; i < macro_class.size(); i++) {
     if (macro_class[i] != i) {
       continue;  // this macro cluster has been merged
     }
 
-    macro_clusters[i]->setClusterType(HardMacroCluster);
-
     if (interconn_class[i] != -1) {
-      macro_clusters[i]->setAsArrayOfInterconnectedMacros();
+      movable_macro_clusters[i]->setAsArrayOfInterconnectedMacros();
     }
 
-    setClusterMetrics(macro_clusters[i]);
-    virtual_conn_clusters.push_back(macro_clusters[i]->getId());
+    movable_macro_clusters[i]->setClusterType(HardMacroCluster);
+    setClusterMetrics(movable_macro_clusters[i]);
+    virtual_conn_clusters.push_back(movable_macro_clusters[i]->getId());
+  }
+
+  // Deal with the fixed macros.
+  for (Cluster* fixed_macro_cluster : fixed_macro_clusters) {
+    fixed_macro_cluster->setClusterType(HardMacroCluster);
+    setClusterMetrics(fixed_macro_cluster);
+    virtual_conn_clusters.push_back(fixed_macro_cluster->getId());
   }
 
   // add virtual connections
@@ -2112,7 +2146,15 @@ void ClusteringEngine::createOneClusterForEachMacro(
     single_macro_cluster->addLeafMacro(hard_macro->getInst());
     macro_clusters.push_back(single_macro_cluster.get());
 
-    incorporateNewCluster(std::move(single_macro_cluster), mixed_leaf_parent);
+    Cluster* new_cluster_parent;
+    if (hard_macro->isFixed()) {
+      single_macro_cluster->setAsFixedMacro(hard_macro);
+      new_cluster_parent = tree_->root.get();
+    } else {
+      new_cluster_parent = mixed_leaf_parent;
+    }
+
+    incorporateNewCluster(std::move(single_macro_cluster), new_cluster_parent);
   }
 }
 
@@ -2159,7 +2201,7 @@ void ClusteringEngine::classifyMacrosByConnSignature(
     logger_->report("\nPrint Connection Signature\n");
     for (Cluster* cluster : macro_clusters) {
       logger_->report("Macro Signature: {}", cluster->getName());
-      for (auto& [cluster_id, weight] : cluster->getConnection()) {
+      for (auto& [cluster_id, weight] : cluster->getConnectionsMap()) {
         logger_->report(" {} {} ",
                         tree_->maps.id_to_cluster[cluster_id]->getName(),
                         weight);

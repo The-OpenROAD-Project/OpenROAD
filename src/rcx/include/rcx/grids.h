@@ -8,12 +8,12 @@
 #include <cstring>
 #include <vector>
 
-#include "box.h"
 #include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "rcx.h"
+#include "rcx/box.h"
 #include "rcx/extRCap.h"
+#include "rcx/rcx.h"
 
 namespace rcx {
 

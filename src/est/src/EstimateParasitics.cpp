@@ -404,6 +404,12 @@ void EstimateParasitics::updateParasitics(bool save_guides)
         "updateParasitics() called with incremental parasitics disabled");
   }
 
+  // Call clearNetDrvrPinMap only without full blown ConcreteNetwork::clear()
+  // This is because netlist changes may invalidate cached net driver pin data
+  sta::LibertyLibrary* default_lib = network_->defaultLibertyLibrary();
+  network_->Network::clear();
+  network_->setDefaultLibertyLibrary(default_lib);
+
   switch (parasitics_src_) {
     case ParasiticsSrc::placement:
       for (const Net* net : parasitics_invalid_) {

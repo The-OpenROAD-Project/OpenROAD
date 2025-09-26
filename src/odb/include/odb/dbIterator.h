@@ -5,7 +5,7 @@
 
 #include <iterator>
 
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 

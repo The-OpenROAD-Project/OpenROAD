@@ -17,10 +17,10 @@
 #include "MplObserver.h"
 #include "boost/random/uniform_int_distribution.hpp"
 #include "clusterEngine.h"
+#include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -153,8 +153,7 @@ void SimulatedAnnealingCore<T>::setInitialSequencePair(
 template <class T>
 bool SimulatedAnnealingCore<T>::isValid() const
 {
-  return (width_ <= std::ceil(outline_.getWidth()))
-         && (height_ <= std::ceil(outline_.getHeight()));
+  return resultFitsInOutline();
 }
 
 template <class T>
@@ -238,9 +237,9 @@ float SimulatedAnnealingCore<T>::getNormFencePenalty() const
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::getMacros(std::vector<T>& macros) const
+std::vector<T> SimulatedAnnealingCore<T>::getMacros() const
 {
-  macros = macros_;
+  return macros_;
 }
 
 // Private functions
@@ -459,11 +458,13 @@ void SimulatedAnnealingCore<T>::packFloorplan()
   for (int i = 0; i < pos_seq_.size(); i++) {
     const int macro_id = pos_seq_[i];
     const int neg_seq_pos = sequence_pair_pos[macro_id].second;
+    T& macro = macros_[macro_id];
 
-    macros_[macro_id].setX(accumulated_length[neg_seq_pos]);
+    if (!macro.isFixed()) {
+      macro.setX(accumulated_length[neg_seq_pos]);
+    }
 
-    const float current_length
-        = macros_[macro_id].getX() + macros_[macro_id].getWidth();
+    const float current_length = macro.getX() + macro.getWidth();
 
     for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
       if (current_length > accumulated_length[j]) {
@@ -494,11 +495,13 @@ void SimulatedAnnealingCore<T>::packFloorplan()
   for (int i = 0; i < pos_seq_.size(); i++) {
     const int macro_id = reversed_pos_seq[i];
     const int neg_seq_pos = sequence_pair_pos[macro_id].second;
+    T& macro = macros_[macro_id];
 
-    macros_[macro_id].setY(accumulated_length[neg_seq_pos]);
+    if (!macro.isFixed()) {
+      macro.setY(accumulated_length[neg_seq_pos]);
+    }
 
-    const float current_height
-        = macros_[macro_id].getY() + macros_[macro_id].getHeight();
+    const float current_height = macro.getY() + macro.getHeight();
 
     for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
       if (current_height > accumulated_length[j]) {
@@ -763,6 +766,13 @@ void SimulatedAnnealingCore<T>::fastSA()
   if ((is_best_result_valid_ && !is_valid) || !improved) {
     useBestResult();
   }
+}
+
+template <class T>
+bool SimulatedAnnealingCore<T>::resultFitsInOutline() const
+{
+  return (width_ <= std::ceil(outline_.getWidth()))
+         && (height_ <= std::ceil(outline_.getHeight()));
 }
 
 template <class T>

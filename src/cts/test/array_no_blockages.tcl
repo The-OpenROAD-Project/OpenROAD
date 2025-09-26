@@ -19,7 +19,7 @@ read_lef array_tile.lef
 
 set db [ord::get_db]
 set tech [ord::get_db_tech]
-set chip [odb::dbChip_create $db]
+set chip [odb::dbChip_create $db $tech]
 set block [odb::dbBlock_create $chip "top"]
 $block setDefUnits 2000
 
@@ -130,10 +130,12 @@ set_wire_rc -signal -layer $wire_rc_layer
 set_wire_rc -clock -layer $wire_rc_layer_clk
 set_dont_use $dont_use
 
-clock_tree_synthesis -root_buf $cts_buffer \
-  -buf_list $cts_buffer \
-  -sink_clustering_enable \
-  -sink_clustering_max_diameter $cts_cluster_diameter \
+set_cts_config -sink_clustering_max_diameter $cts_cluster_diameter \
+  -root_buf $cts_buffer \
+  -buf_list $cts_buffer
+
+
+clock_tree_synthesis -sink_clustering_enable \
   -balance_levels
 
 set_propagated_clock [all_clocks]

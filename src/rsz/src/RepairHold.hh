@@ -39,7 +39,7 @@ using Slacks = Slack[RiseFall::index_count][MinMax::index_count];
 class RepairHold : public sta::dbStaState
 {
  public:
-  RepairHold(Resizer* resizer, est::EstimateParasitics* estimate_parasitics);
+  RepairHold(Resizer* resizer);
   bool repairHold(double setup_margin,
                   double hold_margin,
                   bool allow_setup_violations,

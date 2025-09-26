@@ -2,6 +2,139 @@
 # Copyright (c) 2022-2025, The OpenROAD Authors
 load("//test:regression.bzl", "regression_test")
 
+py_library(
+    name = "helper",
+    srcs = [
+        "helper.py",
+    ],
+    imports = ["."],
+)
+
+py_library(
+    name = "odbUnitTest",
+    srcs = [
+        "odbUnitTest.py",
+    ],
+    imports = ["."],
+)
+
+py_test(
+    name = "test_block",
+    srcs = [
+        "test_block.py",
+    ],
+    deps = [
+        ":helper",
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
+)
+
+py_test(
+    name = "test_bterm",
+    srcs = [
+        "test_bterm.py",
+    ],
+    deps = [
+        ":helper",
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
+)
+
+py_test(
+    name = "test_destroy",
+    srcs = [
+        "test_destroy.py",
+    ],
+    deps = [
+        ":helper",
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
+)
+
+py_test(
+    name = "test_group",
+    srcs = [
+        "test_group.py",
+    ],
+    deps = [
+        ":helper",
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
+)
+
+py_test(
+    name = "test_inst",
+    srcs = [
+        "test_inst.py",
+    ],
+    deps = [
+        ":helper",
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
+)
+
+py_test(
+    name = "test_iterm",
+    srcs = [
+        "test_iterm.py",
+    ],
+    deps = [
+        ":helper",
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
+)
+
+py_test(
+    name = "test_module",
+    srcs = [
+        "test_module.py",
+    ],
+    deps = [
+        ":helper",
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
+)
+
+py_test(
+    name = "test_net",
+    srcs = [
+        "test_net.py",
+    ],
+    deps = [
+        ":helper",
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
+)
+
+py_test(
+    name = "test_wire_codec",
+    srcs = [
+        "test_wire_codec.py",
+    ],
+    deps = [
+        ":helper",
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
+)
+
 PASSFAIL_TESTS = [
     # FIXME not supported yet
     # "cpp_tests",
@@ -54,6 +187,8 @@ COMPULSORY_TESTS = [
     "ndr",
     "polygon",
     "read_abstract_lef",
+    "read_3dbv",
+    "read_3dbx",
     "read_db",
     "read_def",
     "read_def58",
@@ -139,6 +274,8 @@ filegroup(
         "data/design.def.gz",
         "data/design.odb",
         "data/design58.def",
+        "data/example.3dbv",
+        "data/example.3dbx",
         "data/floorplan_initialize.def",
         "data/floorplan_initialize.v",
         "data/floorplan_initialize2.def",

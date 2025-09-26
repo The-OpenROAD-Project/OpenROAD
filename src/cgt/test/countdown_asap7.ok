@@ -1,0 +1,16 @@
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13178, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13211, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13244, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13277, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13310, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13343, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13376, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14772, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14805, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14838, timing group from output port.
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+Derived GENLIB library "asap7sc7p5t_AO_RVT_FF_nldm_211120" with 169 gates.
+[INFO CGT-0003] Clock gating instance 0/3
+[INFO CGT-0004] Accepted clock enable '_05_ | _02_ | _01_ | _10_ | _03_' for instance val\[0\]$_DFF_PP1_
+No differences found.

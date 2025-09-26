@@ -35,15 +35,24 @@
 #include <utility>
 #include <vector>
 
+#include "db/infra/frSegStyle.h"
+#include "db/obj/frFig.h"
+#include "db/obj/frInstBlockage.h"
+#include "db/obj/frMPin.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frLayer.h"
+#include "db/tech/frTechObject.h"
 #include "frBaseTypes.h"
+#include "frDesign.h"
+#include "frRegionQuery.h"
 #include "global.h"
 #include "odb/db.h"
+#include "utl/Logger.h"
 
 namespace drt {
 
 Fixture::Fixture()
-    : logger(std::make_unique<Logger>()),
+    : logger(std::make_unique<utl::Logger>()),
       router_cfg(std::make_unique<RouterConfiguration>()),
       design(std::make_unique<frDesign>(logger.get(), router_cfg.get())),
       numBlockages(0),
@@ -253,7 +262,7 @@ void Fixture::makeDesign()
   odb::dbTech* tech = odb::dbTech::create(db_, "tech");
   odb::dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
   odb::dbLib::create(db_, "lib1", tech, ',');
-  odb::dbChip* chip = odb::dbChip::create(db_);
+  odb::dbChip* chip = odb::dbChip::create(db_, tech);
   odb::dbBlock::create(chip, "simple_block");
 }
 

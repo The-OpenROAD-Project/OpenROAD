@@ -45,8 +45,11 @@
 #include <cstdlib>
 #include <cstring>
 #include <functional>
+#include <initializer_list>
+#include <iterator>
 #include <limits>
 #include <memory>  // only to support hash of smart pointers
+#include <new>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -1911,7 +1914,7 @@ class Table
   }
 
   // Swaps everything between the two maps.
-  void swap(Table& o)
+  void swap(Table& o) noexcept
   {
     ROBIN_HOOD_TRACE(this)
     using std::swap;

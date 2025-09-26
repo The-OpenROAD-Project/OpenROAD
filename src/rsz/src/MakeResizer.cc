@@ -3,9 +3,6 @@
 
 #include "rsz/MakeResizer.hh"
 
-#include <memory>
-#include <utility>
-
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"

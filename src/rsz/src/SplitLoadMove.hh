@@ -5,8 +5,6 @@
 
 namespace rsz {
 
-using std::string;
-
 using sta::ArcDelay;
 using sta::InstancePinIterator;
 using sta::LoadPinIndexMap;
