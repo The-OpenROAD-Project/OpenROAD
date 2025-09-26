@@ -115,10 +115,10 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
           }
           break;
         case MoveType::SIZE:
+          move_sequence.push_back(resizer_->size_up_move_.get());
           if (!skip_size_down) {
             move_sequence.push_back(resizer_->size_down_move_.get());
           }
-          move_sequence.push_back(resizer_->size_up_move_.get());
           break;
         case MoveType::SIZEUP:
           move_sequence.push_back(resizer_->size_up_move_.get());
@@ -160,8 +160,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     }
     // TODO: Add size_down_move to the sequence if we want to allow
     // Always  have sizing
-    move_sequence.push_back(resizer_->size_down_move_.get());
     move_sequence.push_back(resizer_->size_up_move_.get());
+    move_sequence.push_back(resizer_->size_down_move_.get());
     // Disabled by default for now
     // if (!skip_size_down) {
     //   move_sequence.push_back(resizer_->size_down_move_.get());
