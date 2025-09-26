@@ -1,3 +1,5 @@
+load("@openroad_rules_python//python:defs.bzl", "py_library", "py_test")
+
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 load("//test:regression.bzl", "regression_test")
@@ -134,22 +136,6 @@ py_test(
         "//src/odb:odb_py",
     ],
 )
-
-PASSFAIL_TESTS = [
-    # FIXME not supported yet
-    # "cpp_tests",
-    "dump_netlists",
-    "dump_netlists_withfill",
-    "test_block",
-    "test_bterm",
-    "test_destroy",
-    "test_group",
-    "test_inst",
-    "test_iterm",
-    "test_module",
-    "test_net",
-    "test_wire_codec",
-]
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
@@ -339,17 +325,17 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
-            "read_abstract_lef": [
-                "gcd_abstract_lef.lefok",
-            ],
-            "replace_hier_mod4": [
-                "gcd_abstract_lef.lefok",
-            ],
             "dump_netlists": [
                 "dump_netlists_cdl.ok",
             ],
             "dump_netlists_withfill": [
                 "dump_netlists_withfill_cdl.ok",
+            ],
+            "read_abstract_lef": [
+                "gcd_abstract_lef.lefok",
+            ],
+            "replace_hier_mod4": [
+                "gcd_abstract_lef.lefok",
             ],
         }.get(
             test_name,
