@@ -8,7 +8,10 @@
 #include <QDebug>
 #include <QHeaderView>
 #include <QLineEdit>
+#include <QProcess>
+#include <QProcessEnvironment>
 #include <QPushButton>
+#include <QStringList>
 #include <algorithm>
 #include <any>
 #include <cmath>
@@ -20,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "fileLine.h"
 #include "gui/gui.h"
 #include "gui_utils.h"
 
@@ -964,6 +968,51 @@ void Inspector::doubleClicked(const QModelIndex& index)
   emit indexDoubleClicked(index);
 }
 
+bool invokeEditorFromEnv(const FileLine& file_line)
+{
+  QString editorCommand
+      = QProcessEnvironment::systemEnvironment().value("OPENROAD_EDITOR");
+
+  if (editorCommand.isEmpty()) {
+    qWarning() << "OPENROAD_EDITOR environment variable not set.";
+    return false;
+  }
+
+  // Check if the placeholders are present in the command string.
+  if (!editorCommand.contains("%FILE%") || !editorCommand.contains("%LINE%")) {
+    qWarning()
+        << "Error: The OPENROAD_EDITOR command does not contain the necessary "
+           "placeholders.";
+    qWarning()
+        << "It must contain both %FILE% and %LINE% to function correctly.";
+    qWarning() << "Current command:" << editorCommand;
+    return false;
+  }
+
+  // Substitute placeholders.
+  editorCommand.replace("%FILE%", QString::fromStdString(file_line.file_name));
+  editorCommand.replace("%LINE%", QString::number(file_line.line_number));
+
+  QStringList arguments;
+  QString program;
+
+  // Split the command into the program name and arguments.
+  // The first token is the program itself.
+  QRegExp rx("(\\ |\\t)");
+  QStringList parts = editorCommand.split(rx, Qt::SkipEmptyParts);
+  if (!parts.isEmpty()) {
+    program = parts.first();
+    arguments = parts.mid(1);
+  } else {
+    qWarning() << "Invalid OPENROAD_EDITOR command:" << editorCommand;
+    return false;
+  }
+
+  // 4. Execute the command.
+  QProcess::startDetached(program, arguments);
+  return true;
+}
+
 void Inspector::indexClicked()
 {
   // handle single click event
@@ -971,6 +1020,12 @@ void Inspector::indexClicked()
   auto new_selected
       = item->data(EditorItemDelegate::kSelected).value<Selected>();
   if (new_selected) {
+    if (const FileLine* v
+        = std::any_cast<const FileLine>(&new_selected.getObject())) {
+      if (invokeEditorFromEnv(*v)) {
+        return;
+      }
+    }
     if (navigation_history_.empty()) {
       // add starting object
       navigation_history_.push_back(selection_);

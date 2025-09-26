@@ -27,6 +27,7 @@
 #include "bufferTreeDescriptor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "fileLine.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"
@@ -94,9 +95,9 @@ static void populateODBProperties(Descriptor::Properties& props,
     const auto file_name_prop
         = odb::dbStringProperty::find(block, src_file.c_str());
     if (file_name_prop) {
-      const auto info = fmt::format(
-          "{}:{}", file_name_prop->getValue(), src_file_line.value());
-      prop_list.emplace_back("Source", info);
+      auto gui = Gui::get();
+      FileLine file_line{file_name_prop->getValue(), src_file_line.value()};
+      prop_list.emplace_back("Source", gui->makeSelected(file_line));
     }
   }
 
