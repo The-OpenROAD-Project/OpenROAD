@@ -1025,6 +1025,8 @@ proc define_pdn_grid_macro { args } {
       }
       foreach inst $sub_insts {
         if { ![$inst isFixed] } {
+          utl::warn PDN 1050 \
+            "Ignoring non-fixed instance for grid (${keys(-name)}): [$inst getName]"
           continue
         }
         lappend insts $inst
@@ -1059,6 +1061,9 @@ proc define_pdn_grid_macro { args } {
       foreach cell $sub_cells {
         # only add blocks
         if { ![$cell isBlock] } {
+          if { !$default_grid } {
+            utl::warn PDN 1041 "Ignoring non-block cell for grid (${keys(-name)}): [$cell getName]"
+          }
           continue
         }
         lappend cells $cell

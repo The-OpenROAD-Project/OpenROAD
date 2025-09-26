@@ -8,9 +8,9 @@ read_def nangate_macros/floorplan.def
 
 # Create an instance with the same prefix as the macro
 odb::dbInst_create \
-    [ord::get_db_block] \
-    [[ord::get_db] findMaster FILLCELL_X1] \
-    {dcache.data.data_arrays_0.data_arrays_0_ext.mem_10}
+  [ord::get_db_block] \
+  [[ord::get_db] findMaster FILLCELL_X1] \
+  {dcache.data.data_arrays_0.data_arrays_0_ext.mem_10}
 
 add_global_connection -net VDD -pin_pattern {^VDD$} -power
 add_global_connection -net VDD -pin_pattern {^VDDPE$}

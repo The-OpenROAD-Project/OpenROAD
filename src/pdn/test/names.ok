@@ -14,4 +14,6 @@
 PDN-0184
 [ERROR PDN-1043] Grid named "Core" already defined.
 PDN-1043
+[WARNING PDN-1050] Ignoring non-fixed instance for grid (Inst): cmp1
+[WARNING PDN-1050] Ignoring non-fixed instance for grid (Inst): cmp1
 PDN-1043
