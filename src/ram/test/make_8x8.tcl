@@ -15,6 +15,11 @@ generate_ram_netlist \
 
 ord::design_created
 
+make_tracks -x_offset 0 -y_offset 0
+set_io_pin_constraint -direction output -region top:*
+set_io_pin_constraint -pin_names {D[0] D[1]} -region top:*
+place_pins -hor_layers met3 -ver_layers met2
+
 filler_placement {sky130_fd_sc_hd__fill_1 sky130_fd_sc_hd__fill_2 sky130_fd_sc_hd__fill_4 sky130_fd_sc_hd__fill_8}
 
 set def_file [make_result_file make_8x8.def]

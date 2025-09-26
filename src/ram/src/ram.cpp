@@ -386,7 +386,7 @@ void RamGen::generate(const int bytes_per_word,
 
   auto chip = db_->getChip();
   if (!chip) {
-    chip = odb::dbChip::create(db_);
+    chip = odb::dbChip::create(db_, db_->getTech(), ram_name.c_str(), odb::dbChip::ChipType::DIE);
   }
 
   block_ = chip->getBlock();

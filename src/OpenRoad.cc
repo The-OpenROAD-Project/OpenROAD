@@ -230,7 +230,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
       replace_, db_, sta_, resizer_, global_router_, logger_, tcl_interp);
   initOpendp(opendp_, db_, logger_, tcl_interp);
   initFinale(finale_, db_, logger_, tcl_interp);
-  initRamGen(ram_gen_, db_, logger_, tcl_interp);
+  initRamGen(ram_gen_, getDbNetwork(), db_, logger_, tcl_interp);
   initGlobalRouter(global_router_,
                    db_,
                    sta_,

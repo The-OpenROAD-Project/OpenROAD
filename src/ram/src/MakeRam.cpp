@@ -5,20 +5,19 @@
 
 #include <tcl.h>
 
-#include "ord/OpenRoad.hh"
 #include "ram/ram.h"
 #include "sta/StaMain.hh"
+#include "utl/decode.h"
 
-namespace sta {
-// Tcl files encoded into strings.
-extern const char* ram_tcl_inits[];
-}  // namespace sta
 
 extern "C" {
 extern int Ram_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace ram {
+
+// Tcl files encoded into strings.
+extern const char* ram_tcl_inits[];
 
 ram::RamGen* makeRamGen()
 {
@@ -30,15 +29,17 @@ void deleteRamGen(ram::RamGen* ram_gen)
   delete ram_gen;
 }
 
-void initRamGen(OpenRoad* openroad)
+void initRamGen (ram::RamGen* ram_gen,
+		sta::dbNetwork* network,
+		odb::dbDatabase* db,
+		utl::Logger* logger,
+		Tcl_Interp* tcl_interp)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Ram_Init(tcl_interp);
   // Eval encoded sta TCL sources.
-  sta::evalTclInit(tcl_interp, sta::ram_tcl_inits);
-  openroad->getRamGen()->init(
-      openroad->getDb(), openroad->getDbNetwork(), openroad->getLogger());
+  utl::evalTclInit(tcl_interp, ram_tcl_inits);
+  ram_gen->init(db, network, logger);
 }
 
-}  // namespace ord
+}  // namespace ram

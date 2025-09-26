@@ -12,6 +12,8 @@
 
 %inline %{
 
+namespace ram {
+
 void
 generate_ram_netlist_cmd(int bytes_per_word,
                          int word_count,
@@ -59,6 +61,8 @@ generate_ram_netlist_cmd(int bytes_per_word,
   ram_gen->generate(bytes_per_word, word_count, read_ports,
                     storage_cell, tristate_cell, inv_cell);
 }
+
+} //namespace_ram
 
 %} // inline
 

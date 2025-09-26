@@ -3,16 +3,31 @@
 
 #pragma once
 
-namespace ram {
-class RamGen;
+#include <tcl.h>
+
+namespace sta {
+class dbNetwork;
 }
 
-namespace ord {
+namespace odb {
+class dbDatabase;
+}
 
-class OpenRoad;
+namespace utl {
+class Logger;
+}
+
+
+namespace ram {
+
+class RamGen;
 
 ram::RamGen* makeRamGen();
-void initRamGen(OpenRoad* openroad);
+void initRamGen(ram::RamGen* ram_gen,
+		sta::dbNetwork* network,
+		odb::dbDatabase* db,
+		utl::Logger* logger,
+		Tcl_Interp* tcl_interp);
 void deleteRamGen(ram::RamGen* ram);
 
-}  // namespace ord
+}  // namespace ram
