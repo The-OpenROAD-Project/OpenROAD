@@ -27,6 +27,7 @@
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PathAnalysisPt.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"

@@ -4,9 +4,13 @@
 #include "drcWidget.h"
 
 #include <QApplication>
+#include <QComboBox>
 #include <QFileDialog>
 #include <QHeaderView>
+#include <QPushButton>
 #include <QVBoxLayout>
+#include <QVariant>
+#include <QWidget>
 #include <algorithm>
 #include <any>
 #include <memory>
@@ -15,6 +19,7 @@
 #include <vector>
 
 #include "dbDescriptors.h"
+#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"

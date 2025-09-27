@@ -4,6 +4,7 @@
 #include "Graphics.h"
 
 #include "dpl/Opendp.h"
+#include "gui/gui.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/network.h"

@@ -12,6 +12,8 @@
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
+#include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "utl/unique_name.h"
 
 namespace abc {

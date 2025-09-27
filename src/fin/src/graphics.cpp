@@ -7,6 +7,7 @@
 #include <string>
 
 #include "boost/polygon/polygon.hpp"
+#include "gui/gui.h"
 #include "odb/geom.h"
 
 namespace fin {

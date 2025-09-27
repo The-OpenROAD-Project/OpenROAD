@@ -3,8 +3,10 @@
 
 #include "dbvParser.h"
 
+#include <exception>
 #include <fstream>
 #include <sstream>
+#include <string>
 
 #include "objects.h"
 #include "odb/db.h"

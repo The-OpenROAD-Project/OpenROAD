@@ -3,8 +3,10 @@
 
 #pragma once
 
+#include <QColor>
 #include <QMutex>
 #include <QPainter>
+#include <QString>
 #include <QThread>
 #include <QWaitCondition>
 #include <map>

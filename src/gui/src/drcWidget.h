@@ -9,7 +9,10 @@
 #include <QPushButton>
 #include <QSettings>
 #include <QStandardItemModel>
+#include <QString>
 #include <QTreeView>
+#include <QVariant>
+#include <QWidget>
 #include <memory>
 #include <variant>
 

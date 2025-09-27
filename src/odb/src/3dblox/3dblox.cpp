@@ -3,13 +3,17 @@
 
 #include "odb/3dblox.h"
 
+#include <cstddef>
 #include <filesystem>
+#include <sstream>
+#include <string>
 
 #include "dbvParser.h"
 #include "dbxParser.h"
 #include "objects.h"
 #include "odb/db.h"
 #include "odb/defin.h"
+#include "odb/geom.h"
 #include "odb/lefin.h"
 #include "utl/Logger.h"
 

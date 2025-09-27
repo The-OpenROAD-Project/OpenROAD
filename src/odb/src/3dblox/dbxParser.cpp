@@ -3,8 +3,10 @@
 
 #include "dbxParser.h"
 
+#include <exception>
 #include <fstream>
 #include <sstream>
+#include <string>
 
 #include "odb/db.h"
 #include "utl/Logger.h"
