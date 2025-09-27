@@ -86,8 +86,11 @@ class frVia : public frRef
   void setOrient(const dbOrientType& tmpOrient) override { ; }
   Point getOrigin() const override { return origin_; }
   void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
-  dbTransform getTransform() const override { return dbTransform(origin_); }
-  void setTransform(const dbTransform& xformIn) override {}
+  odb::dbTransform getTransform() const override
+  {
+    return odb::dbTransform(origin_);
+  }
+  void setTransform(const odb::dbTransform& xformIn) override {}
 
   /* from frPinFig
    * hasPin
@@ -193,7 +196,7 @@ class frVia : public frRef
     getTransform().apply(box);
     return box;
   }
-  void move(const dbTransform& xform) override { ; }
+  void move(const odb::dbTransform& xform) override { ; }
   bool intersects(const Rect& box) const override { return false; }
 
   void setIter(frListIter<std::unique_ptr<frVia>>& in) { iter_ = in; }

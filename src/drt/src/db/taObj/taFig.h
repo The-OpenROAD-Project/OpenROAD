@@ -7,13 +7,14 @@
 
 #include "db/infra/frBox.h"
 #include "db/taObj/taBlockObject.h"
+#include "odb/dbTransform.h"
 
 namespace drt {
 class taFig : public taBlockObject
 {
  public:
   virtual Rect getBBox() const = 0;
-  virtual void move(const dbTransform& xform) = 0;
+  virtual void move(const odb::dbTransform& xform) = 0;
   virtual bool overlaps(const Rect& box) const = 0;
 };
 
