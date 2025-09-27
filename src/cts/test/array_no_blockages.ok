@@ -126,7 +126,7 @@ delta HPWL                    1 %
 
 Clock clk
    1.03 source latency inst_5_4/clk ^
-  -1.14 target latency inst_6_4/clk ^
+  -1.15 target latency inst_6_4/clk ^
    0.00 CRPR
 --------------
   -0.12 setup skew
