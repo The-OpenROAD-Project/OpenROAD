@@ -1398,7 +1398,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
 
   std::vector<Rect> blockages = findBlockagesWithinOutline(outline);
   eliminateOverlaps(blockages);
-  blockagesAsFixedSoftMacros(blockages, soft_macro_id_map, macros);
+  createSoftMacrosForBlockages(blockages, macros);
 
   // We store the io clusters to push them into the macros' vector
   // only after it is already populated with the clusters we're trying to
@@ -1804,17 +1804,13 @@ void HierRTLMP::eliminateOverlaps(std::vector<Rect>& blockages) const
 // We model blockages as macro clusters (SoftMacros) constrained to fences.
 // The rationale of this model comes from the fact that the area occupied
 // by blockages should be empty, i.e., with neither macros or std cells.
-void HierRTLMP::blockagesAsFixedSoftMacros(
+void HierRTLMP::createSoftMacrosForBlockages(
     const std::vector<Rect>& blockages,
-    std::map<std::string, int>& soft_macro_id_map,
     std::vector<SoftMacro>& macros)
 {
-  for (const Rect& blockage : blockages) {
-    const int macro_id = static_cast<int>(macros.size());
-    std::string macro_name = fmt::format("blockage_{}", macro_id);
-    soft_macro_id_map[macro_name] = macro_id;
-
-    macros.emplace_back(blockage, macro_name);
+  for (int id = 0; id < blockages.size(); id++) {
+    std::string name = fmt::format("blockage_{}", id);
+    macros.emplace_back(blockages[id], name);
   }
 }
 
