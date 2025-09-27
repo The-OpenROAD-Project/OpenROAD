@@ -181,7 +181,7 @@ class HierRTLMP
       const Rect& outline) const;
   void eliminateOverlaps(std::vector<Rect>& blockages) const;
   void createSoftMacrosForBlockages(const std::vector<Rect>& blockages,
-                                  std::vector<SoftMacro>& macros);
+                                    std::vector<SoftMacro>& macros);
   void createFixedTerminals(Cluster* parent,
                             std::map<std::string, int>& soft_macro_id_map,
                             std::vector<SoftMacro>& soft_macros);
