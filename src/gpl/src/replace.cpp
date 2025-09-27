@@ -112,10 +112,9 @@ void Replace::doIncrementalPlace(int threads)
 
     pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_));
 
-    for (auto pd : db_->getChip()->getBlock()->getPowerDomains()) {
-      if (pd->getGroup()) {
-        pbVec_.push_back(
-            std::make_shared<PlacerBase>(db_, pbc_, log_, pd->getGroup()));
+    for (auto pd : db_->getChip()->getBlock()->getRegions()) {
+      for (auto group : pd->getGroups()) {
+        pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_, group));
       }
     }
 
@@ -191,10 +190,9 @@ void Replace::doInitialPlace(int threads)
 
     pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_));
 
-    for (auto pd : db_->getChip()->getBlock()->getPowerDomains()) {
-      if (pd->getGroup()) {
-        pbVec_.push_back(
-            std::make_shared<PlacerBase>(db_, pbc_, log_, pd->getGroup()));
+    for (auto pd : db_->getChip()->getBlock()->getRegions()) {
+      for (auto group : pd->getGroups()) {
+        pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_, group));
       }
     }
 
@@ -244,10 +242,9 @@ bool Replace::initNesterovPlace(int threads)
 
     pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_));
 
-    for (auto pd : db_->getChip()->getBlock()->getPowerDomains()) {
-      if (pd->getGroup()) {
-        pbVec_.push_back(
-            std::make_shared<PlacerBase>(db_, pbc_, log_, pd->getGroup()));
+    for (auto pd : db_->getChip()->getBlock()->getRegions()) {
+      for (auto group : pd->getGroups()) {
+        pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_, group));
       }
     }
 

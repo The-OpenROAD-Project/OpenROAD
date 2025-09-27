@@ -1068,7 +1068,6 @@ void PlacerBase::init()
 void PlacerBase::initInstsForUnusableSites()
 {
   dbSet<dbRow> rows = db_->getChip()->getBlock()->getRows();
-  dbSet<dbPowerDomain> pds = db_->getChip()->getBlock()->getPowerDomains();
 
   int64_t siteCountX = (die_.coreUx() - die_.coreLx()) / siteSizeX_;
   int64_t siteCountY = (die_.coreUy() - die_.coreLy()) / siteSizeY_;
@@ -1161,29 +1160,19 @@ void PlacerBase::initInstsForUnusableSites()
   // In the case of top level power domain i.e no group,
   // mark all other power domains as empty
   if (group_ == nullptr) {
-    for (dbPowerDomain* pd : pds) {
-      if (pd->getGroup() != nullptr) {
-        for (auto boundary : pd->getGroup()->getRegion()->getBoundaries()) {
-          Rect rect = boundary->getBox();
+    for (auto region : db_->getChip()->getBlock()->getRegions()) {
+      for (auto boundary : region->getBoundaries()) {
+        Rect rect = boundary->getBox();
 
-          std::pair<int, int> pairX = getMinMaxIdx(rect.xMin(),
-                                                   rect.xMax(),
-                                                   die_.coreLx(),
-                                                   siteSizeX_,
-                                                   0,
-                                                   siteCountX);
+        std::pair<int, int> pairX = getMinMaxIdx(
+            rect.xMin(), rect.xMax(), die_.coreLx(), siteSizeX_, 0, siteCountX);
 
-          std::pair<int, int> pairY = getMinMaxIdx(rect.yMin(),
-                                                   rect.yMax(),
-                                                   die_.coreLy(),
-                                                   siteSizeY_,
-                                                   0,
-                                                   siteCountY);
+        std::pair<int, int> pairY = getMinMaxIdx(
+            rect.yMin(), rect.yMax(), die_.coreLy(), siteSizeY_, 0, siteCountY);
 
-          for (int i = pairX.first; i < pairX.second; i++) {
-            for (int j = pairY.first; j < pairY.second; j++) {
-              siteGrid[j * siteCountX + i] = Empty;
-            }
+        for (int i = pairX.first; i < pairX.second; i++) {
+          for (int j = pairY.first; j < pairY.second; j++) {
+            siteGrid[j * siteCountX + i] = Empty;
           }
         }
       }
