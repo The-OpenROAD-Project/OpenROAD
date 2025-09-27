@@ -7,23 +7,8 @@
 
 #include "pad/ICeWall.h"
 
-namespace odb {
-class dbDatabase;
-}
-
-namespace utl {
-class Logger;
-}
-
 namespace pad {
 
-void initICeWall(pad::ICeWall* icewall,
-                 odb::dbDatabase* db,
-                 utl::Logger* logger,
-                 Tcl_Interp* tcl_interp);
-
-pad::ICeWall* makeICeWall();
-
-void deleteICeWall(pad::ICeWall* icewall);
+void initICeWall(Tcl_Interp* tcl_interp);
 
 }  // namespace pad

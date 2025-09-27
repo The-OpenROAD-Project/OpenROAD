@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "gui/gui.h"
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"

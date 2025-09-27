@@ -3,7 +3,9 @@
 
 #pragma once
 
+#include <QColor>
 #include <QTabWidget>
+#include <QWidget>
 #include <functional>
 #include <map>
 #include <memory>

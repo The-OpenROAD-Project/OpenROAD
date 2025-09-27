@@ -3,7 +3,10 @@
 
 #include "colorGenerator.h"
 
+#include <QColor>
 #include <array>
+
+#include "gui/gui.h"
 
 namespace gui {
 

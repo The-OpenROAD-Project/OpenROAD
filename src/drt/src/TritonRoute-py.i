@@ -10,6 +10,8 @@
 #include "utl/Logger.h"
 %}
 
+%ignore drt::TritonRoute::initGraphics;
+
 %include <std_string.i>
 %include "../../Exception-py.i"
 %include "triton_route/TritonRoute.h"

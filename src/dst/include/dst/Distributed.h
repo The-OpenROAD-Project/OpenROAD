@@ -26,9 +26,8 @@ class Worker;
 class Distributed
 {
  public:
-  Distributed(utl::Logger* logger = nullptr);
+  Distributed(utl::Logger* logger);
   ~Distributed();
-  void init(utl::Logger* logger);
   void runWorker(const char* ip, unsigned short port, bool interactive);
   void runLoadBalancer(const char* ip,
                        unsigned short port,

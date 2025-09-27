@@ -14,6 +14,7 @@
 #include "odb/dbTypes.h"
 #include "placerBase.h"
 #include "solver.h"
+#include "utl/Logger.h"
 
 namespace gpl {
 

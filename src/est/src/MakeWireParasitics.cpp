@@ -16,6 +16,7 @@
 #include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
+#include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
 #include "sta/ParasiticsClass.hh"
 #include "sta/Sdc.hh"

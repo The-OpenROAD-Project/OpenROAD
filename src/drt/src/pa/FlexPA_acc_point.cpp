@@ -25,6 +25,7 @@
 #include "gc/FlexGC.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
+#include "utl/Logger.h"
 #include "utl/exception.h"
 
 namespace drt {

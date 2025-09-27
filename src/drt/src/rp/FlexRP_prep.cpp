@@ -21,6 +21,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "rp/FlexRP.h"
+#include "utl/Logger.h"
 
 namespace drt {
 

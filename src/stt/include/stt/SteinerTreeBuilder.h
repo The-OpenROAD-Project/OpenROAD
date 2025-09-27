@@ -51,10 +51,8 @@ struct Tree
 class SteinerTreeBuilder
 {
  public:
-  SteinerTreeBuilder();
+  SteinerTreeBuilder(odb::dbDatabase* db, Logger* logger);
   ~SteinerTreeBuilder();
-
-  void init(odb::dbDatabase* db, Logger* logger);
 
   Tree makeSteinerTree(const std::vector<int>& x,
                        const std::vector<int>& y,

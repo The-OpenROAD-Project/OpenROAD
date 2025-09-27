@@ -25,7 +25,10 @@ create_clock -period 5 clk
 
 set_wire_rc -clock -layer metal3
 
-clock_tree_synthesis -root_buf CLKBUF_X3 -buf_list CLKBUF_X3 -wire_unit 20 -apply_ndr root_only
+set_cts_config -wire_unit 20 -apply_ndr root_only \
+  -root_buf CLKBUF_X3 -buf_list CLKBUF_X3
+
+clock_tree_synthesis
 
 set verilog_file [make_result_file simple_test_hier_out.v]
 write_verilog $verilog_file

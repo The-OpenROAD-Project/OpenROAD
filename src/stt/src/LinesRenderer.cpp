@@ -3,6 +3,7 @@
 
 #include "LinesRenderer.h"
 
+#include "gui/gui.h"
 #include "stt/SteinerTreeBuilder.h"
 
 namespace stt {

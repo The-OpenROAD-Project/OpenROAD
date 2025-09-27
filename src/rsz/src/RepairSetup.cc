@@ -14,6 +14,9 @@
 #include "CloneMove.hh"
 #include "Rebuffer.hh"
 #include "SizeDownMove.hh"
+#include "db_sta/dbSta.hh"
+#include "sta/Delay.hh"
+#include "sta/NetworkClass.hh"
 // This includes SizeUpMatchMove
 #include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"

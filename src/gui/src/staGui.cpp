@@ -9,11 +9,15 @@
 #include <QAbstractItemView>
 #include <QAction>
 #include <QApplication>
+#include <QComboBox>
+#include <QDialog>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QMenu>
 #include <QPushButton>
 #include <QStandardItemModel>
+#include <QVariant>
+#include <QWidget>
 #include <algorithm>
 #include <cstddef>
 #include <functional>
@@ -38,7 +42,9 @@
 #include "odb/geom.h"
 #include "sta/Clock.hh"
 #include "sta/Corner.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PatternMatch.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Units.hh"
 
 Q_DECLARE_METATYPE(sta::Corner*);

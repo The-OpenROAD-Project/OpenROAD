@@ -3,8 +3,10 @@
 
 #include "dbvParser.h"
 
+#include <exception>
 #include <fstream>
 #include <sstream>
+#include <string>
 
 #include "objects.h"
 #include "odb/db.h"
@@ -18,6 +20,7 @@ DbvParser::DbvParser(utl::Logger* logger) : BaseParser(logger)
 
 DbvData DbvParser::parseFile(const std::string& filename)
 {
+  current_file_path_ = filename;
   std::ifstream file(filename);
   if (!file.is_open()) {
     logError("3DBV Parser Error: Cannot open file: " + filename);
@@ -29,7 +32,7 @@ DbvData DbvParser::parseFile(const std::string& filename)
   file.close();
 
   DbvData data;
-  parseDefines(data.defines, content);
+  parseDefines(content);
 
   parseYamlContent(data, content);
 
@@ -143,9 +146,31 @@ void DbvParser::parseChiplet(ChipletDef& chiplet,
     if (chiplet_node["external"]["LEF_file"]) {
       for (const auto& lef_file : chiplet_node["external"]["LEF_file"]) {
         try {
-          chiplet.external.lef_files.push_back(lef_file.as<std::string>());
+          resolvePaths(lef_file.as<std::string>(), chiplet.external.lef_files);
         } catch (const YAML::Exception& e) {
           logError("3DBV Error parsing external LEF file name for chiplet "
+                   + chiplet.name + ": " + std::string(e.what()));
+        }
+      }
+    }
+    if (chiplet_node["external"]["APR_tech_file"]) {
+      for (const auto& tech_lef_file :
+           chiplet_node["external"]["APR_tech_file"]) {
+        try {
+          resolvePaths(tech_lef_file.as<std::string>(),
+                       chiplet.external.tech_lef_files);
+        } catch (const YAML::Exception& e) {
+          logError("3DBV Error parsing external APR tech file name for chiplet "
+                   + chiplet.name + ": " + std::string(e.what()));
+        }
+      }
+    }
+    if (chiplet_node["external"]["liberty_file"]) {
+      for (const auto& lib_file : chiplet_node["external"]["liberty_file"]) {
+        try {
+          resolvePaths(lib_file.as<std::string>(), chiplet.external.lib_files);
+        } catch (const YAML::Exception& e) {
+          logError("3DBV Error parsing external liberty file name for chiplet "
                    + chiplet.name + ": " + std::string(e.what()));
         }
       }
@@ -153,6 +178,7 @@ void DbvParser::parseChiplet(ChipletDef& chiplet,
     if (chiplet_node["external"]["DEF_file"]) {
       extractValue(
           chiplet_node["external"], "DEF_file", chiplet.external.def_file);
+      chiplet.external.def_file = resolvePath(chiplet.external.def_file);
     }
   }
 }
