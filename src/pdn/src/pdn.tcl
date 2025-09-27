@@ -1024,6 +1024,11 @@ proc define_pdn_grid_macro { args } {
         utl::error PDN 1030 "Unable to find instance: $inst_pattern"
       }
       foreach inst $sub_insts {
+        if { ![$inst isFixed] } {
+          utl::warn PDN 1050 \
+            "Ignoring non-fixed instance for grid (${keys(-name)}): [$inst getName]"
+          continue
+        }
         lappend insts $inst
       }
     }
@@ -1049,9 +1054,16 @@ proc define_pdn_grid_macro { args } {
   } else {
     set cells {}
     foreach cell_pattern $keys(-cells) {
-      foreach cell [get_masters $cell_pattern] {
+      set sub_cells [get_masters $cell_pattern]
+      if { [llength $sub_cells] == 0 } {
+        utl::warn PDN 1031 "Unable to find cells: $cell_pattern"
+      }
+      foreach cell $sub_cells {
         # only add blocks
         if { ![$cell isBlock] } {
+          if { !$default_grid } {
+            utl::warn PDN 1041 "Ignoring non-block cell for grid (${keys(-name)}): [$cell getName]"
+          }
           continue
         }
         lappend cells $cell
