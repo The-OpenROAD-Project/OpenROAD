@@ -7,11 +7,11 @@
 [INFO ODB-0227] LEF file: ./4BitTrayH2W2/asap7sc7p5t_DFFHQNH2V2X.lef, created 9 library cells
 [INFO IFP-0001] Added 370 rows of 1851 site asap7sc7p5t.
 Alpha = 60.0, Beta = 1.0, #paths = 0, max size = 50
-Total ILP Cost: 4155.465
+Total ILP Cost: 345.786
 Total Timing Critical Path Displacement: 0.0
-Average slot-to-flop displacement: 5.488
-Final Objective Value: 4155.465
+Average slot-to-flop displacement: 3.456
+Final Objective Value: 345.786
 Sizes used
-  1-bit: 2
-  2-bit: 49
+  2-bit: 48
+  4-bit: 21
 No differences found.
