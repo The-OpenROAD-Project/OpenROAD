@@ -12,6 +12,7 @@
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frFig.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
 
 namespace drt {
 class frConstraint;
@@ -85,7 +86,7 @@ class frMarker : public frFig
 
   bool isH() const { return vioIsH_; }
 
-  void move(const dbTransform& xform) override {}
+  void move(const odb::dbTransform& xform) override {}
 
   bool intersects(const Rect& box) const override { return false; }
 

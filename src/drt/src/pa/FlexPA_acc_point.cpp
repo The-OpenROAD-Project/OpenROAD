@@ -23,6 +23,7 @@
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "odb/dbTransform.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "utl/Logger.h"
@@ -1287,7 +1288,7 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
     inst = inst_term->getInst();
   }
 
-  dbTransform xform;
+  odb::dbTransform xform;
   if (inst) {
     xform = inst->getDBTransform();
   }
@@ -1554,9 +1555,9 @@ void FlexPA::revertAccessPoints()
   const auto& unique = unique_insts_.getUniqueClasses();
   for (const auto& unique_class : unique) {
     auto candidate_inst = unique_class->getFirstInst();
-    const dbTransform xform = candidate_inst->getTransform();
+    const odb::dbTransform xform = candidate_inst->getTransform();
     const Point offset(xform.getOffset());
-    dbTransform revertXform(Point(-offset.getX(), -offset.getY()));
+    odb::dbTransform revertXform(Point(-offset.getX(), -offset.getY()));
 
     const auto pin_access_idx = candidate_inst->getPinAccessIdx();
     for (auto& inst_term : candidate_inst->getInstTerms()) {

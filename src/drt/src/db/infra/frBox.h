@@ -11,7 +11,6 @@
 namespace drt {
 
 using odb::dbOrientType;
-using odb::dbTransform;
 using odb::Rect;
 
 class frBox3D : public Rect

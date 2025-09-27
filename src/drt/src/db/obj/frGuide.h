@@ -9,6 +9,7 @@
 
 #include "db/obj/frFig.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
 
 namespace drt {
 class frNet;
@@ -68,7 +69,7 @@ class frGuide : public frConnFig
    */
   // needs to be updated
   Rect getBBox() const override { return Rect(begin_, end_); }
-  void move(const dbTransform& xform) override { ; }
+  void move(const odb::dbTransform& xform) override { ; }
   bool intersects(const Rect& box) const override { return false; }
   void setIndexInOwner(const int& val) { index_in_owner_ = val; }
 

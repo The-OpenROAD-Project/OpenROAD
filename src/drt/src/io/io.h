@@ -125,7 +125,7 @@ class Parser
   // postProcess functions
   void checkFig(frPinFig* uFig,
                 const frString& term_name,
-                const dbTransform& xform,
+                const odb::dbTransform& xform,
                 bool& foundTracks,
                 bool& foundCenterTracks,
                 bool& hasPolys);

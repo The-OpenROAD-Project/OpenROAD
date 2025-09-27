@@ -1348,7 +1348,7 @@ void GuideProcessor::genGuides_addCoverGuide_helper(frInstTerm* iterm,
 {
   const frInst* inst = iterm->getInst();
   const size_t num_pins = iterm->getTerm()->getPins().size();
-  dbTransform transform = inst->getNoRotationTransform();
+  odb::dbTransform transform = inst->getNoRotationTransform();
   for (int pin_idx = 0; pin_idx < num_pins; pin_idx++) {
     const frAccessPoint* pref_ap = getPrefAp(iterm, pin_idx);
     if (pref_ap) {

@@ -7,6 +7,7 @@
 
 #include "db/infra/frBox.h"
 #include "db/obj/frBlockObject.h"
+#include "odb/dbTransform.h"
 
 namespace drt {
 class frFig : public frBlockObject
@@ -16,7 +17,7 @@ class frFig : public frBlockObject
   virtual Rect getBBox() const = 0;
   // setters
   // others
-  virtual void move(const dbTransform& xform) = 0;
+  virtual void move(const odb::dbTransform& xform) = 0;
   virtual bool intersects(const Rect& box) const = 0;
 
  protected:

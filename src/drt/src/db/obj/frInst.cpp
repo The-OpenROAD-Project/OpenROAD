@@ -5,12 +5,13 @@
 
 #include "db/obj/frBlock.h"
 #include "db/obj/frMaster.h"
+#include "odb/dbTransform.h"
 namespace drt {
 
 Rect frInst::getBBox() const
 {
   Rect box = getMaster()->getBBox();
-  dbTransform xform = getDBTransform();
+  odb::dbTransform xform = getDBTransform();
   xform.apply(box);
   return box;
 }
@@ -18,14 +19,14 @@ Rect frInst::getBBox() const
 Rect frInst::getBoundaryBBox() const
 {
   Rect box = getMaster()->getDieBox();
-  dbTransform xform = getDBTransform();
+  odb::dbTransform xform = getDBTransform();
   xform.apply(box);
   return box;
 }
 
-dbTransform frInst::getNoRotationTransform() const
+odb::dbTransform frInst::getNoRotationTransform() const
 {
-  dbTransform xfm = getTransform();
+  odb::dbTransform xfm = getTransform();
   xfm.setOrient(dbOrientType(dbOrientType::R0));
   return xfm;
 }

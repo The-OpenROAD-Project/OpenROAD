@@ -37,6 +37,7 @@
 #include "frDesign.h"
 #include "frRegionQuery.h"
 #include "gc/FlexGC.h"
+#include "odb/dbTransform.h"
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 namespace dst {
@@ -680,7 +681,7 @@ class FlexDRWorker
                            frInst* inst,
                            drNet* dNet,
                            const std::string& name,
-                           const dbTransform& shiftXform);
+                           const odb::dbTransform& shiftXform);
   bool isRestrictedRouting(frLayerNum lNum);
   void initNet_addNet(std::unique_ptr<drNet> in);
   void getTrackLocs(bool isHorzTracks,
@@ -721,7 +722,7 @@ class FlexDRWorker
                           bool isAddPathCost,
                           bool isSkipVia = false);
   void modBlockedEdgesForMacroPin(frInstTerm* instTerm,
-                                  const dbTransform& xForm,
+                                  const odb::dbTransform& xForm,
                                   bool isAddCost);
   void initMazeCost_ap();  // disable maze edge
   void initMazeCost_marker_route_queue(const frMarker& marker);

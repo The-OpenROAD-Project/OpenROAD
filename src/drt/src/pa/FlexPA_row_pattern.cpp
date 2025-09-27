@@ -23,6 +23,7 @@
 #include "dst/JobMessage.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "odb/dbTransform.h"
 #include "pa/FlexPA.h"
 #include "serialization.h"
 #include "utl/exception.h"
@@ -476,7 +477,7 @@ void FlexPA::addAccessPatternObj(
     std::vector<std::unique_ptr<frVia>>& vias,
     const bool isPrev)
 {
-  const dbTransform xform = inst->getNoRotationTransform();
+  const odb::dbTransform xform = inst->getNoRotationTransform();
   int access_point_idx = 0;
   auto& access_points = access_pattern->getPattern();
 

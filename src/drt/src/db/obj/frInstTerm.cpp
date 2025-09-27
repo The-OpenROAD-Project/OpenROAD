@@ -7,6 +7,7 @@
 
 #include "db/obj/frInst.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
 
 namespace drt {
 
@@ -18,7 +19,7 @@ frString frInstTerm::getName() const
 frAccessPoint* frInstTerm::getAccessPoint(frCoord x, frCoord y, frLayerNum lNum)
 {
   auto inst = getInst();
-  dbTransform shiftXform = inst->getTransform();
+  odb::dbTransform shiftXform = inst->getTransform();
   Point offset(shiftXform.getOffset());
   x = x - offset.getX();
   y = y - offset.getY();
@@ -34,7 +35,7 @@ void frInstTerm::getShapes(std::vector<frRect>& outShapes) const
 {
   term_->getShapes(outShapes);
   for (auto& shape : outShapes) {
-    dbTransform trans = getInst()->getDBTransform();
+    odb::dbTransform trans = getInst()->getDBTransform();
     shape.move(trans);
   }
 }
@@ -42,7 +43,7 @@ void frInstTerm::getShapes(std::vector<frRect>& outShapes) const
 Rect frInstTerm::getBBox() const
 {
   Rect bbox(term_->getBBox());
-  dbTransform trans = getInst()->getDBTransform();
+  odb::dbTransform trans = getInst()->getDBTransform();
   trans.apply(bbox);
   return bbox;
 }

@@ -8,6 +8,7 @@
 
 #include "db/obj/frFig.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
 
 namespace drt {
 class frBoundary : public frFig
@@ -41,7 +42,7 @@ class frBoundary : public frFig
     }
     return {llx, lly, urx, ury};
   }
-  void move(const dbTransform& xform) override
+  void move(const odb::dbTransform& xform) override
   {
     for (auto& point : points_) {
       xform.apply(point);

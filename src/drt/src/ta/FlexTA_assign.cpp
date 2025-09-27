@@ -13,6 +13,7 @@
 #include "db/obj/frVia.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
 #include "ta/FlexTA.h"
 
 namespace drt {
@@ -78,7 +79,7 @@ void FlexTAWorker::modMinSpacingCostPlanar(const Rect& box,
   auto& workerRegionQuery = getWorkerRegionQuery();
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
-    dbTransform xform(Point(boxLeft, trackLoc));
+    odb::dbTransform xform(Point(boxLeft, trackLoc));
     xform.apply(box2);
     box2boxDistSquare(box1, box2, dx, dy);
     if (dy >= bloatDist) {
@@ -203,7 +204,7 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
   auto& trackLocs = getTrackLocs(followTrackLNum);
   auto& workerRegionQuery = getWorkerRegionQuery();
   Rect tmpBx;
-  dbTransform xform;
+  odb::dbTransform xform;
   frCoord dx, dy, prl;
   frCoord maxX, blockLeft, blockRight;
   Rect blockBox;
@@ -359,7 +360,7 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
   auto& trackLocs = getTrackLocs(followTrackLNum);
   auto& workerRegionQuery = getWorkerRegionQuery();
   Rect tmpBx;
-  dbTransform xform;
+  odb::dbTransform xform;
   frCoord dx, dy, c2ctrackdist;
   frCoord reqDist = 0;
   frCoord maxX, blockLeft, blockRight;
@@ -544,7 +545,7 @@ void FlexTAWorker::modCost(taPinFig* fig,
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, false, false, pinS);
 
     Point pt = obj->getOrigin();
-    dbTransform xform(pt);
+    odb::dbTransform xform(pt);
     for (auto& uFig : obj->getViaDef()->getCutFigs()) {
       auto rect = static_cast<frRect*>(uFig.get());
       box = rect->getBBox();

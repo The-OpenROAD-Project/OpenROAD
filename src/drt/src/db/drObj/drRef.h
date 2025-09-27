@@ -4,6 +4,7 @@
 #pragma once
 
 #include "db/drObj/drFig.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 
 namespace drt {
@@ -14,11 +15,11 @@ class drRef : public drPinFig
   // getters
   virtual dbOrientType getOrient() const = 0;
   virtual Point getOrigin() const = 0;
-  virtual dbTransform getTransform() const = 0;
+  virtual odb::dbTransform getTransform() const = 0;
   // setters
   virtual void setOrient(const dbOrientType& tmpOrient) = 0;
   virtual void setOrigin(const Point& tmpPoint) = 0;
-  virtual void setTransform(const dbTransform& xform) = 0;
+  virtual void setTransform(const odb::dbTransform& xform) = 0;
 
  protected:
   template <class Archive>
