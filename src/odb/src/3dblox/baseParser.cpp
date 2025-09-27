@@ -3,8 +3,10 @@
 
 #include "baseParser.h"
 
+#include <cstddef>
 #include <filesystem>
 #include <sstream>
+#include <string>
 
 #include "objects.h"
 #include "utl/Logger.h"

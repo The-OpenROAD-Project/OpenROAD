@@ -10,8 +10,10 @@
 #include <QPlainTextEdit>
 #include <QRegularExpression>
 #include <QSettings>
+#include <QString>
 #include <QStringList>
 #include <QStringListModel>
+#include <QWidget>
 #include <functional>
 #include <map>
 #include <memory>

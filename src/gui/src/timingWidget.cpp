@@ -9,9 +9,13 @@
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
+#include <QMenu>
 #include <QMessageBox>
+#include <QPushButton>
+#include <QSettings>
 #include <QSortFilterProxyModel>
 #include <QVBoxLayout>
+#include <QWidget>
 #include <memory>
 #include <set>
 #include <string>
@@ -22,6 +26,7 @@
 #include "odb/db.h"
 #include "odb/defout.h"
 #include "sta/Liberty.hh"
+#include "sta/SdcClass.hh"
 #include "staGui.h"
 
 namespace gui {

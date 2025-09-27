@@ -5,6 +5,9 @@
 
 #include <qnamespace.h>
 
+#include <QComboBox>
+#include <QString>
+#include <QWidget>
 #include <string>
 #include <vector>
 

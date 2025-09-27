@@ -3,6 +3,7 @@
 
 #include "renderThread.h"
 
+#include <QPainter>
 #include <QPainterPath>
 #include <QPolygon>
 #include <algorithm>
@@ -16,6 +17,7 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
+#include "gui/gui.h"
 #include "layoutViewer.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -24,6 +26,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "painter.h"
+#include "utl/Logger.h"
 #include "utl/timer.h"
 
 namespace gui {

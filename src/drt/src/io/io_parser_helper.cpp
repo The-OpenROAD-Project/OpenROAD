@@ -19,6 +19,7 @@
 #include "global.h"
 #include "io/io.h"
 #include "odb/dbTypes.h"
+#include "utl/Logger.h"
 
 namespace drt {
 

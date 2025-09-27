@@ -52,6 +52,7 @@
 #include "ta/AbstractTAGraphics.h"
 #include "ta/FlexTA.h"
 #include "utl/CallBackHandler.h"
+#include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
 
 namespace drt {
