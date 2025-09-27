@@ -1911,11 +1911,9 @@ void ClusteringEngine::buildNetListConnections()
       }
     }
 
-    bool net_has_io_pin = false;
     if (tree_->io_pads.empty()) {
       for (odb::dbBTerm* bterm : net->getBTerms()) {
         const int cluster_id = tree_->maps.bterm_to_cluster_id.at(bterm);
-        net_has_io_pin = true;
 
         if (bterm->getIoType() == odb::dbIoType::INPUT) {
           driver_cluster_id = cluster_id;
@@ -1927,14 +1925,15 @@ void ClusteringEngine::buildNetListConnections()
 
     if (driver_cluster_id != -1 && !load_clusters_ids.empty()
         && load_clusters_ids.size() < tree_->large_net_threshold) {
-      const float weight = net_has_io_pin ? tree_->virtual_weight : 1.0;
+      Cluster* driver_cluster = tree_->maps.id_to_cluster.at(driver_cluster_id);
 
       for (const int load_cluster_id : load_clusters_ids) {
-        if (load_cluster_id != driver_cluster_id) { /* undirected connection */
-          tree_->maps.id_to_cluster[driver_cluster_id]->addConnection(
-              load_cluster_id, weight);
-          tree_->maps.id_to_cluster[load_cluster_id]->addConnection(
-              driver_cluster_id, weight);
+        if (load_cluster_id != driver_cluster_id) {
+          Cluster* load_cluster = tree_->maps.id_to_cluster.at(load_cluster_id);
+
+          // The connection is undirected.
+          load_cluster->addConnection(driver_cluster_id, base_weight_);
+          driver_cluster->addConnection(load_cluster_id, base_weight_);
         }
       }
     }
