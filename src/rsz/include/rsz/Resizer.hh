@@ -287,7 +287,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
                    bool skip_buffering,
                    bool skip_buffer_removal,
                    bool skip_last_gasp,
-                   bool skip_vt_swap);
+                   bool skip_vt_swap,
+                   bool skip_crit_vt_swap);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
@@ -685,6 +686,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool isLogicStdCell(const Instance* inst);
 
   bool okToBufferNet(const Pin* driver_pin) const;
+  bool checkAndMarkVTSwappable(Instance* inst,
+                               std::unordered_set<Instance*>& notSwappable,
+                               LibertyCell*& best_lib_cell);
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
