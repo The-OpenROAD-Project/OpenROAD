@@ -1,0 +1,520 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN RAM8x8 ;
+UNITS DISTANCE MICRONS 100 ;
+DIEAREA ( 0 0 ) ( 12052 2448 ) ;
+ROW RAM_ROW0 unithd 0 0 N DO 262 BY 1 STEP 46 0 ;
+ROW RAM_ROW1 unithd 0 272 FS DO 262 BY 1 STEP 46 0 ;
+ROW RAM_ROW2 unithd 0 544 N DO 262 BY 1 STEP 46 0 ;
+ROW RAM_ROW3 unithd 0 816 FS DO 262 BY 1 STEP 46 0 ;
+ROW RAM_ROW4 unithd 0 1088 N DO 262 BY 1 STEP 46 0 ;
+ROW RAM_ROW5 unithd 0 1360 FS DO 262 BY 1 STEP 46 0 ;
+ROW RAM_ROW6 unithd 0 1632 N DO 262 BY 1 STEP 46 0 ;
+ROW RAM_ROW7 unithd 0 1904 FS DO 262 BY 1 STEP 46 0 ;
+ROW RAM_ROW8 unithd 0 2176 N DO 262 BY 1 STEP 46 0 ;
+COMPONENTS 251 ;
+    - buffer.in[0] sky130_fd_sc_hd__buf_1 + PLACED ( 0 2176 ) N ;
+    - buffer.in[1] sky130_fd_sc_hd__buf_1 + PLACED ( 1288 2176 ) N ;
+    - buffer.in[2] sky130_fd_sc_hd__buf_1 + PLACED ( 2576 2176 ) N ;
+    - buffer.in[3] sky130_fd_sc_hd__buf_1 + PLACED ( 3864 2176 ) N ;
+    - buffer.in[4] sky130_fd_sc_hd__buf_1 + PLACED ( 5152 2176 ) N ;
+    - buffer.in[5] sky130_fd_sc_hd__buf_1 + PLACED ( 6440 2176 ) N ;
+    - buffer.in[6] sky130_fd_sc_hd__buf_1 + PLACED ( 7728 2176 ) N ;
+    - buffer.in[7] sky130_fd_sc_hd__buf_1 + PLACED ( 9016 2176 ) N ;
+    - decoder.inv_0 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11914 1632 ) N ;
+    - decoder.inv_1 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11914 816 ) FS ;
+    - decoder.inv_2 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11914 0 ) N ;
+    - decoder_0_0.and_layer0 sky130_fd_sc_hd__and2_0 + PLACED ( 11454 0 ) N ;
+    - decoder_0_0.and_layer1 sky130_fd_sc_hd__and2_0 + PLACED ( 11684 0 ) N ;
+    - decoder_1_0.and_layer0 sky130_fd_sc_hd__and2_0 + PLACED ( 11454 272 ) FS ;
+    - decoder_1_0.and_layer1 sky130_fd_sc_hd__and2_0 + PLACED ( 11684 272 ) FS ;
+    - decoder_2_0.and_layer0 sky130_fd_sc_hd__and2_0 + PLACED ( 11454 544 ) N ;
+    - decoder_2_0.and_layer1 sky130_fd_sc_hd__and2_0 + PLACED ( 11684 544 ) N ;
+    - decoder_3_0.and_layer0 sky130_fd_sc_hd__and2_0 + PLACED ( 11454 816 ) FS ;
+    - decoder_3_0.and_layer1 sky130_fd_sc_hd__and2_0 + PLACED ( 11684 816 ) FS ;
+    - decoder_4_0.and_layer0 sky130_fd_sc_hd__and2_0 + PLACED ( 11454 1088 ) N ;
+    - decoder_4_0.and_layer1 sky130_fd_sc_hd__and2_0 + PLACED ( 11684 1088 ) N ;
+    - decoder_5_0.and_layer0 sky130_fd_sc_hd__and2_0 + PLACED ( 11454 1360 ) FS ;
+    - decoder_5_0.and_layer1 sky130_fd_sc_hd__and2_0 + PLACED ( 11684 1360 ) FS ;
+    - decoder_6_0.and_layer0 sky130_fd_sc_hd__and2_0 + PLACED ( 11454 1632 ) N ;
+    - decoder_6_0.and_layer1 sky130_fd_sc_hd__and2_0 + PLACED ( 11684 1632 ) N ;
+    - decoder_7_0.and_layer0 sky130_fd_sc_hd__and2_0 + PLACED ( 11454 1904 ) FS ;
+    - decoder_7_0.and_layer1 sky130_fd_sc_hd__and2_0 + PLACED ( 11684 1904 ) FS ;
+    - storage_0_0.bit0.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 0 0 ) N ;
+    - storage_0_0.bit0.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 552 0 ) N ;
+    - storage_0_0.bit0.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 920 0 ) N ;
+    - storage_0_0.bit1.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 1288 0 ) N ;
+    - storage_0_0.bit1.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 1840 0 ) N ;
+    - storage_0_0.bit1.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 2208 0 ) N ;
+    - storage_0_0.bit2.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 2576 0 ) N ;
+    - storage_0_0.bit2.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 3128 0 ) N ;
+    - storage_0_0.bit2.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 3496 0 ) N ;
+    - storage_0_0.bit3.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 3864 0 ) N ;
+    - storage_0_0.bit3.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 4416 0 ) N ;
+    - storage_0_0.bit3.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 4784 0 ) N ;
+    - storage_0_0.bit4.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 5152 0 ) N ;
+    - storage_0_0.bit4.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 5704 0 ) N ;
+    - storage_0_0.bit4.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 6072 0 ) N ;
+    - storage_0_0.bit5.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 6440 0 ) N ;
+    - storage_0_0.bit5.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 6992 0 ) N ;
+    - storage_0_0.bit5.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 7360 0 ) N ;
+    - storage_0_0.bit6.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 7728 0 ) N ;
+    - storage_0_0.bit6.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 8280 0 ) N ;
+    - storage_0_0.bit6.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 8648 0 ) N ;
+    - storage_0_0.bit7.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 9016 0 ) N ;
+    - storage_0_0.bit7.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 9568 0 ) N ;
+    - storage_0_0.bit7.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 9936 0 ) N ;
+    - storage_0_0.cg sky130_fd_sc_hd__dlclkp_1 + PLACED ( 10304 0 ) N ;
+    - storage_0_0.gcand sky130_fd_sc_hd__and2_0 + PLACED ( 10948 0 ) N ;
+    - storage_0_0.select_inv_0 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11178 0 ) N ;
+    - storage_0_0.select_inv_1 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11316 0 ) N ;
+    - storage_1_0.bit0.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 0 272 ) FS ;
+    - storage_1_0.bit0.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 552 272 ) FS ;
+    - storage_1_0.bit0.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 920 272 ) FS ;
+    - storage_1_0.bit1.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 1288 272 ) FS ;
+    - storage_1_0.bit1.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 1840 272 ) FS ;
+    - storage_1_0.bit1.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 2208 272 ) FS ;
+    - storage_1_0.bit2.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 2576 272 ) FS ;
+    - storage_1_0.bit2.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 3128 272 ) FS ;
+    - storage_1_0.bit2.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 3496 272 ) FS ;
+    - storage_1_0.bit3.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 3864 272 ) FS ;
+    - storage_1_0.bit3.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 4416 272 ) FS ;
+    - storage_1_0.bit3.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 4784 272 ) FS ;
+    - storage_1_0.bit4.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 5152 272 ) FS ;
+    - storage_1_0.bit4.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 5704 272 ) FS ;
+    - storage_1_0.bit4.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 6072 272 ) FS ;
+    - storage_1_0.bit5.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 6440 272 ) FS ;
+    - storage_1_0.bit5.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 6992 272 ) FS ;
+    - storage_1_0.bit5.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 7360 272 ) FS ;
+    - storage_1_0.bit6.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 7728 272 ) FS ;
+    - storage_1_0.bit6.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 8280 272 ) FS ;
+    - storage_1_0.bit6.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 8648 272 ) FS ;
+    - storage_1_0.bit7.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 9016 272 ) FS ;
+    - storage_1_0.bit7.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 9568 272 ) FS ;
+    - storage_1_0.bit7.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 9936 272 ) FS ;
+    - storage_1_0.cg sky130_fd_sc_hd__dlclkp_1 + PLACED ( 10304 272 ) FS ;
+    - storage_1_0.gcand sky130_fd_sc_hd__and2_0 + PLACED ( 10948 272 ) FS ;
+    - storage_1_0.select_inv_0 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11178 272 ) FS ;
+    - storage_1_0.select_inv_1 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11316 272 ) FS ;
+    - storage_2_0.bit0.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 0 544 ) N ;
+    - storage_2_0.bit0.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 552 544 ) N ;
+    - storage_2_0.bit0.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 920 544 ) N ;
+    - storage_2_0.bit1.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 1288 544 ) N ;
+    - storage_2_0.bit1.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 1840 544 ) N ;
+    - storage_2_0.bit1.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 2208 544 ) N ;
+    - storage_2_0.bit2.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 2576 544 ) N ;
+    - storage_2_0.bit2.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 3128 544 ) N ;
+    - storage_2_0.bit2.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 3496 544 ) N ;
+    - storage_2_0.bit3.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 3864 544 ) N ;
+    - storage_2_0.bit3.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 4416 544 ) N ;
+    - storage_2_0.bit3.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 4784 544 ) N ;
+    - storage_2_0.bit4.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 5152 544 ) N ;
+    - storage_2_0.bit4.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 5704 544 ) N ;
+    - storage_2_0.bit4.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 6072 544 ) N ;
+    - storage_2_0.bit5.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 6440 544 ) N ;
+    - storage_2_0.bit5.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 6992 544 ) N ;
+    - storage_2_0.bit5.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 7360 544 ) N ;
+    - storage_2_0.bit6.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 7728 544 ) N ;
+    - storage_2_0.bit6.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 8280 544 ) N ;
+    - storage_2_0.bit6.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 8648 544 ) N ;
+    - storage_2_0.bit7.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 9016 544 ) N ;
+    - storage_2_0.bit7.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 9568 544 ) N ;
+    - storage_2_0.bit7.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 9936 544 ) N ;
+    - storage_2_0.cg sky130_fd_sc_hd__dlclkp_1 + PLACED ( 10304 544 ) N ;
+    - storage_2_0.gcand sky130_fd_sc_hd__and2_0 + PLACED ( 10948 544 ) N ;
+    - storage_2_0.select_inv_0 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11178 544 ) N ;
+    - storage_2_0.select_inv_1 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11316 544 ) N ;
+    - storage_3_0.bit0.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 0 816 ) FS ;
+    - storage_3_0.bit0.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 552 816 ) FS ;
+    - storage_3_0.bit0.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 920 816 ) FS ;
+    - storage_3_0.bit1.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 1288 816 ) FS ;
+    - storage_3_0.bit1.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 1840 816 ) FS ;
+    - storage_3_0.bit1.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 2208 816 ) FS ;
+    - storage_3_0.bit2.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 2576 816 ) FS ;
+    - storage_3_0.bit2.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 3128 816 ) FS ;
+    - storage_3_0.bit2.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 3496 816 ) FS ;
+    - storage_3_0.bit3.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 3864 816 ) FS ;
+    - storage_3_0.bit3.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 4416 816 ) FS ;
+    - storage_3_0.bit3.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 4784 816 ) FS ;
+    - storage_3_0.bit4.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 5152 816 ) FS ;
+    - storage_3_0.bit4.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 5704 816 ) FS ;
+    - storage_3_0.bit4.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 6072 816 ) FS ;
+    - storage_3_0.bit5.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 6440 816 ) FS ;
+    - storage_3_0.bit5.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 6992 816 ) FS ;
+    - storage_3_0.bit5.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 7360 816 ) FS ;
+    - storage_3_0.bit6.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 7728 816 ) FS ;
+    - storage_3_0.bit6.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 8280 816 ) FS ;
+    - storage_3_0.bit6.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 8648 816 ) FS ;
+    - storage_3_0.bit7.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 9016 816 ) FS ;
+    - storage_3_0.bit7.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 9568 816 ) FS ;
+    - storage_3_0.bit7.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 9936 816 ) FS ;
+    - storage_3_0.cg sky130_fd_sc_hd__dlclkp_1 + PLACED ( 10304 816 ) FS ;
+    - storage_3_0.gcand sky130_fd_sc_hd__and2_0 + PLACED ( 10948 816 ) FS ;
+    - storage_3_0.select_inv_0 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11178 816 ) FS ;
+    - storage_3_0.select_inv_1 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11316 816 ) FS ;
+    - storage_4_0.bit0.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 0 1088 ) N ;
+    - storage_4_0.bit0.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 552 1088 ) N ;
+    - storage_4_0.bit0.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 920 1088 ) N ;
+    - storage_4_0.bit1.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 1288 1088 ) N ;
+    - storage_4_0.bit1.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 1840 1088 ) N ;
+    - storage_4_0.bit1.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 2208 1088 ) N ;
+    - storage_4_0.bit2.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 2576 1088 ) N ;
+    - storage_4_0.bit2.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 3128 1088 ) N ;
+    - storage_4_0.bit2.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 3496 1088 ) N ;
+    - storage_4_0.bit3.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 3864 1088 ) N ;
+    - storage_4_0.bit3.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 4416 1088 ) N ;
+    - storage_4_0.bit3.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 4784 1088 ) N ;
+    - storage_4_0.bit4.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 5152 1088 ) N ;
+    - storage_4_0.bit4.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 5704 1088 ) N ;
+    - storage_4_0.bit4.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 6072 1088 ) N ;
+    - storage_4_0.bit5.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 6440 1088 ) N ;
+    - storage_4_0.bit5.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 6992 1088 ) N ;
+    - storage_4_0.bit5.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 7360 1088 ) N ;
+    - storage_4_0.bit6.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 7728 1088 ) N ;
+    - storage_4_0.bit6.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 8280 1088 ) N ;
+    - storage_4_0.bit6.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 8648 1088 ) N ;
+    - storage_4_0.bit7.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 9016 1088 ) N ;
+    - storage_4_0.bit7.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 9568 1088 ) N ;
+    - storage_4_0.bit7.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 9936 1088 ) N ;
+    - storage_4_0.cg sky130_fd_sc_hd__dlclkp_1 + PLACED ( 10304 1088 ) N ;
+    - storage_4_0.gcand sky130_fd_sc_hd__and2_0 + PLACED ( 10948 1088 ) N ;
+    - storage_4_0.select_inv_0 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11178 1088 ) N ;
+    - storage_4_0.select_inv_1 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11316 1088 ) N ;
+    - storage_5_0.bit0.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 0 1360 ) FS ;
+    - storage_5_0.bit0.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 552 1360 ) FS ;
+    - storage_5_0.bit0.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 920 1360 ) FS ;
+    - storage_5_0.bit1.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 1288 1360 ) FS ;
+    - storage_5_0.bit1.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 1840 1360 ) FS ;
+    - storage_5_0.bit1.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 2208 1360 ) FS ;
+    - storage_5_0.bit2.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 2576 1360 ) FS ;
+    - storage_5_0.bit2.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 3128 1360 ) FS ;
+    - storage_5_0.bit2.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 3496 1360 ) FS ;
+    - storage_5_0.bit3.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 3864 1360 ) FS ;
+    - storage_5_0.bit3.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 4416 1360 ) FS ;
+    - storage_5_0.bit3.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 4784 1360 ) FS ;
+    - storage_5_0.bit4.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 5152 1360 ) FS ;
+    - storage_5_0.bit4.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 5704 1360 ) FS ;
+    - storage_5_0.bit4.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 6072 1360 ) FS ;
+    - storage_5_0.bit5.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 6440 1360 ) FS ;
+    - storage_5_0.bit5.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 6992 1360 ) FS ;
+    - storage_5_0.bit5.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 7360 1360 ) FS ;
+    - storage_5_0.bit6.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 7728 1360 ) FS ;
+    - storage_5_0.bit6.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 8280 1360 ) FS ;
+    - storage_5_0.bit6.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 8648 1360 ) FS ;
+    - storage_5_0.bit7.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 9016 1360 ) FS ;
+    - storage_5_0.bit7.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 9568 1360 ) FS ;
+    - storage_5_0.bit7.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 9936 1360 ) FS ;
+    - storage_5_0.cg sky130_fd_sc_hd__dlclkp_1 + PLACED ( 10304 1360 ) FS ;
+    - storage_5_0.gcand sky130_fd_sc_hd__and2_0 + PLACED ( 10948 1360 ) FS ;
+    - storage_5_0.select_inv_0 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11178 1360 ) FS ;
+    - storage_5_0.select_inv_1 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11316 1360 ) FS ;
+    - storage_6_0.bit0.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 0 1632 ) N ;
+    - storage_6_0.bit0.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 552 1632 ) N ;
+    - storage_6_0.bit0.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 920 1632 ) N ;
+    - storage_6_0.bit1.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 1288 1632 ) N ;
+    - storage_6_0.bit1.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 1840 1632 ) N ;
+    - storage_6_0.bit1.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 2208 1632 ) N ;
+    - storage_6_0.bit2.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 2576 1632 ) N ;
+    - storage_6_0.bit2.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 3128 1632 ) N ;
+    - storage_6_0.bit2.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 3496 1632 ) N ;
+    - storage_6_0.bit3.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 3864 1632 ) N ;
+    - storage_6_0.bit3.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 4416 1632 ) N ;
+    - storage_6_0.bit3.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 4784 1632 ) N ;
+    - storage_6_0.bit4.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 5152 1632 ) N ;
+    - storage_6_0.bit4.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 5704 1632 ) N ;
+    - storage_6_0.bit4.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 6072 1632 ) N ;
+    - storage_6_0.bit5.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 6440 1632 ) N ;
+    - storage_6_0.bit5.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 6992 1632 ) N ;
+    - storage_6_0.bit5.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 7360 1632 ) N ;
+    - storage_6_0.bit6.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 7728 1632 ) N ;
+    - storage_6_0.bit6.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 8280 1632 ) N ;
+    - storage_6_0.bit6.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 8648 1632 ) N ;
+    - storage_6_0.bit7.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 9016 1632 ) N ;
+    - storage_6_0.bit7.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 9568 1632 ) N ;
+    - storage_6_0.bit7.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 9936 1632 ) N ;
+    - storage_6_0.cg sky130_fd_sc_hd__dlclkp_1 + PLACED ( 10304 1632 ) N ;
+    - storage_6_0.gcand sky130_fd_sc_hd__and2_0 + PLACED ( 10948 1632 ) N ;
+    - storage_6_0.select_inv_0 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11178 1632 ) N ;
+    - storage_6_0.select_inv_1 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11316 1632 ) N ;
+    - storage_7_0.bit0.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 0 1904 ) FS ;
+    - storage_7_0.bit0.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 552 1904 ) FS ;
+    - storage_7_0.bit0.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 920 1904 ) FS ;
+    - storage_7_0.bit1.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 1288 1904 ) FS ;
+    - storage_7_0.bit1.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 1840 1904 ) FS ;
+    - storage_7_0.bit1.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 2208 1904 ) FS ;
+    - storage_7_0.bit2.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 2576 1904 ) FS ;
+    - storage_7_0.bit2.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 3128 1904 ) FS ;
+    - storage_7_0.bit2.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 3496 1904 ) FS ;
+    - storage_7_0.bit3.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 3864 1904 ) FS ;
+    - storage_7_0.bit3.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 4416 1904 ) FS ;
+    - storage_7_0.bit3.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 4784 1904 ) FS ;
+    - storage_7_0.bit4.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 5152 1904 ) FS ;
+    - storage_7_0.bit4.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 5704 1904 ) FS ;
+    - storage_7_0.bit4.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 6072 1904 ) FS ;
+    - storage_7_0.bit5.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 6440 1904 ) FS ;
+    - storage_7_0.bit5.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 6992 1904 ) FS ;
+    - storage_7_0.bit5.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 7360 1904 ) FS ;
+    - storage_7_0.bit6.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 7728 1904 ) FS ;
+    - storage_7_0.bit6.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 8280 1904 ) FS ;
+    - storage_7_0.bit6.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 8648 1904 ) FS ;
+    - storage_7_0.bit7.bit sky130_fd_sc_hd__dlxtp_1 + PLACED ( 9016 1904 ) FS ;
+    - storage_7_0.bit7.obuf0 sky130_fd_sc_hd__ebufn_1 + PLACED ( 9568 1904 ) FS ;
+    - storage_7_0.bit7.obuf1 sky130_fd_sc_hd__ebufn_1 + PLACED ( 9936 1904 ) FS ;
+    - storage_7_0.cg sky130_fd_sc_hd__dlclkp_1 + PLACED ( 10304 1904 ) FS ;
+    - storage_7_0.gcand sky130_fd_sc_hd__and2_0 + PLACED ( 10948 1904 ) FS ;
+    - storage_7_0.select_inv_0 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11178 1904 ) FS ;
+    - storage_7_0.select_inv_1 sky130_fd_sc_hd__clkinv_1 + PLACED ( 11316 1904 ) FS ;
+END COMPONENTS
+PINS 29 ;
+    - D[0] + NET D[0] + DIRECTION INPUT + USE SIGNAL ;
+    - D[1] + NET D[1] + DIRECTION INPUT + USE SIGNAL ;
+    - D[2] + NET D[2] + DIRECTION INPUT + USE SIGNAL ;
+    - D[3] + NET D[3] + DIRECTION INPUT + USE SIGNAL ;
+    - D[4] + NET D[4] + DIRECTION INPUT + USE SIGNAL ;
+    - D[5] + NET D[5] + DIRECTION INPUT + USE SIGNAL ;
+    - D[6] + NET D[6] + DIRECTION INPUT + USE SIGNAL ;
+    - D[7] + NET D[7] + DIRECTION INPUT + USE SIGNAL ;
+    - Q0[0] + NET Q0[0] + DIRECTION OUTPUT + USE SIGNAL ;
+    - Q0[1] + NET Q0[1] + DIRECTION OUTPUT + USE SIGNAL ;
+    - Q0[2] + NET Q0[2] + DIRECTION OUTPUT + USE SIGNAL ;
+    - Q0[3] + NET Q0[3] + DIRECTION OUTPUT + USE SIGNAL ;
+    - Q0[4] + NET Q0[4] + DIRECTION OUTPUT + USE SIGNAL ;
+    - Q0[5] + NET Q0[5] + DIRECTION OUTPUT + USE SIGNAL ;
+    - Q0[6] + NET Q0[6] + DIRECTION OUTPUT + USE SIGNAL ;
+    - Q0[7] + NET Q0[7] + DIRECTION OUTPUT + USE SIGNAL ;
+    - Q1[0] + NET Q1[0] + DIRECTION OUTPUT + USE SIGNAL ;
+    - Q1[1] + NET Q1[1] + DIRECTION OUTPUT + USE SIGNAL ;
+    - Q1[2] + NET Q1[2] + DIRECTION OUTPUT + USE SIGNAL ;
+    - Q1[3] + NET Q1[3] + DIRECTION OUTPUT + USE SIGNAL ;
+    - Q1[4] + NET Q1[4] + DIRECTION OUTPUT + USE SIGNAL ;
+    - Q1[5] + NET Q1[5] + DIRECTION OUTPUT + USE SIGNAL ;
+    - Q1[6] + NET Q1[6] + DIRECTION OUTPUT + USE SIGNAL ;
+    - Q1[7] + NET Q1[7] + DIRECTION OUTPUT + USE SIGNAL ;
+    - addr[0] + NET addr[0] + DIRECTION INPUT + USE SIGNAL ;
+    - addr[1] + NET addr[1] + DIRECTION INPUT + USE SIGNAL ;
+    - addr[2] + NET addr[2] + DIRECTION INPUT + USE SIGNAL ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL ;
+    - we[0] + NET we[0] + DIRECTION INPUT + USE SIGNAL ;
+END PINS
+NETS 168 ;
+    - D[0] ( PIN D[0] ) ( buffer.in[0] A ) + USE SIGNAL ;
+    - D[1] ( PIN D[1] ) ( buffer.in[1] A ) + USE SIGNAL ;
+    - D[2] ( PIN D[2] ) ( buffer.in[2] A ) + USE SIGNAL ;
+    - D[3] ( PIN D[3] ) ( buffer.in[3] A ) + USE SIGNAL ;
+    - D[4] ( PIN D[4] ) ( buffer.in[4] A ) + USE SIGNAL ;
+    - D[5] ( PIN D[5] ) ( buffer.in[5] A ) + USE SIGNAL ;
+    - D[6] ( PIN D[6] ) ( buffer.in[6] A ) + USE SIGNAL ;
+    - D[7] ( PIN D[7] ) ( buffer.in[7] A ) + USE SIGNAL ;
+    - D_nets[0].net ( buffer.in[0] X ) ( storage_7_0.bit0.bit D ) ( storage_6_0.bit0.bit D ) ( storage_5_0.bit0.bit D ) ( storage_4_0.bit0.bit D ) ( storage_3_0.bit0.bit D ) ( storage_2_0.bit0.bit D )
+      ( storage_1_0.bit0.bit D ) ( storage_0_0.bit0.bit D ) + USE SIGNAL ;
+    - D_nets[1].net ( buffer.in[1] X ) ( storage_7_0.bit1.bit D ) ( storage_6_0.bit1.bit D ) ( storage_5_0.bit1.bit D ) ( storage_4_0.bit1.bit D ) ( storage_3_0.bit1.bit D ) ( storage_2_0.bit1.bit D )
+      ( storage_1_0.bit1.bit D ) ( storage_0_0.bit1.bit D ) + USE SIGNAL ;
+    - D_nets[2].net ( buffer.in[2] X ) ( storage_7_0.bit2.bit D ) ( storage_6_0.bit2.bit D ) ( storage_5_0.bit2.bit D ) ( storage_4_0.bit2.bit D ) ( storage_3_0.bit2.bit D ) ( storage_2_0.bit2.bit D )
+      ( storage_1_0.bit2.bit D ) ( storage_0_0.bit2.bit D ) + USE SIGNAL ;
+    - D_nets[3].net ( buffer.in[3] X ) ( storage_7_0.bit3.bit D ) ( storage_6_0.bit3.bit D ) ( storage_5_0.bit3.bit D ) ( storage_4_0.bit3.bit D ) ( storage_3_0.bit3.bit D ) ( storage_2_0.bit3.bit D )
+      ( storage_1_0.bit3.bit D ) ( storage_0_0.bit3.bit D ) + USE SIGNAL ;
+    - D_nets[4].net ( buffer.in[4] X ) ( storage_7_0.bit4.bit D ) ( storage_6_0.bit4.bit D ) ( storage_5_0.bit4.bit D ) ( storage_4_0.bit4.bit D ) ( storage_3_0.bit4.bit D ) ( storage_2_0.bit4.bit D )
+      ( storage_1_0.bit4.bit D ) ( storage_0_0.bit4.bit D ) + USE SIGNAL ;
+    - D_nets[5].net ( buffer.in[5] X ) ( storage_7_0.bit5.bit D ) ( storage_6_0.bit5.bit D ) ( storage_5_0.bit5.bit D ) ( storage_4_0.bit5.bit D ) ( storage_3_0.bit5.bit D ) ( storage_2_0.bit5.bit D )
+      ( storage_1_0.bit5.bit D ) ( storage_0_0.bit5.bit D ) + USE SIGNAL ;
+    - D_nets[6].net ( buffer.in[6] X ) ( storage_7_0.bit6.bit D ) ( storage_6_0.bit6.bit D ) ( storage_5_0.bit6.bit D ) ( storage_4_0.bit6.bit D ) ( storage_3_0.bit6.bit D ) ( storage_2_0.bit6.bit D )
+      ( storage_1_0.bit6.bit D ) ( storage_0_0.bit6.bit D ) + USE SIGNAL ;
+    - D_nets[7].net ( buffer.in[7] X ) ( storage_7_0.bit7.bit D ) ( storage_6_0.bit7.bit D ) ( storage_5_0.bit7.bit D ) ( storage_4_0.bit7.bit D ) ( storage_3_0.bit7.bit D ) ( storage_2_0.bit7.bit D )
+      ( storage_1_0.bit7.bit D ) ( storage_0_0.bit7.bit D ) + USE SIGNAL ;
+    - Q0[0] ( PIN Q0[0] ) ( storage_7_0.bit0.obuf0 Z ) ( storage_6_0.bit0.obuf0 Z ) ( storage_5_0.bit0.obuf0 Z ) ( storage_4_0.bit0.obuf0 Z ) ( storage_3_0.bit0.obuf0 Z ) ( storage_2_0.bit0.obuf0 Z )
+      ( storage_1_0.bit0.obuf0 Z ) ( storage_0_0.bit0.obuf0 Z ) + USE SIGNAL ;
+    - Q0[1] ( PIN Q0[1] ) ( storage_7_0.bit1.obuf0 Z ) ( storage_6_0.bit1.obuf0 Z ) ( storage_5_0.bit1.obuf0 Z ) ( storage_4_0.bit1.obuf0 Z ) ( storage_3_0.bit1.obuf0 Z ) ( storage_2_0.bit1.obuf0 Z )
+      ( storage_1_0.bit1.obuf0 Z ) ( storage_0_0.bit1.obuf0 Z ) + USE SIGNAL ;
+    - Q0[2] ( PIN Q0[2] ) ( storage_7_0.bit2.obuf0 Z ) ( storage_6_0.bit2.obuf0 Z ) ( storage_5_0.bit2.obuf0 Z ) ( storage_4_0.bit2.obuf0 Z ) ( storage_3_0.bit2.obuf0 Z ) ( storage_2_0.bit2.obuf0 Z )
+      ( storage_1_0.bit2.obuf0 Z ) ( storage_0_0.bit2.obuf0 Z ) + USE SIGNAL ;
+    - Q0[3] ( PIN Q0[3] ) ( storage_7_0.bit3.obuf0 Z ) ( storage_6_0.bit3.obuf0 Z ) ( storage_5_0.bit3.obuf0 Z ) ( storage_4_0.bit3.obuf0 Z ) ( storage_3_0.bit3.obuf0 Z ) ( storage_2_0.bit3.obuf0 Z )
+      ( storage_1_0.bit3.obuf0 Z ) ( storage_0_0.bit3.obuf0 Z ) + USE SIGNAL ;
+    - Q0[4] ( PIN Q0[4] ) ( storage_7_0.bit4.obuf0 Z ) ( storage_6_0.bit4.obuf0 Z ) ( storage_5_0.bit4.obuf0 Z ) ( storage_4_0.bit4.obuf0 Z ) ( storage_3_0.bit4.obuf0 Z ) ( storage_2_0.bit4.obuf0 Z )
+      ( storage_1_0.bit4.obuf0 Z ) ( storage_0_0.bit4.obuf0 Z ) + USE SIGNAL ;
+    - Q0[5] ( PIN Q0[5] ) ( storage_7_0.bit5.obuf0 Z ) ( storage_6_0.bit5.obuf0 Z ) ( storage_5_0.bit5.obuf0 Z ) ( storage_4_0.bit5.obuf0 Z ) ( storage_3_0.bit5.obuf0 Z ) ( storage_2_0.bit5.obuf0 Z )
+      ( storage_1_0.bit5.obuf0 Z ) ( storage_0_0.bit5.obuf0 Z ) + USE SIGNAL ;
+    - Q0[6] ( PIN Q0[6] ) ( storage_7_0.bit6.obuf0 Z ) ( storage_6_0.bit6.obuf0 Z ) ( storage_5_0.bit6.obuf0 Z ) ( storage_4_0.bit6.obuf0 Z ) ( storage_3_0.bit6.obuf0 Z ) ( storage_2_0.bit6.obuf0 Z )
+      ( storage_1_0.bit6.obuf0 Z ) ( storage_0_0.bit6.obuf0 Z ) + USE SIGNAL ;
+    - Q0[7] ( PIN Q0[7] ) ( storage_7_0.bit7.obuf0 Z ) ( storage_6_0.bit7.obuf0 Z ) ( storage_5_0.bit7.obuf0 Z ) ( storage_4_0.bit7.obuf0 Z ) ( storage_3_0.bit7.obuf0 Z ) ( storage_2_0.bit7.obuf0 Z )
+      ( storage_1_0.bit7.obuf0 Z ) ( storage_0_0.bit7.obuf0 Z ) + USE SIGNAL ;
+    - Q1[0] ( PIN Q1[0] ) ( storage_7_0.bit0.obuf1 Z ) ( storage_6_0.bit0.obuf1 Z ) ( storage_5_0.bit0.obuf1 Z ) ( storage_4_0.bit0.obuf1 Z ) ( storage_3_0.bit0.obuf1 Z ) ( storage_2_0.bit0.obuf1 Z )
+      ( storage_1_0.bit0.obuf1 Z ) ( storage_0_0.bit0.obuf1 Z ) + USE SIGNAL ;
+    - Q1[1] ( PIN Q1[1] ) ( storage_7_0.bit1.obuf1 Z ) ( storage_6_0.bit1.obuf1 Z ) ( storage_5_0.bit1.obuf1 Z ) ( storage_4_0.bit1.obuf1 Z ) ( storage_3_0.bit1.obuf1 Z ) ( storage_2_0.bit1.obuf1 Z )
+      ( storage_1_0.bit1.obuf1 Z ) ( storage_0_0.bit1.obuf1 Z ) + USE SIGNAL ;
+    - Q1[2] ( PIN Q1[2] ) ( storage_7_0.bit2.obuf1 Z ) ( storage_6_0.bit2.obuf1 Z ) ( storage_5_0.bit2.obuf1 Z ) ( storage_4_0.bit2.obuf1 Z ) ( storage_3_0.bit2.obuf1 Z ) ( storage_2_0.bit2.obuf1 Z )
+      ( storage_1_0.bit2.obuf1 Z ) ( storage_0_0.bit2.obuf1 Z ) + USE SIGNAL ;
+    - Q1[3] ( PIN Q1[3] ) ( storage_7_0.bit3.obuf1 Z ) ( storage_6_0.bit3.obuf1 Z ) ( storage_5_0.bit3.obuf1 Z ) ( storage_4_0.bit3.obuf1 Z ) ( storage_3_0.bit3.obuf1 Z ) ( storage_2_0.bit3.obuf1 Z )
+      ( storage_1_0.bit3.obuf1 Z ) ( storage_0_0.bit3.obuf1 Z ) + USE SIGNAL ;
+    - Q1[4] ( PIN Q1[4] ) ( storage_7_0.bit4.obuf1 Z ) ( storage_6_0.bit4.obuf1 Z ) ( storage_5_0.bit4.obuf1 Z ) ( storage_4_0.bit4.obuf1 Z ) ( storage_3_0.bit4.obuf1 Z ) ( storage_2_0.bit4.obuf1 Z )
+      ( storage_1_0.bit4.obuf1 Z ) ( storage_0_0.bit4.obuf1 Z ) + USE SIGNAL ;
+    - Q1[5] ( PIN Q1[5] ) ( storage_7_0.bit5.obuf1 Z ) ( storage_6_0.bit5.obuf1 Z ) ( storage_5_0.bit5.obuf1 Z ) ( storage_4_0.bit5.obuf1 Z ) ( storage_3_0.bit5.obuf1 Z ) ( storage_2_0.bit5.obuf1 Z )
+      ( storage_1_0.bit5.obuf1 Z ) ( storage_0_0.bit5.obuf1 Z ) + USE SIGNAL ;
+    - Q1[6] ( PIN Q1[6] ) ( storage_7_0.bit6.obuf1 Z ) ( storage_6_0.bit6.obuf1 Z ) ( storage_5_0.bit6.obuf1 Z ) ( storage_4_0.bit6.obuf1 Z ) ( storage_3_0.bit6.obuf1 Z ) ( storage_2_0.bit6.obuf1 Z )
+      ( storage_1_0.bit6.obuf1 Z ) ( storage_0_0.bit6.obuf1 Z ) + USE SIGNAL ;
+    - Q1[7] ( PIN Q1[7] ) ( storage_7_0.bit7.obuf1 Z ) ( storage_6_0.bit7.obuf1 Z ) ( storage_5_0.bit7.obuf1 Z ) ( storage_4_0.bit7.obuf1 Z ) ( storage_3_0.bit7.obuf1 Z ) ( storage_2_0.bit7.obuf1 Z )
+      ( storage_1_0.bit7.obuf1 Z ) ( storage_0_0.bit7.obuf1 Z ) + USE SIGNAL ;
+    - addr[0] ( PIN addr[0] ) ( decoder.inv_0 A ) ( decoder_7_0.and_layer0 A ) ( decoder_5_0.and_layer0 A ) ( decoder_3_0.and_layer0 A ) ( decoder_1_0.and_layer0 A ) + USE SIGNAL ;
+    - addr[1] ( PIN addr[1] ) ( decoder.inv_1 A ) ( decoder_7_0.and_layer1 A ) ( decoder_6_0.and_layer1 A ) ( decoder_3_0.and_layer1 A ) ( decoder_2_0.and_layer1 A ) + USE SIGNAL ;
+    - addr[2] ( PIN addr[2] ) ( decoder.inv_2 A ) ( decoder_7_0.and_layer1 B ) ( decoder_6_0.and_layer1 B ) ( decoder_5_0.and_layer1 B ) ( decoder_4_0.and_layer1 B ) + USE SIGNAL ;
+    - clk ( PIN clk ) ( storage_7_0.cg CLK ) ( storage_6_0.cg CLK ) ( storage_5_0.cg CLK ) ( storage_4_0.cg CLK ) ( storage_3_0.cg CLK ) ( storage_2_0.cg CLK )
+      ( storage_1_0.cg CLK ) ( storage_0_0.cg CLK ) + USE SIGNAL ;
+    - decoder_0_0.layer_in0 ( decoder_0_0.and_layer1 X ) ( decoder_0_0.and_layer0 B ) + USE SIGNAL ;
+    - decoder_0_0.layer_in1 + USE SIGNAL ;
+    - decoder_1_0.layer_in0 ( decoder_1_0.and_layer1 X ) ( decoder_1_0.and_layer0 B ) + USE SIGNAL ;
+    - decoder_1_0.layer_in1 + USE SIGNAL ;
+    - decoder_2_0.layer_in0 ( decoder_2_0.and_layer1 X ) ( decoder_2_0.and_layer0 B ) + USE SIGNAL ;
+    - decoder_2_0.layer_in1 + USE SIGNAL ;
+    - decoder_3_0.layer_in0 ( decoder_3_0.and_layer1 X ) ( decoder_3_0.and_layer0 B ) + USE SIGNAL ;
+    - decoder_3_0.layer_in1 + USE SIGNAL ;
+    - decoder_4_0.layer_in0 ( decoder_4_0.and_layer1 X ) ( decoder_4_0.and_layer0 B ) + USE SIGNAL ;
+    - decoder_4_0.layer_in1 + USE SIGNAL ;
+    - decoder_5_0.layer_in0 ( decoder_5_0.and_layer1 X ) ( decoder_5_0.and_layer0 B ) + USE SIGNAL ;
+    - decoder_5_0.layer_in1 + USE SIGNAL ;
+    - decoder_6_0.layer_in0 ( decoder_6_0.and_layer1 X ) ( decoder_6_0.and_layer0 B ) + USE SIGNAL ;
+    - decoder_6_0.layer_in1 + USE SIGNAL ;
+    - decoder_7_0.layer_in0 ( decoder_7_0.and_layer1 X ) ( decoder_7_0.and_layer0 B ) + USE SIGNAL ;
+    - decoder_7_0.layer_in1 + USE SIGNAL ;
+    - inv.addr[0] ( decoder.inv_0 Y ) ( decoder_6_0.and_layer0 A ) ( decoder_4_0.and_layer0 A ) ( decoder_2_0.and_layer0 A ) ( decoder_0_0.and_layer0 A ) + USE SIGNAL ;
+    - inv.addr[1] ( decoder.inv_1 Y ) ( decoder_5_0.and_layer1 A ) ( decoder_4_0.and_layer1 A ) ( decoder_1_0.and_layer1 A ) ( decoder_0_0.and_layer1 A ) + USE SIGNAL ;
+    - inv.addr[2] ( decoder.inv_2 Y ) ( decoder_3_0.and_layer1 B ) ( decoder_2_0.and_layer1 B ) ( decoder_1_0.and_layer1 B ) ( decoder_0_0.and_layer1 B ) + USE SIGNAL ;
+    - storage_0_0.bit0.storage ( storage_0_0.bit0.obuf1 A ) ( storage_0_0.bit0.obuf0 A ) ( storage_0_0.bit0.bit Q ) + USE SIGNAL ;
+    - storage_0_0.bit1.storage ( storage_0_0.bit1.obuf1 A ) ( storage_0_0.bit1.obuf0 A ) ( storage_0_0.bit1.bit Q ) + USE SIGNAL ;
+    - storage_0_0.bit2.storage ( storage_0_0.bit2.obuf1 A ) ( storage_0_0.bit2.obuf0 A ) ( storage_0_0.bit2.bit Q ) + USE SIGNAL ;
+    - storage_0_0.bit3.storage ( storage_0_0.bit3.obuf1 A ) ( storage_0_0.bit3.obuf0 A ) ( storage_0_0.bit3.bit Q ) + USE SIGNAL ;
+    - storage_0_0.bit4.storage ( storage_0_0.bit4.obuf1 A ) ( storage_0_0.bit4.obuf0 A ) ( storage_0_0.bit4.bit Q ) + USE SIGNAL ;
+    - storage_0_0.bit5.storage ( storage_0_0.bit5.obuf1 A ) ( storage_0_0.bit5.obuf0 A ) ( storage_0_0.bit5.bit Q ) + USE SIGNAL ;
+    - storage_0_0.bit6.storage ( storage_0_0.bit6.obuf1 A ) ( storage_0_0.bit6.obuf0 A ) ( storage_0_0.bit6.bit Q ) + USE SIGNAL ;
+    - storage_0_0.bit7.storage ( storage_0_0.bit7.obuf1 A ) ( storage_0_0.bit7.obuf0 A ) ( storage_0_0.bit7.bit Q ) + USE SIGNAL ;
+    - storage_0_0.decoder0 ( decoder_0_0.and_layer0 X ) ( storage_0_0.select_inv_0 A ) ( storage_0_0.gcand A ) + USE SIGNAL ;
+    - storage_0_0.decoder1 ( storage_0_0.select_inv_1 A ) + USE SIGNAL ;
+    - storage_0_0.gclock ( storage_0_0.cg GCLK ) ( storage_0_0.bit7.bit GATE ) ( storage_0_0.bit6.bit GATE ) ( storage_0_0.bit5.bit GATE ) ( storage_0_0.bit4.bit GATE ) ( storage_0_0.bit3.bit GATE ) ( storage_0_0.bit2.bit GATE )
+      ( storage_0_0.bit1.bit GATE ) ( storage_0_0.bit0.bit GATE ) + USE SIGNAL ;
+    - storage_0_0.select0_b ( storage_0_0.select_inv_0 Y ) ( storage_0_0.bit7.obuf0 TE_B ) ( storage_0_0.bit6.obuf0 TE_B ) ( storage_0_0.bit5.obuf0 TE_B ) ( storage_0_0.bit4.obuf0 TE_B ) ( storage_0_0.bit3.obuf0 TE_B ) ( storage_0_0.bit2.obuf0 TE_B )
+      ( storage_0_0.bit1.obuf0 TE_B ) ( storage_0_0.bit0.obuf0 TE_B ) + USE SIGNAL ;
+    - storage_0_0.select1_b ( storage_0_0.select_inv_1 Y ) ( storage_0_0.bit7.obuf1 TE_B ) ( storage_0_0.bit6.obuf1 TE_B ) ( storage_0_0.bit5.obuf1 TE_B ) ( storage_0_0.bit4.obuf1 TE_B ) ( storage_0_0.bit3.obuf1 TE_B ) ( storage_0_0.bit2.obuf1 TE_B )
+      ( storage_0_0.bit1.obuf1 TE_B ) ( storage_0_0.bit0.obuf1 TE_B ) + USE SIGNAL ;
+    - storage_0_0.we0 ( storage_0_0.gcand X ) ( storage_0_0.cg GATE ) + USE SIGNAL ;
+    - storage_1_0.bit0.storage ( storage_1_0.bit0.obuf1 A ) ( storage_1_0.bit0.obuf0 A ) ( storage_1_0.bit0.bit Q ) + USE SIGNAL ;
+    - storage_1_0.bit1.storage ( storage_1_0.bit1.obuf1 A ) ( storage_1_0.bit1.obuf0 A ) ( storage_1_0.bit1.bit Q ) + USE SIGNAL ;
+    - storage_1_0.bit2.storage ( storage_1_0.bit2.obuf1 A ) ( storage_1_0.bit2.obuf0 A ) ( storage_1_0.bit2.bit Q ) + USE SIGNAL ;
+    - storage_1_0.bit3.storage ( storage_1_0.bit3.obuf1 A ) ( storage_1_0.bit3.obuf0 A ) ( storage_1_0.bit3.bit Q ) + USE SIGNAL ;
+    - storage_1_0.bit4.storage ( storage_1_0.bit4.obuf1 A ) ( storage_1_0.bit4.obuf0 A ) ( storage_1_0.bit4.bit Q ) + USE SIGNAL ;
+    - storage_1_0.bit5.storage ( storage_1_0.bit5.obuf1 A ) ( storage_1_0.bit5.obuf0 A ) ( storage_1_0.bit5.bit Q ) + USE SIGNAL ;
+    - storage_1_0.bit6.storage ( storage_1_0.bit6.obuf1 A ) ( storage_1_0.bit6.obuf0 A ) ( storage_1_0.bit6.bit Q ) + USE SIGNAL ;
+    - storage_1_0.bit7.storage ( storage_1_0.bit7.obuf1 A ) ( storage_1_0.bit7.obuf0 A ) ( storage_1_0.bit7.bit Q ) + USE SIGNAL ;
+    - storage_1_0.decoder0 ( decoder_1_0.and_layer0 X ) ( storage_1_0.select_inv_0 A ) ( storage_1_0.gcand A ) + USE SIGNAL ;
+    - storage_1_0.decoder1 ( storage_1_0.select_inv_1 A ) + USE SIGNAL ;
+    - storage_1_0.gclock ( storage_1_0.cg GCLK ) ( storage_1_0.bit7.bit GATE ) ( storage_1_0.bit6.bit GATE ) ( storage_1_0.bit5.bit GATE ) ( storage_1_0.bit4.bit GATE ) ( storage_1_0.bit3.bit GATE ) ( storage_1_0.bit2.bit GATE )
+      ( storage_1_0.bit1.bit GATE ) ( storage_1_0.bit0.bit GATE ) + USE SIGNAL ;
+    - storage_1_0.select0_b ( storage_1_0.select_inv_0 Y ) ( storage_1_0.bit7.obuf0 TE_B ) ( storage_1_0.bit6.obuf0 TE_B ) ( storage_1_0.bit5.obuf0 TE_B ) ( storage_1_0.bit4.obuf0 TE_B ) ( storage_1_0.bit3.obuf0 TE_B ) ( storage_1_0.bit2.obuf0 TE_B )
+      ( storage_1_0.bit1.obuf0 TE_B ) ( storage_1_0.bit0.obuf0 TE_B ) + USE SIGNAL ;
+    - storage_1_0.select1_b ( storage_1_0.select_inv_1 Y ) ( storage_1_0.bit7.obuf1 TE_B ) ( storage_1_0.bit6.obuf1 TE_B ) ( storage_1_0.bit5.obuf1 TE_B ) ( storage_1_0.bit4.obuf1 TE_B ) ( storage_1_0.bit3.obuf1 TE_B ) ( storage_1_0.bit2.obuf1 TE_B )
+      ( storage_1_0.bit1.obuf1 TE_B ) ( storage_1_0.bit0.obuf1 TE_B ) + USE SIGNAL ;
+    - storage_1_0.we0 ( storage_1_0.gcand X ) ( storage_1_0.cg GATE ) + USE SIGNAL ;
+    - storage_2_0.bit0.storage ( storage_2_0.bit0.obuf1 A ) ( storage_2_0.bit0.obuf0 A ) ( storage_2_0.bit0.bit Q ) + USE SIGNAL ;
+    - storage_2_0.bit1.storage ( storage_2_0.bit1.obuf1 A ) ( storage_2_0.bit1.obuf0 A ) ( storage_2_0.bit1.bit Q ) + USE SIGNAL ;
+    - storage_2_0.bit2.storage ( storage_2_0.bit2.obuf1 A ) ( storage_2_0.bit2.obuf0 A ) ( storage_2_0.bit2.bit Q ) + USE SIGNAL ;
+    - storage_2_0.bit3.storage ( storage_2_0.bit3.obuf1 A ) ( storage_2_0.bit3.obuf0 A ) ( storage_2_0.bit3.bit Q ) + USE SIGNAL ;
+    - storage_2_0.bit4.storage ( storage_2_0.bit4.obuf1 A ) ( storage_2_0.bit4.obuf0 A ) ( storage_2_0.bit4.bit Q ) + USE SIGNAL ;
+    - storage_2_0.bit5.storage ( storage_2_0.bit5.obuf1 A ) ( storage_2_0.bit5.obuf0 A ) ( storage_2_0.bit5.bit Q ) + USE SIGNAL ;
+    - storage_2_0.bit6.storage ( storage_2_0.bit6.obuf1 A ) ( storage_2_0.bit6.obuf0 A ) ( storage_2_0.bit6.bit Q ) + USE SIGNAL ;
+    - storage_2_0.bit7.storage ( storage_2_0.bit7.obuf1 A ) ( storage_2_0.bit7.obuf0 A ) ( storage_2_0.bit7.bit Q ) + USE SIGNAL ;
+    - storage_2_0.decoder0 ( decoder_2_0.and_layer0 X ) ( storage_2_0.select_inv_0 A ) ( storage_2_0.gcand A ) + USE SIGNAL ;
+    - storage_2_0.decoder1 ( storage_2_0.select_inv_1 A ) + USE SIGNAL ;
+    - storage_2_0.gclock ( storage_2_0.cg GCLK ) ( storage_2_0.bit7.bit GATE ) ( storage_2_0.bit6.bit GATE ) ( storage_2_0.bit5.bit GATE ) ( storage_2_0.bit4.bit GATE ) ( storage_2_0.bit3.bit GATE ) ( storage_2_0.bit2.bit GATE )
+      ( storage_2_0.bit1.bit GATE ) ( storage_2_0.bit0.bit GATE ) + USE SIGNAL ;
+    - storage_2_0.select0_b ( storage_2_0.select_inv_0 Y ) ( storage_2_0.bit7.obuf0 TE_B ) ( storage_2_0.bit6.obuf0 TE_B ) ( storage_2_0.bit5.obuf0 TE_B ) ( storage_2_0.bit4.obuf0 TE_B ) ( storage_2_0.bit3.obuf0 TE_B ) ( storage_2_0.bit2.obuf0 TE_B )
+      ( storage_2_0.bit1.obuf0 TE_B ) ( storage_2_0.bit0.obuf0 TE_B ) + USE SIGNAL ;
+    - storage_2_0.select1_b ( storage_2_0.select_inv_1 Y ) ( storage_2_0.bit7.obuf1 TE_B ) ( storage_2_0.bit6.obuf1 TE_B ) ( storage_2_0.bit5.obuf1 TE_B ) ( storage_2_0.bit4.obuf1 TE_B ) ( storage_2_0.bit3.obuf1 TE_B ) ( storage_2_0.bit2.obuf1 TE_B )
+      ( storage_2_0.bit1.obuf1 TE_B ) ( storage_2_0.bit0.obuf1 TE_B ) + USE SIGNAL ;
+    - storage_2_0.we0 ( storage_2_0.gcand X ) ( storage_2_0.cg GATE ) + USE SIGNAL ;
+    - storage_3_0.bit0.storage ( storage_3_0.bit0.obuf1 A ) ( storage_3_0.bit0.obuf0 A ) ( storage_3_0.bit0.bit Q ) + USE SIGNAL ;
+    - storage_3_0.bit1.storage ( storage_3_0.bit1.obuf1 A ) ( storage_3_0.bit1.obuf0 A ) ( storage_3_0.bit1.bit Q ) + USE SIGNAL ;
+    - storage_3_0.bit2.storage ( storage_3_0.bit2.obuf1 A ) ( storage_3_0.bit2.obuf0 A ) ( storage_3_0.bit2.bit Q ) + USE SIGNAL ;
+    - storage_3_0.bit3.storage ( storage_3_0.bit3.obuf1 A ) ( storage_3_0.bit3.obuf0 A ) ( storage_3_0.bit3.bit Q ) + USE SIGNAL ;
+    - storage_3_0.bit4.storage ( storage_3_0.bit4.obuf1 A ) ( storage_3_0.bit4.obuf0 A ) ( storage_3_0.bit4.bit Q ) + USE SIGNAL ;
+    - storage_3_0.bit5.storage ( storage_3_0.bit5.obuf1 A ) ( storage_3_0.bit5.obuf0 A ) ( storage_3_0.bit5.bit Q ) + USE SIGNAL ;
+    - storage_3_0.bit6.storage ( storage_3_0.bit6.obuf1 A ) ( storage_3_0.bit6.obuf0 A ) ( storage_3_0.bit6.bit Q ) + USE SIGNAL ;
+    - storage_3_0.bit7.storage ( storage_3_0.bit7.obuf1 A ) ( storage_3_0.bit7.obuf0 A ) ( storage_3_0.bit7.bit Q ) + USE SIGNAL ;
+    - storage_3_0.decoder0 ( decoder_3_0.and_layer0 X ) ( storage_3_0.select_inv_0 A ) ( storage_3_0.gcand A ) + USE SIGNAL ;
+    - storage_3_0.decoder1 ( storage_3_0.select_inv_1 A ) + USE SIGNAL ;
+    - storage_3_0.gclock ( storage_3_0.cg GCLK ) ( storage_3_0.bit7.bit GATE ) ( storage_3_0.bit6.bit GATE ) ( storage_3_0.bit5.bit GATE ) ( storage_3_0.bit4.bit GATE ) ( storage_3_0.bit3.bit GATE ) ( storage_3_0.bit2.bit GATE )
+      ( storage_3_0.bit1.bit GATE ) ( storage_3_0.bit0.bit GATE ) + USE SIGNAL ;
+    - storage_3_0.select0_b ( storage_3_0.select_inv_0 Y ) ( storage_3_0.bit7.obuf0 TE_B ) ( storage_3_0.bit6.obuf0 TE_B ) ( storage_3_0.bit5.obuf0 TE_B ) ( storage_3_0.bit4.obuf0 TE_B ) ( storage_3_0.bit3.obuf0 TE_B ) ( storage_3_0.bit2.obuf0 TE_B )
+      ( storage_3_0.bit1.obuf0 TE_B ) ( storage_3_0.bit0.obuf0 TE_B ) + USE SIGNAL ;
+    - storage_3_0.select1_b ( storage_3_0.select_inv_1 Y ) ( storage_3_0.bit7.obuf1 TE_B ) ( storage_3_0.bit6.obuf1 TE_B ) ( storage_3_0.bit5.obuf1 TE_B ) ( storage_3_0.bit4.obuf1 TE_B ) ( storage_3_0.bit3.obuf1 TE_B ) ( storage_3_0.bit2.obuf1 TE_B )
+      ( storage_3_0.bit1.obuf1 TE_B ) ( storage_3_0.bit0.obuf1 TE_B ) + USE SIGNAL ;
+    - storage_3_0.we0 ( storage_3_0.gcand X ) ( storage_3_0.cg GATE ) + USE SIGNAL ;
+    - storage_4_0.bit0.storage ( storage_4_0.bit0.obuf1 A ) ( storage_4_0.bit0.obuf0 A ) ( storage_4_0.bit0.bit Q ) + USE SIGNAL ;
+    - storage_4_0.bit1.storage ( storage_4_0.bit1.obuf1 A ) ( storage_4_0.bit1.obuf0 A ) ( storage_4_0.bit1.bit Q ) + USE SIGNAL ;
+    - storage_4_0.bit2.storage ( storage_4_0.bit2.obuf1 A ) ( storage_4_0.bit2.obuf0 A ) ( storage_4_0.bit2.bit Q ) + USE SIGNAL ;
+    - storage_4_0.bit3.storage ( storage_4_0.bit3.obuf1 A ) ( storage_4_0.bit3.obuf0 A ) ( storage_4_0.bit3.bit Q ) + USE SIGNAL ;
+    - storage_4_0.bit4.storage ( storage_4_0.bit4.obuf1 A ) ( storage_4_0.bit4.obuf0 A ) ( storage_4_0.bit4.bit Q ) + USE SIGNAL ;
+    - storage_4_0.bit5.storage ( storage_4_0.bit5.obuf1 A ) ( storage_4_0.bit5.obuf0 A ) ( storage_4_0.bit5.bit Q ) + USE SIGNAL ;
+    - storage_4_0.bit6.storage ( storage_4_0.bit6.obuf1 A ) ( storage_4_0.bit6.obuf0 A ) ( storage_4_0.bit6.bit Q ) + USE SIGNAL ;
+    - storage_4_0.bit7.storage ( storage_4_0.bit7.obuf1 A ) ( storage_4_0.bit7.obuf0 A ) ( storage_4_0.bit7.bit Q ) + USE SIGNAL ;
+    - storage_4_0.decoder0 ( decoder_4_0.and_layer0 X ) ( storage_4_0.select_inv_0 A ) ( storage_4_0.gcand A ) + USE SIGNAL ;
+    - storage_4_0.decoder1 ( storage_4_0.select_inv_1 A ) + USE SIGNAL ;
+    - storage_4_0.gclock ( storage_4_0.cg GCLK ) ( storage_4_0.bit7.bit GATE ) ( storage_4_0.bit6.bit GATE ) ( storage_4_0.bit5.bit GATE ) ( storage_4_0.bit4.bit GATE ) ( storage_4_0.bit3.bit GATE ) ( storage_4_0.bit2.bit GATE )
+      ( storage_4_0.bit1.bit GATE ) ( storage_4_0.bit0.bit GATE ) + USE SIGNAL ;
+    - storage_4_0.select0_b ( storage_4_0.select_inv_0 Y ) ( storage_4_0.bit7.obuf0 TE_B ) ( storage_4_0.bit6.obuf0 TE_B ) ( storage_4_0.bit5.obuf0 TE_B ) ( storage_4_0.bit4.obuf0 TE_B ) ( storage_4_0.bit3.obuf0 TE_B ) ( storage_4_0.bit2.obuf0 TE_B )
+      ( storage_4_0.bit1.obuf0 TE_B ) ( storage_4_0.bit0.obuf0 TE_B ) + USE SIGNAL ;
+    - storage_4_0.select1_b ( storage_4_0.select_inv_1 Y ) ( storage_4_0.bit7.obuf1 TE_B ) ( storage_4_0.bit6.obuf1 TE_B ) ( storage_4_0.bit5.obuf1 TE_B ) ( storage_4_0.bit4.obuf1 TE_B ) ( storage_4_0.bit3.obuf1 TE_B ) ( storage_4_0.bit2.obuf1 TE_B )
+      ( storage_4_0.bit1.obuf1 TE_B ) ( storage_4_0.bit0.obuf1 TE_B ) + USE SIGNAL ;
+    - storage_4_0.we0 ( storage_4_0.gcand X ) ( storage_4_0.cg GATE ) + USE SIGNAL ;
+    - storage_5_0.bit0.storage ( storage_5_0.bit0.obuf1 A ) ( storage_5_0.bit0.obuf0 A ) ( storage_5_0.bit0.bit Q ) + USE SIGNAL ;
+    - storage_5_0.bit1.storage ( storage_5_0.bit1.obuf1 A ) ( storage_5_0.bit1.obuf0 A ) ( storage_5_0.bit1.bit Q ) + USE SIGNAL ;
+    - storage_5_0.bit2.storage ( storage_5_0.bit2.obuf1 A ) ( storage_5_0.bit2.obuf0 A ) ( storage_5_0.bit2.bit Q ) + USE SIGNAL ;
+    - storage_5_0.bit3.storage ( storage_5_0.bit3.obuf1 A ) ( storage_5_0.bit3.obuf0 A ) ( storage_5_0.bit3.bit Q ) + USE SIGNAL ;
+    - storage_5_0.bit4.storage ( storage_5_0.bit4.obuf1 A ) ( storage_5_0.bit4.obuf0 A ) ( storage_5_0.bit4.bit Q ) + USE SIGNAL ;
+    - storage_5_0.bit5.storage ( storage_5_0.bit5.obuf1 A ) ( storage_5_0.bit5.obuf0 A ) ( storage_5_0.bit5.bit Q ) + USE SIGNAL ;
+    - storage_5_0.bit6.storage ( storage_5_0.bit6.obuf1 A ) ( storage_5_0.bit6.obuf0 A ) ( storage_5_0.bit6.bit Q ) + USE SIGNAL ;
+    - storage_5_0.bit7.storage ( storage_5_0.bit7.obuf1 A ) ( storage_5_0.bit7.obuf0 A ) ( storage_5_0.bit7.bit Q ) + USE SIGNAL ;
+    - storage_5_0.decoder0 ( decoder_5_0.and_layer0 X ) ( storage_5_0.select_inv_0 A ) ( storage_5_0.gcand A ) + USE SIGNAL ;
+    - storage_5_0.decoder1 ( storage_5_0.select_inv_1 A ) + USE SIGNAL ;
+    - storage_5_0.gclock ( storage_5_0.cg GCLK ) ( storage_5_0.bit7.bit GATE ) ( storage_5_0.bit6.bit GATE ) ( storage_5_0.bit5.bit GATE ) ( storage_5_0.bit4.bit GATE ) ( storage_5_0.bit3.bit GATE ) ( storage_5_0.bit2.bit GATE )
+      ( storage_5_0.bit1.bit GATE ) ( storage_5_0.bit0.bit GATE ) + USE SIGNAL ;
+    - storage_5_0.select0_b ( storage_5_0.select_inv_0 Y ) ( storage_5_0.bit7.obuf0 TE_B ) ( storage_5_0.bit6.obuf0 TE_B ) ( storage_5_0.bit5.obuf0 TE_B ) ( storage_5_0.bit4.obuf0 TE_B ) ( storage_5_0.bit3.obuf0 TE_B ) ( storage_5_0.bit2.obuf0 TE_B )
+      ( storage_5_0.bit1.obuf0 TE_B ) ( storage_5_0.bit0.obuf0 TE_B ) + USE SIGNAL ;
+    - storage_5_0.select1_b ( storage_5_0.select_inv_1 Y ) ( storage_5_0.bit7.obuf1 TE_B ) ( storage_5_0.bit6.obuf1 TE_B ) ( storage_5_0.bit5.obuf1 TE_B ) ( storage_5_0.bit4.obuf1 TE_B ) ( storage_5_0.bit3.obuf1 TE_B ) ( storage_5_0.bit2.obuf1 TE_B )
+      ( storage_5_0.bit1.obuf1 TE_B ) ( storage_5_0.bit0.obuf1 TE_B ) + USE SIGNAL ;
+    - storage_5_0.we0 ( storage_5_0.gcand X ) ( storage_5_0.cg GATE ) + USE SIGNAL ;
+    - storage_6_0.bit0.storage ( storage_6_0.bit0.obuf1 A ) ( storage_6_0.bit0.obuf0 A ) ( storage_6_0.bit0.bit Q ) + USE SIGNAL ;
+    - storage_6_0.bit1.storage ( storage_6_0.bit1.obuf1 A ) ( storage_6_0.bit1.obuf0 A ) ( storage_6_0.bit1.bit Q ) + USE SIGNAL ;
+    - storage_6_0.bit2.storage ( storage_6_0.bit2.obuf1 A ) ( storage_6_0.bit2.obuf0 A ) ( storage_6_0.bit2.bit Q ) + USE SIGNAL ;
+    - storage_6_0.bit3.storage ( storage_6_0.bit3.obuf1 A ) ( storage_6_0.bit3.obuf0 A ) ( storage_6_0.bit3.bit Q ) + USE SIGNAL ;
+    - storage_6_0.bit4.storage ( storage_6_0.bit4.obuf1 A ) ( storage_6_0.bit4.obuf0 A ) ( storage_6_0.bit4.bit Q ) + USE SIGNAL ;
+    - storage_6_0.bit5.storage ( storage_6_0.bit5.obuf1 A ) ( storage_6_0.bit5.obuf0 A ) ( storage_6_0.bit5.bit Q ) + USE SIGNAL ;
+    - storage_6_0.bit6.storage ( storage_6_0.bit6.obuf1 A ) ( storage_6_0.bit6.obuf0 A ) ( storage_6_0.bit6.bit Q ) + USE SIGNAL ;
+    - storage_6_0.bit7.storage ( storage_6_0.bit7.obuf1 A ) ( storage_6_0.bit7.obuf0 A ) ( storage_6_0.bit7.bit Q ) + USE SIGNAL ;
+    - storage_6_0.decoder0 ( decoder_6_0.and_layer0 X ) ( storage_6_0.select_inv_0 A ) ( storage_6_0.gcand A ) + USE SIGNAL ;
+    - storage_6_0.decoder1 ( storage_6_0.select_inv_1 A ) + USE SIGNAL ;
+    - storage_6_0.gclock ( storage_6_0.cg GCLK ) ( storage_6_0.bit7.bit GATE ) ( storage_6_0.bit6.bit GATE ) ( storage_6_0.bit5.bit GATE ) ( storage_6_0.bit4.bit GATE ) ( storage_6_0.bit3.bit GATE ) ( storage_6_0.bit2.bit GATE )
+      ( storage_6_0.bit1.bit GATE ) ( storage_6_0.bit0.bit GATE ) + USE SIGNAL ;
+    - storage_6_0.select0_b ( storage_6_0.select_inv_0 Y ) ( storage_6_0.bit7.obuf0 TE_B ) ( storage_6_0.bit6.obuf0 TE_B ) ( storage_6_0.bit5.obuf0 TE_B ) ( storage_6_0.bit4.obuf0 TE_B ) ( storage_6_0.bit3.obuf0 TE_B ) ( storage_6_0.bit2.obuf0 TE_B )
+      ( storage_6_0.bit1.obuf0 TE_B ) ( storage_6_0.bit0.obuf0 TE_B ) + USE SIGNAL ;
+    - storage_6_0.select1_b ( storage_6_0.select_inv_1 Y ) ( storage_6_0.bit7.obuf1 TE_B ) ( storage_6_0.bit6.obuf1 TE_B ) ( storage_6_0.bit5.obuf1 TE_B ) ( storage_6_0.bit4.obuf1 TE_B ) ( storage_6_0.bit3.obuf1 TE_B ) ( storage_6_0.bit2.obuf1 TE_B )
+      ( storage_6_0.bit1.obuf1 TE_B ) ( storage_6_0.bit0.obuf1 TE_B ) + USE SIGNAL ;
+    - storage_6_0.we0 ( storage_6_0.gcand X ) ( storage_6_0.cg GATE ) + USE SIGNAL ;
+    - storage_7_0.bit0.storage ( storage_7_0.bit0.obuf1 A ) ( storage_7_0.bit0.obuf0 A ) ( storage_7_0.bit0.bit Q ) + USE SIGNAL ;
+    - storage_7_0.bit1.storage ( storage_7_0.bit1.obuf1 A ) ( storage_7_0.bit1.obuf0 A ) ( storage_7_0.bit1.bit Q ) + USE SIGNAL ;
+    - storage_7_0.bit2.storage ( storage_7_0.bit2.obuf1 A ) ( storage_7_0.bit2.obuf0 A ) ( storage_7_0.bit2.bit Q ) + USE SIGNAL ;
+    - storage_7_0.bit3.storage ( storage_7_0.bit3.obuf1 A ) ( storage_7_0.bit3.obuf0 A ) ( storage_7_0.bit3.bit Q ) + USE SIGNAL ;
+    - storage_7_0.bit4.storage ( storage_7_0.bit4.obuf1 A ) ( storage_7_0.bit4.obuf0 A ) ( storage_7_0.bit4.bit Q ) + USE SIGNAL ;
+    - storage_7_0.bit5.storage ( storage_7_0.bit5.obuf1 A ) ( storage_7_0.bit5.obuf0 A ) ( storage_7_0.bit5.bit Q ) + USE SIGNAL ;
+    - storage_7_0.bit6.storage ( storage_7_0.bit6.obuf1 A ) ( storage_7_0.bit6.obuf0 A ) ( storage_7_0.bit6.bit Q ) + USE SIGNAL ;
+    - storage_7_0.bit7.storage ( storage_7_0.bit7.obuf1 A ) ( storage_7_0.bit7.obuf0 A ) ( storage_7_0.bit7.bit Q ) + USE SIGNAL ;
+    - storage_7_0.decoder0 ( decoder_7_0.and_layer0 X ) ( storage_7_0.select_inv_0 A ) ( storage_7_0.gcand A ) + USE SIGNAL ;
+    - storage_7_0.decoder1 ( storage_7_0.select_inv_1 A ) + USE SIGNAL ;
+    - storage_7_0.gclock ( storage_7_0.cg GCLK ) ( storage_7_0.bit7.bit GATE ) ( storage_7_0.bit6.bit GATE ) ( storage_7_0.bit5.bit GATE ) ( storage_7_0.bit4.bit GATE ) ( storage_7_0.bit3.bit GATE ) ( storage_7_0.bit2.bit GATE )
+      ( storage_7_0.bit1.bit GATE ) ( storage_7_0.bit0.bit GATE ) + USE SIGNAL ;
+    - storage_7_0.select0_b ( storage_7_0.select_inv_0 Y ) ( storage_7_0.bit7.obuf0 TE_B ) ( storage_7_0.bit6.obuf0 TE_B ) ( storage_7_0.bit5.obuf0 TE_B ) ( storage_7_0.bit4.obuf0 TE_B ) ( storage_7_0.bit3.obuf0 TE_B ) ( storage_7_0.bit2.obuf0 TE_B )
+      ( storage_7_0.bit1.obuf0 TE_B ) ( storage_7_0.bit0.obuf0 TE_B ) + USE SIGNAL ;
+    - storage_7_0.select1_b ( storage_7_0.select_inv_1 Y ) ( storage_7_0.bit7.obuf1 TE_B ) ( storage_7_0.bit6.obuf1 TE_B ) ( storage_7_0.bit5.obuf1 TE_B ) ( storage_7_0.bit4.obuf1 TE_B ) ( storage_7_0.bit3.obuf1 TE_B ) ( storage_7_0.bit2.obuf1 TE_B )
+      ( storage_7_0.bit1.obuf1 TE_B ) ( storage_7_0.bit0.obuf1 TE_B ) + USE SIGNAL ;
+    - storage_7_0.we0 ( storage_7_0.gcand X ) ( storage_7_0.cg GATE ) + USE SIGNAL ;
+    - we[0] ( PIN we[0] ) ( storage_7_0.gcand B ) ( storage_6_0.gcand B ) ( storage_5_0.gcand B ) ( storage_4_0.gcand B ) ( storage_3_0.gcand B ) ( storage_2_0.gcand B )
+      ( storage_1_0.gcand B ) ( storage_0_0.gcand B ) + USE SIGNAL ;
+END NETS
+END DESIGN

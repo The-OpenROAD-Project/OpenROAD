@@ -1,11 +1,8 @@
-#!/usr/bin/env bash
-
-############################################################################
-##
-## Copyright (c) 2024, The Regents of the University of California
-## All rights reserved.
-##
+###########################################################################
 ## BSD 3-Clause License
+##
+## Copyright (c) 2023, Precision Innovations Inc.
+## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
 ## modification, are permitted provided that the following conditions are met:
@@ -32,29 +29,53 @@
 ## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
-##
-############################################################################
-set -e
+###########################################################################
 
+include("openroad")
+
+swig_lib(NAME      ram
+         NAMESPACE ram
+         I_FILE    src/ram.i
+         SCRIPTS   src/ram.tcl
+)
+
+target_sources(ram
+  PRIVATE
+    src/ram.cpp
+    src/layout.cpp
+    src/MakeRam.cpp
+)
+
+target_include_directories(ram
+  PUBLIC
+    include
+)
+
+target_link_libraries(ram
+  PRIVATE
+    odb
+    dbSta
+    OpenSTA
+)
+
+messages(
+  TARGET ram
+)
+
+#if (Python3_FOUND AND BUILD_PYTHON)
+#  swig_lib(NAME          ram_py
+#           NAMESPACE     ram
+#           LANGUAGE      python
+#           I_FILE        src/ram-py.i
+#           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/ram
+#           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/ram_py.py
+#  )
 #
-# Uses the current directory to figure out what the tool name is. Allows us to
-# call the script from src/tool/test and src/tool directories. Wish we could
-# just use the path of the regression script, but we can't since $0 points to
-# the location in test/shared and not src/tool/test.
+#  target_link_libraries(ram_py
+#    PUBLIC
+#      ram
+#      odb
+#  )
 #
-_get_tool_name()
-{
-    echo $(readlink $0)
-    script_path=$(realpath $PWD)
-    tool=$(basename "${script_path%%/src/*}/src/$(echo "$script_path" | awk -F'/src/' '{print $2}' | cut -d'/' -f1)")
-}
-
-_get_tool_name
-
-# build directory is two directories up from test/shared where this file exists
-build_dir_path=$(dirname $(dirname $(dirname $(realpath "$0"))))/build
-
-cd $build_dir_path
-
-ctest -L " $tool " ${@:1}
+#endif()
 
