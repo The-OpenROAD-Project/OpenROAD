@@ -17,6 +17,7 @@
 #include "frDesign.h"
 #include "frRTree.h"
 #include "global.h"
+#include "odb/dbTransform.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -170,7 +171,7 @@ void frRegionQuery::addBlockObj(frBlockObject* obj)
   switch (obj->typeId()) {
     case frcInstTerm: {
       auto instTerm = static_cast<frInstTerm*>(obj);
-      dbTransform xform = instTerm->getInst()->getDBTransform();
+      odb::dbTransform xform = instTerm->getInst()->getDBTransform();
       for (auto& pin : instTerm->getTerm()->getPins()) {
         for (auto& uFig : pin->getFigs()) {
           auto shape = uFig.get();
@@ -184,7 +185,7 @@ void frRegionQuery::addBlockObj(frBlockObject* obj)
     }
     case frcInstBlockage: {
       auto instBlk = static_cast<frInstBlockage*>(obj);
-      dbTransform xform = instBlk->getInst()->getDBTransform();
+      odb::dbTransform xform = instBlk->getInst()->getDBTransform();
       auto blk = instBlk->getBlockage();
       auto pin = blk->getPin();
       for (auto& uFig : pin->getFigs()) {
@@ -243,7 +244,7 @@ void frRegionQuery::removeBlockObj(frBlockObject* obj)
   switch (obj->typeId()) {
     case frcInstTerm: {
       auto instTerm = static_cast<frInstTerm*>(obj);
-      dbTransform xform = instTerm->getInst()->getDBTransform();
+      odb::dbTransform xform = instTerm->getInst()->getDBTransform();
       for (auto& pin : instTerm->getTerm()->getPins()) {
         for (auto& uFig : pin->getFigs()) {
           auto shape = uFig.get();
@@ -257,7 +258,7 @@ void frRegionQuery::removeBlockObj(frBlockObject* obj)
     }
     case frcInstBlockage: {
       auto instBlk = static_cast<frInstBlockage*>(obj);
-      dbTransform xform = instBlk->getInst()->getDBTransform();
+      odb::dbTransform xform = instBlk->getInst()->getDBTransform();
       auto blk = instBlk->getBlockage();
       auto pin = blk->getPin();
       for (auto& uFig : pin->getFigs()) {
@@ -371,7 +372,7 @@ void frRegionQuery::removeMarker(frMarker* in)
 void frRegionQuery::Impl::add(frVia* via,
                               ObjectsByLayer<frBlockObject>& allShapes)
 {
-  dbTransform xform = via->getTransform();
+  odb::dbTransform xform = via->getTransform();
   for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
     auto shape = uShape.get();
     if (shape->typeId() == frcRect) {
@@ -439,7 +440,7 @@ void frRegionQuery::addGRObj(grVia* via)
 void frRegionQuery::Impl::add(frInstTerm* instTerm,
                               ObjectsByLayer<frBlockObject>& allShapes)
 {
-  dbTransform xform = instTerm->getInst()->getDBTransform();
+  odb::dbTransform xform = instTerm->getInst()->getDBTransform();
 
   for (auto& pin : instTerm->getTerm()->getPins()) {
     for (auto& uFig : pin->getFigs()) {
@@ -476,7 +477,7 @@ void frRegionQuery::Impl::add(frBTerm* term,
 void frRegionQuery::Impl::add(frInstBlockage* instBlk,
                               ObjectsByLayer<frBlockObject>& allShapes)
 {
-  dbTransform xform = instBlk->getInst()->getDBTransform();
+  odb::dbTransform xform = instBlk->getInst()->getDBTransform();
   auto blk = instBlk->getBlockage();
   auto pin = blk->getPin();
   for (auto& uFig : pin->getFigs()) {

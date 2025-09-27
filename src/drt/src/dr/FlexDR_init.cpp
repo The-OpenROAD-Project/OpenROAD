@@ -30,6 +30,7 @@
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRTree.h"
+#include "odb/dbTransform.h"
 
 namespace drt {
 
@@ -1170,8 +1171,8 @@ void FlexDRWorker::initNet_term(const frDesign* design,
   for (auto term : terms) {
     // ap
     // TODO is instXform used properly here?
-    dbTransform instXform;  // (0,0), R0
-    dbTransform shiftXform;
+    odb::dbTransform instXform;  // (0,0), R0
+    odb::dbTransform shiftXform;
     switch (term->typeId()) {
       case frcInstTerm: {
         auto instTerm = static_cast<frInstTerm*>(term);
@@ -1205,7 +1206,7 @@ void FlexDRWorker::initNet_term_helper(const frDesign* design,
                                        frInst* inst,
                                        drNet* dNet,
                                        const std::string& name,
-                                       const dbTransform& shiftXform)
+                                       const odb::dbTransform& shiftXform)
 {
   dNet->addFrNetTerm(term);
   auto dPin = std::make_unique<drPin>();
@@ -2789,7 +2790,7 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
 }
 
 void FlexDRWorker::modBlockedEdgesForMacroPin(frInstTerm* instTerm,
-                                              const dbTransform& xform,
+                                              const odb::dbTransform& xform,
                                               const bool isAddCost)
 {
   const frDirEnum dirs[4]{
@@ -2881,8 +2882,8 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
     } else if (obj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(obj);
       auto inst = instTerm->getInst();
-      const dbTransform xform = inst->getDBTransform();
-      const dbTransform shiftXform = inst->getNoRotationTransform();
+      const odb::dbTransform xform = inst->getDBTransform();
+      const odb::dbTransform shiftXform = inst->getNoRotationTransform();
       const dbMasterType masterType = inst->getMaster()->getMasterType();
       bool accessHorz = false;
       bool accessVert = false;
@@ -3123,7 +3124,7 @@ void FlexDRWorker::initMazeCost_minCut_helper(drNet* net, bool isAddPathCost)
   for (auto& connFig : net->getExtConnFigs()) {
     if (connFig->typeId() == drcVia) {
       auto via = static_cast<drVia*>(connFig.get());
-      const dbTransform xform = via->getTransform();
+      const odb::dbTransform xform = via->getTransform();
 
       const auto l1Num = via->getViaDef()->getLayer1Num();
       const auto l1Fig = (via->getViaDef()->getLayer1Figs()[0].get());

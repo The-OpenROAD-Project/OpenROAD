@@ -10,6 +10,7 @@
 #include "db/taObj/taFig.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 
 namespace drt {
@@ -20,11 +21,11 @@ class taRef : public taPinFig
   // getters
   virtual dbOrientType getOrient() const = 0;
   virtual Point getOrigin() const = 0;
-  virtual dbTransform getTransform() const = 0;
+  virtual odb::dbTransform getTransform() const = 0;
   // setters
   virtual void setOrient(const dbOrientType& tmpOrient) = 0;
   virtual void setOrigin(const Point& tmpPoint) = 0;
-  virtual void setTransform(const dbTransform& xform) = 0;
+  virtual void setTransform(const odb::dbTransform& xform) = 0;
 };
 
 class taVia : public taRef
@@ -83,8 +84,11 @@ class taVia : public taRef
   void setOrient(const dbOrientType& tmpOrient) override { ; }
   Point getOrigin() const override { return origin_; }
   void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
-  dbTransform getTransform() const override { return dbTransform(origin_); }
-  void setTransform(const dbTransform& xformIn) override {}
+  odb::dbTransform getTransform() const override
+  {
+    return odb::dbTransform(origin_);
+  }
+  void setTransform(const odb::dbTransform& xformIn) override {}
 
   /* from frPinFig
    * hasPin
@@ -185,7 +189,7 @@ class taVia : public taRef
     getTransform().apply(box);
     return box;
   }
-  void move(const dbTransform& xform) override { ; }
+  void move(const odb::dbTransform& xform) override { ; }
   bool overlaps(const Rect& box) const override { return false; }
 
  protected:

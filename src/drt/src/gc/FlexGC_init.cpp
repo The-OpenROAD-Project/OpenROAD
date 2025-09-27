@@ -24,6 +24,7 @@
 #include "frProfileTask.h"
 #include "frRegionQuery.h"
 #include "gc/FlexGC_impl.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 
 namespace drt {
@@ -223,7 +224,7 @@ void FlexGCWorker::Impl::addPAObj(frConnFig* obj, frBlockObject* owner)
   } else if (obj->typeId() == frcVia) {
     auto via = static_cast<frVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
-    dbTransform xform = via->getTransform();
+    odb::dbTransform xform = via->getTransform();
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
@@ -291,7 +292,7 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
   } else if (obj->typeId() == drcVia) {
     auto via = static_cast<drVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
-    dbTransform xform = via->getTransform();
+    odb::dbTransform xform = via->getTransform();
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
@@ -349,7 +350,7 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
   } else if (obj->typeId() == frcVia) {
     auto via = static_cast<frVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
-    dbTransform xform = via->getTransform();
+    odb::dbTransform xform = via->getTransform();
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);

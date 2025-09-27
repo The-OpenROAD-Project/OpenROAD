@@ -8,6 +8,7 @@
 #include "db/grObj/grRef.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
 
 namespace drt {
 
@@ -49,8 +50,11 @@ class grVia : public grRef
   Point getOrigin() const override { return origin_; }
   void setOrigin(const Point& in) override { origin_ = in; }
 
-  dbTransform getTransform() const override { return dbTransform(origin_); }
-  void setTransform(const dbTransform& in) override { ; }
+  odb::dbTransform getTransform() const override
+  {
+    return odb::dbTransform(origin_);
+  }
+  void setTransform(const odb::dbTransform& in) override { ; }
 
   /* from gfrPinFig
    * hasPin
