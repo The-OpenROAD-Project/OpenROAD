@@ -939,13 +939,16 @@ SoftMacro::SoftMacro(Cluster* cluster)
 }
 
 // Represent a blockage.
-SoftMacro::SoftMacro(float width, float height, const std::string& name)
+SoftMacro::SoftMacro(const Rect& blockage, const std::string& name)
 {
   name_ = name;
-  width_ = width;
-  height_ = height;
-  area_ = width * height;
+  x_ = blockage.xMin();
+  y_ = blockage.yMin();
+  width_ = blockage.getWidth();
+  height_ = blockage.getHeight();
+  area_ = width_ * height_;
   cluster_ = nullptr;
+  fixed_ = true;
 }
 
 // Represent an IO cluster or fixed terminal.
