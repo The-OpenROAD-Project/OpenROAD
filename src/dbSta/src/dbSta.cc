@@ -52,11 +52,6 @@
 
 namespace sta {
 
-dbSta* makeDbSta()
-{
-  return new dbSta;
-}
-
 namespace {
 // Holds the usage information of a specific cell which includes (i) name of
 // the cell, (ii) number of instances of the cell, and (iii) area of the cell
@@ -198,7 +193,25 @@ dbStaState::~dbStaState()
 
 ////////////////////////////////////////////////////////////////
 
-dbSta::~dbSta() = default;
+namespace {
+std::once_flag init_sta_flag;
+}
+
+dbSta::dbSta(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger)
+{
+  std::call_once(init_sta_flag, []() { sta::initSta(); });
+  initVars(tcl_interp, db, logger);
+  if (!sta::Sta::sta()) {
+    sta::Sta::setSta(this);
+  }
+}
+
+dbSta::~dbSta()
+{
+  if (sta::Sta::sta() == this) {
+    sta::Sta::setSta(nullptr);
+  }
+}
 
 void dbSta::initVars(Tcl_Interp* tcl_interp,
                      odb::dbDatabase* db,
@@ -237,8 +250,7 @@ void dbSta::unregisterStaState(dbStaState* state)
 
 std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
 {
-  auto clone = std::make_unique<dbSta>();
-  clone->initVars(tclInterp(), db_, logger_);
+  auto clone = std::make_unique<dbSta>(tclInterp(), db_, logger_);
   clone->getDbNetwork()->setBlock(block);
   clone->getDbNetwork()->setDefaultLibertyLibrary(
       network_->defaultLibertyLibrary());

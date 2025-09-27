@@ -21,23 +21,17 @@ namespace stt {
 
 static void reportSteinerBranches(const stt::Tree& tree, Logger* logger);
 
-SteinerTreeBuilder::SteinerTreeBuilder()
+SteinerTreeBuilder::SteinerTreeBuilder(odb::dbDatabase* db, Logger* logger)
     : alpha_(0.3),
       min_fanout_alpha_({0, -1}),
       min_hpwl_alpha_({0, -1}),
-      logger_(nullptr),
-      db_(nullptr),
+      logger_(logger),
+      db_(db),
       flute_(new flt::Flute())
 {
 }
 
 SteinerTreeBuilder::~SteinerTreeBuilder() = default;
-
-void SteinerTreeBuilder::init(odb::dbDatabase* db, Logger* logger)
-{
-  db_ = db;
-  logger_ = logger;
-}
 
 Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
                                          const std::vector<int>& y,

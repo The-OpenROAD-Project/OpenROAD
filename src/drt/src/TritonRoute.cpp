@@ -56,7 +56,11 @@
 
 namespace drt {
 
-TritonRoute::TritonRoute()
+TritonRoute::TritonRoute(odb::dbDatabase* db,
+                         utl::Logger* logger,
+                         utl::CallBackHandler* callback_handler,
+                         dst::Distributed* dist,
+                         stt::SteinerTreeBuilder* stt_builder)
     : debug_(std::make_unique<frDebugSettings>()),
       db_callback_(std::make_unique<DesignCallBack>(this)),
       pa_callback_(std::make_unique<PACallBack>(this)),
@@ -65,9 +69,22 @@ TritonRoute::TritonRoute()
   if (distributed_) {
     dist_pool_.emplace(1);
   }
+  db_ = db;
+  logger_ = logger;
+  dist_ = dist;
+  stt_builder_ = stt_builder;
+  design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
+  dist->addCallBack(new RoutingCallBack(this, dist, logger));
+  pa_callback_->setOwner(callback_handler);
 }
 
 TritonRoute::~TritonRoute() = default;
+
+void TritonRoute::initGraphics(
+    std::unique_ptr<AbstractGraphicsFactory> graphics_factory)
+{
+  graphics_factory_ = std::move(graphics_factory);
+}
 
 void TritonRoute::setDebugDR(bool on)
 {
@@ -533,24 +550,6 @@ void TritonRoute::applyUpdates(
       }
     }
   }
-}
-
-void TritonRoute::init(
-    odb::dbDatabase* db,
-    utl::Logger* logger,
-    utl::CallBackHandler* callback_handler,
-    dst::Distributed* dist,
-    stt::SteinerTreeBuilder* stt_builder,
-    std::unique_ptr<AbstractGraphicsFactory> graphics_factory)
-{
-  db_ = db;
-  logger_ = logger;
-  dist_ = dist;
-  stt_builder_ = stt_builder;
-  design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
-  dist->addCallBack(new RoutingCallBack(this, dist, logger));
-  graphics_factory_ = std::move(graphics_factory);
-  pa_callback_->setOwner(callback_handler);
 }
 
 bool TritonRoute::initGuide()

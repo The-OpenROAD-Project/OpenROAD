@@ -173,8 +173,6 @@ use_repo(orfs, "docker_orfs")
 
 SCALA_VERSION = "2.13.16"
 
-SCALA_VERSION_SHORT = SCALA_VERSION.rpartition(".")[0]
-
 scala_config = use_extension(
     "@rules_scala//scala/extensions:config.bzl",
     "scala_config",

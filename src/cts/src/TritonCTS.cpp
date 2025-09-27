@@ -53,7 +53,7 @@ namespace cts {
 
 using utl::CTS;
 
-void TritonCTS::init(utl::Logger* logger,
+TritonCTS::TritonCTS(utl::Logger* logger,
                      odb::dbDatabase* db,
                      sta::dbNetwork* network,
                      sta::dbSta* sta,
@@ -70,8 +70,6 @@ void TritonCTS::init(utl::Logger* logger,
 
   options_ = new CtsOptions(logger_, st_builder);
 }
-
-TritonCTS::TritonCTS() = default;
 
 TritonCTS::~TritonCTS()
 {

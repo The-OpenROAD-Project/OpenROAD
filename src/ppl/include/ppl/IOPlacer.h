@@ -84,9 +84,8 @@ using int64 = std::int64_t;
 class IOPlacer
 {
  public:
-  IOPlacer();
+  IOPlacer(odb::dbDatabase* db, Logger* logger);
   ~IOPlacer();
-  void init(odb::dbDatabase* db, Logger* logger);
   void clear();
   void clearConstraints();
   void runHungarianMatching();
