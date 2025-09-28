@@ -44,7 +44,8 @@ namespace drt {
 namespace gtl = boost::polygon;
 
 const int beginDebugIter = std::numeric_limits<int>::max();
-static frSquaredDistance pt2boxDistSquare(const Point& pt, const odb::Rect& box)
+static frSquaredDistance pt2boxDistSquare(const odb::Point& pt,
+                                          const odb::Rect& box)
 
 {
   frCoord dx = std::max(std::max(box.xMin() - pt.x(), pt.x() - box.xMax()), 0);
@@ -348,7 +349,7 @@ void FlexDRWorker::modMinSpacingCostPlanarHelper(const odb::Rect& box,
                    box.yMax() - width2 / 2);
     gridGraph_.getIdxBox(mPinLL, mPinUR, sBox);
   }
-  Point pt, pt1, pt2, pt3, pt4;
+  odb::Point pt, pt1, pt2, pt3, pt4;
   frSquaredDistance distSquare = 0;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
@@ -540,7 +541,7 @@ void FlexDRWorker::modMinimumcutCostVia(const odb::Rect& box,
 
   FlexMazeIdx mIdx1, mIdx2;
   odb::Rect bx, tmpBx, sViaBox;
-  Point pt;
+  odb::Point pt;
   frCoord dx, dy;
   frVia sVia;
   frMIdx zIdx = isUpperVia ? z : z - 1;
@@ -779,7 +780,7 @@ void FlexDRWorker::modMinSpacingCostViaHelper(const odb::Rect& box,
       box.yMax() + std::max(bloatDist, bloatDistEolY) + (0 - viaBox.yMin())
           - 1);
   gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
-  Point pt;
+  odb::Point pt;
   odb::Rect tmpBx;
   frSquaredDistance distSquare = 0;
   frCoord dx, dy;
@@ -904,7 +905,7 @@ void FlexDRWorker::modEolSpacingCost_helper(const odb::Rect& testbox,
 
   frVia sVia;
   odb::Rect sViaBox;
-  Point pt;
+  odb::Point pt;
 
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
@@ -1205,12 +1206,12 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
                box.yMax() + bloatDist + (0 - viaBox.yMin()) - 1);
   gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
 
-  Point pt;
+  odb::Point pt;
   frSquaredDistance distSquare = 0;
   frSquaredDistance c2cSquare = 0;
   frCoord dx, dy, prl;
   frSquaredDistance reqDistSquare = 0;
-  Point boxCenter, tmpBxCenter;
+  odb::Point boxCenter, tmpBxCenter;
   boxCenter = {(box.xMin() + box.xMax()) / 2, (box.yMin() + box.yMax()) / 2};
   frSquaredDistance currDistSquare = 0;
   bool hasViol;
@@ -1228,7 +1229,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
         tmpBxCenter = {(tmpBx.xMin() + tmpBx.xMax()) / 2,
                        (tmpBx.yMin() + tmpBx.yMax()) / 2};
         distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
-        c2cSquare = Point::squaredDistance(boxCenter, tmpBxCenter);
+        c2cSquare = odb::Point::squaredDistance(boxCenter, tmpBxCenter);
         prl = std::max(-dx, -dy);
         hasViol = false;
         for (auto con : cutLayer->getCutSpacing()) {
@@ -1395,12 +1396,12 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const odb::Rect& box,
                box.yMax() + bloatDist + (0 - viaBox.yMin()) - 1);
   gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
 
-  Point pt;
+  odb::Point pt;
   frSquaredDistance distSquare = 0;
   frSquaredDistance c2cSquare = 0;
   frCoord prl, dx, dy;
   frSquaredDistance reqDistSquare = 0;
-  Point boxCenter, tmpBxCenter;
+  odb::Point boxCenter, tmpBxCenter;
   boxCenter = {(box.xMin() + box.xMax()) / 2, (box.yMin() + box.yMax()) / 2};
   frSquaredDistance currDistSquare = 0;
   bool hasViol = false;
@@ -1415,7 +1416,7 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const odb::Rect& box,
         tmpBxCenter = {(tmpBx.xMin() + tmpBx.xMax()) / 2,
                        (tmpBx.yMin() + tmpBx.yMax()) / 2};
         distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
-        c2cSquare = Point::squaredDistance(boxCenter, tmpBxCenter);
+        c2cSquare = odb::Point::squaredDistance(boxCenter, tmpBxCenter);
         prl = std::max(-dx, -dy);
         hasViol = false;
         if (con != nullptr) {
@@ -1546,7 +1547,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
       modEolSpacingRulesCost(box, ei.z(), type, false, ndr);
     }
 
-    Point pt = obj->getOrigin();
+    odb::Point pt = obj->getOrigin();
     odb::dbTransform xform(pt);
     for (auto& uFig : obj->getViaDef()->getCutFigs()) {
       auto rect = static_cast<frRect*>(uFig.get());
@@ -1680,15 +1681,15 @@ void FlexDRWorker::writeGCPatchesToDRWorker(
     tmp_pwire->setOffsetBox(pwire->getOffsetBox());
     if (!valid_indices.empty()) {
       // Find closest path point
-      Point closest;
+      odb::Point closest;
       frSquaredDistance closest_dist
           = std::numeric_limits<frSquaredDistance>::max();
       auto origin = pwire->getOrigin();
       auto box = pwire->getOffsetBox();
       for (auto p : valid_indices) {
-        Point pp;
+        odb::Point pp;
         gridGraph_.getPoint(pp, p.x(), p.y());
-        frSquaredDistance path_length = Point::squaredDistance(origin, pp);
+        frSquaredDistance path_length = odb::Point::squaredDistance(origin, pp);
         if (path_length < closest_dist) {
           closest_dist = path_length;
           closest = pp;
@@ -2279,7 +2280,7 @@ void FlexDRWorker::routeNet_setSrc(
     std::vector<FlexMazeIdx>& connComps,
     FlexMazeIdx& ccMazeIdx1,
     FlexMazeIdx& ccMazeIdx2,
-    Point& centerPt)
+    odb::Point& centerPt)
 {
   frMIdx xDim, yDim, zDim;
   gridGraph_.getDim(xDim, yDim, zDim);
@@ -2295,7 +2296,7 @@ void FlexDRWorker::routeNet_setSrc(
   for (auto& pin : unConnPins) {
     for (auto& ap : pin->getAccessPatterns()) {
       mi = ap->getMazeIdx();
-      Point bp = ap->getPoint();
+      odb::Point bp = ap->getPoint();
       totX += bp.x();
       totY += bp.y();
       totZ += gridGraph_.getZHeight(mi.z());
@@ -2318,7 +2319,7 @@ void FlexDRWorker::routeNet_setSrc(
   for (auto& pin : unConnPins) {
     for (auto& ap : pin->getAccessPatterns()) {
       mi = ap->getMazeIdx();
-      Point bp = ap->getPoint();
+      odb::Point bp = ap->getPoint();
       frCoord dist = abs(centerX - bp.x()) + abs(centerY - bp.y())
                      + abs(centerZ - gridGraph_.getZHeight(mi.z()));
       if (dist >= currDist) {
@@ -2375,8 +2376,8 @@ drPin* FlexDRWorker::routeNet_getNextDst(
     std::map<FlexMazeIdx, frOrderedIdSet<drPin*>>& mazeIdx2unConnPins,
     std::list<std::pair<drPin*, frBox3D>>& pinTaperBoxes)
 {
-  Point pt;
-  Point ll, ur;
+  odb::Point pt;
+  odb::Point ll, ur;
   gridGraph_.getPoint(ll, ccMazeIdx1.x(), ccMazeIdx1.y());
   gridGraph_.getPoint(ur, ccMazeIdx2.x(), ccMazeIdx2.y());
   frCoord currDist = std::numeric_limits<frCoord>::max();
@@ -2628,7 +2629,7 @@ void FlexDRWorker::routeNet_postAstarWritePath(
                      apMazeIdx);
     } else if (startX == endX && startY == endY && startZ != endZ) {  // via
       for (auto currZ = startZ; currZ < endZ; ++currZ) {
-        Point loc;
+        odb::Point loc;
         frLayerNum startLayerNum = gridGraph_.getLayerNum(currZ);
         gridGraph_.getPoint(loc, startX, startY);
         FlexMazeIdx mi(startX, startY, currZ);
@@ -2714,7 +2715,7 @@ void FlexDRWorker::addApExtFigUpdate(drNet* net,
       }
     } else if (ext_obj->typeId() == drcVia) {
       auto via = static_cast<const drVia*>(ext_obj.get());
-      Point via_point = via->getOrigin();
+      odb::Point via_point = via->getOrigin();
       if (via_point != real_point) {
         continue;
       }
@@ -2752,9 +2753,9 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net)
   for (auto& ps : ap->getPathSegs()) {
     std::unique_ptr<drPathSeg> drPs = std::make_unique<drPathSeg>();
     drPs->setApPathSeg({x, y});
-    Point begin = ps.getBeginPoint();
-    Point end = ps.getEndPoint();
-    Point* connecting = nullptr;
+    odb::Point begin = ps.getBeginPoint();
+    odb::Point end = ps.getEndPoint();
+    odb::Point* connecting = nullptr;
     if (ps.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
       connecting = &begin;
     } else if (ps.getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
@@ -2770,7 +2771,7 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net)
         } else {
           connecting = &begin;
         }
-        Point tmp = begin;
+        odb::Point tmp = begin;
         begin = end;
         end = tmp;
       }
@@ -2869,7 +2870,7 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
                                   std::vector<FlexMazeIdx>& points,
                                   const std::set<FlexMazeIdx>& apMazeIdx)
 {
-  Point startLoc, endLoc;
+  odb::Point startLoc, endLoc;
   frLayerNum currLayerNum = gridGraph_.getLayerNum(z);
   gridGraph_.getPoint(startLoc, startX, startY);
   gridGraph_.getPoint(endLoc, endX, endY);
@@ -2960,7 +2961,7 @@ void FlexDRWorker::checkPathSegStyle(drPathSeg* ps,
                                      const std::set<FlexMazeIdx>& apMazeIdx,
                                      const FlexMazeIdx& idx)
 {
-  const Point& pt = (isBegin ? ps->getBeginPoint() : ps->getEndPoint());
+  const odb::Point& pt = (isBegin ? ps->getBeginPoint() : ps->getEndPoint());
   if (apMazeIdx.find(idx) == apMazeIdx.end()
       && !isInWorkerBorder(pt.x(), pt.y())) {
     return;
@@ -2976,7 +2977,9 @@ void FlexDRWorker::checkPathSegStyle(drPathSeg* ps,
   }
 }
 
-bool FlexDRWorker::hasAccessPoint(const Point& pt, frLayerNum lNum, frNet* net)
+bool FlexDRWorker::hasAccessPoint(const odb::Point& pt,
+                                  frLayerNum lNum,
+                                  frNet* net)
 {
   frRegionQuery::Objects<frBlockObject> result;
   odb::Rect bx(pt.x(), pt.y(), pt.x(), pt.y());
@@ -3169,7 +3172,7 @@ void FlexDRWorker::routeNet_AddCutSpcCost(std::vector<FlexMazeIdx>& path)
                                    ->getDefaultViaDef();
       int x = gridGraph_.xCoord(path[i].x());
       int y = gridGraph_.yCoord(path[i].y());
-      odb::dbTransform xform(Point(x, y));
+      odb::dbTransform xform(odb::Point(x, y));
       for (auto& uFig : viaDef->getCutFigs()) {
         auto rect = static_cast<frRect*>(uFig.get());
         odb::Rect box = rect->getBBox();
@@ -3236,7 +3239,7 @@ bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
   }
 
   FlexMazeIdx ccMazeIdx1, ccMazeIdx2;  // connComps ll, ur flexmazeidx
-  Point centerPt;
+  odb::Point centerPt;
   std::vector<FlexMazeIdx> connComps;
   routeNet_setSrc(unConnPins,
                   mazeIdx2unConnPins,
@@ -3412,10 +3415,11 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
       frArea reqArea
           = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
       auto pathWidth = getTech()->getLayer(layerNum)->getWidth();
-      Point begin_point, end_point;
+      odb::Point begin_point, end_point;
       gridGraph_.getPoint(begin_point, currIdx.x(), currIdx.y());
       gridGraph_.getPoint(end_point, nextIdx.x(), nextIdx.y());
-      frCoord pathLength = Point::manhattanDistance(begin_point, end_point);
+      frCoord pathLength
+          = odb::Point::manhattanDistance(begin_point, end_point);
       if (currArea < reqArea) {
         if (!prev_is_wire) {
           currArea /= 2;
@@ -3538,7 +3542,7 @@ int FlexDRWorker::routeNet_postAstarAddPathMetal_isClean(
     frCoord patchLength)
 {
   int cost = 0;
-  Point origin, patchEnd;
+  odb::Point origin, patchEnd;
   gridGraph_.getPoint(origin, bpIdx.x(), bpIdx.y());
   frLayerNum layerNum = gridGraph_.getLayerNum(bpIdx.z());
   if (isPatchHorz) {
@@ -3555,8 +3559,8 @@ int FlexDRWorker::routeNet_postAstarAddPathMetal_isClean(
     }
   }
   // for wire, no need to bloat width
-  const Point& patchLL = std::min(origin, patchEnd);
-  const Point& patchUR = std::max(origin, patchEnd);
+  const odb::Point& patchLL = std::min(origin, patchEnd);
+  const odb::Point& patchUR = std::max(origin, patchEnd);
   if (!getRouteBox().intersects(patchEnd)) {
     cost = std::numeric_limits<int>::max();
   } else {
@@ -3624,11 +3628,11 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal_addPWire(
     frCoord patchLength,
     frCoord patchWidth)
 {
-  Point origin;
+  odb::Point origin;
   gridGraph_.getPoint(origin, bpIdx.x(), bpIdx.y());
   frLayerNum layerNum = gridGraph_.getLayerNum(bpIdx.z());
   // actual offsetbox
-  Point patchLL, patchUR;
+  odb::Point patchLL, patchUR;
   if (isPatchHorz) {
     if (isPatchLeft) {
       patchLL = {0 - patchLength, 0 - patchWidth / 2};

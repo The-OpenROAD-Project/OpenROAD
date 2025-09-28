@@ -447,7 +447,7 @@ int FlexPA::getEdgeCost(
     const frAccessPoint* ap_1 = pa_1->getAccessPoint(prev_acc_point_idx);
     std::unique_ptr<frVia> via1;
     if (ap_1->hasAccess(frDirEnum::U)) {
-      Point pt1(ap_1->getPoint());
+      odb::Point pt1(ap_1->getPoint());
       xform.apply(pt1);
       via1 = std::make_unique<frVia>(ap_1->getViaDef(), pt1);
       via1->setOrigin(pt1);
@@ -463,7 +463,7 @@ int FlexPA::getEdgeCost(
     const frAccessPoint* ap_2 = pa_2->getAccessPoint(curr_acc_point_idx);
     std::unique_ptr<frVia> via2;
     if (ap_2->hasAccess(frDirEnum::U)) {
-      Point pt2(ap_2->getPoint());
+      odb::Point pt2(ap_2->getPoint());
       xform.apply(pt2);
       via2 = std::make_unique<frVia>(ap_2->getViaDef(), pt2);
       if (inst_term_2->hasNet()) {
@@ -490,7 +490,7 @@ int FlexPA::getEdgeCost(
               = pa_3->getAccessPoint(prev_prev_acc_point_idx);
           std::unique_ptr<frVia> via3;
           if (ap_3->hasAccess(frDirEnum::U)) {
-            Point pt3(ap_3->getPoint());
+            odb::Point pt3(ap_3->getPoint());
             xform.apply(pt3);
             via3 = std::make_unique<frVia>(ap_3->getViaDef(), pt3);
             if (inst_term_3->hasNet()) {
@@ -608,7 +608,7 @@ bool FlexPA::genPatternsCommit(
       temp_vias.push_back(std::move(via));
 
       odb::dbTransform xform = unique_inst->getNoRotationTransform();
-      Point pt(access_point->getPoint());
+      odb::Point pt(access_point->getPoint());
       xform.apply(pt);
       rvia->setOrigin(pt);
       if (inst_term->hasNet()) {
@@ -635,7 +635,7 @@ bool FlexPA::genPatternsCommit(
         pin_access_pattern->addAccessPoint(nullptr);
       } else {
         const auto& ap = pin_to_access_point[pin.get()];
-        const Point tmpPt = ap->getPoint();
+        const odb::Point tmpPt = ap->getPoint();
         if (tmpPt.x() < left_pt) {
           left_access_point = ap;
           left_pt = tmpPt.x();
@@ -710,7 +710,7 @@ void FlexPA::genPatternsPrintDebug(
       const int pin_access_idx = unique_inst->getPinAccessIdx();
       auto pa = pin->getPinAccess(pin_access_idx);
       auto [curr_pin_idx, curr_acc_point_idx] = curr_node->getIdx();
-      Point pt(pa->getAccessPoint(curr_acc_point_idx)->getPoint());
+      odb::Point pt(pa->getAccessPoint(curr_acc_point_idx)->getPoint());
       xform.apply(pt);
       std::cout << " (" << pt.x() / dbu << ", " << pt.y() / dbu << ")";
     }
@@ -744,7 +744,7 @@ void FlexPA::genPatternsPrint(
       auto [curr_pin_idx, curr_acc_point_idx] = curr_node->getIdx();
       std::unique_ptr<frVia> via = std::make_unique<frVia>(
           pa->getAccessPoint(curr_acc_point_idx)->getViaDef());
-      Point pt(pa->getAccessPoint(curr_acc_point_idx)->getPoint());
+      odb::Point pt(pa->getAccessPoint(curr_acc_point_idx)->getPoint());
       std::cout << " gccleanvia " << unique_inst->getMaster()->getName() << " "
                 << inst_term->getTerm()->getName() << " "
                 << via->getViaDef()->getName() << " " << pt.x() << " " << pt.y()

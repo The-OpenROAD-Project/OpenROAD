@@ -181,31 +181,36 @@ class FlexGCWorker::Impl
   void initNet_pins_polygonEdges(gcNet* net);
   void initNet_pins_polygonEdges_getFixedPolygonEdges(
       gcNet* net,
-      std::vector<std::set<std::pair<Point, Point>>>& fixedPolygonEdges);
+      std::vector<std::set<std::pair<odb::Point, odb::Point>>>&
+          fixedPolygonEdges);
   void initNet_pins_polygonEdges_helper_outer(
       gcNet* net,
       gcPin* pin,
       gcPolygon* poly,
       frLayerNum i,
-      const std::vector<std::set<std::pair<Point, Point>>>& fixedPolygonEdges);
+      const std::vector<std::set<std::pair<odb::Point, odb::Point>>>&
+          fixedPolygonEdges);
   void initNet_pins_polygonEdges_helper_inner(
       gcNet* net,
       gcPin* pin,
       const gtl::polygon_90_data<frCoord>& hole_poly,
       frLayerNum i,
-      const std::vector<std::set<std::pair<Point, Point>>>& fixedPolygonEdges);
+      const std::vector<std::set<std::pair<odb::Point, odb::Point>>>&
+          fixedPolygonEdges);
   void initNet_pins_polygonCorners(gcNet* net);
   void initNet_pins_polygonCorners_helper(gcNet* net, gcPin* pin);
   void initNet_pins_maxRectangles(gcNet* net);
   void initNet_pins_maxRectangles_getFixedMaxRectangles(
       gcNet* net,
-      std::vector<std::set<std::pair<Point, Point>>>& fixedMaxRectangles);
+      std::vector<std::set<std::pair<odb::Point, odb::Point>>>&
+          fixedMaxRectangles);
   void initNet_pins_maxRectangles_helper(
       gcNet* net,
       gcPin* pin,
       const gtl::rectangle_data<frCoord>& rect,
       frLayerNum i,
-      const std::vector<std::set<std::pair<Point, Point>>>& fixedMaxRectangles);
+      const std::vector<std::set<std::pair<odb::Point, odb::Point>>>&
+          fixedMaxRectangles);
 
   void initRegionQuery();
 

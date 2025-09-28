@@ -184,9 +184,9 @@ class frBlock : public frBlockObject
   }
   frCoord getGCellSizeVertical() { return getGCellPatterns()[1].getSpacing(); }
   // idx must be legal
-  odb::Rect getGCellBox(const Point& idx1) const
+  odb::Rect getGCellBox(const odb::Point& idx1) const
   {
-    Point idx(idx1);
+    odb::Point idx(idx1);
     odb::Rect dieBox = getDieBox();
     auto& gp = getGCellPatterns();
     auto& xgp = gp[0];
@@ -223,7 +223,7 @@ class frBlock : public frBlockObject
     }
     return odb::Rect(xl, yl, xh, yh);
   }
-  Point getGCellCenter(const Point& idx) const
+  odb::Point getGCellCenter(const odb::Point& idx) const
   {
     odb::Rect dieBox = getDieBox();
     auto& gp = getGCellPatterns();
@@ -247,9 +247,9 @@ class frBlock : public frBlockObject
     if (idx.y() == (int) ygp.getCount() - 1) {
       yh = dieBox.yMax();
     }
-    return Point((xl + xh) / 2, (yl + yh) / 2);
+    return odb::Point((xl + xh) / 2, (yl + yh) / 2);
   }
-  Point getGCellIdx(const Point& pt) const
+  odb::Point getGCellIdx(const odb::Point& pt) const
   {
     auto& gp = getGCellPatterns();
     auto& xgp = gp[0];
@@ -268,9 +268,9 @@ class frBlock : public frBlockObject
     if (idxY >= (int) ygp.getCount()) {
       idxY = (int) ygp.getCount() - 1;
     }
-    return Point(idxX, idxY);
+    return odb::Point(idxX, idxY);
   }
-  bool isValidGCellIdx(const Point& pt) const
+  bool isValidGCellIdx(const odb::Point& pt) const
   {
     const auto& gp = getGCellPatterns();
     const auto& xgp = gp[0];

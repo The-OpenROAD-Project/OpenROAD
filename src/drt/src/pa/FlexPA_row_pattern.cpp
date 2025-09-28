@@ -24,6 +24,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 #include "pa/FlexPA.h"
 #include "serialization.h"
 #include "utl/exception.h"
@@ -53,7 +54,7 @@ std::vector<std::vector<frInst*>> FlexPA::computeInstRows()
   int prev_y_coord = INT_MIN;
   int prev_x_end_coord = INT_MIN;
   for (auto inst : insts_set_) {
-    Point origin = inst->getBoundaryBBox().ll();
+    odb::Point origin = inst->getBoundaryBBox().ll();
     if (origin.y() != prev_y_coord || origin.x() > prev_x_end_coord) {
       if (!row_insts.empty()) {
         inst_rows.push_back(row_insts);
@@ -405,7 +406,7 @@ void FlexPA::genInstRowPatternPrint(
              i++) {
           auto& access_point = access_points[access_point_idx];
           if (access_point) {
-            const Point& pt(access_point->getPoint());
+            const odb::Point& pt(access_point->getPoint());
             if (inst_term->hasNet()) {
               std::cout << " gcclean2via " << inst->getName() << " "
                         << inst_term->getTerm()->getName() << " "
@@ -499,7 +500,7 @@ void FlexPA::addAccessPatternObj(
         continue;
       }
       if (access_point->hasAccess(frDirEnum::U)) {
-        Point pt(access_point->getPoint());
+        odb::Point pt(access_point->getPoint());
         xform.apply(pt);
         auto via = std::make_unique<frVia>(access_point->getViaDef(), pt);
         auto rvia = via.get();

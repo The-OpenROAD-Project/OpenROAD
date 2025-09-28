@@ -2276,7 +2276,7 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
                         / getTech()->getManufacturingGrid())
                    * getTech()->getManufacturingGrid();
   odb::Rect patchBx;
-  Point offset;  // the lower left corner of the patch box
+  odb::Point offset;  // the lower left corner of the patch box
   if (prefDirIsVert) {
     patchBx.set_xlo(-chosenEdg->length() / 2);
     patchBx.set_xhi(chosenEdg->length() / 2);
@@ -3703,7 +3703,7 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
     const auto lNum = marker->getLayerNum();
     const auto layer = tech_->getLayer(lNum);
 
-    Point origin;
+    odb::Point origin;
     odb::Rect fig_bbox;
     drNet* net = nullptr;
     odb::Rect markerBBox = marker->getBBox();
@@ -3739,9 +3739,9 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
         // Pick nearest of begin/end points
         const auto [bp, ep] = seg->getPoints();
         auto dist_bp
-            = Point::manhattanDistance(markerBBox.closestPtInside(bp), bp);
+            = odb::Point::manhattanDistance(markerBBox.closestPtInside(bp), bp);
         auto dist_ep
-            = Point::manhattanDistance(markerBBox.closestPtInside(ep), ep);
+            = odb::Point::manhattanDistance(markerBBox.closestPtInside(ep), ep);
         auto tmpOrigin = (dist_bp < dist_ep) ? bp : ep;
         if (routeBox.intersects(tmpOrigin)) {
           origin = tmpOrigin;
@@ -3816,7 +3816,7 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
       continue;
     }
 
-    Point origin;
+    odb::Point origin;
     drNet* net = nullptr;
     auto& workerRegionQuery = getDRWorker()->getWorkerRegionQuery();
     odb::Rect markerBBox = marker->getBBox();
@@ -3824,7 +3824,7 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
       continue;
     }
     workerRegionQuery.query(markerBBox, lNum, results);
-    std::map<Point, std::vector<drVia*>> vias;
+    std::map<odb::Point, std::vector<drVia*>> vias;
     for (auto& connFig : results) {
       if (connFig->typeId() != drcVia) {
         continue;
@@ -3836,7 +3836,7 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
       if (targetNet_ && obj->getNet()->getFrNet() != targetNet_->getFrNet()) {
         continue;
       }
-      Point tmpOrigin = obj->getOrigin();
+      odb::Point tmpOrigin = obj->getOrigin();
       frLayerNum cutLayerNum = obj->getViaDef()->getCutLayerNum();
       if (cutLayerNum == lNum + 1 || cutLayerNum == lNum - 1) {
         vias[tmpOrigin].push_back(obj);
@@ -4181,7 +4181,7 @@ void FlexGCWorker::Impl::modifyMarkers()
     if (!pwire->hasNet()) {
       continue;
     }
-    Point origin = pwire->getOrigin();
+    odb::Point origin = pwire->getOrigin();
     auto net = pwire->getNet()->getFrNet();
     for (auto& marker : markers_) {
       if (marker->getLayerNum() != pwire->getLayerNum()) {

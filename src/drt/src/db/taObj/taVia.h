@@ -21,11 +21,11 @@ class taRef : public taPinFig
  public:
   // getters
   virtual dbOrientType getOrient() const = 0;
-  virtual Point getOrigin() const = 0;
+  virtual odb::Point getOrigin() const = 0;
   virtual odb::dbTransform getTransform() const = 0;
   // setters
   virtual void setOrient(const dbOrientType& tmpOrient) = 0;
-  virtual void setOrigin(const Point& tmpPoint) = 0;
+  virtual void setOrigin(const odb::Point& tmpPoint) = 0;
   virtual void setTransform(const odb::dbTransform& xform) = 0;
 };
 
@@ -83,8 +83,8 @@ class taVia : public taRef
 
   dbOrientType getOrient() const override { return dbOrientType(); }
   void setOrient(const dbOrientType& tmpOrient) override { ; }
-  Point getOrigin() const override { return origin_; }
-  void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
+  odb::Point getOrigin() const override { return origin_; }
+  void setOrigin(const odb::Point& tmpPoint) override { origin_ = tmpPoint; }
   odb::dbTransform getTransform() const override
   {
     return odb::dbTransform(origin_);
@@ -194,7 +194,7 @@ class taVia : public taRef
   bool overlaps(const odb::Rect& box) const override { return false; }
 
  protected:
-  Point origin_;
+  odb::Point origin_;
   const frViaDef* viaDef_{nullptr};
   frBlockObject* owner_{nullptr};
 };

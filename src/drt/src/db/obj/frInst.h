@@ -75,8 +75,11 @@ class frInst : public frRef
   {
     xform_.setOrient(tmpOrient);
   }
-  Point getOrigin() const override { return xform_.getOffset(); }
-  void setOrigin(const Point& tmpPoint) override { xform_.setOffset(tmpPoint); }
+  odb::Point getOrigin() const override { return xform_.getOffset(); }
+  void setOrigin(const odb::Point& tmpPoint) override
+  {
+    xform_.setOffset(tmpPoint);
+  }
   odb::dbTransform getTransform() const override { return xform_; }
   void setTransform(const odb::dbTransform& xformIn) override
   {

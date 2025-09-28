@@ -10,6 +10,7 @@
 #include "db/infra/frPoint.h"
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frNet;
@@ -23,7 +24,7 @@ class frNode : public frBlockObject
   frNode(grNode& in);
   // setters
   void addToNet(frNet* in) { net_ = in; }
-  void setLoc(const Point& in) { loc_ = in; }
+  void setLoc(const odb::Point& in) { loc_ = in; }
   void setLayerNum(frLayerNum in) { layerNum_ = in; }
   void setConnFig(frBlockObject* in) { connFig_ = in; }
   void setPin(frBlockObject* in) { pin_ = in; }
@@ -89,7 +90,7 @@ class frNode : public frBlockObject
   // getters
   bool hasNet() { return net_; }
   frNet* getNet() { return net_; }
-  Point getLoc() { return loc_; }
+  odb::Point getLoc() { return loc_; }
   frLayerNum getLayerNum() { return layerNum_; }
   frBlockObject* getConnFig() { return connFig_; }
   frBlockObject* getPin() { return pin_; }
@@ -104,7 +105,7 @@ class frNode : public frBlockObject
 
  protected:
   frNet* net_{nullptr};
-  Point loc_;                        // == prefAP bp if exist for pin
+  odb::Point loc_;                   // == prefAP bp if exist for pin
   frLayerNum layerNum_{0};           // == prefAP bp if exist for pin
   frBlockObject* connFig_{nullptr};  // wire / via / patch to parent
   frBlockObject* pin_{

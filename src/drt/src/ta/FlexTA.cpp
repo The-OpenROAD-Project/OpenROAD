@@ -109,10 +109,11 @@ int FlexTA::initTA_helper(int iter,
       auto uworker = std::make_unique<FlexTAWorker>(
           getDesign(), logger_, router_cfg_, save_updates_);
       auto& worker = *(uworker.get());
-      odb::Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(0, i));
+      odb::Rect beginBox
+          = getDesign()->getTopBlock()->getGCellBox(odb::Point(0, i));
       odb::Rect endBox = getDesign()->getTopBlock()->getGCellBox(
-          Point((int) xgp.getCount() - 1,
-                std::min(i + size - 1, (int) ygp.getCount() - 1)));
+          odb::Point((int) xgp.getCount() - 1,
+                     std::min(i + size - 1, (int) ygp.getCount() - 1)));
       odb::Rect routeBox(
           beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
       odb::Rect extBox;
@@ -132,10 +133,11 @@ int FlexTA::initTA_helper(int iter,
       auto uworker = std::make_unique<FlexTAWorker>(
           getDesign(), logger_, router_cfg_, save_updates_);
       auto& worker = *(uworker.get());
-      odb::Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(i, 0));
+      odb::Rect beginBox
+          = getDesign()->getTopBlock()->getGCellBox(odb::Point(i, 0));
       odb::Rect endBox = getDesign()->getTopBlock()->getGCellBox(
-          Point(std::min(i + size - 1, (int) xgp.getCount() - 1),
-                (int) ygp.getCount() - 1));
+          odb::Point(std::min(i + size - 1, (int) xgp.getCount() - 1),
+                     (int) ygp.getCount() - 1));
       odb::Rect routeBox(
           beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
       odb::Rect extBox;

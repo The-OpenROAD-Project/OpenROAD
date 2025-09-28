@@ -15,7 +15,7 @@ namespace drt {
 
 odb::Rect frRPin::getBBox()
 {
-  Point pt;
+  odb::Point pt;
 
   switch (term_->typeId()) {
     case frcInstTerm: {

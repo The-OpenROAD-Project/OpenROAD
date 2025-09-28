@@ -1142,11 +1142,12 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
   auto& ygp = gCellPatterns.at(1);
   for (int i = offset; i < (int) xgp.getCount(); i += size) {
     for (int j = offset; j < (int) ygp.getCount(); j += size) {
-      odb::Rect routeBox1 = design_->getTopBlock()->getGCellBox(Point(i, j));
+      odb::Rect routeBox1
+          = design_->getTopBlock()->getGCellBox(odb::Point(i, j));
       const int max_i = std::min((int) xgp.getCount() - 1, i + size - 1);
       const int max_j = std::min((int) ygp.getCount(), j + size - 1);
       odb::Rect routeBox2
-          = design_->getTopBlock()->getGCellBox(Point(max_i, max_j));
+          = design_->getTopBlock()->getGCellBox(odb::Point(max_i, max_j));
       odb::Rect routeBox(routeBox1.xMin(),
                          routeBox1.yMin(),
                          routeBox2.xMax(),

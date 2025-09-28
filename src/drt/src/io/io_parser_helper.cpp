@@ -810,7 +810,7 @@ void io::Parser::checkFig(frPinFig* uFig,
     hasPolys = true;
     auto polygon = static_cast<frPolygon*>(uFig);
     std::vector<gtl::point_data<frCoord>> points;
-    for (Point pt : polygon->getPoints()) {
+    for (odb::Point pt : polygon->getPoints()) {
       xform.apply(pt);
       points.emplace_back(pt.x(), pt.y());
       if (pt.getX() % grid || pt.getY() % grid) {

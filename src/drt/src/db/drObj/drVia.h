@@ -73,8 +73,8 @@ class drVia : public drRef
 
   dbOrientType getOrient() const override { return dbOrientType(); }
   void setOrient(const dbOrientType& tmpOrient) override { ; }
-  Point getOrigin() const override { return origin_; }
-  void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
+  odb::Point getOrigin() const override { return origin_; }
+  void setOrigin(const odb::Point& tmpPoint) override { origin_ = tmpPoint; }
   odb::dbTransform getTransform() const override
   {
     return odb::dbTransform(origin_);
@@ -145,7 +145,7 @@ class drVia : public drRef
   bool isLonely() const { return isLonely_; }
 
  protected:
-  Point origin_;
+  odb::Point origin_;
   const frViaDef* viaDef_{nullptr};
   drBlockObject* owner_{nullptr};
   FlexMazeIdx beginMazeIdx_;

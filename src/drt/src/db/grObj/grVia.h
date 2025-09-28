@@ -48,8 +48,8 @@ class grVia : public grRef
 
   dbOrientType getOrient() const override { return dbOrientType(); }
   void setOrient(const dbOrientType& in) override { ; }
-  Point getOrigin() const override { return origin_; }
-  void setOrigin(const Point& in) override { origin_ = in; }
+  odb::Point getOrigin() const override { return origin_; }
+  void setOrigin(const odb::Point& in) override { origin_ = in; }
 
   odb::dbTransform getTransform() const override
   {
@@ -127,7 +127,7 @@ class grVia : public grRef
   frListIter<std::unique_ptr<grVia>> getIter() const { return iter_; }
 
  protected:
-  Point origin_;
+  odb::Point origin_;
   const frViaDef* viaDef_{nullptr};
   frBlockObject* child_{nullptr};
   frBlockObject* parent_{nullptr};

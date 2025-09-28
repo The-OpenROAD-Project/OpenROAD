@@ -26,7 +26,7 @@
 namespace drt {
 
 bool FlexTAWorker::outOfDieVia(frLayerNum layer_num,
-                               const Point& pt,
+                               const odb::Point& pt,
                                const odb::Rect& die_box) const
 {
   if (router_cfg_->USENONPREFTRACKS
@@ -101,7 +101,7 @@ void FlexTAWorker::initTracks()
              trackNum++) {
           frCoord trackCoord
               = trackNum * tp->getTrackSpacing() + tp->getStartCoord();
-          Point via_pt(die_center);
+          odb::Point via_pt(die_center);
           if (isH) {
             via_pt.setY(trackCoord);
           } else {
@@ -193,7 +193,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
             pinIdx++;
             continue;
           }
-          Point bp = ap->getPoint();
+          odb::Point bp = ap->getPoint();
           auto bNum = ap->getLayerNum();
           shiftXform.apply(bp);
           if (layerNum == bNum && getRouteBox().intersects(bp)) {
@@ -223,7 +223,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
             continue;
           }
           for (auto& ap : pin->getPinAccess(0)->getAccessPoints()) {
-            Point bp = ap->getPoint();
+            odb::Point bp = ap->getPoint();
             auto bNum = ap->getLayerNum();
             if (layerNum == bNum && getRouteBox().intersects(bp)) {
               pinCoord = isH ? bp.y() : bp.x();
@@ -326,7 +326,7 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
               continue;
             }
           }
-          Point bp = ap->getPoint();
+          odb::Point bp = ap->getPoint();
           shiftXform.apply(bp);
           if (getRouteBox().intersects(bp)) {
             pinCoord = isH ? bp.y() : bp.x();
@@ -346,7 +346,7 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
             continue;
           }
           for (auto& ap : pin->getPinAccess(0)->getAccessPoints()) {
-            Point bp = ap->getPoint();
+            odb::Point bp = ap->getPoint();
             if (getRouteBox().intersects(bp)) {
               pinCoord = isH ? bp.y() : bp.x();
               return;
@@ -382,7 +382,7 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
   upViaCoordSet.clear();
 
   auto [bp, ep] = guide->getPoints();
-  Point cp;
+  odb::Point cp;
   // layerNum in FlexTAWorker
   std::vector<frGuide*> nbrGuides;
   auto rq = getRegionQuery();
@@ -511,9 +511,11 @@ void FlexTAWorker::initIroute(frGuide* guide)
   ps->setNet(guide->getNet());
   auto rptr = static_cast<taPathSeg*>(ps.get());
   if (isH) {
-    rptr->setPoints(Point(maxBegin, trackLoc), Point(minEnd, trackLoc));
+    rptr->setPoints(odb::Point(maxBegin, trackLoc),
+                    odb::Point(minEnd, trackLoc));
   } else {
-    rptr->setPoints(Point(trackLoc, maxBegin), Point(trackLoc, minEnd));
+    rptr->setPoints(odb::Point(trackLoc, maxBegin),
+                    odb::Point(trackLoc, minEnd));
   }
   rptr->setLayerNum(layerNum);
   if (guide->getNet() && guide->getNet()->getNondefaultRule()) {
@@ -542,7 +544,8 @@ void FlexTAWorker::initIroute(frGuide* guide)
     std::unique_ptr<taPinFig> via = std::make_unique<taVia>(viaDef);
     via->setNet(guide->getNet());
     auto rViaPtr = static_cast<taVia*>(via.get());
-    rViaPtr->setOrigin(isH ? Point(coord, trackLoc) : Point(trackLoc, coord));
+    rViaPtr->setOrigin(isH ? odb::Point(coord, trackLoc)
+                           : odb::Point(trackLoc, coord));
     iroute->addPinFig(std::move(via));
   }
   for (auto coord : downViaCoordSet) {
@@ -558,7 +561,8 @@ void FlexTAWorker::initIroute(frGuide* guide)
     std::unique_ptr<taPinFig> via = std::make_unique<taVia>(viaDef);
     via->setNet(guide->getNet());
     auto rViaPtr = static_cast<taVia*>(via.get());
-    rViaPtr->setOrigin(isH ? Point(coord, trackLoc) : Point(trackLoc, coord));
+    rViaPtr->setOrigin(isH ? odb::Point(coord, trackLoc)
+                           : odb::Point(trackLoc, coord));
     iroute->addPinFig(std::move(via));
   }
   iroute->setNextIrouteDir(nextIrouteDir);
