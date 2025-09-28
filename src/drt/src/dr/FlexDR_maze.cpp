@@ -36,6 +36,7 @@
 #include "frProfileTask.h"
 #include "frRegionQuery.h"
 #include "gc/FlexGC.h"
+#include "odb/dbTransform.h"
 
 namespace drt {
 
@@ -578,7 +579,7 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
       for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
         for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
           gridGraph_.getPoint(pt, i, j);
-          dbTransform xform(pt);
+          odb::dbTransform xform(pt);
           tmpBx = viaBox;
           frMIdx idx = gridGraph_.getIdx(i, j, zIdx);
           if (gridGraph_.isSVia(idx)) {
@@ -784,7 +785,7 @@ void FlexDRWorker::modMinSpacingCostViaHelper(const Rect& box,
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
       gridGraph_.getPoint(pt, i, j);
-      dbTransform xform(pt);
+      odb::dbTransform xform(pt);
       tmpBx = viaBox;
       frMIdx idx = gridGraph_.getIdx(i, j, zIdx);
       if (gridGraph_.isSVia(idx)) {
@@ -1218,7 +1219,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
       for (auto& uFig : via.getViaDef()->getCutFigs()) {
         auto obj = static_cast<frRect*>(uFig.get());
         gridGraph_.getPoint(pt, i, j);
-        dbTransform xform(pt);
+        odb::dbTransform xform(pt);
         Rect tmpBx = obj->getBBox();
         xform.apply(tmpBx);
         tmpBxCenter = {(tmpBx.xMin() + tmpBx.xMax()) / 2,
@@ -1405,7 +1406,7 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const Rect& box,
       for (auto& uFig : via.getViaDef()->getCutFigs()) {
         auto obj = static_cast<frRect*>(uFig.get());
         gridGraph_.getPoint(pt, i, j);
-        dbTransform xform(pt);
+        odb::dbTransform xform(pt);
         Rect tmpBx = obj->getBBox();
         xform.apply(tmpBx);
         tmpBxCenter = {(tmpBx.xMin() + tmpBx.xMax()) / 2,
@@ -1543,7 +1544,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
     }
 
     Point pt = obj->getOrigin();
-    dbTransform xform(pt);
+    odb::dbTransform xform(pt);
     for (auto& uFig : obj->getViaDef()->getCutFigs()) {
       auto rect = static_cast<frRect*>(uFig.get());
       box = rect->getBBox();
@@ -2757,7 +2758,7 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net)
       connecting = &end;
     }
     if (inst) {
-      dbTransform trans = inst->getNoRotationTransform();
+      odb::dbTransform trans = inst->getNoRotationTransform();
       trans.apply(begin);
       trans.apply(end);
       if (end < begin) {  // if rotation swapped order, correct it
@@ -3165,7 +3166,7 @@ void FlexDRWorker::routeNet_AddCutSpcCost(std::vector<FlexMazeIdx>& path)
                                    ->getDefaultViaDef();
       int x = gridGraph_.xCoord(path[i].x());
       int y = gridGraph_.yCoord(path[i].y());
-      dbTransform xform(Point(x, y));
+      odb::dbTransform xform(Point(x, y));
       for (auto& uFig : viaDef->getCutFigs()) {
         auto rect = static_cast<frRect*>(uFig.get());
         Rect box = rect->getBBox();

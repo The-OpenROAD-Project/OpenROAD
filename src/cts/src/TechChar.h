@@ -25,10 +25,13 @@
 #include "boost/functional/hash.hpp"
 #include "boost/unordered/unordered_map.hpp"
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
+#include "sta/Graph.hh"
+#include "sta/Liberty.hh"
 
 namespace utl {
 class Logger;

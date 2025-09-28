@@ -3,12 +3,14 @@
 
 #pragma once
 
+#include <QColor>
 #include <QDockWidget>
 #include <QMenu>
 #include <QPushButton>
 #include <QSettings>
 #include <QStandardItemModel>
 #include <QTreeView>
+#include <QWidget>
 #include <array>
 #include <map>
 #include <memory>

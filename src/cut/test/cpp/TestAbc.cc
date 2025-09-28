@@ -72,8 +72,8 @@ class AbcTest : public ::testing::Test
       abc::Abc_Start();
     });
     db_->setLogger(&logger_);
-    sta_ = std::make_unique<sta::dbSta>();
-    sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
+    sta_
+        = std::make_unique<sta::dbSta>(Tcl_CreateInterp(), db_.get(), &logger_);
     auto path = std::filesystem::canonical("./Nangate45/Nangate45_typ.lib");
     library_ = sta_->readLiberty(path.c_str(),
                                  sta_->findCorner("default"),
@@ -101,8 +101,7 @@ class AbcTest : public ::testing::Test
   {
     // Assumes module name is "top" and clock name is "clk"
     sta::dbNetwork* network = sta_->getDbNetwork();
-    ord::dbVerilogNetwork verilog_network;
-    verilog_network.init(network);
+    ord::dbVerilogNetwork verilog_network(sta_.get());
 
     sta::VerilogReader verilog_reader(&verilog_network);
     verilog_reader.read(file_name.c_str());
@@ -169,8 +168,8 @@ class AbcTestSky130 : public AbcTest
       abc::Abc_Start();
     });
     db_->setLogger(&logger_);
-    sta_ = std::make_unique<sta::dbSta>();
-    sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
+    sta_
+        = std::make_unique<sta::dbSta>(Tcl_CreateInterp(), db_.get(), &logger_);
     auto path = std::filesystem::canonical(
         "./sky130/sky130_fd_sc_hd__ss_n40C_1v40.lib");
     library_ = sta_->readLiberty(path.c_str(),
@@ -205,8 +204,8 @@ class AbcTestAsap7 : public AbcTest
       abc::Abc_Start();
     });
     db_->setLogger(&logger_);
-    sta_ = std::make_unique<sta::dbSta>();
-    sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
+    sta_
+        = std::make_unique<sta::dbSta>(Tcl_CreateInterp(), db_.get(), &logger_);
 
     std::vector<std::string> liberty_paths
         = {"./asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",

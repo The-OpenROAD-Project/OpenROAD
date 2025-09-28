@@ -18,6 +18,7 @@
 #include <QStyledItemDelegate>
 #include <QToolBar>
 #include <QVariant>
+#include <QWidget>
 #include <unordered_map>
 #include <utility>
 #include <vector>

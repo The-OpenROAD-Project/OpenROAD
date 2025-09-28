@@ -28,6 +28,7 @@
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "odb/dbTransform.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "serialization.h"
@@ -435,7 +436,7 @@ int FlexPA::getEdgeCost(
   if (vio_edges[edge_idx] != -1) {
     has_vio = (vio_edges[edge_idx] == 1);
   } else {
-    dbTransform xform = unique_inst->getNoRotationTransform();
+    odb::dbTransform xform = unique_inst->getNoRotationTransform();
     // check DRC
     std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
     const auto& [pin_1, inst_term_1] = pins[prev_pin_idx];
@@ -605,7 +606,7 @@ bool FlexPA::genPatternsCommit(
       auto rvia = via.get();
       temp_vias.push_back(std::move(via));
 
-      dbTransform xform = unique_inst->getNoRotationTransform();
+      odb::dbTransform xform = unique_inst->getNoRotationTransform();
       Point pt(access_point->getPoint());
       xform.apply(pt);
       rvia->setOrigin(pt);
@@ -689,7 +690,7 @@ void FlexPA::genPatternsPrintDebug(
   FlexDPNode* curr_node = sink_node;
   int pin_cnt = pins.size();
 
-  dbTransform xform;
+  odb::dbTransform xform;
   auto& [pin, inst_term] = pins[0];
   if (inst_term) {
     frInst* unique_inst = inst_term->getInst();

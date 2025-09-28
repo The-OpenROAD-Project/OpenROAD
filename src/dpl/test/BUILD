@@ -179,57 +179,57 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
-            "fillers7": [
+            "check1": [
                 "simple01.def",
-            ],
-            "fillers5": [
-                "fragmented_row04.def",
-            ],
-            "pad05": [
-                "extra.lef",
-                "check6.def",
             ],
             "check7": [
                 "check6.def",
             ],
-            "fillers2": [
-                "simple01.def",
-            ],
-            "check1": [
-                "simple01.def",
-            ],
             "edge_spacing": [
                 "multi_height_rows.def",
             ],
-            "pad06": [
-                "check6.def",
-            ],
             "fillers1": [
+                "simple01.def",
+            ],
+            "fillers2": [
+                "simple01.def",
+            ],
+            "fillers2_verbose": [
                 "simple01.def",
             ],
             "fillers3": [
                 "simple01.def",
             ],
-            "pad03": [
-                "simple03.def",
+            "fillers5": [
+                "fragmented_row04.def",
             ],
-            "pad08": [
+            "fillers7": [
                 "simple01.def",
             ],
             "fillers9_verbose": [
                 "fillers9.lef",
                 "fillers9.def",
             ],
-            "fillers2_verbose": [
+            "pad01": [
                 "simple01.def",
             ],
             "pad02": [
                 "simple01.def",
             ],
+            "pad03": [
+                "simple03.def",
+            ],
+            "pad05": [
+                "extra.lef",
+                "check6.def",
+            ],
+            "pad06": [
+                "check6.def",
+            ],
             "pad07": [
                 "simple01.def",
             ],
-            "pad01": [
+            "pad08": [
                 "simple01.def",
             ],
         }.get(test_name, []),

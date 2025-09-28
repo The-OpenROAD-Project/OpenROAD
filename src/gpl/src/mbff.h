@@ -13,6 +13,7 @@
 
 #include "odb/db.h"
 #include "sta/Corner.hh"
+#include "sta/NetworkClass.hh"
 
 namespace utl {
 class Logger;

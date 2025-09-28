@@ -1,3 +1,5 @@
+load("@openroad_rules_python//python:defs.bzl", "py_library")
+
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, The OpenROAD Authors
 load("@openroad_rules_python//python:packaging.bzl", "py_package", "py_wheel")
@@ -30,11 +32,11 @@ py_wheel(
     abi = "abi3",
     distribution = "openroad",
     homepage = "https://github.com/The-OpenROAD-Project/OpenROAD",
+    platform = "linux_x86_64",
     python_requires = ">=3.10",
     python_tag = "cp310",
     version = "0.0.1",
     deps = [
         ":openroad_pkg",
     ],
-    platform = "linux_x86_64"
 )

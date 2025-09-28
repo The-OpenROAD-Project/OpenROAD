@@ -3,6 +3,8 @@
 
 #include "findDialog.h"
 
+#include <QDialog>
+#include <QWidget>
 #include <string>
 
 #include "gui/gui.h"

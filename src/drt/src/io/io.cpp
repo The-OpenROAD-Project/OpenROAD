@@ -291,7 +291,8 @@ void io::Parser::setVias(odb::dbBlock* block)
       }
       currX -= xCutSpacing;  // max cut X
       currY -= yCutSpacing;  // max cut Y
-      dbTransform cutXform(Point(-currX / 2 + xOffset, -currY / 2 + yOffset));
+      odb::dbTransform cutXform(
+          Point(-currX / 2 + xOffset, -currY / 2 + yOffset));
       for (auto& uShape : cutFigs) {
         auto rect = static_cast<frRect*>(uShape.get());
         rect->move(cutXform);
@@ -304,10 +305,10 @@ void io::Parser::setVias(odb::dbBlock* block)
       Rect botBox(0 - xBotEnc, 0 - yBotEnc, currX + xBotEnc, currY + yBotEnc);
       Rect topBox(0 - xTopEnc, 0 - yTopEnc, currX + xTopEnc, currY + yTopEnc);
 
-      dbTransform botXform(Point(-currX / 2 + xOffset + xBotOffset,
-                                 -currY / 2 + yOffset + yBotOffset));
-      dbTransform topXform(Point(-currX / 2 + xOffset + xTopOffset,
-                                 -currY / 2 + yOffset + yTopOffset));
+      odb::dbTransform botXform(Point(-currX / 2 + xOffset + xBotOffset,
+                                      -currY / 2 + yOffset + yBotOffset));
+      odb::dbTransform topXform(Point(-currX / 2 + xOffset + xTopOffset,
+                                      -currY / 2 + yOffset + yTopOffset));
       botXform.apply(botBox);
       topXform.apply(topBox);
 

@@ -51,21 +51,13 @@ exec "{bazel_test_sh}" "$@"
 regression_rule_test = rule(
     implementation = _regression_test_impl,
     attrs = {
-        "test_name": attr.string(
-            doc = "The name of the test.",
-            mandatory = True,
-        ),
-        "test_file": attr.label(
-            doc = "The primary test file (e.g., .tcl or .py).",
+        "bazel_test_sh": attr.label(
+            doc = "The Bazel test shell script.",
             allow_single_file = True,
         ),
         "data": attr.label_list(
             doc = "Additional test files required for the test.",
             allow_files = True,
-        ),
-        "bazel_test_sh": attr.label(
-            doc = "The Bazel test shell script.",
-            allow_single_file = True,
         ),
         "openroad": attr.label(
             doc = "The OpenROAD executable.",
@@ -79,6 +71,14 @@ regression_rule_test = rule(
         "regression_test": attr.label(
             doc = "The regression test script.",
             allow_single_file = True,
+        ),
+        "test_file": attr.label(
+            doc = "The primary test file (e.g., .tcl or .py).",
+            allow_single_file = True,
+        ),
+        "test_name": attr.string(
+            doc = "The name of the test.",
+            mandatory = True,
         ),
     },
     executable = True,
@@ -104,6 +104,7 @@ def regression_test(
         name: The base name of the test (without extension).
         **kwargs: Additional keyword arguments to pass to the regression_rule_test.
     """
+
     # TODO: we should _not_ have the magic to figure out if tcl or py exists
     # in here but rather in the BUILD file and just pass the resulting
     # name = "foo-tcl", test_file = "foo.tcl" to this regression test macro.

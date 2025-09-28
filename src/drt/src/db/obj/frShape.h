@@ -10,6 +10,7 @@
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frFig.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
 
 namespace drt {
 class frNet;
@@ -159,7 +160,7 @@ class frRect : public frShape
    * intersects in .cpp
    */
   Rect getBBox() const override { return box_; }
-  void move(const dbTransform& xform) override { xform.apply(box_); }
+  void move(const odb::dbTransform& xform) override { xform.apply(box_); }
   bool intersects(const Rect& box) const override
   {
     return getBBox().intersects(box);
@@ -269,14 +270,14 @@ class frPatchWire : public frShape
    */
   Rect getBBox() const override
   {
-    dbTransform xform(origin_);
+    odb::dbTransform xform(origin_);
     Rect box = offsetBox_;
     xform.apply(box);
     return box;
   }
   Rect getOffsetBox() const { return offsetBox_; }
   Point getOrigin() const { return origin_; }
-  void move(const dbTransform& xform) override {}
+  void move(const odb::dbTransform& xform) override {}
   bool intersects(const Rect& box) const override
   {
     return getBBox().intersects(box);
@@ -397,7 +398,7 @@ class frPolygon : public frShape
     }
     return Rect(llx, lly, urx, ury);
   }
-  void move(const dbTransform& xform) override
+  void move(const odb::dbTransform& xform) override
   {
     for (auto& point : points_) {
       xform.apply(point);
@@ -583,7 +584,7 @@ class frPathSeg : public frShape
                 end_.x() + width / 2,
                 end_.y() + endExt);
   }
-  void move(const dbTransform& xform) override
+  void move(const odb::dbTransform& xform) override
   {
     xform.apply(begin_);
     xform.apply(end_);

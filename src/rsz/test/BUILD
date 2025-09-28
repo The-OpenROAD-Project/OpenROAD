@@ -206,9 +206,9 @@ extra_deps = {
     "repair_setup2_multi": ["repair_setup2.tcl"],
     "repair_setup3_multi": ["repair_setup3.tcl"],
     "repair_setup4_multi": ["repair_setup4.tcl"],
+    "repair_setup4_sequence": ["repair_setup4.tcl"],
     "repair_setup6_multi": ["repair_setup6.tcl"],
     "repair_setup7_multi": ["repair_setup7.tcl"],
-    "repair_setup4_sequence": ["repair_setup4.tcl"],
 }
 
 BIG_TESTS = [

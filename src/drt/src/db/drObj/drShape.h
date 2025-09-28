@@ -9,6 +9,7 @@
 #include "db/infra/frSegStyle.h"
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
 
 namespace drt {
 
@@ -292,7 +293,7 @@ class drPatchWire : public drShape
    */
   Rect getBBox() const override
   {
-    dbTransform xform(origin_);
+    odb::dbTransform xform(origin_);
     Rect box = offsetBox_;
     xform.apply(box);
     return box;

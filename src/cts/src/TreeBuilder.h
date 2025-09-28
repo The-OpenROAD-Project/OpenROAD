@@ -20,6 +20,7 @@
 #include "boost/unordered/unordered_set.hpp"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace utl {
 class Logger;

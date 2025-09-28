@@ -8,6 +8,7 @@
 #include "db/infra/frSegStyle.h"
 #include "db/taObj/taFig.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
 
 namespace drt {
 class frNet;
@@ -140,7 +141,7 @@ class taPathSeg : public taShape
                 end_.x() + width / 2,
                 end_.y() + endExt);
   }
-  void move(const dbTransform& xform) override
+  void move(const odb::dbTransform& xform) override
   {
     xform.apply(begin_);
     xform.apply(end_);

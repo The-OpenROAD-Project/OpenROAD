@@ -1061,6 +1061,7 @@ void ClusteringEngine::buildDataFlowConnections()
       const float conn_weight = computeConnWeight(hops);
       for (auto& sink : sink_clusters) {
         tree_->maps.id_to_cluster[driver_id]->addConnection(sink, conn_weight);
+        tree_->maps.id_to_cluster[sink]->addConnection(driver_id, conn_weight);
       }
     }
   }

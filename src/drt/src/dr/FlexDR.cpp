@@ -50,6 +50,7 @@
 #include "io/io.h"
 #include "odb/dbTypes.h"
 #include "serialization.h"
+#include "utl/Logger.h"
 #include "utl/Progress.h"
 #include "utl/ScopedTemporaryFile.h"
 #include "utl/exception.h"

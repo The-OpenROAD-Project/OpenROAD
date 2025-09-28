@@ -55,14 +55,12 @@ struct AntennaModel
   double diff_metal_reduce_factor;
 };
 
-AntennaChecker::AntennaChecker() = default;
-AntennaChecker::~AntennaChecker() = default;
-
-void AntennaChecker::init(odb::dbDatabase* db, utl::Logger* logger)
+AntennaChecker::AntennaChecker(odb::dbDatabase* db, utl::Logger* logger)
+    : db_(db), logger_(logger)
 {
-  db_ = db;
-  logger_ = logger;
 }
+
+AntennaChecker::~AntennaChecker() = default;
 
 void AntennaChecker::initAntennaRules()
 {

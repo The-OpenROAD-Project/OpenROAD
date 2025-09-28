@@ -18,7 +18,9 @@
 #include "frProfileTask.h"
 #include "global.h"
 #include "io/io.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "utl/Logger.h"
 
 namespace drt {
 
@@ -758,7 +760,7 @@ inline void getTrackLocs(bool isHorzTracks,
 
 void io::Parser::checkFig(frPinFig* uFig,
                           const frString& term_name,
-                          const dbTransform& xform,
+                          const odb::dbTransform& xform,
                           bool& foundTracks,
                           bool& foundCenterTracks,
                           bool& hasPolys)
@@ -867,7 +869,7 @@ void io::Parser::checkPins()
       for (auto& uFig : pin->getFigs()) {
         checkFig(uFig.get(),
                  bTerm->getName(),
-                 dbTransform(),
+                 odb::dbTransform(),
                  foundTracks,
                  foundCenterTracks,
                  hasPolys);
@@ -888,7 +890,7 @@ void io::Parser::checkPins()
     if (!inst->getMaster()->getMasterType().isBlock()) {
       continue;
     }
-    dbTransform xform = inst->getDBTransform();
+    odb::dbTransform xform = inst->getDBTransform();
     for (auto& iTerm : inst->getInstTerms()) {
       if (!iTerm->hasNet() || iTerm->getNet()->isSpecial()) {
         continue;

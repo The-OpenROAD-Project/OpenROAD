@@ -20,6 +20,7 @@
 #include "odb/dbTypes.h"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ConcreteNetwork.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/NetworkCmp.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Vector.hh"
@@ -74,26 +75,11 @@ using sta::Term;
 using sta::VerilogReader;
 using utl::Logger;
 
-dbVerilogNetwork::dbVerilogNetwork()
+dbVerilogNetwork::dbVerilogNetwork(sta::dbSta* sta)
 {
-  report_ = nullptr;
-  debug_ = nullptr;
-}
-
-void dbVerilogNetwork::init(dbNetwork* db_network)
-{
+  dbNetwork* db_network = sta->getDbNetwork();
   db_network_ = db_network;
   copyState(db_network_);
-}
-
-dbVerilogNetwork* makeDbVerilogNetwork()
-{
-  return new dbVerilogNetwork;
-}
-
-void initDbVerilogNetwork(dbVerilogNetwork* network, sta::dbSta* sta)
-{
-  network->init(sta->getDbNetwork());
 }
 
 void setDbNetworkLinkFunc(dbVerilogNetwork* network,
@@ -110,11 +96,6 @@ void setDbNetworkLinkFunc(dbVerilogNetwork* network,
               false);
         });
   }
-}
-
-void deleteDbVerilogNetwork(dbVerilogNetwork* verilog_network)
-{
-  delete verilog_network;
 }
 
 // Facade that looks in the db network for a liberty cell if

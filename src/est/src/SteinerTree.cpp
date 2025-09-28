@@ -10,6 +10,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "odb/geom.h"
+#include "sta/NetworkClass.hh"
 #include "sta/NetworkCmp.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"

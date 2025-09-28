@@ -8,6 +8,7 @@
 #include "db/obj/frInst.h"
 #include "db/obj/frInstTerm.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
 
 namespace drt {
 
@@ -18,7 +19,7 @@ Rect frRPin::getBBox()
   switch (term_->typeId()) {
     case frcInstTerm: {
       auto inst = static_cast<frInstTerm*>(term_)->getInst();
-      dbTransform shiftXform = inst->getNoRotationTransform();
+      odb::dbTransform shiftXform = inst->getNoRotationTransform();
 
       pt = accessPoint_->getPoint();
       shiftXform.apply(pt);

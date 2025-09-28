@@ -13,6 +13,7 @@
 #include "db/obj/frMPin.h"
 #include "frBaseTypes.h"
 #include "global.h"
+#include "gui/gui.h"
 #include "pa/FlexPA.h"
 #include "utl/Logger.h"
 
