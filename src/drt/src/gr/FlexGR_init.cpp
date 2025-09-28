@@ -17,6 +17,7 @@
 #include "frBaseTypes.h"
 #include "gr/FlexGR.h"
 #include "gr/FlexGRCMap.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -83,7 +84,7 @@ void FlexGR::initLayerPitch()
 
     if (downVia) {
       frVia via(downVia);
-      Rect viaBox = via.getLayer2BBox();
+      odb::Rect viaBox = via.getLayer2BBox();
       frCoord enclosureWidth = viaBox.minDXDY();
       frCoord prl = isLayerHorz ? (viaBox.xMax() - viaBox.xMin())
                                 : (viaBox.yMax() - viaBox.yMin());
@@ -126,7 +127,7 @@ void FlexGR::initLayerPitch()
 
     if (upVia) {
       frVia via(upVia);
-      Rect viaBox = via.getLayer1BBox();
+      odb::Rect viaBox = via.getLayer1BBox();
       frCoord enclosureWidth = viaBox.minDXDY();
       frCoord prl = isLayerHorz ? (viaBox.xMax() - viaBox.xMin())
                                 : (viaBox.yMax() - viaBox.yMin());
@@ -211,7 +212,7 @@ void FlexGR::initGCell()
               << layer->getName() << " pitch  = "
               << pitch / (double) (design_->getTopBlock()->getDBUPerUU())
               << "\n";
-    Rect dieBox = design_->getTopBlock()->getDieBox();
+    odb::Rect dieBox = design_->getTopBlock()->getDieBox();
 
     frGCellPattern xgp, ygp;
     // set xgp

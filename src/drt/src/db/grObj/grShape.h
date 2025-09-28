@@ -9,6 +9,7 @@
 #include "db/grObj/grFig.h"
 #include "db/infra/frSegStyle.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frNet;
@@ -156,9 +157,9 @@ class grPathSeg : public grShape
    * getBBox
    */
   // needs to be updated
-  Rect getBBox() const override
+  odb::Rect getBBox() const override
   {
-    return Rect(begin_.x(), begin_.y(), end_.x(), end_.y());
+    return odb::Rect(begin_.x(), begin_.y(), end_.x(), end_.y());
   }
 
   void setIter(frListIter<std::unique_ptr<grShape>>& in) override

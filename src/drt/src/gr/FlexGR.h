@@ -21,16 +21,14 @@
 #include "global.h"
 #include "gr/FlexGRCMap.h"
 #include "gr/FlexGRGridGraph.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
-namespace odb {
-class dbDatabase;
-class Rect;
-}  // namespace odb
+
 namespace stt {
 class SteinerTreeBuilder;
 }
 namespace drt {
-using odb::Rect;
 
 class FlexGR
 {
@@ -236,10 +234,10 @@ class FlexGRWorkerRegionQuery
   void add(grConnFig* connFig,
            std::vector<std::vector<rq_box_value_t<grConnFig*>>>& allShapes);
   void remove(grConnFig* connFig);
-  void query(const Rect& box,
+  void query(const odb::Rect& box,
              frLayerNum layerNum,
              std::vector<grConnFig*>& result) const;
-  void query(const Rect& box,
+  void query(const odb::Rect& box,
              frLayerNum layerNum,
              std::vector<rq_box_value_t<grConnFig*>>& result) const;
   void init(bool includeExt = false);
@@ -276,8 +274,8 @@ class FlexGRWorker
   // setters
   void setRouteGCellIdxLL(const Point& in) { routeGCellIdxLL_ = in; }
   void setRouteGCellIdxUR(const Point& in) { routeGCellIdxUR_ = in; }
-  void setExtBox(const Rect& in) { extBox_ = in; }
-  void setRouteBox(const Rect& in) { routeBox_ = in; }
+  void setExtBox(const odb::Rect& in) { extBox_ = in; }
+  void setRouteBox(const odb::Rect& in) { routeBox_ = in; }
   void setGRIter(int in) { grIter_ = in; }
   void setMazeEndIter(int in) { mazeEndIter_ = in; }
   void setCongCost(int in) { workerCongCost_ = in; }
@@ -294,12 +292,12 @@ class FlexGRWorker
   Point& getRouteGCellIdxLL() { return routeGCellIdxLL_; }
   const Point& getRouteGCellIdxUR() const { return routeGCellIdxUR_; }
   Point& getRouteGCellIdxUR() { return routeGCellIdxUR_; }
-  void getExtBox(Rect& in) const { in = extBox_; }
-  const Rect& getExtBox() const { return extBox_; }
-  Rect& getExtBox() { return extBox_; }
-  void getRouteBox(Rect& in) const { in = routeBox_; }
-  const Rect& getRouteBox() const { return routeBox_; }
-  Rect& getRouteBox() { return routeBox_; }
+  void getExtBox(odb::Rect& in) const { in = extBox_; }
+  const odb::Rect& getExtBox() const { return extBox_; }
+  odb::Rect& getExtBox() { return extBox_; }
+  void getRouteBox(odb::Rect& in) const { in = routeBox_; }
+  const odb::Rect& getRouteBox() const { return routeBox_; }
+  odb::Rect& getRouteBox() { return routeBox_; }
   int getGRIter() const { return grIter_; }
   int getMazeEndIter() const { return mazeEndIter_; }
   double getCongThresh() const { return congThresh_; }
@@ -330,8 +328,8 @@ class FlexGRWorker
   FlexGR* gr_{nullptr};
   Point routeGCellIdxLL_;
   Point routeGCellIdxUR_;
-  Rect extBox_;
-  Rect routeBox_;
+  odb::Rect extBox_;
+  odb::Rect routeBox_;
   int grIter_{0};
   int mazeEndIter_{1};
   int workerCongCost_{0};

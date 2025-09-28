@@ -186,7 +186,7 @@ void io::Parser::setObstructions(odb::dbBlock* block)
     frCoord yh = blockage->getBBox()->yMax();
     // pinFig
     std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
-    pinFig->setBBox(Rect(xl, yl, xh, yh));
+    pinFig->setBBox(odb::Rect(xl, yl, xh, yh));
     pinFig->addToPin(pinIn.get());
     pinFig->setLayerNum(layerNum);
     // pinFig completed
@@ -281,7 +281,7 @@ void io::Parser::setVias(odb::dbBlock* block)
         currX = 0;
         for (int j = 0; j < params.getNumCutCols(); j++) {
           auto rect = std::make_unique<frRect>();
-          Rect tmpBox(currX, currY, currX + xSize, currY + ySize);
+          odb::Rect tmpBox(currX, currY, currX + xSize, currY + ySize);
           rect->setBBox(tmpBox);
           rect->setLayerNum(cutLayerNum);
           cutFigs.push_back(std::move(rect));
@@ -302,8 +302,10 @@ void io::Parser::setVias(odb::dbBlock* block)
       std::unique_ptr<frShape> uTopFig = std::make_unique<frRect>();
       auto topFig = static_cast<frRect*>(uTopFig.get());
 
-      Rect botBox(0 - xBotEnc, 0 - yBotEnc, currX + xBotEnc, currY + yBotEnc);
-      Rect topBox(0 - xTopEnc, 0 - yTopEnc, currX + xTopEnc, currY + yTopEnc);
+      odb::Rect botBox(
+          0 - xBotEnc, 0 - yBotEnc, currX + xBotEnc, currY + yBotEnc);
+      odb::Rect topBox(
+          0 - xTopEnc, 0 - yTopEnc, currX + xTopEnc, currY + yTopEnc);
 
       odb::dbTransform botXform(Point(-currX / 2 + xOffset + xBotOffset,
                                       -currY / 2 + yOffset + yBotOffset));
@@ -327,7 +329,7 @@ void io::Parser::setVias(odb::dbBlock* block)
       int cutClassIdx = -1;
       frLef58CutClass* cutClass = nullptr;
       for (auto& cutFig : viaDef->getCutFigs()) {
-        Rect box = cutFig->getBBox();
+        odb::Rect box = cutFig->getBBox();
         auto width = box.minDXDY();
         auto length = box.maxDXDY();
         cutClassIdx = cutLayer->getCutClassIdx(width, length);
@@ -369,7 +371,7 @@ void io::Parser::setVias(odb::dbBlock* block)
         for (auto box : boxes) {
           std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
           pinFig->setBBox(
-              Rect(box->xMin(), box->yMin(), box->xMax(), box->yMax()));
+              odb::Rect(box->xMin(), box->yMin(), box->xMax(), box->yMax()));
           pinFig->setLayerNum(layerNum);
           switch (cnt) {
             case 0:
@@ -825,7 +827,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
         auto tmpPWire = std::make_unique<frPatchWire>();
         tmpPWire->setLayerNum(layerNum);
         tmpPWire->setOrigin({beginX, beginY});
-        tmpPWire->setOffsetBox(Rect(left, bottom, right, top));
+        tmpPWire->setOffsetBox(odb::Rect(left, bottom, right, top));
         netIn->addPatchWire(std::move(tmpPWire));
       }
       if (hasEndPoint) {
@@ -1312,9 +1314,9 @@ void io::Parser::readDesign(odb::dbDatabase* db)
   auto numLefVia = getTech()->vias_.size();
   if (router_cfg_->VERBOSE > 0) {
     logger_->report("");
-    Rect dieBox = getBlock()->getDieBox();
+    odb::Rect dieBox = getBlock()->getDieBox();
     logger_->report("Design:                   {}", getBlock()->getName());
-    // TODO Rect can't be logged directly
+    // TODO odb::Rect can't be logged directly
     std::stringstream dieBoxSStream;
     dieBoxSStream << dieBox;
     logger_->report("Die area:                 {}", dieBoxSStream.str());
@@ -2605,7 +2607,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
   std::vector<RTree<frMPin*>> pin_shapes;
   pin_shapes.resize(numLayers);
   auto addPinFig
-      = [&pin_shapes](const Rect& box, frLayerNum lNum, frMPin* pinIn) {
+      = [&pin_shapes](const odb::Rect& box, frLayerNum lNum, frMPin* pinIn) {
           std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
           pinFig->setBBox(box);
           pinFig->addToPin(pinIn);
@@ -2699,7 +2701,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
               frCoord yl = box->yMin();
               frCoord xh = box->xMax();
               frCoord yh = box->yMax();
-              addPinFig(Rect(xl, yl, xh, yh), layerNum, pinIn.get());
+              addPinFig(odb::Rect(xl, yl, xh, yh), layerNum, pinIn.get());
             }
           }
           term->addPin(std::move(pinIn));
@@ -2740,7 +2742,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
           std::vector<rq_box_value_t<frMPin*>> containing_pins;
           if (layerNum + 1 < pin_shapes.size()) {
             pin_shapes[layerNum + 1].query(
-                bgi::intersects(Rect{xl, yl, xh, yh}),
+                bgi::intersects(odb::Rect{xl, yl, xh, yh}),
                 back_inserter(containing_pins));
           }
           if (!containing_pins.empty()) {
@@ -2755,7 +2757,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
             }
             if (pin) {
               std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
-              pinFig->setBBox(Rect(xl, yl, xh, yh));
+              pinFig->setBBox(odb::Rect(xl, yl, xh, yh));
               pinFig->addToPin(pin);
               pinFig->setLayerNum(layerNum);
               std::unique_ptr<frPinFig> uptr(std::move(pinFig));
@@ -2776,7 +2778,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
           pinIn->setId(0);
           // pinFig
           std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
-          pinFig->setBBox(Rect(xl, yl, xh, yh));
+          pinFig->setBBox(odb::Rect(xl, yl, xh, yh));
           pinFig->addToPin(pinIn.get());
           pinFig->setLayerNum(layerNum);
           std::unique_ptr<frPinFig> uptr(std::move(pinFig));
@@ -2803,7 +2805,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
             pinIn->setId(0);
             // pinFig
             std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
-            pinFig->setBBox(Rect(xl, yl, xh, yh));
+            pinFig->setBBox(odb::Rect(xl, yl, xh, yh));
             pinFig->addToPin(pinIn.get());
             pinFig->setLayerNum(lNum);
             std::unique_ptr<frPinFig> uptr(std::move(pinFig));
@@ -2889,7 +2891,7 @@ void io::Parser::setTechViaRules(odb::dbTech* db_tech)
         frCoord yl = rect.yMin();
         frCoord xh = rect.xMax();
         frCoord yh = rect.yMax();
-        Rect box(xl, yl, xh, yh);
+        odb::Rect box(xl, yl, xh, yh);
         switch (lNum2Int[layerNum]) {
           case 1:
             logger_->warn(
@@ -3002,7 +3004,7 @@ void io::Parser::setTechVias(odb::dbTech* db_tech)
       frCoord xh = box->xMax();
       frCoord yh = box->yMax();
       std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
-      pinFig->setBBox(Rect(xl, yl, xh, yh));
+      pinFig->setBBox(odb::Rect(xl, yl, xh, yh));
       pinFig->setLayerNum(layerNum);
       if (lNum2Int[layerNum] == 1) {
         viaDef->addLayer1Fig(std::move(pinFig));
@@ -3018,7 +3020,7 @@ void io::Parser::setTechVias(odb::dbTech* db_tech)
     frLef58CutClass* cutClass = nullptr;
 
     for (auto& cutFig : viaDef->getCutFigs()) {
-      Rect box = cutFig->getBBox();
+      odb::Rect box = cutFig->getBBox();
       auto width = box.minDXDY();
       auto length = box.maxDXDY();
       cutClassIdx = cutLayer->getCutClassIdx(width, length);
@@ -3521,18 +3523,18 @@ void io::Writer::writeViaDefToODB(odb::dbBlock* block,
   odb::dbVia* _db_via = odb::dbVia::create(block, via->getName().c_str());
   _db_via->setDefault(true);
   for (auto& fig : via->getLayer2Figs()) {
-    Rect box = fig->getBBox();
+    odb::Rect box = fig->getBBox();
     odb::dbBox::create(
         _db_via, _layer2, box.xMin(), box.yMin(), box.xMax(), box.yMax());
   }
   for (auto& fig : via->getCutFigs()) {
-    Rect box = fig->getBBox();
+    odb::Rect box = fig->getBBox();
     odb::dbBox::create(
         _db_via, _cut_layer, box.xMin(), box.yMin(), box.xMax(), box.yMax());
   }
 
   for (auto& fig : via->getLayer1Figs()) {
-    Rect box = fig->getBBox();
+    odb::Rect box = fig->getBBox();
     odb::dbBox::create(
         _db_via, _layer1, box.xMin(), box.yMin(), box.xMax(), box.yMax());
   }
@@ -3640,7 +3642,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
             auto layer = db_tech->findLayer(layerName.c_str());
             _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
             Point origin = pwire->getOrigin();
-            Rect offsetBox = pwire->getOffsetBox();
+            odb::Rect offsetBox = pwire->getOffsetBox();
             _wire_encoder.addPoint(origin.x(), origin.y());
             _wire_encoder.addRect(offsetBox.xMin(),
                                   offsetBox.yMin(),
@@ -3708,7 +3710,8 @@ void io::Writer::updateDbAccessPoint(odb::dbAccessPoint* db_ap,
   }
   auto path_segs = ap->getPathSegs();
   for (const auto& path_seg : path_segs) {
-    Rect db_rect = Rect(path_seg.getBeginPoint(), path_seg.getEndPoint());
+    odb::Rect db_rect
+        = odb::Rect(path_seg.getBeginPoint(), path_seg.getEndPoint());
     bool begin_style_trunc = (path_seg.getBeginStyle() == frcTruncateEndStyle);
     bool end_style_trunc = (path_seg.getEndStyle() == frcTruncateEndStyle);
     db_ap->addSegment(db_rect, begin_style_trunc, end_style_trunc);
@@ -3913,7 +3916,7 @@ std::vector<int> getTracksInRange(const frTrackPattern* tp,
  * the passed pin_rect and chooses the one that is closest to the center. If no
  * tracks are found, it chooses the pin center point as the via location.
  */
-Point io::TopLayerBTermHandler::getBestViaPosition(Rect pin_rect)
+Point io::TopLayerBTermHandler::getBestViaPosition(odb::Rect pin_rect)
 {
   Point center_pt = pin_rect.center();
   const auto top_routing_layer

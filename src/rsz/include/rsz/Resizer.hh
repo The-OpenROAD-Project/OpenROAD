@@ -42,7 +42,6 @@ using odb::dbMaster;
 using odb::dbNet;
 using odb::dbTechLayer;
 using odb::Point;
-using odb::Rect;
 
 using stt::SteinerTreeBuilder;
 
@@ -725,7 +724,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   int dbu_ = 0;
   const Pin* debug_pin_ = nullptr;
 
-  Rect core_;
+  odb::Rect core_;
   bool core_exists_ = false;
 
   double design_area_ = 0.0;

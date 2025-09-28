@@ -8,6 +8,7 @@
 #include "db/obj/frInst.h"
 #include "frBaseTypes.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -40,9 +41,9 @@ void frInstTerm::getShapes(std::vector<frRect>& outShapes) const
   }
 }
 
-Rect frInstTerm::getBBox() const
+odb::Rect frInstTerm::getBBox() const
 {
-  Rect bbox(term_->getBBox());
+  odb::Rect bbox(term_->getBBox());
   odb::dbTransform trans = getInst()->getDBTransform();
   trans.apply(bbox);
   return bbox;

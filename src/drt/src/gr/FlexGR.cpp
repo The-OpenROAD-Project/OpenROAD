@@ -28,6 +28,7 @@
 #include "db/obj/frInst.h"
 #include "frBaseTypes.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/exception.h"
 
 namespace drt {
@@ -191,7 +192,7 @@ void FlexGR::searchRepairMacro(int iter,
 
   for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
     if (inst->getMaster()->getMasterType() == dbMasterType::BLOCK) {
-      Rect macroBBox = inst->getBBox();
+      odb::Rect macroBBox = inst->getBBox();
       Point macroCenter((macroBBox.xMin() + macroBBox.xMax()) / 2,
                         (macroBBox.yMin() + macroBBox.yMax()) / 2);
       Point macroCenterIdx
@@ -208,7 +209,7 @@ void FlexGR::searchRepairMacro(int iter,
   // create separate worker for each macro
   for (auto macro : macros) {
     auto worker = std::make_unique<FlexGRWorker>(this, router_cfg_);
-    Rect macroBBox = macro->getBBox();
+    odb::Rect macroBBox = macro->getBBox();
     Point macroLL(macroBBox.xMin(), macroBBox.yMin());
     Point macroUR(macroBBox.xMax(), macroBBox.yMax());
     Point gcellIdxLL = getDesign()->getTopBlock()->getGCellIdx(macroLL);
@@ -219,14 +220,14 @@ void FlexGR::searchRepairMacro(int iter,
     gcellIdxUR = {std::min((int) gcellIdxUR.x() + size, (int) xgp.getCount()),
                   std::min((int) gcellIdxUR.y() + size, (int) ygp.getCount())};
 
-    Rect routeBox1 = getDesign()->getTopBlock()->getGCellBox(gcellIdxLL);
-    Rect routeBox2 = getDesign()->getTopBlock()->getGCellBox(gcellIdxUR);
-    Rect extBox(
+    odb::Rect routeBox1 = getDesign()->getTopBlock()->getGCellBox(gcellIdxLL);
+    odb::Rect routeBox2 = getDesign()->getTopBlock()->getGCellBox(gcellIdxUR);
+    odb::Rect extBox(
         routeBox1.xMin(), routeBox1.yMin(), routeBox2.xMax(), routeBox2.yMax());
-    Rect routeBox((routeBox1.xMin() + routeBox1.xMax()) / 2,
-                  (routeBox1.yMin() + routeBox1.yMax()) / 2,
-                  (routeBox2.xMin() + routeBox2.xMax()) / 2,
-                  (routeBox2.yMin() + routeBox2.yMax()) / 2);
+    odb::Rect routeBox((routeBox1.xMin() + routeBox1.xMax()) / 2,
+                       (routeBox1.yMin() + routeBox1.yMax()) / 2,
+                       (routeBox2.xMin() + routeBox2.xMax()) / 2,
+                       (routeBox2.yMin() + routeBox2.yMax()) / 2);
 
     worker->setRouteGCellIdxLL(gcellIdxLL);
     worker->setRouteGCellIdxUR(gcellIdxUR);
@@ -289,8 +290,8 @@ void FlexGR::searchRepair(int iter,
     std::cout << "search and repair test mode" << std::endl << std::flush;
 
     FlexGRWorker worker(this, router_cfg_);
-    Rect extBox(1847999, 440999, 1857000, 461999);
-    Rect routeBox(1849499, 442499, 1855499, 460499);
+    odb::Rect extBox(1847999, 440999, 1857000, 461999);
+    odb::Rect routeBox(1849499, 442499, 1855499, 460499);
     Point gcellIdxLL(616, 147);
     Point gcellIdxUR(618, 153);
 
@@ -330,16 +331,18 @@ void FlexGR::searchRepair(int iter,
             = Point(std::min((int) xgp.getCount() - 1, i + size - 1),
                     std::min((int) ygp.getCount(), j + size - 1));
 
-        Rect routeBox1 = getDesign()->getTopBlock()->getGCellBox(gcellIdxLL);
-        Rect routeBox2 = getDesign()->getTopBlock()->getGCellBox(gcellIdxUR);
-        Rect extBox(routeBox1.xMin(),
-                    routeBox1.yMin(),
-                    routeBox2.xMax(),
-                    routeBox2.yMax());
-        Rect routeBox((routeBox1.xMin() + routeBox1.xMax()) / 2,
-                      (routeBox1.yMin() + routeBox1.yMax()) / 2,
-                      (routeBox2.xMin() + routeBox2.xMax()) / 2,
-                      (routeBox2.yMin() + routeBox2.yMax()) / 2);
+        odb::Rect routeBox1
+            = getDesign()->getTopBlock()->getGCellBox(gcellIdxLL);
+        odb::Rect routeBox2
+            = getDesign()->getTopBlock()->getGCellBox(gcellIdxUR);
+        odb::Rect extBox(routeBox1.xMin(),
+                         routeBox1.yMin(),
+                         routeBox2.xMax(),
+                         routeBox2.yMax());
+        odb::Rect routeBox((routeBox1.xMin() + routeBox1.xMax()) / 2,
+                           (routeBox1.yMin() + routeBox1.yMax()) / 2,
+                           (routeBox2.xMin() + routeBox2.xMax()) / 2,
+                           (routeBox2.yMin() + routeBox2.yMax()) / 2);
 
         // worker->setGCellIdx(gcellIdxLL, gcellIdxUR);
         worker->setRouteGCellIdxLL(gcellIdxLL);
@@ -678,7 +681,7 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
       xgp->getStartCoord(), xgp->getCount(), xgp->getSpacing());
   gcell->addGridPatternY(
       ygp->getStartCoord(), ygp->getCount(), ygp->getSpacing());
-  Rect dieBox = design_->getTopBlock()->getDieBox();
+  odb::Rect dieBox = design_->getTopBlock()->getDieBox();
   gcell->addGridPatternX(dieBox.xMax(), 1, 0);
   gcell->addGridPatternY(dieBox.yMax(), 1, 0);
   unsigned cmapLayerIdx = 0;
@@ -1675,7 +1678,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
 
     auto gcellNode = std::make_unique<frNode>();
     gcellNode->setType(frNodeTypeEnum::frcSteiner);
-    Rect gcellBox = design_->getTopBlock()->getGCellBox(
+    odb::Rect gcellBox = design_->getTopBlock()->getGCellBox(
         Point(gcellIdx.first, gcellIdx.second));
     Point loc((gcellBox.xMin() + gcellBox.xMax()) / 2,
               (gcellBox.yMin() + gcellBox.yMax()) / 2);
@@ -1866,7 +1869,7 @@ void FlexGR::layerAssign()
     frCoord urx = INT_MIN;
     frCoord ury = INT_MIN;
     for (auto& rpin : net->getRPins()) {
-      Rect bbox = rpin->getBBox();
+      odb::Rect bbox = rpin->getBBox();
       llx = std::min(bbox.xMin(), llx);
       lly = std::min(bbox.yMin(), lly);
       urx = std::max(bbox.xMax(), urx);
@@ -2514,8 +2517,8 @@ void FlexGR::updateDb()
       Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);
       Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
 
-      Rect bbox = design_->getTopBlock()->getGCellBox(bpIdx);
-      Rect ebox = design_->getTopBlock()->getGCellBox(epIdx);
+      odb::Rect bbox = design_->getTopBlock()->getGCellBox(bpIdx);
+      odb::Rect ebox = design_->getTopBlock()->getGCellBox(epIdx);
       frLayerNum bNum = guide->getBeginLayerNum();
       frLayerNum eNum = guide->getEndLayerNum();
       // append unit guide in case of stacked via

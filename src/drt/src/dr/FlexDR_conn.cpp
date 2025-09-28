@@ -29,6 +29,7 @@
 #include "frProfileTask.h"
 #include "frRegionQuery.h"
 #include "io/io.h"
+#include "odb/geom.h"
 #include "triton_route/TritonRoute.h"
 #include "utl/exception.h"
 
@@ -59,7 +60,7 @@ void FlexDRConnectivityChecker::pin2epMap_helper(
 {
   auto regionQuery = getRegionQuery();
   frRegionQuery::Objects<frBlockObject> result;
-  Rect query_box(pt.x(), pt.y(), pt.x(), pt.y());
+  odb::Rect query_box(pt.x(), pt.y(), pt.x(), pt.y());
   regionQuery->query(query_box, lNum, result);
   for (auto& [bx, rqObj] : result) {
     switch (rqObj->typeId()) {
@@ -468,7 +469,7 @@ void FlexDRConnectivityChecker::finish(
       } else if (netRouteObjs[i]->typeId() == frcVia) {
         auto victimVia = static_cast<frVia*>(netRouteObjs[i]);
         // negative rule
-        Rect bbox = victimVia->getLayer1BBox();
+        odb::Rect bbox = victimVia->getLayer1BBox();
         addMarker(net, victimVia->getViaDef()->getLayer1Num(), bbox);
 
         frVia* via = static_cast<frVia*>(netRouteObjs[i]);
@@ -1148,7 +1149,7 @@ void FlexDRConnectivityChecker::merge_commit(
 }
 void FlexDRConnectivityChecker::addMarker(frNet* net,
                                           frLayerNum lNum,
-                                          const Rect& bbox)
+                                          const odb::Rect& bbox)
 {
   auto regionQuery = getRegionQuery();
   auto marker = std::make_unique<frMarker>();

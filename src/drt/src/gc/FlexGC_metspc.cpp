@@ -11,16 +11,18 @@
 #include "frBaseTypes.h"
 #include "gc/FlexGC_impl.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 
-Rect FlexGCWorker::Impl::checkForbiddenSpc_queryBox(gcRect* rect,
-                                                    frCoord minSpc,
-                                                    frCoord maxSpc,
-                                                    bool isH,
-                                                    bool right)
+odb::Rect FlexGCWorker::Impl::checkForbiddenSpc_queryBox(gcRect* rect,
+                                                         frCoord minSpc,
+                                                         frCoord maxSpc,
+                                                         bool isH,
+                                                         bool right)
 {
-  Rect queryBox(gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect));
+  odb::Rect queryBox(
+      gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect));
   if (isH) {
     if (right) {
       queryBox.set_ylo(gtl::yh(*rect) + minSpc);
@@ -97,35 +99,36 @@ void FlexGCWorker::Impl::checkForbiddenSpc_main(
     }
     // add violation
     auto marker = std::make_unique<frMarker>();
-    Rect box(gtl::xl(markerRect),
-             gtl::yl(markerRect),
-             gtl::xh(markerRect),
-             gtl::yh(markerRect));
+    odb::Rect box(gtl::xl(markerRect),
+                  gtl::yl(markerRect),
+                  gtl::xh(markerRect),
+                  gtl::yh(markerRect));
     marker->setBBox(box);
     marker->setLayerNum(rect1->getLayerNum());
     marker->setConstraint(con);
     marker->addSrc(rect1->getNet()->getOwner());
     marker->addVictim(rect1->getNet()->getOwner(),
                       std::make_tuple(rect1->getLayerNum(),
-                                      Rect(gtl::xl(*rect1),
-                                           gtl::yl(*rect1),
-                                           gtl::xh(*rect1),
-                                           gtl::yh(*rect1)),
+                                      odb::Rect(gtl::xl(*rect1),
+                                                gtl::yl(*rect1),
+                                                gtl::xh(*rect1),
+                                                gtl::yh(*rect1)),
                                       rect1->isFixed()));
     marker->addSrc(rect2->getNet()->getOwner());
     marker->addAggressor(rect2->getNet()->getOwner(),
                          std::make_tuple(rect2->getLayerNum(),
-                                         Rect(gtl::xl(*rect2),
-                                              gtl::yl(*rect2),
-                                              gtl::xh(*rect2),
-                                              gtl::yh(*rect2)),
+                                         odb::Rect(gtl::xl(*rect2),
+                                                   gtl::yl(*rect2),
+                                                   gtl::xh(*rect2),
+                                                   gtl::yh(*rect2)),
                                          rect2->isFixed()));
     marker->addSrc(ptr->getNet()->getOwner());
     marker->addAggressor(
         ptr->getNet()->getOwner(),
         std::make_tuple(
             ptr->getLayerNum(),
-            Rect(gtl::xl(*ptr), gtl::yl(*ptr), gtl::xh(*ptr), gtl::yh(*ptr)),
+            odb::Rect(
+                gtl::xl(*ptr), gtl::yl(*ptr), gtl::xh(*ptr), gtl::yh(*ptr)),
             ptr->isFixed()));
     addMarker(std::move(marker));
   }
@@ -136,7 +139,7 @@ bool FlexGCWorker::Impl::checkForbiddenSpc_twoedges(
     frLef58ForbiddenSpcConstraint* con,
     bool isH)
 {
-  Rect queryBox;
+  odb::Rect queryBox;
   auto hasWireInWithin
       = [](gcRect* rect, const std::vector<rq_box_value_t<gcRect*>>& result) {
           for (auto& [objBox, ptr] : result) {
@@ -178,7 +181,7 @@ void FlexGCWorker::Impl::checkForbiddenSpc_main(
   if (!checkForbiddenSpc_twoedges(rect, con, isH)) {
     return;
   }
-  Rect queryBox;
+  odb::Rect queryBox;
   std::vector<rq_box_value_t<gcRect*>> result;
   auto& workerRegionQuery = getWorkerRegionQuery();
 

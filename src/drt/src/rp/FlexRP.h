@@ -34,7 +34,9 @@ class FlexRP
   // functions
   void prep_viaForbiddenThrough();
   void prep_minStepViasCheck();
-  bool hasMinStepViol(const Rect& r1, const Rect& r2, frLayerNum lNum);
+  bool hasMinStepViol(const odb::Rect& r1,
+                      const odb::Rect& r2,
+                      frLayerNum lNum);
   void prep_viaForbiddenThrough_helper(const frLayerNum& lNum,
                                        const int& tableLayerIdx,
                                        const int& tableEntryIdx,
@@ -134,9 +136,9 @@ class FlexRP
       ForbiddenRanges& forbiddenRanges);
 
   void prep_via2viaForbiddenLen_lef58CutSpc_helper(
-      const Rect& enclosureBox1,
-      const Rect& enclosureBox2,
-      const Rect& cutBox,
+      const odb::Rect& enclosureBox1,
+      const odb::Rect& enclosureBox2,
+      const odb::Rect& cutBox,
       frCoord reqSpcVal,
       std::pair<frCoord, frCoord>& range);
 

@@ -20,19 +20,20 @@
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 #include "ta/FlexTA.h"
 
 namespace drt {
 
 bool FlexTAWorker::outOfDieVia(frLayerNum layer_num,
                                const Point& pt,
-                               const Rect& die_box) const
+                               const odb::Rect& die_box) const
 {
   if (router_cfg_->USENONPREFTRACKS
       && !getTech()->getLayer(layer_num)->isUnidirectional()) {
     return false;
   }
-  Rect test_box_up;
+  odb::Rect test_box_up;
   if (layer_num + 1 <= getTech()->getTopLayerNum()) {
     const frViaDef* via
         = getTech()->getLayer(layer_num + 1)->getDefaultViaDef();
@@ -45,7 +46,7 @@ bool FlexTAWorker::outOfDieVia(frLayerNum layer_num,
       die_box.bloat(1, test_box_up);
     }
   }
-  Rect test_box_down;
+  odb::Rect test_box_down;
   if (layer_num - 1 >= getTech()->getBottomLayerNum()) {
     const frViaDef* via
         = getTech()->getLayer(layer_num - 1)->getDefaultViaDef();
@@ -143,8 +144,8 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
 
   std::vector<frGuide*> nbrGuides;
   auto rq = getRegionQuery();
-  Rect box;
-  box = Rect(bp, bp);
+  odb::Rect box;
+  box = odb::Rect(bp, bp);
   nbrGuides.clear();
   if (layerNum - 2 >= router_cfg_->BOTTOM_ROUTING_LAYER) {
     rq->queryGuide(box, layerNum - 2, nbrGuides);
@@ -167,7 +168,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
   }
 
   std::vector<frBlockObject*> result;
-  box = Rect(bp, bp);
+  box = odb::Rect(bp, bp);
   rq->queryGRPin(box, result);
 
   for (auto& term : result) {
@@ -284,11 +285,11 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
   auto rq = getRegionQuery();
   std::vector<frBlockObject*> result;
 
-  Rect box;
-  box = Rect(bp, bp);
+  odb::Rect box;
+  box = odb::Rect(bp, bp);
   rq->queryGRPin(box, result);
   if (!(ep == bp)) {
-    box = Rect(ep, ep);
+    box = odb::Rect(ep, ep);
     rq->queryGRPin(box, result);
   }
   for (auto& term : result) {
@@ -385,16 +386,16 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
   // layerNum in FlexTAWorker
   std::vector<frGuide*> nbrGuides;
   auto rq = getRegionQuery();
-  Rect box;
+  odb::Rect box;
   for (int i = 0; i < 2; i++) {
     nbrGuides.clear();
     // check left
     if (i == 0) {
-      box = Rect(bp, bp);
+      box = odb::Rect(bp, bp);
       cp = bp;
       // check right
     } else {
-      box = Rect(ep, ep);
+      box = odb::Rect(ep, ep);
       cp = ep;
     }
     if (layerNum - 2 >= router_cfg_->BOTTOM_ROUTING_LAYER) {
@@ -469,7 +470,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
 {
   auto iroute = std::make_unique<taPin>();
   iroute->setGuide(guide);
-  Rect guideBox = guide->getBBox();
+  odb::Rect guideBox = guide->getBBox();
   auto layerNum = guide->getBeginLayerNum();
   bool isExt = !(getRouteBox().contains(guideBox));
   if (isExt) {
@@ -671,13 +672,13 @@ void FlexTAWorker::sortIroutes()
   }
 }
 
-void FlexTAWorker::initFixedObjs_helper(const Rect& box,
+void FlexTAWorker::initFixedObjs_helper(const odb::Rect& box,
                                         frCoord bloatDist,
                                         frLayerNum lNum,
                                         frNet* net,
                                         bool isViaCost)
 {
-  Rect bloatBox;
+  odb::Rect bloatBox;
   box.bloat(bloatDist, bloatBox);
   auto con = getDesign()->getTech()->getLayer(lNum)->getShortConstraint();
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
@@ -698,7 +699,7 @@ void FlexTAWorker::initFixedObjs_helper(const Rect& box,
     // track.addToCost(net, x1, x2, 2);
     // old
     auto trackLoc = trackLocs[i];
-    Rect tmpBox;
+    odb::Rect tmpBox;
     if (isH) {
       tmpBox.init(bloatBox.xMin(), trackLoc, bloatBox.xMax(), trackLoc);
     } else {
@@ -715,7 +716,7 @@ void FlexTAWorker::initFixedObjs_helper(const Rect& box,
 void FlexTAWorker::initFixedObjs()
 {
   frRegionQuery::Objects<frBlockObject> result;
-  Rect box;
+  odb::Rect box;
   frCoord width = 0;
   frCoord bloatDist = 0;
   for (auto layerNum = getTech()->getBottomLayerNum();
@@ -760,7 +761,7 @@ void FlexTAWorker::initFixedObjs()
                      == dbTechLayerType::ROUTING) {
             auto cutLayer = getTech()->getLayer(layerNum - 1);
             auto via = std::make_unique<frVia>(cutLayer->getDefaultViaDef());
-            Rect viaBox = via->getLayer2BBox();
+            odb::Rect viaBox = via->getLayer2BBox();
             frCoord viaWidth = viaBox.minDXDY();
             // only add for fat via
             if (viaWidth > width) {
@@ -775,7 +776,7 @@ void FlexTAWorker::initFixedObjs()
                      == dbTechLayerType::ROUTING) {
             auto cutLayer = getTech()->getLayer(layerNum + 1);
             auto via = std::make_unique<frVia>(cutLayer->getDefaultViaDef());
-            Rect viaBox = via->getLayer1BBox();
+            odb::Rect viaBox = via->getLayer1BBox();
             frCoord viaWidth = viaBox.minDXDY();
             // only add for fat via
             if (viaWidth > width) {
@@ -796,7 +797,7 @@ void FlexTAWorker::initFixedObjs()
                            bool upper,
                            const frRegionQuery::Objects<frBlockObject>&
                                result) {
-      Rect box;
+      odb::Rect box;
       for (auto& [bounds, obj] : result) {
         bounds.bloat(-1, box);
         auto type = obj->typeId();
@@ -816,10 +817,10 @@ void FlexTAWorker::initFixedObjs()
                 = getTech()->getLayer(upper ? layerNum + 1 : layerNum - 1);
             auto bloatDist = initFixedObjs_calcOBSBloatDistVia(
                 cutLayer->getDefaultViaDef(), layerNum, bounds);
-            Rect bloatBox;
+            odb::Rect bloatBox;
             box.bloat(bloatDist, bloatBox);
 
-            Rect borderBox(
+            odb::Rect borderBox(
                 bloatBox.xMin(), bloatBox.yMin(), box.xMin(), bloatBox.yMax());
             initFixedObjs_helper(borderBox, 0, layerNum, nullptr, true);
             borderBox.init(
@@ -858,11 +859,11 @@ void FlexTAWorker::initFixedObjs()
 
 frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(const frViaDef* viaDef,
                                                         const frLayerNum lNum,
-                                                        const Rect& box,
+                                                        const odb::Rect& box,
                                                         bool isOBS)
 {
   auto layer = getTech()->getLayer(lNum);
-  Rect viaBox;
+  odb::Rect viaBox;
   auto via = std::make_unique<frVia>(viaDef);
   if (viaDef->getLayer1Num() == lNum) {
     viaBox = via->getLayer1BBox();
@@ -900,7 +901,7 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(const frViaDef* viaDef,
 
 frCoord FlexTAWorker::initFixedObjs_calcBloatDist(frBlockObject* obj,
                                                   const frLayerNum lNum,
-                                                  const Rect& box)
+                                                  const odb::Rect& box)
 {
   auto layer = getTech()->getLayer(lNum);
   frCoord width = layer->getWidth();

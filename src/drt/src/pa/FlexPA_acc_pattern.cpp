@@ -29,6 +29,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "serialization.h"
@@ -326,13 +327,13 @@ bool FlexPA::genPatternsGC(
   frCoord urx = std::numeric_limits<frCoord>::min();
   frCoord ury = std::numeric_limits<frCoord>::min();
   for (auto& [connFig, owner] : objs) {
-    Rect bbox = connFig->getBBox();
+    odb::Rect bbox = connFig->getBBox();
     llx = std::min(llx, bbox.xMin());
     lly = std::min(lly, bbox.yMin());
     urx = std::max(urx, bbox.xMax());
     ury = std::max(ury, bbox.yMax());
   }
-  const Rect ext_box(llx - 3000, lly - 3000, urx + 3000, ury + 3000);
+  const odb::Rect ext_box(llx - 3000, lly - 3000, urx + 3000, ury + 3000);
   design_rule_checker.setExtBox(ext_box);
   design_rule_checker.setDrcBox(ext_box);
 

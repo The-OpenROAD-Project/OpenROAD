@@ -13,6 +13,7 @@
 #include "db/obj/frRef.h"
 #include "frBaseTypes.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frBlock;
@@ -115,13 +116,13 @@ class frInst : public frRef
    * intersects
    */
 
-  Rect getBBox() const override;
+  odb::Rect getBBox() const override;
 
   void move(const odb::dbTransform& xform) override { ; }
-  bool intersects(const Rect& box) const override { return false; }
+  bool intersects(const odb::Rect& box) const override { return false; }
   // others
   odb::dbTransform getNoRotationTransform() const;
-  Rect getBoundaryBBox() const;
+  odb::Rect getBoundaryBBox() const;
 
   frInstTerm* getInstTerm(int index);
 

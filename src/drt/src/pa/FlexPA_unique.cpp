@@ -136,7 +136,8 @@ void UniqueInsts::initMasterToPinLayerRange()
   }
 }
 
-bool UniqueInsts::hasTrackPattern(frTrackPattern* tp, const Rect& box) const
+bool UniqueInsts::hasTrackPattern(frTrackPattern* tp,
+                                  const odb::Rect& box) const
 {
   const bool is_vertical_track = tp->isHorizontal();
   const frCoord low = tp->getStartCoord();
@@ -160,7 +161,7 @@ bool UniqueInsts::isNDRInst(frInst* inst) const
 UniqueClassKey UniqueInsts::computeUniqueClassKey(frInst* inst) const
 {
   const Point origin = inst->getOrigin();
-  const Rect boundary_bbox = inst->getBoundaryBBox();
+  const odb::Rect boundary_bbox = inst->getBoundaryBBox();
   const dbOrientType orient = inst->getOrient();
   auto it = master_to_pin_layer_range_.find(inst->getMaster());
   if (it == master_to_pin_layer_range_.end()) {

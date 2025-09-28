@@ -130,8 +130,8 @@ void io::Parser::initDefaultVias()
       auto techDefautlViaDef
           = getTech()->getLayer(layerNum)->getDefaultViaDef();
       frVia via(techDefautlViaDef);
-      Rect layer1Box = via.getLayer1BBox();
-      Rect layer2Box = via.getLayer2BBox();
+      odb::Rect layer1Box = via.getLayer1BBox();
+      odb::Rect layer2Box = via.getLayer2BBox();
       frLayerNum layer1Num = techDefautlViaDef->getLayer1Num();
       frLayerNum layer2Num = techDefautlViaDef->getLayer2Num();
       bool isLayer1Square = layer1Box.dx() == layer1Box.dy();
@@ -189,7 +189,7 @@ void io::Parser::initDefaultVias()
         // cut layer shape
         std::unique_ptr<frShape> uCutFig = std::make_unique<frRect>();
         auto cutFig = static_cast<frRect*>(uCutFig.get());
-        Rect cutBox = via.getCutBBox();
+        odb::Rect cutBox = via.getCutBBox();
         cutFig->setBBox(cutBox);
         cutFig->setLayerNum(techDefautlViaDef->getCutLayerNum());
 
@@ -292,8 +292,8 @@ void io::Parser::initSecondaryVias()
             auto botfig = static_cast<frRect*>(u_botfig.get());
             std::unique_ptr<frShape> u_topfig = std::make_unique<frRect>();
             auto topfig = static_cast<frRect*>(u_topfig.get());
-            Rect layer1_box = secondary_via.getLayer1BBox();
-            Rect layer2_box = secondary_via.getLayer2BBox();
+            odb::Rect layer1_box = secondary_via.getLayer1BBox();
+            odb::Rect layer2_box = secondary_via.getLayer2BBox();
             layer1_box = layer1_box.bloat(layer1_bloats.first,
                                           odb::Orientation2D::Vertical);
             layer1_box = layer1_box.bloat(layer1_bloats.second,
@@ -313,7 +313,7 @@ void io::Parser::initSecondaryVias()
             // cut layer shape
             std::unique_ptr<frShape> u_cutfig = std::make_unique<frRect>();
             auto cutfig = static_cast<frRect*>(u_cutfig.get());
-            Rect cut_box = secondary_via.getCutBBox();
+            odb::Rect cut_box = secondary_via.getCutBBox();
             cut_box.moveDelta(-dx, -dy);
             cutfig->setBBox(cut_box);
             cutfig->setLayerNum(viadef->getCutLayerNum());
@@ -494,7 +494,7 @@ void io::Parser::getViaRawPriority(const frViaDef* viaDef,
 
   using boost::polygon::operators::operator+=;
   for (auto& fig : viaDef->getLayer1Figs()) {
-    Rect bbox = fig->getBBox();
+    odb::Rect bbox = fig->getBBox();
     Rectangle bboxRect(bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     viaLayerPS1 += bboxRect;
   }
@@ -514,7 +514,7 @@ void io::Parser::getViaRawPriority(const frViaDef* viaDef,
 
   PolygonSet viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
-    Rect bbox = fig->getBBox();
+    odb::Rect bbox = fig->getBBox();
     Rectangle bboxRect(bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     viaLayerPS2 += bboxRect;
   }
@@ -768,7 +768,7 @@ void io::Parser::checkFig(frPinFig* uFig,
   int grid = getTech()->getManufacturingGrid();
   if (uFig->typeId() == frcRect) {
     frRect* shape = static_cast<frRect*>(uFig);
-    Rect box = shape->getBBox();
+    odb::Rect box = shape->getBBox();
     xform.apply(box);
     if (box.xMin() % grid || box.yMin() % grid || box.xMax() % grid
         || box.yMax() % grid) {

@@ -24,6 +24,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "utl/Logger.h"
@@ -118,7 +119,7 @@ void FlexPA::genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
   const auto rect_width = gtl::delta(rect, gtl::HORIZONTAL);
   const auto rect_height = gtl::delta(rect, gtl::VERTICAL);
   frVia via(via_def);
-  const Rect box = via.getLayer1BBox();
+  const odb::Rect box = via.getLayer1BBox();
   const auto via_width = box.dx();
   const auto via_height = box.dy();
   if (via_width > rect_width || via_height > rect_height) {
@@ -693,8 +694,8 @@ bool FlexPA::isPlanarViolationFree(frAccessPoint* ap,
   design_rule_checker.setIgnoreCornerSpacing();
   const auto pitch = layer->getPitch();
   const auto extension = 5 * pitch;
-  Rect tmp_box(point, point);
-  Rect ext_box;
+  odb::Rect tmp_box(point, point);
+  odb::Rect ext_box;
   tmp_box.bloat(extension, ext_box);
   design_rule_checker.setExtBox(ext_box);
   design_rule_checker.setDrcBox(ext_box);
@@ -802,10 +803,10 @@ frCoord FlexPA::viaMaxExt(frInstTerm* inst_term,
   const auto layer_num = ap->getLayerNum();
   auto via = std::make_unique<frVia>(via_def);
   via->setOrigin(begin_point);
-  const Rect box = via->getLayer1BBox();
+  const odb::Rect box = via->getLayer1BBox();
 
   // check if ap is on the left/right boundary of the cell
-  Rect boundary_bbox;
+  odb::Rect boundary_bbox;
   bool is_side_bound = false;
   if (inst_term) {
     boundary_bbox = inst_term->getInst()->getBoundaryBBox();
@@ -893,13 +894,13 @@ void FlexPA::filterViaAccess(
   int valid_via_count = 0;
   for (auto& [idx, via_def] : via_defs) {
     auto via = std::make_unique<frVia>(via_def, begin_point);
-    const Rect box = via->getLayer1BBox();
+    const odb::Rect box = via->getLayer1BBox();
     if (inst_term) {
-      Rect boundary_bbox = inst_term->getInst()->getBoundaryBBox();
+      odb::Rect boundary_bbox = inst_term->getInst()->getBoundaryBBox();
       if (!boundary_bbox.contains(box)) {
         continue;
       }
-      Rect layer2_boundary_box = via->getLayer2BBox();
+      odb::Rect layer2_boundary_box = via->getLayer2BBox();
       if (!boundary_bbox.contains(layer2_boundary_box)) {
         continue;
       }
@@ -1023,8 +1024,8 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
   design_rule_checker.setIgnoreCornerSpacing();
   const auto pitch = getTech()->getLayer(ap->getLayerNum())->getPitch();
   const auto extension = 5 * pitch;
-  Rect tmp_box(point, point);
-  Rect ext_box;
+  odb::Rect tmp_box(point, point);
+  odb::Rect ext_box;
   tmp_box.bloat(extension, ext_box);
   auto pin_term = pin->getTerm();
   auto pin_net = pin_term->getNet();
@@ -1174,8 +1175,8 @@ bool FlexPA::EnoughSparsePoints(
   for (int i = 0; i < (int) aps.size(); i++) {
     const int colision_dist
         = design_->getTech()->getLayer(aps[i]->getLayerNum())->getWidth() / 2;
-    Rect ap_colision_box;
-    Rect(aps[i]->getPoint(), aps[i]->getPoint())
+    odb::Rect ap_colision_box;
+    odb::Rect(aps[i]->getPoint(), aps[i]->getPoint())
         .bloat(colision_dist, ap_colision_box);
     for (int j = i + 1; j < (int) aps.size(); j++) {
       if (aps[i]->getLayerNum() == aps[j]->getLayerNum()
@@ -1203,13 +1204,14 @@ bool FlexPA::EnoughPointsFarFromEdge(
     frInstTerm* inst_term)
 {
   const int far_from_edge_requirement = 1;
-  Rect cell_box = inst_term->getInst()->getBBox();
+  odb::Rect cell_box = inst_term->getInst()->getBBox();
   int total_far_from_edge = 0;
   for (auto& ap : aps) {
     const int colision_dist
         = design_->getTech()->getLayer(ap->getLayerNum())->getWidth() * 2;
-    Rect ap_colision_box;
-    Rect(ap->getPoint(), ap->getPoint()).bloat(colision_dist, ap_colision_box);
+    odb::Rect ap_colision_box;
+    odb::Rect(ap->getPoint(), ap->getPoint())
+        .bloat(colision_dist, ap_colision_box);
     if (cell_box.contains(ap_colision_box)) {
       total_far_from_edge++;
       if (total_far_from_edge >= far_from_edge_requirement) {
@@ -1315,7 +1317,7 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
       if (!layer->isRoutable()) {
         continue;
       }
-      Rect box = obj->getBBox();
+      odb::Rect box = obj->getBBox();
       xform.apply(box);
       gtl::rectangle_data<frCoord> rect(
           box.xMin(), box.yMin(), box.xMax(), box.yMax());

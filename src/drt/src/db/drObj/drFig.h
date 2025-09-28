@@ -7,12 +7,13 @@
 
 #include "db/drObj/drBlockObject.h"
 #include "db/infra/frBox.h"
+#include "odb/geom.h"
 
 namespace drt {
 class drFig : public drBlockObject
 {
  public:
-  virtual Rect getBBox() const = 0;
+  virtual odb::Rect getBBox() const = 0;
 
  protected:
   template <class Archive>

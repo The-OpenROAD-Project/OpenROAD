@@ -16,6 +16,7 @@
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRegionQuery.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbDatabase;
@@ -133,7 +134,7 @@ class FlexDRConnectivityChecker
                              const PathSegsByLayerAndTrackId& vertVictims,
                              const SpansByLayerAndTrackId& horzNewSegSpans,
                              const SpansByLayerAndTrackId& vertNewSegSpans);
-  void addMarker(frNet* net, frLayerNum lNum, const Rect& bbox);
+  void addMarker(frNet* net, frLayerNum lNum, const odb::Rect& bbox);
   void handleOverlaps_perform(NetRouteObjs& netRouteObjs,
                               const std::vector<int>& indices,
                               std::vector<int>& victims,

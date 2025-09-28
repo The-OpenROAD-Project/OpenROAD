@@ -163,7 +163,7 @@ frBlockage* Fixture::makeMacroObs(frMaster* master,
   pinIn->setId(0);
   // pinFig
   std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
-  pinFig->setBBox(Rect(xl, yl, xh, yh));
+  pinFig->setBBox(odb::Rect(xl, yl, xh, yh));
   pinFig->addToPin(pinIn.get());
   pinFig->setLayerNum(lNum);
   std::unique_ptr<frPinFig> uptr(std::move(pinFig));
@@ -194,7 +194,7 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
   auto pinIn = std::make_unique<frMPin>();
   pinIn->setId(0);
   std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
-  pinFig->setBBox(Rect(xl, yl, xh, yh));
+  pinFig->setBBox(odb::Rect(xl, yl, xh, yh));
   pinFig->addToPin(pinIn.get());
   pinFig->setLayerNum(lNum);
   std::unique_ptr<frPinFig> uptr(std::move(pinFig));
@@ -737,7 +737,7 @@ frViaDef* Fixture::makeViaDef(const char* name,
   auto via_p = std::make_unique<frViaDef>(name);
   for (frLayerNum l = layer_num - 1; l <= layer_num + 1; l++) {
     std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
-    pinFig->setBBox(Rect(ll, ur));
+    pinFig->setBBox(odb::Rect(ll, ur));
     pinFig->setLayerNum(l);
     switch (l - layer_num) {
       case -1:
