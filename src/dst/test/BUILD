@@ -15,6 +15,7 @@ cc_test(
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/dst",
+        "@boost.test",
     ],
 )
 
@@ -30,6 +31,7 @@ cc_test(
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/dst",
+        "@boost.test",
     ],
 )
 
@@ -45,5 +47,6 @@ cc_test(
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/dst",
+        "@boost.test",
     ],
 )
