@@ -30,7 +30,7 @@ using utl::CUT;
 
 namespace cut {
 
-Blif::Blif(Logger* logger,
+Blif::Blif(utl::Logger* logger,
            sta::dbSta* sta,
            const std::string& const0_cell,
            const std::string& const0_cell_port,
