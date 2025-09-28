@@ -16,10 +16,14 @@ foreach pin $pins {
   if { $activity_origin != "vcd" } {
     continue
   }
+  set duty [lindex $activity 1]
+  if { $duty > 1.0 } { # this generates an sta error
+    set duty 1.0
+  }
   puts $fp "set_power_activity \
   -pin \[get_pins \{[get_property $pin full_name]\}\] \
   -activity [expr [lindex $activity 0] * $clock_period] \
-  -duty [lindex $activity 1]"
+  -duty $duty"
 }
 close $fp
 
