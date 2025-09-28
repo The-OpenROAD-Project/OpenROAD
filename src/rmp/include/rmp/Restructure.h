@@ -111,8 +111,8 @@ class Restructure
   std::vector<std::string> lib_file_names_;
   std::set<odb::dbInst*> path_insts_;
 
-  Mode opt_mode_;
-  bool is_area_mode_;
+  Mode opt_mode_{Mode::DELAY_1};
+  bool is_area_mode_{false};
   int blif_call_id_{0};
 };
 

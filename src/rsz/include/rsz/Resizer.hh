@@ -798,8 +798,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Sizing
   const double default_sizing_cap_ratio_ = 4.0;
   const double default_buffer_sizing_cap_ratio_ = 9.0;
-  double sizing_cap_ratio_;
-  double buffer_sizing_cap_ratio_;
+  double sizing_cap_ratio_{default_sizing_cap_ratio_};
+  double buffer_sizing_cap_ratio_{default_buffer_sizing_cap_ratio_};
 
   // VT layer hash
   std::unordered_map<dbMaster*, VTCategory> vt_map_;
