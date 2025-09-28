@@ -362,7 +362,7 @@ void FlexDRWorker::endAddNets_merge(
     hasPatchMetal = false;
     bool skip = false;
     result.clear();
-    regionQuery->query(Rect(pt, pt), lNum, result);
+    regionQuery->query(odb::Rect(pt, pt), lNum, result);
     for (auto& [bx, obj] : result) {
       auto type = obj->typeId();
       if (type == frcInstTerm) {
@@ -392,7 +392,7 @@ void FlexDRWorker::endAddNets_merge(
     drObjs.clear();
     horzPathSegs.clear();
     vertPathSegs.clear();
-    regionQuery->queryDRObj(Rect(pt, pt), lNum, drObjs);
+    regionQuery->queryDRObj(odb::Rect(pt, pt), lNum, drObjs);
     for (auto& obj : drObjs) {
       if (obj->typeId() == frcPathSeg) {
         auto ps = static_cast<frPathSeg*>(obj);

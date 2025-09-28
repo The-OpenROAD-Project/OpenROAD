@@ -9,6 +9,7 @@
 #include "db/taObj/taFig.h"
 #include "frBaseTypes.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frNet;
@@ -121,7 +122,7 @@ class taPathSeg : public taShape
    * overlaps, in .cpp
    */
   // needs to be updated
-  Rect getBBox() const override
+  odb::Rect getBBox() const override
   {
     bool isHorizontal = true;
     if (begin_.x() == end_.x()) {
@@ -131,22 +132,22 @@ class taPathSeg : public taShape
     auto beginExt = style_.getBeginExt();
     auto endExt = style_.getEndExt();
     if (isHorizontal) {
-      return Rect(begin_.x() - beginExt,
-                  begin_.y() - width / 2,
-                  end_.x() + endExt,
-                  end_.y() + width / 2);
+      return odb::Rect(begin_.x() - beginExt,
+                       begin_.y() - width / 2,
+                       end_.x() + endExt,
+                       end_.y() + width / 2);
     }
-    return Rect(begin_.x() - width / 2,
-                begin_.y() - beginExt,
-                end_.x() + width / 2,
-                end_.y() + endExt);
+    return odb::Rect(begin_.x() - width / 2,
+                     begin_.y() - beginExt,
+                     end_.x() + width / 2,
+                     end_.y() + endExt);
   }
   void move(const odb::dbTransform& xform) override
   {
     xform.apply(begin_);
     xform.apply(end_);
   }
-  bool overlaps(const Rect& box) const override { return false; }
+  bool overlaps(const odb::Rect& box) const override { return false; }
 
  protected:
   Point begin_;  // begin always smaller than end, assumed

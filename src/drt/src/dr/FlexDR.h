@@ -38,6 +38,7 @@
 #include "frRegionQuery.h"
 #include "gc/FlexGC.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 namespace dst {
@@ -184,12 +185,13 @@ class FlexDR
   initDR_mergeBoundaryPin(int startX,
                           int startY,
                           int size,
-                          const Rect& routeBox) const;
+                          const odb::Rect& routeBox) const;
   std::vector<frVia*> getLonelyVias(frLayer* layer, int max_spc, int cut_class);
   std::unique_ptr<FlexDRWorker> createWorker(int x_offset,
                                              int y_offset,
                                              const SearchRepairArgs& args,
-                                             const Rect& routeBox = Rect());
+                                             const odb::Rect& routeBox
+                                             = odb::Rect());
   void reportIterationViolations() const;
   void endWorkersBatch(
       std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch);
@@ -201,7 +203,7 @@ class FlexDR
       std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch,
       int& version,
       IterationProgress& iter_prog);
-  Rect getDRVBBox(const Rect& drv_rect) const;
+  odb::Rect getDRVBBox(const odb::Rect& drv_rect) const;
   void stubbornTilesFlow(const SearchRepairArgs& args,
                          IterationProgress& iter_prog);
   void optimizationFlow(const SearchRepairArgs& args,
@@ -216,10 +218,10 @@ class FlexDRWorkerRegionQuery
   ~FlexDRWorkerRegionQuery();
   void add(drConnFig* connFig);
   void remove(drConnFig* connFig);
-  void query(const Rect& box,
+  void query(const odb::Rect& box,
              frLayerNum layerNum,
              std::vector<drConnFig*>& result) const;
-  void query(const Rect& box,
+  void query(const odb::Rect& box,
              frLayerNum layerNum,
              std::vector<rq_box_value_t<drConnFig*>>& result) const;
   void init();
@@ -294,9 +296,9 @@ class FlexDRWorker
   {
     debugSettings_ = settings;
   }
-  void setRouteBox(const Rect& boxIn) { routeBox_ = boxIn; }
-  void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }
-  void setDrcBox(const Rect& boxIn) { drcBox_ = boxIn; }
+  void setRouteBox(const odb::Rect& boxIn) { routeBox_ = boxIn; }
+  void setExtBox(const odb::Rect& boxIn) { extBox_ = boxIn; }
+  void setDrcBox(const odb::Rect& boxIn) { drcBox_ = boxIn; }
   void setDRIter(int in) { drIter_ = in; }
   void setDRIter(
       int in,
@@ -379,14 +381,14 @@ class FlexDRWorker
   void setWorkerId(const int id) { worker_id_ = id; }
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
-  void getRouteBox(Rect& boxIn) const { boxIn = routeBox_; }
-  const Rect& getRouteBox() const { return routeBox_; }
-  Rect& getRouteBox() { return routeBox_; }
-  void getExtBox(Rect& boxIn) const { boxIn = extBox_; }
-  const Rect& getExtBox() const { return extBox_; }
-  Rect& getExtBox() { return extBox_; }
-  const Rect& getDrcBox() const { return drcBox_; }
-  Rect& getDrcBox() { return drcBox_; }
+  void getRouteBox(odb::Rect& boxIn) const { boxIn = routeBox_; }
+  const odb::Rect& getRouteBox() const { return routeBox_; }
+  odb::Rect& getRouteBox() { return routeBox_; }
+  void getExtBox(odb::Rect& boxIn) const { boxIn = extBox_; }
+  const odb::Rect& getExtBox() const { return extBox_; }
+  odb::Rect& getExtBox() { return extBox_; }
+  const odb::Rect& getDrcBox() const { return drcBox_; }
+  odb::Rect& getDrcBox() { return drcBox_; }
   bool isInitDR() const { return (drIter_ == 0); }
   int getDRIter() const { return drIter_; }
   int getMazeEndIter() const { return mazeEndIter_; }
@@ -499,9 +501,9 @@ class FlexDRWorker
   AbstractDRGraphics* graphics_{nullptr};  // owned by FlexDR
   frDebugSettings* debugSettings_{nullptr};
   FlexDRViaData* via_data_{nullptr};
-  Rect routeBox_;
-  Rect extBox_;
-  Rect drcBox_;
+  odb::Rect routeBox_;
+  odb::Rect extBox_;
+  odb::Rect drcBox_;
   int drIter_{0};
   int mazeEndIter_{0};
   bool followGuide_{false};
@@ -792,7 +794,7 @@ class FlexDRWorker
                    bool modEol = false,
                    bool modCutSpc = false);
   // minSpc
-  void modMinSpacingCostPlanar(const Rect& box,
+  void modMinSpacingCostPlanar(const odb::Rect& box,
                                frMIdx z,
                                ModCostType type,
                                bool isBlockage = false,
@@ -800,7 +802,7 @@ class FlexDRWorker
                                bool isMacroPin = false,
                                bool resetHorz = true,
                                bool resetVert = true);
-  void modMinSpacingCostPlanarHelper(const Rect& box,
+  void modMinSpacingCostPlanarHelper(const odb::Rect& box,
                                      frMIdx z,
                                      ModCostType type,
                                      frCoord width,
@@ -810,15 +812,17 @@ class FlexDRWorker
                                      bool resetHorz,
                                      bool resetVert,
                                      bool ndr);
-  void modCornerToCornerSpacing(const Rect& box, frMIdx z, ModCostType type);
-  void modMinSpacingCostVia(const Rect& box,
+  void modCornerToCornerSpacing(const odb::Rect& box,
+                                frMIdx z,
+                                ModCostType type);
+  void modMinSpacingCostVia(const odb::Rect& box,
                             frMIdx z,
                             ModCostType type,
                             bool isUpperVia,
                             bool isCurrPs,
                             bool isBlockage = false,
                             frNonDefaultRule* ndr = nullptr);
-  void modMinSpacingCostViaHelper(const Rect& box,
+  void modMinSpacingCostViaHelper(const odb::Rect& box,
                                   frMIdx z,
                                   ModCostType type,
                                   frCoord width,
@@ -830,29 +834,29 @@ class FlexDRWorker
                                   bool isBlockage,
                                   bool ndr);
 
-  void modCornerToCornerSpacing_helper(const Rect& box,
+  void modCornerToCornerSpacing_helper(const odb::Rect& box,
                                        frMIdx z,
                                        ModCostType type);
 
-  void modMinSpacingCostVia_eol(const Rect& box,
-                                const Rect& tmpBx,
+  void modMinSpacingCostVia_eol(const odb::Rect& box,
+                                const odb::Rect& tmpBx,
                                 ModCostType type,
                                 const drEolSpacingConstraint& drCon,
                                 frMIdx idx,
                                 bool ndr = false);
-  void modMinSpacingCostVia_eol_helper(const Rect& box,
-                                       const Rect& testBox,
+  void modMinSpacingCostVia_eol_helper(const odb::Rect& box,
+                                       const odb::Rect& testBox,
                                        ModCostType type,
                                        frMIdx idx,
                                        bool ndr = false);
   // eolSpc
-  void modEolSpacingCost_helper(const Rect& testbox,
+  void modEolSpacingCost_helper(const odb::Rect& testbox,
                                 frMIdx z,
                                 ModCostType type,
                                 int eolType,
                                 bool resetHorz = true,
                                 bool resetVert = true);
-  void modEolSpacingRulesCost(const Rect& box,
+  void modEolSpacingRulesCost(const odb::Rect& box,
                               frMIdx z,
                               ModCostType type,
                               bool isSkipVia = false,
@@ -860,30 +864,30 @@ class FlexDRWorker
                               bool resetHorz = true,
                               bool resetVert = true);
   // cutSpc
-  void modCutSpacingCost(const Rect& box,
+  void modCutSpacingCost(const odb::Rect& box,
                          frMIdx z,
                          ModCostType type,
                          bool isBlockage = false,
                          int avoidI = -1,
                          int avoidJ = -1);
-  void modInterLayerCutSpacingCost(const Rect& box,
+  void modInterLayerCutSpacingCost(const odb::Rect& box,
                                    frMIdx z,
                                    ModCostType type,
                                    bool isUpperVia,
                                    bool isBlockage = false);
   // adjCut
   void modAdjCutSpacingCost_fixedObj(const frDesign* design,
-                                     const Rect& box,
+                                     const odb::Rect& box,
                                      frVia* origVia);
-  void modMinimumcutCostVia(const Rect& box,
+  void modMinimumcutCostVia(const odb::Rect& box,
                             frMIdx z,
                             ModCostType type,
                             bool isUpperVia);
   void modViaForbiddenThrough(const FlexMazeIdx& bi,
                               const FlexMazeIdx& ei,
                               ModCostType type);
-  void modBlockedPlanar(const Rect& box, frMIdx z, bool setBlock);
-  void modBlockedVia(const Rect& box, frMIdx z, bool setBlock);
+  void modBlockedPlanar(const odb::Rect& box, frMIdx z, bool setBlock);
+  void modBlockedVia(const odb::Rect& box, frMIdx z, bool setBlock);
 
   bool mazeIterInit_sortRerouteNets(int mazeIter,
                                     std::vector<drNet*>& rerouteNets);

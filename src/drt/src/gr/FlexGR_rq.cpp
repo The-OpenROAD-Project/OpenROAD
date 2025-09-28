@@ -12,6 +12,7 @@
 #include "frDesign.h"
 #include "gr/FlexGR.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -24,8 +25,9 @@ void FlexGRWorkerRegionQuery::add(grConnFig* connFig)
 {
   if (connFig->typeId() == grcPathSeg) {
     auto obj = static_cast<grShape*>(connFig);
-    Rect frb = obj->getBBox();
-    Rect boostr = Rect(frb.xMin(), frb.yMin(), frb.xMax(), frb.yMax());
+    odb::Rect frb = obj->getBBox();
+    odb::Rect boostr
+        = odb::Rect(frb.xMin(), frb.yMin(), frb.xMax(), frb.yMax());
     shapes_.at(obj->getLayerNum()).insert(std::make_pair(boostr, obj));
   } else if (connFig->typeId() == grcVia) {
     auto via = static_cast<grVia*>(connFig);
@@ -33,7 +35,7 @@ void FlexGRWorkerRegionQuery::add(grConnFig* connFig)
     for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        Rect frb = shape->getBBox();
+        odb::Rect frb = shape->getBBox();
         xform.apply(frb);
         shapes_.at(via->getViaDef()->getLayer1Num())
             .insert(std::make_pair(frb, via));
@@ -44,7 +46,7 @@ void FlexGRWorkerRegionQuery::add(grConnFig* connFig)
     for (auto& uShape : via->getViaDef()->getLayer2Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        Rect frb = shape->getBBox();
+        odb::Rect frb = shape->getBBox();
         xform.apply(frb);
         shapes_.at(via->getViaDef()->getLayer2Num())
             .insert(std::make_pair(frb, via));
@@ -55,7 +57,7 @@ void FlexGRWorkerRegionQuery::add(grConnFig* connFig)
     for (auto& uShape : via->getViaDef()->getCutFigs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        Rect frb = shape->getBBox();
+        odb::Rect frb = shape->getBBox();
         xform.apply(frb);
         shapes_.at(via->getViaDef()->getCutLayerNum())
             .insert(std::make_pair(frb, via));
@@ -74,7 +76,7 @@ void FlexGRWorkerRegionQuery::add(
 {
   if (connFig->typeId() == grcPathSeg) {
     auto obj = static_cast<grShape*>(connFig);
-    Rect frb = obj->getBBox();
+    odb::Rect frb = obj->getBBox();
     allShapes.at(obj->getLayerNum()).push_back(std::make_pair(frb, obj));
   } else if (connFig->typeId() == grcVia) {
     auto via = static_cast<grVia*>(connFig);
@@ -82,7 +84,7 @@ void FlexGRWorkerRegionQuery::add(
     for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        Rect frb = shape->getBBox();
+        odb::Rect frb = shape->getBBox();
         xform.apply(frb);
         allShapes.at(via->getViaDef()->getLayer1Num())
             .push_back(std::make_pair(frb, via));
@@ -93,7 +95,7 @@ void FlexGRWorkerRegionQuery::add(
     for (auto& uShape : via->getViaDef()->getLayer2Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        Rect frb = shape->getBBox();
+        odb::Rect frb = shape->getBBox();
         xform.apply(frb);
         allShapes.at(via->getViaDef()->getLayer2Num())
             .push_back(std::make_pair(frb, via));
@@ -104,7 +106,7 @@ void FlexGRWorkerRegionQuery::add(
     for (auto& uShape : via->getViaDef()->getCutFigs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        Rect frb = shape->getBBox();
+        odb::Rect frb = shape->getBBox();
         xform.apply(frb);
         allShapes.at(via->getViaDef()->getCutLayerNum())
             .push_back(std::make_pair(frb, via));
@@ -121,7 +123,7 @@ void FlexGRWorkerRegionQuery::remove(grConnFig* connFig)
 {
   if (connFig->typeId() == grcPathSeg) {
     auto obj = static_cast<grShape*>(connFig);
-    Rect frb = obj->getBBox();
+    odb::Rect frb = obj->getBBox();
     shapes_.at(obj->getLayerNum()).remove(std::make_pair(frb, obj));
   } else if (connFig->typeId() == grcVia) {
     auto via = static_cast<grVia*>(connFig);
@@ -129,7 +131,7 @@ void FlexGRWorkerRegionQuery::remove(grConnFig* connFig)
     for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        Rect frb = shape->getBBox();
+        odb::Rect frb = shape->getBBox();
         xform.apply(frb);
         shapes_.at(via->getViaDef()->getLayer1Num())
             .remove(std::make_pair(frb, via));
@@ -140,7 +142,7 @@ void FlexGRWorkerRegionQuery::remove(grConnFig* connFig)
     for (auto& uShape : via->getViaDef()->getLayer2Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        Rect frb = shape->getBBox();
+        odb::Rect frb = shape->getBBox();
         xform.apply(frb);
         shapes_.at(via->getViaDef()->getLayer2Num())
             .remove(std::make_pair(frb, via));
@@ -151,7 +153,7 @@ void FlexGRWorkerRegionQuery::remove(grConnFig* connFig)
     for (auto& uShape : via->getViaDef()->getCutFigs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        Rect frb = shape->getBBox();
+        odb::Rect frb = shape->getBBox();
         xform.apply(frb);
         shapes_.at(via->getViaDef()->getCutLayerNum())
             .remove(std::make_pair(frb, via));
@@ -164,7 +166,7 @@ void FlexGRWorkerRegionQuery::remove(grConnFig* connFig)
   }
 }
 
-void FlexGRWorkerRegionQuery::query(const Rect& box,
+void FlexGRWorkerRegionQuery::query(const odb::Rect& box,
                                     const frLayerNum layerNum,
                                     std::vector<grConnFig*>& result) const
 {
@@ -178,7 +180,7 @@ void FlexGRWorkerRegionQuery::query(const Rect& box,
 }
 
 void FlexGRWorkerRegionQuery::query(
-    const Rect& box,
+    const odb::Rect& box,
     const frLayerNum layerNum,
     std::vector<rq_box_value_t<grConnFig*>>& result) const
 {

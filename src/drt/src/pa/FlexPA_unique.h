@@ -176,7 +176,7 @@ class UniqueInsts
    * terminal.
    */
   bool isNDRInst(frInst* inst) const;
-  bool hasTrackPattern(frTrackPattern* tp, const Rect& box) const;
+  bool hasTrackPattern(frTrackPattern* tp, const odb::Rect& box) const;
 
   /**
    * @brief Creates a vector of preferred track patterns.
@@ -215,7 +215,7 @@ class UniqueInsts
    * @brief Raises an error if pin shape is illegal.
    *
    * @throws DRT 320/321 if the term has offgrid pin shape
-   * @throws DRT 322 if the pin figure is unsuported (not Rect of Polygon)
+   * @throws DRT 322 if the pin figure is unsuported (not odb::Rect of Polygon)
    *
    * @param pin Pin to be checked.
    */

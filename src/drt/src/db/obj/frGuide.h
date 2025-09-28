@@ -10,6 +10,7 @@
 #include "db/obj/frFig.h"
 #include "frBaseTypes.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frNet;
@@ -68,9 +69,9 @@ class frGuide : public frConnFig
    * intersects, incomplete
    */
   // needs to be updated
-  Rect getBBox() const override { return Rect(begin_, end_); }
+  odb::Rect getBBox() const override { return odb::Rect(begin_, end_); }
   void move(const odb::dbTransform& xform) override { ; }
-  bool intersects(const Rect& box) const override { return false; }
+  bool intersects(const odb::Rect& box) const override { return false; }
   void setIndexInOwner(const int& val) { index_in_owner_ = val; }
 
  private:

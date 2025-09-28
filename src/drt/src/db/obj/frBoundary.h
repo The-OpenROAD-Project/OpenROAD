@@ -9,6 +9,7 @@
 #include "db/obj/frFig.h"
 #include "frBaseTypes.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frBoundary : public frFig
@@ -22,7 +23,7 @@ class frBoundary : public frFig
   // others
   frBlockObjectEnum typeId() const override { return frcBoundary; }
 
-  Rect getBBox() const override
+  odb::Rect getBBox() const override
   {
     frCoord llx = 0;
     frCoord lly = 0;
@@ -48,7 +49,7 @@ class frBoundary : public frFig
       xform.apply(point);
     }
   }
-  bool intersects(const Rect& box) const override { return false; }
+  bool intersects(const odb::Rect& box) const override { return false; }
 
  protected:
   std::vector<Point> points_;

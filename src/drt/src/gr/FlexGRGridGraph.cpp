@@ -7,6 +7,7 @@
 
 #include "frBaseTypes.h"
 #include "gr/FlexGR.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -28,12 +29,14 @@ void FlexGRGridGraph::initCoords()
   Point gcellIdxUR = getGRWorker()->getRouteGCellIdxUR();
   // xCoords
   for (int xIdx = gcellIdxLL.x(); xIdx <= gcellIdxUR.x(); xIdx++) {
-    Rect gcellBox = getDesign()->getTopBlock()->getGCellBox(Point(xIdx, 0));
+    odb::Rect gcellBox
+        = getDesign()->getTopBlock()->getGCellBox(Point(xIdx, 0));
     xCoords_.push_back((gcellBox.xMin() + gcellBox.xMax()) / 2);
   }
   // yCoords
   for (int yIdx = gcellIdxLL.y(); yIdx <= gcellIdxUR.y(); yIdx++) {
-    Rect gcellBox = getDesign()->getTopBlock()->getGCellBox(Point(0, yIdx));
+    odb::Rect gcellBox
+        = getDesign()->getTopBlock()->getGCellBox(Point(0, yIdx));
     yCoords_.push_back((gcellBox.yMin() + gcellBox.yMax()) / 2);
   }
   // z

@@ -1666,7 +1666,7 @@ struct BoundaryData
   int lo_search_limit;
   int lo_gs_limit;
 
-  void setBBox(const Rect& extRect)
+  void setBBox(const odb::Rect& extRect)
   {
     ll[0] = extRect.xMin();
     ll[1] = extRect.yMin();
@@ -1738,13 +1738,15 @@ class extMain
 
   uint getPeakMemory(const char* msg, int n = -1);
 
-  void setupBoundaries(BoundaryData& bounds, const Rect& extRect);
+  void setupBoundaries(BoundaryData& bounds, const odb::Rect& extRect);
   void updateBoundaries(BoundaryData& bounds,
                         uint dir,
                         uint ccDist,
                         uint maxPitch);
   void initializeLayerTables(LayerDimensionData& tables);
-  int initSearch(LayerDimensionData& tables, Rect& extRect, uint& totWireCnt);
+  int initSearch(LayerDimensionData& tables,
+                 odb::Rect& extRect,
+                 uint& totWireCnt);
 
   // CLEANUP dkf 10242024 ----------------------------------
   void makeBlockRCsegs_v2(const char* netNames, const char* extRules);
@@ -1871,8 +1873,8 @@ class extMain
   // v2 ------------------------------------------------------------
   uint _debug_net_id = 0;
 
-  uint couplingFlow_v2_opt(Rect& extRect, uint ccFlag, extMeasure* m);
-  uint couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m);
+  uint couplingFlow_v2_opt(odb::Rect& extRect, uint ccFlag, extMeasure* m);
+  uint couplingFlow_v2(odb::Rect& extRect, uint ccFlag, extMeasure* m);
   void setBranchCapNodeId(dbNet* net, uint junction);
   void markPathHeadTerm(dbWirePath& path);
 

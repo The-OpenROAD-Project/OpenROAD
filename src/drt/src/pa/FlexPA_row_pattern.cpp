@@ -62,7 +62,7 @@ std::vector<std::vector<frInst*>> FlexPA::computeInstRows()
     }
     row_insts.push_back(inst);
     prev_y_coord = origin.y();
-    Rect inst_boundary_box = inst->getBoundaryBBox();
+    odb::Rect inst_boundary_box = inst->getBoundaryBBox();
     prev_x_end_coord = inst_boundary_box.xMax();
   }
   if (!row_insts.empty()) {

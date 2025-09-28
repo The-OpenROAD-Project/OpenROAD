@@ -9,6 +9,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcFig.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace gtl = boost::polygon;
 
@@ -258,7 +259,7 @@ class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
     gtl::yl((*this), bp.y());
     gtl::yh((*this), ep.y());
   }
-  void setRect(const Rect& in)
+  void setRect(const odb::Rect& in)
   {
     gtl::xl((*this), in.xMin());
     gtl::xh((*this), in.xMax());
@@ -320,7 +321,7 @@ class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
 
   void setTapered(bool t) { tapered_ = t; }
 
-  bool intersects(const Rect& bx)
+  bool intersects(const odb::Rect& bx)
   {
     return gtl::xl(*this) <= bx.xMax() && gtl::xh(*this) >= bx.xMin()
            && gtl::yl(*this) <= bx.yMax() && gtl::yh(*this) >= bx.yMin();

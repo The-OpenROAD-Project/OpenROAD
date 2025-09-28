@@ -286,14 +286,14 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       = checkDisplayControl(current_net_only_visible_);
   if (checkDisplayControl(routing_objs_visible_)) {
     if (drawWholeDesign_) {
-      Rect box = design_->getTopBlock()->getDieBox();
+      odb::Rect box = design_->getTopBlock()->getDieBox();
       frRegionQuery::Objects<frBlockObject> figs;
       design_->getRegionQuery()->queryDRObj(box, layerNum, figs);
       for (auto& fig : figs) {
         drawObj(fig.second, painter, layerNum);
       }
     } else if (worker_) {
-      Rect box;
+      odb::Rect box;
       worker_->getExtBox(box);
       std::vector<drConnFig*> figs;
       worker_->getWorkerRegionQuery().query(box, layerNum, figs);
@@ -311,7 +311,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     painter.setBrush(layer, /* alpha */ 90);
     for (auto& rect : net_->getOrigGuides()) {
       if (rect.getLayerNum() == layerNum) {
-        Rect box = rect.getBBox();
+        odb::Rect box = rect.getBBox();
         painter.drawRect({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
       }
     }
@@ -420,14 +420,14 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   painter.setPen(gui::Painter::kGreen, /* cosmetic */ true);
   for (auto& marker : design_->getTopBlock()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
-      Rect box = marker->getBBox();
+      odb::Rect box = marker->getBBox();
       drawMarker(box.xMin(), box.yMin(), box.xMax(), box.yMax(), painter);
     }
   }
   painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
   for (auto& marker : worker_->getGCWorker()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
-      Rect box = marker->getBBox();
+      odb::Rect box = marker->getBBox();
       drawMarker(box.xMin(), box.yMin(), box.xMax(), box.yMax(), painter);
     }
   }
@@ -437,7 +437,7 @@ void FlexDRGraphics::drawObj(frBlockObject* fig,
                              gui::Painter& painter,
                              int layerNum)
 {
-  Rect box;
+  odb::Rect box;
   switch (fig->typeId()) {
     case frcPathSeg: {
       auto seg = (frPathSeg*) fig;
@@ -520,7 +520,7 @@ void FlexDRGraphics::show(bool checkStopConditions)
             && (!net_ || net_->getFrNet()->getName() != settings_->netName))) {
       return;
     }
-    const Rect& rBox = worker_->getRouteBox();
+    const odb::Rect& rBox = worker_->getRouteBox();
     if (settings_->box != odb::Rect(-1, -1, -1, -1)
         && !rBox.intersects(settings_->box)) {
       return;
@@ -566,7 +566,7 @@ void FlexDRGraphics::drawObjects(gui::Painter& painter)
   painter.setBrush(gui::Painter::kTransparent);
   painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
 
-  Rect box;
+  odb::Rect box;
   worker_->getRouteBox(box);
   painter.drawRect({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
 
@@ -593,7 +593,7 @@ void FlexDRGraphics::startWorker(FlexDRWorker* worker)
   if (current_iter_ < settings_->iter) {
     return;
   }
-  const Rect& rBox = worker->getRouteBox();
+  const odb::Rect& rBox = worker->getRouteBox();
   if (settings_->box != odb::Rect(-1, -1, -1, -1)
       && !rBox.intersects(settings_->box)) {
     return;
@@ -608,7 +608,7 @@ void FlexDRGraphics::startWorker(FlexDRWorker* worker)
   points_by_layer_.resize(worker->getTech()->getLayers().size());
 
   if (settings_->netName.empty()) {
-    Rect box;
+    odb::Rect box;
     worker_->getExtBox(box);
     gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
     if (settings_->draw) {
@@ -686,7 +686,7 @@ void FlexDRGraphics::startNet(drNet* net)
   net_ = net;
   last_pt_layer_ = -1;
 
-  Rect box;
+  odb::Rect box;
   worker_->getExtBox(box);
   gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
   if (settings_->allowPause) {

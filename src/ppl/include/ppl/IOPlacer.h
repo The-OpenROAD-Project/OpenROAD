@@ -40,7 +40,6 @@ struct Section;
 struct Slot;
 
 using odb::Point;
-using odb::Rect;
 
 using utl::Logger;
 
@@ -220,8 +219,8 @@ class IOPlacer
                       int layer,
                       int width,
                       int height,
-                      const Rect& die_boundary);
-  Interval getIntervalFromPin(IOPin& io_pin, const Rect& die_boundary);
+                      const odb::Rect& die_boundary);
+  Interval getIntervalFromPin(IOPin& io_pin, const odb::Rect& die_boundary);
   bool checkBlocked(Edge edge, odb::Line, const odb::Point& pos, int layer);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
                                              const odb::Rect& box);
@@ -237,8 +236,8 @@ class IOPlacer
 
   // db functions
   void findConstraintRegion(const Interval& interval,
-                            const Rect& constraint_box,
-                            Rect& region);
+                            const odb::Rect& constraint_box,
+                            odb::Rect& region);
   void commitIOPlacementToDB(std::vector<IOPin>& assignment);
   void commitIOPinToDB(const IOPin& pin);
   void initCore(const std::set<int>& hor_layer_idxs,

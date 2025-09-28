@@ -98,7 +98,7 @@ class FlexGridGraph
     return nodes_[getIdx(x, y, z)].hasGridCostUp;
   }
 
-  void getBBox(Rect& in) const
+  void getBBox(odb::Rect& in) const
   {
     if (!xCoords_.empty() && !yCoords_.empty()) {
       in.init(
@@ -178,7 +178,7 @@ class FlexGridGraph
 
   void getIdxBox(FlexMazeIdx& mIdx1,
                  FlexMazeIdx& mIdx2,
-                 const Rect& box,
+                 const odb::Rect& box,
                  getIdxBox_EnclosureType enclosureOption = uncertain) const
   {
     mIdx1.set(std::lower_bound(xCoords_.begin(), xCoords_.end(), box.xMin())
@@ -391,7 +391,7 @@ class FlexGridGraph
                    frMIdx y,
                    frMIdx z,
                    frDirEnum dir,
-                   const Rect& box,
+                   const odb::Rect& box,
                    bool initDR) const
   {
     bool sol = false;
@@ -416,7 +416,7 @@ class FlexGridGraph
                frMIdx y,
                frMIdx z,
                frDirEnum dir,
-               const Rect& box,
+               const odb::Rect& box,
                bool initDR)
   {
     bool sol = false;
@@ -895,8 +895,8 @@ class FlexGridGraph
   const frBox3D* getDstTaperBox() const { return dstTaperBox_; }
   // functions
   void init(const frDesign* design,
-            const Rect& routeBBox,
-            const Rect& extBBox,
+            const odb::Rect& routeBBox,
+            const odb::Rect& extBBox,
             frLayerCoordTrackPatternMap& xMap,
             frLayerCoordTrackPatternMap& yMap,
             bool initDR,
@@ -1060,7 +1060,7 @@ class FlexGridGraph
   frVector<frLayerNum> zCoords_;
   frVector<frCoord> zHeights_;  // accumulated Z diff
   std::vector<dbTechLayerDir> layerRouteDirections_;
-  Rect dieBox_;
+  odb::Rect dieBox_;
   frUInt4 ggDRCCost_ = 0;
   frUInt4 ggMarkerCost_ = 0;
   frUInt4 ggFixedShapeCost_ = 0;
@@ -1244,7 +1244,7 @@ class FlexGridGraph
                   frLayerCoordTrackPatternMap& horLoc2TrackPatterns,
                   frLayerCoordTrackPatternMap& vertLoc2TrackPatterns,
                   frLayerDirMap& layerNum2PreRouteDir,
-                  const Rect& bbox);
+                  const odb::Rect& bbox);
   void initGrids(const frLayerCoordTrackPatternMap& xMap,
                  const frLayerCoordTrackPatternMap& yMap,
                  const frLayerDirMap& zMap,
@@ -1253,7 +1253,7 @@ class FlexGridGraph
                  frLayerCoordTrackPatternMap& xMap,
                  frLayerCoordTrackPatternMap& yMap,
                  const frLayerDirMap& zMap,
-                 const Rect& bbox,
+                 const odb::Rect& bbox,
                  bool initDR);
   frCost getEstCost(const FlexMazeIdx& src,
                     const FlexMazeIdx& dstMazeIdx1,
@@ -1288,7 +1288,7 @@ class FlexGridGraph
       const std::map<frLayerNum, frTrackPattern*>& ySubMap) const;
 
  private:
-  bool outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const Rect& dieBox);
+  bool outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const odb::Rect& dieBox);
   bool hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z);
   bool isWorkerBorder(frMIdx v, bool isVert);
 

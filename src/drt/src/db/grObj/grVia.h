@@ -9,6 +9,7 @@
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -120,7 +121,7 @@ class grVia : public grRef
    * overlaps
    */
 
-  Rect getBBox() const override { return Rect(origin_, origin_); }
+  odb::Rect getBBox() const override { return odb::Rect(origin_, origin_); }
 
   void setIter(frListIter<std::unique_ptr<grVia>>& in) { iter_ = in; }
   frListIter<std::unique_ptr<grVia>> getIter() const { return iter_; }

@@ -10,6 +10,7 @@
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -173,7 +174,7 @@ class drPathSeg : public drShape
    * overlaps, in .cpp
    */
   // needs to be updated
-  Rect getBBox() const override;
+  odb::Rect getBBox() const override;
 
   bool hasMazeIdx() const { return (!beginMazeIdx_.empty()); }
   std::pair<FlexMazeIdx, FlexMazeIdx> getMazeIdx() const
@@ -291,22 +292,22 @@ class drPatchWire : public drShape
    * getBBox
    * setBBox
    */
-  Rect getBBox() const override
+  odb::Rect getBBox() const override
   {
     odb::dbTransform xform(origin_);
-    Rect box = offsetBox_;
+    odb::Rect box = offsetBox_;
     xform.apply(box);
     return box;
   }
 
-  Rect getOffsetBox() const { return offsetBox_; }
-  void setOffsetBox(const Rect& boxIn) { offsetBox_ = boxIn; }
+  odb::Rect getOffsetBox() const { return offsetBox_; }
+  void setOffsetBox(const odb::Rect& boxIn) { offsetBox_ = boxIn; }
 
   Point getOrigin() const { return origin_; }
   void setOrigin(const Point& in) { origin_ = in; }
 
  protected:
-  Rect offsetBox_;
+  odb::Rect offsetBox_;
   Point origin_;
   frLayerNum layer_{0};
   drBlockObject* owner_{nullptr};

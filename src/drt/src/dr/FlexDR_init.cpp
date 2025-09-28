@@ -293,8 +293,8 @@ void FlexDRWorker::initNetObjs(
       auto [bp, ep] = guide->getPoints();
       Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);
       Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
-      Rect bbox = design_->getTopBlock()->getGCellBox(bpIdx);
-      Rect ebox = design_->getTopBlock()->getGCellBox(epIdx);
+      odb::Rect bbox = design_->getTopBlock()->getGCellBox(bpIdx);
+      odb::Rect ebox = design_->getTopBlock()->getGCellBox(epIdx);
       frLayerNum bNum = guide->getBeginLayerNum();
       frLayerNum eNum = guide->getEndLayerNum();
       frRect rect;
@@ -308,7 +308,7 @@ void FlexDRWorker::initNetObjs(
   }
 }
 
-static bool segOnBorder(const Rect& routeBox,
+static bool segOnBorder(const odb::Rect& routeBox,
                         const Point& begin,
                         const Point& end)
 {
@@ -375,7 +375,7 @@ void dfs(const int start,
   }
 }
 
-frSquaredDistance getSqrdDist(const Rect& rect1, const Rect& rect2)
+frSquaredDistance getSqrdDist(const odb::Rect& rect1, const odb::Rect& rect2)
 {
   frSquaredDistance dist = gtl::square_euclidean_distance(
       gtl::rectangle_data<frCoord>(
@@ -480,8 +480,8 @@ void FlexDRWorker::initNets_initDR_helper(
     };
     Type type;
     int idx;
-    Rect rect;
-    Node(Type typeIn, int idxIn, Rect rectIn)
+    odb::Rect rect;
+    Node(Type typeIn, int idxIn, odb::Rect rectIn)
         : type(typeIn), idx(idxIn), rect(rectIn)
     {
     }
@@ -492,7 +492,7 @@ void FlexDRWorker::initNets_initDR_helper(
     nodes.emplace_back(Node::GUIDE, i, netGuides.at(i).getBBox());
   }
   for (int i = 0; i < netTerms.size(); i++) {
-    Rect rect;
+    odb::Rect rect;
     if (netTerms.at(i)->typeId() == frcInstTerm) {
       auto iterm = static_cast<frInstTerm*>(netTerms.at(i));
       rect = iterm->getBBox();
@@ -562,7 +562,7 @@ void FlexDRWorker::initNets_initDR_helper(
   std::vector<std::vector<std::pair<Point, frLayerNum>>> bounds(
       connectedComponents.size());
   for (int i = 0; i < netTerms.size(); i++) {
-    Rect rect;
+    odb::Rect rect;
     if (netTerms.at(i)->typeId() == frcInstTerm) {
       auto iterm = static_cast<frInstTerm*>(netTerms.at(i));
       rect = iterm->getBBox();
@@ -1370,14 +1370,14 @@ void FlexDRWorker::initNets_numPinsIn()
         }
         if (ap->getPinCost() == 0) {
           const Point pt = ap->getPoint();
-          allPins.emplace_back(Rect(pt, pt), pin.get());
+          allPins.emplace_back(odb::Rect(pt, pt), pin.get());
           hasPrefAP = true;
           break;
         }
       }
       if (!hasPrefAP && firstAP != nullptr) {
         const Point pt = firstAP->getPoint();
-        allPins.emplace_back(Rect(pt, pt), pin.get());
+        allPins.emplace_back(odb::Rect(pt, pt), pin.get());
       }
     }
   }
@@ -1411,7 +1411,7 @@ void FlexDRWorker::initNets_numPinsIn()
       y2 = std::max(y2, pt.getY());
     }
     if (x1 <= x2 && y1 <= y2) {
-      const Rect box = Rect(x1, y1, x2, y2);
+      const odb::Rect box = odb::Rect(x1, y1, x2, y2);
       allPins.clear();
       pinRegionQuery.query(bgi::intersects(box), back_inserter(allPins));
       net->setNumPinsIn(allPins.size());
@@ -1442,7 +1442,7 @@ void FlexDRWorker::initNets_boundaryArea()
 
         const Point bp = ap->getPoint();
         const frLayerNum lNum = ap->getBeginLayerNum();
-        const Rect queryBox = Rect(bp, bp);
+        const odb::Rect queryBox = odb::Rect(bp, bp);
         workerRegionQuery.query(queryBox, lNum, results);
         for (auto& [ignored, connFig] : results) {
           if (connFig->getNet() != net) {
@@ -2040,7 +2040,7 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
   std::set<drNet*> vioNets;  // for self-violation, only add cost for one side
                              // (experiment with self cut spacing)
 
-  const Rect mBox = marker.getBBox();
+  const odb::Rect mBox = marker.getBBox();
   const auto lNum = marker.getLayerNum();
 
   std::vector<rq_box_value_t<drConnFig*>> results;
@@ -2059,7 +2059,7 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
       // right of pathseg
       const frSegStyle segStyle = obj->getStyle();
       const frCoord width = segStyle.getWidth();
-      Rect bloatBox;
+      odb::Rect bloatBox;
       mBox.bloat(width, bloatBox);
       FlexMazeIdx mIdx1, mIdx2;
       gridGraph_.getIdxBox(mIdx1, mIdx2, bloatBox);
@@ -2112,7 +2112,7 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
             }
             std::cout << "\n";
             // get violation bbox
-            const Rect bbox = marker.getBBox();
+            const odb::Rect bbox = marker.getBBox();
             const double dbu = getTech()->getDBUPerUU();
             std::cout << "    bbox = ( " << bbox.xMin() / dbu << ", "
                       << bbox.yMin() / dbu << " ) - ( " << bbox.xMax() / dbu
@@ -2187,7 +2187,7 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
       }
       // add history cost
       // gridGraph_.getMazeIdx(objMIdx1, bp, lNum);
-      Rect patchBBox = obj->getBBox();
+      odb::Rect patchBBox = obj->getBBox();
       Point patchLL = patchBBox.ll();
       Point patchUR = patchBBox.ur();
       FlexMazeIdx startIdx, endIdx;
@@ -2640,7 +2640,7 @@ void FlexDRWorker::route_queue_update_queue(
 void FlexDRWorker::initMazeCost_guide_helper(drNet* net, const bool isAdd)
 {
   for (auto& rect : net->getOrigGuides()) {
-    const Rect box = rect.getBBox();
+    const odb::Rect box = rect.getBBox();
     const frLayerNum lNum = rect.getLayerNum();
     const frMIdx z = gridGraph_.getMazeZIdx(lNum);
     FlexMazeIdx mIdx1, mIdx2;
@@ -2839,7 +2839,7 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
             }
             frMIdx zIdx;
             const frRect instPinRect(*rpinRect);
-            const Rect box = instPinRect.getBBox();
+            const odb::Rect box = instPinRect.getBBox();
 
             bool isRoutingLayer = true;
             if (getTech()->getLayer(layerNum)->getType()
@@ -2915,7 +2915,7 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
             frMIdx zIdx;
             frRect instPinRect(*rpinRect);
             instPinRect.move(xform);
-            const Rect box = instPinRect.getBBox();
+            const odb::Rect box = instPinRect.getBBox();
 
             // add cost
             bool isRoutingLayer = true;
@@ -3128,7 +3128,7 @@ void FlexDRWorker::initMazeCost_minCut_helper(drNet* net, bool isAddPathCost)
 
       const auto l1Num = via->getViaDef()->getLayer1Num();
       const auto l1Fig = (via->getViaDef()->getLayer1Figs()[0].get());
-      Rect l1Box = l1Fig->getBBox();
+      odb::Rect l1Box = l1Fig->getBBox();
       xform.apply(l1Box);
       modMinimumcutCostVia(l1Box, gridGraph_.getMazeZIdx(l1Num), modType, true);
       modMinimumcutCostVia(
@@ -3136,7 +3136,7 @@ void FlexDRWorker::initMazeCost_minCut_helper(drNet* net, bool isAddPathCost)
 
       const auto l2Num = via->getViaDef()->getLayer2Num();
       const auto l2Fig = (via->getViaDef()->getLayer2Figs()[0].get());
-      Rect l2Box = l2Fig->getBBox();
+      odb::Rect l2Box = l2Fig->getBBox();
       xform.apply(l2Box);
       modMinimumcutCostVia(l2Box, gridGraph_.getMazeZIdx(l2Num), modType, true);
       modMinimumcutCostVia(

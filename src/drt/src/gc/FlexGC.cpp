@@ -58,7 +58,7 @@ FlexGCWorker::Impl::Impl(frTechObject* techIn,
 
 void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
 {
-  Rect bbox = in->getBBox();
+  odb::Rect bbox = in->getBBox();
   auto layerNum = in->getLayerNum();
   auto con = in->getConstraint();
   if (mapMarkers_.find({bbox, layerNum, con, in->getSrcs()})
@@ -104,12 +104,12 @@ void FlexGCWorker::initPA1()
   impl_->initPA1();
 }
 
-void FlexGCWorker::setExtBox(const Rect& in)
+void FlexGCWorker::setExtBox(const odb::Rect& in)
 {
   impl_->extBox_ = in;
 }
 
-void FlexGCWorker::setDrcBox(const Rect& in)
+void FlexGCWorker::setDrcBox(const odb::Rect& in)
 {
   impl_->drcBox_ = in;
 }

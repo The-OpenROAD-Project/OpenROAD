@@ -9,10 +9,11 @@
 #include "db/obj/frInstTerm.h"
 #include "frBaseTypes.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 namespace drt {
 
-Rect frRPin::getBBox()
+odb::Rect frRPin::getBBox()
 {
   Point pt;
 
@@ -33,7 +34,7 @@ Rect frRPin::getBBox()
       break;
   }
 
-  return Rect(pt.x(), pt.y(), pt.x(), pt.y());
+  return odb::Rect(pt.x(), pt.y(), pt.x(), pt.y());
 }
 
 frLayerNum frRPin::getLayerNum()

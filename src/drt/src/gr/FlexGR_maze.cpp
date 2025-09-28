@@ -14,6 +14,7 @@
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 #include "gr/FlexGR.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -113,7 +114,7 @@ void FlexGRWorker::route_mazeIterInit()
             // this gcell
             Point gcellCenter;
             gridGraph_.getPoint(xIdx, yIdx, gcellCenter);
-            Rect gcellCenterBox(gcellCenter, gcellCenter);
+            odb::Rect gcellCenterBox(gcellCenter, gcellCenter);
             result.clear();
             workerRegionQuery.query(gcellCenterBox, lNum, result);
             for (auto rptr : result) {
@@ -754,7 +755,7 @@ void FlexGRWorker::routeNet_postAstarWritePath(
       Point srcLoc;
       gridGraph_.getPoint(points.back().x(), points.back().y(), srcLoc);
       frLayerNum srcLNum = (points.back().z() + 1) * 2;
-      Rect srcBox(srcLoc, srcLoc);
+      odb::Rect srcBox(srcLoc, srcLoc);
       std::vector<grConnFig*> result;
       workerRegionQuery.query(srcBox, srcLNum, result);
       for (auto rptr : result) {

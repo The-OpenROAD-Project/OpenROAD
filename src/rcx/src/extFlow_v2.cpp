@@ -12,6 +12,7 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
+#include "odb/geom.h"
 #include "parse.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"

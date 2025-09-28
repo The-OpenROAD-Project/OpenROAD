@@ -6,19 +6,20 @@
 #include "db/obj/frBlock.h"
 #include "db/obj/frMaster.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 namespace drt {
 
-Rect frInst::getBBox() const
+odb::Rect frInst::getBBox() const
 {
-  Rect box = getMaster()->getBBox();
+  odb::Rect box = getMaster()->getBBox();
   odb::dbTransform xform = getDBTransform();
   xform.apply(box);
   return box;
 }
 
-Rect frInst::getBoundaryBBox() const
+odb::Rect frInst::getBoundaryBBox() const
 {
-  Rect box = getMaster()->getDieBox();
+  odb::Rect box = getMaster()->getDieBox();
   odb::dbTransform xform = getDBTransform();
   xform.apply(box);
   return box;

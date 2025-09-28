@@ -7,6 +7,7 @@
 
 #include "db/infra/frBox.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frViaRuleGenerate
@@ -18,7 +19,7 @@ class frViaRuleGenerate
   const frString& getName() const { return name_; }
   bool getDefault() const { return isDefault_; }
   const Point& getLayer1Enc() const { return botEnc_; }
-  const Rect& getCutRect() const { return cutRect_; }
+  const odb::Rect& getCutRect() const { return cutRect_; }
   const Point& getCutSpacing() const { return cutSpacing_; }
   const Point& getLayer2Enc() const { return topEnc_; }
   frLayerNum getLayer1Num() const { return botLayerNum_; }
@@ -27,7 +28,7 @@ class frViaRuleGenerate
   // setters
   void setDefault(bool in) { isDefault_ = in; }
   void setLayer1Enc(const Point& in) { botEnc_ = in; }
-  void setCutRect(const Rect& in) { cutRect_ = in; }
+  void setCutRect(const odb::Rect& in) { cutRect_ = in; }
   void setCutSpacing(const Point& in) { cutSpacing_ = in; }
   void setLayer2Enc(const Point& in) { topEnc_ = in; }
   void setLayer1Num(frLayerNum in) { botLayerNum_ = in; }
@@ -38,7 +39,7 @@ class frViaRuleGenerate
   frString name_;
   bool isDefault_{false};
   Point botEnc_;
-  Rect cutRect_;
+  odb::Rect cutRect_;
   Point cutSpacing_;
   Point topEnc_;
   frLayerNum botLayerNum_{0};

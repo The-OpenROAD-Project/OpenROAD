@@ -26,6 +26,7 @@
 #include "gc/FlexGC_impl.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -123,7 +124,7 @@ gcNet* FlexGCWorker::Impl::getNet(frNet* net)
   return it->second;
 }
 
-void FlexGCWorker::Impl::initObj(const Rect& box,
+void FlexGCWorker::Impl::initObj(const odb::Rect& box,
                                  frLayerNum layerNum,
                                  frBlockObject* obj,
                                  bool isFixed)
@@ -226,21 +227,21 @@ void FlexGCWorker::Impl::addPAObj(frConnFig* obj, frBlockObject* owner)
     layerNum = via->getViaDef()->getLayer1Num();
     odb::dbTransform xform = via->getTransform();
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
-      Rect box = fig->getBBox();
+      odb::Rect box = fig->getBBox();
       xform.apply(box);
       currNet->addPolygon(box, layerNum, false);
     }
     // push cut layer rect
     layerNum = via->getViaDef()->getCutLayerNum();
     for (auto& fig : via->getViaDef()->getCutFigs()) {
-      Rect box = fig->getBBox();
+      odb::Rect box = fig->getBBox();
       xform.apply(box);
       currNet->addRectangle(box, layerNum, false);
     }
     // push layer2 rect
     layerNum = via->getViaDef()->getLayer2Num();
     for (auto& fig : via->getViaDef()->getLayer2Figs()) {
-      Rect box = fig->getBBox();
+      odb::Rect box = fig->getBBox();
       xform.apply(box);
       currNet->addPolygon(box, layerNum, false);
     }
@@ -255,7 +256,7 @@ void addNonTaperedPatches(gcNet* gNet,
   for (auto& obj : figs) {
     if (obj->typeId() == drcPatchWire) {
       auto pwire = static_cast<drPatchWire*>(obj.get());
-      Rect box = pwire->getBBox();
+      odb::Rect box = pwire->getBBox();
       int z = pwire->getLayerNum() / 2 - 1;
       for (auto& nt : gNet->getNonTaperedRects(z)) {
         if (nt.intersects(box)) {
@@ -280,7 +281,7 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
   frLayerNum layerNum;
   if (obj->typeId() == drcPathSeg) {
     auto pathSeg = static_cast<drPathSeg*>(obj);
-    Rect box = pathSeg->getBBox();
+    odb::Rect box = pathSeg->getBBox();
     currNet->addPolygon(
         box, pathSeg->getLayerNum(), pathSeg->getNet()->isFixed());
     if (pathSeg->isTapered()) {
@@ -294,7 +295,7 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     layerNum = via->getViaDef()->getLayer1Num();
     odb::dbTransform xform = via->getTransform();
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
-      Rect box = fig->getBBox();
+      odb::Rect box = fig->getBBox();
       xform.apply(box);
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
@@ -307,14 +308,14 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     // push cut layer rect
     layerNum = via->getViaDef()->getCutLayerNum();
     for (auto& fig : via->getViaDef()->getCutFigs()) {
-      Rect box = fig->getBBox();
+      odb::Rect box = fig->getBBox();
       xform.apply(box);
       currNet->addRectangle(box, layerNum, via->getNet()->isFixed());
     }
     // push layer2 rect
     layerNum = via->getViaDef()->getLayer2Num();
     for (auto& fig : via->getViaDef()->getLayer2Figs()) {
-      Rect box = fig->getBBox();
+      odb::Rect box = fig->getBBox();
       xform.apply(box);
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
@@ -339,7 +340,7 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
   frLayerNum layerNum;
   if (obj->typeId() == frcPathSeg) {
     auto pathSeg = static_cast<frPathSeg*>(obj);
-    Rect box = pathSeg->getBBox();
+    odb::Rect box = pathSeg->getBBox();
     currNet->addPolygon(box, pathSeg->getLayerNum());
     if (pathSeg->isTapered()) {
       currNet->addTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
@@ -352,7 +353,7 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
     layerNum = via->getViaDef()->getLayer1Num();
     odb::dbTransform xform = via->getTransform();
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
-      Rect box = fig->getBBox();
+      odb::Rect box = fig->getBBox();
       xform.apply(box);
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
@@ -365,14 +366,14 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
     // push cut layer rect
     layerNum = via->getViaDef()->getCutLayerNum();
     for (auto& fig : via->getViaDef()->getCutFigs()) {
-      Rect box = fig->getBBox();
+      odb::Rect box = fig->getBBox();
       xform.apply(box);
       currNet->addRectangle(box, layerNum);
     }
     // push layer2 rect
     layerNum = via->getViaDef()->getLayer2Num();
     for (auto& fig : via->getViaDef()->getLayer2Figs()) {
-      Rect box = fig->getBBox();
+      odb::Rect box = fig->getBBox();
       xform.apply(box);
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
@@ -437,7 +438,7 @@ void FlexGCWorker::Impl::initNetsFromDesign(const frDesign* design)
   }
   for (const auto& [gNet, patches] : pwires) {
     for (auto pwire : patches) {
-      Rect box = pwire->getBBox();
+      odb::Rect box = pwire->getBBox();
       int z = pwire->getLayerNum() / 2 - 1;
       for (auto& nt : gNet->getNonTaperedRects(z)) {
         if (nt.intersects(box)) {
