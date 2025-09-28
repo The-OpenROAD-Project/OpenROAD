@@ -67,44 +67,46 @@ class FlexDRConnectivityChecker
   void buildPin2epMap(
       const frNet* net,
       const NetRouteObjs& netRouteObjs,
-      frOrderedIdMap<frBlockObject*, std::set<std::pair<Point, frLayerNum>>>&
-          pin2epMap);
+      frOrderedIdMap<frBlockObject*,
+                     std::set<std::pair<odb::Point, frLayerNum>>>& pin2epMap);
   void pin2epMap_helper(
       const frNet* net,
-      const Point& pt,
+      const odb::Point& pt,
       frLayerNum lNum,
-      frOrderedIdMap<frBlockObject*, std::set<std::pair<Point, frLayerNum>>>&
-          pin2epMap);
+      frOrderedIdMap<frBlockObject*,
+                     std::set<std::pair<odb::Point, frLayerNum>>>& pin2epMap);
   void buildNodeMap(
       const frNet* net,
       const NetRouteObjs& netRouteObjs,
       std::vector<frBlockObject*>& netPins,
       const frOrderedIdMap<frBlockObject*,
-                           std::set<std::pair<Point, frLayerNum>>>& pin2epMap,
-      std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
+                           std::set<std::pair<odb::Point, frLayerNum>>>&
+          pin2epMap,
+      std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap);
   void nodeMap_routeObjEnd(
       const frNet* net,
       const std::vector<frConnFig*>& netRouteObjs,
-      std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
+      std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap);
   void nodeMap_routeObjSplit(
       const frNet* net,
       const std::vector<frConnFig*>& netRouteObjs,
-      std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
+      std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap);
   void nodeMap_routeObjSplit_helper(
-      const Point& crossPt,
+      const odb::Point& crossPt,
       frCoord trackCoord,
       frCoord splitCoord,
       frLayerNum lNum,
       const std::vector<
           std::map<frCoord, std::map<frCoord, std::pair<frCoord, int>>>>&
           mergeHelper,
-      std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
+      std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap);
   void nodeMap_pin(
       const std::vector<frConnFig*>& netRouteObjs,
       std::vector<frBlockObject*>& netPins,
       const frOrderedIdMap<frBlockObject*,
-                           std::set<std::pair<Point, frLayerNum>>>& pin2epMap,
-      std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
+                           std::set<std::pair<odb::Point, frLayerNum>>>&
+          pin2epMap,
+      std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap);
   /**
    * Maps the net's segments to track indices.
    *
@@ -162,17 +164,18 @@ class FlexDRConnectivityChecker
       const frNet* net,
       std::vector<char>& adjVisited,
       std::vector<int>& adjPrevIdx,
-      const std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap,
+      const std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap,
       const NetRouteObjs& netRouteObjs,
       int nNetRouteObjs,
       int nNetObjs);
-  void finish(frNet* net,
-              NetRouteObjs& netRouteObjs,
-              const std::vector<frBlockObject*>& netPins,
-              const std::vector<char>& adjVisited,
-              int gCnt,
-              int nCnt,
-              std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
+  void finish(
+      frNet* net,
+      NetRouteObjs& netRouteObjs,
+      const std::vector<frBlockObject*>& netPins,
+      const std::vector<char>& adjVisited,
+      int gCnt,
+      int nCnt,
+      std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap);
 
   frRegionQuery* getRegionQuery() const;
   frTechObject* getTech() const;

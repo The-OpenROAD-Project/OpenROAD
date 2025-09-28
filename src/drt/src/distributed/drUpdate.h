@@ -53,8 +53,8 @@ class drUpdate
   frNet* net_{nullptr};
   int index_in_owner_{0};
   UpdateType type_;
-  Point begin_;
-  Point end_;
+  odb::Point begin_;
+  odb::Point end_;
   frSegStyle style_;
   odb::Rect offsetBox_;
   frLayerNum layer_{0};

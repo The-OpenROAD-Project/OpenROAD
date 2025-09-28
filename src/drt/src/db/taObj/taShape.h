@@ -57,10 +57,10 @@ class taPathSeg : public taShape
   taPathSeg& operator=(const taPathSeg&) = delete;
   taPathSeg(const frPathSeg& in);
   // getters
-  std::pair<Point, Point> getPoints() const { return {begin_, end_}; }
+  std::pair<odb::Point, odb::Point> getPoints() const { return {begin_, end_}; }
   frSegStyle getStyle() const { return style_; }
   // setters
-  void setPoints(const Point& beginIn, const Point& endIn)
+  void setPoints(const odb::Point& beginIn, const odb::Point& endIn)
   {
     begin_ = beginIn;
     end_ = endIn;
@@ -150,8 +150,8 @@ class taPathSeg : public taShape
   bool overlaps(const odb::Rect& box) const override { return false; }
 
  protected:
-  Point begin_;  // begin always smaller than end, assumed
-  Point end_;
+  odb::Point begin_;  // begin always smaller than end, assumed
+  odb::Point end_;
   frLayerNum layer_{0};
   frSegStyle style_;
   frBlockObject* owner_{nullptr};

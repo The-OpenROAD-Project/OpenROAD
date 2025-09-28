@@ -16,10 +16,10 @@ class frBoundary : public frFig
 {
  public:
   // getters
-  const std::vector<Point>& getPoints() const { return points_; }
+  const std::vector<odb::Point>& getPoints() const { return points_; }
   frUInt4 getNumPoints() const { return points_.size(); }
   // setters
-  void setPoints(const std::vector<Point>& pIn) { points_ = pIn; }
+  void setPoints(const std::vector<odb::Point>& pIn) { points_ = pIn; }
   // others
   frBlockObjectEnum typeId() const override { return frcBoundary; }
 
@@ -52,6 +52,6 @@ class frBoundary : public frFig
   bool intersects(const odb::Rect& box) const override { return false; }
 
  protected:
-  std::vector<Point> points_;
+  std::vector<odb::Point> points_;
 };
 }  // namespace drt

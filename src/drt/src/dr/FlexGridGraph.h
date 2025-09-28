@@ -112,7 +112,7 @@ class FlexGridGraph
     zDim = zCoords_.size();
   }
   // unsafe access
-  Point& getPoint(Point& in, frMIdx x, frMIdx y) const
+  odb::Point& getPoint(odb::Point& in, frMIdx x, frMIdx y) const
   {
     in = {xCoords_[x], yCoords_[y]};
     return in;
@@ -136,11 +136,11 @@ class FlexGridGraph
   {
     return std::binary_search(zCoords_.begin(), zCoords_.end(), in);
   }
-  bool hasIdx(const Point& p, frLayerNum lNum) const
+  bool hasIdx(const odb::Point& p, frLayerNum lNum) const
   {
     return (hasMazeXIdx(p.x()) && hasMazeYIdx(p.y()) && hasMazeZIdx(lNum));
   }
-  bool hasMazeIdx(const Point& p, frLayerNum lNum) const
+  bool hasMazeIdx(const odb::Point& p, frLayerNum lNum) const
   {
     return (hasMazeXIdx(p.x()) && hasMazeYIdx(p.y()) && hasMazeZIdx(lNum));
   }
@@ -160,7 +160,7 @@ class FlexGridGraph
     return it - zCoords_.begin();
   }
   FlexMazeIdx& getMazeIdx(FlexMazeIdx& mIdx,
-                          const Point& p,
+                          const odb::Point& p,
                           frLayerNum layerNum) const
   {
     mIdx.set(getMazeXIdx(p.x()), getMazeYIdx(p.y()), getMazeZIdx(layerNum));
@@ -401,7 +401,7 @@ class FlexGridGraph
       auto y1 = y;
       auto z1 = z;
       reverse(x1, y1, z1, dir);
-      Point pt, pt1;
+      odb::Point pt, pt1;
       getPoint(pt, x, y);
       getPoint(pt1, x1, y1);
       sol = box.intersects(pt) && box.intersects(pt1);
@@ -911,7 +911,7 @@ class FlexGridGraph
               std::vector<FlexMazeIdx>& path,
               FlexMazeIdx& ccMazeIdx1,
               FlexMazeIdx& ccMazeIdx2,
-              const Point& centerPt,
+              const odb::Point& centerPt,
               std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox,
               bool route_with_jumpers);
   void setCost(frUInt4 drcCostIn,
@@ -1074,7 +1074,7 @@ class FlexGridGraph
       = nullptr;  // taper box for the current dest pin in the search
 
   // locations of access points. The vector is indexed by layer number.
-  frVector<std::set<Point>> ap_locs_;
+  frVector<std::set<odb::Point>> ap_locs_;
   std::ofstream dump_file_;
   bool debug_{false};
   frUInt4 curr_id_{1};
@@ -1271,7 +1271,7 @@ class FlexGridGraph
   void expandWavefront(FlexWavefrontGrid& currGrid,
                        const FlexMazeIdx& dstMazeIdx1,
                        const FlexMazeIdx& dstMazeIdx2,
-                       const Point& centerPt,
+                       const odb::Point& centerPt,
                        bool route_with_jumpers);
   bool isExpandable(const FlexWavefrontGrid& currGrid, frDirEnum dir) const;
   FlexMazeIdx getTailIdx(const FlexMazeIdx& currIdx,
@@ -1280,7 +1280,7 @@ class FlexGridGraph
               const frDirEnum& dir,
               const FlexMazeIdx& dstMazeIdx1,
               const FlexMazeIdx& dstMazeIdx2,
-              const Point& centerPt,
+              const odb::Point& centerPt,
               bool route_with_jumpers);
   bool hasAlignedUpDefTrack(
       frLayerNum layerNum,

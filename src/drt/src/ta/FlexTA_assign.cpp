@@ -80,7 +80,7 @@ void FlexTAWorker::modMinSpacingCostPlanar(const odb::Rect& box,
   auto& workerRegionQuery = getWorkerRegionQuery();
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
-    odb::dbTransform xform(Point(boxLeft, trackLoc));
+    odb::dbTransform xform(odb::Point(boxLeft, trackLoc));
     xform.apply(box2);
     box2boxDistSquare(box1, box2, dx, dy);
     if (dy >= bloatDist) {
@@ -212,9 +212,9 @@ void FlexTAWorker::modMinSpacingCostVia(const odb::Rect& box,
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
     if (isH) {
-      xform.setOffset(Point(box.xMin(), trackLoc));
+      xform.setOffset(odb::Point(box.xMin(), trackLoc));
     } else {
-      xform.setOffset(Point(trackLoc, box.yMin()));
+      xform.setOffset(odb::Point(trackLoc, box.yMin()));
     }
     tmpBx = viaBox;
     xform.apply(tmpBx);
@@ -366,15 +366,15 @@ void FlexTAWorker::modCutSpacingCost(const odb::Rect& box,
   frCoord reqDist = 0;
   frCoord maxX, blockLeft, blockRight;
   odb::Rect blockBox;
-  Point boxCenter;
+  odb::Point boxCenter;
   boxCenter = {(box.xMin() + box.xMax()) / 2, (box.yMin() + box.yMax()) / 2};
   bool hasViol = false;
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
     if (isH) {
-      xform.setOffset(Point(box.xMin(), trackLoc));
+      xform.setOffset(odb::Point(box.xMin(), trackLoc));
     } else {
-      xform.setOffset(Point(trackLoc, box.yMin()));
+      xform.setOffset(odb::Point(trackLoc, box.yMin()));
     }
     tmpBx = viaBox;
     xform.apply(tmpBx);
@@ -545,7 +545,7 @@ void FlexTAWorker::modCost(taPinFig* fig,
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, true, false, pinS);
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, false, false, pinS);
 
-    Point pt = obj->getOrigin();
+    odb::Point pt = obj->getOrigin();
     odb::dbTransform xform(pt);
     for (auto& uFig : obj->getViaDef()->getCutFigs()) {
       auto rect = static_cast<frRect*>(uFig.get());
@@ -566,7 +566,7 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
 {
   lNum = iroute->getGuide()->getBeginLayerNum();
   auto [gbp, gep] = iroute->getGuide()->getPoints();
-  Point gIdx = getDesign()->getTopBlock()->getGCellIdx(gbp);
+  odb::Point gIdx = getDesign()->getTopBlock()->getGCellIdx(gbp);
   odb::Rect gBox = getDesign()->getTopBlock()->getGCellBox(gIdx);
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   frCoord coordLow = isH ? gBox.yMin() : gBox.xMin();
@@ -623,7 +623,7 @@ frUInt4 FlexTAWorker::assignIroute_getNextIrouteDirCost(taPin* iroute,
   auto guide = iroute->getGuide();
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   auto [begin, end] = guide->getPoints();
-  Point idx = getDesign()->getTopBlock()->getGCellIdx(end);
+  odb::Point idx = getDesign()->getTopBlock()->getGCellIdx(end);
   odb::Rect endBox = getDesign()->getTopBlock()->getGCellBox(idx);
   int nextIrouteDirCost = 0;
   auto nextIrouteDir = iroute->getNextIrouteDir();

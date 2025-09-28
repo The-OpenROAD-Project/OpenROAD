@@ -23,7 +23,7 @@ void FlexGridGraph::addAccessPointLocation(frLayerNum layer_num,
                                            frCoord x_coord,
                                            frCoord y_coord)
 {
-  ap_locs_[layer_num].insert(Point(x_coord, y_coord));
+  ap_locs_[layer_num].insert(odb::Point(x_coord, y_coord));
 }
 
 void initCoords(const frLayerCoordTrackPatternMap& map,
@@ -57,7 +57,8 @@ bool FlexGridGraph::isAccessPointLocation(frLayerNum layer_num,
     return false;
   }
   const auto& layer_maze_locs = ap_locs_[layer_num];
-  return layer_maze_locs.find(Point(x_coord, y_coord)) != layer_maze_locs.end();
+  return layer_maze_locs.find(odb::Point(x_coord, y_coord))
+         != layer_maze_locs.end();
 }
 void FlexGridGraph::initGrids(const frLayerCoordTrackPatternMap& xMap,
                               const frLayerCoordTrackPatternMap& yMap,
@@ -548,7 +549,7 @@ void FlexGridGraph::print() const
     std::cout << "extBBox (xDim, yDim, zDim) = (" << xDim << ", " << yDim
               << ", " << zDim << ")\n";
 
-    Point p;
+    odb::Point p;
     for (frMIdx xIdx = 0; xIdx < xDim; ++xIdx) {
       for (frMIdx yIdx = 0; yIdx < yDim; ++yIdx) {
         for (frMIdx zIdx = 0; zIdx < zDim; ++zIdx) {

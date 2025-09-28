@@ -143,7 +143,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     auto color = ap.hasAccess() ? gui::Painter::kGreen : gui::Painter::kRed;
     painter.setPen(color, /* cosmetic */ true);
 
-    const Point& pt = ap.getPoint();
+    const odb::Point& pt = ap.getPoint();
     painter.drawX(pt.x(), pt.y(), 50);
   }
 }

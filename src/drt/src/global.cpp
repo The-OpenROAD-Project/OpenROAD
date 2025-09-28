@@ -143,7 +143,7 @@ std::ostream& operator<<(std::ostream& os, const frBlock& blockIn)
 
 std::ostream& operator<<(std::ostream& os, const frInst& instIn)
 {
-  Point tmpPoint = instIn.getOrigin();
+  odb::Point tmpPoint = instIn.getOrigin();
   auto tmpOrient = instIn.getOrient();
   const frString& tmpName = instIn.getName();
   frString tmpString = instIn.getMaster()->getName();

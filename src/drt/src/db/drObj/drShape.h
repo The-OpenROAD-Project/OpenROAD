@@ -66,16 +66,16 @@ class drPathSeg : public drShape
   drPathSeg(const drPathSeg& in) = default;
   drPathSeg(const frPathSeg& in);
   // getters
-  std::pair<Point, Point> getPoints() const { return {begin_, end_}; }
+  std::pair<odb::Point, odb::Point> getPoints() const { return {begin_, end_}; }
 
   frCoord length() const
   {
     // assuming it is always orthogonal
     return end_.x() - begin_.x() + end_.y() - begin_.y();
   }
-  const Point& getBeginPoint() const { return begin_; }
+  const odb::Point& getBeginPoint() const { return begin_; }
 
-  const Point& getEndPoint() const { return end_; }
+  const odb::Point& getEndPoint() const { return end_; }
 
   bool isVertical() const { return begin_.x() == end_.x(); }
 
@@ -95,7 +95,7 @@ class drPathSeg : public drShape
   }
   frSegStyle getStyle() const { return style_; }
   // setters
-  void setPoints(const Point& beginIn, const Point& endIn)
+  void setPoints(const odb::Point& beginIn, const odb::Point& endIn)
   {
     begin_ = beginIn;
     end_ = endIn;
@@ -190,17 +190,17 @@ class drPathSeg : public drShape
   bool isPatchSeg() const { return patchSeg_; }
   bool isTapered() const { return isTapered_; }
   void setTapered(bool t) { isTapered_ = t; }
-  void setApPathSeg(Point pt)
+  void setApPathSeg(odb::Point pt)
   {
     is_ap_pathseg_ = true;
     ap_loc_ = pt;
   }
   bool isApPathSeg() const { return is_ap_pathseg_; }
-  Point getApLoc() const { return ap_loc_; }
+  odb::Point getApLoc() const { return ap_loc_; }
 
  protected:
-  Point begin_;  // begin always smaller than end, assumed
-  Point end_;
+  odb::Point begin_;  // begin always smaller than end, assumed
+  odb::Point end_;
   frLayerNum layer_{0};
   frSegStyle style_;
   drBlockObject* owner_{nullptr};
@@ -209,7 +209,7 @@ class drPathSeg : public drShape
   bool patchSeg_{false};
   bool isTapered_{false};
   bool is_ap_pathseg_{false};
-  Point ap_loc_;
+  odb::Point ap_loc_;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
@@ -303,12 +303,12 @@ class drPatchWire : public drShape
   odb::Rect getOffsetBox() const { return offsetBox_; }
   void setOffsetBox(const odb::Rect& boxIn) { offsetBox_ = boxIn; }
 
-  Point getOrigin() const { return origin_; }
-  void setOrigin(const Point& in) { origin_ = in; }
+  odb::Point getOrigin() const { return origin_; }
+  void setOrigin(const odb::Point& in) { origin_ = in; }
 
  protected:
   odb::Rect offsetBox_;
-  Point origin_;
+  odb::Point origin_;
   frLayerNum layer_{0};
   drBlockObject* owner_{nullptr};
 

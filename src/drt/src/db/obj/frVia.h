@@ -21,7 +21,7 @@ class frVia : public frRef
   // constructors
   frVia() = default;
   frVia(const frViaDef* in) : viaDef_(in) {}
-  frVia(const frViaDef* def_in, const Point& pt_in)
+  frVia(const frViaDef* def_in, const odb::Point& pt_in)
       : origin_(pt_in), viaDef_(def_in)
   {
   }
@@ -85,8 +85,8 @@ class frVia : public frRef
 
   dbOrientType getOrient() const override { return dbOrientType(); }
   void setOrient(const dbOrientType& tmpOrient) override { ; }
-  Point getOrigin() const override { return origin_; }
-  void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
+  odb::Point getOrigin() const override { return origin_; }
+  void setOrigin(const odb::Point& tmpPoint) override { origin_ = tmpPoint; }
   odb::dbTransform getTransform() const override
   {
     return odb::dbTransform(origin_);
@@ -216,7 +216,7 @@ class frVia : public frRef
   bool isLonely() const { return isLonely_; }
 
  private:
-  Point origin_;
+  odb::Point origin_;
   const frViaDef* viaDef_{nullptr};
   frBlockObject* owner_{nullptr};
   frListIter<std::unique_ptr<frVia>> iter_;

@@ -21,7 +21,7 @@ frAccessPoint* frInstTerm::getAccessPoint(frCoord x, frCoord y, frLayerNum lNum)
 {
   auto inst = getInst();
   odb::dbTransform shiftXform = inst->getTransform();
-  Point offset(shiftXform.getOffset());
+  odb::Point offset(shiftXform.getOffset());
   x = x - offset.getX();
   y = y - offset.getY();
   return term_->getAccessPoint(x, y, lNum, inst->getPinAccessIdx());

@@ -60,7 +60,7 @@ void io::Parser::setDieArea(odb::dbBlock* block)
 {
   std::vector<frBoundary> bounds;
   frBoundary bound;
-  std::vector<Point> points;
+  std::vector<odb::Point> points;
   odb::Rect box = block->getDieArea();
   points.emplace_back(box.xMin(), box.yMin());
   points.emplace_back(box.xMax(), box.yMax());
@@ -128,7 +128,7 @@ frInst* io::Parser::setInst(odb::dbInst* db_inst)
 
   int x, y;
   db_inst->getLocation(x, y);
-  inst->setOrigin(Point(x, y));
+  inst->setOrigin(odb::Point(x, y));
   inst->setOrient(db_inst->getOrient());
   int numInstTerms = 0;
   inst->setPinAccessIdx(db_inst->getPinAccessIdx());
@@ -292,7 +292,7 @@ void io::Parser::setVias(odb::dbBlock* block)
       currX -= xCutSpacing;  // max cut X
       currY -= yCutSpacing;  // max cut Y
       odb::dbTransform cutXform(
-          Point(-currX / 2 + xOffset, -currY / 2 + yOffset));
+          odb::Point(-currX / 2 + xOffset, -currY / 2 + yOffset));
       for (auto& uShape : cutFigs) {
         auto rect = static_cast<frRect*>(uShape.get());
         rect->move(cutXform);
@@ -307,10 +307,10 @@ void io::Parser::setVias(odb::dbBlock* block)
       odb::Rect topBox(
           0 - xTopEnc, 0 - yTopEnc, currX + xTopEnc, currY + yTopEnc);
 
-      odb::dbTransform botXform(Point(-currX / 2 + xOffset + xBotOffset,
-                                      -currY / 2 + yOffset + yBotOffset));
-      odb::dbTransform topXform(Point(-currX / 2 + xOffset + xTopOffset,
-                                      -currY / 2 + yOffset + yTopOffset));
+      odb::dbTransform botXform(odb::Point(-currX / 2 + xOffset + xBotOffset,
+                                           -currY / 2 + yOffset + yBotOffset));
+      odb::dbTransform topXform(odb::Point(-currX / 2 + xOffset + xTopOffset,
+                                           -currY / 2 + yOffset + yTopOffset));
       botXform.apply(botBox);
       topXform.apply(topBox);
 
@@ -834,10 +834,10 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
         netIn->setHasInitialRouting(true);
         auto tmpP = std::make_unique<frPathSeg>();
         if (beginX > endX || beginY > endY) {
-          tmpP->setPoints(Point(endX, endY), Point(beginX, beginY));
+          tmpP->setPoints(odb::Point(endX, endY), odb::Point(beginX, beginY));
           std::swap(beginExt, endExt);
         } else {
-          tmpP->setPoints(Point(beginX, beginY), Point(endX, endY));
+          tmpP->setPoints(odb::Point(beginX, beginY), odb::Point(endX, endY));
         }
         tmpP->addToNet(netIn);
         tmpP->setLayerNum(layerNum);
@@ -890,7 +890,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
         if (getTech()->name2via_.find(viaName) == getTech()->name2via_.end()) {
           logger_->error(DRT, 108, "Unsupported via in db.");
         } else {
-          Point p;
+          odb::Point p;
           if (hasEndPoint && !beginInVia) {
             p = {endX, endY};
           } else {
@@ -914,7 +914,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
                               ->name2layer_[box->getTechLayer()->getName()]
                               ->getLayerNum();
           auto tmpP = std::make_unique<frPathSeg>();
-          tmpP->setPoints(Point(beginX, beginY), Point(endX, endY));
+          tmpP->setPoints(odb::Point(beginX, beginY), odb::Point(endX, endY));
           tmpP->addToNet(netIn);
           tmpP->setLayerNum(layerNum);
           width
@@ -958,7 +958,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
           } else {
             int x, y;
             box->getViaXY(x, y);
-            Point p(x, y);
+            odb::Point p(x, y);
             auto viaDef = getTech()->name2via_[viaName];
             auto tmpP = std::make_unique<frVia>(viaDef);
             tmpP->setOrigin(p);
@@ -1260,7 +1260,7 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
         if (ap_map.find(db_ap) == ap_map.end()) {
           logger_->error(DRT,
                          1011,
-                         "Access Point not found for iterm {}",
+                         "Access odb::Point not found for iterm {}",
                          db_term->getName());
         }
         db_aps_map[db_ap->getMPin()] = db_ap;
@@ -2628,7 +2628,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
       frCoord sizeY = master->getHeight();
       std::vector<frBoundary> bounds;
       frBoundary bound;
-      std::vector<Point> points;
+      std::vector<odb::Point> points;
       points.emplace_back(origin);
       points.emplace_back(sizeX, origin.y());
       points.emplace_back(sizeX, sizeY);
@@ -2867,7 +2867,7 @@ void io::Parser::setTechViaRules(odb::dbTech* db_tech)
         frCoord x;
         frCoord y;
         layerRule->getEnclosure(x, y);
-        Point enc(x, y);
+        odb::Point enc(x, y);
         switch (lNum2Int[layerNum]) {
           case 1:
             viaRuleGen->setLayer1Enc(enc);
@@ -2916,7 +2916,7 @@ void io::Parser::setTechViaRules(odb::dbTech* db_tech)
         frCoord x;
         frCoord y;
         layerRule->getSpacing(x, y);
-        Point pt(x, y);
+        odb::Point pt(x, y);
         switch (lNum2Int[layerNum]) {
           case 1:
             logger_->warn(
@@ -3229,11 +3229,11 @@ void io::Writer::splitVia_helper(
             = getTech()->getLayer(layerNum)->getDefaultSegStyle();
         std::shared_ptr<frPathSeg> newPathSeg
             = std::make_shared<frPathSeg>(*pathSeg);
-        pathSeg->setPoints(begin, Point(x, y));
+        pathSeg->setPoints(begin, odb::Point(x, y));
         style1.setEndStyle(style_default.getEndStyle(),
                            style_default.getEndExt());
         pathSeg->setStyle(style1);
-        newPathSeg->setPoints(Point(x, y), end);
+        newPathSeg->setPoints(odb::Point(x, y), end);
         style2.setBeginStyle(style_default.getBeginStyle(),
                              style_default.getBeginExt());
         newPathSeg->setStyle(style2);
@@ -3281,7 +3281,7 @@ void io::Writer::mergeSplitConnFigs(
     } else if (connFig->typeId() == frcVia) {
       auto via = std::dynamic_pointer_cast<frVia>(connFig);
       auto cutLayerNum = via->getViaDef()->getCutLayerNum();
-      Point viaPoint = via->getOrigin();
+      odb::Point viaPoint = via->getOrigin();
       viaMergeMap[std::make_tuple(viaPoint.x(), viaPoint.y(), cutLayerNum)]
           = std::move(via);
       // std::cout <<"found via" <<std::endl;
@@ -3335,7 +3335,7 @@ void io::Writer::mergeSplitConnFigs(
           auto pathSeg = std::get<0>(pathSegTuple);
           auto isBegin = std::get<1>(pathSegTuple);
           if (!isBegin) {
-            Point tmp;
+            odb::Point tmp;
             std::tie(tmp, end) = pathSeg->getPoints();
             frSegStyle tmpStyle = pathSeg->getStyle();
             if (tmpStyle.getEndExt() > style.getEndExt()) {
@@ -3405,9 +3405,10 @@ void io::Writer::mergeSplitConnFigs(
               pushNewSeg1 = true;
               newSeg1 = std::make_shared<frPathSeg>(*seg1);
               // modify seg1
-              seg1->setPoints(seg1Begin, Point(seg1End.x(), seg2End.y()));
+              seg1->setPoints(seg1Begin, odb::Point(seg1End.x(), seg2End.y()));
               // modify newSeg1
-              newSeg1->setPoints(Point(seg1End.x(), seg2Begin.y()), seg1End);
+              newSeg1->setPoints(odb::Point(seg1End.x(), seg2Begin.y()),
+                                 seg1End);
               // modify endstyle
               auto layerNum = seg1->getLayerNum();
               frSegStyle tmpStyle1 = seg1->getStyle();
@@ -3426,9 +3427,10 @@ void io::Writer::mergeSplitConnFigs(
               pushNewSeg2 = true;
               newSeg2 = std::make_shared<frPathSeg>(*seg1);
               // modify seg2
-              seg2->setPoints(seg2Begin, Point(seg1End.x(), seg2End.y()));
+              seg2->setPoints(seg2Begin, odb::Point(seg1End.x(), seg2End.y()));
               // modify newSeg2
-              newSeg2->setPoints(Point(seg1End.x(), seg2Begin.y()), seg2End);
+              newSeg2->setPoints(odb::Point(seg1End.x(), seg2Begin.y()),
+                                 seg2End);
               // modify endstyle
               auto layerNum = seg2->getLayerNum();
               frSegStyle tmpStyle1 = seg2->getStyle();
@@ -3623,7 +3625,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
                   odb::dbWireType("ROUTED"),
                   net->getNonDefaultRule()->getLayerRule(layer));
             }
-            Point origin = via->getOrigin();
+            odb::Point origin = via->getOrigin();
             _wire_encoder.addPoint(origin.x(), origin.y());
             odb::dbTechVia* tech_via = db_tech->findVia(viaName.c_str());
             if (tech_via != nullptr) {
@@ -3641,7 +3643,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
                 = getTech()->getLayer(pwire->getLayerNum())->getName();
             auto layer = db_tech->findLayer(layerName.c_str());
             _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
-            Point origin = pwire->getOrigin();
+            odb::Point origin = pwire->getOrigin();
             odb::Rect offsetBox = pwire->getOffsetBox();
             _wire_encoder.addPoint(origin.x(), origin.y());
             _wire_encoder.addRect(offsetBox.xMin(),
@@ -3916,9 +3918,9 @@ std::vector<int> getTracksInRange(const frTrackPattern* tp,
  * the passed pin_rect and chooses the one that is closest to the center. If no
  * tracks are found, it chooses the pin center point as the via location.
  */
-Point io::TopLayerBTermHandler::getBestViaPosition(odb::Rect pin_rect)
+odb::Point io::TopLayerBTermHandler::getBestViaPosition(odb::Rect pin_rect)
 {
-  Point center_pt = pin_rect.center();
+  odb::Point center_pt = pin_rect.center();
   const auto top_routing_layer
       = design_->getTech()->getLayer(router_cfg_->TOP_ROUTING_LAYER);
   const bool is_horizontal = top_routing_layer->isHorizontal();

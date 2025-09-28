@@ -121,11 +121,11 @@ std::pair<frMaster*, odb::dbMaster*> Fixture::makeMacro(const char* name,
   auto block = std::make_unique<frMaster>(name);
   std::vector<frBoundary> bounds;
   frBoundary bound;
-  std::vector<Point> points;
-  points.push_back(Point(originX, originY));
-  points.push_back(Point(sizeX, originY));
-  points.push_back(Point(sizeX, sizeY));
-  points.push_back(Point(originX, sizeY));
+  std::vector<odb::Point> points;
+  points.push_back(odb::Point(originX, originY));
+  points.push_back(odb::Point(sizeX, originY));
+  points.push_back(odb::Point(sizeX, sizeY));
+  points.push_back(odb::Point(originX, sizeY));
   bound.setPoints(points);
   bounds.push_back(bound);
   block->setBoundaries(bounds);
@@ -730,8 +730,8 @@ frNet* Fixture::makeNet(const char* name)
 
 frViaDef* Fixture::makeViaDef(const char* name,
                               frLayerNum layer_num,
-                              const Point& ll,
-                              const Point& ur)
+                              const odb::Point& ll,
+                              const odb::Point& ur)
 {
   auto tech = design->getTech();
   auto via_p = std::make_unique<frViaDef>(name);
@@ -755,7 +755,7 @@ frViaDef* Fixture::makeViaDef(const char* name,
   return tech->addVia(std::move(via_p));
 }
 
-frVia* Fixture::makeVia(frViaDef* viaDef, frNet* net, const Point& origin)
+frVia* Fixture::makeVia(frViaDef* viaDef, frNet* net, const odb::Point& origin)
 {
   auto via_p = std::make_unique<frVia>(viaDef, origin);
   via_p->addToNet(net);
@@ -766,8 +766,8 @@ frVia* Fixture::makeVia(frViaDef* viaDef, frNet* net, const Point& origin)
 
 void Fixture::makePathseg(frNet* net,
                           frLayerNum layer_num,
-                          const Point& begin,
-                          const Point& end,
+                          const odb::Point& begin,
+                          const odb::Point& end,
                           frUInt4 width,
                           frEndStyleEnum begin_style,
                           frEndStyleEnum end_style)

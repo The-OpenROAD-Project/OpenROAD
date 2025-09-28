@@ -72,10 +72,10 @@ class grPathSeg : public grShape
   }
   grPathSeg(const frPathSeg& in);
   // getters
-  std::pair<Point, Point> getPoints() const { return {begin_, end_}; }
+  std::pair<odb::Point, odb::Point> getPoints() const { return {begin_, end_}; }
 
   // setters
-  void setPoints(const Point& begin, const Point& end)
+  void setPoints(const odb::Point& begin, const odb::Point& end)
   {
     begin_ = begin;
     end_ = end;
@@ -172,8 +172,8 @@ class grPathSeg : public grShape
   }
 
  protected:
-  Point begin_;
-  Point end_;
+  odb::Point begin_;
+  odb::Point end_;
   frLayerNum layer_{0};
   frBlockObject* child_{nullptr};
   frBlockObject* parent_{nullptr};

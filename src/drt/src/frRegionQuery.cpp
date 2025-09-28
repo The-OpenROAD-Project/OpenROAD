@@ -56,7 +56,7 @@ struct frRegionQuery::Impl
   void initOrigGuide(frOrderedIdMap<frNet*, std::vector<frRect>>& tmpGuides);
   void initGuide();
   void initRPin();
-  void initGRPin(std::vector<std::pair<frBlockObject*, Point>>& in);
+  void initGRPin(std::vector<std::pair<frBlockObject*, odb::Point>>& in);
   void initDRObj();
   void initGRObj();
 
@@ -199,7 +199,7 @@ void frRegionQuery::addBlockObj(frBlockObject* obj)
           // Decompose the polygon to rectangles and store those
           // Convert the frPolygon to a Boost polygon
           std::vector<gtl::point_data<frCoord>> points;
-          for (Point pt : ((frPolygon*) shape)->getPoints()) {
+          for (odb::Point pt : ((frPolygon*) shape)->getPoints()) {
             xform.apply(pt);
             points.emplace_back(pt.x(), pt.y());
           }
@@ -272,7 +272,7 @@ void frRegionQuery::removeBlockObj(frBlockObject* obj)
           // Decompose the polygon to rectangles and store those
           // Convert the frPolygon to a Boost polygon
           std::vector<gtl::point_data<frCoord>> points;
-          for (Point pt : ((frPolygon*) shape)->getPoints()) {
+          for (odb::Point pt : ((frPolygon*) shape)->getPoints()) {
             xform.apply(pt);
             points.emplace_back(pt.x(), pt.y());
           }
@@ -491,7 +491,7 @@ void frRegionQuery::Impl::add(frInstBlockage* instBlk,
       // Decompose the polygon to rectangles and store those
       // Convert the frPolygon to a Boost polygon
       std::vector<gtl::point_data<frCoord>> points;
-      for (Point pt : ((frPolygon*) shape)->getPoints()) {
+      for (odb::Point pt : ((frPolygon*) shape)->getPoints()) {
         xform.apply(pt);
         points.emplace_back(pt.x(), pt.y());
       }
@@ -883,13 +883,14 @@ void frRegionQuery::Impl::initGuide()
   }
 }
 
-void frRegionQuery::initGRPin(std::vector<std::pair<frBlockObject*, Point>>& in)
+void frRegionQuery::initGRPin(
+    std::vector<std::pair<frBlockObject*, odb::Point>>& in)
 {
   impl_->initGRPin(in);
 }
 
 void frRegionQuery::Impl::initGRPin(
-    std::vector<std::pair<frBlockObject*, Point>>& in)
+    std::vector<std::pair<frBlockObject*, odb::Point>>& in)
 {
   grPins.clear();
   Objects<frBlockObject> allGRPins;

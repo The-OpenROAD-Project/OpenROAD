@@ -382,8 +382,8 @@ void FlexGRWorker::endWriteBackCMap()
 {
   auto cmap = getCMap();
 
-  Point gcellIdxLL = getRouteGCellIdxLL();
-  Point gcellIdxUR = getRouteGCellIdxUR();
+  odb::Point gcellIdxLL = getRouteGCellIdxLL();
+  odb::Point gcellIdxUR = getRouteGCellIdxUR();
   int idxLLX = gcellIdxLL.x();
   int idxLLY = gcellIdxLL.y();
   int idxURX = gcellIdxUR.x();

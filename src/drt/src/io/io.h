@@ -238,7 +238,7 @@ class TopLayerBTermHandler
    * @returns The chosen via location for stacking the vias up to the
    * TOP_ROUTING_LAYER
    */
-  Point getBestViaPosition(odb::Rect pin_rect);
+  odb::Point getBestViaPosition(odb::Rect pin_rect);
   frDesign* design_;
   odb::dbDatabase* db_;
   utl::Logger* logger_;

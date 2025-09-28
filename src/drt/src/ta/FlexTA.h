@@ -253,7 +253,7 @@ class FlexTAWorker
   void initCosts();
   void sortIroutes();
   bool outOfDieVia(frLayerNum layer_num,
-                   const Point& pt,
+                   const odb::Point& pt,
                    const odb::Rect& die_box) const;
 
   // quick drc

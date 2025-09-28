@@ -194,7 +194,7 @@ class FlexGR
                                           bool isCurrU,
                                           std::pair<frCoord, frCoord>& horzIntv,
                                           std::pair<frCoord, frCoord>& vertIntv,
-                                          Point& turnLoc);
+                                          odb::Point& turnLoc);
   void genSTTopology_HVW_commit(frNode* currNode,
                                 bool isCurrU,
                                 std::vector<frNode*>& nodes,
@@ -212,10 +212,10 @@ class FlexGR
       std::map<frCoord, boost::icl::interval_set<frCoord>>& vertIntvs);
   void genSTTopology_build_tree_splitSeg(
       std::vector<frNode*>& pinNodes,
-      std::map<Point, frNode*>& pinGCell2Nodes,
+      std::map<odb::Point, frNode*>& pinGCell2Nodes,
       std::map<frCoord, boost::icl::interval_set<frCoord>>& horzIntvs,
       std::map<frCoord, boost::icl::interval_set<frCoord>>& vertIntvs,
-      std::map<Point, frNode*>& steinerGCell2Nodes,
+      std::map<odb::Point, frNode*>& steinerGCell2Nodes,
       std::vector<frNode*>& steinerNodes);
   // utility
   void writeToGuide();
@@ -272,8 +272,8 @@ class FlexGRWorker
   {
   }
   // setters
-  void setRouteGCellIdxLL(const Point& in) { routeGCellIdxLL_ = in; }
-  void setRouteGCellIdxUR(const Point& in) { routeGCellIdxUR_ = in; }
+  void setRouteGCellIdxLL(const odb::Point& in) { routeGCellIdxLL_ = in; }
+  void setRouteGCellIdxUR(const odb::Point& in) { routeGCellIdxUR_ = in; }
   void setExtBox(const odb::Rect& in) { extBox_ = in; }
   void setRouteBox(const odb::Rect& in) { routeBox_ = in; }
   void setGRIter(int in) { grIter_ = in; }
@@ -288,10 +288,10 @@ class FlexGRWorker
   frTechObject* getTech() const { return design_->getTech(); }
   frDesign* getDesign() const { return design_; }
   FlexGR* getGR() const { return gr_; }
-  const Point& getRouteGCellIdxLL() const { return routeGCellIdxLL_; }
-  Point& getRouteGCellIdxLL() { return routeGCellIdxLL_; }
-  const Point& getRouteGCellIdxUR() const { return routeGCellIdxUR_; }
-  Point& getRouteGCellIdxUR() { return routeGCellIdxUR_; }
+  const odb::Point& getRouteGCellIdxLL() const { return routeGCellIdxLL_; }
+  odb::Point& getRouteGCellIdxLL() { return routeGCellIdxLL_; }
+  const odb::Point& getRouteGCellIdxUR() const { return routeGCellIdxUR_; }
+  odb::Point& getRouteGCellIdxUR() { return routeGCellIdxUR_; }
   void getExtBox(odb::Rect& in) const { in = extBox_; }
   const odb::Rect& getExtBox() const { return extBox_; }
   odb::Rect& getExtBox() { return extBox_; }
@@ -326,8 +326,8 @@ class FlexGRWorker
  private:
   frDesign* design_{nullptr};
   FlexGR* gr_{nullptr};
-  Point routeGCellIdxLL_;
-  Point routeGCellIdxUR_;
+  odb::Point routeGCellIdxLL_;
+  odb::Point routeGCellIdxUR_;
   odb::Rect extBox_;
   odb::Rect routeBox_;
   int grIter_{0};
@@ -347,13 +347,13 @@ class FlexGRWorker
 
   // initBoundary
   void initBoundary_splitPathSeg(grPathSeg* pathSeg);
-  void initBoundary_splitPathSeg_getBreakPts(const Point& bp,
-                                             const Point& ep,
-                                             Point& breakPt1,
-                                             Point& breakPt2);
+  void initBoundary_splitPathSeg_getBreakPts(const odb::Point& bp,
+                                             const odb::Point& ep,
+                                             odb::Point& breakPt1,
+                                             odb::Point& breakPt2);
   frNode* initBoundary_splitPathSeg_split(frNode* child,
                                           frNode* parent,
-                                          const Point& breakPt);
+                                          const odb::Point& breakPt);
 
   // init
   void init();
@@ -413,7 +413,7 @@ class FlexGRWorker
       std::vector<FlexMazeIdx>& connComps,
       FlexMazeIdx& ccMazeIdx1,
       FlexMazeIdx& ccMazeIdx2,
-      Point& centerPt);
+      odb::Point& centerPt);
   grNode* routeNet_getNextDst(
       FlexMazeIdx& ccMazeIdx1,
       FlexMazeIdx& ccMazeIdx2,
@@ -430,7 +430,7 @@ class FlexGRWorker
       std::map<FlexMazeIdx, grNode*>& mazeIdx2endPointNode);
   grNode* routeNet_postAstarWritePath_splitPathSeg(grNode* child,
                                                    grNode* parent,
-                                                   const Point& breakPt);
+                                                   const odb::Point& breakPt);
   void routeNet_postRouteAddCong(grNet* net);
   void route_decayHistCost();
 
@@ -452,7 +452,7 @@ class FlexGRWorker
   void endWriteBackCMap();
 
   // other
-  Point getBoundaryPinGCellNodeLoc(const Point& boundaryPinLoc);
+  odb::Point getBoundaryPinGCellNodeLoc(const odb::Point& boundaryPinLoc);
 
   // debug
   void routeNet_printNet(grNet* net);

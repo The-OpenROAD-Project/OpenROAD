@@ -217,7 +217,7 @@ const char* FlexDRGraphics::current_net_only_visible_ = "Current Net Only";
 
 static std::string workerOrigin(FlexDRWorker* worker)
 {
-  Point origin = worker->getRouteBox().ll();
+  odb::Point origin = worker->getRouteBox().ll();
   return "(" + std::to_string(origin.x()) + ", " + std::to_string(origin.y())
          + ")";
 }
@@ -318,7 +318,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
   painter.setPen(layer, /* cosmetic */ true);
   if (checkDisplayControl(maze_search_visible_) && !points_by_layer_.empty()) {
-    for (Point& pt : points_by_layer_[layerNum]) {
+    for (odb::Point& pt : points_by_layer_[layerNum]) {
       painter.drawX(pt.x(), pt.y(), 20);
     }
   }
@@ -342,12 +342,12 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     color.a = 255;
     for (frMIdx x = 0; x < x_dim; ++x) {
       for (frMIdx y = 0; y < y_dim; ++y) {
-        Point pt;
+        odb::Point pt;
         grid_graph_->getPoint(pt, x, y);
         // draw edges
         if (draw_edges || draw_gCostEdges || draw_blockedEdges) {
           if (x != x_dim - 1) {
-            Point pt2;
+            odb::Point pt2;
             grid_graph_->getPoint(pt2, x + 1, y);
 
             if (draw_edges && grid_graph_->hasEdge(x, y, z, frDirEnum::E)) {
@@ -364,7 +364,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
             painter.setPen(layer, true);
           }
           if (y != y_dim - 1) {
-            Point pt2;
+            odb::Point pt2;
             grid_graph_->getPoint(pt2, x, y + 1);
             if (draw_edges && grid_graph_->hasEdge(x, y, z, frDirEnum::N)) {
               painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
@@ -579,7 +579,7 @@ void FlexDRGraphics::drawObjects(gui::Painter& painter)
   if (net_) {
     for (auto& pin : net_->getPins()) {
       for (auto& ap : pin->getAccessPatterns()) {
-        Point pt = ap->getPoint();
+        odb::Point pt = ap->getPoint();
         painter.drawX(pt.x(), pt.y(), 100);
       }
     }
@@ -630,7 +630,7 @@ void FlexDRGraphics::searchNode(const FlexGridGraph* grid_graph,
   assert(grid_graph_ == nullptr || grid_graph_ == grid_graph);
   grid_graph_ = grid_graph;
 
-  Point in;
+  odb::Point in;
   grid_graph->getPoint(in, grid.x(), grid.y());
   frLayerNum layer = grid_graph->getLayerNum(grid.z());
 
@@ -673,7 +673,7 @@ void FlexDRGraphics::startNet(drNet* net)
   for (auto& pin : net->getPins()) {
     logger_->info(DRT, 250, "  Pin {}.", pin->getName());
     for (auto& ap : pin->getAccessPatterns()) {
-      Point pt = ap->getPoint();
+      odb::Point pt = ap->getPoint();
       logger_->info(DRT,
                     275,
                     "    AP ({:.5f}, {:.5f}) (layer {}) (cost {}).",
