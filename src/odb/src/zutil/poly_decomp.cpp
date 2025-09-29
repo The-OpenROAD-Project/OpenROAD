@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include <algorithm>
 #include <limits>
-#include <list>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 
 namespace gtl = boost::polygon;

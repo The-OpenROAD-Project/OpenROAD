@@ -8,6 +8,7 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO ODB-0131]     Created 32 components and 116 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 114 connections.
 [INFO ODB-0133]     Created 2 nets and 2 connections.
+[INFO GPL-0005] Execute conjugate gradient initial placement.
 [INFO GPL-0002] DBU: 1000
 [INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
 [INFO GPL-0004] CoreBBox: ( 10.120 10.880 ) ( 7989.740 7988.640 ) um
@@ -38,15 +39,20 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0028] Bin count (X, Y):        2048 ,   2048
 [INFO GPL-0029] Bin size (W * H):       3.896 *  3.895 um
 [INFO GPL-0030] Number of bins:                4194304
+[INFO GPL-0007] Execute nesterov global placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        1 |   0.0000 |  2.065415e+06 |   +0.00% |  8.04e-23 |      
-[INFO GPL-1001] Finished with Overflow: 0.000000
+        0 |   0.0000 |  2.065415e+03 |   +0.00% |  8.04e-23 |      
+        0 |   0.0000 |  2.065415e+03 |          |  8.36e-23 |      
+---------------------------------------------------------------
+[INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area                3.7536
 [INFO GPL-1003] Available Free Area         63659439.4496
 [INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
 [INFO GPL-1006]   Suggested Target Densities:
 [INFO GPL-1007]     - For 90% usage of free space: 0.0000
 [INFO GPL-1008]     - For 80% usage of free space: 0.0000
+[INFO GPL-1009]     - For 50% usage of free space: 0.0000
+[INFO GPL-1014] Final placement area: 3.75 (+0.00%)
 No differences found.

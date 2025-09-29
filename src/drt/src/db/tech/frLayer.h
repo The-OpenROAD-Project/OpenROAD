@@ -4,6 +4,7 @@
 #pragma once
 
 #include <algorithm>
+#include <iostream>
 #include <map>
 #include <set>
 #include <vector>
@@ -11,7 +12,9 @@
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
+#include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
+#include "utl/Logger.h"
 namespace odb {
 class dbTechLayer;
 }

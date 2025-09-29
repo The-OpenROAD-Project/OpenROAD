@@ -86,27 +86,13 @@ dbIStream& operator>>(dbIStream& stream, _dbBusPort& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbBusPort& obj)
 {
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream << obj._flags;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
-    stream << obj._from;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
-    stream << obj._to;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
-    stream << obj._port;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
-    stream << obj._members;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
-    stream << obj._last;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
-    stream << obj._parent;
-  }
+  stream << obj._flags;
+  stream << obj._from;
+  stream << obj._to;
+  stream << obj._port;
+  stream << obj._members;
+  stream << obj._last;
+  stream << obj._parent;
   return stream;
 }
 
@@ -118,6 +104,9 @@ void _dbBusPort::collectMemInfo(MemInfo& info)
 
 _dbBusPort::~_dbBusPort()
 {
+  // User Code Begin Destructor
+  delete _members_iter;
+  // User Code End Destructor
 }
 
 ////////////////////////////////////////////////////////////////////

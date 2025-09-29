@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <cstdio>
+
+#include "odb/db.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extSegment.h"
@@ -99,9 +102,9 @@ bool extMeasureRC::DiagCap(FILE* fp,
   }
   return true;
 }
-dbRSeg* extMeasureRC::GetRseg(int id)
+odb::dbRSeg* extMeasureRC::GetRseg(int id)
 {
-  dbRSeg* rseg1 = id > 0 ? dbRSeg::getRSeg(_block, id) : nullptr;
+  odb::dbRSeg* rseg1 = id > 0 ? odb::dbRSeg::getRSeg(_block, id) : nullptr;
   return rseg1;
 }
 bool extMeasureRC::VerticalCap(uint met,
@@ -130,7 +133,7 @@ bool extMeasureRC::VerticalCap(uint met,
       return false;
     }
 
-    capTable[ii] = len * rc->_fringe;
+    capTable[ii] = len * rc->getFringe();
   }
   createCap(rsegId1, rsegId2, capTable);
   return true;
@@ -166,7 +169,7 @@ bool extMeasureRC::DiagCouplingCap(uint met,
     }
 
     capTable[ii]
-        = len * rc->_fringe;  // OVERLOADED value from model - dkf 110424
+        = len * rc->getFringe();  // OVERLOADED value from model - dkf 110424
   }
   createCap(rsegId1, rsegId2, capTable);
   return true;

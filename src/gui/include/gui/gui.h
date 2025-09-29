@@ -23,6 +23,8 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/geom.h"
 
 struct Tcl_Interp;
 struct GifWriter;
@@ -158,10 +160,6 @@ class Painter
   static inline const Color kHighlight = kYellow;
   static inline const Color kPersistHighlight = kYellow;
 
-  Painter(Options* options, const odb::Rect& bounds, double pixels_per_dbu)
-      : options_(options), bounds_(bounds), pixels_per_dbu_(pixels_per_dbu)
-  {
-  }
   virtual ~Painter() = default;
 
   // Get the current pen color
@@ -220,6 +218,7 @@ class Painter
 
   // Draw a line with coordinates in DBU with the current pen
   virtual void drawLine(const odb::Point& p1, const odb::Point& p2) = 0;
+  void drawLine(const odb::Line& line) { drawLine(line.pt0(), line.pt1()); }
 
   // Draw a circle with coordinates in DBU with the current pen
   virtual void drawCircle(int x, int y, int r) = 0;
@@ -280,6 +279,12 @@ class Painter
   Options* getOptions() { return options_; }
   const odb::Rect& getBounds() { return bounds_; }
 
+ protected:
+  Painter(Options* options, const odb::Rect& bounds, double pixels_per_dbu)
+      : options_(options), bounds_(bounds), pixels_per_dbu_(pixels_per_dbu)
+  {
+  }
+
  private:
   Options* options_;
   const odb::Rect bounds_;
@@ -294,22 +299,24 @@ class Descriptor
 {
  public:
   virtual ~Descriptor() = default;
-  virtual std::string getName(std::any object) const = 0;
-  virtual std::string getShortName(std::any object) const
+  virtual std::string getName(const std::any& object) const = 0;
+  virtual std::string getShortName(const std::any& object) const
   {
-    return getName(std::move(object));
+    return getName(object);
   }
   virtual std::string getTypeName() const = 0;
-  virtual std::string getTypeName(std::any /* object */) const
+  virtual std::string getTypeName(const std::any& /* object */) const
   {
     return getTypeName();
   }
-  virtual bool getBBox(std::any object, odb::Rect& bbox) const = 0;
+  virtual bool getBBox(const std::any& object, odb::Rect& bbox) const = 0;
 
-  virtual bool isInst(std::any /* object */) const { return false; }
-  virtual bool isNet(std::any /* object */) const { return false; }
+  virtual bool isInst(const std::any& /* object */) const { return false; }
+  virtual bool isNet(const std::any& /* object */) const { return false; }
 
-  virtual bool getAllObjects(SelectionSet& /* objects */) const = 0;
+  virtual void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const
+      = 0;
 
   // A property is a name and a value.
   struct Property
@@ -353,13 +360,19 @@ class Descriptor
   };
   using Editors = std::map<std::string, Editor>;
 
-  virtual Properties getProperties(std::any object) const = 0;
-  virtual Actions getActions(std::any /* object */) const { return Actions(); }
-  virtual Editors getEditors(std::any /* object */) const { return Editors(); }
+  virtual Properties getProperties(const std::any& object) const = 0;
+  virtual Actions getActions(const std::any& /* object */) const
+  {
+    return Actions();
+  }
+  virtual Editors getEditors(const std::any& /* object */) const
+  {
+    return Editors();
+  }
 
-  virtual Selected makeSelected(std::any object) const = 0;
+  virtual Selected makeSelected(const std::any& object) const = 0;
 
-  virtual bool lessThan(std::any l, std::any r) const = 0;
+  virtual bool lessThan(const std::any& l, const std::any& r) const = 0;
 
   static Editor makeEditor(const EditorCallback& func,
                            const std::vector<EditorOption>& options)
@@ -373,8 +386,11 @@ class Descriptor
 
   // The caller (Selected and Renderers) will pre-configure the Painter's pen
   // and brush before calling.
-  virtual void highlight(std::any object, Painter& painter) const = 0;
-  virtual bool isSlowHighlight(std::any /* object */) const { return false; }
+  virtual void highlight(const std::any& object, Painter& painter) const = 0;
+  virtual bool isSlowHighlight(const std::any& /* object */) const
+  {
+    return false;
+  }
 
   static std::string convertUnits(double value,
                                   bool area = false,
@@ -409,7 +425,7 @@ class Selected
 
   bool isInst() const { return descriptor_->isInst(object_); }
   bool isNet() const { return descriptor_->isNet(object_); }
-  std::any getObject() const { return object_; }
+  const std::any& getObject() const { return object_; }
 
   // If the select_flag is false, the drawing will happen in highlight mode.
   // Highlight shapes are persistent which will not get removed from
@@ -564,6 +580,27 @@ class SpectrumGenerator
   double scale_;
 };
 
+// A chart with a single X axis and potentially multiple Y axes
+class Chart
+{
+ public:
+  virtual ~Chart() = default;
+
+  // printf-style format string
+  virtual void setXAxisFormat(const std::string& format) = 0;
+  // printf-style format.  An empty string is a no-op placeholder
+  virtual void setYAxisFormats(const std::vector<std::string>& formats) = 0;
+  virtual void setYAxisMin(const std::vector<std::optional<double>>& mins) = 0;
+  // One y per series.  The order matches y_labels in addChart
+  virtual void addPoint(double x, const std::vector<double>& ys) = 0;
+  virtual void clearPoints() = 0;
+
+  virtual void addVerticalMarker(double x, const Painter::Color& color) = 0;
+
+ protected:
+  Chart() = default;
+};
+
 // This is the API for the rest of the program to interact with the
 // GUI.  This class is accessed by the GUI implementation to interact
 // with the rest of the system.  This class itself doesn't hold the
@@ -668,7 +705,8 @@ class Gui
                           const std::string& corner = "",
                           int width_px = 0,
                           int height_px = 0);
-  void selectClockviewerClock(const std::string& clock_name);
+  void selectClockviewerClock(const std::string& clock_name,
+                              std::optional<int> depth);
 
   // Save histogram view
   void saveHistogramImage(const std::string& filename,
@@ -702,6 +740,10 @@ class Gui
   void addNetTracks(odb::dbNet* net);
   void removeNetTracks(odb::dbNet* net);
   void clearNetTracks();
+
+  Chart* addChart(const std::string& name,
+                  const std::string& x_label,
+                  const std::vector<std::string>& y_labels);
 
   // show/hide widgets
   void showWidget(const std::string& name, bool show);

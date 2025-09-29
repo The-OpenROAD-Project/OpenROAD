@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <QColor>
 #include <QComboBox>
 #include <QDockWidget>
 #include <QGraphicsItem>
@@ -10,19 +11,28 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QMenu>
+#include <QPainter>
 #include <QPainterPath>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSpinBox>
+#include <QString>
 #include <QTabWidget>
 #include <QToolTip>
+#include <QVariant>
+#include <QWidget>
+#include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
 #include "gui/gui.h"
+#include "odb/db.h"
+#include "sta/Delay.hh"
 #include "staGuiInterface.h"
 
 namespace sta {
@@ -404,12 +414,12 @@ class ClockTreeView : public QGraphicsView
   void setRendererState(RendererState state);
   void fit();
   void save(const QString& path = "");
+  void updateColorDepth(int depth);
 
  private slots:
   void selectionChanged();
   void highlightTo(odb::dbITerm* term);
   void clearHighlightTo();
-  void updateColorDepth(int depth);
 
  protected:
   void wheelEvent(QWheelEvent* event) override;
@@ -516,7 +526,8 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
                  const std::string& corner,
                  const std::optional<int>& width_px,
                  const std::optional<int>& height_px);
-  void selectClock(const std::string& clock_name);
+  void selectClock(const std::string& clock_name,
+                   std::optional<int> depth = {});
 
   void postReadLiberty() override;
 

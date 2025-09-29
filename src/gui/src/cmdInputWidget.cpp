@@ -3,8 +3,12 @@
 
 #include "cmdInputWidget.h"
 
+#include <QFile>
 #include <QMimeData>
+#include <QSettings>
+#include <QString>
 #include <QTextStream>
+#include <QWidget>
 
 namespace gui {
 

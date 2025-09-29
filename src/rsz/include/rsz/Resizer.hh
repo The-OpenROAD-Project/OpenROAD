@@ -11,7 +11,9 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
+#include "est/EstimateParasitics.h"
 #include "grt/GlobalRouter.h"
+#include "odb/dbTypes.h"
 #include "rsz/OdbCallBack.hh"
 #include "sta/Path.hh"
 #include "sta/UnorderedSet.hh"
@@ -19,7 +21,6 @@
 
 namespace grt {
 class GlobalRouter;
-class IncrementalGRoute;
 }  // namespace grt
 
 namespace stt {
@@ -41,12 +42,10 @@ using odb::dbMaster;
 using odb::dbNet;
 using odb::dbTechLayer;
 using odb::Point;
-using odb::Rect;
 
 using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
-using grt::IncrementalGRoute;
 
 using sta::ArcDelay;
 using sta::Cell;
@@ -95,8 +94,6 @@ using LibertyPortTuple = std::tuple<LibertyPort*, LibertyPort*>;
 using InstanceTuple = std::tuple<Instance*, Instance*>;
 using InputSlews = std::array<Slew, RiseFall::index_count>;
 
-class AbstractSteinerRenderer;
-class SteinerTree;
 using SteinerPt = int;
 
 class BufferedNet;
@@ -120,6 +117,8 @@ class SizeDownMove;
 class SizeUpMove;
 class SwapPinsMove;
 class UnbufferMove;
+class VTSwapSpeedMove;
+class SizeUpMatchMove;
 class RegisterOdbCallbackGuard;
 
 class NetHash
@@ -131,26 +130,6 @@ class NetHash
 using CellTargetLoadMap = Map<LibertyCell*, float>;
 using TgtSlews = std::array<Slew, RiseFall::index_count>;
 
-enum class ParasiticsSrc
-{
-  none,
-  placement,
-  global_routing,
-  detailed_routing
-};
-
-struct ParasiticsResistance
-{
-  double h_res;
-  double v_res;
-};
-
-struct ParasiticsCapacitance
-{
-  double h_cap;
-  double v_cap;
-};
-
 enum class MoveType
 {
   BUFFER,
@@ -160,7 +139,81 @@ enum class MoveType
   SIZEUP,
   SIZEDOWN,
   CLONE,
-  SPLIT
+  SPLIT,
+  VTSWAP_SPEED,  // VT swap for timing (need VT swap for power also)
+  SIZEUP_MATCH   // sizeup to match drive strength vs. prev stage
+};
+
+// Voltage Threshold (VT) category identifier
+struct VTCategory
+{
+  int vt_index;
+  std::string vt_name;
+
+  // Enable use as map key
+  bool operator<(const VTCategory& other) const
+  {
+    if (vt_index != other.vt_index) {
+      return vt_index < other.vt_index;
+    }
+    return vt_name < other.vt_name;
+  }
+  bool operator==(const VTCategory& other) const
+  {
+    return (vt_index == other.vt_index && vt_name == other.vt_name);
+  }
+  bool operator!=(const VTCategory& other) const { return !(*this == other); }
+};
+
+// Leakage statistics for cells in a single VT category
+struct VTLeakageStats
+{
+  int cell_count = 0;
+  float total_leakage = 0.0f;
+
+  float get_average_leakage() const
+  {
+    return cell_count > 0 ? total_leakage / cell_count : 0.0f;
+  }
+
+  void add_cell_leakage(std::optional<float> cell_leak)
+  {
+    cell_count++;
+    if (cell_leak.has_value()) {
+      total_leakage += *cell_leak;
+    }
+  }
+};
+
+// Complete analysis data for a library
+struct LibraryAnalysisData
+{
+  // VT category leakage analysis
+  std::map<VTCategory, VTLeakageStats> vt_leakage_by_category;
+  // Cell footprint distribution (footprint_name -> count)
+  std::map<std::string, int> cells_by_footprint;
+  // LEF site usage distribution (site -> count)
+  std::map<odb::dbSite*, int> cells_by_site;
+  // VT categories sorted by VT type for HVT/RVT/LVT/uLVT ordering
+  std::vector<std::pair<VTCategory, VTLeakageStats>> sorted_vt_categories;
+
+  // Helper methods for common operations
+  void sort_vt_categories()
+  {
+    sorted_vt_categories.clear();
+    sorted_vt_categories.reserve(vt_leakage_by_category.size());
+    for (const auto& vt_pair : vt_leakage_by_category) {
+      sorted_vt_categories.push_back(vt_pair);
+    }
+
+    // Sort by average leakage (ascending order - least leaky to most leaky)
+    std::sort(sorted_vt_categories.begin(),
+              sorted_vt_categories.end(),
+              [](const auto& a, const auto& b) {
+                return a.second.get_average_leakage()
+                       < b.second.get_average_leakage();
+              });
+  }
 };
 
 class OdbCallBack;
@@ -168,72 +221,14 @@ class OdbCallBack;
 class Resizer : public dbStaState, public dbNetworkObserver
 {
  public:
-  Resizer();
+  Resizer(Logger* logger,
+          dbDatabase* db,
+          dbSta* sta,
+          SteinerTreeBuilder* stt_builder,
+          GlobalRouter* global_router,
+          dpl::Opendp* opendp,
+          est::EstimateParasitics* estimate_parasitics);
   ~Resizer() override;
-  void init(Logger* logger,
-            dbDatabase* db,
-            dbSta* sta,
-            SteinerTreeBuilder* stt_builder,
-            GlobalRouter* global_router,
-            dpl::Opendp* opendp,
-            std::unique_ptr<AbstractSteinerRenderer> steiner_renderer);
-  void setLayerRC(dbTechLayer* layer,
-                  const Corner* corner,
-                  double res,
-                  double cap);
-  void layerRC(dbTechLayer* layer,
-               const Corner* corner,
-               // Return values.
-               double& res,
-               double& cap) const;
-  // Set the resistance and capacitance used for horizontal parasitics on signal
-  // nets.
-  void setHWireSignalRC(const Corner* corner,
-                        double res,   // ohms/meter
-                        double cap);  // farads/meter
-  // Set the resistance and capacitance used for vertical wires parasitics on
-  // signal nets.
-  void setVWireSignalRC(const Corner* corner,
-                        double res,   // ohms/meter
-                        double cap);  // farads/meter
-  // Set the resistance and capacitance used for parasitics on clock nets.
-  void setHWireClkRC(const Corner* corner,
-                     double res,
-                     double cap);  // farads/meter
-  // Set the resistance and capacitance used for parasitics on clock nets.
-  void setVWireClkRC(const Corner* corner,
-                     double res,
-                     double cap);  // farads/meter
-  // ohms/meter, farads/meter
-  void wireSignalRC(const Corner* corner,
-                    // Return values.
-                    double& res,
-                    double& cap) const;
-  double wireSignalResistance(const Corner* corner) const;
-  double wireSignalHResistance(const Corner* corner) const;
-  double wireSignalVResistance(const Corner* corner) const;
-  double wireClkResistance(const Corner* corner) const;
-  double wireClkHResistance(const Corner* corner) const;
-  double wireClkVResistance(const Corner* corner) const;
-  // farads/meter
-  double wireSignalCapacitance(const Corner* corner) const;
-  double wireSignalHCapacitance(const Corner* corner) const;
-  double wireSignalVCapacitance(const Corner* corner) const;
-  double wireClkCapacitance(const Corner* corner) const;
-  double wireClkHCapacitance(const Corner* corner) const;
-  double wireClkVCapacitance(const Corner* corner) const;
-  void estimateParasitics(ParasiticsSrc src);
-  void estimateParasitics(ParasiticsSrc src,
-                          std::map<Corner*, std::ostream*>& spef_streams_);
-  void estimateWireParasitics(SpefWriter* spef_writer = nullptr);
-  void estimateWireParasitic(const Net* net, SpefWriter* spef_writer = nullptr);
-  void estimateWireParasitic(const Pin* drvr_pin,
-                             const Net* net,
-                             SpefWriter* spef_writer = nullptr);
-  bool haveEstimatedParasitics() const;
-  void parasiticsInvalid(const Net* net);
-  void parasiticsInvalid(const dbNet* net);
-  bool parasiticsValid() const;
 
   // Core area (meters).
   double coreArea() const;
@@ -242,15 +237,17 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Maximum utilizable area (core area * utilization)
   double maxArea() const;
 
+  VertexSeq orderedLoadPinVertices();
+
   void setDontUse(LibertyCell* cell, bool dont_use);
   void resetDontUse();
   bool dontUse(const LibertyCell* cell);
   void reportDontUse() const;
   void setDontTouch(const Instance* inst, bool dont_touch);
-  bool dontTouch(const Instance* inst);
+  bool dontTouch(const Instance* inst) const;
   void setDontTouch(const Net* net, bool dont_touch);
-  bool dontTouch(const Net* net);
-  bool dontTouch(const Pin* pin);
+  bool dontTouch(const Net* net) const;
+  bool dontTouch(const Pin* pin) const;
   void reportDontTouch();
 
   void reportFastBufferSizes();
@@ -259,8 +256,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Remove all or selected buffers from the netlist.
   void removeBuffers(InstanceSeq insts);
   void unbufferNet(Net* net);
-  void bufferInputs();
-  void bufferOutputs();
+  void bufferInputs(LibertyCell* buffer_cell = nullptr, bool verbose = false);
+  void bufferOutputs(LibertyCell* buffer_cell = nullptr, bool verbose = false);
 
   // from sta::dbNetworkObserver callbacks
   void postReadLiberty() override;
@@ -288,7 +285,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
                    bool skip_size_down,
                    bool skip_buffering,
                    bool skip_buffer_removal,
-                   bool skip_last_gasp);
+                   bool skip_last_gasp,
+                   bool skip_vt_swap);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
@@ -412,51 +410,61 @@ class Resizer : public dbStaState, public dbNetworkObserver
   PinSet findFanins(PinSet& end_pins);
 
   ////////////////////////////////////////////////////////////////
-  void highlightSteiner(const Pin* drvr);
-
   dbNetwork* getDbNetwork() { return db_network_; }
-  ParasiticsSrc getParasiticsSrc() { return parasitics_src_; }
-  void setParasiticsSrc(ParasiticsSrc src);
   dbBlock* getDbBlock() { return block_; };
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   void makeEquivCells();
-  std::pair<int, std::string> cellVTType(dbMaster* master);
+  VTCategory cellVTType(dbMaster* master);
 
   ////////////////////////////////////////////////////////////////
   void initBlock();
   void journalBeginTest();
   void journalRestoreTest();
   Logger* logger() const { return logger_; }
-  void eraseParasitics(const Net* net);
   void eliminateDeadLogic(bool clean_nets);
   std::optional<float> cellLeakage(LibertyCell* cell);
   // For debugging - calls getSwappableCells
   void reportEquivalentCells(LibertyCell* base_cell,
                              bool match_cell_footprint,
-                             bool report_all_cells);
+                             bool report_all_cells,
+                             bool report_vt_equiv);
+  void reportBuffers(bool filtered);
+  void getBufferList(LibertyCellSeq& buffer_list);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
   static MoveType parseMove(const std::string& s);
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
   void fullyRebuffer(Pin* pin);
 
+  est::EstimateParasitics* getEstimateParasitics()
+  {
+    return estimate_parasitics_;
+  }
+
+  // Library analysis data
+  std::unique_ptr<LibraryAnalysisData> lib_data_;
+
  protected:
   void init();
   double computeDesignArea();
   void initDesignArea();
   void ensureLevelDrvrVertices();
-  Instance* bufferInput(const Pin* top_pin, LibertyCell* buffer_cell);
-  void bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell);
+  Instance* bufferInput(const Pin* top_pin,
+                        LibertyCell* buffer_cell,
+                        bool verbose);
+  void bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell, bool verbose);
   bool hasTristateOrDontTouchDriver(const Net* net);
-  bool isTristateDriver(const Pin* pin);
+  bool isTristateDriver(const Pin* pin) const;
   void checkLibertyForAllCorners();
   void copyDontUseFromLiberty();
   bool bufferSizeOutmatched(LibertyCell* worse,
                             LibertyCell* better,
                             float max_drive_resist);
   void findBuffers();
+  void findBuffersNoPruning();
   void findFastBuffers();
+  LibertyCell* selectBufferCell(LibertyCell* buffer_cell = nullptr);
   bool isLinkCell(LibertyCell* cell) const;
   void findTargetLoads();
   void balanceBin(const std::vector<odb::dbInst*>& bin,
@@ -498,6 +506,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   void resizePreamble();
   LibertyCellSeq getSwappableCells(LibertyCell* source_cell);
+  LibertyCellSeq getVTEquivCells(LibertyCell* source_cell);
 
   bool getCin(const LibertyCell* cell, float& cin);
   // Resize drvr_pin instance to target slew.
@@ -580,10 +589,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
                          double wire_length,  // meters
                          const Corner* corner,
                          Parasitics* parasitics);
-  std::string makeUniqueNetName(Instance* parent = nullptr);
-  Net* makeUniqueNet();
-  std::string makeUniqueInstName(const char* base_name);
-  std::string makeUniqueInstName(const char* base_name, bool underscore);
   bool overMaxArea();
   bool bufferBetweenPorts(Instance* buffer);
   bool hasPort(const Net* net);
@@ -616,19 +621,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   InstanceSeq findClkInverters();
   void cloneClkInverter(Instance* inv);
 
-  void incrementalParasiticsBegin();
-  void incrementalParasiticsEnd();
-  void ensureParasitics();
-  void updateParasitics(bool save_guides = false);
-  void ensureWireParasitic(const Pin* drvr_pin);
-  void ensureWireParasitic(const Pin* drvr_pin, const Net* net);
-  void estimateWireParasiticSteiner(const Pin* drvr_pin,
-                                    const Net* net,
-                                    SpefWriter* spef_writer);
-  float totalLoad(SteinerTree* tree) const;
-  float subtreeLoad(SteinerTree* tree,
-                    float cap_per_micron,
-                    SteinerPt pt) const;
   void makePadParasitic(const Net* net, SpefWriter* spef_writer);
   bool isPadNet(const Net* net) const;
   bool isPadPin(const Pin* pin) const;
@@ -636,7 +628,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void net2Pins(const Net* net, const Pin*& pin1, const Pin*& pin2) const;
   void parasiticNodeConnectPins(Parasitic* parasitic,
                                 ParasiticNode* node,
-                                SteinerTree* tree,
+                                est::SteinerTree* tree,
                                 SteinerPt pt,
                                 size_t& resistor_id);
 
@@ -648,7 +640,16 @@ class Resizer : public dbStaState, public dbNetworkObserver
   Instance* makeInstance(LibertyCell* cell,
                          const char* name,
                          Instance* parent,
-                         const Point& loc);
+                         const Point& loc,
+                         const odb::dbNameUniquifyType& uniquify
+                         = odb::dbNameUniquifyType::ALWAYS);
+  void deleteTieCellAndNet(const Instance* tie_inst, LibertyPort* tie_port);
+  const Pin* findArithBoundaryPin(const Pin* load_pin);
+  void createNewTieCellForLoadPin(const Pin* load_pin,
+                                  const char* new_inst_name,
+                                  Instance* parent,
+                                  LibertyPort* tie_port,
+                                  int separation_dbu);
   void getBufferPins(Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
 
   Instance* makeBuffer(LibertyCell* cell,
@@ -659,10 +660,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   LibertyCell* findTargetCell(LibertyCell* cell,
                               float load_cap,
                               bool revisiting_inst);
-  // Returns nullptr if net has less than 2 pins or any pin is not placed.
-  SteinerTree* makeSteinerTree(Point drvr_location,
-                               const std::vector<Point>& sink_locations);
-  SteinerTree* makeSteinerTree(const Pin* drvr_pin);
   BufferedNetPtr makeBufferedNet(const Pin* drvr_pin, const Corner* corner);
   BufferedNetPtr makeBufferedNetSteiner(const Pin* drvr_pin,
                                         const Corner* corner);
@@ -685,6 +682,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
                       const Corner*& corner);
   void warnBufferMovedIntoCore();
   bool isLogicStdCell(const Instance* inst);
+
+  bool okToBufferNet(const Pin* driver_pin) const;
+
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
   // during repair timing.
@@ -708,37 +708,24 @@ class Resizer : public dbStaState, public dbNetworkObserver
   std::unique_ptr<RepairSetup> repair_setup_;
   std::unique_ptr<RepairHold> repair_hold_;
   std::unique_ptr<ConcreteSwapArithModules> swap_arith_modules_;
-  std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
   std::unique_ptr<Rebuffer> rebuffer_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
-  std::vector<std::vector<double>> layer_res_;  // ohms/meter
-  std::vector<std::vector<double>> layer_cap_;  // Farads/meter
-  // Signal wire RC indexed by corner->index
-  std::vector<ParasiticsResistance> wire_signal_res_;   // ohms/metre
-  std::vector<ParasiticsCapacitance> wire_signal_cap_;  // Farads/meter
-  // Clock wire RC.
-  std::vector<ParasiticsResistance> wire_clk_res_;   // ohms/metre
-  std::vector<ParasiticsCapacitance> wire_clk_cap_;  // Farads/meter
   LibertyCellSet dont_use_;
   double max_area_ = 0.0;
 
   Logger* logger_ = nullptr;
+  est::EstimateParasitics* estimate_parasitics_ = nullptr;
   SteinerTreeBuilder* stt_builder_ = nullptr;
   GlobalRouter* global_router_ = nullptr;
-  IncrementalGRoute* incr_groute_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
   int dbu_ = 0;
   const Pin* debug_pin_ = nullptr;
 
-  Rect core_;
+  odb::Rect core_;
   bool core_exists_ = false;
-
-  ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
-  UnorderedSet<const Net*, NetHash> parasitics_invalid_;
-  bool incremental_parasitics_enabled_ = false;
 
   double design_area_ = 0.0;
   const MinMax* min_ = MinMax::min();
@@ -752,6 +739,12 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   // Cache results of getSwappableCells() as this is expensive for large PDKs.
   std::unordered_map<LibertyCell*, LibertyCellSeq> swappable_cells_cache_;
+  // Cache VT equivalent cells for each cell, equivalent cells are sorted in
+  // increasing order of leakage
+  // BUF_X1_RVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+  // BUF_X1_LVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
+  // ...
+  std::unordered_map<LibertyCell*, LibertyCellSeq> vt_equiv_cells_cache_;
 
   std::unique_ptr<CellTargetLoadMap> target_load_map_;
   VertexSeq level_drvr_vertices_;
@@ -761,8 +754,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   const DcalcAnalysisPt* tgt_slew_dcalc_ap_ = nullptr;
   // Instances with multiple output ports that have been resized.
   InstanceSet resized_multi_output_insts_;
-  int unique_net_index_ = 1;
-  int unique_inst_index_ = 1;
   int inserted_buffer_count_ = 0;
   int cloned_gate_count_ = 0;
   int swap_pin_count_ = 0;
@@ -802,15 +793,16 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool default_sizing_leakage_limit_set_ = true;
   bool sizing_keep_site_ = false;
   bool sizing_keep_vt_ = false;
+  bool disable_buffer_pruning_ = false;
 
   // Sizing
   const double default_sizing_cap_ratio_ = 4.0;
   const double default_buffer_sizing_cap_ratio_ = 9.0;
-  double sizing_cap_ratio_;
-  double buffer_sizing_cap_ratio_;
+  double sizing_cap_ratio_{default_sizing_cap_ratio_};
+  double buffer_sizing_cap_ratio_{default_buffer_sizing_cap_ratio_};
 
   // VT layer hash
-  std::unordered_map<dbMaster*, std::pair<int, std::string>> vt_map_;
+  std::unordered_map<dbMaster*, VTCategory> vt_map_;
   std::unordered_map<size_t, int>
       vt_hash_map_;  // maps hash value to unique int
 
@@ -825,6 +817,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   std::unique_ptr<SizeUpMove> size_up_move_;
   std::unique_ptr<SwapPinsMove> swap_pins_move_;
   std::unique_ptr<UnbufferMove> unbuffer_move_;
+  std::unique_ptr<VTSwapSpeedMove> vt_swap_speed_move_;
+  std::unique_ptr<SizeUpMatchMove> size_up_match_move_;
   int accepted_move_count_ = 0;
   int rejected_move_count_ = 0;
 
@@ -835,7 +829,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class RepairDesign;
   friend class RepairSetup;
   friend class RepairHold;
-  friend class SteinerTree;
   friend class BaseMove;
   friend class BufferMove;
   friend class SizeDownMove;
@@ -844,25 +837,12 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class CloneMove;
   friend class SwapPinsMove;
   friend class UnbufferMove;
+  friend class SizeUpMatchMove;
+  friend class VTSwapSpeedMove;
   friend class SwapArithModules;
   friend class ConcreteSwapArithModules;
-  friend class IncrementalParasiticsGuard;
   friend class Rebuffer;
   friend class OdbCallBack;
-};
-
-class IncrementalParasiticsGuard
-{
- public:
-  IncrementalParasiticsGuard(Resizer* resizer);
-  ~IncrementalParasiticsGuard();
-
-  // calls resizer_->updateParasitics()
-  void update();
-
- private:
-  Resizer* resizer_;
-  bool need_unregister_;
 };
 
 }  // namespace rsz

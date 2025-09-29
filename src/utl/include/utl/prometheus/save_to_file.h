@@ -23,13 +23,14 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <fstream>
 #include <memory>
 #include <string>
 #include <thread>
 
-#include "registry.h"
-#include "text_serializer.h"
+#include "utl/prometheus/registry.h"
+#include "utl/prometheus/text_serializer.h"
 
 namespace utl {
 class SaveToFile

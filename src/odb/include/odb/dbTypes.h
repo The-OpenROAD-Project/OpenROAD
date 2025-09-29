@@ -3,12 +3,13 @@
 
 #pragma once
 
+#include <cstdint>
 #include <optional>
 #include <string>
 
-#include "dbStream.h"
-#include "geom.h"
-#include "odb.h"
+#include "odb/dbStream.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -37,7 +38,7 @@ class dbOrientType
     MXR90  /** mirror about the "X" axis and rotate 90 degrees */
   };
 
-  static const Value DEFAULT = R0;
+  static constexpr Value DEFAULT = Value::R0;
 
   static std::optional<Value> fromString(const char* orient);
 
@@ -52,17 +53,17 @@ class dbOrientType
   ///
   /// Create a dbOrientType instance with an explicit orientation.
   ///
-  dbOrientType(Value orient);
+  dbOrientType(Value orient) : _value(orient) {}
 
   ///
   /// Create a dbOrientType instance with orientation "R0".
   ///
-  dbOrientType();
+  dbOrientType() = default;
 
   ///
   /// Copy constructor.
   ///
-  dbOrientType(const dbOrientType& orient);
+  dbOrientType(const dbOrientType& orient) = default;
 
   ///
   /// Returns the orientation
@@ -95,16 +96,53 @@ class dbOrientType
   bool isRightAngleRotation() const;
 
  private:
-  Value _value;
+  Value _value = DEFAULT;
+};
+
+class dbOrientType3D
+{
+ public:
+  static std::optional<dbOrientType3D> fromString(const std::string& orient);
+
+  dbOrientType3D(const std::string& orient);
+
+  ///
+  /// Create a dbOrientType3D instance with an explicit orientation.
+  ///
+  dbOrientType3D(const dbOrientType& orient, bool mirror_z);
+
+  dbOrientType3D() = default;
+
+  ///
+  /// Copy constructor.
+  ///
+  dbOrientType3D(const dbOrientType3D& orient) = default;
+
+  ///
+  /// Returns the orientation as a string
+  ///
+  std::string getString() const;
+
+  dbOrientType getOrientType2D() const;
+
+  bool isMirrorZ() const;
+
+  friend dbIStream& operator>>(dbIStream& stream, dbOrientType3D& t);
+  friend dbOStream& operator<<(dbOStream& stream, const dbOrientType3D& t);
+
+ private:
+  dbOrientType::Value value_{dbOrientType::R0};
+  bool mirror_z_{false};
 };
 
 class dbGDSSTrans
 {
  public:
-  bool _flipX;
-  double _mag, _angle;
+  bool _flipX = false;
+  double _mag = 1.0;
+  double _angle = 0.0;
 
-  dbGDSSTrans();
+  dbGDSSTrans() = default;
 
   dbGDSSTrans(bool flipX, double mag, double angle);
 
@@ -116,7 +154,7 @@ class dbGDSSTrans
 };
 
 dbIStream& operator>>(dbIStream& stream, dbGDSSTrans& t);
-dbOStream& operator<<(dbOStream& stream, dbGDSSTrans t);
+dbOStream& operator<<(dbOStream& stream, const dbGDSSTrans& t);
 
 class dbGDSTextPres
 {
@@ -134,10 +172,10 @@ class dbGDSTextPres
     RIGHT = 2
   };
 
-  VPres _vPres;
-  HPres _hPres;
+  VPres _vPres = VPres::TOP;
+  HPres _hPres = HPres::LEFT;
 
-  dbGDSTextPres();
+  dbGDSTextPres() = default;
 
   dbGDSTextPres(VPres vPres, HPres hPres);
 
@@ -149,7 +187,7 @@ class dbGDSTextPres
 };
 
 dbIStream& operator>>(dbIStream& stream, dbGDSTextPres& t);
-dbOStream& operator<<(dbOStream& stream, dbGDSTextPres t);
+dbOStream& operator<<(dbOStream& stream, const dbGDSTextPres& t);
 
 ///
 /// The dbGroup's basis.
@@ -161,7 +199,8 @@ class dbGroupType
   {
     PHYSICAL_CLUSTER,
     VOLTAGE_DOMAIN,
-    POWER_DOMAIN
+    POWER_DOMAIN,
+    VISUAL_DEBUG
   };
 
   ///
@@ -174,17 +213,17 @@ class dbGroupType
   ///
   /// Create a dbGroupType instance with an explicit type.
   ///
-  dbGroupType(Value type);
+  dbGroupType(Value type) : _value(type) {}
 
   ///
   /// Create a dbGroupType instance with type "PHYSICAL_CLUSTER".
   ///
-  dbGroupType();
+  dbGroupType() = default;
 
   ///
   /// Copy constructor.
   ///
-  dbGroupType(const dbGroupType& type);
+  dbGroupType(const dbGroupType& type) = default;
 
   ///
   /// Returns the orientation
@@ -202,7 +241,7 @@ class dbGroupType
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::PHYSICAL_CLUSTER;
 };
 
 ///
@@ -233,17 +272,17 @@ class dbSigType
   ///
   /// Create a dbSigType instance with an explicit signal value.
   ///
-  dbSigType(Value value);
+  dbSigType(Value value) : _value(value) {}
 
   ///
   /// Create a dbSigType instance with value "signal".
   ///
-  dbSigType();
+  dbSigType() = default;
 
   ///
   /// Copy constructor.
   ///
-  dbSigType(const dbSigType& value);
+  dbSigType(const dbSigType& value) = default;
 
   ///
   /// Returns the signal-value
@@ -269,7 +308,7 @@ class dbSigType
   bool operator!=(const Value v) const { return _value != v; };
 
  private:
-  Value _value;
+  Value _value = Value::SIGNAL;
 };
 
 ///
@@ -296,17 +335,17 @@ class dbIoType
   ///
   /// Create a dbIoType instance with an explicit IO direction.
   ///
-  dbIoType(Value value);
+  dbIoType(Value value) : _value(value) {}
 
   ///
   /// Create a dbIoType instance with value "input".
   ///
-  dbIoType();
+  dbIoType() = default;
 
   ///
   /// Copy constructor.
   ///
-  dbIoType(const dbIoType& value);
+  dbIoType(const dbIoType& value) = default;
 
   ///
   /// Returns the direction of IO of an element.
@@ -327,7 +366,7 @@ class dbIoType
   bool operator!=(const Value v) const { return _value != v; };
 
  private:
-  Value _value;
+  Value _value = Value::INPUT;
 };
 
 ///
@@ -358,17 +397,17 @@ class dbPlacementStatus
   ///
   /// Create a dbPlacementStatus instance with an explicit status.
   ///
-  dbPlacementStatus(Value value);
+  dbPlacementStatus(Value value) : _value(value) {}
 
   ///
   /// Create a dbPlacementStatus instance with status = "none".
   ///
-  dbPlacementStatus();
+  dbPlacementStatus() = default;
 
   ///
   /// Copy constructor.
   ///
-  dbPlacementStatus(const dbPlacementStatus& value);
+  dbPlacementStatus(const dbPlacementStatus& value) = default;
 
   ///
   /// Returns the placement status.
@@ -396,7 +435,7 @@ class dbPlacementStatus
   bool isFixed() const;
 
  private:
-  Value _value;
+  Value _value = Value::NONE;
 };
 
 ///
@@ -466,17 +505,17 @@ class dbMasterType
   ///
   /// Create a dbMasterType instance with an explicit value.
   ///
-  dbMasterType(Value value);
+  dbMasterType(Value value) : _value(value) {}
 
   ///
   /// Create a dbMasterType instance with value = "none".
   ///
-  dbMasterType();
+  dbMasterType() = default;
 
   ///
   /// Copy constructor.
   ///
-  dbMasterType(const dbMasterType& value);
+  dbMasterType(const dbMasterType& value) = default;
 
   ///
   /// Returns the master-value.
@@ -519,7 +558,7 @@ class dbMasterType
   bool isCover() const;
 
  private:
-  Value _value;
+  Value _value = Value::CORE;
 };
 
 ///
@@ -538,7 +577,7 @@ class dbTechLayerType
     NONE         /** */
   };
 
-  static const Value DEFAULT = ROUTING;
+  static constexpr Value DEFAULT = Value::ROUTING;
 
   static std::optional<Value> fromString(const char* value);
 
@@ -552,17 +591,17 @@ class dbTechLayerType
   ///
   /// Create a dbTechLayerType instance with an explicit value.
   ///
-  dbTechLayerType(Value value) { _value = value; }
+  dbTechLayerType(Value value) : _value(value) {}
 
   ///
   /// Create a dbTechLayerType instance with value = "routing".
   ///
-  dbTechLayerType() { _value = DEFAULT; }
+  dbTechLayerType() = default;
 
   ///
   /// Copy constructor.
   ///
-  dbTechLayerType(const dbTechLayerType& value) { _value = value._value; }
+  dbTechLayerType(const dbTechLayerType& value) = default;
 
   ///
   /// Returns the layer-value.
@@ -580,7 +619,7 @@ class dbTechLayerType
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = DEFAULT;
 };
 
 ///
@@ -606,17 +645,17 @@ class dbTechLayerDir
   ///
   /// Create a dbTechLayerDir instance with an explicit direction.
   ///
-  dbTechLayerDir(Value value) { _value = value; }
+  dbTechLayerDir(Value value) : _value(value) {}
 
   ///
   /// Create a dbTechLayerDir instance with direction = "none".
   ///
-  dbTechLayerDir() { _value = NONE; }
+  dbTechLayerDir() = default;
 
   ///
   /// Copy constructor.
   ///
-  dbTechLayerDir(const dbTechLayerDir& value) { _value = value._value; }
+  dbTechLayerDir(const dbTechLayerDir& value) = default;
 
   ///
   /// Returns the layer-direction.
@@ -634,7 +673,7 @@ class dbTechLayerDir
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::NONE;
 };
 
 ///
@@ -660,17 +699,17 @@ class dbTechLayerMinStepType
   ///
   /// Create a dbTechLayerMinStepType instance with an explicit type.
   ///
-  dbTechLayerMinStepType(Value value);
+  dbTechLayerMinStepType(Value value) : _value(value) {}
 
   ///
   /// Create a dbTechLayerMinStepType instance with value = "OUTSIDE_CORNER".
   ///
-  dbTechLayerMinStepType();
+  dbTechLayerMinStepType() = default;
 
   ///
   /// Copy constructor.
   ///
-  dbTechLayerMinStepType(const dbTechLayerMinStepType& value);
+  dbTechLayerMinStepType(const dbTechLayerMinStepType& value) = default;
 
   ///
   /// Returns the layer-direction.
@@ -688,7 +727,7 @@ class dbTechLayerMinStepType
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::OUTSIDE_CORNER;
 };
 
 ///
@@ -713,17 +752,17 @@ class dbRowDir
   ///
   /// Create a dbRowDir instance with an explicit direction.
   ///
-  dbRowDir(Value value);
+  dbRowDir(Value value) : _value(value) {}
 
   ///
   /// Create a dbRowDir instance with direction = "horizontal".
   ///
-  dbRowDir();
+  dbRowDir() = default;
 
   ///
   /// Copy constructor.
   ///
-  dbRowDir(const dbRowDir& value);
+  dbRowDir(const dbRowDir& value) = default;
 
   ///
   /// Returns the layer-direction.
@@ -741,7 +780,7 @@ class dbRowDir
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::HORIZONTAL;
 };
 
 ///
@@ -776,17 +815,17 @@ class dbBoxOwner
   ///
   /// Create a dbBoxOwner instance with an explicit value.
   ///
-  dbBoxOwner(Value value);
+  dbBoxOwner(Value value) : _value(value) {}
 
   ///
   /// Create a dbBoxOwner instance with value = BLOCK.
   ///
-  dbBoxOwner();
+  dbBoxOwner() = default;
 
   ///
   /// Copy constructor.
   ///
-  dbBoxOwner(const dbBoxOwner& value);
+  dbBoxOwner(const dbBoxOwner& value) = default;
 
   ///
   /// Returns the owner-value.
@@ -804,7 +843,7 @@ class dbBoxOwner
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::BLOCK;
 };
 
 ///
@@ -829,17 +868,17 @@ class dbPolygonOwner
   ///
   /// Create a dbPolygonOwner instance with an explicit value.
   ///
-  dbPolygonOwner(Value value);
+  dbPolygonOwner(Value value) : _value(value) {}
 
   ///
   /// Create a dbPolygonOwner instance with value = UNKNOWN.
   ///
-  dbPolygonOwner();
+  dbPolygonOwner() = default;
 
   ///
   /// Copy constructor.
   ///
-  dbPolygonOwner(const dbPolygonOwner& value);
+  dbPolygonOwner(const dbPolygonOwner& value) = default;
 
   ///
   /// Returns the owner-value.
@@ -857,7 +896,7 @@ class dbPolygonOwner
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::UNKNOWN;
 };
 
 ///
@@ -886,17 +925,17 @@ class dbWireType
   ///
   /// Create a dbWireType instance with an explicit value.
   ///
-  dbWireType(Value value);
+  dbWireType(Value value) : _value(value) {}
 
   ///
   /// Create a dbWireType instance with value = NONE
   ///
-  dbWireType();
+  dbWireType() = default;
 
   ///
   /// Copy constructor.
   ///
-  dbWireType(const dbWireType& value);
+  dbWireType(const dbWireType& value) = default;
 
   ///
   /// Returns the type-value.
@@ -914,7 +953,7 @@ class dbWireType
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::NONE;
 };
 
 ///
@@ -951,17 +990,17 @@ class dbWireShapeType
   ///
   /// Create a dbWireShapeType instance with an explicit value.
   ///
-  dbWireShapeType(Value value);
+  dbWireShapeType(Value value) : _value(value) {}
 
   ///
   /// Create a dbWireShapeType instance with value = RING
   ///
-  dbWireShapeType();
+  dbWireShapeType() = default;
 
   ///
   /// Copy constructor.
   ///
-  dbWireShapeType(const dbWireShapeType& value);
+  dbWireShapeType(const dbWireShapeType& value) = default;
 
   ///
   /// Returns the type-value.
@@ -979,7 +1018,7 @@ class dbWireShapeType
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::NONE;
 };
 
 ///
@@ -1005,17 +1044,17 @@ class dbSiteClass
   ///
   /// Create a dbSiteClass instance with an explicit value.
   ///
-  dbSiteClass(Value value);
+  dbSiteClass(Value value) : _value(value) {}
 
   ///
   /// Create a dbSiteClass instance with value = NONE
   ///
-  dbSiteClass();
+  dbSiteClass() = default;
 
   ///
   /// Copy constructor.
   ///
-  dbSiteClass(const dbSiteClass& value);
+  dbSiteClass(const dbSiteClass& value) = default;
 
   ///
   /// Returns the type-value.
@@ -1033,7 +1072,7 @@ class dbSiteClass
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::NONE;
 };
 
 //
@@ -1054,11 +1093,11 @@ class dbOnOffType
   /// a bool, a type value, or default ("OFF")
   ///
   dbOnOffType(const char* instr);
-  dbOnOffType(int innum);
-  dbOnOffType(bool insw);
-  dbOnOffType(Value inval);
-  dbOnOffType(const dbOnOffType& value);
-  dbOnOffType();
+  dbOnOffType(int innum) : _value((innum == 0) ? OFF : ON) {}
+  dbOnOffType(bool insw) : _value(insw ? ON : OFF) {}
+  dbOnOffType(Value inval) : _value(inval) {}
+  dbOnOffType(const dbOnOffType& value) = default;
+  dbOnOffType() = default;
 
   ///
   /// Returns the orientation as type, string, int (0,1), bool
@@ -1074,7 +1113,7 @@ class dbOnOffType
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::OFF;
 };
 
 //
@@ -1093,9 +1132,9 @@ class dbClMeasureType
   /// Construction may take a string, a type value, or default ("EUCLIDEAN")
   ///
   dbClMeasureType(const char* instr);
-  dbClMeasureType(Value inval) { _value = inval; }
-  dbClMeasureType(const dbClMeasureType& value) { _value = value; }
-  dbClMeasureType() { _value = EUCLIDEAN; }
+  dbClMeasureType(Value inval) : _value(inval) {}
+  dbClMeasureType(const dbClMeasureType& value) = default;
+  dbClMeasureType() = default;
 
   ///
   /// Returns the orientation as type or string
@@ -1109,7 +1148,7 @@ class dbClMeasureType
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::EUCLIDEAN;
 };
 
 //
@@ -1131,9 +1170,9 @@ class dbJournalEntryType
   /// Construction may take a type value, or default ("NONE")
   ///
   dbJournalEntryType(const char* instr);
-  dbJournalEntryType(Value inval) { _value = inval; }
-  dbJournalEntryType(const dbJournalEntryType& value) { _value = value; }
-  dbJournalEntryType() { _value = NONE; }
+  dbJournalEntryType(Value inval) : _value(inval) {}
+  dbJournalEntryType(const dbJournalEntryType& value) = default;
+  dbJournalEntryType() = default;
 
   ///
   /// Returns as type or string
@@ -1147,7 +1186,7 @@ class dbJournalEntryType
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::NONE;
 };
 
 //
@@ -1171,9 +1210,9 @@ class dbDirection
   /// Construction may take a type value, or default ("NONE")
   ///
   dbDirection(const char* instr);
-  dbDirection(Value inval) { _value = inval; }
-  dbDirection(const dbDirection& value) { _value = value; }
-  dbDirection() { _value = NONE; }
+  dbDirection(Value inval) : _value(inval) {}
+  dbDirection(const dbDirection& value) = default;
+  dbDirection() = default;
 
   ///
   /// Returns as type or string
@@ -1187,7 +1226,7 @@ class dbDirection
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::NONE;
 };
 
 //
@@ -1207,15 +1246,15 @@ class dbRegionType
   /// Construction may take a type value, or default ("INCLUSIVE")
   ///
   dbRegionType(const char* instr);
-  dbRegionType(Value inval) { _value = inval; }
-  dbRegionType(const dbRegionType& value) { _value = value; }
-  dbRegionType() { _value = INCLUSIVE; }
+  dbRegionType(Value inval) : _value(inval) {}
+  dbRegionType(const dbRegionType& value) = default;
+  dbRegionType() = default;
   Value getValue() const { return _value; }
   const char* getString() const;
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::INCLUSIVE;
 };
 
 //
@@ -1238,26 +1277,27 @@ class dbSourceType
   /// Construction may take a type value, or default ("NONE")
   ///
   dbSourceType(const char* value);
-  dbSourceType(Value inval) { _value = inval; }
-  dbSourceType(const dbSourceType& value) { _value = value; }
-  dbSourceType() { _value = NONE; }
+  dbSourceType(Value inval) : _value(inval) {}
+  dbSourceType(const dbSourceType& value) = default;
+  dbSourceType() = default;
   Value getValue() const { return _value; }
   const char* getString() const;
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::NONE;
 };
 
-constexpr uint64_t MAX_UINT64 = 0xffffffffffffffffLL;
-constexpr uint64_t MIN_UINT64 = 0;
-constexpr uint MAX_UINT = 0xffffffff;
-constexpr uint MIN_UINT = 0;
+// TODO: shouldn't these come from <climits> ?
+static inline constexpr uint64_t MAX_UINT64 = 0xffffffffffffffffLL;
+static inline constexpr uint64_t MIN_UINT64 = 0;
+static inline constexpr uint MAX_UINT = 0xffffffff;
+static inline constexpr uint MIN_UINT = 0;
 
-constexpr int64_t MAX_INT64 = 0x7fffffffffffffffLL;
-constexpr int64_t MIN_INT64 = 0x8000000000000000LL;
-constexpr int MAX_INT = 0x7fffffff;
-constexpr int MIN_INT = 0x80000000;
+static inline constexpr int64_t MAX_INT64 = 0x7fffffffffffffffLL;
+static inline constexpr int64_t MIN_INT64 = 0x8000000000000000LL;
+static inline constexpr int MAX_INT = 0x7fffffff;
+static inline constexpr int MIN_INT = 0x80000000;
 
 ///
 /// Defines the type of shapes.
@@ -1282,17 +1322,17 @@ class dbMTermShapeType
   ///
   /// Create a dbMTermShapeType with an explicit value.
   ///
-  dbMTermShapeType(Value value);
+  dbMTermShapeType(Value value) : _value(value) {}
 
   ///
   /// Create a dbMTermShapeType instance with value = NONE
   ///
-  dbMTermShapeType();
+  dbMTermShapeType() = default;
 
   ///
   /// Copy constructor.
   ///
-  dbMTermShapeType(const dbMTermShapeType& value);
+  dbMTermShapeType(const dbMTermShapeType& value) = default;
 
   ///
   /// Returns the type-value.
@@ -1310,7 +1350,7 @@ class dbMTermShapeType
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::NONE;
 };
 
 ///
@@ -1340,12 +1380,12 @@ class dbAccessType
   ///
   /// Create a dbAccessType instance with an explicit type.
   ///
-  dbAccessType(Value type);
+  dbAccessType(Value type) : _value(type) {}
 
   ///
   /// Create a dbAccessType instance with type "OnGrid".
   ///
-  dbAccessType();
+  dbAccessType() = default;
 
   ///
   /// Copy constructor.
@@ -1368,7 +1408,36 @@ class dbAccessType
   operator Value() const { return _value; }
 
  private:
-  Value _value;
+  Value _value = Value::OnGrid;
+};
+
+//
+//  Class to denote a name uniquify type
+//
+class dbNameUniquifyType
+{
+ public:
+  enum Value
+  {
+    ALWAYS,                     // Add unique suffix always
+    ALWAYS_WITH_UNDERSCORE,     // Add unique suffix with underscore always
+    IF_NEEDED,                  // Add unique suffix if needed
+    IF_NEEDED_WITH_UNDERSCORE,  // Add unique suffix with underscore if needed
+  };
+
+  ///
+  /// Construction may take a type value, or default ("ALWAYS")
+  ///
+  dbNameUniquifyType(const char* instr);
+  dbNameUniquifyType(Value inval) : _value(inval) {}
+  dbNameUniquifyType(const dbNameUniquifyType& value) = default;
+  dbNameUniquifyType() = default;
+  Value getValue() const { return _value; }
+  const char* getString() const;
+  operator Value() const { return _value; }
+
+ private:
+  Value _value = Value::ALWAYS;
 };
 
 }  // namespace odb

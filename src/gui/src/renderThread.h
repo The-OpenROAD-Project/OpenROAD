@@ -3,16 +3,21 @@
 
 #pragma once
 
+#include <QColor>
 #include <QMutex>
 #include <QPainter>
+#include <QString>
 #include <QThread>
 #include <QWaitCondition>
+#include <map>
 #include <mutex>
+#include <utility>
 #include <vector>
 
 #include "gui/gui.h"
 #include "label.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "ruler.h"
 #include "utl/Logger.h"
 

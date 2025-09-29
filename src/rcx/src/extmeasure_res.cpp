@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <cassert>
+
 #include "gseq.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extRCap.h"
@@ -136,7 +138,7 @@ int extMeasure::getMaxDist(int tgtMet, uint modelIndex)
 
 int extDistRCTable::getComputeRC_maxDist()
 {
-  return _maxDist;
+  return maxDist_;
 }
 
 void extMeasure::calcRes(int rsegId1,
@@ -166,9 +168,9 @@ void extMeasure::calcRes(int rsegId1,
 
     extDistRC* rc = rcModel->_resOver[tgtMet]->getRes(0, _width, dist1, dist2);
     if (rc != nullptr) {
-      double R1 = rc->_diag > 0 ? rc->_diag : rc->_res;
+      double R1 = rc->diag_ > 0 ? rc->diag_ : rc->res_;
       double R = len * R1;
-      _rc[ii]->_res += R;
+      _rc[ii]->res_ += R;
     }
   }
 }
@@ -187,7 +189,7 @@ void extMeasure::calcRes0(double* deltaRes,
     }
 
     extDistRC* rc = rcModel->_resOver[tgtMet]->getRes(0, _width, dist1, dist2);
-    double R = len * rc->_res;
+    double R = len * rc->res_;
     deltaRes[ii] = R;
   }
 }
@@ -211,7 +213,7 @@ void extMain::calcRes0(double* deltaRes,
     if (rc == nullptr) {
       continue;
     }
-    double R = len * rc->_res;
+    double R = len * rc->res_;
     deltaRes[jj] = R;
   }
 }
@@ -224,16 +226,16 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
     dist1 = dist2;
     dist2 = min_dist;
   }
-  if (_measureTable == nullptr) {
+  if (measureTable_ == nullptr) {
     return nullptr;
   }
 
-  if (_measureTable->getCnt() <= 0) {
+  if (measureTable_->getCnt() <= 0) {
     return nullptr;
   }
 
-  extDistRC* rc1 = _measureTableR[0]->geti(0);
-  rc1->_diag = 0.0;
+  extDistRC* rc1 = measureTableR_[0]->geti(0);
+  rc1->diag_ = 0.0;
   if (rc1 == nullptr) {
     return nullptr;
   }
@@ -241,28 +243,28 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
   if (dist1 + dist2 == 0) {  // ASSUMPTION: 0 dist exists as first
     return rc1;
   }
-  if (dist1 >= _maxDist && dist2 >= _maxDist) {
+  if (dist1 >= maxDist_ && dist2 >= maxDist_) {
     return nullptr;
   }
-  if (dist2 > _maxDist) {
+  if (dist2 > maxDist_) {
     dist2 = dist1;
     dist1 = 0;
   }
 
   uint index_dist = 0;
   bool found = false;
-  extDistRC* rc2 = _measureTableR[1]->geti(0);
+  extDistRC* rc2 = measureTableR_[1]->geti(0);
   if (rc2 == nullptr) {
     return rc1;
   }
 
-  if (dist1 <= rc1->_sep) {
+  if (dist1 <= rc1->sep_) {
     index_dist = 0;
     found = true;
-  } else if (dist1 < rc2->_sep) {
+  } else if (dist1 < rc2->sep_) {
     index_dist = 0;
     found = true;
-  } else if (dist1 == rc2->_sep) {
+  } else if (dist1 == rc2->sep_) {
     index_dist = 1;
     found = true;
   } else {
@@ -273,39 +275,39 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
     // find first dist
 
     uint ii;
-    for (ii = index_dist; ii < _distCnt; ii++) {
-      rc = _measureTableR[ii]->geti(0);
-      if (dist1 == rc->_sep) {
+    for (ii = index_dist; ii < distCnt_; ii++) {
+      rc = measureTableR_[ii]->geti(0);
+      if (dist1 == rc->sep_) {
         found = true;
         index_dist = ii;
         break;
       }
-      if (dist1 < rc->_sep) {
+      if (dist1 < rc->sep_) {
         found = true;
         index_dist = ii;
         break;
       }
     }
-    if (!found && ii == _distCnt) {
+    if (!found && ii == distCnt_) {
       index_dist = ii - 1;
       found = true;
     }
   }
   if (found) {
-    if (!_measureInR) {
-      delete _measureTable;
+    if (!measureInR_) {
+      delete measureTable_;
     }
-    _measureInR = true;
-    _measureTable = _measureTableR[index_dist];
-    _computeTable = _computeTableR[index_dist];
+    measureInR_ = true;
+    measureTable_ = measureTableR_[index_dist];
+    computeTable_ = computeTableR_[index_dist];
     extDistRC* res = findIndexed_res(dist1, dist2);
-    res->_diag = 0;
-    if (rc != nullptr && dist1 < rc->_sep) {
-      _measureTable = _measureTableR[index_dist - 1];
-      _computeTable = _computeTableR[index_dist - 1];
+    res->diag_ = 0;
+    if (rc != nullptr && dist1 < rc->sep_) {
+      measureTable_ = measureTableR_[index_dist - 1];
+      computeTable_ = computeTableR_[index_dist - 1];
       extDistRC* res1 = findIndexed_res(dist1, dist2);
       double R1 = res->interpolate_res(dist1, res1);
-      res1->_diag = R1;
+      res1->diag_ = R1;
       return res1;
     }
     return res;
@@ -315,21 +317,21 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
 
 extDistRC* extDistRCTable::findIndexed_res(uint dist1, uint dist2)
 {
-  extDistRC* firstRC = _measureTable->get(0);
-  uint firstDist = firstRC->_sep;
+  extDistRC* firstRC = measureTable_->get(0);
+  uint firstDist = firstRC->sep_;
   if (dist2 <= firstDist) {
     return firstRC;
   }
-  if (_measureTable->getCnt() == 1) {
+  if (measureTable_->getCnt() == 1) {
     return firstRC;
   }
-  extDistRC* resLast = _measureTable->getLast();
-  if (dist2 >= resLast->_sep) {
+  extDistRC* resLast = measureTable_->getLast();
+  if (dist2 >= resLast->sep_) {
     return resLast;
   }
 
-  uint n = dist2 / _unit;
-  extDistRC* res = _computeTable->geti(n);
+  uint n = dist2 / unit_;
+  extDistRC* res = computeTable_->geti(n);
   return res;
 }
 

@@ -3,16 +3,24 @@
 
 #pragma once
 
-#include <boost/icl/interval_set.hpp>
 #include <utility>
 
+#include "boost/icl/interval_set.hpp"
+#include "db/tech/frLayer.h"
+#include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
+#include "utl/Logger.h"
 
 namespace drt {
 class FlexRP
 {
  public:
-  FlexRP(frDesign* design, Logger* logger, RouterConfiguration* router_cfg);
+  FlexRP(frDesign* design,
+         utl::Logger* logger,
+         RouterConfiguration* router_cfg);
 
   void main();
 
@@ -26,7 +34,9 @@ class FlexRP
   // functions
   void prep_viaForbiddenThrough();
   void prep_minStepViasCheck();
-  bool hasMinStepViol(const Rect& r1, const Rect& r2, frLayerNum lNum);
+  bool hasMinStepViol(const odb::Rect& r1,
+                      const odb::Rect& r2,
+                      frLayerNum lNum);
   void prep_viaForbiddenThrough_helper(const frLayerNum& lNum,
                                        const int& tableLayerIdx,
                                        const int& tableEntryIdx,
@@ -126,15 +136,15 @@ class FlexRP
       ForbiddenRanges& forbiddenRanges);
 
   void prep_via2viaForbiddenLen_lef58CutSpc_helper(
-      const Rect& enclosureBox1,
-      const Rect& enclosureBox2,
-      const Rect& cutBox,
+      const odb::Rect& enclosureBox1,
+      const odb::Rect& enclosureBox2,
+      const odb::Rect& cutBox,
       frCoord reqSpcVal,
       std::pair<frCoord, frCoord>& range);
 
   frDesign* design_;
   frTechObject* tech_;
-  Logger* logger_;
+  utl::Logger* logger_;
   RouterConfiguration* router_cfg_;
 };
 }  // namespace drt

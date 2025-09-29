@@ -3,7 +3,8 @@
 
 #include "par/MakePartitionMgr.h"
 
-#include "par/PartitionMgr.h"
+#include <tcl.h>
+
 #include "utl/decode.h"
 
 extern "C" {
@@ -15,26 +16,10 @@ namespace par {
 // Tcl files encoded into strings.
 extern const char* par_tcl_inits[];
 
-par::PartitionMgr* makePartitionMgr()
-{
-  return new par::PartitionMgr();
-}
-
-void initPartitionMgr(par::PartitionMgr* partitioner,
-                      odb::dbDatabase* db,
-                      sta::dbNetwork* db_network,
-                      sta::dbSta* sta,
-                      utl::Logger* logger,
-                      Tcl_Interp* tcl_interp)
+void initPartitionMgr(Tcl_Interp* tcl_interp)
 {
   Par_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, par::par_tcl_inits);
-
-  partitioner->init(db, db_network, sta, logger);
 };
 
-void deletePartitionMgr(par::PartitionMgr* partitionmgr)
-{
-  delete partitionmgr;
-}
 }  // namespace par

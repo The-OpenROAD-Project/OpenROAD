@@ -2,6 +2,7 @@
 [INFO ODB-0227] LEF file: data/sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
 [WARNING STA-0202] gcd_adder2.v line 3284, instance gcd_1 port resp_msg size 16 does not match net size 1.
 [WARNING STA-0202] gcd_adder2.v line 3286, instance gcd_2 port resp_msg size 16 does not match net size 1.
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 Startpoint: gcd_1/dpath.b_reg.out[3]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by CLK)
 Endpoint: carry_out (output port)
@@ -47,7 +48,7 @@ Cell type report:                       Count       Area
   Inverter                                  5      18.77
   Multi-Input combinational cell           82     384.12
   Total                                   103     523.00
-[WARNING ODB-0470] The modules cannot be swapped because the new module LCU_16_KOGGE_STONE is identical to the existing module
+[WARNING ODB-0470] The modules cannot be swapped because the new module name LCU_16_KOGGE_STONE is identical to the existing module name.
 Startpoint: gcd_1/dpath.b_reg.out[3]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by CLK)
 Endpoint: carry_out (output port)

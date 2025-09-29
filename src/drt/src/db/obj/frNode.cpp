@@ -10,13 +10,13 @@ namespace drt {
 
 frNode::frNode(grNode& in)
 {
-  net = in.getNet()->getFrNet();
-  loc = in.getLoc();
-  layerNum = in.getLayerNum();
-  connFig = nullptr;
-  pin = nullptr;
-  type = in.getType();
-  parent = nullptr;
+  net_ = in.getNet()->getFrNet();
+  loc_ = in.getLoc();
+  layerNum_ = in.getLayerNum();
+  connFig_ = nullptr;
+  pin_ = nullptr;
+  type_ = in.getType();
+  parent_ = nullptr;
 }
 
 }  // namespace drt

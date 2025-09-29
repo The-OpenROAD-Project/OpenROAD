@@ -6,6 +6,10 @@
 #include <algorithm>
 #include <vector>
 
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "utl/Logger.h"
+
 namespace grt {
 
 RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger,
@@ -204,7 +208,7 @@ bool RoutingCongestionDataSource::populateMapForDirection(
 
       const odb::Rect gcell_rect(x_grid[x_idx], y_grid[y_idx], next_x, next_y);
 
-      int capacity, usage;
+      double capacity, usage;
       double congestion;
       setCongestionValues(
           hor_cong_data, ver_cong_data, capacity, usage, congestion);
@@ -222,8 +226,8 @@ bool RoutingCongestionDataSource::populateMapForDirection(
   return true;
 }
 
-double RoutingCongestionDataSource::defineValue(const int capacity,
-                                                const int usage,
+double RoutingCongestionDataSource::defineValue(const double capacity,
+                                                const double usage,
                                                 const double congestion,
                                                 const bool show_data)
 {
@@ -253,8 +257,8 @@ double RoutingCongestionDataSource::defineValue(const int capacity,
 void RoutingCongestionDataSource::setCongestionValues(
     const odb::dbGCellGrid::GCellData& hor_cong_data,
     const odb::dbGCellGrid::GCellData& ver_cong_data,
-    int& capacity,
-    int& usage,
+    double& capacity,
+    double& usage,
     double& congestion)
 {
   auto hor_capacity = hor_cong_data.capacity;

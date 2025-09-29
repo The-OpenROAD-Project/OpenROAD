@@ -4,6 +4,7 @@
 #include "layoutViewer.h"
 
 #include <QApplication>
+#include <QColor>
 #include <QDateTime>
 #include <QFileDialog>
 #include <QFont>
@@ -12,6 +13,7 @@
 #include <QImageWriter>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMenu>
 #include <QPaintEvent>
 #include <QPainter>
 #include <QPainterPath>
@@ -19,18 +21,26 @@
 #include <QScrollBar>
 #include <QSizePolicy>
 #include <QStaticText>
+#include <QString>
 #include <QToolButton>
 #include <QToolTip>
 #include <QTranslator>
-#include <boost/geometry.hpp>
+#include <QWidget>
+#include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstdint>
 #include <deque>
 #include <functional>
 #include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <tuple>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "dbDescriptors.h"
 #include "gui/gui.h"
 #include "gui_utils.h"
@@ -38,8 +48,11 @@
 #include "label.h"
 #include "mainWindow.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "painter.h"
 #include "ruler.h"
 #include "scriptWidget.h"
@@ -634,7 +647,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
 
     const bool routing_visible = options_->areRoutingSegmentsVisible();
     const bool vias_visible = options_->areRoutingViasVisible();
-    if (routing_visible || vias_visible) {
+    const bool io_pins_visible = options_->areIOPinsVisible();
+    if (routing_visible || vias_visible || io_pins_visible) {
       auto box_shapes = search_.searchBoxShapes(block_,
                                                 layer,
                                                 search_line.xMin(),
@@ -642,11 +656,14 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                                 search_line.xMax(),
                                                 search_line.yMax(),
                                                 shape_limit);
-      for (const auto& [box, is_via, net] : box_shapes) {
-        if (!routing_visible && !is_via) {
+      for (const auto& [box, type, net] : box_shapes) {
+        if (!routing_visible && type == Search::WIRE) {
           continue;
         }
-        if (!vias_visible && is_via) {
+        if (!vias_visible && type == Search::VIA) {
+          continue;
+        }
+        if (!io_pins_visible && type == Search::BTERM) {
           continue;
         }
         if (isNetVisible(net)) {
@@ -855,7 +872,8 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
 
     const bool routing_visible = options_->areRoutingSegmentsVisible();
     const bool vias_visible = options_->areRoutingViasVisible();
-    if (routing_visible || vias_visible) {
+    const bool io_pins_visible = options_->areIOPinsVisible();
+    if (routing_visible || vias_visible || io_pins_visible) {
       auto box_shapes = search_.searchBoxShapes(block_,
                                                 layer,
                                                 region.xMin(),
@@ -864,11 +882,14 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                                 region.yMax(),
                                                 shape_limit);
 
-      for (auto& [box, is_via, net] : box_shapes) {
-        if (!routing_visible && !is_via) {
+      for (auto& [box, type, net] : box_shapes) {
+        if (!routing_visible && type == Search::WIRE) {
           continue;
         }
-        if (!vias_visible && is_via) {
+        if (!vias_visible && type == Search::VIA) {
+          continue;
+        }
+        if (!io_pins_visible && type == Search::BTERM) {
           continue;
         }
         if (isNetVisible(net) && options_->isNetSelectable(net)) {
@@ -2489,8 +2510,8 @@ LayoutScroll::LayoutScroll(
     const std::function<int()>& arrow_keys_scroll_step,
     QWidget* parent)
     : QScrollArea(parent),
-      default_mouse_wheel_zoom_(std::move(default_mouse_wheel_zoom)),
-      arrow_keys_scroll_step_(std::move(arrow_keys_scroll_step)),
+      default_mouse_wheel_zoom_(default_mouse_wheel_zoom),
+      arrow_keys_scroll_step_(arrow_keys_scroll_step),
       viewer_(viewer),
       scrolling_with_cursor_(false)
 {

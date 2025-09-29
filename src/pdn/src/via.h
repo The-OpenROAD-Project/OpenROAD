@@ -4,9 +4,6 @@
 #pragma once
 
 #include <array>
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/index/rtree.hpp>
 #include <map>
 #include <memory>
 #include <set>
@@ -14,6 +11,9 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometries/point_xy.hpp"
+#include "boost/geometry/geometry.hpp"
+#include "boost/geometry/index/rtree.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -277,8 +277,10 @@ class DbSplitCutVia : public DbVia
   DbSplitCutVia(DbBaseVia* via,
                 int rows,
                 int row_pitch,
+                int row_offset,
                 int cols,
                 int col_pitch,
+                int col_offset,
                 odb::dbBlock* block,
                 odb::dbTechLayer* bottom,
                 bool snap_bottom,
@@ -302,8 +304,10 @@ class DbSplitCutVia : public DbVia
   std::unique_ptr<DbBaseVia> via_;
   int rows_;
   int row_pitch_;
+  int row_offset_;
   int cols_;
   int col_pitch_;
+  int col_offset_;
 };
 
 // Wrapper to build via arrays according to ARRAYSPACING rules
@@ -378,7 +382,8 @@ class DbGenerateDummyVia : public DbVia
                      const odb::Rect& shape,
                      odb::dbTechLayer* bottom,
                      odb::dbTechLayer* top,
-                     bool add_report);
+                     bool add_report,
+                     const std::string& reason);
 
   ViaLayerShape generate(odb::dbBlock* block,
                          odb::dbSWire* wire,
@@ -396,6 +401,7 @@ class DbGenerateDummyVia : public DbVia
   const odb::Rect shape_;
   odb::dbTechLayer* bottom_;
   odb::dbTechLayer* top_;
+  std::string reason_;
 };
 
 // Class to build a generate via, either as a single group or as an array
@@ -429,6 +435,10 @@ class ViaGenerator
   int getCutPitchX() const { return cut_pitch_x_; }
   void setCutPitchY(int pitch) { cut_pitch_y_ = pitch; }
   int getCutPitchY() const { return cut_pitch_y_; }
+  void setCutOffsetX(int pitch) { cut_offset_y_ = pitch; }
+  int getCutOffsetX() const { return cut_offset_y_; }
+  void setCutOffsetY(int pitch) { cut_offset_y_ = pitch; }
+  int getCutOffsetY() const { return cut_offset_y_; }
 
   void setMaxRows(int rows) { max_rows_ = rows; }
   void setMaxColumns(int columns) { max_cols_ = columns; }
@@ -538,6 +548,8 @@ class ViaGenerator
 
   int cut_pitch_x_ = 0;
   int cut_pitch_y_ = 0;
+  int cut_offset_x_ = 0;
+  int cut_offset_y_ = 0;
 
   int max_rows_ = 0;
   int max_cols_ = 0;

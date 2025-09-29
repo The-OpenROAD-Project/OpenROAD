@@ -3,16 +3,17 @@
 
 #pragma once
 
+#include <cassert>
 #include <cmath>
 #include <vector>
 
-#include "ZException.h"
-#include "dbObject.h"
-#include "dbSet.h"
-#include "dbTransform.h"
-#include "dbWireCodec.h"
-#include "geom.h"
-#include "odb.h"
+#include "odb/ZException.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbTransform.h"
+#include "odb/dbWireCodec.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
 namespace utl {
 class Logger;
 }

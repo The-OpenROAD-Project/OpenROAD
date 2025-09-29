@@ -3,17 +3,18 @@
 
 #include "Opt.hh"
 
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/register/point.hpp>
-#include <boost/geometry/index/rtree.hpp>
 #include <cstddef>
-#include <iostream>
+#include <cstdint>
 #include <limits>
 #include <memory>
 #include <utility>
 #include <vector>
 
 #include "ClockDomain.hh"
+#include "boost/geometry/geometries/register/point.hpp"
+#include "boost/geometry/geometry.hpp"
+#include "boost/geometry/index/rtree.hpp"
+#include "utl/Logger.h"
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;

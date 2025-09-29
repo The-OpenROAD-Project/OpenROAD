@@ -5,6 +5,8 @@
 
 #include <omp.h>
 
+#include <limits>
+
 namespace gpl {
 
 ResidualError cpuSparseSolve(int maxSolverIter,
@@ -20,16 +22,28 @@ ResidualError cpuSparseSolve(int maxSolverIter,
 {
   omp_set_num_threads(threads);
 
-  ResidualError error;
+  ResidualError residual_error;
   BiCGSTAB<SMatrix, IdentityPreconditioner> solver;
   solver.setMaxIterations(maxSolverIter);
+
   solver.compute(placeInstForceMatrixX);
   instLocVecX = solver.solveWithGuess(fixedInstForceVecX, instLocVecX);
-  error.x = solver.error();
+  if (solver.info() == Eigen::NoConvergence
+      || solver.info() == Eigen::Success) {
+    residual_error.x = solver.error();
+  } else {
+    residual_error.x = std::numeric_limits<float>::quiet_NaN();
+  }
 
   solver.compute(placeInstForceMatrixY);
   instLocVecY = solver.solveWithGuess(fixedInstForceVecY, instLocVecY);
-  error.y = solver.error();
-  return error;
+  if (solver.info() == Eigen::NoConvergence
+      || solver.info() == Eigen::Success) {
+    residual_error.y = solver.error();
+  } else {
+    residual_error.y = std::numeric_limits<float>::quiet_NaN();
+  }
+
+  return residual_error;
 }
 }  // namespace gpl

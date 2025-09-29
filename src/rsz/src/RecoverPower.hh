@@ -10,6 +10,10 @@
 #include "sta/StaState.hh"
 #include "utl/Logger.h"
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace sta {
 class PathExpanded;
 }
@@ -85,6 +89,7 @@ class RecoverPower : public sta::dbStaState
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
   const Corner* corner_ = nullptr;
   int resize_count_ = 0;
   const MinMax* max_ = MinMax::max();

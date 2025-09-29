@@ -1,6 +1,4 @@
-#include <limits>
-#include <random>
-#include <sstream>
+#include <cstdint>
 
 #include "ScanArchitect.hh"
 #include "ScanArchitectConfig.hh"

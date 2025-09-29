@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "FlexTA.h"
+#include "ta/FlexTA.h"
 
 #include <omp.h>
 
@@ -14,10 +14,11 @@
 #include <utility>
 #include <vector>
 
-#include "AbstractTAGraphics.h"
 #include "db/infra/frTime.h"
 #include "frProfileTask.h"
 #include "global.h"
+#include "ta/AbstractTAGraphics.h"
+#include "utl/Logger.h"
 #include "utl/exception.h"
 
 namespace drt {
@@ -50,10 +51,10 @@ int FlexTAWorker::main_mt()
 
   init();
   if (isInitTA()) {
-    hardIroutesMode = true;
+    hardIroutesMode_ = true;
     sortIroutes();
     assign();
-    hardIroutesMode = false;
+    hardIroutesMode_ = false;
   }
   sortIroutes();
   auto t1 = high_resolution_clock::now();
@@ -78,7 +79,7 @@ int FlexTAWorker::main_mt()
 }
 
 FlexTA::FlexTA(frDesign* in,
-               Logger* logger,
+               utl::Logger* logger,
                RouterConfiguration* router_cfg,
                bool save_updates)
     : tech_(in->getTech()),
@@ -108,13 +109,14 @@ int FlexTA::initTA_helper(int iter,
       auto uworker = std::make_unique<FlexTAWorker>(
           getDesign(), logger_, router_cfg_, save_updates_);
       auto& worker = *(uworker.get());
-      Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(0, i));
-      Rect endBox = getDesign()->getTopBlock()->getGCellBox(
-          Point((int) xgp.getCount() - 1,
-                std::min(i + size - 1, (int) ygp.getCount() - 1)));
-      Rect routeBox(
+      odb::Rect beginBox
+          = getDesign()->getTopBlock()->getGCellBox(odb::Point(0, i));
+      odb::Rect endBox = getDesign()->getTopBlock()->getGCellBox(
+          odb::Point((int) xgp.getCount() - 1,
+                     std::min(i + size - 1, (int) ygp.getCount() - 1)));
+      odb::Rect routeBox(
           beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
-      Rect extBox;
+      odb::Rect extBox;
       routeBox.bloat(ygp.getSpacing() / 2, extBox);
       worker.setRouteBox(routeBox);
       worker.setExtBox(extBox);
@@ -131,13 +133,14 @@ int FlexTA::initTA_helper(int iter,
       auto uworker = std::make_unique<FlexTAWorker>(
           getDesign(), logger_, router_cfg_, save_updates_);
       auto& worker = *(uworker.get());
-      Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(i, 0));
-      Rect endBox = getDesign()->getTopBlock()->getGCellBox(
-          Point(std::min(i + size - 1, (int) xgp.getCount() - 1),
-                (int) ygp.getCount() - 1));
-      Rect routeBox(
+      odb::Rect beginBox
+          = getDesign()->getTopBlock()->getGCellBox(odb::Point(i, 0));
+      odb::Rect endBox = getDesign()->getTopBlock()->getGCellBox(
+          odb::Point(std::min(i + size - 1, (int) xgp.getCount() - 1),
+                     (int) ygp.getCount() - 1));
+      odb::Rect routeBox(
           beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
-      Rect extBox;
+      odb::Rect extBox;
       routeBox.bloat(xgp.getSpacing() / 2, extBox);
       worker.setRouteBox(routeBox);
       worker.setExtBox(extBox);

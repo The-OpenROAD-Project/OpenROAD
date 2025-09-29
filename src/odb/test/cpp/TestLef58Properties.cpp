@@ -1,12 +1,17 @@
 #define BOOST_TEST_MODULE TestLef58Properties
 #include <libgen.h>
 
-#include <boost/test/included/unit_test.hpp>
 #include <fstream>
 #include <iostream>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include "boost/test/included/unit_test.hpp"
 #include "env.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/defin.h"
 #include "odb/defout.h"
 #include "odb/lefin.h"

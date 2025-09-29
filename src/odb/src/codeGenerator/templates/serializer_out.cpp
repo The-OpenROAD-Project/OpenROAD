@@ -2,6 +2,9 @@
   {% set sname = (parent.name + "::" if parent else '_') + klass.name %}
   dbOStream& operator<<(dbOStream& stream, const {{sname}}& obj)
   {
+    {% if klass.ostream_scope %}
+    dbOStreamScope scope(stream, "{{klass.name}}");
+    {% endif %}
     {% for field in klass.fields %}
       {% if field.bitFields %}
         {% if field.numBits == 32 %}
@@ -14,13 +17,7 @@
         stream << {{field.name}}bit_field;
       {% else %}
         {% if 'no-serial' not in field.flags %}
-          {% if 'schema' in field %}
-          if (obj.getDatabase()->isSchema({{field.schema}})) {
-          {% endif %}
           stream << {% if field.table %}*{% endif %}obj.{{field.name}};
-          {% if 'schema' in field %}
-          }
-          {% endif %}
         {% endif %}
       {% endif %}
     {% endfor %}
@@ -29,3 +26,4 @@
     return stream;
   }
 {%- endmacro %}
+

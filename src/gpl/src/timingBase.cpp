@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -153,8 +154,8 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore)
   for (auto& gNet : nbc_->getGNets()) {
     // default weight
     gNet->setTimingWeight(1.0);
-    if (gNet->gPins().size() > 1) {
-      auto net_slack_opt = rs_->resizeNetSlack(gNet->net()->dbNet());
+    if (gNet->getGPins().size() > 1) {
+      auto net_slack_opt = rs_->resizeNetSlack(gNet->getPbNet()->getDbNet());
       if (!net_slack_opt) {
         continue;
       }
@@ -177,9 +178,9 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore)
                  "timing",
                  1,
                  "net:{} slack:{} weight:{}",
-                 gNet->net()->dbNet()->getConstName(),
+                 gNet->getPbNet()->getDbNet()->getConstName(),
                  net_slack,
-                 gNet->totalWeight());
+                 gNet->getTotalWeight());
     }
   }
 

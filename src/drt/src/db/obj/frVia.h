@@ -9,6 +9,8 @@
 #include "db/obj/frRef.h"
 #include "db/obj/frShape.h"
 #include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frNet;
@@ -19,7 +21,7 @@ class frVia : public frRef
   // constructors
   frVia() = default;
   frVia(const frViaDef* in) : viaDef_(in) {}
-  frVia(const frViaDef* def_in, const Point& pt_in)
+  frVia(const frViaDef* def_in, const odb::Point& pt_in)
       : origin_(pt_in), viaDef_(def_in)
   {
   }
@@ -37,9 +39,9 @@ class frVia : public frRef
   frVia(const drVia& in);
   // getters
   const frViaDef* getViaDef() const { return viaDef_; }
-  Rect getLayer1BBox() const
+  odb::Rect getLayer1BBox() const
   {
-    Rect box;
+    odb::Rect box;
     box.mergeInit();
     for (auto& fig : viaDef_->getLayer1Figs()) {
       box.merge(fig->getBBox());
@@ -47,9 +49,9 @@ class frVia : public frRef
     getTransform().apply(box);
     return box;
   }
-  Rect getCutBBox() const
+  odb::Rect getCutBBox() const
   {
-    Rect box;
+    odb::Rect box;
     box.mergeInit();
     for (auto& fig : viaDef_->getCutFigs()) {
       box.merge(fig->getBBox());
@@ -57,9 +59,9 @@ class frVia : public frRef
     getTransform().apply(box);
     return box;
   }
-  Rect getLayer2BBox() const
+  odb::Rect getLayer2BBox() const
   {
-    Rect box;
+    odb::Rect box;
     box.mergeInit();
     for (auto& fig : viaDef_->getLayer2Figs()) {
       box.merge(fig->getBBox());
@@ -83,10 +85,13 @@ class frVia : public frRef
 
   dbOrientType getOrient() const override { return dbOrientType(); }
   void setOrient(const dbOrientType& tmpOrient) override { ; }
-  Point getOrigin() const override { return origin_; }
-  void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
-  dbTransform getTransform() const override { return dbTransform(origin_); }
-  void setTransform(const dbTransform& xformIn) override {}
+  odb::Point getOrigin() const override { return origin_; }
+  void setOrigin(const odb::Point& tmpPoint) override { origin_ = tmpPoint; }
+  odb::dbTransform getTransform() const override
+  {
+    return odb::dbTransform(origin_);
+  }
+  void setTransform(const odb::dbTransform& xformIn) override {}
 
   /* from frPinFig
    * hasPin
@@ -133,7 +138,7 @@ class frVia : public frRef
    * intersects
    */
 
-  Rect getBBox() const override
+  odb::Rect getBBox() const override
   {
     auto& layer1Figs = viaDef_->getLayer1Figs();
     auto& layer2Figs = viaDef_->getLayer2Figs();
@@ -144,7 +149,7 @@ class frVia : public frRef
     frCoord xh = 0;
     frCoord yh = 0;
     for (auto& fig : layer1Figs) {
-      Rect box = fig->getBBox();
+      odb::Rect box = fig->getBBox();
       if (isFirst) {
         xl = box.xMin();
         yl = box.yMin();
@@ -159,7 +164,7 @@ class frVia : public frRef
       }
     }
     for (auto& fig : layer2Figs) {
-      Rect box = fig->getBBox();
+      odb::Rect box = fig->getBBox();
       if (isFirst) {
         xl = box.xMin();
         yl = box.yMin();
@@ -174,7 +179,7 @@ class frVia : public frRef
       }
     }
     for (auto& fig : cutFigs) {
-      Rect box = fig->getBBox();
+      odb::Rect box = fig->getBBox();
       if (isFirst) {
         xl = box.xMin();
         yl = box.yMin();
@@ -188,12 +193,12 @@ class frVia : public frRef
         yh = std::max(yh, box.yMax());
       }
     }
-    Rect box(xl, yl, xh, yh);
+    odb::Rect box(xl, yl, xh, yh);
     getTransform().apply(box);
     return box;
   }
-  void move(const dbTransform& xform) override { ; }
-  bool intersects(const Rect& box) const override { return false; }
+  void move(const odb::dbTransform& xform) override { ; }
+  bool intersects(const odb::Rect& box) const override { return false; }
 
   void setIter(frListIter<std::unique_ptr<frVia>>& in) { iter_ = in; }
   frListIter<std::unique_ptr<frVia>> getIter() const { return iter_; }
@@ -211,7 +216,7 @@ class frVia : public frRef
   bool isLonely() const { return isLonely_; }
 
  private:
-  Point origin_;
+  odb::Point origin_;
   const frViaDef* viaDef_{nullptr};
   frBlockObject* owner_{nullptr};
   frListIter<std::unique_ptr<frVia>> iter_;

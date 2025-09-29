@@ -4,8 +4,10 @@
 #include "utility.h"
 
 #include <algorithm>
+#include <cstdint>
 
 #include "infrastructure/network.h"
+#include "odb/geom.h"
 
 namespace dpl {
 

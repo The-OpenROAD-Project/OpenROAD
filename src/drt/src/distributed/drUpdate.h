@@ -2,9 +2,13 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
+#include "db/infra/frSegStyle.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
+#include "odb/geom.h"
 namespace drt {
 
 class frNet;
@@ -49,10 +53,10 @@ class drUpdate
   frNet* net_{nullptr};
   int index_in_owner_{0};
   UpdateType type_;
-  Point begin_;
-  Point end_;
+  odb::Point begin_;
+  odb::Point end_;
   frSegStyle style_;
-  Rect offsetBox_;
+  odb::Rect offsetBox_;
   frLayerNum layer_{0};
   bool bottomConnected_{false};
   bool topConnected_{false};

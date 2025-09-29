@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "FlexRP.h"
+#include "rp/FlexRP.h"
 
+#include "frDesign.h"
 #include "frProfileTask.h"
+#include "global.h"
+#include "utl/Logger.h"
 
 namespace drt {
 
 FlexRP::FlexRP(frDesign* design,
-               Logger* logger,
+               utl::Logger* logger,
                RouterConfiguration* router_cfg)
     : design_(design),
       tech_(design->getTech()),

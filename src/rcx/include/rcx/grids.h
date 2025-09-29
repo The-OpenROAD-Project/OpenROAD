@@ -8,12 +8,12 @@
 #include <cstring>
 #include <vector>
 
-#include "box.h"
 #include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "rcx.h"
+#include "rcx/box.h"
 #include "rcx/extRCap.h"
+#include "rcx/rcx.h"
 
 namespace rcx {
 
@@ -22,7 +22,6 @@ using odb::AthPool;
 using odb::dbBlock;
 using odb::dbBox;
 using odb::dbNet;
-using odb::Rect;
 
 enum OverlapAdjust
 {
@@ -513,7 +512,7 @@ class GridTable
                         AthPool<SEQ>* seqPool);
 
   // -------------------------------------------------------------
-  GridTable(Rect* bb,
+  GridTable(odb::Rect* bb,
             uint rowCnt,
             uint colCnt,
             uint* pitch,
@@ -680,7 +679,7 @@ class GridTable
   Box _bbox;
   Box _maxSearchBox;
   bool _setMaxArea;
-  Rect _rectBB;
+  odb::Rect _rectBB;
   uint _rowCnt;
   uint _colCnt;
   uint _rowSize;

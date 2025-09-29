@@ -5,7 +5,7 @@
 
 #include <list>
 
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -22,6 +22,7 @@ class dbMarker;
 class dbMarkerCategory;
 class dbMaster;
 class dbModBTerm;
+class dbModule;
 class dbModInst;
 class dbModITerm;
 class dbModNet;
@@ -65,6 +66,11 @@ class dbBlockCallBackObj
   virtual void inDbModInstDestroy(dbModInst*) {}
   // dbModInst End
 
+  // dbModule Start
+  virtual void inDbModuleCreate(dbModule*) {}
+  virtual void inDbModuleDestroy(dbModule*) {}
+  // dbModule End
+
   // dbNet Start
   virtual void inDbNetCreate(dbNet*) {}
   virtual void inDbNetDestroy(dbNet*) {}
@@ -83,6 +89,7 @@ class dbBlockCallBackObj
   virtual void inDbITermPostDisconnect(dbITerm*, dbNet*) {}
   virtual void inDbITermPreConnect(dbITerm*, dbNet*) {}
   virtual void inDbITermPostConnect(dbITerm*) {}
+  virtual void inDbITermPostSetAccessPoints(dbITerm*) {}
   // dbITerm End
 
   // dbModITerm Start

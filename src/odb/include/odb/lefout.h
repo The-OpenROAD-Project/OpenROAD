@@ -3,16 +3,20 @@
 
 #pragma once
 
-#include <boost/polygon/polygon.hpp>
+#include <cstdint>
 #include <map>
 #include <ostream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 
-#include "db.h"
-#include "dbObject.h"
-#include "odb.h"
+#include "boost/polygon/polygon.hpp"
+#include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {

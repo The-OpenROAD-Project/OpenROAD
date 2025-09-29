@@ -3,6 +3,9 @@
 
 #include "dbITerm.h"
 
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
 #include <map>
 #include <utility>
 #include <vector>
@@ -13,6 +16,7 @@
 #include "dbBlock.h"
 #include "dbChip.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHier.h"
 #include "dbInst.h"
@@ -29,6 +33,7 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbShape.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 namespace odb {
 
@@ -273,6 +278,12 @@ void dbITerm::clearConnected()
   iterm->_flags._connected = 0;
 }
 
+/*
+Warning: this does not do a reassociate. Specifically it will
+not make sure that every dbModNet has just one dbNet associated
+with it. To assure that, use dbNetwork::connectPin
+*/
+
 void dbITerm::connect(dbNet* db_net, dbModNet* db_mod_net)
 {
   connect(db_net);
@@ -394,7 +405,7 @@ void dbITerm::connect(dbModNet* mod_net)
   // accidentally blow away prior flat net connections)
 
   if (iterm->_mnet != 0) {
-    disconnectModNet();
+    disconnectDbModNet();
   }
 
   iterm->_mnet = _mod_net->getId();
@@ -614,7 +625,7 @@ void dbITerm::disconnectDbNet()
 //
 // Disconnect the mod net and allow journaling
 //
-void dbITerm::disconnectModNet()
+void dbITerm::disconnectDbModNet()
 {
   _dbITerm* iterm = (_dbITerm*) this;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
@@ -780,6 +791,11 @@ void dbITerm::setAccessPoint(dbMPin* pin, dbAccessPoint* ap)
     _ap->iterms_.push_back(iterm->getOID());
   } else {
     iterm->aps_[pin->getImpl()->getOID()] = dbId<_dbAccessPoint>();
+  }
+
+  _dbBlock* block = (_dbBlock*) iterm->getOwner();
+  for (auto callback : block->_callbacks) {
+    callback->inDbITermPostSetAccessPoints(this);
   }
 }
 

@@ -10,6 +10,8 @@
 
 #include "definBase.h"
 #include "defrReader.hpp"
+#include "odb/db.h"
+#include "odb/defin.h"
 #include "odb/odb.h"
 
 namespace utl {
@@ -53,13 +55,9 @@ class definReader : public definBase
   void useBlockName(const char* name);
   void error(std::string_view msg);
 
-  dbChip* createChip(std::vector<dbLib*>& search_libs,
-                     const char* def_file,
-                     dbTech* tech);
-  dbBlock* createBlock(dbBlock* parent,
-                       std::vector<dbLib*>& search_libs,
-                       const char* def_file,
-                       dbTech* tech);
+  void readChip(std::vector<dbLib*>& search_libs,
+                const char* def_file,
+                dbChip* chip);
 
  private:
   void init();
@@ -224,7 +222,7 @@ class definReader : public definBase
                                                 const char* msg);
 
   dbDatabase* _db;
-  dbBlock* parent_{nullptr};  // For Hierarchal implementation if exits
+  dbChip* chip_{nullptr};
   std::unique_ptr<definBlockage> _blockageR;
   std::unique_ptr<definComponentMaskShift> _componentMaskShift;
   std::unique_ptr<definComponent> _componentR;
@@ -242,7 +240,6 @@ class definReader : public definBase
   std::unique_ptr<definPropDefs> _prop_defsR;
   std::unique_ptr<definPinProps> _pin_propsR;
   std::vector<definBase*> _interfaces;
-  bool _update{false};
   bool _continue_on_errors{false};
   std::string _block_name;
   std::string version_;

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <algorithm>
+#include <list>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -11,6 +12,7 @@
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frFig.h"
 #include "db/obj/frGuide.h"
 #include "db/obj/frNode.h"
 #include "db/obj/frRPin.h"
@@ -195,8 +197,8 @@ class frNet : public frBlockObject
     updateAbsPriority();
   }
   bool hasNDR() const { return getNondefaultRule() != nullptr; }
-  void setAbsPriorityLvl(int l) { absPriorityLvl = l; }
-  int getAbsPriorityLvl() const { return absPriorityLvl; }
+  void setAbsPriorityLvl(int l) { absPriorityLvl_ = l; }
+  int getAbsPriorityLvl() const { return absPriorityLvl_; }
   bool isClock() const { return isClock_; }
   void updateIsClock(bool ic)
   {
@@ -205,14 +207,14 @@ class frNet : public frBlockObject
   }
   void updateAbsPriority()
   {
-    int max = absPriorityLvl;
+    int max = absPriorityLvl_;
     if (hasNDR()) {
       max = std::max(max, router_cfg_->NDR_NETS_ABS_PRIORITY);
     }
     if (isClock()) {
       max = std::max(max, router_cfg_->CLOCK_NETS_ABS_PRIORITY);
     }
-    absPriorityLvl = max;
+    absPriorityLvl_ = max;
   }
   bool isSpecial() const { return is_special_; }
   void setIsSpecial(bool s) { is_special_ = s; }
@@ -253,8 +255,8 @@ class frNet : public frBlockObject
   bool modified_{false};
   bool isFakeNet_{false};  // indicate floating PG nets
   frNonDefaultRule* ndr_{nullptr};
-  int absPriorityLvl{0};  // absolute priority level: will be checked in net
-                          // ordering before other criteria
+  int absPriorityLvl_{0};  // absolute priority level: will be checked in net
+                           // ordering before other criteria
   bool isClock_{false};
   bool is_special_{false};
   bool is_connected_by_abutment_{false};

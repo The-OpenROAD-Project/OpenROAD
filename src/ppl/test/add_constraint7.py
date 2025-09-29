@@ -13,7 +13,7 @@ ppl_aux.set_io_pin_constraint(
     pin_names="resp_val resp_rdy req_rdy req_val req_msg.* .*msg.*",
     region="bottom:*",
 )
-ppl_aux.place_pins(design, hor_layers="metal3", ver_layers="metal2", random=True)
+ppl_aux.place_pins(design, hor_layers="metal3", ver_layers="metal2")
 
 def_file = helpers.make_result_file("add_constraint7.def")
 design.writeDef(def_file)

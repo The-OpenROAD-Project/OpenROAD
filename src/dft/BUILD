@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -52,6 +53,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":dft",
         "//:ord",
         "//src/dbSta",
         "//src/dft/src/architect",

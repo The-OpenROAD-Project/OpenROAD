@@ -11,6 +11,7 @@
 #include "Coordinates.h"
 #include "Objects.h"
 #include "architecture.h"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 namespace odb {
@@ -46,6 +47,8 @@ class Network
     {
       return a->getEdge()->getId() < b->getEdge()->getId();
     }
+
+   private:
     Network* nw_ = nullptr;
   };
 
@@ -60,6 +63,8 @@ class Network
       }
       return a->getOffsetX() < b->getOffsetX();
     }
+
+   private:
     Network* nw_ = nullptr;
   };
 

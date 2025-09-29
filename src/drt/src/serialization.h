@@ -3,19 +3,24 @@
 
 #pragma once
 
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/polygon/polygon.hpp>
-#include <boost/serialization/array.hpp>
-#include <boost/serialization/list.hpp>
-#include <boost/serialization/map.hpp>
-#include <boost/serialization/set.hpp>
-#include <boost/serialization/split_member.hpp>
-#include <boost/serialization/unique_ptr.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/weak_ptr.hpp>
+#include <cstdlib>
+#include <iostream>
+#include <list>
+#include <tuple>
 #include <vector>
 
+#include "boost/archive/binary_iarchive.hpp"
+#include "boost/archive/binary_oarchive.hpp"
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
+#include "boost/serialization/array.hpp"
+#include "boost/serialization/list.hpp"
+#include "boost/serialization/map.hpp"
+#include "boost/serialization/set.hpp"
+#include "boost/serialization/split_member.hpp"
+#include "boost/serialization/unique_ptr.hpp"
+#include "boost/serialization/vector.hpp"
+#include "boost/serialization/weak_ptr.hpp"
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
 #include "db/drObj/drPin.h"
@@ -23,13 +28,16 @@
 #include "db/gcObj/gcPin.h"
 #include "db/gcObj/gcShape.h"
 #include "db/infra/frBox.h"
+#include "db/obj/frAccess.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 #include "distributed/drUpdate.h"
 #include "distributed/paUpdate.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "global.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
@@ -751,8 +759,6 @@ void serializeGlobals(Archive& ar, RouterConfiguration* router_cfg)
   (ar) & router_cfg->MTSAFEDIST;
   (ar) & router_cfg->DRCSAFEDIST;
   (ar) & router_cfg->VERBOSE;
-  (ar) & router_cfg->BOTTOM_ROUTING_LAYER_NAME;
-  (ar) & router_cfg->TOP_ROUTING_LAYER_NAME;
   (ar) & router_cfg->BOTTOM_ROUTING_LAYER;
   (ar) & router_cfg->TOP_ROUTING_LAYER;
   (ar) & router_cfg->ALLOW_PIN_AS_FEEDTHROUGH;

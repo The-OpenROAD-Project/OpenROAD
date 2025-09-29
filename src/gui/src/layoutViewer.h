@@ -3,30 +3,38 @@
 
 #pragma once
 
+#include <QColor>
 #include <QFrame>
 #include <QLine>
 #include <QMainWindow>
 #include <QMap>
 #include <QMenu>
 #include <QMutex>
-#include <QOpenGLWidget>
 #include <QPaintEvent>
+#include <QPainter>
 #include <QPixmap>
 #include <QScrollArea>
 #include <QShortcut>
+#include <QString>
 #include <QThread>
 #include <QTimer>
 #include <QWaitCondition>
+#include <QWidget>
 #include <chrono>
 #include <functional>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 #include "gui/gui.h"
 #include "label.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/geom.h"
 #include "options.h"
 #include "renderThread.h"
 #include "search.h"

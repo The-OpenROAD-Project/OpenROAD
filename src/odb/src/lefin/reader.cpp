@@ -3,11 +3,10 @@
 
 #include <unistd.h>
 
-#include <boost/algorithm/string/predicate.hpp>
 #include <cstdio>
-#include <list>
 #include <string>
 
+#include "boost/algorithm/string/predicate.hpp"
 #include "lefiDebug.hpp"
 #include "lefiUtil.hpp"
 #include "lefrReader.hpp"

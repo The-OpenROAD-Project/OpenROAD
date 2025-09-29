@@ -4,6 +4,7 @@
 #include "clockWidget.h"
 
 #include <QApplication>
+#include <QComboBox>
 #include <QFontMetrics>
 #include <QGraphicsRectItem>
 #include <QGraphicsSceneHoverEvent>
@@ -14,26 +15,40 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPaintEvent>
+#include <QPainter>
+#include <QPushButton>
+#include <QString>
 #include <QToolTip>
 #include <QVBoxLayout>
+#include <QVariant>
 #include <QWheelEvent>
+#include <QWidget>
 #include <QWidgetAction>
 #include <QtAlgorithms>
+#include <algorithm>
 #include <cmath>
+#include <limits>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "colorGenerator.h"
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "gui/gui.h"
 #include "gui_utils.h"
+#include "odb/db.h"
 #include "sta/Corner.hh"
+#include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Sdc.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 
@@ -152,6 +167,10 @@ void ClockTreeRenderer::resetTree()
 
 void ClockTreeRenderer::setMaxColorDepth(int depth)
 {
+  if (depth < 1) {
+    return;
+  }
+
   max_depth_ = depth;
   redraw();
 }
@@ -1651,7 +1670,8 @@ void ClockWidget::postReadLiberty()
   }
 }
 
-void ClockWidget::selectClock(const std::string& clock_name)
+void ClockWidget::selectClock(const std::string& clock_name,
+                              std::optional<int> depth)
 {
   setVisible(true);
 
@@ -1662,6 +1682,9 @@ void ClockWidget::selectClock(const std::string& clock_name)
   for (auto& view : views_) {
     if (view->getClockName() == clock_name) {
       clocks_tab_->setCurrentWidget(view.get());
+      if (depth) {
+        view->updateColorDepth(*depth);
+      }
 
       return;
     }

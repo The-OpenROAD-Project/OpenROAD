@@ -71,14 +71,14 @@ class Parser:
         """Parse using the user_code_tag
 
         Used for a file where the default is generated code and user
-        code is taggged."""
+        code is tagged."""
         _get_sections(self.lines, self.user_code_tag, self.user_code)
 
     def parse_source_code(self, file_name):
         """Parse using the file using the generator_code_tag
 
         Used for a file where the default is user code and generated
-        code is taggged."""
+        code is tagged."""
         with open(file_name, "r", encoding="ascii") as source_file:
             db_lines = source_file.readlines()
         _get_sections(db_lines, self.generator_code_tag, self.generator_code)

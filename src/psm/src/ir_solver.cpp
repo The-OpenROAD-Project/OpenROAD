@@ -3,30 +3,40 @@
 
 #include "ir_solver.h"
 
-#include <Eigen/SparseLU>
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <fstream>
-#include <list>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <optional>
 #include <queue>
 #include <set>
+#include <sstream>
+#include <string>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "connection.h"
 #include "db_sta/dbNetwork.hh"
+#include "est/EstimateParasitics.h"
 #include "ir_network.h"
 #include "node.h"
+#include "odb/db.h"
 #include "odb/dbShape.h"
-#include "rsz/Resizer.hh"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "shape.h"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/PowerClass.hh"
 #include "sta/Sdc.hh"
+#include "utl/Logger.h"
 #include "utl/timer.h"
 
 namespace psm {
@@ -35,14 +45,14 @@ IRSolver::IRSolver(
     odb::dbNet* net,
     bool floorplanning,
     sta::dbSta* sta,
-    rsz::Resizer* resizer,
+    est::EstimateParasitics* estimate_parasitics,
     utl::Logger* logger,
     const std::map<odb::dbNet*, std::map<sta::Corner*, Voltage>>& user_voltages,
     const std::map<odb::dbInst*, std::map<sta::Corner*, Power>>& user_powers,
     const PDNSim::GeneratedSourceSettings& generated_source_settings)
     : net_(net),
       logger_(logger),
-      resizer_(resizer),
+      estimate_parasitics_(estimate_parasitics),
       sta_(sta),
       network_(new IRNetwork(net_, logger_, floorplanning)),
       gui_(nullptr),
@@ -368,7 +378,8 @@ Connection::ResistanceMap IRSolver::getResistanceMap(sta::Corner* corner) const
     switch (layer->getType()) {
       case odb::dbTechLayerType::ROUTING: {
         double r_per_meter, cap_per_meter;
-        resizer_->layerRC(layer, corner, r_per_meter, cap_per_meter);
+        estimate_parasitics_->layerRC(
+            layer, corner, r_per_meter, cap_per_meter);
         const double width_meter
             = static_cast<double>(layer->getWidth()) / dbus * 1e-6;
         res = r_per_meter * width_meter;
@@ -376,7 +387,7 @@ Connection::ResistanceMap IRSolver::getResistanceMap(sta::Corner* corner) const
       }
       case odb::dbTechLayerType::CUT: {
         double cap;
-        resizer_->layerRC(layer, corner, res, cap);
+        estimate_parasitics_->layerRC(layer, corner, res, cap);
         break;
       }
       default:
@@ -387,7 +398,7 @@ Connection::ResistanceMap IRSolver::getResistanceMap(sta::Corner* corner) const
                utl::PSM,
                "resistance",
                2,
-               "Resizer resistance for {} = {}",
+               "Estimate parasitics resistance for {} = {}",
                layer->getName(),
                res);
     if (res == 0.0) {

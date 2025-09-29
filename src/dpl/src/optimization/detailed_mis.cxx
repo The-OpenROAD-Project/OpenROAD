@@ -25,9 +25,11 @@
 #include <lemon/smart_graph.h>
 
 #include <algorithm>
-#include <boost/tokenizer.hpp>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <deque>
 #include <limits>
 #include <map>
 #include <queue>
@@ -35,10 +37,12 @@
 #include <utility>
 #include <vector>
 
+#include "boost/tokenizer.hpp"
 #include "detailed_manager.h"
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
 #include "infrastructure/network.h"
+#include "odb/geom.h"
 #include "util/color.h"
 #include "util/journal.h"
 #include "utl/Logger.h"
@@ -51,16 +55,16 @@ namespace dpl {
 ////////////////////////////////////////////////////////////////////////////////
 struct DetailedMis::Bucket
 {
-  void clear() { nodes_.clear(); }
+  void clear() { nodes.clear(); }
 
-  std::deque<Node*> nodes_;
-  double xmin_ = 0.0;
-  double xmax_ = 0.0;
-  double ymin_ = 0.0;
-  double ymax_ = 0.0;
-  int i_ = 0;
-  int j_ = 0;
-  int travId_ = 0;
+  std::deque<Node*> nodes;
+  double xmin = 0.0;
+  double xmax = 0.0;
+  double ymin = 0.0;
+  double ymax = 0.0;
+  int i = 0;
+  int j = 0;
+  int travId = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -349,13 +353,13 @@ void DetailedMis::buildGrid()
     grid_[i].resize(dimH_);
     for (int j = 0; j < dimH_; j++) {
       auto bucket = new Bucket;
-      bucket->xmin_ = xmin + (i) *stepX_;
-      bucket->xmax_ = xmin + (i + 1) * stepX_;
-      bucket->ymin_ = ymin + (j) *stepY_;
-      bucket->ymax_ = ymin + (j + 1) * stepY_;
-      bucket->i_ = i;
-      bucket->j_ = j;
-      bucket->travId_ = traversal_;
+      bucket->xmin = xmin + (i) *stepX_;
+      bucket->xmax = xmin + (i + 1) * stepX_;
+      bucket->ymin = ymin + (j) *stepY_;
+      bucket->ymax = ymin + (j + 1) * stepY_;
+      bucket->i = i;
+      bucket->j = j;
+      bucket->travId = traversal_;
       grid_[i][j] = bucket;
     }
   }
@@ -385,7 +389,7 @@ void DetailedMis::populateGrid()
     const int j = std::max(std::min((int) ((y - ymin) / stepY_), dimH_ - 1), 0);
     const int i = std::max(std::min((int) ((x - xmin) / stepX_), dimW_ - 1), 0);
 
-    grid_[i][j]->nodes_.push_back(ndi);
+    grid_[i][j]->nodes.push_back(ndi);
     cellToBinMap_[ndi] = grid_[i][j];
   }
 }
@@ -431,14 +435,14 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
     Bucket* currPtr = Q.front();
     Q.pop();
 
-    if (currPtr->travId_ == traversal_) {
+    if (currPtr->travId == traversal_) {
       continue;
     }
-    currPtr->travId_ = traversal_;
+    currPtr->travId = traversal_;
 
     // Scan all the cells in this bucket.  If they are compatible with the
     // original cell, then add them to the neighbour list.
-    for (Node* ndj : currPtr->nodes_) {
+    for (Node* ndj : currPtr->nodes) {
       // Check to make sure the cell is not the original, that they have
       // the same region, that they have the same size (if applicable),
       // and that they have the same color (if applicable).
@@ -481,17 +485,17 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
     }
 
     // Add more bins to the queue if we have not yet collected enough cells.
-    if (currPtr->i_ > 0) {
-      Q.push(grid_[currPtr->i_ - 1][currPtr->j_]);
+    if (currPtr->i > 0) {
+      Q.push(grid_[currPtr->i - 1][currPtr->j]);
     }
-    if (currPtr->i_ + 1 < dimW_) {
-      Q.push(grid_[currPtr->i_ + 1][currPtr->j_]);
+    if (currPtr->i + 1 < dimW_) {
+      Q.push(grid_[currPtr->i + 1][currPtr->j]);
     }
-    if (currPtr->j_ > 0) {
-      Q.push(grid_[currPtr->i_][currPtr->j_ - 1]);
+    if (currPtr->j > 0) {
+      Q.push(grid_[currPtr->i][currPtr->j - 1]);
     }
-    if (currPtr->j_ + 1 < dimH_) {
-      Q.push(grid_[currPtr->i_][currPtr->j_ + 1]);
+    if (currPtr->j + 1 < dimH_) {
+      Q.push(grid_[currPtr->i][currPtr->j + 1]);
     }
   }
   return true;

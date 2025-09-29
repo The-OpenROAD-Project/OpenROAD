@@ -3,11 +3,13 @@
 
 #include "dpl/OptMirror.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <unordered_set>
 #include <vector>
 
 #include "dpl/Opendp.h"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
@@ -24,7 +26,7 @@ using odb::dbOrientType;
 
 static dbOrientType orientMirrorY(const dbOrientType& orient);
 
-NetBox::NetBox(dbNet* net, Rect box, bool ignore)
+NetBox::NetBox(dbNet* net, const odb::Rect& box, bool ignore)
     : net_(net), box_(box), ignore_(ignore)
 {
 }
@@ -118,9 +120,9 @@ std::vector<dbInst*> OptimizeMirroring::findMirrorCandidates(
   unordered_set<dbInst*> existing;
   // Find inst terms on the boundary of the net boxes.
   for (NetBox* net_box : net_boxes) {
-    if (!net_box->ignore_) {
-      dbNet* net = net_box->net_;
-      Rect& box = net_box->box_;
+    if (!net_box->isIgnore()) {
+      dbNet* net = net_box->getNet();
+      const odb::Rect& box = net_box->getBox();
       for (dbITerm* iterm : net->getITerms()) {
         dbInst* inst = iterm->getInst();
         int x, y;
@@ -204,7 +206,7 @@ int64_t OptimizeMirroring::hpwl(dbInst* inst)
     dbNet* net = iterm->getNet();
     if (net) {
       NetBox& net_box = net_box_map_[net];
-      if (!net_box.ignore_) {
+      if (!net_box.isIgnore()) {
         inst_hpwl += net_box.hpwl();
       }
     }
@@ -218,8 +220,8 @@ void OptimizeMirroring::updateNetBoxes(dbInst* inst)
     dbNet* net = iterm->getNet();
     if (net) {
       NetBox& net_box = net_box_map_[net];
-      if (!net_box.ignore_) {
-        net_box_map_[net].box_ = net->getTermBBox();
+      if (!net_box.isIgnore()) {
+        net_box_map_[net].setBox(net->getTermBBox());
       }
     }
   }

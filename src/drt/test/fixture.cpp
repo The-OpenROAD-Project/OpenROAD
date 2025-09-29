@@ -35,13 +35,24 @@
 #include <utility>
 #include <vector>
 
+#include "db/infra/frSegStyle.h"
+#include "db/obj/frFig.h"
+#include "db/obj/frInstBlockage.h"
+#include "db/obj/frMPin.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frLayer.h"
+#include "db/tech/frTechObject.h"
+#include "frBaseTypes.h"
+#include "frDesign.h"
+#include "frRegionQuery.h"
 #include "global.h"
 #include "odb/db.h"
+#include "utl/Logger.h"
 
 namespace drt {
 
 Fixture::Fixture()
-    : logger(std::make_unique<Logger>()),
+    : logger(std::make_unique<utl::Logger>()),
       router_cfg(std::make_unique<RouterConfiguration>()),
       design(std::make_unique<frDesign>(logger.get(), router_cfg.get())),
       numBlockages(0),
@@ -110,11 +121,11 @@ std::pair<frMaster*, odb::dbMaster*> Fixture::makeMacro(const char* name,
   auto block = std::make_unique<frMaster>(name);
   std::vector<frBoundary> bounds;
   frBoundary bound;
-  std::vector<Point> points;
-  points.push_back(Point(originX, originY));
-  points.push_back(Point(sizeX, originY));
-  points.push_back(Point(sizeX, sizeY));
-  points.push_back(Point(originX, sizeY));
+  std::vector<odb::Point> points;
+  points.push_back(odb::Point(originX, originY));
+  points.push_back(odb::Point(sizeX, originY));
+  points.push_back(odb::Point(sizeX, sizeY));
+  points.push_back(odb::Point(originX, sizeY));
   bound.setPoints(points);
   bounds.push_back(bound);
   block->setBoundaries(bounds);
@@ -152,7 +163,7 @@ frBlockage* Fixture::makeMacroObs(frMaster* master,
   pinIn->setId(0);
   // pinFig
   std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
-  pinFig->setBBox(Rect(xl, yl, xh, yh));
+  pinFig->setBBox(odb::Rect(xl, yl, xh, yh));
   pinFig->addToPin(pinIn.get());
   pinFig->setLayerNum(lNum);
   std::unique_ptr<frPinFig> uptr(std::move(pinFig));
@@ -183,7 +194,7 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
   auto pinIn = std::make_unique<frMPin>();
   pinIn->setId(0);
   std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
-  pinFig->setBBox(Rect(xl, yl, xh, yh));
+  pinFig->setBBox(odb::Rect(xl, yl, xh, yh));
   pinFig->addToPin(pinIn.get());
   pinFig->setLayerNum(lNum);
   std::unique_ptr<frPinFig> uptr(std::move(pinFig));
@@ -199,7 +210,7 @@ frInst* Fixture::makeInst(const char* name,
   auto ptr_db_inst = std::make_unique<odb::dbInst>();
   odb::dbInst* db_inst
       = ptr_db_inst->create(db_->getChip()->getBlock(), db_master, "dummy");
-  dbTransform trans;
+  odb::dbTransform trans;
   db_inst->setTransform(trans);
   auto uInst = std::make_unique<frInst>(name, master, db_inst);
   auto tmpInst = uInst.get();
@@ -251,7 +262,7 @@ void Fixture::makeDesign()
   odb::dbTech* tech = odb::dbTech::create(db_, "tech");
   odb::dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
   odb::dbLib::create(db_, "lib1", tech, ',');
-  odb::dbChip* chip = odb::dbChip::create(db_);
+  odb::dbChip* chip = odb::dbChip::create(db_, tech);
   odb::dbBlock::create(chip, "simple_block");
 }
 
@@ -719,14 +730,14 @@ frNet* Fixture::makeNet(const char* name)
 
 frViaDef* Fixture::makeViaDef(const char* name,
                               frLayerNum layer_num,
-                              const Point& ll,
-                              const Point& ur)
+                              const odb::Point& ll,
+                              const odb::Point& ur)
 {
   auto tech = design->getTech();
   auto via_p = std::make_unique<frViaDef>(name);
   for (frLayerNum l = layer_num - 1; l <= layer_num + 1; l++) {
     std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
-    pinFig->setBBox(Rect(ll, ur));
+    pinFig->setBBox(odb::Rect(ll, ur));
     pinFig->setLayerNum(l);
     switch (l - layer_num) {
       case -1:
@@ -744,7 +755,7 @@ frViaDef* Fixture::makeViaDef(const char* name,
   return tech->addVia(std::move(via_p));
 }
 
-frVia* Fixture::makeVia(frViaDef* viaDef, frNet* net, const Point& origin)
+frVia* Fixture::makeVia(frViaDef* viaDef, frNet* net, const odb::Point& origin)
 {
   auto via_p = std::make_unique<frVia>(viaDef, origin);
   via_p->addToNet(net);
@@ -755,8 +766,8 @@ frVia* Fixture::makeVia(frViaDef* viaDef, frNet* net, const Point& origin)
 
 void Fixture::makePathseg(frNet* net,
                           frLayerNum layer_num,
-                          const Point& begin,
-                          const Point& end,
+                          const odb::Point& begin,
+                          const odb::Point& end,
                           frUInt4 width,
                           frEndStyleEnum begin_style,
                           frEndStyleEnum end_style)

@@ -9,6 +9,9 @@
 #include <vector>
 
 #include "grt/GlobalRouter.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace grt {
 
@@ -18,7 +21,7 @@ Pin::Pin(
     const std::vector<odb::dbTechLayer*>& layers,
     const std::map<odb::dbTechLayer*, std::vector<odb::Rect>>& boxes_per_layer,
     bool connected_to_pad_or_macro)
-    : iterm_(iterm),
+    : iterm(iterm),
       position_(position),
       edge_(PinEdge::none),
       is_port_(false),
@@ -46,7 +49,7 @@ Pin::Pin(
     const std::vector<odb::dbTechLayer*>& layers,
     const std::map<odb::dbTechLayer*, std::vector<odb::Rect>>& boxes_per_layer,
     const odb::Point& die_center)
-    : bterm_(bterm),
+    : bterm(bterm),
       position_(position),
       edge_(PinEdge::none),
       is_port_(true),
@@ -134,13 +137,13 @@ odb::dbITerm* Pin::getITerm() const
     return nullptr;
   }
 
-  return iterm_;
+  return iterm;
 }
 
 odb::dbBTerm* Pin::getBTerm() const
 {
   if (is_port_) {
-    return bterm_;
+    return bterm;
   }
 
   return nullptr;
@@ -149,18 +152,18 @@ odb::dbBTerm* Pin::getBTerm() const
 std::string Pin::getName() const
 {
   if (is_port_) {
-    return bterm_->getName();
+    return bterm->getName();
   }
 
-  return getITermName(iterm_);
+  return getITermName(iterm);
 }
 
 bool Pin::isDriver()
 {
   if (is_port_) {
-    return (bterm_->getIoType() == odb::dbIoType::INPUT);
+    return (bterm->getIoType() == odb::dbIoType::INPUT);
   }
-  odb::dbMTerm* mterm = iterm_->getMTerm();
+  odb::dbMTerm* mterm = iterm->getMTerm();
   odb::dbIoType type = mterm->getIoType();
   return type == odb::dbIoType::OUTPUT || type == odb::dbIoType::INOUT;
 }
@@ -180,11 +183,6 @@ odb::Point Pin::getPositionNearInstEdge(const odb::Rect& pin_box,
   }
 
   return pin_pos;
-}
-
-int Pin::getConnectionLayer() const
-{
-  return connection_layer_;
 }
 
 }  // namespace grt

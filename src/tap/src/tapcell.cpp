@@ -14,8 +14,11 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 
@@ -24,15 +27,10 @@ namespace tap {
 using std::string;
 using std::vector;
 
-Tapcell::Tapcell()
+Tapcell::Tapcell(odb::dbDatabase* db, utl::Logger* logger)
+    : db_(db), logger_(logger)
 {
   reset();
-}
-
-void Tapcell::init(odb::dbDatabase* db, utl::Logger* logger)
-{
-  db_ = db;
-  logger_ = logger;
 }
 
 void Tapcell::reset()

@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <boost/geometry.hpp>
-#include <boost/polygon/polygon.hpp>
+#include <any>
+#include <functional>
 #include <map>
 #include <memory>
 #include <set>
@@ -12,8 +12,12 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "gui/gui.h"
 #include "ir_network.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 
 namespace psm {
@@ -46,19 +50,20 @@ class NodeDescriptor : public SolverDescriptor
   NodeDescriptor(
       const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override { return "PSM Node"; }
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  bool getAllObjects(gui::SelectionSet& /* objects */) const override
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
   {
-    return false;
   }
-  gui::Descriptor::Properties getProperties(std::any object) const override;
-  gui::Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  gui::Descriptor::Properties getProperties(
+      const std::any& object) const override;
+  gui::Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
-  void highlight(std::any object, gui::Painter& painter) const override;
+  void highlight(const std::any& object, gui::Painter& painter) const override;
 };
 
 class ITermNodeDescriptor : public NodeDescriptor
@@ -67,15 +72,16 @@ class ITermNodeDescriptor : public NodeDescriptor
   ITermNodeDescriptor(
       const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override { return "PSM ITerm Node"; }
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  gui::Descriptor::Properties getProperties(std::any object) const override;
-  gui::Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  gui::Descriptor::Properties getProperties(
+      const std::any& object) const override;
+  gui::Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
-  void highlight(std::any object, gui::Painter& painter) const override;
+  void highlight(const std::any& object, gui::Painter& painter) const override;
 };
 
 class BPinNodeDescriptor : public NodeDescriptor
@@ -84,15 +90,16 @@ class BPinNodeDescriptor : public NodeDescriptor
   BPinNodeDescriptor(
       const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override { return "PSM BPin Node"; }
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  gui::Descriptor::Properties getProperties(std::any object) const override;
-  gui::Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  gui::Descriptor::Properties getProperties(
+      const std::any& object) const override;
+  gui::Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
-  void highlight(std::any object, gui::Painter& painter) const override;
+  void highlight(const std::any& object, gui::Painter& painter) const override;
 };
 
 class ConnectionDescriptor : public SolverDescriptor
@@ -101,19 +108,20 @@ class ConnectionDescriptor : public SolverDescriptor
   ConnectionDescriptor(
       const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers);
 
-  std::string getName(std::any object) const override;
+  std::string getName(const std::any& object) const override;
   std::string getTypeName() const override { return "PSM Connection"; }
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  bool getAllObjects(gui::SelectionSet& /* objects */) const override
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
   {
-    return false;
   }
-  gui::Descriptor::Properties getProperties(std::any object) const override;
-  gui::Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
+  gui::Descriptor::Properties getProperties(
+      const std::any& object) const override;
+  gui::Selected makeSelected(const std::any& object) const override;
+  bool lessThan(const std::any& l, const std::any& r) const override;
 
-  void highlight(std::any object, gui::Painter& painter) const override;
+  void highlight(const std::any& object, gui::Painter& painter) const override;
 };
 
 class DebugGui : public gui::Renderer

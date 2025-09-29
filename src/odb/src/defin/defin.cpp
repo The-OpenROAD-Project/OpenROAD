@@ -3,6 +3,7 @@
 
 #include "odb/defin.h"
 
+#include <mutex>
 #include <vector>
 
 #include "definReader.h"
@@ -63,21 +64,12 @@ void defin::useBlockName(const char* name)
   _reader->useBlockName(name);
 }
 
-dbChip* defin::createChip(std::vector<dbLib*>& libs,
-                          const char* def_file,
-                          dbTech* tech)
+void defin::readChip(std::vector<dbLib*>& libs,
+                     const char* def_file,
+                     dbChip* chip)
 {
   std::lock_guard<std::mutex> lock(_def_mutex);
-  return _reader->createChip(libs, def_file, tech);
-}
-
-dbBlock* defin::createBlock(dbBlock* parent,
-                            std::vector<dbLib*>& libs,
-                            const char* def_file,
-                            dbTech* tech)
-{
-  std::lock_guard<std::mutex> lock(_def_mutex);
-  return _reader->createBlock(parent, libs, def_file, tech);
+  _reader->readChip(libs, def_file, chip);
 }
 
 }  // namespace odb

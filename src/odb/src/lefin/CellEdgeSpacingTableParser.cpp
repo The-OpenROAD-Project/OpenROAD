@@ -4,12 +4,11 @@
 // Parser for LEF58 cell edge spacing table rules
 #include "CellEdgeSpacingTableParser.h"
 
-#include <functional>
-#include <iostream>
 #include <string>
-#include <vector>
 
+#include "boost/bind/bind.hpp"
 #include "boostParser.h"
+#include "odb/db.h"
 #include "parserUtils.h"
 
 namespace odb {

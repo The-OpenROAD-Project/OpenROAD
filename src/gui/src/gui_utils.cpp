@@ -3,9 +3,13 @@
 
 #include "gui_utils.h"
 
+#include <QColor>
 #include <QFileDialog>
 #include <QImageWriter>
 #include <QPainter>
+#include <QString>
+#include <QWidget>
+#include <algorithm>
 
 #include "utl/Logger.h"
 

@@ -5,10 +5,6 @@
 
 namespace rsz {
 
-using std::pair;
-using std::string;
-using std::vector;
-
 using odb::Point;
 
 using sta::InstancePinIterator;

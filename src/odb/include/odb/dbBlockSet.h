@@ -3,8 +3,12 @@
 
 #pragma once
 
-#include "dbObject.h"
-#include "dbSet.h"
+#include <cstddef>
+#include <iterator>
+
+#include "odb/dbIterator.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 

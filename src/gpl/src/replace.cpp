@@ -4,8 +4,9 @@
 #include "gpl/Replace.h"
 
 #include <algorithm>
-#include <iostream>
+#include <chrono>
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "db_sta/dbNetwork.hh"
@@ -15,7 +16,6 @@
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
 #include "placerBase.h"
 #include "routeBase.h"
 #include "rsz/Resizer.hh"
@@ -27,22 +27,16 @@ namespace gpl {
 
 using utl::GPL;
 
-Replace::Replace() = default;
+Replace::Replace(odb::dbDatabase* odb,
+                 sta::dbSta* sta,
+                 rsz::Resizer* resizer,
+                 grt::GlobalRouter* router,
+                 utl::Logger* logger)
+    : db_(odb), sta_(sta), rs_(resizer), fr_(router), log_(logger)
+{
+}
 
 Replace::~Replace() = default;
-
-void Replace::init(odb::dbDatabase* odb,
-                   sta::dbSta* sta,
-                   rsz::Resizer* resizer,
-                   grt::GlobalRouter* router,
-                   utl::Logger* logger)
-{
-  db_ = odb;
-  sta_ = sta;
-  rs_ = resizer;
-  fr_ = router;
-  log_ = logger;
-}
 
 void Replace::reset()
 {
@@ -98,12 +92,6 @@ void Replace::reset()
   timingNetWeightOverflows_.clear();
   timingNetWeightOverflows_.shrink_to_fit();
   timingNetWeightMax_ = 5;
-
-  gui_debug_ = false;
-  gui_debug_pause_iterations_ = 10;
-  gui_debug_update_iterations_ = 10;
-  gui_debug_draw_bins_ = false;
-  gui_debug_initial_ = false;
 }
 
 void Replace::addPlacementCluster(const Cluster& cluster)
@@ -113,6 +101,7 @@ void Replace::addPlacementCluster(const Cluster& cluster)
 
 void Replace::doIncrementalPlace(int threads)
 {
+  log_->info(GPL, 6, "Execute incremental mode global placement.");
   if (pbc_ == nullptr) {
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
@@ -191,6 +180,7 @@ void Replace::doIncrementalPlace(int threads)
 
 void Replace::doInitialPlace(int threads)
 {
+  log_->info(GPL, 5, "Execute conjugate gradient initial placement.");
   if (pbc_ == nullptr) {
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
@@ -334,8 +324,8 @@ bool Replace::initNesterovPlace(int threads)
     npVars.debug_draw_bins = gui_debug_draw_bins_;
     npVars.debug_inst = gui_debug_inst_;
     npVars.debug_start_iter = gui_debug_start_iter_;
-    npVars.debug_generate_images = gui_debug_generate_images;
-    npVars.debug_images_path = gui_debug_images_path;
+    npVars.debug_generate_images = gui_debug_generate_images_;
+    npVars.debug_images_path = gui_debug_images_path_;
     npVars.disableRevertIfDiverge = disableRevertIfDiverge_;
 
     for (const auto& nb : nbVec_) {
@@ -355,6 +345,8 @@ int Replace::doNesterovPlace(int threads, int start_iter)
   if (!initNesterovPlace(threads)) {
     return 0;
   }
+
+  log_->info(GPL, 7, "Execute nesterov global placement.");
   if (timingDrivenMode_) {
     rs_->resizeSlackPreamble();
   }
@@ -440,11 +432,18 @@ void Replace::setUniformTargetDensityMode(bool mode)
 
 float Replace::getUniformTargetDensity(int threads)
 {
-  // TODO: update to be compatible with multiple target densities
+  log_->info(GPL, 22, "Initialize gpl and calculate uniform density.");
+  log_->redirectStringBegin();
+
+  setSkipIoMode(true);  // in case bterms are not placed
+
+  float density = 1.0f;
   if (initNesterovPlace(threads)) {
-    return nbVec_[0]->uniformTargetDensity();
+    density = nbVec_[0]->getUniformTargetDensity();
   }
-  return 1;
+
+  std::string _ = log_->redirectStringEnd();
+  return density;
 }
 
 void Replace::setInitDensityPenalityFactor(float penaltyFactor)
@@ -488,8 +487,8 @@ void Replace::setDebug(int pause_iterations,
   gui_debug_initial_ = initial;
   gui_debug_inst_ = inst;
   gui_debug_start_iter_ = start_iter;
-  gui_debug_generate_images = generate_images;
-  gui_debug_images_path = std::move(images_path);
+  gui_debug_generate_images_ = generate_images;
+  gui_debug_images_path_ = std::move(images_path);
 }
 
 void Replace::setDisableRevertIfDiverge(bool mode)

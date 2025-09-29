@@ -2,10 +2,10 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
-#include <boost/functional/hash.hpp>
 #include <unordered_set>
 #include <vector>
 
+#include "boost/functional/hash.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
@@ -16,6 +16,10 @@
 
 namespace sta {
 class PathExpanded;
+}
+
+namespace est {
+class EstimateParasitics;
 }
 
 namespace rsz {
@@ -80,7 +84,8 @@ class RepairSetup : public sta::dbStaState
                    bool skip_size_down,
                    bool skip_buffering,
                    bool skip_buffer_removal,
-                   bool skip_last_gasp);
+                   bool skip_last_gasp,
+                   bool skip_vt_swap);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
@@ -110,6 +115,7 @@ class RepairSetup : public sta::dbStaState
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
 
   bool fallback_ = false;
   float min_viol_ = 0.0;

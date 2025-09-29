@@ -3,9 +3,13 @@
 
 #pragma once
 
+#include <QColor>
 #include <QPlainTextEdit>
 #include <QSettings>
+#include <QString>
 #include <QStringList>
+#include <QWidget>
+#include <string>
 
 namespace gui {
 
@@ -34,6 +38,7 @@ class CmdInputWidget : public QPlainTextEdit
   void commandFinishedExecuting(bool is_ok);
 
   void addResultToOutput(const QString& result, bool is_ok);
+  void addTextToOutput(const QString& text, const QColor& color);
   void addCommandToOutput(const QString& cmd);
 
  public slots:

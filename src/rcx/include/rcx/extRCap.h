@@ -3,32 +3,39 @@
 
 #pragma once
 
+#include <algorithm>
+#include <array>
+#include <cstdio>
+#include <cstdlib>
+#include <list>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "ext2dBox.h"
-#include "extSegment.h"
-#include "extViaModel.h"
-#include "extprocess.h"
 #include "odb/db.h"
 #include "odb/dbExtControl.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/dbWireCodec.h"
+#include "odb/geom.h"
 #include "odb/odb.h"
 #include "odb/util.h"
 #include "rcx/dbUtil.h"
+#include "rcx/ext2dBox.h"
 #include "rcx/extPattern.h"
+#include "rcx/extSegment.h"
 #include "rcx/extSolverGen.h"
+#include "rcx/extViaModel.h"
 #include "rcx/ext_options.h"
-#include "util.h"
+#include "rcx/extprocess.h"
+#include "rcx/util.h"
 
 namespace utl {
 class Logger;
 }
 
 namespace rcx {
-
-using namespace odb;
 
 class extMeasure;
 class extMeasureRC;
@@ -89,23 +96,29 @@ class extDistRC
   void readRC(Ath__parser* parser, double dbFactor = 1.0);
   void readRC_res2(Ath__parser* parser, double dbFactor = 1.0);
   double getFringe();
+  double getFringeW();
   double getCoupling();
   double getDiag();
   double getRes();
-  double getTotalCap() { return _coupling + _fringe + _diag; };
+  int getSep();
+  double getTotalCap() { return coupling_ + fringe_ + diag_; };
+  void setCoupling(double coupling);
+  void setFringe(double fringe);
+  void setFringeW(double fringew);
+  void setRes(double res);
   void addRC(extDistRC* rcUnit, uint len, bool addCC);
   void writeRC(FILE* fp, bool bin);
   void writeRC();
   void interpolate(uint d, extDistRC* rc1, extDistRC* rc2);
   double interpolate_res(uint d, extDistRC* rc2);
 
- public:
-  int _sep;
-  double _coupling;
-  double _fringe;
-  double _fringeW;
-  double _diag;
-  double _res;
+ private:
+  int sep_;
+  double coupling_;
+  double fringe_;
+  double fringeW_;
+  double diag_;
+  double res_;
   Logger* logger_;
 
   friend class extDistRCTable;
@@ -186,14 +199,14 @@ class extDistRCTable
   void makeCapTableOver();
   void makeCapTableUnder();
 
-  Ath__array1D<extDistRC*>* _measureTable;
-  Ath__array1D<extDistRC*>* _computeTable;
-  Ath__array1D<extDistRC*>* _measureTableR[16];
-  Ath__array1D<extDistRC*>* _computeTableR[16];  // OPTIMIZE
-  bool _measureInR;
-  int _maxDist;
-  uint _distCnt;
-  uint _unit;
+  Ath__array1D<extDistRC*>* measureTable_;
+  Ath__array1D<extDistRC*>* computeTable_;
+  Ath__array1D<extDistRC*>* measureTableR_[16];
+  Ath__array1D<extDistRC*>* computeTableR_[16];  // OPTIMIZE
+  bool measureInR_;
+  int maxDist_;
+  uint distCnt_;
+  uint unit_;
   Logger* logger_;
 };
 
@@ -1651,7 +1664,7 @@ struct BoundaryData
   int lo_search_limit;
   int lo_gs_limit;
 
-  void setBBox(const Rect& extRect)
+  void setBBox(const odb::Rect& extRect)
   {
     ll[0] = extRect.xMin();
     ll[1] = extRect.yMin();
@@ -1723,13 +1736,15 @@ class extMain
 
   uint getPeakMemory(const char* msg, int n = -1);
 
-  void setupBoundaries(BoundaryData& bounds, const Rect& extRect);
+  void setupBoundaries(BoundaryData& bounds, const odb::Rect& extRect);
   void updateBoundaries(BoundaryData& bounds,
                         uint dir,
                         uint ccDist,
                         uint maxPitch);
   void initializeLayerTables(LayerDimensionData& tables);
-  int initSearch(LayerDimensionData& tables, Rect& extRect, uint& totWireCnt);
+  int initSearch(LayerDimensionData& tables,
+                 odb::Rect& extRect,
+                 uint& totWireCnt);
 
   // CLEANUP dkf 10242024 ----------------------------------
   void makeBlockRCsegs_v2(const char* netNames, const char* extRules);
@@ -1748,17 +1763,17 @@ class extMain
 
   void setExtractionOptions_v2(ExtractOptions options);
   uint makeNetRCsegs_v2(dbNet* net, bool skipStartWarning = false);
-  uint resetMapNodes_v2(dbWire* wire);
+  uint resetMapNodes_v2(odb::dbWire* wire);
 
   uint getCapNodeId_v2(dbITerm* iterm, const uint junction);
   uint getCapNodeId_v2(dbBTerm* bterm, const uint junction);
   uint getCapNodeId_v2(dbNet* net, const int junction, const bool branch);
   uint getCapNodeId_v2(dbNet* net,
-                       dbWirePath& path,
+                       odb::dbWirePath& path,
                        const uint junction,
                        bool branch);
   uint getCapNodeId_v2(dbNet* net,
-                       const dbWirePathShape& pshape,
+                       const odb::dbWirePathShape& pshape,
                        int junct_id,
                        bool branch);
   void initJunctionIdMaps(dbNet* net);
@@ -1767,30 +1782,32 @@ class extMain
                    const uint junction,
                    uint capId,
                    const char* old_new);
-  dbRSeg* addRSeg_v2(dbNet* net,
-                     uint& srcId,
-                     Point& prevPoint,
-                     const dbWirePath& path,
-                     const dbWirePathShape& pshape,
-                     const bool isBranch,
-                     const double* restbl = nullptr,
-                     const double* captbl = nullptr);
+  odb::dbRSeg* addRSeg_v2(dbNet* net,
+                          uint& srcId,
+                          odb::Point& prevPoint,
+                          const odb::dbWirePath& path,
+                          const odb::dbWirePathShape& pshape,
+                          const bool isBranch,
+                          const double* restbl = nullptr,
+                          const double* captbl = nullptr);
 
-  void loopWarning(dbNet* net, const dbWirePathShape& pshape);
+  void loopWarning(dbNet* net, const odb::dbWirePathShape& pshape);
   void getShapeRC_v2(dbNet* net,
                      const dbShape& s,
-                     Point& prevPoint,
-                     const dbWirePathShape& pshape);
+                     odb::Point& prevPoint,
+                     const odb::dbWirePathShape& pshape);
   void getShapeRC_v3(dbNet* net,
                      const dbShape& s,
-                     Point& prevPoint,
-                     const dbWirePathShape& pshape);
+                     odb::Point& prevPoint,
+                     const odb::dbWirePathShape& pshape);
   double getViaRes_v2(dbNet* net, dbTechVia* tvia);
   double getDbViaRes_v2(dbNet* net, const dbShape& s);
   double getMetalRes_v2(dbNet* net,
                         const dbShape& s,
-                        const dbWirePathShape& pshape);
-  void setResAndCap_v2(dbRSeg* rc, const double* restbl, const double* captbl);
+                        const odb::dbWirePathShape& pshape);
+  void setResAndCap_v2(odb::dbRSeg* rc,
+                       const double* restbl,
+                       const double* captbl);
   extRCModel* createCornerMap(const char* rulesFileName);
 
   uint getResCapTable_lefRC_v2();
@@ -1856,10 +1873,10 @@ class extMain
   // v2 ------------------------------------------------------------
   uint _debug_net_id = 0;
 
-  uint couplingFlow_v2_opt(Rect& extRect, uint ccFlag, extMeasure* m);
-  uint couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m);
+  uint couplingFlow_v2_opt(odb::Rect& extRect, uint ccFlag, extMeasure* m);
+  uint couplingFlow_v2(odb::Rect& extRect, uint ccFlag, extMeasure* m);
   void setBranchCapNodeId(dbNet* net, uint junction);
-  void markPathHeadTerm(dbWirePath& path);
+  void markPathHeadTerm(odb::dbWirePath& path);
 
   extSolverGen* getCurrentSolverGen() { return _currentSolverGen; }
   void setCurrentSolverGen(extSolverGen* p) { _currentSolverGen = p; }

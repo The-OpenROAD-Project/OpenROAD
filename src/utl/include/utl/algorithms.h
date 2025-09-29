@@ -3,13 +3,17 @@
 
 #pragma once
 
-#include <boost/generator_iterator.hpp>
-#include <boost/random.hpp>
+#include <cmath>
 #include <cstddef>
 #include <iomanip>
+#include <ios>
 #include <sstream>
 #include <string>
 #include <tuple>
+#include <type_traits>
+
+#include "boost/generator_iterator.hpp"
+#include "boost/random.hpp"
 
 namespace utl {
 
@@ -78,6 +82,24 @@ inline std::string to_numeric_string(const double number, const int precision)
   }
 
   return str;
+}
+
+template <typename T>
+constexpr T snapDown(const T value, const T step, const T origin = T{0})
+{
+  if constexpr (std::is_integral_v<T>) {
+    return ((value - origin) / step) * step + origin;
+  }
+  return std::floor((value - origin) / step) * step + origin;
+}
+
+template <typename T>
+constexpr T snapUp(const T value, const T step, const T origin = T{0})
+{
+  if constexpr (std::is_integral_v<T>) {
+    return snapDown(value + step - 1, step, origin);
+  }
+  return std::ceil((value - origin) / step) * step + origin;
 }
 
 }  // namespace utl

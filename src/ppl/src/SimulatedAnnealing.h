@@ -3,12 +3,8 @@
 
 #pragma once
 
-#include <algorithm>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_int_distribution.hpp>
 #include <limits>
 #include <memory>
-#include <random>
 #include <set>
 #include <utility>
 #include <vector>
@@ -16,6 +12,7 @@
 #include "Core.h"
 #include "Netlist.h"
 #include "Slots.h"
+#include "boost/random/mersenne_twister.hpp"
 #include "odb/geom.h"
 #include "ppl/IOPlacer.h"
 
@@ -51,8 +48,7 @@ class SimulatedAnnealing
   void run(float init_temperature,
            int max_iterations,
            int perturb_per_iter,
-           float alpha,
-           bool random);
+           float alpha);
   void getAssignment(std::vector<IOPin>& assignment);
 
   // debug functions

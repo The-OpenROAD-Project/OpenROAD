@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include <functional>
 #include <list>
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "dbCore.h"
@@ -14,6 +16,7 @@
 #include "dbPagedVector.h"
 #include "dbVector.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -33,6 +36,8 @@ class _dbITerm;
 class _dbNet;
 class _dbInst;
 class _dbInstHdr;
+class _dbScanInst;
+class dbScanListScanInstItr;
 class _dbWire;
 class _dbVia;
 class _dbGCellGrid;
@@ -157,7 +162,6 @@ class _dbBlock : public _dbObject
   char* _name;
   Polygon _die_area;
   std::vector<Rect> _blocked_regions_for_pins;
-  dbId<_dbTech> _tech;
   dbId<_dbChip> _chip;
   dbId<_dbBox> _bbox;
   dbId<_dbBlock> _parent;
@@ -193,6 +197,8 @@ class _dbBlock : public _dbObject
   int _max_layer_for_clock;
   std::vector<_dbBTermGroup> _bterm_groups;
   _dbBTermTopLayerGrid _bterm_top_layer_grid;
+  uint _unique_net_index{1};   // unique index used to create a new net name
+  uint _unique_inst_index{1};  // unique index used to create a new inst name
 
   // NON-PERSISTANT-STREAMED-MEMBERS
   dbTable<_dbBTerm>* _bterm_tbl;
@@ -200,6 +206,7 @@ class _dbBlock : public _dbObject
   dbTable<_dbNet>* _net_tbl;
   dbTable<_dbInstHdr>* _inst_hdr_tbl;
   dbTable<_dbInst>* _inst_tbl;
+  dbTable<_dbScanInst>* _scan_inst_tbl;
   dbTable<_dbBox, 1024>* _box_tbl;
   dbTable<_dbVia, 1024>* _via_tbl;
   dbTable<_dbGCellGrid>* _gcell_grid_tbl;
@@ -251,6 +258,7 @@ class _dbBlock : public _dbObject
   dbNetBTermItr* _net_bterm_itr;
   dbNetITermItr* _net_iterm_itr;
   dbInstITermItr* _inst_iterm_itr;
+  dbScanListScanInstItr* _scan_list_scan_inst_itr;
   dbBoxItr<1024>* _box_itr;
   dbSWireItr* _swire_itr;
   dbSBoxItr* _sbox_itr;
@@ -283,6 +291,7 @@ class _dbBlock : public _dbObject
 
   std::unordered_map<std::string, int> _module_name_id_map;
   std::unordered_map<std::string, int> _inst_name_id_map;
+  std::unordered_map<dbId<_dbInst>, dbId<_dbScanInst>> _inst_scan_inst_map;
 
   unsigned char _num_ext_dbs;
 
@@ -299,7 +308,6 @@ class _dbBlock : public _dbObject
   void remove_rect(const Rect& rect);
   void invalidate_bbox() { _flags._valid_bbox = 0; }
   void initialize(_dbChip* chip,
-                  _dbTech* tech,
                   _dbBlock* parent,
                   const char* name,
                   char delimiter);
@@ -314,6 +322,12 @@ class _dbBlock : public _dbObject
   void collectMemInfo(MemInfo& info);
   void clearSystemBlockagesAndObstructions();
   void ensureConstraintRegion(const Direction2D& edge, int& begin, int& end);
+  void ComputeBBox();
+  std::string makeNewName(dbModInst* parent,
+                          const char* base_name,
+                          const dbNameUniquifyType& uniquify,
+                          uint& unique_index,
+                          const std::function<bool(const char*)>& exists);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbBlock& block);

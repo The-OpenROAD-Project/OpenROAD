@@ -6,12 +6,13 @@
 
 #pragma once
 
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/register/point.hpp>
-#include <boost/geometry/geometries/register/ring.hpp>
-#include <boost/polygon/polygon.hpp>
+#include <cstddef>
 #include <vector>
 
+#include "boost/geometry/geometries/register/point.hpp"
+#include "boost/geometry/geometries/register/ring.hpp"
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "odb/geom.h"
 
 // Make odb's Point work with boost polgyon
@@ -231,8 +232,8 @@ struct exterior_ring<odb::Oct>
 template <>
 struct interior_rings<odb::Oct>
 {
-  static std::vector<std::vector<odb::Point>> get(odb::Oct& o) { return {}; }
-  static std::vector<std::vector<odb::Point>> get(const odb::Oct& o)
+  static std::vector<std::vector<odb::Point>> get(odb::Oct&) { return {}; }
+  static std::vector<std::vector<odb::Point>> get(const odb::Oct&)
   {
     return {};
   }
@@ -285,11 +286,8 @@ struct exterior_ring<odb::Polygon>
 template <>
 struct interior_rings<odb::Polygon>
 {
-  static std::vector<std::vector<odb::Point>> get(odb::Polygon& p)
-  {
-    return {};
-  }
-  static const std::vector<std::vector<odb::Point>> get(const odb::Polygon& p)
+  static std::vector<std::vector<odb::Point>> get(odb::Polygon&) { return {}; }
+  static std::vector<std::vector<odb::Point>> get(const odb::Polygon&)
   {
     return {};
   }

@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include <cstdio>
+#include <list>
 #include <string>
 
-#include "extRCap.h"
+#include "rcx/extRCap.h"
 
 namespace rcx {
 

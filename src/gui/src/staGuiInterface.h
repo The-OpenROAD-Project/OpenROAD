@@ -16,6 +16,14 @@
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbObject.h"
+#include "odb/geom.h"
+#include "sta/Delay.hh"
+#include "sta/Graph.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/SdcClass.hh"
 
 namespace sta {
 class Corner;
@@ -321,6 +329,14 @@ class STAGuiInterface
 
   bool isUseMax() const { return use_max_; }
   void setUseMax(bool use_max) { use_max_ = use_max; }
+  const sta::MinMaxAll* minMaxAll() const
+  {
+    return use_max_ ? sta::MinMaxAll::max() : sta::MinMaxAll::min();
+  }
+  const sta::MinMax* minMax() const
+  {
+    return use_max_ ? sta::MinMax::max() : sta::MinMax::min();
+  }
 
   int getMaxPathCount() const { return max_path_count_; }
   void setMaxPathCount(int max_paths) { max_path_count_ = max_paths; }
@@ -340,7 +356,8 @@ class STAGuiInterface
   TimingPathList getTimingPaths(const StaPins& from,
                                 const std::vector<StaPins>& thrus,
                                 const StaPins& to,
-                                const std::string& path_group_name) const;
+                                const std::string& path_group_name,
+                                const sta::ClockSet* clks) const;
   TimingPathList getTimingPaths(const sta::Pin* thru) const;
 
   std::unique_ptr<TimingPathNode> getTimingNode(const sta::Pin* pin) const;
@@ -358,7 +375,9 @@ class STAGuiInterface
   StaPins getStartPoints() const;
 
   float getPinSlack(const sta::Pin* pin) const;
-  EndPointSlackMap getEndPointToSlackMap(const std::string& path_group_name);
+  EndPointSlackMap getEndPointToSlackMap(const std::string& path_group_name,
+                                         const sta::Clock* clk = nullptr);
+  EndPointSlackMap getEndPointToSlackMap(const sta::Clock* clk);
 
   std::set<std::string> getGroupPathsNames() const;
   void updatePathGroups();

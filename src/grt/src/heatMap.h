@@ -7,6 +7,7 @@
 
 #include "AbstractRoutingCongestionDataSource.h"
 #include "gui/heatMap.h"
+#include "odb/db.h"
 
 namespace grt {
 
@@ -46,14 +47,14 @@ class RoutingCongestionDataSource : public gui::GlobalRoutingDataSource,
 
   bool populateMapForLayer(odb::dbTechLayer* layer, odb::dbGCellGrid* grid);
   bool populateMapForDirection(Direction direction, odb::dbGCellGrid* grid);
-  double defineValue(int capacity,
-                     int usage,
+  double defineValue(double capacity,
+                     double usage,
                      double congestion,
                      bool show_data);
   void setCongestionValues(const odb::dbGCellGrid::GCellData& hor_cong_data,
                            const odb::dbGCellGrid::GCellData& ver_cong_data,
-                           int& capacity,
-                           int& usage,
+                           double& capacity,
+                           double& usage,
                            double& congestion);
 
   odb::dbDatabase* db_;

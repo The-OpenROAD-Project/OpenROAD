@@ -4,6 +4,7 @@
 #pragma once
 
 #include <set>
+#include <unordered_set>
 
 #include "odb/db.h"
 #include "sta/ConcreteNetwork.hh"
@@ -39,6 +40,8 @@ using odb::dbSigType;
 using odb::Point;
 
 class dbNetwork;
+class dbEditHierarchy;
+
 // This class handles callbacks from the network to the listeners
 class dbNetworkObserver
 {
@@ -57,6 +60,8 @@ class dbNetworkObserver
 // ConcreteNetwork is used for library/cell/port functions only.
 class dbNetwork : public ConcreteNetwork
 {
+  friend class dbEditHierarchy;
+
  public:
   dbNetwork();
   ~dbNetwork() override;
@@ -65,6 +70,19 @@ class dbNetwork : public ConcreteNetwork
   void setBlock(dbBlock* block);
   void clear() override;
   CellPortIterator* portIterator(const Cell* cell) const override;
+
+  // sanity checkers
+  void checkAxioms() const;
+  void checkSanityModBTerms() const;
+  void checkSanityModITerms() const;
+  void checkSanityModuleInsts() const;
+  void checkSanityModInstTerms() const;
+  void checkSanityUnusedModules() const;
+  void checkSanityTermConnectivity() const;
+  void checkSanityNetConnectivity() const;
+  void checkSanityInstNames() const;
+  void checkSanityNetNames() const;
+  void checkSanityModNetNamesInModule(odb::dbModule* module) const;
 
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);
@@ -86,6 +104,8 @@ class dbNetwork : public ConcreteNetwork
   Point location(const Pin* pin) const;
   bool isPlaced(const Pin* pin) const;
 
+  LibertyCell* libertyCell(Cell* cell) const override;
+  const LibertyCell* libertyCell(const Cell* cell) const override;
   LibertyCell* libertyCell(dbInst* inst);
   LibertyPort* libertyPort(const Pin*) const override;
   dbInst* staToDb(const Instance* instance) const;
@@ -155,20 +175,13 @@ class dbNetwork : public ConcreteNetwork
                                      bool hier = false);
   Instance* getOwningInstanceParent(Pin* pin);
 
-  bool ConnectionToModuleExists(dbITerm* source_pin,
-                                dbModule* dest_module,
-                                dbModBTerm*& dest_modbterm,
-                                dbModITerm*& dest_moditerm);
-
   bool connected(Pin* source_pin, Pin* dest_pin);
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
-                           const char* connection_name);
-
-  void getParentHierarchy(dbModule* start_module,
-                          std::vector<dbModule*>& parent_hierarchy) const;
-  dbModule* findHighestCommonModule(std::vector<dbModule*>& itree1,
-                                    std::vector<dbModule*>& itree2);
+                           const char* connection_name = "net");
+  void hierarchicalConnect(dbITerm* source_pin,
+                           dbModITerm* dest_pin,
+                           const char* connection_name = "net");
   Instance* findHierInstance(const char* name);
   void replaceHierModule(dbModInst* mod_inst, dbModule* module);
   void removeUnusedPortsAndPinsOnModuleInstances();
@@ -188,6 +201,7 @@ class dbNetwork : public ConcreteNetwork
   // Instance functions
   // Top level instance of the design (defined after link).
   Instance* topInstance() const override;
+  bool isTopInstanceOrNull(const Instance* instance) const;
   // Name local to containing cell/instance.
   const char* name(const Instance* instance) const override;
   const char* name(const Port* port) const override;
@@ -217,6 +231,7 @@ class dbNetwork : public ConcreteNetwork
   dbNet* findRelatedDbNet(const dbModNet*) const;
   dbModNet* findModNetForPin(const Pin*);
   dbModNet* findRelatedModNet(const dbNet*) const;
+  dbModInst* getModInst(Instance* inst) const;
 
   ////////////////////////////////////////////////////////////////
   // Pin functions
@@ -231,6 +246,7 @@ class dbNetwork : public ConcreteNetwork
   dbModNet* hierNet(const Pin* pin) const;
   dbITerm* flatPin(const Pin* pin) const;
   dbModITerm* hierPin(const Pin* pin) const;
+  dbBlock* getBlockOf(const Pin* pin) const;
 
   bool isFlat(const Pin* pin) const;
   bool isFlat(const Net* net) const;
@@ -239,6 +255,8 @@ class dbNetwork : public ConcreteNetwork
   PortDirection* direction(const Pin* pin) const override;
   VertexId vertexId(const Pin* pin) const override;
   void setVertexId(Pin* pin, VertexId id) override;
+  // Find the connected dbModITerm in the parent module of the input pin.
+  dbModITerm* findInputModITermInParent(const Pin* input_pin) const;
 
   ////////////////////////////////////////////////////////////////
   // Terminal functions
@@ -257,7 +275,8 @@ class dbNetwork : public ConcreteNetwork
                     const std::string& value) override;
 
   bool isConcreteCell(const Cell*) const;
-  void registerConcreteCell(const Cell*);
+  void registerHierModule(const Cell* cell);
+  void unregisterHierModule(const Cell* cell);
 
   ////////////////////////////////////////////////////////////////
   // Port functions
@@ -275,6 +294,7 @@ class dbNetwork : public ConcreteNetwork
   // Net functions
   ObjectId id(const Net* net) const override;
   Net* findNet(const Instance* instance, const char* net_name) const override;
+  Net* findNetAllScopes(const char* net_name) const;
   void findInstNetsMatching(const Instance* instance,
                             const PatternMatch* pattern,
                             // Return value.
@@ -287,7 +307,27 @@ class dbNetwork : public ConcreteNetwork
   NetTermIterator* termIterator(const Net* net) const override;
   const Net* highestConnectedNet(Net* net) const override;
   bool isSpecial(Net* net);
+
+  // Get the flat net (dbNet) with the Net*.
+  // If the net is a hierarchical net (dbModNet), return nullptr
   dbNet* flatNet(const Net* net) const;
+
+  // Given a net or pin that may be hierarchical, find the corresponding flat
+  // dbNet by traversing the netlist.
+  // If the net is already a flat net (dbNet), it is returned as is.
+  // If the net is a hierarchical net (dbModNet), find the associated dbNet.
+  dbNet* findFlatDbNet(const Net* net) const;
+  dbNet* findFlatDbNet(const Pin* pin) const;
+
+  // Given a net that may be hierarchical, find the corresponding flat dbNet by
+  // traversing the netlist and return it as Net*.
+  // If the net is already a flat net, it is returned as is.
+  // If the net is a hierarchical net (dbModNet), find the associated dbNet and
+  // return it as Net*.
+  Net* findFlatNet(const Net* net) const;
+  Net* findFlatNet(const Pin* pin) const;
+
+  bool hasPort(const Net* net) const;
 
   ////////////////////////////////////////////////////////////////
   // Edit functions
@@ -307,7 +347,11 @@ class dbNetwork : public ConcreteNetwork
   void disconnectPin(Pin* pin, Net*);
   void disconnectPinBefore(const Pin* pin);
   void deletePin(Pin* pin) override;
+  Net* makeNet(Instance* parent = nullptr);
   Net* makeNet(const char* name, Instance* parent) override;
+  Net* makeNet(const char* base_name,
+               Instance* parent,
+               const odb::dbNameUniquifyType& uniquify);
   Pin* makePin(Instance* inst, Port* port, Net* net) override;
   Port* makePort(Cell* cell, const char* name) override;
   void deleteNet(Net* net) override;
@@ -326,6 +370,14 @@ class dbNetwork : public ConcreteNetwork
   void reassociateHierFlatNet(dbModNet* mod_net,
                               dbNet* new_flat_net,
                               dbNet* orig_flat_net);
+
+  void reassociateFromDbNetView(dbNet* flat_net, dbModNet* mod_net);
+  void reassociatePinConnection(Pin* pin);
+
+  void accumulateFlatLoadPinsOnNet(
+      Net* net,
+      Pin* drvr_pin,
+      std::unordered_set<const Pin*>& accumulated_pins);
 
   int fromIndex(const Port* port) const override;
   int toIndex(const Port* port) const override;
@@ -383,8 +435,9 @@ class dbNetwork : public ConcreteNetwork
 
  private:
   bool hierarchy_ = false;
-  std::set<const Cell*> concrete_cells_;
+  std::set<const Cell*> hier_modules_;
   std::set<const Port*> concrete_ports_;
+  std::unique_ptr<dbEditHierarchy> hierarchy_editor_;
 };
 
 }  // namespace sta

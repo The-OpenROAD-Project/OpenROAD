@@ -1,10 +1,12 @@
 #define BOOST_TEST_MODULE TestModule
-#include <boost/test/included/unit_test.hpp>
-#include <iostream>
+#include <cstdio>
+#include <sstream>
 #include <string>
 
+#include "boost/test/included/unit_test.hpp"
 #include "helper.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 namespace {
@@ -57,7 +59,7 @@ void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
             bt->getName().c_str(),
             bt->getNet() ? bt->getNet()->getName().c_str() : "",
             bt->getNet() ? bt->getNet()->getId() : 0,
-            bt->getModNet() ? bt->getModNet()->getName() : "",
+            bt->getModNet() ? bt->getModNet()->getName().c_str() : "",
             bt->getModNet() ? bt->getModNet()->getId() : 0);
     str_db << tmp_str;
   }
@@ -88,7 +90,7 @@ void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
                 bterm->getName().c_str(),
                 bterm->getNet() ? bterm->getNet()->getName().c_str() : "",
                 bterm->getNet() ? bterm->getNet()->getId() : -1,
-                bterm->getModNet() ? bterm->getModNet()->getName() : "",
+                bterm->getModNet() ? bterm->getModNet()->getName().c_str() : "",
                 bterm->getModNet() ? bterm->getModNet()->getId() : -1);
         str_db << tmp_str;
       }
@@ -106,8 +108,9 @@ void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
           tmp_str,
           "\t\tPort %s Net %s (%d)\n",
           module_port->getName(),
-          (module_port->getModNet()) ? (module_port->getModNet()->getName())
-                                     : "No-modnet",
+          (module_port->getModNet())
+              ? (module_port->getModNet()->getName().c_str())
+              : "No-modnet",
           (module_port->getModNet()) ? module_port->getModNet()->getId() : -1);
       str_db << tmp_str;
       sprintf(tmp_str,
@@ -143,8 +146,9 @@ void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
                 "\t\t\tModIterm : %s (%u) Mod Net %s (%u) \n",
                 miterm_pin->getName(),
                 miterm_pin->getId(),
-                miterm_pin->getModNet() ? (miterm_pin->getModNet()->getName())
-                                        : "No-net",
+                miterm_pin->getModNet()
+                    ? (miterm_pin->getModNet()->getName().c_str())
+                    : "No-net",
                 miterm_pin->getModNet() ? miterm_pin->getModNet()->getId() : 0);
         str_db << tmp_str;
       }
@@ -169,7 +173,8 @@ void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
             mterm->getName().c_str(),
             iterm->getId(),
             iterm->getNet() ? iterm->getNet()->getName().c_str() : "unk-dbnet",
-            iterm->getModNet() ? iterm->getModNet()->getName() : "unk-modnet",
+            iterm->getModNet() ? iterm->getModNet()->getName().c_str()
+                               : "unk-modnet",
             iterm->getModNet() ? iterm->getModNet()->getId() : -1);
         str_db << tmp_str;
       }
@@ -189,8 +194,10 @@ void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
          mod_net_iter != mod_nets.end();
          mod_net_iter++) {
       dbModNet* mod_net = *mod_net_iter;
-      sprintf(
-          tmp_str, "\t\tNet: %s (%u)\n", mod_net->getName(), mod_net->getId());
+      sprintf(tmp_str,
+              "\t\tNet: %s (%u)\n",
+              mod_net->getName().c_str(),
+              mod_net->getId());
       str_db << tmp_str;
       sprintf(tmp_str,
               "\t\tConnections -> modIterms/modbterms/bterms/iterms:\n");

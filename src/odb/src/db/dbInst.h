@@ -46,7 +46,8 @@ class _dbInst : public _dbObject
   enum Field  // dbJournalField name
   {
     FLAGS,
-    ORIGIN
+    ORIGIN,
+    NAME
   };
 
   _dbInstFlags _flags;

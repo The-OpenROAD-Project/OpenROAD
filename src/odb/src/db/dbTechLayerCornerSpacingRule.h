@@ -6,7 +6,6 @@
 
 #include "dbCore.h"
 #include "odb/odb.h"
-
 // User Code Begin Includes
 #include "dbVector.h"
 // User Code End Includes

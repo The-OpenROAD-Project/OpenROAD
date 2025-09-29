@@ -11,15 +11,12 @@ import unittest
 ##################
 class TestModule(odbUnitTest.TestCase):
     def setUp(self):
-        self.db, self.lib = helper.createSimpleDB()
+        self.db, self.lib, self.design, self.ord_tech = helper.createSimpleDB()
         self.block = helper.create1LevelBlock(self.db, self.lib, self.db.getChip())
         self.master_mod = odb.dbModule_create(self.block, "master_mod")
         self.parent_mod = odb.dbModule_create(self.block, "parent_mod")
         self.i1 = odb.dbModInst_create(self.parent_mod, self.master_mod, "i1")
         self.inst1 = self.block.findInst("inst")
-
-    def tearDown(self):
-        self.db.destroy(self.db)
 
     def test_default(self):
         self.check(self.master_mod, "getName", "master_mod")

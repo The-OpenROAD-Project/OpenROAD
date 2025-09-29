@@ -27,6 +27,14 @@ namespace cts {
 class CtsOptions : public odb::dbBlockCallBackObj
 {
  public:
+  enum class NdrStrategy
+  {
+    NONE,
+    ROOT_ONLY,
+    HALF,
+    FULL
+  };
+
   enum class MasterType
   {
     DUMMY,
@@ -48,12 +56,22 @@ class CtsOptions : public odb::dbBlockCallBackObj
     bufferList_ = buffers;
   }
   std::vector<std::string> getBufferList() const { return bufferList_; }
+  std::string getBufferListToString() const
+  {
+    std::ostringstream buffer_names;
+    for (const auto& buf : bufferList_) {
+      buffer_names << buf << " ";
+    }
+    return buffer_names.str();
+  }
+  void resetBufferList() { bufferList_.clear(); }
   void setDbUnits(int units) { dbUnits_ = units; }
   int getDbUnits() const { return dbUnits_; }
   void setWireSegmentUnit(unsigned wireSegmentUnit)
   {
     wireSegmentUnit_ = wireSegmentUnit;
   }
+  void resetWireSegmentUnit() { wireSegmentUnit_ = 0; }
   unsigned getWireSegmentUnit() const { return wireSegmentUnit_; }
   void setPlotSolution(bool plot) { plotSolution_ = plot; }
   bool getPlotSolution() const { return plotSolution_; }
@@ -123,14 +141,17 @@ class CtsOptions : public odb::dbBlockCallBackObj
   void setNumSinks(int sinks) { sinks_ = sinks; }
   int getNumSinks() const { return sinks_; }
   void setTreeBuffer(const std::string& buffer) { treeBuffer_ = buffer; }
+  void resetTreeBuffer() { treeBuffer_.clear(); }
   std::string getTreeBuffer() const { return treeBuffer_; }
   unsigned getClusteringPower() const { return clusteringPower_; }
   void setClusteringPower(unsigned power) { clusteringPower_ = power; }
+  void resetClusteringPower() { clusteringPower_ = 4; }
   double getClusteringCapacity() const { return clusteringCapacity_; }
   void setClusteringCapacity(double capacity)
   {
     clusteringCapacity_ = capacity;
   }
+  void resetClusteringCapacity() { clusteringCapacity_ = 0.6; }
 
   void setMaxFanout(unsigned maxFanout) { maxFanout_ = maxFanout; }
   unsigned getMaxFanout() const { return maxFanout_; }
@@ -150,6 +171,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
     return 100 /*um*/ * dbUnits_;
   }
   void setBufferDistance(int32_t distance_dbu) { bufDistance_ = distance_dbu; }
+  void resetBufferDistance() { bufDistance_.reset(); }
 
   // VertexBufferDistance is in DBU
   int32_t getVertexBufferDistance() const
@@ -169,6 +191,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   {
     vertexBufDistance_ = distance_dbu;
   }
+  void resetVertexBufferDistance() { vertexBufDistance_.reset(); }
   bool isVertexBuffersEnabled() const { return vertexBuffersEnable_; }
   void setVertexBuffersEnabled(bool enable) { vertexBuffersEnable_ = enable; }
   bool isSimpleSegmentEnabled() const { return simpleSegmentsEnable_; }
@@ -180,7 +203,17 @@ class CtsOptions : public odb::dbBlockCallBackObj
     sinkClusteringUseMaxCap_ = false;
     maxDiameterSet_ = true;
   }
+  void resetMaxDiameter()
+  {
+    maxDiameter_ = 50;
+    sinkClusteringUseMaxCap_ = true;
+    maxDiameterSet_ = false;
+  }
   bool isMaxDiameterSet() const { return maxDiameterSet_; }
+  const std::vector<unsigned>& getSinkClusteringDiameters()
+  {
+    return sinkClusteringDiameters_;
+  }
   unsigned getSinkClusteringSize() const { return sinkClustersSize_; }
   void setSinkClusteringSize(unsigned size)
   {
@@ -188,12 +221,24 @@ class CtsOptions : public odb::dbBlockCallBackObj
     sinkClusteringUseMaxCap_ = false;
     sinkClustersSizeSet_ = true;
   }
+  void resetSinkClusteringSize()
+  {
+    sinkClustersSize_ = 20;
+    sinkClusteringUseMaxCap_ = true;
+    sinkClustersSizeSet_ = false;
+  }
   bool isSinkClusteringSizeSet() const { return sinkClustersSizeSet_; }
+  const std::vector<unsigned>& getSinkClusteringSizes()
+  {
+    return sinkClusteringSizes_;
+  }
+  void limitSinkClusteringSizes(unsigned limit);
   unsigned getSinkClusteringLevels() const { return sinkClusteringLevels_; }
   void setSinkClusteringLevels(unsigned levels)
   {
     sinkClusteringLevels_ = levels;
   }
+  void resetSinkClusteringLevels() { sinkClusteringLevels_ = 0; }
 
   double getMacroMaxDiameter() const { return macroMaxDiameter_; }
   void setMacroMaxDiameter(double distance)
@@ -201,12 +246,22 @@ class CtsOptions : public odb::dbBlockCallBackObj
     macroMaxDiameter_ = distance;
     macroMaxDiameterSet_ = true;
   }
+  void resetMacroMaxDiameter()
+  {
+    macroMaxDiameter_ = 50;
+    macroMaxDiameterSet_ = false;
+  }
   bool isMacroMaxDiameterSet() const { return macroMaxDiameterSet_; }
   unsigned getMacroSinkClusteringSize() const { return macroSinkClustersSize_; }
   void setMacroClusteringSize(unsigned size)
   {
     macroSinkClustersSize_ = size;
     macroSinkClustersSizeSet_ = true;
+  }
+  void resetMacroClusteringSize()
+  {
+    macroSinkClustersSize_ = 4;
+    macroSinkClustersSizeSet_ = false;
   }
   bool isMacroSinkClusteringSizeSet() const
   {
@@ -216,6 +271,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   void setBalanceLevels(bool balance) { balanceLevels_ = balance; }
   bool getBalanceLevels() const { return balanceLevels_; }
   void setNumStaticLayers(unsigned num) { numStaticLayers_ = num; }
+  void resetNumStaticLayers() { numStaticLayers_ = 0; }
   void setSinkBuffer(const std::string& buffer) { sinkBuffer_ = buffer; }
   void setSinkBufferInputCap(double cap) { sinkBufferInputCap_ = cap; }
   double getSinkBufferInputCap() const { return sinkBufferInputCap_; }
@@ -224,8 +280,6 @@ class CtsOptions : public odb::dbBlockCallBackObj
   stt::SteinerTreeBuilder* getSttBuilder() const { return sttBuilder_; }
   void setObstructionAware(bool obs) { obsAware_ = obs; }
   bool getObstructionAware() const { return obsAware_; }
-  void setApplyNDR(bool ndr) { applyNDR_ = ndr; }
-  bool applyNDR() const { return applyNDR_; }
   void enableInsertionDelay(bool insDelay) { insertionDelay_ = insDelay; }
   bool insertionDelayEnabled() const { return insertionDelay_; }
   void setBufferListInferred(bool inferred) { bufferListInferred_ = inferred; }
@@ -234,22 +288,29 @@ class CtsOptions : public odb::dbBlockCallBackObj
   bool isSinkBufferInferred() const { return sinkBufferInferred_; }
   void setRootBufferInferred(bool inferred) { rootBufferInferred_ = inferred; }
   bool isRootBufferInferred() const { return rootBufferInferred_; }
-  void setSinkBufferMaxCapDerate(float derate)
+  void setSinkBufferMaxCapDerate(double derate)
   {
     sinkBufferMaxCapDerate_ = derate;
     sinkBufferMaxCapDerateSet_ = true;
   }
-  float getSinkBufferMaxCapDerate() const { return sinkBufferMaxCapDerate_; }
+  void resetSinkBufferMaxCapDerate()
+  {
+    sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
+    sinkBufferMaxCapDerateSet_ = false;
+  }
+  double getSinkBufferMaxCapDerate() const { return sinkBufferMaxCapDerate_; }
   bool isSinkBufferMaxCapDerateSet() const
   {
     return sinkBufferMaxCapDerateSet_;
   }
   void setDelayBufferDerate(float derate) { delayBufferDerate_ = derate; }
+  void resetDelayBufferDerate() { delayBufferDerate_ = 1.0; }
   float getDelayBufferDerate() const { return delayBufferDerate_; }
   void enableDummyLoad(bool dummyLoad) { dummyLoad_ = dummyLoad; }
   bool dummyLoadEnabled() const { return dummyLoad_; }
   std::string getDummyLoadPrefix() const { return dummyload_prefix_; }
   void setCtsLibrary(const char* name) { ctsLibrary_ = name; }
+  void resetCtsLibrary() { ctsLibrary_.clear(); }
   const char* getCtsLibrary() { return ctsLibrary_.c_str(); }
   bool isCtsLibrarySet() { return !ctsLibrary_.empty(); }
 
@@ -265,6 +326,25 @@ class CtsOptions : public odb::dbBlockCallBackObj
 
   void setRepairClockNets(bool value) { repairClockNets_ = value; }
   bool getRepairClockNets() { return repairClockNets_; }
+
+  // NDR strategies
+  void setApplyNDR(NdrStrategy strategy) { ndrStrategy_ = strategy; }
+  void resetApplyNDR() { ndrStrategy_ = NdrStrategy::HALF; }
+  NdrStrategy getApplyNdr() const { return ndrStrategy_; }
+  const char* getApplyNdrName() const
+  {
+    switch (ndrStrategy_) {
+      case NdrStrategy::NONE:
+        return "NONE";
+      case NdrStrategy::ROOT_ONLY:
+        return "ROOT_ONLY";
+      case NdrStrategy::HALF:
+        return "HALF";
+      case NdrStrategy::FULL:
+        return "FULL";
+    }
+    return "";
+  }
 
  private:
   std::string clockNets_;
@@ -303,8 +383,10 @@ class CtsOptions : public odb::dbBlockCallBackObj
   int sinks_ = 0;
   double maxDiameter_ = 50;
   bool maxDiameterSet_ = false;
+  std::vector<unsigned> sinkClusteringDiameters_ = {50, 100, 200};
   unsigned sinkClustersSize_ = 20;
   bool sinkClustersSizeSet_ = false;
+  std::vector<unsigned> sinkClusteringSizes_ = {10, 20, 30};
   double macroMaxDiameter_ = 50;
   bool macroMaxDiameterSet_ = false;
   unsigned macroSinkClustersSize_ = 4;
@@ -318,14 +400,13 @@ class CtsOptions : public odb::dbBlockCallBackObj
   utl::Logger* logger_ = nullptr;
   stt::SteinerTreeBuilder* sttBuilder_ = nullptr;
   bool obsAware_ = true;
-  bool applyNDR_ = false;
   bool insertionDelay_ = true;
   bool bufferListInferred_ = false;
   bool sinkBufferInferred_ = false;
   bool rootBufferInferred_ = false;
   bool sinkBufferMaxCapDerateSet_ = false;
-  float sinkBufferMaxCapDerateDefault_ = 0.01;
-  float sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
+  double sinkBufferMaxCapDerateDefault_ = 0.01;
+  double sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
   bool dummyLoad_ = true;
   float delayBufferDerate_ = 1.0;  // no derate
   std::string ctsLibrary_;
@@ -333,6 +414,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   std::string dummyload_prefix_ = "clkload";
   MasterCount dummy_count_;
   bool repairClockNets_ = false;
+  NdrStrategy ndrStrategy_ = NdrStrategy::HALF;
 };
 
 }  // namespace cts

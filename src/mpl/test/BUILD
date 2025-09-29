@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
+
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
 # From CMakeLists.txt or_integration_tests(TESTS
@@ -29,6 +31,7 @@ COMPULSORY_TESTS = [
     "boundary_push3",
     "centralization1",
     "clocked_macro",
+    "fixed_macros",
 ]
 
 # Disabled in CMakeLists.txt
@@ -86,6 +89,8 @@ filegroup(
         "testcases/clocked_macro.lef",
         "testcases/clocked_macro.lib",
         "testcases/clocked_macro.v",
+        "testcases/fixed_ios1.def",
+        "testcases/fixed_macros.def",
         "testcases/guides1.def",
         "testcases/guides1.v",
         "testcases/io_constraints1.def",
@@ -95,11 +100,10 @@ filegroup(
         "testcases/macro_only.lef",
         "testcases/macro_only.lib",
         "testcases/macro_only.v",
+        "testcases/mixed_ios1.def",
         "testcases/no_unfixed_macros.def",
         "testcases/orientation_improve1.def",
         "testcases/orientation_improve1.lef",
-        "testcases/fixed_ios1.def",
-        "testcases/mixed_ios1.def",
     ],
 )
 
@@ -128,3 +132,17 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "mpl_snapper_unittest",
+    srcs = [
+        "cpp/MplTest.h",
+        "cpp/TestSnapper.cpp",
+    ],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/mpl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

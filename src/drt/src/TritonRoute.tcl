@@ -122,14 +122,12 @@ proc detailed_route { args } {
     set or_k 0
   }
   if { [info exists keys(-bottom_routing_layer)] } {
-    set bottom_routing_layer $keys(-bottom_routing_layer)
-  } else {
-    set bottom_routing_layer ""
+    utl::error DRT 509 "-bottom_routing_layer is deprecated.\
+        Use set_routing_layers command instead."
   }
   if { [info exists keys(-top_routing_layer)] } {
-    set top_routing_layer $keys(-top_routing_layer)
-  } else {
-    set top_routing_layer ""
+    utl::error DRT 510 "-top_routing_layer is deprecated.\
+      Use set_routing_layers command instead."
   }
   if { [info exists keys(-verbose)] } {
     sta::check_positive_integer "-verbose" $keys(-verbose)
@@ -169,7 +167,7 @@ proc detailed_route { args } {
   drt::detailed_route_cmd $output_maze $output_drc $output_cmap \
     $output_guide_coverage $db_process_node $enable_via_gen $droute_end_iter \
     $via_in_pin_bottom_layer $via_in_pin_top_layer \
-    $via_access_layer $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose \
+    $via_access_layer $or_seed $or_k $verbose \
     $clean_patches $no_pin_access $single_step_dr $min_access_points \
     $save_guide_updates $repair_pdn_vias $drc_report_iter_step
 }
@@ -296,14 +294,12 @@ proc pin_access { args } {
     set db_process_node ""
   }
   if { [info exists keys(-bottom_routing_layer)] } {
-    set bottom_routing_layer $keys(-bottom_routing_layer)
-  } else {
-    set bottom_routing_layer ""
+    utl::error DRT 511 "-bottom_routing_layer is deprecated.\
+        Use set_routing_layers command instead."
   }
   if { [info exists keys(-top_routing_layer)] } {
-    set top_routing_layer $keys(-top_routing_layer)
-  } else {
-    set top_routing_layer ""
+    utl::error DRT 514 "-top_routing_layer is deprecated.\
+        Use set_routing_layers command instead."
   }
   if { [info exists keys(-via_access_layer)] } {
     set via_access_layer $keys(-via_access_layer)
@@ -355,8 +351,8 @@ proc pin_access { args } {
     }
     drt::detailed_route_distributed $rhost $rport $vol $cloudsz
   }
-  drt::pin_access_cmd $db_process_node $bottom_routing_layer \
-    $top_routing_layer $via_access_layer $verbose $min_access_points \
+  drt::pin_access_cmd $db_process_node \
+    $via_access_layer $verbose $min_access_points \
     $via_in_pin_bottom_layer $via_in_pin_top_layer
 }
 
@@ -471,7 +467,7 @@ proc step_dr { args } {
   drt::detailed_route_step_drt {*}$args
 }
 
-sta::define_cmd_args "check_drc" {
+sta::define_hidden_cmd_args "check_drc" {
     [-box box]
     [-output_file filename]
     [-marker_name name]

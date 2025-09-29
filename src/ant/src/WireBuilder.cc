@@ -3,10 +3,23 @@
 
 #include "WireBuilder.hh"
 
-#include <boost/functional/hash.hpp>
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
 #include <limits>
+#include <map>
+#include <tuple>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
+#include "boost/functional/hash.hpp"
+#include "odb/db.h"
 #include "odb/dbShape.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/dbWireCodec.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace ant {
@@ -331,8 +344,8 @@ bool WireBuilder::pinOverlapsGSegment(const odb::Point& pin_position,
     for (const GuideSegment& seg : route) {
       if (seg.pt1.layer == seg.pt2.layer &&  // ignore vias
           seg.pt1.layer == pin_layer) {
-        auto [x0, x1] = std::minmax(seg.pt1.pos.getX(), seg.pt2.pos.getX());
-        auto [y0, y1] = std::minmax(seg.pt1.pos.getY(), seg.pt2.pos.getY());
+        auto [x0, x1] = std::minmax({seg.pt1.pos.getX(), seg.pt2.pos.getX()});
+        auto [y0, y1] = std::minmax({seg.pt1.pos.getY(), seg.pt2.pos.getY()});
         odb::Rect seg_rect(x0, y0, x1, y1);
 
         if (box.intersects(seg_rect)) {

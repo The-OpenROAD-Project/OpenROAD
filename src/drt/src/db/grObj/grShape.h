@@ -8,6 +8,8 @@
 
 #include "db/grObj/grFig.h"
 #include "db/infra/frSegStyle.h"
+#include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frNet;
@@ -60,23 +62,23 @@ class grPathSeg : public grShape
   // constructors
   grPathSeg() = default;
   grPathSeg(const grPathSeg& in)
-      : begin(in.begin),
-        end(in.end),
-        layer(in.layer),
-        child(in.child),
-        parent(in.parent),
-        owner(in.owner)
+      : begin_(in.begin_),
+        end_(in.end_),
+        layer_(in.layer_),
+        child_(in.child_),
+        parent_(in.parent_),
+        owner_(in.owner_)
   {
   }
   grPathSeg(const frPathSeg& in);
   // getters
-  std::pair<Point, Point> getPoints() const { return {begin, end}; }
+  std::pair<odb::Point, odb::Point> getPoints() const { return {begin_, end_}; }
 
   // setters
-  void setPoints(const Point& beginIn, const Point& endIn)
+  void setPoints(const odb::Point& begin, const odb::Point& end)
   {
-    begin = beginIn;
-    end = endIn;
+    begin_ = begin;
+    end_ = end;
   }
   // others
   frBlockObjectEnum typeId() const override { return grcPathSeg; }
@@ -85,8 +87,8 @@ class grPathSeg : public grShape
    * setLayerNum
    * getLayerNum
    */
-  void setLayerNum(frLayerNum numIn) override { layer = numIn; }
-  frLayerNum getLayerNum() const override { return layer; }
+  void setLayerNum(frLayerNum numIn) override { layer_ = numIn; }
+  frLayerNum getLayerNum() const override { return layer_; }
 
   /* from grPinFig
    * hasPin
@@ -94,19 +96,16 @@ class grPathSeg : public grShape
    * addToPin
    * removeFromPin
    */
-  bool hasPin() const override
-  {
-    return (owner) && (owner->typeId() == grcPin);
-  }
+  bool hasPin() const override { return owner_ && owner_->typeId() == grcPin; }
 
-  grPin* getPin() const override { return reinterpret_cast<grPin*>(owner); }
+  grPin* getPin() const override { return reinterpret_cast<grPin*>(owner_); }
 
   void addToPin(grPin* in) override
   {
-    owner = reinterpret_cast<frBlockObject*>(in);
+    owner_ = reinterpret_cast<frBlockObject*>(in);
   }
 
-  void removeFromPin() override { owner = nullptr; }
+  void removeFromPin() override { owner_ = nullptr; }
 
   /* from grConnFig
    * hasNet
@@ -122,57 +121,63 @@ class grPathSeg : public grShape
    * setChild
    * setParent
    */
-  bool hasNet() const override
-  {
-    return (owner) && (owner->typeId() == frcNet);
-  }
+  bool hasNet() const override { return owner_ && owner_->typeId() == frcNet; }
   bool hasGrNet() const override
   {
-    return (owner) && (owner->typeId() == grcNet);
+    return owner_ && owner_->typeId() == grcNet;
   }
-  frNet* getNet() const override { return reinterpret_cast<frNet*>(owner); }
-  grNet* getGrNet() const override { return reinterpret_cast<grNet*>(owner); }
-  frNode* getChild() const override { return reinterpret_cast<frNode*>(child); }
+  frNet* getNet() const override { return reinterpret_cast<frNet*>(owner_); }
+  grNet* getGrNet() const override { return reinterpret_cast<grNet*>(owner_); }
+  frNode* getChild() const override
+  {
+    return reinterpret_cast<frNode*>(child_);
+  }
   frNode* getParent() const override
   {
-    return reinterpret_cast<frNode*>(parent);
+    return reinterpret_cast<frNode*>(parent_);
   }
   grNode* getGrChild() const override
   {
-    return reinterpret_cast<grNode*>(child);
+    return reinterpret_cast<grNode*>(child_);
   }
   grNode* getGrParent() const override
   {
-    return reinterpret_cast<grNode*>(parent);
+    return reinterpret_cast<grNode*>(parent_);
   }
 
-  void addToNet(frBlockObject* in) override { owner = in; }
+  void addToNet(frBlockObject* in) override { owner_ = in; }
 
-  void removeFromNet() override { owner = nullptr; }
+  void removeFromNet() override { owner_ = nullptr; }
 
-  void setChild(frBlockObject* in) override { child = in; }
+  void setChild(frBlockObject* in) override { child_ = in; }
 
-  void setParent(frBlockObject* in) override { parent = in; }
+  void setParent(frBlockObject* in) override { parent_ = in; }
 
   /* from grFig
    * getBBox
    */
   // needs to be updated
-  Rect getBBox() const override
+  odb::Rect getBBox() const override
   {
-    return Rect(begin.x(), begin.y(), end.x(), end.y());
+    return odb::Rect(begin_.x(), begin_.y(), end_.x(), end_.y());
   }
 
-  void setIter(frListIter<std::unique_ptr<grShape>>& in) override { iter = in; }
-  frListIter<std::unique_ptr<grShape>> getIter() const override { return iter; }
+  void setIter(frListIter<std::unique_ptr<grShape>>& in) override
+  {
+    iter_ = in;
+  }
+  frListIter<std::unique_ptr<grShape>> getIter() const override
+  {
+    return iter_;
+  }
 
  protected:
-  Point begin;
-  Point end;
-  frLayerNum layer{0};
-  frBlockObject* child{nullptr};
-  frBlockObject* parent{nullptr};
-  frBlockObject* owner{nullptr};
-  frListIter<std::unique_ptr<grShape>> iter;
+  odb::Point begin_;
+  odb::Point end_;
+  frLayerNum layer_{0};
+  frBlockObject* child_{nullptr};
+  frBlockObject* parent_{nullptr};
+  frBlockObject* owner_{nullptr};
+  frListIter<std::unique_ptr<grShape>> iter_;
 };
 }  // namespace drt

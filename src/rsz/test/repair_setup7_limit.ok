@@ -14,6 +14,7 @@ Optimization config:
 -keep_sizing_vt:                    false
 -set_early_sizing_cap_ratio:        unset
 -set_early_buffer_sizing_cap_ratio: unset
+-disable_buffer_pruning:            false
 *******************************************
 worst slack max -1.95
 [INFO RSZ-0100] Repair move sequence: SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
@@ -27,7 +28,7 @@ worst slack max -1.95
     final |       0 |      12 |        3 |      0 |     0 |   +11.0% |   -0.919 |       -3.1 |      6 | r2/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 3 buffers.
-[INFO RSZ-0051] Resized 12 instances, 12 sized up, 0 sized down.
+[INFO RSZ-0051] Resized 12 instances: 12 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
 worst slack max -0.92

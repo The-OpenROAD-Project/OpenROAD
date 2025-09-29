@@ -4,6 +4,7 @@
 #pragma once
 
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace utl {
 class Logger;
@@ -18,7 +19,7 @@ using utl::Logger;
 class Finale
 {
  public:
-  void init(odb::dbDatabase* db, Logger* logger);
+  Finale(odb::dbDatabase* db, Logger* logger);
 
   void densityFill(const char* rules_filename, const odb::Rect& fill_area);
 

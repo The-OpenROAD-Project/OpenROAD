@@ -29,6 +29,7 @@
 
 #include <tcl.h>
 
+#include <cstdio>
 #include <cstdlib>
 #include <string>
 
@@ -116,12 +117,15 @@ std::string base64_decode(const char* encoded_strings[])
 void evalTclInit(Tcl_Interp* interp, const char* inits[])
 {
   std::string unencoded = base64_decode(inits);
-  if (Tcl_Eval(interp, unencoded.c_str()) != TCL_OK) {
+  Tcl_Obj* obj = Tcl_NewStringObj(unencoded.c_str(), unencoded.size());
+  Tcl_IncrRefCount(obj);
+  if (Tcl_EvalObjEx(interp, obj, 0) != TCL_OK) {
     Tcl_Eval(interp, "$errorInfo");
     const char* tcl_err = Tcl_GetStringResult(interp);
     fprintf(stderr, "Error: TCL init script: %s.\n", tcl_err);
     exit(1);
   }
+  Tcl_DecrRefCount(obj);
 }
 
 }  // namespace utl

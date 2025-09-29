@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include <boost/polygon/polygon.hpp>
 #include <string>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/defout.h"
+#include "odb/geom.h"
 
 odb::dbLib* read_lef(odb::dbDatabase* db, const char* path);
 
@@ -20,7 +22,7 @@ odb::dbChip* read_def(odb::dbTech* tech, std::string path);
 
 int write_def(odb::dbBlock* block,
               const char* path,
-              odb::defout::Version version = odb::defout::Version::DEF_5_8);
+              odb::DefOut::Version version = odb::DefOut::Version::DEF_5_8);
 
 odb::dbDatabase* read_db(odb::dbDatabase* db, const char* db_path);
 

@@ -4,7 +4,11 @@
 #include "rcx/grids.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cstdio>
+#include <cstdlib>
+
+#include "odb/db.h"
 
 namespace rcx {
 
@@ -2308,7 +2312,7 @@ void GridTable::dumpTrackCounts(FILE* fp)
           texpand,
           ttsubtn);
 }
-GridTable::GridTable(Rect* bb,
+GridTable::GridTable(odb::Rect* bb,
                      uint rowCnt,
                      uint colCnt,
                      uint* pitch,

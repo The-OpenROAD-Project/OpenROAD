@@ -2,15 +2,21 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <deque>
 #include <iostream>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <set>
 #include <utility>
 #include <vector>
 
-#include "FlexGR.h"
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
+#include "gr/FlexGR.h"
+#include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 
 namespace drt {
@@ -27,7 +33,7 @@ void FlexGR::genSTTopology_FLUTE(std::vector<frNode*>& pinGCellNodes,
   std::vector<int> ys(degree);
   for (int i = 0; i < (int) pinGCellNodes.size(); i++) {
     auto gcellNode = pinGCellNodes[i];
-    Point loc = gcellNode->getLoc();
+    odb::Point loc = gcellNode->getLoc();
     xs[i] = loc.x();
     ys[i] = loc.y();
   }
@@ -35,7 +41,7 @@ void FlexGR::genSTTopology_FLUTE(std::vector<frNode*>& pinGCellNodes,
   stt_builder_->setAlpha(0);
   auto fluteTree = stt_builder_->makeSteinerTree(xs, ys, 0);
 
-  std::map<Point, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
+  std::map<odb::Point, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
   frOrderedIdMap<frNode*, frOrderedIdSet<frNode*>> adjacencyList;
 
   for (auto pinNode : pinGCellNodes) {
@@ -47,8 +53,8 @@ void FlexGR::genSTTopology_FLUTE(std::vector<frNode*>& pinGCellNodes,
     auto& branch1 = fluteTree.branch[i];
     auto& branch2 = fluteTree.branch[branch1.n];
 
-    Point bp(branch1.x, branch1.y);
-    Point ep(branch2.x, branch2.y);
+    odb::Point bp(branch1.x, branch1.y);
+    odb::Point ep(branch2.x, branch2.y);
 
     if (bp == ep) {
       continue;
@@ -149,8 +155,8 @@ void FlexGR::genMSTTopology_PD(std::vector<frNode*>& nodes, double alpha)
     for (int j = i; j < (int) nodes.size(); j++) {
       auto node1 = nodes[i];
       auto node2 = nodes[j];
-      Point loc1 = node1->getLoc();
-      Point loc2 = node2->getLoc();
+      odb::Point loc1 = node1->getLoc();
+      odb::Point loc2 = node2->getLoc();
       int dist = abs(loc2.x() - loc1.x()) + abs(loc2.y() - loc1.y());
       dists[i][j] = dist;
       dists[j][i] = dist;
@@ -326,7 +332,7 @@ unsigned FlexGR::genSTTopology_HVW_levelOvlp(frNode* currNode,
       vertIntvMaps;
 
   std::pair<frCoord, frCoord> horzIntv, vertIntv;
-  Point turnLoc;
+  odb::Point turnLoc;
 
   // connection to parent if exists
   auto parent = currNode->getParent();
@@ -384,28 +390,28 @@ void FlexGR::genSTTopology_HVW_levelOvlp_helper(
     bool isCurrU,
     std::pair<frCoord, frCoord>& horzIntv,
     std::pair<frCoord, frCoord>& vertIntv,
-    Point& turnLoc)
+    odb::Point& turnLoc)
 {
-  Point parentLoc = parent->getLoc();
-  Point childLoc = child->getLoc();
+  odb::Point parentLoc = parent->getLoc();
+  odb::Point childLoc = child->getLoc();
 
   if (isCurrU) {
     if ((childLoc.x() >= parentLoc.x() && childLoc.y() >= parentLoc.y())
         || (childLoc.x() <= parentLoc.x() && childLoc.y() <= parentLoc.y())) {
-      turnLoc = Point(std::min(childLoc.x(), parentLoc.x()),
-                      std::max(childLoc.y(), parentLoc.y()));
+      turnLoc = odb::Point(std::min(childLoc.x(), parentLoc.x()),
+                           std::max(childLoc.y(), parentLoc.y()));
     } else {
-      turnLoc = Point(std::max(childLoc.x(), parentLoc.x()),
-                      std::max(childLoc.y(), parentLoc.y()));
+      turnLoc = odb::Point(std::max(childLoc.x(), parentLoc.x()),
+                           std::max(childLoc.y(), parentLoc.y()));
     }
   } else {
     if ((childLoc.x() >= parentLoc.x() && childLoc.y() >= parentLoc.y())
         || (childLoc.x() <= parentLoc.x() && childLoc.y() <= parentLoc.y())) {
-      turnLoc = Point(std::max(childLoc.x(), parentLoc.x()),
-                      std::min(childLoc.y(), parentLoc.y()));
+      turnLoc = odb::Point(std::max(childLoc.x(), parentLoc.x()),
+                           std::min(childLoc.y(), parentLoc.y()));
     } else {
-      turnLoc = Point(std::min(childLoc.x(), parentLoc.x()),
-                      std::min(childLoc.y(), parentLoc.y()));
+      turnLoc = odb::Point(std::min(childLoc.x(), parentLoc.x()),
+                           std::min(childLoc.y(), parentLoc.y()));
     }
   }
 
@@ -476,7 +482,7 @@ void FlexGR::genSTTopology_build_tree(std::vector<frNode*>& pinNodes,
                                       std::vector<frNode*>& steinerNodes)
 {
   std::map<frCoord, boost::icl::interval_set<frCoord>> horzIntvs, vertIntvs;
-  std::map<Point, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
+  std::map<odb::Point, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
 
   genSTTopology_build_tree_mergeSeg(pinNodes, isU, horzIntvs, vertIntvs);
 
@@ -513,7 +519,7 @@ void FlexGR::genSTTopology_build_tree_mergeSeg(
     std::map<frCoord, boost::icl::interval_set<frCoord>>& horzIntvs,
     std::map<frCoord, boost::icl::interval_set<frCoord>>& vertIntvs)
 {
-  Point turnLoc;
+  odb::Point turnLoc;
   std::pair<frCoord, frCoord> horzIntv, vertIntv;
   for (int i = 1; i < (int) pinNodes.size(); i++) {
     genSTTopology_HVW_levelOvlp_helper(pinNodes[i],
@@ -535,10 +541,10 @@ void FlexGR::genSTTopology_build_tree_mergeSeg(
 
 void FlexGR::genSTTopology_build_tree_splitSeg(
     std::vector<frNode*>& pinNodes,
-    std::map<Point, frNode*>& pinGCell2Nodes,
+    std::map<odb::Point, frNode*>& pinGCell2Nodes,
     std::map<frCoord, boost::icl::interval_set<frCoord>>& horzIntvs,
     std::map<frCoord, boost::icl::interval_set<frCoord>>& vertIntvs,
-    std::map<Point, frNode*>& steinerGCell2Nodes,
+    std::map<odb::Point, frNode*>& steinerGCell2Nodes,
     std::vector<frNode*>& steinerNodes)
 {
   std::map<frCoord, std::set<std::pair<frCoord, frCoord>>> horzSegs, vertSegs;
@@ -643,8 +649,8 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
   // from horz segs
   for (auto& [trackIdx, intvs] : horzSegs) {
     for (auto& intv : intvs) {
-      Point bp(intv.first, trackIdx);
-      Point ep(intv.second, trackIdx);
+      odb::Point bp(intv.first, trackIdx);
+      odb::Point ep(intv.second, trackIdx);
       if (pinGCell2Nodes.find(bp) == pinGCell2Nodes.end()) {
         if (steinerGCell2Nodes.find(bp) == steinerGCell2Nodes.end()) {
           // add steiner
@@ -674,8 +680,8 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
   // from vert segs
   for (auto& [trackIdx, intvs] : vertSegs) {
     for (auto& intv : intvs) {
-      Point bp(trackIdx, intv.first);
-      Point ep(trackIdx, intv.second);
+      odb::Point bp(trackIdx, intv.first);
+      odb::Point ep(trackIdx, intv.second);
       if (pinGCell2Nodes.find(bp) == pinGCell2Nodes.end()) {
         if (steinerGCell2Nodes.find(bp) == steinerGCell2Nodes.end()) {
           // add steiner
@@ -707,8 +713,8 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
   // from horz segs
   for (auto& [trackIdx, intvs] : horzSegs) {
     for (auto& intv : intvs) {
-      Point bp(intv.first, trackIdx);
-      Point ep(intv.second, trackIdx);
+      odb::Point bp(intv.first, trackIdx);
+      odb::Point ep(intv.second, trackIdx);
       frNode* bpNode = nullptr;
       frNode* epNode = nullptr;
       if (pinGCell2Nodes.find(bp) != pinGCell2Nodes.end()) {
@@ -737,8 +743,8 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
   // from vert segs
   for (auto& [trackIdx, intvs] : vertSegs) {
     for (auto& intv : intvs) {
-      Point bp(trackIdx, intv.first);
-      Point ep(trackIdx, intv.second);
+      odb::Point bp(trackIdx, intv.first);
+      odb::Point ep(trackIdx, intv.second);
       frNode* bpNode = nullptr;
       frNode* epNode = nullptr;
       if (pinGCell2Nodes.find(bp) != pinGCell2Nodes.end()) {

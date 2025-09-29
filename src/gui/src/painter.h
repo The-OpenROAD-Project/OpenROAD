@@ -3,7 +3,10 @@
 
 #pragma once
 
+#include <QColor>
 #include <QPainter>
+#include <QString>
+#include <algorithm>
 #include <cmath>
 #include <string>
 #include <vector>

@@ -4,10 +4,14 @@
 #include "renderer.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "domain.h"
 #include "grid.h"
+#include "gui/gui.h"
+#include "odb/dbTypes.h"
 #include "pdn/PdnGen.hh"
 #include "straps.h"
 
@@ -98,7 +102,7 @@ void PDNRenderer::update()
                                    channel.target->getName(),
                                    nets);
 
-        repair_.push_back(channel);
+        repair_.push_back(std::move(channel));
       }
     }
   }

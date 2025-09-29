@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
+#include <cstdint>
+
 #include "dpl/Opendp.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 
 // My stuff.
+#include "graphics/DplObserver.h"
 #include "legalize_shift.h"
 #include "optimization/detailed.h"
 #include "optimization/detailed_manager.h"
@@ -84,6 +87,7 @@ void Opendp::improvePlacement(const int seed,
   // a bug in my code somewhere.
   ShiftLegalizer lg;
   lg.legalize(mgr);
+  setFixedGridCells();
 
   // Detailed improvement.  Runs through a number of different
   // optimizations aimed at wirelength improvement.  The last
@@ -92,26 +96,30 @@ void Opendp::improvePlacement(const int seed,
   // Everything done through a script string.
 
   DetailedParams dtParams;
-  dtParams.script_ = "";
+  dtParams.script = "";
   // Maximum independent set matching.
-  dtParams.script_ += "mis -p 10 -t 0.005;";
+  dtParams.script += "mis -p 10 -t 0.005;";
   // Global swaps.
-  dtParams.script_ += "gs -p 10 -t 0.005;";
+  dtParams.script += "gs -p 10 -t 0.005;";
   // Vertical swaps.
-  dtParams.script_ += "vs -p 10 -t 0.005;";
+  dtParams.script += "vs -p 10 -t 0.005;";
   // Small reordering.
-  dtParams.script_ += "ro -p 10 -t 0.005;";
+  dtParams.script += "ro -p 10 -t 0.005;";
   // Random moves and swaps with hpwl as a cost function.  Use
   // random moves and hpwl objective right now.
-  dtParams.script_ += "default -p 5 -f 20 -gen rng -obj hpwl -cost (hpwl);";
+  dtParams.script += "default -p 5 -f 20 -gen rng -obj hpwl -cost (hpwl);";
 
   if (disallow_one_site_gaps) {
-    dtParams.script_ += "disallow_one_site_gaps;";
+    dtParams.script += "disallow_one_site_gaps;";
   }
 
   // Run the script.
   Detailed dt(dtParams);
   dt.improve(mgr);
+
+  if (debug_observer_) {
+    debug_observer_->endPlacement();
+  }
 
   // Write solution back.
   updateDbInstLocations();

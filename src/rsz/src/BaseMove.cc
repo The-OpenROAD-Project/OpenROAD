@@ -3,6 +3,27 @@
 
 #include "BaseMove.hh"
 
+#include <algorithm>
+#include <array>
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <tuple>
+
+#include "db_sta/dbSta.hh"
+#include "odb/db.h"
+#include "odb/geom.h"
+#include "sta/ArcDelayCalc.hh"
+#include "sta/Delay.hh"
+#include "sta/Graph.hh"
+#include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/TimingArc.hh"
+#include "sta/Transition.hh"
+#include "sta/Vector.hh"
+#include "utl/Logger.h"
+
 namespace rsz {
 
 using std::max;
@@ -47,6 +68,7 @@ using TgtSlews = std::array<Slew, RiseFall::index_count>;
 BaseMove::BaseMove(Resizer* resizer)
 {
   resizer_ = resizer;
+  estimate_parasitics_ = resizer_->getEstimateParasitics();
   logger_ = resizer_->logger_;
   network_ = resizer_->network_;
   db_ = resizer_->db_;
@@ -566,16 +588,6 @@ bool BaseMove::estimateInputSlewImpact(Instance* instance,
   return true;
 }
 
-bool BaseMove::hasPort(const Net* net)
-{
-  if (!net) {
-    return false;
-  }
-
-  dbNet* db_net = db_network_->staToDb(net);
-  return !db_net->getBTerms().empty();
-}
-
 void BaseMove::getBufferPins(Instance* buffer, Pin*& ip, Pin*& op)
 {
   ip = nullptr;
@@ -674,8 +686,10 @@ bool BaseMove::replaceCell(Instance* inst, const LibertyCell* replacement)
     resizer_->designAreaIncr(area(replacement_master));
 
     // Legalize the position of the instance in case it leaves the die
-    if (resizer_->getParasiticsSrc() == ParasiticsSrc::global_routing
-        || resizer_->getParasiticsSrc() == ParasiticsSrc::detailed_routing) {
+    if (estimate_parasitics_->getParasiticsSrc()
+            == est::ParasiticsSrc::global_routing
+        || estimate_parasitics_->getParasiticsSrc()
+               == est::ParasiticsSrc::detailed_routing) {
       opendp_->legalCellPos(db_network_->staToDb(inst));
     }
 
@@ -700,6 +714,4 @@ vector<const Pin*> BaseMove::getFanouts(const Instance* inst)
   return fanouts;
 }
 
-////////////////////////////////////////////////////////////////
-// namespace rsz
 }  // namespace rsz

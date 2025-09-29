@@ -2,9 +2,11 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
+#include <istream>
+#include <ostream>
 
+#include "boost/archive/binary_iarchive.hpp"
+#include "boost/archive/binary_oarchive.hpp"
 #include "frDesign.h"
 #include "serialization.h"
 
@@ -36,7 +38,7 @@ struct frOArchive : OutputArchive
 struct frIArchive : InputArchive
 {
   frIArchive(std::istream& os, unsigned flags = 0)
-      : InputArchive(os, flags), design(nullptr)
+      : InputArchive(os, flags), design_(nullptr)
   {
   }
 
@@ -46,17 +48,17 @@ struct frIArchive : InputArchive
   {
     InputArchive::load(t);
   }
-  frDesign* getDesign() const { return design; }
-  void setDesign(frDesign* in) { design = in; }
+  frDesign* getDesign() const { return design_; }
+  void setDesign(frDesign* in) { design_ = in; }
 
  private:
-  frDesign* design;
+  frDesign* design_;
 };
 }  // namespace drt
 
 // template implementations
-#include <boost/archive/impl/archive_serializer_map.ipp>
-#include <boost/archive/impl/basic_binary_iarchive.ipp>
-#include <boost/archive/impl/basic_binary_iprimitive.ipp>
-#include <boost/archive/impl/basic_binary_oarchive.ipp>
-#include <boost/archive/impl/basic_binary_oprimitive.ipp>
+#include "boost/archive/impl/archive_serializer_map.ipp"
+#include "boost/archive/impl/basic_binary_iarchive.ipp"
+#include "boost/archive/impl/basic_binary_iprimitive.ipp"
+#include "boost/archive/impl/basic_binary_oarchive.ipp"
+#include "boost/archive/impl/basic_binary_oprimitive.ipp"

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include "odb/db.h"
+#include "odb/dbWireCodec.h"
+#include "odb/geom.h"
 #include "rcx/extRCap.h"
 #include "rcx/extRulesPattern.h"
 #include "rcx/extSpef.h"
@@ -11,8 +14,10 @@
 #endif
 
 #include <algorithm>
-#include <map>
-#include <vector>
+#include <cassert>
+#include <cstdio>
+#include <cstring>
+#include <string>
 
 #include "utl/Logger.h"
 
@@ -778,9 +783,9 @@ uint extMain::DefWires(extMainOptions* opt)
 
   opt->_tech = _tech;
 
-  dbChip* chip = dbChip::create(_db);
+  dbChip* chip = dbChip::create(_db, _tech);
   assert(chip);
-  _block = dbBlock::create(chip, opt->_name, nullptr, '/');
+  _block = dbBlock::create(chip, opt->_name, '/');
   assert(_block);
 
   _block->setBusDelimiters('[', ']');

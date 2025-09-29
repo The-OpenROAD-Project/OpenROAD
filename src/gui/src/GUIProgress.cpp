@@ -6,10 +6,16 @@
 #include <QApplication>
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QStatusBar>
+#include <QString>
 #include <QVBoxLayout>
+#include <QWidget>
+#include <algorithm>
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "mainWindow.h"
 #include "utl/Logger.h"

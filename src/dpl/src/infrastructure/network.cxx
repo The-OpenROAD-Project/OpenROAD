@@ -3,12 +3,19 @@
 
 #include "network.h"
 
+#include <algorithm>
+#include <cstddef>
+#include <limits>
+#include <map>
 #include <memory>
+#include <utility>
+#include <vector>
 
 #include "PlacementDRC.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 namespace dpl {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -152,19 +159,19 @@ namespace {
  * child segments. It first sorts the segs vector and merges intersecting ones.
  * Then it calculates the difference and returns a list of segments.
  */
-std::vector<Rect> difference(const Rect& parent_segment,
-                             const std::vector<Rect>& segs)
+std::vector<odb::Rect> difference(const odb::Rect& parent_segment,
+                                  const std::vector<odb::Rect>& segs)
 {
   if (segs.empty()) {
     return {parent_segment};
   }
   bool is_horizontal = parent_segment.yMin() == parent_segment.yMax();
-  std::vector<Rect> sorted_segs = segs;
+  std::vector<odb::Rect> sorted_segs = segs;
   // Sort segments by start coordinate
   std::sort(
       sorted_segs.begin(),
       sorted_segs.end(),
-      [is_horizontal](const Rect& a, const Rect& b) {
+      [is_horizontal](const odb::Rect& a, const odb::Rect& b) {
         return (is_horizontal ? a.xMin() < b.xMin() : a.yMin() < b.yMin());
       });
   // Merge overlapping segments
@@ -183,8 +190,8 @@ std::vector<Rect> difference(const Rect& parent_segment,
       = is_horizontal ? parent_segment.xMin() : parent_segment.yMin();
   const int end = is_horizontal ? parent_segment.xMax() : parent_segment.yMax();
   int current_pos = start;
-  std::vector<Rect> result;
-  for (const Rect& seg : sorted_segs) {
+  std::vector<odb::Rect> result;
+  for (const odb::Rect& seg : sorted_segs) {
     int seg_start = is_horizontal ? seg.xMin() : seg.yMin();
     int seg_end = is_horizontal ? seg.xMax() : seg.yMax();
     if (seg_start > current_pos) {
@@ -216,10 +223,10 @@ std::vector<Rect> difference(const Rect& parent_segment,
   return result;
 }
 
-Rect getBoundarySegment(const Rect& bbox,
-                        const odb::dbMasterEdgeType::EdgeDir dir)
+odb::Rect getBoundarySegment(const odb::Rect& bbox,
+                             const odb::dbMasterEdgeType::EdgeDir dir)
 {
-  Rect segment(bbox);
+  odb::Rect segment(bbox);
   switch (dir) {
     case odb::dbMasterEdgeType::RIGHT:
       segment.set_xlo(bbox.xMax());
@@ -292,7 +299,7 @@ Master* Network::addMaster(odb::dbMaster* db_master,
   masters_.emplace_back(std::move(umaster));
   master_to_idx_[db_master] = id;
   master->setDbMaster(db_master);
-  Rect bbox;
+  odb::Rect bbox;
   db_master->getPlacementBoundary(bbox);
   master->setBBox(bbox);
   master->setMultiRow(grid->isMultiHeight(db_master));
@@ -307,11 +314,11 @@ Master* Network::addMaster(odb::dbMaster* db_master,
       == odb::dbMasterType::CORE_SPACER) {  // Skip fillcells
     return master;
   }
-  std::map<odb::dbMasterEdgeType::EdgeDir, std::vector<Rect>> typed_segs;
+  std::map<odb::dbMasterEdgeType::EdgeDir, std::vector<odb::Rect>> typed_segs;
   int num_rows = grid->gridHeight(db_master).v;
   for (auto edge : db_master->getEdgeTypes()) {
     auto dir = edge->getEdgeDir();
-    Rect edge_rect = getBoundarySegment(bbox, dir);
+    odb::Rect edge_rect = getBoundarySegment(bbox, dir);
     if (dir == odb::dbMasterEdgeType::TOP
         || dir == odb::dbMasterEdgeType::BOTTOM) {
       if (edge->getRangeBegin() != -1) {

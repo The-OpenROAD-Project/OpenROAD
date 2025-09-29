@@ -79,7 +79,7 @@ set_io_pin_constraint
 | ----- | ----- |
 | `-direction` | Pin direction (`input`, `output`, `inout`, or `feedthrough`). |
 | `-pin_names` | List of names. Only one of (`-direction`, `-pin_names`) should be used in a single call for the `set_io_pin_constraint` command. |
-| `-region` | Syntax is `-region edge:interval`. The `edge` values are (`top\|bottom\|left\|right`). The `interval` can be the whole edge with the wildcard `*` value or a range of values. |
+| `-region` | Syntax is `-region edge:interval`. The `edge` values are (`top\|bottom\|left\|right`). The `interval` can be the whole edge with the wildcard `*` value or a range of values `begin-end` in microns. For example, in `-region right:15-60` the interval is on the right edge from 15 microns to 60 microns.|
 | `-mirrored_pins` | List of pins that sets pairs of pins that will be symmetrically placed in the vertical or the horizontal edges. The number of pins in this list **must be even**. For example, in `set_io_pin_constraint -mirrored_pins {pin1 pin2 pin3 pin4 pin5 pin6}`, the pins `pin1` and `pin2` will be placed symmetrically to each other. Same for `pin3` and `pin4`, and for `pin5` and `pin6`. |
 | `-group` | Flag places together on the die boundary the pin list defined in `-pin_names,` similar to the `-group_pins` option on the `place_pins` command. |
 | `-order` | Flag places the pins ordered in ascending x/y position and must be used only when `-group` is also used. |
@@ -255,15 +255,11 @@ place_pin
 
 The `place_pins` command places all pins together. Use the following command to perform pin placement:
 
-Developer arguments:
-- `-random`, `-random_seed`
 
 ```tcl
 place_pins 
     -hor_layers h_layers
     -ver_layers v_layers
-    [-random_seed seed]
-    [-random]
     [-corner_avoidance length]
     [-min_distance distance]
     [-min_distance_in_tracks]
@@ -293,13 +289,6 @@ value, or a range of values. For example, in `place_pins -hor_layers metal2
 -ver_layers metal3 -exclude top:* -exclude right:15-60.5 -exclude left:*-50`
 three intervals are excluded: the whole top edge, the right edge from 15
 microns to 60.5 microns, and the left edge from its beginning to 50 microns.
-
-#### Developer Arguments
-
-| Switch Name | Description |
-| ----- | ----- |
-| `-random_seed` | Specify the seed for random operations. |
-| `-random` | When this flag is enabled, the pin placement is random. |
 
 ### Write Pin Placement
 

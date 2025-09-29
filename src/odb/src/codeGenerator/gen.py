@@ -17,16 +17,19 @@ from helper import (
     components,
     get_class,
     get_functional_name,
+    get_plural_name,
     get_hash_table_type,
     get_ref_type,
     get_table_name,
-    get_template_type,
+    is_template_type,
+    get_template_types,
     is_bit_fields,
     is_hash_table,
     is_pass_by_ref,
     is_set_by_ref,
     is_ref,
     std,
+    fnv1a_32,
 )
 
 # map types to their header if it isn't equal to their name
@@ -54,9 +57,9 @@ def make_parent_field(parent, relation):
     field["table"] = True
     field["dbSetGetter"] = True
     field["components"] = [field["name"]]
-    field["flags"] = ["cmp", "serial", "diff", "no-set", "get"] + relation.get(
-        "flags", []
-    )
+    field["flags"] = ["no-set"] + relation.get("flags", [])
+    if "page_size" in relation:
+        field["page_size"] = relation["page_size"]
     if "schema" in relation:
         field["schema"] = relation["schema"]
 
@@ -71,10 +74,12 @@ def make_parent_hash_field(parent, relation, parent_field):
     """Adds a hash table field to the parent of a hashed relationsip"""
     field = {}
     field["name"] = parent_field["name"][:-4] + "hash_"
-    field["type"] = "dbHashTable<_" + relation["child"] + ">"
+    page_size_part = f", {relation['page_size']}" if "page_size" in relation else ""
+    field["type"] = f"dbHashTable<_{relation['child']}{page_size_part}>"
     field["components"] = [field["name"]]
     field["table_name"] = parent_field["name"]
-    field["flags"] = ["cmp", "serial", "diff", "no-set", "get"]
+    field["flags"] = ["no-set"]
+    field["flags"].extend(relation.get("flags", []))
     parent["fields"].append(field)
     if "dbHashTable.h" not in parent["h_includes"]:
         parent["h_includes"].append("dbHashTable.h")
@@ -86,7 +91,8 @@ def make_child_next_field(child, relation):
     """Adds a next entry field to the child of a hashed relationsip"""
     inChildNextEntry = {"name": "_next_entry"}
     inChildNextEntry["type"] = "dbId<_" + relation["child"] + ">"
-    inChildNextEntry["flags"] = ["cmp", "serial", "diff", "private", "no-deep"]
+    inChildNextEntry["flags"] = ["private"]
+    inChildNextEntry["flags"].extend(relation.get("flags", []))
     child["fields"].append(inChildNextEntry)
     logging.debug(f"Add hash field {inChildNextEntry['name']} to {relation['child']}")
 
@@ -122,10 +128,12 @@ def add_field_attributes(field, klass, flags_struct, schema):
     field["isHashTable"] = is_hash_table(field["type"])
     field["hashTableType"] = get_hash_table_type(field["type"])
     field["isPassByRef"] = is_pass_by_ref(field["type"])
-    field["isSetByRef"] = is_set_by_ref(field["type"])
+    field.setdefault("flags", [])
+    field["isSetByRef"] = "set-const-ref" in field["flags"] or is_set_by_ref(
+        field["type"]
+    )
     if "argument" not in field:
         field["argument"] = field["name"].strip("_")
-    field.setdefault("flags", [])
     if "private" in field["flags"]:
         field["flags"].append("no-set")
         field["flags"].append("no-get")
@@ -135,33 +143,32 @@ def add_field_attributes(field, klass, flags_struct, schema):
     #
     # This needs documentation
     #
-    template_class_name = None
-    tmp = get_template_type(field["type"])
-    while tmp is not None:
-        template_class_name = tmp
-        tmp = get_template_type(tmp)
-
-    if template_class_name is not None:
-        if (
-            template_class_name not in klass["declared_classes"]
-            and template_class_name not in std
-            and "no-template" not in field["flags"]
-            and klass["name"] != template_class_name[1:]
-            and klass["name"] + "::" != template_class_name[0 : len(klass["name"]) + 2]
-        ):
-            klass["declared_classes"].append(template_class_name)
+    if is_template_type(field["type"]):
+        for template_class_name in get_template_types(field["type"]):
+            if (
+                template_class_name not in klass["declared_classes"]
+                and template_class_name not in std
+                and not template_class_name.isdigit()
+                and template_class_name != "false"
+                and template_class_name != "true"
+                and "no-template" not in field["flags"]
+                and klass["name"] != template_class_name[1:]
+                and klass["name"] + "::"
+                != template_class_name[0 : len(klass["name"]) + 2]
+            ):
+                klass["declared_classes"].append(template_class_name)
     ####
     ####
     ####
     if field.get("table", False):
         klass["hasTables"] = True
         if field["type"].startswith("db"):
-            field["functional_name"] = f"{field['type'][2:]}s"
+            field["functional_name"] = get_plural_name(field["type"][2:])
         else:
-            field["functional_name"] = f"{field['type']}s"
+            field["functional_name"] = get_plural_name(field["type"])
         field["components"] = [field["name"]]
     elif field["isHashTable"]:
-        field["functional_name"] = f"{field['type'][2:]}s"
+        field["functional_name"] = get_plural_name(field["type"][2:])
     else:
         field["functional_name"] = get_functional_name(field["name"])
         field["components"] = components(klass["structs"], field["name"], field["type"])
@@ -261,6 +268,52 @@ def generate_relations(schema):
             make_child_next_field(child, relation)
 
 
+def add_include(klass, key, include, cpp=False, sys=False):
+    for field in klass["fields"]:
+        if key in field["type"]:
+            if sys:
+                klass["h_sys_includes"].insert(0, include)
+            else:
+                klass["h_includes"].insert(0, include)
+
+            if cpp:
+                if sys:
+                    klass["cpp_sys_includes"].insert(0, include)
+                else:
+                    klass["cpp_includes"].insert(0, include)
+            break
+
+
+def preprocess_klass(klass):
+    klass["declared_classes"].insert(0, "dbIStream")
+    klass["declared_classes"].insert(1, "dbOStream")
+    if klass["name"] != "dbDatabase":
+        klass["declared_classes"].insert(2, "_dbDatabase")
+        klass["cpp_includes"].append("dbDatabase.h")
+    klass["h_includes"].insert(0, "dbCore.h")
+    klass["h_includes"].insert(1, "odb/odb.h")
+    name = klass["name"]
+    klass["cpp_includes"].extend(["dbTable.h", "dbTable.hpp", "odb/db.h", f"{name}.h"])
+    if klass["hasBitFields"]:
+        klass["cpp_sys_includes"].extend(["cstdint", "cstring"])
+    add_include(klass, "dbObject", "dbCore.h", cpp=True)
+    add_include(klass, "dbId<", "odb/dbId.h")
+    add_include(klass, "dbVector", "dbVector.h")
+    add_include(klass, "dbObjectType", "odb/dbObject.h", cpp=True)
+    add_include(klass, "tuple", "tuple", cpp=True, sys=True)
+    for field in klass["fields"]:
+        if field.get("table", False):
+            page_size_part = f", {field['page_size']}" if "page_size" in field else ""
+            # setting default value for table fields
+            this_or_db = "this" if klass["name"] == "dbDatabase" else "db"
+            field["default"] = (
+                f"new dbTable<_{field['type']}{page_size_part}>({this_or_db}, this, (GetObjTbl_t) &_{klass['name']}::getObjectTable, {field['type']}Obj)"
+            )
+            # setting table identifier for table fields
+            field["table_base_type"] = field["type"]
+            field["type"] = f"dbTable<_{field['type']}{page_size_part}>*"
+
+
 def generate(schema, env, includeDir, srcDir, keep_empty):
     """Generate generate code based on the schema and templates"""
     print("###################Code Generation Begin###################")
@@ -291,6 +344,7 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
     generate_relations(schema)
 
     to_be_merged = []
+    hash_dict = {}
     for klass in schema["classes"]:
         # Adding functional name to fields and extracting field components
         flags_struct = {
@@ -311,7 +365,20 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
                 if "odb/db.h" not in klass["h_includes"]:
                     klass["h_includes"].append("odb/db.h")
                 break
+        # Add hash to class
+        if "hash" not in klass:
+            hash_value = fnv1a_32(klass["name"])
+        else:
+            hash_value = int(klass["hash"], 16)
 
+        if hash_value in hash_dict:
+            # Collision detected, error out
+            raise ValueError(
+                f"Collision detected for {klass['name']} with {hash_dict[hash_value]}"
+            )
+        hash_dict[hash_value] = klass["name"]
+        klass["hash"] = f"0x{hash_value:08X}"
+        preprocess_klass(klass)
         # Generating files
         for template_file in ["impl.h", "impl.cpp"]:
             template = env.get_template(template_file)

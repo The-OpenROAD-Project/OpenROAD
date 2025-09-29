@@ -12,6 +12,7 @@
 #include "dbScanPin.h"
 #include "dbVector.h"
 #include "odb/db.h"
+#include "odb/dbId.h"
 #include "odb/odb.h"
 
 namespace odb {
@@ -37,6 +38,8 @@ class _dbScanInst : public _dbObject
   dbId<dbInst> inst_;
   std::string scan_clock_;
   uint clock_edge_;
+  dbId<_dbScanInst> _next_list_scan_inst;
+  dbId<_dbScanInst> _prev_list_scan_inst;
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanInst& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbScanInst& obj);

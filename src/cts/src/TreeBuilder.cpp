@@ -3,17 +3,16 @@
 
 #include "TreeBuilder.h"
 
-#include <boost/polygon/polygon.hpp>
+#include <algorithm>
+#include <cassert>
 #include <cmath>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <limits>
-#include <map>
-#include <memory>
 #include <string>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "utl/Logger.h"
 
@@ -106,6 +105,17 @@ void TreeBuilder::initBlockages()
                 "{} blockages from hard placement blockages and placed macros "
                 "will be used.",
                 blockages_.size());
+}
+
+// Returns true if the tree has no sub-trees.
+bool TreeBuilder::isLeafTree()
+{
+  if (type_ == TreeType::MacroTree) {
+    // Because the register tree is a child of the macro tree
+    // but it is not a sub-tree ignore the first child.
+    return children_.size() == 1;
+  }
+  return children_.empty();
 }
 
 // Check if location (x, y) is legal by checking if

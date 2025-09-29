@@ -5,10 +5,11 @@
 
 #include <vector>
 
-#include "dbTypes.h"
-#include "geom.h"
-#include "odb.h"
-#include "odbDList.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
+#include "odb/odbDList.h"
+#include "utl/Logger.h"
 
 namespace odb {
 

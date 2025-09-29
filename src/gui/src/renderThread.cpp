@@ -3,16 +3,30 @@
 
 #include "renderThread.h"
 
+#include <QPainter>
 #include <QPainterPath>
 #include <QPolygon>
+#include <algorithm>
 #include <cmath>
+#include <exception>
+#include <iterator>
+#include <mutex>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "gui/gui.h"
 #include "layoutViewer.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "painter.h"
+#include "utl/Logger.h"
 #include "utl/timer.h"
 
 namespace gui {
@@ -1102,7 +1116,7 @@ void RenderThread::drawBlock(QPainter* painter,
   odb::Polygon die_area = block->getDieAreaPolygon();
 
   if (die_area.getEnclosingRect().area() > 0) {
-    QPolygon die_area_qpoly(die_area.getPoints().size());
+    QPolygon die_area_qpoly;
     for (const odb::Point& point : die_area.getPoints()) {
       die_area_qpoly << QPoint(point.getX(), point.getY());
     }
@@ -1707,7 +1721,7 @@ void RenderThread::drawIOPins(Painter& painter,
       } else {
         pin_specs.rect = odb::Rect();
       }
-      pin_text_spec.push_back(pin_specs);
+      pin_text_spec.push_back(std::move(pin_specs));
     }
   }
 

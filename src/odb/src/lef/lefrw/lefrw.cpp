@@ -31,10 +31,11 @@
 #pragma warning(disable : 4786)
 #endif
 
+#include <string.h>
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
 
 #ifndef WIN32
 #include <unistd.h>

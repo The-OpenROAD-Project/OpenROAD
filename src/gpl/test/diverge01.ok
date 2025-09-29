@@ -3,6 +3,7 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 294 components and 1656 component-terminals.
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
+[INFO GPL-0005] Execute conjugate gradient initial placement.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
@@ -28,21 +29,24 @@
 [INFO GPL-0028] Bin count (X, Y):          16 ,     16
 [INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
 [INFO GPL-0030] Number of bins:                    256
+[INFO GPL-0007] Execute nesterov global placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        1 |   0.9428 |  3.779352e+06 |   +0.00% |  1.15e-07 |      
-       10 |   0.2488 |  9.104801e+06 | +140.91% |  1.75e-07 |      
-       20 |   0.1744 |  6.548218e+06 |  -28.08% |  2.58e-07 |      
-       30 |   0.1429 |  6.017806e+06 |   -8.10% |  3.80e-07 |      
-       40 |   0.1363 |  5.822817e+06 |   -3.24% |  5.59e-07 |      
-       50 |   0.1027 |  5.774941e+06 |   -0.82% |  8.24e-07 |      
-[INFO GPL-1001] Finished with Overflow: 0.098411
+        0 |   0.9428 |  1.889676e+03 |   +0.00% |  1.15e-07 |      
+       10 |   0.2252 |  4.349466e+03 | +130.17% |  1.82e-07 |      
+       20 |   0.1706 |  3.226394e+03 |  -25.82% |  2.68e-07 |      
+       30 |   0.1493 |  2.989941e+03 |   -7.33% |  3.94e-07 |      
+       40 |   0.1338 |  2.910019e+03 |   -2.67% |  5.81e-07 |      
+       50 |   0.1026 |  2.888094e+03 |   -0.75% |  8.56e-07 |      
+       54 |   0.0984 |  2.888925e+03 |          |  1.04e-06 |      
+---------------------------------------------------------------
+[INFO GPL-1001] Global placement finished at iteration 54
 [INFO GPL-1002] Placed Cell Area              569.7720
 [INFO GPL-1003] Available Free Area           953.8760
 [INFO GPL-1004] Minimum Feasible Density        0.6000 (cell_area / free_area)
 [INFO GPL-1006]   Suggested Target Densities:
 [INFO GPL-1007]     - For 90% usage of free space: 0.6637
 [INFO GPL-1008]     - For 80% usage of free space: 0.7467
-[INFO GPL-1009]     - For 50% usage of free space: 1.1946
+[INFO GPL-1014] Final placement area: 569.77 (+0.00%)
 

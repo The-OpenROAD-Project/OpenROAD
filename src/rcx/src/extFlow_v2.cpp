@@ -1,10 +1,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include <map>
+#include <string.h>
+
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <vector>
 
 #include "gseq.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/dbShape.h"
+#include "odb/geom.h"
 #include "parse.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
@@ -1498,8 +1506,8 @@ void extDistRC::printBound(FILE* fp,
           met,
           corner,
           loHi,
-          2 * (_coupling + _fringe + _diag) * 10e+3,
-          2 * _coupling * 10e+3,
+          2 * (coupling_ + fringe_ + diag_) * 10e+3,
+          2 * coupling_ * 10e+3,
           res * 1000);
 }
 

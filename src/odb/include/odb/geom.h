@@ -4,13 +4,16 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
+#include <cstdint>
+#include <cstdio>
 #include <iosfwd>
 #include <tuple>
 #include <vector>
 
-#include "isotropy.h"
-#include "odb.h"
+#include "odb/isotropy.h"
+#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -57,12 +60,50 @@ class Point
   friend dbIStream& operator>>(dbIStream& stream, Point& p);
   friend dbOStream& operator<<(dbOStream& stream, const Point& p);
 
- private:
+ protected:
   int x_ = 0;
   int y_ = 0;
 };
 
 std::ostream& operator<<(std::ostream& os, const Point& pIn);
+
+class Point3D
+{
+ public:
+  Point3D() = default;
+  Point3D(int x, int y, int z) : x_(x), y_(y), z_(z) {}
+  Point3D& operator=(const Point3D&) = default;
+  Point3D(const Point3D& p) : x_(p.x()), y_(p.y()), z_(p.z()) {}
+  Point3D(const Point& p, int z) : x_(p.x()), y_(p.y()), z_(z) {}
+
+  bool operator==(const Point3D& rhs) const;
+  bool operator!=(const Point3D& rhs) const { return !(*this == rhs); }
+  bool operator<(const Point3D& rhs) const;
+  bool operator>=(const Point3D& rhs) const { return !(*this < rhs); }
+
+  int z() const { return z_; }
+  void setZ(int z) { z_ = z; }
+  int x() const { return x_; }
+  void setX(int x) { x_ = x; }
+  int y() const { return y_; }
+  void setY(int y) { y_ = y; }
+  void set(const int x, const int y, const int z)
+  {
+    setX(x);
+    setY(y);
+    setZ(z);
+  }
+
+  friend dbIStream& operator>>(dbIStream& stream, Point3D& p);
+  friend dbOStream& operator<<(dbOStream& stream, const Point3D& p);
+
+ private:
+  int x_ = 0;
+  int y_ = 0;
+  int z_ = 0;
+};
+
+std::ostream& operator<<(std::ostream& os, const Point3D& pIn);
 
 /*
 an Oct represents a 45-degree routing segment as 2 connected octagons
@@ -327,6 +368,11 @@ class Polygon
   // returns a corrected Polygon with a closed form and counter-clockwise points
   Polygon bloat(int margin) const;
 
+  // Merge a collection of shapes
+  static std::vector<Polygon> merge(const std::vector<Polygon>& polys);
+  static std::vector<Polygon> merge(const std::vector<Rect>& rects);
+  static std::vector<Polygon> merge(const std::vector<Oct>& octs);
+
   // Returns the geometric difference between this polygon "a" and polygon "b"
   // results in a vector of polygons.
   std::vector<Polygon> difference(Polygon b) const;
@@ -436,6 +482,16 @@ inline int64_t Point::manhattanDistance(Point p0, Point p1)
 inline bool Point::operator<(const Point& rhs) const
 {
   return std::tie(x_, y_) < std::tie(rhs.x_, rhs.y_);
+}
+
+inline bool Point3D::operator==(const Point3D& rhs) const
+{
+  return std::tie(x_, y_, z_) == std::tie(rhs.x_, rhs.y_, rhs.z_);
+}
+
+inline bool Point3D::operator<(const Point3D& rhs) const
+{
+  return std::tie(x_, y_, z_) < std::tie(rhs.x_, rhs.y_, rhs.z_);
 }
 
 inline bool Rect::operator<(const Rect& rhs) const

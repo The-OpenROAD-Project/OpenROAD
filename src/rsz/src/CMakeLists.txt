@@ -21,13 +21,12 @@ add_library(rsz_lib
     RepairHold.cc
     RepairSetup.cc
     Rebuffer.cc
-    SteinerTree.cc
     SizeDownMove.cc
     SizeUpMove.cc
     SplitLoadMove.cc
     SwapPinsMove.cc
     UnbufferMove.cc
-    EstimateWireParasitics.cc
+    VTSwapMove.cc
     Resizer.cc
     OdbCallBack.cc
     ConcreteSwapArithModules.cc
@@ -37,7 +36,6 @@ target_sources(rsz
   PRIVATE
     Graphics.cc
     MakeResizer.cc
-    SteinerRenderer.cc
 )
 
 target_include_directories(rsz
@@ -57,6 +55,7 @@ target_include_directories(rsz_lib
 
 target_link_libraries(rsz_lib
   PUBLIC
+    est_lib
     stt_lib
     odb
     OpenSTA
@@ -68,6 +67,7 @@ target_link_libraries(rsz_lib
 target_link_libraries(rsz
   PUBLIC
     rsz_lib
+    est
     stt
     odb
     OpenSTA

@@ -4,12 +4,25 @@
 #include "inspector.h"
 
 #include <QApplication>
+#include <QColor>
 #include <QComboBox>
 #include <QDebug>
 #include <QHeaderView>
 #include <QLineEdit>
+#include <QMenu>
 #include <QPushButton>
+#include <QString>
+#include <QVariant>
+#include <QWidget>
+#include <algorithm>
+#include <any>
+#include <cmath>
+#include <iterator>
+#include <map>
+#include <set>
+#include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "gui/gui.h"
@@ -137,10 +150,10 @@ QStandardItem* SelectedItemModel::makeItem(const QString& name)
   return item;
 }
 
-QStandardItem* SelectedItemModel::makeItem(const std::any& item,
+QStandardItem* SelectedItemModel::makeItem(const std::any& item_param,
                                            bool short_name)
 {
-  if (auto selected = std::any_cast<Selected>(&item)) {
+  if (auto selected = std::any_cast<Selected>(&item_param)) {
     QStandardItem* item = nullptr;
     if (short_name) {
       item = makeItem(QString::fromStdString(selected->getShortName()));
@@ -151,7 +164,8 @@ QStandardItem* SelectedItemModel::makeItem(const std::any& item,
                   EditorItemDelegate::kSelected);
     return item;
   }
-  return makeItem(QString::fromStdString(Descriptor::Property::toString(item)));
+  return makeItem(
+      QString::fromStdString(Descriptor::Property::toString(item_param)));
 }
 
 template <typename Iterator>
@@ -835,16 +849,6 @@ void Inspector::unsetReadOnly()
   reload();
 }
 
-void Inspector::highlightChanged()
-{
-  loadActions();
-}
-
-void Inspector::focusNetsChanged()
-{
-  loadActions();
-}
-
 void Inspector::loadActions()
 {
   // remove action buttons and ensure delete
@@ -1056,6 +1060,7 @@ void Inspector::handleAction(QWidget* action)
   }
 
   if (new_selection && new_selection == selection_) {
+    loadActions();
     return;
   }
 

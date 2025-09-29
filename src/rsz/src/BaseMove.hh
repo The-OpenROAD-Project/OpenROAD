@@ -12,6 +12,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -39,10 +40,11 @@
 #include "sta/UnorderedMap.hh"
 #include "utl/Logger.h"
 
-namespace rsz {
+namespace est {
+class EstimateParasitics;
+}
 
-using std::string;
-using std::vector;
+namespace rsz {
 
 using odb::dbMaster;
 
@@ -138,6 +140,7 @@ class BaseMove : public sta::dbStaState
 
  protected:
   Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
   Logger* logger_;
   Network* network_;
   dbNetwork* db_network_;
@@ -213,7 +216,6 @@ class BaseMove : public sta::dbStaState
                                float delay_adjust,
                                SlackEstimatorParams params,
                                bool accept_if_slack_improves);
-  bool hasPort(const Net* net);
   void getBufferPins(Instance* buffer, Pin*& ip, Pin*& op);
   int fanout(Vertex* vertex);
 
@@ -229,7 +231,7 @@ class BaseMove : public sta::dbStaState
   static constexpr int buffer_removal_max_fanout_ = 10;
   static constexpr float rebuffer_relaxation_factor_ = 0.03;
 
-  vector<const Pin*> getFanouts(const Instance* inst);
+  std::vector<const Pin*> getFanouts(const Instance* inst);
 };
 
 }  // namespace rsz

@@ -7,11 +7,15 @@
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcBlockObject.h"
 #include "db/gcObj/gcPin.h"
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frBlockage.h"
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frNet.h"
+#include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frNet;
@@ -25,12 +29,14 @@ class gcNet : public gcBlockObject
         fixedRectangles_(numLayers),
         routeRectangles_(numLayers),
         pins_(numLayers),
-        taperedRects(numLayers),
-        nonTaperedRects(numLayers)
+        taperedRects_(numLayers),
+        nonTaperedRects_(numLayers)
   {
   }
   // setters
-  void addPolygon(const Rect& box, frLayerNum layerNum, bool isFixed = false)
+  void addPolygon(const odb::Rect& box,
+                  frLayerNum layerNum,
+                  bool isFixed = false)
   {
     gtl::rectangle_data<frCoord> rect(
         box.xMin(), box.yMin(), box.xMax(), box.yMax());
@@ -41,7 +47,9 @@ class gcNet : public gcBlockObject
       routePolygons_[layerNum] += rect;
     }
   }
-  void addRectangle(const Rect& box, frLayerNum layerNum, bool isFixed = false)
+  void addRectangle(const odb::Rect& box,
+                    frLayerNum layerNum,
+                    bool isFixed = false)
   {
     gtl::rectangle_data<frCoord> rect(
         box.xMin(), box.yMin(), box.xMax(), box.yMax());
@@ -76,11 +84,11 @@ class gcNet : public gcBlockObject
     routePolygons_.resize(size);
     routeRectangles_.clear();
     routeRectangles_.resize(size);
-    taperedRects.clear();
-    taperedRects.resize(size);
-    nonTaperedRects.clear();
-    nonTaperedRects.resize(size);
-    specialSpacingRects.clear();
+    taperedRects_.clear();
+    taperedRects_.resize(size);
+    nonTaperedRects_.clear();
+    nonTaperedRects_.resize(size);
+    specialSpacingRects_.clear();
     for (auto& layerPins : pins_) {
       layerPins.clear();
     }
@@ -168,23 +176,23 @@ class gcNet : public gcBlockObject
   {
     return getFrNet() && getFrNet()->getNondefaultRule();
   }
-  void addTaperedRect(const Rect& bx, int zIdx)
+  void addTaperedRect(const odb::Rect& bx, int zIdx)
   {
-    taperedRects[zIdx].push_back(bx);
+    taperedRects_[zIdx].push_back(bx);
   }
-  const std::vector<Rect>& getTaperedRects(int z) const
+  const std::vector<odb::Rect>& getTaperedRects(int z) const
   {
-    return taperedRects[z];
+    return taperedRects_[z];
   }
-  void addNonTaperedRect(const Rect& bx, int zIdx)
+  void addNonTaperedRect(const odb::Rect& bx, int zIdx)
   {
-    nonTaperedRects[zIdx].push_back(bx);
+    nonTaperedRects_[zIdx].push_back(bx);
   }
-  const std::vector<Rect>& getNonTaperedRects(int z) const
+  const std::vector<odb::Rect>& getNonTaperedRects(int z) const
   {
-    return nonTaperedRects[z];
+    return nonTaperedRects_[z];
   }
-  void addSpecialSpcRect(const Rect& bx,
+  void addSpecialSpcRect(const odb::Rect& bx,
                          frLayerNum lNum,
                          gcPin* pin,
                          gcNet* net)
@@ -194,11 +202,11 @@ class gcNet : public gcBlockObject
     sp->addToNet(net);
     sp->addToPin(pin);
     sp->setRect(bx);
-    specialSpacingRects.push_back(std::move(sp));
+    specialSpacingRects_.push_back(std::move(sp));
   }
   const std::vector<std::unique_ptr<gcRect>>& getSpecialSpcRects() const
   {
-    return specialSpacingRects;
+    return specialSpacingRects_;
   }
   bool hasPolyCornerAt(frCoord x, frCoord y, frLayerNum ln) const
   {
@@ -238,11 +246,11 @@ class gcNet : public gcBlockObject
       routeRectangles_;  // only cut layer
   std::vector<std::vector<std::unique_ptr<gcPin>>> pins_;
   frBlockObject* owner_{nullptr};
-  std::vector<std::vector<Rect>> taperedRects;     //(only routing layer)
-  std::vector<std::vector<Rect>> nonTaperedRects;  //(only routing layer)
+  std::vector<std::vector<odb::Rect>> taperedRects_;     //(only routing layer)
+  std::vector<std::vector<odb::Rect>> nonTaperedRects_;  //(only routing layer)
   // A non-tapered rect within a tapered max rectangle still require nondefault
   // spacing. This list hold these rectangles
-  std::vector<std::unique_ptr<gcRect>> specialSpacingRects;
+  std::vector<std::unique_ptr<gcRect>> specialSpacingRects_;
 
   void init();
 };

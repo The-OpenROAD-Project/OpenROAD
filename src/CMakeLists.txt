@@ -264,7 +264,9 @@ add_subdirectory(exa)
 add_subdirectory(fin)
 add_subdirectory(ppl)
 add_subdirectory(rmp)
+add_subdirectory(cgt)
 add_subdirectory(cts)
+add_subdirectory(cut)
 add_subdirectory(grt)
 add_subdirectory(tap)
 add_subdirectory(rcx)
@@ -279,11 +281,16 @@ add_subdirectory(pdn)
 add_subdirectory(dft)
 add_subdirectory(mpl)
 add_subdirectory(par)
+add_subdirectory(est)
 
 ################################################################
 
 add_executable(openroad
   ${OPENROAD_SOURCE}
+)
+
+set_target_properties(openroad PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
 target_compile_options(openroad
@@ -327,7 +334,9 @@ target_link_libraries(openroad
   odbtcl
   rcx
   rmp
+  cgt
   cts
+  cut
   grt
   tap
   gui
@@ -341,6 +350,7 @@ target_link_libraries(openroad
   dft
   mpl
   par
+  est
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -407,6 +417,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     exa_py
     ppl_py
     tap_py
+    cgt_py
     cts_py
     drt_py
     fin_py

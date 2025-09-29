@@ -10,6 +10,10 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 
 using utl::Logger;
@@ -123,6 +127,7 @@ class Rebuffer : public sta::dbStaState
     LibertyCell* cell;
     FixedDelay intrinsic_delay;
     float margined_max_cap;
+    float driver_resistance;
   };
 
   bool bufferSizeCanDriveLoad(const BufferSize& size,
@@ -134,26 +139,27 @@ class Rebuffer : public sta::dbStaState
 
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
-  Resizer* resizer_;
+  Resizer* resizer_ = nullptr;
+  est::EstimateParasitics* estimate_parasitics_ = nullptr;
 
   std::vector<BufferSize> buffer_sizes_;
   std::map<LibertyCell*, BufferSize*> buffer_sizes_index_;
 
-  Pin* pin_;
-  float fanout_limit_;
-  float drvr_pin_max_slew_;
-  float drvr_load_high_water_mark_;
+  Pin* pin_ = nullptr;
+  float fanout_limit_ = 0.0f;
+  float drvr_pin_max_slew_ = 0.0f;
+  float drvr_load_high_water_mark_ = 0.0f;
   const Corner* corner_ = nullptr;
   LibertyPort* drvr_port_ = nullptr;
-  Path* arrival_paths_[RiseFall::index_count];
+  Path* arrival_paths_[RiseFall::index_count] = {nullptr};
 
-  int resizer_max_wire_length_;
-  int wire_length_step_;
+  int resizer_max_wire_length_ = 0;
+  int wire_length_step_ = 0;
 
-  double initial_design_area_;
-  int print_interval_;
-  int removed_count_;
-  int inserted_count_;
+  double initial_design_area_ = 0.0;
+  int print_interval_ = 0;
+  int removed_count_ = 0;
+  int inserted_count_ = 0;
 
   // margins in percent
   float slew_margin_ = 20.0f;

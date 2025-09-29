@@ -210,3 +210,6 @@ suppress_message PAR 38
 
 # suppress ord message with number of threads
 suppress_message ORD 30
+
+# suppress grt message with the suggested adjustment
+suppress_message GRT 704

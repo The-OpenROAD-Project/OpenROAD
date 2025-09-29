@@ -1,35 +1,39 @@
 #include "PlacementDRC.h"
 
+#include <algorithm>
+#include <cstddef>
 #include <set>
 #include <string>
 
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
+#include "infrastructure/Padding.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 namespace dpl {
 
 namespace cell_edges {
-Rect transformEdgeRect(const Rect& edge_rect,
-                       const Node* cell,
-                       const DbuX x,
-                       const DbuY y,
-                       const odb::dbOrientType& orient)
+odb::Rect transformEdgeRect(const odb::Rect& edge_rect,
+                            const Node* cell,
+                            const DbuX x,
+                            const DbuY y,
+                            const odb::dbOrientType& orient)
 {
-  Rect bbox;
+  odb::Rect bbox;
   cell->getDbInst()->getMaster()->getPlacementBoundary(bbox);
   odb::dbTransform transform(orient);
   transform.apply(bbox);
   Point offset(x.v - bbox.xMin(), y.v - bbox.yMin());
   transform.setOffset(offset);
-  Rect result(edge_rect);
+  odb::Rect result(edge_rect);
   transform.apply(result);
   return result;
 }
-Rect getQueryRect(const Rect& edge_box, const int spc)
+odb::Rect getQueryRect(const odb::Rect& edge_box, const int spc)
 {
-  Rect query_rect(edge_box);
+  odb::Rect query_rect(edge_box);
   bool is_vertical_edge = edge_box.getDir() == 0;
   if (is_vertical_edge) {
     // vertical edge
@@ -43,7 +47,13 @@ Rect getQueryRect(const Rect& edge_box, const int spc)
 };  // namespace cell_edges
 
 // Constructor
-PlacementDRC::PlacementDRC(Grid* grid, odb::dbTech* tech) : grid_(grid)
+PlacementDRC::PlacementDRC(Grid* grid,
+                           odb::dbTech* tech,
+                           Padding* padding,
+                           bool disallow_one_site_gap)
+    : grid_(grid),
+      padding_(padding),
+      disallow_one_site_gap_(disallow_one_site_gap)
 {
   makeCellEdgeSpacingTable(tech);
 }
@@ -75,10 +85,10 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell,
   for (const auto& edge1 : master->getEdges()) {
     int max_spc = getMaxSpacing(edge1.getEdgeType())
                   + 1;  // +1 to account for EXACT rules
-    Rect edge1_box = cell_edges::transformEdgeRect(
+    odb::Rect edge1_box = cell_edges::transformEdgeRect(
         edge1.getBBox(), cell, x_real, y_real, orient);
     bool is_vertical_edge = edge1_box.getDir() == 0;
-    Rect query_rect = cell_edges::getQueryRect(edge1_box, max_spc);
+    odb::Rect query_rect = cell_edges::getQueryRect(edge1_box, max_spc);
     GridX xMin = grid_->gridX(DbuX(query_rect.xMin()));
     GridX xMax = grid_->gridEndX(DbuX(query_rect.xMax()));
     GridY yMin = grid_->gridEndY(DbuY(query_rect.yMin())) - 1;
@@ -107,11 +117,12 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell,
           auto spc_entry
               = edge_spacing_table_[edge1.getEdgeType()][edge2.getEdgeType()];
           int spc = spc_entry.spc;
-          Rect edge2_box = cell_edges::transformEdgeRect(edge2.getBBox(),
-                                                         cell2,
-                                                         cell2->getLeft(),
-                                                         cell2->getBottom(),
-                                                         cell2->getOrient());
+          odb::Rect edge2_box
+              = cell_edges::transformEdgeRect(edge2.getBBox(),
+                                              cell2,
+                                              cell2->getLeft(),
+                                              cell2->getBottom(),
+                                              cell2->getOrient());
           if (edge1_box.getDir() != edge2_box.getDir()) {
             // Skip if edges are not parallel.
             continue;
@@ -120,7 +131,7 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell,
             // Skip if there is no PRL between the edges.
             continue;
           }
-          Rect test_rect(edge1_box);
+          odb::Rect test_rect(edge1_box);
           // Generalized intersection between the two edges.
           test_rect.merge(edge2_box);
           int dist = is_vertical_edge ? test_rect.dx() : test_rect.dy();
@@ -156,7 +167,7 @@ bool PlacementDRC::checkBlockedLayers(const Node* cell,
   for (GridY y1 = y_begin; y1 < y_end; y1++) {
     for (GridX x1 = x_begin; x1 < x_end; x1++) {
       const Pixel* pixel = grid_->gridPixel(x1, y1);
-      if (pixel != nullptr && pixel->blocked_layers_ & cell->getUsedLayers()) {
+      if (pixel != nullptr && pixel->blocked_layers & cell->getUsedLayers()) {
         return false;
       }
     }
@@ -175,7 +186,180 @@ bool PlacementDRC::checkDRC(const Node* cell,
                             const GridY y,
                             const dbOrientType& orient) const
 {
-  return checkEdgeSpacing(cell, x, y, orient) && checkBlockedLayers(cell, x, y);
+  return checkEdgeSpacing(cell, x, y, orient) && checkPadding(cell, x, y)
+         && checkBlockedLayers(cell, x, y) && checkOneSiteGap(cell, x, y);
+}
+
+namespace {
+bool isCrWtBlClass(const Node* cell)
+{
+  dbMasterType type = cell->getDbInst()->getMaster()->getType();
+  // Use switch so if new types are added we get a compiler warning.
+  switch (type.getValue()) {
+    case dbMasterType::CORE:
+    case dbMasterType::CORE_ANTENNACELL:
+    case dbMasterType::CORE_FEEDTHRU:
+    case dbMasterType::CORE_TIEHIGH:
+    case dbMasterType::CORE_TIELOW:
+    case dbMasterType::CORE_WELLTAP:
+    case dbMasterType::BLOCK:
+    case dbMasterType::BLOCK_BLACKBOX:
+    case dbMasterType::BLOCK_SOFT:
+      return true;
+    case dbMasterType::CORE_SPACER:
+    case dbMasterType::ENDCAP:
+    case dbMasterType::ENDCAP_PRE:
+    case dbMasterType::ENDCAP_POST:
+    case dbMasterType::ENDCAP_TOPLEFT:
+    case dbMasterType::ENDCAP_TOPRIGHT:
+    case dbMasterType::ENDCAP_BOTTOMLEFT:
+    case dbMasterType::ENDCAP_BOTTOMRIGHT:
+    case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_TOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
+    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
+    case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
+    case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
+      // These classes are completely ignored by the placer.
+    case dbMasterType::COVER:
+    case dbMasterType::COVER_BUMP:
+    case dbMasterType::RING:
+    case dbMasterType::PAD:
+    case dbMasterType::PAD_AREAIO:
+    case dbMasterType::PAD_INPUT:
+    case dbMasterType::PAD_OUTPUT:
+    case dbMasterType::PAD_INOUT:
+    case dbMasterType::PAD_POWER:
+    case dbMasterType::PAD_SPACER:
+      return false;
+  }
+  return false;
+}
+
+bool isWellTap(const Node* cell)
+{
+  dbMasterType type = cell->getDbInst()->getMaster()->getType();
+  return type == dbMasterType::CORE_WELLTAP;
+}
+
+bool allowOverlap(const Node* cell1, const Node* cell2)
+{
+  return cell1->isBlock() && cell2->isBlock();
+}
+
+bool allowPaddingOverlap(const Node* cell1, const Node* cell2)
+{
+  return !isCrWtBlClass(cell1) || !isCrWtBlClass(cell2)
+         || (isWellTap(cell1) && isWellTap(cell2));
+}
+
+}  // namespace
+
+bool PlacementDRC::hasPaddingConflict(const Node* cell,
+                                      const Node* padding_cell) const
+{
+  return cell != nullptr && padding_cell != nullptr && cell != padding_cell
+         && !allowPaddingOverlap(cell, padding_cell)
+         && !allowOverlap(cell, padding_cell);
+}
+
+bool PlacementDRC::checkPadding(const Node* cell) const
+{
+  return checkPadding(cell, grid_->gridX(cell), grid_->gridRoundY(cell));
+}
+
+// CLASSes are grouped as follows
+// CR = {CORE, CORE FEEDTHRU, CORE TIEHIGH, CORE TIELOW, CORE ANTENNACELL}
+// WT = CORE WELLTAP
+// SP = CORE SPACER, ENDCAP *
+// BL = BLOCK *
+
+//    CR WT BL SP
+// CR  P  P  P  O
+// WT  P  O  P  O
+// BL  P  P  -  O
+// SP  O  O  O  O
+//
+// P = no padded overlap
+// O = no overlap (padding ignored)
+// - = no overlap check (overlap allowed)
+// The rules apply to both FIXED or PLACED instances
+
+bool PlacementDRC::checkPadding(const Node* cell,
+                                const GridX x,
+                                const GridY y) const
+{
+  const GridX cell_x_end = x + grid_->gridWidth(cell);
+  const GridY cell_y_end
+      = grid_->gridEndY(grid_->gridYToDbu(y) + cell->getHeight());
+
+  // Get the cell's padding requirements
+  const GridX left_pad = padding_->padLeft(cell);
+  const GridX right_pad = padding_->padRight(cell);
+  for (GridX grid_x{x - left_pad}; grid_x < cell_x_end + right_pad; grid_x++) {
+    for (GridY grid_y{y}; grid_y < cell_y_end; grid_y++) {
+      const Pixel* pixel = grid_->gridPixel(grid_x, grid_y);
+      if (pixel == nullptr) {  // at the core edge
+        continue;
+      }
+      if (hasPaddingConflict(cell, pixel->cell)) {
+        return false;
+      }
+      for (auto padding_cell : pixel->padding_reserved_by) {
+        if (hasPaddingConflict(cell, padding_cell)) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;  // No padding conflicts found
+}
+
+bool PlacementDRC::checkOneSiteGap(const Node* cell) const
+{
+  return checkOneSiteGap(cell, grid_->gridX(cell), grid_->gridRoundY(cell));
+}
+
+bool PlacementDRC::checkOneSiteGap(const Node* cell,
+                                   const GridX x,
+                                   const GridY y) const
+{
+  if (!disallow_one_site_gap_) {
+    return true;
+  }
+  const GridX x_begin = x - 1;
+  const GridY y_begin = y;
+  // inclusive search, so we don't add 1 to the end
+  const GridX x_finish = x + grid_->gridWidth(cell);
+  const GridY y_finish
+      = grid_->gridEndY(grid_->gridYToDbu(y) + cell->getHeight());
+
+  auto isAbutted = [this](const GridX x, const GridY y) {
+    const Pixel* pixel = grid_->gridPixel(x, y);
+    return (pixel == nullptr || pixel->cell);
+  };
+
+  auto cellAtSite = [this](const GridX x, const GridY y) {
+    const Pixel* pixel = grid_->gridPixel(x, y);
+    return (pixel == nullptr || pixel->cell);
+  };
+  for (GridY y = y_begin; y < y_finish; ++y) {
+    // left side
+    if (!isAbutted(x_begin, y) && cellAtSite(x_begin - 1, y)) {
+      return false;
+    }
+    // right side
+    if (!isAbutted(x_finish, y) && cellAtSite(x_finish + 1, y)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // Initialize the edge spacing table from the technology

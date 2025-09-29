@@ -3,9 +3,7 @@
 
 #pragma once
 
-#include <boost/functional/hash.hpp>
-#include <boost/unordered/unordered_map.hpp>
-#include <boost/unordered/unordered_set.hpp>
+#include <cstddef>
 #include <deque>
 #include <functional>
 #include <set>
@@ -17,6 +15,12 @@
 #include "CtsOptions.h"
 #include "TechChar.h"
 #include "Util.h"
+#include "boost/functional/hash.hpp"
+#include "boost/unordered/unordered_map.hpp"
+#include "boost/unordered/unordered_set.hpp"
+#include "odb/db.h"
+#include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace utl {
 class Logger;
@@ -79,6 +83,7 @@ class TreeBuilder
   void addChild(TreeBuilder* child) { children_.emplace_back(child); }
   std::vector<TreeBuilder*> getChildren() const { return children_; }
   TreeBuilder* getParent() const { return parent_; }
+  bool isLeafTree();
   unsigned getTreeBufLevels() const { return treeBufLevels_; }
   void addFirstLevelSinkDriver(ClockInst* inst)
   {

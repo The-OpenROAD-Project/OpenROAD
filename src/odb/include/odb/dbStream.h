@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include <string.h>
+
 #include <array>
-#include <boost/container/flat_map.hpp>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <istream>
 #include <map>
@@ -17,9 +19,10 @@
 #include <variant>
 #include <vector>
 
-#include "ZException.h"
-#include "dbObject.h"
-#include "odb.h"
+#include "boost/container/flat_map.hpp"
+#include "odb/ZException.h"
+#include "odb/dbObject.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -138,12 +141,6 @@ class dbOStream
       _f.write(c, l);
     }
 
-    return *this;
-  }
-
-  dbOStream& operator<<(dbObjectType c)
-  {
-    writeValueAsBytes(c);
     return *this;
   }
 
@@ -375,12 +372,6 @@ class dbIStream
     return *this;
   }
 
-  dbIStream& operator>>(dbObjectType& c)
-  {
-    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
   template <class T1, class T2>
   dbIStream& operator>>(std::pair<T1, T2>& p)
   {
@@ -399,7 +390,7 @@ class dbIStream
       T2 val;
       *this >> key;
       *this >> val;
-      m[key] = val;
+      m[key] = std::move(val);
     }
     return *this;
   }
@@ -414,7 +405,7 @@ class dbIStream
       T2 val;
       *this >> key;
       *this >> val;
-      m[key] = val;
+      m[key] = std::move(val);
     }
     return *this;
   }
@@ -429,7 +420,7 @@ class dbIStream
       T2 val;
       *this >> key;
       *this >> val;
-      m[key] = val;
+      m[key] = std::move(val);
     }
     return *this;
   }
@@ -444,7 +435,7 @@ class dbIStream
     for (uint i = 0; i < sz; i++) {
       T1 val;
       *this >> val;
-      m.push_back(val);
+      m.push_back(std::move(val));
     }
     return *this;
   }
@@ -510,7 +501,7 @@ class dbIStream
       if (I == index) {
         std::variant_alternative_t<I, std::variant<Ts...>> val;
         *this >> val;
-        v = val;
+        v = std::move(val);
       }
       return (*this).variantHelper<I + 1>(index, v);
     }

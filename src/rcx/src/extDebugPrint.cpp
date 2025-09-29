@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <cstdio>
+
+#include "odb/db.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
@@ -274,10 +277,10 @@ bool extMeasure::ouRCvalues(const char* msg, uint jj)
       "{:g}\n\tdgCap : {:g}\n\tRes  : {:g}\n\n",
       msg,
       msg,
-      _rc[jj]->_fringe,
-      _rc[jj]->_coupling,
-      _rc[jj]->_diag,
-      _rc[jj]->_res);
+      _rc[jj]->fringe_,
+      _rc[jj]->coupling_,
+      _rc[jj]->diag_,
+      _rc[jj]->res_);
 
   return true;
 }
@@ -468,10 +471,10 @@ void extDistRC::printDebug(const char* from,
              "\t{}: {} {:g} {:g} {:g} R {:g} {} {}",
              from,
              name,
-             _coupling,
-             _fringe,
-             _diag,
-             _res,
+             coupling_,
+             fringe_,
+             diag_,
+             res_,
              len,
              dist);
   if (rcUnit == nullptr) {
@@ -493,12 +496,12 @@ void extDistRC::printDebugRC(const char* from, Logger* logger)
              "{:g}\n\tDiagC "
              ": {:g}\n\ttotCap: {:g}\n\tRes  : {:g}\n",
              from,
-             _sep,
-             _coupling,
-             _fringe,
-             _diag,
-             _coupling + _fringe + _diag,
-             _res);
+             sep_,
+             coupling_,
+             fringe_,
+             diag_,
+             coupling_ + fringe_ + diag_,
+             res_);
 }
 
 double extDistRC::GetDBcoords(int x, int db_factor)
@@ -536,12 +539,12 @@ void extDistRC::printDebugRC_diag(int met,
              ": {:g}\n\t\t\ttotCap: {:g}\n\t\t\tRes   : {:g}\n",
              tmp,
              tmp1,
-             _sep,
-             _coupling,
-             _fringe,
-             _diag,
-             _coupling + _fringe + _diag,
-             _res);
+             sep_,
+             coupling_,
+             fringe_,
+             diag_,
+             coupling_ + fringe_ + diag_,
+             res_);
 }
 
 void extDistRC::printDebugRC(int met,
@@ -583,12 +586,12 @@ void extDistRC::printDebugRC(int met,
              ": {:g}\n\t\t\ttotCap: {:g}\n\t\t\tRes   : {:g}\n",
              tmp,
              tmp1,
-             _sep,
-             _coupling,
-             _fringe,
-             _diag,
-             _coupling + _fringe + _diag,
-             _res);
+             sep_,
+             coupling_,
+             fringe_,
+             diag_,
+             coupling_ + fringe_ + diag_,
+             res_);
 }
 
 void extDistRC::printDebugRC_sum(int len, int dbUnit, Logger* logger)
@@ -603,11 +606,11 @@ void extDistRC::printDebugRC_sum(int len, int dbUnit, Logger* logger)
              ": {:.6f}\n\t\t\ttotCap: {:.6f}\n\t\t\tRes   : {:.6f}\n",
              len,
              GetDBcoords(len, dbUnit),
-             _coupling,
-             _fringe,
-             _diag,
-             _coupling + _fringe + _diag,
-             _res);
+             coupling_,
+             fringe_,
+             diag_,
+             coupling_ + fringe_ + diag_,
+             res_);
 }
 
 void extDistRC::printDebugRC_values(const char* msg)
@@ -621,11 +624,11 @@ void extDistRC::printDebugRC_values(const char* msg)
              "{:.6f}\n\t\t\tDiagC "
              ": {:.6f}\n\t\t\ttotCap: {:.6f}\n\t\t\tRes   : {:.6f}\n",
              msg,
-             _coupling,
-             _fringe,
-             _diag,
-             _coupling + _fringe + _diag,
-             _res);
+             coupling_,
+             fringe_,
+             diag_,
+             coupling_ + fringe_ + diag_,
+             res_);
 }
 
 }  // namespace rcx

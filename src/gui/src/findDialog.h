@@ -4,6 +4,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QWidget>
 
 #include "ui_findDlg.h"
 

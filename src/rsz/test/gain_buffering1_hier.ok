@@ -1,5 +1,6 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 Startpoint: U1/_69_ (rising edge-triggered flip-flop clocked by clk)
 Endpoint: _68_ (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -31,7 +32,7 @@ Fanout   Delay    Time   Description
                  -0.12   slack (VIOLATED)
 
 
-[WARNING RSZ-0021] no estimated parasitics. Using wire load models.
+[WARNING EST-0027] no estimated parasitics. Using wire load models.
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net _20_
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net y[7]
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net y[6]

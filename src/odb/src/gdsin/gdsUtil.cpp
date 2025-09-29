@@ -3,13 +3,16 @@
 
 #include "odb/gdsUtil.h"
 
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
+#include <cmath>
+#include <cstdint>
 #include <ctime>
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
+#include "boost/property_tree/ptree.hpp"
+#include "boost/property_tree/xml_parser.hpp"
 #include "odb/db.h"
 
 namespace odb::gds {

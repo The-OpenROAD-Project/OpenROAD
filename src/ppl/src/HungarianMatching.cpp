@@ -5,9 +5,16 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <functional>
 #include <limits>
 #include <vector>
 
+#include "Core.h"
+#include "Netlist.h"
+#include "Slots.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace ppl {
@@ -128,6 +135,10 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
         io_pin.setLayer(slots_[slot_index].layer);
         io_pin.setPlaced();
         io_pin.setEdge(slots_[slot_index].edge);
+        // Set line information only for polygon edges
+        if (slots_[slot_index].edge == Edge::polygonEdge) {
+          io_pin.setLine(slots_[slot_index].containing_line);
+        }
         assignment.push_back(io_pin);
         slots_[slot_index].used = true;
 
@@ -310,6 +321,10 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment,
         io_pin.setPosition(slots_[slot_index + pin_cnt].pos);
         io_pin.setLayer(slots_[slot_index + pin_cnt].layer);
         io_pin.setEdge(slots_[slot_index + pin_cnt].edge);
+        // Set line information only for polygon edges
+        if (slots_[slot_index + pin_cnt].edge == Edge::polygonEdge) {
+          io_pin.setLine(slots_[slot_index + pin_cnt].containing_line);
+        }
         assignment.push_back(io_pin);
         slots_[slot_index + pin_cnt].used = true;
         slots_[slot_index + pin_cnt].blocked = true;

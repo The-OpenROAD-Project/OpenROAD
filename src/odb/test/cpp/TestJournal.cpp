@@ -1,12 +1,11 @@
 #define BOOST_TEST_MODULE TestJournal
-#include <boost/test/included/unit_test.hpp>
 #include <functional>
-#include <iostream>
-#include <string>
 
+#include "boost/test/included/unit_test.hpp"
 #include "env.h"
 #include "helper.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace odb {
 namespace {
@@ -234,6 +233,60 @@ BOOST_FIXTURE_TEST_CASE(test_undo_iterm_disconnect, F_DEFAULT)
   iterm->connect(net);
   in_eco([&]() { iterm->disconnect(); });
   BOOST_TEST(iterm->getNet() == net);
+}
+
+BOOST_FIXTURE_TEST_CASE(RenameNet, F_DEFAULT)
+{
+  dbNet* net = dbNet::create(block, "original_net_name");
+  BOOST_TEST(net != nullptr);
+  BOOST_TEST(net->getName() == "original_net_name");
+
+  in_eco([&]() {
+    net->rename("new_net_name");
+    BOOST_TEST(net->getName() == "new_net_name");
+  });
+
+  BOOST_TEST(net->getName() == "original_net_name");
+
+  dbNet::destroy(net);
+}
+
+BOOST_FIXTURE_TEST_CASE(RenameInst, F_DEFAULT)
+{
+  dbMaster* master = lib->findMaster("and2");
+  BOOST_TEST(master != nullptr);
+  dbInst* inst = dbInst::create(block, master, "original_inst_name");
+  BOOST_TEST(inst != nullptr);
+  BOOST_TEST(inst->getName() == "original_inst_name");
+
+  in_eco([&]() {
+    inst->rename("new_inst_name");
+    BOOST_TEST(inst->getName() == "new_inst_name");
+  });
+
+  BOOST_TEST(inst->getName() == "original_inst_name");
+
+  dbInst::destroy(inst);
+}
+
+BOOST_FIXTURE_TEST_CASE(RenameModNet, F_DEFAULT)
+{
+  dbModule* module = dbModule::create(block, "original_module_name");
+  BOOST_TEST(module != nullptr);
+
+  dbModNet* mod_net = dbModNet::create(module, "original_mod_net_name");
+  BOOST_TEST(mod_net != nullptr);
+  BOOST_TEST(mod_net->getName() == "original_mod_net_name");
+
+  in_eco([&]() {
+    mod_net->rename("new_mod_net_name");
+    BOOST_TEST(mod_net->getName() == "new_mod_net_name");
+  });
+
+  BOOST_TEST(mod_net->getName() == "original_mod_net_name");
+
+  dbModNet::destroy(mod_net);
+  dbModule::destroy(module);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

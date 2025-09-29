@@ -4,12 +4,23 @@
 #include "SimulatedAnnealing.h"
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
+#include <numeric>
+#include <random>
 #include <set>
 #include <utility>
 #include <vector>
 
 #include "AbstractIOPlacerRenderer.h"
+#include "Core.h"
+#include "Netlist.h"
+#include "Slots.h"
+#include "boost/random/uniform_int_distribution.hpp"
+#include "boost/random/uniform_real_distribution.hpp"
+#include "odb/db.h"
+#include "odb/geom.h"
+#include "ppl/IOPlacer.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -41,78 +52,75 @@ SimulatedAnnealing::SimulatedAnnealing(
 void SimulatedAnnealing::run(float init_temperature,
                              int max_iterations,
                              int perturb_per_iter,
-                             float alpha,
-                             bool random)
+                             float alpha)
 {
   init(init_temperature, max_iterations, perturb_per_iter, alpha);
   randomAssignment();
-  if (!random) {
-    int64 pre_cost = 0;
-    pre_cost = getAssignmentCost();
-    float temperature = init_temperature_;
-    odb::dbBlock* block = db_->getChip()->getBlock();
+  int64 pre_cost = 0;
+  pre_cost = getAssignmentCost();
+  float temperature = init_temperature_;
+  odb::dbBlock* block = db_->getChip()->getBlock();
 
-    boost::random::uniform_real_distribution<float> distribution;
-    for (int iter = 0; iter < max_iterations_; iter++) {
-      for (int perturb = 0; perturb < perturb_per_iter_; perturb++) {
-        int prev_cost;
-        perturbAssignment(prev_cost);
+  boost::random::uniform_real_distribution<float> distribution;
+  for (int iter = 0; iter < max_iterations_; iter++) {
+    for (int perturb = 0; perturb < perturb_per_iter_; perturb++) {
+      int prev_cost;
+      perturbAssignment(prev_cost);
 
-        const int64 cost = pre_cost + getDeltaCost(prev_cost);
-        const int delta_cost = cost - pre_cost;
-        debugPrint(logger_,
-                   utl::PPL,
-                   "annealing",
-                   2,
-                   "iteration: {}; perturb: {}; temperature: {}; assignment "
-                   "cost: {}um; delta "
-                   "cost: {}um",
-                   iter,
-                   perturb,
-                   temperature,
-                   block->dbuToMicrons(cost),
-                   block->dbuToMicrons(delta_cost));
+      const int64 cost = pre_cost + getDeltaCost(prev_cost);
+      const int delta_cost = cost - pre_cost;
+      debugPrint(logger_,
+                 utl::PPL,
+                 "annealing",
+                 2,
+                 "iteration: {}; perturb: {}; temperature: {}; assignment "
+                 "cost: {}um; delta "
+                 "cost: {}um",
+                 iter,
+                 perturb,
+                 temperature,
+                 block->dbuToMicrons(cost),
+                 block->dbuToMicrons(delta_cost));
 
-        const float rand_float = distribution(generator_);
-        const float accept_prob = std::exp((-1) * delta_cost / temperature);
-        if (delta_cost <= 0 || accept_prob > rand_float) {
-          // accept new solution, update cost and slots
-          pre_cost = cost;
-          if (!prev_slots_.empty() && !new_slots_.empty()) {
-            for (int prev_slot : prev_slots_) {
-              slots_[prev_slot].used = false;
-            }
-            for (int new_slot : new_slots_) {
-              slots_[new_slot].used = true;
-            }
+      const float rand_float = distribution(generator_);
+      const float accept_prob = std::exp((-1) * delta_cost / temperature);
+      if (delta_cost <= 0 || accept_prob > rand_float) {
+        // accept new solution, update cost and slots
+        pre_cost = cost;
+        if (!prev_slots_.empty() && !new_slots_.empty()) {
+          for (int prev_slot : prev_slots_) {
+            slots_[prev_slot].used = false;
           }
-        } else {
-          for (int i = 0; i < prev_slots_.size(); i++) {
-            slots_[prev_slots_[i]].used = true;
+          for (int new_slot : new_slots_) {
+            slots_[new_slot].used = true;
           }
-          restorePreviousAssignment();
         }
-        prev_slots_.clear();
-        new_slots_.clear();
-        pins_.clear();
+      } else {
+        for (const int prev_slot : prev_slots_) {
+          slots_[prev_slot].used = true;
+        }
+        restorePreviousAssignment();
+      }
+      prev_slots_.clear();
+      new_slots_.clear();
+      pins_.clear();
+    }
+
+    temperature *= alpha_;
+
+    if (debug_->isOn()) {
+      std::vector<ppl::IOPin> pins;
+      getAssignment(pins);
+
+      std::vector<std::vector<ppl::InstancePin>> all_sinks;
+
+      for (int pin_idx = 0; pin_idx < pins.size(); pin_idx++) {
+        std::vector<ppl::InstancePin> pin_sinks;
+        netlist_->getSinksOfIO(pin_idx, pin_sinks);
+        all_sinks.push_back(pin_sinks);
       }
 
-      temperature *= alpha_;
-
-      if (debug_->isOn()) {
-        std::vector<ppl::IOPin> pins;
-        getAssignment(pins);
-
-        std::vector<std::vector<ppl::InstancePin>> all_sinks;
-
-        for (int pin_idx = 0; pin_idx < pins.size(); pin_idx++) {
-          std::vector<ppl::InstancePin> pin_sinks;
-          netlist_->getSinksOfIO(pin_idx, pin_sinks);
-          all_sinks.push_back(pin_sinks);
-        }
-
-        annealingStateVisualization(pins, all_sinks, iter);
-      }
+      annealingStateVisualization(pins, all_sinks, iter);
     }
   }
 }

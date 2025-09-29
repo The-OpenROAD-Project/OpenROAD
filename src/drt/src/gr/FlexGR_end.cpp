@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <deque>
+#include <iostream>
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frNode.h"
 #include "gr/FlexGR.h"
 
@@ -379,8 +382,8 @@ void FlexGRWorker::endWriteBackCMap()
 {
   auto cmap = getCMap();
 
-  Point gcellIdxLL = getRouteGCellIdxLL();
-  Point gcellIdxUR = getRouteGCellIdxUR();
+  odb::Point gcellIdxLL = getRouteGCellIdxLL();
+  odb::Point gcellIdxUR = getRouteGCellIdxUR();
   int idxLLX = gcellIdxLL.x();
   int idxLLY = gcellIdxLL.y();
   int idxURX = gcellIdxUR.x();

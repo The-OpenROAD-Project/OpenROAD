@@ -3,9 +3,6 @@
 
 #pragma once
 
-#include <algorithm>
-#include <iostream>
-#include <limits>
 #include <map>
 #include <memory>
 #include <random>
@@ -14,11 +11,10 @@
 #include <utility>
 #include <vector>
 
+#include "mpl-util.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 #include "shapes.h"
-#include "util.h"
 
 namespace odb {
 class Rect;
@@ -41,6 +37,7 @@ class HardMacro;
 class SoftMacro;
 class Cluster;
 
+using ConnectionsMap = std::map<int, float>;
 using IntervalList = std::vector<Interval>;
 using TilingList = std::vector<Tiling>;
 using TilingSet = std::set<Tiling>;
@@ -123,21 +120,15 @@ class Metrics
   float macro_area_ = 0.0;
 };
 
-// In this hierarchical autoclustering part,
-// we convert the original gate-level netlist into a cluster-level netlist
 class Cluster
 {
  public:
-  // constructors
-  Cluster(int cluster_id, utl::Logger* logger);  // cluster name can be updated
+  Cluster(int cluster_id, utl::Logger* logger);
   Cluster(int cluster_id, const std::string& cluster_name, utl::Logger* logger);
 
-  // cluster id can not be changed
   int getId() const;
-  // cluster name can be updated
   const std::string& getName() const;
   void setName(const std::string& name);
-  // cluster type (default type = MixedCluster)
   void setClusterType(const ClusterType& cluster_type);
   ClusterType getClusterType() const;
   std::string getClusterTypeString() const;
@@ -159,7 +150,7 @@ class Cluster
   void clearLeafStdCells();
   void clearLeafMacros();
   void clearHardMacros();
-  void copyInstances(const Cluster& cluster);  // only based on cluster type
+  void copyInstances(const Cluster& cluster);
 
   bool isIOCluster() const;
   bool isClusterOfUnconstrainedIOPins() const;
@@ -174,6 +165,9 @@ class Cluster
                          float height);
   bool isIOBundle() const { return is_io_bundle_; }
   void setAsIOBundle(const Point& pos, float width, float height);
+
+  bool isFixedMacro() const { return is_fixed_macro_; }
+  void setAsFixedMacro(const HardMacro* hard_macro);
 
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
@@ -209,22 +203,17 @@ class Cluster
   Cluster* getParent() const;
   const UniqueClusterVector& getChildren() const;
 
-  bool isLeaf() const;  // if the cluster is a leaf cluster
+  bool isLeaf() const;
   std::string getIsLeafString() const;
   bool attemptMerge(Cluster* incomer, bool& incomer_deleted);
 
   // Connection signature support
   void initConnection();
-  void addConnection(int cluster_id, float weight);
-  // TODO: this should return a const reference iff callers don't implicitly
-  // modify it. See comment in Cluster.
-  std::map<int, float> getConnection() const;
+  void addConnection(Cluster* cluster, float connection_weight);
+  void removeConnection(int cluster_id);
+  const ConnectionsMap& getConnectionsMap() const;
   bool isSameConnSignature(const Cluster& cluster, float net_threshold);
   bool hasMacroConnectionWith(const Cluster& cluster, float net_threshold);
-  // Get closely-connected cluster if such cluster exists
-  // For example, if a small cluster A is closely connected to a
-  // well-formed cluster B, (there are also other well-formed clusters
-  // C, D), A is only connected to B and A has no connection with C, D
   int getCloseCluster(const std::vector<int>& candidate_clusters,
                       float net_threshold);
 
@@ -233,9 +222,6 @@ class Cluster
   std::vector<std::pair<int, int>> getVirtualConnections() const;
   void addVirtualConnection(int src, int target);
 
-  // Print Basic Information
-  void printBasicInformation(utl::Logger* logger) const;
-
   // Macro Placement Support
   void setSoftMacro(std::unique_ptr<SoftMacro> soft_macro);
   SoftMacro* getSoftMacro() const;
@@ -243,57 +229,35 @@ class Cluster
   void setTilings(const TilingList& tilings);
   const TilingList& getTilings() const;
 
- private:
-  // Private Variables
-  int id_ = -1;       // cluster id (a valid cluster id should be nonnegative)
-  std::string name_;  // cluster name
-  ClusterType type_ = MixedCluster;  // cluster type
+  // For Debug
+  void reportConnections() const;
 
-  // Instances in the cluster
-  // the logical module included in the cluster
-  // dbModule is a object representing logical module in the OpenDB
+ private:
+  int id_{-1};
+  std::string name_;
+  ClusterType type_{MixedCluster};
+  Metrics metrics_;
   std::vector<odb::dbModule*> db_modules_;
-  // the std cell instances in the cluster (leaf std cell instances)
   std::vector<odb::dbInst*> leaf_std_cells_;
-  // the macros in the cluster (leaf macros)
   std::vector<odb::dbInst*> leaf_macros_;
-  // all the macros in the cluster
   std::vector<HardMacro*> hard_macros_;
 
   bool is_cluster_of_unplaced_io_pins_{false};
   bool is_cluster_of_unconstrained_io_pins_{false};
   bool is_io_pad_cluster_{false};
   bool is_io_bundle_{false};
+  bool is_array_of_interconnected_macros_ = false;
+  bool is_fixed_macro_{false};
 
-  bool is_array_of_interconnected_macros = false;
-
-  // Each cluster uses metrics to store its statistics
-  Metrics metrics_;
-
-  // Each cluster cooresponding to a SoftMacro in the placement engine
-  // which will concludes the information about real pos, width, height, area
   std::unique_ptr<SoftMacro> soft_macro_;
-
-  // Each cluster is a node in the physical hierarchy tree
-  // Thus we need to define related to parent and children pointers
-  Cluster* parent_ = nullptr;  // parent of current cluster
-  UniqueClusterVector children_;
-
   TilingList tilings_;
 
-  // To support grouping small clusters based connection signature,
-  // we define connection_map_
-  // Here we do not differentiate the input and output connections
-  std::map<int, float> connection_map_;  // cluster_id, number of connections
+  Cluster* parent_{nullptr};
+  UniqueClusterVector children_;
 
-  // store the virtual connection between children
-  // the virtual connection is used to tie the std cell part and the
-  // corresponding macro part together
-  std::vector<std::pair<int, int>> virtual_connections_;
+  ConnectionsMap connections_map_;  // cluster id -> connection weight
+  std::vector<std::pair<int, int>> virtual_connections_;  // id -> id
 
-  // pin access for each bundled connection
-  std::map<int, std::pair<Boundary, float>> pin_access_map_;
-  std::map<Boundary, std::map<Boundary, float>> boundary_connection_map_;
   utl::Logger* logger_;
 };
 
@@ -346,6 +310,7 @@ class HardMacro
   // width, height (include halo_width)
   float getWidth() const { return width_; }
   float getHeight() const { return height_; }
+  bool isFixed() const { return fixed_; }
 
   // Note that the real X and Y does NOT include halo_width
   void setRealLocation(const std::pair<float, float>& location);
@@ -359,10 +324,6 @@ class HardMacro
 
   // Orientation support
   odb::dbOrientType getOrientation() const;
-  // We do not allow rotation of macros
-  // This may violate the direction of metal layers
-  // flip about X or Y axis
-  void flip(bool flip_horizontal);
 
   // Interfaces with OpenDB
   odb::dbInst* getInst() const;
@@ -415,6 +376,8 @@ class HardMacro
   float pin_x_ = 0.0;
   float pin_y_ = 0.0;
 
+  bool fixed_{false};
+
   odb::dbInst* inst_ = nullptr;
   odb::dbBlock* block_ = nullptr;
 
@@ -431,7 +394,8 @@ class HardMacro
 //  - an IO Cluster (PAD or group of unplaced pins) which has its position
 //    fixed;
 //  - a fixed terminal;
-//  - a blockage.
+//  - a blockage;
+//  - a fixed macro.
 //
 // Obs: The bundled pin of a SoftMacro is always its center.
 class SoftMacro
@@ -444,6 +408,9 @@ class SoftMacro
             float width,
             float height,
             Cluster* cluster);
+  SoftMacro(utl::Logger* logger,
+            const HardMacro* hard_macro,
+            const Point* offset = nullptr);
 
   const std::string& getName() const;
 
@@ -469,6 +436,9 @@ class SoftMacro
   {
     return std::pair<float, float>(x_, y_);
   }
+
+  bool isFixed() const { return fixed_; }
+
   float getWidth() const { return width_; }
   float getHeight() const { return height_; }
   float getArea() const;
@@ -547,97 +517,6 @@ struct BundledNet
   // Thus each net must have both src_cluster_id and target_cluster_id
   int src_cluster_id = -1;
   int target_cluster_id = -1;
-};
-
-// Here we redefine the Rect class
-// odb::Rect use database unit
-// Rect class use float type for Micron unit
-struct Rect
-{
-  Rect() = default;
-  Rect(const float lx,
-       const float ly,
-       const float ux,
-       const float uy,
-       bool fixed_flag = false)
-      : lx(lx), ly(ly), ux(ux), uy(uy), fixed_flag(fixed_flag)
-  {
-  }
-
-  float xMin() const { return lx; }
-  float yMin() const { return ly; }
-  float xMax() const { return ux; }
-  float yMax() const { return uy; }
-
-  void setXMin(float lx) { this->lx = lx; }
-  void setYMin(float ly) { this->ly = ly; }
-  void setXMax(float ux) { this->ux = ux; }
-  void setYMax(float uy) { this->uy = uy; }
-
-  float xCenter() const { return (lx + ux) / 2.0; }
-  float yCenter() const { return (ly + uy) / 2.0; }
-
-  float getWidth() const { return ux - lx; }
-  float getHeight() const { return uy - ly; }
-
-  float getPerimeter() const { return 2 * getWidth() + 2 * getHeight(); }
-  float getArea() const { return getWidth() * getHeight(); }
-
-  void moveHor(float dist)
-  {
-    lx = lx + dist;
-    ux = ux + dist;
-  }
-
-  void moveVer(float dist)
-  {
-    ly = ly + dist;
-    uy = uy + dist;
-  }
-
-  bool isValid() const { return (lx < ux) && (ly < uy); }
-
-  void mergeInit()
-  {
-    lx = std::numeric_limits<float>::max();
-    ly = lx;
-    ux = std::numeric_limits<float>::lowest();
-    uy = ux;
-  }
-
-  void merge(const Rect& rect)
-  {
-    lx = std::min(lx, rect.lx);
-    ly = std::min(ly, rect.ly);
-    ux = std::max(ux, rect.ux);
-    uy = std::max(uy, rect.uy);
-  }
-
-  void relocate(float outline_lx,
-                float outline_ly,
-                float outline_ux,
-                float outline_uy)
-  {
-    if (!isValid()) {
-      return;
-    }
-
-    lx = std::max(lx, outline_lx);
-    ly = std::max(ly, outline_ly);
-    ux = std::min(ux, outline_ux);
-    uy = std::min(uy, outline_uy);
-    lx -= outline_lx;
-    ly -= outline_ly;
-    ux -= outline_lx;
-    uy -= outline_ly;
-  }
-
-  float lx = 0.0;
-  float ly = 0.0;
-  float ux = 0.0;
-  float uy = 0.0;
-
-  bool fixed_flag = false;
 };
 
 struct SequencePair

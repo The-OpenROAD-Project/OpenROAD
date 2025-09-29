@@ -3,7 +3,11 @@
 
 #include "utl/timer.h"
 
+#include <chrono>
+#include <ostream>
 #include <string>
+
+#include "utl/Logger.h"
 
 namespace utl {
 
@@ -19,7 +23,16 @@ double Timer::elapsed() const
 
 std::ostream& operator<<(std::ostream& os, const Timer& t)
 {
-  os << t.elapsed() << " sec";
+  auto elapsed_sec = t.elapsed();
+  if (elapsed_sec < 1e-6) {
+    os << elapsed_sec * 1e9 << " nsec";
+  } else if (elapsed_sec < 1e-3) {
+    os << elapsed_sec * 1e6 << " usec";
+  } else if (elapsed_sec < 1) {
+    os << elapsed_sec * 1e3 << " msec";
+  } else {
+    os << elapsed_sec << " sec";
+  }
   return os;
 }
 
@@ -39,9 +52,28 @@ DebugScopedTimer::DebugScopedTimer(utl::Logger* logger,
 {
 }
 
+DebugScopedTimer::DebugScopedTimer(double& aggregate,
+                                   utl::Logger* logger,
+                                   ToolId tool,
+                                   const char* group,
+                                   int level,
+                                   const std::string& msg)
+    : Timer(),
+      logger_(logger),
+      msg_(msg),
+      tool_(tool),
+      group_(group),
+      level_(level),
+      aggregate_(&aggregate)
+{
+}
+
 DebugScopedTimer::~DebugScopedTimer()
 {
   debugPrint(logger_, tool_, group_, level_, msg_, *this);
+  if (aggregate_) {
+    *aggregate_ += elapsed();
+  }
 }
 
 }  // namespace utl

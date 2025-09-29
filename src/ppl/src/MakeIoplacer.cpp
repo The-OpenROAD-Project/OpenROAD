@@ -3,7 +3,8 @@
 
 #include "ppl/MakeIoplacer.h"
 
-#include "ppl/IOPlacer.h"
+#include <tcl.h>
+
 #include "utl/decode.h"
 
 extern "C" {
@@ -15,26 +16,11 @@ namespace ppl {
 // Tcl files encoded into strings.
 extern const char* ppl_tcl_inits[];
 
-ppl::IOPlacer* makeIoplacer()
-{
-  return new ppl::IOPlacer();
-}
-
-void deleteIoplacer(ppl::IOPlacer* ioplacer)
-{
-  delete ioplacer;
-}
-
-void initIoplacer(ppl::IOPlacer* placer,
-                  odb::dbDatabase* db,
-                  utl::Logger* logger,
-                  Tcl_Interp* tcl_interp)
+void initIoplacer(Tcl_Interp* tcl_interp)
 {
   // Define swig TCL commands.
   Ppl_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, ppl::ppl_tcl_inits);
-
-  placer->init(db, logger);
 }
 
 }  // namespace ppl

@@ -3,9 +3,6 @@
 
 #pragma once
 
-#define MAX_SLOTS_RECOMMENDED 600
-#define MAX_SECTIONS_RECOMMENDED 600
-
 #include <algorithm>
 #include <cstddef>
 #include <numeric>
@@ -13,6 +10,7 @@
 #include <vector>
 
 #include "Netlist.h"
+#include "odb/geom.h"
 #include "ppl/IOPlacer.h"
 
 namespace ppl {
@@ -45,7 +43,7 @@ struct IntervalHash
 
 struct RectHash
 {
-  std::size_t operator()(const Rect& rect) const;
+  std::size_t operator()(const odb::Rect& rect) const;
 };
 
 // Slot: an on-track position in the die boundary where a pin
@@ -57,6 +55,7 @@ struct Slot
   odb::Point pos;
   int layer;
   Edge edge;
+  odb::Line containing_line;
 
   bool isAvailable() const { return (!blocked && !used); }
 };

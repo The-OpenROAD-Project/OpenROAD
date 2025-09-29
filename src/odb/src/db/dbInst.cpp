@@ -4,7 +4,10 @@
 #include "dbInst.h"
 
 #include <algorithm>
+#include <cstdlib>
+#include <cstring>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "dbAccessPoint.h"
@@ -15,6 +18,7 @@
 #include "dbBox.h"
 #include "dbChip.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbGroup.h"
 #include "dbHier.h"
@@ -29,12 +33,14 @@
 #include "dbNet.h"
 #include "dbNullIterator.h"
 #include "dbRegion.h"
+#include "dbScanInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -360,6 +366,17 @@ bool dbInst::rename(const char* name)
 
   if (block->_inst_hash.hasMember(name)) {
     return false;
+  }
+
+  if (block->_journal) {
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: inst {}, rename to {}",
+               getId(),
+               name);
+    block->_journal->updateField(this, _dbInst::NAME, inst->_name, name);
   }
 
   block->_inst_hash.remove(inst);
@@ -783,6 +800,22 @@ bool dbInst::isPad() const
 bool dbInst::isEndCap() const
 {
   return getMaster()->isEndCap();
+}
+
+dbScanInst* dbInst::getScanInst() const
+{
+  _dbInst* inst = (_dbInst*) this;
+  _dbBlock* block = (_dbBlock*) inst->getOwner();
+  auto itr = block->_inst_scan_inst_map.find(inst->getId());
+
+  if (itr == block->_inst_scan_inst_map.end()) {
+    return nullptr;
+  }
+
+  dbId<_dbScanInst> scan_inst_id = itr->second;
+  _dbScanInst* scan_inst = block->_scan_inst_tbl->getPtr(scan_inst_id);
+
+  return (dbScanInst*) scan_inst;
 }
 
 dbSet<dbITerm> dbInst::getITerms()
@@ -1227,13 +1260,13 @@ uint dbInst::getPinAccessIdx() const
   return inst->pin_access_idx_;
 }
 
-dbInst* dbInst::create(dbBlock* block_,
-                       dbMaster* master_,
-                       const char* name_,
+dbInst* dbInst::create(dbBlock* block,
+                       dbMaster* master,
+                       const char* name,
                        bool physical_only,
-                       dbModule* target_module)
+                       dbModule* parent_module)
 {
-  return create(block_, master_, name_, nullptr, physical_only, target_module);
+  return create(block, master, name, nullptr, physical_only, parent_module);
 }
 
 dbInst* dbInst::create(dbBlock* block_,
@@ -1300,7 +1333,10 @@ dbInst* dbInst::create(dbBlock* block_,
   block->add_rect(box->_shape._rect);
 
   inst->_flags._physical_only = physical_only;
-  if (!physical_only) {
+
+  // Add the new instance to the parent module.
+  bool parent_is_top = parent_module == nullptr || parent_module->isTop();
+  if (physical_only == false || parent_is_top) {
     if (parent_module) {
       parent_module->addInst((dbInst*) inst);
     } else {
@@ -1409,6 +1445,15 @@ void dbInst::destroy(dbInst* inst_)
                              362,
                              "Attempt to destroy dont_touch instance {}",
                              inst->_name);
+  }
+
+  dbScanInst* scan_inst = inst_->getScanInst();
+  if (scan_inst) {
+    inst->getLogger()->error(
+        utl::ODB,
+        505,
+        "Attempt to destroy instance {} with an associated scan inst.",
+        inst->_name);
   }
 
   uint i;

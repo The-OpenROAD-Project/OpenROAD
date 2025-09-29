@@ -11,6 +11,7 @@
 *.orig
 *.vscode
 *.sw[opqr]
+*.code-workspace
 TAGS
 *~
 \#*#
@@ -20,6 +21,7 @@ TAGS
 Makefile
 __pycache__
 venv/
+.abc_history
 
 include/ord/Version.hh
 

@@ -18,6 +18,10 @@ namespace utl {
 class Logger;
 }
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 class Resizer;
 }
@@ -30,6 +34,7 @@ class Unit;
 class LibertyCell;
 class Vertex;
 class Graph;
+class Pin;
 }  // namespace sta
 
 namespace stt {
@@ -52,23 +57,26 @@ class HTreeBuilder;
 class TritonCTS
 {
  public:
-  TritonCTS();
-  ~TritonCTS();
-
-  void init(utl::Logger* logger,
+  TritonCTS(utl::Logger* logger,
             odb::dbDatabase* db,
             sta::dbNetwork* network,
             sta::dbSta* sta,
             stt::SteinerTreeBuilder* st_builder,
-            rsz::Resizer* resizer);
+            rsz::Resizer* resizer,
+            est::EstimateParasitics* estimate_parasitics);
+  ~TritonCTS();
+
   void runTritonCts();
   void reportCtsMetrics();
   CtsOptions* getParms() { return options_; }
   TechChar* getCharacterization() { return techChar_.get(); }
+  odb::dbBlock* getBlock() { return db_->getChip()->getBlock(); }
   int setClockNets(const char* names);
   int setSkipNets(const char* names);
   void setBufferList(const char* buffers);
   void setRootBuffer(const char* buffers);
+  std::string getRootBufferToString();
+  void resetRootBuffer() { rootBuffers_.clear(); }
   void setSinkBuffer(const char* buffers);
 
  private:
@@ -80,6 +88,7 @@ class TritonCTS
   void inferBufferList(std::vector<std::string>& buffers);
   TreeBuilder* addBuilder(CtsOptions* options,
                           Clock& net,
+                          odb::dbNet* topInputNet,
                           TreeBuilder* parent,
                           utl::Logger* logger,
                           odb::dbDatabase* db);
@@ -93,12 +102,27 @@ class TritonCTS
   void buildClockTrees();
   void writeDataToDb();
 
+  // NDR functions
+  std::vector<int> getAllClockTreeLevels(Clock& clockNet);
+  int applyNDRToClockLevels(Clock& clockNet,
+                            odb::dbTechNonDefaultRule* clockNDR,
+                            const std::vector<int>& targetLevels);
+
+  int applyNDRToClockLevelRange(Clock& clockNet,
+                                odb::dbTechNonDefaultRule* clockNDR,
+                                int minLevel,
+                                int maxLevel);
+  int applyNDRToFirstHalfLevels(Clock& clockNet,
+                                odb::dbTechNonDefaultRule* clockNDR);
+
   // db functions
   bool masterExists(const std::string& master) const;
   void populateTritonCTS();
+  void destroyClockModNet(sta::Pin* pin_driver);
   void writeClockNetsToDb(TreeBuilder* builder,
                           std::set<odb::dbNet*>& clkLeafNets);
-  void writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets);
+  void writeClockNDRsToDb(TreeBuilder* builder);
+  int getNetSpacing(odb::dbTechLayer* layer, int width1, int width2);
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }
@@ -128,6 +152,7 @@ class TritonCTS
       std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& macroSinks);
   TreeBuilder* addClockSinks(
       Clock& clockNet,
+      odb::dbNet* topInputNet,
       odb::dbNet* physicalNet,
       const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& sinks,
       TreeBuilder* parentBuilder,
@@ -207,6 +232,7 @@ class TritonCTS
   CtsOptions* options_ = nullptr;
   std::unique_ptr<TechChar> techChar_;
   rsz::Resizer* resizer_ = nullptr;
+  est::EstimateParasitics* estimate_parasitics_ = nullptr;
   std::vector<std::unique_ptr<TreeBuilder>> builders_;
   std::set<odb::dbNet*> staClockNets_;
   std::set<odb::dbNet*> visitedClockNets_;

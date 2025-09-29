@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -77,6 +78,49 @@ class NesterovPlace
   void destroyCbkITerm(odb::dbITerm*);
 
  private:
+  void updateIterGraphics(int iter,
+                          const std::string& reports_dir,
+                          const std::string& routability_driven_dir,
+                          int routability_driven_count,
+                          int timing_driven_count,
+                          bool& final_routability_image_saved);
+  void runTimingDriven(int iter,
+                       const std::string& timing_driven_dir,
+                       int routability_driven_count,
+                       int& timing_driven_count,
+                       int64_t& td_accumulated_delta_area,
+                       bool is_routability_gpl_iter);
+  bool isDiverged(float& diverge_snapshot_WlCoefX,
+                  float& diverge_snapshot_WlCoefY,
+                  bool& is_diverge_snapshot_saved);
+  void routabilitySnapshot(int iter,
+                           float curA,
+                           const std::string& routability_driven_dir,
+                           int routability_driven_count,
+                           int timing_driven_count,
+                           bool& is_routability_snapshot_saved,
+                           float& route_snapshot_WlCoefX,
+                           float& route_snapshot_WlCoefY,
+                           float& route_snapshotA);
+  void runRoutability(int iter,
+                      int timing_driven_count,
+                      const std::string& routability_driven_dir,
+                      float route_snapshotA,
+                      float route_snapshot_WlCoefX,
+                      float route_snapshot_WlCoefY,
+                      int& routability_driven_count,
+                      float& curA,
+                      int64_t& end_routability_area);
+  bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
+  std::string getReportsDir() const;
+  void cleanReportsDirs(const std::string& timing_driven_dir,
+                        const std::string& routability_driven_dir) const;
+  void doBackTracking(float coeff);
+  void reportResults(int nesterov_iter,
+                     int64_t original_area,
+                     int64_t end_routability_area,
+                     int64_t td_accumulated_delta_area);
+
   std::shared_ptr<PlacerBaseCommon> pbc_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
   std::vector<std::shared_ptr<PlacerBase>> pbVec_;
@@ -110,7 +154,7 @@ class NesterovPlace
   float wireLengthCoefY_ = 0;
 
   // observability metrics
-  utl::Gauge<double>* hpwl_gauge_;
+  utl::Gauge<double>* hpwl_gauge_ = nullptr;
 
   // half-parameter-wire-length
   int64_t prevHpwl_ = 0;

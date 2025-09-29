@@ -8,7 +8,10 @@
 
 #include "MplObserver.h"
 #include "SimulatedAnnealingCore.h"
+#include "clusterEngine.h"
+#include "mpl-util.h"
 #include "object.h"
+#include "odb/db.h"
 
 namespace utl {
 class Logger;
@@ -24,9 +27,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   const Rect& outline,
                   const std::vector<SoftMacro>& macros,
                   const SACoreWeights& core_weights,
-                  float boundary_weight,
-                  float macro_blockage_weight,
-                  float notch_weight,
+                  const SASoftWeights& soft_weights,
                   // notch threshold
                   float notch_h_threshold,
                   float notch_v_threshold,
@@ -46,6 +47,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   odb::dbBlock* block);
 
   void run() override;
+  bool isValid() const override;
 
   // accessors
   float getBoundaryPenalty() const;
@@ -61,42 +63,44 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void initialize() override;
   // adjust the size of MixedCluster to fill the empty space
   void fillDeadSpace() override;
-  void alignMacroClusters();
+  void attemptMacroClusterAlignment();
   void addBlockages(const std::vector<Rect>& blockages);
 
   bool centralizationWasReverted() { return centralization_was_reverted_; }
-  void setCentralizationAttemptOn(bool centralization_on)
-  {
-    centralization_on_ = centralization_on;
-  };
+
+  void enableEnhancements() { enhancements_on_ = true; };
 
  private:
   float calNormCost() const override;
   void calPenalty() override;
 
   void perturb() override;
-  void restore() override;
+  void saveState() override;
+  void restoreState() override;
   // actions used
   void resizeOneCluster();
 
-  // A utility function for FillDeadSpace.
-  // It's used for calculate the start point and end point for a segment in a
-  // grid
-  void calSegmentLoc(float seg_start,
-                     float seg_end,
-                     int& start_id,
-                     int& end_id,
-                     std::vector<float>& grid);
+  int getSegmentIndex(float segment, const std::vector<float>& coords);
 
   void calBoundaryPenalty();
+  float calSingleNotchPenalty(float width, float height);
   void calNotchPenalty();
   void calMacroBlockagePenalty();
+  void calFixedMacrosPenalty();
 
+  std::vector<std::pair<float, float>> getClustersLocations() const;
+  void setClustersLocations(
+      const std::vector<std::pair<float, float>>& clusters_locations);
   // Only for Cluster Placement:
   void attemptCentralization(float pre_cost);
   void moveFloorplan(const std::pair<float, float>& offset);
 
+  Tiling computeOverlapShape(const Rect& rect_a, const Rect& rect_b) const;
+
+  void findFixedMacros();
+
   std::vector<Rect> blockages_;
+  std::vector<Rect> fixed_macros_;
 
   Cluster* root_;
 
@@ -112,10 +116,13 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   // additional penalties
   float boundary_weight_ = 0.0;
   float macro_blockage_weight_ = 0.0;
+  float notch_weight_ = 0.0;
+  const float fixed_macros_weight_ = 100.0;
 
   float boundary_penalty_ = 0.0;
   float notch_penalty_ = 0.0;
   float macro_blockage_penalty_ = 0.0;
+  float fixed_macros_penalty_ = 0.0;
 
   float pre_boundary_penalty_ = 0.0;
   float pre_notch_penalty_ = 0.0;
@@ -124,11 +131,12 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   float norm_boundary_penalty_ = 0.0;
   float norm_notch_penalty_ = 0.0;
   float norm_macro_blockage_penalty_ = 0.0;
+  float norm_fixed_macros_penalty_ = 0.0;
 
   // action prob
   float resize_prob_ = 0.0;
 
-  bool centralization_on_ = false;
+  bool enhancements_on_ = false;
   bool centralization_was_reverted_ = false;
 };
 

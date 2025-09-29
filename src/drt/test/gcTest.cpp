@@ -31,20 +31,26 @@
 #ifdef HAS_BOOST_UNIT_TEST_LIBRARY
 // Shared library version
 #define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
-#include <vector>
+#include "boost/test/unit_test.hpp"
 #else
 // Header only version
-#include <boost/test/included/unit_test.hpp>
+#include "boost/test/included/unit_test.hpp"
 #endif
 
-#include <boost/test/data/test_case.hpp>
-#include <iostream>
+#include <map>
+#include <memory>
+#include <utility>
+#include <vector>
 
+#include "boost/test/data/test_case.hpp"
+#include "db/obj/frMarker.h"
+#include "db/tech/frViaDef.h"
 #include "fixture.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -58,9 +64,9 @@ struct GCFixture : public Fixture
   void testMarker(frMarker* marker,
                   frLayerNum layer_num,
                   frConstraintTypeEnum type,
-                  const Rect& expected_bbox)
+                  const odb::Rect& expected_bbox)
   {
-    Rect bbox = marker->getBBox();
+    odb::Rect bbox = marker->getBBox();
 
     BOOST_TEST(marker->getLayerNum() == layer_num);
     BOOST_TEST(marker->getConstraint());
@@ -75,7 +81,7 @@ struct GCFixture : public Fixture
     initRegionQuery();
 
     // Run the GC engine
-    const Rect work(0, 0, 2000, 2000);
+    const odb::Rect work(0, 0, 2000, 2000);
     worker.setExtBox(work);
     worker.setDrcBox(work);
 
@@ -107,7 +113,7 @@ BOOST_AUTO_TEST_CASE(metal_short)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcShortConstraint,
-             Rect(499, -50, 501, 50));
+             odb::Rect(499, -50, 501, 50));
 }
 
 /*
@@ -156,7 +162,7 @@ BOOST_AUTO_TEST_CASE(metal_short_obs)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcShortConstraint,
-             Rect(450, -50, 550, 40));
+             odb::Rect(450, -50, 550, 40));
 
   // shorts of net (0,-50), (600,50)
   // with obs (450,-50), (750,200)
@@ -164,11 +170,11 @@ BOOST_AUTO_TEST_CASE(metal_short_obs)
   testMarker(markers[1].get(),
              2,
              frConstraintTypeEnum::frcShortConstraint,
-             Rect(550, -50, 600, 50));
+             odb::Rect(550, -50, 600, 50));
   testMarker(markers[2].get(),
              2,
              frConstraintTypeEnum::frcShortConstraint,
-             Rect(450, -50, 600, 40));
+             odb::Rect(450, -50, 600, 40));
 }
 
 // Two touching metal shape from the same net must have sufficient
@@ -190,7 +196,7 @@ BOOST_AUTO_TEST_CASE(metal_non_sufficient)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcNonSufficientMetalConstraint,
-             Rect(0, 0, 50, 50));
+             odb::Rect(0, 0, 50, 50));
 }
 
 // Path seg less than min width flags a violation
@@ -221,7 +227,7 @@ BOOST_DATA_TEST_CASE(min_cut,
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcMinimumcutConstraint,
-               Rect(200, 50, 400, 150));
+               odb::Rect(200, 50, 400, 150));
   }
 }
 
@@ -242,7 +248,7 @@ BOOST_AUTO_TEST_CASE(min_width)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcMinWidthConstraint,
-             Rect(0, -30, 500, 30));
+             odb::Rect(0, -30, 500, 30));
 }
 
 // Abutting Path seg less than min width don't flag a violation
@@ -278,7 +284,7 @@ BOOST_AUTO_TEST_CASE(off_grid)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcOffGridConstraint,
-             Rect(1, -49, 501, 51));
+             odb::Rect(1, -49, 501, 51));
 }
 
 // Check violation for corner spacing
@@ -301,7 +307,7 @@ BOOST_AUTO_TEST_CASE(corner_basic)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58CornerSpacingConstraint,
-             Rect(500, 50, 500, 150));
+             odb::Rect(500, 50, 500, 150));
 }
 
 // Check no violation for corner spacing with EOL spacing
@@ -377,7 +383,7 @@ BOOST_AUTO_TEST_CASE(corner_concave, *boost::unit_test::disabled())
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58CornerSpacingConstraint,
-             Rect(50, 50, 200, 200));
+             odb::Rect(50, 50, 200, 200));
 }
 
 // Check violation for parallel-run-length (PRL) spacing tables
@@ -418,7 +424,7 @@ BOOST_DATA_TEST_CASE(spacing_prl,
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcSpacingTablePrlConstraint,
-               Rect(0, 50, prl, y - width / 2));
+               odb::Rect(0, 50, prl, y - width / 2));
   }
 }
 
@@ -466,7 +472,7 @@ BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcSpacingTableTwConstraint,
-               Rect(0, 100, 500, 140));
+               odb::Rect(0, 100, 500, 140));
   }
 }
 
@@ -508,7 +514,7 @@ BOOST_AUTO_TEST_CASE(min_step58_nobetweeneol)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58MinStepConstraint,
-             Rect(200, 50, 300, 70));
+             odb::Rect(200, 50, 300, 70));
 }
 
 // Check for a lef58 style min step violation.  The checker is very
@@ -534,11 +540,11 @@ BOOST_AUTO_TEST_CASE(min_step58_minadjlength)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58MinStepConstraint,
-             Rect(150, 50, 500, 70));
+             odb::Rect(150, 50, 500, 70));
   testMarker(markers[1].get(),
              2,
              frConstraintTypeEnum::frcLef58MinStepConstraint,
-             Rect(0, 50, 250, 70));
+             odb::Rect(0, 50, 250, 70));
 }
 
 // Check for a lef58 rect only violation.  The markers are
@@ -562,15 +568,15 @@ BOOST_AUTO_TEST_CASE(rect_only)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58RectOnlyConstraint,
-             Rect(150, -50, 250, 100));
+             odb::Rect(150, -50, 250, 100));
   testMarker(markers[1].get(),
              2,
              frConstraintTypeEnum::frcLef58RectOnlyConstraint,
-             Rect(150, -50, 350, 50));
+             odb::Rect(150, -50, 350, 50));
   testMarker(markers[2].get(),
              2,
              frConstraintTypeEnum::frcLef58RectOnlyConstraint,
-             Rect(50, -50, 250, 50));
+             odb::Rect(50, -50, 250, 50));
 }
 
 // Check for a min enclosed area violation.
@@ -594,7 +600,7 @@ BOOST_AUTO_TEST_CASE(min_enclosed_area)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcMinEnclosedAreaConstraint,
-             Rect(50, 50, 150, 150));
+             odb::Rect(50, 50, 150, 150));
 }
 
 // Check for a spacing table influence violation.
@@ -618,7 +624,7 @@ BOOST_AUTO_TEST_CASE(spacing_table_infl_vertical)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcSpacingTableInfluenceConstraint,
-             Rect(100, 150, 300, 200));
+             odb::Rect(100, 150, 300, 200));
 }
 // Check for a spacing table influence violation.
 BOOST_AUTO_TEST_CASE(spacing_table_infl_horizontal)
@@ -640,7 +646,7 @@ BOOST_AUTO_TEST_CASE(spacing_table_infl_horizontal)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcSpacingTableInfluenceConstraint,
-             Rect(150, 250, 250, 450));
+             odb::Rect(150, 250, 250, 450));
 }
 
 // Check for a spacing table twowidths violation.
@@ -671,7 +677,7 @@ BOOST_AUTO_TEST_CASE(spacing_table_twowidth)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcSpacingTableTwConstraint,
-             Rect(0, 100, 500, 140));
+             odb::Rect(0, 100, 500, 140));
 }
 
 // Check for a SPACING RANGE violation.
@@ -706,7 +712,7 @@ BOOST_DATA_TEST_CASE(spacing_range,
       testMarker(markers[0].get(),
                  2,
                  frConstraintTypeEnum::frcSpacingRangeConstraint,
-                 Rect(0, 100, 1000, y - 50));
+                 odb::Rect(0, 100, 1000, y - 50));
     }
   }
 }
@@ -740,7 +746,7 @@ BOOST_DATA_TEST_CASE(spacing_range_same_diff_net,
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcSpacingRangeConstraint,
-               Rect(0, 100, 1000, 150));
+               odb::Rect(0, 100, 1000, 150));
   }
 }
 
@@ -768,7 +774,7 @@ BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
              2,
              lef58 ? frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint
                    : frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
-             Rect(450, 500, 550, 650));
+             odb::Rect(450, 500, 550, 650));
 }
 
 // Check for a basic end-of-line (EOL) spacing violation.
@@ -795,7 +801,7 @@ BOOST_AUTO_TEST_CASE(eol_endtoend)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
-             Rect(100, 0, 350, 100));
+             odb::Rect(100, 0, 350, 100));
 }
 // Check for a basic end-of-line (EOL) spacing violation with extension.
 BOOST_AUTO_TEST_CASE(eol_endtoend_ext)
@@ -821,7 +827,7 @@ BOOST_AUTO_TEST_CASE(eol_endtoend_ext)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
-             Rect(100, 100, 350, 150));
+             odb::Rect(100, 100, 350, 150));
 }
 
 BOOST_AUTO_TEST_CASE(eol_wrongdirspc)
@@ -867,7 +873,7 @@ BOOST_DATA_TEST_CASE(eol_ext_basic,
       testMarker(markers[0].get(),
                  2,
                  frConstraintTypeEnum::frcLef58EolExtensionConstraint,
-                 Rect(500, 50, 690, 150));
+                 odb::Rect(500, 50, 690, 150));
     }
   }
 }
@@ -905,11 +911,11 @@ BOOST_AUTO_TEST_CASE(eol_prlend)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
-             Rect(100, 50, 320, 100));
+             odb::Rect(100, 50, 320, 100));
   testMarker(markers[1].get(),
              2,
              frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
-             Rect(100, 950, 220, 1050));
+             odb::Rect(100, 950, 220, 1050));
 }
 
 BOOST_DATA_TEST_CASE(eol_ext_paronly, (bdata::make({true, false})), parOnly)
@@ -932,7 +938,7 @@ BOOST_DATA_TEST_CASE(eol_ext_paronly, (bdata::make({true, false})), parOnly)
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcLef58EolExtensionConstraint,
-               Rect(500, 150, 520, 240));
+               odb::Rect(500, 150, 520, 240));
   }
 }
 // Check for eol keepout violation.
@@ -961,7 +967,7 @@ BOOST_DATA_TEST_CASE(eol_keepout, (bdata::make({true, false})), legal)
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcLef58EolKeepOutConstraint,
-               Rect(450, 500, 550, 650));
+               odb::Rect(450, 500, 550, 650));
   }
 }
 
@@ -1013,7 +1019,7 @@ BOOST_DATA_TEST_CASE(eol_keepout_corner,
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcLef58EolKeepOutConstraint,
-               Rect(410, 500, 450, 650));
+               odb::Rect(410, 500, 450, 650));
   }
 }
 
@@ -1045,7 +1051,7 @@ BOOST_DATA_TEST_CASE(eol_parallel_edge, (bdata::make({true, false})), lef58)
              2,
              lef58 ? frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint
                    : frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
-             Rect(450, 500, 550, 650));
+             odb::Rect(450, 500, 550, 650));
 }
 
 // Check for an end-of-line (EOL) spacing violation involving two
@@ -1079,7 +1085,7 @@ BOOST_DATA_TEST_CASE(eol_parallel_two_edge, (bdata::make({true, false})), lef58)
              2,
              lef58 ? frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint
                    : frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
-             Rect(450, 500, 550, 650));
+             odb::Rect(450, 500, 550, 650));
 }
 
 BOOST_DATA_TEST_CASE(eol_min_max,
@@ -1128,7 +1134,7 @@ BOOST_DATA_TEST_CASE(eol_min_max,
       testMarker(markers[0].get(),
                  2,
                  frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
-                 Rect(450, y, 550, 650));
+                 odb::Rect(450, y, 550, 650));
     }
   }
 }
@@ -1156,7 +1162,7 @@ BOOST_DATA_TEST_CASE(eol_enclose_cut,
       testMarker(markers[0].get(),
                  4,
                  frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
-                 Rect(450, 500, 550, 650));
+                 odb::Rect(450, 500, 550, 650));
     }
   }
 }
@@ -1265,7 +1271,7 @@ BOOST_AUTO_TEST_CASE(metal_width_via_map)
   testMarker(markers[0].get(),
              3,
              frConstraintTypeEnum::frcMetalWidthViaConstraint,
-             Rect(100, 0, 200, 100));
+             odb::Rect(100, 0, 200, 100));
 }
 
 BOOST_DATA_TEST_CASE(cut_spc_parallel_overlap,
@@ -1297,7 +1303,7 @@ BOOST_DATA_TEST_CASE(cut_spc_parallel_overlap,
     testMarker(markers[0].get(),
                3,
                frConstraintTypeEnum::frcLef58CutSpacingConstraint,
-               Rect(100, 0, 150, 100));
+               odb::Rect(100, 0, 150, 100));
   }
 }
 
@@ -1357,7 +1363,7 @@ BOOST_AUTO_TEST_CASE(cut_keepoutzone)
   testMarker(markers[0].get(),
              3,
              frConstraintTypeEnum::frcLef58KeepOutZoneConstraint,
-             Rect(150, 150, 200, 200));
+             odb::Rect(150, 150, 200, 200));
 }
 
 BOOST_DATA_TEST_CASE(route_wrong_direction_spc,
@@ -1409,7 +1415,7 @@ BOOST_DATA_TEST_CASE(route_wrong_direction_spc,
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcLef58SpacingWrongDirConstraint,
-               Rect(0, 100, 100, 150));
+               odb::Rect(0, 100, 100, 150));
   }
 }
 
@@ -1481,7 +1487,7 @@ BOOST_AUTO_TEST_CASE(lef58_enclosure)
     testMarker(markers[0].get(),
                4,
                frConstraintTypeEnum::frcLef58EnclosureConstraint,
-               Rect(0, 0, 200, 100));
+               odb::Rect(0, 0, 200, 100));
   }
 }
 

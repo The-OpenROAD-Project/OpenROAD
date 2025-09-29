@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -171,7 +172,7 @@ extern const char* powv9[];
 
 void Flute::readLUT()
 {
-  makeLUT(LUT, numsoln);
+  makeLUT(LUT_, numsoln_);
 
 #if LUT_SOURCE == LUT_FILE
   readLUTfiles(LUT, numsoln);
@@ -179,7 +180,7 @@ void Flute::readLUT()
 
 #elif LUT_SOURCE == LUT_VAR
   // Only init to d=8 on startup because d=9 is big and slow.
-  initLUT(lut_initial_d, LUT, numsoln);
+  initLUT(lut_initial_d, LUT_, numsoln_);
 
 #elif LUT_SOURCE == LUT_VAR_CHECK
   readLUTfiles(LUT, numsoln);
@@ -205,7 +206,7 @@ void Flute::makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
 
 void Flute::deleteLUT()
 {
-  deleteLUT(LUT, numsoln);
+  deleteLUT(LUT_, numsoln_);
 }
 
 void Flute::deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
@@ -322,16 +323,16 @@ void Flute::initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
       }
     }
   }
-  lut_valid_d = to_d;
+  lut_valid_d_ = to_d;
 }
 
 void Flute::ensureLUT(int d)
 {
-  if (LUT == nullptr) {
+  if (LUT_ == nullptr) {
     readLUT();
   }
-  if (d > lut_valid_d && d <= FLUTE_D) {
-    initLUT(FLUTE_D, LUT, numsoln);
+  if (d > lut_valid_d_ && d <= FLUTE_D) {
+    initLUT(FLUTE_D, LUT_, numsoln_);
   }
 }
 
@@ -581,14 +582,14 @@ int Flute::flutes_wl_LD(int d,
     }
 
     minl = l[0] = xs[d - 1] - xs[0] + ys[d - 1] - ys[0];
-    rlist = (*LUT)[d][k].get();
+    rlist = (*LUT_)[d][k].get();
     for (i = 0; rlist->seg[i] > 0; i++) {
       minl += dd[rlist->seg[i]];
     }
 
     l[1] = minl;
     j = 2;
-    while (j <= numsoln[d][k]) {
+    while (j <= numsoln_[d][k]) {
       rlist++;
       sum = l[rlist->parent];
       for (i = 0; rlist->seg[i] > 0; i++) {
@@ -1146,14 +1147,14 @@ Tree Flute::flutes_LD(int d,
     }
 
     minl = l[0] = xs[d - 1] - xs[0] + ys[d - 1] - ys[0];
-    rlist = (*LUT)[d][k].get();
+    rlist = (*LUT_)[d][k].get();
     for (i = 0; rlist->seg[i] > 0; i++) {
       minl += dd[rlist->seg[i]];
     }
     bestrlist = rlist;
     l[1] = minl;
     j = 2;
-    while (j <= numsoln[d][k]) {
+    while (j <= numsoln_[d][k]) {
       rlist++;
       sum = l[rlist->parent];
       for (i = 0; rlist->seg[i] > 0; i++) {

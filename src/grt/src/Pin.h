@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace grt {
 
@@ -48,7 +49,8 @@ class Pin
   const odb::Point& getPosition() const { return position_; }
   const std::vector<int>& getLayers() const { return layers_; }
   int getNumLayers() const { return layers_.size(); }
-  int getConnectionLayer() const;
+  int getConnectionLayer() const { return connection_layer_; }
+  void setConnectionLayer(int layer) { connection_layer_ = layer; }
   PinEdge getEdge() const { return edge_; }
   const std::map<int, std::vector<odb::Rect>>& getBoxes() const
   {
@@ -71,8 +73,8 @@ class Pin
 
   union
   {
-    odb::dbITerm* iterm_;
-    odb::dbBTerm* bterm_;
+    odb::dbITerm* iterm;
+    odb::dbBTerm* bterm;
   };
   odb::Point position_;
   odb::Point on_grid_position_;

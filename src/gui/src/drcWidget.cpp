@@ -4,16 +4,24 @@
 #include "drcWidget.h"
 
 #include <QApplication>
+#include <QComboBox>
 #include <QFileDialog>
 #include <QHeaderView>
+#include <QPushButton>
 #include <QVBoxLayout>
-#include <array>
-#include <iomanip>
-#include <map>
+#include <QVariant>
+#include <QWidget>
+#include <algorithm>
+#include <any>
+#include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "dbDescriptors.h"
+#include "gui/gui.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbMarker*);
@@ -253,7 +261,7 @@ void DRCWidget::updateModel()
   model_->removeRows(0, model_->rowCount());
 
   if (category != nullptr) {
-    for (odb::dbMarkerCategory* subcategory : category->getMarkerCategorys()) {
+    for (odb::dbMarkerCategory* subcategory : category->getMarkerCategories()) {
       populateCategory(subcategory, model_->invisibleRootItem());
     }
   }
@@ -280,7 +288,7 @@ void DRCWidget::populateCategory(odb::dbMarkerCategory* category,
   type_group->setCheckable(true);
   type_group->setCheckState(Qt::Checked);
 
-  for (odb::dbMarkerCategory* subcategory : category->getMarkerCategorys()) {
+  for (odb::dbMarkerCategory* subcategory : category->getMarkerCategories()) {
     populateCategory(subcategory, type_group);
   }
 

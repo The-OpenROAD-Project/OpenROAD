@@ -3,7 +3,9 @@
 
 #pragma once
 
-#include "dbStream.h"
+#include <cstddef>
+
+#include "odb/dbStream.h"
 
 namespace odb {
 
@@ -11,14 +13,14 @@ template <class T>
 class dbId
 {
   constexpr static unsigned int invalid = 0;
-  unsigned int _id;
+  unsigned int _id = invalid;
 
  public:
   using _type = T;
 
-  dbId() { _id = invalid; }
-  dbId(const dbId<T>& id) : _id(id._id) {}
-  dbId(unsigned int id) { _id = id; }
+  dbId() = default;
+  dbId(const dbId<T>& id) = default;
+  dbId(unsigned int id) : _id(id) {}
 
   operator unsigned int() const { return _id; }
   unsigned int& id() { return _id; }
@@ -40,3 +42,17 @@ class dbId
 };
 
 }  // namespace odb
+
+// Enable unordered_map/set usage
+namespace std {
+
+template <typename T>
+struct hash<odb::dbId<T>>
+{
+  std::size_t operator()(const odb::dbId<T>& db_id) const
+  {
+    return std::hash<unsigned int>()(db_id);
+  }
+};
+
+}  // namespace std

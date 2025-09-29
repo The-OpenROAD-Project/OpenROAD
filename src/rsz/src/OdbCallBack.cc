@@ -14,11 +14,12 @@
 
 #include "rsz/OdbCallBack.hh"
 
-#include <memory>
-
+#include "est/EstimateParasitics.h"
 #include "rsz/Resizer.hh"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 
@@ -37,37 +38,6 @@ OdbCallBack::OdbCallBack(Resizer* resizer,
 {
 }
 
-void OdbCallBack::inDbInstCreate(dbInst* inst)
-{
-  debugPrint(resizer_->logger(),
-             utl::RSZ,
-             "odb",
-             1,
-             "inDbInstCreate {}",
-             inst->getName());
-  Instance* sta_inst = db_network_->dbToSta(inst);
-  std::unique_ptr<InstancePinIterator> pin_iter{
-      network_->pinIterator(sta_inst)};
-  while (pin_iter->hasNext()) {
-    Pin* pin = pin_iter->next();
-    Net* net = network_->net(pin);
-    if (net) {
-      resizer_->parasiticsInvalid(net);
-    }
-  }
-}
-
-void OdbCallBack::inDbNetCreate(dbNet* net)
-{
-  debugPrint(resizer_->logger(),
-             utl::RSZ,
-             "odb",
-             1,
-             "inDbNetCreate {}",
-             net->getName());
-  resizer_->parasiticsInvalid(net);
-}
-
 void OdbCallBack::inDbNetDestroy(dbNet* net)
 {
   debugPrint(resizer_->logger(),
@@ -77,65 +47,8 @@ void OdbCallBack::inDbNetDestroy(dbNet* net)
              "inDbNetDestroy {}",
              net->getName());
   Net* sta_net = db_network_->dbToSta(net);
-  if (sta_net) {
-    resizer_->eraseParasitics(sta_net);
-  }
   if (resizer_->net_slack_map_.count(sta_net)) {
     resizer_->net_slack_map_.erase(sta_net);
-  }
-}
-
-void OdbCallBack::inDbITermPostConnect(dbITerm* iterm)
-{
-  debugPrint(resizer_->logger(),
-             utl::RSZ,
-             "odb",
-             1,
-             "inDbITermPostConnect iterm {}",
-             iterm->getName());
-  dbNet* db_net = iterm->getNet();
-  if (db_net) {
-    resizer_->parasiticsInvalid(db_net);
-  }
-}
-
-void OdbCallBack::inDbITermPostDisconnect(dbITerm* iterm, dbNet* net)
-{
-  debugPrint(resizer_->logger(),
-             utl::RSZ,
-             "odb",
-             1,
-             "inDbITermPostDisconnect iterm={} net={}",
-             iterm->getName(),
-             net->getName());
-  resizer_->parasiticsInvalid(net);
-}
-
-void OdbCallBack::inDbInstSwapMasterAfter(dbInst* inst)
-{
-  debugPrint(resizer_->logger(),
-             utl::RSZ,
-             "odb",
-             1,
-             "inDbInstSwapMasterAfter {}",
-             inst->getName());
-  Instance* sta_inst = db_network_->dbToSta(inst);
-
-  // Invalidate estimated parasitics on all instance pins.
-  std::unique_ptr<InstancePinIterator> pin_iter{
-      network_->pinIterator(sta_inst)};
-  while (pin_iter->hasNext()) {
-    Pin* pin = pin_iter->next();
-    Net* net = network_->net(pin);
-
-    const LibertyPort* port = network_->libertyPort(pin);
-    // Tristate nets have multiple drivers and this is drivers^2 if
-    // the parasitics are updated for each resize.
-    if (!port || !port->direction()->isAnyTristate()) {
-      // we can only update parasitics for flat net
-      odb::dbNet* db_net = db_network_->flatNet(net);
-      resizer_->parasiticsInvalid(db_network_->dbToSta(db_net));
-    }
   }
 }
 

@@ -3,8 +3,13 @@
 
 #include "tclCmdHighlighter.h"
 
+#include <QColor>
+#include <QString>
 #include <QTextDocument>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace gui {

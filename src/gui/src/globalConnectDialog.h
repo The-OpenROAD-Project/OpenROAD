@@ -9,7 +9,9 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QString>
 #include <QWidget>
+#include <map>
 
 #include "odb/db.h"
 

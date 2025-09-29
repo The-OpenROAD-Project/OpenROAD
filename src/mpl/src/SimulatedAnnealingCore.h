@@ -3,15 +3,17 @@
 
 #pragma once
 
+#include <limits>
 #include <map>
 #include <random>
-#include <set>
 #include <string>
 #include <vector>
 
 #include "MplObserver.h"
 #include "clusterEngine.h"
-#include "util.h"
+#include "mpl-util.h"
+#include "object.h"
+#include "odb/db.h"
 
 namespace utl {
 class Logger;
@@ -57,17 +59,17 @@ class SimulatedAnnealingCore
 
   virtual ~SimulatedAnnealingCore() = default;
 
-  void setNumberOfMacrosToPlace(int macros_to_place)
+  void setNumberOfSequencePairMacros(int number_of_sequence_pair_macros)
   {
-    macros_to_place_ = macros_to_place;
+    number_of_sequence_pair_macros_ = number_of_sequence_pair_macros;
   };
   void setNets(const std::vector<BundledNet>& nets);
   void setFences(const std::map<int, Rect>& fences);
   void setGuides(const std::map<int, Rect>& guides);
   void setInitialSequencePair(const SequencePair& sequence_pair);
 
-  bool isValid() const;
-  bool isValid(const Rect& outline) const;
+  virtual bool isValid() const;
+  bool fitsIn(const Rect& outline) const;
   void writeCostFile(const std::string& file_name) const;
   float getNormCost() const;
   float getWidth() const;
@@ -81,7 +83,7 @@ class SimulatedAnnealingCore
   float getNormGuidancePenalty() const;
   float getFencePenalty() const;
   float getNormFencePenalty() const;
-  void getMacros(std::vector<T>& macros) const;
+  std::vector<T> getMacros() const;
 
   virtual void initialize() = 0;
   virtual void run() = 0;
@@ -90,6 +92,8 @@ class SimulatedAnnealingCore
  protected:
   struct Result
   {
+    bool empty() const { return sequence_pair.pos_sequence.empty(); }
+
     float cost{std::numeric_limits<float>::max()};
     SequencePair sequence_pair;
     // [Only for SoftMacro] The same sequence pair can represent different
@@ -98,13 +102,14 @@ class SimulatedAnnealingCore
   };
 
   void fastSA();
+  bool resultFitsInOutline() const;
 
   void setAvailableRegionsForUnconstrainedPins(
       const BoundaryRegionList& regions);
   void initSequencePair();
   void setDieArea(const Rect& die_area);
-  void updateBestValidResult(float cost);
-  void useBestValidResult();
+  void updateBestResult(float cost);
+  void useBestResult();
 
   virtual float calNormCost() const = 0;
   virtual void calPenalty() = 0;
@@ -120,7 +125,8 @@ class SimulatedAnnealingCore
   // operations
   void packFloorplan();
   virtual void perturb() = 0;
-  virtual void restore() = 0;
+  virtual void saveState() = 0;
+  virtual void restoreState() = 0;
   // actions used
   void singleSeqSwap(bool pos);
   void doubleSeqSwap();
@@ -142,17 +148,13 @@ class SimulatedAnnealingCore
   BoundaryRegionList available_regions_for_unconstrained_pins_;
   ClusterToBoundaryRegionMap io_cluster_to_constraint_;
 
-  // Number of macros that will actually be part of the sequence pair
-  int macros_to_place_ = 0;
+  int number_of_sequence_pair_macros_ = 0;
 
   std::vector<BundledNet> nets_;
   std::map<int, Rect> fences_;  // Macro Id -> Fence
   std::map<int, Rect> guides_;  // Macro Id -> Guide
 
   SACoreWeights core_weights_;
-
-  float original_notch_weight_ = 0.0;
-  float notch_weight_ = 0.0;
 
   // Fast SA hyperparameter
   float init_prob_ = 0.0;
@@ -208,7 +210,8 @@ class SimulatedAnnealingCore
   MplObserver* graphics_ = nullptr;
   odb::dbBlock* block_;
 
-  Result best_valid_result_;
+  Result best_result_;
+  bool is_best_result_valid_ = false;
 
   std::vector<float> cost_list_;  // store the cost in the list
   std::vector<float> T_list_;     // store the temperature

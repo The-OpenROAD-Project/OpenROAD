@@ -3,12 +3,15 @@
 
 #include "db/drObj/drShape.h"
 
+#include <tuple>
+
 #include "db/drObj/drNet.h"
 #include "db/obj/frShape.h"
+#include "odb/geom.h"
 
 namespace drt {
 
-Rect drPathSeg::getBBox() const
+odb::Rect drPathSeg::getBBox() const
 {
   bool isHorizontal = true;
   if (begin_.x() == end_.x()) {
@@ -18,15 +21,15 @@ Rect drPathSeg::getBBox() const
   const auto beginExt = style_.getBeginExt();
   const auto endExt = style_.getEndExt();
   if (isHorizontal) {
-    return Rect(begin_.x() - beginExt,
-                begin_.y() - width / 2,
-                end_.x() + endExt,
-                end_.y() + width / 2);
+    return odb::Rect(begin_.x() - beginExt,
+                     begin_.y() - width / 2,
+                     end_.x() + endExt,
+                     end_.y() + width / 2);
   }
-  return Rect(begin_.x() - width / 2,
-              begin_.y() - beginExt,
-              end_.x() + width / 2,
-              end_.y() + endExt);
+  return odb::Rect(begin_.x() - width / 2,
+                   begin_.y() - beginExt,
+                   end_.x() + width / 2,
+                   end_.y() + endExt);
 }
 
 drPathSeg::drPathSeg(const frPathSeg& in) : layer_(in.getLayerNum())

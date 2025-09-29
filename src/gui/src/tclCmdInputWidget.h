@@ -10,8 +10,12 @@
 #include <QPlainTextEdit>
 #include <QRegularExpression>
 #include <QSettings>
+#include <QString>
 #include <QStringList>
 #include <QStringListModel>
+#include <QWidget>
+#include <functional>
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -67,7 +71,7 @@ class TclCmdInputWidget : public CmdInputWidget
 
  private:
   void init();
-  void processTclResult(bool is_ok);
+  void processTclResult(int tcl_result);
 
   static int tclExitHandler(ClientData instance_data,
                             Tcl_Interp* interp,

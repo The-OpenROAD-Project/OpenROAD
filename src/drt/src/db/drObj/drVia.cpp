@@ -8,6 +8,8 @@
 #include "db/drObj/drNet.h"
 #include "db/obj/frVia.h"
 #include "distributed/frArchive.h"
+#include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -21,7 +23,7 @@ drVia::drVia(const frVia& in)
 {
 }
 
-Rect drVia::getBBox() const
+odb::Rect drVia::getBBox() const
 {
   auto& layer1Figs = viaDef_->getLayer1Figs();
   auto& layer2Figs = viaDef_->getLayer2Figs();
@@ -32,7 +34,7 @@ Rect drVia::getBBox() const
   frCoord xh = 0;
   frCoord yh = 0;
   for (auto& fig : layer1Figs) {
-    Rect box = fig->getBBox();
+    odb::Rect box = fig->getBBox();
     if (isFirst) {
       xl = box.xMin();
       yl = box.yMin();
@@ -47,7 +49,7 @@ Rect drVia::getBBox() const
     }
   }
   for (auto& fig : layer2Figs) {
-    Rect box = fig->getBBox();
+    odb::Rect box = fig->getBBox();
     if (isFirst) {
       xl = box.xMin();
       yl = box.yMin();
@@ -62,7 +64,7 @@ Rect drVia::getBBox() const
     }
   }
   for (auto& fig : cutFigs) {
-    Rect box = fig->getBBox();
+    odb::Rect box = fig->getBBox();
     if (isFirst) {
       xl = box.xMin();
       yl = box.yMin();
@@ -76,7 +78,7 @@ Rect drVia::getBBox() const
       yh = std::max(yh, box.yMax());
     }
   }
-  Rect box(xl, yl, xh, yh);
+  odb::Rect box(xl, yl, xh, yh);
   getTransform().apply(box);
   return box;
 }

@@ -32,7 +32,7 @@
 
 #include "env.h"
 
-#include <iostream>
+#include <cstdlib>
 #include <stdexcept>
 #include <string>
 

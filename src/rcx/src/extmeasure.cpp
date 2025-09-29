@@ -2,8 +2,16 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <array>
+#include <cassert>
+#include <cmath>
+#include <cstdint>
+#include <cstdio>
 
 #include "gseq.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/dbTypes.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
@@ -453,11 +461,11 @@ uint extMeasure::defineBox(CoupleOptions& options)
     _ur[1] = base + _width;
   }
   for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
-    _rc[ii]->_coupling = 0.0;
-    _rc[ii]->_fringe = 0.0;
-    _rc[ii]->_diag = 0.0;
-    _rc[ii]->_res = 0.0;
-    _rc[ii]->_sep = 0;
+    _rc[ii]->coupling_ = 0.0;
+    _rc[ii]->fringe_ = 0.0;
+    _rc[ii]->diag_ = 0.0;
+    _rc[ii]->res_ = 0.0;
+    _rc[ii]->sep_ = 0;
   }
   dbTechLayer* layer = _extMain->_tech->findRoutingLayer(_met);
   _minWidth = layer->getWidth();
@@ -684,8 +692,8 @@ extDistRC* extMeasure::computeOverFringe(uint overMet,
     }
 
     if (rcUnit != nullptr) {
-      _rc[ii]->_fringe += rcUnit->_fringe * len;
-      _rc[ii]->_res += rcUnit->_res * len;
+      _rc[ii]->fringe_ += rcUnit->fringe_ * len;
+      _rc[ii]->res_ += rcUnit->res_ * len;
     }
   }
   return rcUnit;
@@ -712,8 +720,8 @@ extDistRC* extMeasure::computeUnderFringe(uint underMet,
     }
 
     if (rcUnit != nullptr) {
-      _rc[ii]->_fringe += rcUnit->_fringe * len;
-      _rc[ii]->_res += rcUnit->_res * len;
+      _rc[ii]->fringe_ += rcUnit->fringe_ * len;
+      _rc[ii]->res_ += rcUnit->res_ * len;
     }
   }
   return rcUnit;
@@ -1825,10 +1833,10 @@ double extMain::calcFringe(extDistRC* rc, double deltaFr, bool includeCoupling)
 {
   double ccCap = 0.0;
   if (includeCoupling) {
-    ccCap = rc->_coupling;
+    ccCap = rc->coupling_;
   }
 
-  double cap = rc->_fringe + ccCap - deltaFr;
+  double cap = rc->fringe_ + ccCap - deltaFr;
 
   if (_gndcModify) {
     cap *= _gndcFactor;
@@ -1867,10 +1875,10 @@ void extDistRC::addRC(extDistRC* rcUnit, uint len, bool addCC)
     return;
   }
 
-  _fringe += rcUnit->_fringe * len;
+  fringe_ += rcUnit->fringe_ * len;
 
   if (addCC) {  // dist based
-    _coupling += rcUnit->_coupling * len;
+    coupling_ += rcUnit->coupling_ * len;
   }
 }
 
@@ -1967,18 +1975,18 @@ void extMeasure::calcDiagRC(int rsegId1,
     extMetRCTable* rcModel = _metRCTable.get(ii);
 
     capTable[ii] = len * getDiagUnderCC(rcModel, diagWidth, diagDist, tgtMet);
-    _rc[ii]->_diag += capTable[ii];
+    _rc[ii]->diag_ += capTable[ii];
     double ccTable[10];
     if (_dist > 0) {
       extDistRC* rc = getDiagUnderCC2(rcModel, diagWidth, diagDist, tgtMet);
       if (rc) {
-        ccTable[ii] = len * rc->_coupling;
+        ccTable[ii] = len * rc->coupling_;
       }
 
       rc = rcModel->_capOver[_met]->getRC(0, _width, _dist);
       if (rc) {
-        ccTable[ii] -= len * rc->_coupling;
-        _rc[ii]->_coupling += ccTable[ii];
+        ccTable[ii] -= len * rc->coupling_;
+        _rc[ii]->coupling_ += ccTable[ii];
       }
     }
   }
@@ -2014,7 +2022,7 @@ void extMeasure::createCap(int rsegId1, uint rsegId2, double* capTable)
     if (ccCap != nullptr) {
       addCCcap(ccCap, capTable[model], model);
     } else {
-      _rc[model]->_diag += capTable[model];
+      _rc[model]->diag_ += capTable[model];
       addFringe(nullptr, rseg2, capTable[model], model);
       // FIXME IMPORTANT-TEST-FIRST addFringe(rseg1, rseg2, capTable[model],
       // model);
@@ -2031,7 +2039,7 @@ void extMeasure::areaCap(int rsegId1, uint rsegId2, uint len, uint tgtMet)
     double area = 1.0 * _width;
     area *= len;
     extDistRC* rc = getUnderLastWidthDistRC(rcModel, tgtMet);
-    capTable[ii] = 2 * area * rc->_fringe;  //_fringe always 1/2 of rulesGen
+    capTable[ii] = 2 * area * rc->fringe_;  //_fringe always 1/2 of rulesGen
 
     dbRSeg* rseg2 = nullptr;
     if (rsegId2 > 0) {
@@ -2043,7 +2051,7 @@ void extMeasure::areaCap(int rsegId1, uint rsegId2, uint len, uint tgtMet)
       _met = tgtMet;
       extDistRC* area_rc = areaCapOverSub(ii, rcModel);
       _met = met;
-      double areaCapOverSub = 2 * area * area_rc->_fringe;
+      double areaCapOverSub = 2 * area * area_rc->fringe_;
       _extMain->updateTotalCap(rseg2, 0.0, 0.0, areaCapOverSub, ii);
     }
   }
@@ -2087,7 +2095,7 @@ bool extMeasure::verticalCap(int rsegId1,
       return false;
     }
 
-    capTable[ii] = len * rc->_fringe;
+    capTable[ii] = len * rc->fringe_;
 
     if ((rseg2 == nullptr) && (rseg1 == nullptr)) {
       continue;
@@ -2098,7 +2106,7 @@ bool extMeasure::verticalCap(int rsegId1,
     if (overSubFringe == nullptr) {
       continue;
     }
-    double frCap = len * overSubFringe->_fringe;
+    double frCap = len * overSubFringe->fringe_;
 
     if (diagDist > tgtWidth) {
       double scale = 0.25 * diagDist / tgtWidth;
@@ -2135,12 +2143,12 @@ void extMeasure::calcDiagRC(int rsegId1,
       double cap = getDiagUnderCC(rcModel, dist, tgtMet);
       double diagCap = DOUBLE_DIAG * len * cap;
       capTable[ii] = diagCap;
-      _rc[ii]->_diag += diagCap;
+      _rc[ii]->diag_ += diagCap;
 
       const char* msg = "calcDiagRC";
       Debug_DiagValues(0.0, diagCap, msg);
     } else {
-      capTable[ii] = 2 * len * getUnderRC(rcModel)->_fringe;
+      capTable[ii] = 2 * len * getUnderRC(rcModel)->fringe_;
     }
   }
   createCap(rsegId1, rsegId2, capTable);
@@ -2185,7 +2193,7 @@ void extMeasure::calcRC(dbRSeg* rseg1, dbRSeg* rseg2, uint totLenCovered)
       }
       double res = 0.0;
       if (rcOverSub != nullptr) {
-        res = rcOverSub->_res * _len;
+        res = rcOverSub->res_ * _len;
       }
 
       double deltaFr = 0.0;
@@ -2194,7 +2202,7 @@ void extMeasure::calcRC(dbRSeg* rseg1, dbRSeg* rseg2, uint totLenCovered)
 
       if (rcMaxDist != nullptr) {
         deltaFr = rcMaxDist->getFringe() * _len;
-        deltaRes = rcMaxDist->_res * _len;
+        deltaRes = rcMaxDist->res_ * _len;
         res -= deltaRes;
       }
 
@@ -2212,7 +2220,7 @@ void extMeasure::calcRC(dbRSeg* rseg1, dbRSeg* rseg2, uint totLenCovered)
 
         _totCCcnt++;
 
-        if (_rc[_minModelIndex]->_coupling >= _extMain->_coupleThreshold) {
+        if (_rc[_minModelIndex]->coupling_ >= _extMain->_coupleThreshold) {
           ccap = dbCCSeg::create(
               dbCapNode::getCapNode(_block, rseg1->getTargetNode()),
               dbCapNode::getCapNode(_block, rseg2->getTargetNode()),
@@ -2227,7 +2235,7 @@ void extMeasure::calcRC(dbRSeg* rseg1, dbRSeg* rseg2, uint totLenCovered)
       extDistRC* finalRC = _rc[model];
       if (ccap != nullptr) {
         double coupling
-            = _ccModify ? finalRC->_coupling * _ccFactor : finalRC->_coupling;
+            = _ccModify ? finalRC->coupling_ * _ccFactor : finalRC->coupling_;
         ccap->addCapacitance(coupling, model);
       }
 
@@ -2435,11 +2443,11 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
 
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
       bool ou = false;
-      _rc[jj]->_res = 0;  // Res non context based
+      _rc[jj]->res_ = 0;  // Res non context based
 
-      if (_rc[jj]->_fringe > 0) {
+      if (_rc[jj]->fringe_ > 0) {
         ou = true;
-        _extMain->updateTotalCap(rseg1, _rc[jj]->_fringe, jj);
+        _extMain->updateTotalCap(rseg1, _rc[jj]->fringe_, jj);
       }
       if (ou && IsDebugNet()) {
         _rc[jj]->printDebugRC_values("OverUnder Total Open");
@@ -2464,14 +2472,14 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
 
   for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
     bool ou = false;
-    if (_rc[jj]->_fringe > 0) {
+    if (_rc[jj]->fringe_ > 0) {
       ou = true;
-      _extMain->updateTotalCap(rseg1, _rc[jj]->_fringe, jj);
-      _extMain->updateTotalCap(rseg2, _rc[jj]->_fringe, jj);
+      _extMain->updateTotalCap(rseg1, _rc[jj]->fringe_, jj);
+      _extMain->updateTotalCap(rseg2, _rc[jj]->fringe_, jj);
     }
-    if (_rc[jj]->_coupling > 0) {
+    if (_rc[jj]->coupling_ > 0) {
       ou = true;
-      _extMain->updateCoupCap(rseg1, rseg2, jj, _rc[jj]->_coupling);
+      _extMain->updateCoupCap(rseg1, rseg2, jj, _rc[jj]->coupling_);
     }
     if (ou && IsDebugNet()) {
       _rc[jj]->printDebugRC_values("OverUnder Total Dist");
@@ -2544,7 +2552,7 @@ void extMeasure::measureRC(CoupleOptions& options)
   bool rvia1 = rseg1 != nullptr && isVia(rseg1->getId());
   if (!rvia1 && rseg1 != nullptr) {
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
-      _rc[jj]->_res = 0;
+      _rc[jj]->res_ = 0;
     }
     if (IsDebugNet()) {
       const char* netName = "";
@@ -2589,7 +2597,7 @@ void extMeasure::measureRC(CoupleOptions& options)
     }
 
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
-      double totR1 = _rc[jj]->_res;
+      double totR1 = _rc[jj]->res_;
       if (totR1 > 0) {
         totR1 -= deltaRes[jj];
         if (totR1 != 0.0) {

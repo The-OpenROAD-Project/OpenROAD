@@ -3,10 +3,11 @@
 
 #pragma once
 
-#include <boost/asio.hpp>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "boost/asio.hpp"
 
 namespace utl {
 class Logger;
@@ -25,9 +26,8 @@ class Worker;
 class Distributed
 {
  public:
-  Distributed(utl::Logger* logger = nullptr);
+  Distributed(utl::Logger* logger);
   ~Distributed();
-  void init(utl::Logger* logger);
   void runWorker(const char* ip, unsigned short port, bool interactive);
   void runLoadBalancer(const char* ip,
                        unsigned short port,

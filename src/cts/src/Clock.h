@@ -15,6 +15,7 @@
 
 #include "Util.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 
 namespace utl {
 class Logger;
@@ -94,10 +95,16 @@ class ClockSubNet
   std::deque<ClockInst*> instances_;
   std::unordered_map<ClockInst*, unsigned> mapInstToIdx_;
   bool leafLevel_ = false;
+  int level_ = -1;
+  odb::dbNet* netObj_ = nullptr;
 
  public:
   explicit ClockSubNet(const std::string& name) : name_(name) {}
 
+  void setNetObj(odb::dbNet* net) { netObj_ = net; }
+  odb::dbNet* getNetObj() { return netObj_; }
+  void setTreeLevel(int level) { level_ = level; }
+  int getTreeLevel() { return level_; }
   void setLeafLevel(bool isLeaf) { leafLevel_ = isLeaf; }
   bool isLeafLevel() const { return leafLevel_; }
 

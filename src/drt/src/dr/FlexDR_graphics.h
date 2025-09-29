@@ -7,9 +7,10 @@
 #include <string>
 #include <vector>
 
-#include "AbstractDRGraphics.h"
+#include "dr/AbstractDRGraphics.h"
 #include "frBaseTypes.h"
 #include "gui/gui.h"
+#include "odb/db.h"
 
 namespace odb {
 class dbDatabase;
@@ -34,7 +35,7 @@ class FlexDRGraphics : public gui::Renderer, public AbstractDRGraphics
   FlexDRGraphics(frDebugSettings* settings,
                  frDesign* design,
                  odb::dbDatabase* db,
-                 Logger* logger);
+                 utl::Logger* logger);
 
   void startWorker(FlexDRWorker* worker) override;
 
@@ -83,7 +84,7 @@ class FlexDRGraphics : public gui::Renderer, public AbstractDRGraphics
   int current_iter_;
   frLayerNum last_pt_layer_;
   gui::Gui* gui_;
-  Logger* logger_;
+  utl::Logger* logger_;
   int dbu_per_uu_;
   bool drawWholeDesign_ = false;
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent

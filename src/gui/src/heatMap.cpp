@@ -4,22 +4,35 @@
 #include "gui/heatMap.h"
 
 #include <QApplication>
+#include <QDialog>
+#include <QString>
 #include <QThread>
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <cstring>
 #include <fstream>
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <limits>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <set>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "gui/gui.h"
 #include "heatMapSetup.h"
+#include "odb/db.h"
 #include "sta/Corner.hh"
+#include "sta/PowerClass.hh"
 #include "utl/Logger.h"
 
 namespace gui {
@@ -215,6 +228,10 @@ Painter::Color HeatMapDataSource::getColor(double value) const
 
 void HeatMapDataSource::showSetup()
 {
+  if (block_ == nullptr) {
+    return;
+  }
+
   if (setup_ == nullptr) {
     setup_ = new HeatMapSetup(*this,
                               QString::fromStdString(name_),

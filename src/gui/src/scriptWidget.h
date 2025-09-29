@@ -3,12 +3,16 @@
 
 #pragma once
 
+#include <QColor>
 #include <QDockWidget>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSettings>
+#include <QString>
+#include <QWidget>
 #include <functional>
 #include <memory>
+#include <mutex>
 
 #include "utl/Logger.h"
 

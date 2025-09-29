@@ -3,20 +3,33 @@
 
 #pragma once
 
-#include <boost/polygon/polygon.hpp>
-#include <boost/serialization/unordered_map.hpp>
 #include <cstdint>
 #include <limits>
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-#include "FlexPA_unique.h"
+#include "boost/polygon/polygon.hpp"
+#include "boost/serialization/unordered_map.hpp"
+#include "db/obj/frAccess.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frInst.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frMPin.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frLayer.h"
+#include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
+#include "odb/db.h"
+#include "pa/FlexPA_unique.h"
 namespace gtl = boost::polygon;
 
 namespace odb {
@@ -47,7 +60,8 @@ struct frInstLocationComp
 {
   bool operator()(const frInst* lhs, const frInst* rhs) const
   {
-    Point lp = lhs->getBoundaryBBox().ll(), rp = rhs->getBoundaryBBox().ll();
+    odb::Point lp = lhs->getBoundaryBBox().ll(),
+               rp = rhs->getBoundaryBBox().ll();
     if (lp.getY() != rp.getY()) {
       return lp.getY() < rp.getY();
     }
@@ -78,7 +92,7 @@ class FlexPA
   };
 
   FlexPA(frDesign* in,
-         Logger* logger,
+         utl::Logger* logger,
          dst::Distributed* dist,
          RouterConfiguration* router_cfg);
   ~FlexPA();
@@ -97,7 +111,7 @@ class FlexPA
 
  private:
   frDesign* design_;
-  Logger* logger_;
+  utl::Logger* logger_;
   dst::Distributed* dist_;
   RouterConfiguration* router_cfg_;
 
@@ -113,13 +127,11 @@ class FlexPA
   int macro_cell_pin_valid_planar_ap_cnt_ = 0;
   int macro_cell_pin_valid_via_ap_cnt_ = 0;
   int macro_cell_pin_no_ap_cnt_ = 0;
-  std::unordered_map<frInst*,
+  std::unordered_map<UniqueClass*,
                      std::vector<std::unique_ptr<FlexPinAccessPattern>>>
       unique_inst_patterns_;
 
   UniqueInsts unique_insts_;
-  using UniqueMTerm = std::pair<const UniqueInsts::InstSet*, frMTerm*>;
-  std::map<UniqueMTerm, bool> skip_unique_inst_term_;
 
   // helper structures
   std::vector<std::map<frCoord, frAccessPointEnum>> track_coords_;
@@ -154,7 +166,7 @@ class FlexPA
   void initTrackCoords();
   void initViaRawPriority();
   void initAllSkipInstTerm();
-  void initSkipInstTerm(frInst* unique_inst);
+  void initSkipInstTerm(UniqueClass* unique_class);
   // prep
   void prep();
 
@@ -245,7 +257,7 @@ class FlexPA
   template <typename T>
   bool genPinAccessCostBounded(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<Point, frLayerNum>>& apset,
+      std::set<std::pair<odb::Point, frLayerNum>>& apset,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
           layer_polys,
@@ -256,7 +268,7 @@ class FlexPA
       pa_requirements_met& reqs);
 
   void getViasFromMetalWidthMap(
-      const Point& pt,
+      const odb::Point& pt,
       frLayerNum layer_num,
       const gtl::polygon_90_set_data<frCoord>& polyset,
       std::vector<std::pair<int, const frViaDef*>>& via_defs);
@@ -289,7 +301,7 @@ class FlexPA
   void createAPsFromLayerToRectCoordsMap(
       const LayerToRectCoordsMap& layer_rect_to_coords,
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<Point, frLayerNum>>& apset,
+      std::set<std::pair<odb::Point, frLayerNum>>& apset,
       frInstTerm* inst_term,
       frAccessPointEnum lower_type,
       frAccessPointEnum upper_type);
@@ -437,7 +449,7 @@ class FlexPA
   void createMultipleAccessPoints(
       frInstTerm* inst_term,
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<Point, frLayerNum>>& apset,
+      std::set<std::pair<odb::Point, frLayerNum>>& apset,
       const gtl::rectangle_data<frCoord>& rect,
       frLayerNum layer_num,
       const std::map<frCoord, frAccessPointEnum>& x_coords,
@@ -458,16 +470,17 @@ class FlexPA
    * @param lower_type lowest access cost considered
    * @param upper_type highest access cost considered
    */
-  void createSingleAccessPoint(std::vector<std::unique_ptr<frAccessPoint>>& aps,
-                               std::set<std::pair<Point, frLayerNum>>& apset,
-                               const gtl::rectangle_data<frCoord>& maxrect,
-                               frCoord x,
-                               frCoord y,
-                               frLayerNum layer_num,
-                               bool allow_planar,
-                               bool allow_via,
-                               frAccessPointEnum lower_type,
-                               frAccessPointEnum upper_type);
+  void createSingleAccessPoint(
+      std::vector<std::unique_ptr<frAccessPoint>>& aps,
+      std::set<std::pair<odb::Point, frLayerNum>>& apset,
+      const gtl::rectangle_data<frCoord>& maxrect,
+      frCoord x,
+      frCoord y,
+      frLayerNum layer_num,
+      bool allow_planar,
+      bool allow_via,
+      frAccessPointEnum lower_type,
+      frAccessPointEnum upper_type);
 
   /**
    * @brief Filters the accesses of all access points
@@ -525,7 +538,7 @@ class FlexPA
                              T* pin,
                              frPathSeg* ps,
                              frInstTerm* inst_term,
-                             Point point,
+                             odb::Point point,
                              frLayer* layer);
 
   /**
@@ -540,9 +553,9 @@ class FlexPA
    *
    * @returns the generated end point
    */
-  Point genEndPoint(
+  odb::Point genEndPoint(
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
-      const Point& begin_point,
+      const odb::Point& begin_point,
       frLayerNum layer_num,
       frDirEnum dir,
       bool is_block);
@@ -553,7 +566,7 @@ class FlexPA
    * @return if the point is outside the pin shapes
    */
   bool isPointOutsideShapes(
-      const Point& point,
+      const odb::Point& point,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys);
 
   /**
@@ -617,13 +630,13 @@ class FlexPA
   /**
    * @brief Checks if a Via has at least one valid planar access
    *
-   * @param ap Access Point
+   * @param ap Access odb::Point
    * @param via Via checked
    * @param pin Pin checked
    * @param inst_term Instance Terminal
    * @param layer_polys The Pin polygons in the pertinent layer
    *
-   * @return If the Via Access Point is legal
+   * @return If the Via Access odb::Point is legal
    */
   template <typename T>
   bool checkViaPlanarAccess(
@@ -636,7 +649,7 @@ class FlexPA
   /**
    * @brief Checks if a the Via Access can be accessed from a given dir
    *
-   * @param ap Access Point
+   * @param ap Access odb::Point
    * @param via Via checked
    * @param pin Pin checked
    * @param inst_term Instance Terminal
@@ -663,7 +676,7 @@ class FlexPA
                           T* pin,
                           frPathSeg* ps,
                           frInstTerm* inst_term,
-                          Point point);
+                          odb::Point point);
 
   /**
    * @brief Serially updates some of general pin stats

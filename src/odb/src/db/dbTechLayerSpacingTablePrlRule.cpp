@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <tuple>
 
 #include "dbDatabase.h"
 #include "dbTable.h"

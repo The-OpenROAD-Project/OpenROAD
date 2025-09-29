@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <boost/container/flat_map.hpp>
 #include <cstdint>
 #include <map>
 
+#include "boost/container/flat_map.hpp"
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "odb/db.h"
@@ -72,6 +72,8 @@ class _dbITerm : public _dbObject
 
 inline _dbITerm::_dbITerm(_dbDatabase*)
 {
+  // For pointer tagging the bottom 3 bits.
+  static_assert(alignof(_dbITerm) % 8 == 0);
   _flags._mterm_idx = 0;
   _flags._spare_bits = 0;
   _flags._clocked = 0;
@@ -98,8 +100,6 @@ inline _dbITerm::_dbITerm(_dbDatabase*, const _dbITerm& i)
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbITerm& iterm)
 {
-  dbBlock* block = (dbBlock*) (iterm.getOwner());
-  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   uint* bit_field = (uint*) &iterm._flags;
   stream << *bit_field;
   stream << iterm._ext_id;
@@ -107,11 +107,9 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbITerm& iterm)
   stream << iterm._inst;
   stream << iterm._next_net_iterm;
   stream << iterm._prev_net_iterm;
-  if (db->isSchema(db_schema_update_hierarchy)) {
-    stream << iterm._mnet;
-    stream << iterm._next_modnet_iterm;
-    stream << iterm._prev_modnet_iterm;
-  }
+  stream << iterm._mnet;
+  stream << iterm._next_modnet_iterm;
+  stream << iterm._prev_modnet_iterm;
   stream << iterm.aps_;
   return stream;
 }

@@ -9,12 +9,15 @@
 #include <memory>
 #include <regex>
 #include <set>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 #include "grid.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 
@@ -92,7 +95,7 @@ void Connect::setOnGrid(const std::vector<odb::dbTechLayer*>& layers)
   ongrid_.insert(layers.begin(), layers.end());
 }
 
-void Connect::setSplitCuts(const std::map<odb::dbTechLayer*, int>& splits)
+void Connect::setSplitCuts(const std::map<odb::dbTechLayer*, SplitCut>& splits)
 {
   split_cuts_ = splits;
   // remove top and bottom layers of the stack
@@ -107,7 +110,17 @@ int Connect::getSplitCutPitch(odb::dbTechLayer* layer) const
     return 0;
   }
 
-  return layer_itr->second;
+  return layer_itr->second.pitch;
+}
+
+bool Connect::getSplitCutStagger(odb::dbTechLayer* layer) const
+{
+  auto layer_itr = split_cuts_.find(layer);
+  if (layer_itr == split_cuts_.end()) {
+    return false;
+  }
+
+  return layer_itr->second.stagger;
 }
 
 bool Connect::appliesToVia(const ViaPtr& via) const
@@ -417,10 +430,11 @@ void Connect::report() const
   }
   if (!split_cuts_.empty()) {
     logger->report("    Split cuts:");
-    for (const auto& [layer, pitch] : split_cuts_) {
-      logger->report("      Layer: {} with pitch {:.4f}",
+    for (const auto& [layer, cut_def] : split_cuts_) {
+      logger->report("      Layer: {} with pitch {:.4f}{}",
                      layer->getName(),
-                     pitch / dbu_per_micron);
+                     cut_def.pitch / dbu_per_micron,
+                     cut_def.stagger ? " staggered" : "");
     }
   }
 }
@@ -433,24 +447,72 @@ void Connect::makeVia(odb::dbSWire* wire,
 {
   const odb::Rect& lower_rect = lower->getRect();
   const odb::Rect& upper_rect = upper->getRect();
-  const odb::Rect intersection = lower_rect.intersect(upper_rect);
+  odb::Rect intersection = lower_rect.intersect(upper_rect);
 
   auto* tech = layer0_->getTech();
+
+  // Attempt to snap to grid
+  if (tech->hasManufacturingGrid()) {
+    const odb::Rect new_intersection(
+        TechLayer::snapToManufacturingGrid(tech, intersection.xMin(), true, 2),
+        TechLayer::snapToManufacturingGrid(tech, intersection.yMin(), true, 2),
+        TechLayer::snapToManufacturingGrid(tech, intersection.xMax(), false, 2),
+        TechLayer::snapToManufacturingGrid(
+            tech, intersection.yMax(), false, 2));
+    if (intersection != new_intersection) {
+      debugPrint(grid_->getLogger(),
+                 utl::PDN,
+                 "Via",
+                 2,
+                 "intersection changed: {} -> {}",
+                 Shape::getRectText(intersection, tech->getLefUnits()),
+                 Shape::getRectText(new_intersection, tech->getLefUnits()));
+      intersection = new_intersection;
+    }
+  }
+
   const int x = std::round(0.5 * (intersection.xMin() + intersection.xMax()));
   const int y = std::round(0.5 * (intersection.yMin() + intersection.yMax()));
 
   // check if off grid and don't add one if it is
   if (!TechLayer::checkIfManufacturingGrid(tech, x)
       || !TechLayer::checkIfManufacturingGrid(tech, y)) {
-    DbGenerateDummyVia dummy_via(this, intersection, layer0_, layer1_, true);
+    DbGenerateDummyVia dummy_via(
+        this,
+        intersection,
+        layer0_,
+        layer1_,
+        true,
+        fmt::format("({:.4f}, {:.4f}) is off manufacturing grid of {:.4f}",
+                    x / static_cast<double>(tech->getLefUnits()),
+                    y / static_cast<double>(tech->getLefUnits()),
+                    tech->getManufacturingGrid()
+                        / static_cast<double>(tech->getLefUnits())));
     dummy_via.generate(
         wire->getBlock(), wire, type, 0, 0, ongrid_, grid_->getLogger());
     return;
   }
 
+  odb::dbNet* index_net = nullptr;
+  if (!split_cuts_.empty()) {
+    index_net = wire->getNet();
+  }
+
   const ViaIndex via_index
-      = std::make_pair(intersection.dx(), intersection.dy());
+      = std::make_tuple(index_net, intersection.dx(), intersection.dy());
   auto& via = vias_[via_index];
+
+  debugPrint(grid_->getLogger(),
+             utl::PDN,
+             "Via",
+             2,
+             "Cache {} at {} / {} / {}",
+             via == nullptr ? "miss" : "hit",
+             std::get<0>(via_index) != nullptr
+                 ? std::get<0>(via_index)->getName()
+                 : "null",
+             std::get<1>(via_index),
+             std::get<2>(via_index));
 
   bool skip_caching = false;
   // make the via stack if one is not available for the given size
@@ -509,7 +571,8 @@ void Connect::makeVia(odb::dbSWire* wire,
         }
       }
 
-      auto* new_via = makeSingleLayerVia(wire->getBlock(),
+      auto* new_via = makeSingleLayerVia(wire->getNet(),
+                                         wire->getBlock(),
                                          l0,
                                          via_lower_rects,
                                          lower_constraint,
@@ -527,7 +590,7 @@ void Connect::makeVia(odb::dbSWire* wire,
         odb::Rect area = intersection;
         xfm.apply(area);
         stack.push_back(
-            new DbGenerateDummyVia(this, area, layer0_, layer1_, false));
+            new DbGenerateDummyVia(this, area, layer0_, layer1_, false, ""));
         break;
       }
       stack.push_back(new_via);
@@ -550,6 +613,7 @@ void Connect::makeVia(odb::dbSWire* wire,
 }
 
 DbVia* Connect::generateDbVia(
+    odb::dbNet* net,
     const std::vector<std::shared_ptr<ViaGenerator>>& generators,
     odb::dbBlock* block) const
 {
@@ -571,13 +635,19 @@ DbVia* Connect::generateDbVia(
                via->getCutLayer()->getName(),
                via->hasCutClass() ? via->getCutClass()->getName() : "none");
 
-    const int lower_split = getSplitCut(via->getBottomLayer());
-    const int upper_split = getSplitCut(via->getTopLayer());
-    if (lower_split != 0 || upper_split != 0) {
-      const int pitch = std::max(lower_split, upper_split);
-      via->setSplitCutArray(lower_split != 0, upper_split != 0);
+    const auto lower_split = getSplitCut(via->getBottomLayer());
+    const auto upper_split = getSplitCut(via->getTopLayer());
+    if (lower_split.pitch != 0 || upper_split.pitch != 0) {
+      const int pitch = std::max(lower_split.pitch, upper_split.pitch);
+      via->setSplitCutArray(lower_split.pitch != 0, upper_split.pitch != 0);
       via->setCutPitchX(pitch);
       via->setCutPitchY(pitch);
+      if (lower_split.stagger || upper_split.stagger) {
+        if (net->getSigType() == odb::dbSigType::GROUND) {
+          via->setCutOffsetX(pitch / 2);
+          via->setCutOffsetY(pitch / 2);
+        }
+      }
     }
 
     const bool lower_is_internal = via->getBottomLayer() != layer0_;
@@ -628,6 +698,7 @@ DbVia* Connect::generateDbVia(
 }
 
 DbVia* Connect::makeSingleLayerVia(
+    odb::dbNet* net,
     odb::dbBlock* block,
     odb::dbTechLayer* lower,
     const std::set<odb::Rect>& lower_rects,
@@ -678,7 +749,7 @@ DbVia* Connect::makeSingleLayerVia(
              generate_vias.size(),
              generate_via_rules_.size());
 
-  DbVia* generate_via = generateDbVia(generate_vias, block);
+  DbVia* generate_via = generateDbVia(net, generate_vias, block);
 
   if (generate_via != nullptr) {
     return generate_via;
@@ -720,7 +791,7 @@ DbVia* Connect::makeSingleLayerVia(
              tech_vias.size(),
              tech_vias_.size());
 
-  return generateDbVia(tech_vias, block);
+  return generateDbVia(net, tech_vias, block);
 }
 
 void Connect::populateGenerateRules()
@@ -831,13 +902,13 @@ bool Connect::techViaContains(odb::dbTechVia* via,
   return via->getBottomLayer() == lower && via->getTopLayer() == upper;
 }
 
-int Connect::getSplitCut(odb::dbTechLayer* layer) const
+Connect::SplitCut Connect::getSplitCut(odb::dbTechLayer* layer) const
 {
   auto split_itr = split_cuts_.find(layer);
   if (split_itr != split_cuts_.end()) {
     return split_itr->second;
   }
-  return 0;
+  return SplitCut{};
 }
 
 void Connect::clearShapes()

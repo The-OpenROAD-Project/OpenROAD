@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <string>
@@ -11,11 +12,13 @@
 
 #include "db/obj/frBlock.h"
 #include "db/obj/frMaster.h"
+#include "db/obj/frTrackPattern.h"
 #include "db/tech/frTechObject.h"
 #include "distributed/drUpdate.h"
 #include "frBaseTypes.h"
 #include "frRegionQuery.h"
 #include "global.h"
+#include "utl/Logger.h"
 
 namespace drt {
 namespace io {
@@ -25,7 +28,7 @@ class frDesign
 {
  public:
   // constructors
-  frDesign(Logger* logger, RouterConfiguration* router_cfg)
+  frDesign(utl::Logger* logger, RouterConfiguration* router_cfg)
       : topBlock_(nullptr),
         tech_(std::make_unique<frTechObject>()),
         rq_(std::make_unique<frRegionQuery>(this, logger, router_cfg)),

@@ -5,7 +5,7 @@ read_lef Nangate45/Nangate45.lef
 
 set db [ord::get_db]
 set tech [$db getTech]
-set chip [odb::dbChip_create $db]
+set chip [odb::dbChip_create $db $tech]
 set block [odb::dbBlock_create $chip top]
 $block setDefUnits 2000
 # Tech dependent

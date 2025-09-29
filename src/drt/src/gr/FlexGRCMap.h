@@ -8,13 +8,16 @@ constexpr int CMAPSUPPLYSIZE = 8;
 constexpr int CMAPDEMANDSIZE = 16;
 constexpr int CMAPFRACSIZE = 1;
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
 
 namespace drt {
 class frTrackPattern;
@@ -640,7 +643,7 @@ class FlexGRCMap
       const std::vector<rq_box_value_t<frBlockObject*>>& results);
   frCoord calcBloatDist(frBlockObject* obj,
                         frLayerNum lNum,
-                        const Rect& box,
+                        const odb::Rect& box,
                         bool isOBS);
 };
 }  // namespace drt

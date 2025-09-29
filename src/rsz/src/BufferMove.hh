@@ -3,9 +3,11 @@
 
 #include "BaseMove.hh"
 
-namespace rsz {
+namespace est {
+class EstimateParasitics;
+}
 
-using std::string;
+namespace rsz {
 
 using sta::ArcDelay;
 using sta::Instance;

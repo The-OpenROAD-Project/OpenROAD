@@ -4,14 +4,17 @@
 #include "initialPlace.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <limits>
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "odb/dbTypes.h"
 #include "placerBase.h"
 #include "solver.h"
+#include "utl/Logger.h"
 
 namespace gpl {
 
@@ -71,14 +74,6 @@ void InitialPlace::doBicgstabPlace(int threads)
                            instLocVecY_,
                            log_,
                            threads);
-    float error_max = std::max(error.x, error.y);
-    log_->report(
-        "[InitialPlace]  Iter: {} conjugate gradient residual: {:0.8f} HPWL: "
-        "{}",
-        iter,
-        error_max,
-        pbc_->hpwl());
-    updateCoordi();
 
     if (graphics) {
       graphics->cellPlot(true);
@@ -90,6 +85,24 @@ void InitialPlace::doBicgstabPlace(int threads)
       double dbu_per_pixel = static_cast<double>(max_dim) / 1000.0;
       gui->gifAddFrame(region, 500, dbu_per_pixel, 20);
     }
+
+    if (std::isnan(error.x) || std::isnan(error.y)) {
+      log_->warn(GPL,
+                 154,
+                 "Conjugate gradient initial placement solver failed at "
+                 "iteration {}. ",
+                 iter);
+      break;
+    }
+
+    float error_max = std::max(error.x, error.y);
+    log_->report(
+        "[InitialPlace]  Iter: {} conjugate gradient residual: {:0.8f} HPWL: "
+        "{}",
+        iter,
+        error_max,
+        pbc_->getHpwl());
+    updateCoordi();
 
     if (error_max <= 1e-5 && iter >= 5) {
       break;
@@ -104,8 +117,8 @@ void InitialPlace::doBicgstabPlace(int threads)
 // starting point of initial place is center.
 void InitialPlace::placeInstsCenter()
 {
-  const int center_x = pbc_->die().coreCx();
-  const int center_y = pbc_->die().coreCy();
+  const int center_x = pbc_->getDie().coreCx();
+  const int center_y = pbc_->getDie().coreCy();
 
   int count_region_center = 0;
   int count_db_location = 0;
@@ -136,7 +149,7 @@ void InitialPlace::placeInstsCenter()
       inst->setCenterLocation(domain_x_max - (domain_x_max - domain_x_min) / 2,
                               domain_y_max - (domain_y_max - domain_y_min) / 2);
       ++count_region_center;
-    } else if (pbc_->skipIoMode() && db_inst->isPlaced()) {
+    } else if (pbc_->isSkipIoMode() && db_inst->isPlaced()) {
       // It is helpful to pick up the placement from mpl if available,
       // particularly when you are going to run skip_io.
       const auto bbox = db_inst->getBBox()->getBox();
@@ -162,7 +175,7 @@ void InitialPlace::placeInstsCenter()
 void InitialPlace::setPlaceInstExtId()
 {
   // reset ExtId for all instances
-  for (auto& inst : pbc_->insts()) {
+  for (auto& inst : pbc_->getInsts()) {
     inst->setExtId(INT_MAX);
   }
   // set index only with place-able instances
@@ -174,21 +187,21 @@ void InitialPlace::setPlaceInstExtId()
 void InitialPlace::updatePinInfo()
 {
   // reset all MinMax attributes
-  for (auto& pin : pbc_->pins()) {
+  for (auto& pin : pbc_->getPins()) {
     pin->unsetMinPinX();
     pin->unsetMinPinY();
     pin->unsetMaxPinX();
     pin->unsetMaxPinY();
   }
 
-  for (auto& net : pbc_->nets()) {
+  for (auto& net : pbc_->getNets()) {
     Pin *pinMinX = nullptr, *pinMinY = nullptr;
     Pin *pinMaxX = nullptr, *pinMaxY = nullptr;
     int lx = INT_MAX, ly = INT_MAX;
     int ux = INT_MIN, uy = INT_MIN;
 
     // Mark B2B info on Pin structures
-    for (auto& pin : net->pins()) {
+    for (auto& pin : net->getPins()) {
       if (lx > pin->cx()) {
         if (pinMinX) {
           pinMinX->unsetMinPinX();
@@ -257,7 +270,7 @@ void InitialPlace::createSparseMatrix()
 
   // initialize vector
   for (auto& inst : pbc_->placeInsts()) {
-    int idx = inst->extId();
+    int idx = inst->getExtId();
 
     instLocVecX_(idx) = inst->cx();
     instLocVecY_(idx) = inst->cy();
@@ -266,29 +279,29 @@ void InitialPlace::createSparseMatrix()
   }
 
   // for each net
-  for (auto& net : pbc_->nets()) {
+  for (auto& net : pbc_->getNets()) {
     // skip for small nets.
-    if (net->pins().size() <= 1) {
+    if (net->getPins().size() <= 1) {
       continue;
     }
 
     // escape long time cals on huge fanout.
     //
-    if (net->pins().size() >= ipVars_.maxFanout) {
+    if (net->getPins().size() >= ipVars_.maxFanout) {
       continue;
     }
 
-    float netWeight = ipVars_.netWeightScale / (net->pins().size() - 1);
+    float netWeight = ipVars_.netWeightScale / (net->getPins().size() - 1);
 
     // foreach two pins in single nets.
-    auto& pins = net->pins();
+    auto& pins = net->getPins();
     for (int pinIdx1 = 1; pinIdx1 < pins.size(); ++pinIdx1) {
       Pin* pin1 = pins[pinIdx1];
       for (int pinIdx2 = 0; pinIdx2 < pinIdx1; ++pinIdx2) {
         Pin* pin2 = pins[pinIdx2];
 
         // no need to fill in when instance is same
-        if (pin1->instance() == pin2->instance()) {
+        if (pin1->getInstance() == pin2->getInstance()) {
           continue;
         }
 
@@ -305,8 +318,8 @@ void InitialPlace::createSparseMatrix()
 
           // both pin cames from instance
           if (pin1->isPlaceInstConnected() && pin2->isPlaceInstConnected()) {
-            const int inst1 = pin1->instance()->extId();
-            const int inst2 = pin2->instance()->extId();
+            const int inst1 = pin1->getInstance()->getExtId();
+            const int inst2 = pin2->getInstance()->getExtId();
 
             listX.emplace_back(inst1, inst1, weightX);
             listX.emplace_back(inst2, inst2, weightX);
@@ -316,33 +329,33 @@ void InitialPlace::createSparseMatrix()
 
             fixedInstForceVecX_(inst1)
                 += -weightX
-                   * ((pin1->cx() - pin1->instance()->cx())
-                      - (pin2->cx() - pin2->instance()->cx()));
+                   * ((pin1->cx() - pin1->getInstance()->cx())
+                      - (pin2->cx() - pin2->getInstance()->cx()));
 
             fixedInstForceVecX_(inst2)
                 += -weightX
-                   * ((pin2->cx() - pin2->instance()->cx())
-                      - (pin1->cx() - pin1->instance()->cx()));
+                   * ((pin2->cx() - pin2->getInstance()->cx())
+                      - (pin1->cx() - pin1->getInstance()->cx()));
           }
           // pin1 from IO port / pin2 from Instance
           else if (!pin1->isPlaceInstConnected()
                    && pin2->isPlaceInstConnected()) {
-            const int inst2 = pin2->instance()->extId();
+            const int inst2 = pin2->getInstance()->getExtId();
             listX.emplace_back(inst2, inst2, weightX);
 
             fixedInstForceVecX_(inst2)
                 += weightX
-                   * (pin1->cx() - (pin2->cx() - pin2->instance()->cx()));
+                   * (pin1->cx() - (pin2->cx() - pin2->getInstance()->cx()));
           }
           // pin1 from Instance / pin2 from IO port
           else if (pin1->isPlaceInstConnected()
                    && !pin2->isPlaceInstConnected()) {
-            const int inst1 = pin1->instance()->extId();
+            const int inst1 = pin1->getInstance()->getExtId();
             listX.emplace_back(inst1, inst1, weightX);
 
             fixedInstForceVecX_(inst1)
                 += weightX
-                   * (pin2->cx() - (pin1->cx() - pin1->instance()->cx()));
+                   * (pin2->cx() - (pin1->cx() - pin1->getInstance()->cx()));
           }
         }
 
@@ -359,8 +372,8 @@ void InitialPlace::createSparseMatrix()
 
           // both pin cames from instance
           if (pin1->isPlaceInstConnected() && pin2->isPlaceInstConnected()) {
-            const int inst1 = pin1->instance()->extId();
-            const int inst2 = pin2->instance()->extId();
+            const int inst1 = pin1->getInstance()->getExtId();
+            const int inst2 = pin2->getInstance()->getExtId();
 
             listY.emplace_back(inst1, inst1, weightY);
             listY.emplace_back(inst2, inst2, weightY);
@@ -370,33 +383,33 @@ void InitialPlace::createSparseMatrix()
 
             fixedInstForceVecY_(inst1)
                 += -weightY
-                   * ((pin1->cy() - pin1->instance()->cy())
-                      - (pin2->cy() - pin2->instance()->cy()));
+                   * ((pin1->cy() - pin1->getInstance()->cy())
+                      - (pin2->cy() - pin2->getInstance()->cy()));
 
             fixedInstForceVecY_(inst2)
                 += -weightY
-                   * ((pin2->cy() - pin2->instance()->cy())
-                      - (pin1->cy() - pin1->instance()->cy()));
+                   * ((pin2->cy() - pin2->getInstance()->cy())
+                      - (pin1->cy() - pin1->getInstance()->cy()));
           }
           // pin1 from IO port / pin2 from Instance
           else if (!pin1->isPlaceInstConnected()
                    && pin2->isPlaceInstConnected()) {
-            const int inst2 = pin2->instance()->extId();
+            const int inst2 = pin2->getInstance()->getExtId();
             listY.emplace_back(inst2, inst2, weightY);
 
             fixedInstForceVecY_(inst2)
                 += weightY
-                   * (pin1->cy() - (pin2->cy() - pin2->instance()->cy()));
+                   * (pin1->cy() - (pin2->cy() - pin2->getInstance()->cy()));
           }
           // pin1 from Instance / pin2 from IO port
           else if (pin1->isPlaceInstConnected()
                    && !pin2->isPlaceInstConnected()) {
-            const int inst1 = pin1->instance()->extId();
+            const int inst1 = pin1->getInstance()->getExtId();
             listY.emplace_back(inst1, inst1, weightY);
 
             fixedInstForceVecY_(inst1)
                 += weightY
-                   * (pin2->cy() - (pin1->cy() - pin1->instance()->cy()));
+                   * (pin2->cy() - (pin1->cy() - pin1->getInstance()->cy()));
           }
         }
       }
@@ -410,7 +423,7 @@ void InitialPlace::createSparseMatrix()
 void InitialPlace::updateCoordi()
 {
   for (auto& inst : pbc_->placeInsts()) {
-    int idx = inst->extId();
+    int idx = inst->getExtId();
     if (!inst->isLocked()) {
       inst->dbSetCenterLocation(instLocVecX_(idx), instLocVecY_(idx));
       inst->dbSetPlaced();

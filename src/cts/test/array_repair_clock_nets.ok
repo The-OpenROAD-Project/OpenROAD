@@ -112,6 +112,8 @@
 [INFO CTS-0207]  Leaf load cells 4
 [INFO RSZ-0047] Found 38 long wires.
 [INFO RSZ-0048] Inserted 112 buffers in 38 nets.
+[INFO CTS-0033] Balancing latency for clock clk
+[INFO CTS-0036]  inserted 0 delay buffers
 Total number of Clock Roots: 2.
 Total number of Buffers Inserted: 556.
 Total number of Clock Subnets: 556.
@@ -128,16 +130,16 @@ Dummys used:
 [INFO RSZ-0058] Using max wire length 693um.
 Placement Analysis
 ---------------------------------
-total displacement       5019.4 u
-average displacement        1.6 u
+total displacement       4507.3 u
+average displacement        1.4 u
 max displacement          146.7 u
 original HPWL          189360.8 u
-legalized HPWL         190310.5 u
-delta HPWL                    1 %
+legalized HPWL         190290.2 u
+delta HPWL                    0 %
 
 Clock clk
    1.08 source latency inst_5_7/clk ^
-  -1.22 target latency inst_6_7/clk ^
+  -1.21 target latency inst_6_7/clk ^
    0.00 CRPR
 --------------
   -0.14 setup skew
@@ -179,7 +181,7 @@ Path Type: max
    0.04    1.07 ^ wire11/Z (BUF_X8)
    0.04    1.11 ^ wire10/Z (BUF_X8)
    0.05    1.16 ^ clkbuf_leaf_0_clk/Z (BUF_X4)
-   0.00    1.17 ^ inst_1_1/clk (array_tile)
+   0.00    1.16 ^ inst_1_1/clk (array_tile)
    0.21    1.38 ^ inst_1_1/e_out (array_tile)
    0.00    1.38 ^ inst_2_1/w_in (array_tile)
            1.38   data arrival time

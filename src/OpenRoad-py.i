@@ -24,13 +24,13 @@ openroad_version();
 const char *
 openroad_git_describe();
 
-const bool
+bool
 openroad_gpu_compiled();
 
-const bool 
+bool 
 openroad_python_compiled();
 
-const bool
+bool
 openroad_gui_compiled();
 
 odb::dbDatabase *
@@ -55,6 +55,27 @@ get_db_block();
 %include "ord/Tech.h"
 %include "ord/Design.h"
 %include "ord/Timing.h"
+
+#ifdef BAZEL
+%include "src/gpl/src/replace-py.i"
+%include "src/ifp/src/InitFloorplan-py.i"
+%include "src/ant/src/AntennaChecker-py.i"
+%include "src/cts/src/TritonCTS-py.i"
+%include "src/dpl/src/Opendp-py.i"
+%include "src/drt/src/TritonRoute-py.i"
+%include "src/exa/src/example-py.i"
+%include "src/fin/src/finale-py.i"
+%include "src/grt/src/GlobalRouter-py.i"
+%include "src/par/src/partitionmgr-py.i"
+%include "src/pdn/src/PdnGen-py.i"
+%include "src/ppl/src/IOPlacer-py.i"
+%include "src/psm/src/pdnsim-py.i"
+%include "src/rcx/src/ext-py.i"
+%include "src/stt/src/SteinerTreeBuilder-py.i"
+%include "src/tap/src/tapcell-py.i"
+%import "src/odb/src/swig/common/odb.i"
+%import "src/utl/src/Logger-py.i"
+#endif
 
 %newobject Design::getFloorplan();
 

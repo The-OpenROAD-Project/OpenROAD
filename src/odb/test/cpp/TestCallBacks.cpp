@@ -1,8 +1,7 @@
 #define BOOST_TEST_MODULE TestCallbacks
-#include <boost/test/included/unit_test.hpp>
-#include <iostream>
 
 #include "CallBack.h"
+#include "boost/test/included/unit_test.hpp"
 #include "helper.h"
 #include "odb/db.h"
 

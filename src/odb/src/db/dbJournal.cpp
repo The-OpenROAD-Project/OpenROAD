@@ -3,15 +3,21 @@
 
 #include "dbJournal.h"
 
+#include <cstdio>
+
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbCCSeg.h"
 #include "dbCapNode.h"
 #include "dbITerm.h"
 #include "dbInst.h"
+#include "dbModNet.h"
+#include "dbModule.h"
 #include "dbNet.h"
 #include "dbRSeg.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -780,7 +786,7 @@ void dbJournal::redo_disconnectObject()
       } else if (net_id != 0) {
         iterm->disconnectDbNet();
       } else if (mnet_id != 0) {
-        iterm->disconnectModNet();
+        iterm->disconnectDbModNet();
       }
       break;
     }
@@ -910,6 +916,10 @@ void dbJournal::redo_updateField()
 
     case dbCapNodeObj:
       redo_updateCapNodeField();
+      break;
+
+    case dbModNetObj:
+      redo_updateModNetField();
       break;
 
     default:
@@ -1082,6 +1092,55 @@ void dbJournal::redo_updateNetField()
       break;
     }
 
+    case _dbNet::NAME: {
+      std::string prev_name;
+      _log.pop(prev_name);
+      std::string new_name;
+      _log.pop(new_name);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 2,
+                 "REDO ECO: dbNetObj {}, updateName from {} to {}",
+                 net_id,
+                 prev_name.c_str(),
+                 new_name.c_str());
+      ((dbNet*) net)->rename(new_name.c_str());
+      break;
+    }
+
+    default:
+      break;
+  }
+}
+
+void dbJournal::redo_updateModNetField()
+{
+  uint modnet_id;
+  _log.pop(modnet_id);
+  _dbModNet* modnet = (_dbModNet*) dbModNet::getModNet(_block, modnet_id);
+
+  int field;
+  _log.pop(field);
+
+  switch ((_dbModNet::Field) field) {
+    case _dbModNet::NAME: {
+      std::string prev_name;
+      _log.pop(prev_name);
+      std::string new_name;
+      _log.pop(new_name);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 2,
+                 "REDO ECO: dbModNetObj {}, updateName from {} to {}",
+                 modnet_id,
+                 prev_name.c_str(),
+                 new_name.c_str());
+      ((dbModNet*) modnet)->rename(new_name.c_str());
+      break;
+    }
+
     default:
       break;
   }
@@ -1141,6 +1200,23 @@ void dbJournal::redo_updateInstField()
                  inst->_x,
                  inst->_y);
       ((dbInst*) inst)->setOrigin(current_x, current_y);
+      break;
+    }
+
+    case _dbInst::NAME: {
+      std::string prev_name;
+      _log.pop(prev_name);
+      std::string new_name;
+      _log.pop(new_name);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 2,
+                 "REDO ECO: dbInstObj {}, updateName from {} to {}",
+                 inst_id,
+                 prev_name.c_str(),
+                 new_name.c_str());
+      ((dbInst*) inst)->rename(new_name.c_str());
       break;
     }
 
@@ -2078,7 +2154,7 @@ void dbJournal::undo_connectObject()
         iterm->disconnectDbNet();
       }
       if (mnet_id != 0) {
-        iterm->disconnectModNet();
+        iterm->disconnectDbModNet();
       }
       break;
     }
@@ -2286,6 +2362,10 @@ void dbJournal::undo_updateField()
       undo_updateCapNodeField();
       break;
 
+    case dbModNetObj:
+      undo_updateModNetField();
+      break;
+
     default: {
       _logger->critical(utl::ODB,
                         445,
@@ -2313,11 +2393,61 @@ void dbJournal::undo_updateNetField()
       _log.pop(new_flags);
       break;
     }
+
+    case _dbNet::NAME: {
+      std::string prev_name;
+      _log.pop(prev_name);
+      std::string new_name;
+      _log.pop(new_name);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 2,
+                 "UNDO ECO: dbNetObj {}, updateName from {} to {}",
+                 net_id,
+                 new_name.c_str(),
+                 prev_name.c_str());
+      ((dbNet*) net)->rename(prev_name.c_str());
+      break;
+    }
+
     default: {
       _logger->critical(
           utl::ODB, 408, "No undo_updateNetField support for field {}", field);
       break;
     }
+  }
+}
+
+void dbJournal::undo_updateModNetField()
+{
+  uint modnet_id;
+  _log.pop(modnet_id);
+  _dbModNet* modnet = (_dbModNet*) dbModNet::getModNet(_block, modnet_id);
+
+  int field;
+  _log.pop(field);
+
+  switch ((_dbModNet::Field) field) {
+    case _dbModNet::NAME: {
+      std::string prev_name;
+      _log.pop(prev_name);
+      std::string new_name;
+      _log.pop(new_name);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: dbModNet {}, updateName from {} to {}",
+                 modnet_id,
+                 new_name.c_str(),
+                 prev_name.c_str());
+      ((dbModNet*) modnet)->rename(prev_name.c_str());
+      break;
+    }
+
+    default:
+      break;
   }
 }
 
@@ -2358,6 +2488,24 @@ void dbJournal::undo_updateInstField()
       ((dbInst*) inst)->setOrigin(prev_x, prev_y);
       break;
     }
+
+    case _dbInst::NAME: {
+      std::string prev_name;
+      _log.pop(prev_name);
+      std::string new_name;
+      _log.pop(new_name);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 2,
+                 "UNDO ECO: dbInstObj {}, updateName from {} to {}",
+                 inst_id,
+                 new_name.c_str(),
+                 prev_name.c_str());
+      ((dbInst*) inst)->rename(prev_name.c_str());
+      break;
+    }
+
     default: {
       _logger->critical(
           utl::ODB, 409, "No undo_updateInstField support for field {}", field);

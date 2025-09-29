@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
 package(
     features = ["layering_check"],
 )
@@ -65,4 +67,16 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestAccessPoint",
+    srcs = [
+        "TestAccessPoint.cpp",
+    ],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "@boost.test",
+    ],
+)
 # TODO: more to come.

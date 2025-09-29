@@ -12,6 +12,12 @@ or_integration_tests(
     buffer_ports6
     buffer_ports7
     buffer_ports8
+    buffer_ports9
+    buffer_ports10
+    buffer_ports11
+    buffer_ports11_hier
+    buffer_ports12
+    buffer_ports12_hier
     buffer_varying_lengths
     clone_flat
     clone_hier
@@ -23,16 +29,11 @@ or_integration_tests(
     gain_buffering1
     gcd_resize
     liberty_dont_use
-    make_parasitics1
-    make_parasitics2
-    make_parasitics3
-    make_parasitics4
-    make_parasitics5
-    make_parasitics6
-    make_parasitics7
     pin_swap1
     pinswap_flat
     pinswap_hier
+    rebuffer1
+    rebuffer1_hier
     recover_power_verbose
     remove_buffers1
     remove_buffers2
@@ -74,6 +75,7 @@ or_integration_tests(
     repair_hold14
     repair_hold15
     repair_setup_sizedown
+    repair_setup_sizeup_match
     repair_setup1
     repair_setup2
     repair_setup3
@@ -87,6 +89,8 @@ or_integration_tests(
     repair_setup7
     repair_setup7_limit
     repair_setup8
+    repair_setup9
+    repair_setup9_hier
     repair_setup_undo
     repair_slew1
     repair_slew2
@@ -114,6 +118,9 @@ or_integration_tests(
     repair_tie7
     repair_tie8
     repair_tie9
+    repair_tie10_hier
+    repair_tie11_hier
+    repair_tie12_hier
     repair_wire1
     repair_wire2
     repair_wire3
@@ -159,6 +166,12 @@ or_integration_tests(
     repair_setup7_multi
     report_equiv_cells
     replace_arith_modules1
+    report_buffers_asap7
+    report_buffers_nangate45
+    report_buffers_ihp
+    report_buffers_sky130hs
+    report_buffers_sky130hd
+    report_buffers_gf180
   PASSFAIL_TESTS
     cpp_tests
 )

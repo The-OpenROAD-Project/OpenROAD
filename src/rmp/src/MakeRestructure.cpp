@@ -15,27 +15,11 @@ namespace rmp {
 
 extern const char* rmp_tcl_inits[];
 
-rmp::Restructure* makeRestructure()
-{
-  return new rmp::Restructure();
-}
-
-void initRestructure(rmp::Restructure* restructure,
-                     utl::Logger* logger,
-                     sta::dbSta* sta,
-                     odb::dbDatabase* db,
-                     rsz::Resizer* resizer,
-                     Tcl_Interp* tcl_interp)
+void initRestructure(Tcl_Interp* tcl_interp)
 {
   // Define swig TCL commands.
   Rmp_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, rmp::rmp_tcl_inits);
-  restructure->init(logger, sta, db, resizer);
-}
-
-void deleteRestructure(rmp::Restructure* restructure)
-{
-  delete restructure;
 }
 
 }  // namespace rmp

@@ -7,51 +7,6 @@
 {
 "path": [
   {
-    "instance": "",
-    "cell": "reg1",
-    "verilog_src": "",
-    "pin": "clk",
-    "x": 0.000100000,
-    "y": 0.000033330,
-    "arrival": 0.000e+00,
-    "capacitance": 2.924e-15,
-    "slew": 0.000e+00
-  },
-  {
-    "instance": "c2",
-    "cell": "BUF_X1",
-    "verilog_src": "",
-    "pin": "c2/A",
-    "net": "clk",
-    "x": 0.000200125,
-    "y": 0.000100612,
-    "arrival": 0.000e+00,
-    "slew": 0.000e+00
-  },
-  {
-    "instance": "c2",
-    "cell": "BUF_X1",
-    "verilog_src": "",
-    "pin": "c2/Z",
-    "net": "clk2",
-    "x": 0.000200465,
-    "y": 0.000100715,
-    "arrival": 1.618e-11,
-    "capacitance": 9.497e-16,
-    "slew": 5.514e-12
-  },
-  {
-    "instance": "r2",
-    "cell": "DFF_X1",
-    "verilog_src": "",
-    "pin": "r2/CK",
-    "net": "clk2",
-    "x": 0.000201615,
-    "y": 0.000100615,
-    "arrival": 1.618e-11,
-    "slew": 5.514e-12
-  },
-  {
     "instance": "r2",
     "cell": "DFF_X1",
     "verilog_src": "",

@@ -6,11 +6,17 @@
 
 #include <tcl.h>
 
+#include <any>
 #include <cstdio>
+#include <map>
+#include <optional>
 #include <string>
+#include <typeinfo>
 #include <vector>
 
 #include "gui/gui.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 // empty gif writer class
 struct GifWriter
@@ -223,6 +229,13 @@ std::string Gui::addLabel(int x,
                           const std::optional<std::string>& name)
 {
   return "";
+}
+
+Chart* Gui::addChart(const std::string& name,
+                     const std::string& x_label,
+                     const std::vector<std::string>& y_labels)
+{
+  return nullptr;
 }
 
 void Gui::saveImage(const std::string& filename,

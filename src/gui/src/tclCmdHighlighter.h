@@ -4,9 +4,11 @@
 #pragma once
 
 #include <QRegularExpression>
+#include <QString>
 #include <QSyntaxHighlighter>
 #include <QTextBlockUserData>
 #include <QTextCharFormat>
+#include <map>
 #include <memory>
 #include <set>
 #include <string>

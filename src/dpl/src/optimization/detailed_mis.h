@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <string>
 #include <vector>
@@ -14,7 +15,7 @@ class Architecture;
 class DetailedMgr;
 class Network;
 
-class DetailedMisParams
+struct DetailedMisParams
 {
  public:
   enum Strategy
@@ -24,16 +25,16 @@ class DetailedMisParams
     Colour = 2,
   };
 
-  double _maxDifferenceInMetric = 0.03;  // How much we allow the routine to
-                                         // reintroduce overlap into placement
-  unsigned _maxNumNodes = 15;  // Only consider this many number of nodes for
-                               // B&B (<= MAX_BB_NODES)
-  unsigned _maxPasses = 1;     // Maximum number of B&B passes
-  double _sizeTol = 1.1;       // Tolerance for what is considered same-size
-  unsigned _skipNetsLargerThanThis = 50;  // Skip nets larger than this amount.
-  Strategy _strategy = Binning;           // The type of strategy to consider
-  bool _useSameSize = true;  // If 'false', cells can swap with approximately
-                             // same-size locations
+  double maxDifferenceInMetric = 0.03;  // How much we allow the routine to
+                                        // reintroduce overlap into placement
+  unsigned maxNumNodes = 15;  // Only consider this many number of nodes for
+                              // B&B (<= MAX_BB_NODES)
+  unsigned maxPasses = 1;     // Maximum number of B&B passes
+  double sizeTol = 1.1;       // Tolerance for what is considered same-size
+  unsigned skipNetsLargerThanThis = 50;  // Skip nets larger than this amount.
+  Strategy strategy = Binning;           // The type of strategy to consider
+  bool useSameSize = true;  // If 'false', cells can swap with approximately
+                            // same-size locations
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -68,7 +69,6 @@ class DetailedMis
   uint64_t getHpwl(const Node* ndi, DbuX xi, DbuY yi);
   uint64_t getDisp(const Node* ndi, DbuX xi, DbuY yi);
 
- public:
   /* DetailedMisParams _params; */
 
   DetailedMgr* mgrPtr_ = nullptr;

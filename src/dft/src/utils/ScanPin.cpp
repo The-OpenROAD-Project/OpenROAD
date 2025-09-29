@@ -4,6 +4,9 @@
 #include "ScanPin.hh"
 
 #include <string_view>
+#include <variant>
+
+#include "odb/db.h"
 
 namespace dft {
 

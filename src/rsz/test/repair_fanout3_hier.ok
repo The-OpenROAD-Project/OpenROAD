@@ -1,18 +1,25 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 [INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0001] Number of available slots 8754
+[INFO PPL-0002] Number of I/O             3
+[INFO PPL-0003] Number of I/O w/sink      3
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 60.67 um.
+[INFO GPL-0005] Execute conjugate gradient initial placement.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[WARNING GPL-0001] clk1 toplevel port is not placed!
-       Replace will regard clk1 is placed in (0, 0)
-[WARNING GPL-0001] net0 toplevel port is not placed!
-       Replace will regard net0 is placed in (0, 0)
 [INFO GPL-0006] Number of instances:                71
 [INFO GPL-0007] Movable instances:                  71
 [INFO GPL-0008] Fixed instances:                     0
 [INFO GPL-0009] Dummy instances:                     0
-[INFO GPL-0010] Number of nets:                      2
-[INFO GPL-0011] Number of pins:                    144
+[INFO GPL-0010] Number of nets:                      3
+[INFO GPL-0011] Number of pins:                    146
 [INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
 [INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [INFO GPL-0016] Core area:                   47872.020 um^2
@@ -21,19 +28,19 @@
 [INFO GPL-0019] Utilization:                     0.671 %
 [INFO GPL-0020] Standard cells area:           321.062 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 18520
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 27440
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000012 HPWL: 19494
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000012 HPWL: 27022
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000012 HPWL: 19466
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 3620250
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000008 HPWL: 37274
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 33620
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 32404
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 32134
 Placement Analysis
 ---------------------------------
-total displacement       1195.4 u
-average displacement       16.8 u
-max displacement           27.1 u
-original HPWL               2.4 u
-legalized HPWL             90.0 u
-delta HPWL                 3711 %
+total displacement        775.8 u
+average displacement       10.9 u
+max displacement           17.7 u
+original HPWL               3.9 u
+legalized HPWL            113.3 u
+delta HPWL                 2771 %
 
 max fanout
 
@@ -43,16 +50,15 @@ drvr/Q                                   10     70    -60 (VIOLATED)
 
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
-        0 |     +0.0% |       0 |       0 |             0 |       143
-    final |     +3.1% |       9 |      10 |             1 |         0
+        0 |     +0.0% |       0 |       0 |             0 |       144
+    final |     +2.0% |       0 |       8 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
-[INFO RSZ-0039] Resized 9 instances.
-[INFO RSZ-0038] Inserted 10 buffers in 1 nets.
+[INFO RSZ-0038] Inserted 8 buffers in 1 nets.
 max fanout
 
 Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
-fanout9/Z                                10     10      0 (MET)
+fanout7/Z                                10     10      0 (MET)
 
 No differences found.

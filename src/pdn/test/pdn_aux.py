@@ -516,7 +516,8 @@ def add_pdn_connect(
     max_rows=0,
     max_columns=0,
     ongrid=[],  # list of layer names that should be on grid?
-    split_cuts={},  # dictionary of layer name to pitch
+    split_cuts={},  # dictionary of layer name to pitch,
+    split_cuts_staggered=False,
     dont_use_vias="",
 ):
     pdngen = design.getPdnGen()
@@ -551,7 +552,9 @@ def add_pdn_connect(
 
     split_cuts_layers = [get_layer(l) for l in split_cuts.keys()]
     split_cuts_pitches = [design.micronToDBU(x) for x in split_cuts.values()]
-    split_cuts_dict = dict(zip(split_cuts_layers, split_cuts_pitches))
+    split_cuts_dict = dict(
+        zip(split_cuts_layers, (split_cuts_pitches, split_cuts_staggered))
+    )
 
     for g in pdngen.findGrid(grid):
         pdngen.makeConnect(

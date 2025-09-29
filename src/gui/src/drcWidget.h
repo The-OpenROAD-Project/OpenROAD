@@ -9,7 +9,10 @@
 #include <QPushButton>
 #include <QSettings>
 #include <QStandardItemModel>
+#include <QString>
 #include <QTreeView>
+#include <QVariant>
+#include <QWidget>
 #include <memory>
 #include <variant>
 
@@ -17,6 +20,7 @@
 #include "inspector.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/geom.h"
 
 namespace utl {
 class Logger;

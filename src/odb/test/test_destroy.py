@@ -10,7 +10,7 @@ import unittest
 
 class TestDestroy(odbUnitTest.TestCase):
     def setUp(self):
-        self.db, lib = helper.createSimpleDB()
+        self.db, lib, self.design, self.ord_tech = helper.createSimpleDB()
         self.parentBlock = odb.dbBlock_create(self.db.getChip(), "Parent")
         self.block = helper.create2LevelBlock(self.db, lib, self.parentBlock)
         self.i1 = self.block.findInst("i1")
@@ -23,9 +23,6 @@ class TestDestroy(odbUnitTest.TestCase):
         self.n5 = self.i3.findITerm("a").getNet()
         self.n6 = self.i3.findITerm("b").getNet()
         self.n7 = self.i3.findITerm("o").getNet()
-
-    def tearDown(self):
-        self.db.destroy(self.db)
 
     def test_destroy_net(self):
         self.n1.destroy(self.n1)

@@ -31,7 +31,15 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frInst.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
+#include "odb/db.h"
+#include "utl/Logger.h"
 
 namespace odb {
 class dbTechLayerCutSpacingTableDefRule;
@@ -183,23 +191,23 @@ class Fixture
 
   frViaDef* makeViaDef(const char* name,
                        frLayerNum layer_num,
-                       const Point& ll,
-                       const Point& ur);
+                       const odb::Point& ll,
+                       const odb::Point& ur);
 
-  frVia* makeVia(frViaDef* via, frNet* net, const Point& origin);
+  frVia* makeVia(frViaDef* via, frNet* net, const odb::Point& origin);
 
   void makePathseg(frNet* net,
                    frLayerNum layer_num,
-                   const Point& begin,
-                   const Point& end,
+                   const odb::Point& begin,
+                   const odb::Point& end,
                    frUInt4 width = 100,
                    frEndStyleEnum begin_style = frcTruncateEndStyle,
                    frEndStyleEnum end_style = frcTruncateEndStyle);
 
   void makePathsegExt(frNet* net,
                       frLayerNum layer_num,
-                      const Point& begin,
-                      const Point& end,
+                      const odb::Point& begin,
+                      const odb::Point& end,
                       frUInt4 width = 100)
   {
     makePathseg(net,
@@ -250,7 +258,7 @@ class Fixture
                                       frCoord within,
                                       frCoord spc);
   // Public data members are accessible from inside the test function
-  std::unique_ptr<Logger> logger;
+  std::unique_ptr<utl::Logger> logger;
   std::unique_ptr<RouterConfiguration> router_cfg;
   std::unique_ptr<frDesign> design;
   frUInt4 numBlockages, numTerms, numMasters, numInsts;

@@ -10,26 +10,27 @@
 #include "MplObserver.h"
 #include "hier_rtlmp.h"
 #include "object.h"
+#include "odb/db.h"
+#include "utl/Logger.h"
 
 namespace mpl {
 using std::string;
 using utl::MPL;
 
-MacroPlacer::MacroPlacer() = default;
-MacroPlacer::~MacroPlacer() = default;
-
 class Snapper;
 
-void MacroPlacer::init(sta::dbNetwork* network,
-                       odb::dbDatabase* db,
-                       sta::dbSta* sta,
-                       utl::Logger* logger,
-                       par::PartitionMgr* tritonpart)
+MacroPlacer::MacroPlacer(sta::dbNetwork* network,
+                         odb::dbDatabase* db,
+                         sta::dbSta* sta,
+                         utl::Logger* logger,
+                         par::PartitionMgr* tritonpart)
 {
   hier_rtlmp_ = std::make_unique<HierRTLMP>(network, db, logger, tritonpart);
   logger_ = logger;
   db_ = db;
 }
+
+MacroPlacer::~MacroPlacer() = default;
 
 bool MacroPlacer::place(const int num_threads,
                         const int max_num_macro,

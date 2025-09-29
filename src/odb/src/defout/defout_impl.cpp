@@ -6,20 +6,33 @@
 #include <sys/stat.h>
 
 #include <algorithm>
+#include <cassert>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
+#include <ios>
 #include <limits>
+#include <list>
 #include <map>
 #include <optional>
+#include <ostream>
 #include <set>
+#include <stdexcept>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include "odb/db.h"
 #include "odb/dbMap.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
+#include "odb/defout.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
+
 namespace odb {
 
 namespace {
@@ -88,7 +101,7 @@ const char* defIoType(const dbIoType& type)
 
 }  // namespace
 
-void defout_impl::selectNet(dbNet* net)
+void DefOut::Impl::selectNet(dbNet* net)
 {
   if (!net) {
     return;
@@ -96,7 +109,7 @@ void defout_impl::selectNet(dbNet* net)
   _select_net_list.push_back(net);
 }
 
-void defout_impl::selectInst(dbInst* inst)
+void DefOut::Impl::selectInst(dbInst* inst)
 {
   if (!inst) {
     return;
@@ -104,14 +117,11 @@ void defout_impl::selectInst(dbInst* inst)
   _select_inst_list.push_back(inst);
 }
 
-bool defout_impl::writeBlock(dbBlock* block, std::ostream& stream)
+bool DefOut::Impl::writeBlock(dbBlock* block, std::ostream& stream)
 {
   if (!_select_net_list.empty()) {
     _select_net_map = new dbMap<dbNet, char>(block->getNets());
-    std::list<dbNet*>::iterator sitr;
-    for (sitr = _select_net_list.begin(); sitr != _select_net_list.end();
-         ++sitr) {
-      dbNet* net = *sitr;
+    for (dbNet* net : _select_net_list) {
       (*_select_net_map)[net] = 1;
       if (net->isSpecial() || net->isMark_1ed()) {
         continue;
@@ -119,22 +129,18 @@ bool defout_impl::writeBlock(dbBlock* block, std::ostream& stream)
       if (!_select_inst_map) {
         _select_inst_map = new dbMap<dbInst, char>(block->getInsts());
       }
-      dbSet<dbITerm> iterms = net->getITerms();
-      dbSet<dbITerm>::iterator titr;
-      for (titr = iterms.begin(); titr != iterms.end(); ++titr) {
-        dbInst* inst = (*titr)->getInst();
+      for (dbITerm* iterm : net->getITerms()) {
+        dbInst* inst = iterm->getInst();
         (*_select_inst_map)[inst] = 1;
       }
     }
   }
+
   if (!_select_inst_list.empty()) {
     if (!_select_inst_map) {
       _select_inst_map = new dbMap<dbInst, char>(block->getInsts());
     }
-    std::list<dbInst*>::iterator xitr;
-    for (xitr = _select_inst_list.begin(); xitr != _select_inst_list.end();
-         ++xitr) {
-      dbInst* inst = *xitr;
+    for (dbInst* inst : _select_inst_list) {
       (*_select_inst_map)[inst] = 1;
     }
   }
@@ -153,20 +159,20 @@ bool defout_impl::writeBlock(dbBlock* block, std::ostream& stream)
   // The following line disables automatic flushing of the buffer.
   *_out << std::nounitbuf;
 
-  if (_version == defout::DEF_5_3) {
+  if (_version == DefOut::DEF_5_3) {
     *_out << "VERSION 5.3 ;\n";
-  } else if (_version == defout::DEF_5_4) {
+  } else if (_version == DefOut::DEF_5_4) {
     *_out << "VERSION 5.4 ;\n";
-  } else if (_version == defout::DEF_5_5) {
+  } else if (_version == DefOut::DEF_5_5) {
     *_out << "VERSION 5.5 ;\n";
-  } else if (_version == defout::DEF_5_6) {
+  } else if (_version == DefOut::DEF_5_6) {
     *_out << "VERSION 5.6 ;\n";
-  } else if (_version == defout::DEF_5_7) {
+  } else if (_version == DefOut::DEF_5_7) {
     *_out << "VERSION 5.7 ;\n";
-  } else if (_version == defout::DEF_5_8) {
+  } else if (_version == DefOut::DEF_5_8) {
     *_out << "VERSION 5.8 ;\n";
   }
-  if (_version < defout::DEF_5_6) {
+  if (_version < DefOut::DEF_5_6) {
     *_out << "NAMESCASESENSITIVE ON ;\n";
   }
   char hd = block->getHierarchyDelimiter();
@@ -227,7 +233,7 @@ bool defout_impl::writeBlock(dbBlock* block, std::ostream& stream)
   writeVias(block);
   writeNonDefaultRules(block);
   writeRegions(block);
-  if (_version == defout::DEF_5_8) {
+  if (_version == DefOut::DEF_5_8) {
     writeComponentMaskShift(block);
   }
   writeInsts(block);
@@ -240,31 +246,24 @@ bool defout_impl::writeBlock(dbBlock* block, std::ostream& stream)
   writeScanChains(block);
 
   *_out << "END DESIGN\n";
-  {
-    delete _select_net_map;
-  }
-  {
-    delete _select_inst_map;
-  }
+
+  delete _select_net_map;
+  delete _select_inst_map;
 
   _out = nullptr;
 
   return true;
 }
 
-bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
+bool DefOut::Impl::writeBlock(dbBlock* block, const char* def_file)
 {
   utl::OutStreamHandler stream_handler(def_file, false);
   return writeBlock(block, stream_handler.getStream());
 }
 
-void defout_impl::writeRows(dbBlock* block)
+void DefOut::Impl::writeRows(dbBlock* block)
 {
-  dbSet<dbRow> rows = block->getRows();
-  dbSet<dbRow>::iterator itr;
-
-  for (itr = rows.begin(); itr != rows.end(); ++itr) {
-    dbRow* row = *itr;
+  for (dbRow* row : block->getRows()) {
     std::string n = row->getName();
     Point origin = row->getOrigin();
     int s = row->getSpacing();
@@ -291,21 +290,12 @@ void defout_impl::writeRows(dbBlock* block)
   }
 }
 
-void defout_impl::writeTracks(dbBlock* block)
+void DefOut::Impl::writeTracks(dbBlock* block)
 {
-  dbSet<dbTrackGrid> grids = block->getTrackGrids();
-  dbSet<dbTrackGrid>::iterator itr;
-
-  for (itr = grids.begin(); itr != grids.end(); ++itr) {
-    dbTrackGrid* grid = *itr;
+  for (dbTrackGrid* grid : block->getTrackGrids()) {
     dbTechLayer* layer = grid->getTechLayer();
 
-    std::string lname;
-    if (_use_alias && layer->hasAlias()) {
-      lname = layer->getAlias();
-    } else {
-      lname = layer->getName();
-    }
+    const std::string lname = layer->getName();
 
     for (int i = 0; i < grid->getNumGridPatternsX(); ++i) {
       int orgX, count, step, firstmask;
@@ -339,7 +329,7 @@ void defout_impl::writeTracks(dbBlock* block)
   }
 }
 
-void defout_impl::writeGCells(dbBlock* block)
+void DefOut::Impl::writeGCells(dbBlock* block)
 {
   dbGCellGrid* grid = block->getGCellGrid();
 
@@ -364,7 +354,7 @@ void defout_impl::writeGCells(dbBlock* block)
   }
 }
 
-void defout_impl::writeVias(dbBlock* block)
+void DefOut::Impl::writeVias(dbBlock* block)
 {
   dbSet<dbVia> vias = block->getVias();
 
@@ -372,13 +362,10 @@ void defout_impl::writeVias(dbBlock* block)
     return;
   }
 
-  dbSet<dbVia>::iterator itr;
-  uint cnt = 0;
+  int cnt = 0;
 
-  for (itr = vias.begin(); itr != vias.end(); ++itr) {
-    dbVia* via = *itr;
-
-    if ((_version >= defout::DEF_5_6) && via->isViaRotated()) {
+  for (dbVia* via : vias) {
+    if ((_version >= DefOut::DEF_5_6) && via->isViaRotated()) {
       continue;
     }
 
@@ -387,10 +374,8 @@ void defout_impl::writeVias(dbBlock* block)
 
   *_out << "VIAS " << cnt << " ;\n";
 
-  for (itr = vias.begin(); itr != vias.end(); ++itr) {
-    dbVia* via = *itr;
-
-    if ((_version >= defout::DEF_5_6) && via->isViaRotated()) {
+  for (dbVia* via : vias) {
+    if ((_version >= DefOut::DEF_5_6) && via->isViaRotated()) {
       continue;
     }
 
@@ -400,13 +385,13 @@ void defout_impl::writeVias(dbBlock* block)
   *_out << "END VIAS\n";
 }
 
-void defout_impl::writeVia(dbVia* via)
+void DefOut::Impl::writeVia(dbVia* via)
 {
   std::string vname = via->getName();
   *_out << "    - " << vname;
   dbTechViaGenerateRule* rule = via->getViaGenerateRule();
 
-  if ((_version >= defout::DEF_5_6) && via->hasParams() && (rule != nullptr)) {
+  if ((_version >= DefOut::DEF_5_6) && via->hasParams() && (rule != nullptr)) {
     std::string rname = rule->getName();
     *_out << " + VIARULE " << rname;
 
@@ -454,18 +439,9 @@ void defout_impl::writeVia(dbVia* via)
     }
 
     int i = 0;
-    dbSet<dbBox> boxes = via->getBoxes();
-    dbSet<dbBox>::iterator bitr;
 
-    for (bitr = boxes.begin(); bitr != boxes.end(); ++bitr) {
-      dbBox* box = *bitr;
+    for (dbBox* box : via->getBoxes()) {
       dbTechLayer* layer = box->getTechLayer();
-      std::string lname;
-      if (_use_alias && layer->hasAlias()) {
-        lname = layer->getAlias();
-      } else {
-        lname = layer->getName();
-      }
       int x1 = defdist(box->xMin());
       int y1 = defdist(box->yMin());
       int x2 = defdist(box->xMax());
@@ -475,15 +451,15 @@ void defout_impl::writeVia(dbVia* via)
         *_out << "\n      ";
       }
 
-      *_out << " + RECT " << lname << " ( " << x1 << " " << y1 << " ) ( " << x2
-            << " " << y2 << " )";
+      *_out << " + RECT " << layer->getName() << " ( " << x1 << " " << y1
+            << " ) ( " << x2 << " " << y2 << " )";
     }
   }
 
   *_out << " ;\n";
 }
 
-void defout_impl::writeComponentMaskShift(dbBlock* block)
+void DefOut::Impl::writeComponentMaskShift(dbBlock* block)
 {
   const std::vector<dbTechLayer*> layers = block->getComponentMaskShift();
 
@@ -498,14 +474,24 @@ void defout_impl::writeComponentMaskShift(dbBlock* block)
   *_out << ";\n";
 }
 
-void defout_impl::writeInsts(dbBlock* block)
+void DefOut::Impl::writeInsts(dbBlock* block)
 {
   dbSet<dbInst> insts = block->getInsts();
 
-  *_out << "COMPONENTS " << insts.size() << " ;\n";
+  auto sorted_insts = sortedSet(insts);
+
+  int inst_cnt = 0;
+  for (dbInst* inst : sorted_insts) {
+    if (_select_inst_map && !(*_select_inst_map)[inst]) {
+      continue;
+    }
+    inst_cnt++;
+  }
+
+  *_out << "COMPONENTS " << inst_cnt << " ;\n";
 
   // Sort the components for consistent output
-  for (dbInst* inst : sortedSet(insts)) {
+  for (dbInst* inst : sorted_insts) {
     if (_select_inst_map && !(*_select_inst_map)[inst]) {
       continue;
     }
@@ -515,7 +501,7 @@ void defout_impl::writeInsts(dbBlock* block)
   *_out << "END COMPONENTS\n";
 }
 
-void defout_impl::writeNonDefaultRules(dbBlock* block)
+void DefOut::Impl::writeNonDefaultRules(dbBlock* block)
 {
   dbSet<dbTechNonDefaultRule> rules = block->getNonDefaultRules();
 
@@ -525,17 +511,14 @@ void defout_impl::writeNonDefaultRules(dbBlock* block)
 
   *_out << "NONDEFAULTRULES " << rules.size() << " ;\n";
 
-  dbSet<dbTechNonDefaultRule>::iterator itr;
-
-  for (itr = rules.begin(); itr != rules.end(); ++itr) {
-    dbTechNonDefaultRule* rule = *itr;
+  for (dbTechNonDefaultRule* rule : rules) {
     writeNonDefaultRule(rule);
   }
 
   *_out << "END NONDEFAULTRULES\n";
 }
 
-void defout_impl::writeNonDefaultRule(dbTechNonDefaultRule* rule)
+void DefOut::Impl::writeNonDefaultRule(dbTechNonDefaultRule* rule)
 {
   std::string name = rule->getName();
   *_out << "    - " << name << "\n";
@@ -547,17 +530,14 @@ void defout_impl::writeNonDefaultRule(dbTechNonDefaultRule* rule)
   std::vector<dbTechLayerRule*> layer_rules;
   rule->getLayerRules(layer_rules);
 
-  std::vector<dbTechLayerRule*>::iterator litr;
-  for (litr = layer_rules.begin(); litr != layer_rules.end(); ++litr) {
-    writeLayerRule(*litr);
+  for (dbTechLayerRule* rule : layer_rules) {
+    writeLayerRule(rule);
   }
 
   std::vector<dbTechVia*> use_vias;
   rule->getUseVias(use_vias);
 
-  std::vector<dbTechVia*>::iterator uvitr;
-  for (uvitr = use_vias.begin(); uvitr != use_vias.end(); ++uvitr) {
-    dbTechVia* via = *uvitr;
+  for (dbTechVia* via : use_vias) {
     std::string vname = via->getName();
     *_out << "      + VIA " << vname << "\n";
   }
@@ -565,19 +545,12 @@ void defout_impl::writeNonDefaultRule(dbTechNonDefaultRule* rule)
   std::vector<dbTechViaGenerateRule*> use_rules;
   rule->getUseViaRules(use_rules);
 
-  std::vector<dbTechViaGenerateRule*>::iterator uvritr;
-  for (uvritr = use_rules.begin(); uvritr != use_rules.end(); ++uvritr) {
-    dbTechViaGenerateRule* rule = *uvritr;
+  for (dbTechViaGenerateRule* rule : use_rules) {
     std::string rname = rule->getName();
     *_out << "      + VIARULE " << rname << "\n";
   }
 
-  dbTech* tech = rule->getDb()->getTech();
-  dbSet<dbTechLayer> layers = tech->getLayers();
-  dbSet<dbTechLayer>::iterator layitr;
-
-  for (layitr = layers.begin(); layitr != layers.end(); ++layitr) {
-    dbTechLayer* layer = *layitr;
+  for (dbTechLayer* layer : rule->getDb()->getTech()->getLayers()) {
     int count;
 
     if (rule->getMinCuts(layer, count)) {
@@ -594,7 +567,7 @@ void defout_impl::writeNonDefaultRule(dbTechNonDefaultRule* rule)
   *_out << "    ;\n";
 }
 
-void defout_impl::writeLayerRule(dbTechLayerRule* rule)
+void DefOut::Impl::writeLayerRule(dbTechLayerRule* rule)
 {
   dbTechLayer* layer = rule->getLayer();
   std::string name = layer->getName();
@@ -614,25 +587,12 @@ void defout_impl::writeLayerRule(dbTechLayerRule* rule)
   *_out << "\n";
 }
 
-void defout_impl::writeInst(dbInst* inst)
+void DefOut::Impl::writeInst(dbInst* inst)
 {
   dbMaster* master = inst->getMaster();
   std::string mname = master->getName();
 
-  if (_use_net_inst_ids) {
-    if (_use_master_ids) {
-      *_out << "    - I" << inst->getId() << " M" << master->getMasterId();
-    } else {
-      *_out << "    - I" << inst->getId() << " " << mname;
-    }
-  } else {
-    std::string iname = inst->getName();
-    if (_use_master_ids) {
-      *_out << "    - " << iname << " M" << master->getMasterId();
-    } else {
-      *_out << "    - " << iname << " " << mname;
-    }
-  }
+  *_out << "    - " << inst->getName() << " " << mname;
 
   dbSourceType source = inst->getSourceType();
 
@@ -713,7 +673,7 @@ void defout_impl::writeInst(dbInst* inst)
     writeProperties(inst);
   }
 
-  if (_version >= defout::DEF_5_6) {
+  if (_version >= DefOut::DEF_5_6) {
     dbBox* box = inst->getHalo();
 
     if (box) {
@@ -730,7 +690,7 @@ void defout_impl::writeInst(dbInst* inst)
   *_out << " ;\n";
 }
 
-void defout_impl::writeBTerms(dbBlock* block)
+void DefOut::Impl::writeBTerms(dbBlock* block)
 {
   dbSet<dbBTerm> bterms = block->getBTerms();
 
@@ -740,10 +700,7 @@ void defout_impl::writeBTerms(dbBlock* block)
 
   uint n = 0;
 
-  dbSet<dbBTerm>::iterator itr;
-
-  for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
-    dbBTerm* bterm = *itr;
+  for (dbBTerm* bterm : bterms) {
     dbNet* net = bterm->getNet();
 
     if (net && _select_net_map && !(*_select_net_map)[net]) {
@@ -766,16 +723,13 @@ void defout_impl::writeBTerms(dbBlock* block)
   *_out << "END PINS\n";
 }
 
-void defout_impl::writeRegions(dbBlock* block)
+void DefOut::Impl::writeRegions(dbBlock* block)
 {
   dbSet<dbRegion> regions = block->getRegions();
 
   uint cnt = 0;
-  dbSet<dbRegion>::iterator itr;
 
-  for (itr = regions.begin(); itr != regions.end(); ++itr) {
-    dbRegion* region = *itr;
-
+  for (dbRegion* region : regions) {
     dbSet<dbBox> boxes = region->getBoundaries();
 
     if (!boxes.empty()) {
@@ -789,9 +743,7 @@ void defout_impl::writeRegions(dbBlock* block)
 
   *_out << "REGIONS " << cnt << " ;\n";
 
-  for (itr = regions.begin(); itr != regions.end(); ++itr) {
-    dbRegion* region = *itr;
-
+  for (dbRegion* region : regions) {
     dbSet<dbBox> boxes = region->getBoundaries();
 
     if (boxes.empty()) {
@@ -801,12 +753,9 @@ void defout_impl::writeRegions(dbBlock* block)
     std::string name = region->getName();
     *_out << "    - " << name;
 
-    dbSet<dbBox>::iterator bitr;
     int cnt = 0;
 
-    for (bitr = boxes.begin(); bitr != boxes.end(); ++bitr, ++cnt) {
-      dbBox* box = *bitr;
-
+    for (dbBox* box : boxes) {
       if ((cnt & 0x3) == 0x3) {
         *_out << "\n        ";
       }
@@ -814,6 +763,7 @@ void defout_impl::writeRegions(dbBlock* block)
       *_out << " ( " << defdist(box->xMin()) << " " << defdist(box->yMin())
             << " ) ( " << defdist(box->xMax()) << " " << defdist(box->yMax())
             << " )";
+      ++cnt;
     }
 
     switch ((dbRegionType::Value) region->getRegionType()) {
@@ -840,7 +790,7 @@ void defout_impl::writeRegions(dbBlock* block)
   *_out << "END REGIONS\n";
 }
 
-void defout_impl::writeGroups(dbBlock* block)
+void DefOut::Impl::writeGroups(dbBlock* block)
 {
   auto groups = block->getGroups();
   uint cnt = 0;
@@ -861,13 +811,9 @@ void defout_impl::writeGroups(dbBlock* block)
     std::string name = group->getName();
     *_out << "    - " << name;
 
-    dbSet<dbInst> insts = group->getInsts();
-    dbSet<dbInst>::iterator iitr;
     cnt = 0;
 
-    for (iitr = insts.begin(); iitr != insts.end(); ++iitr, ++cnt) {
-      dbInst* inst = *iitr;
-
+    for (dbInst* inst : group->getInsts()) {
       if ((cnt & 0x3) == 0x3) {
         *_out << "\n        ";
       }
@@ -875,6 +821,7 @@ void defout_impl::writeGroups(dbBlock* block)
       std::string name = inst->getName();
 
       *_out << " " << name;
+      ++cnt;
     }
 
     dbRegion* parent = group->getRegion();
@@ -901,7 +848,7 @@ void defout_impl::writeGroups(dbBlock* block)
   *_out << "END GROUPS\n";
 }
 
-void defout_impl::writeScanChains(dbBlock* block)
+void DefOut::Impl::writeScanChains(dbBlock* block)
 {
   dbDft* dft = block->getDft();
   dbSet<dbScanChain> scan_chains = dft->getScanChains();
@@ -961,7 +908,7 @@ void defout_impl::writeScanChains(dbBlock* block)
   *_out << "END SCANCHAINS\n\n";
 }
 
-void defout_impl::writeBTerm(dbBTerm* bterm)
+void DefOut::Impl::writeBTerm(dbBTerm* bterm)
 {
   dbNet* net = bterm->getNet();
   if (net) {
@@ -970,10 +917,8 @@ void defout_impl::writeBTerm(dbBTerm* bterm)
     if (bpins.size() != 0) {
       int cnt = 0;
 
-      dbSet<dbBPin>::iterator itr;
-
-      for (itr = bpins.begin(); itr != bpins.end(); ++itr) {
-        writeBPin(*itr, cnt++);
+      for (dbBPin* bpin : bpins) {
+        writeBPin(bpin, cnt++);
       }
 
       *_out << " ;\n";
@@ -983,12 +928,8 @@ void defout_impl::writeBTerm(dbBTerm* bterm)
 
     std::string bname = bterm->getName();
 
-    if (_use_net_inst_ids) {
-      *_out << "    - " << bname << " + NET N" << net->getId();
-    } else {
-      std::string nname = net->getName();
-      *_out << "    - " << bname << " + NET " << nname;
-    }
+    std::string nname = net->getName();
+    *_out << "    - " << bname << " + NET " << nname;
 
     if (bterm->isSpecial()) {
       *_out << " + SPECIAL";
@@ -996,7 +937,7 @@ void defout_impl::writeBTerm(dbBTerm* bterm)
 
     *_out << " + DIRECTION " << defIoType(bterm->getIoType());
 
-    if (_version >= defout::DEF_5_6) {
+    if (_version >= DefOut::DEF_5_6) {
       dbBTerm* supply = bterm->getSupplyPin();
 
       if (supply) {
@@ -1024,27 +965,18 @@ void defout_impl::writeBTerm(dbBTerm* bterm)
   }
 }
 
-void defout_impl::writeBPin(dbBPin* bpin, int cnt)
+void DefOut::Impl::writeBPin(dbBPin* bpin, int cnt)
 {
   dbBTerm* bterm = bpin->getBTerm();
   dbNet* net = bterm->getNet();
   std::string bname = bterm->getName();
 
-  if (cnt == 0 || _version <= defout::DEF_5_6) {
-    if (_use_net_inst_ids) {
-      if (cnt == 0) {
-        *_out << "    - " << bname << " + NET N" << net->getId();
-      } else {
-        *_out << "    - " << bname << ".extra" << cnt << "+ NET N"
-              << net->getId();
-      }
+  if (cnt == 0 || _version <= DefOut::DEF_5_6) {
+    std::string nname = net->getName();
+    if (cnt == 0) {
+      *_out << "    - " << bname << " + NET " << nname;
     } else {
-      std::string nname = net->getName();
-      if (cnt == 0) {
-        *_out << "    - " << bname << " + NET " << nname;
-      } else {
-        *_out << "    - " << bname << ".extra" << cnt << " + NET " << nname;
-      }
+      *_out << "    - " << bname << ".extra" << cnt << " + NET " << nname;
     }
 
     if (bterm->isSpecial()) {
@@ -1053,7 +985,7 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
 
     *_out << " + DIRECTION " << defIoType(bterm->getIoType());
 
-    if (_version >= defout::DEF_5_6) {
+    if (_version >= DefOut::DEF_5_6) {
       dbBTerm* supply = bterm->getSupplyPin();
 
       if (supply) {
@@ -1074,7 +1006,7 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
 
   *_out << "\n      ";
 
-  if (_version > defout::DEF_5_6) {
+  if (_version > DefOut::DEF_5_6) {
     *_out << "+ PORT";
   }
 
@@ -1097,38 +1029,31 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
     xMax = defdist(box->xMax()) - x;
     yMax = defdist(box->yMax()) - y;
     dbTechLayer* layer = box->getTechLayer();
-    std::string lname;
-
-    if (_use_alias && layer->hasAlias()) {
-      lname = layer->getAlias();
-    } else {
-      lname = layer->getName();
-    }
+    std::string lname = layer->getName();
 
     *_out << "\n       ";
-    if (_version == defout::DEF_5_5) {
+    if (_version == DefOut::DEF_5_5) {
       *_out << " + LAYER " << lname << " ( " << xMin << " " << yMin << " ) ( "
             << xMax << " " << yMax << " )";
     } else {
-      std::string layer_name = lname;
-      if (_version == defout::DEF_5_8) {
+      if (_version == DefOut::DEF_5_8) {
         uint mask = box->getLayerMask();
         if (mask != 0) {
           // add mask information to layer name
-          layer_name += " MASK " + std::to_string(mask);
+          lname += " MASK " + std::to_string(mask);
         }
       }
       if (bpin->hasEffectiveWidth()) {
         int w = defdist(bpin->getEffectiveWidth());
-        *_out << " + LAYER " << layer_name << " DESIGNRULEWIDTH " << w << " ( "
+        *_out << " + LAYER " << lname << " DESIGNRULEWIDTH " << w << " ( "
               << xMin << " " << yMin << " ) ( " << xMax << " " << yMax << " )";
       } else if (bpin->hasMinSpacing()) {
         int s = defdist(bpin->getMinSpacing());
-        *_out << " + LAYER " << layer_name << " SPACING " << s << " ( " << xMin
+        *_out << " + LAYER " << lname << " SPACING " << s << " ( " << xMin
               << " " << yMin << " ) ( " << xMax << " " << yMax << " )";
       } else {
-        *_out << " + LAYER " << layer_name << " ( " << xMin << " " << yMin
-              << " ) ( " << xMax << " " << yMax << " )";
+        *_out << " + LAYER " << lname << " ( " << xMin << " " << yMin << " ) ( "
+              << xMax << " " << yMax << " )";
       }
     }
   }
@@ -1159,7 +1084,7 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
   }
 }
 
-void defout_impl::writeBlockages(dbBlock* block)
+void DefOut::Impl::writeBlockages(dbBlock* block)
 {
   dbSet<dbObstruction> obstructions_raw = block->getObstructions();
   dbSet<dbBlockage> blockages_raw = block->getBlockages();
@@ -1220,22 +1145,12 @@ void defout_impl::writeBlockages(dbBlock* block)
 
     dbBox* bbox = obs->getBBox();
     dbTechLayer* layer = bbox->getTechLayer();
-    std::string lname;
-    if (_use_alias && layer->hasAlias()) {
-      lname = layer->getAlias();
-    } else {
-      lname = layer->getName();
-    }
 
-    *_out << "    - LAYER " << lname;
+    *_out << "    - LAYER " << layer->getName();
 
     if (inst) {
-      if (_use_net_inst_ids) {
-        *_out << " + COMPONENT I" << inst->getId();
-      } else {
-        std::string iname = inst->getName();
-        *_out << " + COMPONENT " << iname;
-      }
+      std::string iname = inst->getName();
+      *_out << " + COMPONENT " << iname;
     }
 
     if (obs->isSlotObstruction()) {
@@ -1250,7 +1165,7 @@ void defout_impl::writeBlockages(dbBlock* block)
       *_out << " + PUSHDOWN";
     }
 
-    if (_version >= defout::DEF_5_6) {
+    if (_version >= DefOut::DEF_5_6) {
       if (obs->hasEffectiveWidth()) {
         int w = defdist(obs->getEffectiveWidth());
         *_out << " + DESIGNRULEWIDTH " << w;
@@ -1302,12 +1217,8 @@ void defout_impl::writeBlockages(dbBlock* block)
     }
 
     if (inst) {
-      if (_use_net_inst_ids) {
-        *_out << " + COMPONENT I" << inst->getId();
-      } else {
-        std::string iname = inst->getName();
-        *_out << " + COMPONENT " << iname;
-      }
+      std::string iname = inst->getName();
+      *_out << " + COMPONENT " << iname;
     }
 
     if (blk->isPushedDown()) {
@@ -1329,7 +1240,7 @@ void defout_impl::writeBlockages(dbBlock* block)
   }
 }
 
-void defout_impl::writeFills(dbBlock* block)
+void DefOut::Impl::writeFills(dbBlock* block)
 {
   dbSet<dbFill> fills = block->getFills();
   int num_fills = fills.size();
@@ -1367,7 +1278,7 @@ void defout_impl::writeFills(dbBlock* block)
   *_out << "END FILLS\n";
 }
 
-void defout_impl::writeNets(dbBlock* block)
+void DefOut::Impl::writeNets(dbBlock* block)
 {
   dbSet<dbNet> nets = block->getNets();
 
@@ -1434,16 +1345,10 @@ void defout_impl::writeNets(dbBlock* block)
   *_out << "END NETS\n";
 }
 
-void defout_impl::writeSNet(dbNet* net)
+void DefOut::Impl::writeSNet(dbNet* net)
 {
-  dbSet<dbITerm> iterms = net->getITerms();
-
-  if (_use_net_inst_ids) {
-    *_out << "    - N" << net->getId();
-  } else {
-    std::string nname = net->getName();
-    *_out << "    - " << nname;
-  }
+  std::string nname = net->getName();
+  *_out << "    - " << nname;
 
   int i = 0;
 
@@ -1455,11 +1360,8 @@ void defout_impl::writeSNet(dbNet* net)
   }
 
   char ttname[max_name_length];
-  dbSet<dbITerm>::iterator iterm_itr;
   std::set<std::string> wild_names;
-  for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
-    dbITerm* iterm = *iterm_itr;
-
+  for (dbITerm* iterm : net->getITerms()) {
     if (!iterm->isSpecial()) {
       continue;
     }
@@ -1475,19 +1377,11 @@ void defout_impl::writeSNet(dbNet* net)
       }
     } else {
       if ((++i & 7) == 0) {
-        if (_use_net_inst_ids) {
-          *_out << "\n      ( I" << inst->getId() << " " << mtname << " )";
-        } else {
-          std::string iname = inst->getName();
-          *_out << "\n      ( " << iname << " " << mtname << " )";
-        }
+        std::string iname = inst->getName();
+        *_out << "\n      ( " << iname << " " << mtname << " )";
       } else {
-        if (_use_net_inst_ids) {
-          *_out << " ( I" << inst->getId() << " " << mtname << " )";
-        } else {
-          std::string iname = inst->getName();
-          *_out << " ( " << iname << " " << mtname << " )";
-        }
+        std::string iname = inst->getName();
+        *_out << " ( " << iname << " " << mtname << " )";
       }
     }
   }
@@ -1496,11 +1390,9 @@ void defout_impl::writeSNet(dbNet* net)
   *_out << " + USE " << sig_type;
 
   _non_default_rule = nullptr;
-  dbSet<dbSWire> swires = net->getSWires();
-  dbSet<dbSWire>::iterator itr;
 
-  for (itr = swires.begin(); itr != swires.end(); ++itr) {
-    writeSWire(*itr);
+  for (dbSWire* swire : net->getSWires()) {
+    writeSWire(swire);
   }
 
   dbSourceType source = net->getSourceType();
@@ -1545,7 +1437,7 @@ void defout_impl::writeSNet(dbNet* net)
   *_out << " ;\n";
 }
 
-void defout_impl::writeWire(dbWire* wire)
+void DefOut::Impl::writeWire(dbWire* wire)
 {
   dbWireDecoder decode;
   dbTechLayer* layer;
@@ -1566,12 +1458,8 @@ void defout_impl::writeWire(dbWire* wire)
       case dbWireDecoder::VWIRE:
       case dbWireDecoder::JUNCTION: {
         layer = decode.getLayer();
-        std::string lname;
-        if (_use_alias && layer->hasAlias()) {
-          lname = layer->getAlias();
-        } else {
-          lname = layer->getName();
-        }
+        const std::string lname = layer->getName();
+
         dbWireType wire_type = decode.getWireType();
         if (wire->getNet()->getWireType() == dbWireType::FIXED) {
           wire_type = dbWireType::FIXED;
@@ -1655,14 +1543,14 @@ void defout_impl::writeWire(dbWire* wire)
         dbVia* via = decode.getVia();
 
         std::string via_mask_statement;
-        if ((_version >= defout::DEF_5_8) && viacolor) {
+        if ((_version >= DefOut::DEF_5_8) && viacolor) {
           via_mask_statement = fmt::format("MASK {}{}{} ",
                                            viacolor.value().top_color,
                                            viacolor.value().cut_color,
                                            viacolor.value().bottom_color);
         }
 
-        if ((_version >= defout::DEF_5_6) && via->isViaRotated()) {
+        if ((_version >= DefOut::DEF_5_6) && via->isViaRotated()) {
           std::string vname;
 
           if (via->getTechVia()) {
@@ -1686,7 +1574,7 @@ void defout_impl::writeWire(dbWire* wire)
         }
 
         std::string via_mask_statement;
-        if ((_version >= defout::DEF_5_8) && viacolor) {
+        if ((_version >= DefOut::DEF_5_8) && viacolor) {
           via_mask_statement = fmt::format("MASK {}{}{} ",
                                            viacolor.value().top_color,
                                            viacolor.value().cut_color,
@@ -1750,7 +1638,7 @@ void defout_impl::writeWire(dbWire* wire)
   }
 }
 
-void defout_impl::writeSWire(dbSWire* wire)
+void DefOut::Impl::writeSWire(dbSWire* wire)
 {
   switch (wire->getWireType().getValue()) {
     case dbWireType::COVER:
@@ -1783,12 +1671,8 @@ void defout_impl::writeSWire(dbSWire* wire)
   }
 
   int i = 0;
-  dbSet<dbSBox> wires = wire->getWires();
-  dbSet<dbSBox>::iterator itr;
 
-  for (itr = wires.begin(); itr != wires.end(); ++itr) {
-    dbSBox* box = *itr;
-
+  for (dbSBox* box : wire->getWires()) {
     if (i++ > 0) {
       *_out << "\n      NEW";
     }
@@ -1801,12 +1685,7 @@ void defout_impl::writeSWire(dbSWire* wire)
       dbTechVia* v = box->getTechVia();
       std::string vn = v->getName();
       dbTechLayer* l = v->getBottomLayer();
-      std::string ln;
-      if (_use_alias && l->hasAlias()) {
-        ln = l->getAlias();
-      } else {
-        ln = l->getName();
-      }
+      const std::string ln = l->getName();
 
       int x, y;
       box->getViaXY(x, y);
@@ -1831,12 +1710,7 @@ void defout_impl::writeSWire(dbSWire* wire)
       dbVia* v = box->getBlockVia();
       std::string vn = v->getName();
       dbTechLayer* l = v->getBottomLayer();
-      std::string ln;
-      if (_use_alias && l->hasAlias()) {
-        ln = l->getAlias();
-      } else {
-        ln = l->getName();
-      }
+      const std::string ln = l->getName();
 
       int x, y;
       box->getViaXY(x, y);
@@ -1860,16 +1734,10 @@ void defout_impl::writeSWire(dbSWire* wire)
   }
 }
 
-void defout_impl::writeSpecialPath(dbSBox* box)
+void DefOut::Impl::writeSpecialPath(dbSBox* box)
 {
   dbTechLayer* l = box->getTechLayer();
-  std::string ln;
-
-  if (_use_alias && l->hasAlias()) {
-    ln = l->getAlias();
-  } else {
-    ln = l->getName();
-  }
+  const std::string ln = l->getName();
 
   int x1 = box->xMin();
   int y1 = box->yMin();
@@ -1975,14 +1843,10 @@ void defout_impl::writeSpecialPath(dbSBox* box)
   }
 }
 
-void defout_impl::writeNet(dbNet* net)
+void DefOut::Impl::writeNet(dbNet* net)
 {
-  if (_use_net_inst_ids) {
-    *_out << "    - N" << net->getId();
-  } else {
-    std::string nname = net->getName();
-    *_out << "    - " << nname;
-  }
+  std::string nname = net->getName();
+  *_out << "    - " << nname;
 
   char ttname[max_name_length];
   int i = 0;
@@ -2012,12 +1876,8 @@ void defout_impl::writeNet(dbNet* net)
       *_out << "\n     ";
     }
 
-    if (_use_net_inst_ids) {
-      *_out << " ( I" << inst->getId() << " " << mtname << " )";
-    } else {
-      std::string iname = inst->getName();
-      *_out << " ( " << iname << " " << mtname << " )";
-    }
+    std::string iname = inst->getName();
+    *_out << " ( " << iname << " " << mtname << " )";
   }
 
   if (net->getXTalkClass() != 0) {
@@ -2086,7 +1946,7 @@ void defout_impl::writeNet(dbNet* net)
 //
 // See defin/definProDefs.h
 //
-void defout_impl::writePropertyDefinitions(dbBlock* block)
+void DefOut::Impl::writePropertyDefinitions(dbBlock* block)
 {
   dbProperty* defs
       = dbProperty::find(block, "__ADS_DEF_PROPERTY_DEFINITIONS__");
@@ -2097,11 +1957,7 @@ void defout_impl::writePropertyDefinitions(dbBlock* block)
 
   *_out << "PROPERTYDEFINITIONS\n";
 
-  dbSet<dbProperty> obj_types = dbProperty::getProperties(defs);
-  dbSet<dbProperty>::iterator objitr;
-
-  for (objitr = obj_types.begin(); objitr != obj_types.end(); ++objitr) {
-    dbProperty* obj = *objitr;
+  for (dbProperty* obj : dbProperty::getProperties(defs)) {
     std::string objType = obj->getName();
 
     ObjType obj_type;
@@ -2129,11 +1985,8 @@ void defout_impl::writePropertyDefinitions(dbBlock* block)
     }
 
     std::map<std::string, bool>& defs_map = _prop_defs[obj_type];
-    dbSet<dbProperty> props = dbProperty::getProperties(obj);
-    dbSet<dbProperty>::iterator pitr;
 
-    for (pitr = props.begin(); pitr != props.end(); ++pitr) {
-      dbProperty* prop = *pitr;
+    for (dbProperty* prop : dbProperty::getProperties(obj)) {
       std::string name = prop->getName();
       defs_map[std::string(name)] = true;
       switch (prop->getType()) {
@@ -2175,7 +2028,7 @@ void defout_impl::writePropertyDefinitions(dbBlock* block)
   *_out << "END PROPERTYDEFINITIONS\n";
 }
 
-void defout_impl::writePropValue(dbProperty* prop)
+void DefOut::Impl::writePropValue(dbProperty* prop)
 {
   switch (prop->getType()) {
     case dbProperty::STRING_PROP: {
@@ -2203,31 +2056,25 @@ void defout_impl::writePropValue(dbProperty* prop)
   }
 }
 
-void defout_impl::writeProperties(dbObject* object)
+void DefOut::Impl::writeProperties(dbObject* object)
 {
-  dbSet<dbProperty> props = dbProperty::getProperties(object);
-  dbSet<dbProperty>::iterator itr;
   int cnt = 0;
 
-  for (itr = props.begin(); itr != props.end(); ++itr) {
+  for (dbProperty* prop : dbProperty::getProperties(object)) {
     if (cnt && ((cnt & 3) == 0)) {
       *_out << "\n    ";
     }
 
-    dbProperty* prop = *itr;
     std::string name = prop->getName();
     *_out << name << " ";
     writePropValue(prop);
+    ++cnt;
   }
 }
 
-bool defout_impl::hasProperties(dbObject* object, ObjType type)
+bool DefOut::Impl::hasProperties(dbObject* object, ObjType type)
 {
-  dbSet<dbProperty> props = dbProperty::getProperties(object);
-  dbSet<dbProperty>::iterator itr;
-
-  for (itr = props.begin(); itr != props.end(); ++itr) {
-    dbProperty* prop = *itr;
+  for (dbProperty* prop : dbProperty::getProperties(object)) {
     std::string name = prop->getName();
 
     if (_prop_defs[type].find(name) != _prop_defs[type].end()) {
@@ -2238,24 +2085,22 @@ bool defout_impl::hasProperties(dbObject* object, ObjType type)
   return false;
 }
 
-void defout_impl::writePinProperties(dbBlock* block)
+void DefOut::Impl::writePinProperties(dbBlock* block)
 {
   uint cnt = 0;
 
   dbSet<dbBTerm> bterms = block->getBTerms();
-  dbSet<dbBTerm>::iterator bitr;
 
-  for (bitr = bterms.begin(); bitr != bterms.end(); ++bitr) {
-    if (hasProperties(*bitr, COMPONENTPIN)) {
+  for (dbBTerm* bterm : bterms) {
+    if (hasProperties(bterm, COMPONENTPIN)) {
       ++cnt;
     }
   }
 
   dbSet<dbITerm> iterms = block->getITerms();
-  dbSet<dbITerm>::iterator iitr;
 
-  for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
-    if (hasProperties(*iitr, COMPONENTPIN)) {
+  for (dbITerm* iterm : iterms) {
+    if (hasProperties(iterm, COMPONENTPIN)) {
       ++cnt;
     }
   }
@@ -2266,9 +2111,7 @@ void defout_impl::writePinProperties(dbBlock* block)
 
   *_out << "PINPROPERTIES " << cnt << " ;\n";
 
-  for (bitr = bterms.begin(); bitr != bterms.end(); ++bitr) {
-    dbBTerm* bterm = *bitr;
-
+  for (dbBTerm* bterm : bterms) {
     if (hasProperties(bterm, COMPONENTPIN)) {
       std::string name = bterm->getName();
       *_out << "  - PIN " << name << " + PROPERTY ";
@@ -2278,9 +2121,7 @@ void defout_impl::writePinProperties(dbBlock* block)
   }
 
   char ttname[max_name_length];
-  for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
-    dbITerm* iterm = *iitr;
-
+  for (dbITerm* iterm : iterms) {
     if (hasProperties(iterm, COMPONENTPIN)) {
       dbInst* inst = iterm->getInst();
       dbMTerm* mterm = iterm->getMTerm();

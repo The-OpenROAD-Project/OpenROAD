@@ -3,13 +3,20 @@
 
 #pragma once
 
+#include <QColor>
 #include <QTabWidget>
+#include <QWidget>
 #include <functional>
+#include <map>
 #include <memory>
+#include <set>
+#include <string>
 #include <vector>
 
 #include "gui/gui.h"
 #include "layoutViewer.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace gui {
 
@@ -76,6 +83,8 @@ class LayoutTabs : public QTabWidget
   void addSelected(const SelectionSet& selected);
   void addRuler(int x0, int y0, int x1, int y1);
   void focusNetsChanged();
+  void routeGuidesChanged();
+  void netTracksChanged();
 
  public slots:
   void tabChange(int index);

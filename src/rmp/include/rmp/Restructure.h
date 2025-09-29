@@ -3,15 +3,18 @@
 
 #pragma once
 
+#include <fstream>
 #include <functional>
 #include <set>
 #include <string>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
-#include "rmp/unique_name.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
+#include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
+#include "utl/unique_name.h"
 
 namespace abc {
 }  // namespace abc
@@ -27,6 +30,10 @@ class dbInst;
 class dbNet;
 class dbITerm;
 }  // namespace odb
+
+namespace est {
+class EstimateParasitics;
+}
 
 namespace sta {
 class dbSta;
@@ -50,13 +57,13 @@ enum class Mode
 class Restructure
 {
  public:
-  Restructure() = default;
+  Restructure(utl::Logger* logger,
+              sta::dbSta* open_sta,
+              odb::dbDatabase* db,
+              rsz::Resizer* resizer,
+              est::EstimateParasitics* estimate_parasitics);
   ~Restructure();
 
-  void init(utl::Logger* logger,
-            sta::dbSta* open_sta,
-            odb::dbDatabase* db,
-            rsz::Resizer* resizer);
   void reset();
   void resynth(sta::Corner* corner);
   void run(char* liberty_file_name,
@@ -84,7 +91,7 @@ class Restructure
   bool readAbcLog(std::string abc_file_name, int& level_gain, float& delay_val);
 
   Logger* logger_;
-  UniqueName name_generator_;
+  utl::UniqueName name_generator_;
   std::string logfile_;
   std::string locell_;
   std::string loport_;
@@ -96,6 +103,7 @@ class Restructure
   sta::dbSta* open_sta_;
   odb::dbDatabase* db_;
   rsz::Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
   odb::dbBlock* block_ = nullptr;
 
   std::string input_blif_file_name_;
@@ -103,8 +111,8 @@ class Restructure
   std::vector<std::string> lib_file_names_;
   std::set<odb::dbInst*> path_insts_;
 
-  Mode opt_mode_;
-  bool is_area_mode_;
+  Mode opt_mode_{Mode::DELAY_1};
+  bool is_area_mode_{false};
   int blif_call_id_{0};
 };
 

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <memory>
 #include <vector>
 
-#include "SteinerTreeBuilder.h"
 #include "boost/multi_array.hpp"
+#include "stt/SteinerTreeBuilder.h"
 
 #pragma once
 
@@ -165,13 +166,14 @@ class Flute
 
  private:
   // Dynamically allocate LUTs.
-  LUT_TYPE LUT = nullptr;
-  NUMSOLN_TYPE numsoln = nullptr;
+  LUT_TYPE LUT_ = nullptr;
+  NUMSOLN_TYPE numsoln_ = nullptr;
   // LUTs are initialized to this order at startup.
-  const int lut_initial_d = 8;
-  int lut_valid_d = 0;
+  static constexpr int lut_initial_d = 8;
+  int lut_valid_d_ = 0;
 
-  const int numgrp[10] = {0, 0, 0, 0, 6, 30, 180, 1260, 10080, 90720};
+  static constexpr int numgrp[10]
+      = {0, 0, 0, 0, 6, 30, 180, 1260, 10080, 90720};
 };
 
 }  // namespace flt

@@ -12,6 +12,7 @@
 
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "shape.h"
 #include "via.h"
 
@@ -152,7 +153,7 @@ class Grid
 
   virtual bool isReplaceable() const { return false; }
 
-  void checkSetup() const;
+  virtual void checkSetup() const;
 
   void setSwitchedPower(GridSwitchedPower* cell);
 
@@ -250,6 +251,7 @@ class InstanceGrid : public Grid
   bool isReplaceable() const override { return replaceable_; }
 
   virtual bool isValid() const;
+  void checkSetup() const override;
 
   static ShapeVectorMap getInstanceObstructions(odb::dbInst* inst,
                                                 const Halo& halo

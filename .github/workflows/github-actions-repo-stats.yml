@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  j1:
+  Repo-Stats:
     name: repostats-for-nice-project
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:

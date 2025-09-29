@@ -3,10 +3,13 @@
 
 #pragma once
 
+#include <cassert>
+#include <cstddef>
 #include <vector>
 
-#include "dbStream.h"
-#include "odb.h"
+#include "boost/multi_array.hpp"
+#include "odb/dbStream.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -17,8 +20,8 @@ class dbMatrix
   dbMatrix() = default;
   dbMatrix(uint n, uint m);
 
-  uint numRows() const { return _n; }
-  uint numCols() const { return _m; }
+  uint numRows() const { return _matrix.shape()[0]; }
+  uint numCols() const { return _matrix.shape()[1]; }
   uint numElems() const;
 
   void resize(uint n, uint m);
@@ -27,13 +30,13 @@ class dbMatrix
   const T& operator()(uint i, uint j) const;
   T& operator()(uint i, uint j);
 
+  dbMatrix<T>& operator=(const dbMatrix<T>& rhs);
+
   bool operator==(const dbMatrix<T>& rhs) const;
   bool operator!=(const dbMatrix<T>& rhs) const { return !operator==(rhs); }
 
  private:
-  uint _n = 0;
-  uint _m = 0;
-  std::vector<std::vector<T>> _matrix;
+  boost::multi_array<T, 2> _matrix;
 };
 
 template <class T>
@@ -73,47 +76,36 @@ inline dbIStream& operator>>(dbIStream& stream, dbMatrix<T>& mat)
 template <class T>
 inline dbMatrix<T>::dbMatrix(uint n, uint m)
 {
-  _n = n;
-  _m = m;
   resize(n, m);
 }
 
 template <class T>
 inline void dbMatrix<T>::clear()
 {
-  _n = _m = 0;
-  _matrix.clear();
+  _matrix.resize(boost::extents[0][0]);
 }
 
 template <class T>
 inline uint dbMatrix<T>::numElems() const
 {
-  return _n * _m;
+  return _matrix.num_elements();
 }
 
 template <class T>
 inline void dbMatrix<T>::resize(uint n, uint m)
 {
-  _n = n;
-  _m = m;
-  _matrix.resize(n);
-
-  for (uint i = 0; i < _n; ++i) {
-    _matrix[i].resize(m);
-  }
+  _matrix.resize(boost::extents[n][m]);
 }
 
 template <class T>
 inline const T& dbMatrix<T>::operator()(uint i, uint j) const
 {
-  assert((i >= 0) && (i < _n) && (j >= 0) && (j < _m));
   return _matrix[i][j];
 }
 
 template <class T>
 inline T& dbMatrix<T>::operator()(uint i, uint j)
 {
-  assert((i >= 0) && (i < _n) && (j >= 0) && (j < _m));
   return _matrix[i][j];
 }
 
@@ -121,6 +113,25 @@ template <class T>
 inline bool dbMatrix<T>::operator==(const dbMatrix<T>& rhs) const
 {
   return _matrix == rhs._matrix;
+}
+
+template <class T>
+inline dbMatrix<T>& dbMatrix<T>::operator=(const dbMatrix<T>& rhs)
+{
+  if (this == &rhs) {
+    return *this;
+  }
+
+  const auto lhs_shape = _matrix.shape();
+  const auto rhs_shape = rhs._matrix.shape();
+
+  if (lhs_shape[0] != rhs_shape[0] || lhs_shape[1] != rhs_shape[1]) {
+    std::vector<size_t> new_extents{rhs_shape[0], rhs_shape[1]};
+    _matrix.resize(new_extents);
+  }
+  _matrix = rhs._matrix;
+
+  return *this;
 }
 
 }  // namespace odb

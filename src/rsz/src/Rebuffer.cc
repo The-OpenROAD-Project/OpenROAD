@@ -3,24 +3,49 @@
 
 #include "Rebuffer.hh"
 
+#include <algorithm>
+#include <cassert>
+#include <chrono>
+#include <cmath>
+#include <cstddef>
+#include <limits>
 #include <memory>
+#include <optional>
+#include <set>
+#include <string>
+#include <tuple>
+#include <type_traits>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "BufferMove.hh"
 #include "BufferedNet.hh"
 #include "UnbufferMove.hh"
+#include "db_sta/dbSta.hh"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "rsz/Resizer.hh"
+#include "sta/ArcDelayCalc.hh"
 #include "sta/DcalcAnalysisPt.hh"
+#include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
+#include "sta/TimingArc.hh"
 #include "sta/Units.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 
 using odb::dbSigType;
 using sta::ArcDcalcResult;
+using sta::Arrival;
 using sta::Edge;
 using sta::fuzzyGreater;
 using sta::fuzzyGreaterEqual;
@@ -125,8 +150,8 @@ void Rebuffer::annotateLoadSlacks(BnetPtr& tree, Vertex* root_vertex)
             } else {
               const RiseFall* rf = req_path->transition(sta_);
               node->setSlackTransition(rf->asRiseFallBoth());
-              node->setSlack(
-                  FixedDelay(req_path->required() - arrival_path->arrival()));
+              node->setSlack(FixedDelay(
+                  req_path->required() - arrival_path->arrival(), resizer_));
 
               if (arrival_paths_[rf->index()] == nullptr) {
                 arrival_paths_[rf->index()] = arrival_path;
@@ -152,7 +177,8 @@ BnetPtr Rebuffer::stripTreeBuffers(const BnetPtr& tree)
                                             node->layer(),
                                             recurse(node->ref()),
                                             corner_,
-                                            resizer_);
+                                            resizer_,
+                                            estimate_parasitics_);
           case BnetType::junction:
             return make_shared<BufferedNet>(BnetType::junction,
                                             node->location(),
@@ -191,7 +217,8 @@ BnetPtr Rebuffer::resteiner(const BnetPtr& tree)
                                                      node->bufferCell(),
                                                      resteiner(node->ref()),
                                                      corner_,
-                                                     resizer_));
+                                                     resizer_,
+                                                     estimate_parasitics_));
             return 1;
           }
           default:
@@ -241,8 +268,12 @@ std::tuple<Delay, Delay, Slew> Rebuffer::drvrPinTiming(const BnetPtr& bnet)
                                        load_pin_index_map,
                                        dcalc_ap);
       rf_delay = dcalc_result.gateDelay();
-      rf_correction = arrival_path->arrival()
-                      - (driver_path->arrival() + dcalc_result.gateDelay());
+
+      Arrival prev_arrival = driver_path->isClock(sta_)
+                                 ? search_->clkPathArrival(driver_path)
+                                 : driver_path->arrival();
+      rf_correction
+          = arrival_path->arrival() - (prev_arrival + dcalc_result.gateDelay());
       rf_slew = dcalc_result.drvrSlew();
     } else {
       rf_delay = 0;
@@ -266,7 +297,7 @@ std::tuple<Delay, Delay, Slew> Rebuffer::drvrPinTiming(const BnetPtr& bnet)
 bool Rebuffer::loadSlewSatisfactory(LibertyPort* driver, const BnetPtr& bnet)
 {
   double wire_res, wire_cap;
-  resizer_->wireSignalRC(corner_, wire_res, wire_cap);
+  estimate_parasitics_->wireSignalRC(corner_, wire_res, wire_cap);
   float r_drvr = driver->driveResistance();
   float load_slew
       = (r_drvr + resizer_->dbuToMeters(bnet->maxLoadWireLength()) * wire_res)
@@ -279,7 +310,7 @@ FixedDelay Rebuffer::slackAtDriverPin(const BufferedNetPtr& bnet)
 {
   Delay correction;
   std::tie(std::ignore, correction, std::ignore) = drvrPinTiming(bnet);
-  return bnet->slack() + FixedDelay(correction);
+  return bnet->slack() + FixedDelay(correction, resizer_);
 }
 
 std::optional<FixedDelay> Rebuffer::evaluateOption(const BnetPtr& option,
@@ -289,7 +320,7 @@ std::optional<FixedDelay> Rebuffer::evaluateOption(const BnetPtr& option,
   Delay correction;
   Slew slew;
   std::tie(std::ignore, correction, slew) = drvrPinTiming(option);
-  FixedDelay slack = option->slack() + FixedDelay(correction);
+  FixedDelay slack = option->slack() + FixedDelay(correction, resizer_);
 
   if (!loadSlewSatisfactory(drvr_port_, option)) {
     return {};
@@ -298,7 +329,7 @@ std::optional<FixedDelay> Rebuffer::evaluateOption(const BnetPtr& option,
   // Refuse buffering option if we are violating max slew on the driver pin.
   // There's one exception: If we previously observed satisfactory slew with
   // an even higher load, ficticiously assume this load satisfies max slew.
-  // This is a precaution against non-mononotic slew vs load data which would
+  // This is a precaution against non-monotonic slew vs load data which would
   // cause inconsistencies in the algorithm.
   if (slew > drvr_pin_max_slew_ && option->cap() > drvr_load_high_water_mark_) {
     return {};
@@ -381,14 +412,14 @@ bool Rebuffer::bufferSizeCanDriveLoad(const BufferSize& size,
 {
   double wire_res, wire_cap;
   LibertyPort *inp, *outp;
-  resizer_->wireSignalRC(corner_, wire_res, wire_cap);
+  estimate_parasitics_->wireSignalRC(corner_, wire_res, wire_cap);
   size.cell->bufferPorts(inp, outp);
 
   const float extra_cap = resizer_->dbuToMeters(extra_wire_length) * wire_cap
                           + outp->capacitance();
-  const float r_drvr = outp->driveResistance();
+
   const float load_slew
-      = (r_drvr
+      = (size.driver_resistance
          + resizer_->dbuToMeters(bnet->maxLoadWireLength() + extra_wire_length)
                * wire_res)
         * (bnet->cap() + extra_cap) * elmore_skew_factor_;
@@ -405,7 +436,7 @@ int Rebuffer::wireLengthLimitImpliedByLoadSlew(LibertyCell* cell)
 
   const float r_drvr = out->driveResistance();
   double wire_res, wire_cap;
-  resizer_->wireSignalRC(corner_, wire_res, wire_cap);
+  estimate_parasitics_->wireSignalRC(corner_, wire_res, wire_cap);
 
   const float max_slew = maxSlewMargined(resizer_->maxInputSlew(in, corner_));
 
@@ -453,7 +484,7 @@ int Rebuffer::wireLengthLimitImpliedByMaxCap(LibertyCell* cell)
 
   if (cap_limit_exists) {
     double wire_res, wire_cap;
-    resizer_->wireSignalRC(corner_, wire_res, wire_cap);
+    estimate_parasitics_->wireSignalRC(corner_, wire_res, wire_cap);
     double slack = maxCapMargined(cap_limit) - in->capacitance();
     return std::max(0, resizer_->metersToDbu(slack / wire_cap));
   }
@@ -548,7 +579,8 @@ BnetPtr Rebuffer::attemptTopologyRewrite(const BnetPtr& node,
                                                     size.cell,
                                                     junc1,
                                                     corner_,
-                                                    resizer_);
+                                                    resizer_,
+                                                    estimate_parasitics_);
           buffer->setSlack(buffer_slack);
           buffer->setSlackTransition(junc1->slackTransition());
           buffer->setDelay(buffer_delay);
@@ -806,6 +838,48 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
   return best_option;
 }
 
+static void accumulateBufferTreeFlatLoadPins(
+    bool gone_through_buffer,
+    dbNetwork* nwk,
+    const BufferedNetPtr& choice,
+    std::unordered_set<const sta::Pin*>& buffer_tree_flat_load_pins)
+{
+  switch (choice->type()) {
+    case BufferedNetType::buffer: {
+      accumulateBufferTreeFlatLoadPins(
+          true, nwk, choice->ref(), buffer_tree_flat_load_pins);
+
+      break;
+    }
+    case BufferedNetType::wire: {
+      accumulateBufferTreeFlatLoadPins(
+          gone_through_buffer, nwk, choice->ref(), buffer_tree_flat_load_pins);
+      break;
+    }
+    case BufferedNetType::junction: {
+      accumulateBufferTreeFlatLoadPins(
+          gone_through_buffer, nwk, choice->ref(), buffer_tree_flat_load_pins);
+      accumulateBufferTreeFlatLoadPins(
+          gone_through_buffer, nwk, choice->ref2(), buffer_tree_flat_load_pins);
+      break;
+    }
+    case BufferedNetType::load: {
+      const Pin* load_pin = choice->loadPin();
+      odb::dbITerm* load_iterm = nullptr;
+      odb::dbBTerm* load_bterm = nullptr;
+      odb::dbModITerm* load_moditerm = nullptr;
+      nwk->staToDb(load_pin, load_iterm, load_bterm, load_moditerm);
+      if (load_iterm || load_bterm) {
+        // accumulate all loads through buffers
+        if (gone_through_buffer) {
+          buffer_tree_flat_load_pins.insert(load_pin);
+        }
+      }
+      break;
+    }
+  }
+}
+
 static void pruneCapVsAreaOptions(StaState* sta, BufferedNetSeq& options)
 {
   sort(options.begin(),
@@ -895,7 +969,7 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
         return 0;
       },
       root,
-      -FixedDelay(slack_correction));
+      -FixedDelay(slack_correction, resizer_));
 
   BnetSeq top_opts = visitTree(
       [&](auto& recurse, int level, const BnetPtr& node, int upstream_wl)
@@ -1077,12 +1151,13 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
             int ret = recurse(bnet->ref());
             BnetPtr p = bnet->ref();
             double layer_res, layer_cap;
-            bnet->wireRC(corner_, resizer_, layer_res, layer_cap);
+            bnet->wireRC(
+                corner_, resizer_, estimate_parasitics_, layer_res, layer_cap);
             double wire_length = resizer_->dbuToMeters(bnet->length());
             double wire_res = wire_length * layer_res;
             double wire_cap = wire_length * layer_cap;
             FixedDelay wire_delay
-                = FixedDelay(wire_res * (wire_cap / 2 + p->cap()));
+                = FixedDelay(wire_res * (wire_cap / 2 + p->cap()), resizer_);
             if (bnet->length() == 0) {
               wire_res = 0;
               wire_cap = 0;
@@ -1129,8 +1204,8 @@ FixedDelay Rebuffer::bufferDelay(LibertyCell* cell,
       ArcDelay gate_delays[RiseFall::index_count];
       Slew slews[RiseFall::index_count];
       resizer_->gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
-      delay
-          = std::max<FixedDelay>(delay, FixedDelay(gate_delays[rf1->index()]));
+      delay = std::max<FixedDelay>(
+          delay, FixedDelay(gate_delays[rf1->index()], resizer_));
     }
   }
 
@@ -1142,15 +1217,21 @@ BnetPtr Rebuffer::addWire(const BnetPtr& p,
                           int wire_layer,
                           int level)
 {
-  BnetPtr z = make_shared<BufferedNet>(
-      BnetType::wire, wire_end, wire_layer, p, corner_, resizer_);
+  BnetPtr z = make_shared<BufferedNet>(BnetType::wire,
+                                       wire_end,
+                                       wire_layer,
+                                       p,
+                                       corner_,
+                                       resizer_,
+                                       estimate_parasitics_);
 
   double layer_res, layer_cap;
-  z->wireRC(corner_, resizer_, layer_res, layer_cap);
+  z->wireRC(corner_, resizer_, estimate_parasitics_, layer_res, layer_cap);
   double wire_length = resizer_->dbuToMeters(z->length());
   double wire_res = wire_length * layer_res;
   double wire_cap = wire_length * layer_cap;
-  FixedDelay wire_delay = FixedDelay(wire_res * (wire_cap / 2 + p->cap()));
+  FixedDelay wire_delay
+      = FixedDelay(wire_res * (wire_cap / 2 + p->cap()), resizer_);
 
   // account for wire delay
   z->setDelay(wire_delay);
@@ -1277,7 +1358,8 @@ void Rebuffer::insertBufferOptions(
                                            buffer_cell,
                                            load_opt,
                                            corner_,
-                                           resizer_);
+                                           resizer_,
+                                           estimate_parasitics_);
       z->setSlack(best_slack);
       z->setSlackTransition(load_opt->slackTransition());
       z->setDelay(load_opt_buffer_delay);
@@ -1329,7 +1411,8 @@ void Rebuffer::insertBufferOptions(
                                                buffer_cell,
                                                load_opt,
                                                corner_,
-                                               resizer_);
+                                               resizer_,
+                                               estimate_parasitics_);
           z->setSlack(load_opt->slack() - buffer_delay);
           z->setSlackTransition(load_opt->slackTransition());
           z->setDelay(buffer_delay);
@@ -1379,6 +1462,7 @@ void Rebuffer::init()
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
+  estimate_parasitics_ = resizer_->estimate_parasitics_;
   resizer_max_wire_length_
       = resizer_->metersToDbu(resizer_->findMaxWireLength());
   sta_->checkCapacitanceLimitPreamble();
@@ -1393,8 +1477,9 @@ void Rebuffer::init()
     cell->bufferPorts(in, out);
     buffer_sizes_.push_back(BufferSize{
         cell,
-        FixedDelay(out->intrinsicDelay(sta_)),
-        0.0f,
+        FixedDelay(out->intrinsicDelay(sta_), resizer_),
+        /*margined_max_cap=*/0.0f,
+        out->driveResistance(),
     });
   }
 
@@ -1535,7 +1620,8 @@ BnetPtr Rebuffer::importBufferTree(const Pin* drvr_pin, const Corner* corner)
                                               node->layer(),
                                               inner,
                                               corner,
-                                              resizer_);
+                                              resizer_,
+                                              estimate_parasitics_);
             }
             return nullptr;
           }
@@ -1593,7 +1679,8 @@ BnetPtr Rebuffer::importBufferTree(const Pin* drvr_pin, const Corner* corner)
                                             cell,
                                             inner_bnet,
                                             corner,
-                                            resizer_);
+                                            resizer_,
+                                            estimate_parasitics_);
           }
           default:
             logger_->critical(RSZ, 1003, "unhandled BufferedNet type");
@@ -1771,16 +1858,12 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
   Instance* parent = parent_in;
   switch (choice->type()) {
     case BufferedNetType::buffer: {
-      std::string buffer_name
-          = resizer_->makeUniqueInstName(instance_base_name);
-
       // HFix: make net in hierarchy
-      std::string net_name = resizer_->makeUniqueNetName();
-      Net* net2 = db_network_->makeNet(net_name.c_str(), parent);
+      Net* net2 = db_network_->makeNet(parent);
 
       LibertyCell* buffer_cell = choice->bufferCell();
       Instance* buffer = resizer_->makeBuffer(
-          buffer_cell, buffer_name.c_str(), parent, choice->location());
+          buffer_cell, instance_base_name, parent, choice->location());
 
       resizer_->level_drvr_vertices_valid_ = false;
       LibertyPort *input, *output;
@@ -1793,7 +1876,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
                  "",
                  level,
                  sdc_network_->pathName(net),
-                 buffer_name.c_str(),
+                 sdc_network_->pathName(buffer),
                  buffer_cell->name(),
                  sdc_network_->pathName(net2));
 
@@ -1816,21 +1899,8 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
       db_network_->staToDb(
           buffer_op_pin, buffer_op_iterm, buffer_op_bterm, buffer_op_moditerm);
 
-      // disconnect modnet from original driver
-      // connect the output to the modnet.
-      // inch the modnet to the end of the buffer chain created in this scope
-
-      // Hierarchy handling
-      if (mod_net_drvr && mod_net_in) {
-        // save original dbnet
-        dbNet* orig_db_net = mod_net_drvr->getNet();
-        // disconnect everything
-        mod_net_drvr->disconnect();
-        // restore dbnet
-        mod_net_drvr->connect(orig_db_net);
-        // add the modnet to the new output
-        buffer_op_iterm->connect(mod_net_in);
-      }
+      // we never expect to see mod_net_in
+      assert(!(mod_net_drvr && mod_net_in));
 
       int buffer_count = exportBufferTree(choice->ref(),
                                           net2,
@@ -1885,8 +1955,9 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
         return 0;
       }
 
+      Pin* mod_net_drvr_pin = db_network_->dbToSta(mod_net_drvr);
       dbNet* db_load_net = db_network_->flatNet(load_pin);
-      odb::dbNet* db_net = db_network_->flatNet((Pin*) mod_net_drvr);
+      odb::dbNet* db_net = db_network_->flatNet(mod_net_drvr_pin);
       if ((Net*) db_load_net != net) {
         odb::dbITerm* load_iterm = nullptr;
         odb::dbBTerm* load_bterm = nullptr;
@@ -1925,11 +1996,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
               && load_parent_inst != parent_in) {
             // make the flat connection
             db_network_->connectPin(const_cast<Pin*>(load_pin), net);
-            std::string preferred_connection_name;
-            // always make a unique name to avoid name clashes
-            preferred_connection_name = resizer_->makeUniqueNetName();
-            db_network_->hierarchicalConnect(
-                mod_net_drvr, load_iterm, preferred_connection_name.c_str());
+            db_network_->hierarchicalConnect(mod_net_drvr, load_iterm);
           } else if (mod_net_in) {  // input hierarchical net
             db_network_->connectPin(
                 const_cast<Pin*>(load_pin), (Net*) db_net, (Net*) mod_net_in);
@@ -1961,10 +2028,14 @@ void Rebuffer::printProgress(int iteration,
   if (iteration % print_interval_ == 0 || force || end) {
     const double design_area = resizer_->computeDesignArea();
     const double area_growth = design_area - initial_design_area_;
+    double area_growth_percent = std::numeric_limits<double>::infinity();
+    if (std::abs(initial_design_area_) > 0.0) {
+      area_growth_percent = area_growth / initial_design_area_ * 100.0;
+    }
 
     logger_->report("{: >9s} | {: >+8.1f}% | {: >7d} | {: >8d} | {: >9d}",
                     end ? "final" : std::to_string(iteration),
-                    area_growth / initial_design_area_ * 1e2,
+                    area_growth_percent,
                     removed_count_,
                     inserted_count_,
                     remaining);
@@ -2102,7 +2173,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
   }
 
   initOnCorner(sta_->cmdCorner());
-  IncrementalParasiticsGuard guard(resizer_);
+  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
 
   for (auto iter = 0; iter < filtered_pins.size(); iter++) {
     printProgress(iter, false, false, filtered_pins.size() - iter);
@@ -2218,23 +2289,29 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     //    computation of wire load, we are using pin position for the existing
     //    buffer, but instance position for the new buffer.)
     //
-    Delay relaxation
-        = std::max<float>(0.0f,
-                          ((slackAtDriverPin(timing_tree).toSeconds())
-                           - std::min(original_tree_slack_error, 0.0f)))
-              / 4.0f
-          + (std::max(drvr_gate_delay, 0.0f)
-             + criticalPathDelay(logger_, timing_tree).toSeconds())
-                * relaxation_factor_;
 
-    FixedDelay target = slackAtDriverPin(timing_tree) - FixedDelay(relaxation);
+    FixedDelay target_slack = -FixedDelay::INF;
+
+    // Check the tree isn't fully unconstrained
+    if (timing_tree->slackTransition() != nullptr) {
+      Delay relaxation
+          = std::max<float>(0.0f,
+                            ((slackAtDriverPin(timing_tree).toSeconds())
+                             - std::min(original_tree_slack_error, 0.0f)))
+                / 4.0f
+            + (std::max(drvr_gate_delay, 0.0f)
+               + criticalPathDelay(logger_, timing_tree).toSeconds())
+                  * relaxation_factor_;
+      target_slack
+          = slackAtDriverPin(timing_tree) - FixedDelay(relaxation, resizer_);
+    }
 
     BnetPtr area_opt_tree = timing_tree;
     {
       ScopedTimer timer(logger_, ra_runtime);
       for (int i = 0; i < 5 && area_opt_tree; i++) {
         area_opt_tree
-            = recoverArea(area_opt_tree, target, ((float) (1 + i)) / 5);
+            = recoverArea(area_opt_tree, target_slack, ((float) (1 + i)) / 5);
       }
     }
 
@@ -2252,83 +2329,44 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     db_network_->staToDb(
         drvr_pin, drvr_op_iterm, drvr_op_bterm, drvr_op_moditerm);
 
-    if (db_net && db_modnet) {
-      std::string new_name = resizer_->makeUniqueNetName();
-      db_modnet->rename(new_name.c_str());
-    }
-
     auto insts = collectImportedTreeBufferInstances(drvr_pin, unbuffered_tree);
 
-    //
-    // characterize the buffer tree here
-    //
-    bool propagate_mod_net = false;
-    bool all_loads_in_same_module = false;
-    int buffer_count = 0;
-    int load_count = 0;
-    int wire_count = 0;
-    int junction_count = 0;
-    std::set<odb::dbModule*> load_modules;
+    // Hierarchy support
+    //  remove any loads behind a buffer in the buffer tree
+    //  we will wire those in during construction.
 
-    characterizeChoiceTree(db_network_,
-                           1,
-                           area_opt_tree,
-                           buffer_count,
-                           load_count,
-                           wire_count,
-                           junction_count,
-                           load_modules);
-
-    /*
-      Propagating a hierarchicial through a single buffer or serial chain
-      of buffers is fine.
-
-      However, normally we cannot propagate a hierarchical net through a
-      junction, because we cannot discriminate between the two outputs.
-
-      Specifically if there is a junction with loads or buffers we
-      cannot do the propagation. However, if there is a
-      junction which is just doing wiring (no buffers or loads) then fine.
-     */
-    odb::dbModule* source_module = nullptr;
-    odb::dbITerm* drvr_iterm = nullptr;
-    odb::dbBTerm* drvr_bterm = nullptr;
-    odb::dbModITerm* drvr_moditerm = nullptr;
-    db_network_->staToDb(drvr_pin, drvr_iterm, drvr_bterm, drvr_moditerm);
-
-    if (drvr_iterm) {
-      dbInst* drvr_inst = drvr_iterm->getInst();
-      source_module = drvr_inst->getModule();
-    }
-    // check to see if we have just one module in load set
-    // and that all loads in the source module.
-    if (load_modules.size() == 1) {
-      if (*(load_modules.begin()) == source_module) {
-        all_loads_in_same_module = true;
+    if (db_modnet) {
+      std::unordered_set<const Pin*> buffer_tree_flat_load_pins;
+      accumulateBufferTreeFlatLoadPins(
+          false, db_network_, area_opt_tree, buffer_tree_flat_load_pins);
+      for (auto p : buffer_tree_flat_load_pins) {
+        odb::dbModNet* mod_net = db_network_->hierNet(p);
+        if (mod_net == db_modnet) {
+          db_network_->disconnectPin(const_cast<Pin*>(p), (Net*) db_modnet);
+        }
       }
     }
 
-    if (junction_count != 0 && (!(buffer_count == 0 && load_count == 0))) {
-      propagate_mod_net = false;
-    } else {
-      propagate_mod_net = true;
-    }
-    // Corner case. If all the loads are in the same module
-    // then it is fine to propagate the modnet, no matter
-    // how many junctions
+    inserted_count_ += exportBufferTree(area_opt_tree,
+                                        db_network_->dbToSta(db_net),
+                                        1,
+                                        parent,
+                                        drvr_op_iterm,
+                                        nullptr,
+                                        "place");
 
-    if (all_loads_in_same_module) {
-      propagate_mod_net = true;
+    // Hierarchy support
+    // This is to make sure than any surviving hierarchical connections
+    // at this level of hierarchy are associated with the flat net
+    // at this level. Recall we killed any loads in the buffer tree
+    // from the modnet. The reassociateHierFlatNet will restore
+    // any flat/hier net association on the driver side of the buffer tree.
+    if (db_modnet) {
+      const Pin* pin = db_network_->dbToSta(drvr_op_iterm);
+      dbNet* driver_flat_net = db_network_->flatNet(pin);
+      odb::dbModNet* driver_hier_net = db_network_->hierNet(pin);
+      db_network_->reassociateFromDbNetView(driver_flat_net, driver_hier_net);
     }
-
-    inserted_count_
-        += exportBufferTree(area_opt_tree,
-                            db_network_->dbToSta(db_net),
-                            1,
-                            parent,
-                            drvr_op_iterm,
-                            (propagate_mod_net ? db_modnet : nullptr),
-                            "place");
 
     for (auto* inst : insts) {
       resizer_->unbuffer_move_->removeBuffer(inst);
@@ -2357,7 +2395,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
         },
         unbuffered_tree);
 
-    resizer_->updateParasitics();
+    estimate_parasitics_->updateParasitics();
 
     {
       ScopedTimer timer(logger_, sta_runtime);
@@ -2442,7 +2480,8 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
     annotateLoadSlacks(bnet, drvr);
 
     const bool allow_topology_rewrite
-        = (resizer_->getParasiticsSrc() == ParasiticsSrc::placement);
+        = (estimate_parasitics_->getParasiticsSrc()
+           == est::ParasiticsSrc::placement);
 
     for (int i = 0; i < 3; i++) {
       bnet = bufferForTiming(bnet, allow_topology_rewrite);
@@ -2468,7 +2507,8 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
                         + criticalPathDelay(logger_, bnet).toSeconds())
                        * relaxation_factor_;
 
-    FixedDelay target = slackAtDriverPin(bnet) - FixedDelay(relaxation);
+    FixedDelay target
+        = slackAtDriverPin(bnet) - FixedDelay(relaxation, resizer_);
 
     for (int i = 0; i < 5 && bnet; i++) {
       bnet = recoverArea(bnet, target, ((float) (1 + i)) / 5);
@@ -2487,81 +2527,42 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
     db_network_->staToDb(
         drvr_pin, drvr_op_iterm, drvr_op_bterm, drvr_op_moditerm);
 
-    if (db_net && db_modnet) {
-      std::string new_name = resizer_->makeUniqueNetName();
-      db_modnet->rename(new_name.c_str());
-    }
+    // Hierarchy support
+    //  remove any loads behind a buffer in the buffer tree
+    //  we will wire those in during construction.
 
-    //
-    // characterize the buffer tree here
-    //
-    bool propagate_mod_net = false;
-    bool all_loads_in_same_module = false;
-    int buffer_count = 0;
-    int load_count = 0;
-    int wire_count = 0;
-    int junction_count = 0;
-    std::set<odb::dbModule*> load_modules;
-
-    characterizeChoiceTree(db_network_,
-                           1,
-                           bnet,
-                           buffer_count,
-                           load_count,
-                           wire_count,
-                           junction_count,
-                           load_modules);
-
-    /*
-      Propagating a hierarchicial through a single buffer or serial chain
-      of buffers is fine.
-
-      However, normally we cannot propagate a hierarchical net through a
-      junction, because we cannot discriminate between the two outputs.
-
-      Specifically if there is a junction with loads or buffers we
-      cannot do the propagation. However, if there is a
-      junction which is just doing wiring (no buffers or loads) then fine.
-     */
-    odb::dbModule* source_module = nullptr;
-    odb::dbITerm* drvr_iterm = nullptr;
-    odb::dbBTerm* drvr_bterm = nullptr;
-    odb::dbModITerm* drvr_moditerm = nullptr;
-    db_network_->staToDb(drvr_pin, drvr_iterm, drvr_bterm, drvr_moditerm);
-
-    if (drvr_iterm) {
-      dbInst* drvr_inst = drvr_iterm->getInst();
-      source_module = drvr_inst->getModule();
-    }
-    // check to see if we have just one module in load set
-    // and that all loads in the source module.
-    if (load_modules.size() == 1) {
-      if (*(load_modules.begin()) == source_module) {
-        all_loads_in_same_module = true;
+    if (db_modnet) {
+      std::unordered_set<const Pin*> buffer_tree_flat_load_pins;
+      accumulateBufferTreeFlatLoadPins(
+          false, db_network_, bnet, buffer_tree_flat_load_pins);
+      for (auto p : buffer_tree_flat_load_pins) {
+        odb::dbModNet* mod_net = db_network_->hierNet(p);
+        if (mod_net == db_modnet) {
+          db_network_->disconnectPin(const_cast<Pin*>(p), (Net*) db_modnet);
+        }
       }
     }
 
-    if (junction_count != 0 && (!(buffer_count == 0 && load_count == 0))) {
-      propagate_mod_net = false;
-    } else {
-      propagate_mod_net = true;
-    }
-    // Corner case. If all the loads are in the same module
-    // then it is fine to propagate the modnet, no matter
-    // how many junctions
+    const int inserted_count = exportBufferTree(bnet,
+                                                db_network_->dbToSta(db_net),
+                                                1,
+                                                parent,
+                                                drvr_op_iterm,
+                                                nullptr,
+                                                "rebuffer");
 
-    if (all_loads_in_same_module) {
-      propagate_mod_net = true;
+    // Hierarchy support
+    // This is to make sure than any surviving hierarchical connections
+    // at this level of hierarchy are associated with the flat net
+    // at this level. Recall we killed any loads in the buffer tree
+    // from the modnet. The reassociateHierFlatNet will restore
+    // any flat/hier net association on the driver side of the buffer tree.
+    if (db_modnet) {
+      const Pin* pin = db_network_->dbToSta(drvr_op_iterm);
+      dbNet* driver_flat_net = db_network_->flatNet(pin);
+      odb::dbModNet* driver_hier_net = db_network_->hierNet(pin);
+      db_network_->reassociateFromDbNetView(driver_flat_net, driver_hier_net);
     }
-
-    const int inserted_count
-        = exportBufferTree(bnet,
-                           db_network_->dbToSta(db_net),
-                           1,
-                           parent,
-                           drvr_op_iterm,
-                           (propagate_mod_net ? db_modnet : nullptr),
-                           "rebuffer");
 
     if (inserted_count > 0) {
       resizer_->level_drvr_vertices_valid_ = false;
@@ -2585,7 +2586,7 @@ void BufferMove::rebufferNet(const Pin* drvr_pin)
   auto& rebuffer = resizer_->rebuffer_;
   rebuffer->init();
   rebuffer->initOnCorner(sta_->cmdCorner());
-  IncrementalParasiticsGuard guard(resizer_);
+  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   int inserted_buffer_count_ = rebuffer->rebufferPin(drvr_pin);
   logger_->report("Inserted {} buffers.", inserted_buffer_count_);
 }

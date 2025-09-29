@@ -22,6 +22,57 @@ class Logger;
 
 namespace sta {
 
+// std::any and typeid do not work on incomplete types
+// talking to the OpenSTA author about implementing these
+// upstream instead. https://github.com/llvm/llvm-project/issues/36746
+// for llvm bug.
+//
+// Deleting all the constructors to preserve behavior as opaque pointers.
+// This should let RTTI based constructs like std::any to work on these
+// types. See
+// https://github.com/The-OpenROAD-Project/OpenROAD/pull/7725#discussion_r2201423922
+// for more information.
+class Library
+{
+ public:
+  Library() = delete;
+};
+class Cell
+{
+ public:
+  Cell() = delete;
+};
+class Port
+{
+ public:
+  Port() = delete;
+};
+class Instance
+{
+ public:
+  Instance() = delete;
+};
+class Pin
+{
+ public:
+  Pin() = delete;
+};
+class Term
+{
+ public:
+  Term() = delete;
+};
+class Net
+{
+ public:
+  Net() = delete;
+};
+class ViewType
+{
+ public:
+  ViewType() = delete;
+};
+
 class dbSta;
 class dbNetwork;
 class dbStaReport;
@@ -73,6 +124,7 @@ class BufferUseAnalyser
 class dbSta : public Sta, public odb::dbDatabaseObserver
 {
  public:
+  dbSta(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger);
   ~dbSta() override;
 
   enum InstType
@@ -134,6 +186,7 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
   void postReadDef(odb::dbBlock* block) override;
   void postReadDb(odb::dbDatabase* db) override;
+  void postRead3Dbx(odb::dbChip* chip) override;
 
   // Find clock nets connected by combinational gates from the clock roots.
   std::set<dbNet*> findClkNets();
