@@ -938,15 +938,17 @@ void EstimateParasitics::parasiticNodeConnectPins(
         if (tree_layer != nullptr && !layer_res_.empty()) {
           odb::dbTechLayer* pin_layer = getPinLayer(pin);
 
-          insertViaResistances(pin_layer,
-                               tree_layer,
-                               parasitic,
-                               pin_node,
-                               node,
-                               resistor_id,
-                               corner,
-                               net,
-                               max_node_index);
+          if (pin_layer != tree_layer) {
+            insertViaResistances(pin_layer,
+                                 tree_layer,
+                                 parasitic,
+                                 pin_node,
+                                 node,
+                                 resistor_id,
+                                 corner,
+                                 net,
+                                 max_node_index);
+          }
         } else {
           double cut_res
               = std::max(computeAverageCutResistance(corner), 1.0e-3);
