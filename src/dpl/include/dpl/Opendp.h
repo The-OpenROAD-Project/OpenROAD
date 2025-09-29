@@ -36,7 +36,6 @@ using odb::dbMaster;
 using odb::dbMasterType;
 using odb::dbTechLayer;
 using odb::Point;
-using odb::Rect;
 
 class Node;
 class Group;
@@ -168,7 +167,7 @@ class Opendp
                       const std::string& violation_type = "") const;
   void importDb();
   void importClear();
-  Rect getBbox(dbInst* inst);
+  odb::Rect getBbox(dbInst* inst);
   void createNetwork();
   void createArchitecture();
   void setUpPlacementGroups();
@@ -183,11 +182,11 @@ class Opendp
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
   void detailedPlacement();
   DbuPt nearestPt(const Node* cell, const DbuRect& rect) const;
-  int distToRect(const Node* cell, const Rect& rect) const;
-  static bool checkOverlap(const Rect& cell, const Rect& box);
+  int distToRect(const Node* cell, const odb::Rect& rect) const;
+  static bool checkOverlap(const odb::Rect& cell, const odb::Rect& box);
   bool checkOverlap(const Node* cell, const DbuRect& rect) const;
-  static bool isInside(const Rect& cell, const Rect& box);
-  bool isInside(const Node* cell, const Rect& rect) const;
+  static bool isInside(const odb::Rect& cell, const odb::Rect& box);
+  bool isInside(const Node* cell, const odb::Rect& rect) const;
   PixelPt searchNearestSite(const Node* cell, GridX x, GridY y) const;
   int calcDist(GridPt p0, GridPt p1) const;
   bool canBePlaced(const Node* cell, GridX bin_x, GridY bin_y) const;
@@ -214,7 +213,7 @@ class Opendp
   GridPt legalGridPt(const Node* cell, bool padded) const;
   DbuPt nearestBlockEdge(const Node* cell,
                          const DbuPt& legal_pt,
-                         const Rect& block_bbox) const;
+                         const odb::Rect& block_bbox) const;
 
   void findOverlapInRtree(const bgBox& queryBox,
                           std::vector<bgBox>& overlaps) const;
@@ -266,11 +265,11 @@ class Opendp
   void writeJsonReport(const std::string& filename);
 
   void rectDist(const Node* cell,
-                const Rect& rect,
+                const odb::Rect& rect,
                 // Return values.
                 int* x,
                 int* y) const;
-  int rectDist(const Node* cell, const Rect& rect) const;
+  int rectDist(const Node* cell, const odb::Rect& rect) const;
   void deleteGrid();
   // Cell initial location wrt core origin.
 

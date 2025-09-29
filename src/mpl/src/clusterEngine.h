@@ -241,6 +241,7 @@ class ClusteringEngine
   void clearConnections();
   void buildNetListConnections();
   void buildDataFlowConnections();
+  void connect(Cluster* a, Cluster* b, float connection_weight) const;
 
   // Methods for data flow
   void createDataFlow();

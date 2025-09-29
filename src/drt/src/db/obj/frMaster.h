@@ -14,6 +14,7 @@
 #include "db/obj/frBoundary.h"
 #include "db/obj/frMTerm.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 namespace io {
@@ -25,9 +26,9 @@ class frMaster : public frBlockObject
   // constructors
   frMaster(const frString& name) : name_(name) {}
   // getters
-  Rect getBBox() const
+  odb::Rect getBBox() const
   {
-    Rect box;
+    odb::Rect box;
     if (!boundaries_.empty()) {
       box = boundaries_.begin()->getBBox();
     }
@@ -36,7 +37,7 @@ class frMaster : public frBlockObject
     frCoord urx = box.xMax();
     frCoord ury = box.yMax();
     for (auto& boundary : boundaries_) {
-      Rect tmpBox = boundary.getBBox();
+      odb::Rect tmpBox = boundary.getBBox();
       llx = llx < tmpBox.xMin() ? llx : tmpBox.xMin();
       lly = lly < tmpBox.yMin() ? lly : tmpBox.yMin();
       urx = urx > tmpBox.xMax() ? urx : tmpBox.xMax();
@@ -45,7 +46,7 @@ class frMaster : public frBlockObject
     for (auto& term : getTerms()) {
       for (auto& pin : term->getPins()) {
         for (auto& fig : pin->getFigs()) {
-          Rect tmpBox = fig->getBBox();
+          odb::Rect tmpBox = fig->getBBox();
           llx = llx < tmpBox.xMin() ? llx : tmpBox.xMin();
           lly = lly < tmpBox.yMin() ? lly : tmpBox.yMin();
           urx = urx > tmpBox.xMax() ? urx : tmpBox.xMax();
@@ -53,9 +54,9 @@ class frMaster : public frBlockObject
         }
       }
     }
-    return Rect(llx, lly, urx, ury);
+    return odb::Rect(llx, lly, urx, ury);
   }
-  Rect getDieBox() const { return dieBox_; }
+  odb::Rect getDieBox() const { return dieBox_; }
   const std::vector<frBoundary>& getBoundaries() const { return boundaries_; }
   const std::vector<std::unique_ptr<frBlockage>>& getBlockages() const
   {
@@ -95,7 +96,7 @@ class frMaster : public frBlockObject
     frCoord urx = dieBox_.xMax();
     frCoord ury = dieBox_.yMax();
     for (auto& boundary : boundaries_) {
-      Rect tmpBox = boundary.getBBox();
+      odb::Rect tmpBox = boundary.getBBox();
       llx = std::min(llx, tmpBox.xMin());
       lly = std::min(lly, tmpBox.yMin());
       urx = std::max(urx, tmpBox.xMax());
@@ -121,7 +122,7 @@ class frMaster : public frBlockObject
   std::vector<std::unique_ptr<frMTerm>> terms_;
   std::vector<std::unique_ptr<frBlockage>> blockages_;
   std::vector<frBoundary> boundaries_;
-  Rect dieBox_;
+  odb::Rect dieBox_;
   frString name_;
   dbMasterType masterType_{dbMasterType::CORE};
 

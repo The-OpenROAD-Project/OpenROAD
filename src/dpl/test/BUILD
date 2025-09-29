@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
+
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
 # From CMakeLists.txt or_integration_tests(TESTS
@@ -246,3 +248,14 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "dpl_unittest",
+    srcs = ["dpl_test.cc"],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/dpl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

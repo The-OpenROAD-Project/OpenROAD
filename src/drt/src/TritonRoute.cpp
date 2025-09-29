@@ -1132,7 +1132,7 @@ void TritonRoute::fixMaxSpacing(int num_threads)
 }
 
 void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
-                                const Rect& requiredDrcBox)
+                                const odb::Rect& requiredDrcBox)
 {
   std::vector<std::vector<std::unique_ptr<FlexGCWorker>>> workersBatches(1);
   auto size = 7;
@@ -1142,16 +1142,18 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
   auto& ygp = gCellPatterns.at(1);
   for (int i = offset; i < (int) xgp.getCount(); i += size) {
     for (int j = offset; j < (int) ygp.getCount(); j += size) {
-      Rect routeBox1 = design_->getTopBlock()->getGCellBox(Point(i, j));
+      odb::Rect routeBox1
+          = design_->getTopBlock()->getGCellBox(odb::Point(i, j));
       const int max_i = std::min((int) xgp.getCount() - 1, i + size - 1);
       const int max_j = std::min((int) ygp.getCount(), j + size - 1);
-      Rect routeBox2 = design_->getTopBlock()->getGCellBox(Point(max_i, max_j));
-      Rect routeBox(routeBox1.xMin(),
-                    routeBox1.yMin(),
-                    routeBox2.xMax(),
-                    routeBox2.yMax());
-      Rect extBox;
-      Rect drcBox;
+      odb::Rect routeBox2
+          = design_->getTopBlock()->getGCellBox(odb::Point(max_i, max_j));
+      odb::Rect routeBox(routeBox1.xMin(),
+                         routeBox1.yMin(),
+                         routeBox2.xMax(),
+                         routeBox2.yMax());
+      odb::Rect extBox;
+      odb::Rect drcBox;
       routeBox.bloat(router_cfg_->DRCSAFEDIST, drcBox);
       routeBox.bloat(router_cfg_->MTSAFEDIST, extBox);
       if (!drcBox.intersects(requiredDrcBox)) {
@@ -1177,7 +1179,7 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
     }
     for (const auto& worker : workers) {
       for (auto& marker : worker->getMarkers()) {
-        Rect bbox = marker->getBBox();
+        odb::Rect bbox = marker->getBBox();
         if (!bbox.intersects(requiredDrcBox)) {
           continue;
         }
@@ -1218,7 +1220,7 @@ void TritonRoute::checkDRC(const char* filename,
   } else if (!initGuide()) {
     logger_->error(DRT, 1, "GCELLGRID is undefined");
   }
-  Rect requiredDrcBox(x1, y1, x2, y2);
+  odb::Rect requiredDrcBox(x1, y1, x2, y2);
   if (requiredDrcBox.area() == 0) {
     requiredDrcBox = design_->getTopBlock()->getBBox();
   }
@@ -1328,7 +1330,7 @@ int TritonRoute::getWorkerResultsSize()
 void TritonRoute::reportDRC(const std::string& file_name,
                             const frList<std::unique_ptr<frMarker>>& markers,
                             const std::string& marker_name,
-                            Rect drcBox) const
+                            odb::Rect drcBox) const
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   odb::dbMarkerCategory* tool_category
@@ -1346,8 +1348,8 @@ void TritonRoute::reportDRC(const std::string& file_name,
 
   for (const auto& marker : markers) {
     // get violation bbox
-    Rect bbox = marker->getBBox();
-    if (drcBox != Rect() && !drcBox.intersects(bbox)) {
+    odb::Rect bbox = marker->getBBox();
+    if (drcBox != odb::Rect() && !drcBox.intersects(bbox)) {
       continue;
     }
     auto tech = getDesign()->getTech();
