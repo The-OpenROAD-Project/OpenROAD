@@ -15,6 +15,7 @@
 #include "cts/TritonCTS.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
+#include "utl/Logger.h"
 
 namespace cts {
 

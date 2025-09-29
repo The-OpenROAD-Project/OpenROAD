@@ -10,8 +10,19 @@
 #include <string>
 #include <tuple>
 
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "sta/ArcDelayCalc.hh"
+#include "sta/Delay.hh"
+#include "sta/Graph.hh"
+#include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/TimingArc.hh"
+#include "sta/Transition.hh"
+#include "sta/Vector.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 

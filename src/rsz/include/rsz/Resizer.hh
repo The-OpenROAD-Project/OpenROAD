@@ -42,7 +42,6 @@ using odb::dbMaster;
 using odb::dbNet;
 using odb::dbTechLayer;
 using odb::Point;
-using odb::Rect;
 
 using stt::SteinerTreeBuilder;
 
@@ -725,7 +724,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   int dbu_ = 0;
   const Pin* debug_pin_ = nullptr;
 
-  Rect core_;
+  odb::Rect core_;
   bool core_exists_ = false;
 
   double design_area_ = 0.0;
@@ -799,8 +798,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Sizing
   const double default_sizing_cap_ratio_ = 4.0;
   const double default_buffer_sizing_cap_ratio_ = 9.0;
-  double sizing_cap_ratio_;
-  double buffer_sizing_cap_ratio_;
+  double sizing_cap_ratio_{default_sizing_cap_ratio_};
+  double buffer_sizing_cap_ratio_{default_buffer_sizing_cap_ratio_};
 
   // VT layer hash
   std::unordered_map<dbMaster*, VTCategory> vt_map_;

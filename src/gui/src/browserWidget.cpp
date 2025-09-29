@@ -3,12 +3,17 @@
 
 #include "browserWidget.h"
 
+#include <QColor>
 #include <QColorDialog>
 #include <QEvent>
 #include <QHeaderView>
 #include <QLocale>
+#include <QMenu>
 #include <QMouseEvent>
+#include <QPushButton>
+#include <QSettings>
 #include <QString>
+#include <QWidget>
 #include <algorithm>
 #include <any>
 #include <cstdint>

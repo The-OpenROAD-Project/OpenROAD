@@ -15,7 +15,6 @@
 #include <sstream>
 #include <string>
 
-#include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gmock/gmock.h"
@@ -27,6 +26,7 @@
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PathAnalysisPt.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"

@@ -3,6 +3,7 @@
 
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
+#include "odb/geom.h"
 #include "rcx/extRCap.h"
 #include "rcx/extRulesPattern.h"
 #include "rcx/extSpef.h"

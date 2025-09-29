@@ -109,13 +109,14 @@ int FlexTA::initTA_helper(int iter,
       auto uworker = std::make_unique<FlexTAWorker>(
           getDesign(), logger_, router_cfg_, save_updates_);
       auto& worker = *(uworker.get());
-      Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(0, i));
-      Rect endBox = getDesign()->getTopBlock()->getGCellBox(
-          Point((int) xgp.getCount() - 1,
-                std::min(i + size - 1, (int) ygp.getCount() - 1)));
-      Rect routeBox(
+      odb::Rect beginBox
+          = getDesign()->getTopBlock()->getGCellBox(odb::Point(0, i));
+      odb::Rect endBox = getDesign()->getTopBlock()->getGCellBox(
+          odb::Point((int) xgp.getCount() - 1,
+                     std::min(i + size - 1, (int) ygp.getCount() - 1)));
+      odb::Rect routeBox(
           beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
-      Rect extBox;
+      odb::Rect extBox;
       routeBox.bloat(ygp.getSpacing() / 2, extBox);
       worker.setRouteBox(routeBox);
       worker.setExtBox(extBox);
@@ -132,13 +133,14 @@ int FlexTA::initTA_helper(int iter,
       auto uworker = std::make_unique<FlexTAWorker>(
           getDesign(), logger_, router_cfg_, save_updates_);
       auto& worker = *(uworker.get());
-      Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(i, 0));
-      Rect endBox = getDesign()->getTopBlock()->getGCellBox(
-          Point(std::min(i + size - 1, (int) xgp.getCount() - 1),
-                (int) ygp.getCount() - 1));
-      Rect routeBox(
+      odb::Rect beginBox
+          = getDesign()->getTopBlock()->getGCellBox(odb::Point(i, 0));
+      odb::Rect endBox = getDesign()->getTopBlock()->getGCellBox(
+          odb::Point(std::min(i + size - 1, (int) xgp.getCount() - 1),
+                     (int) ygp.getCount() - 1));
+      odb::Rect routeBox(
           beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
-      Rect extBox;
+      odb::Rect extBox;
       routeBox.bloat(xgp.getSpacing() / 2, extBox);
       worker.setRouteBox(routeBox);
       worker.setExtBox(extBox);

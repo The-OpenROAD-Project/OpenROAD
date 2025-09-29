@@ -7,6 +7,7 @@
 #include <cmath>
 #include <vector>
 
+#include "odb/geom.h"
 #include "ppl/IOPlacer.h"
 
 namespace ppl {
@@ -72,7 +73,7 @@ int Netlist::numIOPins()
   return io_pins_.size();
 }
 
-Rect Netlist::getBB(int idx, const Point& slot_pos)
+odb::Rect Netlist::getBB(int idx, const Point& slot_pos)
 {
   int net_start = net_pointer_[idx];
   int net_end = net_pointer_[idx + 1];
@@ -93,7 +94,7 @@ Rect Netlist::getBB(int idx, const Point& slot_pos)
   Point upper_bounds = Point(max_x, max_y);
   Point lower_bounds = Point(min_x, min_y);
 
-  Rect net_b_box(lower_bounds, upper_bounds);
+  odb::Rect net_b_box(lower_bounds, upper_bounds);
   return net_b_box;
 }
 

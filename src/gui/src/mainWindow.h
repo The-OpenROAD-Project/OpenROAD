@@ -7,8 +7,11 @@
 #include <QCloseEvent>
 #include <QLabel>
 #include <QMainWindow>
+#include <QMenu>
 #include <QShortcut>
+#include <QString>
 #include <QToolBar>
+#include <QWidget>
 #include <map>
 #include <memory>
 #include <optional>

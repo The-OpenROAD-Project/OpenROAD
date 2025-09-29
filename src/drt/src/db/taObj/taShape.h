@@ -8,6 +8,8 @@
 #include "db/infra/frSegStyle.h"
 #include "db/taObj/taFig.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frNet;
@@ -55,10 +57,10 @@ class taPathSeg : public taShape
   taPathSeg& operator=(const taPathSeg&) = delete;
   taPathSeg(const frPathSeg& in);
   // getters
-  std::pair<Point, Point> getPoints() const { return {begin_, end_}; }
+  std::pair<odb::Point, odb::Point> getPoints() const { return {begin_, end_}; }
   frSegStyle getStyle() const { return style_; }
   // setters
-  void setPoints(const Point& beginIn, const Point& endIn)
+  void setPoints(const odb::Point& beginIn, const odb::Point& endIn)
   {
     begin_ = beginIn;
     end_ = endIn;
@@ -120,7 +122,7 @@ class taPathSeg : public taShape
    * overlaps, in .cpp
    */
   // needs to be updated
-  Rect getBBox() const override
+  odb::Rect getBBox() const override
   {
     bool isHorizontal = true;
     if (begin_.x() == end_.x()) {
@@ -130,26 +132,26 @@ class taPathSeg : public taShape
     auto beginExt = style_.getBeginExt();
     auto endExt = style_.getEndExt();
     if (isHorizontal) {
-      return Rect(begin_.x() - beginExt,
-                  begin_.y() - width / 2,
-                  end_.x() + endExt,
-                  end_.y() + width / 2);
+      return odb::Rect(begin_.x() - beginExt,
+                       begin_.y() - width / 2,
+                       end_.x() + endExt,
+                       end_.y() + width / 2);
     }
-    return Rect(begin_.x() - width / 2,
-                begin_.y() - beginExt,
-                end_.x() + width / 2,
-                end_.y() + endExt);
+    return odb::Rect(begin_.x() - width / 2,
+                     begin_.y() - beginExt,
+                     end_.x() + width / 2,
+                     end_.y() + endExt);
   }
-  void move(const dbTransform& xform) override
+  void move(const odb::dbTransform& xform) override
   {
     xform.apply(begin_);
     xform.apply(end_);
   }
-  bool overlaps(const Rect& box) const override { return false; }
+  bool overlaps(const odb::Rect& box) const override { return false; }
 
  protected:
-  Point begin_;  // begin always smaller than end, assumed
-  Point end_;
+  odb::Point begin_;  // begin always smaller than end, assumed
+  odb::Point end_;
   frLayerNum layer_{0};
   frSegStyle style_;
   frBlockObject* owner_{nullptr};

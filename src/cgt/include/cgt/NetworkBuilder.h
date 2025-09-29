@@ -9,6 +9,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "sta/Liberty.hh"
 #include "utl/deleter.h"
 
 namespace cgt {

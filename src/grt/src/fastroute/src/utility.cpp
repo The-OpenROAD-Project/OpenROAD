@@ -19,6 +19,7 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "sta/MinMax.hh"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"

@@ -172,6 +172,7 @@ or_integration_tests(
     report_buffers_sky130hs
     report_buffers_sky130hd
     report_buffers_gf180
+    repair_fanout7_skip_pin_swap
   PASSFAIL_TESTS
     cpp_tests
 )

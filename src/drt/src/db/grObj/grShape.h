@@ -9,6 +9,7 @@
 #include "db/grObj/grFig.h"
 #include "db/infra/frSegStyle.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frNet;
@@ -71,10 +72,10 @@ class grPathSeg : public grShape
   }
   grPathSeg(const frPathSeg& in);
   // getters
-  std::pair<Point, Point> getPoints() const { return {begin_, end_}; }
+  std::pair<odb::Point, odb::Point> getPoints() const { return {begin_, end_}; }
 
   // setters
-  void setPoints(const Point& begin, const Point& end)
+  void setPoints(const odb::Point& begin, const odb::Point& end)
   {
     begin_ = begin;
     end_ = end;
@@ -156,9 +157,9 @@ class grPathSeg : public grShape
    * getBBox
    */
   // needs to be updated
-  Rect getBBox() const override
+  odb::Rect getBBox() const override
   {
-    return Rect(begin_.x(), begin_.y(), end_.x(), end_.y());
+    return odb::Rect(begin_.x(), begin_.y(), end_.x(), end_.y());
   }
 
   void setIter(frListIter<std::unique_ptr<grShape>>& in) override
@@ -171,8 +172,8 @@ class grPathSeg : public grShape
   }
 
  protected:
-  Point begin_;
-  Point end_;
+  odb::Point begin_;
+  odb::Point end_;
   frLayerNum layer_{0};
   frBlockObject* child_{nullptr};
   frBlockObject* parent_{nullptr};
