@@ -63,7 +63,7 @@ class dbEditHierarchy
                                dbModITerm*& top_mod_iterm) const;
   void reassociatePinConnection(Pin* pin);
   std::string makeUniqueName(dbModule* module,
-                             const std::string& name,
+                             std::string_view name,
                              const char* io_type_str = nullptr) const;
 
   // During the addition of new ports and new wiring we may

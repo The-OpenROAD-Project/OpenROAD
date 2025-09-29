@@ -593,7 +593,7 @@ void dbEditHierarchy::cleanUnusedHierPins(
 }
 
 std::string dbEditHierarchy::makeUniqueName(dbModule* module,
-                                            const std::string& name,
+                                            std::string_view name,
                                             const char* io_type_str) const
 {
   std::string base_name;
