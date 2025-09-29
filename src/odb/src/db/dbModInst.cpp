@@ -664,7 +664,8 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   // Remove any dangling nets
   std::vector<dbNet*> nets_to_delete;
   for (dbNet* net : parent->getOwner()->getNets()) {
-    if (net->getITerms().empty()) {
+    if (net->getITerms().empty() && net->getBTerms().empty()
+        && !net->isSpecial()) {
       nets_to_delete.emplace_back(net);
     }
   }
