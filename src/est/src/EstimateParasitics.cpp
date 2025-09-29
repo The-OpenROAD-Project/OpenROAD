@@ -857,7 +857,8 @@ odb::dbTechLayer* EstimateParasitics::getPinLayer(const Pin* pin)
   if (iterm) {
     int min_layer_idx = std::numeric_limits<int>::max();
     for (const auto& [layer, rect] : iterm->getGeometries()) {
-      if (layer->getRoutingLevel() < min_layer_idx) {
+      if (layer->getType() == odb::dbTechLayerType::ROUTING
+          && layer->getRoutingLevel() < min_layer_idx) {
         min_layer_idx = layer->getRoutingLevel();
         pin_layer = layer;
       }
