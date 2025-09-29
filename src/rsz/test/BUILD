@@ -63,6 +63,7 @@ TESTS = [
     "repair_fanout6_multi",
     "repair_fanout7",
     "repair_fanout7_multi",
+    "repair_fanout7_skip_pin_swap",
     "repair_fanout8",
     "repair_fanout8_multi",
     "repair_hold1",
@@ -201,6 +202,7 @@ filegroup(
 extra_deps = {
     "repair_fanout6_multi": ["repair_fanout6.tcl"],
     "repair_fanout7_multi": ["repair_fanout7.tcl"],
+    "repair_fanout7_skip_pin_swap": ["repair_fanout7.tcl"],
     "repair_fanout8_multi": ["repair_fanout8.tcl"],
     "repair_setup1_multi": ["repair_setup1.tcl"],
     "repair_setup2_multi": ["repair_setup2.tcl"],
