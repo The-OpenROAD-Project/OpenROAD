@@ -37,17 +37,15 @@ using sta::Slew;
 using sta::StaState;
 using sta::Vertex;
 
-using odb::Rect;
-
 // Region for partioning fanout pins.
 class LoadRegion
 {
  public:
   LoadRegion();
-  LoadRegion(PinSeq& pins, Rect& bbox);
+  LoadRegion(PinSeq& pins, odb::Rect& bbox);
 
   PinSeq pins_;
-  Rect bbox_;  // dbu
+  odb::Rect bbox_;  // dbu
   std::vector<LoadRegion> regions_;
 };
 
@@ -179,14 +177,14 @@ class RepairDesign : dbStaState
                            bool resize_drvr);
   void makeFanoutRepeater(PinSeq& repeater_loads,
                           PinSeq& repeater_inputs,
-                          const Rect& bbox,
+                          const odb::Rect& bbox,
                           const Point& loc,
                           bool check_slew,
                           bool check_cap,
                           int max_length,
                           bool resize_drvr);
   PinSeq findLoads(const Pin* drvr_pin);
-  Rect findBbox(PinSeq& pins);
+  odb::Rect findBbox(PinSeq& pins);
   Point findClosedPinLoc(const Pin* drvr_pin, PinSeq& pins);
   bool isRepeater(const Pin* load_pin);
   bool makeRepeater(const char* reason,

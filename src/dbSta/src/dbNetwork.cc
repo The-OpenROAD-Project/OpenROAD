@@ -64,6 +64,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"

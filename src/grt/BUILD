@@ -57,6 +57,7 @@ cc_library(
         "//src/dbSta:dbNetwork",
         "//src/gui",
         "//src/odb",
+        "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
         "@boost.container_hash",

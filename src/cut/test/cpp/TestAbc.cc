@@ -25,7 +25,6 @@
 #include "base/main/abcapis.h"
 #include "cut/abc_library_factory.h"
 #include "cut/logic_extractor.h"
-#include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
 #include "gmock/gmock.h"

@@ -22,7 +22,6 @@ class Logger;
 namespace ppl {
 
 using odb::Point;
-using odb::Rect;
 using utl::Logger;
 
 class HungarianMatching

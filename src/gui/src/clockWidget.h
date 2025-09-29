@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <QColor>
 #include <QComboBox>
 #include <QDockWidget>
 #include <QGraphicsItem>
@@ -10,12 +11,16 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QMenu>
+#include <QPainter>
 #include <QPainterPath>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSpinBox>
+#include <QString>
 #include <QTabWidget>
 #include <QToolTip>
+#include <QVariant>
+#include <QWidget>
 #include <map>
 #include <memory>
 #include <optional>
@@ -27,6 +32,7 @@
 
 #include "gui/gui.h"
 #include "odb/db.h"
+#include "sta/Delay.hh"
 #include "staGuiInterface.h"
 
 namespace sta {

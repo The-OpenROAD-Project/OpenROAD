@@ -6,6 +6,7 @@
 #include "db/infra/frBox.h"
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frNet;
@@ -27,7 +28,7 @@ class frRPin : public frBlockObject
   frNet* getNet() const { return net_; }
 
   // utility
-  Rect getBBox();
+  odb::Rect getBBox();
   frLayerNum getLayerNum();
 
   // others

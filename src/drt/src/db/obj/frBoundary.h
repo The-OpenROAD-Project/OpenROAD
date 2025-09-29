@@ -8,20 +8,22 @@
 
 #include "db/obj/frFig.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frBoundary : public frFig
 {
  public:
   // getters
-  const std::vector<Point>& getPoints() const { return points_; }
+  const std::vector<odb::Point>& getPoints() const { return points_; }
   frUInt4 getNumPoints() const { return points_.size(); }
   // setters
-  void setPoints(const std::vector<Point>& pIn) { points_ = pIn; }
+  void setPoints(const std::vector<odb::Point>& pIn) { points_ = pIn; }
   // others
   frBlockObjectEnum typeId() const override { return frcBoundary; }
 
-  Rect getBBox() const override
+  odb::Rect getBBox() const override
   {
     frCoord llx = 0;
     frCoord lly = 0;
@@ -41,15 +43,15 @@ class frBoundary : public frFig
     }
     return {llx, lly, urx, ury};
   }
-  void move(const dbTransform& xform) override
+  void move(const odb::dbTransform& xform) override
   {
     for (auto& point : points_) {
       xform.apply(point);
     }
   }
-  bool intersects(const Rect& box) const override { return false; }
+  bool intersects(const odb::Rect& box) const override { return false; }
 
  protected:
-  std::vector<Point> points_;
+  std::vector<odb::Point> points_;
 };
 }  // namespace drt

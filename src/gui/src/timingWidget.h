@@ -13,7 +13,10 @@
 #include <QSettings>
 #include <QSpinBox>
 #include <QSplitter>
+#include <QString>
 #include <QTableView>
+#include <QVariant>
+#include <QWidget>
 #include <memory>
 #include <set>
 #include <string>
@@ -22,6 +25,7 @@
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "sta/Clock.hh"
+#include "sta/SdcClass.hh"
 
 namespace sta {
 class Pin;

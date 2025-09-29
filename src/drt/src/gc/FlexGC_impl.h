@@ -46,7 +46,7 @@ class FlexGCWorkerRegionQuery
       frLayerNum layerNum,
       std::vector<std::pair<segment_t, gcSegment*>>& result) const;
   void queryPolygonEdge(
-      const Rect& box,
+      const odb::Rect& box,
       frLayerNum layerNum,
       std::vector<std::pair<segment_t, gcSegment*>>& result) const;
   void queryMaxRectangle(const box_t& box,
@@ -55,7 +55,7 @@ class FlexGCWorkerRegionQuery
   void querySpcRectangle(const box_t& box,
                          frLayerNum layerNum,
                          std::vector<rq_box_value_t<gcRect>>& result) const;
-  void queryMaxRectangle(const Rect& box,
+  void queryMaxRectangle(const odb::Rect& box,
                          frLayerNum layerNum,
                          std::vector<rq_box_value_t<gcRect*>>& result) const;
   void queryMaxRectangle(const gtl::rectangle_data<frCoord>& box,
@@ -111,7 +111,7 @@ class FlexGCWorker::Impl
   // getters
   frTechObject* getTech() const { return tech_; }
   FlexDRWorker* getDRWorker() const { return drWorker_; }
-  const Rect& getExtBox() const { return extBox_; }
+  const odb::Rect& getExtBox() const { return extBox_; }
   std::vector<std::unique_ptr<gcNet>>& getNets() { return nets_; }
   // others
   void init(const frDesign* design);
@@ -130,8 +130,8 @@ class FlexGCWorker::Impl
   RouterConfiguration* router_cfg_;
   FlexDRWorker* drWorker_;
 
-  Rect extBox_;
-  Rect drcBox_;
+  odb::Rect extBox_;
+  odb::Rect drcBox_;
 
   std::map<frBlockObject*, gcNet*> owner2nets_;  // no order is assumed
   std::vector<std::unique_ptr<gcNet>> nets_;
@@ -166,7 +166,7 @@ class FlexGCWorker::Impl
   // init
   gcNet* getNet(frBlockObject* obj);
   gcNet* getNet(frNet* net);
-  void initObj(const Rect& box,
+  void initObj(const odb::Rect& box,
                frLayerNum layerNum,
                frBlockObject* obj,
                bool isFixed);
@@ -181,31 +181,36 @@ class FlexGCWorker::Impl
   void initNet_pins_polygonEdges(gcNet* net);
   void initNet_pins_polygonEdges_getFixedPolygonEdges(
       gcNet* net,
-      std::vector<std::set<std::pair<Point, Point>>>& fixedPolygonEdges);
+      std::vector<std::set<std::pair<odb::Point, odb::Point>>>&
+          fixedPolygonEdges);
   void initNet_pins_polygonEdges_helper_outer(
       gcNet* net,
       gcPin* pin,
       gcPolygon* poly,
       frLayerNum i,
-      const std::vector<std::set<std::pair<Point, Point>>>& fixedPolygonEdges);
+      const std::vector<std::set<std::pair<odb::Point, odb::Point>>>&
+          fixedPolygonEdges);
   void initNet_pins_polygonEdges_helper_inner(
       gcNet* net,
       gcPin* pin,
       const gtl::polygon_90_data<frCoord>& hole_poly,
       frLayerNum i,
-      const std::vector<std::set<std::pair<Point, Point>>>& fixedPolygonEdges);
+      const std::vector<std::set<std::pair<odb::Point, odb::Point>>>&
+          fixedPolygonEdges);
   void initNet_pins_polygonCorners(gcNet* net);
   void initNet_pins_polygonCorners_helper(gcNet* net, gcPin* pin);
   void initNet_pins_maxRectangles(gcNet* net);
   void initNet_pins_maxRectangles_getFixedMaxRectangles(
       gcNet* net,
-      std::vector<std::set<std::pair<Point, Point>>>& fixedMaxRectangles);
+      std::vector<std::set<std::pair<odb::Point, odb::Point>>>&
+          fixedMaxRectangles);
   void initNet_pins_maxRectangles_helper(
       gcNet* net,
       gcPin* pin,
       const gtl::rectangle_data<frCoord>& rect,
       frLayerNum i,
-      const std::vector<std::set<std::pair<Point, Point>>>& fixedMaxRectangles);
+      const std::vector<std::set<std::pair<odb::Point, odb::Point>>>&
+          fixedMaxRectangles);
 
   void initRegionQuery();
 
@@ -272,11 +277,11 @@ class FlexGCWorker::Impl
                               gcRect* rect2,
                               frLef58ForbiddenSpcConstraint* con,
                               bool isH);
-  Rect checkForbiddenSpc_queryBox(gcRect* rect,
-                                  frCoord minSpc,
-                                  frCoord maxSpc,
-                                  bool isH,
-                                  bool right);
+  odb::Rect checkForbiddenSpc_queryBox(gcRect* rect,
+                                       frCoord minSpc,
+                                       frCoord maxSpc,
+                                       bool isH,
+                                       bool right);
   bool checkForbiddenSpc_twoedges(gcRect* rect,
                                   frLef58ForbiddenSpcConstraint* con,
                                   bool isH);
@@ -308,7 +313,7 @@ class FlexGCWorker::Impl
   void checkMetalShape_offGrid(gcPin* pin);
   void checkMetalShape_minEnclosedArea(gcPin* pin);
   void checkMetalShape_minStep(gcPin* pin);
-  void checkMetalShape_minStep_helper(const Rect& markerBox,
+  void checkMetalShape_minStep_helper(const odb::Rect& markerBox,
                                       frLayerNum layerNum,
                                       gcNet* net,
                                       frMinStepConstraint* con,
@@ -546,7 +551,7 @@ class FlexGCWorker::Impl
   void patchMetalShape_cornerSpacing();
 
   // utility
-  bool isCornerOverlap(gcCorner* corner, const Rect& box);
+  bool isCornerOverlap(gcCorner* corner, const odb::Rect& box);
   bool isCornerOverlap(gcCorner* corner,
                        const gtl::rectangle_data<frCoord>& rect);
   bool isOppositeDir(gcCorner* corner, gcSegment* seg);

@@ -14,7 +14,10 @@
 #include <QHBoxLayout>
 #include <QHash>
 #include <QListWidget>
+#include <QPushButton>
 #include <QSpinBox>
+#include <QVariant>
+#include <QWidget>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -28,6 +31,7 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "sta/PathExpanded.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
 #include "staGuiInterface.h"
 

@@ -168,19 +168,19 @@ class frViaDef
   // setters
   void addLayer1Fig(std::unique_ptr<frShape> figIn)
   {
-    Rect box = figIn->getBBox();
+    odb::Rect box = figIn->getBBox();
     layer1ShapeBox_.merge(box);
     layer1Figs_.push_back(std::move(figIn));
   }
   void addLayer2Fig(std::unique_ptr<frShape> figIn)
   {
-    Rect box = figIn->getBBox();
+    odb::Rect box = figIn->getBBox();
     layer2ShapeBox_.merge(box);
     layer2Figs_.push_back(std::move(figIn));
   }
   void addCutFig(std::unique_ptr<frShape> figIn)
   {
-    Rect box = figIn->getBBox();
+    odb::Rect box = figIn->getBBox();
     cutShapeBox_.merge(box);
     cutFigs_.push_back(std::move(figIn));
   }
@@ -188,10 +188,10 @@ class frViaDef
   void setCutClass(frLef58CutClass* in) { cutClass_ = in; }
   void setCutClassIdx(int in) { cutClassIdx_ = in; }
   void setAddedByRouter(bool in) { addedByRouter_ = in; }
-  const Rect& getLayer1ShapeBox() const { return layer1ShapeBox_; }
-  const Rect& getLayer2ShapeBox() const { return layer2ShapeBox_; }
-  const Rect& getCutShapeBox() const { return cutShapeBox_; }
-  const Rect& getShapeBox(frLayerNum lNum)
+  const odb::Rect& getLayer1ShapeBox() const { return layer1ShapeBox_; }
+  const odb::Rect& getLayer2ShapeBox() const { return layer2ShapeBox_; }
+  const odb::Rect& getCutShapeBox() const { return cutShapeBox_; }
+  const odb::Rect& getShapeBox(frLayerNum lNum)
   {
     if (lNum == getLayer1Num()) {
       return layer1ShapeBox_;
@@ -216,9 +216,9 @@ class frViaDef
   int cutClassIdx_{-1};
   bool addedByRouter_{false};
 
-  Rect layer1ShapeBox_;
-  Rect layer2ShapeBox_;
-  Rect cutShapeBox_;
+  odb::Rect layer1ShapeBox_;
+  odb::Rect layer2ShapeBox_;
+  odb::Rect cutShapeBox_;
 };
 struct frViaDefComp
 {

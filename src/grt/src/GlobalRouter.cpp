@@ -46,6 +46,8 @@
 #include "odb/geom_boost.h"
 #include "odb/wOrder.h"
 #include "sta/Clock.hh"
+#include "sta/Delay.hh"
+#include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Set.hh"

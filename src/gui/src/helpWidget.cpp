@@ -3,11 +3,13 @@
 
 #include "helpWidget.h"
 
+#include <QComboBox>
 #include <QFile>
 #include <QHBoxLayout>
 #include <QListWidgetItem>
 #include <QTextStream>
 #include <QVBoxLayout>
+#include <QWidget>
 #include <filesystem>
 #include <string>
 

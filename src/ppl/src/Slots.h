@@ -43,7 +43,7 @@ struct IntervalHash
 
 struct RectHash
 {
-  std::size_t operator()(const Rect& rect) const;
+  std::size_t operator()(const odb::Rect& rect) const;
 };
 
 // Slot: an on-track position in the die boundary where a pin
