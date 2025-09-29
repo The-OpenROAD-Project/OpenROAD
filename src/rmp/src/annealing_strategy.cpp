@@ -375,6 +375,9 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
   logger->info(RMP, 52, "Resynthesis: starting simulated annealing");
   logger->info(RMP, 53, "Initial temperature: {}", *temperature_);
 
+  float best_worst_slack = worst_slack;
+  auto best_ops = ops;
+
   for (unsigned i = 0; i < iterations_; i++) {
     float current_temp
         = *temperature_ * (static_cast<float>(iterations_ - i) / iterations_);
@@ -451,6 +454,11 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
 
     ops = new_ops;
     worst_slack = worst_slack_new;
+
+    if (worst_slack > best_worst_slack) {
+      best_worst_slack = worst_slack;
+      best_ops = ops;
+    }
   }
 
   logger->info(
@@ -461,7 +469,7 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
   RunGia(sta,
          candidate_vertices,
          abc_library,
-         ops,
+         best_ops,
          FINAL_RESIZE_ITERS,
          name_generator,
          logger);

@@ -110,24 +110,24 @@ Derived GENLIB library "asap7sc7p5t_AO_RVT_SS_nldm_211120" with 169 gates.
 [INFO RMP-0054] Iteration: 100, temperature: 1e-12
 [INFO RMP-0055] Resynthesis: End of simulated annealing, applying operations
 [INFO RMP-0056] Resynthesis: Applying ABC operations
-[-54.543, -23.036): ************************************************** (38)
-[-23.036,   8.471): ***** (4)
-[  8.471,  39.978): * (1)
-[ 39.978,  71.485): ***** (4)
-[ 71.485, 102.992): * (1)
-[102.992, 134.499): * (1)
-[134.499, 166.006): *** (2)
-[166.006, 197.513): * (1)
-[197.513, 229.020):  (0)
-[229.020, 260.527]: * (1)
+[-36.203,  -6.653): ************************************************** (39)
+[ -6.653,  22.897): **** (3)
+[ 22.897,  52.448): * (1)
+[ 52.448,  81.998): **** (3)
+[ 81.998, 111.549): * (1)
+[111.549, 141.099): **** (3)
+[141.099, 170.649): * (1)
+[170.649, 200.200): * (1)
+[200.200, 229.750):  (0)
+[229.750, 259.301]: * (1)
 Cell type report:                       Count       Area
-  Inverter                                 64       2.87
+  Inverter                                 52       2.84
   Sequential cell                          35      10.21
-  Multi-Input combinational cell          409      29.79
-  Total                                   508      42.87
-Startpoint: dpath/a_lt_b$in0[13]$_DFFE_PP_
+  Multi-Input combinational cell          423      29.96
+  Total                                   510      43.01
+Startpoint: dpath/a_lt_b$in0[8]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: resp_msg[14] (output port clocked by core_clock)
+Endpoint: resp_msg[9] (output port clocked by core_clock)
 Path Group: core_clock
 Path Type: max
 Corner: slow
@@ -136,20 +136,19 @@ Corner: slow
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ dpath/a_lt_b$in0[13]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
-  65.49   65.49 v dpath/a_lt_b$in0[13]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_R)
-  23.67   89.16 ^ cut_72030/Y (INVx1_ASAP7_75t_R)
- 122.29  211.45 ^ _424_/SN (HAxp5_ASAP7_75t_R)
-  32.30  243.74 v cut_71848/Y (NOR2x2_ASAP7_75t_R)
-  26.06  269.80 ^ cut_71856/Y (NAND2xp33_ASAP7_75t_R)
-  21.40  291.20 v cut_71857/Y (NOR2xp33_ASAP7_75t_R)
-  60.07  351.27 ^ cut_71858/Y (NOR2xp33_ASAP7_75t_R)
-  38.44  389.71 v cut_72234/Y (NOR2xp33_ASAP7_75t_R)
-  27.94  417.65 ^ cut_72235/Y (NAND2xp33_ASAP7_75t_R)
-  18.21  435.86 v cut_72236/Y (NAND2xp33_ASAP7_75t_R)
-  18.68  454.54 ^ cut_72237/Y (NOR2xp33_ASAP7_75t_R)
-   0.00  454.54 ^ resp_msg[14] (out)
-         454.54   data arrival time
+   0.00    0.00 ^ dpath/a_lt_b$in0[8]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
+  72.75   72.75 ^ dpath/a_lt_b$in0[8]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_R)
+  18.04   90.80 v cut_72268/Y (INVx1_ASAP7_75t_R)
+ 112.12  202.92 v _429_/SN (HAxp5_ASAP7_75t_R)
+  53.71  256.62 v cut_71866/Y (OR2x2_ASAP7_75t_R)
+  23.42  280.04 ^ cut_72132/Y (NOR2xp33_ASAP7_75t_R)
+  19.48  299.52 v cut_72133/Y (INVx1_ASAP7_75t_R)
+  35.29  334.81 v cut_72134/Y (OR2x2_ASAP7_75t_R)
+  29.68  364.50 ^ cut_72136/Y (NOR2xp33_ASAP7_75t_R)
+  37.11  401.61 v cut_72137/Y (NOR2xp33_ASAP7_75t_R)
+  34.60  436.20 v cut_72138/Y (XOR2xp5_ASAP7_75t_R)
+   0.00  436.20 v resp_msg[9] (out)
+         436.20   data arrival time
 
  500.00  500.00   clock core_clock (rise edge)
    0.00  500.00   clock network delay (ideal)
@@ -158,10 +157,10 @@ Corner: slow
          400.00   data required time
 ---------------------------------------------------------
          400.00   data required time
-        -454.54   data arrival time
+        -436.20   data arrival time
 ---------------------------------------------------------
-         -54.54   slack (VIOLATED)
+         -36.20   slack (VIOLATED)
 
 
-wns max -54.54
-tns max -1717.14
+wns max -36.20
+tns max -777.64
