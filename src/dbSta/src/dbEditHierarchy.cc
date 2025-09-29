@@ -593,12 +593,14 @@ void dbEditHierarchy::cleanUnusedHierPins(
 }
 
 std::string dbEditHierarchy::makeUniqueName(dbModule* module,
-                                            std::string name,
+                                            std::string_view name,
                                             const char* io_type_str) const
 {
-  std::string base_name = name;
+  std::string base_name;
   if (io_type_str) {
     base_name = fmt::format("{}_{}", name, io_type_str);
+  } else {
+    base_name = name;
   }
 
   std::string unique_name = base_name;
@@ -606,11 +608,7 @@ std::string dbEditHierarchy::makeUniqueName(dbModule* module,
   while (module->findModBTerm(unique_name.c_str())
          || module->getModNet(unique_name.c_str())) {
     id++;
-    if (io_type_str) {
-      unique_name = fmt::format("{}_{}_{}", name, io_type_str, id);
-    } else {
-      unique_name = fmt::format("{}_{}", base_name, id);
-    }
+    unique_name = fmt::format("{}_{}", base_name, id);
   }
   return unique_name;
 }
