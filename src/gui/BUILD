@@ -38,8 +38,8 @@ cc_library(
 # but do not have an attached display. This requires setting 'qt_gui_platform'
 # to `headless`, and subsituting the depedency in the top-level BUILD.
 QT_GUI_PLATFORMS = {
-    "native": "",
     "headless": "_headless",
+    "native": "",
 }
 
 [
