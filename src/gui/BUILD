@@ -36,7 +36,7 @@ cc_library(
 
 # A Qt 'headless' build is added for environments that require GUI features
 # but do not have an attached display. This requires setting 'qt_gui_platform'
-# to `headless`, and subsituting the depedency in the top-level BUILD.
+# to `headless`, and subsituting the dependency in the top-level BUILD.
 QT_GUI_PLATFORMS = {
     "headless": "_headless",
     "native": "",
