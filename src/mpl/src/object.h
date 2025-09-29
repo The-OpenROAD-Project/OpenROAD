@@ -209,7 +209,7 @@ class Cluster
 
   // Connection signature support
   void initConnection();
-  void addConnection(int cluster_id, float weight);
+  void addConnection(Cluster* cluster, float connection_weight);
   void removeConnection(int cluster_id);
   const ConnectionsMap& getConnectionsMap() const;
   bool isSameConnSignature(const Cluster& cluster, float net_threshold);
