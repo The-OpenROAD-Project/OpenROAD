@@ -12,10 +12,6 @@ set_propagated_clock [get_clocks {core_clock}]
 
 set guide_file [make_result_file clock_route_cugr.guide]
 
-set_global_routing_layer_adjustment met1 0.8
-set_global_routing_layer_adjustment met2 0.7
-set_global_routing_layer_adjustment * 0.5
-
 set_routing_layers -signal met1-met5 -clock met3-met5
 
 global_route -verbose -use_cugr

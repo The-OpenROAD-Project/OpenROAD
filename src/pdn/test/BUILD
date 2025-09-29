@@ -3,6 +3,7 @@ load("//test:regression.bzl", "regression_test")
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "add_double_global_connection",
+    "asap7_failed_macro_covered",
     "asap7_failed_macro_grid",
     "asap7_no_via_generate",
     "asap7_no_via_generate_v1_snapped",
@@ -19,6 +20,7 @@ COMPULSORY_TESTS = [
     "asap7_vias_max_rows_columns",
     "asap7_M1_M3_followpins",
     "asap7_M1_M3_followpins_staggered",
+    "asap7_macro_notcovered",
     "bpin_removal",
     "core_grid",
     "core_grid_adjacentcuts",
@@ -77,6 +79,7 @@ COMPULSORY_TESTS = [
     "macros_cells_overlapping_ports",
     "macros_cells_via_failure",
     "macros_different_nets",
+    "macros_grid_check",
     "macros_grid_through",
     "macros_grid_through_without_middle",
     "macros_narrow_channel",
@@ -168,6 +171,8 @@ filegroup(
         "Nangate45/work_around_yosys/cells.v",
         "Nangate45_vias/Nangate45_adjacentcuts.lef",
         "asap7_data/fakeram7_256x32.lef",
+        "asap7_data/fakeram7_256x32_covered.lef",
+        "asap7_data/fakeram7_256x32_notcovered.lef",
         "asap7_vias/asap7_tech_1x.lef",
         "asap7_vias/asap7_tech_1x_arrayspacing.lef",
         "asap7_vias/asap7_tech_1x_arrayspacing_tightspacing.lef",
@@ -261,6 +266,8 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "asap7_failed_macro_covered": ["asap7_failed_macro_grid.def"],
+            "asap7_macro_notcovered": ["asap7_failed_macro_grid.def"],
             "core_grid_auto_domain": ["core_grid.defok"],
             "core_grid_with_rings_connect": ["core_grid_with_rings.defok"],
             "macros_channel_recursive_repair": [

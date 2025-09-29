@@ -9,11 +9,15 @@
 #include <QAbstractItemView>
 #include <QAction>
 #include <QApplication>
+#include <QComboBox>
+#include <QDialog>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QMenu>
 #include <QPushButton>
 #include <QStandardItemModel>
+#include <QVariant>
+#include <QWidget>
 #include <algorithm>
 #include <cstddef>
 #include <functional>
@@ -38,7 +42,9 @@
 #include "odb/geom.h"
 #include "sta/Clock.hh"
 #include "sta/Corner.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PatternMatch.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Units.hh"
 
 Q_DECLARE_METATYPE(sta::Corner*);
@@ -270,7 +276,7 @@ void TimingPathsModel::populateModel(
     const std::vector<std::set<const sta::Pin*>>& thru,
     const std::set<const sta::Pin*>& to,
     const std::string& path_group_name,
-    sta::ClockSet* clks)
+    const sta::ClockSet* clks)
 {
   beginResetModel();
   timing_paths_.clear();
@@ -283,7 +289,7 @@ bool TimingPathsModel::populatePaths(
     const std::vector<std::set<const sta::Pin*>>& thru,
     const std::set<const sta::Pin*>& to,
     const std::string& path_group_name,
-    sta::ClockSet* clks)
+    const sta::ClockSet* clks)
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -1356,11 +1362,13 @@ std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins() const
   return pins;
 }
 
-void TimingControlsDialog::getClocks(sta::ClockSet* clock_set) const
+const sta::ClockSet* TimingControlsDialog::getClocks()
 {
+  selected_clocks_.clear();
   for (const auto& clk_name : clock_box_->selectedItems()) {
-    clock_set->insert(qstring_to_clk_[clk_name]);
+    selected_clocks_.insert(qstring_to_clk_[clk_name]);
   }
+  return &selected_clocks_;
 }
 
 }  // namespace gui

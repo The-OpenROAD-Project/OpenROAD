@@ -22,16 +22,24 @@
 #include "BufferMove.hh"
 #include "BufferedNet.hh"
 #include "UnbufferMove.hh"
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "rsz/Resizer.hh"
+#include "sta/ArcDelayCalc.hh"
 #include "sta/DcalcAnalysisPt.hh"
+#include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
+#include "sta/TimingArc.hh"
 #include "sta/Units.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 
@@ -98,9 +106,7 @@ decltype(auto) visitTree(F&& f, Args&&... args)
   return v(std::forward<Args>(args)...);
 }
 
-Rebuffer::Rebuffer(Resizer* resizer,
-                   est::EstimateParasitics* estimate_parasitics)
-    : resizer_(resizer), estimate_parasitics_(estimate_parasitics)
+Rebuffer::Rebuffer(Resizer* resizer) : resizer_(resizer)
 {
 }
 
@@ -1456,6 +1462,7 @@ void Rebuffer::init()
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
+  estimate_parasitics_ = resizer_->estimate_parasitics_;
   resizer_max_wire_length_
       = resizer_->metersToDbu(resizer_->findMaxWireLength());
   sta_->checkCapacitanceLimitPreamble();

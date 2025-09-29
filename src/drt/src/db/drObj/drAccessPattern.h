@@ -9,6 +9,7 @@
 #include "db/infra/frPoint.h"
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -19,7 +20,7 @@ class drAccessPattern : public drBlockObject
 {
  public:
   // getters
-  Point getPoint() const { return beginPoint_; }
+  odb::Point getPoint() const { return beginPoint_; }
   frLayerNum getBeginLayerNum() const { return beginLayerNum_; }
   frCoord getBeginArea() const { return beginArea_; }
   drPin* getPin() const { return pin_; }
@@ -39,7 +40,7 @@ class drAccessPattern : public drBlockObject
   bool isOnTrack(bool isX) const { return (isX) ? onTrackX_ : onTrackY_; }
   frUInt4 getPinCost() const { return pinCost_; }
   // setters
-  void setPoint(const Point& bpIn) { beginPoint_ = bpIn; }
+  void setPoint(const odb::Point& bpIn) { beginPoint_ = bpIn; }
   void setBeginLayerNum(frLayerNum in) { beginLayerNum_ = in; }
   void setBeginArea(frCoord in) { beginArea_ = in; }
   void setMazeIdx(const FlexMazeIdx& in) { mazeIdx_.set(in); }
@@ -69,7 +70,7 @@ class drAccessPattern : public drBlockObject
   frBlockObjectEnum typeId() const override { return drcAccessPattern; }
 
  protected:
-  Point beginPoint_;
+  odb::Point beginPoint_;
   frLayerNum beginLayerNum_{0};
   frCoord beginArea_{0};
   FlexMazeIdx mazeIdx_;

@@ -35,14 +35,12 @@ struct Rect;
 class MacroPlacer
 {
  public:
-  MacroPlacer();
+  MacroPlacer(sta::dbNetwork* network,
+              odb::dbDatabase* db,
+              sta::dbSta* sta,
+              utl::Logger* logger,
+              par::PartitionMgr* tritonpart);
   ~MacroPlacer();
-
-  void init(sta::dbNetwork* network,
-            odb::dbDatabase* db,
-            sta::dbSta* sta,
-            utl::Logger* logger,
-            par::PartitionMgr* tritonpart);
 
   bool place(int num_threads,
              int max_num_macro,

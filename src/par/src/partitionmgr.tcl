@@ -1001,3 +1001,16 @@ proc read_partitioning { args } {
   }
   return [par::read_file $keys(-read_file) $instance_file]
 }
+
+sta::define_cmd_args "write_artnet_spec" { [-out_file] }
+
+proc write_artnet_spec { args } {
+  sta::parse_key_args "write_artnet_spec" args \
+    keys { -out_file } flags {}
+
+  set out_file "ArtNet.spec"
+  if { [info exists keys(-out_file)] } {
+    set out_file $keys(-out_file)
+  }
+  par::artnet_write_spec $out_file
+}

@@ -14,9 +14,9 @@ tns max -3.964
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.425 |       -4.0 |     19 | u_mid2/u_leaf3/dff2/D
-    final |       0 |      13 |        3 |      0 |     0 |    +7.5% |   -0.401 |       -4.4 |     19 | u_mid2/u_leaf3/dff2/D
+    final |       0 |      13 |        2 |      0 |     0 |    +5.9% |   -0.401 |       -4.1 |     19 | u_mid2/u_leaf3/dff2/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0045] Inserted 3 buffers, 1 to split loads.
+[INFO RSZ-0045] Inserted 2 buffers, 1 to split loads.
 [INFO RSZ-0051] Resized 13 instances: 13 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 No differences found.

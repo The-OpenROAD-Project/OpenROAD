@@ -9,6 +9,7 @@
 #include <QComboBox>
 #include <QStandardItem>
 #include <QStandardItemModel>
+#include <QWidget>
 #include <string>
 #include <vector>
 

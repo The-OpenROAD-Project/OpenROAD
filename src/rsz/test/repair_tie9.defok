@@ -12,6 +12,6 @@ COMPONENTS 4 ;
 END COMPONENTS
 NETS 2 ;
     - n1 ( t1 HI ) ( u1 A ) + USE SIGNAL ;
-    - net1 ( u0 A ) ( u0_1 HI ) + USE SIGNAL ;
+    - net ( u0 A ) ( u0_1 HI ) + USE SIGNAL ;
 END NETS
 END DESIGN

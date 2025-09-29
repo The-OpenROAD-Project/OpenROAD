@@ -4,6 +4,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QWidget>
 
 #include "gui/gui.h"
 #include "ui_highlightGroupDlg.h"

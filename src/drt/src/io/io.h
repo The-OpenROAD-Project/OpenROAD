@@ -125,7 +125,7 @@ class Parser
   // postProcess functions
   void checkFig(frPinFig* uFig,
                 const frString& term_name,
-                const dbTransform& xform,
+                const odb::dbTransform& xform,
                 bool& foundTracks,
                 bool& foundCenterTracks,
                 bool& hasPolys);
@@ -238,7 +238,7 @@ class TopLayerBTermHandler
    * @returns The chosen via location for stacking the vias up to the
    * TOP_ROUTING_LAYER
    */
-  Point getBestViaPosition(Rect pin_rect);
+  odb::Point getBestViaPosition(odb::Rect pin_rect);
   frDesign* design_;
   odb::dbDatabase* db_;
   utl::Logger* logger_;

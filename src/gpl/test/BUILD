@@ -1,3 +1,5 @@
+load("@openroad_rules_python//python:defs.bzl", "py_library", "py_test")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
 TESTS = [
@@ -40,19 +42,19 @@ TESTS = [
 py_library(
     name = "helpers",
     srcs = ["helpers.py"],
+    imports = ["."],
     deps = [
         "//openroad:openroadpy",
     ],
-    imports = ["."],
 )
 
 py_library(
     name = "gpl_aux",
     srcs = ["gpl_aux.py"],
+    imports = ["."],
     deps = [
         "//openroad:openroadpy",
     ],
-    imports = ["."],
 )
 
 filegroup(
@@ -62,7 +64,7 @@ filegroup(
         "asap7/*.lib",
         "asap7/*.lef",
         "asap7/*.tcl",
-    ])
+    ]),
 )
 
 filegroup(
@@ -115,16 +117,28 @@ PY_TESTS = [
 ]
 
 [
-py_test(
-    name = test_name,
-    srcs = [test_name + ".py"],
+    py_test(
+        name = test_name,
+        srcs = [test_name + ".py"],
+        data = [
+            ":test_resources",
+        ],
+        deps = [
+            ":gpl_aux",
+            ":helpers",
+            "//openroad:openroadpy",
+        ],
+    )
+    for test_name in PY_TESTS
+]
+
+cc_test(
+    name = "gpl_fft_unittest",
+    srcs = ["fft_test.cc"],
+    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
-        "//openroad:openroadpy",
-        ":helpers",
-        ":gpl_aux",
+        "//src/gpl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
-    data = [
-        ":test_resources"
-    ]
 )
-for test_name in PY_TESTS]

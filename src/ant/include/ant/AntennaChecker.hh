@@ -106,10 +106,8 @@ using GateToViolationLayers
 class AntennaChecker
 {
  public:
-  AntennaChecker();
+  AntennaChecker(odb::dbDatabase* db, utl::Logger* logger);
   ~AntennaChecker();
-
-  void init(odb::dbDatabase* db, utl::Logger* logger);
 
   // net nullptr -> check all nets
   int checkAntennas(odb::dbNet* net = nullptr,

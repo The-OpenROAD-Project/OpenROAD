@@ -85,8 +85,7 @@ struct EndcapCellOptions
 class Tapcell
 {
  public:
-  Tapcell();
-  void init(odb::dbDatabase* db, utl::Logger* logger);
+  Tapcell(odb::dbDatabase* db, utl::Logger* logger);
   void setTapPrefix(const std::string& tap_prefix);
   void setEndcapPrefix(const std::string& endcap_prefix);
   void clear();

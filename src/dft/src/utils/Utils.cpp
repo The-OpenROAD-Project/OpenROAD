@@ -10,9 +10,13 @@
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/SdcClass.hh"
 
 namespace dft::utils {
 

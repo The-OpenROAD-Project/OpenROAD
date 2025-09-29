@@ -2,6 +2,7 @@ or_integration_tests(
   "pdn"
   TESTS
     add_double_global_connection
+    asap7_failed_macro_covered
     asap7_failed_macro_grid
     asap7_no_via_generate
     asap7_no_via_generate_v1_snapped
@@ -18,6 +19,7 @@ or_integration_tests(
     asap7_vias_max_rows_columns
     asap7_M1_M3_followpins
     asap7_M1_M3_followpins_staggered
+    asap7_macro_notcovered
     bpin_removal
     core_grid
     core_grid_adjacentcuts
@@ -76,6 +78,7 @@ or_integration_tests(
     macros_cells_overlapping_ports
     macros_cells_via_failure
     macros_different_nets
+    macros_grid_check
     macros_grid_through
     macros_grid_through_without_middle
     macros_narrow_channel

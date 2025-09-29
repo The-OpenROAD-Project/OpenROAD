@@ -79,6 +79,8 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
       max_eol_within_ = std::max(max_eol_within_, static_cast<int>(eol_within));
     }
   }
+
+  adjustment_ = tech_layer->getLayerAdjustment();
 }
 
 int MetalLayer::getTrackLocation(const int track_index) const

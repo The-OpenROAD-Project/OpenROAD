@@ -26,10 +26,9 @@ using utl::Logger;
 class Ext
 {
  public:
-  Ext();
+  Ext(odb::dbDatabase* db, Logger* logger, const char* spef_version);
   ~Ext();
 
-  void init(odb::dbDatabase* db, Logger* logger, const char* spef_version);
   void setLogger(Logger* logger);
 
   void bench_wires_gen(const PatternOptions& opt);

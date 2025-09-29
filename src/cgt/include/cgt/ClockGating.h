@@ -48,10 +48,8 @@ using utl::Logger;
 class ClockGating
 {
  public:
-  ClockGating();
+  ClockGating(utl::Logger* logger, sta::dbSta* open_sta);
   ~ClockGating();
-
-  void init(utl::Logger* logger, sta::dbSta* open_sta);
 
   // Main function that performs the clock gating process
   void run();

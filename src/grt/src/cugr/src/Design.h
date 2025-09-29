@@ -58,12 +58,15 @@ class Design
 
   int getGridlineSize() const { return default_gridline_spacing_; }
 
+  BoxT getDieRegion() const { return die_region_; }
+
  private:
   void read();
   void readLayers();
   void readNetlist();
   void readInstanceObstructions();
   int readSpecialNetObstructions();
+  void readDesignObstructions();
   void computeGrid();
   void setUnitCosts();
 

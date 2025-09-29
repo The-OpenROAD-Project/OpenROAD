@@ -42,7 +42,6 @@ using odb::dbMaster;
 using odb::dbNet;
 using odb::dbTechLayer;
 using odb::Point;
-using odb::Rect;
 
 using stt::SteinerTreeBuilder;
 
@@ -222,15 +221,14 @@ class OdbCallBack;
 class Resizer : public dbStaState, public dbNetworkObserver
 {
  public:
-  Resizer();
+  Resizer(Logger* logger,
+          dbDatabase* db,
+          dbSta* sta,
+          SteinerTreeBuilder* stt_builder,
+          GlobalRouter* global_router,
+          dpl::Opendp* opendp,
+          est::EstimateParasitics* estimate_parasitics);
   ~Resizer() override;
-  void init(Logger* logger,
-            dbDatabase* db,
-            dbSta* sta,
-            SteinerTreeBuilder* stt_builder,
-            GlobalRouter* global_router,
-            dpl::Opendp* opendp,
-            est::EstimateParasitics* estimate_parasitics);
 
   // Core area (meters).
   double coreArea() const;
@@ -646,6 +644,13 @@ class Resizer : public dbStaState, public dbNetworkObserver
                          const Point& loc,
                          const odb::dbNameUniquifyType& uniquify
                          = odb::dbNameUniquifyType::ALWAYS);
+  void deleteTieCellAndNet(const Instance* tie_inst, LibertyPort* tie_port);
+  const Pin* findArithBoundaryPin(const Pin* load_pin);
+  void createNewTieCellForLoadPin(const Pin* load_pin,
+                                  const char* new_inst_name,
+                                  Instance* parent,
+                                  LibertyPort* tie_port,
+                                  int separation_dbu);
   void getBufferPins(Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
 
   Instance* makeBuffer(LibertyCell* cell,
@@ -723,7 +728,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   int dbu_ = 0;
   const Pin* debug_pin_ = nullptr;
 
-  Rect core_;
+  odb::Rect core_;
   bool core_exists_ = false;
 
   double design_area_ = 0.0;
@@ -797,8 +802,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Sizing
   const double default_sizing_cap_ratio_ = 4.0;
   const double default_buffer_sizing_cap_ratio_ = 9.0;
-  double sizing_cap_ratio_;
-  double buffer_sizing_cap_ratio_;
+  double sizing_cap_ratio_{default_sizing_cap_ratio_};
+  double buffer_sizing_cap_ratio_{default_buffer_sizing_cap_ratio_};
 
   // VT layer hash
   std::unordered_map<dbMaster*, VTCategory> vt_map_;

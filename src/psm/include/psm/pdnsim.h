@@ -63,14 +63,12 @@ class PDNSim : public odb::dbBlockCallBackObj
   using IRDropByPoint = std::map<odb::Point, double>;
   using IRDropByLayer = std::map<odb::dbTechLayer*, IRDropByPoint>;
 
-  PDNSim();
+  PDNSim(utl::Logger* logger,
+         odb::dbDatabase* db,
+         sta::dbSta* sta,
+         est::EstimateParasitics* estimate_parasitics,
+         dpl::Opendp* opendp);
   ~PDNSim() override;
-
-  void init(utl::Logger* logger,
-            odb::dbDatabase* db,
-            sta::dbSta* sta,
-            est::EstimateParasitics* estimate_parasitics,
-            dpl::Opendp* opendp);
 
   void setNetVoltage(odb::dbNet* net, sta::Corner* corner, double voltage);
   void setInstPower(odb::dbInst* inst, sta::Corner* corner, float power);

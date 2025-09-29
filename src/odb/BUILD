@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, Precision Innovations Inc.
 
+load("@openroad_rules_python//python:defs.bzl", "py_library")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
@@ -41,12 +44,18 @@ cc_library(
         "src/lefin/*.cpp",
         "src/lefin/*.h",
         "src/lefout/*.cpp",
+        "src/3dblox/*.cpp",
+        "src/3dblox/*.h",
+    ] + [
         "src/swig/common/swig_common.cpp",
     ]),
-    hdrs = glob([
-        "include/odb/*.h",
-        "include/odb/*.hpp",
-    ]) + ["src/swig/common/swig_common.h"],
+    hdrs = glob(
+        include = [
+            "include/odb/*.h",
+            "include/odb/*.hpp",
+        ],
+        exclude = ["include/odb/MakeOdb.h"],
+    ) + ["src/swig/common/swig_common.h"],
     features = [
         "-use_header_modules",
     ],
@@ -68,6 +77,7 @@ cc_library(
         "@boost.integer",
         "@boost.iostreams",
         "@boost.lambda",
+        "@boost.multi_array",
         "@boost.optional",
         "@boost.phoenix",
         "@boost.polygon",
@@ -76,6 +86,7 @@ cc_library(
         "@boost.spirit",
         "@spdlog",
         "@tk_tcl//:tcl",
+        "@yaml-cpp",
         "@zlib",
     ],
 )
@@ -115,10 +126,7 @@ cc_library(
         ":swig",
         ":tcl",
     ],
-    hdrs = glob([
-        "include/odb/*.h",
-        "include/odb/*.hpp",
-    ]),
+    hdrs = ["include/odb/MakeOdb.h"],
     copts = [
         "-Wno-missing-braces",  # from TCL swigging
         "-Isrc/odb/src/swig/common",
@@ -133,6 +141,7 @@ cc_library(
         "//src/utl",
         "@boost.container",
         "@boost.geometry",
+        "@boost.multi_array",
         "@boost.polygon",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",

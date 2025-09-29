@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -16,11 +17,10 @@ cc_library(
         "src/Clock.h",
         "src/Clustering.h",
         "src/CtsObserver.h",
-        "src/CtsOptions.h",
         "src/HTreeBuilder.h",
+        "src/LatencyBalancer.h",
         "src/LevelBalancer.h",
         "src/SinkClustering.h",
-        "src/TechChar.h",
         "src/TreeBuilder.h",
         "src/Util.h",
     ],
@@ -40,6 +40,7 @@ cc_library(
         "src/Clustering.cpp",
         "src/CtsOptions.cpp",
         "src/HTreeBuilder.cpp",
+        "src/LatencyBalancer.cpp",
         "src/LevelBalancer.cpp",
         "src/SinkClustering.cpp",
         "src/TechChar.cpp",
@@ -51,7 +52,10 @@ cc_library(
         "src/CtsOptions.h",
         "src/TechChar.h",
     ],
-    includes = ["include", "src"],
+    includes = [
+        "include",
+        "src",
+    ],
     deps = [
         ":private_hdrs",
         "//src/dbSta",

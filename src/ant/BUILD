@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -90,13 +91,13 @@ python_wrap_cc(
         "src/AntennaChecker.i",
         "//:error_swig-py",
     ],
-    deps = [
-        "//src/odb:swig-py",
-    ],
     module = "ant_py",
     root_swig_src = "src/AntennaChecker-py.i",
     swig_includes = [
         "include",
         "src",
+    ],
+    deps = [
+        "//src/odb:swig-py",
     ],
 )

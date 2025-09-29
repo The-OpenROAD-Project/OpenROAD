@@ -4,6 +4,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QWidget>
 
 #include "layoutTabs.h"
 #include "ui_gotoDlg.h"
