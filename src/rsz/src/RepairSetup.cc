@@ -1067,7 +1067,7 @@ bool RepairSetup::swapVTCritCells(const OptoParams& params, int& num_viols)
 
   // Do VT swap on critical instances for now
   // Other transforms can follow later
-  BaseMove* move = resizer_->vt_swap_speed_move_.get();
+  VTSwapSpeedMove* move = resizer_->vt_swap_speed_move_.get();
   for (auto crit_inst_slack : crit_insts) {
     if (move->doMove(crit_inst_slack.first, notSwappable)) {
       changed = true;
@@ -1139,7 +1139,7 @@ void RepairSetup::traverseFaninCone(
         if (inst_slack < params.setup_slack_margin) {
           // Update worst slack for this instance
           auto it = crit_insts.find(inst);
-          if (it == crit_insts.end() || inst_slack < it->second) {
+          if (it == crit_insts.end()) {
             crit_insts[inst] = inst_slack;
             endpoint_insts++;
             debugPrint(logger_,
