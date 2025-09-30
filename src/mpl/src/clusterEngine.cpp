@@ -1021,12 +1021,7 @@ void ClusteringEngine::buildDataFlowConnections()
 
   // bterm, macros or ffs
   for (const auto& [bterm, insts] : data_connections_.io_and_regs) {
-    const auto itr = tree_->maps.bterm_to_cluster_id.find(bterm);
-    if (itr == tree_->maps.bterm_to_cluster_id.end()) {
-      continue;
-    }
-
-    const int driver_id = itr->second;
+    const int driver_id = tree_->maps.bterm_to_cluster_id.at(bterm);
     Cluster* driver_cluster = tree_->maps.id_to_cluster.at(driver_id);
 
     for (int hops = 0; hops < max_num_of_hops_; hops++) {
