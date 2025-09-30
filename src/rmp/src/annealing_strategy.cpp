@@ -373,7 +373,11 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
   }
 
   logger->info(RMP, 52, "Resynthesis: starting simulated annealing");
-  logger->info(RMP, 53, "Initial temperature: {}", *temperature_);
+  logger->info(RMP,
+               53,
+               "Initial temperature: {}, worst slack: {}",
+               *temperature_,
+               worst_slack);
 
   float best_worst_slack = worst_slack;
   auto best_ops = ops;
@@ -382,16 +386,21 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
     float current_temp
         = *temperature_ * (static_cast<float>(iterations_ - i) / iterations_);
     if (i > 0 && (i + 1) % 10 == 0) {
-      logger->info(
-          RMP, 54, "Iteration: {}, temperature: {}", i + 1, current_temp);
+      logger->info(RMP,
+                   54,
+                   "Iteration: {}, temperature: {}, best worst slack: {}",
+                   i + 1,
+                   current_temp,
+                   best_worst_slack);
     } else {
       debugPrint(logger,
                  RMP,
                  "annealing",
                  1,
-                 "Iteration: {}, temperature: {}",
+                 "Iteration: {}, temperature: {}, best worst slack: {}",
                  i + 1,
-                 current_temp);
+                 current_temp,
+                 best_worst_slack);
     }
 
     odb::dbDatabase::beginEco(block);

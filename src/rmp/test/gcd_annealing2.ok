@@ -97,17 +97,17 @@ tns max -15641.01
 
 Derived GENLIB library "asap7sc7p5t_AO_RVT_SS_nldm_211120" with 169 gates.
 [INFO RMP-0052] Resynthesis: starting simulated annealing
-[INFO RMP-0053] Initial temperature: 1e-10
-[INFO RMP-0054] Iteration: 10, temperature: 9.1000006e-11
-[INFO RMP-0054] Iteration: 20, temperature: 8.1e-11
-[INFO RMP-0054] Iteration: 30, temperature: 7.1e-11
-[INFO RMP-0054] Iteration: 40, temperature: 6.1000004e-11
-[INFO RMP-0054] Iteration: 50, temperature: 5.1e-11
-[INFO RMP-0054] Iteration: 60, temperature: 4.1e-11
-[INFO RMP-0054] Iteration: 70, temperature: 3.1e-11
-[INFO RMP-0054] Iteration: 80, temperature: 2.1e-11
-[INFO RMP-0054] Iteration: 90, temperature: 1.1e-11
-[INFO RMP-0054] Iteration: 100, temperature: 1e-12
+[INFO RMP-0053] Initial temperature: 1e-10, worst slack: -1.0941836e-10
+[INFO RMP-0054] Iteration: 10, temperature: 9.1000006e-11, best worst slack: -4.645495e-11
+[INFO RMP-0054] Iteration: 20, temperature: 8.1e-11, best worst slack: 3.401074e-11
+[INFO RMP-0054] Iteration: 30, temperature: 7.1e-11, best worst slack: 1.0621096e-10
+[INFO RMP-0054] Iteration: 40, temperature: 6.1000004e-11, best worst slack: 1.0704734e-10
+[INFO RMP-0054] Iteration: 50, temperature: 5.1e-11, best worst slack: 1.0704734e-10
+[INFO RMP-0054] Iteration: 60, temperature: 4.1e-11, best worst slack: 1.3240287e-10
+[INFO RMP-0054] Iteration: 70, temperature: 3.1e-11, best worst slack: 1.3467072e-10
+[INFO RMP-0054] Iteration: 80, temperature: 2.1e-11, best worst slack: 1.6515597e-10
+[INFO RMP-0054] Iteration: 90, temperature: 1.1e-11, best worst slack: 1.6515597e-10
+[INFO RMP-0054] Iteration: 100, temperature: 1e-12, best worst slack: 1.6515597e-10
 [INFO RMP-0055] Resynthesis: End of simulated annealing, applying operations
 [INFO RMP-0056] Resynthesis: Applying ABC operations
 [-36.203,  -6.653): ************************************************** (39)

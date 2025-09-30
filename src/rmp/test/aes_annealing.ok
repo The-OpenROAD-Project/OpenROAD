@@ -89,10 +89,10 @@ tns max -191.30
 
 Derived GENLIB library "asap7sc7p5t_AO_RVT_SS_nldm_211120" with 169 gates.
 [INFO RMP-0052] Resynthesis: starting simulated annealing
-[INFO RMP-0053] Initial temperature: 9.712329e-10
-[INFO RMP-0054] Iteration: 10, temperature: 6.79863e-10
-[INFO RMP-0054] Iteration: 20, temperature: 3.5611872e-10
-[INFO RMP-0054] Iteration: 30, temperature: 3.237443e-11
+[INFO RMP-0053] Initial temperature: 9.712329e-10, worst slack: 3.157022e-10
+[INFO RMP-0054] Iteration: 10, temperature: 6.79863e-10, best worst slack: 3.344247e-10
+[INFO RMP-0054] Iteration: 20, temperature: 3.5611872e-10, best worst slack: 3.8375575e-10
+[INFO RMP-0054] Iteration: 30, temperature: 3.237443e-11, best worst slack: 3.9578357e-10
 [INFO RMP-0055] Resynthesis: End of simulated annealing, applying operations
 [INFO RMP-0056] Resynthesis: Applying ABC operations
 [ 14.281,  95.583): ******* (30)
