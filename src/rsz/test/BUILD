@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
 exports_files(
@@ -63,6 +64,7 @@ TESTS = [
     "repair_fanout6_multi",
     "repair_fanout7",
     "repair_fanout7_multi",
+    "repair_fanout7_skip_pin_swap",
     "repair_fanout8",
     "repair_fanout8_multi",
     "repair_hold1",
@@ -201,6 +203,7 @@ filegroup(
 extra_deps = {
     "repair_fanout6_multi": ["repair_fanout6.tcl"],
     "repair_fanout7_multi": ["repair_fanout7.tcl"],
+    "repair_fanout7_skip_pin_swap": ["repair_fanout7.tcl"],
     "repair_fanout8_multi": ["repair_fanout8.tcl"],
     "repair_setup1_multi": ["repair_setup1.tcl"],
     "repair_setup2_multi": ["repair_setup2.tcl"],
@@ -220,3 +223,19 @@ BIG_TESTS = [
     size = "large" if test_name in BIG_TESTS else "medium",
     data = [":test_resources"] + extra_deps.get(test_name, []),
 ) for test_name in TESTS]
+
+cc_test(
+    name = "rsz_buffer_removal",
+    srcs = [
+        "cpp/TestBufferRemoval.cc",
+    ],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/dbSta",
+        "//src/dpl",
+        "//src/rsz",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

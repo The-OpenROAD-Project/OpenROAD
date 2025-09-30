@@ -8,6 +8,8 @@
 #include <sstream>
 #include <string>
 
+#include "baseParser.h"
+#include "objects.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 

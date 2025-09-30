@@ -5,6 +5,7 @@
 #include "helper.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "odb/isotropy.h"
 
 namespace odb {
 namespace {

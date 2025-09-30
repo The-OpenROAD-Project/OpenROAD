@@ -10,6 +10,7 @@
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbCellEdgeSpacing.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbMetalWidthViaMap.h"
 #include "dbNameCache.h"

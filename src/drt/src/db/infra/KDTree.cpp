@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "frBaseTypes.h"
+#include "odb/isotropy.h"
 using odb::horizontal;
 namespace drt {
 KDTree::KDTree(const std::vector<Point>& points)

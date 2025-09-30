@@ -9,6 +9,7 @@
 #include <cstdlib>
 
 #include "odb/db.h"
+#include "odb/isotropy.h"
 
 namespace rcx {
 
