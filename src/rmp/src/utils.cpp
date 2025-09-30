@@ -5,31 +5,18 @@
 
 #include <fcntl.h>
 
-#include <algorithm>
 #include <vector>
 
-#include "aig/gia/gia.h"
-#include "aig/gia/giaAig.h"
 #include "base/abc/abc.h"
-#include "base/main/main.h"
-#include "base/main/mainInt.h"
 #include "cut/abc_library_factory.h"
 #include "cut/logic_cut.h"
-#include "cut/logic_extractor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "map/scl/sclSize.h"
-#include "misc/vec/vecPtr.h"
-#include "proof/dch/dch.h"
 #include "rsz/Resizer.hh"
 #include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
 #include "sta/MinMax.hh"
 #include "sta/PortDirection.hh"
-#include "sta/Search.hh"
-#include "utl/Logger.h"
 #include "utl/deleter.h"
-#include "utl/unique_name.h"
 
 namespace rmp {
 
