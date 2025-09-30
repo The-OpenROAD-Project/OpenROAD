@@ -15,11 +15,8 @@ class Observer;
 class Example
 {
  public:
-  Example();
+  Example(odb::dbDatabase* db, utl::Logger* logger);
   ~Example();
-
-  // Called at application startup.
-  void init(odb::dbDatabase* db, utl::Logger* logger);
 
   // The example operation that makes an instance.
   void makeInstance(const char* name);

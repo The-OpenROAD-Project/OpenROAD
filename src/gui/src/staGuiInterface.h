@@ -18,6 +18,12 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
+#include "sta/Delay.hh"
+#include "sta/Graph.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/SdcClass.hh"
 
 namespace sta {
 class Corner;
@@ -351,7 +357,7 @@ class STAGuiInterface
                                 const std::vector<StaPins>& thrus,
                                 const StaPins& to,
                                 const std::string& path_group_name,
-                                sta::ClockSet* clks) const;
+                                const sta::ClockSet* clks) const;
   TimingPathList getTimingPaths(const sta::Pin* thru) const;
 
   std::unique_ptr<TimingPathNode> getTimingNode(const sta::Pin* pin) const;

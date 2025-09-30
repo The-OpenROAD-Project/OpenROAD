@@ -6,12 +6,9 @@ import unittest
 
 class TestInst(odbUnitTest.TestCase):
     def setUp(self):
-        self.db, self.lib = helper.createSimpleDB()
+        self.db, self.lib, self.design, self.ord_tech = helper.createSimpleDB()
         self.block = helper.create2LevelBlock(self.db, self.lib, self.db.getChip())
         self.i1 = self.block.findInst("i1")
-
-    def tearDown(self):
-        self.db.destroy(self.db)
 
     def test_swap_master(self):
         self.assertEqual(self.i1.getMaster().getName(), "and2")

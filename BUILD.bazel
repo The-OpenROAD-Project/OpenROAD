@@ -2,6 +2,10 @@
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("@openroad_rules_python//python:defs.bzl", "py_library")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -43,8 +47,6 @@ config_setting(
     },
 )
 
-# TODO: once project is properly decomposed, we don't
-# need these blanked dependencies in multiple places anymore.
 OPENROAD_LIBRARY_DEPS = [
     ":openroad_version",
     ":ord",
@@ -55,6 +57,10 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/cts:ui",
     "//src/cut",
     "//src/dbSta",
+    "//src/dbSta:dbNetwork",
+    "//src/dbSta:dbReadVerilog",
+    "//src/dbSta:dbSdcNetwork",
+    "//src/dbSta:SpefWriter",
     "//src/dbSta:ui",
     "//src/dft",
     "//src/dft:ui",
@@ -101,8 +107,8 @@ OPENROAD_LIBRARY_DEPS = [
     "@edu_berkeley_abc//:abc-lib",
 ] + select(
     {
-        ":platform_gui": ["//src/gui:gui_qt"],
         ":platform_cli": ["//src/gui"],
+        ":platform_gui": ["//src/gui:gui_qt"],
     },
 )
 
@@ -133,16 +139,19 @@ cc_binary(
     name = "openroad",
     srcs = [
         "src/Main.cc",
-        "//bazel:runfiles",
     ],
     copts = OPENROAD_COPTS,
     features = ["-use_header_modules"],
-    malloc = "@tcmalloc//tcmalloc",
+    malloc = select({
+        "@platforms//os:linux": "@tcmalloc//tcmalloc",
+        "@platforms//os:macos": "@bazel_tools//tools/cpp:malloc",
+    }),
     visibility = ["//visibility:public"],
     deps = [
         ":openroad_lib",
         ":openroad_version",
         ":ord",
+        "//bazel:runfiles",
         "//src/cut",
         "//src/gui",
         "//src/sta:opensta_lib",
@@ -155,28 +164,9 @@ cc_binary(
 
 GUI_BUILD_FLAGS = select(
     {
-        ":platform_gui": ["BUILD_GUI=true"],
         ":platform_cli": ["BUILD_GUI=false"],
+        ":platform_gui": ["BUILD_GUI=true"],
     },
-)
-
-cc_library(
-    name = "openroad_lib_private",
-    srcs = [
-        "src/Design.cc",
-        "src/Tech.cc",
-        "src/Timing.cc",
-    ],
-    copts = OPENROAD_COPTS,
-    defines = OPENROAD_DEFINES + GUI_BUILD_FLAGS,
-    features = ["-use_header_modules"],
-    includes = [
-        "include",
-    ],
-    deps = OPENROAD_LIBRARY_DEPS + [
-        "//src/sta:opensta_lib",
-        "@tk_tcl//:tcl",
-    ],
 )
 
 cc_library(
@@ -262,10 +252,105 @@ tcl_wrap_cc(
     ],
 )
 
+# This target compiles the SWIG C++ wrapper into a shared library (.so)
+# that Python can load dynamically.
+cc_binary(
+    name = "_openroadpy.so",
+    srcs = [":openroad_swig-py"],
+    defines = [PYTHON_STABLE_API_DEFINE],
+    linkshared = True,
+    deps = [
+        ":openroad_lib",  # Depends on the core odb C++ library
+        ":ord",
+        "//src/ant",
+        "//src/cts",
+        "//src/dpl",
+        "//src/drt",
+        "//src/exa",
+        "//src/fin",
+        "//src/gpl",
+        "//src/grt",
+        "//src/gui",
+        "//src/ifp",
+        "//src/odb",
+        "//src/par",
+        "//src/pdn",
+        "//src/ppl",
+        "//src/psm",
+        "//src/rcx",
+        "//src/stt",
+        "//src/tap",
+        "//src/utl",
+        "@boost.stacktrace",
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
+    ],
+)
+
+# This packages the SWIG-generated Python wrapper (odb.py) and the
+# compiled C++ extension (_odb.so) together.
+py_library(
+    name = "ord_py",
+    srcs = [":openroad_swig-py"],  # Use the .py output from the swig-py rule
+    # The data attribute makes the .so file available at runtime.
+    data = [":_openroadpy.so"],
+    # This allows imports relative to the workspace root.
+    imports = ["."],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//src/odb:odb_py",
+        "//src/utl:utl_py",
+    ],
+)
+
+python_wrap_cc(
+    name = "openroad_swig-py",
+    srcs = [
+        "include/ord/Design.h",
+        "include/ord/Tech.h",
+        "include/ord/Timing.h",
+        "src/OpenRoad-py.i",
+        ":error_swig-py",
+    ],
+    module = "openroadpy",
+    root_swig_src = "src/OpenRoad-py.i",
+    swig_includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        "//src/ant:swig-py",
+        "//src/cts:swig-py",
+        "//src/dpl:swig-py",
+        "//src/drt:swig-py",
+        "//src/exa:swig-py",
+        "//src/fin:swig-py",
+        "//src/gpl:swig-py",
+        "//src/grt:swig-py",
+        "//src/ifp:swig-py",
+        "//src/odb:swig-py",
+        "//src/par:swig-py",
+        "//src/pdn:swig-py",
+        "//src/ppl:swig-py",
+        "//src/psm:swig-py",
+        "//src/rcx:swig-py",
+        "//src/stt:swig-py",
+        "//src/tap:swig-py",
+        "//src/utl:swig-py",
+    ],
+)
+
 filegroup(
     name = "error_swig",
     srcs = [
         "src/Exception.i",
+    ],
+    visibility = ["@//:__subpackages__"],
+)
+
+filegroup(
+    name = "error_swig-py",
+    srcs = [
+        "src/Exception-py.i",
     ],
     visibility = ["@//:__subpackages__"],
 )

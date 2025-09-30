@@ -6,7 +6,10 @@
 #include <QColor>
 #include <QDialog>
 #include <QPalette>
+#include <QWidget>
 #include <vector>
+
+#include "gui/gui.h"
 
 namespace gui {
 HighlightGroupDialog::HighlightGroupDialog(QWidget* parent) : QDialog(parent)

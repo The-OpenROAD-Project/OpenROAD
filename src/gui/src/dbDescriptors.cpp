@@ -4,6 +4,7 @@
 #include "dbDescriptors.h"
 
 #include <QInputDialog>
+#include <QString>
 #include <QStringList>
 #include <algorithm>
 #include <any>
@@ -27,6 +28,7 @@
 #include "bufferTreeDescriptor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"

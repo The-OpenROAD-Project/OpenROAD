@@ -1027,13 +1027,14 @@ void ClusteringEngine::buildDataFlowConnections()
     }
 
     const int driver_id = itr->second;
+    Cluster* driver_cluster = tree_->maps.id_to_cluster.at(driver_id);
 
     for (int hops = 0; hops < max_num_of_hops_; hops++) {
       std::set<int> sink_clusters = computeSinks(insts[hops]);
       const float conn_weight = computeConnWeight(hops);
       for (auto& sink : sink_clusters) {
-        tree_->maps.id_to_cluster[driver_id]->addConnection(sink, conn_weight);
-        tree_->maps.id_to_cluster[sink]->addConnection(driver_id, conn_weight);
+        Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink);
+        connect(driver_cluster, sink_cluster, conn_weight);
       }
     }
   }
@@ -1041,13 +1042,14 @@ void ClusteringEngine::buildDataFlowConnections()
   // macros to ffs
   for (const auto& [iterm, insts] : data_connections_.macro_pins_and_regs) {
     const int driver_id = tree_->maps.inst_to_cluster_id.at(iterm->getInst());
+    Cluster* driver_cluster = tree_->maps.id_to_cluster.at(driver_id);
 
     for (int hops = 0; hops < max_num_of_hops_; hops++) {
       std::set<int> sink_clusters = computeSinks(insts[hops]);
       const float conn_weight = computeConnWeight(hops);
       for (auto& sink : sink_clusters) {
-        tree_->maps.id_to_cluster[driver_id]->addConnection(sink, conn_weight);
-        tree_->maps.id_to_cluster[sink]->addConnection(driver_id, conn_weight);
+        Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink);
+        connect(driver_cluster, sink_cluster, conn_weight);
       }
     }
   }
@@ -1055,15 +1057,25 @@ void ClusteringEngine::buildDataFlowConnections()
   // macros to macros
   for (const auto& [iterm, insts] : data_connections_.macro_pins_and_macros) {
     const int driver_id = tree_->maps.inst_to_cluster_id.at(iterm->getInst());
+    Cluster* driver_cluster = tree_->maps.id_to_cluster.at(driver_id);
 
     for (int hops = 0; hops < max_num_of_hops_; hops++) {
       std::set<int> sink_clusters = computeSinks(insts[hops]);
       const float conn_weight = computeConnWeight(hops);
       for (auto& sink : sink_clusters) {
-        tree_->maps.id_to_cluster[driver_id]->addConnection(sink, conn_weight);
+        Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink);
+        connect(driver_cluster, sink_cluster, conn_weight);
       }
     }
   }
+}
+
+void ClusteringEngine::connect(Cluster* a,
+                               Cluster* b,
+                               const float connection_weight) const
+{
+  a->addConnection(b, connection_weight);
+  b->addConnection(a, connection_weight);
 }
 
 float ClusteringEngine::computeConnWeight(const int hops)
@@ -1849,14 +1861,21 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
 
 bool ClusteringEngine::attemptMerge(Cluster* receiver, Cluster* incomer)
 {
-  // The incomer might be deleted so we need to cache
-  // its id in order to erase it from the map if so.
+  // Cache incomer data in case it is deleted.
   const int incomer_id = incomer->getId();
+  const ConnectionsMap incomer_connections = incomer->getConnectionsMap();
 
   bool incomer_deleted = false;
   if (receiver->attemptMerge(incomer, incomer_deleted)) {
     if (incomer_deleted) {
       tree_->maps.id_to_cluster.erase(incomer_id);
+
+      // Update connections of clusters connected to the deleted cluster.
+      for (const auto& [cluster_id, connection_weight] : incomer_connections) {
+        Cluster* cluster = tree_->maps.id_to_cluster.at(cluster_id);
+        cluster->removeConnection(incomer_id);
+        cluster->addConnection(receiver, connection_weight);
+      }
     }
 
     updateInstancesAssociation(receiver);
@@ -1920,13 +1939,12 @@ void ClusteringEngine::buildNetListConnections()
     if (driver_cluster_id != -1 && !load_clusters_ids.empty()
         && load_clusters_ids.size() < tree_->large_net_threshold) {
       const float weight = net_has_io_pin ? tree_->virtual_weight : 1.0;
+      Cluster* driver_cluster = tree_->maps.id_to_cluster.at(driver_cluster_id);
 
       for (const int load_cluster_id : load_clusters_ids) {
-        if (load_cluster_id != driver_cluster_id) { /* undirected connection */
-          tree_->maps.id_to_cluster[driver_cluster_id]->addConnection(
-              load_cluster_id, weight);
-          tree_->maps.id_to_cluster[load_cluster_id]->addConnection(
-              driver_cluster_id, weight);
+        if (load_cluster_id != driver_cluster_id) {
+          Cluster* load_cluster = tree_->maps.id_to_cluster.at(load_cluster_id);
+          connect(driver_cluster, load_cluster, weight);
         }
       }
     }
@@ -2194,7 +2212,7 @@ void ClusteringEngine::classifyMacrosByConnSignature(
     logger_->report("\nPrint Connection Signature\n");
     for (Cluster* cluster : macro_clusters) {
       logger_->report("Macro Signature: {}", cluster->getName());
-      for (auto& [cluster_id, weight] : cluster->getConnection()) {
+      for (auto& [cluster_id, weight] : cluster->getConnectionsMap()) {
         logger_->report(" {} {} ",
                         tree_->maps.id_to_cluster[cluster_id]->getName(),
                         weight);

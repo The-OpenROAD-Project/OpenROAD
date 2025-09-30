@@ -16,13 +16,14 @@
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "odb/geom.h"
 
 namespace drt {
 void FlexGridGraph::addAccessPointLocation(frLayerNum layer_num,
                                            frCoord x_coord,
                                            frCoord y_coord)
 {
-  ap_locs_[layer_num].insert(Point(x_coord, y_coord));
+  ap_locs_[layer_num].insert(odb::Point(x_coord, y_coord));
 }
 
 void initCoords(const frLayerCoordTrackPatternMap& map,
@@ -56,7 +57,8 @@ bool FlexGridGraph::isAccessPointLocation(frLayerNum layer_num,
     return false;
   }
   const auto& layer_maze_locs = ap_locs_[layer_num];
-  return layer_maze_locs.find(Point(x_coord, y_coord)) != layer_maze_locs.end();
+  return layer_maze_locs.find(odb::Point(x_coord, y_coord))
+         != layer_maze_locs.end();
 }
 void FlexGridGraph::initGrids(const frLayerCoordTrackPatternMap& xMap,
                               const frLayerCoordTrackPatternMap& yMap,
@@ -105,7 +107,7 @@ void FlexGridGraph::initGrids(const frLayerCoordTrackPatternMap& xMap,
 bool FlexGridGraph::outOfDieVia(frMIdx x,
                                 frMIdx y,
                                 frMIdx z,
-                                const Rect& dieBox)
+                                const odb::Rect& dieBox)
 {
   frLayerNum lNum = getLayerNum(z) + 1;
   if (lNum > getTech()->getTopLayerNum()) {
@@ -115,7 +117,7 @@ bool FlexGridGraph::outOfDieVia(frMIdx x,
   if (!via) {
     return true;
   }
-  Rect viaBox(via->getLayer1ShapeBox());
+  odb::Rect viaBox(via->getLayer1ShapeBox());
   viaBox.merge(via->getLayer2ShapeBox());
   viaBox.moveDelta(xCoords_[x], yCoords_[y]);
   return !dieBox.contains(viaBox);
@@ -126,7 +128,7 @@ bool FlexGridGraph::hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z)
   if (!getTech()->getLayer(lNum)->isUnidirectional()) {
     return false;
   }
-  Rect testBoxUp;
+  odb::Rect testBoxUp;
   if (lNum + 1 <= getTech()->getTopLayerNum()) {
     const frViaDef* via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     if (via) {
@@ -138,7 +140,7 @@ bool FlexGridGraph::hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z)
       dieBox_.bloat(1, testBoxUp);
     }
   }
-  Rect testBoxDown;
+  odb::Rect testBoxDown;
   if (lNum - 1 >= getTech()->getBottomLayerNum()) {
     const frViaDef* via = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
     if (via) {
@@ -200,7 +202,7 @@ void FlexGridGraph::initEdges(const frDesign* design,
                               frLayerCoordTrackPatternMap& xMap,
                               frLayerCoordTrackPatternMap& yMap,
                               const frLayerDirMap& zMap,
-                              const Rect& bbox,
+                              const odb::Rect& bbox,
                               bool initDR)
 {
   frMIdx xDim, yDim, zDim;
@@ -429,8 +431,8 @@ void FlexGridGraph::initEdges(const frDesign* design,
 
 // initialization: update grid graph topology, does not assign edge cost
 void FlexGridGraph::init(const frDesign* design,
-                         const Rect& routeBBox,
-                         const Rect& extBBox,
+                         const odb::Rect& routeBBox,
+                         const odb::Rect& extBBox,
                          frLayerCoordTrackPatternMap& xMap,
                          frLayerCoordTrackPatternMap& yMap,
                          bool initDR,
@@ -458,7 +460,7 @@ void FlexGridGraph::initTracks(
     frLayerCoordTrackPatternMap& horLoc2TrackPatterns,
     frLayerCoordTrackPatternMap& vertLoc2TrackPatterns,
     frLayerDirMap& layerNum2PreRouteDir,
-    const Rect& bbox)
+    const odb::Rect& bbox)
 {
   for (auto& layer : getTech()->getLayers()) {
     if (layer->getType() != dbTechLayerType::ROUTING) {
@@ -532,7 +534,7 @@ void FlexGridGraph::print() const
   std::ofstream mazeLog(router_cfg_->OUT_MAZE_FILE.c_str());
   if (mazeLog.is_open()) {
     // print edges
-    Rect gridBBox;
+    odb::Rect gridBBox;
     getBBox(gridBBox);
     mazeLog << "printing Maze grid (" << gridBBox.xMin() << ", "
             << gridBBox.yMin() << ") -- (" << gridBBox.xMax() << ", "
@@ -547,7 +549,7 @@ void FlexGridGraph::print() const
     std::cout << "extBBox (xDim, yDim, zDim) = (" << xDim << ", " << yDim
               << ", " << zDim << ")\n";
 
-    Point p;
+    odb::Point p;
     for (frMIdx xIdx = 0; xIdx < xDim; ++xIdx) {
       for (frMIdx yIdx = 0; yIdx < yDim; ++yIdx) {
         for (frMIdx zIdx = 0; zIdx < zDim; ++zIdx) {

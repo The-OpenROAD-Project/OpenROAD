@@ -18,7 +18,9 @@
 #include "frProfileTask.h"
 #include "global.h"
 #include "io/io.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "utl/Logger.h"
 
 namespace drt {
 
@@ -128,8 +130,8 @@ void io::Parser::initDefaultVias()
       auto techDefautlViaDef
           = getTech()->getLayer(layerNum)->getDefaultViaDef();
       frVia via(techDefautlViaDef);
-      Rect layer1Box = via.getLayer1BBox();
-      Rect layer2Box = via.getLayer2BBox();
+      odb::Rect layer1Box = via.getLayer1BBox();
+      odb::Rect layer2Box = via.getLayer2BBox();
       frLayerNum layer1Num = techDefautlViaDef->getLayer1Num();
       frLayerNum layer2Num = techDefautlViaDef->getLayer2Num();
       bool isLayer1Square = layer1Box.dx() == layer1Box.dy();
@@ -187,7 +189,7 @@ void io::Parser::initDefaultVias()
         // cut layer shape
         std::unique_ptr<frShape> uCutFig = std::make_unique<frRect>();
         auto cutFig = static_cast<frRect*>(uCutFig.get());
-        Rect cutBox = via.getCutBBox();
+        odb::Rect cutBox = via.getCutBBox();
         cutFig->setBBox(cutBox);
         cutFig->setLayerNum(techDefautlViaDef->getCutLayerNum());
 
@@ -290,8 +292,8 @@ void io::Parser::initSecondaryVias()
             auto botfig = static_cast<frRect*>(u_botfig.get());
             std::unique_ptr<frShape> u_topfig = std::make_unique<frRect>();
             auto topfig = static_cast<frRect*>(u_topfig.get());
-            Rect layer1_box = secondary_via.getLayer1BBox();
-            Rect layer2_box = secondary_via.getLayer2BBox();
+            odb::Rect layer1_box = secondary_via.getLayer1BBox();
+            odb::Rect layer2_box = secondary_via.getLayer2BBox();
             layer1_box = layer1_box.bloat(layer1_bloats.first,
                                           odb::Orientation2D::Vertical);
             layer1_box = layer1_box.bloat(layer1_bloats.second,
@@ -311,7 +313,7 @@ void io::Parser::initSecondaryVias()
             // cut layer shape
             std::unique_ptr<frShape> u_cutfig = std::make_unique<frRect>();
             auto cutfig = static_cast<frRect*>(u_cutfig.get());
-            Rect cut_box = secondary_via.getCutBBox();
+            odb::Rect cut_box = secondary_via.getCutBBox();
             cut_box.moveDelta(-dx, -dy);
             cutfig->setBBox(cut_box);
             cutfig->setLayerNum(viadef->getCutLayerNum());
@@ -492,7 +494,7 @@ void io::Parser::getViaRawPriority(const frViaDef* viaDef,
 
   using boost::polygon::operators::operator+=;
   for (auto& fig : viaDef->getLayer1Figs()) {
-    Rect bbox = fig->getBBox();
+    odb::Rect bbox = fig->getBBox();
     Rectangle bboxRect(bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     viaLayerPS1 += bboxRect;
   }
@@ -512,7 +514,7 @@ void io::Parser::getViaRawPriority(const frViaDef* viaDef,
 
   PolygonSet viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
-    Rect bbox = fig->getBBox();
+    odb::Rect bbox = fig->getBBox();
     Rectangle bboxRect(bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     viaLayerPS2 += bboxRect;
   }
@@ -758,7 +760,7 @@ inline void getTrackLocs(bool isHorzTracks,
 
 void io::Parser::checkFig(frPinFig* uFig,
                           const frString& term_name,
-                          const dbTransform& xform,
+                          const odb::dbTransform& xform,
                           bool& foundTracks,
                           bool& foundCenterTracks,
                           bool& hasPolys)
@@ -766,7 +768,7 @@ void io::Parser::checkFig(frPinFig* uFig,
   int grid = getTech()->getManufacturingGrid();
   if (uFig->typeId() == frcRect) {
     frRect* shape = static_cast<frRect*>(uFig);
-    Rect box = shape->getBBox();
+    odb::Rect box = shape->getBBox();
     xform.apply(box);
     if (box.xMin() % grid || box.yMin() % grid || box.xMax() % grid
         || box.yMax() % grid) {
@@ -808,7 +810,7 @@ void io::Parser::checkFig(frPinFig* uFig,
     hasPolys = true;
     auto polygon = static_cast<frPolygon*>(uFig);
     std::vector<gtl::point_data<frCoord>> points;
-    for (Point pt : polygon->getPoints()) {
+    for (odb::Point pt : polygon->getPoints()) {
       xform.apply(pt);
       points.emplace_back(pt.x(), pt.y());
       if (pt.getX() % grid || pt.getY() % grid) {
@@ -867,7 +869,7 @@ void io::Parser::checkPins()
       for (auto& uFig : pin->getFigs()) {
         checkFig(uFig.get(),
                  bTerm->getName(),
-                 dbTransform(),
+                 odb::dbTransform(),
                  foundTracks,
                  foundCenterTracks,
                  hasPolys);
@@ -888,7 +890,7 @@ void io::Parser::checkPins()
     if (!inst->getMaster()->getMasterType().isBlock()) {
       continue;
     }
-    dbTransform xform = inst->getDBTransform();
+    odb::dbTransform xform = inst->getDBTransform();
     for (auto& iTerm : inst->getInstTerms()) {
       if (!iTerm->hasNet() || iTerm->getNet()->isSpecial()) {
         continue;

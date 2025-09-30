@@ -861,7 +861,7 @@ ROW ROW_853 FreePDK45_38x28_10R_NP_162NW_34O 0 2388400 FS DO 210 BY 1 STEP 380 0
 ROW ROW_854 FreePDK45_38x28_10R_NP_162NW_34O 0 2391200 N DO 210 BY 1 STEP 380 0 ;
 ROW ROW_855 FreePDK45_38x28_10R_NP_162NW_34O 0 2394000 FS DO 210 BY 1 STEP 380 0 ;
 ROW ROW_856 FreePDK45_38x28_10R_NP_162NW_34O 0 2396800 N DO 210 BY 1 STEP 380 0 ;
-COMPONENTS 37 ;
+COMPONENTS 36 ;
     - buf1 BUF_X2 + PLACED ( 1520 0 ) N ;
     - buf2 BUF_X2 + PLACED ( 380 0 ) N ;
     - dff_out1 DFF_X1 + PLACED ( 15580 2800 ) FS ;
@@ -888,7 +888,6 @@ COMPONENTS 37 ;
     - u_mid1/u_leaf2/dff2 DFF_X1 + PLACED ( 15580 5600 ) N ;
     - u_mid1/u_leaf2/dff3 DFF_X1 + PLACED ( 1520 16800 ) N ;
     - u_mid1/u_leaf2/rebuffer1 BUF_X4 + SOURCE TIMING + PLACED ( 21850 6990 ) N ;
-    - u_mid1/u_leaf2/rebuffer9 BUF_X4 + SOURCE TIMING + PLACED ( 23530 9568 ) N ;
     - u_mid1/u_leaf2/split2 BUF_X4 + SOURCE TIMING + PLACED ( 23530 8343 ) N ;
     - u_mid2/buf1 BUF_X2 + PLACED ( 1520 5600 ) N ;
     - u_mid2/dff_out1 DFF_X1 + PLACED ( 22040 0 ) N ;
@@ -909,7 +908,7 @@ PINS 7 ;
     - out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL ;
     - out2 + NET out2 + DIRECTION OUTPUT + USE SIGNAL ;
 END PINS
-NETS 32 ;
+NETS 31 ;
     - clk ( PIN clk ) ( dff_out1 CK ) ( dff_out2 CK ) ( u_mid1/dff_load1 CK ) ( u_mid1/dff_load10 CK ) ( u_mid1/dff_load2 CK ) ( u_mid1/dff_load3 CK )
       ( u_mid1/dff_load4 CK ) ( u_mid1/dff_load5 CK ) ( u_mid1/dff_load6 CK ) ( u_mid1/dff_load7 CK ) ( u_mid1/dff_load8 CK ) ( u_mid1/dff_load9 CK ) ( u_mid1/dff_out1 CK ) ( u_mid1/dff_out2 CK )
       ( u_mid1/u_leaf1/dff1 CK ) ( u_mid1/u_leaf1/dff2 CK ) ( u_mid1/u_leaf2/dff1 CK ) ( u_mid1/u_leaf2/dff2 CK ) ( u_mid1/u_leaf2/dff3 CK ) ( u_mid2/dff_out1 CK ) ( u_mid2/u_leaf3/dff1 CK ) ( u_mid2/u_leaf3/dff2 CK )
@@ -934,9 +933,9 @@ NETS 32 ;
     - u_mid1/u_leaf2/n1 ( u_mid1/u_leaf2/buf1 A ) ( u_mid1/u_leaf2/buf2 A ) ( u_mid1/u_leaf2/dff1 Q ) + USE SIGNAL ;
     - u_mid1/u_leaf2/n2 ( u_mid1/u_leaf2/buf1 Z ) ( u_mid1/u_leaf2/dff2 D ) + USE SIGNAL ;
     - u_mid1/u_leaf2/n3 ( u_mid1/u_leaf2/buf2 Z ) ( u_mid1/u_leaf2/dff3 D ) + USE SIGNAL ;
-    - u_mid1/u_leaf2/net1 ( u_mid1/u_leaf2/rebuffer9 A ) ( u_mid1/u_leaf2/split2 A ) ( u_mid1/u_leaf2/rebuffer1 Z ) + USE SIGNAL ;
-    - u_mid1/u_leaf2/net2 ( u_mid1/u_leaf2/split2 Z ) ( u_mid1/dff_load8 D ) ( u_mid1/dff_load7 D ) ( u_mid1/dff_load5 D ) ( u_mid1/dff_load3 D ) ( u_mid1/dff_out2 D ) + USE SIGNAL ;
-    - u_mid1/u_leaf2/net9 ( u_mid1/u_leaf2/rebuffer9 Z ) ( u_mid1/dff_load9 D ) ( u_mid1/dff_load6 D ) ( u_mid1/dff_load4 D ) ( u_mid1/dff_load1 D ) ( u_mid1/dff_load10 D ) ( u_mid1/dff_load2 D ) + USE SIGNAL ;
+    - u_mid1/u_leaf2/net1 ( u_mid1/dff_load2 D ) ( u_mid1/dff_load10 D ) ( u_mid1/dff_load1 D ) ( u_mid1/dff_load4 D ) ( u_mid1/dff_load6 D ) ( u_mid1/dff_load9 D ) ( u_mid1/u_leaf2/split2 A )
+      ( u_mid1/u_leaf2/rebuffer1 Z ) + USE SIGNAL ;
+    - u_mid1/u_leaf2/net2 ( u_mid1/dff_load8 D ) ( u_mid1/u_leaf2/split2 Z ) ( u_mid1/dff_load7 D ) ( u_mid1/dff_load5 D ) ( u_mid1/dff_load3 D ) ( u_mid1/dff_out2 D ) + USE SIGNAL ;
     - u_mid2/l3_out ( u_mid2/buf1 A ) ( u_mid2/u_leaf3/dff2 Q ) + USE SIGNAL ;
     - u_mid2/l4_out ( u_mid2/u_leaf4/dff1 Q ) + USE SIGNAL ;
     - u_mid2/n1 ( u_mid2/buf1 Z ) ( u_mid2/dff_out1 D ) + USE SIGNAL ;

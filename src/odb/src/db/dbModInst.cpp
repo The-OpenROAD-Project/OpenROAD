@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <iterator>
 #include <map>
 #include <set>
 #include <string>
@@ -663,7 +664,8 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   // Remove any dangling nets
   std::vector<dbNet*> nets_to_delete;
   for (dbNet* net : parent->getOwner()->getNets()) {
-    if (net->getITerms().empty()) {
+    if (net->getITerms().empty() && net->getBTerms().empty()
+        && !net->isSpecial()) {
       nets_to_delete.emplace_back(net);
     }
   }
@@ -688,6 +690,47 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   }
 
   return new_mod_inst;
+}
+
+bool dbModInst::containsDbInst(dbInst* inst) const
+{
+  dbModule* master = getMaster();
+  if (master == nullptr) {
+    return false;
+  }
+
+  // Check direct child dbInsts
+  for (dbInst* child_inst : master->getInsts()) {
+    if (child_inst == inst) {
+      return true;
+    }
+  }
+
+  // Recursively check child dbModInsts
+  for (dbModInst* child_mod_inst : master->getModInsts()) {
+    if (child_mod_inst->containsDbInst(inst)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool dbModInst::containsDbModInst(dbModInst* inst) const
+{
+  dbModule* master = getMaster();
+  if (master == nullptr) {
+    return false;
+  }
+
+  // Recursively check child dbModInsts
+  for (dbModInst* child_mod_inst : master->getModInsts()) {
+    if (child_mod_inst == inst || child_mod_inst->containsDbModInst(inst)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 // User Code End dbModInstPublicMethods

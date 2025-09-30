@@ -14,6 +14,9 @@
 #include "CloneMove.hh"
 #include "Rebuffer.hh"
 #include "SizeDownMove.hh"
+#include "db_sta/dbSta.hh"
+#include "sta/Delay.hh"
+#include "sta/NetworkClass.hh"
 // This includes SizeUpMatchMove
 #include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"
@@ -59,9 +62,7 @@ using sta::PathExpanded;
 using sta::Slew;
 using sta::VertexOutEdgeIterator;
 
-RepairSetup::RepairSetup(Resizer* resizer,
-                         est::EstimateParasitics* estimate_parasitics)
-    : resizer_(resizer), estimate_parasitics_(estimate_parasitics)
+RepairSetup::RepairSetup(Resizer* resizer) : resizer_(resizer)
 {
 }
 
@@ -70,7 +71,7 @@ void RepairSetup::init()
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
-
+  estimate_parasitics_ = resizer_->estimate_parasitics_;
   initial_design_area_ = resizer_->computeDesignArea();
 }
 
@@ -454,7 +455,14 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 
   if (!skip_last_gasp) {
     // do some last gasp setup fixing before we give up
-    OptoParams params(setup_slack_margin, verbose);
+    OptoParams params(setup_slack_margin,
+                      verbose,
+                      skip_pin_swap,
+                      skip_gate_cloning,
+                      skip_size_down,
+                      skip_buffering,
+                      skip_buffer_removal,
+                      skip_vt_swap);
     params.iteration = opto_iteration;
     params.initial_tns = initial_tns;
     repairSetupLastGasp(params, num_viols);
@@ -624,7 +632,7 @@ bool RepairSetup::repairPath(Path* path,
       const Path* path = expanded.path(i);
       Vertex* path_vertex = path->vertex(sta_);
       const Pin* path_pin = path->pin(sta_);
-      if (i > 0 && network_->isDriver(path_pin)
+      if (i > 0 && path_vertex->isDriver(network_)
           && !network_->isTopLevelPort(path_pin)) {
         const TimingArc* prev_arc = path->prevArc(sta_);
         const TimingArc* corner_arc = prev_arc->cornerArc(lib_ap);
@@ -834,10 +842,14 @@ bool RepairSetup::terminateProgress(const int iteration,
 void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
 {
   move_sequence.clear();
-  move_sequence = {resizer_->vt_swap_speed_move_.get(),
-                   resizer_->size_up_match_move_.get(),
-                   resizer_->size_up_move_.get(),
-                   resizer_->swap_pins_move_.get()};
+  if (!params.skip_vt_swap) {
+    move_sequence.push_back(resizer_->vt_swap_speed_move_.get());
+  }
+  move_sequence.push_back(resizer_->size_up_match_move_.get());
+  move_sequence.push_back(resizer_->size_up_move_.get());
+  if (!params.skip_pin_swap) {
+    move_sequence.push_back(resizer_->swap_pins_move_.get());
+  }
 
   // Sort remaining failing endpoints
   const VertexSet* endpoints = sta_->endpoints();

@@ -925,8 +925,8 @@ class NesterovBase
 
   const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
 
-  float getSumOverflow() const { return sumOverflow_; }
-  float getSumOverflowUnscaled() const { return sumOverflowUnscaled_; }
+  float getSumOverflow() const { return sum_overflow_; }
+  float getSumOverflowUnscaled() const { return sum_overflow_unscaled_; }
   float getBaseWireLengthCoef() const { return baseWireLengthCoef_; }
   float getDensityPenalty() const { return densityPenalty_; }
 
@@ -1210,12 +1210,13 @@ class NesterovBase
   float baseWireLengthCoef_ = 0;
 
   // phi is described in ePlace paper.
-  float sumOverflow_ = 0;
-  float sumOverflowUnscaled_ = 0;
+  float sum_overflow_ = 0;
+  float sum_overflow_unscaled_ = 0;
+  float prev_reported_overflow_unscaled_ = 0;
 
   // half-parameter-wire-length
-  int64_t prevHpwl_ = 0;
-  int64_t prevReportedHpwl_ = 0;
+  int64_t prev_hpwl_ = 0;
+  int64_t prev_reported_hpwl_ = 0;
 
   bool isDiverged_ = false;
 

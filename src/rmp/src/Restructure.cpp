@@ -16,6 +16,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -27,9 +28,12 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PatternMatch.hh"
@@ -46,11 +50,11 @@ using cut::Blif;
 
 namespace rmp {
 
-void Restructure::init(utl::Logger* logger,
-                       sta::dbSta* open_sta,
-                       odb::dbDatabase* db,
-                       rsz::Resizer* resizer,
-                       est::EstimateParasitics* estimate_parasitics)
+Restructure::Restructure(utl::Logger* logger,
+                         sta::dbSta* open_sta,
+                         odb::dbDatabase* db,
+                         rsz::Resizer* resizer,
+                         est::EstimateParasitics* estimate_parasitics)
 {
   logger_ = logger;
   db_ = db;

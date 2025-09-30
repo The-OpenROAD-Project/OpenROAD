@@ -36,7 +36,6 @@ using odb::dbTechLayerDir;
 using odb::dbTechLayerRule;
 using odb::dbTechNonDefaultRule;
 using odb::dbTechVia;
-using odb::Rect;
 
 //
 // This class creates a new net along with a wire.
@@ -67,9 +66,12 @@ class dbCreateNetUtil
                              dbTechLayerDir dir,
                              bool skipBterms = false);
 
-  dbNet* createNetSingleWire(Rect& r, uint level, uint netId, uint shapeId);
+  dbNet* createNetSingleWire(odb::Rect& r,
+                             uint level,
+                             uint netId,
+                             uint shapeId);
   dbSBox* createSpecialWire(dbNet* mainNet,
-                            Rect& r,
+                            odb::Rect& r,
                             dbTechLayer* layer,
                             uint sboxId);
   void setCurrentNet(dbNet* net);
@@ -80,7 +82,7 @@ class dbCreateNetUtil
   uint getFirstShape(dbNet* net, dbShape& s);
   bool setFirstShapeProperty(dbNet* net, uint prop);
   dbTechLayerRule* getRule(int routingLayer, int width);
-  dbTechVia* getVia(int l1, int l2, Rect& bbox);
+  dbTechVia* getVia(int l1, int l2, odb::Rect& bbox);
   std::pair<dbBTerm*, dbBTerm*> createTerms4SingleNet(dbNet* net,
                                                       int x1,
                                                       int y1,

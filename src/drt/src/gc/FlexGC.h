@@ -33,8 +33,8 @@ class FlexGCWorker
                FlexDRWorker* drWorkerIn = nullptr);
   ~FlexGCWorker();
   // setters
-  void setExtBox(const Rect& in);
-  void setDrcBox(const Rect& in);
+  void setExtBox(const odb::Rect& in);
+  void setDrcBox(const odb::Rect& in);
   bool setTargetNet(frBlockObject* in);
   bool setTargetNet(drNet* in);
   gcNet* getTargetNet();
@@ -71,7 +71,7 @@ class FlexGCWorker
 };
 struct MarkerId
 {
-  Rect box;
+  odb::Rect box;
   frLayerNum lNum;
   frConstraint* con;
   std::set<frBlockObject*> srcs;

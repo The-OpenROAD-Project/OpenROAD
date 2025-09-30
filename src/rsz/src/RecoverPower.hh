@@ -48,7 +48,7 @@ using BufferedNetSeq = std::vector<BufferedNetPtr>;
 class RecoverPower : public sta::dbStaState
 {
  public:
-  RecoverPower(Resizer* resizer, est::EstimateParasitics* estimate_parasitics);
+  RecoverPower(Resizer* resizer);
   bool recoverPower(float recover_power_percent, bool verbose);
   // For testing.
   Vertex* recoverPower(const Pin* end_pin);

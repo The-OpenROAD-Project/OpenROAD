@@ -43,7 +43,7 @@ struct IntervalHash
 
 struct RectHash
 {
-  std::size_t operator()(const Rect& rect) const;
+  std::size_t operator()(const odb::Rect& rect) const;
 };
 
 // Slot: an on-track position in the die boundary where a pin
@@ -55,6 +55,7 @@ struct Slot
   odb::Point pos;
   int layer;
   Edge edge;
+  odb::Line containing_line;
 
   bool isAvailable() const { return (!blocked && !used); }
 };

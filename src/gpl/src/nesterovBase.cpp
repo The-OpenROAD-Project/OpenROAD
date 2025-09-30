@@ -2331,7 +2331,7 @@ void NesterovBase::initDensity1()
   // bin
   updateGCellDensityCenterLocation(curSLPCoordi_);
 
-  prevHpwl_ = nbc_->getHpwl();
+  prev_hpwl_ = nbc_->getHpwl();
 
   // FFT update
   updateDensityForceBin();
@@ -2340,11 +2340,11 @@ void NesterovBase::initDensity1()
       = npVars_->initWireLengthCoef
         / (static_cast<float>(getBinSizeX() + getBinSizeY()) * 0.5);
 
-  sumOverflow_ = static_cast<float>(getOverflowArea())
-                 / static_cast<float>(getNesterovInstsArea());
+  sum_overflow_ = static_cast<float>(getOverflowArea())
+                  / static_cast<float>(getNesterovInstsArea());
 
-  sumOverflowUnscaled_ = static_cast<float>(getOverflowAreaUnscaled())
-                         / static_cast<float>(getNesterovInstsArea());
+  sum_overflow_unscaled_ = static_cast<float>(getOverflowAreaUnscaled())
+                           / static_cast<float>(getNesterovInstsArea());
 }
 
 float NesterovBase::initDensity2(float wlCoeffX, float wlCoeffY)
@@ -2359,11 +2359,11 @@ float NesterovBase::initDensity2(float wlCoeffX, float wlCoeffY)
         = (wireLengthGradSum_ / densityGradSum_) * npVars_->initDensityPenalty;
   }
 
-  sumOverflow_ = static_cast<float>(getOverflowArea())
-                 / static_cast<float>(getNesterovInstsArea());
+  sum_overflow_ = static_cast<float>(getOverflowArea())
+                  / static_cast<float>(getNesterovInstsArea());
 
-  sumOverflowUnscaled_ = static_cast<float>(getOverflowAreaUnscaled())
-                         / static_cast<float>(getNesterovInstsArea());
+  sum_overflow_unscaled_ = static_cast<float>(getOverflowAreaUnscaled())
+                           / static_cast<float>(getNesterovInstsArea());
 
   stepLength_ = getStepLength(
       prevSLPCoordi_, prevSLPSumGrads_, curSLPCoordi_, curSLPSumGrads_);
@@ -2677,21 +2677,22 @@ void NesterovBase::updateNextIter(const int iter)
       = std::max(static_cast<float>(getNesterovInstsArea()),
                  fractionOfMaxIters * pb_->nonPlaceInstsArea() * 0.05f);
 
-  sumOverflow_ = getOverflowArea() / overflowDenominator;
-  sumOverflowUnscaled_ = getOverflowAreaUnscaled() / overflowDenominator;
+  sum_overflow_ = getOverflowArea() / overflowDenominator;
+  sum_overflow_unscaled_ = getOverflowAreaUnscaled() / overflowDenominator;
 
   int64_t hpwl = nbc_->getHpwl();
-  float phiCoef = getPhiCoef(static_cast<float>(hpwl - prevHpwl_)
+  float phiCoef = getPhiCoef(static_cast<float>(hpwl - prev_hpwl_)
                              / npVars_->referenceHpwl);
 
-  float percentageChange = 0.0;
+  float hpwl_percent_change = 0.0;
   if (iter == 0 || (iter) % 10 == 0) {
-    if (prevReportedHpwl_ != 0) {
-      percentageChange = (static_cast<double>(hpwl - prevReportedHpwl_)
-                          / static_cast<double>(prevReportedHpwl_))
-                         * 100.0;
+    if (prev_reported_hpwl_ != 0) {
+      hpwl_percent_change = (static_cast<double>(hpwl - prev_reported_hpwl_)
+                             / static_cast<double>(prev_reported_hpwl_))
+                            * 100.0;
     }
-    prevReportedHpwl_ = hpwl;
+    prev_reported_hpwl_ = hpwl;
+    prev_reported_overflow_unscaled_ = sum_overflow_unscaled_;
 
     std::string group_name;
     if (pb_->group()) {
@@ -2722,14 +2723,14 @@ void NesterovBase::updateNextIter(const int iter)
     dbBlock* block = pb_->db()->getChip()->getBlock();
     log_->report("{:9d} | {:8.4f} | {:13.6e} | {:+7.2f}% | {:9.2e} | {:>5}",
                  iter,
-                 sumOverflowUnscaled_,
+                 sum_overflow_unscaled_,
                  block->dbuToMicrons(hpwl),
-                 percentageChange,
+                 hpwl_percent_change,
                  densityPenalty_,
                  group_name);
   }
 
-  debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prevHpwl_);
+  debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prev_hpwl_);
   debugPrint(log_, GPL, "updateNextIter", 1, "NewHPWL: {}", hpwl);
   debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
   debugPrint(log_,
@@ -2740,14 +2741,14 @@ void NesterovBase::updateNextIter(const int iter)
              getSecondNorm(curSLPSumGrads_));
   debugPrint(log_, GPL, "updateNextIter", 1, "Phi: {:g}", getSumPhi());
   debugPrint(
-      log_, GPL, "updateNextIter", 1, "Overflow: {:g}", sumOverflowUnscaled_);
+      log_, GPL, "updateNextIter", 1, "Overflow: {:g}", sum_overflow_unscaled_);
 
-  prevHpwl_ = hpwl;
+  prev_hpwl_ = hpwl;
   densityPenalty_ *= phiCoef;
 
-  if (iter > 50 && minSumOverflow_ > sumOverflowUnscaled_) {
-    minSumOverflow_ = sumOverflowUnscaled_;
-    hpwlWithMinSumOverflow_ = prevHpwl_;
+  if (iter > 50 && minSumOverflow_ > sum_overflow_unscaled_) {
+    minSumOverflow_ = sum_overflow_unscaled_;
+    hpwlWithMinSumOverflow_ = prev_hpwl_;
   }
 }
 
@@ -2822,7 +2823,7 @@ void NesterovBase::nesterovAdjustPhi()
   // dynamic adjustment for
   // better convergence with
   // large designs
-  if (!isMaxPhiCoefChanged_ && sumOverflowUnscaled_ < 0.35f) {
+  if (!isMaxPhiCoefChanged_ && sum_overflow_unscaled_ < 0.35f) {
     isMaxPhiCoefChanged_ = true;
     npVars_->maxPhiCoef *= 0.99;
   }
@@ -2849,7 +2850,7 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
   if (isConverged_) {
     return true;
   }
-  if (sumOverflowUnscaled_ <= npVars_->targetOverflow) {
+  if (sum_overflow_unscaled_ <= npVars_->targetOverflow) {
     const bool is_power_domain = pb_->group();
     const std::string group_name
         = is_power_domain ? pb_->group()->getName() : "";
@@ -2858,7 +2859,7 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
 
     log_->report("{:9d} | {:8.4f} | {:13.6e} | {:>8} | {:9.2e} | {:>5}",
                  final_iter,
-                 sumOverflowUnscaled_,
+                 sum_overflow_unscaled_,
                  block->dbuToMicrons(nbc_->getHpwl()),
                  "",  // No % delta
                  densityPenalty_,
@@ -2963,10 +2964,23 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
 
 bool NesterovBase::checkDivergence()
 {
-  if (sumOverflowUnscaled_ < 0.2f
-      && sumOverflowUnscaled_ - minSumOverflow_ >= 0.02f
-      && hpwlWithMinSumOverflow_ * 1.2f < prevHpwl_) {
+  if (sum_overflow_unscaled_ < 0.2f
+      && sum_overflow_unscaled_ - minSumOverflow_ >= 0.02f
+      && hpwlWithMinSumOverflow_ * 1.2f < prev_hpwl_) {
     isDiverged_ = true;
+  }
+
+  // Check if both overflow and HPWL increase
+  if (minSumOverflow_ < 0.2f && prev_reported_overflow_unscaled_ > 0
+      && prev_reported_hpwl_ > 0) {
+    float overflow_change
+        = sum_overflow_unscaled_ - prev_reported_overflow_unscaled_;
+    float hpwl_increase = (static_cast<float>(prev_hpwl_ - prev_reported_hpwl_))
+                          / static_cast<float>(prev_reported_hpwl_);
+
+    if (overflow_change >= 0.02f && hpwl_increase >= 0.05f) {
+      isDiverged_ = true;
+    }
   }
 
   return isDiverged_;
@@ -3233,13 +3247,15 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
     // From now on gcell_index is the index for the replacement (previous last
     // element)
     size_t replacer_index = gcell_index;
-    if (replacer_index != last_index
-        && !nb_gcells_[replacer_index]->isFiller()) {
-      odb::dbInst* replacer_inst
-          = nb_gcells_[replacer_index]->insts()[0]->dbInst();
-      // Update new replacer reference on map
-      db_inst_to_nb_index_.erase(replacer_inst);
-      db_inst_to_nb_index_[replacer_inst] = replacer_index;
+    if (replacer_index != last_index) {
+      if (!nb_gcells_[replacer_index]->isFiller()) {
+        odb::dbInst* replacer_inst
+            = nb_gcells_[replacer_index]->insts()[0]->dbInst();
+        db_inst_to_nb_index_[replacer_inst] = replacer_index;
+      } else {
+        size_t filler_stor_index = nb_gcells_[replacer_index].getStorageIndex();
+        filler_stor_index_to_nb_index_[filler_stor_index] = replacer_index;
+      }
     }
 
     std::pair<odb::dbInst*, size_t> replacer = nbc_->destroyCbkGCell(db_inst);

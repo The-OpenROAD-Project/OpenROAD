@@ -58,9 +58,29 @@ struct OptoParams
   float initial_tns;
   const float setup_slack_margin;
   const bool verbose;
+  const bool skip_pin_swap;
+  const bool skip_gate_cloning;
+  const bool skip_size_down;
+  const bool skip_buffering;
+  const bool skip_buffer_removal;
+  const bool skip_vt_swap;
 
-  OptoParams(const float margin, const bool verbose)
-      : setup_slack_margin(margin), verbose(verbose)
+  OptoParams(const float margin,
+             const bool verbose,
+             const bool skip_pin_swap,
+             const bool skip_gate_cloning,
+             const bool skip_size_down,
+             const bool skip_buffering,
+             const bool skip_buffer_removal,
+             const bool skip_vt_swap)
+      : setup_slack_margin(margin),
+        verbose(verbose),
+        skip_pin_swap(skip_pin_swap),
+        skip_gate_cloning(skip_gate_cloning),
+        skip_size_down(skip_size_down),
+        skip_buffering(skip_buffering),
+        skip_buffer_removal(skip_buffer_removal),
+        skip_vt_swap(skip_vt_swap)
   {
     iteration = 0;
     initial_tns = 0.0;
@@ -70,7 +90,7 @@ struct OptoParams
 class RepairSetup : public sta::dbStaState
 {
  public:
-  RepairSetup(Resizer* resizer, est::EstimateParasitics* estimate_parasitics);
+  RepairSetup(Resizer* resizer);
   bool repairSetup(float setup_slack_margin,
                    // Percent of violating ends to repair to
                    // reduce tns (0.0-1.0).

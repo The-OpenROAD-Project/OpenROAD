@@ -11,6 +11,7 @@
 #include "db/obj/frMTerm.h"
 #include "db/obj/frNet.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frNet;
@@ -43,7 +44,7 @@ class frInstTerm : public frBlockObject
   frAccessPoint* getAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
   bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
   void getShapes(std::vector<frRect>& outShapes) const;
-  Rect getBBox() const;
+  odb::Rect getBBox() const;
   void setIndexInOwner(int in) { index_in_owner_ = in; }
   int getIndexInOwner() const { return index_in_owner_; }
 

@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "gui/gui.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
