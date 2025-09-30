@@ -8,14 +8,10 @@
 
 namespace ram {
 
-using odb::dbBTerm;
 using odb::dbInst;
-using odb::dbNet;
 using odb::dbOrientType;
 using odb::Point;
 using odb::Rect;
-
-using utl::RAM;
 
 //////////////////////////////////////////////////////////////
 
@@ -64,12 +60,12 @@ void Cell::setOrigin(Point position)
   origin_ = position;
 }
 
-const int Cell::getHeight()
+int Cell::getHeight()
 {
   return height;
 }
 
-const int Cell::getWidth()
+int Cell::getWidth()
 {
   return width;
 }
@@ -131,12 +127,12 @@ void Layout::setOrigin(odb::Point position)
   origin_ = position;
 }
 
-const int Layout::getHeight()
+int Layout::getHeight()
 {
   return cell_height;
 }
 
-const int Layout::getWidth()
+int Layout::getWidth()
 {
   return cell_width;
 }
@@ -210,22 +206,22 @@ void Grid::setOrigin(odb::Point position)
   origin_ = position;
 }
 
-const int Grid::getHeight()
+int Grid::getHeight()
 {
   return cell_height;
 }
 
-const int Grid::getWidth()
+int Grid::getWidth()
 {
   return cell_width;
 }
 
-const int Grid::numLayouts()
+int Grid::numLayouts()
 {
   return layouts_.size();
 }
 
-const int Grid::getRowWidth()
+int Grid::getRowWidth()
 {
   int row_width = 0;
   for (auto& layout : layouts_) {

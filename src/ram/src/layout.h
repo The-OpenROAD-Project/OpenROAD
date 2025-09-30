@@ -28,9 +28,9 @@ class Cell
 
   void setOrigin(odb::Point position);
 
-  const int getHeight();
+  int getHeight();
 
-  const int getWidth();
+  int getWidth();
 
  private:
   odb::Point origin_;
@@ -55,9 +55,9 @@ class Layout
 
   void setOrigin(odb::Point position);
 
-  const int getHeight();
+  int getHeight();
 
-  const int getWidth();
+  int getWidth();
 
  private:
   odb::Orientation2D orientation_;
@@ -86,13 +86,13 @@ class Grid
 
   void setOrigin(odb::Point position);
 
-  const int getHeight();
+  int getHeight();
 
-  const int getWidth();
+  int getWidth();
 
-  const int numLayouts();
+  int numLayouts();
 
-  const int getRowWidth();
+  int getRowWidth();
 
  private:
   odb::Orientation2D orientation_;

@@ -36,9 +36,9 @@ class RamGen
   RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger);
   ~RamGen();
 
-  void generate(const int bytes_per_word,
-                const int word_count,
-                const int read_ports,
+  void generate(int bytes_per_word,
+                int word_count,
+                int read_ports,
                 odb::dbMaster* storage_cell,
                 odb::dbMaster* tristate_cell,
                 odb::dbMaster* inv_cell);
@@ -61,16 +61,16 @@ class RamGen
       odb::dbMaster* master,
       const std::vector<std::pair<std::string, odb::dbNet*>>& connections);
   std::unique_ptr<Cell> makeCellBit(const std::string& prefix,
-                                    const int read_ports,
+                                    int read_ports,
                                     odb::dbNet* clock,
                                     std::vector<odb::dbNet*>& select,
                                     odb::dbNet* data_input,
                                     std::vector<odb::dbNet*>& data_output);
   void makeCellByte(
       Grid& ram_grid,
-      const int byte_number,
+      int byte_number,
       const std::string& prefix,
-      const int read_ports,
+      int read_ports,
       odb::dbNet* clock,
       odb::dbNet* write_enable,
       const std::vector<odb::dbNet*>& selects,
@@ -80,13 +80,13 @@ class RamGen
   odb::dbBTerm* makeBTerm(const std::string& name, odb::dbIoType io_type);
 
   std::unique_ptr<Cell> makeDecoder(const std::string& prefix,
-                                    const int num_word,
-                                    const int read_ports,
+                                    int num_word,
+                                    int read_ports,
                                     const std::vector<odb::dbNet*>& selects,
-                                    const std::vector<odb::dbNet*>& ram_inputs);
+                                    const std::vector<odb::dbNet*>& addr_nets);
 
   std::vector<odb::dbNet*> selectNets(const std::string& prefix,
-                                      const int read_ports);
+                                      int read_ports);
 
   sta::dbNetwork* network_;
   odb::dbDatabase* db_;

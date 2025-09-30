@@ -295,7 +295,7 @@ void RamGen::findMasters()
 {
   if (!inv_cell_) {
     inv_cell_ = findMaster(
-        [this](sta::LibertyPort* port) {
+        [](sta::LibertyPort* port) {
           return port->libertyCell()->isInverter();
         },
         "inverter");
@@ -303,7 +303,7 @@ void RamGen::findMasters()
 
   if (!tristate_cell_) {
     tristate_cell_ = findMaster(
-        [this](sta::LibertyPort* port) {
+        [](sta::LibertyPort* port) {
           if (!port->direction()->isTristate()) {
             return false;
           }
@@ -315,7 +315,7 @@ void RamGen::findMasters()
 
   if (!and2_cell_) {
     and2_cell_ = findMaster(
-        [this](sta::LibertyPort* port) {
+        [](sta::LibertyPort* port) {
           if (!port->direction()->isOutput()) {
             return false;
           }
@@ -330,7 +330,7 @@ void RamGen::findMasters()
   if (!storage_cell_) {
     // FIXME
     storage_cell_ = findMaster(
-        [this](sta::LibertyPort* port) {
+        [](sta::LibertyPort* port) {
           if (!port->direction()->isOutput()) {
             return false;
           }
@@ -344,7 +344,7 @@ void RamGen::findMasters()
 
   if (!clock_gate_cell_) {
     clock_gate_cell_ = findMaster(
-        [this](sta::LibertyPort* port) {
+        [](sta::LibertyPort* port) {
           return port->libertyCell()->isClockGate();
         },
         "clock gate");
@@ -352,7 +352,7 @@ void RamGen::findMasters()
   // for input buffers
   if (!buffer_cell_) {
     buffer_cell_ = findMaster(
-        [this](sta::LibertyPort* port) {
+        [](sta::LibertyPort* port) {
           return port->libertyCell()->isBuffer();
         },
         "buffer");

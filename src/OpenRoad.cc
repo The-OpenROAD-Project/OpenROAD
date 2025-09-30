@@ -41,6 +41,7 @@
 #include "exa/example.h"
 #include "fin/Finale.h"
 #include "fin/MakeFinale.h"
+#include "ram/ram.h"
 #include "ram/MakeRam.h"
 #include "gpl/MakeReplace.h"
 #include "gpl/Replace.h"
