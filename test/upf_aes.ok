@@ -219,7 +219,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       430 |   0.1411 |  1.835169e+06 |   +0.43% |  3.30e-07 |  (PD_AES_2)
       436 |   0.0989 |  1.838610e+06 |          |  6.14e-07 | PD_AES_1
 ---------------------------------------------------------------
-[INFO GPL-1016] Power domain 'PD_AES_1' placement finished at iteration 436
+[INFO GPL-1016] Region 'PD_AES_1' placement finished at iteration 436
 [INFO GPL-1002] Placed Cell Area            121017.3152
 [INFO GPL-1003] Available Free Area         150144.0000
 [INFO GPL-1004] Minimum Feasible Density        0.8100 (cell_area / free_area)
@@ -234,7 +234,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       460 |   0.1035 |  1.850758e+06 |   +0.24% |  5.78e-07 |  (PD_AES_2)
       465 |   0.0996 |  1.852840e+06 |          |  6.46e-07 | PD_AES_2
 ---------------------------------------------------------------
-[INFO GPL-1016] Power domain 'PD_AES_2' placement finished at iteration 465
+[INFO GPL-1016] Region 'PD_AES_2' placement finished at iteration 465
 [INFO GPL-1002] Placed Cell Area            121017.3152
 [INFO GPL-1003] Available Free Area         150144.0000
 [INFO GPL-1004] Minimum Feasible Density        0.8100 (cell_area / free_area)
