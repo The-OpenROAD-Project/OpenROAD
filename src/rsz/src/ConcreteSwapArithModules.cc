@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "sta/Corner.hh"
 #include "sta/Graph.hh"
@@ -19,6 +20,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 

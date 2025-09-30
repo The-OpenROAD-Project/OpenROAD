@@ -11,9 +11,11 @@
 #include <string>
 
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "sta/Corner.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"

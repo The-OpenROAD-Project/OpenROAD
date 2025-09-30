@@ -4,11 +4,16 @@
 #include "inspector.h"
 
 #include <QApplication>
+#include <QColor>
 #include <QComboBox>
 #include <QDebug>
 #include <QHeaderView>
 #include <QLineEdit>
+#include <QMenu>
 #include <QPushButton>
+#include <QString>
+#include <QVariant>
+#include <QWidget>
 #include <algorithm>
 #include <any>
 #include <cmath>

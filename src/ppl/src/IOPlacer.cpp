@@ -1915,14 +1915,14 @@ Interval IOPlacer::findIntervalFromRect(const odb::Rect& rect)
 void IOPlacer::getConstraintsFromDB()
 {
   std::map<Interval, PinSet> pins_per_interval;
-  std::map<Rect, PinSet> pins_per_rect;
+  std::map<odb::Rect, PinSet> pins_per_rect;
   for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
     auto constraint_region = bterm->getConstraintRegion();
     // Constraints derived from mirrored pins are not taken into account here.
     // Only pins with constraints directly assigned by the user should be
     // considered.
     if (constraint_region && !bterm->isMirrored()) {
-      Rect region = constraint_region.value();
+      odb::Rect region = constraint_region.value();
       if (region.xMin() == region.xMax() || region.yMin() == region.yMax()) {
         Interval interval = findIntervalFromRect(constraint_region.value());
         pins_per_interval[interval].insert(bterm);
@@ -1932,7 +1932,8 @@ void IOPlacer::getConstraintsFromDB()
           logger_->error(utl::PPL, 121, "Top layer grid not found.");
         }
         if (top_grid_->region.isRect()) {
-          const Rect& top_grid_region = top_grid_->region.getEnclosingRect();
+          const odb::Rect& top_grid_region
+              = top_grid_->region.getEnclosingRect();
           if (!top_grid_region.contains(region)) {
             logger_->error(utl::PPL,
                            25,
@@ -2618,7 +2619,7 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
   odb::Point pos = odb::Point(x, y);
 
-  Rect die_boundary = getBlock()->getDieArea();
+  odb::Rect die_boundary = getBlock()->getDieArea();
   Point lb = die_boundary.ll();
   Point ub = die_boundary.ur();
 
@@ -2755,7 +2756,7 @@ void IOPlacer::movePinToTrack(odb::Point& pos,
                               int layer,
                               int width,
                               int height,
-                              const Rect& die_boundary)
+                              const odb::Rect& die_boundary)
 {
   Point lb = die_boundary.ll();
   Point ub = die_boundary.ur();
@@ -2794,7 +2795,8 @@ void IOPlacer::movePinToTrack(odb::Point& pos,
   }
 }
 
-Interval IOPlacer::getIntervalFromPin(IOPin& io_pin, const Rect& die_boundary)
+Interval IOPlacer::getIntervalFromPin(IOPin& io_pin,
+                                      const odb::Rect& die_boundary)
 {
   Edge edge;
   int begin, end, layer;
@@ -2831,7 +2833,7 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
 {
   int database_unit = getTech()->getLefUnits();
 
-  Rect boundary = getBlock()->getDieArea();
+  odb::Rect boundary = getBlock()->getDieArea();
 
   LayerToVector min_spacings_x;
   LayerToVector min_spacings_y;
@@ -2939,7 +2941,7 @@ void IOPlacer::findSlotsForTopLayer()
     if (top_grid_->region.isRect()) {
       const int half_width = top_grid_->pin_width / 2;
       const int half_height = top_grid_->pin_height / 2;
-      const Rect& top_grid_region = top_grid_->region.getEnclosingRect();
+      const odb::Rect& top_grid_region = top_grid_->region.getEnclosingRect();
       for (int x = top_grid_region.xMin(); x < top_grid_region.xMax();
            x += top_grid_->x_step) {
         for (int y = top_grid_region.yMin(); y < top_grid_region.yMax();
@@ -3056,7 +3058,7 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
 
   std::vector<Section> sections;
   if (top_grid_->region.isRect()) {
-    const Rect& top_grid_region = top_grid_->region.getEnclosingRect();
+    const odb::Rect& top_grid_region = top_grid_->region.getEnclosingRect();
     for (int x = top_grid_region.xMin(); x < top_grid_region.xMax();
          x += top_grid_->x_step) {
       if (x < lb_x || x > ub_x) {
@@ -3110,7 +3112,7 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
 void IOPlacer::initNetlist()
 {
   netlist_->reset();
-  const Rect& coreBoundary = core_->getBoundary();
+  const odb::Rect& coreBoundary = core_->getBoundary();
   int x_center = (coreBoundary.xMin() + coreBoundary.xMax()) / 2;
   int y_center = (coreBoundary.yMin() + coreBoundary.yMax()) / 2;
 
@@ -3195,30 +3197,30 @@ void IOPlacer::initNetlist()
 }
 
 void IOPlacer::findConstraintRegion(const Interval& interval,
-                                    const Rect& constraint_box,
-                                    Rect& region)
+                                    const odb::Rect& constraint_box,
+                                    odb::Rect& region)
 {
-  const Rect& die_bounds = getBlock()->getDieArea();
+  const odb::Rect& die_bounds = getBlock()->getDieArea();
   if (interval.getEdge() == Edge::bottom) {
-    region = Rect(interval.getBegin(),
-                  die_bounds.yMin(),
-                  interval.getEnd(),
-                  die_bounds.yMin());
+    region = odb::Rect(interval.getBegin(),
+                       die_bounds.yMin(),
+                       interval.getEnd(),
+                       die_bounds.yMin());
   } else if (interval.getEdge() == Edge::top) {
-    region = Rect(interval.getBegin(),
-                  die_bounds.yMax(),
-                  interval.getEnd(),
-                  die_bounds.yMax());
+    region = odb::Rect(interval.getBegin(),
+                       die_bounds.yMax(),
+                       interval.getEnd(),
+                       die_bounds.yMax());
   } else if (interval.getEdge() == Edge::left) {
-    region = Rect(die_bounds.xMin(),
-                  interval.getBegin(),
-                  die_bounds.xMin(),
-                  interval.getEnd());
+    region = odb::Rect(die_bounds.xMin(),
+                       interval.getBegin(),
+                       die_bounds.xMin(),
+                       interval.getEnd());
   } else if (interval.getEdge() == Edge::right) {
-    region = Rect(die_bounds.xMax(),
-                  interval.getBegin(),
-                  die_bounds.xMax(),
-                  interval.getEnd());
+    region = odb::Rect(die_bounds.xMax(),
+                       interval.getBegin(),
+                       die_bounds.xMax(),
+                       interval.getEnd());
   } else {
     region = constraint_box;
   }

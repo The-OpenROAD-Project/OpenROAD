@@ -10,6 +10,7 @@
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frFig.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
 
 namespace drt {
 class frNet;
@@ -84,7 +85,7 @@ class frRect : public frShape
   }
 
   // setters
-  void setBBox(const Rect& boxIn) { box_ = boxIn; }
+  void setBBox(const odb::Rect& boxIn) { box_ = boxIn; }
   // getters
   // others
   bool isHor() const
@@ -158,9 +159,9 @@ class frRect : public frShape
    * move, in .cpp
    * intersects in .cpp
    */
-  Rect getBBox() const override { return box_; }
-  void move(const dbTransform& xform) override { xform.apply(box_); }
-  bool intersects(const Rect& box) const override
+  odb::Rect getBBox() const override { return box_; }
+  void move(const odb::dbTransform& xform) override { xform.apply(box_); }
+  bool intersects(const odb::Rect& box) const override
   {
     return getBBox().intersects(box);
   }
@@ -180,7 +181,7 @@ class frRect : public frShape
   void setBottom(frCoord v) { box_.set_ylo(v); }
 
  protected:
-  Rect box_;
+  odb::Rect box_;
   frLayerNum layer_{0};
   frListIter<std::unique_ptr<frShape>> iter_;
 
@@ -210,8 +211,8 @@ class frPatchWire : public frShape
   }
   frPatchWire(const drPatchWire& in);
   // setters
-  void setOffsetBox(const Rect& in) { offsetBox_ = in; }
-  void setOrigin(const Point& in) { origin_ = in; }
+  void setOffsetBox(const odb::Rect& in) { offsetBox_ = in; }
+  void setOrigin(const odb::Point& in) { origin_ = in; }
   // getters
   // others
   frBlockObjectEnum typeId() const override { return frcPatchWire; }
@@ -267,17 +268,17 @@ class frPatchWire : public frShape
    * move, in .cpp
    * intersects in .cpp
    */
-  Rect getBBox() const override
+  odb::Rect getBBox() const override
   {
-    dbTransform xform(origin_);
-    Rect box = offsetBox_;
+    odb::dbTransform xform(origin_);
+    odb::Rect box = offsetBox_;
     xform.apply(box);
     return box;
   }
-  Rect getOffsetBox() const { return offsetBox_; }
-  Point getOrigin() const { return origin_; }
-  void move(const dbTransform& xform) override {}
-  bool intersects(const Rect& box) const override
+  odb::Rect getOffsetBox() const { return offsetBox_; }
+  odb::Point getOrigin() const { return origin_; }
+  void move(const odb::dbTransform& xform) override {}
+  bool intersects(const odb::Rect& box) const override
   {
     return getBBox().intersects(box);
   }
@@ -292,8 +293,8 @@ class frPatchWire : public frShape
   }
 
  protected:
-  Rect offsetBox_;
-  Point origin_;
+  odb::Rect offsetBox_;
+  odb::Point origin_;
   frLayerNum layer_{0};
   frListIter<std::unique_ptr<frShape>> iter_;
 
@@ -320,9 +321,12 @@ class frPolygon : public frShape
   {
   }
   // setters
-  void setPoints(const std::vector<Point>& pointsIn) { points_ = pointsIn; }
+  void setPoints(const std::vector<odb::Point>& pointsIn)
+  {
+    points_ = pointsIn;
+  }
   // getters
-  const std::vector<Point>& getPoints() const { return points_; }
+  const std::vector<odb::Point>& getPoints() const { return points_; }
   // others
   frBlockObjectEnum typeId() const override { return frcPolygon; }
 
@@ -377,7 +381,7 @@ class frPolygon : public frShape
    * move, in .cpp
    * intersects, in .cpp
    */
-  Rect getBBox() const override
+  odb::Rect getBBox() const override
   {
     frCoord llx = 0;
     frCoord lly = 0;
@@ -395,15 +399,15 @@ class frPolygon : public frShape
       urx = (urx > point.x()) ? urx : point.x();
       ury = (ury > point.y()) ? ury : point.y();
     }
-    return Rect(llx, lly, urx, ury);
+    return odb::Rect(llx, lly, urx, ury);
   }
-  void move(const dbTransform& xform) override
+  void move(const odb::dbTransform& xform) override
   {
     for (auto& point : points_) {
       xform.apply(point);
     }
   }
-  bool intersects(const Rect& box) const override { return false; }
+  bool intersects(const odb::Rect& box) const override { return false; }
 
   void setIter(frListIter<std::unique_ptr<frShape>>& in) override
   {
@@ -415,7 +419,7 @@ class frPolygon : public frShape
   }
 
  protected:
-  std::vector<Point> points_;
+  std::vector<odb::Point> points_;
   frLayerNum layer_{0};
   frListIter<std::unique_ptr<frShape>> iter_;
 
@@ -448,9 +452,9 @@ class frPathSeg : public frShape
   frPathSeg(const drPathSeg& in);
   frPathSeg(const taPathSeg& in);
   // getters
-  std::pair<Point, Point> getPoints() const { return {begin_, end_}; }
-  const Point& getBeginPoint() const { return begin_; }
-  const Point& getEndPoint() const { return end_; }
+  std::pair<odb::Point, odb::Point> getPoints() const { return {begin_, end_}; }
+  const odb::Point& getBeginPoint() const { return begin_; }
+  const odb::Point& getEndPoint() const { return end_; }
   const frSegStyle& getStyle() const { return style_; }
   frEndStyle getBeginStyle() const { return style_.getBeginStyle(); }
   frEndStyle getEndStyle() const { return style_.getEndStyle(); }
@@ -481,12 +485,12 @@ class frPathSeg : public frShape
   }
   bool isEndTruncated() { return style_.getEndStyle() == frcTruncateEndStyle; }
   // setters
-  void setPoints(const Point& beginIn, const Point& endIn)
+  void setPoints(const odb::Point& beginIn, const odb::Point& endIn)
   {
     begin_ = beginIn;
     end_ = endIn;
   }
-  void setPoints_safe(const Point& beginIn, const Point& endIn)
+  void setPoints_safe(const odb::Point& beginIn, const odb::Point& endIn)
   {
     if (endIn < beginIn) {
       setPoints(endIn, beginIn);
@@ -563,7 +567,7 @@ class frPathSeg : public frShape
    * intersects, in .cpp
    */
   // needs to be updated
-  Rect getBBox() const override
+  odb::Rect getBBox() const override
   {
     bool isHorizontal = true;
     if (begin_.x() == end_.x()) {
@@ -573,22 +577,22 @@ class frPathSeg : public frShape
     auto beginExt = style_.getBeginExt();
     auto endExt = style_.getEndExt();
     if (isHorizontal) {
-      return Rect(begin_.x() - beginExt,
-                  begin_.y() - width / 2,
-                  end_.x() + endExt,
-                  end_.y() + width / 2);
+      return odb::Rect(begin_.x() - beginExt,
+                       begin_.y() - width / 2,
+                       end_.x() + endExt,
+                       end_.y() + width / 2);
     }
-    return Rect(begin_.x() - width / 2,
-                begin_.y() - beginExt,
-                end_.x() + width / 2,
-                end_.y() + endExt);
+    return odb::Rect(begin_.x() - width / 2,
+                     begin_.y() - beginExt,
+                     end_.x() + width / 2,
+                     end_.y() + endExt);
   }
-  void move(const dbTransform& xform) override
+  void move(const odb::dbTransform& xform) override
   {
     xform.apply(begin_);
     xform.apply(end_);
   }
-  bool intersects(const Rect& box) const override { return false; }
+  bool intersects(const odb::Rect& box) const override { return false; }
 
   void setIter(frListIter<std::unique_ptr<frShape>>& in) override
   {
@@ -601,27 +605,27 @@ class frPathSeg : public frShape
   void setTapered(bool t) { tapered_ = t; }
   bool isTapered() const { return tapered_; }
 
-  bool intersectsCenterLine(const Point& pt)
+  bool intersectsCenterLine(const odb::Point& pt)
   {
     return pt.x() >= begin_.x() && pt.x() <= end_.x() && pt.y() >= begin_.y()
            && pt.y() <= end_.y();
   }
-  void setApPathSeg(Point pt)
+  void setApPathSeg(odb::Point pt)
   {
     is_ap_pathseg_ = true;
     ap_loc_ = pt;
   }
   bool isApPathSeg() const { return is_ap_pathseg_; }
-  Point getApLoc() const { return ap_loc_; }
+  odb::Point getApLoc() const { return ap_loc_; }
 
  protected:
-  Point begin_;  // begin always smaller than end, assumed
-  Point end_;
+  odb::Point begin_;  // begin always smaller than end, assumed
+  odb::Point end_;
   frLayerNum layer_{0};
   frSegStyle style_;
   bool tapered_{false};
   bool is_ap_pathseg_{false};
-  Point ap_loc_;
+  odb::Point ap_loc_;
   frListIter<std::unique_ptr<frShape>> iter_;
 
   template <class Archive>

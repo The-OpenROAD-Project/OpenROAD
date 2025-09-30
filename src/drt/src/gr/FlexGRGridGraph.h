@@ -72,7 +72,7 @@ class FlexGRGridGraph
     zDim = zCoords_.size();
   }
 
-  Point& getPoint(frMIdx x, frMIdx y, Point& in) const
+  odb::Point& getPoint(frMIdx x, frMIdx y, odb::Point& in) const
   {
     in = {xCoords_[x], yCoords_[y]};
     return in;
@@ -581,7 +581,7 @@ class FlexGRGridGraph
               std::vector<FlexMazeIdx>& path,
               FlexMazeIdx& ccMazeIdx1,
               FlexMazeIdx& ccMazeIdx2,
-              const Point& centerPt);
+              const odb::Point& centerPt);
 
   void cleanup()
   {
@@ -657,7 +657,7 @@ class FlexGRGridGraph
     auto it = std::lower_bound(zCoords_.begin(), zCoords_.end(), in);
     return it - zCoords_.begin();
   }
-  FlexMazeIdx& getMazeIdx(const Point& p,
+  FlexMazeIdx& getMazeIdx(const odb::Point& p,
                           frLayerNum layerNum,
                           FlexMazeIdx& mIdx) const
   {
@@ -790,7 +790,7 @@ class FlexGRGridGraph
   void expandWavefront(FlexGRWavefrontGrid& currGrid,
                        const FlexMazeIdx& dstMazeIdx1,
                        const FlexMazeIdx& dstMazeIdx2,
-                       const Point& centerPt);
+                       const odb::Point& centerPt);
   bool isExpandable(const FlexGRWavefrontGrid& currGrid, frDirEnum dir);
   FlexMazeIdx getTailIdx(const FlexMazeIdx& currIdx,
                          const FlexGRWavefrontGrid& currGrid);
@@ -798,7 +798,7 @@ class FlexGRGridGraph
               const frDirEnum& dir,
               const FlexMazeIdx& dstMazeIdx1,
               const FlexMazeIdx& dstMazeIdx2,
-              const Point& centerPt);
+              const odb::Point& centerPt);
 
   friend class FlexGRWorker;
 };

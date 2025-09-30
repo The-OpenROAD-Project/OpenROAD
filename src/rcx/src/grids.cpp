@@ -2312,7 +2312,7 @@ void GridTable::dumpTrackCounts(FILE* fp)
           texpand,
           ttsubtn);
 }
-GridTable::GridTable(Rect* bb,
+GridTable::GridTable(odb::Rect* bb,
                      uint rowCnt,
                      uint colCnt,
                      uint* pitch,

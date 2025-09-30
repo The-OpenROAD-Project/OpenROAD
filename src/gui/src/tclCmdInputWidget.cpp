@@ -7,7 +7,9 @@
 #include <QCoreApplication>
 #include <QMimeData>
 #include <QScrollBar>
+#include <QSettings>
 #include <QTextStream>
+#include <QWidget>
 #include <functional>
 #include <memory>
 #include <regex>

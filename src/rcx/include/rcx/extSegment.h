@@ -35,7 +35,6 @@ class Logger;
 }
 
 namespace rcx {
-using namespace odb;
 class Wire;
 
 class extMeasure;

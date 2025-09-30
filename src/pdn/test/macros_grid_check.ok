@@ -1,0 +1,46 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: nangate_macros/fakeram45_64x32.lef, created 1 library cells
+[INFO ODB-0128] Design: RocketTile
+[INFO ODB-0130]     Created 269 pins.
+[INFO ODB-0131]     Created 547 components and 1304 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 1094 connections.
+[INFO ODB-0133]     Created 269 nets and 0 connections.
+[WARNING PDN-1031] Unable to find cells: fakeram45_64x55
+[WARNING PDN-1050] Ignoring non-fixed instance for grid (sram): dcache.data.data_arrays_0.data_arrays_0_ext.mem_10
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: Core
+Type: Core
+Straps:
+  Type: Followpin
+    Layer: metal1
+    Width: 0.1700
+    Spacing: 0.0000
+    Pitch: 2.8000
+    Offset: 0.0000
+    Snap to grid: false
+  Type: Strap
+    Layer: metal4
+    Width: 0.4800
+    Spacing: 4.0000
+    Pitch: 49.0000
+    Offset: 2.5000
+    Snap to grid: false
+  Type: Strap
+    Layer: metal7
+    Width: 1.4000
+    Spacing: 18.6000
+    Pitch: 40.0000
+    Offset: 2.5000
+    Snap to grid: false
+Connect:
+  Connect layers metal1 -> metal4
+  Connect layers metal4 -> metal7
+Grid name: sram - dcache.data.data_arrays_0.data_arrays_0_ext.mem
+Type: Instance
+Halo:
+  Left: 0.0000
+  Bottom: 0.0000
+  Right: 0.0000
+  Top: 0.0000
