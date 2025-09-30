@@ -145,127 +145,127 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
   // GIA ops as lambdas
   // All the magic numbers are defaults from abc/src/base/abci/abc.c
   // Or from the ORFS qbc_speed script
-  std::vector<GiaOp> all_ops = {
-      [&](auto& gia) {
-        // &st
-        debugPrint(logger, RMP, "annealing", 1, "Starting rehash");
-        replaceGia(gia, Gia_ManRehash(gia, false));
-      },
+  std::vector<GiaOp> all_ops
+      = {[&](auto& gia) {
+           // &st
+           debugPrint(logger, RMP, "annealing", 1, "Starting rehash");
+           replaceGia(gia, Gia_ManRehash(gia, false));
+         },
 
-      [&](auto& gia) {
-        // &dch
-        if (!gia->pReprs) {
-          debugPrint(logger,
-                     RMP,
-                     "annealing",
-                     1,
-                     "Computing choices before equiv reduce");
-          abc::Dch_Pars_t pars = {};
-          Dch_ManSetDefaultParams(&pars);
-          replaceGia(gia, Gia_ManPerformDch(gia, &pars));
-        }
-        debugPrint(logger, RMP, "annealing", 1, "Starting equiv reduce");
-        replaceGia(gia, Gia_ManEquivReduce(gia, true, false, false, false));
-      },
+         [&](auto& gia) {
+           // &dch
+           if (!gia->pReprs) {
+             debugPrint(logger,
+                        RMP,
+                        "annealing",
+                        1,
+                        "Computing choices before equiv reduce");
+             abc::Dch_Pars_t pars = {};
+             Dch_ManSetDefaultParams(&pars);
+             replaceGia(gia, Gia_ManPerformDch(gia, &pars));
+           }
+           debugPrint(logger, RMP, "annealing", 1, "Starting equiv reduce");
+           replaceGia(gia, Gia_ManEquivReduce(gia, true, false, false, false));
+         },
 
-      [&](auto& gia) {
-        // &syn2
-        debugPrint(logger, RMP, "annealing", 1, "Starting syn2");
-        replaceGia(gia,
-                   Gia_ManAigSyn2(gia, false, true, 0, 20, 0, false, false));
-      },
+         [&](auto& gia) {
+           // &syn2
+           debugPrint(logger, RMP, "annealing", 1, "Starting syn2");
+           replaceGia(gia,
+                      Gia_ManAigSyn2(gia, false, true, 0, 20, 0, false, false));
+         },
 
-      [&](auto& gia) {
-        // &syn3
-        debugPrint(logger, RMP, "annealing", 1, "Starting syn3");
-        replaceGia(gia, Gia_ManAigSyn3(gia, false, false));
-      },
+         [&](auto& gia) {
+           // &syn3
+           debugPrint(logger, RMP, "annealing", 1, "Starting syn3");
+           replaceGia(gia, Gia_ManAigSyn3(gia, false, false));
+         },
 
-      [&](auto& gia) {
-        // &syn4
-        debugPrint(logger, RMP, "annealing", 1, "Starting syn4");
-        replaceGia(gia, Gia_ManAigSyn4(gia, false, false));
-      },
+         [&](auto& gia) {
+           // &syn4
+           debugPrint(logger, RMP, "annealing", 1, "Starting syn4");
+           replaceGia(gia, Gia_ManAigSyn4(gia, false, false));
+         },
 
-      [&](auto& gia) {
-        // &retime
-        debugPrint(logger, RMP, "annealing", 1, "Starting retime");
-        replaceGia(gia, Gia_ManRetimeForward(gia, 100, false));
-      },
+         [&](auto& gia) {
+           // &retime
+           debugPrint(logger, RMP, "annealing", 1, "Starting retime");
+           replaceGia(gia, Gia_ManRetimeForward(gia, 100, false));
+         },
 
-      [&](auto& gia) {
-        // &dc2
-        debugPrint(logger, RMP, "annealing", 1, "Starting heavy rewriting");
-        replaceGia(gia, Gia_ManCompress2(gia, true, false));
-      },
+         [&](auto& gia) {
+           // &dc2
+           debugPrint(logger, RMP, "annealing", 1, "Starting heavy rewriting");
+           replaceGia(gia, Gia_ManCompress2(gia, true, false));
+         },
 
-      [&](auto& gia) {
-        // &b
-        debugPrint(logger, RMP, "annealing", 1, "Starting &b");
-        replaceGia(gia,
-                   Gia_ManAreaBalance(gia, false, ABC_INFINITY, false, false));
-      },
+         [&](auto& gia) {
+           // &b
+           debugPrint(logger, RMP, "annealing", 1, "Starting &b");
+           replaceGia(
+               gia, Gia_ManAreaBalance(gia, false, ABC_INFINITY, false, false));
+         },
 
-      [&](auto& gia) {
-        // &b -d
-        debugPrint(logger, RMP, "annealing", 1, "Starting &b -d");
-        replaceGia(gia, Gia_ManBalance(gia, false, false, false));
-      },
+         [&](auto& gia) {
+           // &b -d
+           debugPrint(logger, RMP, "annealing", 1, "Starting &b -d");
+           replaceGia(gia, Gia_ManBalance(gia, false, false, false));
+         },
 
-      [&](auto& gia) {
-        // &false
-        debugPrint(
-            logger, RMP, "annealing", 1, "Starting false path elimination");
-        SuppressStdout nostdout;
-        replaceGia(gia, Gia_ManCheckFalse(gia, 0, 0, false, false));
-      },
+         [&](auto& gia) {
+           // &false
+           debugPrint(
+               logger, RMP, "annealing", 1, "Starting false path elimination");
+           SuppressStdout nostdout;
+           replaceGia(gia, Gia_ManCheckFalse(gia, 0, 0, false, false));
+         },
 
-      [&](auto& gia) {
-        // &reduce
-        if (!gia->pReprs) {
-          debugPrint(logger,
-                     RMP,
-                     "annealing",
-                     1,
-                     "Computing choices before equiv reduce");
-          abc::Dch_Pars_t pars = {};
-          Dch_ManSetDefaultParams(&pars);
-          replaceGia(gia, Gia_ManPerformDch(gia, &pars));
-        }
-        debugPrint(
-            logger, RMP, "annealing", 1, "Starting equiv reduce and remap");
-        replaceGia(gia, Gia_ManEquivReduceAndRemap(gia, true, false));
-      },
+         [&](auto& gia) {
+           // &reduce
+           if (!gia->pReprs) {
+             debugPrint(logger,
+                        RMP,
+                        "annealing",
+                        1,
+                        "Computing choices before equiv reduce");
+             abc::Dch_Pars_t pars = {};
+             Dch_ManSetDefaultParams(&pars);
+             replaceGia(gia, Gia_ManPerformDch(gia, &pars));
+           }
+           debugPrint(
+               logger, RMP, "annealing", 1, "Starting equiv reduce and remap");
+           replaceGia(gia, Gia_ManEquivReduceAndRemap(gia, true, false));
+         },
 
-      [&](auto& gia) {
-        // &if -g -K 6
-        if (Gia_ManHasMapping(gia)) {
-          debugPrint(logger,
-                     RMP,
-                     "annealing",
-                     1,
-                     "GIA has mapping - rehashing before mapping");
-          replaceGia(gia, Gia_ManRehash(gia, false));
-        }
-        abc::If_Par_t pars = {};
-        Gia_ManSetIfParsDefault(&pars);
-        pars.fDelayOpt = true;
-        pars.nLutSize = 6;
-        pars.fTruth = true;
-        pars.fCutMin = true;
-        pars.fExpRed = false;
-        debugPrint(logger, RMP, "annealing", 1, "Starting SOP balancing");
-        replaceGia(gia, Gia_ManPerformMapping(gia, &pars));
-      },
+         [&](auto& gia) {
+           // &if -g -K 6
+           if (Gia_ManHasMapping(gia)) {
+             debugPrint(logger,
+                        RMP,
+                        "annealing",
+                        1,
+                        "GIA has mapping - rehashing before mapping");
+             replaceGia(gia, Gia_ManRehash(gia, false));
+           }
+           abc::If_Par_t pars = {};
+           Gia_ManSetIfParsDefault(&pars);
+           pars.fDelayOpt = true;
+           pars.nLutSize = 6;
+           pars.fTruth = true;
+           pars.fCutMin = true;
+           pars.fExpRed = false;
+           debugPrint(logger, RMP, "annealing", 1, "Starting SOP balancing");
+           replaceGia(gia, Gia_ManPerformMapping(gia, &pars));
+         },
 
-      [&](auto& gia) {
-        // &synch2
-        abc::Dch_Pars_t pars = {};
-        Dch_ManSetDefaultParams(&pars);
-        pars.nBTLimit = 100;
-        debugPrint(logger, RMP, "annealing", 1, "Starting synch2");
-        replaceGia(gia, Gia_ManAigSynch2(gia, &pars, 6, 20));
-      }};
+         [&](auto& gia) {
+           // &synch2
+           abc::Dch_Pars_t pars = {};
+           Dch_ManSetDefaultParams(&pars);
+           pars.nBTLimit = 100;
+           debugPrint(logger, RMP, "annealing", 1, "Starting synch2");
+           replaceGia(gia, Gia_ManAigSynch2(gia, &pars, 6, 20));
+         }};
   /* Some ABC functions/commands that could be used, but crash in some
      permutations:
       * &nf. Call it like this:
