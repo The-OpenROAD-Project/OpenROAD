@@ -438,7 +438,6 @@ POWER_TESTS = [
     data = [
         ":MockArray_{name}".format(name = name),
     ],
-    tags = ["manual"] if name == "power_instances" else [],
 ) for name in POWER_TESTS]
 
 # FIXME why is this needed to ensure that cfg=exec of OpenSTA has runfiles?
