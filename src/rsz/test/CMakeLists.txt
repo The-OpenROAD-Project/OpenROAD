@@ -174,6 +174,7 @@ or_integration_tests(
     report_buffers_gf180
     repair_setup_vt_swap
     repair_setup_vt_swap2
+    repair_fanout7_skip_pin_swap
   PASSFAIL_TESTS
     cpp_tests
 )
