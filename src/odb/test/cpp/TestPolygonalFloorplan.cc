@@ -10,8 +10,6 @@
 #include <stdexcept>
 #include <vector>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "nangate45_test_fixture.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -30,7 +28,7 @@ TEST_F(Nangate45TestFixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)
 {
   // Arrange
   defin def_parser(db_.get(), &logger_);
-  std::vector<dbLib*> libs = {lib_.get()};
+  std::vector<dbLib*> libs = {lib_};
 
   // Act
   dbChip* chip = dbChip::create(db_.get(), lib_->getTech());
@@ -74,7 +72,7 @@ TEST_F(Nangate45TestFixture, SettingTheFloorplanTwiceClearsSystemBlockages)
 {
   // Arrange
   defin def_parser(db_.get(), &logger_);
-  std::vector<dbLib*> libs = {lib_.get()};
+  std::vector<dbLib*> libs = {lib_};
 
   // Act
   dbChip* chip = dbChip::create(db_.get(), lib_->getTech());
@@ -125,7 +123,7 @@ TEST_F(Nangate45TestFixture, DeletingSystemBlockagesThrows)
 {
   // Arrange
   defin def_parser(db_.get(), &logger_);
-  std::vector<dbLib*> libs = {lib_.get()};
+  std::vector<dbLib*> libs = {lib_};
 
   // Act
   dbChip* chip = dbChip::create(db_.get(), lib_->getTech());
@@ -155,7 +153,7 @@ TEST_F(Nangate45TestFixture, DeletingSystemObstructionsThrows)
 {
   // Arrange
   defin def_parser(db_.get(), &logger_);
-  std::vector<dbLib*> libs = {lib_.get()};
+  std::vector<dbLib*> libs = {lib_};
 
   // Act
   dbChip* chip = dbChip::create(db_.get(), lib_->getTech());
