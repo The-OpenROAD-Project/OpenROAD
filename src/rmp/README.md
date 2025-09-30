@@ -80,6 +80,7 @@ resynth_annealing
     [-seed seed]
     [-temp temp]
     [-iters iters]
+    [-revert_after revert_after]
     [-initial_ops initial_ops]
 ```
 
@@ -92,6 +93,7 @@ resynth_annealing
 | `-seed` | Seed to use for randomness in simulated annealing. |
 | `-temp` | Initial temperature for simulated annealing. The default is the required arrival time on the worst slack endpoint. |
 | `-iters` | Number of iterations to run simulated annealing for. |
+| `-revert_after` | After the given number of iterations that worsen slack, revert to best fonud solution. |
 | `-initial_ops` | Size of the initial random solution (number of commands in the script for ABC). |
 
 ## Example scripts

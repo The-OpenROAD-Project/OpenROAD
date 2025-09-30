@@ -99,33 +99,46 @@ Derived GENLIB library "asap7sc7p5t_AO_RVT_SS_nldm_211120" with 169 gates.
 [INFO RMP-0052] Resynthesis: starting simulated annealing
 [INFO RMP-0053] Initial temperature: 4.710931e-10, worst slack: -1.0941836e-10
 [INFO RMP-0054] Iteration: 10, temperature: 4.2869475e-10, best worst slack: -4.645495e-11
+[INFO RMP-0057] Reverting to the best found solution
 [INFO RMP-0054] Iteration: 20, temperature: 3.8158543e-10, best worst slack: -4.645495e-11
-[INFO RMP-0054] Iteration: 30, temperature: 3.3447609e-10, best worst slack: -4.645495e-11
-[INFO RMP-0054] Iteration: 40, temperature: 2.873668e-10, best worst slack: -4.645495e-11
-[INFO RMP-0054] Iteration: 50, temperature: 2.4025748e-10, best worst slack: -4.645495e-11
-[INFO RMP-0054] Iteration: 60, temperature: 1.9314818e-10, best worst slack: 7.46139e-11
-[INFO RMP-0054] Iteration: 70, temperature: 1.4603886e-10, best worst slack: 9.330073e-11
-[INFO RMP-0054] Iteration: 80, temperature: 9.892955e-11, best worst slack: 9.330073e-11
-[INFO RMP-0054] Iteration: 90, temperature: 5.1820243e-11, best worst slack: 9.330073e-11
-[INFO RMP-0054] Iteration: 100, temperature: 4.710931e-12, best worst slack: 9.330073e-11
+[INFO RMP-0057] Reverting to the best found solution
+[INFO RMP-0054] Iteration: 30, temperature: 3.3447609e-10, best worst slack: 1.0340384e-10
+[INFO RMP-0057] Reverting to the best found solution
+[INFO RMP-0057] Reverting to the best found solution
+[INFO RMP-0054] Iteration: 40, temperature: 2.873668e-10, best worst slack: 1.0340384e-10
+[INFO RMP-0057] Reverting to the best found solution
+[INFO RMP-0057] Reverting to the best found solution
+[INFO RMP-0054] Iteration: 50, temperature: 2.4025748e-10, best worst slack: 1.0340384e-10
+[INFO RMP-0057] Reverting to the best found solution
+[INFO RMP-0054] Iteration: 60, temperature: 1.9314818e-10, best worst slack: 1.0340384e-10
+[INFO RMP-0057] Reverting to the best found solution
+[INFO RMP-0057] Reverting to the best found solution
+[INFO RMP-0054] Iteration: 70, temperature: 1.4603886e-10, best worst slack: 1.0359913e-10
+[INFO RMP-0057] Reverting to the best found solution
+[INFO RMP-0054] Iteration: 80, temperature: 9.892955e-11, best worst slack: 1.3306825e-10
+[INFO RMP-0057] Reverting to the best found solution
+[INFO RMP-0054] Iteration: 90, temperature: 5.1820243e-11, best worst slack: 1.4056589e-10
+[INFO RMP-0057] Reverting to the best found solution
+[INFO RMP-0057] Reverting to the best found solution
+[INFO RMP-0054] Iteration: 100, temperature: 4.710931e-12, best worst slack: 1.4056589e-10
 [INFO RMP-0055] Resynthesis: End of simulated annealing, applying operations
 [INFO RMP-0056] Resynthesis: Applying ABC operations
-[-207.989, -160.733): ************************************************** (19)
-[-160.733, -113.478): ******************************** (12)
-[-113.478,  -66.222): ************************ (9)
-[ -66.222,  -18.967): *********** (4)
-[ -18.967,   28.289): ******** (3)
-[  28.289,   75.544):  (0)
-[  75.544,  122.800): ***** (2)
-[ 122.800,  170.055): *** (1)
-[ 170.055,  217.311): ***** (2)
-[ 217.311,  264.567]: *** (1)
+[-98.726, -62.245): ************************************************** (35)
+[-62.245, -25.764): ********** (7)
+[-25.764,  10.717): **** (3)
+[ 10.717,  47.198):  (0)
+[ 47.198,  83.679): * (1)
+[ 83.679, 120.160): *** (2)
+[120.160, 156.641): **** (3)
+[156.641, 193.122): * (1)
+[193.122, 229.603):  (0)
+[229.603, 266.084]: * (1)
 Cell type report:                       Count       Area
-  Inverter                                 52       2.27
+  Inverter                                 73       3.66
   Sequential cell                          35      10.21
-  Multi-Input combinational cell          297      21.80
-  Total                                   384      34.28
-Startpoint: dpath/a_lt_b$in1[0]$_DFFE_PP_
+  Multi-Input combinational cell          383      28.11
+  Total                                   491      41.98
+Startpoint: dpath/a_lt_b$in0[8]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: dpath/a_lt_b$in1[10]$_DFFE_PP_
           (rising edge-triggered flip-flop clocked by core_clock)
@@ -137,44 +150,36 @@ Corner: slow
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ dpath/a_lt_b$in1[0]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
-  70.31   70.31 ^ dpath/a_lt_b$in1[0]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_R)
-  21.89   92.20 v cut_59401/Y (INVx1_ASAP7_75t_R)
-  24.35  116.55 ^ _421_/CON (HAxp5_ASAP7_75t_R)
-  25.49  142.04 v cut_59535/Y (INVx1_ASAP7_75t_R)
-  42.29  184.33 ^ _420_/CON (FAx1_ASAP7_75t_R)
-  22.75  207.07 v cut_59368/Y (NAND2xp33_ASAP7_75t_R)
-  22.56  229.63 ^ cut_59369/Y (NAND2xp33_ASAP7_75t_R)
-  18.31  247.94 v cut_59371/Y (NAND2xp33_ASAP7_75t_R)
-  26.61  274.55 ^ cut_59372/Y (NAND2xp5_ASAP7_75t_R)
-  22.28  296.83 v cut_59374/Y (NAND2xp5_ASAP7_75t_R)
-  30.19  327.02 ^ cut_59375/Y (NAND2xp33_ASAP7_75t_R)
-  33.31  360.33 v cut_59376/Y (NAND2xp33_ASAP7_75t_R)
-  21.94  382.27 ^ cut_59377/Y (NAND2xp5_ASAP7_75t_R)
-  23.64  405.91 v cut_59385/Y (NAND2xp5_ASAP7_75t_R)
-  28.30  434.21 ^ cut_59386/Y (NAND2x1p5_ASAP7_75t_R)
-  23.04  457.24 v cut_59387/Y (NAND2x1_ASAP7_75t_R)
-  45.66  502.90 v cut_59408/Y (AND2x4_ASAP7_75t_R)
-  66.21  569.11 ^ cut_59409/Y (NAND2x2_ASAP7_75t_R)
-  39.74  608.85 v cut_59474/Y (NOR2xp33_ASAP7_75t_R)
-  22.89  631.74 ^ cut_59475/Y (NOR2xp33_ASAP7_75t_R)
-  20.50  652.23 v cut_59477/Y (NAND2xp33_ASAP7_75t_R)
-  26.03  678.27 ^ cut_59479/Y (NAND2xp33_ASAP7_75t_R)
-   0.00  678.27 ^ dpath/a_lt_b$in1[10]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
-         678.27   data arrival time
+   0.00    0.00 ^ dpath/a_lt_b$in0[8]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
+  75.55   75.55 ^ dpath/a_lt_b$in0[8]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_R)
+  21.58   97.13 v cut_65225/Y (INVx1_ASAP7_75t_R)
+ 137.55  234.69 v _429_/SN (HAxp5_ASAP7_75t_R)
+  22.14  256.82 ^ cut_64992/Y (NOR2x1p5_ASAP7_75t_R)
+  38.87  295.69 v cut_64994/Y (NOR2xp33_ASAP7_75t_R)
+  31.96  327.65 ^ cut_64995/Y (NOR2x1_ASAP7_75t_R)
+  24.98  352.63 v cut_64996/Y (NOR2x1_ASAP7_75t_R)
+  28.11  380.74 ^ cut_64997/Y (NAND2xp5_ASAP7_75t_R)
+  28.54  409.28 v cut_65020/Y (NOR2x1p5_ASAP7_75t_R)
+  32.03  441.31 ^ cut_65021/Y (NOR2x2_ASAP7_75t_R)
+  17.62  458.92 v cut_65036/Y (NAND2x1p5_ASAP7_75t_R)
+  58.46  517.38 ^ cut_65037/Y (NAND2x1_ASAP7_75t_R)
+  25.10  542.49 v cut_65088/Y (NAND2xp33_ASAP7_75t_R)
+  26.42  568.91 ^ cut_65089/Y (NAND2xp33_ASAP7_75t_R)
+   0.00  568.91 ^ dpath/a_lt_b$in1[10]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
+         568.91   data arrival time
 
  500.00  500.00   clock core_clock (rise edge)
    0.00  500.00   clock network delay (ideal)
    0.00  500.00   clock reconvergence pessimism
          500.00 ^ dpath/a_lt_b$in1[10]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
- -29.72  470.28   library setup time
-         470.28   data required time
+ -29.82  470.18   library setup time
+         470.18   data required time
 ---------------------------------------------------------
-         470.28   data required time
-        -678.27   data arrival time
+         470.18   data required time
+        -568.91   data arrival time
 ---------------------------------------------------------
-        -207.99   slack (VIOLATED)
+         -98.73   slack (VIOLATED)
 
 
-wns max -207.99
-tns max -6392.07
+wns max -98.73
+tns max -3434.68

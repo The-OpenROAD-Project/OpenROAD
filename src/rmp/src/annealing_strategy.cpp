@@ -381,10 +381,19 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
 
   float best_worst_slack = worst_slack;
   auto best_ops = ops;
+  size_t worse_iters = 0;
 
   for (unsigned i = 0; i < iterations_; i++) {
     float current_temp
         = *temperature_ * (static_cast<float>(iterations_ - i) / iterations_);
+
+    if (revert_after_ && worse_iters >= *revert_after_) {
+      logger->info(RMP, 57, "Reverting to the best found solution");
+      ops = best_ops;
+      worst_slack = best_worst_slack;
+      worse_iters = 0;
+    }
+
     if (i > 0 && (i + 1) % 10 == 0) {
       logger->info(RMP,
                    54,
@@ -420,6 +429,12 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
     sta->worstSlack(corner_, sta::MinMax::max(), worst_slack_new, worst_vertex);
 
     odb::dbDatabase::undoEco(block);
+
+    if (worst_slack_new < best_worst_slack) {
+      worse_iters++;
+    } else {
+      worse_iters = 0;
+    }
 
     if (worst_slack_new < worst_slack) {
       float accept_prob

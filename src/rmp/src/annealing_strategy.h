@@ -24,11 +24,13 @@ class AnnealingStrategy : public ResynthesisStrategy
                              std::optional<uint64_t> seed,
                              std::optional<float> temperature,
                              unsigned iterations,
+                             std::optional<unsigned> revert_after,
                              unsigned initial_ops)
       : corner_(corner),
         slack_threshold_(slack_threshold),
         temperature_(temperature),
         iterations_(iterations),
+        revert_after_(revert_after),
         initial_ops_(initial_ops)
   {
     if (seed) {
@@ -52,6 +54,7 @@ class AnnealingStrategy : public ResynthesisStrategy
   sta::Slack slack_threshold_;
   std::optional<float> temperature_;
   unsigned iterations_;
+  std::optional<unsigned> revert_after_;
   unsigned initial_ops_;
   std::mt19937 random_;
 };

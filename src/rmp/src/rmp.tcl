@@ -121,12 +121,13 @@ sta::define_cmd_args "resynth_annealing" {
                                             [-seed seed]
                                             [-temp temp]
                                             [-iters iters]
+                                            [-revert_after revert_after]
                                             [-initial_ops initial_ops]
                                           }
 
 proc resynth_annealing { args } {
   sta::parse_key_args "resynth_annealing" args \
-    keys {-corner -iters -seed -temp -initial_ops -slack_threshold} \
+    keys {-corner -iters -revert_after -seed -temp -initial_ops -slack_threshold} \
     flags {}
 
   set corner [sta::parse_corner keys]
@@ -141,6 +142,9 @@ proc resynth_annealing { args } {
   }
   if { [info exists keys(-iters)] } {
     rmp::set_annealing_iters $keys(-iters)
+  }
+  if { [info exists keys(-revert_after)] } {
+    rmp::set_annealing_revert_after $keys(-revert_after)
   }
   if { [info exists keys(-initial_ops)] } {
     rmp::set_annealing_initial_ops $keys(-initial_ops)

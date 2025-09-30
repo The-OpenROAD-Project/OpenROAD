@@ -67,6 +67,12 @@ set_annealing_iters(int annealing_iters)
 }
 
 void
+set_annealing_revert_after(int annealing_revert_after)
+{
+  getRestructure()->setAnnealingRevertAfter(annealing_revert_after);
+}
+
+void
 set_annealing_initial_ops(int set_annealing_initial_ops)
 {
   getRestructure()->setAnnealingInitialOps(set_annealing_initial_ops);

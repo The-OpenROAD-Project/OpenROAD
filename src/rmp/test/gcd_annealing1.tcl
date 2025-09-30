@@ -28,7 +28,7 @@ report_tns
 
 puts "-- After --\n"
 
-resynth_annealing -corner fast
+resynth_annealing -corner fast -revert_after 5
 report_timing_histogram
 report_cell_usage
 report_checks

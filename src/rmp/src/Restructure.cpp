@@ -95,6 +95,7 @@ void Restructure::resynthAnnealing(sta::Corner* corner)
                                        annealing_seed_,
                                        annealing_temp_,
                                        annealing_iters_,
+                                       annealing_revert_after_,
                                        annealing_init_ops_);
   annealing_strategy.OptimizeDesign(
       open_sta_, name_generator_, resizer_, logger_);
