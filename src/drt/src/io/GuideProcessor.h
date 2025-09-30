@@ -64,7 +64,7 @@ class GuideProcessor
                                  frCoord& GCELLOFFSETX,
                                  frCoord& GCELLOFFSETY);
 
-  std::vector<std::pair<frBlockObject*, Point>> genGuides(
+  std::vector<std::pair<frBlockObject*, odb::Point>> genGuides(
       frNet* net,
       std::vector<frRect> rects);
   void genGuides_addCoverGuide(frNet* net, std::vector<frRect>& rects);
@@ -306,7 +306,7 @@ class GuidePathFinder
    * @param pin_gcell_map A map of pins and their corresponding GCell indices.
    * @returns A vector of pin-gcell pair to be updated.
    */
-  std::vector<std::pair<frBlockObject*, Point>> commitPathToGuides(
+  std::vector<std::pair<frBlockObject*, odb::Point>> commitPathToGuides(
       std::vector<frRect>& rects,
       const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
 
@@ -416,7 +416,7 @@ class GuidePathFinder
    * @param pin_to_gcell A vector mapping pins to their GCell locations.
    * @returns A vector of pin-to-gcell pairs to be updated.
    */
-  std::vector<std::pair<frBlockObject*, Point>> getGRPins(
+  std::vector<std::pair<frBlockObject*, odb::Point>> getGRPins(
       const std::vector<frBlockObject*>& pins,
       const std::vector<std::vector<Point3D>>& pin_to_gcell) const;
   /**

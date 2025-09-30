@@ -13,6 +13,7 @@
 
 #include "boost/operators.hpp"
 #include "dpl/Opendp.h"
+#include "odb/geom.h"
 
 namespace dpl {
 
@@ -140,12 +141,12 @@ struct GridRect
   GridY yhi;
   GridRect intersect(const GridRect& r) const;
   GridPt closestPtInside(GridPt pt) const;
-  Rect toRect() const;
+  odb::Rect toRect() const;
 };
 
-inline Rect GridRect::toRect() const
+inline odb::Rect GridRect::toRect() const
 {
-  return Rect(xlo.v, ylo.v, xhi.v, yhi.v);
+  return odb::Rect(xlo.v, ylo.v, xhi.v, yhi.v);
 }
 
 inline GridPt GridRect::closestPtInside(GridPt pt) const
@@ -174,7 +175,7 @@ struct DbuPt
 
 struct DbuRect
 {
-  DbuRect(const Rect& rect)
+  DbuRect(const odb::Rect& rect)
       : xl(rect.xMin()), yl(rect.yMin()), xh(rect.xMax()), yh(rect.yMax())
   {
   }

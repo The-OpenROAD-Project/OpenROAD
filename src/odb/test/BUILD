@@ -1,3 +1,5 @@
+load("@openroad_rules_python//python:defs.bzl", "py_library", "py_test")
+
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 load("//test:regression.bzl", "regression_test")
@@ -7,7 +9,7 @@ py_library(
     srcs = [
         "helper.py",
     ],
-    imports = ["."]
+    imports = ["."],
 )
 
 py_library(
@@ -15,9 +17,8 @@ py_library(
     srcs = [
         "odbUnitTest.py",
     ],
-    imports = ["."]
+    imports = ["."],
 )
-
 
 py_test(
     name = "test_block",
@@ -25,11 +26,11 @@ py_test(
         "test_block.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 py_test(
@@ -38,11 +39,11 @@ py_test(
         "test_bterm.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 py_test(
@@ -51,11 +52,11 @@ py_test(
         "test_destroy.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 py_test(
@@ -64,11 +65,11 @@ py_test(
         "test_group.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 py_test(
@@ -77,11 +78,11 @@ py_test(
         "test_inst.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 py_test(
@@ -90,11 +91,11 @@ py_test(
         "test_iterm.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 py_test(
@@ -103,11 +104,11 @@ py_test(
         "test_module.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 py_test(
@@ -116,11 +117,11 @@ py_test(
         "test_net.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
 
 py_test(
@@ -129,28 +130,12 @@ py_test(
         "test_wire_codec.py",
     ],
     deps = [
-        "//src/odb:odb_py",
-        "//openroad:openroadpy",
-        ":odbUnitTest",
         ":helper",
-    ]
+        ":odbUnitTest",
+        "//openroad:openroadpy",
+        "//src/odb:odb_py",
+    ],
 )
-
-PASSFAIL_TESTS = [
-    # FIXME not supported yet
-    # "cpp_tests",
-    "dump_netlists",
-    "dump_netlists_withfill",
-    "test_block",
-    "test_bterm",
-    "test_destroy",
-    "test_group",
-    "test_inst",
-    "test_iterm",
-    "test_module",
-    "test_net",
-    "test_wire_codec",
-]
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
@@ -188,6 +173,8 @@ COMPULSORY_TESTS = [
     "ndr",
     "polygon",
     "read_abstract_lef",
+    "read_3dbv",
+    "read_3dbx",
     "read_db",
     "read_def",
     "read_def58",
@@ -273,6 +260,8 @@ filegroup(
         "data/design.def.gz",
         "data/design.odb",
         "data/design58.def",
+        "data/example.3dbv",
+        "data/example.3dbx",
         "data/floorplan_initialize.def",
         "data/floorplan_initialize.v",
         "data/floorplan_initialize2.def",
@@ -336,17 +325,17 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
-            "read_abstract_lef": [
-                "gcd_abstract_lef.lefok",
-            ],
-            "replace_hier_mod4": [
-                "gcd_abstract_lef.lefok",
-            ],
             "dump_netlists": [
                 "dump_netlists_cdl.ok",
             ],
             "dump_netlists_withfill": [
                 "dump_netlists_withfill_cdl.ok",
+            ],
+            "read_abstract_lef": [
+                "gcd_abstract_lef.lefok",
+            ],
+            "replace_hier_mod4": [
+                "gcd_abstract_lef.lefok",
             ],
         }.get(
             test_name,

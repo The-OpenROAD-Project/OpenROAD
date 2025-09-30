@@ -15,6 +15,7 @@
 #include "db/grObj/grVia.h"
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frNet;
@@ -82,7 +83,7 @@ class grNet : public grBlockObject
   bool isModified() const { return modified_; }
   int getNumOverConGCells() const { return numOverConGCells_; }
   int getNumPinsIn() const { return numPinsIn_; }
-  Rect getPinBox() { return pinBox_; }
+  odb::Rect getPinBox() { return pinBox_; }
   bool isRipup() const { return ripup_; }
   int getNumReroutes() const { return numReroutes_; }
   bool isInQueue() const { return inQueue_; }
@@ -155,7 +156,7 @@ class grNet : public grBlockObject
   void setNumOverConGCell(int in) { numOverConGCells_ = in; }
   void setNumPinsIn(int in) { numPinsIn_ = in; }
   void setAllowRipup(bool in) { allowRipup_ = in; }
-  void setPinBox(const Rect& in) { pinBox_ = in; }
+  void setPinBox(const odb::Rect& in) { pinBox_ = in; }
   void setRipup(bool in) { ripup_ = in; }
   void addNumReroutes() { numReroutes_++; }
   void resetNumReroutes() { numReroutes_ = 0; }
@@ -207,7 +208,7 @@ class grNet : public grBlockObject
   int numOverConGCells_{0};
   int numPinsIn_{0};
   bool allowRipup_{true};
-  Rect pinBox_;
+  odb::Rect pinBox_;
   bool ripup_{false};
 
   int numReroutes_{0};

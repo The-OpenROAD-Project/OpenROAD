@@ -27,6 +27,7 @@
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 #include "util/journal.h"
 #include "utl/Logger.h"
 // #define ODP_DEBUG
@@ -108,10 +109,10 @@ void Opendp::prePlace()
     if (cell->getType() != Node::CELL) {
       continue;
     }
-    const Rect* group_rect = nullptr;
+    const odb::Rect* group_rect = nullptr;
     if (!cell->inGroup() && !cell->isPlaced()) {
       for (auto& group : arch_->getRegions()) {
-        for (const Rect& rect : group->getRects()) {
+        for (const odb::Rect& rect : group->getRects()) {
           if (checkOverlap(cell.get(), rect)) {
             group_rect = &rect;
           }
@@ -192,8 +193,8 @@ void Opendp::prePlaceGroups()
       if (!cell->isFixed() && !cell->isPlaced()) {
         int dist = numeric_limits<int>::max();
         bool in_group = false;
-        const Rect* nearest_rect = nullptr;
-        for (const Rect& rect : group->getRects()) {
+        const odb::Rect* nearest_rect = nullptr;
+        for (const odb::Rect& rect : group->getRects()) {
           if (isInside(cell, rect)) {
             in_group = true;
           }
@@ -218,7 +219,7 @@ void Opendp::prePlaceGroups()
   }
 }
 
-bool Opendp::isInside(const Node* cell, const Rect& rect) const
+bool Opendp::isInside(const Node* cell, const odb::Rect& rect) const
 {
   const DbuPt init = initialLocation(cell, false);
   const DbuX x = init.x;
@@ -227,7 +228,7 @@ bool Opendp::isInside(const Node* cell, const Rect& rect) const
          && y >= rect.yMin() && y + cell->getHeight() <= rect.yMax();
 }
 
-int Opendp::distToRect(const Node* cell, const Rect& rect) const
+int Opendp::distToRect(const Node* cell, const odb::Rect& rect) const
 {
   const DbuPt init = initialLocation(cell, true);
   const DbuX x = init.x;
@@ -253,7 +254,7 @@ int Opendp::distToRect(const Node* cell, const Rect& rect) const
 class CellPlaceOrderLess
 {
  public:
-  explicit CellPlaceOrderLess(const Rect& core);
+  explicit CellPlaceOrderLess(const odb::Rect& core);
   bool operator()(const Node* cell1, const Node* cell2) const;
 
  private:
@@ -263,7 +264,7 @@ class CellPlaceOrderLess
   const int center_y_;
 };
 
-CellPlaceOrderLess::CellPlaceOrderLess(const Rect& core)
+CellPlaceOrderLess::CellPlaceOrderLess(const odb::Rect& core)
     : center_x_((core.xMin() + core.xMax()) / 2),
       center_y_((core.yMin() + core.yMax()) / 2)
 {
@@ -397,7 +398,7 @@ void Opendp::placeGroups2()
 // Place cells in group toward edges.
 void Opendp::brickPlace1(const Group* group)
 {
-  const Rect& boundary = group->getBBox();
+  const odb::Rect& boundary = group->getBBox();
   vector<Node*> sorted_cells(group->getCells());
 
   sort(sorted_cells.begin(), sorted_cells.end(), [&](Node* cell1, Node* cell2) {
@@ -419,7 +420,7 @@ void Opendp::brickPlace1(const Group* group)
 }
 
 void Opendp::rectDist(const Node* cell,
-                      const Rect& rect,
+                      const odb::Rect& rect,
                       // Return values.
                       int* x,
                       int* y) const
@@ -441,7 +442,7 @@ void Opendp::rectDist(const Node* cell,
   }
 }
 
-int Opendp::rectDist(const Node* cell, const Rect& rect) const
+int Opendp::rectDist(const Node* cell, const odb::Rect& rect) const
 {
   int x, y;
   rectDist(cell, rect, &x, &y);
@@ -952,7 +953,7 @@ GridPt Opendp::legalGridPt(const Node* cell, const DbuPt& pt) const
 
 DbuPt Opendp::nearestBlockEdge(const Node* cell,
                                const DbuPt& legal_pt,
-                               const Rect& block_bbox) const
+                               const odb::Rect& block_bbox) const
 {
   const DbuX legal_x = legal_pt.x;
   const DbuY legal_y = legal_pt.y;
@@ -1056,7 +1057,7 @@ void Opendp::convertDbToCell(dbInst* db_inst, Node& cell)
 {
   cell.setType(Node::CELL);
   cell.setDbInst(db_inst);
-  Rect bbox = getBbox(db_inst);
+  odb::Rect bbox = getBbox(db_inst);
   cell.setWidth(DbuX{bbox.dx()});
   cell.setHeight(DbuY{bbox.dy()});
   cell.setLeft(DbuX{bbox.xMin()});
@@ -1068,10 +1069,10 @@ DbuPt Opendp::pointOffMacro(const Node& cell)
 {
   // Get cell position
   const DbuPt init = initialLocation(&cell, false);
-  const Rect bbox(init.x.v,
-                  init.y.v,
-                  init.x.v + cell.getWidth().v,
-                  init.y.v + cell.getHeight().v);
+  const odb::Rect bbox(init.x.v,
+                       init.y.v,
+                       init.x.v + cell.getWidth().v,
+                       init.y.v + cell.getHeight().v);
 
   const GridRect grid_box = grid_->gridCovering(bbox);
 
@@ -1093,10 +1094,10 @@ DbuPt Opendp::pointOffMacro(const Node& cell)
 
   if (block && block->isBlock()) {
     // Get new legal position
-    const Rect block_bbox(block->getLeft().v,
-                          block->getBottom().v,
-                          block->getLeft().v + block->getWidth().v,
-                          block->getBottom().v + block->getHeight().v);
+    const odb::Rect block_bbox(block->getLeft().v,
+                               block->getBottom().v,
+                               block->getLeft().v + block->getWidth().v,
+                               block->getBottom().v + block->getHeight().v);
     return nearestBlockEdge(&cell, init, block_bbox);
   }
   return init;
@@ -1171,10 +1172,10 @@ DbuPt Opendp::legalPt(const Node* cell, const bool padded) const
     // edge strategy.  This doesn't consider site availability at the
     // end used so it is secondary.
     if (block && block->isBlock()) {
-      const Rect block_bbox(block->getLeft().v,
-                            block->getBottom().v,
-                            block->getLeft().v + block->getWidth().v,
-                            block->getBottom().v + block->getHeight().v);
+      const odb::Rect block_bbox(block->getLeft().v,
+                                 block->getBottom().v,
+                                 block->getLeft().v + block->getWidth().v,
+                                 block->getBottom().v + block->getHeight().v);
       if ((legal_pt.x + cell->getWidth()) >= block_bbox.xMin()
           && legal_pt.x <= block_bbox.xMax()
           && (legal_pt.y + cell->getHeight()) >= block_bbox.yMin()

@@ -13,6 +13,7 @@
 #include "ord/OpenRoad.hh"
 #include "sta/Corner.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Units.hh"
 
 namespace ord {

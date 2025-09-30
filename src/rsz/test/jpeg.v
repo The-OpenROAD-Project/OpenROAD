@@ -16618,7 +16618,7 @@ endmodule
 (* top =  1  *)
 (* dynports =  1  *)
 (* hdlname = "jpeg_encoder" *)
-module jpeg_encoder(clk, ena, rst, dstrb, din, qnt_val, qnt_cnt, size, rlen, amp, douten);
+module jpeg_encoder(clk, ena, rst, unused, dstrb, din, qnt_val, qnt_cnt, size, rlen, amp, douten);
   (* force_downto = 32'b00000000000000000000000000000001 *)
   (* src = "./platforms/gf180/cells_adders.v:6.28-6.29" *)
   wire _00000_;
@@ -36386,6 +36386,8 @@ module jpeg_encoder(clk, ena, rst, dstrb, din, qnt_val, qnt_cnt, size, rlen, amp
   (* src = "/home/cmoon/ORFS/OpenROAD-flow-scripts/flow/designs/src/jpeg/jpeg_encoder.v:134.8-134.11" *)
   input clk;
   wire clk;
+  input unused;
+  wire unused;
   (* src = "/home/cmoon/ORFS/OpenROAD-flow-scripts/flow/designs/src/jpeg/jpeg_encoder.v:205.14-205.25" *)
   wire dc_diff_doe;
   (* src = "/home/cmoon/ORFS/OpenROAD-flow-scripts/flow/designs/src/jpeg/jpeg_encoder.v:139.23-139.26" *)

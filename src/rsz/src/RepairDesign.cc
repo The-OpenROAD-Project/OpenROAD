@@ -19,23 +19,32 @@
 #include "BufferedNet.hh"
 #include "ResizerObserver.hh"
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/Corner.hh"
+#include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
 #include "sta/RiseFallValues.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
+#include "sta/TimingArc.hh"
+#include "sta/TimingRole.hh"
 #include "sta/Units.hh"
+#include "sta/Vector.hh"
+#include "utl/Logger.h"
 #include "utl/mem_stats.h"
 #include "utl/scope.h"
 
@@ -1704,7 +1713,7 @@ void RepairDesign::repairNetLoad(
 
 LoadRegion::LoadRegion() = default;
 
-LoadRegion::LoadRegion(PinSeq& pins, Rect& bbox) : pins_(pins), bbox_(bbox)
+LoadRegion::LoadRegion(PinSeq& pins, odb::Rect& bbox) : pins_(pins), bbox_(bbox)
 {
 }
 
@@ -1713,7 +1722,7 @@ LoadRegion RepairDesign::findLoadRegions(const Net* net,
                                          int max_fanout)
 {
   PinSeq loads = findLoads(drvr_pin);
-  Rect bbox = findBbox(loads);
+  odb::Rect bbox = findBbox(loads);
   LoadRegion region(loads, bbox);
   if (graphics_) {
     odb::dbNet* db_net = db_network_->staToDb(net);
@@ -1740,13 +1749,13 @@ void RepairDesign::subdivideRegion(LoadRegion& region, int max_fanout)
     bool horz_partition;
     odb::Line cut;
     if (region.bbox_.dx() > region.bbox_.dy()) {
-      region.regions_[0].bbox_ = Rect(x_min, y_min, x_mid, y_max);
-      region.regions_[1].bbox_ = Rect(x_mid, y_min, x_max, y_max);
+      region.regions_[0].bbox_ = odb::Rect(x_min, y_min, x_mid, y_max);
+      region.regions_[1].bbox_ = odb::Rect(x_mid, y_min, x_max, y_max);
       cut = odb::Line{x_mid, y_min, x_mid, y_max};
       horz_partition = true;
     } else {
-      region.regions_[0].bbox_ = Rect(x_min, y_min, x_max, y_mid);
-      region.regions_[1].bbox_ = Rect(x_min, y_mid, x_max, y_max);
+      region.regions_[0].bbox_ = odb::Rect(x_min, y_min, x_max, y_mid);
+      region.regions_[1].bbox_ = odb::Rect(x_min, y_mid, x_max, y_max);
       horz_partition = false;
       cut = odb::Line{x_min, y_mid, x_max, y_mid};
     }
@@ -1853,7 +1862,7 @@ void RepairDesign::makeRegionRepeaters(LoadRegion& region,
 
 void RepairDesign::makeFanoutRepeater(PinSeq& repeater_loads,
                                       PinSeq& repeater_inputs,
-                                      const Rect& bbox,
+                                      const odb::Rect& bbox,
                                       const Point& loc,
                                       bool check_slew,
                                       bool check_cap,
@@ -1900,13 +1909,13 @@ void RepairDesign::makeFanoutRepeater(PinSeq& repeater_loads,
   repeater_loads.clear();
 }
 
-Rect RepairDesign::findBbox(PinSeq& pins)
+odb::Rect RepairDesign::findBbox(PinSeq& pins)
 {
-  Rect bbox;
+  odb::Rect bbox;
   bbox.mergeInit();
   for (const Pin* pin : pins) {
     Point loc = db_network_->location(pin);
-    Rect r(loc.x(), loc.y(), loc.x(), loc.y());
+    odb::Rect r(loc.x(), loc.y(), loc.x(), loc.y());
     bbox.merge(r);
   }
   return bbox;

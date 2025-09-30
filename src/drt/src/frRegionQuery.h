@@ -9,15 +9,10 @@
 
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
-namespace odb {
-class Point;
-class Rect;
-}  // namespace odb
-
 namespace drt {
-using odb::Rect;
 class frBlockObject;
 class frDesign;
 class frGuide;
@@ -58,41 +53,44 @@ class frRegionQuery
   void query(const box_t& boostb,
              frLayerNum layerNum,
              Objects<frBlockObject>& result) const;
-  void query(const Rect& box,
+  void query(const odb::Rect& box,
              frLayerNum layerNum,
              Objects<frBlockObject>& result) const;
-  void queryGuide(const Rect& box,
+  void queryGuide(const odb::Rect& box,
                   frLayerNum layerNum,
                   Objects<frGuide>& result) const;
-  void queryGuide(const Rect& box,
+  void queryGuide(const odb::Rect& box,
                   frLayerNum layerNum,
                   std::vector<frGuide*>& result) const;
-  void queryGuide(const Rect& box, std::vector<frGuide*>& result) const;
-  void queryOrigGuide(const Rect& box,
+  void queryGuide(const odb::Rect& box, std::vector<frGuide*>& result) const;
+  void queryOrigGuide(const odb::Rect& box,
                       frLayerNum layerNum,
                       Objects<frNet>& result) const;
-  void queryRPin(const Rect& box,
+  void queryRPin(const odb::Rect& box,
                  frLayerNum layerNum,
                  Objects<frRPin>& result) const;
-  void queryGRPin(const Rect& box, std::vector<frBlockObject*>& result) const;
+  void queryGRPin(const odb::Rect& box,
+                  std::vector<frBlockObject*>& result) const;
   void queryDRObj(const box_t& boostb,
                   frLayerNum layerNum,
                   Objects<frBlockObject>& result) const;
-  void queryDRObj(const Rect& box,
+  void queryDRObj(const odb::Rect& box,
                   frLayerNum layerNum,
                   Objects<frBlockObject>& result) const;
-  void queryDRObj(const Rect& box,
+  void queryDRObj(const odb::Rect& box,
                   frLayerNum layerNum,
                   std::vector<frBlockObject*>& result) const;
-  void queryDRObj(const Rect& box, std::vector<frBlockObject*>& result) const;
-  void queryGRObj(const Rect& box,
+  void queryDRObj(const odb::Rect& box,
+                  std::vector<frBlockObject*>& result) const;
+  void queryGRObj(const odb::Rect& box,
                   frLayerNum layerNum,
                   Objects<grBlockObject>& result) const;
-  void queryGRObj(const Rect& box, std::vector<grBlockObject*>& result) const;
-  void queryMarker(const Rect& box,
+  void queryGRObj(const odb::Rect& box,
+                  std::vector<grBlockObject*>& result) const;
+  void queryMarker(const odb::Rect& box,
                    frLayerNum layerNum,
                    std::vector<frMarker*>& result) const;
-  void queryMarker(const Rect& box, std::vector<frMarker*>& result) const;
+  void queryMarker(const odb::Rect& box, std::vector<frMarker*>& result) const;
 
   void clearGuides();
   void removeDRObj(frShape* shape);
@@ -122,7 +120,8 @@ class frRegionQuery
   std::unique_ptr<Impl> impl_;
 
   frRegionQuery();
-  std::vector<std::pair<frBlockObject*, Rect>> getVias(frLayerNum layer_num);
+  std::vector<std::pair<frBlockObject*, odb::Rect>> getVias(
+      frLayerNum layer_num);
 
   friend class FlexDR;
 };

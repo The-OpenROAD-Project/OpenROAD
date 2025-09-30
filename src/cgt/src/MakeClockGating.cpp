@@ -3,7 +3,6 @@
 
 #include "cgt/MakeClockGating.h"
 
-#include "cgt/ClockGating.h"
 #include "utl/decode.h"
 
 extern "C" {
@@ -14,24 +13,10 @@ namespace cgt {
 
 extern const char* cgt_tcl_inits[];
 
-ClockGating* makeClockGating()
-{
-  return new ClockGating();
-}
-
-void initClockGating(ClockGating* const cgt,
-                     Tcl_Interp* const tcl_interp,
-                     utl::Logger* const logger,
-                     sta::dbSta* const sta)
+void initClockGating(Tcl_Interp* const tcl_interp)
 {
   Cgt_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, cgt::cgt_tcl_inits);
-  cgt->init(logger, sta);
-}
-
-void deleteClockGating(cgt::ClockGating* const clock_gating)
-{
-  delete clock_gating;
 }
 
 }  // namespace cgt

@@ -98,7 +98,7 @@ void Grid::markHopeless(dbBlock* block,
   gtl::polygon_90_set_data<int> hopeless;
   hopeless += gtl::rectangle_data<int>{0, 0, row_site_count_.v, row_count_.v};
 
-  const Rect core = getCore();
+  const odb::Rect core = getCore();
 
   // Fragmented row support; mark valid sites.
   visitDbRows(block, [&](odb::dbRow* db_row) {
@@ -138,7 +138,7 @@ void Grid::markHopeless(dbBlock* block,
 
 void Grid::markBlocked(dbBlock* block)
 {
-  const Rect core = getCore();
+  const odb::Rect core = getCore();
   auto addBlockedLayers
       = [&](odb::Rect wire_rect, odb::dbTechLayer* tech_layer) {
           if (tech_layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
@@ -186,7 +186,7 @@ void Grid::markBlocked(dbBlock* block)
     if (blockage->isSoft()) {
       continue;
     }
-    Rect bbox = blockage->getBBox()->getBox();
+    odb::Rect bbox = blockage->getBBox()->getBox();
     bbox.moveDelta(-core.xMin(), -core.yMin());
     GridRect grid_rect = gridCovering(bbox);
 
@@ -282,14 +282,14 @@ void Grid::visitCellPixels(
   dbInst* inst = cell.getDbInst();
   auto obstructions = inst->getMaster()->getObstructions();
   bool have_obstructions = false;
-  const Rect core = getCore();
+  const odb::Rect core = getCore();
 
   for (dbBox* obs : obstructions) {
     if (obs->getTechLayer()->getType()
         == odb::dbTechLayerType::Value::OVERLAP) {
       have_obstructions = true;
 
-      Rect rect = obs->getBox();
+      odb::Rect rect = obs->getBox();
       inst->getTransform().apply(rect);
       rect.moveDelta(-core.xMin(), -core.yMin());
       GridRect grid_rect = gridCovering(rect);
@@ -361,13 +361,13 @@ void Grid::visitCellBoundaryPixels(
   dbMaster* master = inst->getMaster();
   auto obstructions = master->getObstructions();
   bool have_obstructions = false;
-  const Rect core = getCore();
+  const odb::Rect core = getCore();
   for (dbBox* obs : obstructions) {
     if (obs->getTechLayer()->getType()
         == odb::dbTechLayerType::Value::OVERLAP) {
       have_obstructions = true;
 
-      Rect rect = obs->getBox();
+      odb::Rect rect = obs->getBox();
       inst->getTransform().apply(rect);
       rect.moveDelta(-core.xMin(), -core.yMin());
 
@@ -512,7 +512,7 @@ GridX Grid::gridWidth(const Node* cell) const
 
 GridY Grid::gridHeight(odb::dbMaster* master) const
 {
-  Rect bbox;
+  odb::Rect bbox;
   master->getPlacementBoundary(bbox);
   if (uniform_row_height_) {
     DbuY row_height = uniform_row_height_.value();
@@ -569,7 +569,7 @@ GridY Grid::getRowCount(DbuY row_height) const
   return GridY{divFloor(core_.dy(), row_height.v)};
 }
 
-GridRect Grid::gridCovering(const Rect& rect) const
+GridRect Grid::gridCovering(const odb::Rect& rect) const
 {
   return {.xlo = gridX(DbuX{rect.xMin()}),
           .ylo = gridSnapDownY(DbuY{rect.yMin()}),

@@ -4,6 +4,10 @@
 #include "gui/gui.h"
 
 #include <QApplication>
+#include <QColor>
+#include <QPushButton>
+#include <QString>
+#include <QWidget>
 #include <algorithm>
 #include <any>
 #include <cstddef>

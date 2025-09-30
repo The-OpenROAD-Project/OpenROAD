@@ -3,15 +3,19 @@
 
 #pragma once
 
+#include <QColor>
 #include <QDockWidget>
 #include <QItemDelegate>
 #include <QLabel>
 #include <QMenu>
 #include <QPushButton>
 #include <QStandardItemModel>
+#include <QString>
 #include <QTimer>
 #include <QTreeView>
 #include <QVBoxLayout>
+#include <QVariant>
+#include <QWidget>
 #include <any>
 #include <map>
 #include <memory>

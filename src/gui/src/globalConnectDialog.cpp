@@ -4,10 +4,15 @@
 #include "globalConnectDialog.h"
 
 #include <QApplication>
+#include <QComboBox>
+#include <QDialog>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QVBoxLayout>
+#include <QVariant>
+#include <QWidget>
 #include <regex>
 #include <set>
 #include <stdexcept>

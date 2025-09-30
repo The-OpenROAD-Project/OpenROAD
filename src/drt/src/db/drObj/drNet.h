@@ -64,7 +64,7 @@ class drNet : public drBlockObject
   int getNumPinsIn() const { return numPinsIn_; }
   bool hasMarkerDist() const { return (markerDist_ == -1); }
   frCoord getMarkerDist() const { return markerDist_; }
-  Rect getPinBox() { return pinBox_; }
+  odb::Rect getPinBox() { return pinBox_; }
   bool isRipup() const { return allowRipup_ ? ripup_ : false; }
   int getNumReroutes() const { return numReroutes_; }
   bool isInQueue() const { return inQueue_; }
@@ -125,7 +125,7 @@ class drNet : public drBlockObject
   void setNumPinsIn(int in) { numPinsIn_ = in; }
   void updateMarkerDist(frCoord in) { markerDist_ = std::min(markerDist_, in); }
   void resetMarkerDist() { markerDist_ = std::numeric_limits<frCoord>::max(); }
-  void setPinBox(const Rect& in) { pinBox_ = in; }
+  void setPinBox(const odb::Rect& in) { pinBox_ = in; }
   void setRipup() { ripup_ = true; }
   void resetRipup() { ripup_ = false; }
   void setAllowRipup(bool in) { allowRipup_ = in; }
@@ -215,7 +215,7 @@ class drNet : public drBlockObject
   int numPinsIn_{0};
   frCoord markerDist_{std::numeric_limits<frCoord>::max()};
   bool allowRipup_{true};
-  Rect pinBox_;
+  odb::Rect pinBox_;
   bool ripup_{false};
   // new
   int numReroutes_{0};

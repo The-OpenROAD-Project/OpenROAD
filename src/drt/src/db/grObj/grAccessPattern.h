@@ -8,6 +8,7 @@
 #include "db/grObj/grBlockObject.h"
 #include "db/infra/frPoint.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 class grPin;
@@ -16,7 +17,7 @@ class grAccessPattern : public grBlockObject
 {
  public:
   // getters
-  Point getPoint() const { return beginPoint_; }
+  odb::Point getPoint() const { return beginPoint_; }
   frLayerNum getBeginLayerNum() const { return beginLayerNum_; }
   grPin* getPin() const { return pin_; }
   bool hasValidAccess(const frDirEnum& dir)
@@ -60,7 +61,7 @@ class grAccessPattern : public grBlockObject
   }
 
   // setters
-  void setPoint(const Point& bpIn) { beginPoint_ = bpIn; }
+  void setPoint(const odb::Point& bpIn) { beginPoint_ = bpIn; }
   void setBeginLayerNum(frLayerNum in) { beginLayerNum_ = in; }
   void setPin(grPin* in) { pin_ = in; }
   void setValidAccess(const std::vector<bool>& in) { validAccess_ = in; }
@@ -77,7 +78,7 @@ class grAccessPattern : public grBlockObject
   frBlockObjectEnum typeId() const override { return grcAccessPattern; }
 
  protected:
-  Point beginPoint_;
+  odb::Point beginPoint_;
   frLayerNum beginLayerNum_{0};
   grPin* pin_{nullptr};
   std::vector<bool> validAccess_ = std::vector<bool>(6, true);
