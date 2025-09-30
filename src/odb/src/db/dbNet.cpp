@@ -43,6 +43,7 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbExtControl.h"
+#include "odb/dbObject.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"

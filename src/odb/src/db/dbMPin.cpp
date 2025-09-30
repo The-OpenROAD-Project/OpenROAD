@@ -9,6 +9,7 @@
 #include "dbBlock.h"
 #include "dbBoxItr.h"
 #include "dbCore.h"
+#include "dbDatabase.h"
 #include "dbMPinItr.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
