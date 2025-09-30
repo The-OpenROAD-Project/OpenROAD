@@ -38,22 +38,25 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
+#include "sta/Clock.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/Path.hh"
 #include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/Sdc.hh"
+#include "sta/Vector.hh"
 #include "utl/Logger.h"
 
 namespace cts {
 
 using utl::CTS;
 
-void TritonCTS::init(utl::Logger* logger,
+TritonCTS::TritonCTS(utl::Logger* logger,
                      odb::dbDatabase* db,
                      sta::dbNetwork* network,
                      sta::dbSta* sta,
@@ -70,8 +73,6 @@ void TritonCTS::init(utl::Logger* logger,
 
   options_ = new CtsOptions(logger_, st_builder);
 }
-
-TritonCTS::TritonCTS() = default;
 
 TritonCTS::~TritonCTS()
 {
@@ -643,19 +644,33 @@ int TritonCTS::setClockNets(const char* names)
 
 void TritonCTS::setBufferList(const char* buffers)
 {
+  // Put the buffer list into a string vector
   std::stringstream ss(buffers);
   std::istream_iterator<std::string> begin(ss);
   std::istream_iterator<std::string> end;
   std::vector<std::string> bufferList(begin, end);
+  // If the vector is empty, then the buffers are inferred
   if (bufferList.empty()) {
     inferBufferList(bufferList);
   } else {
+    // Iterate the user-defined buffer list
+    sta::Vector<sta::LibertyCell*> selected_buffers;
     for (const std::string& buffer : bufferList) {
-      if (db_->findMaster(buffer.c_str()) == nullptr) {
+      odb::dbMaster* buffer_master = db_->findMaster(buffer.c_str());
+      if (buffer_master == nullptr) {
         logger_->error(
             CTS, 126, "No physical master cell found for buffer {}.", buffer);
+      } else {
+        // Get the buffer and add to the vector
+        sta::Cell* master_cell = network_->dbToSta(buffer_master);
+        if (master_cell) {
+          sta::LibertyCell* lib_cell = network_->libertyCell(master_cell);
+          selected_buffers.push_back(lib_cell);
+        }
       }
     }
+    // Add found buffer to RSZ
+    resizer_->setClockBuffersList(selected_buffers);
   }
   options_->setBufferList(bufferList);
 }
@@ -837,6 +852,15 @@ bool TritonCTS::isClockCellCandidate(sta::LibertyCell* cell)
           && !cell->isIsolationCell() && !cell->isLevelShifter());
 }
 
+std::string TritonCTS::getRootBufferToString()
+{
+  std::ostringstream buffer_names;
+  for (const auto& buf : rootBuffers_) {
+    buffer_names << buf << " ";
+  }
+  return buffer_names.str();
+}
+
 void TritonCTS::setRootBuffer(const char* buffers)
 {
   std::stringstream ss(buffers);
@@ -964,7 +988,7 @@ std::string TritonCTS::selectBestMaxCapBuffer(
     // clang-format off
     debugPrint(logger_, CTS, "buffering", 1, "{} has cap limit:{}"
                " vs. total cap:{}, derate:{}", name,
-               maxCap * options_->getSinkBufferMaxCapDerate(), totalCap,
+               maxCap * (float) options_->getSinkBufferMaxCapDerate(), totalCap,
                options_->getSinkBufferMaxCapDerate());
     // clang-format on
     if (maxCapExists

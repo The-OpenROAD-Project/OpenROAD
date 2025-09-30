@@ -3,12 +3,18 @@
 
 #include "odb/3dblox.h"
 
+#include <cstddef>
 #include <filesystem>
+#include <sstream>
+#include <string>
 
 #include "dbvParser.h"
 #include "dbxParser.h"
 #include "objects.h"
 #include "odb/db.h"
+#include "odb/defin.h"
+#include "odb/geom.h"
+#include "odb/lefin.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -55,29 +61,15 @@ void ThreeDBlox::readDbv(const std::string& dbv_file)
   }
 }
 
-std::string ThreeDBlox::resolveIncludePath(const std::string& include_path,
-                                           const std::string& current_file_path)
-{
-  std::filesystem::path include_fs_path(include_path);
-  if (include_fs_path.is_absolute()) {
-    return include_fs_path.string();
-  }
-  std::filesystem::path current_fs_path(current_file_path);
-  std::filesystem::path current_dir = current_fs_path.parent_path();
-  std::filesystem::path resolved_path = current_dir / include_fs_path;
-  return resolved_path.string();
-}
-
 void ThreeDBlox::readDbx(const std::string& dbx_file)
 {
   DbxParser parser(logger_);
   DbxData data = parser.parseFile(dbx_file);
   for (const auto& include : data.header.includes) {
-    std::string resolved_path = resolveIncludePath(include, dbx_file);
     if (include.find(".3dbv") != std::string::npos) {
-      readDbv(resolved_path);
+      readDbv(include);
     } else if (include.find(".3dbx") != std::string::npos) {
-      readDbx(resolved_path);
+      readDbx(include);
     }
   }
   dbChip* chip = createDesignTopChiplet(data.design);
@@ -111,12 +103,52 @@ dbChip::ChipType getChipType(const std::string& type, utl::Logger* logger)
   logger->error(
       utl::ODB, 527, "3DBV Parser Error: Invalid chip type: {}", type);
 }
+std::string getFileName(const std::string& tech_file_path)
+{
+  std::filesystem::path tech_file_path_fs(tech_file_path);
+  return tech_file_path_fs.stem().string();
+}
 void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 {
-  auto tech = db_->getTech();  // TODO: specify tech
+  dbTech* tech = nullptr;
+
+  // Read tech LEF file
+  if (!chiplet.external.tech_lef_files.empty()) {
+    if (chiplet.external.tech_lef_files.size() > 1) {
+      logger_->error(
+          utl::ODB,
+          529,
+          "3DBV Parser Error: Multiple tech LEF files are not supported");
+    }
+    auto tech_file = chiplet.external.tech_lef_files[0];
+    auto tech_name = getFileName(tech_file);
+    odb::lefin lef_reader(db_, logger_, false);
+    tech = db_->findTech(tech_name.c_str());
+    if (tech == nullptr) {
+      auto lib = lef_reader.createTechAndLib(
+          tech_name.c_str(), tech_name.c_str(), tech_file.c_str());
+      tech = lib->getTech();
+    }
+  }
+  // Read LEF files
+
+  for (const auto& lef_file : chiplet.external.lef_files) {
+    auto lib_name = getFileName(lef_file);
+    odb::lefin lef_reader(db_, logger_, false);
+    lef_reader.createLib(tech, lib_name.c_str(), lef_file.c_str());
+  }
+  // TODO: Read liberty files
   dbChip* chip = dbChip::create(
       db_, tech, chiplet.name, getChipType(chiplet.type, logger_));
-
+  // Read DEF file
+  if (!chiplet.external.def_file.empty()) {
+    odb::defin def_reader(db_, logger_, odb::defin::DEFAULT);
+    std::vector<odb::dbLib*> search_libs;
+    for (odb::dbLib* lib : db_->getLibs()) {
+      search_libs.push_back(lib);
+    }
+    def_reader.readChip(search_libs, chiplet.external.def_file.c_str(), chip);
+  }
   chip->setWidth(chiplet.design_width * db_->getDbuPerMicron());
   chip->setHeight(chiplet.design_height * db_->getDbuPerMicron());
   chip->setThickness(chiplet.thickness * db_->getDbuPerMicron());

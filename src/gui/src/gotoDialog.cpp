@@ -3,6 +3,9 @@
 
 #include "gotoDialog.h"
 
+#include <QDialog>
+#include <QString>
+#include <QWidget>
 #include <cmath>
 
 #include "gui/gui.h"

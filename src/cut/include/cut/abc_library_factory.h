@@ -16,6 +16,7 @@
 #include "map/mio/mioInt.h"
 #include "map/scl/sclLib.h"
 #include "rsz/Resizer.hh"
+#include "sta/Liberty.hh"
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"

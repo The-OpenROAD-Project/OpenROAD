@@ -136,6 +136,7 @@ tcl_wrap_cc = rule(
             The root file must be explicitly provided. This is the file which will be passed to
             swig for generation.""",
         ),
+        "runtime_header": attr.string(),
         "srcs": attr.label_list(
             allow_empty = False,
             allow_files = [".i", ".swig", ".h", ".hpp", ".hh"],
@@ -147,7 +148,6 @@ tcl_wrap_cc = rule(
         "swig_options": attr.string_list(
             doc = "args to pass directly to the swig binary",
         ),
-        "runtime_header": attr.string(),
         "_swig": attr.label(
             default = "@org_swig//:swig_stable",
             allow_files = True,

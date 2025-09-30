@@ -4,6 +4,7 @@
 #include "layoutViewer.h"
 
 #include <QApplication>
+#include <QColor>
 #include <QDateTime>
 #include <QFileDialog>
 #include <QFont>
@@ -12,6 +13,7 @@
 #include <QImageWriter>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMenu>
 #include <QPaintEvent>
 #include <QPainter>
 #include <QPainterPath>
@@ -19,9 +21,11 @@
 #include <QScrollBar>
 #include <QSizePolicy>
 #include <QStaticText>
+#include <QString>
 #include <QToolButton>
 #include <QToolTip>
 #include <QTranslator>
+#include <QWidget>
 #include <algorithm>
 #include <array>
 #include <cmath>

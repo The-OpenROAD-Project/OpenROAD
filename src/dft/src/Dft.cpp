@@ -18,6 +18,7 @@
 #include "ScanStitch.hh"
 #include "boost/property_tree/json_parser.hpp"
 #include "boost/property_tree/ptree.hpp"
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -27,19 +28,15 @@ constexpr char kDefaultPartition[] = "default";
 
 namespace dft {
 
-Dft::Dft() : dft_config_(std::make_unique<DftConfig>())
+Dft::Dft(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
+    : db_(db),
+      sta_(sta),
+      logger_(logger),
+      dft_config_(std::make_unique<DftConfig>())
 {
 }
 
-void Dft::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
-{
-  db_ = db;
-  logger_ = logger;
-  sta_ = sta;
-
-  // Just to be sure if we are called twice
-  reset();
-}
+Dft::~Dft() = default;
 
 void Dft::reset()
 {

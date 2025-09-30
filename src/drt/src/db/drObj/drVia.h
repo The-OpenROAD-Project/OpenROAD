@@ -10,6 +10,7 @@
 #include "db/tech/frViaDef.h"
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -26,9 +27,9 @@ class drVia : public drRef
   drVia(const frVia& in);
   // getters
   const frViaDef* getViaDef() const { return viaDef_; }
-  Rect getLayer1BBox() const
+  odb::Rect getLayer1BBox() const
   {
-    Rect box;
+    odb::Rect box;
     box.mergeInit();
     for (auto& fig : viaDef_->getLayer1Figs()) {
       box.merge(fig->getBBox());
@@ -36,9 +37,9 @@ class drVia : public drRef
     getTransform().apply(box);
     return box;
   }
-  Rect getCutBBox() const
+  odb::Rect getCutBBox() const
   {
-    Rect box;
+    odb::Rect box;
     box.mergeInit();
     for (auto& fig : viaDef_->getCutFigs()) {
       box.merge(fig->getBBox());
@@ -46,9 +47,9 @@ class drVia : public drRef
     getTransform().apply(box);
     return box;
   }
-  Rect getLayer2BBox() const
+  odb::Rect getLayer2BBox() const
   {
-    Rect box;
+    odb::Rect box;
     box.mergeInit();
     for (auto& fig : viaDef_->getLayer2Figs()) {
       box.merge(fig->getBBox());
@@ -72,10 +73,13 @@ class drVia : public drRef
 
   dbOrientType getOrient() const override { return dbOrientType(); }
   void setOrient(const dbOrientType& tmpOrient) override { ; }
-  Point getOrigin() const override { return origin_; }
-  void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
-  dbTransform getTransform() const override { return dbTransform(origin_); }
-  void setTransform(const dbTransform& xformIn) override {}
+  odb::Point getOrigin() const override { return origin_; }
+  void setOrigin(const odb::Point& tmpPoint) override { origin_ = tmpPoint; }
+  odb::dbTransform getTransform() const override
+  {
+    return odb::dbTransform(origin_);
+  }
+  void setTransform(const odb::dbTransform& xformIn) override {}
 
   /* from frPinFig
    * hasPin
@@ -117,7 +121,7 @@ class drVia : public drRef
    * overlaps
    */
 
-  Rect getBBox() const override;
+  odb::Rect getBBox() const override;
   bool hasMazeIdx() const { return (!beginMazeIdx_.empty()); }
   std::pair<FlexMazeIdx, FlexMazeIdx> getMazeIdx() const
   {
@@ -141,7 +145,7 @@ class drVia : public drRef
   bool isLonely() const { return isLonely_; }
 
  protected:
-  Point origin_;
+  odb::Point origin_;
   const frViaDef* viaDef_{nullptr};
   drBlockObject* owner_{nullptr};
   FlexMazeIdx beginMazeIdx_;

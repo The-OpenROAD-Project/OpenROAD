@@ -17,7 +17,9 @@
 #include "est/EstimateParasitics.h"
 #include "rsz/Resizer.hh"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 

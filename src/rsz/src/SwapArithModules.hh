@@ -46,7 +46,7 @@ class SwapArithModules : public sta::dbStaState
   explicit SwapArithModules(Resizer* resizer) : resizer_(resizer) {}
   ~SwapArithModules() override = default;
 
-  virtual void replaceArithModules(int path_count,
+  virtual bool replaceArithModules(int path_count,
                                    const std::string& target,
                                    float slack_threshold)
       = 0;
@@ -60,7 +60,7 @@ class SwapArithModules : public sta::dbStaState
                                      float slack_threshold,
                                      std::set<dbModInst*>& insts)
       = 0;
-  virtual void doSwapInstances(const std::set<dbModInst*>& insts,
+  virtual bool doSwapInstances(const std::set<dbModInst*>& insts,
                                const std::string& target)
       = 0;
 

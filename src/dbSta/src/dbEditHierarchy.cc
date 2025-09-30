@@ -164,20 +164,19 @@ void dbEditHierarchy::createHierarchyBottomUp(Pin* pin,
   const char* io_type_str = (io_type == dbIoType::OUTPUT) ? "o" : "i";
 
   // Decide a new unique pin/net name
-  std::string unique_name = fmt::format("{}_{}", connection_name, io_type_str);
-  int id = 0;
-  while (cur_module->findModBTerm(unique_name.c_str())
-         || cur_module->getModNet(unique_name.c_str())) {
-    id++;
-    unique_name = fmt::format("{}_{}_{}", connection_name, io_type_str, id);
-  }
-  const char* new_term_net_name = unique_name.c_str();
+  std::string new_term_net_name
+      = makeUniqueName(cur_module, connection_name, io_type_str);
 
   while (cur_module != lowest_common_module) {
-    // Create BTerm & ModNet and connect them
+    // Create BTerm & ModNet (if not exist) and connect them
     dlogCreateHierBTermAndModNet(level, cur_module, new_term_net_name);
-    dbModBTerm* mod_bterm = dbModBTerm::create(cur_module, new_term_net_name);
-    db_mod_net = dbModNet::create(cur_module, new_term_net_name);
+    dbModBTerm* mod_bterm
+        = dbModBTerm::create(cur_module, new_term_net_name.c_str());
+
+    db_mod_net = cur_module->getModNet(new_term_net_name.c_str());
+    if (db_mod_net == nullptr) {
+      db_mod_net = dbModNet::create(cur_module, new_term_net_name.c_str());
+    }
 
     mod_bterm->connect(db_mod_net);
     mod_bterm->setIoType(io_type);
@@ -204,20 +203,16 @@ void dbEditHierarchy::createHierarchyBottomUp(Pin* pin,
     dlogCreateHierCreatingITerm(
         level, cur_module, parent_inst, new_term_net_name);
     dbModITerm* mod_iterm
-        = dbModITerm::create(parent_inst, new_term_net_name, mod_bterm);
+        = dbModITerm::create(parent_inst, new_term_net_name.c_str(), mod_bterm);
 
     // Retry to get a new unique pin/net name in the new hierarchy
-    while (cur_module->findModBTerm(unique_name.c_str())
-           || cur_module->getModNet(unique_name.c_str())) {
-      id++;
-      unique_name = fmt::format("{}_{}_{}", connection_name, io_type_str, id);
-    }
-    new_term_net_name = unique_name.c_str();
+    new_term_net_name
+        = makeUniqueName(cur_module, connection_name, io_type_str);
 
     // Create ModNet for the ITerm
     if (io_type == dbIoType::OUTPUT
         || (io_type == dbIoType::INPUT && cur_module != lowest_common_module)) {
-      db_mod_net = dbModNet::create(cur_module, new_term_net_name);
+      db_mod_net = dbModNet::create(cur_module, new_term_net_name.c_str());
       mod_iterm->connect(db_mod_net);
       dlogCreateHierConnectingITerm(
           level, cur_module, parent_inst, new_term_net_name, db_mod_net);
@@ -399,14 +394,10 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
         std::string base_name = fmt::format(
             "{}", db_network_->name(db_network_->dbToSta(source_pin_flat_net)));
 
-        // Decide a new unique net name to avoid collisions.
-        std::string unique_name = base_name;
-        int id = 0;
-        while (lowest_common_module->findModBTerm(unique_name.c_str())
-               || lowest_common_module->getModNet(unique_name.c_str())) {
-          id++;
-          unique_name = fmt::format("{}_{}", base_name, id);
-        }
+        // Decide a new unique net name to avoid collisions in the lowest common
+        // hierarchy
+        std::string unique_name
+            = makeUniqueName(lowest_common_module, base_name);
 
         // Create and connect dbModNet
         source_db_mod_net
@@ -536,7 +527,10 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
   } else {
     top_source_mod_net = source_pin->getModNet();
     if (!top_source_mod_net) {
-      top_source_mod_net = dbModNet::create(source_db_module, connection_name);
+      std::string unique_name
+          = makeUniqueName(lowest_common_module, connection_name);
+      top_source_mod_net
+          = dbModNet::create(source_db_module, unique_name.c_str());
       source_pin->connect(top_source_mod_net);
     }
   }
@@ -596,6 +590,27 @@ void dbEditHierarchy::cleanUnusedHierPins(
       }
     }
   }
+}
+
+std::string dbEditHierarchy::makeUniqueName(dbModule* module,
+                                            std::string_view name,
+                                            const char* io_type_str) const
+{
+  std::string base_name;
+  if (io_type_str) {
+    base_name = fmt::format("{}_{}", name, io_type_str);
+  } else {
+    base_name = name;
+  }
+
+  std::string unique_name = base_name;
+  int id = 0;
+  while (module->findModBTerm(unique_name.c_str())
+         || module->getModNet(unique_name.c_str())) {
+    id++;
+    unique_name = fmt::format("{}_{}", base_name, id);
+  }
+  return unique_name;
 }
 
 const char* dbEditHierarchy::getBaseName(const char* connection_name) const

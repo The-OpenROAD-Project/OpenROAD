@@ -14,6 +14,9 @@
 #include "CloneMove.hh"
 #include "Rebuffer.hh"
 #include "SizeDownMove.hh"
+#include "db_sta/dbSta.hh"
+#include "sta/Delay.hh"
+#include "sta/NetworkClass.hh"
 // This includes SizeUpMatchMove
 #include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"
@@ -452,7 +455,14 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 
   if (!skip_last_gasp) {
     // do some last gasp setup fixing before we give up
-    OptoParams params(setup_slack_margin, verbose);
+    OptoParams params(setup_slack_margin,
+                      verbose,
+                      skip_pin_swap,
+                      skip_gate_cloning,
+                      skip_size_down,
+                      skip_buffering,
+                      skip_buffer_removal,
+                      skip_vt_swap);
     params.iteration = opto_iteration;
     params.initial_tns = initial_tns;
     repairSetupLastGasp(params, num_viols);
@@ -832,10 +842,14 @@ bool RepairSetup::terminateProgress(const int iteration,
 void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
 {
   move_sequence.clear();
-  move_sequence = {resizer_->vt_swap_speed_move_.get(),
-                   resizer_->size_up_match_move_.get(),
-                   resizer_->size_up_move_.get(),
-                   resizer_->swap_pins_move_.get()};
+  if (!params.skip_vt_swap) {
+    move_sequence.push_back(resizer_->vt_swap_speed_move_.get());
+  }
+  move_sequence.push_back(resizer_->size_up_match_move_.get());
+  move_sequence.push_back(resizer_->size_up_move_.get());
+  if (!params.skip_pin_swap) {
+    move_sequence.push_back(resizer_->swap_pins_move_.get());
+  }
 
   // Sort remaining failing endpoints
   const VertexSet* endpoints = sta_->endpoints();

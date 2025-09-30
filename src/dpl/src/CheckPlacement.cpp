@@ -177,7 +177,7 @@ void Opendp::saveViolations(const std::vector<Node*>& failures,
 
       marker->addSource(o_cell->getDbInst());
     }
-    marker->addShape(Rect{xMin, yMin, xMax, yMax});
+    marker->addShape(odb::Rect{xMin, yMin, xMax, yMax});
     marker->addSource(failure->getDbInst());
   }
 }

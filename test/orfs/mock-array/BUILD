@@ -3,6 +3,7 @@ load("@bazel-orfs//:openroad.bzl", "orfs_flow", "orfs_run")
 load("@bazel-orfs//:verilog.bzl", "verilog_directory", "verilog_single_file_library")
 load("@bazel-orfs//toolchains/scala:chisel.bzl", "chisel_binary")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
 load("@rules_verilator//verilog:defs.bzl", "verilog_library")
 
@@ -113,42 +114,42 @@ VARIANTS = [
 [orfs_flow(
     name = "MockArray",
     arguments = {
-        "PLACE_PINS_ARGS": "-annealing",
-        "PLACE_DENSITY": "0.30",
         "CORE_AREA": "{} {} {} {}".format(
             margin_x,
             margin_y,
             core_width + margin_x,
             core_height + margin_y,
         ),
+        "DETAILED_ROUTE_END_ITERATION": "6",
         "DIE_AREA": "0 0 {} {}".format(
             die_width,
             die_height,
         ),
+        "GDS_ALLOW_EMPTY": "Element",
+        "GND_NETS_VOLTAGES": "",
+        "IO_PLACER_H": "M4 M6",
+        "IO_PLACER_V": "M5 M7",
+        "MACRO_BLOCKAGE_HALO": "0",
         "MACRO_PLACE_HALO": "0 2.16",
-        "RTLMP_BOUNDARY_WT": "0",
-        "RTLMP_MAX_INST": "250",
-        "RTLMP_MIN_INST": "50",
-        "RTLMP_MAX_MACRO": "64",
-        "RTLMP_MIN_MACRO": "8",
-        "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCKS_grid_strategy.tcl",
         "MACRO_ROWS_HALO_X": "0.5",
         "MACRO_ROWS_HALO_Y": "0.5",
-        "MACRO_BLOCKAGE_HALO": "0",
         "MAX_ROUTING_LAYER": "M9",
-        "GDS_ALLOW_EMPTY": "Element",
-        "PWR_NETS_VOLTAGES": "",
-        "GND_NETS_VOLTAGES": "",
-        "IO_PLACER_V": "M5 M7",
-        "IO_PLACER_H": "M4 M6",
-        "DETAILED_ROUTE_END_ITERATION": "6",
         "OPENROAD_HIERARCHICAL": "1" if variant == "base" else "0",
+        "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCKS_grid_strategy.tcl",
+        "PLACE_DENSITY": "0.30",
+        "PLACE_PINS_ARGS": "-annealing",
+        "PWR_NETS_VOLTAGES": "",
+        "RTLMP_BOUNDARY_WT": "0",
+        "RTLMP_MAX_INST": "250",
+        "RTLMP_MAX_MACRO": "64",
+        "RTLMP_MIN_INST": "50",
+        "RTLMP_MIN_MACRO": "8",
     },
     macros = ["Element_generate_abstract"],
     sources = {
+        "IO_CONSTRAINTS": [":mock-array-io"],
         "RULES_JSON": [":rules-base.json"],
         "SDC_FILE": [":mock-array-constraints"],
-        "IO_CONSTRAINTS": [":mock-array-io"],
     },
     tags = ["manual"],
     test_kwargs = {
@@ -173,28 +174,28 @@ orfs_flow(
     name = "Element",
     abstract_stage = POWER_STAGE_NAME,
     arguments = {
-        "PLACE_DENSITY": "0.82",
-        "DETAILED_ROUTE_END_ITERATION": "6",
-        "MIN_ROUTING_LAYER": "M2",
-        "MAX_ROUTING_LAYER": "M5",
-        "IO_PLACER_H": "M2 M4",
-        "IO_PLACER_V": "M3 M5",
-        "PLACE_PINS_ARGS": "-annealing",
-        "GND_NETS_VOLTAGES": "",
-        "PWR_NETS_VOLTAGES": "",
         "CORE_AREA": "{} {} {} {}".format(
             ce_margin_x,
             ce_margin_y,
             ce_width - ce_margin_x,
             ce_height - ce_margin_y,
         ),
+        "DETAILED_ROUTE_END_ITERATION": "6",
         "DIE_AREA": "0 0 {} {}".format(
             ce_width,
             ce_height,
         ),
-        "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCK_grid_strategy.tcl",
+        "GND_NETS_VOLTAGES": "",
+        "IO_PLACER_H": "M2 M4",
+        "IO_PLACER_V": "M3 M5",
+        "MAX_ROUTING_LAYER": "M5",
+        "MIN_ROUTING_LAYER": "M2",
         # We want to report power per module using hierarhical .odb
         "OPENROAD_HIERARCHICAL": "1",
+        "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCK_grid_strategy.tcl",
+        "PLACE_DENSITY": "0.82",
+        "PLACE_PINS_ARGS": "-annealing",
+        "PWR_NETS_VOLTAGES": "",
         # Keep only one module, enough for testing, faster builds. There's
         # some width in multiply reduction going on here to speed up
         # builds, so we want to keep this exact module.
@@ -379,6 +380,7 @@ genrule(
 
 # If we want to measure power after final, instead of with estimated parasitics,
 # we'll need this.
+# buildifier: disable=unused-variable
 SPEFS_AND_NETLISTS = [
     ":results/asap7/{macro}/{stem}.{ext}".format(
         ext = ext,
@@ -404,12 +406,12 @@ POWER_TESTS = [
         "{name}.txt".format(name = name),
     ],
     arguments = {
-        "OUTPUT": "$(location :{name}.txt)".format(name = name),
-        "VCD_STIMULI": "$(location :vcd)",
+        "LOAD_POWER_TCL": "$(location :load_power.tcl)",
         "OPENROAD_EXE": "$(location //src/sta:opensta)",
+        "OUTPUT": "$(location :{name}.txt)".format(name = name),
         "POWER_STAGE_NAME": POWER_STAGE_NAME,
         "POWER_STAGE_STEM": POWER_STAGE_STEM,
-        "LOAD_POWER_TCL": "$(location :load_power.tcl)",
+        "VCD_STIMULI": "$(location :vcd)",
     },
     data = [
                # FIXME this is a workaround to ensure that the OpenSTA runfiles are available

@@ -3,6 +3,8 @@
 
 #include "layoutTabs.h"
 
+#include <QColor>
+#include <QWidget>
 #include <functional>
 #include <memory>
 #include <string>

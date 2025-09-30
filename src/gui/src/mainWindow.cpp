@@ -3,7 +3,11 @@
 
 #include "mainWindow.h"
 
+#include <QApplication>
 #include <QDesktopServices>
+#include <QDialog>
+#include <QPushButton>
+#include <QWidget>
 #include <algorithm>
 #include <any>
 #include <exception>
@@ -40,6 +44,7 @@
 #include "displayControls.h"
 #include "drcWidget.h"
 #include "globalConnectDialog.h"
+#include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "helpWidget.h"
 #include "highlightGroupDialog.h"
@@ -51,6 +56,7 @@
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "staDescriptors.h"
 #include "staGui.h"
 #include "timingWidget.h"

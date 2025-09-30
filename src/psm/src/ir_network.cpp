@@ -26,6 +26,7 @@
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "shape.h"
+#include "utl/Logger.h"
 #include "utl/timer.h"
 
 namespace psm {

@@ -9,6 +9,7 @@
 #include <QMenu>
 #include <QPushButton>
 #include <QString>
+#include <QWidget>
 #include <QtCharts>
 #include <deque>
 #include <limits>
@@ -21,6 +22,7 @@
 #include <vector>
 
 #include "gui/gui.h"
+#include "sta/SdcClass.hh"
 #include "staGuiInterface.h"
 #include "utl/histogram.h"
 

@@ -11,7 +11,6 @@
 namespace ppl {
 
 using odb::Point;
-using odb::Rect;
 
 using LayerToVector = std::map<int, std::vector<int>>;
 
@@ -19,7 +18,7 @@ class Core
 {
  public:
   Core();
-  Core(const Rect& boundary,
+  Core(const odb::Rect& boundary,
        const LayerToVector& min_dst_pins_x,
        const LayerToVector& min_dst_pins_y,
        const LayerToVector& init_tracks_x,
@@ -48,7 +47,7 @@ class Core
   {
   }
 
-  Rect getBoundary() const { return boundary_; }
+  odb::Rect getBoundary() const { return boundary_; }
   const LayerToVector& getMinDstPinsX() const { return min_dst_pins_x_; }
   const LayerToVector& getMinDstPinsY() const { return min_dst_pins_y_; }
   const LayerToVector& getInitTracksX() const { return init_tracks_x_; }
@@ -65,7 +64,7 @@ class Core
   std::vector<odb::Line> getDieAreaEdges();
 
  private:
-  Rect boundary_;
+  odb::Rect boundary_;
   LayerToVector min_dst_pins_x_;
   LayerToVector min_dst_pins_y_;
   LayerToVector init_tracks_x_;
