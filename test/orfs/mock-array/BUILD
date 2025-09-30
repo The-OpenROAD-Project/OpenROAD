@@ -200,6 +200,7 @@ orfs_flow(
         # some width in multiply reduction going on here to speed up
         # builds, so we want to keep this exact module.
         "SYNTH_KEEP_MODULES": "Multiplier",
+        "SYNTH_HIERARCHICAL": "1",
     },
     sources = {
         "IO_CONSTRAINTS": [":mock-array-element-io"],

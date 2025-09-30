@@ -1,7 +1,7 @@
 source $::env(LOAD_POWER_TCL)
 
-set instances [get_cells ces*/Multiplier*]
-if { [llength $instances] != 64 } {
+set instances [get_cells ces*/io_outs_*_mult*]
+if { [llength $instances] != 256 } {
   puts "Error: Expected to find 64 Multiplier instances, found [llength $instances]"
   exit 1
 }
