@@ -476,7 +476,15 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   if (!skip_crit_vt_swap && !skip_vt_swap
       && resizer_->lib_data_->sorted_vt_categories.size() > 1) {
     // Swap most critical cells to fastest VT
-    OptoParams params(setup_slack_margin, verbose);
+
+    OptoParams params(setup_slack_margin,
+                      verbose,
+                      skip_pin_swap,
+                      skip_gate_cloning,
+                      skip_size_down,
+                      skip_buffering,
+                      skip_buffer_removal,
+                      skip_vt_swap);
     if (swapVTCritCells(params, num_viols)) {
       estimate_parasitics_->updateParasitics();
       sta_->findRequireds();
