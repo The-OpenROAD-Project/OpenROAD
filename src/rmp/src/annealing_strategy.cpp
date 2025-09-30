@@ -202,14 +202,14 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
 
       [&](auto& gia) {
         // &b
-        debugPrint(logger, RMP, "annealing", 1, "Starting syn2");
+        debugPrint(logger, RMP, "annealing", 1, "Starting &b");
         replaceGia(gia,
                    Gia_ManAreaBalance(gia, false, ABC_INFINITY, false, false));
       },
 
       [&](auto& gia) {
         // &b -d
-        debugPrint(logger, RMP, "annealing", 1, "Starting syn2");
+        debugPrint(logger, RMP, "annealing", 1, "Starting &b -d");
         replaceGia(gia, Gia_ManBalance(gia, false, false, false));
       },
 
@@ -255,7 +255,7 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
         pars.fTruth = true;
         pars.fCutMin = true;
         pars.fExpRed = false;
-        debugPrint(logger, RMP, "annealing", 1, "Starting tech mapping (&if)");
+        debugPrint(logger, RMP, "annealing", 1, "Starting SOP balancing");
         replaceGia(gia, Gia_ManPerformMapping(gia, &pars));
       },
 

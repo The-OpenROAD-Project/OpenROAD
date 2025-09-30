@@ -88,9 +88,9 @@ resynth_annealing
 | Switch Name | Description |
 | ----- | ----- |
 | `-corner` | Process corner to use. |
-| `-slack_threshold` | Specifies a (setup) timing slack value below which timing paths need to be analyzed for restructuring. The default value is `0`, and the allowed values are floats `[0, MAX_FLOAT]`. |
+| `-slack_threshold` | Specifies a (setup) timing slack value below which timing paths need to be analyzed for restructuring. The default value is `0`. |
 | `-seed` | Seed to use for randomness in simulated annealing. |
-| `-temp` | Initial temperature for simulated annealing. The default is the required of the worst slack path. |
+| `-temp` | Initial temperature for simulated annealing. The default is the required arrival time on the worst slack endpoint. |
 | `-iters` | Number of iterations to run simulated annealing for. |
 | `-initial_ops` | Size of the initial random solution (number of commands in the script for ABC). |
 
