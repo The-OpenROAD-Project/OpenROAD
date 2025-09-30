@@ -125,7 +125,7 @@ sta::define_cmd_args "resynth_annealing" {
                                           }
 
 proc resynth_annealing { args } {
-  sta::parse_key_args "resynth" args \
+  sta::parse_key_args "resynth_annealing" args \
     keys {-corner -iters -seed -temp -initial_ops -slack_threshold} \
     flags {}
 
