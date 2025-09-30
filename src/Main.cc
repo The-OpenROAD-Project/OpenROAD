@@ -452,19 +452,19 @@ static int tclAppInit(int& argc,
     const bool gui_enabled = gui::Gui::enabled();
 
     if (read_odb_filename) {
-    std::string cmd = fmt::format("read_db {{{}}}", read_odb_filename);
-    if (!gui_enabled) {
-      if (Tcl_Eval(interp, cmd.c_str()) != TCL_OK) {
-        fprintf(stderr,
-                "Error: failed to read_db %s: %s\n",
-                read_odb_filename,
-                Tcl_GetStringResult(interp));
-        exit(1);
+      std::string cmd = fmt::format("read_db {{{}}}", read_odb_filename);
+      if (!gui_enabled) {
+        if (Tcl_Eval(interp, cmd.c_str()) != TCL_OK) {
+          fprintf(stderr,
+                  "Error: failed to read_db %s: %s\n",
+                  read_odb_filename,
+                  Tcl_GetStringResult(interp));
+          exit(1);
+        }
+      } else {
+        gui::Gui::get()->addRestoreStateCommand(cmd);
       }
-    } else {
-      gui::Gui::get()->addRestoreStateCommand(cmd);
     }
-    } 
 
     const char* home = getenv("HOME");
     if (!findCmdLineFlag(argc, argv, "-no_init") && home) {
@@ -552,15 +552,15 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -gui                  start in gui mode\n");
   printf("  -minimize             start the gui minimized\n");
   printf("  -no_settings          do not load the previous gui settings\n");
-  #ifdef ENABLE_PYTHON3
+#ifdef ENABLE_PYTHON3
   printf(
-    "  -python               start with python interpreter [limited to db "
-    "operations]\n");
-    #endif
-    printf("  -log <file_name>      write a log in <file_name>\n");
-    printf(
+      "  -python               start with python interpreter [limited to db "
+      "operations]\n");
+#endif
+  printf("  -log <file_name>      write a log in <file_name>\n");
+  printf(
       "  -metrics <file_name>  write metrics in <file_name> in JSON format\n");
-    printf("  -db <file_name>      open a .odb database at startup\n");
+  printf("  -db <file_name>      open a .odb database at startup\n");
   printf("  cmd_file              source cmd_file\n");
 }
 
