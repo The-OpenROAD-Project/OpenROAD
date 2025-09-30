@@ -10,25 +10,20 @@ jobs:
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: "recursive"
       - name: ClangTidy Gen
-        uses: sombraSoft/clang-tidy-review@clang-tidy-dep-fix
+        uses: The-OpenROAD-Project/clang-tidy-review@master
         id: review
         with:
           build_dir: "./build"
-          cmake_command: >-
-            which cmake &&
-            cmake --version &&
-            ls -l /usr/lib/x86_64-linux-gnu/cmake/yaml-cpp &&
-            dpkg -L libyaml-cpp-dev &&
-            cmake . -B build
+          cmake_command: cmake . -B build
           config_file: ".clang-tidy"
           exclude: "*/codeGenerator/templates/*,*/third-party/*"
           split_workflow: true
-          apt_packages: libomp-15-dev,libfl-dev
-      - uses: sombraSoft/clang-tidy-review/upload@clang-tidy-dep-fix
+          apt_packages: libomp-15-dev,libfl-dev,libyaml-cpp-dev
+      - uses: The-OpenROAD-Project/clang-tidy-review/upload@master
         id: upload-review
       - name: Correct Build Directory Ownership
         if: always()
