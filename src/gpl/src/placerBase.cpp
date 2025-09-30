@@ -28,7 +28,6 @@ using odb::dbITerm;
 using odb::dbMPin;
 using odb::dbNet;
 using odb::dbPlacementStatus;
-using odb::dbPowerDomain;
 using odb::dbRow;
 using odb::dbSet;
 using odb::dbSigType;
