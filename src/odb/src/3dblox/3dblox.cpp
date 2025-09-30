@@ -16,6 +16,7 @@
 #include "odb/defin.h"
 #include "odb/geom.h"
 #include "odb/lefin.h"
+#include "sta/Sta.hh"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -30,8 +31,8 @@ static std::map<std::string, std::string> dup_orient_map
        {"MZ_MX_R180", "MZ_MY"},
        {"MZ_MX_R270", "MZ_MY_R90"}};
 
-ThreeDBlox::ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db)
-    : logger_(logger), db_(db)
+ThreeDBlox::ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db, sta::Sta* sta)
+    : logger_(logger), db_(db), sta_(sta)
 {
 }
 
@@ -138,7 +139,12 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     odb::lefin lef_reader(db_, logger_, false);
     lef_reader.createLib(tech, lib_name.c_str(), lef_file.c_str());
   }
-  // TODO: Read liberty files
+  if (sta_ != nullptr) {
+    for (const auto& liberty_file : chiplet.external.lib_files) {
+      sta_->readLiberty(
+          liberty_file.c_str(), sta_->cmdCorner(), sta::MinMaxAll::all(), true);
+    }
+  }
   dbChip* chip = dbChip::create(
       db_, tech, chiplet.name, getChipType(chiplet.type, logger_));
   // Read DEF file

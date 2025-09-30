@@ -479,13 +479,13 @@ void OpenRoad::writeCdl(const char* out_filename,
 
 void OpenRoad::read3Dbv(const std::string& filename)
 {
-  odb::ThreeDBlox parser(logger_, db_);
+  odb::ThreeDBlox parser(logger_, db_, sta::Sta::sta());
   parser.readDbv(filename);
 }
 
 void OpenRoad::read3Dbx(const std::string& filename)
 {
-  odb::ThreeDBlox parser(logger_, db_);
+  odb::ThreeDBlox parser(logger_, db_, sta::Sta::sta());
   parser.readDbx(filename);
 }
 
