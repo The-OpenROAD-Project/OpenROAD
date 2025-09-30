@@ -125,7 +125,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
     clockNetsObjs_ = nets;
   }
   std::vector<odb::dbNet*> getClockNetsObjs() const { return clockNetsObjs_; }
-  void setSkipNets(const std::vector<odb::dbNet*>& nets) { skipNets_ = nets; }
+  void setSkipNets(odb::dbNet* nets) { skipNets_.push_back(nets); }
   std::vector<odb::dbNet*> getSkipNets() const { return skipNets_; }
   void setMetricsFile(const std::string& metricFile)
   {

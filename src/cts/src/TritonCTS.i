@@ -222,10 +222,10 @@ set_clock_nets(const char* names)
   return getTritonCts()->setClockNets(names);
 }
 
-int
-set_skip_clock_nets(const char* names)
+void
+set_skip_clock_nets(odb::dbNet* net)
 {
-  return getTritonCts()->setSkipNets(names);
+  getTritonCts()->getParms()->setSkipNets(net);
 }
 
 void

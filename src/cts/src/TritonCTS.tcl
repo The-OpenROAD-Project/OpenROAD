@@ -455,10 +455,9 @@ proc clock_tree_synthesis { args } {
   }
 
   if { [info exists keys(-skip_nets)] } {
-    set clk_nets $keys(-skip_nets)
-    set fail [cts::set_skip_clock_nets $clk_nets]
-    if { $fail } {
-      utl::error CTS 57 "Error when finding -skip_nets in DB."
+    foreach net [get_nets $keys(-skip_nets)] {
+      set db_net [sta::sta_to_db_net $net]
+      cts::set_skip_clock_nets $db_net
     }
   }
 
