@@ -9,6 +9,7 @@
 #include "boost/test/included/unit_test.hpp"
 #include "helper/env.h"
 #include "odb/db.h"
+#include "odb/gdsUtil.h"
 #include "odb/gdsin.h"
 #include "odb/gdsout.h"
 #include "odb/geom.h"
