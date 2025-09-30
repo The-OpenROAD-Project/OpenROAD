@@ -72,7 +72,6 @@ class TritonCTS
   TechChar* getCharacterization() { return techChar_.get(); }
   odb::dbBlock* getBlock() { return db_->getChip()->getBlock(); }
   int setClockNets(const char* names);
-  int setSkipNets(const char* names);
   void setBufferList(const char* buffers);
   void setRootBuffer(const char* buffers);
   std::string getRootBufferToString();

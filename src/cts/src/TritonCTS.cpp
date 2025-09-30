@@ -649,44 +649,6 @@ int TritonCTS::setClockNets(const char* names)
   return 0;
 }
 
-int TritonCTS::setSkipNets(const char* names)
-{
-  odb::dbChip* chip = db_->getChip();
-  odb::dbBlock* block = chip->getBlock();
-
-  std::stringstream ss(names);
-  std::istream_iterator<std::string> begin(ss);
-  std::istream_iterator<std::string> end;
-  std::vector<std::string> nets(begin, end);
-
-  std::vector<odb::dbNet*> netObjects;
-  for (const std::string& name : nets) {
-    odb::dbNet* net = block->findNet(name.c_str());
-    bool netFound = false;
-    if (net != nullptr) {
-      // Since a set is unique, only the nets not found by dbSta are added.
-      netObjects.push_back(net);
-      netFound = true;
-    } else {
-      // User input was a pin, transform it into an iterm if possible
-      odb::dbITerm* iterm = block->findITerm(name.c_str());
-      if (iterm != nullptr) {
-        net = iterm->getNet();
-        if (net != nullptr) {
-          // Since a set is unique, only the nets not found by dbSta are added.
-          netObjects.push_back(net);
-          netFound = true;
-        }
-      }
-    }
-    if (!netFound) {
-      return 1;
-    }
-  }
-  options_->setSkipNets(netObjects);
-  return 0;
-}
-
 void TritonCTS::setBufferList(const char* buffers)
 {
   // Put the buffer list into a string vector
