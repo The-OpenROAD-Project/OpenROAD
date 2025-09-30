@@ -1178,15 +1178,9 @@ Slack RepairSetup::getInstanceSlack(Instance* inst)
   while (pin_iter->hasNext()) {
     Pin* pin = pin_iter->next();
     if (network_->direction(pin)->isAnyOutput()) {
-      Vertex* vertex = graph_->pinLoadVertex(pin);
+      Vertex* vertex = graph_->pinDrvrVertex(pin);
       if (vertex) {
         const Slack pin_slack = sta_->vertexSlack(vertex, max_);
-        worst_slack = std::min(worst_slack, pin_slack);
-      }
-      // Bidi pins may have different slacks at split pins
-      Vertex* d_vertex = graph_->pinDrvrVertex(pin);
-      if (d_vertex && d_vertex != vertex) {
-        const Slack pin_slack = sta_->vertexSlack(d_vertex, max_);
         worst_slack = std::min(worst_slack, pin_slack);
       }
     }
