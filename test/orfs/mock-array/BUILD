@@ -90,7 +90,7 @@ core_width = (
 )
 
 core_height = (
-    pitch_y * (rows - 1) + ce_height + margin_x * 2
+    pitch_y * (rows - 1) + ce_height + margin_y * 2
 )
 
 die_width = core_width + (array_spacing_x * 2)
