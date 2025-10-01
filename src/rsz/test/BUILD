@@ -179,7 +179,7 @@ TESTS = [
     "set_dont_use1",
     "split_load_hier",
     "repair_setup_vt_swap",
-    "repair_setup_vt_swap2"
+    "repair_setup_vt_swap2",
 ]
 
 filegroup(
