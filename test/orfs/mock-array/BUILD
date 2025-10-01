@@ -148,7 +148,7 @@ VARIANTS = [
     macros = ["Element_generate_abstract"],
     sources = {
         "IO_CONSTRAINTS": [":mock-array-io"],
-        "RULES_JSON": [":rules-base.json"],
+        "RULES_JSON": [":rules-{variant}.json".format(variant = variant)],
         "SDC_FILE": [":mock-array-constraints"],
     },
     tags = ["manual"],
