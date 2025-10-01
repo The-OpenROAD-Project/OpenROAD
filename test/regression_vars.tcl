@@ -87,7 +87,7 @@ proc record_tests1 { tests cmp_logfile } {
 }
 
 # Record a test in the regression suite.
-proc record_test { test cmd_dir pass_criteria {test_options ""} } {
+proc record_test { test cmd_dir pass_criteria { test_options "" } } {
   global cmd_dirs test_groups test_pass_criteria test_langs test_specific_options
   set cmd_dirs($test) $cmd_dir
   lappend test_groups(all) $test
