@@ -76,16 +76,16 @@ array_spacing_y = margin_y * 2
 
 # top level core and die size
 core_width = (
-    2 * array_spacing_x + ((placement_grid_x * pitch_x) * (cols - 1)) + ce_width
+    2 * margin_x + ((placement_grid_x * pitch_x) * (cols - 1)) + ce_width
 )
 
 core_height = (
-    2 * array_spacing_y + ((placement_grid_y * pitch_y) * (rows - 1)) + ce_height
+    2 * margin_y + ((placement_grid_y * pitch_y) * (rows - 1)) + ce_height
 )
 
-die_width = core_width + (margin_x * 2)
+die_width = core_width + (array_spacing_x * 2)
 
-die_height = core_height + (margin_y * 2)
+die_height = core_height + (array_spacing_y * 2)
 
 filegroup(
     name = "mock-array-constraints",
@@ -115,10 +115,10 @@ VARIANTS = [
     name = "MockArray",
     arguments = {
         "CORE_AREA": "{} {} {} {}".format(
-            margin_x,
-            margin_y,
-            core_width + margin_x,
-            core_height + margin_y,
+            array_spacing_x,
+            array_spacing_y,
+            array_spacing_x + core_width,
+            array_spacing_y + core_height,
         ),
         "DETAILED_ROUTE_END_ITERATION": "6",
         "DIE_AREA": "0 0 {} {}".format(
