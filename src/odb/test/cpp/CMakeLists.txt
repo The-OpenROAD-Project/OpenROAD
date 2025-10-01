@@ -15,6 +15,7 @@ set(TEST_LIBS
         utl_lib
         odb_test_helper
         gdsin
+        tst
         GTest::gtest
         GTest::gtest_main
         GTest::gmock

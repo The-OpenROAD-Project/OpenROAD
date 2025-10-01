@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
 exports_files(
@@ -222,3 +223,19 @@ BIG_TESTS = [
     size = "large" if test_name in BIG_TESTS else "medium",
     data = [":test_resources"] + extra_deps.get(test_name, []),
 ) for test_name in TESTS]
+
+cc_test(
+    name = "rsz_buffer_removal",
+    srcs = [
+        "cpp/TestBufferRemoval.cc",
+    ],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/dbSta",
+        "//src/dpl",
+        "//src/rsz",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

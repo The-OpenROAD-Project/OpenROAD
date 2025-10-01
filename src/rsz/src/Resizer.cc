@@ -42,6 +42,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"

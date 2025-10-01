@@ -2,6 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
