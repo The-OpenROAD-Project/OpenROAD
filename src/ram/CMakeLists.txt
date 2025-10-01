@@ -79,3 +79,4 @@ messages(
 #
 #endif()
 
+add_subdirectory(test)
