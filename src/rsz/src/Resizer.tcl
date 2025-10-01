@@ -377,7 +377,7 @@ sta::define_cmd_args "report_design_area" {}
 proc report_design_area { args } {
   sta::parse_key_args "report_design_area" args keys {} flags {}
   set util [format %.0f [expr [rsz::utilization] * 100]]
-  set area [sta::format_area [rsz::design_area] 0]
+  set area [format %.0f [expr [rsz::design_area] * 1e6 * 1e6]]
   utl::report "Design area ${area} u^2 ${util}% utilization."
 }
 

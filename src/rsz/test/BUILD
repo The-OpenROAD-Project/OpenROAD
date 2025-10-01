@@ -155,6 +155,7 @@ TESTS = [
     "report_buffers_nangate45",
     "report_buffers_sky130hd",
     "report_buffers_sky130hs",
+    "report_design_area",
     "report_dont_touch",
     "report_dont_use",
     "report_dont_use_corners",
