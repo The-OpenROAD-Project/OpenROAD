@@ -5,7 +5,6 @@
 
 #include <tcl.h>
 
-#include "sta/StaMain.hh"
 #include "utl/decode.h"
 
 extern "C" {
