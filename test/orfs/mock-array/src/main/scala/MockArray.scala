@@ -114,8 +114,9 @@ class MockArray(width: Int, height: Int, singleElementWidth: Int)
       })
     }
 
-    // Combinational logic, but a maximum flight path of 4 elements
-    val MAX_FLIGHT = 4
+    // Combinational logic, but a maximum flight path of number of
+    // elements horizontally / 2
+    val MAX_FLIGHT = width / 2
     io.lsbOuts := (io.lsbIns
       .drop(1)
       .reverse
