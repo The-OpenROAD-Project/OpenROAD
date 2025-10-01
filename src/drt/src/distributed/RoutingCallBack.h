@@ -2,8 +2,6 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
-#include <omp.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
@@ -26,6 +24,7 @@
 #include "dst/JobCallBack.h"
 #include "dst/JobMessage.h"
 #include "global.h"
+#include "omp.h"
 #include "pa/FlexPA.h"
 #include "triton_route/TritonRoute.h"
 #include "utl/Logger.h"
