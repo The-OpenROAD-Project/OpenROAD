@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#pragma once
+#ifndef OPENROAD_ODB_DBCOMPARE_H
+#define OPENROAD_ODB_DBCOMPARE_H
 
 // IWYU pragma: private, include "db.h"
 
@@ -1079,3 +1080,4 @@ struct less<odb::dbTechLayerWrongDirSpacingRule*>
 // Generator Code End Less
 
 }  // namespace std
+#endif  // OPENROAD_ODB_DBCOMPARE_H

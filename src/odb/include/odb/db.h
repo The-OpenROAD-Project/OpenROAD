@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#pragma once
+#ifndef OPENROAD_ODB_DB_H
+#define OPENROAD_ODB_DB_H
 
 #include <cstdint>
 #include <cstdio>
@@ -10990,6 +10991,8 @@ class dbDoubleProperty : public dbProperty
 };
 
 }  // namespace odb
+
+#endif  // OPENROAD_ODB_DB_H
 
 // Overload std::less for these types
 #include "odb/dbCompare.h"
