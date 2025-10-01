@@ -652,7 +652,7 @@ void FastRouteCore::updateRouteType23D(int netID,
   }
 }
 
-// Resistance-aware routing cost calculation
+// Resistance-aware cost calculation
 float FastRouteCore::getMazeRouteCost3D(const int net_id,
                                         const int from_layer,
                                         const int to_layer,
@@ -664,14 +664,14 @@ float FastRouteCore::getMazeRouteCost3D(const int net_id,
 {
   FrNet* net = nets_[net_id];
   float base_cost = 1.0;
-  const int scale_factor = 2;
+  const int via_scale_factor = 2;  // A to B to A
 
   if (is_via) {
     // Via transition cost
     base_cost = via_cost_;
     float via_resistance = getViaResistance(from_layer, to_layer);
 
-    return base_cost + via_resistance * scale_factor;
+    return base_cost + via_resistance * via_scale_factor;
   }
 
   // Wire segment cost

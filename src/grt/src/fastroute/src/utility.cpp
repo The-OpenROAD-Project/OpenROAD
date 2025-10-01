@@ -385,18 +385,19 @@ void FastRouteCore::fixEdgeAssignment(int& net_layer,
   }
 }
 
+// Get wire resistance cost for a specific metal layer
+// R = (sheet_resistance) * (length/width)
 int FastRouteCore::getLayerResistance(const int layer,
                                       const int length,
                                       FrNet* net)
 {
-  if(!resistance_aware_){
+  if (!resistance_aware_) {
     return 0;
   }
-  
+
   odb::dbTech* tech = db_->getTech();
   odb::dbTechLayer* db_layer = tech->findRoutingLayer(layer + 1);
   int width = db_layer->getMinWidth();
-  // logger_->report("net: {}  Layer: {}", net->getName(), db_layer->getName());
   double resistance = db_layer->getResistance();
 
   // If net has NDR, get the correct width value
@@ -414,25 +415,16 @@ int FastRouteCore::getLayerResistance(const int layer,
     return BIG_INT;
   }
 
-  // R = (sheet_resistance) * (length/width)
-  // if(net->getDbNet()->getName()=="clk"){
-  // logger_->report("Net: {} - layer {} - length {} ({}) - width {} ({}) -
-  // TotalResistance: {}", net->getName(), layer, length, dbuToMicrons(length),
-  // width, layer_width, final_resistance);
-  // }
-
   return final_resistance;
 }
 
+// Get via resistance cost going from layer A to layer B
 int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
 {
-  if(!resistance_aware_){
+  if (!resistance_aware_) {
     return 0;
   }
 
-  odb::dbTech* tech = db_->getTech();
-
-  // Handle stacked vias (multiple layer transitions)
   if (abs(to_layer - from_layer) == 0) {
     return 0.0;  // Same layer, no via needed
   }
@@ -442,19 +434,12 @@ int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
   int start = std::min(from_layer, to_layer);
   int end = std::max(from_layer, to_layer);
 
+  odb::dbTech* tech = db_->getTech();
   for (int i = start; i < end; i++) {
     odb::dbTechLayer* db_layer = tech->findRoutingLayer(i + 1)->getUpperLayer();
-    // if(db_layer==nullptr){
-    //   logger_->report("db_layer upper {} is nullptr", i+1);
-    // }
-    // logger_->report("i: {}  Layer via: {}", i+1, db_layer->getName());
-    double resistance
-        = db_layer->getResistance();  /// dbuToMicrons(db_layer->getMinWidth());
+
+    double resistance = db_layer->getResistance();
     total_via_resistance += resistance;
-    // if(from_layer == 1 && to_layer == 3){
-    //   logger_->report("Via resistance L{}: {} total: {}", i+1, resistance,
-    //   total_via_resistance);
-    // }
   }
 
   return std::ceil(total_via_resistance);
