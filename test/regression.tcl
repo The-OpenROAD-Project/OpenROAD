@@ -338,13 +338,11 @@ proc run_test_plain { test cmd_file log_file lang } {
   } else {
     set save_dir [pwd]
     cd [file dirname $cmd_file]
-    
     # Get test-specific options if they exist
     set test_opts $app_options
     if { [info exists test_specific_options($test)] } {
       set test_opts [concat $test_specific_options($test) $app_options]
     }
-    
     # tclint-disable command-args
     if {
       [catch [concat exec $app_path $test_opts \
