@@ -15,5 +15,7 @@ report_checks -fields input -digits 3
 
 write_verilog_for_eqy repair_setup1 before "None"
 repair_timing -setup {*}$repair_args
-run_equivalence_test repair_setup1 ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test repair_setup1 \
+  -lib_dir ./Nangate45/work_around_yosys/ \
+  -remove_cells "None"
 report_checks -fields input -digits 3
