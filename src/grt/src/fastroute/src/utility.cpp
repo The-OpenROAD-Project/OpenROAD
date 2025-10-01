@@ -389,9 +389,14 @@ int FastRouteCore::getLayerResistance(const int layer,
                                       const int length,
                                       FrNet* net)
 {
+  if(!resistance_aware_){
+    return 0;
+  }
+  
   odb::dbTech* tech = db_->getTech();
   odb::dbTechLayer* db_layer = tech->findRoutingLayer(layer + 1);
   int width = db_layer->getMinWidth();
+  // logger_->report("net: {}  Layer: {}", net->getName(), db_layer->getName());
   double resistance = db_layer->getResistance();
 
   // If net has NDR, get the correct width value
@@ -421,6 +426,10 @@ int FastRouteCore::getLayerResistance(const int layer,
 
 int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
 {
+  if(!resistance_aware_){
+    return 0;
+  }
+
   odb::dbTech* tech = db_->getTech();
 
   // Handle stacked vias (multiple layer transitions)
@@ -434,11 +443,15 @@ int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
   int end = std::max(from_layer, to_layer);
 
   for (int i = start; i < end; i++) {
-    odb::dbTechLayer* db_layer = tech->findRoutingLayer(i + 1)->getLowerLayer();
+    odb::dbTechLayer* db_layer = tech->findRoutingLayer(i + 1)->getUpperLayer();
+    // if(db_layer==nullptr){
+    //   logger_->report("db_layer upper {} is nullptr", i+1);
+    // }
+    // logger_->report("i: {}  Layer via: {}", i+1, db_layer->getName());
     double resistance
         = db_layer->getResistance();  /// dbuToMicrons(db_layer->getMinWidth());
     total_via_resistance += resistance;
-    // if(from_layer == 1 && to_layer == 13){
+    // if(from_layer == 1 && to_layer == 3){
     //   logger_->report("Via resistance L{}: {} total: {}", i+1, resistance,
     //   total_via_resistance);
     // }

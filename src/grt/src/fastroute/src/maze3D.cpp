@@ -664,19 +664,14 @@ float FastRouteCore::getMazeRouteCost3D(const int net_id,
 {
   FrNet* net = nets_[net_id];
   float base_cost = 1.0;
-  const int via_scale_factor = 2;
+  const int scale_factor = 2;
 
   if (is_via) {
     // Via transition cost
     base_cost = via_cost_;
     float via_resistance = getViaResistance(from_layer, to_layer);
 
-    // if(net->getDbNet()->getName() == "clk"){
-    //   logger_->report("Via resistance: {} - Total: {}", via_resistance,
-    //   base_cost + via_resistance * via_scale_factor);
-    // }
-
-    return base_cost + via_resistance * via_scale_factor;
+    return base_cost + via_resistance * scale_factor;
   }
 
   // Wire segment cost
@@ -705,11 +700,6 @@ float FastRouteCore::getMazeRouteCost3D(const int net_id,
   if (congested) {
     base_cost = BIG_INT;  // Heavy penalty for congestion
   }
-
-  // if(net->getDbNet()->getName() == "clk"){
-  //   logger_->report("Wire resistance: {} - Total: {}", wire_resistance,
-  //   base_cost + wire_resistance);
-  // }
 
   return base_cost + wire_resistance;
 }
