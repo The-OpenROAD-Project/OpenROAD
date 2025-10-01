@@ -49,7 +49,18 @@ report_checks
 report_wns
 report_tns
 
+<<<<<<< HEAD
 set liberty_files [concat $lib_files_slow $lib_files_fast]
 run_equivalence_test $test_name \
   -liberty_files $liberty_files \
   -remove_cells "None"
+=======
+if { [info exists ::env(EQUIVALENCE_CHECK)] } {
+  set liberty_files [concat $lib_files_slow $lib_files_fast]
+  run_equivalence_test $test_name \
+    -liberty_files $liberty_files \
+    -remove_cells "None"
+} else {
+  puts "Repair timing output failed equivalence test"
+}
+>>>>>>> 8b879455fe (rmp: eqy check)

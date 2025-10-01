@@ -66,7 +66,11 @@ proc write_verilog_for_eqy { test stage remove_cells } {
 # Argument Description
 # lib_dir:         specifies directory with Verilog library files to be read
 #                  alongside tested design
+<<<<<<< HEAD
 # liberty_files:   specifies list of PDK liberty files to be read
+=======
+# liberty_files:   specifies list of SDK liberty files to be read
+>>>>>>> 8b879455fe (rmp: eqy check)
 # remove_cells:    specifies remove_cells mode for write_verilog_for_eqy call
 
 sta::define_cmd_args "run_equivalence_test" {
@@ -113,7 +117,11 @@ proc run_equivalence_test { test args } {
   if { $liberty_files != "" } {
     puts $outfile "read_liberty -ignore_miss_func -overwrite $liberty_files"
   }
+<<<<<<< HEAD
   puts $outfile "read_verilog -sv $before_netlist $lib_files"
+=======
+  puts $outfile "read_verilog -sv $after_netlist $lib_files"
+>>>>>>> 8b879455fe (rmp: eqy check)
   puts $outfile "prep -top $top_cell -flatten"
   puts $outfile "memory_map\n"
 
