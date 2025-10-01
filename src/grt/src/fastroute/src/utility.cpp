@@ -130,7 +130,11 @@ void FastRouteCore::netpinOrderInc()
       ndr_priority = 0;  // Higher priority for NDR nets
     }
 
-    float slack = nets_[netID]->getSlack();
+    float slack = 1;
+
+    if(resistance_aware_){
+      slack = nets_[netID]->getSlack();
+    }
 
     tree_order_pv_.push_back(
         {netID, xmin, length_per_pin, ndr_priority, slack});
