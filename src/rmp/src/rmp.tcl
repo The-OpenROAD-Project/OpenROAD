@@ -152,3 +152,54 @@ proc resynth_annealing { args } {
 
   rmp::resynth_annealing_cmd $corner
 }
+
+sta::define_cmd_args "resynth_genetic" {
+                                            [-corner corner]
+                                            [-slack_threshold slack_threshold]
+                                            [-seed seed]
+                                            [-pop_size pop_size]
+                                            [-mut_prob mut_prob]
+                                            [-cross_prob cross_prob]
+                                            [-tourn_prob tourn_prob]
+                                            [-tourn_size tourn_size]
+                                            [-iters iters]
+                                            [-initial_ops initial_ops]
+                                          }
+
+proc resynth_genetic { args } {
+  sta::parse_key_args "resynth_genetic" args \
+      keys {-corner -iters -seed -pop_size -mut_prob -cross_prob \
+                -tourn_size -tourn_prob -initial_ops -slack_threshold} \
+      flags {}
+
+  set corner [sta::parse_corner keys]
+  if { [info exists keys(-slack_threshold)] } {
+    rmp::set_slack_threshold $keys(-slack_threshold)
+  }
+  if { [info exists keys(-seed)] } {
+    rmp::set_genetic_seed $keys(-seed)
+  }
+  if { [info exists keys(-pop_size)] } {
+    rmp::set_genetic_pop_size $keys(-pop_size)
+  }
+  if { [info exists keys(-mut_prob)] } {
+    rmp::set_genetic_mut_prob $keys(-mut_prob)
+  }
+  if { [info exists keys(-cross_prob)] } {
+    rmp::set_genetic_cross_prob $keys(-cross_prob)
+  }
+  if { [info exists keys(-tourn_size)] } {
+    rmp::set_genetic_tourn_size $keys(-tourn_size)
+  }
+  if { [info exists keys(-tourn_prob)] } {
+    rmp::set_genetic_tourn_prob $keys(-tourn_prob)
+  }
+  if { [info exists keys(-iters)] } {
+    rmp::set_genetic_iters $keys(-iters)
+  }
+  if { [info exists keys(-initial_ops)] } {
+    rmp::set_genetic_initial_ops $keys(-initial_ops)
+  }
+
+  rmp::resynth_genetic_cmd $corner
+}
