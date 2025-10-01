@@ -57,14 +57,16 @@ ce_x = 20
 
 ce_y = 20
 
-pitch_x = 20
-
-pitch_y = 22
-
 # Element size is set to multiple of placement grid above
 ce_width = ce_x * placement_grid_x
 
 ce_height = ce_y * placement_grid_y
+
+# Routing by abutment horizontally
+pitch_x = ce_width
+
+# Some routing space vertically for clock routing
+pitch_y = ce_height + (placement_grid_y * 3)
 
 # top level core offset
 margin_x = placement_grid_x
@@ -83,11 +85,11 @@ array_spacing_y = margin_y * 2
 
 # top level core and die size
 core_width = (
-    2 * margin_x + ((placement_grid_x * pitch_x) * (cols - 1)) + ce_width
+    pitch_x * (cols - 1) + ce_width
 )
 
 core_height = (
-    2 * margin_y + ((placement_grid_y * pitch_y) * (rows - 1)) + ce_height
+    pitch_y * (rows - 1) + ce_height
 )
 
 die_width = core_width + (array_spacing_x * 2)
