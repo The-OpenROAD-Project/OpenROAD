@@ -3,15 +3,12 @@
 
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <random>
 
-#include "cut/abc_library_factory.h"
 #include "db_sta/dbSta.hh"
-#include "resynthesis_strategy.h"
 #include "rsz/Resizer.hh"
+#include "slack_tuning_strategy.h"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "utl/Logger.h"
@@ -19,9 +16,7 @@
 
 namespace rmp {
 
-using GiaOp = std::function<void(abc::Gia_Man_t*&)>;
-
-class AnnealingStrategy : public ResynthesisStrategy
+class AnnealingStrategy final : public SlackTuningStrategy
 {
  public:
   explicit AnnealingStrategy(sta::Corner* corner,
@@ -31,37 +26,28 @@ class AnnealingStrategy : public ResynthesisStrategy
                              unsigned iterations,
                              std::optional<unsigned> revert_after,
                              unsigned initial_ops)
-      : corner_(corner),
-        slack_threshold_(slack_threshold),
+      : SlackTuningStrategy(corner,
+                             slack_threshold,
+                             seed,
+                             iterations,
+                             initial_ops),
         temperature_(temperature),
-        iterations_(iterations),
-        revert_after_(revert_after),
-        initial_ops_(initial_ops)
+        revert_after_(revert_after)
   {
-    if (seed) {
-      random_.seed(*seed);
-    }
   }
-  void OptimizeDesign(sta::dbSta* sta,
-                      utl::UniqueName& name_generator,
-                      rsz::Resizer* resizer,
-                      utl::Logger* logger) override;
-  void RunGia(sta::dbSta* sta,
-              const std::vector<sta::Vertex*>& candidate_vertices,
-              cut::AbcLibrary& abc_library,
-              const std::vector<GiaOp>& gia_ops,
-              size_t resize_iters,
-              utl::UniqueName& name_generator,
-              utl::Logger* logger);
+
+  std::vector<GiaOp> RunStrategy(
+      const std::vector<GiaOp>& all_ops,
+      const std::vector<sta::Vertex*>& candidate_vertices,
+      cut::AbcLibrary& abc_library,
+      sta::dbSta* sta,
+      utl::UniqueName& name_generator,
+      rsz::Resizer* resizer,
+      utl::Logger* logger) override;
 
  private:
-  sta::Corner* corner_;
-  sta::Slack slack_threshold_;
   std::optional<float> temperature_;
-  unsigned iterations_;
   std::optional<unsigned> revert_after_;
-  unsigned initial_ops_;
-  std::mt19937 random_;
 };
 
 }  // namespace rmp
