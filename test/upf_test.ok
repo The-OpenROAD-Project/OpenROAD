@@ -266,7 +266,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       830 |   0.1762 |  7.298180e+02 |   +4.65% |  4.73e-06 |  (PD_D2)
       837 |   0.0901 |  7.572950e+02 |          |  5.49e-06 | PD_D2
 ---------------------------------------------------------------
-[INFO GPL-1016] Power domain 'PD_D2' placement finished at iteration 837
+[INFO GPL-1016] Region 'PD_D2' placement finished at iteration 837
 [INFO GPL-1002] Placed Cell Area               43.7920
 [INFO GPL-1003] Available Free Area           900.8640
 [INFO GPL-1004] Minimum Feasible Density        0.0500 (cell_area / free_area)
@@ -283,7 +283,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       900 |   0.0658 |  9.887790e+02 |   +8.10% |  1.32e-05 |  (PD_D1)
       900 |   0.0658 |  9.887790e+02 |          |  1.34e-05 | PD_D1
 ---------------------------------------------------------------
-[INFO GPL-1016] Power domain 'PD_D1' placement finished at iteration 900
+[INFO GPL-1016] Region 'PD_D1' placement finished at iteration 900
 [INFO GPL-1002] Placed Cell Area               21.2704
 [INFO GPL-1003] Available Free Area           900.8640
 [INFO GPL-1004] Minimum Feasible Density        0.0300 (cell_area / free_area)

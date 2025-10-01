@@ -19,6 +19,7 @@
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frLayer.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "frProfileTask.h"

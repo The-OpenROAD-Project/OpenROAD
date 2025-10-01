@@ -9,6 +9,7 @@
 
 #include "name.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "parse.h"
 #include "rcx/extRCap.h"

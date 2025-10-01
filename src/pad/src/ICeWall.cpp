@@ -23,6 +23,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/isotropy.h"
 #include "utl/Logger.h"
 
 namespace pad {
