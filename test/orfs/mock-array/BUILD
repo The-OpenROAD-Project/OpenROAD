@@ -25,16 +25,6 @@ POWER_STAGE_STEM = {
 # each number is a unit
 # current unit is configured as 2.16 which is on the routing grid for M5
 
-# table of Elements - (rows cols width height pitch_x pitch_y)
-MOCK_ARRAY_TABLE = [
-    8,
-    8,
-    20,
-    20,
-    20,
-    22,
-]
-
 MOCK_ARRAY_SCALE = 45
 
 # Routing pitches for relevant metal layers.
@@ -50,7 +40,7 @@ placement_grid_x = 0.048 * MOCK_ARRAY_SCALE
 placement_grid_y = 0.048 * MOCK_ARRAY_SCALE
 
 # number of Elements in row and column, can be control by user via environment variable
-# MOCK_ARRAY_TABLE (rows, cols, width, height, pitch_x, pitch_y)
+#
 #  rows, cols       - number of Element in rows, cols
 #  width, height    - width and height of each Element
 #
@@ -59,7 +49,17 @@ placement_grid_y = 0.048 * MOCK_ARRAY_SCALE
 #
 #  pitch_x, pitch_y - placement pitch for each Element, in x and y direction
 # specification are in unit of placement grid
-rows, cols, ce_x, ce_y, pitch_x, pitch_y = MOCK_ARRAY_TABLE
+rows = 8
+
+cols = 8
+
+ce_x = 20
+
+ce_y = 20
+
+pitch_x = 20
+
+pitch_y = 22
 
 # Element size is set to multiple of placement grid above
 ce_width = ce_x * placement_grid_x
@@ -83,16 +83,16 @@ array_spacing_y = margin_y * 2
 
 # top level core and die size
 core_width = (
-    2 * array_spacing_x + ((placement_grid_x * pitch_x) * (cols - 1)) + ce_width
+    2 * margin_x + ((placement_grid_x * pitch_x) * (cols - 1)) + ce_width
 )
 
 core_height = (
-    2 * array_spacing_y + ((placement_grid_y * pitch_y) * (rows - 1)) + ce_height
+    2 * margin_y + ((placement_grid_y * pitch_y) * (rows - 1)) + ce_height
 )
 
-die_width = core_width + (margin_x * 2)
+die_width = core_width + (array_spacing_x * 2)
 
-die_height = core_height + (margin_y * 2)
+die_height = core_height + (array_spacing_y * 2)
 
 filegroup(
     name = "mock-array-constraints",
@@ -122,10 +122,10 @@ VARIANTS = [
     name = "MockArray",
     arguments = {
         "CORE_AREA": "{} {} {} {}".format(
-            margin_x,
-            margin_y,
-            core_width + margin_x,
-            core_height + margin_y,
+            array_spacing_x,
+            array_spacing_y,
+            array_spacing_x + core_width,
+            array_spacing_y + core_height,
         ),
         "DETAILED_ROUTE_END_ITERATION": "6",
         "DIE_AREA": "0 0 {} {}".format(
@@ -155,7 +155,7 @@ VARIANTS = [
     macros = ["Element_generate_abstract"],
     sources = {
         "IO_CONSTRAINTS": [":mock-array-io"],
-        "RULES_JSON": [":rules-base.json"],
+        "RULES_JSON": [":rules-{variant}.json".format(variant = variant)],
         "SDC_FILE": [":mock-array-constraints"],
     },
     tags = ["manual"],
@@ -232,8 +232,8 @@ fir_library(
     ],
     generator = ":generate_verilog",
     opts = [
-        "--width=8",
-        "--height=8",
+        "--width=" + str(cols),
+        "--height=" + str(rows),
         "--dataWidth=64",
         "--",
         # Imagine Chisel arguments here
