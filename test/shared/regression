@@ -1,11 +1,13 @@
-#!/usr/bin/env bash
+#!/bin/sh
+# The next line is executed by /bin/sh, but not Tcl \
+exec tclsh $0 ${1+"$@"}
 
-############################################################################
-##
-## Copyright (c) 2024, The Regents of the University of California
-## All rights reserved.
+###############################################################################
 ##
 ## BSD 3-Clause License
+##
+## Copyright (c) 2019, Parallax Software, Inc.
+## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
 ## modification, are permitted provided that the following conditions are met:
@@ -33,28 +35,21 @@
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
 ##
-############################################################################
-set -e
+###############################################################################
 
-#
-# Uses the current directory to figure out what the tool name is. Allows us to
-# call the script from src/tool/test and src/tool directories. Wish we could
-# just use the path of the regression script, but we can't since $0 points to
-# the location in test/shared and not src/tool/test.
-#
-_get_tool_name()
-{
-    echo $(readlink $0)
-    script_path=$(realpath $PWD)
-    tool=$(basename "${script_path%%/src/*}/src/$(echo "$script_path" | awk -F'/src/' '{print $2}' | cut -d'/' -f1)")
-}
+# Usage: regression [test1 [test2...]]
+# Where test1 is all or the name of a tcl script in /test
+# Wildcard matching with '*' and '?' in test names is supported.
 
-_get_tool_name
+# Directory containing tests.
+set test_dir [file dirname [file normalize [info script]]]
+set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
 
-# build directory is two directories up from test/shared where this file exists
-build_dir_path=$(dirname $(dirname $(dirname $(realpath "$0"))))/build
+source [file join $openroad_dir "test" "regression.tcl"]
+source [file join $test_dir "regression_tests.tcl"]
 
-cd $build_dir_path
+regression_main
 
-ctest -L " $tool " ${@:1}
-
+# Local Variables:
+# mode:tcl
+# End:
