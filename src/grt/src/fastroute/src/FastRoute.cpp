@@ -1634,10 +1634,10 @@ NetRouteMap FastRouteCore::run()
   costheight_ = 3;
   via_cost_ = 1;
 
-  // if (past_cong == 0) {
-  //   mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
-  //   mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
-  // }
+  if (past_cong == 0) {
+    mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
+    mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
+  }
 
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     getOverflow3D();

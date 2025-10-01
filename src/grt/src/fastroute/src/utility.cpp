@@ -403,18 +403,20 @@ int FastRouteCore::getLayerResistance(const int layer,
 
   const float layer_width = dbuToMicrons(width);
   const float res_ohm_per_micron = resistance / layer_width;
-  int final_resistence = ceil(res_ohm_per_micron * dbuToMicrons(length));
+  int final_resistance = ceil(res_ohm_per_micron * dbuToMicrons(length));
 
   if (layer < net->getMinLayer() || layer > net->getMaxLayer()) {
     return BIG_INT;
   }
 
   // R = (sheet_resistance) * (length/width)
-  // logger_->report("Net: {} - layer {} - length {} - width {} -
-  // TotalResistance: {}", net->getName(), layer, length, width,
-  // total_resistance*0.1);
+  // if(net->getDbNet()->getName()=="clk"){
+  // logger_->report("Net: {} - layer {} - length {} ({}) - width {} ({}) -
+  // TotalResistance: {}", net->getName(), layer, length, dbuToMicrons(length),
+  // width, layer_width, final_resistance);
+  // }
 
-  return final_resistence;
+  return final_resistance;
 }
 
 int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
@@ -432,16 +434,15 @@ int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
   int end = std::max(from_layer, to_layer);
 
   for (int i = start; i < end; i++) {
-    odb::dbTechLayer* db_layer = tech->findRoutingLayer(i + 1);
-    double resistance = db_layer->getResistance();
+    odb::dbTechLayer* db_layer = tech->findRoutingLayer(i + 1)->getLowerLayer();
+    double resistance
+        = db_layer->getResistance();  /// dbuToMicrons(db_layer->getMinWidth());
     total_via_resistance += resistance;
+    // if(from_layer == 1 && to_layer == 13){
+    //   logger_->report("Via resistance L{}: {} total: {}", i+1, resistance,
+    //   total_via_resistance);
+    // }
   }
-
-  // logger_->report("Via resistance from L{} to L{}: {} to {} - total: {}",
-  // from_layer+1, to_layer+1,
-  //     tech->findRoutingLayer(from_layer+1)->getResistance(),
-  //     tech->findRoutingLayer(to_layer+1)->getResistance(),
-  //     total_via_resistance);
 
   return std::ceil(total_via_resistance);
 }
@@ -482,16 +483,9 @@ void FastRouteCore::assignEdge(const int netID,
   multi_array<int, 2> layer_grid;
   layer_grid.resize(boost::extents[num_layers_][routelen + 1]);
 
-  // Store segment lengths for resistance calculation
-  std::vector<float> segment_lengths(routelen + 1);
   const int via_scale_factor = 2;
 
   for (k = 0; k < routelen; k++) {
-    // Calculate segment length (Manhattan distance in grid units)
-    float seg_length
-        = abs(grids[k + 1].x - grids[k].x) + abs(grids[k + 1].y - grids[k].y);
-    segment_lengths.at(k)
-        = seg_length * tile_size_ * routelen;  // Convert to physical units
     int best_cost = std::numeric_limits<int>::min();
     if (grids[k].x == grids[k + 1].x) {
       const int min_y = std::min(grids[k].y, grids[k + 1].y);
@@ -640,7 +634,7 @@ void FastRouteCore::assignEdge(const int netID,
       for (int l = 0; l < num_layers_; l++) {
         if (layer_grid[l][k] >= net->getLayerEdgeCost(l)) {
           gridD[l][k + 1] = gridD[l][k] + 1
-                            + getLayerResistance(l, segment_lengths.at(k), net);
+                            + getLayerResistance(l, tile_size_ * routelen, net);
         } else if (layer_grid[l][k] == std::numeric_limits<int>::min()
                    || l < net->getMinLayer() || l > net->getMaxLayer()) {
           // when the layer orientation doesn't match the edge orientation,
@@ -650,7 +644,7 @@ void FastRouteCore::assignEdge(const int netID,
         } else {
           // Congested case - still include resistance but with higher base cost
           float wire_resistance
-              = getLayerResistance(l, segment_lengths.at(k), net);
+              = getLayerResistance(l, tile_size_ * routelen, net);
           gridD[l][k + 1] = gridD[l][k] + BIG_INT + wire_resistance;
         }
       }
@@ -771,7 +765,7 @@ void FastRouteCore::assignEdge(const int netID,
       for (int l = 0; l < num_layers_; l++) {
         if (layer_grid[l][k - 1] >= net->getLayerEdgeCost(l)) {
           gridD[l][k - 1] = gridD[l][k] + 1
-                            + getLayerResistance(l, segment_lengths.at(k), net);
+                            + getLayerResistance(l, tile_size_ * routelen, net);
         } else if (layer_grid[l][k] == std::numeric_limits<int>::min()
                    || l < net->getMinLayer() || l > net->getMaxLayer()) {
           // when the layer orientation doesn't match the edge orientation,
@@ -781,7 +775,7 @@ void FastRouteCore::assignEdge(const int netID,
         } else {
           // Congested case - still include resistance but with higher base cost
           float wire_resistance
-              = getLayerResistance(l, segment_lengths.at(k), net);
+              = getLayerResistance(l, tile_size_ * routelen, net);
           gridD[l][k - 1] = gridD[l][k] + BIG_INT + wire_resistance;
         }
       }

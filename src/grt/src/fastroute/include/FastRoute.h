@@ -354,6 +354,14 @@ class FastRouteCore
   void reInitTree(int netID);
 
   // maze3D functions
+  float getMazeRouteCost3D(int net_id,
+                           int from_layer,
+                           int to_layer,
+                           int from_x,
+                           int from_y,
+                           int to_x,
+                           int to_y,
+                           bool is_via);
   void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub);
   void addNeighborPoints(int netID,
                          int n1,
