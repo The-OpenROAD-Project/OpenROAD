@@ -13,6 +13,7 @@
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
+#include "odb/isotropy.h"
 #include "utl/Logger.h"
 namespace dpl {
 
@@ -177,7 +178,7 @@ void Opendp::saveViolations(const std::vector<Node*>& failures,
 
       marker->addSource(o_cell->getDbInst());
     }
-    marker->addShape(Rect{xMin, yMin, xMax, yMax});
+    marker->addShape(odb::Rect{xMin, yMin, xMax, yMax});
     marker->addSource(failure->getDbInst());
   }
 }

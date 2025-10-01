@@ -3,9 +3,12 @@
 
 #pragma once
 
+#include <QColor>
 #include <QPlainTextEdit>
 #include <QSettings>
+#include <QString>
 #include <QStringList>
+#include <QWidget>
 #include <string>
 
 namespace gui {

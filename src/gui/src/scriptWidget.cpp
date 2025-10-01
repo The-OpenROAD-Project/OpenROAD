@@ -5,12 +5,16 @@
 
 #include <unistd.h>
 
+#include <QColor>
 #include <QCoreApplication>
 #include <QHBoxLayout>
 #include <QKeyEvent>
+#include <QPushButton>
+#include <QSettings>
 #include <QThread>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QWidget>
 #include <cerrno>
 #include <functional>
 #include <memory>

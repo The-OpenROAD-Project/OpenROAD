@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <QColor>
 #include <QColorDialog>
 #include <QDialog>
 #include <QDockWidget>
@@ -14,10 +15,13 @@
 #include <QRadioButton>
 #include <QSettings>
 #include <QStandardItemModel>
+#include <QString>
 #include <QStringList>
 #include <QTextEdit>
 #include <QTreeView>
 #include <QVBoxLayout>
+#include <QVariant>
+#include <QWidget>
 #include <functional>
 #include <map>
 #include <optional>

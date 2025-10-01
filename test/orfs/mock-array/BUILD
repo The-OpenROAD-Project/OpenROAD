@@ -3,29 +3,27 @@ load("@bazel-orfs//:openroad.bzl", "orfs_flow", "orfs_run")
 load("@bazel-orfs//:verilog.bzl", "verilog_directory", "verilog_single_file_library")
 load("@bazel-orfs//toolchains/scala:chisel.bzl", "chisel_binary")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
 load("@rules_verilator//verilog:defs.bzl", "verilog_library")
 
-POWER_STAGE_NAME = "cts"
+POWER_STAGES = {
+    "cts": {
+        "stage": "4",
+    },
+    "final": {
+        "stage": "6",
+    },
+}
 
 POWER_STAGE_STEM = {
-    "cts": "4",
-    "final": "6",
-}[POWER_STAGE_NAME] + "_" + POWER_STAGE_NAME
+    stage: POWER_STAGES[stage]["stage"] + "_" + stage
+    for stage in POWER_STAGES
+}
 
 # single source of truth for defaults.
 # each number is a unit
 # current unit is configured as 2.16 which is on the routing grid for M5
-
-# table of Elements - (rows cols width height pitch_x pitch_y)
-MOCK_ARRAY_TABLE = [
-    8,
-    8,
-    20,
-    20,
-    20,
-    22,
-]
 
 MOCK_ARRAY_SCALE = 45
 
@@ -42,7 +40,7 @@ placement_grid_x = 0.048 * MOCK_ARRAY_SCALE
 placement_grid_y = 0.048 * MOCK_ARRAY_SCALE
 
 # number of Elements in row and column, can be control by user via environment variable
-# MOCK_ARRAY_TABLE (rows, cols, width, height, pitch_x, pitch_y)
+#
 #  rows, cols       - number of Element in rows, cols
 #  width, height    - width and height of each Element
 #
@@ -51,7 +49,17 @@ placement_grid_y = 0.048 * MOCK_ARRAY_SCALE
 #
 #  pitch_x, pitch_y - placement pitch for each Element, in x and y direction
 # specification are in unit of placement grid
-rows, cols, ce_x, ce_y, pitch_x, pitch_y = MOCK_ARRAY_TABLE
+rows = 8
+
+cols = 8
+
+ce_x = 20
+
+ce_y = 20
+
+pitch_x = 20
+
+pitch_y = 22
 
 # Element size is set to multiple of placement grid above
 ce_width = ce_x * placement_grid_x
@@ -75,16 +83,16 @@ array_spacing_y = margin_y * 2
 
 # top level core and die size
 core_width = (
-    2 * array_spacing_x + ((placement_grid_x * pitch_x) * (cols - 1)) + ce_width
+    2 * margin_x + ((placement_grid_x * pitch_x) * (cols - 1)) + ce_width
 )
 
 core_height = (
-    2 * array_spacing_y + ((placement_grid_y * pitch_y) * (rows - 1)) + ce_height
+    2 * margin_y + ((placement_grid_y * pitch_y) * (rows - 1)) + ce_height
 )
 
-die_width = core_width + (margin_x * 2)
+die_width = core_width + (array_spacing_x * 2)
 
-die_height = core_height + (margin_y * 2)
+die_height = core_height + (array_spacing_y * 2)
 
 filegroup(
     name = "mock-array-constraints",
@@ -113,42 +121,42 @@ VARIANTS = [
 [orfs_flow(
     name = "MockArray",
     arguments = {
-        "PLACE_PINS_ARGS": "-annealing",
-        "PLACE_DENSITY": "0.30",
         "CORE_AREA": "{} {} {} {}".format(
-            margin_x,
-            margin_y,
-            core_width + margin_x,
-            core_height + margin_y,
+            array_spacing_x,
+            array_spacing_y,
+            array_spacing_x + core_width,
+            array_spacing_y + core_height,
         ),
+        "DETAILED_ROUTE_END_ITERATION": "6",
         "DIE_AREA": "0 0 {} {}".format(
             die_width,
             die_height,
         ),
+        "GDS_ALLOW_EMPTY": "Element",
+        "GND_NETS_VOLTAGES": "",
+        "IO_PLACER_H": "M4 M6",
+        "IO_PLACER_V": "M5 M7",
+        "MACRO_BLOCKAGE_HALO": "0",
         "MACRO_PLACE_HALO": "0 2.16",
-        "RTLMP_BOUNDARY_WT": "0",
-        "RTLMP_MAX_INST": "250",
-        "RTLMP_MIN_INST": "50",
-        "RTLMP_MAX_MACRO": "64",
-        "RTLMP_MIN_MACRO": "8",
-        "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCKS_grid_strategy.tcl",
         "MACRO_ROWS_HALO_X": "0.5",
         "MACRO_ROWS_HALO_Y": "0.5",
-        "MACRO_BLOCKAGE_HALO": "0",
         "MAX_ROUTING_LAYER": "M9",
-        "GDS_ALLOW_EMPTY": "Element",
-        "PWR_NETS_VOLTAGES": "",
-        "GND_NETS_VOLTAGES": "",
-        "IO_PLACER_V": "M5 M7",
-        "IO_PLACER_H": "M4 M6",
-        "DETAILED_ROUTE_END_ITERATION": "6",
         "OPENROAD_HIERARCHICAL": "1" if variant == "base" else "0",
+        "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCKS_grid_strategy.tcl",
+        "PLACE_DENSITY": "0.30",
+        "PLACE_PINS_ARGS": "-annealing",
+        "PWR_NETS_VOLTAGES": "",
+        "RTLMP_BOUNDARY_WT": "0",
+        "RTLMP_MAX_INST": "250",
+        "RTLMP_MAX_MACRO": "64",
+        "RTLMP_MIN_INST": "50",
+        "RTLMP_MIN_MACRO": "8",
     },
     macros = ["Element_generate_abstract"],
     sources = {
-        "RULES_JSON": [":rules-base.json"],
-        "SDC_FILE": [":mock-array-constraints"],
         "IO_CONSTRAINTS": [":mock-array-io"],
+        "RULES_JSON": [":rules-{variant}.json".format(variant = variant)],
+        "SDC_FILE": [":mock-array-constraints"],
     },
     tags = ["manual"],
     test_kwargs = {
@@ -171,30 +179,29 @@ filegroup(
 
 orfs_flow(
     name = "Element",
-    abstract_stage = POWER_STAGE_NAME,
     arguments = {
-        "PLACE_DENSITY": "0.82",
-        "DETAILED_ROUTE_END_ITERATION": "6",
-        "MIN_ROUTING_LAYER": "M2",
-        "MAX_ROUTING_LAYER": "M5",
-        "IO_PLACER_H": "M2 M4",
-        "IO_PLACER_V": "M3 M5",
-        "PLACE_PINS_ARGS": "-annealing",
-        "GND_NETS_VOLTAGES": "",
-        "PWR_NETS_VOLTAGES": "",
         "CORE_AREA": "{} {} {} {}".format(
             ce_margin_x,
             ce_margin_y,
             ce_width - ce_margin_x,
             ce_height - ce_margin_y,
         ),
+        "DETAILED_ROUTE_END_ITERATION": "6",
         "DIE_AREA": "0 0 {} {}".format(
             ce_width,
             ce_height,
         ),
-        "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCK_grid_strategy.tcl",
+        "GND_NETS_VOLTAGES": "",
+        "IO_PLACER_H": "M2 M4",
+        "IO_PLACER_V": "M3 M5",
+        "MAX_ROUTING_LAYER": "M5",
+        "MIN_ROUTING_LAYER": "M2",
         # We want to report power per module using hierarhical .odb
         "OPENROAD_HIERARCHICAL": "1",
+        "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCK_grid_strategy.tcl",
+        "PLACE_DENSITY": "0.82",
+        "PLACE_PINS_ARGS": "-annealing",
+        "PWR_NETS_VOLTAGES": "",
         # Keep only one module, enough for testing, faster builds. There's
         # some width in multiply reduction going on here to speed up
         # builds, so we want to keep this exact module.
@@ -225,8 +232,8 @@ fir_library(
     ],
     generator = ":generate_verilog",
     opts = [
-        "--width=8",
-        "--height=8",
+        "--width=" + str(cols),
+        "--height=" + str(rows),
         "--dataWidth=64",
         "--",
         # Imagine Chisel arguments here
@@ -273,16 +280,16 @@ MACROS = [
         name = "{macro}_parasitics".format(macro = macro),
         src = ":{macro}_{stage}".format(
             macro = macro,
-            stage = POWER_STAGE_NAME,
+            stage = stage,
         ),
         outs = [
             "results/asap7/{macro}/base/{stem}.spef".format(
                 macro = macro,
-                stem = POWER_STAGE_STEM,
+                stem = POWER_STAGE_STEM[stage],
             ),
             "results/asap7/{macro}/base/{stem}.v".format(
                 macro = macro,
-                stem = POWER_STAGE_STEM,
+                stem = POWER_STAGE_STEM[stage],
             ),
         ],
         script = ":parasitics.tcl",
@@ -290,7 +297,8 @@ MACROS = [
         visibility = ["//visibility:public"],
     )
     for macro in MACROS
-    if POWER_STAGE_NAME != "final"
+    for stage in POWER_STAGES
+    if stage != "final"
 ]
 
 [
@@ -299,22 +307,23 @@ MACROS = [
         srcs = [
             ":{macro}_{stage}".format(
                 macro = macro,
-                stage = POWER_STAGE_NAME,
+                stage = stage,
             ),
         ],
-        output_group = POWER_STAGE_STEM + ".v",
+        output_group = POWER_STAGE_STEM[stage] + ".v",
     )
     for macro in MACROS
-    if POWER_STAGE_NAME == "final"
+    for stage in POWER_STAGES
+    if stage == "final"
 ]
 
-verilog_library(
-    name = "array",
+[verilog_library(
+    name = "array_{stage}".format(stage = stage),
     srcs = [
         ("results/asap7/{macro}/base/{stem}.v".format(
             macro = macro,
-            stem = POWER_STAGE_STEM,
-        ) if POWER_STAGE_NAME != "final" else "{macro}_netlist".format(macro = macro))
+            stem = POWER_STAGE_STEM[stage],
+        ) if stage != "final" else "{macro}_netlist".format(macro = macro))
         for macro in MACROS
     ] + [
         "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_AO_RVT_TT_201020.v",
@@ -324,15 +333,15 @@ verilog_library(
         "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/empty.v",
     ],
     tags = ["manual"],
-)
+) for stage in POWER_STAGES]
 
-verilator_cc_library(
-    name = "array_verilator",
+[verilator_cc_library(
+    name = "array_verilator_{stage}".format(stage = stage),
     copts = [
         # Don't care about warnings from Verilator generated C++
         "-Wno-unused-variable",
     ],
-    module = ":array",
+    module = ":array_{stage}".format(stage = stage),
     module_top = "MockArray",
     tags = ["manual"],
     trace = True,
@@ -348,10 +357,10 @@ verilator_cc_library(
         # No-op option to retrigger a build
         # "-Wfuture-blah",
     ],
-)
+) for stage in POWER_STAGES]
 
-cc_binary(
-    name = "simulator",
+[cc_binary(
+    name = "simulator_{stage}".format(stage = stage),
     srcs = [
         "simulate.cpp",
     ],
@@ -360,36 +369,38 @@ cc_binary(
     ],
     tags = ["manual"],
     deps = [
-        ":array_verilator",
+        ":array_verilator_{stage}".format(stage = stage),
     ],
-)
+) for stage in POWER_STAGES]
 
-genrule(
-    name = "vcd",
+[genrule(
+    name = "vcd_{stage}".format(stage = stage),
     srcs = [
         # FIXME move to tools, using target configuration for now to avoid rebuilds
-        ":simulator",
+        ":simulator_{stage}".format(stage = stage),
     ],
-    outs = ["MockArrayTestbench.vcd"],
-    cmd = "$(execpath :simulator) $(location :MockArrayTestbench.vcd)",
+    outs = ["MockArrayTestbench_{stage}.vcd".format(stage = stage)],
+    cmd = "$(execpath :simulator_{stage}) $(location :MockArrayTestbench_{stage}.vcd)".format(stage = stage),
     tags = ["manual"],
     tools = [
     ],
-)
+) for stage in POWER_STAGES]
 
 # If we want to measure power after final, instead of with estimated parasitics,
 # we'll need this.
+# buildifier: disable=unused-variable
 SPEFS_AND_NETLISTS = [
     ":results/asap7/{macro}/{stem}.{ext}".format(
         ext = ext,
         macro = macro,
-        stem = POWER_STAGE_STEM,
+        stem = POWER_STAGE_STEM[stage],
     )
     for macro in MACROS
     for ext in [
         "spef",
         "v",
     ]
+    for stage in POWER_STAGES
 ]
 
 POWER_TESTS = [
@@ -397,47 +408,72 @@ POWER_TESTS = [
     "power_instances",
 ]
 
-[orfs_run(
-    name = "MockArray_{name}".format(name = name),
-    src = ":MockArray_{stage}".format(stage = POWER_STAGE_NAME),
-    outs = [
-        "{name}.txt".format(name = name),
-    ],
-    arguments = {
-        "OUTPUT": "$(location :{name}.txt)".format(name = name),
-        "VCD_STIMULI": "$(location :vcd)",
-        "OPENROAD_EXE": "$(location //src/sta:opensta)",
-        "POWER_STAGE_NAME": POWER_STAGE_NAME,
-        "POWER_STAGE_STEM": POWER_STAGE_STEM,
-        "LOAD_POWER_TCL": "$(location :load_power.tcl)",
-    },
-    data = [
-               # FIXME this is a workaround to ensure that the OpenSTA runfiles are available
-               ":opensta_runfiles",
-               ":vcd",
-               ":load_power.tcl",
-           ] + ["{macro}_{stage}".format(
-               macro = macro,
-               stage = POWER_STAGE_NAME,
-           ) for macro in MACROS] +
-           (["{macro}_parasitics".format(macro = macro) for macro in MACROS] if POWER_STAGE_NAME != "final" else []),
-    script = ":{name}.tcl".format(name = name),
-    tags = ["manual"],
-    tools = ["//src/sta:opensta"],
-    visibility = ["//visibility:public"],
-) for name in POWER_TESTS]
+[
+    orfs_run(
+        name = "MockArray_{stage}_{name}".format(
+            name = name,
+            stage = stage,
+        ),
+        src = ":MockArray_{stage}".format(stage = stage),
+        outs = [
+            "{name}_{stage}.txt".format(
+                name = name,
+                stage = stage,
+            ),
+        ],
+        arguments = {
+            "LOAD_POWER_TCL": "$(location :load_power.tcl)",
+            "OPENROAD_EXE": "$(location //src/sta:opensta)",
+            "OUTPUT": "$(location :{name}_{stage}.txt)".format(
+                name = name,
+                stage = stage,
+            ),
+            "POWER_STAGE_NAME": stage,
+            "POWER_STAGE_STEM": POWER_STAGE_STEM[stage],
+            "VCD_STIMULI": "$(location :vcd_{stage})".format(stage = stage),
+        },
+        data = [
+                   # FIXME this is a workaround to ensure that the OpenSTA runfiles are available
+                   ":opensta_runfiles",
+                   ":vcd_{stage}".format(stage = stage),
+                   ":load_power.tcl",
+               ] + ["{macro}_{stage}".format(
+                   macro = macro,
+                   stage = stage,
+               ) for macro in MACROS] +
+               (["{macro}_parasitics".format(macro = macro) for macro in MACROS] if stage != "final" else []),
+        script = ":{name}.tcl".format(name = name),
+        tags = ["manual"],
+        tools = ["//src/sta:opensta"],
+        visibility = ["//visibility:public"],
+    )
+    for name in POWER_TESTS
+    for stage in POWER_STAGES
+]
 
-[sh_test(
-    name = "MockArray_{name}_test".format(name = name),
-    srcs = ["ok.sh"],
-    args = [
-        "$(location :MockArray_{name})".format(name = name),
-    ],
-    data = [
-        ":MockArray_{name}".format(name = name),
-    ],
-    tags = ["manual"] if name == "power_instances" else [],
-) for name in POWER_TESTS]
+[
+    sh_test(
+        name = "MockArray_{name}_{stage}_test".format(
+            name = name,
+            stage = stage,
+        ),
+        srcs = ["ok.sh"],
+        args = [
+            "$(location :MockArray_{stage}_{name})".format(
+                name = name,
+                stage = stage,
+            ),
+        ],
+        data = [
+            ":MockArray_{stage}_{name}".format(
+                name = name,
+                stage = stage,
+            ),
+        ],
+    )
+    for name in POWER_TESTS
+    for stage in POWER_STAGES
+]
 
 # FIXME why is this needed to ensure that cfg=exec of OpenSTA has runfiles?
 genrule(

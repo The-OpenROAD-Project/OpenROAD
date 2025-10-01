@@ -3,11 +3,15 @@
 
 #include "baseParser.h"
 
+#include <cstddef>
+#include <filesystem>
+#include <map>
 #include <sstream>
+#include <string>
+#include <vector>
 
 #include "objects.h"
 #include "utl/Logger.h"
-
 namespace odb {
 
 BaseParser::BaseParser(utl::Logger* logger) : logger_(logger)
@@ -67,17 +71,20 @@ void BaseParser::parseHeader(Header& header, const YAML::Node& header_node)
   }
 
   if (header_node["include"]) {
-    extractValue(header_node, "include", header.includes);
+    std::vector<std::string> includes;
+    extractValue(header_node, "include", includes);
+    for (auto& include : includes) {
+      resolvePaths(include, header.includes);
+    }
   }
 }
 
-void BaseParser::parseDefines(std::map<std::string, std::string>& defines,
-                              const std::string& content)
+void BaseParser::parseDefines(std::string& content)
 {
-  defines.clear();
-
+  std::map<std::string, std::string> defines;
   std::istringstream stream(content);
   std::string line;
+  std::string processed_content;
 
   while (std::getline(stream, line)) {
     if (line.find("#!define") == 0) {
@@ -93,7 +100,74 @@ void BaseParser::parseDefines(std::map<std::string, std::string>& defines,
         value = trim(value);
         defines[key] = value;
       }
+      // Don't include define statements in processed content
+    } else {
+      std::string resolved_line = line;
+      for (const auto& [macro, replacement] : defines) {
+        size_t pos = 0;
+        while ((pos = resolved_line.find(macro, pos)) != std::string::npos) {
+          resolved_line.replace(pos, macro.length(), replacement);
+          pos += replacement.length();
+        }
+      }
+      processed_content += resolved_line + "\n";
     }
+  }
+  content = processed_content;
+}
+
+std::string BaseParser::resolvePath(const std::string& path)
+{
+  std::filesystem::path include_fs_path(path);
+  if (include_fs_path.is_absolute()) {
+    return include_fs_path.string();
+  }
+  std::filesystem::path current_fs_path(current_file_path_);
+  std::filesystem::path current_dir = current_fs_path.parent_path();
+  std::filesystem::path resolved_path = current_dir / include_fs_path;
+  return resolved_path.string();
+}
+
+namespace {
+inline bool matchesPattern(const std::string& filename,
+                           const std::string& pattern)
+{
+  const size_t star_pos = pattern.find('*');
+  const std::string prefix = pattern.substr(0, star_pos);
+  const std::string suffix = pattern.substr(star_pos + 1);
+  if (filename.length() < prefix.length() + suffix.length()) {
+    return false;
+  }
+  return filename.substr(0, prefix.length()) == prefix
+         && filename.substr(filename.length() - suffix.length()) == suffix;
+}
+}  // namespace
+
+void BaseParser::resolvePaths(const std::string& path,
+                              std::vector<std::string>& paths)
+{
+  const std::string resolved_path = resolvePath(path);
+
+  if (resolved_path.find('*') != std::string::npos) {
+    std::filesystem::path path_fs(resolved_path);
+    std::filesystem::path directory = path_fs.parent_path();
+    const std::string filename_pattern = path_fs.filename().string();
+
+    if (!std::filesystem::exists(directory)
+        || !std::filesystem::is_directory(directory)) {
+      logError("Directory does not exist: " + directory.string());
+    }
+
+    for (const auto& entry : std::filesystem::directory_iterator(directory)) {
+      if (entry.is_regular_file()) {
+        const std::string filename = entry.path().filename().string();
+        if (matchesPattern(filename, filename_pattern)) {
+          paths.push_back(entry.path().string());
+        }
+      }
+    }
+  } else {
+    paths.push_back(resolved_path);
   }
 }
 

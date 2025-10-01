@@ -5,23 +5,10 @@
 
 #include <tcl.h>
 
-namespace odb {
-class dbDatabase;
-}
-
-namespace utl {
-class Logger;
-}
-
 namespace fin {
 
 class Finale;
 
-fin::Finale* makeFinale();
-void initFinale(fin::Finale* finale,
-                odb::dbDatabase* db,
-                utl::Logger* logger,
-                Tcl_Interp* tcl_interp);
-void deleteFinale(fin::Finale* finale);
+void initFinale(Tcl_Interp* tcl_interp);
 
 }  // namespace fin

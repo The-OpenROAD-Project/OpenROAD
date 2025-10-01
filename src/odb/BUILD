@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, Precision Innovations Inc.
 
+load("@openroad_rules_python//python:defs.bzl", "py_library")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
@@ -41,9 +44,10 @@ cc_library(
         "src/lefin/*.cpp",
         "src/lefin/*.h",
         "src/lefout/*.cpp",
-        "src/swig/common/swig_common.cpp",
         "src/3dblox/*.cpp",
         "src/3dblox/*.h",
+    ] + [
+        "src/swig/common/swig_common.cpp",
     ]),
     hdrs = glob(
         include = [

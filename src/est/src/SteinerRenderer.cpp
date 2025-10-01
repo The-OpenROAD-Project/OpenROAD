@@ -4,6 +4,7 @@
 #include "SteinerRenderer.h"
 
 #include "est/SteinerTree.h"
+#include "gui/gui.h"
 
 namespace est {
 

@@ -9,6 +9,8 @@
 #include <QFormLayout>
 #include <QPushButton>
 #include <QSpinBox>
+#include <QString>
+#include <QWidget>
 
 #include "gui/heatMap.h"
 

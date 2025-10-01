@@ -32,7 +32,11 @@
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/PowerClass.hh"
 #include "sta/Sdc.hh"
+#include "utl/Logger.h"
 #include "utl/timer.h"
 
 namespace psm {

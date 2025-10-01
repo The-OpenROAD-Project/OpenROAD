@@ -20,7 +20,9 @@
 #include "gc/FlexGC.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "rp/FlexRP.h"
+#include "utl/Logger.h"
 
 namespace drt {
 
@@ -63,8 +65,8 @@ void FlexRP::prep_minStepViasCheck()
       continue;
     }
 
-    const Rect upViaBox = upVia->getLayer1ShapeBox();
-    const Rect downViaBox = downVia->getLayer2ShapeBox();
+    const odb::Rect upViaBox = upVia->getLayer1ShapeBox();
+    const odb::Rect downViaBox = downVia->getLayer2ShapeBox();
     const gtl::rectangle_data<frCoord> upViaRect(
         upViaBox.xMin(), upViaBox.yMin(), upViaBox.xMax(), upViaBox.yMax());
     const gtl::rectangle_data<frCoord> downViaRect(downViaBox.xMin(),
@@ -306,7 +308,7 @@ void FlexRP::prep_cutSpcTbl()
         continue;
       }
       frVia via(viaDef);
-      Rect tmpBx = via.getCutBBox();
+      odb::Rect tmpBx = via.getCutBBox();
       frString cutClass1;
       const auto cutClassIdx1
           = layer->getCutClassIdx(tmpBx.minDXDY(), tmpBx.maxDXDY());
@@ -600,7 +602,7 @@ void FlexRP::prep_viaForbiddenTurnLen_minSpc(const frLayerNum& lNum,
   }
 
   const frVia via1(viaDef);
-  Rect viaBox1;
+  odb::Rect viaBox1;
   if (viaDef->getLayer1Num() == lNum) {
     viaBox1 = via1.getLayer1BBox();
   } else {
@@ -734,8 +736,8 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
   }
 }
 
-bool FlexRP::hasMinStepViol(const Rect& r1,
-                            const Rect& r2,
+bool FlexRP::hasMinStepViol(const odb::Rect& r1,
+                            const odb::Rect& r2,
                             const frLayerNum lNum)
 {
   const gtl::rectangle_data<frCoord> rect1(
@@ -820,7 +822,7 @@ void FlexRP::prep_via2viaForbiddenLen_minStep(const frLayerNum& lNum,
   if (viaDef1->getLayer1Num() == viaDef2->getLayer1Num()) {
     return;
   }
-  Rect enclosureBox1, enclosureBox2;
+  odb::Rect enclosureBox1, enclosureBox2;
   const frVia via1(viaDef1);
   const frVia via2(viaDef2);
   if (viaDef1->getLayer1Num() == lNum) {
@@ -830,7 +832,7 @@ void FlexRP::prep_via2viaForbiddenLen_minStep(const frLayerNum& lNum,
     enclosureBox1 = via1.getLayer2BBox();
     enclosureBox2 = via2.getLayer1BBox();
   }
-  Rect *shifting, *other;
+  odb::Rect *shifting, *other;
   // get the rect with lesser width (the shifting one)
   if (isVertical) {
     if (enclosureBox1.dx() < enclosureBox2.dx()) {
@@ -1000,7 +1002,7 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc(
     return;
   }
 
-  Rect enclosureBox1;
+  odb::Rect enclosureBox1;
   const frVia via1(viaDef1);
   const frVia via2(viaDef2);
   if (viaDef1->getLayer1Num() == lNum) {
@@ -1008,14 +1010,14 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc(
   } else {
     enclosureBox1 = via1.getLayer2BBox();
   }
-  Rect enclosureBox2;
+  odb::Rect enclosureBox2;
   if (viaDef2->getLayer1Num() == lNum) {
     enclosureBox2 = via2.getLayer1BBox();
   } else {
     enclosureBox2 = via2.getLayer2BBox();
   }
-  const Rect cutBox1 = via1.getCutBBox();
-  const Rect cutBox2 = via2.getCutBBox();
+  const odb::Rect cutBox1 = via1.getCutBBox();
+  const odb::Rect cutBox2 = via2.getCutBBox();
   std::pair<frCoord, frCoord> range;
   frCoord reqSpcVal = 0;
   // check via1 cut layer to lNum
@@ -1103,7 +1105,7 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
   }
   const bool isCurrDirY = !isCurrDirX;
   const frVia via1(viaDef1);
-  Rect viaBox1;
+  odb::Rect viaBox1;
   if (viaDef1->getLayer1Num() == lNum) {
     viaBox1 = via1.getLayer1BBox();
   } else {
@@ -1111,14 +1113,14 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
   }
 
   const frVia via2(viaDef2);
-  Rect viaBox2;
+  odb::Rect viaBox2;
   if (viaDef2->getLayer1Num() == lNum) {
     viaBox2 = via2.getLayer1BBox();
   } else {
     viaBox2 = via2.getLayer2BBox();
   }
-  const Rect cutBox1 = via1.getCutBBox();
-  const Rect cutBox2 = via2.getCutBBox();
+  const odb::Rect cutBox1 = via1.getCutBBox();
+  const odb::Rect cutBox2 = via2.getCutBBox();
   const auto layer1 = tech_->getLayer(viaDef1->getCutLayerNum());
   const auto layer2 = tech_->getLayer(viaDef2->getCutLayerNum());
   const auto cutClassIdx1
@@ -1197,9 +1199,9 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
 }
 
 void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc_helper(
-    const Rect& enclosureBox1,
-    const Rect& enclosureBox2,
-    const Rect& cutBox,
+    const odb::Rect& enclosureBox1,
+    const odb::Rect& enclosureBox2,
+    const odb::Rect& cutBox,
     const frCoord reqSpcVal,
     std::pair<frCoord, frCoord>& range)
 {
@@ -1232,7 +1234,7 @@ void FlexRP::prep_via2viaForbiddenLen_minimumCut(
 
   bool isVia1Above = false;
   const frVia via1(viaDef1);
-  Rect viaBox1;
+  odb::Rect viaBox1;
   if (viaDef1->getLayer1Num() == lNum) {
     viaBox1 = via1.getLayer1BBox();
     isVia1Above = true;
@@ -1240,13 +1242,13 @@ void FlexRP::prep_via2viaForbiddenLen_minimumCut(
     viaBox1 = via1.getLayer2BBox();
     isVia1Above = false;
   }
-  const Rect cutBox1 = via1.getCutBBox();
+  const odb::Rect cutBox1 = via1.getCutBBox();
   const int width1 = viaBox1.minDXDY();
   const int length1 = viaBox1.maxDXDY();
 
   bool isVia2Above = false;
   const frVia via2(viaDef2);
-  Rect viaBox2;
+  odb::Rect viaBox2;
   if (viaDef2->getLayer1Num() == lNum) {
     viaBox2 = via2.getLayer1BBox();
     isVia2Above = true;
@@ -1254,7 +1256,7 @@ void FlexRP::prep_via2viaForbiddenLen_minimumCut(
     viaBox2 = via2.getLayer2BBox();
     isVia2Above = false;
   }
-  const Rect cutBox2 = via2.getCutBBox();
+  const odb::Rect cutBox2 = via2.getCutBBox();
   const int width2 = viaBox2.minDXDY();
   const int length2 = viaBox2.maxDXDY();
 
@@ -1344,11 +1346,11 @@ void FlexRP::prep_via2viaForbiddenLen_widthViaMap(
   const bool isVia2Above = (viaDef2->getLayer1Num() == lNum);
   assert(isVia1Above != isVia2Above);
 
-  const Rect viaBox1(isVia1Above ? viaDef1->getLayer1ShapeBox()
-                                 : viaDef1->getLayer2ShapeBox());
+  const odb::Rect viaBox1(isVia1Above ? viaDef1->getLayer1ShapeBox()
+                                      : viaDef1->getLayer2ShapeBox());
 
-  const Rect viaBox2(isVia2Above ? viaDef2->getLayer1ShapeBox()
-                                 : viaDef2->getLayer2ShapeBox());
+  const odb::Rect viaBox2(isVia2Above ? viaDef2->getLayer1ShapeBox()
+                                      : viaDef2->getLayer2ShapeBox());
 
   int lower_width;
   int upper_width;
@@ -1383,8 +1385,8 @@ void FlexRP::prep_via2viaForbiddenLen_widthViaMap(
     return;
   }
 
-  const Rect cutBox1 = viaDef1->getCutShapeBox();
-  const Rect cutBox2 = viaDef2->getCutShapeBox();
+  const odb::Rect cutBox1 = viaDef1->getCutShapeBox();
+  const odb::Rect cutBox2 = viaDef2->getCutShapeBox();
 
   frCoord minReqDist;
   if (isCurrDirX) {
@@ -1423,22 +1425,22 @@ void FlexRP::prep_via2viaForbiddenLen_cutSpc(const frLayerNum& lNum,
   const bool isCurrDirY = !isCurrDirX;
 
   const frVia via1(viaDef1);
-  Rect viaBox1;
+  odb::Rect viaBox1;
   if (viaDef1->getLayer1Num() == lNum) {
     viaBox1 = via1.getLayer1BBox();
   } else {
     viaBox1 = via1.getLayer2BBox();
   }
-  const Rect cutBox1 = via1.getCutBBox();
+  const odb::Rect cutBox1 = via1.getCutBBox();
 
   const frVia via2(viaDef2);
-  Rect viaBox2;
+  odb::Rect viaBox2;
   if (viaDef2->getLayer1Num() == lNum) {
     viaBox2 = via2.getLayer1BBox();
   } else {
     viaBox2 = via2.getLayer2BBox();
   }
-  const Rect cutBox2 = via2.getCutBBox();
+  const odb::Rect cutBox2 = via2.getCutBBox();
 
   // same layer (use samenet rule if exist, otherwise use diffnet rule)
   if (viaDef1->getCutLayerNum() == viaDef2->getCutLayerNum()) {
@@ -1553,7 +1555,7 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
   const frCoord defaultWidth = tech_->getLayer(lNum)->getWidth();
 
   const frVia via1(viaDef1);
-  Rect viaBox1;
+  odb::Rect viaBox1;
   if (viaDef1->getLayer1Num() == lNum) {
     viaBox1 = via1.getLayer1BBox();
   } else {
@@ -1565,7 +1567,7 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
   auto prl1 = isCurrDirX ? viaBox1.dy() : viaBox1.dx();
 
   const frVia via2(viaDef2);
-  Rect viaBox2;
+  odb::Rect viaBox2;
   if (viaDef2->getLayer1Num() == lNum) {
     viaBox2 = via2.getLayer1BBox();
   } else {
@@ -1659,14 +1661,14 @@ void FlexRP::prep_via2viaPRL(const frLayerNum lNum,
     return;
   }
   const frVia via1(viaDef1);
-  Rect viaBox1;
+  odb::Rect viaBox1;
   if (viaDef1->getLayer1Num() == lNum) {
     viaBox1 = via1.getLayer1BBox();
   } else {
     viaBox1 = via1.getLayer2BBox();
   }
   const frVia via2(viaDef2);
-  Rect viaBox2;
+  odb::Rect viaBox2;
   if (viaDef2->getLayer1Num() == lNum) {
     viaBox2 = via2.getLayer1BBox();
   } else {

@@ -29,15 +29,11 @@ using odb::dbSigType;
 
 namespace psm {
 
-PDNSim::PDNSim() = default;
-
-PDNSim::~PDNSim() = default;
-
-void PDNSim::init(utl::Logger* logger,
-                  odb::dbDatabase* db,
-                  sta::dbSta* sta,
-                  est::EstimateParasitics* estimate_parasitics,
-                  dpl::Opendp* opendp)
+PDNSim::PDNSim(utl::Logger* logger,
+               odb::dbDatabase* db,
+               sta::dbSta* sta,
+               est::EstimateParasitics* estimate_parasitics,
+               dpl::Opendp* opendp)
 {
   db_ = db;
   sta_ = sta;
@@ -47,6 +43,8 @@ void PDNSim::init(utl::Logger* logger,
   heatmap_ = std::make_unique<IRDropDataSource>(this, sta, logger_);
   heatmap_->registerHeatMap();
 }
+
+PDNSim::~PDNSim() = default;
 
 void PDNSim::setDebugGui(bool enable)
 {

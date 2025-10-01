@@ -7,8 +7,19 @@
 #include <cmath>
 #include <string>
 #include <tuple>
+#include <utility>
+#include <vector>
 
 #include "BaseMove.hh"
+#include "sta/ArcDelayCalc.hh"
+#include "sta/Delay.hh"
+#include "sta/Graph.hh"
+#include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
+#include "sta/Vector.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 

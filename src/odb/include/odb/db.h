@@ -28,6 +28,7 @@
 #include "odb/dbTypes.h"
 #include "odb/dbViaParams.h"
 #include "odb/geom.h"
+#include "odb/isotropy.h"
 #include "odb/odb.h"
 
 constexpr int ADS_MAX_CORNER = 10;

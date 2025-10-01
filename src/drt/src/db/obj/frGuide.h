@@ -9,6 +9,8 @@
 
 #include "db/obj/frFig.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frNet;
@@ -18,10 +20,10 @@ class frGuide : public frConnFig
   frGuide() = default;
   frGuide(const frGuide& in) = delete;
   // getters
-  std::pair<Point, Point> getPoints() const { return {begin_, end_}; }
+  std::pair<odb::Point, odb::Point> getPoints() const { return {begin_, end_}; }
 
-  const Point& getBeginPoint() const { return begin_; }
-  const Point& getEndPoint() const { return end_; }
+  const odb::Point& getBeginPoint() const { return begin_; }
+  const odb::Point& getEndPoint() const { return end_; }
 
   frLayerNum getBeginLayerNum() const { return beginLayer_; }
   frLayerNum getEndLayerNum() const { return endLayer_; }
@@ -32,7 +34,7 @@ class frGuide : public frConnFig
   }
   int getIndexInOwner() const { return index_in_owner_; }
   // setters
-  void setPoints(const Point& beginIn, const Point& endIn)
+  void setPoints(const odb::Point& beginIn, const odb::Point& endIn)
   {
     begin_ = beginIn;
     end_ = endIn;
@@ -67,14 +69,14 @@ class frGuide : public frConnFig
    * intersects, incomplete
    */
   // needs to be updated
-  Rect getBBox() const override { return Rect(begin_, end_); }
-  void move(const dbTransform& xform) override { ; }
-  bool intersects(const Rect& box) const override { return false; }
+  odb::Rect getBBox() const override { return odb::Rect(begin_, end_); }
+  void move(const odb::dbTransform& xform) override { ; }
+  bool intersects(const odb::Rect& box) const override { return false; }
   void setIndexInOwner(const int& val) { index_in_owner_ = val; }
 
  private:
-  Point begin_;
-  Point end_;
+  odb::Point begin_;
+  odb::Point end_;
   frLayerNum beginLayer_{0};
   frLayerNum endLayer_{0};
   std::vector<std::unique_ptr<frConnFig>> routeObj_;

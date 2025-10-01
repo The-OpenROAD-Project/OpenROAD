@@ -14,23 +14,10 @@
 
 #include <tcl.h>
 
-namespace odb {
-class dbDatabase;
-}
-
-namespace utl {
-class Logger;
-}
-
 namespace exa {
 
 class Example;
 
-exa::Example* makeExample();
-void initExample(exa::Example* example,
-                 odb::dbDatabase* db,
-                 utl::Logger* logger,
-                 Tcl_Interp* tcl_interp);
-void deleteExample(exa::Example* example);
+void initExample(Tcl_Interp* tcl_interp);
 
 }  // namespace exa

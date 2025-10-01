@@ -10,6 +10,7 @@
 
 #include "RDLRoute.h"
 #include "RDLRouter.h"
+#include "gui/gui.h"
 #include "odb/geom.h"
 
 namespace pad {

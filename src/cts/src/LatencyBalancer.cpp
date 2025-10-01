@@ -3,8 +3,12 @@
 
 #include "LatencyBalancer.h"
 
+#include <algorithm>
+#include <cmath>
+#include <limits>
 #include <map>
 #include <set>
+#include <stack>
 #include <string>
 #include <utility>
 #include <vector>
@@ -14,13 +18,22 @@
 #include "TreeBuilder.h"
 #include "cts/TritonCTS.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/geom.h"
+#include "sta/Clock.hh"
+#include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 #include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/Sdc.hh"
+#include "sta/TimingArc.hh"
+#include "sta/TimingModel.hh"
+#include "utl/Logger.h"
 
 namespace cts {
 

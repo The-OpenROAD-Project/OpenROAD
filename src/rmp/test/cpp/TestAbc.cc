@@ -19,7 +19,6 @@
 #include "base/main/abcapis.h"
 #include "cut/abc_library_factory.h"
 #include "cut/logic_extractor.h"
-#include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
 #include "delay_optimization_strategy.h"
@@ -35,6 +34,7 @@
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "sta/VerilogReader.hh"
+#include "tst/fixture.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 #include "zero_slack_strategy.h"
@@ -53,52 +53,27 @@ using cut::AbcLibraryFactory;
 using cut::LogicCut;
 using cut::LogicExtractorFactory;
 
-std::once_flag init_sta_flag;
+std::once_flag init_abc_flag;
 
-class AbcTest : public ::testing::Test
+class AbcTest : public tst::Fixture
 {
  protected:
   void SetUp() override
   {
-    db_ = utl::UniquePtrWithDeleter<odb::dbDatabase>(odb::dbDatabase::create(),
-                                                     &odb::dbDatabase::destroy);
-    std::call_once(init_sta_flag, []() {
-      sta::initSta();
-      abc::Abc_Start();
-    });
-    db_->setLogger(&logger_);
-    sta_ = std::unique_ptr<sta::dbSta>(sta::makeDbSta());
-    sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
-    auto path = std::filesystem::canonical("./Nangate45/Nangate45_typ.lib");
-    library_ = sta_->readLiberty(path.string().c_str(),
-                                 sta_->findCorner("default"),
-                                 /*min_max=*/sta::MinMaxAll::all(),
-                                 /*infer_latches=*/false);
+    std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
 
-    odb::lefin lef_reader(
-        db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
+    library_ = readLiberty("./Nangate45/Nangate45_typ.lib");
 
-    auto tech_lef
-        = std::filesystem::canonical("./Nangate45/Nangate45_tech.lef");
-    auto stdcell_lef
-        = std::filesystem::canonical("./Nangate45/Nangate45_stdcell.lef");
     odb::dbTech* tech
-        = lef_reader.createTech("nangate45", tech_lef.string().c_str());
-    odb::dbLib* lib
-        = lef_reader.createLib(tech, "nangate45", stdcell_lef.string().c_str());
-
-    sta_->postReadLef(/*tech=*/nullptr, lib);
-
-    sta::Units* units = library_->units();
-    power_unit_ = units->powerUnit();
+        = loadTechLef("nangate45", "./Nangate45/Nangate45_tech.lef");
+    loadLibaryLef(tech, "nangate45", "./Nangate45/Nangate45_stdcell.lef");
   }
 
   void LoadVerilog(const std::string& file_name, const std::string& top = "top")
   {
     // Assumes module name is "top" and clock name is "clk"
     sta::dbNetwork* network = sta_->getDbNetwork();
-    ord::dbVerilogNetwork verilog_network;
-    verilog_network.init(network);
+    ord::dbVerilogNetwork verilog_network(sta_.get());
 
     sta::VerilogReader verilog_reader(&verilog_network);
     verilog_reader.read(file_name.c_str());
@@ -147,11 +122,7 @@ class AbcTest : public ::testing::Test
     return primary_output_name_to_index;
   }
 
-  utl::UniquePtrWithDeleter<odb::dbDatabase> db_;
-  sta::Unit* power_unit_;
-  std::unique_ptr<sta::dbSta> sta_;
   sta::LibertyLibrary* library_;
-  utl::Logger logger_;
 };
 
 TEST_F(AbcTest, InsertingMappedLogicAfterOptimizationCutDoesNotThrow)

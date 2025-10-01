@@ -3,13 +3,20 @@
 
 #include "odb/3dblox.h"
 
+#include <cstddef>
 #include <filesystem>
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "dbvParser.h"
 #include "dbxParser.h"
 #include "objects.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/defin.h"
+#include "odb/geom.h"
 #include "odb/lefin.h"
 #include "utl/Logger.h"
 
@@ -32,7 +39,6 @@ ThreeDBlox::ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db)
 
 void ThreeDBlox::readDbv(const std::string& dbv_file)
 {
-  current_file_path_ = dbv_file;
   DbvParser parser(logger_);
   DbvData data = parser.parseFile(dbv_file);
   if (db_->getDbuPerMicron() == 0) {
@@ -58,30 +64,15 @@ void ThreeDBlox::readDbv(const std::string& dbv_file)
   }
 }
 
-std::string ThreeDBlox::resolveIncludePath(const std::string& include_path,
-                                           const std::string& current_file_path)
-{
-  std::filesystem::path include_fs_path(include_path);
-  if (include_fs_path.is_absolute()) {
-    return include_fs_path.string();
-  }
-  std::filesystem::path current_fs_path(current_file_path);
-  std::filesystem::path current_dir = current_fs_path.parent_path();
-  std::filesystem::path resolved_path = current_dir / include_fs_path;
-  return resolved_path.string();
-}
-
 void ThreeDBlox::readDbx(const std::string& dbx_file)
 {
-  current_file_path_ = dbx_file;
   DbxParser parser(logger_);
   DbxData data = parser.parseFile(dbx_file);
   for (const auto& include : data.header.includes) {
-    std::string resolved_path = resolveIncludePath(include, dbx_file);
     if (include.find(".3dbv") != std::string::npos) {
-      readDbv(resolved_path);
+      readDbv(include);
     } else if (include.find(".3dbx") != std::string::npos) {
-      readDbx(resolved_path);
+      readDbx(include);
     }
   }
   dbChip* chip = createDesignTopChiplet(data.design);
@@ -138,9 +129,7 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     tech = db_->findTech(tech_name.c_str());
     if (tech == nullptr) {
       auto lib = lef_reader.createTechAndLib(
-          tech_name.c_str(),
-          tech_name.c_str(),
-          resolveIncludePath(tech_file, current_file_path_).c_str());
+          tech_name.c_str(), tech_name.c_str(), tech_file.c_str());
       tech = lib->getTech();
     }
   }
@@ -149,10 +138,7 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
   for (const auto& lef_file : chiplet.external.lef_files) {
     auto lib_name = getFileName(lef_file);
     odb::lefin lef_reader(db_, logger_, false);
-    lef_reader.createLib(
-        tech,
-        lib_name.c_str(),
-        resolveIncludePath(lef_file, current_file_path_).c_str());
+    lef_reader.createLib(tech, lib_name.c_str(), lef_file.c_str());
   }
   // TODO: Read liberty files
   dbChip* chip = dbChip::create(
@@ -164,11 +150,7 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     for (odb::dbLib* lib : db_->getLibs()) {
       search_libs.push_back(lib);
     }
-    def_reader.readChip(
-        search_libs,
-        resolveIncludePath(chiplet.external.def_file, current_file_path_)
-            .c_str(),
-        chip);
+    def_reader.readChip(search_libs, chiplet.external.def_file.c_str(), chip);
   }
   chip->setWidth(chiplet.design_width * db_->getDbuPerMicron());
   chip->setHeight(chiplet.design_height * db_->getDbuPerMicron());

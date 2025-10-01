@@ -568,13 +568,9 @@ void Cluster::initConnection()
   connections_map_.clear();
 }
 
-void Cluster::addConnection(int cluster_id, float weight)
+void Cluster::addConnection(Cluster* cluster, const float connection_weight)
 {
-  if (connections_map_.find(cluster_id) == connections_map_.end()) {
-    connections_map_[cluster_id] = weight;
-  } else {
-    connections_map_[cluster_id] += weight;
-  }
+  connections_map_[cluster->getId()] += connection_weight;
 }
 
 void Cluster::removeConnection(int cluster_id)

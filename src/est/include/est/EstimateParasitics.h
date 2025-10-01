@@ -19,6 +19,9 @@
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "sta/Delay.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/UnorderedSet.hh"
 #include "utl/Logger.h"
@@ -113,14 +116,13 @@ class EstimateParasiticsCallBack;
 class EstimateParasitics : public dbStaState
 {
  public:
-  EstimateParasitics();
+  EstimateParasitics(Logger* logger,
+                     utl::CallBackHandler* callback_handler,
+                     dbDatabase* db,
+                     dbSta* sta,
+                     SteinerTreeBuilder* stt_builder,
+                     GlobalRouter* global_router);
   ~EstimateParasitics() override;
-  void init(Logger* logger,
-            utl::CallBackHandler* callback_handler,
-            dbDatabase* db,
-            dbSta* sta,
-            SteinerTreeBuilder* stt_builder,
-            GlobalRouter* global_router);
   void initSteinerRenderer(
       std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer);
   void setLayerRC(dbTechLayer* layer,
