@@ -14,7 +14,7 @@ namespace ram {
 class Cell
 {
  public:
-  Cell();
+  Cell() = default;
 
   Cell(const odb::Point& position, odb::dbOrientType orient);
 
@@ -35,8 +35,8 @@ class Cell
  private:
   odb::Point origin_;
   odb::dbOrientType orient_;
-  int height_;
-  int width_;
+  int height_{0};
+  int width_{0};
   std::vector<odb::dbInst*> insts_;
 };
 
@@ -62,8 +62,8 @@ class Layout
  private:
   odb::Orientation2D orientation_;
   odb::Point origin_;
-  int cell_height_;
-  int cell_width_;
+  int cell_height_{0};
+  int cell_width_{0};
   std::vector<std::unique_ptr<Cell>> cells_;
 };
 
@@ -97,8 +97,8 @@ class Grid
  private:
   odb::Orientation2D orientation_;
   odb::Point origin_;
-  int cell_height_;
-  int cell_width_;
+  int cell_height_{0};
+  int cell_width_{0};
   std::vector<std::unique_ptr<Layout>> layouts_;
 };
 

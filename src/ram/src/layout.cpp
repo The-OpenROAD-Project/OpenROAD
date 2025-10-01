@@ -15,10 +15,6 @@ using odb::Rect;
 
 //////////////////////////////////////////////////////////////
 
-Cell::Cell() : origin_(0, 0), orient_(dbOrientType::R0)
-{
-}
-
 Cell::Cell(const Point& position, dbOrientType orient)
     : origin_(position), orient_(orient)
 {
