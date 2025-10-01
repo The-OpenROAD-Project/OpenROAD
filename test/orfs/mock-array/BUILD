@@ -7,12 +7,19 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
 load("@rules_verilator//verilog:defs.bzl", "verilog_library")
 
-POWER_STAGE_NAME = "cts"
+POWER_STAGES = {
+    "cts": {
+        "stage": "4",
+    },
+    "final": {
+        "stage": "6",
+    },
+}
 
 POWER_STAGE_STEM = {
-    "cts": "4",
-    "final": "6",
-}[POWER_STAGE_NAME] + "_" + POWER_STAGE_NAME
+    stage: POWER_STAGES[stage]["stage"] + "_" + stage
+    for stage in POWER_STAGES
+}
 
 # single source of truth for defaults.
 # each number is a unit
@@ -172,7 +179,6 @@ filegroup(
 
 orfs_flow(
     name = "Element",
-    abstract_stage = POWER_STAGE_NAME,
     arguments = {
         "CORE_AREA": "{} {} {} {}".format(
             ce_margin_x,
@@ -274,16 +280,16 @@ MACROS = [
         name = "{macro}_parasitics".format(macro = macro),
         src = ":{macro}_{stage}".format(
             macro = macro,
-            stage = POWER_STAGE_NAME,
+            stage = stage,
         ),
         outs = [
             "results/asap7/{macro}/base/{stem}.spef".format(
                 macro = macro,
-                stem = POWER_STAGE_STEM,
+                stem = POWER_STAGE_STEM[stage],
             ),
             "results/asap7/{macro}/base/{stem}.v".format(
                 macro = macro,
-                stem = POWER_STAGE_STEM,
+                stem = POWER_STAGE_STEM[stage],
             ),
         ],
         script = ":parasitics.tcl",
@@ -291,7 +297,8 @@ MACROS = [
         visibility = ["//visibility:public"],
     )
     for macro in MACROS
-    if POWER_STAGE_NAME != "final"
+    for stage in POWER_STAGES
+    if stage != "final"
 ]
 
 [
@@ -300,22 +307,23 @@ MACROS = [
         srcs = [
             ":{macro}_{stage}".format(
                 macro = macro,
-                stage = POWER_STAGE_NAME,
+                stage = stage,
             ),
         ],
-        output_group = POWER_STAGE_STEM + ".v",
+        output_group = POWER_STAGE_STEM[stage] + ".v",
     )
     for macro in MACROS
-    if POWER_STAGE_NAME == "final"
+    for stage in POWER_STAGES
+    if stage == "final"
 ]
 
-verilog_library(
-    name = "array",
+[verilog_library(
+    name = "array_{stage}".format(stage = stage),
     srcs = [
         ("results/asap7/{macro}/base/{stem}.v".format(
             macro = macro,
-            stem = POWER_STAGE_STEM,
-        ) if POWER_STAGE_NAME != "final" else "{macro}_netlist".format(macro = macro))
+            stem = POWER_STAGE_STEM[stage],
+        ) if stage != "final" else "{macro}_netlist".format(macro = macro))
         for macro in MACROS
     ] + [
         "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_AO_RVT_TT_201020.v",
@@ -325,15 +333,15 @@ verilog_library(
         "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/empty.v",
     ],
     tags = ["manual"],
-)
+) for stage in POWER_STAGES]
 
-verilator_cc_library(
-    name = "array_verilator",
+[verilator_cc_library(
+    name = "array_verilator_{stage}".format(stage = stage),
     copts = [
         # Don't care about warnings from Verilator generated C++
         "-Wno-unused-variable",
     ],
-    module = ":array",
+    module = ":array_{stage}".format(stage = stage),
     module_top = "MockArray",
     tags = ["manual"],
     trace = True,
@@ -349,10 +357,10 @@ verilator_cc_library(
         # No-op option to retrigger a build
         # "-Wfuture-blah",
     ],
-)
+) for stage in POWER_STAGES]
 
-cc_binary(
-    name = "simulator",
+[cc_binary(
+    name = "simulator_{stage}".format(stage = stage),
     srcs = [
         "simulate.cpp",
     ],
@@ -361,22 +369,22 @@ cc_binary(
     ],
     tags = ["manual"],
     deps = [
-        ":array_verilator",
+        ":array_verilator_{stage}".format(stage = stage),
     ],
-)
+) for stage in POWER_STAGES]
 
-genrule(
-    name = "vcd",
+[genrule(
+    name = "vcd_{stage}".format(stage = stage),
     srcs = [
         # FIXME move to tools, using target configuration for now to avoid rebuilds
-        ":simulator",
+        ":simulator_{stage}".format(stage = stage),
     ],
-    outs = ["MockArrayTestbench.vcd"],
-    cmd = "$(execpath :simulator) $(location :MockArrayTestbench.vcd)",
+    outs = ["MockArrayTestbench_{stage}.vcd".format(stage = stage)],
+    cmd = "$(execpath :simulator_{stage}) $(location :MockArrayTestbench_{stage}.vcd)".format(stage = stage),
     tags = ["manual"],
     tools = [
     ],
-)
+) for stage in POWER_STAGES]
 
 # If we want to measure power after final, instead of with estimated parasitics,
 # we'll need this.
@@ -385,13 +393,14 @@ SPEFS_AND_NETLISTS = [
     ":results/asap7/{macro}/{stem}.{ext}".format(
         ext = ext,
         macro = macro,
-        stem = POWER_STAGE_STEM,
+        stem = POWER_STAGE_STEM[stage],
     )
     for macro in MACROS
     for ext in [
         "spef",
         "v",
     ]
+    for stage in POWER_STAGES
 ]
 
 POWER_TESTS = [
@@ -399,46 +408,72 @@ POWER_TESTS = [
     "power_instances",
 ]
 
-[orfs_run(
-    name = "MockArray_{name}".format(name = name),
-    src = ":MockArray_{stage}".format(stage = POWER_STAGE_NAME),
-    outs = [
-        "{name}.txt".format(name = name),
-    ],
-    arguments = {
-        "LOAD_POWER_TCL": "$(location :load_power.tcl)",
-        "OPENROAD_EXE": "$(location //src/sta:opensta)",
-        "OUTPUT": "$(location :{name}.txt)".format(name = name),
-        "POWER_STAGE_NAME": POWER_STAGE_NAME,
-        "POWER_STAGE_STEM": POWER_STAGE_STEM,
-        "VCD_STIMULI": "$(location :vcd)",
-    },
-    data = [
-               # FIXME this is a workaround to ensure that the OpenSTA runfiles are available
-               ":opensta_runfiles",
-               ":vcd",
-               ":load_power.tcl",
-           ] + ["{macro}_{stage}".format(
-               macro = macro,
-               stage = POWER_STAGE_NAME,
-           ) for macro in MACROS] +
-           (["{macro}_parasitics".format(macro = macro) for macro in MACROS] if POWER_STAGE_NAME != "final" else []),
-    script = ":{name}.tcl".format(name = name),
-    tags = ["manual"],
-    tools = ["//src/sta:opensta"],
-    visibility = ["//visibility:public"],
-) for name in POWER_TESTS]
+[
+    orfs_run(
+        name = "MockArray_{stage}_{name}".format(
+            name = name,
+            stage = stage,
+        ),
+        src = ":MockArray_{stage}".format(stage = stage),
+        outs = [
+            "{name}_{stage}.txt".format(
+                name = name,
+                stage = stage,
+            ),
+        ],
+        arguments = {
+            "LOAD_POWER_TCL": "$(location :load_power.tcl)",
+            "OPENROAD_EXE": "$(location //src/sta:opensta)",
+            "OUTPUT": "$(location :{name}_{stage}.txt)".format(
+                name = name,
+                stage = stage,
+            ),
+            "POWER_STAGE_NAME": stage,
+            "POWER_STAGE_STEM": POWER_STAGE_STEM[stage],
+            "VCD_STIMULI": "$(location :vcd_{stage})".format(stage = stage),
+        },
+        data = [
+                   # FIXME this is a workaround to ensure that the OpenSTA runfiles are available
+                   ":opensta_runfiles",
+                   ":vcd_{stage}".format(stage = stage),
+                   ":load_power.tcl",
+               ] + ["{macro}_{stage}".format(
+                   macro = macro,
+                   stage = stage,
+               ) for macro in MACROS] +
+               (["{macro}_parasitics".format(macro = macro) for macro in MACROS] if stage != "final" else []),
+        script = ":{name}.tcl".format(name = name),
+        tags = ["manual"],
+        tools = ["//src/sta:opensta"],
+        visibility = ["//visibility:public"],
+    )
+    for name in POWER_TESTS
+    for stage in POWER_STAGES
+]
 
-[sh_test(
-    name = "MockArray_{name}_test".format(name = name),
-    srcs = ["ok.sh"],
-    args = [
-        "$(location :MockArray_{name})".format(name = name),
-    ],
-    data = [
-        ":MockArray_{name}".format(name = name),
-    ],
-) for name in POWER_TESTS]
+[
+    sh_test(
+        name = "MockArray_{name}_{stage}_test".format(
+            name = name,
+            stage = stage,
+        ),
+        srcs = ["ok.sh"],
+        args = [
+            "$(location :MockArray_{stage}_{name})".format(
+                name = name,
+                stage = stage,
+            ),
+        ],
+        data = [
+            ":MockArray_{stage}_{name}".format(
+                name = name,
+                stage = stage,
+            ),
+        ],
+    )
+    for name in POWER_TESTS
+    for stage in POWER_STAGES
+]
 
 # FIXME why is this needed to ensure that cfg=exec of OpenSTA has runfiles?
 genrule(
