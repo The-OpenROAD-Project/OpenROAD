@@ -3,8 +3,6 @@
 
 #include "ant/AntennaChecker.hh"
 
-#include <omp.h>
-
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
@@ -26,6 +24,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "omp.h"
 #include "utl/Logger.h"
 
 namespace ant {

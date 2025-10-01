@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include <omp.h>
-
 #include <algorithm>
 #include <cstddef>
 #include <map>
@@ -26,6 +24,7 @@
 #include "gc/FlexGC.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
+#include "omp.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "utl/Logger.h"
