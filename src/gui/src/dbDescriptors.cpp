@@ -30,7 +30,6 @@
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
 #include "odb/db.h"
-#include "odb/dbCompare.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"

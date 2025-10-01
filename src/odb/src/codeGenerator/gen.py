@@ -390,13 +390,13 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
             with open(out_file, "w", encoding="ascii") as file:
                 file.write(text)
 
-    includes = ["db.h", "dbObject.h", "dbCompare.h"]
+    includes = ["db.h", "dbObject.h", "dbCompare.inc"]
     for template_file in [
         "db.h",
         "dbObject.h",
         "CMakeLists.txt",
         "dbObject.cpp",
-        "dbCompare.h",
+        "dbCompare.inc",
     ]:
         template = env.get_template(template_file)
         text = template.render(schema=schema)

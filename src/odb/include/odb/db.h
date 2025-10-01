@@ -10992,4 +10992,4 @@ class dbDoubleProperty : public dbProperty
 }  // namespace odb
 
 // Overload std::less for these types
-#include "odb/dbCompare.h"
+#include "odb/dbCompare.inc"  // IWYU pragma: export

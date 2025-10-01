@@ -46,6 +46,7 @@ cc_library(
         "src/lefout/*.cpp",
         "src/3dblox/*.cpp",
         "src/3dblox/*.h",
+        "include/odb/dbCompare.inc",
     ] + [
         "src/swig/common/swig_common.cpp",
     ]),
