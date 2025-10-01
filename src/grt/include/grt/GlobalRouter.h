@@ -151,6 +151,7 @@ class GlobalRouter
   void setCongestionReportFile(const char* file_name);
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
+  void setResistanceAware(bool resistance_aware);
   void setMacroExtension(int macro_extension);
   void setUseCUGR(bool use_cugr) { use_cugr_ = use_cugr; };
 
@@ -484,6 +485,7 @@ class GlobalRouter
   int congestion_iterations_{50};
   int congestion_report_iter_step_;
   bool allow_congestion_;
+  bool resistance_aware_;
   std::vector<int> vertical_capacities_;
   std::vector<int> horizontal_capacities_;
   int macro_extension_;
