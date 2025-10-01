@@ -18,16 +18,6 @@ POWER_STAGE_STEM = {
 # each number is a unit
 # current unit is configured as 2.16 which is on the routing grid for M5
 
-# table of Elements - (rows cols width height pitch_x pitch_y)
-MOCK_ARRAY_TABLE = [
-    8,
-    8,
-    20,
-    20,
-    20,
-    22,
-]
-
 MOCK_ARRAY_SCALE = 45
 
 # Routing pitches for relevant metal layers.
@@ -43,7 +33,7 @@ placement_grid_x = 0.048 * MOCK_ARRAY_SCALE
 placement_grid_y = 0.048 * MOCK_ARRAY_SCALE
 
 # number of Elements in row and column, can be control by user via environment variable
-# MOCK_ARRAY_TABLE (rows, cols, width, height, pitch_x, pitch_y)
+#
 #  rows, cols       - number of Element in rows, cols
 #  width, height    - width and height of each Element
 #
@@ -52,7 +42,17 @@ placement_grid_y = 0.048 * MOCK_ARRAY_SCALE
 #
 #  pitch_x, pitch_y - placement pitch for each Element, in x and y direction
 # specification are in unit of placement grid
-rows, cols, ce_x, ce_y, pitch_x, pitch_y = MOCK_ARRAY_TABLE
+rows = 8
+
+cols = 8
+
+ce_x = 20
+
+ce_y = 20
+
+pitch_x = 20
+
+pitch_y = 22
 
 # Element size is set to multiple of placement grid above
 ce_width = ce_x * placement_grid_x
