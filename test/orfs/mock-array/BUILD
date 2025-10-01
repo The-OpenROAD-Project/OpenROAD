@@ -226,8 +226,8 @@ fir_library(
     ],
     generator = ":generate_verilog",
     opts = [
-        "--width=8",
-        "--height=8",
+        "--width=" + str(cols),
+        "--height=" + str(rows),
         "--dataWidth=64",
         "--",
         # Imagine Chisel arguments here
