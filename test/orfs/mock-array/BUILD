@@ -434,6 +434,8 @@ POWER_TESTS = [
             ),
         ],
         arguments = {
+            "ARRAY_COLS": str(cols),
+            "ARRAY_ROWS": str(rows),
             "LOAD_POWER_TCL": "$(location :load_power.tcl)",
             "OPENROAD_EXE": "$(location //src/sta:opensta)",
             "OUTPUT": "$(location :{name}_{stage}.txt)".format(
