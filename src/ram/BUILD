@@ -22,8 +22,8 @@ cc_library(
         ":tcl",
     ],
     hdrs = [
-        "include/ram/ram.h",
         "include/ram/MakeRam.h",
+        "include/ram/ram.h",
     ],
     includes = [
         "include",
