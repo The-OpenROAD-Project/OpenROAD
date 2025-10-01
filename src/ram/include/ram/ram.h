@@ -34,7 +34,7 @@ class RamGen
 {
  public:
   RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger);
-  ~RamGen();
+  ~RamGen() = default;
 
   void generate(int bytes_per_word,
                 int word_count,

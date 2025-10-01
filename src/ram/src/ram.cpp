@@ -12,8 +12,6 @@
 
 namespace ram {
 
-using odb::dbBlock;
-using odb::dbBPin;
 using odb::dbBTerm;
 using odb::dbInst;
 using odb::dbIoType;
@@ -32,8 +30,6 @@ RamGen::RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger)
     : network_(network), db_(db), logger_(logger)
 {
 }
-
-RamGen::~RamGen() = default;
 
 dbInst* RamGen::makeCellInst(
     Cell* cell,
@@ -125,6 +121,7 @@ void RamGen::makeCellByte(Grid& ram_grid,
   for (int bit = first_byte; bit < first_byte + 8; ++bit) {
     auto name = fmt::format("{}.bit{}", prefix, bit);
     vector<dbNet*> outs;
+    outs.reserve(read_ports);
     for (int read_port = 0; read_port < read_ports; ++read_port) {
       outs.push_back(data_output[read_port][bit]->getNet());
     }
@@ -352,9 +349,7 @@ void RamGen::findMasters()
   // for input buffers
   if (!buffer_cell_) {
     buffer_cell_ = findMaster(
-        [](sta::LibertyPort* port) {
-          return port->libertyCell()->isBuffer();
-        },
+        [](sta::LibertyPort* port) { return port->libertyCell()->isBuffer(); },
         "buffer");
   }
 }
@@ -383,7 +378,7 @@ void RamGen::generate(const int bytes_per_word,
   auto chip = db_->getChip();
   if (!chip) {
     chip = odb::dbChip::create(
-        db_, db_->getTech(), ram_name.c_str(), odb::dbChip::ChipType::DIE);
+        db_, db_->getTech(), ram_name, odb::dbChip::ChipType::DIE);
   }
 
   block_ = chip->getBlock();
@@ -545,14 +540,14 @@ void RamGen::generate(const int bytes_per_word,
 
   int num_sites = ram_grid.getRowWidth() / db_sites->getWidth();
   for (int i = 0; i <= word_count; ++i) {  // extra for the layer of buffers
-    auto row_name = fmt::format("RAM_ROW{}", i).c_str();
+    auto row_name = fmt::format("RAM_ROW{}", i);
     auto y_coord = i * ram_grid.getHeight();
     auto row_orient = odb::dbOrientType::R0;
     if (i % 2 == 1) {
       row_orient = odb::dbOrientType::MX;
     }
     dbRow::create(block_,
-                  row_name,
+                  row_name.c_str(),
                   db_sites,
                   ram_origin.getX(),
                   y_coord,
