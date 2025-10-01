@@ -100,15 +100,18 @@ void SelectedItemModel::updateObject()
       if (editor_found != editors.end()) {
         auto& editor = (*editor_found).second;
         makeItemEditor(prop.name,
-                      value_item,
-                      object_,
-                      EditorItemDelegate::getEditorType(prop.value),
-                      editor);
+                       value_item,
+                       object_,
+                       EditorItemDelegate::getEditorType(prop.value),
+                       editor);
       }
     }
   } catch (const std::runtime_error& error) {
-    QMessageBox::critical(qobject_cast<QWidget*>(parent()), error.what(), "Failed to populate properties.");
-    appendRow({makeItem(QString::fromStdString("error")), makeItem(QString(error.what()))});
+    QMessageBox::critical(qobject_cast<QWidget*>(parent()),
+                          error.what(),
+                          "Failed to populate properties.");
+    appendRow({makeItem(QString::fromStdString("error")),
+               makeItem(QString(error.what()))});
   }
 
   endResetModel();
