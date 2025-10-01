@@ -205,7 +205,7 @@ proc run_test_lang { test lang } {
         exec tr -d "\r" < $log_file > $tmp_file
         file rename -force $tmp_file $log_file
         # tclint-disable-next-line command-args
-        if {[catch [concat exec diff $diff_options $ok_file $log_file >> $diff_file]]} {
+        if { [catch [concat exec diff $diff_options $ok_file $log_file >> $diff_file]] } {
           puts " *FAIL*"
           append_failure $test
           incr errors(fail)

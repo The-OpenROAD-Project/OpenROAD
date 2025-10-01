@@ -3,5 +3,3 @@
 # Expected behavior: OpenROAD should exit with error message and not reach this script
 
 puts "TEST: Testing -db flag with invalid database file"
-
-
