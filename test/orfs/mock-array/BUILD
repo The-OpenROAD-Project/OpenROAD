@@ -84,18 +84,18 @@ ce_margin_x = placement_grid_x * 0.5
 ce_margin_y = placement_grid_y * 0.5
 
 # PDN problems if it is smaller. Not investigated.
-array_spacing_x = margin_x * 2
+array_spacing_x = margin_x * 4
 
-array_spacing_y = margin_y * 2
+array_spacing_y = margin_y * 4
 
 # top level core and die size, we need some space around the
 # array to put some flip flops and buffers for top level io pins
 core_width = (
-    pitch_x * (cols - 1) + ce_width + margin_x * 2
+    pitch_x * (cols - 1) + ce_width + margin_x * 8
 )
 
 core_height = (
-    pitch_y * (rows - 1) + ce_height + margin_y * 2
+    pitch_y * (rows - 1) + ce_height + margin_y * 8
 )
 
 die_width = core_width + (array_spacing_x * 2)
