@@ -3,8 +3,6 @@
 
 #include "io/GuideProcessor.h"
 
-#include <omp.h>
-
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -28,6 +26,7 @@
 #include "frProfileTask.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "omp.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
 
