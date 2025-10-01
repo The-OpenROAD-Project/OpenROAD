@@ -98,12 +98,12 @@ class MockArray(width: Int, height: Int, singleElementWidth: Int)
     // Registered routing paths
     //  left <-> down
     //  up <-> right
-    (io.outs.asSeq zip (io.ins.asSeq ++ Seq(io.ins.asSeq.head))
+    (io.outs.asSeq.zipWithIndex zip (io.ins.asSeq ++ Seq(io.ins.asSeq.head))
       .sliding(2)
       .toSeq
       .reverse
-      .map(_.map(RegNext(_)))).foreach { case (a, b) =>
-      a := RegNext({
+      .map(_.map(RegNext(_)))).foreach { case ((a, i), b) =>
+      a := RegNext(if (i == 0) {
         val mult = Module(new Multiplier())
         mult.io.a := b(0)
         mult.io.b := b(1)
@@ -111,6 +111,10 @@ class MockArray(width: Int, height: Int, singleElementWidth: Int)
         mult.io.rst := false.B
         mult.io.clk := clock
         mult.io.o
+      } else {
+        // Only one multiplier, simple addition for the rest, faster
+        // testing, less area
+        b.reduce(_ + _)
       })
     }
 
