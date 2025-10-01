@@ -18,6 +18,8 @@ report_worst_slack -max
 report_tns -digits 3
 write_verilog_for_eqy repair_setup4 before "None"
 repair_timing -setup {*}$repair_args
-run_equivalence_test repair_setup4 ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test repair_setup4 \
+  -lib_dir ./Nangate45/work_around_yosys/ \
+  -remove_cells "None"
 report_worst_slack -max
 report_tns -digits 3
