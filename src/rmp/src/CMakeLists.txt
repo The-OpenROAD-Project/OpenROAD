@@ -20,6 +20,11 @@ add_library(rmp_lib
     zero_slack_strategy.cpp
 )
 
+# For ABC headers
+set_source_files_properties(annealing_strategy.cpp
+  PROPERTIES COMPILE_FLAGS "-Wno-error=redundant-decls -Wno-error=unused-variable -Wno-error=unused-but-set-variable"
+)
+
 target_sources(rmp
   PRIVATE
     MakeRestructure.cpp
