@@ -16,7 +16,7 @@ class Cell
  public:
   Cell();
 
-  Cell(odb::Point position, odb::dbOrientType orient);
+  Cell(const odb::Point& position, odb::dbOrientType orient);
 
   void addInst(odb::dbInst* inst);
 
@@ -26,17 +26,17 @@ class Cell
 
   void setOrient(odb::dbOrientType orient);
 
-  void setOrigin(odb::Point position);
+  void setOrigin(const odb::Point& position);
 
-  int getHeight();
+  int getHeight() const;
 
-  int getWidth();
+  int getWidth() const;
 
  private:
   odb::Point origin_;
   odb::dbOrientType orient_;
-  int height;
-  int width;
+  int height_;
+  int width_;
   std::vector<odb::dbInst*> insts_;
 };
 
@@ -53,17 +53,17 @@ class Layout
 
   void placeLayout();
 
-  void setOrigin(odb::Point position);
+  void setOrigin(const odb::Point& position);
 
-  int getHeight();
+  int getHeight() const;
 
-  int getWidth();
+  int getWidth() const;
 
  private:
   odb::Orientation2D orientation_;
   odb::Point origin_;
-  int cell_height;
-  int cell_width;
+  int cell_height_;
+  int cell_width_;
   std::vector<std::unique_ptr<Cell>> cells_;
 };
 
@@ -86,19 +86,19 @@ class Grid
 
   void setOrigin(odb::Point position);
 
-  int getHeight();
+  int getHeight() const;
 
-  int getWidth();
+  int getWidth() const;
 
-  int numLayouts();
+  int numLayouts() const;
 
-  int getRowWidth();
+  int getRowWidth() const;
 
  private:
   odb::Orientation2D orientation_;
   odb::Point origin_;
-  int cell_height;
-  int cell_width;
+  int cell_height_;
+  int cell_width_;
   std::vector<std::unique_ptr<Layout>> layouts_;
 };
 

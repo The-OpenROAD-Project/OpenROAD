@@ -19,7 +19,7 @@ Cell::Cell() : origin_(0, 0), orient_(dbOrientType::R0)
 {
 }
 
-Cell::Cell(Point position, dbOrientType orient)
+Cell::Cell(const Point& position, dbOrientType orient)
     : origin_(position), orient_(orient)
 {
 }
@@ -33,8 +33,8 @@ void Cell::cellInit()
 {
   for (auto& inst : insts_) {
     Rect inst_box = inst->getBBox()->getBox();
-    width += inst_box.dx();
-    height = inst_box.dy();
+    width_ += inst_box.dx();
+    height_ = inst_box.dy();
     inst->setOrient(orient_);
   }
 }
@@ -55,19 +55,19 @@ void Cell::setOrient(odb::dbOrientType orient)
   orient_ = orient;
 }
 
-void Cell::setOrigin(Point position)
+void Cell::setOrigin(const Point& position)
 {
   origin_ = position;
 }
 
-int Cell::getHeight()
+int Cell::getHeight() const
 {
-  return height;
+  return height_;
 }
 
-int Cell::getWidth()
+int Cell::getWidth() const
 {
-  return width;
+  return width_;
 }
 
 /////////////////////////////////////////////////////////////
@@ -96,11 +96,11 @@ void Layout::layoutInit()
         cells_[i]->setOrient(odb::dbOrientType::MX);
       }
       cells_[i]->cellInit();
-      if (cell_height < cells_[i]->getHeight()) {
-        cell_height = cells_[i]->getHeight();
+      if (cell_height_ < cells_[i]->getHeight()) {
+        cell_height_ = cells_[i]->getHeight();
       }
-      if (cell_width < cells_[i]->getWidth()) {
-        cell_width = cells_[i]->getWidth();
+      if (cell_width_ < cells_[i]->getWidth()) {
+        cell_width_ = cells_[i]->getWidth();
       }
     }
   }
@@ -115,26 +115,26 @@ void Layout::placeLayout()
       cell->placeCell();
     }
     if (orientation_ == odb::vertical) {
-      position.addY(cell_height);
+      position.addY(cell_height_);
     } else {
-      position.addX(cell_width);
+      position.addX(cell_width_);
     }
   }
 }
 
-void Layout::setOrigin(odb::Point position)
+void Layout::setOrigin(const odb::Point& position)
 {
   origin_ = position;
 }
 
-int Layout::getHeight()
+int Layout::getHeight() const
 {
-  return cell_height;
+  return cell_height_;
 }
 
-int Layout::getWidth()
+int Layout::getWidth() const
 {
-  return cell_width;
+  return cell_width_;
 }
 
 //////////////////////////////////////////////////////////////
@@ -182,8 +182,8 @@ void Grid::gridInit()
   }
 
   // sets the height and width of the storage + read ports
-  cell_height = layouts_[0]->getHeight();
-  cell_width = layouts_[0]->getWidth();
+  cell_height_ = layouts_[0]->getHeight();
+  cell_width_ = layouts_[0]->getWidth();
 }
 
 void Grid::placeGrid()
@@ -206,22 +206,22 @@ void Grid::setOrigin(odb::Point position)
   origin_ = position;
 }
 
-int Grid::getHeight()
+int Grid::getHeight() const
 {
-  return cell_height;
+  return cell_height_;
 }
 
-int Grid::getWidth()
+int Grid::getWidth() const
 {
-  return cell_width;
+  return cell_width_;
 }
 
-int Grid::numLayouts()
+int Grid::numLayouts() const
 {
   return layouts_.size();
 }
 
-int Grid::getRowWidth()
+int Grid::getRowWidth() const
 {
   int row_width = 0;
   for (auto& layout : layouts_) {
