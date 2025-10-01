@@ -69,7 +69,6 @@ clock_tree_synthesis
     [-library liberty_library_name]
     [-repair_clock_nets]
     [-no_insertion_delay]
-    [-skip_nets <list_of_clk_nets_to_skip>]
 ```
 
 #### Options
@@ -100,7 +99,6 @@ clock_tree_synthesis
 | `-library` | This option specifies the name of Liberty library from which clock buffers will be selected, such as the LVT or uLVT library.  It is assumed that the library has already been loaded using the read_liberty command.  If this option is not specified, clock buffers will be chosen from the currently loaded libraries, which may not include LVT or uLVT cells. |
 | `-repair_clock_nets` | This option includes fixing long wires inside CTS prior to latency adjustment with delay buffers. This can lead to a more balanced clock tree.  The default is not to perform clock net repair. |
 | `-no_insertion_delay` | Ignore sink insertion delay in clock tree construction and balancing. |
-| `-skip_nets` | String containing the names of the clock nets to be skipped. If the net is a root clock net, the whole clock is skipped, otherwise only the subnet specified is skipped. |
 
 #### Instance Name Prefixes
 
@@ -153,6 +151,7 @@ set_cts_config
     [-sink_clustering_levels levels]
     [-sink_clustering_max_diameter max_diameter]
     [-sink_clustering_size cluster_size]
+    [-skip_nets <list_of_clk_nets_to_skip>]
     [-tree_buf <buf>]
     [-wire_unit wire_unit]
 ```
@@ -178,6 +177,7 @@ set_cts_config
 | `-sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster for the register tree. The allowed values are integers `[0, MAX_INT]`. If this is not specified the diameter will be automatically chosen between `50, 100 or 200`, based on the tree buffer max cap. |
 | `-sink_clustering_size` | Specifies the maximum number of sinks per cluster for the register tree. The allowed values are integers `[0, MAX_INT]`. If this is not specified the size will be automatically chosen between `10, 20 or 30` based on the tree buffer max cap. |
 | `-sink_clustering_levels` | ... |
+| `-skip_nets` | Tcl list containing the clock nets to be skipped (e.g. `{net1, net2}`). If the net is a root clock net, the whole clock is skipped, otherwise only the subnet specified is skipped. |
 | `-wire_unit` | Minimum unit distance between buffers for a specific wire. If this parameter is omitted, the code gets the value from ten times the height of `-root_buffer`. |
 
 ### Report CTS configuration
@@ -210,6 +210,7 @@ reset_cts_config
     [-sink_clustering_levels]
     [-sink_clustering_max_diameter]
     [-sink_clustering_size]
+    [-skip_nets]
     [-tree_buf]
     [-wire_unit]
 ```
