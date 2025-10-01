@@ -25,7 +25,7 @@ POWER_STAGE_STEM = {
 # each number is a unit
 # current unit is configured as 2.16 which is on the routing grid for M5
 
-MOCK_ARRAY_SCALE = 45
+MOCK_ARRAY_SCALE = 30
 
 # Routing pitches for relevant metal layers.
 #  For x, this is M5; for y, this is M4.
@@ -49,9 +49,14 @@ placement_grid_y = 0.048 * MOCK_ARRAY_SCALE
 #
 #  pitch_x, pitch_y - placement pitch for each Element, in x and y direction
 # specification are in unit of placement grid
-rows = 8
+#
+# A 4x4 array is the minimum to have a good test of the array
+# where all the cases are covered, i.e. isolated elements talking only to
+# other elements and isolated elements talking only to isolated elements
+# and all the edge elements.
+rows = 4
 
-cols = 8
+cols = 4
 
 ce_x = 20
 
