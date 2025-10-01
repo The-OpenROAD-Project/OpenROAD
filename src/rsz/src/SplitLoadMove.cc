@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "BaseMove.hh"
 #include "odb/db.h"

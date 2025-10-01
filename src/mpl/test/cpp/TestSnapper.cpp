@@ -19,7 +19,7 @@ class TestSnapper : public MplTest
   void SetUp() override
   {
     MplTest::SetUp();
-    snapper_ = std::make_unique<Snapper>(logger_.get());
+    snapper_ = std::make_unique<Snapper>(&logger_);
   }
 
   std::unique_ptr<Snapper> snapper_;

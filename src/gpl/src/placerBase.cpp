@@ -12,6 +12,7 @@
 
 #include "nesterovBase.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
@@ -28,7 +29,6 @@ using odb::dbITerm;
 using odb::dbMPin;
 using odb::dbNet;
 using odb::dbPlacementStatus;
-using odb::dbPowerDomain;
 using odb::dbRow;
 using odb::dbSet;
 using odb::dbSigType;

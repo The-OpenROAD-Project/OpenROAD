@@ -6,9 +6,9 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/lefin.h"
+#include "tst/fixture.h"
 #include "utl/Logger.h"
 
 // TODO: not needed after fully switching to bazel
@@ -17,34 +17,22 @@
 #endif
 
 namespace odb {
-class Sky130TestFixutre : public ::testing::Test
+class Sky130TestFixutre : public tst::Fixture
 {
  protected:
-  template <class T>
-  using OdbUniquePtr = std::unique_ptr<T, void (*)(T*)>;
-
   void SetUp() override
   {
-    db_ = OdbUniquePtr<odb::dbDatabase>(odb::dbDatabase::create(),
-                                        &odb::dbDatabase::destroy);
-    odb::lefin lef_reader(
-        db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
-    dbLib* lib = lef_reader.createTechAndLib(
+    lib_ = loadTechAndLib(
         "sky130", "sky130", DATA_PREFIX "data/sky130hd/sky130_fd_sc_hd.tlef");
-    lib_ = OdbUniquePtr<odb::dbLib>(lib, &odb::dbLib::destroy);
 
-    chip_ = OdbUniquePtr<odb::dbChip>(
-        odb::dbChip::create(db_.get(), db_->getTech()), &odb::dbChip::destroy);
-    block_ = OdbUniquePtr<odb::dbBlock>(
-        odb::dbBlock::create(chip_.get(), "top"), &odb::dbBlock::destroy);
+    chip_ = odb::dbChip::create(db_.get(), db_->getTech());
+    block_ = odb::dbBlock::create(chip_, "top");
     block_->setDefUnits(lib_->getTech()->getLefUnits());
     block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
   }
 
-  utl::Logger logger_;
-  OdbUniquePtr<odb::dbDatabase> db_{nullptr, &odb::dbDatabase::destroy};
-  OdbUniquePtr<odb::dbLib> lib_{nullptr, &odb::dbLib::destroy};
-  OdbUniquePtr<odb::dbChip> chip_{nullptr, &odb::dbChip::destroy};
-  OdbUniquePtr<odb::dbBlock> block_{nullptr, &odb::dbBlock::destroy};
+  odb::dbLib* lib_;
+  odb::dbChip* chip_;
+  odb::dbBlock* block_;
 };
 }  // namespace odb

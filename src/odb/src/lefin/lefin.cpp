@@ -24,6 +24,7 @@
 #include "lefiUtil.hpp"
 #include "lefrReader.hpp"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbSet.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
