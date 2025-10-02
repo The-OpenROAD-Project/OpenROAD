@@ -10,6 +10,7 @@
 #include <string_view>
 
 #include "spdlog/fmt/fmt.h"
+#include "sta/NetworkClass.hh"
 #include "sta/ParseBus.hh"
 #include "sta/PatternMatch.hh"
 

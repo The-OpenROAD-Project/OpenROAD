@@ -14,6 +14,7 @@
 #include "odb/dbTypes.h"
 #include "placerBase.h"
 #include "solver.h"
+#include "utl/Logger.h"
 
 namespace gpl {
 
@@ -131,22 +132,22 @@ void InitialPlace::placeInstsCenter()
     const auto db_inst = inst->dbInst();
     const auto group = db_inst->getGroup();
 
-    if (group && group->getType() == odb::dbGroupType::POWER_DOMAIN) {
-      auto domain_region = group->getRegion();
-      int domain_x_min = std::numeric_limits<int>::max();
-      int domain_y_min = std::numeric_limits<int>::max();
-      int domain_x_max = std::numeric_limits<int>::min();
-      int domain_y_max = std::numeric_limits<int>::min();
+    if (group && group->getRegion()) {
+      auto region = group->getRegion();
+      int region_x_min = std::numeric_limits<int>::max();
+      int region_y_min = std::numeric_limits<int>::max();
+      int region_x_max = std::numeric_limits<int>::min();
+      int region_y_max = std::numeric_limits<int>::min();
 
-      for (auto boundary : domain_region->getBoundaries()) {
-        domain_x_min = std::min(domain_x_min, boundary->xMin());
-        domain_y_min = std::min(domain_y_min, boundary->yMin());
-        domain_x_max = std::max(domain_x_max, boundary->xMax());
-        domain_y_max = std::max(domain_y_max, boundary->yMax());
+      for (auto boundary : region->getBoundaries()) {
+        region_x_min = std::min(region_x_min, boundary->xMin());
+        region_y_min = std::min(region_y_min, boundary->yMin());
+        region_x_max = std::max(region_x_max, boundary->xMax());
+        region_y_max = std::max(region_y_max, boundary->yMax());
       }
 
-      inst->setCenterLocation(domain_x_max - (domain_x_max - domain_x_min) / 2,
-                              domain_y_max - (domain_y_max - domain_y_min) / 2);
+      inst->setCenterLocation(region_x_max - (region_x_max - region_x_min) / 2,
+                              region_y_max - (region_y_max - region_y_min) / 2);
       ++count_region_center;
     } else if (pbc_->isSkipIoMode() && db_inst->isPlaced()) {
       // It is helpful to pick up the placement from mpl if available,

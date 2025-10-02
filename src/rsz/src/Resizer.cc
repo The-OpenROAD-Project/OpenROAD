@@ -40,27 +40,37 @@
 #include "boost/functional/hash.hpp"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"
 #include "sta/Corner.hh"
+#include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/InputDrive.hh"
 #include "sta/LeakagePower.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
+#include "sta/MinMax.hh"
 #include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
+#include "sta/SearchPred.hh"
 #include "sta/StaMain.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
+#include "sta/TimingRole.hh"
 #include "sta/Units.hh"
+#include "sta/Vector.hh"
 #include "utl/Logger.h"
 #include "utl/scope.h"
 
@@ -4353,7 +4363,8 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_buffering,
                           bool skip_buffer_removal,
                           bool skip_last_gasp,
-                          bool skip_vt_swap)
+                          bool skip_vt_swap,
+                          bool skip_crit_vt_swap)
 {
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
@@ -4376,7 +4387,8 @@ bool Resizer::repairSetup(double setup_margin,
                                     skip_buffering,
                                     skip_buffer_removal,
                                     skip_last_gasp,
-                                    skip_vt_swap);
+                                    skip_vt_swap,
+                                    skip_crit_vt_swap);
 }
 
 void Resizer::reportSwappablePins()
@@ -5139,6 +5151,46 @@ bool Resizer::okToBufferNet(const Pin* driver_pin) const
   dbNet* db_net = db_network_->staToDb(net);
 
   if (db_net->isConnectedByAbutment() || db_net->isSpecial()) {
+    return false;
+  }
+
+  return true;
+}
+
+// Check if current instance can be swapped to the
+// fastest VT variant.  If not, mark it as such.
+bool Resizer::checkAndMarkVTSwappable(
+    Instance* inst,
+    std::unordered_set<Instance*>& notSwappable,
+    LibertyCell*& best_lib_cell)
+{
+  best_lib_cell = nullptr;
+  if (notSwappable.find(inst) != notSwappable.end()) {
+    return false;
+  }
+  if (dontTouch(inst) || !isLogicStdCell(inst)) {
+    notSwappable.insert(inst);
+    return false;
+  }
+  Cell* cell = network_->cell(inst);
+  if (!cell) {
+    notSwappable.insert(inst);
+    return false;
+  }
+  LibertyCell* curr_lib_cell = network_->libertyCell(cell);
+  if (!curr_lib_cell) {
+    notSwappable.insert(inst);
+    return false;
+  }
+  LibertyCellSeq equiv_cells = getVTEquivCells(curr_lib_cell);
+  if (equiv_cells.empty()) {
+    notSwappable.insert(inst);
+    return false;
+  }
+  best_lib_cell = equiv_cells.back();
+  if (best_lib_cell == curr_lib_cell) {
+    best_lib_cell = nullptr;
+    notSwappable.insert(inst);
     return false;
   }
 

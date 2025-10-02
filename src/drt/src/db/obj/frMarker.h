@@ -12,6 +12,7 @@
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frFig.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
 
 namespace drt {
 class frConstraint;
@@ -33,7 +34,7 @@ class frMarker : public frFig
   // setters
   void setConstraint(frConstraint* constraintIn) { constraint_ = constraintIn; }
 
-  void setBBox(const Rect& bboxIn) { bbox_ = bboxIn; }
+  void setBBox(const odb::Rect& bboxIn) { bbox_ = bboxIn; }
 
   void setLayerNum(const frLayerNum& layerNumIn) { layerNum_ = layerNumIn; }
 
@@ -43,12 +44,12 @@ class frMarker : public frFig
 
   void addSrc(frBlockObject* srcIn) { srcs_.insert(srcIn); }
   void addAggressor(frBlockObject* obj,
-                    const std::tuple<frLayerNum, Rect, bool>& tupleIn)
+                    const std::tuple<frLayerNum, odb::Rect, bool>& tupleIn)
   {
     aggressors_.emplace_back(obj, tupleIn);
   }
   void addVictim(frBlockObject* obj,
-                 const std::tuple<frLayerNum, Rect, bool>& tupleIn)
+                 const std::tuple<frLayerNum, odb::Rect, bool>& tupleIn)
   {
     victims_.emplace_back(obj, tupleIn);
   }
@@ -60,20 +61,22 @@ class frMarker : public frFig
    * intersects in .cpp
    */
 
-  Rect getBBox() const override { return bbox_; }
+  odb::Rect getBBox() const override { return bbox_; }
   frLayerNum getLayerNum() const { return layerNum_; }
 
   const std::set<frBlockObject*>& getSrcs() const { return srcs_; }
 
   void setSrcs(const std::set<frBlockObject*>& srcs) { srcs_ = srcs; }
 
-  std::vector<std::pair<frBlockObject*, std::tuple<frLayerNum, Rect, bool>>>&
+  std::vector<
+      std::pair<frBlockObject*, std::tuple<frLayerNum, odb::Rect, bool>>>&
   getAggressors()
   {
     return aggressors_;
   }
 
-  std::vector<std::pair<frBlockObject*, std::tuple<frLayerNum, Rect, bool>>>&
+  std::vector<
+      std::pair<frBlockObject*, std::tuple<frLayerNum, odb::Rect, bool>>>&
   getVictims()
   {
     return victims_;
@@ -85,9 +88,9 @@ class frMarker : public frFig
 
   bool isH() const { return vioIsH_; }
 
-  void move(const dbTransform& xform) override {}
+  void move(const odb::dbTransform& xform) override {}
 
-  bool intersects(const Rect& box) const override { return false; }
+  bool intersects(const odb::Rect& box) const override { return false; }
 
   // others
   frBlockObjectEnum typeId() const override { return frcMarker; }
@@ -99,12 +102,14 @@ class frMarker : public frFig
 
  private:
   frConstraint* constraint_{nullptr};
-  Rect bbox_;
+  odb::Rect bbox_;
   frLayerNum layerNum_{0};
   std::set<frBlockObject*> srcs_;
-  std::vector<std::pair<frBlockObject*, std::tuple<frLayerNum, Rect, bool>>>
+  std::vector<
+      std::pair<frBlockObject*, std::tuple<frLayerNum, odb::Rect, bool>>>
       victims_;  // obj, isFixed
-  std::vector<std::pair<frBlockObject*, std::tuple<frLayerNum, Rect, bool>>>
+  std::vector<
+      std::pair<frBlockObject*, std::tuple<frLayerNum, odb::Rect, bool>>>
       aggressors_;  // obj, isFixed
   frListIter<std::unique_ptr<frMarker>> iter_;
   bool vioHasDir_{false};

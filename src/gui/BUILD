@@ -5,6 +5,7 @@
 # is needed to handle Qt and build a working gui.
 
 load("@qt-bazel//:build_defs.bzl", "qt6_library", "qt6_resource_library")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -33,50 +34,74 @@ cc_library(
     ],
 )
 
-qt6_library(
-    name = "gui_qt",
-    srcs = glob(
-        include = [
-            "src/*.cpp",
+# A Qt 'headless' build is added for environments that require GUI features
+# but do not have an attached display. This requires setting 'qt_gui_platform'
+# to `headless`, and subsituting the dependency in the top-level BUILD.
+QT_GUI_PLATFORMS = {
+    "headless": "_headless",
+    "native": "",
+}
+
+[
+    qt6_library(
+        name = "gui_qt" + suffix,
+        srcs = glob(
+            include = [
+                "src/*.cpp",
+            ],
+            exclude = [
+                "src/stub.cpp",
+                "src/stub_heatMap.cpp",
+            ],
+        ) + [
+            ":gui_swig",
+            ":tcl",
         ],
-        exclude = [
-            "src/stub.cpp",
-            "src/stub_heatMap.cpp",
+        hdrs = [
+            "include/gui/MakeGui.h",
+            "include/gui/gui.h",
+            "include/gui/heatMap.h",
         ],
-    ) + [
-        ":gui_swig",
-        ":tcl",
-    ],
+        defines = [
+            "STATIC_QPA_PLUGIN_XCB=1",
+        ],
+        includes = [
+            "include",
+            "src",
+            "ui",
+        ],
+        moc_hdrs = glob(["src/*.h"]),
+        qt_gui_platform = platform,
+        uic_srcs = glob(["ui/*.ui"]) if platform == "native" else [],
+        deps = [
+            ":qt_resources",
+            "//:ord",
+            "//src/dbSta",
+            "//src/dbSta:dbNetwork",
+            "//src/odb",
+            "//src/sta:opensta_lib",
+            "//src/utl",
+            "//third-party/gif-h:gif_h",
+            "@boost.algorithm",
+            "@boost.geometry",
+            "@boost.multi_array",
+            "@boost.stacktrace",
+            "@spdlog",
+            "@tk_tcl//:tcl",
+        ] + ([":uic_lib"] if platform == "headless" else []),
+    )
+    for platform, suffix in QT_GUI_PLATFORMS.items()
+]
+
+# This is used to work around the limitation of the `qt6_library` rule which
+# only supports use of one `qt6_library` rule using `uic_srcs` per package.
+cc_library(
+    name = "uic_lib",
     hdrs = [
-        "include/gui/MakeGui.h",
-        "include/gui/gui.h",
-        "include/gui/heatMap.h",
-    ],
-    defines = [
-        "STATIC_QPA_PLUGIN_XCB=1",
-    ],
-    includes = [
-        "include",
-        "src",
-        "ui",
-    ],
-    moc_hdrs = glob(["src/*.h"]),
-    uic_srcs = glob(["ui/*.ui"]),
-    deps = [
-        ":qt_resources",
-        "//:ord",
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/odb",
-        "//src/sta:opensta_lib",
-        "//src/utl",
-        "//third-party/gif-h:gif_h",
-        "@boost.algorithm",
-        "@boost.geometry",
-        "@boost.multi_array",
-        "@boost.stacktrace",
-        "@spdlog",
-        "@tk_tcl//:tcl",
+        ":ui/ui_findDlg.h",
+        ":ui/ui_gotoDlg.h",
+        ":ui/ui_highlightGroupDlg.h",
+        ":ui/ui_selectedWidget.h",
     ],
 )
 

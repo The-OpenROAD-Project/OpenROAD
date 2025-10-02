@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "gui/gui.h"
 #include "gui/heatMap.h"
 
 namespace gui {

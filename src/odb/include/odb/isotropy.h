@@ -274,20 +274,20 @@ std::ostream& operator<<(std::ostream& os, const Direction2D& dir);
 std::ostream& operator<<(std::ostream& os, const Direction3D& dir);
 
 // Convenience objects that will be commonly used.
-constexpr Orientation2D horizontal{Orientation2D::Horizontal};
-constexpr Orientation2D vertical{Orientation2D::Vertical};
-constexpr Orientation3D proximal{Orientation3D::Proximal};
+inline constexpr Orientation2D horizontal{Orientation2D::Horizontal};
+inline constexpr Orientation2D vertical{Orientation2D::Vertical};
+inline constexpr Orientation3D proximal{Orientation3D::Proximal};
 
-constexpr Direction1D low{Direction1D::Low};
-constexpr Direction1D high{Direction1D::High};
+inline constexpr Direction1D low{Direction1D::Low};
+inline constexpr Direction1D high{Direction1D::High};
 
-constexpr Direction2D west{Direction2D::West};
-constexpr Direction2D east{Direction2D::East};
-constexpr Direction2D south{Direction2D::South};
-constexpr Direction2D north{Direction2D::North};
+inline constexpr Direction2D west{Direction2D::West};
+inline constexpr Direction2D east{Direction2D::East};
+inline constexpr Direction2D south{Direction2D::South};
+inline constexpr Direction2D north{Direction2D::North};
 
-constexpr Direction3D down{Direction3D::Down};
-constexpr Direction3D up{Direction3D::Up};
+inline constexpr Direction3D down{Direction3D::Down};
+inline constexpr Direction3D up{Direction3D::Up};
 
 using utl::format_as;
 

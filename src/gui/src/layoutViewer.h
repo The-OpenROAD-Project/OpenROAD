@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <QColor>
 #include <QFrame>
 #include <QLine>
 #include <QMainWindow>
@@ -10,12 +11,15 @@
 #include <QMenu>
 #include <QMutex>
 #include <QPaintEvent>
+#include <QPainter>
 #include <QPixmap>
 #include <QScrollArea>
 #include <QShortcut>
+#include <QString>
 #include <QThread>
 #include <QTimer>
 #include <QWaitCondition>
+#include <QWidget>
 #include <chrono>
 #include <functional>
 #include <map>

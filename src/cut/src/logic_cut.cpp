@@ -20,6 +20,7 @@
 #include "map/mio/mio.h"
 #include "map/mio/mioInt.h"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 #include "utl/unique_name.h"

@@ -95,6 +95,7 @@ target_link_libraries(dpl_test
     GTest::gtest
     GTest::gtest_main
     dpl_lib
+    tst
 )
 
 gtest_discover_tests(dpl_test

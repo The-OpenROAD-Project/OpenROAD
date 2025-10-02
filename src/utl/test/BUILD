@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
+
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
 # From CMakeLists.txt or_integration_tests(TESTS
@@ -46,7 +48,6 @@ filegroup(
         "tee_6.rptok",
         "tee_7.rptok",
         "tee_8.rptok",
-        "utl_unit_test.tcl",
     ],
 )
 
@@ -71,3 +72,14 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "utl_cfile_unittest",
+    srcs = ["cpp/TestCFileUtils.cpp"],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

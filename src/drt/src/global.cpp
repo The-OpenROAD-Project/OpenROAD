@@ -25,7 +25,7 @@ std::ostream& operator<<(std::ostream& os, const frRect& pinFigIn)
   //    pinFigIn.getPin()->getTerm()->getName()
   //       << " " << pinFigIn.getLayerNum() << std::endl;
   //  }
-  Rect tmpBox = pinFigIn.getBBox();
+  odb::Rect tmpBox = pinFigIn.getBBox();
   os << "  RECT " << tmpBox.xMin() << " " << tmpBox.yMin() << " "
      << tmpBox.xMax() << " " << tmpBox.yMax();
   return os;
@@ -131,7 +131,7 @@ std::ostream& operator<<(std::ostream& os, const frViaDef& viaDefIn)
 
 std::ostream& operator<<(std::ostream& os, const frBlock& blockIn)
 {
-  Rect box = blockIn.getBBox();
+  odb::Rect box = blockIn.getBBox();
   os << "MACRO " << blockIn.getName() << std::endl
      << "  ORIGIN " << box.xMin() << " " << box.yMin() << std::endl
      << "  SIZE " << box.xMax() << " " << box.yMax();
@@ -143,7 +143,7 @@ std::ostream& operator<<(std::ostream& os, const frBlock& blockIn)
 
 std::ostream& operator<<(std::ostream& os, const frInst& instIn)
 {
-  Point tmpPoint = instIn.getOrigin();
+  odb::Point tmpPoint = instIn.getOrigin();
   auto tmpOrient = instIn.getOrient();
   const frString& tmpName = instIn.getName();
   frString tmpString = instIn.getMaster()->getName();

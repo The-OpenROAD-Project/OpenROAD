@@ -17,6 +17,8 @@
 #include "boost/icl/interval_map.hpp"
 #include "dpl/Opendp.h"
 #include "odb/db.h"
+#include "odb/geom.h"
+#include "odb/isotropy.h"
 
 namespace dpl {
 
@@ -66,7 +68,7 @@ class Grid
 {
  public:
   void init(Logger* logger) { logger_ = logger; }
-  void setCore(const Rect& core) { core_ = core; }
+  void setCore(const odb::Rect& core) { core_ = core; }
   void initGrid(dbDatabase* db,
                 dbBlock* block,
                 std::shared_ptr<Padding> padding,
@@ -89,7 +91,7 @@ class Grid
   GridY gridEndY(DbuY y) const;
 
   // Snap outwards to fully contain
-  GridRect gridCovering(const Rect& rect) const;
+  GridRect gridCovering(const odb::Rect& rect) const;
   GridRect gridCovering(const Node* cell) const;
   GridRect gridCoveringPadded(const Node* cell) const;
 
@@ -149,7 +151,7 @@ class Grid
 
   GridY getRowCount(DbuY row_height) const;
 
-  Rect getCore() const { return core_; }
+  odb::Rect getCore() const { return core_; }
   bool cellFitsInCore(Node* cell) const;
 
   bool isMultiHeight(dbMaster* master) const;
@@ -203,7 +205,7 @@ class Grid
   std::vector<RowSitesMap> row_sites_;
 
   bool has_hybrid_rows_ = false;
-  Rect core_;
+  odb::Rect core_;
 
   std::optional<DbuY> uniform_row_height_;  // unset if hybrid
   DbuX site_width_{0};

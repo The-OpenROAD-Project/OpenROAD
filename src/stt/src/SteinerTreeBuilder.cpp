@@ -16,6 +16,7 @@
 #include "odb/geom.h"
 #include "stt/flute.h"
 #include "stt/pd.h"
+#include "utl/Logger.h"
 
 namespace stt {
 

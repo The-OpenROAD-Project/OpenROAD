@@ -9,6 +9,7 @@
 #include <cstdlib>
 
 #include "odb/db.h"
+#include "odb/isotropy.h"
 
 namespace rcx {
 
@@ -2312,7 +2313,7 @@ void GridTable::dumpTrackCounts(FILE* fp)
           texpand,
           ttsubtn);
 }
-GridTable::GridTable(Rect* bb,
+GridTable::GridTable(odb::Rect* bb,
                      uint rowCnt,
                      uint colCnt,
                      uint* pitch,

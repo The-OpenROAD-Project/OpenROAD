@@ -25,7 +25,6 @@
 #include "base/main/abcapis.h"
 #include "cut/abc_library_factory.h"
 #include "cut/logic_extractor.h"
-#include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
 #include "gmock/gmock.h"
@@ -41,6 +40,7 @@
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "sta/VerilogReader.hh"
+#include "tst/fixture.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
@@ -59,40 +59,19 @@ using cut::LogicCut;
 using cut::LogicExtractorFactory;
 using ::testing::Contains;
 
-std::once_flag init_sta_flag;
+std::once_flag init_abc_flag;
 
-class AbcTest : public ::testing::Test
+class AbcTest : public tst::Fixture
 {
  protected:
   void SetUp() override
   {
-    db_ = utl::UniquePtrWithDeleter<odb::dbDatabase>(odb::dbDatabase::create(),
-                                                     &odb::dbDatabase::destroy);
-    std::call_once(init_sta_flag, []() {
-      sta::initSta();
-      abc::Abc_Start();
-    });
-    db_->setLogger(&logger_);
-    sta_
-        = std::make_unique<sta::dbSta>(Tcl_CreateInterp(), db_.get(), &logger_);
-    auto path = std::filesystem::canonical("./Nangate45/Nangate45_typ.lib");
-    library_ = sta_->readLiberty(path.c_str(),
-                                 sta_->findCorner("default"),
-                                 /*min_max=*/sta::MinMaxAll::all(),
-                                 /*infer_latches=*/false);
+    std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
+    library_ = readLiberty("./Nangate45/Nangate45_typ.lib");
 
-    odb::lefin lef_reader(
-        db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
-
-    auto tech_lef
-        = std::filesystem::canonical("./Nangate45/Nangate45_tech.lef");
-    auto stdcell_lef
-        = std::filesystem::canonical("./Nangate45/Nangate45_stdcell.lef");
-    odb::dbTech* tech = lef_reader.createTech("nangate45", tech_lef.c_str());
-    odb::dbLib* lib
-        = lef_reader.createLib(tech, "nangate45", stdcell_lef.c_str());
-
-    sta_->postReadLef(/*tech=*/nullptr, lib);
+    odb::dbTech* tech
+        = loadTechLef("nangate45", "./Nangate45/Nangate45_tech.lef");
+    loadLibaryLef(tech, "nangate45", "./Nangate45/Nangate45_stdcell.lef");
 
     sta::Units* units = library_->units();
     power_unit_ = units->powerUnit();
@@ -151,43 +130,23 @@ class AbcTest : public ::testing::Test
     return primary_output_name_to_index;
   }
 
-  utl::UniquePtrWithDeleter<odb::dbDatabase> db_;
   sta::Unit* power_unit_;
-  std::unique_ptr<sta::dbSta> sta_;
   sta::LibertyLibrary* library_;
-  utl::Logger logger_;
 };
 
 class AbcTestSky130 : public AbcTest
 {
   void SetUp() override
   {
-    db_ = utl::UniquePtrWithDeleter<odb::dbDatabase>(odb::dbDatabase::create(),
-                                                     &odb::dbDatabase::destroy);
-    std::call_once(init_sta_flag, []() {
-      sta::initSta();
-      abc::Abc_Start();
-    });
-    db_->setLogger(&logger_);
-    sta_
-        = std::make_unique<sta::dbSta>(Tcl_CreateInterp(), db_.get(), &logger_);
-    auto path = std::filesystem::canonical(
-        "./sky130/sky130_fd_sc_hd__ss_n40C_1v40.lib");
-    library_ = sta_->readLiberty(path.c_str(),
-                                 sta_->findCorner("default"),
-                                 /*min_max=*/sta::MinMaxAll::all(),
-                                 /*infer_latches=*/false);
+    std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
 
-    odb::lefin lef_reader(
-        db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
+    library_ = readLiberty("./sky130/sky130_fd_sc_hd__ss_n40C_1v40.lib");
 
-    auto tech_lef = std::filesystem::canonical("./sky130/sky130hd.tlef");
-    auto stdcell_lef
-        = std::filesystem::canonical("./sky130/sky130hd_std_cell.lef");
-    odb::dbTech* tech = lef_reader.createTech("sky130", tech_lef.c_str());
-    odb::dbLib* lib = lef_reader.createLib(tech, "sky130", stdcell_lef.c_str());
+    odb::dbTech* tech = loadTechLef("sky130", "./sky130/sky130hd.tlef");
+    odb::dbLib* lib
+        = loadLibaryLef(tech, "sky130", "./sky130/sky130hd_std_cell.lef");
 
-    sta_->postReadLef(/*tech=*/nullptr, lib);
+    sta_->postReadLef(tech, lib);
 
     sta::Units* units = library_->units();
     power_unit_ = units->powerUnit();
@@ -198,42 +157,25 @@ class AbcTestAsap7 : public AbcTest
 {
   void SetUp() override
   {
-    db_ = utl::UniquePtrWithDeleter<odb::dbDatabase>(odb::dbDatabase::create(),
-                                                     &odb::dbDatabase::destroy);
-    std::call_once(init_sta_flag, []() {
-      sta::initSta();
-      abc::Abc_Start();
-    });
-    db_->setLogger(&logger_);
-    sta_
-        = std::make_unique<sta::dbSta>(Tcl_CreateInterp(), db_.get(), &logger_);
+    std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
 
-    std::vector<std::string> liberty_paths
+    std::array<const char*, 5> liberty_paths
         = {"./asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
            "./asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
            "./asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz",
            "./asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
            "./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz"};
 
-    for (const std::string& liberty_path : liberty_paths) {
-      auto path = std::filesystem::canonical(liberty_path);
-      library_ = sta_->readLiberty(path.c_str(),
-                                   sta_->findCorner("default"),
-                                   /*min_max=*/sta::MinMaxAll::all(),
-                                   /*infer_latches=*/false);
+    for (const char* liberty_path : liberty_paths) {
+      library_ = readLiberty(liberty_path);
     }
 
-    odb::lefin lef_reader(
-        db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
+    odb::dbTech* tech
+        = loadTechLef("asap7", "./asap7/asap7_tech_1x_201209.lef");
+    odb::dbLib* lib = loadLibaryLef(
+        tech, "asap7", "./asap7/asap7sc7p5t_28_R_1x_220121a.lef");
 
-    auto tech_lef
-        = std::filesystem::canonical("./asap7/asap7_tech_1x_201209.lef");
-    auto stdcell_lef
-        = std::filesystem::canonical("./asap7/asap7sc7p5t_28_R_1x_220121a.lef");
-    odb::dbTech* tech = lef_reader.createTech("asap7", tech_lef.c_str());
-    odb::dbLib* lib = lef_reader.createLib(tech, "asap7", stdcell_lef.c_str());
-
-    sta_->postReadLef(/*tech=*/nullptr, lib);
+    sta_->postReadLef(tech, lib);
 
     sta::Units* units = library_->units();
     power_unit_ = units->powerUnit();

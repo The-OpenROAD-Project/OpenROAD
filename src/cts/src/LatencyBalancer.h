@@ -15,6 +15,7 @@
 #include "TreeBuilder.h"
 #include "Util.h"
 #include "odb/db.h"
+#include "sta/Delay.hh"
 
 namespace utl {
 class Logger;

@@ -13,7 +13,7 @@ jobs:
     steps:
       # Downloads the artifact uploaded by the lint action
       - name: 'Download artifact'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           script: |
             const artifacts = await github.rest.actions.listWorkflowRunArtifacts({

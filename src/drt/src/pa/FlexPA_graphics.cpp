@@ -13,6 +13,7 @@
 #include "db/obj/frMPin.h"
 #include "frBaseTypes.h"
 #include "global.h"
+#include "gui/gui.h"
 #include "pa/FlexPA.h"
 #include "utl/Logger.h"
 
@@ -100,7 +101,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
   for (auto via : pa_vias_) {
     auto* via_def = via->getViaDef();
-    Rect bbox;
+    odb::Rect bbox;
     bool skip = false;
     if (via_def->getLayer1Num() == layer_num) {
       bbox = via->getLayer1BBox();
@@ -118,7 +119,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
   for (auto seg : pa_segs_) {
     if (seg->getLayerNum() == layer_num) {
-      Rect bbox = seg->getBBox();
+      odb::Rect bbox = seg->getBBox();
       painter.setPen(layer, /* cosmetic */ true);
       painter.setBrush(layer);
       painter.drawRect({bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax()});
@@ -142,7 +143,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     auto color = ap.hasAccess() ? gui::Painter::kGreen : gui::Painter::kRed;
     painter.setPen(color, /* cosmetic */ true);
 
-    const Point& pt = ap.getPoint();
+    const odb::Point& pt = ap.getPoint();
     painter.drawX(pt.x(), pt.y(), 50);
   }
 }
@@ -197,7 +198,7 @@ void FlexPAGraphics::startPin(frBPin* pin,
   pin_ = pin;
   inst_term_ = nullptr;
 
-  Rect box = term->getBBox();
+  odb::Rect box = term->getBBox();
   gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
   gui_->pause();
 }
@@ -255,7 +256,7 @@ void FlexPAGraphics::setViaAP(
   pa_segs_.clear();
   pa_markers_ = &markers;
   for (auto& marker : markers) {
-    Rect bbox = marker->getBBox();
+    odb::Rect bbox = marker->getBBox();
     std::string layer_name;
     for (auto& layer : layer_map_) {
       if (layer.first == marker->getLayerNum()) {
@@ -297,7 +298,7 @@ void FlexPAGraphics::setPlanarAP(
   pa_segs_ = {seg};
   pa_markers_ = &markers;
   for (auto& marker : markers) {
-    Rect bbox = marker->getBBox();
+    odb::Rect bbox = marker->getBBox();
     logger_->info(DRT,
                   292,
                   "Marker {} at ({}, {}) ({}, {}).",
@@ -341,7 +342,7 @@ void FlexPAGraphics::setObjsAndMakers(
   }
   pa_markers_ = &markers;
   for (auto& marker : markers) {
-    Rect bbox = marker->getBBox();
+    odb::Rect bbox = marker->getBBox();
     logger_->info(DRT,
                   281,
                   "Marker {} at ({}, {}) ({}, {}).",

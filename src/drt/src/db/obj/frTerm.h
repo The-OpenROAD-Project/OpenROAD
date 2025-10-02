@@ -10,6 +10,7 @@
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frNet.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frTerm : public frBlockObject
@@ -38,7 +39,7 @@ class frTerm : public frBlockObject
   }
   // fills outShapes with copies of the pinFigs
   virtual void getShapes(std::vector<frRect>& outShapes) const = 0;
-  Rect getBBox() const { return bbox_; }
+  odb::Rect getBBox() const { return bbox_; }
 
  protected:
   // constructors
@@ -49,7 +50,7 @@ class frTerm : public frBlockObject
   dbSigType type_{dbSigType::SIGNAL};
   dbIoType direction_{dbIoType::INPUT};
   int index_in_owner_{0};
-  Rect bbox_;
+  odb::Rect bbox_;
 };
 
 }  // namespace drt

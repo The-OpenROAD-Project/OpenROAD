@@ -15,8 +15,6 @@
 
 namespace rcx {
 
-using namespace odb;
-
 template <class T>
 class AthArray;
 
