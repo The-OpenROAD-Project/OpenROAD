@@ -49,9 +49,9 @@ placement_grid_y = 0.048 * MOCK_ARRAY_SCALE
 #
 #  pitch_x, pitch_y - placement pitch for each Element, in x and y direction
 # specification are in unit of placement grid
-rows = 8
+rows = 4
 
-cols = 8
+cols = 4
 
 # Use smallest working value for minimum area of test-case
 ce_x = 8
