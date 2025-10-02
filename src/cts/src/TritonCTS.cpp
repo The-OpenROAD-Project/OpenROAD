@@ -302,9 +302,16 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
                                  TreeBuilder* parent)
 {
   TreeBuilder* clockBuilder = nullptr;
+  std::vector<odb::dbNet*> skipNets = options_->getSkipNets();
   if (driverNet->isSpecial()) {
     logger_->info(
         CTS, 116, "Special net \"{}\" skipped.", driverNet->getName());
+  } else if (std::find(skipNets.begin(), skipNets.end(), driverNet)
+             != skipNets.end()) {
+    logger_->warn(CTS,
+                  44,
+                  "Skipping net {}, specified by the user...",
+                  driverNet->getName());
   } else {
     clockBuilder = initClock(driverNet, clkInputNet, sdcClockName, parent);
   }
@@ -1959,12 +1966,20 @@ bool TritonCTS::masterExists(const std::string& master) const
 void TritonCTS::findClockRoots(sta::Clock* clk,
                                std::set<odb::dbNet*>& clockNets)
 {
+  std::vector<odb::dbNet*> skipNets = options_->getSkipNets();
   for (const sta::Pin* pin : clk->leafPins()) {
     odb::dbITerm* instTerm;
     odb::dbBTerm* port;
     odb::dbModITerm* moditerm;
     network_->staToDb(pin, instTerm, port, moditerm);
     odb::dbNet* net = instTerm ? instTerm->getNet() : port->getNet();
+    if (std::find(skipNets.begin(), skipNets.end(), net) != skipNets.end()) {
+      logger_->warn(CTS,
+                    42,
+                    "Skipping root net {}, specified by the user...",
+                    net->getName());
+      continue;
+    }
     clockNets.insert(net);
   }
 }

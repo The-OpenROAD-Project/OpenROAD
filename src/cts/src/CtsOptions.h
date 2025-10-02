@@ -125,6 +125,17 @@ class CtsOptions : public odb::dbBlockCallBackObj
     clockNetsObjs_ = nets;
   }
   std::vector<odb::dbNet*> getClockNetsObjs() const { return clockNetsObjs_; }
+  void setSkipNets(odb::dbNet* nets) { skipNets_.push_back(nets); }
+  std::vector<odb::dbNet*> getSkipNets() const { return skipNets_; }
+  std::string getSkipNetsToString() const
+  {
+    std::ostringstream skip_nets_names;
+    for (const odb::dbNet* db_net : skipNets_) {
+      skip_nets_names << db_net->getConstName() << " ";
+    }
+    return skip_nets_names.str();
+  }
+  void resetSkipNets() { skipNets_.clear(); }
   void setMetricsFile(const std::string& metricFile)
   {
     metricFile_ = metricFile;
@@ -394,6 +405,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   unsigned numStaticLayers_ = 0;
   std::vector<std::string> bufferList_;
   std::vector<odb::dbNet*> clockNetsObjs_;
+  std::vector<odb::dbNet*> skipNets_;
   utl::Logger* logger_ = nullptr;
   stt::SteinerTreeBuilder* sttBuilder_ = nullptr;
   bool obsAware_ = true;

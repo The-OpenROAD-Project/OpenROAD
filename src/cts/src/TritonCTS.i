@@ -223,6 +223,12 @@ set_clock_nets(const char* names)
 }
 
 void
+set_skip_clock_nets(odb::dbNet* net)
+{
+  getTritonCts()->getParms()->setSkipNets(net);
+}
+
+void
 set_buffer_list(const char* buffers)
 {
   getTritonCts()->setBufferList(buffers);
@@ -377,6 +383,11 @@ get_sink_clustering_size()
 }
 
 std::string
+get_skip_nets()
+{
+  return getTritonCts()->getParms()->getSkipNetsToString();
+}
+std::string
 get_tree_buf()
 {
   return getTritonCts()->getParms()->getTreeBuffer();
@@ -477,6 +488,11 @@ void
 reset_sink_clustering_size()
 {
   getTritonCts()->getParms()->resetSinkClusteringSize();
+}
+void
+reset_skip_nets()
+{
+  getTritonCts()->getParms()->resetSkipNets();
 }
 void
 reset_tree_buf()

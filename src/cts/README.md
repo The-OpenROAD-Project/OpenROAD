@@ -151,6 +151,7 @@ set_cts_config
     [-sink_clustering_levels levels]
     [-sink_clustering_max_diameter max_diameter]
     [-sink_clustering_size cluster_size]
+    [-skip_nets <list_of_clk_nets_to_skip>]
     [-tree_buf <buf>]
     [-wire_unit wire_unit]
 ```
@@ -176,6 +177,7 @@ set_cts_config
 | `-sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster for the register tree. The allowed values are integers `[0, MAX_INT]`. If this is not specified the diameter will be automatically chosen between `50, 100 or 200`, based on the tree buffer max cap. |
 | `-sink_clustering_size` | Specifies the maximum number of sinks per cluster for the register tree. The allowed values are integers `[0, MAX_INT]`. If this is not specified the size will be automatically chosen between `10, 20 or 30` based on the tree buffer max cap. |
 | `-sink_clustering_levels` | ... |
+| `-skip_nets` | Tcl list containing the clock nets to be skipped (e.g. `{net1, net2}`). If the net is a root clock net, the whole clock is skipped, otherwise only the subnet specified is skipped. |
 | `-wire_unit` | Minimum unit distance between buffers for a specific wire. If this parameter is omitted, the code gets the value from ten times the height of `-root_buffer`. |
 
 ### Report CTS configuration
@@ -208,6 +210,7 @@ reset_cts_config
     [-sink_clustering_levels]
     [-sink_clustering_max_diameter]
     [-sink_clustering_size]
+    [-skip_nets]
     [-tree_buf]
     [-wire_unit]
 ```

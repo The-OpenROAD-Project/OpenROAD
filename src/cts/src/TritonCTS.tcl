@@ -52,6 +52,7 @@ sta::define_cmd_args "set_cts_config" {[-apply_ndr strategy] \
                                        [-sink_clustering_levels levels] \
                                        [-sink_clustering_max_diameter] \
                                        [-sink_clustering_size] \
+				       [-skip_nets] \
                                        [-tree_buf buf] \
 	                               [-wire_unit unit]
 }
@@ -60,8 +61,8 @@ proc set_cts_config { args } {
     keys {-apply_ndr -branching_point_buffers_distance -buf_list -clustering_exponent \
            -clustering_unbalance_ratio -delay_buffer_derate -distance_between_buffers \
            -library -macro_clustering_max_diameter -macro_clustering_size \
-           -num_static_layers -sink_buffer_max_cap_derate -sink_clustering_levels -root_buf\
-           -sink_clustering_max_diameter -sink_clustering_size -tree_buf -wire_unit} \
+           -num_static_layers -sink_buffer_max_cap_derate -sink_clustering_levels -root_buf \
+           -sink_clustering_max_diameter -sink_clustering_size -skip_nets -tree_buf -wire_unit} \
     flags {}
 
   sta::check_argc_eq0 "set_cts_config" $args
@@ -136,6 +137,12 @@ proc set_cts_config { args } {
     set size $keys(-sink_clustering_size)
     cts::set_sink_clustering_size $size
   }
+  if { [info exists keys(-skip_nets)] } {
+    foreach net [get_nets $keys(-skip_nets)] {
+      set db_net [sta::sta_to_db_net $net]
+      cts::set_skip_clock_nets $db_net
+    }
+  }
   if { [info exists keys(-tree_buf)] } {
     set buf $keys(-tree_buf)
     cts::set_tree_buf $buf
@@ -186,6 +193,10 @@ proc report_cts_config { args } {
   set sink_clustering_levels [cts::get_sink_clustering_levels]
   set sink_max_diameter [cts::get_sink_clustering_max_diameter]
   set sink_cluster_size [cts::get_sink_clustering_size]
+  set skip_nets_list [cts::get_skip_nets]
+  if { $skip_nets_list eq "" } {
+    set skip_nets_list "undefined"
+  }
   set tree_buffer [cts::get_tree_buf]
   if { $tree_buffer eq "" } {
     set tree_buffer "undefined"
@@ -211,6 +222,7 @@ proc report_cts_config { args } {
   puts "-sink_clustering_levels:             $sink_clustering_levels"
   puts "-sink_clustering_max_diameter:       $sink_max_diameter"
   puts "-sink_clustering_size:               $sink_cluster_size"
+  puts "-skip_nets:                          $skip_nets_list"
   puts "-tree_buf:                           $tree_buffer"
   puts "-wire_unit:                          $wire_segment_unit"
   puts "****'***************************************"
@@ -232,6 +244,7 @@ sta::define_cmd_args "reset_cts_config" {[-apply_ndr] \
                                          [-sink_clustering_levels] \
                                          [-sink_clustering_max_diameter] \
                                          [-sink_clustering_size] \
+					 [-skip_nets] \
                                          [-tree_buf] \
 	                                 [-wire_unit]}
 
@@ -242,7 +255,7 @@ proc reset_cts_config { args } {
            -clustering_unbalance_ratio -delay_buffer_derate -distance_between_buffers \
            -library -macro_clustering_max_diameter -macro_clustering_size \
            -num_static_layers -root_buf -sink_buffer_max_cap_derate -sink_clustering_levels \
-           -sink_clustering_max_diameter -sink_clustering_size -tree_buf -wire_unit}
+           -sink_clustering_max_diameter -sink_clustering_size -skip_nets -tree_buf -wire_unit}
 
   set reset_all [expr { [array size flags] == 0 }]
 
@@ -310,13 +323,17 @@ proc reset_cts_config { args } {
     cts::reset_sink_clustering_size
     utl::info CTS 226 "Sink clustering size has been removed."
   }
+  if { $reset_all || [info exists flags(-skip_nets)] } {
+    cts::reset_skip_nets
+    utl::info CTS 227 "Skip nets has been removed."
+  }
   if { $reset_all || [info exists flags(-tree_buf)] } {
     cts::reset_tree_buf
-    utl::info CTS 227 "Tree buffer has been removed."
+    utl::info CTS 228 "Tree buffer has been removed."
   }
   if { $reset_all || [info exists flags(-wire_unit)] } {
     cts::reset_wire_segment_distance_unit
-    utl::info CTS 228 "Wire segment unit has been removed."
+    utl::info CTS 229 "Wire segment unit has been removed."
   }
 }
 
