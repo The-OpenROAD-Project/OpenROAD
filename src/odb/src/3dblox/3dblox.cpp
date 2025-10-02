@@ -13,6 +13,7 @@
 #include "bmapParser.h"
 #include "dbvParser.h"
 #include "dbxParser.h"
+#include "dbvOut.h"
 #include "objects.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -103,6 +104,12 @@ void ThreeDBlox::readHeaderIncludes(const std::vector<std::string>& includes)
       readDbx(include);
     }
   }
+}
+
+void ThreeDBlox::writeDbv(const std::string& dbv_file)
+{
+  DbvOut writer(logger_);
+  writer.writeFile(dbv_file, db_);
 }
 
 dbChip::ChipType getChipType(const std::string& type, utl::Logger* logger)
