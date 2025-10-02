@@ -49,6 +49,52 @@ Opendp::MasterByImplant Opendp::splitByImplant(
   return mapping;
 }
 
+dbMasterSeq Opendp::filterFillerMasters(const dbMasterSeq& filler_masters) const
+{
+  // Remove fillers that cannot be used
+  dbMasterSeq filtered_masters = filler_masters;
+
+  if (logger_->debugCheck(DPL, "filler", 2)) {
+    debugPrint(logger_,
+               DPL,
+               "filler",
+               1,
+               "Starting fillers: {}",
+               filtered_masters.size()) for (auto* master : filtered_masters)
+    {
+      debugPrint(logger_, DPL, "filler", 2, "    {}", master->getName());
+    }
+  }
+
+  // Remove fillers with PAD or BLOCK classes
+  filtered_masters.erase(std::remove_if(filtered_masters.begin(),
+                                        filtered_masters.end(),
+                                        [](dbMaster* master) -> bool {
+                                          if (master->isPad()) {
+                                            return true;
+                                          }
+                                          if (master->isBlock()) {
+                                            return true;
+                                          }
+                                          return false;
+                                        }),
+                         filtered_masters.end());
+
+  if (logger_->debugCheck(DPL, "filler", 2)) {
+    debugPrint(logger_,
+               DPL,
+               "filler",
+               1,
+               "Final filterered fillers: {}",
+               filtered_masters.size()) for (auto* master : filtered_masters)
+    {
+      debugPrint(logger_, DPL, "filler", 2, "    {}", master->getName());
+    }
+  }
+
+  return filtered_masters;
+}
+
 void Opendp::fillerPlacement(const dbMasterSeq& filler_masters,
                              const char* prefix,
                              bool verbose)
@@ -58,7 +104,9 @@ void Opendp::fillerPlacement(const dbMasterSeq& filler_masters,
     adjustNodesOrient();
   }
 
-  auto filler_masters_by_implant = splitByImplant(filler_masters);
+  const auto filtered_masters = filterFillerMasters(filler_masters);
+
+  auto filler_masters_by_implant = splitByImplant(filtered_masters);
 
   for (auto& [layer, masters] : filler_masters_by_implant) {
     std::sort(masters.begin(),
