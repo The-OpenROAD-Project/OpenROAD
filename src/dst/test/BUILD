@@ -21,7 +21,8 @@ cc_test(
     deps = [
         ":test_helpers",
         "//src/dst",
-        "@boost.test",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -37,7 +38,8 @@ cc_test(
     deps = [
         ":test_helpers",
         "//src/dst",
-        "@boost.test",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -53,6 +55,7 @@ cc_test(
     deps = [
         ":test_helpers",
         "//src/dst",
-        "@boost.test",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )

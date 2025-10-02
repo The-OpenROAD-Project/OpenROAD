@@ -80,7 +80,8 @@ cc_test(
         "//src/odb",
         "//src/odb/test/cpp/helper",
         "//src/tst",
-        "@boost.test",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 # TODO: more to come.

@@ -178,21 +178,10 @@ if(ENABLE_TESTS)
   target_link_libraries(trTest
     drt
     odb
+    GTest::gtest
+    GTest::gtest_main
+    GTest::gmock
   )
-
-  # Use the shared library if found.  We need to pass this info to
-  # the code to select the corresponding include.  Using the shared
-  # library speeds up compilation.
-  if (Boost_unit_test_framework_FOUND)
-    message(STATUS "Boost unit_test_framework library found")
-    target_link_libraries(trTest
-      Boost::unit_test_framework
-    )
-    target_compile_definitions(trTest
-      PRIVATE
-      HAS_BOOST_UNIT_TEST_LIBRARY
-    )
-  endif()
 
   add_test(NAME trTest COMMAND trTest)
   add_dependencies(build_and_test trTest)

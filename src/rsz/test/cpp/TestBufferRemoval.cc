@@ -201,10 +201,10 @@ class BufRemTest : public tst::Fixture
   est::EstimateParasitics ep_;
   rsz::Resizer resizer_;
 
-  sta::LibertyLibrary* library_;
-  sta::dbNetwork* db_network_;
-  sta::PathAnalysisPt* pathAnalysisPt_;
-  sta::Vertex* outVertex_;
+  sta::LibertyLibrary* library_{nullptr};
+  sta::dbNetwork* db_network_{nullptr};
+  sta::PathAnalysisPt* pathAnalysisPt_{nullptr};
+  sta::Vertex* outVertex_{nullptr};
 };
 
 TEST_F(BufRemTest, SlackImproves)

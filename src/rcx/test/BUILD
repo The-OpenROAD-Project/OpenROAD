@@ -107,6 +107,7 @@ cc_test(
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/rcx",
-        "@boost.test",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )

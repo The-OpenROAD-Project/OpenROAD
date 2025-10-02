@@ -119,6 +119,7 @@ cc_test(
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/drt",
-        "@boost.test",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
