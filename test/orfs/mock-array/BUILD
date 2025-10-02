@@ -53,9 +53,10 @@ rows = 8
 
 cols = 8
 
-ce_x = 20
+# Use smallest working value for minimum area of test-case
+ce_x = 8
 
-ce_y = 20
+ce_y = 8
 
 # Element size is set to multiple of placement grid above
 ce_width = ce_x * placement_grid_x
