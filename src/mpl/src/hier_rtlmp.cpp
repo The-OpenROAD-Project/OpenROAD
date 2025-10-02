@@ -938,8 +938,9 @@ void HierRTLMP::computePinAccessDepthLimits()
   const float proportional_min_height = min_depth_proportion * die.getHeight();
 
   const Tiling tiling = tree_->root->getTilings().front();
-  const float tiling_min_width = (die.getWidth() - tiling.width()) / 2;
-  const float tiling_min_height = (die.getHeight() - tiling.height()) / 2;
+  // Required for designs that are too tight (i.e. MockArray)
+  const float tiling_min_width = std::floor((die.getWidth() - tiling.width())) / 2;
+  const float tiling_min_height = std::floor((die.getHeight() - tiling.height())) / 2;
 
   pin_access_depth_limits_.x.min
       = std::min(proportional_min_width, tiling_min_width);
@@ -1900,6 +1901,7 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
   // add the macro area for blockages, pin access and so on
   for (auto& macro : macros) {
     if (macro.getCluster() == nullptr) {
+      logger_->report("PA MACRO {}", macro.getName());
       pin_access_area += macro.getArea();  // get the physical-only area
     }
   }
@@ -1983,11 +1985,12 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
                MPL,
                "fine_shaping",
                1,
-               "No valid solution for children of {}"
-               "avail_space = {}, min_target_util = {}",
+               "No valid solution for children of {} "
+               "std_cell_area = {} avail_space = {} pa area = {} "
+               "std_cell_mixed_area = {} min_target_util = {}",
                parent->getName(),
-               avail_space,
-               min_target_util);
+               std_cell_cluster_area, avail_space, pin_access_area,
+               std_cell_mixed_cluster_area, min_target_util);
 
     return false;
   }
