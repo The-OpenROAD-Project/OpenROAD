@@ -155,6 +155,7 @@ TESTS = [
     "report_buffers_nangate45",
     "report_buffers_sky130hd",
     "report_buffers_sky130hs",
+    "report_design_area",
     "report_dont_touch",
     "report_dont_use",
     "report_dont_use_corners",
@@ -179,6 +180,8 @@ TESTS = [
     "set_dont_touch1",
     "set_dont_use1",
     "split_load_hier",
+    "repair_setup_vt_swap",
+    "repair_setup_vt_swap2",
 ]
 
 filegroup(

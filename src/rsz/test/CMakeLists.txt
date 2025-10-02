@@ -132,6 +132,7 @@ or_integration_tests(
     repair_wire9
     repair_wire10
     repair_wire11
+    report_design_area
     report_dont_touch
     report_dont_use
     report_dont_use_corners
@@ -172,6 +173,8 @@ or_integration_tests(
     report_buffers_sky130hs
     report_buffers_sky130hd
     report_buffers_gf180
+    repair_setup_vt_swap
+    repair_setup_vt_swap2
     repair_fanout7_skip_pin_swap
   PASSFAIL_TESTS
     cpp_tests

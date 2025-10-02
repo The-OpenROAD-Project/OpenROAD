@@ -1289,15 +1289,15 @@ class dbSourceType
 };
 
 // TODO: shouldn't these come from <climits> ?
-static inline constexpr uint64_t MAX_UINT64 = 0xffffffffffffffffLL;
-static inline constexpr uint64_t MIN_UINT64 = 0;
-static inline constexpr uint MAX_UINT = 0xffffffff;
-static inline constexpr uint MIN_UINT = 0;
+inline constexpr uint64_t MAX_UINT64 = 0xffffffffffffffffLL;
+inline constexpr uint64_t MIN_UINT64 = 0;
+inline constexpr uint MAX_UINT = 0xffffffff;
+inline constexpr uint MIN_UINT = 0;
 
-static inline constexpr int64_t MAX_INT64 = 0x7fffffffffffffffLL;
-static inline constexpr int64_t MIN_INT64 = 0x8000000000000000LL;
-static inline constexpr int MAX_INT = 0x7fffffff;
-static inline constexpr int MIN_INT = 0x80000000;
+inline constexpr int64_t MAX_INT64 = 0x7fffffffffffffffLL;
+inline constexpr int64_t MIN_INT64 = 0x8000000000000000LL;
+inline constexpr int MAX_INT = 0x7fffffff;
+inline constexpr int MIN_INT = 0x80000000;
 
 ///
 /// Defines the type of shapes.
