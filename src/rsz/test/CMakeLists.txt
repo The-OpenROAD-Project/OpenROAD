@@ -132,6 +132,7 @@ or_integration_tests(
     repair_wire9
     repair_wire10
     repair_wire11
+    report_design_area
     report_dont_touch
     report_dont_use
     report_dont_use_corners
