@@ -1017,11 +1017,6 @@ int NesterovPlace::doNesterovPlace(const int start_iter)
       ++npVars_.maxNesterovIter;
     }
 
-    // if(nesterov_iter % 50 == 0) {
-      // for(auto& nb : nbVec_) {
-      //   nb->writeGCellVectorsToCSV("gcells_vector.csv", nesterov_iter, 320, 1, 1);
-      // }
-    // }
     runTimingDriven(nesterov_iter,
                     timing_driven_dir,
                     routability_driven_revert_count,

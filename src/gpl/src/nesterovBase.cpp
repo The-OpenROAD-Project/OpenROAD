@@ -3066,12 +3066,7 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
 
 void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
 {
-        debugPrint(
-          log_,
-          GPL,
-          "callbacks",
-          1, "new_instances_ size at updateGCellState: {}", new_instances_.size());
-  for (auto& db_inst : new_instances_) {    
+  for (auto& db_inst : new_instances_) {
     auto db_it = db_inst_to_nb_index_.find(db_inst);
     if (db_it != db_inst_to_nb_index_.end()) {
       size_t gcells_index = db_it->second;
@@ -3137,12 +3132,16 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
       // analogous to updatePrevGradient()
       updateSinglePrevGradient(gcells_index, wlCoeffX, wlCoeffY);
     } else {
-      debugPrint(
-          log_,
-          GPL,
-          "callbacks",
-          1,
-          "warning: updateGCellState, db_inst not found in db_inst_to_nb_index_");
+      // Not finding a db_inst in the map should not be a problem. They are just
+      // ignored.
+      //  This can happen when rsz creates and destroys an instance in the same
+      //  iteration.
+      debugPrint(log_,
+                 GPL,
+                 "callbacks",
+                 1,
+                 "warning: updateGCellState, db_inst not found in "
+                 "db_inst_to_nb_index_");
     }
   }
   new_instances_.clear();
@@ -3234,18 +3233,6 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
              2,
              "NesterovBase: destroyCbkGCell {}",
              db_inst->getName());
-
-    // auto it = std::find(new_instances_.begin(), new_instances_.end(), db_inst);
-    // if (it != new_instances_.end()) {
-    //   log_->report("Removing db_inst {} from new_instances_ (found at position {})", 
-    //                db_inst->getName(), 
-    //                std::distance(new_instances_.begin(), it));
-    //   new_instances_.erase(it);
-    // } else {
-    //   log_->report("db_inst {} not found in new_instances_ vector (size: {})", 
-    //                db_inst->getName(), 
-    //                new_instances_.size());
-    // }
   auto db_it = db_inst_to_nb_index_.find(db_inst);
   if (db_it != db_inst_to_nb_index_.end()) {
     size_t last_index = nb_gcells_.size() - 1;
@@ -3519,26 +3506,18 @@ void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
     }
     std::swap(nb_gcells_[nb_index_remove], nb_gcells_[nb_last_index]);
   }
-  log_->report("swap finished for nb_gcells_, size:{}", nb_gcells_.size());
   swapAndPopParallelVectors(nb_index_remove, nb_last_index);
-  log_->report("swapAndPop finished for parallel vectors");
   nb_gcells_.pop_back();
   filler_stor_index_to_nb_index_.erase(stor_index_remove);
 
   if (stor_index_remove != stor_last_index) {
-    auto it = filler_stor_index_to_nb_index_.find(stor_last_index);
-    if (it == filler_stor_index_to_nb_index_.end()) {
-      log_->error(GPL, 317, "stor_last_index {} not found in filler_stor_index_to_nb_index_", stor_last_index);
-      return;
-    }
-    size_t replacer_index = it->second;
-    log_->report("replacer_index: {}, stor_last_index: {}", replacer_index, stor_last_index);
+    size_t replacer_index
+        = filler_stor_index_to_nb_index_.find(stor_last_index)->second;
     std::swap(fillerStor_[stor_index_remove], fillerStor_[stor_last_index]);
     nb_gcells_[replacer_index].updateHandle(this, stor_index_remove);
     filler_stor_index_to_nb_index_[stor_index_remove] = replacer_index;
   }
   fillerStor_.pop_back();
-  log_->report("pop_back finished for fillerStor_, size:{}", fillerStor_.size());
 }
 
 void NesterovBase::restoreRemovedFillers()
@@ -3815,20 +3794,20 @@ void NesterovBase::appendGCellCSVNote(const std::string& filename,
 }
 
 void NesterovBase::writeGCellVectorsToCSV(const std::string& filename,
-                      int iteration,
-                      int start_iteration,
-                      int iteration_stride,
-                      int gcell_index_stride) const
+                                          int iteration,
+                                          int start_iteration,
+                                          int iteration_stride,
+                                          int gcell_index_stride) const
 {
-  if (iteration != 0 && (iteration < start_iteration
-      || iteration % iteration_stride != 0)) {
+  if (iteration != 0
+      && (iteration < start_iteration || iteration % iteration_stride != 0)) {
     return;
   }
 
   bool file_exists = std::ifstream(filename).good();
   std::ofstream file(filename, std::ios::app);
   if (!file.is_open()) {
-  file.open(filename, std::ios::out | std::ios::app);
+    file.open(filename, std::ios::out | std::ios::app);
     if (!file.is_open()) {
       log_->report("Could not create or open file: {}", filename);
       return;
@@ -3837,40 +3816,40 @@ void NesterovBase::writeGCellVectorsToCSV(const std::string& filename,
 
   // Write header only if file didn't exist before
   if (!file_exists) {
-  file << "iteration,index,name";
-  file << ",insts_size,gPins_size";
-  file << ",lx,ly,ux,uy";
-  file << ",dLx,dLy,dUx,dUy";
-  file << ",densityScale,gradientX,gradientY";
+    file << "iteration,index,name";
+    file << ",insts_size,gPins_size";
+    file << ",lx,ly,ux,uy";
+    file << ",dLx,dLy,dUx,dUy";
+    file << ",densityScale,gradientX,gradientY";
 
-  auto add_header = [&](const std::string& name) {
-    file << "," << name << "_x" << "," << name << "_y";
-  };
+    auto add_header = [&](const std::string& name) {
+      file << "," << name << "_x" << "," << name << "_y";
+    };
 
-  add_header("curSLPCoordi");
-  add_header("curSLPWireLengthGrads");
-  add_header("curSLPDensityGrads");
-  add_header("curSLPSumGrads");
+    add_header("curSLPCoordi");
+    add_header("curSLPWireLengthGrads");
+    add_header("curSLPDensityGrads");
+    add_header("curSLPSumGrads");
 
-  add_header("nextSLPCoordi");
-  add_header("nextSLPWireLengthGrads");
-  add_header("nextSLPDensityGrads");
-  add_header("nextSLPSumGrads");
+    add_header("nextSLPCoordi");
+    add_header("nextSLPWireLengthGrads");
+    add_header("nextSLPDensityGrads");
+    add_header("nextSLPSumGrads");
 
-  add_header("prevSLPCoordi");
-  add_header("prevSLPWireLengthGrads");
-  add_header("prevSLPDensityGrads");
-  add_header("prevSLPSumGrads");
+    add_header("prevSLPCoordi");
+    add_header("prevSLPWireLengthGrads");
+    add_header("prevSLPDensityGrads");
+    add_header("prevSLPSumGrads");
 
-  add_header("curCoordi");
-  add_header("nextCoordi");
-  add_header("initCoordi");
+    add_header("curCoordi");
+    add_header("nextCoordi");
+    add_header("initCoordi");
 
-  add_header("snapshotCoordi");
-  add_header("snapshotSLPCoordi");
-  add_header("snapshotSLPSumGrads");
+    add_header("snapshotCoordi");
+    add_header("snapshotSLPCoordi");
+    add_header("snapshotSLPSumGrads");
 
-  file << "\n";
+    file << "\n";
   }
 
   size_t num_rows = curSLPCoordi_.size();
