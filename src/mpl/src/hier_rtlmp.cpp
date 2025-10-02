@@ -1801,9 +1801,6 @@ void HierRTLMP::eliminateOverlaps(std::vector<Rect>& blockages) const
   }
 }
 
-// We model blockages as macro clusters (SoftMacros) constrained to fences.
-// The rationale of this model comes from the fact that the area occupied
-// by blockages should be empty, i.e., with neither macros or std cells.
 void HierRTLMP::createSoftMacrosForBlockages(const std::vector<Rect>& blockages,
                                              std::vector<SoftMacro>& macros)
 {
