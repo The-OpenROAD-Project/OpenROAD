@@ -3132,10 +3132,8 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
       // analogous to updatePrevGradient()
       updateSinglePrevGradient(gcells_index, wlCoeffX, wlCoeffY);
     } else {
-      // Not finding a db_inst in the map should not be a problem. They are just
-      // ignored.
-      //  This can happen when rsz creates and destroys an instance in the same
-      //  iteration.
+      // Not finding a db_inst in the map should not be a problem. Just ignore
+      // Occurs when instance created and destroyed in same iteration.
       debugPrint(log_,
                  GPL,
                  "callbacks",
