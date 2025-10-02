@@ -18,6 +18,8 @@ class VTSwapSpeedMove : public BaseMove
               PathExpanded* expanded,
               float setup_slack_margin) override;
 
+  bool doMove(Instance* drvr, std::unordered_set<Instance*>& notSwappable);
+
   const char* name() override { return "VTSwapSpeed"; }
 
  private:
