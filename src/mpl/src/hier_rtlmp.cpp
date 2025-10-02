@@ -1901,7 +1901,6 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
   // add the macro area for blockages, pin access and so on
   for (auto& macro : macros) {
     if (macro.getCluster() == nullptr) {
-      logger_->report("PA MACRO {}", macro.getName());
       pin_access_area += macro.getArea();  // get the physical-only area
     }
   }
