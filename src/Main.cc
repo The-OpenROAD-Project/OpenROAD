@@ -542,7 +542,7 @@ static void showUsage(const char* prog, const char* init_filename)
 {
   printf("Usage: %s [-help] [-version] [-no_init] [-no_splash] [-exit] ", prog);
   printf("[-gui] [-threads count|max] [-log file_name] [-metrics file_name] ");
-  printf("[-no_settings] [-minimize] cmd_file\n");
+  printf("[-db file_name] [-no_settings] [-minimize] cmd_file\n");
   printf("  -help                 show help and exit\n");
   printf("  -version              show version and exit\n");
   printf("  -no_init              do not read %s init file\n", init_filename);
