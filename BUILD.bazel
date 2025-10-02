@@ -90,6 +90,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/pdn",
     "//src/ppl",
     "//src/psm",
+    "//src/ram",
     "//src/rcx",
     "//src/rcx:ui",
     "//src/rmp",
