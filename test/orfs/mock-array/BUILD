@@ -372,6 +372,21 @@ MACROS = [
     srcs = [
         "simulate.cpp",
     ],
+    # Best way to refer to static names in Verilator generated code?
+    copts = [
+        "-DARRAY_COLS=\"{}\"".format(
+            ",".join([
+                "&top->io_ins_down_{col}, &top->io_ins_up_{col}".format(col = col)
+                for col in range(cols)
+            ]),
+        ),
+        "-DARRAY_ROWS=\"{}\"".format(
+            ",".join([
+                "&top->io_ins_left_{row}, &top->io_ins_right_{row}".format(row = row)
+                for row in range(rows)
+            ]),
+        ),
+    ],
     cxxopts = [
         "-std=c++23",
     ],
