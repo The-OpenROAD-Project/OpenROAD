@@ -68,12 +68,14 @@ class Progress;
   X(PDN)                \
   X(PPL)                \
   X(PSM)                \
+  X(RAM)                \
   X(RCX)                \
   X(RMP)                \
   X(RSZ)                \
   X(STA)                \
   X(STT)                \
   X(TAP)                \
+  X(TST)                \
   X(UKN)                \
   X(UPF)                \
   X(UTL)

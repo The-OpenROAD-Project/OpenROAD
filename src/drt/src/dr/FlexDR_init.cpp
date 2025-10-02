@@ -32,6 +32,7 @@
 #include "frRTree.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
+#include "odb/isotropy.h"
 
 namespace drt {
 

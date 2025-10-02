@@ -10,6 +10,7 @@ target_link_libraries(CutGTests
         utl_lib
         libabc
         cut
+        tst
         ${TCL_LIBRARY}
 )
 

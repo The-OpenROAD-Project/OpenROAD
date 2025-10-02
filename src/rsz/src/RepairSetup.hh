@@ -105,7 +105,8 @@ class RepairSetup : public sta::dbStaState
                    bool skip_buffering,
                    bool skip_buffer_removal,
                    bool skip_last_gasp,
-                   bool skip_vt_swap);
+                   bool skip_vt_swap,
+                   bool skip_crit_vt_swap);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
@@ -131,6 +132,13 @@ class RepairSetup : public sta::dbStaState
                          int endpt_index,
                          int num_endpts);
   void repairSetupLastGasp(const OptoParams& params, int& num_viols);
+  bool swapVTCritCells(const OptoParams& params, int& num_viols);
+  void traverseFaninCone(Vertex* endpoint,
+                         std::unordered_map<Instance*, float>& crit_insts,
+                         std::unordered_set<Vertex*>& visited,
+                         std::unordered_set<Instance*>& notSwappable,
+                         const OptoParams& params);
+  Slack getInstanceSlack(Instance* inst);
 
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;

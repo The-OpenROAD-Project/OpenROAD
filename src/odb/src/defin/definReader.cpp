@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "boost/algorithm/string/replace.hpp"
+#include "definBase.h"
 #include "definBlockage.h"
 #include "definComponent.h"
 #include "definComponentMaskShift.h"
