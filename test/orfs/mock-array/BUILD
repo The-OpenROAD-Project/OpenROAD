@@ -229,6 +229,15 @@ chisel_binary(
     ],
 )
 
+FIRTOOL_OPTIONS = [
+    "-disable-all-randomization",
+    "-strip-debug-info",
+    "-enable-layers=Verification",
+    "-enable-layers=Verification.Assert",
+    "-enable-layers=Verification.Assume",
+    "-enable-layers=Verification.Cover",
+]
+
 fir_library(
     name = "generate_fir",
     data = [
@@ -241,19 +250,14 @@ fir_library(
         "--",
         # Imagine Chisel arguments here
         "--",
-        "-disable-all-randomization",
-        "-strip-debug-info",
-        "-enable-layers=Verification",
-        "-enable-layers=Verification.Assert",
-        "-enable-layers=Verification.Assume",
-        "-enable-layers=Verification.Cover",
-    ],
+    ] + FIRTOOL_OPTIONS,
     tags = ["manual"],
 )
 
 verilog_directory(
     name = "generate_split",
     srcs = [":generate_fir"],
+    opts = FIRTOOL_OPTIONS,
     tags = ["manual"],
 )
 

@@ -136,7 +136,7 @@ enum class DataType : uint8_t
 };
 
 /** dataType sizes in number of bytes */
-static const size_t dataTypeSize[(int) DataType::INVALID_DT]
+inline constexpr size_t dataTypeSize[(int) DataType::INVALID_DT]
     = {1, 1, 2, 4, 4, 8, 1};
 
 /**

@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO RAM-0003] Generating RAM8x8
+[INFO RAM-0016] Selected inverter cell sky130_fd_sc_hd__clkinv_1
+[INFO RAM-0016] Selected tristate cell sky130_fd_sc_hd__ebufn_1
+[INFO RAM-0016] Selected and2 cell sky130_fd_sc_hd__and2_0
+[INFO RAM-0016] Selected clock gate cell sky130_fd_sc_hd__dlclkp_1
+[INFO RAM-0016] Selected buffer cell sky130_fd_sc_hd__buf_1
+No differences found.
