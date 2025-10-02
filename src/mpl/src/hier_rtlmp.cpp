@@ -1478,8 +1478,6 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
         soft_macro_id_map[tree_->maps.id_to_cluster[cluster1]->getName()],
         soft_macro_id_map[tree_->maps.id_to_cluster[cluster2]->getName()],
         tree_->virtual_weight);
-    net.src_cluster_id = cluster1;
-    net.target_cluster_id = cluster2;
     nets.push_back(net);
   }
 
@@ -1500,8 +1498,6 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
       if (src_id > cluster_id) {
         BundledNet net(
             soft_macro_id_map[src_name], soft_macro_id_map[name], weight);
-        net.src_cluster_id = src_id;
-        net.target_cluster_id = cluster_id;
         nets.push_back(net);
       }
     }
@@ -2329,9 +2325,6 @@ std::vector<BundledNet> HierRTLMP::computeBundledNets(
     for (auto [cluster_id, weight] : macro_cluster->getConnectionsMap()) {
       BundledNet net(
           cluster_to_macro.at(src_id), cluster_to_macro.at(cluster_id), weight);
-
-      net.src_cluster_id = src_id;
-      net.target_cluster_id = cluster_id;
       nets.push_back(net);
     }
   }
