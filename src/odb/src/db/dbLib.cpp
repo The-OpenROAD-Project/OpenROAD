@@ -8,6 +8,7 @@
 #include <string>
 
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.h"
 #include "dbHashTable.hpp"

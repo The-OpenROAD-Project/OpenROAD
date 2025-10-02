@@ -13,6 +13,7 @@
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
+#include "odb/isotropy.h"
 #include "utl/Logger.h"
 namespace dpl {
 

@@ -11,6 +11,7 @@ cc_test(
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
+        "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

@@ -12,6 +12,7 @@ set(TEST_LIBS
   GTest::gmock
   odb
   mpl_lib
+  tst
 )
 
 add_executable(TestSnapper TestSnapper.cpp)

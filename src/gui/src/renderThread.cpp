@@ -3,6 +3,7 @@
 
 #include "renderThread.h"
 
+#include <QColor>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPolygon>

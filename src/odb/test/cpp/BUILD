@@ -22,6 +22,7 @@ cc_test(
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/odb",
+        "//src/tst",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -40,6 +41,7 @@ cc_test(
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/odb",
+        "//src/tst",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -61,6 +63,7 @@ cc_test(
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/odb",
+        "//src/tst",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -76,6 +79,7 @@ cc_test(
     deps = [
         "//src/odb",
         "//src/odb/test/cpp/helper",
+        "//src/tst",
         "@boost.test",
     ],
 )
