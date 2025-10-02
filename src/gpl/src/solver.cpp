@@ -3,9 +3,9 @@
 
 #include "solver.h"
 
-#include <omp.h>
-
 #include <limits>
+
+#include "omp.h"
 
 namespace gpl {
 

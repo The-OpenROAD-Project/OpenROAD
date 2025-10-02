@@ -3,8 +3,6 @@
 
 #include "dr/FlexDR_conn.h"
 
-#include <omp.h>
-
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
@@ -30,6 +28,7 @@
 #include "frRegionQuery.h"
 #include "io/io.h"
 #include "odb/geom.h"
+#include "omp.h"
 #include "triton_route/TritonRoute.h"
 #include "utl/exception.h"
 
