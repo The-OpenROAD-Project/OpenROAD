@@ -159,7 +159,8 @@ proc global_route { args } {
     keys {-guide_file -congestion_iterations -congestion_report_file \
           -grid_origin -critical_nets_percentage -congestion_report_iter_step
          } \
-    flags {-allow_congestion -resistance_aware -verbose -start_incremental -end_incremental -use_cugr}
+    flags {-allow_congestion -resistance_aware -verbose -start_incremental -end_incremental \
+          -use_cugr}
 
   sta::check_argc_eq0 "global_route" $args
 

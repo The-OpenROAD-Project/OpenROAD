@@ -132,7 +132,7 @@ void FastRouteCore::netpinOrderInc()
 
     float slack = 1;
 
-    if(resistance_aware_){
+    if (resistance_aware_) {
       slack = nets_[netID]->getSlack();
     }
 
@@ -624,8 +624,7 @@ void FastRouteCore::assignEdge(const int netID,
           }
 
           int base_via_cost = abs(i - l) * (k == 0 ? 2 : 3);
-          int total_via_cost
-              = base_via_cost + static_cast<int>(via_resistance_cost);
+          int total_via_cost = base_via_cost + via_resistance_cost;
 
           if (gridD[i][k] > gridD[l][k] + total_via_cost) {
             gridD[i][k] = gridD[l][k] + total_via_cost;
@@ -658,7 +657,7 @@ void FastRouteCore::assignEdge(const int netID,
         if (i != l) {
           via_resistance_cost = getViaResistance(l, i) * via_scale_factor;
         }
-        int total_cost = abs(i - l) + static_cast<int>(via_resistance_cost);
+        int total_cost = abs(i - l) * 1 + via_resistance_cost;
 
         if (gridD[i][k] > gridD[l][k] + total_cost) {
           gridD[i][k] = gridD[l][k] + total_cost;
@@ -755,8 +754,7 @@ void FastRouteCore::assignEdge(const int netID,
           }
 
           int base_via_cost = abs(i - l) * (k == routelen ? 2 : 3);
-          int total_via_cost
-              = base_via_cost + static_cast<int>(via_resistance_cost);
+          int total_via_cost = base_via_cost + via_resistance_cost;
 
           if (gridD[i][k] > gridD[l][k] + total_via_cost) {
             gridD[i][k] = gridD[l][k] + total_via_cost;
@@ -789,7 +787,7 @@ void FastRouteCore::assignEdge(const int netID,
         if (i != l) {
           via_resistance_cost = getViaResistance(l, i) * via_scale_factor;
         }
-        int total_cost = abs(i - l) + static_cast<int>(via_resistance_cost);
+        int total_cost = abs(i - l) * 1 + via_resistance_cost;
 
         if (gridD[i][0] > gridD[l][0] + total_cost) {
           gridD[i][0] = gridD[l][0] + total_cost;
