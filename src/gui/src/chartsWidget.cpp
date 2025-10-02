@@ -29,6 +29,7 @@
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
 #include "sta/PortDirection.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Units.hh"
 #include "utl/histogram.h"
 

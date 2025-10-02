@@ -7,6 +7,8 @@
 #include <cmath>
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "BufferMove.hh"
 #include "SplitLoadMove.hh"

@@ -5,9 +5,9 @@
 
 namespace dpl {
 
-const unsigned Symmetry_UNKNOWN = 0x00000000;
-const unsigned Symmetry_X = 0x00000001;
-const unsigned Symmetry_Y = 0x00000002;
-const unsigned Symmetry_ROT90 = 0x00000004;
+inline constexpr unsigned Symmetry_UNKNOWN = 0x00000000;
+inline constexpr unsigned Symmetry_X = 0x00000001;
+inline constexpr unsigned Symmetry_Y = 0x00000002;
+inline constexpr unsigned Symmetry_ROT90 = 0x00000004;
 
 }  // namespace dpl

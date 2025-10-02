@@ -12,6 +12,7 @@
 
 #include "nesterovBase.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"

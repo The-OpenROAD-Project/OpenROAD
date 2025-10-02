@@ -3,8 +3,6 @@
 
 #include "nesterovBase.h"
 
-#include <omp.h>
-
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -24,6 +22,7 @@
 #include "fft.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
+#include "omp.h"
 #include "placerBase.h"
 #include "utl/Logger.h"
 

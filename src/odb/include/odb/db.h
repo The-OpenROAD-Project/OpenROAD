@@ -31,7 +31,7 @@
 #include "odb/isotropy.h"
 #include "odb/odb.h"
 
-constexpr int ADS_MAX_CORNER = 10;
+inline constexpr int ADS_MAX_CORNER = 10;
 
 namespace utl {
 class Logger;
