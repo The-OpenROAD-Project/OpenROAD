@@ -70,13 +70,8 @@ dbMasterSeq Opendp::filterFillerMasters(const dbMasterSeq& filler_masters) const
   filtered_masters.erase(std::remove_if(filtered_masters.begin(),
                                         filtered_masters.end(),
                                         [](dbMaster* master) -> bool {
-                                          if (master->isPad()) {
-                                            return true;
-                                          }
-                                          if (master->isBlock()) {
-                                            return true;
-                                          }
-                                          return false;
+                                          return master->isPad()
+                                                 || master->isBlock();
                                         }),
                          filtered_masters.end());
 
