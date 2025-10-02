@@ -103,6 +103,7 @@ class FastRouteCore
   void addHCapacity(short horizontalCapacity, int layer);
   void setLowerLeft(int x, int y);
   void setTileSize(int size);
+  void setResistanceAware(bool resistance_aware);
   void addLayerDirection(int layer_idx, const odb::dbTechLayerDir& direction);
   FrNet* addNet(odb::dbNet* db_net,
                 bool is_clock,
@@ -354,6 +355,14 @@ class FastRouteCore
   void reInitTree(int netID);
 
   // maze3D functions
+  float getMazeRouteCost3D(int net_id,
+                           int from_layer,
+                           int to_layer,
+                           int from_x,
+                           int from_y,
+                           int to_x,
+                           int to_y,
+                           bool is_via);
   void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub);
   void addNeighborPoints(int netID,
                          int n1,
@@ -513,6 +522,8 @@ class FastRouteCore
                          int& best_cost,
                          multi_array<int, 2>& layer_grid);
   void assignEdge(int netID, int edgeID, bool processDIR);
+  int getLayerResistance(int layer, int length, FrNet* net);
+  int getViaResistance(int from_layer, int to_layer);
   void recoverEdge(int netID, int edgeID);
   void layerAssignmentV4();
   void netpinOrderInc();
@@ -589,6 +600,7 @@ class FastRouteCore
   int x_range_;
   int y_range_;
 
+  bool resistance_aware_ = false;
   int num_adjust_;
   int v_capacity_;
   int h_capacity_;
