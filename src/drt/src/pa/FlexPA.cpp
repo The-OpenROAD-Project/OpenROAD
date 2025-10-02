@@ -3,8 +3,6 @@
 
 #include "pa/FlexPA.h"
 
-#include <omp.h>
-
 #include <cstdint>
 #include <fstream>
 #include <memory>
@@ -29,6 +27,7 @@
 #include "gc/FlexGC.h"
 #include "global.h"
 #include "odb/db.h"
+#include "omp.h"
 #include "pa/AbstractPAGraphics.h"
 #include "serialization.h"
 #include "utl/exception.h"

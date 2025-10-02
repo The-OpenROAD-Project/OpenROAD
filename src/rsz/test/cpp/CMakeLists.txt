@@ -12,6 +12,7 @@ target_link_libraries(TestBufRem1
         grt_lib
         dpl_lib
         stt_lib
+        tst
         ${TCL_LIBRARY}
 )
 

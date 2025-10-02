@@ -11,6 +11,7 @@
 
 #include "dbArrayTable.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "odb/ZException.h"
 #include "odb/dbId.h"
 #include "odb/dbObject.h"

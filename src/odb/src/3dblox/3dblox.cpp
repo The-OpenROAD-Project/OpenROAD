@@ -5,13 +5,16 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <map>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "dbvParser.h"
 #include "dbxParser.h"
 #include "objects.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/defin.h"
 #include "odb/geom.h"
 #include "odb/lefin.h"

@@ -3,8 +3,6 @@
 
 #include "nesterovBase.h"
 
-#include <omp.h>
-
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -24,6 +22,7 @@
 #include "fft.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
+#include "omp.h"
 #include "placerBase.h"
 #include "utl/Logger.h"
 
@@ -2851,9 +2850,8 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
     return true;
   }
   if (sum_overflow_unscaled_ <= npVars_->targetOverflow) {
-    const bool is_power_domain = pb_->group();
-    const std::string group_name
-        = is_power_domain ? pb_->group()->getName() : "";
+    const bool has_group = pb_->group();
+    const std::string group_name = has_group ? pb_->group()->getName() : "";
     const int final_iter = gpl_iter_count;
     dbBlock* block = pb_->db()->getChip()->getBlock();
 
@@ -2867,10 +2865,10 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
     log_->report(
         "---------------------------------------------------------------");
 
-    if (is_power_domain) {
+    if (has_group) {
       log_->info(GPL,
                  1016,
-                 "Power domain '{}' placement finished at iteration {}",
+                 "Region '{}' placement finished at iteration {}",
                  group_name,
                  final_iter);
     } else {

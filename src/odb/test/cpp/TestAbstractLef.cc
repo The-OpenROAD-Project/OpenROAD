@@ -10,7 +10,6 @@
 #include <string>
 
 #include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
 #include "odb/lefout.h"
@@ -26,12 +25,12 @@ TEST_F(Sky130TestFixutre, AbstractLefWriterMapsTieOffToSignal)
   // Arrange
   std::ostringstream os;
   odb::lefout lefout(&logger_, os);
-  odb::dbNet* tieoff_net = odb::dbNet::create(block_.get(), "tieoff_net");
+  odb::dbNet* tieoff_net = odb::dbNet::create(block_, "tieoff_net");
   tieoff_net->setSigType(odb::dbSigType::TIEOFF);
   odb::dbBTerm::create(tieoff_net, "tieoff_pin");
 
   // Act
-  lefout.writeAbstractLef(block_.get());
+  lefout.writeAbstractLef(block_);
   std::string result = os.str();
 
   // Assert
@@ -46,12 +45,12 @@ TEST_F(Sky130TestFixutre, AbstractLefWriterMapsScanToSignal)
   // Arrange
   std::ostringstream os;
   odb::lefout lefout(&logger_, os);
-  odb::dbNet* tieoff_net = odb::dbNet::create(block_.get(), "scan_net");
+  odb::dbNet* tieoff_net = odb::dbNet::create(block_, "scan_net");
   tieoff_net->setSigType(odb::dbSigType::SCAN);
   odb::dbBTerm::create(tieoff_net, "scan_pin");
 
   // Act
-  lefout.writeAbstractLef(block_.get());
+  lefout.writeAbstractLef(block_);
   std::string result = os.str();
 
   // Assert
@@ -66,12 +65,12 @@ TEST_F(Sky130TestFixutre, AbstractLefWriterMapsResetToSignal)
   // Arrange
   std::ostringstream os;
   odb::lefout lefout(&logger_, os);
-  odb::dbNet* tieoff_net = odb::dbNet::create(block_.get(), "reset_net");
+  odb::dbNet* tieoff_net = odb::dbNet::create(block_, "reset_net");
   tieoff_net->setSigType(odb::dbSigType::RESET);
   odb::dbBTerm::create(tieoff_net, "reset_pin");
 
   // Act
-  lefout.writeAbstractLef(block_.get());
+  lefout.writeAbstractLef(block_);
   std::string result = os.str();
 
   // Assert

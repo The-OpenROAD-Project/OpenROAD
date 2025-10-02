@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
