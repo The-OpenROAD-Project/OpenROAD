@@ -617,7 +617,7 @@ void FastRouteCore::assignEdge(const int netID,
       for (int l = 0; l < num_layers_; l++) {
         for (int i = 0; i < num_layers_; i++) {
           // Calculate via cost with resistance
-          float via_resistance_cost = 0;
+          int via_resistance_cost = 0;
           if (i != l) {
             via_resistance_cost
                 = getViaResistance(l, i) * via_scale_factor;  // Scale factor
@@ -644,7 +644,7 @@ void FastRouteCore::assignEdge(const int netID,
           gridD[l][k + 1] = gridD[l][k] + 2 * BIG_INT;
         } else {
           // Congested case - still include resistance but with higher base cost
-          float wire_resistance
+          int wire_resistance
               = getLayerResistance(l, tile_size_ * routelen, net);
           gridD[l][k + 1] = gridD[l][k] + BIG_INT + wire_resistance;
         }
@@ -653,11 +653,11 @@ void FastRouteCore::assignEdge(const int netID,
 
     for (int l = 0; l < num_layers_; l++) {
       for (int i = 0; i < num_layers_; i++) {
-        float via_resistance_cost = 0;
+        int via_resistance_cost = 0;
         if (i != l) {
           via_resistance_cost = getViaResistance(l, i) * via_scale_factor;
         }
-        int total_cost = abs(i - l) * 1 + via_resistance_cost;
+        int total_cost = abs(i - l) + via_resistance_cost;
 
         if (gridD[i][k] > gridD[l][k] + total_cost) {
           gridD[i][k] = gridD[l][k] + total_cost;
@@ -747,7 +747,7 @@ void FastRouteCore::assignEdge(const int netID,
       for (int l = 0; l < num_layers_; l++) {
         for (int i = 0; i < num_layers_; i++) {
           // Calculate via cost with resistance
-          float via_resistance_cost = 0;
+          int via_resistance_cost = 0;
           if (i != l) {
             via_resistance_cost
                 = getViaResistance(l, i) * via_scale_factor;  // Scale factor
@@ -774,7 +774,7 @@ void FastRouteCore::assignEdge(const int netID,
           gridD[l][k - 1] = gridD[l][k] + 2 * BIG_INT;
         } else {
           // Congested case - still include resistance but with higher base cost
-          float wire_resistance
+          int wire_resistance
               = getLayerResistance(l, tile_size_ * routelen, net);
           gridD[l][k - 1] = gridD[l][k] + BIG_INT + wire_resistance;
         }
@@ -783,11 +783,11 @@ void FastRouteCore::assignEdge(const int netID,
 
     for (int l = 0; l < num_layers_; l++) {
       for (int i = 0; i < num_layers_; i++) {
-        float via_resistance_cost = 0;
+        int via_resistance_cost = 0;
         if (i != l) {
           via_resistance_cost = getViaResistance(l, i) * via_scale_factor;
         }
-        int total_cost = abs(i - l) * 1 + via_resistance_cost;
+        int total_cost = abs(i - l) + via_resistance_cost;
 
         if (gridD[i][0] > gridD[l][0] + total_cost) {
           gridD[i][0] = gridD[l][0] + total_cost;
