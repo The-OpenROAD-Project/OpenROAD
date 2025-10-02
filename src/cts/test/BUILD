@@ -161,6 +161,9 @@ filegroup(
             "max_cap": [
                 "//src/rsz/test:hi_fanout.tcl",
             ],
+            "skip_nets": [
+                "gated_clock2.def",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
