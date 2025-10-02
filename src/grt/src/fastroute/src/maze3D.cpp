@@ -664,19 +664,18 @@ float FastRouteCore::getMazeRouteCost3D(const int net_id,
 {
   FrNet* net = nets_[net_id];
   float base_cost = 1.0;
-  const int via_scale_factor = 2;  // A to B to A
 
   if (is_via) {
     // Via transition cost
     base_cost = via_cost_;
-    float via_resistance = getViaResistance(from_layer, to_layer);
+    const int via_resistance = getViaResistance(from_layer, to_layer);
 
-    return base_cost + via_resistance * via_scale_factor;
+    return base_cost + via_resistance;
   }
 
   // Wire segment cost
-  float length = abs(to_x - from_x) + abs(to_y - from_y);
-  float wire_resistance
+  const float length = abs(to_x - from_x) + abs(to_y - from_y);
+  const float wire_resistance
       = getLayerResistance(from_layer, length * tile_size_, net);
 
   // Check congestion

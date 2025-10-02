@@ -130,9 +130,9 @@ void FastRouteCore::netpinOrderInc()
       ndr_priority = 0;  // Higher priority for NDR nets
     }
 
-    float slack = 1;
+    float slack = 0;
 
-    if (resistance_aware_) {
+    if (resistance_aware_ && nets_[netID]->getSlack() < 0) {
       slack = nets_[netID]->getSlack();
     }
 
@@ -485,8 +485,6 @@ void FastRouteCore::assignEdge(const int netID,
   multi_array<int, 2> layer_grid;
   layer_grid.resize(boost::extents[num_layers_][routelen + 1]);
 
-  const int via_scale_factor = 2;
-
   for (k = 0; k < routelen; k++) {
     int best_cost = std::numeric_limits<int>::min();
     if (grids[k].x == grids[k + 1].x) {
@@ -619,8 +617,7 @@ void FastRouteCore::assignEdge(const int netID,
           // Calculate via cost with resistance
           int via_resistance_cost = 0;
           if (i != l) {
-            via_resistance_cost
-                = getViaResistance(l, i) * via_scale_factor;  // Scale factor
+            via_resistance_cost = getViaResistance(l, i);  // Scale factor
           }
 
           int base_via_cost = abs(i - l) * (k == 0 ? 2 : 3);
@@ -634,8 +631,8 @@ void FastRouteCore::assignEdge(const int netID,
       }
       for (int l = 0; l < num_layers_; l++) {
         if (layer_grid[l][k] >= net->getLayerEdgeCost(l)) {
-          gridD[l][k + 1] = gridD[l][k] + 1
-                            + getLayerResistance(l, tile_size_ * routelen, net);
+          gridD[l][k + 1]
+              = gridD[l][k] + 1 + getLayerResistance(l, tile_size_, net);
         } else if (layer_grid[l][k] == std::numeric_limits<int>::min()
                    || l < net->getMinLayer() || l > net->getMaxLayer()) {
           // when the layer orientation doesn't match the edge orientation,
@@ -644,8 +641,7 @@ void FastRouteCore::assignEdge(const int netID,
           gridD[l][k + 1] = gridD[l][k] + 2 * BIG_INT;
         } else {
           // Congested case - still include resistance but with higher base cost
-          int wire_resistance
-              = getLayerResistance(l, tile_size_ * routelen, net);
+          int wire_resistance = getLayerResistance(l, tile_size_, net);
           gridD[l][k + 1] = gridD[l][k] + BIG_INT + wire_resistance;
         }
       }
@@ -655,7 +651,7 @@ void FastRouteCore::assignEdge(const int netID,
       for (int i = 0; i < num_layers_; i++) {
         int via_resistance_cost = 0;
         if (i != l) {
-          via_resistance_cost = getViaResistance(l, i) * via_scale_factor;
+          via_resistance_cost = getViaResistance(l, i);
         }
         int total_cost = abs(i - l) + via_resistance_cost;
 
@@ -749,8 +745,7 @@ void FastRouteCore::assignEdge(const int netID,
           // Calculate via cost with resistance
           int via_resistance_cost = 0;
           if (i != l) {
-            via_resistance_cost
-                = getViaResistance(l, i) * via_scale_factor;  // Scale factor
+            via_resistance_cost = getViaResistance(l, i);  // Scale factor
           }
 
           int base_via_cost = abs(i - l) * (k == routelen ? 2 : 3);
@@ -764,8 +759,8 @@ void FastRouteCore::assignEdge(const int netID,
       }
       for (int l = 0; l < num_layers_; l++) {
         if (layer_grid[l][k - 1] >= net->getLayerEdgeCost(l)) {
-          gridD[l][k - 1] = gridD[l][k] + 1
-                            + getLayerResistance(l, tile_size_ * routelen, net);
+          gridD[l][k - 1]
+              = gridD[l][k] + 1 + getLayerResistance(l, tile_size_, net);
         } else if (layer_grid[l][k] == std::numeric_limits<int>::min()
                    || l < net->getMinLayer() || l > net->getMaxLayer()) {
           // when the layer orientation doesn't match the edge orientation,
@@ -774,8 +769,7 @@ void FastRouteCore::assignEdge(const int netID,
           gridD[l][k - 1] = gridD[l][k] + 2 * BIG_INT;
         } else {
           // Congested case - still include resistance but with higher base cost
-          int wire_resistance
-              = getLayerResistance(l, tile_size_ * routelen, net);
+          int wire_resistance = getLayerResistance(l, tile_size_, net);
           gridD[l][k - 1] = gridD[l][k] + BIG_INT + wire_resistance;
         }
       }
@@ -785,7 +779,7 @@ void FastRouteCore::assignEdge(const int netID,
       for (int i = 0; i < num_layers_; i++) {
         int via_resistance_cost = 0;
         if (i != l) {
-          via_resistance_cost = getViaResistance(l, i) * via_scale_factor;
+          via_resistance_cost = getViaResistance(l, i);
         }
         int total_cost = abs(i - l) + via_resistance_cost;
 
