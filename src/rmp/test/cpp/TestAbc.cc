@@ -18,6 +18,7 @@
 #include "base/abc/abc.h"
 #include "base/main/abcapis.h"
 #include "cut/abc_library_factory.h"
+#include "cut/logic_cut.h"
 #include "cut/logic_extractor.h"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
@@ -31,12 +32,14 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "sta/VerilogReader.hh"
 #include "tst/fixture.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
+#include "utl/unique_name.h"
 #include "zero_slack_strategy.h"
 
 // Headers have duplicate declarations so we include

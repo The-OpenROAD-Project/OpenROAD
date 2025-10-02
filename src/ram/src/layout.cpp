@@ -3,6 +3,10 @@
 
 #include "layout.h"
 
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/isotropy.h"
 #include "ram/ram.h"
 #include "utl/Logger.h"
 
@@ -150,7 +154,9 @@ Grid::Grid(odb::Orientation2D orientation, int tracks)
 }
 
 Grid::Grid(odb::Orientation2D orientation, Point origin)
-    : orientation_(orientation), origin_(origin){};
+    : orientation_(orientation), origin_(origin)
+{
+}
 
 void Grid::addLayout(std::unique_ptr<Layout> layout)
 {
