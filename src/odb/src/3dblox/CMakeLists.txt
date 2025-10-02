@@ -7,6 +7,7 @@ add_library(3dblox
   baseParser.cpp
   dbvParser.cpp
   dbxParser.cpp
+  dbvOut.cpp
   3dblox.cpp
 )
 
