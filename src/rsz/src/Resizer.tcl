@@ -248,6 +248,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-skip_buffer_removal]\
                                         [-skip_last_gasp]\
                                         [-skip_vt_swap]\
+                                        [-skip_crit_vt_swap]\
                                         [-repair_tns tns_end_percent]\
                                         [-max_passes passes]\
                                         [-max_buffer_percent buffer_percent]\
@@ -263,7 +264,7 @@ proc repair_timing { args } {
             -recover_power -repair_tns -max_passes -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
              -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
-             -skip_vt_swap -match_cell_footprint -verbose}
+             -skip_vt_swap -skip_crit_vt_swap -match_cell_footprint -verbose}
 
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
@@ -301,6 +302,7 @@ proc repair_timing { args } {
   set skip_buffer_removal [info exists flags(-skip_buffer_removal)]
   set skip_last_gasp [info exists flags(-skip_last_gasp)]
   set skip_vt_swap [info exists flags(-skip_vt_swap)]
+  set skip_crit_vt_swap [info exists flags(-skip_crit_vt_swap)]
   rsz::set_max_utilization [rsz::parse_max_util keys]
 
   set max_buffer_percent 20
@@ -358,7 +360,7 @@ proc repair_timing { args } {
         $max_repairs_per_pass $match_cell_footprint $verbose \
         $sequence \
         $skip_pin_swap $skip_gate_cloning $skip_size_down $skip_buffering \
-        $skip_buffer_removal $skip_last_gasp $skip_vt_swap]
+        $skip_buffer_removal $skip_last_gasp $skip_vt_swap $skip_crit_vt_swap]
     }
     if { $hold } {
       set repaired_hold [rsz::repair_hold $setup_margin $hold_margin \
@@ -377,7 +379,7 @@ sta::define_cmd_args "report_design_area" {}
 proc report_design_area { args } {
   sta::parse_key_args "report_design_area" args keys {} flags {}
   set util [format %.0f [expr [rsz::utilization] * 100]]
-  set area [sta::format_area [rsz::design_area] 0]
+  set area [format %.0f [expr [rsz::design_area] * 1e6 * 1e6]]
   utl::report "Design area ${area} u^2 ${util}% utilization."
 }
 

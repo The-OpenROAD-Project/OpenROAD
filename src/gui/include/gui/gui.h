@@ -545,7 +545,11 @@ class Renderer
                          T& value)
   {
     if (settings.count(key) == 1) {
-      value = std::get<T>(settings.at(key));
+      try {
+        value = std::get<T>(settings.at(key));
+      } catch (const std::bad_variant_access&) {
+        // Stay with current value
+      }
     }
   }
 
