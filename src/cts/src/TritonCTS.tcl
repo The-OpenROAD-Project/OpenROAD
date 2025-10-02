@@ -414,8 +414,9 @@ proc clock_tree_synthesis { args } {
     set distance $keys(-macro_clustering_max_diameter)
     cts::set_macro_clustering_diameter $distance
   }
-
-  cts::set_balance_levels [info exists flags(-balance_levels)]
+  if { [info exists flags(-balance_levels)] } {
+    utl::warn CTS 132 "-balance_levels is obsolete."
+  }
 
   if { [info exists keys(-sink_clustering_levels)] } {
     set levels $keys(-sink_clustering_levels)

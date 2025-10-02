@@ -277,8 +277,6 @@ class CtsOptions : public odb::dbBlockCallBackObj
     return macroSinkClustersSizeSet_;
   }
   unsigned getNumStaticLayers() const { return numStaticLayers_; }
-  void setBalanceLevels(bool balance) { balanceLevels_ = balance; }
-  bool getBalanceLevels() const { return balanceLevels_; }
   void setNumStaticLayers(unsigned num) { numStaticLayers_ = num; }
   void resetNumStaticLayers() { numStaticLayers_ = 0; }
   void setSinkBuffer(const std::string& buffer) { sinkBuffer_ = buffer; }
@@ -400,7 +398,6 @@ class CtsOptions : public odb::dbBlockCallBackObj
   bool macroMaxDiameterSet_ = false;
   unsigned macroSinkClustersSize_ = 4;
   bool macroSinkClustersSizeSet_ = true;
-  bool balanceLevels_ = false;
   unsigned sinkClusteringLevels_ = 0;
   unsigned numStaticLayers_ = 0;
   std::vector<std::string> bufferList_;
