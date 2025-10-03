@@ -4,6 +4,8 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "aes_nangate45",
@@ -127,15 +129,23 @@ cc_test(
     srcs = [
         "cpp/TestAbc.cc",
     ],
+    features = ["-layering_check"],  # TODO: includes private headers
     includes = [
         "../src",
     ],
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
+        "//src/cut",
+        "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
+        "//src/odb",
         "//src/rmp",
+        "//src/sta:opensta_lib",
         "//src/tst",
+        "//src/utl",
+        "@edu_berkeley_abc//:abc-lib",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
+        "@tk_tcl//:tcl",
     ],
 )

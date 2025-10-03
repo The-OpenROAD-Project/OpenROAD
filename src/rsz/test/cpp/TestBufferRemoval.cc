@@ -4,7 +4,6 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 
-#include <tcl.h>
 #include <unistd.h>
 
 #include <filesystem>
@@ -31,6 +30,7 @@
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "stt/SteinerTreeBuilder.h"
+#include "tcl.h"
 #include "tst/fixture.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"

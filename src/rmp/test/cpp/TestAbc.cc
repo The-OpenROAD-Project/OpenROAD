@@ -5,7 +5,6 @@
 // https://developers.google.com/open-source/licenses/bsd
 
 #include <string.h>
-#include <tcl.h>
 #include <unistd.h>
 
 #include <cstdlib>
@@ -34,6 +33,7 @@
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "sta/VerilogReader.hh"
+#include "tcl.h"
 #include "tst/fixture.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
