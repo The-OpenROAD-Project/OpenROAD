@@ -144,7 +144,7 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
 
   // GIA ops as lambdas
   // All the magic numbers are defaults from abc/src/base/abci/abc.c
-  // Or from the ORFS qbc_speed script
+  // Or from the ORFS abc_speed script
   std::vector<GiaOp> all_ops
       = {[&](auto& gia) {
            // &st
