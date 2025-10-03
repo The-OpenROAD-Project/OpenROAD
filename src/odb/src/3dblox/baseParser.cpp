@@ -5,8 +5,10 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <map>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "objects.h"
 #include "utl/Logger.h"

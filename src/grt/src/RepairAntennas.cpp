@@ -3,8 +3,6 @@
 
 #include "RepairAntennas.h"
 
-#include <omp.h>
-
 #include <algorithm>
 #include <cmath>
 #include <iterator>
@@ -23,6 +21,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "omp.h"
 #include "utl/Logger.h"
 
 namespace grt {

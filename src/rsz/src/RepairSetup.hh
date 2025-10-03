@@ -58,9 +58,29 @@ struct OptoParams
   float initial_tns;
   const float setup_slack_margin;
   const bool verbose;
+  const bool skip_pin_swap;
+  const bool skip_gate_cloning;
+  const bool skip_size_down;
+  const bool skip_buffering;
+  const bool skip_buffer_removal;
+  const bool skip_vt_swap;
 
-  OptoParams(const float margin, const bool verbose)
-      : setup_slack_margin(margin), verbose(verbose)
+  OptoParams(const float margin,
+             const bool verbose,
+             const bool skip_pin_swap,
+             const bool skip_gate_cloning,
+             const bool skip_size_down,
+             const bool skip_buffering,
+             const bool skip_buffer_removal,
+             const bool skip_vt_swap)
+      : setup_slack_margin(margin),
+        verbose(verbose),
+        skip_pin_swap(skip_pin_swap),
+        skip_gate_cloning(skip_gate_cloning),
+        skip_size_down(skip_size_down),
+        skip_buffering(skip_buffering),
+        skip_buffer_removal(skip_buffer_removal),
+        skip_vt_swap(skip_vt_swap)
   {
     iteration = 0;
     initial_tns = 0.0;
@@ -85,7 +105,8 @@ class RepairSetup : public sta::dbStaState
                    bool skip_buffering,
                    bool skip_buffer_removal,
                    bool skip_last_gasp,
-                   bool skip_vt_swap);
+                   bool skip_vt_swap,
+                   bool skip_crit_vt_swap);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
@@ -111,6 +132,13 @@ class RepairSetup : public sta::dbStaState
                          int endpt_index,
                          int num_endpts);
   void repairSetupLastGasp(const OptoParams& params, int& num_viols);
+  bool swapVTCritCells(const OptoParams& params, int& num_viols);
+  void traverseFaninCone(Vertex* endpoint,
+                         std::unordered_map<Instance*, float>& crit_insts,
+                         std::unordered_set<Vertex*>& visited,
+                         std::unordered_set<Instance*>& notSwappable,
+                         const OptoParams& params);
+  Slack getInstanceSlack(Instance* inst);
 
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;

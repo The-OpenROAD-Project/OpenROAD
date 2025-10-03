@@ -10,6 +10,7 @@
 #include <cstring>
 #include <filesystem>
 
+#include "odb/array1.h"
 #include "odb/odb.h"
 #include "utl/Logger.h"
 

@@ -5,7 +5,6 @@
 
 #include <lemon/list_graph.h>
 #include <lemon/network_simplex.h>
-#include <omp.h>
 
 #include <algorithm>
 #include <cmath>
@@ -27,6 +26,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "omp.h"
 #include "ortools/linear_solver/linear_solver.h"
 #include "ortools/sat/cp_model.h"
 #include "rsz/Resizer.hh"

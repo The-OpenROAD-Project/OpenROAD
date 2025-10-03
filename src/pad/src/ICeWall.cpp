@@ -23,6 +23,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/isotropy.h"
 #include "utl/Logger.h"
 
 namespace pad {
@@ -1188,7 +1189,7 @@ void ICeWall::placeFiller(
         odb::Rect r_bbox;
         r->getPlacementBoundary(r_bbox);
         odb::Rect l_bbox;
-        r->getPlacementBoundary(l_bbox);
+        l->getPlacementBoundary(l_bbox);
         row_xform.apply(r_bbox);
         row_xform.apply(l_bbox);
         // sort biggest to smallest

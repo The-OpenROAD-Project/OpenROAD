@@ -9,6 +9,7 @@
 
 #include "frBaseTypes.h"
 #include "odb/geom.h"
+#include "odb/isotropy.h"
 
 namespace drt {
 

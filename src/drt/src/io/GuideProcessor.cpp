@@ -3,8 +3,6 @@
 
 #include "io/GuideProcessor.h"
 
-#include <omp.h>
-
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -22,11 +20,13 @@
 #include "db/infra/frTime.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
+#include "db/tech/frLayer.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "omp.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
 

@@ -11,6 +11,7 @@ target_link_libraries(RmpGTests
         utl_lib
         cut
         rmp_lib
+        tst
         ${TCL_LIBRARY}
 )
 

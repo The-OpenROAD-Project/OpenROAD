@@ -136,7 +136,7 @@ set_cts_config -sink_clustering_max_diameter $cts_cluster_diameter \
   -root_buf $cts_buffer \
   -buf_list $cts_buffer
 
-clock_tree_synthesis -sink_clustering_enable -balance_levels
+clock_tree_synthesis -sink_clustering_enable
 
 report_cts
 

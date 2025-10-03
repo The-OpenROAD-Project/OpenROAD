@@ -105,6 +105,12 @@ set_allow_congestion(bool allowCongestion)
 }
 
 void
+set_resistance_aware(bool resistance_aware)
+{
+  getGlobalRouter()->setResistanceAware(resistance_aware);
+}
+
+void
 set_critical_nets_percentage(float criticalNetsPercentage)
 {
   getGlobalRouter()->setCriticalNetsPercentage(criticalNetsPercentage);

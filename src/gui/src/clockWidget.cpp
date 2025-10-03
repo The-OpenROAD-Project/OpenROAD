@@ -4,6 +4,7 @@
 #include "clockWidget.h"
 
 #include <QApplication>
+#include <QColor>
 #include <QComboBox>
 #include <QFontMetrics>
 #include <QGraphicsRectItem>
