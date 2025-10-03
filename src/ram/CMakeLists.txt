@@ -62,21 +62,21 @@ messages(
   TARGET ram
 )
 
-#if (Python3_FOUND AND BUILD_PYTHON)
-#  swig_lib(NAME          ram_py
-#           NAMESPACE     ram
-#           LANGUAGE      python
-#           I_FILE        src/ram-py.i
-#           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/ram
-#           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/ram_py.py
-#  )
-#
-#  target_link_libraries(ram_py
-#    PUBLIC
-#      ram
-#      odb
-#  )
-#
-#endif()
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          ram_py
+           NAMESPACE     ram
+           LANGUAGE      python
+           I_FILE        src/ram-py.i
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/ram
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/ram_py.py
+  )
+
+  target_link_libraries(ram_py
+    PUBLIC
+      ram
+      odb
+  )
+
+endif()
 
 add_subdirectory(test)
