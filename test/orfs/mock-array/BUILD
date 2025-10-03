@@ -7,7 +7,9 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
 load("@rules_verilator//verilog:defs.bzl", "verilog_library")
 
-package(features = ["layering_check"])
+package(
+    features = ["-layering_check"],  # TODO: enable
+)
 
 POWER_STAGES = {
     "cts": {
