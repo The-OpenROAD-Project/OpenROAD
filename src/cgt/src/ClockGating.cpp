@@ -24,6 +24,7 @@
 #include "base/main/abcapis.h"
 #include "cut/abc_init.h"
 #include "cut/abc_library_factory.h"
+#include "cut/logic_cut.h"
 #include "cut/logic_extractor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"

@@ -3,10 +3,15 @@
 
 #pragma once
 
+#include <array>
 #include <functional>
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 
 namespace odb {
 class dbMaster;
