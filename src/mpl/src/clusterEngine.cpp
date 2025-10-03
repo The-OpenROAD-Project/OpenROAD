@@ -1743,23 +1743,10 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
     }
     // Firstly we perform Type 1 merge
     for (int i = 0; i < num_small_children; i++) {
-      const int cluster_id = small_children[i]->getCloseCluster(
-          small_children_ids, tree_->min_net_count_for_connection);
-      debugPrint(
-          logger_,
-          MPL,
-          "multilevel_autoclustering",
-          1,
-          "Candidate cluster: {} - {}",
-          small_children[i]->getName(),
-          (cluster_id != -1 ? tree_->maps.id_to_cluster[cluster_id]->getName()
-                            : "   "));
-      if (cluster_id != -1
-          && !tree_->maps.id_to_cluster[cluster_id]->isIOCluster()) {
-        Cluster* close_cluster = tree_->maps.id_to_cluster[cluster_id];
-        if (attemptMerge(close_cluster, small_children[i])) {
-          cluster_class[i] = close_cluster->getId();
-        }
+      Cluster* close_cluster = findSingleWellFormedConnectedCluster(
+          small_children[i], small_children_ids);
+      if (close_cluster && attemptMerge(close_cluster, small_children[i])) {
+        cluster_class[i] = close_cluster->getId();
       }
     }
 
@@ -1772,8 +1759,7 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
             continue;
           }
 
-          if (small_children[i]->isSameConnSignature(
-                  *small_children[j], tree_->min_net_count_for_connection)) {
+          if (sameConnectionSignature(small_children[i], small_children[j])) {
             if (attemptMerge(small_children[i], small_children[j])) {
               cluster_class[j] = i;
             } else {
@@ -1858,6 +1844,127 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
              "multilevel_autoclustering",
              1,
              "Finished merging clusters");
+}
+
+bool ClusteringEngine::sameConnectionSignature(Cluster* a, Cluster* b) const
+{
+  std::vector<int> a_neighbors = findNeighbors(a, /* ignore */ b);
+  if (a_neighbors.empty()) {
+    return false;
+  }
+
+  std::vector<int> b_neighbors = findNeighbors(b, /* ignore */ a);
+  if (b_neighbors.size() != a_neighbors.size()) {
+    return false;
+  }
+
+  std::sort(a_neighbors.begin(), a_neighbors.end());
+  std::sort(b_neighbors.begin(), b_neighbors.end());
+
+  for (int i = 0; i < a_neighbors.size(); i++) {
+    if (a_neighbors[i] != b_neighbors[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+std::vector<int> ClusteringEngine::findNeighbors(Cluster* target_cluster,
+                                                 Cluster* ignored_cluster) const
+{
+  std::vector<int> neighbors;
+  const ConnectionsMap& target_connections
+      = target_cluster->getConnectionsMap();
+
+  for (const auto& [cluster_id, connection_weight] : target_connections) {
+    if (cluster_id == target_cluster->getId()) {
+      logger_->error(MPL,
+                     53,
+                     "Cluster {} is connected to itself.",
+                     target_cluster->getName());
+    }
+
+    if (cluster_id == ignored_cluster->getId()) {
+      continue;
+    }
+
+    Cluster* other_cluster = tree_->maps.id_to_cluster.at(cluster_id);
+
+    if (strongConnection(target_cluster, other_cluster, &connection_weight)) {
+      neighbors.push_back(cluster_id);
+    }
+  }
+
+  return neighbors;
+}
+
+bool ClusteringEngine::strongConnection(Cluster* a,
+                                        Cluster* b,
+                                        const float* connection_weight) const
+{
+  if (a == b) {
+    logger_->error(
+        MPL,
+        61,
+        "Attempt to evaluate if cluster {} has strong connection with itself.",
+        a->getName());
+  }
+
+  const float minimum_connection_ratio = 0.1;
+  const float total_weight
+      = a->allConnectionsWeight() + b->allConnectionsWeight();
+
+  float connection_ratio = 0.0;
+  if (connection_weight) {
+    connection_ratio = *connection_weight / total_weight;
+  } else {
+    const ConnectionsMap& a_connections = a->getConnectionsMap();
+    auto itr = a_connections.find(b->getId());
+
+    if (itr != a_connections.end()) {
+      const float conn_weight = itr->second;
+      connection_ratio = conn_weight / total_weight;
+    }
+  }
+
+  return connection_ratio >= minimum_connection_ratio;
+}
+
+Cluster* ClusteringEngine::findSingleWellFormedConnectedCluster(
+    Cluster* target_cluster,
+    const std::vector<int>& small_clusters_id_list) const
+{
+  int number_of_close_clusters = 0;
+  Cluster* close_cluster = nullptr;
+  const ConnectionsMap& target_connections
+      = target_cluster->getConnectionsMap();
+
+  for (auto& [cluster_id, connection_weight] : target_connections) {
+    Cluster* candidate = tree_->maps.id_to_cluster.at(cluster_id);
+
+    if (candidate->isIOCluster()) {
+      continue;
+    }
+
+    if (strongConnection(target_cluster, candidate, &connection_weight)) {
+      auto small_child_found = std::find(small_clusters_id_list.begin(),
+                                         small_clusters_id_list.end(),
+                                         cluster_id);
+
+      // A small child is not well-formed, so we avoid them.
+      if (small_child_found == small_clusters_id_list.end()) {
+        number_of_close_clusters++;
+        close_cluster = candidate;
+      }
+    }
+  }
+
+  if (number_of_close_clusters == 1) {
+    return close_cluster;
+  }
+
+  return nullptr;
 }
 
 bool ClusteringEngine::attemptMerge(Cluster* receiver, Cluster* incomer)
@@ -2209,8 +2316,7 @@ void ClusteringEngine::classifyMacrosByConnSignature(
           continue;
         }
 
-        if (macro_clusters[i]->isSameConnSignature(
-                *macro_clusters[j], tree_->min_net_count_for_connection)) {
+        if (sameConnectionSignature(macro_clusters[i], macro_clusters[j])) {
           signature_class[j] = i;
         }
       }
@@ -2238,8 +2344,11 @@ void ClusteringEngine::classifyMacrosByInterconn(
     if (interconn_class[i] == -1) {
       interconn_class[i] = i;
       for (int j = 0; j < macro_clusters.size(); j++) {
-        if (macro_clusters[i]->hasMacroConnectionWith(
-                *macro_clusters[j], tree_->min_net_count_for_connection)) {
+        if (macro_clusters[i] == macro_clusters[j]) {
+          continue;
+        }
+
+        if (strongConnection(macro_clusters[i], macro_clusters[j])) {
           if (interconn_class[j] != -1) {
             interconn_class[i] = interconn_class[j];
             break;
