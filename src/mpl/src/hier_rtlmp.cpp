@@ -156,11 +156,6 @@ void HierRTLMP::setLargeNetThreshold(int large_net_threshold)
   tree_->large_net_threshold = large_net_threshold;
 }
 
-void HierRTLMP::setSignatureNetThreshold(int signature_net_threshold)
-{
-  tree_->min_net_count_for_connection = signature_net_threshold;
-}
-
 void HierRTLMP::setPinAccessThreshold(float pin_access_th)
 {
   pin_access_th_ = pin_access_th;

@@ -41,7 +41,6 @@ bool MacroPlacer::place(const int num_threads,
                         const int max_num_level,
                         const float coarsening_ratio,
                         const int large_net_threshold,
-                        const int signature_net_threshold,
                         const float halo_width,
                         const float halo_height,
                         const float fence_lx,
@@ -68,7 +67,6 @@ bool MacroPlacer::place(const int num_threads,
   hier_rtlmp_->setMaxNumLevel(max_num_level);
   hier_rtlmp_->setClusterSizeRatioPerLevel(coarsening_ratio);
   hier_rtlmp_->setLargeNetThreshold(large_net_threshold);
-  hier_rtlmp_->setSignatureNetThreshold(signature_net_threshold);
   hier_rtlmp_->setHaloWidth(halo_width);
   hier_rtlmp_->setHaloHeight(halo_height);
   hier_rtlmp_->setGlobalFence(fence_lx, fence_ly, fence_ux, fence_uy);
