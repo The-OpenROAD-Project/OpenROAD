@@ -90,15 +90,15 @@ class RamGen
 
   sta::dbNetwork* network_;
   odb::dbDatabase* db_;
-  odb::dbBlock* block_;
+  odb::dbBlock* block_{nullptr};
   Logger* logger_;
 
-  odb::dbMaster* storage_cell_;
-  odb::dbMaster* tristate_cell_;
-  odb::dbMaster* inv_cell_;
-  odb::dbMaster* and2_cell_;
-  odb::dbMaster* clock_gate_cell_;
-  odb::dbMaster* buffer_cell_;
+  odb::dbMaster* storage_cell_{nullptr};
+  odb::dbMaster* tristate_cell_{nullptr};
+  odb::dbMaster* inv_cell_{nullptr};
+  odb::dbMaster* and2_cell_{nullptr};
+  odb::dbMaster* clock_gate_cell_{nullptr};
+  odb::dbMaster* buffer_cell_{nullptr};
 };
 
 }  // namespace ram

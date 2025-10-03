@@ -221,9 +221,10 @@ def bazelTest = {
             stage('bazelisk test ...') {
                 withCredentials([string(credentialsId: 'bazel-auth-token-b64', variable: 'BAZEL_AUTH_TOKEN_B64')]) {
                     timeout(time: 120, unit: 'MINUTES') {
-                        def cmd = 'bazelisk test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic --remote_header="Authorization=Basic $BAZEL_AUTH_TOKEN_B64"'
+                        def cmd = 'bazelisk test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic --remote_header="Authorization=Basic $BAZEL_AUTH_TOKEN_B64" --profile=build.profile'
                         try {
                             sh label: 'Bazel Build', script: cmd + ' ...';
+                            sh label: 'Bazel Build', script: 'bazelisk analyze-profile build.profile';
                         } catch (e) {
                             currentBuild.result = 'FAILURE';
                             sh label: 'Bazel Build (keep_going)', script: cmd + ' --keep_going ...';
