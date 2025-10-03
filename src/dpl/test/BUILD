@@ -33,6 +33,7 @@ COMPULSORY_TESTS = [
     "fillers8",
     "fillers9",
     "fillers9_verbose",
+    "fillers10",
     "fragmented_row01",
     "fragmented_row02",
     "fragmented_row03",
@@ -192,6 +193,9 @@ filegroup(
             ],
             "fillers1": [
                 "simple01.def",
+            ],
+            "fillers10": [
+                "simple09.def",
             ],
             "fillers2": [
                 "simple01.def",
