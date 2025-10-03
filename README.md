@@ -5,6 +5,14 @@
 [![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5370/badge)](https://bestpractices.coreinfrastructure.org/en/projects/5370)
 
+## Building OpenROAD
+
+OpenROAD has grown beyond what CMake/Make can reasonably handle. With so many operating systems, use cases, and dependencies, we needed a build system designed for complexity. That’s why we chose Bazel - it gives us reproducibility, scalability, and flexibility to support everyone from researchers to industry users. Bazel can take some effort to learn, but we encourage you to dive in and explore it for your own workflows. Every contribution helps, and your experience with Bazel will make the whole community stronger.
+
+OpenROAD and OpenROAD-flow-scripts use-case specific Bazel documentation is normally close to the use-case, search for Bazel use-case specific documentation by running:
+
+    find . -type f -name '*.md' -print | grep -Ei 'orfs|bazel'
+
 ## About OpenROAD
 
 OpenROAD is the leading open-source, foundational application for
