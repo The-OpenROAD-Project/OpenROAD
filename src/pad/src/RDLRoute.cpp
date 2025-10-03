@@ -11,7 +11,6 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "odb/db.h"
-#include "odb/dbCompare.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
 
