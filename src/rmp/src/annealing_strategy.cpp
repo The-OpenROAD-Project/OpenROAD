@@ -393,7 +393,7 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
       worse_iters = 0;
     }
 
-    if (i > 0 && (i + 1) % 10 == 0) {
+    if ((i + 1) % 10 == 0) {
       logger->info(RMP,
                    54,
                    "Iteration: {}, temperature: {}, best worst slack: {}",
