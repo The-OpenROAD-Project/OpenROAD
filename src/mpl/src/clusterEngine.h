@@ -117,7 +117,6 @@ struct PhysicalHierarchy
 
   int max_level{0};
   int large_net_threshold{0};  // used to ignore global nets
-  int min_net_count_for_connection{0};
   float cluster_size_ratio{0.0f};
   float cluster_size_tolerance{0.0f};
 
@@ -212,6 +211,15 @@ class ClusteringEngine
   bool partitionerSolutionIsFullyUnbalanced(const std::vector<int>& solution,
                                             int num_other_cluster_vertices);
   void mergeChildrenBelowThresholds(std::vector<Cluster*>& small_children);
+  bool sameConnectionSignature(Cluster* a, Cluster* b) const;
+  bool strongConnection(Cluster* a,
+                        Cluster* b,
+                        const float* connection_weight = nullptr) const;
+  Cluster* findSingleWellFormedConnectedCluster(
+      Cluster* target_cluster,
+      const std::vector<int>& small_clusters_id_list) const;
+  std::vector<int> findNeighbors(Cluster* target_cluster,
+                                 Cluster* ignored_cluster) const;
   bool attemptMerge(Cluster* receiver, Cluster* incomer);
   void fetchMixedLeaves(Cluster* parent,
                         std::vector<std::vector<Cluster*>>& mixed_leaves);
