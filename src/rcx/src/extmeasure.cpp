@@ -10,6 +10,7 @@
 
 #include "gseq.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "rcx/dbUtil.h"

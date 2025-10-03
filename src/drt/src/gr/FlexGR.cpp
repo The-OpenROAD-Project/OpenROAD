@@ -3,8 +3,6 @@
 
 #include "gr/FlexGR.h"
 
-#include <omp.h>
-
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -29,6 +27,7 @@
 #include "frBaseTypes.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "omp.h"
 #include "utl/exception.h"
 
 namespace drt {

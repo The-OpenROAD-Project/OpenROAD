@@ -199,12 +199,6 @@ set_sink_buffer(const char* buffer)
 }
 
 void
-set_balance_levels(bool balance)
-{
-  getTritonCts()->getParms()->setBalanceLevels(balance);
-}
-
-void
 report_characterization()
 {
   getTritonCts()->getCharacterization()->report();
@@ -220,6 +214,12 @@ int
 set_clock_nets(const char* names)
 {
   return getTritonCts()->setClockNets(names);
+}
+
+void
+set_skip_clock_nets(odb::dbNet* net)
+{
+  getTritonCts()->getParms()->setSkipNets(net);
 }
 
 void
@@ -377,6 +377,11 @@ get_sink_clustering_size()
 }
 
 std::string
+get_skip_nets()
+{
+  return getTritonCts()->getParms()->getSkipNetsToString();
+}
+std::string
 get_tree_buf()
 {
   return getTritonCts()->getParms()->getTreeBuffer();
@@ -477,6 +482,11 @@ void
 reset_sink_clustering_size()
 {
   getTritonCts()->getParms()->resetSinkClusteringSize();
+}
+void
+reset_skip_nets()
+{
+  getTritonCts()->getParms()->resetSkipNets();
 }
 void
 reset_tree_buf()

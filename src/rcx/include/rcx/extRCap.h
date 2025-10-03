@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbExtControl.h"
 #include "odb/dbShape.h"

@@ -10,7 +10,6 @@ COMPULSORY_TESTS = [
     "array_ins_delay",
     "array_no_blockages",
     "array_repair_clock_nets",
-    "balance_levels",
     "check_buffers",
     "check_buffers_blockages",
     "check_buffers_blockages_merge",
@@ -42,6 +41,7 @@ COMPULSORY_TESTS = [
     "simple_test_clustered",
     "simple_test_clustered_max_cap",
     "simple_test_hier",
+    "skip_nets",
     "twice",
 ]
 
@@ -160,6 +160,9 @@ filegroup(
             ],
             "max_cap": [
                 "//src/rsz/test:hi_fanout.tcl",
+            ],
+            "skip_nets": [
+                "gated_clock2.def",
             ],
         }.get(test_name, []),
     )

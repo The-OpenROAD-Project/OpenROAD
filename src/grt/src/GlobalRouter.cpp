@@ -2058,6 +2058,11 @@ void GlobalRouter::setAllowCongestion(bool allow_congestion)
   allow_congestion_ = allow_congestion;
 }
 
+void GlobalRouter::setResistanceAware(bool resistance_aware)
+{
+  resistance_aware_ = resistance_aware;
+}
+
 void GlobalRouter::setMacroExtension(int macro_extension)
 {
   macro_extension_ = macro_extension;
@@ -2159,6 +2164,7 @@ void GlobalRouter::configFastRoute()
   fastroute_->setVerbose(verbose_);
   fastroute_->setOverflowIterations(congestion_iterations_);
   fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
+  fastroute_->setResistanceAware(resistance_aware_);
 
   if (congestion_file_name_ != nullptr) {
     fastroute_->setCongestionReportFile(congestion_file_name_);

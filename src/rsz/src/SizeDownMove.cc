@@ -7,6 +7,8 @@
 #include <cmath>
 #include <string>
 #include <tuple>
+#include <utility>
+#include <vector>
 
 #include "BaseMove.hh"
 #include "sta/ArcDelayCalc.hh"
