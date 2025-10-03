@@ -1027,9 +1027,11 @@ void ClusteringEngine::buildDataFlowConnections()
     for (int hops = 0; hops < max_num_of_hops_; hops++) {
       std::set<int> sink_clusters = computeSinks(insts[hops]);
       const float conn_weight = computeConnWeight(hops);
-      for (auto& sink : sink_clusters) {
-        Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink);
-        connect(driver_cluster, sink_cluster, conn_weight);
+      for (const int sink_id : sink_clusters) {
+        if (driver_id != sink_id) {
+          Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink_id);
+          connect(driver_cluster, sink_cluster, conn_weight);
+        }
       }
     }
   }
@@ -1042,9 +1044,11 @@ void ClusteringEngine::buildDataFlowConnections()
     for (int hops = 0; hops < max_num_of_hops_; hops++) {
       std::set<int> sink_clusters = computeSinks(insts[hops]);
       const float conn_weight = computeConnWeight(hops);
-      for (auto& sink : sink_clusters) {
-        Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink);
-        connect(driver_cluster, sink_cluster, conn_weight);
+      for (const int sink_id : sink_clusters) {
+        if (driver_id != sink_id) {
+          Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink_id);
+          connect(driver_cluster, sink_cluster, conn_weight);
+        }
       }
     }
   }
@@ -1057,9 +1061,11 @@ void ClusteringEngine::buildDataFlowConnections()
     for (int hops = 0; hops < max_num_of_hops_; hops++) {
       std::set<int> sink_clusters = computeSinks(insts[hops]);
       const float conn_weight = computeConnWeight(hops);
-      for (auto& sink : sink_clusters) {
-        Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink);
-        connect(driver_cluster, sink_cluster, conn_weight);
+      for (const int sink_id : sink_clusters) {
+        if (driver_id != sink_id) {
+          Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink_id);
+          connect(driver_cluster, sink_cluster, conn_weight);
+        }
       }
     }
   }
@@ -1869,7 +1875,13 @@ bool ClusteringEngine::attemptMerge(Cluster* receiver, Cluster* incomer)
       for (const auto& [cluster_id, connection_weight] : incomer_connections) {
         Cluster* cluster = tree_->maps.id_to_cluster.at(cluster_id);
         cluster->removeConnection(incomer_id);
-        cluster->addConnection(receiver, connection_weight);
+
+        // If the incomer and the receiver were connected, we forget that
+        // connection, otherwise we'll end up with the receiver connected
+        // to itself.
+        if (cluster_id != receiver->getId()) {
+          cluster->addConnection(receiver, connection_weight);
+        }
       }
     }
 
