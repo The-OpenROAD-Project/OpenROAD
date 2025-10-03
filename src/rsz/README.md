@@ -1,17 +1,14 @@
-#Gate Resizer
+# Gate Resizer
 
-Gate Resizer commands are described below.The `resizer` commands stop when the
-            design area is `
-        - max_utilization util` percent of the core area. `util` is between 0
-    and 100. The `resizer` stops and reports an error if the max utilization is
-            exceeded.
+Gate Resizer commands are described below.  The `resizer` commands stop when
+the design area is `-max_utilization util` percent of the core area. `util`
+is between 0 and 100.  The `resizer` stops and reports an error if the max
+utilization is exceeded.
 
-        ##Commands
 
-```
-{
-  note
-}
+## Commands
+
+```{note}
 - Parameters in square brackets `[-param param]` are optional.
 - Parameters without square brackets `-param2 param2` are required.
 ```
