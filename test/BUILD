@@ -3,6 +3,8 @@
 
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 exports_files(
     [
         "bazel_test.sh",

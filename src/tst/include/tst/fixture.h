@@ -3,12 +3,11 @@
 
 #pragma once
 
-#include <tcl.h>
-
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "sta/MinMax.hh"
+#include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 

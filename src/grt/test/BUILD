@@ -1,5 +1,7 @@
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 TESTS = [
     "bus_route",
     "clock_route",

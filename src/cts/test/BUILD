@@ -4,6 +4,8 @@ load("@rules_cc//cc:cc_test.bzl", "cc_test")
 # Copyright (c) 2022-2025, The OpenROAD Authors
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "array",
@@ -182,10 +184,10 @@ filegroup(
 cc_test(
     name = "cts_unittest",
     srcs = ["cts_unittest.cc"],
+    features = ["-layering_check"],  # TODO: accesses private headers
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/cts",
-        "//src/grt",  # work around cyclic dependncy between rsz and grt
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

@@ -4,9 +4,12 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 
+package(features = ["layering_check"])
+
 cc_library(
     name = "test_helpers",
     hdrs = ["cpp/HelperCallBack.h"],
+    deps = ["//src/dst"],
 )
 
 cc_test(
@@ -14,6 +17,7 @@ cc_test(
     srcs = [
         "cpp/TestBalancer.cc",
     ],
+    features = ["-layering_check"],  # TODO: includes private headers
     includes = [
         "../src",
     ],
@@ -21,8 +25,14 @@ cc_test(
     deps = [
         ":test_helpers",
         "//src/dst",
+        "//src/utl",
+        "@boost.asio",
+        "@boost.bind",
         "@boost.test",
-    ],
+    ] + select({
+        "@platforms//os:macos": ["@boost.thread//:thread_mac"],
+        "//conditions:default": ["@boost.thread//:thread_posix"],
+    }),
 )
 
 cc_test(
@@ -37,8 +47,14 @@ cc_test(
     deps = [
         ":test_helpers",
         "//src/dst",
+        "//src/utl",
+        "@boost.asio",
+        "@boost.bind",
         "@boost.test",
-    ],
+    ] + select({
+        "@platforms//os:macos": ["@boost.thread//:thread_mac"],
+        "//conditions:default": ["@boost.thread//:thread_posix"],
+    }),
 )
 
 cc_test(
@@ -46,6 +62,7 @@ cc_test(
     srcs = [
         "cpp/TestWorker.cc",
     ],
+    features = ["-layering_check"],  # TODO: includes private headers
     includes = [
         "../src",
     ],
@@ -53,6 +70,13 @@ cc_test(
     deps = [
         ":test_helpers",
         "//src/dst",
+        "//src/utl",
+        "@boost.asio",
+        "@boost.bind",
+        "@boost.system",
         "@boost.test",
-    ],
+    ] + select({
+        "@platforms//os:macos": ["@boost.thread//:thread_mac"],
+        "//conditions:default": ["@boost.thread//:thread_posix"],
+    }),
 )

@@ -4,7 +4,6 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 
-#include <tcl.h>
 #include <unistd.h>
 
 #include <array>
@@ -42,6 +41,7 @@
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "sta/VerilogReader.hh"
+#include "tcl.h"
 #include "tst/fixture.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
