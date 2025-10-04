@@ -1,6 +1,8 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 exports_files(
     ["hi_fanout.tcl"],
     visibility = ["//visibility:public"],
@@ -155,6 +157,7 @@ TESTS = [
     "report_buffers_nangate45",
     "report_buffers_sky130hd",
     "report_buffers_sky130hs",
+    "report_design_area",
     "report_dont_touch",
     "report_dont_use",
     "report_dont_use_corners",
@@ -179,6 +182,8 @@ TESTS = [
     "set_dont_touch1",
     "set_dont_use1",
     "split_load_hier",
+    "repair_setup_vt_swap",
+    "repair_setup_vt_swap2",
 ]
 
 filegroup(
@@ -231,11 +236,19 @@ cc_test(
     ],
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
+        "//src/ant",
         "//src/dbSta",
-        "//src/dpl",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/grt",
+        "//src/odb",
         "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
         "//src/tst",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
+        "@tk_tcl//:tcl",
     ],
 )

@@ -66,7 +66,9 @@ class LatencyBalancer
         network_(network),
         openSta_(sta),
         wireSegmentUnit_(scalingUnit),
-        capPerDBU_(capPerDBU)
+        capPerDBU_(capPerDBU),
+        worseDelay_(std::numeric_limits<float>::min()),
+        delayBufIndex_(0)
   {
   }
 
@@ -115,9 +117,9 @@ class LatencyBalancer
   sta::dbSta* openSta_ = nullptr;
   sta::Graph* timingGraph_ = nullptr;
   double wireSegmentUnit_;
-  float worseDelay_;
   float bufferDelay_;
   double capPerDBU_;
+  float worseDelay_;
   int delayBufIndex_;
   std::vector<GraphNode> graph_;
   std::map<std::string, TreeBuilder*> inst2builder_;

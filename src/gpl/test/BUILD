@@ -2,6 +2,8 @@ load("@openroad_rules_python//python:defs.bzl", "py_library", "py_test")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 TESTS = [
     "ar01",
     "ar02",
@@ -135,10 +137,12 @@ PY_TESTS = [
 cc_test(
     name = "gpl_fft_unittest",
     srcs = ["fft_test.cc"],
+    features = ["-layering_check"],  # TODO: includes private headers
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/gpl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
+        "@spdlog",
     ],
 )

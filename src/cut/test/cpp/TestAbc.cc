@@ -4,7 +4,6 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 
-#include <tcl.h>
 #include <unistd.h>
 
 #include <array>
@@ -24,6 +23,7 @@
 #include "base/abc/abc.h"
 #include "base/main/abcapis.h"
 #include "cut/abc_library_factory.h"
+#include "cut/logic_cut.h"
 #include "cut/logic_extractor.h"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
@@ -37,12 +37,15 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "sta/VerilogReader.hh"
+#include "tcl.h"
 #include "tst/fixture.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
+#include "utl/unique_name.h"
 
 // Headers have duplicate declarations so we include
 // a forward one to get at this function without angering

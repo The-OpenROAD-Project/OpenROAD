@@ -222,9 +222,9 @@
 [INFO CTS-0016]     Fanout distribution for the current clock = 8:1, 9:2, 10:1..
 [INFO CTS-0017]     Max level of the clock tree: 2.
 [INFO CTS-0098] Clock net "clk"
-[INFO CTS-0099]  Sinks 5
+[INFO CTS-0099]  Sinks 3
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 60.40 um
+[INFO CTS-0101]  Average sink wire length 63.31 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Leaf load cells 27
 [INFO CTS-0098] Clock net "clk_regs"
@@ -259,13 +259,6 @@
 [INFO CTS-0101]  Average sink wire length 29.38 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Leaf load cells 27
-[DEBUG CTS-insertion delay] top buffer delay for macro tree clkbuf_0_clk is 2.666e-11
-[DEBUG CTS-insertion delay] top buffer delay for register tree clkbuf_regs_0_clk is 2.480e-11
-[DEBUG CTS-insertion delay] top buffer delay for register tree clkbuf_0_gclk1 is 3.355e-11
-[DEBUG CTS-insertion delay] top buffer delay for register tree clkbuf_0_gclk3 is 3.355e-11
-[DEBUG CTS-insertion delay] top buffer delay for macro tree clkbuf_0_gclk4 is 2.938e-11
-[DEBUG CTS-insertion delay] top buffer delay for register tree clkbuf_regs_1_clk is 2.938e-11
-[DEBUG CTS-insertion delay] top buffer delay for register tree clkbuf_0_gclk2 is 3.354e-11
 [INFO CTS-0033] Balancing latency for clock clk
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_0_clk is inserted at (149560 120545)
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_1_clk is inserted at (151285 117669)

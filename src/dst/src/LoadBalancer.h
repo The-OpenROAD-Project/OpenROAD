@@ -24,8 +24,9 @@ namespace dst {
 
 namespace ip = asio::ip;
 
-const int kWorkersDiscoveryPeriod = 15;  // time in seconds between retrying to
-                                         // find new workers on the network
+// time in seconds between retrying to find new workers on the network
+inline constexpr int kWorkersDiscoveryPeriod = 15;
+
 class Distributed;
 class LoadBalancer
 {

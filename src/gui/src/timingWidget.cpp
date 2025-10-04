@@ -18,6 +18,7 @@
 #include <QWidget>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -71,6 +72,7 @@ TimingWidget::TimingWidget(QWidget* parent)
   controls_layout->insertStretch(2);
   control_frame->setLayout(controls_layout);
   layout->addWidget(control_frame);
+  update_button_->setEnabled(false);
 
   // top half
   delay_widget_->addTab(setup_timing_table_view_, "Setup");
@@ -632,6 +634,8 @@ void TimingWidget::highlightPathStage(TimingPathDetailModel* model,
 
 void TimingWidget::populatePaths()
 {
+  update_button_->setEnabled(false);
+
   clearPathDetails();
 
   const auto from = settings_->getFromPins();
@@ -640,6 +644,8 @@ void TimingWidget::populatePaths()
   const sta::ClockSet* clks = settings_->getClocks();
 
   populateAndSortModels(from, thru, to, "" /* path group name */, clks);
+
+  update_button_->setEnabled(true);
 }
 
 void TimingWidget::populateAndSortModels(
@@ -649,10 +655,20 @@ void TimingWidget::populateAndSortModels(
     const std::string& path_group_name,
     const sta::ClockSet* clks)
 {
-  setup_timing_paths_model_->populateModel(
-      from, thru, to, path_group_name, clks);
-  hold_timing_paths_model_->populateModel(
-      from, thru, to, path_group_name, clks);
+  try {
+    setup_timing_paths_model_->populateModel(
+        from, thru, to, path_group_name, clks);
+    hold_timing_paths_model_->populateModel(
+        from, thru, to, path_group_name, clks);
+  } catch (const std::runtime_error& error) {
+    setup_timing_paths_model_->resetModel();
+    hold_timing_paths_model_->resetModel();
+
+    QApplication::restoreOverrideCursor();
+
+    QMessageBox::critical(this, error.what(), "Failed to populate timing.");
+    return;
+  }
 
   // honor selected sort
   auto setup_header = setup_timing_table_view_->horizontalHeader();
@@ -797,6 +813,7 @@ void TimingWidget::toggleRenderer(bool visible)
 void TimingWidget::setBlock(odb::dbBlock* block)
 {
   dbchange_listener_->addOwner(block);
+  update_button_->setEnabled(true);
 }
 
 void TimingWidget::showSettings()

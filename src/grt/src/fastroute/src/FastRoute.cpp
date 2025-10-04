@@ -1802,6 +1802,11 @@ void FastRouteCore::setCongestionReportIterStep(int congestion_report_iter_step)
   congestion_report_iter_step_ = congestion_report_iter_step;
 }
 
+void FastRouteCore::setResistanceAware(bool resistance_aware)
+{
+  resistance_aware_ = resistance_aware;
+}
+
 void FastRouteCore::setCongestionReportFile(const char* congestion_file_name)
 {
   congestion_file_name_ = congestion_file_name;

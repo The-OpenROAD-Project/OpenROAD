@@ -10,6 +10,7 @@
 #include <string>
 
 #include "odb/lefin.h"
+#include "sta/MinMax.hh"
 
 namespace tst {
 
