@@ -642,8 +642,9 @@ void TimingWidget::populatePaths()
   const auto thru = settings_->getThruPins();
   const auto to = settings_->getToPins();
   const sta::ClockSet* clks = settings_->getClocks();
+  const auto path_group = settings_->getPathGroup();
 
-  populateAndSortModels(from, thru, to, "" /* path group name */, clks);
+  populateAndSortModels(from, thru, to, path_group, clks);
 
   update_button_->setEnabled(true);
 }
