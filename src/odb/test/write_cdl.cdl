@@ -1,0 +1,27 @@
+*.BIPOLAR
+*.RESI = 2000
+*.RESVAL
+*.CAPVAL
+*.DIOPERI
+*.DIOAREA
+*.EQUATION
+*.SCALE METER
+*.MEGA
+.PARAM
+*.EXPAND_ON_M_FACTOR
+
+.SUBCKT BUFFER A Z inh_gnd inh_vdd
+*.PININFO A:I Z:O inh_gnd:B inh_vdd:B
+MM0   netx A inh_vdd inh_vdd P250 W=1e-6 L=1e-6 M=1 ngcon=1 nfing=1 srcefirst=1
+MM1   Z netx inh_vdd inh_vdd P250 W=1e-6 L=1e-6 M=1 ngcon=1 nfing=1 srcefirst=1
+MMN1  netx A inh_gnd inh_gnd N250 W=1u   L=1u   M=1 ngcon=1 nfing=1 srcefirst=1
+MMN10 Z netx inh_gnd inh_gnd N250 W=1u   L=1u   M=1 ngcon=1 nfing=1 srcefirst=1
+.ENDS
+
+.SUBCKT MACRO_CELL IN_REG<0> IN_REG<1> OUT_REG<0> OUT_REG<1> VDD GND
+*.PININFO IN_REG<0>:I IN_REG<1>:I
+*.PININFO OUT_REG<0>:O OUT_REG<1>:O
+*.PININFO VDD:B GND:B
+BUFFER IN_REG<0> OUT_REG<0> VDD GND / buffer0
+BUFFER IN_REG<1> OUT_REG<1> VDD GND / buffer1
+.ENDS

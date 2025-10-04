@@ -129,6 +129,9 @@ readMasters(utl::Logger* logger, dbBlock* block, const char* fileName)
           }
           mterms = &mtermMap[master];
         } else {
+          // Replace CDL <> (normal and escaped) to []
+          token = std::regex_replace(token, std::regex(R"(\\?<)"), "[");
+          token = std::regex_replace(token, std::regex(R"(\\?>)"), "]");
           dbMTerm* mterm = master->findMTerm(token.c_str());
           if (!mterm) {
             logger->warn(utl::ODB,
