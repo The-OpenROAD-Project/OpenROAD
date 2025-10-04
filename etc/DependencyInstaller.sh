@@ -109,7 +109,31 @@ _installCommonDev() {
     fi
     if [ ${bisonInstalledVersion} != ${bisonVersion} ]; then
         cd "${baseDir}"
-        eval wget https://ftp.gnu.org/gnu/bison/bison-${bisonVersion}.tar.gz
+
+        mirrors=(
+            "https://ftp.gnu.org/gnu/bison"
+            "https://ftpmirror.gnu.org/bison"
+            "https://mirrors.kernel.org/gnu/bison"
+            "https://mirrors.dotsrc.org/gnu/bison"
+        )
+
+        success=0
+        for mirror in "${mirrors[@]}"; do
+            url="${mirror}/bison-${bisonVersion}.tar.gz"
+            echo "Trying to download bison from: $url"
+            if wget "$url"; then
+                success=1
+                break
+            else
+                echo "Failed to download from $mirror"
+            fi
+        done
+
+        if [ $success -ne 1 ]; then
+            echo "Error: could not download bison-${bisonVersion}.tar.gz from any mirror."
+            exit 1
+        fi
+
         md5sum -c <(echo "${bisonChecksum} bison-${bisonVersion}.tar.gz") || exit 1
         tar xf bison-${bisonVersion}.tar.gz
         cd bison-${bisonVersion}
