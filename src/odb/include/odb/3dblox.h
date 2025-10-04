@@ -9,7 +9,9 @@
 namespace utl {
 class Logger;
 }
-
+namespace sta {
+class Sta;
+}
 namespace odb {
 class dbDatabase;
 class ChipletDef;
@@ -24,7 +26,7 @@ class dbChipInst;
 class ThreeDBlox
 {
  public:
-  ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db);
+  ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db, sta::Sta* sta = nullptr);
   ~ThreeDBlox() = default;
   void readDbv(const std::string& dbv_file);
   void readDbx(const std::string& dbx_file);
@@ -40,5 +42,6 @@ class ThreeDBlox
 
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
+  sta::Sta* sta_ = nullptr;
 };
 }  // namespace odb
