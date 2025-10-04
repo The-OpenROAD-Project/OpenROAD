@@ -402,7 +402,7 @@ class SoftMacro
 {
  public:
   SoftMacro(Cluster* cluster);
-  SoftMacro(float width, float height, const std::string& name);
+  SoftMacro(const Rect& blockage, const std::string& name);
   SoftMacro(const std::pair<float, float>& location,
             const std::string& name,
             float width,
@@ -452,6 +452,7 @@ class SoftMacro
   void setLocationF(float x, float y);
   void setShapeF(float width, float height);
   int getNumMacro() const;
+  bool isBlockage() const;
   // Align Flag support
   void setAlignFlag(bool flag);
   bool getAlignFlag() const;
@@ -482,6 +483,7 @@ class SoftMacro
   // Interfaces with hard macro
   Cluster* cluster_ = nullptr;
   bool fixed_ = false;  // if the macro is fixed
+  bool is_blockage_ = false;
 
   // Alignment support
   // if the cluster has been aligned related to other macro_cluster or
