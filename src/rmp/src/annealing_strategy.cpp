@@ -6,6 +6,8 @@
 #include <fcntl.h>
 
 #include <algorithm>
+#include <cassert>
+#include <cstddef>
 #include <vector>
 
 #include "aig/gia/gia.h"
@@ -20,8 +22,10 @@
 #include "map/if/if.h"
 #include "map/scl/sclSize.h"
 #include "misc/vec/vecPtr.h"
+#include "odb/db.h"
 #include "proof/dch/dch.h"
 #include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/MinMax.hh"

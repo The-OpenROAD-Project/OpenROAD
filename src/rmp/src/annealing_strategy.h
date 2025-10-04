@@ -3,12 +3,16 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
+#include <optional>
 #include <random>
 
 #include "cut/abc_library_factory.h"
 #include "db_sta/dbSta.hh"
 #include "resynthesis_strategy.h"
 #include "sta/Corner.hh"
+#include "sta/Delay.hh"
 #include "utl/Logger.h"
 #include "utl/unique_name.h"
 
