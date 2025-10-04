@@ -38,7 +38,8 @@ class AnnealingStrategy : public ResynthesisStrategy
         initial_ops_(initial_ops)
   {
     if (seed) {
-      random_ = decltype(random_){*seed};
+      const uint32_t seed_32 = *seed;
+      random_ = decltype(random_){seed_32};
     }
   }
   void OptimizeDesign(sta::dbSta* sta,
