@@ -38,6 +38,8 @@
 
 namespace rsz {
 
+static const std::string prefix("_main/src/rsz/test/");
+
 class BufRemTest : public tst::Fixture
 {
  protected:
@@ -61,8 +63,8 @@ class BufRemTest : public tst::Fixture
 
   void SetUp() override
   {
-    library_ = readLiberty("./Nangate45/Nangate45_typ.lib");
-    loadTechAndLib("tech", "Nangate45.lef", "./Nangate45/Nangate45.lef");
+    library_ = readLiberty(prefix + "Nangate45/Nangate45_typ.lib");
+    loadTechAndLib("tech", "Nangate45", prefix + "Nangate45/Nangate45.lef");
 
     db_network_ = sta_->getDbNetwork();
 
