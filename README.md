@@ -329,7 +329,7 @@ save_flow_metrics_limits <TEST_NAME>
 
 ``` text
 openroad [-help] [-version] [-no_init] [-exit] [-gui]
-         [-threads count|max] [-log file_name] cmd_file
+         [-threads count|max] [-log file_name] [-db file_name] cmd_file
   -help              show help and exit
   -version           show version and exit
   -no_init           do not read .openroad init file
@@ -339,6 +339,7 @@ openroad [-help] [-version] [-no_init] [-exit] [-gui]
   -gui               start in gui mode
   -python            start with python interpreter [limited to db operations]
   -log <file_name>   write a log in <file_name>
+  -db <file_name>    open a .odb database at startup
   cmd_file           source cmd_file
 ```
 

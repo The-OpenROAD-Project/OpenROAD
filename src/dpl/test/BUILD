@@ -4,6 +4,8 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "aes",
@@ -33,6 +35,7 @@ COMPULSORY_TESTS = [
     "fillers8",
     "fillers9",
     "fillers9_verbose",
+    "fillers10",
     "fragmented_row01",
     "fragmented_row02",
     "fragmented_row03",
@@ -193,6 +196,9 @@ filegroup(
             "fillers1": [
                 "simple01.def",
             ],
+            "fillers10": [
+                "simple09.def",
+            ],
             "fillers2": [
                 "simple01.def",
             ],
@@ -255,7 +261,9 @@ cc_test(
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/dpl",
+        "//src/odb",
         "//src/tst",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

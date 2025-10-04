@@ -238,6 +238,7 @@ struct OrderNetPin
   int minX;
   float length_per_pin;  // net length over pin count
   int ndr_priority;      // NDR nets are assigned first
+  float slack;
 };
 
 struct OrderTree
