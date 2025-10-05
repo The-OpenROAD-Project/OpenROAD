@@ -4617,6 +4617,34 @@ void dbNetwork::checkSanityNetNames() const
   for (odb::dbModule* module : block_->getModules()) {
     checkSanityModNetNamesInModule(module);
   }
+
+  // Check for name mismatch between flat net and hierchical net
+  // - Flat net name should be one of the hierarchical net names
+  for (odb::dbNet* net : block_->getNets()) {
+    std::set<odb::dbModNet*> mod_nets;
+    if (findRelatedModNet(net, mod_nets) && mod_nets.empty() == false) {
+      bool name_match = false;
+      for (odb::dbModNet* mod_net : mod_nets) {
+        if (net->getName() == mod_net->getHierarchicalName()) {
+          name_match = true;
+          break;
+        }
+      }
+      if (name_match == false) {
+        logger_->warn(ORD,
+                      2050,
+                      "SanityCheck: Flat net name '{}' does not match any of "
+                      "its hierarchical net names.",
+                      net->getName());
+        for (odb::dbModNet* mod_net : mod_nets) {
+          logger_->warn(ORD,
+                        2055,
+                        "  hierarchical net: {}",
+                        mod_net->getHierarchicalName());
+        }
+      }
+    }
+  }
 }
 
 void dbNetwork::checkSanityModNetNamesInModule(odb::dbModule* module) const
