@@ -60,9 +60,8 @@ std::filesystem::path findValidPath(const std::filesystem::path& relative_path)
 
     if (std::filesystem::exists(current_path)) {
       return current_path;
-    } else {
-      path_components.pop_front();
-    }
+    } 
+    path_components.pop_front();
   }
 
   throw std::runtime_error("Could not find: " + std::string(relative_path));

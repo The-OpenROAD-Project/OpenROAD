@@ -71,7 +71,8 @@ class AbcTest : public tst::Fixture
 
     odb::dbTech* tech
         = loadTechLef("nangate45", prefix + "Nangate45/Nangate45_tech.lef");
-    loadLibaryLef(tech, "nangate45", prefix + "Nangate45/Nangate45_stdcell.lef");
+    loadLibaryLef(
+        tech, "nangate45", prefix + "Nangate45/Nangate45_stdcell.lef");
   }
 
   void LoadVerilog(const std::string& file_name, const std::string& top = "top")
