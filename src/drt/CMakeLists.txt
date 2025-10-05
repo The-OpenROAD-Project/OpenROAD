@@ -166,7 +166,6 @@ if(ENABLE_TESTS)
     ${FLEXROUTE_HOME}/test/gcTest.cpp
     ${FLEXROUTE_HOME}/test/fixture.cpp
     ${FLEXROUTE_HOME}/test/stubs.cpp
-    ${OPENROAD_HOME}/src/gui/src/stub.cpp
   )
 
   target_include_directories(trTest
@@ -176,7 +175,7 @@ if(ENABLE_TESTS)
   )
 
   target_link_libraries(trTest
-    drt
+    drt_lib
     odb
     GTest::gtest
     GTest::gtest_main
