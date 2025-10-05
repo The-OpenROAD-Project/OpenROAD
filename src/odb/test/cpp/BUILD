@@ -16,9 +16,6 @@ cc_test(
     data = [
         "//src/odb/test/data/sky130hd:lef-test-data",
     ],
-    defines = [
-        'DATA_PREFIX=\\"src/odb/test/\\"',  # TODO: not needed after no cmake
-    ],
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/odb",
@@ -34,9 +31,6 @@ cc_test(
     srcs = ["TestDbWire.cc"],
     data = [
         "//src/odb/test/data/sky130hd:lef-test-data",
-    ],
-    defines = [
-        'DATA_PREFIX=\\"src/odb/test/\\"',  # TODO: not needed after no cmake
     ],
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
