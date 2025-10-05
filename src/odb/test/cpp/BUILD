@@ -26,6 +26,20 @@ cc_test(
 )
 
 cc_test(
+    name = "TestAccessPoint",
+    srcs = [
+        "TestAccessPoint.cpp",
+    ],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestDbWire",
     srcs = ["TestDbWire.cc"],
     data = [
@@ -58,17 +72,4 @@ cc_test(
     ],
 )
 
-cc_test(
-    name = "TestAccessPoint",
-    srcs = [
-        "TestAccessPoint.cpp",
-    ],
-    deps = [
-        "//src/odb",
-        "//src/odb/test/cpp/helper",
-        "//src/tst",
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-    ],
-)
 # TODO: more to come.
