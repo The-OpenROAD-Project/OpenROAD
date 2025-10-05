@@ -40,6 +40,37 @@ cc_test(
 )
 
 cc_test(
+    name = "TestCallBacks",
+    srcs = [
+        "TestCallBacks.cpp",
+        "CallBack.h",
+    ],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "//src/tst",
+        "@spdlog",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestChips",
+    srcs = [
+        "TestChips.cpp",
+    ],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "//src/tst",
+        "@spdlog",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestDbWire",
     srcs = ["TestDbWire.cc"],
     data = [
