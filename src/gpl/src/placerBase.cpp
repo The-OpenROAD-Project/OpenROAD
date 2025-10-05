@@ -784,7 +784,7 @@ void PlacerBaseCommon::init()
   insts_.reserve(instStor_.size());
   for (dbInst* db_inst : db_insts) {
     auto type = db_inst->getMaster()->getType();
-    if (!type.isCore() && !type.isBlock() &&!type.isEndCap()) {
+    if (!type.isCore() && !type.isBlock() && !type.isEndCap()) {
       continue;
     }
 
