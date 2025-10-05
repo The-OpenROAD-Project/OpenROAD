@@ -17,11 +17,6 @@
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
-// TODO: not needed after fully switching to bazel
-#ifndef DATA_PREFIX
-#define DATA_PREFIX ""
-#endif
-
 namespace odb {
 
 TEST_F(Nangate45TestFixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)

@@ -51,9 +51,6 @@ cc_test(
     data = [
         "//src/odb/test:regression_resources",
     ],
-    defines = [
-        'DATA_PREFIX=\\"src/odb/test/\\"',  # TODO: not needed after no cmake
-    ],
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/odb",
