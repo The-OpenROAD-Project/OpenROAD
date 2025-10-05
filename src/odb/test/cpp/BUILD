@@ -86,6 +86,18 @@ cc_test(
 )
 
 cc_test(
+    name = "TestGCellGrid",
+    srcs = ["TestGCellGrid.cpp"],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestPolygonalFloorplan",
     srcs = [
         "TestPolygonalFloorplan.cc",
