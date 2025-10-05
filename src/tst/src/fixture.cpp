@@ -60,7 +60,7 @@ std::filesystem::path findValidPath(const std::filesystem::path& relative_path)
 
     if (std::filesystem::exists(current_path)) {
       return current_path;
-    } 
+    }
     path_components.pop_front();
   }
 
