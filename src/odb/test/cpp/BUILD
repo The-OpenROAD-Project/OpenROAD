@@ -16,7 +16,6 @@ cc_test(
     data = [
         "//src/odb/test/data/sky130hd:lef-test-data",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/odb",
         "//src/tst",
@@ -32,7 +31,6 @@ cc_test(
     data = [
         "//src/odb/test/data/sky130hd:lef-test-data",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/odb",
         "//src/tst",
@@ -51,7 +49,6 @@ cc_test(
     data = [
         "//src/odb/test:regression_resources",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/odb",
         "//src/tst",
@@ -66,7 +63,6 @@ cc_test(
     srcs = [
         "TestAccessPoint.cpp",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/odb",
         "//src/odb/test/cpp/helper",
