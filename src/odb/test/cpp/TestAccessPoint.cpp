@@ -1,20 +1,17 @@
-#define BOOST_TEST_MODULE TestAccessPoint
 #include <fstream>
 #include <ios>
 #include <string>
 #include <vector>
 
-#include "boost/test/included/unit_test.hpp"
 #include "env.h"
+#include "gtest/gtest.h"
 #include "helper.h"
 #include "odb/db.h"
 
 namespace odb {
 namespace {
 
-BOOST_AUTO_TEST_SUITE(test_suite)
-
-BOOST_AUTO_TEST_CASE(test_default)
+TEST(AccessPoint, test_default)
 {
   dbDatabase* db;
   db = createSimpleDB();
@@ -51,35 +48,33 @@ BOOST_AUTO_TEST_CASE(test_default)
                  ->findInst("i1")
                  ->findITerm("a")
                  ->getPrefAccessPoints();
-  BOOST_TEST(aps.size() == 1);
+  EXPECT_EQ(aps.size(), 1);
   ap = aps[0];
-  BOOST_TEST(ap->getPoint().x() == 10);
-  BOOST_TEST(ap->getPoint().y() == 250);
-  BOOST_TEST(ap->getMPin()->getMTerm()->getName() == "a");
-  BOOST_TEST(ap->getLayer()->getName() == "L1");
-  BOOST_TEST(ap->hasAccess());
-  BOOST_TEST(ap->getHighType() == dbAccessType::HalfGrid);
-  BOOST_TEST(ap->hasAccess(dbDirection::DOWN));
+  EXPECT_EQ(ap->getPoint().x(), 10);
+  EXPECT_EQ(ap->getPoint().y(), 250);
+  EXPECT_EQ(ap->getMPin()->getMTerm()->getName(), "a");
+  EXPECT_EQ(ap->getLayer()->getName(), "L1");
+  EXPECT_TRUE(ap->hasAccess());
+  EXPECT_EQ(ap->getHighType(), dbAccessType::HalfGrid);
+  EXPECT_TRUE(ap->hasAccess(dbDirection::DOWN));
   auto path_segs = ap->getSegments();
-  BOOST_TEST(path_segs.size() == 1);
-  BOOST_TEST(std::get<0>(path_segs[0]) == Rect(10, 20, 30, 40));
-  BOOST_TEST(std::get<1>(path_segs[0]) == true);
-  BOOST_TEST(std::get<2>(path_segs[0]) == false);
+  EXPECT_EQ(path_segs.size(), 1);
+  EXPECT_EQ(std::get<0>(path_segs[0]), Rect(10, 20, 30, 40));
+  EXPECT_EQ(std::get<1>(path_segs[0]), true);
+  EXPECT_EQ(std::get<2>(path_segs[0]), false);
   std::vector<dbDirection> dirs;
   ap->getAccesses(dirs);
-  BOOST_TEST(dirs.size() == 1);
-  BOOST_TEST(dirs[0] == dbDirection::DOWN);
+  EXPECT_EQ(dirs.size(), 1);
+  EXPECT_EQ(dirs[0], dbDirection::DOWN);
   odb::dbAccessPoint::destroy(ap);
   aps = db2->getChip()
             ->getBlock()
             ->findInst("i1")
             ->findITerm("a")
             ->getPrefAccessPoints();
-  BOOST_TEST(aps.size() == 0);
+  EXPECT_EQ(aps.size(), 0);
   dbDatabase::destroy(db2);
 }
-
-BOOST_AUTO_TEST_SUITE_END()
 
 }  // namespace
 }  // namespace odb

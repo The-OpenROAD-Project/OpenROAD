@@ -25,6 +25,7 @@ cc_library(
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "@bazel_tools//tools/cpp/runfiles",
         "@googletest//:gtest",
         "@spdlog",
         "@tk_tcl//:tcl",

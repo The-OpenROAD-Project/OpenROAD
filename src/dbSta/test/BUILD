@@ -176,6 +176,10 @@ filegroup(
 cc_test(
     name = "dbsta_hconn_unittest",
     srcs = ["cpp/TestHconn.cpp"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+    ],
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/dbSta",

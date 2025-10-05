@@ -136,6 +136,12 @@ cc_test(
     srcs = [
         "cpp/TestAbc.cc",
     ],
+    data = [
+        "Nangate45/Nangate45_stdcell.lef",
+        "Nangate45/Nangate45_tech.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "aes_nangate45.v",
+    ],
     features = ["-layering_check"],  # TODO: includes private headers
     includes = [
         "../src",

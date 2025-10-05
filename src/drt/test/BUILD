@@ -125,6 +125,7 @@ cc_test(
         "//src/drt:db_hdrs",
         "//src/odb",
         "//src/utl",
-        "@boost.test",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )

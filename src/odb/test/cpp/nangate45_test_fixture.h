@@ -18,17 +18,19 @@
 #endif
 
 namespace odb {
+
 class Nangate45TestFixture : public tst::Fixture
 {
  protected:
   void SetUp() override
   {
-    lib_
-        = loadTechAndLib("ng45", "ng45", DATA_PREFIX "Nangate45/Nangate45.lef");
+    lib_ = loadTechAndLib(
+        "ng45", "ng45", "_main/src/odb/test/Nangate45/Nangate45.lef");
   }
 
   odb::dbLib* lib_;
   odb::dbChip* chip_;
   odb::dbBlock* block_;
 };
+
 }  // namespace odb

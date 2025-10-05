@@ -25,10 +25,10 @@ class OdbMultiPatternedTest : public tst::Fixture
  protected:
   void SetUp() override
   {
-    lib_ = loadTechAndLib("multipatterned",
-                          "multipatterned",
-                          DATA_PREFIX
-                          "data/sky130hd/sky130hd_multi_patterned.tlef");
+    lib_ = loadTechAndLib(
+        "multipatterned",
+        "multipatterned",
+        "_main/src/odb/test/data/sky130hd/sky130hd_multi_patterned.tlef");
 
     chip_ = odb::dbChip::create(db_.get(), db_->getTech());
     block_ = odb::dbBlock::create(chip_, "top");

@@ -37,6 +37,8 @@
 
 namespace odb {
 
+static const std::string prefix("_main/src/dbSta/test/");
+
 /*
   Extract the hierarchical information in human readable format.
   Shows the dbNet and dbModNet view of the database.
@@ -216,9 +218,9 @@ class TestHconn : public ::tst::Fixture
   void SetUp() override
   {
     // this will be so much easier with read_def
-    auto path = std::filesystem::canonical("./Nangate45/Nangate45_typ.lib");
-    library_ = readLiberty(path.string().c_str());
-    lib_ = loadTechAndLib("tech", "Nangate45.lef", "./Nangate45/Nangate45.lef");
+    library_ = readLiberty(prefix + "Nangate45/Nangate45_typ.lib");
+    lib_ = loadTechAndLib(
+        "tech", "Nangate45", prefix + "Nangate45/Nangate45.lef");
 
     db_network_ = sta_->getDbNetwork();
     // turn on hierarchy
