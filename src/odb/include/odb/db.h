@@ -8324,6 +8324,7 @@ class dbModNet : public dbObject
   unsigned connectionCount();
   std::string getName() const;
   const char* getConstName() const;
+  std::string getHierarchicalName() const;
   void rename(const char* new_name);
   void disconnectAllTerms();
   void dump() const;
