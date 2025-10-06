@@ -56,7 +56,6 @@ bool MacroPlacer::place(const int num_threads,
                         const float boundary_weight,
                         const float notch_weight,
                         const float macro_blockage_weight,
-                        const float pin_access_th,
                         const float target_util,
                         const float target_dead_space,
                         const float min_ar,
@@ -80,7 +79,6 @@ bool MacroPlacer::place(const int num_threads,
   hier_rtlmp_->setBoundaryWeight(boundary_weight);
   hier_rtlmp_->setNotchWeight(notch_weight);
   hier_rtlmp_->setMacroBlockageWeight(macro_blockage_weight);
-  hier_rtlmp_->setPinAccessThreshold(pin_access_th);
   hier_rtlmp_->setTargetUtil(target_util);
   hier_rtlmp_->setTargetDeadSpace(target_dead_space);
   hier_rtlmp_->setMinAR(min_ar);
