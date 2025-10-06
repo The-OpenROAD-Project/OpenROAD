@@ -123,8 +123,8 @@ py_library(
 cc_library(
     name = "ui",
     srcs = [
-        "src/LoggerCommon.h",
         "src/LoggerCommon.cpp",
+        "src/LoggerCommon.h",
         "src/MakeLogger.cpp",
         ":swig",
         ":tcl",
