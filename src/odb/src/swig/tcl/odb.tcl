@@ -1066,10 +1066,12 @@ proc all_pin_placed { args } {
 
   foreach bterm [$block getBTerms] {
     set placement_status [$bterm getFirstPinPlacementStatus]
-    if { $placement_status != "PLACED"
-         && $placement_status != "LOCKED"
-         && $placement_status != "FIRM"
-         && $placement_status != "COVER" } {
+    if {
+      $placement_status != "PLACED"
+      && $placement_status != "LOCKED"
+      && $placement_status != "FIRM"
+      && $placement_status != "COVER"
+    } {
       return 0
     }
   }
