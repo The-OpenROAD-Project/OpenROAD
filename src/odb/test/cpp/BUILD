@@ -42,16 +42,16 @@ cc_test(
 cc_test(
     name = "TestCallBacks",
     srcs = [
-        "TestCallBacks.cpp",
         "CallBack.h",
+        "TestCallBacks.cpp",
     ],
     deps = [
         "//src/odb",
         "//src/odb/test/cpp/helper",
         "//src/tst",
-        "@spdlog",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
+        "@spdlog",
     ],
 )
 
@@ -64,9 +64,9 @@ cc_test(
         "//src/odb",
         "//src/odb/test/cpp/helper",
         "//src/tst",
-        "@spdlog",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
+        "@spdlog",
     ],
 )
 
@@ -92,6 +92,20 @@ cc_test(
         "//src/odb",
         "//src/odb/test/cpp/helper",
         "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGDSIn",
+    srcs = ["TestGDSIn.cpp"],
+    data = ["//src/odb/test:regression_resources"],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "//src/tst",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
