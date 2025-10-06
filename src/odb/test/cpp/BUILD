@@ -112,6 +112,16 @@ cc_test(
 )
 
 cc_test(
+    name = "TestGeom",
+    srcs = ["TestGeom.cpp"],
+    deps = [
+        "//src/odb",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestPolygonalFloorplan",
     srcs = [
         "TestPolygonalFloorplan.cc",
