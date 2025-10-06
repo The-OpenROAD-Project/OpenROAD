@@ -29,13 +29,16 @@ class DbvOut
 
  private:
   void writeYamlContent(YAML::Node& root, const odb::dbDatabase& db);
-  void writeHeader(YAML::Node& header_node, const Header& header);
-  void writeChipletDefs(YAML::Node& chiplets_node, const std::map<std::string, ChipletDef>& chiplet_defs);
-  void writeChiplet(YAML::Node& chiplet_node, const ChipletDef& chiplet);
-  void writeRegions(YAML::Node& regions_node, const std::map<std::string, ChipletRegion>& regions);
+  void writeHeader(YAML::Node& header_node, odb::dbDatabase& db);
+  void writeChipletDefs(YAML::Node& chiplets_node, odb::dbDatabase& db);
+  void writeChiplet(YAML::Node& chiplet_node, const odb::dbChip& chiplet);
+  void writeRegions(YAML::Node& regions_node,
+                    const std::map<std::string, ChipletRegion>& regions);
   void writeRegion(YAML::Node& region_node, const ChipletRegion& region);
-  void writeExternal(YAML::Node& external_node, const ChipletExternal& external);
-  void writeCoordinates(YAML::Node& coords_node, const std::vector<Coordinate>& coords);
+  void writeExternal(YAML::Node& external_node,
+                     const ChipletExternal& external);
+  void writeCoordinates(YAML::Node& coords_node,
+                        const std::vector<Coordinate>& coords);
 
   utl::Logger* logger_ = nullptr;
 };
