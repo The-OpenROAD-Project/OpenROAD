@@ -2,8 +2,8 @@ or_integration_tests(
   "odb"
   TESTS
     abstract_origin
-    all_pin_placed1
-    all_pin_placed2
+    all_pins_placed1
+    all_pins_placed2
     bterm_hier_create
     check_routing_tracks
     create_blockage
