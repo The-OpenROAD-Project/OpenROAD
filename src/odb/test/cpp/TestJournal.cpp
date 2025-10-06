@@ -10,7 +10,7 @@ namespace {
 
 class JournalFixture : public SimpleDbFixture
 {
-protected:
+ protected:
   JournalFixture()
   {
     createSimpleDB();

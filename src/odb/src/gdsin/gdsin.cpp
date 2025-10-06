@@ -129,7 +129,7 @@ bool GDSReader::readRecord()
     }
     if (dataType == DataType::ASCII_STRING && !_r.data8.empty()
         && _r.data8.back() == 0) {
-      _r.data8.pop_back(); // Discard null terminator
+      _r.data8.pop_back();  // Discard null terminator
     }
   }
 
