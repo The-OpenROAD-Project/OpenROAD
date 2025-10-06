@@ -1,6 +1,9 @@
 set(TEST_LIBS
     dst
     dl
+    GTest::gtest
+    GTest::gtest_main
+    GTest::gmock
     ${TCL_LIBRARY}
 )
 

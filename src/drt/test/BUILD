@@ -119,12 +119,12 @@ cc_test(
     includes = [
         "../src",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/drt",
         "//src/drt:db_hdrs",
         "//src/odb",
         "//src/utl",
-        "@boost.test",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )

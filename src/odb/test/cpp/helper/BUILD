@@ -21,6 +21,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//src/odb",
+        "//src/tst",
         "//src/utl",
     ],
 )

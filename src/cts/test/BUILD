@@ -185,7 +185,6 @@ cc_test(
     name = "cts_unittest",
     srcs = ["cts_unittest.cc"],
     features = ["-layering_check"],  # TODO: accesses private headers
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/cts",
         "//src/utl",

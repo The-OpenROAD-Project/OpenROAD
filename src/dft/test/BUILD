@@ -114,7 +114,6 @@ cc_test(
     name = "dft_scan_architect_unittest",
     srcs = ["cpp/TestScanArchitect.cpp"],
     features = ["-layering_check"],  # TODO: includes private headers
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/dft",
         "@googletest//:gtest",
@@ -130,7 +129,6 @@ cc_test(
         "cpp/TestScanArchitectHeuristic.cpp",
     ],
     features = ["-layering_check"],  # TODO: includes private headers
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/dft",
         "//src/odb",

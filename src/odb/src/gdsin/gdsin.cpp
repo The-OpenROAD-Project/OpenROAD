@@ -127,6 +127,10 @@ bool GDSReader::readRecord()
     for (int i = 0; i < length; i++) {
       _r.data8.push_back(readInt8());
     }
+    if (dataType == DataType::ASCII_STRING && !_r.data8.empty()
+        && _r.data8.back() == 0) {
+      _r.data8.pop_back();  // Discard null terminator
+    }
   }
 
   return static_cast<bool>(_file);

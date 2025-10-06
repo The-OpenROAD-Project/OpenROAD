@@ -279,7 +279,6 @@ filegroup(
         "data/gscl45nm_polygon.lef",
         "data/lef58class_gscl45nm.lef",
         "data/mask.lef",
-        "data/nangate45_polygon_floorplan.def",
         "data/ndr.def",
         "data/parser_test.def",
         "data/rounding.def",

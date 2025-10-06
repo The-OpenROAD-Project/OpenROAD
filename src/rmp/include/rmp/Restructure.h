@@ -3,8 +3,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include <fstream>
 #include <functional>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -12,6 +14,7 @@
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
+#include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/unique_name.h"

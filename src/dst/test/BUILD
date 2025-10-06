@@ -21,14 +21,14 @@ cc_test(
     includes = [
         "../src",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         ":test_helpers",
         "//src/dst",
         "//src/utl",
         "@boost.asio",
         "@boost.bind",
-        "@boost.test",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ] + select({
         "@platforms//os:macos": ["@boost.thread//:thread_mac"],
         "//conditions:default": ["@boost.thread//:thread_posix"],
@@ -43,14 +43,14 @@ cc_test(
     includes = [
         "../src",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         ":test_helpers",
         "//src/dst",
         "//src/utl",
         "@boost.asio",
         "@boost.bind",
-        "@boost.test",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ] + select({
         "@platforms//os:macos": ["@boost.thread//:thread_mac"],
         "//conditions:default": ["@boost.thread//:thread_posix"],
@@ -66,7 +66,6 @@ cc_test(
     includes = [
         "../src",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         ":test_helpers",
         "//src/dst",
@@ -74,7 +73,8 @@ cc_test(
         "@boost.asio",
         "@boost.bind",
         "@boost.system",
-        "@boost.test",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ] + select({
         "@platforms//os:macos": ["@boost.thread//:thread_mac"],
         "//conditions:default": ["@boost.thread//:thread_posix"],

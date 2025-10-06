@@ -78,7 +78,6 @@ filegroup(
 cc_test(
     name = "utl_cfile_unittest",
     srcs = ["cpp/TestCFileUtils.cpp"],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/utl",
         "@boost.asio",

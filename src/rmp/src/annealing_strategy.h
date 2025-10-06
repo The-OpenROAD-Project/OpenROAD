@@ -3,12 +3,16 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
+#include <optional>
 #include <random>
 
 #include "cut/abc_library_factory.h"
 #include "db_sta/dbSta.hh"
 #include "resynthesis_strategy.h"
 #include "sta/Corner.hh"
+#include "sta/Delay.hh"
 #include "utl/Logger.h"
 #include "utl/unique_name.h"
 
@@ -34,7 +38,8 @@ class AnnealingStrategy : public ResynthesisStrategy
         initial_ops_(initial_ops)
   {
     if (seed) {
-      random_ = decltype(random_){*seed};
+      const uint32_t seed_32 = *seed;
+      random_ = decltype(random_){seed_32};
     }
   }
   void OptimizeDesign(sta::dbSta* sta,
