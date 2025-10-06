@@ -122,6 +122,17 @@ cc_test(
 )
 
 cc_test(
+    name = "TestGroup",
+    srcs = ["TestGroup.cpp"],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestPolygonalFloorplan",
     srcs = [
         "TestPolygonalFloorplan.cc",
