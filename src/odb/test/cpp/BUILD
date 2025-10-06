@@ -155,6 +155,18 @@ cc_test(
 )
 
 cc_test(
+    name = "TestLef58Properties",
+    srcs = ["TestLef58Properties.cpp"],
+    data = ["//src/odb/test:regression_resources"],
+    deps = [
+        "//src/odb",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestPolygonalFloorplan",
     srcs = [
         "TestPolygonalFloorplan.cc",
