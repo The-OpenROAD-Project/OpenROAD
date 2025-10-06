@@ -29,7 +29,6 @@ cc_test(
         "sky130/sky130hd_std_cell.lef",
         "sky130_const_cell.v",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/cut",
         "//src/dbSta",

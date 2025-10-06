@@ -119,7 +119,6 @@ cc_test(
     includes = [
         "../src",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/drt",
         "//src/drt:db_hdrs",

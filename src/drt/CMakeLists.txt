@@ -165,7 +165,6 @@ if(ENABLE_TESTS)
   add_executable(trTest
     ${FLEXROUTE_HOME}/test/gcTest.cpp
     ${FLEXROUTE_HOME}/test/fixture.cpp
-    ${FLEXROUTE_HOME}/test/stubs.cpp
   )
 
   target_include_directories(trTest

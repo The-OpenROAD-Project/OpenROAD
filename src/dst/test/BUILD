@@ -21,7 +21,6 @@ cc_test(
     includes = [
         "../src",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         ":test_helpers",
         "//src/dst",
@@ -44,7 +43,6 @@ cc_test(
     includes = [
         "../src",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         ":test_helpers",
         "//src/dst",
@@ -68,7 +66,6 @@ cc_test(
     includes = [
         "../src",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         ":test_helpers",
         "//src/dst",
