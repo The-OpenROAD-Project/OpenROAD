@@ -1,5 +1,7 @@
 load("@bazel-orfs//:openroad.bzl", "orfs_flow")
 
+package(features = ["layering_check"])
+
 orfs_flow(
     name = "gcd",
     # buildifier: disable=unsorted-dict-items

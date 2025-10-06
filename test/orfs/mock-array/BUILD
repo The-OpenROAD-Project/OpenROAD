@@ -7,6 +7,10 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
 load("@rules_verilator//verilog:defs.bzl", "verilog_library")
 
+package(
+    features = ["-layering_check"],  # TODO: enable
+)
+
 POWER_STAGES = {
     "cts": {
         "stage": "4",
@@ -49,27 +53,30 @@ placement_grid_y = 0.048 * MOCK_ARRAY_SCALE
 #
 #  pitch_x, pitch_y - placement pitch for each Element, in x and y direction
 # specification are in unit of placement grid
-rows = 8
+rows = 4
 
-cols = 8
+cols = 4
 
-ce_x = 20
+# Use smallest working value for minimum area of test-case
+ce_x = 8
 
-ce_y = 20
-
-pitch_x = 20
-
-pitch_y = 22
+ce_y = 8
 
 # Element size is set to multiple of placement grid above
 ce_width = ce_x * placement_grid_x
 
 ce_height = ce_y * placement_grid_y
 
-# top level core offset
-margin_x = placement_grid_x
+# Routing by abutment horizontally
+pitch_x = ce_width
 
-margin_y = placement_grid_y
+# Some routing space vertically for clock routing
+pitch_y = ce_height + (placement_grid_y * 2)
+
+# top level core offset
+margin_x = placement_grid_x * 2
+
+margin_y = placement_grid_y * 2
 
 # Element core margin
 ce_margin_x = placement_grid_x * 0.5
@@ -77,17 +84,18 @@ ce_margin_x = placement_grid_x * 0.5
 ce_margin_y = placement_grid_y * 0.5
 
 # PDN problems if it is smaller. Not investigated.
-array_spacing_x = margin_x * 2
+array_spacing_x = placement_grid_x * 4
 
-array_spacing_y = margin_y * 2
+array_spacing_y = placement_grid_y * 4
 
-# top level core and die size
+# top level core and die size, we need some space around the
+# array to put some flip flops and buffers for top level io pins
 core_width = (
-    2 * margin_x + ((placement_grid_x * pitch_x) * (cols - 1)) + ce_width
+    pitch_x * (cols - 1) + ce_width + margin_x * 2
 )
 
 core_height = (
-    2 * margin_y + ((placement_grid_y * pitch_y) * (rows - 1)) + ce_height
+    pitch_y * (rows - 1) + ce_height + margin_y * 2
 )
 
 die_width = core_width + (array_spacing_x * 2)
@@ -226,6 +234,15 @@ chisel_binary(
     ],
 )
 
+FIRTOOL_OPTIONS = [
+    "-disable-all-randomization",
+    "-strip-debug-info",
+    "-enable-layers=Verification",
+    "-enable-layers=Verification.Assert",
+    "-enable-layers=Verification.Assume",
+    "-enable-layers=Verification.Cover",
+]
+
 fir_library(
     name = "generate_fir",
     data = [
@@ -238,19 +255,14 @@ fir_library(
         "--",
         # Imagine Chisel arguments here
         "--",
-        "-disable-all-randomization",
-        "-strip-debug-info",
-        "-enable-layers=Verification",
-        "-enable-layers=Verification.Assert",
-        "-enable-layers=Verification.Assume",
-        "-enable-layers=Verification.Cover",
-    ],
+    ] + FIRTOOL_OPTIONS,
     tags = ["manual"],
 )
 
 verilog_directory(
     name = "generate_split",
     srcs = [":generate_fir"],
+    opts = FIRTOOL_OPTIONS,
     tags = ["manual"],
 )
 
@@ -364,6 +376,21 @@ MACROS = [
     srcs = [
         "simulate.cpp",
     ],
+    # Best way to refer to static names in Verilator generated code?
+    copts = [
+        "-DARRAY_COLS=\"{}\"".format(
+            ",".join([
+                "&top->io_ins_down_{col}, &top->io_ins_up_{col}".format(col = col)
+                for col in range(cols)
+            ]),
+        ),
+        "-DARRAY_ROWS=\"{}\"".format(
+            ",".join([
+                "&top->io_ins_left_{row}, &top->io_ins_right_{row}".format(row = row)
+                for row in range(rows)
+            ]),
+        ),
+    ],
     cxxopts = [
         "-std=c++23",
     ],
@@ -422,6 +449,8 @@ POWER_TESTS = [
             ),
         ],
         arguments = {
+            "ARRAY_COLS": str(cols),
+            "ARRAY_ROWS": str(rows),
             "LOAD_POWER_TCL": "$(location :load_power.tcl)",
             "OPENROAD_EXE": "$(location //src/sta:opensta)",
             "OUTPUT": "$(location :{name}_{stage}.txt)".format(

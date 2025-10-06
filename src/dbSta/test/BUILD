@@ -4,6 +4,8 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "block_sta1",
@@ -174,11 +176,20 @@ filegroup(
 cc_test(
     name = "dbsta_hconn_unittest",
     srcs = ["cpp/TestHconn.cpp"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+    ],
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/sta:opensta_lib",
         "//src/tst",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
+        "@tk_tcl//:tcl",
     ],
 )

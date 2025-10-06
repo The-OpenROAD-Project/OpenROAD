@@ -359,3 +359,13 @@ This will:
 - launch the GUI opening gui_final gcd
 
 `bazelisk run test/orfs/gcd:gcd_final` run alone would create the `/tmp/gcd` folder and the arguments. The arguments after `--` are forwarded to the `/tmp/gcd/make` script that invokes make with the gcd ORFS project set up in `/tmp/gcd/_main/config.mk`.
+
+## Hacking ORFS with `//test/orfs/gcd:gcd_test` test case
+
+First create a local work folder with all dependencies for the step that you want to work on:
+
+    bazelisk run //test/orfs/gcd:gcd_floorplan_deps /tmp/floorplan
+
+Now run make directly with the `/tmp/floorplan/_main` work folder, but be sure to use the `do-` targets that side-step ORFS make dependency checking:
+
+    make --file ~/OpenROAD-flow-scripts/flow/Makefile --dir /tmp/floorplan/_main DESIGN_CONFIG=config.mk do-floorplan

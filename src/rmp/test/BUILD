@@ -4,6 +4,8 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "aes_nangate45",
@@ -22,6 +24,9 @@ COMPULSORY_TESTS = [
     "memory_nangate45",
     "aes_dontuse_nangate45",
     "aes_donttouch_nangate45",
+    "aes_annealing",
+    "gcd_annealing1",
+    "gcd_annealing2",
 ]
 
 # Disabled in CMakeLists.txt
@@ -67,15 +72,31 @@ filegroup(
         "Nangate45/fakeram45_64x96.lef",
         "Nangate45/fakeram45_64x96.lib",
         "Nangate45/work_around_yosys/cells.v",
+        "aes_asap7.sdc",
+        "aes_asap7.v",
         "aes_nangate45.sdc",
         "aes_nangate45.tcl",
         "aes_nangate45.v",
+        "asap7/asap7_tech_1x_201209.lef",
+        "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+        "asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
+        "asap7/asap7sc7p5t_AO_RVT_SS_nldm_211120.lib.gz",
+        "asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
+        "asap7/asap7sc7p5t_INVBUF_RVT_SS_nldm_220122.lib.gz",
+        "asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz",
+        "asap7/asap7sc7p5t_OA_RVT_SS_nldm_211120.lib.gz",
+        "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
+        "asap7/asap7sc7p5t_SEQ_RVT_SS_nldm_220123.lib",
+        "asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz",
+        "asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz",
         "design.def",
         "design_const.def",
         "design_hanging.def",
         "design_in_out.def",
         "design_sequential.def",
         "gcd.sdc",
+        "gcd_asap7.sdc",
+        "gcd_asap7.v",
         "gcd_placed.def",
         "helpers.tcl",
         "rcon.def",
@@ -94,18 +115,6 @@ filegroup(
                 test_name + ".*",
             ],
         ) + ([
-            "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
-            "asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
-            "asap7/asap7sc7p5t_AO_RVT_SS_nldm_211120.lib.gz",
-            "asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
-            "asap7/asap7sc7p5t_INVBUF_RVT_SS_nldm_220122.lib.gz",
-            "asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz",
-            "asap7/asap7sc7p5t_OA_RVT_SS_nldm_211120.lib.gz",
-            "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
-            "asap7/asap7sc7p5t_SEQ_RVT_SS_nldm_220123.lib",
-            "asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz",
-            "asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz",
-            "asap7/asap7_tech_1x_201209.lef",
             "asap7/setRC.tcl",
         ] if "asap7" in test_name else []),
     )
@@ -127,15 +136,29 @@ cc_test(
     srcs = [
         "cpp/TestAbc.cc",
     ],
+    data = [
+        "Nangate45/Nangate45_stdcell.lef",
+        "Nangate45/Nangate45_tech.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "aes_nangate45.v",
+    ],
+    features = ["-layering_check"],  # TODO: includes private headers
     includes = [
         "../src",
     ],
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
+        "//src/cut",
+        "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
+        "//src/odb",
         "//src/rmp",
+        "//src/sta:opensta_lib",
         "//src/tst",
+        "//src/utl",
+        "@edu_berkeley_abc//:abc-lib",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
+        "@tk_tcl//:tcl",
     ],
 )

@@ -31,7 +31,7 @@
 #include "odb/isotropy.h"
 #include "odb/odb.h"
 
-constexpr int ADS_MAX_CORNER = 10;
+inline constexpr int ADS_MAX_CORNER = 10;
 
 namespace utl {
 class Logger;
@@ -10992,4 +10992,4 @@ class dbDoubleProperty : public dbProperty
 }  // namespace odb
 
 // Overload std::less for these types
-#include "odb/dbCompare.h"
+#include "odb/dbCompare.inc"  // IWYU pragma: export

@@ -4,6 +4,8 @@ load("@openroad_rules_python//python:defs.bzl", "py_library", "py_test")
 # Copyright (c) 2022-2025, The OpenROAD Authors
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 py_library(
     name = "helper",
     srcs = [

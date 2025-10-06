@@ -3,8 +3,6 @@
 
 #include "ta/FlexTA.h"
 
-#include <omp.h>
-
 #include <algorithm>
 #include <chrono>
 #include <iostream>
@@ -17,6 +15,7 @@
 #include "db/infra/frTime.h"
 #include "frProfileTask.h"
 #include "global.h"
+#include "omp.h"
 #include "ta/AbstractTAGraphics.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"

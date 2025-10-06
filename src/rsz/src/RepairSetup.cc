@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <limits>
 #include <string>
 #include <utility>
@@ -18,6 +19,7 @@
 #include "db_sta/dbSta.hh"
 #include "sta/Delay.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/SearchClass.hh"
 // This includes SizeUpMatchMove
 #include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"
@@ -33,9 +35,11 @@
 #include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
 #include "sta/Parasitics.hh"
+#include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
+#include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
@@ -59,8 +63,10 @@ using sta::fuzzyLess;
 using sta::GraphDelayCalc;
 using sta::InstancePinIterator;
 using sta::NetConnectedPinIterator;
+using sta::PathEndSeq;
 using sta::PathExpanded;
 using sta::Slew;
+using sta::VertexInEdgeIterator;
 using sta::VertexOutEdgeIterator;
 
 RepairSetup::RepairSetup(Resizer* resizer) : resizer_(resizer)
@@ -88,7 +94,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const bool skip_buffering,
                               const bool skip_buffer_removal,
                               const bool skip_last_gasp,
-                              const bool skip_vt_swap)
+                              const bool skip_vt_swap,
+                              const bool skip_crit_vt_swap)
 {
   bool repaired = false;
   init();
@@ -467,6 +474,24 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     params.iteration = opto_iteration;
     params.initial_tns = initial_tns;
     repairSetupLastGasp(params, num_viols);
+  }
+
+  if (!skip_crit_vt_swap && !skip_vt_swap
+      && resizer_->lib_data_->sorted_vt_categories.size() > 1) {
+    // Swap most critical cells to fastest VT
+
+    OptoParams params(setup_slack_margin,
+                      verbose,
+                      skip_pin_swap,
+                      skip_gate_cloning,
+                      skip_size_down,
+                      skip_buffering,
+                      skip_buffer_removal,
+                      skip_vt_swap);
+    if (swapVTCritCells(params, num_viols)) {
+      estimate_parasitics_->updateParasitics();
+      sta_->findRequireds();
+    }
   }
 
   printProgress(opto_iteration, true, true, false, num_viols);
@@ -1002,6 +1027,189 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       break;
     }
   }  // for each violating endpoint
+}
+
+// Perform VT swap on remaining critical cells as a last resort
+bool RepairSetup::swapVTCritCells(const OptoParams& params, int& num_viols)
+{
+  bool changed = false;
+
+  // Start with sorted violating endpoints
+  const VertexSet* endpoints = sta_->endpoints();
+  vector<pair<Vertex*, Slack>> violating_ends;
+  for (Vertex* end : *endpoints) {
+    const Slack end_slack = sta_->vertexSlack(end, max_);
+    if (end_slack < params.setup_slack_margin) {
+      violating_ends.emplace_back(end, end_slack);
+    }
+  }
+  std::stable_sort(violating_ends.begin(),
+                   violating_ends.end(),
+                   [](const auto& end_slack1, const auto& end_slack2) {
+                     return end_slack1.second < end_slack2.second;
+                   });
+
+  // Collect 50 critical instances from worst 100 violating endpoints
+  // 50 x 100 = 5000 instances
+  const size_t max_endpoints = 100;
+  if (violating_ends.size() > max_endpoints) {
+    violating_ends.resize(max_endpoints);
+  }
+  std::unordered_map<Instance*, float> crit_insts;
+  std::unordered_set<Vertex*> visited;
+  std::unordered_set<Instance*> notSwappable;
+  for (const auto& [endpoint, slack] : violating_ends) {
+    traverseFaninCone(endpoint, crit_insts, visited, notSwappable, params);
+  }
+  debugPrint(logger_,
+             RSZ,
+             "swap_crit_vt",
+             1,
+             "identified {} critical instances",
+             crit_insts.size());
+
+  // Do VT swap on critical instances for now
+  // Other transforms can follow later
+  VTSwapSpeedMove* move = resizer_->vt_swap_speed_move_.get();
+  for (auto crit_inst_slack : crit_insts) {
+    if (move->doMove(crit_inst_slack.first, notSwappable)) {
+      changed = true;
+      debugPrint(logger_,
+                 RSZ,
+                 "swap_crit_vt",
+                 1,
+                 "inst {} did crit VT swap",
+                 network_->pathName(crit_inst_slack.first));
+    }
+  }
+  if (changed) {
+    move->commitMoves();
+    estimate_parasitics_->updateParasitics();
+    sta_->findRequireds();
+    violating_ends.clear();
+    for (Vertex* end : *endpoints) {
+      const Slack end_slack = sta_->vertexSlack(end, max_);
+      if (end_slack < params.setup_slack_margin) {
+        violating_ends.emplace_back(end, end_slack);
+      }
+    }
+    num_viols = violating_ends.size();
+  }
+
+  return changed;
+}
+
+// Traverse fanin code starting from this violaitng endpoint.
+// Visit fanin instances only if they have violating slack.
+// This avoids exponential path enumeration in findPathEnds.
+void RepairSetup::traverseFaninCone(
+    Vertex* endpoint,
+    std::unordered_map<Instance*, float>& crit_insts,
+    std::unordered_set<Vertex*>& visited,
+    std::unordered_set<Instance*>& notSwappable,
+    const OptoParams& params)
+
+{
+  if (visited.find(endpoint) != visited.end()) {
+    return;
+  }
+
+  visited.insert(endpoint);
+  // Limit number of critical instances per endpoint
+  const int max_instances = 50;
+  std::queue<Vertex*> queue;
+  queue.push(endpoint);
+  int endpoint_insts = 0;
+  LibertyCell* best_lib_cell;
+
+  while (!queue.empty() && endpoint_insts < max_instances) {
+    Vertex* current = queue.front();
+    queue.pop();
+
+    // Get the instance associated with this vertex
+    Instance* inst = nullptr;
+    Pin* pin = current->pin();
+    if (pin) {
+      inst = network_->instance(pin);
+    }
+
+    if (inst) {
+      // Check if VT swap is possible
+      if (resizer_->checkAndMarkVTSwappable(
+              inst, notSwappable, best_lib_cell)) {
+        // Check if this instance has negative slack
+        const Slack inst_slack = getInstanceSlack(inst);
+        if (inst_slack < params.setup_slack_margin) {
+          // Update worst slack for this instance
+          auto it = crit_insts.find(inst);
+          if (it == crit_insts.end()) {
+            crit_insts[inst] = inst_slack;
+            endpoint_insts++;
+            debugPrint(logger_,
+                       RSZ,
+                       "swap_crit_vt",
+                       1,
+                       "swapVTCritCells: found crit inst {}: slack {}",
+                       network_->name(inst),
+                       inst_slack);
+          }
+        }
+      }
+    }
+
+    // Traverse fanin edges
+    VertexInEdgeIterator edge_iter(current, graph_);
+    while (edge_iter.hasNext()) {
+      Edge* edge = edge_iter.next();
+      Vertex* fanin_vertex = edge->from(graph_);
+      if (fanin_vertex->isRegClk()) {
+        continue;
+      }
+
+      // Only traverse if we haven't visited and the fanin has negative slack
+      if (visited.find(fanin_vertex) == visited.end()) {
+        const Slack fanin_slack = sta_->vertexSlack(fanin_vertex, max_);
+        if (fanin_slack < params.setup_slack_margin) {
+          queue.push(fanin_vertex);
+          visited.insert(fanin_vertex);
+        }
+      }
+    }
+  }
+
+  debugPrint(logger_,
+             RSZ,
+             "swap_crit_vt",
+             1,
+             "traverseFaninCone: endpoint {} has {} critical instances:",
+             endpoint->name(network_),
+             endpoint_insts);
+  if (logger_->debugCheck(RSZ, "swap_crit_vt", 1)) {
+    for (auto crit_inst_slack : crit_insts) {
+      logger_->report(" {}", network_->pathName(crit_inst_slack.first));
+    }
+  }
+}
+
+Slack RepairSetup::getInstanceSlack(Instance* inst)
+{
+  Slack worst_slack = std::numeric_limits<float>::max();
+
+  // Check all output pins of the instance
+  InstancePinIterator* pin_iter = network_->pinIterator(inst);
+  while (pin_iter->hasNext()) {
+    Pin* pin = pin_iter->next();
+    if (network_->direction(pin)->isAnyOutput()) {
+      Vertex* vertex = graph_->pinDrvrVertex(pin);
+      if (vertex) {
+        const Slack pin_slack = sta_->vertexSlack(vertex, max_);
+        worst_slack = std::min(worst_slack, pin_slack);
+      }
+    }
+  }
+  delete pin_iter;
+
+  return worst_slack;
 }
 
 }  // namespace rsz

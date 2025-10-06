@@ -277,6 +277,7 @@ class Opendp
   DbuPt initialLocation(const Node* cell, bool padded) const;
   int disp(const Node* cell) const;
   // Place fillers
+  dbMasterSeq filterFillerMasters(const dbMasterSeq& filler_masters) const;
   MasterByImplant splitByImplant(const dbMasterSeq& filler_masters);
   void setGridCells();
   dbMasterSeq& gapFillers(dbTechLayer* implant,
