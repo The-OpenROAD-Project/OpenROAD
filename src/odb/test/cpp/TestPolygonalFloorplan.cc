@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "gtest/gtest.h"
 #include "nangate45_test_fixture.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"

@@ -1,5 +1,6 @@
 #include <exception>
 
+#include "gtest/gtest.h"
 #include "helper.h"
 #include "odb/db.h"
 
