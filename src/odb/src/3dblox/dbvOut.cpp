@@ -15,7 +15,7 @@ DbvOut::DbvOut(utl::Logger* logger) : logger_(logger)
 {
 }
 
-void DbvOut::writeFile(const std::string& filename, const odb::dbDatabase& db)
+void DbvOut::writeFile(const std::string& filename, odb::dbDatabase* db)
 {
   YAML::Node root;
   writeYamlContent(root, db);
@@ -32,7 +32,7 @@ void DbvOut::writeFile(const std::string& filename, const odb::dbDatabase& db)
   out << root;
 }
 
-void DbvOut::writeYamlContent(YAML::Node& root, const odb::dbDatabase& db)
+void DbvOut::writeYamlContent(YAML::Node& root, odb::dbDatabase* db)
 {
   YAML::Node header_node = root["Header"];
 
@@ -43,46 +43,46 @@ void DbvOut::writeYamlContent(YAML::Node& root, const odb::dbDatabase& db)
   // writeChipletDefs(chiplets_node, db);
 }
 
-void DbvOut::writeHeader(YAML::Node& header_node, const odb::dbDatabase& db)
+void DbvOut::writeHeader(YAML::Node& header_node, odb::dbDatabase* db)
 {
   header_node["version"] = "2.5";
   header_node["unit"] = "microns";
   header_node["precision"] = db->getDbuPerMicron();
 }
 
-void DbvOut::writeChipletDefs(YAML::Node& chiplets_node, odb::dbDatabase& db)
+void DbvOut::writeChipletDefs(YAML::Node& chiplets_node, odb::dbDatabase* db)
 {
-  for (const auto & db->getChips() : chiplet) {
-    YAML::Node chiplet_node = chiplets_node[chiplet.getName()];
+  for (auto chiplet : db->getChips()) {
+    YAML::Node chiplet_node = chiplets_node[chiplet->getName()];
     writeChiplet(chiplet_node, chiplet);
   }
 }
 
-void DbvOut::writeChiplet(YAML::Node& chiplet_node, const odb::dbChip& chiplet)
+void DbvOut::writeChiplet(YAML::Node& chiplet_node, odb::dbChip* chiplet)
 {
-  auto type = chiplet->getType();
+  auto type = chiplet->getChipType();
   auto width = chiplet->getWidth();
   auto height = chiplet->getHeight();
 
   // Offset
   auto offset_x = chiplet->getOffset().getX();
-  auto offset_y = chiplet->getOffset().geY();
+  auto offset_y = chiplet->getOffset().getY();
 
   // Seal ring
   auto seal_ring_west = chiplet->getSealRingWest();
-  auto seal_ring_south = chiplet->getSealRingSouth();
+  auto seal_ring_north = chiplet->getSealRingNorth();
   auto seal_ring_east = chiplet->getSealRingEast();
   auto seal_ring_south = chiplet->getSealRingSouth();
 
   // Scribe line
   auto scribe_line_west = chiplet->getScribeLineWest();
-  auto scribe_line_south = chiplet->getScribeLineSouth();
+  auto scribe_line_north = chiplet->getScribeLineNorth();
   auto scribe_line_east = chiplet->getScribeLineEast();
-  auto scribe_linesouth = chiplet->getScribeLineSouth();
+  auto scribe_line_south = chiplet->getScribeLineSouth();
 
   chiplet_node["thickness"] = chiplet->getThickness();
   chiplet_node["shrink"] = chiplet->getShrink();
-  chiplet_node["tsv"] = chiplet->getTsv();
+  chiplet_node["tsv"] = chiplet->isTsv();
 
   // External files
   YAML::Node external_node = chiplet_node["external"];
@@ -97,23 +97,24 @@ void DbvOut::writeChiplet(YAML::Node& chiplet_node, const odb::dbChip& chiplet)
 
 // Placeholder functions
 
-void DbvOut::writeRegions(YAML::Node& regions_node,
-                          std::map<std::string, ChipletRegion>& regions)
-{
-}
+// void DbvOut::writeRegions(YAML::Node& regions_node,
+//                           std::map<std::string, ChipletRegion>& regions)
+// {
+// }
 
-void DbvOut::writeRegion(YAML::Node& region_node, const ChipletRegion& region)
-{
-}
+// void DbvOut::writeRegion(YAML::Node& region_node, const ChipletRegion&
+// region)
+// {
+// }
 
-void DbvOut::writeExternal(YAML::Node& external_node,
-                           const ChipletExternal& external)
-{
-}
+// void DbvOut::writeExternal(YAML::Node& external_node,
+//                            const ChipletExternal& external)
+// {
+// }
 
-void DbvOut::writeCoordinates(YAML::Node& coords_node,
-                              const std::vector<Coordinate>& coords)
-{
-}
+// void DbvOut::writeCoordinates(YAML::Node& coords_node,
+//                               const std::vector<Coordinate>& coords)
+// {
+// }
 
 }  // namespace odb
