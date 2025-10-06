@@ -142,6 +142,8 @@ py_test(
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "abstract_origin",
+    "all_pin_placed1",
+    "all_pin_placed2",
     "bterm_hier_create",
     "check_routing_tracks",
     "create_blockage",
