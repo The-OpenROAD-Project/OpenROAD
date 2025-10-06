@@ -6,9 +6,7 @@
 namespace odb {
 namespace {
 
-using Fixture = SimpleDbFixture;
-
-TEST_F(Fixture, test_delete_module)
+TEST_F(SimpleDbFixture, test_delete_module)
 {
   createSimpleDB();
 

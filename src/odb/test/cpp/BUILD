@@ -189,6 +189,17 @@ cc_test(
 )
 
 cc_test(
+    name = "TestNetTrack",
+    srcs = ["TestNetTrack.cpp"],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestPolygonalFloorplan",
     srcs = [
         "TestPolygonalFloorplan.cc",
