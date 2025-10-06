@@ -329,10 +329,10 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
-            "all_pins_placed1" :[
+            "all_pins_placed1": [
                 "floorplan_initialize3.def",
             ],
-            "all_pins_placed2" :[
+            "all_pins_placed2": [
                 "design_is_routed1.def",
             ],
             "dump_netlists": [
