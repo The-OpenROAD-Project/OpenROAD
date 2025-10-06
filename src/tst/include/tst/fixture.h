@@ -49,7 +49,7 @@ class Fixture : public ::testing::Test
 
   // Add macros to this library
   bool updateLib(odb::dbLib* lib, const std::string& lef_file);
-  
+
   utl::Logger logger_;
   utl::UniquePtrWithDeleter<odb::dbDatabase> db_;
   utl::UniquePtrWithDeleter<Tcl_Interp> interp_;

@@ -126,7 +126,7 @@ bool Fixture::updateLib(odb::dbLib* lib, const std::string& lef_file)
   odb::lefin lef_reader(
       db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
   auto path = getFilePath(lef_file);
-  
+
   return lef_reader.updateLib(lib, path.c_str());
 }
 
