@@ -1056,6 +1056,27 @@ proc define_pin_shape_pattern { args } {
   odb::set_bterm_top_layer_grid $block $layer $x_step $y_step region $width $height $keepout
 }
 
+sta::define_cmd_args "all_pin_placed" {}
+
+proc all_pin_placed { args } {
+  sta::parse_key_args "all_pin_placed" args \
+    keys {} flags {}
+
+  set block [odb::get_block]
+
+  foreach bterm [$block getBTerms] {
+    set placement_status [$bterm getFirstPinPlacementStatus]
+    if { $placement_status != "PLACED"
+         && $placement_status != "LOCKED"
+         && $placement_status != "FIRM"
+         && $placement_status != "COVER" } {
+      return 0
+    }
+  }
+
+  return 1
+}
+
 namespace eval odb {
 proc add_direction_constraint { dir edge begin end } {
   set block [get_block]
