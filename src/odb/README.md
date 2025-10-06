@@ -450,7 +450,7 @@ The full set of the Tcl commands exposed can be found under
 This command checks if the IO pins of the design have a placement status of `PLACED`, `LOCKED`, `FIRM`, or `COVER`. Return `1` if true, and `0` if false.
 
 ```tcl
-all_pin_placed
+all_pins_placed
 ```
 
 ## Regression tests

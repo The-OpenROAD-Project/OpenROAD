@@ -1056,10 +1056,10 @@ proc define_pin_shape_pattern { args } {
   odb::set_bterm_top_layer_grid $block $layer $x_step $y_step region $width $height $keepout
 }
 
-sta::define_cmd_args "all_pin_placed" {}
+sta::define_cmd_args "all_pins_placed" {}
 
-proc all_pin_placed { args } {
-  sta::parse_key_args "all_pin_placed" args \
+proc all_pins_placed { args } {
+  sta::parse_key_args "all_pins_placed" args \
     keys {} flags {}
 
   set block [odb::get_block]
