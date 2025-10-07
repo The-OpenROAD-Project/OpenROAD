@@ -1955,7 +1955,7 @@ class dbNet : public dbObject
   ///
   /// Get all the instance-terminals of this net.
   ///
-  dbSet<dbITerm> getITerms();
+  dbSet<dbITerm> getITerms() const;
 
   ///
   /// Get the 1st instance-terminal of this net.
@@ -1975,7 +1975,7 @@ class dbNet : public dbObject
   ///
   /// Get all the block-terminals of this net.
   ///
-  dbSet<dbBTerm> getBTerms();
+  dbSet<dbBTerm> getBTerms() const;
 
   ///
   /// Get the 1st block-terminal of this net.
@@ -2454,6 +2454,16 @@ class dbNet : public dbObject
   bool hasJumpers();
 
   void setJumpers(bool has_jumpers);
+
+  ///
+  /// Find all dbModNets related to the given dbNet.
+  /// Go through all the pins on the dbNet and find all dbModNets.
+  ///
+  /// A dbNet could have many modnets (e.g., a dbNet might connect
+  /// two objects in different parts of the hierarchy, each connected
+  /// by different dbModNets in different parts of the hierarchy).
+  ///
+  bool findRelatedModNets(std::set<dbModNet*>& modnet_set) const;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

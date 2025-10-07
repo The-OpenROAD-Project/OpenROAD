@@ -4018,31 +4018,6 @@ void PinModDbNetConnection::operator()(const Pin* pin)
 }
 
 /*
-Find if there is a modnet equivalent to a dbNet.
-We always expect all the pins on a net to members of the same
-net.
-
-Go through all the pins on the modnet and get all the dbNets.
-
-A dbnet could have many modnets (eg a dbNet might connect
-two objects in different parts of the hierarchy, each connected
-by different dbModNets in different parts of the hierarchy).
-
-A modnet should only have one dbNet, and we check for that.
-*/
-
-bool dbNetwork::findRelatedModNet(const dbNet* net,
-                                  std::set<dbModNet*>& modnet_set) const
-{
-  // we pass in the net and decode it for axiom checking.
-  PinModDbNetConnection visitor(this, logger_, dbToSta(net));
-  NetSet visited_nets(this);
-  visitConnectedPins(dbToSta(net), visitor, visited_nets);
-  modnet_set = visitor.getModNets();
-  return (!modnet_set.empty());
-}
-
-/*
 A modnet can have only one equivalent dbNet.
 */
 dbNet* dbNetwork::findRelatedDbNet(const dbModNet* net) const
@@ -4622,7 +4597,7 @@ void dbNetwork::checkSanityNetNames() const
   // - Flat net name should be one of the hierarchical net names
   for (odb::dbNet* net : block_->getNets()) {
     std::set<odb::dbModNet*> mod_nets;
-    if (findRelatedModNet(net, mod_nets) && mod_nets.empty() == false) {
+    if (net->findRelatedModNets(mod_nets) && mod_nets.empty() == false) {
       bool name_match = false;
       for (odb::dbModNet* mod_net : mod_nets) {
         if (net->getName() == mod_net->getHierarchicalName()) {

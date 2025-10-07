@@ -29,6 +29,7 @@
 #include "dbInst.h"
 #include "dbJournal.h"
 #include "dbMTerm.h"
+#include "dbModNet.h"
 #include "dbNetTrack.h"
 #include "dbNetTrackItr.h"
 #include "dbRSeg.h"
@@ -1136,7 +1137,7 @@ dbBlock* dbNet::getBlock() const
   return (dbBlock*) getImpl()->getOwner();
 }
 
-dbSet<dbITerm> dbNet::getITerms()
+dbSet<dbITerm> dbNet::getITerms() const
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
@@ -1155,7 +1156,7 @@ dbITerm* dbNet::get1stITerm()
   return it;
 }
 
-dbSet<dbBTerm> dbNet::getBTerms()
+dbSet<dbBTerm> dbNet::getBTerms() const
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
@@ -2364,6 +2365,27 @@ dbModule* dbNet::findMainParentModule() const
   }
 
   return getBlock()->getTopModule();
+}
+
+bool dbNet::findRelatedModNets(std::set<dbModNet*>& modnet_set) const
+{
+  modnet_set.clear();
+
+  for (dbITerm* iterm : getITerms()) {
+    dbModNet* modnet = iterm->getModNet();
+    if (modnet) {
+      modnet_set.insert(modnet);
+    }
+  }
+
+  for (dbBTerm* bterm : getBTerms()) {
+    dbModNet* modnet = bterm->getModNet();
+    if (modnet) {
+      modnet_set.insert(modnet);
+    }
+  }
+
+  return (modnet_set.empty() == false);
 }
 
 void _dbNet::collectMemInfo(MemInfo& info)
