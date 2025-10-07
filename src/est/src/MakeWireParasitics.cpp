@@ -215,7 +215,7 @@ void MakeWireParasitics::makeRouteParasitics(
                  segment.final_layer,
                  units->resistanceUnit()->asString(res));
     } else if (segment.init_layer == segment.final_layer) {
-      layerRC(wire_length_dbu, segment.init_layer, corner, res, cap);
+      layerRC(wire_length_dbu, segment.init_layer, corner, net, res, cap);
       debugPrint(logger_,
                  EST,
                  "est_rc",
@@ -297,7 +297,7 @@ void MakeWireParasitics::makeParasiticsToPin(
     int wire_length_dbu
         = abs(pt.getX() - grid_pt.getX()) + abs(pt.getY() - grid_pt.getY());
     float res, cap;
-    layerRC(wire_length_dbu, layer, corner, res, cap);
+    layerRC(wire_length_dbu, layer, corner, net, res, cap);
     sta::Units* units = sta_->units();
     debugPrint(
         logger_,
@@ -404,7 +404,7 @@ void MakeWireParasitics::makePartialParasiticsToPin(
     int wire_length_dbu
         = abs(pt.getX() - grid_pt.getX()) + abs(pt.getY() - grid_pt.getY());
     float res, cap;
-    layerRC(wire_length_dbu, layer, corner, res, cap);
+    layerRC(wire_length_dbu, layer, corner, net, res, cap);
     sta::Units* units = sta_->units();
     debugPrint(
         logger_,
@@ -468,6 +468,50 @@ void MakeWireParasitics::layerRC(int wire_length_dbu,
     const float cap_pf_per_micron = layer_width * layer->getCapacitance()
                                     + 2 * layer->getEdgeCapacitance();
     cap_per_meter = 1E+6 * 1E-12 * cap_pf_per_micron;  // F/meter
+  }
+
+  const float wire_length = dbuToMeters(wire_length_dbu);
+  res = r_per_meter * wire_length;
+  cap = cap_per_meter * wire_length;
+}
+
+void MakeWireParasitics::layerRC(int wire_length_dbu,
+                                 int layer_id,
+                                 sta::Corner* corner,
+                                 odb::dbNet* net,
+                                 // Return values.
+                                 float& res,
+                                 float& cap) const
+{
+  odb::dbTechLayer* layer = tech_->findRoutingLayer(layer_id);
+  double r_per_meter = 0.0;    // ohm/meter
+  double cap_per_meter = 0.0;  // F/meter
+
+  // if(!net->getNonDefaultRule()){
+    estimate_parasitics_->layerRC(layer, corner, r_per_meter, cap_per_meter);
+  // }
+
+  
+  const float layer_width = block_->dbuToMicrons(layer->getWidth());
+  if (r_per_meter == 0.0) {
+    const float res_ohm_per_micron = layer->getResistance() / layer_width;
+    r_per_meter = 1E+6 * res_ohm_per_micron;  // ohm/meter
+  }
+  
+
+  if (cap_per_meter == 0.0) {
+    const float cap_pf_per_micron = layer_width * layer->getCapacitance()
+                                    + 2 * layer->getEdgeCapacitance();
+    cap_per_meter = 1E+6 * 1E-12 * cap_pf_per_micron;  // F/meter
+  }
+
+  float ndr_width;
+  float ndr_ratio;
+  if(net->getNonDefaultRule()){
+    odb::dbTechLayerRule* rule = net->getNonDefaultRule()->getLayerRule(layer);
+    ndr_width = rule->getWidth();
+    ndr_ratio = ndr_width / layer->getWidth();
+    r_per_meter /= ndr_ratio;
   }
 
   const float wire_length = dbuToMeters(wire_length_dbu);
