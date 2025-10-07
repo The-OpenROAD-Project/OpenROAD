@@ -217,4 +217,22 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "Test3DBloxParser",
+    srcs = [
+        "Test3DBloxParser.cpp",
+        "nangate45_test_fixture.h",
+    ],
+    data = [
+        "//src/odb/test:regression_resources",
+    ],
+    deps = [
+        "//src/odb",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 # TODO: more to come.
