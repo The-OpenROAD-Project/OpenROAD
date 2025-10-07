@@ -2475,12 +2475,7 @@ class dbNet : public dbObject
   ///
   /// Find the modnet in the highest hierarchy related to this net.
   ///
-  dbModNet* findHighestModNet() const;
-
-  ///
-  /// Find the modnet on the driver iterm of this net.
-  ///
-  dbModNet* findModNetOfDriver() const;
+  dbModNet* findModNetInHighestHier() const;
 
   ///
   /// Rename this net with the name of the modnet in the highest hierarchy

@@ -4605,18 +4605,22 @@ void dbNetwork::checkSanityNetNames() const
           break;
         }
       }
-      if (name_match == false) {
+
+      if (name_match) {
+        continue;
+      }
+
+      // Found name mismatch b/w flat net and hierarchical nets
+      logger_->warn(ORD,
+                    2050,
+                    "SanityCheck: Flat net name '{}' does not match any of "
+                    "its hierarchical net names.",
+                    net->getName());
+      for (odb::dbModNet* mod_net : mod_nets) {
         logger_->warn(ORD,
-                      2050,
-                      "SanityCheck: Flat net name '{}' does not match any of "
-                      "its hierarchical net names.",
-                      net->getName());
-        for (odb::dbModNet* mod_net : mod_nets) {
-          logger_->warn(ORD,
-                        2055,
-                        "  hierarchical net: {}",
-                        mod_net->getHierarchicalName());
-        }
+                      2055,
+                      "  hierarchical net: {}",
+                      mod_net->getHierarchicalName());
       }
     }
   }

@@ -2413,7 +2413,7 @@ bool dbNet::isDeeperThan(const dbNet* net) const
   return (other_depth < this_depth);
 }
 
-dbModNet* dbNet::findHighestModNet() const
+dbModNet* dbNet::findModNetInHighestHier() const
 {
   std::set<dbModNet*> modnets;
   if (findRelatedModNets(modnets) == false) {
@@ -2436,28 +2436,9 @@ dbModNet* dbNet::findHighestModNet() const
   return highest;
 }
 
-dbModNet* dbNet::findModNetOfDriver() const
-{
-  for (dbITerm* iterm : getITerms()) {
-    if (iterm->getIoType() == dbIoType::OUTPUT
-        || iterm->getIoType() == dbIoType::INOUT) {
-      return iterm->getModNet();
-    }
-  }
-
-  for (dbBTerm* bterm : getBTerms()) {
-    if (bterm->getIoType() == dbIoType::INPUT
-        || bterm->getIoType() == dbIoType::INOUT) {
-      return bterm->getModNet();
-    }
-  }
-
-  return nullptr;
-}
-
 void dbNet::renameWithModNetInHighestHier()
 {
-  dbModNet* highest_mod_net = findHighestModNet();
+  dbModNet* highest_mod_net = findModNetInHighestHier();
   if (highest_mod_net) {
     rename(highest_mod_net->getHierarchicalName().c_str());
   }

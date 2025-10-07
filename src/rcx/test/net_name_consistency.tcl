@@ -1,6 +1,4 @@
-# Tests the handling of hierarchical and escaped names in read/write spef
-# This test starts with read_verilog to make sure that the names generated
-# in odb are what are generated during verilog parsing and not from DEF.
+# Tests a net name consistency b/w Verilog and SPEF.
 source helpers.tcl
 source Nangate45/Nangate45.vars
 

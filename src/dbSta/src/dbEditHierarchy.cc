@@ -562,7 +562,7 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
   db_network_->reassociatePinConnection(sta_source_pin);
   db_network_->reassociatePinConnection(sta_dest_pin);
 
-  // 3.8. Rename flat net name if needed
+  // 3.7. Rename flat net name if needed
   new_flat_net->renameWithModNetInHighestHier();
 
   // 3.8. During the addition of new ports and new wiring we may
