@@ -1778,7 +1778,7 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
     }
 
     // Set NDR settings
-    int ndr_width = defaultWidth;
+    int ndr_width = 2*defaultWidth;
     layerRule->setWidth(ndr_width);
     int ndr_space = 2 * getNetSpacing(layer, ndr_width, ndr_width);
     layerRule->setSpacing(ndr_space);
