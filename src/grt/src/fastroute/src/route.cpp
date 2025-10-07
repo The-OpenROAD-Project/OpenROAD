@@ -932,8 +932,9 @@ void FastRouteCore::spiralRouteAll()
       treenodes[d].status = 0;
 
       if (d < num_terminals) {
-        treenodes[d].botL = nets_[netID]->getPinL()[d];
-        treenodes[d].topL = nets_[netID]->getPinL()[d];
+        const int pin_idx = sttrees_[netID].node_to_pin_idx[d];
+        treenodes[d].botL = nets_[netID]->getPinL()[pin_idx];
+        treenodes[d].topL = nets_[netID]->getPinL()[pin_idx];
         // treenodes[d].l = 0;
         treenodes[d].assigned = true;
         treenodes[d].status = 2;
