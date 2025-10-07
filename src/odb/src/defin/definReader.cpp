@@ -1808,7 +1808,8 @@ void definReader::setLibs(std::vector<dbLib*>& lib_names)
 
 void definReader::readChip(std::vector<dbLib*>& libs,
                            const char* file,
-                           dbChip* chip)
+                           dbChip* chip,
+                           const bool issue_callback)
 {
   init();
   setLibs(libs);
@@ -1877,7 +1878,9 @@ void definReader::readChip(std::vector<dbLib*>& libs,
 
   _logger->info(utl::ODB, 134, "Finished DEF file: {}", file);
 
-  _db->triggerPostReadDef(_block, _mode == defin::FLOORPLAN);
+  if (issue_callback) {
+    _db->triggerPostReadDef(_block, _mode == defin::FLOORPLAN);
+  }
 }
 
 static inline bool hasSuffix(const std::string& str, const std::string& suffix)

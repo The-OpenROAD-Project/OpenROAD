@@ -50,7 +50,8 @@ class defin
   /// Create a new chip
   void readChip(std::vector<dbLib*>& search_libs,
                 const char* def_file,
-                dbChip* chip);
+                dbChip* chip,
+                bool issue_callback=true);
 };
 
 }  // namespace odb
