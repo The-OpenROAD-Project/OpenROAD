@@ -4,6 +4,8 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "macro_only",
@@ -139,10 +141,12 @@ cc_test(
         "cpp/MplTest.h",
         "cpp/TestSnapper.cpp",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
+    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/mpl",
+        "//src/odb",
         "//src/tst",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

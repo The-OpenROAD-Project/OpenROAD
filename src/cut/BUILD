@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
 package(
     default_visibility = ["//:__subpackages__"],
+    features = ["layering_check"],
 )
 
 cc_library(
@@ -31,6 +32,7 @@ cc_library(
     includes = ["include"],
     deps = [
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/rsz",
         "//src/sta:opensta_lib",

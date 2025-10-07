@@ -760,10 +760,10 @@ place_corners sky130_ef_io__corner_pad
 
 place_io_fill \
   -row IO_NORTH \
-  sky130_ef_io__com_bus_slice_20um \
-  sky130_ef_io__com_bus_slice_10um \
+  sky130_ef_io__com_bus_slice_1um \
   sky130_ef_io__com_bus_slice_5um \
-  sky130_ef_io__com_bus_slice_1um
+  sky130_ef_io__com_bus_slice_20um \
+  sky130_ef_io__com_bus_slice_10um
 place_io_fill \
   -row IO_SOUTH \
   sky130_ef_io__com_bus_slice_20um \

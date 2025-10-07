@@ -93,6 +93,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   const std::vector<int>& getPinX() const { return pin_x_; }
   const std::vector<int>& getPinY() const { return pin_y_; }
   const std::vector<int>& getPinL() const { return pin_l_; }
+  int getPinIdxFromPosition(int x, int y, int count);
 
   void addPin(int x, int y, int layer);
   void reset(odb::dbNet* db_net,
@@ -227,6 +228,7 @@ struct StTree
   // The nodes (pin and Steiner nodes) in the tree.
   std::vector<TreeNode> nodes;
   std::vector<TreeEdge> edges;
+  std::map<int, int> node_to_pin_idx;
 
   int num_edges() const { return edges.size(); }
   int num_nodes() const { return nodes.size(); }
@@ -238,6 +240,7 @@ struct OrderNetPin
   int minX;
   float length_per_pin;  // net length over pin count
   int ndr_priority;      // NDR nets are assigned first
+  float slack;
 };
 
 struct OrderTree

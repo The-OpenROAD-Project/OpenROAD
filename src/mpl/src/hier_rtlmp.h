@@ -101,7 +101,6 @@ class HierRTLMP
   void setBoundaryWeight(float boundary_weight);
   void setNotchWeight(float notch_weight);
   void setMacroBlockageWeight(float macro_blockage_weight);
-  void setPinAccessThreshold(float pin_access_th);
   void setTargetUtil(float target_util);
   void setTargetDeadSpace(float target_dead_space);
   void setMinAR(float min_ar);
@@ -274,8 +273,6 @@ class HierRTLMP
   float min_ar_ = 0.3;  // the aspect ratio range for StdCellCluster (min_ar_, 1
                         // / min_ar_)
 
-  float pin_access_th_ = 0.1;  // each pin access is modeled as a SoftMacro
-  float pin_access_th_orig_ = 0.1;
   float notch_v_th_ = 10.0;
   float notch_h_th_ = 10.0;
 

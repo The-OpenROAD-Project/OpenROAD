@@ -11,7 +11,6 @@ or_integration_tests(
     array_ins_delay
     array_no_blockages
     array_repair_clock_nets
-    balance_levels
     check_buffers
     check_buffers_blockages
     check_buffers_blockages_merge
@@ -43,6 +42,7 @@ or_integration_tests(
     simple_test_clustered
     simple_test_clustered_max_cap
     simple_test_hier
+    skip_nets
     twice
 )
 
