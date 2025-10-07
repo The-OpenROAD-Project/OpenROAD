@@ -93,7 +93,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   const std::vector<int>& getPinX() const { return pin_x_; }
   const std::vector<int>& getPinY() const { return pin_y_; }
   const std::vector<int>& getPinL() const { return pin_l_; }
-  int getIdxPos(int x, int y, int count);
+  int getPinIdxFromPosition(int x, int y, int count);
 
   void addPin(int x, int y, int layer);
   void reset(odb::dbNet* db_net,

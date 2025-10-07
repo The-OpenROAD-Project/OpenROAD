@@ -1986,7 +1986,7 @@ int8_t FrNet::getLayerEdgeCost(int layer) const
   return 1;
 }
 
-int FrNet::getIdxPos(int x, int y, int count)
+int FrNet::getPinIdxFromPosition(int x, int y, int count)
 {
   int cnt = 1;
   for (int idx = 0; idx < pin_x_.size(); idx++) {
@@ -1996,9 +1996,8 @@ int FrNet::getIdxPos(int x, int y, int count)
     if (x == pin_x && y == pin_y) {
       if (cnt == count) {
         return idx;
-      } else {
-        cnt++;
       }
+      cnt++;
     }
   }
 

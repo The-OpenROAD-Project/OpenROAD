@@ -121,8 +121,8 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
   for (int i = 0; i < d; i++) {
     odb::Point pos{treenodes[i].x, treenodes[i].y};
     pos_count[pos]++;
-    const int pin_idx
-        = nets_[ind]->getIdxPos(treenodes[i].x, treenodes[i].y, pos_count[pos]);
+    const int pin_idx = nets_[ind]->getPinIdxFromPosition(
+        treenodes[i].x, treenodes[i].y, pos_count[pos]);
     sttrees_[ind].node_to_pin_idx[i] = pin_idx;
   }
 
