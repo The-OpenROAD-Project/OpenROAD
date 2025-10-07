@@ -25,7 +25,7 @@ class AnnealingStrategy : public ResynthesisStrategy
  public:
   explicit AnnealingStrategy(sta::Corner* corner,
                              sta::Slack slack_threshold,
-                             std::optional<uint64_t> seed,
+                             std::optional<std::mt19937::result_type> seed,
                              std::optional<float> temperature,
                              unsigned iterations,
                              std::optional<unsigned> revert_after,
@@ -38,8 +38,7 @@ class AnnealingStrategy : public ResynthesisStrategy
         initial_ops_(initial_ops)
   {
     if (seed) {
-      const uint32_t seed_32 = *seed;
-      random_ = decltype(random_){seed_32};
+      random_.seed(*seed);
     }
   }
   void OptimizeDesign(sta::dbSta* sta,

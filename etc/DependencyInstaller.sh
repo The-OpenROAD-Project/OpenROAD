@@ -73,8 +73,8 @@ _installCommonDev() {
     cuddVersion=3.0.0
     lemonVersion=1.3.1
     spdlogVersion=1.15.0
-    gtestVersion=1.13.0
-    gtestChecksum="a1279c6fb5bf7d4a5e0d0b2a4adb39ac"
+    gtestVersion=1.17.0
+    gtestChecksum="3471f5011afc37b6555f6619c14169cf"
     abslVersion=20240722.0
     abslChecksum="740fb8f35ebdf82740c294bde408b9c0"
     bisonVersion=3.8.2

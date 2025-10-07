@@ -143,7 +143,7 @@ nextOpCode:
         goto nextOpCode;
       }
       auto dw = _dw;
-      if (_layer->getDirection() == dbTechLayerDir::VERTICAL) {
+      if (!_has_width && _layer->getDirection() == dbTechLayerDir::VERTICAL) {
         dw = _layer->getWrongWayWidth() / 2;
       }
 
@@ -182,7 +182,7 @@ nextOpCode:
       }
       auto dw = _dw;
 
-      if (_layer->getDirection() == dbTechLayerDir::HORIZONTAL) {
+      if (!_has_width && _layer->getDirection() == dbTechLayerDir::HORIZONTAL) {
         dw = _layer->getWrongWayWidth() / 2;
       }
       shape.setSegment(_prev_x,

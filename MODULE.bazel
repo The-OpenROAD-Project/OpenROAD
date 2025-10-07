@@ -103,7 +103,7 @@ git_override(
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
-bazel_dep(name = "googletest", version = "1.16.0", dev_dependency = True)
+bazel_dep(name = "googletest", version = "1.17.0", dev_dependency = True)
 
 # Dependencies needed by one of the rules_hdl repos. Once they are on
 # BCR, they should depend on their own version.
