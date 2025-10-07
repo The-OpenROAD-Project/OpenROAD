@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "dbvOut.h"
 #include "dbvParser.h"
 #include "dbxParser.h"
 #include "objects.h"
@@ -84,6 +85,12 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   }
 
   db_->triggerPostRead3Dbx(chip);
+}
+
+void ThreeDBlox::writeDbv(const std::string& dbv_file)
+{
+  DbvOut writer(logger_);
+  writer.writeFile(dbv_file, db_);
 }
 
 dbChip::ChipType getChipType(const std::string& type, utl::Logger* logger)
