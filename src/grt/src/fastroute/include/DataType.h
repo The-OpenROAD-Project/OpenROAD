@@ -238,11 +238,13 @@ struct OrderNetPin
   int minX;
   float length_per_pin;  // net length over pin count
   int ndr_priority;      // NDR nets are assigned first
+  int is_clock;
   float slack;
 };
 
 struct OrderTree
 {
+  int ndr_priority;      // NDR nets are assigned first
   int length;
   int treeIndex;
   int16_t xmin;

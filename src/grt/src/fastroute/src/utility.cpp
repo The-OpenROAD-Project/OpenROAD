@@ -101,10 +101,14 @@ void FastRouteCore::ConvertToFull3DType2()
 static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
 {
   // Sorting by ndr_priority, length_per_pin, minX, and treeIndex
+  // return std::tie(
+  //            a.ndr_priority, a.slack, a.length_per_pin, a.minX, a.treeIndex)
+  //        < std::tie(
+  //            b.ndr_priority, b.slack, b.length_per_pin, b.minX, b.treeIndex);
   return std::tie(
-             a.ndr_priority, a.slack, a.length_per_pin, a.minX, a.treeIndex)
+             a.ndr_priority, a.length_per_pin, a.slack, a.minX, a.treeIndex)
          < std::tie(
-             b.ndr_priority, b.slack, b.length_per_pin, b.minX, b.treeIndex);
+             b.ndr_priority, b.length_per_pin, b.slack, b.minX, b.treeIndex);
 }
 
 void FastRouteCore::netpinOrderInc()
@@ -134,10 +138,13 @@ void FastRouteCore::netpinOrderInc()
 
     if (resistance_aware_ && nets_[netID]->getSlack() < 0) {
       slack = nets_[netID]->getSlack();
+      // slack = getNetSlack(nets_[netID]->getDbNet());
     }
 
+    int is_clock = nets_[netID]->isClock() ? 0 : 1;
+
     tree_order_pv_.push_back(
-        {netID, xmin, length_per_pin, ndr_priority, slack});
+        {netID, xmin, length_per_pin, ndr_priority, is_clock, slack});
   }
 
   std::stable_sort(
@@ -1238,6 +1245,7 @@ void FastRouteCore::StNetOrder()
     StTree* stree = &(sttrees_[netID]);
     tree_order_cong_[j].xmin = 0;
     tree_order_cong_[j].treeIndex = netID;
+    tree_order_cong_[j].ndr_priority = (nets_[netID]->getDbNet()->getNonDefaultRule() ? 1 : 0);
 
     for (int ind = 0; ind < stree->num_edges(); ind++) {
       const auto& treeedges = stree->edges;
@@ -1262,8 +1270,8 @@ void FastRouteCore::StNetOrder()
     }
   }
 
-  std::stable_sort(
-      tree_order_cong_.begin(), tree_order_cong_.end(), compareTEL);
+  // std::stable_sort(
+  //     tree_order_cong_.begin(), tree_order_cong_.end(), compareTEL);
 
   // Set the 70% (or less) of non critical nets that doesn't have overflow
   // with the lowest priority
@@ -1285,8 +1293,35 @@ void FastRouteCore::StNetOrder()
     return net_a->getSlack() < net_b->getSlack();
   };
   // sort by slack after congestion sort
+  // std::stable_sort(
+  //     tree_order_cong_.begin(), tree_order_cong_.end(), compareSlack);
+
+  auto compareAll = [this](const OrderTree a, const OrderTree b) {
+    const FrNet* net_a = nets_[a.treeIndex];
+    const FrNet* net_b = nets_[b.treeIndex];
+    const int slack_a = (getNetSlack(net_a->getDbNet()) < 0 ? -getNetSlack(net_a->getDbNet()) : 0);
+    const int slack_b = (getNetSlack(net_b->getDbNet()) < 0 ? -getNetSlack(net_b->getDbNet()) : 0);
+    // const int slack_a = net_a->getSlack() < 0 ? 1 : 0;
+    // const int slack_b = net_b->getSlack() < 0 ? 1 : 0;
+
+    return std::tie(a.ndr_priority, a.xmin, slack_a) > std::tie(b.ndr_priority, b.xmin, slack_b);
+  };
+   // sort by slack after congestion sort
   std::stable_sort(
-      tree_order_cong_.begin(), tree_order_cong_.end(), compareSlack);
+      tree_order_cong_.begin(), tree_order_cong_.end(), compareAll);
+  
+  // int i=0;
+  // logger_->report("After NDR:");
+  // for(auto net : tree_order_cong_){
+  //   FrNet* net_ = nets_[net.treeIndex];
+  //   logger_->report("{} Net: {} - {} - NDR:{} - x_min: {}", i, net_->getName(), getNetSlack(net_->getDbNet())
+  //       ,(net_->getDbNet()->getNonDefaultRule()!=nullptr), net.xmin);
+  //   i++;
+  //   if(i==40){
+  //     break;
+  //   }
+  // }
+  
 }
 
 float FastRouteCore::CalculatePartialSlack()
