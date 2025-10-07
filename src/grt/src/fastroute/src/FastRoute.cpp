@@ -1672,8 +1672,10 @@ NetRouteMap FastRouteCore::run()
 void FastRouteCore::applySoftNDR(const std::vector<int>& net_ids)
 {
   for (auto net_id : net_ids) {
-    logger_->warn(
-        GRT, 273, "Disabled NDR for the {} net.", nets_[net_id]->getName());
+    logger_->warn(GRT,
+                  273,
+                  "Disabled NDR (to reduce congestion) for net: {}",
+                  nets_[net_id]->getName());
 
     // Remove the usage of all the edges involved with this net
     updateSoftNDRNetUsage(net_id, -nets_[net_id]->getEdgeCost());
