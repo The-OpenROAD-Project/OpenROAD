@@ -40,7 +40,7 @@ void DbvOut::writeYamlContent(YAML::Node& root, odb::dbDatabase* db)
 
   YAML::Node chiplets_node = root["ChipletsDef"];
 
-  // writeChipletDefs(chiplets_node, db);
+  writeChipletDefs(chiplets_node, db);
 }
 
 void DbvOut::writeHeader(YAML::Node& header_node, odb::dbDatabase* db)
@@ -60,7 +60,26 @@ void DbvOut::writeChipletDefs(YAML::Node& chiplets_node, odb::dbDatabase* db)
 
 void DbvOut::writeChiplet(YAML::Node& chiplet_node, odb::dbChip* chiplet)
 {
-  auto type = chiplet->getChipType();
+  auto chip_type = chiplet->getChipType();
+  switch (chip_type) {
+    case (odb::dbChip::ChipType::DIE):
+      chiplet_node["type"] = "die";
+      break;
+    case (odb::dbChip::ChipType::RDL):
+      chiplet_node["type"] = "rdl";
+      break;
+    case (odb::dbChip::ChipType::IP):
+      chiplet_node["type"] = "ip";
+      break;
+    case (odb::dbChip::ChipType::SUBSTRATE):
+      chiplet_node["type"] = "substrate";
+      break;
+    case (odb::dbChip::ChipType::HIER):
+      chiplet_node["type"] = "hier";
+      break;
+    default:
+      break;
+  }
   auto width = chiplet->getWidth();
   auto height = chiplet->getHeight();
 
