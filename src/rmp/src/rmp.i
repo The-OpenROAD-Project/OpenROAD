@@ -42,8 +42,48 @@ void set_tiehi_port_cmd(LibertyPort* tieHiport)
   getRestructure()->setTieHiPort(tieHiport);
 }
 
+void
+set_slack_threshold(float slack_threshold)
+{
+  getRestructure()->setSlackThreshold(slack_threshold);
+}
+
+void
+set_annealing_seed(std::mt19937::result_type annealing_seed)
+{
+  getRestructure()->setAnnealingSeed(annealing_seed);
+}
+
+void
+set_annealing_temp(float annealing_temp)
+{
+  getRestructure()->setAnnealingTemp(annealing_temp);
+}
+
+void
+set_annealing_iters(int annealing_iters)
+{
+  getRestructure()->setAnnealingIters(annealing_iters);
+}
+
+void
+set_annealing_revert_after(int annealing_revert_after)
+{
+  getRestructure()->setAnnealingRevertAfter(annealing_revert_after);
+}
+
+void
+set_annealing_initial_ops(int set_annealing_initial_ops)
+{
+  getRestructure()->setAnnealingInitialOps(set_annealing_initial_ops);
+}
+
 void resynth_cmd(Corner* corner) {
   getRestructure()->resynth(corner);
+}
+
+void resynth_annealing_cmd(Corner* corner) {
+  getRestructure()->resynthAnnealing(corner);
 }
 
 void

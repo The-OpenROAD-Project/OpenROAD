@@ -1,6 +1,8 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 exports_files(
     ["hi_fanout.tcl"],
     visibility = ["//visibility:public"],
@@ -232,13 +234,24 @@ cc_test(
     srcs = [
         "cpp/TestBufferRemoval.cc",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+    ],
     deps = [
+        "//src/ant",
         "//src/dbSta",
-        "//src/dpl",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/grt",
+        "//src/odb",
         "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
         "//src/tst",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
+        "@tk_tcl//:tcl",
     ],
 )

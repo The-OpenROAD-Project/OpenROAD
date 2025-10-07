@@ -1,9 +1,7 @@
-#define BOOST_TEST_MODULE TestModule
 #include <cstdio>
 #include <sstream>
 #include <string>
 
-#include "boost/test/included/unit_test.hpp"
 #include "helper.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -232,85 +230,83 @@ void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
   }
 }
 
-BOOST_AUTO_TEST_SUITE(test_suite)
-
-struct F_DEFAULT
+class ModuleFixture : public SimpleDbFixture
 {
-  F_DEFAULT()
+ protected:
+  ModuleFixture()
   {
-    db = createSimpleDB();
-    block = db->getChip()->getBlock();
-    lib = db->findLib("lib1");
+    createSimpleDB();
+    block_ = db_->getChip()->getBlock();
+    lib_ = db_->findLib("lib1");
   }
-  ~F_DEFAULT() { dbDatabase::destroy(db); }
-  dbDatabase* db;
-  dbLib* lib;
-  dbBlock* block;
+  dbLib* lib_;
+  dbBlock* block_;
 };
 
-BOOST_FIXTURE_TEST_CASE(test_default, F_DEFAULT)
+TEST_F(ModuleFixture, test_default)
 {
   // dbModule::create() Succeed
-  BOOST_TEST(dbModule::create(block, "parent_mod") != nullptr);
-  dbModule* master_mod = dbModule::create(block, "master_mod");
+  EXPECT_NE(dbModule::create(block_, "parent_mod"), nullptr);
+  dbModule* master_mod = dbModule::create(block_, "master_mod");
   // dbModule::create() rejected
-  BOOST_TEST(dbModule::create(block, "parent_mod") == nullptr);
+  EXPECT_EQ(dbModule::create(block_, "parent_mod"), nullptr);
   // dbBlock::findModule()
-  dbModule* parent_mod = block->findModule("parent_mod");
-  BOOST_TEST(parent_mod != nullptr);
+  dbModule* parent_mod = block_->findModule("parent_mod");
+  ASSERT_NE(parent_mod, nullptr);
   // dbModule::getName()
-  BOOST_TEST(std::string(parent_mod->getName()) == "parent_mod");
+  EXPECT_EQ(std::string(parent_mod->getName()), "parent_mod");
   // dbModInst::create() Succeed
-  BOOST_TEST(dbModInst::create(parent_mod, master_mod, "i1") != nullptr);
+  EXPECT_NE(dbModInst::create(parent_mod, master_mod, "i1"), nullptr);
   // dbModInst::create() rejected duplicate name
-  BOOST_TEST(dbModInst::create(parent_mod, master_mod, "i1") == nullptr);
+  EXPECT_EQ(dbModInst::create(parent_mod, master_mod, "i1"), nullptr);
   // dbModInst::create() rejected master already has a modinst
-  BOOST_TEST(dbModInst::create(parent_mod, master_mod, "i2") == nullptr);
+  EXPECT_EQ(dbModInst::create(parent_mod, master_mod, "i2"), nullptr);
   // dbModule::findModInst()1
   dbModInst* modInst = parent_mod->findModInst("i1");
   // dbModule getModInst()
-  BOOST_TEST(master_mod->getModInst() == modInst);
+  EXPECT_EQ(master_mod->getModInst(), modInst);
   // dbModInst::getName()
-  BOOST_TEST(std::string(modInst->getName()) == "i1");
+  EXPECT_EQ(std::string(modInst->getName()), "i1");
   // dbModule::getChildren()
-  BOOST_TEST(parent_mod->getChildren().size() == 1);
+  EXPECT_EQ(parent_mod->getChildren().size(), 1);
   // dbBlock::getModInsts()
-  BOOST_TEST(block->getModInsts().size() == 1);
+  EXPECT_EQ(block_->getModInsts().size(), 1);
   // dbInst <--> dbModule
-  auto inst1 = dbInst::create(block, lib->findMaster("and2"), "inst1");
-  auto inst2 = dbInst::create(block, lib->findMaster("and2"), "inst2");
+  auto inst1 = dbInst::create(block_, lib_->findMaster("and2"), "inst1");
+  auto inst2 = dbInst::create(block_, lib_->findMaster("and2"), "inst2");
   // dbModule::addInst()
   parent_mod->addInst(inst1);
   parent_mod->addInst(inst2);
   // dbModule::getInsts()
-  BOOST_TEST(parent_mod->getInsts().size() == 2);
+  EXPECT_EQ(parent_mod->getInsts().size(), 2);
   // dbInst::getModule()
-  BOOST_TEST(std::string(inst1->getModule()->getName()) == "parent_mod");
+  EXPECT_EQ(std::string(inst1->getModule()->getName()), "parent_mod");
   // dbModule::addInst() new parent
-  block->getTopModule()->addInst(inst2);
-  BOOST_TEST(parent_mod->getInsts().size() == 1);
-  BOOST_TEST(inst2->getModule() == block->getTopModule());
+  block_->getTopModule()->addInst(inst2);
+  EXPECT_EQ(parent_mod->getInsts().size(), 1);
+  EXPECT_EQ(inst2->getModule(), block_->getTopModule());
   // dbInst::destroy -> dbModule insts
   dbInst::destroy(inst1);
-  BOOST_TEST(parent_mod->getInsts().size() == 0);
+  EXPECT_EQ(parent_mod->getInsts().size(), 0);
 }
-BOOST_FIXTURE_TEST_CASE(test_find_modinst, F_DEFAULT)
+TEST_F(ModuleFixture, test_find_modinst)
 {
-  auto top = block->getTopModule();
-  BOOST_TEST(top != nullptr);
-  auto master1 = odb::dbModule::create(block, "master1");
+  auto top = block_->getTopModule();
+  ASSERT_NE(top, nullptr);
+  auto master1 = odb::dbModule::create(block_, "master1");
   odb::dbModInst::create(top, master1, "minst1");
-  auto master2 = odb::dbModule::create(block, "master2");
+  auto master2 = odb::dbModule::create(block_, "master2");
   auto minst2 = odb::dbModInst::create(master1, master2, "minst2");
-  BOOST_TEST(block->findModInst("minst1/minst2") == minst2);
+  EXPECT_EQ(block_->findModInst("minst1/minst2"), minst2);
 }
-struct F_DETAILED
+class DetailedFixture : public SimpleDbFixture
 {
-  F_DETAILED()
+ protected:
+  DetailedFixture()
   {
-    db = createSimpleDB();
-    block = db->getChip()->getBlock();
-    lib = db->findLib("lib1");
+    createSimpleDB();
+    block = db_->getChip()->getBlock();
+    lib = db_->findLib("lib1");
     master_mod1 = dbModule::create(block, "master_mod1");
     master_mod2 = dbModule::create(block, "master_mod2");
     master_mod3 = dbModule::create(block, "master_mod3");
@@ -325,8 +321,7 @@ struct F_DETAILED
     parent_mod->addInst(inst2);
     parent_mod->addInst(inst3);
   }
-  ~F_DETAILED() { dbDatabase::destroy(db); }
-  dbDatabase* db;
+
   dbLib* lib;
   dbBlock* block;
   dbModule* master_mod1;
@@ -340,34 +335,34 @@ struct F_DETAILED
   dbInst* inst2;
   dbInst* inst3;
 };
-BOOST_FIXTURE_TEST_CASE(test_destroy, F_DETAILED)
+TEST_F(DetailedFixture, test_destroy)
 {
-  BOOST_TEST(block->getModInsts().size() == 3);
+  EXPECT_EQ(block->getModInsts().size(), 3);
 
   // We now require that the module instance be deleted
   dbModInst::destroy(i1);
   dbModule::destroy(master_mod1);
-  BOOST_TEST(parent_mod->findModInst("i1") == nullptr);
+  EXPECT_EQ(parent_mod->findModInst("i1"), nullptr);
 
-  BOOST_TEST(block->getModInsts().size() == 2);
+  EXPECT_EQ(block->getModInsts().size(), 2);
   dbModInst::destroy(i2);
   dbModule::destroy(master_mod2);
 
-  BOOST_TEST(parent_mod->findModInst("i2") == nullptr);
-  BOOST_TEST(block->getModInsts().size() == 1);
+  EXPECT_EQ(parent_mod->findModInst("i2"), nullptr);
+  EXPECT_EQ(block->getModInsts().size(), 1);
 
   dbModule::destroy(parent_mod);
-  BOOST_TEST(block->findModule("parent_mod") == nullptr);
-  BOOST_TEST(block->getModInsts().size() == 0);
+  EXPECT_EQ(block->findModule("parent_mod"), nullptr);
+  EXPECT_EQ(block->getModInsts().size(), 0);
 }
 
-BOOST_FIXTURE_TEST_CASE(test_iterators, F_DETAILED)
+TEST_F(DetailedFixture, test_iterators)
 {
   int i;
   dbSet<dbModInst> children = parent_mod->getChildren();
   dbSet<dbModInst>::iterator modinst_itr;
-  BOOST_TEST(children.size() == 3);
-  BOOST_TEST(children.reversible());
+  EXPECT_EQ(children.size(), 3);
+  EXPECT_TRUE(children.reversible());
   for (int j = 0; j < 2; j++) {
     if (j == 1) {
       children.reverse();
@@ -377,16 +372,16 @@ BOOST_FIXTURE_TEST_CASE(test_iterators, F_DETAILED)
          ++modinst_itr, i = i + (j ? 1 : -1)) {
       switch (i) {
         case 1:
-          BOOST_TEST(*modinst_itr == i1);
+          EXPECT_EQ(*modinst_itr, i1);
           break;
         case 2:
-          BOOST_TEST(*modinst_itr == i2);
+          EXPECT_EQ(*modinst_itr, i2);
           break;
         case 3:
-          BOOST_TEST(*modinst_itr == i3);
+          EXPECT_EQ(*modinst_itr, i3);
           break;
         default:
-          BOOST_TEST(false);
+          FAIL();
           break;
       }
     }
@@ -394,8 +389,8 @@ BOOST_FIXTURE_TEST_CASE(test_iterators, F_DETAILED)
 
   dbSet<dbInst> insts = parent_mod->getInsts();
   dbSet<dbInst>::iterator inst_itr;
-  BOOST_TEST(insts.size() == 3);
-  BOOST_TEST(insts.reversible());
+  EXPECT_EQ(insts.size(), 3);
+  EXPECT_TRUE(insts.reversible());
   for (int j = 0; j < 2; j++) {
     if (j == 1) {
       insts.reverse();
@@ -404,29 +399,30 @@ BOOST_FIXTURE_TEST_CASE(test_iterators, F_DETAILED)
          ++inst_itr, i = i + (j ? 1 : -1)) {
       switch (i) {
         case 1:
-          BOOST_TEST(*inst_itr == inst1);
+          EXPECT_EQ(*inst_itr, inst1);
           break;
         case 2:
-          BOOST_TEST(*inst_itr == inst2);
+          EXPECT_EQ(*inst_itr, inst2);
           break;
         case 3:
-          BOOST_TEST(*inst_itr == inst3);
+          EXPECT_EQ(*inst_itr, inst3);
           break;
         default:
-          BOOST_TEST(false);
+          FAIL();
           break;
       }
     }
   }
 }
 
-struct F_HIERARCHY
+struct HierarchyFixture : public SimpleDbFixture
 {
-  F_HIERARCHY()
+ protected:
+  HierarchyFixture()
   {
-    db = createSimpleDB();
-    block = db->getChip()->getBlock();
-    lib = db->findLib("lib1");
+    createSimpleDB();
+    block = db_->getChip()->getBlock();
+    lib = db_->findLib("lib1");
 
     odb::dbDatabase::beginEco(block);
 
@@ -505,8 +501,6 @@ struct F_HIERARCHY
     (void) (signature);
   }
 
-  ~F_HIERARCHY() { dbDatabase::destroy(db); }
-  dbDatabase* db;
   dbLib* lib;
   dbBlock* block;
 
@@ -551,24 +545,24 @@ struct F_HIERARCHY
   dbInst* inst3;
 };
 
-BOOST_FIXTURE_TEST_CASE(test_hierarchy, F_HIERARCHY)
+TEST_F(HierarchyFixture, test_hierarchy)
 {
   dbSet<dbModNet> parent_modnets = parent_mod->getModNets();
-  BOOST_TEST(parent_modnets.size() == 7);
+  EXPECT_EQ(parent_modnets.size(), 7);
   dbSet<dbModBTerm> parent_modbterms = parent_mod->getModBTerms();
-  BOOST_TEST(parent_modbterms.size() == 5);
+  EXPECT_EQ(parent_modbterms.size(), 5);
   dbSet<dbModITerm> i1_moditerms = i1->getModITerms();
-  BOOST_TEST(i1_moditerms.size() == 3);
+  EXPECT_EQ(i1_moditerms.size(), 3);
   dbSet<dbModITerm> i2_moditerms = i2->getModITerms();
-  BOOST_TEST(i2_moditerms.size() == 3);
+  EXPECT_EQ(i2_moditerms.size(), 3);
   dbSet<dbModITerm> i3_moditerms = i3->getModITerms();
-  BOOST_TEST(i3_moditerms.size() == 3);
+  EXPECT_EQ(i3_moditerms.size(), 3);
 
   int i;
   dbSet<dbModInst> children = parent_mod->getChildren();
   dbSet<dbModInst>::iterator modinst_itr;
-  BOOST_TEST(children.size() == 3);
-  BOOST_TEST(children.reversible());
+  EXPECT_EQ(children.size(), 3);
+  EXPECT_TRUE(children.reversible());
   for (int j = 0; j < 2; j++) {
     if (j == 1) {
       children.reverse();
@@ -578,16 +572,16 @@ BOOST_FIXTURE_TEST_CASE(test_hierarchy, F_HIERARCHY)
          ++modinst_itr, i = i + (j ? 1 : -1)) {
       switch (i) {
         case 1:
-          BOOST_TEST(*modinst_itr == i1);
+          EXPECT_EQ(*modinst_itr, i1);
           break;
         case 2:
-          BOOST_TEST(*modinst_itr == i2);
+          EXPECT_EQ(*modinst_itr, i2);
           break;
         case 3:
-          BOOST_TEST(*modinst_itr == i3);
+          EXPECT_EQ(*modinst_itr, i3);
           break;
         default:
-          BOOST_TEST(false);
+          FAIL();
           break;
       }
     }
@@ -595,8 +589,8 @@ BOOST_FIXTURE_TEST_CASE(test_hierarchy, F_HIERARCHY)
 
   dbSet<dbInst> insts = parent_mod->getInsts();
   dbSet<dbInst>::iterator inst_itr;
-  BOOST_TEST(insts.size() == 3);
-  BOOST_TEST(insts.reversible());
+  EXPECT_EQ(insts.size(), 3);
+  EXPECT_TRUE(insts.reversible());
   for (int j = 0; j < 2; j++) {
     if (j == 1) {
       insts.reverse();
@@ -605,16 +599,16 @@ BOOST_FIXTURE_TEST_CASE(test_hierarchy, F_HIERARCHY)
          ++inst_itr, i = i + (j ? 1 : -1)) {
       switch (i) {
         case 1:
-          BOOST_TEST(*inst_itr == inst1);
+          EXPECT_EQ(*inst_itr, inst1);
           break;
         case 2:
-          BOOST_TEST(*inst_itr == inst2);
+          EXPECT_EQ(*inst_itr, inst2);
           break;
         case 3:
-          BOOST_TEST(*inst_itr == inst3);
+          EXPECT_EQ(*inst_itr, inst3);
           break;
         default:
-          BOOST_TEST(false);
+          FAIL();
           break;
       }
     }
@@ -625,27 +619,25 @@ BOOST_FIXTURE_TEST_CASE(test_hierarchy, F_HIERARCHY)
 Test the hierarchical journalling
 */
 
-BOOST_FIXTURE_TEST_CASE(test_hierarchy_journalling, F_HIERARCHY)
+TEST_F(HierarchyFixture, test_hierarchy_journalling)
 {
   // end the eco ready to undo
   odb::dbDatabase::endEco(block);
   // undo the construction
   odb::dbDatabase::undoEco(block);
-  BOOST_TEST(odb::dbDatabase::checkEco(block) == 0);
+  EXPECT_EQ(odb::dbDatabase::checkEco(block), 0);
   // sanity check nothing left.
   dbSet<dbModNet> parent_modnets = parent_mod->getModNets();
-  BOOST_TEST(parent_modnets.size() == 0);
+  EXPECT_EQ(parent_modnets.size(), 0);
   dbSet<dbModBTerm> parent_modbterms = parent_mod->getModBTerms();
-  BOOST_TEST(parent_modbterms.size() == 0);
+  EXPECT_EQ(parent_modbterms.size(), 0);
   dbSet<dbModITerm> i1_moditerms = i1->getModITerms();
-  BOOST_TEST(i1_moditerms.size() == 0);
+  EXPECT_EQ(i1_moditerms.size(), 0);
   dbSet<dbModITerm> i2_moditerms = i2->getModITerms();
-  BOOST_TEST(i2_moditerms.size() == 0);
+  EXPECT_EQ(i2_moditerms.size(), 0);
   dbSet<dbModITerm> i3_moditerms = i3->getModITerms();
-  BOOST_TEST(i3_moditerms.size() == 0);
+  EXPECT_EQ(i3_moditerms.size(), 0);
 }
-
-BOOST_AUTO_TEST_SUITE_END()
 
 }  // namespace
 }  // namespace odb

@@ -4,8 +4,12 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/isotropy.h"
 
 namespace ram {
 

@@ -3,8 +3,13 @@
 
 #include "ram/ram.h"
 
+#include <array>
+#include <vector>
+
 #include "db_sta/dbNetwork.hh"
 #include "layout.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"

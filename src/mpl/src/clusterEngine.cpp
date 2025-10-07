@@ -1021,20 +1021,17 @@ void ClusteringEngine::buildDataFlowConnections()
 
   // bterm, macros or ffs
   for (const auto& [bterm, insts] : data_connections_.io_and_regs) {
-    const auto itr = tree_->maps.bterm_to_cluster_id.find(bterm);
-    if (itr == tree_->maps.bterm_to_cluster_id.end()) {
-      continue;
-    }
-
-    const int driver_id = itr->second;
+    const int driver_id = tree_->maps.bterm_to_cluster_id.at(bterm);
     Cluster* driver_cluster = tree_->maps.id_to_cluster.at(driver_id);
 
     for (int hops = 0; hops < max_num_of_hops_; hops++) {
       std::set<int> sink_clusters = computeSinks(insts[hops]);
       const float conn_weight = computeConnWeight(hops);
-      for (auto& sink : sink_clusters) {
-        Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink);
-        connect(driver_cluster, sink_cluster, conn_weight);
+      for (const int sink_id : sink_clusters) {
+        if (driver_id != sink_id) {
+          Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink_id);
+          connect(driver_cluster, sink_cluster, conn_weight);
+        }
       }
     }
   }
@@ -1047,9 +1044,11 @@ void ClusteringEngine::buildDataFlowConnections()
     for (int hops = 0; hops < max_num_of_hops_; hops++) {
       std::set<int> sink_clusters = computeSinks(insts[hops]);
       const float conn_weight = computeConnWeight(hops);
-      for (auto& sink : sink_clusters) {
-        Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink);
-        connect(driver_cluster, sink_cluster, conn_weight);
+      for (const int sink_id : sink_clusters) {
+        if (driver_id != sink_id) {
+          Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink_id);
+          connect(driver_cluster, sink_cluster, conn_weight);
+        }
       }
     }
   }
@@ -1062,9 +1061,11 @@ void ClusteringEngine::buildDataFlowConnections()
     for (int hops = 0; hops < max_num_of_hops_; hops++) {
       std::set<int> sink_clusters = computeSinks(insts[hops]);
       const float conn_weight = computeConnWeight(hops);
-      for (auto& sink : sink_clusters) {
-        Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink);
-        connect(driver_cluster, sink_cluster, conn_weight);
+      for (const int sink_id : sink_clusters) {
+        if (driver_id != sink_id) {
+          Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink_id);
+          connect(driver_cluster, sink_cluster, conn_weight);
+        }
       }
     }
   }
@@ -1874,7 +1875,13 @@ bool ClusteringEngine::attemptMerge(Cluster* receiver, Cluster* incomer)
       for (const auto& [cluster_id, connection_weight] : incomer_connections) {
         Cluster* cluster = tree_->maps.id_to_cluster.at(cluster_id);
         cluster->removeConnection(incomer_id);
-        cluster->addConnection(receiver, connection_weight);
+
+        // If the incomer and the receiver were connected, we forget that
+        // connection, otherwise we'll end up with the receiver connected
+        // to itself.
+        if (cluster_id != receiver->getId()) {
+          cluster->addConnection(receiver, connection_weight);
+        }
       }
     }
 

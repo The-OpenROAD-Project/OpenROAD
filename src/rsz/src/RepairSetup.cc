@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <limits>
 #include <string>
 #include <utility>
@@ -18,6 +19,7 @@
 #include "db_sta/dbSta.hh"
 #include "sta/Delay.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/SearchClass.hh"
 // This includes SizeUpMatchMove
 #include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"

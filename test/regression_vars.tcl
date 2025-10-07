@@ -87,12 +87,15 @@ proc record_tests1 { tests cmp_logfile } {
 }
 
 # Record a test in the regression suite.
-proc record_test { test cmd_dir pass_criteria } {
-  global cmd_dirs test_groups test_pass_criteria test_langs
+proc record_test { test cmd_dir pass_criteria { test_options "" } } {
+  global cmd_dirs test_groups test_pass_criteria test_langs test_specific_options
   set cmd_dirs($test) $cmd_dir
   lappend test_groups(all) $test
   set test_pass_criteria($test) $pass_criteria
   set test_langs($test) [list]
+  if { $test_options != "" } {
+    set test_specific_options($test) $test_options
+  }
   if { [file exists [file join $cmd_dir "$test.tcl"]] } {
     lappend test_langs($test) tcl
   }
