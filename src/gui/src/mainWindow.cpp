@@ -1637,10 +1637,8 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
     return;
   }
 
+  // Only create a tab for the top block
   emit blockLoaded(block);
-  for (auto child : block->getChildren()) {
-    emit blockLoaded(child);
-  }
 }
 
 void MainWindow::setLogger(utl::Logger* logger)
