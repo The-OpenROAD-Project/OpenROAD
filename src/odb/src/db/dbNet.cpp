@@ -521,11 +521,13 @@ void dbNet::setDrivingITerm(int id)
   _dbNet* net = (_dbNet*) this;
   net->_drivingIterm = id;
 }
-int dbNet::getDrivingITerm()
+
+int dbNet::getDrivingITerm() const
 {
   _dbNet* net = (_dbNet*) this;
   return net->_drivingIterm;
 }
+
 bool dbNet::hasFixedBump()
 {
   _dbNet* net = (_dbNet*) this;
@@ -1174,7 +1176,8 @@ dbBTerm* dbNet::get1stBTerm()
   }
   return bt;
 }
-dbITerm* dbNet::getFirstOutput()
+
+dbITerm* dbNet::getFirstOutput() const
 {
   if (getDrivingITerm() > 0) {
     return dbITerm::getITerm((dbBlock*) getImpl()->getOwner(),
@@ -1199,6 +1202,7 @@ dbITerm* dbNet::getFirstOutput()
 
   return nullptr;
 }
+
 dbITerm* dbNet::get1stSignalInput(bool io)
 {
   for (dbITerm* tr : getITerms()) {
@@ -2395,6 +2399,68 @@ void _dbNet::collectMemInfo(MemInfo& info)
 
   info.children_["name"].add(_name);
   info.children_["groups"].add(_groups);
+}
+
+bool dbNet::isDeeperThan(const dbNet* net) const
+{
+  std::string this_name = getName();
+  std::string other_name = net->getName();
+
+  char delim = getBlock()->getHierarchyDelimiter();
+  size_t this_depth = std::count(this_name.begin(), this_name.end(), delim);
+  size_t other_depth = std::count(other_name.begin(), other_name.end(), delim);
+
+  return (other_depth < this_depth);
+}
+
+dbModNet* dbNet::findHighestModNet() const
+{
+  std::set<dbModNet*> modnets;
+  if (findRelatedModNets(modnets) == false) {
+    return nullptr;
+  }
+
+  dbModNet* highest = nullptr;
+  size_t min_delimiters = (size_t) -1;
+  char delim = getBlock()->getHierarchyDelimiter();
+
+  for (dbModNet* modnet : modnets) {
+    std::string name = modnet->getHierarchicalName();
+    size_t num_delimiters = std::count(name.begin(), name.end(), delim);
+    if (highest == nullptr || num_delimiters < min_delimiters) {
+      min_delimiters = num_delimiters;
+      highest = modnet;
+    }
+  }
+
+  return highest;
+}
+
+dbModNet* dbNet::findModNetOfDriver() const
+{
+  for (dbITerm* iterm : getITerms()) {
+    if (iterm->getIoType() == dbIoType::OUTPUT
+        || iterm->getIoType() == dbIoType::INOUT) {
+      return iterm->getModNet();
+    }
+  }
+
+  for (dbBTerm* bterm : getBTerms()) {
+    if (bterm->getIoType() == dbIoType::INPUT
+        || bterm->getIoType() == dbIoType::INOUT) {
+      return bterm->getModNet();
+    }
+  }
+
+  return nullptr;
+}
+
+void dbNet::renameWithModNetInHighestHier()
+{
+  dbModNet* highest_mod_net = findHighestModNet();
+  if (highest_mod_net) {
+    rename(highest_mod_net->getHierarchicalName().c_str());
+  }
 }
 
 }  // namespace odb

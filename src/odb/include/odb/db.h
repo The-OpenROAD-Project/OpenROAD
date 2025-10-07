@@ -1811,7 +1811,7 @@ class dbNet : public dbObject
   /// Returns driving term id assigned of this net. -1 if not set, 0 if non
   /// existent
   ///
-  int getDrivingITerm();
+  int getDrivingITerm() const;
 
   ///
   /// Returns true if a fixed-bump flag has been set.
@@ -1970,7 +1970,7 @@ class dbNet : public dbObject
   ///
   /// Get the 1st output Iterm; can be
   ///
-  dbITerm* getFirstOutput();
+  dbITerm* getFirstOutput() const;
 
   ///
   /// Get all the block-terminals of this net.
@@ -2456,6 +2456,13 @@ class dbNet : public dbObject
   void setJumpers(bool has_jumpers);
 
   ///
+  /// Return true if the input net is in higher hierarchy than this net
+  /// e.g., If this net name = "a/b/c" and input `net` name = "a/d",
+  ///       this API returns true.
+  ///
+  bool isDeeperThan(const dbNet* net) const;
+
+  ///
   /// Find all dbModNets related to the given dbNet.
   /// Go through all the pins on the dbNet and find all dbModNets.
   ///
@@ -2464,6 +2471,22 @@ class dbNet : public dbObject
   /// by different dbModNets in different parts of the hierarchy).
   ///
   bool findRelatedModNets(std::set<dbModNet*>& modnet_set) const;
+
+  ///
+  /// Find the modnet in the highest hierarchy related to this net.
+  ///
+  dbModNet* findHighestModNet() const;
+
+  ///
+  /// Find the modnet on the driver iterm of this net.
+  ///
+  dbModNet* findModNetOfDriver() const;
+
+  ///
+  /// Rename this net with the name of the modnet in the highest hierarchy
+  /// related to this flat net.
+  ///
+  void renameWithModNetInHighestHier();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
