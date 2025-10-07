@@ -16,6 +16,9 @@ build --cxxopt "-std=c++17"        --host_cxxopt "-std=c++17"
 build --cxxopt "-xc++"             --host_cxxopt "-xc++"
 build --cxxopt "-DBAZEL_BUILD"     --host_cxxopt "-DBAZEL_BUILD"
 
+# Needed when compiling using GCC
+build --linkopt "-lstdc++"          --host_linkopt "-lstdc++"
+
 # Needed for floating point stability in FFT (fft_test will check this).
 # See also https://kristerw.github.io/2021/11/09/fp-contract/
 build --cxxopt "-ffp-contract=off" --host_cxxopt "-ffp-contract=off"

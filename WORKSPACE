@@ -8,16 +8,16 @@ workspace(name = "openroad")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-rules_hdl_git_hash = "8cc8977cc305ed94ec7852495ed576fcbde1c18d"
+rules_hdl_git_hash = "cc437034a4a4770b9d07f192cd21d78d0420a1f1"
 
-rules_hdl_git_sha256 = "046193f4a0b006f43bd5f9615c218d2171d0169e231028a22d8d9c011c675ad6"
+rules_hdl_git_sha256 = "49c94d4081b759277396a072a99a4a82afd1bcecd1898b929ef647ee38ff5f57"
 
 http_archive(
     name = "rules_hdl",
     sha256 = rules_hdl_git_sha256,
     strip_prefix = "bazel_rules_hdl-%s" % rules_hdl_git_hash,
     urls = [
-        "https://github.com/hdl/bazel_rules_hdl/archive/%s.tar.gz" % rules_hdl_git_hash,
+        "https://github.com/hongted/bazel_rules_hdl/archive/%s.tar.gz" % rules_hdl_git_hash,
     ],
 )
 

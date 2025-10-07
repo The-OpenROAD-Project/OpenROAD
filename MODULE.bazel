@@ -111,6 +111,7 @@ bazel_dep(name = "glpk", version = "5.0.bcr.3", repo_name = "org_gnu_glpk")
 
 ## Fix the compiler version and avoid any local compiler
 bazel_dep(name = "toolchains_llvm", version = "1.5.0")
+bazel_dep(name = "gcc_toolchain", version = "0.9.0")
 
 # Configure and register the toolchain.
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
@@ -120,9 +121,17 @@ llvm.toolchain(
 use_repo(llvm, "llvm_toolchain")
 # use_repo(llvm, "llvm_toolchain_llvm") # if you depend on specific tools in scripts
 
+gcc_toolchains = use_extension("@gcc_toolchain//toolchain:module_extensions.bzl", "gcc_toolchains")
+gcc_toolchains.toolchain(
+  name = "gcc_toolchain_x86_64",
+  target_arch = "x86_64",
+)
+use_repo(gcc_toolchains, "gcc_toolchain_x86_64")
+
 # FYI: Comment out on NixOS where you'd like to use the local clang toolchain.
 register_toolchains(
-    "@llvm_toolchain//:all",
+    #"@llvm_toolchain//:all",
+    "@gcc_toolchain_x86_64//:cc_toolchain",
     "@rules_verilator//verilator:verilator_toolchain",
 )
 
