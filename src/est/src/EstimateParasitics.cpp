@@ -731,7 +731,7 @@ void EstimateParasitics::estimateWireParasiticSteiner(const Pin* drvr_pin,
             std::vector<odb::dbTechLayerRule*> layer_rules;
             db_network_->staToDb(net)->getNonDefaultRule()->getLayerRules(layer_rules);
             float ratio = (float)layer_rules.at(0)->getWidth()/layer_rules.at(0)->getLayer()->getWidth();
-            wire_res /= ratio;
+            res /= ratio;
             if(db_network_->staToDb(net)->getName()=="clk"){
               logger_->report(">>> estimateWireParasiticSteiner - ratio {} <<<", ratio);
             }
