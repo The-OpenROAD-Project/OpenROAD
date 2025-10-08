@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "gtest/gtest.h"
 #include "helper/env.h"
 #include "odb/db.h"
 #include "odb/gdsUtil.h"

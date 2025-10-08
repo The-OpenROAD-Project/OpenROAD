@@ -125,6 +125,8 @@ extern const char* recordNames[];
  */
 enum class DataType : uint8_t
 {
+// TODO: https://google.github.io/styleguide/cppguide.html#Enumerator_Names
+#undef NO_DATA  // avoid conflict with macro in /usr/include/netdb.h
   NO_DATA,
   BIT_ARRAY,
   INT_2,
