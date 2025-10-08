@@ -7,10 +7,11 @@
 #include "gtest/gtest.h"
 #include "helper.h"
 #include "odb/db.h"
+#include "tst/fixture.h"
 
 namespace odb {
 
-class TestDbNet : public ::testing::Test
+class TestDbNet : public tst::Fixture
 {
  protected:
   struct ComplexHierarchy
