@@ -19,6 +19,10 @@ class Nangate45TestFixture : public tst::Fixture
   {
     lib_ = loadTechAndLib(
         "ng45", "ng45", "_main/src/odb/test/Nangate45/Nangate45.lef");
+    chip_ = odb::dbChip::create(db_.get(), db_->getTech());
+    block_ = odb::dbBlock::create(chip_, "top");
+    block_->setDefUnits(lib_->getTech()->getLefUnits());
+    block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
   }
 
   odb::dbLib* lib_;

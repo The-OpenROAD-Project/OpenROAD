@@ -21,10 +21,6 @@ namespace odb {
 
 TEST_F(Nangate45TestFixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)
 {
-  // Arrange
-  dbChip* chip = dbChip::create(db_.get(), lib_->getTech());
-  dbBlock* block = dbBlock::create(chip, "block");
-
   // Act
   Polygon area({{0, 0},
                 {0, 300000},
@@ -33,11 +29,11 @@ TEST_F(Nangate45TestFixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)
                 {300000, 150000},
                 {300000, 0}});
 
-  block->setDieArea(area);
+  block_->setDieArea(area);
 
   // Assert that there is one virtual blockage for this floorplan.
   // There's essentially 1 rectangle cut out of it.
-  dbSet<dbBlockage> blockages = block->getBlockages();
+  dbSet<dbBlockage> blockages = block_->getBlockages();
   std::vector<dbBlockage*> virtual_blockages;
   for (dbBlockage* blockage : blockages) {
     if (!blockage->isSystemReserved()) {
@@ -51,7 +47,7 @@ TEST_F(Nangate45TestFixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)
 
   // 1 obstruction for each via and metal layer in Nangate 45
   // should be 21 including poly layers.
-  dbSet<dbObstruction> obstructions = block->getObstructions();
+  dbSet<dbObstruction> obstructions = block_->getObstructions();
   std::vector<dbObstruction*> virtual_obstructions;
   for (dbObstruction* obstruction : obstructions) {
     if (!obstruction->isSystemReserved()) {
@@ -66,10 +62,6 @@ TEST_F(Nangate45TestFixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)
 
 TEST_F(Nangate45TestFixture, SettingTheFloorplanTwiceClearsSystemBlockages)
 {
-  // Arrange
-  dbChip* chip = dbChip::create(db_.get(), lib_->getTech());
-  dbBlock* block = dbBlock::create(chip, "block");
-
   // Act
   Polygon area({{0, 0},
                 {0, 300000},
@@ -77,7 +69,7 @@ TEST_F(Nangate45TestFixture, SettingTheFloorplanTwiceClearsSystemBlockages)
                 {400000, 150000},
                 {300000, 150000},
                 {300000, 0}});
-  block->setDieArea(area);
+  block_->setDieArea(area);
 
   odb::Polygon new_die_area({{0, 0},
                              {0, 300000},
@@ -86,11 +78,11 @@ TEST_F(Nangate45TestFixture, SettingTheFloorplanTwiceClearsSystemBlockages)
                              {300000, 160000},
                              {300000, 0}});
 
-  block->setDieArea(new_die_area);
+  block_->setDieArea(new_die_area);
 
   // Assert that there is one virtual blockage for this floorplan.
   // There's essentially 1 rectangle cut out of it.
-  dbSet<dbBlockage> blockages = block->getBlockages();
+  dbSet<dbBlockage> blockages = block_->getBlockages();
   std::vector<dbBlockage*> virtual_blockages;
   for (dbBlockage* blockage : blockages) {
     if (!blockage->isSystemReserved()) {
@@ -104,7 +96,7 @@ TEST_F(Nangate45TestFixture, SettingTheFloorplanTwiceClearsSystemBlockages)
 
   // 1 obstruction for each via and metal layer in Nangate 45
   // should be 21 including poly layers.
-  dbSet<dbObstruction> obstructions = block->getObstructions();
+  dbSet<dbObstruction> obstructions = block_->getObstructions();
   std::vector<dbObstruction*> virtual_obstructions;
   for (dbObstruction* obstruction : obstructions) {
     if (!obstruction->isSystemReserved()) {
@@ -120,9 +112,6 @@ TEST_F(Nangate45TestFixture, SettingTheFloorplanTwiceClearsSystemBlockages)
 TEST_F(Nangate45TestFixture, DeletingSystemBlockagesThrows)
 {
   // Arrange
-  dbChip* chip = dbChip::create(db_.get(), lib_->getTech());
-  dbBlock* block = dbBlock::create(chip, "block");
-
   Polygon area({{0, 0},
                 {0, 300000},
                 {400000, 300000},
@@ -130,11 +119,11 @@ TEST_F(Nangate45TestFixture, DeletingSystemBlockagesThrows)
                 {300000, 150000},
                 {300000, 0}});
 
-  block->setDieArea(area);
+  block_->setDieArea(area);
 
   // Assert that there is one virtual blockage for this floorplan.
   // There's essentially 1 rectangle cut out of it.
-  dbSet<dbBlockage> blockages = block->getBlockages();
+  dbSet<dbBlockage> blockages = block_->getBlockages();
   std::vector<dbBlockage*> virtual_blockages;
   for (dbBlockage* blockage : blockages) {
     if (!blockage->isSystemReserved()) {
@@ -152,9 +141,6 @@ TEST_F(Nangate45TestFixture, DeletingSystemBlockagesThrows)
 TEST_F(Nangate45TestFixture, DeletingSystemObstructionsThrows)
 {
   // Arrange
-  dbChip* chip = dbChip::create(db_.get(), lib_->getTech());
-  dbBlock* block = dbBlock::create(chip, "block");
-
   Polygon area({{0, 0},
                 {0, 300000},
                 {400000, 300000},
@@ -162,11 +148,11 @@ TEST_F(Nangate45TestFixture, DeletingSystemObstructionsThrows)
                 {300000, 150000},
                 {300000, 0}});
 
-  block->setDieArea(area);
+  block_->setDieArea(area);
 
   // Assert that there is one virtual blockage for this floorplan.
   // There's essentially 1 rectangle cut out of it.
-  dbSet<dbObstruction> obstructions = block->getObstructions();
+  dbSet<dbObstruction> obstructions = block_->getObstructions();
   std::vector<dbObstruction*> virtual_obstructions;
   for (dbObstruction* obstruction : obstructions) {
     if (!obstruction->isSystemReserved()) {
