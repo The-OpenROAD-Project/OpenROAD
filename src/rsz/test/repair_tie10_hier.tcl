@@ -25,3 +25,5 @@ report_net _395_/CI
 
 check_ties TIEHIx1_ASAP7_75t_R
 report_ties TIEHIx1_ASAP7_75t_R
+
+sta::check_axioms
