@@ -231,7 +231,7 @@ genrule(
 
 tcl_encode(
     name = "openroad_tcl",
-    srcs = ["//src/sta:tcl_util"] +[
+    srcs = ["//src/sta:tcl_util"] + [
         "src/Metrics.tcl",
         "src/OpenRoad.tcl",
     ],

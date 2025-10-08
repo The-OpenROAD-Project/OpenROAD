@@ -222,6 +222,13 @@ MANUAL_TESTS = [
     "odb_readme_msgs_check",
 ]
 
+# TODO: Enable once difference between bazel and ctest is resolved.
+MANUAL_FOR_BAZEL_TESTS = [
+    "dump_netlists",
+    "dump_netlists_withfill",
+    "replace_hier_mod1",
+]
+
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS + PASSFAIL_TESTS
 
 filegroup(
@@ -362,10 +369,11 @@ filegroup(
 [
     regression_test(
         name = test_name,
-        data = [":" + test_name + "_resources"],
-        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
-        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
+        data = [":" + test_name + "_resources"],
+        tags = ["manual"] if test_name in MANUAL_TESTS or
+                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
