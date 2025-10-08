@@ -154,6 +154,10 @@ void Grid::markBlocked(dbBlock* block)
           }
           wire_rect.moveDelta(-core.xMin(), -core.yMin());
           GridRect grid_rect = gridCovering(wire_rect);
+          if (grid_rect.yhi - grid_rect.ylo < 3) {
+            // probably a patch over a via, ignore
+            return;
+          }
           GridRect core{.xlo = GridX{0},
                         .ylo = GridY{0},
                         .xhi = GridX{row_site_count_},
