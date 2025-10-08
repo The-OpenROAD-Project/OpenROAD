@@ -530,7 +530,9 @@ void IOPlacer::writePinPlacement(const char* file_name, const bool placed)
         if (io_pin.getEdge() == edge) {
           const int layer = io_pin.getLayer();
           odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
-          const odb::Point& pos = io_pin.getPosition();
+          const odb::Rect pin_rect{io_pin.getLowerBound(),
+                                   io_pin.getUpperBound()};
+          const odb::Point pos = pin_rect.center();
           out << "place_pin -pin_name " << io_pin.getName() << " -layer "
               << tech_layer->getName() << " -location {"
               << getBlock()->dbuToMicrons(pos.x()) << " "
@@ -3252,6 +3254,13 @@ void IOPlacer::commitIOPinToDB(const IOPin& pin)
 
   Point lower_bound = pin.getLowerBound();
   Point upper_bound = pin.getUpperBound();
+
+  if (!netlist_->getIOPins().empty()) {
+    const int netlist_pin_idx = netlist_->getIoPinIdx(pin.getBTerm());
+    IOPin& netlist_pin = netlist_->getIoPin(netlist_pin_idx);
+    netlist_pin.setLowerBound(lower_bound.getX(), lower_bound.getY());
+    netlist_pin.setUpperBound(upper_bound.getX(), upper_bound.getY());
+  }
 
   odb::dbBPin* bpin = odb::dbBPin::create(bterm);
 

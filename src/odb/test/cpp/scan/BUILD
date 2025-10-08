@@ -12,7 +12,6 @@ cc_test(
     srcs = [
         "TestScanChain.cpp",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/odb",
         "//src/odb/test/cpp/helper",

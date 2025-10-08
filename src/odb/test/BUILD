@@ -142,6 +142,8 @@ py_test(
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "abstract_origin",
+    "all_pins_placed1",
+    "all_pins_placed2",
     "bterm_hier_create",
     "check_routing_tracks",
     "create_blockage",
@@ -279,7 +281,6 @@ filegroup(
         "data/gscl45nm_polygon.lef",
         "data/lef58class_gscl45nm.lef",
         "data/mask.lef",
-        "data/nangate45_polygon_floorplan.def",
         "data/ndr.def",
         "data/parser_test.def",
         "data/rounding.def",
@@ -327,6 +328,12 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "all_pins_placed1": [
+                "floorplan_initialize3.def",
+            ],
+            "all_pins_placed2": [
+                "design_is_routed1.def",
+            ],
             "dump_netlists": [
                 "dump_netlists_cdl.ok",
             ],

@@ -38,6 +38,7 @@
   stdenv,
   overrideSDK,
   git,
+  yaml-cpp,
 }: let
   or-tools' =
     (or-tools.override {
@@ -111,6 +112,7 @@
       cbc
       re2
       gtest
+      yaml-cpp
     ];
 
     nativeBuildInputs = [
