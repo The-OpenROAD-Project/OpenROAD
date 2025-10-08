@@ -7,9 +7,7 @@
 #include <memory>
 
 #include "odb/db.h"
-#include "odb/lefin.h"
 #include "tst/fixture.h"
-#include "utl/Logger.h"
 
 namespace odb {
 class Sky130TestFixutre : public tst::Fixture
