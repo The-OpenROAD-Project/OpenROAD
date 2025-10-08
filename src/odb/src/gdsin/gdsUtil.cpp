@@ -57,7 +57,7 @@ uint8_t fromRecordType(RecordType recordType)
 
 DataType toDataType(uint8_t dataType)
 {
-  if (dataType >= (uint8_t) DataType::INVALID_DT) {
+  if (dataType >= (uint8_t) DataType::kInvalidDt) {
     throw std::runtime_error("Corrupted GDS, Invalid data type!");
   }
   return static_cast<DataType>(dataType);
@@ -65,7 +65,7 @@ DataType toDataType(uint8_t dataType)
 
 uint8_t fromDataType(DataType dataType)
 {
-  if (dataType >= DataType::INVALID_DT) {
+  if (dataType >= DataType::kInvalidDt) {
     throw std::runtime_error("Corrupted GDS, Invalid data type!");
   }
   return static_cast<uint8_t>(dataType);

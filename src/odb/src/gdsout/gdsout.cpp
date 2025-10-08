@@ -41,23 +41,23 @@ void GDSWriter::calcRecSize(record_t& r)
 {
   r.length = 4;
   switch (r.dataType) {
-    case DataType::REAL_8:
+    case DataType::kReal8:
       r.length += r.data64.size() * 8;
       break;
-    case DataType::INT_4:
+    case DataType::kInt4:
       r.length += r.data32.size() * 4;
       break;
-    case DataType::INT_2:
+    case DataType::kInt2:
       r.length += r.data16.size() * 2;
       break;
-    case DataType::ASCII_STRING:
-    case DataType::BIT_ARRAY:
+    case DataType::kAsciiString:
+    case DataType::kBitArray:
       r.length += r.data8.size();
       break;
-    case DataType::NO_DATA:
+    case DataType::kNoData:
       break;
-    case DataType::REAL_4:
-    case DataType::INVALID_DT:
+    case DataType::kReal4:
+    case DataType::kInvalidDt:
       _logger->error(ODB, 448, "Invalid data type");
       break;
   }
@@ -94,34 +94,34 @@ void GDSWriter::writeRecord(record_t& r)
   writeInt8(fromDataType(r.dataType));
 
   switch (r.dataType) {
-    case DataType::REAL_8: {
+    case DataType::kReal8: {
       for (const auto& d : r.data64) {
         writeReal8(d);
       }
       break;
     }
-    case DataType::INT_4: {
+    case DataType::kInt4: {
       for (const auto& d : r.data32) {
         writeInt32(d);
       }
       break;
     }
-    case DataType::INT_2: {
+    case DataType::kInt2: {
       for (const auto& d : r.data16) {
         writeInt16(d);
       }
       break;
     }
-    case DataType::ASCII_STRING:
-    case DataType::BIT_ARRAY: {
+    case DataType::kAsciiString:
+    case DataType::kBitArray: {
       _file.write(r.data8.c_str(), r.data8.size());
       break;
     }
-    case DataType::NO_DATA: {
+    case DataType::kNoData: {
       break;
     }
-    case DataType::REAL_4:
-    case DataType::INVALID_DT:
+    case DataType::kReal4:
+    case DataType::kInvalidDt:
       _logger->error(ODB, 449, "Invalid data type");
       break;
   }
@@ -131,13 +131,13 @@ void GDSWriter::writeLib()
 {
   record_t rh;
   rh.type = RecordType::HEADER;
-  rh.dataType = DataType::INT_2;
+  rh.dataType = DataType::kInt2;
   rh.data16 = {600};
   writeRecord(rh);
 
   record_t r;
   r.type = RecordType::BGNLIB;
-  r.dataType = DataType::INT_2;
+  r.dataType = DataType::kInt2;
 
   const std::time_t now = std::time(nullptr);
   const std::tm* lt = std::localtime(&now);
@@ -157,14 +157,14 @@ void GDSWriter::writeLib()
 
   record_t r2;
   r2.type = RecordType::LIBNAME;
-  r2.dataType = DataType::ASCII_STRING;
+  r2.dataType = DataType::kAsciiString;
   r2.data8 = _lib->getLibname();
   writeRecord(r2);
 
   record_t r3;
 
   r3.type = RecordType::UNITS;
-  r3.dataType = DataType::REAL_8;
+  r3.dataType = DataType::kReal8;
   auto units = _lib->getUnits();
   r3.data64 = {units.first, units.second};
   writeRecord(r3);
@@ -176,7 +176,7 @@ void GDSWriter::writeLib()
 
   record_t r4;
   r4.type = RecordType::ENDLIB;
-  r4.dataType = DataType::NO_DATA;
+  r4.dataType = DataType::kNoData;
   writeRecord(r4);
 }
 
@@ -184,7 +184,7 @@ void GDSWriter::writeStruct(dbGDSStructure* str)
 {
   record_t r;
   r.type = RecordType::BGNSTR;
-  r.dataType = DataType::INT_2;
+  r.dataType = DataType::kInt2;
 
   std::time_t now = std::time(nullptr);
   std::tm* lt = std::localtime(&now);
@@ -204,7 +204,7 @@ void GDSWriter::writeStruct(dbGDSStructure* str)
 
   record_t r2;
   r2.type = RecordType::STRNAME;
-  r2.dataType = DataType::ASCII_STRING;
+  r2.dataType = DataType::kAsciiString;
   r2.data8 = str->getName();
   writeRecord(r2);
 
@@ -234,7 +234,7 @@ void GDSWriter::writeStruct(dbGDSStructure* str)
 
   record_t r3;
   r3.type = RecordType::ENDSTR;
-  r3.dataType = DataType::NO_DATA;
+  r3.dataType = DataType::kNoData;
   writeRecord(r3);
 }
 
@@ -245,13 +245,13 @@ void GDSWriter::writePropAttr(T* el)
   for (const auto& pair : props) {
     record_t r;
     r.type = RecordType::PROPATTR;
-    r.dataType = DataType::INT_2;
+    r.dataType = DataType::kInt2;
     r.data16 = {pair.first};
     writeRecord(r);
 
     record_t r2;
     r2.type = RecordType::PROPVALUE;
-    r2.dataType = DataType::ASCII_STRING;
+    r2.dataType = DataType::kAsciiString;
     r2.data8 = pair.second;
     writeRecord(r2);
   }
@@ -261,7 +261,7 @@ void GDSWriter::writeLayer(const int16_t layer)
 {
   record_t r;
   r.type = RecordType::LAYER;
-  r.dataType = DataType::INT_2;
+  r.dataType = DataType::kInt2;
   r.data16 = {layer};
   writeRecord(r);
 }
@@ -270,7 +270,7 @@ void GDSWriter::writeXY(const std::vector<Point>& points)
 {
   record_t r;
   r.type = RecordType::XY;
-  r.dataType = DataType::INT_4;
+  r.dataType = DataType::kInt4;
   for (auto pt : points) {
     r.data32.push_back(pt.x());
     r.data32.push_back(pt.y());
@@ -282,7 +282,7 @@ void GDSWriter::writeDataType(const int16_t data_type)
 {
   record_t r;
   r.type = RecordType::DATATYPE;
-  r.dataType = DataType::INT_2;
+  r.dataType = DataType::kInt2;
   r.data16 = {data_type};
   writeRecord(r);
 }
@@ -291,7 +291,7 @@ void GDSWriter::writeEndel()
 {
   record_t r;
   r.type = RecordType::ENDEL;
-  r.dataType = DataType::NO_DATA;
+  r.dataType = DataType::kNoData;
   writeRecord(r);
 }
 
@@ -299,7 +299,7 @@ void GDSWriter::writeBoundary(dbGDSBoundary* bnd)
 {
   record_t r;
   r.type = RecordType::BOUNDARY;
-  r.dataType = DataType::NO_DATA;
+  r.dataType = DataType::kNoData;
   writeRecord(r);
 
   writeLayer(bnd->getLayer());
@@ -314,7 +314,7 @@ void GDSWriter::writePath(dbGDSPath* path)
 {
   record_t r;
   r.type = RecordType::PATH;
-  r.dataType = DataType::NO_DATA;
+  r.dataType = DataType::kNoData;
   writeRecord(r);
 
   writeLayer(path->getLayer());
@@ -323,7 +323,7 @@ void GDSWriter::writePath(dbGDSPath* path)
   if (path->getPathType() != 0) {
     record_t r2;
     r2.type = RecordType::PATHTYPE;
-    r2.dataType = DataType::INT_2;
+    r2.dataType = DataType::kInt2;
     r2.data16 = {path->getPathType()};
     writeRecord(r2);
   }
@@ -331,7 +331,7 @@ void GDSWriter::writePath(dbGDSPath* path)
   if (path->getWidth() != 0) {
     record_t r3;
     r3.type = RecordType::WIDTH;
-    r3.dataType = DataType::INT_4;
+    r3.dataType = DataType::kInt4;
     r3.data32 = {path->getWidth()};
     writeRecord(r3);
   }
@@ -346,12 +346,12 @@ void GDSWriter::writeSRef(dbGDSSRef* sref)
 {
   record_t r;
   r.type = RecordType::SREF;
-  r.dataType = DataType::NO_DATA;
+  r.dataType = DataType::kNoData;
   writeRecord(r);
 
   record_t r2;
   r2.type = RecordType::SNAME;
-  r2.dataType = DataType::ASCII_STRING;
+  r2.dataType = DataType::kAsciiString;
   r2.data8 = sref->getStructure()->getName();
   writeRecord(r2);
 
@@ -370,12 +370,12 @@ void GDSWriter::writeARef(dbGDSARef* aref)
 {
   record_t r;
   r.type = RecordType::AREF;
-  r.dataType = DataType::NO_DATA;
+  r.dataType = DataType::kNoData;
   writeRecord(r);
 
   record_t r2;
   r2.type = RecordType::SNAME;
-  r2.dataType = DataType::ASCII_STRING;
+  r2.dataType = DataType::kAsciiString;
   r2.data8 = aref->getStructure()->getName();
   writeRecord(r2);
 
@@ -388,7 +388,7 @@ void GDSWriter::writeARef(dbGDSARef* aref)
   if (cols != 1 || rows != 1) {
     record_t r4;
     r4.type = RecordType::COLROW;
-    r4.dataType = DataType::INT_2;
+    r4.dataType = DataType::kInt2;
     r4.data16 = {cols, rows};
     writeRecord(r4);
   }
@@ -404,14 +404,14 @@ void GDSWriter::writeText(dbGDSText* text)
 {
   record_t r;
   r.type = RecordType::TEXT;
-  r.dataType = DataType::NO_DATA;
+  r.dataType = DataType::kNoData;
   writeRecord(r);
 
   writeLayer(text->getLayer());
 
   record_t r2;
   r2.type = RecordType::TEXTTYPE;
-  r2.dataType = DataType::INT_2;
+  r2.dataType = DataType::kInt2;
   r2.data16 = {text->getDatatype()};
   writeRecord(r2);
 
@@ -426,7 +426,7 @@ void GDSWriter::writeText(dbGDSText* text)
 
   record_t r5;
   r5.type = RecordType::STRING;
-  r5.dataType = DataType::ASCII_STRING;
+  r5.dataType = DataType::kAsciiString;
   r5.data8 = text->getText();
   writeRecord(r5);
 
@@ -438,14 +438,14 @@ void GDSWriter::writeBox(dbGDSBox* box)
 {
   record_t r;
   r.type = RecordType::BOX;
-  r.dataType = DataType::NO_DATA;
+  r.dataType = DataType::kNoData;
   writeRecord(r);
 
   writeLayer(box->getLayer());
 
   record_t r2;
   r2.type = RecordType::BOXTYPE;
-  r2.dataType = DataType::INT_2;
+  r2.dataType = DataType::kInt2;
   r2.data16 = {box->getDatatype()};
   writeRecord(r2);
 
@@ -461,7 +461,7 @@ void GDSWriter::writeSTrans(const dbGDSSTrans& strans)
 {
   record_t r;
   r.type = RecordType::STRANS;
-  r.dataType = DataType::BIT_ARRAY;
+  r.dataType = DataType::kBitArray;
 
   char data0 = strans._flipX << 7;
   r.data8 = {data0, 0};
@@ -470,7 +470,7 @@ void GDSWriter::writeSTrans(const dbGDSSTrans& strans)
   if (strans._mag != 1.0) {
     record_t r2;
     r2.type = RecordType::MAG;
-    r2.dataType = DataType::REAL_8;
+    r2.dataType = DataType::kReal8;
     r2.data64 = {strans._mag};
     writeRecord(r2);
   }
@@ -478,7 +478,7 @@ void GDSWriter::writeSTrans(const dbGDSSTrans& strans)
   if (strans._angle != 0.0) {
     record_t r3;
     r3.type = RecordType::ANGLE;
-    r3.dataType = DataType::REAL_8;
+    r3.dataType = DataType::kReal8;
     r3.data64 = {strans._angle};
     writeRecord(r3);
   }
@@ -488,7 +488,7 @@ void GDSWriter::writeTextPres(const dbGDSTextPres& pres)
 {
   record_t r;
   r.type = RecordType::PRESENTATION;
-  r.dataType = DataType::BIT_ARRAY;
+  r.dataType = DataType::kBitArray;
   r.data8 = {0, 0};
   r.data8[1] |= pres._vPres << 2;
   r.data8[1] |= pres._hPres;
