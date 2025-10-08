@@ -933,8 +933,10 @@ void HierRTLMP::computePinAccessDepthLimits()
 
   const Tiling tiling = tree_->root->getTilings().front();
   // Required for designs that are too tight (i.e. MockArray)
-  const float tiling_min_width = std::floor((die.getWidth() - tiling.width())) / 2;
-  const float tiling_min_height = std::floor((die.getHeight() - tiling.height())) / 2;
+  const float tiling_min_width
+      = std::floor((die.getWidth() - tiling.width())) / 2;
+  const float tiling_min_height
+      = std::floor((die.getHeight() - tiling.height())) / 2;
 
   pin_access_depth_limits_.x.min
       = std::min(proportional_min_width, tiling_min_width);
@@ -1978,8 +1980,11 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
                "std_cell_area = {} avail_space = {} pa area = {} "
                "std_cell_mixed_area = {} min_target_util = {}",
                parent->getName(),
-               std_cell_cluster_area, avail_space, pin_access_area,
-               std_cell_mixed_cluster_area, min_target_util);
+               std_cell_cluster_area,
+               avail_space,
+               pin_access_area,
+               std_cell_mixed_cluster_area,
+               min_target_util);
 
     return false;
   }
