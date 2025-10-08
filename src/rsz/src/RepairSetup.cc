@@ -169,14 +169,12 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     if (!skip_vt_swap && resizer_->lib_data_->sorted_vt_categories.size() > 1) {
       move_sequence.push_back(resizer_->vt_swap_speed_move_.get());
     }
-    // TODO: Add size_down_move to the sequence if we want to allow
     // Always  have sizing
     move_sequence.push_back(resizer_->size_up_move_.get());
-    move_sequence.push_back(resizer_->size_down_move_.get());
     // Disabled by default for now
-    // if (!skip_size_down) {
-    //   move_sequence.push_back(resizer_->size_down_move_.get());
-    // }
+    if (!skip_size_down) {
+      move_sequence.push_back(resizer_->size_down_move_.get());
+    }
     if (!skip_pin_swap) {
       move_sequence.push_back(resizer_->swap_pins_move_.get());
     }
