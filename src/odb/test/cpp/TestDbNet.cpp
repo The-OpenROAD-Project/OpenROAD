@@ -5,8 +5,8 @@
 // https://developers.google.com/open-source/licenses/bsd
 
 #include "gtest/gtest.h"
-#include "helper/helper.h"
 #include "odb/db.h"
+#include "sta/Liberty.hh"
 #include "tst/fixture.h"
 
 namespace odb {
@@ -22,15 +22,11 @@ class TestDbNet : public tst::Fixture
 
   void SetUp() override
   {
-    dbTech* tech = dbTech::create(db_.get(), "tech");
-    dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
-    dbLib* lib = dbLib::create(db_.get(), "lib1", tech, ',');
-    dbChip* chip = dbChip::create(db_.get(), tech);
-    dbBlock::create(chip, "simple_block");
-    createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o");
-    createMaster2X1(lib, "or2", 500, 500, "a", "b", "o");
-    createMaster1X1(lib, "inv1", 500, 500, "ip0", "op0");
-    block_ = db_->getChip()->getBlock();
+    library_ = readLiberty("./Nangate45/Nangate45_typ.lib");
+    loadTechAndLib("tech", "Nangate45.lef", "./Nangate45/Nangate45.lef");
+
+    dbChip* chip = dbChip::create(db_.get(), db_->getTech());
+    block_ = dbBlock::create(chip, "top");
   }
 
   ComplexHierarchy SetUpComplexHierarchy(const std::string& net_name,
@@ -43,12 +39,12 @@ class TestDbNet : public tst::Fixture
     // top_mod
     //  |-- l1_inst_A (l1_mod_A)
     //  |    |-- l2_inst_A1 (l2_mod_A1)
-    //  |    |    +-- leaf_inst_1 (and2)
+    //  |    |    +-- leaf_inst_1 (AND2_X1)
     //  |    +-- l2_inst_A2 (l2_mod_A2)
-    //  |         +-- leaf_inst_2 (or2)
+    //  |         +-- leaf_inst_2 (OR2_X1)
     //  |-- l1_inst_B (l1_mod_B)
-    //  |    +-- leaf_inst_3 (inv1)
-    //  +-- leaf_inst_4 (and2)
+    //  |    +-- leaf_inst_3 (INV_X1)
+    //  +-- leaf_inst_4 (AND2_X1)
 
     auto* top_mod = block_->getTopModule();
     auto* l1_mod_A = dbModule::create(block_, "l1_mod_A");
@@ -61,9 +57,9 @@ class TestDbNet : public tst::Fixture
     auto* l2_inst_A1 = dbModInst::create(l1_mod_A, l2_mod_A1, "l2_inst_A1");
     auto* l2_inst_A2 = dbModInst::create(l1_mod_A, l2_mod_A2, "l2_inst_A2");
 
-    auto* and2_master = db_->findMaster("and2");
-    auto* or2_master = db_->findMaster("or2");
-    auto* inv1_master = db_->findMaster("inv1");
+    auto* and2_master = db_->findMaster("AND2_X1");
+    auto* or2_master = db_->findMaster("OR2_X1");
+    auto* inv1_master = db_->findMaster("INV_X1");
 
     auto* leaf_inst_1
         = dbInst::create(block_, and2_master, "leaf_inst_1", false, l2_mod_A1);
@@ -97,10 +93,10 @@ class TestDbNet : public tst::Fixture
     in_bterm->connect(top_mod_net);
     out_bterm->connect(top_mod_net);
 
-    leaf_inst_1->findITerm("a")->connect(hierarchy.the_net, l2_mod_A1_net);
-    leaf_inst_2->findITerm("b")->connect(hierarchy.the_net, l2_mod_A2_net);
-    leaf_inst_3->findITerm("ip0")->connect(hierarchy.the_net, l1_mod_B_net);
-    leaf_inst_4->findITerm("a")->connect(hierarchy.the_net, top_mod_net);
+    leaf_inst_1->findITerm("A1")->connect(hierarchy.the_net, l2_mod_A1_net);
+    leaf_inst_2->findITerm("A2")->connect(hierarchy.the_net, l2_mod_A2_net);
+    leaf_inst_3->findITerm("A")->connect(hierarchy.the_net, l1_mod_B_net);
+    leaf_inst_4->findITerm("A1")->connect(hierarchy.the_net, top_mod_net);
 
     auto* l2_mod_A1_bterm = dbModBTerm::create(l2_mod_A1, "p0");
     l2_mod_A1_bterm->connect(l2_mod_A1_net);
@@ -128,6 +124,7 @@ class TestDbNet : public tst::Fixture
   }
 
   dbBlock* block_;
+  sta::LibertyLibrary* library_;
 };
 
 // Test a multi-level hierarchy where a dbNet is connected to multiple
@@ -156,8 +153,8 @@ TEST_F(TestDbNet, FindRelatedModNetsNone)
 {
   // ARRANGE
   auto* net = dbNet::create(block_, "net_no_modnet");
-  auto* inst = dbInst::create(block_, db_->findMaster("and2"), "i1");
-  inst->findITerm("a")->connect(net);
+  auto* inst = dbInst::create(block_, db_->findMaster("AND2_X1"), "i1");
+  inst->findITerm("A1")->connect(net);
 
   // ACTION
   std::set<dbModNet*> related_modnets;
@@ -204,8 +201,8 @@ TEST_F(TestDbNet, RenameWithModNetNoHier)
 {
   // ARRANGE
   auto* net = dbNet::create(block_, "original_name");
-  auto* inst = dbInst::create(block_, db_->findMaster("and2"), "i1");
-  inst->findITerm("a")->connect(net);
+  auto* inst = dbInst::create(block_, db_->findMaster("AND2_X1"), "i1");
+  inst->findITerm("A1")->connect(net);
 
   // ACTION
   net->renameWithModNetInHighestHier();
