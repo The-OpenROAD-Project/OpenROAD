@@ -5,7 +5,7 @@
 // https://developers.google.com/open-source/licenses/bsd
 
 #include "gtest/gtest.h"
-#include "helper.h"
+#include "helper/helper.h"
 #include "odb/db.h"
 #include "tst/fixture.h"
 
@@ -22,11 +22,16 @@ class TestDbNet : public tst::Fixture
 
   void SetUp() override
   {
-    db_ = createSimpleDB();
+    dbTech* tech = dbTech::create(db_.get(), "tech");
+    dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
+    dbLib* lib = dbLib::create(db_.get(), "lib1", tech, ',');
+    dbChip* chip = dbChip::create(db_.get(), tech);
+    dbBlock::create(chip, "simple_block");
+    createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o");
+    createMaster2X1(lib, "or2", 500, 500, "a", "b", "o");
+    createMaster1X1(lib, "inv1", 500, 500, "ip0", "op0");
     block_ = db_->getChip()->getBlock();
   }
-
-  void TearDown() override { dbDatabase::destroy(db_); }
 
   ComplexHierarchy SetUpComplexHierarchy(const std::string& net_name,
                                          const std::string& top_mod_net_name)
@@ -122,7 +127,6 @@ class TestDbNet : public tst::Fixture
     return hierarchy;
   }
 
-  dbDatabase* db_;
   dbBlock* block_;
 };
 
