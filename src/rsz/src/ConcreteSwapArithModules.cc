@@ -281,6 +281,8 @@ bool ConcreteSwapArithModules::doSwapInstances(
                 "{} arithmetic instances have swapped to improve '{}' target",
                 swapped_count,
                 target);
+  logger_->metric("design__instance__count__swapped_arithmetic_operator",
+                  swapped_count);
   return (swapped_count > 0);
 }
 
