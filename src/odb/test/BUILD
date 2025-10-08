@@ -201,6 +201,9 @@ COMPULSORY_TESTS = [
     "write_lef_and_def",
     "write_lef_polygon",
     "write_macro_placement",
+]
+
+PASSFAIL_TESTS = [
     # pass-fail
     "test_block",
     "test_bterm",
@@ -219,7 +222,7 @@ MANUAL_TESTS = [
     "odb_readme_msgs_check",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -361,6 +364,8 @@ filegroup(
         name = test_name,
         data = [":" + test_name + "_resources"],
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
+        check_log = False if test_name in PASSFAIL_TESTS else True,
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

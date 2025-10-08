@@ -49,7 +49,6 @@ config_setting(
 
 OPENROAD_LIBRARY_DEPS = [
     ":openroad_version",
-    ":ord",
     "//src/ant",
     "//src/ant:ui",
     "//src/cgt",
@@ -106,6 +105,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/utl",
     "//src/utl:ui",
     "@edu_berkeley_abc//:abc-lib",
+    ":ord",
 ] + select(
     {
         ":platform_cli": ["//src/gui"],
@@ -187,11 +187,11 @@ cc_library(
         "include",
     ],
     visibility = ["//visibility:public"],
-    deps = OPENROAD_LIBRARY_DEPS + [
+    deps = [
         "//src/sta:opensta_lib",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
-    ],
+    ] + OPENROAD_LIBRARY_DEPS,
 )
 
 cc_library(
@@ -231,7 +231,7 @@ genrule(
 
 tcl_encode(
     name = "openroad_tcl",
-    srcs = ["//src/sta:tcl_util"] + [
+    srcs = ["//src/sta:tcl_util"] +[
         "src/Metrics.tcl",
         "src/OpenRoad.tcl",
     ],
