@@ -2375,21 +2375,42 @@ bool dbNet::findRelatedModNets(std::set<dbModNet*>& modnet_set) const
 {
   modnet_set.clear();
 
+  std::vector<dbModNet*> nets_to_visit;
+
+  // Helper to add a modnet to the result set and the visit queue if it's new.
+  auto visitIfNew = [&](dbModNet* modnet) {
+    if (modnet && modnet_set.insert(modnet).second) {
+      nets_to_visit.push_back(modnet);
+    }
+  };
+
+  // Find initial set of modnets from the current dbNet.
   for (dbITerm* iterm : getITerms()) {
-    dbModNet* modnet = iterm->getModNet();
-    if (modnet) {
-      modnet_set.insert(modnet);
-    }
+    visitIfNew(iterm->getModNet());
   }
-
   for (dbBTerm* bterm : getBTerms()) {
-    dbModNet* modnet = bterm->getModNet();
-    if (modnet) {
-      modnet_set.insert(modnet);
+    visitIfNew(bterm->getModNet());
+  }
+
+  // Perform a DFS traversal to find all connected modnets.
+  while (!nets_to_visit.empty()) {
+    dbModNet* current_mod_net = nets_to_visit.back();
+    nets_to_visit.pop_back();
+
+    for (dbModITerm* mod_iterm : current_mod_net->getModITerms()) {
+      if (dbModBTerm* mod_bterm = mod_iterm->getChildModBTerm()) {
+        visitIfNew(mod_bterm->getModNet());
+      }
+    }
+
+    for (dbModBTerm* mod_bterm : current_mod_net->getModBTerms()) {
+      if (dbModITerm* mod_iterm = mod_bterm->getParentModITerm()) {
+        visitIfNew(mod_iterm->getModNet());
+      }
     }
   }
 
-  return (modnet_set.empty() == false);
+  return !modnet_set.empty();
 }
 
 void _dbNet::collectMemInfo(MemInfo& info)
