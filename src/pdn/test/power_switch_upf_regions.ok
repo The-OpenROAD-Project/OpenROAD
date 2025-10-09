@@ -16,6 +16,4 @@
 [INFO PDN-0001] Inserting grid: TempSensor
 [WARNING PDN-0110] No via inserted between met4 and met5 at (63.6000, 12.8000) - (64.3700, 14.4000) on VSS
 [WARNING PDN-0110] No via inserted between met4 and met5 at (63.6000, 40.0000) - (64.3700, 41.6000) on VSS
-Differences found at line 31.
-ROW ROW_24_2 unithd 66240 65280 N DO 211 BY 1 STEP 460 0 ;
-ROW ROW_24 unithd 0 65280 N DO 355 BY 1 STEP 460 0 ;
+No differences found.
