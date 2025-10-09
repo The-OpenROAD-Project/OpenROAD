@@ -179,7 +179,44 @@ void placeNewBuffer(dbInst* buffer_inst,
   buffer_inst->setPlacementStatus(dbPlacementStatus::PLACED);
 }
 
-}  // namespace
+dbNet* createBufferNet(dbNet* net,
+                       dbBTerm* term,
+                       const char* suffix,
+                       dbModNet* mod_net,
+                       dbModule* parent_mod,
+                       const dbNameUniquifyType& uniquify)
+{
+  dbBlock* block = net->getBlock();
+  if (term == nullptr) {
+    // If not connecting to a BTerm, just append the suffix.
+    const std::string new_net_name_str = std::string(net->getName()) + suffix;
+    return dbNet::create(block, new_net_name_str.c_str(), uniquify, parent_mod);
+  }
+
+  // If the connected term is a port, the new net should take the name of the
+  // port to maintain connectivity.
+  const char* port_name = term->getConstName();
+
+  // If the original net name is the same as the port name, it should be
+  // renamed to avoid conflict.
+  if (std::string_view(block->getBaseName(net->getConstName())) == port_name) {
+    const std::string new_orig_net_name = block->makeNewNetName(
+        parent_mod ? parent_mod->getModInst() : nullptr, "net", uniquify);
+    net->rename(new_orig_net_name.c_str());
+
+    // Rename modnet if it has name conflict.
+    if (mod_net && std::string_view(mod_net->getConstName()) == port_name) {
+      mod_net->rename(new_orig_net_name.c_str());
+    }
+  }
+
+  // The new net takes the name of the port.
+  // The uniquify parameter is not strictly needed here if we assume port names
+  // are unique, but we pass it for safety.
+  return dbNet::create(block, port_name, uniquify, parent_mod);
+}
+
+}  // anonymous namespace
 
 template class dbTable<_dbNet>;
 
@@ -2586,29 +2623,9 @@ dbInst* dbNet::insertBufferBeforeLoad(dbObject* load_input_term,
 
   placeNewBuffer(buffer_inst, loc, load_iterm, load_bterm);
 
-  // Create new net for buffer output.
-  std::string new_net_name_str;
-  if (load_bterm) {
-    // If the load is a port, the new net should take the name of the port to
-    // maintain connectivity.
-    const std::string port_name = load_bterm->getName();
-    new_net_name_str = port_name;
-
-    // The original net name is the bterm name, it should be renamed.
-    if (block->getBaseName(getConstName()) == port_name) {
-      const std::string new_orig_net_name = block->makeNewNetName(
-          parent_mod ? parent_mod->getModInst() : nullptr, "net", uniquify);
-      rename(new_orig_net_name.c_str());
-
-      if (orig_mod_net && orig_mod_net->getName() == port_name) {
-        orig_mod_net->rename(new_orig_net_name.c_str());
-      }
-    }
-  } else {
-    new_net_name_str = std::string(getName()) + "_load";
-  }
-  dbNet* new_net
-      = dbNet::create(block, new_net_name_str.c_str(), uniquify, parent_mod);
+  // Create new net for buffer output
+  dbNet* new_net = createBufferNet(
+      this, load_bterm, "_load", orig_mod_net, parent_mod, uniquify);
   if (new_net == nullptr) {
     dbInst::destroy(buffer_inst);
     return nullptr;
@@ -2696,28 +2713,8 @@ dbInst* dbNet::insertBufferAfterDriver(dbObject* drvr_output_term,
   placeNewBuffer(buffer_inst, loc, drvr_iterm, drvr_bterm);
 
   // Create new net for buffer input
-  std::string new_net_name_str;
-  if (drvr_bterm) {
-    // When the driver is a port, the new net driving the buffer should
-    // take the name of the port to maintain connectivity.
-    const std::string port_name = drvr_bterm->getName();
-    new_net_name_str = port_name;
-
-    // The original net name is the bterm name, it should be renamed.
-    if (block->getBaseName(getConstName()) == port_name) {
-      const std::string new_orig_net_name = block->makeNewNetName(
-          parent_mod ? parent_mod->getModInst() : nullptr, "net", uniquify);
-      rename(new_orig_net_name.c_str());
-
-      if (orig_mod_net && orig_mod_net->getName() == port_name) {
-        orig_mod_net->rename(new_orig_net_name.c_str());
-      }
-    }
-  } else {
-    new_net_name_str = std::string(getName()) + "_drvr";
-  }
-  dbNet* new_net
-      = dbNet::create(block, new_net_name_str.c_str(), uniquify, parent_mod);
+  dbNet* new_net = createBufferNet(
+      this, drvr_bterm, "_drvr", orig_mod_net, parent_mod, uniquify);
   if (new_net == nullptr) {
     dbInst::destroy(buffer_inst);
     return nullptr;
