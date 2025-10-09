@@ -16,9 +16,7 @@ class Sky130Fixture : public tst::Fixture
   void SetUp() override
   {
     lib_ = loadTechAndLib(
-        "sky130",
-        "sky130",
-        "_main/test/sky130hd/sky130_fd_sc_hd_merged.lef");
+        "sky130", "sky130", "_main/test/sky130hd/sky130_fd_sc_hd_merged.lef");
 
     chip_ = odb::dbChip::create(db_.get(), db_->getTech());
     block_ = odb::dbBlock::create(chip_, "top");

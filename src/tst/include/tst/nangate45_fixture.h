@@ -17,8 +17,7 @@ class Nangate45Fixture : public tst::Fixture
  protected:
   void SetUp() override
   {
-    lib_ = loadTechAndLib(
-        "ng45", "ng45", "_main/test/Nangate45/Nangate45.lef");
+    lib_ = loadTechAndLib("ng45", "ng45", "_main/test/Nangate45/Nangate45.lef");
     chip_ = odb::dbChip::create(db_.get(), db_->getTech());
     block_ = odb::dbBlock::create(chip_, "top");
     block_->setDefUnits(lib_->getTech()->getLefUnits());
