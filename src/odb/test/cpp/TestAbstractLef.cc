@@ -14,14 +14,14 @@
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
 #include "odb/lefout.h"
-#include "sky130_test_fixture.h"
+#include "sky130_fixture.h"
 #include "utl/Logger.h"
 
 namespace odb {
 
 using ::testing::HasSubstr;
 
-TEST_F(Sky130TestFixutre, AbstractLefWriterMapsTieOffToSignal)
+TEST_F(Sky130Fixture, AbstractLefWriterMapsTieOffToSignal)
 {
   // Arrange
   std::ostringstream os;
@@ -41,7 +41,7 @@ TEST_F(Sky130TestFixutre, AbstractLefWriterMapsTieOffToSignal)
   EXPECT_THAT(result, HasSubstr("SIGNAL"));
 }
 
-TEST_F(Sky130TestFixutre, AbstractLefWriterMapsScanToSignal)
+TEST_F(Sky130Fixture, AbstractLefWriterMapsScanToSignal)
 {
   // Arrange
   std::ostringstream os;
@@ -61,7 +61,7 @@ TEST_F(Sky130TestFixutre, AbstractLefWriterMapsScanToSignal)
   EXPECT_THAT(result, HasSubstr("SIGNAL"));
 }
 
-TEST_F(Sky130TestFixutre, AbstractLefWriterMapsResetToSignal)
+TEST_F(Sky130Fixture, AbstractLefWriterMapsResetToSignal)
 {
   // Arrange
   std::ostringstream os;

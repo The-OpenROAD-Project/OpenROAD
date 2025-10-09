@@ -10,7 +10,7 @@
 #include "tst/fixture.h"
 
 namespace odb {
-class Sky130TestFixutre : public tst::Fixture
+class Sky130Fixture : public tst::Fixture
 {
  protected:
   void SetUp() override
@@ -18,7 +18,7 @@ class Sky130TestFixutre : public tst::Fixture
     lib_ = loadTechAndLib(
         "sky130",
         "sky130",
-        "_main/src/odb/test/data/sky130hd/sky130_fd_sc_hd.tlef");
+        "_main/test/sky130hd/sky130_fd_sc_hd_merged.lef");
 
     chip_ = odb::dbChip::create(db_.get(), db_->getTech());
     block_ = odb::dbBlock::create(chip_, "top");

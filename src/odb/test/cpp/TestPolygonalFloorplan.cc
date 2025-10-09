@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "nangate45_test_fixture.h"
+#include "nangate45_fixture.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/defin.h"
@@ -20,7 +20,7 @@
 
 namespace odb {
 
-TEST_F(Nangate45TestFixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)
+TEST_F(Nangate45Fixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)
 {
   // Act
   Polygon area({{0, 0},
@@ -61,7 +61,7 @@ TEST_F(Nangate45TestFixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)
   EXPECT_EQ(virtual_obstructions.size(), 21);
 }
 
-TEST_F(Nangate45TestFixture, SettingTheFloorplanTwiceClearsSystemBlockages)
+TEST_F(Nangate45Fixture, SettingTheFloorplanTwiceClearsSystemBlockages)
 {
   // Act
   Polygon area({{0, 0},
@@ -110,7 +110,7 @@ TEST_F(Nangate45TestFixture, SettingTheFloorplanTwiceClearsSystemBlockages)
   EXPECT_EQ(virtual_obstructions.size(), 21);
 }
 
-TEST_F(Nangate45TestFixture, DeletingSystemBlockagesThrows)
+TEST_F(Nangate45Fixture, DeletingSystemBlockagesThrows)
 {
   // Arrange
   Polygon area({{0, 0},
@@ -139,7 +139,7 @@ TEST_F(Nangate45TestFixture, DeletingSystemBlockagesThrows)
       { dbBlockage::destroy(virtual_blockages[0]); }, std::runtime_error);
 }
 
-TEST_F(Nangate45TestFixture, DeletingSystemObstructionsThrows)
+TEST_F(Nangate45Fixture, DeletingSystemObstructionsThrows)
 {
   // Arrange
   Polygon area({{0, 0},
