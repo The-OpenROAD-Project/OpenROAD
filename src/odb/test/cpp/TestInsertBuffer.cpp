@@ -107,6 +107,11 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   ASSERT_TRUE(load2_a);
   load2_a->connect(net);
 
+  dbBTerm* load_output_bterm = dbBTerm::create(net, "load_output");
+  ASSERT_TRUE(load_output_bterm);
+  load_output_bterm->setIoType(dbIoType::OUTPUT);
+  load_output_bterm->connect(net);
+
   // Hierarchical connections
   // Inside MOD1
   dbModNet* mod1_net_a = dbModNet::create(mod1, "A");
@@ -158,9 +163,11 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
                       std::istreambuf_iterator<char>());
 
   const std::string expected_verilog
-      = "module top ();\n\n"
+      = "module top (load_output);\n"
+        " output load_output;\n\n"
         " wire net_load;\n"
         " wire net;\n\n"
+        " assign load_output = net;\n"
         " BUF_X4 buf (.A(net),\n"
         "    .Z(net_load));\n"
         " LOGIC0_X1 drvr_inst (.Z(net));\n"
@@ -199,9 +206,11 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
                        std::istreambuf_iterator<char>());
 
   const std::string expected_verilog_2
-      = "module top ();\n\n"
+      = "module top (load_output);\n"
+        " output load_output;\n\n"
         " wire net_load;\n"
         " wire net;\n\n"
+        " assign load_output = net;\n"
         " BUF_X4 buf (.A(net),\n"
         "    .Z(net_load));\n"
         " LOGIC0_X1 drvr_inst (.Z(net));\n"
@@ -242,10 +251,12 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
                        std::istreambuf_iterator<char>());
 
   const std::string expected_verilog_3
-      = "module top ();\n\n"
+      = "module top (load_output);\n"
+        " output load_output;\n\n"
         " wire net_load_1;\n"
         " wire net_load;\n"
         " wire net;\n\n"
+        " assign load_output = net;\n"
         " BUF_X4 buf_1 (.A(net),\n"
         "    .Z(net_load_1));\n"
         " BUF_X4 buf (.A(net),\n"
@@ -269,10 +280,64 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
 
   EXPECT_EQ(sort_lines(content3), sort_lines(expected_verilog_3));
 
+  // Insert buffer #4
+  dbInst* new_buffer4
+      = net->insertBufferBeforeLoad(load_output_bterm, buffer_master);
+  ASSERT_TRUE(new_buffer4);
+  num_warning = db_network_->checkAxioms();
+  EXPECT_EQ(num_warning, 0);
+
+  // Verify connections for buffer #4
+  EXPECT_EQ(load_output_bterm->getNet()->getName(), std::string("net_load_2"));
+  EXPECT_EQ(new_buffer4->findITerm("A")->getNet(), net);
+  EXPECT_EQ(new_buffer4->findITerm("Z")->getNet(), load_output_bterm->getNet());
+
+  // Write verilog and check the content after inserting buffer #4
+  const std::string verilog_file_4 = "test_insert_buffer_4.v";
+  sta::writeVerilog(verilog_file_4.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file4(verilog_file_4);
+  std::string content4((std::istreambuf_iterator<char>(file4)),
+                       std::istreambuf_iterator<char>());
+
+  const std::string expected_verilog_4
+      = "module top (load_output);\n"
+        " output load_output;\n\n"
+        " wire net_load_2;\n"
+        " wire net_load_1;\n"
+        " wire net_load;\n"
+        " wire net;\n\n"
+        " assign load_output = net_load_2;\n"
+        " BUF_X4 buf_2 (.A(net),\n"
+        "    .Z(net_load_2));\n"
+        " BUF_X4 buf_1 (.A(net),\n"
+        "    .Z(net_load_1));\n"
+        " BUF_X4 buf (.A(net),\n"
+        "    .Z(net_load));\n"
+        " LOGIC0_X1 drvr_inst (.Z(net));\n"
+        " BUF_X1 load0_inst (.A(net_load));\n"
+        " BUF_X1 load2_inst (.A(net_load_1));\n"
+        " MOD0 mi0 (.A(net));\n"
+        "endmodule\n"
+        "module MOD0 (A);\n"
+        " input A;\n\n\n"
+        " MOD1 mi1 (.A(A));\n"
+        "endmodule\n"
+        "module MOD1 (A);\n"
+        " input A;\n\n"
+        " wire net_load;\n\n"
+        " BUF_X4 buf (.A(A),\n"
+        "    .Z(net_load));\n"
+        " BUF_X1 load1_inst (.A(net_load));\n"
+        "endmodule\n";
+
+  EXPECT_EQ(sort_lines(content4), sort_lines(expected_verilog_4));
+
   // Clean up
   std::filesystem::remove(verilog_file);
   std::filesystem::remove(verilog_file_2);
   std::filesystem::remove(verilog_file_3);
+  std::filesystem::remove(verilog_file_4);
 }
 
 }  // namespace odb
