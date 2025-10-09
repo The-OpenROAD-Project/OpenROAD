@@ -117,9 +117,10 @@ dbInst* checkAndCreateBuffer(dbBlock* block,
     return nullptr;
   }
 
+  const char* inst_base_name = (base_name) ? base_name : "buf";
   dbInst* buffer_inst = dbInst::create(block,
                                        const_cast<dbMaster*>(buffer_master),
-                                       base_name,
+                                       inst_base_name,
                                        uniquify,
                                        parent_mod);
 
@@ -153,29 +154,28 @@ void placeNewBuffer(dbInst* buffer_inst,
                     dbITerm* term,
                     dbBTerm* bterm)
 {
-  // Place buffer instance
+  int x = 0;
+  int y = 0;
   if (loc) {
-    buffer_inst->setLocation(loc->getX(), loc->getY());
+    x = loc->getX();
+    y = loc->getY();
   } else {
-    int x, y;
     if (term) {
       Point origin = term->getInst()->getOrigin();
       x = origin.getX();
       y = origin.getY();
     } else {  // bterm
       auto bpins = bterm->getBPins();
-      if (bpins.empty()) {
-        x = 0;
-        y = 0;
-      } else {
+      if (bpins.empty() == false) {
         dbBPin* first_bpin = *bpins.begin();
         Rect box = first_bpin->getBBox();
         x = box.xMin();
         y = box.yMin();
       }
     }
-    buffer_inst->setLocation(x, y);
   }
+
+  buffer_inst->setLocation(x, y);
   buffer_inst->setPlacementStatus(dbPlacementStatus::PLACED);
 }
 
@@ -2647,14 +2647,11 @@ dbInst* dbNet::insertBufferCommon(dbObject* term_obj,
   // 3. Check buffer validity and create buffer instance
   dbITerm* buf_input_iterm = nullptr;
   dbITerm* buf_output_iterm = nullptr;
-  const char* inst_base_name = (base_name != nullptr) ? base_name : "buf";
-  dbModule* parent_mod = nullptr;
-  if (term_iterm) {
-    parent_mod = term_iterm->getInst()->getModule();
-  }
+  dbModule* parent_mod
+      = (term_iterm) ? term_iterm->getInst()->getModule() : nullptr;
   dbInst* buffer_inst = checkAndCreateBuffer(block,
                                              buffer_master,
-                                             inst_base_name,
+                                             base_name,
                                              uniquify,
                                              parent_mod,
                                              buf_input_iterm,
