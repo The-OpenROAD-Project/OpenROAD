@@ -1407,6 +1407,19 @@ dbInst* dbInst::create(dbBlock* top_block,
   return inst;
 }
 
+dbInst* dbInst::create(dbBlock* block,
+                       dbMaster* master,
+                       const char* base_name,
+                       const dbNameUniquifyType& uniquify,
+                       dbModule* parent_module)
+{
+  std::string inst_name = block->makeNewInstName(
+      parent_module ? parent_module->getModInst() : nullptr,
+      base_name,
+      uniquify);
+  return create(block, master, inst_name.c_str(), false, parent_module);
+}
+
 dbInst* dbInst::makeUniqueDbInst(dbBlock* block,
                                  dbMaster* master,
                                  const char* name,

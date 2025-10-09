@@ -943,7 +943,7 @@ class dbBlock : public dbObject
   /// A hierarchy delimiter can only be set at the time
   /// a block is created.
   ///
-  char getHierarchyDelimiter();
+  char getHierarchyDelimiter() const;
 
   ///
   /// Set the bus name delimiters
@@ -1286,6 +1286,8 @@ class dbBlock : public dbObject
                               const char* base_name = "inst",
                               const dbNameUniquifyType& uniquify
                               = dbNameUniquifyType::ALWAYS);
+
+  const char* getBaseName(const char* name) const;
 
   ///
   /// return the regions of this design
@@ -2394,6 +2396,11 @@ class dbNet : public dbObject
                        const char* name,
                        bool skipExistingCheck = false);
 
+  static dbNet* create(dbBlock* block,
+                       const char* base_name,
+                       const dbNameUniquifyType& uniquify,
+                       dbModule* parent_module = nullptr);
+
   ///
   /// Delete this net from this block.
   ///
@@ -2454,6 +2461,24 @@ class dbNet : public dbObject
   bool hasJumpers();
 
   void setJumpers(bool has_jumpers);
+
+  ///
+  /// Inserts a buffer on the net driving the specified iterm/bterm.
+  /// Returns the newly created buffer instance.
+  ///
+  dbInst* insertBuffer(dbITerm* term, dbMaster* buffer_master);
+  dbInst* insertBuffer(dbBTerm* term, dbMaster* buffer_master);
+
+  dbInst* insertBufferBeforeLoad(
+      dbObject* load_input_term,
+      const dbMaster* buffer_master,
+      const Point* loc = nullptr,
+      const char* base_name = nullptr,
+      const dbNameUniquifyType& uniquify
+      = dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+
+ private:
+  dbInst* insertBufferCommon(dbObject* term, dbMaster* buffer_master);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2970,11 +2995,20 @@ class dbInst : public dbObject
   /// Returns nullptr if an instance with this name already exists.
   /// Returns nullptr if the master is not FROZEN.
   /// If dbmodule is non null the dbInst is added to that module.
-
+  ///
   static dbInst* create(dbBlock* block,
                         dbMaster* master,
                         const char* name,
                         bool physical_only = false,
+                        dbModule* parent_module = nullptr);
+
+  ///
+  /// Create a new instance with a unique name.
+  ///
+  static dbInst* create(dbBlock* block,
+                        dbMaster* master,
+                        const char* base_name,
+                        const dbNameUniquifyType& uniquify,
                         dbModule* parent_module = nullptr);
 
   static dbInst* create(dbBlock* block,
@@ -4997,7 +5031,7 @@ class dbLib : public dbObject
   /// A hierarchy delimiter can only be set at the time
   /// a library is created.
   ///
-  char getHierarchyDelimiter();
+  char getHierarchyDelimiter() const;
 
   ///
   /// Set the Bus name delimiters

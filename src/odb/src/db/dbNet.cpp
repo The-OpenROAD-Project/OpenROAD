@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "dbBPin.h"
 #include "dbBTerm.h"
 #include "dbBTermItr.h"
 #include "dbBlock.h"
@@ -29,6 +30,9 @@
 #include "dbInst.h"
 #include "dbJournal.h"
 #include "dbMTerm.h"
+#include "dbMaster.h"
+#include "dbModNet.h"
+#include "dbModule.h"
 #include "dbNetTrack.h"
 #include "dbNetTrackItr.h"
 #include "dbRSeg.h"
@@ -2131,6 +2135,16 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
   return (dbNet*) net;
 }
 
+dbNet* dbNet::create(dbBlock* block,
+                     const char* name,
+                     const dbNameUniquifyType& uniquify,
+                     dbModule* parent_module)
+{
+  std::string net_name = block->makeNewNetName(
+      parent_module ? parent_module->getModInst() : nullptr, name, uniquify);
+  return create(block, net_name.c_str());
+}
+
 void dbNet::destroy(dbNet* net_)
 {
   _dbNet* net = (_dbNet*) net_;
@@ -2373,6 +2387,178 @@ void _dbNet::collectMemInfo(MemInfo& info)
 
   info.children_["name"].add(_name);
   info.children_["groups"].add(_groups);
+}
+
+dbInst* dbNet::insertBuffer(dbITerm* term, dbMaster* buffer_master)
+{
+  // TODO
+  return nullptr;
+}
+
+dbInst* dbNet::insertBuffer(dbBTerm* term, dbMaster* buffer_master)
+{
+  // TODO
+  return nullptr;
+}
+
+dbInst* dbNet::insertBufferCommon(dbObject* term, dbMaster* buffer_master)
+{
+  // TODO
+  return nullptr;
+}
+
+dbInst* dbNet::insertBufferBeforeLoad(dbObject* load_input_term,
+                                      const dbMaster* buffer_master,
+                                      const Point* loc,
+                                      const char* base_name,
+                                      const dbNameUniquifyType& uniquify)
+{
+  if (load_input_term == nullptr || buffer_master == nullptr) {
+    return nullptr;
+  }
+
+  dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return nullptr;
+  }
+
+  // Check load terminal type and connectivity.
+  dbITerm* load_iterm = nullptr;
+  dbBTerm* load_bterm = nullptr;
+  dbModNet* orig_mod_net = nullptr;
+
+  if (load_input_term->getObjectType() == dbITermObj) {
+    load_iterm = (dbITerm*) load_input_term;
+    if (load_iterm->getNet() != this) {
+      // Load is not connected to this net
+      return nullptr;
+    }
+    orig_mod_net = load_iterm->getModNet();
+  } else if (load_input_term->getObjectType() == dbBTermObj) {
+    load_bterm = (dbBTerm*) load_input_term;
+    if (load_bterm->getNet() != this) {
+      // Load is not connected to this net
+      return nullptr;
+    }
+    orig_mod_net = load_bterm->getModNet();
+  } else {
+    // Invalid load type
+    return nullptr;
+  }
+
+  // Honor dont_touch
+  if (isDoNotTouch()) {
+    return nullptr;
+  }
+
+  if (load_iterm) {
+    if (load_iterm->getInst()->isDoNotTouch()) {
+      return nullptr;
+    }
+  }
+  // dbBTerm does not have a dont_touch attribute
+
+  if (dbITerm* driver = getFirstOutput()) {
+    if (driver->getInst()->isDoNotTouch()) {
+      return nullptr;
+    }
+  }
+
+  // Find buffer input and output MTerms
+  dbMTerm* input_mterm = nullptr;
+  dbMTerm* output_mterm = nullptr;
+  for (dbMTerm* mterm : const_cast<dbMaster*>(buffer_master)->getMTerms()) {
+    if (mterm->getIoType() == dbIoType::INPUT) {
+      if (input_mterm != nullptr) {
+        return nullptr;  // More than one input
+      }
+      input_mterm = mterm;
+    } else if (mterm->getIoType() == dbIoType::OUTPUT) {
+      if (output_mterm != nullptr) {
+        return nullptr;  // More than one output
+      }
+      output_mterm = mterm;
+    }
+  }
+  if (input_mterm == nullptr || output_mterm == nullptr) {
+    // Not a simple buffer
+    return nullptr;
+  }
+
+  // Create buffer instance
+  const char* inst_base_name = (base_name != nullptr) ? base_name : "buf";
+  dbModule* parent_mod = nullptr;
+  if (load_iterm) {
+    parent_mod = load_iterm->getInst()->getModule();
+  }
+  dbInst* buffer_inst = dbInst::create(
+      block, (dbMaster*) buffer_master, inst_base_name, uniquify, parent_mod);
+  if (buffer_inst == nullptr) {
+    return nullptr;
+  }
+
+  // Place buffer instance
+  if (loc) {
+    buffer_inst->setLocation(loc->getX(), loc->getY());
+  } else {
+    int x, y;
+    if (load_iterm) {
+      Point origin = load_iterm->getInst()->getOrigin();
+      x = origin.getX();
+      y = origin.getY();
+    } else {  // load_bterm
+      auto bpins = load_bterm->getBPins();
+      if (bpins.empty()) {
+        x = 0;
+        y = 0;
+      } else {
+        dbBPin* first_bpin = *bpins.begin();
+        Rect box = first_bpin->getBBox();
+        x = box.xMin();
+        y = box.yMin();
+      }
+    }
+    buffer_inst->setLocation(x, y);
+  }
+  buffer_inst->setPlacementStatus(dbPlacementStatus::PLACED);
+
+  // Create new net for buffer output
+  std::string new_net_name = std::string(getName()) + "_load";
+  dbNet* new_net
+      = dbNet::create(block, new_net_name.c_str(), uniquify, parent_mod);
+  if (new_net == nullptr) {
+    dbInst::destroy(buffer_inst);
+    return nullptr;
+  }
+
+  // Propagate NDR
+  if (dbTechNonDefaultRule* rule = getNonDefaultRule()) {
+    new_net->setNonDefaultRule(rule);
+  }
+
+  // Connect buffer input to original net
+  dbITerm* buf_input_iterm
+      = buffer_inst->findITerm(input_mterm->getConstName());
+  buf_input_iterm->connect(this);
+  if (orig_mod_net) {
+    buf_input_iterm->connect(orig_mod_net);
+  }
+
+  // Connect buffer output to new net
+  dbITerm* buf_output_iterm
+      = buffer_inst->findITerm(output_mterm->getConstName());
+  buf_output_iterm->connect(new_net);
+
+  // Connect load to new net
+  if (load_iterm) {
+    load_iterm->disconnect();
+    load_iterm->connect(new_net);
+  } else {  // load_bterm
+    load_bterm->disconnect();
+    load_bterm->connect(new_net);
+  }
+
+  return buffer_inst;
 }
 
 }  // namespace odb

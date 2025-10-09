@@ -2148,7 +2148,7 @@ int64_t dbBlock::micronsAreaToDbu(const double micronsArea)
   return static_cast<int64_t>(std::round(dbuArea));
 }
 
-char dbBlock::getHierarchyDelimiter()
+char dbBlock::getHierarchyDelimiter() const
 {
   _dbBlock* block = (_dbBlock*) this;
   return block->_hier_delimiter;
@@ -3802,4 +3802,16 @@ std::string dbBlock::makeNewInstName(dbModInst* parent,
       parent, base_name, uniquify, block->_unique_inst_index, exists);
 }
 
+const char* dbBlock::getBaseName(const char* name) const
+{
+  // If name contains the hierarchy delimiter, use the partial string
+  // after the last occurrence of the hierarchy delimiter.
+  // This prevents a very long term/net name creation when the name
+  // begins with a back-slash as "\soc/module1/instance_a/.../clk_port"
+  const char* last_hier_delimiter = strrchr(name, getHierarchyDelimiter());
+  if (last_hier_delimiter != nullptr) {
+    return last_hier_delimiter + 1;
+  }
+  return name;
+}
 }  // namespace odb

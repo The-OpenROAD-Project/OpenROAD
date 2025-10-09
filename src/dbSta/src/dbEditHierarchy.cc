@@ -615,16 +615,7 @@ std::string dbEditHierarchy::makeUniqueName(dbModule* module,
 
 const char* dbEditHierarchy::getBaseName(const char* connection_name) const
 {
-  // If connect_name contains the hierarchy delimiter, use the partial string
-  // after the last occurrence of the hierarchy delimiter.
-  // This prevents a very long term/net name creation when the connection_name
-  // begins with a back-slash as "\soc/module1/instance_a/.../clk_port"
-  const char* last_hier_delimiter
-      = strrchr(connection_name, db_network_->block()->getHierarchyDelimiter());
-  if (last_hier_delimiter != nullptr) {
-    return last_hier_delimiter + 1;
-  }
-  return connection_name;
+  return db_network_->block()->getBaseName(connection_name);
 }
 
 void dbEditHierarchy::dlogHierConnStart(dbITerm* source_pin,
