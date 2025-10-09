@@ -725,6 +725,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     FrNet* net = nets_[netID];
     int8_t edge_cost = 0;
 
+    // Enable resistance aware routing only if the net needs it
+    resistance_aware_ = getNetSlack(net->getDbNet()) < 0 ? true : false;
+
     int enlarge = expand;
     const int num_terminals = sttrees_[netID].num_terminals;
     auto& treeedges = sttrees_[netID].edges;
