@@ -1,27 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
-load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 
 package(
     features = ["layering_check"],
-)
-
-cc_library(
-    name = "nangate45_fixture",
-    hdrs = ["nangate45_fixture.h"],
-    data = [
-        "//test:nangate45_data",
-    ],
-)
-
-cc_library(
-    name = "sky130_fixture",
-    hdrs = ["sky130_fixture.h"],
-    data = [
-        "//test:sky130hd_data",
-    ],
 )
 
 cc_test(
@@ -33,10 +16,10 @@ cc_test(
         "//src/odb/test/data/sky130hd:lef-test-data",
     ],
     deps = [
-        ":sky130_fixture",
         "//src/odb",
         "//src/tst",
         "//src/utl",
+        "//test:sky130_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -225,10 +208,10 @@ cc_test(
         "//src/odb/test:regression_resources",
     ],
     deps = [
-        ":nangate45_fixture",
         "//src/odb",
         "//src/tst",
         "//src/utl",
+        "//test:nangate45_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -243,10 +226,10 @@ cc_test(
         "//src/odb/test:regression_resources",
     ],
     deps = [
-        ":nangate45_fixture",
         "//src/odb",
         "//src/tst",
         "//src/utl",
+        "//test:nangate45_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

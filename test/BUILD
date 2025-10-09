@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
@@ -25,10 +26,30 @@ filegroup(
 filegroup(
     name = "sky130hd_data",
     srcs = [
+        "sky130hd/sky130_fd_sc_hd_merged.lef",
         "sky130hd/sky130hd.tlef",
         "sky130hd/sky130hd_std_cell.lef",
-        "sky130hd/sky130_fd_sc_hd_merged.lef",
     ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "nangate45_fixture",
+    hdrs = ["nangate45_fixture.h"],
+    data = [
+        ":nangate45_data",
+    ],
+    includes = ["."],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "sky130_fixture",
+    hdrs = ["sky130_fixture.h"],
+    data = [
+        ":sky130hd_data",
+    ],
+    includes = ["."],
     visibility = ["//visibility:public"],
 )
 
