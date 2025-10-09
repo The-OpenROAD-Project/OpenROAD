@@ -728,6 +728,8 @@ void EstimateParasitics::estimateWireParasiticSteiner(const Pin* drvr_pin,
           double length = dbuToMeters(wire_length_dbu);
           double cap = length * wire_cap;
           double res = length * wire_res;
+
+          // Reduce resistance if the net has NDR with increased width
           if (db_network_->staToDb(net)->getNonDefaultRule()) {
             std::vector<odb::dbTechLayerRule*> layer_rules;
             db_network_->staToDb(net)->getNonDefaultRule()->getLayerRules(
@@ -735,13 +737,8 @@ void EstimateParasitics::estimateWireParasiticSteiner(const Pin* drvr_pin,
             float ratio = (float) layer_rules.at(0)->getWidth()
                           / layer_rules.at(0)->getLayer()->getWidth();
             res /= ratio;
-            // if(db_network_->staToDb(net)->getName()=="clk"){
-            logger_->report(
-                ">>> estimateWireParasiticSteiner - ratio {} {} <<<",
-                ratio,
-                db_network_->staToDb(net)->getName());
-            // }
           }
+
           // Make pi model for the wire.
           debugPrint(logger_,
                      EST,
