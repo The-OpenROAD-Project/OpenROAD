@@ -216,6 +216,42 @@ dbNet* createBufferNet(dbNet* net,
   return dbNet::create(block, port_name, uniquify, parent_mod);
 }
 
+void rewireBuffer(bool insertBefore,
+                  dbITerm* buf_input_iterm,
+                  dbITerm* buf_output_iterm,
+                  dbNet* orig_net,
+                  dbModNet* orig_mod_net,
+                  dbNet* new_net,
+                  dbITerm* term_iterm,
+                  dbBTerm* term_bterm)
+{
+  dbNet* in_net = insertBefore ? orig_net : new_net;
+  dbNet* out_net = insertBefore ? new_net : orig_net;
+  dbModNet* in_mod_net = insertBefore ? orig_mod_net : nullptr;
+  dbModNet* out_mod_net = insertBefore ? nullptr : orig_mod_net;
+
+  // Connect buffer input
+  buf_input_iterm->connect(in_net);
+  if (in_mod_net) {
+    buf_input_iterm->connect(in_mod_net);
+  }
+
+  // Connect buffer output
+  buf_output_iterm->connect(out_net);
+  if (out_mod_net) {
+    buf_output_iterm->connect(out_mod_net);
+  }
+
+  // Connect the original terminal (load or driver) to the new net
+  if (term_iterm) {
+    term_iterm->disconnect();
+    term_iterm->connect(new_net);
+  } else {  // term_bterm
+    term_bterm->disconnect();
+    term_bterm->connect(new_net);
+  }
+}
+
 }  // anonymous namespace
 
 template class dbTable<_dbNet>;
@@ -2551,110 +2587,18 @@ void _dbNet::collectMemInfo(MemInfo& info)
   info.children_["groups"].add(_groups);
 }
 
-dbInst* dbNet::insertBuffer(dbITerm* term, dbMaster* buffer_master)
-{
-  // TODO
-  return nullptr;
-}
-
-dbInst* dbNet::insertBuffer(dbBTerm* term, dbMaster* buffer_master)
-{
-  // TODO
-  return nullptr;
-}
-
-dbInst* dbNet::insertBufferCommon(dbObject* term, dbMaster* buffer_master)
-{
-  // TODO
-  return nullptr;
-}
-
 dbInst* dbNet::insertBufferBeforeLoad(dbObject* load_input_term,
                                       const dbMaster* buffer_master,
                                       const Point* loc,
                                       const char* base_name,
                                       const dbNameUniquifyType& uniquify)
 {
-  //
-  // This function inserts a buffer before a specific load terminal on a net.
-  // It handles both flat and hierarchical net connections.
-  //
-  if (load_input_term == nullptr || buffer_master == nullptr) {
-    return nullptr;
-  }
-
-  dbBlock* block = getBlock();
-  if (block == nullptr) {
-    return nullptr;
-  }
-
-  // Check load terminal type and connectivity.
-  dbITerm* load_iterm = nullptr;
-  dbBTerm* load_bterm = nullptr;
-  dbModNet* orig_mod_net = nullptr;
-  if (!checkAndGetTerm(
-          this, load_input_term, load_iterm, load_bterm, orig_mod_net)) {
-    return nullptr;
-  }
-
-  // Check if dont_touch attribute is present
-  if (checkDontTouch(this, nullptr, load_iterm)) {
-    return nullptr;
-  }
-
-  // Check buffer validity and create buffer instance
-  dbITerm* buf_input_iterm = nullptr;
-  dbITerm* buf_output_iterm = nullptr;
-  const char* inst_base_name = (base_name != nullptr) ? base_name : "buf";
-  dbModule* parent_mod = nullptr;
-  if (load_iterm) {
-    parent_mod = load_iterm->getInst()->getModule();
-  }
-  dbInst* buffer_inst = checkAndCreateBuffer(block,
-                                             buffer_master,
-                                             inst_base_name,
-                                             uniquify,
-                                             parent_mod,
-                                             buf_input_iterm,
-                                             buf_output_iterm);
-  if (buffer_inst == nullptr) {
-    return nullptr;
-  }
-
-  placeNewBuffer(buffer_inst, loc, load_iterm, load_bterm);
-
-  // Create new net for buffer output
-  dbNet* new_net = createBufferNet(
-      this, load_bterm, "_load", orig_mod_net, parent_mod, uniquify);
-  if (new_net == nullptr) {
-    dbInst::destroy(buffer_inst);
-    return nullptr;
-  }
-
-  // Propagate NDR
-  if (dbTechNonDefaultRule* rule = getNonDefaultRule()) {
-    new_net->setNonDefaultRule(rule);
-  }
-
-  // Connect buffer input to original net
-  buf_input_iterm->connect(this);
-  if (orig_mod_net) {
-    buf_input_iterm->connect(orig_mod_net);
-  }
-
-  // Connect buffer output to new net
-  buf_output_iterm->connect(new_net);
-
-  // Connect load to new net
-  if (load_iterm) {
-    load_iterm->disconnect();
-    load_iterm->connect(new_net);
-  } else {  // load_bterm
-    load_bterm->disconnect();
-    load_bterm->connect(new_net);
-  }
-
-  return buffer_inst;
+  return insertBufferCommon(load_input_term,
+                            buffer_master,
+                            loc,
+                            base_name,
+                            uniquify,
+                            /* insertBefore */ true);
 }
 
 dbInst* dbNet::insertBufferAfterDriver(dbObject* drvr_output_term,
@@ -2663,12 +2607,22 @@ dbInst* dbNet::insertBufferAfterDriver(dbObject* drvr_output_term,
                                        const char* base_name,
                                        const dbNameUniquifyType& uniquify)
 {
-  //
-  // This function inserts a buffer after the driver of a net.
-  // This function inserts a buffer after the driver of a net.
-  // It handles both flat and hierarchical net connections.
-  //
-  if (drvr_output_term == nullptr || buffer_master == nullptr) {
+  return insertBufferCommon(drvr_output_term,
+                            buffer_master,
+                            loc,
+                            base_name,
+                            uniquify,
+                            /* insertBefore */ false);
+}
+
+dbInst* dbNet::insertBufferCommon(dbObject* term_obj,
+                                  const dbMaster* buffer_master,
+                                  const Point* loc,
+                                  const char* base_name,
+                                  const dbNameUniquifyType& uniquify,
+                                  bool insertBefore)
+{
+  if (term_obj == nullptr || buffer_master == nullptr) {
     return nullptr;
   }
 
@@ -2677,27 +2631,26 @@ dbInst* dbNet::insertBufferAfterDriver(dbObject* drvr_output_term,
     return nullptr;
   }
 
-  // Check driver terminal type and connectivity.
-  dbITerm* drvr_iterm = nullptr;
-  dbBTerm* drvr_bterm = nullptr;
+  // 1. Check terminal type and connectivity.
+  dbITerm* term_iterm = nullptr;
+  dbBTerm* term_bterm = nullptr;
   dbModNet* orig_mod_net = nullptr;
-  if (!checkAndGetTerm(
-          this, drvr_output_term, drvr_iterm, drvr_bterm, orig_mod_net)) {
+  if (!checkAndGetTerm(this, term_obj, term_iterm, term_bterm, orig_mod_net)) {
     return nullptr;
   }
 
-  // Check if dont_touch attribute is present
-  if (checkDontTouch(this, drvr_iterm, nullptr)) {
+  // 2. Check if dont_touch attribute is present
+  if (checkDontTouch(this, term_iterm, nullptr)) {
     return nullptr;
   }
 
-  // Check buffer validity and create buffer instance
+  // 3. Check buffer validity and create buffer instance
   dbITerm* buf_input_iterm = nullptr;
   dbITerm* buf_output_iterm = nullptr;
   const char* inst_base_name = (base_name != nullptr) ? base_name : "buf";
   dbModule* parent_mod = nullptr;
-  if (drvr_iterm) {
-    parent_mod = drvr_iterm->getInst()->getModule();
+  if (term_iterm) {
+    parent_mod = term_iterm->getInst()->getModule();
   }
   dbInst* buffer_inst = checkAndCreateBuffer(block,
                                              buffer_master,
@@ -2710,37 +2663,31 @@ dbInst* dbNet::insertBufferAfterDriver(dbObject* drvr_output_term,
     return nullptr;
   }
 
-  placeNewBuffer(buffer_inst, loc, drvr_iterm, drvr_bterm);
-
-  // Create new net for buffer input
+  // 4. Create new net for one side of the buffer
+  const char* suffix = insertBefore ? "_load" : "_drvr";
   dbNet* new_net = createBufferNet(
-      this, drvr_bterm, "_drvr", orig_mod_net, parent_mod, uniquify);
+      this, term_bterm, suffix, orig_mod_net, parent_mod, uniquify);
   if (new_net == nullptr) {
     dbInst::destroy(buffer_inst);
     return nullptr;
   }
 
-  // Propagate NDR
+  // 5. Rewire
+  rewireBuffer(insertBefore,
+               buf_input_iterm,
+               buf_output_iterm,
+               this,
+               orig_mod_net,
+               new_net,
+               term_iterm,
+               term_bterm);
+
+  // 6. Place the new buffer
+  placeNewBuffer(buffer_inst, loc, term_iterm, term_bterm);
+
+  // 7. Propagate NDR
   if (dbTechNonDefaultRule* rule = getNonDefaultRule()) {
     new_net->setNonDefaultRule(rule);
-  }
-
-  // Connect buffer input to new net
-  buf_input_iterm->connect(new_net);
-
-  // Connect buffer output to original net
-  buf_output_iterm->connect(this);
-  if (orig_mod_net) {
-    buf_output_iterm->connect(orig_mod_net);
-  }
-
-  // Connect driver to new net
-  if (drvr_iterm) {
-    drvr_iterm->disconnect();
-    drvr_iterm->connect(new_net);
-  } else {  // drvr_bterm
-    drvr_bterm->disconnect();
-    drvr_bterm->connect(new_net);
   }
 
   return buffer_inst;

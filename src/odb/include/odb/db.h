@@ -2466,9 +2466,6 @@ class dbNet : public dbObject
   /// Inserts a buffer on the net driving the specified iterm/bterm.
   /// Returns the newly created buffer instance.
   ///
-  dbInst* insertBuffer(dbITerm* term, dbMaster* buffer_master);
-  dbInst* insertBuffer(dbBTerm* term, dbMaster* buffer_master);
-
   dbInst* insertBufferBeforeLoad(
       dbObject* load_input_term,
       const dbMaster* buffer_master,
@@ -2486,7 +2483,12 @@ class dbNet : public dbObject
       = dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
 
  private:
-  dbInst* insertBufferCommon(dbObject* term, dbMaster* buffer_master);
+  dbInst* insertBufferCommon(dbObject* term_obj,
+                             const dbMaster* buffer_master,
+                             const Point* loc,
+                             const char* base_name,
+                             const dbNameUniquifyType& uniquify,
+                             bool insertBefore);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
