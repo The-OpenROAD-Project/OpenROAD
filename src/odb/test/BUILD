@@ -258,8 +258,6 @@ filegroup(
         "NangateOpenCellLibrary.cdl",
         "data/ICEWall/dummy_pads.lef",
         "data/ICEWall/octilinear.def",
-        "data/Nangate45/NangateOpenCellLibrary.mod.lef",
-        "data/Nangate45/OpenCellLibraryLicenseSi2.txt",
         "data/design.def",
         "data/design.def.gz",
         "data/design.odb",
