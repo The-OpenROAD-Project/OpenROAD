@@ -33,26 +33,6 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-cc_library(
-    name = "nangate45_fixture",
-    hdrs = ["nangate45_fixture.h"],
-    data = [
-        ":nangate45_data",
-    ],
-    includes = ["."],
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
-    name = "sky130_fixture",
-    hdrs = ["sky130_fixture.h"],
-    data = [
-        ":sky130hd_data",
-    ],
-    includes = ["."],
-    visibility = ["//visibility:public"],
-)
-
 filegroup(
     name = "regression_resources",
     # TODO Refine glob later.

@@ -11,11 +11,11 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "nangate45_fixture.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/defin.h"
 #include "odb/geom.h"
+#include "tst/nangate45_fixture.h"
 #include "utl/Logger.h"
 
 namespace odb {
