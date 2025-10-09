@@ -367,6 +367,7 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   std::filesystem::remove(verilog_file_1);
   std::filesystem::remove(verilog_file_2);
   std::filesystem::remove(verilog_file_3);
+  std::filesystem::remove(verilog_file_4);
 }
 
 TEST_F(TestInsertBuffer, AfterDriver_Case1)
