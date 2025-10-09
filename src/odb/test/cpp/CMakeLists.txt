@@ -36,6 +36,7 @@ add_executable(TestMaster TestMaster.cpp)
 add_executable(TestGDSIn TestGDSIn.cpp)
 add_executable(TestChips TestChips.cpp)
 add_executable(Test3DBloxParser Test3DBloxParser.cpp)
+add_executable(TestInsertBuffer TestInsertBuffer.cpp)
 #add_executable(TestXML TestXML.cpp)
 
 target_link_libraries(OdbGTests ${TEST_LIBS})
@@ -53,6 +54,7 @@ target_link_libraries(TestMaster ${TEST_LIBS})
 target_link_libraries(TestGDSIn gdsin odb_test_helper)
 target_link_libraries(TestChips ${TEST_LIBS})
 target_link_libraries(Test3DBloxParser ${TEST_LIBS})
+target_link_libraries(TestInsertBuffer ${TEST_LIBS})
 #target_link_libraries(TestXML gdsin odb_test_helper)
 
 # Skip the tests from being registered here, since they are called via
@@ -78,6 +80,7 @@ add_dependencies(build_and_test
         TestMaster
         TestChips
         Test3DBloxParser
+        TestInsertBuffer
         OdbGTests
 )
 add_subdirectory(helper)
