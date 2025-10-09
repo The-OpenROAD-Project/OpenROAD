@@ -487,17 +487,13 @@ void MakeWireParasitics::layerRC(int wire_length_dbu,
   double r_per_meter = 0.0;    // ohm/meter
   double cap_per_meter = 0.0;  // F/meter
 
-  // if(!net->getNonDefaultRule()){
-    estimate_parasitics_->layerRC(layer, corner, r_per_meter, cap_per_meter);
-  // }
+  estimate_parasitics_->layerRC(layer, corner, r_per_meter, cap_per_meter);
 
-  
   const float layer_width = block_->dbuToMicrons(layer->getWidth());
   if (r_per_meter == 0.0) {
     const float res_ohm_per_micron = layer->getResistance() / layer_width;
     r_per_meter = 1E+6 * res_ohm_per_micron;  // ohm/meter
   }
-  
 
   if (cap_per_meter == 0.0) {
     const float cap_pf_per_micron = layer_width * layer->getCapacitance()
@@ -505,12 +501,10 @@ void MakeWireParasitics::layerRC(int wire_length_dbu,
     cap_per_meter = 1E+6 * 1E-12 * cap_pf_per_micron;  // F/meter
   }
 
-  float ndr_width;
-  float ndr_ratio;
-  if(net->getNonDefaultRule()){
+  // Reduce resistance if the net has NDR with increased width
+  if (net->getNonDefaultRule()) {
     odb::dbTechLayerRule* rule = net->getNonDefaultRule()->getLayerRule(layer);
-    ndr_width = rule->getWidth();
-    ndr_ratio = ndr_width / layer->getWidth();
+    float ndr_ratio = (float) rule->getWidth() / layer->getWidth();
     r_per_meter /= ndr_ratio;
   }
 

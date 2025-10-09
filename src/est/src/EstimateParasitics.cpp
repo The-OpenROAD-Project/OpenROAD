@@ -617,15 +617,16 @@ void EstimateParasitics::makeWireParasitic(Net* net,
   double wire_cap = wire_length * wireSignalCapacitance(corner);
   double wire_res = wire_length * wireSignalResistance(corner);
   parasitics->incrCap(n1, wire_cap / 2.0);
-  if(db_network_->staToDb(net)->getNonDefaultRule()){
+
+  // Reduce resistance if the net has NDR with increased width
+  if (db_network_->staToDb(net)->getNonDefaultRule()) {
     std::vector<odb::dbTechLayerRule*> layer_rules;
     db_network_->staToDb(net)->getNonDefaultRule()->getLayerRules(layer_rules);
-    float ratio = (float)layer_rules.at(0)->getWidth()/layer_rules.at(0)->getLayer()->getWidth();
-    wire_res /= ratio;
-    if(db_network_->staToDb(net)->getName()=="clk"){
-      logger_->report(">>> MakeWireParasitic <<<");
-    }
+    float ndr_ratio = (float) layer_rules.at(0)->getWidth()
+                      / layer_rules.at(0)->getLayer()->getWidth();
+    wire_res /= ndr_ratio;
   }
+
   parasitics->makeResistor(parasitic, 1, wire_res, n1, n2);
   parasitics->incrCap(n2, wire_cap / 2.0);
 }
@@ -727,14 +728,19 @@ void EstimateParasitics::estimateWireParasiticSteiner(const Pin* drvr_pin,
           double length = dbuToMeters(wire_length_dbu);
           double cap = length * wire_cap;
           double res = length * wire_res;
-          if(db_network_->staToDb(net)->getNonDefaultRule()){
+          if (db_network_->staToDb(net)->getNonDefaultRule()) {
             std::vector<odb::dbTechLayerRule*> layer_rules;
-            db_network_->staToDb(net)->getNonDefaultRule()->getLayerRules(layer_rules);
-            float ratio = (float)layer_rules.at(0)->getWidth()/layer_rules.at(0)->getLayer()->getWidth();
+            db_network_->staToDb(net)->getNonDefaultRule()->getLayerRules(
+                layer_rules);
+            float ratio = (float) layer_rules.at(0)->getWidth()
+                          / layer_rules.at(0)->getLayer()->getWidth();
             res /= ratio;
-            if(db_network_->staToDb(net)->getName()=="clk"){
-              logger_->report(">>> estimateWireParasiticSteiner - ratio {} <<<", ratio);
-            }
+            // if(db_network_->staToDb(net)->getName()=="clk"){
+            logger_->report(
+                ">>> estimateWireParasiticSteiner - ratio {} {} <<<",
+                ratio,
+                db_network_->staToDb(net)->getName());
+            // }
           }
           // Make pi model for the wire.
           debugPrint(logger_,
