@@ -72,17 +72,17 @@ class dbNetwork : public ConcreteNetwork
   CellPortIterator* portIterator(const Cell* cell) const override;
 
   // sanity checkers
-  void checkAxioms() const;
-  void checkSanityModBTerms() const;
-  void checkSanityModITerms() const;
-  void checkSanityModuleInsts() const;
-  void checkSanityModInstTerms() const;
-  void checkSanityUnusedModules() const;
-  void checkSanityTermConnectivity() const;
-  void checkSanityNetConnectivity() const;
-  void checkSanityInstNames() const;
-  void checkSanityNetNames() const;
-  void checkSanityModNetNamesInModule(odb::dbModule* module) const;
+  int checkAxioms() const;
+  int checkSanityModBTerms() const;
+  int checkSanityModITerms() const;
+  int checkSanityModuleInsts() const;
+  int checkSanityModInstTerms() const;
+  int checkSanityUnusedModules() const;
+  int checkSanityTermConnectivity() const;
+  int checkSanityNetConnectivity() const;
+  int checkSanityInstNames() const;
+  int checkSanityNetNames() const;
+  int checkSanityModNetNamesInModule(odb::dbModule* module) const;
 
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);

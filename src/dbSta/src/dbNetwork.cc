@@ -4154,17 +4154,19 @@ void dbNetwork::accumulateFlatLoadPinsOnNet(
 }
 
 // Use this API to check if flat & hier connectivities are ok
-void dbNetwork::checkAxioms() const
+int dbNetwork::checkAxioms() const
 {
-  checkSanityModBTerms();
-  checkSanityModITerms();
-  checkSanityModInstTerms();
-  checkSanityUnusedModules();
-  checkSanityTermConnectivity();
-  checkSanityNetConnectivity();
-  checkSanityInstNames();
-  checkSanityNetNames();
-  checkSanityModuleInsts();
+  int warning_count = 0;
+  warning_count += checkSanityModBTerms();
+  warning_count += checkSanityModITerms();
+  warning_count += checkSanityModInstTerms();
+  warning_count += checkSanityUnusedModules();
+  warning_count += checkSanityTermConnectivity();
+  warning_count += checkSanityNetConnectivity();
+  warning_count += checkSanityInstNames();
+  warning_count += checkSanityNetNames();
+  warning_count += checkSanityModuleInsts();
+  return warning_count;
 }
 
 // Given a net that may be hierarchical, find the corresponding flat net.
@@ -4253,10 +4255,10 @@ bool dbNetwork::hasPort(const Net* net) const
   return false;
 }
 
-void dbNetwork::checkSanityModBTerms() const
+int dbNetwork::checkSanityModBTerms() const
 {
   if (block_ == nullptr) {
-    return;
+    return 0;
   }
   for (odb::dbModule* module : block_->getModules()) {
     std::set<std::string> bterm_names;
@@ -4273,13 +4275,15 @@ void dbNetwork::checkSanityModBTerms() const
       bterm_names.insert(bterm_name);
     }
   }
+  return 0;
 }
 
-void sta::dbNetwork::checkSanityModITerms() const
+int sta::dbNetwork::checkSanityModITerms() const
 {
   if (block_ == nullptr) {
-    return;
+    return 0;
   }
+  int warning_count = 0;
   for (odb::dbModInst* mod_inst : block_->getModInsts()) {
     std::set<std::string> iterm_names;
     for (odb::dbModITerm* iterm : mod_inst->getModITerms()) {
@@ -4295,10 +4299,12 @@ void sta::dbNetwork::checkSanityModITerms() const
       iterm_names.insert(iterm_name);
     }
   }
+  return warning_count;
 }
 
-void dbNetwork::checkSanityModuleInsts() const
+int dbNetwork::checkSanityModuleInsts() const
 {
+  int warning_count = 0;
   int inst_count = 0;
   for (odb::dbModule* module : block_->getModules()) {
     if (module->getModInsts().empty() && module->getInsts().empty()) {
@@ -4306,8 +4312,8 @@ void dbNetwork::checkSanityModuleInsts() const
                     2038,
                     "SanityCheck: Module '{}' has no instances.",
                     module->getHierarchicalName());
+      warning_count++;
     }
-
     inst_count += module->getInsts().size();
   }
 
@@ -4321,6 +4327,7 @@ void dbNetwork::checkSanityModuleInsts() const
                    block_->getInsts().size(),
                    inst_count);
   }
+  return warning_count;
 }
 
 static std::vector<std::string> getNameSetDifferences(
@@ -4336,8 +4343,9 @@ static std::vector<std::string> getNameSetDifferences(
   return differences;
 }
 
-void dbNetwork::checkSanityModInstTerms() const
+int dbNetwork::checkSanityModInstTerms() const
 {
+  int warning_count = 0;
   for (odb::dbModInst* mod_inst : block_->getModInsts()) {
     // Compare ModITerms in the instance and ModBTerms in the master.
     // - Note that ModBTerms may have bus port sentinels which are not in
@@ -4386,6 +4394,7 @@ void dbNetwork::checkSanityModInstTerms() const
             "master '{}'.",
             mod_inst->getHierarchicalName(),
             master->getName());
+        warning_count++;
 
         if (!iterms_only.empty()) {
           std::string s;
@@ -4407,12 +4416,14 @@ void dbNetwork::checkSanityModInstTerms() const
       }
     }
   }
+  return warning_count;
 }
 
-void dbNetwork::checkSanityUnusedModules() const
+int dbNetwork::checkSanityUnusedModules() const
 {
+  int warning_count = 0;
   if (block_ == nullptr) {
-    return;
+    return 0;
   }
 
   // 1. Collect all modules from the top block and its children.
@@ -4447,12 +4458,15 @@ void dbNetwork::checkSanityUnusedModules() const
           2043,
           "SanityCheck: Module '{}' is defined but never instantiated.",
           module->getName());
+      warning_count++;
     }
   }
+  return warning_count;
 }
 
-void dbNetwork::checkSanityTermConnectivity() const
+int dbNetwork::checkSanityTermConnectivity() const
 {
+  int warning_count = 0;
   for (odb::dbBTerm* bterm : block_->getBTerms()) {
     if (bterm->getIoType() != dbIoType::INPUT && bterm->getNet() == nullptr) {
       logger_->error(
@@ -4480,10 +4494,12 @@ void dbNetwork::checkSanityTermConnectivity() const
       }
     }
   }
+  return warning_count;
 }
 
-void dbNetwork::checkSanityNetConnectivity() const
+int dbNetwork::checkSanityNetConnectivity() const
 {
+  int warning_count = 0;
   // Check for hier net and flat net connectivity
   dbSet<dbModNet> mod_nets = block()->getModNets();
   for (dbModNet* mod_net : mod_nets) {
@@ -4555,13 +4571,15 @@ void dbNetwork::checkSanityNetConnectivity() const
                   net_db->getName(),
                   iterm_count,
                   bterm_count);
+    warning_count++;
   }
+  return warning_count;
 }
 
-void dbNetwork::checkSanityInstNames() const
+int dbNetwork::checkSanityInstNames() const
 {
   if (block_ == nullptr) {
-    return;
+    return 0;
   }
 
   // Check for duplicate instance names
@@ -4591,12 +4609,14 @@ void dbNetwork::checkSanityInstNames() const
     }
     inst_names.insert(mod_inst_name);
   }
+  return 0;
 }
 
-void dbNetwork::checkSanityNetNames() const
+int dbNetwork::checkSanityNetNames() const
 {
+  int warning_count = 0;
   if (block_ == nullptr) {
-    return;
+    return 0;
   }
 
   // Check for duplicate flat net names
@@ -4615,12 +4635,14 @@ void dbNetwork::checkSanityNetNames() const
 
   // Check for duplicate module net names within each module
   for (odb::dbModule* module : block_->getModules()) {
-    checkSanityModNetNamesInModule(module);
+    warning_count += checkSanityModNetNamesInModule(module);
   }
+  return warning_count;
 }
 
-void dbNetwork::checkSanityModNetNamesInModule(odb::dbModule* module) const
+int dbNetwork::checkSanityModNetNamesInModule(odb::dbModule* module) const
 {
+  int warning_count = 0;
   // If duplicate ModNet name found, log details of both existing and new nets
   std::map<std::string, odb::dbModNet*> mod_net_map;
   for (odb::dbModNet* mod_net : module->getModNets()) {
@@ -4679,6 +4701,7 @@ void dbNetwork::checkSanityModNetNamesInModule(odb::dbModule* module) const
     }
     mod_net_map[mod_net_name] = mod_net;
   }
+  return warning_count;
 }
 
 }  // namespace sta
