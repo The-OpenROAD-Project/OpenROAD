@@ -23,7 +23,7 @@ jobs:
           config_file: ".clang-tidy"
           exclude: "*/codeGenerator/templates/*,*/third-party/*"
           split_workflow: true
-          apt_packages: libyaml-cpp-dev
+          apt_packages: libomp-15-dev,libfl-dev,libyaml-cpp-dev
       - uses: The-OpenROAD-Project/clang-tidy-review/upload@master
         id: upload-review
       - name: Correct Build Directory Ownership
