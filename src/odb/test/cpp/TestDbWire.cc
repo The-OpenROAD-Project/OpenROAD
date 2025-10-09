@@ -8,16 +8,13 @@
 
 #include <memory>
 
+#include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
 #include "odb/lefin.h"
 #include "tst/fixture.h"
 #include "utl/Logger.h"
-
-// TODO: not needed after fully switching to bazel
-#ifndef DATA_PREFIX
-#define DATA_PREFIX ""
-#endif
 
 namespace odb {
 class OdbMultiPatternedTest : public tst::Fixture
@@ -40,6 +37,40 @@ class OdbMultiPatternedTest : public tst::Fixture
   odb::dbChip* chip_;
   odb::dbBlock* block_;
 };
+
+TEST_F(OdbMultiPatternedTest, NdrWidth)
+{
+  dbTechLayer* met1 = lib_->getTech()->findLayer("met1");
+  ASSERT_NE(met1, nullptr);
+
+  // Setup an NDR
+  dbTechNonDefaultRule* ndr = dbTechNonDefaultRule::create(block_, "ndr");
+  dbTechLayerRule* rule = dbTechLayerRule::create(ndr, met1);
+  const int width = 42;
+  rule->setWidth(width);
+
+  // Apply it to some routing
+  dbNet* net = dbNet::create(block_, "net");
+  dbWire* wire = dbWire::create(net);
+  dbWireEncoder encoder;
+  encoder.begin(wire);
+  encoder.newPath(met1, dbWireType::ROUTED, rule);
+  encoder.addPoint(0, 0);
+  encoder.addPoint(0, 100000);
+  encoder.addPoint(100000, 100000);
+  encoder.end();
+
+  // Check the width in both directions is correct
+  int shape_cnt = 0;
+  odb::dbWireShapeItr it;
+  it.begin(wire);
+  odb::dbShape shape;
+  while (it.next(shape)) {
+    EXPECT_EQ(shape.getBox().minDXDY(), width);
+    ++shape_cnt;
+  }
+  EXPECT_EQ(shape_cnt, 2);
+}
 
 TEST_F(OdbMultiPatternedTest, CanColorColoredLayer)
 {

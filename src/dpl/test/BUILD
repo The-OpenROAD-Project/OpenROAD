@@ -258,7 +258,6 @@ filegroup(
 cc_test(
     name = "dpl_unittest",
     srcs = ["dpl_test.cc"],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/dpl",
         "//src/odb",

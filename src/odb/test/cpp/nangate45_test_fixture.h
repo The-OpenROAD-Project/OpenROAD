@@ -12,11 +12,6 @@
 #include "tst/fixture.h"
 #include "utl/Logger.h"
 
-// TODO: not needed after fully switching to bazel
-#ifndef DATA_PREFIX
-#define DATA_PREFIX ""
-#endif
-
 namespace odb {
 
 class Nangate45TestFixture : public tst::Fixture

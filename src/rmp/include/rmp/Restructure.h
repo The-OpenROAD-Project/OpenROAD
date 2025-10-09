@@ -7,6 +7,7 @@
 #include <fstream>
 #include <functional>
 #include <optional>
+#include <random>
 #include <set>
 #include <string>
 #include <vector>
@@ -76,7 +77,10 @@ class Restructure
            char* workdir_name,
            char* abc_logfile);
 
-  void setAnnealingSeed(uint64_t seed) { annealing_seed_ = seed; }
+  void setAnnealingSeed(std::mt19937::result_type seed)
+  {
+    annealing_seed_ = seed;
+  }
   void setAnnealingTemp(float temp) { annealing_temp_ = temp; }
   void setAnnealingIters(unsigned iters) { annealing_iters_ = iters; }
   void setAnnealingRevertAfter(unsigned revert_after)
@@ -120,7 +124,7 @@ class Restructure
   odb::dbBlock* block_ = nullptr;
 
   // Annealing
-  std::optional<uint64_t> annealing_seed_;
+  std::optional<std::mt19937::result_type> annealing_seed_;
   std::optional<float> annealing_temp_;
   unsigned annealing_iters_ = 100;
   std::optional<unsigned> annealing_revert_after_;

@@ -13,6 +13,7 @@ COMPULSORY_TESTS = [
     "gcd",
     "generate_pattern",
     "names",
+    "net_name_consistency",
 ]
 
 # Disabled in CMakeLists.txt
@@ -106,7 +107,6 @@ filegroup(
 cc_test(
     name = "rcx_unittest",
     srcs = ["ext2dBoxTest.cpp"],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/rcx",
         "@googletest//:gtest",

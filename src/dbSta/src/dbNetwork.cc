@@ -4018,31 +4018,6 @@ void PinModDbNetConnection::operator()(const Pin* pin)
 }
 
 /*
-Find if there is a modnet equivalent to a dbNet.
-We always expect all the pins on a net to members of the same
-net.
-
-Go through all the pins on the modnet and get all the dbNets.
-
-A dbnet could have many modnets (eg a dbNet might connect
-two objects in different parts of the hierarchy, each connected
-by different dbModNets in different parts of the hierarchy).
-
-A modnet should only have one dbNet, and we check for that.
-*/
-
-bool dbNetwork::findRelatedModNet(const dbNet* net,
-                                  std::set<dbModNet*>& modnet_set) const
-{
-  // we pass in the net and decode it for axiom checking.
-  PinModDbNetConnection visitor(this, logger_, dbToSta(net));
-  NetSet visited_nets(this);
-  visitConnectedPins(dbToSta(net), visitor, visited_nets);
-  modnet_set = visitor.getModNets();
-  return (!modnet_set.empty());
-}
-
-/*
 A modnet can have only one equivalent dbNet.
 */
 dbNet* dbNetwork::findRelatedDbNet(const dbModNet* net) const
@@ -4636,6 +4611,38 @@ int dbNetwork::checkSanityNetNames() const
   // Check for duplicate module net names within each module
   for (odb::dbModule* module : block_->getModules()) {
     warning_count += checkSanityModNetNamesInModule(module);
+  }
+
+  // Check for name mismatch between flat net and hierchical net
+  // - Flat net name should be one of the hierarchical net names
+  for (odb::dbNet* net : block_->getNets()) {
+    std::set<odb::dbModNet*> mod_nets;
+    if (net->findRelatedModNets(mod_nets) && mod_nets.empty() == false) {
+      bool name_match = false;
+      for (odb::dbModNet* mod_net : mod_nets) {
+        if (net->getName() == mod_net->getHierarchicalName()) {
+          name_match = true;
+          break;
+        }
+      }
+
+      if (name_match) {
+        continue;
+      }
+
+      // Found name mismatch b/w flat net and hierarchical nets
+      logger_->warn(ORD,
+                    2050,
+                    "SanityCheck: Flat net name '{}' does not match any of "
+                    "its hierarchical net names.",
+                    net->getName());
+      for (odb::dbModNet* mod_net : mod_nets) {
+        logger_->warn(ORD,
+                      2055,
+                      "  hierarchical net: {}",
+                      mod_net->getHierarchicalName());
+      }
+    }
   }
   return warning_count;
 }

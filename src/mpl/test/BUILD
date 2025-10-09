@@ -142,7 +142,6 @@ cc_test(
         "cpp/TestSnapper.cpp",
     ],
     features = ["-layering_check"],  # TODO: includes private headers
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/mpl",
         "//src/odb",

@@ -33,17 +33,16 @@
 #include "helper.h"
 
 #include "odb/db.h"
-#include "utl/Logger.h"
 
 namespace odb {
 
-dbMaster* createMaster2X1(dbLib* lib,
-                          const char* name,
-                          uint width,
-                          uint height,
-                          const char* in1,
-                          const char* in2,
-                          const char* out)
+dbMaster* SimpleDbFixture::createMaster2X1(dbLib* lib,
+                                           const char* name,
+                                           uint width,
+                                           uint height,
+                                           const char* in1,
+                                           const char* in2,
+                                           const char* out)
 {
   dbMaster* master = dbMaster::create(lib, name);
   master->setWidth(width);
@@ -56,12 +55,12 @@ dbMaster* createMaster2X1(dbLib* lib,
   return master;
 }
 
-dbMaster* createMaster1X1(dbLib* lib,
-                          const char* name,
-                          uint width,
-                          uint height,
-                          const char* in1,
-                          const char* out)
+dbMaster* SimpleDbFixture::createMaster1X1(dbLib* lib,
+                                           const char* name,
+                                           uint width,
+                                           uint height,
+                                           const char* in1,
+                                           const char* out)
 {
   dbMaster* master = dbMaster::create(lib, name);
   master->setWidth(width);
@@ -73,11 +72,9 @@ dbMaster* createMaster1X1(dbLib* lib,
   return master;
 }
 
-dbDatabase* createSimpleDB()
+void SimpleDbFixture::createSimpleDB()
 {
-  utl::Logger* logger = new utl::Logger();
-  dbDatabase* db = dbDatabase::create();
-  db->setLogger(logger);
+  dbDatabase* db = db_.get();
   dbTech* tech = dbTech::create(db, "tech");
   dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
   dbLib* lib = dbLib::create(db, "lib1", tech, ',');
@@ -86,14 +83,13 @@ dbDatabase* createSimpleDB()
   createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o");
   createMaster2X1(lib, "or2", 500, 500, "a", "b", "o");
   createMaster1X1(lib, "inv1", 500, 500, "ip0", "op0");
-  return db;
 }
 
-dbDatabase* create2LevetDbNoBTerms()
+void SimpleDbFixture::create2LevetDbNoBTerms()
 {
-  dbDatabase* db = createSimpleDB();
-  dbLib* lib = db->findLib("lib1");
-  dbChip* chip = db->getChip();
+  createSimpleDB();
+  dbLib* lib = db_->findLib("lib1");
+  dbChip* chip = db_->getChip();
   dbBlock* block = chip->getBlock();
   auto and2 = lib->findMaster("and2");
   auto or2 = lib->findMaster("or2");
@@ -116,13 +112,12 @@ dbDatabase* create2LevetDbNoBTerms()
   i1->findITerm("o")->connect(n5);
   i2->findITerm("o")->connect(n6);
   i3->findITerm("o")->connect(n7);
-  return db;
 }
 
-dbDatabase* create2LevetDbWithBTerms()
+void SimpleDbFixture::create2LevetDbWithBTerms()
 {
-  dbDatabase* db = create2LevetDbNoBTerms();
-  dbBlock* block = db->getChip()->getBlock();
+  create2LevetDbNoBTerms();
+  dbBlock* block = db_->getChip()->getBlock();
   auto n1 = block->findNet("n1");
   auto n2 = block->findNet("n2");
   auto n7 = block->findNet("n7");
@@ -132,7 +127,6 @@ dbDatabase* create2LevetDbWithBTerms()
   IN2->setIoType(dbIoType::INPUT);
   dbBTerm* OUT = dbBTerm::create(n7, "IN3");
   OUT->setIoType(dbIoType::OUTPUT);
-  return db;
 }
 
 }  // namespace odb

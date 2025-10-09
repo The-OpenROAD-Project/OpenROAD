@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "gtest/gtest.h"
 #include "nangate45_test_fixture.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -17,27 +18,23 @@
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
-// TODO: not needed after fully switching to bazel
-#ifndef DATA_PREFIX
-#define DATA_PREFIX ""
-#endif
-
 namespace odb {
 
 TEST_F(Nangate45TestFixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)
 {
   // Arrange
-  defin def_parser(db_.get(), &logger_);
-  std::vector<dbLib*> libs = {lib_};
+  dbChip* chip = dbChip::create(db_.get(), lib_->getTech());
+  dbBlock* block = dbBlock::create(chip, "block");
 
   // Act
-  dbChip* chip = dbChip::create(db_.get(), lib_->getTech());
-  def_parser.readChip(
-      libs, DATA_PREFIX "data/nangate45_polygon_floorplan.def", chip);
-  EXPECT_NE(chip, nullptr);
+  Polygon area({{0, 0},
+                {0, 300000},
+                {400000, 300000},
+                {400000, 150000},
+                {300000, 150000},
+                {300000, 0}});
 
-  // Assert
-  dbBlock* block = chip->getBlock();
+  block->setDieArea(area);
 
   // Assert that there is one virtual blockage for this floorplan.
   // There's essentially 1 rectangle cut out of it.
@@ -71,14 +68,17 @@ TEST_F(Nangate45TestFixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)
 TEST_F(Nangate45TestFixture, SettingTheFloorplanTwiceClearsSystemBlockages)
 {
   // Arrange
-  defin def_parser(db_.get(), &logger_);
-  std::vector<dbLib*> libs = {lib_};
+  dbChip* chip = dbChip::create(db_.get(), lib_->getTech());
+  dbBlock* block = dbBlock::create(chip, "block");
 
   // Act
-  dbChip* chip = dbChip::create(db_.get(), lib_->getTech());
-  def_parser.readChip(
-      libs, DATA_PREFIX "data/nangate45_polygon_floorplan.def", chip);
-  EXPECT_NE(chip, nullptr);
+  Polygon area({{0, 0},
+                {0, 300000},
+                {400000, 300000},
+                {400000, 150000},
+                {300000, 150000},
+                {300000, 0}});
+  block->setDieArea(area);
 
   odb::Polygon new_die_area({{0, 0},
                              {0, 300000},
@@ -87,7 +87,6 @@ TEST_F(Nangate45TestFixture, SettingTheFloorplanTwiceClearsSystemBlockages)
                              {300000, 160000},
                              {300000, 0}});
 
-  dbBlock* block = chip->getBlock();
   block->setDieArea(new_die_area);
 
   // Assert that there is one virtual blockage for this floorplan.
@@ -122,17 +121,17 @@ TEST_F(Nangate45TestFixture, SettingTheFloorplanTwiceClearsSystemBlockages)
 TEST_F(Nangate45TestFixture, DeletingSystemBlockagesThrows)
 {
   // Arrange
-  defin def_parser(db_.get(), &logger_);
-  std::vector<dbLib*> libs = {lib_};
-
-  // Act
   dbChip* chip = dbChip::create(db_.get(), lib_->getTech());
-  def_parser.readChip(
-      libs, DATA_PREFIX "data/nangate45_polygon_floorplan.def", chip);
-  EXPECT_NE(chip, nullptr);
-  dbBlock* block = chip->getBlock();
+  dbBlock* block = dbBlock::create(chip, "block");
 
-  // Assert
+  Polygon area({{0, 0},
+                {0, 300000},
+                {400000, 300000},
+                {400000, 150000},
+                {300000, 150000},
+                {300000, 0}});
+
+  block->setDieArea(area);
 
   // Assert that there is one virtual blockage for this floorplan.
   // There's essentially 1 rectangle cut out of it.
@@ -145,6 +144,8 @@ TEST_F(Nangate45TestFixture, DeletingSystemBlockagesThrows)
     virtual_blockages.push_back(blockage);
   }
   EXPECT_EQ(virtual_blockages.size(), 1);
+
+  // Act & Assert
   EXPECT_THROW(
       { dbBlockage::destroy(virtual_blockages[0]); }, std::runtime_error);
 }
@@ -152,16 +153,17 @@ TEST_F(Nangate45TestFixture, DeletingSystemBlockagesThrows)
 TEST_F(Nangate45TestFixture, DeletingSystemObstructionsThrows)
 {
   // Arrange
-  defin def_parser(db_.get(), &logger_);
-  std::vector<dbLib*> libs = {lib_};
-
-  // Act
   dbChip* chip = dbChip::create(db_.get(), lib_->getTech());
-  def_parser.readChip(
-      libs, DATA_PREFIX "data/nangate45_polygon_floorplan.def", chip);
-  EXPECT_NE(chip, nullptr);
-  dbBlock* block = chip->getBlock();
-  // Assert
+  dbBlock* block = dbBlock::create(chip, "block");
+
+  Polygon area({{0, 0},
+                {0, 300000},
+                {400000, 300000},
+                {400000, 150000},
+                {300000, 150000},
+                {300000, 0}});
+
+  block->setDieArea(area);
 
   // Assert that there is one virtual blockage for this floorplan.
   // There's essentially 1 rectangle cut out of it.
@@ -174,6 +176,8 @@ TEST_F(Nangate45TestFixture, DeletingSystemObstructionsThrows)
     virtual_obstructions.push_back(obstruction);
   }
   EXPECT_EQ(virtual_obstructions.size(), 21);
+
+  // Act & Assert
   EXPECT_THROW(
       { dbObstruction::destroy(virtual_obstructions[0]); }, std::runtime_error);
 }

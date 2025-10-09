@@ -41,6 +41,8 @@ cc_library(
         "src/defout/*.h",
         "src/defin/*.cpp",
         "src/defin/*.h",
+        "src/gdsin/*.cpp",
+        "src/gdsout/*.cpp",
         "src/lefin/*.cpp",
         "src/lefin/*.h",
         "src/lefout/*.cpp",
