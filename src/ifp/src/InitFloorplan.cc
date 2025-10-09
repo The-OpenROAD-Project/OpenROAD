@@ -495,7 +495,8 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
 
       int total_row_count = rows.size();
 
-      // Search the minimum site width & height as base unit for snapping and gap calculation
+      // Search the minimum site width & height as base unit for snapping and
+      // gap calculation
       int min_site_dx = std::numeric_limits<int>::max();
       int min_site_dy = std::numeric_limits<int>::max();
       std::vector<dbRow*>::iterator row_itr = rows.begin();
@@ -514,7 +515,7 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
       }
       // Space is 6 times the minimum site height
       const int power_domain_y_space = 6 * min_site_dy;
- 
+
       row_itr = rows.begin();
       for (int row_processed = 0; row_processed < total_row_count;
            row_processed++) {
