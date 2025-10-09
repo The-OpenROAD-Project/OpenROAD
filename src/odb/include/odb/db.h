@@ -2477,6 +2477,14 @@ class dbNet : public dbObject
       const dbNameUniquifyType& uniquify
       = dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
 
+  dbInst* insertBufferAfterDriver(
+      dbObject* drvr_output_term,
+      const dbMaster* buffer_master,
+      const Point* loc = nullptr,
+      const char* base_name = nullptr,
+      const dbNameUniquifyType& uniquify
+      = dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+
  private:
   dbInst* insertBufferCommon(dbObject* term, dbMaster* buffer_master);
 };

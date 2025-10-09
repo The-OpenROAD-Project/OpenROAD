@@ -2561,4 +2561,176 @@ dbInst* dbNet::insertBufferBeforeLoad(dbObject* load_input_term,
   return buffer_inst;
 }
 
+dbInst* dbNet::insertBufferAfterDriver(dbObject* drvr_output_term,
+                                       const dbMaster* buffer_master,
+                                       const Point* loc,
+                                       const char* base_name,
+                                       const dbNameUniquifyType& uniquify)
+{
+  if (drvr_output_term == nullptr || buffer_master == nullptr) {
+    return nullptr;
+  }
+
+  dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return nullptr;
+  }
+
+  // Check driver terminal type and connectivity.
+  dbITerm* drvr_iterm = nullptr;
+  dbBTerm* drvr_bterm = nullptr;
+  dbModNet* orig_mod_net = nullptr;
+
+  if (drvr_output_term->getObjectType() == dbITermObj) {
+    drvr_iterm = (dbITerm*) drvr_output_term;
+    if (drvr_iterm->getNet() != this) {
+      // Driver is not connected to this net
+      return nullptr;
+    }
+    orig_mod_net = drvr_iterm->getModNet();
+  } else if (drvr_output_term->getObjectType() == dbBTermObj) {
+    drvr_bterm = (dbBTerm*) drvr_output_term;
+    if (drvr_bterm->getNet() != this) {
+      // Driver is not connected to this net
+      return nullptr;
+    }
+    orig_mod_net = drvr_bterm->getModNet();
+  } else {
+    // Invalid driver type
+    return nullptr;
+  }
+
+  // Honor dont_touch
+  if (isDoNotTouch()) {
+    return nullptr;
+  }
+
+  if (drvr_iterm) {
+    if (drvr_iterm->getInst()->isDoNotTouch()) {
+      return nullptr;
+    }
+  }
+
+  for (dbITerm* load : getITerms()) {
+    if (load->getInst()->isDoNotTouch()) {
+      return nullptr;
+    }
+  }
+
+  // Find buffer input and output MTerms
+  dbMTerm* input_mterm = nullptr;
+  dbMTerm* output_mterm = nullptr;
+  for (dbMTerm* mterm : const_cast<dbMaster*>(buffer_master)->getMTerms()) {
+    if (mterm->getIoType() == dbIoType::INPUT) {
+      if (input_mterm != nullptr) {
+        return nullptr;  // More than one input
+      }
+      input_mterm = mterm;
+    } else if (mterm->getIoType() == dbIoType::OUTPUT) {
+      if (output_mterm != nullptr) {
+        return nullptr;  // More than one output
+      }
+      output_mterm = mterm;
+    }
+  }
+  if (input_mterm == nullptr || output_mterm == nullptr) {
+    // Not a simple buffer
+    return nullptr;
+  }
+
+  // Create buffer instance
+  const char* inst_base_name = (base_name != nullptr) ? base_name : "buf";
+  dbModule* parent_mod = nullptr;
+  if (drvr_iterm) {
+    parent_mod = drvr_iterm->getInst()->getModule();
+  }
+  dbInst* buffer_inst = dbInst::create(
+      block, (dbMaster*) buffer_master, inst_base_name, uniquify, parent_mod);
+  if (buffer_inst == nullptr) {
+    return nullptr;
+  }
+
+  // Place buffer instance
+  if (loc) {
+    buffer_inst->setLocation(loc->getX(), loc->getY());
+  } else {
+    int x, y;
+    if (drvr_iterm) {
+      Point origin = drvr_iterm->getInst()->getOrigin();
+      x = origin.getX();
+      y = origin.getY();
+    } else {  // drvr_bterm
+      auto bpins = drvr_bterm->getBPins();
+      if (bpins.empty()) {
+        x = 0;
+        y = 0;
+      } else {
+        dbBPin* first_bpin = *bpins.begin();
+        Rect box = first_bpin->getBBox();
+        x = box.xMin();
+        y = box.yMin();
+      }
+    }
+    buffer_inst->setLocation(x, y);
+  }
+  buffer_inst->setPlacementStatus(dbPlacementStatus::PLACED);
+
+  // Create new net for buffer input
+  std::string new_net_name_str;
+  if (drvr_bterm) {
+    // When the driver is a port, the new net driving the buffer should
+    // take the name of the port to maintain connectivity.
+    const std::string port_name = drvr_bterm->getName();
+    new_net_name_str = port_name;
+
+    // The original net name is the bterm name, it should be renamed.
+    if (block->getBaseName(getConstName()) == port_name) {
+      const std::string new_orig_net_name = block->makeNewNetName(
+          parent_mod ? parent_mod->getModInst() : nullptr, "net", uniquify);
+      rename(new_orig_net_name.c_str());
+
+      if (orig_mod_net && orig_mod_net->getName() == port_name) {
+        orig_mod_net->rename(new_orig_net_name.c_str());
+      }
+    }
+  } else {
+    new_net_name_str = std::string(getName()) + "_drvr";
+  }
+  dbNet* new_net
+      = dbNet::create(block, new_net_name_str.c_str(), uniquify, parent_mod);
+  if (new_net == nullptr) {
+    dbInst::destroy(buffer_inst);
+    return nullptr;
+  }
+
+  // Propagate NDR
+  if (dbTechNonDefaultRule* rule = getNonDefaultRule()) {
+    new_net->setNonDefaultRule(rule);
+  }
+
+  // Connect buffer input to new net
+  dbITerm* buf_input_iterm
+      = buffer_inst->findITerm(input_mterm->getConstName());
+  buf_input_iterm->connect(new_net);
+
+  // Connect buffer output to original net
+  dbITerm* buf_output_iterm
+      = buffer_inst->findITerm(output_mterm->getConstName());
+  buf_output_iterm->connect(this);
+  if (orig_mod_net) {
+    buf_output_iterm->connect(orig_mod_net);
+  }
+
+  // Connect driver to new net
+  if (drvr_iterm) {
+    drvr_iterm->disconnect();
+    drvr_iterm->connect(new_net);
+  } else {  // drvr_bterm
+    drvr_bterm->disconnect();
+    drvr_bterm->connect(new_net);
+  }
+
+  return buffer_inst;
+}
+
 }  // namespace odb
