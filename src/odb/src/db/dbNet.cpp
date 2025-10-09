@@ -148,33 +148,6 @@ bool checkDontTouch(dbNet* net, dbITerm* drvr_iterm, dbITerm* load_iterm)
   return false;
 }
 
-// Helper function to check buffer master and get input/output mterms
-bool checkAndGetBufferTerms(const dbMaster* buffer_master,
-                            dbMTerm*& input_mterm,
-                            dbMTerm*& output_mterm)
-{
-  input_mterm = nullptr;
-  output_mterm = nullptr;
-  for (dbMTerm* mterm : const_cast<dbMaster*>(buffer_master)->getMTerms()) {
-    if (mterm->getIoType() == dbIoType::INPUT) {
-      if (input_mterm != nullptr) {
-        return false;  // More than one input
-      }
-      input_mterm = mterm;
-    } else if (mterm->getIoType() == dbIoType::OUTPUT) {
-      if (output_mterm != nullptr) {
-        return false;  // More than one output
-      }
-      output_mterm = mterm;
-    }
-  }
-  if (input_mterm == nullptr || output_mterm == nullptr) {
-    // Not a simple buffer
-    return false;
-  }
-  return true;
-}
-
 void placeNewBuffer(dbInst* buffer_inst,
                     const Point* loc,
                     dbITerm* term,
@@ -2613,10 +2586,29 @@ dbInst* dbNet::insertBufferBeforeLoad(dbObject* load_input_term,
 
   placeNewBuffer(buffer_inst, loc, load_iterm, load_bterm);
 
-  // Create new net for buffer output
-  std::string new_net_name = std::string(getName()) + "_load";
+  // Create new net for buffer output.
+  std::string new_net_name_str;
+  if (load_bterm) {
+    // If the load is a port, the new net should take the name of the port to
+    // maintain connectivity.
+    const std::string port_name = load_bterm->getName();
+    new_net_name_str = port_name;
+
+    // The original net name is the bterm name, it should be renamed.
+    if (block->getBaseName(getConstName()) == port_name) {
+      const std::string new_orig_net_name = block->makeNewNetName(
+          parent_mod ? parent_mod->getModInst() : nullptr, "net", uniquify);
+      rename(new_orig_net_name.c_str());
+
+      if (orig_mod_net && orig_mod_net->getName() == port_name) {
+        orig_mod_net->rename(new_orig_net_name.c_str());
+      }
+    }
+  } else {
+    new_net_name_str = std::string(getName()) + "_load";
+  }
   dbNet* new_net
-      = dbNet::create(block, new_net_name.c_str(), uniquify, parent_mod);
+      = dbNet::create(block, new_net_name_str.c_str(), uniquify, parent_mod);
   if (new_net == nullptr) {
     dbInst::destroy(buffer_inst);
     return nullptr;

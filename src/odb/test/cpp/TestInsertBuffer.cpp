@@ -317,7 +317,7 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   EXPECT_EQ(num_warning, 0);
 
   // Verify connections for buffer #4
-  EXPECT_EQ(load_output_bterm->getNet()->getName(), std::string("net_load_2"));
+  EXPECT_EQ(load_output_bterm->getNet()->getName(), std::string("load_output"));
   EXPECT_EQ(new_buffer4->findITerm("A")->getNet(), net);
   EXPECT_EQ(new_buffer4->findITerm("Z")->getNet(), load_output_bterm->getNet());
 
@@ -332,13 +332,11 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   const std::string expected_verilog_4
       = "module top (load_output);\n"
         " output load_output;\n\n"
-        " wire net_load_2;\n"
         " wire net_load_1;\n"
         " wire net_load;\n"
         " wire net;\n\n"
-        " assign load_output = net_load_2;\n"
         " BUF_X4 buf_2 (.A(net),\n"
-        "    .Z(net_load_2));\n"
+        "    .Z(load_output));\n"
         " BUF_X4 buf_1 (.A(net),\n"
         "    .Z(net_load_1));\n"
         " BUF_X4 buf (.A(net),\n"
