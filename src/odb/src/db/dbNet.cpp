@@ -2380,6 +2380,41 @@ dbModule* dbNet::findMainParentModule() const
   return getBlock()->getTopModule();
 }
 
+namespace {
+
+void placeNewBuffer(dbInst* buffer_inst,
+                    const Point* loc,
+                    dbITerm* term,
+                    dbBTerm* bterm)
+{
+  // Place buffer instance
+  if (loc) {
+    buffer_inst->setLocation(loc->getX(), loc->getY());
+  } else {
+    int x, y;
+    if (term) {
+      Point origin = term->getInst()->getOrigin();
+      x = origin.getX();
+      y = origin.getY();
+    } else {  // bterm
+      auto bpins = bterm->getBPins();
+      if (bpins.empty()) {
+        x = 0;
+        y = 0;
+      } else {
+        dbBPin* first_bpin = *bpins.begin();
+        Rect box = first_bpin->getBBox();
+        x = box.xMin();
+        y = box.yMin();
+      }
+    }
+    buffer_inst->setLocation(x, y);
+  }
+  buffer_inst->setPlacementStatus(dbPlacementStatus::PLACED);
+}
+
+}  // namespace
+
 void _dbNet::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
@@ -2497,30 +2532,7 @@ dbInst* dbNet::insertBufferBeforeLoad(dbObject* load_input_term,
     return nullptr;
   }
 
-  // Place buffer instance
-  if (loc) {
-    buffer_inst->setLocation(loc->getX(), loc->getY());
-  } else {
-    int x, y;
-    if (load_iterm) {
-      Point origin = load_iterm->getInst()->getOrigin();
-      x = origin.getX();
-      y = origin.getY();
-    } else {  // load_bterm
-      auto bpins = load_bterm->getBPins();
-      if (bpins.empty()) {
-        x = 0;
-        y = 0;
-      } else {
-        dbBPin* first_bpin = *bpins.begin();
-        Rect box = first_bpin->getBBox();
-        x = box.xMin();
-        y = box.yMin();
-      }
-    }
-    buffer_inst->setLocation(x, y);
-  }
-  buffer_inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  placeNewBuffer(buffer_inst, loc, load_iterm, load_bterm);
 
   // Create new net for buffer output
   std::string new_net_name = std::string(getName()) + "_load";
@@ -2650,30 +2662,7 @@ dbInst* dbNet::insertBufferAfterDriver(dbObject* drvr_output_term,
     return nullptr;
   }
 
-  // Place buffer instance
-  if (loc) {
-    buffer_inst->setLocation(loc->getX(), loc->getY());
-  } else {
-    int x, y;
-    if (drvr_iterm) {
-      Point origin = drvr_iterm->getInst()->getOrigin();
-      x = origin.getX();
-      y = origin.getY();
-    } else {  // drvr_bterm
-      auto bpins = drvr_bterm->getBPins();
-      if (bpins.empty()) {
-        x = 0;
-        y = 0;
-      } else {
-        dbBPin* first_bpin = *bpins.begin();
-        Rect box = first_bpin->getBBox();
-        x = box.xMin();
-        y = box.yMin();
-      }
-    }
-    buffer_inst->setLocation(x, y);
-  }
-  buffer_inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  placeNewBuffer(buffer_inst, loc, drvr_iterm, drvr_bterm);
 
   // Create new net for buffer input
   std::string new_net_name_str;
