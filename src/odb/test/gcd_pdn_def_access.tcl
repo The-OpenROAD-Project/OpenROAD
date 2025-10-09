@@ -3,7 +3,8 @@ source "helpers.tcl"
 # Open database, load lef and design
 
 set db [ord::get_db]
-read_lef "data/Nangate45/NangateOpenCellLibrary.mod.lef"
+read_lef "Nangate45/Nangate45.lef"
+read_lef "Nangate45/Nangate45_stdcell.lef"
 read_def "data/gcd/gcd_pdn.def"
 set chip [$db getChip]
 set block [$chip getBlock]

@@ -8,6 +8,7 @@
 
 #include <memory>
 
+#include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
