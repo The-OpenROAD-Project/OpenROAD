@@ -514,6 +514,8 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
         // snap inward to site grid
         domain_x_min = odb::makeSiteLoc(domain_x_min, site_dx, false, 0);
         domain_x_max = odb::makeSiteLoc(domain_x_max, site_dx, true, 0);
+        domain_y_min = odb::makeSiteLoc(domain_y_min, site_dy, false, 0);
+        domain_y_max = odb::makeSiteLoc(domain_y_max, site_dy, true, 0);
 
         // check if the rows overlapped with the area of a defined voltage
         // domains + margin
