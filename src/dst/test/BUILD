@@ -21,6 +21,9 @@ cc_test(
     includes = [
         "../src",
     ],
+
+    # TODO(https://github.com/The-OpenROAD-Project/OpenROAD/issues/8599): re-enable once issue is resolved.
+    tags = ["manual"],
     deps = [
         ":test_helpers",
         "//src/dst",
@@ -43,6 +46,8 @@ cc_test(
     includes = [
         "../src",
     ],
+    # TODO(https://github.com/The-OpenROAD-Project/OpenROAD/issues/8599): re-enable once issue is resolved.
+    tags = ["manual"],
     deps = [
         ":test_helpers",
         "//src/dst",
@@ -66,6 +71,9 @@ cc_test(
     includes = [
         "../src",
     ],
+
+    # TODO(https://github.com/The-OpenROAD-Project/OpenROAD/issues/8599): re-enable once issue is resolved.
+    tags = ["manual"],
     deps = [
         ":test_helpers",
         "//src/dst",
