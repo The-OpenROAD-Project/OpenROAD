@@ -345,6 +345,9 @@ filegroup(
             "replace_hier_mod4": [
                 "gcd_abstract_lef.lefok",
             ],
+            "write_cdl": [
+                "write_cdl_escaped.cdl",
+            ],
         }.get(
             test_name,
             [],
