@@ -154,10 +154,6 @@ void Grid::markBlocked(dbBlock* block)
           }
           wire_rect.moveDelta(-core.xMin(), -core.yMin());
           GridRect grid_rect = gridCovering(wire_rect);
-          if (grid_rect.yhi - grid_rect.ylo < 3) {
-            // probably a patch over a via, ignore
-            return;
-          }
           GridRect core{.xlo = GridX{0},
                         .ylo = GridY{0},
                         .xhi = GridX{row_site_count_},
@@ -178,12 +174,18 @@ void Grid::markBlocked(dbBlock* block)
       continue;
     }
     for (odb::dbSWire* swire : net->getSWires()) {
-      for (odb::dbSBox* s : swire->getWires()) {
-        if (!s->isVia()) {
-          odb::Rect wire_rect = s->getBox();
-          odb::dbTechLayer* tech_layer = s->getTechLayer();
-          addBlockedLayers(wire_rect, tech_layer);
+      for (odb::dbSBox* sbox : swire->getWires()) {
+        if (sbox->isVia()) {
+          // TODO: handle via
+          continue;
         }
+        if (sbox->getWireShapeType() == odb::dbWireShapeType::DRCFILL) {
+          // TODO: handle patches
+          continue;
+        }
+        odb::Rect wire_rect = sbox->getBox();
+        odb::dbTechLayer* tech_layer = sbox->getTechLayer();
+        addBlockedLayers(wire_rect, tech_layer);
       }
     }
   }
