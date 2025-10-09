@@ -121,7 +121,7 @@ void FlexPA::updateDirtyInsts()
     const auto& old_unique_class = unique_insts_.getUniqueClass(inst);
     const auto& new_unique_class = unique_insts_.computeUniqueClass(inst);
     if (old_unique_class == new_unique_class) {  // same unique class
-      if (!updateSkipInstTerm(inst)) {           // a new connection added
+      if (updateSkipInstTerm(inst)) {            // a new connection added
         dirty_unique_classes.insert(old_unique_class);
       } else if (inst->getLatestPATransform()
                  != inst->getTransform()) {  // cell has been moved

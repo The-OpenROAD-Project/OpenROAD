@@ -93,6 +93,11 @@ void DesignCallBack::inDbInstSwapMasterAfter(odb::dbInst* db_inst)
 {
   inDbInstCreate(db_inst);
   inDbPostMoveInst(db_inst);
+  for (auto inst_term : db_inst->getITerms()) {
+    if (inst_term->getNet()) {
+      inDbITermPostConnect(inst_term);
+    }
+  }
 }
 void DesignCallBack::inDbNetCreate(odb::dbNet* db_net)
 {
