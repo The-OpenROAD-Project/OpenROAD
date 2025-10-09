@@ -12,9 +12,6 @@ cc_test(
     srcs = [
         "TestAbstractLef.cc",
     ],
-    data = [
-        "//src/odb/test/data/sky130hd:lef-test-data",
-    ],
     deps = [
         "//src/odb",
         "//src/tst",
