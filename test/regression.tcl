@@ -196,22 +196,40 @@ proc run_test_lang { test lang } {
     flush stdout
     set test_errors [run_test_app $test $cmd_file $log_file $lang]
     if { [lindex $test_errors 0] == "ERROR" } {
-      puts " *ERROR* [lrange $test_errors 1 end]"
-      append_failure $test
-      incr errors(error)
-
-      # For some reason seg faults aren't echoed in the log - add them.
-      if { [file exists $log_file] } {
-        set log_ch [open $log_file "a"]
-        puts $log_ch "$test_errors"
-        close $log_ch
-      }
-
-      # Report partial log diff anyway.
-      if { [file exists $ok_file] } {
+      # Special handling: allow tests with expected errors to pass
+      # if their log matches the .ok file.
+      set pass_crit [test_pass_criteria $test]
+      if { $pass_crit == "compare_logfile_allow_error" && [file exists $ok_file] } {
+        # Filter dos '/r's from log file to match normal compare behavior.
+        set tmp_file [file join $result_dir $test.tmp]
+        exec tr -d "\r" < $log_file > $tmp_file
+        file rename -force $tmp_file $log_file
         # tclint-disable-next-line command-args
-        catch [concat exec diff $diff_options $ok_file $log_file \
-          >> $diff_file]
+        if { [catch [concat exec diff $diff_options $ok_file $log_file >> $diff_file]] } {
+          puts " *FAIL*"
+          append_failure $test
+          incr errors(fail)
+        } else {
+          puts " pass (expected error)"
+        }
+      } else {
+        puts " *ERROR* [lrange $test_errors 1 end]"
+        append_failure $test
+        incr errors(error)
+
+        # For some reason seg faults aren't echoed in the log - add them.
+        if { [file exists $log_file] } {
+          set log_ch [open $log_file "a"]
+          puts $log_ch "$test_errors"
+          close $log_ch
+        }
+
+        # Report partial log diff anyway.
+        if { [file exists $ok_file] } {
+          # tclint-disable-next-line command-args
+          catch [concat exec diff $diff_options $ok_file $log_file \
+            >> $diff_file]
+        }
       }
     } else {
       set error_msg ""
@@ -311,7 +329,7 @@ proc run_test_app { test cmd_file log_file lang } {
 }
 
 proc run_test_plain { test cmd_file log_file lang } {
-  global app_path app_options result_dir errorCode
+  global app_path app_options result_dir errorCode test_specific_options
 
   if { ![file exists $app_path] } {
     return "ERROR $app_path not found."
@@ -320,9 +338,14 @@ proc run_test_plain { test cmd_file log_file lang } {
   } else {
     set save_dir [pwd]
     cd [file dirname $cmd_file]
+    # Get test-specific options if they exist
+    set test_opts $app_options
+    if { [info exists test_specific_options($test)] } {
+      set test_opts [concat $test_specific_options($test) $app_options]
+    }
     # tclint-disable command-args
     if {
-      [catch [concat exec $app_path $app_options \
+      [catch [concat exec $app_path $test_opts \
         [lang_flag $lang] \
         -metrics [test_metrics_result_file $test $lang] \
         [file tail $cmd_file] >& $log_file]]
@@ -351,7 +374,7 @@ proc run_test_plain { test cmd_file log_file lang } {
 }
 
 proc run_test_valgrind { test cmd_file log_file lang } {
-  global app_path app_options valgrind_options result_dir errorCode
+  global app_path app_options valgrind_options result_dir errorCode test_specific_options
 
   set vg_cmd_file [test_valgrind_cmd_file $test $lang]
   set vg_stream [open $vg_cmd_file "w"]
@@ -359,8 +382,14 @@ proc run_test_valgrind { test cmd_file log_file lang } {
   puts $vg_stream "source [file tail $cmd_file]"
   close $vg_stream
 
+  # Get test-specific options if they exist
+  set test_opts $app_options
+  if { [info exists test_specific_options($test)] } {
+    set test_opts [concat $test_specific_options($test) $app_options]
+  }
+
   set cmd [concat exec valgrind $valgrind_options \
-    $app_path [lang_flag $lang] $app_options \
+    $app_path [lang_flag $lang] $test_opts \
     $vg_cmd_file >& $log_file]
   set error_msg ""
   if { [catch { $cmd }] } {

@@ -11,6 +11,7 @@
 #include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "odb/util.h"
 #include "rcx/box.h"
 #include "rcx/extRCap.h"
 #include "rcx/rcx.h"

@@ -1,0 +1,6 @@
+TEST: Verifying database was loaded via -db flag
+PASS: Design loaded: gcd
+PASS: Database loaded correctly with 250 instances
+PASS: Basic commands work after database load
+PASS: Database object accessible
+PASS: -db flag test completed successfully

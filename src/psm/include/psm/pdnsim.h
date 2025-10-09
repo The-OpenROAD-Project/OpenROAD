@@ -8,8 +8,8 @@
 #include <optional>
 #include <string>
 
+#include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "odb/dbCompare.h"
 
 namespace odb {
 class dbDatabase;

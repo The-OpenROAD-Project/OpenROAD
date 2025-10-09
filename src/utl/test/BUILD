@@ -4,6 +4,8 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "logger_max_messages",
@@ -76,9 +78,10 @@ filegroup(
 cc_test(
     name = "utl_cfile_unittest",
     srcs = ["cpp/TestCFileUtils.cpp"],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/utl",
+        "@boost.asio",
+        "@boost.beast",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

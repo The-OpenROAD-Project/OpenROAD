@@ -26,35 +26,23 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define BOOST_TEST_MODULE gc
-
-#ifdef HAS_BOOST_UNIT_TEST_LIBRARY
-// Shared library version
-#define BOOST_TEST_DYN_LINK
-#include "boost/test/unit_test.hpp"
-#else
-// Header only version
-#include "boost/test/included/unit_test.hpp"
-#endif
-
 #include <map>
 #include <memory>
+#include <tuple>
 #include <utility>
 #include <vector>
 
-#include "boost/test/data/test_case.hpp"
 #include "db/obj/frMarker.h"
 #include "db/tech/frViaDef.h"
 #include "fixture.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
+#include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 
 namespace drt {
-
-namespace bdata = boost::unit_test::data;
 
 // Fixture for GC tests
 struct GCFixture : public Fixture
@@ -68,11 +56,11 @@ struct GCFixture : public Fixture
   {
     odb::Rect bbox = marker->getBBox();
 
-    BOOST_TEST(marker->getLayerNum() == layer_num);
-    BOOST_TEST(marker->getConstraint());
-    TEST_ENUM_EQUAL(marker->getConstraint()->typeId(), type);
+    EXPECT_EQ(marker->getLayerNum(), layer_num);
+    EXPECT_TRUE(marker->getConstraint());
+    EXPECT_EQ(marker->getConstraint()->typeId(), type);
 
-    BOOST_TEST(bbox == expected_bbox);
+    EXPECT_EQ(bbox, expected_bbox);
   }
 
   void runGC()
@@ -92,10 +80,14 @@ struct GCFixture : public Fixture
   FlexGCWorker worker;
 };
 
-BOOST_FIXTURE_TEST_SUITE(gc, GCFixture);
+template <typename T>
+class FixtureWithParam : public GCFixture,
+                         public ::testing::WithParamInterface<T>
+{
+};
 
 // Two touching metal shape from different nets generate a short
-BOOST_AUTO_TEST_CASE(metal_short)
+TEST_F(GCFixture, metal_short)
 {
   // Setup
   frNet* n1 = makeNet("n1");
@@ -109,7 +101,7 @@ BOOST_AUTO_TEST_CASE(metal_short)
   // Test the results
   auto& markers = worker.getMarkers();
 
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcShortConstraint,
@@ -133,7 +125,7 @@ BOOST_AUTO_TEST_CASE(metal_short)
  * (0,-50)        (450,-50)
  */
 // short with obs
-BOOST_AUTO_TEST_CASE(metal_short_obs)
+TEST_F(GCFixture, metal_short_obs)
 {
   // Setup
   frNet* n1 = makeNet("n1");
@@ -156,7 +148,7 @@ BOOST_AUTO_TEST_CASE(metal_short_obs)
   // Test the results
   auto& markers = worker.getMarkers();
 
-  BOOST_TEST(markers.size() == 3);
+  EXPECT_EQ(markers.size(), 3);
   // short of pin+net (450,-50), (550,90)
   // with obs 450,-50), (750,200)
   testMarker(markers[0].get(),
@@ -179,7 +171,7 @@ BOOST_AUTO_TEST_CASE(metal_short_obs)
 
 // Two touching metal shape from the same net must have sufficient
 // overlap
-BOOST_AUTO_TEST_CASE(metal_non_sufficient)
+TEST_F(GCFixture, metal_non_sufficient)
 {
   // Setup
   frNet* n1 = makeNet("n1");
@@ -192,7 +184,7 @@ BOOST_AUTO_TEST_CASE(metal_non_sufficient)
   // Test the results
   auto& markers = worker.getMarkers();
 
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcNonSufficientMetalConstraint,
@@ -200,11 +192,11 @@ BOOST_AUTO_TEST_CASE(metal_non_sufficient)
 }
 
 // Path seg less than min width flags a violation
-BOOST_DATA_TEST_CASE(min_cut,
-                     (bdata::make({1000, 199}) ^ bdata::make({false, true})),
-                     spacing,
-                     legal)
+using MinCutFixture = FixtureWithParam<std::pair<int, bool>>;
+
+TEST_P(MinCutFixture, min_cut)
 {
+  const auto [spacing, legal] = GetParam();
   // Setup
   addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
   addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
@@ -221,9 +213,9 @@ BOOST_DATA_TEST_CASE(min_cut,
   // Test the results
   auto& markers = worker.getMarkers();
   if (legal) {
-    BOOST_TEST(markers.size() == 0);
+    EXPECT_EQ(markers.size(), 0);
   } else {
-    BOOST_TEST(markers.size() == 1);
+    EXPECT_EQ(markers.size(), 1);
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcMinimumcutConstraint,
@@ -231,8 +223,13 @@ BOOST_DATA_TEST_CASE(min_cut,
   }
 }
 
+INSTANTIATE_TEST_SUITE_P(MinCutSuite,
+                         MinCutFixture,
+                         testing::Values(std::make_pair(1000, false),
+                                         std::make_pair(199, true)));
+
 // Path seg less than min width flags a violation
-BOOST_AUTO_TEST_CASE(min_width)
+TEST_F(GCFixture, min_width)
 {
   // Setup
   frNet* n1 = makeNet("n1");
@@ -244,7 +241,7 @@ BOOST_AUTO_TEST_CASE(min_width)
   // Test the results
   auto& markers = worker.getMarkers();
 
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcMinWidthConstraint,
@@ -253,7 +250,7 @@ BOOST_AUTO_TEST_CASE(min_width)
 
 // Abutting Path seg less than min width don't flag a violation
 // as their combined width is ok
-BOOST_AUTO_TEST_CASE(min_width_combines_shapes)
+TEST_F(GCFixture, min_width_combines_shapes)
 {
   // Setup
   frNet* n1 = makeNet("n1");
@@ -264,11 +261,11 @@ BOOST_AUTO_TEST_CASE(min_width_combines_shapes)
   runGC();
 
   // Test the results
-  BOOST_TEST(worker.getMarkers().size() == 0);
+  EXPECT_EQ(worker.getMarkers().size(), 0);
 }
 
 // Check violation for off-grid points
-BOOST_AUTO_TEST_CASE(off_grid)
+TEST_F(GCFixture, off_grid)
 {
   // Setup
   frNet* n1 = makeNet("n1");
@@ -280,7 +277,7 @@ BOOST_AUTO_TEST_CASE(off_grid)
   // Test the results
   auto& markers = worker.getMarkers();
 
-  BOOST_TEST(worker.getMarkers().size() == 1);
+  EXPECT_EQ(worker.getMarkers().size(), 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcOffGridConstraint,
@@ -288,7 +285,7 @@ BOOST_AUTO_TEST_CASE(off_grid)
 }
 
 // Check violation for corner spacing
-BOOST_AUTO_TEST_CASE(corner_basic)
+TEST_F(GCFixture, corner_basic)
 {
   // Setup
   makeCornerConstraint(2);
@@ -303,7 +300,7 @@ BOOST_AUTO_TEST_CASE(corner_basic)
   // Test the results
   auto& markers = worker.getMarkers();
 
-  BOOST_TEST(worker.getMarkers().size() == 1);
+  EXPECT_EQ(worker.getMarkers().size(), 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58CornerSpacingConstraint,
@@ -312,7 +309,7 @@ BOOST_AUTO_TEST_CASE(corner_basic)
 
 // Check no violation for corner spacing with EOL spacing
 // (same as corner_basic but for eol)
-BOOST_AUTO_TEST_CASE(corner_eol_no_violation)
+TEST_F(GCFixture, corner_eol_no_violation)
 {
   // Setup
   makeCornerConstraint(2, 200);
@@ -325,12 +322,12 @@ BOOST_AUTO_TEST_CASE(corner_eol_no_violation)
   runGC();
 
   // Test the results
-  BOOST_TEST(worker.getMarkers().size() == 0);
+  EXPECT_EQ(worker.getMarkers().size(), 0);
 }
 
 // Check no violation for corner spacing with PRL > 0
 // (same as corner_basic but for n2's pathseg begin pt)
-BOOST_AUTO_TEST_CASE(corner_prl_no_violation)
+TEST_F(GCFixture, corner_prl_no_violation)
 {
   // Setup
   makeCornerConstraint(2);
@@ -343,11 +340,14 @@ BOOST_AUTO_TEST_CASE(corner_prl_no_violation)
   runGC();
 
   // Test the results
-  BOOST_TEST(worker.getMarkers().size() == 0);
+  EXPECT_EQ(worker.getMarkers().size(), 0);
 }
 
-BOOST_DATA_TEST_CASE(corner_to_corner, bdata::make({true, false}), legal)
+using CornerToCornerFixture = FixtureWithParam<bool>;
+
+TEST_P(CornerToCornerFixture, corner_to_corner)
 {
+  const bool legal = GetParam();
   // Setup
   auto con = makeCornerConstraint(2);
   con->setCornerToCorner(legal);
@@ -359,11 +359,15 @@ BOOST_DATA_TEST_CASE(corner_to_corner, bdata::make({true, false}), legal)
   runGC();
 
   // Test the results
-  BOOST_TEST(worker.getMarkers().size() == (legal ? 0 : 1));
+  EXPECT_EQ(worker.getMarkers().size(), (legal ? 0 : 1));
 }
 
+INSTANTIATE_TEST_SUITE_P(CornerToCornerSuite,
+                         CornerToCornerFixture,
+                         testing::Values(true, false));
+
 // Check violation for corner spacing on a concave corner
-BOOST_AUTO_TEST_CASE(corner_concave, *boost::unit_test::disabled())
+TEST_F(GCFixture, DISABLED_corner_concave)
 {
   // Setup
   makeCornerConstraint(2, /* no eol */ -1, frCornerTypeEnum::CONCAVE);
@@ -379,7 +383,7 @@ BOOST_AUTO_TEST_CASE(corner_concave, *boost::unit_test::disabled())
   // Test the results
   auto& markers = worker.getMarkers();
 
-  BOOST_TEST(worker.getMarkers().size() == 1);
+  EXPECT_EQ(worker.getMarkers().size(), 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58CornerSpacingConstraint,
@@ -389,15 +393,11 @@ BOOST_AUTO_TEST_CASE(corner_concave, *boost::unit_test::disabled())
 // Check violation for parallel-run-length (PRL) spacing tables
 // This test runs over a variety of width / prl / spacing values
 // where the spacing is both legal or illegal.
-BOOST_DATA_TEST_CASE(spacing_prl,
-                     (bdata::make({100, 220}) * bdata::make({300, 500})
-                      ^ bdata::make({100, 200, 300, 400}))
-                         * bdata::make({true, false}),
-                     width,
-                     prl,
-                     spacing,
-                     legal)
+using SpacingPrlFixture = FixtureWithParam<std::tuple<int, int, int, bool>>;
+
+TEST_P(SpacingPrlFixture, spacing_prl)
 {
+  const auto [width, prl, spacing, legal] = GetParam();
   // Setup
   makeSpacingConstraint(2);
 
@@ -418,9 +418,9 @@ BOOST_DATA_TEST_CASE(spacing_prl,
   auto& markers = worker.getMarkers();
 
   if (legal) {
-    BOOST_TEST(worker.getMarkers().size() == 0);
+    EXPECT_EQ(worker.getMarkers().size(), 0);
   } else {
-    BOOST_TEST(worker.getMarkers().size() == 1);
+    EXPECT_EQ(worker.getMarkers().size(), 1);
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcSpacingTablePrlConstraint,
@@ -428,10 +428,26 @@ BOOST_DATA_TEST_CASE(spacing_prl,
   }
 }
 
+INSTANTIATE_TEST_SUITE_P(
+    SpacingPrlSuite,
+    SpacingPrlFixture,
+    testing::Values(std::make_tuple(100, 300, 100, true),
+                    std::make_tuple(100, 500, 200, true),
+                    std::make_tuple(220, 300, 300, true),
+                    std::make_tuple(220, 500, 400, true),
+                    std::make_tuple(100, 300, 100, false),
+                    std::make_tuple(100, 500, 200, false),
+                    std::make_tuple(220, 300, 300, false),
+                    std::make_tuple(220, 500, 400, false)));
+
 // Check violation for spacing two widths with design rule width on macro
 // obstruction
-BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
+
+using DesignRuleWidthFixture = FixtureWithParam<bool>;
+
+TEST_P(DesignRuleWidthFixture, design_rule_width)
 {
+  const bool legal = GetParam();
   // Setup
   auto dbLayer = db_tech->findLayer("m1");
   dbLayer->initTwoWidths(2);
@@ -466,9 +482,9 @@ BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
   // Test the results
   auto& markers = worker.getMarkers();
   if (legal) {
-    BOOST_TEST(markers.size() == 0);
+    EXPECT_EQ(markers.size(), 0);
   } else {
-    BOOST_TEST(markers.size() == 1);
+    EXPECT_EQ(markers.size(), 1);
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcSpacingTableTwConstraint,
@@ -476,8 +492,12 @@ BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
   }
 }
 
+INSTANTIATE_TEST_SUITE_P(DesignRuleWidthSuite,
+                         DesignRuleWidthFixture,
+                         testing::Bool());
+
 // Check for a min step violation.
-BOOST_AUTO_TEST_CASE(min_step)
+TEST_F(GCFixture, min_step)
 {
   // Setup
   makeMinStepConstraint(2);
@@ -490,12 +510,12 @@ BOOST_AUTO_TEST_CASE(min_step)
   runGC();
 
   // Test the results
-  BOOST_TEST(worker.getMarkers().size() == 1);
+  EXPECT_EQ(worker.getMarkers().size(), 1);
 }
 
 // Check for a lef58 style min step violation.  The checker is very
 // limited and just supports NOBETWEENEOL style.
-BOOST_AUTO_TEST_CASE(min_step58_nobetweeneol)
+TEST_F(GCFixture, min_step58_nobetweeneol)
 {
   // Setup
   auto con = makeMinStep58Constraint(2);
@@ -510,7 +530,7 @@ BOOST_AUTO_TEST_CASE(min_step58_nobetweeneol)
 
   // Test the results
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58MinStepConstraint,
@@ -519,7 +539,7 @@ BOOST_AUTO_TEST_CASE(min_step58_nobetweeneol)
 
 // Check for a lef58 style min step violation.  The checker is very
 // limited and just supports NOBETWEENEOL style.
-BOOST_AUTO_TEST_CASE(min_step58_minadjlength)
+TEST_F(GCFixture, min_step58_minadjlength)
 {
   // Setup
   auto con = makeMinStep58Constraint(2);
@@ -536,7 +556,7 @@ BOOST_AUTO_TEST_CASE(min_step58_minadjlength)
 
   // Test the results
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 2);
+  EXPECT_EQ(markers.size(), 2);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58MinStepConstraint,
@@ -550,7 +570,7 @@ BOOST_AUTO_TEST_CASE(min_step58_minadjlength)
 // Check for a lef58 rect only violation.  The markers are
 // the concave corners expanded by min-width and intersected
 // with the metal shapes.
-BOOST_AUTO_TEST_CASE(rect_only)
+TEST_F(GCFixture, rect_only)
 {
   // Setup
   makeRectOnlyConstraint(2);
@@ -564,7 +584,7 @@ BOOST_AUTO_TEST_CASE(rect_only)
 
   // Test the results
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 3);
+  EXPECT_EQ(markers.size(), 3);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58RectOnlyConstraint,
@@ -580,7 +600,7 @@ BOOST_AUTO_TEST_CASE(rect_only)
 }
 
 // Check for a min enclosed area violation.
-BOOST_AUTO_TEST_CASE(min_enclosed_area)
+TEST_F(GCFixture, min_enclosed_area)
 {
   // Setup
   makeMinEnclosedAreaConstraint(2);
@@ -596,7 +616,7 @@ BOOST_AUTO_TEST_CASE(min_enclosed_area)
 
   // Test the results
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcMinEnclosedAreaConstraint,
@@ -604,7 +624,7 @@ BOOST_AUTO_TEST_CASE(min_enclosed_area)
 }
 
 // Check for a spacing table influence violation.
-BOOST_AUTO_TEST_CASE(spacing_table_infl_vertical)
+TEST_F(GCFixture, spacing_table_infl_vertical)
 {
   // Setup
   makeSpacingTableInfluenceConstraint(2, {10}, {{200, 100}});
@@ -620,14 +640,14 @@ BOOST_AUTO_TEST_CASE(spacing_table_infl_vertical)
   // Test the results
   auto& markers = worker.getMarkers();
 
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcSpacingTableInfluenceConstraint,
              odb::Rect(100, 150, 300, 200));
 }
 // Check for a spacing table influence violation.
-BOOST_AUTO_TEST_CASE(spacing_table_infl_horizontal)
+TEST_F(GCFixture, spacing_table_infl_horizontal)
 {
   // Setup
   makeSpacingTableInfluenceConstraint(2, {10}, {{200, 150}});
@@ -642,7 +662,7 @@ BOOST_AUTO_TEST_CASE(spacing_table_infl_horizontal)
   // Test the results
   auto& markers = worker.getMarkers();
 
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcSpacingTableInfluenceConstraint,
@@ -650,7 +670,7 @@ BOOST_AUTO_TEST_CASE(spacing_table_infl_horizontal)
 }
 
 // Check for a spacing table twowidths violation.
-BOOST_AUTO_TEST_CASE(spacing_table_twowidth)
+TEST_F(GCFixture, spacing_table_twowidth)
 {
   // Setup
   auto dbLayer = db_tech->findLayer("m1");
@@ -673,7 +693,7 @@ BOOST_AUTO_TEST_CASE(spacing_table_twowidth)
   // Test the results
   auto& markers = worker.getMarkers();
 
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcSpacingTableTwConstraint,
@@ -681,13 +701,11 @@ BOOST_AUTO_TEST_CASE(spacing_table_twowidth)
 }
 
 // Check for a SPACING RANGE violation.
-BOOST_DATA_TEST_CASE(spacing_range,
-                     bdata::make({0, 200, 200}) ^ bdata::make({200, 200, 100})
-                         ^ bdata::make({false, true, false}),
-                     minWidth,
-                     y,
-                     legal)
+using SpacingRangeFixture = FixtureWithParam<std::tuple<int, int, bool>>;
+
+TEST_P(SpacingRangeFixture, spacing_range)
 {
+  const auto [minWidth, y, legal] = GetParam();
   // Setup
   makeSpacingRangeConstraint(2, 500, minWidth, 400);
 
@@ -702,12 +720,12 @@ BOOST_DATA_TEST_CASE(spacing_range,
   // Test the results
   auto& markers = worker.getMarkers();
   if (legal) {
-    BOOST_TEST(markers.size() == 0);
+    EXPECT_EQ(markers.size(), 0);
   } else {
-    BOOST_TEST(markers.size() == 1);
+    EXPECT_EQ(markers.size(), 1);
     if (y == 100) {
-      BOOST_TEST(markers[0]->getConstraint()->typeId()
-                 == frConstraintTypeEnum::frcShortConstraint);
+      EXPECT_EQ(markers[0]->getConstraint()->typeId(),
+                frConstraintTypeEnum::frcShortConstraint);
     } else {
       testMarker(markers[0].get(),
                  2,
@@ -717,12 +735,19 @@ BOOST_DATA_TEST_CASE(spacing_range,
   }
 }
 
+INSTANTIATE_TEST_SUITE_P(SpacingRangeSuite,
+                         SpacingRangeFixture,
+                         testing::Values(std::make_tuple(0, 200, false),
+                                         std::make_tuple(200, 200, true),
+                                         std::make_tuple(200, 100, false)));
+
 // Check for a SPACING RANGE SAME/DIFF net violation.
-BOOST_DATA_TEST_CASE(spacing_range_same_diff_net,
-                     bdata::make({true, false}) ^ bdata::make({true, false}),
-                     samenet,
-                     legal)
+
+using SpacingRangeSameDiffNetFixture = FixtureWithParam<std::pair<bool, bool>>;
+
+TEST_P(SpacingRangeSameDiffNetFixture, spacing_range_same_diff_net)
 {
+  const auto [samenet, legal] = GetParam();
   // Setup
   makeSpacingRangeConstraint(2, 500, 0, 400);
 
@@ -740,9 +765,9 @@ BOOST_DATA_TEST_CASE(spacing_range_same_diff_net,
   // Test the results
   auto& markers = worker.getMarkers();
   if (legal) {
-    BOOST_TEST(markers.size() == 0);
+    EXPECT_EQ(markers.size(), 0);
   } else {
-    BOOST_TEST(markers.size() == 1);
+    EXPECT_EQ(markers.size(), 1);
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcSpacingRangeConstraint,
@@ -750,9 +775,17 @@ BOOST_DATA_TEST_CASE(spacing_range_same_diff_net,
   }
 }
 
+INSTANTIATE_TEST_SUITE_P(SpacingRangeSameDiffNetSuite,
+                         SpacingRangeSameDiffNetFixture,
+                         testing::Values(std::make_pair(false, false),
+                                         std::make_pair(true, true)));
+
 // Check for a basic end-of-line (EOL) spacing violation.
-BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
+using EolBasicFixture = FixtureWithParam<bool>;
+
+TEST_P(EolBasicFixture, eol_basic)
 {
+  const bool lef58 = GetParam();
   // Setup
   if (lef58) {
     makeLef58SpacingEolConstraint(2);
@@ -769,7 +802,7 @@ BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
 
   // Test the results
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
   testMarker(markers[0].get(),
              2,
              lef58 ? frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint
@@ -777,8 +810,10 @@ BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
              odb::Rect(450, 500, 550, 650));
 }
 
+INSTANTIATE_TEST_SUITE_P(EolBasicSuite, EolBasicFixture, testing::Bool());
+
 // Check for a basic end-of-line (EOL) spacing violation.
-BOOST_AUTO_TEST_CASE(eol_endtoend)
+TEST_F(GCFixture, eol_endtoend)
 {
   // Setup
   auto con = makeLef58SpacingEolConstraint(2);
@@ -797,14 +832,14 @@ BOOST_AUTO_TEST_CASE(eol_endtoend)
 
   // Test the results
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
              odb::Rect(100, 0, 350, 100));
 }
 // Check for a basic end-of-line (EOL) spacing violation with extension.
-BOOST_AUTO_TEST_CASE(eol_endtoend_ext)
+TEST_F(GCFixture, eol_endtoend_ext)
 {
   // Setup
   auto con = makeLef58SpacingEolConstraint(2);
@@ -823,14 +858,14 @@ BOOST_AUTO_TEST_CASE(eol_endtoend_ext)
 
   // Test the results
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
              odb::Rect(100, 100, 350, 150));
 }
 
-BOOST_AUTO_TEST_CASE(eol_wrongdirspc)
+TEST_F(GCFixture, eol_wrongdirspc)
 {
   // Setup
   auto con = makeLef58SpacingEolConstraint(2);
@@ -845,14 +880,14 @@ BOOST_AUTO_TEST_CASE(eol_wrongdirspc)
 
   // Test the results
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 0);
+  EXPECT_EQ(markers.size(), 0);
 }
 
-BOOST_DATA_TEST_CASE(eol_ext_basic,
-                     (bdata::make({30, 50})) ^ (bdata::make({true, false})),
-                     ext,
-                     legal)
+using EolExtBasicFixture = FixtureWithParam<std::pair<int, bool>>;
+
+TEST_P(EolExtBasicFixture, eol_ext_basic)
 {
+  const auto [ext, legal] = GetParam();
   // Setup
   makeEolExtensionConstraint(2, 100, {51, 101}, {20, ext}, false);
 
@@ -866,9 +901,9 @@ BOOST_DATA_TEST_CASE(eol_ext_basic,
   // Test the results
   auto& markers = worker.getMarkers();
   if (legal) {
-    BOOST_TEST(markers.size() == 0);
+    EXPECT_EQ(markers.size(), 0);
   } else {
-    BOOST_TEST(markers.size() == 1);
+    EXPECT_EQ(markers.size(), 1);
     if (markers.size() == 1) {
       testMarker(markers[0].get(),
                  2,
@@ -878,7 +913,12 @@ BOOST_DATA_TEST_CASE(eol_ext_basic,
   }
 }
 
-BOOST_AUTO_TEST_CASE(eol_prlend)
+INSTANTIATE_TEST_SUITE_P(EolExtBasicSuite,
+                         EolExtBasicFixture,
+                         testing::Values(std::make_pair(30, true),
+                                         std::make_pair(50, false)));
+
+TEST_F(GCFixture, eol_prlend)
 {
   // Setup
   makeLef58SpacingEolConstraint(2,    // layer_num
@@ -907,7 +947,7 @@ BOOST_AUTO_TEST_CASE(eol_prlend)
 
   // Test the results
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 2);
+  EXPECT_EQ(markers.size(), 2);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
@@ -918,8 +958,11 @@ BOOST_AUTO_TEST_CASE(eol_prlend)
              odb::Rect(100, 950, 220, 1050));
 }
 
-BOOST_DATA_TEST_CASE(eol_ext_paronly, (bdata::make({true, false})), parOnly)
+using EolExtParOnlyFixture = FixtureWithParam<bool>;
+
+TEST_P(EolExtParOnlyFixture, eol_ext_paronly)
 {
+  const bool parOnly = GetParam();
   // Setup
   makeEolExtensionConstraint(2, 100, {101}, {50}, parOnly);
 
@@ -932,18 +975,26 @@ BOOST_DATA_TEST_CASE(eol_ext_paronly, (bdata::make({true, false})), parOnly)
   // Test the results
   auto& markers = worker.getMarkers();
   if (parOnly) {
-    BOOST_TEST(markers.size() == 0);
+    EXPECT_EQ(markers.size(), 0);
   } else {
-    BOOST_TEST(markers.size() == 1);
+    EXPECT_EQ(markers.size(), 1);
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcLef58EolExtensionConstraint,
                odb::Rect(500, 150, 520, 240));
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(EolExtParOnlySuite,
+                         EolExtParOnlyFixture,
+                         testing::Bool());
+
 // Check for eol keepout violation.
-BOOST_DATA_TEST_CASE(eol_keepout, (bdata::make({true, false})), legal)
+using EolKeepoutFixture = FixtureWithParam<bool>;
+
+TEST_P(EolKeepoutFixture, eol_keepout)
 {
+  const bool legal = GetParam();
   // Setup
   makeLef58EolKeepOutConstraint(2);
 
@@ -961,9 +1012,9 @@ BOOST_DATA_TEST_CASE(eol_keepout, (bdata::make({true, false})), legal)
   // Test the results
   auto& markers = worker.getMarkers();
   if (legal) {
-    BOOST_TEST(markers.size() == 0);
+    EXPECT_EQ(markers.size(), 0);
   } else {
-    BOOST_TEST(markers.size() == 1);
+    EXPECT_EQ(markers.size(), 1);
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcLef58EolKeepOutConstraint,
@@ -971,7 +1022,9 @@ BOOST_DATA_TEST_CASE(eol_keepout, (bdata::make({true, false})), legal)
   }
 }
 
-BOOST_AUTO_TEST_CASE(eol_keepout_except_within)
+INSTANTIATE_TEST_SUITE_P(EolKeepoutSuite, EolKeepoutFixture, testing::Bool());
+
+TEST_F(GCFixture, eol_keepout_except_within)
 {
   // Setup
   makeLef58EolKeepOutConstraint(2, false, true);
@@ -984,15 +1037,15 @@ BOOST_AUTO_TEST_CASE(eol_keepout_except_within)
   runGC();
 
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 0);
+  EXPECT_EQ(markers.size(), 0);
 }
 
 // Check for eol keepout violation CORNERONLY.
-BOOST_DATA_TEST_CASE(eol_keepout_corner,
-                     (bdata::make({true, false}) * bdata::make({true, false})),
-                     concave,
-                     legal)
+using EolKeepoutCornerFixture = FixtureWithParam<std::tuple<bool, bool>>;
+
+TEST_P(EolKeepoutCornerFixture, eol_keepout_corner)
 {
+  const auto [concave, legal] = GetParam();
   // Setup
   makeLef58EolKeepOutConstraint(2, true);
 
@@ -1013,9 +1066,9 @@ BOOST_DATA_TEST_CASE(eol_keepout_corner,
   // Test the results
   auto& markers = worker.getMarkers();
   if (legal) {
-    BOOST_TEST(markers.size() == 0);
+    EXPECT_EQ(markers.size(), 0);
   } else {
-    BOOST_TEST(markers.size() == 1);
+    EXPECT_EQ(markers.size(), 1);
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcLef58EolKeepOutConstraint,
@@ -1023,10 +1076,16 @@ BOOST_DATA_TEST_CASE(eol_keepout_corner,
   }
 }
 
+INSTANTIATE_TEST_SUITE_P(EolKeepoutCornerSuite,
+                         EolKeepoutCornerFixture,
+                         testing::Combine(testing::Bool(), testing::Bool()));
+
 // Check for an end-of-line (EOL) spacing violation involving one
 // parallel edge
-BOOST_DATA_TEST_CASE(eol_parallel_edge, (bdata::make({true, false})), lef58)
+using EolParallelEdgeFixture = FixtureWithParam<bool>;
+TEST_P(EolParallelEdgeFixture, eol_parallel_edge)
 {
+  const bool lef58 = GetParam();
   // Setup
   if (lef58) {
     makeLef58SpacingEolParEdgeConstraint(
@@ -1046,7 +1105,7 @@ BOOST_DATA_TEST_CASE(eol_parallel_edge, (bdata::make({true, false})), lef58)
 
   // Test the results
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
   testMarker(markers[0].get(),
              2,
              lef58 ? frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint
@@ -1054,10 +1113,16 @@ BOOST_DATA_TEST_CASE(eol_parallel_edge, (bdata::make({true, false})), lef58)
              odb::Rect(450, 500, 550, 650));
 }
 
+INSTANTIATE_TEST_SUITE_P(EolParallelEdgeSuite,
+                         EolParallelEdgeFixture,
+                         testing::Bool());
+
 // Check for an end-of-line (EOL) spacing violation involving two
 // parallel edges
-BOOST_DATA_TEST_CASE(eol_parallel_two_edge, (bdata::make({true, false})), lef58)
+using EolParallelTwoEdgeFixture = FixtureWithParam<bool>;
+TEST_P(EolParallelTwoEdgeFixture, eol_parallel_two_edge)
 {
+  const bool lef58 = GetParam();
   // Setup
   if (lef58) {
     makeLef58SpacingEolParEdgeConstraint(
@@ -1080,7 +1145,7 @@ BOOST_DATA_TEST_CASE(eol_parallel_two_edge, (bdata::make({true, false})), lef58)
 
   // Test the results
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
   testMarker(markers[0].get(),
              2,
              lef58 ? frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint
@@ -1088,13 +1153,15 @@ BOOST_DATA_TEST_CASE(eol_parallel_two_edge, (bdata::make({true, false})), lef58)
              odb::Rect(450, 500, 550, 650));
 }
 
-BOOST_DATA_TEST_CASE(eol_min_max,
-                     (bdata::make({true, false}) * bdata::make({true, false})
-                      * bdata::make({true, false})),
-                     max,
-                     twoSides,
-                     legal)
+INSTANTIATE_TEST_SUITE_P(EolParallelTwoEdgeSuite,
+                         EolParallelTwoEdgeFixture,
+                         testing::Bool());
+
+using EolMinMaxFixture = FixtureWithParam<std::tuple<bool, bool, bool>>;
+
+TEST_P(EolMinMaxFixture, eol_min_max)
 {
+  const auto [max, twoSides, legal] = GetParam();
   makeLef58SpacingEolMinMaxLenConstraint(
       makeLef58SpacingEolConstraint(2), 500, max, twoSides);
   frNet* n1 = makeNet("n1");
@@ -1127,9 +1194,9 @@ BOOST_DATA_TEST_CASE(eol_min_max,
   // Test the results
   auto& markers = worker.getMarkers();
   if (legal) {
-    BOOST_TEST(markers.size() == 0);
+    EXPECT_EQ(markers.size(), 0);
   } else {
-    BOOST_TEST(markers.size() == 1);
+    EXPECT_EQ(markers.size(), 1);
     if (markers.size() == 1) {
       testMarker(markers[0].get(),
                  2,
@@ -1138,11 +1205,17 @@ BOOST_DATA_TEST_CASE(eol_min_max,
     }
   }
 }
-BOOST_DATA_TEST_CASE(eol_enclose_cut,
-                     (bdata::make({0, 350})) ^ (bdata::make({true, false})),
-                     y,
-                     legal)
+
+INSTANTIATE_TEST_SUITE_P(EolMinMaxSuite,
+                         EolMinMaxFixture,
+                         testing::Combine(testing::Bool(),
+                                          testing::Bool(),
+                                          testing::Bool()));
+
+using EolEncloseCutFixture = FixtureWithParam<std::pair<int, bool>>;
+TEST_P(EolEncloseCutFixture, eol_enclose_cut)
 {
+  const auto [y, legal] = GetParam();
   addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
   addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
   makeLef58SpacingEolCutEncloseConstraint(makeLef58SpacingEolConstraint(4));
@@ -1155,9 +1228,9 @@ BOOST_DATA_TEST_CASE(eol_enclose_cut,
   runGC();
   auto& markers = worker.getMarkers();
   if (legal) {
-    BOOST_TEST(markers.size() == 0);
+    EXPECT_EQ(markers.size(), 0);
   } else {
-    BOOST_TEST(markers.size() == 1);
+    EXPECT_EQ(markers.size(), 1);
     if (markers.size() == 1) {
       testMarker(markers[0].get(),
                  4,
@@ -1167,8 +1240,15 @@ BOOST_DATA_TEST_CASE(eol_enclose_cut,
   }
 }
 
-BOOST_DATA_TEST_CASE(cut_spc_tbl, (bdata::make({true, false})), viol)
+INSTANTIATE_TEST_SUITE_P(EolEncloseCutSuite,
+                         EolEncloseCutFixture,
+                         testing::Values(std::make_pair(0, true),
+                                         std::make_pair(350, false)));
+
+using CutSpcTblFixture = FixtureWithParam<bool>;
+TEST_P(CutSpcTblFixture, cut_spc_tbl)
 {
+  const bool viol = GetParam();
   // Setup
   addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
   addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
@@ -1206,14 +1286,15 @@ BOOST_DATA_TEST_CASE(cut_spc_tbl, (bdata::make({true, false})), viol)
   // Test the results
   auto& markers = worker.getMarkers();
 
-  BOOST_TEST(markers.size() == (viol ? 1 : 0));
+  EXPECT_EQ(markers.size(), (viol ? 1 : 0));
 }
 
-BOOST_DATA_TEST_CASE(cut_spc_tbl_ex_aligned,
-                     (bdata::make({0, 10})) ^ (bdata::make({1, 0})),
-                     x,
-                     viol)
+INSTANTIATE_TEST_SUITE_P(CutSpcTblSuite, CutSpcTblFixture, testing::Bool());
+
+using CutSpcTblExAlignedFixture = FixtureWithParam<std::pair<int, int>>;
+TEST_P(CutSpcTblExAlignedFixture, cut_spc_tbl_ex_aligned)
 {
+  const auto [x, viol] = GetParam();
   // Setup
   addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
   addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
@@ -1235,10 +1316,15 @@ BOOST_DATA_TEST_CASE(cut_spc_tbl_ex_aligned,
   // Test the results
   auto& markers = worker.getMarkers();
 
-  BOOST_TEST(markers.size() == viol);
+  EXPECT_EQ(markers.size(), viol);
 }
 
-BOOST_AUTO_TEST_CASE(metal_width_via_map)
+INSTANTIATE_TEST_SUITE_P(CutSpcTblExAlignedSuite,
+                         CutSpcTblExAlignedFixture,
+                         testing::Values(std::make_pair(0, 1),
+                                         std::make_pair(10, 0)));
+
+TEST_F(GCFixture, metal_width_via_map)
 {
   // Setup
   addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
@@ -1267,18 +1353,17 @@ BOOST_AUTO_TEST_CASE(metal_width_via_map)
   // Test the results
   auto& markers = worker.getMarkers();
 
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
   testMarker(markers[0].get(),
              3,
              frConstraintTypeEnum::frcMetalWidthViaConstraint,
              odb::Rect(100, 0, 200, 100));
 }
 
-BOOST_DATA_TEST_CASE(cut_spc_parallel_overlap,
-                     (bdata::make({100, 50}) ^ bdata::make({false, true})),
-                     spacing,
-                     legal)
+using CutSpcParallelOverlapFixture = FixtureWithParam<std::pair<int, int>>;
+TEST_P(CutSpcParallelOverlapFixture, cut_spc_parallel_overlap)
 {
+  const auto [spacing, legal] = GetParam();
   // Setup
   addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
   addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
@@ -1295,9 +1380,9 @@ BOOST_DATA_TEST_CASE(cut_spc_parallel_overlap,
   // // Test the results
   auto& markers = worker.getMarkers();
   if (legal) {
-    BOOST_TEST(markers.size() == 0);
+    EXPECT_EQ(markers.size(), 0);
   } else {
-    BOOST_TEST(markers.size() == 1);
+    EXPECT_EQ(markers.size(), 1);
   }
   if (!markers.empty()) {
     testMarker(markers[0].get(),
@@ -1307,8 +1392,15 @@ BOOST_DATA_TEST_CASE(cut_spc_parallel_overlap,
   }
 }
 
-BOOST_DATA_TEST_CASE(cut_spc_adjacent_cuts, (bdata::make({true, false})), lef58)
+INSTANTIATE_TEST_SUITE_P(CutSpcParallelOverlapSuite,
+                         CutSpcParallelOverlapFixture,
+                         testing::Values(std::make_pair(100, false),
+                                         std::make_pair(50, true)));
+
+using CutSpcAdjacentCutsFixture = FixtureWithParam<bool>;
+TEST_P(CutSpcAdjacentCutsFixture, cut_spc_adjacent_cuts)
 {
+  const bool lef58 = GetParam();
   // Setup
   addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
   addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
@@ -1331,11 +1423,15 @@ BOOST_DATA_TEST_CASE(cut_spc_adjacent_cuts, (bdata::make({true, false})), lef58)
     // Test the results
     auto& markers = worker.getMarkers();
 
-    BOOST_TEST(markers.size() == 3);
+    EXPECT_EQ(markers.size(), 3);
   }
 }
 
-BOOST_AUTO_TEST_CASE(cut_keepoutzone)
+INSTANTIATE_TEST_SUITE_P(CutSpcAdjacentCutsSuite,
+                         CutSpcAdjacentCutsFixture,
+                         testing::Bool());
+
+TEST_F(GCFixture, cut_keepoutzone)
 {
   // Setup
   addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
@@ -1359,25 +1455,18 @@ BOOST_AUTO_TEST_CASE(cut_keepoutzone)
 
   // // Test the results
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
   testMarker(markers[0].get(),
              3,
              frConstraintTypeEnum::frcLef58KeepOutZoneConstraint,
              odb::Rect(150, 150, 200, 200));
 }
 
-BOOST_DATA_TEST_CASE(route_wrong_direction_spc,
-                     (bdata::make({100, 50, 100, 100})
-                      ^ bdata::make({false, true, true, true})
-                      ^ bdata::make({false, false, true, false})
-                      ^ bdata::make({150, 150, 150, 150})
-                      ^ bdata::make({0, 0, 0, 50})),
-                     spacing,
-                     legal,
-                     noneolValid,
-                     noneolWidth,
-                     prlLength)
+using RouteWrongDirectionSpcFixture
+    = FixtureWithParam<std::tuple<int, bool, bool, int, int>>;
+TEST_P(RouteWrongDirectionSpcFixture, route_wrong_direction_spc)
 {
+  const auto [spacing, legal, noneolValid, noneolWidth, prlLength] = GetParam();
   // Setup
   auto db_layer = db_tech->findLayer("m1");
   db_layer->setDirection(odb::dbTechLayerDir::VERTICAL);
@@ -1407,9 +1496,9 @@ BOOST_DATA_TEST_CASE(route_wrong_direction_spc,
   // // Test the results
   auto& markers = worker.getMarkers();
   if (legal) {
-    BOOST_TEST(markers.size() == 0);
+    EXPECT_EQ(markers.size(), 0);
   } else {
-    BOOST_TEST(markers.size() == 1);
+    EXPECT_EQ(markers.size(), 1);
   }
   if (!markers.empty()) {
     testMarker(markers[0].get(),
@@ -1419,7 +1508,15 @@ BOOST_DATA_TEST_CASE(route_wrong_direction_spc,
   }
 }
 
-BOOST_AUTO_TEST_CASE(twowires_forbidden_spc)
+INSTANTIATE_TEST_SUITE_P(
+    RouteWrongDirectionSpcSuite,
+    RouteWrongDirectionSpcFixture,
+    testing::Values(std::make_tuple(100, false, false, 150, 0),
+                    std::make_tuple(50, true, false, 150, 0),
+                    std::make_tuple(100, true, true, 150, 0),
+                    std::make_tuple(100, true, false, 150, 50)));
+
+TEST_F(GCFixture, twowires_forbidden_spc)
 {
   // Setup
   auto db_layer = db_tech->findLayer("m1");
@@ -1437,10 +1534,10 @@ BOOST_AUTO_TEST_CASE(twowires_forbidden_spc)
   runGC();
 
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(forbidden_spc)
+TEST_F(GCFixture, forbidden_spc)
 {
   // Setup
   auto db_layer = db_tech->findLayer("m1");
@@ -1461,10 +1558,10 @@ BOOST_AUTO_TEST_CASE(forbidden_spc)
   runGC();
 
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(lef58_enclosure)
+TEST_F(GCFixture, lef58_enclosure)
 {
   // Setup
   addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
@@ -1482,7 +1579,7 @@ BOOST_AUTO_TEST_CASE(lef58_enclosure)
   runGC();
   // BELOW ENC VALID, ABOVE ENCLOSURE VIOLATING
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 1);
+  EXPECT_EQ(markers.size(), 1);
   if (!markers.empty()) {
     testMarker(markers[0].get(),
                4,
@@ -1491,11 +1588,10 @@ BOOST_AUTO_TEST_CASE(lef58_enclosure)
   }
 }
 
-BOOST_DATA_TEST_CASE(cut_spc_tbl_orth,
-                     (bdata::make({true, false}) ^ bdata::make({140, 150})),
-                     violating,
-                     y)
+using CutSpcTblOrthFixture = FixtureWithParam<std::pair<bool, int>>;
+TEST_P(CutSpcTblOrthFixture, cut_spc_tbl_orth)
 {
+  const auto [violating, y] = GetParam();
   addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
   addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
   makeSpacingTableOrthConstraint(3, 150, 50);
@@ -1507,17 +1603,21 @@ BOOST_DATA_TEST_CASE(cut_spc_tbl_orth,
   runGC();
   auto& markers = worker.getMarkers();
   if (violating) {
-    BOOST_TEST(markers.size() == 1);
+    EXPECT_EQ(markers.size(), 1);
   } else {
-    BOOST_TEST(markers.size() == 0);
+    EXPECT_EQ(markers.size(), 0);
   }
 }
 
-BOOST_DATA_TEST_CASE(width_tbl_orth,
-                     (bdata::make({40, 50, 60}) * bdata::make({40, 50, 60})),
-                     horz_spc,
-                     vert_spc)
+INSTANTIATE_TEST_SUITE_P(CutSpcTblOrthSuite,
+                         CutSpcTblOrthFixture,
+                         testing::Values(std::make_pair(true, 140),
+                                         std::make_pair(false, 150)));
+
+using WidthTblOrthFixture = FixtureWithParam<std::tuple<int, int>>;
+TEST_P(WidthTblOrthFixture, width_tbl_orth)
 {
+  const auto [horz_spc, vert_spc] = GetParam();
   makeWidthTblOrthConstraint(2, horz_spc, vert_spc);
   design->getTech()->getLayer(2)->setMinWidth(
       10);  // to ignore NSMetal violations
@@ -1530,12 +1630,14 @@ BOOST_DATA_TEST_CASE(width_tbl_orth,
   runGC();
   auto& markers = worker.getMarkers();
   if (violating) {
-    BOOST_TEST(markers.size() == 1);
+    EXPECT_EQ(markers.size(), 1);
   } else {
-    BOOST_TEST(markers.size() == 0);
+    EXPECT_EQ(markers.size(), 0);
   }
 }
-
-BOOST_AUTO_TEST_SUITE_END();
+INSTANTIATE_TEST_SUITE_P(WidthTblOrthSuite,
+                         WidthTblOrthFixture,
+                         testing::Combine(testing::Values(40, 50, 60),
+                                          testing::Values(40, 50, 60)));
 
 }  // namespace drt

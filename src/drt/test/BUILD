@@ -4,6 +4,8 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "drc_test",
@@ -113,12 +115,16 @@ cc_test(
         "fixture.h",
         "gcTest.cpp",
     ],
+    features = ["-layering_check"],  # TODO: acceses private headers
     includes = [
         "../src",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/drt",
-        "@boost.test",
+        "//src/drt:db_hdrs",
+        "//src/odb",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )

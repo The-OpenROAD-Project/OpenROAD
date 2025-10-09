@@ -1,9 +1,8 @@
-#define BOOST_TEST_MODULE TestChips
 #include <exception>
 #include <set>
 #include <vector>
 
-#include "boost/test/included/unit_test.hpp"
+#include "gtest/gtest.h"
 #include "helper.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -12,14 +11,10 @@
 namespace odb {
 namespace {
 
-BOOST_AUTO_TEST_SUITE(test_suite)
-struct F_CHIP_HIERARCHY
+struct ChipHierarchyFixture : public SimpleDbFixture
 {
-  F_CHIP_HIERARCHY()
+  ChipHierarchyFixture()
   {
-    utl::Logger* logger = new utl::Logger();
-    db = dbDatabase::create();
-    db->setLogger(logger);
     createLibsAndTechs();
     createChips();
     createChipRegions();
@@ -27,6 +22,7 @@ struct F_CHIP_HIERARCHY
   }
   void createLibsAndTechs()
   {
+    dbDatabase* db = db_.get();
     tech1 = dbTech::create(db, "tech1");
     layer_l1 = dbTechLayer::create(tech1, "L1", dbTechLayerType::MASTERSLICE);
     lib1 = dbLib::create(db, "lib1", tech1, ',');
@@ -36,6 +32,7 @@ struct F_CHIP_HIERARCHY
   }
   void createChips()
   {
+    dbDatabase* db = db_.get();
     system_chip
         = dbChip::create(db, nullptr, "system_chip", dbChip::ChipType::HIER);
     system_chip->setWidth(5000);
@@ -85,9 +82,6 @@ struct F_CHIP_HIERARCHY
     cache_inst->setOrient(dbOrientType3D("MZ_MY_R90"));
   }
 
-  ~F_CHIP_HIERARCHY() { dbDatabase::destroy(db); }
-
-  dbDatabase* db;
   dbTech* tech1;
   dbTech* tech2;
   dbLib* lib1;
@@ -110,116 +104,112 @@ struct F_CHIP_HIERARCHY
   dbChipBump* io_bump;
 };
 
-BOOST_FIXTURE_TEST_CASE(test_chip_creation, F_CHIP_HIERARCHY)
+TEST_F(ChipHierarchyFixture, test_chip_creation)
 {
-  BOOST_TEST(db->getChips().size() == 5);
-  BOOST_TEST(db->findChip("system_chip") == system_chip);
-  BOOST_TEST(db->findChip("cpu_chip") == cpu_chip);
-  BOOST_TEST(db->findChip("memory_chip") == memory_chip);
-  BOOST_TEST(db->findChip("io_chip") == io_chip);
-  BOOST_TEST(db->findChip("cache_chip") == cache_chip);
-  BOOST_TEST(db->findChip("dummy_chip") == nullptr);
-  BOOST_TEST(db->getChip() == system_chip);
+  EXPECT_EQ(db_->getChips().size(), 5);
+  EXPECT_EQ(db_->findChip("system_chip"), system_chip);
+  EXPECT_EQ(db_->findChip("cpu_chip"), cpu_chip);
+  EXPECT_EQ(db_->findChip("memory_chip"), memory_chip);
+  EXPECT_EQ(db_->findChip("io_chip"), io_chip);
+  EXPECT_EQ(db_->findChip("cache_chip"), cache_chip);
+  EXPECT_EQ(db_->findChip("dummy_chip"), nullptr);
+  EXPECT_EQ(db_->getChip(), system_chip);
 
   // Test dbChip methods
-  BOOST_TEST(system_chip->getName() == "system_chip");
+  EXPECT_STREQ(system_chip->getName(), "system_chip");
 
-  BOOST_TEST((system_chip->getChipType() == dbChip::ChipType::HIER));
-  BOOST_TEST((cache_chip->getChipType() == dbChip::ChipType::DIE));
+  EXPECT_EQ(system_chip->getChipType(), dbChip::ChipType::HIER);
+  EXPECT_EQ(cache_chip->getChipType(), dbChip::ChipType::DIE);
 
-  BOOST_TEST(system_chip->getOffset() == Point(10, 0));
-  BOOST_TEST(system_chip->getWidth() == 5000);
-  BOOST_TEST(system_chip->getHeight() == 4000);
-  BOOST_TEST(system_chip->getThickness() == 500);
+  EXPECT_EQ(system_chip->getOffset(), Point(10, 0));
+  EXPECT_EQ(system_chip->getWidth(), 5000);
+  EXPECT_EQ(system_chip->getHeight(), 4000);
+  EXPECT_EQ(system_chip->getThickness(), 500);
 
   // Test dbDatabase methods
-  db->setTopChip(cpu_chip);
-  BOOST_TEST(db->getChip() == cpu_chip);
+  db_->setTopChip(cpu_chip);
+  EXPECT_EQ(db_->getChip(), cpu_chip);
   dbChip::destroy(cpu_chip);
-  BOOST_TEST(db->getChips().size() == 4);
-  BOOST_TEST(db->findChip("cpu_chip") == nullptr);
-  BOOST_TEST(db->getChip() == nullptr);
-  try {
-    dbChipInst::create(system_chip, cpu_chip, "cpu_inst");
-    BOOST_TEST(false);
-  } catch (const std::exception& e) {
-    BOOST_TEST(true);
-  }
+  EXPECT_EQ(db_->getChips().size(), 4);
+  EXPECT_EQ(db_->findChip("cpu_chip"), nullptr);
+  EXPECT_EQ(db_->getChip(), nullptr);
+  EXPECT_THROW(dbChipInst::create(system_chip, cpu_chip, "cpu_inst"),
+               std::exception);
 }
 
-BOOST_FIXTURE_TEST_CASE(test_chip_hierarchy, F_CHIP_HIERARCHY)
+TEST_F(ChipHierarchyFixture, test_chip_hierarchy)
 {
   // Test system level chip instances
   dbSet<dbChipInst> system_chipinsts = system_chip->getChipInsts();
-  BOOST_TEST(system_chipinsts.size() == 3);
+  EXPECT_EQ(system_chipinsts.size(), 3);
 
   // Test CPU level chip instances (nested)
   dbSet<dbChipInst> cpu_chipinsts = cpu_chip->getChipInsts();
-  BOOST_TEST(cpu_chipinsts.size() == 1);
+  EXPECT_EQ(cpu_chipinsts.size(), 1);
 
   // Verify the cache instance is in the CPU chip
   bool found_cache = false;
   for (auto ci : cpu_chipinsts) {
     if (ci == cache_inst) {
       found_cache = true;
-      BOOST_TEST(ci->getParentChip() == cpu_chip);
-      BOOST_TEST(ci->getMasterChip() == cache_chip);
+      EXPECT_EQ(ci->getParentChip(), cpu_chip);
+      EXPECT_EQ(ci->getMasterChip(), cache_chip);
       break;
     }
   }
-  BOOST_TEST(found_cache == true);
+  EXPECT_TRUE(found_cache);
 
   // Test that other chips have no instances
-  BOOST_TEST(memory_chip->getChipInsts().size() == 0);
-  BOOST_TEST(io_chip->getChipInsts().size() == 0);
-  BOOST_TEST(cache_chip->getChipInsts().size() == 0);
+  EXPECT_EQ(memory_chip->getChipInsts().size(), 0);
+  EXPECT_EQ(io_chip->getChipInsts().size(), 0);
+  EXPECT_EQ(cache_chip->getChipInsts().size(), 0);
 
   // Verify parent-child relationships
-  BOOST_TEST(cpu_inst->getParentChip() == system_chip);
-  BOOST_TEST(memory_inst->getParentChip() == system_chip);
-  BOOST_TEST(io_inst->getParentChip() == system_chip);
-  BOOST_TEST(cache_inst->getParentChip() == cpu_chip);
-  BOOST_TEST(system_chip->findChipInst("cpu_inst") == cpu_inst);
-  BOOST_TEST(cpu_chip->findChipInst("cache_inst") == cache_inst);
-  BOOST_TEST(system_chip->findChipInst("cache_inst") == nullptr);
+  EXPECT_EQ(cpu_inst->getParentChip(), system_chip);
+  EXPECT_EQ(memory_inst->getParentChip(), system_chip);
+  EXPECT_EQ(io_inst->getParentChip(), system_chip);
+  EXPECT_EQ(cache_inst->getParentChip(), cpu_chip);
+  EXPECT_EQ(system_chip->findChipInst("cpu_inst"), cpu_inst);
+  EXPECT_EQ(cpu_chip->findChipInst("cache_inst"), cache_inst);
+  EXPECT_EQ(system_chip->findChipInst("cache_inst"), nullptr);
 
   // Verify master relationships
-  BOOST_TEST(cpu_inst->getMasterChip() == cpu_chip);
-  BOOST_TEST(memory_inst->getMasterChip() == memory_chip);
-  BOOST_TEST(io_inst->getMasterChip() == io_chip);
-  BOOST_TEST(cache_inst->getMasterChip() == cache_chip);
+  EXPECT_EQ(cpu_inst->getMasterChip(), cpu_chip);
+  EXPECT_EQ(memory_inst->getMasterChip(), memory_chip);
+  EXPECT_EQ(io_inst->getMasterChip(), io_chip);
+  EXPECT_EQ(cache_inst->getMasterChip(), cache_chip);
 
   // Test positioning
   Point3D memory_loc = memory_inst->getLoc();
-  BOOST_TEST(memory_loc.x() == 2500);
-  BOOST_TEST(memory_loc.y() == 500);
-  BOOST_TEST(memory_loc.z() == 0);
-  BOOST_TEST(memory_inst->getOrient().getOrientType2D() == dbOrientType::R0);
-  BOOST_TEST(memory_inst->getOrient().isMirrorZ() == false);
-  BOOST_TEST(memory_inst->getOrient().getString() == "R0");
+  EXPECT_EQ(memory_loc.x(), 2500);
+  EXPECT_EQ(memory_loc.y(), 500);
+  EXPECT_EQ(memory_loc.z(), 0);
+  EXPECT_EQ(memory_inst->getOrient().getOrientType2D(), dbOrientType::R0);
+  EXPECT_FALSE(memory_inst->getOrient().isMirrorZ());
+  EXPECT_EQ(memory_inst->getOrient().getString(), "R0");
 
   Point3D cache_loc = cache_inst->getLoc();
-  BOOST_TEST(cache_loc.x() == 100);
-  BOOST_TEST(cache_loc.y() == 100);
-  BOOST_TEST(cache_loc.z() == 50);
-  BOOST_TEST(cache_inst->getOrient().getOrientType2D() == dbOrientType::MYR90);
-  BOOST_TEST(cache_inst->getOrient().isMirrorZ() == true);
-  BOOST_TEST(cache_inst->getOrient().getString() == "MZ_MY_R90");
+  EXPECT_EQ(cache_loc.x(), 100);
+  EXPECT_EQ(cache_loc.y(), 100);
+  EXPECT_EQ(cache_loc.z(), 50);
+  EXPECT_EQ(cache_inst->getOrient().getOrientType2D(), dbOrientType::MYR90);
+  EXPECT_TRUE(cache_inst->getOrient().isMirrorZ());
+  EXPECT_EQ(cache_inst->getOrient().getString(), "MZ_MY_R90");
 }
 
-BOOST_FIXTURE_TEST_CASE(test_chip_complex_destroy, F_CHIP_HIERARCHY)
+TEST_F(ChipHierarchyFixture, test_chip_complex_destroy)
 {
   // Test destroying nested hierarchy
-  BOOST_TEST(cpu_chip->getChipInsts().size() == 1);
+  EXPECT_EQ(cpu_chip->getChipInsts().size(), 1);
 
   // Destroy cache instance first
   dbChipInst::destroy(cache_inst);
-  BOOST_TEST(cpu_chip->getChipInsts().size() == 0);
+  EXPECT_EQ(cpu_chip->getChipInsts().size(), 0);
 
   // Now destroy CPU instance from system
-  BOOST_TEST(system_chip->getChipInsts().size() == 3);
+  EXPECT_EQ(system_chip->getChipInsts().size(), 3);
   dbChipInst::destroy(cpu_inst);
-  BOOST_TEST(system_chip->getChipInsts().size() == 2);
+  EXPECT_EQ(system_chip->getChipInsts().size(), 2);
 
   // Verify remaining system instances
   bool found_memory = false, found_io = false;
@@ -231,79 +221,72 @@ BOOST_FIXTURE_TEST_CASE(test_chip_complex_destroy, F_CHIP_HIERARCHY)
       found_io = true;
     }
   }
-  BOOST_TEST(found_memory == true);
-  BOOST_TEST(found_io == true);
+  EXPECT_TRUE(found_memory);
+  EXPECT_TRUE(found_io);
 
   // Clean up remaining instances
   dbChipInst::destroy(memory_inst);
   dbChipInst::destroy(io_inst);
-  BOOST_TEST(db->getChipBumpInsts().size() == 0);
-  BOOST_TEST(db->getChipRegionInsts().size() == 0);
-  BOOST_TEST(system_chip->getChipInsts().size() == 0);
-  BOOST_TEST(system_chip->findChipInst("cpu_inst") == nullptr);
-  BOOST_TEST(system_chip->findChipInst("io_inst") == nullptr);
+  EXPECT_EQ(db_->getChipBumpInsts().size(), 0);
+  EXPECT_EQ(db_->getChipRegionInsts().size(), 0);
+  EXPECT_EQ(system_chip->getChipInsts().size(), 0);
+  EXPECT_EQ(system_chip->findChipInst("cpu_inst"), nullptr);
+  EXPECT_EQ(system_chip->findChipInst("io_inst"), nullptr);
 }
 
-BOOST_FIXTURE_TEST_CASE(test_chip_regions, F_CHIP_HIERARCHY)
+TEST_F(ChipHierarchyFixture, test_chip_regions)
 {
-  auto iterateChipRegions = [](dbChip* chip,
-                               std::set<std::string> region_names) {
-    BOOST_TEST(chip->getChipRegions().size() == region_names.size());
-    for (auto region : chip->getChipRegions()) {
-      BOOST_TEST((region_names.find(region->getName()) != region_names.end()));
-    }
-  };
+  auto iterateChipRegions
+      = [](dbChip* chip, std::set<std::string> region_names) {
+          EXPECT_EQ(chip->getChipRegions().size(), region_names.size());
+          for (auto region : chip->getChipRegions()) {
+            EXPECT_NE(region_names.find(region->getName()), region_names.end());
+          }
+        };
   auto iterateChipRegionInsts
       = [](dbChipInst* chipinst, std::set<std::string> region_names) {
-          BOOST_TEST(chipinst->getRegions().size() == region_names.size());
+          EXPECT_EQ(chipinst->getRegions().size(), region_names.size());
           for (auto region : chipinst->getRegions()) {
-            BOOST_TEST((region_names.find(region->getChipRegion()->getName())
-                        != region_names.end()));
+            EXPECT_NE(region_names.find(region->getChipRegion()->getName()),
+                      region_names.end());
           }
         };
   // Test dbChipRegion methods
-  BOOST_TEST(memory_chip_region_r1->getName() == "R1");
-  BOOST_TEST((memory_chip_region_r1->getSide() == dbChipRegion::Side::FRONT));
-  BOOST_TEST(memory_chip_region_r1->getLayer() == layer_l1);
-  BOOST_TEST(memory_chip_region_r1->getChip() == memory_chip);
-  BOOST_TEST(
-      (memory_chip_region_r3->getSide() == dbChipRegion::Side::INTERNAL));
-  BOOST_TEST(memory_chip_region_r3->getLayer() == nullptr);
+  EXPECT_EQ(memory_chip_region_r1->getName(), "R1");
+  EXPECT_EQ(memory_chip_region_r1->getSide(), dbChipRegion::Side::FRONT);
+  EXPECT_EQ(memory_chip_region_r1->getLayer(), layer_l1);
+  EXPECT_EQ(memory_chip_region_r1->getChip(), memory_chip);
+  EXPECT_EQ(memory_chip_region_r3->getSide(), dbChipRegion::Side::INTERNAL);
+  EXPECT_EQ(memory_chip_region_r3->getLayer(), nullptr);
   // Test dbChip::findChipRegion
-  BOOST_TEST(memory_chip->findChipRegion("R1") == memory_chip_region_r1);
-  BOOST_TEST(memory_chip->findChipRegion("R2") == memory_chip_region_r2);
-  BOOST_TEST(memory_chip->findChipRegion("R3") == memory_chip_region_r3);
-  BOOST_TEST(memory_chip->findChipRegion("R4") == nullptr);
+  EXPECT_EQ(memory_chip->findChipRegion("R1"), memory_chip_region_r1);
+  EXPECT_EQ(memory_chip->findChipRegion("R2"), memory_chip_region_r2);
+  EXPECT_EQ(memory_chip->findChipRegion("R3"), memory_chip_region_r3);
+  EXPECT_EQ(memory_chip->findChipRegion("R4"), nullptr);
   // Test dbChipInst::findChipRegionInst
-  BOOST_TEST(memory_inst->findChipRegionInst("R1")->getChipRegion()
-             == memory_chip_region_r1);
-  BOOST_TEST(memory_inst->findChipRegionInst("R2")->getChipRegion()
-             == memory_chip_region_r2);
-  BOOST_TEST(memory_inst->findChipRegionInst("R3")->getChipRegion()
-             == memory_chip_region_r3);
-  BOOST_TEST(memory_inst->findChipRegionInst("R4") == nullptr);
+  EXPECT_EQ(memory_inst->findChipRegionInst("R1")->getChipRegion(),
+            memory_chip_region_r1);
+  EXPECT_EQ(memory_inst->findChipRegionInst("R2")->getChipRegion(),
+            memory_chip_region_r2);
+  EXPECT_EQ(memory_inst->findChipRegionInst("R3")->getChipRegion(),
+            memory_chip_region_r3);
+  EXPECT_EQ(memory_inst->findChipRegionInst("R4"), nullptr);
 
   iterateChipRegions(memory_chip, {"R1", "R2", "R3"});
   iterateChipRegionInsts(memory_inst, {"R1", "R2", "R3"});
   iterateChipRegions(io_chip, {"R1"});
 
-  try {
-    dbChipRegion::create(cpu_chip, "R1", dbChipRegion::Side::FRONT, layer_l1);
-    BOOST_TEST(false);
-  } catch (const std::exception& e) {
-    BOOST_TEST(true);
-  }
+  EXPECT_THROW(
+      dbChipRegion::create(cpu_chip, "R1", dbChipRegion::Side::FRONT, layer_l1),
+      std::exception);
 
-  try {
-    dbChipRegion::create(
-        memory_chip, "region_M1", dbChipRegion::Side::FRONT, layer_M1);
-    BOOST_TEST(false);
-  } catch (const std::exception& e) {
-    BOOST_TEST(true);
-  }
+  EXPECT_THROW(
+      dbChipRegion::create(
+          memory_chip, "region_M1", dbChipRegion::Side::FRONT, layer_M1),
+      std::exception);
 }
 
-BOOST_FIXTURE_TEST_CASE(test_chip_conns, F_CHIP_HIERARCHY)
+TEST_F(ChipHierarchyFixture, test_chip_conns)
 {
   dbChipRegionInst* cache_region_inst_r1
       = (dbChipRegionInst*) (*cache_inst->getRegions().begin());
@@ -314,84 +297,77 @@ BOOST_FIXTURE_TEST_CASE(test_chip_conns, F_CHIP_HIERARCHY)
       break;
     }
   }
-  BOOST_TEST(memory_region_inst_r1 != nullptr);
+  ASSERT_NE(memory_region_inst_r1, nullptr);
   odb::dbChipConn* conn = odb::dbChipConn::create("CONN1",
                                                   system_chip,
                                                   {cpu_inst, cache_inst},
                                                   cache_region_inst_r1,
                                                   {memory_inst},
                                                   memory_region_inst_r1);
-  BOOST_TEST(conn->getName() == "CONN1");
-  BOOST_TEST(conn->getTopRegion() == cache_region_inst_r1);
-  BOOST_TEST(conn->getBottomRegion() == memory_region_inst_r1);
-  BOOST_TEST(conn->getTopRegionPath().size() == 2);
-  BOOST_TEST(conn->getBottomRegionPath().size() == 1);
-  BOOST_TEST(conn->getTopRegionPath()[0] == cpu_inst);
-  BOOST_TEST(conn->getTopRegionPath()[1] == cache_inst);
-  BOOST_TEST(conn->getBottomRegionPath()[0] == memory_inst);
-  BOOST_TEST(db->getChipConns().size() == 1);
-  BOOST_TEST(system_chip->getChipConns().size() == 1);
+  EXPECT_EQ(conn->getName(), "CONN1");
+  EXPECT_EQ(conn->getTopRegion(), cache_region_inst_r1);
+  EXPECT_EQ(conn->getBottomRegion(), memory_region_inst_r1);
+  EXPECT_EQ(conn->getTopRegionPath().size(), 2);
+  EXPECT_EQ(conn->getBottomRegionPath().size(), 1);
+  EXPECT_EQ(conn->getTopRegionPath()[0], cpu_inst);
+  EXPECT_EQ(conn->getTopRegionPath()[1], cache_inst);
+  EXPECT_EQ(conn->getBottomRegionPath()[0], memory_inst);
+  EXPECT_EQ(db_->getChipConns().size(), 1);
+  EXPECT_EQ(system_chip->getChipConns().size(), 1);
   dbChipConn::destroy(conn);
-  BOOST_TEST(db->getChipConns().size() == 0);
-  BOOST_TEST(system_chip->getChipConns().size() == 0);
-  try {
-    odb::dbChipConn::create("CONN2",
-                            system_chip,
-                            {cache_inst},
-                            cache_region_inst_r1,
-                            {memory_inst},
-                            memory_region_inst_r1);
-    BOOST_TEST(false);
-  } catch (const std::exception& e) {
-    BOOST_TEST(true);
-  }
-  try {
-    odb::dbChipConn::create("CONN2",
-                            system_chip,
-                            {cache_inst},
-                            memory_region_inst_r1,
-                            {memory_inst},
-                            cache_region_inst_r1);
-    BOOST_TEST(false);
-  } catch (const std::exception& e) {
-    BOOST_TEST(true);
-  }
+  EXPECT_EQ(db_->getChipConns().size(), 0);
+  EXPECT_EQ(system_chip->getChipConns().size(), 0);
+  EXPECT_THROW(odb::dbChipConn::create("CONN2",
+                                       system_chip,
+                                       {cache_inst},
+                                       cache_region_inst_r1,
+                                       {memory_inst},
+                                       memory_region_inst_r1),
+               std::exception);
+
+  EXPECT_THROW(odb::dbChipConn::create("CONN2",
+                                       system_chip,
+                                       {cache_inst},
+                                       memory_region_inst_r1,
+                                       {memory_inst},
+                                       cache_region_inst_r1),
+               std::exception);
 }
 
-BOOST_FIXTURE_TEST_CASE(test_chip_bumps, F_CHIP_HIERARCHY)
+TEST_F(ChipHierarchyFixture, test_chip_bumps)
 {
-  BOOST_TEST(io_bump->getInst()->getName() == "io_bump");
-  BOOST_TEST(io_bump->getChip() == io_chip);
-  BOOST_TEST(io_bump->getChipRegion() == io_chip_region_r1);
-  BOOST_TEST(io_bump->getNet() == nullptr);
-  BOOST_TEST(io_bump->getBTerm() == nullptr);
+  EXPECT_EQ(io_bump->getInst()->getName(), "io_bump");
+  EXPECT_EQ(io_bump->getChip(), io_chip);
+  EXPECT_EQ(io_bump->getChipRegion(), io_chip_region_r1);
+  EXPECT_EQ(io_bump->getNet(), nullptr);
+  EXPECT_EQ(io_bump->getBTerm(), nullptr);
   dbNet* net = dbNet::create(io_chip->getBlock(), "net1");
   dbBTerm* bterm = dbBTerm::create(net, "bterm1");
   io_bump->setNet(net);
   io_bump->setBTerm(bterm);
-  BOOST_TEST(io_bump->getNet() == net);
-  BOOST_TEST(io_bump->getBTerm() == bterm);
+  EXPECT_EQ(io_bump->getNet(), net);
+  EXPECT_EQ(io_bump->getBTerm(), bterm);
 
-  BOOST_TEST(io_chip_region_r1->getChipBumps().size() == 1);
-  BOOST_TEST(*io_chip_region_r1->getChipBumps().begin() == io_bump);
+  EXPECT_EQ(io_chip_region_r1->getChipBumps().size(), 1);
+  EXPECT_EQ(*io_chip_region_r1->getChipBumps().begin(), io_bump);
 
-  BOOST_TEST(db->getChipBumpInsts().size() == 2);
+  EXPECT_EQ(db_->getChipBumpInsts().size(), 2);
 
-  BOOST_TEST(io_inst->getRegions().size() == 1);
+  EXPECT_EQ(io_inst->getRegions().size(), 1);
   auto io_inst_region_r1 = *io_inst->getRegions().begin();
-  BOOST_TEST(io_inst_region_r1->getChipBumpInsts().size() == 1);
+  EXPECT_EQ(io_inst_region_r1->getChipBumpInsts().size(), 1);
   auto io_inst_region_r1_bump_inst
       = *io_inst_region_r1->getChipBumpInsts().begin();
-  BOOST_TEST(io_inst_region_r1_bump_inst->getChipBump() == io_bump);
-  BOOST_TEST(io_inst_region_r1_bump_inst->getChipRegionInst()
-             == io_inst_region_r1);
+  EXPECT_EQ(io_inst_region_r1_bump_inst->getChipBump(), io_bump);
+  EXPECT_EQ(io_inst_region_r1_bump_inst->getChipRegionInst(),
+            io_inst_region_r1);
 
   // test chip nets
   dbChipNet* chip_net = dbChipNet::create(system_chip, "net1");
-  BOOST_TEST(chip_net->getChip() == system_chip);
-  BOOST_TEST(chip_net->getNumBumpInsts() == 0);
-  BOOST_TEST(system_chip->getChipNets().size() == 1);
-  BOOST_TEST(db->getChipNets().size() == 1);
+  EXPECT_EQ(chip_net->getChip(), system_chip);
+  EXPECT_EQ(chip_net->getNumBumpInsts(), 0);
+  EXPECT_EQ(system_chip->getChipNets().size(), 1);
+  EXPECT_EQ(db_->getChipNets().size(), 1);
   chip_net->addBumpInst(io_inst_region_r1_bump_inst, {io_inst});
   dbChipRegionInst* memory_inst_region_r1 = nullptr;
   for (auto region : memory_inst->getRegions()) {
@@ -400,25 +376,18 @@ BOOST_FIXTURE_TEST_CASE(test_chip_bumps, F_CHIP_HIERARCHY)
       break;
     }
   }
-  BOOST_TEST(memory_inst_region_r1->getChipBumpInsts().size() == 1);
+  EXPECT_EQ(memory_inst_region_r1->getChipBumpInsts().size(), 1);
   auto memory_inst_region_r1_bump_inst
       = (*memory_inst_region_r1->getChipBumpInsts().begin());
   chip_net->addBumpInst(memory_inst_region_r1_bump_inst, {memory_inst});
-  BOOST_TEST(chip_net->getNumBumpInsts() == 2);
+  EXPECT_EQ(chip_net->getNumBumpInsts(), 2);
   std::vector<dbChipInst*> path;
-  BOOST_TEST(chip_net->getBumpInst(0, path) == io_inst_region_r1_bump_inst);
-  BOOST_TEST(path.size() == 1);
-  BOOST_TEST(path[0] == io_inst);
+  EXPECT_EQ(chip_net->getBumpInst(0, path), io_inst_region_r1_bump_inst);
+  EXPECT_EQ(path.size(), 1);
+  EXPECT_EQ(path[0], io_inst);
   dbInst* io_cell = memory_chip->getBlock()->findInst("io_bump");
-  try {
-    dbChipBump::create(io_chip_region_r1, io_cell);
-    BOOST_TEST(false);
-  } catch (const std::exception& e) {
-    BOOST_TEST(true);
-  }
+  EXPECT_THROW(dbChipBump::create(io_chip_region_r1, io_cell), std::exception);
 }
-
-BOOST_AUTO_TEST_SUITE_END()
 
 }  // namespace
 }  // namespace odb

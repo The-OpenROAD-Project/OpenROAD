@@ -125,18 +125,18 @@ extern const char* recordNames[];
  */
 enum class DataType : uint8_t
 {
-  NO_DATA,
-  BIT_ARRAY,
-  INT_2,
-  INT_4,
-  REAL_4,
-  REAL_8,
-  ASCII_STRING,
-  INVALID_DT
+  kNoData,
+  kBitArray,
+  kInt2,
+  kInt4,
+  kReal4,
+  kReal8,
+  kAsciiString,
+  kInvalid
 };
 
 /** dataType sizes in number of bytes */
-static const size_t dataTypeSize[(int) DataType::INVALID_DT]
+inline constexpr size_t dataTypeSize[(int) DataType::kInvalid]
     = {1, 1, 2, 4, 4, 8, 1};
 
 /**

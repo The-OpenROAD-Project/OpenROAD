@@ -11,11 +11,6 @@
 #include "tst/fixture.h"
 #include "utl/Logger.h"
 
-// TODO: not needed after fully switching to bazel
-#ifndef DATA_PREFIX
-#define DATA_PREFIX ""
-#endif
-
 namespace odb {
 class Sky130TestFixutre : public tst::Fixture
 {
@@ -23,7 +18,9 @@ class Sky130TestFixutre : public tst::Fixture
   void SetUp() override
   {
     lib_ = loadTechAndLib(
-        "sky130", "sky130", DATA_PREFIX "data/sky130hd/sky130_fd_sc_hd.tlef");
+        "sky130",
+        "sky130",
+        "_main/src/odb/test/data/sky130hd/sky130_fd_sc_hd.tlef");
 
     chip_ = odb::dbChip::create(db_.get(), db_->getTech());
     block_ = odb::dbBlock::create(chip_, "top");

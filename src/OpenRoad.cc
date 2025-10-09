@@ -67,6 +67,8 @@
 #include "ppl/MakeIoplacer.h"
 #include "psm/MakePDNSim.hh"
 #include "psm/pdnsim.h"
+#include "ram/MakeRam.h"
+#include "ram/ram.h"
 #include "rcx/MakeOpenRCX.h"
 #include "rcx/ext.h"
 #include "rmp/MakeRestructure.h"
@@ -135,6 +137,7 @@ OpenRoad::~OpenRoad()
   delete replace_;
   delete pdnsim_;
   delete finale_;
+  delete ram_gen_;
   delete antenna_checker_;
   odb::dbDatabase::destroy(db_);
   delete partitionMgr_;
@@ -220,6 +223,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                               opendp_,
                               estimate_parasitics_);
   finale_ = new fin::Finale(db_, logger_);
+  ram_gen_ = new ram::RamGen(getDbNetwork(), db_, logger_);
   restructure_ = new rmp::Restructure(
       logger_, sta_, db_, resizer_, estimate_parasitics_);
   clock_gating_ = new cgt::ClockGating(logger_, sta_);
@@ -253,6 +257,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   utl::evalTclInit(tcl_interp, ord::ord_tcl_inits);
 
   utl::initLogger(tcl_interp);
+
   // GUI first so we can register our sink with the logger
   gui::initGui(tcl_interp, db_, sta_, logger_);
   odb::initOdb(tcl_interp);
@@ -264,6 +269,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   gpl::initReplace(tcl_interp);
   dpl::initOpendp(tcl_interp);
   fin::initFinale(tcl_interp);
+  ram::initRamGen(tcl_interp);
   grt::initTcl(tcl_interp);
   cts::initTritonCts(tcl_interp);
   tap::initTapcell(tcl_interp);

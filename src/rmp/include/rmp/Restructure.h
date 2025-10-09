@@ -3,8 +3,11 @@
 
 #pragma once
 
+#include <cstdint>
 #include <fstream>
 #include <functional>
+#include <optional>
+#include <random>
 #include <set>
 #include <string>
 #include <vector>
@@ -12,6 +15,7 @@
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
+#include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/unique_name.h"
@@ -66,12 +70,25 @@ class Restructure
 
   void reset();
   void resynth(sta::Corner* corner);
+  void resynthAnnealing(sta::Corner* corner);
   void run(char* liberty_file_name,
            float slack_threshold,
            unsigned max_depth,
            char* workdir_name,
            char* abc_logfile);
 
+  void setAnnealingSeed(std::mt19937::result_type seed)
+  {
+    annealing_seed_ = seed;
+  }
+  void setAnnealingTemp(float temp) { annealing_temp_ = temp; }
+  void setAnnealingIters(unsigned iters) { annealing_iters_ = iters; }
+  void setAnnealingRevertAfter(unsigned revert_after)
+  {
+    annealing_revert_after_ = revert_after;
+  }
+  void setAnnealingInitialOps(unsigned ops) { annealing_init_ops_ = ops; }
+  void setSlackThreshold(sta::Slack thresh) { slack_threshold_ = thresh; }
   void setMode(const char* mode_name);
   void setTieLoPort(sta::LibertyPort* loport);
   void setTieHiPort(sta::LibertyPort* hiport);
@@ -105,6 +122,14 @@ class Restructure
   rsz::Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;
   odb::dbBlock* block_ = nullptr;
+
+  // Annealing
+  std::optional<std::mt19937::result_type> annealing_seed_;
+  std::optional<float> annealing_temp_;
+  unsigned annealing_iters_ = 100;
+  std::optional<unsigned> annealing_revert_after_;
+  unsigned annealing_init_ops_ = 10;
+  sta::Slack slack_threshold_ = 0;
 
   std::string input_blif_file_name_;
   std::string output_blif_file_name_;
