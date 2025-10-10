@@ -12,7 +12,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
-#include "odb/dbWireCodec.h" 
+#include "odb/dbWireCodec.h"
 #include "odb/lefout.h"
 #include "tst/sky130_fixture.h"
 #include "utl/Logger.h"
