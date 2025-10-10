@@ -2,6 +2,8 @@
 # Copyright (c) 2022-2025, The OpenROAD Authors
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "aes_gf180",
@@ -10,12 +12,17 @@ COMPULSORY_TESTS = [
     "boundary_macros",
     "boundary_macros_auto_select",
     "boundary_macros_separate",
+    "boundary_macros_separate2",
     "boundary_macros_tapcell",
     "cut_rows",
     "cut_rows_min_width",
     "cut_rows_with_endcaps",
     "disallow_one_site_gaps",
     "disallow_one_site_gaps2",
+    "endcap_autoselection_error1",
+    "endcap_autoselection_error2",
+    "endcap_autoselection_error3",
+    "endcap_autoselection_error4",
     "gcd_asap7",
     "gcd_fakeram",
     "gcd_nangate45",
@@ -133,14 +140,14 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "allow_one_site_gaps": ["disallow_one_site_gaps.def"],
             "boundary_macros": [],
             "disallow_one_site_gaps2": [
                 "disallow_one_site_gaps.def",
                 "disallow_one_site_gaps.defok",
             ],
-            "multiple_calls": ["gcd_ripup.def"],
-            "allow_one_site_gaps": ["disallow_one_site_gaps.def"],
             "gcd_sky130_separate": ["gcd_sky130.defok"],
+            "multiple_calls": ["gcd_ripup.def"],
         }.get(
             test_name,
             ["boundary_macros.def"],

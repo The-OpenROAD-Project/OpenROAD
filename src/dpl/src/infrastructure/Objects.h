@@ -3,11 +3,13 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
 #include "Coordinates.h"
 #include "dpl/Opendp.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbBox;
@@ -24,18 +26,17 @@ using odb::dbInst;
 using odb::dbMaster;
 using odb::dbOrientType;
 using odb::dbSite;
-using odb::Rect;
 
 class MasterEdge
 {
  public:
-  MasterEdge(unsigned int type, const Rect& box);
+  MasterEdge(unsigned int type, const odb::Rect& box);
   unsigned int getEdgeType() const;
-  const Rect& getBBox() const;
+  const odb::Rect& getBBox() const;
 
  private:
   unsigned int edge_type_idx_{0};
-  Rect bbox_;
+  odb::Rect bbox_;
 };
 
 class Master
@@ -43,13 +44,13 @@ class Master
  public:
   bool isMultiRow() const;
   const std::vector<MasterEdge>& getEdges() const;
-  Rect getBBox() const;
+  odb::Rect getBBox() const;
   int getBottomPowerType() const;
   int getTopPowerType() const;
   void setMultiRow(bool in);
   void addEdge(const MasterEdge& edge);
   void clearEdges();
-  void setBBox(Rect box);
+  void setBBox(odb::Rect box);
   void setBottomPowerType(int bottom_pwr);
   void setTopPowerType(int top_pwr);
   void setDbMaster(dbMaster* db_master);
@@ -57,7 +58,7 @@ class Master
 
  private:
   dbMaster* db_master_{nullptr};
-  Rect boundary_box_;
+  odb::Rect boundary_box_;
   bool is_multi_row_{false};
   std::vector<MasterEdge> edges_;
   int bottom_pwr_{0};
@@ -109,13 +110,13 @@ class Node
   bool isStdCell() const;
   bool isBlock() const;
   Group* getGroup() const;
-  const Rect* getRegion() const;
+  const odb::Rect* getRegion() const;
   Master* getMaster() const;
   bool inGroup() const;
   int getNumPins() const;
   const std::vector<Pin*>& getPins() const;
   int getGroupId() const;
-  Rect getBBox() const;
+  odb::Rect getBBox() const;
   dbBTerm* getBTerm() const;
   uint8_t getUsedLayers() const;
 
@@ -137,7 +138,7 @@ class Node
   void setOrigLeft(DbuX left);
   void setType(Type type);
   void setGroup(Group* in);
-  void setRegion(const Rect* in);
+  void setRegion(const odb::Rect* in);
   void setMaster(Master* in);
   void addPin(Pin* pin);
   void setGroupId(int id);
@@ -170,7 +171,7 @@ class Node
   // Master and edges
   Master* master_{nullptr};
   Group* group_{nullptr};
-  const Rect* region_{nullptr};  // group rect
+  const odb::Rect* region_{nullptr};  // group rect
   // // Regions.
   int group_id_{-1};
   // Pins.
@@ -184,25 +185,25 @@ class Group
  public:
   // getters
   std::string getName() const;
-  const std::vector<Rect>& getRects() const;
+  const std::vector<odb::Rect>& getRects() const;
   std::vector<Node*> getCells() const;
-  const Rect& getBBox() const;
+  const odb::Rect& getBBox() const;
   double getUtil() const;
   int getId() const;
   // setters
   void setId(int id);
   void setName(const std::string& in);
-  void addRect(const Rect& in);
+  void addRect(const odb::Rect& in);
   void addCell(Node* cell);
-  void setBoundary(const Rect& in);
+  void setBoundary(const odb::Rect& in);
   void setUtil(double in);
 
  private:
   int id_{0};
   std::string name_;
-  std::vector<Rect> region_boundaries_;
+  std::vector<odb::Rect> region_boundaries_;
   std::vector<Node*> cells_;
-  Rect boundary_;
+  odb::Rect boundary_;
   double util_{0.0};
 };
 

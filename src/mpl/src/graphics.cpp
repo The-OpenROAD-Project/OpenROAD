@@ -13,11 +13,11 @@
 
 #include "clusterEngine.h"
 #include "gui/gui.h"
+#include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -36,7 +36,14 @@ Graphics::Graphics(bool coarse,
       block_(block),
       logger_(logger)
 {
-  gui::Gui::get()->registerRenderer(this);
+  gui::Gui* gui = gui::Gui::get();
+  gui->registerRenderer(this);
+
+  // Setup the chart
+  chart_ = gui->addChart("MPL", "Iteration", {"Area", "Outline", "WireLength"});
+  chart_->setXAxisFormat("%d");
+  chart_->setYAxisFormats({"%.2e", "%.2e", "%.2e"});
+  chart_->setYAxisMin({0, 0, 0});
 }
 
 void Graphics::startCoarse()
@@ -49,7 +56,9 @@ void Graphics::startFine()
   active_ = fine_;
 }
 
-void Graphics::startSA()
+void Graphics::startSA(const char* type,
+                       const int max_num_step,
+                       const int num_perturb_per_step)
 {
   if (!active_) {
     return;
@@ -63,9 +72,14 @@ void Graphics::startSA()
     return;
   }
 
-  logger_->report("------ Start ------");
+  logger_->report("------ Start {} ------", type);
+  logger_->report("max_num_step = {} num_perturb_per_step = {}",
+                  max_num_step,
+                  num_perturb_per_step);
   best_norm_cost_ = std::numeric_limits<float>::max();
   skipped_ = 0;
+  chart_->clearPoints();
+  iter_ = 0;
 }
 
 void Graphics::endSA(const float norm_cost)
@@ -85,7 +99,7 @@ void Graphics::endSA(const float norm_cost)
   if (skipped_ > 0) {
     logger_->report("Skipped to end: {}", skipped_);
   }
-  logger_->report("------ End ------");
+  logger_->report("------ End (Iter {}) ------", iter_);
   report(norm_cost);
   gui::Gui::get()->pause();
 }
@@ -135,6 +149,7 @@ void Graphics::report(const float norm_cost)
   report(guidance_penalty_);
   report(boundary_penalty_);
   report(macro_blockage_penalty_);
+  report(fixed_macros_penalty_);
   report(notch_penalty_);
   report(std::optional<PenaltyData>({"Total", 1.0f, norm_cost, 1.0f}));
 }
@@ -195,6 +210,7 @@ void Graphics::penaltyCalculated(float norm_cost)
   if (!active_) {
     return;
   }
+  iter_++;
 
   if (is_skipping_) {
     return;
@@ -207,7 +223,13 @@ void Graphics::penaltyCalculated(float norm_cost)
   bool drawing_last_step = skip_steps_ && !is_skipping_;
 
   if (norm_cost < best_norm_cost_ || drawing_last_step) {
-    logger_->report("------ Penalty ------");
+    const float area = area_penalty_ ? area_penalty_.value().value : 0;
+    const float outline = outline_penalty_ ? outline_penalty_.value().value : 0;
+    const float wirelength
+        = wirelength_penalty_ ? wirelength_penalty_.value().value : 0;
+    chart_->addPoint(iter_, {area, outline, wirelength});
+
+    logger_->report("------ Penalty (Iter {}) ------", iter_);
     report(norm_cost);
 
     if (skipped_ > 0) {
@@ -251,6 +273,11 @@ void Graphics::setNotchPenalty(const PenaltyData& penalty)
 void Graphics::setMacroBlockagePenalty(const PenaltyData& penalty)
 {
   macro_blockage_penalty_ = penalty;
+}
+
+void Graphics::setFixedMacrosPenalty(const PenaltyData& penalty)
+{
+  fixed_macros_penalty_ = penalty;
 }
 
 void Graphics::setBoundaryPenalty(const PenaltyData& penalty)

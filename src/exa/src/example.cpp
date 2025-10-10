@@ -3,21 +3,23 @@
 
 #include "exa/example.h"
 
+#include <memory>
+#include <utility>
+
 #include "observer.h"
+#include "odb/db.h"
+#include "utl/Logger.h"
 
 namespace exa {
 
 // These need to be defined in the cpp due to the smart pointer in
 // example.h to Observer which is only declared there.
-Example::Example() = default;
-Example::~Example() = default;
-
-// If the example neede
-void Example::init(odb::dbDatabase* db, utl::Logger* logger)
+Example::Example(odb::dbDatabase* db, utl::Logger* logger)
+    : db_(db), logger_(logger)
 {
-  db_ = db;
-  logger_ = logger;
 }
+
+Example::~Example() = default;
 
 // Checks that a block exists and errors if not.  error() will throw an
 // exception with the message.

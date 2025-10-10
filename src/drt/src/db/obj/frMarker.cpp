@@ -3,9 +3,14 @@
 
 #include "db/obj/frMarker.h"
 
+#include <tuple>
+
+#include "db/obj/frBlockObject.h"
 #include "db/tech/frConstraint.h"
 #include "distributed/frArchive.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -40,7 +45,7 @@ void frMarker::serialize(Archive& ar, const unsigned int version)
     while (sz--) {
       frBlockObject* obj;
       serializeBlockObject(ar, obj);
-      std::tuple<frLayerNum, Rect, bool> tup;
+      std::tuple<frLayerNum, odb::Rect, bool> tup;
       (ar) & tup;
       victims_.emplace_back(obj, tup);
     }
@@ -48,7 +53,7 @@ void frMarker::serialize(Archive& ar, const unsigned int version)
     while (sz--) {
       frBlockObject* obj;
       serializeBlockObject(ar, obj);
-      std::tuple<frLayerNum, Rect, bool> tup;
+      std::tuple<frLayerNum, odb::Rect, bool> tup;
       (ar) & tup;
       aggressors_.emplace_back(obj, tup);
     }

@@ -4,12 +4,12 @@
 #include "triton_route/TritonRoute.h"
 
 #include <algorithm>
-#include <boost/asio/post.hpp>
-#include <boost/bind/bind.hpp>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <string>
 #include <thread>
@@ -18,6 +18,13 @@
 
 #include "AbstractGraphicsFactory.h"
 #include "DesignCallBack.h"
+#include "PACallBack.h"
+#include "boost/asio/post.hpp"
+#include "boost/bind/bind.hpp"
+#include "boost/geometry/geometry.hpp"
+#include "db/infra/frSegStyle.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"
@@ -26,6 +33,7 @@
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR.h"
 #include "dst/Distributed.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
@@ -33,6 +41,8 @@
 #include "gr/FlexGR.h"
 #include "io/GuideProcessor.h"
 #include "io/io.h"
+#include "odb/db.h"
+#include "odb/dbId.h"
 #include "odb/dbShape.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
@@ -41,21 +51,41 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/AbstractTAGraphics.h"
 #include "ta/FlexTA.h"
+#include "utl/CallBackHandler.h"
+#include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
 
 namespace drt {
 
-TritonRoute::TritonRoute()
+TritonRoute::TritonRoute(odb::dbDatabase* db,
+                         utl::Logger* logger,
+                         utl::CallBackHandler* callback_handler,
+                         dst::Distributed* dist,
+                         stt::SteinerTreeBuilder* stt_builder)
     : debug_(std::make_unique<frDebugSettings>()),
       db_callback_(std::make_unique<DesignCallBack>(this)),
+      pa_callback_(std::make_unique<PACallBack>(this)),
       router_cfg_(std::make_unique<RouterConfiguration>())
 {
   if (distributed_) {
     dist_pool_.emplace(1);
   }
+  db_ = db;
+  logger_ = logger;
+  dist_ = dist;
+  stt_builder_ = stt_builder;
+  design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
+  dist->addCallBack(new RoutingCallBack(this, dist, logger));
+  pa_callback_->setOwner(callback_handler);
 }
 
 TritonRoute::~TritonRoute() = default;
+
+void TritonRoute::initGraphics(
+    std::unique_ptr<AbstractGraphicsFactory> graphics_factory)
+{
+  graphics_factory_ = std::move(graphics_factory);
+}
 
 void TritonRoute::setDebugDR(bool on)
 {
@@ -521,22 +551,6 @@ void TritonRoute::applyUpdates(
       }
     }
   }
-}
-
-void TritonRoute::init(
-    odb::dbDatabase* db,
-    Logger* logger,
-    dst::Distributed* dist,
-    stt::SteinerTreeBuilder* stt_builder,
-    std::unique_ptr<AbstractGraphicsFactory> graphics_factory)
-{
-  db_ = db;
-  logger_ = logger;
-  dist_ = dist;
-  stt_builder_ = stt_builder;
-  design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
-  dist->addCallBack(new RoutingCallBack(this, dist, logger));
-  graphics_factory_ = std::move(graphics_factory);
 }
 
 bool TritonRoute::initGuide()
@@ -1118,7 +1132,7 @@ void TritonRoute::fixMaxSpacing(int num_threads)
 }
 
 void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
-                                const Rect& requiredDrcBox)
+                                const odb::Rect& requiredDrcBox)
 {
   std::vector<std::vector<std::unique_ptr<FlexGCWorker>>> workersBatches(1);
   auto size = 7;
@@ -1128,16 +1142,18 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
   auto& ygp = gCellPatterns.at(1);
   for (int i = offset; i < (int) xgp.getCount(); i += size) {
     for (int j = offset; j < (int) ygp.getCount(); j += size) {
-      Rect routeBox1 = design_->getTopBlock()->getGCellBox(Point(i, j));
+      odb::Rect routeBox1
+          = design_->getTopBlock()->getGCellBox(odb::Point(i, j));
       const int max_i = std::min((int) xgp.getCount() - 1, i + size - 1);
       const int max_j = std::min((int) ygp.getCount(), j + size - 1);
-      Rect routeBox2 = design_->getTopBlock()->getGCellBox(Point(max_i, max_j));
-      Rect routeBox(routeBox1.xMin(),
-                    routeBox1.yMin(),
-                    routeBox2.xMax(),
-                    routeBox2.yMax());
-      Rect extBox;
-      Rect drcBox;
+      odb::Rect routeBox2
+          = design_->getTopBlock()->getGCellBox(odb::Point(max_i, max_j));
+      odb::Rect routeBox(routeBox1.xMin(),
+                         routeBox1.yMin(),
+                         routeBox2.xMax(),
+                         routeBox2.yMax());
+      odb::Rect extBox;
+      odb::Rect drcBox;
       routeBox.bloat(router_cfg_->DRCSAFEDIST, drcBox);
       routeBox.bloat(router_cfg_->MTSAFEDIST, extBox);
       if (!drcBox.intersects(requiredDrcBox)) {
@@ -1163,7 +1179,7 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
     }
     for (const auto& worker : workers) {
       for (auto& marker : worker->getMarkers()) {
-        Rect bbox = marker->getBBox();
+        odb::Rect bbox = marker->getBBox();
         if (!bbox.intersects(requiredDrcBox)) {
           continue;
         }
@@ -1204,7 +1220,7 @@ void TritonRoute::checkDRC(const char* filename,
   } else if (!initGuide()) {
     logger_->error(DRT, 1, "GCELLGRID is undefined");
   }
-  Rect requiredDrcBox(x1, y1, x2, y2);
+  odb::Rect requiredDrcBox(x1, y1, x2, y2);
   if (requiredDrcBox.area() == 0) {
     requiredDrcBox = design_->getTopBlock()->getBBox();
   }
@@ -1314,7 +1330,7 @@ int TritonRoute::getWorkerResultsSize()
 void TritonRoute::reportDRC(const std::string& file_name,
                             const frList<std::unique_ptr<frMarker>>& markers,
                             const std::string& marker_name,
-                            Rect drcBox) const
+                            odb::Rect drcBox) const
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   odb::dbMarkerCategory* tool_category
@@ -1332,8 +1348,8 @@ void TritonRoute::reportDRC(const std::string& file_name,
 
   for (const auto& marker : markers) {
     // get violation bbox
-    Rect bbox = marker->getBBox();
-    if (drcBox != Rect() && !drcBox.intersects(bbox)) {
+    odb::Rect bbox = marker->getBBox();
+    if (drcBox != odb::Rect() && !drcBox.intersects(bbox)) {
       continue;
     }
     auto tech = getDesign()->getTech();

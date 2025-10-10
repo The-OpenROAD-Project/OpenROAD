@@ -2,11 +2,15 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <bitset>
 #include <cmath>
+#include <iostream>
 #include <vector>
 
+#include "frBaseTypes.h"
 #include "gr/FlexGR.h"
 #include "gr/FlexGRGridGraph.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -15,7 +19,7 @@ bool FlexGRGridGraph::search(std::vector<FlexMazeIdx>& connComps,
                              std::vector<FlexMazeIdx>& path,
                              FlexMazeIdx& ccMazeIdx1,
                              FlexMazeIdx& ccMazeIdx2,
-                             const Point& centerPt)
+                             const odb::Point& centerPt)
 {
   // prep nextPinBox
   frMIdx xDim, yDim, zDim;
@@ -37,7 +41,7 @@ bool FlexGRGridGraph::search(std::vector<FlexMazeIdx>& connComps,
 
   wavefront_ = FlexGRWavefront();
 
-  Point currPt;
+  odb::Point currPt;
   // push connected components to wavefront
   for (auto& idx : connComps) {
     if (isDst(idx.x(), idx.y(), idx.z())) {
@@ -82,7 +86,7 @@ frCost FlexGRGridGraph::getEstCost(const FlexMazeIdx& src,
 {
   // bend cost
   int bendCnt = 0;
-  Point srcPoint, dstPoint1, dstPoint2;
+  odb::Point srcPoint, dstPoint1, dstPoint2;
   getPoint(src.x(), src.y(), srcPoint);
   getPoint(dstMazeIdx1.x(), dstMazeIdx1.y(), dstPoint1);
   getPoint(dstMazeIdx2.x(), dstMazeIdx2.y(), dstPoint2);
@@ -208,7 +212,7 @@ void FlexGRGridGraph::getPrevGrid(frMIdx& gridX,
 void FlexGRGridGraph::expandWavefront(FlexGRWavefrontGrid& currGrid,
                                       const FlexMazeIdx& dstMazeIdx1,
                                       const FlexMazeIdx& dstMazeIdx2,
-                                      const Point& centerPt)
+                                      const odb::Point& centerPt)
 {
   // N
   if (isExpandable(currGrid, frDirEnum::N)) {
@@ -256,7 +260,7 @@ void FlexGRGridGraph::expand(FlexGRWavefrontGrid& currGrid,
                              const frDirEnum& dir,
                              const FlexMazeIdx& dstMazeIdx1,
                              const FlexMazeIdx& dstMazeIdx2,
-                             const Point& centerPt)
+                             const odb::Point& centerPt)
 {
   frCost nextEstCost, nextPathCost;
   int gridX = currGrid.x();
@@ -270,7 +274,7 @@ void FlexGRGridGraph::expand(FlexGRWavefrontGrid& currGrid,
   nextEstCost = getEstCost(nextIdx, dstMazeIdx1, dstMazeIdx2, dir);
   nextPathCost = getNextPathCost(currGrid, dir);
 
-  Point currPt;
+  odb::Point currPt;
   getPoint(gridX, gridY, currPt);
   frCoord currDist
       = abs(currPt.x() - centerPt.x()) + abs(currPt.y() - centerPt.y());

@@ -1,38 +1,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
-)
-
-cc_library(
-    name = "hdrs",
-    hdrs = [
-        "include/rcx/box.h",
-        "include/rcx/dbUtil.h",
-        "include/rcx/ext.h",
-        "include/rcx/ext2dBox.h",
-        "include/rcx/extMeasureRC.h",
-        "include/rcx/extModelGen.h",
-        "include/rcx/extPattern.h",
-        "include/rcx/extProgressTracker.hpp",
-        "include/rcx/extRCap.h",
-        "include/rcx/extRulesPattern.h",
-        "include/rcx/extSegment.h",
-        "include/rcx/extSolverGen.h",
-        "include/rcx/extSpef.h",
-        "include/rcx/extViaModel.h",
-        "include/rcx/ext_options.h",
-        "include/rcx/extprocess.h",
-        "include/rcx/grids.h",
-        "include/rcx/name.h",
-        "include/rcx/rcx.h",
-        "include/rcx/util.h",
-    ],
 )
 
 cc_library(
@@ -75,6 +51,8 @@ cc_library(
         "src/extmeasure_res_v2.cpp",
         "src/extprocess.cpp",
         "src/extstats.cpp",
+        "src/find_some_net.cpp",
+        "src/find_some_net.h",
         "src/findsegments.cpp",
         "src/grids.cpp",
         "src/gs.cpp",
@@ -85,14 +63,33 @@ cc_library(
         "src/parse.cpp",
         "src/parse.h",
         "src/process_ext.cpp",
-        "src/find_some_net.cpp",
-        "src/find_some_net.h",
+    ],
+    hdrs = [
+        "include/rcx/box.h",
+        "include/rcx/dbUtil.h",
+        "include/rcx/ext.h",
+        "include/rcx/ext2dBox.h",
+        "include/rcx/extMeasureRC.h",
+        "include/rcx/extModelGen.h",
+        "include/rcx/extPattern.h",
+        "include/rcx/extProgressTracker.hpp",
+        "include/rcx/extRCap.h",
+        "include/rcx/extRulesPattern.h",
+        "include/rcx/extSegment.h",
+        "include/rcx/extSolverGen.h",
+        "include/rcx/extSpef.h",
+        "include/rcx/extViaModel.h",
+        "include/rcx/ext_options.h",
+        "include/rcx/extprocess.h",
+        "include/rcx/grids.h",
+        "include/rcx/name.h",
+        "include/rcx/rcx.h",
+        "include/rcx/util.h",
     ],
     includes = [
         "include",
     ],
     deps = [
-        ":hdrs",
         "//src/odb",
         "//src/utl",
     ],
@@ -115,7 +112,6 @@ cc_library(
         "include",
     ],
     deps = [
-        ":hdrs",
         ":rcx",
         "//:ord",
         "//src/odb",
@@ -148,5 +144,23 @@ tcl_wrap_cc(
     ],
     deps = [
         "//src/odb:swig",
+    ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/rcx/ext.h",
+        "include/rcx/ext_options.h",
+        "src/ext-py.i",
+        "//:error_swig-py",
+    ],
+    module = "rcx_py",
+    root_swig_src = "src/ext-py.i",
+    swig_includes = [
+        "include",
+    ],
+    deps = [
+        "//src/odb:swig-py",
     ],
 )

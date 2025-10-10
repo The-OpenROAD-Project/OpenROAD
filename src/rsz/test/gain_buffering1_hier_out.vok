@@ -5,6 +5,27 @@ module top (clk,
  input load;
  output [7:0] y;
 
+ wire _13_;
+ wire _12_;
+ wire _11_;
+ wire _10_;
+ wire _08_;
+ wire _09_;
+ wire _14_;
+ wire _15_;
+ wire _17_;
+ wire _18_;
+ wire _19_;
+ wire _20_;
+ wire _21_;
+ wire _22_;
+ wire _23_;
+ wire _24_;
+ wire _25_;
+ wire _26_;
+ wire _27_;
+ wire _28_;
+ wire net1;
 
  sky130_fd_sc_hd__buf_2 gain1 (.A(y[6]),
     .X(net1));
@@ -116,6 +137,7 @@ module hier_flop (CLK,
  input D;
  output Q;
 
+ wire [0:0] y;
 
  sky130_fd_sc_hd__buf_2 gain3 (.A(y[0]),
     .X(Q));
@@ -130,6 +152,7 @@ module hier_flop_U2 (CLK,
  input D;
  output Q;
 
+ wire [1:0] y;
 
  sky130_fd_sc_hd__buf_2 gain2 (.A(y[1]),
     .X(Q));

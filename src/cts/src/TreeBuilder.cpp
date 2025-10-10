@@ -3,17 +3,16 @@
 
 #include "TreeBuilder.h"
 
-#include <boost/polygon/polygon.hpp>
+#include <algorithm>
+#include <cassert>
 #include <cmath>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <limits>
-#include <map>
-#include <memory>
 #include <string>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "utl/Logger.h"
 

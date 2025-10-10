@@ -2,7 +2,8 @@
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include <algorithm>
-#include <iostream>
+#include <cmath>
+#include <cstdint>
 #include <map>
 #include <set>
 #include <unordered_map>
@@ -11,6 +12,7 @@
 
 #include "DataType.h"
 #include "FastRoute.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -141,19 +143,22 @@ void FastRouteCore::fixOverlappingEdge(
     routeLShape(startpoint, endpoint, blocked_positions, new_route);
 
     // Updates the usage of the altered edge
-    const int edgeCost = nets_[net_id]->getEdgeCost();
+    FrNet* net = nets_[net_id];
+    const int8_t edgeCost = net->getEdgeCost();
     for (int k = 0; k < treeedge->route.routelen;
          k++) {  // remove the usages of the old edges
       if (treeedge->route.grids[k].x == treeedge->route.grids[k + 1].x) {
         if (treeedge->route.grids[k].y != treeedge->route.grids[k + 1].y) {
           const int min_y = std::min(treeedge->route.grids[k].y,
                                      treeedge->route.grids[k + 1].y);
-          graph2d_.addUsageV(treeedge->route.grids[k].x, min_y, -edgeCost);
+          graph2d_.updateUsageV(
+              treeedge->route.grids[k].x, min_y, net, -edgeCost);
         }
       } else {
         const int min_x = std::min(treeedge->route.grids[k].x,
                                    treeedge->route.grids[k + 1].x);
-        graph2d_.addUsageH(min_x, treeedge->route.grids[k].y, -edgeCost);
+        graph2d_.updateUsageH(
+            min_x, treeedge->route.grids[k].y, net, -edgeCost);
       }
     }
     for (int k = 0; k < new_route.size() - 1;
@@ -161,11 +166,11 @@ void FastRouteCore::fixOverlappingEdge(
       if (new_route[k].x == new_route[k + 1].x) {
         if (new_route[k].y != new_route[k + 1].y) {
           const int min_y = std::min(new_route[k].y, new_route[k + 1].y);
-          graph2d_.addUsageV(new_route[k].x, min_y, edgeCost);
+          graph2d_.updateUsageV(new_route[k].x, min_y, net, edgeCost);
         }
       } else {
         const int min_x = std::min(new_route[k].x, new_route[k + 1].x);
-        graph2d_.addUsageH(min_x, new_route[k].y, edgeCost);
+        graph2d_.updateUsageH(min_x, new_route[k].y, net, edgeCost);
       }
     }
     treeedge->route.routelen = new_route.size() - 1;
@@ -1692,18 +1697,19 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         treeedges[edge_n1n2].route.grids[i].y = grids[i].y;
       }
 
-      int edgeCost = nets_[netID]->getEdgeCost();
+      FrNet* net = nets_[netID];
+      int8_t edgeCost = net->getEdgeCost();
 
       // update edge usage
       for (int i = 0; i < cnt_n1n2 - 1; i++) {
         if (grids[i].x == grids[i + 1].x)  // a vertical edge
         {
           const int min_y = std::min(grids[i].y, grids[i + 1].y);
-          graph2d_.addUsageV(grids[i].x, min_y, edgeCost);
-        } else  /// if(grids[i].y==grids[i+1].y)// a horizontal edge
+          graph2d_.updateUsageV(grids[i].x, min_y, net, edgeCost);
+        } else  // a horizontal edge
         {
           const int min_x = std::min(grids[i].x, grids[i + 1].x);
-          graph2d_.addUsageH(min_x, grids[i].y, edgeCost);
+          graph2d_.updateUsageH(min_x, grids[i].y, net, edgeCost);
         }
       }
     }  // loop edgeID
@@ -1818,11 +1824,10 @@ void FastRouteCore::getCongestionGrid(
   }
 }
 
-void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
-                                      int& posX,
-                                      int& posY,
-                                      int dir,
-                                      int& radius)
+void FastRouteCore::findNetsNearPosition(std::set<odb::dbNet*>& congestion_nets,
+                                         const odb::Point& position,
+                                         bool is_horizontal,
+                                         int& radius)
 {
   // get Nets with overflow
   for (int netID = 0; netID < netCount(); netID++) {
@@ -1846,14 +1851,15 @@ void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
         }
         if (grids[i].x == grids[i + 1].x) {  // a vertical edge
           const int ymin = std::min(grids[i].y, grids[i + 1].y);
-          if (abs(ymin - posY) <= radius && abs(grids[i].x - posX) <= radius
-              && dir == 0) {
+          if (abs(ymin - position.getY()) <= radius
+              && abs(grids[i].x - position.getX()) <= radius
+              && !is_horizontal) {
             congestion_nets.insert(nets_[netID]->getDbNet());
           }
         } else if (grids[i].y == grids[i + 1].y) {  // a horizontal edge
           const int xmin = std::min(grids[i].x, grids[i + 1].x);
-          if (abs(grids[i].y - posY) <= radius && abs(xmin - posX) <= radius
-              && dir == 1) {
+          if (abs(grids[i].y - position.getY()) <= radius
+              && abs(xmin - position.getX()) <= radius && is_horizontal) {
             congestion_nets.insert(nets_[netID]->getDbNet());
           }
         }
@@ -1862,31 +1868,107 @@ void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
   }
 }
 
-// The function will add the new nets to the congestion_nets set
-void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
+// Get overflow positions
+void FastRouteCore::getOverflowPositions(
+    std::vector<std::pair<odb::Point, bool>>& overflow_pos)
 {
-  std::vector<int> xs, ys, dirs;
-  int n = 0;
   // Find horizontal ggrids with congestion
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
     const int overflow = graph2d_.getOverflowH(x, y);
     if (overflow > 0) {
-      xs.push_back(x);
-      ys.push_back(y);
-      dirs.push_back(1);
-      n++;
+      overflow_pos.emplace_back(odb::Point(x, y), true);
     }
   }
   // Find vertical ggrids with congestion
   for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
     const int overflow = graph2d_.getOverflowV(x, y);
     if (overflow > 0) {
-      xs.push_back(x);
-      ys.push_back(y);
-      dirs.push_back(0);
-      n++;
+      overflow_pos.emplace_back(odb::Point(x, y), false);
     }
   }
+}
+
+// Search in range of 5 the correct adjustment to fix the overflow
+void FastRouteCore::getPrecisionAdjustment(const int x,
+                                           const int y,
+                                           bool is_horizontal,
+                                           int& adjustment)
+{
+  int new_2D_cap, usage_2D, range = 5;
+  if (is_horizontal) {
+    usage_2D = graph2d_.getUsageH(x, y);
+  } else {
+    usage_2D = graph2d_.getUsageV(x, y);
+  }
+
+  new_2D_cap = 0;
+  while (range > 0 && new_2D_cap < usage_2D) {
+    // calculate new capacity with adjustment
+    for (int l = 0; l < num_layers_; l++) {
+      if (is_horizontal) {
+        new_2D_cap
+            += (1.0 - (adjustment / 100.0)) * h_edges_3D_[l][y][x].real_cap;
+      } else {
+        new_2D_cap
+            += (1.0 - (adjustment / 100.0)) * v_edges_3D_[l][y][x].real_cap;
+      }
+    }
+    // Reduce adjustment to increase capacity
+    if (usage_2D > new_2D_cap) {
+      adjustment--;
+      new_2D_cap = 0;
+    }
+    range--;
+  }
+}
+
+// For each edge with overflow, calculate the ideal adjustment
+// Return the minimum value of all or -1 if no value can be found
+bool FastRouteCore::computeSuggestedAdjustment(int& suggested_adjustment)
+{
+  int horizontal_suggest = 100, local_suggest;
+  bool has_new_adj;
+  // Find horizontal ggrids with congestion
+  for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
+    const int overflow = graph2d_.getOverflowH(x, y);
+    if (overflow > 0) {
+      has_new_adj
+          = graph2d_.computeSuggestedAdjustment(x, y, true, local_suggest);
+      if (has_new_adj) {
+        // modify the value to resolve the congestion at the position
+        getPrecisionAdjustment(x, y, true, local_suggest);
+        horizontal_suggest = std::min(horizontal_suggest, local_suggest);
+      } else {
+        return false;
+      }
+    }
+  }
+  int vertical_suggest = 100;
+  // Find vertical ggrids with congestion
+  for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
+    const int overflow = graph2d_.getOverflowV(x, y);
+    if (overflow > 0) {
+      has_new_adj
+          = graph2d_.computeSuggestedAdjustment(x, y, false, local_suggest);
+      if (has_new_adj) {
+        // modify the value to resolve the congestion at the position
+        getPrecisionAdjustment(x, y, false, local_suggest);
+        vertical_suggest = std::min(vertical_suggest, local_suggest);
+      } else {
+        return false;
+      }
+    }
+  }
+  suggested_adjustment = std::min(horizontal_suggest, vertical_suggest);
+  return true;
+}
+
+// The function will add the new nets to the congestion_nets set
+void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
+{
+  // Get overflow position -- [(x,y), is horizontal]
+  std::vector<std::pair<odb::Point, bool>> overflow_positions;
+  getOverflowPositions(overflow_positions);
 
   int old_size = congestion_nets.size();
 
@@ -1895,8 +1977,9 @@ void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
   for (int radius = 0; radius < 5 && old_size == congestion_nets.size();
        radius++) {
     // Find nets for each congestion ggrid
-    for (int i = 0; i < n; i++) {
-      setCongestionNets(congestion_nets, xs[i], ys[i], dirs[i], radius);
+    for (const auto& position : overflow_positions) {
+      findNetsNearPosition(
+          congestion_nets, position.first, position.second, radius);
     }
   }
 }
@@ -1917,6 +2000,12 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
     total_usage += graph2d_.getUsageH(x, y);
     const int overflow = graph2d_.getOverflowH(x, y);
     if (overflow > 0) {
+      if (logger_->debugCheck(GRT, "congestion2D", 1)) {
+        // Convert to real coordinates
+        int x_real = tile_size_ * (x + 0.5) + x_corner_;
+        int y_real = tile_size_ * (y + 0.5) + y_corner_;
+        logger_->report("H 2D Overflow x{} y{} ({} {})", x, y, x_real, y_real);
+      }
       H_overflow += overflow;
       max_H_overflow = std::max(max_H_overflow, overflow);
       numedges++;
@@ -1927,6 +2016,12 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
     total_usage += graph2d_.getUsageV(x, y);
     const int overflow = graph2d_.getOverflowV(x, y);
     if (overflow > 0) {
+      if (logger_->debugCheck(GRT, "congestion2D", 1)) {
+        // Convert to real coordinates
+        int x_real = tile_size_ * (x + 0.5) + x_corner_;
+        int y_real = tile_size_ * (y + 0.5) + y_corner_;
+        logger_->report("V 2D Overflow x{} y{} ({} {})", x, y, x_real, y_real);
+      }
       V_overflow += overflow;
       max_V_overflow = std::max(max_V_overflow, overflow);
       numedges++;
@@ -1937,7 +2032,7 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   total_overflow_ = H_overflow + V_overflow;
   *maxOverflow = max_overflow;
 
-  if (logger_->debugCheck(GRT, "congestion", 1)) {
+  if (logger_->debugCheck(GRT, "congestion2D", 1)) {
     logger_->report("Overflow report:");
     logger_->report("Total usage          : {}", total_usage);
     logger_->report("Max H overflow       : {}", max_H_overflow);
@@ -1981,6 +2076,12 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     const int overflow = graph2d_.getEstUsageH(x, y) - graph2d_.getCapH(x, y);
     hCap += graph2d_.getCapH(x, y);
     if (overflow > 0) {
+      if (logger_->debugCheck(GRT, "congestion2D", 1)) {
+        // Convert to real coordinates
+        int x_real = tile_size_ * (x + 0.5) + x_corner_;
+        int y_real = tile_size_ * (y + 0.5) + y_corner_;
+        logger_->report("H 2D Overflow x{} y{} ({} {})", x, y, x_real, y_real);
+      }
       H_overflow += overflow;
       max_H_overflow = std::max(max_H_overflow, overflow);
       numedges++;
@@ -1992,6 +2093,12 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     const int overflow = graph2d_.getEstUsageV(x, y) - graph2d_.getCapV(x, y);
     vCap += graph2d_.getCapV(x, y);
     if (overflow > 0) {
+      if (logger_->debugCheck(GRT, "congestion2D", 1)) {
+        // Convert to real coordinates
+        int x_real = tile_size_ * (x + 0.5) + x_corner_;
+        int y_real = tile_size_ * (y + 0.5) + y_corner_;
+        logger_->report("V 2D Overflow x{} y{} ({} {})", x, y, x_real, y_real);
+      }
       V_overflow += overflow;
       max_V_overflow = std::max(max_V_overflow, overflow);
       numedges++;
@@ -2008,7 +2115,7 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     ahth_ = 20;
   }
 
-  if (logger_->debugCheck(GRT, "checkRoute3D", 1)) {
+  if (logger_->debugCheck(GRT, "congestion2D", 1)) {
     logger_->report("Overflow report.");
     logger_->report("Total hCap               : {}", hCap);
     logger_->report("Total vCap               : {}", vCap);
@@ -2042,6 +2149,18 @@ int FastRouteCore::getOverflow3D()
       overflow = h_edges_3D_[k][y][x].usage - h_edges_3D_[k][y][x].cap;
 
       if (overflow > 0) {
+        if (logger_->debugCheck(GRT, "checkRoute3D", 1)) {
+          // Convert to real coordinates
+          int x_real = tile_size_ * (x + 0.5) + x_corner_;
+          int y_real = tile_size_ * (y + 0.5) + y_corner_;
+          logger_->report(
+              ">>> 3D H Overflow: x{} y{} l{} - Real coordinates: ({}, {})",
+              x,
+              y,
+              k + 1,
+              x_real,
+              y_real);
+        }
         H_overflow += overflow;
         max_H_overflow = std::max(max_H_overflow, overflow);
       }
@@ -2050,6 +2169,18 @@ int FastRouteCore::getOverflow3D()
       total_usage += v_edges_3D_[k][y][x].usage;
       overflow = v_edges_3D_[k][y][x].usage - v_edges_3D_[k][y][x].cap;
       if (overflow > 0) {
+        if (logger_->debugCheck(GRT, "checkRoute3D", 1)) {
+          // Convert to real coordinates
+          int x_real = tile_size_ * (x + 0.5) + x_corner_;
+          int y_real = tile_size_ * (y + 0.5) + y_corner_;
+          logger_->report(
+              ">>> 3D V Overflow: x{} y{} l{} - Real coordinates: ({}, {})",
+              x,
+              y,
+              k + 1,
+              x_real,
+              y_real);
+        }
         V_overflow += overflow;
         max_V_overflow = std::max(max_V_overflow, overflow);
       }
@@ -2057,6 +2188,15 @@ int FastRouteCore::getOverflow3D()
   }
 
   total_overflow_ = H_overflow + V_overflow;
+
+  if (logger_->debugCheck(GRT, "checkRoute3D", 1)) {
+    logger_->report("=== Total 3D Overflow Summary ===");
+    logger_->report("Total H overflow: {}", H_overflow);
+    logger_->report("Total V overflow: {}", V_overflow);
+    logger_->report("Max H overflow: {}", max_H_overflow);
+    logger_->report("Max V overflow: {}", max_V_overflow);
+    logger_->report("Total overflow: {}", total_overflow_);
+  }
 
   return total_usage;
 }

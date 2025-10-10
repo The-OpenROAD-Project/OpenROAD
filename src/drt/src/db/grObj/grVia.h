@@ -7,6 +7,9 @@
 
 #include "db/grObj/grRef.h"
 #include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
+#include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -45,11 +48,14 @@ class grVia : public grRef
 
   dbOrientType getOrient() const override { return dbOrientType(); }
   void setOrient(const dbOrientType& in) override { ; }
-  Point getOrigin() const override { return origin_; }
-  void setOrigin(const Point& in) override { origin_ = in; }
+  odb::Point getOrigin() const override { return origin_; }
+  void setOrigin(const odb::Point& in) override { origin_ = in; }
 
-  dbTransform getTransform() const override { return dbTransform(origin_); }
-  void setTransform(const dbTransform& in) override { ; }
+  odb::dbTransform getTransform() const override
+  {
+    return odb::dbTransform(origin_);
+  }
+  void setTransform(const odb::dbTransform& in) override { ; }
 
   /* from gfrPinFig
    * hasPin
@@ -115,13 +121,13 @@ class grVia : public grRef
    * overlaps
    */
 
-  Rect getBBox() const override { return Rect(origin_, origin_); }
+  odb::Rect getBBox() const override { return odb::Rect(origin_, origin_); }
 
   void setIter(frListIter<std::unique_ptr<grVia>>& in) { iter_ = in; }
   frListIter<std::unique_ptr<grVia>> getIter() const { return iter_; }
 
  protected:
-  Point origin_;
+  odb::Point origin_;
   const frViaDef* viaDef_{nullptr};
   frBlockObject* child_{nullptr};
   frBlockObject* parent_{nullptr};

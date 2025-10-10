@@ -2,13 +2,14 @@
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include <algorithm>
-#include <limits>
+#include <string>
 #include <utility>
 
 #include "dpl/Opendp.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/network.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -48,6 +49,47 @@ Opendp::MasterByImplant Opendp::splitByImplant(
   return mapping;
 }
 
+dbMasterSeq Opendp::filterFillerMasters(const dbMasterSeq& filler_masters) const
+{
+  // Remove fillers that cannot be used
+  dbMasterSeq filtered_masters = filler_masters;
+
+  if (logger_->debugCheck(DPL, "filler", 2)) {
+    debugPrint(logger_,
+               DPL,
+               "filler",
+               1,
+               "Starting fillers: {}",
+               filtered_masters.size()) for (auto* master : filtered_masters)
+    {
+      debugPrint(logger_, DPL, "filler", 2, "    {}", master->getName());
+    }
+  }
+
+  // Remove fillers with PAD or BLOCK classes
+  filtered_masters.erase(std::remove_if(filtered_masters.begin(),
+                                        filtered_masters.end(),
+                                        [](dbMaster* master) -> bool {
+                                          return master->isPad()
+                                                 || master->isBlock();
+                                        }),
+                         filtered_masters.end());
+
+  if (logger_->debugCheck(DPL, "filler", 2)) {
+    debugPrint(logger_,
+               DPL,
+               "filler",
+               1,
+               "Final filterered fillers: {}",
+               filtered_masters.size()) for (auto* master : filtered_masters)
+    {
+      debugPrint(logger_, DPL, "filler", 2, "    {}", master->getName());
+    }
+  }
+
+  return filtered_masters;
+}
+
 void Opendp::fillerPlacement(const dbMasterSeq& filler_masters,
                              const char* prefix,
                              bool verbose)
@@ -57,7 +99,9 @@ void Opendp::fillerPlacement(const dbMasterSeq& filler_masters,
     adjustNodesOrient();
   }
 
-  auto filler_masters_by_implant = splitByImplant(filler_masters);
+  const auto filtered_masters = filterFillerMasters(filler_masters);
+
+  auto filler_masters_by_implant = splitByImplant(filtered_masters);
 
   for (auto& [layer, masters] : filler_masters_by_implant) {
     std::sort(masters.begin(),
@@ -112,24 +156,6 @@ void Opendp::setGridCells()
   }
 }
 
-// Select the site and orientation to fill this row with.  Use the shortest
-// site.
-std::pair<dbSite*, dbOrientType> Opendp::fillSite(Pixel* pixel)
-{
-  dbSite* selected_site = nullptr;
-  dbOrientType selected_orient;
-  DbuY min_height{std::numeric_limits<int>::max()};
-  for (const auto& [site, orient] : pixel->sites) {
-    DbuY site_height{site->getHeight()};
-    if (site_height < min_height) {
-      min_height = site_height;
-      selected_site = site;
-      selected_orient = orient;
-    }
-  }
-  return {selected_site, selected_orient};
-}
-
 void Opendp::placeRowFillers(GridY row,
                              const std::string& prefix,
                              const MasterByImplant& filler_masters_by_implant)
@@ -145,7 +171,9 @@ void Opendp::placeRowFillers(GridY row,
       ++j;
       continue;
     }
-    auto [site, orient] = fillSite(pixel);
+    // Select the site and orientation to fill this row with.  Use the shortest
+    // site.
+    auto [site, orient] = grid_->getShortestSite(j, row);
     GridX k = j;
     while (k < row_site_count && grid_->gridPixel(k, row)->cell == nullptr
            && grid_->gridPixel(k, row)->is_valid) {

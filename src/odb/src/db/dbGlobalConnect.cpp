@@ -11,7 +11,6 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
-
 // User Code Begin Includes
 #include "dbInst.h"
 #include "dbLib.h"

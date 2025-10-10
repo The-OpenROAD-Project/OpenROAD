@@ -3,12 +3,18 @@
 
 #include "layoutTabs.h"
 
+#include <QColor>
+#include <QWidget>
 #include <functional>
+#include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
 #include "colorGenerator.h"
 #include "layoutViewer.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace gui {

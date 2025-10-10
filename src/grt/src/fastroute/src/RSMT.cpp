@@ -2,6 +2,9 @@
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <tuple>
 #include <vector>
 
 #include "AbstractFastRouteRenderer.h"
@@ -112,6 +115,17 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
       logger_->error(GRT, 188, "Invalid number of node neighbors.");
     }
   }
+
+  // Map the node indices to the pin indices of the net
+  std::map<odb::Point, int> pos_count;
+  for (int i = 0; i < d; i++) {
+    odb::Point pos{treenodes[i].x, treenodes[i].y};
+    pos_count[pos]++;
+    const int pin_idx = nets_[ind]->getPinIdxFromPosition(
+        treenodes[i].x, treenodes[i].y, pos_count[pos]);
+    sttrees_[ind].node_to_pin_idx[i] = pin_idx;
+  }
+
   // Copy num neighbors
   for (int i = 0; i < numnodes; i++) {
     treenodes[i].nbr_count = nbrcnt[i];
@@ -718,21 +732,12 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
 
       if (x1 != x2 || y1 != y2) {  // the branch is not degraded (a point)
         // the position of this segment in seglist
-        seglist_[netID].push_back(Segment());
-        auto& seg = seglist_[netID].back();
+        const int8_t cost = nets_[netID]->getEdgeCost();
         if (x1 < x2) {
-          seg.x1 = x1;
-          seg.x2 = x2;
-          seg.y1 = y1;
-          seg.y2 = y2;
+          seglist_[netID].emplace_back(netID, x1, y1, x2, y2, cost);
         } else {
-          seg.x1 = x2;
-          seg.x2 = x1;
-          seg.y1 = y2;
-          seg.y2 = y1;
+          seglist_[netID].emplace_back(netID, x2, y2, x1, y1, cost);
         }
-
-        seg.netID = netID;
       }
     }  // loop j
 

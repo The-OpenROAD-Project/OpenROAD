@@ -1,0 +1,195 @@
+{
+  "name": "dbChip",
+  "type": "dbObject",
+  "ostream_scope": true,
+  "hash" : "0x1",
+  "enums": [
+    {
+      "name": "ChipType",
+      "class": true,
+      "values": [
+        "DIE",
+        "RDL", 
+        "IP",
+        "SUBSTRATE",
+        "HIER"
+      ],
+      "public": true
+    }
+  ],
+  "fields": [
+    {
+      "name": "_name",
+      "type": "char *",
+      "schema": "db_schema_chip_extended",
+      "default": "nullptr",
+      "flags": ["no-set"]
+    },
+    {
+      "name": "type_",
+      "type": "uint",
+      "default": 0,
+      "schema": "db_schema_chip_extended",
+      "flags": ["private"]
+    },
+    {
+      "name": "offset_",
+      "type": "Point",
+      "default": "{}",
+      "schema": "db_schema_chip_extended"
+    },
+    {
+      "name": "width_",
+      "type": "int",
+      "default": "0",
+      "schema": "db_schema_chip_extended"
+    },
+    {
+      "name": "height_",
+      "type": "int", 
+      "default": "0",
+      "schema": "db_schema_chip_extended"
+    },
+    {
+      "name": "thickness_",
+      "type": "int",
+      "default": "0",
+      "schema": "db_schema_chip_extended"
+    },
+    {
+      "name": "shrink_",
+      "type": "float",
+      "default": "0.0",
+      "comment": "// range (0, 1]",
+      "schema": "db_schema_chip_extended"
+    },
+    {
+      "name": "seal_ring_east_",
+      "type": "int",
+      "default": "0",
+      "schema": "db_schema_chip_extended"
+    },
+    {
+      "name": "seal_ring_west_",
+      "type": "int",
+      "default": "0",
+      "schema": "db_schema_chip_extended"
+    },
+    {
+      "name": "seal_ring_north_",
+      "type": "int",
+      "default": "0",
+      "schema": "db_schema_chip_extended"
+    },
+    {
+      "name": "seal_ring_south_",
+      "type": "int",
+      "default": "0",
+      "schema": "db_schema_chip_extended"
+    },
+    {
+      "name": "scribe_line_east_",
+      "type": "int",
+      "default": "0",
+      "schema": "db_schema_chip_extended"
+    },
+    {
+      "name": "scribe_line_west_",
+      "type": "int",
+      "default": "0",
+      "schema": "db_schema_chip_extended"
+    },
+    {
+      "name": "scribe_line_north_",
+      "type": "int",
+      "default": "0",
+      "schema": "db_schema_chip_extended"
+    },
+    {
+      "name": "scribe_line_south_",
+      "type": "int",
+      "default": "0",
+      "schema": "db_schema_chip_extended"
+    },
+    {
+      "name": "tsv_",
+      "type": "bool",
+      "default": "false",
+      "schema": "db_schema_chip_extended"
+    },
+    {
+      "name": "_top",
+      "type": "dbId<_dbBlock>",
+      "flags": ["private", "cmpgt"],
+      "parent": "dbBlock"
+    },
+    {
+      "name": "_block_tbl",
+      "type": "dbTable<_dbBlock>*",
+      "flags": ["private", "no-serial"]
+    },
+    {
+      "name": "_name_cache",
+      "type": "_dbNameCache*",
+      "flags": ["private", "no-cmp", "no-serial"]
+    },
+    {
+      "name": "_block_itr",
+      "type": "dbBlockItr*", 
+      "flags": ["private", "no-cmp", "no-serial"]
+    },
+    {
+      "name": "_prop_itr",
+      "type": "dbPropertyItr*",
+      "flags": ["private", "no-cmp", "no-serial"]
+    },
+    {
+      "name": "chipinsts_",
+      "type": "dbId<_dbChipInst>",
+      "flags": ["private"],
+      "schema":"db_schema_chip_inst"
+    },
+    {
+      "name": "conns_",
+      "type": "dbId<_dbChipConn>",
+      "flags": ["private"],
+      "schema": "db_schema_chip_region"
+    },
+    {
+      "name": "nets_",
+      "type": "dbId<_dbChipNet>",
+      "flags": ["private"],
+      "schema": "db_schema_chip_bump"
+    },
+    {
+      "name": "chipinsts_map_",
+      "type": "std::unordered_map<std::string, dbId<_dbChipInst>>",
+      "flags": ["private", "no-serial"]
+    },
+    {
+      "name": "chip_region_map_",
+      "type": "std::unordered_map<std::string, dbId<_dbChipRegion>>",
+      "flags": ["private", "no-serial"]
+    },
+    {
+      "name": "tech_",
+      "type": "dbId<_dbTech>",
+      "flags": ["private"],
+      "schema": "db_schema_chip_tech"
+    }
+  ],
+  "declared_classes": ["dbPropertyItr", "_dbNameCache","dbBlockItr"],
+  "h_includes": [
+    "odb/geom.h"
+  ],
+  "cpp_includes": [
+    "dbTable.h",
+    "dbTable.hpp",
+    "dbNameCache.h",
+    "dbBlockItr.h", 
+    "dbBlock.h", 
+    "dbTech.h", 
+    "dbPropertyItr.h",
+    "dbChipConn.h"
+  ]
+} 

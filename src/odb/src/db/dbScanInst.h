@@ -12,6 +12,7 @@
 #include "dbScanPin.h"
 #include "dbVector.h"
 #include "odb/db.h"
+#include "odb/dbId.h"
 #include "odb/odb.h"
 
 namespace odb {

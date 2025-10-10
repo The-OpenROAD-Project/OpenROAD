@@ -8,6 +8,8 @@
 #include "dbAccessPoint.h"
 #include "dbBlock.h"
 #include "dbBoxItr.h"
+#include "dbCore.h"
+#include "dbDatabase.h"
 #include "dbMPinItr.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
@@ -15,6 +17,8 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/geom.h"
 
 namespace odb {
 

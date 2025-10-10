@@ -2,6 +2,8 @@
 # Copyright (c) 2022-2025, The OpenROAD Authors
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "add_constraint1",
@@ -22,6 +24,7 @@ COMPULSORY_TESTS = [
     "add_constraint16",
     "add_constraint17",
     "add_constraint18",
+    "add_constraint19",
     "add_constraint_debug",
     "add_constraint_error1",
     "add_constraint_error2",
@@ -32,6 +35,7 @@ COMPULSORY_TESTS = [
     "add_constraint_error7",
     "add_constraint_error8",
     "add_constraint_error9",
+    "add_constraint_error10",
     "annealing1",
     "annealing2",
     "annealing3",
@@ -107,6 +111,8 @@ COMPULSORY_TESTS = [
     "place_pin_error1",
     "place_pin_error2",
     "place_pin_error3",
+    "random_deprecated1",
+    "random_deprecated2",
     "top_layer1",
     "top_layer2",
     "top_layer3",
@@ -151,10 +157,10 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
-            "gcd": [],
             "blocked_region": [],
-            "large_groups1": [],
+            "gcd": [],
             "group_pins3": [],
+            "large_groups1": [],
             "multi_track_pattern1": ["multi_track_pattern2.lef"],
             "multi_track_pattern2": ["multi_track_pattern1.lef"],
             "pin_length_error": ["on_grid.def"],

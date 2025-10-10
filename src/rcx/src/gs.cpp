@@ -2,10 +2,13 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
 #include "gseq.h"
+#include "odb/array1.h"
+#include "odb/util.h"
 
 namespace rcx {
 

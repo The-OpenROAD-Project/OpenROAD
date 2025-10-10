@@ -12,7 +12,7 @@ _versionCompare() {
 }
 
 _equivalenceDeps() {
-    yosysVersion=v0.55
+    yosysVersion=v0.57
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
@@ -73,8 +73,10 @@ _installCommonDev() {
     cuddVersion=3.0.0
     lemonVersion=1.3.1
     spdlogVersion=1.15.0
-    gtestVersion=1.13.0
-    gtestChecksum="a1279c6fb5bf7d4a5e0d0b2a4adb39ac"
+    gtestVersion=1.17.0
+    gtestChecksum="3471f5011afc37b6555f6619c14169cf"
+    abslVersion=20240722.0
+    abslChecksum="740fb8f35ebdf82740c294bde408b9c0"
     bisonVersion=3.8.2
     bisonChecksum="1e541a097cda9eca675d29dd2832921f"
     flexVersion=2.6.4
@@ -91,7 +93,7 @@ _installCommonDev() {
     cmakeBin=${cmakePrefix}/bin/cmake
     if [[ ! -f ${cmakeBin} || -z $(${cmakeBin} --version | grep ${cmakeVersionBig}) ]]; then
         cd "${baseDir}"
-        eval wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
+        eval wget https://github.com/Kitware/CMake/releases/download/v${cmakeVersionSmall}/cmake-${cmakeVersionSmall}-linux-${arch}.sh
         md5sum -c <(echo "${cmakeChecksum} cmake-${cmakeVersionSmall}-${osName}-${arch}.sh") || exit 1
         chmod +x cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
         ./cmake-${cmakeVersionSmall}-${osName}-${arch}.sh --skip-license --prefix=${cmakePrefix}
@@ -107,7 +109,31 @@ _installCommonDev() {
     fi
     if [ ${bisonInstalledVersion} != ${bisonVersion} ]; then
         cd "${baseDir}"
-        eval wget https://ftp.gnu.org/gnu/bison/bison-${bisonVersion}.tar.gz
+
+        mirrors=(
+            "https://ftp.gnu.org/gnu/bison"
+            "https://ftpmirror.gnu.org/bison"
+            "https://mirrors.kernel.org/gnu/bison"
+            "https://mirrors.dotsrc.org/gnu/bison"
+        )
+
+        success=0
+        for mirror in "${mirrors[@]}"; do
+            url="${mirror}/bison-${bisonVersion}.tar.gz"
+            echo "Trying to download bison from: $url"
+            if wget "$url"; then
+                success=1
+                break
+            else
+                echo "Failed to download from $mirror"
+            fi
+        done
+
+        if [ $success -ne 1 ]; then
+            echo "Error: could not download bison-${bisonVersion}.tar.gz from any mirror."
+            exit 1
+        fi
+
         md5sum -c <(echo "${bisonChecksum} bison-${bisonVersion}.tar.gz") || exit 1
         tar xf bison-${bisonVersion}.tar.gz
         cd bison-${bisonVersion}
@@ -262,6 +288,21 @@ _installCommonDev() {
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D GTest_ROOT=$(realpath $gtestPrefix) "
 
+    # Abseil
+    abslPrefix=${PREFIX:-"/usr/local"}
+    if [[ ! -d ${abslPrefix}/absl/base ]]; then
+        cd "${baseDir}"
+        eval wget https://github.com/abseil/abseil-cpp/releases/download/${abslVersion}/abseil-cpp-${abslVersion}.tar.gz
+        md5sum -c <(echo "${abslChecksum} abseil-cpp-${abslVersion}.tar.gz") || exit 1
+        tar xf abseil-cpp-${abslVersion}.tar.gz
+        cd abseil-cpp-${abslVersion}
+        ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${abslPrefix}" -DCMAKE_CXX_STANDARD=17 -B build .
+        ${cmakePrefix}/bin/cmake --build build --target install
+    else
+        echo "Abseil already installed."
+    fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D ABSL_ROOT=$(realpath $abslPrefix) "
+
     if [[ ${equivalenceDeps} == "yes" ]]; then
         _equivalenceDeps
     fi
@@ -289,7 +330,12 @@ _installCommonDev() {
     if [[ ! -z ${PREFIX} ]]; then
         # Emit an environment setup script
         cat > ${PREFIX}/env.sh <<EOF
-depRoot="\$(dirname \$(readlink -f "\${BASH_SOURCE[0]}"))"
+if [ -n "\$ZSH_VERSION" ]; then
+  depRoot="\$(dirname \$(readlink -f "\${(%):-%x}"))"
+else
+  depRoot="\$(dirname \$(readlink -f "\${BASH_SOURCE[0]}"))"
+fi
+
 PATH=\${depRoot}/bin:\${PATH}
 LD_LIBRARY_PATH=\${depRoot}/lib64:\${depRoot}/lib:\${LD_LIBRARY_PATH}
 EOF
@@ -300,6 +346,8 @@ _installOrTools() {
     os=$1
     osVersion=$2
     arch=$3
+    local skipSystemOrTools=$4
+
     orToolsVersionBig=9.11
     orToolsVersionSmall=${orToolsVersionBig}.4210
 
@@ -309,18 +357,20 @@ _installOrTools() {
     cd "${baseDir}"
 
     # Disable exit on error for 'find' command, as it might return non zero
-    set +euo pipefail
-    LIST=($(find /local* /opt* /lib* /usr* /bin* -type f -name "libortools.so*" 2>/dev/null))
-    # Bring back exit on error
-    set -euo pipefail
-    # Return if right version of or-tools is installed
-    for lib in ${LIST[@]}; do
-        if [[ "$lib" =~ .*"/libortools.so.${orToolsVersionSmall}" ]]; then
-            echo "OR-Tools is already installed"
-            CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath $(dirname $lib)/..) "
-            return
-        fi
-    done
+    if [[ "${skipSystemOrTools}" == "false" ]]; then
+      set +euo pipefail
+      LIST=($(find /local* /opt* /lib* /usr* /bin* -type f -name "libortools.so*" 2>/dev/null))
+      # Bring back exit on error
+      set -euo pipefail
+      # Return if right version of or-tools is installed
+      for lib in ${LIST[@]}; do
+          if [[ "$lib" =~ .*"/libortools.so.${orToolsVersionSmall}" ]]; then
+              echo "OR-Tools is already installed"
+              CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath $(dirname $lib)/..) "
+              return
+          fi
+      done
+    fi
 
     orToolsPath=${PREFIX:-"/opt/or-tools"}
     if [ "$(uname -m)" == "aarch64" ]; then
@@ -391,6 +441,7 @@ _installUbuntuPackages() {
         tcllib \
         unzip \
         wget \
+        libyaml-cpp-dev \
         zlib1g-dev
 
     packages=()
@@ -476,6 +527,7 @@ _installRHELPackages() {
         tcl-thread-devel \
         tcllib \
         wget \
+        yaml-cpp-devel \
         zlib-devel
 
     if [[ ${rhelVersion} == 8 ]]; then
@@ -543,6 +595,7 @@ _installOpenSusePackages() {
         tcl-devel \
         tcllib \
         wget \
+        yaml-cpp-devel \
         zlib-devel
 
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
@@ -587,7 +640,7 @@ Then, rerun this script.
 EOF
         exit 1
     fi
-    brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib swig
+    brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib swig yaml-cpp
 
     # Some systems need this to correctly find OpenMP package during build
     brew link --force libomp
@@ -641,6 +694,7 @@ _installDebianPackages() {
         tcllib \
         unzip \
         wget \
+        libyaml-cpp-dev \
         zlib1g-dev
 
     if [[ $1 == 10 ]]; then
@@ -765,6 +819,11 @@ Usage: $0 -all
                                 #    like working around a firewall. This opens
                                 #    vulnerability to man-in-the-middle (MITM)
                                 #    attacks.
+       $0 -skip-system-or-tools
+                                # If true, does not perform a search of system
+                                # paths for a pre-installed or-tools library.
+                                # Instead, will install a separate version 
+                                # of or-tools
        $0 -save-deps-prefixes=FILE
                                 # Dumps OpenROAD build arguments and variables
                                 # to FILE
@@ -787,6 +846,7 @@ equivalenceDeps="no"
 CI="no"
 saveDepsPrefixes=""
 numThreads=$(nproc)
+skipSystemOrTools="false"
 # temp dir to download and compile
 baseDir=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 
@@ -860,11 +920,14 @@ while [ "$#" -gt 0 ]; do
             alias wget="wget --no-check-certificate"
             export GIT_SSL_NO_VERIFY=true
             ;;
+        -skip-system-or-tools)
+            skipSystemOrTools="true"
+            ;;
         -save-deps-prefixes=*)
-            saveDepsPrefixes=$(realpath ${1#-save-deps-prefixes=})
+            saveDepsPrefixes=$(realpath ${1#*=})
             ;;
         -threads=*)
-            numThreads=${1}
+            numThreads=${1#*=}
             ;;
         *)
             echo "unknown option: ${1}" >&2
@@ -910,13 +973,13 @@ esac
 case "${os}" in
     "Ubuntu" )
         ubuntuVersion=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
-        if [[ ${CI} == "yes" ]]; then
-            _installCI "${ubuntuVersion}"
-        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installUbuntuPackages "${ubuntuVersion}"
             _installUbuntuCleanUp
+        fi
+        if [[ ${CI} == "yes" ]]; then
+            _installCI "${ubuntuVersion}"
         fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
@@ -930,14 +993,16 @@ case "${os}" in
             else
                 ubuntuVersion=20.04
             fi
-            _installOrTools "ubuntu" "${ubuntuVersion}" "amd64"
+            _installOrTools "ubuntu" "${ubuntuVersion}" "amd64" ${skipSystemOrTools}
         fi
         ;;
-    "Red Hat Enterprise Linux" | "Rocky Linux")
+    "Red Hat Enterprise Linux" | "Rocky Linux" | "AlmaLinux")
     if [[ "${os}" == "Red Hat Enterprise Linux" ]]; then
         rhelVersion=$(rpm -q --queryformat '%{VERSION}' redhat-release | cut -d. -f1)
     elif  [[ "${os}" == "Rocky Linux" ]]; then
         rhelVersion=$(rpm -q --queryformat '%{VERSION}' rocky-release | cut -d. -f1)
+    elif [[ "${os}" == "AlmaLinux" ]]; then
+        rhelVersion=$(rpm -q --queryformat '%{VERSION}' almalinux-release | cut -d. -f1)
     fi
         if [[ "${rhelVersion}" != "8" ]] && [[ "${rhelVersion}" != "9" ]]; then
             echo "ERROR: Unsupported ${rhelVersion} version. Versions '8' and '9' are supported."
@@ -954,10 +1019,10 @@ case "${os}" in
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
             if [[ "${rhelVersion}" == "8" ]]; then
-                    _installOrTools "AlmaLinux" "8.10" "x86_64"
+                    _installOrTools "AlmaLinux" "8.10" "x86_64" ${skipSystemOrTools}
             fi
             if [[ "${rhelVersion}" == "9" ]]; then
-                    _installOrTools "rockylinux" "9" "amd64"
+                    _installOrTools "rockylinux" "9" "amd64" ${skipSystemOrTools}
             fi
         fi
         ;;
@@ -984,7 +1049,7 @@ EOF
         fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
-            _installOrTools "opensuse" "leap" "amd64"
+            _installOrTools "opensuse" "leap" "amd64" ${skipSystemOrTools}
         fi
         cat <<EOF
 To enable GCC-11 you need to run:
@@ -1007,7 +1072,7 @@ EOF
         fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
-            _installOrTools "debian" "${debianVersion}" "amd64"
+            _installOrTools "debian" "${debianVersion}" "amd64" ${skipSystemOrTools}
         fi
         ;;
     *)
@@ -1018,4 +1083,8 @@ esac
 if [[ ! -z ${saveDepsPrefixes} ]]; then
     mkdir -p "$(dirname $saveDepsPrefixes)"
     echo "$CMAKE_PACKAGE_ROOT_ARGS" > $saveDepsPrefixes
+    # Fix permissions if running as root to allow user access
+    if [[ $(id -u) == 0 && ! -z "${SUDO_USER+x}" ]]; then
+        chown "$SUDO_USER:$(id -gn "$SUDO_USER")" "$saveDepsPrefixes" 2>/dev/null || true
+    fi
 fi

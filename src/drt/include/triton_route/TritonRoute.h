@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <boost/asio/thread_pool.hpp>
+#include <cstdint>
 #include <list>
 #include <memory>
 #include <mutex>
@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/asio/thread_pool.hpp"
 #include "odb/geom.h"
 
 namespace odb {
@@ -26,7 +27,8 @@ class dbWire;
 
 namespace utl {
 class Logger;
-}
+class CallBackHandler;
+}  // namespace utl
 
 namespace stt {
 class SteinerTreeBuilder;
@@ -41,6 +43,7 @@ namespace drt {
 class frDesign;
 class frInst;
 class DesignCallBack;
+class PACallBack;
 class FlexDR;
 class FlexPA;
 class FlexTA;
@@ -80,13 +83,14 @@ struct ParamStruct
 class TritonRoute
 {
  public:
-  TritonRoute();
+  TritonRoute(odb::dbDatabase* db,
+              utl::Logger* logger,
+              utl::CallBackHandler* callback_handler,
+              dst::Distributed* dist,
+              stt::SteinerTreeBuilder* stt_builder);
   ~TritonRoute();
-  void init(odb::dbDatabase* db,
-            utl::Logger* logger,
-            dst::Distributed* dist,
-            stt::SteinerTreeBuilder* stt_builder,
-            std::unique_ptr<AbstractGraphicsFactory> graphics_factory);
+
+  void initGraphics(std::unique_ptr<AbstractGraphicsFactory> graphics_factory);
 
   frDesign* getDesign() const { return design_.get(); }
   utl::Logger* getLogger() const { return logger_; }
@@ -185,6 +189,7 @@ class TritonRoute
   std::unique_ptr<frDesign> design_;
   std::unique_ptr<frDebugSettings> debug_;
   std::unique_ptr<DesignCallBack> db_callback_;
+  std::unique_ptr<PACallBack> pa_callback_;
   std::unique_ptr<RouterConfiguration> router_cfg_;
   odb::dbDatabase* db_{nullptr};
   utl::Logger* logger_{nullptr};

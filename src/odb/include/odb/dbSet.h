@@ -3,7 +3,10 @@
 
 #pragma once
 
-#include "dbIterator.h"
+#include <cstddef>
+#include <iterator>
+
+#include "odb/dbIterator.h"
 
 namespace odb {
 

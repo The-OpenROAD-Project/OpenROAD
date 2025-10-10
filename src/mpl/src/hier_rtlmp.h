@@ -11,12 +11,12 @@
 
 #include "MplObserver.h"
 #include "clusterEngine.h"
+#include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "shapes.h"
-#include "util.h"
 
 namespace sta {
 class dbNetwork;
@@ -101,7 +101,6 @@ class HierRTLMP
   void setBoundaryWeight(float boundary_weight);
   void setNotchWeight(float notch_weight);
   void setMacroBlockageWeight(float macro_blockage_weight);
-  void setPinAccessThreshold(float pin_access_th);
   void setTargetUtil(float target_util);
   void setTargetDeadSpace(float target_dead_space);
   void setMinAR(float min_ar);
@@ -176,8 +175,7 @@ class HierRTLMP
 
   // Hierarchical Macro Placement 1st stage: Cluster Placement
   void adjustMacroBlockageWeight();
-  void placeChildren(Cluster* parent);
-  void placeChildrenUsingMinimumTargetUtil(Cluster* parent);
+  void placeChildren(Cluster* parent, bool ignore_std_cell_area = false);
 
   void findBlockagesWithinOutline(std::vector<Rect>& macro_blockages,
                                   std::vector<Rect>& placement_blockages,
@@ -197,6 +195,9 @@ class HierRTLMP
                                   float offset_x,
                                   float offset_y);
   void mergeNets(std::vector<BundledNet>& nets);
+  void considerFixedMacro(const Rect& outline,
+                          std::vector<SoftMacro>& sa_macros,
+                          Cluster* fixed_macro_cluster) const;
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
   void placeMacros(Cluster* cluster);
@@ -240,6 +241,13 @@ class HierRTLMP
   void printPlacementResult(Cluster* parent,
                             const Rect& outline,
                             SACore* sa_core);
+  void writeNetFile(const std::string& file_name_prefix,
+                    std::vector<SoftMacro>& macros,
+                    std::vector<BundledNet>& nets);
+  void writeFloorplanFile(const std::string& file_name_prefix,
+                          std::vector<SoftMacro>& macros);
+  template <typename SACore>
+  void writeCostFile(const std::string& file_name_prefix, SACore* sa_core);
 
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
@@ -268,13 +276,11 @@ class HierRTLMP
   float min_ar_ = 0.3;  // the aspect ratio range for StdCellCluster (min_ar_, 1
                         // / min_ar_)
 
-  float pin_access_th_ = 0.1;  // each pin access is modeled as a SoftMacro
-  float pin_access_th_orig_ = 0.1;
   float notch_v_th_ = 10.0;
   float notch_h_th_ = 10.0;
 
-  // For cluster and macro placement.
-  SACoreWeights placement_core_weights_;
+  SACoreWeights placement_core_weights_;  // For cluster and macro placement.
+  SASoftWeights cluster_placement_weights_;
 
   // For generation of the coarse shape (tiling) of clusters with macros.
   const SACoreWeights shaping_core_weights_{1.0f /* area */,
@@ -282,11 +288,6 @@ class HierRTLMP
                                             0.0f /* wirelength */,
                                             0.0f /* guidance */,
                                             0.0f /* fence */};
-
-  // Soft-Especific Weights
-  float boundary_weight_ = 5.0;
-  float notch_weight_ = 1.0;  // Used inside Core, but only for Soft.
-  float macro_blockage_weight_ = 1.0;
 
   std::map<std::string, Rect> fences_;   // macro_name, fence
   std::map<odb::dbInst*, Rect> guides_;  // Macro -> Guidance Region
@@ -305,7 +306,6 @@ class HierRTLMP
   float neg_swap_prob_ = 0.2;
   float double_swap_prob_ = 0.2;
   float exchange_swap_prob_ = 0.2;
-  float flip_prob_ = 0.4;
   float resize_prob_ = 0.4;
 
   // since we convert from the database unit to the micrometer

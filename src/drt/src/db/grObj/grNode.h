@@ -4,10 +4,12 @@
 #pragma once
 
 #include <iostream>
+#include <list>
 #include <memory>
 
 #include "db/grObj/grBlockObject.h"
 #include "db/infra/frPoint.h"
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frNode.h"
 #include "frBaseTypes.h"
 
@@ -39,7 +41,7 @@ class grNode : public grBlockObject
 
   // setters
   void addToNet(grNet* in) { net_ = in; }
-  void setLoc(const Point& in) { loc_ = in; }
+  void setLoc(const odb::Point& in) { loc_ = in; }
   void setLayerNum(frLayerNum in) { layerNum_ = in; }
   void setConnFig(grBlockObject* in) { connFig_ = in; }
   void setPin(frBlockObject* in) { pin_ = in; }
@@ -79,7 +81,7 @@ class grNode : public grBlockObject
   // getters
   bool hasNet() { return (net_ != nullptr); }
   grNet* getNet() { return net_; }
-  Point getLoc() { return loc_; }
+  odb::Point getLoc() { return loc_; }
   frLayerNum getLayerNum() { return layerNum_; }
   grBlockObject* getConnFig() { return connFig_; }
   frBlockObject* getPin() { return pin_; }
@@ -95,7 +97,7 @@ class grNode : public grBlockObject
 
  protected:
   grNet* net_{nullptr};
-  Point loc_;
+  odb::Point loc_;
   frLayerNum layerNum_{0};
   grBlockObject* connFig_{nullptr};  // wire / via / patch to parent
   frBlockObject* pin_{

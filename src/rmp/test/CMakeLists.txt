@@ -14,6 +14,12 @@ or_integration_tests(
     gcd_restructure
     aes_asap7
     gcd_asap7
+    memory_nangate45
+    aes_dontuse_nangate45
+    aes_donttouch_nangate45
+    aes_annealing
+    gcd_annealing1
+    gcd_annealing2
 )
 
 # Skipped

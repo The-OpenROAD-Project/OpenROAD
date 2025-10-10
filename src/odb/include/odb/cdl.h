@@ -10,8 +10,8 @@
 #include <string>
 #include <vector>
 
-#include "db.h"
-#include "odb.h"
+#include "odb/db.h"
+#include "odb/odb.h"
 
 namespace odb {
 

@@ -3,12 +3,14 @@
 
 #include "odb/dbShape.h"
 
+#include <cstring>
 #include <vector>
 
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbVia.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace odb {
 

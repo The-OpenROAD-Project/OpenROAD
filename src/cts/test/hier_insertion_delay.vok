@@ -1,13 +1,47 @@
 module multi_sink (clk);
  input clk;
 
+ wire clknet_leaf_15_clk_regs;
+ wire clknet_leaf_13_clk_regs;
+ wire clknet_leaf_12_clk_regs;
+ wire clknet_leaf_11_clk_regs;
+ wire clk_regs;
+ wire clknet_0_clk;
+ wire clknet_1_0__leaf_clk;
+ wire clknet_leaf_0_clk_regs;
+ wire clknet_leaf_1_clk_regs;
+ wire clknet_leaf_2_clk_regs;
+ wire clknet_leaf_3_clk_regs;
+ wire clknet_leaf_4_clk_regs;
+ wire clknet_leaf_5_clk_regs;
+ wire clknet_leaf_6_clk_regs;
+ wire clknet_leaf_7_clk_regs;
+ wire clknet_leaf_8_clk_regs;
+ wire clknet_leaf_9_clk_regs;
+ wire clknet_leaf_10_clk_regs;
+ wire clknet_leaf_14_clk_regs;
+ wire clknet_leaf_16_clk_regs;
+ wire clknet_leaf_17_clk_regs;
+ wire clknet_leaf_18_clk_regs;
+ wire clknet_leaf_19_clk_regs;
+ wire clknet_leaf_20_clk_regs;
+ wire clknet_leaf_21_clk_regs;
+ wire clknet_leaf_22_clk_regs;
+ wire clknet_leaf_23_clk_regs;
+ wire clknet_leaf_24_clk_regs;
+ wire clknet_leaf_25_clk_regs;
+ wire clknet_leaf_26_clk_regs;
+ wire clknet_leaf_27_clk_regs;
+ wire clknet_0_clk_regs;
+ wire clknet_1_0__leaf_clk_regs;
+ wire clknet_1_1__leaf_clk_regs;
+ wire delaynet_0_core;
+ wire delaynet_1_core;
 
- CLKBUF_X3 delaybuf_2_core (.A(delaynet_2_core),
-    .Z(clknet_0_clk));
- CLKBUF_X3 delaybuf_1_core (.A(delaynet_1_core),
-    .Z(delaynet_2_core));
- CLKBUF_X3 delaybuf_0_core (.A(delaynet_0_core),
+ CLKBUF_X3 delaybuf_1_core (.A(delaynet_0_core),
     .Z(delaynet_1_core));
+ CLKBUF_X3 delaybuf_0_core (.A(clk),
+    .Z(delaynet_0_core));
  INV_X1 clkload1 (.A(clknet_leaf_27_clk_regs));
  INV_X4 clkload0 (.A(clknet_1_1__leaf_clk_regs));
  CLKBUF_X3 clkbuf_1_1__f_clk_regs (.A(clknet_0_clk_regs),
@@ -74,8 +108,8 @@ module multi_sink (clk);
     .Z(clknet_leaf_0_clk_regs));
  CLKBUF_X3 clkbuf_1_0__f_clk (.A(clknet_0_clk),
     .Z(clknet_1_0__leaf_clk));
- CLKBUF_X3 clkbuf_0_clk (.A(clk),
-    .Z(delaynet_0_core));
+ CLKBUF_X3 clkbuf_0_clk (.A(delaynet_1_core),
+    .Z(clknet_0_clk));
  CLKBUF_X3 clkbuf_regs_0_core (.A(clk),
     .Z(clk_regs));
  DFF_X1 ff10 (.CK(clknet_leaf_27_clk_regs));

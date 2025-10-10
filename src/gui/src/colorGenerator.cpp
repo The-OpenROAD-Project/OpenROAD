@@ -3,6 +3,11 @@
 
 #include "colorGenerator.h"
 
+#include <QColor>
+#include <array>
+
+#include "gui/gui.h"
+
 namespace gui {
 
 // https://mokole.com/palette.html

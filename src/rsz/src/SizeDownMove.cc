@@ -6,8 +6,20 @@
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 #include "BaseMove.hh"
+#include "sta/ArcDelayCalc.hh"
+#include "sta/Delay.hh"
+#include "sta/Graph.hh"
+#include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
+#include "sta/Vector.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 
@@ -122,7 +134,8 @@ bool SizeDownMove::doMove(const Path* drvr_path,
     LibertyCell* load_cell = load_port->libertyCell();
     Instance* load_inst = network_->instance(load_pin);
 
-    if (resizer_->dontTouch(load_inst)) {
+    if (resizer_->dontTouch(load_inst)
+        || !resizer_->isLogicStdCell(load_inst)) {
       continue;
     }
 

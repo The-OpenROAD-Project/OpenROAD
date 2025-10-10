@@ -140,5 +140,11 @@ proc get_hier_module { arg } {
 }
 interp alias {} get_design {} get_hier_module
 
+define_cmd_args "check_axioms" {}
+proc check_axioms { args } {
+  check_argc_eq0 "check_axioms" $args
+  check_axioms_cmd
+}
+
 # namespace
 }

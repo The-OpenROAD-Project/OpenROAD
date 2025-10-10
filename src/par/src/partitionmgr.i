@@ -320,4 +320,9 @@ void read_file(const char* filename, const char* instance_map_file)
   getPartitionMgr()->readPartitioningFile(filename, instance_map_file);
 }
 
+void artnet_write_spec(const char* filename)
+{
+  getPartitionMgr()->writeArtNetSpec(filename);
+}
+
 %}

@@ -4,11 +4,21 @@
 #include "globalConnectDialog.h"
 
 #include <QApplication>
+#include <QComboBox>
+#include <QDialog>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QVBoxLayout>
+#include <QVariant>
+#include <QWidget>
+#include <regex>
+#include <set>
+#include <stdexcept>
+#include <string>
 
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbNet*);

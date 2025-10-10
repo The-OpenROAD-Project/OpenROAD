@@ -4,10 +4,15 @@
 #include "heatMapSetup.h"
 
 #include <QComboBox>
+#include <QDialog>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListWidget>
+#include <QPushButton>
+#include <QString>
 #include <QVBoxLayout>
+#include <QWidget>
+#include <variant>
 
 namespace gui {
 

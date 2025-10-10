@@ -3,12 +3,15 @@
 
 #include "dbMTerm.h"
 
-#include <spdlog/fmt/ostr.h>
+#include <string.h>
 
+#include <cstdlib>
+#include <cstring>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbLib.h"
@@ -18,7 +21,11 @@
 #include "dbTable.hpp"
 #include "dbTechLayerAntennaRule.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/lefout.h"
+#include "spdlog/fmt/ostr.h"
 
 namespace odb {
 

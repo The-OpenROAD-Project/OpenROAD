@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
+
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
+
+package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
@@ -9,6 +13,7 @@ COMPULSORY_TESTS = [
     "gcd",
     "generate_pattern",
     "names",
+    "net_name_consistency",
 ]
 
 # Disabled in CMakeLists.txt
@@ -82,8 +87,8 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
-            "gcd": ["ext_pattern.rules"],
             "ext_pattern": ["generate_pattern.defok"],
+            "gcd": ["ext_pattern.rules"],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
@@ -98,3 +103,13 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "rcx_unittest",
+    srcs = ["ext2dBoxTest.cpp"],
+    deps = [
+        "//src/rcx",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

@@ -3,13 +3,16 @@
 
 #include "odb/gdsUtil.h"
 
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
+#include <cmath>
+#include <cstdint>
 #include <ctime>
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
+#include "boost/property_tree/ptree.hpp"
+#include "boost/property_tree/xml_parser.hpp"
 #include "odb/db.h"
 
 namespace odb::gds {
@@ -54,7 +57,7 @@ uint8_t fromRecordType(RecordType recordType)
 
 DataType toDataType(uint8_t dataType)
 {
-  if (dataType >= (uint8_t) DataType::INVALID_DT) {
+  if (dataType >= (uint8_t) DataType::kInvalid) {
     throw std::runtime_error("Corrupted GDS, Invalid data type!");
   }
   return static_cast<DataType>(dataType);
@@ -62,7 +65,7 @@ DataType toDataType(uint8_t dataType)
 
 uint8_t fromDataType(DataType dataType)
 {
-  if (dataType >= DataType::INVALID_DT) {
+  if (dataType >= DataType::kInvalid) {
     throw std::runtime_error("Corrupted GDS, Invalid data type!");
   }
   return static_cast<uint8_t>(dataType);

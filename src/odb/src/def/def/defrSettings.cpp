@@ -28,6 +28,8 @@
 // *****************************************************************************
 #include "defrSettings.hpp"
 
+#include <cstring>
+
 #include "def_parser.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE

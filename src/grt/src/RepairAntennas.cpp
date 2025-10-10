@@ -3,13 +3,10 @@
 
 #include "RepairAntennas.h"
 
-#include <omp.h>
-
 #include <algorithm>
-#include <boost/pending/disjoint_sets.hpp>
 #include <cmath>
-#include <limits>
-#include <map>
+#include <iterator>
+#include <stack>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -17,7 +14,14 @@
 
 #include "Net.h"
 #include "Pin.h"
+#include "boost/geometry/geometry.hpp"
+#include "boost/pending/disjoint_sets.hpp"
 #include "grt/GlobalRouter.h"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "omp.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -577,7 +581,8 @@ void RepairAntennas::addJumperAndVias(GRoute& route,
                                       const int& init_y,
                                       const int& final_x,
                                       const int& final_y,
-                                      const int& layer_level)
+                                      const int& layer_level,
+                                      odb::dbNet* db_net)
 {
   // Create vias (at the start and end of the jumper)
   for (int layer = layer_level; layer < layer_level + 2; layer++) {
@@ -594,17 +599,22 @@ void RepairAntennas::addJumperAndVias(GRoute& route,
                            layer_level + 2,
                            true));
   // Reducing usage in the layer level
-  grouter_->updateResources(init_x, init_y, final_x, final_y, layer_level, -1);
+  grouter_->updateResources(
+      init_x, init_y, final_x, final_y, layer_level, -1, db_net);
   // Increasing usage in the layer level + 2
   grouter_->updateResources(
-      init_x, init_y, final_x, final_y, layer_level + 2, 1);
+      init_x, init_y, final_x, final_y, layer_level + 2, 1, db_net);
+  // Update FastRoute Tree Edges
+  grouter_->updateFastRouteGridsLayer(
+      init_x, init_y, final_x, final_y, layer_level, layer_level + 2, db_net);
 }
 
 void RepairAntennas::addJumperToRoute(GRoute& route,
                                       const int& seg_id,
                                       const int& jumper_init_pos,
                                       const int& jumper_final_pos,
-                                      const int& layer_level)
+                                      const int& layer_level,
+                                      odb::dbNet* db_net)
 {
   const int seg_init_x = route[seg_id].init_x;
   const int seg_init_y = route[seg_id].init_y;
@@ -632,7 +642,8 @@ void RepairAntennas::addJumperToRoute(GRoute& route,
                    jumper_init_y,
                    jumper_final_x,
                    jumper_final_y,
-                   layer_level);
+                   layer_level,
+                   db_net);
   // Divide segment (new segment is added before jumper insertion)
   route.push_back(GSegment(seg_init_x,
                            seg_init_y,
@@ -647,7 +658,8 @@ void RepairAntennas::addJumperToRoute(GRoute& route,
 
 void RepairAntennas::addJumper(GRoute& route,
                                const int& segment_id,
-                               const int& jumper_pos)
+                               const int& jumper_pos,
+                               odb::dbNet* db_net)
 {
   odb::dbTech* tech = db_->getTech();
   const int segment_layer_level = route[segment_id].init_layer;
@@ -659,14 +671,22 @@ void RepairAntennas::addJumper(GRoute& route,
     // Get start and final X position of jumper
     const int jumper_start_x = jumper_pos;
     const int jumper_final_x = jumper_start_x + jumper_size_;
-    addJumperToRoute(
-        route, segment_id, jumper_start_x, jumper_final_x, segment_layer_level);
+    addJumperToRoute(route,
+                     segment_id,
+                     jumper_start_x,
+                     jumper_final_x,
+                     segment_layer_level,
+                     db_net);
   } else {
     // Get start and final Y position jumper
     const int jumper_start_y = jumper_pos;
     const int jumper_final_y = jumper_start_y + jumper_size_;
-    addJumperToRoute(
-        route, segment_id, jumper_start_y, jumper_final_y, segment_layer_level);
+    addJumperToRoute(route,
+                     segment_id,
+                     jumper_start_y,
+                     jumper_final_y,
+                     segment_layer_level,
+                     db_net);
   }
 }
 
@@ -895,7 +915,8 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
                                      LayerToSegmentNodeVector& segment_graph,
                                      const SegmentNode& seg_node,
                                      const odb::Point& parent_pos,
-                                     int& jumper_position)
+                                     int& jumper_position,
+                                     odb::dbNet* db_net)
 {
   jumper_position = -1;
   const GSegment& seg = route[seg_node.seg_id];
@@ -929,7 +950,7 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
   while (pos_x <= seg_final_x && pos_y <= seg_final_y) {
     // Check if the position has resources available
     has_available_resources = grouter_->hasAvailableResources(
-        is_horizontal, pos_x, pos_y, layer_level + 2);
+        is_horizontal, pos_x, pos_y, layer_level + 2, db_net);
     is_via = (is_horizontal && via_pos.find(pos_x) != via_pos.end())
              || (!is_horizontal && via_pos.find(pos_y) != via_pos.end());
     // If the position has vias or does not have resources
@@ -980,7 +1001,8 @@ void RepairAntennas::findSegments(const GRoute& route,
                                   LayerToSegmentNodeVector& segment_graph,
                                   const int& num_nodes,
                                   const int& violation_layer,
-                                  SegmentToJumperPos& segments_to_repair)
+                                  SegmentToJumperPos& segments_to_repair,
+                                  odb::dbNet* db_net)
 {
   // Init stack and vector of visited and parent position
   std::stack<std::pair<odb::dbTechLayer*, SegmentNode>> node_stack;
@@ -1026,7 +1048,8 @@ void RepairAntennas::findSegments(const GRoute& route,
                                       segment_graph,
                                       cur_node,
                                       parent_pos[cur_node.node_id],
-                                      jumper_pos);
+                                      jumper_pos,
+                                      db_net);
       // If jumper wasnt added, then explore adjacent segment nodes
       if (is_found) {
         segments_to_repair[cur_node.seg_id].insert(jumper_pos);
@@ -1077,7 +1100,8 @@ void RepairAntennas::getViolations(
 
 int RepairAntennas::addJumperOnSegments(
     const SegmentToJumperPos& segments_to_repair,
-    GRoute& route)
+    GRoute& route,
+    odb::dbNet* db_net)
 {
   int jumper_by_net = 0;
   // Iterate all jumper positions on segments
@@ -1092,11 +1116,11 @@ int RepairAntennas::addJumperOnSegments(
         // Avoid overlap with last jumper position
         const int dist = abs(last_pos_aux - pos_it);
         if (dist > jumper_size_) {
-          addJumper(route, seg_it.first, pos_it);
+          addJumper(route, seg_it.first, pos_it, db_net);
           jumper_by_net++;
         }
       } else {
-        addJumper(route, seg_it.first, pos_it);
+        addJumper(route, seg_it.first, pos_it, db_net);
         jumper_by_net++;
       }
       last_pos_aux = pos_it;
@@ -1153,14 +1177,16 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing,
                        segment_graph,
                        num_nodes,
                        layer_level,
-                       segments_to_repair);
+                       segments_to_repair,
+                       db_net);
         }
       }
       required_jumper_by_net = segments_to_repair.size();
     }
     if (required_jumper_by_net > 0) {
       // Add jumper in found segment positions
-      jumper_by_net = addJumperOnSegments(segments_to_repair, routing[db_net]);
+      jumper_by_net
+          = addJumperOnSegments(segments_to_repair, routing[db_net], db_net);
       if (jumper_by_net > 0) {
         db_net->setJumpers(true);
         net_with_jumpers++;

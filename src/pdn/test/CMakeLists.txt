@@ -2,6 +2,7 @@ or_integration_tests(
   "pdn"
   TESTS
     add_double_global_connection
+    asap7_failed_macro_covered
     asap7_failed_macro_grid
     asap7_no_via_generate
     asap7_no_via_generate_v1_snapped
@@ -18,6 +19,7 @@ or_integration_tests(
     asap7_vias_max_rows_columns
     asap7_M1_M3_followpins
     asap7_M1_M3_followpins_staggered
+    asap7_macro_notcovered
     bpin_removal
     core_grid
     core_grid_adjacentcuts
@@ -48,12 +50,16 @@ or_integration_tests(
     core_grid_with_fixed_pins
     core_grid_with_rings
     core_grid_with_rings_connect
+    core_grid_with_rings_different_offset
+    core_grid_with_rings_different_width1
+    core_grid_with_rings_different_width2
     core_grid_with_rings_outside_die
     core_grid_with_rings_outside_die_allowed
     core_grid_with_rings_with_limit_straps
     core_grid_with_rings_with_straps
     core_grid_with_rings_with_straps_rings_over_core
     core_grid_with_routing_obstructions
+    core_grid_with_single_edge_pins
     core_grid_with_single_layer_rings
     design_width
     existing
@@ -72,6 +78,7 @@ or_integration_tests(
     macros_cells_overlapping_ports
     macros_cells_via_failure
     macros_different_nets
+    macros_grid_check
     macros_grid_through
     macros_grid_through_without_middle
     macros_narrow_channel
@@ -94,6 +101,7 @@ or_integration_tests(
     pads_black_parrot_max_width
     pads_black_parrot_no_connect
     pads_black_parrot_offset
+    pads_connect_from_non_pref_edge
     power_switch
     power_switch_cut_rows
     power_switch_daisy

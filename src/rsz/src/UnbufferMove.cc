@@ -3,8 +3,8 @@
 
 #include "UnbufferMove.hh"
 
-#include <algorithm>
 #include <cmath>
+#include <optional>
 #include <string>
 
 #include "BaseMove.hh"
@@ -13,6 +13,16 @@
 #include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
+#include "odb/db.h"
+#include "sta/ArcDelayCalc.hh"
+#include "sta/Delay.hh"
+#include "sta/Graph.hh"
+#include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
+#include "sta/Transition.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 
@@ -218,7 +228,7 @@ bool UnbufferMove::bufferBetweenPorts(Instance* buffer)
   Pin* out_pin = db_network_->findPin(buffer, out_port);
   Net* in_net = db_network_->net(in_pin);
   Net* out_net = db_network_->net(out_pin);
-  return hasPort(in_net) && hasPort(out_net);
+  return db_network_->hasPort(in_net) && db_network_->hasPort(out_net);
 }
 
 // There are two buffer removal modes: auto and manual:
@@ -303,8 +313,8 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   Pin* out_pin = db_network_->findPin(buffer, out_port);
   Net* in_net = db_network_->net(in_pin);
   Net* out_net = db_network_->net(out_pin);
-  dbNet* in_db_net = db_network_->staToDb(in_net);
-  dbNet* out_db_net = db_network_->staToDb(out_net);
+  dbNet* in_db_net = db_network_->findFlatDbNet(in_net);
+  dbNet* out_db_net = db_network_->findFlatDbNet(out_net);
   // honor net dont-touch on input net or output net
   if ((in_db_net && in_db_net->isDoNotTouch())
       || (out_db_net && out_db_net->isDoNotTouch())) {
@@ -319,43 +329,48 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
       out_db_net->setDoNotTouch(false);
     }
   }
-  bool out_net_ports = hasPort(out_net);
-  Net *survivor, *removed;
+  bool out_net_ports = db_network_->hasPort(out_net);
+  Net* removed = nullptr;
+  odb::dbNet* db_net_survivor = nullptr;
+  odb::dbNet* db_net_removed = nullptr;
   if (out_net_ports) {
-    if (hasPort(in_net)) {
+    if (db_network_->hasPort(in_net)) {
       return false;
     }
-    survivor = out_net;
     removed = in_net;
+    db_net_survivor = out_db_net;
+    db_net_removed = in_db_net;
   } else {
     // default or out_net_ports
     // Default to in_net surviving so drivers (cached in dbNetwork)
     // do not change.
-    survivor = in_net;
     removed = out_net;
+    db_net_survivor = in_db_net;
+    db_net_removed = out_db_net;
   }
 
   if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
       && (!removed || !sdc_->isConstrained(removed))
       && !sdc_->isConstrained(buffer)) {
-    odb::dbNet* db_survivor = db_network_->staToDb(survivor);
-    odb::dbNet* db_removed = db_network_->staToDb(removed);
-    return !db_removed || db_survivor->canMergeNet(db_removed);
+    return db_net_removed == nullptr
+           || (db_net_survivor && db_net_survivor->canMergeNet(db_net_removed));
   }
   return false;
 }
 
 void UnbufferMove::removeBuffer(Instance* buffer)
 {
+  LibertyCell* lib_cell = network_->libertyCell(buffer);
   debugPrint(logger_,
              RSZ,
              "repair_setup",
              3,
-             "remove_buffer{}",
-             network_->pathName(buffer));
+             "remove_buffer {} ({})",
+             network_->pathName(buffer),
+             lib_cell->name());
+
   addMove(buffer);
 
-  LibertyCell* lib_cell = network_->libertyCell(buffer);
   LibertyPort *in_port, *out_port;
   lib_cell->bufferPorts(in_port, out_port);
 
@@ -374,7 +389,7 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   Net* in_net = db_network_->dbToSta(in_db_net);
   Net* out_net = db_network_->dbToSta(out_db_net);
 
-  bool out_net_ports = hasPort(out_net);
+  bool out_net_ports = db_network_->hasPort(out_net);
   Net *survivor, *removed;
   if (out_net_ports) {
     survivor = out_net;
@@ -386,8 +401,30 @@ void UnbufferMove::removeBuffer(Instance* buffer)
     survivor = in_net;
     removed = out_net;
   }
-  debugPrint(
-      logger_, RSZ, "remove_buffer", 1, "remove {}", db_network_->name(buffer));
+
+  // If the input net is hierarchical, we need to find the driver pin.
+  // Get the driver pin beforing removing the input net.
+  Pin* driver_pin = nullptr;
+  if (op_modnet) {
+    db_network_->getNetDriverParentModule(in_net, driver_pin, true);
+    if (driver_pin == nullptr) {
+      logger_->error(RSZ,
+                     165,
+                     "Cannot find driver pin for hierarchical net {}",
+                     op_modnet->getName());
+    }
+  }
+
+  // Disconnect the buffer and handle the nets
+  debugPrint(logger_,
+             RSZ,
+             "remove_buffer",
+             1,
+             "remove_buffer {} (input net) - {} ({}) - {} (output net)",
+             db_network_->name(in_net),
+             network_->pathName(buffer),
+             lib_cell->name(),
+             db_network_->name(out_net));
 
   odb::dbNet* db_survivor = db_network_->staToDb(survivor);
   odb::dbNet* db_removed = db_network_->staToDb(removed);
@@ -396,10 +433,6 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   }
   sta_->disconnectPin(in_pin);
   sta_->disconnectPin(out_pin);
-  sta_->deleteInstance(buffer);
-  if (removed) {
-    sta_->deleteNet(removed);
-  }
 
   // Hierarchical case supported:
   // moving an output hierarchical net to the input pin driver.
@@ -412,16 +445,33 @@ void UnbufferMove::removeBuffer(Instance* buffer)
                RSZ,
                "remove_buffer",
                1,
-               "Handling hierarchical net {}",
-               op_modnet->getName());
-    Pin* driver_pin = nullptr;
-    db_network_->getNetDriverParentModule(in_net, driver_pin, true);
+               "Handling hierarchical net ({}). Connect driver pin ({}) to the "
+               "load modNet ({}).",
+               op_modnet->getName(),
+               db_network_->name(driver_pin),
+               db_network_->name(in_net));
     db_network_->connectPin(driver_pin, db_network_->dbToSta(op_modnet));
   }
 
-  resizer_->parasitics_invalid_.erase(removed);
-  resizer_->parasiticsInvalid(survivor);
-  resizer_->updateParasitics();
+  // Deletion
+  sta_->deleteInstance(buffer);
+  if (removed) {
+    // If removed net name is higher in hierarchy, rename survivor with it.
+    std::optional<std::string> new_net_name;
+    if (db_survivor->isDeeperThan(db_removed)) {
+      new_net_name = db_removed->getName();
+    }
+
+    sta_->deleteNet(removed);
+
+    if (new_net_name) {
+      db_survivor->rename(new_net_name->c_str());
+    }
+  }
+
+  estimate_parasitics_->removeNetFromParasiticsInvalid(removed);
+  estimate_parasitics_->parasiticsInvalid(survivor);
+  estimate_parasitics_->updateParasitics();
 }
 
 }  // namespace rsz

@@ -25,8 +25,8 @@
 #include <string>
 #include <vector>
 
-#include "client_metric.h"
-#include "prometheus_metric.h"
+#include "utl/prometheus/client_metric.h"
+#include "utl/prometheus/prometheus_metric.h"
 
 namespace utl {
 

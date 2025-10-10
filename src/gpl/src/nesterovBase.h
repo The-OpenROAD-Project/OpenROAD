@@ -4,8 +4,12 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <deque>
 #include <fstream>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -921,8 +925,8 @@ class NesterovBase
 
   const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
 
-  float getSumOverflow() const { return sumOverflow_; }
-  float getSumOverflowUnscaled() const { return sumOverflowUnscaled_; }
+  float getSumOverflow() const { return sum_overflow_; }
+  float getSumOverflowUnscaled() const { return sum_overflow_unscaled_; }
   float getBaseWireLengthCoef() const { return baseWireLengthCoef_; }
   float getDensityPenalty() const { return densityPenalty_; }
 
@@ -1090,9 +1094,17 @@ class NesterovBase
   void appendGCellCSVNote(const std::string& filename,
                           int iteration,
                           const std::string& message) const;
+  // Helper to be used at nesterovPlace.cpp, inside core nesterov loop
+  // Example:
+  // for(auto& nb : nbVec_) {
+  //   nb->writeGCellVectorsToCSV("gcells_vector.csv", nesterov_iter, 320, 1,
+  //   1);
+  // }
   void writeGCellVectorsToCSV(const std::string& filename,
                               int iteration,
-                              bool write_header) const;
+                              int start_iteration = 0,
+                              int iteration_stride = 50,
+                              int gcell_index_stride = 10) const;
 
  private:
   NesterovBaseVars nbVars_;
@@ -1206,12 +1218,13 @@ class NesterovBase
   float baseWireLengthCoef_ = 0;
 
   // phi is described in ePlace paper.
-  float sumOverflow_ = 0;
-  float sumOverflowUnscaled_ = 0;
+  float sum_overflow_ = 0;
+  float sum_overflow_unscaled_ = 0;
+  float prev_reported_overflow_unscaled_ = 0;
 
   // half-parameter-wire-length
-  int64_t prevHpwl_ = 0;
-  int64_t prevReportedHpwl_ = 0;
+  int64_t prev_hpwl_ = 0;
+  int64_t prev_reported_hpwl_ = 0;
 
   bool isDiverged_ = false;
 

@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <map>
+#include <string>
 #include <vector>
 
 #include "dpl/Opendp.h"
@@ -12,6 +13,8 @@
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -208,8 +211,8 @@ void Opendp::insertDecapInPos(dbMaster* master,
                                 /* physical_only */ true);
   const GridX grid_x = grid_->gridX(pos_x - core_.xMin());
   const GridY grid_y = grid_->gridSnapDownY(pos_y - core_.yMin());
-  const Pixel* pixel = grid_->gridPixel(grid_x, grid_y);
-  const dbOrientType orient = pixel->sites.at(master->getSite());
+  const dbOrientType orient
+      = grid_->getSiteOrientation(grid_x, grid_y, master->getSite()).value();
   inst->setOrient(orient);
   inst->setLocation(pos_x.v, pos_y.v);
   inst->setPlacementStatus(dbPlacementStatus::PLACED);

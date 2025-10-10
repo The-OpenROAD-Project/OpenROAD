@@ -5,9 +5,16 @@
 
 #include <memory>
 #include <set>
+#include <tuple>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frMarker.h"
+#include "db/tech/frTechObject.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
+#include "utl/Logger.h"
 
 namespace drt {
 class drNet;
@@ -21,13 +28,13 @@ class FlexGCWorker
  public:
   // constructors
   FlexGCWorker(frTechObject* techIn,
-               Logger* logger,
+               utl::Logger* logger,
                RouterConfiguration* router_cfg,
                FlexDRWorker* drWorkerIn = nullptr);
   ~FlexGCWorker();
   // setters
-  void setExtBox(const Rect& in);
-  void setDrcBox(const Rect& in);
+  void setExtBox(const odb::Rect& in);
+  void setDrcBox(const odb::Rect& in);
   bool setTargetNet(frBlockObject* in);
   bool setTargetNet(drNet* in);
   gcNet* getTargetNet();
@@ -64,7 +71,7 @@ class FlexGCWorker
 };
 struct MarkerId
 {
-  Rect box;
+  odb::Rect box;
   frLayerNum lNum;
   frConstraint* con;
   std::set<frBlockObject*> srcs;

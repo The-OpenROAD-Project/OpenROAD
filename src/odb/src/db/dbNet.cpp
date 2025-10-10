@@ -4,6 +4,9 @@
 #include "dbNet.h"
 
 #include <algorithm>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <set>
 #include <string>
 #include <vector>
@@ -16,6 +19,7 @@
 #include "dbCapNode.h"
 #include "dbCapNodeItr.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbGroup.h"
 #include "dbGuide.h"
@@ -25,6 +29,7 @@
 #include "dbInst.h"
 #include "dbJournal.h"
 #include "dbMTerm.h"
+#include "dbModNet.h"
 #include "dbNetTrack.h"
 #include "dbNetTrackItr.h"
 #include "dbRSeg.h"
@@ -39,8 +44,11 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbExtControl.h"
+#include "odb/dbObject.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -347,17 +355,18 @@ bool _dbNet::operator==(const _dbNet& rhs) const
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbNet::getName()
+std::string dbNet::getName() const
 {
   _dbNet* net = (_dbNet*) this;
   return net->_name;
 }
 
-const char* dbNet::getConstName()
+const char* dbNet::getConstName() const
 {
   _dbNet* net = (_dbNet*) this;
   return net->_name;
 }
+
 void dbNet::printNetName(FILE* fp, bool idFlag, bool newLine)
 {
   if (idFlag) {
@@ -371,6 +380,7 @@ void dbNet::printNetName(FILE* fp, bool idFlag, bool newLine)
     fprintf(fp, "\n");
   }
 }
+
 bool dbNet::rename(const char* name)
 {
   _dbNet* net = (_dbNet*) this;
@@ -378,6 +388,17 @@ bool dbNet::rename(const char* name)
 
   if (block->_net_hash.hasMember(name)) {
     return false;
+  }
+
+  if (block->_journal) {
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: net {}, rename to {}",
+               getId(),
+               name);
+    block->_journal->updateField(this, _dbNet::NAME, net->_name, name);
   }
 
   block->_net_hash.remove(net);
@@ -500,11 +521,13 @@ void dbNet::setDrivingITerm(int id)
   _dbNet* net = (_dbNet*) this;
   net->_drivingIterm = id;
 }
-int dbNet::getDrivingITerm()
+
+int dbNet::getDrivingITerm() const
 {
   _dbNet* net = (_dbNet*) this;
   return net->_drivingIterm;
 }
+
 bool dbNet::hasFixedBump()
 {
   _dbNet* net = (_dbNet*) this;
@@ -1111,12 +1134,12 @@ bool dbNet::isRCgraph()
   return net->_flags._rc_graph == 1;
 }
 
-dbBlock* dbNet::getBlock()
+dbBlock* dbNet::getBlock() const
 {
   return (dbBlock*) getImpl()->getOwner();
 }
 
-dbSet<dbITerm> dbNet::getITerms()
+dbSet<dbITerm> dbNet::getITerms() const
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
@@ -1135,7 +1158,7 @@ dbITerm* dbNet::get1stITerm()
   return it;
 }
 
-dbSet<dbBTerm> dbNet::getBTerms()
+dbSet<dbBTerm> dbNet::getBTerms() const
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
@@ -1153,7 +1176,8 @@ dbBTerm* dbNet::get1stBTerm()
   }
   return bt;
 }
-dbITerm* dbNet::getFirstOutput()
+
+dbITerm* dbNet::getFirstOutput() const
 {
   if (getDrivingITerm() > 0) {
     return dbITerm::getITerm((dbBlock*) getImpl()->getOwner(),
@@ -1178,6 +1202,7 @@ dbITerm* dbNet::getFirstOutput()
 
   return nullptr;
 }
+
 dbITerm* dbNet::get1stSignalInput(bool io)
 {
   for (dbITerm* tr : getITerms()) {
@@ -2234,20 +2259,24 @@ void dbNet::mergeNet(dbNet* in_net)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
-  std::vector<dbITerm*> iterms;
-  for (dbITerm* iterm : in_net->getITerms()) {
-    iterms.push_back(iterm);
-  }
-
   for (auto callback : block->_callbacks) {
     callback->inDbNetPreMerge(this, in_net);
   }
 
+  // in_net->getITerms() returns a terminal iterator, and iterm->connect() can
+  // invalidate the iterator by disconnecting a dbITerm.
+  // Calling iterm->connect() during iteration with the iterator is not safe.
+  // Thus create another vector for safe iterms iteration.
+  auto iterms_set = in_net->getITerms();
+  std::vector<dbITerm*> iterms(iterms_set.begin(), iterms_set.end());
   for (dbITerm* iterm : iterms) {
     iterm->connect(this);
   }
 
-  for (dbBTerm* bterm : in_net->getBTerms()) {
+  // Create vector for safe iteration.
+  auto bterms_set = in_net->getBTerms();
+  std::vector<dbBTerm*> bterms(bterms_set.begin(), bterms_set.end());
+  for (dbBTerm* bterm : bterms) {
     bterm->connect(this);
   }
 }
@@ -2317,6 +2346,73 @@ void dbNet::setJumpers(bool has_jumpers)
   }
 }
 
+dbModInst* dbNet::findMainParentModInst() const
+{
+  dbBlock* block = getBlock();
+  const char delim = block->getHierarchyDelimiter();
+  const std::string net_name = getName();
+  const size_t last_delim_pos = net_name.find_last_of(delim);
+
+  if (last_delim_pos != std::string::npos) {
+    const std::string net_parent_hier_name = net_name.substr(0, last_delim_pos);
+    return block->findModInst(net_parent_hier_name.c_str());
+  }
+
+  return nullptr;
+}
+
+dbModule* dbNet::findMainParentModule() const
+{
+  dbModInst* parent_mod_inst = findMainParentModInst();
+  if (parent_mod_inst) {
+    return parent_mod_inst->getMaster();
+  }
+
+  return getBlock()->getTopModule();
+}
+
+bool dbNet::findRelatedModNets(std::set<dbModNet*>& modnet_set) const
+{
+  modnet_set.clear();
+
+  std::vector<dbModNet*> nets_to_visit;
+
+  // Helper to add a modnet to the result set and the visit queue if it's new.
+  auto visitIfNew = [&](dbModNet* modnet) {
+    if (modnet && modnet_set.insert(modnet).second) {
+      nets_to_visit.push_back(modnet);
+    }
+  };
+
+  // Find initial set of modnets from the current dbNet.
+  for (dbITerm* iterm : getITerms()) {
+    visitIfNew(iterm->getModNet());
+  }
+  for (dbBTerm* bterm : getBTerms()) {
+    visitIfNew(bterm->getModNet());
+  }
+
+  // Perform a DFS traversal to find all connected modnets.
+  while (!nets_to_visit.empty()) {
+    dbModNet* current_mod_net = nets_to_visit.back();
+    nets_to_visit.pop_back();
+
+    for (dbModITerm* mod_iterm : current_mod_net->getModITerms()) {
+      if (dbModBTerm* mod_bterm = mod_iterm->getChildModBTerm()) {
+        visitIfNew(mod_bterm->getModNet());
+      }
+    }
+
+    for (dbModBTerm* mod_bterm : current_mod_net->getModBTerms()) {
+      if (dbModITerm* mod_iterm = mod_bterm->getParentModITerm()) {
+        visitIfNew(mod_iterm->getModNet());
+      }
+    }
+  }
+
+  return !modnet_set.empty();
+}
+
 void _dbNet::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
@@ -2324,6 +2420,49 @@ void _dbNet::collectMemInfo(MemInfo& info)
 
   info.children_["name"].add(_name);
   info.children_["groups"].add(_groups);
+}
+
+bool dbNet::isDeeperThan(const dbNet* net) const
+{
+  std::string this_name = getName();
+  std::string other_name = net->getName();
+
+  char delim = getBlock()->getHierarchyDelimiter();
+  size_t this_depth = std::count(this_name.begin(), this_name.end(), delim);
+  size_t other_depth = std::count(other_name.begin(), other_name.end(), delim);
+
+  return (other_depth < this_depth);
+}
+
+dbModNet* dbNet::findModNetInHighestHier() const
+{
+  std::set<dbModNet*> modnets;
+  if (findRelatedModNets(modnets) == false) {
+    return nullptr;
+  }
+
+  dbModNet* highest = nullptr;
+  size_t min_delimiters = (size_t) -1;
+  char delim = getBlock()->getHierarchyDelimiter();
+
+  for (dbModNet* modnet : modnets) {
+    std::string name = modnet->getHierarchicalName();
+    size_t num_delimiters = std::count(name.begin(), name.end(), delim);
+    if (highest == nullptr || num_delimiters < min_delimiters) {
+      min_delimiters = num_delimiters;
+      highest = modnet;
+    }
+  }
+
+  return highest;
+}
+
+void dbNet::renameWithModNetInHighestHier()
+{
+  dbModNet* highest_mod_net = findModNetInHighestHier();
+  if (highest_mod_net) {
+    rename(highest_mod_net->getHierarchicalName().c_str());
+  }
 }
 
 }  // namespace odb

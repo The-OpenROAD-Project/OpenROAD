@@ -3,18 +3,32 @@
 
 #include "dr/FlexDR_conn.h"
 
-#include <omp.h>
-
 #include <algorithm>
+#include <cstdlib>
+#include <iostream>
+#include <iterator>
 #include <map>
 #include <memory>
+#include <queue>
 #include <set>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "db/infra/frSegStyle.h"
+#include "db/obj/frBTerm.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frShape.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frTechObject.h"
 #include "dr/FlexDR.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
+#include "frRegionQuery.h"
 #include "io/io.h"
+#include "odb/geom.h"
+#include "omp.h"
 #include "triton_route/TritonRoute.h"
 #include "utl/exception.h"
 
@@ -38,14 +52,14 @@ frDesign* FlexDRConnectivityChecker::getDesign() const
 // copied from FlexDRWorker::initNets_searchRepair_pin2epMap_helper
 void FlexDRConnectivityChecker::pin2epMap_helper(
     const frNet* net,
-    const Point& pt,
+    const odb::Point& pt,
     const frLayerNum lNum,
-    frOrderedIdMap<frBlockObject*, std::set<std::pair<Point, frLayerNum>>>&
+    frOrderedIdMap<frBlockObject*, std::set<std::pair<odb::Point, frLayerNum>>>&
         pin2epMap)
 {
   auto regionQuery = getRegionQuery();
   frRegionQuery::Objects<frBlockObject> result;
-  Rect query_box(pt.x(), pt.y(), pt.x(), pt.y());
+  odb::Rect query_box(pt.x(), pt.y(), pt.x(), pt.y());
   regionQuery->query(query_box, lNum, result);
   for (auto& [bx, rqObj] : result) {
     switch (rqObj->typeId()) {
@@ -72,11 +86,11 @@ void FlexDRConnectivityChecker::pin2epMap_helper(
 void FlexDRConnectivityChecker::buildPin2epMap(
     const frNet* net,
     const NetRouteObjs& netRouteObjs,
-    frOrderedIdMap<frBlockObject*, std::set<std::pair<Point, frLayerNum>>>&
+    frOrderedIdMap<frBlockObject*, std::set<std::pair<odb::Point, frLayerNum>>>&
         pin2epMap)
 {
   // to avoid delooping fake planar ep in pin
-  std::set<std::pair<Point, frLayerNum>> extEndPoints;
+  std::set<std::pair<odb::Point, frLayerNum>> extEndPoints;
   for (auto& connFig : netRouteObjs) {
     if (connFig->typeId() != frcPathSeg) {
       continue;
@@ -98,7 +112,7 @@ void FlexDRConnectivityChecker::buildPin2epMap(
       continue;
     }
     auto obj = static_cast<frVia*>(connFig);
-    const Point origin = obj->getOrigin();
+    const odb::Point origin = obj->getOrigin();
     auto l1Num = obj->getViaDef()->getLayer1Num();
     auto l2Num = obj->getViaDef()->getLayer2Num();
     if (obj->isBottomConnected()) {
@@ -134,7 +148,7 @@ void FlexDRConnectivityChecker::initRouteObjs(const frNet* net,
 void FlexDRConnectivityChecker::nodeMap_routeObjEnd(
     const frNet* net,
     const std::vector<frConnFig*>& netRouteObjs,
-    std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap)
+    std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap)
 {
   for (int i = 0; i < (int) netRouteObjs.size(); i++) {
     const auto connFig = netRouteObjs[i];
@@ -146,7 +160,7 @@ void FlexDRConnectivityChecker::nodeMap_routeObjEnd(
       nodeMap[{ep, lNum}].insert(i);
     } else if (connFig->typeId() == frcVia) {
       auto obj = static_cast<const frVia*>(connFig);
-      const Point origin = obj->getOrigin();
+      const odb::Point origin = obj->getOrigin();
       const auto l1Num = obj->getViaDef()->getLayer1Num();
       const auto l2Num = obj->getViaDef()->getLayer2Num();
       nodeMap[{origin, l1Num}].insert(i);
@@ -156,14 +170,14 @@ void FlexDRConnectivityChecker::nodeMap_routeObjEnd(
 }
 
 void FlexDRConnectivityChecker::nodeMap_routeObjSplit_helper(
-    const Point& crossPt,
+    const odb::Point& crossPt,
     const frCoord trackCoord,
     const frCoord splitCoord,
     const frLayerNum lNum,
     const std::vector<
         std::map<frCoord, std::map<frCoord, std::pair<frCoord, int>>>>&
         mergeHelper,
-    std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap)
+    std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap)
 {
   auto it1 = mergeHelper[lNum].find(trackCoord);
   if (it1 == mergeHelper[lNum].end()) {
@@ -184,7 +198,7 @@ void FlexDRConnectivityChecker::nodeMap_routeObjSplit_helper(
 void FlexDRConnectivityChecker::nodeMap_routeObjSplit(
     const frNet* net,
     const std::vector<frConnFig*>& netRouteObjs,
-    std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap)
+    std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap)
 {
   const int numLayers = getTech()->getLayers().size();
   // lNum -> track -> ep -> (bp, segIdx)
@@ -231,7 +245,7 @@ void FlexDRConnectivityChecker::nodeMap_routeObjSplit(
       }
     } else if (connFig->typeId() == frcVia) {
       auto obj = static_cast<const frVia*>(connFig);
-      const Point origin = obj->getOrigin();
+      const odb::Point origin = obj->getOrigin();
       const auto lNum1 = obj->getViaDef()->getLayer1Num();
       // find whether there is horz track at origin on layer1
       nodeMap_routeObjSplit_helper(
@@ -255,8 +269,9 @@ void FlexDRConnectivityChecker::nodeMap_pin(
     const std::vector<frConnFig*>& netRouteObjs,
     std::vector<frBlockObject*>& netPins,
     const frOrderedIdMap<frBlockObject*,
-                         std::set<std::pair<Point, frLayerNum>>>& pin2epMap,
-    std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap)
+                         std::set<std::pair<odb::Point, frLayerNum>>>&
+        pin2epMap,
+    std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap)
 {
   int currCnt = (int) netRouteObjs.size();
   for (auto& [obj, locS] : pin2epMap) {
@@ -273,8 +288,9 @@ void FlexDRConnectivityChecker::buildNodeMap(
     const NetRouteObjs& netRouteObjs,
     std::vector<frBlockObject*>& netPins,
     const frOrderedIdMap<frBlockObject*,
-                         std::set<std::pair<Point, frLayerNum>>>& pin2epMap,
-    std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap)
+                         std::set<std::pair<odb::Point, frLayerNum>>>&
+        pin2epMap,
+    std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap)
 {
   nodeMap_routeObjEnd(net, netRouteObjs, nodeMap);
   nodeMap_routeObjSplit(net, netRouteObjs, nodeMap);
@@ -285,7 +301,7 @@ bool FlexDRConnectivityChecker::astar(
     const frNet* net,
     std::vector<char>& adjVisited,
     std::vector<int>& adjPrevIdx,
-    const std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap,
+    const std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap,
     const NetRouteObjs& netRouteObjs,
     const int nNetRouteObjs,
     const int nNetObjs)
@@ -418,12 +434,12 @@ void FlexDRConnectivityChecker::finish(
     const std::vector<char>& adjVisited,
     const int gCnt,
     const int nCnt,
-    std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap)
+    std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap)
 {
   auto regionQuery = getRegionQuery();
 
   // from obj to pt
-  std::map<int, std::set<std::pair<Point, frLayerNum>>> reverseNodeMap;
+  std::map<int, std::set<std::pair<odb::Point, frLayerNum>>> reverseNodeMap;
   for (auto& [pr, idxS] : nodeMap) {
     for (auto& idx : idxS) {
       reverseNodeMap[idx].insert(pr);
@@ -454,7 +470,7 @@ void FlexDRConnectivityChecker::finish(
       } else if (netRouteObjs[i]->typeId() == frcVia) {
         auto victimVia = static_cast<frVia*>(netRouteObjs[i]);
         // negative rule
-        Rect bbox = victimVia->getLayer1BBox();
+        odb::Rect bbox = victimVia->getLayer1BBox();
         addMarker(net, victimVia->getViaDef()->getLayer1Num(), bbox);
 
         frVia* via = static_cast<frVia*>(netRouteObjs[i]);
@@ -489,7 +505,7 @@ void FlexDRConnectivityChecker::finish(
   }
 
   // must use map because split has to start from right
-  std::map<std::pair<Point, frLayerNum>, int> psSplits;
+  std::map<std::pair<odb::Point, frLayerNum>, int> psSplits;
   for (auto& [pr, idxS] : nodeMap) {
     bool hasPin = false;
     for (auto idx : idxS) {
@@ -542,8 +558,8 @@ void FlexDRConnectivityChecker::finish(
     auto ps1 = static_cast<frPathSeg*>(netRouteObjs[idx1]);
     const auto [bp1, ep1] = ps1->getPoints();
     bool isHorz = (bp1.y() == ep1.y());
-    std::set<std::pair<Point, frLayerNum>> newPr1;
-    std::set<std::pair<Point, frLayerNum>> newPr2;
+    std::set<std::pair<odb::Point, frLayerNum>> newPr1;
+    std::set<std::pair<odb::Point, frLayerNum>> newPr2;
     for (auto& [prPt, prLNum] : reverseNodeMap[idx1]) {
       if (isHorz) {
         if (prPt.x() <= splitPt.x()) {
@@ -660,7 +676,7 @@ void FlexDRConnectivityChecker::finish(
   }
 
   // delete redundant pwires
-  std::set<std::pair<Point, frLayerNum>> validPoints;
+  std::set<std::pair<odb::Point, frLayerNum>> validPoints;
   frLayerNum lNum;
   for (auto& connFig : net->getShapes()) {
     if (connFig->typeId() == frcPathSeg) {
@@ -677,7 +693,7 @@ void FlexDRConnectivityChecker::finish(
   for (auto& connFig : net->getVias()) {
     if (connFig->typeId() == frcVia) {
       auto obj = static_cast<frVia*>(connFig.get());
-      const Point origin = obj->getOrigin();
+      const odb::Point origin = obj->getOrigin();
       lNum = obj->getViaDef()->getLayer1Num();
       validPoints.insert(std::make_pair(origin, lNum));
       lNum = obj->getViaDef()->getLayer2Num();
@@ -691,7 +707,7 @@ void FlexDRConnectivityChecker::finish(
        it != net->getPatchWires().end();) {
     auto obj = static_cast<frPatchWire*>(it->get());
     it++;
-    const Point origin = obj->getOrigin();
+    const odb::Point origin = obj->getOrigin();
     lNum = obj->getLayerNum();
     if (validPoints.find(std::make_pair(origin, lNum)) == validPoints.end()) {
       // negative rule
@@ -979,7 +995,7 @@ void FlexDRConnectivityChecker::splitPathSegs_commit(
       segSpans.insert(segSpans.begin() + i, newSpan);  // add last segment piece
       i++;
       std::unique_ptr<frPathSeg> newPs = std::make_unique<frPathSeg>();
-      Point begin, end;
+      odb::Point begin, end;
       if (highestPs->isVertical()) {
         begin = {highestPs->getBeginPoint().x(), lo};
         end = {highestPs->getBeginPoint().x(), hi};
@@ -1088,7 +1104,7 @@ void FlexDRConnectivityChecker::merge_commit(
     }
     regionQuery->removeDRObj(static_cast<frShape*>(victimPathSeg));
 
-    Point bp, ep;
+    odb::Point bp, ep;
     frCoord high = victimPathSeg->high();
     if (isHorz) {
       bp = {newSegSpan.lo, trackCoord};
@@ -1134,7 +1150,7 @@ void FlexDRConnectivityChecker::merge_commit(
 }
 void FlexDRConnectivityChecker::addMarker(frNet* net,
                                           frLayerNum lNum,
-                                          const Rect& bbox)
+                                          const odb::Rect& bbox)
 {
   auto regionQuery = getRegionQuery();
   auto marker = std::make_unique<frMarker>();
@@ -1257,12 +1273,12 @@ void FlexDRConnectivityChecker::check(int iter)
                             vertNewSegSpans);
     }
     // net->term/instTerm->pt_layer
-    std::vector<
-        frOrderedIdMap<frBlockObject*, std::set<std::pair<Point, frLayerNum>>>>
+    std::vector<frOrderedIdMap<frBlockObject*,
+                               std::set<std::pair<odb::Point, frLayerNum>>>>
         aPin2epMap(batchSize);
     std::vector<std::vector<frBlockObject*>> aNetPins(batchSize);
-    std::vector<std::map<std::pair<Point, frLayerNum>, std::set<int>>> aNodeMap(
-        batchSize);
+    std::vector<std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>>
+        aNodeMap(batchSize);
     std::vector<std::vector<char>> aAdjVisited(batchSize);
     std::vector<std::vector<int>> aAdjPrevIdx(batchSize);
     std::vector<char> status(batchSize, false);
@@ -1349,7 +1365,7 @@ void FlexDRConnectivityChecker::check(int iter)
 
 FlexDRConnectivityChecker::FlexDRConnectivityChecker(
     drt::TritonRoute* router,
-    Logger* logger,
+    utl::Logger* logger,
     RouterConfiguration* router_cfg,
     AbstractDRGraphics* graphics,
     bool save_updates)

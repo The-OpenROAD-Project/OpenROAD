@@ -4,11 +4,13 @@
 #include "dbGroupPowerNetItr.h"
 
 #include <algorithm>
+#include <cstdarg>
 
 #include "dbBlock.h"
 #include "dbGroup.h"
 #include "dbNet.h"
 #include "dbTable.h"
+#include "odb/dbObject.h"
 
 namespace odb {
 

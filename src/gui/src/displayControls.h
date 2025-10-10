@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <QColor>
 #include <QColorDialog>
 #include <QDialog>
 #include <QDockWidget>
@@ -14,19 +15,24 @@
 #include <QRadioButton>
 #include <QSettings>
 #include <QStandardItemModel>
+#include <QString>
 #include <QStringList>
 #include <QTextEdit>
 #include <QTreeView>
 #include <QVBoxLayout>
+#include <QVariant>
+#include <QWidget>
 #include <functional>
 #include <map>
 #include <optional>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "gui/gui.h"
+#include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "options.h"
 

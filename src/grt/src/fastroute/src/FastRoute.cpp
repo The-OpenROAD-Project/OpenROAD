@@ -5,8 +5,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <memory>
+#include <tuple>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -15,6 +17,7 @@
 #include "DataType.h"
 #include "grt/GRoute.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -23,7 +26,9 @@ using utl::GRT;
 
 FastRouteCore::FastRouteCore(odb::dbDatabase* db,
                              utl::Logger* log,
-                             stt::SteinerTreeBuilder* stt_builder)
+                             utl::CallBackHandler* callback_handler,
+                             stt::SteinerTreeBuilder* stt_builder,
+                             sta::dbSta* sta)
     : max_degree_(0),
       db_(db),
       overflow_iterations_(0),
@@ -55,11 +60,12 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       h_capacity_lb_(0),
       regular_x_(false),
       regular_y_(false),
+      callback_handler_(callback_handler),
       logger_(log),
       stt_builder_(stt_builder),
+      sta_(sta),
       debug_(new DebugSetting())
 {
-  parasitics_builder_ = nullptr;
 }
 
 FastRouteCore::~FastRouteCore()
@@ -231,11 +237,11 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
                              bool is_clock,
                              bool is_local,
                              int driver_idx,
-                             int cost,
+                             int8_t cost,
                              int min_layer,
                              int max_layer,
                              float slack,
-                             std::vector<int>* edge_cost_per_layer)
+                             std::vector<int8_t>* edge_cost_per_layer)
 {
   int netID;
   bool exists;
@@ -351,6 +357,11 @@ void FastRouteCore::clearNetRoute(const int netID)
   sttrees_[netID].edges.clear();
 }
 
+void FastRouteCore::clearNDRnets()
+{
+  graph2d_.clearNDRnets();
+}
+
 void FastRouteCore::initEdges()
 {
   const float LB = 0.9;
@@ -359,8 +370,14 @@ void FastRouteCore::initEdges()
 
   // allocate memory and initialize for edges
 
-  graph2d_.init(x_grid_, y_grid_, h_capacity_, v_capacity_);
+  graph2d_.init(
+      x_grid_, y_grid_, h_capacity_, v_capacity_, num_layers_, logger_);
 
+  init3DEdges();
+}
+
+void FastRouteCore::init3DEdges()
+{
   v_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   h_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 
@@ -381,6 +398,28 @@ void FastRouteCore::initEdges()
         v_edges_3D_[k][i][j].cap = v_capacity_3D_[k];
         v_edges_3D_[k][i][j].usage = 0;
         v_edges_3D_[k][i][j].red = 0;
+      }
+    }
+  }
+}
+
+// Useful to prevent NDR nets to be assigned to 3D edges with insufficient
+// capacity. Need to be initialized after all the adjustments
+void FastRouteCore::initEdgesCapacityPerLayer()
+{
+  graph2d_.initCap3D();
+
+  for (int y = 0; y < y_grid_; y++) {
+    for (int x = 0; x < x_grid_; x++) {
+      for (int l = 0; l < num_layers_; l++) {
+        if (x < x_grid_ - 1) {
+          graph2d_.updateCap3D(
+              x, y, l, EdgeDirection::Horizontal, h_edges_3D_[l][y][x].cap);
+        }
+        if (y < y_grid_ - 1) {
+          graph2d_.updateCap3D(
+              x, y, l, EdgeDirection::Vertical, v_edges_3D_[l][y][x].cap);
+        }
       }
     }
   }
@@ -485,24 +524,96 @@ void FastRouteCore::addAdjustment(int x1,
   }
 }
 
+void FastRouteCore::saveResourcesBeforeAdjustments()
+{
+  // Save real horizontal resources
+  for (int x = 0; x < x_grid_ - 1; x++) {
+    for (int y = 0; y < y_grid_; y++) {
+      graph2d_.saveResources(x, y, true);
+      for (int l = 0; l < num_layers_; l++) {
+        h_edges_3D_[l][y][x].real_cap = h_edges_3D_[l][y][x].cap;
+      }
+    }
+  }
+  // Save real vertical resources
+  for (int x = 0; x < x_grid_; x++) {
+    for (int y = 0; y < y_grid_ - 1; y++) {
+      graph2d_.saveResources(x, y, false);
+      for (int l = 0; l < num_layers_; l++) {
+        v_edges_3D_[l][y][x].real_cap = v_edges_3D_[l][y][x].cap;
+      }
+    }
+  }
+}
+
+void FastRouteCore::releaseResourcesOnInterval(
+    int x,
+    int y,
+    int layer,
+    bool is_horizontal,
+    const interval<int>::type& tile_reduce_interval,
+    const std::vector<int>& track_space)
+{
+  int edge_cap;
+  // Get capacity on the position
+  if (is_horizontal) {
+    edge_cap = getEdgeCapacity(x, y, x + 1, y, layer);
+  } else {
+    edge_cap = getEdgeCapacity(x, y, x, y + 1, layer);
+  }
+  // Get total of resources to release
+  int increase = 0;
+  if (layer > 0 && layer <= track_space.size()) {
+    increase
+        = std::ceil(static_cast<float>(std::abs(tile_reduce_interval.upper()
+                                                - tile_reduce_interval.lower()))
+                    / track_space[layer - 1]);
+  }
+  // increase resource
+  edge_cap += increase;
+  if (is_horizontal) {
+    addAdjustment(x, y, x + 1, y, layer, edge_cap, false);
+  } else {
+    addAdjustment(x, y, x, y + 1, layer, edge_cap, false);
+  }
+}
+
 void FastRouteCore::addVerticalAdjustments(
     const odb::Point& first_tile,
     const odb::Point& last_tile,
     const int layer,
     const interval<int>::type& first_tile_reduce_interval,
-    const interval<int>::type& last_tile_reduce_interval)
+    const interval<int>::type& last_tile_reduce_interval,
+    const std::vector<int>& track_space,
+    bool release)
 {
-  // add intervals to set for each tile
+  // Add intervals to set or release resources for each tile
   for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
     for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
       if (x == first_tile.getX()) {
-        vertical_blocked_intervals_[std::make_tuple(x, y, layer)]
-            += first_tile_reduce_interval;
+        if (release) {
+          releaseResourcesOnInterval(
+              x, y, layer, false, first_tile_reduce_interval, track_space);
+        } else {
+          vertical_blocked_intervals_[std::make_tuple(x, y, layer)]
+              += first_tile_reduce_interval;
+        }
       } else if (x == last_tile.getX()) {
-        vertical_blocked_intervals_[std::make_tuple(x, y, layer)]
-            += last_tile_reduce_interval;
+        if (release) {
+          releaseResourcesOnInterval(
+              x, y, layer, false, last_tile_reduce_interval, track_space);
+        } else {
+          vertical_blocked_intervals_[std::make_tuple(x, y, layer)]
+              += last_tile_reduce_interval;
+        }
       } else {
-        addAdjustment(x, y, x, y + 1, layer, 0, true);
+        // Restore capacity removed by blockage
+        if (release) {
+          int reduced = v_edges_3D_[layer - 1][y][x].red;
+          addAdjustment(x, y, x, y + 1, layer, reduced, false);
+        } else {
+          addAdjustment(x, y, x, y + 1, layer, 0, true);
+        }
       }
     }
   }
@@ -513,19 +624,37 @@ void FastRouteCore::addHorizontalAdjustments(
     const odb::Point& last_tile,
     const int layer,
     const interval<int>::type& first_tile_reduce_interval,
-    const interval<int>::type& last_tile_reduce_interval)
+    const interval<int>::type& last_tile_reduce_interval,
+    const std::vector<int>& track_space,
+    bool release)
 {
-  // add intervals to each tiles
+  // Add intervals to set or release resources for each tile
   for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
     for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
       if (y == first_tile.getY()) {
-        horizontal_blocked_intervals_[std::make_tuple(x, y, layer)]
-            += first_tile_reduce_interval;
+        if (release) {
+          releaseResourcesOnInterval(
+              x, y, layer, true, first_tile_reduce_interval, track_space);
+        } else {
+          horizontal_blocked_intervals_[std::make_tuple(x, y, layer)]
+              += first_tile_reduce_interval;
+        }
       } else if (y == last_tile.getY()) {
-        horizontal_blocked_intervals_[std::make_tuple(x, y, layer)]
-            += last_tile_reduce_interval;
+        if (release) {
+          releaseResourcesOnInterval(
+              x, y, layer, true, last_tile_reduce_interval, track_space);
+        } else {
+          horizontal_blocked_intervals_[std::make_tuple(x, y, layer)]
+              += last_tile_reduce_interval;
+        }
       } else {
-        addAdjustment(x, y, x + 1, y, layer, 0, true);
+        // Restore capacity removed by blockage
+        if (release) {
+          int reduced = h_edges_3D_[layer - 1][y][x].red;
+          addAdjustment(x, y, x + 1, y, layer, reduced, false);
+        } else {
+          addAdjustment(x, y, x + 1, y, layer, 0, true);
+        }
       }
     }
   }
@@ -660,19 +789,29 @@ void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
                                            int x2,
                                            int y2,
                                            int layer,
-                                           int used)
+                                           int used,
+                                           odb::dbNet* db_net)
 {
   const int k = layer - 1;
+  FrNet* net = nullptr;
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+
+  net = nets_[net_id];
+
+  int8_t layer_edge_cost = net->getLayerEdgeCost(k);
+  int8_t edge_cost = net->getEdgeCost();
 
   if (y1 == y2) {  // horizontal edge
-    graph2d_.addUsageH({x1, x2}, y1, used);
+    graph2d_.updateUsageH({x1, x2}, y1, net, used * edge_cost);
     for (int x = x1; x < x2; x++) {
-      h_edges_3D_[k][y1][x].usage += used;
+      h_edges_3D_[k][y1][x].usage += used * layer_edge_cost;
     }
   } else if (x1 == x2) {  // vertical edge
-    graph2d_.addUsageV(x1, {y1, y2}, used);
+    graph2d_.updateUsageV(x1, {y1, y2}, net, used * edge_cost);
     for (int y = y1; y < y2; y++) {
-      v_edges_3D_[k][y][x1].usage += used;
+      v_edges_3D_[k][y][x1].usage += used * layer_edge_cost;
     }
   }
 }
@@ -740,6 +879,59 @@ NetRouteMap FastRouteCore::getRoutes()
   }
 
   return routes;
+}
+
+// Updates the layer assignment for specific route segments after repair
+// antennas. This function is called after jumper insertion during antenna
+// violation repair. When a jumper is inserted to fix an antenna violation,
+// certain route segments need to be moved to a different layer. This function
+// searches through all edges of the specified net and updates the layer
+// assignment for any route points that fall within the specified region.
+void FastRouteCore::updateRouteGridsLayer(int x1,
+                                          int y1,
+                                          int x2,
+                                          int y2,
+                                          int layer,
+                                          int new_layer,
+                                          odb::dbNet* db_net)
+{
+  // Get the internal net ID from the database net object
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+
+  // Access the routing tree edges for this net
+  std::vector<TreeEdge>& treeedges = sttrees_[net_id].edges;
+  const int num_edges = sttrees_[net_id].num_edges();
+
+  // Iterate through all edges in the net's routing tree
+  for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+    TreeEdge* treeedge = &(treeedges[edgeID]);
+    // Only process edges that have actual routing
+    if (treeedge->len > 0 || treeedge->route.routelen > 0) {
+      int routeLen = treeedge->route.routelen;
+      std::vector<GPoint3D>& grids = treeedge->route.grids;
+
+      // If the point is within the specified rectangular region AND on the
+      // original layer
+      for (int i = 0; i <= routeLen; i++) {
+        if (grids[i].x >= x1 && grids[i].x <= x2 && grids[i].y >= y1
+            && grids[i].y <= y2 && grids[i].layer == layer) {
+          // Update to the new layer
+          grids[i].layer = new_layer;
+        }
+      }
+    }
+  }
+}
+
+int FastRouteCore::getDbNetLayerEdgeCost(odb::dbNet* db_net, int layer)
+{
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+
+  return nets_[net_id]->getLayerEdgeCost(layer - 1);
 }
 
 NetRouteMap FastRouteCore::getPlanarRoutes()
@@ -992,7 +1184,6 @@ NetRouteMap FastRouteCore::run()
   int L = 0;
   int VIA = 2;
   const int Ripvalue = -1;
-  const bool goingLV = true;
   const bool noADJ = false;
   const int thStep1 = 10;
   const int thStep2 = 4;
@@ -1003,20 +1194,50 @@ NetRouteMap FastRouteCore::run()
   float logistic_coef = 0;
   int slope;
   int max_adj;
+  int long_edge_len = 40;
+  const int short_edge_len = 12;
+  const int soft_ndr_overflow_th = 10000;
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
-
   via_cost_ = 0;
   gen_brk_RSMT(false, false, false, false, noADJ);
-  routeLAll(true);
-  gen_brk_RSMT(true, true, true, false, noADJ);
+  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    logger_->report("After RSMT");
+  }
 
+  // First time L routing
+  routeLAll(true);
+  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    logger_->report("After routeLAll");
+  }
+
+  // Congestion-driven rip-up and reroute L
+  gen_brk_RSMT(true, true, true, false, noADJ);
   getOverflow2D(&maxOverflow);
+  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    logger_->report("After congestion-driven RSMT");
+  }
+
+  // New rip-up and reroute L via-guided
   newrouteLAll(false, true);
   getOverflow2D(&maxOverflow);
+  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    logger_->report("After newRouteLAll");
+  }
+
+  // Rip-up and reroute using spiral route
   spiralRouteAll();
+  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    logger_->report("After spiralRouteAll");
+  }
+
+  // Rip-up a tree edge according to its ripup type and Z-route it
   newrouteZAll(10);
   int past_cong = getOverflow2D(&maxOverflow);
+
+  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    logger_->report("After newRouteZAll");
+  }
 
   convertToMazeroute();
 
@@ -1053,8 +1274,6 @@ NetRouteMap FastRouteCore::run()
       newTH = 1;
     }
   }
-
-  //  past_cong = getOverflow2Dmaze( &maxOverflow);
 
   graph2d_.InitEstUsage();
 
@@ -1130,9 +1349,6 @@ NetRouteMap FastRouteCore::run()
         if (i % 2 == 0) {
           logistic_coef += 0.5;
         }
-        if (i > 40) {
-          break;
-        }
       }
       if (i > 10) {
         ripup_threshold = 0;
@@ -1158,7 +1374,6 @@ NetRouteMap FastRouteCore::run()
     }
 
     if (maxOverflow == 1) {
-      // L = 0;
       ripup_threshold = -1;
       slope = 5;
     }
@@ -1177,6 +1392,7 @@ NetRouteMap FastRouteCore::run()
                   L,
                   cost_params,
                   slack_th);
+
     int last_cong = past_cong;
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
 
@@ -1287,10 +1503,6 @@ NetRouteMap FastRouteCore::run()
       if (bmfl < 30 && bwcnt > 50) {
         break;
       }
-      if (i >= mazeRound) {
-        getOverflow2Dmaze(&maxOverflow, &tUsage);
-        break;
-      }
     }
 
     if (i >= mazeRound) {
@@ -1309,6 +1521,62 @@ NetRouteMap FastRouteCore::run()
 
     last_total_overflow = total_overflow_;
 
+    if (logger_->debugCheck(GRT, "congestionIterations", 1)) {
+      logger_->report(
+          "=== Overflow Iteration {} - TotalOverflow {} - OverflowIter {} - "
+          "OverflowIncreases {} - MaxOverIncr {} ===",
+          i,
+          total_overflow_,
+          overflow_iterations_,
+          overflow_increases,
+          max_overflow_increases);
+    }
+
+    // Try disabling NDR nets to fix congestion
+    if (total_overflow_ > 0
+        && (i == overflow_iterations_
+            || overflow_increases == max_overflow_increases)) {
+      // Compute all the NDR nets involved in congestion
+      computeCongestedNDRnets();
+
+      std::vector<int> net_ids;
+
+      // If the congestion is not that high (note that the overflow is inflated
+      // by 100x when there is no capacity available for a NDR net in a specific
+      // edge)
+      if (total_overflow_ < soft_ndr_overflow_th) {
+        // Select one NDR net to be disabled
+        int net_id = graph2d_.getOneCongestedNDRnet();
+        if (net_id != -1) {
+          net_ids.push_back(net_id);
+        }
+      } else {  // Select multiple NDR nets
+        net_ids = graph2d_.getMultipleCongestedNDRnet();
+      }
+
+      // Only apply soft NDR if there is NDR nets involved in congestion
+      if (!net_ids.empty()) {
+        // Apply the soft NDR to the selected list of nets
+        applySoftNDR(net_ids);
+
+        // Reset loop parameters
+        overflow_increases = 0;
+        i = 1;
+        costheight_ = COSHEIGHT;
+        enlarge_ = ENLARGE;
+        ripup_threshold = Ripvalue;
+        minofl = total_overflow_;
+        bmfl = minofl;
+        stopDEC = false;
+
+        slope = 20;
+        L = 1;
+
+        // Increase maze route 3D threshold to fix bad routes
+        long_edge_len = BIG_INT;
+      }
+    }
+
     // generate DRC report each interval
     if (congestion_report_iter_step_ && i % congestion_report_iter_step_ == 0) {
       saveCongestion(i);
@@ -1317,6 +1585,7 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D) {
+    logger_->report("Tree 2D after overflow iterations");
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
@@ -1355,12 +1624,24 @@ NetRouteMap FastRouteCore::run()
 
   layerAssignment();
 
+  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    getOverflow3D();
+    logger_->report("After LayerAssignment - 2D/3D cong: {}/{}",
+                    past_cong,
+                    total_overflow_);
+  }
+
   costheight_ = 3;
   via_cost_ = 1;
 
-  if (goingLV && past_cong == 0) {
-    mazeRouteMSMDOrder3D(enlarge_, 0, 20);
-    mazeRouteMSMDOrder3D(enlarge_, 0, 12);
+  if (past_cong == 0) {
+    mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
+    mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
+  }
+
+  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+    getOverflow3D();
+    logger_->report("After MazeRoute3D - 3Dcong: {}", total_overflow_);
   }
 
   fillVIA();
@@ -1388,6 +1669,121 @@ NetRouteMap FastRouteCore::run()
   return routes;
 }
 
+void FastRouteCore::applySoftNDR(const std::vector<int>& net_ids)
+{
+  for (auto net_id : net_ids) {
+    logger_->warn(GRT,
+                  273,
+                  "Disabled NDR (to reduce congestion) for net: {}",
+                  nets_[net_id]->getName());
+
+    // Remove the usage of all the edges involved with this net
+    updateSoftNDRNetUsage(net_id, -nets_[net_id]->getEdgeCost());
+
+    // Reset the edge cost and layer edge cost to 1
+    setSoftNDR(net_id);
+
+    // Update the usage of all the edges involved with this net considering
+    // the new edge cost
+    updateSoftNDRNetUsage(net_id, nets_[net_id]->getEdgeCost());
+  }
+}
+
+void FastRouteCore::setSoftNDR(const int net_id)
+{
+  nets_[net_id]->setIsSoftNDR(true);
+  nets_[net_id]->setEdgeCost(1);
+}
+
+void FastRouteCore::computeCongestedNDRnets()
+{
+  // Clear the old list first
+  graph2d_.clearCongestedNDRnets();
+
+  // Compute all NDR nets to identify those in congestion
+  for (auto net_id : net_ids_) {
+    FrNet* net = nets_[net_id];
+
+    // Ignore non-NDR and soft-NDR nets
+    if (net->getDbNet()->getNonDefaultRule() == nullptr || net->isSoftNDR()) {
+      continue;
+    }
+
+    // Access the routing tree edges for this net
+    std::vector<TreeEdge>& treeedges = sttrees_[net_id].edges;
+    const int num_edges = sttrees_[net_id].num_edges();
+
+    uint16_t num_congested_edges = 0;
+
+    // Iterate through all edges in the net's routing tree
+    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+      TreeEdge* treeedge = &(treeedges[edgeID]);
+      // Only process edges that have actual routing
+      if (treeedge->len > 0 || treeedge->route.routelen > 0) {
+        int routeLen = treeedge->route.routelen;
+        std::vector<GPoint3D>& grids = treeedge->route.grids;
+
+        // Check route
+        for (int i = 0; i < routeLen; i++) {
+          if (grids[i].x == grids[i + 1].x) {  // vertical
+            const int min_y = std::min(grids[i].y, grids[i + 1].y);
+            // Increment congested edges if have overflow
+            if (graph2d_.getOverflowV(grids[i].x, min_y) > 0) {
+              num_congested_edges++;
+            }
+          } else {  // horizontal
+            const int min_x = std::min(grids[i].x, grids[i + 1].x);
+            if (graph2d_.getOverflowH(min_x, grids[i].y) > 0) {
+              num_congested_edges++;
+            }
+          }
+        }
+      }
+    }
+    if (num_congested_edges > 0) {
+      // Include the NDR net in the list
+      graph2d_.addCongestedNDRnet(net_id, num_congested_edges);
+      if (logger_->debugCheck(GRT, "softNDR", 1)) {
+        logger_->report("Congested NDR net: {} Edges: {}",
+                        net->getName(),
+                        num_congested_edges);
+      }
+    }
+  }
+
+  // Sort the congested NDR nets according to the priorities
+  graph2d_.sortCongestedNDRnets();
+}
+
+void FastRouteCore::updateSoftNDRNetUsage(const int net_id, const int edge_cost)
+{
+  FrNet* net = nets_[net_id];
+  // Access the routing tree edges for this net
+  std::vector<TreeEdge>& treeedges = sttrees_[net_id].edges;
+  const int num_edges = sttrees_[net_id].num_edges();
+
+  // Iterate through all edges in the net's routing tree
+  for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+    TreeEdge* treeedge = &(treeedges[edgeID]);
+    // Only process edges that have actual routing
+    if (treeedge->len > 0 || treeedge->route.routelen > 0) {
+      int routeLen = treeedge->route.routelen;
+      std::vector<GPoint3D>& grids = treeedge->route.grids;
+
+      // Update route usage
+      for (int i = 0; i < routeLen; i++) {
+        if (grids[i].x == grids[i + 1].x) {  // vertical
+          const int min_y = std::min(grids[i].y, grids[i + 1].y);
+          graph2d_.updateUsageV(grids[i].x, min_y, net, edge_cost);
+        } else {  // horizontal
+          const int min_x = std::min(grids[i].x, grids[i + 1].x);
+          graph2d_.updateUsageH(min_x, grids[i].y, net, edge_cost);
+        }
+      }
+    }
+  }
+}
+
 void FastRouteCore::setVerbose(bool v)
 {
   verbose_ = v;
@@ -1398,12 +1794,6 @@ void FastRouteCore::setCriticalNetsPercentage(float u)
   critical_nets_percentage_ = u;
 }
 
-void FastRouteCore::setMakeWireParasiticsBuilder(
-    AbstractMakeWireParasitics* builder)
-{
-  parasitics_builder_ = builder;
-}
-
 void FastRouteCore::setOverflowIterations(int iterations)
 {
   overflow_iterations_ = iterations;
@@ -1412,6 +1802,11 @@ void FastRouteCore::setOverflowIterations(int iterations)
 void FastRouteCore::setCongestionReportIterStep(int congestion_report_iter_step)
 {
   congestion_report_iter_step_ = congestion_report_iter_step;
+}
+
+void FastRouteCore::setResistanceAware(bool resistance_aware)
+{
+  resistance_aware_ = resistance_aware;
 }
 
 void FastRouteCore::setCongestionReportFile(const char* congestion_file_name)
@@ -1582,13 +1977,31 @@ void FastRouteCore::StTreeVisualization(const StTree& stree,
 
 ////////////////////////////////////////////////////////////////
 
-int FrNet::getLayerEdgeCost(int layer) const
+int8_t FrNet::getLayerEdgeCost(int layer) const
 {
-  if (edge_cost_per_layer_) {
+  if (edge_cost_per_layer_ && !is_soft_ndr_) {
     return (*edge_cost_per_layer_)[layer];
   }
 
   return 1;
+}
+
+int FrNet::getPinIdxFromPosition(int x, int y, int count)
+{
+  int cnt = 1;
+  for (int idx = 0; idx < pin_x_.size(); idx++) {
+    const int pin_x = pin_x_[idx];
+    const int pin_y = pin_y_[idx];
+
+    if (x == pin_x && y == pin_y) {
+      if (cnt == count) {
+        return idx;
+      }
+      cnt++;
+    }
+  }
+
+  return -1;
 }
 
 void FrNet::addPin(int x, int y, int layer)
@@ -1601,11 +2014,11 @@ void FrNet::addPin(int x, int y, int layer)
 void FrNet::reset(odb::dbNet* db_net,
                   bool is_clock,
                   int driver_idx,
-                  int edge_cost,
+                  int8_t edge_cost,
                   int min_layer,
                   int max_layer,
                   float slack,
-                  std::vector<int>* edge_cost_per_layer)
+                  std::vector<int8_t>* edge_cost_per_layer)
 {
   db_net_ = db_net;
   is_critical_ = false;

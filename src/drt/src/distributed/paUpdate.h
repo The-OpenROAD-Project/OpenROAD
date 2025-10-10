@@ -2,13 +2,14 @@
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
 #pragma once
-#include <boost/serialization/access.hpp>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "boost/serialization/access.hpp"
 #include "db/obj/frAccess.h"
+#include "db/obj/frPin.h"
 namespace drt {
 class frInst;
 class frInstTerm;

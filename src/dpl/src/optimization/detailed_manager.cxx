@@ -4,24 +4,23 @@
 #include "detailed_manager.h"
 
 #include <algorithm>
-#include <boost/format.hpp>
-#include <boost/tokenizer.hpp>
 #include <cmath>
 #include <cstddef>
-#include <iostream>
 #include <limits>
 #include <memory>
-#include <set>
 #include <stack>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "PlacementDRC.h"
+#include "boost/format.hpp"
+#include "boost/tokenizer.hpp"
 #include "detailed_orient.h"
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 #include "util/journal.h"
 #include "util/utility.h"
 #include "utl/Logger.h"
@@ -2777,6 +2776,7 @@ bool DetailedMgr::trySwap1(Node* ndi,
       return false;
     }
     if (!addToMoveList(ndj, x2, y2, sj, xi, y1, si)) {
+      paintInGrid(ndj);
       return false;
     }
     return true;
@@ -2875,6 +2875,7 @@ bool DetailedMgr::trySwap1(Node* ndi,
     return false;
   }
   if (!addToMoveList(ndj, x2, y2, sj, xi, y1, si)) {
+    paintInGrid(ndj);
     return false;
   }
   return true;
@@ -2985,9 +2986,10 @@ void DetailedMgr::paintInGrid(Node* node)
 {
   const auto grid_x = grid_->gridX(node);
   const auto grid_y = grid_->gridSnapDownY(node);
-  auto pixel = grid_->gridPixel(grid_x, grid_y);
+  dbSite* site = node->getDbInst()->getMaster()->getSite();
+  const auto orientation
+      = grid_->getSiteOrientation(grid_x, grid_y, site).value();
   grid_->paintPixel(node, grid_x, grid_y);
-  node->adjustCurrOrient(
-      pixel->sites.at(node->getDbInst()->getMaster()->getSite()));
+  node->adjustCurrOrient(orientation);
 }
 }  // namespace dpl

@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
+#include <cstdint>
+
 #include "dpl/Opendp.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 
 // My stuff.
+#include "graphics/DplObserver.h"
 #include "legalize_shift.h"
 #include "optimization/detailed.h"
 #include "optimization/detailed_manager.h"
@@ -113,6 +116,10 @@ void Opendp::improvePlacement(const int seed,
   // Run the script.
   Detailed dt(dtParams);
   dt.improve(mgr);
+
+  if (debug_observer_) {
+    debug_observer_->endPlacement();
+  }
 
   // Write solution back.
   updateDbInstLocations();

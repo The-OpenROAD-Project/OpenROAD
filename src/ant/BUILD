@@ -1,25 +1,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
-)
-
-cc_library(
-    name = "types",
-    hdrs = [
-        "include/ant/AntennaChecker.hh",
-    ],
-    includes = [
-        "include",
-    ],
-    deps = [
-        "//src/odb",
-    ],
 )
 
 cc_library(
@@ -32,6 +21,9 @@ cc_library(
         "src/WireBuilder.cc",
         "src/WireBuilder.hh",
     ],
+    hdrs = [
+        "include/ant/AntennaChecker.hh",
+    ],
     copts = [
         "-fopenmp",
     ],
@@ -39,7 +31,6 @@ cc_library(
         "include",
     ],
     deps = [
-        ":types",
         "//src/odb",
         "//src/utl",
         "@boost.container_hash",
@@ -57,11 +48,11 @@ cc_library(
         ":tcl",
     ],
     hdrs = [
-        "include/ant/AntennaChecker.hh",
         "include/ant/MakeAntennaChecker.hh",
     ],
     includes = ["include"],
     deps = [
+        ":ant",
         "//:ord",
         "//src/odb",
         "//src/utl",
@@ -90,5 +81,23 @@ tcl_wrap_cc(
     root_swig_src = "src/AntennaChecker.i",
     swig_includes = [
         "src",
+    ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/ant/AntennaChecker.hh",
+        "src/AntennaChecker.i",
+        "//:error_swig-py",
+    ],
+    module = "ant_py",
+    root_swig_src = "src/AntennaChecker-py.i",
+    swig_includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        "//src/odb:swig-py",
     ],
 )

@@ -21,6 +21,7 @@ TAGS
 Makefile
 __pycache__
 venv/
+.abc_history
 
 include/ord/Version.hh
 
@@ -64,3 +65,4 @@ bazel-OpenROAD
 projectview.bazelproject
 .bsp/
 .bazelbsp/
+/buildifier

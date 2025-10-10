@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -23,6 +25,7 @@ cc_library(
     deps = [
         "//src/odb",
         "//src/utl",
+        "@boost.geometry",
         "@boost.polygon",
     ],
 )
@@ -46,6 +49,7 @@ cc_library(
         "//:ord",
         "//src/odb",
         "//src/utl",
+        "@boost.geometry",
         "@boost.polygon",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
@@ -75,5 +79,20 @@ tcl_wrap_cc(
     ],
     deps = [
         "//src/odb:swig",
+    ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/tap/tapcell.h",
+        "src/tapcell-py.i",
+        "//:error_swig-py",
+    ],
+    module = "tap_py",
+    root_swig_src = "src/tapcell-py.i",
+    swig_includes = [
+        "include",
+        "src",
     ],
 )

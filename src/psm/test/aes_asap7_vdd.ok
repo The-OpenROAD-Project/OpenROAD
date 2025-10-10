@@ -1,4 +1,4 @@
-[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 24 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
 [INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
 [INFO ODB-0128] Design: aes_cipher_top
 [INFO ODB-0130]     Created 388 pins.
@@ -21,9 +21,9 @@
 Net              : VDD
 Corner           : default
 Supply voltage   : 7.00e-01 V
-Worstcase voltage: 6.93e-01 V
+Worstcase voltage: 6.91e-01 V
 Average voltage  : 6.97e-01 V
-Average IR drop  : 2.65e-03 V
-Worstcase IR drop: 6.60e-03 V
-Percentage drop  : 0.94 %
+Average IR drop  : 3.37e-03 V
+Worstcase IR drop: 8.55e-03 V
+Percentage drop  : 1.22 %
 ######################################

@@ -1,0 +1,92 @@
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13178, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13211, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13244, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13277, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13310, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13343, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13376, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14772, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14805, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14838, timing group from output port.
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+Net gcd/ALU_16_0_16_0_16_unused_CO[14:0]_X_HAN_CARLSON/BI
+ Pin capacitance: 2.24-2.75
+ Wire capacitance: 0.00
+ Total capacitance: 2.24-2.75
+ Number of drivers: 1
+ Number of loads: 2
+ Number of pins: 3
+
+Driver pins
+ _396_/H output (TIEHIx1_ASAP7_75t_R)
+
+Load pins
+ _395_/_087_/A input (BUFx2_ASAP7_75t_R) 0.44-0.58
+ _395_/_153_/B input (FAx1_ASAP7_75t_R) 1.80-2.18
+
+Hierarchical pins
+ _395_/BI input
+ _395_/CI input
+
+Net gcd/ALU_16_0_16_0_16_unused_CO[14:0]_X_HAN_CARLSON/CI
+ Pin capacitance: 2.24-2.75
+ Wire capacitance: 0.00
+ Total capacitance: 2.24-2.75
+ Number of drivers: 1
+ Number of loads: 2
+ Number of pins: 3
+
+Driver pins
+ _396_/H output (TIEHIx1_ASAP7_75t_R)
+
+Load pins
+ _395_/_087_/A input (BUFx2_ASAP7_75t_R) 0.44-0.58
+ _395_/_153_/B input (FAx1_ASAP7_75t_R) 1.80-2.18
+
+Hierarchical pins
+ _395_/BI input
+ _395_/CI input
+
+Execute repair_tie_fanout.
+[INFO RSZ-0042] Inserted 2 tie TIEHIx1_ASAP7_75t_R instances.
+Net gcd/ALU_16_0_16_0_16_unused_CO[14:0]_X_HAN_CARLSON/BI
+ Pin capacitance: 0.44-0.58
+ Wire capacitance: 0.00
+ Total capacitance: 0.44-0.58
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ _395__1/H output (TIEHIx1_ASAP7_75t_R) (0, 0)
+
+Load pins
+ _395_/_087_/A input (BUFx2_ASAP7_75t_R) 0.44-0.58
+
+Hierarchical pins
+ _395_/BI input
+
+Net gcd/ALU_16_0_16_0_16_unused_CO[14:0]_X_HAN_CARLSON/CI
+ Pin capacitance: 1.80-2.18
+ Wire capacitance: 0.00
+ Total capacitance: 1.80-2.18
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ _395__2/H output (TIEHIx1_ASAP7_75t_R) (0, 0)
+
+Load pins
+ _395_/_153_/B input (FAx1_ASAP7_75t_R) 1.80-2.18
+
+Hierarchical pins
+ _395_/CI input
+
+0.0 0.0
+0.0 0.0
+[WARNING ORD-2043] SanityCheck: Module 'ALU_16_0_16_0_16_unused_CO\[14:0\]_X_BRENT_KUNG' is defined but never instantiated.
+[WARNING ORD-2043] SanityCheck: Module 'ALU_16_0_16_0_16_unused_CO\[14:0\]_X_KOGGE_STONE' is defined but never instantiated.
+[WARNING ORD-2043] SanityCheck: Module 'ALU_16_0_16_0_16_unused_CO\[14:0\]_X_SKLANSKY' is defined but never instantiated.

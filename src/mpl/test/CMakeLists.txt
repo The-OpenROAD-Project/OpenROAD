@@ -27,6 +27,7 @@ or_integration_tests(
     centralization1
     clocked_macro
     keep_clustering_data
+    fixed_macros
 )
 
 # Skipped

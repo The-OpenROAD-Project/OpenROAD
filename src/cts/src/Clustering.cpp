@@ -9,17 +9,12 @@
 #include <sys/timeb.h>
 
 #include <algorithm>
-#include <array>
 #include <cfloat>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
-#include <fstream>
-#include <iostream>
 #include <limits>
-#include <list>
-#include <map>
-#include <stack>
 #include <string>
 #include <utility>
 #include <vector>

@@ -4,10 +4,14 @@
 #include "label.h"
 
 #include <QFont>
+#include <any>
+#include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "gui/gui.h"
 #include "odb/db.h"
 #include "options.h"
 
@@ -42,7 +46,7 @@ LabelDescriptor::LabelDescriptor(
 {
 }
 
-std::string LabelDescriptor::getName(std::any object) const
+std::string LabelDescriptor::getName(const std::any& object) const
 {
   auto label = std::any_cast<Label*>(object);
   return label->getName();
@@ -53,12 +57,12 @@ std::string LabelDescriptor::getTypeName() const
   return "Label";
 }
 
-bool LabelDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool LabelDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   return false;
 }
 
-void LabelDescriptor::highlight(std::any object, Painter& painter) const
+void LabelDescriptor::highlight(const std::any& object, Painter& painter) const
 {
   auto label = std::any_cast<Label*>(object);
 
@@ -69,7 +73,8 @@ void LabelDescriptor::highlight(std::any object, Painter& painter) const
   painter.drawRect(label->getOutline());
 }
 
-Descriptor::Properties LabelDescriptor::getProperties(std::any object) const
+Descriptor::Properties LabelDescriptor::getProperties(
+    const std::any& object) const
 {
   auto label = std::any_cast<Label*>(object);
 
@@ -85,7 +90,7 @@ Descriptor::Properties LabelDescriptor::getProperties(std::any object) const
   return props;
 }
 
-Descriptor::Editors LabelDescriptor::getEditors(std::any object) const
+Descriptor::Editors LabelDescriptor::getEditors(const std::any& object) const
 {
   auto label = std::any_cast<Label*>(object);
 
@@ -94,7 +99,7 @@ Descriptor::Editors LabelDescriptor::getEditors(std::any object) const
     anchor_options.push_back({name, anchor});
   }
 
-  return {{"Name", makeEditor([this, label](std::any value) {
+  return {{"Name", makeEditor([this, label](const std::any& value) {
              auto new_name = std::any_cast<const std::string>(value);
              if (new_name.empty()) {
                return false;
@@ -107,7 +112,7 @@ Descriptor::Editors LabelDescriptor::getEditors(std::any object) const
              label->setName(new_name);
              return true;
            })},
-          {"Text", makeEditor([label](std::any value) {
+          {"Text", makeEditor([label](const std::any& value) {
              auto new_text = std::any_cast<const std::string>(value);
              if (new_text.empty()) {
                return false;
@@ -115,7 +120,7 @@ Descriptor::Editors LabelDescriptor::getEditors(std::any object) const
              label->setText(new_text);
              return true;
            })},
-          {"Size", makeEditor([label](std::any value) {
+          {"Size", makeEditor([label](const std::any& value) {
              try {
                auto new_size = static_cast<int>(std::any_cast<double>(value));
                if (new_size <= 0) {
@@ -129,13 +134,13 @@ Descriptor::Editors LabelDescriptor::getEditors(std::any object) const
            })},
           {"Anchor",
            makeEditor(
-               [label](std::any value) {
+               [label](const std::any& value) {
                  auto anchor = std::any_cast<Painter::Anchor>(value);
                  label->setAnchor(anchor);
                  return true;
                },
                anchor_options)},
-          {"Color", makeEditor([this, label](std::any value) {
+          {"Color", makeEditor([this, label](const std::any& value) {
              label->setColor(Painter::stringToColor(
                  std::any_cast<const std::string>(value), logger_));
              return true;
@@ -148,7 +153,9 @@ Descriptor::Editors LabelDescriptor::getEditors(std::any object) const
            })}};
 }
 
-bool LabelDescriptor::editPoint(std::any value, odb::Point& pt, bool is_x)
+bool LabelDescriptor::editPoint(const std::any& value,
+                                odb::Point& pt,
+                                bool is_x)
 {
   bool accept;
   const int new_val = Descriptor::Property::convert_string(
@@ -164,7 +171,7 @@ bool LabelDescriptor::editPoint(std::any value, odb::Point& pt, bool is_x)
   return true;
 }
 
-Descriptor::Actions LabelDescriptor::getActions(std::any object) const
+Descriptor::Actions LabelDescriptor::getActions(const std::any& object) const
 {
   auto label = std::any_cast<Label*>(object);
 
@@ -174,7 +181,7 @@ Descriptor::Actions LabelDescriptor::getActions(std::any object) const
            }}};
 }
 
-Selected LabelDescriptor::makeSelected(std::any object) const
+Selected LabelDescriptor::makeSelected(const std::any& object) const
 {
   if (auto label = std::any_cast<Label*>(&object)) {
     return Selected(*label, this);
@@ -182,7 +189,7 @@ Selected LabelDescriptor::makeSelected(std::any object) const
   return Selected();
 }
 
-bool LabelDescriptor::lessThan(std::any l, std::any r) const
+bool LabelDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_label = std::any_cast<Label*>(l);
   auto r_label = std::any_cast<Label*>(r);
@@ -190,12 +197,12 @@ bool LabelDescriptor::lessThan(std::any l, std::any r) const
   return l_label->getName() < r_label->getName();
 }
 
-bool LabelDescriptor::getAllObjects(SelectionSet& objects) const
+void LabelDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
 {
   for (auto& label : labels_) {
-    objects.insert(makeSelected(label.get()));
+    func({label.get(), this});
   }
-  return true;
 }
 
 }  // namespace gui

@@ -3,14 +3,22 @@
 
 #pragma once
 
+#include <algorithm>
 #include <memory>
 #include <set>
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frVia.h"
 #include "db/taObj/taPin.h"
+#include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "frRegionQuery.h"
+#include "global.h"
+#include "utl/Logger.h"
 
 namespace drt {
 class FlexTAGraphics;
@@ -21,7 +29,7 @@ class FlexTA
  public:
   // constructors
   FlexTA(frDesign* in,
-         Logger* logger,
+         utl::Logger* logger,
          RouterConfiguration* router_cfg,
          bool save_updates_);
   ~FlexTA();
@@ -35,7 +43,7 @@ class FlexTA
  private:
   frTechObject* tech_;
   frDesign* design_;
-  Logger* logger_;
+  utl::Logger* logger_;
   RouterConfiguration* router_cfg_;
   bool save_updates_;
   std::unique_ptr<AbstractTAGraphics> graphics_;
@@ -57,33 +65,33 @@ class FlexTAWorkerRegionQuery
 
   void add(taPinFig* fig);
   void remove(taPinFig* fig);
-  void query(const Rect& box,
+  void query(const odb::Rect& box,
              frLayerNum layerNum,
              frOrderedIdSet<taPin*>& result) const;
 
-  void addCost(const Rect& box,
+  void addCost(const odb::Rect& box,
                frLayerNum layerNum,
                frBlockObject* obj,
                frConstraint* con);
-  void removeCost(const Rect& box,
+  void removeCost(const odb::Rect& box,
                   frLayerNum layerNum,
                   frBlockObject* obj,
                   frConstraint* con);
   void queryCost(
-      const Rect& box,
+      const odb::Rect& box,
       frLayerNum layerNum,
       std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>&
           result) const;
-  void addViaCost(const Rect& box,
+  void addViaCost(const odb::Rect& box,
                   frLayerNum layerNum,
                   frBlockObject* obj,
                   frConstraint* con);
-  void removeViaCost(const Rect& box,
+  void removeViaCost(const odb::Rect& box,
                      frLayerNum layerNum,
                      frBlockObject* obj,
                      frConstraint* con);
   void queryViaCost(
-      const Rect& box,
+      const odb::Rect& box,
       frLayerNum layerNum,
       std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>&
           result) const;
@@ -100,7 +108,7 @@ class FlexTAWorker
  public:
   // constructors
   FlexTAWorker(frDesign* designIn,
-               Logger* logger,
+               utl::Logger* logger,
                RouterConfiguration* router_cfg,
                bool save_updates)
       : design_(designIn),
@@ -117,8 +125,8 @@ class FlexTAWorker
   {
   }
   // setters
-  void setRouteBox(const Rect& boxIn) { routeBox_ = boxIn; }
-  void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }
+  void setRouteBox(const odb::Rect& boxIn) { routeBox_ = boxIn; }
+  void setExtBox(const odb::Rect& boxIn) { extBox_ = boxIn; }
   void setDir(const dbTechLayerDir& in) { dir_ = in; }
   void setTAIter(int in) { taIter_ = in; }
   void addIroute(std::unique_ptr<taPin> in, bool isExt = false)
@@ -151,8 +159,8 @@ class FlexTAWorker
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
   frDesign* getDesign() const { return design_; }
-  const Rect& getRouteBox() const { return routeBox_; }
-  const Rect& getExtBox() const { return extBox_; }
+  const odb::Rect& getRouteBox() const { return routeBox_; }
+  const odb::Rect& getExtBox() const { return extBox_; }
   dbTechLayerDir getDir() const { return dir_; }
   int getTAIter() const { return taIter_; }
   bool isInitTA() const { return (taIter_ == 0); }
@@ -183,11 +191,11 @@ class FlexTAWorker
 
  private:
   frDesign* design_;
-  Logger* logger_;
+  utl::Logger* logger_;
   RouterConfiguration* router_cfg_;
   bool save_updates_;
-  Rect routeBox_;
-  Rect extBox_;
+  odb::Rect routeBox_;
+  odb::Rect extBox_;
   dbTechLayerDir dir_;
   int taIter_;
   FlexTAWorkerRegionQuery rq_;
@@ -207,12 +215,12 @@ class FlexTAWorker
   void initFixedObjs();
   frCoord initFixedObjs_calcBloatDist(frBlockObject* obj,
                                       frLayerNum lNum,
-                                      const Rect& box);
+                                      const odb::Rect& box);
   frCoord initFixedObjs_calcOBSBloatDistVia(const frViaDef* viaDef,
                                             frLayerNum lNum,
-                                            const Rect& box,
+                                            const odb::Rect& box,
                                             bool isOBS = true);
-  void initFixedObjs_helper(const Rect& box,
+  void initFixedObjs_helper(const odb::Rect& box,
                             frCoord bloatDist,
                             frLayerNum lNum,
                             frNet* net,
@@ -245,12 +253,12 @@ class FlexTAWorker
   void initCosts();
   void sortIroutes();
   bool outOfDieVia(frLayerNum layer_num,
-                   const Point& pt,
-                   const Rect& die_box) const;
+                   const odb::Point& pt,
+                   const odb::Rect& die_box) const;
 
   // quick drc
-  frSquaredDistance box2boxDistSquare(const Rect& box1,
-                                      const Rect& box2,
+  frSquaredDistance box2boxDistSquare(const odb::Rect& box1,
+                                      const odb::Rect& box2,
                                       frCoord& dx,
                                       frCoord& dy);
   void addCost(taPinFig* fig, frOrderedIdSet<taPin*>* pinS = nullptr);
@@ -258,19 +266,19 @@ class FlexTAWorker
   void modCost(taPinFig* fig,
                bool isAddCost,
                frOrderedIdSet<taPin*>* pinS = nullptr);
-  void modMinSpacingCostPlanar(const Rect& box,
+  void modMinSpacingCostPlanar(const odb::Rect& box,
                                frLayerNum lNum,
                                taPinFig* fig,
                                bool isAddCost,
                                frOrderedIdSet<taPin*>* pinS = nullptr);
-  void modMinSpacingCostVia(const Rect& box,
+  void modMinSpacingCostVia(const odb::Rect& box,
                             frLayerNum lNum,
                             taPinFig* fig,
                             bool isAddCost,
                             bool isUpperVia,
                             bool isCurrPs,
                             frOrderedIdSet<taPin*>* pinS = nullptr);
-  void modCutSpacingCost(const Rect& box,
+  void modCutSpacingCost(const odb::Rect& box,
                          frLayerNum lNum,
                          taPinFig* fig,
                          bool isAddCost,
@@ -303,7 +311,7 @@ class FlexTAWorker
   frUInt4 assignIroute_getAlignCost(taPin* iroute, frCoord trackLoc);
   frUInt4 assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc);
   frUInt4 assignIroute_getDRCCost_helper(taPin* iroute,
-                                         Rect& box,
+                                         odb::Rect& box,
                                          frLayerNum lNum);
   void assignIroute_updateIroute(taPin* iroute,
                                  frCoord bestTrackLoc,

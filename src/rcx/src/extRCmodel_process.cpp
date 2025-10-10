@@ -9,8 +9,8 @@
 #include "direct.h"
 #endif
 
-#include <map>
-#include <vector>
+#include <cstdio>
+#include <cstring>
 
 #include "utl/Logger.h"
 

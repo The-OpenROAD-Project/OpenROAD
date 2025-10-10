@@ -7,9 +7,15 @@
 #include <QCloseEvent>
 #include <QLabel>
 #include <QMainWindow>
+#include <QMenu>
 #include <QShortcut>
+#include <QString>
 #include <QToolBar>
+#include <QWidget>
+#include <map>
 #include <memory>
+#include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -17,6 +23,8 @@
 #include "gotoDialog.h"
 #include "gui/gui.h"
 #include "label.h"
+#include "odb/dbDatabaseObserver.h"
+#include "odb/dbObject.h"
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
 #include "utl/Progress.h"
@@ -69,6 +77,7 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
   void postReadDef(odb::dbBlock* block) override;
   void postReadDb(odb::dbDatabase* db) override;
+  void postRead3Dbx(odb::dbChip* chip) override;
 
   // Capture logger messages into the script widget output
   void setLogger(utl::Logger* logger);
@@ -276,6 +285,7 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   // used to check if user intends to close Openroad or just the GUI.
   void closeEvent(QCloseEvent* event) override;
   void keyPressEvent(QKeyEvent* event) override;
+  void showEvent(QShowEvent* event) override;
 
  private slots:
   void setBlock(odb::dbBlock* block);
@@ -306,6 +316,10 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   Labels labels_;
 
   int arrow_keys_scroll_step_;
+
+  bool first_show_{true};
+  std::optional<QByteArray> saved_geometry_;
+  std::optional<QByteArray> saved_state_;
 
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.
@@ -369,6 +383,9 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   std::map<HeatMapDataSource*, QAction*> heatmap_actions_;
 
   std::unique_ptr<utl::Progress> cli_progress_ = nullptr;
+
+  std::unique_ptr<QTimer> selection_timer_;
+  std::unique_ptr<QTimer> highlight_timer_;
 };
 
 }  // namespace gui

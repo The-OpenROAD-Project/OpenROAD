@@ -8,6 +8,10 @@
 #include "sta/StaState.hh"
 #include "utl/Logger.h"
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 
 class Resizer;
@@ -108,6 +112,7 @@ class RepairHold : public sta::dbStaState
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
 
   int resize_count_ = 0;
   int inserted_buffer_count_ = 0;

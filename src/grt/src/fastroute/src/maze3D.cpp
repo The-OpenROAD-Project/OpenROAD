@@ -2,6 +2,8 @@
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cmath>
+#include <cstdint>
 #include <utility>
 #include <vector>
 
@@ -208,8 +210,12 @@ void FastRouteCore::setupHeap3D(int netID,
   if (num_terminals == 2) {  // 2-pin net
     const int node1_alias = treenodes[n1].stackAlias;
     const int node2_alias = treenodes[n2].stackAlias;
-    const int node1_access_layer = nets_[netID]->getPinL()[node1_alias];
-    const int node2_access_layer = nets_[netID]->getPinL()[node2_alias];
+
+    const int pin_idx1 = sttrees_[netID].node_to_pin_idx[node1_alias];
+    const int pin_idx2 = sttrees_[netID].node_to_pin_idx[node2_alias];
+
+    const int node1_access_layer = nets_[netID]->getPinL()[pin_idx1];
+    const int node2_access_layer = nets_[netID]->getPinL()[pin_idx2];
 
     d1_3D[node1_access_layer][y1][x1] = 0;
     directions_3D[node1_access_layer][y1][x1] = Direction::Origin;
@@ -650,6 +656,57 @@ void FastRouteCore::updateRouteType23D(int netID,
   }
 }
 
+// Resistance-aware cost calculation
+float FastRouteCore::getMazeRouteCost3D(const int net_id,
+                                        const int from_layer,
+                                        const int to_layer,
+                                        const int from_x,
+                                        const int from_y,
+                                        const int to_x,
+                                        const int to_y,
+                                        const bool is_via)
+{
+  FrNet* net = nets_[net_id];
+  float base_cost = 1.0;
+
+  if (is_via) {
+    // Via transition cost
+    base_cost = via_cost_;
+    const int via_resistance = getViaResistance(from_layer, to_layer);
+
+    return base_cost + via_resistance;
+  }
+
+  // Wire segment cost
+  const float length = abs(to_x - from_x) + abs(to_y - from_y);
+  const float wire_resistance
+      = getLayerResistance(from_layer, length * tile_size_, net);
+
+  // Check congestion
+  bool congested = false;
+  if (from_x == to_x) {  // vertical
+    int min_y = std::min(from_y, to_y);
+    if (v_edges_3D_[from_layer][min_y][from_x].usage
+            + net->getLayerEdgeCost(from_layer)
+        > v_edges_3D_[from_layer][min_y][from_x].cap) {
+      congested = true;
+    }
+  } else {  // horizontal
+    int min_x = std::min(from_x, to_x);
+    if (h_edges_3D_[from_layer][from_y][min_x].usage
+            + net->getLayerEdgeCost(from_layer)
+        > h_edges_3D_[from_layer][from_y][min_x].cap) {
+      congested = true;
+    }
+  }
+
+  if (congested) {
+    base_cost = BIG_INT;  // Heavy penalty for congestion
+  }
+
+  return base_cost + wire_resistance;
+}
+
 void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                          int ripupTHlb,
                                          int ripupTHub)
@@ -666,6 +723,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     const int netID = tree_order_pv_[orderIndex].treeIndex;
 
     FrNet* net = nets_[netID];
+    int8_t edge_cost = 0;
 
     int enlarge = expand;
     const int num_terminals = sttrees_[netID].num_terminals;
@@ -693,6 +751,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       if (!newRipup3DType3(netID, edgeID)) {
         continue;
       }
+
       enlarge = std::min(origEng, treeedge->route.routelen);
 
       const int regionX1 = std::max(0, xmin - enlarge);
@@ -751,6 +810,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         const int curY = remd / x_range_;
         removeMin3D(src_heap_3D_);
 
+        // If the net has more than 1 cost, use its cost as extra cost when
+        // trying to find a new route
+        edge_cost = net->getLayerEdgeCost(curL);
+
         const bool Horizontal
             = layer_directions_[curL] == odb::dbTechLayerDir::HORIZONTAL;
 
@@ -758,9 +821,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           // left
           if (curX > regionX1
               && directions_3D_[curL][curY][curX] != Direction::East) {
-            const float tmp = d1_3D_[curL][curY][curX] + 1;
-            if (h_edges_3D_[curL][curY][curX - 1].usage
-                    < h_edges_3D_[curL][curY][curX - 1].cap
+            const float cost = getMazeRouteCost3D(
+                netID, curL, curL, curX, curY, curX - 1, curY, false);
+            const float tmp = d1_3D_[curL][curY][curX] + cost;
+            if (h_edges_3D_[curL][curY][curX - 1].usage + edge_cost
+                    <= h_edges_3D_[curL][curY][curX - 1].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               const int tmpX = curX - 1;  // the left neighbor
 
@@ -803,11 +868,13 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           // right
           if (Horizontal && curX < regionX2
               && directions_3D_[curL][curY][curX] != Direction::West) {
-            const float tmp = d1_3D_[curL][curY][curX] + 1;
+            const float cost = getMazeRouteCost3D(
+                netID, curL, curL, curX, curY, curX + 1, curY, false);
+            const float tmp = d1_3D_[curL][curY][curX] + cost;
             const int tmpX = curX + 1;  // the right neighbor
 
-            if (h_edges_3D_[curL][curY][curX].usage
-                    < h_edges_3D_[curL][curY][curX].cap
+            if (h_edges_3D_[curL][curY][curX].usage + edge_cost
+                    <= h_edges_3D_[curL][curY][curX].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               if (d1_3D_[curL][curY][tmpX]
                   >= BIG_INT)  // right neighbor not been put into
@@ -849,10 +916,12 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           // bottom
           if (!Horizontal && curY > regionY1
               && directions_3D_[curL][curY][curX] != Direction::South) {
-            const float tmp = d1_3D_[curL][curY][curX] + 1;
+            const float cost = getMazeRouteCost3D(
+                netID, curL, curL, curX, curY, curX, curY - 1, false);
+            const float tmp = d1_3D_[curL][curY][curX] + cost;
             const int tmpY = curY - 1;  // the bottom neighbor
-            if (v_edges_3D_[curL][curY - 1][curX].usage
-                    < v_edges_3D_[curL][curY - 1][curX].cap
+            if (v_edges_3D_[curL][curY - 1][curX].usage + edge_cost
+                    <= v_edges_3D_[curL][curY - 1][curX].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               if (d1_3D_[curL][tmpY][curX]
                   >= BIG_INT)  // bottom neighbor not been put into
@@ -893,10 +962,12 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           // top
           if (!Horizontal && curY < regionY2
               && directions_3D_[curL][curY][curX] != Direction::North) {
-            const float tmp = d1_3D_[curL][curY][curX] + 1;
+            const float cost = getMazeRouteCost3D(
+                netID, curL, curL, curX, curY, curX, curY + 1, false);
+            const float tmp = d1_3D_[curL][curY][curX] + cost;
             const int tmpY = curY + 1;  // the top neighbor
-            if (v_edges_3D_[curL][curY][curX].usage
-                    < v_edges_3D_[curL][curY][curX].cap
+            if (v_edges_3D_[curL][curY][curX].usage + edge_cost
+                    <= v_edges_3D_[curL][curY][curX].cap
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               if (d1_3D_[curL][tmpY][curX]
                   >= BIG_INT)  // top neighbor not been put into src_heap_3D
@@ -937,7 +1008,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
         // down
         if (curL > 0 && directions_3D_[curL][curY][curX] != Direction::Up) {
-          const float tmp = d1_3D_[curL][curY][curX] + via_cost_;
+          // Via cost
+          const float cost = getMazeRouteCost3D(
+              netID, curL, curL - 1, curX, curY, curX, curY, true);
+          const float tmp = d1_3D_[curL][curY][curX] + cost;
           const int tmpL = curL - 1;  // the bottom neighbor
 
           if (d1_3D_[tmpL][curY][curX]
@@ -978,7 +1052,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         // up
         if (curL < num_layers_ - 1
             && directions_3D_[curL][curY][curX] != Direction::Down) {
-          const float tmp = d1_3D_[curL][curY][curX] + via_cost_;
+          // Via cost
+          const float cost = getMazeRouteCost3D(
+              netID, curL, curL + 1, curX, curY, curX, curY, true);
+          const float tmp = d1_3D_[curL][curY][curX] + cost;
           const int tmpL = curL + 1;  // the bottom neighbor
           if (d1_3D_[tmpL][curY][curX]
               >= BIG_INT)  // bottom neighbor not been put into src_heap_3D
@@ -1423,13 +1500,13 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           if (grids[i].x == grids[i + 1].x)  // a vertical edge
           {
             const int min_y = std::min(grids[i].y, grids[i + 1].y);
-            graph2d_.addUsageV(grids[i].x, min_y, net->getEdgeCost());
+            graph2d_.updateUsageV(grids[i].x, min_y, net, net->getEdgeCost());
             v_edges_3D_[grids[i].layer][min_y][grids[i].x].usage
                 += net->getLayerEdgeCost(grids[i].layer);
-          } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
+          } else  // a horizontal edge
           {
             const int min_x = std::min(grids[i].x, grids[i + 1].x);
-            graph2d_.addUsageH(min_x, grids[i].y, net->getEdgeCost());
+            graph2d_.updateUsageH(min_x, grids[i].y, net, net->getEdgeCost());
             h_edges_3D_[grids[i].layer][grids[i].y][min_x].usage
                 += net->getLayerEdgeCost(grids[i].layer);
           }

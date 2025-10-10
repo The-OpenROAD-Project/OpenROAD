@@ -1,8 +1,5 @@
-# Copyright 2023 Google LLC
-#
-# Use of this source code is governed by a BSD-style
-# license that can be found in the LICENSE file or at
-# https://developers.google.com/open-source/licenses/bsd
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2023-2025, The OpenROAD Authors
 
 or_integration_tests(
   "dpl"
@@ -34,6 +31,7 @@ or_integration_tests(
     fillers8
     fillers9
     fillers9_verbose
+    fillers10
     fragmented_row01
     fragmented_row02
     fragmented_row03
@@ -59,6 +57,7 @@ or_integration_tests(
     pad06
     pad07
     pad08
+    pad09
     regions1
     regions2
     regions3
@@ -94,6 +93,7 @@ target_link_libraries(dpl_test
     GTest::gtest
     GTest::gtest_main
     dpl_lib
+    tst
 )
 
 gtest_discover_tests(dpl_test

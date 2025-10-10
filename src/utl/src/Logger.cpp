@@ -3,10 +3,15 @@
 
 #include "utl/Logger.h"
 
-#include <atomic>
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
 #include <fstream>
 #include <memory>
-#include <mutex>
+#include <ostream>
+#include <sstream>
+#include <stack>
+#include <string>
 #include <string_view>
 #include <utility>
 
@@ -279,6 +284,12 @@ void Logger::teeStringBegin()
 std::string Logger::teeStringEnd()
 {
   return redirectStringEnd();
+}
+
+Logger* Logger::defaultLogger()
+{
+  static Logger default_logger;
+  return &default_logger;
 }
 
 void Logger::assertNoRedirect()

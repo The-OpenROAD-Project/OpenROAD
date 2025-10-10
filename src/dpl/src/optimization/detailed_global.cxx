@@ -4,12 +4,14 @@
 #include "detailed_global.h"
 
 #include <algorithm>
-#include <boost/tokenizer.hpp>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
+#include <cstdlib>
 #include <string>
 #include <vector>
 
+#include "boost/tokenizer.hpp"
 #include "detailed_manager.h"
 #include "infrastructure/Objects.h"
 #include "objective/detailed_hpwl.h"

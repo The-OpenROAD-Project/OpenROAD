@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include <functional>
 #include <list>
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "dbCore.h"
@@ -14,9 +16,11 @@
 #include "dbPagedVector.h"
 #include "dbVector.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/isotropy.h"
 #include "odb/odb.h"
 
 namespace odb {
@@ -159,7 +163,6 @@ class _dbBlock : public _dbObject
   char* _name;
   Polygon _die_area;
   std::vector<Rect> _blocked_regions_for_pins;
-  dbId<_dbTech> _tech;
   dbId<_dbChip> _chip;
   dbId<_dbBox> _bbox;
   dbId<_dbBlock> _parent;
@@ -195,6 +198,8 @@ class _dbBlock : public _dbObject
   int _max_layer_for_clock;
   std::vector<_dbBTermGroup> _bterm_groups;
   _dbBTermTopLayerGrid _bterm_top_layer_grid;
+  uint _unique_net_index{1};   // unique index used to create a new net name
+  uint _unique_inst_index{1};  // unique index used to create a new inst name
 
   // NON-PERSISTANT-STREAMED-MEMBERS
   dbTable<_dbBTerm>* _bterm_tbl;
@@ -304,7 +309,6 @@ class _dbBlock : public _dbObject
   void remove_rect(const Rect& rect);
   void invalidate_bbox() { _flags._valid_bbox = 0; }
   void initialize(_dbChip* chip,
-                  _dbTech* tech,
                   _dbBlock* parent,
                   const char* name,
                   char delimiter);
@@ -319,6 +323,12 @@ class _dbBlock : public _dbObject
   void collectMemInfo(MemInfo& info);
   void clearSystemBlockagesAndObstructions();
   void ensureConstraintRegion(const Direction2D& edge, int& begin, int& end);
+  void ComputeBBox();
+  std::string makeNewName(dbModInst* parent,
+                          const char* base_name,
+                          const dbNameUniquifyType& uniquify,
+                          uint& unique_index,
+                          const std::function<bool(const char*)>& exists);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbBlock& block);

@@ -7,6 +7,7 @@ target_link_libraries(TestHconn
         GTest::gtest_main
         GTest::gmock
         dbSta_lib
+        tst
         utl_lib
         ${TCL_LIBRARY}
 )
@@ -22,4 +23,3 @@ gtest_discover_tests(TestHconn
 
 add_dependencies(build_and_test TestHconn
 )
-

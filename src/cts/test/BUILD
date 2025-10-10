@@ -1,25 +1,39 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 load("//test:regression.bzl", "regression_test")
+
+package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "array",
     "array_ins_delay",
     "array_no_blockages",
-    "balance_levels",
+    "array_repair_clock_nets",
     "check_buffers",
     "check_buffers_blockages",
     "check_buffers_blockages_merge",
+    "check_buffer_inference1",
+    "check_buffer_inference2",
+    "check_buffer_inference3",
     "check_charBuf",
     "check_max_fanout1",
     "check_max_fanout2",
+    "check_max_fanout3",
     "check_wire_rc_cts",
     "dummy_load",
     "find_clock",
     "find_clock_pad",
+    "gated_clock1",
+    "gated_clock2",
+    "gated_clock3",
+    "gated_clock4",
+    "gated_clock5",
     "hier_insertion_delay",
     "insertion_delay",
+    "inverters",
     "lvt_lib",
     "max_cap",
     "no_clocks",
@@ -29,6 +43,7 @@ COMPULSORY_TESTS = [
     "simple_test_clustered",
     "simple_test_clustered_max_cap",
     "simple_test_hier",
+    "skip_nets",
     "twice",
 ]
 
@@ -47,6 +62,8 @@ filegroup(
     # per test glob patterns below.
     srcs = [
         "16sinks.def",
+        "ModNangate45/ModNangate45.lef",
+        "ModNangate45/ModNangate45_typ.lib",
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45.pdn.tcl",
         "Nangate45/Nangate45.rc",
@@ -82,6 +99,7 @@ filegroup(
         "array_tile.lib",
         "array_tile_ins_delay.lef",
         "array_tile_ins_delay.lib",
+        "check_buffers.def",
         "cts-helpers.tcl",
         "helpers.tcl",
         "ihp-sg13g2_data/IOLib.lef",
@@ -145,6 +163,9 @@ filegroup(
             "max_cap": [
                 "//src/rsz/test:hi_fanout.tcl",
             ],
+            "skip_nets": [
+                "gated_clock2.def",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
@@ -163,11 +184,10 @@ filegroup(
 cc_test(
     name = "cts_unittest",
     srcs = ["cts_unittest.cc"],
-    linkstatic = True,  # TODO: remove once deps define all symbols
+    features = ["-layering_check"],  # TODO: accesses private headers
     deps = [
         "//src/cts",
         "//src/utl",
-        "//src/grt",  # work around cyclic dependncy between rsz and grt
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

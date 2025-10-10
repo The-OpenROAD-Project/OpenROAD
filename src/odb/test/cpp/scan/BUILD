@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
 package(
     features = ["layering_check"],
 )
@@ -10,7 +12,6 @@ cc_test(
     srcs = [
         "TestScanChain.cpp",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/odb",
         "//src/odb/test/cpp/helper",

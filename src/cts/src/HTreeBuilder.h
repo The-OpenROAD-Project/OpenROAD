@@ -14,6 +14,8 @@
 #include "CtsObserver.h"
 #include "CtsOptions.h"
 #include "TreeBuilder.h"
+#include "odb/db.h"
+#include "odb/isotropy.h"
 
 namespace cts {
 class Graphics;

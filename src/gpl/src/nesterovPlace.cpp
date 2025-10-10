@@ -5,10 +5,12 @@
 
 #include "nesterovPlace.h"
 
-#include <iomanip>
-#include <iostream>
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <cstdlib>
+#include <filesystem>
 #include <memory>
-#include <sstream>
 #include <utility>
 #include <vector>
 

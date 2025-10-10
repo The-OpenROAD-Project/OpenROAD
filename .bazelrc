@@ -14,6 +14,7 @@ common --incompatible_disallow_empty_glob
 
 build --cxxopt "-std=c++17"        --host_cxxopt "-std=c++17"
 build --cxxopt "-xc++"             --host_cxxopt "-xc++"
+build --cxxopt "-DBAZEL_BUILD"     --host_cxxopt "-DBAZEL_BUILD"
 
 # Needed for floating point stability in FFT (fft_test will check this).
 # See also https://kristerw.github.io/2021/11/09/fp-contract/
@@ -78,23 +79,18 @@ build --jobs=200
 build --disk_cache=~/.cache/bazel-disk-cache
 build --repository_cache=~/.cache/bazel-repository-cache
 
-# --- CI Settings (write access) ---
-build:ci --remote_cache=https://storage.googleapis.com/openroad-bazel-cache
-build:ci --remote_cache_compression=true
-build:ci --remote_upload_local_results=true
 # CI only needs to know if the build succeeded, not the artifacts themselves.
 build:ci --remote_download_minimal
+build:ci --remote_upload_local_results=true
 # Disable disk cache for CI builds
 build:ci --disk_cache=
 
-# --- OpenROAD Developer Settings (read-only access) ---
-build:openroad-dev --remote_cache=https://storage.googleapis.com/openroad-bazel-cache
-build:openroad-dev --remote_cache_compression=true
-build:openroad-dev --remote_upload_local_results=false
-# Developers need the actual output files to run and use them.
-build:openroad-dev --remote_download_toplevel
-build:openroad-dev --google_default_credentials=true
-build:openroad-dev --disk_cache=/workspace/.cache/bazel-disk-cache
-build:openroad-dev --repository_cache=/workspace/.cache/bazel-repository-cache
+# Setup remote cache
+build --remote_cache=https://bazel.precisioninno.com
+build --remote_cache_compression=true
+build --remote_upload_local_results=false
+
+# Without this, bazelisk build ... builds the bazel-orfs tests
+build --build_tag_filters=-orfs
 
 try-import %workspace%/user.bazelrc

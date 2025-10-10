@@ -4,7 +4,6 @@
 #include "Evaluator.h"
 
 #include <algorithm>
-#include <boost/range/iterator_range_core.hpp>
 #include <cmath>
 #include <fstream>
 #include <functional>
@@ -21,6 +20,7 @@
 
 #include "Hypergraph.h"
 #include "Utilities.h"
+#include "boost/range/iterator_range_core.hpp"
 #include "utl/Logger.h"
 
 // ------------------------------------------------------------------------------

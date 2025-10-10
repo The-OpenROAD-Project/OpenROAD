@@ -4,6 +4,7 @@
 #pragma once
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/odb.h"
 
 namespace utl {

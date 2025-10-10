@@ -1,15 +1,13 @@
 # Restructure
 
-The restructure module in OpenROAD (`rmp`) is based on 
-an interface to ABC for local resynthesis. The package allows
-logic restructuring that targets area or timing. It extracts a cloud of logic
-using the OpenSTA timing engine, and passes it to ABC through `blif` interface.
-Multiple recipes for area or timing are run to obtain multiple structures from ABC;
-the most desirable among these is used to improve the netlist.
-The ABC output is read back by a `blif` reader which is integrated to OpenDB.
-`blif` writer and reader also support constants from and to OpenDB. Reading
-back of constants requires insertion of tie cells which should be provided
-by the user as per the interface described below.
+The restructure module in OpenROAD (`rmp`) is based on an interface to ABC for
+local resynthesis. The package allows logic restructuring that targets area or
+timing. It extracts a cloud of logic to ABC using the [`cut`](../cut/README.md)
+module. Multiple recipes for area or timing are run to obtain multiple
+structures from ABC; the most desirable among these is used to improve the
+netlist. The resynthesized logic is then read back to OpenDB. Reading back of
+constants requires insertion of tie cells which should be provided by the user
+as per the interface described below.
 
 ## Commands
 
@@ -55,19 +53,48 @@ restructure
 
 ### Resynth
 
-Resynthesis can be performed with the resynthesis command it will attempt to drive
-all paths to zero slack. It's an improved version of restructure. If you have multiple
-corners you need to specify witch `-corner` you want to use.
+Resynthesize parts of the design in an attempt to fix negative slack.
 
 ```tcl
-resynth [-corner corner]
+resynth
+    [-corner corner]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-corner` | Specifies the library corner you intend to use in the optimization loop.
+| `-corner` | Process corner to use. |
+
+### Resynth with simulated annealing
+
+Resynthesize parts of the design with an ABC script found via simulated annealing.
+The script is a series of operations on ABC's internal AIG data structure.
+A neighboring solution is a script with one operation added, removed, or two operations swapped.
+The optimization function is defined as the worst slack.
+
+```tcl
+resynth_annealing
+    [-corner corner]
+    [-slack_threshold slack_threshold]
+    [-seed seed]
+    [-temp temp]
+    [-iters iters]
+    [-revert_after revert_after]
+    [-initial_ops initial_ops]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-corner` | Process corner to use. |
+| `-slack_threshold` | Specifies a (setup) timing slack value below which timing paths need to be analyzed for restructuring. The default value is `0`. |
+| `-seed` | Seed to use for randomness in simulated annealing. |
+| `-temp` | Initial temperature for simulated annealing. The default is the required arrival time on the worst slack endpoint. |
+| `-iters` | Number of iterations to run simulated annealing for. |
+| `-revert_after` | After the given number of iterations that worsen slack, revert to best found solution. |
+| `-initial_ops` | Size of the initial random solution (number of commands in the script for ABC). |
 
 ## Example scripts
 

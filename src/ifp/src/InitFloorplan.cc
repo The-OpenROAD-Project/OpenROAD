@@ -5,8 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
-#include <fstream>
-#include <iostream>
+#include <cstddef>
 #include <limits>
 #include <map>
 #include <set>
@@ -16,6 +15,8 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/util.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
@@ -551,11 +552,7 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
           }
 
           // rcr stands for right core row
-          // rcr_dx_site_number is the max number of site_dx that is less than
-          // power_domain_y_space * site_dy. This helps align the rcr_x_min on
-          // the multiple of site_dx.
-          int rcr_dx_site_number = (power_domain_y_space * site_dy) / site_dx;
-          int rcr_x_min = domain_x_max + rcr_dx_site_number * site_dx;
+          int rcr_x_min = domain_x_max + power_domain_y_space * site_dy;
           // snap to the site grid rightward
           rcr_x_min = odb::makeSiteLoc(rcr_x_min, site_dx, false, 0);
 

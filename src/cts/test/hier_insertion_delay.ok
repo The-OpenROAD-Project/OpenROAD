@@ -2,12 +2,20 @@
 [INFO ODB-0227] LEF file: array_tile_ins_delay.lef, created 1 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 [INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[WARNING PPL-0015] Macro inst_0 is not placed.
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0001] Number of available slots 8754
+[INFO PPL-0002] Number of I/O             1
+[INFO PPL-0003] Number of I/O w/sink      1
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 20.11 um.
 [INFO GPL-0005] Execute conjugate gradient initial placement.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[WARNING GPL-0001] clk toplevel port is not placed!
-       Replace will regard clk is placed in (0, 0)
 [INFO GPL-0006] Number of instances:               279
 [INFO GPL-0007] Movable instances:                 279
 [INFO GPL-0008] Fixed instances:                     0
@@ -22,19 +30,19 @@
 [INFO GPL-0019] Utilization:                     2.835 %
 [INFO GPL-0020] Standard cells area:          1257.116 um^2
 [INFO GPL-0021] Large instances area:          100.000 um^2
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000012 HPWL: 40000
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000012 HPWL: 40000
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000012 HPWL: 40000
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000012 HPWL: 40000
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000012 HPWL: 40000
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000012 HPWL: 1220290
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000012 HPWL: 1230290
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000012 HPWL: 1230290
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000012 HPWL: 1230290
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000012 HPWL: 1230290
 Placement Analysis
 ---------------------------------
 total displacement       9363.8 u
 average displacement       33.6 u
 max displacement           51.7 u
-original HPWL              10.1 u
-legalized HPWL             91.3 u
-delta HPWL                  806 %
+original HPWL             605.2 u
+legalized HPWL            641.6 u
+delta HPWL                    6 %
 
 [INFO CTS-0050] Root buffer is CLKBUF_X3.
 [INFO CTS-0051] Sink buffer is CLKBUF_X3.
@@ -104,5 +112,8 @@ delta HPWL                  806 %
 [INFO CTS-0101]  Average sink wire length 31.00 um
 [INFO CTS-0102]  Path depth 2 - 3
 [INFO CTS-0207]  Leaf load cells 2
+[INFO CTS-0033] Balancing latency for clock core
+[INFO CTS-0036]  inserted 2 delay buffers
+[INFO CTS-0037] Total number of delay buffers: 2
 Found 0 unconnected buffers.
 No differences found.

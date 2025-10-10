@@ -1,9 +1,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include <map>
+#include <string.h>
+
+#include <cassert>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <vector>
 
+#include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/geom.h"
 #include "rcx/extPattern.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
@@ -27,9 +36,9 @@ uint extMain::benchPatternsGen(const PatternOptions& opt1)
 
   printf("benchPatternsGen= layerCnt %d %s\n", opt.met_cnt, opt.name);
 
-  dbChip* chip = dbChip::create(_db);
+  dbChip* chip = dbChip::create(_db, _tech);
   assert(chip);
-  _block = dbBlock::create(chip, opt.name, nullptr, '/');
+  _block = dbBlock::create(chip, opt.name, '/');
   assert(_block);
   // _prevControl = _block->getExtControl();
   _block->setBusDelimiters('[', ']');

@@ -1,17 +1,25 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
+
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
+
+package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "block_sta1",
+    "check_axioms",
     "clock_pin",
     "constant1",
     "find_clks1",
     "find_clks2",
+    "get_ports1",
+    "get_ports1_hier",
     "hier2",
     "hierclock",
     "hierwrite",
+    "hier_deep",
     "make_port",
     "network_edit1",
     "power1",
@@ -26,6 +34,7 @@ COMPULSORY_TESTS = [
     "read_verilog8",
     "read_verilog9",
     "read_verilog10",
+    "read_verilog10_no_prop",
     "read_verilog11",
     "readdb_hier",
     "report_cell_usage",
@@ -35,6 +44,7 @@ COMPULSORY_TESTS = [
     "report_cell_usage_physical_only",
     "report_json1",
     "report_timing_histogram",
+    "report_logic_depth_histogram",
     "sdc_get1",
     "sdc_names1",
     "sdc_names2",
@@ -52,6 +62,8 @@ COMPULSORY_TESTS = [
     "write_verilog6",
     "write_verilog7",
     "write_verilog8",
+    "write_verilog9",
+    "write_verilog9_hier",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
@@ -107,11 +119,13 @@ filegroup(
         "example1_fast.lib",
         "example1_slow.lib",
         "example1_typ.lib",
+        "get_ports1.v",
         "helpers.tcl",
         "hier1.def",
         "hier1.sdc",
         "hier1.v",
         "hier2_out.vok",
+        "hier_deep.v",
         "hierclock_gate.v",
         "hierclock_out.vok",
         "liberty1.lef",
@@ -126,6 +140,7 @@ filegroup(
         "reg5.v",
         "reg6.def",
         "report_cell_usage_no_taps.def",
+        "write_verilog9.v",
     ],
 )
 
@@ -157,3 +172,23 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "dbsta_hconn_unittest",
+    srcs = ["cpp/TestHconn.cpp"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@tk_tcl//:tcl",
+    ],
+)

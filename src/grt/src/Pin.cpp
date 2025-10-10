@@ -9,6 +9,9 @@
 #include <vector>
 
 #include "grt/GlobalRouter.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace grt {
 
@@ -180,11 +183,6 @@ odb::Point Pin::getPositionNearInstEdge(const odb::Rect& pin_box,
   }
 
   return pin_pos;
-}
-
-int Pin::getConnectionLayer() const
-{
-  return connection_layer_;
 }
 
 }  // namespace grt

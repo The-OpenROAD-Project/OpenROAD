@@ -2,11 +2,9 @@
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
 // Parser for LEF58 edge type rules that define edge properties for macro cells
-#include <functional>
-#include <iostream>
 #include <string>
-#include <vector>
 
+#include "boost/bind/bind.hpp"
 #include "boostParser.h"
 #include "lefMacroPropParser.h"
 #include "parserUtils.h"

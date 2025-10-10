@@ -7,11 +7,15 @@
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcBlockObject.h"
 #include "db/gcObj/gcPin.h"
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frBlockage.h"
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frNet.h"
+#include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frNet;
@@ -30,7 +34,9 @@ class gcNet : public gcBlockObject
   {
   }
   // setters
-  void addPolygon(const Rect& box, frLayerNum layerNum, bool isFixed = false)
+  void addPolygon(const odb::Rect& box,
+                  frLayerNum layerNum,
+                  bool isFixed = false)
   {
     gtl::rectangle_data<frCoord> rect(
         box.xMin(), box.yMin(), box.xMax(), box.yMax());
@@ -41,7 +47,9 @@ class gcNet : public gcBlockObject
       routePolygons_[layerNum] += rect;
     }
   }
-  void addRectangle(const Rect& box, frLayerNum layerNum, bool isFixed = false)
+  void addRectangle(const odb::Rect& box,
+                    frLayerNum layerNum,
+                    bool isFixed = false)
   {
     gtl::rectangle_data<frCoord> rect(
         box.xMin(), box.yMin(), box.xMax(), box.yMax());
@@ -168,23 +176,23 @@ class gcNet : public gcBlockObject
   {
     return getFrNet() && getFrNet()->getNondefaultRule();
   }
-  void addTaperedRect(const Rect& bx, int zIdx)
+  void addTaperedRect(const odb::Rect& bx, int zIdx)
   {
     taperedRects_[zIdx].push_back(bx);
   }
-  const std::vector<Rect>& getTaperedRects(int z) const
+  const std::vector<odb::Rect>& getTaperedRects(int z) const
   {
     return taperedRects_[z];
   }
-  void addNonTaperedRect(const Rect& bx, int zIdx)
+  void addNonTaperedRect(const odb::Rect& bx, int zIdx)
   {
     nonTaperedRects_[zIdx].push_back(bx);
   }
-  const std::vector<Rect>& getNonTaperedRects(int z) const
+  const std::vector<odb::Rect>& getNonTaperedRects(int z) const
   {
     return nonTaperedRects_[z];
   }
-  void addSpecialSpcRect(const Rect& bx,
+  void addSpecialSpcRect(const odb::Rect& bx,
                          frLayerNum lNum,
                          gcPin* pin,
                          gcNet* net)
@@ -238,8 +246,8 @@ class gcNet : public gcBlockObject
       routeRectangles_;  // only cut layer
   std::vector<std::vector<std::unique_ptr<gcPin>>> pins_;
   frBlockObject* owner_{nullptr};
-  std::vector<std::vector<Rect>> taperedRects_;     //(only routing layer)
-  std::vector<std::vector<Rect>> nonTaperedRects_;  //(only routing layer)
+  std::vector<std::vector<odb::Rect>> taperedRects_;     //(only routing layer)
+  std::vector<std::vector<odb::Rect>> nonTaperedRects_;  //(only routing layer)
   // A non-tapered rect within a tapered max rectangle still require nondefault
   // spacing. This list hold these rectangles
   std::vector<std::unique_ptr<gcRect>> specialSpacingRects_;

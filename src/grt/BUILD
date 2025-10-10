@@ -1,28 +1,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
-)
-
-cc_library(
-    name = "types",
-    hdrs = [
-        "include/grt/GRoute.h",
-        "include/grt/GlobalRouter.h",
-        "include/grt/PinGridLocation.h",
-        "include/grt/RoutePt.h",
-    ],
-    includes = [
-        "include",
-    ],
-    deps = [
-        "//src/odb",
-    ],
 )
 
 cc_library(
@@ -38,37 +24,86 @@ cc_library(
 )
 
 cc_library(
+    name = "groute",
+    hdrs = ["include/grt/GRoute.h"],
+)
+
+cc_library(
     name = "fastroute",
     srcs = [
         "src/fastroute/src/FastRoute.cpp",
         "src/fastroute/src/FastRouteRenderer.cpp",
-        "src/fastroute/src/graph2d.cpp",
         "src/fastroute/src/RSMT.cpp",
         "src/fastroute/src/RipUp.cpp",
+        "src/fastroute/src/graph2d.cpp",
         "src/fastroute/src/maze.cpp",
         "src/fastroute/src/maze3D.cpp",
         "src/fastroute/src/route.cpp",
         "src/fastroute/src/utility.cpp",
     ],
     hdrs = [
-        "src/fastroute/include/AbstractMakeWireParasitics.h",
         "src/fastroute/include/FastRoute.h",
         "src/fastroute/include/FastRouteRenderer.h",
         "src/fastroute/include/Graph2D.h",
     ],
     includes = [
+        "include",
         "src/fastroute/include",
     ],
     deps = [
         ":abstract-fastroute",
-        ":types",
+        ":groute",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/gui",
         "//src/odb",
+        "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
         "@boost.container_hash",
         "@boost.icl",
         "@boost.multi_array",
+    ],
+)
+
+cc_library(
+    name = "cugr",
+    srcs = [
+        "src/cugr/src/CUGR.cpp",
+        "src/cugr/src/Design.cpp",
+        "src/cugr/src/Design.h",
+        "src/cugr/src/GRNet.cpp",
+        "src/cugr/src/GRNet.h",
+        "src/cugr/src/GRTree.cpp",
+        "src/cugr/src/GRTree.h",
+        "src/cugr/src/GeoTypes.cpp",
+        "src/cugr/src/GeoTypes.h",
+        "src/cugr/src/GridGraph.cpp",
+        "src/cugr/src/GridGraph.h",
+        "src/cugr/src/Layers.cpp",
+        "src/cugr/src/Layers.h",
+        "src/cugr/src/MazeRoute.cpp",
+        "src/cugr/src/MazeRoute.h",
+        "src/cugr/src/Netlist.cpp",
+        "src/cugr/src/Netlist.h",
+        "src/cugr/src/PatternRoute.cpp",
+        "src/cugr/src/PatternRoute.h",
+        "src/cugr/src/geo.h",
+        "src/cugr/src/robin_hood.h",
+    ],
+    hdrs = [
+        "src/cugr/include/CUGR.h",
+    ],
+    includes = [
+        "include",
+        "src/cugr/include",
+    ],
+    deps = [
+        ":groute",
+        "//:ord",
+        "//src/odb",
+        "//src/stt",
+        "//src/utl",
     ],
 )
 
@@ -80,8 +115,6 @@ cc_library(
         "src/GlobalRouter.cpp",
         "src/Grid.cpp",
         "src/Grid.h",
-        "src/MakeWireParasitics.cpp",
-        "src/MakeWireParasitics.h",
         "src/Net.cpp",
         "src/Net.h",
         "src/Pin.cpp",
@@ -92,6 +125,9 @@ cc_library(
         "src/Rudy.cpp",
     ],
     hdrs = [
+        "include/grt/GlobalRouter.h",
+        "include/grt/PinGridLocation.h",
+        "include/grt/RoutePt.h",
         "include/grt/Rudy.h",
     ],
     copts = [
@@ -102,15 +138,16 @@ cc_library(
     ],
     deps = [
         ":abstract-fastroute",
+        ":cugr",
         ":fastroute",
-        ":types",
+        ":groute",
         "//src/ant",
-        "//src/ant:types",
         "//src/dbSta",
+        "//src/dbSta:SpefWriter",
+        "//src/dbSta:dbNetwork",
         "//src/dpl",
         "//src/gui",
         "//src/odb",
-        "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
@@ -142,7 +179,6 @@ cc_library(
     ],
     hdrs = [
         "include/grt/MakeGlobalRouter.h",
-        "include/grt/Rudy.h",
     ],
     copts = [
         "-Isrc/grt/src",
@@ -154,15 +190,16 @@ cc_library(
     ],
     deps = [
         ":abstract-fastroute",
+        ":cugr",
         ":fastroute",
-        ":types",
+        ":groute",
+        ":grt",
         "//:ord",
         "//src/ant",
         "//src/dbSta",
         "//src/dpl",
         "//src/gui",
         "//src/odb",
-        "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
@@ -195,6 +232,21 @@ tcl_wrap_cc(
     namespace_prefix = "grt",
     root_swig_src = "src/GlobalRouter.i",
     swig_includes = [
+        "src",
+    ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/grt/GlobalRouter.h",
+        "src/GlobalRouter-py.i",
+        "//:error_swig-py",
+    ],
+    module = "grt_py",
+    root_swig_src = "src/GlobalRouter-py.i",
+    swig_includes = [
+        "include",
         "src",
     ],
 )

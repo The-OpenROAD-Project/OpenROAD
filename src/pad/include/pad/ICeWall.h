@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
@@ -27,10 +28,8 @@ class RDLGui;
 class ICeWall
 {
  public:
-  ICeWall();
+  ICeWall(odb::dbDatabase* db, utl::Logger* logger);
   ~ICeWall();
-
-  void init(odb::dbDatabase* db, utl::Logger* logger);
 
   void makeBumpArray(odb::dbMaster* master,
                      const odb::Point& start,

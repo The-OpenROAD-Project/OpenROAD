@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <boost/container/flat_map.hpp>
 #include <cstdint>
 #include <map>
 
+#include "boost/container/flat_map.hpp"
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "odb/db.h"
@@ -72,6 +72,8 @@ class _dbITerm : public _dbObject
 
 inline _dbITerm::_dbITerm(_dbDatabase*)
 {
+  // For pointer tagging the bottom 3 bits.
+  static_assert(alignof(_dbITerm) % 8 == 0);
   _flags._mterm_idx = 0;
   _flags._spare_bits = 0;
   _flags._clocked = 0;

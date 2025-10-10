@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -23,12 +24,12 @@ cc_library(
         "src/clusterEngine.h",
         "src/hier_rtlmp.cpp",
         "src/hier_rtlmp.h",
+        "src/mpl-util.h",
         "src/object.cpp",
         "src/object.h",
         "src/rtl_mp.cpp",
         "src/shapes.cpp",
         "src/shapes.h",
-        "src/util.h",
     ],
     hdrs = [
         "include/mpl/rtl_mp.h",
@@ -38,6 +39,7 @@ cc_library(
     ],
     deps = [
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/par",
         "//src/sta:opensta_lib",
@@ -55,9 +57,9 @@ cc_library(
         "src/clusterEngine.h",
         "src/graphics.cpp",
         "src/graphics.h",
+        "src/mpl-util.h",
         "src/object.h",
         "src/shapes.h",
-        "src/util.h",
         ":swig",
         ":tcl",
     ],

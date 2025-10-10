@@ -43,24 +43,42 @@ class BusesVec(singleElementWidth: Int, width: Int, height: Int)
   def asSeq: Seq[Vec[UInt]] = routes.map(_._2).toSeq
 }
 
-class MockArrayBundle(width: Int, height: Int, singleElementWidth: Int) extends Bundle {
+class MockArrayBundle(width: Int, height: Int, singleElementWidth: Int)
+    extends Bundle {
   val ins = Input(new BusesVec(singleElementWidth, width, height))
   val outs = Output(new BusesVec(singleElementWidth, width, height))
   val lsbs = Output(Vec(width * height, Bool()))
 }
 
+class MultiplierIO extends Bundle {
+  val a = Input(UInt(32.W))
+  val b = Input(UInt(32.W))
+  val o = Output(UInt(32.W))
+  val rst = Input(Bool())
+  val clk = Input(Clock())
+}
+
 // Generated with:
 //
 // vlsi-multiplier --register-input --register-post-ppg --register-post-ppa --register-output --bits=32 --algorithm=brentkung --tech=asap7 --output=multiplier.v
-class Multiplier extends BlackBox with HasBlackBoxResource {
+class MultiplierBlackBox extends BlackBox with HasBlackBoxResource {
   override def desiredName = "multiplier"
-  val io = IO(new Bundle {
-    val a = Input(UInt(32.W))
-    val b = Input(UInt(32.W))
-    val o = Output(UInt(32.W))
-    val rst = Input(Bool())
-    val clk = Input(Clock())
-  })
+  val io = IO(new MultiplierIO())
+}
+
+// This module is kept in synthesis for hierarchical power testing purposes
+class Multiplier extends RawModule {
+  val io = IO(new MultiplierIO())
+
+  val mod = Module(new MultiplierBlackBox())
+  mod.io.a := io.a
+  mod.io.b := io.b
+  mod.io.rst := io.rst
+  mod.io.clk := io.clk
+  // reduce output bit-width until we slight negative slack
+  // and also until we run in a few minutes for fast local
+  // smoke-testing
+  io.o := mod.io.o(3, 0)
 }
 
 class MockArray(width: Int, height: Int, singleElementWidth: Int)
@@ -81,23 +99,24 @@ class MockArray(width: Int, height: Int, singleElementWidth: Int)
     //  left <-> down
     //  up <-> right
     (io.outs.asSeq zip (io.ins.asSeq ++ Seq(io.ins.asSeq.head))
-      .sliding(2).toSeq.reverse.map(_.map(RegNext(_)))).foreach {
-      case (a, b) => a := RegNext({
+      .sliding(2)
+      .toSeq
+      .reverse
+      .map(_.map(RegNext(_)))).foreach { case (a, b) =>
+      a := RegNext({
         val mult = Module(new Multiplier())
         mult.io.a := b(0)
         mult.io.b := b(1)
         // save some area and complexity by not having reset
         mult.io.rst := false.B
         mult.io.clk := clock
-        // reduce output bit-width until we slight negative slack
-        // and also until we run in a few minutes for fast local
-        // smoke-testing
-        mult.io.o(3, 0)
+        mult.io.o
       })
     }
 
-    // Combinational logic, but a maximum flight path of 4 elements
-    val MAX_FLIGHT = 4
+    // Combinational logic, but a maximum flight path of number of
+    // elements horizontally / 2
+    val MAX_FLIGHT = width / 2
     io.lsbOuts := (io.lsbIns
       .drop(1)
       .reverse
@@ -172,9 +191,10 @@ case class ArrayConfig(
     remainingArgs: Seq[String] = Seq.empty
 )
 
-
 object parse {
-  def apply(args:Array[String]) : (ArrayConfig, Array[String], Array[String]) = {
+  def apply(
+      args: Array[String]
+  ): (ArrayConfig, Array[String], Array[String]) = {
     val builder = OParser.builder[ArrayConfig]
     val parser = {
       import builder._
@@ -202,7 +222,6 @@ object parse {
     val (chiselArgs, secondDelimiter) = firstDelimiter.drop(1).span(_ != "--")
     val firtoolArgs = secondDelimiter.drop(1)
 
-
     OParser.parse(parser, configArgs, ArrayConfig()) match {
       case Some(c) =>
         return (c, chiselArgs, firtoolArgs)
@@ -219,7 +238,7 @@ object parse {
 object GenerateMockArray extends App {
   val (c, chiselArgs, firtoolArgs) = parse(args)
 
-  ChiselStage.emitSystemVerilog(
+  ChiselStage.emitHWDialect(
     new MockArray(c.width, c.height, c.dataWidth),
     chiselArgs,
     firtoolArgs

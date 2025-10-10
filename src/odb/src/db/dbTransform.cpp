@@ -5,9 +5,12 @@
 
 #include "odb/dbTransform.h"
 
+#include <stdexcept>
 #include <vector>
 
 #include "odb/dbStream.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace odb {
 

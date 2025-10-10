@@ -1056,6 +1056,24 @@ proc define_pin_shape_pattern { args } {
   odb::set_bterm_top_layer_grid $block $layer $x_step $y_step region $width $height $keepout
 }
 
+sta::define_cmd_args "all_pins_placed" {}
+
+proc all_pins_placed { args } {
+  sta::parse_key_args "all_pins_placed" args \
+    keys {} flags {}
+
+  set block [odb::get_block]
+
+  foreach bterm [$block getBTerms] {
+    set placement_status [$bterm getFirstPinPlacementStatus]
+    if { [lsearch -exact {PLACED LOCKED FIRM COVER} $placement_status] == -1 } {
+      return 0
+    }
+  }
+
+  return 1
+}
+
 namespace eval odb {
 proc add_direction_constraint { dir edge begin end } {
   set block [get_block]
@@ -1100,5 +1118,10 @@ proc get_block { } {
   set db [ord::get_db]
   set chip [$db getChip]
   return [$chip getBlock]
+}
+
+proc destroy_routes { } {
+  set block [ord::get_db_block]
+  $block destroyRoutes
 }
 }

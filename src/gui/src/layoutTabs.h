@@ -3,13 +3,20 @@
 
 #pragma once
 
+#include <QColor>
 #include <QTabWidget>
+#include <QWidget>
 #include <functional>
+#include <map>
 #include <memory>
+#include <set>
+#include <string>
 #include <vector>
 
 #include "gui/gui.h"
 #include "layoutViewer.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace gui {
 

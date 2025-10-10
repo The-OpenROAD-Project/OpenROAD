@@ -4,14 +4,18 @@
 #pragma once
 
 #include <algorithm>
+#include <cstddef>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <utility>
 #include <vector>
 
 #include "db/infra/frPoint.h"
 #include "db/obj/frBlockObject.h"
-#include "frShape.h"
+#include "db/obj/frShape.h"
+#include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frViaDef;
@@ -21,7 +25,7 @@ class frAccessPoint : public frBlockObject
 {
  public:
   // constructors
-  frAccessPoint(const Point& point, frLayerNum layerNum)
+  frAccessPoint(const odb::Point& point, frLayerNum layerNum)
       : point_(point), layerNum_(layerNum)
   {
   }
@@ -39,7 +43,7 @@ class frAccessPoint : public frBlockObject
   }
   frAccessPoint& operator=(const frAccessPoint&) = delete;
   // getters
-  const Point& getPoint() const { return point_; }
+  const odb::Point& getPoint() const { return point_; }
   frLayerNum getLayerNum() const { return layerNum_; }
   bool hasAccess() const
   {
@@ -135,7 +139,7 @@ class frAccessPoint : public frBlockObject
   }
   bool isViaAllowed() const { return allow_via_; }
   // setters
-  void setPoint(const Point& in) { point_ = in; }
+  void setPoint(const odb::Point& in) { point_ = in; }
   void setLayer(const frLayerNum& layerNum) { layerNum_ = layerNum; }
   void setAccess(const frDirEnum& dir, bool isValid = true)
   {
@@ -189,7 +193,7 @@ class frAccessPoint : public frBlockObject
   std::vector<frPathSeg>& getPathSegs() { return pathSegs_; }
 
  private:
-  Point point_;
+  odb::Point point_;
   frLayerNum layerNum_{0};
   // 0 = E, 1 = S, 2 = W, 3 = N, 4 = U, 5 = D
   std::vector<bool> accesses_ = std::vector<bool>(6, false);

@@ -1,0 +1,28 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC0_X1
+[WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC1_X1
+Derived GENLIB library "NangateOpenCellLibrary" with 92 gates.
+[INFO CGT-0003] Clock gating instance 0/562
+[INFO CGT-0004] Accepted clock enable '_13148_ | _04712_ | _04712_ | _00499_ | _05106_ | _05208_' for instance dcnt\[0\]$_SDFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable '_13151_ | _11055_ | _07150_ | _09231_ | _11144_ | _05152_ | _07152_ | _04670_' for instance ld_r$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13152_ | _02522_ | _09935_ | _02343_ | _07158_ | _07177_' for instance sa00_sr\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_13167_ | _03152_ | _02955_ | _12895_ | _02938_ | _07849_ | _02885_ | _07223_' for instance sa01_sr\[7\]$_DFF_P_
+[INFO CGT-0003] Clock gating instance 100/562
+[INFO CGT-0004] Accepted clock enable '_00487_ | _01917_ | _01868_ | _01929_ | _01959_ | _01793_ | _01878_ | _07282_ | _01732_ | _01720_ | _07400_' for instance text_in_r\[10\]$_DFFE_PP_
+[INFO CGT-0004] Accepted clock enable '_00474_ | _11747_ | _11696_ | _11833_ | _07400_ | _11753_ | _11685_ | _07158_' for instance text_in_r\[16\]$_DFFE_PP_
+[INFO CGT-0004] Accepted clock enable '_00462_ | _09182_ | _09315_ | _09285_ | _09290_ | _09166_ | _07399_ | _09289_ | _07157_' for instance text_in_r\[24\]$_DFFE_PP_
+[INFO CGT-0004] Accepted clock enable '_00495_ | _03475_ | _07282_ | _03757_ | _03436_ | _07267_' for instance text_in_r\[32\]$_DFFE_PP_
+[INFO CGT-0003] Clock gating instance 200/562
+[INFO CGT-0004] Accepted clock enable '_00492_ | _02863_ | _03152_ | _03035_ | _02947_ | _07267_ | _02841_ | _02886_ | _02859_ | _07281_' for instance text_in_r\[64\]$_DFFE_PP_
+[INFO CGT-0003] Clock gating instance 300/562
+[INFO CGT-0004] Accepted clock enable '_00444_ | _06777_ | _05017_ | _06673_ | _05078_ | _05256_ | _05205_' for instance u0.r0.out\[24\]$_SDFF_PP1_
+[INFO CGT-0003] Clock gating instance 400/562
+[INFO CGT-0004] Accepted clock enable '_00437_ | _04381_ | _05294_ | _05271_ | _05208_ | _05220_ | _05138_' for instance u0.u1.d\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00420_ | _04142_ | _04977_ | _04989_ | _05242_ | _04218_ | _04455_ | _04985_ | _04649_ | _04954_' for instance u0.u1.d\[2\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00443_ | _05518_ | _00001_ | _05611_ | _05736_ | _00005_ | _05557_ | _00004_ | _00002_ | _00006_ | _00000_ | _05563_ | _05290_ | _00393_' for instance u0.u1.d\[7\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00432_ | _06027_ | _04893_ | _05760_ | _04909_ | _04940_ | _04875_ | _05208_ | _05113_' for instance u0.u2.d\[3\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00436_ | _05219_ | _04965_ | _00391_ | _06015_ | _06037_ | _00010_ | _00008_ | _00015_ | _00009_ | _00012_ | _00013_ | _06087_ | _06025_ | _06127_ | _06099_ | _00416_' for instance u0.u2.d\[7\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00423_ | _04790_ | _04771_ | _04196_ | _04764_ | _04605_' for instance u0.u3.d\[0\]$_DFF_P_
+[INFO CGT-0003] Clock gating instance 500/562
+No differences found.

@@ -3,19 +3,26 @@
 
 #include "Grid.h"
 
-#include <boost/polygon/polygon.hpp>
+#include <algorithm>
 #include <cmath>
 #include <functional>
 #include <limits>
 #include <memory>
+#include <optional>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "Objects.h"
 #include "Padding.h"
+#include "boost/polygon/polygon.hpp"
 #include "dpl/Opendp.h"
+#include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/isotropy.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -76,6 +83,9 @@ void Grid::allocateGrid()
       pixel.blocked_layers = 0;
     }
   }
+
+  row_sites_.clear();
+  row_sites_.resize(row_count_.v);
 }
 
 void Grid::markHopeless(dbBlock* block,
@@ -89,7 +99,7 @@ void Grid::markHopeless(dbBlock* block,
   gtl::polygon_90_set_data<int> hopeless;
   hopeless += gtl::rectangle_data<int>{0, 0, row_site_count_.v, row_count_.v};
 
-  const Rect core = getCore();
+  const odb::Rect core = getCore();
 
   // Fragmented row support; mark valid sites.
   visitDbRows(block, [&](odb::dbRow* db_row) {
@@ -101,8 +111,9 @@ void Grid::markHopeless(dbBlock* block,
     for (GridX x{x_start}; x < x_end; x++) {
       Pixel* pixel = gridPixel(x, y_row);
       pixel->is_valid = true;
-      pixel->sites[db_row->getSite()] = db_row->getOrient();
     }
+    row_sites_[y_row.v].add(
+        {{x_start.v, x_end.v}, {{db_row->getSite(), db_row->getOrient()}}});
 
     // The safety margin is to avoid having only a very few sites
     // within the diamond search that may still lead to failures.
@@ -128,7 +139,7 @@ void Grid::markHopeless(dbBlock* block,
 
 void Grid::markBlocked(dbBlock* block)
 {
-  const Rect core = getCore();
+  const odb::Rect core = getCore();
   auto addBlockedLayers
       = [&](odb::Rect wire_rect, odb::dbTechLayer* tech_layer) {
           if (tech_layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
@@ -163,12 +174,18 @@ void Grid::markBlocked(dbBlock* block)
       continue;
     }
     for (odb::dbSWire* swire : net->getSWires()) {
-      for (odb::dbSBox* s : swire->getWires()) {
-        if (!s->isVia()) {
-          odb::Rect wire_rect = s->getBox();
-          odb::dbTechLayer* tech_layer = s->getTechLayer();
-          addBlockedLayers(wire_rect, tech_layer);
+      for (odb::dbSBox* sbox : swire->getWires()) {
+        if (sbox->isVia()) {
+          // TODO: handle via
+          continue;
         }
+        if (sbox->getWireShapeType() == odb::dbWireShapeType::DRCFILL) {
+          // TODO: handle patches
+          continue;
+        }
+        odb::Rect wire_rect = sbox->getBox();
+        odb::dbTechLayer* tech_layer = sbox->getTechLayer();
+        addBlockedLayers(wire_rect, tech_layer);
       }
     }
   }
@@ -176,7 +193,7 @@ void Grid::markBlocked(dbBlock* block)
     if (blockage->isSoft()) {
       continue;
     }
-    Rect bbox = blockage->getBBox()->getBox();
+    odb::Rect bbox = blockage->getBBox()->getBox();
     bbox.moveDelta(-core.xMin(), -core.yMin());
     GridRect grid_rect = gridCovering(bbox);
 
@@ -211,6 +228,50 @@ void Grid::initGrid(dbDatabase* db,
   markBlocked(block);
 }
 
+std::pair<dbSite*, dbOrientType> Grid::getShortestSite(GridX grid_x,
+                                                       GridY grid_y)
+{
+  dbSite* selected_site = nullptr;
+  dbOrientType selected_orient;
+  DbuY min_height{std::numeric_limits<int>::max()};
+
+  const RowSitesMap& sites_map = row_sites_[grid_y.v];
+  auto it = sites_map.find(grid_x.v);
+
+  if (it != sites_map.end()) {
+    for (const auto& [site, orient] : it->second) {
+      DbuY site_height{site->getHeight()};
+      if (site_height < min_height) {
+        min_height = site_height;
+        selected_site = site;
+        selected_orient = orient;
+      }
+    }
+  }
+
+  return {selected_site, selected_orient};
+}
+
+std::optional<dbOrientType> Grid::getSiteOrientation(GridX x,
+                                                     GridY y,
+                                                     dbSite* site) const
+{
+  const RowSitesMap& sites_map = row_sites_[y.v];
+  auto interval_it = sites_map.find(x.v);
+
+  if (interval_it == sites_map.end()) {
+    return {};
+  }
+
+  const SiteToOrientation& sites_orient = interval_it->second;
+
+  if (auto it = sites_orient.find(site); it != sites_orient.end()) {
+    return it->second;
+  }
+
+  return {};
+}
+
 Pixel* Grid::gridPixel(GridX grid_x, GridY grid_y) const
 {
   if (grid_x >= 0 && grid_x < row_site_count_ && grid_y >= 0
@@ -228,14 +289,14 @@ void Grid::visitCellPixels(
   dbInst* inst = cell.getDbInst();
   auto obstructions = inst->getMaster()->getObstructions();
   bool have_obstructions = false;
-  const Rect core = getCore();
+  const odb::Rect core = getCore();
 
   for (dbBox* obs : obstructions) {
     if (obs->getTechLayer()->getType()
         == odb::dbTechLayerType::Value::OVERLAP) {
       have_obstructions = true;
 
-      Rect rect = obs->getBox();
+      odb::Rect rect = obs->getBox();
       inst->getTransform().apply(rect);
       rect.moveDelta(-core.xMin(), -core.yMin());
       GridRect grid_rect = gridCovering(rect);
@@ -307,13 +368,13 @@ void Grid::visitCellBoundaryPixels(
   dbMaster* master = inst->getMaster();
   auto obstructions = master->getObstructions();
   bool have_obstructions = false;
-  const Rect core = getCore();
+  const odb::Rect core = getCore();
   for (dbBox* obs : obstructions) {
     if (obs->getTechLayer()->getType()
         == odb::dbTechLayerType::Value::OVERLAP) {
       have_obstructions = true;
 
-      Rect rect = obs->getBox();
+      odb::Rect rect = obs->getBox();
       inst->getTransform().apply(rect);
       rect.moveDelta(-core.xMin(), -core.yMin());
 
@@ -458,7 +519,7 @@ GridX Grid::gridWidth(const Node* cell) const
 
 GridY Grid::gridHeight(odb::dbMaster* master) const
 {
-  Rect bbox;
+  odb::Rect bbox;
   master->getPlacementBoundary(bbox);
   if (uniform_row_height_) {
     DbuY row_height = uniform_row_height_.value();
@@ -515,7 +576,7 @@ GridY Grid::getRowCount(DbuY row_height) const
   return GridY{divFloor(core_.dy(), row_height.v)};
 }
 
-GridRect Grid::gridCovering(const Rect& rect) const
+GridRect Grid::gridCovering(const odb::Rect& rect) const
 {
   return {.xlo = gridX(DbuX{rect.xMin()}),
           .ylo = gridSnapDownY(DbuY{rect.yMin()}),

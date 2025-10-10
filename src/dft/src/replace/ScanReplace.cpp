@@ -5,21 +5,26 @@
 
 #include <algorithm>
 #include <cmath>
-#include <iostream>
+#include <cstring>
 #include <limits>
 #include <memory>
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "Utils.hh"
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/EquivCells.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Sequential.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 

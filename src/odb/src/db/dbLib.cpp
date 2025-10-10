@@ -3,9 +3,14 @@
 
 #include "dbLib.h"
 
+#include <cstdlib>
+#include <cstring>
 #include <string>
 
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbHashTable.h"
 #include "dbHashTable.hpp"
 #include "dbMaster.h"
 #include "dbNameCache.h"
@@ -16,6 +21,9 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbStream.h"
 #include "odb/dbTransform.h"
 
 namespace odb {
@@ -98,7 +106,7 @@ _dbLib::_dbLib(_dbDatabase* db)
 {
   _lef_units = 0;
   _dbu_per_micron = 1000;
-  _hier_delimiter = 0;
+  _hier_delimiter = '/';
   _left_bus_delimiter = 0;
   _right_bus_delimiter = 0;
   _spare = 0;

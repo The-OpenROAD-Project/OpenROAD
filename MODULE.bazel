@@ -89,6 +89,7 @@ bazel_dep(name = "or-tools", version = "9.12")
 bazel_dep(name = "spdlog", version = "1.15.1")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250331-43fcf6e")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
+bazel_dep(name = "yaml-cpp", version = "0.8.0")
 
 # A from source build of QT that allows it to link into OpenROAD.
 # Building like any other bazel project. scripts in the docker folder
@@ -102,19 +103,19 @@ git_override(
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
-bazel_dep(name = "googletest", version = "1.16.0", dev_dependency = True)
+bazel_dep(name = "googletest", version = "1.17.0", dev_dependency = True)
 
 # Dependencies needed by one of the rules_hdl repos. Once they are on
 # BCR, they should depend on their own version.
 bazel_dep(name = "glpk", version = "5.0.bcr.3", repo_name = "org_gnu_glpk")
 
 ## Fix the compiler version and avoid any local compiler
-bazel_dep(name = "toolchains_llvm", version = "1.4.0")
+bazel_dep(name = "toolchains_llvm", version = "1.5.0")
 
 # Configure and register the toolchain.
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(
-    llvm_version = "20.1.2",
+    llvm_version = "20.1.8",
 )
 use_repo(llvm, "llvm_toolchain")
 # use_repo(llvm, "llvm_toolchain_llvm") # if you depend on specific tools in scripts
@@ -137,6 +138,7 @@ python.toolchain(
     ignore_root_user_error = True,
     python_version = "3.13",
 )
+use_repo(python, "python_3_13")
 
 pip = use_extension("@openroad_rules_python//python/extensions:pip.bzl", "pip")
 pip.parse(
@@ -151,7 +153,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "abacf584d7515bebec96491c757a806431b7f9f7",
+    commit = "2aa6a9dd3c0006c5358e363fcac9e209c4dccc47",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -160,17 +162,15 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:v3.0-3503-gd7c7e73f",
+    image = "docker.io/openroad/orfs:v3.0-3911-g99312fa58",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "d5539ade517724de3765362589be443afb2624b14391b365612c8949a7c99a19",
+    sha256 = "36d3ac23732803c9e47181e167a105c69d4d6927a96782c4a4a27ceca40d8ff8",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
 
 SCALA_VERSION = "2.13.16"
-
-SCALA_VERSION_SHORT = SCALA_VERSION.rpartition(".")[0]
 
 scala_config = use_extension(
     "@rules_scala//scala/extensions:config.bzl",
@@ -193,10 +193,10 @@ scala_deps.scalatest()
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(
-    name = "openroad_maven",
+    name = "maven",
     artifacts = [
-        "org.chipsalliance:chisel_2.13:7.0.0-RC3",
-        "org.chipsalliance:chisel-plugin_2.13.16:7.0.0-RC3",
+        "org.chipsalliance:chisel_2.13:7.0.0",
+        "org.chipsalliance:chisel-plugin_2.13.16:7.0.0",
     ],
     repositories = [
         "https://repo1.maven.org/maven2",
@@ -204,7 +204,7 @@ maven.install(
         "https://s01.oss.sonatype.org/content/repositories/snapshots",
     ],
 )
-use_repo(maven, "openroad_maven")
+use_repo(maven, "maven")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 

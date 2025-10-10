@@ -3,14 +3,19 @@
 
 #pragma once
 
-#include <boost/icl/interval_set.hpp>
 #include <map>
+#include <queue>
 #include <set>
 #include <utility>
 #include <vector>
 
+#include "boost/icl/interval_set.hpp"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frInstTerm.h"
 #include "db/tech/frTechObject.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -59,7 +64,7 @@ class GuideProcessor
                                  frCoord& GCELLOFFSETX,
                                  frCoord& GCELLOFFSETY);
 
-  std::vector<std::pair<frBlockObject*, Point>> genGuides(
+  std::vector<std::pair<frBlockObject*, odb::Point>> genGuides(
       frNet* net,
       std::vector<frRect> rects);
   void genGuides_addCoverGuide(frNet* net, std::vector<frRect>& rects);
@@ -231,7 +236,7 @@ class GuideProcessor
                             frLayerNum& layer_num);
 
   frDesign* design_;
-  Logger* logger_;
+  utl::Logger* logger_;
   odb::dbDatabase* db_;
   RouterConfiguration* router_cfg_;
   frOrderedIdMap<frNet*, std::vector<frRect>> tmp_guides_;
@@ -256,7 +261,7 @@ class GuidePathFinder
    * @param pin_gcell_map A map of pins and their corresponding GCell indices.
    */
   GuidePathFinder(frDesign* design,
-                  Logger* logger,
+                  utl::Logger* logger,
                   RouterConfiguration* router_cfg,
                   frNet* net,
                   bool force_feed_through,
@@ -301,7 +306,7 @@ class GuidePathFinder
    * @param pin_gcell_map A map of pins and their corresponding GCell indices.
    * @returns A vector of pin-gcell pair to be updated.
    */
-  std::vector<std::pair<frBlockObject*, Point>> commitPathToGuides(
+  std::vector<std::pair<frBlockObject*, odb::Point>> commitPathToGuides(
       std::vector<frRect>& rects,
       const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
 
@@ -411,7 +416,7 @@ class GuidePathFinder
    * @param pin_to_gcell A vector mapping pins to their GCell locations.
    * @returns A vector of pin-to-gcell pairs to be updated.
    */
-  std::vector<std::pair<frBlockObject*, Point>> getGRPins(
+  std::vector<std::pair<frBlockObject*, odb::Point>> getGRPins(
       const std::vector<frBlockObject*>& pins,
       const std::vector<std::vector<Point3D>>& pin_to_gcell) const;
   /**
@@ -430,7 +435,7 @@ class GuidePathFinder
   frTechObject* getTech() const { return design_->getTech(); }
 
   frDesign* design_{nullptr};
-  Logger* logger_{nullptr};
+  utl::Logger* logger_{nullptr};
   RouterConfiguration* router_cfg_{nullptr};
   frNet* net_{nullptr};
   bool force_feed_through_{false};

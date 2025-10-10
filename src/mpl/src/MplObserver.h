@@ -7,9 +7,9 @@
 #include <vector>
 
 #include "clusterEngine.h"
+#include "mpl-util.h"
 #include "object.h"
 #include "odb/geom.h"
-#include "util.h"
 
 namespace mpl {
 
@@ -24,7 +24,11 @@ class MplObserver
   virtual void startCoarse() {}
   virtual void startFine() {}
 
-  virtual void startSA() {}
+  virtual void startSA(const char* type,
+                       int max_num_step,
+                       int num_perturb_per_step)
+  {
+  }
   virtual void saStep(const std::vector<SoftMacro>& macros) {}
   virtual void saStep(const std::vector<HardMacro>& macros) {}
   virtual void endSA(float norm_cost) {}
@@ -70,6 +74,7 @@ class MplObserver
   virtual void setFencePenalty(const PenaltyData& penalty) {}
   virtual void setGuidancePenalty(const PenaltyData& penalty) {}
   virtual void setMacroBlockagePenalty(const PenaltyData& penalty) {}
+  virtual void setFixedMacrosPenalty(const PenaltyData& penalty) {}
   virtual void setNotchPenalty(const PenaltyData& penalty) {}
   virtual void setOutlinePenalty(const PenaltyData& penalty) {}
   virtual void setWirelengthPenalty(const PenaltyData& penalty) {}

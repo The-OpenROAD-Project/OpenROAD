@@ -3,11 +3,13 @@
 
 #include "dpl/OptMirror.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <unordered_set>
 #include <vector>
 
 #include "dpl/Opendp.h"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
@@ -24,7 +26,7 @@ using odb::dbOrientType;
 
 static dbOrientType orientMirrorY(const dbOrientType& orient);
 
-NetBox::NetBox(dbNet* net, const Rect& box, bool ignore)
+NetBox::NetBox(dbNet* net, const odb::Rect& box, bool ignore)
     : net_(net), box_(box), ignore_(ignore)
 {
 }
@@ -120,7 +122,7 @@ std::vector<dbInst*> OptimizeMirroring::findMirrorCandidates(
   for (NetBox* net_box : net_boxes) {
     if (!net_box->isIgnore()) {
       dbNet* net = net_box->getNet();
-      const Rect& box = net_box->getBox();
+      const odb::Rect& box = net_box->getBox();
       for (dbITerm* iterm : net->getITerms()) {
         dbInst* inst = iterm->getInst();
         int x, y;

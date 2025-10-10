@@ -14,11 +14,11 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
-#include <boost/regex.hpp>
 #include <fstream>
 #include <regex>
 #include <sstream>
 
+#include "boost/regex.hpp"
 #include "dbHashTable.hpp"
 #include "odb/dbBlockCallBackObj.h"
 // User Code End Includes
@@ -169,11 +169,11 @@ void _dbMarkerCategory::populatePTree(
   }
 
   _dbMarkerCategory::PropertyTree subcategory_tree;
-  for (dbMarkerCategory* category : category->getMarkerCategorys()) {
+  for (dbMarkerCategory* category : category->getMarkerCategories()) {
     _dbMarkerCategory* category_ = (_dbMarkerCategory*) category;
     category_->populatePTree(subcategory_tree);
   }
-  if (!category->getMarkerCategorys().empty()) {
+  if (!category->getMarkerCategories().empty()) {
     category_tree.add_child("category", subcategory_tree);
   }
 
@@ -267,7 +267,7 @@ void _dbMarkerCategory::writeTR(std::ofstream& report) const
     marker_->writeTR(report);
   }
 
-  for (dbMarkerCategory* category : marker_category->getMarkerCategorys()) {
+  for (dbMarkerCategory* category : marker_category->getMarkerCategories()) {
     _dbMarkerCategory* category_ = (_dbMarkerCategory*) category;
     category_->writeTR(report);
   }
@@ -326,7 +326,7 @@ dbSet<dbMarker> dbMarkerCategory::getMarkers() const
   return dbSet<dbMarker>(obj, obj->marker_tbl_);
 }
 
-dbSet<dbMarkerCategory> dbMarkerCategory::getMarkerCategorys() const
+dbSet<dbMarkerCategory> dbMarkerCategory::getMarkerCategories() const
 {
   _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
   return dbSet<dbMarkerCategory>(obj, obj->categories_tbl_);
@@ -345,7 +345,7 @@ int dbMarkerCategory::getMarkerCount() const
   _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
   int count = obj->marker_tbl_->size();
 
-  for (dbMarkerCategory* category : getMarkerCategorys()) {
+  for (dbMarkerCategory* category : getMarkerCategories()) {
     count += category->getMarkerCount();
   }
 
@@ -745,7 +745,7 @@ std::set<dbMarker*> dbMarkerCategory::getAllMarkers() const
 {
   std::set<dbMarker*> markers;
 
-  for (dbMarkerCategory* category : getMarkerCategorys()) {
+  for (dbMarkerCategory* category : getMarkerCategories()) {
     const std::set<dbMarker*> category_markers = category->getAllMarkers();
     markers.insert(category_markers.begin(), category_markers.end());
   }

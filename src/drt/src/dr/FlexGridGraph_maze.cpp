@@ -2,6 +2,10 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <bitset>
+#include <cmath>
+#include <iostream>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <string>
@@ -9,6 +13,8 @@
 
 #include "dr/FlexDR.h"
 #include "dr/FlexGridGraph.h"
+#include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 const int debugMazeIter = std::numeric_limits<int>::max();
@@ -28,7 +34,7 @@ void FlexGridGraph::printExpansion(const FlexWavefrontGrid& currGrid,
   bool blockCost = isBlocked(gridX, gridY, gridZ, dir);
   bool guideCost = hasGuide(gridX, gridY, gridZ, dir);
   frCoord edgeLength = getEdgeLength(gridX, gridY, gridZ, dir);
-  Point pt;
+  odb::Point pt;
   getPoint(pt, currGrid.x(), currGrid.y());
   dump_file_ << fmt::format(
       "{} {} pt {} cost {} pathCost {} lastDir {} estCost {} gridX {} gridY "
@@ -60,7 +66,7 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
                            const frDirEnum& dir,
                            const FlexMazeIdx& dstMazeIdx1,
                            const FlexMazeIdx& dstMazeIdx2,
-                           const Point& centerPt,
+                           const odb::Point& centerPt,
                            bool route_with_jumpers)
 {
   frCost nextEstCost, nextPathCost;
@@ -78,9 +84,9 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
                    dstMazeIdx2,
                    dir);
   nextPathCost = getNextPathCost(currGrid, dir, route_with_jumpers);
-  Point currPt;
+  odb::Point currPt;
   getPoint(currPt, gridX, gridY);
-  frCoord currDist = Point::manhattanDistance(currPt, centerPt);
+  frCoord currDist = odb::Point::manhattanDistance(currPt, centerPt);
 
   // vlength calculation
   frCoord currVLengthX = 0;
@@ -187,7 +193,7 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
 void FlexGridGraph::expandWavefront(FlexWavefrontGrid& currGrid,
                                     const FlexMazeIdx& dstMazeIdx1,
                                     const FlexMazeIdx& dstMazeIdx2,
-                                    const Point& centerPt,
+                                    const odb::Point& centerPt,
                                     bool route_with_jumpers)
 {
   for (const auto dir : frDirEnumAll) {
@@ -215,7 +221,7 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   // bend cost
   int bendCnt = 0;
   int forbiddenPenalty = 0;
-  Point srcPoint, dstPoint1, dstPoint2;
+  odb::Point srcPoint, dstPoint1, dstPoint2;
   getPoint(srcPoint, gridX, gridY);
   getPoint(dstPoint1, dstMazeIdx1.x(), dstMazeIdx1.y());
   getPoint(dstPoint2, dstMazeIdx2.x(), dstMazeIdx2.y());
@@ -251,7 +257,7 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   if (src.z() == dstMazeIdx1.z() && dstMazeIdx1.z() == dstMazeIdx2.z()) {
   }
 
-  Point nextPoint;
+  odb::Point nextPoint;
   getPoint(nextPoint, gridX, gridY);
   // avoid propagating to location that will cause forbidden via spacing to
   // boundary pin
@@ -709,7 +715,7 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
                            std::vector<FlexMazeIdx>& path,
                            FlexMazeIdx& ccMazeIdx1,
                            FlexMazeIdx& ccMazeIdx2,
-                           const Point& centerPt,
+                           const odb::Point& centerPt,
                            std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox,
                            bool route_with_jumpers)
 {
@@ -743,14 +749,14 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
 
   wavefront_.cleanup();
   // init wavefront
-  Point currPt;
+  odb::Point currPt;
   for (auto& idx : connComps) {
     if (isDst(idx.x(), idx.y(), idx.z())) {
       path.emplace_back(idx.x(), idx.y(), idx.z());
       return true;
     }
     getPoint(currPt, idx.x(), idx.y());
-    frCoord currDist = Point::manhattanDistance(currPt, centerPt);
+    frCoord currDist = odb::Point::manhattanDistance(currPt, centerPt);
     FlexWavefrontGrid currGrid(
         idx.x(),
         idx.y(),

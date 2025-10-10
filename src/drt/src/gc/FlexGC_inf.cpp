@@ -2,12 +2,19 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cstddef>
 #include <memory>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
+#include "db/obj/frMarker.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -83,10 +90,10 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
         gtl::rectangle_data<frCoord> markerRect(rect1);
         gtl::generalized_intersect(markerRect, rect2);
         auto marker = std::make_unique<frMarker>();
-        Rect box(gtl::xl(markerRect),
-                 gtl::yl(markerRect),
-                 gtl::xh(markerRect),
-                 gtl::yh(markerRect));
+        odb::Rect box(gtl::xl(markerRect),
+                      gtl::yl(markerRect),
+                      gtl::xh(markerRect),
+                      gtl::yh(markerRect));
         marker->setBBox(box);
         marker->setLayerNum(lNum);
         marker->setConstraint(
@@ -94,18 +101,18 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
         marker->addSrc(rects[i]->getNet()->getOwner());
         marker->addVictim(rects[i]->getNet()->getOwner(),
                           std::make_tuple(lNum,
-                                          Rect(gtl::xl(rect1),
-                                               gtl::yl(rect1),
-                                               gtl::xh(rect1),
-                                               gtl::yh(rect1)),
+                                          odb::Rect(gtl::xl(rect1),
+                                                    gtl::yl(rect1),
+                                                    gtl::xh(rect1),
+                                                    gtl::yh(rect1)),
                                           rects[i]->isFixed()));
         marker->addSrc(rects[j]->getNet()->getOwner());
         marker->addAggressor(rects[j]->getNet()->getOwner(),
                              std::make_tuple(lNum,
-                                             Rect(gtl::xl(rect2),
-                                                  gtl::yl(rect2),
-                                                  gtl::xh(rect2),
-                                                  gtl::yh(rect2)),
+                                             odb::Rect(gtl::xl(rect2),
+                                                       gtl::yl(rect2),
+                                                       gtl::xh(rect2),
+                                                       gtl::yh(rect2)),
                                              rects[j]->isFixed()));
         addMarker(std::move(marker));
       } else {

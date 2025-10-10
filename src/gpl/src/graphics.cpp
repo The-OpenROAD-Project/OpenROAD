@@ -5,15 +5,19 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "gui/gui.h"
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
+#include "odb/db.h"
 #include "placerBase.h"
 #include "utl/Logger.h"
 

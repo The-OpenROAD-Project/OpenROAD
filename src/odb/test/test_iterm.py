@@ -6,15 +6,12 @@ import unittest
 
 class TestITerm(odbUnitTest.TestCase):
     def setUp(self):
-        self.db, self.lib = helper.createSimpleDB()
+        self.db, self.lib, self.design, self.ord_tech = helper.createSimpleDB()
         blockName = "1LevelBlock"
         self.block = odb.dbBlock_create(self.db.getChip(), blockName)
         self.and2 = self.lib.findMaster("and2")
         self.inst = odb.dbInst.create(self.block, self.and2, "inst")
         self.iterm_a = self.inst.findITerm("a")
-
-    def tearDown(self):
-        self.db.destroy(self.db)
 
     def test_idle(self):
         self.assertIsNone(self.iterm_a.getNet())

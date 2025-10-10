@@ -3,9 +3,7 @@
 
 #pragma once
 
-#include <boost/asio.hpp>
-#include <boost/asio/thread_pool.hpp>
-#include <boost/thread/thread.hpp>
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <mutex>
@@ -14,6 +12,9 @@
 #include <vector>
 
 #include "BalancerConnection.h"
+#include "boost/asio.hpp"
+#include "boost/asio/thread_pool.hpp"
+#include "boost/thread/thread.hpp"
 
 namespace utl {
 class Logger;
@@ -23,8 +24,9 @@ namespace dst {
 
 namespace ip = asio::ip;
 
-const int kWorkersDiscoveryPeriod = 15;  // time in seconds between retrying to
-                                         // find new workers on the network
+// time in seconds between retrying to find new workers on the network
+inline constexpr int kWorkersDiscoveryPeriod = 15;
+
 class Distributed;
 class LoadBalancer
 {

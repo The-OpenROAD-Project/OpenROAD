@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <cstdio>
+
+#include "odb/db.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extSegment.h"
@@ -99,9 +102,9 @@ bool extMeasureRC::DiagCap(FILE* fp,
   }
   return true;
 }
-dbRSeg* extMeasureRC::GetRseg(int id)
+odb::dbRSeg* extMeasureRC::GetRseg(int id)
 {
-  dbRSeg* rseg1 = id > 0 ? dbRSeg::getRSeg(_block, id) : nullptr;
+  odb::dbRSeg* rseg1 = id > 0 ? odb::dbRSeg::getRSeg(_block, id) : nullptr;
   return rseg1;
 }
 bool extMeasureRC::VerticalCap(uint met,

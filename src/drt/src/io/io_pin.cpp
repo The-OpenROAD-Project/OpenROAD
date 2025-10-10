@@ -2,9 +2,12 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <tuple>
 #include <vector>
 
-#include "io.h"
+#include "frBaseTypes.h"
+#include "io/io.h"
+#include "odb/geom.h"
 
 namespace drt {
 
@@ -63,7 +66,7 @@ void io::Parser::instAnalysis()
   std::vector<frCoord> offset;
   int cnt = 0;
   for (auto& inst : getBlock()->getInsts()) {
-    Point origin = inst->getOrigin();
+    odb::Point origin = inst->getOrigin();
     auto orient = inst->getOrient();
     auto [minLayerNum, maxLayerNum] = masterPinLayerRange[inst->getMaster()];
     offset.clear();

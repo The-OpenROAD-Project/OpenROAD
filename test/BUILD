@@ -3,10 +3,31 @@
 
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 exports_files(
     [
         "bazel_test.sh",
         "regression_test.sh",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "nangate45_data",
+    srcs = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "sky130hd_data",
+    srcs = [
+        "sky130hd/sky130_fd_sc_hd_merged.lef",
+        "sky130hd/sky130hd.tlef",
+        "sky130hd/sky130hd_std_cell.lef",
     ],
     visibility = ["//visibility:public"],
 )
@@ -30,6 +51,8 @@ COMPULSORY_TESTS = [
     "upf_test",
     "upf_aes",
     "write_db",
+    # pass-fail
+    "commands_without_load",
 ]
 
 # Bazel OpenROAD is not compiled with Python support yet

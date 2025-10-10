@@ -5,15 +5,22 @@
 
 #include <unistd.h>
 
+#include <QColor>
 #include <QCoreApplication>
 #include <QHBoxLayout>
 #include <QKeyEvent>
+#include <QPushButton>
+#include <QSettings>
 #include <QThread>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QWidget>
 #include <cerrno>
 #include <functional>
+#include <memory>
 #include <mutex>
+#include <stdexcept>
+#include <string>
 
 #include "gui/gui.h"
 #include "spdlog/formatter.h"
@@ -75,6 +82,11 @@ ScriptWidget::ScriptWidget(QWidget* parent)
           &TclCmdInputWidget::addResultToOutput,
           this,
           &ScriptWidget::addResultToOutput);
+  connect(input_,
+          &TclCmdInputWidget::addTextToOutput,
+          this,
+          &ScriptWidget::addTextToOutput,
+          Qt::QueuedConnection);
   connect(input_,
           &TclCmdInputWidget::commandFinishedExecuting,
           this,

@@ -2,9 +2,7 @@
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include <cmath>
-#include <fstream>
 #include <functional>
-#include <limits>
 #include <string>
 #include <vector>
 
@@ -14,6 +12,8 @@
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
+#include "odb/db.h"
+#include "odb/isotropy.h"
 #include "utl/Logger.h"
 namespace dpl {
 
@@ -178,7 +178,7 @@ void Opendp::saveViolations(const std::vector<Node*>& failures,
 
       marker->addSource(o_cell->getDbInst());
     }
-    marker->addShape(Rect{xMin, yMin, xMax, yMax});
+    marker->addShape(odb::Rect{xMin, yMin, xMax, yMax});
     marker->addSource(failure->getDbInst());
   }
 }
@@ -344,8 +344,7 @@ bool Opendp::checkInRows(const Node& cell) const
       if (pixel == nullptr || !pixel->is_valid) {
         return false;
       }
-      if (first_row
-          && pixel->sites.find(cell.getSite()) == pixel->sites.end()) {
+      if (first_row && !grid_->getSiteOrientation(x, y, cell.getSite())) {
         return false;
       }
     }

@@ -7,17 +7,19 @@
 
 #include "db/infra/frBox.h"
 #include "db/obj/frBlockObject.h"
+#include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frFig : public frBlockObject
 {
  public:
   // getters
-  virtual Rect getBBox() const = 0;
+  virtual odb::Rect getBBox() const = 0;
   // setters
   // others
-  virtual void move(const dbTransform& xform) = 0;
-  virtual bool intersects(const Rect& box) const = 0;
+  virtual void move(const odb::dbTransform& xform) = 0;
+  virtual bool intersects(const odb::Rect& box) const = 0;
 
  protected:
   frFig() = default;

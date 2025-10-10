@@ -13,17 +13,24 @@
 #include <QSettings>
 #include <QSpinBox>
 #include <QSplitter>
+#include <QString>
 #include <QTableView>
+#include <QVariant>
+#include <QWidget>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
 #include "gui/gui.h"
 #include "odb/db.h"
+#include "sta/Clock.hh"
+#include "sta/SdcClass.hh"
 
 namespace sta {
 class Pin;
 class dbSta;
+class Clock;
 }  // namespace sta
 
 namespace gui {
@@ -51,6 +58,7 @@ class TimingWidget : public QDockWidget
   ~TimingWidget() override;
 
   void init(sta::dbSta* sta);
+  void setLogger(utl::Logger* logger);
 
   TimingPathRenderer* getTimingRenderer() { return path_renderer_.get(); }
   TimingConeRenderer* getConeRenderer() { return cone_renderer_.get(); }
@@ -98,6 +106,7 @@ class TimingWidget : public QDockWidget
 
   void writePathReportCommand(const QModelIndex& selected_index,
                               const CommandType& type);
+  void writePathDef(const QModelIndex& selected_index, const CommandType& type);
   void showCommandsMenu(const QPoint& pos);
 
  private slots:
@@ -115,7 +124,8 @@ class TimingWidget : public QDockWidget
   void populateAndSortModels(const std::set<const sta::Pin*>& from,
                              const std::vector<std::set<const sta::Pin*>>& thru,
                              const std::set<const sta::Pin*>& to,
-                             const std::string& path_group_name);
+                             const std::string& path_group_name,
+                             const sta::ClockSet* clks = nullptr);
   void setInitialColumnsVisibility(const QVariant& columns_visibility);
   QVariantList getColumnsVisibility() const;
 
@@ -123,6 +133,7 @@ class TimingWidget : public QDockWidget
   QString generateFromStartToEndString(TimingPath* path);
   QString generateClosestMatchString(CommandType type, TimingPath* path);
 
+  utl::Logger* logger_{nullptr};
   QMenu* commands_menu_;
 
   QModelIndex timing_paths_table_index_;

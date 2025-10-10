@@ -3,9 +3,9 @@
 
 #include "odb/cdl.h"
 
-#include <algorithm>
-#include <fstream>
-#include <list>
+#include <cstddef>
+#include <ios>
+#include <iterator>
 #include <ostream>
 #include <regex>
 #include <sstream>
@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "odb/db.h"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
 
@@ -128,6 +129,9 @@ readMasters(utl::Logger* logger, dbBlock* block, const char* fileName)
           }
           mterms = &mtermMap[master];
         } else {
+          // Replace CDL <> (normal and escaped) to []
+          token = std::regex_replace(token, std::regex(R"(\\?<)"), "[");
+          token = std::regex_replace(token, std::regex(R"(\\?>)"), "]");
           dbMTerm* mterm = master->findMTerm(token.c_str());
           if (!mterm) {
             logger->warn(utl::ODB,

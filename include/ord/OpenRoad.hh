@@ -17,6 +17,7 @@ class dbDatabase;
 class dbBlock;
 class dbTech;
 class dbLib;
+class dbChip;
 class Point;
 class Rect;
 }  // namespace odb
@@ -33,6 +34,10 @@ class Resizer;
 
 namespace ppl {
 class IOPlacer;
+}
+
+namespace cgt {
+class ClockGating;
 }
 
 namespace rmp {
@@ -57,6 +62,10 @@ class Opendp;
 
 namespace fin {
 class Finale;
+}
+
+namespace ram {
+class RamGen;
 }
 
 namespace exa {
@@ -101,7 +110,8 @@ class ICeWall;
 
 namespace utl {
 class Logger;
-}
+class CallBackHandler;
+}  // namespace utl
 
 namespace dst {
 class Distributed;
@@ -114,9 +124,11 @@ namespace dft {
 class Dft;
 }
 
-namespace ord {
+namespace est {
+class EstimateParasitics;
+}
 
-using std::string;
+namespace ord {
 
 class dbVerilogNetwork;
 
@@ -137,15 +149,18 @@ class OpenRoad
 
   Tcl_Interp* tclInterp() { return tcl_interp_; }
   utl::Logger* getLogger() { return logger_; }
+  utl::CallBackHandler* getCallBackHandler() { return callback_handler_; }
   odb::dbDatabase* getDb() { return db_; }
   sta::dbSta* getSta() { return sta_; }
   sta::dbNetwork* getDbNetwork();
+  cgt::ClockGating* getClockGating() { return clock_gating_; }
   rsz::Resizer* getResizer() { return resizer_; }
   rmp::Restructure* getRestructure() { return restructure_; }
   cts::TritonCTS* getTritonCts() { return tritonCts_; }
   dbVerilogNetwork* getVerilogNetwork() { return verilog_network_; }
   dpl::Opendp* getOpendp() { return opendp_; }
   fin::Finale* getFinale() { return finale_; }
+  ram::RamGen* getRamGen() { return ram_gen_; }
   tap::Tapcell* getTapcell() { return tapcell_; }
   mpl::MacroPlacer* getMacroPlacer() { return macro_placer_; }
   exa::Example* getExample() { return example_; }
@@ -162,6 +177,10 @@ class OpenRoad
   dst::Distributed* getDistributed() { return distributer_; }
   stt::SteinerTreeBuilder* getSteinerTreeBuilder() { return stt_builder_; }
   dft::Dft* getDft() { return dft_; }
+  est::EstimateParasitics* getEstimateParasitics()
+  {
+    return estimate_parasitics_;
+  }
 
   // Return the bounding box of the db rows.
   odb::Rect getCore();
@@ -175,11 +194,10 @@ class OpenRoad
                bool make_library);
 
   void readDef(const char* filename,
-               odb::dbTech* tech,
+               odb::dbChip* chip,
                bool continue_on_errors,
                bool floorplan_init,
-               bool incremental,
-               bool child);
+               bool incremental);
 
   void writeLef(const char* filename);
 
@@ -190,7 +208,7 @@ class OpenRoad
   void writeDef(const char* filename, const char* version);
   void writeDef(const char* filename,
                 // major.minor (avoid including defout.h)
-                const string& version);
+                const std::string& version);
 
   void writeCdl(const char* out_filename,
                 const std::vector<const char*>& masters_filenames,
@@ -203,6 +221,9 @@ class OpenRoad
   // Used if a design is created programmatically rather than loaded
   // to notify the tools (eg dbSta, gui).
   void designCreated();
+
+  void read3Dbv(const std::string& filename);
+  void read3Dbx(const std::string& filename);
 
   void readDb(std::istream& stream);
   void readDb(const char* filename, bool hierarchy = false);
@@ -239,9 +260,11 @@ class OpenRoad
   ppl::IOPlacer* ioPlacer_ = nullptr;
   dpl::Opendp* opendp_ = nullptr;
   fin::Finale* finale_ = nullptr;
+  ram::RamGen* ram_gen_ = nullptr;
   mpl::MacroPlacer* macro_placer_ = nullptr;
   exa::Example* example_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;
+  cgt::ClockGating* clock_gating_ = nullptr;
   rmp::Restructure* restructure_ = nullptr;
   cts::TritonCTS* tritonCts_ = nullptr;
   tap::Tapcell* tapcell_ = nullptr;
@@ -256,6 +279,8 @@ class OpenRoad
   dst::Distributed* distributer_ = nullptr;
   stt::SteinerTreeBuilder* stt_builder_ = nullptr;
   dft::Dft* dft_ = nullptr;
+  est::EstimateParasitics* estimate_parasitics_ = nullptr;
+  utl::CallBackHandler* callback_handler_ = nullptr;
 
   int threads_ = 1;
 
