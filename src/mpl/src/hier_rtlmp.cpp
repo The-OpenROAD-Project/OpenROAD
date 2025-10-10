@@ -2102,7 +2102,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
     // Large arrays need more steps to properly converge.
     if (large_macro_cluster) {
-      perturbations_per_step *= num_perturb_per_step_;
+      perturbations_per_step = num_perturb_per_step_;
     }
   }
 
