@@ -37,8 +37,10 @@
 
 #include "defiComponent.hpp"
 #include "defiDebug.hpp"
+#include "defiMisc.hpp"
 #include "defiUtil.hpp"
 #include "defrData.hpp"
+#include "defrSettings.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

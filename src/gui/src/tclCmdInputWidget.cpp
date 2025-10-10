@@ -8,6 +8,7 @@
 #include <QMimeData>
 #include <QScrollBar>
 #include <QSettings>
+#include <QTextCursor>
 #include <QTextStream>
 #include <QWidget>
 #include <functional>

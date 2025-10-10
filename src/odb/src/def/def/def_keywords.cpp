@@ -45,6 +45,7 @@
 #include "defiPath.hpp"
 #include "defrCallBacks.hpp"
 #include "defrData.hpp"
+#include "defrReader.hpp"
 #include "defrSettings.hpp"
 
 #ifdef WIN32

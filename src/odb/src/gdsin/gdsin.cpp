@@ -3,6 +3,8 @@
 
 #include "odb/gdsin.h"
 
+#include <endian.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <iostream>

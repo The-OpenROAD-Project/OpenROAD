@@ -41,6 +41,7 @@
 #include <system_error>
 
 #include "defiDebug.hpp"
+#include "defiDefs.hpp"
 #include "defiMisc.hpp"
 #include "defiProp.hpp"
 #include "defiPropType.hpp"

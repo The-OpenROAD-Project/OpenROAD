@@ -35,6 +35,7 @@
 #include <sstream>
 
 #include "defiDebug.hpp"
+#include "defiMisc.hpp"
 #include "defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
