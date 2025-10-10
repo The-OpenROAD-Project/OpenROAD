@@ -32,7 +32,7 @@
 #include "sta/Units.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "tcl.h"
-#include "tst/fixture.h"
+#include "tst/nangate45_fixture.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
@@ -41,7 +41,7 @@ namespace rsz {
 
 static const std::string prefix("_main/src/rsz/test/");
 
-class BufRemTest : public tst::Fixture
+class BufRemTest : public tst::Nangate45Fixture
 {
  protected:
   BufRemTest()
@@ -60,37 +60,28 @@ class BufRemTest : public tst::Fixture
         ep_(&logger_, &callback_handler_, db_.get(), sta_.get(), &stt_, &grt_),
         resizer_(&logger_, db_.get(), sta_.get(), &stt_, &grt_, &dp_, &ep_)
   {
-  }
-
-  void SetUp() override
-  {
     library_ = readLiberty(prefix + "Nangate45/Nangate45_typ.lib");
-    loadTechAndLib("tech", "Nangate45", prefix + "Nangate45/Nangate45.lef");
-
     db_network_ = sta_->getDbNetwork();
+    db_network_->setBlock(block_);
+    block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
+    // register proper callbacks for timer like read_def
+    sta_->postReadDef(block_);
 
     // create a chain consisting of 4 buffers
-    odb::dbChip* chip = odb::dbChip::create(db_.get(), db_->getTech());
-    odb::dbBlock* block = odb::dbBlock::create(chip, "top");
-    db_network_->setBlock(block);
-    block->setDieArea(odb::Rect(0, 0, 1000, 1000));
-    // register proper callbacks for timer like read_def
-    sta_->postReadDef(block);
-
     const char* layer = "metal1";
 
-    makeBTerm(block,
+    makeBTerm(block_,
               "in1",
               {.bpins = {{.layer_name = layer, .rect = {0, 0, 10, 10}}}});
 
     odb::dbBTerm* outPort = makeBTerm(
-        block,
+        block_,
         "out1",
         {.io_type = odb::dbIoType::OUTPUT,
          .bpins = {{.layer_name = layer, .rect = {990, 990, 1000, 1000}}}});
 
     makeBTerm(
-        block,
+        block_,
         "out2",
         {.io_type = odb::dbIoType::OUTPUT,
          .bpins = {{.layer_name = layer, .rect = {980, 980, 1000, 990}}}});
@@ -102,7 +93,7 @@ class BufRemTest : public tst::Fixture
                         const char* out_net) {
       odb::dbMaster* master = db_->findMaster(master_name);
       return tst::Fixture::makeInst(
-          block,
+          block_,
           master,
           inst_name,
           {.location = location,
@@ -148,9 +139,6 @@ TEST_F(BufRemTest, SlackImproves)
       = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
 
   // Remove buffers 'b2' and 'b3' from the buffer chain
-  odb::dbChip* chip = db_->getChip();
-  odb::dbBlock* block = chip->getBlock();
-
   resizer_.initBlock();
   db_->setLogger(&logger_);
 
@@ -161,11 +149,11 @@ TEST_F(BufRemTest, SlackImproves)
     resizer_.logger()->setDebugLevel(utl::RSZ, "journal", 1);
 
     auto insts = std::make_unique<sta::InstanceSeq>();
-    odb::dbInst* inst1 = block->findInst("b2");
+    odb::dbInst* inst1 = block_->findInst("b2");
     sta::Instance* sta_inst1 = db_network_->dbToSta(inst1);
     insts->emplace_back(sta_inst1);
 
-    odb::dbInst* inst2 = block->findInst("b3");
+    odb::dbInst* inst2 = block_->findInst("b3");
     sta::Instance* sta_inst2 = db_network_->dbToSta(inst2);
     insts->emplace_back(sta_inst2);
 

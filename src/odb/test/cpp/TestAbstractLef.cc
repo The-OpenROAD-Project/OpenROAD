@@ -21,6 +21,8 @@ namespace odb {
 
 using ::testing::HasSubstr;
 
+using tst::Sky130Fixture;
+
 TEST_F(Sky130Fixture, AbstractLefWriterMapsTieOffToSignal)
 {
   // Arrange
