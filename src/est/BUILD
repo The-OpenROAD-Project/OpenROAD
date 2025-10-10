@@ -31,6 +31,7 @@ cc_library(
         "src/MakeWireParasitics.cpp",
         "src/OdbCallBack.cpp",
         "src/SteinerTree.cpp",
+        "src/CorrelationUtils.cpp",
     ],
     hdrs = [
         "include/est/EstimateParasitics.h",
