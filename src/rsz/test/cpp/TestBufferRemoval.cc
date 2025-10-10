@@ -17,6 +17,8 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/lefin.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
