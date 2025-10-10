@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "odb/db.h"
 #include "odb/lefin.h"
 #include "sta/MinMax.hh"
 
