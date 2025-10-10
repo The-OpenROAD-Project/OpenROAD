@@ -4,6 +4,8 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "45_gcd",
@@ -11,6 +13,7 @@ COMPULSORY_TESTS = [
     "gcd",
     "generate_pattern",
     "names",
+    "net_name_consistency",
 ]
 
 # Disabled in CMakeLists.txt
@@ -104,9 +107,9 @@ filegroup(
 cc_test(
     name = "rcx_unittest",
     srcs = ["ext2dBoxTest.cpp"],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/rcx",
-        "@boost.test",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )

@@ -106,26 +106,30 @@ bool GDSReader::readRecord()
   }
   _r.length = recordLength;
   const int length = recordLength - 4;
-  if (dataType == DataType::INT_2) {
+  if (dataType == DataType::kInt2) {
     _r.data16.clear();
     for (int i = 0; i < length; i += 2) {
       _r.data16.push_back(readInt16());
     }
-  } else if (dataType == DataType::INT_4) {
+  } else if (dataType == DataType::kInt4) {
     _r.data32.clear();
     for (int i = 0; i < length; i += 4) {
       _r.data32.push_back(readInt32());
     }
-  } else if (dataType == DataType::REAL_8) {
+  } else if (dataType == DataType::kReal8) {
     _r.data64.clear();
     for (int i = 0; i < length; i += 8) {
       _r.data64.push_back(readReal8());
     }
-  } else if (dataType == DataType::ASCII_STRING
-             || dataType == DataType::BIT_ARRAY) {
+  } else if (dataType == DataType::kAsciiString
+             || dataType == DataType::kBitArray) {
     _r.data8.clear();
     for (int i = 0; i < length; i++) {
       _r.data8.push_back(readInt8());
+    }
+    if (dataType == DataType::kAsciiString && !_r.data8.empty()
+        && _r.data8.back() == 0) {
+      _r.data8.pop_back();  // Discard null terminator
     }
   }
 

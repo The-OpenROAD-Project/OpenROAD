@@ -445,6 +445,14 @@ You can find examples on using the API from Tcl under `test/tcl/` directory.
 The full set of the Tcl commands exposed can be found under
 `./build/src/swig/tcl/opendb_wrapper.cpp`. Search for `SWIG_prefix`.
 
+### All pin placed
+
+This command checks if the IO pins of the design have a placement status of `PLACED`, `LOCKED`, `FIRM`, or `COVER`. Return `1` if true, and `0` if false.
+
+```tcl
+all_pins_placed
+```
+
 ## Regression tests
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 

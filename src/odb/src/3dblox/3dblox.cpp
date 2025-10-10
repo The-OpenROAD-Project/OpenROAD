@@ -59,6 +59,7 @@ void ThreeDBlox::readDbv(const std::string& dbv_file)
                      dbv_file);
     }
   }
+  readHeaderIncludes(data.header.includes);
   for (const auto& [_, chiplet] : data.chiplet_defs) {
     createChiplet(chiplet);
   }
@@ -68,13 +69,7 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
 {
   DbxParser parser(logger_);
   DbxData data = parser.parseFile(dbx_file);
-  for (const auto& include : data.header.includes) {
-    if (include.find(".3dbv") != std::string::npos) {
-      readDbv(include);
-    } else if (include.find(".3dbx") != std::string::npos) {
-      readDbx(include);
-    }
-  }
+  readHeaderIncludes(data.header.includes);
   dbChip* chip = createDesignTopChiplet(data.design);
   for (const auto& [_, chip_inst] : data.chiplet_instances) {
     createChipInst(chip_inst);
@@ -82,8 +77,30 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   for (const auto& [_, connection] : data.connections) {
     createConnection(connection);
   }
-
+  calculateSize(db_->getChip());
   db_->triggerPostRead3Dbx(chip);
+}
+
+void ThreeDBlox::calculateSize(dbChip* chip)
+{
+  Rect box;
+  box.mergeInit();
+  for (auto inst : chip->getChipInsts()) {
+    box.merge(inst->getBBox());
+  }
+  chip->setWidth(box.dx());
+  chip->setHeight(box.dy());
+}
+
+void ThreeDBlox::readHeaderIncludes(const std::vector<std::string>& includes)
+{
+  for (const auto& include : includes) {
+    if (include.find(".3dbv") != std::string::npos) {
+      readDbv(include);
+    } else if (include.find(".3dbx") != std::string::npos) {
+      readDbx(include);
+    }
+  }
 }
 
 dbChip::ChipType getChipType(const std::string& type, utl::Logger* logger)
@@ -141,8 +158,21 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     lef_reader.createLib(tech, lib_name.c_str(), lef_file.c_str());
   }
   // TODO: Read liberty files
-  dbChip* chip = dbChip::create(
-      db_, tech, chiplet.name, getChipType(chiplet.type, logger_));
+  // Check if chiplet already exists
+  auto chip = db_->findChip(chiplet.name.c_str());
+  if (chip != nullptr) {
+    if (chip->getChipType() != getChipType(chiplet.type, logger_)
+        || chip->getChipType() != dbChip::ChipType::HIER) {
+      logger_->error(utl::ODB,
+                     530,
+                     "3DBV Parser Error: Chiplet {} already exists",
+                     chiplet.name);
+    }
+    // chiplet already exists, update it
+  } else {
+    chip = dbChip::create(
+        db_, tech, chiplet.name, getChipType(chiplet.type, logger_));
+  }
   // Read DEF file
   if (!chiplet.external.def_file.empty()) {
     odb::defin def_reader(db_, logger_, odb::defin::DEFAULT);

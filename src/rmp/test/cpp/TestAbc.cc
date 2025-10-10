@@ -1,11 +1,7 @@
-// Copyright 2023 Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include <string.h>
-#include <tcl.h>
 #include <unistd.h>
 
 #include <cstdlib>
@@ -18,6 +14,7 @@
 #include "base/abc/abc.h"
 #include "base/main/abcapis.h"
 #include "cut/abc_library_factory.h"
+#include "cut/logic_cut.h"
 #include "cut/logic_extractor.h"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
@@ -31,12 +28,15 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "sta/VerilogReader.hh"
+#include "tcl.h"
 #include "tst/fixture.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
+#include "utl/unique_name.h"
 #include "zero_slack_strategy.h"
 
 // Headers have duplicate declarations so we include
@@ -53,6 +53,8 @@ using cut::AbcLibraryFactory;
 using cut::LogicCut;
 using cut::LogicExtractorFactory;
 
+static const std::string prefix("_main/src/rmp/test/");
+
 std::once_flag init_abc_flag;
 
 class AbcTest : public tst::Fixture
@@ -62,11 +64,12 @@ class AbcTest : public tst::Fixture
   {
     std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
 
-    library_ = readLiberty("./Nangate45/Nangate45_typ.lib");
+    library_ = readLiberty(prefix + "Nangate45/Nangate45_typ.lib");
 
     odb::dbTech* tech
-        = loadTechLef("nangate45", "./Nangate45/Nangate45_tech.lef");
-    loadLibaryLef(tech, "nangate45", "./Nangate45/Nangate45_stdcell.lef");
+        = loadTechLef("nangate45", prefix + "Nangate45/Nangate45_tech.lef");
+    loadLibaryLef(
+        tech, "nangate45", prefix + "Nangate45/Nangate45_stdcell.lef");
   }
 
   void LoadVerilog(const std::string& file_name, const std::string& top = "top")
@@ -76,7 +79,7 @@ class AbcTest : public tst::Fixture
     ord::dbVerilogNetwork verilog_network(sta_.get());
 
     sta::VerilogReader verilog_reader(&verilog_network);
-    verilog_reader.read(file_name.c_str());
+    verilog_reader.read(getFilePath(file_name).c_str());
 
     ord::dbLinkDesign(top.c_str(),
                       &verilog_network,
@@ -131,7 +134,7 @@ TEST_F(AbcTest, InsertingMappedLogicAfterOptimizationCutDoesNotThrow)
   factory.AddDbSta(sta_.get());
   AbcLibrary abc_library = factory.Build();
 
-  LoadVerilog("aes_nangate45.v", /*top=*/"aes_cipher_top");
+  LoadVerilog(prefix + "aes_nangate45.v", /*top=*/"aes_cipher_top");
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Vertex* flop_input_vertex = nullptr;
@@ -160,7 +163,7 @@ TEST_F(AbcTest, InsertingMappedLogicAfterOptimizationCutDoesNotThrow)
 
 TEST_F(AbcTest, ResynthesisStrategyDoesNotThrow)
 {
-  LoadVerilog("aes_nangate45.v", /*top=*/"aes_cipher_top");
+  LoadVerilog(prefix + "aes_nangate45.v", /*top=*/"aes_cipher_top");
 
   utl::UniqueName name_generator;
   ZeroSlackStrategy zero_slack;

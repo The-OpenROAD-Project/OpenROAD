@@ -4,6 +4,8 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "aes",
@@ -256,10 +258,11 @@ filegroup(
 cc_test(
     name = "dpl_unittest",
     srcs = ["dpl_test.cc"],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/dpl",
+        "//src/odb",
         "//src/tst",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

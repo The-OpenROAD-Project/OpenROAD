@@ -66,7 +66,6 @@ class MacroPlacer
              float boundary_weight,
              float notch_weight,
              float macro_blockage_weight,
-             float pin_access_th,
              float target_util,
              float target_dead_space,
              float min_ar,
