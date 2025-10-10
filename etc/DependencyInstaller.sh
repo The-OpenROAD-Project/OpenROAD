@@ -1075,6 +1075,33 @@ EOF
             _installOrTools "debian" "${debianVersion}" "amd64" ${skipSystemOrTools}
         fi
         ;;
+    "Arch Linux" | "Manjaro Linux" )
+        echo "[INFO] Detected Arch-based distribution: ${os}"
+        if [[ ${CI} == "yes" ]]; then
+            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
+        if [[ "${option}" == "base" || "${option}" == "all" ]]; then
+            echo "[INFO] Base packages for Arch should be installed via pacman."
+            echo "[INFO] Skipping base package installation - assumes you've run:"
+            echo "[INFO]   sudo pacman -S --needed base-devel git cmake bison flex gcc clang libomp wget unzip python python-pip tcl tk qt5-base qt5-charts qt5-imageformats qt5-multimedia qt5-svg qt5-tools qt5-xmlpatterns ruby readline pcre pcre2 zlib libffi boost eigen swig yaml-cpp pandoc groff help2man lcov gdb llvm verilator klayout"
+        fi
+        if [[ "${option}" == "common" || "${option}" == "all" ]]; then
+            echo "[INFO] Building common dependencies from source for Arch Linux"
+            _installCommonDev
+            # Build or-tools from source for Arch
+            arch=$(uname -m)
+            echo "[INFO] Building or-tools from source (no prebuilt binaries for Arch)"
+            orToolsVersionBig=9.11
+            orToolsPath=${PREFIX:-"/opt/or-tools"}
+            mkdir -p "${baseDir}"
+            cd "${baseDir}"
+            git clone --depth=1 -b "v${orToolsVersionBig}" https://github.com/google/or-tools.git
+            cd or-tools
+            ${PREFIX}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX=${orToolsPath} -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
+            ${PREFIX}/bin/cmake --build build --config Release --target install -v -j ${numThreads}
+            CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath $orToolsPath) "
+        fi
+        ;;
     *)
         echo "unsupported system: ${os}" >&2
         _help
