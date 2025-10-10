@@ -515,11 +515,39 @@ void ICeWall::placeCorner(odb::dbMaster* master, int ring_index)
 
     const std::string corner_name = fmt::format("{}_INST", row->getName());
     odb::dbInst* inst = block->findInst(corner_name.c_str());
+
+    const odb::Rect row_bbox = row->getBBox();
+
+    // Check for instances overlapping the corner site
+    bool place_inst = true;
+    for (auto* check_inst : block->getInsts()) {
+      if (check_inst == inst) {
+        continue;
+      }
+      if (!check_inst->isFixed()) {
+        continue;
+      }
+      if (check_inst->getMaster()->isCover()) {
+        continue;
+      }
+      const odb::Rect check_rect = check_inst->getBBox()->getBox();
+      if (row_bbox.overlaps(check_rect)) {
+        place_inst = false;
+        break;
+      }
+    }
+    if (!place_inst) {
+      logger_->warn(
+          utl::PAD,
+          44,
+          "Skipping corner cell placement in {} due to overlapping instances",
+          row->getName());
+      continue;
+    }
+
     if (inst == nullptr) {
       inst = odb::dbInst::create(block, master, corner_name.c_str());
     }
-
-    const odb::Rect row_bbox = row->getBBox();
 
     inst->setOrient(row->getOrient());
     inst->setLocation(row_bbox.xMin(), row_bbox.yMin());
