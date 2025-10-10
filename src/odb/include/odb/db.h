@@ -7072,6 +7072,8 @@ class dbChip : public dbObject
 
   dbTech* getTech() const;
 
+  Rect getBBox() const;
+
   ///
   /// Create a new chip.
   /// Returns nullptr if there is no database technology.
@@ -7180,6 +7182,8 @@ class dbChipInst : public dbObject
   // User Code Begin dbChipInst
 
   dbTransform getTransform() const;
+
+  Rect getBBox() const;
 
   dbSet<dbChipRegionInst> getRegions() const;
 
