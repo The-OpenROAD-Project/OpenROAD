@@ -7,12 +7,12 @@
 #include "odb/db.h"
 #include "tst/fixture.h"
 
-namespace odb {
+namespace tst {
 
 class Nangate45Fixture : public tst::Fixture
 {
  protected:
-  void SetUp() override
+  Nangate45Fixture()
   {
     lib_ = loadTechAndLib("ng45", "ng45", "_main/test/Nangate45/Nangate45.lef");
     chip_ = odb::dbChip::create(db_.get(), db_->getTech());
@@ -26,4 +26,4 @@ class Nangate45Fixture : public tst::Fixture
   odb::dbBlock* block_;
 };
 
-}  // namespace odb
+}  // namespace tst

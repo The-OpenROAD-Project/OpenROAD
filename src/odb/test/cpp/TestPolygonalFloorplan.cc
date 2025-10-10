@@ -20,6 +20,8 @@
 
 namespace odb {
 
+using tst::Nangate45Fixture;
+
 TEST_F(Nangate45Fixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)
 {
   // Act

@@ -6,11 +6,11 @@
 #include "odb/db.h"
 #include "tst/fixture.h"
 
-namespace odb {
+namespace tst {
 class Sky130Fixture : public tst::Fixture
 {
  protected:
-  void SetUp() override
+  Sky130Fixture()
   {
     lib_ = loadTechAndLib(
         "sky130", "sky130", "_main/test/sky130hd/sky130_fd_sc_hd_merged.lef");
@@ -25,4 +25,4 @@ class Sky130Fixture : public tst::Fixture
   odb::dbChip* chip_;
   odb::dbBlock* block_;
 };
-}  // namespace odb
+}  // namespace tst
