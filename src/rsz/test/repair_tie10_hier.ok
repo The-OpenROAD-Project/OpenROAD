@@ -87,3 +87,6 @@ Hierarchical pins
 
 0.0 0.0
 0.0 0.0
+[WARNING ORD-2043] SanityCheck: Module 'ALU_16_0_16_0_16_unused_CO\[14:0\]_X_BRENT_KUNG' is defined but never instantiated.
+[WARNING ORD-2043] SanityCheck: Module 'ALU_16_0_16_0_16_unused_CO\[14:0\]_X_KOGGE_STONE' is defined but never instantiated.
+[WARNING ORD-2043] SanityCheck: Module 'ALU_16_0_16_0_16_unused_CO\[14:0\]_X_SKLANSKY' is defined but never instantiated.

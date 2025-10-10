@@ -11,59 +11,11 @@ cc_test(
     name = "TestAbstractLef",
     srcs = [
         "TestAbstractLef.cc",
-        "sky130_test_fixture.h",
     ],
-    data = [
-        "//src/odb/test/data/sky130hd:lef-test-data",
-    ],
-    defines = [
-        'DATA_PREFIX=\\"src/odb/test/\\"',  # TODO: not needed after no cmake
-    ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/odb",
         "//src/tst",
-        "//src/utl",
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-    ],
-)
-
-cc_test(
-    name = "TestDbWire",
-    srcs = ["TestDbWire.cc"],
-    data = [
-        "//src/odb/test/data/sky130hd:lef-test-data",
-    ],
-    defines = [
-        'DATA_PREFIX=\\"src/odb/test/\\"',  # TODO: not needed after no cmake
-    ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
-    deps = [
-        "//src/odb",
-        "//src/tst",
-        "//src/utl",
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-    ],
-)
-
-cc_test(
-    name = "TestPolygonalFloorplan",
-    srcs = [
-        "TestPolygonalFloorplan.cc",
-        "nangate45_test_fixture.h",
-    ],
-    data = [
-        "//src/odb/test:regression_resources",
-    ],
-    defines = [
-        'DATA_PREFIX=\\"src/odb/test/\\"',  # TODO: not needed after no cmake
-    ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
-    deps = [
-        "//src/odb",
-        "//src/tst",
+        "//src/tst:sky130_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -75,12 +27,209 @@ cc_test(
     srcs = [
         "TestAccessPoint.cpp",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/odb",
         "//src/odb/test/cpp/helper",
         "//src/tst",
-        "@boost.test",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "TestCallBacks",
+    srcs = [
+        "CallBack.h",
+        "TestCallBacks.cpp",
+    ],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@spdlog",
+    ],
+)
+
+cc_test(
+    name = "TestChips",
+    srcs = [
+        "TestChips.cpp",
+    ],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@spdlog",
+    ],
+)
+
+cc_test(
+    name = "TestDbWire",
+    srcs = ["TestDbWire.cc"],
+    data = [
+        "//src/odb/test/data/sky130hd:lef-test-data",
+    ],
+    deps = [
+        "//src/odb",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGCellGrid",
+    srcs = ["TestGCellGrid.cpp"],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGDSIn",
+    srcs = ["TestGDSIn.cpp"],
+    data = ["//src/odb/test:regression_resources"],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGeom",
+    srcs = ["TestGeom.cpp"],
+    deps = [
+        "//src/odb",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGroup",
+    srcs = ["TestGroup.cpp"],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGuide",
+    srcs = ["TestGuide.cpp"],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestJournal",
+    srcs = ["TestJournal.cpp"],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestLef58Properties",
+    srcs = ["TestLef58Properties.cpp"],
+    data = ["//src/odb/test:regression_resources"],
+    deps = [
+        "//src/odb",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestMaster",
+    srcs = ["TestMaster.cpp"],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestModule",
+    srcs = ["TestModule.cpp"],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestNetTrack",
+    srcs = ["TestNetTrack.cpp"],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestPolygonalFloorplan",
+    srcs = [
+        "TestPolygonalFloorplan.cc",
+    ],
+    data = [
+        "//src/odb/test:regression_resources",
+    ],
+    deps = [
+        "//src/odb",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "Test3DBloxParser",
+    srcs = [
+        "Test3DBloxParser.cpp",
+    ],
+    data = [
+        "//src/odb/test:regression_resources",
+    ],
+    deps = [
+        "//src/odb",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 # TODO: more to come.

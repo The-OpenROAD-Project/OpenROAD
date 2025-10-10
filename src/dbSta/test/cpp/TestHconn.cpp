@@ -1,10 +1,6 @@
-// Copyright 2023 Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include <tcl.h>
 #include <unistd.h>
 
 #include <cstddef>
@@ -31,11 +27,14 @@
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
+#include "tcl.h"
 #include "tst/fixture.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
 namespace odb {
+
+static const std::string prefix("_main/src/dbSta/test/");
 
 /*
   Extract the hierarchical information in human readable format.
@@ -216,9 +215,9 @@ class TestHconn : public ::tst::Fixture
   void SetUp() override
   {
     // this will be so much easier with read_def
-    auto path = std::filesystem::canonical("./Nangate45/Nangate45_typ.lib");
-    library_ = readLiberty(path.string().c_str());
-    lib_ = loadTechAndLib("tech", "Nangate45.lef", "./Nangate45/Nangate45.lef");
+    library_ = readLiberty(prefix + "Nangate45/Nangate45_typ.lib");
+    lib_ = loadTechAndLib(
+        "tech", "Nangate45", prefix + "Nangate45/Nangate45.lef");
 
     db_network_ = sta_->getDbNetwork();
     // turn on hierarchy

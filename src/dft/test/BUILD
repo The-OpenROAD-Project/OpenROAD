@@ -4,6 +4,8 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "max_chain_count_sky130",
@@ -111,7 +113,7 @@ filegroup(
 cc_test(
     name = "dft_scan_architect_unittest",
     srcs = ["cpp/TestScanArchitect.cpp"],
-    linkstatic = True,  # TODO: remove once deps define all symbols
+    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/dft",
         "@googletest//:gtest",
@@ -126,9 +128,11 @@ cc_test(
         "cpp/ScanCellMock.hh",
         "cpp/TestScanArchitectHeuristic.cpp",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
+    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/dft",
+        "//src/odb",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

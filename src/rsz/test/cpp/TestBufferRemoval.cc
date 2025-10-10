@@ -1,15 +1,12 @@
-// Copyright 2023 Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include <tcl.h>
 #include <unistd.h>
 
 #include <filesystem>
 #include <memory>
 #include <mutex>
+#include <string>
 
 #include "ant/AntennaChecker.hh"
 #include "db_sta/dbNetwork.hh"
@@ -31,14 +28,17 @@
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "stt/SteinerTreeBuilder.h"
-#include "tst/fixture.h"
+#include "tcl.h"
+#include "tst/nangate45_fixture.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
 namespace rsz {
 
-class BufRemTest : public tst::Fixture
+static const std::string prefix("_main/src/rsz/test/");
+
+class BufRemTest : public tst::Nangate45Fixture
 {
  protected:
   BufRemTest()
@@ -57,119 +57,53 @@ class BufRemTest : public tst::Fixture
         ep_(&logger_, &callback_handler_, db_.get(), sta_.get(), &stt_, &grt_),
         resizer_(&logger_, db_.get(), sta_.get(), &stt_, &grt_, &dp_, &ep_)
   {
-  }
-
-  void SetUp() override
-  {
-    library_ = readLiberty("./Nangate45/Nangate45_typ.lib");
-    loadTechAndLib("tech", "Nangate45.lef", "./Nangate45/Nangate45.lef");
-
+    library_ = readLiberty(prefix + "Nangate45/Nangate45_typ.lib");
     db_network_ = sta_->getDbNetwork();
+    db_network_->setBlock(block_);
+    block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
+    // register proper callbacks for timer like read_def
+    sta_->postReadDef(block_);
 
     // create a chain consisting of 4 buffers
-    odb::dbChip* chip = odb::dbChip::create(db_.get(), db_->getTech());
-    odb::dbBlock* block = odb::dbBlock::create(chip, "top");
-    db_network_->setBlock(block);
-    block->setDieArea(odb::Rect(0, 0, 1000, 1000));
-    // register proper callbacks for timer like read_def
-    sta_->postReadDef(block);
-    odb::dbModule* module = odb::dbModule::create(block, "top");
-    odb::dbMaster* bufx1 = db_->findMaster("BUF_X1");
-    odb::dbMaster* bufx2 = db_->findMaster("BUF_X2");
-    odb::dbMaster* bufx4 = db_->findMaster("BUF_X4");
-    odb::dbMaster* bufx8 = db_->findMaster("BUF_X8");
+    const char* layer = "metal1";
 
-    odb::dbInst* b1 = odb::dbInst::create(block, bufx1, "b1", module);
-    b1->setSourceType(odb::dbSourceType::TIMING);
-    b1->setLocation(100, 100);
-    b1->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    makeBTerm(block_,
+              "in1",
+              {.bpins = {{.layer_name = layer, .rect = {0, 0, 10, 10}}}});
 
-    odb::dbInst* b2 = odb::dbInst::create(block, bufx2, "b2", module);
-    b2->setSourceType(odb::dbSourceType::TIMING);
-    b2->setLocation(200, 200);
-    b2->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    odb::dbBTerm* outPort = makeBTerm(
+        block_,
+        "out1",
+        {.io_type = odb::dbIoType::OUTPUT,
+         .bpins = {{.layer_name = layer, .rect = {990, 990, 1000, 1000}}}});
 
-    odb::dbInst* b3 = odb::dbInst::create(block, bufx4, "b3", module);
-    b3->setSourceType(odb::dbSourceType::TIMING);
-    b3->setLocation(300, 300);
-    b3->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    makeBTerm(
+        block_,
+        "out2",
+        {.io_type = odb::dbIoType::OUTPUT,
+         .bpins = {{.layer_name = layer, .rect = {980, 980, 1000, 990}}}});
 
-    odb::dbInst* b4 = odb::dbInst::create(block, bufx8, "b4", module);
-    b4->setSourceType(odb::dbSourceType::TIMING);
-    b4->setLocation(400, 400);
-    b4->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    auto makeInst = [&](const char* master_name,
+                        const char* inst_name,
+                        const odb::Point& location,
+                        const char* in_net,
+                        const char* out_net) {
+      odb::dbMaster* master = db_->findMaster(master_name);
+      return tst::Fixture::makeInst(
+          block_,
+          master,
+          inst_name,
+          {.location = location,
+           .status = odb::dbPlacementStatus::PLACED,
+           .iterms = {{.net_name = in_net, .term_name = "A"},
+                      {.net_name = out_net, .term_name = "Z"}}});
+    };
 
-    odb::dbInst* b5 = odb::dbInst::create(block, bufx8, "b5", module);
-    b4->setSourceType(odb::dbSourceType::TIMING);
-    b4->setLocation(500, 500);
-    b4->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-
-    odb::dbNet* in1 = odb::dbNet::create(block, "in1");
-    odb::dbNet* n1 = odb::dbNet::create(block, "n1");
-    odb::dbNet* n2 = odb::dbNet::create(block, "n2");
-    odb::dbNet* n3 = odb::dbNet::create(block, "n3");
-    odb::dbNet* out1 = odb::dbNet::create(block, "out1");
-    odb::dbNet* out2 = odb::dbNet::create(block, "out2");
-
-    odb::dbWire::create(in1);
-    odb::dbWire::create(n1);
-    odb::dbWire::create(n2);
-    odb::dbWire::create(n3);
-    odb::dbWire::create(out1);
-    odb::dbWire::create(out2);
-
-    in1->setSigType(odb::dbSigType::SIGNAL);
-    n1->setSigType(odb::dbSigType::SIGNAL);
-    n2->setSigType(odb::dbSigType::SIGNAL);
-    n3->setSigType(odb::dbSigType::SIGNAL);
-    out1->setSigType(odb::dbSigType::SIGNAL);
-
-    odb::dbBTerm* inPort = odb::dbBTerm::create(in1, "in1");
-    inPort->setIoType(odb::dbIoType::INPUT);
-    odb::dbBPin* inPin = odb::dbBPin::create(inPort);
-    odb::dbTechLayer* layer = block->getTech()->findRoutingLayer(0);
-    odb::dbBox::create(inPin, layer, 0, 0, 10, 10);
-    inPin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
-
-    odb::dbBTerm* outPort = odb::dbBTerm::create(out1, "out1");
-    outPort->setIoType(odb::dbIoType::OUTPUT);
-    odb::dbBPin* outPin = odb::dbBPin::create(outPort);
-    layer = block->getTech()->findRoutingLayer(0);
-    odb::dbBox::create(outPin, layer, 990, 990, 1000, 1000);
-    outPin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
-
-    odb::dbBTerm* outPort2 = odb::dbBTerm::create(out2, "out2");
-    outPort2->setIoType(odb::dbIoType::OUTPUT);
-    odb::dbBPin* outPin2 = odb::dbBPin::create(outPort2);
-    layer = block->getTech()->findRoutingLayer(0);
-    odb::dbBox::create(outPin2, layer, 980, 980, 1000, 990);
-    outPin2->setPlacementStatus(odb::dbPlacementStatus::FIRM);
-
-    odb::dbITerm* inTerm = getFirstInput(b1);
-    inTerm->connect(in1);
-
-    odb::dbITerm* outTerm = b1->getFirstOutput();
-    inTerm = getFirstInput(b2);
-    inTerm->connect(n1);
-    outTerm->connect(n1);
-
-    outTerm = b2->getFirstOutput();
-    inTerm = getFirstInput(b3);
-    inTerm->connect(n2);
-    outTerm->connect(n2);
-
-    outTerm = b3->getFirstOutput();
-    inTerm = getFirstInput(b4);
-    inTerm->connect(n3);
-    outTerm->connect(n3);
-
-    outTerm = b4->getFirstOutput();
-    outTerm->connect(out1);
-
-    outTerm = b5->getFirstOutput();
-    outTerm->connect(out2);
-    inTerm = getFirstInput(b5);
-    inTerm->connect(n1);
+    makeInst("BUF_X1", "b1", {100, 100}, "in1", "n1");
+    makeInst("BUF_X2", "b2", {200, 200}, "n1", "n2");
+    makeInst("BUF_X4", "b3", {300, 300}, "n2", "n3");
+    makeInst("BUF_X8", "b4", {400, 400}, "n3", "out1");
+    makeInst("BUF_X8", "b5", {500, 500}, "n1", "out2");
 
     // initialize STA
     sta::Corner* corner = sta_->cmdCorner();
@@ -182,17 +116,6 @@ class BufRemTest : public tst::Fixture
     outVertex_ = graph->pinLoadVertex(outStaPin);
   }
 
-  odb::dbITerm* getFirstInput(odb::dbInst* inst) const
-  {
-    odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
-    for (odb::dbITerm* iterm : iterms) {
-      if (iterm->isInputSignal()) {
-        return iterm;
-      }
-    }
-    return nullptr;
-  }
-
   stt::SteinerTreeBuilder stt_;
   utl::CallBackHandler callback_handler_;
   dpl::Opendp dp_;
@@ -201,10 +124,10 @@ class BufRemTest : public tst::Fixture
   est::EstimateParasitics ep_;
   rsz::Resizer resizer_;
 
-  sta::LibertyLibrary* library_;
-  sta::dbNetwork* db_network_;
-  sta::PathAnalysisPt* pathAnalysisPt_;
-  sta::Vertex* outVertex_;
+  sta::LibertyLibrary* library_{nullptr};
+  sta::dbNetwork* db_network_{nullptr};
+  sta::PathAnalysisPt* pathAnalysisPt_{nullptr};
+  sta::Vertex* outVertex_{nullptr};
 };
 
 TEST_F(BufRemTest, SlackImproves)
@@ -213,9 +136,6 @@ TEST_F(BufRemTest, SlackImproves)
       = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
 
   // Remove buffers 'b2' and 'b3' from the buffer chain
-  odb::dbChip* chip = db_->getChip();
-  odb::dbBlock* block = chip->getBlock();
-
   resizer_.initBlock();
   db_->setLogger(&logger_);
 
@@ -226,22 +146,26 @@ TEST_F(BufRemTest, SlackImproves)
     resizer_.logger()->setDebugLevel(utl::RSZ, "journal", 1);
 
     auto insts = std::make_unique<sta::InstanceSeq>();
-    odb::dbInst* inst1 = block->findInst("b2");
+    odb::dbInst* inst1 = block_->findInst("b2");
     sta::Instance* sta_inst1 = db_network_->dbToSta(inst1);
     insts->emplace_back(sta_inst1);
 
-    odb::dbInst* inst2 = block->findInst("b3");
+    odb::dbInst* inst2 = block_->findInst("b3");
     sta::Instance* sta_inst2 = db_network_->dbToSta(inst2);
     insts->emplace_back(sta_inst2);
 
     resizer_.removeBuffers(*insts);
+    const float newArrival = sta_->vertexArrival(
+        outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
+
+    EXPECT_LT(newArrival, origArrival);
     resizer_.journalRestoreTest();
   }
 
-  float newArrival
+  const float restoredArrival
       = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
 
-  EXPECT_LE(newArrival, origArrival);
+  EXPECT_EQ(restoredArrival, origArrival);
 }
 
 }  // namespace rsz

@@ -25,7 +25,6 @@ cc_library(
         "src/CommandLineProgress.cpp",
         "src/CommandLineProgress.h",
         "src/Logger.cpp",
-        "src/LoggerCommon.cpp",
         "src/Metrics.cpp",
         "src/Progress.cpp",
         "src/ScopedTemporaryFile.cpp",
@@ -72,7 +71,6 @@ cc_library(
         "include/utl/timer.h",
         "include/utl/unique_name.h",
         "include/utl/validation.h",
-        "src/LoggerCommon.h",
     ],
     includes = [
         "include",
@@ -125,6 +123,7 @@ py_library(
 cc_library(
     name = "ui",
     srcs = [
+        "src/LoggerCommon.cpp",
         "src/LoggerCommon.h",
         "src/MakeLogger.cpp",
         ":swig",

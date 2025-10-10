@@ -45,8 +45,6 @@ int LatencyBalancer::run()
                 33,
                 "Balancing latency for clock {}",
                 root_->getClock().getSdcName());
-  worseDelay_ = std::numeric_limits<float>::min();
-  delayBufIndex_ = 0;
   initSta();
   findLeafBuilders(root_);
   buildGraph(root_->getTopInputNet());
@@ -136,8 +134,8 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
   }
   int builderSrcId = graph_.size();
   GraphNode builderSrcNode
-      = GraphNode(builderSrcId, rootSrcName, rootOutputITerm);
-  graph_.push_back(builderSrcNode);
+      = GraphNode(builderSrcId, std::move(rootSrcName), rootOutputITerm);
+  graph_.push_back(std::move(builderSrcNode));
 
   std::stack<int> visitNode;
   visitNode.push(builderSrcId);
@@ -164,7 +162,7 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
         odb::dbInst* sinkInst = sinkIterm->getInst();
         std::string sinkName = sinkInst->getName();
         GraphNode sinkNode = GraphNode(sinkId, sinkName, sinkIterm);
-        graph_.push_back(sinkNode);
+        graph_.push_back(std::move(sinkNode));
         graph_[driverId].childrenIds.push_back(sinkId);
 
         if (inst2builder_.find(sinkName) != inst2builder_.end()) {
@@ -440,7 +438,7 @@ void LatencyBalancer::balanceLatencies(int nodeId)
     if (!previouBufToInsert) {
       previouBufToInsert = bufToInsert;
       sinksInput.clear();
-      sinksInput = children;
+      sinksInput = std::move(children);
       continue;
     }
 
@@ -449,7 +447,7 @@ void LatencyBalancer::balanceLatencies(int nodeId)
         = insertDelayBuffers(numBuffers, srcX, srcY, sinksInput);
 
     sinksInput.clear();
-    sinksInput = children;
+    sinksInput = std::move(children);
     sinksInput.push_back(delauBuffInput);
 
     previouBufToInsert = bufToInsert;

@@ -489,18 +489,11 @@ class SoftMacro
   bool align_flag_ = false;
 };
 
-// In our netlist model, we only have two-pin nets
 struct BundledNet
 {
   BundledNet(int src, int target, float weight)
   {
     this->terminals = std::pair<int, int>(src, target);
-    this->weight = weight;
-  }
-
-  BundledNet(const std::pair<int, int>& terminals, float weight)
-  {
-    this->terminals = terminals;
     this->weight = weight;
   }
 
@@ -512,11 +505,6 @@ struct BundledNet
 
   std::pair<int, int> terminals;  // source_id <--> target_id (undirected)
   float weight;  // Number of bundled connections (can be timing-related)
-
-  // In our framework, we only bundled connections between clusters.
-  // Thus each net must have both src_cluster_id and target_cluster_id
-  int src_cluster_id = -1;
-  int target_cluster_id = -1;
 };
 
 struct SequencePair

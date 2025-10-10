@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#pragma once
-
 // IWYU pragma: private, include "db.h"
 
 // Provide overloads of std::less for all instantiable, dbObject-derived types.
@@ -14,9 +12,6 @@
 
 #include <functional>
 
-// This is needed just for clang-tidy.  Normally people will not include
-// this header directly; they will include db.h and get this indirectly.
-#include "odb/db.h"
 #include "odb/dbObject.h"
 
 namespace odb {

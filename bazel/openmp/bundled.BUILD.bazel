@@ -86,7 +86,6 @@ cc_library(
         "runtime/src/ompt-general.cpp",
         "runtime/src/ompt-internal.h",
         "runtime/src/ompt-specific.h",
-        "runtime/src/test-touch.c",
         "runtime/src/z_Linux_asm.S",
         "runtime/src/z_Linux_util.cpp",
     ] + [

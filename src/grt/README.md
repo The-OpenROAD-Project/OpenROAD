@@ -29,6 +29,7 @@ global_route
     [-start_incremental]
     [-end_incremental]
     [-use_cugr]
+    [-resistance_aware]
 ```
 
 #### Options
@@ -46,6 +47,7 @@ global_route
 | `-start_incremental` | This flag initializes the GRT listener to get the net modified. The default is false. |
 | `-end_incremental` | This flag run incremental GRT with the nets modified. The default is false. |
 | `-use_cugr` | This flag run GRT using CUGR as the router solver. NOTE: this is not ready for production. |
+| `-resistance_aware` | This flag enables resistance-aware layer assignment and 3D routing. NOTE: this is not ready for production. |
 
 ### Set Routing Layers
 

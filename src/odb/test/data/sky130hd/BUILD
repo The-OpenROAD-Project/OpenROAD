@@ -3,6 +3,7 @@
 
 package(
     default_visibility = ["//:__subpackages__"],
+    features = ["layering_check"],
 )
 
 filegroup(

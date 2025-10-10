@@ -37,6 +37,8 @@ class ThreeDBlox
   void createConnection(const Connection& connection);
   dbChipRegionInst* resolvePath(const std::string& path,
                                 std::vector<dbChipInst*>& path_insts);
+  void readHeaderIncludes(const std::vector<std::string>& includes);
+  void calculateSize(dbChip* chip);
 
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
