@@ -1,26 +1,19 @@
-// Copyright 2023 Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include <memory>
 
 #include "odb/db.h"
-#include "odb/lefin.h"
 #include "tst/fixture.h"
-#include "utl/Logger.h"
 
 namespace odb {
-class Sky130TestFixutre : public tst::Fixture
+class Sky130Fixture : public tst::Fixture
 {
  protected:
   void SetUp() override
   {
     lib_ = loadTechAndLib(
-        "sky130",
-        "sky130",
-        "_main/src/odb/test/data/sky130hd/sky130_fd_sc_hd.tlef");
+        "sky130", "sky130", "_main/test/sky130hd/sky130_fd_sc_hd_merged.lef");
 
     chip_ = odb::dbChip::create(db_.get(), db_->getTech());
     block_ = odb::dbBlock::create(chip_, "top");

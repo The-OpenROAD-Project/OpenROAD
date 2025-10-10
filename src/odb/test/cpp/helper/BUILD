@@ -10,11 +10,9 @@ package(
 cc_library(
     name = "helper",
     srcs = [
-        "env.cpp",
         "helper.cpp",
     ],
     hdrs = [
-        "env.h",
         "helper.h",
     ],
     includes = ["."],  # not needed after no cmake

@@ -14,6 +14,25 @@ exports_files(
 )
 
 filegroup(
+    name = "nangate45_data",
+    srcs = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "sky130hd_data",
+    srcs = [
+        "sky130hd/sky130_fd_sc_hd_merged.lef",
+        "sky130hd/sky130hd.tlef",
+        "sky130hd/sky130hd_std_cell.lef",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "regression_resources",
     # TODO Refine glob later.
     #

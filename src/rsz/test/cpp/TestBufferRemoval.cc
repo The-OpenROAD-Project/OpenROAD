@@ -170,13 +170,17 @@ TEST_F(BufRemTest, SlackImproves)
     insts->emplace_back(sta_inst2);
 
     resizer_.removeBuffers(*insts);
+    const float newArrival = sta_->vertexArrival(
+        outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
+
+    EXPECT_LT(newArrival, origArrival);
     resizer_.journalRestoreTest();
   }
 
-  float newArrival
+  const float restoredArrival
       = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
 
-  EXPECT_LE(newArrival, origArrival);
+  EXPECT_EQ(restoredArrival, origArrival);
 }
 
 }  // namespace rsz
