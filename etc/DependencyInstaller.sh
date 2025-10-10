@@ -246,7 +246,6 @@ _install_cmake() {
         log "CMake is already installed and at the correct version."
         INSTALL_SUMMARY+=("CMake: system=${cmake_installed_version}, required=${CMAKE_VERSION_SMALL}, status=skipped")
     fi
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D CMAKE_ROOT=$(realpath "${cmake_prefix}") "
 }
 
 # ------------------------------------------------------------------------------
