@@ -4,6 +4,7 @@
 #include "UnbufferMove.hh"
 
 #include <cmath>
+#include <optional>
 #include <string>
 
 #include "BaseMove.hh"
@@ -455,7 +456,17 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   // Deletion
   sta_->deleteInstance(buffer);
   if (removed) {
+    // If removed net name is higher in hierarchy, rename survivor with it.
+    std::optional<std::string> new_net_name;
+    if (db_survivor->isDeeperThan(db_removed)) {
+      new_net_name = db_removed->getName();
+    }
+
     sta_->deleteNet(removed);
+
+    if (new_net_name) {
+      db_survivor->rename(new_net_name->c_str());
+    }
   }
 
   estimate_parasitics_->removeNetFromParasiticsInvalid(removed);

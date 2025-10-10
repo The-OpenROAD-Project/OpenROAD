@@ -1094,9 +1094,17 @@ class NesterovBase
   void appendGCellCSVNote(const std::string& filename,
                           int iteration,
                           const std::string& message) const;
+  // Helper to be used at nesterovPlace.cpp, inside core nesterov loop
+  // Example:
+  // for(auto& nb : nbVec_) {
+  //   nb->writeGCellVectorsToCSV("gcells_vector.csv", nesterov_iter, 320, 1,
+  //   1);
+  // }
   void writeGCellVectorsToCSV(const std::string& filename,
                               int iteration,
-                              bool write_header) const;
+                              int start_iteration = 0,
+                              int iteration_stride = 50,
+                              int gcell_index_stride = 10) const;
 
  private:
   NesterovBaseVars nbVars_;

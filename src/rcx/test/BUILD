@@ -13,6 +13,7 @@ COMPULSORY_TESTS = [
     "gcd",
     "generate_pattern",
     "names",
+    "net_name_consistency",
 ]
 
 # Disabled in CMakeLists.txt

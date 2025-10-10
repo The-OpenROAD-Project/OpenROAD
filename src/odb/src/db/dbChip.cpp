@@ -591,6 +591,20 @@ dbTech* dbChip::getTech() const
   return (dbTech*) db->_tech_tbl->getPtr(chip->tech_);
 }
 
+Rect dbChip::getBBox() const
+{
+  _dbChip* _chip = (_dbChip*) this;
+  const int llx = 0 - _chip->scribe_line_east_ - _chip->seal_ring_west_;
+  const int lly = 0 - _chip->scribe_line_south_ - _chip->seal_ring_south_;
+  const int urx
+      = _chip->width_ + _chip->scribe_line_east_ + _chip->seal_ring_east_;
+  const int ury
+      = _chip->height_ + _chip->scribe_line_north_ + _chip->seal_ring_north_;
+  Rect box(llx, lly, urx, ury);
+  box.moveTo(_chip->offset_.x(), _chip->offset_.y());
+  return box;
+}
+
 dbChip* dbChip::create(dbDatabase* db_,
                        dbTech* tech,
                        const std::string& name,

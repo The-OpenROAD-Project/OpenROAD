@@ -174,12 +174,18 @@ void Grid::markBlocked(dbBlock* block)
       continue;
     }
     for (odb::dbSWire* swire : net->getSWires()) {
-      for (odb::dbSBox* s : swire->getWires()) {
-        if (!s->isVia()) {
-          odb::Rect wire_rect = s->getBox();
-          odb::dbTechLayer* tech_layer = s->getTechLayer();
-          addBlockedLayers(wire_rect, tech_layer);
+      for (odb::dbSBox* sbox : swire->getWires()) {
+        if (sbox->isVia()) {
+          // TODO: handle via
+          continue;
         }
+        if (sbox->getWireShapeType() == odb::dbWireShapeType::DRCFILL) {
+          // TODO: handle patches
+          continue;
+        }
+        odb::Rect wire_rect = sbox->getBox();
+        odb::dbTechLayer* tech_layer = sbox->getTechLayer();
+        addBlockedLayers(wire_rect, tech_layer);
       }
     }
   }
