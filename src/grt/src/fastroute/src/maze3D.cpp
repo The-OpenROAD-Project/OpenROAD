@@ -719,6 +719,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
   const int endIND = tree_order_pv_.size() * 0.9;
 
+  updateSlacks();
+
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
 
@@ -726,7 +728,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     int8_t edge_cost = 0;
 
     // Enable resistance aware routing only if the net needs it
-    resistance_aware_ = getNetSlack(net->getDbNet()) < 0 ? true : false;
+    if (enable_resistance_aware_) {
+      resistance_aware_ = needResistanceAware(netID);
+    }
 
     int enlarge = expand;
     const int num_terminals = sttrees_[netID].num_terminals;

@@ -100,21 +100,17 @@ void FastRouteCore::ConvertToFull3DType2()
 
 static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
 {
-  // Sorting by ndr_priority, length_per_pin, minX, and treeIndex
-  // return std::tie(
-  //            a.ndr_priority, a.slack, a.length_per_pin, a.minX, a.treeIndex)
-  //        < std::tie(
-  //            b.ndr_priority, b.slack, b.length_per_pin, b.minX, b.treeIndex);
+  // Sorting by ndr_priority, is_clock, length_per_pin, minX, and treeIndex
   return std::tie(a.ndr_priority,
-                  a.is_clock,
-                  a.length_per_pin,
+                  // a.is_clock,
                   a.slack,
+                  a.length_per_pin,
                   a.minX,
                   a.treeIndex)
          < std::tie(b.ndr_priority,
-                    b.is_clock,
-                    b.length_per_pin,
+                    // b.is_clock,
                     b.slack,
+                    b.length_per_pin,
                     b.minX,
                     b.treeIndex);
 }
@@ -146,7 +142,6 @@ void FastRouteCore::netpinOrderInc()
 
     if (resistance_aware_ && nets_[netID]->getSlack() < 0) {
       slack = nets_[netID]->getSlack();
-      // slack = getNetSlack(nets_[netID]->getDbNet());
     }
 
     int is_clock = nets_[netID]->isClock() ? 0 : 1;
@@ -464,6 +459,45 @@ int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
   return std::ceil(total_via_resistance);
 }
 
+void FastRouteCore::updateSlacks()
+{
+  for (const int net_id : net_ids_) {
+    FrNet* net = nets_[net_id];
+    net->setSlack(getNetSlack(net->getDbNet()));
+  }
+}
+
+// Requirements to enable resistance-aware layer assignment and 3D routing
+bool FastRouteCore::needResistanceAware(const int net_id)
+{
+  FrNet* net = nets_[net_id];
+
+  // Check if slack is negative
+  // if (getNetSlack(net->getDbNet()) < 0){
+  if (net->getSlack() < 50) {
+    // getNetSlack(net->getDbNet());
+    return true;
+  }
+
+  // Set the 70% (or less) of non critical nets that doesn't have overflow
+  // with the lowest priority
+  // const int target_percentage = 70;
+  // for (int ord_elID = 0; ord_elID < net_ids_.size(); ord_elID++) {
+  //   auto order_element = tree_order_cong_[ord_elID];
+  //   if (nets_[order_element.treeIndex]->getSlack()
+  //       == std::ceil(std::numeric_limits<float>::lowest())) {
+  //     if (order_element.xmin == 0
+  //         && (ord_elID >= (net_ids_.size() * (100-target_percentage) / 100)))
+  //         {
+  //       nets_[order_element.treeIndex]->setSlack(
+  //           std::numeric_limits<float>::max());
+  //     }
+  //   }
+  // }
+
+  return false;
+}
+
 void FastRouteCore::assignEdge(const int netID,
                                const int edgeID,
                                const bool processDIR)
@@ -500,8 +534,10 @@ void FastRouteCore::assignEdge(const int netID,
   multi_array<int, 2> layer_grid;
   layer_grid.resize(boost::extents[num_layers_][routelen + 1]);
 
-  // Enable resistance aware layer assignment only if the net has timing issues
-  resistance_aware_ = getNetSlack(net->getDbNet()) < 0 ? true : false;
+  // Enable resistance aware layer assignment only if the net needs it
+  if (enable_resistance_aware_) {
+    resistance_aware_ = needResistanceAware(netID);
+  }
 
   for (k = 0; k < routelen; k++) {
     int best_cost = std::numeric_limits<int>::min();
@@ -1017,6 +1053,8 @@ void FastRouteCore::layerAssignmentV4()
 
 void FastRouteCore::layerAssignment()
 {
+  updateSlacks();
+
   for (const int& netID : net_ids_) {
     auto& treenodes = sttrees_[netID].nodes;
 

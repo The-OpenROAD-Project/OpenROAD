@@ -246,7 +246,6 @@ struct OrderNetPin
 
 struct OrderTree
 {
-  int ndr_priority;      // NDR nets are assigned first
   int length;
   int treeIndex;
   int16_t xmin;
