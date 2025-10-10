@@ -38,6 +38,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "defiDefs.hpp"
 #include "defrReader.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE

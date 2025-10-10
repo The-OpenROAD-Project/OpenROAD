@@ -34,6 +34,8 @@
 #include <map>
 #include <string>
 
+#include "defiDefs.hpp"
+#include "defiPropType.hpp"
 #include "defrReader.hpp"
 
 #define DEF_DEBUG_IDS 100

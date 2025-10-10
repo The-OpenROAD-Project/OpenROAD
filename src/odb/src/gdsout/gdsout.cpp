@@ -3,6 +3,8 @@
 
 #include "odb/gdsout.h"
 
+#include <endian.h>
+
 #include <cstdint>
 #include <ctime>
 #include <iostream>

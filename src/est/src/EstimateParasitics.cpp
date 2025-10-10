@@ -38,6 +38,7 @@
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "sta/Vector.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 
