@@ -15,8 +15,8 @@ cc_test(
     deps = [
         "//src/odb",
         "//src/tst",
-        "//src/utl",
         "//src/tst:sky130_fixture",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -224,9 +224,9 @@ cc_test(
     ],
     deps = [
         "//src/odb",
-        "//src/utl",
-        "//src/tst:nangate45_fixture",
         "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
