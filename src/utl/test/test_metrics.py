@@ -8,6 +8,7 @@ utl.open_metrics(metrics_file)
 utl.metric_integer("integer0", -1)
 utl.metric_integer("integer1", 0)
 utl.metric_integer("integer2", 1)
+utl.metric_integer("integer3", 2307209767)
 
 utl.metric_float("float0", 0)
 utl.metric_float("float1", 1e3)
