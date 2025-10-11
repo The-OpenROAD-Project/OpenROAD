@@ -1699,6 +1699,7 @@ void InstanceGrid::checkSetup() const
     if (top != nullptr) {
       const int top_idx = top->getNumber();
       std::map<odb::Rect, int64_t> overlap_area;
+      std::set<odb::dbTechLayer*> layers;
       for (auto* master_obs : inst_->getMaster()->getObstructions()) {
         auto* obs_layer = master_obs->getTechLayer();
         if (obs_layer == nullptr) {
@@ -1713,41 +1714,52 @@ void InstanceGrid::checkSetup() const
 
             if (mobs.intersects(pin)) {
               // Determine level of obstruction
-              if (mobs.contains(pin)) {
-                // pin completely obstructed
-                getLogger()->error(
-                    utl::PDN,
-                    6,
-                    "{} on {} is blocked by obstructions on {} for {}",
-                    iterm->getMTerm()->getName(),
-                    top->getName(),
-                    obs_layer->getName(),
-                    inst_->getName());
-              } else {
-                const odb::Rect overlap = mobs.intersect(pin);
-                overlap_area[pin] += overlap.area();
-              }
+              const odb::Rect overlap = mobs.intersect(pin);
+              overlap_area[pin] += overlap.area();
+              layers.insert(obs_layer);
             }
           }
         }
       }
 
       if (!overlap_area.empty()) {
-        int64_t pin_area = 0;
+        int64_t total_pin_area = 0;
         int64_t total_overlap = 0;
-        for (const auto& [pin, overlap] : overlap_area) {
-          total_overlap += overlap;
-          pin_area += pin.area();
+        std::string layer_txt;
+        for (const auto* layer : layers) {
+          if (layer_txt.size() > 0) {
+            layer_txt += ", ";
+          }
+          layer_txt += layer->getName();
         }
-        const float pct = 100 * static_cast<float>(total_overlap) / pin_area;
-        getLogger()->warn(
-            utl::PDN,
-            7,
-            "{} on {} is partially blocked ({:.1f}%) by obstructions for {}",
-            iterm->getMTerm()->getName(),
-            top->getName(),
-            pct,
-            inst_->getName());
+        for (const auto& [pin, overlap] : overlap_area) {
+          const int64_t pinarea = pin.area();
+          total_overlap += overlap;
+          total_pin_area += pinarea;
+
+          if (overlap >= pinarea) {
+            // pin completely obstructed
+            getLogger()->error(
+                utl::PDN,
+                6,
+                "{} on {} is blocked by obstructions on {} for {}",
+                iterm->getMTerm()->getName(),
+                top->getName(),
+                layer_txt,
+                inst_->getName());
+          }
+        }
+        const float pct
+            = 100 * static_cast<float>(total_overlap) / total_pin_area;
+        getLogger()->warn(utl::PDN,
+                          7,
+                          "{} on {} is partially blocked ({:.1f}%) by "
+                          "obstructions on {} for {}",
+                          iterm->getMTerm()->getName(),
+                          top->getName(),
+                          pct,
+                          layer_txt,
+                          inst_->getName());
       }
     }
   }
