@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
@@ -1697,6 +1698,8 @@ void InstanceGrid::checkSetup() const
 
     if (top != nullptr) {
       const int top_idx = top->getNumber();
+      int64_t overlap_area = 0;
+      int64_t pin_area = 0;
       for (auto* master_obs : inst_->getMaster()->getObstructions()) {
         auto* obs_layer = master_obs->getTechLayer();
         if (obs_layer == nullptr) {
@@ -1707,17 +1710,40 @@ void InstanceGrid::checkSetup() const
         }
         if (obs_layer->getNumber() > top_idx) {
           for (const auto& pin : boxes) {
-            if (pin.intersects(master_obs->getBox())) {
-              getLogger()->error(
-                  utl::PDN,
-                  6,
-                  "Pins on {} are blocked by obstructions on {} for {}",
-                  top->getName(),
-                  obs_layer->getName(),
-                  inst_->getName());
+            const odb::Rect mobs = master_obs->getBox();
+
+            if (mobs.intersects(pin)) {
+              // Determine level of obstruction
+              if (mobs.contains(pin)) {
+                // pin completely obstructed
+                getLogger()->error(
+                    utl::PDN,
+                    6,
+                    "{} on {} is blocked by obstructions on {} for {}",
+                    iterm->getMTerm()->getName(),
+                    top->getName(),
+                    obs_layer->getName(),
+                    inst_->getName());
+              } else {
+                const odb::Rect overlap = mobs.intersect(pin);
+                overlap_area += overlap.area();
+                pin_area += pin.area();
+              }
             }
           }
         }
+      }
+
+      if (pin_area > 0 && overlap_area != 0) {
+        const float pct = 100 * static_cast<float>(overlap_area) / pin_area;
+        getLogger()->warn(
+            utl::PDN,
+            7,
+            "{} on {} is partially blocked ({:.1f}%) by obstructions for {}",
+            iterm->getMTerm()->getName(),
+            top->getName(),
+            pct,
+            inst_->getName());
       }
     }
   }
