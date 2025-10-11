@@ -4,6 +4,9 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <string>
+#include <unordered_map>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"

@@ -6,11 +6,16 @@
 
 #include <cstdint>
 #include <cstring>
+#include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 // User Code Begin Includes
 #include "dbBoxItr.h"
 #include "dbLib.h"

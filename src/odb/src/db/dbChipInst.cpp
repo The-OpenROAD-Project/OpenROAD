@@ -7,10 +7,14 @@
 #include <string>
 #include <unordered_map>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 // User Code Begin Includes
 #include "dbChip.h"
 #include "dbChipBumpInst.h"
