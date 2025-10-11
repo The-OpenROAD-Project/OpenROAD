@@ -4,11 +4,5 @@
 [INFO ODB-0130]     Created 135 pins.
 [INFO ODB-0131]     Created 267 components and 2277 component-terminals.
 [INFO ODB-0133]     Created 350 nets and 390 connections.
-[ERROR PAD-0017] -origin must be specified as {x y}
-PAD-0017
-[ERROR PAD-0017] -origin must be specified as {x y}
-PAD-0017
-[ERROR PAD-0038] -pitch must be specified as {deltax deltay} or {delta}
-PAD-0038
-[ERROR PAD-0038] -pitch must be specified as {deltax deltay} or {delta}
-PAD-0038
+[WARNING PAD-0045] Skipping corner cell generation for IO_CORNER_NORTH_EAST_INST due to overlapping bump cell
+No differences found.

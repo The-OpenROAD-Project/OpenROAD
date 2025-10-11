@@ -1,4 +1,4 @@
-# Test for assigning bumps
+# Test for placing corners and avoiding bumps
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_lef Nangate45_io/dummy_pads.lef
@@ -14,13 +14,11 @@ add_global_connection -pin_pattern "DVSS" -net DVSS -ground
 make_io_sites -horizontal_site IOSITE -vertical_site IOSITE -corner_site IOSITE -offset 35
 
 # Add inst in LL corner
-place_inst -name "OVERLAP" -cell NOR3_X2 -origin "40 40" -status FIRM
-place_inst -name "PASS_INST" -cell NOR3_X2 -origin "2900 40" -status PLACED
 place_inst -name "PASS_BUMP" -cell DUMMY_BUMP -origin "2900 2900" -status FIRM
 
 # Place corners
-place_corners PAD_CORNER
+place_corners PAD_CORNER_M10
 
-set def_file [make_result_file "place_corners_avoid_overlap.def"]
+set def_file [make_result_file "place_corners_avoid_bumps.def"]
 write_def $def_file
-diff_files $def_file "place_corners_avoid_overlap.defok"
+diff_files $def_file "place_corners_avoid_bumps.defok"
