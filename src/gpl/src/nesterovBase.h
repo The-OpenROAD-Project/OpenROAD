@@ -1106,6 +1106,8 @@ class NesterovBase
                               int iteration_stride = 50,
                               int gcell_index_stride = 10) const;
 
+  odb::dbGroup* group() const { return pb_->group(); }
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
