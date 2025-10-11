@@ -47,6 +47,7 @@
 #include <cstring>
 #include <ctime>
 
+#include "defiKRDefs.hpp"
 #include "defiUtil.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE

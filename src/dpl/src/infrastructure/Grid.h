@@ -17,6 +17,7 @@
 #include "boost/icl/interval_map.hpp"
 #include "dpl/Opendp.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/isotropy.h"
 

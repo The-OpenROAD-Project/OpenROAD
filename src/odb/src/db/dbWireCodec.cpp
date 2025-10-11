@@ -18,6 +18,7 @@
 #include "dbVector.h"
 #include "dbWire.h"
 #include "dbWireOpcode.h"
+#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbTypes.h"
