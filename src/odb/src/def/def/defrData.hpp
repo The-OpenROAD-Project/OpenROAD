@@ -41,6 +41,7 @@
 #include "defiFill.hpp"
 #include "defiGroup.hpp"
 #include "defiIOTiming.hpp"
+#include "defiKRDefs.hpp"
 #include "defiMisc.hpp"
 #include "defiNet.hpp"
 #include "defiNonDefault.hpp"

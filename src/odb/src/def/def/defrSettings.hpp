@@ -35,6 +35,7 @@
 #include <string>
 
 #include "defiDefs.hpp"
+#include "defiKRDefs.hpp"
 #include "defiPropType.hpp"
 #include "defrReader.hpp"
 

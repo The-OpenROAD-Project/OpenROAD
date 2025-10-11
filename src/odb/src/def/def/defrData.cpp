@@ -36,6 +36,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "defiKRDefs.hpp"
 #include "defrCallBacks.hpp"
 #include "defrSettings.hpp"
 
