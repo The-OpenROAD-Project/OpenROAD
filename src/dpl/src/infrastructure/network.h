@@ -26,7 +26,6 @@ class Pin;
 class Grid;
 class Edge;
 class PlacementDRC;
-using odb::dbOrientType;
 
 class Network
 {

@@ -144,7 +144,7 @@ dbBTerm* Node::getBTerm() const
   }
   return static_cast<dbBTerm*>(db_owner_);
 }
-dbOrientType Node::getOrient() const
+odb::dbOrientType Node::getOrient() const
 {
   return orient_;
 }
@@ -298,7 +298,7 @@ void Node::setBottom(DbuY y)
 {
   bottom_ = y;
 }
-void Node::setOrient(const dbOrientType& in)
+void Node::setOrient(const odb::dbOrientType& in)
 {
   orient_ = in;
 }
@@ -362,7 +362,7 @@ void Node::addUsedLayer(int layer)
 {
   used_layers_ |= 1 << layer;
 }
-bool Node::adjustCurrOrient(const dbOrientType& newOri)
+bool Node::adjustCurrOrient(const odb::dbOrientType& newOri)
 {
   // Change the orientation of the cell, but leave the lower-left corner
   // alone.  This means changing the locations of pins and possibly
@@ -372,10 +372,12 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
     return true;
   }
 
-  if (curOri == dbOrientType::R90 || curOri == dbOrientType::MXR90
-      || curOri == dbOrientType::R270 || curOri == dbOrientType::MYR90) {
-    if (newOri == dbOrientType::R0 || newOri == dbOrientType::MY
-        || newOri == dbOrientType::MX || newOri == dbOrientType::R180) {
+  if (curOri == odb::dbOrientType::R90 || curOri == odb::dbOrientType::MXR90
+      || curOri == odb::dbOrientType::R270
+      || curOri == odb::dbOrientType::MYR90) {
+    if (newOri == odb::dbOrientType::R0 || newOri == odb::dbOrientType::MY
+        || newOri == odb::dbOrientType::MX
+        || newOri == odb::dbOrientType::R180) {
       // Rotate the cell counter-clockwise by 90 degrees.
       for (Pin* pin : pins_) {
         const auto dx = pin->getOffsetX().v;
@@ -388,19 +390,20 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
         width_ = DbuX{height_.v};
         height_ = DbuY{tmp};
       }
-      if (curOri == dbOrientType::R90) {
-        curOri = dbOrientType::R0;
-      } else if (curOri == dbOrientType::MXR90) {
-        curOri = dbOrientType::MX;
-      } else if (curOri == dbOrientType::MYR90) {
-        curOri = dbOrientType::MY;
+      if (curOri == odb::dbOrientType::R90) {
+        curOri = odb::dbOrientType::R0;
+      } else if (curOri == odb::dbOrientType::MXR90) {
+        curOri = odb::dbOrientType::MX;
+      } else if (curOri == odb::dbOrientType::MYR90) {
+        curOri = odb::dbOrientType::MY;
       } else {
-        curOri = dbOrientType::R180;
+        curOri = odb::dbOrientType::R180;
       }
     }
   } else {
-    if (newOri == dbOrientType::R90 || newOri == dbOrientType::MXR90
-        || newOri == dbOrientType::MYR90 || newOri == dbOrientType::R270) {
+    if (newOri == odb::dbOrientType::R90 || newOri == odb::dbOrientType::MXR90
+        || newOri == odb::dbOrientType::MYR90
+        || newOri == odb::dbOrientType::R270) {
       // Rotate the cell clockwise by 90 degrees.
       for (Pin* pin : pins_) {
         const auto dx = pin->getOffsetX().v;
@@ -413,14 +416,14 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
         width_ = DbuX{height_.v};
         height_ = DbuY{tmp};
       }
-      if (curOri == dbOrientType::R0) {
-        curOri = dbOrientType::R90;
-      } else if (curOri == dbOrientType::MX) {
-        curOri = dbOrientType::MXR90;
-      } else if (curOri == dbOrientType::MY) {
-        curOri = dbOrientType::MYR90;
+      if (curOri == odb::dbOrientType::R0) {
+        curOri = odb::dbOrientType::R90;
+      } else if (curOri == odb::dbOrientType::MX) {
+        curOri = odb::dbOrientType::MXR90;
+      } else if (curOri == odb::dbOrientType::MY) {
+        curOri = odb::dbOrientType::MYR90;
       } else {
-        curOri = dbOrientType::R270;
+        curOri = odb::dbOrientType::R270;
       }
     }
   }
@@ -428,34 +431,35 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
   // FW, W}.
   int mX = 1;
   int mY = 1;
-  if (curOri == dbOrientType::R90 || curOri == dbOrientType::MXR90
-      || curOri == dbOrientType::MYR90 || curOri == dbOrientType::R270) {
-    const bool test1
-        = (curOri == dbOrientType::R90 || curOri == dbOrientType::MYR90);
-    const bool test2
-        = (newOri == dbOrientType::R90 || newOri == dbOrientType::MYR90);
+  if (curOri == odb::dbOrientType::R90 || curOri == odb::dbOrientType::MXR90
+      || curOri == odb::dbOrientType::MYR90
+      || curOri == odb::dbOrientType::R270) {
+    const bool test1 = (curOri == odb::dbOrientType::R90
+                        || curOri == odb::dbOrientType::MYR90);
+    const bool test2 = (newOri == odb::dbOrientType::R90
+                        || newOri == odb::dbOrientType::MYR90);
     if (test1 != test2) {
       mX = -1;
     }
-    const bool test3
-        = (curOri == dbOrientType::R90 || curOri == dbOrientType::MXR90);
-    const bool test4
-        = (newOri == dbOrientType::R90 || newOri == dbOrientType::MXR90);
+    const bool test3 = (curOri == odb::dbOrientType::R90
+                        || curOri == odb::dbOrientType::MXR90);
+    const bool test4 = (newOri == odb::dbOrientType::R90
+                        || newOri == odb::dbOrientType::MXR90);
     if (test3 != test4) {
       mY = -1;
     }
   } else {
     const bool test1
-        = (curOri == dbOrientType::R0 || curOri == dbOrientType::MX);
+        = (curOri == odb::dbOrientType::R0 || curOri == odb::dbOrientType::MX);
     const bool test2
-        = (newOri == dbOrientType::R0 || newOri == dbOrientType::MX);
+        = (newOri == odb::dbOrientType::R0 || newOri == odb::dbOrientType::MX);
     if (test1 != test2) {
       mX = -1;
     }
     const bool test3
-        = (curOri == dbOrientType::R0 || curOri == dbOrientType::MY);
+        = (curOri == odb::dbOrientType::R0 || curOri == odb::dbOrientType::MY);
     const bool test4
-        = (newOri == dbOrientType::R0 || newOri == dbOrientType::MY);
+        = (newOri == odb::dbOrientType::R0 || newOri == odb::dbOrientType::MY);
     if (test3 != test4) {
       mY = -1;
     }

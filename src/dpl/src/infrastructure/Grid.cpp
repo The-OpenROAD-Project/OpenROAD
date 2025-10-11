@@ -228,11 +228,11 @@ void Grid::initGrid(dbDatabase* db,
   markBlocked(block);
 }
 
-std::pair<dbSite*, dbOrientType> Grid::getShortestSite(GridX grid_x,
-                                                       GridY grid_y)
+std::pair<dbSite*, odb::dbOrientType> Grid::getShortestSite(GridX grid_x,
+                                                            GridY grid_y)
 {
   dbSite* selected_site = nullptr;
-  dbOrientType selected_orient;
+  odb::dbOrientType selected_orient;
   DbuY min_height{std::numeric_limits<int>::max()};
 
   const RowSitesMap& sites_map = row_sites_[grid_y.v];
@@ -252,9 +252,9 @@ std::pair<dbSite*, dbOrientType> Grid::getShortestSite(GridX grid_x,
   return {selected_site, selected_orient};
 }
 
-std::optional<dbOrientType> Grid::getSiteOrientation(GridX x,
-                                                     GridY y,
-                                                     dbSite* site) const
+std::optional<odb::dbOrientType> Grid::getSiteOrientation(GridX x,
+                                                          GridY y,
+                                                          dbSite* site) const
 {
   const RowSitesMap& sites_map = row_sites_[y.v];
   auto interval_it = sites_map.find(x.v);

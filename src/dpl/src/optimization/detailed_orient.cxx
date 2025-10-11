@@ -14,6 +14,7 @@
 #include "detailed_manager.h"
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
+#include "odb/dbTypes.h"
 #include "util/symmetry.h"
 #include "util/utility.h"
 #include "utl/Logger.h"
@@ -166,17 +167,17 @@ bool DetailedOrient::orientMultiHeightCellForRow(Node* ndi, int row)
       // to change the orientation the same way I would for a
       // single height cell when flipping about X.
       switch (ndi->getOrient()) {
-        case dbOrientType::R0:
-          ndi->adjustCurrOrient(dbOrientType::MX);
+        case odb::dbOrientType::R0:
+          ndi->adjustCurrOrient(odb::dbOrientType::MX);
           break;
-        case dbOrientType::MY:
-          ndi->adjustCurrOrient(dbOrientType::R180);
+        case odb::dbOrientType::MY:
+          ndi->adjustCurrOrient(odb::dbOrientType::R180);
           break;
-        case dbOrientType::MX:
-          ndi->adjustCurrOrient(dbOrientType::R0);
+        case odb::dbOrientType::MX:
+          ndi->adjustCurrOrient(odb::dbOrientType::R0);
           break;
-        case dbOrientType::R180:
-          ndi->adjustCurrOrient(dbOrientType::MY);
+        case odb::dbOrientType::R180:
+          ndi->adjustCurrOrient(odb::dbOrientType::MY);
           break;
         default:
           return false;
@@ -214,32 +215,33 @@ bool DetailedOrient::orientSingleHeightCellForRow(Node* ndi, int row)
   unsigned rowOri = arch_->getRow(row)->getOrient();
   unsigned cellOri = ndi->getOrient();
 
-  if (rowOri == dbOrientType::R0 || rowOri == dbOrientType::MY) {
-    if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY) {
+  if (rowOri == odb::dbOrientType::R0 || rowOri == odb::dbOrientType::MY) {
+    if (cellOri == odb::dbOrientType::R0 || cellOri == odb::dbOrientType::MY) {
       return true;
     }
 
-    if (cellOri == dbOrientType::MX) {
-      ndi->adjustCurrOrient(dbOrientType::R0);
+    if (cellOri == odb::dbOrientType::MX) {
+      ndi->adjustCurrOrient(odb::dbOrientType::R0);
       return true;
     }
-    if (cellOri == dbOrientType::R180) {
-      ndi->adjustCurrOrient(dbOrientType::MY);
+    if (cellOri == odb::dbOrientType::R180) {
+      ndi->adjustCurrOrient(odb::dbOrientType::MY);
       return true;
     }
     return false;
   }
-  if (rowOri == dbOrientType::MX || rowOri == dbOrientType::R180) {
-    if (cellOri == dbOrientType::MX || cellOri == dbOrientType::R180) {
+  if (rowOri == odb::dbOrientType::MX || rowOri == odb::dbOrientType::R180) {
+    if (cellOri == odb::dbOrientType::MX
+        || cellOri == odb::dbOrientType::R180) {
       return true;
     }
 
-    if (cellOri == dbOrientType::R0) {
-      ndi->adjustCurrOrient(dbOrientType::MX);
+    if (cellOri == odb::dbOrientType::R0) {
+      ndi->adjustCurrOrient(odb::dbOrientType::MX);
       return true;
     }
-    if (cellOri == dbOrientType::MY) {
-      ndi->adjustCurrOrient(dbOrientType::R180);
+    if (cellOri == odb::dbOrientType::MY) {
+      ndi->adjustCurrOrient(odb::dbOrientType::R180);
       return true;
     }
     return false;
@@ -346,20 +348,20 @@ int DetailedOrient::flipCells()
           || ndi->getRight() + leftPadding > rx) {
         continue;
       }
-      dbOrientType orig_orient = ndi->getOrient();
-      dbOrientType flipped_orient;
+      odb::dbOrientType orig_orient = ndi->getOrient();
+      odb::dbOrientType flipped_orient;
       switch (orig_orient) {
-        case dbOrientType::R0:
-          flipped_orient = dbOrientType::MY;
+        case odb::dbOrientType::R0:
+          flipped_orient = odb::dbOrientType::MY;
           break;
-        case dbOrientType::R180:
-          flipped_orient = dbOrientType::MX;
+        case odb::dbOrientType::R180:
+          flipped_orient = odb::dbOrientType::MX;
           break;
-        case dbOrientType::MY:
-          flipped_orient = dbOrientType::R0;
+        case odb::dbOrientType::MY:
+          flipped_orient = odb::dbOrientType::R0;
           break;
-        case dbOrientType::MX:
-          flipped_orient = dbOrientType::R180;
+        case odb::dbOrientType::MX:
+          flipped_orient = odb::dbOrientType::R180;
           break;
         default:
           continue;
@@ -405,25 +407,27 @@ unsigned DetailedOrient::orientFind(Node* ndi, int row)
   unsigned rowOri = arch_->getRow(row)->getOrient();
   unsigned cellOri = ndi->getOrient();
 
-  if (rowOri == dbOrientType::R0 || rowOri == dbOrientType::MY) {
-    if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY) {
+  if (rowOri == odb::dbOrientType::R0 || rowOri == odb::dbOrientType::MY) {
+    if (cellOri == odb::dbOrientType::R0 || cellOri == odb::dbOrientType::MY) {
       return cellOri;
     }
-    if (cellOri == dbOrientType::MX) {
-      return dbOrientType::R0;
+    if (cellOri == odb::dbOrientType::MX) {
+      return odb::dbOrientType::R0;
     }
-    if (cellOri == dbOrientType::R180) {
-      return dbOrientType::MY;
+    if (cellOri == odb::dbOrientType::R180) {
+      return odb::dbOrientType::MY;
     }
-  } else if (rowOri == dbOrientType::MX || rowOri == dbOrientType::R180) {
-    if (cellOri == dbOrientType::MX || cellOri == dbOrientType::R180) {
+  } else if (rowOri == odb::dbOrientType::MX
+             || rowOri == odb::dbOrientType::R180) {
+    if (cellOri == odb::dbOrientType::MX
+        || cellOri == odb::dbOrientType::R180) {
       return cellOri;
     }
-    if (cellOri == dbOrientType::R0) {
-      return dbOrientType::MX;
+    if (cellOri == odb::dbOrientType::R0) {
+      return odb::dbOrientType::MX;
     }
-    if (cellOri == dbOrientType::MY) {
-      return dbOrientType::R180;
+    if (cellOri == odb::dbOrientType::MY) {
+      return odb::dbOrientType::R180;
     }
   }
   return rowOri;
@@ -437,14 +441,16 @@ bool DetailedOrient::isLegalSym(unsigned rowOri,
 {
   // Messy...
   if (siteSym == Symmetry_Y) {
-    if (rowOri == dbOrientType::R0) {
-      if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY) {
+    if (rowOri == odb::dbOrientType::R0) {
+      if (cellOri == odb::dbOrientType::R0
+          || cellOri == odb::dbOrientType::MY) {
         return true;
       }
       return false;
     }
-    if (rowOri == dbOrientType::MX) {
-      if (cellOri == dbOrientType::R180 || cellOri == dbOrientType::MX) {
+    if (rowOri == odb::dbOrientType::MX) {
+      if (cellOri == odb::dbOrientType::R180
+          || cellOri == odb::dbOrientType::MX) {
         return true;
       }
       return false;
@@ -453,14 +459,16 @@ bool DetailedOrient::isLegalSym(unsigned rowOri,
     return false;
   }
   if (siteSym == Symmetry_X) {
-    if (rowOri == dbOrientType::R0) {
-      if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MX) {
+    if (rowOri == odb::dbOrientType::R0) {
+      if (cellOri == odb::dbOrientType::R0
+          || cellOri == odb::dbOrientType::MX) {
         return true;
       }
       return false;
     }
-    if (rowOri == dbOrientType::MX) {
-      if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MX) {
+    if (rowOri == odb::dbOrientType::MX) {
+      if (cellOri == odb::dbOrientType::R0
+          || cellOri == odb::dbOrientType::MX) {
         return true;
       }
       return false;
@@ -469,16 +477,18 @@ bool DetailedOrient::isLegalSym(unsigned rowOri,
     return false;
   }
   if (siteSym == (Symmetry_X | Symmetry_Y)) {
-    if (rowOri == dbOrientType::R0) {
-      if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY
-          || cellOri == dbOrientType::R180 || cellOri == dbOrientType::MX) {
+    if (rowOri == odb::dbOrientType::R0) {
+      if (cellOri == odb::dbOrientType::R0 || cellOri == odb::dbOrientType::MY
+          || cellOri == odb::dbOrientType::R180
+          || cellOri == odb::dbOrientType::MX) {
         return true;
       }
       return false;
     }
-    if (rowOri == dbOrientType::MX) {
-      if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY
-          || cellOri == dbOrientType::R180 || cellOri == dbOrientType::MX) {
+    if (rowOri == odb::dbOrientType::MX) {
+      if (cellOri == odb::dbOrientType::R0 || cellOri == odb::dbOrientType::MY
+          || cellOri == odb::dbOrientType::R180
+          || cellOri == odb::dbOrientType::MX) {
         return true;
       }
       return false;
@@ -487,14 +497,14 @@ bool DetailedOrient::isLegalSym(unsigned rowOri,
     return false;
   }
   if (siteSym == Symmetry_UNKNOWN) {
-    if (rowOri == dbOrientType::R0) {
-      if (cellOri == dbOrientType::R0) {
+    if (rowOri == odb::dbOrientType::R0) {
+      if (cellOri == odb::dbOrientType::R0) {
         return true;
       }
       return false;
     }
-    if (rowOri == dbOrientType::MX) {
-      if (cellOri == dbOrientType::MX) {
+    if (rowOri == odb::dbOrientType::MX) {
+      if (cellOri == odb::dbOrientType::MX) {
         return true;
       }
       return false;
