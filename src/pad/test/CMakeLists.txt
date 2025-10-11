@@ -17,6 +17,7 @@ or_integration_tests(
     non_top_layer
     place_bondpad
     place_bondpad_stagger
+    place_corners_avoid_bumps
     place_corners_avoid_overlap
     place_io_terminals_empty_call
     place_pad
