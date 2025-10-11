@@ -738,11 +738,13 @@ PixelPt Opendp::searchNearestSite(const Node* cell,
     GridPt p;
     bool operator>(const PQ_entry& other) const
     {
-      return manhattan_distance > other.manhattan_distance;
+      return std::tie(manhattan_distance, p.x, p.y)
+             > std::tie(other.manhattan_distance, other.p.x, other.p.y);
     }
     bool operator==(const PQ_entry& other) const
     {
-      return manhattan_distance == other.manhattan_distance;
+      return std::tie(manhattan_distance, p.x, p.y)
+             == std::tie(other.manhattan_distance, other.p.x, other.p.y);
     }
   };
   std::priority_queue<PQ_entry, std::vector<PQ_entry>, std::greater<PQ_entry>>
