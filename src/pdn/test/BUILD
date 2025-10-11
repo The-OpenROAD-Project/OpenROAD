@@ -7,6 +7,7 @@ COMPULSORY_TESTS = [
     "add_double_global_connection",
     "asap7_failed_macro_covered",
     "asap7_failed_macro_grid",
+    "asap7_macro_covered_partial",
     "asap7_no_via_generate",
     "asap7_no_via_generate_v1_snapped",
     "asap7_offcenter_via",
@@ -183,6 +184,7 @@ filegroup(
         "Nangate45_vias/Nangate45_adjacentcuts.lef",
         "asap7_data/fakeram7_256x32.lef",
         "asap7_data/fakeram7_256x32_covered.lef",
+        "asap7_data/fakeram7_256x32_covered_partial.lef",
         "asap7_data/fakeram7_256x32_notcovered.lef",
         "asap7_vias/asap7_tech_1x.lef",
         "asap7_vias/asap7_tech_1x_arrayspacing.lef",
@@ -278,6 +280,7 @@ filegroup(
             ],
         ) + {
             "asap7_failed_macro_covered": ["asap7_failed_macro_grid.def"],
+            "asap7_macro_covered_partial": ["asap7_failed_macro_grid.def"],
             "asap7_macro_notcovered": ["asap7_failed_macro_grid.def"],
             "core_grid_auto_domain": ["core_grid.defok"],
             "core_grid_with_rings_connect": ["core_grid_with_rings.defok"],
