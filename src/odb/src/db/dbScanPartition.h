@@ -8,6 +8,7 @@
 
 #include "dbCore.h"
 #include "dbScanPin.h"
+#include "odb/dbObject.h"
 #include "odb/odb.h"
 
 namespace odb {

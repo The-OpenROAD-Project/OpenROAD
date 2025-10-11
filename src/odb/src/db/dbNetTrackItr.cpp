@@ -7,6 +7,7 @@
 #include "dbNetTrack.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/dbObject.h"
 // User Code Begin Includes
 #include "dbNet.h"
 // User Code End Includes

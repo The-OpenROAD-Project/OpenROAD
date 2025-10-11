@@ -10,10 +10,13 @@
 #include "dbChipInst.h"
 #include "dbChipNet.h"
 #include "dbChipRegionInst.h"
+#include "dbCore.h"
 #include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbDatabaseObserver.h"
+#include "odb/dbObject.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
 #include <algorithm>
