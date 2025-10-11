@@ -15,6 +15,8 @@ make_io_sites -horizontal_site IOSITE -vertical_site IOSITE -corner_site IOSITE 
 
 # Add inst in LL corner
 place_inst -name "OVERLAP" -cell NOR3_X2 -origin "40 40" -status FIRM
+place_inst -name "PASS_INST" -cell NOR3_X2 -origin "2900 40" -status PLACED
+place_inst -name "PASS_BUMP" -cell DUMMY_BUMP -origin "2900 2900" -status FIRM
 
 # Place corners
 place_corners PAD_CORNER
