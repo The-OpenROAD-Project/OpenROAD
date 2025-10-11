@@ -1727,7 +1727,7 @@ void InstanceGrid::checkSetup() const
         int64_t total_overlap = 0;
         std::string layer_txt;
         for (const auto* layer : layers) {
-          if (layer_txt.size() > 0) {
+          if (!layer_txt.empty()) {
             layer_txt += ", ";
           }
           layer_txt += layer->getName();
