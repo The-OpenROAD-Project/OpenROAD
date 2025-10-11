@@ -1698,8 +1698,7 @@ void InstanceGrid::checkSetup() const
 
     if (top != nullptr) {
       const int top_idx = top->getNumber();
-      int64_t overlap_area = 0;
-      int64_t pin_area = 0;
+      std::map<odb::Rect, int64_t> overlap_area;
       for (auto* master_obs : inst_->getMaster()->getObstructions()) {
         auto* obs_layer = master_obs->getTechLayer();
         if (obs_layer == nullptr) {
@@ -1726,16 +1725,21 @@ void InstanceGrid::checkSetup() const
                     inst_->getName());
               } else {
                 const odb::Rect overlap = mobs.intersect(pin);
-                overlap_area += overlap.area();
-                pin_area += pin.area();
+                overlap_area[pin] += overlap.area();
               }
             }
           }
         }
       }
 
-      if (pin_area > 0 && overlap_area != 0) {
-        const float pct = 100 * static_cast<float>(overlap_area) / pin_area;
+      if (!overlap_area.empty()) {
+        int64_t pin_area = 0;
+        int64_t total_overlap = 0;
+        for (const auto& [pin, overlap] : overlap_area) {
+          total_overlap += overlap;
+          pin_area += pin.area();
+        }
+        const float pct = 100 * static_cast<float>(total_overlap) / pin_area;
         getLogger()->warn(
             utl::PDN,
             7,
