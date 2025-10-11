@@ -226,17 +226,8 @@ BIG_TESTS = [
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
     "liberty_dont_use",
-    "pinswap_flat",
-    "pinswap_hier",
-    "repair_fanout1_hier",
-    "repair_fanout2_hier",
-    "repair_fanout3_hier",
-    "repair_setup4_flat",
-    "repair_setup4_hier",
-    "report_buffers_asap7",
     "report_dont_use",
     "report_dont_use_corners",
-    "split_load_hier",
 ]
 
 [regression_test(

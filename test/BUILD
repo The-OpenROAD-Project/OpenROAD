@@ -59,7 +59,6 @@ COMPULSORY_TESTS = [
 
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
-    "upf_test",
     "upf_aes",
 ]
 
