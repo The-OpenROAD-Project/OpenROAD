@@ -8,7 +8,7 @@
 [WARNING ORD-2011] LEF master SLC has no liberty cell.
 [INFO IFP-0001] Added 60 rows of 355 site unithd.
 [INFO IFP-0001] Added 30 rows of 355 site unithddbl.
-[INFO TAP-0005] Inserted 309 tapcells.
+[INFO TAP-0005] Inserted 310 tapcells.
 [WARNING ORD-0044] Net created for VIN_SW, if intended as power or ground net add the -power/-ground switch as appropriate.
 [WARNING PDN-0209] Power switch for PS_0 already exists
 [WARNING PDN-0209] Power switch for PS_1 already exists
