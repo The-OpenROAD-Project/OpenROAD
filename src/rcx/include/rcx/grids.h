@@ -21,7 +21,6 @@ namespace rcx {
 using odb::Ath__array1D;
 using odb::AthPool;
 using odb::dbBox;
-using odb::dbNet;
 
 enum OverlapAdjust
 {
@@ -114,7 +113,7 @@ class Wire
                        uint len,
                        uint wtype);
   void setXY(int xy1, uint len);
-  dbNet* getNet();
+  odb::dbNet* getNet();
   Wire* getUpNext() const { return _upNext; }
   Wire* getDownNext() const { return _downNext; }
   Wire* getAboveNext() const { return _aboveNext; }

@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "odb/db.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
