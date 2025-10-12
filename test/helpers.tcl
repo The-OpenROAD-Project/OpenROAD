@@ -5,13 +5,26 @@ if { [info exists ::env(TEST_TMPDIR)] } {
 } else {
   set test_dir [file dirname [file normalize [info script]]]
 }
-set result_dir [file join $test_dir "results"]
 
-proc make_result_file { filename } {
+if { [info exists ::env(RESULTS_DIR)] } {
+  set result_dir $::env(RESULTS_DIR)
+} else {
+  set result_dir [file join $test_dir "results"]
+}
+
+proc make_result_dir { } {
   variable result_dir
   if { ![file exists $result_dir] } {
     file mkdir $result_dir
   }
+  return $result_dir
+}
+
+proc make_result_file { filename } {
+  variable result_dir
+
+  make_result_dir
+
   set root [file rootname $filename]
   set ext [file extension $filename]
   set filename "$root-tcl$ext"

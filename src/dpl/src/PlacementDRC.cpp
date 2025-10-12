@@ -5,6 +5,7 @@
 #include <set>
 #include <string>
 
+#include "dpl/Opendp.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
@@ -69,7 +70,7 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell) const
 bool PlacementDRC::checkEdgeSpacing(const Node* cell,
                                     const GridX x,
                                     const GridY y,
-                                    const dbOrientType& orient) const
+                                    const odb::dbOrientType& orient) const
 {
   if (!hasCellEdgeSpacingTable()) {
     return true;
@@ -184,7 +185,7 @@ bool PlacementDRC::checkDRC(const Node* cell) const
 bool PlacementDRC::checkDRC(const Node* cell,
                             const GridX x,
                             const GridY y,
-                            const dbOrientType& orient) const
+                            const odb::dbOrientType& orient) const
 {
   return checkEdgeSpacing(cell, x, y, orient) && checkPadding(cell, x, y)
          && checkBlockedLayers(cell, x, y) && checkOneSiteGap(cell, x, y);

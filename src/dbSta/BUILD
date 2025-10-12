@@ -143,10 +143,9 @@ cc_library(
 
 tcl_encode(
     name = "tcl",
-    srcs = [
+    srcs = ["//src/sta:tcl_scripts"] + [
         "src/dbReadVerilog.tcl",
         "src/dbSta.tcl",
-        "//src/sta:tcl_scripts",
     ],
     char_array_name = "dbSta_tcl_inits",
     namespace = "sta",

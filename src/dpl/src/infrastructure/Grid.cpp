@@ -154,10 +154,6 @@ void Grid::markBlocked(dbBlock* block)
           }
           wire_rect.moveDelta(-core.xMin(), -core.yMin());
           GridRect grid_rect = gridCovering(wire_rect);
-          if (grid_rect.yhi - grid_rect.ylo < 3) {
-            // probably a patch over a via, ignore
-            return;
-          }
           GridRect core{.xlo = GridX{0},
                         .ylo = GridY{0},
                         .xhi = GridX{row_site_count_},
@@ -178,12 +174,18 @@ void Grid::markBlocked(dbBlock* block)
       continue;
     }
     for (odb::dbSWire* swire : net->getSWires()) {
-      for (odb::dbSBox* s : swire->getWires()) {
-        if (!s->isVia()) {
-          odb::Rect wire_rect = s->getBox();
-          odb::dbTechLayer* tech_layer = s->getTechLayer();
-          addBlockedLayers(wire_rect, tech_layer);
+      for (odb::dbSBox* sbox : swire->getWires()) {
+        if (sbox->isVia()) {
+          // TODO: handle via
+          continue;
         }
+        if (sbox->getWireShapeType() == odb::dbWireShapeType::DRCFILL) {
+          // TODO: handle patches
+          continue;
+        }
+        odb::Rect wire_rect = sbox->getBox();
+        odb::dbTechLayer* tech_layer = sbox->getTechLayer();
+        addBlockedLayers(wire_rect, tech_layer);
       }
     }
   }
@@ -226,11 +228,11 @@ void Grid::initGrid(dbDatabase* db,
   markBlocked(block);
 }
 
-std::pair<dbSite*, dbOrientType> Grid::getShortestSite(GridX grid_x,
-                                                       GridY grid_y)
+std::pair<dbSite*, odb::dbOrientType> Grid::getShortestSite(GridX grid_x,
+                                                            GridY grid_y)
 {
   dbSite* selected_site = nullptr;
-  dbOrientType selected_orient;
+  odb::dbOrientType selected_orient;
   DbuY min_height{std::numeric_limits<int>::max()};
 
   const RowSitesMap& sites_map = row_sites_[grid_y.v];
@@ -250,9 +252,9 @@ std::pair<dbSite*, dbOrientType> Grid::getShortestSite(GridX grid_x,
   return {selected_site, selected_orient};
 }
 
-std::optional<dbOrientType> Grid::getSiteOrientation(GridX x,
-                                                     GridY y,
-                                                     dbSite* site) const
+std::optional<odb::dbOrientType> Grid::getSiteOrientation(GridX x,
+                                                          GridY y,
+                                                          dbSite* site) const
 {
   const RowSitesMap& sites_map = row_sites_[y.v];
   auto interval_it = sites_map.find(x.v);

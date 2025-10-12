@@ -11,6 +11,7 @@
 #include <QLabel>
 #include <QMenu>
 #include <QMessageBox>
+#include <QModelIndexList>
 #include <QPushButton>
 #include <QSettings>
 #include <QSortFilterProxyModel>

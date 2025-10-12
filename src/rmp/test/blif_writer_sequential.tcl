@@ -16,8 +16,8 @@ rmp::blif_add_instance $blif "_i3_"
 rmp::blif_add_instance $blif "_r1_"
 
 
-rmp::blif_dump $blif "./results/blif_writer_sequential.blif"
+set result_blif [make_result_file "blif_writer_sequential.blif"]
+rmp::blif_dump $blif $result_blif
 
-write_def "./results/design_seq.def"
-diff_files "./results/blif_writer_sequential.blif" \
-  "blif_writer_sequential.blif.ok"
+write_def [make_result_file "design_seq.def"]
+diff_files $result_blif "blif_writer_sequential.blif.ok"

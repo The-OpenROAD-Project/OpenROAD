@@ -3,6 +3,7 @@
 
 #include "journal.h"
 
+#include "dpl/Opendp.h"
 #include "infrastructure/Grid.h"
 #include "optimization/detailed_manager.h"
 

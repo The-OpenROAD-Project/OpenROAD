@@ -17,12 +17,12 @@
 #include "boost/icl/interval_map.hpp"
 #include "dpl/Opendp.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/isotropy.h"
 
 namespace dpl {
 
-using odb::dbOrientType;
 using odb::dbSite;
 
 struct GridIntervalX
@@ -137,10 +137,11 @@ class Grid
   Pixel& pixel(GridY y, GridX x) { return pixels_[y.v][x.v]; }
   const Pixel& pixel(GridY y, GridX x) const { return pixels_[y.v][x.v]; }
 
-  std::optional<dbOrientType> getSiteOrientation(GridX x,
-                                                 GridY y,
-                                                 dbSite* site) const;
-  std::pair<dbSite*, dbOrientType> getShortestSite(GridX grid_x, GridY grid_y);
+  std::optional<odb::dbOrientType> getSiteOrientation(GridX x,
+                                                      GridY y,
+                                                      dbSite* site) const;
+  std::pair<dbSite*, odb::dbOrientType> getShortestSite(GridX grid_x,
+                                                        GridY grid_y);
 
   void resize(int size) { pixels_.resize(size); }
   void resize(GridY size) { pixels_.resize(size.v); }
@@ -158,7 +159,7 @@ class Grid
 
  private:
   // Maps a site to the right orientation to use in a given row
-  using SiteToOrientation = std::map<dbSite*, dbOrientType>;
+  using SiteToOrientation = std::map<dbSite*, odb::dbOrientType>;
 
   // Used to combine the SiteToOrientation for two intervals when merged
   template <typename MapType>

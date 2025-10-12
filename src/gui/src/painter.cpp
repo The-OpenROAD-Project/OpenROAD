@@ -6,6 +6,7 @@
 #include <QColor>
 #include <QFont>
 #include <QString>
+#include <QTransform>
 #include <algorithm>
 #include <cctype>
 #include <cmath>

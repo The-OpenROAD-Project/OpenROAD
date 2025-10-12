@@ -22,6 +22,7 @@
 #include "boost/random/uniform_int_distribution.hpp"
 #include "dpl/Opendp.h"
 #include "graphics/DplObserver.h"
+#include "infrastructure/Coordinates.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
