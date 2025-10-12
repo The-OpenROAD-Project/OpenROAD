@@ -35,6 +35,7 @@
 #include <sstream>
 
 #include "defiDebug.hpp"
+#include "defiKRDefs.hpp"
 #include "defiUtil.hpp"
 #include "defrData.hpp"
 

@@ -13,6 +13,7 @@
 
 #include "detailed_manager.h"
 #include "detailed_orient.h"
+#include "dpl/Opendp.h"
 #include "infrastructure/detailed_segment.h"
 #include "objective/detailed_hpwl.h"
 #include "util/utility.h"

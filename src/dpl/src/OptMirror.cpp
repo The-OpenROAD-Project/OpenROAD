@@ -69,7 +69,8 @@ void OptimizeMirroring::run()
          return net_box1->hpwl() > net_box2->hpwl();
        });
 
-  std::vector<dbInst*> mirror_candidates = findMirrorCandidates(sorted_boxes);
+  std::vector<odb::dbInst*> mirror_candidates
+      = findMirrorCandidates(sorted_boxes);
   odb::WireLengthEvaluator eval(block_);
   int64_t hpwl_before = eval.hpwl();
   int mirror_count = mirrorCandidates(mirror_candidates);
@@ -113,23 +114,23 @@ void OptimizeMirroring::findNetBoxes()
   }
 }
 
-std::vector<dbInst*> OptimizeMirroring::findMirrorCandidates(
+std::vector<odb::dbInst*> OptimizeMirroring::findMirrorCandidates(
     NetBoxes& net_boxes)
 {
-  std::vector<dbInst*> mirror_candidates;
-  unordered_set<dbInst*> existing;
+  std::vector<odb::dbInst*> mirror_candidates;
+  unordered_set<odb::dbInst*> existing;
   // Find inst terms on the boundary of the net boxes.
   for (NetBox* net_box : net_boxes) {
     if (!net_box->isIgnore()) {
       dbNet* net = net_box->getNet();
       const odb::Rect& box = net_box->getBox();
       for (dbITerm* iterm : net->getITerms()) {
-        dbInst* inst = iterm->getInst();
+        odb::dbInst* inst = iterm->getInst();
         int x, y;
         if (inst->isCore() && !inst->isFixed() && iterm->getAvgXY(&x, &y)
             && (x == box.xMin() || x == box.xMax() || y == box.yMin()
                 || y == box.yMax())) {
-          dbInst* inst = iterm->getInst();
+          odb::dbInst* inst = iterm->getInst();
           if (existing.find(inst) == existing.end()) {
             mirror_candidates.push_back(inst);
             existing.insert(inst);
@@ -147,10 +148,11 @@ std::vector<dbInst*> OptimizeMirroring::findMirrorCandidates(
   return mirror_candidates;
 }
 
-int OptimizeMirroring::mirrorCandidates(std::vector<dbInst*>& mirror_candidates)
+int OptimizeMirroring::mirrorCandidates(
+    std::vector<odb::dbInst*>& mirror_candidates)
 {
   int mirror_count = 0;
-  for (dbInst* inst : mirror_candidates) {
+  for (odb::dbInst* inst : mirror_candidates) {
     // Use hpwl of all nets connected to the instance terms
     // before/after to determine incremental change to total hpwl.
     int64_t hpwl_before = hpwl(inst);
@@ -199,7 +201,7 @@ static dbOrientType orientMirrorY(const dbOrientType& orient)
   return dbOrientType::R0;
 }
 
-int64_t OptimizeMirroring::hpwl(dbInst* inst)
+int64_t OptimizeMirroring::hpwl(odb::dbInst* inst)
 {
   int64_t inst_hpwl = 0;
   for (dbITerm* iterm : inst->getITerms()) {
@@ -214,7 +216,7 @@ int64_t OptimizeMirroring::hpwl(dbInst* inst)
   return inst_hpwl;
 }
 
-void OptimizeMirroring::updateNetBoxes(dbInst* inst)
+void OptimizeMirroring::updateNetBoxes(odb::dbInst* inst)
 {
   for (dbITerm* iterm : inst->getITerms()) {
     dbNet* net = iterm->getNet();
@@ -227,7 +229,7 @@ void OptimizeMirroring::updateNetBoxes(dbInst* inst)
   }
 }
 
-void OptimizeMirroring::saveNetBoxes(dbInst* inst)
+void OptimizeMirroring::saveNetBoxes(odb::dbInst* inst)
 {
   for (dbITerm* iterm : inst->getITerms()) {
     dbNet* net = iterm->getNet();
@@ -237,7 +239,7 @@ void OptimizeMirroring::saveNetBoxes(dbInst* inst)
   }
 }
 
-void OptimizeMirroring::restoreNetBoxes(dbInst* inst)
+void OptimizeMirroring::restoreNetBoxes(odb::dbInst* inst)
 {
   for (dbITerm* iterm : inst->getITerms()) {
     dbNet* net = iterm->getNet();

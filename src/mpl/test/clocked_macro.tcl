@@ -12,7 +12,7 @@ link_design "clocked_macro"
 read_def "./testcases/clocked_macro.def" -floorplan_initialize
 
 set_thread_count 0
-rtl_macro_placer -report_directory results/clocked_macro -halo_width 4.0
+rtl_macro_placer -report_directory [make_result_dir] -halo_width 4.0
 
 set def_file [make_result_file clocked_macro.def]
 write_def $def_file

@@ -4,6 +4,7 @@
 #include "renderThread.h"
 
 #include <QColor>
+#include <QMutexLocker>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPolygon>
