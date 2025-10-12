@@ -16,7 +16,7 @@ using odb::dbBox;
 
 Graphics::Graphics(Opendp* dp,
                    float min_displacement,
-                   const dbInst* debug_instance)
+                   const odb::dbInst* debug_instance)
     : dp_(dp),
       debug_instance_(debug_instance),
       min_displacement_(min_displacement)
@@ -29,7 +29,7 @@ void Graphics::startPlacement(dbBlock* block)
   block_ = block;
 }
 
-void Graphics::placeInstance(dbInst* instance)
+void Graphics::placeInstance(odb::dbInst* instance)
 {
   if (!instance || instance != debug_instance_) {
     return;

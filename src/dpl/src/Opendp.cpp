@@ -33,6 +33,7 @@ using std::string;
 
 using utl::DPL;
 
+using odb::dbInst;
 using odb::Rect;
 
 ////////////////////////////////////////////////////////////////
@@ -62,7 +63,7 @@ void Opendp::setPaddingGlobal(const int left, const int right)
   padding_->setPaddingGlobal(GridX{left}, GridX{right});
 }
 
-void Opendp::setPadding(dbInst* inst, const int left, const int right)
+void Opendp::setPadding(odb::dbInst* inst, const int left, const int right)
 {
   padding_->setPadding(inst, GridX{left}, GridX{right});
 }
@@ -139,7 +140,7 @@ void Opendp::updateDbInstLocations()
 {
   for (auto& cell : network_->getNodes()) {
     if (!cell->isFixed() && cell->isStdCell()) {
-      dbInst* db_inst_ = cell->getDbInst();
+      odb::dbInst* db_inst_ = cell->getDbInst();
       // Only move the instance if necessary to avoid triggering callbacks.
       if (db_inst_->getOrient() != cell->getOrient()) {
         db_inst_->setOrient(cell->getOrient());
@@ -235,12 +236,12 @@ int Opendp::padGlobalRight() const
   return padding_->padGlobalRight().v;
 }
 
-int Opendp::padLeft(dbInst* inst) const
+int Opendp::padLeft(odb::dbInst* inst) const
 {
   return padding_->padLeft(inst).v;
 }
 
-int Opendp::padRight(dbInst* inst) const
+int Opendp::padRight(odb::dbInst* inst) const
 {
   return padding_->padRight(inst).v;
 }
@@ -354,7 +355,7 @@ void Opendp::groupInitPixels2()
   }
 }
 
-dbInst* Opendp::getAdjacentInstance(dbInst* inst, bool left) const
+odb::dbInst* Opendp::getAdjacentInstance(odb::dbInst* inst, bool left) const
 {
   const Rect inst_rect = inst->getBBox()->getBox();
   DbuX x_dbu = left ? DbuX{inst_rect.xMin() - 1} : DbuX{inst_rect.xMax() + 1};
@@ -365,7 +366,7 @@ dbInst* Opendp::getAdjacentInstance(dbInst* inst, bool left) const
 
   Pixel* pixel = grid_->gridPixel(x, y);
 
-  dbInst* adjacent_inst = nullptr;
+  odb::dbInst* adjacent_inst = nullptr;
 
   // do not return macros, endcaps and tapcells
   if (pixel != nullptr && pixel->cell && pixel->cell->getDbInst()->isCore()) {
@@ -379,9 +380,9 @@ std::vector<dbInst*> Opendp::getAdjacentInstancesCluster(dbInst* inst) const
 {
   const bool left = true;
   const bool right = false;
-  std::vector<dbInst*> adj_inst_cluster;
+  std::vector<odb::dbInst*> adj_inst_cluster;
 
-  dbInst* left_inst = getAdjacentInstance(inst, left);
+  odb::dbInst* left_inst = getAdjacentInstance(inst, left);
   while (left_inst != nullptr) {
     adj_inst_cluster.push_back(left_inst);
     // the right instance can be ignored, since it was added in the line above
@@ -391,7 +392,7 @@ std::vector<dbInst*> Opendp::getAdjacentInstancesCluster(dbInst* inst) const
   std::reverse(adj_inst_cluster.begin(), adj_inst_cluster.end());
   adj_inst_cluster.push_back(inst);
 
-  dbInst* right_inst = getAdjacentInstance(inst, right);
+  odb::dbInst* right_inst = getAdjacentInstance(inst, right);
   while (right_inst != nullptr) {
     adj_inst_cluster.push_back(right_inst);
     // the left instance can be ignored, since it was added in the line above

@@ -286,7 +286,7 @@ void Grid::visitCellPixels(
     bool padded,
     const std::function<void(Pixel* pixel, bool padded)>& visitor) const
 {
-  dbInst* inst = cell.getDbInst();
+  odb::dbInst* inst = cell.getDbInst();
   auto obstructions = inst->getMaster()->getObstructions();
   bool have_obstructions = false;
   const odb::Rect core = getCore();
@@ -337,7 +337,7 @@ void Grid::visitCellBoundaryPixels(
         void(Pixel* pixel, odb::Direction2D edge, GridX x, GridY y)>& visitor)
     const
 {
-  dbInst* inst = cell.getDbInst();
+  odb::dbInst* inst = cell.getDbInst();
 
   auto visit = [&visitor, this](const GridX x_start,
                                 const GridX x_end,
