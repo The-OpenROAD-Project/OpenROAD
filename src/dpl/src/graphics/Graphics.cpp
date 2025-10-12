@@ -96,9 +96,9 @@ void Graphics::drawObjects(gui::Painter& painter)
     }
 
     dbBox* bbox = cell->getDbInst()->getBBox();
-    Point initial_location(bbox->xMin(), bbox->yMin());
-    Point final_location(lx.v, ly.v);
-    float len = Point::squaredDistance(initial_location, final_location);
+    odb::Point initial_location(bbox->xMin(), bbox->yMin());
+    odb::Point final_location(lx.v, ly.v);
+    float len = odb::Point::squaredDistance(initial_location, final_location);
     if (len < min_length) {
       continue;
     }

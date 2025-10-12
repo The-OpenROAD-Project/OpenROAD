@@ -14,7 +14,6 @@ namespace dpl {
 
 using odb::dbBlock;
 using odb::dbInst;
-using odb::Point;
 
 class Opendp;
 class Node;

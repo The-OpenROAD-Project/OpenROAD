@@ -35,7 +35,6 @@ using odb::dbInst;
 using odb::dbMaster;
 using odb::dbMasterType;
 using odb::dbTechLayer;
-using odb::Point;
 
 class Node;
 class Group;

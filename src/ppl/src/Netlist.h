@@ -14,8 +14,6 @@
 
 namespace ppl {
 
-using odb::Point;
-
 struct Constraint;
 struct Section;
 struct Slot;
