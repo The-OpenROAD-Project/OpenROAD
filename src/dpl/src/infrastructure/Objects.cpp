@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "dpl/Opendp.h"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 

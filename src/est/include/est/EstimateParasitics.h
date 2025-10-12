@@ -43,7 +43,6 @@ namespace est {
 
 using utl::Logger;
 
-using odb::dbBlock;
 using odb::dbDatabase;
 using odb::dbNet;
 using odb::dbTechLayer;
@@ -228,14 +227,14 @@ class EstimateParasitics : public dbStaState
   void highlightSteiner(const Pin* drvr);
 
   dbNetwork* getDbNetwork() { return db_network_; }
-  dbBlock* getBlock() { return block_; }
+  odb::dbBlock* getBlock() { return block_; }
   GlobalRouter* getGlobalRouter() { return global_router_; }
   IncrementalGRoute* getIncrementalGRT() { return incr_groute_; }
   void setIncrementalGRT(IncrementalGRoute* incr_groute)
   {
     incr_groute_ = incr_groute;
   }
-  void setDbCbkOwner(dbBlock* block);
+  void setDbCbkOwner(odb::dbBlock* block);
   void removeDbCbkOwner();
 
   void initBlock();
@@ -276,7 +275,7 @@ class EstimateParasitics : public dbStaState
   IncrementalGRoute* incr_groute_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   dbDatabase* db_ = nullptr;
-  dbBlock* block_ = nullptr;
+  odb::dbBlock* block_ = nullptr;
   std::unique_ptr<OdbCallBack> db_cbk_;
 
   std::vector<odb::dbTechLayer*> signal_layers_;

@@ -20,7 +20,6 @@ namespace rcx {
 
 using odb::Ath__array1D;
 using odb::AthPool;
-using odb::dbBlock;
 using odb::dbBox;
 using odb::dbNet;
 
@@ -489,7 +488,7 @@ class GridTable
                               bool startSearchTrack,
                               int startXY);
 
-  void setExtControl_v2(dbBlock* block,
+  void setExtControl_v2(odb::dbBlock* block,
                         bool useDbSdb,
                         uint adj,
                         uint npsrc,
@@ -613,7 +612,7 @@ class GridTable
   void setNoPowerTarget(uint npt) { _noPowerTarget = npt; };
   void incrCCshorts() { _CCshorts++; };
 
-  void setExtControl(dbBlock* block,
+  void setExtControl(odb::dbBlock* block,
                      bool useDbSdb,
                      uint adj,
                      uint npsrc,
@@ -641,8 +640,8 @@ class GridTable
   void incrMultiTrackWireCnt(bool isPower);
   void adjustOverlapMakerEnd();
   void dumpTrackCounts(FILE* fp);
-  dbBlock* getBlock() { return _block; };
-  void setBlock(dbBlock* block) { _block = block; };
+  odb::dbBlock* getBlock() { return _block; };
+  void setBlock(odb::dbBlock* block) { _block = block; };
 
   int couplingCaps(int hiXY,
                    uint couplingDist,
@@ -723,7 +722,7 @@ class GridTable
   int* _dgContextHiTrack;     // array
   int** _dgContextTrackBase;  // array
 
-  dbBlock* _block;
+  odb::dbBlock* _block;
 
   uint _wireCnt;
 
