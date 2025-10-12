@@ -1749,6 +1749,12 @@ void InstanceGrid::checkSetup() const
                 inst_->getName());
           }
         }
+
+        if (total_pin_area == 0) {
+          // should not occur, implies all blocked pins have 0 area
+          continue;
+        }
+
         const float pct
             = 100 * static_cast<float>(total_overlap) / total_pin_area;
         getLogger()->warn(utl::PDN,
