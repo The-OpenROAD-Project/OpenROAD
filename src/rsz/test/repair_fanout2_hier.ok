@@ -4,12 +4,12 @@
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0001] Number of available slots 8754
-[INFO PPL-0002] Number of I/O             1
-[INFO PPL-0003] Number of I/O w/sink      1
+[INFO PPL-0002] Number of I/O             2
+[INFO PPL-0003] Number of I/O w/sink      2
 [INFO PPL-0004] Number of I/O w/o sink    0
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
-[INFO PPL-0012] I/O nets HPWL: 20.11 um.
+[INFO PPL-0012] I/O nets HPWL: 40.28 um.
 [INFO GPL-0005] Execute conjugate gradient initial placement.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
@@ -18,8 +18,8 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0007] Movable instances:                  71
 [INFO GPL-0008] Fixed instances:                     0
 [INFO GPL-0009] Dummy instances:                     0
-[INFO GPL-0010] Number of nets:                      2
-[INFO GPL-0011] Number of pins:                    143
+[INFO GPL-0010] Number of nets:                      3
+[INFO GPL-0011] Number of pins:                    145
 [INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
 [INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [INFO GPL-0016] Core area:                   47872.020 um^2
@@ -28,19 +28,19 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0019] Utilization:                     0.671 %
 [INFO GPL-0020] Standard cells area:           321.062 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000008 HPWL: 1216010
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000008 HPWL: 27440
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000009 HPWL: 25344
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 25028
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000001 HPWL: 24730
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000001 HPWL: 2422200
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000001 HPWL: 35952
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 34382
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000006 HPWL: 34500
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000002 HPWL: 34146
 Placement Analysis
 ---------------------------------
-total displacement        800.7 u
-average displacement       11.3 u
-max displacement           18.8 u
-original HPWL               2.3 u
-legalized HPWL             95.5 u
-delta HPWL                 3988 %
+total displacement        740.3 u
+average displacement       10.4 u
+max displacement           18.0 u
+original HPWL               3.4 u
+legalized HPWL            112.7 u
+delta HPWL                 3251 %
 
 max fanout
 
@@ -50,7 +50,7 @@ drvr/Q                                   10     70    -60 (VIOLATED)
 
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
-        0 |     +0.0% |       0 |       0 |             0 |       143
+        0 |     +0.0% |       0 |       0 |             0 |       144
     final |     +2.0% |       0 |       8 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
@@ -59,6 +59,6 @@ max fanout
 
 Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
-fanout8/Z                                10     10      0 (MET)
+fanout7/Z                                10     10      0 (MET)
 
 No differences found.

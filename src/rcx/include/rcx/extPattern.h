@@ -8,14 +8,12 @@
 #include <memory>
 #include <vector>
 
-#include "dbUtil.h"
-#include "ext_options.h"
 #include "odb/db.h"
+#include "rcx/dbUtil.h"
+#include "rcx/ext_options.h"
 #include "rcx/util.h"
 
 namespace rcx {
-
-using namespace odb;
 
 template <class T>
 class AthArray;

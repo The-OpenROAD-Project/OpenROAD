@@ -19,23 +19,32 @@
 #include "BufferedNet.hh"
 #include "ResizerObserver.hh"
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/Corner.hh"
+#include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
 #include "sta/RiseFallValues.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
+#include "sta/TimingArc.hh"
+#include "sta/TimingRole.hh"
 #include "sta/Units.hh"
+#include "sta/Vector.hh"
+#include "utl/Logger.h"
 #include "utl/mem_stats.h"
 #include "utl/scope.h"
 
@@ -60,9 +69,7 @@ using sta::TimingArcSet;
 using sta::TimingRole;
 using sta::VertexInEdgeIterator;
 
-RepairDesign::RepairDesign(Resizer* resizer,
-                           est::EstimateParasitics* estimate_parasitics)
-    : resizer_(resizer), estimate_parasitics_(estimate_parasitics)
+RepairDesign::RepairDesign(Resizer* resizer) : resizer_(resizer)
 {
 }
 
@@ -74,6 +81,7 @@ void RepairDesign::init()
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
   dbu_ = resizer_->dbu_;
+  estimate_parasitics_ = resizer_->estimate_parasitics_;
   pre_checks_ = std::make_unique<PreChecks>(resizer_);
   parasitics_src_ = estimate_parasitics_->getParasiticsSrc();
   initial_design_area_ = resizer_->computeDesignArea();
@@ -777,6 +785,10 @@ bool RepairDesign::performGainBuffering(Net* net,
 
     repaired_net = true;
     inserted_buffer_count_++;
+    if (graphics_) {
+      dbInst* db_inst = db_network_->staToDb(inst);
+      graphics_->makeBuffer(db_inst);
+    }
 
     int max_level = 0;
     for (auto it = sinks.begin(); it != group_end; it++) {
@@ -1226,9 +1238,19 @@ void RepairDesign::repairNet(const BufferedNetPtr& bnet,
   max_length_ = max_length;
   corner_ = corner;
 
+  if (graphics_) {
+    Net* net = db_network_->net(drvr_pin);
+    odb::dbNet* db_net = db_network_->staToDb(net);
+    graphics_->repairNetStart(bnet, db_net);
+  }
+
   int wire_length;
   PinSeq load_pins;
   repairNet(bnet, 0, wire_length, load_pins);
+
+  if (graphics_) {
+    graphics_->repairNetDone();
+  }
 }
 
 void RepairDesign::repairNet(const BufferedNetPtr& bnet,
@@ -1691,7 +1713,7 @@ void RepairDesign::repairNetLoad(
 
 LoadRegion::LoadRegion() = default;
 
-LoadRegion::LoadRegion(PinSeq& pins, Rect& bbox) : pins_(pins), bbox_(bbox)
+LoadRegion::LoadRegion(PinSeq& pins, odb::Rect& bbox) : pins_(pins), bbox_(bbox)
 {
 }
 
@@ -1700,7 +1722,7 @@ LoadRegion RepairDesign::findLoadRegions(const Net* net,
                                          int max_fanout)
 {
   PinSeq loads = findLoads(drvr_pin);
-  Rect bbox = findBbox(loads);
+  odb::Rect bbox = findBbox(loads);
   LoadRegion region(loads, bbox);
   if (graphics_) {
     odb::dbNet* db_net = db_network_->staToDb(net);
@@ -1727,13 +1749,13 @@ void RepairDesign::subdivideRegion(LoadRegion& region, int max_fanout)
     bool horz_partition;
     odb::Line cut;
     if (region.bbox_.dx() > region.bbox_.dy()) {
-      region.regions_[0].bbox_ = Rect(x_min, y_min, x_mid, y_max);
-      region.regions_[1].bbox_ = Rect(x_mid, y_min, x_max, y_max);
+      region.regions_[0].bbox_ = odb::Rect(x_min, y_min, x_mid, y_max);
+      region.regions_[1].bbox_ = odb::Rect(x_mid, y_min, x_max, y_max);
       cut = odb::Line{x_mid, y_min, x_mid, y_max};
       horz_partition = true;
     } else {
-      region.regions_[0].bbox_ = Rect(x_min, y_min, x_max, y_mid);
-      region.regions_[1].bbox_ = Rect(x_min, y_mid, x_max, y_max);
+      region.regions_[0].bbox_ = odb::Rect(x_min, y_min, x_max, y_mid);
+      region.regions_[1].bbox_ = odb::Rect(x_min, y_mid, x_max, y_max);
       horz_partition = false;
       cut = odb::Line{x_min, y_mid, x_max, y_mid};
     }
@@ -1840,7 +1862,7 @@ void RepairDesign::makeRegionRepeaters(LoadRegion& region,
 
 void RepairDesign::makeFanoutRepeater(PinSeq& repeater_loads,
                                       PinSeq& repeater_inputs,
-                                      const Rect& bbox,
+                                      const odb::Rect& bbox,
                                       const Point& loc,
                                       bool check_slew,
                                       bool check_cap,
@@ -1887,13 +1909,13 @@ void RepairDesign::makeFanoutRepeater(PinSeq& repeater_loads,
   repeater_loads.clear();
 }
 
-Rect RepairDesign::findBbox(PinSeq& pins)
+odb::Rect RepairDesign::findBbox(PinSeq& pins)
 {
-  Rect bbox;
+  odb::Rect bbox;
   bbox.mergeInit();
   for (const Pin* pin : pins) {
     Point loc = db_network_->location(pin);
-    Rect r(loc.x(), loc.y(), loc.x(), loc.y());
+    odb::Rect r(loc.x(), loc.y(), loc.x(), loc.y());
     bbox.merge(r);
   }
   return bbox;
@@ -2008,7 +2030,6 @@ bool RepairDesign::makeRepeater(
   bool keep_input;
   Instance* parent = nullptr;
   Pin* driver_pin = nullptr;
-  Instance* driver_instance_parent = nullptr;
   PinSet repeater_load_pins(db_network_);
   Pin* buffer_ip_pin = nullptr;
   Pin* buffer_op_pin = nullptr;
@@ -2328,7 +2349,6 @@ bool RepairDesign::makeRepeater(
 
   Point buf_loc(x, y);
   buffer = resizer_->makeBuffer(buffer_cell, reason, parent, buf_loc);
-  driver_instance_parent = parent;
 
   inserted_buffer_count_++;
   buffer_ip_pin = nullptr;
@@ -2341,6 +2361,7 @@ bool RepairDesign::makeRepeater(
 
   odb::dbModNet* driver_pin_mod_net = db_network_->hierNet(driver_pin);
 
+  // TODO: Refactor this later
   // original code to preserve regressions
   // It turns out that original code is sensitive to buffer
   // connection order. To preserve backward compatibility
@@ -2443,7 +2464,7 @@ bool RepairDesign::makeRepeater(
       //
       // Case 1
       //------
-      // A primary input or do not preserve the outputs
+      // Driver is a primary input or loads do not have primary output
       //
       // use orig net as buffer ip (keep primary input name exposed)
       // use new net as buffer op (ok to use new name on op of buffer).
@@ -2455,7 +2476,7 @@ bool RepairDesign::makeRepeater(
       //
       // Copy signal type to new net.
       //
-      dbNet* ip_net_db = load_db_net;
+      dbNet* ip_net_db = load_db_net;  // orig net
       dbNet* op_net_db = db_network_->staToDb(new_net);
       op_net_db->setSigType(ip_net_db->getSigType());
       out_net = new_net;
@@ -2469,70 +2490,28 @@ bool RepairDesign::makeRepeater(
       // this means hiearchical connect can use the buffer_op_pin
       // net, a new net, without having to make a new one).
       //
-      db_network_->connectPin(buffer_ip_pin, buffer_ip_net);
+
+      Net* driver_hier_net
+          = db_network_->dbToSta(db_network_->hierNet(driver_pin));
+      db_network_->connectPin(buffer_ip_pin, buffer_ip_net, driver_hier_net);
       db_network_->connectPin(buffer_op_pin, buffer_op_net);
 
       // The new net is on the output side, we leave the driver
       // untouched and clean it up later.
 
-      for (const Pin* pin : load_pins) {
-        Instance* inst = network_->instance(pin);
+      for (const Pin* load_pin : load_pins) {
+        Instance* inst = network_->instance(load_pin);
         if (resizer_->dontTouch(inst)) {
           continue;
         }
 
-        load_db_net = db_network_->flatNet(pin);
-
-        Instance* load_instance_parent
-            = db_network_->getOwningInstanceParent(const_cast<Pin*>(pin));
-
         // disconnect the load pin from everything
-        db_network_->disconnectPin(const_cast<Pin*>(pin));
+        db_network_->disconnectPin(const_cast<Pin*>(load_pin));
 
-        if (driver_instance_parent != load_instance_parent) {
-          db_network_->hierarchicalConnect(db_network_->flatPin(buffer_op_pin),
-                                           db_network_->flatPin(pin));
-        } else {
-          db_network_->connectPin(const_cast<Pin*>(pin), buffer_op_net);
-        }
+        db_network_->hierarchicalConnect(db_network_->flatPin(buffer_op_pin),
+                                         db_network_->flatPin(load_pin));
       }
 
-      //
-      // renormalize the buffer_op_pin
-      // We have copied a lot of stuff to the buffer output
-      // net. If we have introduced a new hierarchical connection
-      // driven by the buffer output pin, make sure all the
-      // related pins are updated to use the hierarchical net.
-      //
-
-      odb::dbModNet* buffer_op_pin_mod_net
-          = db_network_->hierNet(buffer_op_pin);
-
-      dbNet* buffer_op_pin_flat_net = db_network_->flatNet(buffer_op_pin);
-      if (buffer_op_pin_mod_net) {
-        db_network_->disconnectPin(buffer_op_pin);
-        db_network_->connectPin(buffer_op_pin,
-                                db_network_->dbToSta(buffer_op_pin_flat_net),
-                                db_network_->dbToSta(buffer_op_pin_mod_net));
-      }
-
-      // renormalize the driver pin. We have moved a lot of stuff
-      // off the driver net, possibly moving away any hierarchical
-      // So detect any hierarchical nets reachable from driver pin
-      // at this level of hierarchy and renormalize.
-
-      odb::dbModNet* driver_pin_mod_net
-          = db_network_->findModNetForPin(driver_pin);
-
-      if (driver_pin_mod_net && (driver_pin_mod_net->connectionCount() == 1)) {
-        db_network_->disconnectPin(driver_pin, (Net*) driver_pin_mod_net);
-      } else {
-        dbNet* driver_pin_flat_net = db_network_->flatNet(driver_pin);
-        db_network_->disconnectPin(driver_pin);
-        db_network_->connectPin(driver_pin,
-                                db_network_->dbToSta(driver_pin_flat_net),
-                                db_network_->dbToSta(driver_pin_mod_net));
-      }
     } else /* case 2 */ {
       //
       // case 2. One of the loads is a primary output or a dont touch
@@ -2547,7 +2526,6 @@ bool RepairDesign::makeRepeater(
       db_network_->disconnectPin(driver_pin);
 
       out_net = load_net;
-      Net* ip_net = new_net;
       dbNet* op_net_db = load_db_net;
       dbNet* ip_net_db = db_network_->staToDb(new_net);
       ip_net_db->setSigType(op_net_db->getSigType());
@@ -2589,9 +2567,6 @@ bool RepairDesign::makeRepeater(
         }
         // non-repeater load pins
         if (!repeater_load_pins.hasKey(pin)) {
-          Instance* load_instance_parent
-              = db_network_->getOwningInstanceParent(const_cast<Pin*>(pin));
-
           Instance* inst = network_->instance(pin);
           // do not disconnect/reconnect don't touch instances
           if (resizer_->dontTouch(inst)) {
@@ -2605,14 +2580,8 @@ bool RepairDesign::makeRepeater(
           // non repeater loads go on input side
           db_network_->connectPin(const_cast<Pin*>(pin), buffer_ip_net);
 
-          if (driver_instance_parent != load_instance_parent) {
-            db_network_->hierarchicalConnect(db_network_->flatPin(driver_pin),
-                                             db_network_->flatPin(pin));
-            // hierarchical connection will implicitly hook up the driver pin
-          } else {
-            // No hierarchy.
-            db_network_->connectPin(const_cast<Pin*>(pin), ip_net);
-          }
+          db_network_->hierarchicalConnect(db_network_->flatPin(driver_pin),
+                                           db_network_->flatPin(pin));
         }
       }
 
@@ -2626,6 +2595,11 @@ bool RepairDesign::makeRepeater(
             buffer_op_pin, buffer_op_net, (Net*) driver_pin_mod_net);
       }
     }
+  }
+
+  if (graphics_) {
+    dbInst* db_inst = db_network_->staToDb(buffer);
+    graphics_->makeBuffer(db_inst);
   }
 
   // Resize repeater as we back up by levels.

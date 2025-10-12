@@ -4,7 +4,10 @@
 #include "clockWidget.h"
 
 #include <QApplication>
+#include <QColor>
+#include <QComboBox>
 #include <QFontMetrics>
+#include <QGraphicsItem>
 #include <QGraphicsRectItem>
 #include <QGraphicsSceneHoverEvent>
 #include <QGraphicsTextItem>
@@ -14,9 +17,15 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPaintEvent>
+#include <QPainter>
+#include <QPolygonF>
+#include <QPushButton>
+#include <QString>
 #include <QToolTip>
 #include <QVBoxLayout>
+#include <QVariant>
 #include <QWheelEvent>
+#include <QWidget>
 #include <QWidgetAction>
 #include <QtAlgorithms>
 #include <algorithm>
@@ -33,12 +42,16 @@
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "gui/gui.h"
 #include "gui_utils.h"
 #include "odb/db.h"
 #include "sta/Corner.hh"
+#include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Sdc.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 

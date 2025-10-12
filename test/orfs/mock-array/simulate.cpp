@@ -37,18 +37,10 @@ int main(int argc, char** argv)
   top->reset = 1;
   top->clock = 0;
 
-  QData* inputs[]
-      = {&top->io_ins_down_0,  &top->io_ins_down_1,  &top->io_ins_down_2,
-         &top->io_ins_down_3,  &top->io_ins_down_4,  &top->io_ins_down_5,
-         &top->io_ins_down_6,  &top->io_ins_down_7,  &top->io_ins_left_0,
-         &top->io_ins_left_1,  &top->io_ins_left_2,  &top->io_ins_left_3,
-         &top->io_ins_left_4,  &top->io_ins_left_5,  &top->io_ins_left_6,
-         &top->io_ins_left_7,  &top->io_ins_right_0, &top->io_ins_right_1,
-         &top->io_ins_right_2, &top->io_ins_right_3, &top->io_ins_right_4,
-         &top->io_ins_right_5, &top->io_ins_right_6, &top->io_ins_right_7,
-         &top->io_ins_up_0,    &top->io_ins_up_1,    &top->io_ins_up_2,
-         &top->io_ins_up_3,    &top->io_ins_up_4,    &top->io_ins_up_5,
-         &top->io_ins_up_6,    &top->io_ins_up_7};
+  // There's no great way to do this, we need to
+  // refer to static names from Verilator generated code,
+  // inject them on the command line.
+  QData* inputs[] = {ARRAY_COLS, ARRAY_ROWS};
 
   top->trace(vcd, 99);  // Trace all levels of hierarchy
   vcd->open(args.front().data());

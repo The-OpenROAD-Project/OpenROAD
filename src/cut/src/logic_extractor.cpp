@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "cut/abc_library_factory.h"
@@ -385,7 +386,9 @@ LogicCut LogicExtractorFactory::BuildLogicCut(AbcLibrary& abc_network)
   std::vector<sta::Net*> primary_output_nets
       = ConvertIoPinsToNets(filtered_primary_outputs);
 
-  return LogicCut(primary_input_nets, primary_output_nets, cut_instances);
+  return LogicCut(std::move(primary_input_nets),
+                  std::move(primary_output_nets),
+                  std::move(cut_instances));
 }
 
 }  // namespace cut

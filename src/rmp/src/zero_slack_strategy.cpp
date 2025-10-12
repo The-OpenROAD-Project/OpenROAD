@@ -11,49 +11,16 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "delay_optimization_strategy.h"
+#include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
-#include "sta/PortDirection.hh"
 #include "sta/Search.hh"
-#include "sta/StaMain.hh"
-#include "sta/Units.hh"
-#include "sta/VerilogWriter.hh"
+#include "utils.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 #include "utl/unique_name.h"
 
 namespace rmp {
-
-std::vector<sta::Vertex*> GetNegativeEndpoints(sta::dbSta* sta,
-                                               rsz::Resizer* resizer)
-{
-  std::vector<sta::Vertex*> result;
-
-  sta::dbNetwork* network = sta->getDbNetwork();
-  for (sta::Vertex* vertex : *sta->endpoints()) {
-    sta::Pin* pin = vertex->pin();
-    sta::PortDirection* direction = network->direction(pin);
-    if (!direction->isInput()) {
-      continue;
-    }
-
-    if (resizer != nullptr) {
-      if (resizer->dontTouch(pin) || resizer->dontTouch(network->net(pin))
-          || resizer->dontTouch(network->instance(pin))) {
-        continue;
-      }
-    }
-
-    const sta::Slack slack = sta->vertexSlack(vertex, sta::MinMax::max());
-
-    if (slack > 0.0) {
-      continue;
-    }
-    result.push_back(vertex);
-  }
-
-  return result;
-}
 
 void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
                                        utl::UniqueName& name_generator,
@@ -68,7 +35,7 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
   sta::dbNetwork* network = sta->getDbNetwork();
 
   std::vector<sta::Vertex*> candidate_vertices
-      = GetNegativeEndpoints(sta, resizer);
+      = GetEndpoints(sta, resizer, 0.0);
 
   if (candidate_vertices.empty()) {
     logger->info(utl::RMP,

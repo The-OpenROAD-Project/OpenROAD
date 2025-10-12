@@ -45,6 +45,7 @@
 #include "dbCapNodeItr.h"
 #include "dbChip.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbFill.h"
@@ -117,6 +118,7 @@
 #include "dbTrackGrid.h"
 #include "dbVia.h"
 #include "dbWire.h"
+#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbExtControl.h"
@@ -128,6 +130,7 @@
 #include "odb/defout.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
+#include "odb/isotropy.h"
 #include "odb/lefout.h"
 #include "odb/poly_decomp.h"
 #include "utl/Logger.h"
@@ -3165,6 +3168,20 @@ std::map<dbTechLayer*, odb::dbTechVia*> dbBlock::getDefaultVias()
   }
 
   return default_vias;
+}
+
+void dbBlock::destroyRoutes()
+{
+  dbBlock* block = this;
+  for (odb::dbNet* db_net : block->getNets()) {
+    if (!db_net->getSigType().isSupply() && !db_net->isSpecial()
+        && db_net->getSWires().empty() && !db_net->isConnectedByAbutment()) {
+      odb::dbWire* wire = db_net->getWire();
+      if (wire != nullptr) {
+        odb::dbWire::destroy(wire);
+      }
+    }
+  }
 }
 
 void dbBlock::setDrivingItermsforNets()

@@ -17,9 +17,9 @@
 
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
 // Use spdlog fmt::format until c++20 that supports std::format.
-#include <spdlog/fmt/fmt.h>
-
+#include "spdlog/fmt/fmt.h"
 #include "sta/Fuzzy.hh"
 #include "sta/Liberty.hh"
 #include "sta/Units.hh"

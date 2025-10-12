@@ -6,9 +6,12 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "sta/Corner.hh"
 #include "sta/Graph.hh"
@@ -18,6 +21,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 
@@ -42,12 +46,17 @@ ConcreteSwapArithModules::ConcreteSwapArithModules(Resizer* resizer)
 
 void ConcreteSwapArithModules::init()
 {
+  if (init_) {
+    return;
+  }
+
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
+  init_ = true;
 }
 
-void ConcreteSwapArithModules::replaceArithModules(const int path_count,
+bool ConcreteSwapArithModules::replaceArithModules(const int path_count,
                                                    const std::string& target,
                                                    const float slack_threshold)
 {
@@ -61,21 +70,21 @@ void ConcreteSwapArithModules::replaceArithModules(const int path_count,
 
   // Identify critical mod instances based on target, path_count and
   // slack_threshold
-  set<dbModInst*> arithInsts;
+  std::set<dbModInst*> arithInsts;
   findCriticalInstances(path_count, target, slack_threshold, arithInsts);
   if (arithInsts.empty()) {
-    return;
+    return false;
   }
 
   // Replace arithmetic instances to improve target QoR
-  doSwapInstances(arithInsts, target);
+  return doSwapInstances(arithInsts, target);
 }
 
 void ConcreteSwapArithModules::findCriticalInstances(
     const int path_count,
     const std::string& target,
     const float slack_threshold,
-    set<dbModInst*>& insts)
+    std::set<dbModInst*>& insts)
 {
   logger_->info(RSZ,
                 152,
@@ -130,7 +139,7 @@ void ConcreteSwapArithModules::findCriticalInstances(
 
 void ConcreteSwapArithModules::collectArithInstsOnPath(
     const Path* path,
-    set<dbModInst*>& arithInsts)
+    std::set<dbModInst*>& arithInsts)
 {
   PathExpanded expanded(path, sta_);
   if (expanded.size() > 1) {
@@ -161,6 +170,8 @@ bool ConcreteSwapArithModules::isArithInstance(const Instance* inst,
   if (inst == nullptr) {
     return false;
   }
+
+  init();
   mod_inst = nullptr;
 
   const Instance* curr_inst = inst;
@@ -224,8 +235,9 @@ bool ConcreteSwapArithModules::hasArithOperatorProperty(
   return false;
 }
 
-void ConcreteSwapArithModules::doSwapInstances(const set<dbModInst*>& insts,
-                                               const std::string& target)
+bool ConcreteSwapArithModules::doSwapInstances(
+    const std::set<dbModInst*>& insts,
+    const std::string& target)
 {
   int swapped_count = 0;
 
@@ -269,6 +281,9 @@ void ConcreteSwapArithModules::doSwapInstances(const set<dbModInst*>& insts,
                 "{} arithmetic instances have swapped to improve '{}' target",
                 swapped_count,
                 target);
+  logger_->metric("design__instance__count__swapped_arithmetic_operator",
+                  swapped_count);
+  return (swapped_count > 0);
 }
 
 void ConcreteSwapArithModules::produceNewModuleName(const std::string& old_name,

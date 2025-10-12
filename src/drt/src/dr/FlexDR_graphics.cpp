@@ -18,6 +18,7 @@
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"
 #include "frRegionQuery.h"
+#include "gui/gui.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
@@ -216,7 +217,7 @@ const char* FlexDRGraphics::current_net_only_visible_ = "Current Net Only";
 
 static std::string workerOrigin(FlexDRWorker* worker)
 {
-  Point origin = worker->getRouteBox().ll();
+  odb::Point origin = worker->getRouteBox().ll();
   return "(" + std::to_string(origin.x()) + ", " + std::to_string(origin.y())
          + ")";
 }
@@ -285,14 +286,14 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       = checkDisplayControl(current_net_only_visible_);
   if (checkDisplayControl(routing_objs_visible_)) {
     if (drawWholeDesign_) {
-      Rect box = design_->getTopBlock()->getDieBox();
+      odb::Rect box = design_->getTopBlock()->getDieBox();
       frRegionQuery::Objects<frBlockObject> figs;
       design_->getRegionQuery()->queryDRObj(box, layerNum, figs);
       for (auto& fig : figs) {
         drawObj(fig.second, painter, layerNum);
       }
     } else if (worker_) {
-      Rect box;
+      odb::Rect box;
       worker_->getExtBox(box);
       std::vector<drConnFig*> figs;
       worker_->getWorkerRegionQuery().query(box, layerNum, figs);
@@ -310,14 +311,14 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     painter.setBrush(layer, /* alpha */ 90);
     for (auto& rect : net_->getOrigGuides()) {
       if (rect.getLayerNum() == layerNum) {
-        Rect box = rect.getBBox();
+        odb::Rect box = rect.getBBox();
         painter.drawRect({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
       }
     }
   }
   painter.setPen(layer, /* cosmetic */ true);
   if (checkDisplayControl(maze_search_visible_) && !points_by_layer_.empty()) {
-    for (Point& pt : points_by_layer_[layerNum]) {
+    for (odb::Point& pt : points_by_layer_[layerNum]) {
       painter.drawX(pt.x(), pt.y(), 20);
     }
   }
@@ -341,12 +342,12 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     color.a = 255;
     for (frMIdx x = 0; x < x_dim; ++x) {
       for (frMIdx y = 0; y < y_dim; ++y) {
-        Point pt;
+        odb::Point pt;
         grid_graph_->getPoint(pt, x, y);
         // draw edges
         if (draw_edges || draw_gCostEdges || draw_blockedEdges) {
           if (x != x_dim - 1) {
-            Point pt2;
+            odb::Point pt2;
             grid_graph_->getPoint(pt2, x + 1, y);
 
             if (draw_edges && grid_graph_->hasEdge(x, y, z, frDirEnum::E)) {
@@ -363,7 +364,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
             painter.setPen(layer, true);
           }
           if (y != y_dim - 1) {
-            Point pt2;
+            odb::Point pt2;
             grid_graph_->getPoint(pt2, x, y + 1);
             if (draw_edges && grid_graph_->hasEdge(x, y, z, frDirEnum::N)) {
               painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
@@ -419,14 +420,14 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   painter.setPen(gui::Painter::kGreen, /* cosmetic */ true);
   for (auto& marker : design_->getTopBlock()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
-      Rect box = marker->getBBox();
+      odb::Rect box = marker->getBBox();
       drawMarker(box.xMin(), box.yMin(), box.xMax(), box.yMax(), painter);
     }
   }
   painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
   for (auto& marker : worker_->getGCWorker()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
-      Rect box = marker->getBBox();
+      odb::Rect box = marker->getBBox();
       drawMarker(box.xMin(), box.yMin(), box.xMax(), box.yMax(), painter);
     }
   }
@@ -436,7 +437,7 @@ void FlexDRGraphics::drawObj(frBlockObject* fig,
                              gui::Painter& painter,
                              int layerNum)
 {
-  Rect box;
+  odb::Rect box;
   switch (fig->typeId()) {
     case frcPathSeg: {
       auto seg = (frPathSeg*) fig;
@@ -519,7 +520,7 @@ void FlexDRGraphics::show(bool checkStopConditions)
             && (!net_ || net_->getFrNet()->getName() != settings_->netName))) {
       return;
     }
-    const Rect& rBox = worker_->getRouteBox();
+    const odb::Rect& rBox = worker_->getRouteBox();
     if (settings_->box != odb::Rect(-1, -1, -1, -1)
         && !rBox.intersects(settings_->box)) {
       return;
@@ -565,7 +566,7 @@ void FlexDRGraphics::drawObjects(gui::Painter& painter)
   painter.setBrush(gui::Painter::kTransparent);
   painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
 
-  Rect box;
+  odb::Rect box;
   worker_->getRouteBox(box);
   painter.drawRect({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
 
@@ -578,7 +579,7 @@ void FlexDRGraphics::drawObjects(gui::Painter& painter)
   if (net_) {
     for (auto& pin : net_->getPins()) {
       for (auto& ap : pin->getAccessPatterns()) {
-        Point pt = ap->getPoint();
+        odb::Point pt = ap->getPoint();
         painter.drawX(pt.x(), pt.y(), 100);
       }
     }
@@ -592,7 +593,7 @@ void FlexDRGraphics::startWorker(FlexDRWorker* worker)
   if (current_iter_ < settings_->iter) {
     return;
   }
-  const Rect& rBox = worker->getRouteBox();
+  const odb::Rect& rBox = worker->getRouteBox();
   if (settings_->box != odb::Rect(-1, -1, -1, -1)
       && !rBox.intersects(settings_->box)) {
     return;
@@ -607,7 +608,7 @@ void FlexDRGraphics::startWorker(FlexDRWorker* worker)
   points_by_layer_.resize(worker->getTech()->getLayers().size());
 
   if (settings_->netName.empty()) {
-    Rect box;
+    odb::Rect box;
     worker_->getExtBox(box);
     gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
     if (settings_->draw) {
@@ -629,7 +630,7 @@ void FlexDRGraphics::searchNode(const FlexGridGraph* grid_graph,
   assert(grid_graph_ == nullptr || grid_graph_ == grid_graph);
   grid_graph_ = grid_graph;
 
-  Point in;
+  odb::Point in;
   grid_graph->getPoint(in, grid.x(), grid.y());
   frLayerNum layer = grid_graph->getLayerNum(grid.z());
 
@@ -672,7 +673,7 @@ void FlexDRGraphics::startNet(drNet* net)
   for (auto& pin : net->getPins()) {
     logger_->info(DRT, 250, "  Pin {}.", pin->getName());
     for (auto& ap : pin->getAccessPatterns()) {
-      Point pt = ap->getPoint();
+      odb::Point pt = ap->getPoint();
       logger_->info(DRT,
                     275,
                     "    AP ({:.5f}, {:.5f}) (layer {}) (cost {}).",
@@ -685,7 +686,7 @@ void FlexDRGraphics::startNet(drNet* net)
   net_ = net;
   last_pt_layer_ = -1;
 
-  Rect box;
+  odb::Rect box;
   worker_->getExtBox(box);
   gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
   if (settings_->allowPause) {

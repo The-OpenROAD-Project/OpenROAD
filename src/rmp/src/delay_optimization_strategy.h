@@ -11,7 +11,6 @@
 
 namespace rmp {
 
-utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> WrapUnique(abc::Abc_Ntk_t* ntk);
 void AbcPrintStats(const abc::Abc_Ntk_t* ntk);
 utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> BufferNetwork(
     abc::Abc_Ntk_t* ntk,

@@ -1,8 +1,5 @@
-// Copyright 2023 Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include <unistd.h>
 
@@ -10,54 +7,72 @@
 
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
 #include "odb/lefin.h"
+#include "tst/fixture.h"
 #include "utl/Logger.h"
 
-// TODO: not needed after fully switching to bazel
-#ifndef DATA_PREFIX
-#define DATA_PREFIX ""
-#endif
-
 namespace odb {
-class OdbMultiPatternedTest : public ::testing::Test
+class OdbMultiPatternedTest : public tst::Fixture
 {
  protected:
-  template <class T>
-  using OdbUniquePtr = std::unique_ptr<T, void (*)(T*)>;
-
   void SetUp() override
   {
-    db_ = OdbUniquePtr<odb::dbDatabase>(odb::dbDatabase::create(),
-                                        &odb::dbDatabase::destroy);
-    odb::lefin lef_reader(
-        db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
-    lib_ = OdbUniquePtr<odb::dbLib>(
-        lef_reader.createTechAndLib(
-            "multipatterned",
-            "multipatterned",
-            DATA_PREFIX "data/sky130hd/sky130hd_multi_patterned.tlef"),
-        &odb::dbLib::destroy);
+    lib_ = loadTechAndLib(
+        "multipatterned",
+        "multipatterned",
+        "_main/src/odb/test/data/sky130hd/sky130hd_multi_patterned.tlef");
 
-    chip_ = OdbUniquePtr<odb::dbChip>(
-        odb::dbChip::create(db_.get(), db_->getTech()), &odb::dbChip::destroy);
-    block_ = OdbUniquePtr<odb::dbBlock>(
-        odb::dbBlock::create(chip_.get(), "top"), &odb::dbBlock::destroy);
+    chip_ = odb::dbChip::create(db_.get(), db_->getTech());
+    block_ = odb::dbBlock::create(chip_, "top");
     block_->setDefUnits(lib_->getTech()->getLefUnits());
     block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
   }
 
-  utl::Logger logger_;
-  OdbUniquePtr<odb::dbDatabase> db_{nullptr, &odb::dbDatabase::destroy};
-  OdbUniquePtr<odb::dbLib> lib_{nullptr, &odb::dbLib::destroy};
-  OdbUniquePtr<odb::dbChip> chip_{nullptr, &odb::dbChip::destroy};
-  OdbUniquePtr<odb::dbBlock> block_{nullptr, &odb::dbBlock::destroy};
+  odb::dbLib* lib_;
+  odb::dbChip* chip_;
+  odb::dbBlock* block_;
 };
+
+TEST_F(OdbMultiPatternedTest, NdrWidth)
+{
+  dbTechLayer* met1 = lib_->getTech()->findLayer("met1");
+  ASSERT_NE(met1, nullptr);
+
+  // Setup an NDR
+  dbTechNonDefaultRule* ndr = dbTechNonDefaultRule::create(block_, "ndr");
+  dbTechLayerRule* rule = dbTechLayerRule::create(ndr, met1);
+  const int width = 42;
+  rule->setWidth(width);
+
+  // Apply it to some routing
+  dbNet* net = dbNet::create(block_, "net");
+  dbWire* wire = dbWire::create(net);
+  dbWireEncoder encoder;
+  encoder.begin(wire);
+  encoder.newPath(met1, dbWireType::ROUTED, rule);
+  encoder.addPoint(0, 0);
+  encoder.addPoint(0, 100000);
+  encoder.addPoint(100000, 100000);
+  encoder.end();
+
+  // Check the width in both directions is correct
+  int shape_cnt = 0;
+  odb::dbWireShapeItr it;
+  it.begin(wire);
+  odb::dbShape shape;
+  while (it.next(shape)) {
+    EXPECT_EQ(shape.getBox().minDXDY(), width);
+    ++shape_cnt;
+  }
+  EXPECT_EQ(shape_cnt, 2);
+}
 
 TEST_F(OdbMultiPatternedTest, CanColorColoredLayer)
 {
   // Arrange
-  dbNet* net = dbNet::create(block_.get(), "net0");
+  dbNet* net = dbNet::create(block_, "net0");
   dbTech* tech = lib_->getTech();
   dbTechLayer* met1 = tech->findLayer("met1");
   dbWire* wire = dbWire::create(net);
@@ -88,7 +103,7 @@ TEST_F(OdbMultiPatternedTest, CanColorColoredLayer)
 TEST_F(OdbMultiPatternedTest, WireColorIsClearedOnNewPath)
 {
   // Arrange
-  dbNet* net = dbNet::create(block_.get(), "net0");
+  dbNet* net = dbNet::create(block_, "net0");
   dbTech* tech = lib_->getTech();
   dbTechLayer* met1 = tech->findLayer("met1");
   dbTechVia* met1_met2 = tech->findVia("M1M2_PR_MR");

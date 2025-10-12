@@ -4,11 +4,16 @@
 #include "displayControls.h"
 
 #include <QApplication>
+#include <QColor>
+#include <QDialog>
 #include <QFontDialog>
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QLineEdit>
+#include <QMenu>
 #include <QPainter>
+#include <QVariant>
+#include <QWidget>
 #include <algorithm>
 #include <array>
 #include <map>

@@ -20,7 +20,9 @@
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
+#include "utl/Logger.h"
 
 namespace est {
 

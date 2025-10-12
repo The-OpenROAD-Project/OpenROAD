@@ -79,46 +79,43 @@ std::string PatternRoutingNode::getPythonString(
 
 void PatternRoute::constructSteinerTree()
 {
-  // 1. Select access points
-  robin_hood::unordered_map<uint64_t, std::pair<PointT, IntervalT>>
-      selectedAccessPoints;
-  grid_graph_->selectAccessPoints(net_, selectedAccessPoints);
+  auto selectedAccessPoints = grid_graph_->selectAccessPoints(net_);
 
-  // 2. Construct Steiner tree
   const int degree = selectedAccessPoints.size();
   if (degree == 1) {
-    for (auto& accessPoint : selectedAccessPoints) {
-      steiner_tree_ = std::make_shared<SteinerTreeNode>(
-          accessPoint.second.first, accessPoint.second.second);
-    }
-  } else {
-    std::vector<int> xs;
-    std::vector<int> ys;
-    for (auto& accessPoint : selectedAccessPoints) {
-      xs.push_back(accessPoint.second.first.x());
-      ys.push_back(accessPoint.second.first.y());
-    }
+    const auto& accessPoint = *selectedAccessPoints.begin();
+    steiner_tree_ = std::make_shared<SteinerTreeNode>(accessPoint.point,
+                                                      accessPoint.layers);
+    return;
+  }
 
-    stt::Tree flutetree = stt_builder_->flute(xs, ys, flute_accuracy_);
-    const int numBranches = degree + degree - 2;
-    std::vector<PointT> steinerPoints;
-    steinerPoints.reserve(numBranches);
-    std::vector<std::vector<int>> adjacentList(numBranches);
+  std::vector<int> xs;
+  std::vector<int> ys;
+  for (auto& accessPoint : selectedAccessPoints) {
+    xs.push_back(accessPoint.point.x());
+    ys.push_back(accessPoint.point.y());
+  }
 
-    for (int branchIndex = 0; branchIndex < numBranches; branchIndex++) {
-      const stt::Branch& branch = flutetree.branch[branchIndex];
-      steinerPoints.emplace_back(branch.x, branch.y);
-      if (branchIndex == branch.n) {
-        continue;
-      }
-      adjacentList[branchIndex].push_back(branch.n);
-      adjacentList[branch.n].push_back(branchIndex);
+  stt::Tree flutetree = stt_builder_->flute(xs, ys, flute_accuracy_);
+  const int numBranches = degree + degree - 2;
+  std::vector<PointT> steinerPoints;
+  steinerPoints.reserve(numBranches);
+  std::vector<std::vector<int>> adjacentList(numBranches);
+
+  for (int branchIndex = 0; branchIndex < numBranches; branchIndex++) {
+    const stt::Branch& branch = flutetree.branch[branchIndex];
+    steinerPoints.emplace_back(branch.x, branch.y);
+    if (branchIndex == branch.n) {
+      continue;
     }
+    adjacentList[branchIndex].push_back(branch.n);
+    adjacentList[branch.n].push_back(branchIndex);
+  }
 
-    std::function<void(std::shared_ptr<SteinerTreeNode>&, int, int)>
-        constructTree = [&](std::shared_ptr<SteinerTreeNode>& parent,
-                            int prevIndex,
-                            int curIndex) {
+  std::function<void(std::shared_ptr<SteinerTreeNode>&, int, int)> constructTree
+      = [&](std::shared_ptr<SteinerTreeNode>& parent,
+            int prevIndex,
+            int curIndex) {
           std::shared_ptr<SteinerTreeNode> current
               = std::make_shared<SteinerTreeNode>(steinerPoints[curIndex]);
           if (parent != nullptr && parent->x() == current->x()
@@ -139,38 +136,38 @@ void PatternRoute::constructSteinerTree()
             constructTree(current, curIndex, nextIndex);
           }
           // Set fixed layer interval
-          uint64_t hash = grid_graph_->hashCell(current->x(), current->y());
-          if (selectedAccessPoints.find(hash) != selectedAccessPoints.end()) {
-            current->setFixedLayers(selectedAccessPoints[hash].second);
+          const AccessPoint current_pt{{current->x(), current->y()}, {}};
+          if (auto it = selectedAccessPoints.find(current_pt);
+              it != selectedAccessPoints.end()) {
+            current->setFixedLayers(it->layers);
           }
           // Connect current to parent
           if (parent == nullptr) {
-            parent = current;
+            parent = std::move(current);
           } else {
             parent->addChild(current);
           }
         };
-    // Pick a root having degree 1
-    int root = 0;
-    std::function<bool(int)> hasDegree1 = [&](int index) {
-      if (adjacentList[index].size() == 1) {
-        int nextIndex = adjacentList[index][0];
-        if (steinerPoints[index] == steinerPoints[nextIndex]) {
-          return hasDegree1(nextIndex);
-        }
-        return true;
+  // Pick a root having degree 1
+  int root = 0;
+  std::function<bool(int)> hasDegree1 = [&](int index) {
+    if (adjacentList[index].size() == 1) {
+      int nextIndex = adjacentList[index][0];
+      if (steinerPoints[index] == steinerPoints[nextIndex]) {
+        return hasDegree1(nextIndex);
       }
-
-      return false;
-    };
-    for (int i = 0; i < steinerPoints.size(); i++) {
-      if (hasDegree1(i)) {
-        root = i;
-        break;
-      }
+      return true;
     }
-    constructTree(steiner_tree_, -1, root);
+
+    return false;
+  };
+  for (int i = 0; i < steinerPoints.size(); i++) {
+    if (hasDegree1(i)) {
+      root = i;
+      break;
+    }
   }
+  constructTree(steiner_tree_, -1, root);
 }
 
 void PatternRoute::constructRoutingDAG()
@@ -186,7 +183,7 @@ void PatternRoute::constructRoutingDAG()
           constructDag(current, steinerChild);
         }
         if (dstNode == nullptr) {
-          dstNode = current;
+          dstNode = std::move(current);
         } else {
           dstNode->addChild(current);
           constructPaths(dstNode, current);
@@ -216,7 +213,7 @@ void PatternRoute::constructPaths(std::shared_ptr<PatternRoutingNode>& start,
           = std::make_shared<PatternRoutingNode>(
               midPoint, num_dag_nodes_++, true);
       mid->getPaths() = {{end}};
-      childPaths.push_back(mid);
+      childPaths.push_back(std::move(mid));
     }
   }
 }
@@ -504,7 +501,8 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestion_view)
             }
 
           } else {
-            printf("Warning: the root has not exactly one child.");
+            logger_->warn(
+                utl::GRT, 277, "The root doesn't have exactly one child.");
           }
         }
       }
@@ -637,6 +635,7 @@ std::shared_ptr<GRTreeNode> PatternRoute::getRoutingTree(
       }
     }
   }
+  assert(parentLayerIndex >= 0);
   std::shared_ptr<GRTreeNode> routingNode
       = std::make_shared<GRTreeNode>(parentLayerIndex, node->x(), node->y());
   std::shared_ptr<GRTreeNode> lowestRoutingNode = routingNode;

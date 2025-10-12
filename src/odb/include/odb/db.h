@@ -18,19 +18,20 @@
 #include <variant>
 #include <vector>
 
-#include "dbBlockSet.h"
-#include "dbCCSegSet.h"
-#include "dbDatabaseObserver.h"
-#include "dbMatrix.h"
-#include "dbNetSet.h"
-#include "dbObject.h"
-#include "dbSet.h"
-#include "dbTypes.h"
-#include "dbViaParams.h"
-#include "geom.h"
-#include "odb.h"
+#include "odb/dbBlockSet.h"
+#include "odb/dbCCSegSet.h"
+#include "odb/dbDatabaseObserver.h"
+#include "odb/dbMatrix.h"
+#include "odb/dbNetSet.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/dbViaParams.h"
+#include "odb/geom.h"
+#include "odb/isotropy.h"
+#include "odb/odb.h"
 
-constexpr int ADS_MAX_CORNER = 10;
+inline constexpr int ADS_MAX_CORNER = 10;
 
 namespace utl {
 class Logger;
@@ -1330,6 +1331,11 @@ class dbBlock : public dbObject
 
   std::map<dbTechLayer*, dbTechVia*> getDefaultVias();
 
+  ///
+  /// Destroy all the routing wires from signal and clock nets in this block.
+  ///
+  void destroyRoutes();
+
  public:
   ///
   /// Create a chip's top-block. Returns nullptr of a top-block already
@@ -1731,12 +1737,12 @@ class dbNet : public dbObject
   ///
   /// Get the net name.
   ///
-  std::string getName();
+  std::string getName() const;
 
   ///
   /// Get the net name.
   ///
-  const char* getConstName();
+  const char* getConstName() const;
 
   ///
   /// Print net name with or without id and newline
@@ -1805,7 +1811,7 @@ class dbNet : public dbObject
   /// Returns driving term id assigned of this net. -1 if not set, 0 if non
   /// existent
   ///
-  int getDrivingITerm();
+  int getDrivingITerm() const;
 
   ///
   /// Returns true if a fixed-bump flag has been set.
@@ -1944,12 +1950,12 @@ class dbNet : public dbObject
   ///
   /// Get the block this net belongs to.
   ///
-  dbBlock* getBlock();
+  dbBlock* getBlock() const;
 
   ///
   /// Get all the instance-terminals of this net.
   ///
-  dbSet<dbITerm> getITerms();
+  dbSet<dbITerm> getITerms() const;
 
   ///
   /// Get the 1st instance-terminal of this net.
@@ -1964,12 +1970,12 @@ class dbNet : public dbObject
   ///
   /// Get the 1st output Iterm; can be
   ///
-  dbITerm* getFirstOutput();
+  dbITerm* getFirstOutput() const;
 
   ///
   /// Get all the block-terminals of this net.
   ///
-  dbSet<dbBTerm> getBTerms();
+  dbSet<dbBTerm> getBTerms() const;
 
   ///
   /// Get the 1st block-terminal of this net.
@@ -2423,6 +2429,20 @@ class dbNet : public dbObject
   ///
   void mergeNet(dbNet* in_net);
 
+  ///
+  /// Find the parent module instance of this net by parsing its hierarchical
+  /// name.
+  /// Returns nullptr if the parent is the top module.
+  /// Note that a dbNet can be located at multiple hierarchical modules.
+  ///
+  dbModInst* findMainParentModInst() const;
+
+  ///
+  /// Find the parent module of this net by parsing its hierarchical name.
+  /// Returns the top module if the parent is the top module.
+  ///
+  dbModule* findMainParentModule() const;
+
   dbSet<dbGuide> getGuides() const;
 
   void clearGuides();
@@ -2434,6 +2454,34 @@ class dbNet : public dbObject
   bool hasJumpers();
 
   void setJumpers(bool has_jumpers);
+
+  ///
+  /// Return true if the input net is in higher hierarchy than this net
+  /// e.g., If this net name = "a/b/c" and input `net` name = "a/d",
+  ///       this API returns true.
+  ///
+  bool isDeeperThan(const dbNet* net) const;
+
+  ///
+  /// Find all dbModNets related to the given dbNet.
+  /// Go through all the pins on the dbNet and find all dbModNets.
+  ///
+  /// A dbNet could have many modnets (e.g., a dbNet might connect
+  /// two objects in different parts of the hierarchy, each connected
+  /// by different dbModNets in different parts of the hierarchy).
+  ///
+  bool findRelatedModNets(std::set<dbModNet*>& modnet_set) const;
+
+  ///
+  /// Find the modnet in the highest hierarchy related to this net.
+  ///
+  dbModNet* findModNetInHighestHier() const;
+
+  ///
+  /// Rename this net with the name of the modnet in the highest hierarchy
+  /// related to this flat net.
+  ///
+  void renameWithModNetInHighestHier();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -7031,6 +7079,8 @@ class dbChip : public dbObject
 
   dbTech* getTech() const;
 
+  Rect getBBox() const;
+
   ///
   /// Create a new chip.
   /// Returns nullptr if there is no database technology.
@@ -7140,6 +7190,8 @@ class dbChipInst : public dbObject
 
   dbTransform getTransform() const;
 
+  Rect getBBox() const;
+
   dbSet<dbChipRegionInst> getRegions() const;
 
   dbChipRegionInst* findChipRegionInst(dbChipRegion* chip_region) const;
@@ -7226,6 +7278,10 @@ class dbChipRegionInst : public dbObject
 class dbDatabase : public dbObject
 {
  public:
+  void setDbuPerMicron(uint dbu_per_micron);
+
+  uint getDbuPerMicron() const;
+
   dbSet<dbChip> getChips() const;
 
   dbChip* findChip(const char* name) const;
@@ -7400,6 +7456,7 @@ class dbDatabase : public dbObject
   void triggerPostReadLef(dbTech* tech, dbLib* library);
   void triggerPostReadDef(dbBlock* block, bool floorplan);
   void triggerPostReadDb();
+  void triggerPostRead3Dbx(dbChip* chip);
 
   ///
   /// Create an instance of a database
@@ -7434,8 +7491,8 @@ class dbGCellGrid : public dbObject
  public:
   struct GCellData
   {
-    uint8_t usage = 0;
-    uint8_t capacity = 0;
+    float usage = 0;
+    float capacity = 0;
   };
 
   // User Code Begin dbGCellGrid
@@ -7499,16 +7556,13 @@ class dbGCellGrid : public dbObject
 
   uint getYIdx(int y);
 
-  uint8_t getCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+  float getCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
-  uint8_t getUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+  float getUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
-  void setCapacity(dbTechLayer* layer,
-                   uint x_idx,
-                   uint y_idx,
-                   uint8_t capacity);
+  void setCapacity(dbTechLayer* layer, uint x_idx, uint y_idx, float capacity);
 
-  void setUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint8_t use);
+  void setUsage(dbTechLayer* layer, uint x_idx, uint y_idx, float use);
 
   void resetCongestionMap();
 
@@ -8238,19 +8292,27 @@ class dbModInst : public dbObject
   dbGroup* getGroup() const;
 
   // User Code Begin dbModInst
-
   std::string getHierarchicalName() const;
-
   dbModITerm* findModITerm(const char* name);
-
   dbSet<dbModITerm> getModITerms();
-
   void removeUnusedPortsAndPins();
+
+  dbModNet* findHierNet(const char* base_name) const;
+  dbNet* findFlatNet(const char* base_name) const;
+  bool findNet(const char* base_name,
+               dbNet*& flat_net,
+               dbModNet*& hier_net) const;
 
   /// Swap the module of this instance.
   /// Returns new mod inst if the operations succeeds.
   /// Old mod inst is deleted along with its child insts.
   dbModInst* swapMaster(dbModule* module);
+
+  // Recursive search a given dbInst through child mod insts
+  bool containsDbInst(dbInst* inst) const;
+
+  // Recursive search a given dbModInst through child mod insts
+  bool containsDbModInst(dbModInst* mod_inst) const;
 
   static dbModInst* create(dbModule* parentModule,
                            dbModule* masterModule,
@@ -8294,15 +8356,17 @@ class dbModNet : public dbObject
   dbModule* getParent() const;
 
   // User Code Begin dbModNet
-  dbSet<dbModITerm> getModITerms();
-  dbSet<dbModBTerm> getModBTerms();
-  dbSet<dbITerm> getITerms();
-  dbSet<dbBTerm> getBTerms();
+  dbSet<dbModITerm> getModITerms() const;
+  dbSet<dbModBTerm> getModBTerms() const;
+  dbSet<dbITerm> getITerms() const;
+  dbSet<dbBTerm> getBTerms() const;
   unsigned connectionCount();
   std::string getName() const;
   const char* getConstName() const;
+  std::string getHierarchicalName() const;
   void rename(const char* new_name);
   void disconnectAllTerms();
+  void dump() const;
 
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);
@@ -10968,4 +11032,4 @@ class dbDoubleProperty : public dbProperty
 }  // namespace odb
 
 // Overload std::less for these types
-#include "dbCompare.h"
+#include "odb/dbCompare.inc"  // IWYU pragma: export

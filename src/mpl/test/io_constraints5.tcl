@@ -17,7 +17,7 @@ set_io_pin_constraint -pin_names {io_1 io_2} -region right:70-90
 set_io_pin_constraint -pin_names {io_3} -region right:10-50
 
 set_thread_count 0
-rtl_macro_placer -report_directory results/io_constraints5 -halo_width 4.0
+rtl_macro_placer -report_directory [make_result_dir] -halo_width 4.0
 
 set def_file [make_result_file io_constraints5.def]
 write_def $def_file

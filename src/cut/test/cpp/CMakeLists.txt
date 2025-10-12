@@ -8,8 +8,9 @@ target_link_libraries(CutGTests
         GTest::gmock
         dbSta_lib
         utl_lib
-        libabc
+        ${ABC_LIBRARY}
         cut
+        tst
         ${TCL_LIBRARY}
 )
 

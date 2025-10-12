@@ -268,6 +268,22 @@ def generate_relations(schema):
             make_child_next_field(child, relation)
 
 
+def add_include(klass, key, include, cpp=False, sys=False):
+    for field in klass["fields"]:
+        if key in field["type"]:
+            if sys:
+                klass["h_sys_includes"].insert(0, include)
+            else:
+                klass["h_includes"].insert(0, include)
+
+            if cpp:
+                if sys:
+                    klass["cpp_sys_includes"].insert(0, include)
+                else:
+                    klass["cpp_includes"].insert(0, include)
+            break
+
+
 def preprocess_klass(klass):
     klass["declared_classes"].insert(0, "dbIStream")
     klass["declared_classes"].insert(1, "dbOStream")
@@ -280,6 +296,11 @@ def preprocess_klass(klass):
     klass["cpp_includes"].extend(["dbTable.h", "dbTable.hpp", "odb/db.h", f"{name}.h"])
     if klass["hasBitFields"]:
         klass["cpp_sys_includes"].extend(["cstdint", "cstring"])
+    add_include(klass, "dbObject", "dbCore.h", cpp=True)
+    add_include(klass, "dbId<", "odb/dbId.h")
+    add_include(klass, "dbVector", "dbVector.h")
+    add_include(klass, "dbObjectType", "odb/dbObject.h", cpp=True)
+    add_include(klass, "tuple", "tuple", cpp=True, sys=True)
     for field in klass["fields"]:
         if field.get("table", False):
             page_size_part = f", {field['page_size']}" if "page_size" in field else ""
@@ -369,13 +390,13 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
             with open(out_file, "w", encoding="ascii") as file:
                 file.write(text)
 
-    includes = ["db.h", "dbObject.h", "dbCompare.h"]
+    includes = ["db.h", "dbObject.h", "dbCompare.inc"]
     for template_file in [
         "db.h",
         "dbObject.h",
         "CMakeLists.txt",
         "dbObject.cpp",
-        "dbCompare.h",
+        "dbCompare.inc",
     ]:
         template = env.get_template(template_file)
         text = template.render(schema=schema)

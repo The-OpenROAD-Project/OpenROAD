@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
@@ -20,6 +21,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "odb/isotropy.h"
 #include "power_cells.h"
 #include "rings.h"
 #include "straps.h"
@@ -1244,7 +1246,7 @@ CoreGrid::CoreGrid(VoltageDomain* domain,
 odb::Rect CoreGrid::getDomainBoundary() const
 {
   // account for the width of the follow pins for straps
-  odb::Rect core = Grid::getDomainBoundary();
+  const odb::Rect core = Grid::getDomainBoundary();
 
   int follow_pin_width = 0;
   for (const auto& strap : getStraps()) {
@@ -1253,8 +1255,7 @@ odb::Rect CoreGrid::getDomainBoundary() const
     }
   }
 
-  core.bloat(follow_pin_width / 2, core);
-  return core;
+  return core.bloat(follow_pin_width / 2, odb::Orientation2D::Vertical);
 }
 
 void CoreGrid::setupDirectConnect(
@@ -1295,6 +1296,13 @@ void CoreGrid::setupDirectConnect(
       if (pad_connect->canConnect()) {
         straps.insert(pad_connect.get());
         addStrap(std::move(pad_connect));
+      } else {
+        debugPrint(getLogger(),
+                   utl::PDN,
+                   "Pad",
+                   2,
+                   "Rejecting pad cell pin {} due to lack of connectivity",
+                   iterm->getName())
       }
     }
   }
@@ -1657,6 +1665,104 @@ bool InstanceGrid::isValid() const
     return false;
   }
   return true;
+}
+
+void InstanceGrid::checkSetup() const
+{
+  Grid::checkSetup();
+
+  // check blockages above pins
+  const auto nets = getNets(startsWithPower());
+  for (auto* iterm : inst_->getITerms()) {
+    if (std::find(nets.begin(), nets.end(), iterm->getNet()) == nets.end()) {
+      continue;
+    }
+    odb::dbTechLayer* top = nullptr;
+    std::set<odb::Rect> boxes;
+    for (auto* mpin : iterm->getMTerm()->getMPins()) {
+      for (auto* box : mpin->getGeometry()) {
+        auto* layer = box->getTechLayer();
+        if (layer == nullptr) {
+          continue;
+        }
+        if (top == nullptr
+            || top->getRoutingLevel() < layer->getRoutingLevel()) {
+          top = layer;
+          boxes.clear();
+        }
+        if (layer == top) {
+          boxes.insert(box->getBox());
+        }
+      }
+    }
+
+    if (top != nullptr) {
+      const int top_idx = top->getNumber();
+      std::map<odb::Rect, int64_t> overlap_area;
+      std::set<odb::dbTechLayer*> layers;
+      for (auto* master_obs : inst_->getMaster()->getObstructions()) {
+        auto* obs_layer = master_obs->getTechLayer();
+        if (obs_layer == nullptr) {
+          continue;
+        }
+        if (obs_layer->getType() != odb::dbTechLayerType::ROUTING) {
+          continue;
+        }
+        if (obs_layer->getNumber() > top_idx) {
+          for (const auto& pin : boxes) {
+            const odb::Rect mobs = master_obs->getBox();
+
+            if (mobs.intersects(pin)) {
+              // Determine level of obstruction
+              const odb::Rect overlap = mobs.intersect(pin);
+              overlap_area[pin] += overlap.area();
+              layers.insert(obs_layer);
+            }
+          }
+        }
+      }
+
+      if (!overlap_area.empty()) {
+        int64_t total_pin_area = 0;
+        int64_t total_overlap = 0;
+        std::string layer_txt;
+        for (const auto* layer : layers) {
+          if (!layer_txt.empty()) {
+            layer_txt += ", ";
+          }
+          layer_txt += layer->getName();
+        }
+        for (const auto& [pin, overlap] : overlap_area) {
+          const int64_t pinarea = pin.area();
+          total_overlap += overlap;
+          total_pin_area += pinarea;
+
+          if (overlap >= pinarea) {
+            // pin completely obstructed
+            getLogger()->error(
+                utl::PDN,
+                6,
+                "{} on {} is blocked by obstructions on {} for {}",
+                iterm->getMTerm()->getName(),
+                top->getName(),
+                layer_txt,
+                inst_->getName());
+          }
+        }
+        const float pct
+            = 100 * static_cast<float>(total_overlap) / total_pin_area;
+        getLogger()->warn(utl::PDN,
+                          7,
+                          "{} on {} is partially blocked ({:.1f}%) by "
+                          "obstructions on {} for {}",
+                          iterm->getMTerm()->getName(),
+                          top->getName(),
+                          pct,
+                          layer_txt,
+                          inst_->getName());
+      }
+    }
+  }
 }
 
 ////////

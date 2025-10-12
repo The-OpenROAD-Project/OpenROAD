@@ -1,14 +1,17 @@
 
-module hi_fanout (clk1);
+module hi_fanout (clk1, in);
    input clk1;
-   hi_fanout_child hi_fanout_inst(clk1);
+   input in;
+   hi_fanout_child hi_fanout_inst(clk1, in);
 endmodule
 
-module hi_fanout_child (clk1);
+module hi_fanout_child (clk1, in);
    input clk1;
+   input in;
    wire  net0;
 
  DFF_X1 drvr (.CK(clk1),
+    .D(in),
     .Q(net0));
  DFF_X1 load0 (.D(net0),
     .CK(clk1));

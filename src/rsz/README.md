@@ -5,6 +5,7 @@ the design area is `-max_utilization util` percent of the core area. `util`
 is between 0 and 100.  The `resizer` stops and reports an error if the max
 utilization is exceeded.
 
+
 ## Commands
 
 ```{note}
@@ -227,6 +228,7 @@ repair_timing
     [-skip_buffer_removal]
     [-skip_last_gasp]
     [-skip_vt_swap]
+    [-skip_crit_vt_swap]
     [-repair_tns tns_end_percent]
     [-max_passes passes]
     [-max_repairs_per_pass max_repairs_per_pass]
@@ -246,7 +248,7 @@ repair_timing
 | `-setup_margin` | Add additional setup slack margin. |
 | `-hold_margin` | Add additional hold slack margin. |
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
-| `-sequence` | Specify a particular order of setup timing optimizations. The default is "unbuffer,sizeup,swap,buffer,clone,split". Obeys skip flags also. |
+| `-sequence` | Specify a particular order of setup timing optimizations. The default is "unbuffer,vt_swap,sizeup,swap,buffer,clone,split". Obeys skip flags also. |
 | `-skip_pin_swap` | Flag to skip pin swap. The default is to perform pin swap transform during setup fixing. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default is to perform gate cloning transform during setup fixing. |
 | `-skip_size_down` | Flag to skip gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
@@ -254,6 +256,7 @@ repair_timing
 | `-skip_buffer_removal` | Flag to skip buffer removal.  The default is to perform buffer removal transform during setup fixing. |
 | `-skip_last_gasp` | Flag to skip final ("last gasp") optimizations.  The default is to perform greedy sizing at the end of optimization. |
 | `-skip_vt_swap` | Flag to skip threshold voltage (VT) swap optimizations.  The default is to perform VT swap optimization to improve timing QoR. |
+| `-skip_crit_vt_swap` | Flag to skip critical threshold voltage (VT) swap optimizations at the end of optimization.  The default is to perform critical VT swap optimization to improve timing QoR beyond repairing just the worst path per each violating endpoint. |
 | `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero, only the worst endpoint is repaired. When `tns_end_percent` is 100 (default), all violating endpoints are repaired. |
 | `-max_repairs_per_pass` | Maximum repairs per pass, default is 1. On the worst paths, the maximum number of repairs is attempted. It gradually decreases until the final violations which only get 1 repair per pass. |
 | `-max_utilization` | Defines the percentage of core area used. |
@@ -601,7 +604,7 @@ buffer_ports
 repair_design -max_wire_length 100
 repair_tie_fanout LOGIC0_X1/Z
 repair_tie_fanout LOGIC1_X1/Z
-# clock tree synthesis...
+#clock tree synthesis...
 repair_timing
 ```
 

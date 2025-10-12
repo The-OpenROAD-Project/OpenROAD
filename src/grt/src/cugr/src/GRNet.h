@@ -23,6 +23,7 @@ class GRNet
   odb::dbNet* getDbNet() const { return db_net_; }
   std::string getName() const { return db_net_->getName(); }
   int getNumPins() const { return pin_access_points_.size(); }
+  // vector foreach pin -> list of APs
   const std::vector<std::vector<GRPoint>>& getPinAccessPoints() const
   {
     return pin_access_points_;

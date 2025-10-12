@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -13,10 +14,14 @@ cc_library(
     name = "rmp",
     srcs = [
         "src/Restructure.cpp",
+        "src/annealing_strategy.cpp",
+        "src/annealing_strategy.h",
         "src/delay_optimization_strategy.cpp",
         "src/delay_optimization_strategy.h",
         "src/logic_optimization_strategy.h",
         "src/resynthesis_strategy.h",
+        "src/utils.cpp",
+        "src/utils.h",
         "src/zero_slack_strategy.cpp",
         "src/zero_slack_strategy.h",
     ],
@@ -34,6 +39,7 @@ cc_library(
         "//:ord",
         "//src/cut",
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/rsz",
         "//src/sta:opensta_lib",
@@ -58,7 +64,6 @@ cc_library(
     ],
     hdrs = [
         "include/rmp/MakeRestructure.h",
-        "include/rmp/Restructure.h",
     ],
     copts = [
         "-Isrc/rmp/src",
@@ -67,11 +72,11 @@ cc_library(
         "include",
     ],
     deps = [
+        ":rmp",
         "//:ord",
         "//src/cut",
         "//src/dbSta",
         "//src/odb",
-        "//src/rmp",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",

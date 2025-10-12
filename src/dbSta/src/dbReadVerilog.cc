@@ -20,6 +20,7 @@
 #include "odb/dbTypes.h"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ConcreteNetwork.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/NetworkCmp.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Vector.hh"
@@ -74,26 +75,11 @@ using sta::Term;
 using sta::VerilogReader;
 using utl::Logger;
 
-dbVerilogNetwork::dbVerilogNetwork()
+dbVerilogNetwork::dbVerilogNetwork(sta::dbSta* sta)
 {
-  report_ = nullptr;
-  debug_ = nullptr;
-}
-
-void dbVerilogNetwork::init(dbNetwork* db_network)
-{
+  dbNetwork* db_network = sta->getDbNetwork();
   db_network_ = db_network;
   copyState(db_network_);
-}
-
-dbVerilogNetwork* makeDbVerilogNetwork()
-{
-  return new dbVerilogNetwork;
-}
-
-void initDbVerilogNetwork(dbVerilogNetwork* network, sta::dbSta* sta)
-{
-  network->init(sta->getDbNetwork());
 }
 
 void setDbNetworkLinkFunc(dbVerilogNetwork* network,
@@ -110,11 +96,6 @@ void setDbNetworkLinkFunc(dbVerilogNetwork* network,
               false);
         });
   }
-}
-
-void deleteDbVerilogNetwork(dbVerilogNetwork* verilog_network)
-{
-  delete verilog_network;
 }
 
 // Facade that looks in the db network for a liberty cell if
@@ -170,6 +151,7 @@ class Verilog2db
   void makeChildInsts(Instance* inst, dbModule* module, InstPairs& inst_pairs);
   void makeModBTerms(Cell* cell, dbModule* module);
   void makeModITerms(Instance* inst, dbModInst* modinst);
+  void registerHierModule(dbModule* module);
   dbIoType staToDb(PortDirection* dir);
   bool staToDb(dbModule* module,
                const Pin* pin,
@@ -390,10 +372,21 @@ void Verilog2db::makeDbModule(
     module = dbModule::makeUniqueDbModule(
         network_->name(cell), network_->name(inst), block_);
 
+    registerHierModule(module);
+
     std::string module_inst_name = network_->name(inst);
 
     dbModInst* modinst
         = dbModInst::create(parent, module, module_inst_name.c_str());
+
+    debugPrint(logger_,
+               utl::ODB,
+               "dbReadVerilog",
+               1,
+               "Created module instance '{}' (id={}) in parent '{}'",
+               module_inst_name.c_str(),
+               modinst->getId(),
+               parent->getName());
 
     inst_pairs.emplace_back(inst, modinst);
 
@@ -406,17 +399,10 @@ void Verilog2db::makeDbModule(
                  utl::ODB,
                  "dbReadVerilog",
                  1,
-                 "Added implements_operator attribute to mod inst {}",
-                 module_inst_name);
+                 "Added implements_operator attribute to mod inst '{}' (id={})",
+                 module_inst_name,
+                 modinst->getId());
     }
-
-    debugPrint(logger_,
-               utl::ODB,
-               "dbReadVerilog",
-               1,
-               "Created module instance {} in parent {} ",
-               module_inst_name.c_str(),
-               parent->getName());
 
     if (modinst == nullptr) {
       logger_->error(ORD,
@@ -431,6 +417,14 @@ void Verilog2db::makeDbModule(
     }
   }
   makeChildInsts(inst, module, inst_pairs);
+}
+
+void Verilog2db::registerHierModule(dbModule* module)
+{
+  // Register the module as a hierarchical module in the dbNetwork.
+  dbNetwork* db_network
+      = static_cast<dbVerilogNetwork*>(network_)->getDbNetwork();
+  db_network->registerHierModule(db_network->dbToSta(module));
 }
 
 void Verilog2db::makeModBTerms(Cell* cell, dbModule* module)
@@ -488,8 +482,9 @@ void Verilog2db::makeModBTerms(Cell* cell, dbModule* module)
                  utl::ODB,
                  "dbReadVerilog",
                  1,
-                 "Created module bterm {} ",
-                 bmodterm->getName());
+                 "Created module bterm '{}' (id={})",
+                 bmodterm->getName(),
+                 bmodterm->getId());
     }
   }
   module->getModBTerms().reverse();
@@ -525,9 +520,11 @@ void Verilog2db::makeModITerms(Instance* inst, dbModInst* modinst)
                utl::ODB,
                "dbReadVerilog",
                1,
-               "Created module iterm {} for bterm {}",
+               "Created module iterm '{}' (id={}) for bterm '{}' (id={})",
                moditerm->getName(),
-               modbterm->getName());
+               moditerm->getId(),
+               modbterm->getName(),
+               modbterm->getId());
   }
 }
 
@@ -571,8 +568,9 @@ void Verilog2db::makeChildInsts(Instance* inst,
                  utl::ODB,
                  "dbReadVerilog",
                  2,
-                 "Child inst {} created in makeChildInsts",
-                 db_inst->getName());
+                 "Child inst '{}' (id={}) created in makeChildInsts",
+                 db_inst->getName(),
+                 db_inst->getId());
 
       // Yosys writes a src attribute on sequential instances to give the
       // Verilog source info.
@@ -712,8 +710,9 @@ void Verilog2db::makeDbNets(const Instance* inst)
                utl::ODB,
                "dbReadVerilog",
                2,
-               "makeDbNets created net {}",
-               db_net->getName());
+               "makeDbNets created net '{}' (id={})",
+               db_net->getName(),
+               db_net->getId());
     if (network_->isPower(net)) {
       db_net->setSigType(odb::dbSigType::POWER);
     }
@@ -740,8 +739,9 @@ void Verilog2db::makeDbNets(const Instance* inst)
                      utl::ODB,
                      "dbReadVerilog",
                      2,
-                     "makeDbNets created bterm {}",
-                     bterm->getName());
+                     "makeDbNets created bterm '{}' (id={})",
+                     bterm->getName(),
+                     bterm->getId());
           dbIoType io_type = staToDb(network_->direction(pin));
           bterm->setIoType(io_type);
         }
@@ -759,9 +759,12 @@ void Verilog2db::makeDbNets(const Instance* inst)
                        utl::ODB,
                        "dbReadVerilog",
                        2,
-                       "makeDbNets connected mterm {} to net {}",
+                       "makeDbNets connected mterm '{}' (id={}) to net "
+                       "'{}' (id={})",
                        mterm->getName(),
-                       db_net->getName());
+                       mterm->getId(),
+                       db_net->getName(),
+                       db_net->getId());
           }
         }
       }
@@ -792,9 +795,10 @@ void Verilog2db::makeVModNets(const Instance* inst, dbModInst* mod_inst)
              utl::ODB,
              "dbReadVerilog",
              2,
-             "makeVModNets inst: {} mod_inst: {}",
+             "makeVModNets inst: '{}' mod_inst: '{}' (id={})",
              network_->name(inst),
-             mod_inst->getName());
+             mod_inst->getName(),
+             mod_inst->getId());
 
   dbModule* parent_module = mod_inst->getParent();
   dbModule* child_module = mod_inst->getMaster();
@@ -823,9 +827,12 @@ void Verilog2db::makeVModNets(const Instance* inst, dbModInst* mod_inst)
                    utl::ODB,
                    "dbReadVerilog",
                    2,
-                   "makeVModNets connected mod_iterm {} to upper_mod_net {}",
+                   "makeVModNets connected mod_iterm '{}' (id={}) to "
+                   "upper_mod_net '{}' (id={})",
                    mod_iterm->getName(),
-                   upper_mod_net->getName());
+                   mod_iterm->getId(),
+                   upper_mod_net->getName(),
+                   upper_mod_net->getId());
       }
     }
 
@@ -842,9 +849,12 @@ void Verilog2db::makeVModNets(const Instance* inst, dbModInst* mod_inst)
                      utl::ODB,
                      "dbReadVerilog",
                      2,
-                     "makeVModNets connected bterm {} to upper_mod_net {}",
+                     "makeVModNets connected bterm '{}' (id={}) to "
+                     "upper_mod_net '{}' (id={})",
                      bterm->getName(),
-                     upper_mod_net->getName());
+                     bterm->getId(),
+                     upper_mod_net->getName(),
+                     upper_mod_net->getId());
         }
       }
     }
@@ -871,9 +881,12 @@ void Verilog2db::makeVModNets(const Instance* inst, dbModInst* mod_inst)
                  utl::ODB,
                  "dbReadVerilog",
                  2,
-                 "makeVModNets connected mod_bterm {} to lower_mod_net {}",
+                 "makeVModNets connected mod_bterm '{}' (id={}) to "
+                 "lower_mod_net '{}' (id={})",
                  mod_bterm->getName(),
-                 lower_mod_net->getName());
+                 mod_bterm->getId(),
+                 lower_mod_net->getName(),
+                 lower_mod_net->getId());
     }
   }
 }
@@ -897,8 +910,9 @@ dbModNet* Verilog2db::constructModNet(Net* inst_pin_net, dbModule* module)
                utl::ODB,
                "dbReadVerilog",
                1,
-               "created mod_net {} in module {}",
+               "created mod_net '{}' (id={}) in module '{}'",
                net_name,
+               db_mod_net->getId(),
                module->getName());
   }
   for (auto& [name, pin] : net_pin_map) {
@@ -918,36 +932,44 @@ dbModNet* Verilog2db::constructModNet(Net* inst_pin_net, dbModule* module)
                  utl::ODB,
                  "dbReadVerilog",
                  2,
-                 "connected iterm {} to mod net {}",
+                 "connected iterm '{}' (id={}) to mod net '{}' (id={})",
                  iterm->getName(),
-                 db_mod_net->getName());
+                 iterm->getId(),
+                 db_mod_net->getName(),
+                 db_mod_net->getId());
     } else if (bterm) {
       bterm->connect(db_mod_net);
       debugPrint(logger_,
                  utl::ODB,
                  "dbReadVerilog",
                  2,
-                 "connected bterm {} to mod net {}",
+                 "connected bterm '{}' (id={}) to mod net '{}' (id={})",
                  bterm->getName(),
-                 db_mod_net->getName());
+                 bterm->getId(),
+                 db_mod_net->getName(),
+                 db_mod_net->getId());
     } else if (mod_bterm) {
       mod_bterm->connect(db_mod_net);
       debugPrint(logger_,
                  utl::ODB,
                  "dbReadVerilog",
                  2,
-                 "connected mod_bterm {} to mod net {}",
+                 "connected mod_bterm '{}' (id={}) to mod net '{}' (id={})",
                  mod_bterm->getName(),
-                 db_mod_net->getName());
+                 mod_bterm->getId(),
+                 db_mod_net->getName(),
+                 db_mod_net->getId());
     } else if (mod_iterm) {
       mod_iterm->connect(db_mod_net);
       debugPrint(logger_,
                  utl::ODB,
                  "dbReadVerilog",
                  2,
-                 "connected mod_iterm {} to mod net {}",
+                 "connected mod_iterm '{}' (id={}) to mod net '{}' (id={})",
                  mod_iterm->getName(),
-                 db_mod_net->getName());
+                 mod_iterm->getId(),
+                 db_mod_net->getName(),
+                 db_mod_net->getId());
     }
   }
   return db_mod_net;
@@ -1032,9 +1054,12 @@ void Verilog2db::makeModNets(Instance* inst)
                    utl::ODB,
                    "dbReadVerilog",
                    1,
-                   "makeModNets connected mod_bterm {} to lower_mod_net {}",
+                   "makeModNets connected mod_bterm '{}' (id={}) to "
+                   "lower_mod_net '{}' (id={})",
                    mod_bterm->getName(),
-                   lower_mod_net->getName());
+                   mod_bterm->getId(),
+                   lower_mod_net->getName(),
+                   lower_mod_net->getId());
       }
     }
   }

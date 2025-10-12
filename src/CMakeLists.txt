@@ -257,11 +257,13 @@ if (NOT USE_SYSTEM_OPENSTA)
 endif()
 add_subdirectory(dbSta)
 add_subdirectory(rsz)
+add_subdirectory(tst)
 add_subdirectory(stt)
 add_subdirectory(gpl)
 add_subdirectory(dpl)
 add_subdirectory(exa)
 add_subdirectory(fin)
+add_subdirectory(ram)
 add_subdirectory(ppl)
 add_subdirectory(rmp)
 add_subdirectory(cgt)
@@ -287,6 +289,10 @@ add_subdirectory(est)
 
 add_executable(openroad
   ${OPENROAD_SOURCE}
+)
+
+set_target_properties(openroad PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
 target_compile_options(openroad
@@ -321,6 +327,7 @@ target_link_libraries(openroad
   dpl
   exa
   fin
+  ram
   rsz
   ppl
   stt
@@ -417,6 +424,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     cts_py
     drt_py
     fin_py
+#    ram_py
     rcx_py
     rmp_py
     stt_py

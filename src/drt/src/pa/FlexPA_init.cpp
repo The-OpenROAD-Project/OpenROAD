@@ -11,6 +11,7 @@
 #include "db/obj/frInst.h"
 #include "frBaseTypes.h"
 #include "gc/FlexGC.h"
+#include "odb/geom.h"
 #include "pa/FlexPA.h"
 
 namespace drt {
@@ -39,7 +40,7 @@ ViaRawPriorityTuple FlexPA::getViaRawPriority(const frViaDef* via_def)
   gtl::polygon_90_set_data<frCoord> via_layer_ps1;
 
   for (auto& fig : via_def->getLayer1Figs()) {
-    const Rect bbox = fig->getBBox();
+    const odb::Rect bbox = fig->getBBox();
     gtl::rectangle_data<frCoord> bbox_rect(
         bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using boost::polygon::operators::operator+=;
@@ -62,7 +63,7 @@ ViaRawPriorityTuple FlexPA::getViaRawPriority(const frViaDef* via_def)
 
   gtl::polygon_90_set_data<frCoord> via_layer_PS2;
   for (auto& fig : via_def->getLayer2Figs()) {
-    const Rect bbox = fig->getBBox();
+    const odb::Rect bbox = fig->getBBox();
     const gtl::rectangle_data<frCoord> bbox_rect(
         bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using boost::polygon::operators::operator+=;

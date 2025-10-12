@@ -46,6 +46,8 @@
 #include "odb/geom_boost.h"
 #include "odb/wOrder.h"
 #include "sta/Clock.hh"
+#include "sta/Delay.hh"
+#include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Set.hh"
@@ -59,11 +61,18 @@ namespace grt {
 using boost::icl::interval;
 using utl::GRT;
 
-GlobalRouter::GlobalRouter()
-    : logger_(nullptr),
-      stt_builder_(nullptr),
-      antenna_checker_(nullptr),
-      opendp_(nullptr),
+GlobalRouter::GlobalRouter(utl::Logger* logger,
+                           utl::CallBackHandler* callback_handler,
+                           stt::SteinerTreeBuilder* stt_builder,
+                           odb::dbDatabase* db,
+                           sta::dbSta* sta,
+                           ant::AntennaChecker* antenna_checker,
+                           dpl::Opendp* opendp)
+    : logger_(logger),
+      callback_handler_(callback_handler),
+      stt_builder_(stt_builder),
+      antenna_checker_(antenna_checker),
+      opendp_(opendp),
       fastroute_(nullptr),
       cugr_(nullptr),
       grid_origin_(0, 0),
@@ -80,8 +89,8 @@ GlobalRouter::GlobalRouter()
       seed_(0),
       caps_perturbation_percentage_(0),
       perturbation_amount_(1),
-      sta_(nullptr),
-      db_(nullptr),
+      sta_(sta),
+      db_(db),
       block_(nullptr),
       repair_antennas_(nullptr),
       rudy_(nullptr),
@@ -90,31 +99,16 @@ GlobalRouter::GlobalRouter()
       congestion_file_name_(nullptr),
       grouter_cbk_(nullptr)
 {
-}
-
-void GlobalRouter::init(utl::Logger* logger,
-                        utl::CallBackHandler* callback_handler,
-                        stt::SteinerTreeBuilder* stt_builder,
-                        odb::dbDatabase* db,
-                        sta::dbSta* sta,
-                        ant::AntennaChecker* antenna_checker,
-                        dpl::Opendp* opendp,
-                        std::unique_ptr<AbstractRoutingCongestionDataSource>
-                            routing_congestion_data_source,
-                        std::unique_ptr<AbstractRoutingCongestionDataSource>
-                            routing_congestion_data_source_rudy)
-{
-  logger_ = logger;
-  callback_handler_ = callback_handler;
-  stt_builder_ = stt_builder;
-  db_ = db;
-  stt_builder_ = stt_builder;
-  antenna_checker_ = antenna_checker;
-  opendp_ = opendp;
-  sta_ = sta;
   fastroute_
       = new FastRouteCore(db_, logger_, callback_handler_, stt_builder_, sta_);
   cugr_ = new CUGR(db_, logger_, stt_builder_);
+}
+
+void GlobalRouter::initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
+                               routing_congestion_data_source,
+                           std::unique_ptr<AbstractRoutingCongestionDataSource>
+                               routing_congestion_data_source_rudy)
+{
   heatmap_ = std::move(routing_congestion_data_source);
   heatmap_->registerHeatMap();
   heatmap_rudy_ = std::move(routing_congestion_data_source_rudy);
@@ -415,7 +409,11 @@ void GlobalRouter::updateDbCongestion()
 {
   int min_layer, max_layer;
   getMinMaxLayer(min_layer, max_layer);
-  fastroute_->updateDbCongestion(min_layer, max_layer);
+  if (use_cugr_) {
+    cugr_->updateDbCongestion();
+  } else {
+    fastroute_->updateDbCongestion(min_layer, max_layer);
+  }
   heatmap_->update();
 }
 
@@ -2060,6 +2058,11 @@ void GlobalRouter::setAllowCongestion(bool allow_congestion)
   allow_congestion_ = allow_congestion;
 }
 
+void GlobalRouter::setResistanceAware(bool resistance_aware)
+{
+  resistance_aware_ = resistance_aware;
+}
+
 void GlobalRouter::setMacroExtension(int macro_extension)
 {
   macro_extension_ = macro_extension;
@@ -2161,6 +2164,7 @@ void GlobalRouter::configFastRoute()
   fastroute_->setVerbose(verbose_);
   fastroute_->setOverflowIterations(congestion_iterations_);
   fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
+  fastroute_->setResistanceAware(resistance_aware_);
 
   if (congestion_file_name_ != nullptr) {
     fastroute_->setCongestionReportFile(congestion_file_name_);
@@ -4781,32 +4785,89 @@ void GlobalRouter::reportNetLayerWirelengths(odb::dbNet* db_net,
   }
 }
 
-void GlobalRouter::reportLayerWireLengths()
+void GlobalRouter::reportLayerWireLengths(bool global_route,
+                                          bool detailed_route)
 {
-  std::vector<int64_t> lengths(db_->getTech()->getRoutingLayerCount() + 1);
-  int64_t total_length = 0;
-  for (auto& net_route : routes_) {
-    GRoute& route = net_route.second;
-    for (GSegment& seg : route) {
-      int layer1 = seg.init_layer;
-      int layer2 = seg.final_layer;
-      if (layer1 == layer2) {
-        int seg_length = seg.length();
-        lengths[layer1] += seg_length;
-        total_length += seg_length;
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
+
+  if (global_route) {
+    logger_->info(GRT, 278, "Global route wire length by layer:");
+    std::vector<int64_t> lengths(db_->getTech()->getRoutingLayerCount() + 1);
+    int64_t total_length = 0;
+    for (auto& net_route : routes_) {
+      GRoute& route = net_route.second;
+      for (GSegment& seg : route) {
+        int layer1 = seg.init_layer;
+        int layer2 = seg.final_layer;
+        if (layer1 == layer2) {
+          int seg_length = seg.length();
+          lengths[layer1] += seg_length;
+          total_length += seg_length;
+        }
       }
     }
-  }
-  if (total_length > 0) {
-    for (size_t i = 0; i < lengths.size(); i++) {
-      int64_t length = lengths[i];
-      if (length > 0) {
-        odb::dbTechLayer* layer = routing_layers_[i];
-        logger_->report("{:5s} {:8d}um {:3d}%",
-                        layer->getName(),
-                        block_->dbuToMicrons(length),
-                        static_cast<int>((100.0 * length) / total_length));
+    if (total_length > 0) {
+      logger_->report("Layer    Wire length  Percentage");
+      logger_->report("--------------------------------");
+      for (size_t i = 0; i < lengths.size(); i++) {
+        int64_t length = lengths[i];
+        if (length > 0) {
+          odb::dbTechLayer* layer = routing_layers_[i];
+          logger_->report("{:7s} {:8.2f}um {:5}%",
+                          layer->getName(),
+                          block_->dbuToMicrons(length),
+                          static_cast<int>((100.0 * length) / total_length));
+        }
       }
+      logger_->report("--------------------------------");
+    }
+  }
+
+  if (detailed_route) {
+    logger_->info(GRT, 279, "Detailed route wire length by layer:");
+    std::vector<int64_t> lengths(db_->getTech()->getRoutingLayerCount() + 1);
+    int64_t total_length = 0;
+    odb::dbSet<odb::dbNet> nets = block_->getNets();
+    for (odb::dbNet* db_net : nets) {
+      odb::dbWire* wire = db_net->getWire();
+      if (wire == nullptr || db_net->getSigType().isSupply()
+          || db_net->isSpecial() || !db_net->getSWires().empty()
+          || db_net->isConnectedByAbutment()) {
+        continue;
+      }
+
+      odb::dbWirePath path;
+      odb::dbWirePathShape pshape;
+      odb::dbWirePathItr pitr;
+      for (pitr.begin(wire); pitr.getNextPath(path);) {
+        while (pitr.getNextShape(pshape)) {
+          const odb::dbShape& shape = pshape.shape;
+          if (!shape.isVia()) {
+            int layer = shape.getTechLayer()->getRoutingLevel();
+            int seg_length = shape.getLength();
+            lengths[layer] += seg_length;
+            total_length += seg_length;
+          }
+        }
+      }
+    }
+
+    if (total_length > 0) {
+      logger_->report("Layer    Wire length  Percentage");
+      logger_->report("--------------------------------");
+      for (size_t i = 0; i < lengths.size(); i++) {
+        int64_t length = lengths[i];
+        if (length > 0) {
+          odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
+          logger_->report("{:7s} {:8.2f}um {:5}%",
+                          layer->getName(),
+                          block_->dbuToMicrons(length),
+                          static_cast<int>((100.0 * length) / total_length));
+        }
+      }
+      logger_->report("--------------------------------");
     }
   }
 }

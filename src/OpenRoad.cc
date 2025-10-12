@@ -19,26 +19,37 @@
 #include "Python.h"
 #endif
 
+#include "ant/AntennaChecker.hh"
 #include "ant/MakeAntennaChecker.hh"
+#include "cgt/ClockGating.h"
 #include "cgt/MakeClockGating.h"
 #include "cts/MakeTritoncts.h"
+#include "cts/TritonCTS.h"
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
+#include "dft/Dft.hh"
 #include "dft/MakeDft.hh"
 #include "dpl/MakeOpendp.h"
+#include "dpl/Opendp.h"
+#include "dst/Distributed.h"
 #include "dst/MakeDistributed.h"
 #include "est/EstimateParasitics.h"
 #include "est/MakeEstimateParasitics.h"
 #include "exa/MakeExample.h"
+#include "exa/example.h"
+#include "fin/Finale.h"
 #include "fin/MakeFinale.h"
 #include "gpl/MakeReplace.h"
+#include "gpl/Replace.h"
 #include "grt/GlobalRouter.h"
 #include "grt/MakeGlobalRouter.h"
 #include "gui/MakeGui.h"
 #include "ifp/MakeInitFloorplan.hh"
 #include "mpl/MakeMacroPlacer.h"
+#include "mpl/rtl_mp.h"
+#include "odb/3dblox.h"
 #include "odb/MakeOdb.h"
 #include "odb/cdl.h"
 #include "odb/db.h"
@@ -49,17 +60,28 @@
 #include "ord/InitOpenRoad.hh"
 #include "pad/MakeICeWall.h"
 #include "par/MakePartitionMgr.h"
+#include "par/PartitionMgr.h"
 #include "pdn/MakePdnGen.hh"
+#include "pdn/PdnGen.hh"
+#include "ppl/IOPlacer.h"
 #include "ppl/MakeIoplacer.h"
 #include "psm/MakePDNSim.hh"
+#include "psm/pdnsim.h"
+#include "ram/MakeRam.h"
+#include "ram/ram.h"
 #include "rcx/MakeOpenRCX.h"
+#include "rcx/ext.h"
 #include "rmp/MakeRestructure.h"
+#include "rmp/Restructure.h"
 #include "rsz/MakeResizer.hh"
+#include "rsz/Resizer.hh"
 #include "sta/VerilogReader.hh"
 #include "sta/VerilogWriter.hh"
 #include "stt/MakeSteinerTreeBuilder.h"
 #include "tap/MakeTapcell.h"
+#include "tap/tapcell.h"
 #include "triton_route/MakeTritonRoute.h"
+#include "triton_route/TritonRoute.h"
 #include "upf/MakeUpf.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
@@ -96,34 +118,35 @@ OpenRoad::OpenRoad()
 
 OpenRoad::~OpenRoad()
 {
-  deleteDbVerilogNetwork(verilog_network_);
+  delete verilog_network_;
   // Temporarily removed until a crash can be resolved
   // deleteDbSta(sta_);
   // sta::deleteAllMemory();
-  deleteIoplacer(ioPlacer_);
-  deleteResizer(resizer_);
-  deleteOpendp(opendp_);
-  deleteGlobalRouter(global_router_);
-  deleteRestructure(restructure_);
-  deleteClockGating(clock_gating_);
-  deleteTritonCts(tritonCts_);
-  deleteTapcell(tapcell_);
-  deleteMacroPlacer(macro_placer_);
-  deleteExample(example_);
-  deleteOpenRCX(extractor_);
-  deleteTritonRoute(detailed_router_);
-  deleteReplace(replace_);
-  deletePDNSim(pdnsim_);
-  deleteFinale(finale_);
-  deleteAntennaChecker(antenna_checker_);
+  delete ioPlacer_;
+  delete resizer_;
+  delete opendp_;
+  delete global_router_;
+  delete restructure_;
+  delete clock_gating_;
+  delete tritonCts_;
+  delete tapcell_;
+  delete macro_placer_;
+  delete example_;
+  delete extractor_;
+  delete detailed_router_;
+  delete replace_;
+  delete pdnsim_;
+  delete finale_;
+  delete ram_gen_;
+  delete antenna_checker_;
   odb::dbDatabase::destroy(db_);
-  deletePartitionMgr(partitionMgr_);
-  deletePdnGen(pdngen_);
-  deleteICeWall(icewall_);
-  deleteDistributed(distributer_);
-  deleteSteinerTreeBuilder(stt_builder_);
-  dft::deleteDft(dft_);
-  est::deleteEstimateParasitics(estimate_parasitics_);
+  delete partitionMgr_;
+  delete pdngen_;
+  delete icewall_;
+  delete distributer_;
+  delete stt_builder_;
+  delete dft_;
+  delete estimate_parasitics_;
   delete logger_;
   delete verilog_reader_;
   delete callback_handler_;
@@ -170,123 +193,101 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
 
   // Make components.
   utl::Progress::setBatchMode(batch_mode);
-  logger_ = utl::makeLogger(log_filename, metrics_filename);
+  logger_ = new utl::Logger(log_filename, metrics_filename);
   callback_handler_ = new utl::CallBackHandler(logger_);
   db_->setLogger(logger_);
-  sta_ = sta::makeDbSta();
-  verilog_network_ = makeDbVerilogNetwork();
-  ioPlacer_ = ppl::makeIoplacer();
-  resizer_ = rsz::makeResizer();
-  opendp_ = dpl::makeOpendp();
-  finale_ = fin::makeFinale();
-  global_router_ = grt::makeGlobalRouter();
-  restructure_ = rmp::makeRestructure();
-  clock_gating_ = cgt::makeClockGating();
-  tritonCts_ = cts::makeTritonCts();
-  tapcell_ = tap::makeTapcell();
-  macro_placer_ = mpl::makeMacroPlacer();
-  example_ = exa::makeExample();
-  extractor_ = rcx::makeOpenRCX();
-  detailed_router_ = drt::makeTritonRoute();
-  replace_ = gpl::makeReplace();
-  pdnsim_ = psm::makePDNSim();
-  antenna_checker_ = ant::makeAntennaChecker();
-  partitionMgr_ = par::makePartitionMgr();
-  pdngen_ = pdn::makePdnGen();
-  icewall_ = pad::makeICeWall();
-  distributer_ = dst::makeDistributed();
-  stt_builder_ = stt::makeSteinerTreeBuilder();
-  dft_ = dft::makeDft();
-  estimate_parasitics_ = est::makeEstimateParasitics();
+  sta_ = new sta::dbSta(tcl_interp, db_, logger_);
+  verilog_network_ = new dbVerilogNetwork(sta_);
+  ioPlacer_ = new ppl::IOPlacer(db_, logger_);
+  stt_builder_ = new stt::SteinerTreeBuilder(db_, logger_);
+  antenna_checker_ = new ant::AntennaChecker(db_, logger_);
+  opendp_ = new dpl::Opendp(db_, logger_);
+  global_router_ = new grt::GlobalRouter(logger_,
+                                         callback_handler_,
+                                         stt_builder_,
+                                         db_,
+                                         sta_,
+                                         antenna_checker_,
+                                         opendp_);
+  grt::initGui(global_router_, db_, logger_);
+
+  estimate_parasitics_ = new est::EstimateParasitics(
+      logger_, callback_handler_, db_, sta_, stt_builder_, global_router_);
+  est::initGui(estimate_parasitics_);
+
+  resizer_ = new rsz::Resizer(logger_,
+                              db_,
+                              sta_,
+                              stt_builder_,
+                              global_router_,
+                              opendp_,
+                              estimate_parasitics_);
+  finale_ = new fin::Finale(db_, logger_);
+  ram_gen_ = new ram::RamGen(getDbNetwork(), db_, logger_);
+  restructure_ = new rmp::Restructure(
+      logger_, sta_, db_, resizer_, estimate_parasitics_);
+  clock_gating_ = new cgt::ClockGating(logger_, sta_);
+  tritonCts_ = new cts::TritonCTS(logger_,
+                                  db_,
+                                  getDbNetwork(),
+                                  sta_,
+                                  stt_builder_,
+                                  resizer_,
+                                  estimate_parasitics_);
+  tapcell_ = new tap::Tapcell(db_, logger_);
+  partitionMgr_ = new par::PartitionMgr(db_, getDbNetwork(), sta_, logger_);
+  macro_placer_
+      = new mpl::MacroPlacer(getDbNetwork(), db_, sta_, logger_, partitionMgr_);
+  extractor_ = new rcx::Ext(db_, logger_, getVersion());
+  distributer_ = new dst::Distributed(logger_);
+  detailed_router_ = new drt::TritonRoute(
+      db_, logger_, callback_handler_, distributer_, stt_builder_);
+  drt::initGui(detailed_router_);
+
+  replace_ = new gpl::Replace(db_, sta_, resizer_, global_router_, logger_);
+  pdnsim_ = new psm::PDNSim(logger_, db_, sta_, estimate_parasitics_, opendp_);
+  pdngen_ = new pdn::PdnGen(db_, logger_);
+  icewall_ = new pad::ICeWall(db_, logger_);
+  dft_ = new dft::Dft(db_, sta_, logger_);
+  example_ = new exa::Example(db_, logger_);
 
   // Init components.
   Ord_Init(tcl_interp);
   // Import TCL scripts.
   utl::evalTclInit(tcl_interp, ord::ord_tcl_inits);
 
-  initLogger(logger_, tcl_interp);
+  utl::initLogger(tcl_interp);
+
   // GUI first so we can register our sink with the logger
   gui::initGui(tcl_interp, db_, sta_, logger_);
   odb::initOdb(tcl_interp);
   upf::initUpf(tcl_interp);
   ifp::initInitFloorplan(tcl_interp);
-  initDbSta(sta_, logger_, tcl_interp, db_);
-  initResizer(resizer_,
-              tcl_interp,
-              logger_,
-              db_,
-              sta_,
-              stt_builder_,
-              global_router_,
-              opendp_,
-              estimate_parasitics_);
-  initDbVerilogNetwork(verilog_network_, sta_);
-  initIoplacer(ioPlacer_, db_, logger_, tcl_interp);
-  initReplace(
-      replace_, db_, sta_, resizer_, global_router_, logger_, tcl_interp);
-  initOpendp(opendp_, db_, logger_, tcl_interp);
-  initFinale(finale_, db_, logger_, tcl_interp);
-  initGlobalRouter(global_router_,
-                   db_,
-                   sta_,
-                   antenna_checker_,
-                   opendp_,
-                   stt_builder_,
-                   logger_,
-                   callback_handler_,
-                   tcl_interp);
-  initTritonCts(tritonCts_,
-                db_,
-                getDbNetwork(),
-                sta_,
-                stt_builder_,
-                resizer_,
-                estimate_parasitics_,
-                logger_,
-                tcl_interp);
-  initTapcell(tapcell_, db_, logger_, tcl_interp);
-  initMacroPlacer(macro_placer_,
-                  getDbNetwork(),
-                  db_,
-                  sta_,
-                  logger_,
-                  partitionMgr_,
-                  tcl_interp);
-  initExample(example_, db_, logger_, tcl_interp);
-  initOpenRCX(extractor_, db_, logger_, getVersion(), tcl_interp);
-  initICeWall(icewall_, db_, logger_, tcl_interp);
-  initRestructure(restructure_,
-                  logger_,
-                  sta_,
-                  db_,
-                  resizer_,
-                  estimate_parasitics_,
-                  tcl_interp);
-  cgt::initClockGating(clock_gating_, tcl_interp, logger_, sta_);
-  initTritonRoute(detailed_router_,
-                  db_,
-                  logger_,
-                  callback_handler_,
-                  distributer_,
-                  stt_builder_,
-                  tcl_interp);
-  initPDNSim(
-      pdnsim_, logger_, db_, sta_, estimate_parasitics_, opendp_, tcl_interp);
-  initAntennaChecker(antenna_checker_, db_, logger_, tcl_interp);
-  initPartitionMgr(
-      partitionMgr_, db_, getDbNetwork(), sta_, logger_, tcl_interp);
-  initPdnGen(pdngen_, db_, logger_, tcl_interp);
-  initDistributed(distributer_, logger_, tcl_interp);
-  initSteinerTreeBuilder(stt_builder_, db_, logger_, tcl_interp);
-  dft::initDft(dft_, db_, sta_, logger_, tcl_interp);
-  initEstimateParasitics(estimate_parasitics_,
-                         tcl_interp,
-                         logger_,
-                         callback_handler_,
-                         db_,
-                         sta_,
-                         stt_builder_,
-                         global_router_);
+  sta::initDbSta(tcl_interp);
+  rsz::initResizer(tcl_interp);
+  ppl::initIoplacer(tcl_interp);
+  gpl::initReplace(tcl_interp);
+  dpl::initOpendp(tcl_interp);
+  fin::initFinale(tcl_interp);
+  ram::initRamGen(tcl_interp);
+  grt::initTcl(tcl_interp);
+  cts::initTritonCts(tcl_interp);
+  tap::initTapcell(tcl_interp);
+  mpl::initMacroPlacer(tcl_interp);
+  exa::initExample(tcl_interp);
+  rcx::initOpenRCX(tcl_interp);
+  pad::initICeWall(tcl_interp);
+  rmp::initRestructure(tcl_interp);
+  cgt::initClockGating(tcl_interp);
+  drt::initTcl(tcl_interp);
+  psm::initPDNSim(tcl_interp);
+  ant::initAntennaChecker(tcl_interp);
+  par::initPartitionMgr(tcl_interp);
+  pdn::initPdnGen(tcl_interp);
+  dst::initDistributed(tcl_interp);
+  stt::initSteinerTreeBuilder(tcl_interp);
+  dft::initDft(tcl_interp);
+  est::initTcl(tcl_interp);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
@@ -355,27 +356,27 @@ void OpenRoad::readDef(const char* filename,
   def_reader.readChip(search_libs, filename, chip);
 }
 
-static odb::defout::Version stringToDefVersion(const string& version)
+static odb::DefOut::Version stringToDefVersion(const std::string& version)
 {
   if (version == "5.8") {
-    return odb::defout::Version::DEF_5_8;
+    return odb::DefOut::Version::DEF_5_8;
   }
   if (version == "5.7") {
-    return odb::defout::Version::DEF_5_7;
+    return odb::DefOut::Version::DEF_5_7;
   }
   if (version == "5.6") {
-    return odb::defout::Version::DEF_5_6;
+    return odb::DefOut::Version::DEF_5_6;
   }
   if (version == "5.5") {
-    return odb::defout::Version::DEF_5_5;
+    return odb::DefOut::Version::DEF_5_5;
   }
   if (version == "5.4") {
-    return odb::defout::Version::DEF_5_4;
+    return odb::DefOut::Version::DEF_5_4;
   }
   if (version == "5.3") {
-    return odb::defout::Version::DEF_5_3;
+    return odb::DefOut::Version::DEF_5_3;
   }
-  return odb::defout::Version::DEF_5_8;
+  return odb::DefOut::Version::DEF_5_8;
 }
 
 void OpenRoad::writeDef(const char* filename, const char* version)
@@ -383,7 +384,7 @@ void OpenRoad::writeDef(const char* filename, const char* version)
   writeDef(filename, std::string(version));
 }
 
-void OpenRoad::writeDef(const char* filename, const string& version)
+void OpenRoad::writeDef(const char* filename, const std::string& version)
 {
   odb::dbChip* chip = db_->getChip();
   if (chip) {
@@ -395,7 +396,7 @@ void OpenRoad::writeDef(const char* filename, const string& version)
       if (hierarchy_set) {
         sta->getDbNetwork()->disableHierarchy();
       }
-      odb::defout def_writer(logger_);
+      odb::DefOut def_writer(logger_);
       def_writer.setVersion(stringToDefVersion(version));
       def_writer.writeBlock(block, filename);
       if (hierarchy_set) {
@@ -443,7 +444,7 @@ void OpenRoad::writeLef(const char* filename)
       std::string name(filename);
       if (cnt > 0) {
         auto pos = name.rfind('.');
-        if (pos != string::npos) {
+        if (pos != std::string::npos) {
           name.insert(pos, "_" + std::to_string(cnt));
         } else {
           name += "_" + std::to_string(cnt);
@@ -480,6 +481,18 @@ void OpenRoad::writeCdl(const char* out_filename,
           getLogger(), block, out_filename, masters_filenames, include_fillers);
     }
   }
+}
+
+void OpenRoad::read3Dbv(const std::string& filename)
+{
+  odb::ThreeDBlox parser(logger_, db_);
+  parser.readDbv(filename);
+}
+
+void OpenRoad::read3Dbx(const std::string& filename)
+{
+  odb::ThreeDBlox parser(logger_, db_);
+  parser.readDbx(filename);
 }
 
 void OpenRoad::readDb(const char* filename, bool hierarchy)

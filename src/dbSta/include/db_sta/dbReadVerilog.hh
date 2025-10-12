@@ -37,23 +37,17 @@ using sta::VerilogReader;
 class dbVerilogNetwork : public ConcreteNetwork
 {
  public:
-  dbVerilogNetwork();
+  dbVerilogNetwork(sta::dbSta* sta);
   Cell* findAnyCell(const char* name) override;
-  void init(dbNetwork* db_network);
   bool isBlackBox(ConcreteCell* cell);
+  dbNetwork* getDbNetwork() { return static_cast<dbNetwork*>(db_network_); }
 
  private:
   NetworkReader* db_network_ = nullptr;
 };
 
-dbVerilogNetwork* makeDbVerilogNetwork();
-
-void initDbVerilogNetwork(dbVerilogNetwork* network, sta::dbSta* sta);
-
 void setDbNetworkLinkFunc(dbVerilogNetwork* network,
                           VerilogReader* verilog_reader);
-
-void deleteDbVerilogNetwork(dbVerilogNetwork* verilog_network);
 
 // Read a hierarchical Verilog netlist into a OpenSTA concrete network
 // objects. The hierarchical network is elaborated/flattened by the

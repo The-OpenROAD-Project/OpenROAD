@@ -1076,7 +1076,7 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
                                               patch_rect.yMin(),
                                               patch_rect.xMax(),
                                               patch_rect.yMax(),
-                                              type);
+                                              odb::dbWireShapeType::DRCFILL);
         via_shapes.middle.insert({patch_rect, patch_box});
       }
     }
@@ -1108,12 +1108,14 @@ DbGenerateDummyVia::DbGenerateDummyVia(Connect* connect,
                                        const odb::Rect& shape,
                                        odb::dbTechLayer* bottom,
                                        odb::dbTechLayer* top,
-                                       bool add_report)
+                                       bool add_report,
+                                       const std::string& reason)
     : connect_(connect),
       add_report_(add_report),
       shape_(shape),
       bottom_(bottom),
-      top_(top)
+      top_(top),
+      reason_(reason)
 {
 }
 
@@ -1132,11 +1134,13 @@ DbVia::ViaLayerShape DbGenerateDummyVia::generate(
   xfm.apply(via_area);
   logger->warn(utl::PDN,
                110,
-               "No via inserted between {} and {} at {} on {}",
+               "No via inserted between {} and {} at {} on {}{}{}",
                bottom_->getName(),
                top_->getName(),
                Shape::getRectText(via_area, block->getDbUnitsPerMicron()),
-               wire->getNet()->getName());
+               wire->getNet()->getName(),
+               reason_.empty() ? "" : ": ",
+               reason_);
   if (add_report_) {
     connect_->addFailedVia(failedViaReason::BUILD, via_area, wire->getNet());
   }
@@ -1491,8 +1495,9 @@ bool ViaGenerator::checkMinCuts(odb::dbTechLayer* layer, int width) const
              utl::PDN,
              "MinCut",
              1,
-             "Layer {} of width {:.4f} has {} min cut rules.",
+             "Layer {} (below {}) of width {:.4f} has {} min cut rules.",
              layer->getName(),
+             is_below,
              tech_layer.dbuToMicron(width),
              min_rules_use == nullptr ? 0 : min_rules_use->size());
 
@@ -1505,17 +1510,19 @@ bool ViaGenerator::checkMinCuts(odb::dbTechLayer* layer, int width) const
   for (const auto& min_cut_rule : *min_rules_use) {
     const bool pass = min_cut_rule.cuts <= total_cuts;
 
-    debugPrint(
-        logger_,
-        utl::PDN,
-        "MinCut",
-        2,
-        "Rule width {:.4f} above ({}) or below ({}) requires {} vias: {}.",
-        tech_layer.dbuToMicron(min_cut_rule.width),
-        min_cut_rule.above,
-        min_cut_rule.below,
-        min_cut_rule.cuts,
-        pass);
+    debugPrint(logger_,
+               utl::PDN,
+               "MinCut",
+               2,
+               "Rule width {:.4f} above ({}) or below ({}) requires {} vias, "
+               "has {} vias {}: {}.",
+               tech_layer.dbuToMicron(min_cut_rule.width),
+               min_cut_rule.above,
+               min_cut_rule.below,
+               min_cut_rule.cuts,
+               total_cuts,
+               is_below ? "below" : "above",
+               pass);
 
     is_valid |= pass;
   }

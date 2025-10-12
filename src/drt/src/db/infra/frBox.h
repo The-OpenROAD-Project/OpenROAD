@@ -10,16 +10,12 @@
 
 namespace drt {
 
-using odb::dbOrientType;
-using odb::dbTransform;
-using odb::Rect;
-
-class frBox3D : public Rect
+class frBox3D : public odb::Rect
 {
  public:
   frBox3D() = default;
   frBox3D(int llx, int lly, int urx, int ury, int zl, int zh)
-      : Rect(llx, lly, urx, ury), zl_(zl), zh_(zh)
+      : odb::Rect(llx, lly, urx, ury), zl_(zl), zh_(zh)
   {
   }
   frBox3D(const frBox3D& in) = default;
@@ -43,7 +39,7 @@ class frBox3D : public Rect
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
-    (ar) & boost::serialization::base_object<Rect>(*this);
+    (ar) & boost::serialization::base_object<odb::Rect>(*this);
     (ar) & zl_;
     (ar) & zh_;
   }

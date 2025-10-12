@@ -57,23 +57,25 @@ class HTreeBuilder;
 class TritonCTS
 {
  public:
-  TritonCTS();
-  ~TritonCTS();
-
-  void init(utl::Logger* logger,
+  TritonCTS(utl::Logger* logger,
             odb::dbDatabase* db,
             sta::dbNetwork* network,
             sta::dbSta* sta,
             stt::SteinerTreeBuilder* st_builder,
             rsz::Resizer* resizer,
             est::EstimateParasitics* estimate_parasitics);
+  ~TritonCTS();
+
   void runTritonCts();
   void reportCtsMetrics();
   CtsOptions* getParms() { return options_; }
   TechChar* getCharacterization() { return techChar_.get(); }
+  odb::dbBlock* getBlock() { return db_->getChip()->getBlock(); }
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
   void setRootBuffer(const char* buffers);
+  std::string getRootBufferToString();
+  void resetRootBuffer() { rootBuffers_.clear(); }
   void setSinkBuffer(const char* buffers);
 
  private:
@@ -119,6 +121,7 @@ class TritonCTS
   void writeClockNetsToDb(TreeBuilder* builder,
                           std::set<odb::dbNet*>& clkLeafNets);
   void writeClockNDRsToDb(TreeBuilder* builder);
+  int getNetSpacing(odb::dbTechLayer* layer, int width1, int width2);
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }
@@ -205,22 +208,6 @@ class TritonCTS
   void setAllClocksPropagated();
   void repairClockNets();
   void balanceMacroRegisterLatencies();
-  float getVertexClkArrival(sta::Vertex* sinkVertex,
-                            odb::dbNet* topNet,
-                            odb::dbITerm* iterm);
-  void computeAveSinkArrivals(TreeBuilder* builder, sta::Graph* graph);
-  void computeSinkArrivalRecur(odb::dbNet* topClokcNet,
-                               odb::dbITerm* iterm,
-                               float& sumArrivals,
-                               unsigned& numSinks,
-                               sta::Graph* graph);
-  bool propagateClock(odb::dbITerm* input);
-  void adjustLatencies(TreeBuilder* macroBuilder, TreeBuilder* registerBuilder);
-  void computeTopBufferDelay(TreeBuilder* builder);
-  odb::dbInst* insertDelayBuffer(odb::dbInst* driver,
-                                 const std::string& clockName,
-                                 int locX,
-                                 int locY);
 
   sta::dbSta* openSta_ = nullptr;
   sta::dbNetwork* network_ = nullptr;

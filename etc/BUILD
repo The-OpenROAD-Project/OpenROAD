@@ -1,3 +1,7 @@
+load("@openroad_rules_python//python:defs.bzl", "py_binary")
+
+package(features = ["layering_check"])
+
 py_binary(
     name = "file_to_string",
     srcs = [

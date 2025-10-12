@@ -5,34 +5,36 @@
 #include <set>
 #include <string>
 
+#include "dpl/Opendp.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 namespace dpl {
 
 namespace cell_edges {
-Rect transformEdgeRect(const Rect& edge_rect,
-                       const Node* cell,
-                       const DbuX x,
-                       const DbuY y,
-                       const odb::dbOrientType& orient)
+odb::Rect transformEdgeRect(const odb::Rect& edge_rect,
+                            const Node* cell,
+                            const DbuX x,
+                            const DbuY y,
+                            const odb::dbOrientType& orient)
 {
-  Rect bbox;
+  odb::Rect bbox;
   cell->getDbInst()->getMaster()->getPlacementBoundary(bbox);
   odb::dbTransform transform(orient);
   transform.apply(bbox);
   Point offset(x.v - bbox.xMin(), y.v - bbox.yMin());
   transform.setOffset(offset);
-  Rect result(edge_rect);
+  odb::Rect result(edge_rect);
   transform.apply(result);
   return result;
 }
-Rect getQueryRect(const Rect& edge_box, const int spc)
+odb::Rect getQueryRect(const odb::Rect& edge_box, const int spc)
 {
-  Rect query_rect(edge_box);
+  odb::Rect query_rect(edge_box);
   bool is_vertical_edge = edge_box.getDir() == 0;
   if (is_vertical_edge) {
     // vertical edge
@@ -68,7 +70,7 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell) const
 bool PlacementDRC::checkEdgeSpacing(const Node* cell,
                                     const GridX x,
                                     const GridY y,
-                                    const dbOrientType& orient) const
+                                    const odb::dbOrientType& orient) const
 {
   if (!hasCellEdgeSpacingTable()) {
     return true;
@@ -84,10 +86,10 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell,
   for (const auto& edge1 : master->getEdges()) {
     int max_spc = getMaxSpacing(edge1.getEdgeType())
                   + 1;  // +1 to account for EXACT rules
-    Rect edge1_box = cell_edges::transformEdgeRect(
+    odb::Rect edge1_box = cell_edges::transformEdgeRect(
         edge1.getBBox(), cell, x_real, y_real, orient);
     bool is_vertical_edge = edge1_box.getDir() == 0;
-    Rect query_rect = cell_edges::getQueryRect(edge1_box, max_spc);
+    odb::Rect query_rect = cell_edges::getQueryRect(edge1_box, max_spc);
     GridX xMin = grid_->gridX(DbuX(query_rect.xMin()));
     GridX xMax = grid_->gridEndX(DbuX(query_rect.xMax()));
     GridY yMin = grid_->gridEndY(DbuY(query_rect.yMin())) - 1;
@@ -116,11 +118,12 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell,
           auto spc_entry
               = edge_spacing_table_[edge1.getEdgeType()][edge2.getEdgeType()];
           int spc = spc_entry.spc;
-          Rect edge2_box = cell_edges::transformEdgeRect(edge2.getBBox(),
-                                                         cell2,
-                                                         cell2->getLeft(),
-                                                         cell2->getBottom(),
-                                                         cell2->getOrient());
+          odb::Rect edge2_box
+              = cell_edges::transformEdgeRect(edge2.getBBox(),
+                                              cell2,
+                                              cell2->getLeft(),
+                                              cell2->getBottom(),
+                                              cell2->getOrient());
           if (edge1_box.getDir() != edge2_box.getDir()) {
             // Skip if edges are not parallel.
             continue;
@@ -129,7 +132,7 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell,
             // Skip if there is no PRL between the edges.
             continue;
           }
-          Rect test_rect(edge1_box);
+          odb::Rect test_rect(edge1_box);
           // Generalized intersection between the two edges.
           test_rect.merge(edge2_box);
           int dist = is_vertical_edge ? test_rect.dx() : test_rect.dy();
@@ -182,7 +185,7 @@ bool PlacementDRC::checkDRC(const Node* cell) const
 bool PlacementDRC::checkDRC(const Node* cell,
                             const GridX x,
                             const GridY y,
-                            const dbOrientType& orient) const
+                            const odb::dbOrientType& orient) const
 {
   return checkEdgeSpacing(cell, x, y, orient) && checkPadding(cell, x, y)
          && checkBlockedLayers(cell, x, y) && checkOneSiteGap(cell, x, y);

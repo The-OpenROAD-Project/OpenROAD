@@ -18,6 +18,8 @@ export TEST_NAME_BAZEL={TEST_NAME_BAZEL}
 export TEST_FILE={TEST_FILE}
 export OPENROAD_EXE={OPENROAD_EXE}
 export REGRESSION_TEST={REGRESSION_TEST}
+export TEST_CHECK_LOG={TEST_CHECK_LOG}
+export TEST_CHECK_PASSFAIL={TEST_CHECK_PASSFAIL}
 exec "{bazel_test_sh}" "$@"
 """.format(
             bazel_test_sh = ctx.file.bazel_test_sh.short_path,
@@ -25,6 +27,8 @@ exec "{bazel_test_sh}" "$@"
             TEST_FILE = ctx.file.test_file.short_path,
             OPENROAD_EXE = ctx.executable.openroad.short_path,
             REGRESSION_TEST = ctx.file.regression_test.short_path,
+            TEST_CHECK_LOG = "True" if ctx.attr.check_log else "False",
+            TEST_CHECK_PASSFAIL = "True" if ctx.attr.check_passfail else "False",
         ),
         is_executable = True,
     )
@@ -51,21 +55,21 @@ exec "{bazel_test_sh}" "$@"
 regression_rule_test = rule(
     implementation = _regression_test_impl,
     attrs = {
-        "test_name": attr.string(
-            doc = "The name of the test.",
-            mandatory = True,
-        ),
-        "test_file": attr.label(
-            doc = "The primary test file (e.g., .tcl or .py).",
+        "bazel_test_sh": attr.label(
+            doc = "The Bazel test shell script.",
             allow_single_file = True,
+        ),
+        "check_log": attr.bool(
+            doc = "Diff the output log against <test_name>.ok",
+            default = True,
+        ),
+        "check_passfail": attr.bool(
+            doc = "Check the output log contains pass or OK in the last line",
+            default = False,
         ),
         "data": attr.label_list(
             doc = "Additional test files required for the test.",
             allow_files = True,
-        ),
-        "bazel_test_sh": attr.label(
-            doc = "The Bazel test shell script.",
-            allow_single_file = True,
         ),
         "openroad": attr.label(
             doc = "The OpenROAD executable.",
@@ -79,6 +83,14 @@ regression_rule_test = rule(
         "regression_test": attr.label(
             doc = "The regression test script.",
             allow_single_file = True,
+        ),
+        "test_file": attr.label(
+            doc = "The primary test file (e.g., .tcl or .py).",
+            allow_single_file = True,
+        ),
+        "test_name": attr.string(
+            doc = "The name of the test.",
+            mandatory = True,
         ),
     },
     executable = True,
@@ -96,6 +108,15 @@ def _pop(kwargs, key, default):
 def regression_test(
         name,
         **kwargs):
+    """Macro to instantiate a regression test for a given test name
+
+    Automatically detects test files and configures the test rule.
+
+    Args:
+        name: The base name of the test (without extension).
+        **kwargs: Additional keyword arguments to pass to the regression_rule_test.
+    """
+
     # TODO: we should _not_ have the magic to figure out if tcl or py exists
     # in here but rather in the BUILD file and just pass the resulting
     # name = "foo-tcl", test_file = "foo.tcl" to this regression test macro.
@@ -112,7 +133,7 @@ def regression_test(
     for test_file in test_files:
         ext = test_file.split(".")[-1]
         regression_rule_test(
-            name = name + "-" + ext,
+            name = name + "-" + ext + "_test",
             test_file = test_file,
             test_name = name,
             data = [

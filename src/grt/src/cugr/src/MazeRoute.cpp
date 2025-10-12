@@ -23,12 +23,10 @@ void SparseGraph::init(const GridGraphView<CostT>& wire_cost_view,
                        const SparseGrid& grid)
 {
   // 0. Create pseudo pins
-  robin_hood::unordered_map<uint64_t, std::pair<PointT, IntervalT>>
-      selectedAccessPoints;
-  grid_graph_->selectAccessPoints(net_, selectedAccessPoints);
+  const auto selectedAccessPoints = grid_graph_->selectAccessPoints(net_);
   pseudo_pins_.reserve(selectedAccessPoints.size());
   for (const auto& selectedPoint : selectedAccessPoints) {
-    pseudo_pins_.push_back(selectedPoint.second);
+    pseudo_pins_.push_back(selectedPoint);
   }
 
   // 1. Collect additional routing grid lines
@@ -37,8 +35,8 @@ void SparseGraph::init(const GridGraphView<CostT>& wire_cost_view,
   pxs.reserve(net_->getNumPins());
   pys.reserve(net_->getNumPins());
   for (const auto& pin : pseudo_pins_) {
-    pxs.emplace_back(pin.first.x());
-    pys.emplace_back(pin.first.y());
+    pxs.emplace_back(pin.point.x());
+    pys.emplace_back(pin.point.y());
   }
   std::sort(pxs.begin(), pxs.end());
   std::sort(pys.begin(), pys.end());
@@ -145,8 +143,8 @@ void SparseGraph::init(const GridGraphView<CostT>& wire_cost_view,
   pin_vertex_.resize(pseudo_pins_.size(), -1);
   for (int pinIndex = 0; pinIndex < pseudo_pins_.size(); pinIndex++) {
     const auto& pin = pseudo_pins_[pinIndex];
-    const int xi = xtoxi[pin.first.x()];
-    const int yi = ytoyi[pin.first.y()];
+    const int xi = xtoxi[pin.point.x()];
+    const int yi = ytoyi[pin.point.y()];
     const int u = getVertexIndex(0, xi, yi);
     vertex_pin_.emplace(u, pinIndex);
     pin_vertex_[pinIndex] = u;
@@ -197,7 +195,7 @@ void MazeRoute::run()
       queue.pop();
       foundPinIndex = graph_.getVertexPin(solution->vertex);
       if (foundPinIndex != -1 && !visited[foundPinIndex]) {
-        foundSolution = solution;
+        foundSolution = std::move(solution);
         break;
       }
       // Pruning
@@ -221,11 +219,12 @@ void MazeRoute::run()
     }
 
     solutions_.emplace_back(foundSolution);
+    assert(foundPinIndex >= 0);
     visited[foundPinIndex] = true;
     numDetached -= 1;
 
     // Update the cost of the vertices_ on the path
-    std::shared_ptr<Solution> temp = foundSolution;
+    std::shared_ptr<Solution> temp = std::move(foundSolution);
     while (temp && temp->cost != 0) {
       updateSolution(std::make_shared<Solution>(0, temp->vertex, temp->prev));
       temp = temp->prev;
@@ -233,7 +232,7 @@ void MazeRoute::run()
   }
 
   if (numDetached != 0) {
-    printf("Error: failed to connect all pins.");
+    logger_->error(utl::GRT, 275, "failed to connect all pins.");
   }
 }
 
@@ -242,7 +241,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
   std::shared_ptr<SteinerTreeNode> tree = nullptr;
   if (graph_.getNumPseudoPins() == 1) {
     const auto& pseudoPin = graph_.getPseudoPin(0);
-    tree = std::make_shared<SteinerTreeNode>(pseudoPin.first, pseudoPin.second);
+    tree = std::make_shared<SteinerTreeNode>(pseudoPin.point, pseudoPin.layers);
     return tree;
   }
 
@@ -255,7 +254,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
       auto it = created.find(temp->vertex);
       if (it == created.end()) {
         const PointT point = graph_.getPoint(temp->vertex);
-        const auto node = std::make_shared<SteinerTreeNode>(point);
+        auto node = std::make_shared<SteinerTreeNode>(point);
         created.emplace(temp->vertex, node);
         if (lastNode) {
           node->addChild(lastNode);
@@ -267,9 +266,9 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
           // Both the start and the end of the path should contain pins
           const int pinIndex = graph_.getVertexPin(temp->vertex);
           assert(pinIndex != -1);
-          node->setFixedLayers(graph_.getPseudoPin(pinIndex).second);
+          node->setFixedLayers(graph_.getPseudoPin(pinIndex).layers);
         }
-        lastNode = node;
+        lastNode = std::move(node);
         temp = temp->prev;
       } else {
         if (lastNode) {
@@ -279,6 +278,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
       }
     }
   }
+  assert(tree);
 
   // Remove redundant tree nodes
   SteinerTreeNode::preorder(
@@ -317,7 +317,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
                         == (*(temp->getChildren()[0]))[1 - direction]) {
             temp = temp->getChildren()[0];
           }
-          child = temp;
+          child = std::move(temp);
         }
       });
 
@@ -326,7 +326,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
       tree, [&](const std::shared_ptr<SteinerTreeNode>& node) {
         for (const auto& child : node->getChildren()) {
           if (node->x() == child->x() && node->y() == child->y()) {
-            printf("Error: duplicate tree nodes encountered.");
+            logger_->error(utl::GRT, 276, "duplicate tree nodes encountered.");
           }
         }
       });

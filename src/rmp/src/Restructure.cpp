@@ -16,9 +16,11 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <system_error>
 #include <utility>
 #include <vector>
 
+#include "annealing_strategy.h"
 #include "base/abc/abc.h"
 #include "base/main/abcapis.h"
 #include "cut/abc_init.h"
@@ -27,9 +29,12 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PatternMatch.hh"
@@ -46,11 +51,11 @@ using cut::Blif;
 
 namespace rmp {
 
-void Restructure::init(utl::Logger* logger,
-                       sta::dbSta* open_sta,
-                       odb::dbDatabase* db,
-                       rsz::Resizer* resizer,
-                       est::EstimateParasitics* estimate_parasitics)
+Restructure::Restructure(utl::Logger* logger,
+                         sta::dbSta* open_sta,
+                         odb::dbDatabase* db,
+                         rsz::Resizer* resizer,
+                         est::EstimateParasitics* estimate_parasitics)
 {
   logger_ = logger;
   db_ = db;
@@ -80,6 +85,19 @@ void Restructure::resynth(sta::Corner* corner)
 {
   ZeroSlackStrategy zero_slack_strategy(corner);
   zero_slack_strategy.OptimizeDesign(
+      open_sta_, name_generator_, resizer_, logger_);
+}
+
+void Restructure::resynthAnnealing(sta::Corner* corner)
+{
+  AnnealingStrategy annealing_strategy(corner,
+                                       slack_threshold_,
+                                       annealing_seed_,
+                                       annealing_temp_,
+                                       annealing_iters_,
+                                       annealing_revert_after_,
+                                       annealing_init_ops_);
+  annealing_strategy.OptimizeDesign(
       open_sta_, name_generator_, resizer_, logger_);
 }
 
@@ -629,7 +647,8 @@ bool Restructure::readAbcLog(std::string abc_file_name,
     logger_->error(RMP, 2, "cannot open file {}", abc_file_name);
     return false;
   }
-  logger_->report("Reading ABC log {}.", abc_file_name);
+  debugPrint(
+      logger_, utl::RMP, "remap", 1, "Reading ABC log {}.", abc_file_name);
   std::string buf;
   const char delimiter = ' ';
   bool status = true;

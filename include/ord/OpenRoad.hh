@@ -64,6 +64,10 @@ namespace fin {
 class Finale;
 }
 
+namespace ram {
+class RamGen;
+}
+
 namespace exa {
 class Example;
 }
@@ -126,8 +130,6 @@ class EstimateParasitics;
 
 namespace ord {
 
-using std::string;
-
 class dbVerilogNetwork;
 
 // Only pointers to components so the header has no dependents.
@@ -158,6 +160,7 @@ class OpenRoad
   dbVerilogNetwork* getVerilogNetwork() { return verilog_network_; }
   dpl::Opendp* getOpendp() { return opendp_; }
   fin::Finale* getFinale() { return finale_; }
+  ram::RamGen* getRamGen() { return ram_gen_; }
   tap::Tapcell* getTapcell() { return tapcell_; }
   mpl::MacroPlacer* getMacroPlacer() { return macro_placer_; }
   exa::Example* getExample() { return example_; }
@@ -205,7 +208,7 @@ class OpenRoad
   void writeDef(const char* filename, const char* version);
   void writeDef(const char* filename,
                 // major.minor (avoid including defout.h)
-                const string& version);
+                const std::string& version);
 
   void writeCdl(const char* out_filename,
                 const std::vector<const char*>& masters_filenames,
@@ -218,6 +221,9 @@ class OpenRoad
   // Used if a design is created programmatically rather than loaded
   // to notify the tools (eg dbSta, gui).
   void designCreated();
+
+  void read3Dbv(const std::string& filename);
+  void read3Dbx(const std::string& filename);
 
   void readDb(std::istream& stream);
   void readDb(const char* filename, bool hierarchy = false);
@@ -254,6 +260,7 @@ class OpenRoad
   ppl::IOPlacer* ioPlacer_ = nullptr;
   dpl::Opendp* opendp_ = nullptr;
   fin::Finale* finale_ = nullptr;
+  ram::RamGen* ram_gen_ = nullptr;
   mpl::MacroPlacer* macro_placer_ = nullptr;
   exa::Example* example_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;

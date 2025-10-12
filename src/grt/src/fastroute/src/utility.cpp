@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <limits>
 #include <ostream>
 #include <queue>
@@ -19,6 +20,7 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "sta/MinMax.hh"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
@@ -100,8 +102,10 @@ void FastRouteCore::ConvertToFull3DType2()
 static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
 {
   // Sorting by ndr_priority, length_per_pin, minX, and treeIndex
-  return std::tie(a.ndr_priority, a.length_per_pin, a.minX, a.treeIndex)
-         < std::tie(b.ndr_priority, b.length_per_pin, b.minX, b.treeIndex);
+  return std::tie(
+             a.ndr_priority, a.slack, a.length_per_pin, a.minX, a.treeIndex)
+         < std::tie(
+             b.ndr_priority, b.slack, b.length_per_pin, b.minX, b.treeIndex);
 }
 
 void FastRouteCore::netpinOrderInc()
@@ -127,7 +131,14 @@ void FastRouteCore::netpinOrderInc()
       ndr_priority = 0;  // Higher priority for NDR nets
     }
 
-    tree_order_pv_.push_back({netID, xmin, length_per_pin, ndr_priority});
+    float slack = 0;
+
+    if (resistance_aware_ && nets_[netID]->getSlack() < 0) {
+      slack = nets_[netID]->getSlack();
+    }
+
+    tree_order_pv_.push_back(
+        {netID, xmin, length_per_pin, ndr_priority, slack});
   }
 
   std::stable_sort(
@@ -379,6 +390,66 @@ void FastRouteCore::fixEdgeAssignment(int& net_layer,
   }
 }
 
+// Get wire resistance cost for a specific metal layer
+// R = (sheet_resistance) * (length/width)
+int FastRouteCore::getLayerResistance(const int layer,
+                                      const int length,
+                                      FrNet* net)
+{
+  if (!resistance_aware_) {
+    return 0;
+  }
+
+  odb::dbTech* tech = db_->getTech();
+  odb::dbTechLayer* db_layer = tech->findRoutingLayer(layer + 1);
+  int width = db_layer->getMinWidth();
+  double resistance = db_layer->getResistance();
+
+  // If net has NDR, get the correct width value
+  odb::dbTechNonDefaultRule* ndr = net->getDbNet()->getNonDefaultRule();
+  if (ndr != nullptr) {
+    odb::dbTechLayerRule* layerRule = ndr->getLayerRule(db_layer);
+    width = layerRule->getWidth();
+  }
+
+  const float layer_width = dbuToMicrons(width);
+  const float res_ohm_per_micron = resistance / layer_width;
+  int final_resistance = ceil(res_ohm_per_micron * dbuToMicrons(length));
+
+  if (layer < net->getMinLayer() || layer > net->getMaxLayer()) {
+    return BIG_INT;
+  }
+
+  return final_resistance;
+}
+
+// Get via resistance cost going from layer A to layer B
+int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
+{
+  if (!resistance_aware_) {
+    return 0;
+  }
+
+  if (abs(to_layer - from_layer) == 0) {
+    return 0.0;  // Same layer, no via needed
+  }
+
+  // Calculate total resistance for stacked vias
+  float total_via_resistance = 0.0;
+  int start = std::min(from_layer, to_layer);
+  int end = std::max(from_layer, to_layer);
+
+  odb::dbTech* tech = db_->getTech();
+  for (int i = start; i < end; i++) {
+    odb::dbTechLayer* db_layer = tech->findRoutingLayer(i + 1)->getUpperLayer();
+
+    double resistance = db_layer->getResistance();
+    total_via_resistance += resistance;
+  }
+
+  return std::ceil(total_via_resistance);
+}
+
 void FastRouteCore::assignEdge(const int netID,
                                const int edgeID,
                                const bool processDIR)
@@ -414,6 +485,7 @@ void FastRouteCore::assignEdge(const int netID,
 
   multi_array<int, 2> layer_grid;
   layer_grid.resize(boost::extents[num_layers_][routelen + 1]);
+
   for (k = 0; k < routelen; k++) {
     int best_cost = std::numeric_limits<int>::min();
     if (grids[k].x == grids[k + 1].x) {
@@ -543,22 +615,25 @@ void FastRouteCore::assignEdge(const int netID,
     for (k = 0; k < routelen; k++) {
       for (int l = 0; l < num_layers_; l++) {
         for (int i = 0; i < num_layers_; i++) {
-          if (k == 0) {
-            if (gridD[i][k] > gridD[l][k] + abs(i - l) * 2) {
-              gridD[i][k] = gridD[l][k] + abs(i - l) * 2;
-              via_link[i][k] = l;
-            }
-          } else {
-            if (gridD[i][k] > gridD[l][k] + abs(i - l) * 3) {
-              gridD[i][k] = gridD[l][k] + abs(i - l) * 3;
-              via_link[i][k] = l;
-            }
+          // Calculate via cost with resistance
+          int via_resistance_cost = 0;
+          if (i != l) {
+            via_resistance_cost = getViaResistance(l, i);  // Scale factor
+          }
+
+          int base_via_cost = abs(i - l) * (k == 0 ? 2 : 3);
+          int total_via_cost = base_via_cost + via_resistance_cost;
+
+          if (gridD[i][k] > gridD[l][k] + total_via_cost) {
+            gridD[i][k] = gridD[l][k] + total_via_cost;
+            via_link[i][k] = l;
           }
         }
       }
       for (int l = 0; l < num_layers_; l++) {
         if (layer_grid[l][k] >= net->getLayerEdgeCost(l)) {
-          gridD[l][k + 1] = gridD[l][k] + 1;
+          gridD[l][k + 1]
+              = gridD[l][k] + 1 + getLayerResistance(l, tile_size_, net);
         } else if (layer_grid[l][k] == std::numeric_limits<int>::min()
                    || l < net->getMinLayer() || l > net->getMaxLayer()) {
           // when the layer orientation doesn't match the edge orientation,
@@ -566,15 +641,23 @@ void FastRouteCore::assignEdge(const int netID,
           // routing has 3D overflow
           gridD[l][k + 1] = gridD[l][k] + 2 * BIG_INT;
         } else {
-          gridD[l][k + 1] = gridD[l][k] + BIG_INT;
+          // Congested case - still include resistance but with higher base cost
+          int wire_resistance = getLayerResistance(l, tile_size_, net);
+          gridD[l][k + 1] = gridD[l][k] + BIG_INT + wire_resistance;
         }
       }
     }
 
     for (int l = 0; l < num_layers_; l++) {
       for (int i = 0; i < num_layers_; i++) {
-        if (gridD[i][k] > gridD[l][k] + abs(i - l) * 1) {
-          gridD[i][k] = gridD[l][k] + abs(i - l) * 1;
+        int via_resistance_cost = 0;
+        if (i != l) {
+          via_resistance_cost = getViaResistance(l, i);
+        }
+        int total_cost = abs(i - l) + via_resistance_cost;
+
+        if (gridD[i][k] > gridD[l][k] + total_cost) {
+          gridD[i][k] = gridD[l][k] + total_cost;
           via_link[i][k] = l;
         }
       }
@@ -660,22 +743,25 @@ void FastRouteCore::assignEdge(const int netID,
     for (k = routelen; k > 0; k--) {
       for (int l = 0; l < num_layers_; l++) {
         for (int i = 0; i < num_layers_; i++) {
-          if (k == routelen) {
-            if (gridD[i][k] > gridD[l][k] + abs(i - l) * 2) {
-              gridD[i][k] = gridD[l][k] + abs(i - l) * 2;
-              via_link[i][k] = l;
-            }
-          } else {
-            if (gridD[i][k] > gridD[l][k] + abs(i - l) * 3) {
-              gridD[i][k] = gridD[l][k] + abs(i - l) * 3;
-              via_link[i][k] = l;
-            }
+          // Calculate via cost with resistance
+          int via_resistance_cost = 0;
+          if (i != l) {
+            via_resistance_cost = getViaResistance(l, i);  // Scale factor
+          }
+
+          int base_via_cost = abs(i - l) * (k == routelen ? 2 : 3);
+          int total_via_cost = base_via_cost + via_resistance_cost;
+
+          if (gridD[i][k] > gridD[l][k] + total_via_cost) {
+            gridD[i][k] = gridD[l][k] + total_via_cost;
+            via_link[i][k] = l;
           }
         }
       }
       for (int l = 0; l < num_layers_; l++) {
         if (layer_grid[l][k - 1] >= net->getLayerEdgeCost(l)) {
-          gridD[l][k - 1] = gridD[l][k] + 1;
+          gridD[l][k - 1]
+              = gridD[l][k] + 1 + getLayerResistance(l, tile_size_, net);
         } else if (layer_grid[l][k] == std::numeric_limits<int>::min()
                    || l < net->getMinLayer() || l > net->getMaxLayer()) {
           // when the layer orientation doesn't match the edge orientation,
@@ -683,15 +769,23 @@ void FastRouteCore::assignEdge(const int netID,
           // routing has 3D overflow
           gridD[l][k - 1] = gridD[l][k] + 2 * BIG_INT;
         } else {
-          gridD[l][k - 1] = gridD[l][k] + BIG_INT;
+          // Congested case - still include resistance but with higher base cost
+          int wire_resistance = getLayerResistance(l, tile_size_, net);
+          gridD[l][k - 1] = gridD[l][k] + BIG_INT + wire_resistance;
         }
       }
     }
 
     for (int l = 0; l < num_layers_; l++) {
       for (int i = 0; i < num_layers_; i++) {
-        if (gridD[i][0] > gridD[l][0] + abs(i - l) * 1) {
-          gridD[i][0] = gridD[l][0] + abs(i - l) * 1;
+        int via_resistance_cost = 0;
+        if (i != l) {
+          via_resistance_cost = getViaResistance(l, i);
+        }
+        int total_cost = abs(i - l) + via_resistance_cost;
+
+        if (gridD[i][0] > gridD[l][0] + total_cost) {
+          gridD[i][0] = gridD[l][0] + total_cost;
           via_link[i][0] = l;
         }
       }
@@ -849,8 +943,9 @@ void FastRouteCore::layerAssignmentV4()
       treenodes[nodeID].assigned = false;
 
       if (nodeID < num_terminals) {
-        treenodes[nodeID].botL = nets_[netID]->getPinL()[nodeID];
-        treenodes[nodeID].topL = nets_[netID]->getPinL()[nodeID];
+        const int pin_idx = sttrees_[netID].node_to_pin_idx[nodeID];
+        treenodes[nodeID].botL = nets_[netID]->getPinL()[pin_idx];
+        treenodes[nodeID].topL = nets_[netID]->getPinL()[pin_idx];
         treenodes[nodeID].assigned = true;
         treenodes[nodeID].status = 1;
       }
@@ -922,8 +1017,9 @@ void FastRouteCore::layerAssignment()
       treenodes[d].status = 0;
 
       if (d < sttrees_[netID].num_terminals) {
-        treenodes[d].botL = nets_[netID]->getPinL()[d];
-        treenodes[d].topL = nets_[netID]->getPinL()[d];
+        const int pin_idx = sttrees_[netID].node_to_pin_idx[d];
+        treenodes[d].botL = nets_[netID]->getPinL()[pin_idx];
+        treenodes[d].topL = nets_[netID]->getPinL()[pin_idx];
         // treenodes[d].l = 0;
         treenodes[d].assigned = true;
         treenodes[d].status = 1;
@@ -1010,7 +1106,8 @@ void FastRouteCore::printTree3D(const int netID)
         = tile_size_ * (sttrees_[netID].nodes[nodeID].y + 0.5) + y_corner_;
     int l = num_layers_;
     if (nodeID < sttrees_[netID].num_terminals) {
-      l = nets_[netID]->getPinL()[nodeID];
+      const int pin_idx = sttrees_[netID].node_to_pin_idx[nodeID];
+      l = nets_[netID]->getPinL()[pin_idx];
     }
 
     logger_->report("nodeID {},  [{}, {}, {}], status: {}",
@@ -1034,8 +1131,9 @@ void FastRouteCore::checkRoute3D()
 
     for (int nodeID = 0; nodeID < sttrees_[netID].num_nodes(); nodeID++) {
       if (nodeID < num_terminals) {
-        if ((treenodes[nodeID].botL > nets_[netID]->getPinL()[nodeID])
-            || (treenodes[nodeID].topL < nets_[netID]->getPinL()[nodeID])) {
+        const int pin_idx = sttrees_[netID].node_to_pin_idx[nodeID];
+        if ((treenodes[nodeID].botL > nets_[netID]->getPinL()[pin_idx])
+            || (treenodes[nodeID].topL < nets_[netID]->getPinL()[pin_idx])) {
           logger_->error(GRT, 203, "Caused floating pin node.");
         }
       }
@@ -2627,8 +2725,9 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
     treenodes[d].status = 0;
 
     if (d < num_terminals) {
-      treenodes[d].botL = nets_[netID]->getPinL()[d];
-      treenodes[d].topL = nets_[netID]->getPinL()[d];
+      const int pin_idx = sttrees_[netID].node_to_pin_idx[d];
+      treenodes[d].botL = nets_[netID]->getPinL()[pin_idx];
+      treenodes[d].topL = nets_[netID]->getPinL()[pin_idx];
       treenodes[d].assigned = true;
       treenodes[d].status = 1;
 

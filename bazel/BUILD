@@ -1,4 +1,7 @@
 load("@openroad_rules_python//python:pip.bzl", "compile_pip_requirements")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(features = ["layering_check"])
 
 compile_pip_requirements(
     name = "requirements",
@@ -16,4 +19,5 @@ cc_library(
     deps = [
         "@rules_cc//cc/runfiles",
     ],
+    alwayslink = True,
 )

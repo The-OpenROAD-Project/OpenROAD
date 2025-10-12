@@ -3,26 +3,27 @@ name: clang-tidy-review
 on:
   pull_request:
     branches:
-    - master
+      - master
 
 jobs:
   Clang-Tidy:
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
       - name: ClangTidy Gen
         uses: The-OpenROAD-Project/clang-tidy-review@master
         id: review
         with:
-          build_dir: './build'
+          clang_tidy_version: 15
+          build_dir: "./build"
           cmake_command: cmake . -B build
-          config_file: '.clang-tidy'
+          config_file: ".clang-tidy"
           exclude: "*/codeGenerator/templates/*,*/third-party/*"
           split_workflow: true
-          apt_packages: libomp-15-dev,libfl-dev
+          apt_packages: libomp-15-dev,libfl-dev,libyaml-cpp-dev
       - uses: The-OpenROAD-Project/clang-tidy-review/upload@master
         id: upload-review
       - name: Correct Build Directory Ownership

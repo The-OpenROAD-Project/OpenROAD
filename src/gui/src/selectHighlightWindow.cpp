@@ -5,10 +5,13 @@
 
 #include <QComboBox>
 #include <QHBoxLayout>
+#include <QMenu>
 #include <QPushButton>
 #include <QString>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <QVariant>
+#include <QWidget>
 #include <string>
 #include <utility>
 

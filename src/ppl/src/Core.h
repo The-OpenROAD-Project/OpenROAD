@@ -11,7 +11,6 @@
 namespace ppl {
 
 using odb::Point;
-using odb::Rect;
 
 using LayerToVector = std::map<int, std::vector<int>>;
 
@@ -19,7 +18,7 @@ class Core
 {
  public:
   Core();
-  Core(const Rect& boundary,
+  Core(const odb::Rect& boundary,
        const LayerToVector& min_dst_pins_x,
        const LayerToVector& min_dst_pins_y,
        const LayerToVector& init_tracks_x,
@@ -30,7 +29,8 @@ class Core
        const std::map<int, int>& min_area_y,
        const std::map<int, int>& min_width_x,
        const std::map<int, int>& min_width_y,
-       const int& database_unit)
+       const int& database_unit,
+       const std::vector<odb::Line>& die_area_edges)
       : boundary_(boundary),
         min_dst_pins_x_(min_dst_pins_x),
         min_dst_pins_y_(min_dst_pins_y),
@@ -42,11 +42,12 @@ class Core
         min_area_y_(min_area_y),
         min_width_x_(min_width_x),
         min_width_y_(min_width_y),
-        database_unit_(database_unit)
+        database_unit_(database_unit),
+        die_area_edges_(die_area_edges)
   {
   }
 
-  Rect getBoundary() const { return boundary_; }
+  odb::Rect getBoundary() const { return boundary_; }
   const LayerToVector& getMinDstPinsX() const { return min_dst_pins_x_; }
   const LayerToVector& getMinDstPinsY() const { return min_dst_pins_y_; }
   const LayerToVector& getInitTracksX() const { return init_tracks_x_; }
@@ -60,9 +61,10 @@ class Core
   int getDatabaseUnit() const { return database_unit_; }
   int getPerimeter() const;
   odb::Point getMirroredPosition(const odb::Point& position) const;
+  std::vector<odb::Line> getDieAreaEdges();
 
  private:
-  Rect boundary_;
+  odb::Rect boundary_;
   LayerToVector min_dst_pins_x_;
   LayerToVector min_dst_pins_y_;
   LayerToVector init_tracks_x_;
@@ -74,6 +76,7 @@ class Core
   std::map<int, int> min_width_x_;
   std::map<int, int> min_width_y_;
   int database_unit_;
+  std::vector<odb::Line> die_area_edges_;  // stores edges of the polygon
 };
 
 }  // namespace ppl

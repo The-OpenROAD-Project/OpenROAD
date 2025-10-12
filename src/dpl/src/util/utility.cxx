@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <cstdint>
 
+#include "dpl/Opendp.h"
+#include "infrastructure/Coordinates.h"
 #include "infrastructure/network.h"
 #include "odb/geom.h"
 
@@ -24,8 +26,7 @@ double Utility::disp_l1(Network* nw, double& tot, double& max, double& avg)
 
     const DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
     const DbuY dy = abs(ndi->getBottom() - ndi->getOrigBottom());
-    // TODO: fix wrong total displacement calculation
-    tot += dx.v + dx.v;
+    tot += dx.v + dy.v;
     max = std::max(max, (double) dx.v + dy.v);
   }
   avg = tot / (double) nw->getNumNodes();

@@ -926,14 +926,14 @@ NETS 30 ;
     - u_mid1/l1_out ( u_mid1/dff_out1 D ) ( u_mid1/u_leaf1/dff2 Q ) + USE SIGNAL ;
     - u_mid1/l2_out1 ( u_mid1/u_leaf2/place1 A ) ( u_mid1/u_leaf2/dff2 Q ) + USE SIGNAL ;
     - u_mid1/l2_out2 ( u_mid1/u_leaf2/dff3 Q ) + USE SIGNAL ;
+    - u_mid1/net_o ( u_mid1/dff_load8 D ) ( u_mid1/u_leaf2/place1 Z ) ( u_mid1/dff_load7 D ) ( u_mid1/dff_load5 D ) ( u_mid1/dff_load9 D ) ( u_mid1/dff_load6 D ) ( u_mid1/dff_load4 D )
+      ( u_mid1/dff_load2 D ) ( u_mid1/dff_load10 D ) ( u_mid1/dff_load1 D ) ( u_mid1/dff_load3 D ) ( u_mid1/dff_out2 D ) + USE SIGNAL ;
     - u_mid1/u_leaf1/n1 ( u_mid1/u_leaf1/buf1 A ) ( u_mid1/u_leaf1/dff1 Q ) + USE SIGNAL ;
     - u_mid1/u_leaf1/n2 ( u_mid1/u_leaf1/buf1 Z ) ( u_mid1/u_leaf1/buf2 A ) + USE SIGNAL ;
     - u_mid1/u_leaf1/n3 ( u_mid1/u_leaf1/buf2 Z ) ( u_mid1/u_leaf1/dff2 D ) + USE SIGNAL ;
     - u_mid1/u_leaf2/n1 ( u_mid1/u_leaf2/buf1 A ) ( u_mid1/u_leaf2/buf2 A ) ( u_mid1/u_leaf2/dff1 Q ) + USE SIGNAL ;
     - u_mid1/u_leaf2/n2 ( u_mid1/u_leaf2/buf1 Z ) ( u_mid1/u_leaf2/dff2 D ) + USE SIGNAL ;
     - u_mid1/u_leaf2/n3 ( u_mid1/u_leaf2/buf2 Z ) ( u_mid1/u_leaf2/dff3 D ) + USE SIGNAL ;
-    - u_mid1/u_leaf2/net1 ( u_mid1/u_leaf2/place1 Z ) ( u_mid1/dff_load8 D ) ( u_mid1/dff_load7 D ) ( u_mid1/dff_load5 D ) ( u_mid1/dff_load9 D ) ( u_mid1/dff_load6 D ) ( u_mid1/dff_load4 D )
-      ( u_mid1/dff_load2 D ) ( u_mid1/dff_load10 D ) ( u_mid1/dff_load1 D ) ( u_mid1/dff_load3 D ) ( u_mid1/dff_out2 D ) + USE SIGNAL ;
     - u_mid2/l3_out ( u_mid2/buf1 A ) ( u_mid2/u_leaf3/dff2 Q ) + USE SIGNAL ;
     - u_mid2/l4_out ( u_mid2/u_leaf4/dff1 Q ) + USE SIGNAL ;
     - u_mid2/n1 ( u_mid2/buf1 Z ) ( u_mid2/dff_out1 D ) + USE SIGNAL ;

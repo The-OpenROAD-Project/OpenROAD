@@ -67,17 +67,20 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
     const int spacing = static_cast<int>(std::round(rule->getSpacing()));
     uint eol_width, eol_within, parallel_space, parallel_within;
     bool parallel_edge, two_edges;
-    rule->getEol(eol_width,
-                 eol_within,
-                 parallel_edge,
-                 parallel_space,
-                 parallel_within,
-                 two_edges);
-    // Pessimistic
-    max_eol_spacing_ = std::max(max_eol_spacing_, spacing);
-    max_eol_width_ = std::max(max_eol_width_, static_cast<int>(eol_width));
-    max_eol_within_ = std::max(max_eol_within_, static_cast<int>(eol_within));
+    if (rule->getEol(eol_width,
+                     eol_within,
+                     parallel_edge,
+                     parallel_space,
+                     parallel_within,
+                     two_edges)) {
+      // Pessimistic
+      max_eol_spacing_ = std::max(max_eol_spacing_, spacing);
+      max_eol_width_ = std::max(max_eol_width_, static_cast<int>(eol_width));
+      max_eol_within_ = std::max(max_eol_within_, static_cast<int>(eol_within));
+    }
   }
+
+  adjustment_ = tech_layer->getLayerAdjustment();
 }
 
 int MetalLayer::getTrackLocation(const int track_index) const

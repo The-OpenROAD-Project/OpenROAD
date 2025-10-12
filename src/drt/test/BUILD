@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
+
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
+
+package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
@@ -23,6 +27,18 @@ COMPULSORY_TESTS = [
 MANUAL_TESTS = [
     "drt_man_tcl_check",
     "drt_readme_msgs_check",
+]
+
+# TODO: Enable once difference between bazel and ctest is resolved.
+MANUAL_FOR_BAZEL_TESTS = [
+    "drc_test",
+    "ispd18_sample",
+    "ispd18_sample_incr",
+    "ndr_vias1",
+    "ndr_vias2",
+    "ndr_vias3",
+    "single_step",
+    "top_level_term2",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -98,8 +114,30 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        tags = ["manual"] if test_name in MANUAL_TESTS or
+                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "gc_unittest",
+    srcs = [
+        "fixture.cpp",
+        "fixture.h",
+        "gcTest.cpp",
+    ],
+    features = ["-layering_check"],  # TODO: acceses private headers
+    includes = [
+        "../src",
+    ],
+    deps = [
+        "//src/drt",
+        "//src/drt:db_hdrs",
+        "//src/odb",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

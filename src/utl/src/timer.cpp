@@ -7,6 +7,8 @@
 #include <ostream>
 #include <string>
 
+#include "utl/Logger.h"
+
 namespace utl {
 
 void Timer::reset()

@@ -4,6 +4,10 @@
 #include "gui/gui.h"
 
 #include <QApplication>
+#include <QColor>
+#include <QPushButton>
+#include <QString>
+#include <QWidget>
 #include <algorithm>
 #include <any>
 #include <cstddef>
@@ -1557,6 +1561,12 @@ class SafeApplication : public QApplication
       return QApplication::notify(receiver, event);
     } catch (std::exception& ex) {
       // Ignored here as the message will be logged in the GUI
+      qDebug() << "Caught exception:" << ex.what();
+
+      // Returning true indicates the event has been handled. In this case,
+      // we've "handled" it by catching the exception, so we prevent
+      // further processing that might rely on a corrupt state.
+      return true;
     }
 
     return false;

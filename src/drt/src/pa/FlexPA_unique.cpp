@@ -18,6 +18,7 @@
 #include "frDesign.h"
 #include "global.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 
 namespace drt {
 
@@ -142,7 +143,8 @@ void UniqueInsts::initMasterToPinLayerRange()
   }
 }
 
-bool UniqueInsts::hasTrackPattern(frTrackPattern* tp, const Rect& box) const
+bool UniqueInsts::hasTrackPattern(frTrackPattern* tp,
+                                  const odb::Rect& box) const
 {
   const bool is_vertical_track = tp->isHorizontal();
   const frCoord low = tp->getStartCoord();
@@ -165,9 +167,9 @@ bool UniqueInsts::isNDRInst(frInst* inst) const
 
 UniqueClassKey UniqueInsts::computeUniqueClassKey(frInst* inst) const
 {
-  const Point origin = inst->getOrigin();
-  const Rect boundary_bbox = inst->getBoundaryBBox();
-  const dbOrientType orient = inst->getOrient();
+  const odb::Point origin = inst->getOrigin();
+  const odb::Rect boundary_bbox = inst->getBoundaryBBox();
+  const odb::dbOrientType orient = inst->getOrient();
   auto it = master_to_pin_layer_range_.find(inst->getMaster());
   if (it == master_to_pin_layer_range_.end()) {
     logger_->error(DRT,
@@ -258,7 +260,7 @@ void UniqueInsts::checkFigsOnGrid(const frMPin* pin)
       }
     } else if (fig->typeId() == frcPolygon) {
       const auto polygon = static_cast<frPolygon*>(fig.get());
-      for (const Point& pt : polygon->getPoints()) {
+      for (const odb::Point& pt : polygon->getPoints()) {
         if (pt.getX() % grid || pt.getY() % grid) {
           logger_->error(DRT,
                          321,

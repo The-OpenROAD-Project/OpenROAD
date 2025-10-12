@@ -44,6 +44,8 @@ void Design::read()
 
   const int num_special_nets = readSpecialNetObstructions();
 
+  readDesignObstructions();
+
   computeGrid();
 
   logger_->report("design statistics");
@@ -237,6 +239,26 @@ int Design::readSpecialNetObstructions()
   return num_special_nets;
 }
 
+void Design::readDesignObstructions()
+{
+  for (odb::dbObstruction* obstruction : block_->getObstructions()) {
+    odb::dbBox* box = obstruction->getBBox();
+    odb::dbTechLayer* tech_layer = box->getTechLayer();
+    if (tech_layer == nullptr
+        || tech_layer->getType() != odb::dbTechLayerType::ROUTING
+        || tech_layer->getRoutingLevel() > max_routing_layer_) {
+      continue;
+    }
+
+    int layerIndex = tech_layer->getRoutingLevel() - 1;
+    odb::Rect rect = box->getBox();
+
+    BoxOnLayer box_on_layer(
+        layerIndex, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
+    obstacles_.push_back(box_on_layer);
+  }
+}
+
 void Design::computeGrid()
 {
   gridlines_.resize(2);
@@ -274,7 +296,7 @@ void Design::getAllObstacles(std::vector<std::vector<BoxT>>& all_obstacles,
 
   for (const BoxOnLayer& obs : obstacles_) {
     if (obs.getLayerIdx() > 0 || !skip_m1) {
-      all_obstacles[obs.getLayerIdx()].emplace_back(obs.x, obs.y);
+      all_obstacles[obs.getLayerIdx()].emplace_back(obs.x(), obs.y());
     }
   }
 }

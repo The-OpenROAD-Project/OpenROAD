@@ -10,7 +10,9 @@
 #include "db/taObj/taFig.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frNet;
@@ -18,13 +20,13 @@ class taRef : public taPinFig
 {
  public:
   // getters
-  virtual dbOrientType getOrient() const = 0;
-  virtual Point getOrigin() const = 0;
-  virtual dbTransform getTransform() const = 0;
+  virtual odb::dbOrientType getOrient() const = 0;
+  virtual odb::Point getOrigin() const = 0;
+  virtual odb::dbTransform getTransform() const = 0;
   // setters
-  virtual void setOrient(const dbOrientType& tmpOrient) = 0;
-  virtual void setOrigin(const Point& tmpPoint) = 0;
-  virtual void setTransform(const dbTransform& xform) = 0;
+  virtual void setOrient(const odb::dbOrientType& tmpOrient) = 0;
+  virtual void setOrigin(const odb::Point& tmpPoint) = 0;
+  virtual void setTransform(const odb::dbTransform& xform) = 0;
 };
 
 class taVia : public taRef
@@ -35,9 +37,9 @@ class taVia : public taRef
   taVia(const frViaDef* in) : viaDef_(in) {}
   // getters
   const frViaDef* getViaDef() const { return viaDef_; }
-  Rect getLayer1BBox() const
+  odb::Rect getLayer1BBox() const
   {
-    Rect box;
+    odb::Rect box;
     box.mergeInit();
     for (auto& fig : viaDef_->getLayer1Figs()) {
       box.merge(fig->getBBox());
@@ -45,9 +47,9 @@ class taVia : public taRef
     getTransform().apply(box);
     return box;
   }
-  Rect getCutBBox() const
+  odb::Rect getCutBBox() const
   {
-    Rect box;
+    odb::Rect box;
     box.mergeInit();
     for (auto& fig : viaDef_->getCutFigs()) {
       box.merge(fig->getBBox());
@@ -55,9 +57,9 @@ class taVia : public taRef
     getTransform().apply(box);
     return box;
   }
-  Rect getLayer2BBox() const
+  odb::Rect getLayer2BBox() const
   {
-    Rect box;
+    odb::Rect box;
     box.mergeInit();
     for (auto& fig : viaDef_->getLayer2Figs()) {
       box.merge(fig->getBBox());
@@ -79,12 +81,15 @@ class taVia : public taRef
    * setTransform
    */
 
-  dbOrientType getOrient() const override { return dbOrientType(); }
-  void setOrient(const dbOrientType& tmpOrient) override { ; }
-  Point getOrigin() const override { return origin_; }
-  void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
-  dbTransform getTransform() const override { return dbTransform(origin_); }
-  void setTransform(const dbTransform& xformIn) override {}
+  odb::dbOrientType getOrient() const override { return odb::dbOrientType(); }
+  void setOrient(const odb::dbOrientType& tmpOrient) override { ; }
+  odb::Point getOrigin() const override { return origin_; }
+  void setOrigin(const odb::Point& tmpPoint) override { origin_ = tmpPoint; }
+  odb::dbTransform getTransform() const override
+  {
+    return odb::dbTransform(origin_);
+  }
+  void setTransform(const odb::dbTransform& xformIn) override {}
 
   /* from frPinFig
    * hasPin
@@ -126,7 +131,7 @@ class taVia : public taRef
    * overlaps
    */
 
-  Rect getBBox() const override
+  odb::Rect getBBox() const override
   {
     auto& layer1Figs = viaDef_->getLayer1Figs();
     auto& layer2Figs = viaDef_->getLayer2Figs();
@@ -137,7 +142,7 @@ class taVia : public taRef
     frCoord xh = 0;
     frCoord yh = 0;
     for (auto& fig : layer1Figs) {
-      Rect box = fig->getBBox();
+      odb::Rect box = fig->getBBox();
       if (isFirst) {
         xl = box.xMin();
         yl = box.yMin();
@@ -152,7 +157,7 @@ class taVia : public taRef
       }
     }
     for (auto& fig : layer2Figs) {
-      Rect box = fig->getBBox();
+      odb::Rect box = fig->getBBox();
       if (isFirst) {
         xl = box.xMin();
         yl = box.yMin();
@@ -167,7 +172,7 @@ class taVia : public taRef
       }
     }
     for (auto& fig : cutFigs) {
-      Rect box = fig->getBBox();
+      odb::Rect box = fig->getBBox();
       if (isFirst) {
         xl = box.xMin();
         yl = box.yMin();
@@ -181,15 +186,15 @@ class taVia : public taRef
         yh = std::max(yh, box.yMax());
       }
     }
-    Rect box(xl, yl, xh, yh);
+    odb::Rect box(xl, yl, xh, yh);
     getTransform().apply(box);
     return box;
   }
-  void move(const dbTransform& xform) override { ; }
-  bool overlaps(const Rect& box) const override { return false; }
+  void move(const odb::dbTransform& xform) override { ; }
+  bool overlaps(const odb::Rect& box) const override { return false; }
 
  protected:
-  Point origin_;
+  odb::Point origin_;
   const frViaDef* viaDef_{nullptr};
   frBlockObject* owner_{nullptr};
 };

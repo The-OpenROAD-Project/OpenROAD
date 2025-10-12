@@ -79,7 +79,6 @@ bazel_dep(name = "boost.smart_ptr", version = BOOST_VERSION)
 bazel_dep(name = "boost.spirit", version = BOOST_VERSION)
 bazel_dep(name = "boost.stacktrace", version = BOOST_VERSION)
 bazel_dep(name = "boost.system", version = BOOST_VERSION)
-bazel_dep(name = "boost.test", version = BOOST_VERSION + ".bcr.1")
 bazel_dep(name = "boost.thread", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.tokenizer", version = BOOST_VERSION)
 bazel_dep(name = "boost.unordered", version = BOOST_VERSION)
@@ -90,6 +89,7 @@ bazel_dep(name = "or-tools", version = "9.12")
 bazel_dep(name = "spdlog", version = "1.15.1")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250331-43fcf6e")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
+bazel_dep(name = "yaml-cpp", version = "0.8.0")
 
 # A from source build of QT that allows it to link into OpenROAD.
 # Building like any other bazel project. scripts in the docker folder
@@ -103,7 +103,7 @@ git_override(
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
-bazel_dep(name = "googletest", version = "1.16.0", dev_dependency = True)
+bazel_dep(name = "googletest", version = "1.17.0", dev_dependency = True)
 
 # Dependencies needed by one of the rules_hdl repos. Once they are on
 # BCR, they should depend on their own version.
@@ -138,6 +138,7 @@ python.toolchain(
     ignore_root_user_error = True,
     python_version = "3.13",
 )
+use_repo(python, "python_3_13")
 
 pip = use_extension("@openroad_rules_python//python/extensions:pip.bzl", "pip")
 pip.parse(
@@ -152,7 +153,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "f9c37f21de8e1095276e878d1628ac7a2f7908ab",
+    commit = "2aa6a9dd3c0006c5358e363fcac9e209c4dccc47",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -161,17 +162,15 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:v3.0-3780-g2f349ade",
+    image = "docker.io/openroad/orfs:v3.0-3911-g99312fa58",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "637ffa1af0f224e17e3d5cddbe6b45d9b00102016acc9e866226e8c4e830aeab",
+    sha256 = "36d3ac23732803c9e47181e167a105c69d4d6927a96782c4a4a27ceca40d8ff8",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
 
 SCALA_VERSION = "2.13.16"
-
-SCALA_VERSION_SHORT = SCALA_VERSION.rpartition(".")[0]
 
 scala_config = use_extension(
     "@rules_scala//scala/extensions:config.bzl",
@@ -194,7 +193,7 @@ scala_deps.scalatest()
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(
-    name = "openroad_maven",
+    name = "maven",
     artifacts = [
         "org.chipsalliance:chisel_2.13:7.0.0",
         "org.chipsalliance:chisel-plugin_2.13.16:7.0.0",
@@ -205,7 +204,7 @@ maven.install(
         "https://s01.oss.sonatype.org/content/repositories/snapshots",
     ],
 )
-use_repo(maven, "openroad_maven")
+use_repo(maven, "maven")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 

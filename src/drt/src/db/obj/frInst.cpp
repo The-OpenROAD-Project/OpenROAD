@@ -5,28 +5,31 @@
 
 #include "db/obj/frBlock.h"
 #include "db/obj/frMaster.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 namespace drt {
 
-Rect frInst::getBBox() const
+odb::Rect frInst::getBBox() const
 {
-  Rect box = getMaster()->getBBox();
-  dbTransform xform = getDBTransform();
+  odb::Rect box = getMaster()->getBBox();
+  odb::dbTransform xform = getDBTransform();
   xform.apply(box);
   return box;
 }
 
-Rect frInst::getBoundaryBBox() const
+odb::Rect frInst::getBoundaryBBox() const
 {
-  Rect box = getMaster()->getDieBox();
-  dbTransform xform = getDBTransform();
+  odb::Rect box = getMaster()->getDieBox();
+  odb::dbTransform xform = getDBTransform();
   xform.apply(box);
   return box;
 }
 
-dbTransform frInst::getNoRotationTransform() const
+odb::dbTransform frInst::getNoRotationTransform() const
 {
-  dbTransform xfm = getTransform();
-  xfm.setOrient(dbOrientType(dbOrientType::R0));
+  odb::dbTransform xfm = getTransform();
+  xfm.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
   return xfm;
 }
 

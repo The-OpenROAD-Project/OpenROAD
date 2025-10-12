@@ -160,6 +160,15 @@ dbTransform dbChipInst::getTransform() const
                      Point(obj->loc_.x(), obj->loc_.y()));
 }
 
+Rect dbChipInst::getBBox() const
+{
+  _dbChipInst* _chipinst = (_dbChipInst*) this;
+  Rect box = getMasterChip()->getBBox();
+  box.moveTo(_chipinst->loc_.x(), _chipinst->loc_.y());
+  getTransform().apply(box);
+  return box;
+}
+
 dbSet<dbChipRegionInst> dbChipInst::getRegions() const
 {
   _dbChipInst* _chipinst = (_dbChipInst*) this;

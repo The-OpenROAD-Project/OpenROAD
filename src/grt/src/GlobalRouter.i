@@ -105,6 +105,12 @@ set_allow_congestion(bool allowCongestion)
 }
 
 void
+set_resistance_aware(bool resistance_aware)
+{
+  getGlobalRouter()->setResistanceAware(resistance_aware);
+}
+
+void
 set_critical_nets_percentage(float criticalNetsPercentage)
 {
   getGlobalRouter()->setCriticalNetsPercentage(criticalNetsPercentage);
@@ -237,9 +243,9 @@ clear_route_guides()
 }
 
 void
-report_layer_wire_lengths()
+report_layer_wire_lengths(bool global_route, bool detailed_route)
 {
-  getGlobalRouter()->reportLayerWireLengths();
+  getGlobalRouter()->reportLayerWireLengths(global_route, detailed_route);
 }
 
 void write_segments(const char* file_name)

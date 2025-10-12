@@ -4,11 +4,17 @@
 #include "inspector.h"
 
 #include <QApplication>
+#include <QColor>
 #include <QComboBox>
 #include <QDebug>
 #include <QHeaderView>
 #include <QLineEdit>
+#include <QMenu>
+#include <QMessageBox>
 #include <QPushButton>
+#include <QString>
+#include <QVariant>
+#include <QWidget>
 #include <algorithm>
 #include <any>
 #include <cmath>
@@ -80,24 +86,32 @@ void SelectedItemModel::updateObject()
 
   auto editors = object_.getEditors();
 
-  for (const auto& prop : object_.getProperties()) {
-    QStandardItem* name_item = nullptr;
-    QStandardItem* value_item = nullptr;
+  try {
+    for (const auto& prop : object_.getProperties()) {
+      QStandardItem* name_item = nullptr;
+      QStandardItem* value_item = nullptr;
 
-    makePropertyItem(prop, name_item, value_item);
+      makePropertyItem(prop, name_item, value_item);
 
-    appendRow({name_item, value_item});
+      appendRow({name_item, value_item});
 
-    // make editor if found
-    auto editor_found = editors.find(prop.name);
-    if (editor_found != editors.end()) {
-      auto& editor = (*editor_found).second;
-      makeItemEditor(prop.name,
-                     value_item,
-                     object_,
-                     EditorItemDelegate::getEditorType(prop.value),
-                     editor);
+      // make editor if found
+      auto editor_found = editors.find(prop.name);
+      if (editor_found != editors.end()) {
+        auto& editor = (*editor_found).second;
+        makeItemEditor(prop.name,
+                       value_item,
+                       object_,
+                       EditorItemDelegate::getEditorType(prop.value),
+                       editor);
+      }
     }
+  } catch (const std::runtime_error& error) {
+    QMessageBox::critical(qobject_cast<QWidget*>(parent()),
+                          error.what(),
+                          "Failed to populate properties.");
+    appendRow({makeItem(QString::fromStdString("error")),
+               makeItem(QString(error.what()))});
   }
 
   endResetModel();

@@ -9,18 +9,26 @@
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
+#include <QMenu>
 #include <QMessageBox>
+#include <QModelIndexList>
+#include <QPushButton>
+#include <QSettings>
 #include <QSortFilterProxyModel>
 #include <QVBoxLayout>
+#include <QWidget>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
 #include "gui_utils.h"
 #include "odb/db.h"
+#include "odb/defout.h"
 #include "sta/Liberty.hh"
+#include "sta/SdcClass.hh"
 #include "staGui.h"
 
 namespace gui {
@@ -65,6 +73,7 @@ TimingWidget::TimingWidget(QWidget* parent)
   controls_layout->insertStretch(2);
   control_frame->setLayout(controls_layout);
   layout->addWidget(control_frame);
+  update_button_->setEnabled(false);
 
   // top half
   delay_widget_->addTab(setup_timing_table_view_, "Setup");
@@ -249,6 +258,11 @@ void TimingWidget::init(sta::dbSta* sta)
   clearPathDetails();
 }
 
+void TimingWidget::setLogger(utl::Logger* logger)
+{
+  logger_ = logger;
+}
+
 void TimingWidget::updatePaths()
 {
   update_button_->click();
@@ -336,6 +350,10 @@ void TimingWidget::addCommandsMenuActions()
           [this] {
             writePathReportCommand(timing_paths_table_index_, kFromStartToEnd);
           });
+
+  connect(commands_menu_->addAction("Write path DEF"),
+          &QAction::triggered,
+          [this] { writePathDef(timing_paths_table_index_, kFromStartToEnd); });
 }
 
 void TimingWidget::showCommandsMenu(const QPoint& pos)
@@ -347,6 +365,35 @@ void TimingWidget::showCommandsMenu(const QPoint& pos)
   timing_paths_table_index_ = focus_view_->indexAt(pos);
 
   commands_menu_->popup(focus_view_->viewport()->mapToGlobal(pos));
+}
+
+void TimingWidget::writePathDef(const QModelIndex& selected_index,
+                                const CommandType& type)
+{
+  TimingPathsModel* focus_model
+      = static_cast<TimingPathsModel*>(focus_view_->model());
+  TimingPath* path = focus_model->getPathAt(selected_index);
+
+  odb::dbBlock* block = nullptr;
+  odb::DefOut def_out(logger_);
+  auto add_path = [&](TimingNodeList* node_list) {
+    for (int i = 0; i < (node_list->size() - 1); i++) {
+      TimingPathNode* curr_node = (*node_list)[i].get();
+      odb::dbInst* curr_node_inst = curr_node->getInstance();
+      if (curr_node_inst) {
+        block = curr_node_inst->getBlock();
+        def_out.selectInst(curr_node_inst);
+      }
+      def_out.selectNet(curr_node->getNet());
+    }
+  };
+
+  add_path(&path->getPathNodes());
+  add_path(&path->getCaptureNodes());
+
+  const std::string file_name
+      = fmt::format("path{}.def", selected_index.row() + 1);
+  def_out.writeBlock(block, file_name.c_str());
 }
 
 // The nodes must be written within curly braces to
@@ -588,15 +635,18 @@ void TimingWidget::highlightPathStage(TimingPathDetailModel* model,
 
 void TimingWidget::populatePaths()
 {
+  update_button_->setEnabled(false);
+
   clearPathDetails();
 
   const auto from = settings_->getFromPins();
   const auto thru = settings_->getThruPins();
   const auto to = settings_->getToPins();
-  sta::ClockSet* clks = new sta::ClockSet;
-  settings_->getClocks(clks);
+  const sta::ClockSet* clks = settings_->getClocks();
 
   populateAndSortModels(from, thru, to, "" /* path group name */, clks);
+
+  update_button_->setEnabled(true);
 }
 
 void TimingWidget::populateAndSortModels(
@@ -604,12 +654,22 @@ void TimingWidget::populateAndSortModels(
     const std::vector<std::set<const sta::Pin*>>& thru,
     const std::set<const sta::Pin*>& to,
     const std::string& path_group_name,
-    sta::ClockSet* clks)
+    const sta::ClockSet* clks)
 {
-  setup_timing_paths_model_->populateModel(
-      from, thru, to, path_group_name, clks);
-  hold_timing_paths_model_->populateModel(
-      from, thru, to, path_group_name, clks);
+  try {
+    setup_timing_paths_model_->populateModel(
+        from, thru, to, path_group_name, clks);
+    hold_timing_paths_model_->populateModel(
+        from, thru, to, path_group_name, clks);
+  } catch (const std::runtime_error& error) {
+    setup_timing_paths_model_->resetModel();
+    hold_timing_paths_model_->resetModel();
+
+    QApplication::restoreOverrideCursor();
+
+    QMessageBox::critical(this, error.what(), "Failed to populate timing.");
+    return;
+  }
 
   // honor selected sort
   auto setup_header = setup_timing_table_view_->horizontalHeader();
@@ -754,6 +814,7 @@ void TimingWidget::toggleRenderer(bool visible)
 void TimingWidget::setBlock(odb::dbBlock* block)
 {
   dbchange_listener_->addOwner(block);
+  update_button_->setEnabled(true);
 }
 
 void TimingWidget::showSettings()

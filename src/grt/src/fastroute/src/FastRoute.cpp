@@ -18,6 +18,7 @@
 #include "grt/GRoute.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -1672,8 +1673,10 @@ NetRouteMap FastRouteCore::run()
 void FastRouteCore::applySoftNDR(const std::vector<int>& net_ids)
 {
   for (auto net_id : net_ids) {
-    logger_->warn(
-        GRT, 273, "Disabled NDR for the {} net.", nets_[net_id]->getName());
+    logger_->warn(GRT,
+                  273,
+                  "Disabled NDR (to reduce congestion) for net: {}",
+                  nets_[net_id]->getName());
 
     // Remove the usage of all the edges involved with this net
     updateSoftNDRNetUsage(net_id, -nets_[net_id]->getEdgeCost());
@@ -1800,6 +1803,11 @@ void FastRouteCore::setOverflowIterations(int iterations)
 void FastRouteCore::setCongestionReportIterStep(int congestion_report_iter_step)
 {
   congestion_report_iter_step_ = congestion_report_iter_step;
+}
+
+void FastRouteCore::setResistanceAware(bool resistance_aware)
+{
+  resistance_aware_ = resistance_aware;
 }
 
 void FastRouteCore::setCongestionReportFile(const char* congestion_file_name)
@@ -1977,6 +1985,24 @@ int8_t FrNet::getLayerEdgeCost(int layer) const
   }
 
   return 1;
+}
+
+int FrNet::getPinIdxFromPosition(int x, int y, int count)
+{
+  int cnt = 1;
+  for (int idx = 0; idx < pin_x_.size(); idx++) {
+    const int pin_x = pin_x_[idx];
+    const int pin_y = pin_y_[idx];
+
+    if (x == pin_x && y == pin_y) {
+      if (cnt == count) {
+        return idx;
+      }
+      cnt++;
+    }
+  }
+
+  return -1;
 }
 
 void FrNet::addPin(int x, int y, int layer)

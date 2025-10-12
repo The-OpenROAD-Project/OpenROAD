@@ -9,17 +9,19 @@ set(TEST_LIBS
         lefin
         lefout
         cdl
+        3dblox
         ${TCL_LIBRARY}
         Boost::boost
         utl_lib
         odb_test_helper
         gdsin
+        tst
         GTest::gtest
         GTest::gtest_main
         GTest::gmock
 )
 
-add_executable(OdbGTests TestDbWire.cc TestAbstractLef.cc TestPolygonalFloorplan.cc)
+add_executable(OdbGTests TestDbWire.cc TestDbNet.cpp TestAbstractLef.cc TestPolygonalFloorplan.cc)
 add_executable(TestCallBacks TestCallBacks.cpp)
 add_executable(TestGeom TestGeom.cpp)
 add_executable(TestModule TestModule.cpp)
@@ -33,7 +35,7 @@ add_executable(TestNetTrack TestNetTrack.cpp)
 add_executable(TestMaster TestMaster.cpp)
 add_executable(TestGDSIn TestGDSIn.cpp)
 add_executable(TestChips TestChips.cpp)
-#add_executable(TestXML TestXML.cpp)
+add_executable(Test3DBloxParser Test3DBloxParser.cpp)
 
 target_link_libraries(OdbGTests ${TEST_LIBS})
 target_link_libraries(TestCallBacks ${TEST_LIBS})
@@ -47,9 +49,9 @@ target_link_libraries(TestAccessPoint ${TEST_LIBS})
 target_link_libraries(TestGuide ${TEST_LIBS})
 target_link_libraries(TestNetTrack ${TEST_LIBS})
 target_link_libraries(TestMaster ${TEST_LIBS})
-target_link_libraries(TestGDSIn gdsin odb_test_helper)
+target_link_libraries(TestGDSIn ${TEST_LIBS})
 target_link_libraries(TestChips ${TEST_LIBS})
-#target_link_libraries(TestXML gdsin odb_test_helper)
+target_link_libraries(Test3DBloxParser ${TEST_LIBS})
 
 # Skip the tests from being registered here, since they are called via
 # cpp_tests.tcl and don't need to be executed twice. The cpp_tests.tcl
@@ -60,7 +62,7 @@ target_link_libraries(TestChips ${TEST_LIBS})
 # directory.
 gtest_discover_tests(OdbGTests
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
-    TEST_FILTER "-TestAccessPoint.*,-TestCallBacks.*,-TestGCellGrid.*,-TestGeom.*,-TestGroup.*,-TestGuide.*,-TestJournal.*-TestLef58Properties.*,-TestMaster.*,-TestModule.*,-TestNetTrack.*,-TestChips.*"
+    TEST_FILTER "-TestAccessPoint.*,-TestCallBacks.*,-TestGCellGrid.*,-TestGeom.*,-TestGroup.*,-TestGuide.*,-TestJournal.*-TestLef58Properties.*,-TestMaster.*,-TestModule.*,-TestNetTrack.*,-TestChips.*,-Test3DBloxParser.*"
 )
 
 add_dependencies(build_and_test 
@@ -73,6 +75,7 @@ add_dependencies(build_and_test
         TestNetTrack
         TestMaster
         TestChips
+        Test3DBloxParser
         OdbGTests
 )
 add_subdirectory(helper)

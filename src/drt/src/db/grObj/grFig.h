@@ -8,13 +8,14 @@
 #include "db/grObj/grBlockObject.h"
 #include "db/infra/frBox.h"
 #include "db/obj/frBlockObject.h"
+#include "odb/geom.h"
 
 namespace drt {
 
 class grFig : public grBlockObject
 {
  public:
-  virtual Rect getBBox() const = 0;
+  virtual odb::Rect getBBox() const = 0;
 };
 
 class frNet;

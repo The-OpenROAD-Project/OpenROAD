@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
+
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
+
+package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
@@ -58,6 +62,8 @@ COMPULSORY_TESTS = [
     "write_verilog6",
     "write_verilog7",
     "write_verilog8",
+    "write_verilog9",
+    "write_verilog9_hier",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
@@ -134,6 +140,7 @@ filegroup(
         "reg5.v",
         "reg6.def",
         "report_cell_usage_no_taps.def",
+        "write_verilog9.v",
     ],
 )
 
@@ -165,3 +172,23 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "dbsta_hconn_unittest",
+    srcs = ["cpp/TestHconn.cpp"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@tk_tcl//:tcl",
+    ],
+)

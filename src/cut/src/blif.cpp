@@ -3,6 +3,7 @@
 
 #include "cut/blif.h"
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -29,7 +30,7 @@ using utl::CUT;
 
 namespace cut {
 
-Blif::Blif(Logger* logger,
+Blif::Blif(utl::Logger* logger,
            sta::dbSta* sta,
            const std::string& const0_cell,
            const std::string& const0_cell_port,
@@ -534,7 +535,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
           auto port_ = network_->libertyPort(pin_);
           if (port_->isClock()) {
             mtermName = mTerm->getName();
-            netName = connection;
+            netName = std::move(connection);
             break;
           }
         }

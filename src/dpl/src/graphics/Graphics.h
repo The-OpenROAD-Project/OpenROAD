@@ -15,7 +15,6 @@ namespace dpl {
 using odb::dbBlock;
 using odb::dbInst;
 using odb::Point;
-using odb::Rect;
 
 class Opendp;
 class Node;
@@ -44,7 +43,7 @@ class Graphics : public gui::Renderer, public DplObserver
   const dbInst* debug_instance_;
   dbBlock* block_ = nullptr;
   float min_displacement_;  // in row height
-  std::vector<Rect> searched_;
+  std::vector<odb::Rect> searched_;
 };
 
 }  // namespace dpl

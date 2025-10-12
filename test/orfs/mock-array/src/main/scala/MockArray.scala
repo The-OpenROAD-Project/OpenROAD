@@ -43,7 +43,8 @@ class BusesVec(singleElementWidth: Int, width: Int, height: Int)
   def asSeq: Seq[Vec[UInt]] = routes.map(_._2).toSeq
 }
 
-class MockArrayBundle(width: Int, height: Int, singleElementWidth: Int) extends Bundle {
+class MockArrayBundle(width: Int, height: Int, singleElementWidth: Int)
+    extends Bundle {
   val ins = Input(new BusesVec(singleElementWidth, width, height))
   val outs = Output(new BusesVec(singleElementWidth, width, height))
   val lsbs = Output(Vec(width * height, Bool()))
@@ -98,8 +99,11 @@ class MockArray(width: Int, height: Int, singleElementWidth: Int)
     //  left <-> down
     //  up <-> right
     (io.outs.asSeq zip (io.ins.asSeq ++ Seq(io.ins.asSeq.head))
-      .sliding(2).toSeq.reverse.map(_.map(RegNext(_)))).foreach {
-      case (a, b) => a := RegNext({
+      .sliding(2)
+      .toSeq
+      .reverse
+      .map(_.map(RegNext(_)))).foreach { case (a, b) =>
+      a := RegNext({
         val mult = Module(new Multiplier())
         mult.io.a := b(0)
         mult.io.b := b(1)
@@ -110,8 +114,9 @@ class MockArray(width: Int, height: Int, singleElementWidth: Int)
       })
     }
 
-    // Combinational logic, but a maximum flight path of 4 elements
-    val MAX_FLIGHT = 4
+    // Combinational logic, but a maximum flight path of number of
+    // elements horizontally / 2
+    val MAX_FLIGHT = width / 2
     io.lsbOuts := (io.lsbIns
       .drop(1)
       .reverse
@@ -186,9 +191,10 @@ case class ArrayConfig(
     remainingArgs: Seq[String] = Seq.empty
 )
 
-
 object parse {
-  def apply(args:Array[String]) : (ArrayConfig, Array[String], Array[String]) = {
+  def apply(
+      args: Array[String]
+  ): (ArrayConfig, Array[String], Array[String]) = {
     val builder = OParser.builder[ArrayConfig]
     val parser = {
       import builder._
@@ -216,7 +222,6 @@ object parse {
     val (chiselArgs, secondDelimiter) = firstDelimiter.drop(1).span(_ != "--")
     val firtoolArgs = secondDelimiter.drop(1)
 
-
     OParser.parse(parser, configArgs, ArrayConfig()) match {
       case Some(c) =>
         return (c, chiselArgs, firtoolArgs)
@@ -233,7 +238,7 @@ object parse {
 object GenerateMockArray extends App {
   val (c, chiselArgs, firtoolArgs) = parse(args)
 
-  ChiselStage.emitSystemVerilog(
+  ChiselStage.emitHWDialect(
     new MockArray(c.width, c.height, c.dataWidth),
     chiselArgs,
     firtoolArgs

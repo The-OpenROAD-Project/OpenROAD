@@ -150,7 +150,8 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-verbose] \
                                   [-start_incremental] \
                                   [-end_incremental] \
-                                  [-use_cugr]
+                                  [-use_cugr] \
+                                  [-resistance_aware]
 }
 
 proc global_route { args } {
@@ -158,7 +159,8 @@ proc global_route { args } {
     keys {-guide_file -congestion_iterations -congestion_report_file \
           -grid_origin -critical_nets_percentage -congestion_report_iter_step
          } \
-    flags {-allow_congestion -verbose -start_incremental -end_incremental -use_cugr}
+    flags {-allow_congestion -resistance_aware -verbose -start_incremental -end_incremental \
+          -use_cugr}
 
   sta::check_argc_eq0 "global_route" $args
 
@@ -214,6 +216,9 @@ proc global_route { args } {
 
   set allow_congestion [info exists flags(-allow_congestion)]
   grt::set_allow_congestion $allow_congestion
+
+  set resistance_aware [info exists flags(-resistance_aware)]
+  grt::set_resistance_aware $resistance_aware
 
   set start_incremental [info exists flags(-start_incremental)]
   set end_incremental [info exists flags(-end_incremental)]
@@ -403,13 +408,14 @@ sta::define_cmd_args "report_wire_length" { [-net net_list] \
                                             [-file file] \
                                             [-global_route] \
                                             [-detailed_route] \
-                                            [-verbose]
+                                            [-verbose] \
+                                            [-summary]
 }
 
 proc report_wire_length { args } {
   sta::parse_key_args "report_wire_length" args \
     keys {-net -file} \
-    flags {-global_route -detailed_route -verbose}
+    flags {-global_route -detailed_route -verbose -summary}
 
   set block [ord::get_db_block]
   if { $block == "NULL" } {
@@ -431,7 +437,9 @@ proc report_wire_length { args } {
     grt::create_wl_report_file $file $verbose
   }
 
-  if { [info exists keys(-net)] } {
+  if { [info exists flags(-summary)] } {
+    grt::report_layer_wire_lengths $global_route_wl $detailed_route_wl
+  } elseif { [info exists keys(-net)] } {
     foreach net [get_nets $keys(-net)] {
       set db_net [sta::sta_to_db_net $net]
       if {

@@ -7,8 +7,11 @@
 #include <QCloseEvent>
 #include <QLabel>
 #include <QMainWindow>
+#include <QMenu>
 #include <QShortcut>
+#include <QString>
 #include <QToolBar>
+#include <QWidget>
 #include <map>
 #include <memory>
 #include <optional>
@@ -74,6 +77,7 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
   void postReadDef(odb::dbBlock* block) override;
   void postReadDb(odb::dbDatabase* db) override;
+  void postRead3Dbx(odb::dbChip* chip) override;
 
   // Capture logger messages into the script widget output
   void setLogger(utl::Logger* logger);

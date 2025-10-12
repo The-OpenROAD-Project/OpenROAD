@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
+
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
+
+package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
@@ -31,6 +35,7 @@ COMPULSORY_TESTS = [
     "fillers8",
     "fillers9",
     "fillers9_verbose",
+    "fillers10",
     "fragmented_row01",
     "fragmented_row02",
     "fragmented_row03",
@@ -86,6 +91,16 @@ COMPULSORY_TESTS = [
 MANUAL_TESTS = [
     "dpl_man_tcl_check",
     "dpl_readme_msgs_check",
+]
+
+# TODO: Enable once difference between bazel and ctest is resolved.
+MANUAL_FOR_BAZEL_TESTS = [
+    "aes",
+    "cell_on_block2",
+    "gcd",
+    "ibex",
+    "mirror1",
+    "obstruction2",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -179,57 +194,60 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
-            "fillers7": [
+            "check1": [
                 "simple01.def",
-            ],
-            "fillers5": [
-                "fragmented_row04.def",
-            ],
-            "pad05": [
-                "extra.lef",
-                "check6.def",
             ],
             "check7": [
                 "check6.def",
             ],
-            "fillers2": [
-                "simple01.def",
-            ],
-            "check1": [
-                "simple01.def",
-            ],
             "edge_spacing": [
                 "multi_height_rows.def",
             ],
-            "pad06": [
-                "check6.def",
-            ],
             "fillers1": [
+                "simple01.def",
+            ],
+            "fillers10": [
+                "simple09.def",
+            ],
+            "fillers2": [
+                "simple01.def",
+            ],
+            "fillers2_verbose": [
                 "simple01.def",
             ],
             "fillers3": [
                 "simple01.def",
             ],
-            "pad03": [
-                "simple03.def",
+            "fillers5": [
+                "fragmented_row04.def",
             ],
-            "pad08": [
+            "fillers7": [
                 "simple01.def",
             ],
             "fillers9_verbose": [
                 "fillers9.lef",
                 "fillers9.def",
             ],
-            "fillers2_verbose": [
+            "pad01": [
                 "simple01.def",
             ],
             "pad02": [
                 "simple01.def",
             ],
+            "pad03": [
+                "simple03.def",
+            ],
+            "pad05": [
+                "extra.lef",
+                "check6.def",
+            ],
+            "pad06": [
+                "check6.def",
+            ],
             "pad07": [
                 "simple01.def",
             ],
-            "pad01": [
+            "pad08": [
                 "simple01.def",
             ],
         }.get(test_name, []),
@@ -241,8 +259,22 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        tags = ["manual"] if test_name in MANUAL_TESTS or
+                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "dpl_unittest",
+    srcs = ["dpl_test.cc"],
+    deps = [
+        "//src/dpl",
+        "//src/odb",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

@@ -219,18 +219,22 @@ def bazelTest = {
         }
         withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: 'openroad/bazel-ci:latest') {
             stage('bazelisk test ...') {
-                withCredentials([file(credentialsId: 'bazel-cache-sa', variable: 'GCS_SA_KEY')]) {
+                withCredentials([string(credentialsId: 'bazel-auth-token-b64', variable: 'BAZEL_AUTH_TOKEN_B64')]) {
                     timeout(time: 120, unit: 'MINUTES') {
-                        def cmd = 'bazelisk test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic';
-                        if (env.BRANCH_NAME != 'master') {
-                            cmd += ' --remote_upload_local_results=false';
-                        }
-                        cmd += ' --google_credentials=$GCS_SA_KEY';
+                        def cmd = 'bazelisk test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic --remote_header="Authorization=Basic $BAZEL_AUTH_TOKEN_B64" --profile=build.profile'
                         try {
-                            sh label: 'Bazel Build', script: cmd + ' ...';
+                            try {
+                                sh label: 'Test, using cached results and building a minimum of dependencies', script: cmd + ' ...';
+                            } finally {
+                                sh label: 'Analyze build times', script: 'bazelisk analyze-profile build.profile';
+                            }
                         } catch (e) {
                             currentBuild.result = 'FAILURE';
-                            sh label: 'Bazel Build (keep_going)', script: cmd + ' --keep_going ...';
+                            try {
+                                sh label: 'Test (keep_going)', script: cmd + ' --keep_going ...';
+                            } finally {
+                                sh label: 'Analyze build times', script: 'bazelisk analyze-profile build.profile';
+                            }
                         }
                     }
                 }

@@ -7,8 +7,8 @@
 #include <optional>
 #include <vector>
 
-#include "dbTypes.h"
-#include "odb.h"
+#include "odb/dbTypes.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -488,7 +488,7 @@ class dbWireDecoder
   {
     PATH,      /// A new path
     JUNCTION,  /// A new path spawned from a previous point
-    SHORT,  /// A new path offset from a previous point, implied virutal short
+    SHORT,  /// A new path offset from a previous point, implied virtual short
     VWIRE,  /// A new path spawned from a previous point, non-exsistant virtual
             /// wire from previous point to first point of path
     POINT,  /// A point on a path.

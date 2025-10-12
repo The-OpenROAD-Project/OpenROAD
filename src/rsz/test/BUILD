@@ -1,4 +1,7 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
+
+package(features = ["layering_check"])
 
 exports_files(
     ["hi_fanout.tcl"],
@@ -63,6 +66,7 @@ TESTS = [
     "repair_fanout6_multi",
     "repair_fanout7",
     "repair_fanout7_multi",
+    "repair_fanout7_skip_pin_swap",
     "repair_fanout8",
     "repair_fanout8_multi",
     "repair_hold1",
@@ -132,6 +136,9 @@ TESTS = [
     "repair_tie7",
     "repair_tie8",
     "repair_tie9",
+    "repair_tie10_hier",
+    "repair_tie11_hier",
+    "repair_tie12_hier",
     "repair_wire1",
     "repair_wire10",
     "repair_wire11",
@@ -150,6 +157,7 @@ TESTS = [
     "report_buffers_nangate45",
     "report_buffers_sky130hd",
     "report_buffers_sky130hs",
+    "report_design_area",
     "report_dont_touch",
     "report_dont_use",
     "report_dont_use_corners",
@@ -174,6 +182,8 @@ TESTS = [
     "set_dont_touch1",
     "set_dont_use1",
     "split_load_hier",
+    "repair_setup_vt_swap",
+    "repair_setup_vt_swap2",
 ]
 
 filegroup(
@@ -198,22 +208,67 @@ filegroup(
 extra_deps = {
     "repair_fanout6_multi": ["repair_fanout6.tcl"],
     "repair_fanout7_multi": ["repair_fanout7.tcl"],
+    "repair_fanout7_skip_pin_swap": ["repair_fanout7.tcl"],
     "repair_fanout8_multi": ["repair_fanout8.tcl"],
     "repair_setup1_multi": ["repair_setup1.tcl"],
     "repair_setup2_multi": ["repair_setup2.tcl"],
     "repair_setup3_multi": ["repair_setup3.tcl"],
     "repair_setup4_multi": ["repair_setup4.tcl"],
+    "repair_setup4_sequence": ["repair_setup4.tcl"],
     "repair_setup6_multi": ["repair_setup6.tcl"],
     "repair_setup7_multi": ["repair_setup7.tcl"],
-    "repair_setup4_sequence": ["repair_setup4.tcl"],
 }
 
 BIG_TESTS = [
     "repair_fanout6",
 ]
 
+# TODO: Enable once difference between bazel and ctest is resolved.
+MANUAL_FOR_BAZEL_TESTS = [
+    "liberty_dont_use",
+    "pinswap_flat",
+    "pinswap_hier",
+    "repair_fanout1_hier",
+    "repair_fanout2_hier",
+    "repair_fanout3_hier",
+    "repair_setup4_flat",
+    "repair_setup4_hier",
+    "report_buffers_asap7",
+    "report_dont_use",
+    "report_dont_use_corners",
+    "split_load_hier",
+]
+
 [regression_test(
     name = test_name,
     size = "large" if test_name in BIG_TESTS else "medium",
     data = [":test_resources"] + extra_deps.get(test_name, []),
+    tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]
+
+cc_test(
+    name = "rsz_buffer_removal",
+    srcs = [
+        "cpp/TestBufferRemoval.cc",
+    ],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+    ],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@tk_tcl//:tcl",
+    ],
+)

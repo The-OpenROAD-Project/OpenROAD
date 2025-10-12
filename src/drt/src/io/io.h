@@ -23,6 +23,7 @@
 #include "frDesign.h"
 #include "global.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace odb {
@@ -125,7 +126,7 @@ class Parser
   // postProcess functions
   void checkFig(frPinFig* uFig,
                 const frString& term_name,
-                const dbTransform& xform,
+                const odb::dbTransform& xform,
                 bool& foundTracks,
                 bool& foundCenterTracks,
                 bool& hasPolys);
@@ -153,7 +154,7 @@ class Parser
   odb::dbTechLayer* masterSliceLayer_;
   frOrderedIdMap<
       frMaster*,
-      std::map<dbOrientType,
+      std::map<odb::dbOrientType,
                std::map<std::vector<frCoord>, frOrderedIdSet<frInst*>>>>
       trackOffsetMap_;
   std::vector<frTrackPattern*> prefTrackPatterns_;
@@ -238,7 +239,7 @@ class TopLayerBTermHandler
    * @returns The chosen via location for stacking the vias up to the
    * TOP_ROUTING_LAYER
    */
-  Point getBestViaPosition(Rect pin_rect);
+  odb::Point getBestViaPosition(odb::Rect pin_rect);
   frDesign* design_;
   odb::dbDatabase* db_;
   utl::Logger* logger_;

@@ -8,11 +8,15 @@
 #include <limits>
 #include <string>
 #include <tuple>
+#include <utility>
+#include <vector>
 
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
+#include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
@@ -24,6 +28,7 @@
 #include "sta/Sdc.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
+#include "sta/Vector.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -38,11 +43,8 @@ using sta::Edge;
 using sta::PathExpanded;
 using sta::VertexOutEdgeIterator;
 
-RecoverPower::RecoverPower(Resizer* resizer,
-                           est::EstimateParasitics* estimate_parasitics)
-    : resizer_(resizer),
-      estimate_parasitics_(estimate_parasitics),
-      bad_vertices_(resizer->graph_)
+RecoverPower::RecoverPower(Resizer* resizer)
+    : resizer_(resizer), bad_vertices_(resizer->graph_)
 {
 }
 
@@ -51,6 +53,7 @@ void RecoverPower::init()
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
+  estimate_parasitics_ = resizer_->estimate_parasitics_;
   initial_design_area_ = resizer_->computeDesignArea();
 }
 
@@ -255,7 +258,7 @@ Vertex* RecoverPower::recoverPower(const Path* path, const Slack path_slack)
       const Path* path = expanded.path(i);
       const Vertex* path_vertex = path->vertex(sta_);
       const Pin* path_pin = path->pin(sta_);
-      if (i > 0 && network_->isDriver(path_pin)
+      if (i > 0 && path_vertex->isDriver(network_)
           && !network_->isTopLevelPort(path_pin)) {
         const TimingArc* prev_arc = path->prevArc(sta_);
         const TimingArc* corner_arc = prev_arc->cornerArc(lib_ap);

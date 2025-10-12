@@ -68,12 +68,14 @@ class Progress;
   X(PDN)                \
   X(PPL)                \
   X(PSM)                \
+  X(RAM)                \
   X(RCX)                \
   X(RMP)                \
   X(RSZ)                \
   X(STA)                \
   X(STT)                \
   X(TAP)                \
+  X(TST)                \
   X(UKN)                \
   X(UPF)                \
   X(UTL)
@@ -255,6 +257,8 @@ class Logger
   // Redirect output to a string until teeStringEnd is called.
   void teeStringBegin();
   std::string teeStringEnd();
+
+  static Logger* defaultLogger();
 
   // Progress interface
   Progress* progress() const { return progress_.get(); }
