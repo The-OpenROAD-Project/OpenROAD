@@ -29,7 +29,6 @@ namespace dpl {
 
 using utl::Logger;
 
-using odb::dbBlock;
 using odb::dbDatabase;
 using odb::dbMaster;
 using odb::dbMasterType;
@@ -311,7 +310,7 @@ class Opendp
 
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
-  dbBlock* block_ = nullptr;
+  odb::dbBlock* block_ = nullptr;
   odb::Rect core_;
 
   std::unique_ptr<Architecture> arch_;  // Information about rows, etc.

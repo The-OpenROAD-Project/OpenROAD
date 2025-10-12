@@ -5,6 +5,7 @@
 
 #include "Objects.h"
 #include "dpl/Opendp.h"
+#include "odb/db.h"
 
 namespace dpl {
 

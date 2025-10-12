@@ -81,7 +81,7 @@ odb::dbInst* dbCreateNetUtil::createInst(odb::dbInst* inst0)
   return inst;
 }
 
-void dbCreateNetUtil::setBlock(dbBlock* block, bool skipInit)
+void dbCreateNetUtil::setBlock(odb::dbBlock* block, bool skipInit)
 {
   _block = block;
   if (skipInit) {

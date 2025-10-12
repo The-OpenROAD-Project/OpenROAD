@@ -70,12 +70,12 @@ class Grid
   void init(Logger* logger) { logger_ = logger; }
   void setCore(const odb::Rect& core) { core_ = core; }
   void initGrid(dbDatabase* db,
-                dbBlock* block,
+                odb::dbBlock* block,
                 std::shared_ptr<Padding> padding,
                 int max_displacement_x,
                 int max_displacement_y);
   void allocateGrid();
-  void examineRows(dbBlock* block);
+  void examineRows(odb::dbBlock* block);
   std::unordered_set<int> getRowCoordinates() const;
 
   GridX gridX(DbuX x) const;
@@ -185,15 +185,15 @@ class Grid
 
   using Pixels = std::vector<std::vector<Pixel>>;
 
-  void markHopeless(dbBlock* block,
+  void markHopeless(odb::dbBlock* block,
                     int max_displacement_x,
                     int max_displacement_y);
-  void markBlocked(dbBlock* block);
-  void visitDbRows(dbBlock* block,
+  void markBlocked(odb::dbBlock* block);
+  void visitDbRows(odb::dbBlock* block,
                    const std::function<void(odb::dbRow*)>& func) const;
 
   Logger* logger_ = nullptr;
-  dbBlock* block_ = nullptr;
+  odb::dbBlock* block_ = nullptr;
   std::shared_ptr<Padding> padding_;
   Pixels pixels_;
   // Contains all the rows' yLo plus the yHi of the last row.  The extra

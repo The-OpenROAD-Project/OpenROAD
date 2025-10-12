@@ -8,6 +8,7 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/network.h"
+#include "odb/db.h"
 #include "odb/geom.h"
 
 namespace dpl {
@@ -24,7 +25,7 @@ Graphics::Graphics(Opendp* dp,
   gui::Gui::get()->registerRenderer(this);
 }
 
-void Graphics::startPlacement(dbBlock* block)
+void Graphics::startPlacement(odb::dbBlock* block)
 {
   block_ = block;
 }

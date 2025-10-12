@@ -322,7 +322,7 @@ double EstimateParasitics::wireClkVCapacitance(const Corner* corner) const
 
 ////////////////////////////////////////////////////////////////
 
-void EstimateParasitics::setDbCbkOwner(dbBlock* block)
+void EstimateParasitics::setDbCbkOwner(odb::dbBlock* block)
 {
   db_cbk_->addOwner(block);
 }

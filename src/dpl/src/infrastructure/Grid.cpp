@@ -51,7 +51,7 @@ void Grid::clear()
   row_index_to_y_dbu_.clear();
 }
 
-void Grid::visitDbRows(dbBlock* block,
+void Grid::visitDbRows(odb::dbBlock* block,
                        const std::function<void(dbRow*)>& func) const
 {
   for (auto row : block->getRows()) {
@@ -88,7 +88,7 @@ void Grid::allocateGrid()
   row_sites_.resize(row_count_.v);
 }
 
-void Grid::markHopeless(dbBlock* block,
+void Grid::markHopeless(odb::dbBlock* block,
                         const int max_displacement_x,
                         const int max_displacement_y)
 {
@@ -137,7 +137,7 @@ void Grid::markHopeless(dbBlock* block,
   }
 }
 
-void Grid::markBlocked(dbBlock* block)
+void Grid::markBlocked(odb::dbBlock* block)
 {
   const odb::Rect core = getCore();
   auto addBlockedLayers
@@ -214,7 +214,7 @@ void Grid::markBlocked(dbBlock* block)
 }
 
 void Grid::initGrid(dbDatabase* db,
-                    dbBlock* block,
+                    odb::dbBlock* block,
                     std::shared_ptr<Padding> padding,
                     int max_displacement_x,
                     int max_displacement_y)
@@ -685,7 +685,7 @@ bool Grid::cellFitsInCore(Node* cell) const
          && cell->getHeight().v <= core_.dy();
 }
 
-void Grid::examineRows(dbBlock* block)
+void Grid::examineRows(odb::dbBlock* block)
 {
   block_ = block;
   has_hybrid_rows_ = false;
