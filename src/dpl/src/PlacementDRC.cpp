@@ -26,7 +26,7 @@ odb::Rect transformEdgeRect(const odb::Rect& edge_rect,
   cell->getDbInst()->getMaster()->getPlacementBoundary(bbox);
   odb::dbTransform transform(orient);
   transform.apply(bbox);
-  Point offset(x.v - bbox.xMin(), y.v - bbox.yMin());
+  odb::Point offset(x.v - bbox.xMin(), y.v - bbox.yMin());
   transform.setOffset(offset);
   odb::Rect result(edge_rect);
   transform.apply(result);

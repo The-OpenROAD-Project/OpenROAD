@@ -47,7 +47,6 @@ using odb::dbBlock;
 using odb::dbDatabase;
 using odb::dbNet;
 using odb::dbTechLayer;
-using odb::Point;
 
 using stt::SteinerTreeBuilder;
 
@@ -220,8 +219,8 @@ class EstimateParasitics : public dbStaState
 
   ////////////////////////////////////////////////////////////////
   // Returns nullptr if net has less than 2 pins or any pin is not placed.
-  SteinerTree* makeSteinerTree(Point drvr_location,
-                               const std::vector<Point>& sink_locations);
+  SteinerTree* makeSteinerTree(odb::Point drvr_location,
+                               const std::vector<odb::Point>& sink_locations);
   SteinerTree* makeSteinerTree(const Pin* drvr_pin);
   void updateParasitics(bool save_guides = false);
   void ensureWireParasitic(const Pin* drvr_pin);
