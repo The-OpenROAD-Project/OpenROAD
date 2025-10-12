@@ -1054,7 +1054,7 @@ void Opendp::initMacrosAndGrid()
   setFixedGridCells();
 }
 
-void Opendp::convertDbToCell(dbInst* db_inst, Node& cell)
+void Opendp::convertDbToCell(odb::dbInst* db_inst, Node& cell)
 {
   cell.setType(Node::CELL);
   cell.setDbInst(db_inst);
@@ -1104,7 +1104,7 @@ DbuPt Opendp::pointOffMacro(const Node& cell)
   return init;
 }
 
-void Opendp::legalCellPos(dbInst* db_inst)
+void Opendp::legalCellPos(odb::dbInst* db_inst)
 {
   Node cell;
   convertDbToCell(db_inst, cell);

@@ -15,14 +15,12 @@
 namespace odb {
 class dbBox;
 class dbBTerm;
-class dbInst;
 class dbMaster;
 class dbSite;
 }  // namespace odb
 namespace dpl {
 
 using odb::dbBTerm;
-using odb::dbInst;
 using odb::dbMaster;
 using odb::dbSite;
 
@@ -90,7 +88,7 @@ class Node
   DbuY getHeight() const;
   DbuX getCenterX() const;
   DbuY getCenterY() const;
-  dbInst* getDbInst() const;
+  odb::dbInst* getDbInst() const;
   odb::dbOrientType getOrient() const;
   bool isFixed() const;
   bool isPlaced() const;
@@ -122,7 +120,7 @@ class Node
   // setters
   void setId(int id);
   void setFixed(bool in);
-  void setDbInst(dbInst* inst);
+  void setDbInst(odb::dbInst* inst);
   void setBTerm(dbBTerm* term);
   void setLeft(DbuX x);
   void setBottom(DbuY y);

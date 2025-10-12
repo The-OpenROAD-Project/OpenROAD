@@ -43,7 +43,7 @@ OdbCallBack::OdbCallBack(est::EstimateParasitics* estimate_parasitics,
 {
 }
 
-void OdbCallBack::inDbInstCreate(dbInst* inst)
+void OdbCallBack::inDbInstCreate(odb::dbInst* inst)
 {
   debugPrint(estimate_parasitics_->getLogger(),
              utl::EST,
@@ -114,7 +114,7 @@ void OdbCallBack::inDbITermPostDisconnect(dbITerm* iterm, dbNet* net)
   estimate_parasitics_->parasiticsInvalid(net);
 }
 
-void OdbCallBack::inDbInstSwapMasterAfter(dbInst* inst)
+void OdbCallBack::inDbInstSwapMasterAfter(odb::dbInst* inst)
 {
   debugPrint(estimate_parasitics_->getLogger(),
              utl::EST,

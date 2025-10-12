@@ -81,7 +81,7 @@ static bool swapWidthHeight(const dbOrientType& orient)
   return false;
 }
 
-Rect Opendp::getBbox(dbInst* inst)
+Rect Opendp::getBbox(odb::dbInst* inst)
 {
   dbMaster* master = inst->getMaster();
 
@@ -109,6 +109,7 @@ void Opendp::createNetwork()
     min_row_height = std::min(min_row_height, row->getSite()->getHeight());
   }
   ///////////////////////////////////
+  using odb::dbInst;
   auto block_insts = block->getInsts();
   std::vector<dbInst*> insts(block_insts.begin(), block_insts.end());
   std::stable_sort(insts.begin(), insts.end(), [](dbInst* a, dbInst* b) {

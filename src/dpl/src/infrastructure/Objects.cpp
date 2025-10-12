@@ -132,12 +132,12 @@ DbuY Node::getCenterY() const
 {
   return bottom_ + height_ / DbuY{2};
 }
-dbInst* Node::getDbInst() const
+odb::dbInst* Node::getDbInst() const
 {
   if (type_ != CELL) {
     return nullptr;
   }
-  return static_cast<dbInst*>(db_owner_);
+  return static_cast<odb::dbInst*>(db_owner_);
 }
 dbBTerm* Node::getBTerm() const
 {
@@ -284,7 +284,7 @@ void Node::setFixed(bool in)
 {
   fixed_ = in;
 }
-void Node::setDbInst(dbInst* inst)
+void Node::setDbInst(odb::dbInst* inst)
 {
   db_owner_ = inst;
 }

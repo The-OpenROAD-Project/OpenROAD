@@ -23,7 +23,6 @@ namespace rcx {
 using odb::dbBlock;
 using odb::dbBox;
 using odb::dbBTerm;
-using odb::dbInst;
 using odb::dbITerm;
 using odb::dbMatrix;
 using odb::dbNet;
@@ -75,7 +74,7 @@ class dbCreateNetUtil
                             dbTechLayer* layer,
                             uint sboxId);
   void setCurrentNet(dbNet* net);
-  dbInst* createInst(dbInst* inst0);
+  odb::dbInst* createInst(odb::dbInst* inst0);
   std::vector<dbTechLayer*> getRoutingLayer() { return _routingLayers; };
 
  private:
