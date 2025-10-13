@@ -126,6 +126,11 @@ void Search::inDbBlockSetDieArea(odb::dbBlock* block)
   setTopBlock(block);
 }
 
+void Search::inDbBlockSetCoreArea(odb::dbBlock* block)
+{
+  emit modified();
+}
+
 void Search::inDbRegionAddBox(odb::dbRegion*, odb::dbBox*)
 {
   emit modified();

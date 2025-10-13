@@ -181,6 +181,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _corner_name_list = nullptr;
   _name = nullptr;
   _die_area = Rect(0, 0, 0, 0);
+  _core_area = Rect(0, 0, 0, 0);
   _maxCapNodeId = 0;
   _maxRSegId = 0;
   _maxCCSegId = 0;
@@ -778,6 +779,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._corner_name_list;
   stream << block._name;
   stream << block._die_area;
+  stream << block._core_area;
   stream << block._blocked_regions_for_pins;
   stream << block._chip;
   stream << block._bbox;
@@ -905,6 +907,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     Rect rect;
     stream >> rect;
     block._die_area = rect;
+  }
+  if (db->isSchema(db_schema_core_area_is_polygon)) {
+    stream >> block._core_area;
   }
   if (db->isSchema(db_schema_dbblock_blocked_regions_for_pins)) {
     stream >> block._blocked_regions_for_pins;
@@ -1078,6 +1083,12 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     chip->tech_ = old_db_tech;
   }
 
+  if (!db->isSchema(db_schema_core_area_is_polygon)) {
+    // Wait for rows to be available
+    dbBlock* blk = (dbBlock*) (&block);
+    block._core_area = blk->computeCoreArea();
+  }
+
   return stream;
 }
 
@@ -1182,6 +1193,10 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   }
 
   if (_die_area != rhs._die_area) {
+    return false;
+  }
+
+  if (_core_area != rhs._core_area) {
     return false;
   }
 
@@ -2195,6 +2210,21 @@ void dbBlock::getMasters(std::vector<dbMaster*>& masters)
   }
 }
 
+void dbBlock::setCoreArea(const Rect& new_area)
+{
+  setCoreArea(Polygon(new_area));
+}
+
+void dbBlock::setCoreArea(const Polygon& new_area)
+{
+  _dbBlock* block = (_dbBlock*) this;
+
+  block->_core_area = new_area;
+  for (auto callback : block->_callbacks) {
+    callback->inDbBlockSetCoreArea(this);
+  }
+}
+
 void dbBlock::setDieArea(const Rect& new_area)
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -2275,6 +2305,18 @@ Polygon dbBlock::getDieAreaPolygon()
   return block->_die_area;
 }
 
+Rect dbBlock::getCoreArea()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return block->_core_area.getEnclosingRect();
+}
+
+Polygon dbBlock::getCoreAreaPolygon()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return block->_core_area;
+}
+
 void dbBlock::addBlockedRegionForPins(const Rect& region)
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -2287,23 +2329,32 @@ const std::vector<Rect>& dbBlock::getBlockedRegionsForPins()
   return block->_blocked_regions_for_pins;
 }
 
-Rect dbBlock::getCoreArea()
+Polygon dbBlock::computeCoreArea()
 {
-  Rect rect;
-  rect.mergeInit();
-
+  std::vector<odb::Rect> rows;
   for (dbRow* row : getRows()) {
     if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
-      rect.merge(row->getBBox());
+      rows.push_back(row->getBBox());
     }
   }
 
-  if (!rect.isInverted()) {
-    return rect;
+  if (!rows.empty()) {
+    const auto polys = Polygon::merge(rows);
+
+    if (polys.size() > 1) {
+      odb::Rect area;
+      area.mergeInit();
+      for (const auto& row : rows) {
+        area.merge(row);
+      }
+      return area;
+    }
+
+    return polys[0];
   }
 
   // Default to die area if there aren't any rows.
-  return getDieArea();
+  return getDieAreaPolygon();
 }
 
 void dbBlock::setExtmi(void* ext)
