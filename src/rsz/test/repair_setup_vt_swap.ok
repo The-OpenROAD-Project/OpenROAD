@@ -91,14 +91,14 @@ Path Type: max
            -0.032   slack (VIOLATED)
 
 
-[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SizeDownMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |      10 |        0 |      0 |     0 |    +0.0% |   -0.032 |       -0.0 |      1 | r2/D
-    final |       0 |      10 |        2 |      0 |     0 |    +3.1% |    0.016 |        0.0 |      0 | r2/D
+        0 |       0 |       2 |        0 |      0 |     0 |    +0.0% |   -0.032 |       -0.0 |      1 | r2/D
+    final |       0 |       5 |        1 |      0 |     0 |    -9.6% |    0.014 |        0.0 |      0 | r2/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0040] Inserted 2 buffers.
-[INFO RSZ-0051] Resized 10 instances: 8 up, 2 up match, 0 down, 0 VT
+[INFO RSZ-0040] Inserted 1 buffers.
+[INFO RSZ-0051] Resized 5 instances: 0 up, 2 up match, 3 down, 0 VT
