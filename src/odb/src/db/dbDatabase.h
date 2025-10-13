@@ -48,7 +48,10 @@ namespace odb {
 inline constexpr uint db_schema_major = 0;  // Not used...
 inline constexpr uint db_schema_initial = 57;
 
-inline constexpr uint db_schema_minor = 120;  // Current revision number
+inline constexpr uint db_schema_minor = 121;  // Current revision number
+
+// Revision where core area is stored as a polygon
+inline constexpr uint db_schema_core_area_is_polygon = 121;
 
 // Revision where _dbDatabase::dbu_per_micron_ was added
 inline constexpr uint db_schema_dbu_per_micron = 120;

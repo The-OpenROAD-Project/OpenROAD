@@ -10,7 +10,7 @@ set tiehi "LOGIC1_X1/Z"
 set tielo "LOGIC0_X1/Z"
 
 restructure -liberty_file Nangate45/Nangate45_typ.lib -target area \
-  -abc_logfile results/abc_rcon.log -tielo_port $tielo -tiehi_port $tiehi \
-  -work_dir results
+  -abc_logfile [make_result_file abc_rcon.log] -tielo_port $tielo -tiehi_port $tiehi \
+  -work_dir [make_result_dir]
 
 report_design_area

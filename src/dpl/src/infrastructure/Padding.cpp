@@ -4,6 +4,8 @@
 #include "Padding.h"
 
 #include "Objects.h"
+#include "dpl/Opendp.h"
+#include "odb/db.h"
 
 namespace dpl {
 
@@ -13,7 +15,7 @@ void Padding::setPaddingGlobal(GridX left, GridX right)
   pad_right_ = right;
 }
 
-void Padding::setPadding(dbInst* inst, GridX left, GridX right)
+void Padding::setPadding(odb::dbInst* inst, GridX left, GridX right)
 {
   inst_padding_map_[inst] = {left, right};
 }
@@ -29,7 +31,7 @@ bool Padding::havePadding() const
          || !inst_padding_map_.empty();
 }
 
-bool Padding::isPaddedType(dbInst* inst) const
+bool Padding::isPaddedType(odb::dbInst* inst) const
 {
   if (inst == nullptr) {
     return false;
@@ -89,7 +91,7 @@ GridX Padding::padLeft(const Node* cell) const
   return padLeft(cell->getDbInst());
 }
 
-GridX Padding::padLeft(dbInst* inst) const
+GridX Padding::padLeft(odb::dbInst* inst) const
 {
   if (isPaddedType(inst)) {
     auto itr1 = inst_padding_map_.find(inst);
@@ -110,7 +112,7 @@ GridX Padding::padRight(const Node* cell) const
   return padRight(cell->getDbInst());
 }
 
-GridX Padding::padRight(dbInst* inst) const
+GridX Padding::padRight(odb::dbInst* inst) const
 {
   if (isPaddedType(inst)) {
     auto itr1 = inst_padding_map_.find(inst);

@@ -19,18 +19,19 @@
 #include "frDesign.h"
 #include "global.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 
 namespace drt {
 
 struct UniqueClassKey
 {
   frMaster* master{nullptr};
-  dbOrientType orient{dbOrientType::R0};
+  odb::dbOrientType orient{odb::dbOrientType::R0};
   std::vector<frCoord> offsets;
   frInst* ndr_inst{nullptr};
 
   UniqueClassKey(frMaster* master_in,
-                 const dbOrientType& orient_in,
+                 const odb::dbOrientType& orient_in,
                  std::vector<frCoord> offsets_in,
                  frInst* ndr_inst_in = nullptr)
       : master(master_in),
@@ -63,7 +64,7 @@ class UniqueClass
 
   const UniqueClassKey& key() const { return key_; }
   frMaster* getMaster() const { return key_.master; }
-  dbOrientType getOrient() const { return key_.orient; }
+  odb::dbOrientType getOrient() const { return key_.orient; }
   const std::vector<frCoord>& getOffsets() const { return key_.offsets; }
   const InstSet& getInsts() const { return insts_; }
   int getPinAccessIdx() const { return pin_access_idx_; }

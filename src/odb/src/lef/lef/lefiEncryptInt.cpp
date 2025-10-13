@@ -31,6 +31,7 @@
 
 #include <cstdlib>
 
+#include "lefiKRDefs.hpp"
 #include "lefrSettings.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE

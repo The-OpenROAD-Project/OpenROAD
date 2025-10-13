@@ -7,6 +7,8 @@
 #include <cmath>
 #include <cstddef>
 
+#include "dpl/Opendp.h"
+#include "infrastructure/Coordinates.h"
 #include "optimization/detailed_manager.h"
 #include "optimization/detailed_orient.h"
 
