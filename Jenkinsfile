@@ -4,7 +4,7 @@ def baseTests(String image) {
     Map base_tests = [failFast: false];
 
     base_tests['Unit Tests CTest'] = {
-        withDockerContainer(args: '-u root', image: image) {
+        withDockerContainer(args: '-u root -t', image: image) {
             stage('Setup CTest') {
                 echo 'Nothing to be done.';
             }
@@ -43,7 +43,7 @@ def baseTests(String image) {
     flow_tests.each { current_test ->
         base_tests["Flow Test - ${current_test}"] = {
             node {
-                withDockerContainer(args: '-u root', image: image) {
+                withDockerContainer(args: '-u root -t', image: image) {
                     stage("Setup ${current_test}") {
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
                         checkout scm;
@@ -78,7 +78,7 @@ def getParallelTests(String image) {
     def ret = [
         'Docs Tester': {
             node {
-                withDockerContainer(args: '-u root', image: image) {
+                withDockerContainer(args: '-u root -t', image: image) {
                     stage('Setup Docs Test') {
                         echo "Setting up Docs Tester environment in ${image}";
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
@@ -101,7 +101,7 @@ def getParallelTests(String image) {
 
         'Build without GUI': {
             node {
-                withDockerContainer(args: '-u root', image: image) {
+                withDockerContainer(args: '-u root -t', image: image) {
                     stage('Setup no-GUI Build') {
                         echo "Build without GUI";
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
@@ -118,7 +118,7 @@ def getParallelTests(String image) {
 
         'Build without Test': {
             node {
-                withDockerContainer(args: '-u root', image: image) {
+                withDockerContainer(args: '-u root -t', image: image) {
                     stage('Setup no-test Build') {
                         echo "Build without Tests";
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
@@ -172,7 +172,7 @@ def getParallelTests(String image) {
 
         'Unit Tests Ninja': {
             node {
-                withDockerContainer(args: '-u root', image: image) {
+                withDockerContainer(args: '-u root -t', image: image) {
                     stage('Setup Ninja Tests') {
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
                         checkout scm;
@@ -195,7 +195,7 @@ def getParallelTests(String image) {
 
         'Compile with C++20': {
             node {
-                withDockerContainer(args: '-u root', image: image) {
+                withDockerContainer(args: '-u root -t', image: image) {
                     stage('Setup C++20 Compile') {
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
                         checkout scm;
@@ -217,7 +217,7 @@ def bazelTest = {
             checkout scm;
             sh label: 'Setup Docker Image', script: 'docker build -f docker/Dockerfile.bazel -t openroad/bazel-ci .';
         }
-        withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: 'openroad/bazel-ci:latest') {
+        withDockerContainer(args: '-u root -t -v /var/run/docker.sock:/var/run/docker.sock', image: 'openroad/bazel-ci:latest') {
             stage('bazelisk test ...') {
                 withCredentials([string(credentialsId: 'bazel-auth-token-b64', variable: 'BAZEL_AUTH_TOKEN_B64')]) {
                     timeout(time: 120, unit: 'MINUTES') {
