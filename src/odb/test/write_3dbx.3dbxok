@@ -1,0 +1,9 @@
+
+#!define NG45_PATH ../Nangate45
+
+Header:
+  version: 2.5
+  unit: micron
+  precision: 100000
+
+ChipletInst:

@@ -6,9 +6,11 @@ find_package(yaml-cpp REQUIRED)
 add_library(3dblox
   baseParser.cpp
   bmapParser.cpp
+  baseWriter.cpp
   dbvParser.cpp
   dbxParser.cpp
-  dbvOut.cpp
+  dbvWriter.cpp
+  dbxWriter.cpp
   3dblox.cpp
 )
 
