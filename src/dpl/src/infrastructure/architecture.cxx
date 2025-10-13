@@ -13,6 +13,7 @@
 
 #include "Objects.h"
 #include "Padding.h"
+#include "infrastructure/Coordinates.h"
 #include "network.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"

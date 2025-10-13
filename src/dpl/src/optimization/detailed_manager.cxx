@@ -17,6 +17,7 @@
 #include "boost/format.hpp"
 #include "boost/tokenizer.hpp"
 #include "detailed_orient.h"
+#include "infrastructure/Coordinates.h"
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
 #include "odb/dbTransform.h"

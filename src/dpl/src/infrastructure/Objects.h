@@ -9,22 +9,20 @@
 
 #include "Coordinates.h"
 #include "dpl/Opendp.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace odb {
 class dbBox;
 class dbBTerm;
-class dbInst;
 class dbMaster;
-class dbOrientType;
 class dbSite;
 }  // namespace odb
 namespace dpl {
 
 using odb::dbBTerm;
-using odb::dbInst;
 using odb::dbMaster;
-using odb::dbOrientType;
 using odb::dbSite;
 
 class MasterEdge
@@ -91,8 +89,8 @@ class Node
   DbuY getHeight() const;
   DbuX getCenterX() const;
   DbuY getCenterY() const;
-  dbInst* getDbInst() const;
-  dbOrientType getOrient() const;
+  odb::dbInst* getDbInst() const;
+  odb::dbOrientType getOrient() const;
   bool isFixed() const;
   bool isPlaced() const;
   bool isHold() const;
@@ -123,11 +121,11 @@ class Node
   // setters
   void setId(int id);
   void setFixed(bool in);
-  void setDbInst(dbInst* inst);
+  void setDbInst(odb::dbInst* inst);
   void setBTerm(dbBTerm* term);
   void setLeft(DbuX x);
   void setBottom(DbuY y);
-  void setOrient(const dbOrientType& in);
+  void setOrient(const odb::dbOrientType& in);
   void setWidth(DbuX width);
   void setHeight(DbuY height);
   void setPlaced(bool in);
@@ -144,7 +142,7 @@ class Node
   void setGroupId(int id);
   void addUsedLayer(int layer);
 
-  bool adjustCurrOrient(const dbOrientType& newOrient);
+  bool adjustCurrOrient(const odb::dbOrientType& newOrient);
 
  protected:
   int id_{0};
@@ -152,7 +150,7 @@ class Node
   // Current position; bottom corner.
   DbuX left_{0};
   DbuY bottom_{0};
-  dbOrientType orient_;
+  odb::dbOrientType orient_;
   // Original position.
   DbuX orig_left_{0};
   DbuY orig_bottom_{0};

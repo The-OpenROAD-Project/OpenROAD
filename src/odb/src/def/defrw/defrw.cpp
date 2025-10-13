@@ -37,6 +37,7 @@
 #include "defiAlias.hpp"
 #include "defiComponent.hpp"
 #include "defiDefs.hpp"
+#include "defiKRDefs.hpp"
 #include "defiNet.hpp"
 #include "defrReader.hpp"
 

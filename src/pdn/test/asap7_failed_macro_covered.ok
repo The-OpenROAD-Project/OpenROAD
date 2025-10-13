@@ -6,5 +6,5 @@
 [INFO ODB-0131]     Created 12240 components and 59302 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 6030 connections.
 [INFO ODB-0133]     Created 9695 nets and 790 connections.
-[ERROR PDN-0006] Pins on M4 are blocked by obstructions on M5 for dmem/dmem0
+[ERROR PDN-0006] VSS on M4 is blocked by obstructions on M5 for dmem/dmem0
 PDN-0006

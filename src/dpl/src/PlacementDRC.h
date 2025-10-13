@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "dpl/Opendp.h"
 #include "infrastructure/Coordinates.h"
 
 namespace odb {

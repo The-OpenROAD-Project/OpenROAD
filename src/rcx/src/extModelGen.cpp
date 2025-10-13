@@ -487,7 +487,7 @@ FILE* extModelGen::InitWriteRules(const char* name,
 
   return fp;
 }
-uint extModelGen::ReadRCDB(dbBlock* block,
+uint extModelGen::ReadRCDB(odb::dbBlock* block,
                            uint widthCnt,
                            uint diagOption,
                            char* logFilePrefix)
