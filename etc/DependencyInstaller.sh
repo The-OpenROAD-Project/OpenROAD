@@ -22,15 +22,16 @@ BASE_DIR=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 CMAKE_PACKAGE_ROOT_ARGS=""
 OR_TOOLS_PATH=""
 INSTALL_SUMMARY=()
+VERBOSE_MODE="no"
 
 # Colors
 if [[ -t 1 ]]; then
-    RED=$(tput setaf 1)
-    GREEN=$(tput setaf 2)
-    YELLOW=$(tput setaf 3)
-    BLUE=$(tput setaf 4)
-    BOLD=$(tput bold)
-    NC=$(tput sgr0) # No Color
+    export RED=$(tput setaf 1)
+    export GREEN=$(tput setaf 2)
+    export YELLOW=$(tput setaf 3)
+    export BLUE=$(tput setaf 4)
+    export BOLD=$(tput bold)
+    export NC=$(tput sgr0) # No Color
 else
     RED=""
     GREEN=""
@@ -123,6 +124,16 @@ _version_compare() {
 _command_exists() {
     command -v "$1" &> /dev/null
 }
+
+# ------------------------------------------------------------------------------
+# Checksum Verification
+# ------------------------------------------------------------------------------
+_verify_checksum() {
+    local checksum=$1
+    local filename=$2
+    _execute "Verifying ${filename} checksum..." bash -c "echo '${checksum}  ${filename}' | md5sum --quiet -c -"
+}
+
 # ------------------------------------------------------------------------------
 # Yosys
 # ------------------------------------------------------------------------------
@@ -134,18 +145,17 @@ _install_yosys() {
     fi
 
     local required_version="${YOSYS_VERSION#v}"
+    log "Checking Yosys (System: ${yosys_installed_version}, Required: ${required_version})"
     if [[ "${yosys_installed_version}" != "${required_version}" ]]; then
-        log "Yosys not found or version is incorrect. Installing..."
         (
             cd "${BASE_DIR}"
-            git clone --depth=1 -b "${YOSYS_VERSION}" --recursive https://github.com/YosysHQ/yosys
+            _execute "Cloning Yosys ${YOSYS_VERSION}..." git clone --depth=1 -b "${YOSYS_VERSION}" --recursive https://github.com/YosysHQ/yosys
             cd yosys
-            make -j "${NUM_THREADS}" PREFIX="${yosys_prefix}" ABC_ARCHFLAGS=-Wno-register
-            make install
+            _execute "Building Yosys..." make -j "${NUM_THREADS}" PREFIX="${yosys_prefix}" ABC_ARCHFLAGS=-Wno-register
+            _execute "Installing Yosys..." make install PREFIX="${yosys_prefix}"
         )
         INSTALL_SUMMARY+=("Yosys: system=${yosys_installed_version}, required=${required_version}, status=installed")
     else
-        log "Yosys is already installed and at the correct version."
         INSTALL_SUMMARY+=("Yosys: system=${yosys_installed_version}, required=${required_version}, status=skipped")
     fi
 }
@@ -161,19 +171,18 @@ _install_eqy() {
     fi
 
     local required_version="${YOSYS_VERSION}"
+    log "Checking Eqy (System: ${eqy_installed_version}, Required: ${required_version})"
     if [[ "${eqy_installed_version}" != "${required_version}" ]]; then
-        log "Eqy not found or version is incorrect. Installing..."
         (
             cd "${BASE_DIR}"
-            git clone --depth=1 -b "${YOSYS_VERSION}" https://github.com/YosysHQ/eqy
+            _execute "Cloning Eqy ${YOSYS_VERSION}..." git clone --depth=1 -b "${YOSYS_VERSION}" https://github.com/YosysHQ/eqy
             cd eqy
             export PATH="${PREFIX:-/usr/local}/bin:${PATH}"
-            make -j "${NUM_THREADS}" PREFIX="${eqy_prefix}"
-            make install PREFIX="${eqy_prefix}"
+            _execute "Building Eqy..." make -j "${NUM_THREADS}" PREFIX="${eqy_prefix}"
+            _execute "Installing Eqy..." make install PREFIX="${eqy_prefix}"
         )
         INSTALL_SUMMARY+=("Eqy: system=${eqy_installed_version}, required=${required_version}, status=installed")
     else
-        log "Eqy is already installed and at the correct version."
         INSTALL_SUMMARY+=("Eqy: system=${eqy_installed_version}, required=${required_version}, status=skipped")
     fi
 }
@@ -189,24 +198,23 @@ _install_sby() {
     fi
 
     local required_version="${YOSYS_VERSION}"
+    log "Checking Sby (System: ${sby_installed_version}, Required: ${required_version})"
     if [[ "${sby_installed_version}" != "${required_version}" ]]; then
-        log "Sby not found or version is incorrect. Installing..."
         (
             cd "${BASE_DIR}"
-            git clone --depth=1 -b "${YOSYS_VERSION}" --recursive https://github.com/YosysHQ/sby
+            _execute "Cloning Sby ${YOSYS_VERSION}..." git clone --depth=1 -b "${YOSYS_VERSION}" --recursive https://github.com/YosysHQ/sby
             cd sby
             export PATH="${PREFIX:-/usr/local}/bin:${PATH}"
-            make -j "${NUM_THREADS}" PREFIX="${sby_prefix}" install
+            _execute "Installing Sby..." make -j "${NUM_THREADS}" PREFIX="${sby_prefix}" install
         )
         INSTALL_SUMMARY+=("Sby: system=${sby_installed_version}, required=${required_version}, status=installed")
     else
-        log "Sby is already installed and at the correct version."
         INSTALL_SUMMARY+=("Sby: system=${sby_installed_version}, required=${required_version}, status=skipped")
     fi
 }
 
 _install_equivalence_deps() {
-    log "Installing equivalence dependencies..."
+    log "Install equivalence dependencies (-eqy)..."
     _install_yosys
     _install_eqy
     _install_sby
@@ -214,6 +222,32 @@ _install_equivalence_deps() {
 
 # logging, error handling, and other utility tasks.
 # ------------------------------------------------------------------------------
+# Execute a command, hiding output unless in verbose mode or an error occurs.
+# Usage: _execute "Cloning Yosys..." git clone ...
+_execute() {
+    local description=$1
+    shift
+
+    if [[ "${VERBOSE_MODE}" == "yes" ]]; then
+        log "${description}"
+        "$@"
+        return
+    fi
+
+    echo -n "${BLUE}${BOLD}[INFO]${NC} ${description}..."
+    local log_file
+    log_file=$(mktemp)
+    if ! "$@" &> "${log_file}"; then
+        echo -e " ${RED}✖${NC}"
+        cat "${log_file}"
+        rm "${log_file}"
+        error "Failed to execute: $*"
+    else
+        echo -e " ${GREEN}✔${NC}"
+        rm "${log_file}"
+    fi
+}
+
 # CMake
 # ------------------------------------------------------------------------------
 _install_cmake() {
@@ -224,8 +258,8 @@ _install_cmake() {
         cmake_installed_version=$(${cmake_bin} --version | head -n1 | awk '{print $3}')
     fi
 
+    log "Checking CMake (System: ${cmake_installed_version}, Required: ${CMAKE_VERSION_SMALL})"
     if [[ "${cmake_installed_version}" != "${CMAKE_VERSION_SMALL}" ]]; then
-        log "CMake not found or version is incorrect. Installing..."
         (
             cd "${BASE_DIR}"
             local arch
@@ -236,14 +270,13 @@ _install_cmake() {
             else
                 cmake_checksum=${CMAKE_CHECKSUM_X86_64}
             fi
-            wget "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_SMALL}/cmake-${CMAKE_VERSION_SMALL}-linux-${arch}.sh"
-            echo "${cmake_checksum} cmake-${CMAKE_VERSION_SMALL}-linux-${arch}.sh" | md5sum -c - || error "CMake checksum failed."
+            _execute "Downloading CMake..." wget "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_SMALL}/cmake-${CMAKE_VERSION_SMALL}-linux-${arch}.sh"
+            _verify_checksum "${cmake_checksum}" "cmake-${CMAKE_VERSION_SMALL}-linux-${arch}.sh" || error "CMake checksum failed."
             chmod +x "cmake-${CMAKE_VERSION_SMALL}-linux-${arch}.sh"
-            "./cmake-${CMAKE_VERSION_SMALL}-linux-${arch}.sh" --skip-license --prefix="${cmake_prefix}"
+            _execute "Installing CMake..." "./cmake-${CMAKE_VERSION_SMALL}-linux-${arch}.sh" --skip-license --prefix="${cmake_prefix}"
         )
         INSTALL_SUMMARY+=("CMake: system=${cmake_installed_version}, required=${CMAKE_VERSION_SMALL}, status=installed")
     else
-        log "CMake is already installed and at the correct version."
         INSTALL_SUMMARY+=("CMake: system=${cmake_installed_version}, required=${CMAKE_VERSION_SMALL}, status=skipped")
     fi
 }
@@ -258,8 +291,8 @@ _install_bison() {
         bison_installed_version=$(bison --version | awk 'NR==1 {print $NF}')
     fi
 
+    log "Checking Bison (System: ${bison_installed_version}, Required: ${BISON_VERSION})"
     if [[ "${bison_installed_version}" != "${BISON_VERSION}" ]]; then
-        log "Bison not found or version is incorrect. Installing..."
         (
             cd "${BASE_DIR}"
             local mirrors=(
@@ -282,15 +315,14 @@ _install_bison() {
             if [[ ${success} -ne 1 ]]; then
                 error "Could not download bison-${BISON_VERSION}.tar.gz from any mirror."
             fi
-            echo "${BISON_CHECKSUM} bison-${BISON_VERSION}.tar.gz" | md5sum -c - || error "Bison checksum failed."
-            tar xf "bison-${BISON_VERSION}.tar.gz"
+            _verify_checksum "${BISON_CHECKSUM}" "bison-${BISON_VERSION}.tar.gz" || error "Bison checksum failed."
+            _execute "Extracting Bison..." tar xf "bison-${BISON_VERSION}.tar.gz"
             cd "bison-${BISON_VERSION}"
-            ./configure --prefix="${bison_prefix}"
-            make -j "${NUM_THREADS}" install
+            _execute "Configuring Bison..." ./configure --prefix="${bison_prefix}"
+            _execute "Building and installing Bison..." make -j "${NUM_THREADS}" install
         )
         INSTALL_SUMMARY+=("Bison: system=${bison_installed_version}, required=${BISON_VERSION}, status=installed")
     else
-        log "Bison is already installed and at the correct version."
         INSTALL_SUMMARY+=("Bison: system=${bison_installed_version}, required=${BISON_VERSION}, status=skipped")
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D bison_ROOT=$(realpath "${bison_prefix}") "
@@ -306,21 +338,20 @@ _install_flex() {
         flex_installed_version=$(flex --version | awk '{print $2}')
     fi
 
+    log "Checking Flex (System: ${flex_installed_version}, Required: ${FLEX_VERSION})"
     if [[ "${flex_installed_version}" != "${FLEX_VERSION}" ]]; then
-        log "Flex not found or version is incorrect. Installing..."
         (
             cd "${BASE_DIR}"
-            wget https://github.com/westes/flex/releases/download/v${FLEX_VERSION}/flex-${FLEX_VERSION}.tar.gz
-            echo "${FLEX_CHECKSUM} flex-${FLEX_VERSION}.tar.gz" | md5sum -c - || error "Flex checksum failed."
-            tar xf "flex-${FLEX_VERSION}.tar.gz"
+            _execute "Downloading Flex..." wget https://github.com/westes/flex/releases/download/v${FLEX_VERSION}/flex-${FLEX_VERSION}.tar.gz
+            _verify_checksum "${FLEX_CHECKSUM}" "flex-${FLEX_VERSION}.tar.gz" || error "Flex checksum failed."
+            _execute "Extracting Flex..." tar xf "flex-${FLEX_VERSION}.tar.gz"
             cd "flex-${FLEX_VERSION}"
-            ./configure --prefix="${flex_prefix}"
-            make -j "${NUM_THREADS}"
-            make -j "${NUM_THREADS}" install
+            _execute "Configuring Flex..." ./configure --prefix="${flex_prefix}"
+            _execute "Building Flex..." make -j "${NUM_THREADS}"
+            _execute "Installing Flex..." make -j "${NUM_THREADS}" install
         )
         INSTALL_SUMMARY+=("Flex: system=${flex_installed_version}, required=${FLEX_VERSION}, status=installed")
     else
-        log "Flex is already installed and at the correct version."
         INSTALL_SUMMARY+=("Flex: system=${flex_installed_version}, required=${FLEX_VERSION}, status=skipped")
     fi
 }
@@ -336,25 +367,24 @@ _install_swig() {
         swig_installed_version=$(${swig_bin} -version | grep "SWIG Version" | awk '{print $3}')
     fi
 
+    log "Checking SWIG (System: ${swig_installed_version}, Required: ${SWIG_VERSION})"
     if [[ "${swig_installed_version}" != "${SWIG_VERSION}" ]]; then
-        log "SWIG not found or version is incorrect. Installing..."
         (
             cd "${BASE_DIR}"
             local tar_name="v${SWIG_VERSION}.tar.gz"
-            wget "https://github.com/swig/swig/archive/${tar_name}"
-            echo "${SWIG_CHECKSUM} ${tar_name}" | md5sum -c - || error "SWIG checksum failed."
-            tar xfz "${tar_name}"
-            cd "swig-${tar_name%%.tar*}" || cd "swig-${SWIG_VERSION}"
+            _execute "Downloading SWIG..." wget "https://github.com/swig/swig/archive/${tar_name}"
+            _verify_checksum "${SWIG_CHECKSUM}" "${tar_name}" || error "SWIG checksum failed."
+            _execute "Extracting SWIG..." tar xfz "${tar_name}"
+            cd swig-*
 
             _install_pcre
-            ./autogen.sh
-            ./configure --prefix="${swig_prefix}"
-            make -j "${NUM_THREADS}"
-            make -j "${NUM_THREADS}" install
+            _execute "Generating SWIG configure script..." ./autogen.sh
+            _execute "Configuring SWIG..." ./configure --prefix="${swig_prefix}"
+            _execute "Building SWIG..." make -j "${NUM_THREADS}"
+            _execute "Installing SWIG..." make -j "${NUM_THREADS}" install
         )
         INSTALL_SUMMARY+=("SWIG: system=${swig_installed_version}, required=${SWIG_VERSION}, status=installed")
     else
-        log "SWIG is already installed and at the correct version."
         INSTALL_SUMMARY+=("SWIG: system=${swig_installed_version}, required=${SWIG_VERSION}, status=skipped")
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D SWIG_ROOT=$(realpath "${swig_prefix}") "
@@ -372,23 +402,22 @@ _install_pcre() {
         pcre_installed_version=$(${pcre_config} --version)
     fi
 
+    log "Checking PCRE (System: ${pcre_installed_version}, Required: ${PCRE_VERSION})"
     if [[ "${pcre_installed_version}" == "${PCRE_VERSION}" ]]; then
-        log "PCRE is already installed and at the correct version in ${pcre_prefix}."
         INSTALL_SUMMARY+=("PCRE: system=${pcre_installed_version}, required=${PCRE_VERSION}, status=skipped")
         return
     fi
 
-    log "PCRE not found or version is incorrect in ${pcre_prefix}. Installing..."
     (
         cd "${BASE_DIR}"
         local pcre_tar_name="pcre2-${PCRE_VERSION}.tar.gz"
-        wget "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${PCRE_VERSION}/${pcre_tar_name}"
-        echo "${PCRE_CHECKSUM} ${pcre_tar_name}" | md5sum -c - || error "PCRE checksum failed."
-        tar xf "${pcre_tar_name}"
+        _execute "Downloading PCRE..." wget "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${PCRE_VERSION}/${pcre_tar_name}"
+        _verify_checksum "${PCRE_CHECKSUM}" "${pcre_tar_name}" || error "PCRE checksum failed."
+        _execute "Extracting PCRE..." tar xf "${pcre_tar_name}"
         cd "pcre2-${PCRE_VERSION}"
-        ./configure --prefix="${pcre_prefix}"
-        make -j "${NUM_THREADS}"
-        make -j "${NUM_THREADS}" install
+        _execute "Configuring PCRE..." ./configure --prefix="${pcre_prefix}"
+        _execute "Building PCRE..." make -j "${NUM_THREADS}"
+        _execute "Installing PCRE..." make -j "${NUM_THREADS}" install
     )
     INSTALL_SUMMARY+=("PCRE: system=${pcre_installed_version}, required=${PCRE_VERSION}, status=installed")
 }
@@ -405,21 +434,20 @@ _install_boost() {
     fi
     
     local required_version="${BOOST_VERSION_BIG}"
+    log "Checking Boost (System: ${boost_installed_version}, Required: ${required_version})"
     if [[ "${boost_installed_version}" != "${required_version}" ]]; then
-        log "Boost not found or version is incorrect. Installing..."
         (
             cd "${BASE_DIR}"
             local boost_version_underscore=${BOOST_VERSION_SMALL//./_}
-            wget "https://archives.boost.io/release/${BOOST_VERSION_SMALL}/source/boost_${boost_version_underscore}.tar.gz"
-            echo "${BOOST_CHECKSUM}  boost_${boost_version_underscore}.tar.gz" | md5sum -c - || error "Boost checksum failed."
-            tar -xf "boost_${boost_version_underscore}.tar.gz"
+            _execute "Downloading Boost..." wget "https://archives.boost.io/release/${BOOST_VERSION_SMALL}/source/boost_${boost_version_underscore}.tar.gz"
+            _verify_checksum "${BOOST_CHECKSUM}" "boost_${boost_version_underscore}.tar.gz" || error "Boost checksum failed."
+            _execute "Extracting Boost..." tar -xf "boost_${boost_version_underscore}.tar.gz"
             cd "boost_${boost_version_underscore}"
-            ./bootstrap.sh --prefix="${boost_prefix}"
-            ./b2 install --with-iostreams --with-test --with-serialization --with-system --with-thread -j "${NUM_THREADS}"
+            _execute "Bootstrapping Boost..." ./bootstrap.sh --prefix="${boost_prefix}"
+            _execute "Installing Boost..." ./b2 install --with-iostreams --with-test --with-serialization --with-system --with-thread -j "${NUM_THREADS}"
         )
         INSTALL_SUMMARY+=("Boost: system=${boost_installed_version}, required=${required_version}, status=installed")
     else
-        log "Boost is already installed and at the correct version."
         INSTALL_SUMMARY+=("Boost: system=${boost_installed_version}, required=${required_version}, status=skipped")
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D Boost_ROOT=$(realpath "${boost_prefix}") "
@@ -434,24 +462,25 @@ _install_eigen() {
     local eigen_installed_version="none"
 
     if [[ -f "${eigen_version_file}" ]]; then
-        local world=$(grep "#define EIGEN_WORLD_VERSION" "${eigen_version_file}" | awk '{print $3}')
-        local major=$(grep "#define EIGEN_MAJOR_VERSION" "${eigen_version_file}" | awk '{print $3}')
+        local world
+        world=$(grep "#define EIGEN_WORLD_VERSION" "${eigen_version_file}" | awk '{print $3}')
+        local major
+        major=$(grep "#define EIGEN_MAJOR_VERSION" "${eigen_version_file}" | awk '{print $3}')
         eigen_installed_version="${world}.${major}"
     fi
 
+    log "Checking Eigen (System: ${eigen_installed_version}, Required: ${EIGEN_VERSION})"
     if [[ "${eigen_installed_version}" != "${EIGEN_VERSION}" ]]; then
-        log "Eigen not found or version is incorrect. Installing..."
         (
             cd "${BASE_DIR}"
-            git clone --depth=1 -b "${EIGEN_VERSION}" https://gitlab.com/libeigen/eigen.git
+            _execute "Cloning Eigen..." git clone --depth=1 -b "${EIGEN_VERSION}" https://gitlab.com/libeigen/eigen.git
             cd eigen
             local cmake_bin=${PREFIX:-/usr/local}/bin/cmake
-            "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${eigen_prefix}" -B build .
-            "${cmake_bin}" --build build -j "${NUM_THREADS}" --target install
+            _execute "Configuring Eigen..." "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${eigen_prefix}" -B build .
+            _execute "Building and installing Eigen..." "${cmake_bin}" --build build -j "${NUM_THREADS}" --target install
         )
         INSTALL_SUMMARY+=("Eigen: system=${eigen_installed_version}, required=${EIGEN_VERSION}, status=installed")
     else
-        log "Eigen is already installed and at the correct version."
         INSTALL_SUMMARY+=("Eigen: system=${eigen_installed_version}, required=${EIGEN_VERSION}, status=skipped")
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D Eigen3_ROOT=$(realpath "${eigen_prefix}") "
@@ -462,19 +491,18 @@ _install_eigen() {
 # ------------------------------------------------------------------------------
 _install_cudd() {
     local cudd_prefix=${PREFIX:-"/usr/local"}
+    log "Checking CUDD (Required: ${CUDD_VERSION})"
     if [[ ! -f ${cudd_prefix}/include/cudd.h ]]; then
-        log "CUDD not found. Installing..."
         (
             cd "${BASE_DIR}"
-            git clone --depth=1 -b "${CUDD_VERSION}" https://github.com/The-OpenROAD-Project/cudd.git
+            _execute "Cloning CUDD..." git clone --depth=1 -b "${CUDD_VERSION}" https://github.com/The-OpenROAD-Project/cudd.git
             cd cudd
-            autoreconf
-            ./configure --prefix="${cudd_prefix}"
-            make -j "${NUM_THREADS}" install
+            _execute "Generating CUDD configure script..." autoreconf
+            _execute "Configuring CUDD..." ./configure --prefix="${cudd_prefix}"
+            _execute "Building and installing CUDD..." make -j "${NUM_THREADS}" install
         )
         INSTALL_SUMMARY+=("CUDD: system=none, required=${CUDD_VERSION}, status=installed")
     else
-        log "CUDD is already installed."
         INSTALL_SUMMARY+=("CUDD: system=found, required=${CUDD_VERSION}, status=skipped")
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D cudd_ROOT=$(realpath "${cudd_prefix}") "
@@ -485,17 +513,16 @@ _install_cudd() {
 # ------------------------------------------------------------------------------
 _install_cusp() {
     local cusp_prefix=${PREFIX:-"/usr/local/include"}
+    log "Checking CUSP"
     if [[ ! -f ${cusp_prefix}/cusp/version.h ]]; then
-        log "CUSP not found. Installing..."
         (
             cd "${BASE_DIR}"
-            git clone --depth=1 -b cuda9 https://github.com/cusplibrary/cusplibrary.git
+            _execute "Cloning CUSP..." git clone --depth=1 -b cuda9 https://github.com/cusplibrary/cusplibrary.git
             cd cusplibrary
-            cp -r ./cusp "${cusp_prefix}"
+            _execute "Installing CUSP..." cp -r ./cusp "${cusp_prefix}"
         )
         INSTALL_SUMMARY+=("CUSP: system=none, required=any, status=installed")
     else
-        log "CUSP is already installed."
         INSTALL_SUMMARY+=("CUSP: system=found, required=any, status=skipped")
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D cusp_ROOT=$(realpath "${cusp_prefix}") "
@@ -511,19 +538,18 @@ _install_lemon() {
         lemon_installed_version=$(grep "LEMON_VERSION" "${lemon_prefix}/include/lemon/config.h" | awk -F'"' '{print $2}')
     fi
 
+    log "Checking Lemon (System: ${lemon_installed_version}, Required: ${LEMON_VERSION})"
     if [[ "${lemon_installed_version}" != "${LEMON_VERSION}" ]]; then
-        log "Lemon not found or version is incorrect. Installing..."
         (
             cd "${BASE_DIR}"
-            git clone --depth=1 -b "${LEMON_VERSION}" https://github.com/The-OpenROAD-Project/lemon-graph.git
+            _execute "Cloning Lemon..." git clone --depth=1 -b "${LEMON_VERSION}" https://github.com/The-OpenROAD-Project/lemon-graph.git
             cd lemon-graph
             local cmake_bin=${PREFIX:-/usr/local}/bin/cmake
-            "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${lemon_prefix}" -B build .
-            "${cmake_bin}" --build build -j "${NUM_THREADS}" --target install
+            _execute "Configuring Lemon..." "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${lemon_prefix}" -B build .
+            _execute "Building and installing Lemon..." "${cmake_bin}" --build build -j "${NUM_THREADS}" --target install
         )
         INSTALL_SUMMARY+=("Lemon: system=${lemon_installed_version}, required=${LEMON_VERSION}, status=installed")
     else
-        log "Lemon is already installed and at the correct version."
         INSTALL_SUMMARY+=("Lemon: system=${lemon_installed_version}, required=${LEMON_VERSION}, status=skipped")
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D LEMON_ROOT=$(realpath "${lemon_prefix}") "
@@ -538,19 +564,18 @@ _install_spdlog() {
     if [ -d "${spdlog_prefix}/include/spdlog" ]; then
         spdlog_installed_version=$(grep "#define SPDLOG_VER_" "${spdlog_prefix}/include/spdlog/version.h" | sed 's/.*\s//' | tr '\n' '.' | sed 's/\.$//')
     fi
+    log "Checking spdlog (System: ${spdlog_installed_version}, Required: ${SPDLOG_VERSION})"
     if [[ "${spdlog_installed_version}" != "${SPDLOG_VERSION}" ]]; then
-        log "spdlog not found or version is incorrect. Installing..."
         (
             cd "${BASE_DIR}"
-            git clone --depth=1 -b "v${SPDLOG_VERSION}" https://github.com/gabime/spdlog.git
+            _execute "Cloning spdlog..." git clone --depth=1 -b "v${SPDLOG_VERSION}" https://github.com/gabime/spdlog.git
             cd spdlog
             local cmake_bin=${PREFIX:-/usr/local}/bin/cmake
-            "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${spdlog_prefix}" -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DSPDLOG_BUILD_EXAMPLE=OFF -B build .
-            "${cmake_bin}" --build build -j "${NUM_THREADS}" --target install
+            _execute "Configuring spdlog..." "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${spdlog_prefix}" -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DSPDLOG_BUILD_EXAMPLE=OFF -B build .
+            _execute "Building and installing spdlog..." "${cmake_bin}" --build build -j "${NUM_THREADS}" --target install
         )
         INSTALL_SUMMARY+=("spdlog: system=${spdlog_installed_version}, required=${SPDLOG_VERSION}, status=installed")
     else
-        log "spdlog is already installed and at the correct version."
         INSTALL_SUMMARY+=("spdlog: system=${spdlog_installed_version}, required=${SPDLOG_VERSION}, status=skipped")
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D spdlog_ROOT=$(realpath "${spdlog_prefix}") "
@@ -561,21 +586,20 @@ _install_spdlog() {
 # ------------------------------------------------------------------------------
 _install_gtest() {
     local gtest_prefix=${PREFIX:-"/usr/local"}
+    log "Checking gtest (Required: ${GTEST_VERSION})"
     if [[ ! -d ${gtest_prefix}/include/gtest ]]; then
-        log "gtest not found. Installing..."
         (
             cd "${BASE_DIR}"
-            wget "https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.zip"
-            echo "${GTEST_CHECKSUM} v${GTEST_VERSION}.zip" | md5sum -c - || error "gtest checksum failed."
-            unzip "v${GTEST_VERSION}.zip"
+            _execute "Downloading gtest..." wget "https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.zip"
+            _verify_checksum "${GTEST_CHECKSUM}" "v${GTEST_VERSION}.zip" || error "gtest checksum failed."
+            _execute "Extracting gtest..." unzip "v${GTEST_VERSION}.zip"
             cd "googletest-${GTEST_VERSION}"
             local cmake_bin=${PREFIX:-/usr/local}/bin/cmake
-            "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${gtest_prefix}" -B build .
-            "${cmake_bin}" --build build --target install
+            _execute "Configuring gtest..." "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${gtest_prefix}" -B build .
+            _execute "Building and installing gtest..." "${cmake_bin}" --build build --target install
         )
         INSTALL_SUMMARY+=("gtest: system=none, required=${GTEST_VERSION}, status=installed")
     else
-        log "gtest is already installed."
         INSTALL_SUMMARY+=("gtest: system=found, required=${GTEST_VERSION}, status=skipped")
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D GTest_ROOT=$(realpath "${gtest_prefix}") "
@@ -611,22 +635,21 @@ _install_abseil() {
     fi
 
     local required_version="${ABSL_VERSION%.*}"
+    log "Checking Abseil (System: ${absl_installed_version}, Required: ${required_version})"
     if [[ "${absl_installed_version}" != "${required_version}" ]]; then
-        log "Abseil not found or version is incorrect. Installing..."
         (
             cd "${BASE_DIR}"
-            wget "https://github.com/abseil/abseil-cpp/releases/download/${ABSL_VERSION}/abseil-cpp-${ABSL_VERSION}.tar.gz"
-            echo "${ABSL_CHECKSUM} abseil-cpp-${ABSL_VERSION}.tar.gz" | md5sum -c - || error "Abseil checksum failed."
-            tar xf "abseil-cpp-${ABSL_VERSION}.tar.gz"
+            _execute "Downloading Abseil..." wget "https://github.com/abseil/abseil-cpp/releases/download/${ABSL_VERSION}/abseil-cpp-${ABSL_VERSION}.tar.gz"
+            _verify_checksum "${ABSL_CHECKSUM}" "abseil-cpp-${ABSL_VERSION}.tar.gz" || error "Abseil checksum failed."
+            _execute "Extracting Abseil..." tar xf "abseil-cpp-${ABSL_VERSION}.tar.gz"
             cd "abseil-cpp-${ABSL_VERSION}"
             local cmake_bin=${PREFIX:-/usr/local}/bin/cmake
-            "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${absl_prefix_install}" -DCMAKE_CXX_STANDARD=17 -B build .
-            "${cmake_bin}" --build build --target install
+            _execute "Configuring Abseil..." "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${absl_prefix_install}" -DCMAKE_CXX_STANDARD=17 -B build .
+            _execute "Building and installing Abseil..." "${cmake_bin}" --build build --target install
         )
         absl_prefix_found="${absl_prefix_install}"
         INSTALL_SUMMARY+=("Abseil: system=${absl_installed_version}, required=${required_version}, status=installed")
     else
-        log "Abseil is already installed and at the correct version."
         INSTALL_SUMMARY+=("Abseil: system=${absl_installed_version}, required=${required_version}, status=skipped")
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D ABSL_ROOT=$(realpath "${absl_prefix_found}") "
@@ -638,18 +661,17 @@ _install_abseil() {
 _install_ninja() {
     local ninja_prefix=${PREFIX:-"/usr/local"}
     local ninja_bin=${ninja_prefix}/bin/ninja
+    log "Checking Ninja (Required: ${NINJA_VERSION})"
     if [[ ! -f ${ninja_bin} ]]; then
-        log "Ninja not found. Installing..."
         (
             cd "${BASE_DIR}"
-            wget -O ninja-linux.zip "https://github.com/ninja-build/ninja/releases/download/v${NINJA_VERSION}/ninja-linux.zip"
-            echo "${NINJA_CHECKSUM} ninja-linux.zip" | md5sum -c - || error "Ninja checksum failed."
-            unzip -o ninja-linux.zip -d "${ninja_prefix}/bin/"
+            _execute "Downloading Ninja..." wget -O ninja-linux.zip "https://github.com/ninja-build/ninja/releases/download/v${NINJA_VERSION}/ninja-linux.zip"
+            _verify_checksum "${NINJA_CHECKSUM}" "ninja-linux.zip" || error "Ninja checksum failed."
+            _execute "Installing Ninja..." unzip -o ninja-linux.zip -d "${ninja_prefix}/bin/"
             chmod +x "${ninja_bin}"
         )
         INSTALL_SUMMARY+=("Ninja: system=none, required=${NINJA_VERSION}, status=installed")
     else
-        log "Ninja is already installed."
         INSTALL_SUMMARY+=("Ninja: system=found, required=${NINJA_VERSION}, status=skipped")
     fi
 }
@@ -666,6 +688,7 @@ _install_or_tools() {
 
     local or_tools_installed_version="none"
     # Check if a system-installed version of OR-Tools is present
+    log "Checking or-tools (System: ${or_tools_installed_version}, Required: ${OR_TOOLS_VERSION_SMALL})"
     if [[ "${skip_system_or_tools}" == "false" ]]; then
         # Disable exit on error for 'find' command, as it might return non zero
         set +euo pipefail
@@ -682,7 +705,6 @@ _install_or_tools() {
             or_tools_install_dir=$(realpath "${or_tools_root}/..")
 
             if [[ "${or_tools_installed_version}" == "${OR_TOOLS_VERSION_SMALL}" ]]; then
-                log "OR-Tools ${OR_TOOLS_VERSION_SMALL} is already installed."
                 CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=${or_tools_install_dir} "
                 OR_TOOLS_PATH=${or_tools_install_dir}
                 INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, status=skipped")
@@ -695,33 +717,24 @@ _install_or_tools() {
     fi
 
     if [[ "$(uname -m)" == "aarch64" ]]; then
-        log "Installing OR-Tools for aarch64..."
         (
             cd "${build_dir}"
-            git clone --depth=1 -b "v${OR_TOOLS_VERSION_BIG}" https://github.com/google/or-tools.git
+            _execute "Cloning or-tools..." git clone --depth=1 -b "v${OR_TOOLS_VERSION_BIG}" https://github.com/google/or-tools.git
             cd or-tools
             local cmake_bin=${PREFIX:-/usr/local}/bin/cmake
-            "${cmake_bin}" -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX="${OR_TOOLS_PATH}" -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
-            "${cmake_bin}" --build build --config Release --target install -v -j "${NUM_THREADS}"
+            _execute "Configuring or-tools..." "${cmake_bin}" -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX="${OR_TOOLS_PATH}" -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
+            _execute "Building and installing or-tools..." "${cmake_bin}" --build build --config Release --target install -v -j "${NUM_THREADS}"
         )
     else
-        log "Downloading and installing OR-Tools..."
         (
             cd "${build_dir}"
             if [[ "${os_version}" == "rodete" ]]; then
                 os_version=11
             fi
-            if [[ "${os}" == "ubuntu" && "${os_version}" == "25.04" ]]; then
-                # FIXME: Use 24.04 until an official release for 25.04 is available
-                os_version="24.04"
-            fi
             local or_tools_file="or-tools_${arch}_${os}-${os_version}_cpp_v${OR_TOOLS_VERSION_SMALL}.tar.gz"
-            wget "https://github.com/google/or-tools/releases/download/v${OR_TOOLS_VERSION_BIG}/${or_tools_file}"
-            if command -v brew &> /dev/null; then
-                OR_TOOLS_PATH="$(brew --prefix or-tools)"
-            fi
+            _execute "Downloading or-tools..." wget "https://github.com/google/or-tools/releases/download/v${OR_TOOLS_VERSION_BIG}/${or_tools_file}"
             mkdir -p "${OR_TOOLS_PATH}"
-            tar --strip 1 --dir "${OR_TOOLS_PATH}" -xf "${or_tools_file}"
+            _execute "Extracting or-tools..." tar --strip 1 --dir "${OR_TOOLS_PATH}" -xf "${or_tools_file}"
         )
     fi
     INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, status=installed")
@@ -736,7 +749,7 @@ _install_or_tools() {
 # version management. This modular approach makes the script easier to
 # maintain and extend.
 _install_common_dev() {
-    log "Installing common development dependencies..."
+    log "Install common development dependencies (-common or -all)"
     rm -rf "${BASE_DIR}"
     mkdir -p "${BASE_DIR}"
     if [[ -n "${PREFIX}" ]]; then
@@ -800,16 +813,15 @@ EOF
 # Ubuntu
 # ------------------------------------------------------------------------------
 _install_ubuntu_packages() {
-    log "Installing base packages for Ubuntu..."
+    log "Install ubuntu base packages using apt (-base or -all)"
     export DEBIAN_FRONTEND="noninteractive"
-    apt-get -y update
-    apt-get -y install --no-install-recommends tzdata
-    apt-get -y install --no-install-recommends \
+    _execute "Updating package lists..." apt-get -y update
+    _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential ccache clang \
         debhelper devscripts flex g++ gcc git groff lcov libffi-dev libfl-dev \
         libgomp1 libomp-dev libpcre2-dev libpcre3-dev libreadline-dev pandoc \
         pkg-config python3-dev python3-click qt5-image-formats-plugins tcl tcl-dev tcl-tclreadline \
-        tcllib unzip wget libyaml-cpp-dev zlib1g-dev
+        tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
     local packages=()
     if _version_compare "$1" -ge "25.04"; then
@@ -831,38 +843,36 @@ _install_ubuntu_packages() {
     else
         packages+=("libqt5charts5-dev" "qt5-default")
     fi
-    apt-get install -y --no-install-recommends "${packages[@]}"
-    apt-get autoclean -y
-    apt-get autoremove -y
+    _execute "Installing version-specific packages..." apt-get install -y --no-install-recommends "${packages[@]}"
+    _execute "Cleaning up packages..." apt-get autoclean -y
+    _execute "Removing unused packages..." apt-get autoremove -y
 }
 
 # ------------------------------------------------------------------------------
 # RHEL
 # ------------------------------------------------------------------------------
 _install_rhel_packages() {
-    log "Installing base packages for RHEL..."
+    log "Install rhel base packages using yum (-base or -all)"
     local rhel_version=$1
-    yum -y update
-    yum -y install tzdata
-    yum -y install redhat-rpm-config rpm-build
-    yum -y install "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${rhel_version}.noarch.rpm"
-    yum -y install \
+    _execute "Updating packages..." yum -y update
+    _execute "Installing EPEL release..." yum -y install "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${rhel_version}.noarch.rpm"
+    _execute "Installing base packages..." yum -y install \
         autoconf automake clang clang-devel gcc gcc-c++ gdb git glibc-devel \
         libffi-devel libtool llvm llvm-devel llvm-libs make pcre-devel \
         pcre2-devel pkg-config pkgconf pkgconf-m4 pkgconf-pkg-config python3 \
         python3-devel python3-pip python3-click qt5-qtbase-devel qt5-qtcharts-devel \
         qt5-qtimageformats readline tcl-devel tcl-tclreadline \
         tcl-tclreadline-devel tcl-thread-devel tcllib wget yaml-cpp-devel \
-        zlib-devel
+        zlib-devel tzdata redhat-rpm-config rpm-build
 
     if [[ "${rhel_version}" == "8" ]]; then
         local python_version="3.12"
-        yum install -y gcc-toolset-13 "python${python_version}" "python${python_version}-devel" "python${python_version}-pip"
-        update-alternatives --install /usr/bin/unversioned-python python "$(command -v "python${python_version}")" 50
-        update-alternatives --install /usr/bin/python3 python3 "$(command -v "python${python_version}")" 50
+        _execute "Installing Python ${python_version}..." yum install -y gcc-toolset-13 "python${python_version}" "python${python_version}-devel" "python${python_version}-pip"
+        _execute "Setting Python alternatives..." update-alternatives --install /usr/bin/unversioned-python python "$(command -v "python${python_version}")" 50
+        _execute "Setting Python3 alternatives..." update-alternatives --install /usr/bin/python3 python3 "$(command -v "python${python_version}")" 50
     fi
     if [[ "${rhel_version}" == "9" ]]; then
-        yum install -y \
+        _execute "Installing additional packages for RHEL 9..." yum install -y \
             https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/flex-2.6.4-9.el9.x86_64.rpm \
             https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/readline-devel-8.1-4.el9.x86_64.rpm \
             https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/tcl-devel-8.6.10-7.el9.x86_64.rpm
@@ -870,10 +880,10 @@ _install_rhel_packages() {
 
     local arch=amd64
     local pandoc_version="3.1.11.1"
-    wget "https://github.com/jgm/pandoc/releases/download/${pandoc_version}/pandoc-${pandoc_version}-linux-${arch}.tar.gz"
-    tar xvzf "pandoc-${pandoc_version}-linux-${arch}.tar.gz" --strip-components 1 -C /usr/local/
+    _execute "Downloading pandoc..." wget "https://github.com/jgm/pandoc/releases/download/${pandoc_version}/pandoc-${pandoc_version}-linux-${arch}.tar.gz"
+    _execute "Installing pandoc..." tar xvzf "pandoc-${pandoc_version}-linux-${arch}.tar.gz" --strip-components 1 -C /usr/local/
     rm -rf "pandoc-${pandoc_version}-linux-${arch}.tar.gz"
-    yum clean -y all
+    _execute "Cleaning up yum cache..." yum clean -y all
     rm -rf /var/lib/apt/lists/*
 }
 
@@ -881,28 +891,27 @@ _install_rhel_packages() {
 # openSUSE
 # ------------------------------------------------------------------------------
 _install_opensuse_packages() {
-    log "Installing base packages for openSUSE..."
-    zypper refresh
-    zypper -n update
-    zypper -n install -t pattern devel_basis
-    zypper -n install \
+    log "Install ubuntu base packages using zypper (-base or -all)"
+    _execute "Refreshing repositories..." zypper refresh
+    _execute "Updating packages..." zypper -n update
+    _execute "Installing development pattern..." zypper -n install -t pattern devel_basis
+    _execute "Installing base packages..." zypper -n install \
         binutils clang gcc gcc11-c++ git groff gzip lcov libffi-devel \
         libgomp1 libomp11-devel libpython3_6m1_0 libqt5-creator libqt5-qtbase \
         libqt5-qtstyleplugins libstdc++6-devel-gcc8 llvm pandoc pcre-devel \
         pcre2-devel pkg-config python3-devel python3-pip python3-click qimgv readline-devel tcl \
         tcl-devel tcllib wget yaml-cpp-devel zlib-devel
 
-    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
-    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
-    zypper -n clean --all
-    zypper -n packages --unneeded | awk -F'|' 'NR > 4 {print $3}' | grep -v Name | xargs -r zypper -n remove --clean-deps
+    _execute "Setting gcc alternatives..." update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
+    _execute "Setting g++ alternatives..." update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
+    _execute "Cleaning up zypper cache..." zypper -n clean --all
+    _execute "Removing unneeded packages..." bash -c "zypper -n packages --unneeded | awk -F'|' 'NR > 4 {print \$3}' | grep -v Name | xargs -r zypper -n remove --clean-deps"
 }
 
 # ------------------------------------------------------------------------------
 # Darwin (macOS)
 # ------------------------------------------------------------------------------
 _install_darwin_packages() {
-    log "Installing base packages for Darwin (macOS)..."
     if ! _command_exists "brew"; then
         error "Homebrew is not found. Please install Homebrew before continuing."
     fi
@@ -915,77 +924,77 @@ Then, rerun this script.
 EOF
         exit 1
     fi
-    brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pkg-config pyqt5 python spdlog tcl-tk zlib swig yaml-cpp
-    pip3 install click
-    brew link --force libomp
-    brew install The-OpenROAD-Project/lemon-graph/lemon-graph
+    log "Install darwin base packages using homebrew (-base or -all)"
+    _execute "Installing Homebrew packages..." brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pkg-config pyqt5 python spdlog tcl-tk zlib swig yaml-cpp
+    _execute "Installing Python click..." pip3 install click
+    _execute "Linking libomp..." brew link --force libomp
+    _execute "Installing lemon-graph..." brew install The-OpenROAD-Project/lemon-graph/lemon-graph
 }
 
 # ------------------------------------------------------------------------------
 # Debian
 # ------------------------------------------------------------------------------
 _install_debian_packages() {
-    log "Installing base packages for Debian..."
+    log "Install debian base packages using apt (-base or -all)"
     local debian_version=$1
     export DEBIAN_FRONTEND="noninteractive"
-    apt-get -y update
-    apt-get -y install --no-install-recommends tzdata
+    _execute "Updating package lists..." apt-get -y update
     local tcl_ver=""
     if [[ "${debian_version}" == "rodete" ]]; then
         tcl_ver="8.6"
     fi
-    apt-get -y install --no-install-recommends \
+    _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential clang debhelper \
         devscripts flex g++ gcc git groff lcov libffi-dev libfl-dev libgomp1 \
         libomp-dev libpcre2-dev libpcre3-dev libreadline-dev "libtcl${tcl_ver}" \
         pandoc pkg-config python3-dev python3-click qt5-image-formats-plugins tcl-dev tcl-tclreadline \
-        tcllib unzip wget libyaml-cpp-dev zlib1g-dev
+        tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
     if [[ "${debian_version}" == "10" ]]; then
-        apt-get install -y --no-install-recommends libpython3.7 libqt5charts5-dev qt5-default
+        _execute "Installing Debian 10 specific packages..." apt-get install -y --no-install-recommends libpython3.7 libqt5charts5-dev qt5-default
     else
         local python_ver="3.8"
         if [[ "${debian_version}" == "rodete" ]]; then
             python_ver="3.12"
         fi
-        apt-get install -y --no-install-recommends "libpython${python_ver}" libqt5charts5-dev qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
+        _execute "Installing Debian specific packages..." apt-get install -y --no-install-recommends "libpython${python_ver}" libqt5charts5-dev qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
     fi
-    apt-get autoclean -y
-    apt-get autoremove -y
+    _execute "Cleaning up packages..." apt-get autoclean -y
+    _execute "Removing unused packages..." apt-get autoremove -y
 }
 
 # ------------------------------------------------------------------------------
 # CI Dependencies
 # ------------------------------------------------------------------------------
 _install_ci_packages() {
-    log "Installing CI dependencies..."
-    apt-get -y update
-    apt-get -y install --no-install-recommends \
+    log "Install CI dependencies (-ci)"
+    _execute "Updating package lists..." apt-get -y update
+    _execute "Installing CI packages..." apt-get -y install --no-install-recommends \
         apt-transport-https ca-certificates curl default-jdk gnupg python3 \
         python3-pip python3-pandas jq lsb-release parallel \
         software-properties-common time unzip zip
 
-    curl -Lo bazelisk https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
+    _execute "Downloading bazelisk..." curl -Lo bazelisk https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
     chmod +x bazelisk
-    mv bazelisk /usr/local/bin/bazelisk
+    _execute "Installing bazelisk..." mv bazelisk /usr/local/bin/bazelisk
 
     if _command_exists "docker"; then
         log "Docker is already installed, skipping reinstallation."
         return 0
     fi
 
-    install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    _execute "Creating Docker keyring directory..." install -m 0755 -d /etc/apt/keyrings
+    _execute "Downloading Docker GPG key..." curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
     chmod a+r /etc/apt/keyrings/docker.asc
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-        $(. /etc/os-release && echo "${VERSION_CODENAME}") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-    apt-get -y update
-    apt-get -y install --no-install-recommends docker-ce docker-ce-cli containerd.io docker-buildx-plugin
+    _execute "Adding Docker repository..." bash -c 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+        $(. /etc/os-release && echo \"${VERSION_CODENAME}\") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null'
+    _execute "Updating package lists for Docker..." apt-get -y update
+    _execute "Installing Docker..." apt-get -y install --no-install-recommends docker-ce docker-ce-cli containerd.io docker-buildx-plugin
 
     if _version_compare "${1}" -lt "24.04"; then
-        wget https://apt.llvm.org/llvm.sh
+        _execute "Downloading LLVM install script..." wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-        ./llvm.sh 16 all
+        _execute "Installing LLVM 16..." ./llvm.sh 16 all
     fi
 }
 _help() {
@@ -1006,6 +1015,7 @@ Options:
   -save-deps-prefixes=FILE    Save OpenROAD build arguments to FILE.
   -constant-build-dir         Use a constant build directory instead of a random one.
   -threads=<N>                Limit the number of compiling threads.
+  -verbose                    Show all output from build commands.
   -h, -help                   Show this help message.
 
 EOF
@@ -1022,6 +1032,7 @@ main() {
             -common) option="common" ;;
             -eqy) EQUIVALENCE_DEPS="yes" ;;
             -ci) CI="yes" ;;
+            -verbose) VERBOSE_MODE="yes" ;;
             -local)
                 if [[ $(id -u) == 0 ]]; then
                     error "Cannot use -local with root or sudo."
@@ -1227,10 +1238,14 @@ _print_summary() {
     printf "%-20s | %-20s | %-20s | %-10s\n" "--------------------" "--------------------" "--------------------" "----------"
     for summary_line in "${INSTALL_SUMMARY[@]}"; do
         # summary_line is like "Flex: system=2.6.4, required=2.6.4, status=skipped"
-        local package=$(echo "$summary_line" | cut -d':' -f1)
-        local system_version=$(echo "$summary_line" | sed -n 's/.*system=\([^,]*\).*/\1/p')
-        local required_version=$(echo "$summary_line" | sed -n 's/.*required=\([^,]*\).*/\1/p')
-        local status=$(echo "$summary_line" | sed -n 's/.*status=\([^,]*\).*/\1/p')
+        local package
+        package=$(echo "$summary_line" | cut -d':' -f1)
+        local system_version
+        system_version=$(echo "$summary_line" | sed -n 's/.*system=\([^,]*\).*/\1/p')
+        local required_version
+        required_version=$(echo "$summary_line" | sed -n 's/.*required=\([^,]*\).*/\1/p')
+        local status
+        status=$(echo "$summary_line" | sed -n 's/.*status=\([^,]*\).*/\1/p')
         local status_color=""
         if [[ "${status}" == "installed" ]]; then
             status_color="${GREEN}"
