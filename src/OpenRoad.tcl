@@ -191,6 +191,13 @@ proc write_3dbv { args } {
   ord::write_3dbv_cmd $filename
 }
 
+proc write_3dbx { args } {
+  sta::parse_key_args "write_3dbx" args keys {} flags {}
+  sta::check_argc_eq1 "write_3dbx" $args
+  set filename [file nativename [lindex $args 0]]
+  ord::write_3dbx_cmd $filename
+}
+
 sta::define_cmd_args "read_3dbx" {filename}
 
 proc read_3dbx { args } {
