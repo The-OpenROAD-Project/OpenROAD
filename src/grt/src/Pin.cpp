@@ -192,11 +192,7 @@ bool Pin::isCorePin() const
   }
 
   odb::dbInst* inst = iterm->getInst();
-  if (inst->getMaster()->isCore()) {
-    return true;
-  }
-
-  return false;
+  return inst->isCore();;
 }
 
 }  // namespace grt
