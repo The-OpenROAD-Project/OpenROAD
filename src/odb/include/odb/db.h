@@ -1125,7 +1125,7 @@ class dbBlock : public dbObject
   ///
   /// Set the core area.
   ///
-  void setCoreArea(const Rect& new_rect);
+  void setCoreArea(const Rect& new_area);
 
   ///
   /// Set the core area with polygon. Allows for non-rectangular floorplans
