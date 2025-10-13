@@ -9,6 +9,28 @@ package(
 )
 
 cc_library(
+    name = "nangate45_fixture",
+    hdrs = ["include/tst/nangate45_fixture.h"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    includes = ["."],
+    visibility = ["//visibility:public"],
+    deps = [":tst"],
+)
+
+cc_library(
+    name = "sky130_fixture",
+    hdrs = ["include/tst/sky130_fixture.h"],
+    data = [
+        "//test:sky130hd_data",
+    ],
+    includes = ["."],
+    visibility = ["//visibility:public"],
+    deps = [":tst"],
+)
+
+cc_library(
     name = "tst",
     srcs = [
         "src/fixture.cpp",

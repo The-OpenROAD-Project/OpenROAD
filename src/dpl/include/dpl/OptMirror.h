@@ -16,7 +16,6 @@ class Logger;
 
 namespace dpl {
 
-using odb::dbInst;
 using odb::dbNet;
 
 using utl::Logger;
@@ -53,15 +52,15 @@ class OptimizeMirroring
   void run();
 
  private:
-  int mirrorCandidates(std::vector<dbInst*>& mirror_candidates);
+  int mirrorCandidates(std::vector<odb::dbInst*>& mirror_candidates);
   void findNetBoxes();
-  std::vector<dbInst*> findMirrorCandidates(NetBoxes& net_boxes);
+  std::vector<odb::dbInst*> findMirrorCandidates(NetBoxes& net_boxes);
 
-  void updateNetBoxes(dbInst* inst);
-  void saveNetBoxes(dbInst* inst);
-  void restoreNetBoxes(dbInst* inst);
+  void updateNetBoxes(odb::dbInst* inst);
+  void saveNetBoxes(odb::dbInst* inst);
+  void restoreNetBoxes(odb::dbInst* inst);
 
-  int64_t hpwl(dbInst* inst);  // Sum of ITerm hpwl's.
+  int64_t hpwl(odb::dbInst* inst);  // Sum of ITerm hpwl's.
 
   Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;

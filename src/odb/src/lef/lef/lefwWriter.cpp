@@ -39,6 +39,7 @@
 #include <ctime>
 
 #include "crypt.hpp"
+#include "lefiKRDefs.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE
 

@@ -1,12 +1,13 @@
+#include <filesystem>
 #include <fstream>
 #include <ios>
 #include <string>
 #include <vector>
 
-#include "env.h"
 #include "gtest/gtest.h"
 #include "helper.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 
 namespace odb {
 namespace {
@@ -28,7 +29,8 @@ TEST_F(SimpleDbFixture, test_default)
   ap->setHighType(dbAccessType::HalfGrid);
   ap->setAccess(true, dbDirection::DOWN);
   iterm->setAccessPoint(pin, ap);
-  std::string path = testTmpPath("results", "TestAccessPointDbRW");
+  std::filesystem::create_directory("results");
+  std::string path = "results/TestAccessPointDbRW";
   std::ofstream write;
   write.exceptions(std::ifstream::failbit | std::ifstream::badbit
                    | std::ios::eofbit);

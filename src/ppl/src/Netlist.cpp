@@ -73,7 +73,7 @@ int Netlist::numIOPins()
   return io_pins_.size();
 }
 
-odb::Rect Netlist::getBB(int idx, const Point& slot_pos)
+odb::Rect Netlist::getBB(int idx, const odb::Point& slot_pos)
 {
   int net_start = net_pointer_[idx];
   int net_end = net_pointer_[idx + 1];
@@ -84,21 +84,21 @@ odb::Rect Netlist::getBB(int idx, const Point& slot_pos)
   int max_y = slot_pos.y();
 
   for (int idx = net_start; idx < net_end; ++idx) {
-    Point pos = inst_pins_[idx].getPos();
+    odb::Point pos = inst_pins_[idx].getPos();
     min_x = std::min(min_x, pos.x());
     max_x = std::max(max_x, pos.x());
     min_y = std::min(min_y, pos.y());
     max_y = std::max(max_y, pos.y());
   }
 
-  Point upper_bounds = Point(max_x, max_y);
-  Point lower_bounds = Point(min_x, min_y);
+  odb::Point upper_bounds = odb::Point(max_x, max_y);
+  odb::Point lower_bounds = odb::Point(min_x, min_y);
 
   odb::Rect net_b_box(lower_bounds, upper_bounds);
   return net_b_box;
 }
 
-int Netlist::computeIONetHPWL(int idx, const Point& slot_pos)
+int Netlist::computeIONetHPWL(int idx, const odb::Point& slot_pos)
 {
   int net_start = net_pointer_[idx];
   int net_end = net_pointer_[idx + 1];
@@ -109,7 +109,7 @@ int Netlist::computeIONetHPWL(int idx, const Point& slot_pos)
   int max_y = slot_pos.y();
 
   for (int idx = net_start; idx < net_end; ++idx) {
-    Point pos = inst_pins_[idx].getPos();
+    odb::Point pos = inst_pins_[idx].getPos();
     min_x = std::min(min_x, pos.x());
     max_x = std::max(max_x, pos.x());
     min_y = std::min(min_y, pos.y());
@@ -122,7 +122,7 @@ int Netlist::computeIONetHPWL(int idx, const Point& slot_pos)
   return (x + y);
 }
 
-int Netlist::computeDstIOtoPins(int idx, const Point& slot_pos)
+int Netlist::computeDstIOtoPins(int idx, const odb::Point& slot_pos)
 {
   int net_start = net_pointer_[idx];
   int net_end = net_pointer_[idx + 1];
@@ -130,7 +130,7 @@ int Netlist::computeDstIOtoPins(int idx, const Point& slot_pos)
   int total_distance = 0;
 
   for (int idx = net_start; idx < net_end; ++idx) {
-    Point pin_pos = inst_pins_[idx].getPos();
+    odb::Point pin_pos = inst_pins_[idx].getPos();
     total_distance += std::abs(pin_pos.x() - slot_pos.x())
                       + std::abs(pin_pos.y() - slot_pos.y());
   }

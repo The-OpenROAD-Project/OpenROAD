@@ -63,12 +63,12 @@ void dbCreateNetUtil::setCurrentNet(dbNet* net)
   _currentNet = net;
 }
 
-dbInst* dbCreateNetUtil::createInst(dbInst* inst0)
+odb::dbInst* dbCreateNetUtil::createInst(odb::dbInst* inst0)
 {
   char instName[64];
   sprintf(instName, "N%d", inst0->getId());
 
-  dbInst* inst = dbInst::create(_block, inst0->getMaster(), instName);
+  odb::dbInst* inst = odb::dbInst::create(_block, inst0->getMaster(), instName);
   if (inst == nullptr) {
     return nullptr;
   }
@@ -81,7 +81,7 @@ dbInst* dbCreateNetUtil::createInst(dbInst* inst0)
   return inst;
 }
 
-void dbCreateNetUtil::setBlock(dbBlock* block, bool skipInit)
+void dbCreateNetUtil::setBlock(odb::dbBlock* block, bool skipInit)
 {
   _block = block;
   if (skipInit) {

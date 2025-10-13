@@ -23,6 +23,7 @@
 #include "frDesign.h"
 #include "global.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace odb {
@@ -153,7 +154,7 @@ class Parser
   odb::dbTechLayer* masterSliceLayer_;
   frOrderedIdMap<
       frMaster*,
-      std::map<dbOrientType,
+      std::map<odb::dbOrientType,
                std::map<std::vector<frCoord>, frOrderedIdSet<frInst*>>>>
       trackOffsetMap_;
   std::vector<frTrackPattern*> prefTrackPatterns_;

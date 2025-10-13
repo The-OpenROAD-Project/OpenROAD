@@ -515,15 +515,115 @@ void ICeWall::placeCorner(odb::dbMaster* master, int ring_index)
 
     const std::string corner_name = fmt::format("{}_INST", row->getName());
     odb::dbInst* inst = block->findInst(corner_name.c_str());
-    if (inst == nullptr) {
-      inst = odb::dbInst::create(block, master, corner_name.c_str());
-    }
 
     const odb::Rect row_bbox = row->getBBox();
+
+    // Check for instances overlapping the corner site
+    bool place_inst = true;
+    std::set<odb::dbInst*> covers;
+    for (auto* check_inst : block->getInsts()) {
+      if (check_inst == inst) {
+        continue;
+      }
+      if (!check_inst->isFixed()) {
+        continue;
+      }
+      if (check_inst->getMaster()->isCover()) {
+        covers.insert(check_inst);
+        continue;
+      }
+      const odb::Rect check_rect = check_inst->getBBox()->getBox();
+      if (row_bbox.overlaps(check_rect)) {
+        place_inst = false;
+        break;
+      }
+    }
+    if (!place_inst) {
+      logger_->warn(
+          utl::PAD,
+          44,
+          "Skipping corner cell placement in {} due to overlapping instances",
+          row->getName());
+      continue;
+    }
+
+    const bool create_inst = inst == nullptr;
+    if (create_inst) {
+      inst = odb::dbInst::create(block, master, corner_name.c_str());
+    }
 
     inst->setOrient(row->getOrient());
     inst->setLocation(row_bbox.xMin(), row_bbox.yMin());
     inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+
+    // Check if inst overlaps with bumps
+    std::map<odb::dbTechLayer*, std::set<odb::Rect>> check_shapes;
+    if (!covers.empty()) {
+      // populate map as needed
+      const auto xform = inst->getTransform();
+      for (auto* obs : inst->getMaster()->getObstructions()) {
+        odb::Rect obs_rect = obs->getBox();
+        xform.apply(obs_rect);
+        check_shapes[obs->getTechLayer()].insert(obs_rect);
+      }
+      for (auto* iterm : inst->getITerms()) {
+        for (const auto& [layer, box] : iterm->getGeometries()) {
+          check_shapes[layer].insert(box);
+        }
+      }
+    }
+
+    bool remove = false;
+    for (auto* check_inst : covers) {
+      const auto xform = check_inst->getTransform();
+      for (auto* obs : check_inst->getMaster()->getObstructions()) {
+        odb::Rect obs_rect = obs->getBox();
+        xform.apply(obs_rect);
+        for (const auto& inst_rect : check_shapes[obs->getTechLayer()]) {
+          if (inst_rect.intersects(obs_rect)) {
+            remove = true;
+            break;
+          }
+        }
+      }
+      if (remove) {
+        break;
+      }
+      for (auto* iterm : check_inst->getITerms()) {
+        for (const auto& [layer, box] : iterm->getGeometries()) {
+          for (const auto& inst_rect : check_shapes[layer]) {
+            if (inst_rect.intersects(box)) {
+              remove = true;
+              break;
+            }
+          }
+        }
+        if (remove) {
+          break;
+        }
+      }
+      if (remove) {
+        break;
+      }
+    }
+
+    if (remove) {
+      if (create_inst) {
+        logger_->warn(utl::PAD,
+                      45,
+                      "Skipping corner cell generation for {} due to "
+                      "overlapping bump cell",
+                      inst->getName());
+        odb::dbInst::destroy(inst);
+      } else {
+        logger_->warn(utl::PAD,
+                      46,
+                      "Skipping corner cell placement for {} due to "
+                      "overlapping bump cell",
+                      inst->getName());
+        inst->setPlacementStatus(odb::dbPlacementStatus::UNPLACED);
+      }
+    }
   }
 }
 

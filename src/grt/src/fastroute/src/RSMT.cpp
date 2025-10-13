@@ -4,12 +4,14 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <map>
 #include <tuple>
 #include <vector>
 
 #include "AbstractFastRouteRenderer.h"
 #include "DataType.h"
 #include "FastRoute.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -115,6 +117,17 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
       logger_->error(GRT, 188, "Invalid number of node neighbors.");
     }
   }
+
+  // Map the node indices to the pin indices of the net
+  std::map<odb::Point, int> pos_count;
+  for (int i = 0; i < d; i++) {
+    odb::Point pos{treenodes[i].x, treenodes[i].y};
+    pos_count[pos]++;
+    const int pin_idx = nets_[ind]->getPinIdxFromPosition(
+        treenodes[i].x, treenodes[i].y, pos_count[pos]);
+    sttrees_[ind].node_to_pin_idx[i] = pin_idx;
+  }
+
   // Copy num neighbors
   for (int i = 0; i < numnodes; i++) {
     treenodes[i].nbr_count = nbrcnt[i];

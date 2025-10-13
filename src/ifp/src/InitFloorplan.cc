@@ -467,10 +467,6 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
                                         const int core_ux,
                                         const int core_uy)
 {
-  // The unit for power_domain_y_space is the site height. The real space is
-  // power_domain_y_space * site_dy
-  const int power_domain_y_space = 6;
-
   // checks if a group is defined as a voltage domain, if so it creates a region
   for (dbGroup* group : block_->getGroups()) {
     if (group->getType() == dbGroupType::VOLTAGE_DOMAIN
@@ -499,7 +495,28 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
 
       int total_row_count = rows.size();
 
+      // Search the minimum site width & height as base unit for snapping and
+      // gap calculation
+      int min_site_dx = std::numeric_limits<int>::max();
+      int min_site_dy = std::numeric_limits<int>::max();
       std::vector<dbRow*>::iterator row_itr = rows.begin();
+      for (int row_processed = 0; row_processed < total_row_count;
+           row_processed++) {
+        dbRow* row = *row_itr;
+        auto site = row->getSite();
+        int site_dy = site->getHeight();
+        if (site_dy < min_site_dy) {
+          min_site_dy = site_dy;
+        }
+        int site_dx = site->getWidth();
+        if (site_dx < min_site_dx) {
+          min_site_dx = site_dx;
+        }
+      }
+      // Space is 6 times the minimum site height
+      const int power_domain_y_space = 6 * min_site_dy;
+
+      row_itr = rows.begin();
       for (int row_processed = 0; row_processed < total_row_count;
            row_processed++) {
         dbRow* row = *row_itr;
@@ -508,17 +525,18 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
         int row_y_max = row_bbox.yMax();
         auto site = row->getSite();
 
-        int site_dy = site->getHeight();
         int site_dx = site->getWidth();
 
         // snap inward to site grid
-        domain_x_min = odb::makeSiteLoc(domain_x_min, site_dx, false, 0);
-        domain_x_max = odb::makeSiteLoc(domain_x_max, site_dx, true, 0);
+        domain_x_min = odb::makeSiteLoc(domain_x_min, min_site_dx, false, 0);
+        domain_x_max = odb::makeSiteLoc(domain_x_max, min_site_dx, true, 0);
+        domain_y_min = odb::makeSiteLoc(domain_y_min, min_site_dy, false, 0);
+        domain_y_max = odb::makeSiteLoc(domain_y_max, min_site_dy, true, 0);
 
         // check if the rows overlapped with the area of a defined voltage
         // domains + margin
-        if (row_y_max + power_domain_y_space * site_dy <= domain_y_min
-            || row_y_min >= domain_y_max + power_domain_y_space * site_dy) {
+        if (row_y_max + power_domain_y_space <= domain_y_min
+            || row_y_min >= domain_y_max + power_domain_y_space) {
           row_itr++;
         } else {
           string row_name = row->getName();
@@ -527,7 +545,7 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
           row_itr++;
 
           // lcr stands for left core row
-          int lcr_x_max = domain_x_min - power_domain_y_space * site_dy;
+          int lcr_x_max = domain_x_min - power_domain_y_space;
           // in case there is at least one valid site width on the left, create
           // left core rows
           if (lcr_x_max > core_lx + site_dx) {
@@ -552,11 +570,7 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
           }
 
           // rcr stands for right core row
-          // rcr_dx_site_number is the max number of site_dx that is less than
-          // power_domain_y_space * site_dy. This helps align the rcr_x_min on
-          // the multiple of site_dx.
-          int rcr_dx_site_number = (power_domain_y_space * site_dy) / site_dx;
-          int rcr_x_min = domain_x_max + rcr_dx_site_number * site_dx;
+          int rcr_x_min = domain_x_max + power_domain_y_space;
           // snap to the site grid rightward
           rcr_x_min = odb::makeSiteLoc(rcr_x_min, site_dx, false, 0);
 

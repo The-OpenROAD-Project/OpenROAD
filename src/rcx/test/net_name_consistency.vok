@@ -1,0 +1,26 @@
+module top ();
+
+ wire w0;
+ wire w1;
+ wire mid;
+
+ INV_X1 leaf (.A(w0),
+    .ZN(mid));
+ INV_X1 load0 (.A(w0));
+ INV_X1 load1 (.A(w1));
+ block b (.i(mid),
+    .o({w1,
+    w0}));
+endmodule
+module block (i,
+    o);
+ input i;
+ output [1:0] o;
+
+ wire net2;
+
+ LOGIC0_X1 leaf_2 (.Z(net2));
+ LOGIC0_X1 buf0_1 (.Z(o[1]));
+ INV_X1 leaf (.A(net2),
+    .ZN(o[0]));
+endmodule

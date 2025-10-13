@@ -7,6 +7,7 @@
 #include <QDesktopServices>
 #include <QDialog>
 #include <QPushButton>
+#include <QSize>
 #include <QWidget>
 #include <algorithm>
 #include <any>

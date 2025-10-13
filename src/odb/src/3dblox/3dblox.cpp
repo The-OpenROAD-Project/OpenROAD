@@ -77,8 +77,19 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   for (const auto& [_, connection] : data.connections) {
     createConnection(connection);
   }
-
+  calculateSize(db_->getChip());
   db_->triggerPostRead3Dbx(chip);
+}
+
+void ThreeDBlox::calculateSize(dbChip* chip)
+{
+  Rect box;
+  box.mergeInit();
+  for (auto inst : chip->getChipInsts()) {
+    box.merge(inst->getBBox());
+  }
+  chip->setWidth(box.dx());
+  chip->setHeight(box.dy());
 }
 
 void ThreeDBlox::readHeaderIncludes(const std::vector<std::string>& includes)

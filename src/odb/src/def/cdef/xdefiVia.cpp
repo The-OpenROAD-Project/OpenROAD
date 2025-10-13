@@ -35,6 +35,7 @@
 
 #include <cstdio>
 
+#include "defiMisc.hpp"
 #include "defiVia.h"
 #include "defiVia.hpp"
 
