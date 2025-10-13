@@ -371,18 +371,19 @@ void FastRouteCore::fixEdgeAssignment(int& net_layer,
                                       const int l,
                                       const bool vertical,
                                       int& best_cost,
-                                      multi_array<int, 2>& layer_grid)
+                                      multi_array<int, 2>& layer_grid,
+                                      const int net_cost)
 {
   const bool is_vertical
       = layer_directions_[l] == odb::dbTechLayerDir::VERTICAL;
   // if layer direction doesn't match edge direction or
   // if already found a layer for the edge, ignores the remaining layers
-  if (is_vertical != vertical || best_cost > 0) {
+  if (is_vertical != vertical || best_cost > net_cost - 1) {
     layer_grid[l][k] = std::numeric_limits<int>::min();
   } else {
     layer_grid[l][k] = edges_3D[l][y][x].cap - edges_3D[l][y][x].usage;
     best_cost = std::max(best_cost, layer_grid[l][k]);
-    if (best_cost > 0) {
+    if (best_cost > net_cost - 1) {
       // set the new min/max routing layer for the net to avoid
       // errors during mazeRouteMSMDOrder3D
       net_layer = l;
@@ -458,6 +459,7 @@ void FastRouteCore::assignEdge(const int netID,
   int endLayer = 0;
 
   FrNet* net = nets_[netID];
+  const int net_cost = net->getEdgeCost();
   auto& treeedges = sttrees_[netID].edges;
   auto& treenodes = sttrees_[netID].nodes;
   TreeEdge* treeedge = &(treeedges[edgeID]);
@@ -506,7 +508,7 @@ void FastRouteCore::assignEdge(const int netID,
       // assigning the edge to the layer range would cause overflow try to
       // assign the edge to the closest layer below the min routing layer.
       // if design has 2D overflow, accept the congestion in layer assignment
-      if (best_cost <= 0 && !has_2D_overflow_) {
+      if (best_cost <= net_cost - 1 && !has_2D_overflow_) {
         int min_layer = net->getMinLayer();
         for (int l = net->getMinLayer() - 1; l >= 0; l--) {
           fixEdgeAssignment(min_layer,
@@ -517,7 +519,8 @@ void FastRouteCore::assignEdge(const int netID,
                             l,
                             true,
                             best_cost,
-                            layer_grid);
+                            layer_grid,
+                            net_cost);
         }
         net->setMinLayer(min_layer);
         // try to assign the edge to the closest layer above the max routing
@@ -532,7 +535,8 @@ void FastRouteCore::assignEdge(const int netID,
                             l,
                             true,
                             best_cost,
-                            layer_grid);
+                            layer_grid,
+                            net_cost);
         }
         net->setMaxLayer(max_layer);
       } else {  // the edge was assigned to a layer without causing overflow
@@ -561,7 +565,7 @@ void FastRouteCore::assignEdge(const int netID,
       // assigning the edge to the layer range would cause overflow try to
       // assign the edge to the closest layer below the min routing layer.
       // if design has 2D overflow, accept the congestion in layer assignment
-      if (best_cost <= 0 && !has_2D_overflow_) {
+      if (best_cost <= net_cost - 1 && !has_2D_overflow_) {
         int min_layer = net->getMinLayer();
         for (int l = net->getMinLayer() - 1; l >= 0; l--) {
           fixEdgeAssignment(min_layer,
@@ -572,7 +576,8 @@ void FastRouteCore::assignEdge(const int netID,
                             l,
                             false,
                             best_cost,
-                            layer_grid);
+                            layer_grid,
+                            net_cost);
         }
         net->setMinLayer(min_layer);
         // try to assign the edge to the closest layer above the max routing
@@ -587,7 +592,8 @@ void FastRouteCore::assignEdge(const int netID,
                             l,
                             false,
                             best_cost,
-                            layer_grid);
+                            layer_grid,
+                            net_cost);
         }
         net->setMaxLayer(max_layer);
       } else {  // the edge was assigned to a layer without causing overflow
@@ -1069,7 +1075,6 @@ void FastRouteCore::layerAssignment()
   }
 
   layerAssignmentV4();
-
   ConvertToFull3DType2();
 }
 
