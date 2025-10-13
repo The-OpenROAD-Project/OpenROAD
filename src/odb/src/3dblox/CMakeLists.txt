@@ -15,6 +15,7 @@ target_link_libraries(3dblox
     db
     utl_lib
     yaml-cpp
+    OpenSTA
 )
 
 target_include_directories(3dblox
