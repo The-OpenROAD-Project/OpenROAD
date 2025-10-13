@@ -1153,6 +1153,7 @@ main() {
                 os_id=$(awk -F= '/^ID/{print $2}' /etc/os-release | sed 's/"//g')
                 local arch
                 arch=$(uname -m)
+                local or_tools_arch=${arch}
                 local or_tools_distro=""
                 local or_tools_version=""
                 if [[ "${rhel_version}" == "8" ]]; then
@@ -1163,14 +1164,17 @@ main() {
                     fi
                 elif [[ "${rhel_version}" == "9" ]]; then
                     or_tools_version="9"
+                    if [[ "${arch}" == "x86_64" ]]; then
+                        or_tools_arch="amd64"
+                    fi
                     if [[ "${os_id}" == "almalinux" || "${os_id}" == "rocky" ]]; then
-                        or_tools_distro="${os_id^}" # Capitalize first letter
+                        or_tools_distro="${os_id}"
                     else
                         or_tools_distro="rockylinux"
                         warn "Defaulting to rockylinux or-tools package for RHEL 9 compatible system."
                     fi
                 fi
-                _install_or_tools "${or_tools_distro}" "${or_tools_version}" "${arch}" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_or_tools "${or_tools_distro}" "${or_tools_version}" "${or_tools_arch}" "${SKIP_SYSTEM_OR_TOOLS}"
             fi
             ;;
         "Darwin")
