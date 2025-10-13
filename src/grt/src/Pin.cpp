@@ -187,11 +187,7 @@ odb::Point Pin::getPositionNearInstEdge(const odb::Rect& pin_box,
 
 bool Pin::isCorePin() const
 {
-  if (is_port_) {
-    return false;
-  }
-
-  if (connected_to_pad_or_macro_) {
+  if (iterm == nullptr) {
     return false;
   }
 
