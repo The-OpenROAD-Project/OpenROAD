@@ -146,9 +146,9 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     odb::lefin lef_reader(db_, logger_, false);
     tech = db_->findTech(tech_name.c_str());
     if (tech == nullptr) {
-      auto lib = lef_reader.createTechAndLib(
+      lef_reader.createTechAndLib(
           tech_name.c_str(), tech_name.c_str(), tech_file.c_str());
-      tech = lib->getTech();
+      tech = db_->findTech(tech_name.c_str());
     }
   }
   // Read LEF files
