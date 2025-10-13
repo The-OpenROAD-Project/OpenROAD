@@ -934,8 +934,14 @@ bool GlobalRouter::findPinAccessPointPositions(
       access_points.insert(
           access_points.begin(), bpin_pas.begin(), bpin_pas.end());
     }
-  } else {
+  } else if (pin.isCorePin()) {
     access_points = pin.getITerm()->getPrefAccessPoints();
+  } else {
+    // For non-core cells, DRT does not assign preferred APs.
+    // Use all APs to ensure the guides covering at least one AP.
+    for (const auto& [pin, aps] : pin.getITerm()->getAccessPoints()) {
+      access_points.insert(access_points.end(), aps.begin(), aps.end());
+    }
   }
 
   if (access_points.empty()) {
