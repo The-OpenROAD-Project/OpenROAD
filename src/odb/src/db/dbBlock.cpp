@@ -2332,6 +2332,7 @@ const std::vector<Rect>& dbBlock::getBlockedRegionsForPins()
 Polygon dbBlock::computeCoreArea()
 {
   std::vector<odb::Rect> rows;
+  rows.reserve(getRows().size());
   for (dbRow* row : getRows()) {
     if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
       rows.push_back(row->getBBox());
