@@ -192,6 +192,7 @@ class dbBlockCallBackObj
   virtual void inDbBlockStreamOutAfter(dbBlock*) {}
   virtual void inDbBlockReadNetsBefore(dbBlock*) {}
   virtual void inDbBlockSetDieArea(dbBlock*) {}
+  virtual void inDbBlockSetCoreArea(dbBlock*) {}
 
   // allow ECO client initialization - payam
   virtual dbBlockCallBackObj& operator()() { return *this; }
