@@ -1109,7 +1109,8 @@ main() {
                 _install_common_dev
                 local ubuntu_version_normalized=${ubuntu_version}
                 if _version_compare "${ubuntu_version_normalized}" -ge "25.04"; then
-                    ubuntu_version_normalized="25.04"
+                    # FIXME make do with or-tools for 24.10 until an official release for 25.04 is available
+                    ubuntu_version_normalized="24.10"
                 elif _version_compare "${ubuntu_version_normalized}" -ge "24.04"; then
                     ubuntu_version_normalized="24.04"
                 elif _version_compare "${ubuntu_version_normalized}" -ge "22.04"; then
@@ -1137,12 +1138,28 @@ main() {
             fi
             if [[ "${option}" == "common" || "${option}" == "all" ]]; then
                 _install_common_dev
+                local os_id
+                os_id=$(awk -F= '/^ID/{print $2}' /etc/os-release | sed 's/"//g')
+                local arch
+                arch=$(uname -m)
+                local or_tools_distro=""
+                local or_tools_version=""
                 if [[ "${rhel_version}" == "8" ]]; then
-                    _install_or_tools "AlmaLinux" "8.10" "x86_64" "${SKIP_SYSTEM_OR_TOOLS}"
+                    or_tools_distro="AlmaLinux"
+                    or_tools_version="8.10"
+                    if [[ "${os_id}" != "almalinux" ]]; then
+                        warn "Using AlmaLinux or-tools package for RHEL 8 compatible system."
+                    fi
+                elif [[ "${rhel_version}" == "9" ]]; then
+                    or_tools_version="9"
+                    if [[ "${os_id}" == "almalinux" || "${os_id}" == "rocky" ]]; then
+                        or_tools_distro="${os_id^}" # Capitalize first letter
+                    else
+                        or_tools_distro="rockylinux"
+                        warn "Defaulting to rockylinux or-tools package for RHEL 9 compatible system."
+                    fi
                 fi
-                if [[ "${rhel_version}" == "9" ]]; then
-                    _install_or_tools "rockylinux" "9" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
-                fi
+                _install_or_tools "${or_tools_distro}" "${or_tools_version}" "${arch}" "${SKIP_SYSTEM_OR_TOOLS}"
             fi
             ;;
         "Darwin")
