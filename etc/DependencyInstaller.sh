@@ -1200,6 +1200,9 @@ EOF
 }
 
 _print_summary() {
+    if [ ${#INSTALL_SUMMARY[@]} -eq 0 ]; then
+        return
+    fi
     echo ""
     log "Installation Summary"
     echo "${BOLD}====================================================================================${NC}"
