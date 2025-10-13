@@ -270,6 +270,47 @@ class frBlock : public frBlockObject
     }
     return odb::Point(idxX, idxY);
   }
+
+  std::vector<odb::Point> getGCellIndices(const odb::Point& pt) const
+  {
+    auto& gp = getGCellPatterns();
+    auto& xgp = gp[0];
+    auto& ygp = gp[1];
+    frCoord coord_x = pt.x() - xgp.getStartCoord();
+    frCoord coord_y = pt.y() - ygp.getStartCoord();
+    if (coord_x < 0) {
+      coord_x = 0;
+    }
+    if (coord_x >= (frCoord) xgp.getSpacing() * xgp.getCount()) {
+      coord_x = ((frCoord) xgp.getSpacing() - 1) * xgp.getCount();
+    }
+    if (coord_y < 0) {
+      coord_y = 0;
+    }
+    if (coord_y >= (frCoord) ygp.getSpacing() * ygp.getCount()) {
+      coord_y = ((frCoord) ygp.getSpacing() - 1) * ygp.getCount();
+    }
+
+    frCoord base_idxX = coord_x / (frCoord) xgp.getSpacing();
+    frCoord base_idxY = coord_y / (frCoord) ygp.getSpacing();
+    std::set<frCoord> x_indices{base_idxX};
+    std::set<frCoord> y_indices{base_idxY};
+    // TODO: handle case where gcell size is 1 unit
+    if (coord_x % xgp.getSpacing() == 0 && base_idxX != 0) {
+      x_indices.insert(base_idxX - 1);
+    }
+    if (coord_y % ygp.getSpacing() == 0 && base_idxY != 0) {
+      y_indices.insert(base_idxY - 1);
+    }
+    std::vector<odb::Point> sol;
+    for (auto& x : x_indices) {
+      for (auto& y : y_indices) {
+        sol.push_back(odb::Point(x, y));
+      }
+    }
+    return sol;
+  }
+
   bool isValidGCellIdx(const odb::Point& pt) const
   {
     const auto& gp = getGCellPatterns();

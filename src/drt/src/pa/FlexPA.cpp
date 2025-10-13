@@ -184,9 +184,6 @@ void FlexPA::updateDirtyInsts()
   for (auto& inst_row : inst_rows) {
     genInstRowPattern(inst_row);
   }
-  for (auto& inst : processed_insts) {
-    inst->setHasPinAccessUpdate(true);
-  }
   dirty_insts_.clear();
 }
 

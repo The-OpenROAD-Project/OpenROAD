@@ -1242,6 +1242,7 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
             std::unique_ptr<frAccessPoint> ap
                 = std::make_unique<frAccessPoint>();
             updatefrAccessPoint(db_ap, ap.get(), getTech());
+            ap->setDbAccessPoint(db_ap);
             ap_map[db_ap] = ap.get();
             pa->addAccessPoint(std::move(ap));
           }
