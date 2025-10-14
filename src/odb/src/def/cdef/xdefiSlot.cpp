@@ -35,6 +35,7 @@
 
 #include <cstdio>
 
+#include "defiMisc.hpp"
 #include "defiSlot.h"
 #include "defiSlot.hpp"
 

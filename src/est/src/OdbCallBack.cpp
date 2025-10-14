@@ -43,7 +43,7 @@ OdbCallBack::OdbCallBack(est::EstimateParasitics* estimate_parasitics,
 {
 }
 
-void OdbCallBack::inDbInstCreate(dbInst* inst)
+void OdbCallBack::inDbInstCreate(odb::dbInst* inst)
 {
   debugPrint(estimate_parasitics_->getLogger(),
              utl::EST,
@@ -63,7 +63,7 @@ void OdbCallBack::inDbInstCreate(dbInst* inst)
   }
 }
 
-void OdbCallBack::inDbNetCreate(dbNet* net)
+void OdbCallBack::inDbNetCreate(odb::dbNet* net)
 {
   debugPrint(estimate_parasitics_->getLogger(),
              utl::EST,
@@ -74,7 +74,7 @@ void OdbCallBack::inDbNetCreate(dbNet* net)
   estimate_parasitics_->parasiticsInvalid(net);
 }
 
-void OdbCallBack::inDbNetDestroy(dbNet* net)
+void OdbCallBack::inDbNetDestroy(odb::dbNet* net)
 {
   debugPrint(estimate_parasitics_->getLogger(),
              utl::EST,
@@ -96,13 +96,13 @@ void OdbCallBack::inDbITermPostConnect(dbITerm* iterm)
              1,
              "inDbITermPostConnect iterm {}",
              iterm->getName());
-  dbNet* db_net = iterm->getNet();
+  odb::dbNet* db_net = iterm->getNet();
   if (db_net) {
     estimate_parasitics_->parasiticsInvalid(db_net);
   }
 }
 
-void OdbCallBack::inDbITermPostDisconnect(dbITerm* iterm, dbNet* net)
+void OdbCallBack::inDbITermPostDisconnect(dbITerm* iterm, odb::dbNet* net)
 {
   debugPrint(estimate_parasitics_->getLogger(),
              utl::EST,
@@ -114,7 +114,7 @@ void OdbCallBack::inDbITermPostDisconnect(dbITerm* iterm, dbNet* net)
   estimate_parasitics_->parasiticsInvalid(net);
 }
 
-void OdbCallBack::inDbInstSwapMasterAfter(dbInst* inst)
+void OdbCallBack::inDbInstSwapMasterAfter(odb::dbInst* inst)
 {
   debugPrint(estimate_parasitics_->getLogger(),
              utl::EST,

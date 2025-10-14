@@ -13,6 +13,7 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/geom.h"
+#include "rcx/dbUtil.h"
 #include "rcx/extPattern.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"

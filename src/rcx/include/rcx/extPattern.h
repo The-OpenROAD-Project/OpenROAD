@@ -157,8 +157,8 @@ class extPattern
   static float GetRoundedInt(float v, float mult, int);
   static int GetRoundedInt(int v, float mult, int);
   uint createNetSingleWire(char* netName, int ll[2], int ur[2], int level);
-  bool RenameBterm1stInput(dbNet* net);
-  bool RenameAllBterms(dbNet* net);
+  bool RenameBterm1stInput(odb::dbNet* net);
+  bool RenameAllBterms(odb::dbNet* net);
 
   void PatternEnd(extWirePattern* mainp, int max_ur[2], uint spacingMult);
   static void PrintStats(uint cnt,

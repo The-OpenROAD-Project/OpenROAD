@@ -33,6 +33,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "lefiKRDefs.hpp"
 #include "lefrData.hpp"
 #include "lefrReader.hpp"
 #include "lefrSettings.hpp"

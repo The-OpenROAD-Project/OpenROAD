@@ -37,6 +37,7 @@
 
 #include "defiFill.h"
 #include "defiFill.hpp"
+#include "defiMisc.hpp"
 
 union udefiPoints
 {

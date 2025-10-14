@@ -378,7 +378,7 @@ class extMetRCTable
                                extDistWidthRCTable* table,
                                const char* keyword);
   // dkf 12272023
-  bool GetViaRes(Ath__parser* p, Ath__parser* w, dbNet* net, FILE* logFP);
+  bool GetViaRes(Ath__parser* p, Ath__parser* w, odb::dbNet* net, FILE* logFP);
   extViaModel* addViaModel(char* name,
                            double R,
                            uint cCnt,
@@ -392,7 +392,7 @@ class extMetRCTable
   void writeViaRes(FILE* fp);
   bool ReadRules(Ath__parser* p);
   // dkf 12302023
-  bool SkipPattern(Ath__parser* p, dbNet* net, FILE* logFP);
+  bool SkipPattern(Ath__parser* p, odb::dbNet* net, FILE* logFP);
   // dkf 01022024
   uint SetDefaultTechViaRes(dbTech* tech, bool dbg);
   // ----------------------------------------------------------------------------------------
@@ -1749,11 +1749,12 @@ class extMain
 
   // CLEANUP dkf 10242024 ----------------------------------
   void makeBlockRCsegs_v2(const char* netNames, const char* extRules);
-  bool markNetsToExtract_v2(const char* netNames, std::vector<dbNet*>& inets);
+  bool markNetsToExtract_v2(const char* netNames,
+                            std::vector<odb::dbNet*>& inets);
 
   bool makeRCNetwork_v2();
   bool couplingExtEnd_v2();
-  void update_wireAltered_v2(std::vector<dbNet*>& inets);
+  void update_wireAltered_v2(std::vector<odb::dbNet*>& inets);
   void initSomeValues_v2();
   bool SetCornersAndReadModels_v2(const char* extRules);
   double getDbFactor_v2();
@@ -1763,27 +1764,27 @@ class extMain
                      uint* cornerTable);
 
   void setExtractionOptions_v2(ExtractOptions options);
-  uint makeNetRCsegs_v2(dbNet* net, bool skipStartWarning = false);
+  uint makeNetRCsegs_v2(odb::dbNet* net, bool skipStartWarning = false);
   uint resetMapNodes_v2(odb::dbWire* wire);
 
   uint getCapNodeId_v2(dbITerm* iterm, const uint junction);
   uint getCapNodeId_v2(dbBTerm* bterm, const uint junction);
-  uint getCapNodeId_v2(dbNet* net, const int junction, const bool branch);
-  uint getCapNodeId_v2(dbNet* net,
+  uint getCapNodeId_v2(odb::dbNet* net, const int junction, const bool branch);
+  uint getCapNodeId_v2(odb::dbNet* net,
                        odb::dbWirePath& path,
                        const uint junction,
                        bool branch);
-  uint getCapNodeId_v2(dbNet* net,
+  uint getCapNodeId_v2(odb::dbNet* net,
                        const odb::dbWirePathShape& pshape,
                        int junct_id,
                        bool branch);
-  void initJunctionIdMaps(dbNet* net);
+  void initJunctionIdMaps(odb::dbNet* net);
 
   void print_debug(const bool branch,
                    const uint junction,
                    uint capId,
                    const char* old_new);
-  odb::dbRSeg* addRSeg_v2(dbNet* net,
+  odb::dbRSeg* addRSeg_v2(odb::dbNet* net,
                           uint& srcId,
                           odb::Point& prevPoint,
                           const odb::dbWirePath& path,
@@ -1792,18 +1793,18 @@ class extMain
                           const double* restbl = nullptr,
                           const double* captbl = nullptr);
 
-  void loopWarning(dbNet* net, const odb::dbWirePathShape& pshape);
-  void getShapeRC_v2(dbNet* net,
+  void loopWarning(odb::dbNet* net, const odb::dbWirePathShape& pshape);
+  void getShapeRC_v2(odb::dbNet* net,
                      const dbShape& s,
                      odb::Point& prevPoint,
                      const odb::dbWirePathShape& pshape);
-  void getShapeRC_v3(dbNet* net,
+  void getShapeRC_v3(odb::dbNet* net,
                      const dbShape& s,
                      odb::Point& prevPoint,
                      const odb::dbWirePathShape& pshape);
-  double getViaRes_v2(dbNet* net, dbTechVia* tvia);
-  double getDbViaRes_v2(dbNet* net, const dbShape& s);
-  double getMetalRes_v2(dbNet* net,
+  double getViaRes_v2(odb::dbNet* net, dbTechVia* tvia);
+  double getDbViaRes_v2(odb::dbNet* net, const dbShape& s);
+  double getMetalRes_v2(odb::dbNet* net,
                         const dbShape& s,
                         const odb::dbWirePathShape& pshape);
   void setResAndCap_v2(odb::dbRSeg* rc,
@@ -1876,7 +1877,7 @@ class extMain
 
   uint couplingFlow_v2_opt(odb::Rect& extRect, uint ccFlag, extMeasure* m);
   uint couplingFlow_v2(odb::Rect& extRect, uint ccFlag, extMeasure* m);
-  void setBranchCapNodeId(dbNet* net, uint junction);
+  void setBranchCapNodeId(odb::dbNet* net, uint junction);
   void markPathHeadTerm(odb::dbWirePath& path);
 
   extSolverGen* getCurrentSolverGen() { return _currentSolverGen; }

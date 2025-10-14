@@ -29,6 +29,7 @@
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbVia.h"
+#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"

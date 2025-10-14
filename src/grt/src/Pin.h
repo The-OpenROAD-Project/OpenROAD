@@ -66,6 +66,7 @@ class Pin
   bool isDriver();
   odb::Point getPositionNearInstEdge(const odb::Rect& pin_box,
                                      const odb::Point& rect_middle) const;
+  bool isCorePin() const;
 
  private:
   void determineEdge(const odb::Rect& bounds,

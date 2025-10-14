@@ -35,6 +35,7 @@
 #include <filesystem>
 #include <system_error>
 
+#include "lefiKRDefs.hpp"
 #include "lefrSettings.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE

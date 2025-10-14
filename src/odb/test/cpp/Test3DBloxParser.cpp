@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 
+#include "gtest/gtest.h"
 #include "odb/3dblox.h"
 #include "odb/db.h"
 #include "odb/geom.h"
