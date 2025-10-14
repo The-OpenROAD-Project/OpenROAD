@@ -868,4 +868,24 @@ class DbBoxDescriptor : public BaseDbDescriptor<odb::dbBox>
   odb::dbTransform getTransform(const std::any& object) const;
 };
 
+class DbMasterEdgeTypeDescriptor
+    : public BaseDbDescriptor<odb::dbMasterEdgeType>
+{
+ public:
+  DbMasterEdgeTypeDescriptor(odb::dbDatabase* db);
+
+  std::string getName(const std::any& object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
+
+  void highlight(const std::any& object, Painter& painter) const override;
+
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
+
+ protected:
+  Properties getDBProperties(odb::dbMasterEdgeType* edge) const override;
+};
+
 };  // namespace gui

@@ -893,6 +893,14 @@ Descriptor::Properties DbMasterDescriptor::getDBProperties(
   props.push_back({"Instances", instances});
   props.push_back({"Origin", master->getOrigin()});
 
+  SelectionSet edge_types;
+  for (auto* edge : master->getEdgeTypes()) {
+    edge_types.insert(gui->makeSelected(edge));
+  }
+  if (!edge_types.empty()) {
+    props.push_back({"Edge Types", edge_types});
+  }
+
   auto liberty
       = sta_->getDbNetwork()->findLibertyCell(master->getName().c_str());
   if (liberty) {
@@ -5097,6 +5105,89 @@ odb::dbTransform DbBoxDescriptor::getTransform(const std::any& object) const
     return box_xform->xform;
   }
   return odb::dbTransform();
+}
+
+//////////////////////////////////////////////////
+
+DbMasterEdgeTypeDescriptor::DbMasterEdgeTypeDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbMasterEdgeType>(db)
+{
+}
+
+std::string DbMasterEdgeTypeDescriptor::getName(const std::any& object) const
+{
+  return getObject(object)->getEdgeType();
+}
+
+std::string DbMasterEdgeTypeDescriptor::getTypeName() const
+{
+  return "MasterEdgeType";
+}
+
+bool DbMasterEdgeTypeDescriptor::getBBox(const std::any& object,
+                                         odb::Rect& bbox) const
+{
+  return false;
+}
+
+void DbMasterEdgeTypeDescriptor::highlight(const std::any& object,
+                                           Painter& painter) const
+{
+}
+
+void DbMasterEdgeTypeDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
+{
+  for (auto* lib : db_->getLibs()) {
+    for (auto* master : lib->getMasters()) {
+      for (auto* edge : master->getEdgeTypes()) {
+        func({edge, this});
+      }
+    }
+  }
+}
+
+Descriptor::Properties DbMasterEdgeTypeDescriptor::getDBProperties(
+    odb::dbMasterEdgeType* edge) const
+{
+  Properties props;
+
+  if (edge->getCellRow() != -1) {
+    props.push_back({"Cell row", edge->getCellRow()});
+  }
+  if (edge->getHalfRow() != -1) {
+    props.push_back({"Half row", edge->getHalfRow()});
+  }
+
+  PropertyList range;
+  if (edge->getRangeBegin() != -1) {
+    range.push_back({"Begin", edge->getRangeBegin()});
+  }
+  if (edge->getRangeEnd() != -1) {
+    range.push_back({"End", edge->getRangeEnd()});
+  }
+  if (!range.empty()) {
+    props.push_back({"Range", range});
+  }
+
+  std::string edgedir;
+  switch (edge->getEdgeDir()) {
+    case odb::dbMasterEdgeType::TOP:
+      edgedir = "top";
+      break;
+    case odb::dbMasterEdgeType::RIGHT:
+      edgedir = "right";
+      break;
+    case odb::dbMasterEdgeType::LEFT:
+      edgedir = "left";
+      break;
+    case odb::dbMasterEdgeType::BOTTOM:
+      edgedir = "bottom";
+      break;
+  }
+  props.push_back({"Edge direction", edgedir});
+
+  return props;
 }
 
 }  // namespace gui
