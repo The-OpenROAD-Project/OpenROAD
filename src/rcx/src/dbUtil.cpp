@@ -349,7 +349,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
   net->setSigType(dbSigType::SIGNAL);
 
-  std::pair<dbBTerm*, dbBTerm*> blutrms;
+  std::pair<odb::dbBTerm*, odb::dbBTerm*> blutrms;
 
   if (!skipBterms) {
     blutrms = createTerms4SingleNet(
@@ -597,7 +597,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
   net->setSigType(dbSigType::SIGNAL);
 
-  std::pair<dbBTerm*, dbBTerm*> blutrms;
+  std::pair<odb::dbBTerm*, odb::dbBTerm*> blutrms;
 
   if (!skipBterms) {
     blutrms = createTerms4SingleNet(
@@ -649,7 +649,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   return net;
 }
 
-std::pair<dbBTerm*, dbBTerm*> dbCreateNetUtil::createTerms4SingleNet(
+std::pair<odb::dbBTerm*, odb::dbBTerm*> dbCreateNetUtil::createTerms4SingleNet(
     odb::dbNet* net,
     int x1,
     int y1,
@@ -657,13 +657,13 @@ std::pair<dbBTerm*, dbBTerm*> dbCreateNetUtil::createTerms4SingleNet(
     int y2,
     dbTechLayer* inly)
 {
-  std::pair<dbBTerm*, dbBTerm*> retpr;
+  std::pair<odb::dbBTerm*, odb::dbBTerm*> retpr;
   retpr.first = nullptr;
   retpr.second = nullptr;
 
   std::string term_str(net->getName());
   term_str = term_str + "_BL";
-  dbBTerm* blterm = dbBTerm::create(net, term_str.c_str());
+  odb::dbBTerm* blterm = odb::dbBTerm::create(net, term_str.c_str());
 
   uint dx = x2 - x1;
   uint dy = y2 - y1;
@@ -675,10 +675,10 @@ std::pair<dbBTerm*, dbBTerm*> dbCreateNetUtil::createTerms4SingleNet(
 
   term_str = net->getName();
   term_str = term_str + "_BU";
-  dbBTerm* buterm = dbBTerm::create(net, term_str.c_str());
+  odb::dbBTerm* buterm = odb::dbBTerm::create(net, term_str.c_str());
 
   if (!buterm) {
-    dbBTerm::destroy(blterm);
+    odb::dbBTerm::destroy(blterm);
     return retpr;
   }
 

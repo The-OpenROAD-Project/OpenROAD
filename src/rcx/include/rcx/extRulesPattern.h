@@ -176,15 +176,15 @@ class extRulesPat
   void WriteDB(uint jj, uint dir, uint met, odb::dbTechLayer* layer, FILE* fp);
   void WriteWire(FILE* fp, int ll[2], int ur[2], char* name);
 
-  dbBTerm* createBterm1(bool lo,
-                        odb::dbNet* net,
-                        int ll[2],
-                        int ur[2],
-                        const char* postFix,
-                        odb::dbTechLayer* layer,
-                        uint width,
-                        bool horizontal,
-                        bool io);
+  odb::dbBTerm* createBterm1(bool lo,
+                             odb::dbNet* net,
+                             int ll[2],
+                             int ur[2],
+                             const char* postFix,
+                             odb::dbTechLayer* layer,
+                             uint width,
+                             bool horizontal,
+                             bool io);
   odb::dbNet* createNetSingleWire(const char* netName,
                                   int ll[2],
                                   int ur[2],
@@ -206,15 +206,15 @@ class extRulesPat
                                         odb::dbTechVia* via);
   void WriteDBWireVia(uint jj, uint dir, odb::dbTechVia* via);
   // dkf 12/20/2023
-  dbBTerm* createBterm(bool lo,
-                       odb::dbNet* net,
-                       int ll[2],
-                       int ur[2],
-                       const char* postFix,
-                       odb::dbTechLayer* layer,
-                       uint width,
-                       bool horizontal,
-                       bool io);
+  odb::dbBTerm* createBterm(bool lo,
+                            odb::dbNet* net,
+                            int ll[2],
+                            int ur[2],
+                            const char* postFix,
+                            odb::dbTechLayer* layer,
+                            uint width,
+                            bool horizontal,
+                            bool io);
   // dkf 12/26/2023
   uint GetViaCutCount(odb::dbTechVia* tvia);
   double GetViaArea(odb::dbTechVia* tvia);
