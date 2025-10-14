@@ -1561,7 +1561,7 @@ void extMain::addItermShapesOnPlanes(dbInst* inst,
                                      const bool rotatedFlag,
                                      const bool swap_coords)
 {
-  for (dbITerm* iterm : inst->getITerms()) {
+  for (odb::dbITerm* iterm : inst->getITerms()) {
     dbShape s;
     dbITermShapeItr term_shapes;
     for (term_shapes.begin(iterm); term_shapes.next(s);) {

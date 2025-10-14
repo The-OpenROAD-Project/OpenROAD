@@ -1774,7 +1774,7 @@ class extMain
   uint makeNetRCsegs_v2(odb::dbNet* net, bool skipStartWarning = false);
   uint resetMapNodes_v2(odb::dbWire* wire);
 
-  uint getCapNodeId_v2(dbITerm* iterm, const uint junction);
+  uint getCapNodeId_v2(odb::dbITerm* iterm, const uint junction);
   uint getCapNodeId_v2(odb::dbBTerm* bterm, const uint junction);
   uint getCapNodeId_v2(odb::dbNet* net, const int junction, const bool branch);
   uint getCapNodeId_v2(odb::dbNet* net,
