@@ -437,9 +437,8 @@ void Grid::erasePixel(Node* cell)
       }
 
       // Clear padding reservations made by this cell
-      if (pixel->padding_reserved_by.find(cell)
-          != pixel->padding_reserved_by.end()) {
-        pixel->padding_reserved_by.erase(cell);
+      if (pixel->padding_reserved_by == cell) {
+        pixel->padding_reserved_by = nullptr;
       }
     }
   }
@@ -491,7 +490,7 @@ void Grid::paintCellPadding(Node* cell,
       if (pixel == nullptr) {
         continue;
       }
-      pixel->padding_reserved_by.insert(cell);
+      pixel->padding_reserved_by = cell;
     }
   }
 
@@ -502,7 +501,7 @@ void Grid::paintCellPadding(Node* cell,
       if (pixel == nullptr) {
         continue;
       }
-      pixel->padding_reserved_by.insert(cell);
+      pixel->padding_reserved_by = cell;
     }
   }
 }

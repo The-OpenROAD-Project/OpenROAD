@@ -16,32 +16,30 @@ class Logger;
 
 namespace dpl {
 
-using odb::dbNet;
-
 using utl::Logger;
 
 class NetBox
 {
  public:
   NetBox() = default;
-  NetBox(dbNet* net, const odb::Rect& box, bool ignore);
+  NetBox(odb::dbNet* net, const odb::Rect& box, bool ignore);
   int64_t hpwl();
   void saveBox();
   void restoreBox();
   bool isIgnore() const { return ignore_; }
-  dbNet* getNet() const { return net_; }
+  odb::dbNet* getNet() const { return net_; }
   const odb::Rect& getBox() const { return box_; }
 
   void setBox(const odb::Rect& box) { box_ = box; }
 
  private:
-  dbNet* net_ = nullptr;
+  odb::dbNet* net_ = nullptr;
   odb::Rect box_;
   odb::Rect box_saved_;
   bool ignore_ = false;
 };
 
-using NetBoxMap = std::unordered_map<dbNet*, NetBox>;
+using NetBoxMap = std::unordered_map<odb::dbNet*, NetBox>;
 using NetBoxes = std::vector<NetBox*>;
 
 class OptimizeMirroring
