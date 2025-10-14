@@ -521,7 +521,7 @@ class FastRouteCore
                          bool horizontal,
                          int& best_cost,
                          multi_array<int, 2>& layer_grid,
-                         const int net_cost);
+                         int net_cost);
   void assignEdge(int netID, int edgeID, bool processDIR);
   int getLayerResistance(int layer, int length, FrNet* net);
   int getViaResistance(int from_layer, int to_layer);

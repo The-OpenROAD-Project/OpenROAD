@@ -459,7 +459,7 @@ void FastRouteCore::assignEdge(const int netID,
   int endLayer = 0;
 
   FrNet* net = nets_[netID];
-  const int net_cost = net->getEdgeCost();
+  const int8_t net_cost = net->getEdgeCost();
   auto& treeedges = sttrees_[netID].edges;
   auto& treenodes = sttrees_[netID].nodes;
   TreeEdge* treeedge = &(treeedges[edgeID]);
