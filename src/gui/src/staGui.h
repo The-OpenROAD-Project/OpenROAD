@@ -410,7 +410,7 @@ class TimingControlsDialog : public QDialog
   std::set<const sta::Pin*> getFromPins() const { return from_->getPins(); }
   std::vector<std::set<const sta::Pin*>> getThruPins() const;
   std::set<const sta::Pin*> getToPins() const { return to_->getPins(); }
-  const sta::ClockSet* getClocks();
+  const sta::ClockSet* getClocks(bool return_null_if_all = true);
 
   const sta::Pin* convertTerm(Gui::Term term) const;
 

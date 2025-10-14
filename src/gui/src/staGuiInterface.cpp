@@ -1095,6 +1095,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
           pins, nullptr, nullptr, sta::RiseFallBoth::riseFall()));
     }
   }
+
   sta::ExceptionTo* e_to = nullptr;
   if (!to.empty()) {
     sta::PinSet* pins = new sta::PinSet(getNetwork());
@@ -1119,6 +1120,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
   }
 
   sta::Search* search = sta_->search();
+  search->clear();
   sta::PathEndSeq path_ends
       = search->findPathEnds(  // from, thrus, to, unconstrained
           e_from,

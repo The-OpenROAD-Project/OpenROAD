@@ -48,6 +48,7 @@ class DropdownCheckboxes : public QComboBox
   QStandardItem* getAllItem() { return all_item_; };
 
   QStandardItemModel* model() { return model_; };
+  bool isAllSelected() { return all_item_->checkState() == Qt::Checked; };
   std::vector<QString> selectedItems();
 
  public slots:
