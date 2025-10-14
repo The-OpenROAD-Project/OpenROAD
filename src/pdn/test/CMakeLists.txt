@@ -4,6 +4,7 @@ or_integration_tests(
     add_double_global_connection
     asap7_failed_macro_covered
     asap7_failed_macro_grid
+    asap7_macro_covered_partial
     asap7_no_via_generate
     asap7_no_via_generate_v1_snapped
     asap7_offcenter_via

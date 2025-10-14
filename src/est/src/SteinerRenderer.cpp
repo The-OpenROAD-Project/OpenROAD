@@ -5,6 +5,7 @@
 
 #include "est/SteinerTree.h"
 #include "gui/gui.h"
+#include "odb/geom.h"
 
 namespace est {
 
@@ -23,7 +24,7 @@ void SteinerRenderer::drawObjects(gui::Painter& painter)
   if (tree_) {
     painter.setPen(gui::Painter::kRed, true);
     for (int i = 0; i < tree_->branchCount(); ++i) {
-      Point pt1, pt2;
+      odb::Point pt1, pt2;
       int steiner_pt1, steiner_pt2;
       int wire_length;
       tree_->branch(i, pt1, steiner_pt1, pt2, steiner_pt2, wire_length);

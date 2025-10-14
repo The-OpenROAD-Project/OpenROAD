@@ -3,6 +3,12 @@
 
 #include "odb/gdsout.h"
 
+#if defined(__APPLE__)
+#include <machine/endian.h>
+#else
+#include <endian.h>
+#endif
+
 #include <cstdint>
 #include <ctime>
 #include <iostream>

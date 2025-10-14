@@ -8,6 +8,7 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/network.h"
+#include "odb/db.h"
 #include "odb/geom.h"
 
 namespace dpl {
@@ -16,7 +17,7 @@ using odb::dbBox;
 
 Graphics::Graphics(Opendp* dp,
                    float min_displacement,
-                   const dbInst* debug_instance)
+                   const odb::dbInst* debug_instance)
     : dp_(dp),
       debug_instance_(debug_instance),
       min_displacement_(min_displacement)
@@ -24,12 +25,12 @@ Graphics::Graphics(Opendp* dp,
   gui::Gui::get()->registerRenderer(this);
 }
 
-void Graphics::startPlacement(dbBlock* block)
+void Graphics::startPlacement(odb::dbBlock* block)
 {
   block_ = block;
 }
 
-void Graphics::placeInstance(dbInst* instance)
+void Graphics::placeInstance(odb::dbInst* instance)
 {
   if (!instance || instance != debug_instance_) {
     return;
@@ -96,9 +97,9 @@ void Graphics::drawObjects(gui::Painter& painter)
     }
 
     dbBox* bbox = cell->getDbInst()->getBBox();
-    Point initial_location(bbox->xMin(), bbox->yMin());
-    Point final_location(lx.v, ly.v);
-    float len = Point::squaredDistance(initial_location, final_location);
+    odb::Point initial_location(bbox->xMin(), bbox->yMin());
+    odb::Point final_location(lx.v, ly.v);
+    float len = odb::Point::squaredDistance(initial_location, final_location);
     if (len < min_length) {
       continue;
     }

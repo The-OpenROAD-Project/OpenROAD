@@ -6,6 +6,7 @@
 #include <limits>
 
 #include "Coordinates.h"
+#include "dpl/Opendp.h"
 namespace dpl {
 class DetailedSeg
 {

@@ -4,6 +4,7 @@
 #include "utl/Progress.h"
 
 #include <algorithm>
+#include <csignal>
 #include <ctime>
 #include <memory>
 #include <mutex>

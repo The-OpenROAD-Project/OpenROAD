@@ -3,6 +3,8 @@
 
 #include "odb/cdl.h"
 
+#include <strings.h>
+
 #include <cstddef>
 #include <ios>
 #include <iterator>

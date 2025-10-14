@@ -31,6 +31,7 @@
 #define LEFDEFZIP_H
 
 #include "defiDefs.hpp"
+#include "defiKRDefs.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

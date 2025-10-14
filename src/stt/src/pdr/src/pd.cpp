@@ -17,6 +17,7 @@
 #include "boost/heap/d_ary_heap.hpp"
 #include "lemon/list_graph.h"
 #include "odb/geom.h"
+#include "stt/SteinerTreeBuilder.h"
 
 namespace pdr {
 
