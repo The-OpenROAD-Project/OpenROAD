@@ -957,20 +957,10 @@ void DbMasterDescriptor::getInstances(odb::dbMaster* master,
 void DbMasterDescriptor::visitAllObjects(
     const std::function<void(const Selected&)>& func) const
 {
-  auto* chip = db_->getChip();
-  if (chip == nullptr) {
-    return;
-  }
-  auto* block = chip->getBlock();
-  if (block == nullptr) {
-    return;
-  }
-
-  std::vector<odb::dbMaster*> masters;
-  block->getMasters(masters);
-
-  for (auto* master : masters) {
-    func({master, this});
+  for (auto* lib : db_->getLibs()) {
+    for (auto* master : lib->getMasters()) {
+      func({master, this});
+    }
   }
 }
 
