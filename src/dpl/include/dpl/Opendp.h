@@ -30,7 +30,6 @@ namespace dpl {
 using utl::Logger;
 
 using odb::dbDatabase;
-using odb::dbMasterType;
 
 class Node;
 class Group;

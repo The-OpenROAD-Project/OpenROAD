@@ -193,7 +193,7 @@ void FlexGR::searchRepairMacro(int iter,
   std::vector<frInst*> macros;
 
   for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
-    if (inst->getMaster()->getMasterType() == dbMasterType::BLOCK) {
+    if (inst->getMaster()->getMasterType() == odb::dbMasterType::BLOCK) {
       odb::Rect macroBBox = inst->getBBox();
       odb::Point macroCenter((macroBBox.xMin() + macroBBox.xMax()) / 2,
                              (macroBBox.yMin() + macroBBox.yMax()) / 2);

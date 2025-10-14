@@ -13,6 +13,7 @@
 #include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace drt {
@@ -329,7 +330,7 @@ unsigned FlexGRCMap::getNumBlkTracks(
     }
     if (obj->typeId() == frcBlockage || obj->typeId() == frcInstBlockage) {
       auto inst = (static_cast<frInstBlockage*>(obj))->getInst();
-      if (inst->getMaster()->getMasterType() == dbMasterType::BLOCK) {
+      if (inst->getMaster()->getMasterType() == odb::dbMasterType::BLOCK) {
         // actBloatDist = calcBloatDist(obj, lNum, boostB);
         // currently hack to prevent via EOL violation from above / below layer
         // (see TA prevention for prl)

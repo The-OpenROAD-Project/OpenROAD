@@ -11,6 +11,7 @@
 #include "infrastructure/Padding.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace dpl {
@@ -194,6 +195,8 @@ bool PlacementDRC::checkDRC(const Node* cell,
 namespace {
 bool isCrWtBlClass(const Node* cell)
 {
+  using odb::dbMasterType;
+
   dbMasterType type = cell->getDbInst()->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
   switch (type.getValue()) {
@@ -245,8 +248,8 @@ bool isCrWtBlClass(const Node* cell)
 
 bool isWellTap(const Node* cell)
 {
-  dbMasterType type = cell->getDbInst()->getMaster()->getType();
-  return type == dbMasterType::CORE_WELLTAP;
+  odb::dbMasterType type = cell->getDbInst()->getMaster()->getType();
+  return type == odb::dbMasterType::CORE_WELLTAP;
 }
 
 bool allowOverlap(const Node* cell1, const Node* cell2)

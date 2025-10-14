@@ -812,9 +812,9 @@ void FlexTAWorker::initFixedObjs()
           case frcInstBlockage: {
             auto instBlkg = (static_cast<frInstBlockage*>(obj));
             auto inst = instBlkg->getInst();
-            dbMasterType masterType = inst->getMaster()->getMasterType();
+            odb::dbMasterType masterType = inst->getMaster()->getMasterType();
             if (!masterType.isBlock() && !masterType.isPad()
-                && masterType != dbMasterType::RING) {
+                && masterType != odb::dbMasterType::RING) {
               continue;
             }
             if (bounds.minDXDY() <= 2 * width) {

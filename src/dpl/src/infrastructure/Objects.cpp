@@ -238,7 +238,7 @@ bool Node::isStdCell() const
 bool Node::isBlock() const
 {
   return getDbInst()
-         && getDbInst()->getMaster()->getType() == dbMasterType::BLOCK;
+         && getDbInst()->getMaster()->getType() == odb::dbMasterType::BLOCK;
 }
 Group* Node::getGroup() const
 {
