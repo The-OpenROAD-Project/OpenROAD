@@ -893,12 +893,12 @@ Descriptor::Properties DbMasterDescriptor::getDBProperties(
   props.push_back({"Instances", instances});
   props.push_back({"Origin", master->getOrigin()});
 
-  SelectionSet edge_types;
+  std::vector<std::any> edge_types;
   for (auto* edge : master->getEdgeTypes()) {
-    edge_types.insert(gui->makeSelected(edge));
+    edge_types.push_back(gui->makeSelected(edge));
   }
   if (!edge_types.empty()) {
-    props.push_back({"Edge Types", edge_types});
+    props.push_back({"Edge types", edge_types});
   }
 
   auto liberty
