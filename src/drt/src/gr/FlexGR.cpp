@@ -28,6 +28,7 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "omp.h"
+#include "utl/Logger.h"
 #include "utl/exception.h"
 
 namespace drt {
