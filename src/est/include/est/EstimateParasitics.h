@@ -44,7 +44,6 @@ namespace est {
 using utl::Logger;
 
 using odb::dbDatabase;
-using odb::dbNet;
 using odb::dbTechLayer;
 
 using stt::SteinerTreeBuilder;
@@ -187,7 +186,7 @@ class EstimateParasitics : public dbStaState
                          Parasitics* parasitics);
   bool haveEstimatedParasitics() const;
   void parasiticsInvalid(const Net* net);
-  void parasiticsInvalid(const dbNet* net);
+  void parasiticsInvalid(const odb::dbNet* net);
   void eraseParasitics(const Net* net);
   bool parasiticsValid() const;
 

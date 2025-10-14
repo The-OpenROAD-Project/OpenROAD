@@ -58,7 +58,7 @@ dbCreateNetUtil::~dbCreateNetUtil()
     free(_mapArray);
   }
 }
-void dbCreateNetUtil::setCurrentNet(dbNet* net)
+void dbCreateNetUtil::setCurrentNet(odb::dbNet* net)
 {
   _currentNet = net;
 }
@@ -260,14 +260,14 @@ dbTechVia* dbCreateNetUtil::getVia(int l1, int l2, odb::Rect& bbox)
   return def;
 }
 
-dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
-                                            int x1,
-                                            int y1,
-                                            int x2,
-                                            int y2,
-                                            int routingLayer,
-                                            dbTechLayerDir dir,
-                                            bool skipBterms)
+odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
+                                                 int x1,
+                                                 int y1,
+                                                 int x2,
+                                                 int y2,
+                                                 int routingLayer,
+                                                 dbTechLayerDir dir,
+                                                 bool skipBterms)
 {
   if (dir == dbTechLayerDir::NONE) {
     return createNetSingleWire(
@@ -341,7 +341,7 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
     return nullptr;
   }
 
-  dbNet* net = dbNet::create(_block, netName);
+  odb::dbNet* net = odb::dbNet::create(_block, netName);
 
   if (net == nullptr) {
     return nullptr;
@@ -349,14 +349,14 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
   net->setSigType(dbSigType::SIGNAL);
 
-  std::pair<dbBTerm*, dbBTerm*> blutrms;
+  std::pair<odb::dbBTerm*, odb::dbBTerm*> blutrms;
 
   if (!skipBterms) {
     blutrms = createTerms4SingleNet(
         net, r.xMin(), r.yMin(), r.xMax(), r.yMax(), layer);
 
     if ((blutrms.first == nullptr) || (blutrms.second == nullptr)) {
-      dbNet::destroy(net);
+      odb::dbNet::destroy(net);
       logger_->warn(ODB,
                     403,
                     "Cannot create net {}, because failed to create bterms",
@@ -395,7 +395,7 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
   return net;
 }
-dbSBox* dbCreateNetUtil::createSpecialWire(dbNet* mainNet,
+dbSBox* dbCreateNetUtil::createSpecialWire(odb::dbNet* mainNet,
                                            odb::Rect& r,
                                            dbTechLayer* layer,
                                            uint /* unused: sboxId */)
@@ -418,7 +418,7 @@ dbSBox* dbCreateNetUtil::createSpecialWire(dbNet* mainNet,
   // MIGHT NOT care abour sboxId!!
 }
 
-uint dbCreateNetUtil::getFirstShape(dbNet* net, dbShape& s)
+uint dbCreateNetUtil::getFirstShape(odb::dbNet* net, dbShape& s)
 {
   dbWirePath path;
   dbWirePathShape pshape;
@@ -435,7 +435,7 @@ uint dbCreateNetUtil::getFirstShape(dbNet* net, dbShape& s)
   }
   return status;
 }
-bool dbCreateNetUtil::setFirstShapeProperty(dbNet* net, uint prop)
+bool dbCreateNetUtil::setFirstShapeProperty(odb::dbNet* net, uint prop)
 {
   if (net == nullptr) {
     return false;
@@ -448,10 +448,10 @@ bool dbCreateNetUtil::setFirstShapeProperty(dbNet* net, uint prop)
   return true;
 }
 
-dbNet* dbCreateNetUtil::createNetSingleWire(odb::Rect& r,
-                                            uint level,
-                                            uint netId,
-                                            uint shapeId)
+odb::dbNet* dbCreateNetUtil::createNetSingleWire(odb::Rect& r,
+                                                 uint level,
+                                                 uint netId,
+                                                 uint shapeId)
 {
   // bool skipBterms= false;
   char netName[128];
@@ -459,14 +459,14 @@ dbNet* dbCreateNetUtil::createNetSingleWire(odb::Rect& r,
   if (_currentNet == nullptr) {
     sprintf(netName, "N%d", netId);
 
-    dbNet* newNet = createNetSingleWire(netName,
-                                        r.xMin(),
-                                        r.yMin(),
-                                        r.xMax(),
-                                        r.yMax(),
-                                        level,
-                                        true /*skipBterms*/,
-                                        true);
+    odb::dbNet* newNet = createNetSingleWire(netName,
+                                             r.xMin(),
+                                             r.yMin(),
+                                             r.xMax(),
+                                             r.yMax(),
+                                             level,
+                                             true /*skipBterms*/,
+                                             true);
 
     if (shapeId > 0) {
       setFirstShapeProperty(newNet, shapeId);
@@ -479,14 +479,14 @@ dbNet* dbCreateNetUtil::createNetSingleWire(odb::Rect& r,
     return newNet;
   }
   sprintf(netName, "N%d_%d", netId, shapeId);
-  dbNet* newNet = createNetSingleWire(netName,
-                                      r.xMin(),
-                                      r.yMin(),
-                                      r.xMax(),
-                                      r.yMax(),
-                                      level,
-                                      true /*skipBterms*/,
-                                      true);
+  odb::dbNet* newNet = createNetSingleWire(netName,
+                                           r.xMin(),
+                                           r.yMin(),
+                                           r.xMax(),
+                                           r.yMax(),
+                                           level,
+                                           true /*skipBterms*/,
+                                           true);
 
   if (newNet != nullptr) {
     if (shapeId > 0) {
@@ -494,20 +494,20 @@ dbNet* dbCreateNetUtil::createNetSingleWire(odb::Rect& r,
     }
 
     _currentNet->getWire()->append(newNet->getWire(), true);
-    dbNet::destroy(newNet);
+    odb::dbNet::destroy(newNet);
   }
   return newNet;
 }
 
-dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
-                                            int x1,
-                                            int y1,
-                                            int x2,
-                                            int y2,
-                                            int routingLayer,
-                                            bool skipBterms,
-                                            bool skipExistsNet,
-                                            uint8_t color)
+odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
+                                                 int x1,
+                                                 int y1,
+                                                 int x2,
+                                                 int y2,
+                                                 int routingLayer,
+                                                 bool skipBterms,
+                                                 bool skipExistsNet,
+                                                 uint8_t color)
 {
   if ((netName == nullptr) || (routingLayer < 1)
       || (routingLayer > _tech->getRoutingLayerCount())) {
@@ -588,7 +588,7 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
     p1.setY(r.yMax() - dw);
   }
 
-  dbNet* net = dbNet::create(_block, netName, skipExistsNet);
+  odb::dbNet* net = odb::dbNet::create(_block, netName, skipExistsNet);
 
   if (net == nullptr) {
     logger_->warn(ODB, 406, "Cannot create net {}, duplicate net", netName);
@@ -597,14 +597,14 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
   net->setSigType(dbSigType::SIGNAL);
 
-  std::pair<dbBTerm*, dbBTerm*> blutrms;
+  std::pair<odb::dbBTerm*, odb::dbBTerm*> blutrms;
 
   if (!skipBterms) {
     blutrms = createTerms4SingleNet(
         net, r.xMin(), r.yMin(), r.xMax(), r.yMax(), layer);
 
     if ((blutrms.first == nullptr) || (blutrms.second == nullptr)) {
-      dbNet::destroy(net);
+      odb::dbNet::destroy(net);
       logger_->warn(ODB,
                     407,
                     "Cannot create net {}, because failed to create bterms",
@@ -649,21 +649,21 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   return net;
 }
 
-std::pair<dbBTerm*, dbBTerm*> dbCreateNetUtil::createTerms4SingleNet(
-    dbNet* net,
+std::pair<odb::dbBTerm*, odb::dbBTerm*> dbCreateNetUtil::createTerms4SingleNet(
+    odb::dbNet* net,
     int x1,
     int y1,
     int x2,
     int y2,
     dbTechLayer* inly)
 {
-  std::pair<dbBTerm*, dbBTerm*> retpr;
+  std::pair<odb::dbBTerm*, odb::dbBTerm*> retpr;
   retpr.first = nullptr;
   retpr.second = nullptr;
 
   std::string term_str(net->getName());
   term_str = term_str + "_BL";
-  dbBTerm* blterm = dbBTerm::create(net, term_str.c_str());
+  odb::dbBTerm* blterm = odb::dbBTerm::create(net, term_str.c_str());
 
   uint dx = x2 - x1;
   uint dy = y2 - y1;
@@ -675,10 +675,10 @@ std::pair<dbBTerm*, dbBTerm*> dbCreateNetUtil::createTerms4SingleNet(
 
   term_str = net->getName();
   term_str = term_str + "_BU";
-  dbBTerm* buterm = dbBTerm::create(net, term_str.c_str());
+  odb::dbBTerm* buterm = odb::dbBTerm::create(net, term_str.c_str());
 
   if (!buterm) {
-    dbBTerm::destroy(blterm);
+    odb::dbBTerm::destroy(blterm);
     return retpr;
   }
 

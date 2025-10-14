@@ -45,8 +45,8 @@ struct Pixel
   bool is_valid = false;     // false for dummy cells
   bool is_hopeless = false;  // too far from sites for diamond search
   uint8_t blocked_layers = 0;
-  // Cells that reserved this pixel for padding
-  std::unordered_set<Node*> padding_reserved_by;
+  // Cell that reserved this pixel for padding
+  Node* padding_reserved_by = nullptr;
 };
 
 // Return value for grid searches.

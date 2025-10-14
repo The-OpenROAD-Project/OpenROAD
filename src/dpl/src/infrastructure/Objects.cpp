@@ -140,12 +140,12 @@ odb::dbInst* Node::getDbInst() const
   }
   return static_cast<odb::dbInst*>(db_owner_);
 }
-dbBTerm* Node::getBTerm() const
+odb::dbBTerm* Node::getBTerm() const
 {
   if (type_ != TERMINAL) {
     return nullptr;
   }
-  return static_cast<dbBTerm*>(db_owner_);
+  return static_cast<odb::dbBTerm*>(db_owner_);
 }
 odb::dbOrientType Node::getOrient() const
 {
@@ -289,7 +289,7 @@ void Node::setDbInst(odb::dbInst* inst)
 {
   db_owner_ = inst;
 }
-void Node::setBTerm(dbBTerm* term)
+void Node::setBTerm(odb::dbBTerm* term)
 {
   db_owner_ = term;
 }

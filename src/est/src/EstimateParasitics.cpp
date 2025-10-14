@@ -1041,7 +1041,7 @@ bool EstimateParasitics::isPad(const Instance* inst) const
 
 void EstimateParasitics::parasiticsInvalid(const Net* net)
 {
-  dbNet* db_net = db_network_->flatNet(net);
+  odb::dbNet* db_net = db_network_->flatNet(net);
   if (haveEstimatedParasitics()) {
     debugPrint(logger_,
                EST,
@@ -1053,7 +1053,7 @@ void EstimateParasitics::parasiticsInvalid(const Net* net)
   }
 }
 
-void EstimateParasitics::parasiticsInvalid(const dbNet* net)
+void EstimateParasitics::parasiticsInvalid(const odb::dbNet* net)
 {
   parasiticsInvalid(db_network_->dbToSta(net));
 }
