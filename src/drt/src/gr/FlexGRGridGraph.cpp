@@ -7,7 +7,10 @@
 
 #include "frBaseTypes.h"
 #include "gr/FlexGR.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
+
+using odb::dbTechLayerDir;
 
 namespace drt {
 

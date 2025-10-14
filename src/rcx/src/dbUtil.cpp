@@ -97,11 +97,11 @@ void dbCreateNetUtil::setBlock(odb::dbBlock* block, bool skipInit)
   _rules.resize(layerCount + 1);
   _routingLayers.resize(layerCount + 1);
 
-  dbSet<dbTechLayer> layers = _tech->getLayers();
-  dbSet<dbTechLayer>::iterator itr;
+  dbSet<odb::dbTechLayer> layers = _tech->getLayers();
+  dbSet<odb::dbTechLayer>::iterator itr;
 
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
-    dbTechLayer* layer = *itr;
+    odb::dbTechLayer* layer = *itr;
     int rlevel = layer->getRoutingLevel();
 
     if (rlevel > 0) {
@@ -143,8 +143,8 @@ void dbCreateNetUtil::setBlock(odb::dbBlock* block, bool skipInit)
 
   for (vitr = vias.begin(); vitr != vias.end(); ++vitr) {
     dbTechVia* via = *vitr;
-    dbTechLayer* bot = via->getBottomLayer();
-    dbTechLayer* top = via->getTopLayer();
+    odb::dbTechLayer* bot = via->getBottomLayer();
+    odb::dbTechLayer* top = via->getTopLayer();
 
     int topR = top->getRoutingLevel();
     int botR = bot->getRoutingLevel();
@@ -189,7 +189,7 @@ dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
                 width);
   int i;
   for (i = 1; i <= _tech->getRoutingLayerCount(); i++) {
-    dbTechLayer* layer = _routingLayers[i];
+    odb::dbTechLayer* layer = _routingLayers[i];
 
     if (layer != nullptr) {
       dbTechLayerRule* lr = dbTechLayerRule::create(nd_rule, layer);
@@ -245,7 +245,7 @@ dbTechVia* dbCreateNetUtil::getVia(int l1, int l2, odb::Rect& bbox)
       def = via;
     }
 
-    dbBox* bbox = via->getBBox();
+    odb::dbBox* bbox = via->getBBox();
     uint vdx = bbox->getDX();
     uint vdy = bbox->getDY();
 
@@ -266,10 +266,10 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
                                                  int x2,
                                                  int y2,
                                                  int routingLayer,
-                                                 dbTechLayerDir dir,
+                                                 odb::dbTechLayerDir dir,
                                                  bool skipBterms)
 {
-  if (dir == dbTechLayerDir::NONE) {
+  if (dir == odb::dbTechLayerDir::NONE) {
     return createNetSingleWire(
         netName, x1, y1, x2, y2, routingLayer, dir, skipBterms);
   }
@@ -293,7 +293,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   int width;
   Point p0, p1;
 
-  if (dir == dbTechLayerDir::VERTICAL) {
+  if (dir == odb::dbTechLayerDir::VERTICAL) {
     uint dx = r.dx();
 
     // This is dangerous!
@@ -325,7 +325,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
     p1.setX(r.yMax() - dw);
   }
 
-  dbTechLayer* layer = _routingLayers[routingLayer];
+  odb::dbTechLayer* layer = _routingLayers[routingLayer];
   int minWidth = layer->getWidth();
 
   if (width < (int) minWidth) {
@@ -397,7 +397,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 }
 dbSBox* dbCreateNetUtil::createSpecialWire(odb::dbNet* mainNet,
                                            odb::Rect& r,
-                                           dbTechLayer* layer,
+                                           odb::dbTechLayer* layer,
                                            uint /* unused: sboxId */)
 {
   dbSWire* swire = nullptr;
@@ -524,7 +524,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
     return nullptr;
   }
 
-  dbTechLayer* layer = _routingLayers[routingLayer];
+  odb::dbTechLayer* layer = _routingLayers[routingLayer];
   odb::Rect r(x1, y1, x2, y2);
   uint dx = r.dx();
   uint dy = r.dy();
@@ -655,7 +655,7 @@ std::pair<odb::dbBTerm*, odb::dbBTerm*> dbCreateNetUtil::createTerms4SingleNet(
     int y1,
     int x2,
     int y2,
-    dbTechLayer* inly)
+    odb::dbTechLayer* inly)
 {
   std::pair<odb::dbBTerm*, odb::dbBTerm*> retpr;
   retpr.first = nullptr;
@@ -688,15 +688,15 @@ std::pair<odb::dbBTerm*, odb::dbBTerm*> dbCreateNetUtil::createTerms4SingleNet(
 
   if (dx == fwidth) {
     int x = x1 + hwidth;
-    dbBox::create(
+    odb::dbBox::create(
         blpin, inly, -hwidth + x, -hwidth + y1, hwidth + x, hwidth + y1);
-    dbBox::create(
+    odb::dbBox::create(
         bupin, inly, -hwidth + x, -hwidth + y2, hwidth + x, hwidth + y2);
   } else {
     int y = y1 + hwidth;
-    dbBox::create(
+    odb::dbBox::create(
         blpin, inly, -hwidth + x1, -hwidth + y, hwidth + x1, hwidth + y);
-    dbBox::create(
+    odb::dbBox::create(
         bupin, inly, -hwidth + x2, -hwidth + y, hwidth + x2, hwidth + y);
   }
 

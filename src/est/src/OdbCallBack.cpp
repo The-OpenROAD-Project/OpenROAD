@@ -88,7 +88,7 @@ void OdbCallBack::inDbNetDestroy(odb::dbNet* net)
   }
 }
 
-void OdbCallBack::inDbITermPostConnect(dbITerm* iterm)
+void OdbCallBack::inDbITermPostConnect(odb::dbITerm* iterm)
 {
   debugPrint(estimate_parasitics_->getLogger(),
              utl::EST,
@@ -102,7 +102,7 @@ void OdbCallBack::inDbITermPostConnect(dbITerm* iterm)
   }
 }
 
-void OdbCallBack::inDbITermPostDisconnect(dbITerm* iterm, odb::dbNet* net)
+void OdbCallBack::inDbITermPostDisconnect(odb::dbITerm* iterm, odb::dbNet* net)
 {
   debugPrint(estimate_parasitics_->getLogger(),
              utl::EST,

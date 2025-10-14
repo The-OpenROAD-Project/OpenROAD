@@ -47,7 +47,11 @@
 #include "frRegionQuery.h"
 #include "global.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
+
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
 
 namespace drt {
 
@@ -129,7 +133,7 @@ std::pair<frMaster*, odb::dbMaster*> Fixture::makeMacro(const char* name,
   bound.setPoints(points);
   bounds.push_back(bound);
   block->setBoundaries(bounds);
-  block->setMasterType(dbMasterType::CORE);
+  block->setMasterType(odb::dbMasterType::CORE);
   block->setId(++numMasters);
   auto blkPtr = block.get();
   design->addMaster(std::move(block));
@@ -138,7 +142,7 @@ std::pair<frMaster*, odb::dbMaster*> Fixture::makeMacro(const char* name,
       = odb::dbMaster::create(*db_->getLibs().begin(), "dummy");
   master->setWidth(1000);
   master->setHeight(1000);
-  master->setType(dbMasterType::CORE);
+  master->setType(odb::dbMasterType::CORE);
   odb::dbMTerm::create(master, "a", dbIoType::INPUT, dbSigType::SIGNAL);
   odb::dbMTerm::create(master, "b", dbIoType::INPUT, dbSigType::SIGNAL);
   odb::dbMTerm::create(master, "c", dbIoType::OUTPUT, dbSigType::SIGNAL);

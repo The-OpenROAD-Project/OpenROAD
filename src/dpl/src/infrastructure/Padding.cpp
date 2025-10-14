@@ -6,6 +6,7 @@
 #include "Objects.h"
 #include "dpl/Opendp.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 
 namespace dpl {
 
@@ -20,7 +21,7 @@ void Padding::setPadding(odb::dbInst* inst, GridX left, GridX right)
   inst_padding_map_[inst] = {left, right};
 }
 
-void Padding::setPadding(dbMaster* master, GridX left, GridX right)
+void Padding::setPadding(odb::dbMaster* master, GridX left, GridX right)
 {
   master_padding_map_[master] = {left, right};
 }
@@ -36,6 +37,8 @@ bool Padding::isPaddedType(odb::dbInst* inst) const
   if (inst == nullptr) {
     return false;
   }
+
+  using odb::dbMasterType;
   dbMasterType type = inst->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
   switch (type.getValue()) {

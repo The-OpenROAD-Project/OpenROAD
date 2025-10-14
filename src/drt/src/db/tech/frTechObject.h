@@ -17,6 +17,7 @@
 #include "db/tech/frViaRuleGenerate.h"
 #include "frBaseTypes.h"
 #include "global.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -279,12 +280,12 @@ class frTechObject
 
   bool isHorizontalLayer(frLayerNum l)
   {
-    return getLayer(l)->getDir() == dbTechLayerDir::HORIZONTAL;
+    return getLayer(l)->getDir() == odb::dbTechLayerDir::HORIZONTAL;
   }
 
   bool isVerticalLayer(frLayerNum l)
   {
-    return getLayer(l)->getDir() == dbTechLayerDir::VERTICAL;
+    return getLayer(l)->getDir() == odb::dbTechLayerDir::VERTICAL;
   }
 
  private:

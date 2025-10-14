@@ -76,7 +76,7 @@ void UniqueInsts::computePrefTrackPatterns()
     const bool is_vertical_track = track_pattern->isHorizontal();
     const frLayerNum layer_num = track_pattern->getLayerNum();
     const frLayer* layer = getTech()->getLayer(layer_num);
-    if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
+    if (layer->getDir() == odb::dbTechLayerDir::HORIZONTAL) {
       if (!is_vertical_track) {
         pref_track_patterns_.push_back(track_pattern);
       }
