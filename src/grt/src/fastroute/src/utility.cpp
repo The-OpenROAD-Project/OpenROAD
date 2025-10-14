@@ -378,12 +378,12 @@ void FastRouteCore::fixEdgeAssignment(int& net_layer,
       = layer_directions_[l] == odb::dbTechLayerDir::VERTICAL;
   // if layer direction doesn't match edge direction or
   // if already found a layer for the edge, ignores the remaining layers
-  if (is_vertical != vertical || best_cost > net_cost - 1) {
+  if (is_vertical != vertical || best_cost >= net_cost) {
     layer_grid[l][k] = std::numeric_limits<int>::min();
   } else {
     layer_grid[l][k] = edges_3D[l][y][x].cap - edges_3D[l][y][x].usage;
     best_cost = std::max(best_cost, layer_grid[l][k]);
-    if (best_cost > net_cost - 1) {
+    if (best_cost >= net_cost) {
       // set the new min/max routing layer for the net to avoid
       // errors during mazeRouteMSMDOrder3D
       net_layer = l;
@@ -490,6 +490,7 @@ void FastRouteCore::assignEdge(const int netID,
 
   for (k = 0; k < routelen; k++) {
     int best_cost = std::numeric_limits<int>::min();
+    bool has_available_resources = false;
     if (grids[k].x == grids[k + 1].x) {
       const int min_y = std::min(grids[k].y, grids[k + 1].y);
       for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
@@ -497,18 +498,23 @@ void FastRouteCore::assignEdge(const int netID,
         bool is_vertical
             = layer_directions_[l] == odb::dbTechLayerDir::VERTICAL;
         if (is_vertical) {
-          layer_grid[l][k] = v_edges_3D_[l][min_y][grids[k].x].cap
-                             - v_edges_3D_[l][min_y][grids[k].x].usage;
+          const int available_resources
+              = v_edges_3D_[l][min_y][grids[k].x].cap
+                - v_edges_3D_[l][min_y][grids[k].x].usage;
+          layer_grid[l][k] = available_resources;
           best_cost = std::max(best_cost, layer_grid[l][k]);
+          // Check if any layer has enough resources to route
+          has_available_resources
+              |= (available_resources >= net->getLayerEdgeCost(l));
         } else {
           layer_grid[l][k] = std::numeric_limits<int>::min();
         }
       }
 
-      // assigning the edge to the layer range would cause overflow try to
+      // if no layer has sufficient resources in the range of layers try to
       // assign the edge to the closest layer below the min routing layer.
       // if design has 2D overflow, accept the congestion in layer assignment
-      if (best_cost <= net_cost - 1 && !has_2D_overflow_) {
+      if (!has_available_resources && !has_2D_overflow_) {
         int min_layer = net->getMinLayer();
         for (int l = net->getMinLayer() - 1; l >= 0; l--) {
           fixEdgeAssignment(min_layer,
@@ -554,18 +560,23 @@ void FastRouteCore::assignEdge(const int netID,
         bool is_horizontal
             = layer_directions_[l] == odb::dbTechLayerDir::HORIZONTAL;
         if (is_horizontal) {
-          layer_grid[l][k] = h_edges_3D_[l][grids[k].y][min_x].cap
-                             - h_edges_3D_[l][grids[k].y][min_x].usage;
+          const int available_resources
+              = h_edges_3D_[l][grids[k].y][min_x].cap
+                - h_edges_3D_[l][grids[k].y][min_x].usage;
+          layer_grid[l][k] = available_resources;
           best_cost = std::max(best_cost, layer_grid[l][k]);
+          // Check if any layer has enough resources to route
+          has_available_resources
+              |= (available_resources >= net->getLayerEdgeCost(l));
         } else {
           layer_grid[l][k] = std::numeric_limits<int>::min();
         }
       }
 
-      // assigning the edge to the layer range would cause overflow try to
+      // if no layer has sufficient resources in the range of layers try to
       // assign the edge to the closest layer below the min routing layer.
       // if design has 2D overflow, accept the congestion in layer assignment
-      if (best_cost <= net_cost - 1 && !has_2D_overflow_) {
+      if (!has_available_resources && !has_2D_overflow_) {
         int min_layer = net->getMinLayer();
         for (int l = net->getMinLayer() - 1; l >= 0; l--) {
           fixEdgeAssignment(min_layer,
