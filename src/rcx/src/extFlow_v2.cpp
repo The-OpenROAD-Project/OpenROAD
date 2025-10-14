@@ -149,7 +149,7 @@ int extMain::initSearch(LayerDimensionData& tables,
 
   tables.maxWidth = maxWidth;
 
-  logger_->info(RCX, 43, "{} wires to be extracted", totWireCnt);
+  logger_->info(utl::RCX, 43, "{} wires to be extracted", totWireCnt);
 
   return layerCnt;
 }
@@ -817,7 +817,7 @@ bool extRCModel::readRules(char* name,
       if (cornerCnt > 0) {
         if ((rulesFileModelCnt > 0) && (rulesFileModelCnt < cornerCnt)) {
           logger_->warn(
-              RCX,
+              utl::RCX,
               226,
               "There were {} extraction models defined but only {} exists "
               "in the extraction rules file {}",
@@ -841,7 +841,7 @@ bool extRCModel::readRules(char* name,
             break;
           }
           if (kk == rulesFileModelCnt) {
-            logger_->warn(RCX,
+            logger_->warn(utl::RCX,
                           228,
                           "Cannot find model index {} in extRules file {}",
                           modelIndex,
