@@ -15,13 +15,11 @@
 
 namespace odb {
 class dbBox;
-class dbBTerm;
 class dbMaster;
 class dbSite;
 }  // namespace odb
 namespace dpl {
 
-using odb::dbBTerm;
 using odb::dbMaster;
 using odb::dbSite;
 
@@ -115,14 +113,14 @@ class Node
   const std::vector<Pin*>& getPins() const;
   int getGroupId() const;
   odb::Rect getBBox() const;
-  dbBTerm* getBTerm() const;
+  odb::dbBTerm* getBTerm() const;
   uint8_t getUsedLayers() const;
 
   // setters
   void setId(int id);
   void setFixed(bool in);
   void setDbInst(odb::dbInst* inst);
-  void setBTerm(dbBTerm* term);
+  void setBTerm(odb::dbBTerm* term);
   void setLeft(DbuX x);
   void setBottom(DbuY y);
   void setOrient(const odb::dbOrientType& in);
