@@ -182,7 +182,7 @@ void Opendp::createArchitecture()
       // error.
       continue;
     }
-    dbSite* site = row->getSite();
+    odb::dbSite* site = row->getSite();
     if (site->getHeight() > min_row_height) {
       skip_list[site->getHeight()].insert(site->getName());
       continue;

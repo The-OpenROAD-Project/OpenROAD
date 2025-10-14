@@ -15,11 +15,8 @@
 
 namespace odb {
 class dbBox;
-class dbSite;
 }  // namespace odb
 namespace dpl {
-
-using odb::dbSite;
 
 class MasterEdge
 {
@@ -90,7 +87,7 @@ class Node
   bool isFixed() const;
   bool isPlaced() const;
   bool isHold() const;
-  dbSite* getSite() const;
+  odb::dbSite* getSite() const;
   DbuX siteWidth() const;
   bool isHybrid() const;
   bool isHybridParent() const;

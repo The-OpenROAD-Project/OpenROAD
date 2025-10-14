@@ -894,7 +894,7 @@ bool Opendp::checkPixels(const Node* cell,
     return false;
   }
 
-  dbSite* site = cell->getSite();
+  odb::dbSite* site = cell->getSite();
   for (GridY y1 = y; y1 < y_end; y1++) {
     const bool first_row = (y1 == y);
     for (GridX x1 = x; x1 < x_end; x1++) {
@@ -1229,7 +1229,7 @@ void Opendp::placeCell(Node* cell, const GridX x, const GridY y)
   setGridLoc(cell, x, y);
   grid_->paintPixel(cell);
   cell->setPlaced(true);
-  dbSite* site = cell->getDbInst()->getMaster()->getSite();
+  odb::dbSite* site = cell->getDbInst()->getMaster()->getSite();
   cell->setOrient(grid_->getSiteOrientation(x, y, site).value());
   if (journal_) {
     MoveCellAction action(cell,

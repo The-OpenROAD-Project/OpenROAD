@@ -163,7 +163,7 @@ bool Node::isHold() const
 {
   return hold_;
 }
-dbSite* Node::getSite() const
+odb::dbSite* Node::getSite() const
 {
   if (!getDbInst() || !getDbInst()->getMaster()) {
     return nullptr;
@@ -182,12 +182,12 @@ DbuX Node::siteWidth() const
 }
 bool Node::isHybrid() const
 {
-  dbSite* site = getSite();
+  odb::dbSite* site = getSite();
   return site ? site->isHybrid() : false;
 }
 bool Node::isHybridParent() const
 {
-  dbSite* site = getSite();
+  odb::dbSite* site = getSite();
   return site ? site->hasRowPattern() : false;
 }
 int64_t Node::area() const

@@ -23,8 +23,6 @@
 
 namespace dpl {
 
-using odb::dbSite;
-
 struct GridIntervalX
 {
   GridX lo;
@@ -139,9 +137,9 @@ class Grid
 
   std::optional<odb::dbOrientType> getSiteOrientation(GridX x,
                                                       GridY y,
-                                                      dbSite* site) const;
-  std::pair<dbSite*, odb::dbOrientType> getShortestSite(GridX grid_x,
-                                                        GridY grid_y);
+                                                      odb::dbSite* site) const;
+  std::pair<odb::dbSite*, odb::dbOrientType> getShortestSite(GridX grid_x,
+                                                             GridY grid_y);
 
   void resize(int size) { pixels_.resize(size); }
   void resize(GridY size) { pixels_.resize(size.v); }
@@ -159,7 +157,7 @@ class Grid
 
  private:
   // Maps a site to the right orientation to use in a given row
-  using SiteToOrientation = std::map<dbSite*, odb::dbOrientType>;
+  using SiteToOrientation = std::map<odb::dbSite*, odb::dbOrientType>;
 
   // Used to combine the SiteToOrientation for two intervals when merged
   template <typename MapType>
