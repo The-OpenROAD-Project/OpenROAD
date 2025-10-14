@@ -18,6 +18,7 @@
 #include "frDesign.h"
 #include "global.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 
 namespace drt {
 
@@ -162,7 +163,7 @@ UniqueClassKey UniqueInsts::computeUniqueClassKey(frInst* inst) const
 {
   const odb::Point origin = inst->getOrigin();
   const odb::Rect boundary_bbox = inst->getBoundaryBBox();
-  const dbOrientType orient = inst->getOrient();
+  const odb::dbOrientType orient = inst->getOrient();
   auto it = master_to_pin_layer_range_.find(inst->getMaster());
   if (it == master_to_pin_layer_range_.end()) {
     logger_->error(DRT,

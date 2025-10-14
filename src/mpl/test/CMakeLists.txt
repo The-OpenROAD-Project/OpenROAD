@@ -26,6 +26,7 @@ or_integration_tests(
     boundary_push3
     centralization1
     clocked_macro
+    keep_clustering_data
     fixed_macros
 )
 

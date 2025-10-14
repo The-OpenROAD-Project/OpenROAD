@@ -3,6 +3,7 @@
 
 #include <string.h>
 
+#include <cctype>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -12,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "odb/array1.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
@@ -19,10 +21,11 @@
 #include "utl/Logger.h"
 
 // #define SKIP_SOLVER
-namespace rcx {
 
-using namespace odb;
+using odb::Ath__array1D;
 using utl::RCX;
+
+namespace rcx {
 
 uint extMain::readProcess(const char* name, const char* filename)
 {

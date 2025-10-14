@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "gseq.h"
+#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
@@ -20,9 +21,17 @@
 #include "rcx/grids.h"
 #include "utl/Logger.h"
 
-namespace rcx {
+using odb::Ath__array1D;
+using odb::dbCapNode;
+using odb::dbInst;
+using odb::dbInstShapeItr;
+using odb::dbITermShapeItr;
+using odb::dbNet;
+using odb::dbSet;
+using odb::dbWirePath;
+using odb::Rect;
 
-using namespace odb;
+namespace rcx {
 
 void extMain::initRunEnv(extMeasureRC& m)
 {
@@ -140,7 +149,7 @@ int extMain::initSearch(LayerDimensionData& tables,
 
   tables.maxWidth = maxWidth;
 
-  logger_->info(RCX, 43, "{} wires to be extracted", totWireCnt);
+  logger_->info(utl::RCX, 43, "{} wires to be extracted", totWireCnt);
 
   return layerCnt;
 }
@@ -808,7 +817,7 @@ bool extRCModel::readRules(char* name,
       if (cornerCnt > 0) {
         if ((rulesFileModelCnt > 0) && (rulesFileModelCnt < cornerCnt)) {
           logger_->warn(
-              RCX,
+              utl::RCX,
               226,
               "There were {} extraction models defined but only {} exists "
               "in the extraction rules file {}",
@@ -832,7 +841,7 @@ bool extRCModel::readRules(char* name,
             break;
           }
           if (kk == rulesFileModelCnt) {
-            logger_->warn(RCX,
+            logger_->warn(utl::RCX,
                           228,
                           "Cannot find model index {} in extRules file {}",
                           modelIndex,

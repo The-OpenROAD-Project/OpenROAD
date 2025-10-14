@@ -893,6 +893,14 @@ Descriptor::Properties DbMasterDescriptor::getDBProperties(
   props.push_back({"Instances", instances});
   props.push_back({"Origin", master->getOrigin()});
 
+  std::vector<std::any> edge_types;
+  for (auto* edge : master->getEdgeTypes()) {
+    edge_types.emplace_back(gui->makeSelected(edge));
+  }
+  if (!edge_types.empty()) {
+    props.push_back({"Edge types", edge_types});
+  }
+
   auto liberty
       = sta_->getDbNetwork()->findLibertyCell(master->getName().c_str());
   if (liberty) {
@@ -949,20 +957,10 @@ void DbMasterDescriptor::getInstances(odb::dbMaster* master,
 void DbMasterDescriptor::visitAllObjects(
     const std::function<void(const Selected&)>& func) const
 {
-  auto* chip = db_->getChip();
-  if (chip == nullptr) {
-    return;
-  }
-  auto* block = chip->getBlock();
-  if (block == nullptr) {
-    return;
-  }
-
-  std::vector<odb::dbMaster*> masters;
-  block->getMasters(masters);
-
-  for (auto* master : masters) {
-    func({master, this});
+  for (auto* lib : db_->getLibs()) {
+    for (auto* master : lib->getMasters()) {
+      func({master, this});
+    }
   }
 }
 
@@ -5097,6 +5095,163 @@ odb::dbTransform DbBoxDescriptor::getTransform(const std::any& object) const
     return box_xform->xform;
   }
   return odb::dbTransform();
+}
+
+//////////////////////////////////////////////////
+
+DbMasterEdgeTypeDescriptor::DbMasterEdgeTypeDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbMasterEdgeType>(db)
+{
+}
+
+std::string DbMasterEdgeTypeDescriptor::getName(const std::any& object) const
+{
+  return getObject(object)->getEdgeType();
+}
+
+std::string DbMasterEdgeTypeDescriptor::getTypeName() const
+{
+  return "MasterEdgeType";
+}
+
+bool DbMasterEdgeTypeDescriptor::getBBox(const std::any& object,
+                                         odb::Rect& bbox) const
+{
+  return false;
+}
+
+void DbMasterEdgeTypeDescriptor::highlight(const std::any& object,
+                                           Painter& painter) const
+{
+}
+
+void DbMasterEdgeTypeDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
+{
+  for (auto* lib : db_->getLibs()) {
+    for (auto* master : lib->getMasters()) {
+      for (auto* edge : master->getEdgeTypes()) {
+        func({edge, this});
+      }
+    }
+  }
+}
+
+Descriptor::Properties DbMasterEdgeTypeDescriptor::getDBProperties(
+    odb::dbMasterEdgeType* edge) const
+{
+  Properties props;
+
+  auto* gui = Gui::get();
+
+  SelectionSet rules;
+  for (auto* tech : db_->getTechs()) {
+    for (auto* rule : tech->getCellEdgeSpacingTable()) {
+      if (rule->getFirstEdgeType() == edge->getEdgeType()) {
+        rules.insert(gui->makeSelected(rule));
+      } else if (rule->getSecondEdgeType() == edge->getEdgeType()) {
+        rules.insert(gui->makeSelected(rule));
+      }
+    }
+  }
+  if (!rules.empty()) {
+    props.push_back({"Rules", rules});
+  }
+
+  if (edge->getCellRow() != -1) {
+    props.push_back({"Cell row", edge->getCellRow()});
+  }
+  if (edge->getHalfRow() != -1) {
+    props.push_back({"Half row", edge->getHalfRow()});
+  }
+
+  PropertyList range;
+  if (edge->getRangeBegin() != -1) {
+    range.push_back({"Begin", edge->getRangeBegin()});
+  }
+  if (edge->getRangeEnd() != -1) {
+    range.push_back({"End", edge->getRangeEnd()});
+  }
+  if (!range.empty()) {
+    props.push_back({"Range", range});
+  }
+
+  std::string edgedir;
+  switch (edge->getEdgeDir()) {
+    case odb::dbMasterEdgeType::TOP:
+      edgedir = "top";
+      break;
+    case odb::dbMasterEdgeType::RIGHT:
+      edgedir = "right";
+      break;
+    case odb::dbMasterEdgeType::LEFT:
+      edgedir = "left";
+      break;
+    case odb::dbMasterEdgeType::BOTTOM:
+      edgedir = "bottom";
+      break;
+  }
+  props.push_back({"Edge direction", edgedir});
+
+  return props;
+}
+
+//////////////////////////////////////////////////
+
+DbCellEdgeSpacingDescriptor::DbCellEdgeSpacingDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbCellEdgeSpacing>(db)
+{
+}
+
+std::string DbCellEdgeSpacingDescriptor::getName(const std::any& object) const
+{
+  auto* obj = getObject(object);
+  return obj->getFirstEdgeType() + " - " + obj->getSecondEdgeType();
+}
+
+std::string DbCellEdgeSpacingDescriptor::getTypeName() const
+{
+  return "CellEdgeSpacingRule";
+}
+
+bool DbCellEdgeSpacingDescriptor::getBBox(const std::any& object,
+                                          odb::Rect& bbox) const
+{
+  return false;
+}
+
+void DbCellEdgeSpacingDescriptor::highlight(const std::any& object,
+                                            Painter& painter) const
+{
+}
+
+void DbCellEdgeSpacingDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
+{
+  for (auto* tech : db_->getTechs()) {
+    for (auto* rule : tech->getCellEdgeSpacingTable()) {
+      func({rule, this});
+    }
+  }
+}
+
+Descriptor::Properties DbCellEdgeSpacingDescriptor::getDBProperties(
+    odb::dbCellEdgeSpacing* rule) const
+{
+  Properties props;
+
+  props.push_back({"First edge", rule->getFirstEdgeType()});
+  props.push_back({"Second edge", rule->getSecondEdgeType()});
+
+  props.push_back({"Spacing", Property::convert_dbu(rule->getSpacing(), true)});
+  props.push_back({"Except abutted", rule->isExceptAbutted()});
+  props.push_back(
+      {"Except non filler in between", rule->isExceptNonFillerInBetween()});
+  props.push_back({"Optional", rule->isOptional()});
+  props.push_back({"Soft", rule->isSoft()});
+  props.push_back({"Exact", rule->isExact()});
+
+  return props;
 }
 
 }  // namespace gui

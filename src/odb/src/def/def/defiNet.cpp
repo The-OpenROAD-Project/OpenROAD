@@ -38,6 +38,8 @@
 #include <sstream>
 
 #include "defiDebug.hpp"
+#include "defiKRDefs.hpp"
+#include "defiMisc.hpp"
 #include "defiPath.hpp"
 #include "defiUtil.hpp"
 #include "defrData.hpp"

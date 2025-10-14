@@ -913,6 +913,8 @@ void dbDatabase::triggerPostReadLef(dbTech* tech, dbLib* library)
 
 void dbDatabase::triggerPostReadDef(dbBlock* block, const bool floorplan)
 {
+  block->setCoreArea(block->computeCoreArea());
+
   _dbDatabase* db = (_dbDatabase*) this;
   for (dbDatabaseObserver* observer : db->observers_) {
     if (floorplan) {

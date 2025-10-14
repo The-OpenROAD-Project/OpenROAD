@@ -56,6 +56,7 @@ initialize_floorplan
   -site site_name
   [-additional_sites site_names]
   [-flip_sites site_names]
+  [-gap space]
   [-row_parity NONE|EVEN|ODD]
 ```
 
@@ -71,6 +72,7 @@ initialize_floorplan
 | `[-additional_sites]` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
 | `[-aspect_ratio]` | Ratio $\frac{height}{width}$. The default value is `1.0` and the allowed values are floats `[0, 1.0]`. |
 | `[-flip_sites]` | Flip the orientations of rows matching these sites. Sites listed under this option will create `FS`-oriented rows at even indices and `N`-oriented rows at odd ones, and vice versa for sites not listed under this option. (e.g. `{SITEXX, SITEYY}`) |
+| `[-gap]` | Space between power domains in microns. The default value is 6 times the minimum site height. |
 | `[-row_parity]` | Snap to either an odd (`ODD`) or even (`EVEN`) number of rows. Defaults to `NONE` (no constraint on parity). |
 
 ### Make Tracks
@@ -107,6 +109,7 @@ make_rows
   -site site_name
   [-additional_sites site_names]
   [-flip_sites site_names]
+  [-gap space]
   [-row_parity NONE|EVEN|ODD]
 ```
 
@@ -120,6 +123,7 @@ make_rows
 | `-site` | Site name. |
 | `[-additional_sites]` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
 | `[-flip_sites]` | Flip the orientations of rows matching these sites. Sites listed under this option will create `FS`-oriented rows at even indices and `N`-oriented rows at odd ones, and vice versa for sites not listed under this option. (e.g. `{SITEXX, SITEYY}`) |
+| `[-gap]` | Space between power domains in microns. The default value is 6 times the minimum site height. |
 | `[-row_parity]` | Snap to either an odd (`ODD`) or even (`EVEN`) number of rows. Defaults to `NONE` (no constraint on parity). |
 
 ### Insert tieoff cells

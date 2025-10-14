@@ -3,6 +3,7 @@
 
 #include "LoggerCommon.h"
 
+#include <cstdint>
 #include <string>
 
 #include "utl/Logger.h"
@@ -64,7 +65,7 @@ void metric(const char* metric, const char* value)
   logger->metric(metric, value);
 }
 
-void metric_integer(const char* metric, const int value)
+void metric_integer(const char* metric, int64_t value)
 {
   Logger* logger = getLogger();
   logger->metric(metric, value);

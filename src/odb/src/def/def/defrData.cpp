@@ -36,6 +36,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "defiKRDefs.hpp"
+#include "defrCallBacks.hpp"
 #include "defrSettings.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE

@@ -13,6 +13,7 @@
 #include "db/obj/frRef.h"
 #include "frBaseTypes.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace drt {
@@ -70,8 +71,8 @@ class frInst : public frRef
    * setTransform
    */
 
-  dbOrientType getOrient() const override { return xform_.getOrient(); }
-  void setOrient(const dbOrientType& tmpOrient) override
+  odb::dbOrientType getOrient() const override { return xform_.getOrient(); }
+  void setOrient(const odb::dbOrientType& tmpOrient) override
   {
     xform_.setOrient(tmpOrient);
   }

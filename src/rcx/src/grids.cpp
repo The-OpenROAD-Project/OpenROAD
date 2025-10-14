@@ -8,8 +8,11 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/isotropy.h"
+
+using odb::Ath__array1D;
 
 namespace rcx {
 
@@ -259,7 +262,7 @@ int Wire::getRsegId()
 }
 int Wire::getShapeProperty(int id)
 {
-  dbNet* net = getNet();
+  odb::dbNet* net = getNet();
   if (net == nullptr) {
     return 0;
   }
@@ -272,15 +275,15 @@ int Wire::getShapeProperty(int id)
   int rcid = p->getValue();
   return rcid;
 }
-dbNet* Wire::getNet()
+odb::dbNet* Wire::getNet()
 {
   GridTable* gtb = _track->getGrid()->getGridTable();
-  dbBlock* block = gtb->getBlock();
+  odb::dbBlock* block = gtb->getBlock();
   if (_otherId == 0) {
     return (odb::dbSBox::getSBox(block, _boxId)->getSWire()->getNet());
   }
   if (gtb->usingDbSdb()) {
-    return dbNet::getNet(block, _boxId);
+    return odb::dbNet::getNet(block, _boxId);
   }
   return (odb::dbRSeg::getRSeg(block, _boxId)->getNet());
 }
@@ -2597,7 +2600,7 @@ void GridTable::removeMarkedNetWires()
   fprintf(stdout, "remove %d sdb wires.\n", cnt);
 }
 
-void GridTable::setExtControl(dbBlock* block,
+void GridTable::setExtControl(odb::dbBlock* block,
                               bool useDbSdb,
                               uint adj,
                               uint npsrc,
@@ -2647,7 +2650,7 @@ void GridTable::setExtControl(dbBlock* block,
   _dgContextTrackBase = dgContextTrackBase;
   _seqPool = seqPool;
 }
-void GridTable::setExtControl_v2(dbBlock* block,
+void GridTable::setExtControl_v2(odb::dbBlock* block,
                                  bool useDbSdb,
                                  uint adj,
                                  uint npsrc,

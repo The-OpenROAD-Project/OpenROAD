@@ -216,10 +216,10 @@ void Opendp::placeRowFillers(GridY row,
       for (dbMaster* master : fillers) {
         std::string inst_name
             = prefix + to_string(row.v) + "_" + to_string(k.v);
-        dbInst* inst = dbInst::create(block_,
-                                      master,
-                                      inst_name.c_str(),
-                                      /* physical_only */ true);
+        odb::dbInst* inst = odb::dbInst::create(block_,
+                                                master,
+                                                inst_name.c_str(),
+                                                /* physical_only */ true);
         DbuX x{core_.xMin() + gridToDbu(k, site_width)};
         DbuY y{core_.yMin() + grid_->gridYToDbu(row)};
         inst->setOrient(orient);
@@ -292,7 +292,7 @@ dbMasterSeq& Opendp::gapFillers(
 void Opendp::removeFillers()
 {
   block_ = db_->getChip()->getBlock();
-  for (dbInst* db_inst : block_->getInsts()) {
+  for (odb::dbInst* db_inst : block_->getInsts()) {
     if (isFiller(db_inst)) {
       odb::dbInst::destroy(db_inst);
     }
@@ -300,7 +300,7 @@ void Opendp::removeFillers()
 }
 
 /* static */
-bool Opendp::isFiller(dbInst* db_inst)
+bool Opendp::isFiller(odb::dbInst* db_inst)
 {
   dbMaster* db_master = db_inst->getMaster();
   return db_master->getType() == odb::dbMasterType::CORE_SPACER

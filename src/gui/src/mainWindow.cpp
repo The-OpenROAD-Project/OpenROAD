@@ -7,6 +7,7 @@
 #include <QDesktopServices>
 #include <QDialog>
 #include <QPushButton>
+#include <QSize>
 #include <QWidget>
 #include <algorithm>
 #include <any>
@@ -614,6 +615,10 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   gui->registerDescriptor<odb::dbBox*>(new DbBoxDescriptor(db_));
   gui->registerDescriptor<DbBoxDescriptor::BoxWithTransform>(
       new DbBoxDescriptor(db_));
+  gui->registerDescriptor<odb::dbMasterEdgeType*>(
+      new DbMasterEdgeTypeDescriptor(db_));
+  gui->registerDescriptor<odb::dbCellEdgeSpacing*>(
+      new DbCellEdgeSpacingDescriptor(db_));
 
   gui->registerDescriptor<sta::Corner*>(new CornerDescriptor(sta));
   gui->registerDescriptor<sta::LibertyLibrary*>(
