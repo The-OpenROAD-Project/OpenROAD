@@ -1687,7 +1687,7 @@ uint Grid::placeWire(Wire* w)
 
   return trackNum1;
 }
-uint Grid::placeBox(dbBox* box, uint wtype, uint id)
+uint Grid::placeBox(odb::dbBox* box, uint wtype, uint id)
 {
   int ll[2] = {box->xMin(), box->yMin()};
   int ur[2] = {box->xMax(), box->yMax()};
@@ -2496,7 +2496,7 @@ Grid* GridTable::getGrid(uint row, uint col)
 {
   return _gridTable[row][col];
 }
-bool GridTable::addBox(uint row, uint col, dbBox* bb)
+bool GridTable::addBox(uint row, uint col, odb::dbBox* bb)
 {
   Grid* g = _gridTable[row][col];
 
@@ -2504,7 +2504,7 @@ bool GridTable::addBox(uint row, uint col, dbBox* bb)
 
   return true;
 }
-Wire* GridTable::addBox(dbBox* bb, uint wtype, uint id)
+Wire* GridTable::addBox(odb::dbBox* bb, uint wtype, uint id)
 {
   uint row = 0;
   uint col = 0;

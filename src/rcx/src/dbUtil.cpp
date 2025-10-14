@@ -245,7 +245,7 @@ dbTechVia* dbCreateNetUtil::getVia(int l1, int l2, odb::Rect& bbox)
       def = via;
     }
 
-    dbBox* bbox = via->getBBox();
+    odb::dbBox* bbox = via->getBBox();
     uint vdx = bbox->getDX();
     uint vdy = bbox->getDY();
 
@@ -688,15 +688,15 @@ std::pair<odb::dbBTerm*, odb::dbBTerm*> dbCreateNetUtil::createTerms4SingleNet(
 
   if (dx == fwidth) {
     int x = x1 + hwidth;
-    dbBox::create(
+    odb::dbBox::create(
         blpin, inly, -hwidth + x, -hwidth + y1, hwidth + x, hwidth + y1);
-    dbBox::create(
+    odb::dbBox::create(
         bupin, inly, -hwidth + x, -hwidth + y2, hwidth + x, hwidth + y2);
   } else {
     int y = y1 + hwidth;
-    dbBox::create(
+    odb::dbBox::create(
         blpin, inly, -hwidth + x1, -hwidth + y, hwidth + x1, hwidth + y);
-    dbBox::create(
+    odb::dbBox::create(
         bupin, inly, -hwidth + x2, -hwidth + y, hwidth + x2, hwidth + y);
   }
 

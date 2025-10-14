@@ -13,9 +13,6 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
-namespace odb {
-class dbBox;
-}  // namespace odb
 namespace dpl {
 
 class MasterEdge

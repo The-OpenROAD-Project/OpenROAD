@@ -19,7 +19,6 @@
 namespace rcx {
 
 using odb::AthPool;
-using odb::dbBox;
 
 enum OverlapAdjust
 {
@@ -341,7 +340,7 @@ class Grid
 
   uint placeWire(SearchBox* bb);
   uint placeBox(uint id, int x1, int y1, int x2, int y2);
-  uint placeBox(dbBox* box, uint wtype, uint id);
+  uint placeBox(odb::dbBox* box, uint wtype, uint id);
   uint placeBox(Box* box);
   uint placeBox(SearchBox* bb);
   uint getBucketNum(int xy);
@@ -533,8 +532,8 @@ class GridTable
   uint getColNum(int y);
   bool getRowCol(int x1, int y1, uint* row, uint* col);
   Wire* addBox(Box* bb);
-  Wire* addBox(dbBox* bb, uint wtype, uint id);
-  bool addBox(uint row, uint col, dbBox* bb);
+  Wire* addBox(odb::dbBox* bb, uint wtype, uint id);
+  bool addBox(uint row, uint col, odb::dbBox* bb);
 
   uint getBoxes(Box* bb, odb::Ath__array1D<Box*>* table);
   uint search(SearchBox* bb,
