@@ -1332,8 +1332,6 @@ void GuideProcessor::mapTermAccessPointsToGCells(
          getDesign()->getTopBlock()->getGCellIndices(ap_loc)) {
       gcell_pin_map[Point3D(idx, ap_loc.z())].insert(pin);
     }
-    // const odb::Point idx = getDesign()->getTopBlock()->getGCellIdx(ap_loc);
-    // gcell_pin_map[Point3D(idx, ap_loc.z())].insert(pin);
   }
 }
 

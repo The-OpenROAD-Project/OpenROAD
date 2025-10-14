@@ -273,26 +273,18 @@ class frBlock : public frBlockObject
 
   std::vector<odb::Point> getGCellIndices(const odb::Point& pt) const
   {
-    auto& gp = getGCellPatterns();
-    auto& xgp = gp[0];
-    auto& ygp = gp[1];
+    const auto& gp = getGCellPatterns();
+    const auto& xgp = gp[0];
+    const auto& ygp = gp[1];
     frCoord coord_x = pt.x() - xgp.getStartCoord();
     frCoord coord_y = pt.y() - ygp.getStartCoord();
-    if (coord_x < 0) {
-      coord_x = 0;
-    }
-    if (coord_x >= (frCoord) xgp.getSpacing() * xgp.getCount()) {
-      coord_x = ((frCoord) xgp.getSpacing() - 1) * xgp.getCount();
-    }
-    if (coord_y < 0) {
-      coord_y = 0;
-    }
-    if (coord_y >= (frCoord) ygp.getSpacing() * ygp.getCount()) {
-      coord_y = ((frCoord) ygp.getSpacing() - 1) * ygp.getCount();
-    }
+    const frCoord max_coord_x = xgp.getSpacing() * (frCoord) xgp.getCount();
+    const frCoord max_coord_y = ygp.getSpacing() * (frCoord) ygp.getCount();
+    coord_x = std::clamp(coord_x, 0, max_coord_x - 1);
+    coord_y = std::clamp(coord_y, 0, max_coord_y - 1);
 
-    frCoord base_idxX = coord_x / (frCoord) xgp.getSpacing();
-    frCoord base_idxY = coord_y / (frCoord) ygp.getSpacing();
+    const frCoord base_idxX = coord_x / (frCoord) xgp.getSpacing();
+    const frCoord base_idxY = coord_y / (frCoord) ygp.getSpacing();
     std::set<frCoord> x_indices{base_idxX};
     std::set<frCoord> y_indices{base_idxY};
     // TODO: handle case where gcell size is 1 unit
