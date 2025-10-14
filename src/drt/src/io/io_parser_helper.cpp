@@ -139,9 +139,9 @@ void io::Parser::initDefaultVias()
       bool isLayer1EncHorz = layer1Box.dx() > layer1Box.dy();
       bool isLayer2EncHorz = layer2Box.dx() > layer2Box.dy();
       bool isLayer1Horz = (getTech()->getLayer(layer1Num)->getDir()
-                           == dbTechLayerDir::HORIZONTAL);
+                           == odb::dbTechLayerDir::HORIZONTAL);
       bool isLayer2Horz = (getTech()->getLayer(layer2Num)->getDir()
-                           == dbTechLayerDir::HORIZONTAL);
+                           == odb::dbTechLayerDir::HORIZONTAL);
       bool needViaGen = false;
       if ((!isLayer1Square && (isLayer1EncHorz != isLayer1Horz))
           || (!isLayer2Square && (isLayer2EncHorz != isLayer2Horz))) {
@@ -507,10 +507,10 @@ void io::Parser::getViaRawPriority(const frViaDef* viaDef,
   isNotLowerAlign
       = (isLayer1Horz
          && (getTech()->getLayer(viaDef->getLayer1Num())->getDir()
-             == dbTechLayerDir::VERTICAL))
+             == odb::dbTechLayerDir::VERTICAL))
         || (!isLayer1Horz
             && (getTech()->getLayer(viaDef->getLayer1Num())->getDir()
-                == dbTechLayerDir::HORIZONTAL));
+                == odb::dbTechLayerDir::HORIZONTAL));
 
   PolygonSet viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
@@ -527,10 +527,10 @@ void io::Parser::getViaRawPriority(const frViaDef* viaDef,
   isNotUpperAlign
       = (isLayer2Horz
          && (getTech()->getLayer(viaDef->getLayer2Num())->getDir()
-             == dbTechLayerDir::VERTICAL))
+             == odb::dbTechLayerDir::VERTICAL))
         || (!isLayer2Horz
             && (getTech()->getLayer(viaDef->getLayer2Num())->getDir()
-                == dbTechLayerDir::HORIZONTAL));
+                == odb::dbTechLayerDir::HORIZONTAL));
 
   frCoord layer1Area = area(viaLayerPS1);
   frCoord layer2Area = area(viaLayerPS2);

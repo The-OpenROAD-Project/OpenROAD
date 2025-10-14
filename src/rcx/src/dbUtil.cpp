@@ -266,10 +266,10 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
                                                  int x2,
                                                  int y2,
                                                  int routingLayer,
-                                                 dbTechLayerDir dir,
+                                                 odb::dbTechLayerDir dir,
                                                  bool skipBterms)
 {
-  if (dir == dbTechLayerDir::NONE) {
+  if (dir == odb::dbTechLayerDir::NONE) {
     return createNetSingleWire(
         netName, x1, y1, x2, y2, routingLayer, dir, skipBterms);
   }
@@ -293,7 +293,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   int width;
   Point p0, p1;
 
-  if (dir == dbTechLayerDir::VERTICAL) {
+  if (dir == odb::dbTechLayerDir::VERTICAL) {
     uint dx = r.dx();
 
     // This is dangerous!

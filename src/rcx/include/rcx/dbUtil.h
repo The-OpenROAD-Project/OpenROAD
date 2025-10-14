@@ -27,7 +27,6 @@ using odb::dbObject;
 using odb::dbSBox;
 using odb::dbShape;
 using odb::dbTech;
-using odb::dbTechLayerDir;
 using odb::dbTechLayerRule;
 using odb::dbTechNonDefaultRule;
 using odb::dbTechVia;
@@ -58,7 +57,7 @@ class dbCreateNetUtil
                                   int x2,
                                   int y2,
                                   int routingLayer,
-                                  dbTechLayerDir dir,
+                                  odb::dbTechLayerDir dir,
                                   bool skipBterms = false);
 
   odb::dbNet* createNetSingleWire(odb::Rect& r,
