@@ -1858,34 +1858,43 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
   }
 }
 
-// For macro pins in the east and north edges of the macros, the access for
-// them can be blocked by the macro obstructions. This function adds the
-// resources necessary to route these pins.
-// Only pins in the east and north edges are affected because FastRoute
-// routes from left to right, and bottom to top.
+// For macro pins in the east and north edges of the macros, and pins on west
+// and south edges that have their APs in GCells completely blocked by macro
+// obstructions, the access for them can be blocked by the macro obstructions.
+// This function adds the resources necessary to route these pins. Only pins in
+// the east and north edges are affected because FastRoute routes from left to
+// right, and bottom to top.
 void GlobalRouter::addResourcesForPinAccess()
 {
   odb::dbTech* tech = db_->getTech();
   for (const auto& [db_net, net] : db_net_map_) {
     for (const Pin& pin : net->getPins()) {
-      if (pin.isConnectedToPadOrMacro()
-          && (pin.getEdge() == PinEdge::east
-              || pin.getEdge() == PinEdge::north)) {
+      if (pin.isConnectedToPadOrMacro() && (pin.getEdge() != PinEdge::none)) {
         const odb::Point& pos = pin.getOnGridPosition();
         int pin_x = (int) ((pos.x() - grid_->getXMin()) / grid_->getTileSize());
         int pin_y = (int) ((pos.y() - grid_->getYMin()) / grid_->getTileSize());
         const int layer = pin.getConnectionLayer();
         odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
         if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+          const bool east_north_pin = pin.getEdge() == PinEdge::east
+                                      || pin.getEdge() == PinEdge::north;
+          int pin_y1, pin_y2;
+          pin_y1 = east_north_pin ? pin_y : pin_y - 1;
+          pin_y2 = east_north_pin ? pin_y + 1 : pin_y;
           const int edge_cap = fastroute_->getEdgeCapacity(
-              pin_x, pin_y, pin_x, pin_y + 1, layer);
+              pin_x, pin_y1, pin_x, pin_y2, layer);
           fastroute_->addAdjustment(
-              pin_x, pin_y, pin_x, pin_y + 1, layer, edge_cap + 1, false);
+              pin_x, pin_y1, pin_x, pin_y2, layer, edge_cap + 1, false);
         } else {
+          const bool east_north_pin = pin.getEdge() == PinEdge::east
+                                      || pin.getEdge() == PinEdge::north;
+          int pin_x1, pin_x2;
+          pin_x1 = east_north_pin ? pin_x : pin_x - 1;
+          pin_x2 = east_north_pin ? pin_x + 1 : pin_x;
           const int edge_cap = fastroute_->getEdgeCapacity(
-              pin_x, pin_y, pin_x + 1, pin_y, layer);
+              pin_x1, pin_y, pin_x2, pin_y, layer);
           fastroute_->addAdjustment(
-              pin_x, pin_y, pin_x + 1, pin_y, layer, edge_cap + 1, false);
+              pin_x1, pin_y, pin_x2, pin_y, layer, edge_cap + 1, false);
         }
       }
     }
