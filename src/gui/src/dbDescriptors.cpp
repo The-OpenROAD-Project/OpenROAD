@@ -5142,6 +5142,22 @@ Descriptor::Properties DbMasterEdgeTypeDescriptor::getDBProperties(
 {
   Properties props;
 
+  auto* gui = Gui::get();
+
+  SelectionSet rules;
+  for (auto* tech : db_->getTechs()) {
+    for (auto* rule : tech->getCellEdgeSpacingTable()) {
+      if (rule->getFirstEdgeType() == edge->getEdgeType()) {
+        rules.insert(gui->makeSelected(rule));
+      } else if (rule->getSecondEdgeType() == edge->getEdgeType()) {
+        rules.insert(gui->makeSelected(rule));
+      }
+    }
+  }
+  if (!rules.empty()) {
+    props.push_back({"Rules", rules});
+  }
+
   if (edge->getCellRow() != -1) {
     props.push_back({"Cell row", edge->getCellRow()});
   }
@@ -5176,6 +5192,64 @@ Descriptor::Properties DbMasterEdgeTypeDescriptor::getDBProperties(
       break;
   }
   props.push_back({"Edge direction", edgedir});
+
+  return props;
+}
+
+//////////////////////////////////////////////////
+
+DbCellEdgeSpacingDescriptor::DbCellEdgeSpacingDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbCellEdgeSpacing>(db)
+{
+}
+
+std::string DbCellEdgeSpacingDescriptor::getName(const std::any& object) const
+{
+  auto* obj = getObject(object);
+  return obj->getFirstEdgeType() + " - " + obj->getSecondEdgeType();
+}
+
+std::string DbCellEdgeSpacingDescriptor::getTypeName() const
+{
+  return "CellEdgeSpacingRule";
+}
+
+bool DbCellEdgeSpacingDescriptor::getBBox(const std::any& object,
+                                          odb::Rect& bbox) const
+{
+  return false;
+}
+
+void DbCellEdgeSpacingDescriptor::highlight(const std::any& object,
+                                            Painter& painter) const
+{
+}
+
+void DbCellEdgeSpacingDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
+{
+  for (auto* tech : db_->getTechs()) {
+    for (auto* rule : tech->getCellEdgeSpacingTable()) {
+      func({rule, this});
+    }
+  }
+}
+
+Descriptor::Properties DbCellEdgeSpacingDescriptor::getDBProperties(
+    odb::dbCellEdgeSpacing* rule) const
+{
+  Properties props;
+
+  props.push_back({"First edge", rule->getFirstEdgeType()});
+  props.push_back({"Second edge", rule->getSecondEdgeType()});
+
+  props.push_back({"Spacing", Property::convert_dbu(rule->getSpacing(), true)});
+  props.push_back({"Except abutted", rule->isExceptAbutted()});
+  props.push_back(
+      {"Except non filler in between", rule->isExceptNonFillerInBetween()});
+  props.push_back({"Optional", rule->isOptional()});
+  props.push_back({"Soft", rule->isSoft()});
+  props.push_back({"Exact", rule->isExact()});
 
   return props;
 }

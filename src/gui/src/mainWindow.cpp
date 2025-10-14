@@ -617,6 +617,8 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
       new DbBoxDescriptor(db_));
   gui->registerDescriptor<odb::dbMasterEdgeType*>(
       new DbMasterEdgeTypeDescriptor(db_));
+  gui->registerDescriptor<odb::dbCellEdgeSpacing*>(
+      new DbCellEdgeSpacingDescriptor(db_));
 
   gui->registerDescriptor<sta::Corner*>(new CornerDescriptor(sta));
   gui->registerDescriptor<sta::LibertyLibrary*>(
