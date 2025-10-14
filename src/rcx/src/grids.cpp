@@ -259,7 +259,7 @@ int Wire::getRsegId()
 }
 int Wire::getShapeProperty(int id)
 {
-  dbNet* net = getNet();
+  odb::dbNet* net = getNet();
   if (net == nullptr) {
     return 0;
   }
@@ -272,7 +272,7 @@ int Wire::getShapeProperty(int id)
   int rcid = p->getValue();
   return rcid;
 }
-dbNet* Wire::getNet()
+odb::dbNet* Wire::getNet()
 {
   GridTable* gtb = _track->getGrid()->getGridTable();
   odb::dbBlock* block = gtb->getBlock();
@@ -280,7 +280,7 @@ dbNet* Wire::getNet()
     return (odb::dbSBox::getSBox(block, _boxId)->getSWire()->getNet());
   }
   if (gtb->usingDbSdb()) {
-    return dbNet::getNet(block, _boxId);
+    return odb::dbNet::getNet(block, _boxId);
   }
   return (odb::dbRSeg::getRSeg(block, _boxId)->getNet());
 }

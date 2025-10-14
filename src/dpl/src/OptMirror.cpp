@@ -26,7 +26,7 @@ using odb::dbOrientType;
 
 static dbOrientType orientMirrorY(const dbOrientType& orient);
 
-NetBox::NetBox(dbNet* net, const odb::Rect& box, bool ignore)
+NetBox::NetBox(odb::dbNet* net, const odb::Rect& box, bool ignore)
     : net_(net), box_(box), ignore_(ignore)
 {
 }
@@ -97,7 +97,7 @@ void OptimizeMirroring::findNetBoxes()
 {
   net_box_map_.clear();
   auto nets = block_->getNets();
-  for (dbNet* net : nets) {
+  for (odb::dbNet* net : nets) {
     bool ignore = net->getSigType().isSupply()
                   || net->isSpecial()
                   // Reducing HPWL on large nets (like clocks) is irrelevant
@@ -122,7 +122,7 @@ std::vector<odb::dbInst*> OptimizeMirroring::findMirrorCandidates(
   // Find inst terms on the boundary of the net boxes.
   for (NetBox* net_box : net_boxes) {
     if (!net_box->isIgnore()) {
-      dbNet* net = net_box->getNet();
+      odb::dbNet* net = net_box->getNet();
       const odb::Rect& box = net_box->getBox();
       for (dbITerm* iterm : net->getITerms()) {
         odb::dbInst* inst = iterm->getInst();
@@ -205,7 +205,7 @@ int64_t OptimizeMirroring::hpwl(odb::dbInst* inst)
 {
   int64_t inst_hpwl = 0;
   for (dbITerm* iterm : inst->getITerms()) {
-    dbNet* net = iterm->getNet();
+    odb::dbNet* net = iterm->getNet();
     if (net) {
       NetBox& net_box = net_box_map_[net];
       if (!net_box.isIgnore()) {
@@ -219,7 +219,7 @@ int64_t OptimizeMirroring::hpwl(odb::dbInst* inst)
 void OptimizeMirroring::updateNetBoxes(odb::dbInst* inst)
 {
   for (dbITerm* iterm : inst->getITerms()) {
-    dbNet* net = iterm->getNet();
+    odb::dbNet* net = iterm->getNet();
     if (net) {
       NetBox& net_box = net_box_map_[net];
       if (!net_box.isIgnore()) {
@@ -232,7 +232,7 @@ void OptimizeMirroring::updateNetBoxes(odb::dbInst* inst)
 void OptimizeMirroring::saveNetBoxes(odb::dbInst* inst)
 {
   for (dbITerm* iterm : inst->getITerms()) {
-    dbNet* net = iterm->getNet();
+    odb::dbNet* net = iterm->getNet();
     if (net) {
       net_box_map_[net].saveBox();
     }
@@ -242,7 +242,7 @@ void OptimizeMirroring::saveNetBoxes(odb::dbInst* inst)
 void OptimizeMirroring::restoreNetBoxes(odb::dbInst* inst)
 {
   for (dbITerm* iterm : inst->getITerms()) {
-    dbNet* net = iterm->getNet();
+    odb::dbNet* net = iterm->getNet();
     if (net) {
       net_box_map_[net].restoreBox();
     }
