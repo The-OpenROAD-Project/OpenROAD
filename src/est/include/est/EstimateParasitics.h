@@ -44,7 +44,6 @@ namespace est {
 using utl::Logger;
 
 using odb::dbDatabase;
-using odb::dbTechLayer;
 
 using stt::SteinerTreeBuilder;
 
@@ -122,11 +121,11 @@ class EstimateParasitics : public dbStaState
   ~EstimateParasitics() override;
   void initSteinerRenderer(
       std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer);
-  void setLayerRC(dbTechLayer* layer,
+  void setLayerRC(odb::dbTechLayer* layer,
                   const Corner* corner,
                   double res,
                   double cap);
-  void layerRC(dbTechLayer* layer,
+  void layerRC(odb::dbTechLayer* layer,
                const Corner* corner,
                // Return values.
                double& res,

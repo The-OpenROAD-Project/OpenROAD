@@ -32,7 +32,6 @@ using utl::Logger;
 using odb::dbDatabase;
 using odb::dbMaster;
 using odb::dbMasterType;
-using odb::dbTechLayer;
 
 class Node;
 class Group;
@@ -150,7 +149,7 @@ class Opendp
   // gap -> sequence of masters to fill the gap
   using GapFillers = std::vector<dbMasterSeq>;
 
-  using MasterByImplant = std::map<dbTechLayer*, dbMasterSeq>;
+  using MasterByImplant = std::map<odb::dbTechLayer*, dbMasterSeq>;
 
   using YCoordToGap = std::map<DbuY, std::vector<GapInfo*>>;
 
@@ -278,7 +277,7 @@ class Opendp
   dbMasterSeq filterFillerMasters(const dbMasterSeq& filler_masters) const;
   MasterByImplant splitByImplant(const dbMasterSeq& filler_masters);
   void setGridCells();
-  dbMasterSeq& gapFillers(dbTechLayer* implant,
+  dbMasterSeq& gapFillers(odb::dbTechLayer* implant,
                           GridX gap,
                           const MasterByImplant& filler_masters_by_implant);
   void placeRowFillers(GridY row,
@@ -331,7 +330,7 @@ class Opendp
 
   // Filler placement.
   // gap (in sites) -> seq of masters by implant
-  std::map<dbTechLayer*, GapFillers> gap_fillers_;
+  std::map<odb::dbTechLayer*, GapFillers> gap_fillers_;
   std::map<dbMaster*, int> filler_count_;
   bool have_fillers_ = false;
 

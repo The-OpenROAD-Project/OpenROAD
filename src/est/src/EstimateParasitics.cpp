@@ -92,7 +92,7 @@ void EstimateParasitics::initSteinerRenderer(
 
 ////////////////////////////////////////////////////////////////
 
-void EstimateParasitics::setLayerRC(dbTechLayer* layer,
+void EstimateParasitics::setLayerRC(odb::dbTechLayer* layer,
                                     const Corner* corner,
                                     double res,
                                     double cap)
@@ -112,7 +112,7 @@ void EstimateParasitics::setLayerRC(dbTechLayer* layer,
   layer_cap_[layer->getNumber()][corner->index()] = cap;
 }
 
-void EstimateParasitics::layerRC(dbTechLayer* layer,
+void EstimateParasitics::layerRC(odb::dbTechLayer* layer,
                                  const Corner* corner,
                                  // Return values.
                                  double& res,

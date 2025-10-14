@@ -1440,13 +1440,13 @@ uint extDistWidthRCTable::readRulesUnder(Ath__parser* parser,
 }
 uint extRCModel::calcMinMaxRC(dbTech* tech, const char* out_file)
 {
-  dbSet<dbTechLayer> layers = tech->getLayers();
-  dbSet<dbTechLayer>::iterator itr;
+  dbSet<odb::dbTechLayer> layers = tech->getLayers();
+  dbSet<odb::dbTechLayer>::iterator itr;
 
   FILE* fp = openFile(out_file, "", "", "w");
   uint cnt = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
-    dbTechLayer* layer = *itr;
+    odb::dbTechLayer* layer = *itr;
 
     if (layer->getRoutingLevel() == 0) {
       continue;
