@@ -31,9 +31,12 @@
 #include "frDesign.h"
 #include "frRTree.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/isotropy.h"
 #include "utl/Logger.h"
+
+using odb::dbTechLayerDir;
 
 namespace drt {
 

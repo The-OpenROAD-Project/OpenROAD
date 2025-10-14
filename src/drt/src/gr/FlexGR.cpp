@@ -26,14 +26,16 @@
 #include "db/obj/frInst.h"
 #include "frBaseTypes.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "omp.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
 
-namespace drt {
-
+using odb::dbTechLayerDir;
 using utl::ThreadException;
+
+namespace drt {
 
 void FlexGR::main(odb::dbDatabase* db)
 {

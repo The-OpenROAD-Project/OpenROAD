@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
 #include "odb/geom.h"
 #include "rcx/dbUtil.h"
@@ -22,10 +23,13 @@
 
 #include "utl/Logger.h"
 
-namespace rcx {
-
-using namespace odb;
+using odb::dbBlock;
+using odb::dbTechLayerDir;
 using utl::RCX;
+
+using namespace odb;  // This must go
+
+namespace rcx {
 
 extRulesPat::extRulesPat(const char* pat,
                          bool over,
