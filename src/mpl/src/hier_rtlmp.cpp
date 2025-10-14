@@ -182,6 +182,11 @@ void HierRTLMP::setReportDirectory(const char* report_directory)
   report_directory_ = report_directory;
 }
 
+void HierRTLMP::setKeepClusteringData(bool keep_clustering_data)
+{
+  keep_clustering_data_ = keep_clustering_data;
+}
+
 // Top Level Function
 // The flow of our MacroPlacer is divided into 6 stages.
 // 1) Multilevel Autoclustering:
@@ -206,6 +211,10 @@ void HierRTLMP::run()
   if (skip_macro_placement_) {
     logger_->info(MPL, 13, "Skipping macro placement.");
     return;
+  }
+
+  if (keep_clustering_data_) {
+    commitClusteringDataToDb();
   }
 
   if (!tree_->has_std_cells) {
@@ -2605,6 +2614,44 @@ void HierRTLMP::commitMacroPlacementToDb()
     snapper.snapMacro();
 
     inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+  }
+}
+
+void HierRTLMP::commitClusteringDataToDb() const
+{
+  createGroupForCluster(tree_->root.get(), nullptr);
+}
+
+void HierRTLMP::createGroupForCluster(Cluster* cluster,
+                                      odb::dbGroup* parent_group) const
+{
+  if (cluster->isIOCluster()) {
+    return;
+  }
+
+  odb::dbGroup* cluster_group
+      = parent_group != nullptr
+            ? odb::dbGroup::create(parent_group, cluster->getName().c_str())
+            : odb::dbGroup::create(block_, cluster->getName().c_str());
+
+  cluster_group->setType(odb::dbGroupType::VISUAL_DEBUG);
+
+  for (odb::dbInst* inst : cluster->getLeafStdCells()) {
+    cluster_group->addInst(inst);
+  }
+
+  for (odb::dbInst* macro : cluster->getLeafMacros()) {
+    cluster_group->addInst(macro);
+  }
+
+  for (odb::dbModule* module : cluster->getDbModules()) {
+    for (odb::dbInst* inst : module->getLeafInsts()) {
+      cluster_group->addInst(inst);
+    }
+  }
+
+  for (const auto& child : cluster->getChildren()) {
+    createGroupForCluster(child.get(), cluster_group);
   }
 }
 

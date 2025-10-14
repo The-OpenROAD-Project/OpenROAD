@@ -185,4 +185,15 @@ odb::Point Pin::getPositionNearInstEdge(const odb::Rect& pin_box,
   return pin_pos;
 }
 
+bool Pin::isCorePin() const
+{
+  if (iterm == nullptr) {
+    return false;
+  }
+
+  odb::dbInst* inst = iterm->getInst();
+  return inst->isCore();
+  ;
+}
+
 }  // namespace grt
