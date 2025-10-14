@@ -365,7 +365,7 @@ void Grid::visitCellBoundaryPixels(
     }
   };
 
-  dbMaster* master = inst->getMaster();
+  odb::dbMaster* master = inst->getMaster();
   auto obstructions = master->getObstructions();
   bool have_obstructions = false;
   const odb::Rect core = getCore();
@@ -768,7 +768,7 @@ std::unordered_set<int> Grid::getRowCoordinates() const
   return coords;
 }
 
-bool Grid::isMultiHeight(dbMaster* master) const
+bool Grid::isMultiHeight(odb::dbMaster* master) const
 {
   if (uniform_row_height_) {
     return master->getHeight() > uniform_row_height_.value();

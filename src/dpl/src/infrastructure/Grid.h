@@ -155,7 +155,7 @@ class Grid
   odb::Rect getCore() const { return core_; }
   bool cellFitsInCore(Node* cell) const;
 
-  bool isMultiHeight(dbMaster* master) const;
+  bool isMultiHeight(odb::dbMaster* master) const;
 
  private:
   // Maps a site to the right orientation to use in a given row

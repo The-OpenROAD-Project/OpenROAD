@@ -20,7 +20,7 @@ void Padding::setPadding(odb::dbInst* inst, GridX left, GridX right)
   inst_padding_map_[inst] = {left, right};
 }
 
-void Padding::setPadding(dbMaster* master, GridX left, GridX right)
+void Padding::setPadding(odb::dbMaster* master, GridX left, GridX right)
 {
   master_padding_map_[master] = {left, right};
 }

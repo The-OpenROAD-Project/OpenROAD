@@ -76,11 +76,11 @@ void Master::setTopPowerType(const int top_pwr)
 {
   top_pwr_ = top_pwr;
 }
-void Master::setDbMaster(dbMaster* db_master)
+void Master::setDbMaster(odb::dbMaster* db_master)
 {
   db_master_ = db_master;
 }
-dbMaster* Master::getDbMaster() const
+odb::dbMaster* Master::getDbMaster() const
 {
   return db_master_;
 }
@@ -192,7 +192,7 @@ bool Node::isHybridParent() const
 }
 int64_t Node::area() const
 {
-  dbMaster* master = getDbInst()->getMaster();
+  odb::dbMaster* master = getDbInst()->getMaster();
   return int64_t(master->getWidth()) * master->getHeight();
 }
 std::string Node::name() const

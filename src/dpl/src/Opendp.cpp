@@ -68,7 +68,7 @@ void Opendp::setPadding(odb::dbInst* inst, const int left, const int right)
   padding_->setPadding(inst, GridX{left}, GridX{right});
 }
 
-void Opendp::setPadding(dbMaster* master, const int left, const int right)
+void Opendp::setPadding(odb::dbMaster* master, const int left, const int right)
 {
   padding_->setPadding(master, GridX{left}, GridX{right});
 }

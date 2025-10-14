@@ -15,12 +15,10 @@
 
 namespace odb {
 class dbBox;
-class dbMaster;
 class dbSite;
 }  // namespace odb
 namespace dpl {
 
-using odb::dbMaster;
 using odb::dbSite;
 
 class MasterEdge
@@ -49,11 +47,11 @@ class Master
   void setBBox(odb::Rect box);
   void setBottomPowerType(int bottom_pwr);
   void setTopPowerType(int top_pwr);
-  void setDbMaster(dbMaster* db_master);
-  dbMaster* getDbMaster() const;
+  void setDbMaster(odb::dbMaster* db_master);
+  odb::dbMaster* getDbMaster() const;
 
  private:
-  dbMaster* db_master_{nullptr};
+  odb::dbMaster* db_master_{nullptr};
   odb::Rect boundary_box_;
   bool is_multi_row_{false};
   std::vector<MasterEdge> edges_;
