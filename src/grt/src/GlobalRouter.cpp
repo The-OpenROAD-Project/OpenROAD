@@ -4553,6 +4553,15 @@ std::vector<GSegment> GlobalRouter::createConnectionForPositions(
     connection.emplace_back(x1, y1, layer_hor, x2, y1, layer_hor);
     connection.emplace_back(x2, y1, conn_layer + layer_fix, x2, y1, conn_layer);
     connection.emplace_back(x2, y1, layer_ver, x2, y2, layer_ver);
+
+    // Add vias if the additional connections are not touching the existing
+    // routing.
+    if (layer1 < layer_hor) {
+      connection.emplace_back(x1, y1, layer1, x1, y1, layer_hor);
+    }
+    if (layer2 < layer_ver) {
+      connection.emplace_back(x2, y2, layer_ver, x2, y2, layer2);
+    }
   }
 
   odb::Point via_pos1 = pin_pos1;
