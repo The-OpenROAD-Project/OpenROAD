@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "find_some_net.h"
+#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
@@ -30,8 +31,8 @@ namespace rcx {
 #ifdef DEBUG_NET_ID
 FILE* fp;
 #endif
-using namespace odb;
 
+using odb::Ath__array1D;
 using odb::dbBlock;
 using odb::dbBox;
 using odb::dbBTerm;

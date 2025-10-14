@@ -8,8 +8,11 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/isotropy.h"
+
+using odb::Ath__array1D;
 
 namespace rcx {
 

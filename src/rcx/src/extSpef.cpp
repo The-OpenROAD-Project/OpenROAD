@@ -15,18 +15,31 @@
 #include <vector>
 
 #include "name.h"
+#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbExtControl.h"
 #include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
-namespace rcx {
-
+using odb::Ath__array1D;
+using odb::dbBlock;
+using odb::dbCapNode;
+using odb::dbCCSeg;
+using odb::dbInst;
+using odb::dbNet;
+using odb::dbRSeg;
+using odb::dbSet;
+using odb::dbSigType;
+using odb::dbStringProperty;
+using odb::dbWire;
+using odb::Point;
 using utl::RCX;
-using namespace odb;
+
+namespace rcx {
 
 class extMain;
 
