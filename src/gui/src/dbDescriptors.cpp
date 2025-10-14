@@ -895,7 +895,7 @@ Descriptor::Properties DbMasterDescriptor::getDBProperties(
 
   std::vector<std::any> edge_types;
   for (auto* edge : master->getEdgeTypes()) {
-    edge_types.push_back(gui->makeSelected(edge));
+    edge_types.emplace_back(gui->makeSelected(edge));
   }
   if (!edge_types.empty()) {
     props.push_back({"Edge types", edge_types});
