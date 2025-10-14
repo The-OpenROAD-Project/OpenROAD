@@ -5,6 +5,7 @@
 #include <cstdio>
 
 #include "gseq.h"
+#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "rcx/dbUtil.h"
@@ -19,11 +20,15 @@
 // #define CHECK_SAME_NET
 // #define MIN_FOR_LOOPS
 
-namespace rcx {
-
+using odb::Ath__array1D;
+using odb::dbCapNode;
+using odb::dbCCSeg;
+using odb::dbNet;
+using odb::dbRSeg;
+using odb::dbSet;
 using utl::RCX;
 
-using namespace odb;
+namespace rcx {
 
 struct CouplingConfig;
 

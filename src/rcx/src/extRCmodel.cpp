@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <limits>
 
+#include "odb/array1.h"
 #include "odb/db.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
@@ -18,10 +19,11 @@
 #include "rcx/grids.h"
 #include "utl/Logger.h"
 
-namespace rcx {
-
+using odb::Ath__array1D;
 using odb::dbRSeg;
 using utl::RCX;
+
+namespace rcx {
 
 int extRCModel::getMaxMetIndexOverUnder(int met, int layerCnt)
 {

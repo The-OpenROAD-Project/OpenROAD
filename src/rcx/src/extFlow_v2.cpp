@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "gseq.h"
+#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
@@ -20,9 +21,17 @@
 #include "rcx/grids.h"
 #include "utl/Logger.h"
 
-namespace rcx {
+using odb::Ath__array1D;
+using odb::dbCapNode;
+using odb::dbInst;
+using odb::dbInstShapeItr;
+using odb::dbITermShapeItr;
+using odb::dbNet;
+using odb::dbSet;
+using odb::dbWirePath;
+using odb::Rect;
 
-using namespace odb;
+namespace rcx {
 
 void extMain::initRunEnv(extMeasureRC& m)
 {

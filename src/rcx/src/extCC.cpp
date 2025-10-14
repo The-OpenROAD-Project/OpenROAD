@@ -5,7 +5,10 @@
 #include <vector>
 
 #include "gseq.h"
+#include "odb/array1.h"
 #include "rcx/grids.h"
+
+using odb::Ath__array1D;
 
 namespace rcx {
 
