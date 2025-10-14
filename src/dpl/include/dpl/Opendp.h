@@ -29,8 +29,6 @@ namespace dpl {
 
 using utl::Logger;
 
-using odb::dbDatabase;
-
 class Node;
 class Group;
 class Master;
@@ -81,7 +79,7 @@ struct IRDrop;
 class Opendp
 {
  public:
-  Opendp(dbDatabase* db, Logger* logger);
+  Opendp(odb::dbDatabase* db, Logger* logger);
   ~Opendp();
 
   Opendp(const Opendp&) = delete;
@@ -308,7 +306,7 @@ class Opendp
   void setGridLoc(Node* cell, GridX x, GridY y);
 
   Logger* logger_ = nullptr;
-  dbDatabase* db_ = nullptr;
+  odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   odb::Rect core_;
 

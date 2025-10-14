@@ -56,7 +56,7 @@ using odb::dbModInst;
 
 EstimateParasitics::EstimateParasitics(Logger* logger,
                                        utl::CallBackHandler* callback_handler,
-                                       dbDatabase* db,
+                                       odb::dbDatabase* db,
                                        dbSta* sta,
                                        SteinerTreeBuilder* stt_builder,
                                        GlobalRouter* global_router)

@@ -67,7 +67,7 @@ class Grid
  public:
   void init(Logger* logger) { logger_ = logger; }
   void setCore(const odb::Rect& core) { core_ = core; }
-  void initGrid(dbDatabase* db,
+  void initGrid(odb::dbDatabase* db,
                 odb::dbBlock* block,
                 std::shared_ptr<Padding> padding,
                 int max_displacement_x,

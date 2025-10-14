@@ -45,7 +45,7 @@ bool Opendp::isMultiRow(const Node* cell) const
 
 ////////////////////////////////////////////////////////////////
 
-Opendp::Opendp(dbDatabase* db, Logger* logger) : logger_(logger), db_(db)
+Opendp::Opendp(odb::dbDatabase* db, Logger* logger) : logger_(logger), db_(db)
 {
   dummy_cell_ = std::make_unique<Node>();
   dummy_cell_->setPlaced(true);

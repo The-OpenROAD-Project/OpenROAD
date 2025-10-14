@@ -43,8 +43,6 @@ namespace est {
 
 using utl::Logger;
 
-using odb::dbDatabase;
-
 using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
@@ -114,7 +112,7 @@ class EstimateParasitics : public dbStaState
  public:
   EstimateParasitics(Logger* logger,
                      utl::CallBackHandler* callback_handler,
-                     dbDatabase* db,
+                     odb::dbDatabase* db,
                      dbSta* sta,
                      SteinerTreeBuilder* stt_builder,
                      GlobalRouter* global_router);
@@ -272,7 +270,7 @@ class EstimateParasitics : public dbStaState
   GlobalRouter* global_router_ = nullptr;
   IncrementalGRoute* incr_groute_ = nullptr;
   dbNetwork* db_network_ = nullptr;
-  dbDatabase* db_ = nullptr;
+  odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   std::unique_ptr<OdbCallBack> db_cbk_;
 

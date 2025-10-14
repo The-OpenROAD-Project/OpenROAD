@@ -213,7 +213,7 @@ void Grid::markBlocked(odb::dbBlock* block)
   }
 }
 
-void Grid::initGrid(dbDatabase* db,
+void Grid::initGrid(odb::dbDatabase* db,
                     odb::dbBlock* block,
                     std::shared_ptr<Padding> padding,
                     int max_displacement_x,
