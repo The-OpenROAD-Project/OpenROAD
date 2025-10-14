@@ -641,6 +641,23 @@ bool Opendp::swapCells(Node* cell1, Node* cell2)
           + distChange(cell2, cell1->getLeft(), cell1->getBottom());
 
     if (dist_change < 0) {
+      Journal journal(grid_.get(), nullptr);
+      MoveCellAction action1(cell1,
+                             cell1->getLeft(),
+                             cell1->getBottom(),
+                             cell2->getLeft(),
+                             cell2->getBottom(),
+                             cell1->isPlaced());
+      journal.addAction(action1);
+
+      MoveCellAction action2(cell2,
+                             cell2->getLeft(),
+                             cell2->getBottom(),
+                             cell1->getLeft(),
+                             cell1->getBottom(),
+                             cell2->isPlaced());
+      journal.addAction(action2);
+
       const GridX grid_x1 = grid_->gridX(cell2);
       const GridY grid_y1 = grid_->gridSnapDownY(cell2);
       const GridX grid_x2 = grid_->gridX(cell1);
@@ -650,7 +667,11 @@ bool Opendp::swapCells(Node* cell1, Node* cell2)
       unplaceCell(cell2);
       placeCell(cell1, grid_x1, grid_y1);
       placeCell(cell2, grid_x2, grid_y2);
-      return true;
+      // Check if placement is valid
+      if (drc_engine_->checkDRC(cell1) && drc_engine_->checkDRC(cell2)) {
+        return true;
+      }
+      journal.undo();
     }
   }
   return false;
