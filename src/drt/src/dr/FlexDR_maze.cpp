@@ -38,6 +38,7 @@
 #include "gc/FlexGC.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace drt {
 

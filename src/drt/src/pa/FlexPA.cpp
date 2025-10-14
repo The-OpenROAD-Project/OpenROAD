@@ -30,6 +30,7 @@
 #include "omp.h"
 #include "pa/AbstractPAGraphics.h"
 #include "serialization.h"
+#include "utl/Logger.h"
 #include "utl/exception.h"
 
 BOOST_CLASS_EXPORT(drt::PinAccessJobDescription)

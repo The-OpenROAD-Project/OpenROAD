@@ -33,6 +33,7 @@
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "odb/isotropy.h"
+#include "utl/Logger.h"
 
 namespace drt {
 

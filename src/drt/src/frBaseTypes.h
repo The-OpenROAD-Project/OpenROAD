@@ -19,6 +19,7 @@
 #include "boost/serialization/base_object.hpp"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace boost::serialization {
 class access;
