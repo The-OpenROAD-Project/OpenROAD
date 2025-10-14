@@ -651,6 +651,7 @@ class FastRouteCore
   std::vector<int> ycor_;
   std::vector<int> dcor_;
 
+  std::vector<int> nets_res_aware_;
   std::vector<FrNet*> nets_;
   std::unordered_map<odb::dbNet*, int> db_net_id_map_;  // db net -> net id
   // the copy of xs for nets, used for second FLUTE

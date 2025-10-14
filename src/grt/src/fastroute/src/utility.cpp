@@ -461,9 +461,28 @@ int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
 
 void FastRouteCore::updateSlacks()
 {
+  tree_order_pv_.clear();
+  nets_res_aware_.clear();
+
   for (const int net_id : net_ids_) {
     FrNet* net = nets_[net_id];
     net->setSlack(getNetSlack(net->getDbNet()));
+    tree_order_pv_.push_back({net_id, 0, 0, 0, 0, 0});
+  }
+
+  auto compareSlack = [this](const OrderNetPin a, const OrderNetPin b) {
+    const FrNet* net_a = nets_[a.treeIndex];
+    const FrNet* net_b = nets_[b.treeIndex];
+    return net_a->getSlack() < net_b->getSlack();
+  };
+
+  // sort by slack
+  std::stable_sort(tree_order_pv_.begin(), tree_order_pv_.end(), compareSlack);
+
+  // Decide the percentage of nets that will use resistance aware
+  const float percentage = 0.5;
+  for (int i = 0; i < tree_order_pv_.size() * percentage; i++) {
+    nets_res_aware_.push_back(tree_order_pv_[i].treeIndex);
   }
 }
 
@@ -473,27 +492,11 @@ bool FastRouteCore::needResistanceAware(const int net_id)
   FrNet* net = nets_[net_id];
 
   // Check if slack is negative
-  // if (getNetSlack(net->getDbNet()) < 0){
-  if (net->getSlack() < 50) {
-    // getNetSlack(net->getDbNet());
+  // if (net->getSlack() < 30) {
+  if (std::find(nets_res_aware_.begin(), nets_res_aware_.end(), net_id)
+      != nets_res_aware_.end()) {
     return true;
   }
-
-  // Set the 70% (or less) of non critical nets that doesn't have overflow
-  // with the lowest priority
-  // const int target_percentage = 70;
-  // for (int ord_elID = 0; ord_elID < net_ids_.size(); ord_elID++) {
-  //   auto order_element = tree_order_cong_[ord_elID];
-  //   if (nets_[order_element.treeIndex]->getSlack()
-  //       == std::ceil(std::numeric_limits<float>::lowest())) {
-  //     if (order_element.xmin == 0
-  //         && (ord_elID >= (net_ids_.size() * (100-target_percentage) / 100)))
-  //         {
-  //       nets_[order_element.treeIndex]->setSlack(
-  //           std::numeric_limits<float>::max());
-  //     }
-  //   }
-  // }
 
   return false;
 }
