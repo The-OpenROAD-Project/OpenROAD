@@ -384,7 +384,7 @@ void GlobalRouter::suggestAdjustment()
   // Get min adjustment apply to layers
   int min_routing_layer, max_routing_layer;
   getMinMaxLayer(min_routing_layer, max_routing_layer);
-  float min_adjustment = 100;
+  float min_adjustment = 1.0;
   for (int l = min_routing_layer; l <= max_routing_layer; l++) {
     odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(l);
     if (tech_layer->getLayerAdjustment() != 0.0) {
@@ -5132,6 +5132,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
   callback_handler_->triggerOnPinAccessUpdateRequired();
   std::vector<Net*> dirty_nets;
+
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);
     fastroute_->clearNetsToRoute();
