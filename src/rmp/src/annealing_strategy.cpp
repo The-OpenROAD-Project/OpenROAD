@@ -80,13 +80,16 @@ class SuppressStdout
 {
 #ifndef _WIN32
  public:
-  SuppressStdout()
+  SuppressStdout(utl::Logger* logger)
   {
     // This is a hack to suppress excessive logs from ABC
     // Redirects stdout to /dev/null, preserves original stdout
     fflush(stdout);
     saved_stdout_fd = dup(1);
-    int dev_null_fd = open("/dev/null", O_WRONLY);
+    const int dev_null_fd = open("/dev/null", O_WRONLY);
+    if (dev_null_fd < 0) {
+      logger->error(utl::RMP, 58, "Can't open /dev/null");
+    }
     dup2(dev_null_fd, 1);
     close(dev_null_fd);
   }
@@ -221,7 +224,7 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
            // &false
            debugPrint(
                logger, RMP, "annealing", 1, "Starting false path elimination");
-           SuppressStdout nostdout;
+           SuppressStdout nostdout(logger);
            replaceGia(gia, Gia_ManCheckFalse(gia, 0, 0, false, false));
          },
 
@@ -480,7 +483,7 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
                  worst_slack_new);
     }
 
-    ops = new_ops;
+    ops = std::move(new_ops);
     worst_slack = worst_slack_new;
 
     if (worst_slack > best_worst_slack) {
@@ -634,7 +637,7 @@ void AnnealingStrategy::RunGia(
     }
 
     {
-      SuppressStdout nostdout;
+      SuppressStdout nostdout(logger);
       current_network = WrapUnique(abc::Abc_NtkMap(current_network.get(),
                                                    nullptr,
                                                    /*DelayTarget=*/1.0,
@@ -658,7 +661,7 @@ void AnnealingStrategy::RunGia(
 
     if (resize_iters > 0) {
       // All the magic numbers are defaults from abc/src/base/abci/abc.c
-      SuppressStdout nostdout;
+      SuppressStdout nostdout(logger);
       abc::SC_SizePars pars = {};
       pars.nIters = resize_iters;
       pars.nIterNoChange = 50;
