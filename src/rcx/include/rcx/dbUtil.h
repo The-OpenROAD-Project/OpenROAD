@@ -20,7 +20,6 @@ class Logger;
 
 namespace rcx {
 
-using odb::dbMatrix;
 using odb::dbObject;
 using odb::dbSBox;
 using odb::dbShape;
@@ -88,7 +87,7 @@ class dbCreateNetUtil
   std::vector<RuleMap> _rules;
   std::vector<odb::dbTechLayer*> _routingLayers;
   int _ruleNameHint;
-  dbMatrix<std::vector<odb::dbTechVia*>> _vias;
+  odb::dbMatrix<std::vector<odb::dbTechVia*>> _vias;
   bool _milosFormat;
   odb::dbNet* _currentNet;
   odb::dbNet** _mapArray;
