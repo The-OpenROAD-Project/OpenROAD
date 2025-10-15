@@ -20,7 +20,6 @@ class Logger;
 
 namespace rcx {
 
-using odb::dbObject;
 using odb::dbSBox;
 using odb::dbShape;
 using odb::dbTech;
