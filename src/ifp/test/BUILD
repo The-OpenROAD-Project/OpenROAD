@@ -21,6 +21,7 @@ COMPULSORY_TESTS = [
     "init_floorplan_dbl_row",
     "init_floorplan_even_rows",
     "init_floorplan_flip_sites",
+    "init_floorplan_gap",
     "init_floorplan_odd_rows",
     "init_floorplan_polygon",
     "init_floorplan_polygon2",

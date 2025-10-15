@@ -43,10 +43,6 @@ namespace est {
 
 using utl::Logger;
 
-using odb::dbDatabase;
-using odb::dbNet;
-using odb::dbTechLayer;
-
 using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
@@ -116,18 +112,18 @@ class EstimateParasitics : public dbStaState
  public:
   EstimateParasitics(Logger* logger,
                      utl::CallBackHandler* callback_handler,
-                     dbDatabase* db,
+                     odb::dbDatabase* db,
                      dbSta* sta,
                      SteinerTreeBuilder* stt_builder,
                      GlobalRouter* global_router);
   ~EstimateParasitics() override;
   void initSteinerRenderer(
       std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer);
-  void setLayerRC(dbTechLayer* layer,
+  void setLayerRC(odb::dbTechLayer* layer,
                   const Corner* corner,
                   double res,
                   double cap);
-  void layerRC(dbTechLayer* layer,
+  void layerRC(odb::dbTechLayer* layer,
                const Corner* corner,
                // Return values.
                double& res,
@@ -187,7 +183,7 @@ class EstimateParasitics : public dbStaState
                          Parasitics* parasitics);
   bool haveEstimatedParasitics() const;
   void parasiticsInvalid(const Net* net);
-  void parasiticsInvalid(const dbNet* net);
+  void parasiticsInvalid(const odb::dbNet* net);
   void eraseParasitics(const Net* net);
   bool parasiticsValid() const;
 
@@ -285,7 +281,7 @@ class EstimateParasitics : public dbStaState
   GlobalRouter* global_router_ = nullptr;
   IncrementalGRoute* incr_groute_ = nullptr;
   dbNetwork* db_network_ = nullptr;
-  dbDatabase* db_ = nullptr;
+  odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   std::unique_ptr<OdbCallBack> db_cbk_;
 

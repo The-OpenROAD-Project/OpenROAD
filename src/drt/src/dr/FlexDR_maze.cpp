@@ -37,7 +37,11 @@
 #include "frRegionQuery.h"
 #include "gc/FlexGC.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
+
+using odb::dbTechLayerDir;
 
 namespace drt {
 

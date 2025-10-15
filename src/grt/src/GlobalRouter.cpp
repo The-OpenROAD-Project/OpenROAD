@@ -384,7 +384,7 @@ void GlobalRouter::suggestAdjustment()
   // Get min adjustment apply to layers
   int min_routing_layer, max_routing_layer;
   getMinMaxLayer(min_routing_layer, max_routing_layer);
-  float min_adjustment = 100;
+  float min_adjustment = 1.0;
   for (int l = min_routing_layer; l <= max_routing_layer; l++) {
     odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(l);
     if (tech_layer->getLayerAdjustment() != 0.0) {
@@ -4553,6 +4553,15 @@ std::vector<GSegment> GlobalRouter::createConnectionForPositions(
     connection.emplace_back(x1, y1, layer_hor, x2, y1, layer_hor);
     connection.emplace_back(x2, y1, conn_layer + layer_fix, x2, y1, conn_layer);
     connection.emplace_back(x2, y1, layer_ver, x2, y2, layer_ver);
+
+    // Add vias if the additional connections are not touching the existing
+    // routing.
+    if (layer1 < layer_hor) {
+      connection.emplace_back(x1, y1, layer1, x1, y1, layer_hor);
+    }
+    if (layer2 < layer_ver) {
+      connection.emplace_back(x2, y2, layer_ver, x2, y2, layer2);
+    }
   }
 
   odb::Point via_pos1 = pin_pos1;
@@ -5123,6 +5132,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
   callback_handler_->triggerOnPinAccessUpdateRequired();
   std::vector<Net*> dirty_nets;
+
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);
     fastroute_->clearNetsToRoute();

@@ -26,7 +26,6 @@ struct ResidualError
 
 using Eigen::BiCGSTAB;
 using Eigen::IdentityPreconditioner;
-using utl::GPL;
 
 using SMatrix = Eigen::SparseMatrix<float, Eigen::RowMajor>;
 

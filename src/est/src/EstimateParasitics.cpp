@@ -56,7 +56,7 @@ using odb::dbModInst;
 
 EstimateParasitics::EstimateParasitics(Logger* logger,
                                        utl::CallBackHandler* callback_handler,
-                                       dbDatabase* db,
+                                       odb::dbDatabase* db,
                                        dbSta* sta,
                                        SteinerTreeBuilder* stt_builder,
                                        GlobalRouter* global_router)
@@ -92,7 +92,7 @@ void EstimateParasitics::initSteinerRenderer(
 
 ////////////////////////////////////////////////////////////////
 
-void EstimateParasitics::setLayerRC(dbTechLayer* layer,
+void EstimateParasitics::setLayerRC(odb::dbTechLayer* layer,
                                     const Corner* corner,
                                     double res,
                                     double cap)
@@ -112,7 +112,7 @@ void EstimateParasitics::setLayerRC(dbTechLayer* layer,
   layer_cap_[layer->getNumber()][corner->index()] = cap;
 }
 
-void EstimateParasitics::layerRC(dbTechLayer* layer,
+void EstimateParasitics::layerRC(odb::dbTechLayer* layer,
                                  const Corner* corner,
                                  // Return values.
                                  double& res,
@@ -1109,7 +1109,7 @@ bool EstimateParasitics::isPad(const Instance* inst) const
 
 void EstimateParasitics::parasiticsInvalid(const Net* net)
 {
-  dbNet* db_net = db_network_->flatNet(net);
+  odb::dbNet* db_net = db_network_->flatNet(net);
   if (haveEstimatedParasitics()) {
     debugPrint(logger_,
                EST,
@@ -1121,7 +1121,7 @@ void EstimateParasitics::parasiticsInvalid(const Net* net)
   }
 }
 
-void EstimateParasitics::parasiticsInvalid(const dbNet* net)
+void EstimateParasitics::parasiticsInvalid(const odb::dbNet* net)
 {
   parasiticsInvalid(db_network_->dbToSta(net));
 }

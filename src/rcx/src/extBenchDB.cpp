@@ -10,9 +10,11 @@
 #include <memory>
 #include <vector>
 
+#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
+#include "odb/util.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
@@ -20,8 +22,7 @@
 #include "rcx/extprocess.h"
 #include "utl/Logger.h"
 
-namespace rcx {
-
+using odb::Ath__array1D;
 using odb::dbBTerm;
 using odb::dbCapNode;
 using odb::dbCCSeg;
@@ -31,6 +32,8 @@ using odb::dbObstruction;
 using odb::dbSet;
 using odb::dbTechLayer;
 using utl::RCX;
+
+namespace rcx {
 
 extMetRCTable* extRCModel::initCapTables(uint layerCnt, uint widthCnt)
 {
@@ -43,7 +46,7 @@ extMetRCTable* extRCModel::initCapTables(uint layerCnt, uint widthCnt)
   _modelTable[0]->allocateInitialTables(widthCnt, true, true, true);
   return _modelTable[0];
 }
-AthPool<extDistRC>* extMetRCTable::getRCPool()
+odb::AthPool<extDistRC>* extMetRCTable::getRCPool()
 {
   return _rcPoolPtr;
 }
@@ -62,7 +65,7 @@ uint extMain::GenExtRules(const char* rulesFileName)
 
   extMetRCTable* rcModel = extRulesModel->initCapTables(layerCnt, widthCnt);
 
-  AthPool<extDistRC>* rcPool = rcModel->getRCPool();
+  odb::AthPool<extDistRC>* rcPool = rcModel->getRCPool();
   extMeasure m(nullptr);
   m._diagModel = 1;
   uint openWireNumber = 1;

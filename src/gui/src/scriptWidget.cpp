@@ -26,6 +26,7 @@
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
 #include "tclCmdInputWidget.h"
+#include "utl/Logger.h"
 
 namespace gui {
 

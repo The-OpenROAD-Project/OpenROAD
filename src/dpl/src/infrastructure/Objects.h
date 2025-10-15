@@ -13,17 +13,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
-namespace odb {
-class dbBox;
-class dbBTerm;
-class dbMaster;
-class dbSite;
-}  // namespace odb
 namespace dpl {
-
-using odb::dbBTerm;
-using odb::dbMaster;
-using odb::dbSite;
 
 class MasterEdge
 {
@@ -51,11 +41,11 @@ class Master
   void setBBox(odb::Rect box);
   void setBottomPowerType(int bottom_pwr);
   void setTopPowerType(int top_pwr);
-  void setDbMaster(dbMaster* db_master);
-  dbMaster* getDbMaster() const;
+  void setDbMaster(odb::dbMaster* db_master);
+  odb::dbMaster* getDbMaster() const;
 
  private:
-  dbMaster* db_master_{nullptr};
+  odb::dbMaster* db_master_{nullptr};
   odb::Rect boundary_box_;
   bool is_multi_row_{false};
   std::vector<MasterEdge> edges_;
@@ -94,7 +84,7 @@ class Node
   bool isFixed() const;
   bool isPlaced() const;
   bool isHold() const;
-  dbSite* getSite() const;
+  odb::dbSite* getSite() const;
   DbuX siteWidth() const;
   bool isHybrid() const;
   bool isHybridParent() const;
@@ -115,14 +105,14 @@ class Node
   const std::vector<Pin*>& getPins() const;
   int getGroupId() const;
   odb::Rect getBBox() const;
-  dbBTerm* getBTerm() const;
+  odb::dbBTerm* getBTerm() const;
   uint8_t getUsedLayers() const;
 
   // setters
   void setId(int id);
   void setFixed(bool in);
   void setDbInst(odb::dbInst* inst);
-  void setBTerm(dbBTerm* term);
+  void setBTerm(odb::dbBTerm* term);
   void setLeft(DbuX x);
   void setBottom(DbuY y);
   void setOrient(const odb::dbOrientType& in);
