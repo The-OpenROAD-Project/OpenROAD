@@ -20,6 +20,7 @@
 #include "odb/geom.h"
 
 using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
 
 namespace drt {
 void FlexGridGraph::addAccessPointLocation(frLayerNum layer_num,

@@ -109,7 +109,7 @@ class frLayer
   {
     return (fakeCut_ || fakeMasterslice_)
                ? false
-               : db_layer_->getType() == dbTechLayerType::ROUTING;
+               : db_layer_->getType() == odb::dbTechLayerType::ROUTING;
   }
   bool isUnidirectional() const
   {
@@ -137,14 +137,14 @@ class frLayer
   {
     return viaDefs_;
   }
-  dbTechLayerType getType() const
+  odb::dbTechLayerType getType() const
   {
     if (fakeCut_) {
-      return dbTechLayerType::CUT;
+      return odb::dbTechLayerType::CUT;
     }
 
     if (fakeMasterslice_) {
-      return dbTechLayerType::MASTERSLICE;
+      return odb::dbTechLayerType::MASTERSLICE;
     }
 
     return db_layer_->getType();

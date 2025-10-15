@@ -1582,7 +1582,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
                           ->getTerm()
                           ->getDirection();
         // for instTerm, direction OUTPUT is driver
-        if (ioType == dbIoType::OUTPUT && nodes[0] == nullptr) {
+        if (ioType == odb::dbIoType::OUTPUT && nodes[0] == nullptr) {
           nodes[0] = node.get();
         } else {
           if (sinkIdx >= nodes.size()) {
@@ -1596,7 +1596,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
                  || node->getPin()->typeId() == frcMTerm) {
         auto ioType = static_cast<frTerm*>(node->getPin())->getDirection();
         // for IO term, direction INPUT is driver
-        if (ioType == dbIoType::INPUT && nodes[0] == nullptr) {
+        if (ioType == odb::dbIoType::INPUT && nodes[0] == nullptr) {
           nodes[0] = node.get();
         } else {
           if (sinkIdx >= nodes.size()) {

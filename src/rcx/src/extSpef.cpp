@@ -43,7 +43,7 @@ namespace rcx {
 
 class extMain;
 
-extSpef::extSpef(dbTech* tech,
+extSpef::extSpef(odb::dbTech* tech,
                  dbBlock* blk,
                  Logger* logger,
                  const char* version,

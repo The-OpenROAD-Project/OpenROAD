@@ -118,7 +118,7 @@ class extRulesPat
               int UR[2],
               odb::dbBlock* block,
               extMain* xt,
-              dbTech* tech);
+              odb::dbTech* tech);
   void PrintOrigin(FILE* fp, int ll[2], uint met, const char* msg);
   void UpdateOrigin_start(uint met);
   void UpdateOrigin_wires(int ll[2], int ur[2]);

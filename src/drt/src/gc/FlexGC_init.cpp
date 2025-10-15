@@ -28,6 +28,8 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
+using odb::dbTechLayerType;
+
 namespace drt {
 
 gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
@@ -41,9 +43,9 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
       if (bterm->hasNet()) {
         owner = bterm->getNet();
       } else {
-        dbSigType sigType = bterm->getType();
-        isFloatingVDD = (sigType == dbSigType::POWER);
-        isFloatingVSS = (sigType == dbSigType::GROUND);
+        odb::dbSigType sigType = bterm->getType();
+        isFloatingVDD = (sigType == odb::dbSigType::POWER);
+        isFloatingVSS = (sigType == odb::dbSigType::GROUND);
         owner = obj;
       }
       break;
@@ -53,9 +55,9 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
       if (instTerm->hasNet()) {
         owner = instTerm->getNet();
       } else {
-        dbSigType sigType = instTerm->getTerm()->getType();
-        isFloatingVDD = (sigType == dbSigType::POWER);
-        isFloatingVSS = (sigType == dbSigType::GROUND);
+        odb::dbSigType sigType = instTerm->getTerm()->getType();
+        isFloatingVDD = (sigType == odb::dbSigType::POWER);
+        isFloatingVSS = (sigType == odb::dbSigType::GROUND);
         owner = obj;
       }
       break;

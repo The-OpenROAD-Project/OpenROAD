@@ -42,6 +42,7 @@
 #include "utl/Logger.h"
 
 using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
 
 namespace drt {
 
