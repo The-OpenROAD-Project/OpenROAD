@@ -419,7 +419,7 @@ odb::dbSBox* dbCreateNetUtil::createSpecialWire(odb::dbNet* mainNet,
   // MIGHT NOT care abour sboxId!!
 }
 
-uint dbCreateNetUtil::getFirstShape(odb::dbNet* net, dbShape& s)
+uint dbCreateNetUtil::getFirstShape(odb::dbNet* net, odb::dbShape& s)
 {
   dbWirePath path;
   dbWirePathShape pshape;
@@ -442,7 +442,7 @@ bool dbCreateNetUtil::setFirstShapeProperty(odb::dbNet* net, uint prop)
     return false;
   }
 
-  dbShape s;
+  odb::dbShape s;
   uint jid = getFirstShape(net, s);
   net->getWire()->setProperty(jid, prop);
 

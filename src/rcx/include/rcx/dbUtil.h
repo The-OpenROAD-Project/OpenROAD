@@ -20,7 +20,6 @@ class Logger;
 
 namespace rcx {
 
-using odb::dbShape;
 using odb::dbTech;
 using odb::dbTechLayerRule;
 using odb::dbTechNonDefaultRule;
@@ -67,7 +66,7 @@ class dbCreateNetUtil
   std::vector<odb::dbTechLayer*> getRoutingLayer() { return _routingLayers; };
 
  private:
-  uint getFirstShape(odb::dbNet* net, dbShape& s);
+  uint getFirstShape(odb::dbNet* net, odb::dbShape& s);
   bool setFirstShapeProperty(odb::dbNet* net, uint prop);
   dbTechLayerRule* getRule(int routingLayer, int width);
   odb::dbTechVia* getVia(int l1, int l2, odb::Rect& bbox);

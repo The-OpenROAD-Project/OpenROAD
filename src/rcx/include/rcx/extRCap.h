@@ -1802,17 +1802,17 @@ class extMain
 
   void loopWarning(odb::dbNet* net, const odb::dbWirePathShape& pshape);
   void getShapeRC_v2(odb::dbNet* net,
-                     const dbShape& s,
+                     const odb::dbShape& s,
                      odb::Point& prevPoint,
                      const odb::dbWirePathShape& pshape);
   void getShapeRC_v3(odb::dbNet* net,
-                     const dbShape& s,
+                     const odb::dbShape& s,
                      odb::Point& prevPoint,
                      const odb::dbWirePathShape& pshape);
   double getViaRes_v2(odb::dbNet* net, odb::dbTechVia* tvia);
-  double getDbViaRes_v2(odb::dbNet* net, const dbShape& s);
+  double getDbViaRes_v2(odb::dbNet* net, const odb::dbShape& s);
   double getMetalRes_v2(odb::dbNet* net,
-                        const dbShape& s,
+                        const odb::dbShape& s,
                         const odb::dbWirePathShape& pshape);
   void setResAndCap_v2(odb::dbRSeg* rc,
                        const double* restbl,
@@ -1850,7 +1850,7 @@ class extMain
   void addItermShapesOnPlanes(odb::dbInst* inst,
                               bool rotatedFlag,
                               bool swap_coords);
-  void addShapeOnGs(dbShape* s, bool swap_coords);
+  void addShapeOnGs(odb::dbShape* s, bool swap_coords);
 
   void initRunEnv(extMeasureRC& m);
   uint _ccContextDepth = 0;
