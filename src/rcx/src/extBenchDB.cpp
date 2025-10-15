@@ -470,10 +470,11 @@ uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
     return 0;
     wTable->resetCnt();
     sTable->resetCnt();
-    dbSet<dbTechNonDefaultRule> nd_rules = opt->_tech->getNonDefaultRules();
-    dbSet<dbTechNonDefaultRule>::iterator nditr;
+    dbSet<odb::dbTechNonDefaultRule> nd_rules
+        = opt->_tech->getNonDefaultRules();
+    dbSet<odb::dbTechNonDefaultRule>::iterator nditr;
     odb::dbTechLayerRule* tst_rule;
-    //		dbTechNonDefaultRule  *wdth_rule = nullptr;
+    //		odb::dbTechNonDefaultRule  *wdth_rule = nullptr;
 
     for (nditr = nd_rules.begin(); nditr != nd_rules.end(); ++nditr) {
       tst_rule = (*nditr)->getLayerRule(layer);

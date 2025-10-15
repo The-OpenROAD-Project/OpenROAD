@@ -111,12 +111,12 @@ void dbCreateNetUtil::setBlock(odb::dbBlock* block, bool skipInit)
   }
 
   // Build mapping table to rule widths
-  dbSet<dbTechNonDefaultRule> nd_rules = _tech->getNonDefaultRules();
-  dbSet<dbTechNonDefaultRule>::iterator nditr;
-  // dbTechNonDefaultRule  *wdth_rule = nullptr;
+  dbSet<odb::dbTechNonDefaultRule> nd_rules = _tech->getNonDefaultRules();
+  dbSet<odb::dbTechNonDefaultRule>::iterator nditr;
+  // odb::dbTechNonDefaultRule  *wdth_rule = nullptr;
 
   for (nditr = nd_rules.begin(); nditr != nd_rules.end(); ++nditr) {
-    dbTechNonDefaultRule* nd_rule = *nditr;
+    odb::dbTechNonDefaultRule* nd_rule = *nditr;
     std::vector<odb::dbTechLayerRule*> layer_rules;
     nd_rule->getLayerRules(layer_rules);
     std::vector<odb::dbTechLayerRule*>::iterator lritr;
@@ -167,12 +167,12 @@ odb::dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
   }
 
   // Create a non-default-rule for this width
-  dbTechNonDefaultRule* nd_rule = nullptr;
+  odb::dbTechNonDefaultRule* nd_rule = nullptr;
   char rule_name[64];
 
   while (_ruleNameHint >= 0) {
     snprintf(rule_name, 64, "ADS_ND_%d", _ruleNameHint++);
-    nd_rule = dbTechNonDefaultRule::create(_tech, rule_name);
+    nd_rule = odb::dbTechNonDefaultRule::create(_tech, rule_name);
 
     if (nd_rule) {
       break;

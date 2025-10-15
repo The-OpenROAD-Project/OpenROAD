@@ -20,8 +20,6 @@ class Logger;
 
 namespace rcx {
 
-using odb::dbTechNonDefaultRule;
-
 //
 // This class creates a new net along with a wire.
 //
