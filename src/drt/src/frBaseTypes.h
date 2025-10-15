@@ -44,7 +44,6 @@ template <typename T>
 using frList = std::list<T>;
 template <typename T>
 using frListIter = typename std::list<T>::iterator;
-using odb::dbIoType;
 using odb::dbSigType;
 using odb::dbTechLayerType;
 

@@ -143,9 +143,9 @@ std::pair<frMaster*, odb::dbMaster*> Fixture::makeMacro(const char* name,
   master->setWidth(1000);
   master->setHeight(1000);
   master->setType(odb::dbMasterType::CORE);
-  odb::dbMTerm::create(master, "a", dbIoType::INPUT, dbSigType::SIGNAL);
-  odb::dbMTerm::create(master, "b", dbIoType::INPUT, dbSigType::SIGNAL);
-  odb::dbMTerm::create(master, "c", dbIoType::OUTPUT, dbSigType::SIGNAL);
+  odb::dbMTerm::create(master, "a", odb::dbIoType::INPUT, dbSigType::SIGNAL);
+  odb::dbMTerm::create(master, "b", odb::dbIoType::INPUT, dbSigType::SIGNAL);
+  odb::dbMTerm::create(master, "c", odb::dbIoType::OUTPUT, dbSigType::SIGNAL);
   master->setFrozen();
 
   return {blkPtr, master};
@@ -193,7 +193,7 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
   master->addTerm(std::move(uTerm));
   dbSigType termType = dbSigType::SIGNAL;
   term->setType(termType);
-  dbIoType termDirection = dbIoType::INPUT;
+  odb::dbIoType termDirection = odb::dbIoType::INPUT;
   term->setDirection(termDirection);
   auto pinIn = std::make_unique<frMPin>();
   pinIn->setId(0);
