@@ -25,7 +25,6 @@ using odb::dbPlacementStatus;
 using odb::dbSet;
 using odb::dbSigType;
 using odb::dbSWire;
-using odb::dbTechLayerType;
 using odb::dbWire;
 using odb::dbWireEncoder;
 using odb::dbWirePath;
