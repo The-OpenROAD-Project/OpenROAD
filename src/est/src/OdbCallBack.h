@@ -11,11 +11,10 @@ namespace est {
 
 class EstimateParasitics;
 
-using odb::dbBlockCallBackObj;
 using sta::dbNetwork;
 using sta::Network;
 
-class OdbCallBack : public dbBlockCallBackObj
+class OdbCallBack : public odb::dbBlockCallBackObj
 {
  public:
   OdbCallBack(EstimateParasitics* estimate_parasitics,
