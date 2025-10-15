@@ -1876,21 +1876,17 @@ void GlobalRouter::addResourcesForPinAccess()
         const int layer = pin.getConnectionLayer();
         odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
         if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-          const bool east_north_pin = pin.getEdge() == PinEdge::east
-                                      || pin.getEdge() == PinEdge::north;
-          int pin_y1, pin_y2;
-          pin_y1 = east_north_pin ? pin_y : pin_y - 1;
-          pin_y2 = east_north_pin ? pin_y + 1 : pin_y;
+          const bool north_pin = pin.getEdge() == PinEdge::north;
+          const int pin_y1 = north_pin ? pin_y : pin_y - 1;
+          const int pin_y2 = north_pin ? pin_y + 1 : pin_y;
           const int edge_cap = fastroute_->getEdgeCapacity(
               pin_x, pin_y1, pin_x, pin_y2, layer);
           fastroute_->addAdjustment(
               pin_x, pin_y1, pin_x, pin_y2, layer, edge_cap + 1, false);
         } else {
-          const bool east_north_pin = pin.getEdge() == PinEdge::east
-                                      || pin.getEdge() == PinEdge::north;
-          int pin_x1, pin_x2;
-          pin_x1 = east_north_pin ? pin_x : pin_x - 1;
-          pin_x2 = east_north_pin ? pin_x + 1 : pin_x;
+          const bool east_pin = pin.getEdge() == PinEdge::east;
+          const int pin_x1 = east_pin ? pin_x : pin_x - 1;
+          const int pin_x2 = east_pin ? pin_x + 1 : pin_x;
           const int edge_cap = fastroute_->getEdgeCapacity(
               pin_x1, pin_y, pin_x2, pin_y, layer);
           fastroute_->addAdjustment(
