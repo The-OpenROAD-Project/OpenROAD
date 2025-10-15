@@ -1439,7 +1439,7 @@ uint extDistWidthRCTable::readRulesUnder(Ath__parser* parser,
   }
   return cnt;
 }
-uint extRCModel::calcMinMaxRC(dbTech* tech, const char* out_file)
+uint extRCModel::calcMinMaxRC(odb::dbTech* tech, const char* out_file)
 {
   dbSet<odb::dbTechLayer> layers = tech->getLayers();
   dbSet<odb::dbTechLayer>::iterator itr;

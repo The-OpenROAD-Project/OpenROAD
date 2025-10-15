@@ -392,7 +392,7 @@ class extMetRCTable
   // dkf 12302023
   bool SkipPattern(Ath__parser* p, odb::dbNet* net, FILE* logFP);
   // dkf 01022024
-  uint SetDefaultTechViaRes(dbTech* tech, bool dbg);
+  uint SetDefaultTechViaRes(odb::dbTech* tech, bool dbg);
   // ----------------------------------------------------------------------------------------
   extMetRCTable(uint layerCnt,
                 odb::AthPool<extDistRC>* rcPool,
@@ -596,7 +596,7 @@ class extRCModel
 
   // dkf 09172024
   uint calcMinMaxRC(odb::dbTech* tech, const char* out_file);
-  uint getViaTechRes(dbTech* tech, const char* out_file);
+  uint getViaTechRes(odb::dbTech* tech, const char* out_file);
 
   extMain* get_extMain() { return _extMain; };
   bool getDiagFlag() { return _diag; };

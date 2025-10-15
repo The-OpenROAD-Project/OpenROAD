@@ -498,7 +498,7 @@ bool Ext::rc_estimate(const std::string& ext_model_file,
     cornerTable[ii] = ii;
   }
 
-  dbTech* tech = _db->getTech();
+  odb::dbTech* tech = _db->getTech();
 
   int dbunit = tech->getDbUnitsPerMicron();
   double dbFactor = 1;

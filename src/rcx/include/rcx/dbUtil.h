@@ -20,7 +20,6 @@ class Logger;
 
 namespace rcx {
 
-using odb::dbTech;
 using odb::dbTechLayerRule;
 using odb::dbTechNonDefaultRule;
 
@@ -79,7 +78,7 @@ class dbCreateNetUtil
       odb::dbTechLayer* inly);
 
   using RuleMap = std::map<int, dbTechLayerRule*>;
-  dbTech* _tech;
+  odb::dbTech* _tech;
   odb::dbBlock* _block;
   std::vector<RuleMap> _rules;
   std::vector<odb::dbTechLayer*> _routingLayers;
