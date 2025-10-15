@@ -138,14 +138,16 @@ std::pair<frMaster*, odb::dbMaster*> Fixture::makeMacro(const char* name,
   auto blkPtr = block.get();
   design->addMaster(std::move(block));
 
+  using odb::dbIoType;
+  using odb::dbSigType;
   odb::dbMaster* master
       = odb::dbMaster::create(*db_->getLibs().begin(), "dummy");
   master->setWidth(1000);
   master->setHeight(1000);
   master->setType(odb::dbMasterType::CORE);
-  odb::dbMTerm::create(master, "a", odb::dbIoType::INPUT, dbSigType::SIGNAL);
-  odb::dbMTerm::create(master, "b", odb::dbIoType::INPUT, dbSigType::SIGNAL);
-  odb::dbMTerm::create(master, "c", odb::dbIoType::OUTPUT, dbSigType::SIGNAL);
+  odb::dbMTerm::create(master, "a", dbIoType::INPUT, dbSigType::SIGNAL);
+  odb::dbMTerm::create(master, "b", dbIoType::INPUT, dbSigType::SIGNAL);
+  odb::dbMTerm::create(master, "c", dbIoType::OUTPUT, dbSigType::SIGNAL);
   master->setFrozen();
 
   return {blkPtr, master};
@@ -191,7 +193,7 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
   auto term = uTerm.get();
   term->setId(id);
   master->addTerm(std::move(uTerm));
-  dbSigType termType = dbSigType::SIGNAL;
+  odb::dbSigType termType = odb::dbSigType::SIGNAL;
   term->setType(termType);
   odb::dbIoType termDirection = odb::dbIoType::INPUT;
   term->setDirection(termDirection);
@@ -248,12 +250,12 @@ void Fixture::makeDesign()
 
   // GC assumes these fake nets exist
   auto vssFakeNet = std::make_unique<frNet>("frFakeVSS", router_cfg.get());
-  vssFakeNet->setType(dbSigType::GROUND);
+  vssFakeNet->setType(odb::dbSigType::GROUND);
   vssFakeNet->setIsFake(true);
   block->addFakeSNet(std::move(vssFakeNet));
 
   auto vddFakeNet = std::make_unique<frNet>("frFakeVDD", router_cfg.get());
-  vddFakeNet->setType(dbSigType::POWER);
+  vddFakeNet->setType(odb::dbSigType::POWER);
   vddFakeNet->setIsFake(true);
   block->addFakeSNet(std::move(vddFakeNet));
 

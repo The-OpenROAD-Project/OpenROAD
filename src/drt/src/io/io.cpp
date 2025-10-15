@@ -996,7 +996,7 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
     net_in->updateNondefaultRule(
         getTech()->getNondefaultRule(db_net->getNonDefaultRule()->getName()));
   }
-  if (db_net->getSigType() == dbSigType::CLOCK) {
+  if (db_net->getSigType() == odb::dbSigType::CLOCK) {
     net_in->updateIsClock(true);
   }
   if (is_special) {
@@ -1339,13 +1339,13 @@ void io::Parser::addFakeNets()
   // add VSS fake net
   auto vssFakeNet
       = std::make_unique<frNet>(std::string("frFakeVSS"), router_cfg_);
-  vssFakeNet->setType(dbSigType::GROUND);
+  vssFakeNet->setType(odb::dbSigType::GROUND);
   vssFakeNet->setIsFake(true);
   getBlock()->addFakeSNet(std::move(vssFakeNet));
   // add VDD fake net
   auto vddFakeNet
       = std::make_unique<frNet>(std::string("frFakeVDD"), router_cfg_);
-  vddFakeNet->setType(dbSigType::POWER);
+  vddFakeNet->setType(odb::dbSigType::POWER);
   vddFakeNet->setIsFake(true);
   getBlock()->addFakeSNet(std::move(vddFakeNet));
 }

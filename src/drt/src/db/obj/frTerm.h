@@ -22,8 +22,8 @@ class frTerm : public frBlockObject
   virtual frNet* getNet() const = 0;
   const frString& getName() const { return name_; }
   // setters
-  void setType(const dbSigType& in) { type_ = in; }
-  dbSigType getType() const { return type_; }
+  void setType(const odb::dbSigType& in) { type_ = in; }
+  odb::dbSigType getType() const { return type_; }
   void setDirection(const odb::dbIoType& in) { direction_ = in; }
   odb::dbIoType getDirection() const { return direction_; }
   // others
@@ -48,7 +48,7 @@ class frTerm : public frBlockObject
 
   frString name_;        // A, B, Z, VSS, VDD
   frNet* net_{nullptr};  // set later, term in instTerm does not have net
-  dbSigType type_{dbSigType::SIGNAL};
+  odb::dbSigType type_{odb::dbSigType::SIGNAL};
   odb::dbIoType direction_{odb::dbIoType::INPUT};
   int index_in_owner_{0};
   odb::Rect bbox_;
