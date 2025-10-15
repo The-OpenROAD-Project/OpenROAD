@@ -67,7 +67,6 @@ class MacroPlacer
              float notch_weight,
              float macro_blockage_weight,
              float target_util,
-             float target_dead_space,
              float min_ar,
              const char* report_directory,
              bool keep_clustering_data);
