@@ -12,6 +12,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "DataType.h"
@@ -101,19 +102,11 @@ void FastRouteCore::ConvertToFull3DType2()
 
 static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
 {
-  // Sorting by ndr_priority, is_clock, length_per_pin, minX, and treeIndex
-  return std::tie(a.ndr_priority,
-                  // a.is_clock,
-                  a.slack,
-                  a.length_per_pin,
-                  a.minX,
-                  a.treeIndex)
-         < std::tie(b.ndr_priority,
-                    // b.is_clock,
-                    b.slack,
-                    b.length_per_pin,
-                    b.minX,
-                    b.treeIndex);
+  // Sorting by ndr_priority, slack, length_per_pin, minX, and treeIndex
+  return std::tie(
+             a.ndr_priority, a.slack, a.length_per_pin, a.minX, a.treeIndex)
+         < std::tie(
+             b.ndr_priority, b.slack, b.length_per_pin, b.minX, b.treeIndex);
 }
 
 void FastRouteCore::netpinOrderInc()
@@ -145,10 +138,8 @@ void FastRouteCore::netpinOrderInc()
       slack = nets_[netID]->getSlack();
     }
 
-    int is_clock = nets_[netID]->isClock() ? 0 : 1;
-
     tree_order_pv_.push_back(
-        {netID, xmin, length_per_pin, ndr_priority, is_clock, slack});
+        {netID, xmin, length_per_pin, ndr_priority, slack});
   }
 
   std::stable_sort(
@@ -460,40 +451,35 @@ int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
   return std::ceil(total_via_resistance);
 }
 
-void FastRouteCore::updateSlacks()
+// Update and sort the nets by the worst slack. Finally pick a percentage of the
+// nets to use the resistance-aware strategy
+void FastRouteCore::updateSlacks(float percentage)
 {
-  tree_order_pv_.clear();
+  std::vector<std::pair<int, float>> res_aware_list;
   nets_res_aware_.clear();
 
   for (const int net_id : net_ids_) {
     FrNet* net = nets_[net_id];
-    net->setSlack(getNetSlack(net->getDbNet()));
-    tree_order_pv_.push_back({net_id, 0, 0, 0, 0, 0});
+    res_aware_list.emplace_back(net_id, getNetSlack(net->getDbNet()));
   }
 
-  auto compareSlack = [this](const OrderNetPin a, const OrderNetPin b) {
-    const FrNet* net_a = nets_[a.treeIndex];
-    const FrNet* net_b = nets_[b.treeIndex];
-    return net_a->getSlack() < net_b->getSlack();
-  };
+  auto compareSlack
+      = [](const std::pair<int, float> a, const std::pair<int, float> b) {
+          return std::tie(a.second, a.first) < std::tie(b.second, b.first);
+        };
 
-  // sort by slack
-  std::stable_sort(tree_order_pv_.begin(), tree_order_pv_.end(), compareSlack);
+  std::stable_sort(res_aware_list.begin(), res_aware_list.end(), compareSlack);
 
   // Decide the percentage of nets that will use resistance aware
-  const float percentage = 0.5;
-  for (int i = 0; i < tree_order_pv_.size() * percentage; i++) {
-    nets_res_aware_.push_back(tree_order_pv_[i].treeIndex);
+  for (int i = 0; i < res_aware_list.size() * percentage; i++) {
+    nets_res_aware_.push_back(res_aware_list[i].first);
   }
 }
 
 // Requirements to enable resistance-aware layer assignment and 3D routing
 bool FastRouteCore::needResistanceAware(const int net_id)
 {
-  FrNet* net = nets_[net_id];
-
-  // Check if slack is negative
-  // if (net->getSlack() < 30) {
+  // Check if the net is in the resistance-aware list
   if (std::find(nets_res_aware_.begin(), nets_res_aware_.end(), net_id)
       != nets_res_aware_.end()) {
     return true;
