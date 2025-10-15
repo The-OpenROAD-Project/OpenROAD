@@ -92,7 +92,6 @@ class HierRTLMP
   void setMaxNumLevel(int max_num_level);
   void setClusterSizeRatioPerLevel(float coarsening_ratio);
   void setLargeNetThreshold(int large_net_threshold);
-  void setSignatureNetThreshold(int signature_net_threshold);
   void setAreaWeight(float area_weight);
   void setOutlineWeight(float outline_weight);
   void setWirelengthWeight(float wirelength_weight);
