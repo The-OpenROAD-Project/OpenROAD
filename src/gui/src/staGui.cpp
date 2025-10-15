@@ -1362,9 +1362,11 @@ std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins() const
   return pins;
 }
 
-const sta::ClockSet* TimingControlsDialog::getClocks(bool return_null_if_all)
+const sta::ClockSet* TimingControlsDialog::getClocks()
 {
-  if (return_null_if_all && clock_box_->isAllSelected()) {
+  if (clock_box_->isAllSelected()) {
+    // returns nullptr if all clocks are selected,
+    // so the STA doesn't need to filter by clock
     return nullptr;
   }
 
