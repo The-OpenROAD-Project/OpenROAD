@@ -396,10 +396,10 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
   return net;
 }
-dbSBox* dbCreateNetUtil::createSpecialWire(odb::dbNet* mainNet,
-                                           odb::Rect& r,
-                                           odb::dbTechLayer* layer,
-                                           uint /* unused: sboxId */)
+odb::dbSBox* dbCreateNetUtil::createSpecialWire(odb::dbNet* mainNet,
+                                                odb::Rect& r,
+                                                odb::dbTechLayer* layer,
+                                                uint /* unused: sboxId */)
 {
   dbSWire* swire = nullptr;
   if (mainNet == nullptr) {
@@ -408,13 +408,13 @@ dbSBox* dbCreateNetUtil::createSpecialWire(odb::dbNet* mainNet,
     swire = mainNet->getFirstSWire();
   }
 
-  return dbSBox::create(swire,
-                        layer,
-                        r.xMin(),
-                        r.yMin(),
-                        r.xMax(),
-                        r.yMax(),
-                        dbWireShapeType::NONE);
+  return odb::dbSBox::create(swire,
+                             layer,
+                             r.xMin(),
+                             r.yMin(),
+                             r.xMax(),
+                             r.yMax(),
+                             dbWireShapeType::NONE);
 
   // MIGHT NOT care abour sboxId!!
 }

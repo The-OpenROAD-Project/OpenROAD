@@ -20,7 +20,6 @@ class Logger;
 
 namespace rcx {
 
-using odb::dbSBox;
 using odb::dbShape;
 using odb::dbTech;
 using odb::dbTechLayerRule;
@@ -59,10 +58,10 @@ class dbCreateNetUtil
                                   uint level,
                                   uint netId,
                                   uint shapeId);
-  dbSBox* createSpecialWire(odb::dbNet* mainNet,
-                            odb::Rect& r,
-                            odb::dbTechLayer* layer,
-                            uint sboxId);
+  odb::dbSBox* createSpecialWire(odb::dbNet* mainNet,
+                                 odb::Rect& r,
+                                 odb::dbTechLayer* layer,
+                                 uint sboxId);
   void setCurrentNet(odb::dbNet* net);
   odb::dbInst* createInst(odb::dbInst* inst0);
   std::vector<odb::dbTechLayer*> getRoutingLayer() { return _routingLayers; };
