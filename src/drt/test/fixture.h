@@ -58,7 +58,7 @@ class Fixture : public ::testing::Test
 
   void addLayer(frTechObject* tech,
                 const char* name,
-                dbTechLayerType type,
+                odb::dbTechLayerType type,
                 odb::dbTechLayerDir dir = odb::dbTechLayerDir::NONE);
 
   odb::dbInst* createDummyInst(odb::dbMaster* master);
