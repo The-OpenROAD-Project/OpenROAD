@@ -45,7 +45,7 @@ bool Opendp::isMultiRow(const Node* cell) const
 
 ////////////////////////////////////////////////////////////////
 
-Opendp::Opendp(dbDatabase* db, Logger* logger) : logger_(logger), db_(db)
+Opendp::Opendp(odb::dbDatabase* db, Logger* logger) : logger_(logger), db_(db)
 {
   dummy_cell_ = std::make_unique<Node>();
   dummy_cell_->setPlaced(true);
@@ -68,7 +68,7 @@ void Opendp::setPadding(odb::dbInst* inst, const int left, const int right)
   padding_->setPadding(inst, GridX{left}, GridX{right});
 }
 
-void Opendp::setPadding(dbMaster* master, const int left, const int right)
+void Opendp::setPadding(odb::dbMaster* master, const int left, const int right)
 {
   padding_->setPadding(master, GridX{left}, GridX{right});
 }
@@ -271,7 +271,7 @@ void Opendp::setFixedGridCells()
     if (cell->getType() == Node::CELL && cell->isFixed()) {
       grid_->visitCellPixels(*cell, true, [&](Pixel* pixel, bool padded) {
         if (padded) {
-          pixel->padding_reserved_by.insert(cell.get());
+          pixel->padding_reserved_by = cell.get();
         } else {
           setGridCell(*cell, pixel);
         }
