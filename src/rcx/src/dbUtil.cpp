@@ -116,17 +116,17 @@ void dbCreateNetUtil::setBlock(odb::dbBlock* block, bool skipInit)
 
   for (nditr = nd_rules.begin(); nditr != nd_rules.end(); ++nditr) {
     dbTechNonDefaultRule* nd_rule = *nditr;
-    std::vector<dbTechLayerRule*> layer_rules;
+    std::vector<odb::dbTechLayerRule*> layer_rules;
     nd_rule->getLayerRules(layer_rules);
-    std::vector<dbTechLayerRule*>::iterator lritr;
+    std::vector<odb::dbTechLayerRule*>::iterator lritr;
 
     for (lritr = layer_rules.begin(); lritr != layer_rules.end(); ++lritr) {
-      dbTechLayerRule* rule = *lritr;
+      odb::dbTechLayerRule* rule = *lritr;
 
       int rlevel = rule->getLayer()->getRoutingLevel();
 
       if (rlevel > 0) {
-        dbTechLayerRule*& r = _rules[rlevel][rule->getWidth()];
+        odb::dbTechLayerRule*& r = _rules[rlevel][rule->getWidth()];
 
         if (r == nullptr) {  // Don't overide any existing rule.
           r = rule;
@@ -157,9 +157,9 @@ void dbCreateNetUtil::setBlock(odb::dbBlock* block, bool skipInit)
   }
 }
 
-dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
+odb::dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
 {
-  dbTechLayerRule*& rule = _rules[routingLayer][width];
+  odb::dbTechLayerRule*& rule = _rules[routingLayer][width];
 
   if (rule != nullptr) {
     return rule;
@@ -192,11 +192,11 @@ dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
     odb::dbTechLayer* layer = _routingLayers[i];
 
     if (layer != nullptr) {
-      dbTechLayerRule* lr = dbTechLayerRule::create(nd_rule, layer);
+      odb::dbTechLayerRule* lr = odb::dbTechLayerRule::create(nd_rule, layer);
       lr->setWidth(width);
       lr->setSpacing(layer->getSpacing());
 
-      dbTechLayerRule*& r = _rules[i][width];
+      odb::dbTechLayerRule*& r = _rules[i][width];
       if (r == nullptr) {
         r = lr;
       }
@@ -366,7 +366,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
     }
   }
 
-  dbTechLayerRule* rule = nullptr;
+  odb::dbTechLayerRule* rule = nullptr;
   if ((int) layer->getWidth() != width) {
     rule = getRule(routingLayer, width);
   }
@@ -614,7 +614,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
     }
   }
 
-  dbTechLayerRule* rule = nullptr;
+  odb::dbTechLayerRule* rule = nullptr;
   if (layer->getWidth() != width) {
     rule = getRule(routingLayer, width);
   }

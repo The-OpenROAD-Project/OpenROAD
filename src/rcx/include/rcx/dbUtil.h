@@ -20,7 +20,6 @@ class Logger;
 
 namespace rcx {
 
-using odb::dbTechLayerRule;
 using odb::dbTechNonDefaultRule;
 
 //
@@ -67,7 +66,7 @@ class dbCreateNetUtil
  private:
   uint getFirstShape(odb::dbNet* net, odb::dbShape& s);
   bool setFirstShapeProperty(odb::dbNet* net, uint prop);
-  dbTechLayerRule* getRule(int routingLayer, int width);
+  odb::dbTechLayerRule* getRule(int routingLayer, int width);
   odb::dbTechVia* getVia(int l1, int l2, odb::Rect& bbox);
   std::pair<odb::dbBTerm*, odb::dbBTerm*> createTerms4SingleNet(
       odb::dbNet* net,
@@ -77,7 +76,7 @@ class dbCreateNetUtil
       int y2,
       odb::dbTechLayer* inly);
 
-  using RuleMap = std::map<int, dbTechLayerRule*>;
+  using RuleMap = std::map<int, odb::dbTechLayerRule*>;
   odb::dbTech* _tech;
   odb::dbBlock* _block;
   std::vector<RuleMap> _rules;
