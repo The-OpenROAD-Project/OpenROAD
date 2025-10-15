@@ -137,12 +137,13 @@ class DbMasterDescriptor : public BaseDbDescriptor<odb::dbMaster>
                                   odb::dbMaster* master,
                                   std::set<odb::dbMaster*>& masters);
 
+  static void getInstances(odb::dbMaster* master,
+                           std::set<odb::dbInst*>& insts);
+
  protected:
   Properties getDBProperties(odb::dbMaster* master) const override;
 
  private:
-  void getInstances(odb::dbMaster* master, std::set<odb::dbInst*>& insts) const;
-
   sta::dbSta* sta_;
 };
 
@@ -880,6 +881,10 @@ class DbMasterEdgeTypeDescriptor
   bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
   void highlight(const std::any& object, Painter& painter) const override;
+  static void highlightEdge(odb::dbMaster* master,
+                            odb::dbMasterEdgeType* edge,
+                            Painter& painter,
+                            const std::optional<int>& pen_width = {});
 
   void visitAllObjects(
       const std::function<void(const Selected&)>& func) const override;
