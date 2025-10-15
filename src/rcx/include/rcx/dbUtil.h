@@ -27,7 +27,6 @@ using odb::dbShape;
 using odb::dbTech;
 using odb::dbTechLayerRule;
 using odb::dbTechNonDefaultRule;
-using odb::dbTechVia;
 
 //
 // This class creates a new net along with a wire.
@@ -74,7 +73,7 @@ class dbCreateNetUtil
   uint getFirstShape(odb::dbNet* net, dbShape& s);
   bool setFirstShapeProperty(odb::dbNet* net, uint prop);
   dbTechLayerRule* getRule(int routingLayer, int width);
-  dbTechVia* getVia(int l1, int l2, odb::Rect& bbox);
+  odb::dbTechVia* getVia(int l1, int l2, odb::Rect& bbox);
   std::pair<odb::dbBTerm*, odb::dbBTerm*> createTerms4SingleNet(
       odb::dbNet* net,
       int x1,
@@ -89,7 +88,7 @@ class dbCreateNetUtil
   std::vector<RuleMap> _rules;
   std::vector<odb::dbTechLayer*> _routingLayers;
   int _ruleNameHint;
-  dbMatrix<std::vector<dbTechVia*>> _vias;
+  dbMatrix<std::vector<odb::dbTechVia*>> _vias;
   bool _milosFormat;
   odb::dbNet* _currentNet;
   odb::dbNet** _mapArray;

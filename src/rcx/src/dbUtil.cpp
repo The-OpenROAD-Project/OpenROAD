@@ -138,11 +138,11 @@ void dbCreateNetUtil::setBlock(odb::dbBlock* block, bool skipInit)
   _vias.clear();
   _vias.resize(layerCount + 1, layerCount + 1);
 
-  dbSet<dbTechVia> vias = _tech->getVias();
-  dbSet<dbTechVia>::iterator vitr;
+  dbSet<odb::dbTechVia> vias = _tech->getVias();
+  dbSet<odb::dbTechVia>::iterator vitr;
 
   for (vitr = vias.begin(); vitr != vias.end(); ++vitr) {
-    dbTechVia* via = *vitr;
+    odb::dbTechVia* via = *vitr;
     odb::dbTechLayer* bot = via->getBottomLayer();
     odb::dbTechLayer* top = via->getTopLayer();
 
@@ -203,15 +203,16 @@ dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
     }
   }
 
-  // dbTechVia  *curly_via;
-  dbSet<dbTechVia> all_vias = _tech->getVias();
-  dbSet<dbTechVia>::iterator viter;
+  // odb::dbTechVia  *curly_via;
+  dbSet<odb::dbTechVia> all_vias = _tech->getVias();
+  dbSet<odb::dbTechVia>::iterator viter;
   std::string nd_via_name;
   for (viter = all_vias.begin(); viter != all_vias.end(); ++viter) {
     if (((*viter)->getNonDefaultRule() == nullptr) && ((*viter)->isDefault())) {
       nd_via_name = std::string(rule_name) + std::string("_")
                     + std::string((*viter)->getName());
-      // curly_via = dbTechVia::clone(nd_rule, (*viter), nd_via_name.c_str());
+      // curly_via = odb::dbTechVia::clone(nd_rule, (*viter),
+      // nd_via_name.c_str());
     }
   }
 
@@ -219,7 +220,7 @@ dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
   return rule;
 }
 
-dbTechVia* dbCreateNetUtil::getVia(int l1, int l2, odb::Rect& bbox)
+odb::dbTechVia* dbCreateNetUtil::getVia(int l1, int l2, odb::Rect& bbox)
 {
   int bot, top;
 
@@ -234,12 +235,12 @@ dbTechVia* dbCreateNetUtil::getVia(int l1, int l2, odb::Rect& bbox)
   uint dx = bbox.dx();
   uint dy = bbox.dy();
 
-  dbTechVia* def = nullptr;
-  std::vector<dbTechVia*>& vias = _vias(bot, top);
-  std::vector<dbTechVia*>::iterator itr;
+  odb::dbTechVia* def = nullptr;
+  std::vector<odb::dbTechVia*>& vias = _vias(bot, top);
+  std::vector<odb::dbTechVia*>::iterator itr;
 
   for (itr = vias.begin(); itr != vias.end(); ++itr) {
-    dbTechVia* via = *itr;
+    odb::dbTechVia* via = *itr;
 
     if (via->isDefault()) {
       def = via;

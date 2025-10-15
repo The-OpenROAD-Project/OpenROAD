@@ -1809,7 +1809,7 @@ class extMain
                      const dbShape& s,
                      odb::Point& prevPoint,
                      const odb::dbWirePathShape& pshape);
-  double getViaRes_v2(odb::dbNet* net, dbTechVia* tvia);
+  double getViaRes_v2(odb::dbNet* net, odb::dbTechVia* tvia);
   double getDbViaRes_v2(odb::dbNet* net, const dbShape& s);
   double getMetalRes_v2(odb::dbNet* net,
                         const dbShape& s,
