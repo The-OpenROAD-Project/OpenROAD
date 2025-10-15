@@ -27,6 +27,7 @@
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
+#include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "util/journal.h"

@@ -22,6 +22,7 @@
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
+#include "odb/db.h"
 #include "odb/util.h"
 #include "util/journal.h"
 #include "utl/Logger.h"
