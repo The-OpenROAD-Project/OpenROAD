@@ -22,6 +22,8 @@
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
+using odb::dbTechLayerType;
+
 namespace drt {
 
 using Rectangle = boost::polygon::rectangle_data<int>;

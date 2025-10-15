@@ -24,6 +24,8 @@
 #include "rp/FlexRP.h"
 #include "utl/Logger.h"
 
+using odb::dbTechLayerType;
+
 namespace drt {
 
 void FlexRP::prep()

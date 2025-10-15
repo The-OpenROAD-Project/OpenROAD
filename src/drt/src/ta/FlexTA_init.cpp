@@ -25,6 +25,7 @@
 #include "ta/FlexTA.h"
 
 using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
 
 namespace drt {
 

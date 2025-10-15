@@ -16,6 +16,8 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
+using odb::dbTechLayerType;
+
 namespace drt {
 
 void FlexGRCMap::initFrom3D(FlexGRCMap* cmap3D)

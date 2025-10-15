@@ -28,6 +28,8 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
+using odb::dbTechLayerType;
+
 namespace drt {
 
 gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)

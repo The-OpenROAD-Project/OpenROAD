@@ -41,6 +41,8 @@
 #include "triton_route/TritonRoute.h"
 #include "utl/Logger.h"
 
+using odb::dbTechLayerType;
+
 namespace drt {
 
 io::Parser::Parser(odb::dbDatabase* dbIn,

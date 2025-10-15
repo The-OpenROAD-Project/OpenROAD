@@ -19,14 +19,13 @@
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
-namespace rcx {
-
 using odb::dbBPin;
 using odb::dbIoType;
 using odb::dbPlacementStatus;
 using odb::dbSet;
 using odb::dbSigType;
 using odb::dbSWire;
+using odb::dbTechLayerType;
 using odb::dbWire;
 using odb::dbWireEncoder;
 using odb::dbWirePath;
@@ -36,6 +35,8 @@ using odb::dbWireShapeType;
 using odb::dbWireType;
 using odb::Point;
 using utl::ODB;
+
+namespace rcx {
 
 dbCreateNetUtil::dbCreateNetUtil(utl::Logger* logger)
     : _tech(nullptr),
