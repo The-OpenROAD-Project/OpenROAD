@@ -22,6 +22,8 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
+using odb::dbTechLayerType;
+
 namespace drt {
 
 using polygon_t = bg::model::polygon<point_t>;

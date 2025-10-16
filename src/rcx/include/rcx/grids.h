@@ -18,9 +18,6 @@
 
 namespace rcx {
 
-using odb::AthPool;
-using odb::dbBox;
-
 enum OverlapAdjust
 {
   Z_noAdjust,
@@ -103,9 +100,9 @@ class Wire
 
   // Extraction
   int wireOverlap(Wire* w, int* len1, int* len2, int* len3);
-  Wire* getPoolWire(AthPool<Wire>* wirePool);
-  Wire* makeWire(AthPool<Wire>* wirePool, int xy1, uint len);
-  Wire* makeCoupleWire(AthPool<Wire>* wirePool,
+  Wire* getPoolWire(odb::AthPool<Wire>* wirePool);
+  Wire* makeWire(odb::AthPool<Wire>* wirePool, int xy1, uint len);
+  Wire* makeCoupleWire(odb::AthPool<Wire>* wirePool,
                        int targetHighTracks,
                        Wire* w2,
                        int xy1,
@@ -168,7 +165,7 @@ class Track
            uint markerLen,
            uint markerCnt,
            int base);
-  void freeWires(AthPool<Wire>* pool);
+  void freeWires(odb::AthPool<Wire>* pool);
   bool place(Wire* w, int markIndex1, int markIndex2);
   bool place(Wire* w, int markIndex1);
   uint setExtrusionMarker(int markerCnt, int start, uint markerLen);
@@ -255,7 +252,7 @@ class Track
                       uint firstContextTrack,
                       odb::Ath__array1D<int>* context);
 
-  void dealloc(AthPool<Wire>* pool);
+  void dealloc(odb::AthPool<Wire>* pool);
   Wire* getMarker(int index) const { return _marker[index]; }
   void setMarker(int index, Wire* wire) { _marker[index] = wire; }
 
@@ -304,8 +301,8 @@ class Grid
   uint placeWire_v2(SearchBox* bb);
 
   Grid(GridTable* gt,
-       AthPool<Track>* trackPool,
-       AthPool<Wire>* wirePool,
+       odb::AthPool<Track>* trackPool,
+       odb::AthPool<Wire>* wirePool,
        uint level,
        uint markerCnt);
   ~Grid();
@@ -341,7 +338,7 @@ class Grid
 
   uint placeWire(SearchBox* bb);
   uint placeBox(uint id, int x1, int y1, int x2, int y2);
-  uint placeBox(dbBox* box, uint wtype, uint id);
+  uint placeBox(odb::dbBox* box, uint wtype, uint id);
   uint placeBox(Box* box);
   uint placeBox(SearchBox* bb);
   uint getBucketNum(int xy);
@@ -410,7 +407,7 @@ class Grid
                    uint& wireCnt,
                    odb::Ath__array1D<Wire*>* bandWire,
                    int* limitArray);
-  AthPool<Wire>* getWirePoolPtr();
+  odb::AthPool<Wire>* getWirePoolPtr();
   uint placeWire(Wire* w);
   uint defaultWireType();
   void setDefaultWireType(uint v);
@@ -466,8 +463,8 @@ class Grid
   uint _searchLowMarker;
   uint _searchHiMarker;
 
-  AthPool<Track>* _trackPoolPtr;
-  AthPool<Wire>* _wirePoolPtr;
+  odb::AthPool<Track>* _trackPoolPtr;
+  odb::AthPool<Wire>* _wirePoolPtr;
 
   uint _wireType;
 
@@ -509,7 +506,7 @@ class GridTable
                         int* dgContextLowTrack,
                         int* dgContextHiTrack,
                         int** dgContextTrackBase,
-                        AthPool<SEQ>* seqPool);
+                        odb::AthPool<SEQ>* seqPool);
 
   // -------------------------------------------------------------
   GridTable(odb::Rect* bb,
@@ -533,8 +530,8 @@ class GridTable
   uint getColNum(int y);
   bool getRowCol(int x1, int y1, uint* row, uint* col);
   Wire* addBox(Box* bb);
-  Wire* addBox(dbBox* bb, uint wtype, uint id);
-  bool addBox(uint row, uint col, dbBox* bb);
+  Wire* addBox(odb::dbBox* bb, uint wtype, uint id);
+  bool addBox(uint row, uint col, odb::dbBox* bb);
 
   uint getBoxes(Box* bb, odb::Ath__array1D<Box*>* table);
   uint search(SearchBox* bb,
@@ -593,7 +590,7 @@ class GridTable
   uint getCcFlag() { return _ccFlag; };
   uint contextDepth() { return _ccContextDepth; };
   odb::Ath__array1D<int>** contextArray() { return _ccContextArray; };
-  AthPool<SEQ>* seqPool() { return _seqPool; };
+  odb::AthPool<SEQ>* seqPool() { return _seqPool; };
   odb::Ath__array1D<SEQ*>*** dgContextArray() { return _dgContextArray; };
   int** dgContextTrackBase() { return _dgContextTrackBase; };
   uint* dgContextBaseTrack() { return _dgContextBaseTrack; };
@@ -632,7 +629,7 @@ class GridTable
                      int* dgContextLowTrack,
                      int* dgContextHiTrack,
                      int** dgContextTrackBase,
-                     AthPool<SEQ>* seqPool);
+                     odb::AthPool<SEQ>* seqPool);
 
   bool usingDbSdb() { return _useDbSdb; }
   void reverseTargetTrack();
@@ -684,8 +681,8 @@ class GridTable
   uint _colCnt;
   uint _rowSize;
   uint _colSize;
-  AthPool<Track>* _trackPool;
-  AthPool<Wire>* _wirePool;
+  odb::AthPool<Track>* _trackPool;
+  odb::AthPool<Wire>* _wirePool;
   uint _overlapAdjust{Z_noAdjust};
   uint _powerMultiTrackWire{0};
   uint _signalMultiTrackWire{0};
@@ -708,7 +705,7 @@ class GridTable
 
   odb::Ath__array1D<int>** _ccContextArray{nullptr};
 
-  AthPool<SEQ>* _seqPool;
+  odb::AthPool<SEQ>* _seqPool;
   odb::Ath__array1D<SEQ*>*** _dgContextArray;  // array
 
   uint* _dgContextDepth;      // not array

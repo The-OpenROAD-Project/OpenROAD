@@ -253,7 +253,7 @@ void PDNSim::inDbSWirePostDestroySBoxes(odb::dbSWire*)
 }
 
 // Functions of decap cells
-void PDNSim::addDecapMaster(dbMaster* decap_master, double decap_cap)
+void PDNSim::addDecapMaster(odb::dbMaster* decap_master, double decap_cap)
 {
   opendp_->addDecapMaster(decap_master, decap_cap);
 }

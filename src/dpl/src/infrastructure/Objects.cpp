@@ -76,11 +76,11 @@ void Master::setTopPowerType(const int top_pwr)
 {
   top_pwr_ = top_pwr;
 }
-void Master::setDbMaster(dbMaster* db_master)
+void Master::setDbMaster(odb::dbMaster* db_master)
 {
   db_master_ = db_master;
 }
-dbMaster* Master::getDbMaster() const
+odb::dbMaster* Master::getDbMaster() const
 {
   return db_master_;
 }
@@ -163,7 +163,7 @@ bool Node::isHold() const
 {
   return hold_;
 }
-dbSite* Node::getSite() const
+odb::dbSite* Node::getSite() const
 {
   if (!getDbInst() || !getDbInst()->getMaster()) {
     return nullptr;
@@ -182,17 +182,17 @@ DbuX Node::siteWidth() const
 }
 bool Node::isHybrid() const
 {
-  dbSite* site = getSite();
+  odb::dbSite* site = getSite();
   return site ? site->isHybrid() : false;
 }
 bool Node::isHybridParent() const
 {
-  dbSite* site = getSite();
+  odb::dbSite* site = getSite();
   return site ? site->hasRowPattern() : false;
 }
 int64_t Node::area() const
 {
-  dbMaster* master = getDbInst()->getMaster();
+  odb::dbMaster* master = getDbInst()->getMaster();
   return int64_t(master->getWidth()) * master->getHeight();
 }
 std::string Node::name() const
@@ -238,7 +238,7 @@ bool Node::isStdCell() const
 bool Node::isBlock() const
 {
   return getDbInst()
-         && getDbInst()->getMaster()->getType() == dbMasterType::BLOCK;
+         && getDbInst()->getMaster()->getType() == odb::dbMasterType::BLOCK;
 }
 Group* Node::getGroup() const
 {

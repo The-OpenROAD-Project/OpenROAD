@@ -43,7 +43,7 @@ namespace rcx {
 
 class extMain;
 
-extSpef::extSpef(dbTech* tech,
+extSpef::extSpef(odb::dbTech* tech,
                  dbBlock* blk,
                  Logger* logger,
                  const char* version,
@@ -300,7 +300,7 @@ void extSpef::writeNameNode(dbCapNode* node)
 
 void extSpef::writeITermNode(const uint node)
 {
-  dbITerm* iterm = dbITerm::getITerm(_block, node);
+  odb::dbITerm* iterm = odb::dbITerm::getITerm(_block, node);
   dbInst* inst = iterm->getInst();
   if (inst->getMaster()->isMarked()) {
     return;
@@ -341,7 +341,7 @@ void extSpef::writeITermNode(const uint node)
 
 void extSpef::writeITerm(const uint node)
 {
-  dbITerm* iterm = dbITerm::getITerm(_block, node);
+  odb::dbITerm* iterm = odb::dbITerm::getITerm(_block, node);
   if (iterm->getInst()->getMaster()->isMarked()) {
     return;
   }
@@ -442,7 +442,10 @@ void extSpef::writeCapNode(dbCapNode* capNode, uint netId)
 
 void extSpef::writeCapITerm(const uint node, const uint capIndex)
 {
-  if ((dbITerm::getITerm(_block, node))->getInst()->getMaster()->isMarked()) {
+  if ((odb::dbITerm::getITerm(_block, node))
+          ->getInst()
+          ->getMaster()
+          ->isMarked()) {
     return;
   }
   writeCNodeNumber();
@@ -1362,7 +1365,7 @@ void extSpef::writeNetMap(dbSet<dbNet>& nets)
       continue;
     }
     net->setMark_1(true);
-    for (dbITerm* iterm : net->getITerms()) {
+    for (odb::dbITerm* iterm : net->getITerms()) {
       iterm->getInst()->setUserFlag1();
     }
     for (odb::dbBTerm* bterm : net->getBTerms()) {

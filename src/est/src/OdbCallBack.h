@@ -11,12 +11,10 @@ namespace est {
 
 class EstimateParasitics;
 
-using odb::dbBlockCallBackObj;
-using odb::dbITerm;
 using sta::dbNetwork;
 using sta::Network;
 
-class OdbCallBack : public dbBlockCallBackObj
+class OdbCallBack : public odb::dbBlockCallBackObj
 {
  public:
   OdbCallBack(EstimateParasitics* estimate_parasitics,
@@ -26,8 +24,8 @@ class OdbCallBack : public dbBlockCallBackObj
   void inDbInstCreate(odb::dbInst* inst) override;
   void inDbNetCreate(odb::dbNet* net) override;
   void inDbNetDestroy(odb::dbNet* net) override;
-  void inDbITermPostConnect(dbITerm* iterm) override;
-  void inDbITermPostDisconnect(dbITerm* iterm, odb::dbNet* net) override;
+  void inDbITermPostConnect(odb::dbITerm* iterm) override;
+  void inDbITermPostDisconnect(odb::dbITerm* iterm, odb::dbNet* net) override;
   void inDbInstSwapMasterAfter(odb::dbInst* inst) override;
 
  private:

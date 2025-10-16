@@ -1028,7 +1028,7 @@ void extMain::fill_gs4(const int dir,
     Ath__array1D<uint> instGsTable(num_insts);
 
     for (dbInst* inst : _block->getInsts()) {
-      dbBox* R = inst->getBBox();
+      odb::dbBox* R = inst->getBBox();
 
       int R_ll[2] = {R->xMin(), R->yMin()};
       int R_ur[2] = {R->xMax(), R->yMax()};

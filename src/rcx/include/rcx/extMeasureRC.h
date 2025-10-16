@@ -8,6 +8,7 @@
 
 #include "odb/array1.h"
 #include "odb/db.h"
+#include "odb/util.h"
 #include "rcx/extRCap.h"
 
 namespace rcx {
@@ -313,7 +314,7 @@ class extMeasureRC : public extMeasure
                        float& previous_percent_extracted);
   //----------------------------------------------------------------------- v2
   //----- CLEANUP
-  AthPool<extSegment>* _seqmentPool;
+  odb::AthPool<extSegment>* _seqmentPool;
   void releaseAll(SegmentTables& segments);
 
   void allocateTables(uint colCnt);

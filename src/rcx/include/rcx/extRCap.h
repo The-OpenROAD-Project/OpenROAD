@@ -42,7 +42,6 @@ class extMeasure;
 class extMeasureRC;
 struct SEQ;
 
-using odb::AthPool;
 using odb::uint;
 using utl::Logger;
 
@@ -173,27 +172,27 @@ class extDistRCTable
                       bool compute,
                       bool bin);
   uint readRules(Ath__parser* parser,
-                 AthPool<extDistRC>* rcPool,
+                 odb::AthPool<extDistRC>* rcPool,
                  bool compute,
                  bool bin,
                  bool ignore,
                  double dbFactor = 1.0);
   uint readRules_res2(Ath__parser* parser,
-                      AthPool<extDistRC>* rcPool,
+                      odb::AthPool<extDistRC>* rcPool,
                       bool compute,
                       bool bin,
                       bool ignore,
                       double dbFactor = 1.0);
-  uint interpolate(uint distUnit, int maxDist, AthPool<extDistRC>* rcPool);
+  uint interpolate(uint distUnit, int maxDist, odb::AthPool<extDistRC>* rcPool);
   uint mapInterpolate(extDistRC* rc1,
                       extDistRC* rc2,
                       uint distUnit,
                       int maxDist,
-                      AthPool<extDistRC>* rcPool);
+                      odb::AthPool<extDistRC>* rcPool);
   uint mapExtrapolate(uint loDist,
                       extDistRC* rc2,
                       uint distUnit,
-                      AthPool<extDistRC>* rcPool);
+                      odb::AthPool<extDistRC>* rcPool);
 
  private:
   void makeCapTableOver();
@@ -239,7 +238,7 @@ class extDistWidthRCTable
                       uint layerCnt,
                       uint metCnt,
                       odb::Ath__array1D<double>* widthTable,
-                      AthPool<extDistRC>* rcPool,
+                      odb::AthPool<extDistRC>* rcPool,
                       bool OUREVERSEORDER,
                       double dbFactor = 1.0);
   extDistWidthRCTable(bool over,
@@ -249,7 +248,7 @@ class extDistWidthRCTable
                       odb::Ath__array1D<double>* widthTable,
                       int diagWidthCnt,
                       int diagDistCnt,
-                      AthPool<extDistRC>* rcPool,
+                      odb::AthPool<extDistRC>* rcPool,
                       bool OUREVERSEORDER,
                       double dbFactor = 1.0);
   extDistWidthRCTable(bool over,
@@ -257,7 +256,7 @@ class extDistWidthRCTable
                       uint layerCnt,
                       uint metCnt,
                       uint maxWidthCnt,
-                      AthPool<extDistRC>* rcPool,
+                      odb::AthPool<extDistRC>* rcPool,
                       bool OUREVERSEORDER);
   void addRCw(uint n, uint w, extDistRC* rc);
   void createWidthMap();
@@ -364,7 +363,7 @@ class extDistWidthRCTable
   uint _diagWidthCnt;
   uint _diagDistCnt;
 
-  AthPool<extDistRC>* _rcPoolPtr = nullptr;
+  odb::AthPool<extDistRC>* _rcPoolPtr = nullptr;
   extDistRC* _rc31 = nullptr;
 };
 
@@ -393,10 +392,10 @@ class extMetRCTable
   // dkf 12302023
   bool SkipPattern(Ath__parser* p, odb::dbNet* net, FILE* logFP);
   // dkf 01022024
-  uint SetDefaultTechViaRes(dbTech* tech, bool dbg);
+  uint SetDefaultTechViaRes(odb::dbTech* tech, bool dbg);
   // ----------------------------------------------------------------------------------------
   extMetRCTable(uint layerCnt,
-                AthPool<extDistRC>* rcPool,
+                odb::AthPool<extDistRC>* rcPool,
                 Logger* logger_,
                 bool OUREVERSEORDER);
   ~extMetRCTable();
@@ -449,7 +448,7 @@ class extMetRCTable
   extDistRC* getCapUnder(uint met, uint metOver);
   extDistRC* getOverFringeRC(extMeasure* m, int index_dist = -1);
   extDistRC* getOverFringeRC_last(int met, int width);
-  AthPool<extDistRC>* getRCPool();
+  odb::AthPool<extDistRC>* getRCPool();
 
  public:
   uint _layerCnt;
@@ -464,7 +463,7 @@ class extMetRCTable
   extDistWidthRCTable*** _capOverUnder_open;
   extDistWidthRCTable** _capDiagUnder;
 
-  AthPool<extDistRC>* _rcPoolPtr;
+  odb::AthPool<extDistRC>* _rcPoolPtr;
   double _rate;
   Logger* logger_;
 
@@ -597,7 +596,7 @@ class extRCModel
 
   // dkf 09172024
   uint calcMinMaxRC(odb::dbTech* tech, const char* out_file);
-  uint getViaTechRes(dbTech* tech, const char* out_file);
+  uint getViaTechRes(odb::dbTech* tech, const char* out_file);
 
   extMain* get_extMain() { return _extMain; };
   bool getDiagFlag() { return _diag; };
@@ -937,7 +936,7 @@ class extRCModel
   extRCTable* _capOver;
   extRCTable* _capDiagUnder;
   extRCTable* _capUnder;
-  AthPool<extDistRC>* _rcPoolPtr;
+  odb::AthPool<extDistRC>* _rcPoolPtr;
   extProcess* _process;
   char* _ruleFileName;
   char* _wireFileName;
@@ -1497,7 +1496,7 @@ class extMeasure
 
   odb::Ath__array1D<ext2dBox*>
       _2dBoxTable[2][20];  // assume 20 layers; 0=main net; 1=context
-  AthPool<ext2dBox>* _2dBoxPool;
+  odb::AthPool<ext2dBox>* _2dBoxPool;
   odb::Ath__array1D<int>** _ccMergedContextArray;
 
   int _ll[2];
@@ -1551,9 +1550,9 @@ class extMeasure
   int _netTgtId;
   FILE* _debugFP;
 
-  AthPool<SEQ>* _seqPool;
+  odb::AthPool<SEQ>* _seqPool;
 
-  AthPool<extLenOU>* _lenOUPool;
+  odb::AthPool<extLenOU>* _lenOUPool;
   odb::Ath__array1D<extLenOU*>* _lenOUtable;
 
   bool _diagFlow;
@@ -1775,7 +1774,7 @@ class extMain
   uint makeNetRCsegs_v2(odb::dbNet* net, bool skipStartWarning = false);
   uint resetMapNodes_v2(odb::dbWire* wire);
 
-  uint getCapNodeId_v2(dbITerm* iterm, const uint junction);
+  uint getCapNodeId_v2(odb::dbITerm* iterm, const uint junction);
   uint getCapNodeId_v2(odb::dbBTerm* bterm, const uint junction);
   uint getCapNodeId_v2(odb::dbNet* net, const int junction, const bool branch);
   uint getCapNodeId_v2(odb::dbNet* net,
@@ -1803,17 +1802,17 @@ class extMain
 
   void loopWarning(odb::dbNet* net, const odb::dbWirePathShape& pshape);
   void getShapeRC_v2(odb::dbNet* net,
-                     const dbShape& s,
+                     const odb::dbShape& s,
                      odb::Point& prevPoint,
                      const odb::dbWirePathShape& pshape);
   void getShapeRC_v3(odb::dbNet* net,
-                     const dbShape& s,
+                     const odb::dbShape& s,
                      odb::Point& prevPoint,
                      const odb::dbWirePathShape& pshape);
-  double getViaRes_v2(odb::dbNet* net, dbTechVia* tvia);
-  double getDbViaRes_v2(odb::dbNet* net, const dbShape& s);
+  double getViaRes_v2(odb::dbNet* net, odb::dbTechVia* tvia);
+  double getDbViaRes_v2(odb::dbNet* net, const odb::dbShape& s);
   double getMetalRes_v2(odb::dbNet* net,
-                        const dbShape& s,
+                        const odb::dbShape& s,
                         const odb::dbWirePathShape& pshape);
   void setResAndCap_v2(odb::dbRSeg* rc,
                        const double* restbl,
@@ -1822,7 +1821,7 @@ class extMain
 
   uint getResCapTable_lefRC_v2();
   void infoBeforeCouplingExt();
-  void setExtControl_v2(AthPool<SEQ>* seqPool);
+  void setExtControl_v2(odb::AthPool<SEQ>* seqPool);
 
   // --------------------- dkf 092024 ------------------------
   extRCModel* getCurrentModel() { return _currentModel; }
@@ -1851,7 +1850,7 @@ class extMain
   void addItermShapesOnPlanes(odb::dbInst* inst,
                               bool rotatedFlag,
                               bool swap_coords);
-  void addShapeOnGs(dbShape* s, bool swap_coords);
+  void addShapeOnGs(odb::dbShape* s, bool swap_coords);
 
   void initRunEnv(extMeasureRC& m);
   uint _ccContextDepth = 0;
@@ -2763,7 +2762,7 @@ class extMain
 
   gs* _geomSeq = nullptr;
 
-  AthPool<SEQ>* _seqPool = nullptr;
+  odb::AthPool<SEQ>* _seqPool = nullptr;
 
   odb::Ath__array1D<SEQ*>*** _dgContextArray = nullptr;
   uint _dgContextDepth;

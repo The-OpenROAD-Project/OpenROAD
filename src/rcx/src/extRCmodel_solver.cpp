@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "odb/array1.h"
+#include "odb/util.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
@@ -180,7 +181,7 @@ uint extRCModel::readRCvalues(const char* corner,
 
   uint corner_index = 0;
   extMetRCTable* met_rc = getMetRCTable(corner_index);
-  AthPool<extDistRC>* rcPool = met_rc->getRCPool();
+  odb::AthPool<extDistRC>* rcPool = met_rc->getRCPool();
 
   extMeasure m(nullptr);
   m._diagModel = 1;

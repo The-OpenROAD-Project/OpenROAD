@@ -945,7 +945,7 @@ void DbMasterDescriptor::getMasterEquivalent(sta::dbSta* sta,
 
 // get list of instances of that type
 void DbMasterDescriptor::getInstances(odb::dbMaster* master,
-                                      std::set<odb::dbInst*>& insts) const
+                                      std::set<odb::dbInst*>& insts)
 {
   for (auto inst : master->getDb()->getChip()->getBlock()->getInsts()) {
     if (inst->getMaster() == master) {
@@ -5120,9 +5120,60 @@ bool DbMasterEdgeTypeDescriptor::getBBox(const std::any& object,
   return false;
 }
 
+void DbMasterEdgeTypeDescriptor::highlightEdge(
+    odb::dbMaster* master,
+    odb::dbMasterEdgeType* edge,
+    Painter& painter,
+    const std::optional<int>& pen_width)
+{
+  if (pen_width) {
+    painter.saveState();
+    painter.setPenWidth(pen_width.value());
+  }
+
+  std::set<odb::dbInst*> insts;
+  DbMasterDescriptor::getInstances(master, insts);
+  for (auto inst : insts) {
+    if (!inst->getPlacementStatus().isPlaced()) {
+      continue;
+    }
+
+    const odb::Rect rect = inst->getBBox()->getBox();
+
+    switch (edge->getEdgeDir()) {
+      case odb::dbMasterEdgeType::TOP:
+        painter.drawLine(rect.ur(), rect.ul());
+        break;
+      case odb::dbMasterEdgeType::RIGHT:
+        painter.drawLine(rect.lr(), rect.ur());
+        break;
+      case odb::dbMasterEdgeType::LEFT:
+        painter.drawLine(rect.ll(), rect.ul());
+        break;
+      case odb::dbMasterEdgeType::BOTTOM:
+        painter.drawLine(rect.lr(), rect.ll());
+        break;
+    }
+  }
+
+  if (pen_width) {
+    painter.restoreState();
+  }
+}
+
 void DbMasterEdgeTypeDescriptor::highlight(const std::any& object,
                                            Painter& painter) const
 {
+  auto* edge = getObject(object);
+  for (auto* lib : db_->getLibs()) {
+    for (auto* master : lib->getMasters()) {
+      for (auto* master_edge : master->getEdgeTypes()) {
+        if (master_edge == edge) {
+          DbMasterEdgeTypeDescriptor::highlightEdge(master, edge, painter);
+        }
+      }
+    }
+  }
 }
 
 void DbMasterEdgeTypeDescriptor::visitAllObjects(
@@ -5223,6 +5274,18 @@ bool DbCellEdgeSpacingDescriptor::getBBox(const std::any& object,
 void DbCellEdgeSpacingDescriptor::highlight(const std::any& object,
                                             Painter& painter) const
 {
+  auto rule = getObject(object);
+  for (auto* lib : db_->getLibs()) {
+    for (auto* master : lib->getMasters()) {
+      for (auto* edge : master->getEdgeTypes()) {
+        if (rule->getFirstEdgeType() == edge->getEdgeType()) {
+          DbMasterEdgeTypeDescriptor::highlightEdge(master, edge, painter, 1);
+        } else if (rule->getSecondEdgeType() == edge->getEdgeType()) {
+          DbMasterEdgeTypeDescriptor::highlightEdge(master, edge, painter, 2);
+        }
+      }
+    }
+  }
 }
 
 void DbCellEdgeSpacingDescriptor::visitAllObjects(
