@@ -67,13 +67,14 @@ class DRCWidget : public QDockWidget, public odb::dbBlockCallBackObj
   void inDbMarkerDestroy(odb::dbMarker* marker) override;
 
  signals:
-  void selectDRC(const Selected& selected);
+  void selectDRC(const Selected& selected, bool open_inspector);
   void focus(const Selected& selected);
 
  public slots:
   void loadReport(const QString& filename);
   void setBlock(odb::dbBlock* block);
   void clicked(const QModelIndex& index);
+  void doubleClicked(const QModelIndex& index);
   void selectReport();
   void toggleRenderer(bool visible);
   void updateSelection(const Selected& selection);
@@ -112,6 +113,8 @@ class DRCWidget : public QDockWidget, public odb::dbBlockCallBackObj
   void toggleParent(QStandardItem* child);
   bool setVisibleDRC(QStandardItem* item, bool visible, bool announce_parent);
   void populateCategory(odb::dbMarkerCategory* category, QStandardItem* model);
+
+  void showMarker(const QModelIndex& index, bool open_inspector);
 };
 
 }  // namespace gui
