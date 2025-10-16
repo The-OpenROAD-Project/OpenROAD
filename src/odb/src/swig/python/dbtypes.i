@@ -61,6 +61,7 @@
     }
     $result = list;
 }
+
 %typemap(out) std::vector< T* > {
     PyObject *list = PyList_New($1.size());
     std::vector<T*>& v = *&($1);
@@ -69,6 +70,20 @@
         PyList_SetItem(list, i, SWIG_NewInstanceObj(ptr, $descriptor(T *), 0));
     }
     $result = list;
+}
+
+%typemap(out) std::vector<std::vector< T* >> {
+    std::vector<std::vector< T* >>& outer = *&($1);
+    PyObject *oList = PyList_New(outer.size());
+    for (unsigned int i = 0; i < outer.size(); i++) {
+        std::vector< T* > inner = outer[i];
+        PyObject *iList = PyList_New(inner.size());
+        for (unsigned int j = 0; j < inner.size(); j++) {
+            PyList_SetItem(iList, j, SWIG_NewInstanceObj(inner[j], $descriptor(T *), 0));
+        }
+        PyList_SetItem(oList, i, iList);
+    }
+    $result = oList;
 }
 
 %typemap(out) std::pair< int, int > {
