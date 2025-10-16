@@ -99,11 +99,6 @@ void Replace::addPlacementCluster(const Cluster& cluster)
   clusters_.emplace_back(cluster);
 }
 
-void Replace::clearPlacementClusters()
-{
-  clusters_.clear();
-}
-
 void Replace::doIncrementalPlace(int threads)
 {
   log_->info(GPL, 6, "Execute incremental mode global placement.");
