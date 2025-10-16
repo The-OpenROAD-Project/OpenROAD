@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "graphics.h"
+#include "gpl/AbstractGraphics.h"
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "placerBase.h"
@@ -34,6 +34,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                              std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                              std::shared_ptr<RouteBase> rb,
                              std::shared_ptr<TimingBase> tb,
+                             std::unique_ptr<gpl::AbstractGraphics> graphics,
                              utl::Logger* log)
     : NesterovPlace()
 {
@@ -52,16 +53,18 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
     db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
   }
 
-  if (npVars.debug && Graphics::guiActive()) {
-    graphics_ = std::make_unique<Graphics>(log_,
-                                           this,
-                                           pbc,
-                                           nbc,
-                                           pbVec,
-                                           nbVec,
-                                           npVars_.debug_draw_bins,
-                                           npVars.debug_inst);
+  if (npVars_.debug) {
+    graphics_ = std::move(graphics);
+    graphics_->setDebugOn(npVars.debug);
+    graphics_->debugForNesterovPlace(this,
+                                     pbc_,
+                                     nbc_,
+                                     pbVec_,
+                                     nbVec_,
+                                     npVars_.debug_draw_bins,
+                                     npVars_.debug_inst);
   }
+
   init();
 }
 
@@ -266,21 +269,21 @@ void NesterovPlace::reset()
 }
 
 void NesterovPlace::updateIterGraphics(
-    const int iter,
+    int iter,
     const std::string& reports_dir,
     const std::string& routability_driven_dir,
-    const int routability_driven_revert_count,
-    const int timing_driven_count,
+    int routability_driven_revert_count,
+    int timing_driven_count,
     bool& final_routability_image_saved)
 {
-  if (!graphics_) {
+  if (!graphics_ || !graphics_->enabled()) {
     return;
   }
 
   // For JPEG Saving
   updateDb();
 
-  const int debug_start_iter = npVars_.debug_start_iter;
+  int debug_start_iter = npVars_.debug_start_iter;
   if (debug_start_iter == 0 || iter + 1 >= debug_start_iter) {
     graphics_->addIter(iter, average_overflow_unscaled_);
     bool update
@@ -294,7 +297,7 @@ void NesterovPlace::updateIterGraphics(
 
   if (npVars_.debug_generate_images && iter == 0) {
     std::string gif_path = fmt::format("{}/placement.gif", reports_dir);
-    graphics_->getGuiObjectFromGraphics()->gifStart(gif_path);
+    graphics_->gifStart(gif_path);
   }
 
   if (npVars_.debug_generate_images && iter % 10 == 0) {
@@ -310,10 +313,9 @@ void NesterovPlace::updateIterGraphics(
                                     timing_driven_count);
     std::string label_name = fmt::format("frame_label_{}", iter);
 
-    gui::Gui* gui = graphics_->getGuiObjectFromGraphics();
-    graphics_->addFrameLabel(gui, bbox, label, label_name);
-    gui->gifAddFrame(region, width_px, dbu_per_pixel, delay);
-    gui->deleteLabel(label_name);
+    graphics_->addFrameLabel(bbox, label, label_name);
+    graphics_->gifAddFrame(region, width_px, dbu_per_pixel, delay);
+    graphics_->deleteLabel(label_name);
   }
 
   // Save image once if routability not needed and below routability overflow
@@ -363,9 +365,9 @@ void NesterovPlace::updateIterGraphics(
   }
 }
 
-void NesterovPlace::runTimingDriven(const int iter,
+void NesterovPlace::runTimingDriven(int iter,
                                     const std::string& timing_driven_dir,
-                                    const int routability_driven_revert_count,
+                                    int routability_driven_revert_count,
                                     int& timing_driven_count,
                                     int64_t& td_accumulated_delta_area,
                                     bool is_routability_gpl_iter)
@@ -379,7 +381,7 @@ void NesterovPlace::runTimingDriven(const int iter,
     // update db's instance location from current density coordinates
     updateDb();
 
-    if (graphics_) {
+    if (graphics_ && graphics_->enabled()) {
       graphics_->addTimingDrivenIter(iter);
 
       if (npVars_.debug_generate_images) {
@@ -450,7 +452,7 @@ void NesterovPlace::runTimingDriven(const int iter,
                  nb_total_gcells_delta);
     }
 
-    if (graphics_ && npVars_.debug_generate_images) {
+    if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
       updateDb();
       bool select_buffers = !virtual_td_iter;
       graphics_->saveLabeledImage(
@@ -623,11 +625,11 @@ bool NesterovPlace::isDiverged(float& diverge_snapshot_WlCoefX,
 }
 
 void NesterovPlace::routabilitySnapshot(
-    const int iter,
-    const float curA,
+    int iter,
+    float curA,
     const std::string& routability_driven_dir,
-    const int routability_driven_revert_count,
-    const int timing_driven_count,
+    int routability_driven_revert_count,
+    int timing_driven_count,
     bool& is_routability_snapshot_saved,
     float& route_snapshot_WlCoefX,
     float& route_snapshot_WlCoefY,
@@ -645,12 +647,12 @@ void NesterovPlace::routabilitySnapshot(
     }
 
     log_->info(GPL, 38, "Routability snapshot saved at iter = {}", iter);
-    if (graphics_) {
+    if (graphics_ && graphics_->enabled()) {
       graphics_->addRoutabilitySnapshot(iter);
     }
 
     // Save image of routability snapshot
-    if (graphics_ && npVars_.debug_generate_images) {
+    if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
       graphics_->saveLabeledImage(
           fmt::format("{}/0_routability_snapshot_{:05d}.png",
                       routability_driven_dir,
@@ -664,8 +666,8 @@ void NesterovPlace::routabilitySnapshot(
   }
 }
 
-void NesterovPlace::runRoutability(const int iter,
-                                   const int timing_driven_count,
+void NesterovPlace::runRoutability(int iter,
+                                   int timing_driven_count,
                                    const std::string& routability_driven_dir,
                                    const float route_snapshotA,
                                    const float route_snapshot_WlCoefX,
@@ -680,7 +682,7 @@ void NesterovPlace::runRoutability(const int iter,
     nbVec_[0]->setTrueReprintIterHeader();
     ++routability_driven_revert_count;
 
-    if (graphics_ && npVars_.debug_generate_images) {
+    if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
       updateDb();
       std::string label = fmt::format("Iter {} |R: {} |T: {}",
                                       iter,
@@ -710,7 +712,7 @@ void NesterovPlace::runRoutability(const int iter,
     is_routability_need_ = result.first;
     bool isRevertInitNeeded = result.second;
 
-    if (graphics_) {
+    if (graphics_ && graphics_->enabled()) {
       graphics_->addRoutabilityIter(iter, isRevertInitNeeded);
     }
 
@@ -774,8 +776,8 @@ bool NesterovPlace::isConverged(int gpl_iter_count,
   }
 
   if (num_region_converge == nbVec_.size()) {
-    if (graphics_ && npVars_.debug_generate_images) {
-      graphics_->getGuiObjectFromGraphics()->gifEnd();
+    if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
+      graphics_->gifEnd();
     }
     return true;
   }
@@ -809,7 +811,7 @@ void NesterovPlace::cleanReportsDirs(
           }
         };
 
-  if (graphics_ && npVars_.debug_generate_images) {
+  if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
     clean_directory(timing_driven_dir);
     clean_directory(routability_driven_dir);
   }
@@ -872,10 +874,10 @@ void NesterovPlace::doBackTracking(const float coeff)
   }
 }
 
-void NesterovPlace::reportResults(const int nesterov_iter,
-                                  const int64_t original_area,
-                                  const int64_t end_routability_area,
-                                  const int64_t td_accumulated_delta_area)
+void NesterovPlace::reportResults(int nesterov_iter,
+                                  int64_t original_area,
+                                  int64_t end_routability_area,
+                                  int64_t td_accumulated_delta_area)
 {
   auto block = pbc_->db()->getChip()->getBlock();
 
@@ -926,7 +928,7 @@ void NesterovPlace::reportResults(const int nesterov_iter,
              placement_diff);
 }
 
-int NesterovPlace::doNesterovPlace(const int start_iter)
+int NesterovPlace::doNesterovPlace(int start_iter)
 {
   // if replace diverged in init() function, Nesterov must be skipped.
   if (num_region_diverged_ > 0) {
@@ -955,7 +957,8 @@ int NesterovPlace::doNesterovPlace(const int start_iter)
   int64_t td_accumulated_delta_area = 0;
   int64_t end_routability_area = 0;
 
-  if (graphics_ && npVars_.debug_start_iter == start_iter) {
+  if (graphics_ && graphics_->enabled()
+      && npVars_.debug_start_iter == start_iter) {
     graphics_->cellPlot(true);
   }
 
@@ -1067,7 +1070,7 @@ int NesterovPlace::doNesterovPlace(const int start_iter)
     log_->error(GPL, divergeCode_, divergeMsg_);
   }
 
-  if (graphics_) {
+  if (graphics_ && graphics_->enabled()) {
     graphics_->status("End placement");
     graphics_->cellPlot(true);
 
@@ -1107,7 +1110,7 @@ void NesterovPlace::updateWireLengthCoef(float overflow)
   debugPrint(log_, GPL, "np", 1, "NewWireLengthCoef: {:g}", wireLengthCoefX_);
 }
 
-void NesterovPlace::updateNextIter(const int iter)
+void NesterovPlace::updateNextIter(int iter)
 {
   total_sum_overflow_ = 0;
   total_sum_overflow_unscaled_ = 0;
