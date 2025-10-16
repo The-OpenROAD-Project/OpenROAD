@@ -279,7 +279,7 @@ class FastRouteCore
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
-  void updateSlacks(float percentage = 0.3);
+  void updateSlacks(float percentage = 0.5);
 
   // maze functions
   // Maze-routing in different orders
