@@ -11,17 +11,20 @@
 #include <filesystem>
 #include <limits>
 
+#include "odb/array1.h"
 #include "odb/db.h"
+#include "odb/util.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
 #include "rcx/grids.h"
 #include "utl/Logger.h"
 
-namespace rcx {
-
+using odb::Ath__array1D;
 using odb::dbRSeg;
 using utl::RCX;
+
+namespace rcx {
 
 int extRCModel::getMaxMetIndexOverUnder(int met, int layerCnt)
 {
@@ -211,7 +214,7 @@ extDistRCTable::~extDistRCTable()
 uint extDistRCTable::mapExtrapolate(uint loDist,
                                     extDistRC* rc2,
                                     uint distUnit,
-                                    AthPool<extDistRC>* rcPool)
+                                    odb::AthPool<extDistRC>* rcPool)
 {
   uint cnt = 0;
   uint d1 = loDist;
@@ -238,7 +241,7 @@ uint extDistRCTable::mapInterpolate(extDistRC* rc1,
                                     extDistRC* rc2,
                                     uint distUnit,
                                     int maxDist,
-                                    AthPool<extDistRC>* rcPool)
+                                    odb::AthPool<extDistRC>* rcPool)
 {
   uint cnt = 0;
   uint d1 = rc1->sep_;
@@ -265,7 +268,7 @@ uint extDistRCTable::mapInterpolate(extDistRC* rc1,
 
 uint extDistRCTable::interpolate(uint distUnit,
                                  int maxDist,
-                                 AthPool<extDistRC>* rcPool)
+                                 odb::AthPool<extDistRC>* rcPool)
 {
   uint cnt = measureTable_->getCnt();
   uint Cnt = cnt;
@@ -462,7 +465,7 @@ uint extMetRCTable::readRCstats(Ath__parser* parser)
 }
 
 uint extDistRCTable::readRules_res2(Ath__parser* parser,
-                                    AthPool<extDistRC>* rcPool,
+                                    odb::AthPool<extDistRC>* rcPool,
                                     bool compute,
                                     bool bin,
                                     bool ignore,
@@ -532,7 +535,7 @@ uint extDistRCTable::readRules_res2(Ath__parser* parser,
 }
 
 uint extDistRCTable::readRules(Ath__parser* parser,
-                               AthPool<extDistRC>* rcPool,
+                               odb::AthPool<extDistRC>* rcPool,
                                bool compute,
                                bool bin,
                                bool ignore,
@@ -762,7 +765,7 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
                                          uint layerCnt,
                                          uint metCnt,
                                          uint maxWidthCnt,
-                                         AthPool<extDistRC>* rcPool,
+                                         odb::AthPool<extDistRC>* rcPool,
                                          bool OUREVERSEORDER)
     : _ouReadReverse(OUREVERSEORDER),
       _over(over),
@@ -883,7 +886,7 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
                                          uint layerCnt,
                                          uint metCnt,
                                          Ath__array1D<double>* widthTable,
-                                         AthPool<extDistRC>* rcPool,
+                                         odb::AthPool<extDistRC>* rcPool,
                                          bool OUREVERSEORDER,
                                          double dbFactor)
     : _ouReadReverse(OUREVERSEORDER),
@@ -970,7 +973,7 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
                                          Ath__array1D<double>* widthTable,
                                          int diagWidthCnt,
                                          int diagDistCnt,
-                                         AthPool<extDistRC>* rcPool,
+                                         odb::AthPool<extDistRC>* rcPool,
                                          bool OUREVERSEORDER,
                                          double dbFactor)
     : _ouReadReverse(OUREVERSEORDER),
@@ -1494,7 +1497,7 @@ uint extDistWidthRCTable::writeRulesOverUnder(FILE* fp, bool bin)
   return cnt;
 }
 extMetRCTable::extMetRCTable(uint layerCnt,
-                             AthPool<extDistRC>* rcPool,
+                             odb::AthPool<extDistRC>* rcPool,
                              Logger* logger,
                              bool OUREVERSEORDER)
 {
@@ -2161,7 +2164,7 @@ extRCModel::extRCModel(uint layerCnt, const char* name, Logger* logger)
   _capOver = new extRCTable(true, layerCnt);
   _capUnder = new extRCTable(false, layerCnt);
   _capDiagUnder = new extRCTable(false, layerCnt);
-  _rcPoolPtr = new AthPool<extDistRC>(1024);
+  _rcPoolPtr = new odb::AthPool<extDistRC>(1024);
   _process = nullptr;
   _maxMinFlag = false;
 
@@ -2197,7 +2200,7 @@ extRCModel::extRCModel(const char* name, Logger* logger)
   _capOver = nullptr;
   _capUnder = nullptr;
   _capDiagUnder = nullptr;
-  _rcPoolPtr = new AthPool<extDistRC>(1024);
+  _rcPoolPtr = new odb::AthPool<extDistRC>(1024);
   _process = nullptr;
   _maxMinFlag = false;
 
@@ -2393,7 +2396,7 @@ extMeasure::extMeasure(utl::Logger* logger)
     */
   _extMain = nullptr;
 
-  _2dBoxPool = new AthPool<ext2dBox>(1024);
+  _2dBoxPool = new odb::AthPool<ext2dBox>(1024);
 
   _lenOUPool = nullptr;
   _lenOUtable = nullptr;
@@ -2412,7 +2415,7 @@ extMeasure::extMeasure(utl::Logger* logger)
   _overTable = new Ath__array1D<SEQ*>(32);
   _underTable = new Ath__array1D<SEQ*>(32);
 
-  _seqPool = new AthPool<SEQ>(1024);
+  _seqPool = new odb::AthPool<SEQ>(1024);
 
   _dgContextFile = nullptr;
   _diagFlow = false;
@@ -2422,7 +2425,7 @@ extMeasure::extMeasure(utl::Logger* logger)
 
 void extMeasure::allocOUpool()
 {
-  _lenOUPool = new AthPool<extLenOU>(128);
+  _lenOUPool = new odb::AthPool<extLenOU>(128);
   _lenOUtable = new Ath__array1D<extLenOU*>(128);
 }
 

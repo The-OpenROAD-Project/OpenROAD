@@ -10,7 +10,6 @@
 
 namespace rcx {
 using utl::Logger;
-using utl::RCX;
 
 class extProcess;
 

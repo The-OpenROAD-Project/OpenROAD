@@ -20,7 +20,7 @@ class Padding
 
   void setPaddingGlobal(GridX left, GridX right);
   void setPadding(odb::dbInst* inst, GridX left, GridX right);
-  void setPadding(dbMaster* master, GridX left, GridX right);
+  void setPadding(odb::dbMaster* master, GridX left, GridX right);
   bool havePadding() const;
 
   // Find instance/master/global padding value for an instance.
@@ -33,7 +33,7 @@ class Padding
 
  private:
   using InstPaddingMap = std::map<odb::dbInst*, std::pair<GridX, GridX>>;
-  using MasterPaddingMap = std::map<dbMaster*, std::pair<GridX, GridX>>;
+  using MasterPaddingMap = std::map<odb::dbMaster*, std::pair<GridX, GridX>>;
 
   GridX pad_left_{0};
   GridX pad_right_{0};

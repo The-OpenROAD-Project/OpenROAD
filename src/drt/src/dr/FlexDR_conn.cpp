@@ -30,6 +30,7 @@
 #include "odb/geom.h"
 #include "omp.h"
 #include "triton_route/TritonRoute.h"
+#include "utl/Logger.h"
 #include "utl/exception.h"
 
 namespace drt {

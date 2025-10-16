@@ -43,8 +43,6 @@ enum class GeneratedSourceType
   kBumps
 };
 
-using odb::dbMaster;
-
 class PDNSim : public odb::dbBlockCallBackObj
 {
  public:
@@ -115,7 +113,7 @@ class PDNSim : public odb::dbBlockCallBackObj
                          IRDropByPoint& ir_drop) const;
 
   // Functions of decap cells
-  void addDecapMaster(dbMaster* decap_master, double decap_cap);
+  void addDecapMaster(odb::dbMaster* decap_master, double decap_cap);
   void insertDecapCells(double target, const char* net_name);
 
  private:

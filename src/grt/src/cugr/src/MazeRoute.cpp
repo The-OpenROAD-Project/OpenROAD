@@ -16,6 +16,7 @@
 #include "PatternRoute.h"
 #include "geo.h"
 #include "robin_hood.h"
+#include "utl/Logger.h"
 
 namespace grt {
 
