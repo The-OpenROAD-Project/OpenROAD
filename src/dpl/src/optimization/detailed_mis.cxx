@@ -39,6 +39,7 @@
 
 #include "boost/tokenizer.hpp"
 #include "detailed_manager.h"
+#include "infrastructure/Coordinates.h"
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
 #include "infrastructure/network.h"

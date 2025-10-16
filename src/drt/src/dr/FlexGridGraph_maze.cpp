@@ -14,7 +14,10 @@
 #include "dr/FlexDR.h"
 #include "dr/FlexGridGraph.h"
 #include "frBaseTypes.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
+
+using odb::dbTechLayerDir;
 
 namespace drt {
 const int debugMazeIter = std::numeric_limits<int>::max();

@@ -276,7 +276,10 @@ def mock_array(name, config):
                 "IO_CONSTRAINTS": [":mock-array-io"],
                 "RULES_JSON": [":rules-{variant}.json".format(variant = variant)],
                 "SDC_FILE": [":mock-array-constraints"],
-            },
+            } | ({
+                "IO_CONSTRAINTS": [":write_pin_placement"],
+                "MACRO_PLACEMENT_TCL": [":write_macro_placement"],
+            } if variant == "4x4_flat" else {}),
             tags = ["manual"],
             test_kwargs = {
                 "tags": ["orfs"],

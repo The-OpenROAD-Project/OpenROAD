@@ -35,6 +35,7 @@
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */
+#include "defiDefs.hpp"
 #include "defwWriter.hpp"
 #include "defwWriterCalls.hpp"
 

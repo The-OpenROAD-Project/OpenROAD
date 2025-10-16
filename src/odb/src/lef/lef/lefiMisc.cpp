@@ -39,6 +39,7 @@
 #include <vector>
 
 #include "lefiDebug.hpp"
+#include "lefiKRDefs.hpp"
 #include "lefiUtil.hpp"
 #include "lex.h"
 

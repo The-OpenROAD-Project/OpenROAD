@@ -44,7 +44,7 @@ fi
 # ------------------------------------------------------------------------------
 # Dependency Versions and Checksums
 # ------------------------------------------------------------------------------
-YOSYS_VERSION="v0.57"
+YOSYS_VERSION="v0.58"
 CMAKE_VERSION_BIG="3.31"
 CMAKE_VERSION_SMALL="${CMAKE_VERSION_BIG}.9"
 CMAKE_CHECKSUM_AARCH64="8d426361ce8c54494c0a041a0e3bcc5c"

@@ -4,7 +4,9 @@
 #include "tclCmdHighlighter.h"
 
 #include <QColor>
+#include <QRegularExpressionMatchIterator>
 #include <QString>
+#include <QTextCharFormat>
 #include <QTextDocument>
 #include <memory>
 #include <set>

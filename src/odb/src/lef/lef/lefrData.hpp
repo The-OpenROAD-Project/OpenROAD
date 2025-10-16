@@ -39,6 +39,7 @@
 #include "lefiArray.hpp"
 #include "lefiCrossTalk.hpp"
 #include "lefiDefs.hpp"
+#include "lefiKRDefs.hpp"
 #include "lefiLayer.hpp"
 #include "lefiMacro.hpp"
 #include "lefiNonDefault.hpp"

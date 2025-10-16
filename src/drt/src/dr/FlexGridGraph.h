@@ -27,13 +27,15 @@
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "global.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace drt {
 
 using frLayerCoordTrackPatternMap = boost::container::
     flat_map<frLayerNum, boost::container::flat_map<frCoord, frTrackPattern*>>;
-using frLayerDirMap = boost::container::flat_map<frLayerNum, dbTechLayerDir>;
+using frLayerDirMap
+    = boost::container::flat_map<frLayerNum, odb::dbTechLayerDir>;
 
 class FlexDRWorker;
 class AbstractDRGraphics;
@@ -212,7 +214,10 @@ class FlexGridGraph
     }
   }
   frCoord getZHeight(frMIdx in) const { return zHeights_[in]; }
-  dbTechLayerDir getZDir(frMIdx in) const { return layerRouteDirections_[in]; }
+  odb::dbTechLayerDir getZDir(frMIdx in) const
+  {
+    return layerRouteDirections_[in];
+  }
   int getLayerCount() { return zCoords_.size(); }
   bool hasEdge(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
@@ -832,21 +837,21 @@ class FlexGridGraph
       return;
     }
     switch (getZDir(z)) {
-      case dbTechLayerDir::HORIZONTAL:
+      case odb::dbTechLayerDir::HORIZONTAL:
         for (int i = y1; i <= y2; i++) {
           auto idx1 = getIdx(x1, i, z);
           auto idx2 = getIdx(x2, i, z);
           std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 1);
         }
         break;
-      case dbTechLayerDir::VERTICAL:
+      case odb::dbTechLayerDir::VERTICAL:
         for (int i = x1; i <= x2; i++) {
           auto idx1 = getIdx(i, y1, z);
           auto idx2 = getIdx(i, y2, z);
           std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 1);
         }
         break;
-      case dbTechLayerDir::NONE:
+      case odb::dbTechLayerDir::NONE:
         std::cout << "Error: Invalid preferred direction on layer " << z << ".";
         break;
     }
@@ -857,21 +862,21 @@ class FlexGridGraph
       return;
     }
     switch (getZDir(z)) {
-      case dbTechLayerDir::HORIZONTAL:
+      case odb::dbTechLayerDir::HORIZONTAL:
         for (int i = y1; i <= y2; i++) {
           auto idx1 = getIdx(x1, i, z);
           auto idx2 = getIdx(x2, i, z);
           std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 0);
         }
         break;
-      case dbTechLayerDir::VERTICAL:
+      case odb::dbTechLayerDir::VERTICAL:
         for (int i = x1; i <= x2; i++) {
           auto idx1 = getIdx(i, y1, z);
           auto idx2 = getIdx(i, y2, z);
           std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 0);
         }
         break;
-      case dbTechLayerDir::NONE:
+      case odb::dbTechLayerDir::NONE:
         std::cout << "Error: Invalid preferred direction on layer " << z << ".";
         break;
     }
@@ -1059,7 +1064,7 @@ class FlexGridGraph
   frVector<frCoord> yCoords_;
   frVector<frLayerNum> zCoords_;
   frVector<frCoord> zHeights_;  // accumulated Z diff
-  std::vector<dbTechLayerDir> layerRouteDirections_;
+  std::vector<odb::dbTechLayerDir> layerRouteDirections_;
   odb::Rect dieBox_;
   frUInt4 ggDRCCost_ = 0;
   frUInt4 ggMarkerCost_ = 0;
@@ -1123,7 +1128,7 @@ class FlexGridGraph
     auto xSize = xCoords_.size();
     auto ySize = yCoords_.size();
 
-    frMIdx zDirModifier = (getZDir(zIdx) == dbTechLayerDir::HORIZONTAL)
+    frMIdx zDirModifier = (getZDir(zIdx) == odb::dbTechLayerDir::HORIZONTAL)
                               ? (xIdx + yIdx * xSize)
                               : (yIdx + xIdx * ySize);
     frMIdx partialCoordinates = zIdx * xSize * ySize;

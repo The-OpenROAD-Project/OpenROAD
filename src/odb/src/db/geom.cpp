@@ -70,14 +70,15 @@ std::vector<Polygon> Polygon::merge(const std::vector<Polygon>& polys)
   using BoostPolygonSet = boost::polygon::polygon_set_data<int>;
   using boost::polygon::operators::operator+=;
 
-  // add to polygon set
-  BoostPolygonSet poly_in_set;
-
+  // convert to boost polygon
+  std::vector<BoostPolygon> boost_poly;
+  boost_poly.reserve(polys.size());
   for (const Polygon& poly : polys) {
-    // convert to boost polygon
-    const BoostPolygon polygon_in(poly.points_.begin(), poly.points_.end());
-    poly_in_set += polygon_in;
+    boost_poly.emplace_back(poly.points_.begin(), poly.points_.end());
   }
+
+  // add to polygon set
+  const BoostPolygonSet poly_in_set(boost_poly.begin(), boost_poly.end());
 
   // extract new polygons
   std::vector<BoostPolygon> output_polygons;

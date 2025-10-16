@@ -10,6 +10,7 @@
 
 #include "parse.h"
 #include "rcx/extModelGen.h"
+#include "utl/Logger.h"
 
 namespace rcx {
 
@@ -23,7 +24,7 @@ uint extSolverGen::genSolverPatterns(const char* process_name,
                                      const char* s_list)
 {
   if (!setWidthSpaceMultipliers(w_list, s_list)) {
-    logger_->warn(RCX,
+    logger_->warn(utl::RCX,
                   235,
                   "Width {} and Space {} multiplier lists are NOT correct\n",
                   w_list,
@@ -49,7 +50,7 @@ uint extSolverGen::genSolverPatterns(const char* process_name,
   setDiagModel(2);
   cnt1 += linesDiagUnder();
 
-  logger_->info(RCX, 246, "Finished {} patterns", cnt1);
+  logger_->info(utl::RCX, 246, "Finished {} patterns", cnt1);
 
   closeFiles();
   return 0;
@@ -195,7 +196,7 @@ uint extSolverGen::linesOver(uint metLevel)
       uint cnt1 = widthsSpacingsLoop();
       cnt += cnt1;
 
-      logger_->info(RCX,
+      logger_->info(utl::RCX,
                     251,
                     "Finished {} measurements for pattern M{}_over_M{}",
                     cnt1,
@@ -204,7 +205,7 @@ uint extSolverGen::linesOver(uint metLevel)
     }
   }
   logger_->info(
-      RCX, 250, "Finished {} measurements for pattern MET_OVER_MET", cnt);
+      utl::RCX, 250, "Finished {} measurements for pattern MET_OVER_MET", cnt);
   return cnt;
 }
 uint extSolverGen::linesUnder(uint metLevel)
@@ -226,7 +227,7 @@ uint extSolverGen::linesUnder(uint metLevel)
       uint cnt1 = widthsSpacingsLoop();
       cnt += cnt1;
 
-      logger_->info(RCX,
+      logger_->info(utl::RCX,
                     238,
                     "Finished {} measurements for pattern M{}_under_M{}",
                     cnt1,
@@ -235,7 +236,7 @@ uint extSolverGen::linesUnder(uint metLevel)
     }
   }
   logger_->info(
-      RCX, 241, "Finished {} measurements for pattern MET_UNDER_MET", cnt);
+      utl::RCX, 241, "Finished {} measurements for pattern MET_UNDER_MET", cnt);
   return cnt;
 }
 uint extSolverGen::linesDiagUnder(uint metLevel)
@@ -258,7 +259,7 @@ uint extSolverGen::linesDiagUnder(uint metLevel)
       uint cnt1 = widthsSpacingsLoop(overMet);
       cnt += cnt1;
 
-      logger_->info(RCX,
+      logger_->info(utl::RCX,
                     244,
                     "Finished {} measurements for pattern M{}_diagUnder_M{}",
                     cnt1,
@@ -266,8 +267,10 @@ uint extSolverGen::linesDiagUnder(uint metLevel)
                     overMet);
     }
   }
-  logger_->info(
-      RCX, 245, "Finished {} measurements for pattern MET_DIAGUNDER_MET", cnt);
+  logger_->info(utl::RCX,
+                245,
+                "Finished {} measurements for pattern MET_DIAGUNDER_MET",
+                cnt);
   return cnt;
 }
 uint extSolverGen::linesOverUnder(uint metLevel)
@@ -295,7 +298,7 @@ uint extSolverGen::linesOverUnder(uint metLevel)
         cnt += cnt1;
 
         logger_->info(
-            RCX,
+            utl::RCX,
             242,
             "Finished {} measurements for pattern M{}_over_M{}_under_M{}",
             cnt1,
@@ -305,8 +308,10 @@ uint extSolverGen::linesOverUnder(uint metLevel)
       }
     }
   }
-  logger_->info(
-      RCX, 243, "Finished {} measurements for pattern MET_OVERUNDER_MET", cnt);
+  logger_->info(utl::RCX,
+                243,
+                "Finished {} measurements for pattern MET_OVERUNDER_MET",
+                cnt);
   return cnt;
 }
 
@@ -713,7 +718,7 @@ FILE* extSolverGen::openFile(const char* topDir,
 
   FILE* fp = fopen(filename, permissions);
   if (fp == nullptr) {
-    logger_->info(RCX,
+    logger_->info(utl::RCX,
                   485,
                   "Cannot open file {} with permissions {}",
                   filename,

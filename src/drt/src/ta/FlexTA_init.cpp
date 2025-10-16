@@ -20,8 +20,12 @@
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "ta/FlexTA.h"
+
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
 
 namespace drt {
 
@@ -809,9 +813,9 @@ void FlexTAWorker::initFixedObjs()
           case frcInstBlockage: {
             auto instBlkg = (static_cast<frInstBlockage*>(obj));
             auto inst = instBlkg->getInst();
-            dbMasterType masterType = inst->getMaster()->getMasterType();
+            odb::dbMasterType masterType = inst->getMaster()->getMasterType();
             if (!masterType.isBlock() && !masterType.isPad()
-                && masterType != dbMasterType::RING) {
+                && masterType != odb::dbMasterType::RING) {
               continue;
             }
             if (bounds.minDXDY() <= 2 * width) {
