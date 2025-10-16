@@ -14,13 +14,16 @@ package(
 cc_library(
     name = "gpl",
     srcs = [
+        "src/AbstractGraphics.cpp",
         "src/MakeReplace.cpp",
         "src/fft.cpp",
         "src/fft.h",
         "src/fftsg.cpp",
         "src/fftsg2d.cpp",
-        "src/graphics.cpp",
-        "src/graphics.h",
+        "src/graphicsImpl.cpp",
+        "src/graphicsImpl.h",
+        "src/graphicsNone.cpp",
+        "src/graphicsNone.h",
         "src/initialPlace.cpp",
         "src/initialPlace.h",
         "src/mbff.cpp",
@@ -43,6 +46,7 @@ cc_library(
         ":tcl",
     ],
     hdrs = [
+        "include/gpl/AbstractGraphics.h",
         "include/gpl/MakeReplace.h",
         "include/gpl/Replace.h",
     ],

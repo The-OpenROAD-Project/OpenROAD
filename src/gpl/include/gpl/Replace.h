@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "AbstractGraphics.h"
+
 namespace odb {
 class dbDatabase;
 class dbInst;
@@ -46,12 +48,20 @@ using Clusters = std::vector<Cluster>;
 class Replace
 {
  public:
+  // Create a replace object with no graphics.
   Replace(odb::dbDatabase* odb,
           sta::dbSta* sta,
           rsz::Resizer* resizer,
           grt::GlobalRouter* router,
           utl::Logger* logger);
+
   ~Replace();
+
+  // Use the following class as a template for graphics interface.
+  //
+  // Note: no ownership is transfered as the object will create a new
+  // graphics boject of the same class.
+  void setGraphicsInterface(const gpl::AbstractGraphics& graphics);
 
   void reset();
 
@@ -129,6 +139,8 @@ class Replace
   rsz::Resizer* rs_ = nullptr;
   grt::GlobalRouter* fr_ = nullptr;
   utl::Logger* log_ = nullptr;
+
+  std::unique_ptr<AbstractGraphics> graphics_;
 
   std::shared_ptr<PlacerBaseCommon> pbc_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
