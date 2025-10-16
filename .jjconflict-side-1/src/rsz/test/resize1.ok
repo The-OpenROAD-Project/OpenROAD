@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 6 pins.
+[INFO ODB-0131]     Created 5 components and 27 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 10 connections.
+[INFO ODB-0133]     Created 10 nets and 14 connections.
+Instance r1
+ Cell: DFF_X2
+ Library: Nangate45
+ Path cells: DFF_X2
+ Input pins:
+  D input in1
+  CK input clk1
+ Output pins:
+  Q output r1q
+  QN output (unconnected)

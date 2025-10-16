@@ -1,0 +1,46 @@
+or_integration_tests(
+  "ifp"
+  TESTS
+    hybrid_rows
+    hybrid_rows2
+    init_floorplan1
+    init_floorplan2
+    init_floorplan3
+    init_floorplan4
+    init_floorplan5
+    init_floorplan6
+    init_floorplan7
+    init_floorplan8
+    init_floorplan9
+    init_floorplan10
+    init_floorplan_dbl_row
+    init_floorplan_even_rows
+    init_floorplan_flip_sites
+    init_floorplan_gap
+    init_floorplan_odd_rows
+    init_floorplan_polygon
+    init_floorplan_polygon2
+    make_polygon_rows1
+    make_polygon_rows2
+    make_polygon_rows3
+    make_polygon_rows4
+    make_rows
+    make_tracks1
+    make_tracks2
+    make_tracks3
+    make_tracks4
+    make_tracks5
+    make_tracks6
+    make_tracks7
+    multi_height1
+    multi_height2
+    placement_blockage1
+    placement_blockage2
+    tiecells
+    upf_shifter_test
+    upf_test
+)
+
+# Skipped
+#ifp_man_tcl_check
+#ifp_readme_msgs_check

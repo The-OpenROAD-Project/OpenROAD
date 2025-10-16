@@ -1,0 +1,14 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: single_cell
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 1 components and 4 component-terminals.
+[INFO ODB-0133]     Created 2 nets and 2 connections.
+[INFO DPL-0034] Detailed placement failed on the following 1 instances:
+[INFO DPL-0035]  _277_
+[ERROR DPL-0036] Detailed placement failed.
+DPL-0036
+[WARNING DPL-0006] Site aligned check failed (1).
+ _277_
+[ERROR DPL-0033] detailed placement checks failed.
+DPL-0033
+No differences found.

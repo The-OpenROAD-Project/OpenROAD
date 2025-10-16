@@ -1,0 +1,11 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 482 components and 2074 component-terminals.
+[INFO ODB-0133]     Created 385 nets and 1110 connections.
+[ERROR PDN-0003] Layers must be different in connect rule: metal5
+PDN-0003
+[ERROR PDN-0004] via1 must be a routing layer
+PDN-0004
+[ERROR PDN-0005] via2 must be a routing layer
+PDN-0005

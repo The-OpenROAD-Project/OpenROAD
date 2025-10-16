@@ -1,0 +1,151 @@
+
+Dec 28, 2021
+
+The detailed improver is controlled by a simple script string. 
+
+Available commands:
+
+Global swaps: gs -p <int> -t <double>
+
+The "gs" command performs global moves and swaps using the idea
+of median improvement.  For a selected cell, it will compute
+the optimal hpwl region for the cell assuming other cells as
+fixed.  It will attempt to move the cell to the center of the
+optimal hpwl region.  If the cell is already inside of its
+optimal hpwl region, the cell will not be moved.  If there is
+no space available at the target location, a swap (in lieu of
+a move) will be attempted.
+
+The -p specifies the maximum number of passes to be performed
+where a single pass consists of trying to move each cell in
+the network once.  Default is 1 pass.
+
+The -t specifies a tolerance for early termination.  When the
+improvement in hpwl falls below this tolerance, the algorithm
+will stop.  Default is 0.01 (less than 1% improvement).
+
+Vertical swaps: vs -p <int> -t <double>
+
+The "vs" command performs vertical moves and swaps also using
+the idea of median improvement.  It is identical to the "gs"
+command with the exception that it will only attempt to move
+or swap a cell <= 2 rows up or down from its current row, but
+towards the optimal region.
+
+Maximum independent set matching: mis -p <int> -t <double>
+
+The "mis" command runs a version of maximum independent set
+matching to attempt to improve hpwl.  The parameters are the
+same as for the "gs" and "vs" commands.
+
+Basically, this command colors the network such that cells 
+with the same color do not share any edges (and can thus
+be moved at the same time to improve hpwl without any 
+approximations).  The algorithm will consider each cell as
+a seed and attempt to pick ~25 neighboring cells.  Then, a
+matching problem will be created so replace the selected 
+cells onto the set of positions made available from the 
+selected cells.  To be assigned to another cell's position,
+the cells must be the same size in order to avoid overlap.
+
+Optimal reordering: ro -p <int> -t <double> -w <int>
+
+The "ro" command performs small window optimal reordering.
+The "-p" and "-t" parameters are as previously described.
+The "-w" specifies a window size and must be 2, 3 or 4.
+The algorithm slides a window over the placement rows and
+generates permutations of the selected small number of cells.
+The ultimate selected permutation is the one with the smallest
+hpwl.
+
+Greedy randomized improvement: default -p <int> -t <double> 
+    -f <int> -gen [gs:vs:rng:disp] -obj [abu:disp:hpwl] -cost [func].
+
+The "default" command (poor name) effectively performs a 
+0-temperature annealing.  The "-p" and "-t" parameters are
+as previously described.  The "-f" parameter specifies the
+number of attempted moves per candidate cell when making
+moves.  Basically, in a single pass, this
+command attempts to move or swap each cell "-f" times in 
+order to improve the placement.
+
+The random improver works on the idea of "move generators"
+and "cost functions".  Given a candidate cell, one of the
+specified "move generators" is selected at random and is
+responsible for generating a move or swap involving the 
+candidate cell.  Other cells can be involved when attempting
+to reposition the candidate cell.  For example, due to space,
+it might be necessary to swap the candidate cell with another
+cell (so now at least 2 cells are moving).  Further, it might
+be necessary to shift some cells in order to create some space
+(so now > 2 cells might be moving).
+
+The generators can be (where a "move" is now defined as a 
+bunch of cells being repositioned):
+gs - a move is generated for the candidate cell using the
+idea of a global swap;
+vs - a move is generated for the candidate cell using the
+idea of a vertical swap;
+rng - a move is generated for the candidate cell by randomly
+selecting a new position "close" to its current position.
+disp - a move is generated for the candidate cell by attempting
+to move it back to its position at the beginning of the algorithm.
+
+Generators are specified as a colon-separated list after
+the specifier "-gen".
+
+To determine whether or not a generated move improves the 
+placement, objective terms are required as well as a cost
+function involving these objectives.
+
+The objectives can be the following:
+hpwl - This objective measures wirelength.
+abu - This objective measures placement utilization.  This 
+objective is intended to be used as a multiplicative penalty.
+disp - This placement measures displacement from original
+positions.  This objective is inteneded to be used as a 
+mulitiplicative penalty.
+
+Objectives are specified as a colon-separated list after
+the specifier "-obj".
+
+
+The objectives are used in conjunction with a cost string.  The
+cost string is a "RPN" expression specified with the "-cost"
+specifier.  Each term in the RPN expression should be enclosed
+with "(" and ")" and should consist of doubles and objectives.
+Obviously, it is important to have some knowledge about what
+the objectives "return/report" before using them in the 
+objective function.
+
+Some examples:
+
+1. Perform 0-temperature annealing using random moves and swaps
+to optimize wire length.  Perform maximum of 2 passes and stop
+when a pass produces < 0.5% improvement in the cost function.
+
+default -p 2 -t 0.005 -gen rng -obj hpwl -cost (hpwl)
+
+2. Same as (1) above, but also generate moves using ideas that
+specifically target wirelength.  Specifically, attempt random
+moves as well as moves generated using global swaps.
+
+default -p 2 -t 0.005 -gen rng:gs -obj hpwl -cost (hpwl)
+
+3. Perform 0-temperature annealing using random moves and swaps,
+global swaps, and vertical swaps to optimize wire length with a 
+multiplicative penalty for 
+placement density.  Perform a maxumum of 5 passes, but in each
+pass attempt to move each cell 20 times.
+
+default -p 5 -f 20 -gen rng:gs:vs -obj hpwl:abu -cost (hpwl)(1.0)(10.0)(abu)(*)(+)(*)
+
+The cost string is decoded as follows: hpwl*(1.0+10.0*abu)
+
+4. Etc...
+
+
+
+
+
+

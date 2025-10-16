@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0227] LEF file: blocked_region.lef, created 1 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 253 components and 1357 component-terminals.
+[INFO ODB-0133]     Created 54 nets and 155 connections.
+[ERROR ODB-0428] Cannot get top layer grid region. Pin placement grid on top layer not created.
+ODB-0428

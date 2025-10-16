@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fakeram45_64x7.lef, created 1 library cells
+[INFO ODB-0128] Design: gcd_mem1
+[INFO ODB-0130]     Created 61 pins.
+[INFO ODB-0131]     Created 1 components and 32 component-terminals.
+[INFO ODB-0303] The initial 30 rows (6960 sites) were cut with 1 shapes for a total of 30 rows (4935 sites).
+[INFO TAP-0004] Inserted 60 endcaps.
+[INFO TAP-0005] Inserted 19 tapcells.
+No differences found.

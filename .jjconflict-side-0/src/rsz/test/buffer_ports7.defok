@@ -1,0 +1,35 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN reg1 ;
+UNITS DISTANCE MICRONS 100 ;
+DIEAREA ( 0 0 ) ( 40000 40000 ) ;
+COMPONENTS 2 ;
+    - u1 sky130_fd_sc_hs__buf_1 + PLACED ( 10000 20000 ) N ;
+    - u2 sky130_fd_sc_hs__ebufn_1 + PLACED ( 20000 30000 ) N ;
+END COMPONENTS
+PINS 3 ;
+    - en1 + NET en1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( 0 0 ) ( 0 0 )
+        + FIXED ( 10000 3333 ) N ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( 0 0 ) ( 0 0 )
+        + FIXED ( 0 0 ) N ;
+    - out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( 0 0 ) ( 0 0 )
+        + FIXED ( 3333 10000 ) N ;
+END PINS
+SPECIALNETS 2 ;
+    - VDD + USE POWER ;
+    - VSS + USE GROUND ;
+END SPECIALNETS
+NETS 4 ;
+    - en1 ( PIN en1 ) ( u2 TE_B ) + USE SIGNAL ;
+    - in1 ( PIN in1 ) ( u1 A ) + USE SIGNAL ;
+    - out1 ( PIN out1 ) ( u2 Z ) + USE SIGNAL ;
+    - u1z ( u1 X ) ( u2 A ) + USE SIGNAL ;
+END NETS
+END DESIGN

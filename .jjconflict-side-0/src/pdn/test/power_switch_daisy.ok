@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0227] LEF file: sky130_power_switch/power_switch.lef, created 1 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 1160 components and 3368 component-terminals.
+[INFO ODB-0133]     Created 324 nets and 1048 connections.
+[INFO PDN-0001] Inserting grid: Core
+No differences found.

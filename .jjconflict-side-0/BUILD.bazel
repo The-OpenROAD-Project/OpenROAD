@@ -1,0 +1,364 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2025-2025, The OpenROAD Authors
+
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("@openroad_rules_python//python:defs.bzl", "py_library")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("//bazel:tcl_encode_or.bzl", "tcl_encode")
+load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+
+package(
+    features = [
+        "-parse_headers",
+        "layering_check",
+        # TODO(b/299593765): Fix strict ordering.
+        "-libcxx_assertions",
+    ],
+)
+
+exports_files([
+    "LICENSE",
+    "src/Design.i",
+    "src/Exception.i",
+])
+
+string_flag(
+    name = "platform",
+    build_setting_default = "cli",
+    values = [
+        "cli",
+        "gui",
+    ],
+)
+
+config_setting(
+    name = "platform_cli",
+    flag_values = {
+        ":platform": "cli",
+    },
+)
+
+config_setting(
+    name = "platform_gui",
+    flag_values = {
+        ":platform": "gui",
+    },
+)
+
+OPENROAD_LIBRARY_DEPS = [
+    ":openroad_version",
+    "//src/ant",
+    "//src/ant:ui",
+    "//src/cgt",
+    "//src/cts",
+    "//src/cts:ui",
+    "//src/cut",
+    "//src/dbSta",
+    "//src/dbSta:dbNetwork",
+    "//src/dbSta:dbReadVerilog",
+    "//src/dbSta:dbSdcNetwork",
+    "//src/dbSta:SpefWriter",
+    "//src/dbSta:ui",
+    "//src/dft",
+    "//src/dft:ui",
+    "//src/dpl",
+    "//src/dpl:ui",
+    "//src/drt",
+    "//src/drt:ui",
+    "//src/dst",
+    "//src/dst:ui",
+    "//src/est",
+    "//src/est:ui",
+    "//src/exa",
+    "//src/exa:ui",
+    "//src/fin",
+    "//src/gpl",
+    "//src/grt",
+    "//src/grt:ui",
+    "//src/ifp",
+    "//src/ifp:ui",
+    "//src/mpl",
+    "//src/mpl:ui",
+    "//src/odb",
+    "//src/odb:ui",
+    "//src/pad",
+    "//src/par",
+    "//src/par:ui",
+    "//src/pdn",
+    "//src/ppl",
+    "//src/psm",
+    "//src/ram",
+    "//src/rcx",
+    "//src/rcx:ui",
+    "//src/rmp",
+    "//src/rmp:ui",
+    "//src/rsz",
+    "//src/rsz:ui",
+    "//src/stt",
+    "//src/stt:ui",
+    "//src/tap",
+    "//src/tap:ui",
+    "//src/upf",
+    "//src/upf:ui",
+    "//src/utl",
+    "//src/utl:ui",
+    "@edu_berkeley_abc//:abc-lib",
+    ":ord",
+] + select(
+    {
+        ":platform_cli": ["//src/gui"],
+        ":platform_gui": ["//src/gui:gui_qt"],
+    },
+)
+
+OPENROAD_COPTS = [
+    "-Wno-error",
+    "-Wall",
+    "-Wextra",
+    "-pedantic",
+    "-Wno-cast-qual",  # typically from TCL swigging
+    "-Wno-missing-braces",  # typically from TCL swigging
+    "-Wredundant-decls",
+    "-Wformat-security",
+    "-Wno-sign-compare",
+    "-Wno-unused-parameter",
+    "-fopenmp",
+]
+
+OPENROAD_DEFINES = [
+    "OPENROAD_GIT_DESCRIBE=\\\"bazel-build\\\"",
+    "BUILD_TYPE=\\\"$(COMPILATION_MODE)\\\"",
+    "GPU=false",
+    "BUILD_PYTHON=false",
+    "ABC_NAMESPACE=abc",
+    "TCLRL_VERSION_STR=",
+]
+
+cc_binary(
+    name = "openroad",
+    srcs = [
+        "src/Main.cc",
+    ],
+    copts = OPENROAD_COPTS,
+    features = ["-use_header_modules"],
+    malloc = select({
+        "@platforms//os:linux": "@tcmalloc//tcmalloc",
+        "@platforms//os:macos": "@bazel_tools//tools/cpp:malloc",
+    }),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":openroad_lib",
+        ":openroad_version",
+        ":ord",
+        "//bazel:runfiles",
+        "//src/cut",
+        "//src/gui",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@boost.stacktrace",
+        "@rules_cc//cc/runfiles",
+        "@tk_tcl//:tcl",
+    ],
+)
+
+GUI_BUILD_FLAGS = select(
+    {
+        ":platform_cli": ["BUILD_GUI=false"],
+        ":platform_gui": ["BUILD_GUI=true"],
+    },
+)
+
+cc_library(
+    name = "openroad_lib",
+    srcs = [
+        "src/Design.cc",
+        "src/OpenRoad.cc",
+        "src/Tech.cc",
+        "src/Timing.cc",
+        ":openroad_swig",
+        ":openroad_tcl",
+    ],
+    copts = OPENROAD_COPTS,
+    defines = OPENROAD_DEFINES + GUI_BUILD_FLAGS,
+    features = ["-use_header_modules"],
+    includes = [
+        "include",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//src/sta:opensta_lib",
+        "@boost.stacktrace",
+        "@tk_tcl//:tcl",
+    ] + OPENROAD_LIBRARY_DEPS,
+)
+
+cc_library(
+    name = "ord",
+    hdrs = [
+        "include/ord/Design.h",
+        "include/ord/InitOpenRoad.hh",
+        "include/ord/OpenRoad.hh",
+        "include/ord/Tech.h",
+        "include/ord/Timing.h",
+        "include/ord/Version.hh",
+    ],
+    includes = [
+        "include",
+        "include/ord",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+cc_library(
+    name = "openroad_version",
+    hdrs = [
+        ":OpenRoadVersion",
+    ],
+)
+
+genrule(
+    name = "OpenRoadVersion",
+    srcs = [],
+    outs = ["include/ord/Version.hh"],
+    cmd = """echo -e '
+#define OPENROAD_VERSION "HDL-HEAD"
+#define OPENROAD_GIT_SHA1 "HEAD"
+' > \"$@\"
+    """,
+)
+
+tcl_encode(
+    name = "openroad_tcl",
+    srcs = ["//src/sta:tcl_util"] + [
+        "src/Metrics.tcl",
+        "src/OpenRoad.tcl",
+    ],
+    char_array_name = "ord_tcl_inits",
+    namespace = "ord",
+)
+
+tcl_wrap_cc(
+    name = "openroad_swig",
+    srcs = [
+        "src/OpenRoad.i",
+        ":error_swig",
+    ],
+    module = "ord",
+    namespace_prefix = "ord",
+    root_swig_src = "src/OpenRoad.i",
+    swig_includes = [
+        "src",
+    ],
+)
+
+# This target compiles the SWIG C++ wrapper into a shared library (.so)
+# that Python can load dynamically.
+cc_binary(
+    name = "_openroadpy.so",
+    srcs = [":openroad_swig-py"],
+    defines = [PYTHON_STABLE_API_DEFINE],
+    linkshared = True,
+    deps = [
+        ":openroad_lib",  # Depends on the core odb C++ library
+        ":ord",
+        "//src/ant",
+        "//src/cts",
+        "//src/dpl",
+        "//src/drt",
+        "//src/exa",
+        "//src/fin",
+        "//src/gpl",
+        "//src/grt",
+        "//src/gui",
+        "//src/ifp",
+        "//src/odb",
+        "//src/par",
+        "//src/pdn",
+        "//src/ppl",
+        "//src/psm",
+        "//src/rcx",
+        "//src/stt",
+        "//src/tap",
+        "//src/utl",
+        "@boost.stacktrace",
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
+    ],
+)
+
+# This packages the SWIG-generated Python wrapper (odb.py) and the
+# compiled C++ extension (_odb.so) together.
+py_library(
+    name = "ord_py",
+    srcs = [":openroad_swig-py"],  # Use the .py output from the swig-py rule
+    # The data attribute makes the .so file available at runtime.
+    data = [":_openroadpy.so"],
+    # This allows imports relative to the workspace root.
+    imports = ["."],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//src/odb:odb_py",
+        "//src/utl:utl_py",
+    ],
+)
+
+python_wrap_cc(
+    name = "openroad_swig-py",
+    srcs = [
+        "include/ord/Design.h",
+        "include/ord/Tech.h",
+        "include/ord/Timing.h",
+        "src/OpenRoad-py.i",
+        ":error_swig-py",
+    ],
+    module = "openroadpy",
+    root_swig_src = "src/OpenRoad-py.i",
+    swig_includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        "//src/ant:swig-py",
+        "//src/cts:swig-py",
+        "//src/dpl:swig-py",
+        "//src/drt:swig-py",
+        "//src/exa:swig-py",
+        "//src/fin:swig-py",
+        "//src/gpl:swig-py",
+        "//src/grt:swig-py",
+        "//src/ifp:swig-py",
+        "//src/odb:swig-py",
+        "//src/par:swig-py",
+        "//src/pdn:swig-py",
+        "//src/ppl:swig-py",
+        "//src/psm:swig-py",
+        "//src/rcx:swig-py",
+        "//src/stt:swig-py",
+        "//src/tap:swig-py",
+        "//src/utl:swig-py",
+    ],
+)
+
+filegroup(
+    name = "error_swig",
+    srcs = [
+        "src/Exception.i",
+    ],
+    visibility = ["@//:__subpackages__"],
+)
+
+filegroup(
+    name = "error_swig-py",
+    srcs = [
+        "src/Exception-py.i",
+    ],
+    visibility = ["@//:__subpackages__"],
+)
+
+filegroup(
+    name = "design_swig",
+    srcs = [
+        "src/Design.i",
+    ],
+)

@@ -1,0 +1,15 @@
+build
+*.dat
+*.param
+.gdb_history
+nbproject/
+test/src/*/*.log
+# painful because golden.guide is NOT ignored -cherry
+test/src/*/log.txt
+test/src/*/out.def
+test/src/*/out.guide
+test/src/*/out2.guide
+test/src/*/route.guide
+test/results
+*~
+TAGS

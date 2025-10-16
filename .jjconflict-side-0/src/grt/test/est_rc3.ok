@@ -1,0 +1,54 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 676 components and 2850 component-terminals.
+[INFO ODB-0133]     Created 579 nets and 1498 connections.
+[WARNING GRT-0008] The read_guides command does not allow parasitics estimation from the guides file.
+Net clk
+ Pin capacitance: 29.975-33.238
+ Wire capacitance: 17.722-17.722
+ Total capacitance: 47.697-50.959
+ Number of drivers: 1
+ Number of loads: 35
+ Number of pins: 36
+
+Driver pins
+ clk input port (48, 101)
+
+Load pins
+ _858_/CK input (DFF_X1) 0.856-0.950 (29, 54)
+ _859_/CK input (DFF_X1) 0.856-0.950 (29, 60)
+ _860_/CK input (DFF_X1) 0.856-0.950 (39, 57)
+ _861_/CK input (DFF_X1) 0.856-0.950 (76, 66)
+ _862_/CK input (DFF_X1) 0.856-0.950 (44, 66)
+ _863_/CK input (DFF_X1) 0.856-0.950 (52, 75)
+ _864_/CK input (DFF_X1) 0.856-0.950 (66, 74)
+ _865_/CK input (DFF_X1) 0.856-0.950 (76, 38)
+ _866_/CK input (DFF_X1) 0.856-0.950 (78, 60)
+ _867_/CK input (DFF_X1) 0.856-0.950 (68, 36)
+ _868_/CK input (DFF_X1) 0.856-0.950 (67, 62)
+ _869_/CK input (DFF_X1) 0.856-0.950 (27, 47)
+ _870_/CK input (DFF_X1) 0.856-0.950 (29, 37)
+ _871_/CK input (DFF_X1) 0.856-0.950 (31, 33)
+ _872_/CK input (DFF_X1) 0.856-0.950 (61, 33)
+ _873_/CK input (DFF_X1) 0.856-0.950 (59, 23)
+ _874_/CK input (DFF_X1) 0.856-0.950 (45, 16)
+ _875_/CK input (DFF_X1) 0.856-0.950 (38, 19)
+ _876_/CK input (DFF_X1) 0.856-0.950 (55, 46)
+ _877_/CK input (DFF_X1) 0.856-0.950 (69, 66)
+ _878_/CK input (DFF_X1) 0.856-0.950 (44, 62)
+ _879_/CK input (DFF_X1) 0.856-0.950 (54, 72)
+ _880_/CK input (DFF_X1) 0.856-0.950 (61, 69)
+ _881_/CK input (DFF_X1) 0.856-0.950 (77, 43)
+ _882_/CK input (DFF_X1) 0.856-0.950 (79, 54)
+ _883_/CK input (DFF_X1) 0.856-0.950 (64, 43)
+ _884_/CK input (DFF_X1) 0.856-0.950 (69, 58)
+ _885_/CK input (DFF_X1) 0.856-0.950 (33, 50)
+ _886_/CK input (DFF_X1) 0.856-0.950 (27, 43)
+ _887_/CK input (DFF_X1) 0.856-0.950 (37, 30)
+ _888_/CK input (DFF_X1) 0.856-0.950 (56, 36)
+ _889_/CK input (DFF_X1) 0.856-0.950 (58, 27)
+ _890_/CK input (DFF_X1) 0.856-0.950 (52, 16)
+ _891_/CK input (DFF_X1) 0.856-0.950 (36, 26)
+ _892_/CK input (DFF_X1) 0.856-0.950 (53, 38)
+

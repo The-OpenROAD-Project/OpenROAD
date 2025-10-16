@@ -1,0 +1,23 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+UNITS
+    DATABASE MICRONS 2000 ;
+END UNITS
+
+MACRO rounding
+  FOREIGN rounding 0 0 ;
+  CLASS BLOCK ;
+  SIZE 2050 BY 500 ;
+  PIN pin
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT  -0.006 2000.16 0.006 2000.172 ;
+    END
+  END pin
+  OBS
+  END
+END rounding
+END LIBRARY

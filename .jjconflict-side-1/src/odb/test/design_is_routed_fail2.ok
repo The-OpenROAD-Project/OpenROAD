@@ -1,0 +1,7 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0131]     Created 200 components and 1117 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 400 connections.
+[INFO ODB-0133]     Created 4 nets and 11 connections.
+[WARNING ODB-0232] Net _002_ is not routed.
+Design has unrouted nets.

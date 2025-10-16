@@ -1,0 +1,24 @@
+VERSION 5.7 ;
+  DIVIDERCHAR "/" ;
+  BUSBITCHARS "[]" ;
+MACRO macro_nop
+  CLASS BLOCK ;
+  FOREIGN macro_nop ;
+  ORIGIN 0.000 0.000 ;
+  SIZE 100.0 BY 100.0 ;
+  OBS
+    LAYER li1 ;
+    RECT 0 0 100.0 100.0 ;
+    LAYER met1 ;
+    RECT 0 0 100.0 100.0 ;
+    LAYER met2 ;
+    RECT 0 0 100.0 100.0 ;
+    LAYER met3 ;
+    RECT 0 0 100.0 100.0 ;
+    LAYER met4 ;
+    RECT 0 0 100.0 100.0 ;
+    LAYER met5 ;
+    RECT 0 0 100.0 100.0 ;
+  END
+END macro_nop
+END LIBRARY

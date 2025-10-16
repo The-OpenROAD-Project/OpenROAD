@@ -1,0 +1,39 @@
+[INFO ODB-0227] LEF file: liberty1.lef, created 2 layers, 6 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 6 pins.
+[INFO ODB-0131]     Created 5 components and 24 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 10 connections.
+[INFO ODB-0133]     Created 10 nets and 14 connections.
+module top (in1,
+    in2,
+    clk1,
+    clk2,
+    clk3,
+    out);
+ input in1;
+ input in2;
+ input clk1;
+ input clk2;
+ input clk3;
+ output out;
+
+ wire r1q;
+ wire r2q;
+ wire u1z;
+ wire u2z;
+
+ snl_ffqx1 r1 (.Q(r1q),
+    .D(in1),
+    .CP(clk1));
+ snl_ffqx1 r2 (.Q(r2q),
+    .D(in2),
+    .CP(clk2));
+ snl_ffqx1 r3 (.Q(out),
+    .D(u2z),
+    .CP(clk3));
+ snl_bufx1 u1 (.Z(u1z),
+    .A(r2q));
+ snl_and02x1 u2 (.Z(u2z),
+    .A(r1q),
+    .B(u1z));
+endmodule

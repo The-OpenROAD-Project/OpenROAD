@@ -1,0 +1,32 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
+
+# Author: Dimitris K. Fotakis
+# Doc Version: v1.0
+# Date: 11/12/2024
+
+
+cd src/rcx/calibration/fasterCap
+# follow Makefile steps below
+
+# Prerequisites: FasterCap executable and related system libraries installed
+
+# Create 3d wire patterns using openroad/rcx
+
+	# min process corner
+	make 5v2_min 
+	# typ process corner
+	make 5v2_typ:
+	
+# Run FasterCap
+	# Convert and run all wire patterns through FasterCap
+	make 5v2_typ_fasterCap
+	make 5v2_min_fasterCap
+
+# Parse results from fasterCap
+	make 5v2_typ_parse
+	make 5v2_min_parse
+
+# Create model file using openroad/rcx
+	make model
+

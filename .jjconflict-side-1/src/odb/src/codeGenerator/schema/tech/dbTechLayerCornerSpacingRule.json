@@ -1,0 +1,104 @@
+{
+  "name": "dbTechLayerCornerSpacingRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "bit",
+      "name": "corner_type_",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "type": "bit",
+      "name": "same_mask_"
+    },
+    {
+      "type": "bit",
+      "name": "corner_only_"
+    },
+    {
+      "type": "int",
+      "name": "within_",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "except_eol_"
+    },
+    {
+      "type": "int",
+      "name": "eol_width_",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "except_jog_length_"
+    },
+    {
+      "type": "int",
+      "name": "jog_length_",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "edge_length_valid_"
+    },
+    {
+      "type": "int",
+      "name": "edge_length_",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "include_shape_"
+    },
+    {
+      "type": "bit",
+      "name": "min_length_valid_"
+    },
+    {
+      "type": "int",
+      "name": "min_length_",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "except_notch_"
+    },
+    {
+      "type": "bit",
+      "name": "except_notch_length_valid_"
+    },
+    {
+      "type": "int",
+      "name": "except_notch_length_",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "except_same_net_"
+    },
+    {
+      "type": "bit",
+      "name": "except_same_metal_"
+    },
+    {
+      "type": "bit",
+      "name": "corner_to_corner_"
+    }
+  ],
+  "enums": [
+    {
+      "name": "CornerType",
+      "values": [
+        "CONVEXCORNER",
+        "CONCAVECORNER"
+      ],
+      "public": true
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
+}

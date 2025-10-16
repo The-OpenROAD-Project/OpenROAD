@@ -1,0 +1,78 @@
+{
+    "name": "dbAccessPoint",
+    "fields": [
+      {
+        "name": "point_",
+        "type": "Point",
+        "flags":["cmpgt"]
+      },
+      {
+        "type": "dbId<_dbTechLayer>",
+        "name": "layer_",
+        "flags":["no-get","cmpgt"],
+        "parent": "dbTechLayer"
+      },
+      {
+        "type": "dbId<_dbLib>",
+        "name": "lib_",
+        "flags":["private","cmpgt"],
+        "parent": "dbLib"
+      },
+      {
+        "type": "dbId<_dbMaster>",
+        "name": "master_",
+        "flags":["private","cmpgt"],
+        "parent": "dbMaster"
+      },
+      {
+        "type": "dbId<_dbMPin>",
+        "name": "mpin_",
+        "flags":["private","cmpgt"],
+        "parent": "dbMPin"
+      },
+      {
+        "type": "dbId<_dbBPin>",
+        "name": "bpin_",
+        "flags":["private","cmpgt"],
+        "parent": "dbBPin"
+      },
+      {
+        "name": "accesses_",
+        "type": "std::array<bool, 6>",
+        "flags":["private", "no-template"]
+      },
+      {
+        "name": "low_type_",
+        "type": "dbAccessType::Value",
+        "default": "dbAccessType::OnGrid",
+        "flags" : ["private","cmpgt","no-serial"]
+      },
+      {
+        "name": "high_type_",
+        "type": "dbAccessType::Value",
+        "default": "dbAccessType::OnGrid",
+        "flags" : ["private","cmpgt","no-serial"]
+      },
+      {
+        "name": "iterms_",
+        "type": "dbVector<dbId<_dbITerm>>",
+        "comment" : "//list of iterms that prefer this access point",
+        "flags" : ["private"]
+      },
+      {
+        "name": "vias_",
+        "type": "dbVector<dbVector<std::pair<dbObjectType,dbId<_dbObject>>>>",
+        "comment" : "//list of vias by num of cuts",
+        "flags" : ["private"]
+      },
+      {
+        "name": "path_segs_",
+        "type": "dbVector<std::tuple<Rect, bool, bool>>",
+        "flags": ["private", "no-template"]
+      }
+    ],
+    "h_includes": [
+      "dbVector.h"
+    ],
+    "cpp_includes": ["odb/dbTypes.h"]
+  }

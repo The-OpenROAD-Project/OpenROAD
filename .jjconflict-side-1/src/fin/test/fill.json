@@ -1,0 +1,83 @@
+{
+    "layers" : {
+        "met1" : {
+            "layer":                   36,
+            "name":                    "met1",
+            "dir":                     "H",
+            "datatype":                 0,
+            "space_to_outline":         70,
+            "non-opc": {
+                "datatype":             0,
+                "width":                [2.00, 1.00, 0.58, 0.3],
+                "height":               [2.00, 1.00, 0.58, 0.3],
+                "space_to_fill":        0.3,
+                "space_to_non_fill":    3
+            }
+        },
+        
+        "met2" : {
+            "layer":                   41,
+            "name":                    "met2",
+            "dir":                     "V",
+            "datatype":                 0,
+            "space_to_outline":         70,
+            "non-opc": {
+                "datatype":             0,
+                "width":                [2.00, 1.00, 0.58, 0.3],
+                "height":               [2.00, 1.00, 0.58, 0.3],
+                "space_to_fill":        0.3,
+                "space_to_non_fill":    3
+            }
+        },
+
+        "met3" : {
+            "layer":                   34,
+            "name":                    "met3",
+            "dir":                     "H",
+            "datatype":                 0,
+            "space_to_outline":         70,
+            "non-opc": {
+                "datatype":             0,
+                "width":                [2.00, 1.00, 0.58, 0.4],
+                "height":               [2.00, 1.00, 0.58, 0.4],
+                "space_to_fill":        0.3,
+                "space_to_non_fill":    3
+            }
+        },
+        
+        "met4" : {
+            "layer":                   51,
+            "name":                    "met4",
+            "dir":                     "V",
+            "datatype":                 0,
+            "space_to_outline":         70,
+            "non-opc": {
+                "datatype":             0,
+                "width":                [2.00, 1.00, 0.58, 0.4],
+                "height":               [2.00, 1.00, 0.58, 0.4],
+                "space_to_fill":        0.3,
+                "space_to_non_fill":    3.0
+            }
+        },
+
+        "met5" : {
+            "layer":                   59,
+            "name":                    "met5",
+            "dir":                     "H",
+            "datatype":                 0,
+            "space_to_outline":         70,
+            "non-opc": {
+                "datatype":             0,
+                "width":                [3.00],
+                "height":               [3.00],
+                "space_to_fill":        1.6,
+                "space_to_non_fill":    3.0
+            }
+        }
+    },
+    "outline" : {
+        "layer":                     237,
+        "datatype":                  0
+    }
+}
+

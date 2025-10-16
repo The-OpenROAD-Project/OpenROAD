@@ -1,0 +1,10 @@
+[INFO ODB-0227] LEF file: asap7_vias/asap7_tech_1x_noviarules.lef, created 25 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7_vias/asap7sc7p5t_27_R_1x.lef, created 212 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 406 components and 1816 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 812 connections.
+[INFO ODB-0133]     Created 361 nets and 1004 connections.
+Via repair on VDD, VSS
+V1 removed 9 vias out of 2597 vias (0.35%).
+No differences found.

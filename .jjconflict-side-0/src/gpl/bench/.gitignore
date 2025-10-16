@@ -1,0 +1,17 @@
+ispd18/ispd18_*/*.lef
+ispd18/ispd18_*/*.def
+ispd18/ispd18_*/*.v
+ispd18/ispd18_*/*.guide
+ispd18/*.tar.bz2
+ispd18/tar
+bookshelf/**/*.aux
+bookshelf/**/*.scl
+bookshelf/**/*.nodes
+bookshelf/**/*.route
+bookshelf/**/*.nets
+bookshelf/**/*.wts
+bookshelf/**/*.shapes
+bookshelf/**/*.pl
+bookshelf/*.tar.bz2
+bookshelf/tar
+

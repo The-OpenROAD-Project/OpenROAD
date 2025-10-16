@@ -1,0 +1,47 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: hi_fanout
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 21 components and 126 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 42 connections.
+[INFO ODB-0133]     Created 2 nets and 42 connections.
+[INFO IFP-0001] Added 62 rows of 463 site FreePDK45_38x28_10R_NP_162NW_34O.
+Placement Analysis
+---------------------------------
+total displacement          7.5 u
+average displacement        0.4 u
+max displacement            0.7 u
+original HPWL              70.6 u
+legalized HPWL             69.8 u
+delta HPWL                   -1 %
+
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+load19/D                                0.05    0.07   -0.02 (VIOLATED)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+drvr/Q                                 60.73   31.21   29.52 (MET)
+
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        43
+    final |     +0.6% |       1 |       0 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0039] Resized 1 instances.
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+load19/D                                0.05    0.04    0.01 (MET)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+load0/QN                               60.27    0.00   60.27 (MET)
+

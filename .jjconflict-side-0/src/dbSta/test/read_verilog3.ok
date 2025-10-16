@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: bus1.lef, created 1 library cells
+Instance bus1
+ Cell: bus4
+ Library: bus1
+ Path cells: bus4
+ Input pins:
+  in[0] input in[0]
+  in[2] input in[2]
+  clk input clk
+  in[3] input in[3]
+  in[1] input in[1]
+ Output pins:
+  out[2] output out[2]
+  out[0] output out[0]
+  out[3] output out[3]
+  out[1] output out[1]

@@ -1,0 +1,17 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+[INFO ODB-0227] LEF file: cell_on_block2.lef, created 16 library cells
+[INFO ODB-0128] Design: eFPGA_top
+[INFO ODB-0130]     Created 201 pins.
+[INFO ODB-0131]     Created 11904 components and 90887 component-terminals.
+[INFO ODB-0133]     Created 31790 nets and 67032 connections.
+Placement Analysis
+---------------------------------
+total displacement     291547.5 u
+average displacement       24.5 u
+max displacement         1411.8 u
+original HPWL         1353118.6 u
+legalized HPWL        1391721.9 u
+delta HPWL                    3 %
+
+No differences found.

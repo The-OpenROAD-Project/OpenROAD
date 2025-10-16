@@ -1,0 +1,414 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN multi_sink ;
+UNITS DISTANCE MICRONS 1000 ;
+
+DIEAREA ( 0 0 ) ( 220000 220000 ) ;
+
+COMPONENTS 298 ;
+- ff297 sg13g2_dfrbp_1 + PLACED ( 205200 182000 ) N
+ ;
+- ff296 sg13g2_dfrbp_1 + PLACED ( 183160 182000 ) N
+ ;
+- ff295 sg13g2_dfrbp_1 + PLACED ( 161120 182000 ) N
+ ;
+- ff294 sg13g2_dfrbp_1 + PLACED ( 138700 182000 ) N
+ ;
+- ff293 sg13g2_dfrbp_1 + PLACED ( 116660 182000 ) N
+ ;
+- ff292 sg13g2_dfrbp_1 + PLACED ( 94620 182000 ) N
+ ;
+- ff291 sg13g2_dfrbp_1 + PLACED ( 72200 182000 ) N
+ ;
+- ff290 sg13g2_dfrbp_1 + PLACED ( 50160 182000 ) N
+ ;
+- ff289 sg13g2_dfrbp_1 + PLACED ( 27740 182000 ) N
+ ;
+- ff288 sg13g2_dfrbp_1 + PLACED ( 5700 182000 ) N
+ ;
+- ff287 sg13g2_dfrbp_1 + PLACED ( 205200 170800 ) N
+ ;
+- ff286 sg13g2_dfrbp_1 + PLACED ( 183160 170800 ) N
+ ;
+- ff284 sg13g2_dfrbp_1 + PLACED ( 161120 170800 ) N
+ ;
+- ff282 sg13g2_dfrbp_1 + PLACED ( 138700 170800 ) N
+ ;
+- ff280 sg13g2_dfrbp_1 + PLACED ( 116660 170800 ) N
+ ;
+- ff278 sg13g2_dfrbp_1 + PLACED ( 94620 170800 ) N
+ ;
+- ff276 sg13g2_dfrbp_1 + PLACED ( 72200 170800 ) N
+ ;
+- ff274 sg13g2_dfrbp_1 + PLACED ( 50160 170800 ) N
+ ;
+- ff272 sg13g2_dfrbp_1 + PLACED ( 27740 170800 ) N
+ ;
+- ff270 sg13g2_dfrbp_1 + PLACED ( 5700 170800 ) N
+ ;
+- ff269 sg13g2_dfrbp_1 + PLACED ( 205200 159600 ) N
+ ;
+- ff268 sg13g2_dfrbp_1 + PLACED ( 183160 159600 ) N
+ ;
+- ff266 sg13g2_dfrbp_1 + PLACED ( 161120 159600 ) N
+ ;
+- ff264 sg13g2_dfrbp_1 + PLACED ( 138700 159600 ) N
+ ;
+- ff262 sg13g2_dfrbp_1 + PLACED ( 116660 159600 ) N
+ ;
+- ff260 sg13g2_dfrbp_1 + PLACED ( 94620 159600 ) N
+ ;
+- ff258 sg13g2_dfrbp_1 + PLACED ( 72200 159600 ) N
+ ;
+- ff256 sg13g2_dfrbp_1 + PLACED ( 50160 159600 ) N
+ ;
+- ff254 sg13g2_dfrbp_1 + PLACED ( 27740 159600 ) N
+ ;
+- ff252 sg13g2_dfrbp_1 + PLACED ( 5700 159600 ) N
+ ;
+- ff251 sg13g2_dfrbp_1 + PLACED ( 205200 151200 ) FS
+ ;
+- ff250 sg13g2_dfrbp_1 + PLACED ( 183160 151200 ) FS
+ ;
+- ff248 sg13g2_dfrbp_1 + PLACED ( 161120 151200 ) FS
+ ;
+- ff246 sg13g2_dfrbp_1 + PLACED ( 138700 151200 ) FS
+ ;
+- ff244 sg13g2_dfrbp_1 + PLACED ( 116660 151200 ) FS
+ ;
+- ff242 sg13g2_dfrbp_1 + PLACED ( 94620 151200 ) FS
+ ;
+- ff240 sg13g2_dfrbp_1 + PLACED ( 72200 151200 ) FS
+ ;
+- ff238 sg13g2_dfrbp_1 + PLACED ( 50160 151200 ) FS
+ ;
+- ff236 sg13g2_dfrbp_1 + PLACED ( 27740 151200 ) FS
+ ;
+- ff234 sg13g2_dfrbp_1 + PLACED ( 5700 151200 ) FS
+ ;
+- ff233 sg13g2_dfrbp_1 + PLACED ( 205200 140000 ) FS
+ ;
+- ff232 sg13g2_dfrbp_1 + PLACED ( 183160 140000 ) FS
+ ;
+- ff230 sg13g2_dfrbp_1 + PLACED ( 161120 140000 ) FS
+ ;
+- ff228 sg13g2_dfrbp_1 + PLACED ( 138700 140000 ) FS
+ ;
+- ff226 sg13g2_dfrbp_1 + PLACED ( 116660 140000 ) FS
+ ;
+- ff224 sg13g2_dfrbp_1 + PLACED ( 94620 140000 ) FS
+ ;
+- ff222 sg13g2_dfrbp_1 + PLACED ( 72200 140000 ) FS
+ ;
+- ff220 sg13g2_dfrbp_1 + PLACED ( 50160 140000 ) FS
+ ;
+- ff218 sg13g2_dfrbp_1 + PLACED ( 27740 140000 ) FS
+ ;
+- ff216 sg13g2_dfrbp_1 + PLACED ( 5700 140000 ) FS
+ ;
+- ff215 sg13g2_dfrbp_1 + PLACED ( 205200 128800 ) FS
+ ;
+- ff214 sg13g2_dfrbp_1 + PLACED ( 183160 128800 ) FS
+ ;
+- ff212 sg13g2_dfrbp_1 + PLACED ( 161120 128800 ) FS
+ ;
+- ff210 sg13g2_dfrbp_1 + PLACED ( 138700 128800 ) FS
+ ;
+- ff208 sg13g2_dfrbp_1 + PLACED ( 116660 128800 ) FS
+ ;
+- ff206 sg13g2_dfrbp_1 + PLACED ( 94620 128800 ) FS
+ ;
+- ff204 sg13g2_dfrbp_1 + PLACED ( 72200 128800 ) FS
+ ;
+- ff202 sg13g2_dfrbp_1 + PLACED ( 50160 128800 ) FS
+ ;
+- ff200 sg13g2_dfrbp_1 + PLACED ( 27740 128800 ) FS
+ ;
+- ff198 sg13g2_dfrbp_1 + PLACED ( 5700 128800 ) FS
+ ;
+- ff197 sg13g2_dfrbp_1 + PLACED ( 205200 117600 ) FS
+ ;
+- ff196 sg13g2_dfrbp_1 + PLACED ( 183160 117600 ) FS
+ ;
+- ff194 sg13g2_dfrbp_1 + PLACED ( 161120 117600 ) FS
+ ;
+- ff192 sg13g2_dfrbp_1 + PLACED ( 138700 117600 ) FS
+ ;
+- ff190 sg13g2_dfrbp_1 + PLACED ( 116660 117600 ) FS
+ ;
+- ff188 sg13g2_dfrbp_1 + PLACED ( 94620 117600 ) FS
+ ;
+- ff186 sg13g2_dfrbp_1 + PLACED ( 72200 117600 ) FS
+ ;
+- ff184 sg13g2_dfrbp_1 + PLACED ( 50160 117600 ) FS
+ ;
+- ff182 sg13g2_dfrbp_1 + PLACED ( 27740 117600 ) FS
+ ;
+- ff180 sg13g2_dfrbp_1 + PLACED ( 5700 117600 ) FS
+ ;
+- ff179 sg13g2_dfrbp_1 + PLACED ( 205200 106400 ) FS
+ ;
+- ff178 sg13g2_dfrbp_1 + PLACED ( 183160 106400 ) FS
+ ;
+- ff176 sg13g2_dfrbp_1 + PLACED ( 161120 106400 ) FS
+ ;
+- ff174 sg13g2_dfrbp_1 + PLACED ( 138700 106400 ) FS
+ ;
+- ff172 sg13g2_dfrbp_1 + PLACED ( 116660 106400 ) FS
+ ;
+- ff170 sg13g2_dfrbp_1 + PLACED ( 94620 106400 ) FS
+ ;
+- ff168 sg13g2_dfrbp_1 + PLACED ( 72200 106400 ) FS
+ ;
+- ff166 sg13g2_dfrbp_1 + PLACED ( 50160 106400 ) FS
+ ;
+- ff164 sg13g2_dfrbp_1 + PLACED ( 27740 106400 ) FS
+ ;
+- ff162 sg13g2_dfrbp_1 + PLACED ( 5700 106400 ) FS
+ ;
+- ff161 sg13g2_dfrbp_1 + PLACED ( 205200 95200 ) FS
+ ;
+- ff160 sg13g2_dfrbp_1 + PLACED ( 183160 95200 ) FS
+ ;
+- ff158 sg13g2_dfrbp_1 + PLACED ( 161120 95200 ) FS
+ ;
+- ff156 sg13g2_dfrbp_1 + PLACED ( 138700 95200 ) FS
+ ;
+- ff154 sg13g2_dfrbp_1 + PLACED ( 116660 95200 ) FS
+ ;
+- ff152 sg13g2_dfrbp_1 + PLACED ( 94620 95200 ) FS
+ ;
+- ff150 sg13g2_dfrbp_1 + PLACED ( 72200 95200 ) FS
+ ;
+- ff148 sg13g2_dfrbp_1 + PLACED ( 50160 95200 ) FS
+ ;
+- ff146 sg13g2_dfrbp_1 + PLACED ( 27740 95200 ) FS
+ ;
+- ff144 sg13g2_dfrbp_1 + PLACED ( 5700 95200 ) FS
+ ;
+- ff143 sg13g2_dfrbp_1 + PLACED ( 205200 84000 ) FS
+ ;
+- ff142 sg13g2_dfrbp_1 + PLACED ( 183160 84000 ) FS
+ ;
+- ff140 sg13g2_dfrbp_1 + PLACED ( 161120 84000 ) FS
+ ;
+- ff138 sg13g2_dfrbp_1 + PLACED ( 138700 84000 ) FS
+ ;
+- ff136 sg13g2_dfrbp_1 + PLACED ( 116660 84000 ) FS
+ ;
+- ff134 sg13g2_dfrbp_1 + PLACED ( 94620 84000 ) FS
+ ;
+- ff132 sg13g2_dfrbp_1 + PLACED ( 72200 84000 ) FS
+ ;
+- ff130 sg13g2_dfrbp_1 + PLACED ( 50160 84000 ) FS
+ ;
+- ff128 sg13g2_dfrbp_1 + PLACED ( 27740 84000 ) FS
+ ;
+- ff126 sg13g2_dfrbp_1 + PLACED ( 5700 84000 ) FS
+ ;
+- ff125 sg13g2_dfrbp_1 + PLACED ( 205200 72800 ) FS
+ ;
+- ff124 sg13g2_dfrbp_1 + PLACED ( 183160 72800 ) FS
+ ;
+- ff122 sg13g2_dfrbp_1 + PLACED ( 161120 72800 ) FS
+ ;
+- ff120 sg13g2_dfrbp_1 + PLACED ( 138700 72800 ) FS
+ ;
+- ff118 sg13g2_dfrbp_1 + PLACED ( 116660 72800 ) FS
+ ;
+- ff116 sg13g2_dfrbp_1 + PLACED ( 94620 72800 ) FS
+ ;
+- ff114 sg13g2_dfrbp_1 + PLACED ( 72200 72800 ) FS
+ ;
+- ff112 sg13g2_dfrbp_1 + PLACED ( 50160 72800 ) FS
+ ;
+- ff110 sg13g2_dfrbp_1 + PLACED ( 27740 72800 ) FS
+ ;
+- ff108 sg13g2_dfrbp_1 + PLACED ( 5700 72800 ) FS
+ ;
+- ff107 sg13g2_dfrbp_1 + PLACED ( 205200 61600 ) FS
+ ;
+- ff106 sg13g2_dfrbp_1 + PLACED ( 183160 61600 ) FS
+ ;
+- ff104 sg13g2_dfrbp_1 + PLACED ( 161120 61600 ) FS
+ ;
+- ff102 sg13g2_dfrbp_1 + PLACED ( 138700 61600 ) FS
+ ;
+- ff100 sg13g2_dfrbp_1 + PLACED ( 116660 61600 ) FS
+ ;
+- ff98 sg13g2_dfrbp_1 + PLACED ( 94620 61600 ) FS
+ ;
+- ff96 sg13g2_dfrbp_1 + PLACED ( 72200 61600 ) FS
+ ;
+- ff94 sg13g2_dfrbp_1 + PLACED ( 50160 61600 ) FS
+ ;
+- ff92 sg13g2_dfrbp_1 + PLACED ( 27740 61600 ) FS
+ ;
+- ff90 sg13g2_dfrbp_1 + PLACED ( 5700 61600 ) FS
+ ;
+- ff89 sg13g2_dfrbp_1 + PLACED ( 205200 50400 ) FS
+ ;
+- ff88 sg13g2_dfrbp_1 + PLACED ( 183160 50400 ) FS
+ ;
+- ff86 sg13g2_dfrbp_1 + PLACED ( 161120 50400 ) FS
+ ;
+- ff84 sg13g2_dfrbp_1 + PLACED ( 138700 50400 ) FS
+ ;
+- ff82 sg13g2_dfrbp_1 + PLACED ( 116660 50400 ) FS
+ ;
+- ff80 sg13g2_dfrbp_1 + PLACED ( 94620 50400 ) FS
+ ;
+- ff78 sg13g2_dfrbp_1 + PLACED ( 72200 50400 ) FS
+ ;
+- ff76 sg13g2_dfrbp_1 + PLACED ( 50160 50400 ) FS
+ ;
+- ff74 sg13g2_dfrbp_1 + PLACED ( 27740 50400 ) FS
+ ;
+- ff72 sg13g2_dfrbp_1 + PLACED ( 5700 50400 ) FS
+ ;
+- ff71 sg13g2_dfrbp_1 + PLACED ( 205200 39200 ) FS
+ ;
+- ff70 sg13g2_dfrbp_1 + PLACED ( 183160 39200 ) FS
+ ;
+- ff68 sg13g2_dfrbp_1 + PLACED ( 161120 39200 ) FS
+ ;
+- ff66 sg13g2_dfrbp_1 + PLACED ( 138700 39200 ) FS
+ ;
+- ff64 sg13g2_dfrbp_1 + PLACED ( 116660 39200 ) FS
+ ;
+- ff62 sg13g2_dfrbp_1 + PLACED ( 94620 39200 ) FS
+ ;
+- ff60 sg13g2_dfrbp_1 + PLACED ( 72200 39200 ) FS
+ ;
+- ff58 sg13g2_dfrbp_1 + PLACED ( 50160 39200 ) FS
+ ;
+- ff56 sg13g2_dfrbp_1 + PLACED ( 27740 39200 ) FS
+ ;
+- ff54 sg13g2_dfrbp_1 + PLACED ( 5700 39200 ) FS
+ ;
+- ff53 sg13g2_dfrbp_1 + PLACED ( 205200 28000 ) FS
+ ;
+- ff52 sg13g2_dfrbp_1 + PLACED ( 183160 28000 ) FS
+ ;
+- ff50 sg13g2_dfrbp_1 + PLACED ( 161120 28000 ) FS
+ ;
+- ff48 sg13g2_dfrbp_1 + PLACED ( 138700 28000 ) FS
+ ;
+- ff46 sg13g2_dfrbp_1 + PLACED ( 116660 28000 ) FS
+ ;
+- ff44 sg13g2_dfrbp_1 + PLACED ( 94620 28000 ) FS
+ ;
+- ff42 sg13g2_dfrbp_1 + PLACED ( 72200 28000 ) FS
+ ;
+- ff40 sg13g2_dfrbp_1 + PLACED ( 50160 28000 ) FS
+ ;
+- ff38 sg13g2_dfrbp_1 + PLACED ( 27740 28000 ) FS
+ ;
+- ff36 sg13g2_dfrbp_1 + PLACED ( 5700 28000 ) FS
+ ;
+- ff35 sg13g2_dfrbp_1 + PLACED ( 205200 16800 ) FS
+ ;
+- ff34 sg13g2_dfrbp_1 + PLACED ( 183160 16800 ) FS
+ ;
+- ff32 sg13g2_dfrbp_1 + PLACED ( 161120 16800 ) FS
+ ;
+- ff30 sg13g2_dfrbp_1 + PLACED ( 138700 16800 ) FS
+ ;
+- ff28 sg13g2_dfrbp_1 + PLACED ( 116660 16800 ) FS
+ ;
+- ff26 sg13g2_dfrbp_1 + PLACED ( 94620 16800 ) FS
+ ;
+- ff24 sg13g2_dfrbp_1 + PLACED ( 72200 16800 ) FS
+ ;
+- ff22 sg13g2_dfrbp_1 + PLACED ( 50160 16800 ) FS
+ ;
+- ff20 sg13g2_dfrbp_1 + PLACED ( 27740 16800 ) FS
+ ;
+- ff18 sg13g2_dfrbp_1 + PLACED ( 5700 16800 ) FS
+ ;
+- ff17 sg13g2_dfrbp_1 + PLACED ( 205200 5600 ) FS
+ ;
+- ff16 sg13g2_dfrbp_1 + PLACED ( 183160 5600 ) FS
+ ;
+- ff14 sg13g2_dfrbp_1 + PLACED ( 161120 5600 ) FS
+ ;
+- ff12 sg13g2_dfrbp_1 + PLACED ( 138700 5600 ) FS
+ ;
+- ff10 sg13g2_dfrbp_1 + PLACED ( 116660 5600 ) FS
+ ;
+- ff8 sg13g2_dfrbp_1 + PLACED ( 94620 5600 ) FS
+ ;
+- ff6 sg13g2_dfrbp_1 + PLACED ( 72200 5600 ) FS
+ ;
+- ff4 sg13g2_dfrbp_1 + PLACED ( 50160 5600 ) FS
+ ;
+- ff2 sg13g2_dfrbp_1 + PLACED ( 27740 5600 ) FS
+ ;
+- ff0 sg13g2_dfrbp_1 + PLACED ( 5700 5600 ) FS
+ ;
+END COMPONENTS
+
+PINS 1 ;
+- clk + NET clk + DIRECTION INPUT + USE SIGNAL
+  + LAYER Metal5 ( -140 0 ) ( 140 280 )
+  + FIXED ( 110000 220000 ) S ;
+END PINS
+
+NETS 1 ;
+- clk
+  ( PIN clk ) ( ff0 CLK ) ( ff2 CLK ) ( ff4 CLK )
+  ( ff6 CLK ) ( ff8 CLK ) ( ff10 CLK )
+  ( ff12 CLK ) ( ff14 CLK ) ( ff16 CLK ) ( ff17 CLK )
+  ( ff18 CLK ) ( ff20 CLK ) ( ff22 CLK )
+  ( ff24 CLK ) ( ff26 CLK ) ( ff28 CLK )
+  ( ff30 CLK ) ( ff32 CLK ) ( ff34 CLK ) ( ff35 CLK )
+  ( ff36 CLK ) ( ff38 CLK ) ( ff40 CLK )
+  ( ff42 CLK ) ( ff44 CLK ) ( ff46 CLK )
+  ( ff48 CLK ) ( ff50 CLK ) ( ff52 CLK ) ( ff53 CLK )
+  ( ff54 CLK ) ( ff56 CLK ) ( ff58 CLK )
+  ( ff60 CLK ) ( ff62 CLK ) ( ff64 CLK )
+  ( ff66 CLK ) ( ff68 CLK ) ( ff70 CLK ) ( ff71 CLK )
+  ( ff72 CLK ) ( ff74 CLK ) ( ff76 CLK )
+  ( ff78 CLK ) ( ff80 CLK ) ( ff82 CLK )
+  ( ff84 CLK ) ( ff86 CLK ) ( ff88 CLK ) ( ff89 CLK )
+  ( ff90 CLK ) ( ff92 CLK ) ( ff94 CLK )
+  ( ff96 CLK ) ( ff98 CLK ) ( ff100 CLK )
+  ( ff102 CLK ) ( ff104 CLK ) ( ff106 CLK ) ( ff107 CLK )
+  ( ff108 CLK ) ( ff110 CLK ) ( ff112 CLK )
+  ( ff114 CLK ) ( ff116 CLK ) ( ff118 CLK )
+  ( ff120 CLK ) ( ff122 CLK ) ( ff124 CLK ) ( ff125 CLK )
+  ( ff126 CLK ) ( ff128 CLK ) ( ff130 CLK )
+  ( ff132 CLK ) ( ff134 CLK ) ( ff136 CLK )
+  ( ff138 CLK ) ( ff140 CLK ) ( ff142 CLK ) ( ff143 CLK )
+  ( ff144 CLK ) ( ff146 CLK ) ( ff148 CLK )
+  ( ff150 CLK ) ( ff152 CLK ) ( ff154 CLK )
+  ( ff156 CLK ) ( ff158 CLK ) ( ff160 CLK ) ( ff161 CLK )
+  ( ff162 CLK ) ( ff164 CLK ) ( ff166 CLK )
+  ( ff168 CLK ) ( ff170 CLK ) ( ff172 CLK )
+  ( ff174 CLK ) ( ff176 CLK ) ( ff178 CLK ) ( ff179 CLK )
+  ( ff180 CLK ) ( ff182 CLK ) ( ff184 CLK )
+  ( ff186 CLK ) ( ff188 CLK ) ( ff190 CLK )
+  ( ff192 CLK ) ( ff194 CLK ) ( ff196 CLK ) ( ff197 CLK )
+  ( ff198 CLK ) ( ff200 CLK ) ( ff202 CLK )
+  ( ff204 CLK ) ( ff206 CLK ) ( ff208 CLK )
+  ( ff210 CLK ) ( ff212 CLK ) ( ff214 CLK ) ( ff215 CLK )
+  ( ff216 CLK ) ( ff218 CLK ) ( ff220 CLK )
+  ( ff222 CLK ) ( ff224 CLK ) ( ff226 CLK )
+  ( ff228 CLK ) ( ff230 CLK ) ( ff232 CLK ) ( ff233 CLK )
+  ( ff234 CLK ) ( ff236 CLK ) ( ff238 CLK )
+  ( ff240 CLK ) ( ff242 CLK ) ( ff244 CLK )
+  ( ff246 CLK ) ( ff248 CLK ) ( ff250 CLK ) ( ff251 CLK )
+  ( ff252 CLK ) ( ff254 CLK ) ( ff256 CLK )
+  ( ff258 CLK ) ( ff260 CLK ) ( ff262 CLK )
+  ( ff264 CLK ) ( ff266 CLK ) ( ff268 CLK ) ( ff269 CLK )
+  ( ff270 CLK ) ( ff272 CLK ) ( ff274 CLK )
+  ( ff276 CLK ) ( ff278 CLK ) ( ff280 CLK )
+  ( ff282 CLK ) ( ff284 CLK ) ( ff286 CLK ) ( ff287 CLK )
+  ( ff288 CLK ) ( ff289 CLK ) ( ff290 CLK )
+  ( ff291 CLK ) ( ff292 CLK ) ( ff293 CLK )
+  ( ff294 CLK ) ( ff295 CLK ) ( ff296 CLK ) ( ff297 CLK )
+ ;
+END NETS
+
+END DESIGN

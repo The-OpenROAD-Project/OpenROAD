@@ -1,0 +1,93 @@
+(DELAYFILE
+ (SDFVERSION "OVI 2.1")
+ (DESIGN "top")
+ (DATE "Thu Mar  2 20:33:26 2000")
+ (VENDOR "slow")
+ (PROGRAM "Hand job")
+ (VERSION "69")
+ (DIVIDER /)
+ (VOLTAGE 2.25:2.25:2.25)
+ (PROCESS "1.000:1.000:1.000")
+ (TEMPERATURE 125.00:125.00:125.00)
+ (TIMESCALE 1ns)
+ (CELL
+  (CELLTYPE "top")
+  (INSTANCE)
+  (DELAY
+   (ABSOLUTE
+    // Offset in1 vs in2, rise vs fall arrivals so results are deterministic.
+    (INTERCONNECT in1 r1/D (0.011:0.011:0.011) (0.01:0.01:0.01))
+    (INTERCONNECT in2 r2/D (0.021:0.021:0.021) (0.02:0.02:0.02))
+    (INTERCONNECT clk1 r1/CK (0.0:0.0:0.0) (0.0:0.0:0.0))
+    (INTERCONNECT clk2 r2/CK (0.0:0.0:0.0) (0.0:0.0:0.0))
+    (INTERCONNECT clk3 r3/CK (0.0:0.0:0.0) (0.0:0.0:0.0))
+    (INTERCONNECT r1/Q u2/A1 (0.0:0.0:0.0) (0.0:0.0:0.0))
+    (INTERCONNECT r2/Q u1/A (0.0:0.0:0.0) (0.0:0.0:0.0))
+    (INTERCONNECT u1/Z u2/A2 (0.0:0.0:0.0) (0.0:0.0:0.0))
+    (INTERCONNECT u2/ZN r3/D (0.0:0.0:0.0) (0.0:0.0:0.0))
+    (INTERCONNECT r3/Q out (0.0:0.0:0.0) (0.0:0.0:0.0))
+    )
+   )
+  )
+ (CELL
+  (CELLTYPE "DFF_X1")
+  (INSTANCE r1)
+  (DELAY
+   (ABSOLUTE
+    (IOPATH CK Q (1:1:1) (1.1:1.1:1.1))
+    )
+   )
+  (TIMINGCHECK
+   (SETUP D (posedge CK) (.5:.5:.5))
+   (HOLD D (posedge CK) (.1:.1:.1))
+   (PERIOD (posedge CK) (1.0:2.0:3.0))
+  )
+  )
+(CELL
+  (CELLTYPE "DFF_X1")
+  (INSTANCE r2)
+  (DELAY
+   (ABSOLUTE
+    (IOPATH CK Q (1:1:1) (1.1:1.1:1.1))
+    )
+   )
+  (TIMINGCHECK
+   (SETUP D (posedge CK) (.5:.5:.5))
+   (HOLD D (posedge CK) (.1:.1:.1))
+   (PERIOD (posedge CK) (1.0:2.0:3.0))
+  )
+  )
+(CELL
+  (CELLTYPE "DFF_X1")
+  (INSTANCE r3)
+  (DELAY
+   (ABSOLUTE
+    (IOPATH CK Q (1:1:1) (1.1:1.1:1.1))
+    )
+   )
+  (TIMINGCHECK
+   (SETUP D (posedge CK) (.5:.5:.5))
+   (HOLD D (posedge CK) (.1:.1:.1))
+   (PERIOD (posedge CK) (1.0:2.0:3.0))
+  )
+  )
+ (CELL
+  (CELLTYPE "BUF_X1")
+  (INSTANCE u1)
+  (DELAY
+   (ABSOLUTE
+    (IOPATH A Z (1:1:1) (1.1:1.1:1.1))
+    )
+   )
+  )
+ (CELL
+  (CELLTYPE "AND2_X1")
+  (INSTANCE u2)
+  (DELAY
+   (ABSOLUTE
+    (IOPATH A1 ZN (1:1:1) (1.1:1.1:1.1))
+    (IOPATH A2 ZN (1:1:1) (1.1:1.1:1.1))
+    )
+   )
+  )
+ )

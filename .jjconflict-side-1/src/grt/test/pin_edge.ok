@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: pin_edge.lef, created 24 layers, 9 vias
+[INFO ODB-0128] Design: test
+[INFO ODB-0130]     Created 50 pins.
+[INFO ODB-0133]     Created 25 nets and 0 connections.
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
+No differences found.

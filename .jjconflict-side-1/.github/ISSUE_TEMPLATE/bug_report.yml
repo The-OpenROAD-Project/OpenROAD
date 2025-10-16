@@ -1,0 +1,86 @@
+name: Standalone OpenROAD Bug report
+description: File a bug report concerned with OpenROAD only
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! It helps us more quickly track, narrow down, and address bugs.
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        #### This part is incredibly important:
+
+        Please run the following shell command in the OpenROAD root folder:
+        ```
+        ./etc/Env.sh
+        ```
+        Then upload the build/openroad-env.log file or copy and paste the ENTIRE output in the text field below.
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      render: shell
+      description: Please paste the output from the previous command. It will be automatically formatted into code, so no need for backticks.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        #### To reproduce the bug:
+
+        ##### Upload relevant files
+
+        &nbsp;&nbsp;&nbsp;&nbsp;- Upload a tar file containing the relevant files (.def, .lef and flow.tcl).
+
+        &nbsp;&nbsp;&nbsp;&nbsp;- List the commands used.
+  - type: textarea
+    id: to-reproduce
+    attributes:
+      label: To Reproduce
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: ---
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: |
+        You can upload `openroad_build.log` file found in the build directory by dragging and dropping it below.
+        Feel free to add any relevant log snippets to this section. This will be automatically formatted into code, so no need for backticks.
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, drag and drop screenshots to help explain your problem.
+    validations:
+      required: false
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here.
+    validations:
+      required: false

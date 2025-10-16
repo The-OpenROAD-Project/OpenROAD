@@ -1,0 +1,7 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fake_macros.lef, created 10 library cells
+[WARNING ORD-2011] LEF master MOCK_SINGLE has no liberty cell.
+[WARNING ORD-2011] LEF master MOCK_DOUBLE has no liberty cell.
+[INFO IFP-0001] Added 1 rows of 34 site DoubleHeightSite.
+[INFO IFP-0001] Added 2 rows of 34 site FreePDK45_38x28_10R_NP_162NW_34O.
+No differences found.

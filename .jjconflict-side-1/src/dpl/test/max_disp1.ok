@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fakeram45_1024x32.lef, created 1 library cells
+[INFO ODB-0128] Design: test_RAM
+[INFO ODB-0130]     Created 65 pins.
+[INFO ODB-0131]     Created 1768 components and 3775 component-terminals.
+[INFO ODB-0133]     Created 130 nets and 195 connections.
+Placement Analysis
+---------------------------------
+total displacement       3442.1 u
+average displacement        1.9 u
+max displacement          283.8 u
+original HPWL           32960.1 u
+legalized HPWL          33197.1 u
+delta HPWL                    1 %
+

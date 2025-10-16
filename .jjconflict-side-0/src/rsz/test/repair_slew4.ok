@@ -1,0 +1,20 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: repair_slew4.lef, created 1 library cells
+[INFO ODB-0128] Design: long_wire
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 5 components and 20 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 10 connections.
+[INFO ODB-0133]     Created 3 nets and 7 connections.
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+u5/A                                    0.07    0.14   -0.07 (VIOLATED)
+
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |         6
+    final |    +11.1% |       0 |       1 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0038] Inserted 1 buffers in 1 nets.

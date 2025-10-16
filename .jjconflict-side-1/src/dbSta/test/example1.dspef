@@ -1,0 +1,135 @@
+*SPEF "IEEE 1481-1998"
+*DESIGN "reg1"
+*DATE "Fri Nov 20 13:23:00 2002"
+*VENDOR "Parallax Software, Inc"
+*PROGRAM "Handjob"
+*VERSION "1.0.1c"
+*DESIGN_FLOW "MISSING_NETS"
+*DIVIDER /
+*DELIMITER :
+*BUS_DELIMITER [ ]
+*T_UNIT 1.0 PS
+*C_UNIT 1.0 PF
+*R_UNIT 1.0 OHM
+*L_UNIT 1.0 HENRY
+
+*POWER_NETS VDD
+*GROUND_NETS VSS
+
+*PORTS
+in1 I
+in2 I
+clk1 I
+clk2 I
+clk3 I
+out O
+
+*D_NET in1 0.275
+*CONN
+*P in1 I
+*I r1:D I *L .0036
+*CAP
+1 in1 .243
+2 r1:D .032
+*RES
+3 in1 r1:D 40
+*END
+
+*D_NET in2 0.275
+*CONN
+*P in2 I
+*I r2:D I *L .0036
+*CAP
+1 in2 .243
+2 r2:D .032
+*RES
+3 in2 r2:D 40
+*END
+
+*D_NET clk1 0.275
+*CONN
+*P clk1 I
+*I r1:CK I *L .0036
+*CAP
+1 clk1 .243
+2 r1:CK .032
+*RES
+3 clk1 r1:CK 40
+*END
+
+*D_NET clk2 0.275
+*CONN
+*P clk2 I
+*I r2:CK I *L .0036
+*CAP
+1 clk2 .243
+2 r2:CK .032
+*RES
+3 clk2 r2:CK 40
+*END
+
+*D_NET clk3 0.275
+*CONN
+*P clk3 I
+*I r3:CK I *L .0036
+*CAP
+1 clk3 .243
+2 r3:CK .032
+*RES
+3 clk3 r3:CK 40
+*END
+
+*D_NET r1q 0.275
+*CONN
+*I r1:Q O
+*I u2:A1 I *L .0086
+*CAP
+1 r1:Q .243
+2 u2:A1 .032
+*RES
+3 r1:Q u2:A1 40
+*END
+
+*D_NET r2q 0.275
+*CONN
+*I r2:Q O
+*I u1:A I *L .0086
+*CAP
+1 r2:Q .243
+2 u1:A .032
+*RES
+3 r2:Q u1:A 40
+*END
+
+*D_NET u1z 0.275
+*CONN
+*I u1:Z O
+*I u2:A2 I *L .0086
+*CAP
+1 u1:Z .243
+2 u2:A2 .032
+*RES
+3 u1:Z u2:A2 40
+*END
+
+*D_NET u2z 0.275
+*CONN
+*I u2:ZN O
+*I r3:D I *L .0086
+*CAP
+1 u2:ZN .243
+2 r3:D .032
+*RES
+3 u2:ZN r3:D 40
+*END
+
+*D_NET out 0.275
+*CONN
+*I r3:Q O
+*P out O
+*CAP
+1 r3:Q .243
+2 out .032
+*RES
+3 r3:Q out 40
+*END

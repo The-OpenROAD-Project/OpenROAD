@@ -1,0 +1,32 @@
+VERSION 5.7 ;
+BUSBITCHARS "[]" ;
+MACRO dummy_corner
+  FOREIGN dummy_corner 0 0 ;
+  SYMMETRY X Y R90 ;
+  SIZE 200 BY 200 ;
+  CLASS ENDCAP BOTTOMLEFT ;
+  OBS
+    LAYER metal1 ;
+    RECT 0 0 75 75 ;
+    RECT 75 0 200 75 ;
+    RECT 0 75 75 200 ;
+    LAYER metal2 ;
+    RECT 0 0 75 75 ;
+    RECT 75 0 200 75 ;
+    RECT 0 75 75 200 ;
+    LAYER metal3 ;
+    RECT 0 0 75 75 ;
+    RECT 75 0 200 75 ;
+    RECT 0 75 75 200 ;
+    LAYER metal4 ;
+    RECT 0 0 75 75 ;
+    RECT 75 0 200 75 ;
+    RECT 0 75 75 200 ;
+    LAYER OVERLAP ;
+    RECT 0 0 75 75 ;
+    RECT 75 0 200 75 ;
+    RECT 0 75 75 200 ;
+  END
+END dummy_corner
+
+END LIBRARY

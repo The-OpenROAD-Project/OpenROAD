@@ -1,0 +1,96 @@
+# Nangate45_tech.lef + Nangate45_stdcell.lef
+# 05/24/2020 cherry fix FILLCELL_X2 size
+# 
+# ******************************************************************************
+# *                                                                            *
+# *                   Copyright (C) 2004-2010, Nangate Inc.                    *
+# *                           All rights reserved.                             *
+# *                                                                            *
+# * Nangate and the Nangate logo are trademarks of Nangate Inc.                *
+# *                                                                            *
+# * All trademarks, logos, software marks, and trade names (collectively the   *
+# * "Marks") in this program are proprietary to Nangate or other respective    *
+# * owners that have granted Nangate the right and license to use such Marks.  *
+# * You are not permitted to use the Marks without the prior written consent   *
+# * of Nangate or such third party that may own the Marks.                     *
+# *                                                                            *
+# * This file has been provided pursuant to a License Agreement containing     *
+# * restrictions on its use. This file contains valuable trade secrets and     *
+# * proprietary information of Nangate Inc., and is protected by U.S. and      *
+# * international laws and/or treaties.                                        *
+# *                                                                            *
+# * The copyright notice(s) in this file does not indicate actual or intended  *
+# * publication of this file.                                                  *
+# *                                                                            *
+# *     NGLibraryCreator, v2010.08-HR32-SP3-2010-08-05 - build 1009061800      *
+# *                                                                            *
+# ******************************************************************************
+# 
+# 
+# Running on brazil06.nangate.com.br for user Giancarlo Franciscatto (gfr).
+# Local time is now Fri, 3 Dec 2010, 19:32:18.
+# Main process id is 27821.
+
+VERSION 5.6 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 2000 ;
+END UNITS
+
+MACRO LEFONLY
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  FOREIGN DFF_X1 0 0 ;
+  SIZE 3.23 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
+  PIN D
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.81 0.53 0.97 0.7 ;
+    END
+  END D
+  PIN CK
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 1.56 0.53 1.67 0.7 ;
+    END
+  END CK
+  PIN Q
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 3.1 0.26 3.17 1.13 ;
+    END
+  END Q
+  PIN QN
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 2.72 0.26 2.79 0.785 ;
+    END
+  END QN
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+  END VDD
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    SHAPE ABUTMENT ;
+  END VSS
+END LEFONLY
+
+END LIBRARY
+#
+# End of file
+#

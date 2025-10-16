@@ -1,0 +1,12 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 482 components and 2074 component-terminals.
+[INFO ODB-0133]     Created 385 nets and 1110 connections.
+[ERROR PDN-0117] Width (0.0750 um) specified must be a multiple of 0.0100 um.
+PDN-0117
+[ERROR PDN-0191] Pitch of 4.0040 um does not fit the manufacturing grid of 0.0050 um.
+PDN-0191
+[ERROR PDN-0118] Spacing (0.5040 um) specified must be a multiple of 0.0050 um.
+PDN-0118

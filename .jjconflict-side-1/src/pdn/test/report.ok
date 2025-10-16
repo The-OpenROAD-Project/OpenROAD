@@ -1,0 +1,269 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: nangate_bsg_black_parrot/dummy_pads.lef, created 24 library cells
+[INFO ODB-0128] Design: soc_bsg_black_parrot
+[INFO ODB-0130]     Created 141 pins.
+[INFO ODB-0131]     Created 1514 components and 1480 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 268 connections.
+[INFO ODB-0133]     Created 350 nets and 390 connections.
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: Core
+Type: Core
+Rings:
+  Core offset:
+    Left: 4.5000
+    Bottom: 4.5000
+    Right: 4.5000
+    Top: 4.5000
+  Layer: metal8
+    Width: 5.0000
+    Spacing: 2.0000
+  Layer: metal9
+    Width: 5.0000
+    Spacing: 2.0000
+Straps:
+  Type: Pad connect
+    Pin: u_vss_pll/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_9/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_8/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_7/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_6/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_5/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_4/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_32/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_31/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_30/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_3/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_29/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_28/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_27/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_26/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_25/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_24/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_23/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_22/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_21/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_20/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_2/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_19/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_18/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_17/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_16/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_15/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_14/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_13/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_12/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_11/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_10/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_1/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vss_0/VSS
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_pll/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_9/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_8/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_7/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_6/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_5/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_4/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_32/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_31/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_30/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_3/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_29/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_28/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_27/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_26/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_25/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_24/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_23/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_22/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_21/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_20/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_2/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_19/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_18/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_17/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_16/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_15/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_14/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_13/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_12/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_11/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_10/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_1/VDD
+    Connection type: Edge
+  Type: Pad connect
+    Pin: u_vdd_0/VDD
+    Connection type: Edge
+  Type: Followpin
+    Layer: metal1
+    Width: 0.1700
+    Spacing: 0.0000
+    Pitch: 2.8000
+    Offset: 0.0000
+    Snap to grid: false
+  Type: Strap
+    Layer: metal4
+    Width: 0.4800
+    Spacing: 27.5200
+    Pitch: 56.0000
+    Offset: 2.0000
+    Snap to grid: false
+  Type: Strap
+    Layer: metal7
+    Width: 1.4000
+    Spacing: 18.6000
+    Pitch: 40.0000
+    Offset: 2.0000
+    Snap to grid: false
+  Type: Strap
+    Layer: metal8
+    Width: 1.4000
+    Spacing: 18.6000
+    Pitch: 40.0000
+    Offset: 2.0000
+    Snap to grid: false
+  Type: Strap
+    Layer: metal9
+    Width: 1.4000
+    Spacing: 18.6000
+    Pitch: 40.0000
+    Offset: 2.0000
+    Snap to grid: false
+Connect:
+  Connect layers metal1 -> metal4
+  Connect layers metal4 -> metal7
+  Connect layers metal7 -> metal8
+  Connect layers metal8 -> metal9

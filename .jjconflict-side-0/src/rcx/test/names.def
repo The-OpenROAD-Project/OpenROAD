@@ -1,0 +1,18 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN top ;
+UNITS DISTANCE MICRONS 2000 ;
+COMPONENTS 2 ;
+    - b/disolved_block\/leaf INV_X1 ;
+    - disolved_top\/leaf INV_X1 ;
+END COMPONENTS
+PINS 2 ;
+    - i + NET i + DIRECTION INPUT + USE SIGNAL ;
+    - o + NET o + DIRECTION OUTPUT + USE SIGNAL ;
+END PINS
+NETS 2 ;
+    - i ( PIN i ) ( disolved_top\/leaf A ) ( b/disolved_block\/leaf A ) + USE SIGNAL ;
+    - o ( PIN o ) ( disolved_top\/leaf ZN ) ( b/disolved_block\/leaf ZN ) + USE SIGNAL ;
+END NETS
+END DESIGN

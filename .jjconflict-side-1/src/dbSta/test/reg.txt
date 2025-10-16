@@ -1,0 +1,5 @@
+def files based on reg1.v netlist
+reg2 nangate45
+reg3 1 clock pin, placed
+reg4 bus ports
+reg6 1 clock with 3 clock buffers, placed

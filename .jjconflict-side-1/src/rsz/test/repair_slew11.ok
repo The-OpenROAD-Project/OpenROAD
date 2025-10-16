@@ -1,0 +1,52 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: long_wire
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 3 components and 12 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 6 connections.
+[INFO ODB-0133]     Created 4 nets and 6 connections.
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+u1/A                                    0.10    0.60   -0.50 (VIOLATED)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+in1                                    60.65  151.34  -90.69 (VIOLATED)
+
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |         4
+    final |   +233.3% |       0 |       7 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0036] Found 1 capacitance violations.
+[INFO RSZ-0038] Inserted 7 buffers in 1 nets.
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+u1/A                                    0.10    0.05    0.05 (MET)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+wire1/Z                                60.65   20.68   39.97 (MET)
+
+Net in1
+ Pin capacitance: 0.88-0.97
+ Wire capacitance: 12.54-12.54
+ Total capacitance: 13.42-13.51
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ in1 input port (0, 0)
+
+Load pins
+ wire7/A input (BUF_X1) 0.88-0.97 (166, 1)
+

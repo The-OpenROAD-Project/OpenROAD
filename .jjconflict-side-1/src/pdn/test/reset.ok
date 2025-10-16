@@ -1,0 +1,24 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 482 components and 2074 component-terminals.
+[INFO ODB-0133]     Created 385 nets and 1110 connections.
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: Core
+Type: Core
+Straps:
+  Type: Followpin
+    Layer: metal1
+    Width: 0.1700
+    Spacing: 0.0000
+    Pitch: 2.8000
+    Offset: 0.0000
+    Snap to grid: false
+[INFO PDN-0101] Using VDD as power net for Core domain.
+[INFO PDN-0102] Using VSS as ground net for Core domain.
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS

@@ -1,0 +1,62 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 2000 ;
+END UNITS
+
+MACRO BUF1
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  FOREIGN BUF_X1 0 0 ;
+  SIZE 0.57 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.06 0.525 0.19 0.7 ;
+    END
+  END A
+  PIN Z
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.42 0.19 0.51 1.24 ;
+    END
+  END Z
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 1.315 0.57 1.485 ;
+        RECT 0.225 0.965 0.295 1.485 ;
+    END
+  END VDD
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 -0.085 0.57 0.085 ;
+        RECT 0.225 -0.085 0.295 0.325 ;
+    END
+  END VSS
+  OBS
+    LAYER metal1 ;
+      RECT 0.045 0.83 0.115 1.24 ;
+      RECT 0.045 0.83 0.355 0.9 ;
+      RECT 0.285 0.39 0.355 0.9 ;
+      RECT 0.045 0.39 0.355 0.46 ;
+      RECT 0.045 0.19 0.115 0.46 ;
+  END
+END BUF1
+
+END LIBRARY

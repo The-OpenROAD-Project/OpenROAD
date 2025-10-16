@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: Nangate45_data/endcaps.lef, created 13 library cells
+[INFO ODB-0227] LEF file: Nangate45_data/endcaps_symmetric.lef, created 5 library cells
+[INFO ODB-0227] LEF file: Nangate45/fakeram45_64x7.lef, created 1 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0131]     Created 5 components and 160 component-terminals.
+[ERROR TAP-0104] Found multiple masters for ENDCAP RIGHTEDGE. Use -right_edge/-endcap to specify one of the following cells:  ENDCAP_X4_RIGHTEDGE_Y ENDCAP_X4_RIGHTEDGE
+TAP-0104

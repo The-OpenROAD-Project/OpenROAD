@@ -1,0 +1,155 @@
+{
+   SuSE 12.1
+   Memcheck:Leak
+   fun:malloc
+   obj:/usr/lib64/libtcl8.5.so
+}
+{
+   SuSE 12.1
+   Memcheck:Leak
+   fun:realloc
+   obj:/usr/lib64/libtcl8.5.so
+}
+{
+   MACOS 10.6.4
+   Memcheck:Leak
+   fun:malloc
+   fun:TclpAlloc
+}
+{
+   MACOS 10.6.4
+   Memcheck:Leak
+   fun:malloc
+   fun:SWIG_Tcl_NewInstanceObj
+}
+{
+   MACOS 10.6.4
+   Memcheck:Leak
+   fun:malloc
+   fun:Tcl_GetMemoryInfo
+}
+{
+   MACOS 10.6.4
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+   ...
+   fun:TclpSetInitialEncodings
+}
+{
+   MACOS 10.6.4
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+   ...
+   fun:CFPreferencesCopyAppValue
+}
+{
+   MACOS 10.6.4
+   Memcheck:Cond
+   obj:/usr/lib/libSystem.B.dylib
+}
+{
+   MACOS 10.6.4
+   Memcheck:Cond
+   fun:pthread_rwlock_init
+}
+{
+   MACOS 10.6.4
+   Memcheck:Cond
+   fun:Tcl_GetVersion
+}
+{
+   MACOS 10.6.4
+   Memcheck:Cond
+   fun:TclObjInvoke
+}
+
+{
+   MACOS 10.10.1
+   Memcheck:Leak
+   fun:malloc
+   obj:/usr/lib/libicucore.A.dylib
+}
+{
+   MACOS 10.10.1
+   Memcheck:Leak
+   fun:calloc
+   obj:/usr/lib/libobjc.A.dylib
+}
+{
+   MACOS 10.10.1
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+   obj:/usr/lib/libobjc.A.dylib
+}
+{
+   MACOS 10.10.1
+   Memcheck:Leak
+   fun:malloc_zone_calloc
+   obj:/usr/lib/libobjc.A.dylib
+}
+{
+   MACOS 10.10.1
+   Memcheck:Leak
+   fun:malloc
+   ...
+   obj:/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
+}
+{
+   MACOS 10.10.1
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+   obj:/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
+}
+{
+   MACOS 10.10.1
+   Memcheck:Cond
+   fun:Tcl_AppendObjToErrorInfo
+}
+
+{
+   Ubuntu 11.10
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:Tcl_CreateInterp
+}
+{
+   Ubuntu 11.10
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:Tcl_NewStringObj
+}
+{
+   Ubuntu 11.10
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:TclSetByteCodeFromAny
+}
+{
+   Ubuntu 11.10
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:TclObjInterpProcCore
+}
+{
+   Ubuntu 11.10
+   Memcheck:Cond
+   fun:inflateReset2
+}
+{
+   Ubuntu 11.10
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:Tcl_NewObj
+}
+{ 
+   Ubuntu 11.10 
+   Memcheck:Leak 
+   fun:malloc 
+   ... 
+   fun:TclNRRunCallbacks 
+} 

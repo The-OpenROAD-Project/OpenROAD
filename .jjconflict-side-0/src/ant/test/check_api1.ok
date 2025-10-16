@@ -1,0 +1,110 @@
+[INFO ODB-0227] LEF file: merged_spacing.lef, created 14 layers, 30 vias, 387 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0131]     Created 6 components and 48 component-terminals.
+[INFO ODB-0133]     Created 2 nets and 6 connections.
+Net: net50
+  Pin:   output50/A (sky130_fd_sc_ms__buf_1)
+    Layer: mcon
+      Partial area ratio:    0.14
+      Required ratio:    3.00 (Gate area) 
+      Cumulative area ratio:    0.14
+      Required ratio:    0.00 (Cumulative area) 
+
+    Layer: met1
+      Partial area ratio:   55.56
+      Required ratio:    0.00 (Gate area) 
+      Cumulative area ratio:   55.56
+      Required ratio:    0.00 (Cumulative area) 
+      Partial area ratio:  277.26
+      Required ratio:  400.00 (Side area) 
+      Cumulative area ratio:  277.26
+      Required ratio:    0.00 (Cumulative side area) 
+
+    Layer: via
+      Partial area ratio:    0.11
+      Required ratio:    6.00 (Gate area) 
+      Cumulative area ratio:    0.25
+      Required ratio:    0.00 (Cumulative area) 
+
+    Layer: met2
+      Partial area ratio:   84.80
+      Required ratio:    0.00 (Gate area) 
+      Cumulative area ratio:  140.36
+      Required ratio:    0.00 (Cumulative area) 
+      Partial area ratio:  421.83
+      Required ratio:  400.00 (Side area) (VIOLATED)
+      Cumulative area ratio:  699.09
+      Required ratio:    0.00 (Cumulative side area) 
+
+    Layer: via2
+      Partial area ratio:    0.38
+      Required ratio:    6.00 (Gate area) 
+      Cumulative area ratio:    0.63
+      Required ratio:    0.00 (Cumulative area) 
+
+    Layer: met3
+      Partial area ratio:   40.49
+      Required ratio:    0.00 (Gate area) 
+      Cumulative area ratio:  180.85
+      Required ratio:    0.00 (Cumulative area) 
+      Partial area ratio:  218.01
+      Required ratio: 2878.88 (Side area) 
+      Cumulative area ratio:  917.10
+      Required ratio:    0.00 (Cumulative side area) 
+
+
+  Pin:   _264_/B2 (sky130_fd_sc_ms__a222oi_1)
+    Layer: mcon
+      Partial area ratio:    0.12
+      Required ratio:    3.00 (Gate area) 
+      Cumulative area ratio:    0.12
+      Required ratio:    0.00 (Cumulative area) 
+
+    Layer: met1
+      Partial area ratio:    0.45
+      Required ratio:    0.00 (Gate area) 
+      Cumulative area ratio:    0.45
+      Required ratio:    0.00 (Cumulative area) 
+      Partial area ratio:    2.21
+      Required ratio:  400.00 (Side area) 
+      Cumulative area ratio:    2.21
+      Required ratio:    0.00 (Cumulative side area) 
+
+    Layer: via
+      Partial area ratio:    0.09
+      Required ratio:    6.00 (Gate area) 
+      Cumulative area ratio:    0.21
+      Required ratio:    0.00 (Cumulative area) 
+
+    Layer: met2
+      Partial area ratio:   14.43
+      Required ratio:    0.00 (Gate area) 
+      Cumulative area ratio:   14.87
+      Required ratio:    0.00 (Cumulative area) 
+      Partial area ratio:   70.95
+      Required ratio:  400.00 (Side area) 
+      Cumulative area ratio:   73.16
+      Required ratio:    0.00 (Cumulative side area) 
+
+    Layer: via2
+      Partial area ratio:    0.16
+      Required ratio:    6.00 (Gate area) 
+      Cumulative area ratio:    0.37
+      Required ratio:    0.00 (Cumulative area) 
+
+    Layer: met3
+      Partial area ratio:   40.49
+      Required ratio:    0.00 (Gate area) 
+      Cumulative area ratio:   55.36
+      Required ratio:    0.00 (Cumulative area) 
+      Partial area ratio:  218.01
+      Required ratio: 2878.88 (Side area) 
+      Cumulative area ratio:  291.17
+      Required ratio:    0.00 (Cumulative side area) 
+
+
+
+[INFO ANT-0002] Found 1 net violations.
+[INFO ANT-0001] Found 1 pin violations.
+violation count = 1
+Net net50 violations: 1

@@ -1,0 +1,31 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 9109 components and 19386 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 18218 connections.
+[INFO ODB-0133]     Created 383 nets and 1168 connections.
+[WARNING FIN-0010] Skipping layer nwell.
+[WARNING FIN-0010] Skipping layer pwell.
+[WARNING FIN-0010] Skipping layer li1.
+[WARNING FIN-0010] Skipping layer mcon.
+[INFO FIN-0003] Filling layer met1.
+[INFO FIN-0009] Filling 0 areas with non-OPC fill.
+[INFO FIN-0004] Total fills: 0.
+[WARNING FIN-0010] Skipping layer via.
+[INFO FIN-0003] Filling layer met2.
+[INFO FIN-0009] Filling 32 areas with non-OPC fill.
+[INFO FIN-0004] Total fills: 8418.
+[WARNING FIN-0010] Skipping layer via2.
+[INFO FIN-0003] Filling layer met3.
+[INFO FIN-0009] Filling 34 areas with non-OPC fill.
+[INFO FIN-0004] Total fills: 16910.
+[WARNING FIN-0010] Skipping layer via3.
+[INFO FIN-0003] Filling layer met4.
+[INFO FIN-0009] Filling 19 areas with non-OPC fill.
+[INFO FIN-0004] Total fills: 25441.
+[WARNING FIN-0010] Skipping layer via4.
+[INFO FIN-0003] Filling layer met5.
+[INFO FIN-0009] Filling 1 areas with non-OPC fill.
+[INFO FIN-0004] Total fills: 26360.
+No differences found.

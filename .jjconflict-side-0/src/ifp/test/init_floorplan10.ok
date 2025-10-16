@@ -1,0 +1,4 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fakeram45_64x32.lef, created 1 library cells
+[ERROR IFP-0002] dcache.data.data_arrays_0.data_arrays_0_ext.mem (59.090um, 65.800um) does not fit in the core area: (20.000um, 20.000um) - (80.000um, 80.000um)
+IFP-0002

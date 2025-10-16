@@ -1,0 +1,163 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: multi_sink
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 291 components and 1743 component-terminals.
+[INFO ODB-0133]     Created 4 nets and 294 connections.
+*******************************************
+CTS config:
+-apply_ndr:                          HALF
+-buf_list:                           CLKBUF_X3 
+-branching_point_buffers_distance:   480000
+-clustering_exponent:                4
+-clustering_unbalance_ratio:         0.6
+-delay_buffer_derate:                1.0
+-distance_between_buffers:           200000
+-library:                            undefined
+-macro_clustering_max_diameter:      50.0
+-macro_clustering_size:              4
+-num_static_layers:                  1
+-root_buf:                           CLKBUF_X3 
+-sink_buffer_max_cap_derate:         0.01
+-sink_clustering_levels:             0
+-sink_clustering_max_diameter:       50.0
+-sink_clustering_size:               20
+-skip_nets:                          gclk1 gclk3 
+-tree_buf:                           undefined
+-wire_unit:                          20
+****'***************************************
+[INFO CTS-0050] Root buffer is CLKBUF_X3.
+[INFO CTS-0051] Sink buffer is CLKBUF_X3.
+[INFO CTS-0052] The following clock buffers will be used for CTS:
+                    CLKBUF_X3
+[INFO CTS-0049] Characterization buffer is CLKBUF_X3.
+[INFO CTS-0007] Net "clk" found for clock "clk".
+[INFO CTS-0011]  Clock net "clk" for macros has 2 sinks.
+[INFO CTS-0011]  Clock net "clk_regs" for registers has 144 sinks.
+[WARNING CTS-0044] Skipping net gclk1, specified by the user...
+[INFO CTS-0010]  Clock net "gclk2" has 36 sinks.
+[WARNING CTS-0044] Skipping net gclk3, specified by the user...
+[INFO CTS-0008] TritonCTS found 3 clock nets.
+[INFO CTS-0097] Characterization used 1 buffer(s) types.
+[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
+[INFO CTS-0027] Generating H-Tree topology for net clk.
+[INFO CTS-0028]  Total number of sinks: 2.
+[INFO CTS-0029]  Macro  sinks will be clustered in groups of up to 4 and with maximum cluster diameter of 50.0 um.
+[INFO CTS-0030]  Number of static layers: 1.
+[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
+[INFO CTS-0021]  Distance between buffers: 7 units (100 um).
+[INFO CTS-0023]  Original sink region: [(53595, 151620), (147835, 166180)].
+[INFO CTS-0024]  Normalized sink region: [(3.82821, 10.83), (10.5596, 11.87)].
+[INFO CTS-0025]     Width:  6.7314.
+[INFO CTS-0026]     Height: 1.0400.
+ Level 1
+    Direction: Horizontal
+    Sinks per sub-region: 1
+    Sub-region size: 3.3657 X 1.0400
+[INFO CTS-0034]     Segment length (rounded): 1.
+[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 2.
+[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
+[INFO CTS-0027] Generating H-Tree topology for net clk_regs.
+[INFO CTS-0028]  Total number of sinks: 144.
+[INFO CTS-0090]  Sinks will be clustered based on buffer max cap.
+[INFO CTS-0030]  Number of static layers: 1.
+[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
+[INFO CTS-0021]  Distance between buffers: 7 units (100 um).
+[INFO CTS-0023]  Original sink region: [(8930, 7170), (196650, 85570)].
+[INFO CTS-0024]  Normalized sink region: [(0.637857, 0.512143), (14.0464, 6.11214)].
+[INFO CTS-0025]     Width:  13.4086.
+[INFO CTS-0026]     Height: 5.6000.
+ Level 1
+    Direction: Horizontal
+    Sinks per sub-region: 72
+    Sub-region size: 6.7043 X 5.6000
+[INFO CTS-0034]     Segment length (rounded): 4.
+ Level 2
+    Direction: Vertical
+    Sinks per sub-region: 36
+    Sub-region size: 6.7043 X 2.8000
+[INFO CTS-0034]     Segment length (rounded): 1.
+ Level 3
+    Direction: Horizontal
+    Sinks per sub-region: 18
+    Sub-region size: 3.3521 X 2.8000
+[INFO CTS-0034]     Segment length (rounded): 1.
+ Level 4
+    Direction: Vertical
+    Sinks per sub-region: 9
+    Sub-region size: 3.3521 X 1.4000
+[INFO CTS-0034]     Segment length (rounded): 1.
+[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 144.
+[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
+[INFO CTS-0027] Generating H-Tree topology for net gclk2.
+[INFO CTS-0028]  Total number of sinks: 36.
+[INFO CTS-0090]  Sinks will be clustered based on buffer max cap.
+[INFO CTS-0030]  Number of static layers: 1.
+[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
+[INFO CTS-0021]  Distance between buffers: 7 units (100 um).
+[INFO CTS-0023]  Original sink region: [(8930, 96770), (97850, 130370)].
+[INFO CTS-0024]  Normalized sink region: [(0.637857, 6.91214), (6.98929, 9.31214)].
+[INFO CTS-0025]     Width:  6.3514.
+[INFO CTS-0026]     Height: 2.4000.
+ Level 1
+    Direction: Horizontal
+    Sinks per sub-region: 18
+    Sub-region size: 3.1757 X 2.4000
+[INFO CTS-0034]     Segment length (rounded): 1.
+ Level 2
+    Direction: Vertical
+    Sinks per sub-region: 9
+    Sub-region size: 3.1757 X 1.2000
+[INFO CTS-0034]     Segment length (rounded): 1.
+[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 36.
+[INFO CTS-0018]     Created 3 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
+[INFO CTS-0015]     Created 3 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 1:2..
+[INFO CTS-0017]     Max level of the clock tree: 1.
+[INFO CTS-0018]     Created 17 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
+[INFO CTS-0015]     Created 17 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 6:1, 7:3, 8:2, 9:4, 10:2, 11:3, 12:1..
+[INFO CTS-0017]     Max level of the clock tree: 4.
+[INFO CTS-0018]     Created 5 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
+[INFO CTS-0015]     Created 5 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 8:1, 9:2, 10:1..
+[INFO CTS-0017]     Max level of the clock tree: 2.
+[INFO CTS-0098] Clock net "clk"
+[INFO CTS-0099]  Sinks 2
+[INFO CTS-0100]  Leaf buffers 0
+[INFO CTS-0101]  Average sink wire length 47.55 um
+[INFO CTS-0102]  Path depth 2 - 2
+[INFO CTS-0207]  Leaf load cells 18
+[INFO CTS-0098] Clock net "clk_regs"
+[INFO CTS-0099]  Sinks 159
+[INFO CTS-0100]  Leaf buffers 0
+[INFO CTS-0101]  Average sink wire length 45.22 um
+[INFO CTS-0102]  Path depth 2 - 2
+[INFO CTS-0207]  Leaf load cells 18
+[INFO CTS-0098] Clock net "gclk2"
+[INFO CTS-0099]  Sinks 39
+[INFO CTS-0100]  Leaf buffers 0
+[INFO CTS-0101]  Average sink wire length 29.38 um
+[INFO CTS-0102]  Path depth 2 - 2
+[INFO CTS-0207]  Leaf load cells 18
+[INFO CTS-0033] Balancing latency for clock clk
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_0_clk is inserted at (53554 164304)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_1_clk is inserted at (53513 162428)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_2_clk is inserted at (53472 160552)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_3_clk is inserted at (53431 158676)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_4_clk is inserted at (100434 178107)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_5_clk is inserted at (100868 156355)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_6_clk is inserted at (101302 134603)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_7_clk is inserted at (101737 112851)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_8_clk is inserted at (102171 91099)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_9_clk is inserted at (102605 69347)
+[INFO CTS-0036]  inserted 10 delay buffers
+[INFO CTS-0037] Total number of delay buffers: 10

@@ -1,0 +1,54 @@
+VERSION 5.8 ; 
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN repair_slew5 ;
+
+UNITS DISTANCE MICRONS 1000 ;
+
+DIEAREA ( 0 0 ) ( 20000 20000 ) ;
+
+COMPONENTS 21 ;
+- u1 NOR4_X1 + PLACED ( 1000 1000 ) N ;
+- u2 NAND4_X1 + PLACED ( 2000 1000 ) N ;
+- u3 NAND4_X1 + PLACED ( 3000 1000 ) N ;
+- u4 NAND4_X1 + PLACED ( 4000 1000 ) N ;
+- u5 NAND4_X1 + PLACED ( 5000 1000 ) N ;
+- u6 NAND4_X1 + PLACED ( 6000 1000 ) N ;
+- u7 NAND4_X1 + PLACED ( 7000 1000 ) N ;
+
+- x2 BUF_X1 + PLACED ( 1000 10000 ) N ;
+- x3 BUF_X1 + PLACED ( 2000 10000 ) N ;
+- x4 BUF_X1 + PLACED ( 3000 10000 ) N ;
+- x5 BUF_X1 + PLACED ( 4000 10000 ) N ;
+- x6 BUF_X1 + PLACED ( 5000 10000 ) N ;
+- x7 BUF_X1 + PLACED ( 6000 10000 ) N ;
+END COMPONENTS
+
+PINS 3 ;
+- in1 + NET in1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER metal1 ( 1000 1000 ) ( 1000 1000 ) ;
+- out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER metal1 ( 2000 1000 ) ( 2000 1000 ) ;
+- out2 + NET out2 + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER metal1 ( 3000 1000 ) ( 3000 1000 ) ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 1 ;
+- in1 ( u1 A1 ) ( PIN in1 ) ;
+- u1zn ( u1 ZN ) ( u2 A3 ) ( u3 A4 ) ( u4 A4 ) ( u5 A3 ) ( u6 A4 ) ( u7 A4 ) ;
+- u2zn ( u2 ZN ) ( x2 A ) ;
+- u3zn ( u3 ZN ) ( x3 A ) ;
+- u4zn ( u4 ZN ) ( x4 A ) ;
+- u5zn ( u5 ZN ) ( x5 A ) ;
+- u6zn ( u6 ZN ) ( x6 A ) ;
+- u7zn ( u7 ZN ) ( x7 A ) ;
+- out1 ( x2 Z ) ( PIN out1 ) ;
+- out2 ( x3 Z ) ( PIN out2 ) ;
+END NETS
+
+END DESIGN

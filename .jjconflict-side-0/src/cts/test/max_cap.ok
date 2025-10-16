@@ -1,0 +1,56 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+[INFO ODB-0128] Design: hi_fanout
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 21 components and 146 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 2 nets and 41 connections.
+[INFO CTS-0050] Root buffer is sky130_fd_sc_hs__clkbuf_1.
+[INFO CTS-0051] Sink buffer is sky130_fd_sc_hs__clkbuf_1.
+[INFO CTS-0052] The following clock buffers will be used for CTS:
+                    sky130_fd_sc_hs__clkbuf_1
+[INFO CTS-0049] Characterization buffer is sky130_fd_sc_hs__clkbuf_1.
+[INFO CTS-0007] Net "clk1" found for clock "clk1".
+[INFO CTS-0010]  Clock net "clk1" has 20 sinks.
+[INFO CTS-0008] TritonCTS found 1 clock nets.
+[INFO CTS-0097] Characterization used 1 buffer(s) types.
+[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
+[INFO CTS-0027] Generating H-Tree topology for net clk1.
+[INFO CTS-0028]  Total number of sinks: 20.
+[INFO CTS-0030]  Number of static layers: 0.
+[INFO CTS-0020]  Wire segment unit: 16650  dbu (16 um).
+[INFO CTS-0023]  Original sink region: [(315, 1540), (600315, 801540)].
+[INFO CTS-0024]  Normalized sink region: [(0.0189189, 0.0924925), (36.055, 48.1405)].
+[INFO CTS-0025]     Width:  36.0360.
+[INFO CTS-0026]     Height: 48.0480.
+ Level 1
+    Direction: Vertical
+    Sinks per sub-region: 10
+    Sub-region size: 36.0360 X 24.0240
+[INFO CTS-0034]     Segment length (rounded): 12.
+[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 20.
+[INFO CTS-0018]     Created 3 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
+[INFO CTS-0015]     Created 3 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 10:2..
+[INFO CTS-0017]     Max level of the clock tree: 1.
+[INFO CTS-0098] Clock net "clk1"
+[INFO CTS-0099]  Sinks 20
+[INFO CTS-0100]  Leaf buffers 0
+[INFO CTS-0101]  Average sink wire length 1169.67 um
+[INFO CTS-0102]  Path depth 2 - 2
+[INFO CTS-0207]  Leaf load cells 0
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+r11/CLK                                 1.00    1.96   -0.96 (VIOLATED)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+clkbuf_1_0_0_clk1/X                     0.15    0.29   -0.15 (VIOLATED)
+

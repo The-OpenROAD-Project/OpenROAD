@@ -1,0 +1,24 @@
+[INFO ODB-0227] LEF file: liberty1.lef, created 2 layers
+[INFO ODB-0227] LEF file: bus1.lef, created 1 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 9 pins.
+[INFO ODB-0131]     Created 1 components and 11 component-terminals.
+[INFO ODB-0133]     Created 9 nets and 9 connections.
+module top (clk,
+    in,
+    out);
+ output clk;
+ input [3:0] in;
+ output [3:0] out;
+
+
+ bus4 bus1 (.clk(clk),
+    .in({in[3],
+    in[2],
+    in[1],
+    in[0]}),
+    .out({out[3],
+    out[2],
+    out[1],
+    out[0]}));
+endmodule

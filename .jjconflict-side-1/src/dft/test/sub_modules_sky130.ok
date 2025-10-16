@@ -1,0 +1,15 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+***************************
+Report DFT Plan
+Number of chains: 1
+Clock domain: No Mix
+***************************
+
+Scan chain 'chain_0' has 2 cells (2 bits)
+
+  my_shift_register/ff2 (main_clock, rising)
+  my_shift_register/ff1
+
+
+No differences found.

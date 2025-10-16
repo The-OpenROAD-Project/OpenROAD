@@ -1,0 +1,35 @@
+MANUFACTURINGGRID 0.0025 ;
+
+LAYER metal1
+    TYPE ROUTING ;
+    PITCH 0.19 ;
+    WIDTH 0.065 ;
+    DIRECTION HORIZONTAL ;
+END metal1
+
+LAYER via1
+    TYPE CUT ;
+    SPACING 0.075  ;
+END via1
+
+LAYER metal2
+    TYPE ROUTING ;
+    MASK 2 ;
+    PITCH 0.19 ;
+    WIDTH 0.07 ;
+    DIRECTION VERTICAL ;
+END metal2
+
+LAYER via2
+    TYPE CUT ;
+    SPACING 0.085  ;
+END via2
+
+LAYER metal3
+    TYPE ROUTING ;
+    MASK 3 ;
+    PITCH 0.19 ;
+    WIDTH 0.07 ;
+    DIRECTION HORIZONTAL ;
+END metal3
+END LIBRARY

@@ -1,0 +1,42 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
+
+# Author: Dimitris K Fotakis
+# Version: 1.0
+# Date: 11052024 
+
+Running RC Extraction with rcx
+
+  	- Description: Extraction extracts RC values for wires and vias and write on DB.	
+			It can also create a SPEF file.  
+			it can extract from 1 to as many as max number of corners in model file
+
+  	- Input: 
+		tech LEF : Layer/Via Info
+		macro LEF 
+			NOTE: tech and LEF files might be a single file)
+		DEF - nets/components/wires of the design
+		model File
+			NOTE: Accuracy of the results is dependent on the method used to generate the model file
+
+  	- Output: SPEF file
+
+	- Required Tcl Commands: define_rcx_corners if specific corners are to be extracted
+		Associate corner index numbers in model file (Keyword: Corners)
+		Extract from 1 to as many as mx number of corners in model file
+		Use different corner names than the ones in model files
+		if define_rcx_corners not present, all corners in the model file will be extracted
+
+  	- Sample Script: 
+			read_lef $lef_tech
+			read_lef $lef
+			read_def $def
+
+			get_model_corners -ext_model_file $model # NOT reqiored
+			define_rcx_corners -corner_list "max typ min"
+
+			extract_parasitics -ext_model_file model_file -version 2.0
+			write_spef 3corners.spef
+
+  		Example: rcx/test/rcx_v2/flow/gcd/scripts/gcd_flow_v2_model_v1.tcl
+

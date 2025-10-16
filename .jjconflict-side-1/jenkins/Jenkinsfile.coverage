@@ -1,0 +1,55 @@
+@Library('utils@or-v2.0.1') _
+
+node {
+
+    stage('Checkout'){
+        checkout scm;
+    }
+
+    def DOCKER_IMAGE;
+    stage('Build and Push Docker Image') {
+        DOCKER_IMAGE = dockerPush('ubuntu22.04', 'openroad');
+        echo "Docker image is ${DOCKER_IMAGE}";
+    }
+
+    docker.image(DOCKER_IMAGE).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+        stage('Build for Coverage') {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                sh label: 'Build OpenROAD', script: './etc/Build.sh -no-warnings -coverage';
+            }
+        }
+
+        stage('Dynamic Code Coverage') {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                timeout(time: 3, unit: 'HOURS') {
+                    sh './etc/CodeCoverage.sh dynamic';
+                }
+            }
+        }
+
+        stage('Publish Code Coverage') {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: false,
+                        keepAll: false,
+                        reportDir: 'coverage-output',
+                        reportFiles: 'index.html',
+                        reportName: 'Dynamic Code Coverage',
+                        reportTitles: ''
+                ]);
+            }
+        }
+
+        stage('Save Artifacts') {
+            sh label: "Save code coverage results", script: "find . -name results -type d -exec tar zcvf code-coverage.tgz {} '+'";
+            archiveArtifacts artifacts: "code-coverage.tgz";
+        }
+
+    }
+
+    stage('Send Email Report') {
+        sendEmail();
+    }
+
+}

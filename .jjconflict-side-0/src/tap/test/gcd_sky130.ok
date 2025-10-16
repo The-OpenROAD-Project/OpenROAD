@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 366 components and 2656 component-terminals.
+[INFO ODB-0133]     Created 402 nets and 1192 connections.
+[INFO TAP-0004] Inserted 168 endcaps.
+[INFO TAP-0005] Inserted 774 tapcells.
+No differences found.

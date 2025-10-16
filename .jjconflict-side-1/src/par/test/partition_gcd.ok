@@ -1,0 +1,30 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
+[INFO PAR-0004] Partitioning netlist.
+Netlist Partitioning Parameters
+	Number of partitions = 2
+	UBfactor = 1
+	Seed = 1
+	Vertex dimensions = 1
+	Hyperedge dimensions = 1
+	Placement dimensions = 0
+	Timing aware flag = true
+	Guardband flag = false
+	Global net threshold = 1000
+	Top 1000 critical timing paths are extracted.
+	Fence aware flag = false
+[INFO PAR-0005] Reading netlist.
+[INFO PAR-0037] Extracting timing paths.
+[INFO PAR-0018] Read netlist has 469 vertices, 451 hyperedges and 52 timing paths.
+Display Timing Path Cuts Statistics
+	Total number of timing paths = 52
+	Total number of timing-critical paths = 1
+	Total number of timing-noncritical paths = 51
+	The worst number of cuts on timing-critical paths = 1
+	The average number of cuts on timing-critical paths = 1.00
+	Total number of timing-noncritical to timing critical paths = 30
+	The worst number of cuts on timing-non2critical paths = 2
+	The average number of cuts on timing-non2critical paths = 1.30
+[INFO PAR-0001] Writing partition to verilog.
+No differences found.
+No differences found.

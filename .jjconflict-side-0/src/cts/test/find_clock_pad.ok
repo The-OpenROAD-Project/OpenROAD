@@ -1,0 +1,46 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: pad.lef, created 1 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0131]     Created 4 components and 22 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 6 connections.
+[INFO ODB-0133]     Created 6 nets and 10 connections.
+[INFO CTS-0050] Root buffer is BUF_X1.
+[INFO CTS-0051] Sink buffer is BUF_X1.
+[INFO CTS-0052] The following clock buffers will be used for CTS:
+                    BUF_X1
+[INFO CTS-0049] Characterization buffer is BUF_X1.
+[INFO CTS-0007] Net "clk1" found for clock "clk".
+[WARNING CTS-0041] Net "clk1" has 0 sinks. Skipping...
+[INFO CTS-0010]  Clock net "clk2" has 2 sinks.
+[INFO CTS-0008] TritonCTS found 1 clock nets.
+[INFO CTS-0097] Characterization used 1 buffer(s) types.
+[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
+[INFO CTS-0027] Generating H-Tree topology for net clk2.
+[INFO CTS-0028]  Total number of sinks: 2.
+[INFO CTS-0030]  Number of static layers: 0.
+[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
+[INFO CTS-0023]  Original sink region: [(3730, 1730), (4730, 2730)].
+[INFO CTS-0024]  Normalized sink region: [(0.266429, 0.123571), (0.337857, 0.195)].
+[INFO CTS-0025]     Width:  0.0714.
+[INFO CTS-0026]     Height: 0.0714.
+ Level 1
+    Direction: Vertical
+    Sinks per sub-region: 1
+    Sub-region size: 0.0714 X 0.0357
+[INFO CTS-0034]     Segment length (rounded): 1.
+[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 2.
+[INFO CTS-0018]     Created 3 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
+[INFO CTS-0015]     Created 3 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 1:2..
+[INFO CTS-0017]     Max level of the clock tree: 1.
+[WARNING ODB-0034] Can not find physical location of iterm p1/Y
+[INFO CTS-0098] Clock net "clk2"
+[INFO CTS-0099]  Sinks 2
+[INFO CTS-0100]  Leaf buffers 0
+[INFO CTS-0101]  Average sink wire length 17.47 um
+[INFO CTS-0102]  Path depth 2 - 2
+[INFO CTS-0207]  Leaf load cells 0

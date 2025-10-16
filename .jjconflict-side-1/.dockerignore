@@ -1,0 +1,4 @@
+.git
+build*
+Dockerfile
+etc/openroad_deps_prefixes.txt

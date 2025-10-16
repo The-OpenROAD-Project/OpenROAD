@@ -1,0 +1,142 @@
+# Nangate45_tech.lef + Nangate45_stdcell.lef
+# 
+# ******************************************************************************
+# *                                                                            *
+# *                   Copyright (C) 2004-2010, Nangate Inc.                    *
+# *                           All rights reserved.                             *
+# *                                                                            *
+# * Nangate and the Nangate logo are trademarks of Nangate Inc.                *
+# *                                                                            *
+# * All trademarks, logos, software marks, and trade names (collectively the   *
+# * "Marks") in this program are proprietary to Nangate or other respective    *
+# * owners that have granted Nangate the right and license to use such Marks.  *
+# * You are not permitted to use the Marks without the prior written consent   *
+# * of Nangate or such third party that may own the Marks.                     *
+# *                                                                            *
+# * This file has been provided pursuant to a License Agreement containing     *
+# * restrictions on its use. This file contains valuable trade secrets and     *
+# * proprietary information of Nangate Inc., and is protected by U.S. and      *
+# * international laws and/or treaties.                                        *
+# *                                                                            *
+# * The copyright notice(s) in this file does not indicate actual or intended  *
+# * publication of this file.                                                  *
+# *                                                                            *
+# *     NGLibraryCreator, v2010.08-HR32-SP3-2010-08-05 - build 1009061800      *
+# *                                                                            *
+# ******************************************************************************
+# 
+# 
+# Running on brazil06.nangate.com.br for user Giancarlo Franciscatto (gfr).
+# Local time is now Fri, 3 Dec 2010, 19:32:18.
+# Main process id is 27821.
+
+VERSION 5.6 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 2000 ;
+END UNITS
+
+MACRO DFF_MAX_SLEW
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  FOREIGN DFF_X1 0 0 ;
+  SIZE 3.23 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
+  PIN D
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.81 0.53 0.97 0.7 ;
+    END
+  END D
+  PIN CK
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 1.56 0.53 1.67 0.7 ;
+    END
+  END CK
+  PIN Q
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 3.1 0.26 3.17 1.13 ;
+    END
+  END Q
+  PIN QN
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 2.72 0.26 2.79 0.785 ;
+    END
+  END QN
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 1.315 3.23 1.485 ;
+        RECT 2.905 0.985 2.975 1.485 ;
+        RECT 2.345 1.1 2.48 1.485 ;
+        RECT 1.61 0.9 1.68 1.485 ;
+        RECT 1.005 1.08 1.075 1.485 ;
+        RECT 0.24 0.98 0.31 1.485 ;
+    END
+  END VDD
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 -0.085 3.23 0.085 ;
+        RECT 2.905 -0.085 2.975 0.46 ;
+        RECT 2.345 -0.085 2.48 0.37 ;
+        RECT 1.61 -0.085 1.68 0.36 ;
+        RECT 0.975 -0.085 1.11 0.3 ;
+        RECT 0.24 -0.085 0.31 0.405 ;
+    END
+  END VSS
+  OBS
+    LAYER metal1 ;
+      RECT 2.57 0.225 2.64 1.115 ;
+      RECT 2.57 0.85 3.035 0.92 ;
+      RECT 2.965 0.525 3.035 0.92 ;
+      RECT 2.265 0.73 2.64 0.8 ;
+      RECT 2 0.285 2.07 1.2 ;
+      RECT 2 0.525 2.505 0.66 ;
+      RECT 1.14 1.18 1.495 1.25 ;
+      RECT 1.425 0.225 1.495 1.25 ;
+      RECT 0.485 1.18 0.94 1.25 ;
+      RECT 0.87 0.945 0.94 1.25 ;
+      RECT 1.14 0.945 1.21 1.25 ;
+      RECT 0.87 0.945 1.21 1.015 ;
+      RECT 1.425 0.765 1.925 0.835 ;
+      RECT 1.855 0.15 1.925 0.835 ;
+      RECT 1.855 0.15 2.205 0.22 ;
+      RECT 1.275 0.37 1.345 0.995 ;
+      RECT 0.38 0.15 0.45 0.545 ;
+      RECT 0.785 0.37 1.345 0.44 ;
+      RECT 1.2 0.27 1.27 0.44 ;
+      RECT 0.785 0.15 0.855 0.44 ;
+      RECT 0.38 0.15 0.855 0.22 ;
+      RECT 0.635 0.285 0.705 1.115 ;
+      RECT 0.635 0.765 1.19 0.835 ;
+      RECT 1.12 0.53 1.19 0.835 ;
+      RECT 0.06 0.27 0.13 1.13 ;
+      RECT 0.06 0.61 0.57 0.745 ;
+  END
+END DFF_MAX_SLEW
+
+END LIBRARY
+#
+# End of file
+#

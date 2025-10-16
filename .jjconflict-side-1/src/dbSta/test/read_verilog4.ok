@@ -1,0 +1,4 @@
+[INFO ODB-0227] LEF file: liberty1.lef, created 2 layers, 6 library cells
+[WARNING STA-0198] read_verilog4.v line 6, module xxx not found. Creating black box for r1.
+[WARNING ORD-2013] instance r1 LEF master xxx not found.
+No differences found.

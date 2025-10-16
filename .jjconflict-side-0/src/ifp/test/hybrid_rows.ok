@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fake_macros.lef, created 10 library cells
+[WARNING ORD-2011] LEF master MOCK_HYBRID_A has no liberty cell.
+[WARNING ORD-2011] LEF master MOCK_HYBRID_AG has no liberty cell.
+[WARNING ORD-2011] LEF master MOCK_HYBRID_G has no liberty cell.
+[WARNING IFP-0028] Core area lower left (100.000, 100.000) snapped to (100.130, 102.400).
+[INFO IFP-0049] Added 560 rows from site HybridAG row pattern.
+[INFO IFP-0050] Added 280 rows of site HybridAG.
+No differences found.

@@ -1,0 +1,24 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN top ;
+UNITS DISTANCE MICRONS 2000 ;
+COMPONENTS 3 ;
+    - u1 NAND2_X1 ;
+    - u2 INV_X1 ;
+    - u3 OR2_X1 ;
+END COMPONENTS
+PINS 3 ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL ;
+    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL ;
+END PINS
+NETS 6 ;
+    - in1 ( PIN in1 ) ( u1 A1 ) + USE SIGNAL ;
+    - in2 ( PIN in2 ) ( u3 A2 ) + USE SIGNAL ;
+    - out ( PIN out ) ( u3 ZN ) + USE SIGNAL ;
+    - u1zn ( u2 A ) ( u1 ZN ) + USE SIGNAL ;
+    - u2zn ( u3 A1 ) ( u2 ZN ) + USE SIGNAL ;
+    - zero_ ( u1 A2 ) + USE GROUND ;
+END NETS
+END DESIGN

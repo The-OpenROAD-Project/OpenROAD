@@ -1,0 +1,96 @@
+common --enable_bzlmod
+common --enable_workspace  # explicitly currently still needing this
+
+# suppress distracting warning about newer module
+# versions found in dependency graph.
+common --check_direct_dependencies=off
+
+# Test timeouts for various levels.
+test --test_timeout=300,1800,1800,9600
+
+# bazel 7 is somewhat forgiving for glob patterns that don't
+# match, but bazel 8 will be strict. So start now.
+common --incompatible_disallow_empty_glob
+
+build --cxxopt "-std=c++17"        --host_cxxopt "-std=c++17"
+build --cxxopt "-xc++"             --host_cxxopt "-xc++"
+build --cxxopt "-DBAZEL_BUILD"     --host_cxxopt "-DBAZEL_BUILD"
+
+# Needed for floating point stability in FFT (fft_test will check this).
+# See also https://kristerw.github.io/2021/11/09/fp-contract/
+build --cxxopt "-ffp-contract=off" --host_cxxopt "-ffp-contract=off"
+
+# allow exceptions.
+build  --cxxopt=-fexceptions    --host_cxxopt=-fexceptions
+
+# Turn warnings on...
+build --copt "-Wall"               --host_copt "-Wall"
+build --copt "-Wextra"             --host_copt "-Wextra"
+
+# ... and disable the warnings we're not interested in.
+build --copt "-Wno-sign-compare"          --host_copt "-Wno-sign-compare"
+build --copt "-Wno-unused-parameter"      --host_copt "-Wno-unused-parameter"
+build --copt "-Wno-c++20-designator"      --host_copt "-Wno-c++20-designator"
+build --copt "-Wno-gcc-compat"            --host_copt "-Wno-gcc-compat"
+build --copt "-Wno-nullability-extension" --host_copt "-Wno-nullability-extension"
+
+# The warning acceptance bar in CI for PRs is set by -Werror of a specific
+# version of some chosen compiler. Disable warnings from other compilers until
+# they are fixed and under CI -Werror acceptance critera as there is nothing the
+# developers can(they can't be reproduced locally or in CI) or should do about
+# these warnings in code they are not working on.
+build --copt "-Wno-unused-private-field"  --host_copt "-Wno-unused-private-field"
+build --copt "-Wno-cast-function-type-mismatch"  --host_copt "-Wno-cast-function-type-mismatch"
+build --copt "-Wno-unused-but-set-variable"  --host_copt "-Wno-unused-but-set-variable"
+build --copt "-Wno-deprecated-copy"  --host_copt "-Wno-deprecated-copy"
+build --copt "-Wno-deprecated-copy-with-user-provided-copy"  --host_copt "-Wno-deprecated-copy-with-user-provided-copy"
+build --copt "-Wno-dangling"  --host_copt "-Wno-dangling"
+
+# For 3rd party code: Disable warnings entirely.
+# They are not actionable and just create noise.
+build --per_file_copt=external/.*@-w
+build --host_per_file_copt=external/.*@-w
+
+# Settings for --config=asan address sanitizer build
+build:asan --strip=never
+build:asan --copt -fsanitize=address --host_copt -fsanitize=address
+build:asan --copt -DADDRESS_SANITIZER --host_copt -DADDRESS_SANITIZER
+build:asan --copt -O1 --host_copt -O1
+build:asan --copt -g --host_copt -g
+build:asan --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
+build:asan --linkopt -fsanitize=address --host_linkopt -fsanitize=address
+
+# Flags with enough debug symbols to get useful outputs with Linux `perf`
+build:profile --strip=never
+build:profile --copt -g --host_copt -g
+build:profile --copt -gmlt --host_copt -gmlt
+build:profile --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
+
+# TODO: document
+build --incompatible_strict_action_env
+
+test --build_tests_only
+
+# --- Performance Optimizations ---
+# Use a high number of jobs and let the scheduler manage concurrency
+build --jobs=200
+
+# Enable local disk caching to supplement the remote cache.
+build --disk_cache=~/.cache/bazel-disk-cache
+build --repository_cache=~/.cache/bazel-repository-cache
+
+# CI only needs to know if the build succeeded, not the artifacts themselves.
+build:ci --remote_download_minimal
+build:ci --remote_upload_local_results=true
+# Disable disk cache for CI builds
+build:ci --disk_cache=
+
+# Setup remote cache
+build --remote_cache=https://bazel.precisioninno.com
+build --remote_cache_compression=true
+build --remote_upload_local_results=false
+
+# Without this, bazelisk build ... builds the bazel-orfs tests
+build --build_tag_filters=-orfs
+
+try-import %workspace%/user.bazelrc

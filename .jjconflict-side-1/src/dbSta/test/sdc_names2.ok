@@ -1,0 +1,10 @@
+[INFO ODB-0227] LEF file: liberty1.lef, created 2 layers, 6 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 1 components and 4 component-terminals.
+[INFO ODB-0133]     Created 2 nets and 2 connections.
+foo[0].bar[2].baz
+foo[0].bar[2].baz/A
+A -> Z combinational
+  ^ -> ^ 0.09:0.09
+  v -> v 0.09:0.09

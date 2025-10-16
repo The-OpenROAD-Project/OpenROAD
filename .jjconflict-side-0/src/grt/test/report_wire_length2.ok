@@ -1,0 +1,37 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 170 components and 1258 component-terminals.
+[INFO ODB-0133]     Created 15 nets and 72 connections.
+[WARNING GRT-0008] The read_guides command does not allow parasitics estimation from the guides file.
+[INFO GRT-0237] Net clk global route wire length: 201.60um
+[INFO GRT-0240] Net clk detailed route wire length: 184.95um
+[INFO GRT-0237] Net clknet_0_clk global route wire length: 93.60um
+[INFO GRT-0240] Net clknet_0_clk detailed route wire length: 81.31um
+[INFO GRT-0237] Net clknet_2_0__leaf_clk global route wire length: 288.00um
+[INFO GRT-0240] Net clknet_2_0__leaf_clk detailed route wire length: 165.22um
+[INFO GRT-0237] Net clknet_2_1__leaf_clk global route wire length: 201.60um
+[INFO GRT-0240] Net clknet_2_1__leaf_clk detailed route wire length: 128.94um
+[INFO GRT-0237] Net clknet_2_2__leaf_clk global route wire length: 266.40um
+[INFO GRT-0240] Net clknet_2_2__leaf_clk detailed route wire length: 169.44um
+[INFO GRT-0237] Net clknet_2_3__leaf_clk global route wire length: 374.40um
+[INFO GRT-0240] Net clknet_2_3__leaf_clk detailed route wire length: 214.44um
+[INFO GRT-0237] Net net55 global route wire length: 158.40um
+[INFO GRT-0240] Net net55 detailed route wire length: 96.19um
+[INFO GRT-0237] Net net56 global route wire length: 50.40um
+[INFO GRT-0240] Net net56 detailed route wire length: 33.23um
+[INFO GRT-0237] Net net57 global route wire length: 28.80um
+[INFO GRT-0240] Net net57 detailed route wire length: 17.36um
+[INFO GRT-0237] Net net58 global route wire length: 14.40um
+[INFO GRT-0240] Net net58 detailed route wire length: 5.76um
+[INFO GRT-0237] Net net59 global route wire length: 0.00um
+[INFO GRT-0240] Net net59 detailed route wire length: 4.54um
+[INFO GRT-0237] Net net60 global route wire length: 14.40um
+[INFO GRT-0240] Net net60 detailed route wire length: 13.39um
+[INFO GRT-0237] Net net61 global route wire length: 14.40um
+[INFO GRT-0240] Net net61 detailed route wire length: 5.29um
+[INFO GRT-0237] Net net62 global route wire length: 28.80um
+[INFO GRT-0240] Net net62 detailed route wire length: 13.45um
+[INFO GRT-0237] Net net63 global route wire length: 28.80um
+[INFO GRT-0240] Net net63 detailed route wire length: 16.34um

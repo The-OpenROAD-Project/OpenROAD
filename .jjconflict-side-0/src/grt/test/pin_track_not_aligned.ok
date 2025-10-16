@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: pin_track_not_aligned.lef, created 13 layers, 25 vias, 2 library cells
+[INFO ODB-0128] Design: user_project_wrapper
+[INFO ODB-0131]     Created 2 components and 322 component-terminals.
+[INFO ODB-0133]     Created 1 nets and 2 connections.
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
+No differences found.

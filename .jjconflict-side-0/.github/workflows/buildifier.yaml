@@ -1,0 +1,44 @@
+name: Lint Bazel
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  buildifier:
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        check:
+          - name: Buildifier format
+            run: ./buildifier -r -mode=check -lint=off .
+          - name: Buildifier lint
+            run: ./buildifier -r -lint=warn .
+    name: ${{ matrix.check.name }}
+    env:
+      BUILDIFIER_VERSION: v8.2.1
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Cache buildifier
+        id: cache-buildifier
+        uses: actions/cache@v4
+        with:
+          path: ./buildifier
+          key: ${{ runner.os }}-buildifier-${{ env.BUILDIFIER_VERSION }}
+
+      - name: Download buildifier
+        if: steps.cache-buildifier.outputs.cache-hit != 'true'
+        run: |
+          wget https://github.com/bazelbuild/buildtools/releases/download/${BUILDIFIER_VERSION}/buildifier-linux-amd64 -O buildifier
+          chmod +x buildifier
+
+      - name: ${{ matrix.check.name }}
+        run: ${{ matrix.check.run }}

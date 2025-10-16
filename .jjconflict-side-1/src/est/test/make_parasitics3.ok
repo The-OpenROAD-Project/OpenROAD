@@ -1,0 +1,39 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: reg1
+[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0131]     Created 8 components and 39 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 16 connections.
+[INFO ODB-0133]     Created 10 nets and 20 connections.
+Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock source latency
+   0.00    0.00 ^ clk (in)
+   0.04    0.04 ^ c2/Z (BUF_X1)
+   0.00    0.04 ^ r2/CK (DFF_X1)
+   0.12    0.16 ^ r2/Q (DFF_X1)
+   0.13    0.29 ^ u1/Z (BUF_X1)
+   0.15    0.44 ^ u2/ZN (AND2_X1)
+   0.01    0.46 ^ r3/D (DFF_X1)
+           0.46   data arrival time
+
+  10.00   10.00   clock clk (rise edge)
+   0.00   10.00   clock source latency
+   0.00   10.00 ^ clk (in)
+   0.05   10.05 ^ c3/Z (BUF_X1)
+   0.00   10.05 ^ r3/CK (DFF_X1)
+   0.00   10.05   clock reconvergence pessimism
+  -0.04   10.01   library setup time
+          10.01   data required time
+---------------------------------------------------------
+          10.01   data required time
+          -0.46   data arrival time
+---------------------------------------------------------
+           9.55   slack (MET)
+
+

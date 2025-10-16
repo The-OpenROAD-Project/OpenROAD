@@ -1,0 +1,85 @@
+{
+  "name": "dbTechLayerMinCutRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "bit",
+      "name": "per_cut_class_"
+    },
+    {
+      "type": "int",
+      "name": "num_cuts_",
+      "default" : 0
+    },
+    {
+      "type": "std::map<std::string, int>",
+      "name": "cut_class_cuts_map_",
+      "flags": ["no-set", "no-template"]
+    },
+    {
+      "type": "int",
+      "name": "width_",
+      "default" : 0
+    },
+    {
+      "type": "bit",
+      "name": "within_cut_dist_valid"
+    },
+    {
+      "type": "int",
+      "name": "within_cut_dist",
+      "default" : 0
+    },
+    {
+      "type": "bit",
+      "name": "from_above_"
+    },
+    {
+      "type": "bit",
+      "name": "from_below_"
+    },
+    {
+      "type": "bit",
+      "name": "length_valid_"
+    },
+    {
+      "type": "int",
+      "name": "length_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "length_within_dist_",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "area_valid_"
+    },
+    {
+      "type": "int",
+      "name": "area_",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "area_within_dist_valid_"
+    },
+    {
+      "type": "int",
+      "name": "area_within_dist_",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "same_metal_overlap"
+    },
+    {
+      "type": "bit",
+      "name": "fully_enclosed_"
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
+}

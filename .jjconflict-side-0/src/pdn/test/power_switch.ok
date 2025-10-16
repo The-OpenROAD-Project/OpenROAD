@@ -1,0 +1,47 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0227] LEF file: sky130_power_switch/power_switch.lef, created 1 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 1160 components and 3368 component-terminals.
+[INFO ODB-0133]     Created 324 nets and 1048 connections.
+Switched power cell: POWER_SWITCH
+  Control pin: SLEEP
+  Acknowledge pin: SLEEP_OUT
+  Switched power pin: VPWR
+  Always on power pin: VDDG
+  Ground pin: VGND
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+  Switched power net: VDD_SW
+Grid name: Core
+Type: Core
+Straps:
+  Type: Followpin
+    Layer: met1
+    Width: 0.4800
+    Spacing: 0.0000
+    Pitch: 5.4400
+    Offset: 0.0000
+    Snap to grid: false
+  Type: Strap
+    Layer: met4
+    Width: 1.6000
+    Spacing: 7.4450
+    Pitch: 27.1400
+    Offset: 13.5700
+    Snap to grid: false
+  Type: Strap
+    Layer: met5
+    Width: 1.6000
+    Spacing: 7.4650
+    Pitch: 27.2000
+    Offset: 13.6000
+    Snap to grid: false
+Connect:
+  Connect layers met1 -> met4
+  Connect layers met4 -> met5
+Switched power cell: POWER_SWITCH
+  Control net: nPWRUP
+  Network type: DAISY

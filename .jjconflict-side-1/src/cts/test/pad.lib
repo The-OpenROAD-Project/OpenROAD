@@ -1,0 +1,164 @@
+library (pad) {
+  comment : "";
+  date : "2020/05/06";
+  delay_model : table_lookup;
+  capacitive_load_unit (1,ff);
+  current_unit : "1mA";
+  leakage_power_unit : "1mW";
+  pulling_resistance_unit : "1kohm";
+  time_unit : "1ps";
+  voltage_unit : "1V";
+
+  input_threshold_pct_rise : 50;
+  input_threshold_pct_fall : 50;
+  output_threshold_pct_rise : 50;
+  output_threshold_pct_fall : 50;
+  slew_derate_from_library : 1.0;
+  slew_lower_threshold_pct_fall : 20;
+  slew_lower_threshold_pct_rise : 20;
+  slew_upper_threshold_pct_fall : 80;
+  slew_upper_threshold_pct_rise : 80;
+
+  type (bus_pad) {
+    base_type : array;
+    data_type : bit;
+    bit_width : 2;
+    bit_from  : 1;
+    bit_to    : 0;
+    downto    : true;
+  }
+
+  cell (PAD) {
+    area : 4000;
+    dont_touch : true;
+    dont_use : true;
+    pad_cell : true;
+    pin (PAD) {
+      direction : inout;
+      function : "(DATA)";
+      is_pad : true;
+      three_state : "(TRIEN)";
+      max_capacitance : 30000;
+      max_transition : 2000;
+      capacitance : 2230.14;
+      timing () {
+        related_pin : "DATA";
+        timing_sense : positive_unate;
+        timing_type : combinational;
+        cell_rise (scalar) {
+          values ( 100 );
+        }
+        rise_transition (scalar) {
+          values ( 100 );
+	}
+        cell_fall (scalar) {
+          values ( 100 );
+        }
+        fall_transition (scalar) {
+          values ( 100 );
+	}
+      }
+      timing () {
+        related_pin : "TRIEN";
+        timing_sense : positive_unate;
+        timing_type : three_state_disable;
+        cell_rise (scalar) {
+          values ( 100 );
+        }
+        rise_transition (scalar) {
+          values ( 100 );
+	}
+        cell_fall (scalar) {
+          values ( 100 );
+        }
+        fall_transition (scalar) {
+          values ( 100 );
+	}
+      }
+      timing () {
+        related_pin : "TRIEN";
+        timing_sense : negative_unate;
+        timing_type : three_state_enable;
+        cell_rise (scalar) {
+          values ( 100 );
+        }
+        rise_transition (scalar) {
+          values ( 100 );
+	}
+        cell_fall (scalar) {
+          values ( 100 );
+        }
+        fall_transition (scalar) {
+          values ( 100 );
+	}
+      }
+    }
+    pin (Y) {
+      direction : output;
+      function : "(PAD & RXEN)";
+      output_voltage : default_VDDC_VSSC_output;
+      power_down_function : "(!VDDC) + (VSSC)";
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      timing () {
+        related_pin : "PAD";
+        sdf_cond : "RXEN == 1'b1";
+        timing_sense : positive_unate;
+        timing_type : combinational;
+        when : "RXEN";
+        cell_rise (scalar) {
+          values ( 100 );
+        }
+        rise_transition (scalar) {
+          values ( 100 );
+	}
+        cell_fall (scalar) {
+          values ( 100 );
+        }
+        fall_transition (scalar) {
+          values ( 100 );
+	}
+      }
+      timing () {
+        related_pin : "RXEN";
+        sdf_cond : "PAD == 1'b1";
+        timing_sense : positive_unate;
+        timing_type : combinational;
+        when : "PAD";
+        cell_rise (scalar) {
+          values ( 100 );
+        }
+        rise_transition (scalar) {
+          values ( 100 );
+	}
+        cell_fall (scalar) {
+          values ( 100 );
+        }
+        fall_transition (scalar) {
+          values ( 100 );
+	}
+      }
+    }
+    pin (DATA) {
+      direction : input;
+      max_transition : 200;
+      capacitance : 11.8076;
+    }
+    pin (NDIN) {
+      direction : input;
+      max_transition : 200;
+      capacitance : 3.0;
+    }
+    pin (RXEN) {
+      direction : input;
+      capacitance : 15;
+    }
+    pin (TRIEN) {
+      direction : input;
+      max_transition : 200;
+      capacitance : 4;
+    }
+  }
+}

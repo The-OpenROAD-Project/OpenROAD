@@ -1,0 +1,4 @@
+[ERROR UTL-0102] Unable to start new log redirect while another is active.
+UTL-0102
+[ERROR UTL-0101] -file or -variable is required
+UTL-0101

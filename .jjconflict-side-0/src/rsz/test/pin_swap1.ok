@@ -1,0 +1,1318 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+[INFO ODB-0128] Design: shorted_outputs
+[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0131]     Created 3 components and 14 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 4 nets and 6 connections.
+sky130_fd_sc_hd__a2111o_1/A1 -> A2
+sky130_fd_sc_hd__a2111o_1/A2 -> A1
+sky130_fd_sc_hd__a2111o_1/B1 -> C1 D1
+sky130_fd_sc_hd__a2111o_1/C1 -> B1 D1
+sky130_fd_sc_hd__a2111o_1/D1 -> B1 C1
+sky130_fd_sc_hd__a2111o_2/A1 -> A2
+sky130_fd_sc_hd__a2111o_2/A2 -> A1
+sky130_fd_sc_hd__a2111o_2/B1 -> C1 D1
+sky130_fd_sc_hd__a2111o_2/C1 -> B1 D1
+sky130_fd_sc_hd__a2111o_2/D1 -> B1 C1
+sky130_fd_sc_hd__a2111o_4/A1 -> A2
+sky130_fd_sc_hd__a2111o_4/A2 -> A1
+sky130_fd_sc_hd__a2111o_4/B1 -> C1 D1
+sky130_fd_sc_hd__a2111o_4/C1 -> B1 D1
+sky130_fd_sc_hd__a2111o_4/D1 -> B1 C1
+sky130_fd_sc_hd__a2111oi_0/A1 -> A2
+sky130_fd_sc_hd__a2111oi_0/A2 -> A1
+sky130_fd_sc_hd__a2111oi_0/B1 -> C1 D1
+sky130_fd_sc_hd__a2111oi_0/C1 -> B1 D1
+sky130_fd_sc_hd__a2111oi_0/D1 -> B1 C1
+sky130_fd_sc_hd__a2111oi_1/A1 -> A2
+sky130_fd_sc_hd__a2111oi_1/A2 -> A1
+sky130_fd_sc_hd__a2111oi_1/B1 -> C1 D1
+sky130_fd_sc_hd__a2111oi_1/C1 -> B1 D1
+sky130_fd_sc_hd__a2111oi_1/D1 -> B1 C1
+sky130_fd_sc_hd__a2111oi_2/A1 -> A2
+sky130_fd_sc_hd__a2111oi_2/A2 -> A1
+sky130_fd_sc_hd__a2111oi_2/B1 -> C1 D1
+sky130_fd_sc_hd__a2111oi_2/C1 -> B1 D1
+sky130_fd_sc_hd__a2111oi_2/D1 -> B1 C1
+sky130_fd_sc_hd__a2111oi_4/A1 -> A2
+sky130_fd_sc_hd__a2111oi_4/A2 -> A1
+sky130_fd_sc_hd__a2111oi_4/B1 -> C1 D1
+sky130_fd_sc_hd__a2111oi_4/C1 -> B1 D1
+sky130_fd_sc_hd__a2111oi_4/D1 -> B1 C1
+sky130_fd_sc_hd__a211o_1/A1 -> A2
+sky130_fd_sc_hd__a211o_1/A2 -> A1
+sky130_fd_sc_hd__a211o_1/B1 -> C1
+sky130_fd_sc_hd__a211o_1/C1 -> B1
+sky130_fd_sc_hd__a211o_2/A1 -> A2
+sky130_fd_sc_hd__a211o_2/A2 -> A1
+sky130_fd_sc_hd__a211o_2/B1 -> C1
+sky130_fd_sc_hd__a211o_2/C1 -> B1
+sky130_fd_sc_hd__a211o_4/A1 -> A2
+sky130_fd_sc_hd__a211o_4/A2 -> A1
+sky130_fd_sc_hd__a211o_4/B1 -> C1
+sky130_fd_sc_hd__a211o_4/C1 -> B1
+sky130_fd_sc_hd__a211oi_1/A1 -> A2
+sky130_fd_sc_hd__a211oi_1/A2 -> A1
+sky130_fd_sc_hd__a211oi_1/B1 -> C1
+sky130_fd_sc_hd__a211oi_1/C1 -> B1
+sky130_fd_sc_hd__a211oi_2/A1 -> A2
+sky130_fd_sc_hd__a211oi_2/A2 -> A1
+sky130_fd_sc_hd__a211oi_2/B1 -> C1
+sky130_fd_sc_hd__a211oi_2/C1 -> B1
+sky130_fd_sc_hd__a211oi_4/A1 -> A2
+sky130_fd_sc_hd__a211oi_4/A2 -> A1
+sky130_fd_sc_hd__a211oi_4/B1 -> C1
+sky130_fd_sc_hd__a211oi_4/C1 -> B1
+sky130_fd_sc_hd__a21bo_1/A1 -> A2
+sky130_fd_sc_hd__a21bo_1/A2 -> A1
+sky130_fd_sc_hd__a21bo_1/B1_N ->
+sky130_fd_sc_hd__a21bo_2/A1 -> A2
+sky130_fd_sc_hd__a21bo_2/A2 -> A1
+sky130_fd_sc_hd__a21bo_2/B1_N ->
+sky130_fd_sc_hd__a21bo_4/A1 -> A2
+sky130_fd_sc_hd__a21bo_4/A2 -> A1
+sky130_fd_sc_hd__a21bo_4/B1_N ->
+sky130_fd_sc_hd__a21boi_0/A1 -> A2
+sky130_fd_sc_hd__a21boi_0/A2 -> A1
+sky130_fd_sc_hd__a21boi_0/B1_N ->
+sky130_fd_sc_hd__a21boi_1/A1 -> A2
+sky130_fd_sc_hd__a21boi_1/A2 -> A1
+sky130_fd_sc_hd__a21boi_1/B1_N ->
+sky130_fd_sc_hd__a21boi_2/A1 -> A2
+sky130_fd_sc_hd__a21boi_2/A2 -> A1
+sky130_fd_sc_hd__a21boi_2/B1_N ->
+sky130_fd_sc_hd__a21boi_4/A1 -> A2
+sky130_fd_sc_hd__a21boi_4/A2 -> A1
+sky130_fd_sc_hd__a21boi_4/B1_N ->
+sky130_fd_sc_hd__a21o_1/A1 -> A2
+sky130_fd_sc_hd__a21o_1/A2 -> A1
+sky130_fd_sc_hd__a21o_1/B1 ->
+sky130_fd_sc_hd__a21o_2/A1 -> A2
+sky130_fd_sc_hd__a21o_2/A2 -> A1
+sky130_fd_sc_hd__a21o_2/B1 ->
+sky130_fd_sc_hd__a21o_4/A1 -> A2
+sky130_fd_sc_hd__a21o_4/A2 -> A1
+sky130_fd_sc_hd__a21o_4/B1 ->
+sky130_fd_sc_hd__a21oi_1/A1 -> A2
+sky130_fd_sc_hd__a21oi_1/A2 -> A1
+sky130_fd_sc_hd__a21oi_1/B1 ->
+sky130_fd_sc_hd__a21oi_2/A1 -> A2
+sky130_fd_sc_hd__a21oi_2/A2 -> A1
+sky130_fd_sc_hd__a21oi_2/B1 ->
+sky130_fd_sc_hd__a21oi_4/A1 -> A2
+sky130_fd_sc_hd__a21oi_4/A2 -> A1
+sky130_fd_sc_hd__a21oi_4/B1 ->
+sky130_fd_sc_hd__a221o_1/A1 -> A2
+sky130_fd_sc_hd__a221o_1/A2 -> A1
+sky130_fd_sc_hd__a221o_1/B1 -> B2
+sky130_fd_sc_hd__a221o_1/B2 -> B1
+sky130_fd_sc_hd__a221o_1/C1 ->
+sky130_fd_sc_hd__a221o_2/A1 -> A2
+sky130_fd_sc_hd__a221o_2/A2 -> A1
+sky130_fd_sc_hd__a221o_2/B1 -> B2
+sky130_fd_sc_hd__a221o_2/B2 -> B1
+sky130_fd_sc_hd__a221o_2/C1 ->
+sky130_fd_sc_hd__a221o_4/A1 -> A2
+sky130_fd_sc_hd__a221o_4/A2 -> A1
+sky130_fd_sc_hd__a221o_4/B1 -> B2
+sky130_fd_sc_hd__a221o_4/B2 -> B1
+sky130_fd_sc_hd__a221o_4/C1 ->
+sky130_fd_sc_hd__a221oi_1/A1 -> A2
+sky130_fd_sc_hd__a221oi_1/A2 -> A1
+sky130_fd_sc_hd__a221oi_1/B1 -> B2
+sky130_fd_sc_hd__a221oi_1/B2 -> B1
+sky130_fd_sc_hd__a221oi_1/C1 ->
+sky130_fd_sc_hd__a221oi_2/A1 -> A2
+sky130_fd_sc_hd__a221oi_2/A2 -> A1
+sky130_fd_sc_hd__a221oi_2/B1 -> B2
+sky130_fd_sc_hd__a221oi_2/B2 -> B1
+sky130_fd_sc_hd__a221oi_2/C1 ->
+sky130_fd_sc_hd__a221oi_4/A1 -> A2
+sky130_fd_sc_hd__a221oi_4/A2 -> A1
+sky130_fd_sc_hd__a221oi_4/B1 -> B2
+sky130_fd_sc_hd__a221oi_4/B2 -> B1
+sky130_fd_sc_hd__a221oi_4/C1 ->
+sky130_fd_sc_hd__a222oi_1/A1 -> A2
+sky130_fd_sc_hd__a222oi_1/A2 -> A1
+sky130_fd_sc_hd__a222oi_1/B1 -> B2
+sky130_fd_sc_hd__a222oi_1/B2 -> B1
+sky130_fd_sc_hd__a222oi_1/C1 -> C2
+sky130_fd_sc_hd__a222oi_1/C2 -> C1
+sky130_fd_sc_hd__a22o_1/A1 -> A2
+sky130_fd_sc_hd__a22o_1/A2 -> A1
+sky130_fd_sc_hd__a22o_1/B1 -> B2
+sky130_fd_sc_hd__a22o_1/B2 -> B1
+sky130_fd_sc_hd__a22o_2/A1 -> A2
+sky130_fd_sc_hd__a22o_2/A2 -> A1
+sky130_fd_sc_hd__a22o_2/B1 -> B2
+sky130_fd_sc_hd__a22o_2/B2 -> B1
+sky130_fd_sc_hd__a22o_4/A1 -> A2
+sky130_fd_sc_hd__a22o_4/A2 -> A1
+sky130_fd_sc_hd__a22o_4/B1 -> B2
+sky130_fd_sc_hd__a22o_4/B2 -> B1
+sky130_fd_sc_hd__a22oi_1/A1 -> A2
+sky130_fd_sc_hd__a22oi_1/A2 -> A1
+sky130_fd_sc_hd__a22oi_1/B1 -> B2
+sky130_fd_sc_hd__a22oi_1/B2 -> B1
+sky130_fd_sc_hd__a22oi_2/A1 -> A2
+sky130_fd_sc_hd__a22oi_2/A2 -> A1
+sky130_fd_sc_hd__a22oi_2/B1 -> B2
+sky130_fd_sc_hd__a22oi_2/B2 -> B1
+sky130_fd_sc_hd__a22oi_4/A1 -> A2
+sky130_fd_sc_hd__a22oi_4/A2 -> A1
+sky130_fd_sc_hd__a22oi_4/B1 -> B2
+sky130_fd_sc_hd__a22oi_4/B2 -> B1
+sky130_fd_sc_hd__a2bb2o_1/A1_N -> A2_N
+sky130_fd_sc_hd__a2bb2o_1/A2_N -> A1_N
+sky130_fd_sc_hd__a2bb2o_1/B1 -> B2
+sky130_fd_sc_hd__a2bb2o_1/B2 -> B1
+sky130_fd_sc_hd__a2bb2o_2/A1_N -> A2_N
+sky130_fd_sc_hd__a2bb2o_2/A2_N -> A1_N
+sky130_fd_sc_hd__a2bb2o_2/B1 -> B2
+sky130_fd_sc_hd__a2bb2o_2/B2 -> B1
+sky130_fd_sc_hd__a2bb2o_4/A1_N -> A2_N
+sky130_fd_sc_hd__a2bb2o_4/A2_N -> A1_N
+sky130_fd_sc_hd__a2bb2o_4/B1 -> B2
+sky130_fd_sc_hd__a2bb2o_4/B2 -> B1
+sky130_fd_sc_hd__a2bb2oi_1/A1_N -> A2_N
+sky130_fd_sc_hd__a2bb2oi_1/A2_N -> A1_N
+sky130_fd_sc_hd__a2bb2oi_1/B1 -> B2
+sky130_fd_sc_hd__a2bb2oi_1/B2 -> B1
+sky130_fd_sc_hd__a2bb2oi_2/A1_N -> A2_N
+sky130_fd_sc_hd__a2bb2oi_2/A2_N -> A1_N
+sky130_fd_sc_hd__a2bb2oi_2/B1 -> B2
+sky130_fd_sc_hd__a2bb2oi_2/B2 -> B1
+sky130_fd_sc_hd__a2bb2oi_4/A1_N -> A2_N
+sky130_fd_sc_hd__a2bb2oi_4/A2_N -> A1_N
+sky130_fd_sc_hd__a2bb2oi_4/B1 -> B2
+sky130_fd_sc_hd__a2bb2oi_4/B2 -> B1
+sky130_fd_sc_hd__a311o_1/A1 -> A2 A3
+sky130_fd_sc_hd__a311o_1/A2 -> A1 A3
+sky130_fd_sc_hd__a311o_1/A3 -> A1 A2
+sky130_fd_sc_hd__a311o_1/B1 -> C1
+sky130_fd_sc_hd__a311o_1/C1 -> B1
+sky130_fd_sc_hd__a311o_2/A1 -> A2 A3
+sky130_fd_sc_hd__a311o_2/A2 -> A1 A3
+sky130_fd_sc_hd__a311o_2/A3 -> A1 A2
+sky130_fd_sc_hd__a311o_2/B1 -> C1
+sky130_fd_sc_hd__a311o_2/C1 -> B1
+sky130_fd_sc_hd__a311o_4/A1 -> A2 A3
+sky130_fd_sc_hd__a311o_4/A2 -> A1 A3
+sky130_fd_sc_hd__a311o_4/A3 -> A1 A2
+sky130_fd_sc_hd__a311o_4/B1 -> C1
+sky130_fd_sc_hd__a311o_4/C1 -> B1
+sky130_fd_sc_hd__a311oi_1/A1 -> A2 A3
+sky130_fd_sc_hd__a311oi_1/A2 -> A1 A3
+sky130_fd_sc_hd__a311oi_1/A3 -> A1 A2
+sky130_fd_sc_hd__a311oi_1/B1 -> C1
+sky130_fd_sc_hd__a311oi_1/C1 -> B1
+sky130_fd_sc_hd__a311oi_2/A1 -> A2 A3
+sky130_fd_sc_hd__a311oi_2/A2 -> A1 A3
+sky130_fd_sc_hd__a311oi_2/A3 -> A1 A2
+sky130_fd_sc_hd__a311oi_2/B1 -> C1
+sky130_fd_sc_hd__a311oi_2/C1 -> B1
+sky130_fd_sc_hd__a311oi_4/A1 -> A2 A3
+sky130_fd_sc_hd__a311oi_4/A2 -> A1 A3
+sky130_fd_sc_hd__a311oi_4/A3 -> A1 A2
+sky130_fd_sc_hd__a311oi_4/B1 -> C1
+sky130_fd_sc_hd__a311oi_4/C1 -> B1
+sky130_fd_sc_hd__a31o_1/A1 -> A2 A3
+sky130_fd_sc_hd__a31o_1/A2 -> A1 A3
+sky130_fd_sc_hd__a31o_1/A3 -> A1 A2
+sky130_fd_sc_hd__a31o_1/B1 ->
+sky130_fd_sc_hd__a31o_2/A1 -> A2 A3
+sky130_fd_sc_hd__a31o_2/A2 -> A1 A3
+sky130_fd_sc_hd__a31o_2/A3 -> A1 A2
+sky130_fd_sc_hd__a31o_2/B1 ->
+sky130_fd_sc_hd__a31o_4/A1 -> A2 A3
+sky130_fd_sc_hd__a31o_4/A2 -> A1 A3
+sky130_fd_sc_hd__a31o_4/A3 -> A1 A2
+sky130_fd_sc_hd__a31o_4/B1 ->
+sky130_fd_sc_hd__a31oi_1/A1 -> A2 A3
+sky130_fd_sc_hd__a31oi_1/A2 -> A1 A3
+sky130_fd_sc_hd__a31oi_1/A3 -> A1 A2
+sky130_fd_sc_hd__a31oi_1/B1 ->
+sky130_fd_sc_hd__a31oi_2/A1 -> A2 A3
+sky130_fd_sc_hd__a31oi_2/A2 -> A1 A3
+sky130_fd_sc_hd__a31oi_2/A3 -> A1 A2
+sky130_fd_sc_hd__a31oi_2/B1 ->
+sky130_fd_sc_hd__a31oi_4/A1 -> A2 A3
+sky130_fd_sc_hd__a31oi_4/A2 -> A1 A3
+sky130_fd_sc_hd__a31oi_4/A3 -> A1 A2
+sky130_fd_sc_hd__a31oi_4/B1 ->
+sky130_fd_sc_hd__a32o_1/A1 -> A2 A3
+sky130_fd_sc_hd__a32o_1/A2 -> A1 A3
+sky130_fd_sc_hd__a32o_1/A3 -> A1 A2
+sky130_fd_sc_hd__a32o_1/B1 -> B2
+sky130_fd_sc_hd__a32o_1/B2 -> B1
+sky130_fd_sc_hd__a32o_2/A1 -> A2 A3
+sky130_fd_sc_hd__a32o_2/A2 -> A1 A3
+sky130_fd_sc_hd__a32o_2/A3 -> A1 A2
+sky130_fd_sc_hd__a32o_2/B1 -> B2
+sky130_fd_sc_hd__a32o_2/B2 -> B1
+sky130_fd_sc_hd__a32o_4/A1 -> A2 A3
+sky130_fd_sc_hd__a32o_4/A2 -> A1 A3
+sky130_fd_sc_hd__a32o_4/A3 -> A1 A2
+sky130_fd_sc_hd__a32o_4/B1 -> B2
+sky130_fd_sc_hd__a32o_4/B2 -> B1
+sky130_fd_sc_hd__a32oi_1/A1 -> A2 A3
+sky130_fd_sc_hd__a32oi_1/A2 -> A1 A3
+sky130_fd_sc_hd__a32oi_1/A3 -> A1 A2
+sky130_fd_sc_hd__a32oi_1/B1 -> B2
+sky130_fd_sc_hd__a32oi_1/B2 -> B1
+sky130_fd_sc_hd__a32oi_2/A1 -> A2 A3
+sky130_fd_sc_hd__a32oi_2/A2 -> A1 A3
+sky130_fd_sc_hd__a32oi_2/A3 -> A1 A2
+sky130_fd_sc_hd__a32oi_2/B1 -> B2
+sky130_fd_sc_hd__a32oi_2/B2 -> B1
+sky130_fd_sc_hd__a32oi_4/A1 -> A2 A3
+sky130_fd_sc_hd__a32oi_4/A2 -> A1 A3
+sky130_fd_sc_hd__a32oi_4/A3 -> A1 A2
+sky130_fd_sc_hd__a32oi_4/B1 -> B2
+sky130_fd_sc_hd__a32oi_4/B2 -> B1
+sky130_fd_sc_hd__a41o_1/A1 -> A2 A3 A4
+sky130_fd_sc_hd__a41o_1/A2 -> A1 A3 A4
+sky130_fd_sc_hd__a41o_1/A3 -> A1 A2 A4
+sky130_fd_sc_hd__a41o_1/A4 -> A1 A2 A3
+sky130_fd_sc_hd__a41o_1/B1 ->
+sky130_fd_sc_hd__a41o_2/A1 -> A2 A3 A4
+sky130_fd_sc_hd__a41o_2/A2 -> A1 A3 A4
+sky130_fd_sc_hd__a41o_2/A3 -> A1 A2 A4
+sky130_fd_sc_hd__a41o_2/A4 -> A1 A2 A3
+sky130_fd_sc_hd__a41o_2/B1 ->
+sky130_fd_sc_hd__a41o_4/A1 -> A2 A3 A4
+sky130_fd_sc_hd__a41o_4/A2 -> A1 A3 A4
+sky130_fd_sc_hd__a41o_4/A3 -> A1 A2 A4
+sky130_fd_sc_hd__a41o_4/A4 -> A1 A2 A3
+sky130_fd_sc_hd__a41o_4/B1 ->
+sky130_fd_sc_hd__a41oi_1/A1 -> A2 A3 A4
+sky130_fd_sc_hd__a41oi_1/A2 -> A1 A3 A4
+sky130_fd_sc_hd__a41oi_1/A3 -> A1 A2 A4
+sky130_fd_sc_hd__a41oi_1/A4 -> A1 A2 A3
+sky130_fd_sc_hd__a41oi_1/B1 ->
+sky130_fd_sc_hd__a41oi_2/A1 -> A2 A3 A4
+sky130_fd_sc_hd__a41oi_2/A2 -> A1 A3 A4
+sky130_fd_sc_hd__a41oi_2/A3 -> A1 A2 A4
+sky130_fd_sc_hd__a41oi_2/A4 -> A1 A2 A3
+sky130_fd_sc_hd__a41oi_2/B1 ->
+sky130_fd_sc_hd__a41oi_4/A1 -> A2 A3 A4
+sky130_fd_sc_hd__a41oi_4/A2 -> A1 A3 A4
+sky130_fd_sc_hd__a41oi_4/A3 -> A1 A2 A4
+sky130_fd_sc_hd__a41oi_4/A4 -> A1 A2 A3
+sky130_fd_sc_hd__a41oi_4/B1 ->
+sky130_fd_sc_hd__and2_0/A -> B
+sky130_fd_sc_hd__and2_0/B -> A
+sky130_fd_sc_hd__and2_1/A -> B
+sky130_fd_sc_hd__and2_1/B -> A
+sky130_fd_sc_hd__and2_2/A -> B
+sky130_fd_sc_hd__and2_2/B -> A
+sky130_fd_sc_hd__and2_4/A -> B
+sky130_fd_sc_hd__and2_4/B -> A
+sky130_fd_sc_hd__and2b_1/A_N ->
+sky130_fd_sc_hd__and2b_1/B ->
+sky130_fd_sc_hd__and2b_2/A_N ->
+sky130_fd_sc_hd__and2b_2/B ->
+sky130_fd_sc_hd__and2b_4/A_N ->
+sky130_fd_sc_hd__and2b_4/B ->
+sky130_fd_sc_hd__and3_1/A -> B C
+sky130_fd_sc_hd__and3_1/B -> A C
+sky130_fd_sc_hd__and3_1/C -> A B
+sky130_fd_sc_hd__and3_2/A -> B C
+sky130_fd_sc_hd__and3_2/B -> A C
+sky130_fd_sc_hd__and3_2/C -> A B
+sky130_fd_sc_hd__and3_4/A -> B C
+sky130_fd_sc_hd__and3_4/B -> A C
+sky130_fd_sc_hd__and3_4/C -> A B
+sky130_fd_sc_hd__and3b_1/A_N ->
+sky130_fd_sc_hd__and3b_1/B -> C
+sky130_fd_sc_hd__and3b_1/C -> B
+sky130_fd_sc_hd__and3b_2/A_N ->
+sky130_fd_sc_hd__and3b_2/B -> C
+sky130_fd_sc_hd__and3b_2/C -> B
+sky130_fd_sc_hd__and3b_4/A_N ->
+sky130_fd_sc_hd__and3b_4/B -> C
+sky130_fd_sc_hd__and3b_4/C -> B
+sky130_fd_sc_hd__and4_1/A -> B C D
+sky130_fd_sc_hd__and4_1/B -> A C D
+sky130_fd_sc_hd__and4_1/C -> A B D
+sky130_fd_sc_hd__and4_1/D -> A B C
+sky130_fd_sc_hd__and4_2/A -> B C D
+sky130_fd_sc_hd__and4_2/B -> A C D
+sky130_fd_sc_hd__and4_2/C -> A B D
+sky130_fd_sc_hd__and4_2/D -> A B C
+sky130_fd_sc_hd__and4_4/A -> B C D
+sky130_fd_sc_hd__and4_4/B -> A C D
+sky130_fd_sc_hd__and4_4/C -> A B D
+sky130_fd_sc_hd__and4_4/D -> A B C
+sky130_fd_sc_hd__and4b_1/A_N ->
+sky130_fd_sc_hd__and4b_1/B -> C D
+sky130_fd_sc_hd__and4b_1/C -> B D
+sky130_fd_sc_hd__and4b_1/D -> B C
+sky130_fd_sc_hd__and4b_2/A_N ->
+sky130_fd_sc_hd__and4b_2/B -> C D
+sky130_fd_sc_hd__and4b_2/C -> B D
+sky130_fd_sc_hd__and4b_2/D -> B C
+sky130_fd_sc_hd__and4b_4/A_N ->
+sky130_fd_sc_hd__and4b_4/B -> C D
+sky130_fd_sc_hd__and4b_4/C -> B D
+sky130_fd_sc_hd__and4b_4/D -> B C
+sky130_fd_sc_hd__and4bb_1/A_N -> B_N
+sky130_fd_sc_hd__and4bb_1/B_N -> A_N
+sky130_fd_sc_hd__and4bb_1/C -> D
+sky130_fd_sc_hd__and4bb_1/D -> C
+sky130_fd_sc_hd__and4bb_2/A_N -> B_N
+sky130_fd_sc_hd__and4bb_2/B_N -> A_N
+sky130_fd_sc_hd__and4bb_2/C -> D
+sky130_fd_sc_hd__and4bb_2/D -> C
+sky130_fd_sc_hd__and4bb_4/A_N -> B_N
+sky130_fd_sc_hd__and4bb_4/B_N -> A_N
+sky130_fd_sc_hd__and4bb_4/C -> D
+sky130_fd_sc_hd__and4bb_4/D -> C
+sky130_fd_sc_hd__buf_1/A ->
+sky130_fd_sc_hd__buf_12/A ->
+sky130_fd_sc_hd__buf_16/A ->
+sky130_fd_sc_hd__buf_2/A ->
+sky130_fd_sc_hd__buf_4/A ->
+sky130_fd_sc_hd__buf_6/A ->
+sky130_fd_sc_hd__buf_8/A ->
+sky130_fd_sc_hd__bufbuf_16/A ->
+sky130_fd_sc_hd__bufbuf_8/A ->
+sky130_fd_sc_hd__bufinv_16/A ->
+sky130_fd_sc_hd__bufinv_8/A ->
+sky130_fd_sc_hd__clkbuf_1/A ->
+sky130_fd_sc_hd__clkbuf_16/A ->
+sky130_fd_sc_hd__clkbuf_2/A ->
+sky130_fd_sc_hd__clkbuf_4/A ->
+sky130_fd_sc_hd__clkbuf_8/A ->
+sky130_fd_sc_hd__clkdlybuf4s15_1/A ->
+sky130_fd_sc_hd__clkdlybuf4s15_2/A ->
+sky130_fd_sc_hd__clkdlybuf4s18_1/A ->
+sky130_fd_sc_hd__clkdlybuf4s18_2/A ->
+sky130_fd_sc_hd__clkdlybuf4s25_1/A ->
+sky130_fd_sc_hd__clkdlybuf4s25_2/A ->
+sky130_fd_sc_hd__clkdlybuf4s50_1/A ->
+sky130_fd_sc_hd__clkdlybuf4s50_2/A ->
+sky130_fd_sc_hd__clkinv_1/A ->
+sky130_fd_sc_hd__clkinv_16/A ->
+sky130_fd_sc_hd__clkinv_2/A ->
+sky130_fd_sc_hd__clkinv_4/A ->
+sky130_fd_sc_hd__clkinv_8/A ->
+sky130_fd_sc_hd__clkinvlp_2/A ->
+sky130_fd_sc_hd__clkinvlp_4/A ->
+sky130_fd_sc_hd__dfbbn_1/CLK_N ->
+sky130_fd_sc_hd__dfbbn_1/D ->
+sky130_fd_sc_hd__dfbbn_1/RESET_B ->
+sky130_fd_sc_hd__dfbbn_1/SET_B ->
+sky130_fd_sc_hd__dfbbn_2/CLK_N ->
+sky130_fd_sc_hd__dfbbn_2/D ->
+sky130_fd_sc_hd__dfbbn_2/RESET_B ->
+sky130_fd_sc_hd__dfbbn_2/SET_B ->
+sky130_fd_sc_hd__dfbbp_1/CLK ->
+sky130_fd_sc_hd__dfbbp_1/D ->
+sky130_fd_sc_hd__dfbbp_1/RESET_B ->
+sky130_fd_sc_hd__dfbbp_1/SET_B ->
+sky130_fd_sc_hd__dfrbp_1/CLK ->
+sky130_fd_sc_hd__dfrbp_1/D ->
+sky130_fd_sc_hd__dfrbp_1/RESET_B ->
+sky130_fd_sc_hd__dfrbp_2/CLK ->
+sky130_fd_sc_hd__dfrbp_2/D ->
+sky130_fd_sc_hd__dfrbp_2/RESET_B ->
+sky130_fd_sc_hd__dfrtn_1/CLK_N ->
+sky130_fd_sc_hd__dfrtn_1/D ->
+sky130_fd_sc_hd__dfrtn_1/RESET_B ->
+sky130_fd_sc_hd__dfrtp_1/CLK ->
+sky130_fd_sc_hd__dfrtp_1/D ->
+sky130_fd_sc_hd__dfrtp_1/RESET_B ->
+sky130_fd_sc_hd__dfrtp_2/CLK ->
+sky130_fd_sc_hd__dfrtp_2/D ->
+sky130_fd_sc_hd__dfrtp_2/RESET_B ->
+sky130_fd_sc_hd__dfrtp_4/CLK ->
+sky130_fd_sc_hd__dfrtp_4/D ->
+sky130_fd_sc_hd__dfrtp_4/RESET_B ->
+sky130_fd_sc_hd__dfsbp_1/CLK ->
+sky130_fd_sc_hd__dfsbp_1/D ->
+sky130_fd_sc_hd__dfsbp_1/SET_B ->
+sky130_fd_sc_hd__dfsbp_2/CLK ->
+sky130_fd_sc_hd__dfsbp_2/D ->
+sky130_fd_sc_hd__dfsbp_2/SET_B ->
+sky130_fd_sc_hd__dfstp_1/CLK ->
+sky130_fd_sc_hd__dfstp_1/D ->
+sky130_fd_sc_hd__dfstp_1/SET_B ->
+sky130_fd_sc_hd__dfstp_2/CLK ->
+sky130_fd_sc_hd__dfstp_2/D ->
+sky130_fd_sc_hd__dfstp_2/SET_B ->
+sky130_fd_sc_hd__dfstp_4/CLK ->
+sky130_fd_sc_hd__dfstp_4/D ->
+sky130_fd_sc_hd__dfstp_4/SET_B ->
+sky130_fd_sc_hd__dfxbp_1/CLK ->
+sky130_fd_sc_hd__dfxbp_1/D ->
+sky130_fd_sc_hd__dfxbp_2/CLK ->
+sky130_fd_sc_hd__dfxbp_2/D ->
+sky130_fd_sc_hd__dfxtp_1/CLK ->
+sky130_fd_sc_hd__dfxtp_1/D ->
+sky130_fd_sc_hd__dfxtp_2/CLK ->
+sky130_fd_sc_hd__dfxtp_2/D ->
+sky130_fd_sc_hd__dfxtp_4/CLK ->
+sky130_fd_sc_hd__dfxtp_4/D ->
+sky130_fd_sc_hd__diode_2/DIODE ->
+sky130_fd_sc_hd__dlclkp_1/CLK ->
+sky130_fd_sc_hd__dlclkp_1/GATE ->
+sky130_fd_sc_hd__dlclkp_2/CLK ->
+sky130_fd_sc_hd__dlclkp_2/GATE ->
+sky130_fd_sc_hd__dlclkp_4/CLK ->
+sky130_fd_sc_hd__dlclkp_4/GATE ->
+sky130_fd_sc_hd__dlrbn_1/D ->
+sky130_fd_sc_hd__dlrbn_1/GATE_N ->
+sky130_fd_sc_hd__dlrbn_1/RESET_B ->
+sky130_fd_sc_hd__dlrbn_2/D ->
+sky130_fd_sc_hd__dlrbn_2/GATE_N ->
+sky130_fd_sc_hd__dlrbn_2/RESET_B ->
+sky130_fd_sc_hd__dlrbp_1/D ->
+sky130_fd_sc_hd__dlrbp_1/GATE ->
+sky130_fd_sc_hd__dlrbp_1/RESET_B ->
+sky130_fd_sc_hd__dlrbp_2/D ->
+sky130_fd_sc_hd__dlrbp_2/GATE ->
+sky130_fd_sc_hd__dlrbp_2/RESET_B ->
+sky130_fd_sc_hd__dlrtn_1/D ->
+sky130_fd_sc_hd__dlrtn_1/GATE_N ->
+sky130_fd_sc_hd__dlrtn_1/RESET_B ->
+sky130_fd_sc_hd__dlrtn_2/D ->
+sky130_fd_sc_hd__dlrtn_2/GATE_N ->
+sky130_fd_sc_hd__dlrtn_2/RESET_B ->
+sky130_fd_sc_hd__dlrtn_4/D ->
+sky130_fd_sc_hd__dlrtn_4/GATE_N ->
+sky130_fd_sc_hd__dlrtn_4/RESET_B ->
+sky130_fd_sc_hd__dlrtp_1/D ->
+sky130_fd_sc_hd__dlrtp_1/GATE ->
+sky130_fd_sc_hd__dlrtp_1/RESET_B ->
+sky130_fd_sc_hd__dlrtp_2/D ->
+sky130_fd_sc_hd__dlrtp_2/GATE ->
+sky130_fd_sc_hd__dlrtp_2/RESET_B ->
+sky130_fd_sc_hd__dlrtp_4/D ->
+sky130_fd_sc_hd__dlrtp_4/GATE ->
+sky130_fd_sc_hd__dlrtp_4/RESET_B ->
+sky130_fd_sc_hd__dlxbn_1/D ->
+sky130_fd_sc_hd__dlxbn_1/GATE_N ->
+sky130_fd_sc_hd__dlxbn_2/D ->
+sky130_fd_sc_hd__dlxbn_2/GATE_N ->
+sky130_fd_sc_hd__dlxbp_1/D ->
+sky130_fd_sc_hd__dlxbp_1/GATE ->
+sky130_fd_sc_hd__dlxtn_1/D ->
+sky130_fd_sc_hd__dlxtn_1/GATE_N ->
+sky130_fd_sc_hd__dlxtn_2/D ->
+sky130_fd_sc_hd__dlxtn_2/GATE_N ->
+sky130_fd_sc_hd__dlxtn_4/D ->
+sky130_fd_sc_hd__dlxtn_4/GATE_N ->
+sky130_fd_sc_hd__dlxtp_1/D ->
+sky130_fd_sc_hd__dlxtp_1/GATE ->
+sky130_fd_sc_hd__dlygate4sd1_1/A ->
+sky130_fd_sc_hd__dlygate4sd2_1/A ->
+sky130_fd_sc_hd__dlygate4sd3_1/A ->
+sky130_fd_sc_hd__dlymetal6s2s_1/A ->
+sky130_fd_sc_hd__dlymetal6s4s_1/A ->
+sky130_fd_sc_hd__dlymetal6s6s_1/A ->
+sky130_fd_sc_hd__ebufn_1/A ->
+sky130_fd_sc_hd__ebufn_1/TE_B ->
+sky130_fd_sc_hd__ebufn_2/A ->
+sky130_fd_sc_hd__ebufn_2/TE_B ->
+sky130_fd_sc_hd__ebufn_4/A ->
+sky130_fd_sc_hd__ebufn_4/TE_B ->
+sky130_fd_sc_hd__ebufn_8/A ->
+sky130_fd_sc_hd__ebufn_8/TE_B ->
+sky130_fd_sc_hd__edfxbp_1/CLK ->
+sky130_fd_sc_hd__edfxbp_1/D ->
+sky130_fd_sc_hd__edfxbp_1/DE ->
+sky130_fd_sc_hd__edfxtp_1/CLK ->
+sky130_fd_sc_hd__edfxtp_1/D ->
+sky130_fd_sc_hd__edfxtp_1/DE ->
+sky130_fd_sc_hd__einvn_0/A ->
+sky130_fd_sc_hd__einvn_0/TE_B ->
+sky130_fd_sc_hd__einvn_1/A ->
+sky130_fd_sc_hd__einvn_1/TE_B ->
+sky130_fd_sc_hd__einvn_2/A ->
+sky130_fd_sc_hd__einvn_2/TE_B ->
+sky130_fd_sc_hd__einvn_4/A ->
+sky130_fd_sc_hd__einvn_4/TE_B ->
+sky130_fd_sc_hd__einvn_8/A ->
+sky130_fd_sc_hd__einvn_8/TE_B ->
+sky130_fd_sc_hd__einvp_1/A ->
+sky130_fd_sc_hd__einvp_1/TE ->
+sky130_fd_sc_hd__einvp_2/A ->
+sky130_fd_sc_hd__einvp_2/TE ->
+sky130_fd_sc_hd__einvp_4/A ->
+sky130_fd_sc_hd__einvp_4/TE ->
+sky130_fd_sc_hd__einvp_8/A ->
+sky130_fd_sc_hd__einvp_8/TE ->
+sky130_fd_sc_hd__fa_1/A -> B CIN
+sky130_fd_sc_hd__fa_1/B -> A CIN
+sky130_fd_sc_hd__fa_1/CIN -> A B
+sky130_fd_sc_hd__fa_2/A -> B CIN
+sky130_fd_sc_hd__fa_2/B -> A CIN
+sky130_fd_sc_hd__fa_2/CIN -> A B
+sky130_fd_sc_hd__fa_4/A -> B CIN
+sky130_fd_sc_hd__fa_4/B -> A CIN
+sky130_fd_sc_hd__fa_4/CIN -> A B
+sky130_fd_sc_hd__fah_1/A -> B CI
+sky130_fd_sc_hd__fah_1/B -> A CI
+sky130_fd_sc_hd__fah_1/CI -> A B
+sky130_fd_sc_hd__fahcin_1/A -> B
+sky130_fd_sc_hd__fahcin_1/B -> A
+sky130_fd_sc_hd__fahcin_1/CIN ->
+sky130_fd_sc_hd__fahcon_1/A -> B CI
+sky130_fd_sc_hd__fahcon_1/B -> A CI
+sky130_fd_sc_hd__fahcon_1/CI -> A B
+sky130_fd_sc_hd__ha_1/A -> B
+sky130_fd_sc_hd__ha_1/B -> A
+sky130_fd_sc_hd__ha_2/A -> B
+sky130_fd_sc_hd__ha_2/B -> A
+sky130_fd_sc_hd__ha_4/A -> B
+sky130_fd_sc_hd__ha_4/B -> A
+sky130_fd_sc_hd__inv_1/A ->
+sky130_fd_sc_hd__inv_12/A ->
+sky130_fd_sc_hd__inv_16/A ->
+sky130_fd_sc_hd__inv_2/A ->
+sky130_fd_sc_hd__inv_4/A ->
+sky130_fd_sc_hd__inv_6/A ->
+sky130_fd_sc_hd__inv_8/A ->
+sky130_fd_sc_hd__lpflow_bleeder_1/SHORT ->
+sky130_fd_sc_hd__lpflow_clkbufkapwr_1/A ->
+sky130_fd_sc_hd__lpflow_clkbufkapwr_16/A ->
+sky130_fd_sc_hd__lpflow_clkbufkapwr_2/A ->
+sky130_fd_sc_hd__lpflow_clkbufkapwr_4/A ->
+sky130_fd_sc_hd__lpflow_clkbufkapwr_8/A ->
+sky130_fd_sc_hd__lpflow_clkinvkapwr_1/A ->
+sky130_fd_sc_hd__lpflow_clkinvkapwr_16/A ->
+sky130_fd_sc_hd__lpflow_clkinvkapwr_2/A ->
+sky130_fd_sc_hd__lpflow_clkinvkapwr_4/A ->
+sky130_fd_sc_hd__lpflow_clkinvkapwr_8/A ->
+sky130_fd_sc_hd__lpflow_inputiso0n_1/A ->
+sky130_fd_sc_hd__lpflow_inputiso0n_1/SLEEP_B ->
+sky130_fd_sc_hd__lpflow_inputiso0p_1/A ->
+sky130_fd_sc_hd__lpflow_inputiso0p_1/SLEEP ->
+sky130_fd_sc_hd__lpflow_inputiso1n_1/A ->
+sky130_fd_sc_hd__lpflow_inputiso1n_1/SLEEP_B ->
+sky130_fd_sc_hd__lpflow_inputiso1p_1/A ->
+sky130_fd_sc_hd__lpflow_inputiso1p_1/SLEEP ->
+sky130_fd_sc_hd__lpflow_inputisolatch_1/D ->
+sky130_fd_sc_hd__lpflow_inputisolatch_1/SLEEP_B ->
+sky130_fd_sc_hd__lpflow_isobufsrc_1/A ->
+sky130_fd_sc_hd__lpflow_isobufsrc_1/SLEEP ->
+sky130_fd_sc_hd__lpflow_isobufsrc_16/A ->
+sky130_fd_sc_hd__lpflow_isobufsrc_16/SLEEP ->
+sky130_fd_sc_hd__lpflow_isobufsrc_2/A ->
+sky130_fd_sc_hd__lpflow_isobufsrc_2/SLEEP ->
+sky130_fd_sc_hd__lpflow_isobufsrc_4/A ->
+sky130_fd_sc_hd__lpflow_isobufsrc_4/SLEEP ->
+sky130_fd_sc_hd__lpflow_isobufsrc_8/A ->
+sky130_fd_sc_hd__lpflow_isobufsrc_8/SLEEP ->
+sky130_fd_sc_hd__lpflow_isobufsrckapwr_16/A ->
+sky130_fd_sc_hd__lpflow_isobufsrckapwr_16/SLEEP ->
+sky130_fd_sc_hd__lpflow_lsbuf_lh_hl_isowell_tap_1/A ->
+sky130_fd_sc_hd__lpflow_lsbuf_lh_hl_isowell_tap_2/A ->
+sky130_fd_sc_hd__lpflow_lsbuf_lh_hl_isowell_tap_4/A ->
+sky130_fd_sc_hd__lpflow_lsbuf_lh_isowell_4/A ->
+sky130_fd_sc_hd__lpflow_lsbuf_lh_isowell_tap_1/A ->
+sky130_fd_sc_hd__lpflow_lsbuf_lh_isowell_tap_2/A ->
+sky130_fd_sc_hd__lpflow_lsbuf_lh_isowell_tap_4/A ->
+sky130_fd_sc_hd__maj3_1/A -> B C
+sky130_fd_sc_hd__maj3_1/B -> A C
+sky130_fd_sc_hd__maj3_1/C -> A B
+sky130_fd_sc_hd__maj3_2/A -> B C
+sky130_fd_sc_hd__maj3_2/B -> A C
+sky130_fd_sc_hd__maj3_2/C -> A B
+sky130_fd_sc_hd__maj3_4/A -> B C
+sky130_fd_sc_hd__maj3_4/B -> A C
+sky130_fd_sc_hd__maj3_4/C -> A B
+sky130_fd_sc_hd__mux2_1/A0 ->
+sky130_fd_sc_hd__mux2_1/A1 ->
+sky130_fd_sc_hd__mux2_1/S ->
+sky130_fd_sc_hd__mux2_2/A0 ->
+sky130_fd_sc_hd__mux2_2/A1 ->
+sky130_fd_sc_hd__mux2_2/S ->
+sky130_fd_sc_hd__mux2_4/A0 ->
+sky130_fd_sc_hd__mux2_4/A1 ->
+sky130_fd_sc_hd__mux2_4/S ->
+sky130_fd_sc_hd__mux2_8/A0 ->
+sky130_fd_sc_hd__mux2_8/A1 ->
+sky130_fd_sc_hd__mux2_8/S ->
+sky130_fd_sc_hd__mux2i_1/A0 ->
+sky130_fd_sc_hd__mux2i_1/A1 ->
+sky130_fd_sc_hd__mux2i_1/S ->
+sky130_fd_sc_hd__mux2i_2/A0 ->
+sky130_fd_sc_hd__mux2i_2/A1 ->
+sky130_fd_sc_hd__mux2i_2/S ->
+sky130_fd_sc_hd__mux2i_4/A0 ->
+sky130_fd_sc_hd__mux2i_4/A1 ->
+sky130_fd_sc_hd__mux2i_4/S ->
+sky130_fd_sc_hd__mux4_1/A0 ->
+sky130_fd_sc_hd__mux4_1/A1 ->
+sky130_fd_sc_hd__mux4_1/A2 ->
+sky130_fd_sc_hd__mux4_1/A3 ->
+sky130_fd_sc_hd__mux4_1/S0 ->
+sky130_fd_sc_hd__mux4_1/S1 ->
+sky130_fd_sc_hd__mux4_2/A0 ->
+sky130_fd_sc_hd__mux4_2/A1 ->
+sky130_fd_sc_hd__mux4_2/A2 ->
+sky130_fd_sc_hd__mux4_2/A3 ->
+sky130_fd_sc_hd__mux4_2/S0 ->
+sky130_fd_sc_hd__mux4_2/S1 ->
+sky130_fd_sc_hd__mux4_4/A0 ->
+sky130_fd_sc_hd__mux4_4/A1 ->
+sky130_fd_sc_hd__mux4_4/A2 ->
+sky130_fd_sc_hd__mux4_4/A3 ->
+sky130_fd_sc_hd__mux4_4/S0 ->
+sky130_fd_sc_hd__mux4_4/S1 ->
+sky130_fd_sc_hd__nand2_1/A -> B
+sky130_fd_sc_hd__nand2_1/B -> A
+sky130_fd_sc_hd__nand2_2/A -> B
+sky130_fd_sc_hd__nand2_2/B -> A
+sky130_fd_sc_hd__nand2_4/A -> B
+sky130_fd_sc_hd__nand2_4/B -> A
+sky130_fd_sc_hd__nand2_8/A -> B
+sky130_fd_sc_hd__nand2_8/B -> A
+sky130_fd_sc_hd__nand2b_1/A_N ->
+sky130_fd_sc_hd__nand2b_1/B ->
+sky130_fd_sc_hd__nand2b_2/A_N ->
+sky130_fd_sc_hd__nand2b_2/B ->
+sky130_fd_sc_hd__nand2b_4/A_N ->
+sky130_fd_sc_hd__nand2b_4/B ->
+sky130_fd_sc_hd__nand3_1/A -> B C
+sky130_fd_sc_hd__nand3_1/B -> A C
+sky130_fd_sc_hd__nand3_1/C -> A B
+sky130_fd_sc_hd__nand3_2/A -> B C
+sky130_fd_sc_hd__nand3_2/B -> A C
+sky130_fd_sc_hd__nand3_2/C -> A B
+sky130_fd_sc_hd__nand3_4/A -> B C
+sky130_fd_sc_hd__nand3_4/B -> A C
+sky130_fd_sc_hd__nand3_4/C -> A B
+sky130_fd_sc_hd__nand3b_1/A_N ->
+sky130_fd_sc_hd__nand3b_1/B -> C
+sky130_fd_sc_hd__nand3b_1/C -> B
+sky130_fd_sc_hd__nand3b_2/A_N ->
+sky130_fd_sc_hd__nand3b_2/B -> C
+sky130_fd_sc_hd__nand3b_2/C -> B
+sky130_fd_sc_hd__nand3b_4/A_N ->
+sky130_fd_sc_hd__nand3b_4/B -> C
+sky130_fd_sc_hd__nand3b_4/C -> B
+sky130_fd_sc_hd__nand4_1/A -> B C D
+sky130_fd_sc_hd__nand4_1/B -> A C D
+sky130_fd_sc_hd__nand4_1/C -> A B D
+sky130_fd_sc_hd__nand4_1/D -> A B C
+sky130_fd_sc_hd__nand4_2/A -> B C D
+sky130_fd_sc_hd__nand4_2/B -> A C D
+sky130_fd_sc_hd__nand4_2/C -> A B D
+sky130_fd_sc_hd__nand4_2/D -> A B C
+sky130_fd_sc_hd__nand4_4/A -> B C D
+sky130_fd_sc_hd__nand4_4/B -> A C D
+sky130_fd_sc_hd__nand4_4/C -> A B D
+sky130_fd_sc_hd__nand4_4/D -> A B C
+sky130_fd_sc_hd__nand4b_1/A_N ->
+sky130_fd_sc_hd__nand4b_1/B -> C D
+sky130_fd_sc_hd__nand4b_1/C -> B D
+sky130_fd_sc_hd__nand4b_1/D -> B C
+sky130_fd_sc_hd__nand4b_2/A_N ->
+sky130_fd_sc_hd__nand4b_2/B -> C D
+sky130_fd_sc_hd__nand4b_2/C -> B D
+sky130_fd_sc_hd__nand4b_2/D -> B C
+sky130_fd_sc_hd__nand4b_4/A_N ->
+sky130_fd_sc_hd__nand4b_4/B -> C D
+sky130_fd_sc_hd__nand4b_4/C -> B D
+sky130_fd_sc_hd__nand4b_4/D -> B C
+sky130_fd_sc_hd__nand4bb_1/A_N -> B_N
+sky130_fd_sc_hd__nand4bb_1/B_N -> A_N
+sky130_fd_sc_hd__nand4bb_1/C -> D
+sky130_fd_sc_hd__nand4bb_1/D -> C
+sky130_fd_sc_hd__nand4bb_2/A_N -> B_N
+sky130_fd_sc_hd__nand4bb_2/B_N -> A_N
+sky130_fd_sc_hd__nand4bb_2/C -> D
+sky130_fd_sc_hd__nand4bb_2/D -> C
+sky130_fd_sc_hd__nand4bb_4/A_N -> B_N
+sky130_fd_sc_hd__nand4bb_4/B_N -> A_N
+sky130_fd_sc_hd__nand4bb_4/C -> D
+sky130_fd_sc_hd__nand4bb_4/D -> C
+sky130_fd_sc_hd__nor2_1/A -> B
+sky130_fd_sc_hd__nor2_1/B -> A
+sky130_fd_sc_hd__nor2_2/A -> B
+sky130_fd_sc_hd__nor2_2/B -> A
+sky130_fd_sc_hd__nor2_4/A -> B
+sky130_fd_sc_hd__nor2_4/B -> A
+sky130_fd_sc_hd__nor2_8/A -> B
+sky130_fd_sc_hd__nor2_8/B -> A
+sky130_fd_sc_hd__nor2b_1/A ->
+sky130_fd_sc_hd__nor2b_1/B_N ->
+sky130_fd_sc_hd__nor2b_2/A ->
+sky130_fd_sc_hd__nor2b_2/B_N ->
+sky130_fd_sc_hd__nor2b_4/A ->
+sky130_fd_sc_hd__nor2b_4/B_N ->
+sky130_fd_sc_hd__nor3_1/A -> B C
+sky130_fd_sc_hd__nor3_1/B -> A C
+sky130_fd_sc_hd__nor3_1/C -> A B
+sky130_fd_sc_hd__nor3_2/A -> B C
+sky130_fd_sc_hd__nor3_2/B -> A C
+sky130_fd_sc_hd__nor3_2/C -> A B
+sky130_fd_sc_hd__nor3_4/A -> B C
+sky130_fd_sc_hd__nor3_4/B -> A C
+sky130_fd_sc_hd__nor3_4/C -> A B
+sky130_fd_sc_hd__nor3b_1/A -> B
+sky130_fd_sc_hd__nor3b_1/B -> A
+sky130_fd_sc_hd__nor3b_1/C_N ->
+sky130_fd_sc_hd__nor3b_2/A -> B
+sky130_fd_sc_hd__nor3b_2/B -> A
+sky130_fd_sc_hd__nor3b_2/C_N ->
+sky130_fd_sc_hd__nor3b_4/A -> B
+sky130_fd_sc_hd__nor3b_4/B -> A
+sky130_fd_sc_hd__nor3b_4/C_N ->
+sky130_fd_sc_hd__nor4_1/A -> B C D
+sky130_fd_sc_hd__nor4_1/B -> A C D
+sky130_fd_sc_hd__nor4_1/C -> A B D
+sky130_fd_sc_hd__nor4_1/D -> A B C
+sky130_fd_sc_hd__nor4_2/A -> B C D
+sky130_fd_sc_hd__nor4_2/B -> A C D
+sky130_fd_sc_hd__nor4_2/C -> A B D
+sky130_fd_sc_hd__nor4_2/D -> A B C
+sky130_fd_sc_hd__nor4_4/A -> B C D
+sky130_fd_sc_hd__nor4_4/B -> A C D
+sky130_fd_sc_hd__nor4_4/C -> A B D
+sky130_fd_sc_hd__nor4_4/D -> A B C
+sky130_fd_sc_hd__nor4b_1/A -> B C
+sky130_fd_sc_hd__nor4b_1/B -> A C
+sky130_fd_sc_hd__nor4b_1/C -> A B
+sky130_fd_sc_hd__nor4b_1/D_N ->
+sky130_fd_sc_hd__nor4b_2/A -> B C
+sky130_fd_sc_hd__nor4b_2/B -> A C
+sky130_fd_sc_hd__nor4b_2/C -> A B
+sky130_fd_sc_hd__nor4b_2/D_N ->
+sky130_fd_sc_hd__nor4b_4/A -> B C
+sky130_fd_sc_hd__nor4b_4/B -> A C
+sky130_fd_sc_hd__nor4b_4/C -> A B
+sky130_fd_sc_hd__nor4b_4/D_N ->
+sky130_fd_sc_hd__nor4bb_1/A -> B
+sky130_fd_sc_hd__nor4bb_1/B -> A
+sky130_fd_sc_hd__nor4bb_1/C_N -> D_N
+sky130_fd_sc_hd__nor4bb_1/D_N -> C_N
+sky130_fd_sc_hd__nor4bb_2/A -> B
+sky130_fd_sc_hd__nor4bb_2/B -> A
+sky130_fd_sc_hd__nor4bb_2/C_N -> D_N
+sky130_fd_sc_hd__nor4bb_2/D_N -> C_N
+sky130_fd_sc_hd__nor4bb_4/A -> B
+sky130_fd_sc_hd__nor4bb_4/B -> A
+sky130_fd_sc_hd__nor4bb_4/C_N -> D_N
+sky130_fd_sc_hd__nor4bb_4/D_N -> C_N
+sky130_fd_sc_hd__o2111a_1/A1 -> A2
+sky130_fd_sc_hd__o2111a_1/A2 -> A1
+sky130_fd_sc_hd__o2111a_1/B1 -> C1 D1
+sky130_fd_sc_hd__o2111a_1/C1 -> B1 D1
+sky130_fd_sc_hd__o2111a_1/D1 -> B1 C1
+sky130_fd_sc_hd__o2111a_2/A1 -> A2
+sky130_fd_sc_hd__o2111a_2/A2 -> A1
+sky130_fd_sc_hd__o2111a_2/B1 -> C1 D1
+sky130_fd_sc_hd__o2111a_2/C1 -> B1 D1
+sky130_fd_sc_hd__o2111a_2/D1 -> B1 C1
+sky130_fd_sc_hd__o2111a_4/A1 -> A2
+sky130_fd_sc_hd__o2111a_4/A2 -> A1
+sky130_fd_sc_hd__o2111a_4/B1 -> C1 D1
+sky130_fd_sc_hd__o2111a_4/C1 -> B1 D1
+sky130_fd_sc_hd__o2111a_4/D1 -> B1 C1
+sky130_fd_sc_hd__o2111ai_1/A1 -> A2
+sky130_fd_sc_hd__o2111ai_1/A2 -> A1
+sky130_fd_sc_hd__o2111ai_1/B1 -> C1 D1
+sky130_fd_sc_hd__o2111ai_1/C1 -> B1 D1
+sky130_fd_sc_hd__o2111ai_1/D1 -> B1 C1
+sky130_fd_sc_hd__o2111ai_2/A1 -> A2
+sky130_fd_sc_hd__o2111ai_2/A2 -> A1
+sky130_fd_sc_hd__o2111ai_2/B1 -> C1 D1
+sky130_fd_sc_hd__o2111ai_2/C1 -> B1 D1
+sky130_fd_sc_hd__o2111ai_2/D1 -> B1 C1
+sky130_fd_sc_hd__o2111ai_4/A1 -> A2
+sky130_fd_sc_hd__o2111ai_4/A2 -> A1
+sky130_fd_sc_hd__o2111ai_4/B1 -> C1 D1
+sky130_fd_sc_hd__o2111ai_4/C1 -> B1 D1
+sky130_fd_sc_hd__o2111ai_4/D1 -> B1 C1
+sky130_fd_sc_hd__o211a_1/A1 -> A2
+sky130_fd_sc_hd__o211a_1/A2 -> A1
+sky130_fd_sc_hd__o211a_1/B1 -> C1
+sky130_fd_sc_hd__o211a_1/C1 -> B1
+sky130_fd_sc_hd__o211a_2/A1 -> A2
+sky130_fd_sc_hd__o211a_2/A2 -> A1
+sky130_fd_sc_hd__o211a_2/B1 -> C1
+sky130_fd_sc_hd__o211a_2/C1 -> B1
+sky130_fd_sc_hd__o211a_4/A1 -> A2
+sky130_fd_sc_hd__o211a_4/A2 -> A1
+sky130_fd_sc_hd__o211a_4/B1 -> C1
+sky130_fd_sc_hd__o211a_4/C1 -> B1
+sky130_fd_sc_hd__o211ai_1/A1 -> A2
+sky130_fd_sc_hd__o211ai_1/A2 -> A1
+sky130_fd_sc_hd__o211ai_1/B1 -> C1
+sky130_fd_sc_hd__o211ai_1/C1 -> B1
+sky130_fd_sc_hd__o211ai_2/A1 -> A2
+sky130_fd_sc_hd__o211ai_2/A2 -> A1
+sky130_fd_sc_hd__o211ai_2/B1 -> C1
+sky130_fd_sc_hd__o211ai_2/C1 -> B1
+sky130_fd_sc_hd__o211ai_4/A1 -> A2
+sky130_fd_sc_hd__o211ai_4/A2 -> A1
+sky130_fd_sc_hd__o211ai_4/B1 -> C1
+sky130_fd_sc_hd__o211ai_4/C1 -> B1
+sky130_fd_sc_hd__o21a_1/A1 -> A2
+sky130_fd_sc_hd__o21a_1/A2 -> A1
+sky130_fd_sc_hd__o21a_1/B1 ->
+sky130_fd_sc_hd__o21a_2/A1 -> A2
+sky130_fd_sc_hd__o21a_2/A2 -> A1
+sky130_fd_sc_hd__o21a_2/B1 ->
+sky130_fd_sc_hd__o21a_4/A1 -> A2
+sky130_fd_sc_hd__o21a_4/A2 -> A1
+sky130_fd_sc_hd__o21a_4/B1 ->
+sky130_fd_sc_hd__o21ai_0/A1 -> A2
+sky130_fd_sc_hd__o21ai_0/A2 -> A1
+sky130_fd_sc_hd__o21ai_0/B1 ->
+sky130_fd_sc_hd__o21ai_1/A1 -> A2
+sky130_fd_sc_hd__o21ai_1/A2 -> A1
+sky130_fd_sc_hd__o21ai_1/B1 ->
+sky130_fd_sc_hd__o21ai_2/A1 -> A2
+sky130_fd_sc_hd__o21ai_2/A2 -> A1
+sky130_fd_sc_hd__o21ai_2/B1 ->
+sky130_fd_sc_hd__o21ai_4/A1 -> A2
+sky130_fd_sc_hd__o21ai_4/A2 -> A1
+sky130_fd_sc_hd__o21ai_4/B1 ->
+sky130_fd_sc_hd__o21ba_1/A1 -> A2
+sky130_fd_sc_hd__o21ba_1/A2 -> A1
+sky130_fd_sc_hd__o21ba_1/B1_N ->
+sky130_fd_sc_hd__o21ba_2/A1 -> A2
+sky130_fd_sc_hd__o21ba_2/A2 -> A1
+sky130_fd_sc_hd__o21ba_2/B1_N ->
+sky130_fd_sc_hd__o21ba_4/A1 -> A2
+sky130_fd_sc_hd__o21ba_4/A2 -> A1
+sky130_fd_sc_hd__o21ba_4/B1_N ->
+sky130_fd_sc_hd__o21bai_1/A1 -> A2
+sky130_fd_sc_hd__o21bai_1/A2 -> A1
+sky130_fd_sc_hd__o21bai_1/B1_N ->
+sky130_fd_sc_hd__o21bai_2/A1 -> A2
+sky130_fd_sc_hd__o21bai_2/A2 -> A1
+sky130_fd_sc_hd__o21bai_2/B1_N ->
+sky130_fd_sc_hd__o21bai_4/A1 -> A2
+sky130_fd_sc_hd__o21bai_4/A2 -> A1
+sky130_fd_sc_hd__o21bai_4/B1_N ->
+sky130_fd_sc_hd__o221a_1/A1 -> A2
+sky130_fd_sc_hd__o221a_1/A2 -> A1
+sky130_fd_sc_hd__o221a_1/B1 -> B2
+sky130_fd_sc_hd__o221a_1/B2 -> B1
+sky130_fd_sc_hd__o221a_1/C1 ->
+sky130_fd_sc_hd__o221a_2/A1 -> A2
+sky130_fd_sc_hd__o221a_2/A2 -> A1
+sky130_fd_sc_hd__o221a_2/B1 -> B2
+sky130_fd_sc_hd__o221a_2/B2 -> B1
+sky130_fd_sc_hd__o221a_2/C1 ->
+sky130_fd_sc_hd__o221a_4/A1 -> A2
+sky130_fd_sc_hd__o221a_4/A2 -> A1
+sky130_fd_sc_hd__o221a_4/B1 -> B2
+sky130_fd_sc_hd__o221a_4/B2 -> B1
+sky130_fd_sc_hd__o221a_4/C1 ->
+sky130_fd_sc_hd__o221ai_1/A1 -> A2
+sky130_fd_sc_hd__o221ai_1/A2 -> A1
+sky130_fd_sc_hd__o221ai_1/B1 -> B2
+sky130_fd_sc_hd__o221ai_1/B2 -> B1
+sky130_fd_sc_hd__o221ai_1/C1 ->
+sky130_fd_sc_hd__o221ai_2/A1 -> A2
+sky130_fd_sc_hd__o221ai_2/A2 -> A1
+sky130_fd_sc_hd__o221ai_2/B1 -> B2
+sky130_fd_sc_hd__o221ai_2/B2 -> B1
+sky130_fd_sc_hd__o221ai_2/C1 ->
+sky130_fd_sc_hd__o221ai_4/A1 -> A2
+sky130_fd_sc_hd__o221ai_4/A2 -> A1
+sky130_fd_sc_hd__o221ai_4/B1 -> B2
+sky130_fd_sc_hd__o221ai_4/B2 -> B1
+sky130_fd_sc_hd__o221ai_4/C1 ->
+sky130_fd_sc_hd__o22a_1/A1 -> A2
+sky130_fd_sc_hd__o22a_1/A2 -> A1
+sky130_fd_sc_hd__o22a_1/B1 -> B2
+sky130_fd_sc_hd__o22a_1/B2 -> B1
+sky130_fd_sc_hd__o22a_2/A1 -> A2
+sky130_fd_sc_hd__o22a_2/A2 -> A1
+sky130_fd_sc_hd__o22a_2/B1 -> B2
+sky130_fd_sc_hd__o22a_2/B2 -> B1
+sky130_fd_sc_hd__o22a_4/A1 -> A2
+sky130_fd_sc_hd__o22a_4/A2 -> A1
+sky130_fd_sc_hd__o22a_4/B1 -> B2
+sky130_fd_sc_hd__o22a_4/B2 -> B1
+sky130_fd_sc_hd__o22ai_1/A1 -> A2
+sky130_fd_sc_hd__o22ai_1/A2 -> A1
+sky130_fd_sc_hd__o22ai_1/B1 -> B2
+sky130_fd_sc_hd__o22ai_1/B2 -> B1
+sky130_fd_sc_hd__o22ai_2/A1 -> A2
+sky130_fd_sc_hd__o22ai_2/A2 -> A1
+sky130_fd_sc_hd__o22ai_2/B1 -> B2
+sky130_fd_sc_hd__o22ai_2/B2 -> B1
+sky130_fd_sc_hd__o22ai_4/A1 -> A2
+sky130_fd_sc_hd__o22ai_4/A2 -> A1
+sky130_fd_sc_hd__o22ai_4/B1 -> B2
+sky130_fd_sc_hd__o22ai_4/B2 -> B1
+sky130_fd_sc_hd__o2bb2a_1/A1_N -> A2_N
+sky130_fd_sc_hd__o2bb2a_1/A2_N -> A1_N
+sky130_fd_sc_hd__o2bb2a_1/B1 -> B2
+sky130_fd_sc_hd__o2bb2a_1/B2 -> B1
+sky130_fd_sc_hd__o2bb2a_2/A1_N -> A2_N
+sky130_fd_sc_hd__o2bb2a_2/A2_N -> A1_N
+sky130_fd_sc_hd__o2bb2a_2/B1 -> B2
+sky130_fd_sc_hd__o2bb2a_2/B2 -> B1
+sky130_fd_sc_hd__o2bb2a_4/A1_N -> A2_N
+sky130_fd_sc_hd__o2bb2a_4/A2_N -> A1_N
+sky130_fd_sc_hd__o2bb2a_4/B1 -> B2
+sky130_fd_sc_hd__o2bb2a_4/B2 -> B1
+sky130_fd_sc_hd__o2bb2ai_1/A1_N -> A2_N
+sky130_fd_sc_hd__o2bb2ai_1/A2_N -> A1_N
+sky130_fd_sc_hd__o2bb2ai_1/B1 -> B2
+sky130_fd_sc_hd__o2bb2ai_1/B2 -> B1
+sky130_fd_sc_hd__o2bb2ai_2/A1_N -> A2_N
+sky130_fd_sc_hd__o2bb2ai_2/A2_N -> A1_N
+sky130_fd_sc_hd__o2bb2ai_2/B1 -> B2
+sky130_fd_sc_hd__o2bb2ai_2/B2 -> B1
+sky130_fd_sc_hd__o2bb2ai_4/A1_N -> A2_N
+sky130_fd_sc_hd__o2bb2ai_4/A2_N -> A1_N
+sky130_fd_sc_hd__o2bb2ai_4/B1 -> B2
+sky130_fd_sc_hd__o2bb2ai_4/B2 -> B1
+sky130_fd_sc_hd__o311a_1/A1 -> A2 A3
+sky130_fd_sc_hd__o311a_1/A2 -> A1 A3
+sky130_fd_sc_hd__o311a_1/A3 -> A1 A2
+sky130_fd_sc_hd__o311a_1/B1 -> C1
+sky130_fd_sc_hd__o311a_1/C1 -> B1
+sky130_fd_sc_hd__o311a_2/A1 -> A2 A3
+sky130_fd_sc_hd__o311a_2/A2 -> A1 A3
+sky130_fd_sc_hd__o311a_2/A3 -> A1 A2
+sky130_fd_sc_hd__o311a_2/B1 -> C1
+sky130_fd_sc_hd__o311a_2/C1 -> B1
+sky130_fd_sc_hd__o311a_4/A1 -> A2 A3
+sky130_fd_sc_hd__o311a_4/A2 -> A1 A3
+sky130_fd_sc_hd__o311a_4/A3 -> A1 A2
+sky130_fd_sc_hd__o311a_4/B1 -> C1
+sky130_fd_sc_hd__o311a_4/C1 -> B1
+sky130_fd_sc_hd__o311ai_0/A1 -> A2 A3
+sky130_fd_sc_hd__o311ai_0/A2 -> A1 A3
+sky130_fd_sc_hd__o311ai_0/A3 -> A1 A2
+sky130_fd_sc_hd__o311ai_0/B1 -> C1
+sky130_fd_sc_hd__o311ai_0/C1 -> B1
+sky130_fd_sc_hd__o311ai_1/A1 -> A2 A3
+sky130_fd_sc_hd__o311ai_1/A2 -> A1 A3
+sky130_fd_sc_hd__o311ai_1/A3 -> A1 A2
+sky130_fd_sc_hd__o311ai_1/B1 -> C1
+sky130_fd_sc_hd__o311ai_1/C1 -> B1
+sky130_fd_sc_hd__o311ai_2/A1 -> A2 A3
+sky130_fd_sc_hd__o311ai_2/A2 -> A1 A3
+sky130_fd_sc_hd__o311ai_2/A3 -> A1 A2
+sky130_fd_sc_hd__o311ai_2/B1 -> C1
+sky130_fd_sc_hd__o311ai_2/C1 -> B1
+sky130_fd_sc_hd__o311ai_4/A1 -> A2 A3
+sky130_fd_sc_hd__o311ai_4/A2 -> A1 A3
+sky130_fd_sc_hd__o311ai_4/A3 -> A1 A2
+sky130_fd_sc_hd__o311ai_4/B1 -> C1
+sky130_fd_sc_hd__o311ai_4/C1 -> B1
+sky130_fd_sc_hd__o31a_1/A1 -> A2 A3
+sky130_fd_sc_hd__o31a_1/A2 -> A1 A3
+sky130_fd_sc_hd__o31a_1/A3 -> A1 A2
+sky130_fd_sc_hd__o31a_1/B1 ->
+sky130_fd_sc_hd__o31a_2/A1 -> A2 A3
+sky130_fd_sc_hd__o31a_2/A2 -> A1 A3
+sky130_fd_sc_hd__o31a_2/A3 -> A1 A2
+sky130_fd_sc_hd__o31a_2/B1 ->
+sky130_fd_sc_hd__o31a_4/A1 -> A2 A3
+sky130_fd_sc_hd__o31a_4/A2 -> A1 A3
+sky130_fd_sc_hd__o31a_4/A3 -> A1 A2
+sky130_fd_sc_hd__o31a_4/B1 ->
+sky130_fd_sc_hd__o31ai_1/A1 -> A2 A3
+sky130_fd_sc_hd__o31ai_1/A2 -> A1 A3
+sky130_fd_sc_hd__o31ai_1/A3 -> A1 A2
+sky130_fd_sc_hd__o31ai_1/B1 ->
+sky130_fd_sc_hd__o31ai_2/A1 -> A2 A3
+sky130_fd_sc_hd__o31ai_2/A2 -> A1 A3
+sky130_fd_sc_hd__o31ai_2/A3 -> A1 A2
+sky130_fd_sc_hd__o31ai_2/B1 ->
+sky130_fd_sc_hd__o31ai_4/A1 -> A2 A3
+sky130_fd_sc_hd__o31ai_4/A2 -> A1 A3
+sky130_fd_sc_hd__o31ai_4/A3 -> A1 A2
+sky130_fd_sc_hd__o31ai_4/B1 ->
+sky130_fd_sc_hd__o32a_1/A1 -> A2 A3
+sky130_fd_sc_hd__o32a_1/A2 -> A1 A3
+sky130_fd_sc_hd__o32a_1/A3 -> A1 A2
+sky130_fd_sc_hd__o32a_1/B1 -> B2
+sky130_fd_sc_hd__o32a_1/B2 -> B1
+sky130_fd_sc_hd__o32a_2/A1 -> A2 A3
+sky130_fd_sc_hd__o32a_2/A2 -> A1 A3
+sky130_fd_sc_hd__o32a_2/A3 -> A1 A2
+sky130_fd_sc_hd__o32a_2/B1 -> B2
+sky130_fd_sc_hd__o32a_2/B2 -> B1
+sky130_fd_sc_hd__o32a_4/A1 -> A2 A3
+sky130_fd_sc_hd__o32a_4/A2 -> A1 A3
+sky130_fd_sc_hd__o32a_4/A3 -> A1 A2
+sky130_fd_sc_hd__o32a_4/B1 -> B2
+sky130_fd_sc_hd__o32a_4/B2 -> B1
+sky130_fd_sc_hd__o32ai_1/A1 -> A2 A3
+sky130_fd_sc_hd__o32ai_1/A2 -> A1 A3
+sky130_fd_sc_hd__o32ai_1/A3 -> A1 A2
+sky130_fd_sc_hd__o32ai_1/B1 -> B2
+sky130_fd_sc_hd__o32ai_1/B2 -> B1
+sky130_fd_sc_hd__o32ai_2/A1 -> A2 A3
+sky130_fd_sc_hd__o32ai_2/A2 -> A1 A3
+sky130_fd_sc_hd__o32ai_2/A3 -> A1 A2
+sky130_fd_sc_hd__o32ai_2/B1 -> B2
+sky130_fd_sc_hd__o32ai_2/B2 -> B1
+sky130_fd_sc_hd__o32ai_4/A1 -> A2 A3
+sky130_fd_sc_hd__o32ai_4/A2 -> A1 A3
+sky130_fd_sc_hd__o32ai_4/A3 -> A1 A2
+sky130_fd_sc_hd__o32ai_4/B1 -> B2
+sky130_fd_sc_hd__o32ai_4/B2 -> B1
+sky130_fd_sc_hd__o41a_1/A1 -> A2 A3 A4
+sky130_fd_sc_hd__o41a_1/A2 -> A1 A3 A4
+sky130_fd_sc_hd__o41a_1/A3 -> A1 A2 A4
+sky130_fd_sc_hd__o41a_1/A4 -> A1 A2 A3
+sky130_fd_sc_hd__o41a_1/B1 ->
+sky130_fd_sc_hd__o41a_2/A1 -> A2 A3 A4
+sky130_fd_sc_hd__o41a_2/A2 -> A1 A3 A4
+sky130_fd_sc_hd__o41a_2/A3 -> A1 A2 A4
+sky130_fd_sc_hd__o41a_2/A4 -> A1 A2 A3
+sky130_fd_sc_hd__o41a_2/B1 ->
+sky130_fd_sc_hd__o41a_4/A1 -> A2 A3 A4
+sky130_fd_sc_hd__o41a_4/A2 -> A1 A3 A4
+sky130_fd_sc_hd__o41a_4/A3 -> A1 A2 A4
+sky130_fd_sc_hd__o41a_4/A4 -> A1 A2 A3
+sky130_fd_sc_hd__o41a_4/B1 ->
+sky130_fd_sc_hd__o41ai_1/A1 -> A2 A3 A4
+sky130_fd_sc_hd__o41ai_1/A2 -> A1 A3 A4
+sky130_fd_sc_hd__o41ai_1/A3 -> A1 A2 A4
+sky130_fd_sc_hd__o41ai_1/A4 -> A1 A2 A3
+sky130_fd_sc_hd__o41ai_1/B1 ->
+sky130_fd_sc_hd__o41ai_2/A1 -> A2 A3 A4
+sky130_fd_sc_hd__o41ai_2/A2 -> A1 A3 A4
+sky130_fd_sc_hd__o41ai_2/A3 -> A1 A2 A4
+sky130_fd_sc_hd__o41ai_2/A4 -> A1 A2 A3
+sky130_fd_sc_hd__o41ai_2/B1 ->
+sky130_fd_sc_hd__o41ai_4/A1 -> A2 A3 A4
+sky130_fd_sc_hd__o41ai_4/A2 -> A1 A3 A4
+sky130_fd_sc_hd__o41ai_4/A3 -> A1 A2 A4
+sky130_fd_sc_hd__o41ai_4/A4 -> A1 A2 A3
+sky130_fd_sc_hd__o41ai_4/B1 ->
+sky130_fd_sc_hd__or2_0/A -> B
+sky130_fd_sc_hd__or2_0/B -> A
+sky130_fd_sc_hd__or2_1/A -> B
+sky130_fd_sc_hd__or2_1/B -> A
+sky130_fd_sc_hd__or2_2/A -> B
+sky130_fd_sc_hd__or2_2/B -> A
+sky130_fd_sc_hd__or2_4/A -> B
+sky130_fd_sc_hd__or2_4/B -> A
+sky130_fd_sc_hd__or2b_1/A ->
+sky130_fd_sc_hd__or2b_1/B_N ->
+sky130_fd_sc_hd__or2b_2/A ->
+sky130_fd_sc_hd__or2b_2/B_N ->
+sky130_fd_sc_hd__or2b_4/A ->
+sky130_fd_sc_hd__or2b_4/B_N ->
+sky130_fd_sc_hd__or3_1/A -> B C
+sky130_fd_sc_hd__or3_1/B -> A C
+sky130_fd_sc_hd__or3_1/C -> A B
+sky130_fd_sc_hd__or3_2/A -> B C
+sky130_fd_sc_hd__or3_2/B -> A C
+sky130_fd_sc_hd__or3_2/C -> A B
+sky130_fd_sc_hd__or3_4/A -> B C
+sky130_fd_sc_hd__or3_4/B -> A C
+sky130_fd_sc_hd__or3_4/C -> A B
+sky130_fd_sc_hd__or3b_1/A -> B
+sky130_fd_sc_hd__or3b_1/B -> A
+sky130_fd_sc_hd__or3b_1/C_N ->
+sky130_fd_sc_hd__or3b_2/A -> B
+sky130_fd_sc_hd__or3b_2/B -> A
+sky130_fd_sc_hd__or3b_2/C_N ->
+sky130_fd_sc_hd__or3b_4/A -> B
+sky130_fd_sc_hd__or3b_4/B -> A
+sky130_fd_sc_hd__or3b_4/C_N ->
+sky130_fd_sc_hd__or4_1/A -> B C D
+sky130_fd_sc_hd__or4_1/B -> A C D
+sky130_fd_sc_hd__or4_1/C -> A B D
+sky130_fd_sc_hd__or4_1/D -> A B C
+sky130_fd_sc_hd__or4_2/A -> B C D
+sky130_fd_sc_hd__or4_2/B -> A C D
+sky130_fd_sc_hd__or4_2/C -> A B D
+sky130_fd_sc_hd__or4_2/D -> A B C
+sky130_fd_sc_hd__or4_4/A -> B C D
+sky130_fd_sc_hd__or4_4/B -> A C D
+sky130_fd_sc_hd__or4_4/C -> A B D
+sky130_fd_sc_hd__or4_4/D -> A B C
+sky130_fd_sc_hd__or4b_1/A -> B C
+sky130_fd_sc_hd__or4b_1/B -> A C
+sky130_fd_sc_hd__or4b_1/C -> A B
+sky130_fd_sc_hd__or4b_1/D_N ->
+sky130_fd_sc_hd__or4b_2/A -> B C
+sky130_fd_sc_hd__or4b_2/B -> A C
+sky130_fd_sc_hd__or4b_2/C -> A B
+sky130_fd_sc_hd__or4b_2/D_N ->
+sky130_fd_sc_hd__or4b_4/A -> B C
+sky130_fd_sc_hd__or4b_4/B -> A C
+sky130_fd_sc_hd__or4b_4/C -> A B
+sky130_fd_sc_hd__or4b_4/D_N ->
+sky130_fd_sc_hd__or4bb_1/A -> B
+sky130_fd_sc_hd__or4bb_1/B -> A
+sky130_fd_sc_hd__or4bb_1/C_N -> D_N
+sky130_fd_sc_hd__or4bb_1/D_N -> C_N
+sky130_fd_sc_hd__or4bb_2/A -> B
+sky130_fd_sc_hd__or4bb_2/B -> A
+sky130_fd_sc_hd__or4bb_2/C_N -> D_N
+sky130_fd_sc_hd__or4bb_2/D_N -> C_N
+sky130_fd_sc_hd__or4bb_4/A -> B
+sky130_fd_sc_hd__or4bb_4/B -> A
+sky130_fd_sc_hd__or4bb_4/C_N -> D_N
+sky130_fd_sc_hd__or4bb_4/D_N -> C_N
+sky130_fd_sc_hd__probe_p_8/A ->
+sky130_fd_sc_hd__probec_p_8/A ->
+sky130_fd_sc_hd__sdfbbn_1/CLK_N ->
+sky130_fd_sc_hd__sdfbbn_1/D ->
+sky130_fd_sc_hd__sdfbbn_1/RESET_B ->
+sky130_fd_sc_hd__sdfbbn_1/SCD ->
+sky130_fd_sc_hd__sdfbbn_1/SCE ->
+sky130_fd_sc_hd__sdfbbn_1/SET_B ->
+sky130_fd_sc_hd__sdfbbn_2/CLK_N ->
+sky130_fd_sc_hd__sdfbbn_2/D ->
+sky130_fd_sc_hd__sdfbbn_2/RESET_B ->
+sky130_fd_sc_hd__sdfbbn_2/SCD ->
+sky130_fd_sc_hd__sdfbbn_2/SCE ->
+sky130_fd_sc_hd__sdfbbn_2/SET_B ->
+sky130_fd_sc_hd__sdfbbp_1/CLK ->
+sky130_fd_sc_hd__sdfbbp_1/D ->
+sky130_fd_sc_hd__sdfbbp_1/RESET_B ->
+sky130_fd_sc_hd__sdfbbp_1/SCD ->
+sky130_fd_sc_hd__sdfbbp_1/SCE ->
+sky130_fd_sc_hd__sdfbbp_1/SET_B ->
+sky130_fd_sc_hd__sdfrbp_1/CLK ->
+sky130_fd_sc_hd__sdfrbp_1/D ->
+sky130_fd_sc_hd__sdfrbp_1/RESET_B ->
+sky130_fd_sc_hd__sdfrbp_1/SCD ->
+sky130_fd_sc_hd__sdfrbp_1/SCE ->
+sky130_fd_sc_hd__sdfrbp_2/CLK ->
+sky130_fd_sc_hd__sdfrbp_2/D ->
+sky130_fd_sc_hd__sdfrbp_2/RESET_B ->
+sky130_fd_sc_hd__sdfrbp_2/SCD ->
+sky130_fd_sc_hd__sdfrbp_2/SCE ->
+sky130_fd_sc_hd__sdfrtn_1/CLK_N ->
+sky130_fd_sc_hd__sdfrtn_1/D ->
+sky130_fd_sc_hd__sdfrtn_1/RESET_B ->
+sky130_fd_sc_hd__sdfrtn_1/SCD ->
+sky130_fd_sc_hd__sdfrtn_1/SCE ->
+sky130_fd_sc_hd__sdfrtp_1/CLK ->
+sky130_fd_sc_hd__sdfrtp_1/D ->
+sky130_fd_sc_hd__sdfrtp_1/RESET_B ->
+sky130_fd_sc_hd__sdfrtp_1/SCD ->
+sky130_fd_sc_hd__sdfrtp_1/SCE ->
+sky130_fd_sc_hd__sdfrtp_2/CLK ->
+sky130_fd_sc_hd__sdfrtp_2/D ->
+sky130_fd_sc_hd__sdfrtp_2/RESET_B ->
+sky130_fd_sc_hd__sdfrtp_2/SCD ->
+sky130_fd_sc_hd__sdfrtp_2/SCE ->
+sky130_fd_sc_hd__sdfrtp_4/CLK ->
+sky130_fd_sc_hd__sdfrtp_4/D ->
+sky130_fd_sc_hd__sdfrtp_4/RESET_B ->
+sky130_fd_sc_hd__sdfrtp_4/SCD ->
+sky130_fd_sc_hd__sdfrtp_4/SCE ->
+sky130_fd_sc_hd__sdfsbp_1/CLK ->
+sky130_fd_sc_hd__sdfsbp_1/D ->
+sky130_fd_sc_hd__sdfsbp_1/SCD ->
+sky130_fd_sc_hd__sdfsbp_1/SCE ->
+sky130_fd_sc_hd__sdfsbp_1/SET_B ->
+sky130_fd_sc_hd__sdfsbp_2/CLK ->
+sky130_fd_sc_hd__sdfsbp_2/D ->
+sky130_fd_sc_hd__sdfsbp_2/SCD ->
+sky130_fd_sc_hd__sdfsbp_2/SCE ->
+sky130_fd_sc_hd__sdfsbp_2/SET_B ->
+sky130_fd_sc_hd__sdfstp_1/CLK ->
+sky130_fd_sc_hd__sdfstp_1/D ->
+sky130_fd_sc_hd__sdfstp_1/SCD ->
+sky130_fd_sc_hd__sdfstp_1/SCE ->
+sky130_fd_sc_hd__sdfstp_1/SET_B ->
+sky130_fd_sc_hd__sdfstp_2/CLK ->
+sky130_fd_sc_hd__sdfstp_2/D ->
+sky130_fd_sc_hd__sdfstp_2/SCD ->
+sky130_fd_sc_hd__sdfstp_2/SCE ->
+sky130_fd_sc_hd__sdfstp_2/SET_B ->
+sky130_fd_sc_hd__sdfstp_4/CLK ->
+sky130_fd_sc_hd__sdfstp_4/D ->
+sky130_fd_sc_hd__sdfstp_4/SCD ->
+sky130_fd_sc_hd__sdfstp_4/SCE ->
+sky130_fd_sc_hd__sdfstp_4/SET_B ->
+sky130_fd_sc_hd__sdfxbp_1/CLK ->
+sky130_fd_sc_hd__sdfxbp_1/D ->
+sky130_fd_sc_hd__sdfxbp_1/SCD ->
+sky130_fd_sc_hd__sdfxbp_1/SCE ->
+sky130_fd_sc_hd__sdfxbp_2/CLK ->
+sky130_fd_sc_hd__sdfxbp_2/D ->
+sky130_fd_sc_hd__sdfxbp_2/SCD ->
+sky130_fd_sc_hd__sdfxbp_2/SCE ->
+sky130_fd_sc_hd__sdfxtp_1/CLK ->
+sky130_fd_sc_hd__sdfxtp_1/D ->
+sky130_fd_sc_hd__sdfxtp_1/SCD ->
+sky130_fd_sc_hd__sdfxtp_1/SCE ->
+sky130_fd_sc_hd__sdfxtp_2/CLK ->
+sky130_fd_sc_hd__sdfxtp_2/D ->
+sky130_fd_sc_hd__sdfxtp_2/SCD ->
+sky130_fd_sc_hd__sdfxtp_2/SCE ->
+sky130_fd_sc_hd__sdfxtp_4/CLK ->
+sky130_fd_sc_hd__sdfxtp_4/D ->
+sky130_fd_sc_hd__sdfxtp_4/SCD ->
+sky130_fd_sc_hd__sdfxtp_4/SCE ->
+sky130_fd_sc_hd__sdlclkp_1/CLK ->
+sky130_fd_sc_hd__sdlclkp_1/GATE ->
+sky130_fd_sc_hd__sdlclkp_1/SCE ->
+sky130_fd_sc_hd__sdlclkp_2/CLK ->
+sky130_fd_sc_hd__sdlclkp_2/GATE ->
+sky130_fd_sc_hd__sdlclkp_2/SCE ->
+sky130_fd_sc_hd__sdlclkp_4/CLK ->
+sky130_fd_sc_hd__sdlclkp_4/GATE ->
+sky130_fd_sc_hd__sdlclkp_4/SCE ->
+sky130_fd_sc_hd__sedfxbp_1/CLK ->
+sky130_fd_sc_hd__sedfxbp_1/D ->
+sky130_fd_sc_hd__sedfxbp_1/DE ->
+sky130_fd_sc_hd__sedfxbp_1/SCD ->
+sky130_fd_sc_hd__sedfxbp_1/SCE ->
+sky130_fd_sc_hd__sedfxbp_2/CLK ->
+sky130_fd_sc_hd__sedfxbp_2/D ->
+sky130_fd_sc_hd__sedfxbp_2/DE ->
+sky130_fd_sc_hd__sedfxbp_2/SCD ->
+sky130_fd_sc_hd__sedfxbp_2/SCE ->
+sky130_fd_sc_hd__sedfxtp_1/CLK ->
+sky130_fd_sc_hd__sedfxtp_1/D ->
+sky130_fd_sc_hd__sedfxtp_1/DE ->
+sky130_fd_sc_hd__sedfxtp_1/SCD ->
+sky130_fd_sc_hd__sedfxtp_1/SCE ->
+sky130_fd_sc_hd__sedfxtp_2/CLK ->
+sky130_fd_sc_hd__sedfxtp_2/D ->
+sky130_fd_sc_hd__sedfxtp_2/DE ->
+sky130_fd_sc_hd__sedfxtp_2/SCD ->
+sky130_fd_sc_hd__sedfxtp_2/SCE ->
+sky130_fd_sc_hd__sedfxtp_4/CLK ->
+sky130_fd_sc_hd__sedfxtp_4/D ->
+sky130_fd_sc_hd__sedfxtp_4/DE ->
+sky130_fd_sc_hd__sedfxtp_4/SCD ->
+sky130_fd_sc_hd__sedfxtp_4/SCE ->
+sky130_fd_sc_hd__xnor2_1/A -> B
+sky130_fd_sc_hd__xnor2_1/B -> A
+sky130_fd_sc_hd__xnor2_2/A -> B
+sky130_fd_sc_hd__xnor2_2/B -> A
+sky130_fd_sc_hd__xnor2_4/A -> B
+sky130_fd_sc_hd__xnor2_4/B -> A
+sky130_fd_sc_hd__xnor3_1/A -> B C
+sky130_fd_sc_hd__xnor3_1/B -> A C
+sky130_fd_sc_hd__xnor3_1/C -> A B
+sky130_fd_sc_hd__xnor3_2/A -> B C
+sky130_fd_sc_hd__xnor3_2/B -> A C
+sky130_fd_sc_hd__xnor3_2/C -> A B
+sky130_fd_sc_hd__xnor3_4/A -> B C
+sky130_fd_sc_hd__xnor3_4/B -> A C
+sky130_fd_sc_hd__xnor3_4/C -> A B
+sky130_fd_sc_hd__xor2_1/A -> B
+sky130_fd_sc_hd__xor2_1/B -> A
+sky130_fd_sc_hd__xor2_2/A -> B
+sky130_fd_sc_hd__xor2_2/B -> A
+sky130_fd_sc_hd__xor2_4/A -> B
+sky130_fd_sc_hd__xor2_4/B -> A
+sky130_fd_sc_hd__xor3_1/A -> B C
+sky130_fd_sc_hd__xor3_1/B -> A C
+sky130_fd_sc_hd__xor3_1/C -> A B
+sky130_fd_sc_hd__xor3_2/A -> B C
+sky130_fd_sc_hd__xor3_2/B -> A C
+sky130_fd_sc_hd__xor3_2/C -> A B
+sky130_fd_sc_hd__xor3_4/A -> B C
+sky130_fd_sc_hd__xor3_4/B -> A C
+sky130_fd_sc_hd__xor3_4/C -> A B

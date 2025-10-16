@@ -1,0 +1,328 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
+
+#pragma once
+
+#include <utility>
+
+#include "db/drObj/drFig.h"
+#include "db/infra/frSegStyle.h"
+#include "dr/FlexMazeTypes.h"
+#include "frBaseTypes.h"
+#include "odb/dbTransform.h"
+#include "odb/geom.h"
+
+namespace drt {
+
+class drNet;
+class drPin;
+class frPathSeg;
+class frPatchWire;
+
+class drShape : public drPinFig
+{
+ public:
+  // setters
+  virtual void setLayerNum(frLayerNum tmpLayerNum) = 0;
+  // getters
+  virtual frLayerNum getLayerNum() const = 0;
+  // others
+
+  /* drom drPinFig
+   * hasPin
+   * getPin
+   * addToPin
+   * removedromPin
+   */
+
+  /* drom drConnFig
+   * hasNet
+   * getNet
+   * addToNet
+   * removedromNet
+   */
+
+  /* drom drFig
+   * getBBox
+   * move
+   * overlaps
+   */
+
+ protected:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<drPinFig>(*this);
+  }
+
+  friend class boost::serialization::access;
+};
+
+class drPathSeg : public drShape
+{
+ public:
+  // constructors
+  drPathSeg() = default;
+  drPathSeg(const drPathSeg& in) = default;
+  drPathSeg(const frPathSeg& in);
+  // getters
+  std::pair<odb::Point, odb::Point> getPoints() const { return {begin_, end_}; }
+
+  frCoord length() const
+  {
+    // assuming it is always orthogonal
+    return end_.x() - begin_.x() + end_.y() - begin_.y();
+  }
+  const odb::Point& getBeginPoint() const { return begin_; }
+
+  const odb::Point& getEndPoint() const { return end_; }
+
+  bool isVertical() const { return begin_.x() == end_.x(); }
+
+  frCoord low() const
+  {
+    if (isVertical()) {
+      return begin_.y();
+    }
+    return begin_.x();
+  }
+  frCoord high() const
+  {
+    if (isVertical()) {
+      return end_.y();
+    }
+    return end_.x();
+  }
+  frSegStyle getStyle() const { return style_; }
+  // setters
+  void setPoints(const odb::Point& beginIn, const odb::Point& endIn)
+  {
+    begin_ = beginIn;
+    end_ = endIn;
+  }
+  void setStyle(const frSegStyle& styleIn)
+  {
+    style_.setBeginStyle(styleIn.getBeginStyle(), styleIn.getBeginExt());
+    style_.setEndStyle(styleIn.getEndStyle(), styleIn.getEndExt());
+    style_.setWidth(styleIn.getWidth());
+  }
+  void setBeginStyle(const frEndStyle& bs, frUInt4 ext = 0)
+  {
+    style_.setBeginStyle(bs, ext);
+  }
+  void setEndStyle(const frEndStyle& es, frUInt4 ext = 0)
+  {
+    style_.setEndStyle(es, ext);
+  }
+  frCoord getBeginX() const { return begin_.x(); }
+  frCoord getBeginY() const { return begin_.y(); }
+  frCoord getEndX() const { return end_.x(); }
+  frCoord getEndY() const { return end_.y(); }
+  // others
+  frBlockObjectEnum typeId() const override { return drcPathSeg; }
+
+  /* from drShape
+   * setLayerNum
+   * getLayerNum
+   */
+  void setLayerNum(frLayerNum numIn) override { layer_ = numIn; }
+  frLayerNum getLayerNum() const override { return layer_; }
+
+  /* from drPinFig
+   * hasPin
+   * getPin
+   * addToPin
+   * removedromPin
+   */
+  bool hasPin() const override
+  {
+    return (owner_) && (owner_->typeId() == drcPin);
+  }
+
+  drPin* getPin() const override { return reinterpret_cast<drPin*>(owner_); }
+
+  void addToPin(drPin* in) override
+  {
+    owner_ = reinterpret_cast<drBlockObject*>(in);
+  }
+
+  void removeFromPin() override { owner_ = nullptr; }
+
+  /* from drConnFig
+   * hasNet
+   * getNet
+   * addToNet
+   * removedromNet
+   */
+  bool hasNet() const override
+  {
+    return (owner_) && (owner_->typeId() == drcNet);
+  }
+
+  drNet* getNet() const override { return reinterpret_cast<drNet*>(owner_); }
+
+  void addToNet(drNet* in) override
+  {
+    owner_ = reinterpret_cast<drBlockObject*>(in);
+  }
+
+  void removeFromNet() override { owner_ = nullptr; }
+
+  /* from drFig
+   * getBBox
+   * move, in .cpp
+   * overlaps, in .cpp
+   */
+  // needs to be updated
+  odb::Rect getBBox() const override;
+
+  bool hasMazeIdx() const { return (!beginMazeIdx_.empty()); }
+  std::pair<FlexMazeIdx, FlexMazeIdx> getMazeIdx() const
+  {
+    return {beginMazeIdx_, endMazeIdx_};
+  }
+  void setMazeIdx(FlexMazeIdx& bi, FlexMazeIdx& ei)
+  {
+    beginMazeIdx_.set(bi);
+    endMazeIdx_.set(ei);
+  }
+  void setPatchSeg(bool in) { patchSeg_ = in; }
+  bool isPatchSeg() const { return patchSeg_; }
+  bool isTapered() const { return isTapered_; }
+  void setTapered(bool t) { isTapered_ = t; }
+  void setApPathSeg(odb::Point pt)
+  {
+    is_ap_pathseg_ = true;
+    ap_loc_ = pt;
+  }
+  bool isApPathSeg() const { return is_ap_pathseg_; }
+  odb::Point getApLoc() const { return ap_loc_; }
+
+ protected:
+  odb::Point begin_;  // begin always smaller than end, assumed
+  odb::Point end_;
+  frLayerNum layer_{0};
+  frSegStyle style_;
+  drBlockObject* owner_{nullptr};
+  FlexMazeIdx beginMazeIdx_;
+  FlexMazeIdx endMazeIdx_;
+  bool patchSeg_{false};
+  bool isTapered_{false};
+  bool is_ap_pathseg_{false};
+  odb::Point ap_loc_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<drShape>(*this);
+    (ar) & begin_;
+    (ar) & end_;
+    (ar) & layer_;
+    (ar) & style_;
+    (ar) & owner_;
+    (ar) & beginMazeIdx_;
+    (ar) & endMazeIdx_;
+    (ar) & patchSeg_;
+    (ar) & isTapered_;
+    (ar) & is_ap_pathseg_;
+    (ar) & ap_loc_;
+  }
+
+  friend class boost::serialization::access;
+};
+
+class drPatchWire : public drShape
+{
+ public:
+  // constructors
+  drPatchWire() = default;
+  drPatchWire(const drPatchWire& in) = default;
+  drPatchWire(const frPatchWire& in);
+  // others
+  frBlockObjectEnum typeId() const override { return drcPatchWire; }
+
+  /* from drShape
+   * setLayerNum
+   * getLayerNum
+   */
+  void setLayerNum(frLayerNum numIn) override { layer_ = numIn; }
+  frLayerNum getLayerNum() const override { return layer_; }
+
+  /* from drPinFig
+   * hasPin
+   * getPin
+   * addToPin
+   * removeFromPin
+   */
+  bool hasPin() const override
+  {
+    return (owner_) && (owner_->typeId() == drcPin);
+  }
+
+  drPin* getPin() const override { return reinterpret_cast<drPin*>(owner_); }
+
+  void addToPin(drPin* in) override
+  {
+    owner_ = reinterpret_cast<drBlockObject*>(in);
+  }
+
+  void removeFromPin() override { owner_ = nullptr; }
+
+  /* from drConnfig
+   * hasNet
+   * getNet
+   * addToNet
+   * removedFromNet
+   */
+  bool hasNet() const override
+  {
+    return (owner_) && (owner_->typeId() == drcNet);
+  }
+
+  drNet* getNet() const override { return reinterpret_cast<drNet*>(owner_); }
+
+  void addToNet(drNet* in) override
+  {
+    owner_ = reinterpret_cast<drBlockObject*>(in);
+  }
+
+  void removeFromNet() override { owner_ = nullptr; }
+
+  /* from drFig
+   * getBBox
+   * setBBox
+   */
+  odb::Rect getBBox() const override
+  {
+    odb::dbTransform xform(origin_);
+    odb::Rect box = offsetBox_;
+    xform.apply(box);
+    return box;
+  }
+
+  odb::Rect getOffsetBox() const { return offsetBox_; }
+  void setOffsetBox(const odb::Rect& boxIn) { offsetBox_ = boxIn; }
+
+  odb::Point getOrigin() const { return origin_; }
+  void setOrigin(const odb::Point& in) { origin_ = in; }
+
+ protected:
+  odb::Rect offsetBox_;
+  odb::Point origin_;
+  frLayerNum layer_{0};
+  drBlockObject* owner_{nullptr};
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<drShape>(*this);
+    (ar) & offsetBox_;
+    (ar) & origin_;
+    (ar) & layer_;
+    (ar) & owner_;
+  }
+
+  friend class boost::serialization::access;
+};
+
+}  // namespace drt

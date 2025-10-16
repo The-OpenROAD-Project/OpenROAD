@@ -1,0 +1,144 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__com_bus_slice_10um.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__com_bus_slice_10um.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__com_bus_slice_1um.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__com_bus_slice_1um.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__com_bus_slice_20um.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__com_bus_slice_20um.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__com_bus_slice_5um.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__com_bus_slice_5um.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__corner_pad.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__corner_pad.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__disconnect_vccd_slice_5um.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__disconnect_vccd_slice_5um.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__disconnect_vdda_slice_5um.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__disconnect_vdda_slice_5um.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__gpiov2_pad_wrapped.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__gpiov2_pad_wrapped.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__vccd_hvc_pad.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__vccd_hvc_pad.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__vccd_lvc_pad.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__vccd_lvc_pad.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__vdda_hvc_pad.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__vdda_hvc_pad.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__vdda_lvc_pad.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__vdda_lvc_pad.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__vddio_hvc_pad.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__vddio_hvc_pad.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__vddio_lvc_pad.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__vddio_lvc_pad.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__vssa_hvc_pad.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__vssa_hvc_pad.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__vssa_lvc_pad.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__vssa_lvc_pad.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__vssd_hvc_pad.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__vssd_hvc_pad.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__vssd_lvc_pad.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__vssd_lvc_pad.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__vssio_hvc_pad.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__vssio_hvc_pad.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/lef/sky130_ef_io__vssio_lvc_pad.lef at line 2.
+
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_ef_io__vssio_lvc_pad.lef, created 1 library cells
+[INFO ODB-0227] LEF file: skywater130_io_ef/lef/sky130_fd_io__top_xres4v2.lef, created 1 library cells
+[WARNING ORD-2011] LEF master sky130_ef_io__gpiov2_pad_wrapped has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_ef_io__corner_pad has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_ef_io__vccd_lvc_pad has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_ef_io__vdda_hvc_pad has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_ef_io__vddio_hvc_pad has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_ef_io__vssa_hvc_pad has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_ef_io__vssd_lvc_pad has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_ef_io__vssio_hvc_pad has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_io__top_xres4v2 has no liberty cell.
+[WARNING IFP-0028] Core area lower left (250.000, 250.000) snapped to (250.240, 250.240).
+[INFO IFP-0001] Added 1723 rows of 6712 site unithd.
+[INFO PAD-0116] Creating terminal for clock on met5 at (988.200um, 32.990um) - (1050.800um, 95.440um)
+[INFO PAD-0116] Creating terminal for flash_clk on met5 at (1805.200um, 32.990um) - (1867.800um, 95.440um)
+[INFO PAD-0116] Creating terminal for flash_csb on met5 at (1531.200um, 32.990um) - (1593.800um, 95.440um)
+[INFO PAD-0116] Creating terminal for flash_io0 on met5 at (2079.200um, 32.990um) - (2141.800um, 95.440um)
+[INFO PAD-0116] Creating terminal for flash_io1 on met5 at (2353.200um, 32.990um) - (2415.800um, 95.440um)
+[INFO PAD-0116] Creating terminal for gpio on met5 at (2627.200um, 32.990um) - (2689.800um, 95.440um)
+[INFO PAD-0116] Creating terminal for mprj_io[0] on met5 at (3492.560um, 586.200um) - (3555.010um, 648.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[10] on met5 at (3492.560um, 3502.200um) - (3555.010um, 3564.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[11] on met5 at (3492.560um, 3727.200um) - (3555.010um, 3789.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[12] on met5 at (3492.560um, 3952.200um) - (3555.010um, 4014.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[13] on met5 at (3492.560um, 4398.200um) - (3555.010um, 4460.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[14] on met5 at (3492.560um, 4844.200um) - (3555.010um, 4906.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[15] on met5 at (3136.200um, 5092.560um) - (3198.800um, 5155.010um)
+[INFO PAD-0116] Creating terminal for mprj_io[16] on met5 at (2627.200um, 5092.560um) - (2689.800um, 5155.010um)
+[INFO PAD-0116] Creating terminal for mprj_io[17] on met5 at (2370.200um, 5092.560um) - (2432.800um, 5155.010um)
+[INFO PAD-0116] Creating terminal for mprj_io[1] on met5 at (3492.560um, 812.200um) - (3555.010um, 874.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[2] on met5 at (3492.560um, 1037.200um) - (3555.010um, 1099.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[3] on met5 at (3492.560um, 1263.200um) - (3555.010um, 1325.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[4] on met5 at (3492.560um, 1488.200um) - (3555.010um, 1550.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[5] on met5 at (3492.560um, 1713.200um) - (3555.010um, 1775.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[6] on met5 at (3492.560um, 1939.200um) - (3555.010um, 2001.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[7] on met5 at (3492.560um, 2825.200um) - (3555.010um, 2887.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[8] on met5 at (3492.560um, 3051.200um) - (3555.010um, 3113.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[9] on met5 at (3492.560um, 3276.200um) - (3555.010um, 3338.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[18] on met5 at (1925.200um, 5092.560um) - (1987.800um, 5155.010um)
+[INFO PAD-0116] Creating terminal for mprj_io[28] on met5 at (32.990um, 3280.200um) - (95.440um, 3342.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[29] on met5 at (32.990um, 3064.200um) - (95.440um, 3126.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[30] on met5 at (32.990um, 2848.200um) - (95.440um, 2910.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[31] on met5 at (32.990um, 2632.200um) - (95.440um, 2694.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[32] on met5 at (32.990um, 1994.200um) - (95.440um, 2056.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[33] on met5 at (32.990um, 1778.200um) - (95.440um, 1840.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[34] on met5 at (32.990um, 1562.200um) - (95.440um, 1624.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[35] on met5 at (32.990um, 1346.200um) - (95.440um, 1408.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[36] on met5 at (32.990um, 1130.200um) - (95.440um, 1192.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[37] on met5 at (32.990um, 914.200um) - (95.440um, 976.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[19] on met5 at (1416.200um, 5092.560um) - (1478.800um, 5155.010um)
+[INFO PAD-0116] Creating terminal for mprj_io[20] on met5 at (1158.200um, 5092.560um) - (1220.800um, 5155.010um)
+[INFO PAD-0116] Creating terminal for mprj_io[21] on met5 at (901.200um, 5092.560um) - (963.800um, 5155.010um)
+[INFO PAD-0116] Creating terminal for mprj_io[22] on met5 at (644.200um, 5092.560um) - (706.800um, 5155.010um)
+[INFO PAD-0116] Creating terminal for mprj_io[23] on met5 at (387.200um, 5092.560um) - (449.800um, 5155.010um)
+[INFO PAD-0116] Creating terminal for mprj_io[24] on met5 at (32.990um, 4777.200um) - (95.440um, 4839.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[25] on met5 at (32.990um, 3928.200um) - (95.440um, 3990.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[26] on met5 at (32.990um, 3712.200um) - (95.440um, 3774.800um)
+[INFO PAD-0116] Creating terminal for mprj_io[27] on met5 at (32.990um, 3496.200um) - (95.440um, 3558.800um)
+[INFO PAD-0116] Creating terminal for resetb on met5 at (741.010um, 54.375um) - (753.305um, 72.885um)
+No differences found.

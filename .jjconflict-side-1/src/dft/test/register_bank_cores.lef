@@ -1,0 +1,341 @@
+VERSION 5.7 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO bank1
+  CLASS CORE ;
+  PIN inputs_32[0] DIRECTION INPUT ; END inputs_32[0]
+  PIN inputs_32[1] DIRECTION INPUT ; END inputs_32[1]
+  PIN inputs_32[2] DIRECTION INPUT ; END inputs_32[2]
+  PIN inputs_32[3] DIRECTION INPUT ; END inputs_32[3]
+  PIN inputs_32[4] DIRECTION INPUT ; END inputs_32[4]
+  PIN inputs_32[5] DIRECTION INPUT ; END inputs_32[5]
+  PIN inputs_32[6] DIRECTION INPUT ; END inputs_32[6]
+  PIN inputs_32[7] DIRECTION INPUT ; END inputs_32[7]
+  PIN inputs_32[8] DIRECTION INPUT ; END inputs_32[8]
+  PIN inputs_32[9] DIRECTION INPUT ; END inputs_32[9]
+  PIN inputs_32[10] DIRECTION INPUT ; END inputs_32[10]
+  PIN inputs_32[11] DIRECTION INPUT ; END inputs_32[11]
+  PIN inputs_32[12] DIRECTION INPUT ; END inputs_32[12]
+  PIN inputs_32[13] DIRECTION INPUT ; END inputs_32[13]
+  PIN inputs_32[14] DIRECTION INPUT ; END inputs_32[14]
+  PIN inputs_32[15] DIRECTION INPUT ; END inputs_32[15]
+  PIN inputs_32[16] DIRECTION INPUT ; END inputs_32[16]
+  PIN inputs_32[17] DIRECTION INPUT ; END inputs_32[17]
+  PIN inputs_32[18] DIRECTION INPUT ; END inputs_32[18]
+  PIN inputs_32[19] DIRECTION INPUT ; END inputs_32[19]
+  PIN inputs_32[20] DIRECTION INPUT ; END inputs_32[20]
+  PIN inputs_32[21] DIRECTION INPUT ; END inputs_32[21]
+  PIN inputs_32[22] DIRECTION INPUT ; END inputs_32[22]
+  PIN inputs_32[23] DIRECTION INPUT ; END inputs_32[23]
+  PIN inputs_32[24] DIRECTION INPUT ; END inputs_32[24]
+  PIN inputs_32[25] DIRECTION INPUT ; END inputs_32[25]
+  PIN inputs_32[26] DIRECTION INPUT ; END inputs_32[26]
+  PIN inputs_32[27] DIRECTION INPUT ; END inputs_32[27]
+  PIN inputs_32[28] DIRECTION INPUT ; END inputs_32[28]
+  PIN inputs_32[29] DIRECTION INPUT ; END inputs_32[29]
+  PIN inputs_32[30] DIRECTION INPUT ; END inputs_32[30]
+  PIN inputs_32[31] DIRECTION INPUT ; END inputs_32[31]
+
+  PIN outputs_32[0] DIRECTION INPUT ; END outputs_32[0]
+  PIN outputs_32[1] DIRECTION INPUT ; END outputs_32[1]
+  PIN outputs_32[2] DIRECTION INPUT ; END outputs_32[2]
+  PIN outputs_32[3] DIRECTION INPUT ; END outputs_32[3]
+  PIN outputs_32[4] DIRECTION INPUT ; END outputs_32[4]
+  PIN outputs_32[5] DIRECTION INPUT ; END outputs_32[5]
+  PIN outputs_32[6] DIRECTION INPUT ; END outputs_32[6]
+  PIN outputs_32[7] DIRECTION INPUT ; END outputs_32[7]
+  PIN outputs_32[8] DIRECTION INPUT ; END outputs_32[8]
+  PIN outputs_32[9] DIRECTION INPUT ; END outputs_32[9]
+  PIN outputs_32[10] DIRECTION INPUT ; END outputs_32[10]
+  PIN outputs_32[11] DIRECTION INPUT ; END outputs_32[11]
+  PIN outputs_32[12] DIRECTION INPUT ; END outputs_32[12]
+  PIN outputs_32[13] DIRECTION INPUT ; END outputs_32[13]
+  PIN outputs_32[14] DIRECTION INPUT ; END outputs_32[14]
+  PIN outputs_32[15] DIRECTION INPUT ; END outputs_32[15]
+  PIN outputs_32[16] DIRECTION INPUT ; END outputs_32[16]
+  PIN outputs_32[17] DIRECTION INPUT ; END outputs_32[17]
+  PIN outputs_32[18] DIRECTION INPUT ; END outputs_32[18]
+  PIN outputs_32[19] DIRECTION INPUT ; END outputs_32[19]
+  PIN outputs_32[20] DIRECTION INPUT ; END outputs_32[20]
+  PIN outputs_32[21] DIRECTION INPUT ; END outputs_32[21]
+  PIN outputs_32[22] DIRECTION INPUT ; END outputs_32[22]
+  PIN outputs_32[23] DIRECTION INPUT ; END outputs_32[23]
+  PIN outputs_32[24] DIRECTION INPUT ; END outputs_32[24]
+  PIN outputs_32[25] DIRECTION INPUT ; END outputs_32[25]
+  PIN outputs_32[26] DIRECTION INPUT ; END outputs_32[26]
+  PIN outputs_32[27] DIRECTION INPUT ; END outputs_32[27]
+  PIN outputs_32[28] DIRECTION INPUT ; END outputs_32[28]
+  PIN outputs_32[29] DIRECTION INPUT ; END outputs_32[29]
+  PIN outputs_32[30] DIRECTION INPUT ; END outputs_32[30]
+  PIN outputs_32[31] DIRECTION INPUT ; END outputs_32[31]
+
+  PIN clk1
+    ANTENNAGATEAREA  0.247500 ;
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER li1 ;
+        RECT 2.400000 0.995000 2.680000 2.465000 ;
+    END
+  END clk1
+  PIN enable
+    ANTENNAGATEAREA  0.247500 ;
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER li1 ;
+        RECT 1.890000 1.050000 2.220000 2.465000 ;
+    END
+  END enable
+  PIN reset
+    ANTENNAGATEAREA  0.247500 ;
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER li1 ;
+        RECT 1.290000 1.050000 1.720000 1.290000 ;
+        RECT 1.515000 1.290000 1.720000 2.465000 ;
+    END
+  END reset
+  PIN scan_enable_1
+    ANTENNADIFFAREA  0.504500 ;
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER li1 ;
+        RECT 0.135000 0.255000 0.465000 1.620000 ;
+        RECT 0.135000 1.620000 0.390000 2.460000 ;
+    END
+  END scan_enable_1
+  PIN scan_in_1
+    DIRECTION INPUT ;
+    SHAPE ABUTMENT ;
+    USE GROUND ;
+    PORT
+      LAYER li1 ;
+        RECT 0.000000 -0.085000 4.140000 0.085000 ;
+        RECT 0.635000  0.085000 1.310000 0.470000 ;
+        RECT 2.085000  0.085000 2.430000 0.485000 ;
+        RECT 3.715000  0.085000 3.955000 0.760000 ;
+    END
+    PORT
+      LAYER met1 ;
+        RECT 0.000000 -0.240000 4.140000 0.240000 ;
+    END
+  END scan_in_1
+  OBS
+    LAYER li1 ;
+      RECT 0.695000 0.650000 1.915000 0.655000 ;
+      RECT 0.695000 0.655000 2.805000 0.825000 ;
+      RECT 0.695000 0.825000 0.915000 1.465000 ;
+      RECT 0.695000 1.465000 1.345000 1.645000 ;
+      RECT 1.135000 1.645000 1.345000 2.460000 ;
+      RECT 1.585000 0.260000 1.915000 0.650000 ;
+      RECT 2.600000 0.260000 2.805000 0.655000 ;
+      RECT 2.860000 1.495000 3.990000 1.665000 ;
+      RECT 2.860000 1.665000 3.145000 2.460000 ;
+      RECT 3.720000 1.665000 3.990000 2.460000 ;
+  END
+END bank1
+
+MACRO bank2
+  CLASS CORE ;
+  PIN inputs_64[0] DIRECTION INPUT ; END inputs_64[0]
+  PIN inputs_64[1] DIRECTION INPUT ; END inputs_64[1]
+  PIN inputs_64[2] DIRECTION INPUT ; END inputs_64[2]
+  PIN inputs_64[3] DIRECTION INPUT ; END inputs_64[3]
+  PIN inputs_64[4] DIRECTION INPUT ; END inputs_64[4]
+  PIN inputs_64[5] DIRECTION INPUT ; END inputs_64[5]
+  PIN inputs_64[6] DIRECTION INPUT ; END inputs_64[6]
+  PIN inputs_64[7] DIRECTION INPUT ; END inputs_64[7]
+  PIN inputs_64[8] DIRECTION INPUT ; END inputs_64[8]
+  PIN inputs_64[9] DIRECTION INPUT ; END inputs_64[9]
+  PIN inputs_64[10] DIRECTION INPUT ; END inputs_64[10]
+  PIN inputs_64[11] DIRECTION INPUT ; END inputs_64[11]
+  PIN inputs_64[12] DIRECTION INPUT ; END inputs_64[12]
+  PIN inputs_64[13] DIRECTION INPUT ; END inputs_64[13]
+  PIN inputs_64[14] DIRECTION INPUT ; END inputs_64[14]
+  PIN inputs_64[15] DIRECTION INPUT ; END inputs_64[15]
+  PIN inputs_64[16] DIRECTION INPUT ; END inputs_64[16]
+  PIN inputs_64[17] DIRECTION INPUT ; END inputs_64[17]
+  PIN inputs_64[18] DIRECTION INPUT ; END inputs_64[18]
+  PIN inputs_64[19] DIRECTION INPUT ; END inputs_64[19]
+  PIN inputs_64[20] DIRECTION INPUT ; END inputs_64[20]
+  PIN inputs_64[21] DIRECTION INPUT ; END inputs_64[21]
+  PIN inputs_64[22] DIRECTION INPUT ; END inputs_64[22]
+  PIN inputs_64[23] DIRECTION INPUT ; END inputs_64[23]
+  PIN inputs_64[24] DIRECTION INPUT ; END inputs_64[24]
+  PIN inputs_64[25] DIRECTION INPUT ; END inputs_64[25]
+  PIN inputs_64[26] DIRECTION INPUT ; END inputs_64[26]
+  PIN inputs_64[27] DIRECTION INPUT ; END inputs_64[27]
+  PIN inputs_64[28] DIRECTION INPUT ; END inputs_64[28]
+  PIN inputs_64[29] DIRECTION INPUT ; END inputs_64[29]
+  PIN inputs_64[30] DIRECTION INPUT ; END inputs_64[30]
+  PIN inputs_64[31] DIRECTION INPUT ; END inputs_64[31]
+  PIN inputs_64[32] DIRECTION INPUT ; END inputs_64[32]
+  PIN inputs_64[33] DIRECTION INPUT ; END inputs_64[33]
+  PIN inputs_64[34] DIRECTION INPUT ; END inputs_64[34]
+  PIN inputs_64[35] DIRECTION INPUT ; END inputs_64[35]
+  PIN inputs_64[36] DIRECTION INPUT ; END inputs_64[36]
+  PIN inputs_64[37] DIRECTION INPUT ; END inputs_64[37]
+  PIN inputs_64[38] DIRECTION INPUT ; END inputs_64[38]
+  PIN inputs_64[39] DIRECTION INPUT ; END inputs_64[39]
+  PIN inputs_64[40] DIRECTION INPUT ; END inputs_64[40]
+  PIN inputs_64[41] DIRECTION INPUT ; END inputs_64[41]
+  PIN inputs_64[42] DIRECTION INPUT ; END inputs_64[42]
+  PIN inputs_64[43] DIRECTION INPUT ; END inputs_64[43]
+  PIN inputs_64[44] DIRECTION INPUT ; END inputs_64[44]
+  PIN inputs_64[45] DIRECTION INPUT ; END inputs_64[45]
+  PIN inputs_64[46] DIRECTION INPUT ; END inputs_64[46]
+  PIN inputs_64[47] DIRECTION INPUT ; END inputs_64[47]
+  PIN inputs_64[48] DIRECTION INPUT ; END inputs_64[48]
+  PIN inputs_64[49] DIRECTION INPUT ; END inputs_64[49]
+  PIN inputs_64[50] DIRECTION INPUT ; END inputs_64[50]
+  PIN inputs_64[51] DIRECTION INPUT ; END inputs_64[51]
+  PIN inputs_64[52] DIRECTION INPUT ; END inputs_64[52]
+  PIN inputs_64[53] DIRECTION INPUT ; END inputs_64[53]
+  PIN inputs_64[54] DIRECTION INPUT ; END inputs_64[54]
+  PIN inputs_64[55] DIRECTION INPUT ; END inputs_64[55]
+  PIN inputs_64[56] DIRECTION INPUT ; END inputs_64[56]
+  PIN inputs_64[57] DIRECTION INPUT ; END inputs_64[57]
+  PIN inputs_64[58] DIRECTION INPUT ; END inputs_64[58]
+  PIN inputs_64[59] DIRECTION INPUT ; END inputs_64[59]
+  PIN inputs_64[60] DIRECTION INPUT ; END inputs_64[60]
+  PIN inputs_64[61] DIRECTION INPUT ; END inputs_64[61]
+  PIN inputs_64[62] DIRECTION INPUT ; END inputs_64[62]
+  PIN inputs_64[63] DIRECTION INPUT ; END inputs_64[63]
+
+  PIN outputs_64[0] DIRECTION INPUT ; END outputs_64[0]
+  PIN outputs_64[1] DIRECTION INPUT ; END outputs_64[1]
+  PIN outputs_64[2] DIRECTION INPUT ; END outputs_64[2]
+  PIN outputs_64[3] DIRECTION INPUT ; END outputs_64[3]
+  PIN outputs_64[4] DIRECTION INPUT ; END outputs_64[4]
+  PIN outputs_64[5] DIRECTION INPUT ; END outputs_64[5]
+  PIN outputs_64[6] DIRECTION INPUT ; END outputs_64[6]
+  PIN outputs_64[7] DIRECTION INPUT ; END outputs_64[7]
+  PIN outputs_64[8] DIRECTION INPUT ; END outputs_64[8]
+  PIN outputs_64[9] DIRECTION INPUT ; END outputs_64[9]
+  PIN outputs_64[10] DIRECTION INPUT ; END outputs_64[10]
+  PIN outputs_64[11] DIRECTION INPUT ; END outputs_64[11]
+  PIN outputs_64[12] DIRECTION INPUT ; END outputs_64[12]
+  PIN outputs_64[13] DIRECTION INPUT ; END outputs_64[13]
+  PIN outputs_64[14] DIRECTION INPUT ; END outputs_64[14]
+  PIN outputs_64[15] DIRECTION INPUT ; END outputs_64[15]
+  PIN outputs_64[16] DIRECTION INPUT ; END outputs_64[16]
+  PIN outputs_64[17] DIRECTION INPUT ; END outputs_64[17]
+  PIN outputs_64[18] DIRECTION INPUT ; END outputs_64[18]
+  PIN outputs_64[19] DIRECTION INPUT ; END outputs_64[19]
+  PIN outputs_64[20] DIRECTION INPUT ; END outputs_64[20]
+  PIN outputs_64[21] DIRECTION INPUT ; END outputs_64[21]
+  PIN outputs_64[22] DIRECTION INPUT ; END outputs_64[22]
+  PIN outputs_64[23] DIRECTION INPUT ; END outputs_64[23]
+  PIN outputs_64[24] DIRECTION INPUT ; END outputs_64[24]
+  PIN outputs_64[25] DIRECTION INPUT ; END outputs_64[25]
+  PIN outputs_64[26] DIRECTION INPUT ; END outputs_64[26]
+  PIN outputs_64[27] DIRECTION INPUT ; END outputs_64[27]
+  PIN outputs_64[28] DIRECTION INPUT ; END outputs_64[28]
+  PIN outputs_64[29] DIRECTION INPUT ; END outputs_64[29]
+  PIN outputs_64[30] DIRECTION INPUT ; END outputs_64[30]
+  PIN outputs_64[31] DIRECTION INPUT ; END outputs_64[31]
+  PIN outputs_64[32] DIRECTION INPUT ; END outputs_64[32]
+  PIN outputs_64[33] DIRECTION INPUT ; END outputs_64[33]
+  PIN outputs_64[34] DIRECTION INPUT ; END outputs_64[34]
+  PIN outputs_64[35] DIRECTION INPUT ; END outputs_64[35]
+  PIN outputs_64[36] DIRECTION INPUT ; END outputs_64[36]
+  PIN outputs_64[37] DIRECTION INPUT ; END outputs_64[37]
+  PIN outputs_64[38] DIRECTION INPUT ; END outputs_64[38]
+  PIN outputs_64[39] DIRECTION INPUT ; END outputs_64[39]
+  PIN outputs_64[40] DIRECTION INPUT ; END outputs_64[40]
+  PIN outputs_64[41] DIRECTION INPUT ; END outputs_64[41]
+  PIN outputs_64[42] DIRECTION INPUT ; END outputs_64[42]
+  PIN outputs_64[43] DIRECTION INPUT ; END outputs_64[43]
+  PIN outputs_64[44] DIRECTION INPUT ; END outputs_64[44]
+  PIN outputs_64[45] DIRECTION INPUT ; END outputs_64[45]
+  PIN outputs_64[46] DIRECTION INPUT ; END outputs_64[46]
+  PIN outputs_64[47] DIRECTION INPUT ; END outputs_64[47]
+  PIN outputs_64[48] DIRECTION INPUT ; END outputs_64[48]
+  PIN outputs_64[49] DIRECTION INPUT ; END outputs_64[49]
+  PIN outputs_64[50] DIRECTION INPUT ; END outputs_64[50]
+  PIN outputs_64[51] DIRECTION INPUT ; END outputs_64[51]
+  PIN outputs_64[52] DIRECTION INPUT ; END outputs_64[52]
+  PIN outputs_64[53] DIRECTION INPUT ; END outputs_64[53]
+  PIN outputs_64[54] DIRECTION INPUT ; END outputs_64[54]
+  PIN outputs_64[55] DIRECTION INPUT ; END outputs_64[55]
+  PIN outputs_64[56] DIRECTION INPUT ; END outputs_64[56]
+  PIN outputs_64[57] DIRECTION INPUT ; END outputs_64[57]
+  PIN outputs_64[58] DIRECTION INPUT ; END outputs_64[58]
+  PIN outputs_64[59] DIRECTION INPUT ; END outputs_64[59]
+  PIN outputs_64[60] DIRECTION INPUT ; END outputs_64[60]
+  PIN outputs_64[61] DIRECTION INPUT ; END outputs_64[61]
+  PIN outputs_64[62] DIRECTION INPUT ; END outputs_64[62]
+  PIN outputs_64[63] DIRECTION INPUT ; END outputs_64[63]
+
+  PIN clk2
+    ANTENNAGATEAREA  0.247500 ;
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER li1 ;
+        RECT 2.400000 0.995000 2.680000 2.465000 ;
+    END
+  END clk2
+  PIN enable
+    ANTENNAGATEAREA  0.247500 ;
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER li1 ;
+        RECT 1.890000 1.050000 2.220000 2.465000 ;
+    END
+  END enable
+  PIN reset
+    ANTENNAGATEAREA  0.247500 ;
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER li1 ;
+        RECT 1.290000 1.050000 1.720000 1.290000 ;
+        RECT 1.515000 1.290000 1.720000 2.465000 ;
+    END
+  END reset
+  PIN scan_enable_1
+    ANTENNADIFFAREA  0.504500 ;
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER li1 ;
+        RECT 0.135000 0.255000 0.465000 1.620000 ;
+        RECT 0.135000 1.620000 0.390000 2.460000 ;
+    END
+  END scan_enable_1
+  PIN scan_in_2
+    DIRECTION INPUT ;
+    SHAPE ABUTMENT ;
+    USE GROUND ;
+    PORT
+      LAYER li1 ;
+        RECT 0.000000 -0.085000 4.140000 0.085000 ;
+        RECT 0.635000  0.085000 1.310000 0.470000 ;
+        RECT 2.085000  0.085000 2.430000 0.485000 ;
+        RECT 3.715000  0.085000 3.955000 0.760000 ;
+    END
+    PORT
+      LAYER met1 ;
+        RECT 0.000000 -0.240000 4.140000 0.240000 ;
+    END
+  END scan_in_2
+  OBS
+    LAYER li1 ;
+      RECT 0.695000 0.650000 1.915000 0.655000 ;
+      RECT 0.695000 0.655000 2.805000 0.825000 ;
+      RECT 0.695000 0.825000 0.915000 1.465000 ;
+      RECT 0.695000 1.465000 1.345000 1.645000 ;
+      RECT 1.135000 1.645000 1.345000 2.460000 ;
+      RECT 1.585000 0.260000 1.915000 0.650000 ;
+      RECT 2.600000 0.260000 2.805000 0.655000 ;
+      RECT 2.860000 1.495000 3.990000 1.665000 ;
+      RECT 2.860000 1.665000 3.145000 2.460000 ;
+      RECT 3.720000 1.665000 3.990000 2.460000 ;
+  END
+END bank2

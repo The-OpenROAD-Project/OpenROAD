@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2024-2025, The OpenROAD Authors
+
+set -e
+
+for test_name in "${@:1}"
+do
+    if [ -f "results/${test_name}-tcl.guide" ]; then
+        cp "results/${test_name}-tcl.guide" "${test_name}.guideok"
+        echo "${test_name}"
+    elif [ -f "results/${test_name}-py.guide" ]; then
+        cp "results/${test_name}-py.guide" "${test_name}.guideok"
+        echo "${test_name}"
+    else
+        echo "\"${test_name}\" guide file not found"
+    fi
+done

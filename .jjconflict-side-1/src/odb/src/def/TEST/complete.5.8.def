@@ -1,0 +1,1007 @@
+###############################################################################
+# DEF57_01 testcase
+###############################################################################
+VERSION 5.8 ; 
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN design ;
+TECHNOLOGY technology ;
+UNITS DISTANCE MICRONS 1000 ;
+
+
+
+###############################################################################
+# PROPERTYDEFINITIONS 
+#    objectType propName propType [ RANGE min max ] [ value ] ; ... 
+# END PROPERTYDEFINITIONS 
+###############################################################################
+PROPERTYDEFINITIONS
+  DESIGN strprop STRING "aString" ;
+  DESIGN intprop INTEGER 1 ;
+  DESIGN realprop REAL 1.1 ;
+  DESIGN intrangeprop INTEGER RANGE 1 100 25 ;
+  DESIGN realrangeprop REAL RANGE 1.1 100.1 25.25 ;
+  REGION strprop STRING ;
+  REGION intprop INTEGER ;
+  REGION realprop REAL ;
+  REGION intrangeprop INTEGER RANGE 1 100 ;
+  REGION realrangeprop REAL RANGE 1.1 100.1 ;
+  GROUP strprop STRING ;
+  GROUP intprop INTEGER ;
+  GROUP realprop REAL ;
+  GROUP intrangeprop INTEGER RANGE 1 100 ;
+  GROUP realrangeprop REAL RANGE 1.1 100.1 ;
+  COMPONENT strprop STRING ;
+  COMPONENT intprop INTEGER ;
+  COMPONENT realprop REAL ;
+  COMPONENT intrangeprop INTEGER RANGE 1 100 ;
+  COMPONENT realrangeprop REAL RANGE 1.1 100.1 ;
+  NET strprop STRING ;
+  NET intprop INTEGER ;
+  NET realprop REAL ;
+  NET intrangeprop INTEGER RANGE 1 100 ;
+  NET realrangeprop REAL RANGE 1.1 100.1 ;
+  SPECIALNET strprop STRING ;
+  SPECIALNET intprop INTEGER ;
+  SPECIALNET realprop REAL ;
+  SPECIALNET intrangeprop INTEGER RANGE 1 100 ;
+  SPECIALNET realrangeprop REAL RANGE 1.1 100.1 ;
+  ROW strprop STRING ;
+  ROW intprop INTEGER ;
+  ROW realprop REAL ;
+  ROW intrangeprop INTEGER RANGE 1 100 ;
+  ROW realrangeprop REAL RANGE 1.1 100.1 ;
+  COMPONENTPIN strprop STRING ;
+  COMPONENTPIN intprop INTEGER ;
+  COMPONENTPIN realprop REAL ;
+  COMPONENTPIN intrangeprop INTEGER RANGE 1 100 ;
+  COMPONENTPIN realrangeprop REAL RANGE 1.1 100.1 ;
+  NONDEFAULTRULE strprop STRING ;
+  NONDEFAULTRULE intprop INTEGER ;
+  NONDEFAULTRULE realprop REAL ;
+  NONDEFAULTRULE intrangeprop INTEGER RANGE 1 100 ;
+  NONDEFAULTRULE realrangeprop REAL RANGE 1.1 100.1 ;
+END PROPERTYDEFINITIONS
+
+
+
+###############################################################################
+# DIEAREA pt pt ;
+###############################################################################
+DIEAREA ( -190000 -120000 ) ( -190000 350000 ) ( 190000 350000 )
+        ( 190000 190000 ) ( 190360 190000 ) ( 190360 -120000 ) ;
+
+
+
+###############################################################################
+# ROW rowName rowType origX origY orient
+#     { DO numX BY 1 STEP spaceX 0
+#     | DO 1 BY numY STEP 0 spaceY }
+#     + PROPERTY { propName propVal }... ;
+###############################################################################
+ROW ROW_1 CORE 1000 1000 N DO 100 BY 1 STEP 700 0
+  + PROPERTY strprop "aString" 
+  + PROPERTY intprop 1 
+  + PROPERTY realprop 1.1 
+  + PROPERTY intrangeprop 25
+  + PROPERTY realrangeprop 25.25 ;
+ROW ROW_2 CORE 1000 2000 S DO 100 BY 1 STEP 700 0 ;
+ROW ROW_3 CORE 1000 3000 E DO 100 BY 1 STEP 8400 0 ;
+ROW ROW_4 CORE 1000 4000 W DO 100 BY 1 STEP 8400 0 ;
+ROW ROW_5 CORE 1000 5000 FN DO 100 BY 1 STEP 700 0 ;
+ROW ROW_6 CORE 1000 6000 FS DO 100 BY 1 STEP 700 0 ;
+ROW ROW_7 CORE 1000 7000 FE DO 100 BY 1 STEP 8400 0 ;
+ROW ROW_8 CORE 1000 8000 FW DO 100 BY 1 STEP 8400 0 ;
+
+ROW ROW_VERT_1 CORE -10000 -10000 N DO 1 BY 10 STEP 0 8400 ;
+ROW ROW_VERT_2 CORE -9000 -10000 S DO 1 BY 10 STEP 0 8400 ;
+ROW ROW_VERT_3 CORE -8000 -10000 E DO 1 BY 10 STEP 0 700 ;
+ROW ROW_VERT_4 CORE -7000 -10000 W DO 1 BY 10 STEP 0 700 ;
+ROW ROW_VERT_5 CORE -6000 -10000 FN DO 1 BY 10 STEP 0 8400 ;
+ROW ROW_VERT_6 CORE -5000 -10000 FS DO 1 BY 10 STEP 0 8400 ;
+ROW ROW_VERT_7 CORE -4000 -10000 FE DO 1 BY 10 STEP 0 700 ;
+ROW ROW_VERT_8 CORE -3000 -10000 FW DO 1 BY 1 STEP 0 700 ;
+
+ROW ROW_array0 ARRAYSITE 10000 10000 N DO 100 BY 1 STEP 16000 0 ;
+ROW ROW_array1 ARRAYSITE 10000 17000 W DO 100 BY 1 STEP 16000 0 ;
+ROW ROW_array2 ARRAYSITE 10000 17000 S DO 100 BY 1 STEP 16000 0 ;
+ROW ROW_array3 ARRAYSITE 10000 17000 E DO 100 BY 1 STEP 16000 0 ;
+ROW ROW_array4 ARRAYSITE 10000 17000 FN DO 100 BY 1 STEP 16000 0 ;
+ROW ROW_array5 ARRAYSITE 10000 17000 FE DO 100 BY 1 STEP 16000 0 ;
+ROW ROW_array6 ARRAYSITE 10000 17000 FS DO 100 BY 1 STEP 16000 0 ;
+ROW ROW_array7 ARRAYSITE 10000 17000 FW DO 100 BY 1 STEP 16000 0 ;
+
+
+
+###############################################################################
+# TRACKS 
+#    {X | Y} start 
+#    DO numtracks STEP space 
+#    [ MASK maskNum {SAMEMASK]]
+#    [ LAYER layerName ...] ;
+###############################################################################
+TRACKS Y 52 DO 857 STEP 104 MASK 1 ;
+TRACKS Y 52 DO 857 STEP 104 MASK 1 SAMEMASK LAYER M1 M2 ;
+TRACKS X 52 DO 1720 STEP 104 MASK 2 LAYER M2 ;
+TRACKS X 52 DO 1720 STEP 104 ;
+
+
+###############################################################################
+# GCELLGRID 
+#    X start DO numColumns+1 STEP space 
+#    Y start DO numRows+1 STEP space ;
+###############################################################################
+GCELLGRID X 0 DO 100 STEP 600 ;
+GCELLGRID Y 10 DO 120 STEP 400 ;
+
+
+
+###############################################################################
+# VIAS numVias ;
+#     [- viaName 
+#     [+ PATTERNNAME patternName]
+#      + RECT layerName [+ MASK maskNUM] pt pt
+#       | + POLYGON layerName [+ MASK maskNUM] pt pt pt]...;]... 
+# END VIAS
+###############################################################################
+VIAS 6 ;
+- VIAGEN12_0
+    + PATTERNNAME VIAGEN_12_12.800_7.600_I5
+    + RECT METAL1 ( -4400 -3800 ) ( 4400 3800 )
+    + RECT M2 + MASK 3 ( -4500 -3800 ) ( 4500 3800 )
+    + RECT V1 + MASK 2 ( -3600 -3800 ) ( -2000 -2200 )
+    + RECT V1 + MASK 1 ( -3600 2200 ) ( -2000 3800 )
+    + RECT V1 + MASK 2 ( 2000 -3800 ) ( 3600 -2200 )
+    + RECT V1 + MASK 3 ( 2000 2200 ) ( 3600 3800 ) ;
+
+- VIAGEN12_2
+    + PATTERNNAME VIAGEN_12_5.0000_3.000_1.5600_-0.1600_1.0400_1.0400_D
+    + RECT METAL1 ( -2500 -1500 ) ( 2500 1500 )
+    + RECT M2 ( -2500 -1500 ) ( 2500 1500 )
+    + RECT V1 ( -2360 -960 ) ( -760 640 )
+    + RECT V1 ( -1320 -960 ) ( 280 640 )
+    + RECT V1 ( 760 -960 ) ( 2360 640 ) ;
+
+- VIAGEN12_3
+    + PATTERNNAME VIAGEN12
+    + RECT METAL1 ( -1600 -1600 ) ( 1600 1600 )
+    + RECT M2 ( -1600 -1600 ) ( 1600 1600 )
+    + RECT V1 ( -800 -800 ) ( 800 800 ) ;
+
+- VIAGEN12_4
+    + VIARULE VIAGEN12
+    + CUTSIZE 1600 1600
+    + LAYERS M1 V1 M2
+    + CUTSPACING 5600 6100
+    + ENCLOSURE 100 100 150 150
+    + ROWCOL 5 14
+    + PATTERN 2_FFE0_3_FFFF 
+    + ORIGIN 10 -10
+    + OFFSET 0 0 20 -20 ;
+
+- M2_M1rct_0
+  + RECT V1 ( -25 -65 ) ( 25 65 )
+  + RECT M1 ( -35 -95 ) ( 35 95 )
+  + RECT M2 ( -65 -65 ) ( 65 65 ) ;
+
+- VIAGEN12_1
+    + POLYGON METAL1 + MASK 2 ( -2500 -1500 ) ( -2500 2500 ) ( 1500 2500 ) ( 1500 1500 ) ( 2500 1500 ) ( 2500 -1500 )
+    + RECT M2 ( -2500 -1500 ) ( 2500 1500 )
+    + RECT V1 ( -2400 -960 ) ( -700 640 ) ;
+    
+- CUSTOMVIA
+    + POLYGON METAL1 + MASK 3 ( -2500 -1500 ) ( -2500 2500 ) ( 1500 2500 ) ( 1500 1500 ) ( 2500 1500 ) ( 2500 -1500 ) ;
+    
+- TURNM1_1
+    + RECT METAL1 ( -100 -60 ) ( 100 60 ) ;
+- TURNM2_1
+    + RECT M2 ( -100 -60 ) ( 100 60 ) ;
+- TURNM3_1
+    + RECT M3 ( -100 -60 ) ( 100 60 ) ;
+- myvia1
+    + RECT METAL1 + MASK 2 ( 0 0 ) ( 40000 40000 )
+    + RECT V1 + MASK 3 ( 0 0 ) ( 40000 40000 )
+    + RECT M2 ( 0 0 ) ( 40000 40000 ) ;
+END VIAS
+
+
+
+###############################################################################
+# [STYLES numStyles ;
+#     {- STYLE styleNum pt pt pt … ;} ...
+# END STYLES]
+###############################################################################
+STYLES 10 ;
+- STYLE 0 ( 30 10 ) ( 10 30 ) ( -10 30 ) ( -30 10 ) ( -30 -10 ) ( -10 -30 ) ( 10 -30 ) ( 30 -10 ) ;
+- STYLE 1 ( 25 25 ) ( -25 25 ) ( -25 -25 ) ( 25 -25 ) ;
+- STYLE 2 ( 50 50 ) ( -50 50 ) ( -50 -50 ) ( 50 -50 ) ;
+- STYLE 3 ( 50 21 ) ( 21 50 ) ( -21 50 ) ( -50 21 ) ( -50 -21 ) ( -21 -50 ) ( 21 -50 ) ( 50 -21 ) ;
+- STYLE 4 ( -30 -20 ) ( 10 -60 ) ( 50 -20 ) ( 50 40 ) ( 0 40 ) ( -30 10 ) ;
+- STYLE 5 ( 0 2000 ) ( 0 -2000 ) ( 0 2000 ) ( 0 -2000 ) ;
+- STYLE 6 ( -2000 2000 ) ( 2000 -2000 ) ( * * ) ;
+- STYLE 7 ( 0 0 ) ( 0 1000 ) ( 1000 0 ) ;
+- STYLE 8 ( -7500 -3110 ) ( -3110 -7500 ) ( 3110 -7500 ) ( 7500 -3110 ) ( 7500 7500 ) ( -7500 7500 ) ;
+- STYLE 9 ( 0 -10610 ) ( 7500 -3110 ) ( 7500 3110 ) ( 3110 7500 ) ( -3110 7500 ) ( -10610 0 ) ;
+END STYLES
+
+
+
+###############################################################################
+# [NONDEFAULTRULES numNDRs ;
+#     {- STYLE styleNum pt pt pt … ;} ...
+# END NONDEFAULTRULES]
+###############################################################################
+NONDEFAULTRULES 1 ;
+- DEFAULT
+  + LAYER METAL1
+      WIDTH 10.1
+      DIAGWIDTH 8.01
+      SPACING 2.2
+      WIREEXT 1.1
+  + LAYER M2
+      WIDTH 10.1
+      SPACING 2.2
+  + LAYER M3
+      WIDTH 11.1
+      SPACING 3.2
+  + VIA M1_M2
+  + VIA M2_M3
+  + VIARULE VIAGEN12
+  + MINCUTS V1 2
+  + PROPERTY strprop "aString" 
+  + PROPERTY intprop 1 
+  + PROPERTY realprop 1.1 
+  + PROPERTY intrangeprop 25
+  + PROPERTY realrangeprop 25.25 ;
+- RULE2
+  + HARDSPACING 
+  + LAYER METAL1
+      WIDTH 10.1
+      DIAGWIDTH 8.01
+      SPACING 2.2
+      WIREEXT 1.1
+  + LAYER M2
+      WIDTH 10.1
+      SPACING 2.2
+  + LAYER M3
+      WIDTH 11.1
+      SPACING 3.2
+  + VIA M1_M2
+  + VIA M2_M3
+  + VIARULE VIAGEN12
+  + MINCUTS V1 2
+  + PROPERTY strprop "aString" 
+  + PROPERTY intprop 1 
+  + PROPERTY realprop 1.1 
+  + PROPERTY intrangeprop 25
+  + PROPERTY realrangeprop 25.25 ;
+END NONDEFAULTRULES
+
+
+###############################################################################
+# REGIONS numRegions; 
+#     [- regionName pt pt [pt pt]... 
+#     [+ TYPE [ FENCE | GUIDE ]
+#     [+ PROPERTY {propName propVal}...]...;]... 
+# END REGIONS
+###############################################################################
+REGIONS 2 ;
+- region1 ( -500 -500 ) ( 300 100 ) ( 500 500 ) ( 1000 1000 )
+  + TYPE FENCE
+  + PROPERTY strprop "aString" 
+  + PROPERTY intprop 1 
+  + PROPERTY realprop 1.1 
+  + PROPERTY intrangeprop 25
+  + PROPERTY realrangeprop 25.25 ;
+- region2 ( 4000 0 ) ( 5000 1000 )
+  + TYPE GUIDE ;
+END REGIONS
+
+
+
+###############################################################################
+# COMPONENTS numComps ; 
+#     [- compName modelName[netName | *]... 
+#         [+ EEQMASTER macroname] 
+#         [+ GENERATE generatorName [parameters]] 
+#         [+ SOURCE {NETLIST | DIST | USER | TIMING}] 
+#         [+ FOREIGN foreignCellName pt orient]... 
+#         [+ {FIXED pt orient | COVER pt orient | PLACED pt orient | UNPLACED}]
+#         [+ WEIGHT weight] 
+#         [+ REGION {pt pt | regionName}] 
+#         [+ PROPERTY {propName propVal}...]...; 
+#     ]... 
+# END COMPONENTS
+###############################################################################
+COMPONENTMASKSHIFT M3 M2 V1 M1 ;
+
+COMPONENTS 13 ;
+- I1 B
+  + EEQMASTER A
+  + GENERATE generator 
+  + SOURCE NETLIST
+  + FOREIGN gds2name ( -500 -500 ) N
+  + PLACED ( 100 100 ) N
+  + WEIGHT 100
+  + REGION region1 
+  + MASKSHIFT 1102
+  + HALO 5 6 7 8
+  + HALO SOFT 5 6 7 8
+  + ROUTEHALO 100 METAL1 M3
+  + PROPERTY strprop "aString" 
+  + PROPERTY intprop 1 
+  + PROPERTY realprop 1.1 
+  + PROPERTY intrangeprop 25
+  + PROPERTY realrangeprop 25.25 ;
+- I2 A
+  + SOURCE DIST
+  + ROUTEHALO 100 M2 M3
+  + PLACED ( 200 200 ) S ;
+- I3 A
+  + SOURCE USER
+  + PLACED ( 300 300 ) E ;
+- I4 A
+  + SOURCE TIMING
+  + PLACED ( 400 400 ) W ;
+- I5 A
+  + PLACED ( 500 500 ) FN ;
+- I6 A
+  + PLACED ( 600 600 ) FS ;
+- I7 A
+  + PLACED ( 700 700 ) FE ;
+- I8 A
+  + PLACED ( 800 800 ) FW ;
+- I9 A
+  + FIXED ( 900 900 ) N ;
+- I10 A
+  + COVER ( 1000 1000 ) N ;
+- I11 A
+  + UNPLACED ;
+- I12[0] A ;
+- I12[1] A ;
+- I13[0][10] A ;
+- I14\[1\] A ;
+- vectormodule[1]/scalarname A ;
+- vectormodule[1]/vectorname[1] A ;
+- scancell1 CHK3A ;
+- scancell2 CHK3A ;
+- scancell3 CHK3A ;
+- scancell4 CHK3A ;
+- scancell5 CHK3A ;
+- scancell6 CHK3A ;
+- scancell7 CHK3A ;
+- scancell8 CHK3A ;
+- scancell9 CHK3A ;
+- scancell10 CHK3A ;
+- scancell11 CHK3A ;
+- scancell12 CHK3A ;
+- nobrackets A ;
+- somethingwith[1] A ;
+- more[]brackets A ;
+- more[1]brackets A ;
+- more\[1\]brackets A ;
+- more[1][2] A ;
+- more\[1\]\[2\] A ;
+- more\[2\] A ;
+- foo\[1\]\[2\]/haha\[3\]\[4\] A ;
+- foo[2][3]/haha[4][5] A ;
+- foo\[3\]\[4\]/haha[5][6] A ;
+- foo[4][5]/haha\[6\]\[7\] A ;
+- foo[5][6]bar/haha\[7\]\[8\] A ;
+- foo[6][7]bar/haha[8][9] A ;
+END COMPONENTS
+
+
+###############################################################################
+# PINS numPins ; 
+#     [ - pinName + NET netName 
+#        [+ SPECIAL] 
+#        [+ DIRECTION {INPUT | OUTPUT | INOUT | FEEDTHRU}] 
+#        [+ USE {SIGNAL | POWER | GROUND | CLOCK
+#                    | ANALOG |  SCAN  |  RESET}] 
+#        [+ LAYER layerName pt pt] 
+#        [+ {FIXED | PLACED | COVER} pt orient] 
+#        [+ ANTENNAPINPARTIALMETALAREA      integer [LAYER layerName] ] ... 
+#        [+ ANTENNAPINPARTIALMETALSIDEAREA  integer [LAYER layerName] ] ... 
+#        [+ ANTENNAPINDIFFAREA              integer [LAYER layerName] ] ... 
+#        [+ ANTENNAPINPARTIALCUTAREA        integer [LAYER cutLayerName] ] ... 
+#        [+ ANTENNAMODEL OXIDE{1,2,3,4} ]
+#        [+ ANTENNAPINGATEAREA              integer [LAYER layerName] ] ... 
+#        [+ ANTENNAPINMAXAREACAR            integer LAYER layerName ] 
+#        [+ ANTENNAPINMAXSIDEAREACAR        integer LAYER layerName ] 
+#        [+ ANTENNAPINMAXCUTCAR             integer LAYER layerName ] 
+#     ; 
+#     ]... 
+# END PINS 
+###############################################################################
+PINS 11 ;
+- P0 + NET N0
+  + SPECIAL
+  + DIRECTION INPUT
+  + USE SIGNAL
+  + PORT
+    + LAYER M2 MASK 2 ( 0 0 ) ( 30 135 )
+    + VIA VIAGEN12_0 ( 0 100 )
+    + FIXED ( 45 -2160 ) N
+  + PORT
+    + LAYER M1 ( 0 0 ) ( 30 135 )
+    + VIA M1_M2 MASK 23 ( 100 0 )
+    + COVER ( 0 -1000 ) N
+  + PORT
+    + LAYER M3 ( 0 0 ) ( 30 135 )
+    + PLACED ( 1000 -1000 ) N
+  + NETEXPR "power1 VDD"
+  + SUPPLYSENSITIVITY P1
+  + GROUNDSENSITIVITY P2
+  + ANTENNAPINPARTIALMETALAREA      5 LAYER METAL1
+  + ANTENNAPINPARTIALMETALAREA      5 LAYER M2
+  + ANTENNAPINPARTIALMETALSIDEAREA  10 LAYER METAL1
+  + ANTENNAPINPARTIALMETALSIDEAREA  10 LAYER M2
+  + ANTENNAPINDIFFAREA              20 LAYER M1
+  + ANTENNAPINDIFFAREA              20 LAYER M2
+  + ANTENNAPINPARTIALCUTAREA        35 LAYER V1
+  + ANTENNAPINPARTIALCUTAREA        35 LAYER V2
+  + ANTENNAMODEL OXIDE1
+  + ANTENNAPINGATEAREA              15 LAYER M1
+  + ANTENNAPINGATEAREA              15 LAYER M2
+  + ANTENNAPINMAXAREACAR            25 LAYER M1
+  + ANTENNAPINMAXSIDEAREACAR        30 LAYER M1
+  + ANTENNAPINMAXCUTCAR             40 LAYER M1 
+  + ANTENNAMODEL OXIDE2
+  + ANTENNAPINGATEAREA              115 LAYER M1
+  + ANTENNAPINGATEAREA              115 LAYER M2
+  + ANTENNAPINMAXAREACAR            125 LAYER M1
+  + ANTENNAPINMAXSIDEAREACAR        130 LAYER M1
+  + ANTENNAPINMAXCUTCAR             140 LAYER M1
+  + ANTENNAMODEL OXIDE3
+  + ANTENNAPINGATEAREA              115 LAYER M1
+  + ANTENNAPINGATEAREA              115 LAYER M2
+  + ANTENNAPINMAXAREACAR            125 LAYER M1
+  + ANTENNAPINMAXSIDEAREACAR        130 LAYER M1
+  + ANTENNAPINMAXCUTCAR             140 LAYER M1
+  + ANTENNAMODEL OXIDE4
+  + ANTENNAPINGATEAREA              115 LAYER M1
+  + ANTENNAPINGATEAREA              115 LAYER M2
+  + ANTENNAPINMAXAREACAR            125 LAYER M1
+  + ANTENNAPINMAXSIDEAREACAR        130 LAYER M1
+  + ANTENNAPINMAXCUTCAR             140 LAYER M1 ;
+- P1  + NET N1
+  + DIRECTION OUTPUT
+  + USE POWER
+  + POLYGON M2 MASK 3 ( 0 0 ) ( 0 100 ) ( 50 100 ) ( 50 50 ) ( 100 50 ) ( 100 0 )
+  + PLACED ( 45 -2160 ) N 
+  + NETEXPR "power1 VDD[1]"
+  + ANTENNAPINPARTIALMETALAREA      5
+  + ANTENNAPINPARTIALMETALSIDEAREA  10
+  + ANTENNAPINGATEAREA              15
+  + ANTENNAPINDIFFAREA              20
+  + ANTENNAPINPARTIALCUTAREA        35 ;
+- P2  + NET N2
+  + DIRECTION INOUT
+  + USE GROUND
+  + LAYER M2 MASK 2 ( 0 0 ) ( 30 135 )
+  + COVER ( 45 -2160 ) N ;
+- P2.extra1 + NET N2
+  + DIRECTION INOUT
+  + USE GROUND
+  + LAYER METAL1 ( 0 0 ) ( 10 10 )
+  + COVER ( 0 0 ) N ;
+- P3  + NET N3
+  + DIRECTION FEEDTHRU
+  + USE CLOCK ;
+- P4  + NET N4
+  + USE SIGNAL ;
+- P5 + NET N5
+  + USE ANALOG ;
+- P6 + NET N6
+  + USE SCAN ;
+- P7 + NET N7
+  + USE RESET ;
+- ARRAYPIN[0][10] + NET ARRAYNET[0][10]
+  + LAYER M2 ( 0 0 ) ( 30 135 ) ;
+- ARRAYPIN.extra2[0][10] + NET ARRAYNET[0][10]
+  + LAYER M2 ( 0 0 ) ( 10 10 ) ;
+- scanpin + NET SCAN 
+  + USE SCAN ;
+- scanpin2 + NET SCAN 
+  + USE SCAN ;
+- INBUS[1] + NET INBUS<1>
+  + LAYER METAL1 ( 0 0 ) ( 10 10 ) ;
+- OUTBUS<1> + NET OUTBUS<1> ;
+- INBUS.extra1[1] + NET INBUS<1>
+  + LAYER M1 ( 10 10 ) ( 100 100 ) ;
+- vectorpin[0] + NET vectormodule[1]/vectornet[0] ;
+- scalarpin + NET vectormodule[1]/scalarnet ;
+- RE_RDY_2 + NET RE_RDY_2 + DIRECTION OUTPUT + USE SIGNAL
+ + PORT
+ + VIA myvia1 MASK 123 ( 500 500 )
+   + FIXED ( -390000 0 ) N
+ + PORT
+ + POLYGON METAL1 MASK 22 ( 40000 40000 ) ( 80000 40000 ) ( 80000 -40000 ) ( 40000 -40000 ) ( 40000 -80000 )
+                  ( -40000 -80000 ) ( -40000 -40000 ) ( -80000 -40000 ) ( -80000 40000 ) ( -40000 40000 ) ( -40000 80000 )
+                  ( 40000 80000 )
+   + FIXED ( -190000 0 ) N
+ + PORT
+ + VIA myvia1 ( 100 100 )
+   + FIXED ( 290000 0 ) N ;
+END PINS
+
+
+###############################################################################
+# PINPROPERTIES num; 
+#     [- { compName | PIN } pinName 
+#            [+ PROPERTY {propName propVal}...]...; 
+#     ]... 
+# END PINPROPERTIES
+###############################################################################
+PINPROPERTIES 2 ;
+- PIN P0
+  + PROPERTY strprop "aString" 
+  + PROPERTY intprop 1 
+  + PROPERTY realprop 1.1 
+  + PROPERTY intrangeprop 25
+  + PROPERTY realrangeprop 25.25 ;
+- I1 A 
+  + PROPERTY strprop "aString" 
+  + PROPERTY intprop 1 
+  + PROPERTY realprop 1.1 
+  + PROPERTY intrangeprop 25
+  + PROPERTY realrangeprop 25.25 ;
+END PINPROPERTIES
+
+
+###############################################################################
+# BLOCKAGES numBlockages ; 
+#     -    { LAYER layerName 
+#                 [+ COMPONENT compName 
+#                 |+ SLOTS 
+#                 |+ FILLS 
+#                 | + PUSHDOWN ] 
+#             | PLACEMENT 
+#                 [ + COMPONENT compName 
+#                 | + PUSHDOWN ] 
+#             } 
+#             RECT pt pt 
+#             [RECT pt pt ] ... ; 
+#     ... 
+# END BLOCKAGES
+###############################################################################
+BLOCKAGES 8 ;
+    - LAYER METAL1 + MASK 1
+        RECT ( 60 70 ) ( 80 90 ) ;
+    - LAYER M2 + SLOTS + PUSHDOWN + EXCEPTPGNET + COMPONENT I1 + MASK 3
+        POLYGON ( 100 100 ) ( 100 200 ) ( 150 200 ) ( 150 150 ) ( 200 150 ) ( 200 100 ) ;
+    - LAYER M2 + SLOTS + MASK 2
+        RECT ( 10 20 ) ( 40 50 ) ;
+    - LAYER METAL1 + FILLS + MASK 1 
+        RECT ( -10 20 ) ( 30 40 ) ;
+    - LAYER M1 + PUSHDOWN + SPACING 3 + MASK 1
+        RECT ( 50 30 ) ( 55 40 ) ;
+    - LAYER M1 + EXCEPTPGNET + DESIGNRULEWIDTH 45 + MASK 1
+        RECT ( 50 30 ) ( 55 40 ) ;
+    - PLACEMENT                       
+#        POLYGON ( 100 100 ) ( 100 200 ) ( 150 200 ) ( 150 150 ) ( 200 150 ) ( 200 100 ) ;
+        RECT ( -15 0 ) ( 0  20 )
+        RECT ( -15 20 ) ( 30 40 )
+        RECT ( 30  5 ) ( 50 40 )
+        RECT ( -10 -15 ) ( 50 0 ) ;   #floating  
+    - PLACEMENT + PARTIAL 0.40 + PUSHDOWN + COMPONENT I1 
+        RECT ( -10 0 ) ( 0  20 )
+        RECT ( -10 20 ) ( 30 40 )
+        RECT ( 30  0 ) ( 50 40 )
+        RECT ( -10 -5 ) ( 50 0 ) ;  #coordinate are absolute
+    - PLACEMENT + PUSHDOWN 
+        RECT ( -5 0 ) ( 0  20 )
+        RECT ( -5 20 ) ( 30 40 )
+        RECT ( 30  0 ) ( 25 40 )
+        RECT ( -5 0 ) ( 50 10 ) ;  #coordinate are absolute
+    - PLACEMENT + SOFT
+        RECT ( 50 30 ) ( 55 40 ) ;
+    - PLACEMENT + PARTIAL 0.40
+        RECT ( 50 30 ) ( 55 40 ) ;
+
+END BLOCKAGES
+
+
+
+###############################################################################
+# SPECIALNETS numNets ; 
+#     [- netName [(compNameRegExpr pinName[+ SYNTHESIZED])]... 
+#        [+ WIDTH layerName width]... 
+#         [+ VOLTAGE mvolts] 
+#         [+ SOURCE {NETLIST | DIST | USER | TIMING}] 
+#         [+ FIXEDBUMP ] 
+#         [+ ORIGINAL netName] 
+#         [+ USE 
+#             { SIGNAL | POWER | GROUND | CLOCK 
+#                 | SCAN | RESET | TIEOFF | ANALOG }] 
+#        [+PATTERN 
+#             {STEINER | BALANCED | TRUNK}] 
+#         [+ ESTCAP wireCapacitance] 
+#         [+ WEIGHT weight] 
+#         [+ PROPERTY {propName propVal}...]...;]... 
+#         [+ {ROUTED | FIXED | COVER} layerName width 
+#             [+ SHAPE {RING | STRIPE | FOLLOWPIN | IOWIRE 
+#                         | COREWIRE | BLOCKWIRE | FILLWIRE 
+#                         | PADRING | BLOCKRING | BLOCKAGEWIRE}] 
+#                 (x y) [ (x *) | (* y) | viaName ]... 
+#                 [ NEW layerName width 
+#                     [+ SHAPE {RING | STRIPE | FOLLOWPIN | IOWIRE | COREWIRE 
+#                                 | BLOCKWIRE | FILLWIRE 
+#                                 | PADRING | BLOCKRING | BLOCKAGEWIRE}] 
+#                     (x y) [ (x *) | (* y) | 
+#                        viaName [ DO numX by numY STEP stepX stepY] ]...]...] 
+#         [+ SHIELD shieldedNetName layerName width 
+#             [+ SHAPE {RING | STRIPE | FOLLOWPIN | IOWIRE 
+#                         | COREWIRE | BLOCKWIRE | FILLWIRE 
+#                         | PADRING | BLOCKRING | BLOCKAGEWIRE}] 
+#                 (x y) [ (x *) | (* y) | viaName ]... 
+#                 [NEW layerName width 
+#                   [+ SHAPE {RING | STRIPE | FOLLOWPIN | IOWIRE 
+#                         | COREWIRE | BLOCKWIRE | FILLWIRE | BLOCKAGEWIRE}] 
+#                   (x y) [ [ MASK maskNum ](x *) | [ MASK maskNum ] (* y) | 
+#                     [ MASK viaMaskNum ] viaName [ DO numX by numY STEP stepX stepY] ]...]...]... 
+#     ;]... 
+# END SPECIALNETS
+###############################################################################
+SPECIALNETS 5 ;
+- SN1 ( I1 Z.extra1 ) ( I2 Z ) ( I3 Z ) ( * Z )
+  + WIDTH METAL1 200
+  + WIDTH M2 300
+  + VOLTAGE 3200
+  + SOURCE NETLIST
+  + FIXEDBUMP
+  + ORIGINAL VDD
+  + USE SIGNAL
+  + PATTERN STEINER
+  + ESTCAP 1500000
+  + WEIGHT 30
+ + PROPERTY strprop "aString" 
+  + PROPERTY intprop 1 
+  + PROPERTY realprop 1.1 
+  + PROPERTY intrangeprop 25
+  + PROPERTY realrangeprop 25.25
+  
+  + ROUTED M1 120 + SHAPE RING ( 14000 341440 ) ( 9600 * ) ( * 282400 ) M1_M2 DO 2 BY 2 STEP 200 200 ( 2400 * )
+    NEW METAL1 120 + SHAPE STRIPE    ( 2400 282400 ) ( 240 * ) M1_M2 
+    NEW M1 120 + SHAPE FOLLOWPIN ( 2500 282400 ) ( 250 * ) VIAGEN12_0 N
+    NEW M1 120 + SHAPE IOWIRE    ( 2600 282400 ) ( 260 * ) VIAGEN12_2
+    NEW METAL1 120 + SHAPE COREWIRE  ( 2700 282400 ) ( 270 * ) VIAGEN12_3
+    NEW M1 120 + SHAPE BLOCKWIRE ( 2800 282400 ) ( 280 * ) CUSTOMVIA VIAGEN12_1
+   NEW M1 120 + SHAPE FILLWIRE  ( 2900 282400 ) ( 290 * ) VIAGEN12_4
+    NEW M1 120 + SHAPE FILLWIREOPC  ( 2900 282400 ) VIAGEN12_4
+    NEW M1 120 + SHAPE BLOCKAGEWIRE ( 2000 282400 ) ( 200 * ) VIAGEN12
+   NEW M1 120 + SHAPE BLOCKRING ( 2100 282400 ) ( 210 * )
+    NEW M1 120 + SHAPE PADRING   ( 2200 282400 ) ( 220 * )
+
+    NEW M1 200 ( 3000 3000 ) TURNM1_1
+    NEW M2 200 ( 3100 3100 ) ( 3200 3100 ) TURNM2_1
+   NEW M2 200 ( 3300 3300 ) ( 3400 3300 ) TURNM2_1 ( 3400 3600 )
+    
+    NEW M2 200 ( 400 400 ) M1_M2 ( * * )           # case : pt via ( * * )
+    NEW M2 200 ( 500 500 ) M1_M2 ( * * ) M1_M2     # case : pt via ( * * ) via
+    NEW M2 200 ( 700 700 ) M1_M2 ( * * ) ( * 800 ) # case : pt via ( * * ) pt
+   
+   NEW M2 15000 + STYLE 9 ( 105000 105000 ) ( 50000 50000 )
+    NEW M2 15000 + STYLE 8 ( 105000 155000 ) ( * 105000 )
+  + COVER METAL1 100 ( 100 100 ) ( 100 200 )
+ + FIXED M1 100 ( 200 200 ) ( 300 200 )
+  + ROUTED M1 120 + SHAPE DRCFILL ( 8000 8000 ) ( 8000 8200 ) ( 8400 8200 )
+  + SHIELD N1 M2 90 ( 14100 340440 ) ( 8160 * ) M1_M2  ( * 301600 ) M1_M2 FN DO 2 BY 2 STEP 200 200 ( 2400 * )
+  ;
+- VDD
+  + VOLTAGE 5000
+  + FIXED + SHAPE RING + MASK 2 + POLYGON METAL1 ( 0  0 ) ( 0 100 ) ( 100 100 ) ( 200 200 ) ( 200 0 )
+  + COVER + SHAPE RING + MASK 3 + POLYGON M2 ( 100 100 ) ( * 200 ) ( 200 * ) ( 300 300 ) ( 300 100 ) 
+  + VIA M1_M2 N ( 2400 0 ) ( 10 10 )
+  + FIXED + SHAPE RING + RECT M3 ( 0 0 ) ( 10 10 )
+  + SHIELD N1 + SHAPE BLOCKRING + RECT M3 ( 0 0 ) ( 10 10 )
+  + ROUTED M1 20 ( 10 0 ) MASK 3 ( 10 20 ) VIAGEN12_4
+    NEW M2 100 ( 10 10 ) ( 20 10 ) MASK 1 ( 20 20 ) MASK 031 VIAGEN12_3
+  + SHAPE STRIPE + VIA VIA12_2 ( 30 30 ) ( 40 40 )
+  + ROUTED M1 100 ( 0 0 100 ) ( 0 0 50 ) ( 100 0 50 ) M1_M2 ( 100 100 50 ) 
+  + ROUTED M1 50 + STYLE 0 ( 0 0 ) ( 150 150 )
+  + ROUTED M1 50 + STYLE 0 ( 150 150 ) ( 0 0 )
+  + ROUTED M1 50 + STYLE 0 ( 150 0 ) ( 0 150 )
+  + ROUTED M1 50 + STYLE 0 ( 0 150 ) ( 150 0 )
+  + ROUTED M1 50 + STYLE 1 ( 150 150 ) ( 300 0 ) ( 400 0 )
+  + ROUTED M2 100 + SHAPE RING + STYLE 0 ( 0 0 ) ( 100 100 ) ( 200 100 )
+  + ROUTED M1 100 + STYLE  2 ( 0 0 ) M1_M2 (  600 * ) M1_M2
+  + ROUTED M1 50 ( 150 150 ) ( 300 300 ) 
+  ;
+- SN2 
+  + ROUTED M2 100 + STYLE 3 ( 0 0 ) ( 150 150 ) ( 300 0 )
+    NEW M2 100 ( 300 0 ) ( 400 0 )
+  + ROUTED M1 100 ( 0 0 ) ( 150 150 ) ( 300 0 ) ( 400 0 )
+ + ROUTED M1 4000 + STYLE 5 ( 0 0 ) ( 1000 0 )
+  + ROUTED M1 4000 + STYLE 6 ( 0 0 ) ( 1000 1000 )
+  + ROUTED M1 1000 + STYLE 7 ( 0 0 ) ( * * ) ;
+- SN3
+  + USE GROUND
+  + ROUTED M2 100 ( 100 0 ) ( * 3000 )
+  NEW M3 100 ( 0 1000 ) ( 3000 * )
+  + SHIELD N1 M2 40 + SHAPE FILLWIRE ( 300 80 ) ( * 1920 )
+  NEW M2 40 + SHAPE FILLWIRE ( 500 80 ) ( * 1920 ) ;
+- DUMMY
+  + ROUTED M1 100 + SHAPE FILLWIRE ( 0 0 ) ( 100 0 ) ;
+- DUMMY2
+  + ROUTED M2 100 + SHAPE FILLWIREOPC ( 0 0 ) ( 100 0 ) ;
+END SPECIALNETS
+
+
+###############################################################################
+# NETS numNets ; 
+#     [- { netName [( {compName | PIN} pinName 
+#           [+ SYNTHESIZED])]... 
+#        | MUSTJOIN (compName pinName) } 
+#         [+ SHIELDNET shieldNetName ] ... 
+#         [+ NOSHIELD lastSegment ] ... 
+#         [+ VPIN vpinName [LAYER layerName] pt pt 
+#             [ { PLACED | FIXED | COVER } pt orient ] ]... 
+#         [+ SUBNET subnetName 
+#             [( {compName | PIN} pinName)| (VPIN vpinName)]... 
+#             [NONDEFAULTRULE rulename] 
+#             [regularWiring]] 
+#         [+ XTALK num] 
+#         [+ NONDEFAULTRULE ruleName] 
+#         [regularWiring]... 
+#         [+ SOURCE {NETLIST | DIST | USER | TEST | TIMING}] 
+#         [+ FIXEDBUMP ]
+#         [+ FREQUENCY freq ]
+#         [+ ORIGINAL netName] 
+#         [+ USE 
+#             { SIGNAL | POWER | GROUND | CLOCK 
+#                 | SCAN | RESET | TIEOFF | ANALOG}] 
+#         [+ PATTERN 
+#             {STEINER | BALANCED }] 
+#         [+ ESTCAP wireCapacitance] 
+#         [+ WEIGHT weight] 
+#         [+ PROPERTY {propName propVal}...]...; 
+#     ]... 
+# END NETS 
+# 
+# regularWiring = 
+# {+ ROUTED | + FIXED | + COVER | + NOSHIELD} 
+# layerName [TAPER | TAPERRULE rulename] [STYLE styleNum ] 
+#    routingPoints
+# [NEW layerName [TAPER | TAPERRULE rulename] [STYLE styleNum ]
+#    routingPoints
+# ] ...
+#
+# routingPoints =
+# ( x y [value] ) 
+# {( x * [value]) | ( * y [value]) | ( * * [value] ) | viaName | + RECT ( delta1x delta1y delta2x delta2y ) | + VIRTUAL ( x y ) ]...] 
+###############################################################################
+NETS 6 ;
+- SCAN ( scancell1 PA10 + SYNTHESIZED ) ( scancell2 PA2 + SYNTHESIZED )
+  + SOURCE TEST ;
+- N1 ( I1 A ) ( PIN P0 )
+  + SHIELDNET SN1
+  + SHIELDNET VDD
+  + FIXED M3 ( 10 0 ) MASK 3 ( 10 20 ) MASK 031 M1_M2
+  + ROUTED M1 ( 0 0 ) ( 5 0 ) VIRTUAL ( 2 3 ) MASK 1 ( 7 7 )
+  + ROUTED M1 ( 0 0 ) ( 5 0 ) VIRTUAL ( 2 3 ) RECT ( 1 2 3 4 ) ( 7 7 )
+  + FIXED M1 ( 0 0 ) ( 5 0 ) ( 7 7 ) 
+  + FIXED M1 ( 0 0 ) ( 5 0 ) MASK 3 RECT ( 1 2 3 4 ) ( 7 7 ) 
+  + NOSHIELD M2 ( 14100 341440 ) ( 14000 * ) M1_M2
+  + VPIN N1_VP0 LAYER M3 ( -333 -333 ) ( 333 333 ) PLACED ( 189560 27300 ) N
+  + VPIN N1_VP1 LAYER M3 ( -333 -333 ) ( 333 333 ) PLACED ( 189560 27300 ) S
+  + VPIN N1_VP2 LAYER M3 ( -333 -333 ) ( 333 333 ) PLACED ( 189560 27300 ) E
+  + VPIN N1_VP3 LAYER M3 ( -333 -333 ) ( 333 333 ) PLACED ( 189560 27300 ) W
+  + VPIN N1_VP4 LAYER M3 ( -333 -333 ) ( 333 333 ) PLACED ( 189560 27300 ) FN
+  + VPIN N1_VP5 LAYER M3 ( -333 -333 ) ( 333 333 ) PLACED ( 189560 27300 ) FS
+  + VPIN N1_VP6 LAYER M3 ( -333 -333 ) ( 333 333 ) PLACED ( 189560 27300 ) FE
+  + VPIN N1_VP7 LAYER M3 ( -333 -333 ) ( 333 333 ) PLACED ( 189560 27300 ) FW
+  + VPIN N1_VP8 ( -333 -333 ) ( 333 333 )
+  + SUBNET N1_SUB0 ( I2 A ) ( PIN P1 ) ( VPIN N1_VP9 )
+    NONDEFAULTRULE RULE1
+    ROUTED M1 ( 168280 63300 700 ) ( * 64500 ) M1_M2 ( 169400 * 800 ) M2_M3
+  + XTALK 2
+  + NONDEFAULTRULE RULE1
+  + ROUTED
+    M2 ( 14000 341440 ) ( 9600 * ) ( * 282400 ) nd1VIA12 ( 2400 * ) TURNM1_1
+    NEW M1 TAPER ( 2400 282400 ) ( 240 * )
+  + SOURCE NETLIST
+  + FIXEDBUMP
+  + FREQUENCY 100
+  + ORIGINAL N2
+  + USE SIGNAL
+  + PATTERN STEINER
+  + ESTCAP 1500000
+  + WEIGHT 100
+  + PROPERTY strprop "aString" 
+  + PROPERTY intprop 1 
+  + PROPERTY realprop 1.1 
+  + PROPERTY intrangeprop 25
+  + PROPERTY realrangeprop 25.25 ;
+- N2 ( I3 A ) ( PIN P2 )
+  + FIXED
+    M2 ( 14000 341440 ) ( 9600 * ) ( * 282400 ) M1_M2 ( 2400 * )
+    NEW M1 TAPERRULE RULE1 ( 2400 282400 ) ( 240 * )
+  + SOURCE DIST
+  + PATTERN BALANCED
+  + WEIGHT 500 ;
+- N3 ( I4 A ) ( PIN P3 )
+  + COVER
+    M2 ( 14000 341440 ) ( 9600 * ) ( * 282400 ) M1_M2 ( 2400 * ) VIAGEN12_0 N
+    NEW M1 ( 2400 282400 ) ( 240 * )
+    NEW M2 ( 400 400 ) M1_M2 N ( * * )           # case : pt via ( * * )
+    NEW M2 ( 500 500 ) M1_M2 ( * * ) M1_M2     # case : pt via ( * * ) via
+    NEW M2 ( 600 600 10 ) M1_M2 S ( * * 30 ) ( * 800 )    # case : pt via ( * * ext ) 
+    NEW M2 ( 700 700 ) M1_M2 ( * * ) ( * 800 ) # case : pt via ( * * ) pt
+    NEW M1 ( 0 0 ) M1_M2 FS M2_M3
+    NEW M3 ( 0 0 ) M2_M3 W M1_M2
+    NEW M1 ( 10 10 ) ( 20 10 ) MASK 1 ( 20 20 ) MASK 031 VIA1_2
+  + SOURCE USER
+  + PATTERN TRUNK ;
+- N4 ( I5 A ) ( PIN P4 )
+  + SOURCE TEST
+  + ROUTED M2 STYLE 1 ( 0 0 ) ( 150 150 ) ( 300 0 ) ( 400 0 )
+  + ROUTED M1 ( 150 150 ) MASK 3 ( 300 300 ) MASK 032 VIAGEN12
+  + NOSHIELD M1 ( 150 150 30 ) ( 150 300 30 )
+  + ROUTED M1 STYLE 0 ( 0 0 ) ( 150 150 )
+    NEW M1 STYLE 1 ( 150 150 ) MASK 2 ( 300 0 ) ( 400 0 )
+  + USE GROUND ;
+- N5 ( I6 A ) ( PIN P5 )
+  + ROUTED M2 STYLE 3 ( 0 1000 ) ( 150 1150 ) ( 300 1000 ) ( 400 1000 )
+  + ROUTED M1 ( 0 1000 ) ( 150 1150 ) ( 300 1000 ) ( 400 1000 )
+  + SOURCE TIMING ;
+- N6
+  + NONDEFAULTRULE RULE2
+  + ROUTED M1 STYLE 4 ( 1000 0 ) ( 1100 100 )
+  + ROUTED M1 STYLE 4 ( 1200 100 ) ( 1300 0 )
+  + ROUTED M1 STYLE 4 ( 1000 -100 ) ( 1300 -100 ) ;
+- SCAN ( scancell1 PA10 + SYNTHESIZED ) ( scancell2 PA2 + SYNTHESIZED )
+  + SOURCE TEST ;
+- MUSTJOIN_1 ( I7 A ) ;
+- ARRAYNET[0][10] ;
+- vectormodule[1]/vectornet[0] ;
+- vectormodule[1]/scalarnet ;
+END NETS
+
+
+###############################################################################
+# SCANCHAINS numScanChains ; 
+#     [- chainName 
+#     [+ COMMONSCANPINS [(IN pin)][(OUT pin)]] 
+#     [+ START {fixedInComp | PIN} [outPin] ] 
+#     {+ FLOATING {floatingComp [(IN pin)] [(OUT pin)]}...} 
+#     [+ ORDERED 
+#         {fixedComp [(IN pin)] [(OUT pin)] 
+#         fixedComp [(IN pin)] [(OUT pin)]} 
+#         [fixedComp [(IN pin)] [(OUT pin)]] ...}] 
+#     [+ STOP {fixedOutComp | PIN} [inPin] ] 
+#     ;] 
+#     ... 
+# END SCANCHAINS
+###############################################################################
+SCANCHAINS 2 ;
+- chain1
+  + PARTITION clock1 MAXBITS 256	# DEF5.5 
+  + COMMONSCANPINS ( IN PA1 ) ( OUT PA2 )
+  + START I1 B
+  + STOP  I4 B
+  + ORDERED 
+     scancell1 ( IN PA2 )
+     scancell2 ( OUT PA10 )
+     ( BITS 4 )
+  + FLOATING
+     scancell3 ( IN PA2 )
+     scancell4 ( OUT PA10 )
+     ( BITS 4 ) ;
+- chain2
+  + PARTITION clock1 MAXBITS 256	# DEF5.5 
+  + COMMONSCANPINS ( IN PA1 ) ( OUT PA2 )
+  + START PIN scanpin
+  + STOP  PIN scanpin2
+  + ORDERED 
+     scancell5 ( IN PA2 )
+     scancell6 ( OUT PA10 )
+     ( BITS 4 )
+  + FLOATING
+     scancell7 ( IN PA2 )
+     scancell8 ( OUT PA10 )
+     ( BITS 4 ) ;
+- chain3
+  + PARTITION clock1 MAXBITS 256	# DEF5.5 
+  + COMMONSCANPINS ( IN PA1 ) ( OUT PA2 )
+  + START I5 B
+  + STOP  I6 B
+  + ORDERED 
+     scancell9 ( IN PA2 )
+     scancell10 ( OUT PA10 )
+     ( BITS 4 )
+  + FLOATING
+     scancell11 ( IN PA2 )
+     scancell12 ( OUT PA10 )
+     ( BITS 4 ) ;
+END SCANCHAINS
+
+
+###############################################################################
+# GROUPS numGroups ; 
+#     [- groupName compNameRegExpr... 
+#         [+ SOFT 
+#             [MAXHALFPERIMETER value] 
+#             [MAXX value][MAXY value]] 
+#         [+ REGION {pt pt | regionName} ] 
+#         [+ PROPERTY {propName propVal}...]...;]... 
+# END GROUPS
+###############################################################################
+GROUPS 3 ;
+- group1 I3 I2
+  + SOFT MAXHALFPERIMETER 4000 MAXX 100000 MAXY 100000
+  + REGION region1
+  + PROPERTY strprop "aString" 
+  + PROPERTY intprop 1 
+  + PROPERTY realprop 1.1 
+  + PROPERTY intrangeprop 25
+  + PROPERTY realrangeprop 25.25 ;
+- group2 I4
+  + SOFT MAXHALFPERIMETER 4000
+  + REGION ( 0 0 ) ( 100 100 ) ;
+- region2 I7 I8
+  + REGION region2 ;
+END GROUPS
+
+
+###############################################################################
+# SLOTS numSlots ; 
+#     - { LAYER layerName 
+#             RECT pt pt 
+#             [RECT pt pt] ... ; 
+#         } 
+#     ... 
+# END SLOTS
+###############################################################################
+SLOTS 3 ;
+  -  LAYER M1
+        RECT ( 3 3 )  ( 6 8 ) ;
+  -  LAYER M2
+        RECT ( 3 3 )  ( 6 8 )
+        POLYGON ( 0 0 ) ( 0 10 ) ( 10 10 ) ( 10 20 ) ( 20 20 ) ( 20 0 ) ;
+  -  LAYER M3
+        RECT ( 3 3 )  ( 6 8 ) ;
+END SLOTS     
+
+
+###############################################################################
+# FILLS numFills ; 
+#     - { LAYER layerName 
+#             RECT pt pt 
+#             [RECT pt pt] ... ; 
+#         } 
+#     ... 
+# END FILLS
+###############################################################################
+FILLS 5 ;
+   - VIA myvia1 + MASK 2 + OPC
+    ( 5000 5000 )
+    ( 800 800 ) ;
+   -  LAYER M1 + MASK 2
+        RECT ( 0 2 )  ( 1 10 ) ;
+   -  LAYER M2 + OPC
+        RECT ( 0 2 )  ( 1 10 )
+        POLYGON ( 0 0 ) ( 0 10 ) ( 10 10 ) ( 10 20 ) ( 20 20 ) ( 20 0 ) ;
+   -  LAYER M3    
+        RECT ( 0 2 )  ( 1 10 ) ;
+   - VIA M1_M2 + MASK 202 + OPC ( 2400 0 ) ( 10 10 ) ;
+   - VIA VIAGEN12_0 + OPC ( 100 100 ) ( 200 100 ) ;
+END FILLS     	   
+
+
+###############################################################################
+# BEGINEXT "tag" 
+#   extensionText 
+# ENDEXT 
+###############################################################################
+BEGINEXT "tag"
+- CREATOR "Cadence" ;
+- OTTER furry
+  + PROPERTY arrg later
+  ;
+- SEAL cousin to WALRUS ;
+ENDEXT
+
+END DESIGN

@@ -1,0 +1,11 @@
+BEFORE OPT
+tns -12337488.00
+wns -2982.02
+Resized 148640 instances.
+AFTER SIZING
+tns -251902.19
+wns -619.55
+Inserted 122655 buffers in 28845 nets.
+AFTER BUFFERING
+tns -9473.45
+wns -94.56

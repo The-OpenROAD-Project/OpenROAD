@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 258 components and 1420 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 516 connections.
+[INFO ODB-0133]     Created 294 nets and 904 connections.
+[INFO PPL-0070] Pin clk placed at (8.05um, 0.24um) instead of (8.00um, 0.00um). Pin was snapped to a routing track, to the manufacturing grid or moved away from blocked region.
+No differences found.

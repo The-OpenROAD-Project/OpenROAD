@@ -1,0 +1,43 @@
+name: Check That ODB Files Are Generated
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  Are-Odb-Files-Generated:
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          submodules: 'recursive'
+      - name: setup
+        run: |
+          python3 -m venv venv
+          venv/bin/pip install jinja2==3.1.6
+      - name: Check that ODB Generated Files Are Up To Date
+        run: |
+          source venv/bin/activate
+          cd src/odb/src/codeGenerator/
+          ./generate
+          if [ -z "$(git status --porcelain)" ]; then
+            exit 0
+          else
+            echo ::group::Non-Empty Git Status Oputput
+            git status --porcelain
+            echo ::endgroup::
+
+            echo ::group::Non-Empty Git Diff Oputput
+            git diff
+            echo ::endgroup::
+
+            printf "Your ODB generated files are out of date\n"
+            printf "run ./generate in the src/odb/src/codeGenerator folder"
+            exit 1
+          fi

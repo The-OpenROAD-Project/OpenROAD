@@ -1,0 +1,11 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 482 components and 2074 component-terminals.
+[INFO ODB-0133]     Created 385 nets and 1110 connections.
+[ERROR PDN-0192] There are multiple (2) followpin definitions in Core, but no connect statements between them.
+PDN-0192
+[ERROR PDN-0193] There are only (1) followpin connect statements when 2 is/are required.
+PDN-0193
+[ERROR PDN-0194] Connect statements for followpins overlap between layers: metal1 -> metal2 and metal1 -> metal3
+PDN-0194

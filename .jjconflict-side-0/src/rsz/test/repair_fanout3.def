@@ -1,0 +1,49 @@
+VERSION 5.8 ; 
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN hi_fanout ;
+
+UNITS DISTANCE MICRONS 1000 ;
+
+DIEAREA ( 0 0 ) ( 200000 200000 ) ;
+
+COMPONENTS 13 ;
+- r1 DFF_X1 + PLACED   ( 1000 1000 ) N ;
+- r2 LEFONLY + PLACED   ( 10000 0 ) N ;
+- r3 LEFONLY + PLACED   ( 15000 0 ) N ;
+- r4 LEFONLY + PLACED   ( 20000 0 ) N ;
+- r5 LEFONLY + PLACED   ( 25000 0 ) N ;
+- r6 LEFONLY + PLACED   ( 30000 0 ) N ;
+- r7 LEFONLY + PLACED   ( 35000 0 ) N ;
+- r8 LEFONLY + PLACED   ( 40000 0 ) N ;
+- r9 LEFONLY + PLACED   ( 45000 0 ) N ;
+- r10 LEFONLY + PLACED   ( 0 5000 ) N ;
+- r11 LEFONLY + PLACED   ( 5000 5000 ) N ;
+- r12 LEFONLY + PLACED   ( 10000 5000 ) N ;
+- r13 LEFONLY + PLACED   ( 15000 5000 ) N ;
+END COMPONENTS
+
+PINS 1 ;
+- clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL 
+  + LAYER metal1 ( 0 0 ) ( 100 100 ) + FIXED ( 1000 1000 ) N ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 2 ;
+- clk1 ( PIN clk1 )
+ ( r1 CK )
+ ( r2 CK ) ( r3 CK ) ( r4 CK ) ( r5 CK ) ( r6 CK ) ( r7 CK ) ( r8 CK ) ( r9 CK ) ( r10 CK ) ( r11 CK )
+ ( r12 CK ) ( r13 CK ) ;
+- r1q ( r1 Q )
+ ( r2 D )
+ ( r3 D ) ( r4 D ) ( r5 D ) ( r6 D ) ( r7 D ) ( r8 D ) ( r9 D ) ( r10 D ) ( r11 D ) ( r12 D )
+ ( r13 D ) ;
+END NETS
+END DESIGN

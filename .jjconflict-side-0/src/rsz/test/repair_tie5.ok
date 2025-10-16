@@ -1,0 +1,12 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: pad.lef, created 1 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0131]     Created 5 components and 23 component-terminals.
+[INFO ODB-0133]     Created 1 nets and 5 connections.
+[INFO RSZ-0042] Inserted 4 tie LOGIC1_X1 instances.
+2.1 0.8
+4.1 0.8
+15.0 2.8
+45.0 2.8
+pad1 (0 12000) outside of core (0 0 199880 8400)
+pad2 (60000 12000) outside of core (0 0 199880 8400)

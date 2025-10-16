@@ -1,0 +1,5 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0128] Design: gcd
+[ERROR TAP-0010] Master TAPCELL_X1x not found.
+TAP-0010

@@ -1,0 +1,41 @@
+{
+  "name": "dbTechLayerCutClassRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "_name",
+      "type": "char *",
+      "default": "nullptr",
+      "flags": [
+        "no-set"
+      ]
+    },
+    {
+      "type": "int",
+      "name": "width_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "length_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "num_cuts_",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "length_valid_"
+    },
+    {
+      "type": "bit",
+      "name": "cuts_valid_"
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h",
+    "dbHashTable.h"
+  ]
+}

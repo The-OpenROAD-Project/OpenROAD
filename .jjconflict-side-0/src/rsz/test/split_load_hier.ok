@@ -1,0 +1,59 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0001] Number of available slots 8754
+[INFO PPL-0002] Number of I/O             2
+[INFO PPL-0003] Number of I/O w/sink      2
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 40.28 um.
+[INFO GPL-0005] Execute conjugate gradient initial placement.
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0006] Number of instances:                47
+[INFO GPL-0007] Movable instances:                  47
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                     23
+[INFO GPL-0011] Number of pins:                     97
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:        138.054 um^2
+[INFO GPL-0019] Utilization:                     0.288 %
+[INFO GPL-0020] Standard cells area:           138.054 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000001 HPWL: 2586120
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000010 HPWL: 208613
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000010 HPWL: 203661
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000008 HPWL: 203711
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000011 HPWL: 203384
+Placement Analysis
+---------------------------------
+total displacement        365.1 u
+average displacement        7.8 u
+max displacement           11.2 u
+original HPWL               6.0 u
+legalized HPWL            299.8 u
+delta HPWL                 4932 %
+
+worst slack max -0.68
+tns max -10.573
+[INFO RSZ-0100] Repair move sequence: SizeUpMove BufferMove SplitLoadMove 
+[INFO RSZ-0094] Found 26 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 26 out of 26 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
+--------------------------------------------------------------------------------------------------------------
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.684 |      -10.6 |     26 | u1/r21/D
+    final |       0 |      20 |        6 |      0 |     0 |   +15.6% |   -0.506 |      -12.1 |     26 | u1/r21/D
+--------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0045] Inserted 6 buffers, 2 to split loads.
+[INFO RSZ-0051] Resized 20 instances: 20 up, 0 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+No differences found.

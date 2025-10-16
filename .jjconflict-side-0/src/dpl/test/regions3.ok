@@ -1,0 +1,14 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fake_macros.lef, created 10 library cells
+[INFO ODB-0128] Design: regions3
+[INFO ODB-0131]     Created 2 components and 10 component-terminals.
+Placement Analysis
+---------------------------------
+total displacement          6.3 u
+average displacement        3.2 u
+max displacement            3.8 u
+original HPWL               0.0 u
+legalized HPWL              0.0 u
+delta HPWL                    0 %
+
+No differences found.

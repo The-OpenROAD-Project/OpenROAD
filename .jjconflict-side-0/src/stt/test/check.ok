@@ -1,0 +1,17 @@
+Net cross1
+Wire length = 37 Path depth = 27
+0 (72 61) neighbor 0 length 0
+1 (86 50) neighbor 12 length 1
+2 (84 51) neighbor 14 length 2
+3 (89 51) neighbor 14 length 3
+4 (86 53) neighbor 5 length 5
+5 (86 58) neighbor 13 length 1
+6 (85 59) neighbor 13 length 1
+7 (80 53) neighbor 8 length 4
+8 (79 56) neighbor 11 length 2
+9 (81 58) neighbor 11 length 2
+10 (79 60) neighbor 0 length 8
+11 (79 58) neighbor 10 length 2
+12 (86 51) neighbor 4 length 2
+13 (85 58) neighbor 9 length 4
+14 (86 51) neighbor 12 length 0
