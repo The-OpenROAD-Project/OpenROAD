@@ -1120,7 +1120,6 @@ TimingPathList STAGuiInterface::getTimingPaths(
   }
 
   sta::Search* search = sta_->search();
-  search->clear();
   sta::PathEndSeq path_ends
       = search->findPathEnds(  // from, thrus, to, unconstrained
           e_from,
