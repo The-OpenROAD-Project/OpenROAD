@@ -77,6 +77,7 @@ DRCWidget::DRCWidget(QWidget* parent)
   setWidget(container);
 
   connect(view_, &ObjectTree::clicked, this, &DRCWidget::clicked);
+  connect(view_, &ObjectTree::doubleClicked, this, &DRCWidget::doubleClicked);
   connect(view_->selectionModel(),
           &QItemSelectionModel::selectionChanged,
           this,
@@ -189,7 +190,7 @@ bool DRCWidget::setVisibleDRC(QStandardItem* item,
   return false;
 }
 
-void DRCWidget::clicked(const QModelIndex& index)
+void DRCWidget::showMarker(const QModelIndex& index, bool open_inspector)
 {
   QStandardItem* item = model_->itemFromIndex(index);
   QVariant data = item->data();
@@ -202,7 +203,7 @@ void DRCWidget::clicked(const QModelIndex& index)
       marker->setVisited(false);
     } else {
       Selected t = Gui::get()->makeSelected(marker);
-      emit selectDRC(t);
+      emit selectDRC(t, open_inspector);
       focusIndex(index);
     }
   } else {
@@ -214,6 +215,16 @@ void DRCWidget::clicked(const QModelIndex& index)
       }
     }
   }
+}
+
+void DRCWidget::clicked(const QModelIndex& index)
+{
+  showMarker(index, false);
+}
+
+void DRCWidget::doubleClicked(const QModelIndex& index)
+{
+  showMarker(index, true);
 }
 
 void DRCWidget::setBlock(odb::dbBlock* block)

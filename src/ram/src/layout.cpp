@@ -3,6 +3,9 @@
 
 #include "layout.h"
 
+#include <memory>
+#include <utility>
+
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

@@ -27,6 +27,7 @@
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
+#include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "util/journal.h"
@@ -641,6 +642,23 @@ bool Opendp::swapCells(Node* cell1, Node* cell2)
           + distChange(cell2, cell1->getLeft(), cell1->getBottom());
 
     if (dist_change < 0) {
+      Journal journal(grid_.get(), nullptr);
+      MoveCellAction action1(cell1,
+                             cell1->getLeft(),
+                             cell1->getBottom(),
+                             cell2->getLeft(),
+                             cell2->getBottom(),
+                             cell1->isPlaced());
+      journal.addAction(action1);
+
+      MoveCellAction action2(cell2,
+                             cell2->getLeft(),
+                             cell2->getBottom(),
+                             cell1->getLeft(),
+                             cell1->getBottom(),
+                             cell2->isPlaced());
+      journal.addAction(action2);
+
       const GridX grid_x1 = grid_->gridX(cell2);
       const GridY grid_y1 = grid_->gridSnapDownY(cell2);
       const GridX grid_x2 = grid_->gridX(cell1);
@@ -650,7 +668,11 @@ bool Opendp::swapCells(Node* cell1, Node* cell2)
       unplaceCell(cell2);
       placeCell(cell1, grid_x1, grid_y1);
       placeCell(cell2, grid_x2, grid_y2);
-      return true;
+      // Check if placement is valid
+      if (drc_engine_->checkDRC(cell1) && drc_engine_->checkDRC(cell2)) {
+        return true;
+      }
+      journal.undo();
     }
   }
   return false;
@@ -875,7 +897,7 @@ bool Opendp::checkPixels(const Node* cell,
     return false;
   }
 
-  dbSite* site = cell->getSite();
+  odb::dbSite* site = cell->getSite();
   for (GridY y1 = y; y1 < y_end; y1++) {
     const bool first_row = (y1 == y);
     for (GridX x1 = x; x1 < x_end; x1++) {
@@ -1210,7 +1232,7 @@ void Opendp::placeCell(Node* cell, const GridX x, const GridY y)
   setGridLoc(cell, x, y);
   grid_->paintPixel(cell);
   cell->setPlaced(true);
-  dbSite* site = cell->getDbInst()->getMaster()->getSite();
+  odb::dbSite* site = cell->getDbInst()->getMaster()->getSite();
   cell->setOrient(grid_->getSiteOrientation(x, y, site).value());
   if (journal_) {
     MoveCellAction action(cell,

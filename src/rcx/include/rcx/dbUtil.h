@@ -20,21 +20,6 @@ class Logger;
 
 namespace rcx {
 
-using odb::dbBox;
-using odb::dbBTerm;
-using odb::dbITerm;
-using odb::dbMatrix;
-using odb::dbNet;
-using odb::dbObject;
-using odb::dbSBox;
-using odb::dbShape;
-using odb::dbTech;
-using odb::dbTechLayer;
-using odb::dbTechLayerDir;
-using odb::dbTechLayerRule;
-using odb::dbTechNonDefaultRule;
-using odb::dbTechVia;
-
 //
 // This class creates a new net along with a wire.
 //
@@ -46,58 +31,59 @@ class dbCreateNetUtil
 
   void setBlock(odb::dbBlock* block, bool skipInit = false);
   odb::dbBlock* getBlock() const { return _block; }
-  dbNet* createNetSingleWire(const char* name,
-                             int x1,
-                             int y1,
-                             int x2,
-                             int y2,
-                             int rlevel,
-                             bool skipBterms = false,
-                             bool skipNetExists = false,
-                             uint8_t color = 0);
-  dbNet* createNetSingleWire(const char* name,
-                             int x1,
-                             int y1,
-                             int x2,
-                             int y2,
-                             int rlevel,
-                             dbTechLayerDir dir,
-                             bool skipBterms = false);
+  odb::dbNet* createNetSingleWire(const char* netName,
+                                  int x1,
+                                  int y1,
+                                  int x2,
+                                  int y2,
+                                  int routingLayer,
+                                  bool skipBterms = false,
+                                  bool skipExistsNet = false,
+                                  uint8_t color = 0);
+  odb::dbNet* createNetSingleWire(const char* name,
+                                  int x1,
+                                  int y1,
+                                  int x2,
+                                  int y2,
+                                  int routingLayer,
+                                  odb::dbTechLayerDir dir,
+                                  bool skipBterms = false);
 
-  dbNet* createNetSingleWire(odb::Rect& r,
-                             uint level,
-                             uint netId,
-                             uint shapeId);
-  dbSBox* createSpecialWire(dbNet* mainNet,
-                            odb::Rect& r,
-                            dbTechLayer* layer,
-                            uint sboxId);
-  void setCurrentNet(dbNet* net);
+  odb::dbNet* createNetSingleWire(odb::Rect& r,
+                                  uint level,
+                                  uint netId,
+                                  uint shapeId);
+  odb::dbSBox* createSpecialWire(odb::dbNet* mainNet,
+                                 odb::Rect& r,
+                                 odb::dbTechLayer* layer,
+                                 uint sboxId);
+  void setCurrentNet(odb::dbNet* net);
   odb::dbInst* createInst(odb::dbInst* inst0);
-  std::vector<dbTechLayer*> getRoutingLayer() { return _routingLayers; };
+  std::vector<odb::dbTechLayer*> getRoutingLayer() { return _routingLayers; };
 
  private:
-  uint getFirstShape(dbNet* net, dbShape& s);
-  bool setFirstShapeProperty(dbNet* net, uint prop);
-  dbTechLayerRule* getRule(int routingLayer, int width);
-  dbTechVia* getVia(int l1, int l2, odb::Rect& bbox);
-  std::pair<dbBTerm*, dbBTerm*> createTerms4SingleNet(dbNet* net,
-                                                      int x1,
-                                                      int y1,
-                                                      int x2,
-                                                      int y2,
-                                                      dbTechLayer* inly);
+  uint getFirstShape(odb::dbNet* net, odb::dbShape& s);
+  bool setFirstShapeProperty(odb::dbNet* net, uint prop);
+  odb::dbTechLayerRule* getRule(int routingLayer, int width);
+  odb::dbTechVia* getVia(int l1, int l2, odb::Rect& bbox);
+  std::pair<odb::dbBTerm*, odb::dbBTerm*> createTerms4SingleNet(
+      odb::dbNet* net,
+      int x1,
+      int y1,
+      int x2,
+      int y2,
+      odb::dbTechLayer* inly);
 
-  using RuleMap = std::map<int, dbTechLayerRule*>;
-  dbTech* _tech;
+  using RuleMap = std::map<int, odb::dbTechLayerRule*>;
+  odb::dbTech* _tech;
   odb::dbBlock* _block;
   std::vector<RuleMap> _rules;
-  std::vector<dbTechLayer*> _routingLayers;
+  std::vector<odb::dbTechLayer*> _routingLayers;
   int _ruleNameHint;
-  dbMatrix<std::vector<dbTechVia*>> _vias;
+  odb::dbMatrix<std::vector<odb::dbTechVia*>> _vias;
   bool _milosFormat;
-  dbNet* _currentNet;
-  dbNet** _mapArray;
+  odb::dbNet* _currentNet;
+  odb::dbNet** _mapArray;
   uint _mapCnt;
   uint _ecoCnt;
   utl::Logger* logger_;

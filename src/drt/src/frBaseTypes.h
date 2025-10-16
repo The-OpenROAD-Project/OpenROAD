@@ -19,6 +19,7 @@
 #include "boost/serialization/base_object.hpp"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace boost::serialization {
 class access;
@@ -43,11 +44,6 @@ template <typename T>
 using frList = std::list<T>;
 template <typename T>
 using frListIter = typename std::list<T>::iterator;
-using odb::dbIoType;
-using odb::dbMasterType;
-using odb::dbSigType;
-using odb::dbTechLayerDir;
-using odb::dbTechLayerType;
 
 enum frEndStyleEnum
 {

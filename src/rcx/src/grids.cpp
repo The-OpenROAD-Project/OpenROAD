@@ -8,8 +8,12 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/isotropy.h"
+#include "odb/util.h"
+
+using odb::Ath__array1D;
 
 namespace rcx {
 
@@ -259,7 +263,7 @@ int Wire::getRsegId()
 }
 int Wire::getShapeProperty(int id)
 {
-  dbNet* net = getNet();
+  odb::dbNet* net = getNet();
   if (net == nullptr) {
     return 0;
   }
@@ -272,7 +276,7 @@ int Wire::getShapeProperty(int id)
   int rcid = p->getValue();
   return rcid;
 }
-dbNet* Wire::getNet()
+odb::dbNet* Wire::getNet()
 {
   GridTable* gtb = _track->getGrid()->getGridTable();
   odb::dbBlock* block = gtb->getBlock();
@@ -280,7 +284,7 @@ dbNet* Wire::getNet()
     return (odb::dbSBox::getSBox(block, _boxId)->getSWire()->getNet());
   }
   if (gtb->usingDbSdb()) {
-    return dbNet::getNet(block, _boxId);
+    return odb::dbNet::getNet(block, _boxId);
   }
   return (odb::dbRSeg::getRSeg(block, _boxId)->getNet());
 }
@@ -510,7 +514,7 @@ void Track::set(Grid* g,
   _lowest = 0;
   _base = base;
 }
-void Track::freeWires(AthPool<Wire>* pool)
+void Track::freeWires(odb::AthPool<Wire>* pool)
 {
   for (uint ii = 0; ii < _markerCnt; ii++) {
     Wire* w = _marker[ii];
@@ -522,7 +526,7 @@ void Track::freeWires(AthPool<Wire>* pool)
     }
   }
 }
-void Track::dealloc(AthPool<Wire>* pool)
+void Track::dealloc(odb::AthPool<Wire>* pool)
 {
   freeWires(pool);
   delete[] _marker;
@@ -1250,8 +1254,8 @@ void Grid::setBoundaries(uint dir, const odb::Rect& rect)
   }
 }
 Grid::Grid(GridTable* gt,
-           AthPool<Track>* trackPool,
-           AthPool<Wire>* wirePool,
+           odb::AthPool<Track>* trackPool,
+           odb::AthPool<Wire>* wirePool,
            uint level,
            uint markerCnt)
 {
@@ -1524,7 +1528,7 @@ void Wire::setXY(int xy1, uint len)
   _xy = xy1;  // offset from track start??
   _len = len;
 }
-Wire* Wire::makeCoupleWire(AthPool<Wire>* wirePool,
+Wire* Wire::makeCoupleWire(odb::AthPool<Wire>* wirePool,
                            int targetHighTracks,
                            Wire* w2,
                            int xy1,
@@ -1561,7 +1565,7 @@ Wire* Wire::makeCoupleWire(AthPool<Wire>* wirePool,
   }
   return w;
 }
-Wire* Wire::getPoolWire(AthPool<Wire>* wirePool)
+Wire* Wire::getPoolWire(odb::AthPool<Wire>* wirePool)
 {
   int n;
   int getRecycleFlag = 0;
@@ -1571,7 +1575,7 @@ Wire* Wire::getPoolWire(AthPool<Wire>* wirePool)
   }
   return w;
 }
-Wire* Wire::makeWire(AthPool<Wire>* wirePool, int xy1, uint len)
+Wire* Wire::makeWire(odb::AthPool<Wire>* wirePool, int xy1, uint len)
 {
   Wire* w = getPoolWire(wirePool);
 
@@ -1684,7 +1688,7 @@ uint Grid::placeWire(Wire* w)
 
   return trackNum1;
 }
-uint Grid::placeBox(dbBox* box, uint wtype, uint id)
+uint Grid::placeBox(odb::dbBox* box, uint wtype, uint id)
 {
   int ll[2] = {box->xMin(), box->yMin()};
   int ur[2] = {box->xMax(), box->yMax()};
@@ -1868,7 +1872,7 @@ uint Grid::search(SearchBox* bb,
 {
   Ath__array1D<uint> wireIdTable(1024);
 
-  AthPool<Wire>* wirePool = _wirePoolPtr;
+  odb::AthPool<Wire>* wirePool = _wirePoolPtr;
   if (g != nullptr) {
     wirePool = g->getWirePoolPtr();
   }
@@ -2321,8 +2325,8 @@ GridTable::GridTable(odb::Rect* bb,
                      const int* Y1)
 {
   const int memChunk = 1024;
-  _trackPool = new AthPool<Track>(memChunk);
-  _wirePool = new AthPool<Wire>(memChunk * 1000);
+  _trackPool = new odb::AthPool<Track>(memChunk);
+  _wirePool = new odb::AthPool<Wire>(memChunk * 1000);
 
   _wirePool->alloc();  // so all wire ids>0
 
@@ -2466,7 +2470,7 @@ uint GridTable::setExtrusionMarker(uint startRow, uint startCol)
   }
   return cnt;
 }
-AthPool<Wire>* Grid::getWirePoolPtr()
+odb::AthPool<Wire>* Grid::getWirePoolPtr()
 {
   return _wirePoolPtr;
 }
@@ -2493,7 +2497,7 @@ Grid* GridTable::getGrid(uint row, uint col)
 {
   return _gridTable[row][col];
 }
-bool GridTable::addBox(uint row, uint col, dbBox* bb)
+bool GridTable::addBox(uint row, uint col, odb::dbBox* bb)
 {
   Grid* g = _gridTable[row][col];
 
@@ -2501,7 +2505,7 @@ bool GridTable::addBox(uint row, uint col, dbBox* bb)
 
   return true;
 }
-Wire* GridTable::addBox(dbBox* bb, uint wtype, uint id)
+Wire* GridTable::addBox(odb::dbBox* bb, uint wtype, uint id)
 {
   uint row = 0;
   uint col = 0;
@@ -2617,7 +2621,7 @@ void GridTable::setExtControl(odb::dbBlock* block,
                               int* dgContextLowTrack,
                               int* dgContextHiTrack,
                               int** dgContextTrackBase,
-                              AthPool<SEQ>* seqPool)
+                              odb::AthPool<SEQ>* seqPool)
 {
   _block = block;
   _useDbSdb = useDbSdb;
@@ -2668,7 +2672,7 @@ void GridTable::setExtControl_v2(odb::dbBlock* block,
                                  int* dgContextLowTrack,
                                  int* dgContextHiTrack,
                                  int** dgContextTrackBase,
-                                 AthPool<SEQ>* seqPool)
+                                 odb::AthPool<SEQ>* seqPool)
 {
   _block = block;
   _useDbSdb = useDbSdb;
