@@ -35,6 +35,13 @@ placement_cluster_cmd(const std::vector<odb::dbInst*>& cluster)
   replace->addPlacementCluster(cluster);
 }
 
+void
+clear_placement_clusters_cmd()
+{
+  Replace* replace = getReplace();
+  replace->clearPlacementClusters();
+}
+
 void 
 replace_reset_cmd() 
 {

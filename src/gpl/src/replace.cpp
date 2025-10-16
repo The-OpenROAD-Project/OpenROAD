@@ -99,6 +99,11 @@ void Replace::addPlacementCluster(const Cluster& cluster)
   clusters_.emplace_back(cluster);
 }
 
+void Replace::clearPlacementClusters()
+{
+  clusters_.clear();
+}
+
 void Replace::doIncrementalPlace(int threads)
 {
   log_->info(GPL, 6, "Execute incremental mode global placement.");
@@ -197,6 +202,10 @@ void Replace::doInitialPlace(int threads)
     }
 
     if (pbVec_.front()->placeInsts().empty()) {
+      log_->warn(
+          GPL,
+          123,
+          "No placeable instances in the top-level region. Removing it.");
       pbVec_.erase(pbVec_.begin());
     }
 
@@ -267,6 +276,8 @@ bool Replace::initNesterovPlace(int threads)
       nbVars.isSetBinCnt = true;
       nbVars.binCntX = binGridCntX_;
       nbVars.binCntY = binGridCntY_;
+      nbVars.minPhiCoef = minPhiCoef_;
+      nbVars.maxPhiCoef = maxPhiCoef_;
     }
 
     nbVars.useUniformTargetDensity = uniformTargetDensityMode_;
@@ -304,8 +315,6 @@ bool Replace::initNesterovPlace(int threads)
   if (!np_) {
     NesterovPlaceVars npVars;
 
-    npVars.minPhiCoef = minPhiCoef_;
-    npVars.maxPhiCoef = maxPhiCoef_;
     npVars.referenceHpwl = referenceHpwl_;
     npVars.routability_end_overflow = routabilityCheckOverflow_;
     npVars.keepResizeBelowOverflow = keepResizeBelowOverflow_;

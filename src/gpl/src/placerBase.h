@@ -373,6 +373,7 @@ class PlacerBase
   const std::vector<Instance*>& nonPlaceInsts() const { return nonPlaceInsts_; }
 
   Die& getDie() { return die_; }
+  int64_t getRegionArea() const { return region_area_; }
 
   int getSiteSizeX() const { return siteSizeX_; }
   int getSiteSizeY() const { return siteSizeY_; }
@@ -395,6 +396,7 @@ class PlacerBase
   utl::Logger* log_ = nullptr;
 
   Die die_;
+  int64_t region_area_;
 
   std::vector<Instance> instStor_;
 

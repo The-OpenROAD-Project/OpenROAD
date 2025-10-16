@@ -60,6 +60,7 @@ class Replace
   void runMBFF(int max_sz, float alpha, float beta, int threads, int num_paths);
 
   void addPlacementCluster(const Cluster& cluster);
+  void clearPlacementClusters();
   int doNesterovPlace(int threads, int start_iter = 0);
 
   // Initial Place param settings

@@ -991,11 +991,6 @@ int NesterovPlace::doNesterovPlace(const int start_iter)
 
     doBackTracking(coeff);
 
-    // Adjust Phi dynamically for larger designs
-    for (auto& nb : nbVec_) {
-      nb->nesterovAdjustPhi();
-    }
-
     if (num_region_diverged_ > 0) {
       break;
     }
