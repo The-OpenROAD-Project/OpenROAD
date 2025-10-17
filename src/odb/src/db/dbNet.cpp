@@ -2349,12 +2349,13 @@ void dbNet::setJumpers(bool has_jumpers)
   }
 }
 
-void dbNet::checkSanityMultipleDrivers() const
+void dbNet::checkSanity() const
 {
   _dbNet* net = (_dbNet*) this;
   utl::Logger* logger = net->getImpl()->getLogger();
   std::vector<std::string> drvr_info_list;
 
+  // Find BTerm drivers
   for (dbBTerm* bterm : getBTerms()) {
     if (bterm->getIoType() == dbIoType::INPUT
         || bterm->getIoType() == dbIoType::INOUT) {
@@ -2368,6 +2369,7 @@ void dbNet::checkSanityMultipleDrivers() const
     }
   }
 
+  // Find ITerm drivers
   for (dbITerm* iterm : getITerms()) {
     if (iterm->getIoType() == dbIoType::OUTPUT
         || iterm->getIoType() == dbIoType::INOUT) {
@@ -2400,17 +2402,46 @@ void dbNet::checkSanityMultipleDrivers() const
     }
   }
 
-  int drvr_count = drvr_info_list.size();
+  size_t drvr_count = drvr_info_list.size();
   if (drvr_count > 1) {
     // Multiple drivers found.
     logger->error(utl::ODB,
-                  9068,
-                  "The net '{}' has multiple drivers:{}",
+                  49,
+                  "SanityCheck: dbNet '{}' has multiple drivers: {}",
                   getName(),
                   fmt::join(drvr_info_list, ""));
-  } else if (drvr_count == 0) {
-    // No driver found.
-    logger->warn(utl::ODB, 9069, "The net '{}' has no driver.", getName());
+  }
+
+  const uint iterm_count = getITerms().size();
+  const uint bterm_count = getBTerms().size();
+
+  if (drvr_count == 0 && (iterm_count + bterm_count > 0)) {
+    logger->warn(
+        utl::ODB, 50, "SanityCheck: dbNet '{}' has no driver.", getName());
+  }
+
+  if (iterm_count + bterm_count < 2) {
+    // Skip power/ground net
+    if (getSigType().isSupply()) {
+      return;  // OK: Unconnected power/ground net
+    }
+
+    // A net connected to 1 terminal
+    if (iterm_count == 1
+        && (*(getITerms().begin()))->getIoType() == dbIoType::OUTPUT) {
+      return;  // OK: Unconnected output pin
+    }
+    if (bterm_count == 1
+        && (*(getBTerms().begin()))->getIoType() == dbIoType::INPUT) {
+      return;  // OK: Unconnected input port
+    }
+    logger->warn(utl::ODB,
+                 51,
+                 "SanityCheck: dbNet '{}' is dangling. It has less than 2 "
+                 "connections (# of ITerms = {}, # of BTerms = {}).",
+                 getName(),
+                 iterm_count,
+                 bterm_count);
   }
 }
 

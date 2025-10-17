@@ -4467,73 +4467,6 @@ void dbNetwork::checkSanityTermConnectivity() const
   }
 }
 
-void dbNetwork::checkSanitySingleNetConnectivity(odb::dbNet* net_db) const
-{
-  // Check for multiple drivers.
-  Net* net = dbToSta(net_db);
-  PinSeq loads;
-  PinSeq drvrs;
-  PinSet visited_drvrs(this);
-  FindNetDrvrLoads visitor(nullptr, visited_drvrs, loads, drvrs, this);
-  NetSet visited_nets(this);
-  visitConnectedPins(net, visitor, visited_nets);
-
-  if (drvrs.size() > 1) {
-    bool all_tristate = true;
-    for (const Pin* drvr : drvrs) {
-      LibertyPort* port = libertyPort(drvr);
-      if (!port || !port->direction()->isAnyTristate()) {
-        all_tristate = false;
-        break;
-      }
-    }
-
-    if (!all_tristate) {
-      std::string drivers_str;
-      for (const Pin* drvr : drvrs) {
-        drivers_str += " " + std::string(pathName(drvr));
-      }
-      logger_->error(
-          ORD,
-          2049,
-          "SanityCheck: Net '{}' has multiple non-tristate drivers:{}",
-          name(net),
-          drivers_str);
-    }
-  }
-  const uint iterm_count = net_db->getITerms().size();
-  const uint bterm_count = net_db->getBTerms().size();
-  if (iterm_count + bterm_count >= 2) {
-    return;
-  }
-
-  // Skip power/ground net
-  if (net_db->getSigType().isSupply()) {
-    return;  // OK: Unconnected power/ground net
-  }
-
-  // A net connected to 1 terminal
-  if (iterm_count == 1) {
-    odb::dbITerm* iterm = *(net_db->getITerms().begin());
-    if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-      return;  // OK: Unconnected output pin
-    }
-  } else if (bterm_count == 1) {  // This is a top level port
-    odb::dbBTerm* bterm = *(net_db->getBTerms().begin());
-    if (bterm->getIoType() == odb::dbIoType::INPUT) {
-      return;  // OK: Unconnected input port
-    }
-  }
-
-  logger_->warn(ORD,
-                2039,
-                "SanityCheck: Net '{}' has less than 2 connections (# of "
-                "ITerms = {}, # of BTerms = {}).",
-                net_db->getName(),
-                iterm_count,
-                bterm_count);
-}
-
 void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
 {
   //
@@ -4600,7 +4533,7 @@ void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
     }
 
     for (odb::dbNet* net_db : nets_to_check) {
-      checkSanitySingleNetConnectivity(net_db);
+      net_db->checkSanity();
     }
     return;
   }
@@ -4617,7 +4550,7 @@ void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
 
   // Check for incomplete flat net connections
   for (odb::dbNet* net_db : block()->getNets()) {
-    checkSanitySingleNetConnectivity(net_db);
+    net_db->checkSanity();
   }
 }
 

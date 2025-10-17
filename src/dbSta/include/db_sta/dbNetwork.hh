@@ -83,7 +83,6 @@ class dbNetwork : public ConcreteNetwork
   void checkSanityInstNames() const;
   void checkSanityNetNames() const;
   void checkSanityModNetNamesInModule(odb::dbModule* module) const;
-  void checkSanitySingleNetConnectivity(odb::dbNet* net_db) const;
 
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);

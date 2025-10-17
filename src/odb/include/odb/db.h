@@ -2503,7 +2503,15 @@ class dbNet : public dbObject
   /// related to this flat net.
   ///
   void renameWithModNetInHighestHier();
-  void checkSanityMultipleDrivers() const;
+
+  ///
+  /// Check issues such as multiple drivers, no driver, or dangling net
+  ///
+  void checkSanity() const;
+
+  ///
+  /// Dump dbNet info for debugging
+  ///
   void dump() const;
 };
 
