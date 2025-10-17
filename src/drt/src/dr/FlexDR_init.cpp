@@ -31,8 +31,13 @@
 #include "frDesign.h"
 #include "frRTree.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/isotropy.h"
+#include "utl/Logger.h"
+
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
 
 namespace drt {
 
@@ -1911,12 +1916,12 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, const bool isAddPathCost)
     if (term) {
       switch (term->typeId()) {
         case frcInstTerm: {  // macro cell or stdcell
-          const dbMasterType masterType = static_cast<frInstTerm*>(term)
-                                              ->getInst()
-                                              ->getMaster()
-                                              ->getMasterType();
+          const odb::dbMasterType masterType = static_cast<frInstTerm*>(term)
+                                                   ->getInst()
+                                                   ->getMaster()
+                                                   ->getMasterType();
           if (masterType.isBlock() || masterType.isPad()
-              || masterType == dbMasterType::RING) {
+              || masterType == odb::dbMasterType::RING) {
             isStdCellPin = false;
           }
           break;
@@ -2890,7 +2895,7 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
       auto inst = instTerm->getInst();
       const odb::dbTransform xform = inst->getDBTransform();
       const odb::dbTransform shiftXform = inst->getNoRotationTransform();
-      const dbMasterType masterType = inst->getMaster()->getMasterType();
+      const odb::dbMasterType masterType = inst->getMaster()->getMasterType();
       bool accessHorz = false;
       bool accessVert = false;
       if (masterType.isBlock() && !isAddPathCost) {
@@ -2978,7 +2983,7 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
             }
             // temporary solution, only add cost around macro pins
             if ((masterType.isBlock() || masterType.isPad()
-                 || masterType == dbMasterType::RING)
+                 || masterType == odb::dbMasterType::RING)
                 && !isSkipVia) {
               modMinimumcutCostVia(box, zIdx, type, true);
               modMinimumcutCostVia(box, zIdx, type, false);
@@ -3081,10 +3086,10 @@ void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost)
     auto dPinTerm = pin->getFrTerm();
     if (dPinTerm->typeId() == frcInstTerm) {
       frInstTerm* instTerm = static_cast<frInstTerm*>(dPinTerm);
-      const dbMasterType masterType
+      const odb::dbMasterType masterType
           = instTerm->getInst()->getMaster()->getMasterType();
       if (masterType.isBlock() || masterType.isPad()
-          || masterType == dbMasterType::RING) {
+          || masterType == odb::dbMasterType::RING) {
         continue;
       }
     }

@@ -4,12 +4,14 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <map>
 #include <tuple>
 #include <vector>
 
 #include "AbstractFastRouteRenderer.h"
 #include "DataType.h"
 #include "FastRoute.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace grt {

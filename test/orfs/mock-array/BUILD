@@ -1,24 +1,10 @@
+load("@bazel-orfs//:openroad.bzl", "orfs_run")
 load("@bazel-orfs//toolchains/scala:chisel.bzl", "chisel_binary")
 load(":mock-array.bzl", "config", "element", "mock_array", "verilog")
 
 package(
     features = ["-layering_check"],  # TODO: enable
 )
-
-# mock_array(
-#     name = "base",
-#     verilog = ":4x4",
-# )
-
-# mock_array(
-#     name = "flat",
-#     verilog = ":4x4",
-# )
-
-# mock_array(
-#     name = "8x8",
-#     verilog = ":8x8",
-# )
 
 chisel_binary(
     name = "generate_verilog",
@@ -93,3 +79,23 @@ CONFIGS = {name: config(name, rows, cols) for name, rows, cols in [
     name = name,
     config = config,
 ) for name, config in CONFIGS.items()]
+
+orfs_run(
+    name = "write_macro_placement",
+    src = ":MockArray_4x4_base_floorplan",
+    outs = [
+        ":macro-placement.tcl",
+    ],
+    script = ":write_macros.tcl",
+    tags = ["manual"],
+)
+
+orfs_run(
+    name = "write_pin_placement",
+    src = ":MockArray_4x4_base_floorplan",
+    outs = [
+        ":io-placement.tcl",
+    ],
+    script = ":write_pin_placement.tcl",
+    tags = ["manual"],
+)

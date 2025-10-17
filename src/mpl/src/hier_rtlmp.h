@@ -105,6 +105,7 @@ class HierRTLMP
   void setTargetDeadSpace(float target_dead_space);
   void setMinAR(float min_ar);
   void setReportDirectory(const char* report_directory);
+  void setKeepClusteringData(bool keep_clustering_data);
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
   void setDebugShowClustersIds(bool show_clusters_ids);
@@ -134,6 +135,9 @@ class HierRTLMP
   void updateMacrosOnDb();
   void updateMacroOnDb(const HardMacro* hard_macro);
   void commitMacroPlacementToDb();
+  void commitClusteringDataToDb() const;
+  void createGroupForCluster(Cluster* cluster,
+                             odb::dbGroup* parent_group) const;
   void clear();
   void computeWireLength() const;
 
@@ -173,13 +177,14 @@ class HierRTLMP
   void adjustMacroBlockageWeight();
   void placeChildren(Cluster* parent, bool ignore_std_cell_area = false);
 
-  void findBlockagesWithinOutline(std::vector<Rect>& macro_blockages,
-                                  std::vector<Rect>& placement_blockages,
-                                  const Rect& outline) const;
+  std::vector<Rect> findBlockagesWithinOutline(const Rect& outline) const;
   void getBlockageRegionWithinOutline(
       std::vector<Rect>& blockages_within_outline,
       const Rect& blockage,
       const Rect& outline) const;
+  void eliminateOverlaps(std::vector<Rect>& blockages) const;
+  void createSoftMacrosForBlockages(const std::vector<Rect>& blockages,
+                                    std::vector<SoftMacro>& macros);
   void createFixedTerminals(Cluster* parent,
                             std::map<std::string, int>& soft_macro_id_map,
                             std::vector<SoftMacro>& soft_macros);
@@ -309,6 +314,7 @@ class HierRTLMP
   const float conversion_tolerance_ = 0.01;
 
   bool skip_macro_placement_ = false;
+  bool keep_clustering_data_{false};
 
   std::unique_ptr<MplObserver> graphics_;
   bool is_debug_only_final_result_{false};

@@ -1118,10 +1118,29 @@ class dbBlock : public dbObject
   Polygon getDieAreaPolygon();
 
   ///
-  /// Get the core area. This computes the bbox of the rows
-  /// and is O(#rows) in runtime.
+  /// Compute the core area based on rows
+  ///
+  odb::Polygon computeCoreArea();
+
+  ///
+  /// Set the core area.
+  ///
+  void setCoreArea(const Rect& new_area);
+
+  ///
+  /// Set the core area with polygon. Allows for non-rectangular floorplans
+  ///
+  void setCoreArea(const Polygon& new_area);
+
+  ///
+  /// Get the core area.
   ///
   Rect getCoreArea();
+
+  ///
+  /// Get the core area.
+  ///
+  Polygon getCoreAreaPolygon();
 
   ///
   /// Add region in the die area where IO pins cannot be placed
@@ -1813,7 +1832,7 @@ class dbNet : public dbObject
   /// Returns driving term id assigned of this net. -1 if not set, 0 if non
   /// existent
   ///
-  int getDrivingITerm();
+  int getDrivingITerm() const;
 
   ///
   /// Returns true if a fixed-bump flag has been set.
@@ -1972,7 +1991,7 @@ class dbNet : public dbObject
   ///
   /// Get the 1st output Iterm; can be
   ///
-  dbITerm* getFirstOutput();
+  dbITerm* getFirstOutput() const;
 
   ///
   /// Get all the block-terminals of this net.
@@ -2456,6 +2475,34 @@ class dbNet : public dbObject
   bool hasJumpers();
 
   void setJumpers(bool has_jumpers);
+
+  ///
+  /// Return true if the input net is in higher hierarchy than this net
+  /// e.g., If this net name = "a/b/c" and input `net` name = "a/d",
+  ///       this API returns true.
+  ///
+  bool isDeeperThan(const dbNet* net) const;
+
+  ///
+  /// Find all dbModNets related to the given dbNet.
+  /// Go through all the pins on the dbNet and find all dbModNets.
+  ///
+  /// A dbNet could have many modnets (e.g., a dbNet might connect
+  /// two objects in different parts of the hierarchy, each connected
+  /// by different dbModNets in different parts of the hierarchy).
+  ///
+  bool findRelatedModNets(std::set<dbModNet*>& modnet_set) const;
+
+  ///
+  /// Find the modnet in the highest hierarchy related to this net.
+  ///
+  dbModNet* findModNetInHighestHier() const;
+
+  ///
+  /// Rename this net with the name of the modnet in the highest hierarchy
+  /// related to this flat net.
+  ///
+  void renameWithModNetInHighestHier();
   void checkSanityMultipleDrivers() const;
   void dump() const;
 };
@@ -7048,6 +7095,8 @@ class dbChip : public dbObject
 
   dbTech* getTech() const;
 
+  Rect getBBox() const;
+
   ///
   /// Create a new chip.
   /// Returns nullptr if there is no database technology.
@@ -7156,6 +7205,8 @@ class dbChipInst : public dbObject
   // User Code Begin dbChipInst
 
   dbTransform getTransform() const;
+
+  Rect getBBox() const;
 
   dbSet<dbChipRegionInst> getRegions() const;
 
@@ -8328,6 +8379,7 @@ class dbModNet : public dbObject
   unsigned connectionCount();
   std::string getName() const;
   const char* getConstName() const;
+  std::string getHierarchicalName() const;
   void rename(const char* new_name);
   void disconnectAllTerms();
   void dump() const;

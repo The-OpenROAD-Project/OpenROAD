@@ -15,9 +15,11 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
+#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
+#include "utl/Logger.h"
 
 namespace odb {
 

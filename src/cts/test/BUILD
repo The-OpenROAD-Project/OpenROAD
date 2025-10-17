@@ -53,6 +53,16 @@ MANUAL_TESTS = [
     "cts_readme_msgs_check",
 ]
 
+# TODO: Enable once difference between bazel and ctest is resolved.
+MANUAL_FOR_BAZEL_TESTS = [
+    "array",
+    "array_ins_delay",
+    "array_no_blockages",
+    "array_repair_clock_nets",
+    "gated_clock4",
+    "simple_test_hier",
+]
+
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
 
 filegroup(
@@ -175,7 +185,8 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        tags = ["manual"] if test_name in MANUAL_TESTS or
+                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

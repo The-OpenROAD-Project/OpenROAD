@@ -1076,7 +1076,7 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
                                               patch_rect.yMin(),
                                               patch_rect.xMax(),
                                               patch_rect.yMax(),
-                                              type);
+                                              odb::dbWireShapeType::DRCFILL);
         via_shapes.middle.insert({patch_rect, patch_box});
       }
     }

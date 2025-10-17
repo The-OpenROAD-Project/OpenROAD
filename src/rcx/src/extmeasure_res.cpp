@@ -4,9 +4,12 @@
 #include <cassert>
 
 #include "gseq.h"
+#include "odb/array1.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
+
+using odb::Ath__array1D;
 
 namespace rcx {
 
