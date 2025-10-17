@@ -51,6 +51,10 @@ proc initialize_floorplan { args } {
     }
   }
 
+  if {[info exists keys(-gap)] && $keys(-gap) <= 0 } {
+    utl::error IFP 61 "-gap must be positive"
+  }
+
   # Branch to polygon flow if polygon mode detected
   if { $is_polygon_mode } {
     ifp::make_polygon_die_helper [array get keys]
@@ -113,6 +117,9 @@ proc make_rows_helper { key_array } {
   # Get gap space
   set gap -1
   if { [info exists keys(-gap)] } {
+    if { $keys(-gap) <= 0 } {
+      utl::error IFP 65 "-gap must be positive"
+    }
     set gap [ord::microns_to_dbu $keys(-gap)]
   }
 
