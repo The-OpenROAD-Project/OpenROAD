@@ -139,7 +139,7 @@ delta HPWL                    0 %
 
 Clock clk
    1.08 source latency inst_5_7/clk ^
-  -1.21 target latency inst_6_7/clk ^
+  -1.22 target latency inst_6_7/clk ^
    0.00 CRPR
 --------------
   -0.14 setup skew
@@ -181,7 +181,7 @@ Path Type: max
    0.04    1.07 ^ wire11/Z (BUF_X8)
    0.04    1.11 ^ wire10/Z (BUF_X8)
    0.05    1.16 ^ clkbuf_leaf_0_clk/Z (BUF_X4)
-   0.00    1.16 ^ inst_1_1/clk (array_tile)
+   0.00    1.17 ^ inst_1_1/clk (array_tile)
    0.21    1.38 ^ inst_1_1/e_out (array_tile)
    0.00    1.38 ^ inst_2_1/w_in (array_tile)
            1.38   data arrival time
