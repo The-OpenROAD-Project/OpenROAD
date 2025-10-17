@@ -943,7 +943,7 @@ class dbBlock : public dbObject
   /// A hierarchy delimiter can only be set at the time
   /// a block is created.
   ///
-  char getHierarchyDelimiter();
+  char getHierarchyDelimiter() const;
 
   ///
   /// Set the bus name delimiters
@@ -1286,6 +1286,8 @@ class dbBlock : public dbObject
                               const char* base_name = "inst",
                               const dbNameUniquifyType& uniquify
                               = dbNameUniquifyType::ALWAYS);
+
+  const char* getBaseName(const char* full_name) const;
 
   ///
   /// return the regions of this design
