@@ -2456,6 +2456,7 @@ class dbNet : public dbObject
   bool hasJumpers();
 
   void setJumpers(bool has_jumpers);
+  void checkSanityMultipleDrivers() const;
   void dump() const;
 };
 
@@ -8330,6 +8331,12 @@ class dbModNet : public dbObject
   void rename(const char* new_name);
   void disconnectAllTerms();
   void dump() const;
+
+  // Find the flat net (dbNet) associated with this hierarchical net (dbModNet).
+  // A dbModNet should be associated with a single dbNet.
+  // This function traverses the terminals connected to this dbModNet
+  // and returns the first dbNet it finds.
+  dbNet* findRelatedNet() const;
 
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);
