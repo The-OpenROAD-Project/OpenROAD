@@ -51,7 +51,7 @@ proc initialize_floorplan { args } {
     }
   }
 
-  if {[info exists keys(-gap)] && $keys(-gap) <= 0 } {
+  if { [info exists keys(-gap)] && $keys(-gap) <= 0 } {
     utl::error IFP 61 "-gap must be positive"
   }
 
