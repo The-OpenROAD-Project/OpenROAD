@@ -557,13 +557,13 @@ void dbNet::setWireType(dbWireType wire_type)
   }
 }
 
-dbWireType dbNet::getWireType()
+dbWireType dbNet::getWireType() const
 {
   _dbNet* net = (_dbNet*) this;
   return dbWireType(net->_flags._wire_type);
 }
 
-dbSigType dbNet::getSigType()
+dbSigType dbNet::getSigType() const
 {
   _dbNet* net = (_dbNet*) this;
   return dbSigType(net->_flags._sig_type);
@@ -1136,7 +1136,7 @@ dbBlock* dbNet::getBlock() const
   return (dbBlock*) getImpl()->getOwner();
 }
 
-dbSet<dbITerm> dbNet::getITerms()
+dbSet<dbITerm> dbNet::getITerms() const
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
@@ -1155,7 +1155,7 @@ dbITerm* dbNet::get1stITerm()
   return it;
 }
 
-dbSet<dbBTerm> dbNet::getBTerms()
+dbSet<dbBTerm> dbNet::getBTerms() const
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
@@ -1318,13 +1318,13 @@ void dbNet::setDoNotTouch(bool v)
   net->_flags._dont_touch = v;
 }
 
-bool dbNet::isDoNotTouch()
+bool dbNet::isDoNotTouch() const
 {
   _dbNet* net = (_dbNet*) this;
   return net->_flags._dont_touch == 1;
 }
 
-bool dbNet::isSpecial()
+bool dbNet::isSpecial() const
 {
   _dbNet* net = (_dbNet*) this;
   return net->_flags._special == 1;
@@ -2341,6 +2341,71 @@ void dbNet::setJumpers(bool has_jumpers)
   }
 }
 
+void dbNet::checkSanityMultipleDrivers() const
+{
+  _dbNet* net = (_dbNet*) this;
+  utl::Logger* logger = net->getImpl()->getLogger();
+  std::vector<std::string> drvr_info_list;
+
+  for (dbBTerm* bterm : getBTerms()) {
+    if (bterm->getIoType() == dbIoType::INPUT
+        || bterm->getIoType() == dbIoType::INOUT) {
+      dbBlock* block = bterm->getBlock();
+      dbModule* parent_module = block->getTopModule();
+      drvr_info_list.push_back(
+          fmt::format("\n  - bterm: '{}' (parent_module: '{}', block: '{}')",
+                      bterm->getName(),
+                      parent_module->getName(),
+                      block->getName()));
+    }
+  }
+
+  for (dbITerm* iterm : getITerms()) {
+    if (iterm->getIoType() == dbIoType::OUTPUT
+        || iterm->getIoType() == dbIoType::INOUT) {
+      dbInst* inst = iterm->getInst();
+      dbMaster* master = inst->getMaster();
+      dbModule* parent_module = inst->getModule();
+      dbBlock* block = inst->getBlock();
+
+      std::string parent_module_name = "null";
+      if (parent_module) {
+        parent_module_name = parent_module->getName();
+      }
+
+      std::string master_name = "null";
+      if (master) {
+        master_name = master->getName();
+      }
+
+      std::string block_name = "null";
+      if (block) {
+        block_name = block->getName();
+      }
+
+      drvr_info_list.push_back(fmt::format(
+          "\n  - iterm: '{}' (block: '{}', parent_module: '{}', master: '{}')",
+          iterm->getName('/'),
+          block_name,
+          parent_module_name,
+          master_name));
+    }
+  }
+
+  int drvr_count = drvr_info_list.size();
+  if (drvr_count > 1) {
+    // Multiple drivers found.
+    logger->error(utl::ODB,
+                  9068,
+                  "The net '{}' has multiple drivers:{}",
+                  getName(),
+                  fmt::join(drvr_info_list, ""));
+  } else if (drvr_count == 0) {
+    // No driver found.
+    logger->warn(utl::ODB, 9069, "The net '{}' has no driver.", getName());
+  }
+}
+
 dbModInst* dbNet::findMainParentModInst() const
 {
   dbBlock* block = getBlock();
@@ -2364,6 +2429,42 @@ dbModule* dbNet::findMainParentModule() const
   }
 
   return getBlock()->getTopModule();
+}
+
+void dbNet::dump() const
+{
+  utl::Logger* logger = getImpl()->getLogger();
+  logger->report("--------------------------------------------------");
+  logger->report("dbNet: {} (id={})", getName(), getId());
+  logger->report(
+      "  Parent Block: {} (id={})", getBlock()->getName(), getBlock()->getId());
+  logger->report("  SigType: {}", getSigType().getString());
+  logger->report("  WireType: {}", getWireType().getString());
+  if (isSpecial()) {
+    logger->report("  Special: true");
+  }
+  if (isDoNotTouch()) {
+    logger->report("  DoNotTouch: true");
+  }
+
+  logger->report("  ITerms ({}):", getITerms().size());
+  for (dbITerm* term : getITerms()) {
+    logger->report("    - {} ({}, {}, id={})",
+                   term->getName(),
+                   term->getSigType().getString(),
+                   term->getIoType().getString(),
+                   term->getId());
+  }
+
+  logger->report("  BTerms ({}):", getBTerms().size());
+  for (dbBTerm* term : getBTerms()) {
+    logger->report("    - {} ({}, {}, id={})",
+                   term->getName(),
+                   term->getSigType().getString(),
+                   term->getIoType().getString(),
+                   term->getId());
+  }
+  logger->report("--------------------------------------------------");
 }
 
 void _dbNet::collectMemInfo(MemInfo& info)

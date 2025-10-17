@@ -1828,7 +1828,7 @@ class dbNet : public dbObject
   ///
   /// Get the Regular Wiring of a net (TODO: per path)
   ///
-  dbWireType getWireType();
+  dbWireType getWireType() const;
 
   ///
   /// Set the Regular Wiring of a net (TODO: per path)
@@ -1838,7 +1838,7 @@ class dbNet : public dbObject
   ///
   /// Get the signal type of this block-net.
   ///
-  dbSigType getSigType();
+  dbSigType getSigType() const;
 
   ///
   /// Get the signal type of this block-net.
@@ -1947,7 +1947,7 @@ class dbNet : public dbObject
   ///
   /// Returns true if the don't-touch flag is set.
   ///
-  bool isDoNotTouch();
+  bool isDoNotTouch() const;
 
   ///
   /// Get the block this net belongs to.
@@ -1957,7 +1957,7 @@ class dbNet : public dbObject
   ///
   /// Get all the instance-terminals of this net.
   ///
-  dbSet<dbITerm> getITerms();
+  dbSet<dbITerm> getITerms() const;
 
   ///
   /// Get the 1st instance-terminal of this net.
@@ -1977,7 +1977,7 @@ class dbNet : public dbObject
   ///
   /// Get all the block-terminals of this net.
   ///
-  dbSet<dbBTerm> getBTerms();
+  dbSet<dbBTerm> getBTerms() const;
 
   ///
   /// Get the 1st block-terminal of this net.
@@ -2011,7 +2011,7 @@ class dbNet : public dbObject
   /// Returns true if this dbNet is marked as special. Special nets/iterms are
   /// declared in the SPECIAL NETS section of a DEF file.
   ///
-  bool isSpecial();
+  bool isSpecial() const;
 
   ///
   /// Mark this dbNet as special.
@@ -2456,6 +2456,7 @@ class dbNet : public dbObject
   bool hasJumpers();
 
   void setJumpers(bool has_jumpers);
+  void dump() const;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -8358,15 +8359,15 @@ class dbModule : public dbObject
 
   dbBlock* getOwner();
 
-  dbSet<dbModInst> getChildren();
-  dbSet<dbModInst> getModInsts();
+  dbSet<dbModInst> getChildren() const;
+  dbSet<dbModInst> getModInsts() const;
   dbSet<dbModNet> getModNets();
   // Get the ports of a module (STA world uses ports, which contain members).
   dbSet<dbModBTerm> getPorts();
   // Get the leaf level connections on a module (flat connected view).
   dbSet<dbModBTerm> getModBTerms() const;
   dbModBTerm* getModBTerm(uint id);
-  dbSet<dbInst> getInsts();
+  dbSet<dbInst> getInsts() const;
 
   dbModInst* findModInst(const char* name);
   dbInst* findDbInst(const char* name);
