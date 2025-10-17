@@ -4,30 +4,30 @@ load("@openroad_rules_python//python:defs.bzl", "py_library", "py_test")
 # Copyright (c) 2022-2025, The OpenROAD Authors
 load("//test:regression.bzl", "regression_test")
 
-package(features=["layering_check"])
+package(features = ["layering_check"])
 
 py_library(
-    name="helper",
-    srcs=[
+    name = "helper",
+    srcs = [
         "helper.py",
     ],
-    imports=["."],
+    imports = ["."],
 )
 
 py_library(
-    name="odbUnitTest",
-    srcs=[
+    name = "odbUnitTest",
+    srcs = [
         "odbUnitTest.py",
     ],
-    imports=["."],
+    imports = ["."],
 )
 
 py_test(
-    name="test_block",
-    srcs=[
+    name = "test_block",
+    srcs = [
         "test_block.py",
     ],
-    deps=[
+    deps = [
         ":helper",
         ":odbUnitTest",
         "//openroad:openroadpy",
@@ -36,11 +36,11 @@ py_test(
 )
 
 py_test(
-    name="test_bterm",
-    srcs=[
+    name = "test_bterm",
+    srcs = [
         "test_bterm.py",
     ],
-    deps=[
+    deps = [
         ":helper",
         ":odbUnitTest",
         "//openroad:openroadpy",
@@ -49,11 +49,11 @@ py_test(
 )
 
 py_test(
-    name="test_destroy",
-    srcs=[
+    name = "test_destroy",
+    srcs = [
         "test_destroy.py",
     ],
-    deps=[
+    deps = [
         ":helper",
         ":odbUnitTest",
         "//openroad:openroadpy",
@@ -62,11 +62,11 @@ py_test(
 )
 
 py_test(
-    name="test_group",
-    srcs=[
+    name = "test_group",
+    srcs = [
         "test_group.py",
     ],
-    deps=[
+    deps = [
         ":helper",
         ":odbUnitTest",
         "//openroad:openroadpy",
@@ -75,11 +75,11 @@ py_test(
 )
 
 py_test(
-    name="test_inst",
-    srcs=[
+    name = "test_inst",
+    srcs = [
         "test_inst.py",
     ],
-    deps=[
+    deps = [
         ":helper",
         ":odbUnitTest",
         "//openroad:openroadpy",
@@ -88,11 +88,11 @@ py_test(
 )
 
 py_test(
-    name="test_iterm",
-    srcs=[
+    name = "test_iterm",
+    srcs = [
         "test_iterm.py",
     ],
-    deps=[
+    deps = [
         ":helper",
         ":odbUnitTest",
         "//openroad:openroadpy",
@@ -101,11 +101,11 @@ py_test(
 )
 
 py_test(
-    name="test_module",
-    srcs=[
+    name = "test_module",
+    srcs = [
         "test_module.py",
     ],
-    deps=[
+    deps = [
         ":helper",
         ":odbUnitTest",
         "//openroad:openroadpy",
@@ -114,11 +114,11 @@ py_test(
 )
 
 py_test(
-    name="test_net",
-    srcs=[
+    name = "test_net",
+    srcs = [
         "test_net.py",
     ],
-    deps=[
+    deps = [
         ":helper",
         ":odbUnitTest",
         "//openroad:openroadpy",
@@ -127,11 +127,11 @@ py_test(
 )
 
 py_test(
-    name="test_wire_codec",
-    srcs=[
+    name = "test_wire_codec",
+    srcs = [
         "test_wire_codec.py",
     ],
-    deps=[
+    deps = [
         ":helper",
         ":odbUnitTest",
         "//openroad:openroadpy",
@@ -222,11 +222,11 @@ MANUAL_TESTS = [
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
 
 filegroup(
-    name="regression_resources",
+    name = "regression_resources",
     # Dependencies could be specified more narrowly per test case,
     # but at least it is not a glob of everything and there are
     # per test glob patterns below.
-    srcs=[
+    srcs = [
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45.pdn.tcl",
         "Nangate45/Nangate45.rc",
@@ -316,22 +316,20 @@ filegroup(
         "sky130hd/sky130hd_vt.tlef",
         "sky130hd/work_around_yosys/formal_pdk.v",
     ],
-    visibility=["//src/odb/test/cpp:__subpackages__"],
+    visibility = ["//src/odb/test/cpp:__subpackages__"],
 )
 
 [
     filegroup(
-        name=test_name + "_resources",
-        srcs=[
+        name = test_name + "_resources",
+        srcs = [
             ":regression_resources",
             "//src/odb/test/data/sky130hd:lef-test-data",
-        ]
-        + glob(
+        ] + glob(
             [
                 test_name + ".*",
             ],
-        )
-        + {
+        ) + {
             "all_pins_placed1": [
                 "floorplan_initialize3.def",
             ],
@@ -360,10 +358,10 @@ filegroup(
 
 [
     regression_test(
-        name=test_name,
-        data=[":" + test_name + "_resources"],
-        tags=[] if test_name in COMPULSORY_TESTS else ["manual"],
-        visibility=["//visibility:public"],
+        name = test_name,
+        data = [":" + test_name + "_resources"],
+        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
 ]
