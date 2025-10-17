@@ -42,6 +42,7 @@ void DbvWriter::writeChiplet(YAML::Node& chiplet_node,
                              odb::dbChip* chiplet,
                              odb::dbDatabase* db)
 {
+  bool cad_layer = false;  // TODO: use cad layer
   auto chip_type = chiplet->getChipType();
   switch (chip_type) {
     case (odb::dbChip::ChipType::DIE):
@@ -74,60 +75,60 @@ void DbvWriter::writeChiplet(YAML::Node& chiplet_node,
       = chiplet->getThickness() / (double) db->getDbuPerMicron();
   chiplet_node["shrink"] = chiplet->getShrink();
   chiplet_node["tsv"] = chiplet->isTsv();
+  if (cad_layer_) {
+    auto offset_x = chiplet->getOffset().getX();
+    auto offset_y = chiplet->getOffset().getY();
+    YAML::Emitter off_out;
+    off_out << YAML::Flow << YAML::BeginSeq
+            << offset_x / (double) db->getDbuPerMicron()
+            << offset_y / (double) db->getDbuPerMicron() << YAML::EndSeq;
+    chiplet_node["offset"] = YAML::Load(off_out.c_str());
+    YAML::Node cad_layer = chiplet_node["cad_layer"];
 
-  auto offset_x = chiplet->getOffset().getX();
-  auto offset_y = chiplet->getOffset().getY();
-  YAML::Emitter off_out;
-  off_out << YAML::Flow << YAML::BeginSeq
-          << offset_x / (double) db->getDbuPerMicron()
-          << offset_y / (double) db->getDbuPerMicron() << YAML::EndSeq;
-  chiplet_node["offset"] = YAML::Load(off_out.c_str());
-  YAML::Node cad_layer = chiplet_node["cad_layer"];
+    auto seal_ring_west
+        = chiplet->getSealRingWest() / (double) db->getDbuPerMicron();
+    auto scribe_line_west
+        = chiplet->getScribeLineWest() / (double) db->getDbuPerMicron();
 
-  auto seal_ring_west
-      = chiplet->getSealRingWest() / (double) db->getDbuPerMicron();
-  auto scribe_line_west
-      = chiplet->getScribeLineWest() / (double) db->getDbuPerMicron();
-
-  if (seal_ring_west != -1.0) {
-    auto seal_ring_north
-        = chiplet->getSealRingNorth() / (double) db->getDbuPerMicron();
-    auto seal_ring_east
-        = chiplet->getSealRingEast() / (double) db->getDbuPerMicron();
-    auto seal_ring_south
-        = chiplet->getSealRingSouth() / (double) db->getDbuPerMicron();
-    YAML::Emitter sr_out;
-    sr_out << YAML::Flow << YAML::BeginSeq
-           << chiplet->getSealRingWest() / (double) db->getDbuPerMicron()
-           << chiplet->getSealRingSouth() / (double) db->getDbuPerMicron()
-           << chiplet->getSealRingEast() / (double) db->getDbuPerMicron()
-           << chiplet->getSealRingNorth() / (double) db->getDbuPerMicron()
-           << YAML::EndSeq;
-    YAML::Node layer_id = cad_layer["108;102"];
-    layer_id["type"] = "seal_ring";
-    layer_id["seal_ring_width"] = YAML::Load(sr_out.c_str());
-  } else if (scribe_line_west != -1.0) {
-    auto scribe_line_north
-        = chiplet->getScribeLineNorth() / (double) db->getDbuPerMicron();
-    auto scribe_line_east
-        = chiplet->getScribeLineEast() / (double) db->getDbuPerMicron();
-    auto scribe_line_south
-        = chiplet->getScribeLineSouth() / (double) db->getDbuPerMicron();
-    YAML::Emitter sc_out;
-    sc_out << YAML::Flow << YAML::BeginSeq
-           << chiplet->getScribeLineWest() / (double) db->getDbuPerMicron()
-           << chiplet->getScribeLineSouth() / (double) db->getDbuPerMicron()
-           << chiplet->getScribeLineEast() / (double) db->getDbuPerMicron()
-           << chiplet->getScribeLineNorth() / (double) db->getDbuPerMicron()
-           << YAML::EndSeq;
-    YAML::Node layer_id = cad_layer["108;103"];
-    layer_id["type"] = "scribe_line";
-    layer_id["scribe_line_remaining_width"] = YAML::Load(sc_out.c_str());
-  } else {
-    YAML::Node layer_id = cad_layer["108;101"];
-    layer_id["type"] = "design_area";
+    if (seal_ring_west != -1.0) {
+      auto seal_ring_north
+          = chiplet->getSealRingNorth() / (double) db->getDbuPerMicron();
+      auto seal_ring_east
+          = chiplet->getSealRingEast() / (double) db->getDbuPerMicron();
+      auto seal_ring_south
+          = chiplet->getSealRingSouth() / (double) db->getDbuPerMicron();
+      YAML::Emitter sr_out;
+      sr_out << YAML::Flow << YAML::BeginSeq
+             << chiplet->getSealRingWest() / (double) db->getDbuPerMicron()
+             << chiplet->getSealRingSouth() / (double) db->getDbuPerMicron()
+             << chiplet->getSealRingEast() / (double) db->getDbuPerMicron()
+             << chiplet->getSealRingNorth() / (double) db->getDbuPerMicron()
+             << YAML::EndSeq;
+      YAML::Node layer_id = cad_layer["108;102"];
+      layer_id["type"] = "seal_ring";
+      layer_id["seal_ring_width"] = YAML::Load(sr_out.c_str());
+    } else if (scribe_line_west != -1.0) {
+      auto scribe_line_north
+          = chiplet->getScribeLineNorth() / (double) db->getDbuPerMicron();
+      auto scribe_line_east
+          = chiplet->getScribeLineEast() / (double) db->getDbuPerMicron();
+      auto scribe_line_south
+          = chiplet->getScribeLineSouth() / (double) db->getDbuPerMicron();
+      YAML::Emitter sc_out;
+      sc_out << YAML::Flow << YAML::BeginSeq
+             << chiplet->getScribeLineWest() / (double) db->getDbuPerMicron()
+             << chiplet->getScribeLineSouth() / (double) db->getDbuPerMicron()
+             << chiplet->getScribeLineEast() / (double) db->getDbuPerMicron()
+             << chiplet->getScribeLineNorth() / (double) db->getDbuPerMicron()
+             << YAML::EndSeq;
+      YAML::Node layer_id = cad_layer["108;103"];
+      layer_id["type"] = "scribe_line";
+      layer_id["scribe_line_remaining_width"] = YAML::Load(sc_out.c_str());
+    } else {
+      YAML::Node layer_id = cad_layer["108;101"];
+      layer_id["type"] = "design_area";
+    }
   }
-
   // External files
   YAML::Node external_node = chiplet_node["external"];
   writeExternal(external_node, chiplet, db);
@@ -178,12 +179,8 @@ void DbvWriter::writeExternal(YAML::Node& external_node,
                               odb::dbChip* chiplet,
                               odb::dbDatabase* db)
 {
-  // TODO: Implement chiplet definition external writing
-  external_node["termal_name"] = "termal";
-  external_node["LEF_file"]
-      = "/path/to/" + std::string(chiplet->getName()) + ".lef";
-  external_node["DEF_file"]
-      = "/path/to/" + std::string(chiplet->getName()) + ".def";
+  BaseWriter::writeLef(external_node, db, chiplet);
+  BaseWriter::writeDef(external_node, db, chiplet);
 }
 
 void DbvWriter::writeCoordinates(YAML::Node& coords_node,

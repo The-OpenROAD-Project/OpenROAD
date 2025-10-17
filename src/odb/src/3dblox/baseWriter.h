@@ -11,7 +11,17 @@
 
 #include "objects.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbShape.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "odb/defout.h"
+#include "odb/gdsout.h"
+#include "odb/lefout.h"
+#include "sta/LibertyWriter.hh"
+#include "sta/Sta.hh"
+#include "sta/VerilogWriter.hh"
 
 namespace utl {
 class Logger;
@@ -30,8 +40,15 @@ class BaseWriter
   // Common YAML content writing
   virtual void writeYamlContent(YAML::Node& root, odb::dbDatabase* db);
   void writeHeader(YAML::Node& header_node, odb::dbDatabase* db);
-
-  // Utility methods
+  void writeLef(YAML::Node& external_node,
+                odb::dbDatabase* db,
+                odb::dbChip* chiplet);
+  void writeDef(YAML::Node& external_node,
+                odb::dbDatabase* db,
+                odb::dbChip* chiplet);
+  // void writeVerilog(YAML::Node& external_node, odb::dbDatabase* db,
+  // odb::dbChip* chiplet); void writeLiberty(YAML::Node& external_node,
+  // odb::dbDatabase* db, odb::dbChip* chiplet); Utility methods
   void logError(const std::string& message);
   std::string trim(const std::string& str);
   void writeYamlToFile(const std::string& filename, const YAML::Node& root);
