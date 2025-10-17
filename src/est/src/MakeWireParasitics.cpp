@@ -466,7 +466,7 @@ void MakeWireParasitics::layerRC(int wire_length_dbu,
 
   if (cap_per_meter == 0.0) {
     const float cap_pf_per_micron = layer_width * layer->getCapacitance()
-                                    + 2 * layer->getEdgeCapacitance();
+                                    + (2 * layer->getEdgeCapacitance());
     cap_per_meter = 1E+6 * 1E-12 * cap_pf_per_micron;  // F/meter
   }
 
@@ -497,7 +497,7 @@ void MakeWireParasitics::layerRC(int wire_length_dbu,
 
   if (cap_per_meter == 0.0) {
     const float cap_pf_per_micron = layer_width * layer->getCapacitance()
-                                    + 2 * layer->getEdgeCapacitance();
+                                    + (2 * layer->getEdgeCapacitance());
     cap_per_meter = 1E+6 * 1E-12 * cap_pf_per_micron;  // F/meter
   }
 
