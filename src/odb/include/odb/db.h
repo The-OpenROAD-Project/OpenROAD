@@ -8388,6 +8388,8 @@ class dbModule : public dbObject
   const dbModBTerm* getHeadDbModBTerm() const;
   bool canSwapWith(dbModule* new_module) const;
   bool isTop() const;
+  bool containsDbInst(dbInst* inst) const;
+  bool containsDbModInst(dbModInst* inst) const;
 
   static dbModule* create(dbBlock* block, const char* name);
 
