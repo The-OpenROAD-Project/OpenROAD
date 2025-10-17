@@ -17,6 +17,7 @@ add_library(3dblox
 target_link_libraries(3dblox
   PUBLIC
     db
+    OpenSTA
     utl_lib
     yaml-cpp
     OpenSTA

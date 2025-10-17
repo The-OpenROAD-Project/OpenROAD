@@ -7,6 +7,7 @@
 #include <sstream>
 
 #include "utl/Logger.h"
+#include "utl/ScopedTemporaryFile.h"
 
 namespace odb {
 
@@ -42,6 +43,82 @@ void BaseWriter::writeYamlToFile(const std::string& filename,
 
   out << root;
 }
+
+void BaseWriter::writeLef(YAML::Node& external_node,
+                          odb::dbDatabase* db,
+                          odb::dbChip* chiplet)
+{
+  auto libs = db->getLibs();
+  int num_libs = libs.size();
+  if (num_libs > 0) {
+    if (num_libs > 1) {
+      logger_->warn(
+          utl::ODB,
+          535,
+          "More than one lib exists, multiple files will be written.");
+    }
+    int cnt = 0;
+    for (auto lib : libs) {
+      std::string name(std::string(lib->getName()) + ".lef");
+      // std::string name(std::string(chiplet->getName())+".lef");
+      if (cnt > 0) {
+        auto pos = name.rfind('.');
+        if (pos != std::string::npos) {
+          name.insert(pos, "_" + std::to_string(cnt));
+        } else {
+          name += "_" + std::to_string(cnt);
+        }
+        utl::OutStreamHandler stream_handler(name.c_str());
+        odb::lefout lef_writer(logger_, stream_handler.getStream());
+        lef_writer.writeLib(lib);
+      } else {
+        utl::OutStreamHandler stream_handler(name.c_str());
+        odb::lefout lef_writer(logger_, stream_handler.getStream());
+        lef_writer.writeTechAndLib(lib);
+      }
+      YAML::Node list_node;
+      list_node.SetStyle(YAML::EmitterStyle::Flow);
+      list_node.push_back(name.c_str());
+      if (name.find("_tech") != std::string::npos) {
+        external_node["APR_tech_file"] = list_node;
+      } else {
+        external_node["LEF_file"] = list_node;
+      }
+      ++cnt;
+    }
+  } else if (db->getTech()) {
+    utl::OutStreamHandler stream_handler(
+        (std::string(chiplet->getName()) + ".lef").c_str());
+    odb::lefout lef_writer(logger_, stream_handler.getStream());
+    lef_writer.writeTech(db->getTech());
+  }
+}
+
+void BaseWriter::writeDef(YAML::Node& external_node,
+                          odb::dbDatabase* db,
+                          odb::dbChip* chiplet)
+{
+  odb::DefOut def_writer(logger_);
+  auto block = chiplet->getBlock();
+  def_writer.writeBlock(block,
+                        (std::string(chiplet->getName()) + ".def").c_str());
+  external_node["DEF_file"] = std::string(chiplet->getName()) + ".def";
+}
+
+// void writeVerilog(YAML::Node& external_node, odb::dbDatabase* db,
+// odb::dbChip* chiplet)
+// {
+//   sta::Network *network = sta::sta()->network();
+//   sta::writeVerilog(filename, false, false, remove_cells, network);
+//   delete remove_cells;
+// }
+
+// void writeLiberty(YAML::Node& external_node, odb::dbDatabase* db,
+// odb::dbChip* chiplet)
+// {
+//   liberty_writer = sta::LibertyWriter(lib, chiplet->getName(), );
+//   liberty_writer.writeLibrary();
+// }
 
 void BaseWriter::logError(const std::string& message)
 {
