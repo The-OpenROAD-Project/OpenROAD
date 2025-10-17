@@ -4,6 +4,7 @@
 #pragma once
 
 #include <qchar.h>
+#include <qnamespace.h>
 #include <qobjectdefs.h>
 
 #include <QComboBox>
