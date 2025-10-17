@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <set>
@@ -88,6 +89,13 @@ InitFloorplan::InitFloorplan(dbBlock* block,
 {
 }
 
+void InitFloorplan::checkGap(const int gap)
+{
+  if (gap != std::numeric_limits<int32_t>::min() && gap <= 0) {
+    logger_->error(IFP, 36, "Gap must be positive ({})", gap);
+  }
+}
+
 void InitFloorplan::initFloorplan(
     double utilization,
     double aspect_ratio,
@@ -101,6 +109,8 @@ void InitFloorplan::initFloorplan(
     const std::set<odb::dbSite*>& flipped_sites,
     const int gap)
 {
+  checkGap(gap);
+
   makeDieUtilization(utilization,
                      aspect_ratio,
                      core_space_bottom,
@@ -129,6 +139,8 @@ void InitFloorplan::initFloorplan(
     const std::set<odb::dbSite*>& flipped_sites,
     const int gap)
 {
+  checkGap(gap);
+
   makeDie(die);
   makeRows(core, base_site, additional_sites, row_parity, flipped_sites, gap);
 }
@@ -212,6 +224,8 @@ void InitFloorplan::makePolygonRows(
     const std::set<odb::dbSite*>& flipped_sites,
     const int gap)
 {
+  checkGap(gap);
+
   auto points = core_polygon.getPoints();
 
   if (points.empty()) {
@@ -344,6 +358,8 @@ void InitFloorplan::makeRowsWithSpacing(
     const std::set<odb::dbSite*>& flipped_sites,
     const int gap)
 {
+  checkGap(gap);
+
   odb::Rect block_die_area = block_->getDieArea();
   if (block_die_area.area() == 0) {
     logger_->error(IFP, 64, "Floorplan die area is 0. Cannot build rows.");
@@ -381,6 +397,8 @@ void InitFloorplan::makeRows(const odb::Rect& core,
                              const std::set<odb::dbSite*>& flipped_sites,
                              const int gap)
 {
+  checkGap(gap);
+
   odb::Rect block_die_area = block_->getDieArea();
   if (block_die_area.area() == 0) {
     logger_->error(IFP, 63, "Floorplan die area is 0. Cannot build rows.");
@@ -522,7 +540,9 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
         }
       }
       // Default space is 6 times the minimum site height
-      const int power_domain_y_space = (gap == -1) ? 6 * min_site_dy : gap;
+      const int power_domain_y_space
+          = (gap == std::numeric_limits<int32_t>::min()) ? 6 * min_site_dy
+                                                         : gap;
 
       row_itr = rows.begin();
       for (int row_processed = 0; row_processed < total_row_count;
