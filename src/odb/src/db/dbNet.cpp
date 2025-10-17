@@ -3,6 +3,9 @@
 
 #include "dbNet.h"
 
+#include <spdlog/fmt/bundled/format.h>
+#include <spdlog/fmt/bundled/ranges.h>
+
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>

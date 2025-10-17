@@ -4,10 +4,12 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 
+#include <cstdio>
+#include <string>
+
 #include "db_sta/dbNetwork.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
-#include "sta/Sta.hh"
 #include "tst/fixture.h"
 
 namespace odb {

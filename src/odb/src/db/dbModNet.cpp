@@ -4,6 +4,9 @@
 // Generator Code Begin Cpp
 #include "dbModNet.h"
 
+#include <set>
+#include <vector>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"

@@ -17,6 +17,7 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cassert>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>

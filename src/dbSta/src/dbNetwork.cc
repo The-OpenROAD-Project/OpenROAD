@@ -45,6 +45,8 @@ Recommended conclusion: use map for concrete cells. They are invariant.
  */
 #include "db_sta/dbNetwork.hh"
 
+#include <sys/types.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
@@ -65,6 +67,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "sta/Liberty.hh"
+#include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
@@ -4537,7 +4540,7 @@ void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
   // Check for a specific object if provided
   //
   if (obj != nullptr) {
-    // Collect relevent nets from the provided object
+    // Collect relevant nets from the provided object
     std::set<odb::dbNet*> nets_to_check;
     std::set<odb::dbModNet*> mod_nets_to_check;
 
