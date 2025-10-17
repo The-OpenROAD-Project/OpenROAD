@@ -7,8 +7,10 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 
+#include "odb/db.h"
 #include "odb/lefin.h"
 #include "sta/MinMax.hh"
 
@@ -67,7 +69,7 @@ std::filesystem::path findValidPath(const std::filesystem::path& relative_path)
   throw std::runtime_error("Could not find: " + std::string(relative_path));
 }
 
-std::string Fixture::getFilePath(const std::string& file_path)
+std::string Fixture::getFilePath(const std::string& file_path) const
 {
 #ifdef BAZEL_BUILD
   return runfiles_->Rlocation(file_path);
@@ -128,6 +130,62 @@ bool Fixture::updateLib(odb::dbLib* lib, const std::string& lef_file)
   auto path = getFilePath(lef_file);
 
   return lef_reader.updateLib(lib, path.c_str());
+}
+
+odb::dbInst* Fixture::makeInst(odb::dbBlock* block,
+                               odb::dbMaster* master,
+                               const char* name,
+                               const InstOptions& options)
+{
+  odb::dbInst* inst = odb::dbInst::create(block,
+                                          master,
+                                          name,
+                                          options.region,
+                                          options.physical_only,
+                                          options.parent_module);
+  inst->setSourceType(options.type);
+  inst->setLocation(options.location.x(), options.location.y());
+  inst->setPlacementStatus(options.status);
+
+  for (const InstOptions::ITermInfo& info : options.iterms) {
+    odb::dbMTerm* mterm = master->findMTerm(info.term_name);
+    EXPECT_NE(mterm, nullptr);
+    odb::dbITerm* iterm = inst->getITerm(mterm);
+    odb::dbNet* net = block->findNet(info.net_name);
+    if (!net) {
+      net = odb::dbNet::create(block, info.net_name);
+    }
+    iterm->connect(net);
+  }
+
+  return inst;
+}
+
+odb::dbBTerm* Fixture::makeBTerm(odb::dbBlock* block,
+                                 const char* name,
+                                 const BTermOptions& options)
+{
+  odb::dbNet* net = block->findNet(name);
+  if (!net) {
+    net = odb::dbNet::create(block, name);
+  }
+
+  odb::dbBTerm* bterm = odb::dbBTerm::create(net, name);
+  bterm->setIoType(options.io_type);
+  bterm->setSigType(options.sig_type);
+
+  odb::dbTech* tech = block->getTech();
+  for (const BTermOptions::BPinInfo& info : options.bpins) {
+    odb::dbBPin* pin = odb::dbBPin::create(bterm);
+    const odb::Rect rect = info.rect;
+    odb::dbTechLayer* layer = tech->findLayer(info.layer_name);
+    EXPECT_NE(layer, nullptr);
+    odb::dbBox::create(
+        pin, layer, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
+    pin->setPlacementStatus(info.status);
+  }
+
+  return bterm;
 }
 
 }  // namespace tst

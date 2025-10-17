@@ -35,6 +35,7 @@
 
 #include <cstdio>
 
+#include "defiMisc.hpp"
 #include "defiSite.h"
 #include "defiSite.hpp"
 

@@ -28,6 +28,7 @@
 
 #include <map>
 #include <memory>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -37,8 +38,12 @@
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
+#include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
+
+using odb::dbTechLayerType;
 
 namespace drt {
 

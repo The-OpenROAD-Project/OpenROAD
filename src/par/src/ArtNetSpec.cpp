@@ -733,11 +733,7 @@ void PartitionMgr::writeFile(
 
   // map<string, MasterInfo> --> cellName / cellCount, isMacro
   for (const auto& [name, info] : onlyUseMasters) {
-    if (!info.isMacro) {
-      outFile << "STD_CELL " << name << '\n';
-    } else {
-      outFile << "MACRO_CELL " << name << '\n';
-    }
+    outFile << "ONLY_USE " << name << '\n';
   }
   outFile << '\n';
 

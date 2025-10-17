@@ -18,6 +18,7 @@
 #include "frDesign.h"
 #include "global.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 
 namespace drt {
 
@@ -75,7 +76,7 @@ void UniqueInsts::computePrefTrackPatterns()
     const bool is_vertical_track = track_pattern->isHorizontal();
     const frLayerNum layer_num = track_pattern->getLayerNum();
     const frLayer* layer = getTech()->getLayer(layer_num);
-    if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
+    if (layer->getDir() == odb::dbTechLayerDir::HORIZONTAL) {
       if (!is_vertical_track) {
         pref_track_patterns_.push_back(track_pattern);
       }
@@ -162,7 +163,7 @@ UniqueClassKey UniqueInsts::computeUniqueClassKey(frInst* inst) const
 {
   const odb::Point origin = inst->getOrigin();
   const odb::Rect boundary_bbox = inst->getBoundaryBBox();
-  const dbOrientType orient = inst->getOrient();
+  const odb::dbOrientType orient = inst->getOrient();
   auto it = master_to_pin_layer_range_.find(inst->getMaster());
   if (it == master_to_pin_layer_range_.end()) {
     logger_->error(DRT,

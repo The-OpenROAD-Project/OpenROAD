@@ -18,6 +18,7 @@
 #include "odb/defin.h"
 #include "odb/geom.h"
 #include "odb/lefin.h"
+#include "sta/Sta.hh"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -32,8 +33,8 @@ static std::map<std::string, std::string> dup_orient_map
        {"MZ_MX_R180", "MZ_MY"},
        {"MZ_MX_R270", "MZ_MY_R90"}};
 
-ThreeDBlox::ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db)
-    : logger_(logger), db_(db)
+ThreeDBlox::ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db, sta::Sta* sta)
+    : logger_(logger), db_(db), sta_(sta)
 {
 }
 
@@ -59,6 +60,7 @@ void ThreeDBlox::readDbv(const std::string& dbv_file)
                      dbv_file);
     }
   }
+  readHeaderIncludes(data.header.includes);
   for (const auto& [_, chiplet] : data.chiplet_defs) {
     createChiplet(chiplet);
   }
@@ -68,13 +70,7 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
 {
   DbxParser parser(logger_);
   DbxData data = parser.parseFile(dbx_file);
-  for (const auto& include : data.header.includes) {
-    if (include.find(".3dbv") != std::string::npos) {
-      readDbv(include);
-    } else if (include.find(".3dbx") != std::string::npos) {
-      readDbx(include);
-    }
-  }
+  readHeaderIncludes(data.header.includes);
   dbChip* chip = createDesignTopChiplet(data.design);
   for (const auto& [_, chip_inst] : data.chiplet_instances) {
     createChipInst(chip_inst);
@@ -82,8 +78,30 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   for (const auto& [_, connection] : data.connections) {
     createConnection(connection);
   }
-
+  calculateSize(db_->getChip());
   db_->triggerPostRead3Dbx(chip);
+}
+
+void ThreeDBlox::calculateSize(dbChip* chip)
+{
+  Rect box;
+  box.mergeInit();
+  for (auto inst : chip->getChipInsts()) {
+    box.merge(inst->getBBox());
+  }
+  chip->setWidth(box.dx());
+  chip->setHeight(box.dy());
+}
+
+void ThreeDBlox::readHeaderIncludes(const std::vector<std::string>& includes)
+{
+  for (const auto& include : includes) {
+    if (include.find(".3dbv") != std::string::npos) {
+      readDbv(include);
+    } else if (include.find(".3dbx") != std::string::npos) {
+      readDbx(include);
+    }
+  }
 }
 
 dbChip::ChipType getChipType(const std::string& type, utl::Logger* logger)
@@ -128,9 +146,9 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     odb::lefin lef_reader(db_, logger_, false);
     tech = db_->findTech(tech_name.c_str());
     if (tech == nullptr) {
-      auto lib = lef_reader.createTechAndLib(
+      lef_reader.createTechAndLib(
           tech_name.c_str(), tech_name.c_str(), tech_file.c_str());
-      tech = lib->getTech();
+      tech = db_->findTech(tech_name.c_str());
     }
   }
   // Read LEF files
@@ -140,9 +158,27 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     odb::lefin lef_reader(db_, logger_, false);
     lef_reader.createLib(tech, lib_name.c_str(), lef_file.c_str());
   }
-  // TODO: Read liberty files
-  dbChip* chip = dbChip::create(
-      db_, tech, chiplet.name, getChipType(chiplet.type, logger_));
+  if (sta_ != nullptr) {
+    for (const auto& liberty_file : chiplet.external.lib_files) {
+      sta_->readLiberty(
+          liberty_file.c_str(), sta_->cmdCorner(), sta::MinMaxAll::all(), true);
+    }
+  }
+  // Check if chiplet already exists
+  auto chip = db_->findChip(chiplet.name.c_str());
+  if (chip != nullptr) {
+    if (chip->getChipType() != getChipType(chiplet.type, logger_)
+        || chip->getChipType() != dbChip::ChipType::HIER) {
+      logger_->error(utl::ODB,
+                     530,
+                     "3DBV Parser Error: Chiplet {} already exists",
+                     chiplet.name);
+    }
+    // chiplet already exists, update it
+  } else {
+    chip = dbChip::create(
+        db_, tech, chiplet.name, getChipType(chiplet.type, logger_));
+  }
   // Read DEF file
   if (!chiplet.external.def_file.empty()) {
     odb::defin def_reader(db_, logger_, odb::defin::DEFAULT);

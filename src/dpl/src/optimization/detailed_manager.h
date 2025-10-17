@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "dpl/Opendp.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/network.h"
 #include "util/journal.h"

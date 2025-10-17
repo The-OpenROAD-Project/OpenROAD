@@ -9,6 +9,7 @@
 
 #include "odb/db.h"
 #include "parse.h"
+#include "utl/Logger.h"
 
 namespace rcx {
 

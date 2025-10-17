@@ -35,6 +35,7 @@
 
 #include <cstdio>
 
+#include "defiMisc.hpp"
 #include "defiPinCap.h"
 #include "defiPinCap.hpp"
 

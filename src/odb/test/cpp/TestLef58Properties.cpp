@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/defin.h"

@@ -70,6 +70,7 @@ cc_library(
         "//src/odb/src/def:defzlib",
         "//src/odb/src/lef",
         "//src/odb/src/lef:lefzlib",
+        "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.algorithm",
         "@boost.bind",

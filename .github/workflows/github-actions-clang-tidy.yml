@@ -17,6 +17,7 @@ jobs:
         uses: The-OpenROAD-Project/clang-tidy-review@master
         id: review
         with:
+          clang_tidy_version: 19
           build_dir: "./build"
           cmake_command: cmake . -B build
           config_file: ".clang-tidy"

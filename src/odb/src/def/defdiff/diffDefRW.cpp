@@ -39,6 +39,10 @@
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */
+#include "defiComponent.hpp"
+#include "defiDefs.hpp"
+#include "defiNet.hpp"
+#include "defiPath.hpp"
 #include "defrReader.hpp"
 
 char defaultName[64];

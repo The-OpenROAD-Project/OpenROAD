@@ -38,6 +38,7 @@
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "sta/Vector.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 
@@ -55,7 +56,7 @@ using odb::dbModInst;
 
 EstimateParasitics::EstimateParasitics(Logger* logger,
                                        utl::CallBackHandler* callback_handler,
-                                       dbDatabase* db,
+                                       odb::dbDatabase* db,
                                        dbSta* sta,
                                        SteinerTreeBuilder* stt_builder,
                                        GlobalRouter* global_router)
@@ -91,7 +92,7 @@ void EstimateParasitics::initSteinerRenderer(
 
 ////////////////////////////////////////////////////////////////
 
-void EstimateParasitics::setLayerRC(dbTechLayer* layer,
+void EstimateParasitics::setLayerRC(odb::dbTechLayer* layer,
                                     const Corner* corner,
                                     double res,
                                     double cap)
@@ -111,7 +112,7 @@ void EstimateParasitics::setLayerRC(dbTechLayer* layer,
   layer_cap_[layer->getNumber()][corner->index()] = cap;
 }
 
-void EstimateParasitics::layerRC(dbTechLayer* layer,
+void EstimateParasitics::layerRC(odb::dbTechLayer* layer,
                                  const Corner* corner,
                                  // Return values.
                                  double& res,
@@ -321,7 +322,7 @@ double EstimateParasitics::wireClkVCapacitance(const Corner* corner) const
 
 ////////////////////////////////////////////////////////////////
 
-void EstimateParasitics::setDbCbkOwner(dbBlock* block)
+void EstimateParasitics::setDbCbkOwner(odb::dbBlock* block)
 {
   db_cbk_->addOwner(block);
 }
@@ -680,7 +681,7 @@ void EstimateParasitics::estimateWireParasiticSteiner(const Pin* drvr_pin,
       int branch_count = tree->branchCount();
       size_t resistor_id = 1;
       for (int i = 0; i < branch_count; i++) {
-        Point pt1, pt2;
+        odb::Point pt1, pt2;
         SteinerPt steiner_pt1, steiner_pt2;
         int wire_length_dbu;
         tree->branch(i, pt1, steiner_pt1, pt2, steiner_pt2, wire_length_dbu);
@@ -1040,7 +1041,7 @@ bool EstimateParasitics::isPad(const Instance* inst) const
 
 void EstimateParasitics::parasiticsInvalid(const Net* net)
 {
-  dbNet* db_net = db_network_->flatNet(net);
+  odb::dbNet* db_net = db_network_->flatNet(net);
   if (haveEstimatedParasitics()) {
     debugPrint(logger_,
                EST,
@@ -1052,7 +1053,7 @@ void EstimateParasitics::parasiticsInvalid(const Net* net)
   }
 }
 
-void EstimateParasitics::parasiticsInvalid(const dbNet* net)
+void EstimateParasitics::parasiticsInvalid(const odb::dbNet* net)
 {
   parasiticsInvalid(db_network_->dbToSta(net));
 }
@@ -1098,7 +1099,7 @@ static void connectedPins(const Net* net,
     // hit moditerms/modbterms).
     //
     if (iterm || bterm) {
-      Point loc = db_network->location(pin);
+      odb::Point loc = db_network->location(pin);
       pins.push_back({pin, loc});
     }
   }
@@ -1106,8 +1107,8 @@ static void connectedPins(const Net* net,
 }
 
 SteinerTree* EstimateParasitics::makeSteinerTree(
-    Point drvr_location,
-    const std::vector<Point>& sink_locations)
+    odb::Point drvr_location,
+    const std::vector<odb::Point>& sink_locations)
 {
   SteinerTree* tree = new SteinerTree(drvr_location, logger_);
   sta::Vector<PinLoc>& pinlocs = tree->pinlocs();
