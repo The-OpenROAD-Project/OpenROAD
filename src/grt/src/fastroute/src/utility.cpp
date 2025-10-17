@@ -461,7 +461,10 @@ void FastRouteCore::updateSlacks(float percentage)
 
   for (const int net_id : net_ids_) {
     FrNet* net = nets_[net_id];
-    res_aware_list.emplace_back(net_id, getNetSlack(net->getDbNet()));
+    float slack = getNetSlack(net->getDbNet());
+    if(slack < 20){
+      res_aware_list.emplace_back(net_id, slack);
+    }
   }
 
   auto compareSlack
