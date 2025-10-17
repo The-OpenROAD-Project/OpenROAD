@@ -459,10 +459,15 @@ void FastRouteCore::updateSlacks(float percentage)
   std::vector<std::pair<int, float>> res_aware_list;
   nets_res_aware_.clear();
 
+  // Check if liberty file was loaded before calculating slack
+  if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
+    return;
+  }
+
   for (const int net_id : net_ids_) {
     FrNet* net = nets_[net_id];
     float slack = getNetSlack(net->getDbNet());
-    if(slack < 20){
+    if (slack < 20) {
       res_aware_list.emplace_back(net_id, slack);
     }
   }
