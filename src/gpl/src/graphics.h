@@ -123,10 +123,10 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
   };
 
   // Colors for different regions
-  std::vector<gui::Painter::Color> colors_ = {gui::Painter::kRed,
+  std::vector<gui::Painter::Color> colors_ = {gui::Painter::kMagenta,
+                                              gui::Painter::kRed,
                                               gui::Painter::kBlue,
                                               gui::Painter::kGreen,
-                                              gui::Painter::kMagenta,
                                               gui::Painter::kCyan,
                                               gui::Painter::kOrange};
 

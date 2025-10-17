@@ -484,7 +484,7 @@ void Pin::updateCoordi(odb::dbBTerm* bTerm, utl::Logger* logger)
 {
   Rect bbox = bTerm->getBBox();
   if (bbox.isInverted()) {
-    logger->warn(
+    logger->error(
         GPL, 1, "{} toplevel port is not placed.", bTerm->getConstName());
   }
 
@@ -1172,24 +1172,24 @@ void PlacerBase::initInstsForUnusableSites()
 
   // In the case of top level power domain i.e no group,
   // mark all other power domains as Blocked
-  if (group_ == nullptr) {
-    for (auto region : db_->getChip()->getBlock()->getRegions()) {
-      for (auto boundary : region->getBoundaries()) {
-        Rect rect = boundary->getBox();
+  // if (group_ == nullptr) {
+  //   for (auto region : db_->getChip()->getBlock()->getRegions()) {
+  //     for (auto boundary : region->getBoundaries()) {
+  //       Rect rect = boundary->getBox();
 
-        std::pair<int, int> pairX = getMinMaxIdx(
-            rect.xMin(), rect.xMax(), die_.coreLx(), siteSizeX_, 0, siteCountX);
+  //       std::pair<int, int> pairX = getMinMaxIdx(
+  //           rect.xMin(), rect.xMax(), die_.coreLx(), siteSizeX_, 0, siteCountX);
 
-        std::pair<int, int> pairY = getMinMaxIdx(
-            rect.yMin(), rect.yMax(), die_.coreLy(), siteSizeY_, 0, siteCountY);
+  //       std::pair<int, int> pairY = getMinMaxIdx(
+  //           rect.yMin(), rect.yMax(), die_.coreLy(), siteSizeY_, 0, siteCountY);
 
-        for (int i = pairX.first; i < pairX.second; i++) {
-          for (int j = pairY.first; j < pairY.second; j++) {
-            siteGrid[j * siteCountX + i] = Blocked;
-          }
-        }
-      }
-    }
+  //       for (int i = pairX.first; i < pairX.second; i++) {
+  //         for (int j = pairY.first; j < pairY.second; j++) {
+  //           siteGrid[j * siteCountX + i] = Blocked;
+  //         }
+  //       }
+  //     }
+  //   }
   }
 
   // fill fixed instances' bbox
@@ -1222,6 +1222,29 @@ void PlacerBase::initInstsForUnusableSites()
     for (int i = pairX.first; i < pairX.second; i++) {
       for (int j = pairY.first; j < pairY.second; j++) {
         siteGrid[j * siteCountX + i] = FixedInst;
+      }
+    }
+  }
+
+  //
+  // Search the "Empty" coordinates on site-grid
+  // --> These sites need to be dummyInstance
+  //
+  for (int j = 0; j < siteCountY; j++) {
+    for (int i = 0; i < siteCountX; i++) {
+      // if empty spot found
+      if (siteGrid[j * siteCountX + i] == Empty) {
+        int startX = i;
+        // find end points
+        while (i < siteCountX && siteGrid[j * siteCountX + i] == Empty) {
+          i++;
+        }
+        int endX = i;
+        Instance myInst(die_.coreLx() + siteSizeX_ * startX,
+                        die_.coreLy() + siteSizeY_ * j,
+                        die_.coreLx() + siteSizeX_ * endX,
+                        die_.coreLy() + siteSizeY_ * (j + 1));
+        instStor_.push_back(myInst);
       }
     }
   }

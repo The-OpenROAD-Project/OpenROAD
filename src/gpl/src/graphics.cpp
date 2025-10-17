@@ -330,10 +330,10 @@ void Graphics::drawNesterov(gui::Painter& painter)
 
   // Use different colors for each PlacerBase
   std::vector<gui::Painter::Color> colors
-      = {gui::Painter::Color(gui::Painter::kRed, 50),
+      = {gui::Painter::Color(gui::Painter::kMagenta, 50),
+         gui::Painter::Color(gui::Painter::kRed, 50),
          gui::Painter::Color(gui::Painter::kBlue, 50),
-         gui::Painter::Color(gui::Painter::kGreen, 50),
-         gui::Painter::Color(gui::Painter::kMagenta, 50),
+         gui::Painter::Color(gui::Painter::kGreen, 50),         
          gui::Painter::Color(gui::Painter::kCyan, 50),
          gui::Painter::Color(gui::Painter::kOrange, 50)};
 
@@ -603,7 +603,6 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
     odb::dbInst* db_inst
         = cell->isInstance() ? cell->insts().front()->dbInst() : nullptr;
     if (db_inst != nullptr) {
-      logger_->report("Selected instance: {}", db_inst->getName());
       for (size_t nb_idx = 0; nb_idx < nbVec_.size(); ++nb_idx) {
         for (size_t gc_idx = 0; gc_idx < nbVec_[nb_idx]->getGCells().size();
              ++gc_idx) {
