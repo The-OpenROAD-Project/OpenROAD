@@ -1093,52 +1093,13 @@ void PlacerBase::initInstsForUnusableSites()
   };
 
   //
-  // Initialize siteGrid as Blocked
+  // Initialize siteGrid as Row (all sites are placeable by default)
   //
-  std::vector<SiteInfo> siteGrid(siteCountX * siteCountY, SiteInfo::Blocked);
-
-  // check if this belongs to a group
-  // if there is a group, only mark the sites that belong to the group as Row
-  // if there is no group, then mark all as Row, and then for each power
-  // domain, mark the sites that belong to the power domain as Blocked
-
-  if (group_ != nullptr) {
-    for (auto boundary : group_->getRegion()->getBoundaries()) {
-      Rect rect = boundary->getBox();
-
-      std::pair<int, int> pairX = getMinMaxIdx(
-          rect.xMin(), rect.xMax(), die_.coreLx(), siteSizeX_, 0, siteCountX);
-
-      std::pair<int, int> pairY = getMinMaxIdx(
-          rect.yMin(), rect.yMax(), die_.coreLy(), siteSizeY_, 0, siteCountY);
-
-      for (int i = pairX.first; i < pairX.second; i++) {
-        for (int j = pairY.first; j < pairY.second; j++) {
-          siteGrid[j * siteCountX + i] = Row;
-        }
-      }
-    }
-  } else {
-    // fill in rows' bbox
-    for (dbRow* row : rows) {
-      Rect rect = row->getBBox();
-
-      std::pair<int, int> pairX = getMinMaxIdx(
-          rect.xMin(), rect.xMax(), die_.coreLx(), siteSizeX_, 0, siteCountX);
-
-      std::pair<int, int> pairY = getMinMaxIdx(
-          rect.yMin(), rect.yMax(), die_.coreLy(), siteSizeY_, 0, siteCountY);
-
-      for (int i = pairX.first; i < pairX.second; i++) {
-        for (int j = pairY.first; j < pairY.second; j++) {
-          siteGrid[j * siteCountX + i] = Row;
-        }
-      }
-    }
-  }
+  std::vector<SiteInfo> siteGrid(siteCountX * siteCountY, SiteInfo::Row);
 
   // Mark blockage areas as Blocked so that their sites will be blocked.
   for (dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
+    log_->report("Processing blockage!");
     dbInst* inst = blockage->getInstance();
     if (inst && !inst->isFixed()) {
       std::string msg
@@ -1168,28 +1129,6 @@ void PlacerBase::initInstsForUnusableSites()
         ++cells;
       }
     }
-  }
-
-  // In the case of top level power domain i.e no group,
-  // mark all other power domains as Blocked
-  // if (group_ == nullptr) {
-  //   for (auto region : db_->getChip()->getBlock()->getRegions()) {
-  //     for (auto boundary : region->getBoundaries()) {
-  //       Rect rect = boundary->getBox();
-
-  //       std::pair<int, int> pairX = getMinMaxIdx(
-  //           rect.xMin(), rect.xMax(), die_.coreLx(), siteSizeX_, 0, siteCountX);
-
-  //       std::pair<int, int> pairY = getMinMaxIdx(
-  //           rect.yMin(), rect.yMax(), die_.coreLy(), siteSizeY_, 0, siteCountY);
-
-  //       for (int i = pairX.first; i < pairX.second; i++) {
-  //         for (int j = pairY.first; j < pairY.second; j++) {
-  //           siteGrid[j * siteCountX + i] = Blocked;
-  //         }
-  //       }
-  //     }
-  //   }
   }
 
   // fill fixed instances' bbox
@@ -1227,16 +1166,15 @@ void PlacerBase::initInstsForUnusableSites()
   }
 
   //
-  // Search the "Empty" coordinates on site-grid
+  // Search the "Blocked" coordinates on site-grid
   // --> These sites need to be dummyInstance
   //
   for (int j = 0; j < siteCountY; j++) {
     for (int i = 0; i < siteCountX; i++) {
-      // if empty spot found
-      if (siteGrid[j * siteCountX + i] == Empty) {
+      if (siteGrid[j * siteCountX + i] == Blocked) {
         int startX = i;
         // find end points
-        while (i < siteCountX && siteGrid[j * siteCountX + i] == Empty) {
+        while (i < siteCountX && siteGrid[j * siteCountX + i] == Blocked) {
           i++;
         }
         int endX = i;
