@@ -21,7 +21,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "graphics.h"
+#include "gpl/AbstractGraphics.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -1951,7 +1951,7 @@ float MBFF::GetPairDisplacements()
 void MBFF::displayFlopClusters(const char* stage,
                                std::vector<std::vector<Flop>>& clusters)
 {
-  if (graphics_) {
+  if (graphics_ && graphics_->enabled()) {
     for (const std::vector<Flop>& cluster : clusters) {
       graphics_->status(fmt::format("{} size: {}", stage, cluster.size()));
       std::vector<odb::dbInst*> inst_cluster;
@@ -2056,8 +2056,8 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
         pointsets[t], all_final_trays[t], all_mappings[t], array_mask);
   }
 
-  if (graphics_) {
-    Graphics::LineSegs segs;
+  if (graphics_ && graphics_->enabled()) {
+    AbstractGraphics::LineSegs segs;
     for (int t = 0; t < num_pointsets; t++) {
       const int num_flops = pointsets[t].size();
       for (int i = 0; i < num_flops; i++) {
@@ -2477,12 +2477,14 @@ MBFF::MBFF(odb::dbDatabase* db,
            const int threads,
            const int multistart,
            const int num_paths,
-           const bool debug_graphics)
+           const bool debug_graphics,
+           std::unique_ptr<AbstractGraphics> graphics)
     : db_(db),
       block_(db_->getChip()->getBlock()),
       sta_(sta),
       network_(sta_->getDbNetwork()),
       corner_(sta_->cmdCorner()),
+      graphics_(std::move(graphics)),
       log_(log),
       resizer_(resizer),
       num_threads_(threads),
@@ -2494,9 +2496,7 @@ MBFF::MBFF(odb::dbDatabase* db,
       single_bit_power_(0.0),
       test_idx_(-1)
 {
-  if (debug_graphics && Graphics::guiActive()) {
-    graphics_ = std::make_unique<Graphics>(log_);
-  }
+  graphics_->setDebugOn(debug_graphics);
 }
 
 MBFF::~MBFF() = default;

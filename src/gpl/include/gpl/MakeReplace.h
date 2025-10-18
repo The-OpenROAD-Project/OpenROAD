@@ -4,11 +4,15 @@
 #pragma once
 
 #include <tcl.h>
+namespace utl {
+class Logger;
+}  // namespace utl
 
 namespace gpl {
 
 class Replace;
 
 void initReplace(Tcl_Interp* tcl_interp);
+void initReplaceGraphics(Replace* replace, utl::Logger* log);
 
 }  // namespace gpl
