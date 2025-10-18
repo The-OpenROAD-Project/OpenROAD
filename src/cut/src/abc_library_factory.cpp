@@ -45,7 +45,9 @@ namespace cut {
 AbcLibrary::AbcLibrary(utl::UniquePtrWithDeleter<abc::SC_Lib> abc_library)
     : abc_library_(std::move(abc_library))
 {
-  mio_library_ = abc::Abc_SclDeriveGenlibSimple(abc_library_.get());
+  mio_library_ = utl::UniquePtrWithDeleter<abc::Mio_Library_t>(
+      abc::Abc_SclDeriveGenlibSimple(abc_library_.get()),
+      [](abc::Mio_Library_t* lib) { abc::Mio_LibraryDelete(lib); });
 }
 
 static bool IsCombinational(sta::LibertyCell* cell)
