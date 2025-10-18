@@ -6,10 +6,16 @@
 
 #include <cstdint>
 #include <cstring>
+#include <fstream>
+#include <iostream>
+#include <set>
 #include <string>
+#include <variant>
+#include <vector>
 
 #include "dbBTerm.h"
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbITerm.h"
 #include "dbInst.h"
@@ -22,6 +28,8 @@
 #include "dbTechLayer.h"
 #include "dbVector.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/geom.h"
 // User Code Begin Includes
 #include "odb/dbBlockCallBackObj.h"
 // User Code End Includes

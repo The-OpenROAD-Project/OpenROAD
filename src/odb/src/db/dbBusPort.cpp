@@ -5,6 +5,7 @@
 #include "dbBusPort.h"
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbModBTerm.h"
@@ -16,6 +17,7 @@
 #include "dbTable.hpp"
 #include "dbVector.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 namespace odb {
 template class dbTable<_dbBusPort>;
 

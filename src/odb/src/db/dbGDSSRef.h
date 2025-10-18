@@ -12,6 +12,8 @@
 #include "dbCore.h"
 #include "dbGDSStructure.h"
 #include "odb/dbId.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/odb.h"
 
 namespace odb {
