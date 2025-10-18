@@ -52,7 +52,7 @@ void BaseWriter::writeLef(YAML::Node& external_node,
   int num_libs = libs.size();
   if (num_libs > 0) {
     if (num_libs > 1) {
-      logger_->warn(
+      logger_->info(
           utl::ODB,
           535,
           "More than one lib exists, multiple files will be written.");
@@ -60,7 +60,6 @@ void BaseWriter::writeLef(YAML::Node& external_node,
     int cnt = 0;
     for (auto lib : libs) {
       std::string name(std::string(lib->getName()) + ".lef");
-      // std::string name(std::string(chiplet->getName())+".lef");
       if (cnt > 0) {
         auto pos = name.rfind('.');
         if (pos != std::string::npos) {

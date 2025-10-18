@@ -10,7 +10,6 @@
 #include <string>
 #include <vector>
 
-#include "dbvOut.h"
 #include "dbvParser.h"
 #include "dbvWriter.h"
 #include "dbxParser.h"
@@ -110,8 +109,14 @@ void ThreeDBlox::readHeaderIncludes(const std::vector<std::string>& includes)
 void ThreeDBlox::writeDbv(const std::string& dbv_file)
 {
   DbvWriter writer(logger_);
-  writer.writeFile(dbv_file, db_);
+  writer.writeHierarchicalDbv(dbv_file, db_);
 }
+
+// void ThreeDBlox::writeHierarchicalDbv(const std::string& base_filename)
+// {
+//   DbvWriter writer(logger_);
+//   writer.writeHierarchicalDbv(base_filename, db_);
+// }
 
 void ThreeDBlox::writeDbx(const std::string& dbx_file)
 {
