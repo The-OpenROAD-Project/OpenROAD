@@ -7,6 +7,7 @@ add_library(3dblox
   baseParser.cpp
   bmapParser.cpp
   baseWriter.cpp
+  chipletHierarchy.cpp
   dbvParser.cpp
   dbxParser.cpp
   dbvWriter.cpp

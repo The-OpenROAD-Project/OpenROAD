@@ -3,7 +3,10 @@
 
 #include "dbvWriter.h"
 
+#include <filesystem>
 #include <fstream>
+#include <set>
+#include <sstream>
 #include <string>
 
 #include "objects.h"
@@ -34,15 +37,16 @@ void DbvWriter::writeChipletDefs(YAML::Node& chiplets_node, odb::dbDatabase* db)
 {
   for (auto chiplet : db->getChips()) {
     YAML::Node chiplet_node = chiplets_node[chiplet->getName()];
-    writeChiplet(chiplet_node, chiplet, db);
+    writeChipletInternal(chiplet_node, chiplet, db);
   }
 }
 
-void DbvWriter::writeChiplet(YAML::Node& chiplet_node,
-                             odb::dbChip* chiplet,
-                             odb::dbDatabase* db)
+void DbvWriter::writeChipletInternal(YAML::Node& chiplet_node,
+                                     odb::dbChip* chiplet,
+                                     odb::dbDatabase* db)
 {
   bool cad_layer = false;  // TODO: use cad layer
+  // Chiplet basic information
   auto chip_type = chiplet->getChipType();
   switch (chip_type) {
     case (odb::dbChip::ChipType::DIE):
@@ -70,12 +74,13 @@ void DbvWriter::writeChiplet(YAML::Node& chiplet_node,
           << width / (double) db->getDbuPerMicron()
           << height / (double) db->getDbuPerMicron() << YAML::EndSeq;
   chiplet_node["design_area"] = YAML::Load(dim_out.c_str());
-
   chiplet_node["thickness"]
       = chiplet->getThickness() / (double) db->getDbuPerMicron();
   chiplet_node["shrink"] = chiplet->getShrink();
   chiplet_node["tsv"] = chiplet->isTsv();
-  if (cad_layer_) {
+  
+  // Write cad_layer if enabled
+  if (cad_layer) {
     auto offset_x = chiplet->getOffset().getX();
     auto offset_y = chiplet->getOffset().getY();
     YAML::Emitter off_out;
@@ -204,6 +209,151 @@ void DbvWriter::writeCoordinates(YAML::Node& coords_node,
   coords_node.push_back(YAML::Load(c1.c_str()));
   coords_node.push_back(YAML::Load(c2.c_str()));
   coords_node.push_back(YAML::Load(c3.c_str()));
+}
+
+void DbvWriter::writeLevelDependencies(
+    YAML::Node& header_node,
+    const std::vector<odb::dbChip*>& chiplets,
+    odb::dbDatabase* db)
+{
+  // Find all dependencies for the current level chiplets
+  std::set<int> dependency_levels;
+
+  for (auto chiplet : chiplets) {
+    // Find all chiplets that this chiplet depends on
+    for (auto inst : chiplet->getChipInsts()) {
+      auto master_chip = inst->getMasterChip();
+      if (master_chip != nullptr) {
+        // Find the level of the master chip
+        ChipletHierarchyAnalyzer analyzer(logger_);
+        auto levels = analyzer.analyzeHierarchy(db);
+
+        for (const auto& level : levels) {
+          for (auto level_chiplet : level.chiplets) {
+            if (level_chiplet == master_chip) {
+              dependency_levels.insert(level.level);
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Add include statements for dependency levels
+  if (!dependency_levels.empty()) {
+    YAML::Node includes_node = header_node["include"];
+
+    for (int dep_level : dependency_levels) {
+      // Generate filename for the dependency level
+      std::string dep_filename
+          = getDependencyFilename(current_file_path_, dep_level);
+      includes_node.push_back(dep_filename);
+    }
+  }
+}
+
+void DbvWriter::writeHierarchicalDbv(const std::string& base_filename,
+                                     odb::dbDatabase* db)
+{
+  ChipletHierarchyAnalyzer analyzer(logger_);
+  auto levels = analyzer.analyzeHierarchy(db);
+
+  if (levels.empty()) {
+    logger_->warn(utl::ODB, 537, "No chiplets found in database");
+    return;
+  }
+
+  if (levels.size() == 1) {
+    writeFile(base_filename, db);
+  } else {
+    // Write each level to a separate file
+    for (const auto& level : levels) {
+      if (level.chiplets.empty()) {
+        continue;
+      }
+
+      std::string level_filename
+          = generateLevelFilename(base_filename, level.level);
+      writeLevelToFile(level_filename, level.chiplets, db);
+
+      logger_->info(utl::ODB,
+                    538,
+                    "Wrote level {} with {} chiplets to {}",
+                    level.level,
+                    level.chiplets.size(),
+                    level_filename);
+    }
+  }
+}
+
+void DbvWriter::writeLevelToFile(const std::string& filename,
+                                 const std::vector<odb::dbChip*>& chiplets,
+                                 odb::dbDatabase* db)
+{
+  current_file_path_ = filename;
+
+  YAML::Node root;
+
+  // Write header with dependencies
+  YAML::Node header_node = root["Header"];
+  writeHeader(header_node, db);
+  writeLevelDependencies(header_node, chiplets, db);
+
+  // Write chiplets
+  YAML::Node chiplets_node = root["ChipletDef"];
+  for (auto chiplet : chiplets) {
+    YAML::Node chiplet_node = chiplets_node[chiplet->getName()];
+    writeChipletInternal(chiplet_node, chiplet, db);
+  }
+
+  writeYamlToFile(filename, root);
+}
+
+std::string DbvWriter::generateLevelFilename(const std::string& base_filename,
+                                             int level)
+{
+  std::filesystem::path base_path(base_filename);
+  std::string base_name = base_path.stem().string();
+  std::string extension = base_path.extension().string();
+  std::string directory = base_path.parent_path().string();
+
+  std::ostringstream filename;
+  if (!directory.empty()) {
+    filename << directory << "/";
+  }
+  filename << base_name << "_level" << level << extension;
+
+  return filename.str();
+}
+
+std::string DbvWriter::getBaseName(const std::string& filename)
+{
+  std::filesystem::path path(filename);
+  return path.stem().string();
+}
+
+std::string DbvWriter::getDirectory(const std::string& filename)
+{
+  std::filesystem::path path(filename);
+  return path.parent_path().string();
+}
+
+std::string DbvWriter::getDependencyFilename(const std::string& base_filename,
+                                             int dependency_level)
+{
+  std::filesystem::path base_path(base_filename);
+  std::string base_name = base_path.stem().string();
+  std::string extension = base_path.extension().string();
+  std::string directory = base_path.parent_path().string();
+
+  std::ostringstream filename;
+  if (!directory.empty()) {
+    filename << directory << "/";
+  }
+  filename << base_name << "_level" << dependency_level << extension;
+
+  return filename.str();
 }
 
 }  // namespace odb
