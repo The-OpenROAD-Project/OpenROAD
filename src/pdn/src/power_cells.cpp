@@ -1,37 +1,16 @@
-//////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include "power_cells.h"
 
+#include <algorithm>
+#include <cmath>
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
+
+#include "boost/geometry/geometry.hpp"
 #include "domain.h"
 #include "grid.h"
 #include "odb/db.h"
@@ -53,12 +32,11 @@ PowerCell::PowerCell(utl::Logger* logger,
       acknowledge_(acknowledge),
       switched_power_(switched_power),
       alwayson_power_(alwayson_power),
-      ground_(ground),
-      alwayson_power_positions_()
+      ground_(ground)
 {
 }
 
-const std::string PowerCell::getName() const
+std::string PowerCell::getName() const
 {
   return master_->getName();
 }
@@ -108,9 +86,9 @@ std::set<int> PowerCell::getRectAsSiteWidths(const odb::Rect& rect,
 
 bool PowerCell::appliesToRow(odb::dbRow* row) const
 {
-  // double height cell with switched power in the center needs to be placed in
-  // MX rows
-  return row->getOrient() == odb::dbOrientType::MX;
+  // needs to be string compare because site pointers can come from different
+  // libraries
+  return master_->getSite()->getName() == row->getSite()->getName();
 }
 
 //////////
@@ -118,10 +96,10 @@ bool PowerCell::appliesToRow(odb::dbRow* row) const
 GridSwitchedPower::GridSwitchedPower(Grid* grid,
                                      PowerCell* cell,
                                      odb::dbNet* control,
-                                     NetworkType network)
+                                     PowerSwitchNetworkType network)
     : grid_(grid), cell_(cell), control_(control), network_(network)
 {
-  if (network_ == DAISY && !cell->hasAcknowledge()) {
+  if (network_ == PowerSwitchNetworkType::DAISY && !cell->hasAcknowledge()) {
     grid->getLogger()->error(
         utl::PDN,
         198,
@@ -130,7 +108,7 @@ GridSwitchedPower::GridSwitchedPower(Grid* grid,
   }
 }
 
-const std::string GridSwitchedPower::toString(NetworkType type)
+std::string GridSwitchedPower::toString(PowerSwitchNetworkType type)
 {
   switch (type) {
     case STAR:
@@ -141,9 +119,8 @@ const std::string GridSwitchedPower::toString(NetworkType type)
   return "unknown";
 }
 
-GridSwitchedPower::NetworkType GridSwitchedPower::fromString(
-    const std::string& type,
-    utl::Logger* logger)
+PowerSwitchNetworkType GridSwitchedPower::fromString(const std::string& type,
+                                                     utl::Logger* logger)
 {
   if (type == "STAR") {
     return STAR;
@@ -160,7 +137,8 @@ void GridSwitchedPower::report() const
 {
   auto* logger = grid_->getLogger();
   logger->report("Switched power cell: {}", cell_->getName());
-  logger->report("  Control net: {}", control_->getName());
+  std::string control_net = control_ ? control_->getName() : "undefined";
+  logger->report("  Control net: {}", control_net);
   logger->report("  Network type: {}", toString(network_));
 }
 
@@ -172,25 +150,23 @@ GridSwitchedPower::InstTree GridSwitchedPower::buildInstanceSearchTree() const
       continue;
     }
 
-    odb::Rect bbox = inst->getBBox()->getBox();
-
-    exisiting_insts.insert({Shape::rectToBox(bbox), inst});
+    exisiting_insts.insert(inst);
   }
 
   return exisiting_insts;
 }
 
-ShapeTree GridSwitchedPower::buildStrapTargetList(Straps* target) const
+Shape::ShapeTree GridSwitchedPower::buildStrapTargetList(Straps* target) const
 {
   const odb::dbNet* alwayson = grid_->getDomain()->getAlwaysOnPower();
   const auto& target_shapes = target->getShapes();
 
-  ShapeTree targets;
-  for (const auto& [box, shape] : target_shapes.at(target->getLayer())) {
+  Shape::ShapeTree targets;
+  for (auto& shape : target_shapes.at(target->getLayer())) {
     if (shape->getNet() != alwayson) {
       continue;
     }
-    targets.insert({box, shape});
+    targets.insert(shape);
   }
 
   return targets;
@@ -200,9 +176,7 @@ GridSwitchedPower::RowTree GridSwitchedPower::buildRowTree() const
 {
   RowTree row_search;
   for (auto* row : grid_->getDomain()->getRows()) {
-    odb::Rect bbox = row->getBBox();
-
-    row_search.insert({Shape::rectToBox(bbox), row});
+    row_search.insert(row);
   }
 
   return row_search;
@@ -216,14 +190,13 @@ std::set<odb::dbRow*> GridSwitchedPower::getInstanceRows(
 
   odb::Rect box = inst->getBBox()->getBox();
 
-  for (auto itr = row_search.qbegin(bgi::intersects(Shape::rectToBox(box)));
+  for (auto itr = row_search.qbegin(bgi::intersects(box));
        itr != row_search.qend();
        itr++) {
-    auto* row = itr->second;
+    auto* row = *itr;
     odb::Rect row_box = row->getBBox();
 
-    const auto overlap = row_box.intersect(box);
-    if (overlap.minDXDY() != 0) {
+    if (row_box.overlaps(box)) {
       rows.insert(row);
     }
   }
@@ -258,13 +231,17 @@ void GridSwitchedPower::build()
 
   odb::dbRegion* region = grid_->getDomain()->getRegion();
 
-  const ShapeTree targets = buildStrapTargetList(target);
+  const Shape::ShapeTree targets = buildStrapTargetList(target);
   const RowTree row_search = buildRowTree();
+
+  bool found_row = false;
 
   for (auto* row : grid_->getDomain()->getRows()) {
     if (!cell_->appliesToRow(row)) {
       continue;
     }
+    found_row = true;
+
     const int site_width = row->getSite()->getWidth();
     cell_->populateAlwaysOnPinPositions(site_width);
     const std::string inst_prefix = inst_prefix_ + row->getName() + "_";
@@ -279,10 +256,10 @@ void GridSwitchedPower::build()
 
     odb::Rect bbox = row->getBBox();
     std::vector<odb::Rect> straps;
-    for (auto itr = targets.qbegin(bgi::intersects(Shape::rectToBox(bbox)));
+    for (auto itr = targets.qbegin(bgi::intersects(bbox));
          itr != targets.qend();
          itr++) {
-      const auto& shape = itr->second;
+      const auto& shape = *itr;
       straps.push_back(shape->getRect());
     }
 
@@ -321,6 +298,7 @@ void GridSwitchedPower::build()
 
       const auto locations = computeLocations(strap, site_width, core_area);
       inst->setLocation(*locations.begin(), bbox.yMin());
+      inst->setLocationOrient(row->getOrient());
 
       const auto inst_rows = getInstanceRows(inst, row_search);
       if (inst_rows.size() < 2) {
@@ -344,6 +322,13 @@ void GridSwitchedPower::build()
 
       insts_[inst] = InstanceInfo{locations, inst_rows};
     }
+  }
+
+  if (!found_row) {
+    grid_->getLogger()->error(utl::PDN,
+                              240,
+                              "No rows found that match the power cell: {}.",
+                              cell_->getMaster()->getName());
   }
 
   updateControlNetwork();
@@ -402,9 +387,8 @@ void GridSwitchedPower::updateControlNetworkDAISY(const bool order_by_x)
 
                 if (order_by_x) {
                   return lhs_y < rhs_y;
-                } else {
-                  return lhs_x < rhs_x;
                 }
+                return lhs_x < rhs_x;
               });
   }
 
@@ -414,9 +398,8 @@ void GridSwitchedPower::updateControlNetworkDAISY(const bool order_by_x)
     auto* ack = odb::dbNet::create(grid_->getBlock(), net_name.c_str());
     if (ack == nullptr) {
       return grid_->getBlock()->findNet(net_name.c_str());
-    } else {
-      return ack;
     }
+    return ack;
   };
 
   odb::dbNet* control = control_;
@@ -474,7 +457,7 @@ void GridSwitchedPower::checkAndFixOverlappingInsts(const InstTree& insts)
       }
 
       inst->setLocation(new_pos, y);
-      if (checkInstanceOverlap(inst, overlapping)) {
+      if (!checkInstanceOverlap(inst, overlapping)) {
         debugPrint(
             grid_->getLogger(),
             utl::PDN,
@@ -536,7 +519,6 @@ void GridSwitchedPower::checkAndFixOverlappingInsts(const InstTree& insts)
                overlapping->getName(),
                other_new_loc,
                overlap_y);
-    fixed = true;
   }
 }
 
@@ -546,11 +528,7 @@ bool GridSwitchedPower::checkInstanceOverlap(odb::dbInst* inst0,
   odb::Rect inst0_bbox = inst0->getBBox()->getBox();
   odb::Rect inst1_bbox = inst1->getBBox()->getBox();
 
-  const odb::Rect overlap = inst0_bbox.intersect(inst1_bbox);
-  if (overlap.isInverted()) {
-    return true;
-  }
-  return overlap.area() == 0;
+  return inst0_bbox.overlaps(inst1_bbox);
 }
 
 odb::dbInst* GridSwitchedPower::checkOverlappingInst(
@@ -559,11 +537,10 @@ odb::dbInst* GridSwitchedPower::checkOverlappingInst(
 {
   odb::Rect bbox = cell->getBBox()->getBox();
 
-  for (auto itr = insts.qbegin(bgi::intersects(Shape::rectToBox(bbox)));
-       itr != insts.qend();
+  for (auto itr = insts.qbegin(bgi::intersects(bbox)); itr != insts.qend();
        itr++) {
-    auto* other_inst = itr->second;
-    if (!checkInstanceOverlap(cell, other_inst)) {
+    auto* other_inst = *itr;
+    if (checkInstanceOverlap(cell, other_inst)) {
       return other_inst;
     }
   }
@@ -615,19 +592,19 @@ Straps* GridSwitchedPower::getLowestStrap() const
   return target;
 }
 
-const ShapeTreeMap GridSwitchedPower::getShapes() const
+Shape::ShapeTreeMap GridSwitchedPower::getShapes() const
 {
   odb::dbNet* alwayson = grid_->getDomain()->getAlwaysOnPower();
 
-  ShapeTreeMap shapes;
+  Shape::ShapeTreeMap shapes;
 
   for (const auto& [inst, inst_info] : insts_) {
     for (const auto& [layer, inst_shapes] :
          InstanceGrid::getInstancePins(inst)) {
       auto& layer_shapes = shapes[layer];
-      for (const auto& [box, shape] : inst_shapes) {
+      for (const auto& shape : inst_shapes) {
         if (shape->getNet() == alwayson) {
-          layer_shapes.insert({box, shape});
+          layer_shapes.insert(shape);
         }
       }
     }

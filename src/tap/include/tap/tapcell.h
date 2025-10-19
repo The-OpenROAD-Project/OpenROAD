@@ -1,39 +1,19 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <map>
+#include <optional>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/geom_boost.h"
 
 namespace ord {
 class OpenRoad;
@@ -51,13 +31,6 @@ class dbBlock;
 
 namespace tap {
 
-enum LocationType
-{
-  AboveMacro,
-  BelowMacro,
-  NoMacro,
-};
-
 struct Options
 {
   odb::dbMaster* endcap_master = nullptr;
@@ -65,32 +38,54 @@ struct Options
   int dist = -1;    // default = 2um
   int halo_x = -1;  // default = 2um
   int halo_y = -1;  // default = 2um
-  std::string cnrcap_nwin_master;
-  std::string cnrcap_nwout_master;
-  std::string tap_nwintie_master;
-  std::string tap_nwin2_master;
-  std::string tap_nwin3_master;
-  std::string tap_nwouttie_master;
-  std::string tap_nwout2_master;
-  std::string tap_nwout3_master;
-  std::string incnrcap_nwin_master;
-  std::string incnrcap_nwout_master;
+  int row_min_width = -1;
+  odb::dbMaster* cnrcap_nwin_master = nullptr;
+  odb::dbMaster* cnrcap_nwout_master = nullptr;
+  odb::dbMaster* tap_nwintie_master = nullptr;
+  odb::dbMaster* tap_nwin2_master = nullptr;
+  odb::dbMaster* tap_nwin3_master = nullptr;
+  odb::dbMaster* tap_nwouttie_master = nullptr;
+  odb::dbMaster* tap_nwout2_master = nullptr;
+  odb::dbMaster* tap_nwout3_master = nullptr;
+  odb::dbMaster* incnrcap_nwin_master = nullptr;
+  odb::dbMaster* incnrcap_nwout_master = nullptr;
 
   bool addBoundaryCells() const
   {
-    return !tap_nwintie_master.empty() && !tap_nwin2_master.empty()
-           && !tap_nwin3_master.empty() && !tap_nwouttie_master.empty()
-           && !tap_nwout2_master.empty() && !tap_nwout3_master.empty()
-           && !incnrcap_nwin_master.empty() && !incnrcap_nwout_master.empty();
+    return tap_nwintie_master && tap_nwin2_master && tap_nwin3_master
+           && tap_nwouttie_master && tap_nwout2_master && tap_nwout3_master
+           && incnrcap_nwin_master && incnrcap_nwout_master;
   }
+};
+
+struct EndcapCellOptions
+{
+  // External facing endcap cells
+  odb::dbMaster* left_top_corner = nullptr;
+  odb::dbMaster* right_top_corner = nullptr;
+  odb::dbMaster* left_bottom_corner = nullptr;
+  odb::dbMaster* right_bottom_corner = nullptr;
+
+  // Internal facing endcap cells
+  odb::dbMaster* left_top_edge = nullptr;
+  odb::dbMaster* right_top_edge = nullptr;
+  odb::dbMaster* left_bottom_edge = nullptr;
+  odb::dbMaster* right_bottom_edge = nullptr;
+
+  // row/column endcaps
+  std::vector<odb::dbMaster*> top_edge;
+  std::vector<odb::dbMaster*> bottom_edge;
+  odb::dbMaster* left_edge = nullptr;
+  odb::dbMaster* right_edge = nullptr;
+
+  std::string prefix = "PHY_";
+  bool tapcell_cmd = false;
 };
 
 class Tapcell
 {
  public:
-  Tapcell();
-  ~Tapcell();
-  void init(odb::dbDatabase* db, utl::Logger* logger);
+  Tapcell(odb::dbDatabase* db, utl::Logger* logger);
   void setTapPrefix(const std::string& tap_prefix);
   void setEndcapPrefix(const std::string& endcap_prefix);
   void clear();
@@ -99,87 +94,144 @@ class Tapcell
   void reset();
   int removeCells(const std::string& prefix);
 
+  void placeEndcaps(const EndcapCellOptions& options);
+  void placeTapcells(const Options& options);
+
  private:
-  struct FilledSites
+  enum class EdgeType
   {
-    int yMin;
-    int xMin;
-    int xMax;
+    Left,
+    Top,
+    Right,
+    Bottom,
+    Unknown
   };
-  // Cells placed at corners of macros & corners of core area
-  struct CornercapMasters
+  struct Edge
   {
-    std::string nwin_master;
-    std::string nwout_master;
+    EdgeType type;
+    odb::Point pt0;
+    odb::Point pt1;
+    bool operator==(const Edge& edge) const;
   };
-  typedef std::map<int, std::vector<std::vector<int>>> RowFills;
+  enum class CornerType
+  {
+    OuterBottomLeft,
+    OuterTopLeft,
+    OuterTopRight,
+    OuterBottomRight,
+    InnerBottomLeft,
+    InnerTopLeft,
+    InnerTopRight,
+    InnerBottomRight,
+    Unknown
+  };
+  struct PartialOverlap
+  {
+    bool left = false;
+    int x_start_left;
+    bool right = false;
+    int x_limit_right;
+  };
+  struct Corner
+  {
+    CornerType type;
+    odb::Point pt;
+  };
+  using Polygon = boost::polygon::polygon_90_data<int>;
+  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
+  using CornerMap = std::map<odb::dbRow*, std::set<odb::dbInst*>>;
+
+  struct InstIndexableGetter
+  {
+    using result_type = odb::Rect;
+    odb::Rect operator()(odb::dbInst* inst) const
+    {
+      return inst->getBBox()->getBox();
+    }
+  };
+  using InstTree
+      = boost::geometry::index::rtree<odb::dbInst*,
+                                      boost::geometry::index::quadratic<16>,
+                                      InstIndexableGetter>;
 
   std::vector<odb::dbBox*> findBlockages();
-  const std::pair<int, int> getMinMaxX(
-      const std::vector<std::vector<odb::dbRow*>>& rows);
-  RowFills findRowFills();
-  odb::dbMaster* pickCornerMaster(LocationType top_bottom,
-                                  odb::dbOrientType ori,
-                                  odb::dbMaster* cnrcap_nwin_master,
-                                  odb::dbMaster* cnrcap_nwout_master,
-                                  odb::dbMaster* endcap_master);
-  bool checkSymmetry(odb::dbMaster* master, odb::dbOrientType ori);
-  LocationType getLocationType(const int x,
-                               const std::vector<odb::dbRow*>& rows_above,
-                               const std::vector<odb::dbRow*>& rows_below);
-  void makeInstance(odb::dbBlock* block,
-                    odb::dbMaster* master,
-                    odb::dbOrientType orientation,
-                    int x,
-                    int y,
-                    const std::string& prefix);
-  bool isXInRow(const int x, const std::vector<odb::dbRow*>& subrow);
-  bool checkIfFilled(int x,
+  bool checkSymmetry(odb::dbMaster* master, const odb::dbOrientType& ori);
+  odb::dbInst* makeInstance(odb::dbBlock* block,
+                            odb::dbMaster* master,
+                            const odb::dbOrientType& orientation,
+                            int x,
+                            int y,
+                            const std::string& prefix);
+  std::optional<int> findValidLocation(int x,
+                                       int width,
+                                       const odb::dbOrientType& orient,
+                                       const std::set<odb::dbInst*>& row_insts,
+                                       int site_width,
+                                       int tap_width,
+                                       int row_urx,
+                                       bool disallow_one_site_gaps);
+  bool isOverlapping(int x,
                      int width,
-                     odb::dbOrientType& orient,
-                     const std::vector<std::vector<int>>& row_insts);
-  int insertAtTopBottom(const std::vector<std::vector<odb::dbRow*>>& rows,
-                        const std::vector<std::string>& masters,
-                        odb::dbMaster* endcap_master,
-                        const std::string& prefix);
-  void insertAtTopBottomHelper(
-      odb::dbBlock* block,
-      int top_bottom,
-      bool is_macro,
-      odb::dbOrientType ori,
-      int x_start,
-      int x_end,
-      int lly,
-      odb::dbMaster* tap_nwintie_master,
-      odb::dbMaster* tap_nwin2_master,
-      odb::dbMaster* tap_nwin3_master,
-      odb::dbMaster* tap_nwouttie_master,
-      odb::dbMaster* tap_nwout2_master,
-      odb::dbMaster* tap_nwout3_master,
-      const std::vector<std::vector<int>>& row_fill_check,
-      const std::string& prefix);
-  int insertAroundMacros(const std::vector<std::vector<odb::dbRow*>>& rows,
-                         const std::vector<std::string>& masters,
-                         odb::dbMaster* corner_master,
-                         const std::string& prefix);
-  std::map<std::pair<int, int>, std::vector<int>> getMacroOutlines(
-      const std::vector<std::vector<odb::dbRow*>>& rows);
-  int insertEndcaps(const std::vector<std::vector<odb::dbRow*>>& rows,
-                    odb::dbMaster* endcap_master,
-                    const CornercapMasters& masters);
-  std::vector<std::vector<odb::dbRow*>> organizeRows();
-  int insertTapcells(const std::vector<std::vector<odb::dbRow*>>& rows,
-                     odb::dbMaster* tapcell_master,
-                     int dist);
+                     const odb::dbOrientType& orient,
+                     const std::set<odb::dbInst*>& row_insts);
+  int placeTapcells(odb::dbMaster* tapcell_master, int dist);
+  int placeTapcells(odb::dbMaster* tapcell_master,
+                    int dist,
+                    odb::dbRow* row,
+                    bool is_edge,
+                    bool disallow_one_site_gaps,
+                    const InstTree& fixed_instances);
 
   int defaultDistance() const;
 
-  odb::dbDatabase* db_;
-  utl::Logger* logger_;
-  int phy_idx_;
-  std::vector<FilledSites> filled_sites_;
+  std::vector<Polygon90> getBoundaryAreas() const;
+  std::vector<Edge> getBoundaryEdges(const Polygon& area, bool outer) const;
+  std::vector<Edge> getBoundaryEdges(const Polygon90& area, bool outer) const;
+  std::vector<Corner> getBoundaryCorners(const Polygon90& area,
+                                         bool outer) const;
+
+  std::string toString(EdgeType type) const;
+  std::string toString(CornerType type) const;
+
+  odb::dbRow* getRow(const Corner& corner, odb::dbSite* site) const;
+  std::vector<odb::dbRow*> getRows(const Edge& edge, odb::dbSite* site) const;
+
+  std::pair<int, int> placeEndcaps(const Polygon& area,
+                                   bool outer,
+                                   const EndcapCellOptions& options);
+  std::pair<int, int> placeEndcaps(const Polygon90& area,
+                                   bool outer,
+                                   const EndcapCellOptions& options);
+
+  CornerMap placeEndcapCorner(const Corner& corner,
+                              const EndcapCellOptions& options);
+  int placeEndcapEdge(const Edge& edge,
+                      const CornerMap& corners,
+                      const EndcapCellOptions& options);
+  int placeEndcapEdgeHorizontal(const Edge& edge,
+                                const CornerMap& corners,
+                                const EndcapCellOptions& options);
+  int placeEndcapEdgeVertical(const Edge& edge,
+                              const CornerMap& corners,
+                              const EndcapCellOptions& options);
+
+  EndcapCellOptions correctEndcapOptions(
+      const EndcapCellOptions& options) const;
+
+  EndcapCellOptions correctEndcapOptions(const Options& options) const;
+
+  odb::dbMaster* getMasterByType(const odb::dbMasterType& type,
+                                 const std::string& option_name) const;
+  std::set<odb::dbMaster*> findMasterByType(
+      const odb::dbMasterType& type) const;
+  odb::dbBlock* getBlock() const;
+
+  odb::dbDatabase* db_ = nullptr;
+  utl::Logger* logger_ = nullptr;
+  int phy_idx_ = 0;
   std::string tap_prefix_;
   std::string endcap_prefix_;
+  std::vector<Edge> filled_edges_;
 };
 
 }  // namespace tap

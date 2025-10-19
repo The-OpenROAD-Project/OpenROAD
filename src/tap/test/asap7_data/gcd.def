@@ -1,0 +1,319 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN gcd ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 16200 16200 ) ;
+ROW ROW_0 asap7sc7p5t 1080 1080 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_1 asap7sc7p5t 1080 1350 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_2 asap7sc7p5t 1080 1620 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_3 asap7sc7p5t 1080 1890 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_4 asap7sc7p5t 1080 2160 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_5 asap7sc7p5t 1080 2430 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_6 asap7sc7p5t 1080 2700 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_7 asap7sc7p5t 1080 2970 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_8 asap7sc7p5t 1080 3240 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_9 asap7sc7p5t 1080 3510 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_10 asap7sc7p5t 1080 3780 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_11 asap7sc7p5t 1080 4050 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_12 asap7sc7p5t 1080 4320 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_13 asap7sc7p5t 1080 4590 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_14 asap7sc7p5t 1080 4860 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_15 asap7sc7p5t 1080 5130 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_16 asap7sc7p5t 1080 5400 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_17 asap7sc7p5t 1080 5670 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_18 asap7sc7p5t 1080 5940 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_19 asap7sc7p5t 1080 6210 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_20 asap7sc7p5t 1080 6480 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_21 asap7sc7p5t 1080 6750 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_22 asap7sc7p5t 1080 7020 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_23 asap7sc7p5t 1080 7290 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_24 asap7sc7p5t 1080 7560 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_25 asap7sc7p5t 1080 7830 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_26 asap7sc7p5t 1080 8100 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_27 asap7sc7p5t 1080 8370 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_28 asap7sc7p5t 1080 8640 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_29 asap7sc7p5t 1080 8910 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_30 asap7sc7p5t 1080 9180 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_31 asap7sc7p5t 1080 9450 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_32 asap7sc7p5t 1080 9720 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_33 asap7sc7p5t 1080 9990 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_34 asap7sc7p5t 1080 10260 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_35 asap7sc7p5t 1080 10530 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_36 asap7sc7p5t 1080 10800 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_37 asap7sc7p5t 1080 11070 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_38 asap7sc7p5t 1080 11340 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_39 asap7sc7p5t 1080 11610 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_40 asap7sc7p5t 1080 11880 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_41 asap7sc7p5t 1080 12150 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_42 asap7sc7p5t 1080 12420 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_43 asap7sc7p5t 1080 12690 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_44 asap7sc7p5t 1080 12960 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_45 asap7sc7p5t 1080 13230 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_46 asap7sc7p5t 1080 13500 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_47 asap7sc7p5t 1080 13770 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_48 asap7sc7p5t 1080 14040 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_49 asap7sc7p5t 1080 14310 FS DO 260 BY 1 STEP 54 0 ;
+ROW ROW_50 asap7sc7p5t 1080 14580 N DO 260 BY 1 STEP 54 0 ;
+ROW ROW_51 asap7sc7p5t 1080 14850 FS DO 260 BY 1 STEP 54 0 ;
+TRACKS X 116 DO 201 STEP 80 LAYER Pad ;
+TRACKS Y 116 DO 201 STEP 80 LAYER Pad ;
+TRACKS X 116 DO 201 STEP 80 LAYER M9 ;
+TRACKS Y 116 DO 201 STEP 80 LAYER M9 ;
+TRACKS X 116 DO 201 STEP 80 LAYER M8 ;
+TRACKS Y 116 DO 201 STEP 80 LAYER M8 ;
+TRACKS X 16 DO 253 STEP 64 LAYER M7 ;
+TRACKS Y 16 DO 253 STEP 64 LAYER M7 ;
+TRACKS X 60 DO 336 STEP 48 LAYER M6 ;
+TRACKS Y 16 DO 253 STEP 64 LAYER M6 ;
+TRACKS X 12 DO 338 STEP 48 LAYER M5 ;
+TRACKS Y 12 DO 338 STEP 48 LAYER M5 ;
+TRACKS X 45 DO 449 STEP 36 LAYER M4 ;
+TRACKS Y 12 DO 338 STEP 48 LAYER M4 ;
+TRACKS X 9 DO 450 STEP 36 LAYER M3 ;
+TRACKS Y 9 DO 450 STEP 36 LAYER M3 ;
+TRACKS X 9 DO 450 STEP 36 LAYER M2 ;
+TRACKS X 9 DO 450 STEP 36 LAYER M2 ;
+TRACKS X 9 DO 450 STEP 36 LAYER M2 ;
+TRACKS X 9 DO 450 STEP 36 LAYER M2 ;
+TRACKS X 9 DO 450 STEP 36 LAYER M2 ;
+TRACKS X 9 DO 450 STEP 36 LAYER M2 ;
+TRACKS X 9 DO 450 STEP 36 LAYER M2 ;
+TRACKS Y 45 DO 60 STEP 270 LAYER M2 ;
+TRACKS Y 81 DO 60 STEP 270 LAYER M2 ;
+TRACKS Y 117 DO 60 STEP 270 LAYER M2 ;
+TRACKS Y 153 DO 60 STEP 270 LAYER M2 ;
+TRACKS Y 189 DO 60 STEP 270 LAYER M2 ;
+TRACKS Y 225 DO 60 STEP 270 LAYER M2 ;
+TRACKS Y 270 DO 59 STEP 270 LAYER M2 ;
+TRACKS X 9 DO 450 STEP 36 LAYER M1 ;
+TRACKS Y 9 DO 450 STEP 36 LAYER M1 ;
+VIAS 2 ;
+    - via1_2_14040_18_1_390_36_36 + VIARULE M2_M1 + CUTSIZE 18 18  + LAYERS M1 V1 M2  + CUTSPACING 18 18  + ENCLOSURE 0 0 2 0  + ROWCOL 1 390  ;
+    - via5_6_120_288_1_2_58_322 + VIARULE M6_M5widePWR1p152 + CUTSIZE 24 288  + LAYERS M5 V5 M6  + CUTSPACING 34 34  + ENCLOSURE 19 0 0 0  + ROWCOL 1 2  ;
+END VIAS
+COMPONENTS 0 ;
+END COMPONENTS
+PINS 54 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 167 11532 ) N ;
+    - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 16033 2508 ) N ;
+    - req_msg[10] + NET req_msg[10] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 16033 8844 ) N ;
+    - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 4140 167 ) N ;
+    - req_msg[12] + NET req_msg[12] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 16033 6732 ) N ;
+    - req_msg[13] + NET req_msg[13] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 12012 16033 ) N ;
+    - req_msg[14] + NET req_msg[14] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 12588 167 ) N ;
+    - req_msg[15] + NET req_msg[15] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 167 5196 ) N ;
+    - req_msg[16] + NET req_msg[16] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 167 7308 ) N ;
+    - req_msg[17] + NET req_msg[17] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 167 14700 ) N ;
+    - req_msg[18] + NET req_msg[18] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 16033 3564 ) N ;
+    - req_msg[19] + NET req_msg[19] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 9900 16033 ) N ;
+    - req_msg[1] + NET req_msg[1] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 167 9420 ) N ;
+    - req_msg[20] + NET req_msg[20] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 9420 167 ) N ;
+    - req_msg[21] + NET req_msg[21] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 16033 4620 ) N ;
+    - req_msg[22] + NET req_msg[22] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 16033 10956 ) N ;
+    - req_msg[23] + NET req_msg[23] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 1452 16033 ) N ;
+    - req_msg[24] + NET req_msg[24] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 167 10476 ) N ;
+    - req_msg[25] + NET req_msg[25] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 16033 14124 ) N ;
+    - req_msg[26] + NET req_msg[26] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 11532 167 ) N ;
+    - req_msg[27] + NET req_msg[27] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 13644 167 ) N ;
+    - req_msg[28] + NET req_msg[28] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 167 12588 ) N ;
+    - req_msg[29] + NET req_msg[29] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 16033 1452 ) N ;
+    - req_msg[2] + NET req_msg[2] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 6732 16033 ) N ;
+    - req_msg[30] + NET req_msg[30] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 13068 16033 ) N ;
+    - req_msg[31] + NET req_msg[31] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 167 3084 ) N ;
+    - req_msg[3] + NET req_msg[3] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 8844 16033 ) N ;
+    - req_msg[4] + NET req_msg[4] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 167 4140 ) N ;
+    - req_msg[5] + NET req_msg[5] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 15180 16033 ) N ;
+    - req_msg[6] + NET req_msg[6] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 16033 12012 ) N ;
+    - req_msg[7] + NET req_msg[7] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 2508 16033 ) N ;
+    - req_msg[8] + NET req_msg[8] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 10956 16033 ) N ;
+    - req_msg[9] + NET req_msg[9] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 2028 167 ) N ;
+    - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 972 167 ) N ;
+    - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 4620 16033 ) N ;
+    - reset + NET reset + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 16033 13068 ) N ;
+    - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 6252 167 ) N ;
+    - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 16033 9900 ) N ;
+    - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 14700 167 ) N ;
+    - resp_msg[12] + NET resp_msg[12] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 7788 16033 ) N ;
+    - resp_msg[13] + NET resp_msg[13] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 16033 5676 ) N ;
+    - resp_msg[14] + NET resp_msg[14] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 3084 167 ) N ;
+    - resp_msg[15] + NET resp_msg[15] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 5196 167 ) N ;
+    - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 7308 167 ) N ;
+    - resp_msg[2] + NET resp_msg[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 167 2028 ) N ;
+    - resp_msg[3] + NET resp_msg[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 8364 167 ) N ;
+    - resp_msg[4] + NET resp_msg[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 167 8364 ) N ;
+    - resp_msg[5] + NET resp_msg[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 14124 16033 ) N ;
+    - resp_msg[6] + NET resp_msg[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 3564 16033 ) N ;
+    - resp_msg[7] + NET resp_msg[7] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 5676 16033 ) N ;
+    - resp_msg[8] + NET resp_msg[8] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + PLACED ( 10476 167 ) N ;
+    - resp_msg[9] + NET resp_msg[9] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 167 6252 ) N ;
+    - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 167 13644 ) N ;
+    - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M4 ( -167 -12 ) ( 167 12 )
+        + PLACED ( 16033 7788 ) N ;
+END PINS
+SPECIALNETS 0 ;
+END SPECIALNETS
+NETS 0 ;
+END NETS
+END DESIGN

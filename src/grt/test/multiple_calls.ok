@@ -1,17 +1,13 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.
 [INFO ODB-0133]     Created 87 nets and 250 connections.
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0020] Min routing layer: metal1
 [INFO GRT-0021] Max routing layer: metal10
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
-[INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
 [INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
 [INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
@@ -22,57 +18,57 @@
 [INFO GRT-0088] Layer metal8  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
 [INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 2874
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
-[INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 2874
 
 [INFO GRT-0053] Routing resources analysis:
           Routing      Original      Derated      Resource
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
-metal1     Horizontal      33840         32148          5.00%
-metal2     Vertical        24816         24581          0.95%
-metal3     Horizontal      33840         33028          2.40%
-metal4     Vertical        15792         15698          0.60%
-metal5     Horizontal      15792         15410          2.42%
-metal6     Vertical        15792         15698          0.60%
-metal7     Horizontal       4512          4370          3.15%
-metal8     Vertical         4512          4512          0.00%
-metal9     Horizontal       2256          2162          4.17%
-metal10    Vertical         2256          2209          2.08%
+metal1     Horizontal      33840         25751          23.90%
+metal2     Vertical        25163         24628          2.13%
+metal3     Horizontal      33840         33120          2.13%
+metal4     Vertical        16039         15698          2.13%
+metal5     Horizontal      15792         15456          2.13%
+metal6     Vertical        16039         15698          2.13%
+metal7     Horizontal       4512          4416          2.13%
+metal8     Vertical         4610          4512          2.13%
+metal9     Horizontal       2256          2208          2.13%
+metal10    Vertical         2305          2256          2.13%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 172
-[INFO GRT-0198] Via related Steiner nodes: 32
+[INFO GRT-0197] Via related to pin nodes: 396
+[INFO GRT-0198] Via related Steiner nodes: 31
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 267
-[INFO GRT-0112] Final usage 3D: 1432
+[INFO GRT-0111] Final number of vias: 676
+[INFO GRT-0112] Final usage 3D: 2765
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-metal1           32148           313            0.97%             0 /  0 /  0
-metal2           24581           318            1.29%             0 /  0 /  0
-metal3           33028             0            0.00%             0 /  0 /  0
-metal4           15698             0            0.00%             0 /  0 /  0
-metal5           15410             0            0.00%             0 /  0 /  0
-metal6           15698             0            0.00%             0 /  0 /  0
-metal7            4370             0            0.00%             0 /  0 /  0
+metal1           25751           155            0.60%             0 /  0 /  0
+metal2           24628           255            1.04%             0 /  0 /  0
+metal3           33120           161            0.49%             0 /  0 /  0
+metal4           15698            64            0.41%             0 /  0 /  0
+metal5           15456            49            0.32%             0 /  0 /  0
+metal6           15698            53            0.34%             0 /  0 /  0
+metal7            4416             0            0.00%             0 /  0 /  0
 metal8            4512             0            0.00%             0 /  0 /  0
-metal9            2162             0            0.00%             0 /  0 /  0
-metal10           2209             0            0.00%             0 /  0 /  0
+metal9            2208             0            0.00%             0 /  0 /  0
+metal10           2256             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           149816           631            0.42%             0 /  0 /  0
+Total           143743           737            0.51%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 2303 um
+[INFO GRT-0018] Total wirelength: 2324 um
 [INFO GRT-0014] Routed nets: 87
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0020] Min routing layer: metal1
 [INFO GRT-0021] Max routing layer: metal10
 [INFO GRT-0022] Global adjustment: 80%
 [INFO GRT-0023] Grid origin: (0, 0)
-[INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
 [INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
 [INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
@@ -83,51 +79,51 @@ Total           149816           631            0.42%             0 /  0 /  0
 [INFO GRT-0088] Layer metal8  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
 [INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 2874
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
-[INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 2874
 
 [INFO GRT-0053] Routing resources analysis:
           Routing      Original      Derated      Resource
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
-metal1     Horizontal      33840          4914          85.48%
-metal2     Vertical        24816          5123          79.36%
-metal3     Horizontal      33840          4968          85.32%
-metal4     Vertical        15792          2726          82.74%
-metal5     Horizontal      15792          2438          84.56%
-metal6     Vertical        15792          2726          82.74%
+metal1     Horizontal      33840          3573          89.44%
+metal2     Vertical        25163          4465          82.26%
+metal3     Horizontal      33840          4416          86.95%
+metal4     Vertical        16039          2256          85.93%
+metal5     Horizontal      15792          2208          86.02%
+metal6     Vertical        16039          2256          85.93%
 metal7     Horizontal       4512          2208          51.06%
-metal8     Vertical         4512          2350          47.92%
-metal9     Horizontal       2256          2162          4.17%
-metal10    Vertical         2256          2209          2.08%
+metal8     Vertical         4610          2209          52.08%
+metal9     Horizontal       2256          2208          2.13%
+metal10    Vertical         2305          2209          4.16%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 178
-[INFO GRT-0198] Via related Steiner nodes: 32
+[INFO GRT-0197] Via related to pin nodes: 400
+[INFO GRT-0198] Via related Steiner nodes: 26
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 273
-[INFO GRT-0112] Final usage 3D: 1450
+[INFO GRT-0111] Final number of vias: 681
+[INFO GRT-0112] Final usage 3D: 2780
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-metal1            4914           296            6.02%             0 /  0 /  0
-metal2            5123           318            6.21%             0 /  0 /  0
-metal3            4968            17            0.34%             0 /  0 /  0
-metal4            2726             0            0.00%             0 /  0 /  0
-metal5            2438             0            0.00%             0 /  0 /  0
-metal6            2726             0            0.00%             0 /  0 /  0
+metal1            3573           137            3.83%             0 /  0 /  0
+metal2            4465           250            5.60%             0 /  0 /  0
+metal3            4416           200            4.53%             0 /  0 /  0
+metal4            2256            63            2.79%             0 /  0 /  0
+metal5            2208            28            1.27%             0 /  0 /  0
+metal6            2256            59            2.62%             0 /  0 /  0
 metal7            2208             0            0.00%             0 /  0 /  0
-metal8            2350             0            0.00%             0 /  0 /  0
-metal9            2162             0            0.00%             0 /  0 /  0
+metal8            2209             0            0.00%             0 /  0 /  0
+metal9            2208             0            0.00%             0 /  0 /  0
 metal10           2209             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            31824           631            1.98%             0 /  0 /  0
+Total            28008           737            2.63%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 2303 um
+[INFO GRT-0018] Total wirelength: 2322 um
 [INFO GRT-0014] Routed nets: 87
 No differences found.
 No differences found.

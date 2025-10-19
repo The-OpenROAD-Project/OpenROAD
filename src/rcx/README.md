@@ -1,9 +1,8 @@
-# OpenRCX
+# Parasitics Extraction
 
-[![Standard](https://img.shields.io/badge/C%2B%2B-17-blue)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
-
-OpenRCX is a Parasitic Extraction (PEX, or RCX) tool that works on OpenDB design APIs.
+The parasitics extraction module in OpenROAD (`rcx`) is based on the 
+open-source OpenRCX, a Parasitic Extraction (PEX, or RCX) tool that 
+works on OpenDB design APIs.
 It extracts routed designs based on the LEF/DEF layout model.
 
 OpenRCX extracts both Resistance and Capacitance for wires, based on coupling
@@ -21,111 +20,185 @@ objects. Optionally, OpenRCX can generate a `.spef` file.
 
 ## Commands
 
+```{note}
+- Parameters in square brackets `[-param param]` are optional.
+- Parameters without square brackets `-param2 param2` are required.
+```
+
+### Define Process Corner
+
+This command defines proccess corner.
+
+```tcl
+define_process_corner 
+    [-ext_model_index index]
+    filename
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-ext_model_index` | Extraction model index. Expects 2 inputs (an index, and corner name). |
+| `filename` | Path to process corner file `rcx_patterns.rules`. |
+
 ### Extract Parasitics
 
-```
-extract_parasitics
-  [-ext_model_file filename]      pointer to the Extraction Rules file
-  [-corner_cnt count]             process corner count
-  [-max_res ohms]                 combine resistors in series up to
-                                  <max_res> value in OHMS
-  [-coupling_threshold fF]        coupling below the threshold is grounded
-  [-lef_res]                      use per-unit RC defined in LEF
-  [-cc_model track]               calculate coupling within
-                                  <cc_model> distance
-  [-context_depth depth]          calculate upper/lower coupling from
-                                  <depth> level away
-  [-no_merge_via_res]             separate via resistance
-```
-
 The `extract_parasitics` command performs parasitic extraction based on the
-routed design. If there is no routed design information, then no parasitics are
-returned. Use `ext_model_file` to specify the Extraction Rules file used for
-the extraction.
+routed design. If there are no information on routed design, no parasitics are
+returned. 
 
-The `cc_model` option is used to specify the maximum number of tracks of lateral context
-that the tool considers on the same
-routing level.  The default value is 10.  The `context_depth` option
-is used to specify the number of levels of vertical context that OpenRCX needs to consider for the over/under context overlap for capacitance calculation.
-The default value is 5.
-The `max_res` option combines resistors in series up to the threshold value.
-The `no_merge_via_res` option separates the via resistance from the wire resistance.
+```tcl
+extract_parasitics
+    [-ext_model_file filename]      
+    [-corner cornerIndex]
+    [-corner_cnt count]            
+    [-max_res ohms]               
+    [-coupling_threshold fF]        
+    [-debug_net_id id]
+    [-dbg dbg_num ]
+    [-lef_res]                     
+    [-lef_rc]
+    [-cc_model track]             
+    [-context_depth depth]      
+    [-no_merge_via_res]       
+    [-skip_over_cell ]
+    [-version]
+```
 
-The `corner_cnt` defines the number of corners used during the parasitic
-extraction.
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-ext_model_file` | Specify the Extraction Rules file used for the extraction. |
+| `-corner cornerIndex` | Corner to extract.  Default -1. |
+| `-corner_cnt` | Defines the number of corners used during the parasitic extraction. |
+| `-max_res` | Combines resistors in series up to the threshold value. |
+| `-coupling_threshold` | Coupling below this threshold is grounded. The default value is `0.1`, units are in `fF`, accepted values are floats. |
+| `-debug_net_id` | *Developer Option*: Net ID to evaluate. |
+| `-dbg dbg_num` | Debug messaging level.  Default 0. |
+| `-lef_res` | Override LEF resistance per unit. |
+| `-lef_rc` | Use LEF RC values. Default false. |
+| `-cc_model` | Specify the maximum number of tracks of lateral context that the tool considers on the same routing level. The default value is `10`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-context_depth` | Specify the number of levels of vertical context that OpenRCX needs to consider for the over/under context overlap for capacitance calculation. The default value is `5`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-no_merge_via_res` | Separates the via resistance from the wire resistance. |
+| `-skip_over_cell` | Ignore shapes in cells.  .Default false. |
+| `-version` | select between v1 and v2 modeling.  Defaults to 1.0. |
 
 ### Write SPEF
 
-```
+The `write_spef` command writes the `.spef` output of the parasitics stored
+in the database.
+
+```tcl
 write_spef
-  [-net_id net_id]                output the parasitics info for specific nets
-  [filename]                      the output filename
+    [-net_id net_id]                
+    [-nets nets]
+    [-coordinates]
+    filename                     
 ```
 
-The `write_spef` command writes the .spef output of the parasitics stored
-in the database. Use `net_id` option to write out .spef for specific nets.
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net_id` | Output the parasitics info for specific net IDs. |
+| `-nets` | Net name. |
+| `coordinates` | Coordinates TBC. |
+| `filename` | Output filename. |
 
 ### Scale RC
 
-```
-adjust_rc
-  [-res_factor res]               scale the resistance value by this factor
-  [-cc_factor cc]                 scale the coupling capacitance value by this factor
-  [-gndc_factor gndc]             scale the ground capacitance value by this factor
-```
-
 Use the `adjust_rc` command to scale the resistance, ground, and coupling
-capacitance. The `res_factor` specifies the scale factor for resistance. The
-`cc_factor` specifies the scale factor for coupling capacitance. The `gndc_factor`
-specifies the scale factor for ground capacitance.
+capacitance. 
 
-### Comparing SPEF files
-
-```
-diff_spef
-  [-file filename]                specifies the input .spef filename
+```tcl
+adjust_rc
+    [-res_factor res]               
+    [-cc_factor cc]                
+    [-gndc_factor gndc]          
 ```
 
-The `diff_spef` command compares the parasitics in the database with the parasitic
-information from `<file>.spef`. The output of this command is `diff_spef.out`
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-res_factor` | Scale factor for resistance. |
+| `-cc_factor` | Scale factor for coupling capacitance. |
+| `-gndc_factor` | Scale factor for ground capacitance. |
+
+### Comparing different SPEF files
+
+The `diff_spef` command compares the parasitics in the reference database `<filename>.spef`.
+The output of this command is `diff_spef.out`
 and contains the RC numbers from the parasitics in the database and the
-`<file>.spef`, and the percentage RC difference of the two data.
+`<filename>.spef`, and the percentage RC difference of the two data.
+
+```tcl
+diff_spef
+    [-file filename]                
+    [-spef_corner spef_num]
+    [-ext_corner ext_num]
+    [-r_res]
+    [-r_cap]
+    [-r_cc_cap]
+    [-r_conn]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-file` | Path to the input `.spef` filename. |
+| `-spef_corner spef_num` | The spef corner to diff. |
+| `-ext_corner ext_num` | The extraction corner to diff. |
+| `-r_res` | Read resistance. |
+| `-r_cap` | Read capacitance. |
+| `-r_cc_cap` | Read coupled capacitance. |
+| `r_conn` | Read connections. |
 
 ### Extraction Rules File Generation
-
-```
-bench_wires
-  [-cnt count]                    specify the metal count
-                                  per pattern
-  [-len wire_len]                 specify the wire length
-                                  in the pattern
-  [-s_list space_multiplier_list] list of wire spacing multipliers
-  [-all]                          generate all patterns
-  [-over_dist dist]               The maximum layer span above the target layer
-  [-under_dist dist]              The maximum layer span below the target layer
-```
 
 The `bench_wires` command produces a layout which contains various patterns
 that are used to characterize per-unit length R and C values. The generated patterns model
 the lateral, vertical, and diagonal coupling capacitances, as well as ground
 capacitance effects. This command generates a .def file that contains a number of wire patterns.
 
-The `cnt` option specifies the number of wires in each pattern; the
-default value of cnt is 5. Use the `len` option to change the wire length in the
-pattern. The `all` option is used to  specify all different pattern geometries
-(over, under, over_under, and diagonal). The option `all` is required.
+This command is specifically intended for the Extraction Rules file generation only.
 
-The `s_list` option specifies the lists of wire spacing multipliers from
-the minimum spacing defined in the LEF. The list will be the input index
-on the OpenRCX RC table (Extraction Rules file).
-
-This command is specifically intended for the Extraction Rules file
-generation only.
-
+```tcl
+bench_wires
+    [-met_cnt mcnt]
+    [-cnt count]
+    [-len wire_len]
+    [-over]
+    [-diag]
+    [-all]
+    [-db_only]
+    [-v1]
+    [-under_met layer]
+    [-w_list width]
+    [-s_list space]
+    [-over_dist dist]
+    [-under_dist dist]
 ```
-bench_verilog
-    [filename]                    the output verilog filename
-```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-met_cnt` | Number of layers used in each pattern. The default value is `-1`, meaning it is not set, and the allowed values are integers `[0, MAX_INT]`. |
+| `-cnt` | Number of wires in each pattern. The default value is `5`, and the default values are integers `[0, MAX_INT]`. |
+| `-len` | Wirelength in microns in the pattern. The default value is `100`, and the allowed values are integers `[0, MAX_INT]`. | 
+| `-all` | Consider all different pattern geometries (`over`, `under`, `over_under`, and `diagonal`). |
+| `-db_only` | Run with db values only. All parameters in `bench_wires` are ignored. |
+| `-v1` | Generation version one patterns. |
+| `-under_met` | Consider under metal layer. |
+| `-w_list` | Lists of wire width multipliers from the minimum spacing defined in the LEF. |
+| `-s_list` | Lists of wire spacing multipliers from the minimum spacing defined in the LEF. The list will be the input index on the OpenRCX RC table (Extraction Rules file). |
+| `-over_dist`, `-under_dist` | Consider over and under metal distance respectively. |
+
+### Generate verilog netlist
 
 `bench_verilog` is used after the `bench_wires` command. This command
 generates a Verilog netlist of the generated pattern layout by the `bench_wires`
@@ -135,30 +208,272 @@ This command is optional when running the Extraction Rules generation
 flow. This step is required if the favorite extraction tool (i.e., reference
 extractor) requires a Verilog netlist to extract parasitics of the pattern layout.
 
+
+```tcl
+bench_verilog
+    [filename]                    
 ```
-bench_read_spef
-    [filename]                    the input .spef filename
-```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `filename` | Name for the Verilog output file (e.g., `output.v`). |
+
+### Read SPEF
 
 The `bench_read_spef` command reads a `<filename>.spef` file and stores the
 parasitics into the database.
 
+```tcl
+bench_read_spef
+    [filename]                   
 ```
-write_rules
-  [-file filename]                output file name
-  [-db]                           read parasitics from the database
-```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `filename` | Path to the input `.spef` file. |
+
+### Write Rule File
 
 The `write_rules` command writes the Extraction Rules file (RC technology file)
 for OpenRCX. It processes the parasitics data from the layout patterns that are
 generated using the `bench_wires` command, and writes the Extraction Rules file
-with `<file>` as the output file.
-
-The `db` option instructs OpenRCX to write the Extraction Rules file from the
-parasitics stored in the database. This option is required.
+with `<filename>` as the output file.
 
 This command is specifically intended for the purpose of Extraction Rules file
 generation.
+
+```tcl
+write_rules
+  [-file filename]           
+  [-dir dir]
+  [-name name]
+  [-db]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-file` | Output file name. |
+| `-dir` | Output file directory. |
+| `-name` | Name of rule. |
+| `-db` | DB tbc. |
+
+### Write RCX Model
+
+The `write_rcx_model` command write the model file after reading capacitance/resistance
+Tables from Field Solver.
+
+```tcl
+write_rcx_model
+  [-file filename]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-file` | Output file name. |
+
+### Init RCX Model
+
+The `init_rcx_model` command is used for initialization for creating the model file.
+
+```tcl
+init_rcx_model
+  [-corner_names names]
+  [-met_cnt met_cnt]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-corner_names` | List of corner names. |
+| `-met_cnt` | Number of metal layers. |
+
+### Read RCX Tables
+
+The `read_rcx_tables` command reads the capacitance and resistance tables from Field
+Solver Output.
+
+```tcl
+read_rcx_tables
+  [-corner_name corner_name]
+  [-file in_file_name]
+  [-wire_index wire]
+  [-over]
+  [-under]
+  [-over_under]
+  [-diag]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-corner_name` | Corner name. |
+| `-file` | Input file name. |
+| `-wire_index` | Target wire index. |
+| `-over` | Over pattern family only. |
+| `-under` | Under pattern family only. |
+| `-over_under` | OverUnder pattern family only. |
+| `-diag` | Diagonal pattern family only. |
+
+### Generate Solver Patterns
+
+The `gen_solver_patterns` command generates 3D wire patterns not targeting any particular
+Field Solver.
+
+```tcl
+gen_solver_patterns
+  [-process_file process_file]
+  [-process_name process_name]
+  [-version version]
+  [-wire_cnt wire_count]
+  [-len wire_len]
+  [-w_list widths]
+  [-s_list spacings]
+  [-over_dist dist]
+  [-under_dist dist]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-process_file` | File that contains full process stack with conductor and dielctric dimensions. |
+| `-process_name` | Name of the process. |
+| `-version` | 2 if normalized wires, 1 not normalized; deafult is 1. |
+| `-wire_cnt` | Number of wires. Default is 3. |
+| `-len` | Wire length in microns. Default is 10. |
+| `-w_list` | Min layer Width multiplier list. Default is 1. |
+| `-s_list` | Min layer spacing multiplier list. Default is "1.0 1.5 2.0 3 5". |
+| `-over_dist` | Max number of levels for Under patterns. Default is 4. |
+| `-under_dist` | Max number of levels for Over patterns. Default is 4. |
+
+### Define RCX Corners
+
+The `define_rcx_corners` command defines specific corners to extract parasitics.
+
+```tcl
+define_rcx_corners
+  [-corner_list corner_list]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-corner_list` | List of corner names. |
+
+### Get Model Corners
+
+The `get_model_corners` command lists all the corner names from a model file.
+
+```tcl
+get_model_corners
+  [-ext_model_file file_name]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-ext_model_file` | Input file name. |
+
+### Generate RCX Model
+
+The `gen_rcx_model` command 
+
+```tcl
+gen_rcx_model
+  [-spef_file_list spefList]
+  [-corner_list cornerList]
+  [-out_file outfilename]
+  [-comment comment]
+  [-version version]
+  [-pattern pattern]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-spef_file_list`| List of spef file names. |
+| `-corner_list`| List of corners. |
+| `-out_file`| Output file name. |
+| `-comment`| Comment on the model file. Default: "RCX Model File". |
+| `-version`| Version of the model file. |
+| `-pattern`| Pattern of the model file. |
+
+### Bench Wires Generation
+
+The `bench_wires_gen` command generates comprehensive benchmarking patterns
+(not for model generation).
+
+```tcl
+bench_wires_gen
+  [ -len length_in_min_widths ]
+  [ -met metal ]
+  [ -mlist metal_list ]
+  [ -width multiplier_width_list ]
+  [ -spacing multiplier_spacing_list ]
+  [ -couple_width multiplier_coupling_width_list ]
+  [ -couple_spacing multiplier_coupling_spacing_list ]
+  [ -over_width multiplier_over_width_list ]
+  [ -over_spacing multiplier_over_spacing_list ]
+  [ -under_width multiplier_under_width_list ]
+  [ -under_spacing multiplier_under_spacing_list ]
+  [ -over2_width multiplier_over2_width_list ]
+  [ -over2_spacing multiplier_over2_spacing_list ]
+  [ -under2_width multiplier_under2_width_list ]
+  [ -under2_spacing multiplier_under2_spacing_list ]
+  [ -dbg dbg_flag ]
+  [ -wire_cnt wire_count ]
+  [ -offset_over offset_over ]
+  [ -offset_under offset_under ]
+  [ -under_dist max_dist_to_under_met ]
+  [ -over_dist max_dist_to_over_met ]
+  [ -diag ]
+  [ -over ]
+  [ -under ]
+  [ -over_under ]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-len` | length_in_min_widths.
+| `-met` | target metal.
+| `-mlist` | target metal_list.
+| `-width` | multiplier_width_list.
+| `-spacing` | multiplier_spacing_list.
+| `-couple_width` | multiplier_coupling_width_list.
+| `-couple_spacing` | multiplier_coupling_spacing_list.
+| `-over_width` | multiplier_over_width_list.
+| `-over_spacing` | multiplier_over_spacing_list.
+| `-under_width` | multiplier_under_width_list.
+| `-under_spacing` | multiplier_under_spacing_list.
+| `-over2_width` | multiplier_over2_width_list.
+| `-over2_spacing` | multiplier_over2_spacing_list.	 
+| `-under2_width` | multiplier_under2_width_list.
+| `-under2_spacing` | multiplier_under2_spacing_list.
+| `-dbg` |  dbg_flag.
+| `-wire_cnt` | wire_count.
+| `-offset_over` | offset_over.
+| `-offset_under` | offset_under.
+| `-under_dist` | max_dist_to_under_met.
+| `-over_dist` | max_dist_to_over_met.	  
+| `-diag` | Diag pattern family only.
+| `-over` | Over pattern family only.
+| `-under` | Under pattern family only.
+| `-over_under` | OverUnder pattern family only.
 
 ## Example scripts
 
@@ -168,7 +483,7 @@ from synthesizable RTL Verilog to final-routed layout in an open-source SKY130 t
 is shown below.
 
 ```
-gcd.tcl
+./test/gcd.tcl
 ```
 
 Example scripts demonstrating how to run the
@@ -176,16 +491,18 @@ Extraction Rules file generation can be found in this
 [directory](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/src/rcx/calibration/script).
 
 ```
-generate_patterns.tcl     # generate patterns
-generate_rules.tcl        # generate the Extraction Rules file
-ext_patterns.tcl          # check the accuracy of OpenRCX
+./calibration/script/generate_patterns.tcl     # generate patterns
+./calibration/script/generate_rules.tcl        # generate the Extraction Rules file
+./calibration/script/ext_patterns.tcl          # check the accuracy of OpenRCX
 ```
 
 ## Regression tests
 
-There is a set of regression tests in /test.
+There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests).
 
-```
+Simply run the following script:
+
+```shell
 ./test/regression
 ```
 
@@ -198,15 +515,15 @@ extraction for a specific process corner.
 The Extraction Rules file (RC technology file) is generated once for every
 process node and corner automatically.
 
-The detailed documentation can be found [here](doc/calibration.md)
+The detailed documentation can be found [here](doc/calibration.md).
 
 ## Limitations
 
 ## FAQs
 
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+openrcx+in%3Atitle)
+Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+rcx)
 about this tool.
 
 ## License
 
-BSD 3-Clause License. See [LICENSE](LICENSE) file.
+BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

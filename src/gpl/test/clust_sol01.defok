@@ -1,0 +1,20 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN tray_test ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 1000 1000 ) ;
+COMPONENTS 2 ;
+    - _tray_size2_6 DFFHQNV2Xx1_ASAP7_75t_L + PLACED ( 3350 3864 ) N ;
+    - _tray_size2_7 DFFHQNV2Xx1_ASAP7_75t_L + PLACED ( 5350 3864 ) N ;
+END COMPONENTS
+PINS 1 ;
+    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M1 ( 0 0 ) ( 0 0 )
+        + FIXED ( 1000 1000 ) N ;
+END PINS
+NETS 1 ;
+    - clk1 ( PIN clk1 ) ( _tray_size2_6 CLK ) ( _tray_size2_7 CLK ) + USE SIGNAL ;
+END NETS
+END DESIGN

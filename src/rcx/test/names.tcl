@@ -11,7 +11,7 @@ read_liberty $liberty_file
 read_verilog names.v
 link_design top
 
-initialize_floorplan -site $site -utilization 10
+initialize_floorplan -site $site -utilization 10 -core_space 0.0
 
 source $tracks_file
 
@@ -31,7 +31,7 @@ set_routing_layers -signal $global_routing_layers
 global_route
 detailed_route -verbose 0
 
-# Extract  
+# Extract
 define_process_corner -ext_model_index 0 X
 extract_parasitics -ext_model_file $rcx_rules_file
 

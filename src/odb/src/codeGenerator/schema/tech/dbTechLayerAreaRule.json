@@ -1,0 +1,71 @@
+{
+  "name": "dbTechLayerAreaRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "int",
+      "default": "0",
+      "name": "area_"
+    },
+    {
+      "type": "int",
+      "default": "0",
+      "name": "except_min_width_"
+    },
+    {
+      "type": "int",
+      "default": "0",
+      "name": "except_edge_length_"
+    },
+    {
+      "type": "std::pair<int,int>",
+      "name": "except_edge_lengths_",
+      "flags": [
+        "no-template"
+      ]
+    },
+    {
+      "type": "std::pair<int,int>",
+      "name": "except_min_size_",
+      "flags": [
+        "no-template"
+      ]
+    },
+    {
+      "type": "bit",
+      "name": "except_rectangle_"
+    },
+    {
+      "type": "std::pair<int,int>",
+      "name": "except_step_",
+      "flags": [
+        "no-template"
+      ]
+    },
+    {
+      "type": "dbId<_dbTechLayer>",
+      "name": "trim_layer_",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "type": "uint",
+      "name": "overlap_",
+      "bits": 2
+    },
+    {
+      "type": "int",
+      "default": "0",
+      "name": "mask_"
+    },
+    {
+      "type": "int",
+      "default": "0",
+      "name": "rect_width_"
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
+}

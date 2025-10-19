@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -32,7 +32,7 @@
 
 #include "defiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 class defAliasIterator;
 class defrData;
@@ -40,7 +40,7 @@ class defrData;
 class defiAlias_itr
 {
  public:
-  defiAlias_itr(defrData* defData = 0);
+  defiAlias_itr(defrData* defData = nullptr);
   void Init();
 
   void Destroy();
@@ -52,13 +52,11 @@ class defiAlias_itr
   int Marked();
 
  protected:
-  defAliasIterator* iterator;
-  int first;
+  int first{1};
+  defAliasIterator* iterator{nullptr};
   defrData* defData;
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

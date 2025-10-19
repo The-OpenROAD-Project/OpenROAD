@@ -22,21 +22,22 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
 
 #include "defiScanchain.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
-#include "lex.h"
+#include "defiKRDefs.hpp"
+#include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 defiOrdered::defiOrdered(defrData* data) : defData(data)
 {
@@ -52,10 +53,12 @@ void defiOrdered::clear()
   int i;
   for (i = 0; i < num_; i++) {
     free((char*) (inst_[i]));
-    if (in_[i])
+    if (in_[i]) {
       free((char*) (in_[i]));
-    if (out_[i])
+    }
+    if (out_[i]) {
       free((char*) (out_[i]));
+    }
   }
   num_ = 0;
 }
@@ -112,12 +115,13 @@ void defiOrdered::bump()
 
 void defiOrdered::addOrdered(const char* inst)
 {
-  if (num_ == allocated_)
+  if (num_ == allocated_) {
     bump();
+  }
   inst_[num_] = (char*) malloc(strlen(inst) + 1);
   strcpy(inst_[num_], defData->DEFCASE(inst));
-  in_[num_] = 0;
-  out_[num_] = 0;
+  in_[num_] = nullptr;
+  out_[num_] = nullptr;
   bits_[num_] = -1;
   num_ += 1;
 }
@@ -185,16 +189,16 @@ void defiScanchain::Init()
   floatOut_ = (char**) malloc(sizeof(char*) * 4);
   floatBits_ = (int*) malloc(sizeof(int) * 4);
 
-  stopInst_ = 0;
-  stopPin_ = 0;
-  startInst_ = 0;
-  startPin_ = 0;
+  stopInst_ = nullptr;
+  stopPin_ = nullptr;
+  startInst_ = nullptr;
+  startPin_ = nullptr;
   hasStart_ = 0;
   hasStop_ = 0;
-  commonInPin_ = 0;
-  commonOutPin_ = 0;
+  commonInPin_ = nullptr;
+  commonOutPin_ = nullptr;
   hasPartition_ = 0;
-  partName_ = 0;
+  partName_ = nullptr;
   maxBits_ = -1;
 }
 
@@ -204,47 +208,56 @@ void defiScanchain::clear()
 
   for (i = 0; i < numOrdered_; i++) {
     delete ordered_[i];
-    ordered_[i] = 0;
+    ordered_[i] = nullptr;
   }
 
   numOrdered_ = 0;
 
   for (i = 0; i < numFloating_; i++) {
-    if (floatIn_[i])
+    if (floatIn_[i]) {
       free(floatIn_[i]);
-    if (floatOut_[i])
+    }
+    if (floatOut_[i]) {
       free(floatOut_[i]);
+    }
     free(floatInst_[i]);
-    floatInst_[i] = 0;
+    floatInst_[i] = nullptr;
     floatBits_[i] = -1;
   }
   numFloating_ = 0;
 
-  if (stopInst_)
+  if (stopInst_) {
     free(stopInst_);
-  if (stopPin_)
+  }
+  if (stopPin_) {
     free(stopPin_);
-  if (startInst_)
+  }
+  if (startInst_) {
     free(startInst_);
-  if (startPin_)
+  }
+  if (startPin_) {
     free(startPin_);
-  if (commonInPin_)
+  }
+  if (commonInPin_) {
     free(commonInPin_);
-  if (commonOutPin_)
+  }
+  if (commonOutPin_) {
     free(commonOutPin_);
+  }
 
-  stopInst_ = 0;
-  stopPin_ = 0;
-  startInst_ = 0;
-  startPin_ = 0;
+  stopInst_ = nullptr;
+  stopPin_ = nullptr;
+  startInst_ = nullptr;
+  startPin_ = nullptr;
   hasStart_ = 0;
   hasStop_ = 0;
-  commonInPin_ = 0;
-  commonOutPin_ = 0;
+  commonInPin_ = nullptr;
+  commonOutPin_ = nullptr;
   hasPartition_ = 0;
-  if (partName_)
+  if (partName_) {
     free((char*) (partName_));
-  partName_ = 0;
+  }
+  partName_ = nullptr;
   maxBits_ = -1;
 }
 
@@ -311,8 +324,8 @@ void defiScanchain::addFloatingInst(const char* name)
 
   floatInst_[numFloating_] = (char*) malloc(strlen(name) + 1);
   strcpy(floatInst_[numFloating_], defData->DEFCASE(name));
-  floatIn_[numFloating_] = 0;
-  floatOut_[numFloating_] = 0;
+  floatIn_[numFloating_] = nullptr;
+  floatOut_[numFloating_] = nullptr;
   floatBits_[numFloating_] = -1;
   numFloating_ += 1;
 }
@@ -385,13 +398,14 @@ void defiScanchain::addOrderedList()
 void defiScanchain::setStart(const char* inst, const char* pin)
 {
   int len;
-  if (startInst_)
+  if (startInst_) {
     defiError(0,
               6150,
               "ERROR (DEFPARS-6150): The START statement in the SCANCHAINS has "
               "defined more than one time in the SCANCHAINS statement.\nUpdate "
               "the DEF file to only one START statement and then try again.",
               defData);
+  }
   len = strlen(inst) + 1;
   startInst_ = (char*) malloc(len);
   strcpy(startInst_, defData->DEFCASE(inst));
@@ -404,13 +418,14 @@ void defiScanchain::setStart(const char* inst, const char* pin)
 void defiScanchain::setStop(const char* inst, const char* pin)
 {
   int len;
-  if (stopInst_)
+  if (stopInst_) {
     defiError(0,
               6151,
               "ERROR (DEFPARS-6151): The STOP statment in the SCANCHAINS has "
               "defined more than one time in the SCANCHAINS statement.\nUpdate "
               "the DEF file to only one STOP statement and then try again.",
               defData);
+  }
   len = strlen(inst) + 1;
   stopInst_ = (char*) malloc(len);
   strcpy(stopInst_, defData->DEFCASE(inst));
@@ -423,8 +438,9 @@ void defiScanchain::setStop(const char* inst, const char* pin)
 // 5.4.1
 void defiScanchain::setPartition(const char* partName, int maxBits)
 {
-  if (partName_)
+  if (partName_) {
     free(partName_);
+  }
   partName_ = (char*) malloc(strlen(partName) + 1);
   strcpy(partName_, defData->DEFCASE(partName));
   maxBits_ = maxBits;
@@ -477,18 +493,22 @@ int defiScanchain::partitionMaxBits() const
 
 void defiScanchain::start(char** inst, char** pin) const
 {
-  if (inst)
+  if (inst) {
     *inst = startInst_;
-  if (pin)
+  }
+  if (pin) {
     *pin = startPin_;
+  }
 }
 
 void defiScanchain::stop(char** inst, char** pin) const
 {
-  if (inst)
+  if (inst) {
     *inst = stopInst_;
-  if (pin)
+  }
+  if (pin) {
     *pin = stopPin_;
+  }
 }
 
 int defiScanchain::numOrderedLists() const
@@ -513,7 +533,7 @@ void defiScanchain::ordered(int index,
     *bits = o->bits();
   } else {
     *size = 10;
-    *inst = 0;
+    *inst = nullptr;
   }
 }
 
@@ -615,11 +635,13 @@ void defiScanchain::print(FILE* f) const
     }
   }
 
-  if (hasCommonInPin())
+  if (hasCommonInPin()) {
     fprintf(f, "  common in pin %s\n", commonInPin());
+  }
 
-  if (hasCommonOutPin())
+  if (hasCommonOutPin()) {
     fprintf(f, "  common out pin %s\n", commonOutPin());
+  }
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

@@ -1,48 +1,22 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <QColor>
 #include <QDockWidget>
 #include <QMenu>
 #include <QPushButton>
 #include <QSettings>
 #include <QStandardItemModel>
 #include <QTreeView>
+#include <QWidget>
 #include <array>
+#include <map>
 #include <memory>
+#include <set>
+#include <string>
+#include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "gui/gui.h"
@@ -79,17 +53,17 @@ class BrowserWidget : public QDockWidget,
   bool eventFilter(QObject* obj, QEvent* event) override;
 
   // dbBlockCallBackObj
-  virtual void inDbInstCreate(odb::dbInst*) override;
-  virtual void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
-  virtual void inDbInstDestroy(odb::dbInst*) override;
-  virtual void inDbInstSwapMasterAfter(odb::dbInst*) override;
+  void inDbInstCreate(odb::dbInst*) override;
+  void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
+  void inDbInstDestroy(odb::dbInst*) override;
+  void inDbInstSwapMasterAfter(odb::dbInst*) override;
 
   // API from dbNetworkObserver
-  virtual void postReadLiberty() override;
-  virtual void postReadDb() override;
+  void postReadLiberty() override;
+  void postReadDb() override;
 
   // from QT
-  virtual void paintEvent(QPaintEvent* event) override;
+  void paintEvent(QPaintEvent* event) override;
 
  signals:
   void select(const SelectionSet& selected);
@@ -144,11 +118,14 @@ class BrowserWidget : public QDockWidget,
   QTreeView* view_;
   QStandardItemModel* model_;
   bool model_modified_;
+  bool initial_load_;
 
   bool ignore_selection_;
 
   QMenu* menu_;
   Selected menu_item_;
+  static const int kSortRole;
+
   std::set<odb::dbModule*> getChildren(odb::dbModule* parent);
   std::set<odb::dbModule*> getAllChildren(odb::dbModule* parent);
   SelectionSet getMenuItemChildren();
@@ -158,78 +135,13 @@ class BrowserWidget : public QDockWidget,
 
   std::map<odb::dbModule*, QStandardItem*> modulesmap_;
 
-  struct ModuleStats
-  {
-    int64_t area;
-    int macros;
-    int insts;
-    int modules;
-
-    int hier_macros;
-    int hier_insts;
-    int hier_modules;
-
-    ModuleStats()
-    {
-      area = 0;
-      macros = 0;
-      insts = 0;
-      modules = 0;
-
-      resetInstances();
-      resetMacros();
-      resetModules();
-    }
-
-    void incrementInstances()
-    {
-      insts++;
-      hier_insts++;
-    }
-
-    void resetInstances() { hier_insts = 0; }
-
-    void incrementMacros()
-    {
-      macros++;
-      hier_macros++;
-    }
-
-    void resetMacros() { hier_macros = 0; }
-
-    void incrementModules()
-    {
-      modules++;
-      hier_modules++;
-    }
-
-    void resetModules() { hier_modules = 0; }
-
-    ModuleStats& operator+=(const ModuleStats& other)
-    {
-      area += other.area;
-      macros += other.macros;
-      insts += other.insts;
-      modules += other.modules;
-
-      hier_macros += other.hier_macros;
-      hier_insts += other.hier_insts;
-      hier_modules += other.hier_modules;
-
-      return *this;
-    }
-
-    friend ModuleStats operator+(ModuleStats lhs, const ModuleStats& other)
-    {
-      lhs += other;
-
-      return lhs;
-    }
-  };
+  struct ModuleStats;
 
   ModuleStats populateModule(odb::dbModule* module, QStandardItem* parent);
 
-  ModuleStats addInstanceItem(odb::dbInst* inst, QStandardItem* parent);
+  ModuleStats addInstanceItem(odb::dbInst* inst,
+                              QStandardItem* parent,
+                              bool create_row);
   ModuleStats addInstanceItems(const std::vector<odb::dbInst*>& insts,
                                const std::string& title,
                                QStandardItem* parent);
@@ -237,7 +149,7 @@ class BrowserWidget : public QDockWidget,
                             QStandardItem* parent,
                             bool expand);
 
-  const QIcon makeModuleIcon(const QColor& color);
+  QIcon makeModuleIcon(const QColor& color);
 
   void makeRowItems(QStandardItem* item,
                     const std::string& master,
@@ -247,13 +159,16 @@ class BrowserWidget : public QDockWidget,
 
   enum Columns
   {
-    Instance,
-    Master,
-    Instances,
-    Macros,
-    Modules,
-    Area
+    kInstance,
+    kMaster,
+    kInstances,
+    kMacros,
+    kModules,
+    kArea
   };
+
+  // Limit number of visible physical instances
+  static constexpr int kMaxVisibleLeafs = 1000;
 };
 
 }  // namespace gui

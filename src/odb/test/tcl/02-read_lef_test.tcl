@@ -5,8 +5,8 @@ source [file join $tcl_dir "test_helpers.tcl"]
 
 set db [odb::dbDatabase_create]
 set lib [odb::read_lef $db [file join $data_dir "gscl45nm.lef"]]
-if {$lib == "NULL"} {
-    puts "Failed to read LEF file"
-    exit 1
+if { $lib == "NULL" } {
+  puts "Failed to read LEF file"
+  exit 1
 }
 exit 0

@@ -1,39 +1,9 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
+
+#include <qchar.h>
 
 #include <QAbstractTableModel>
 #include <QCheckBox>
@@ -42,24 +12,33 @@
 #include <QDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
+#include <QHash>
 #include <QListWidget>
+#include <QPushButton>
 #include <QSpinBox>
+#include <QVariant>
+#include <QWidget>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <set>
+#include <string>
 #include <vector>
 
+#include "dropdownCheckboxes.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbObject.h"
 #include "sta/PathExpanded.hh"
-#include "sta/PathRef.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
 #include "staGuiInterface.h"
 
 namespace sta {
 class dbSta;
 class Pin;
+class Clock;
 }  // namespace sta
 namespace gui {
 class TimingPathsModel;
@@ -70,7 +49,38 @@ class TimingPathsModel : public QAbstractTableModel
 {
   Q_OBJECT
 
+ private:
+  enum Column
+  {
+    kClock,
+    kRequired,
+    kArrival,
+    kSlack,
+    kSkew,
+    kLogicDelay,
+    kLogicDepth,
+    kFanout,
+    kStart,
+    kEnd
+  };
+
  public:
+  static const std::map<Column, const char*>& getColumnNames()
+  {
+    static const std::map<Column, const char*> kColumnNames
+        = {{kClock, "Capture Clock"},
+           {kRequired, "Required"},
+           {kArrival, "Arrival"},
+           {kSlack, "Slack"},
+           {kSkew, "Skew"},
+           {kLogicDelay, "Logic Delay"},
+           {kLogicDepth, "Logic Depth"},
+           {kFanout, "Fanout"},
+           {kStart, "Start"},
+           {kEnd, "End"}};
+    return kColumnNames;
+  }
+
   TimingPathsModel(bool is_setup,
                    STAGuiInterface* sta,
                    QObject* parent = nullptr);
@@ -88,36 +98,55 @@ class TimingPathsModel : public QAbstractTableModel
   TimingPath* getPathAt(const QModelIndex& index) const;
 
   void resetModel();
-  void populateModel(const std::set<sta::Pin*>& from,
-                     const std::vector<std::set<sta::Pin*>>& thru,
-                     const std::set<sta::Pin*>& to);
+  void populateModel(const std::set<const sta::Pin*>& from,
+                     const std::vector<std::set<const sta::Pin*>>& thru,
+                     const std::set<const sta::Pin*>& to,
+                     const std::string& path_group_name,
+                     const sta::ClockSet* clks);
 
  public slots:
   void sort(int col_index, Qt::SortOrder sort_order) override;
 
  private:
-  bool populatePaths(const std::set<sta::Pin*>& from,
-                     const std::vector<std::set<sta::Pin*>>& thru,
-                     const std::set<sta::Pin*>& to);
+  bool populatePaths(const std::set<const sta::Pin*>& from,
+                     const std::vector<std::set<const sta::Pin*>>& thru,
+                     const std::set<const sta::Pin*>& to,
+                     const std::string& path_group_name,
+                     const sta::ClockSet* clks);
 
   STAGuiInterface* sta_;
   bool is_setup_;
   std::vector<std::unique_ptr<TimingPath>> timing_paths_;
-
-  enum Column
-  {
-    Clock,
-    Required,
-    Arrival,
-    Slack,
-    Start,
-    End
-  };
 };
 
 class TimingPathDetailModel : public QAbstractTableModel
 {
+ private:
+  enum Column
+  {
+    kPin,
+    kFanout,
+    kRiseFall,
+    kTime,
+    kDelay,
+    kSlew,
+    kLoad
+  };
+
  public:
+  static const std::map<Column, const char*>& getColumnNames()
+  {
+    static const std::map<Column, const char*> kColumnNames
+        = {{kPin, "Pin"},
+           {kFanout, "Fanout"},
+           {kRiseFall, "RiseFall"},
+           {kTime, "Time"},
+           {kDelay, "Delay"},
+           {kSlew, "Slew"},
+           {kLoad, "Load"}};
+    return kColumnNames;
+  }
+
   TimingPathDetailModel(bool is_capture,
                         sta::dbSta* sta,
                         QObject* parent = nullptr);
@@ -148,7 +177,7 @@ class TimingPathDetailModel : public QAbstractTableModel
 
   bool isClockSummaryRow(const QModelIndex& index) const
   {
-    return index.row() == clock_summary_row_;
+    return index.row() == kClockSummaryRow;
   }
 
   void populateModel(TimingPath* path, TimingNodeList* nodes);
@@ -162,20 +191,10 @@ class TimingPathDetailModel : public QAbstractTableModel
   TimingNodeList* nodes_;
 
   // Unicode symbols
-  static constexpr char up_down_arrows_[] = "\u21C5";
-  static constexpr char up_arrow_[] = "\u2191";
-  static constexpr char down_arrow_[] = "\u2193";
-  enum Column
-  {
-    Pin,
-    Fanout,
-    RiseFall,
-    Time,
-    Delay,
-    Slew,
-    Load
-  };
-  static constexpr int clock_summary_row_ = 1;
+  static constexpr char kUpDownArrows[] = "⇅";
+  static constexpr char kUpArrow[] = "↑";
+  static constexpr char kDownArrow[] = "↓";
+  static constexpr int kClockSummaryRow = 1;
 };
 
 class TimingPathRenderer : public gui::Renderer
@@ -185,13 +204,10 @@ class TimingPathRenderer : public gui::Renderer
   void highlight(TimingPath* path);
 
   void highlightNode(const TimingPathNode* node);
-  void clearHighlightNodes() { highlight_stage_.clear(); }
+  void clearHighlightNodes();
 
-  virtual void drawObjects(gui::Painter& /* painter */) override;
-  virtual const char* getDisplayControlGroupName() override
-  {
-    return "Timing Path";
-  }
+  void drawObjects(gui::Painter& /* painter */) override;
+  const char* getDisplayControlGroupName() override { return "Timing Path"; }
 
   TimingPath* getPathToRender() { return path_; }
 
@@ -219,17 +235,18 @@ class TimingPathRenderer : public gui::Renderer
     odb::dbObject* sink;
   };
   std::vector<std::unique_ptr<HighlightStage>> highlight_stage_;
+  std::mutex rendering_;
 
-  static const gui::Painter::Color inst_highlight_color_;
-  static const gui::Painter::Color path_inst_color_;
-  static const gui::Painter::Color term_color_;
-  static const gui::Painter::Color signal_color_;
-  static const gui::Painter::Color clock_color_;
-  static const gui::Painter::Color capture_clock_color_;
+  static const gui::Painter::Color kInstHighlightColor;
+  static const gui::Painter::Color kPathInstColor;
+  static const gui::Painter::Color kTermColor;
+  static const gui::Painter::Color kSignalColor;
+  static const gui::Painter::Color kClockColor;
+  static const gui::Painter::Color kCaptureClockColor;
 
-  static constexpr const char* data_path_label_ = "Data path";
-  static constexpr const char* launch_clock_label_ = "Launch clock";
-  static constexpr const char* capture_clock_label_ = "Capture clock";
+  static constexpr const char* kDataPathLabel = "Data path";
+  static constexpr const char* kLaunchClockLabel = "Launch clock";
+  static constexpr const char* kCaptureClockLabel = "Capture clock";
 };
 
 class TimingConeRenderer : public gui::Renderer
@@ -239,13 +256,13 @@ class TimingConeRenderer : public gui::Renderer
   void setSTA(sta::dbSta* sta) { sta_ = sta; }
   void setITerm(odb::dbITerm* term, bool fanin, bool fanout);
   void setBTerm(odb::dbBTerm* term, bool fanin, bool fanout);
-  void setPin(sta::Pin* pin, bool fanin, bool fanout);
+  void setPin(const sta::Pin* pin, bool fanin, bool fanout);
 
-  virtual void drawObjects(gui::Painter& painter) override;
+  void drawObjects(gui::Painter& painter) override;
 
  private:
   sta::dbSta* sta_;
-  sta::Pin* term_;
+  const sta::Pin* term_;
   bool fanin_;
   bool fanout_;
   ConeDepthMap map_;
@@ -253,7 +270,7 @@ class TimingConeRenderer : public gui::Renderer
   float max_timing_;
   SpectrumGenerator color_generator_;
 
-  bool isSupplyPin(sta::Pin* pin) const;
+  bool isSupplyPin(const sta::Pin* pin) const;
 };
 
 class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
@@ -323,9 +340,9 @@ class PinSetWidget : public QWidget
 
   void updatePins();
 
-  void setPins(const std::set<sta::Pin*>& pins);
+  void setPins(const std::set<const sta::Pin*>& pins);
 
-  const std::set<sta::Pin*> getPins() const;
+  std::set<const sta::Pin*> getPins() const;
 
   bool isAddMode() const { return add_mode_; }
   bool isRemoveMode() const { return !isAddMode(); }
@@ -348,7 +365,7 @@ class PinSetWidget : public QWidget
 
  private:
   sta::dbSta* sta_;
-  std::vector<sta::Pin*> pins_;
+  std::vector<const sta::Pin*> pins_;
 
   QListWidget* box_;
   QLineEdit* find_pin_;
@@ -357,8 +374,8 @@ class PinSetWidget : public QWidget
 
   bool add_mode_;
 
-  void addPin(sta::Pin* pin);
-  void removePin(sta::Pin* pin);
+  void addPin(const sta::Pin* pin);
+  void removePin(const sta::Pin* pin);
   void removeSelectedPins();
 };
 
@@ -383,15 +400,19 @@ class TimingControlsDialog : public QDialog
   void setExpandClock(bool expand);
   bool getExpandClock() const;
 
-  void setFromPin(const std::set<sta::Pin*>& pins) { from_->setPins(pins); }
-  void setThruPin(const std::vector<std::set<sta::Pin*>>& pins);
-  void setToPin(const std::set<sta::Pin*>& pins) { to_->setPins(pins); }
+  void setFromPin(const std::set<const sta::Pin*>& pins)
+  {
+    from_->setPins(pins);
+  }
+  void setThruPin(const std::vector<std::set<const sta::Pin*>>& pins);
+  void setToPin(const std::set<const sta::Pin*>& pins) { to_->setPins(pins); }
 
-  const std::set<sta::Pin*> getFromPins() const { return from_->getPins(); }
-  const std::vector<std::set<sta::Pin*>> getThruPins() const;
-  const std::set<sta::Pin*> getToPins() const { return to_->getPins(); }
+  std::set<const sta::Pin*> getFromPins() const { return from_->getPins(); }
+  std::vector<std::set<const sta::Pin*>> getThruPins() const;
+  std::set<const sta::Pin*> getToPins() const { return to_->getPins(); }
+  const sta::ClockSet* getClocks();
 
-  sta::Pin* convertTerm(Gui::odbTerm term) const;
+  const sta::Pin* convertTerm(Gui::Term term) const;
 
   sta::Corner* getCorner() const { return sta_->getCorner(); }
   void setCorner(sta::Corner* corner) { sta_->setCorner(corner); }
@@ -413,6 +434,7 @@ class TimingControlsDialog : public QDialog
 
   QSpinBox* path_count_spin_box_;
   QComboBox* corner_box_;
+  DropdownCheckboxes* clock_box_;
 
   QCheckBox* unconstrained_;
   QCheckBox* one_path_per_endpoint_;
@@ -421,12 +443,15 @@ class TimingControlsDialog : public QDialog
   PinSetWidget* from_;
   std::vector<PinSetWidget*> thru_;
   PinSetWidget* to_;
+  QHash<QString, sta::Clock*> qstring_to_clk_;
 
-  static constexpr int thru_start_row_ = 3;
+  sta::ClockSet selected_clocks_;
+
+  static constexpr int kThruStartRow = 4;
 
   void setPinSelections();
 
-  void addThruRow(const std::set<sta::Pin*>& pins);
+  void addThruRow(const std::set<const sta::Pin*>& pins);
   void setupPinRow(const QString& label, PinSetWidget* row, int row_index = -1);
 };
 

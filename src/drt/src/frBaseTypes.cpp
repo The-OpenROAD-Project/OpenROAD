@@ -1,35 +1,11 @@
-/*
- * Copyright (c) 2022, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include "frBaseTypes.h"
 
 #include <iostream>
 
-namespace fr {
+namespace drt {
 
 std::ostream& operator<<(std::ostream& os, frMinstepTypeEnum type)
 {
@@ -263,6 +239,8 @@ std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type)
     case frConstraintTypeEnum::
         frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint:
       return os << "frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint";
+    case frConstraintTypeEnum::frcLef58SpacingWrongDirConstraint:
+      return os << "frcLef58SpacingWrongDirConstraint";
     case frConstraintTypeEnum::frcLef58CutClassConstraint:
       return os << "frcLef58CutClassConstraint";
     case frConstraintTypeEnum::frcNonSufficientMetalConstraint:
@@ -287,8 +265,45 @@ std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type)
       return os << "frcMetalWidthViaConstraint";
     case frConstraintTypeEnum::frcLef58AreaConstraint:
       return os << "frcLef58AreaConstraint";
+    case frConstraintTypeEnum::frcLef58KeepOutZoneConstraint:
+      return os << "frcLef58KeepOutZoneConstraint";
+    case frConstraintTypeEnum::frcSpacingRangeConstraint:
+      return os << "frcSpacingRangeConstraint";
+    case frConstraintTypeEnum::frcLef58TwoWiresForbiddenSpcConstraint:
+      return os << "frcLef58TwoWiresForbiddenSpcConstraint";
+    case frConstraintTypeEnum::frcLef58ForbiddenSpcConstraint:
+      return os << "frcLef58ForbiddenSpcConstraint";
+    case frConstraintTypeEnum::frcLef58EnclosureConstraint:
+      return os << "frcLef58EnclosureConstraint";
+    case frConstraintTypeEnum::frcLef58MaxSpacingConstraint:
+      return os << "frcLef58MaxSpacingConstraint";
+    case frConstraintTypeEnum::frcSpacingTableOrth:
+      return os << "frcSpacingTableOrth";
+    case frConstraintTypeEnum::frcLef58WidthTableOrth:
+      return os << "frcLef58WidthTableOrth";
   }
   return os << "Bad frConstraintTypeEnum";
 }
 
-}  // namespace fr
+std::ostream& operator<<(std::ostream& os, frDirEnum dir)
+{
+  switch (dir) {
+    case frDirEnum::UNKNOWN:
+      return os << "Unknown";
+    case frDirEnum::D:
+      return os << 'D';
+    case frDirEnum::S:
+      return os << 'S';
+    case frDirEnum::W:
+      return os << 'W';
+    case frDirEnum::E:
+      return os << 'E';
+    case frDirEnum::N:
+      return os << 'N';
+    case frDirEnum::U:
+      return os << 'U';
+  }
+  return os << "Bad frDirEnum";
+}
+
+}  // namespace drt

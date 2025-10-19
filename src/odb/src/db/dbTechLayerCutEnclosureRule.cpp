@@ -1,300 +1,163 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbTechLayerCutEnclosureRule.h"
 
-#include "db.h"
+#include <cstdint>
+#include <cstring>
+
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "dbTechLayerCutClassRule.h"
-// User Code Begin Includes
-// User Code End Includes
+#include "odb/db.h"
 namespace odb {
-
 template class dbTable<_dbTechLayerCutEnclosureRule>;
 
 bool _dbTechLayerCutEnclosureRule::operator==(
     const _dbTechLayerCutEnclosureRule& rhs) const
 {
-  if (flags_.type_ != rhs.flags_.type_)
+  if (flags_.type_ != rhs.flags_.type_) {
     return false;
-
-  if (flags_.cut_class_valid_ != rhs.flags_.cut_class_valid_)
+  }
+  if (flags_.cut_class_valid_ != rhs.flags_.cut_class_valid_) {
     return false;
-
-  if (flags_.above_ != rhs.flags_.above_)
+  }
+  if (flags_.above_ != rhs.flags_.above_) {
     return false;
-
-  if (flags_.below_ != rhs.flags_.below_)
+  }
+  if (flags_.below_ != rhs.flags_.below_) {
     return false;
-
-  if (flags_.eol_min_length_valid_ != rhs.flags_.eol_min_length_valid_)
+  }
+  if (flags_.eol_min_length_valid_ != rhs.flags_.eol_min_length_valid_) {
     return false;
-
-  if (flags_.eol_only_ != rhs.flags_.eol_only_)
+  }
+  if (flags_.eol_only_ != rhs.flags_.eol_only_) {
     return false;
-
-  if (flags_.short_edge_only_ != rhs.flags_.short_edge_only_)
+  }
+  if (flags_.short_edge_on_eol_ != rhs.flags_.short_edge_on_eol_) {
     return false;
-
-  if (flags_.side_spacing_valid_ != rhs.flags_.side_spacing_valid_)
+  }
+  if (flags_.side_spacing_valid_ != rhs.flags_.side_spacing_valid_) {
     return false;
-
-  if (flags_.end_spacing_valid_ != rhs.flags_.end_spacing_valid_)
+  }
+  if (flags_.end_spacing_valid_ != rhs.flags_.end_spacing_valid_) {
     return false;
-
-  if (flags_.off_center_line_ != rhs.flags_.off_center_line_)
+  }
+  if (flags_.off_center_line_ != rhs.flags_.off_center_line_) {
     return false;
-
-  if (flags_.width_valid_ != rhs.flags_.width_valid_)
+  }
+  if (flags_.width_valid_ != rhs.flags_.width_valid_) {
     return false;
-
-  if (flags_.include_abutted_ != rhs.flags_.include_abutted_)
+  }
+  if (flags_.include_abutted_ != rhs.flags_.include_abutted_) {
     return false;
-
-  if (flags_.except_extra_cut_ != rhs.flags_.except_extra_cut_)
+  }
+  if (flags_.except_extra_cut_ != rhs.flags_.except_extra_cut_) {
     return false;
-
-  if (flags_.prl_ != rhs.flags_.prl_)
+  }
+  if (flags_.prl_ != rhs.flags_.prl_) {
     return false;
-
-  if (flags_.no_shared_edge_ != rhs.flags_.no_shared_edge_)
+  }
+  if (flags_.no_shared_edge_ != rhs.flags_.no_shared_edge_) {
     return false;
-
-  if (flags_.length_valid_ != rhs.flags_.length_valid_)
+  }
+  if (flags_.length_valid_ != rhs.flags_.length_valid_) {
     return false;
-
-  if (flags_.extra_cut_valid_ != rhs.flags_.extra_cut_valid_)
+  }
+  if (flags_.extra_cut_valid_ != rhs.flags_.extra_cut_valid_) {
     return false;
-
-  if (flags_.extra_only != rhs.flags_.extra_only)
+  }
+  if (flags_.extra_only != rhs.flags_.extra_only) {
     return false;
-
-  if (flags_.redundant_cut_valid_ != rhs.flags_.redundant_cut_valid_)
+  }
+  if (flags_.redundant_cut_valid_ != rhs.flags_.redundant_cut_valid_) {
     return false;
-
-  if (flags_.parallel_valid_ != rhs.flags_.parallel_valid_)
+  }
+  if (flags_.parallel_valid_ != rhs.flags_.parallel_valid_) {
     return false;
-
-  if (flags_.second_parallel_valid != rhs.flags_.second_parallel_valid)
+  }
+  if (flags_.second_parallel_valid != rhs.flags_.second_parallel_valid) {
     return false;
-
-  if (flags_.second_par_within_valid_ != rhs.flags_.second_par_within_valid_)
+  }
+  if (flags_.second_par_within_valid_ != rhs.flags_.second_par_within_valid_) {
     return false;
-
-  if (flags_.below_enclosure_valid_ != rhs.flags_.below_enclosure_valid_)
+  }
+  if (flags_.below_enclosure_valid_ != rhs.flags_.below_enclosure_valid_) {
     return false;
-
-  if (flags_.concave_corners_valid_ != rhs.flags_.concave_corners_valid_)
+  }
+  if (flags_.concave_corners_valid_ != rhs.flags_.concave_corners_valid_) {
     return false;
-
-  if (cut_class_ != rhs.cut_class_)
+  }
+  if (cut_class_ != rhs.cut_class_) {
     return false;
-
-  if (eol_width_ != rhs.eol_width_)
+  }
+  if (eol_width_ != rhs.eol_width_) {
     return false;
-
-  if (eol_min_length_ != rhs.eol_min_length_)
+  }
+  if (eol_min_length_ != rhs.eol_min_length_) {
     return false;
-
-  if (first_overhang_ != rhs.first_overhang_)
+  }
+  if (first_overhang_ != rhs.first_overhang_) {
     return false;
-
-  if (second_overhang_ != rhs.second_overhang_)
+  }
+  if (second_overhang_ != rhs.second_overhang_) {
     return false;
-
-  if (spacing_ != rhs.spacing_)
+  }
+  if (spacing_ != rhs.spacing_) {
     return false;
-
-  if (extension_ != rhs.extension_)
+  }
+  if (extension_ != rhs.extension_) {
     return false;
-
-  if (forward_extension_ != rhs.forward_extension_)
+  }
+  if (forward_extension_ != rhs.forward_extension_) {
     return false;
-
-  if (backward_extension_ != rhs.backward_extension_)
+  }
+  if (backward_extension_ != rhs.backward_extension_) {
     return false;
-
-  if (min_width_ != rhs.min_width_)
+  }
+  if (min_width_ != rhs.min_width_) {
     return false;
-
-  if (cut_within_ != rhs.cut_within_)
+  }
+  if (cut_within_ != rhs.cut_within_) {
     return false;
-
-  if (min_length_ != rhs.min_length_)
+  }
+  if (min_length_ != rhs.min_length_) {
     return false;
-
-  if (par_length_ != rhs.par_length_)
+  }
+  if (par_length_ != rhs.par_length_) {
     return false;
-
-  if (second_par_length_ != rhs.second_par_length_)
+  }
+  if (second_par_length_ != rhs.second_par_length_) {
     return false;
-
-  if (par_within_ != rhs.par_within_)
+  }
+  if (par_within_ != rhs.par_within_) {
     return false;
-
-  if (second_par_within_ != rhs.second_par_within_)
+  }
+  if (second_par_within_ != rhs.second_par_within_) {
     return false;
-
-  if (below_enclosure_ != rhs.below_enclosure_)
+  }
+  if (below_enclosure_ != rhs.below_enclosure_) {
     return false;
-
-  if (num_corners_ != rhs.num_corners_)
+  }
+  if (num_corners_ != rhs.num_corners_) {
     return false;
+  }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbTechLayerCutEnclosureRule::operator<(
     const _dbTechLayerCutEnclosureRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
-void _dbTechLayerCutEnclosureRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerCutEnclosureRule& rhs) const
-{
-  DIFF_BEGIN
 
-  DIFF_FIELD(flags_.type_);
-  DIFF_FIELD(flags_.cut_class_valid_);
-  DIFF_FIELD(flags_.above_);
-  DIFF_FIELD(flags_.below_);
-  DIFF_FIELD(flags_.eol_min_length_valid_);
-  DIFF_FIELD(flags_.eol_only_);
-  DIFF_FIELD(flags_.short_edge_only_);
-  DIFF_FIELD(flags_.side_spacing_valid_);
-  DIFF_FIELD(flags_.end_spacing_valid_);
-  DIFF_FIELD(flags_.off_center_line_);
-  DIFF_FIELD(flags_.width_valid_);
-  DIFF_FIELD(flags_.include_abutted_);
-  DIFF_FIELD(flags_.except_extra_cut_);
-  DIFF_FIELD(flags_.prl_);
-  DIFF_FIELD(flags_.no_shared_edge_);
-  DIFF_FIELD(flags_.length_valid_);
-  DIFF_FIELD(flags_.extra_cut_valid_);
-  DIFF_FIELD(flags_.extra_only);
-  DIFF_FIELD(flags_.redundant_cut_valid_);
-  DIFF_FIELD(flags_.parallel_valid_);
-  DIFF_FIELD(flags_.second_parallel_valid);
-  DIFF_FIELD(flags_.second_par_within_valid_);
-  DIFF_FIELD(flags_.below_enclosure_valid_);
-  DIFF_FIELD(flags_.concave_corners_valid_);
-  DIFF_FIELD(cut_class_);
-  DIFF_FIELD(eol_width_);
-  DIFF_FIELD(eol_min_length_);
-  DIFF_FIELD(first_overhang_);
-  DIFF_FIELD(second_overhang_);
-  DIFF_FIELD(spacing_);
-  DIFF_FIELD(extension_);
-  DIFF_FIELD(forward_extension_);
-  DIFF_FIELD(backward_extension_);
-  DIFF_FIELD(min_width_);
-  DIFF_FIELD(cut_within_);
-  DIFF_FIELD(min_length_);
-  DIFF_FIELD(par_length_);
-  DIFF_FIELD(second_par_length_);
-  DIFF_FIELD(par_within_);
-  DIFF_FIELD(second_par_within_);
-  DIFF_FIELD(below_enclosure_);
-  DIFF_FIELD(num_corners_);
-  // User Code Begin Differences
-  // User Code End Differences
-  DIFF_END
-}
-void _dbTechLayerCutEnclosureRule::out(dbDiff& diff,
-                                       char side,
-                                       const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.type_);
-  DIFF_OUT_FIELD(flags_.cut_class_valid_);
-  DIFF_OUT_FIELD(flags_.above_);
-  DIFF_OUT_FIELD(flags_.below_);
-  DIFF_OUT_FIELD(flags_.eol_min_length_valid_);
-  DIFF_OUT_FIELD(flags_.eol_only_);
-  DIFF_OUT_FIELD(flags_.short_edge_only_);
-  DIFF_OUT_FIELD(flags_.side_spacing_valid_);
-  DIFF_OUT_FIELD(flags_.end_spacing_valid_);
-  DIFF_OUT_FIELD(flags_.off_center_line_);
-  DIFF_OUT_FIELD(flags_.width_valid_);
-  DIFF_OUT_FIELD(flags_.include_abutted_);
-  DIFF_OUT_FIELD(flags_.except_extra_cut_);
-  DIFF_OUT_FIELD(flags_.prl_);
-  DIFF_OUT_FIELD(flags_.no_shared_edge_);
-  DIFF_OUT_FIELD(flags_.length_valid_);
-  DIFF_OUT_FIELD(flags_.extra_cut_valid_);
-  DIFF_OUT_FIELD(flags_.extra_only);
-  DIFF_OUT_FIELD(flags_.redundant_cut_valid_);
-  DIFF_OUT_FIELD(flags_.parallel_valid_);
-  DIFF_OUT_FIELD(flags_.second_parallel_valid);
-  DIFF_OUT_FIELD(flags_.second_par_within_valid_);
-  DIFF_OUT_FIELD(flags_.below_enclosure_valid_);
-  DIFF_OUT_FIELD(flags_.concave_corners_valid_);
-  DIFF_OUT_FIELD(cut_class_);
-  DIFF_OUT_FIELD(eol_width_);
-  DIFF_OUT_FIELD(eol_min_length_);
-  DIFF_OUT_FIELD(first_overhang_);
-  DIFF_OUT_FIELD(second_overhang_);
-  DIFF_OUT_FIELD(spacing_);
-  DIFF_OUT_FIELD(extension_);
-  DIFF_OUT_FIELD(forward_extension_);
-  DIFF_OUT_FIELD(backward_extension_);
-  DIFF_OUT_FIELD(min_width_);
-  DIFF_OUT_FIELD(cut_within_);
-  DIFF_OUT_FIELD(min_length_);
-  DIFF_OUT_FIELD(par_length_);
-  DIFF_OUT_FIELD(second_par_length_);
-  DIFF_OUT_FIELD(par_within_);
-  DIFF_OUT_FIELD(second_par_within_);
-  DIFF_OUT_FIELD(below_enclosure_);
-  DIFF_OUT_FIELD(num_corners_);
-
-  // User Code Begin Out
-  // User Code End Out
-  DIFF_END
-}
 _dbTechLayerCutEnclosureRule::_dbTechLayerCutEnclosureRule(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   eol_width_ = 0;
   eol_min_length_ = 0;
   first_overhang_ = 0;
@@ -312,64 +175,14 @@ _dbTechLayerCutEnclosureRule::_dbTechLayerCutEnclosureRule(_dbDatabase* db)
   second_par_within_ = 0;
   below_enclosure_ = 0;
   num_corners_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
-}
-_dbTechLayerCutEnclosureRule::_dbTechLayerCutEnclosureRule(
-    _dbDatabase* db,
-    const _dbTechLayerCutEnclosureRule& r)
-{
-  flags_.type_ = r.flags_.type_;
-  flags_.cut_class_valid_ = r.flags_.cut_class_valid_;
-  flags_.above_ = r.flags_.above_;
-  flags_.below_ = r.flags_.below_;
-  flags_.eol_min_length_valid_ = r.flags_.eol_min_length_valid_;
-  flags_.eol_only_ = r.flags_.eol_only_;
-  flags_.short_edge_only_ = r.flags_.short_edge_only_;
-  flags_.side_spacing_valid_ = r.flags_.side_spacing_valid_;
-  flags_.end_spacing_valid_ = r.flags_.end_spacing_valid_;
-  flags_.off_center_line_ = r.flags_.off_center_line_;
-  flags_.width_valid_ = r.flags_.width_valid_;
-  flags_.include_abutted_ = r.flags_.include_abutted_;
-  flags_.except_extra_cut_ = r.flags_.except_extra_cut_;
-  flags_.prl_ = r.flags_.prl_;
-  flags_.no_shared_edge_ = r.flags_.no_shared_edge_;
-  flags_.length_valid_ = r.flags_.length_valid_;
-  flags_.extra_cut_valid_ = r.flags_.extra_cut_valid_;
-  flags_.extra_only = r.flags_.extra_only;
-  flags_.redundant_cut_valid_ = r.flags_.redundant_cut_valid_;
-  flags_.parallel_valid_ = r.flags_.parallel_valid_;
-  flags_.second_parallel_valid = r.flags_.second_parallel_valid;
-  flags_.second_par_within_valid_ = r.flags_.second_par_within_valid_;
-  flags_.below_enclosure_valid_ = r.flags_.below_enclosure_valid_;
-  flags_.concave_corners_valid_ = r.flags_.concave_corners_valid_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  cut_class_ = r.cut_class_;
-  eol_width_ = r.eol_width_;
-  eol_min_length_ = r.eol_min_length_;
-  first_overhang_ = r.first_overhang_;
-  second_overhang_ = r.second_overhang_;
-  spacing_ = r.spacing_;
-  extension_ = r.extension_;
-  forward_extension_ = r.forward_extension_;
-  backward_extension_ = r.backward_extension_;
-  min_width_ = r.min_width_;
-  cut_within_ = r.cut_within_;
-  min_length_ = r.min_length_;
-  par_length_ = r.par_length_;
-  second_par_length_ = r.second_par_length_;
-  par_within_ = r.par_within_;
-  second_par_within_ = r.second_par_within_;
-  below_enclosure_ = r.below_enclosure_;
-  num_corners_ = r.num_corners_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutEnclosureRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.cut_class_;
   stream >> obj.eol_width_;
   stream >> obj.eol_min_length_;
@@ -388,15 +201,16 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutEnclosureRule& obj)
   stream >> obj.second_par_within_;
   stream >> obj.below_enclosure_;
   stream >> obj.num_corners_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutEnclosureRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj.cut_class_;
   stream << obj.eol_width_;
   stream << obj.eol_min_length_;
@@ -415,19 +229,14 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.second_par_within_;
   stream << obj.below_enclosure_;
   stream << obj.num_corners_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
-_dbTechLayerCutEnclosureRule::~_dbTechLayerCutEnclosureRule()
+void _dbTechLayerCutEnclosureRule::collectMemInfo(MemInfo& info)
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
+  info.cnt++;
+  info.size += sizeof(*this);
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -446,8 +255,9 @@ void dbTechLayerCutEnclosureRule::setCutClass(
 dbTechLayerCutClassRule* dbTechLayerCutEnclosureRule::getCutClass() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
-  if (obj->cut_class_ == 0)
-    return NULL;
+  if (obj->cut_class_ == 0) {
+    return nullptr;
+  }
   _dbTechLayer* par = (_dbTechLayer*) obj->getOwner();
   return (dbTechLayerCutClassRule*) par->cut_class_rules_tbl_->getPtr(
       obj->cut_class_);
@@ -745,18 +555,18 @@ bool dbTechLayerCutEnclosureRule::isEolOnly() const
   return obj->flags_.eol_only_;
 }
 
-void dbTechLayerCutEnclosureRule::setShortEdgeOnly(bool short_edge_only)
+void dbTechLayerCutEnclosureRule::setShortEdgeOnEol(bool short_edge_on_eol)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.short_edge_only_ = short_edge_only;
+  obj->flags_.short_edge_on_eol_ = short_edge_on_eol;
 }
 
-bool dbTechLayerCutEnclosureRule::isShortEdgeOnly() const
+bool dbTechLayerCutEnclosureRule::isShortEdgeOnEol() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.short_edge_only_;
+  return obj->flags_.short_edge_on_eol_;
 }
 
 void dbTechLayerCutEnclosureRule::setSideSpacingValid(bool side_spacing_valid)
@@ -1040,4 +850,4 @@ void dbTechLayerCutEnclosureRule::destroy(dbTechLayerCutEnclosureRule* rule)
 }
 // User Code End dbTechLayerCutEnclosureRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

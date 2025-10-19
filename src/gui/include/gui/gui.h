@@ -1,54 +1,37 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #pragma once
 
-#include <string.h>
-
 #include <any>
 #include <array>
+#include <cstring>
 #include <functional>
 #include <initializer_list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <typeindex>
 #include <typeinfo>
 #include <unordered_map>
+#include <utility>
 #include <variant>
+#include <vector>
 
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/geom.h"
+
+struct Tcl_Interp;
+struct GifWriter;
+
+namespace sta {
+class dbSta;
+}
 
 namespace utl {
 class Logger;
@@ -56,7 +39,9 @@ class Logger;
 
 namespace gui {
 class HeatMapDataSource;
+class PinDensityDataSource;
 class PlacementDensityDataSource;
+class PowerDensityDataSource;
 class Painter;
 class Selected;
 class Options;
@@ -67,10 +52,20 @@ enum class Interpreter
   Python
 };
 
+struct GIF
+{
+  std::string filename;
+  std::unique_ptr<GifWriter> writer;
+  int height = -1;
+  int width = -1;
+};
+
 // A collection of selected objects
+
+// Only a finite set of highlight color is supported for now
+constexpr int kNumHighlightSet = 16;
 using SelectionSet = std::set<Selected>;
-using HighlightSet = std::array<SelectionSet, 8>;  // Only 8 Discrete Highlight
-                                                   // Color is supported for now
+using HighlightSet = std::array<SelectionSet, kNumHighlightSet>;
 
 using DBUToString = std::function<std::string(int, bool)>;
 using StringToDBU = std::function<int(const std::string&, bool*)>;
@@ -82,6 +77,19 @@ using StringToDBU = std::function<int(const std::string&, bool*)>;
 class Painter
 {
  public:
+  struct Font
+  {
+    Font(const std::string& name, int size) : name(name), size(size) {}
+
+    std::string name;
+    int size;
+
+    bool operator==(const Font& other) const
+    {
+      return (name == other.name) && (size == other.size);
+    }
+  };
+
   struct Color
   {
     constexpr Color() : r(0), g(0), b(0), a(255) {}
@@ -105,43 +113,59 @@ class Painter
     }
   };
 
-  static inline const Color black{0x00, 0x00, 0x00, 0xff};
-  static inline const Color white{0xff, 0xff, 0xff, 0xff};
-  static inline const Color dark_gray{0x80, 0x80, 0x80, 0xff};
-  static inline const Color gray{0xa0, 0xa0, 0xa4, 0xff};
-  static inline const Color light_gray{0xc0, 0xc0, 0xc0, 0xff};
-  static inline const Color red{0xff, 0x00, 0x00, 0xff};
-  static inline const Color green{0x00, 0xff, 0x00, 0xff};
-  static inline const Color blue{0x00, 0x00, 0xff, 0xff};
-  static inline const Color cyan{0x00, 0xff, 0xff, 0xff};
-  static inline const Color magenta{0xff, 0x00, 0xff, 0xff};
-  static inline const Color yellow{0xff, 0xff, 0x00, 0xff};
-  static inline const Color dark_red{0x80, 0x00, 0x00, 0xff};
-  static inline const Color dark_green{0x00, 0x80, 0x00, 0xff};
-  static inline const Color dark_blue{0x00, 0x00, 0x80, 0xff};
-  static inline const Color dark_cyan{0x00, 0x80, 0x80, 0xff};
-  static inline const Color dark_magenta{0x80, 0x00, 0x80, 0xff};
-  static inline const Color dark_yellow{0x80, 0x80, 0x00, 0xff};
-  static inline const Color transparent{0x00, 0x00, 0x00, 0x00};
+  static inline const Color kBlack{0x00, 0x00, 0x00, 0xff};
+  static inline const Color kWhite{0xff, 0xff, 0xff, 0xff};
+  static inline const Color kDarkGray{0x80, 0x80, 0x80, 0xff};
+  static inline const Color kGray{0xa0, 0xa0, 0xa4, 0xff};
+  static inline const Color kLightGray{0xc0, 0xc0, 0xc0, 0xff};
+  static inline const Color kRed{0xff, 0x00, 0x00, 0xff};
+  static inline const Color kGreen{0x00, 0xff, 0x00, 0xff};
+  static inline const Color kBlue{0x00, 0x00, 0xff, 0xff};
+  static inline const Color kCyan{0x00, 0xff, 0xff, 0xff};
+  static inline const Color kMagenta{0xff, 0x00, 0xff, 0xff};
+  static inline const Color kYellow{0xff, 0xff, 0x00, 0xff};
+  static inline const Color kDarkRed{0x80, 0x00, 0x00, 0xff};
+  static inline const Color kDarkGreen{0x00, 0x80, 0x00, 0xff};
+  static inline const Color kDarkBlue{0x00, 0x00, 0x80, 0xff};
+  static inline const Color kDarkCyan{0x00, 0x80, 0x80, 0xff};
+  static inline const Color kDarkMagenta{0x80, 0x00, 0x80, 0xff};
+  static inline const Color kDarkYellow{0x80, 0x80, 0x00, 0xff};
+  static inline const Color kOrange{0xff, 0xa5, 0x00, 0xff};
+  static inline const Color kPurple{0x80, 0x00, 0x80, 0xff};
+  static inline const Color kLime{0xbf, 0xff, 0x00, 0xff};
+  static inline const Color kTeal{0x00, 0x80, 0x80, 0xff};
+  static inline const Color kPink{0xff, 0xc0, 0xcb, 0xff};
+  static inline const Color kBrown{0x8b, 0x45, 0x13, 0xff};
+  static inline const Color kIndigo{0x4b, 0x00, 0x82, 0xff};
+  static inline const Color kTurquoise{0x40, 0xe0, 0xd0, 0xff};
+  static inline const Color kTransparent{0x00, 0x00, 0x00, 0x00};
 
-  static inline const std::array<Painter::Color, 8> highlightColors{
-      Color(Painter::green, 100),
-      Color(Painter::yellow, 100),
-      Color(Painter::cyan, 100),
-      Color(Painter::magenta, 100),
-      Color(Painter::red, 100),
-      Color(Painter::dark_green, 100),
-      Color(Painter::dark_magenta, 100),
-      Color(Painter::blue, 100)};
+  static std::map<std::string, Color> colors();
+  static Color stringToColor(const std::string& color, utl::Logger* logger);
+  static std::string colorToString(const Color& color);
+
+  static inline const std::array<Painter::Color, kNumHighlightSet>
+      kHighlightColors{Color(Painter::kGreen, 100),
+                       Color(Painter::kYellow, 100),
+                       Color(Painter::kCyan, 100),
+                       Color(Painter::kMagenta, 100),
+                       Color(Painter::kRed, 100),
+                       Color(Painter::kDarkGreen, 100),
+                       Color(Painter::kDarkMagenta, 100),
+                       Color(Painter::kBlue, 100),
+                       Color(Painter::kOrange, 100),
+                       Color(Painter::kPurple, 100),
+                       Color(Painter::kLime, 100),
+                       Color(Painter::kTeal, 100),
+                       Color(Painter::kPink, 100),
+                       Color(Painter::kBrown, 100),
+                       Color(Painter::kIndigo, 100),
+                       Color(Painter::kTurquoise, 100)};
 
   // The color to highlight in
-  static inline const Color highlight = yellow;
-  static inline const Color persistHighlight = yellow;
+  static inline const Color kHighlight = kYellow;
+  static inline const Color kPersistHighlight = kYellow;
 
-  Painter(Options* options, const odb::Rect& bounds, double pixels_per_dbu)
-      : options_(options), bounds_(bounds), pixels_per_dbu_(pixels_per_dbu)
-  {
-  }
   virtual ~Painter() = default;
 
   // Get the current pen color
@@ -162,18 +186,20 @@ class Painter
   // Set the brush to whatever the user has chosen for this layer
   enum Brush
   {
-    NONE,
-    SOLID,
-    DIAGONAL,
-    CROSS,
-    DOTS
+    kNone,
+    kSolid,
+    kDiagonal,
+    kCross,
+    kDots
   };
-  virtual void setBrush(const Color& color, const Brush& style = SOLID) = 0;
+  virtual void setBrush(const Color& color, const Brush& style = kSolid) = 0;
+
+  virtual void setFont(const Font& font) = 0;
 
   // Set the pen to an RGBA value and the brush
   void setPenAndBrush(const Color& color,
                       bool cosmetic = false,
-                      const Brush& style = SOLID,
+                      const Brush& style = kSolid,
                       int width = 1)
   {
     setPen(color, cosmetic, width);
@@ -191,11 +217,14 @@ class Painter
 
   // Draw a rect with coordinates in DBU with the current pen/brush; draws a
   // round rect if roundX > 0 or roundY > 0
-  virtual void drawRect(const odb::Rect& rect, int roundX = 0, int roundY = 0)
-      = 0;
+  virtual void drawRect(const odb::Rect& rect, int round_x, int round_y) = 0;
+
+  // Draw a rect with coordinates in DBU with the current pen/brush
+  void drawRect(const odb::Rect& rect) { drawRect(rect, 0, 0); }
 
   // Draw a line with coordinates in DBU with the current pen
   virtual void drawLine(const odb::Point& p1, const odb::Point& p2) = 0;
+  void drawLine(const odb::Line& line) { drawLine(line.pt0(), line.pt1()); }
 
   // Draw a circle with coordinates in DBU with the current pen
   virtual void drawCircle(int x, int y, int r) = 0;
@@ -205,33 +234,37 @@ class Painter
   // height of the X.
   virtual void drawX(int x, int y, int size) = 0;
 
+  virtual void drawPolygon(const odb::Polygon& polygon) = 0;
   virtual void drawPolygon(const std::vector<odb::Point>& points) = 0;
 
   enum Anchor
   {
     // four corners
-    BOTTOM_LEFT,
-    BOTTOM_RIGHT,
-    TOP_LEFT,
-    TOP_RIGHT,
+    kBottomLeft,
+    kBottomRight,
+    kTopLeft,
+    kTopRight,
 
     // centers
-    CENTER,
-    BOTTOM_CENTER,
-    TOP_CENTER,
-    LEFT_CENTER,
-    RIGHT_CENTER
+    kCenter,
+    kBottomCenter,
+    kTopCenter,
+    kLeftCenter,
+    kRightCenter
   };
+  static std::map<std::string, Anchor> anchors();
+  static Anchor stringToAnchor(const std::string& anchor, utl::Logger* logger);
+  static std::string anchorToString(const Anchor& anchor);
   virtual void drawString(int x,
                           int y,
                           Anchor anchor,
                           const std::string& s,
                           bool rotate_90 = false)
       = 0;
-  virtual const odb::Rect stringBoundaries(int x,
-                                           int y,
-                                           Anchor anchor,
-                                           const std::string& s)
+  virtual odb::Rect stringBoundaries(int x,
+                                     int y,
+                                     Anchor anchor,
+                                     const std::string& s)
       = 0;
 
   virtual void drawRuler(int x0,
@@ -248,9 +281,15 @@ class Painter
     drawLine(odb::Point(xl, yl), odb::Point(xh, yh));
   }
 
-  inline double getPixelsPerDBU() { return pixels_per_dbu_; }
-  inline Options* getOptions() { return options_; }
-  inline const odb::Rect& getBounds() { return bounds_; }
+  double getPixelsPerDBU() { return pixels_per_dbu_; }
+  Options* getOptions() { return options_; }
+  const odb::Rect& getBounds() { return bounds_; }
+
+ protected:
+  Painter(Options* options, const odb::Rect& bounds, double pixels_per_dbu)
+      : options_(options), bounds_(bounds), pixels_per_dbu_(pixels_per_dbu)
+  {
+  }
 
  private:
   Options* options_;
@@ -266,22 +305,24 @@ class Descriptor
 {
  public:
   virtual ~Descriptor() = default;
-  virtual std::string getName(std::any object) const = 0;
-  virtual std::string getShortName(std::any object) const
+  virtual std::string getName(const std::any& object) const = 0;
+  virtual std::string getShortName(const std::any& object) const
   {
     return getName(object);
   }
   virtual std::string getTypeName() const = 0;
-  virtual std::string getTypeName(std::any /* object */) const
+  virtual std::string getTypeName(const std::any& /* object */) const
   {
     return getTypeName();
   }
-  virtual bool getBBox(std::any object, odb::Rect& bbox) const = 0;
+  virtual bool getBBox(const std::any& object, odb::Rect& bbox) const = 0;
 
-  virtual bool isInst(std::any /* object */) const { return false; }
-  virtual bool isNet(std::any /* object */) const { return false; }
+  virtual bool isInst(const std::any& /* object */) const { return false; }
+  virtual bool isNet(const std::any& /* object */) const { return false; }
 
-  virtual bool getAllObjects(SelectionSet& /* objects */) const = 0;
+  virtual void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const
+      = 0;
 
   // A property is a name and a value.
   struct Property
@@ -300,14 +341,14 @@ class Descriptor
 
   // An action is a name and a callback function, the function should return
   // the next object to select (when deleting the object just return Selected())
-  using ActionCallback = std::function<Selected(void)>;
+  using ActionCallback = std::function<Selected()>;
   struct Action
   {
     std::string name;
     ActionCallback callback;
   };
   using Actions = std::vector<Action>;
-  static constexpr std::string_view deselect_action_ = "deselect";
+  static constexpr std::string_view kDeselectAction = "deselect";
 
   // An editor is a callback function and a list of possible values (this can be
   // empty), the name of the editor should match the property it modifies the
@@ -317,7 +358,7 @@ class Descriptor
     std::string name;
     std::any value;
   };
-  using EditorCallback = std::function<bool(std::any)>;
+  using EditorCallback = std::function<bool(const std::any&)>;
   struct Editor
   {
     EditorCallback callback;
@@ -325,28 +366,41 @@ class Descriptor
   };
   using Editors = std::map<std::string, Editor>;
 
-  virtual Properties getProperties(std::any object) const = 0;
-  virtual Actions getActions(std::any /* object */) const { return Actions(); }
-  virtual Editors getEditors(std::any /* object */) const { return Editors(); }
+  virtual Properties getProperties(const std::any& object) const = 0;
+  virtual Actions getActions(const std::any& /* object */) const
+  {
+    return Actions();
+  }
+  virtual Editors getEditors(const std::any& /* object */) const
+  {
+    return Editors();
+  }
 
-  virtual Selected makeSelected(std::any object) const = 0;
+  virtual Selected makeSelected(const std::any& object) const = 0;
 
-  virtual bool lessThan(std::any l, std::any r) const = 0;
+  virtual bool lessThan(const std::any& l, const std::any& r) const = 0;
 
-  static const Editor makeEditor(const EditorCallback& func,
-                                 const std::vector<EditorOption>& options)
+  static Editor makeEditor(const EditorCallback& func,
+                           const std::vector<EditorOption>& options)
   {
     return {func, options};
   }
-  static const Editor makeEditor(const EditorCallback& func)
+  static Editor makeEditor(const EditorCallback& func)
   {
     return makeEditor(func, {});
   }
 
   // The caller (Selected and Renderers) will pre-configure the Painter's pen
   // and brush before calling.
-  virtual void highlight(std::any object, Painter& painter) const = 0;
-  virtual bool isSlowHighlight(std::any /* object */) const { return false; }
+  virtual void highlight(const std::any& object, Painter& painter) const = 0;
+  virtual bool isSlowHighlight(const std::any& /* object */) const
+  {
+    return false;
+  }
+
+  static std::string convertUnits(double value,
+                                  bool area = false,
+                                  int digits = 3);
 };
 
 // An object selected in the gui.  The object is stored as a
@@ -357,10 +411,10 @@ class Selected
 {
  public:
   // Null case
-  Selected() : object_({}), descriptor_(nullptr) {}
+  Selected() = default;
 
   Selected(std::any object, const Descriptor* descriptor)
-      : object_(object), descriptor_(descriptor)
+      : object_(std::move(object)), descriptor_(descriptor)
   {
   }
 
@@ -377,17 +431,17 @@ class Selected
 
   bool isInst() const { return descriptor_->isInst(object_); }
   bool isNet() const { return descriptor_->isNet(object_); }
-  std::any getObject() const { return object_; }
+  const std::any& getObject() const { return object_; }
 
   // If the select_flag is false, the drawing will happen in highlight mode.
   // Highlight shapes are persistent which will not get removed from
   // highlightSet, if the user clicks on layout view as in case of selectionSet
   void highlight(Painter& painter,
-                 const Painter::Color& pen = Painter::persistHighlight,
+                 const Painter::Color& pen = Painter::kPersistHighlight,
                  int pen_width = 0,
-                 const Painter::Color& brush = Painter::transparent,
+                 const Painter::Color& brush = Painter::kTransparent,
                  const Painter::Brush& brush_style
-                 = Painter::Brush::SOLID) const;
+                 = Painter::Brush::kSolid) const;
   bool isSlowHighlight() const { return descriptor_->isSlowHighlight(object_); }
 
   Descriptor::Properties getProperties() const;
@@ -429,7 +483,7 @@ class Selected
 
  private:
   std::any object_;
-  const Descriptor* descriptor_;
+  const Descriptor* descriptor_{nullptr};
 };
 
 // This is an interface for classes that wish to be called to render
@@ -470,7 +524,7 @@ class Renderer
   // Used to register display controls for this renderer.
   // DisplayControls is a map with the name of the control and the initial
   // setting for the control
-  using DisplayControlCallback = std::function<void(void)>;
+  using DisplayControlCallback = std::function<void()>;
   struct DisplayControl
   {
     bool visibility;
@@ -485,10 +539,10 @@ class Renderer
   // Used to set the value of the display control
   void setDisplayControl(const std::string& name, bool value);
 
-  virtual const std::string getSettingsGroupName() { return ""; }
+  virtual std::string getSettingsGroupName() { return ""; }
   using Setting = std::variant<bool, int, double, std::string>;
   using Settings = std::map<std::string, Setting>;
-  virtual const Settings getSettings();
+  virtual Settings getSettings();
   virtual void setSettings(const Settings& settings);
 
   template <typename T>
@@ -497,7 +551,11 @@ class Renderer
                          T& value)
   {
     if (settings.count(key) == 1) {
-      value = std::get<T>(settings.at(key));
+      try {
+        value = std::get<T>(settings.at(key));
+      } catch (const std::bad_variant_access&) {
+        // Stay with current value
+      }
     }
   }
 
@@ -528,8 +586,29 @@ class SpectrumGenerator
       const std::vector<std::pair<int, std::string>>& legend_key) const;
 
  private:
-  static const unsigned char spectrum_[256][3];
+  static const unsigned char kSpectrum[256][3];
   double scale_;
+};
+
+// A chart with a single X axis and potentially multiple Y axes
+class Chart
+{
+ public:
+  virtual ~Chart() = default;
+
+  // printf-style format string
+  virtual void setXAxisFormat(const std::string& format) = 0;
+  // printf-style format.  An empty string is a no-op placeholder
+  virtual void setYAxisFormats(const std::vector<std::string>& formats) = 0;
+  virtual void setYAxisMin(const std::vector<std::optional<double>>& mins) = 0;
+  // One y per series.  The order matches y_labels in addChart
+  virtual void addPoint(double x, const std::vector<double>& ys) = 0;
+  virtual void clearPoints() = 0;
+
+  virtual void addVerticalMarker(double x, const Painter::Color& color) = 0;
+
+ protected:
+  Chart() = default;
 };
 
 // This is the API for the rest of the program to interact with the
@@ -546,10 +625,10 @@ class Gui
 
   // Make a Selected any object in the gui.  It should have a descriptor
   // registered for its exact type to be useful.
-  Selected makeSelected(std::any object);
+  Selected makeSelected(const std::any& object);
 
   // Set the current selected object in the gui.
-  void setSelected(Selected selection);
+  void setSelected(const Selected& selection);
 
   void removeSelectedByType(const std::string& type);
 
@@ -574,7 +653,8 @@ class Gui
                                     bool output,
                                     bool input,
                                     int highlight_group = 0);
-
+  void selectHighlightConnectedBufferTrees(bool select_flag,
+                                           int highlight_group = 0);
   void addInstToHighlightSet(const char* name, int highlight_group = 0);
   void addNetToHighlightSet(const char* name, int highlight_group = 0);
 
@@ -582,6 +662,16 @@ class Gui
   int selectNext();
   int selectPrevious();
   void animateSelection(int repeat = 0);
+
+  std::string addLabel(int x,
+                       int y,
+                       const std::string& text,
+                       std::optional<Painter::Color> color = {},
+                       std::optional<int> size = {},
+                       std::optional<Painter::Anchor> anchor = {},
+                       const std::optional<std::string>& name = {});
+  void deleteLabel(const std::string& name);
+  void clearLabels();
 
   std::string addRuler(int x0,
                        int y0,
@@ -591,13 +681,15 @@ class Gui
                        const std::string& name = "",
                        bool euclidian = true);
   void deleteRuler(const std::string& name);
+  void clearRulers();
 
   void clearSelections();
   void clearHighlights(int highlight_group = 0);
-  void clearRulers();
 
   int select(const std::string& type,
              const std::string& name_filter = "",
+             const std::string& attribute = "",
+             const std::any& value = "",
              bool filter_case_sensitive = true,
              int highlight_group = -1);
 
@@ -613,16 +705,30 @@ class Gui
   // Save layout to an image file
   void saveImage(const std::string& filename,
                  const odb::Rect& region = odb::Rect(),
+                 int width_px = 0,
                  double dbu_per_pixel = 0,
                  const std::map<std::string, bool>& display_settings = {});
 
   // Save clock tree view
   void saveClockTreeImage(const std::string& clock_name,
-                          const std::string& filename);
+                          const std::string& filename,
+                          const std::string& corner = "",
+                          int width_px = 0,
+                          int height_px = 0);
+  void selectClockviewerClock(const std::string& clock_name,
+                              std::optional<int> depth);
+
+  // Save histogram view
+  void saveHistogramImage(const std::string& filename,
+                          const std::string& mode,
+                          int width_px = 0,
+                          int height_px = 0);
 
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);
   void setDisplayControlsSelectable(const std::string& name, bool value);
+  void setDisplayControlsColor(const std::string& name,
+                               const Painter::Color& color);
   // Get the visibility/selectability for a control in the 'Display Control'
   // panel.
   bool checkDisplayControlsVisible(const std::string& name);
@@ -640,36 +746,47 @@ class Gui
   void addRouteGuides(odb::dbNet* net);
   void removeRouteGuides(odb::dbNet* net);
   void clearRouteGuides();
+  // Used to add, remove and clear assigned tracks
+  void addNetTracks(odb::dbNet* net);
+  void removeNetTracks(odb::dbNet* net);
+  void clearNetTracks();
+
+  Chart* addChart(const std::string& name,
+                  const std::string& x_label,
+                  const std::vector<std::string>& y_labels);
 
   // show/hide widgets
   void showWidget(const std::string& name, bool show);
 
+  // trigger actions in the GUI
+  void triggerAction(const std::string& name);
+
   // adding custom buttons to toolbar
-  const std::string addToolbarButton(const std::string& name,
-                                     const std::string& text,
-                                     const std::string& script,
-                                     bool echo);
+  std::string addToolbarButton(const std::string& name,
+                               const std::string& text,
+                               const std::string& script,
+                               bool echo);
   void removeToolbarButton(const std::string& name);
 
   // adding custom menu items to menu bar
-  const std::string addMenuItem(const std::string& name,
-                                const std::string& path,
-                                const std::string& text,
-                                const std::string& script,
-                                const std::string& shortcut,
-                                bool echo);
+  std::string addMenuItem(const std::string& name,
+                          const std::string& path,
+                          const std::string& text,
+                          const std::string& script,
+                          const std::string& shortcut,
+                          bool echo);
   void removeMenuItem(const std::string& name);
 
   // request for user input
-  const std::string requestUserInput(const std::string& title,
-                                     const std::string& question);
+  std::string requestUserInput(const std::string& title,
+                               const std::string& question);
 
-  using odbTerm = std::variant<odb::dbITerm*, odb::dbBTerm*>;
-  void timingCone(odbTerm term, bool fanin, bool fanout);
-  void timingPathsThrough(const std::set<odbTerm>& terms);
+  using Term = std::variant<odb::dbITerm*, odb::dbBTerm*>;
+  void timingCone(Term term, bool fanin, bool fanout);
+  void timingPathsThrough(const std::set<Term>& terms);
 
-  // open DRC
-  void loadDRC(const std::string& filename);
+  // open markers
+  void selectMarkers(odb::dbMarkerCategory* markers);
 
   // Force an immediate redraw.
   void redraw();
@@ -692,7 +809,10 @@ class Gui
   // Called to show the gui and return to tcl command line
   void showGui(Interpreter interpreter,
                const std::string& cmds = "",
-               bool interactive = true);
+               bool interactive = true,
+               bool load_settings = true);
+  void minimize();
+  void unminimize();
 
   // set the system logger
   void setLogger(utl::Logger* logger);
@@ -707,10 +827,27 @@ class Gui
 
   const Selected& getInspectorSelection();
 
+  // GIF API
+  void gifStart(const std::string& filename);
+  void gifAddFrame(const odb::Rect& region = odb::Rect(),
+                   int width_px = 0,
+                   double dbu_per_pixel = 0,
+                   std::optional<int> delay = {});
+  void gifEnd();
+
   void setHeatMapSetting(const std::string& name,
                          const std::string& option,
                          const Renderer::Setting& value);
+  Renderer::Setting getHeatMapSetting(const std::string& name,
+                                      const std::string& option);
   void dumpHeatMap(const std::string& name, const std::string& file);
+
+  void setMainWindowTitle(const std::string& title);
+  std::string getMainWindowTitle();
+
+  void selectHelp(const std::string& item);
+  void selectChart(const std::string& name);
+  void updateTimingReport();
 
   // accessors for to add and remove commands needed to restore the state of the
   // gui
@@ -754,7 +891,7 @@ class Gui
   static bool enabled();
 
   // initialize the GUI
-  void init(odb::dbDatabase* db, utl::Logger* logger);
+  void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
 
  private:
   Gui();
@@ -764,14 +901,43 @@ class Gui
   const Descriptor* getDescriptor(const std::type_info& type) const;
   void unregisterDescriptor(const std::type_info& type);
 
+  bool filterSelectionProperties(const Descriptor::Properties& properties,
+                                 const std::string& attribute,
+                                 const std::any& value,
+                                 bool& is_valid_attribute);
+
   // flag to indicate if tcl should take over after gui closes
   bool continue_after_close_;
 
   utl::Logger* logger_;
   odb::dbDatabase* db_;
 
+  // There are RTTI implementation differences between libstdc++ and libc++,
+  // where the latter seems to generate multiple typeids for classes including
+  // but not limited to sta::Instance* in different compile units. We have been
+  // unable to remedy this.
+  //
+  // These classes are a workaround such that unless __GLIBCXX__ is set, hashing
+  // and comparing are done on the type's name instead, which adds a negligible
+  // performance penalty but has the distinct advantage of not crashing when an
+  // Instance is clicked in the GUI.
+  //
+  // In the event the RTTI issue is ever resolved, the following two structs may
+  // be removed.
+  struct TypeInfoHasher
+  {
+    std::size_t operator()(const std::type_index& x) const;
+  };
+  struct TypeInfoComparator
+  {
+    bool operator()(const std::type_index& a, const std::type_index& b) const;
+  };
+
   // Maps types to descriptors
-  std::unordered_map<std::type_index, std::unique_ptr<const Descriptor>>
+  std::unordered_map<std::type_index,
+                     std::unique_ptr<const Descriptor>,
+                     TypeInfoHasher,
+                     TypeInfoComparator>
       descriptors_;
   // Heatmaps
   std::set<HeatMapDataSource*> heat_maps_;
@@ -781,9 +947,16 @@ class Gui
 
   std::set<Renderer*> renderers_;
 
+  std::unique_ptr<PinDensityDataSource> pin_density_heat_map_;
   std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
+  std::unique_ptr<PowerDensityDataSource> power_density_heat_map_;
+
+  std::unique_ptr<GIF> gif_;
+  static constexpr int kDefaultGifDelay = 250;
 
   static Gui* singleton_;
+
+  std::string main_window_title_ = "OpenROAD";
 };
 
 // The main entry point
@@ -792,6 +965,8 @@ int startGui(int& argc,
              Interpreter interpreter,
              Tcl_Interp* interp,
              const std::string& script = "",
-             bool interactive = true);
+             bool interactive = true,
+             bool load_settings = true,
+             bool minimize = false);
 
 }  // namespace gui

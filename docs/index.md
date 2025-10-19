@@ -37,28 +37,36 @@ The paper is also available from [ACM Digital Library](https://dl.acm.org/doi/10
 Other publications and presentations are
 linked [here](https://theopenroadproject.org/publications/).
 
-## Code of conduct
-
-Please read our code of conduct [here](../CODE_OF_CONDUCT.md).
-
 ## Documentation
 
 The OpenROAD Project has two releases:
 
-### [Application](https://github.com/The-OpenROAD-Project/OpenROAD)
+- Application ([github](https://github.com/The-OpenROAD-Project/OpenROAD)) ([docs](main/README.md)): The application is a standalone binary for digital place and route that can be used by any other RTL-GDSII flow controller.
+- Flow ([github](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)) ([docs](https://openroad-flow-scripts.readthedocs.io/en/latest/)): This is the native OpenROAD flow that consists of a set of integrated scripts for an autonomous RTL-GDSII flow using OpenROAD and other open-source tools.
 
-The application is a standalone binary capable of performing RTL-to-GDSII SoC design,
-from logic synthesis and floorplanning through detailed routing with metal fill insertion,
-signoff parasitic extraction and timing analysis.
+## Supported Operating Systems
 
-See documentation for the application [here](../README.md).
+Note that depending on the installation method, we have varying levels of 
+support for various operating systems. 
 
-### [Flow](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
+Legend:
+- `Y` for supported.
+- `-` for unsupported.
 
-The flow is a set of integrated scripts that allow for RTL-to-GDSII flow
-using open-source tools.
+| Operating System | Local Installation | Prebuilt Binaries | Docker Installation | Windows Subsystem for Linux | 
+| --- | --- | --- | --- | --- |
+| Ubuntu 20.04 | `Y` | `Y` | `Y` | `-` |  
+| Ubuntu 22.04 | `Y` | `Y` | `Y` | `-` |
+| CentOS 8     | `Y` | `-` | `Y` | `-` |
+| Debian 11    | `Y` | `Y` | `Y` | `-` |
+| RHEL         | `Y` | `-` | `Y` | `-` |
+| Windows 10 and above | `-` | `-` | `Y` | `Y` |
+| macOS        | `Y` | `-` | `Y` | `-` |
 
-See documentation for the flow [here](https://openroad-flow-scripts.readthedocs.io/en/latest/).
+
+## Code of conduct
+
+Please read our code of conduct [here](main/CODE_OF_CONDUCT.md).
 
 ## How to contribute
 
@@ -68,6 +76,9 @@ If you are willing to **contribute**, see the
 If you are a **developer** with EDA background, learn more about how you
 can use OpenROAD as the infrastructure for your tools in the
 [Developer Guide](contrib/DeveloperGuide.md) section.
+
+OpenROAD uses Git for version control and contributions. 
+Get familiarised with a quickstart tutorial to contribution [here](contrib/GitGuide.md).
 
 ## How to get in touch
 
@@ -79,7 +90,7 @@ We maintain the following channels for communication:
     -   OpenROAD: <https://github.com/The-OpenROAD-Project/OpenROAD/issues>
 -   Discussions:
     -   OpenROAD: <https://github.com/The-OpenROAD-Project/OpenROAD/discussions>
--   Inquiries: openroad@eng.ucsd.edu
+-   Inquiries: openroad@ucsd.edu
 
 See also our [FAQs](user/FAQS.md).
 

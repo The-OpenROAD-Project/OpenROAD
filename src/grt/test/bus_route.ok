@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+[INFO ODB-0128] Design: test
+[INFO ODB-0130]     Created 30 pins.
+[INFO ODB-0133]     Created 15 nets and 0 connections.
+SUCCESS

@@ -16,7 +16,7 @@ add_pdn_stripe -followpins -layer metal1 -extend_to_core_ring
 add_pdn_stripe -layer metal4 -width 1.0 -pitch 5.0 -offset 2.5 -extend_to_core_ring -nets "VDD VSS"
 add_pdn_stripe -layer metal5 -width 1.0 -pitch 5.0 -offset 2.5 -extend_to_core_ring
 
-add_pdn_ring -grid "Core" -layers {metal5 metal6} -widths 2.0 -spacings 2.0 -core_offsets 2.0
+add_pdn_ring -grid "Core" -layers {metal5 metal6} -widths 2.0 -spacings 1.0 -core_offsets 1.0
 
 add_pdn_connect -layers {metal5 metal6}
 add_pdn_connect -layers {metal1 metal6}

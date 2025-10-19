@@ -1,87 +1,65 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "definComponent.h"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
 
-#include "db.h"
-#include "dbTransform.h"
+#include <cassert>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <vector>
+
 #include "defiComponent.hpp"
 #include "defiUtil.hpp"
+#include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/defin.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
+
 namespace odb {
 
 definComponent::definComponent()
 {
-  init();
+  _libs.clear();
+
+  MasterMap::iterator mitr;
+  for (mitr = _masters.begin(); mitr != _masters.end(); ++mitr) {
+    free((void*) (*mitr).first);
+  }
+
+  _masters.clear();
+
+  SiteMap::iterator sitr;
+
+  for (sitr = _sites.begin(); sitr != _sites.end(); ++sitr) {
+    free((void*) (*sitr).first);
+  }
+
+  _sites.clear();
+  _inst_cnt = 0;
+  _update_cnt = 0;
+  _iterm_cnt = 0;
+  _cur_inst = nullptr;
 }
 
 definComponent::~definComponent()
 {
   MasterMap::iterator mitr;
 
-  for (mitr = _masters.begin(); mitr != _masters.end(); ++mitr)
+  for (mitr = _masters.begin(); mitr != _masters.end(); ++mitr) {
     free((void*) (*mitr).first);
+  }
 
   SiteMap::iterator sitr;
 
-  for (sitr = _sites.begin(); sitr != _sites.end(); ++sitr)
+  for (sitr = _sites.begin(); sitr != _sites.end(); ++sitr) {
     free((void*) (*sitr).first);
-}
-
-void definComponent::init()
-{
-  definBase::init();
-  _libs.clear();
-
-  MasterMap::iterator mitr;
-  for (mitr = _masters.begin(); mitr != _masters.end(); ++mitr)
-    free((void*) (*mitr).first);
-
-  _masters.clear();
-
-  SiteMap::iterator sitr;
-
-  for (sitr = _sites.begin(); sitr != _sites.end(); ++sitr)
-    free((void*) (*sitr).first);
-
-  _sites.clear();
-  _inst_cnt = 0;
-  _update_cnt = 0;
-  _iterm_cnt = 0;
-  _cur_inst = NULL;
+  }
 }
 
 dbMaster* definComponent::getMaster(const char* name)
@@ -110,7 +88,7 @@ dbMaster* definComponent::getMaster(const char* name)
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 dbSite* definComponent::getSite(const char* name)
@@ -139,15 +117,15 @@ dbSite* definComponent::getSite(const char* name)
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 void definComponent::begin(const char* iname, const char* mname)
 {
-  assert(_cur_inst == NULL);
+  assert(_cur_inst == nullptr);
   dbMaster* master = getMaster(mname);
 
-  if (master == NULL) {
+  if (master == nullptr) {
     _logger->warn(
         utl::ODB,
         92,
@@ -175,15 +153,17 @@ void definComponent::begin(const char* iname, const char* mname)
       _errors++;
       return;
     }
-    if (_inst_cnt % 100000 == 0)
+    if (_inst_cnt % 100000 == 0) {
       _logger->info(utl::ODB, 94, "\t\tCreated {} Insts", _inst_cnt);
+    }
   }
 }
 
 void definComponent::placement(int status, int x, int y, int orient)
 {
-  if (_cur_inst == NULL)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   dbPlacementStatus placement_status;
   switch (status) {
@@ -241,89 +221,105 @@ void definComponent::placement(int status, int x, int y, int orient)
 
 void definComponent::halo(int left, int bottom, int right, int top)
 {
+  if (_cur_inst == nullptr) {
+    return;
+  }
+
   dbBox::create(
       _cur_inst, dbdist(left), dbdist(bottom), dbdist(right), dbdist(top));
 }
 
 void definComponent::region(const char* name)
 {
-  if (_cur_inst == NULL)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   dbRegion* region = _block->findRegion(name);
 
-  if (region == NULL)
+  if (region == nullptr) {
     region = dbRegion::create(_block, name);
-  else if (_mode != defin::DEFAULT && _cur_inst->getRegion() == region)
+  } else if (_mode != defin::DEFAULT && _cur_inst->getRegion() == region) {
     return;
+  }
 
   region->addInst(_cur_inst);
 }
 
 void definComponent::source(dbSourceType source)
 {
-  if (_cur_inst == NULL)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   _cur_inst->setSourceType(source);
 }
 
 void definComponent::weight(int weight)
 {
-  if (_cur_inst == NULL)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   _cur_inst->setWeight(weight);
 }
 
 void definComponent::property(const char* name, const char* value)
 {
-  if (_cur_inst == NULL)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_inst, name);
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbStringProperty::create(_cur_inst, name, value);
 }
 
 void definComponent::property(const char* name, int value)
 {
-  if (_cur_inst == NULL)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_inst, name);
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbIntProperty::create(_cur_inst, name, value);
 }
 
 void definComponent::property(const char* name, double value)
 {
-  if (_cur_inst == NULL)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_inst, name);
 
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbDoubleProperty::create(_cur_inst, name, value);
 }
 
 void definComponent::end()
 {
-  if (_cur_inst == NULL)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   dbSet<dbProperty> props = dbProperty::getProperties(_cur_inst);
 
-  if (!props.empty() && props.orderReversed())
+  if (!props.empty() && props.orderReversed()) {
     props.reverse();
+  }
 
-  _cur_inst = NULL;
+  _cur_inst = nullptr;
 }
 
 }  // namespace odb

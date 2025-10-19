@@ -13,4 +13,4 @@ set core_area {30 30 1770 1770}
 set slew_margin 15
 set cap_margin 20
 
-source -echo "flow.tcl"
+include -echo "flow.tcl"

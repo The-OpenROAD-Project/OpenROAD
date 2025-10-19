@@ -1,5 +1,6 @@
 import helpers  # only for setting logging
 
+
 def set_resistance(tech):
     layer = tech.getDB().getTech().findLayer
     layer("via1").setResistance(5)

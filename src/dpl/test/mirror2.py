@@ -5,7 +5,7 @@ import dpl_aux
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
 tech.readLef("extra.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("mirror2.def")
 
 dpl_aux.set_placement_padding(design, globl=True, left=1, right=1)

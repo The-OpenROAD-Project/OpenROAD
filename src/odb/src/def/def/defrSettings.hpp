@@ -1,6 +1,6 @@
 // *****************************************************************************
 // *****************************************************************************
-// Copyright 2013-2014, Cadence Design Systems
+// Copyright 2013-2019, Cadence Design Systems
 //
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
 // Distribution,  Product Version 5.8.
@@ -34,11 +34,15 @@
 #include <map>
 #include <string>
 
+#include "defiDefs.hpp"
+#include "defiKRDefs.hpp"
+#include "defiPropType.hpp"
 #include "defrReader.hpp"
 
 #define DEF_DEBUG_IDS 100
+#define defMaxOxides 32
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 struct defCompareCStrings
 {
@@ -48,7 +52,7 @@ struct defCompareCStrings
   }
 };
 
-typedef std::map<const char*, int, defCompareCStrings> defKeywordMap;
+using defKeywordMap = std::map<const char*, int, defCompareCStrings>;
 
 class defrSettings
 {
@@ -59,7 +63,7 @@ class defrSettings
 
   defKeywordMap Keyword_set;
 
-  int defiDeltaNumberLines;
+  int defiDeltaNumberLines{10000};
 
   ////////////////////////////////////
   //
@@ -67,66 +71,65 @@ class defrSettings
   //
   ////////////////////////////////////
 
-  int AssertionWarnings;
-  int BlockageWarnings;
-  int CaseSensitiveWarnings;
-  int ComponentWarnings;
-  int ConstraintWarnings;
-  int DefaultCapWarnings;
-  int FillWarnings;
-  int GcellGridWarnings;
-  int IOTimingWarnings;
-  int LogFileAppend;
-  int NetWarnings;
-  int NonDefaultWarnings;
-  int PinExtWarnings;
-  int PinWarnings;
-  int RegionWarnings;
-  int RowWarnings;
-  int TrackWarnings;
-  int ScanchainWarnings;
-  int SNetWarnings;
-  int StylesWarnings;
-  int UnitsWarnings;
-  int VersionWarnings;
-  int ViaWarnings;
+  int AssertionWarnings{999};
+  int BlockageWarnings{999};
+  int CaseSensitiveWarnings{999};
+  int ComponentWarnings{999};
+  int ConstraintWarnings{999};
+  int DefaultCapWarnings{999};
+  int FillWarnings{999};
+  int GcellGridWarnings{999};
+  int IOTimingWarnings{999};
+  int NetWarnings{999};
+  int NonDefaultWarnings{999};
+  int PinExtWarnings{999};
+  int PinWarnings{999};
+  int RegionWarnings{999};
+  int RowWarnings{999};
+  int TrackWarnings{999};
+  int ScanchainWarnings{999};
+  int SNetWarnings{999};
+  int StylesWarnings{999};
+  int UnitsWarnings{999};
+  int VersionWarnings{999};
+  int ViaWarnings{999};
 
-  int nDDMsgs;
-  int* disableDMsgs;
-  int totalDefMsgLimit;  // to save the user set total msg limit to output
-  int AddPathToNet;
-  int AllowComponentNets;
-  char CommentChar;
-  int DisPropStrProcess;
+  int nDDMsgs{0};
+  int* disableDMsgs{nullptr};
+  int totalDefMsgLimit{0};  // to save the user set total msg limit to output
+  int AddPathToNet{0};
+  int AllowComponentNets{0};
+  char CommentChar{'#'};
 
-  int reader_case_sensitive_set;
-
-  DEFI_READ_FUNCTION ReadFunction;
-  DEFI_LOG_FUNCTION ErrorLogFunction;
-  DEFI_WARNING_LOG_FUNCTION WarningLogFunction;
-  DEFI_CONTEXT_LOG_FUNCTION ContextErrorLogFunction;
-  DEFI_CONTEXT_WARNING_LOG_FUNCTION ContextWarningLogFunction;
-  DEFI_MAGIC_COMMENT_FOUND_FUNCTION MagicCommentFoundFunction;
-  DEFI_MALLOC_FUNCTION MallocFunction;
-  DEFI_REALLOC_FUNCTION ReallocFunction;
-  DEFI_FREE_FUNCTION FreeFunction;
-  DEFI_LINE_NUMBER_FUNCTION LineNumberFunction;
-  DEFI_LONG_LINE_NUMBER_FUNCTION LongLineNumberFunction;
-  DEFI_CONTEXT_LINE_NUMBER_FUNCTION ContextLineNumberFunction;
-  DEFI_CONTEXT_LONG_LINE_NUMBER_FUNCTION ContextLongLineNumberFunction;
+  DEFI_READ_FUNCTION ReadFunction{nullptr};
+  DEFI_LOG_FUNCTION ErrorLogFunction{nullptr};
+  DEFI_WARNING_LOG_FUNCTION WarningLogFunction{nullptr};
+  DEFI_CONTEXT_LOG_FUNCTION ContextErrorLogFunction{nullptr};
+  DEFI_CONTEXT_WARNING_LOG_FUNCTION ContextWarningLogFunction{nullptr};
+  DEFI_MAGIC_COMMENT_FOUND_FUNCTION MagicCommentFoundFunction{nullptr};
+  DEFI_MALLOC_FUNCTION MallocFunction{nullptr};
+  DEFI_REALLOC_FUNCTION ReallocFunction{nullptr};
+  DEFI_FREE_FUNCTION FreeFunction{nullptr};
+  DEFI_LINE_NUMBER_FUNCTION LineNumberFunction{nullptr};
+  DEFI_LONG_LINE_NUMBER_FUNCTION LongLineNumberFunction{nullptr};
+  DEFI_CONTEXT_LINE_NUMBER_FUNCTION ContextLineNumberFunction{nullptr};
+  DEFI_CONTEXT_LONG_LINE_NUMBER_FUNCTION ContextLongLineNumberFunction{nullptr};
 
   int UnusedCallbacks[CBMAX];
   int MsgLimit[DEF_MSGS];
+  int reader_case_sensitive_set{0};
+  int DisPropStrProcess{0};
+  int LogFileAppend{0};
+
+  static const char* defOxides[defMaxOxides];
 };
 
 class defrSession
 {
  public:
-  defrSession();
-
-  char* FileName;
-  int reader_case_sensitive;
-  defiUserData UserData;
+  char* FileName{nullptr};
+  int reader_case_sensitive{0};
+  defiUserData UserData{nullptr};
 
   defiPropType CompProp;
   defiPropType CompPinProp;
@@ -139,6 +142,6 @@ class defrSession
   defiPropType SNetProp;
 };
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

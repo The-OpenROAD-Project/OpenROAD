@@ -1,115 +1,62 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbGuide.h"
 
-#include "db.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 // User Code Begin Includes
 #include "dbBlock.h"
+#include "dbJournal.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbGuide>;
 
 bool _dbGuide::operator==(const _dbGuide& rhs) const
 {
-  if (net_ != rhs.net_)
+  if (net_ != rhs.net_) {
     return false;
-
-  if (box_ != rhs.box_)
+  }
+  if (box_ != rhs.box_) {
     return false;
-
-  if (layer_ != rhs.layer_)
+  }
+  if (layer_ != rhs.layer_) {
     return false;
-
-  if (guide_next_ != rhs.guide_next_)
+  }
+  if (via_layer_ != rhs.via_layer_) {
     return false;
+  }
+  if (guide_next_ != rhs.guide_next_) {
+    return false;
+  }
+  if (is_congested_ != rhs.is_congested_) {
+    return false;
+  }
+  if (is_jumper_ != rhs.is_jumper_) {
+    return false;
+  }
+  if (is_connect_to_term_ != rhs.is_connect_to_term_) {
+    return false;
+  }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbGuide::operator<(const _dbGuide& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
-void _dbGuide::differences(dbDiff& diff,
-                           const char* field,
-                           const _dbGuide& rhs) const
-{
-  DIFF_BEGIN
 
-  DIFF_FIELD(net_);
-  DIFF_FIELD(box_);
-  DIFF_FIELD(layer_);
-  DIFF_FIELD(guide_next_);
-  // User Code Begin Differences
-  // User Code End Differences
-  DIFF_END
-}
-void _dbGuide::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(net_);
-  DIFF_OUT_FIELD(box_);
-  DIFF_OUT_FIELD(layer_);
-  DIFF_OUT_FIELD(guide_next_);
-
-  // User Code Begin Out
-  // User Code End Out
-  DIFF_END
-}
 _dbGuide::_dbGuide(_dbDatabase* db)
 {
-  // User Code Begin Constructor
-  // User Code End Constructor
-}
-_dbGuide::_dbGuide(_dbDatabase* db, const _dbGuide& r)
-{
-  net_ = r.net_;
-  box_ = r.box_;
-  layer_ = r.layer_;
-  guide_next_ = r.guide_next_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
+  is_congested_ = false;
+  is_jumper_ = false;
+  is_connect_to_term_ = false;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
@@ -117,30 +64,40 @@ dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
   stream >> obj.net_;
   stream >> obj.box_;
   stream >> obj.layer_;
+  if (obj.getDatabase()->isSchema(db_schema_db_guide_via_layer)) {
+    stream >> obj.via_layer_;
+  }
   stream >> obj.guide_next_;
-  // User Code Begin >>
-  // User Code End >>
+  if (obj.getDatabase()->isSchema(db_schema_db_guide_congested)) {
+    stream >> obj.is_congested_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_has_jumpers)) {
+    stream >> obj.is_jumper_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_guide_connected_to_term)) {
+    stream >> obj.is_connect_to_term_;
+  }
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
 {
   stream << obj.net_;
   stream << obj.box_;
   stream << obj.layer_;
+  stream << obj.via_layer_;
   stream << obj.guide_next_;
-  // User Code Begin <<
-  // User Code End <<
+  stream << obj.is_congested_;
+  stream << obj.is_jumper_;
+  stream << obj.is_connect_to_term_;
   return stream;
 }
 
-_dbGuide::~_dbGuide()
+void _dbGuide::collectMemInfo(MemInfo& info)
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
+  info.cnt++;
+  info.size += sizeof(*this);
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -163,6 +120,19 @@ dbTechLayer* dbGuide::getLayer() const
   return odb::dbTechLayer::getTechLayer(tech, obj->layer_);
 }
 
+dbTechLayer* dbGuide::getViaLayer() const
+{
+  _dbGuide* obj = (_dbGuide*) this;
+  auto tech = getDb()->getTech();
+  return odb::dbTechLayer::getTechLayer(tech, obj->via_layer_);
+}
+
+bool dbGuide::isCongested() const
+{
+  _dbGuide* obj = (_dbGuide*) this;
+  return obj->is_congested_;
+}
+
 dbNet* dbGuide::getNet() const
 {
   _dbGuide* obj = (_dbGuide*) this;
@@ -170,15 +140,37 @@ dbNet* dbGuide::getNet() const
   return (dbNet*) block->_net_tbl->getPtr(obj->net_);
 }
 
-dbGuide* dbGuide::create(dbNet* net, dbTechLayer* layer, Rect box)
+dbGuide* dbGuide::create(dbNet* net,
+                         dbTechLayer* layer,
+                         dbTechLayer* via_layer,
+                         Rect box,
+                         bool is_congested)
 {
   _dbNet* owner = (_dbNet*) net;
   _dbBlock* block = (_dbBlock*) owner->getOwner();
   _dbGuide* guide = block->_guide_tbl->create();
+
+  if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: create guide, layer {} box {}",
+               layer->getName(),
+               box);
+    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->pushParam(dbGuideObj);
+    block->_journal->pushParam(guide->getOID());
+    block->_journal->endAction();
+  }
+
   guide->layer_ = layer->getImpl()->getOID();
+  guide->via_layer_ = via_layer->getImpl()->getOID();
   guide->box_ = box;
   guide->net_ = owner->getId();
+  guide->is_congested_ = is_congested;
   guide->guide_next_ = owner->guides_;
+  guide->is_jumper_ = false;
   owner->guides_ = guide->getOID();
   return (dbGuide*) guide;
 }
@@ -195,16 +187,37 @@ void dbGuide::destroy(dbGuide* guide)
   _dbNet* net = (_dbNet*) guide->getNet();
   _dbGuide* _guide = (_dbGuide*) guide;
 
+  if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: destroy guide, id: {}",
+               guide->getId());
+    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->pushParam(dbGuideObj);
+    block->_journal->pushParam(net->getOID());
+    block->_journal->pushParam(_guide->box_.xMin());
+    block->_journal->pushParam(_guide->box_.yMin());
+    block->_journal->pushParam(_guide->box_.xMax());
+    block->_journal->pushParam(_guide->box_.yMax());
+    block->_journal->pushParam(_guide->layer_);
+    block->_journal->pushParam(_guide->via_layer_);
+    block->_journal->pushParam(_guide->is_congested_);
+    block->_journal->endAction();
+  }
+
   uint id = _guide->getOID();
   _dbGuide* prev = nullptr;
   uint cur = net->guides_;
   while (cur) {
     _dbGuide* c = block->_guide_tbl->getPtr(cur);
     if (cur == id) {
-      if (prev == nullptr)
+      if (prev == nullptr) {
         net->guides_ = _guide->guide_next_;
-      else
+      } else {
         prev->guide_next_ = _guide->guide_next_;
+      }
       break;
     }
     prev = c;
@@ -213,6 +226,48 @@ void dbGuide::destroy(dbGuide* guide)
 
   dbProperty::destroyProperties(guide);
   block->_guide_tbl->destroy((_dbGuide*) guide);
+}
+
+dbSet<dbGuide>::iterator dbGuide::destroy(dbSet<dbGuide>::iterator& itr)
+{
+  dbGuide* g = *itr;
+  dbSet<dbGuide>::iterator next = ++itr;
+  destroy(g);
+  return next;
+}
+
+bool dbGuide::isJumper() const
+{
+  bool is_jumper = false;
+  _dbGuide* guide = (_dbGuide*) this;
+  _dbDatabase* db = guide->getDatabase();
+  if (db->isSchema(db_schema_has_jumpers)) {
+    is_jumper = guide->is_jumper_;
+  }
+  return is_jumper;
+}
+
+void dbGuide::setIsJumper(bool jumper)
+{
+  _dbGuide* guide = (_dbGuide*) this;
+  _dbDatabase* db = guide->getDatabase();
+  if (db->isSchema(db_schema_has_jumpers)) {
+    guide->is_jumper_ = jumper;
+  }
+}
+
+bool dbGuide::isConnectedToTerm() const
+{
+  bool is_connected_to_term = false;
+  _dbGuide* guide = (_dbGuide*) this;
+  is_connected_to_term = guide->is_connect_to_term_;
+  return is_connected_to_term;
+}
+
+void dbGuide::setIsConnectedToTerm(bool is_connected)
+{
+  _dbGuide* guide = (_dbGuide*) this;
+  guide->is_connect_to_term_ = is_connected;
 }
 
 // User Code End dbGuidePublicMethods

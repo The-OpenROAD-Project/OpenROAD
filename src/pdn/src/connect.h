@@ -1,61 +1,33 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
 
-#include <fstream>
 #include <map>
+#include <memory>
 #include <set>
+#include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "shape.h"
-
-namespace odb {
-class dbVia;
-class dbTechViaGenerateRule;
-class dbTechLayer;
-class dbTechVia;
-class dbSWire;
-class Rect;
-}  // namespace odb
+#include "via.h"
 
 namespace pdn {
-
-class DbVia;
-class ViaGenerator;
 
 class Connect
 {
  public:
+  struct SplitCut
+  {
+    int pitch{0};
+    bool stagger{false};
+  };
+
   Connect(Grid* grid, odb::dbTechLayer* layer0, odb::dbTechLayer* layer1);
 
   void addFixedVia(odb::dbTechViaGenerateRule* via);
@@ -73,8 +45,9 @@ class Connect
 
   void setOnGrid(const std::vector<odb::dbTechLayer*>& layers);
 
-  void setSplitCuts(const std::map<odb::dbTechLayer*, int>& splits);
+  void setSplitCuts(const std::map<odb::dbTechLayer*, SplitCut>& splits);
   int getSplitCutPitch(odb::dbTechLayer* layer) const;
+  bool getSplitCutStagger(odb::dbTechLayer* layer) const;
 
   void report() const;
 
@@ -97,15 +70,15 @@ class Connect
   std::vector<odb::dbTechLayer*> getAllLayers() const;
   std::vector<odb::dbTechLayer*> getAllRoutingLayers() const;
   bool containsIntermediateLayer(odb::dbTechLayer* layer) const;
-  bool overlaps(const Connect* connect) const;
-  bool startsBelow(const Connect* connect) const;
+  bool overlaps(const Connect* other) const;
+  bool startsBelow(const Connect* other) const;
 
   bool appliesToVia(const ViaPtr& via) const;
 
   void makeVia(odb::dbSWire* wire,
                const ShapePtr& lower,
                const ShapePtr& upper,
-               odb::dbWireShapeType type,
+               const odb::dbWireShapeType& type,
                DbVia::ViaLayerShape& via_shapes);
 
   void setGrid(Grid* grid) { grid_ = grid; }
@@ -120,7 +93,7 @@ class Connect
   void addFailedVia(failedViaReason reason,
                     const odb::Rect& rect,
                     odb::dbNet* net);
-  void writeFailedVias(std::ofstream& file) const;
+  void recordFailedVias() const;
 
  private:
   Grid* grid_;
@@ -128,18 +101,18 @@ class Connect
   odb::dbTechLayer* layer1_;
   std::vector<odb::dbTechViaGenerateRule*> fixed_generate_vias_;
   std::vector<odb::dbTechVia*> fixed_tech_vias_;
-  int cut_pitch_x_;
-  int cut_pitch_y_;
+  int cut_pitch_x_ = 0;
+  int cut_pitch_y_ = 0;
 
-  int max_rows_;
-  int max_columns_;
+  int max_rows_ = 0;
+  int max_columns_ = 0;
 
   std::set<odb::dbTechLayer*> ongrid_;
-  std::map<odb::dbTechLayer*, int> split_cuts_;
+  std::map<odb::dbTechLayer*, SplitCut> split_cuts_;
 
   // map of built vias, where the key is the width and height of the via
   // intersection, and the value points of the associated via stack.
-  using ViaIndex = std::pair<int, int>;
+  using ViaIndex = std::tuple<odb::dbNet*, int, int>;
   std::map<ViaIndex, std::unique_ptr<DbGenerateStackedVia>> vias_;
   std::vector<odb::dbTechViaGenerateRule*> generate_via_rules_;
   std::vector<odb::dbTechVia*> tech_vias_;
@@ -151,6 +124,7 @@ class Connect
       failed_vias_;
 
   DbVia* makeSingleLayerVia(
+      odb::dbNet* net,
       odb::dbBlock* block,
       odb::dbTechLayer* lower,
       const std::set<odb::Rect>& lower_rects,
@@ -166,13 +140,14 @@ class Connect
   bool generateRuleContains(odb::dbTechViaGenerateRule* rule,
                             odb::dbTechLayer* lower,
                             odb::dbTechLayer* upper) const;
-  bool techViaContains(odb::dbTechVia* rule,
+  bool techViaContains(odb::dbTechVia* via,
                        odb::dbTechLayer* lower,
                        odb::dbTechLayer* upper) const;
 
-  int getSplitCut(odb::dbTechLayer* layer) const;
+  SplitCut getSplitCut(odb::dbTechLayer* layer) const;
 
   DbVia* generateDbVia(
+      odb::dbNet* net,
       const std::vector<std::shared_ptr<ViaGenerator>>& generators,
       odb::dbBlock* block) const;
 

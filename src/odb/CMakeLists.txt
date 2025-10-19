@@ -1,22 +1,11 @@
-############################################################################
-########################### Project Setup ##################################
-############################################################################
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2019-2025, The OpenROAD Authors
 
 # Setting CMake version properly to ensure correct policies behavior
 cmake_minimum_required(VERSION 3.14...3.16)
 # Setting up OpenDB project
 project(odb VERSION 0.0.1
   LANGUAGES CXX)
-
-# Configure build version
-configure_file (
-    "${PROJECT_SOURCE_DIR}/include/odb/version.hh.in"
-    "${PROJECT_BINARY_DIR}/include/odb/version.hh"
-)
-
-############################################################################
-################################# Targets ##################################
-############################################################################
 
 add_subdirectory(src/db)
 add_subdirectory(src/defin)
@@ -26,23 +15,29 @@ add_subdirectory(src/lefin)
 add_subdirectory(src/lefout)
 add_subdirectory(src/def)
 add_subdirectory(src/zutil)
-add_subdirectory(src/tm)
 add_subdirectory(src/cdl)
-add_subdirectory(src/upf)
-add_subdirectory(test/cpp)
+add_subdirectory(src/3dblox)
+add_subdirectory(src/gdsin)
+add_subdirectory(src/gdsout)
+
+if(ENABLE_TESTS)
+  add_subdirectory(test)
+endif()
 
 add_library(odb INTERFACE)
 target_link_libraries(odb
   INTERFACE
     db
     cdl
+    3dblox
     defin
     defout
     lefin
     lefout
-    tm
     zutil
-    utl
+    utl_lib
+    gdsin
+    gdsout
     ${TCL_LIBRARY}
 )
 
@@ -70,3 +65,7 @@ if (DOXYGEN_FOUND)
 
   doxygen_add_docs(docs include)
 endif()
+
+messages(
+  TARGET odb
+)

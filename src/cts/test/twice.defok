@@ -1,0 +1,56 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN test_16_sinks ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 20000 20000 ) ;
+NONDEFAULTRULES 1 ;
+    - CTS_NDR_0
+      + LAYER metal1 WIDTH 140 SPACING 260
+      + LAYER metal2 WIDTH 140 SPACING 280
+      + LAYER metal3 WIDTH 140 SPACING 280
+      + LAYER metal4 WIDTH 280 SPACING 560
+      + LAYER metal5 WIDTH 280 SPACING 560
+      + LAYER metal6 WIDTH 280 SPACING 560
+      + LAYER metal7 WIDTH 800 SPACING 1600
+      + LAYER metal8 WIDTH 800 SPACING 1600
+      + LAYER metal9 WIDTH 1600 SPACING 3200
+      + LAYER metal10 WIDTH 1600 SPACING 3200
+    ;
+END NONDEFAULTRULES
+COMPONENTS 19 ;
+    - clkbuf_0_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 13230 11230 ) N ;
+    - clkbuf_1_0__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 13229 -2769 ) N ;
+    - clkbuf_1_1__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 13229 25230 ) N ;
+    - ff1 DFF_X1 + PLACED ( 500 500 ) N ;
+    - ff10 DFF_X1 + PLACED ( 12000 19500 ) N ;
+    - ff11 DFF_X1 + PLACED ( 18000 19500 ) N ;
+    - ff12 DFF_X1 + PLACED ( 19500 19500 ) N ;
+    - ff13 DFF_X1 + PLACED ( 9000 9000 ) N ;
+    - ff14 DFF_X1 + PLACED ( 11000 11000 ) N ;
+    - ff15 DFF_X1 + PLACED ( 11000 9000 ) N ;
+    - ff16 DFF_X1 + PLACED ( 9000 11000 ) N ;
+    - ff2 DFF_X1 + PLACED ( 2000 500 ) N ;
+    - ff3 DFF_X1 + PLACED ( 8000 500 ) N ;
+    - ff4 DFF_X1 + PLACED ( 12000 500 ) N ;
+    - ff5 DFF_X1 + PLACED ( 18000 500 ) N ;
+    - ff6 DFF_X1 + PLACED ( 19500 500 ) N ;
+    - ff7 DFF_X1 + PLACED ( 500 19500 ) N ;
+    - ff8 DFF_X1 + PLACED ( 2000 19500 ) N ;
+    - ff9 DFF_X1 + PLACED ( 8000 19500 ) N ;
+END COMPONENTS
+PINS 1 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 10000 19860 ) N ;
+END PINS
+NETS 4 ;
+    - clk ( PIN clk ) ( clkbuf_0_clk A ) + USE CLOCK + NONDEFAULTRULE CTS_NDR_0 ;
+    - clknet_0_clk ( clkbuf_1_1__f_clk A ) ( clkbuf_1_0__f_clk A ) ( clkbuf_0_clk Z ) + USE CLOCK + NONDEFAULTRULE CTS_NDR_0 ;
+    - clknet_1_0__leaf_clk ( ff15 CK ) ( ff13 CK ) ( ff6 CK ) ( ff5 CK ) ( ff4 CK ) ( ff3 CK ) ( ff2 CK )
+      ( ff1 CK ) ( clkbuf_1_0__f_clk Z ) + USE CLOCK ;
+    - clknet_1_1__leaf_clk ( ff16 CK ) ( ff14 CK ) ( ff12 CK ) ( ff11 CK ) ( ff10 CK ) ( ff9 CK ) ( ff8 CK )
+      ( ff7 CK ) ( clkbuf_1_1__f_clk Z ) + USE CLOCK ;
+END NETS
+END DESIGN

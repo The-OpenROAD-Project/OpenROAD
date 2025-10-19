@@ -22,20 +22,22 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
 
 #include "defiIOTiming.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
-#include "lex.h"
+#include "defiKRDefs.hpp"
+#include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -52,15 +54,15 @@ defiIOTiming::defiIOTiming(defrData* data) : defData(data)
 
 void defiIOTiming::Init()
 {
-  inst_ = 0;
+  inst_ = nullptr;
   instLength_ = 0;
-  pin_ = 0;
+  pin_ = nullptr;
   pinLength_ = 0;
-  from_ = 0;
+  from_ = nullptr;
   fromLength_ = 0;
-  to_ = 0;
+  to_ = nullptr;
   toLength_ = 0;
-  driveCell_ = 0;
+  driveCell_ = nullptr;
   driveCellLength_ = 0;
   hasVariableRise_ = 0;
   hasVariableFall_ = 0;
@@ -69,9 +71,10 @@ void defiIOTiming::Init()
   hasCapacitance_ = 0;
   hasDriveCell_ = 0;
   hasFrom_ = 0;
-  if (pin_)
+  if (pin_) {
     free(pin_);
-  pin_ = 0;
+  }
+  pin_ = nullptr;
   pinLength_ = 0;
 
   hasTo_ = 0;
@@ -95,29 +98,34 @@ defiIOTiming::~defiIOTiming()
 
 void defiIOTiming::Destroy()
 {
-  if (inst_)
+  if (inst_) {
     free(inst_);
-  inst_ = 0;
+  }
+  inst_ = nullptr;
   instLength_ = 0;
 
-  if (pin_)
+  if (pin_) {
     free(pin_);
-  pin_ = 0;
+  }
+  pin_ = nullptr;
   pinLength_ = 0;
 
-  if (from_)
+  if (from_) {
     free(from_);
-  from_ = 0;
+  }
+  from_ = nullptr;
   fromLength_ = 0;
 
-  if (to_)
+  if (to_) {
     free(to_);
-  to_ = 0;
+  }
+  to_ = nullptr;
   toLength_ = 0;
 
-  if (driveCell_)
+  if (driveCell_) {
     free(driveCell_);
-  driveCell_ = 0;
+  }
+  driveCell_ = nullptr;
   driveCellLength_ = 0;
 
   clear();
@@ -154,8 +162,9 @@ void defiIOTiming::setName(const char* inst, const char* pin)
 
   len = strlen(inst) + 1;
   if (len > instLength_) {
-    if (inst_)
+    if (inst_) {
       free(inst_);
+    }
     instLength_ = len;
     inst_ = (char*) malloc(len);
   }
@@ -163,8 +172,9 @@ void defiIOTiming::setName(const char* inst, const char* pin)
 
   len = strlen(pin) + 1;
   if (len > pinLength_) {
-    if (pin_)
+    if (pin_) {
       free(pin_);
+    }
     pinLength_ = len;
     pin_ = (char*) malloc(len);
   }
@@ -175,38 +185,47 @@ void defiIOTiming::print(FILE* f) const
 {
   fprintf(f, "IOTiming '%s' '%s'\n", inst_, pin_);
 
-  if (hasSlewRise())
+  if (hasSlewRise()) {
     fprintf(f, "  Slew rise  %5.2f %5.2f\n", slewRiseMin(), slewRiseMax());
+  }
 
-  if (hasSlewFall())
+  if (hasSlewFall()) {
     fprintf(f, "  Slew fall  %5.2f %5.2f\n", slewFallMin(), slewFallMax());
+  }
 
-  if (hasVariableRise())
+  if (hasVariableRise()) {
     fprintf(f,
             "  variable rise  %5.2f %5.2f\n",
             variableRiseMin(),
             variableRiseMax());
+  }
 
-  if (hasVariableFall())
+  if (hasVariableFall()) {
     fprintf(f,
             "  variable fall  %5.2f %5.2f\n",
             variableFallMin(),
             variableFallMax());
+  }
 
-  if (hasCapacitance())
+  if (hasCapacitance()) {
     fprintf(f, "  capacitance %5.2f\n", capacitance());
+  }
 
-  if (hasDriveCell())
+  if (hasDriveCell()) {
     fprintf(f, "  drive cell '%s'\n", driveCell());
+  }
 
-  if (hasFrom())
+  if (hasFrom()) {
     fprintf(f, "  from pin '%s'\n", from());
+  }
 
-  if (hasTo())
+  if (hasTo()) {
     fprintf(f, "  to pin '%s'\n", to());
+  }
 
-  if (hasParallel())
+  if (hasParallel()) {
     fprintf(f, "  parallel %5.2f\n", parallel());
+  }
 }
 
 void defiIOTiming::setVariable(const char* riseFall, double min, double max)
@@ -264,8 +283,9 @@ void defiIOTiming::setDriveCell(const char* name)
   int len = strlen(name) + 1;
 
   if (driveCellLength_ < len) {
-    if (driveCell_)
+    if (driveCell_) {
       free(driveCell_);
+    }
     driveCell_ = (char*) malloc(len);
     driveCellLength_ = len;
   }
@@ -279,8 +299,9 @@ void defiIOTiming::setFrom(const char* name)
   int len = strlen(name) + 1;
 
   if (fromLength_ < len) {
-    if (from_)
+    if (from_) {
       free(from_);
+    }
     from_ = (char*) malloc(len);
     fromLength_ = len;
   }
@@ -294,8 +315,9 @@ void defiIOTiming::setTo(const char* name)
   int len = strlen(name) + 1;
 
   if (toLength_ < len) {
-    if (to_)
+    if (to_) {
       free(to_);
+    }
     to_ = (char*) malloc(len);
     toLength_ = len;
   }
@@ -430,4 +452,4 @@ double defiIOTiming::parallel() const
   return parallel_;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

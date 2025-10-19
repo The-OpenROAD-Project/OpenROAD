@@ -22,20 +22,25 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
 
 #include "defiVia.hpp"
 
-#include <stdlib.h>
 #include <string.h>
 
-#include "defiDebug.hpp"
-#include "lex.h"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+#include "defiDebug.hpp"
+#include "defiKRDefs.hpp"
+#include "defiMisc.hpp"
+#include "defrData.hpp"
+
+BEGIN_DEF_PARSER_NAMESPACE
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -50,145 +55,25 @@ defiVia::defiVia(defrData* data) : defData(data)
   Init();
 }
 
-DEF_COPY_CONSTRUCTOR_C(defiVia)
-{
-  DEF_COPY_FUNC(defData);
-  Init();
-
-  DEF_COPY_FUNC(nameLength_);
-  DEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-  DEF_MALLOC_FUNC(pattern_, char, sizeof(char) * (strlen(prev.pattern_) + 1));
-  DEF_COPY_FUNC(patternLength_);
-
-  DEF_COPY_FUNC(numLayers_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(layers_, numLayers_);
-
-  DEF_COPY_FUNC(hasPattern_);
-  DEF_MALLOC_FUNC(xl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(xh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yh_, int, sizeof(int) * numLayers_);
-  DEF_COPY_FUNC(layersLength_);
-  DEF_COPY_FUNC(numPolys_);
-
-  DEF_MALLOC_FUNC_FOR_2D_STR(polygonNames_, numPolys_);
-  DEF_COPY_FUNC(polysAllocated_);
-
-  DEF_MALLOC_FUNC_FOR_2D_POINT(polygons_, numPolys_);
-
-  DEF_MALLOC_FUNC(viaRule_, char, sizeof(char) * (strlen(prev.viaRule_) + 1));
-  DEF_COPY_FUNC(viaRuleLength_);
-  DEF_COPY_FUNC(hasViaRule_);
-  DEF_COPY_FUNC(xSize_);
-  DEF_COPY_FUNC(ySize_);
-  DEF_MALLOC_FUNC(botLayer_, char, sizeof(char) * (strlen(prev.botLayer_) + 1));
-  DEF_MALLOC_FUNC(cutLayer_, char, sizeof(char) * (strlen(prev.cutLayer_) + 1));
-  DEF_MALLOC_FUNC(topLayer_, char, sizeof(char) * (strlen(prev.topLayer_) + 1));
-  DEF_COPY_FUNC(botLayerLength_);
-  DEF_COPY_FUNC(cutLayerLength_);
-  DEF_COPY_FUNC(topLayerLength_);
-  DEF_COPY_FUNC(xCutSpacing_);
-  DEF_COPY_FUNC(yCutSpacing_);
-  DEF_COPY_FUNC(xBotEnc_);
-  DEF_COPY_FUNC(yBotEnc_);
-  DEF_COPY_FUNC(xTopEnc_);
-  DEF_COPY_FUNC(yTopEnc_);
-  DEF_COPY_FUNC(rows_);
-  DEF_COPY_FUNC(cols_);
-  DEF_COPY_FUNC(xOffset_);
-  DEF_COPY_FUNC(yOffset_);
-  DEF_COPY_FUNC(xBotOffset_);
-  DEF_COPY_FUNC(yBotOffset_);
-  DEF_COPY_FUNC(xTopOffset_);
-  DEF_COPY_FUNC(yTopOffset_);
-  DEF_MALLOC_FUNC(
-      cutPattern_, char, sizeof(char) * (strlen(prev.cutPattern_) + 1));
-  DEF_COPY_FUNC(cutPatternLength_);
-  DEF_COPY_FUNC(hasCutPattern_);
-  DEF_MALLOC_FUNC(rectMask_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(polyMask_, int, sizeof(int) * numLayers_);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiVia)
-{
-  CHECK_SELF_ASSIGN
-  DEF_COPY_FUNC(defData);
-  Init();
-
-  DEF_COPY_FUNC(nameLength_);
-  DEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-  DEF_MALLOC_FUNC(pattern_, char, sizeof(char) * (strlen(prev.pattern_) + 1));
-  DEF_COPY_FUNC(patternLength_);
-
-  DEF_COPY_FUNC(numLayers_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(layers_, numLayers_);
-
-  DEF_COPY_FUNC(hasPattern_);
-  DEF_MALLOC_FUNC(xl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(xh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yh_, int, sizeof(int) * numLayers_);
-  DEF_COPY_FUNC(layersLength_);
-  DEF_COPY_FUNC(numPolys_);
-
-  DEF_MALLOC_FUNC_FOR_2D_STR(polygonNames_, numPolys_);
-  DEF_COPY_FUNC(polysAllocated_);
-
-  DEF_MALLOC_FUNC_FOR_2D_POINT(polygons_, numPolys_);
-
-  DEF_MALLOC_FUNC(viaRule_, char, sizeof(char) * (strlen(prev.viaRule_) + 1));
-  DEF_COPY_FUNC(viaRuleLength_);
-  DEF_COPY_FUNC(hasViaRule_);
-  DEF_COPY_FUNC(xSize_);
-  DEF_COPY_FUNC(ySize_);
-  DEF_MALLOC_FUNC(botLayer_, char, sizeof(char) * (strlen(prev.botLayer_) + 1));
-  DEF_MALLOC_FUNC(cutLayer_, char, sizeof(char) * (strlen(prev.cutLayer_) + 1));
-  DEF_MALLOC_FUNC(topLayer_, char, sizeof(char) * (strlen(prev.topLayer_) + 1));
-  DEF_COPY_FUNC(botLayerLength_);
-  DEF_COPY_FUNC(cutLayerLength_);
-  DEF_COPY_FUNC(topLayerLength_);
-  DEF_COPY_FUNC(xCutSpacing_);
-  DEF_COPY_FUNC(yCutSpacing_);
-  DEF_COPY_FUNC(xBotEnc_);
-  DEF_COPY_FUNC(yBotEnc_);
-  DEF_COPY_FUNC(xTopEnc_);
-  DEF_COPY_FUNC(yTopEnc_);
-  DEF_COPY_FUNC(rows_);
-  DEF_COPY_FUNC(cols_);
-  DEF_COPY_FUNC(xOffset_);
-  DEF_COPY_FUNC(yOffset_);
-  DEF_COPY_FUNC(xBotOffset_);
-  DEF_COPY_FUNC(yBotOffset_);
-  DEF_COPY_FUNC(xTopOffset_);
-  DEF_COPY_FUNC(yTopOffset_);
-  DEF_MALLOC_FUNC(
-      cutPattern_, char, sizeof(char) * (strlen(prev.cutPattern_) + 1));
-  DEF_COPY_FUNC(cutPatternLength_);
-  DEF_COPY_FUNC(hasCutPattern_);
-  DEF_MALLOC_FUNC(rectMask_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(polyMask_, int, sizeof(int) * numLayers_);
-  return *this;
-}
-
 void defiVia::Init()
 {
-  name_ = 0;
+  name_ = nullptr;
   nameLength_ = 0;
-  pattern_ = 0;
+  pattern_ = nullptr;
   patternLength_ = 0;
-  xl_ = 0;
-  yl_ = 0;
-  xh_ = 0;
-  yh_ = 0;
+  xl_ = nullptr;
+  yl_ = nullptr;
+  xh_ = nullptr;
+  yh_ = nullptr;
   layersLength_ = 0;
-  layers_ = 0;
-  viaRule_ = 0;
+  layers_ = nullptr;
+  viaRule_ = nullptr;
   viaRuleLength_ = 0;
   xSize_ = 0;
   ySize_ = 0;
-  botLayer_ = 0;
-  cutLayer_ = 0;
-  topLayer_ = 0;
+  botLayer_ = nullptr;
+  cutLayer_ = nullptr;
+  topLayer_ = nullptr;
   botLayerLength_ = 0;
   cutLayerLength_ = 0;
   topLayerLength_ = 0;
@@ -198,15 +83,15 @@ void defiVia::Init()
   yBotEnc_ = 0;
   xTopEnc_ = 0;
   yTopEnc_ = 0;
-  cutPattern_ = 0;
+  cutPattern_ = nullptr;
   cutPatternLength_ = 0;
   numLayers_ = 0;
   numPolys_ = 0;
-  polygons_ = 0;
+  polygons_ = nullptr;
   polysAllocated_ = 0;
-  polygonNames_ = 0;
-  rectMask_ = 0;
-  polyMask_ = 0;
+  polygonNames_ = nullptr;
+  rectMask_ = nullptr;
+  polyMask_ = nullptr;
   clear();
 }
 
@@ -241,9 +126,9 @@ void defiVia::clear()
     free(polygons_);
     free(polyMask_);
 
-    polygonNames_ = NULL;
-    polygons_ = NULL;
-    polyMask_ = NULL;
+    polygonNames_ = nullptr;
+    polygons_ = nullptr;
+    polyMask_ = nullptr;
   }
 
   numPolys_ = 0;
@@ -260,10 +145,10 @@ void defiVia::Destroy()
   int i;
 
   free(name_);
-  name_ = NULL;
+  name_ = nullptr;
 
   free(pattern_);
-  pattern_ = NULL;
+  pattern_ = nullptr;
 
   if (layers_) {
     for (i = 0; i < numLayers_; i++) {
@@ -271,41 +156,41 @@ void defiVia::Destroy()
     }
 
     free(layers_);
-    layers_ = NULL;
+    layers_ = nullptr;
 
     free(xl_);
-    xl_ = NULL;
+    xl_ = nullptr;
 
     free(yl_);
-    yl_ = NULL;
+    yl_ = nullptr;
 
     free(xh_);
-    xh_ = NULL;
+    xh_ = nullptr;
 
     free(yh_);
-    yh_ = NULL;
+    yh_ = nullptr;
 
     free(rectMask_);
-    rectMask_ = NULL;
+    rectMask_ = nullptr;
 
     free(polyMask_);
-    polyMask_ = NULL;
+    polyMask_ = nullptr;
   }
 
   free(viaRule_);
-  viaRule_ = NULL;
+  viaRule_ = nullptr;
 
   free(botLayer_);
-  botLayer_ = NULL;
+  botLayer_ = nullptr;
 
   free(cutLayer_);
-  cutLayer_ = NULL;
+  cutLayer_ = nullptr;
 
   free(topLayer_);
-  topLayer_ = NULL;
+  topLayer_ = nullptr;
 
   free(cutPattern_);
-  cutPattern_ = NULL;
+  cutPattern_ = nullptr;
 
   clear();
 }
@@ -319,12 +204,13 @@ void defiVia::setup(const char* name)
     name_ = (char*) realloc(name_, len);
   }
   strcpy(name_, defData->DEFCASE(name));
-  if (pattern_)
+  if (pattern_) {
     *(pattern_) = 0;
+  }
   if (layers_) {
     for (i = 0; i < numLayers_; i++) {
       free(layers_[i]);
-      layers_[i] = 0;
+      layers_[i] = nullptr;
     }
   }
 
@@ -359,45 +245,57 @@ void defiVia::addLayer(const char* layer,
     layersLength_ = layersLength_ ? 2 * layersLength_ : 8;
 
     newl = (char**) malloc(layersLength_ * sizeof(char*));
-    for (i = 0; i < numLayers_; i++)
+    for (i = 0; i < numLayers_; i++) {
       newl[i] = layers_[i];
-    if (layers_)
+    }
+    if (layers_) {
       free((char*) (layers_));
+    }
     layers_ = newl;
 
     ints = (int*) malloc(layersLength_ * sizeof(int));
-    for (i = 0; i < numLayers_; i++)
+    for (i = 0; i < numLayers_; i++) {
       ints[i] = xl_[i];
-    if (xl_)
+    }
+    if (xl_) {
       free((char*) (xl_));
+    }
     xl_ = ints;
 
     ints = (int*) malloc(layersLength_ * sizeof(int));
-    for (i = 0; i < numLayers_; i++)
+    for (i = 0; i < numLayers_; i++) {
       ints[i] = yl_[i];
-    if (yl_)
+    }
+    if (yl_) {
       free((char*) (yl_));
+    }
     yl_ = ints;
 
     ints = (int*) malloc(layersLength_ * sizeof(int));
-    for (i = 0; i < numLayers_; i++)
+    for (i = 0; i < numLayers_; i++) {
       ints[i] = xh_[i];
-    if (xh_)
+    }
+    if (xh_) {
       free((char*) (xh_));
+    }
     xh_ = ints;
 
     ints = (int*) malloc(layersLength_ * sizeof(int));
-    for (i = 0; i < numLayers_; i++)
+    for (i = 0; i < numLayers_; i++) {
       ints[i] = yh_[i];
-    if (yh_)
+    }
+    if (yh_) {
       free((char*) (yh_));
+    }
     yh_ = ints;
 
     ints = (int*) malloc(layersLength_ * sizeof(int));
-    for (i = 0; i < numLayers_; i++)
+    for (i = 0; i < numLayers_; i++) {
       ints[i] = rectMask_[i];
-    if (rectMask_)
+    }
+    if (rectMask_) {
       free((char*) (rectMask_));
+    }
     rectMask_ = ints;
   }
 
@@ -434,12 +332,15 @@ void defiVia::addPolygon(const char* layer, defiGeometries* geom, int colorMask)
       poly[i] = polygons_[i];
       masks[i] = polyMask_[i];
     }
-    if (polygons_)
+    if (polygons_) {
       free((char*) (polygons_));
-    if (polygonNames_)
+    }
+    if (polygonNames_) {
       free((char*) (polygonNames_));
-    if (polyMask_)
+    }
+    if (polyMask_) {
       free((char*) (polyMask_));
+    }
     polygonNames_ = newn;
     polygons_ = poly;
     polyMask_ = masks;
@@ -476,8 +377,9 @@ void defiVia::addViaRule(char* viaRuleName,
 
   len = strlen(viaRuleName) + 1;
   if (len > viaRuleLength_) {
-    if (viaRule_)
+    if (viaRule_) {
       free(viaRule_);
+    }
     viaRule_ = (char*) malloc(strlen(viaRuleName) + 1);
   }
   strcpy(viaRule_, defData->DEFCASE(viaRuleName));
@@ -485,24 +387,27 @@ void defiVia::addViaRule(char* viaRuleName,
   ySize_ = ySize;
   len = strlen(botLayer) + 1;
   if (len > botLayerLength_) {
-    if (botLayer_)
+    if (botLayer_) {
       free(botLayer_);
+    }
     botLayer_ = (char*) malloc(strlen(botLayer) + 1);
     botLayerLength_ = len;
   }
   strcpy(botLayer_, defData->DEFCASE(botLayer));
   len = strlen(cutLayer) + 1;
   if (len > cutLayerLength_) {
-    if (cutLayer_)
+    if (cutLayer_) {
       free(cutLayer_);
+    }
     cutLayer_ = (char*) malloc(strlen(cutLayer) + 1);
     cutLayerLength_ = len;
   }
   strcpy(cutLayer_, defData->DEFCASE(cutLayer));
   len = strlen(topLayer) + 1;
   if (len > topLayerLength_) {
-    if (topLayer_)
+    if (topLayer_) {
       free(topLayer_);
+    }
     topLayer_ = (char*) malloc(strlen(topLayer) + 1);
     topLayerLength_ = len;
   }
@@ -542,8 +447,9 @@ void defiVia::addCutPattern(char* cutPattern)
 
   len = strlen(cutPattern) + 1;
   if (len > cutPatternLength_) {
-    if (cutPattern_)
+    if (cutPattern_) {
       free(cutPattern_);
+    }
     cutPattern_ = (char*) malloc(strlen(cutPattern) + 1);
     cutPatternLength_ = len;
   }
@@ -593,16 +499,21 @@ void defiVia::layer(int index, char** layer, int* xl, int* yl, int* xh, int* yh)
     const
 {
   if (index >= 0 && index < numLayers_) {
-    if (layer)
+    if (layer) {
       *layer = layers_[index];
-    if (xl)
+    }
+    if (xl) {
       *xl = xl_[index];
-    if (yl)
+    }
+    if (yl) {
       *yl = yl_[index];
-    if (xh)
+    }
+    if (xh) {
       *xh = xh_[index];
-    if (yh)
+    }
+    if (yh) {
       *yh = yh_[index];
+    }
   }
 }
 
@@ -624,7 +535,7 @@ const char* defiVia::polygonName(int index) const
             index,
             numPolys_);
     defiError(0, 6180, msg, defData);
-    return 0;
+    return nullptr;
   }
   return polygonNames_[index];
 }
@@ -668,10 +579,11 @@ void defiVia::viaRule(char** viaRuleName,
 
 int defiVia::hasRowCol() const
 {
-  if (rows_)
+  if (rows_) {
     return rows_;
-  else
-    return cols_;
+  }
+
+  return cols_;
 }
 
 void defiVia::rowCol(int* numCutRows, int* numCutCols) const
@@ -682,10 +594,11 @@ void defiVia::rowCol(int* numCutRows, int* numCutCols) const
 
 int defiVia::hasOrigin() const
 {
-  if (xOffset_)
+  if (xOffset_) {
     return xOffset_;
-  else
-    return yOffset_;
+  }
+
+  return yOffset_;
 }
 
 void defiVia::origin(int* xOffset, int* yOffset) const
@@ -696,14 +609,16 @@ void defiVia::origin(int* xOffset, int* yOffset) const
 
 int defiVia::hasOffset() const
 {
-  if (xBotOffset_)
+  if (xBotOffset_) {
     return xBotOffset_;
-  else if (yBotOffset_)
+  }
+  if (yBotOffset_) {
     return yBotOffset_;
-  else if (xTopOffset_)
+  }
+  if (xTopOffset_) {
     return xTopOffset_;
-  else
-    return yTopOffset_;
+  }
+  return yTopOffset_;
 }
 
 void defiVia::offset(int* xBotOffset,
@@ -757,8 +672,9 @@ void defiVia::print(FILE* f) const
 
   fprintf(f, "via '%s'\n", name());
 
-  if (hasPattern())
+  if (hasPattern()) {
     fprintf(f, "  pattern '%s'\n", pattern());
+  }
 
   for (i = 0; i < numLayers(); i++) {
     layer(i, &c, &xl, &yl, &xh, &yh);
@@ -784,8 +700,9 @@ void defiVia::print(FILE* f) const
       offset(&xbo, &ybo, &xto, &yto);
       fprintf(f, "    offset %d %d %d %d\n", xbo, ybo, xto, yto);
     }
-    if (hasCutPattern())
+    if (hasCutPattern()) {
       fprintf(f, "    pattern '%s'\n", cutPattern());
+    }
   }
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

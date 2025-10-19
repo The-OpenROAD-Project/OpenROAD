@@ -2,25 +2,18 @@
 
 List of coding practices.
 
----
-**NOTE**
-
-This is a compilation of many idioms in OpenROAD code that I consider
-undesirable. Obviously other programmers have different opinions or they
-would not be so pervasive. James Cherry 04/2020
-
----
+:::{Note}
+This is a compilation of many idioms in OpenROAD code that are considered undesirable. 
+:::
 
 ## C++
 
 ### Practice #1
 
-Don't comment out code. Remove it. `git` provides a complete history of
+Don't comment out code, instead remove it.
+`git` provides a complete history of
 the code if you want to look backwards. Huge chunks of commented-out
-code that are stunningly common in student code make it nearly
-impossible to read.
-
-`FlexTa.cpp` has 220 lines of code and 600 lines of commented-out code.
+code make it difficult to read.
 
 ### Practice #2
 
@@ -78,8 +71,8 @@ frDRC.h frDRC_init.cpp frDRC_main.cpp frDRC_setup.cpp frDRC_util.cpp
 
 ### Practice #6
 
-Don't name variables theThingy, curThingy or myThingy. It is just
-distracting extraneous verbiage. Just use thingy.
+Don't name variables `theThingy`, `curThingy` or `myThingy`. It is just
+distracting extraneous verbiage. Just use `thingy`.
 
 ``` cpp
 float currXSize;
@@ -149,8 +142,6 @@ for(dbInst* inst : block->getInsts() ){
 Don't put magic numbers in the code. Use a variable with a name that
 captures the intent. Document the units if they exist.
 
-Examples of unnamed magic numbers:
-
 ``` cpp
 referenceHpwl_= 446000000;
 coeffV = 1.36;
@@ -217,26 +208,22 @@ if (net != nullptr) {
 
 ### Practice #13
 
-Don't use malloc. Use new. We are writting C++, not C.
+Don't use `malloc`. Use `new`. We are writing C++, not C.
 
 ### Practice #14
 
 Don't use C style arrays. There is no bounds checks for them so they
 invite subtle memory errors to unwitting programmers who fail to use
-valgrind. Use std::vector or std::array.
+`valgrind`. Use `std::vector` or `std::array`.
 
 ### Practice #15
 
 Break long functions into smaller ones, preferably that fit on one
 screen.
 
-- 162 lines void DBWrapper::initNetlist()
-- 246 lines static vector<pair<Partition, Partition>> GetPart()
-- 263 lines void MacroCircuit::FillVertexEdge()
-
 ### Practice #16
 
-Don't reinvent functions like round, floor, abs, min, max. Use the std
+Don't reinvent functions like `round`, `floor`, `abs`, `min`, `max`. Use the std
 versions.
 
 ``` cpp
@@ -245,8 +232,8 @@ int size_x = (int)floor(theCell->width / wsite + 0.5);
 
 ### Practice #17
 
-Don't use C stdlib.h abs, fabs or fabsf. They fail miserably if the
-wrong arg type is passed to them. Use std::abs.
+Don't use C's stdlib.h `abs`, `fabs` or `fabsf`. They fail miserably if the
+wrong arg type is passed to them. Use `std::abs`.
 
 ### Practice #18
 
@@ -273,7 +260,7 @@ Instead make one pass over the instances doing each check.
 
 ### Practice #19
 
-Don't use == true, or == false. Boolean expressions already have a
+Don't use `== true`, or `== false`. Boolean expressions already have a
 value of true or false.
 
 ``` cpp
@@ -296,7 +283,7 @@ if(!found.first) {
 
 ### Practice #20
 
-Don't nest if statements. Use && on the clauses instead.
+Don't nest if statements. Use `&&` on the clauses instead.
 
 ``` cpp
 if(grid[j][k].group != UINT_MAX)
@@ -319,10 +306,10 @@ value.
 
 ### Practice #22
 
-Don't use <>'s to include anything but system headers. Your
-project's headers should NEVER be in <>'s. -
-<https://gcc.gnu.org/onlinedocs/cpp/Include-Syntax.html> -
-<https://stackoverflow.com/questions/21593/what-is-the-difference-between-include-filename-and-include-filename>
+Don't use `<>` to include anything but system headers. Your
+project's headers should never be in `<>`. 
+1. [GCC Include Syntax](https://gcc.gnu.org/onlinedocs/cpp/Include-Syntax.html)
+1. [StackOverflow discussion on "filename" vs \<filename\>](https://stackoverflow.com/questions/21593/what-is-the-difference-between-include-filename-and-include-filename)
 
 These are all wrong:
 
@@ -339,7 +326,7 @@ These are all wrong:
 ### Practice #23
 
 Don't make "include the kitchen sink" headers and include them in
-every source file. This is convenient (lazy) but slows the builds down
+every source file. This is convenient but slows the builds down
 for everyone. Make each source file include just the headers it actually
 needs.
 
@@ -401,7 +388,7 @@ class Network;
 
 ### Practice #25
 
-Use pragma once instead of #define to protect headers from being read
+Use pragma once instead of `#define` to protect headers from being read
 more than once. The #define symbol has to be unique, which is difficult
 to guarantee.
 
@@ -416,21 +403,17 @@ to guarantee.
 
 ### Practice #26
 
-Don't put "using namespace" inside a function. It makes no sense whatsoever
-but I have seen some very confused programmers do this far too
-many times.
+Don't put `using namespace` inside a function. 
 
 ### Practice #27
 
-Don't nest namespaces. We don't have enough code to justify that
-complication.
+Don't nest namespaces.
 
 ### Practice #28
 
-Don't use `using namespace` It is just asking for conflicts
+Avoid `using namespace`. It increases the likelihood of conflicts
 and doesn't explicity declare what in the namespace is being used. Use
-`using namespace::symbol;` instead. And especially NEVER
-EVER EVER `using namespace std`. It is HUGE.
+`using namespace::symbol;` instead. And especially do not use `using namespace std`. 
 
 The following is especially confused because it is trying to "use" the
 symbols in code that are already in the MacroPlace namespace.
@@ -463,10 +446,9 @@ for (odb::dbNet* currNet : nets) {
 }
 ```
 
-### Practice #34
+### Practice #31
 
-Don't use end of line comments unless they are very short. Don't
-assume that the person reading your code has a 60" monitor.
+Don't use end of line comments unless they are very short. 
 
 ``` cpp
 for (int x = firstTile._x; x <= lastTile._x; x++) { // Setting capacities of edges completely inside the adjust region according the percentage of reduction
@@ -474,9 +456,9 @@ for (int x = firstTile._x; x <= lastTile._x; x++) { // Setting capacities of edg
 }
 ```
 
-### Practice #35
+### Practice #32
 
-Don't std::pow for powers of 2 or for decimal constants.
+Don't `std::pow` for powers of 2 or for decimal constants.
 
 ``` cpp
 // This
@@ -492,24 +474,23 @@ unsigned numberOfTopologies = 1 << numberOfNodes;
 
 ## Git
 
-### Practice #31
+### Practice #33
 
 Don't put /'s in `.gitignore` directory names.
 `test/`
 
-### Practice #32
+### Practice #34
 
 Don't put file names in `.gitignore` ignored directories.
 `test/results` `test/results/diffs`
 
-### Practice #33
+### Practice #35
 
 Don't list compile artifacts in `.gitignore`. They all end
 up in the build directory so each file type does not have to appear in
 `.gitignore`.
 
-All of the following is nonsense that has propagated faster than COVID
-in student code:
+All of the following are to be avoided:
 
 #### Compiled Object files
 
@@ -554,7 +535,7 @@ target_include_directories( ABKCommon PUBLIC ${ABKCOMMON_HOME} src/ )
 
 ### Practice #37
 
-Don't use glob. Explictly list the files in a group.
+Don't use `glob`. Explictly list the files in a group.
 
 ``` cmake
 # Instead of

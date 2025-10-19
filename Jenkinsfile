@@ -1,160 +1,301 @@
-pipeline {
-  agent any;
-  options {
-    timeout(time: 1, unit: 'HOURS')
-  }
-  environment {
-    COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
-  }
-  stages {
-    stage('Build and test') {
-      parallel {
-        stage('Local centos7 gcc8') {
-          agent any;
-          stages {
-            stage('Build centos7 gcc8') {
-              steps {
-                sh './etc/Build.sh -no-warnings';
-              }
+@Library('utils@or-v2.0.1') _
+
+def baseTests(String image) {
+    Map base_tests = [failFast: false];
+
+    base_tests['Unit Tests CTest'] = {
+        withDockerContainer(args: '-u root', image: image) {
+            stage('Setup CTest') {
+                echo 'Nothing to be done.';
             }
-            stage('Test centos7 gcc8') {
-              steps {
-                script {
-                  parallel (
-                      'Unit tests':           { sh './test/regression' },
-                      'nangate45 aes':        { sh './test/regression aes_nangate45' },
-                      'nangate45 gcd':        { sh './test/regression gcd_nangate45' },
-                      'nangate45 tinyRocket': { sh './test/regression tinyRocket_nangate45' },
-                      'sky130hd aes':         { sh './test/regression aes_sky130hd' },
-                      'sky130hd gcd':         { sh './test/regression gcd_sky130hd' },
-                      'sky130hd ibex':        { sh './test/regression ibex_sky130hd' },
-                      'sky130hs aes':         { sh './test/regression aes_sky130hs' },
-                      'sky130hs gcd':         { sh './test/regression gcd_sky130hs' },
-                      'sky130hs ibex':        { sh './test/regression ibex_sky130hs' },
-                      )
-                }
-              }
-            }
-          }
-          post {
-            always {
-              sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
-              archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
-            }
-          }
-        }
-        stage('Local centos7 gcc8 without GUI') {
-          agent any;
-          stages {
-            stage('Build centos7 gcc8 without GUI') {
-              steps {
-                sh './etc/Build.sh -no-warnings -no-gui -dir=build-without-gui';
-              }
-            }
-          }
-        }
-        stage('Docker centos7 gcc8') {
-          agent any;
-          stages{
-            stage('Pull centos7') {
-              steps {
-                retry(3) {
-                  script {
-                    try {
-                      sh 'docker pull openroad/centos7-dev'
+            stage('Unit Tests CTest') {
+                try {
+                    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                        timeout(time: 10, unit: 'MINUTES') {
+                            sh label: 'Run ctest', script: 'ctest --test-dir build -j $(nproc) --output-on-failure';
+                        }
                     }
-                    catch (err) {
-                      echo err.getMessage();
-                      sh 'sleep 1m ; exit 1';
-                    }
-                  }
+                } catch (e) {
+                    echo 'Failed regressions';
+                    currentBuild.result = 'FAILURE';
                 }
-              }
+                sh label: 'Save ctest results', script: 'tar zcvf results-ctest.tgz build/Testing';
+                sh label: 'Save results', script: "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+                archiveArtifacts artifacts: 'results-ctest.tgz, **/results.tgz';
             }
-            stage('Build docker centos7') {
-              steps {
-                script {
-                  parallel (
-                      'build gcc8':   { sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=gcc' },
-                      'build clang7': { sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=clang' },
-                      )
-                }
-              }
-            }
-            stage('Test docker centos7') {
-              steps {
-                script {
-                  parallel (
-                      'test gcc8':   { sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=gcc' },
-                      'test clang7': { sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=clang' },
-                      )
-                }
-              }
-            }
-          }
         }
-        stage('Docker ubuntu20 gcc9') {
-          agent any;
-          stages{
-            stage('Pull ubuntu20') {
-              steps {
-                retry(3) {
-                  script {
-                    try {
-                      sh 'docker pull openroad/ubuntu20-dev'
-                    }
-                    catch (err) {
-                      echo err.getMessage();
-                      sh 'sleep 1m ; exit 1';
-                    }
-                  }
-                }
-              }
-            }
-            stage('Build docker ubuntu20') {
-              steps {
-                script {
-                  parallel (
-                      'build gcc9':    { sh './etc/DockerHelper.sh create -os=ubuntu20 -target=builder -compiler=gcc' },
-                      'build clang10': { sh './etc/DockerHelper.sh create -os=ubuntu20 -target=builder -compiler=clang' },
-                      )
-                }
-              }
-            }
-            stage('Test docker ubuntu20') {
-              steps {
-                script {
-                  parallel (
-                      'test gcc9':    { sh './etc/DockerHelper.sh test -os=ubuntu20 -target=builder -compiler=gcc' },
-                      'test clang10': { sh './etc/DockerHelper.sh test -os=ubuntu20 -target=builder -compiler=clang' },
-                      )
-                }
-              }
-            }
-          }
-        }
-      }
     }
-  }
-  post {
-    failure {
-      script {
-        if ( env.BRANCH_NAME == 'master' ) {
-          echo('Main development branch: report to stakeholders and commit author.');
-          EMAIL_TO="$COMMIT_AUTHOR_EMAIL, \$DEFAULT_RECIPIENTS, cherry@parallaxsw.com";
-          REPLY_TO="$EMAIL_TO";
-        } else {
-          echo('Feature development branch: report only to commit author.');
-          EMAIL_TO="$COMMIT_AUTHOR_EMAIL";
-          REPLY_TO='$DEFAULT_REPLYTO';
+
+    def flow_tests = [
+        'aes_nangate45',
+        'gcd_nangate45',
+        'tinyRocket_nangate45',
+        'aes_sky130hd',
+        'gcd_sky130hd',
+        'ibex_sky130hd',
+        'jpeg_sky130hd',
+        'aes_sky130hs',
+        'gcd_sky130hs',
+        'ibex_sky130hs',
+        'jpeg_sky130hs'
+    ];
+
+    flow_tests.each { current_test ->
+        base_tests["Flow Test - ${current_test}"] = {
+            node {
+                withDockerContainer(args: '-u root', image: image) {
+                    stage("Setup ${current_test}") {
+                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                        checkout scm;
+                        unstash 'install';
+                    }
+                    stage("Flow Test - ${current_test}") {
+                        try {
+                            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                                timeout(time: 1, unit: 'HOURS') {
+                                    sh label: "Flow ${current_test}", script: "./test/regression ${current_test}";
+                                }
+                            }
+                        }
+                        catch (e) {
+                            echo 'Failed regressions';
+                            currentBuild.result = 'FAILURE';
+                        }
+                        sh label: "Save ${current_test} results", script: "find . -name results -type d -exec tar zcvf ${current_test}.tgz {} ';'";
+                        archiveArtifacts artifacts: "${current_test}.tgz";
+                    }
+                }
+            }
         }
-        emailext (
-            to: "$EMAIL_TO",
-            replyTo: "$REPLY_TO",
-            subject: '$DEFAULT_SUBJECT',
-            body: '$DEFAULT_CONTENT',
-            );
-      }
     }
-  }
+
+    return base_tests;
+
+}
+
+def getParallelTests(String image) {
+
+    def ret = [
+        'Docs Tester': {
+            node {
+                withDockerContainer(args: '-u root', image: image) {
+                    stage('Setup Docs Test') {
+                        echo "Setting up Docs Tester environment in ${image}";
+                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                        checkout([
+                            $class: 'GitSCM',
+                            branches: [[name: scm.branches[0].name]],
+                            extensions: [[$class: 'SubmoduleOption', recursiveSubmodules: true]],
+                            userRemoteConfigs: scm.userRemoteConfigs
+                        ]);
+                    }
+                    stage('Run Docs Tests') {
+                        sh label: 'Build messages', script: 'python3 docs/src/test/make_messages.py';
+                        sh label: 'Preprocess docs', script: 'cd docs && make preprocess -j$(nproc)';
+                        sh label: 'Run Tcl syntax parser', script: 'python3 docs/src/test/man_tcl_params.py';
+                        sh label: 'Run readme parser', script: 'cd docs && make clean && python3 src/test/readme_check.py';
+                    }
+                }
+            }
+        },
+
+        'Build without GUI': {
+            node {
+                withDockerContainer(args: '-u root', image: image) {
+                    stage('Setup no-GUI Build') {
+                        echo "Build without GUI";
+                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                        checkout scm;
+                    }
+                    stage('no-GUI Build') {
+                        timeout(time: 20, unit: 'MINUTES') {
+                            sh label: 'no-GUI Build', script: './etc/Build.sh -no-warnings -no-gui -dir=build-without-gui';
+                        }
+                    }
+                }
+            }
+        },
+
+        'Build without Test': {
+            node {
+                withDockerContainer(args: '-u root', image: image) {
+                    stage('Setup no-test Build') {
+                        echo "Build without Tests";
+                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                        checkout scm;
+                    }
+                    stage('no-test Build') {
+                        timeout(time: 20, unit: 'MINUTES') {
+                            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                                sh label: 'no-test Build', script: './etc/Build.sh -no-warnings -no-tests';
+                            }
+                        }
+                        sh 'mv build/openroad_build.log no_test.log'
+                        archiveArtifacts artifacts: 'no_test.log';
+                    }
+                }
+            }
+        },
+
+        'Build on RHEL8': {
+            node ('rhel8') {
+                stage('Setup RHEL8 Build') {
+                    checkout scm;
+                }
+                stage('Build on RHEL8') {
+                    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                        timeout(time: 20, unit: 'MINUTES') {
+                            sh label: 'Build on RHEL8', script: './etc/Build.sh 2>&1 | tee rhel8-build.log';
+                        }
+                    }
+                    archiveArtifacts artifacts: 'rhel8-build.log';
+                }
+                stage('Unit Tests CTest') {
+                    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                        timeout(time: 10, unit: 'MINUTES') {
+                            sh label: 'Run ctest', script: 'ctest --test-dir build -j $(nproc) --output-on-failure';
+                        }
+                    }
+                    sh label: 'Save ctest results', script: 'tar zcvf results-ctest-rhel8.tgz build/Testing';
+                    sh label: 'Save results', script: "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+                    archiveArtifacts artifacts: 'results-ctest-rhel8.tgz, **/results.tgz';
+                }
+            }
+        },
+
+        'Check message IDs': {
+            dir('src') {
+                sh label: 'Find duplicated message IDs', script: '../etc/find_messages.py > messages.txt';
+                archiveArtifacts artifacts: 'messages.txt';
+            }
+        },
+
+        'Unit Tests Ninja': {
+            node {
+                withDockerContainer(args: '-u root', image: image) {
+                    stage('Setup Ninja Tests') {
+                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                        checkout scm;
+                    }
+                    stage('C++ Build and Unit Tests') {
+                        sh label: 'C++ Build with Ninja', script: './etc/Build.sh -no-warnings -ninja';
+                    }
+                }
+            }
+        },
+
+        'Build and Test': {
+            stage('Build and Stash bins') {
+                buildBinsOR(image, "-no-warnings");
+            }
+            stage('Tests') {
+                parallel(baseTests(image));
+            }
+        },
+
+        'Compile with C++20': {
+            node {
+                withDockerContainer(args: '-u root', image: image) {
+                    stage('Setup C++20 Compile') {
+                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                        checkout scm;
+                    }
+                    stage('Compile with C++20') {
+                        sh label: 'Compile C++20', script: "./etc/Build.sh -cpp20"
+                    }
+                }
+            }
+        }
+    ];
+
+    return ret;
+}
+
+def bazelTest = {
+    node {
+        stage('Setup') {
+            checkout scm;
+            sh label: 'Setup Docker Image', script: 'docker build -f docker/Dockerfile.bazel -t openroad/bazel-ci .';
+        }
+        try {
+            withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: 'openroad/bazel-ci:latest') {
+                stage('bazelisk test ...') {
+                    withCredentials([string(credentialsId: 'bazel-auth-token-b64', variable: 'BAZEL_AUTH_TOKEN_B64')]) {
+                        timeout(time: 120, unit: 'MINUTES') {
+                            def cmd = 'bazelisk test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic --remote_header="Authorization=Basic $BAZEL_AUTH_TOKEN_B64" --profile=build.profile'
+                            try {
+                                try {
+                                    sh label: 'Test, using cached results and building a minimum of dependencies', script: cmd + ' ...';
+                                } finally {
+                                    sh label: 'Analyze build times', script: 'bazelisk analyze-profile build.profile';
+                                }
+                            } catch (e) {
+                                try {
+                                    sh label: 'Test (keep_going)', script: cmd + ' --keep_going ...';
+                                } catch (e2) {
+                                    currentBuild.result = 'FAILURE';
+                                } finally {
+                                    sh label: 'Analyze build times', script: 'bazelisk analyze-profile build.profile';
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            echo "Caught: ${e}";
+        }
+    }
+}
+
+def dockerTests = {
+    stage('Checkout') {
+        checkout scm;
+    }
+    def DOCKER_IMAGE;
+    stage('Build, Test and Push Docker Image') {
+        Map build_docker_images  = [failFast: false];
+        test_os = [
+            [name: 'Ubuntu 20.04', base: 'ubuntu:20.04', image: 'ubuntu20.04'],
+            [name: 'Ubuntu 22.04', base: 'ubuntu:22.04', image: 'ubuntu22.04'],
+            [name: 'Ubuntu 24.04', base: 'ubuntu:24.04', image: 'ubuntu24.04'],
+            [name: 'RockyLinux 9', base: 'rockylinux:9', image: 'rockylinux9'],
+            [name: 'Debian 11', base: 'debian:11', image: 'debian11']
+        ];
+        test_os.each { os ->
+            build_docker_images["Test Installer - ${os.name}"] = {
+                node {
+                    checkout scm;
+                    sh label: 'Build Docker image', script: "./etc/DockerHelper.sh create -target=builder -os=${os.image}";
+                    sh label: 'Test Docker image', script: "./etc/DockerHelper.sh test -target=builder -os=${os.image} -smoke";
+                    dockerPush("${os.image}", 'openroad');
+                }
+            }
+        }
+        parallel(build_docker_images);
+        DOCKER_IMAGE = dockerPush('ubuntu22.04', 'openroad');
+        echo "Docker image is ${DOCKER_IMAGE}";
+    }
+    parallel(getParallelTests(DOCKER_IMAGE));
+}
+
+node {
+    def isDefaultBranch = (env.BRANCH_NAME == 'master')
+    def daysToKeep = '20';
+    def numToKeep = (isDefaultBranch ? '-1' : '10');
+    properties([
+        buildDiscarder(logRotator(
+            daysToKeepStr:         daysToKeep,
+            artifactDaysToKeepStr: daysToKeep,
+            numToKeepStr:          numToKeep,
+            artifactNumToKeepStr:  numToKeep
+        ))
+    ]);
+    parallel(
+            "Bazel": bazelTest,
+            "Docker Tests": dockerTests
+    );
+    stage('Send Email Report') {
+        sendEmail();
+    }
 }

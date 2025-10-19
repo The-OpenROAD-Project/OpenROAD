@@ -1,40 +1,12 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
-#include "array1.h"
-#include "odb.h"
-#include "parse.h"
+#include <cstdio>
+
+#include "odb/array1.h"
+#include "odb/odb.h"
 
 namespace utl {
 class Logger;
@@ -42,23 +14,36 @@ class Logger;
 
 namespace rcx {
 
-using odb::Ath__array1D;
-using odb::Ath__parser;
 using odb::uint;
 using utl::Logger;
 
 class extProcess;
+class Ath__parser;
 
 class extConductor
 {
   extConductor(Logger* logger);
-  bool readConductor(Ath__parser* parser);
-  void print(FILE* fp,
-             const char* sep,
-             const char* key,
-             int v,
-             bool pos = false);
+
   void printConductor(FILE* fp, Ath__parser* parse);
+  bool readConductor(Ath__parser* parser);
+  bool setDoubleVal(Ath__parser* parser, const char* key, int n, double& val);
+  bool setIntVal(Ath__parser* parser, const char* key, int n, int& val);
+
+  void printString(FILE* fp,
+                   const char* sep,
+                   const char* key,
+                   char* v,
+                   bool pos = false);
+  void printInt(FILE* fp,
+                const char* sep,
+                const char* key,
+                int v,
+                bool pos = false);
+  void printDouble(FILE* fp,
+                   const char* sep,
+                   const char* key,
+                   double v,
+                   bool pos = false);
 
   char _name[128];
   double _height;
@@ -83,31 +68,43 @@ class extConductor
   double _max_ct_del;
   double _min_ca;
   double _max_ca;
+  Logger* logger_;
 
+  friend class extSolverGen;
   friend class extRCModel;
   friend class extProcess;
   friend class extMasterConductor;
-
- protected:
-  Logger* logger_;
 };
 
 class extDielectric
 {
   extDielectric(Logger* logger);
   bool readDielectric(Ath__parser* parser);
-  void printInt(FILE* fp,
-                const char* sep,
-                const char* key,
-                int v,
-                bool pos = false);
-  void printDielectric(FILE* fp, Ath__parser* parser);
+  void printDielectric(FILE* fp, Ath__parser* parse);
   void printDielectric(FILE* fp, float planeWidth, float planeThickness);
   void printDielectric3D(FILE* fp,
                          float blockWidth,
                          float blockThickness,
                          float blockLength);
 
+  void printString(FILE* fp,
+                   const char* sep,
+                   const char* key,
+                   char* v,
+                   bool pos = false);
+  void printInt(FILE* fp,
+                const char* sep,
+                const char* key,
+                int v,
+                bool pos = false);
+  void printDouble(FILE* fp,
+                   const char* sep,
+                   const char* key,
+                   double v,
+                   bool pos = false);
+
+  bool setDoubleVal(Ath__parser* parser, const char* key, int n, double& val);
+  bool setIntVal(Ath__parser* parser, const char* key, int n, int& val);
   char _name[128];
   char _non_conformal_metal[128];
   bool _conformal;
@@ -126,29 +123,35 @@ class extDielectric
   int _met;
   int _nextMet;
 
+  Logger* logger_;
+
   friend class extProcess;
   friend class extMasterConductor;
-
- protected:
-  Logger* logger_;
 };
+
 class extMasterConductor
 {
-  extMasterConductor(uint condId,
-                     extConductor* cond,
-                     double prevHeight,
-                     Logger* logger);
-  extMasterConductor(uint dielId,
-                     extDielectric* diel,
-                     double xlo,
-                     double dx1,
-                     double xhi,
-                     double dx2,
-                     double h,
-                     double th,
-                     Logger* logger);
-
  public:
+  void writeWire3D(FILE* fp,
+                   uint wireNum,
+                   double X,
+                   double width,
+                   double length,
+                   double height_offset,
+                   double volt);
+  void writePointXY(FILE* fp,
+                    const char* suffix,
+                    double X,
+                    double Y,
+                    const char* postfix = "");
+  void writeWireName(FILE* fp, uint wireNum);
+  void writeDiel(FILE* fp,
+                 const char* name,
+                 double epsilon,
+                 double height_offset);
+  void printDielHeights(FILE* fp, extDielectric* diel);
+  double writeGround(FILE* fp, int met, int wire_num, double th);
+
   void reset(double height,
              double top_width,
              double bottom_width,
@@ -162,6 +165,12 @@ class extMasterConductor
                          double X,
                          double volt);
   void writeRaphaelPoly(FILE* fp, uint wireNum, double X, double volt);
+  void writeRaphaelPoly3D_w(FILE* fp,
+                            uint wireNum,
+                            double X,
+                            double width,
+                            double length,
+                            double volt);
   void writeRaphaelPoly3D(FILE* fp,
                           uint wireNum,
                           double X,
@@ -180,7 +189,7 @@ class extMasterConductor
                           double width,
                           double X,
                           double volt,
-                          extProcess* p = NULL);
+                          extProcess* p = nullptr);
   double writeRaphaelPoly3D(FILE* fp,
                             uint wireNum,
                             double width,
@@ -210,12 +219,23 @@ class extMasterConductor
                               extDielectric* diel);
   void writeBoxName(FILE* fp, uint wireNum);
 
-  uint _conformalId[3];
-
- protected:
-  Logger* logger_;
-
  private:
+  extMasterConductor(uint condId,
+                     extConductor* cond,
+                     double prevHeight,
+                     Logger* logger);
+  extMasterConductor(uint dielId,
+                     extDielectric* diel,
+                     double xlo,
+                     double dx1,
+                     double xhi,
+                     double dx2,
+                     double h,
+                     double th,
+                     Logger* logger);
+
+  uint _conformalId[3];
+  Logger* logger_;
   uint _condId;
   double _loLeft[3];
   double _loRight[3];
@@ -226,6 +246,7 @@ class extMasterConductor
 
   friend class extProcess;
 };
+
 class extVarTable
 {
  public:
@@ -237,25 +258,26 @@ class extVarTable
                          const char* keyword2,
                          const char* keyword3,
                          const char* key);
-  Ath__array1D<double>* readDoubleArray(Ath__parser* parser,
-                                        const char* keyword);
+  odb::Ath__array1D<double>* readDoubleArray(Ath__parser* parser,
+                                             const char* keyword);
   void printOneLine(FILE* fp,
-                    Ath__array1D<double>* A,
+                    odb::Ath__array1D<double>* A,
                     const char* header,
                     const char* trail);
   void printTable(FILE* fp, const char* valKey);
   double getVal(uint ii, uint jj) { return _vTable[ii]->get(jj); };
 
  private:
-  Ath__array1D<double>* _width;
-  Ath__array1D<double>* _space;
-  Ath__array1D<double>* _density;
-  Ath__array1D<double>* _p;
+  odb::Ath__array1D<double>* _width;
+  odb::Ath__array1D<double>* _space;
+  odb::Ath__array1D<double>* _density;
+  odb::Ath__array1D<double>* _p;
   uint _rowCnt;
-  Ath__array1D<double>** _vTable;
+  odb::Ath__array1D<double>** _vTable;
 
   friend class extVariation;
 };
+
 class extVariation
 {
  public:
@@ -266,10 +288,10 @@ class extVariation
                             const char* key3,
                             const char* endKey);
   void printVariation(FILE* fp, uint n);
-  Ath__array1D<double>* getWidthTable();
-  Ath__array1D<double>* getSpaceTable();
-  Ath__array1D<double>* getDataRateTable();
-  Ath__array1D<double>* getPTable();
+  odb::Ath__array1D<double>* getWidthTable();
+  odb::Ath__array1D<double>* getSpaceTable();
+  odb::Ath__array1D<double>* getDataRateTable();
+  odb::Ath__array1D<double>* getPTable();
   double getTopWidth(uint ii, uint jj);
   double getTopWidthR(uint ii, uint jj);
   double getBottomWidth(double w, uint dIndex);
@@ -278,10 +300,11 @@ class extVariation
   double getThicknessR(double w, uint dIndex);
   double getP(double w);
   double interpolate(double w,
-                     Ath__array1D<double>* X,
-                     Ath__array1D<double>* Y);
+                     odb::Ath__array1D<double>* X,
+                     odb::Ath__array1D<double>* Y);
   void setLogger(Logger* logger) { logger_ = logger; }
 
+ private:
   extVarTable* _hiWidthC;
   extVarTable* _loWidthC;
   extVarTable* _thicknessC;
@@ -290,17 +313,36 @@ class extVariation
   extVarTable* _thicknessR;
   extVarTable* _p;
 
- protected:
   Logger* logger_;
 };
+
 class extProcess
 {
- protected:
-  Logger* logger_;
+  friend class extSolverGen;
 
  public:
+  double writeProcessHeights(FILE* fp,
+                             double X,
+                             double width,
+                             double length,
+                             char* width_name,
+                             double height_base,
+                             double height_ceiling);
+  double writeProcessAndGroundPlanes(FILE* wfp,
+                                     const char* gndName,
+                                     int underMet,
+                                     int overMet,
+                                     double X,
+                                     double width,
+                                     double length,
+                                     double thickness,
+                                     double W,
+                                     bool apply_height_offset,
+                                     double& height_ceiling,
+                                     bool diag = false);
+
   extProcess(uint condCnt, uint dielCnt, Logger* logger);
-  ~extProcess();
+
   FILE* openFile(const char* filename, const char* permissions);
   uint readProcess(const char* name, char* filename);
   void writeProcess(const char* filename);
@@ -345,12 +387,7 @@ class extProcess
                      double y1,
                      const char* param_thickness_name,
                      const char* param_length_name);
-  void writeGround(FILE* fp,
-                   int met,
-                   const char* name,
-                   const char* param_width_name,
-                   double x1,
-                   double volt);
+
   void writeGround(FILE* fp,
                    int met,
                    const char* name,
@@ -358,6 +395,13 @@ class extProcess
                    double x1,
                    double volt,
                    bool diag = false);
+
+  void writeGround(FILE* fp,
+                   int met,
+                   const char* name,
+                   const char* param_width_name,
+                   double x1,
+                   double volt);
   void writeGround3D(FILE* fp,
                      int met,
                      const char* name,
@@ -386,10 +430,10 @@ class extProcess
                                bool diag = false);
 
   extVariation* getVariation(uint met);
-  Ath__array1D<double>* getWidthTable(uint met);
-  Ath__array1D<double>* getSpaceTable(uint met);
-  Ath__array1D<double>* getDiagSpaceTable(uint met);
-  Ath__array1D<double>* getDataRateTable(uint met);
+  odb::Ath__array1D<double>* getWidthTable(uint met);
+  odb::Ath__array1D<double>* getSpaceTable(uint met);
+  odb::Ath__array1D<double>* getDiagSpaceTable(uint met);
+  odb::Ath__array1D<double>* getDataRateTable(uint met);
   void readDataRateTable(Ath__parser* parser, const char* keyword);
   double adjustMasterLayersForHeight(uint met, double thickness);
   double adjustMasterDielectricsForHeight(uint met, double dth);
@@ -397,16 +441,18 @@ class extProcess
   bool getThickVarFlag();
 
  private:
+  Logger* logger_;
+
   uint _condctorCnt;
   uint _dielectricCnt;
   bool _maxMinFlag;
   bool _thickVarFlag;
-  Ath__array1D<extConductor*>* _condTable;
-  Ath__array1D<extDielectric*>* _dielTable;
-  Ath__array1D<extMasterConductor*>* _masterConductorTable;
-  Ath__array1D<extMasterConductor*>* _masterDielectricTable;
-  Ath__array1D<extVariation*>* _varTable;
-  Ath__array1D<double>* _dataRateTable;
+  odb::Ath__array1D<extConductor*>* _condTable;
+  odb::Ath__array1D<extDielectric*>* _dielTable;
+  odb::Ath__array1D<extMasterConductor*>* _masterConductorTable;
+  odb::Ath__array1D<extMasterConductor*>* _masterDielectricTable;
+  odb::Ath__array1D<extVariation*>* _varTable;
+  odb::Ath__array1D<double>* _dataRateTable;
 };
 
 }  // namespace rcx

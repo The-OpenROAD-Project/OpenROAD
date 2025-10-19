@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2019-2025, The OpenROAD Authors
+
 add_library(defout
     defout.cpp
     defout_impl.cpp
@@ -10,7 +13,7 @@ target_include_directories(defout
 )
 target_link_libraries(defout
     db
-    utl
+    utl_lib
 )
 
 set_target_properties(defout

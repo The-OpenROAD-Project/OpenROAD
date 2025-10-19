@@ -6,7 +6,7 @@ read_def reg3.def
 
 disconnect_pin in1 r1/D
 disconnect_pin in1 [get_ports in1]
-report_net -connections in1
+report_net in1
 
 set def_file [make_result_file "network_edit1.def"]
 write_def $def_file
@@ -17,4 +17,4 @@ read_def $def_file
 
 connect_pin in1 r1/D
 connect_pin in1 [get_ports in1]
-report_net -connections in1
+report_net in1

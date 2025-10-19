@@ -1,48 +1,21 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <cassert>
+#include <cstdint>
 #include <deque>
 #include <functional>
+#include <set>
+#include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "Util.h"
-#include "db.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
 
 namespace utl {
 class Logger;
@@ -65,13 +38,19 @@ class ClockInst
             int x,
             int y,
             odb::dbITerm* pinObj = nullptr,
-            float inputCap = 0.0)
+            float inputCap = 0.0,
+            float insertionDelay = 0.0,
+            float outputCap = 0.0,
+            float idealOutputCap = 0.0)
       : name_(name),
         master_(master),
         type_(type),
         location_(x, y),
         inputPinObj_(pinObj),
-        inputCap_(inputCap)
+        inputCap_(inputCap),
+        insertionDelay_(insertionDelay),
+        outputCap_(outputCap),
+        idealOutputCap_(idealOutputCap)
   {
   }
 
@@ -87,10 +66,14 @@ class ClockInst
   odb::dbITerm* getDbInputPin() const { return inputPinObj_; }
   void setInputCap(float cap) { inputCap_ = cap; }
   float getInputCap() const { return inputCap_; }
-
   bool isClockBuffer() const { return type_ == CLOCK_BUFFER; }
+  double getInsertionDelay() const { return insertionDelay_; }
+  void setOutputCap(float cap) { outputCap_ = cap; }
+  float getOutputCap() const { return outputCap_; }
+  void setIdealOutputCap(float cap) { idealOutputCap_ = cap; }
+  float getIdealOutputCap() const { return idealOutputCap_; }
 
- protected:
+ private:
   std::string name_;
   std::string master_;
   InstType type_;
@@ -98,90 +81,94 @@ class ClockInst
   odb::dbInst* instObj_ = nullptr;
   odb::dbITerm* inputPinObj_ = nullptr;
   float inputCap_;
+  double insertionDelay_;  // insertion delay in terms of length, not time
+  float outputCap_;        // current load cap seen by this instance
+  float idealOutputCap_;   // ideal load cap needed for perfectly balanced tree
 };
 
 //-----------------------------------------------------------------------------
 
+class ClockSubNet
+{
+ private:
+  std::string name_;
+  std::deque<ClockInst*> instances_;
+  std::unordered_map<ClockInst*, unsigned> mapInstToIdx_;
+  bool leafLevel_ = false;
+  int level_ = -1;
+  odb::dbNet* netObj_ = nullptr;
+
+ public:
+  explicit ClockSubNet(const std::string& name) : name_(name) {}
+
+  void setNetObj(odb::dbNet* net) { netObj_ = net; }
+  odb::dbNet* getNetObj() { return netObj_; }
+  void setTreeLevel(int level) { level_ = level; }
+  int getTreeLevel() { return level_; }
+  void setLeafLevel(bool isLeaf) { leafLevel_ = isLeaf; }
+  bool isLeafLevel() const { return leafLevel_; }
+
+  void addInst(ClockInst& inst)
+  {
+    instances_.push_back(&inst);
+    mapInstToIdx_[&inst] = instances_.size() - 1;
+  }
+
+  unsigned findIndex(ClockInst* inst) const { return mapInstToIdx_.at(inst); }
+
+  void replaceSink(ClockInst* curSink, ClockInst* newSink)
+  {
+    const unsigned idx = findIndex(curSink);
+    instances_[idx] = newSink;
+    mapInstToIdx_.erase(curSink);
+    mapInstToIdx_[newSink] = idx;
+  }
+
+  void removeSinks(std::set<ClockInst*> sinksToRemove)
+  {
+    ClockInst* driver = getDriver();
+    std::vector<ClockInst*> instsToPreserve;
+    forEachSink([&](ClockInst* inst) {
+      if (sinksToRemove.find(inst) == sinksToRemove.end()) {
+        instsToPreserve.emplace_back(inst);
+      }
+    });
+    instances_.clear();
+    mapInstToIdx_.clear();
+    addInst(*driver);
+    for (auto inst : instsToPreserve) {
+      addInst(*inst);
+    }
+  }
+
+  std::string getName() const { return name_; }
+  int getNumSinks() const { return instances_.size() - 1; }
+
+  ClockInst* getDriver() const
+  {
+    assert(instances_.size() > 0);
+    return instances_[0];
+  }
+
+  void forEachSink(const std::function<void(ClockInst*)>& func) const
+  {
+    if (instances_.size() < 2) {
+      return;
+    }
+    for (unsigned inst = 1; inst < instances_.size(); ++inst) {
+      func(instances_[inst]);
+    }
+  }
+};
+
 class Clock
 {
  public:
-  class SubNet
-  {
-   protected:
-    std::string name_;
-    std::deque<ClockInst*> instances_;
-    std::unordered_map<ClockInst*, unsigned> mapInstToIdx_;
-    bool leafLevel_;
-
-   public:
-    SubNet(const std::string& name) : name_(name), leafLevel_(false) {}
-
-    void setLeafLevel(bool isLeaf) { leafLevel_ = isLeaf; }
-    bool isLeafLevel() const { return leafLevel_; }
-
-    void addInst(ClockInst& inst)
-    {
-      instances_.push_back(&inst);
-      mapInstToIdx_[&inst] = instances_.size() - 1;
-    }
-
-    unsigned findIndex(ClockInst* inst) const { return mapInstToIdx_.at(inst); }
-
-    void replaceSink(ClockInst* curSink, ClockInst* newSink)
-    {
-      const unsigned idx = findIndex(curSink);
-      instances_[idx] = newSink;
-      mapInstToIdx_.erase(curSink);
-      mapInstToIdx_[newSink] = idx;
-    }
-
-    void removeSinks(std::set<ClockInst*> sinksToRemove)
-    {
-      ClockInst* driver = getDriver();
-      std::vector<ClockInst*> instsToPreserve;
-      forEachSink([&](ClockInst* inst) {
-        if (sinksToRemove.find(inst) == sinksToRemove.end()) {
-          instsToPreserve.emplace_back(inst);
-        }
-      });
-      instances_.clear();
-      mapInstToIdx_.clear();
-      addInst(*driver);
-      for (auto inst : instsToPreserve) {
-        addInst(*inst);
-      }
-    }
-
-    std::string getName() const { return name_; }
-    int getNumSinks() const { return instances_.size() - 1; }
-
-    ClockInst* getDriver() const
-    {
-      assert(instances_.size() > 0);
-      return instances_[0];
-    }
-
-    void forEachSink(const std::function<void(ClockInst*)>& func) const
-    {
-      if (instances_.size() < 2) {
-        return;
-      }
-      for (unsigned inst = 1; inst < instances_.size(); ++inst) {
-        func(instances_[inst]);
-      }
-    }
-  };
-
   Clock(const std::string& netName,
         const std::string& clockPin,
         const std::string& sdcClockName,
         int clockPinX,
-        int clockPinY)
-      : netName_(netName),
-        clockPin_(clockPin),
-        sdcClockName_(sdcClockName),
-        clockPinX_(clockPinX),
-        clockPinY_(clockPinY){};
+        int clockPinY);
 
   ClockInst& addClockBuffer(const std::string& name,
                             const std::string& master,
@@ -194,16 +181,16 @@ class Clock
     return clockBuffers_.back();
   }
 
-  ClockInst* findClockByName(std::string name)
+  ClockInst* findClockByName(const std::string& name)
   {
     if (mapNameToInst_.find(name) == mapNameToInst_.end()) {
       return nullptr;
-    } else {
-      return mapNameToInst_.at(name);
     }
+
+    return mapNameToInst_.at(name);
   }
 
-  SubNet& addSubNet(const std::string& name)
+  ClockSubNet& addSubNet(const std::string& name)
   {
     subNets_.emplace_back(name + "_" + getName());
     return subNets_.back();
@@ -223,12 +210,23 @@ class Clock
     sinks_.emplace_back(name, "", CLOCK_SINK, x, y, pinObj, inputCap);
   }
 
+  void addSink(const std::string& name,
+               int x,
+               int y,
+               odb::dbITerm* pinObj,
+               float inputCap,
+               float insDelay)
+  {
+    sinks_.emplace_back(name, "", CLOCK_SINK, x, y, pinObj, inputCap, insDelay);
+  }
+
   std::string getName() const { return netName_; }
+  std::string getSdcName() const { return sdcClockName_; }
   unsigned getNumSinks() const { return sinks_.size(); }
 
   Box<int> computeSinkRegion();
   Box<double> computeSinkRegionClustered(
-      std::vector<std::pair<float, float>> sinks);
+      const std::vector<std::pair<float, float>>& sinks);
   Box<double> computeNormalizedSinkRegion(double factor);
 
   void report(utl::Logger* logger) const;
@@ -238,14 +236,14 @@ class Clock
   void forEachClockBuffer(
       const std::function<void(const ClockInst&)>& func) const;
   void forEachClockBuffer(const std::function<void(ClockInst&)>& func);
-  void forEachSubNet(const std::function<void(const SubNet&)>& func) const
+  void forEachSubNet(const std::function<void(const ClockSubNet&)>& func) const
   {
-    for (const SubNet& subNet : subNets_) {
+    for (const ClockSubNet& subNet : subNets_) {
       func(subNet);
     }
   }
 
-  void forEachSubNet(const std::function<void(SubNet&)>& func)
+  void forEachSubNet(const std::function<void(ClockSubNet&)>& func)
   {
     unsigned size = subNets_.size();
     // We want to use ranged for loops in here beacause
@@ -275,7 +273,7 @@ class Clock
 
   std::deque<ClockInst> sinks_;
   std::deque<ClockInst> clockBuffers_;
-  std::deque<SubNet> subNets_;
+  std::deque<ClockSubNet> subNets_;
   std::unordered_map<std::string, ClockInst*> mapNameToInst_;
 
   odb::dbNet* netObj_ = nullptr;

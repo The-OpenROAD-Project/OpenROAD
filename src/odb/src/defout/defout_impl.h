@@ -1,43 +1,16 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <list>
 #include <map>
+#include <ostream>
 #include <string>
 
 #include "odb/db.h"
 #include "odb/dbMap.h"
+#include "odb/dbObject.h"
 #include "odb/defout.h"
 #include "odb/odb.h"
 namespace utl {
@@ -52,8 +25,22 @@ class dbInst;
 class dbTechNonDefaultRule;
 class dbTechLayerRule;
 
-class defout_impl
+class DefOut::Impl
 {
+ public:
+  Impl(utl::Logger* logger) : _logger(logger) {}
+
+  ~Impl() = default;
+
+  void selectNet(dbNet* net);
+  void selectInst(dbInst* inst);
+
+  void setVersion(DefOut::Version v) { _version = v; }
+
+  bool writeBlock(dbBlock* block, const char* def_file);
+  bool writeBlock(dbBlock* block, std::ostream& stream);
+
+ private:
   enum ObjType
   {
     COMPONENT,
@@ -67,20 +54,6 @@ class defout_impl
     SPECIALNET
   };
 
-  double _dist_factor;
-  FILE* _out;
-  bool _use_net_inst_ids;
-  bool _use_master_ids;
-  bool _use_alias;
-  std::list<dbNet*> _select_net_list;
-  std::list<dbInst*> _select_inst_list;
-  dbMap<dbNet, char>* _select_net_map;
-  dbMap<dbInst, char>* _select_inst_map;
-  dbTechNonDefaultRule* _non_default_rule;
-  int _version;
-  std::map<std::string, bool> _prop_defs[9];
-  utl::Logger* _logger;
-
   int defdist(int value) { return (int) (((double) value) * _dist_factor); }
 
   int defdist(uint value) { return (uint) (((double) value) * _dist_factor); }
@@ -91,6 +64,7 @@ class defout_impl
   void writeGCells(dbBlock* block);
   void writeVias(dbBlock* block);
   void writeVia(dbVia* via);
+  void writeComponentMaskShift(dbBlock* block);
   void writeInsts(dbBlock* block);
   void writeNonDefaultRules(dbBlock* block);
   void writeNonDefaultRule(dbTechNonDefaultRule* rule);
@@ -101,6 +75,7 @@ class defout_impl
   void writeBPin(dbBPin* bpin, int n);
   void writeRegions(dbBlock* block);
   void writeGroups(dbBlock* block);
+  void writeScanChains(dbBlock* block);
   void writeBlockages(dbBlock* block);
   void writeFills(dbBlock* block);
   void writeNets(dbBlock* block);
@@ -114,32 +89,16 @@ class defout_impl
   void writePinProperties(dbBlock* block);
   bool hasProperties(dbObject* object, ObjType type);
 
- public:
-  defout_impl(utl::Logger* logger)
-  {
-    _use_net_inst_ids = false;
-    _use_master_ids = false;
-    _use_alias = false;
-    _select_net_map = NULL;
-    _select_inst_map = NULL;
-    _version = defout::DEF_5_8;
-    _logger = logger;
-  }
-
-  ~defout_impl() {}
-
-  void setUseLayerAlias(bool value) { _use_alias = value; }
-
-  void setUseNetInstIds(bool value) { _use_net_inst_ids = value; }
-
-  void setUseMasterIds(bool value) { _use_master_ids = value; }
-
-  void selectNet(dbNet* net);
-
-  void selectInst(dbInst* inst);
-  void setVersion(int v) { _version = v; }
-
-  bool writeBlock(dbBlock* block, const char* def_file);
+  double _dist_factor{0};
+  std::ostream* _out{nullptr};
+  std::list<dbNet*> _select_net_list;
+  std::list<dbInst*> _select_inst_list;
+  dbMap<dbNet, char>* _select_net_map{nullptr};
+  dbMap<dbInst, char>* _select_inst_map{nullptr};
+  dbTechNonDefaultRule* _non_default_rule{nullptr};
+  DefOut::Version _version{DefOut::DEF_5_8};
+  std::map<std::string, bool> _prop_defs[9];
+  utl::Logger* _logger;
 };
 
 }  // namespace odb

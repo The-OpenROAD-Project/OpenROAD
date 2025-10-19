@@ -1,20 +1,8 @@
-[INFO ODB-0222] Reading LEF file: testcase/ispd18_sample/ispd18_sample.input.lef
-[INFO ODB-0223]     Created 18 technology layers
-[INFO ODB-0224]     Created 22 technology vias
-[INFO ODB-0225]     Created 16 library cells
-[INFO ODB-0226] Finished LEF file:  testcase/ispd18_sample/ispd18_sample.input.lef
+[INFO ODB-0227] LEF file: testcase/ispd18_sample/ispd18_sample.input.lef, created 18 layers, 22 vias, 16 library cells
 [INFO ODB-0128] Design: ispd18_sample
 [INFO ODB-0131]     Created 22 components and 146 component-terminals.
 [INFO ODB-0133]     Created 11 nets and 22 connections.
-[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
-[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
-[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
-[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
-[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
-[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
-[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
-[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
-[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
+[WARNING GRT-0008] The read_guides command does not allow parasitics estimation from the guides file.
 [WARNING DRT-0160] Warning: Metal5 does not have viaDef aligned with layer direction, generating new viaDef Via5_FR.
 [WARNING DRT-0160] Warning: Metal6 does not have viaDef aligned with layer direction, generating new viaDef Via6_FR.
 [WARNING DRT-0160] Warning: Metal7 does not have viaDef aligned with layer direction, generating new viaDef Via7_FR.
@@ -62,7 +50,7 @@
 [INFO DRT-0036] Via1 guide region query size = 0.
 [INFO DRT-0036] Metal2 guide region query size = 21.
 [INFO DRT-0036] Via2 guide region query size = 0.
-[INFO DRT-0036] Metal3 guide region query size = 15.
+[INFO DRT-0036] Metal3 guide region query size = 10.
 [INFO DRT-0036] Via3 guide region query size = 0.
 [INFO DRT-0036] Metal4 guide region query size = 0.
 [INFO DRT-0036] Via4 guide region query size = 0.

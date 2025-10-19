@@ -1,37 +1,10 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-#include <dbRtTree.h>
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "dbUtil.h"
+#include <cstdio>
+
+#include "odb/db.h"
+#include "rcx/dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
@@ -39,32 +12,9 @@ namespace rcx {
 
 using utl::RCX;
 
-using odb::dbBlock;
-using odb::dbBox;
-using odb::dbBTerm;
-using odb::dbCapNode;
 using odb::dbCCSeg;
-using odb::dbChip;
-using odb::dbDatabase;
 using odb::dbNet;
 using odb::dbRSeg;
-using odb::dbRtTree;
-using odb::dbSet;
-using odb::dbShape;
-using odb::dbSigType;
-using odb::dbTech;
-using odb::dbTechLayer;
-using odb::dbTechLayerDir;
-using odb::dbTechLayerType;
-using odb::dbWire;
-using odb::dbWirePath;
-using odb::dbWirePathItr;
-using odb::dbWirePathShape;
-using odb::gs;
-using odb::notice;
-using odb::Rect;
-using odb::SEQ;
-using odb::warning;
 
 void extMeasure::printTraceNetInfo(const char* msg, uint netId, int rsegId)
 {
@@ -106,25 +56,30 @@ double extMeasure::GetDBcoords(int coord)
 
 bool extMeasure::IsDebugNet()
 {
-  if (_no_debug)
+  if (_no_debug) {
     return false;
+  }
 
-  if (!(_extMain->_debug_net_id > 0))
+  if (!(_extMain->_debug_net_id > 0)) {
     return false;
+  }
 
-  if (_netSrcId <= 0 && _netTgtId <= 0)
+  if (_netSrcId <= 0 && _netTgtId <= 0) {
     return false;
+  }
 
   if (_netSrcId == _extMain->_debug_net_id
-      || _netTgtId == _extMain->_debug_net_id)
+      || _netTgtId == _extMain->_debug_net_id) {
     return true;
-  else
-    return false;
+  }
+  return false;
 }
+
 void extMeasure::printNetCaps()
 {
-  if (_netId <= 0)
+  if (_netId <= 0) {
     return;
+  }
   dbNet* net = dbNet::getNet(_block, _netId);
   double gndCap = net->getTotalCapacitance(0, false);
   double ccCap = net->getTotalCouplingCap(0);
@@ -143,33 +98,39 @@ void extMeasure::printNetCaps()
              net->getTotalResistance(),
              net->getConstName());
 }
+
 bool extMeasure::printTraceNet(const char* msg,
                                bool init,
                                dbCCSeg* cc,
                                uint overSub,
                                uint covered)
 {
-  if (!IsDebugNet())
+  if (!IsDebugNet()) {
     return false;
+  }
 
   if (init) {
-    if (overSub + covered > 0)
+    if (overSub + covered > 0) {
       fprintf(_debugFP, "SUB %d GS %d ", overSub, covered);
+    }
 
-    if (_netSrcId == _netId)
+    if (_netSrcId == _netId) {
       printTraceNetInfo("", _netSrcId, _rsegSrcId);
-    else
+    } else {
       printTraceNetInfo("", _netTgtId, _rsegTgtId);
+    }
 
     return true;
   }
 
   fprintf(_debugFP, "%s   ", msg);
-  if (overSub + covered > 0)
+  if (overSub + covered > 0) {
     fprintf(_debugFP, " L %d SUB %d GS %d ", _len, overSub, covered);
+  }
 
-  if (cc != NULL)
+  if (cc != nullptr) {
     fprintf(_debugFP, " %g ", cc->getCapacitance());
+  }
 
   printTraceNetInfo("", _netSrcId, _rsegSrcId);
   printTraceNetInfo(" ", _netTgtId, _rsegTgtId);
@@ -188,7 +149,7 @@ void extMeasure::segInfo(const char* msg, uint netId, int rsegId)
   uint shapeId = rseg->getTargetCapNode()->getShapeId();
 
   const char* wire
-      = rseg != NULL
+      = rseg != nullptr
                 && extMain::getShapeProperty_rc(rseg->getNet(), rseg->getId())
                        > 0
             ? "Via "
@@ -217,12 +178,15 @@ void extMeasure::segInfo(const char* msg, uint netId, int rsegId)
       rseg->getCapacitance(0, 1.0),
       rseg->getResistance(0));
 }
+
 void extMeasure::rcNetInfo()
 {
-  if (_netId <= 0)
+  if (_netId <= 0) {
     return;
-  if (!IsDebugNet())
+  }
+  if (!IsDebugNet()) {
     return;
+  }
   dbNet* net = dbNet::getNet(_block, _netId);
   double gndCap = net->getTotalCapacitance(0, false);
   double ccCap = net->getTotalCouplingCap(0);
@@ -242,25 +206,29 @@ void extMeasure::rcNetInfo()
       totaCap,
       net->getTotalResistance());
 }
+
 bool extMeasure::rcSegInfo()
 {
-  if (!IsDebugNet())
+  if (!IsDebugNet()) {
     return false;
+  }
 
   rcNetInfo();
 
-  if (_netSrcId == _netId)
+  if (_netSrcId == _netId) {
     segInfo("SRC", _netSrcId, _rsegSrcId);
-  else
+  } else {
     segInfo("DST", _netTgtId, _rsegTgtId);
+  }
 
   return true;
 }
 
 bool extMeasure::ouCovered_debug(int covered)
 {
-  if (!IsDebugNet())
+  if (!IsDebugNet()) {
     return false;
+  }
   int sub = (int) _len - covered;
   debugPrint(logger_,
              RCX,
@@ -279,22 +247,25 @@ bool extMeasure::ouCovered_debug(int covered)
 
   return true;
 }
+
 bool extMeasure::isVia(uint rsegId)
 {
   dbRSeg* rseg1 = dbRSeg::getRSeg(_block, rsegId);
 
   bool rvia1
-      = rseg1 != NULL
+      = rseg1 != nullptr
                 && extMain::getShapeProperty_rc(rseg1->getNet(), rseg1->getId())
                        > 0
             ? true
             : false;
   return rvia1;
 }
+
 bool extMeasure::ouRCvalues(const char* msg, uint jj)
 {
-  if (!IsDebugNet())
+  if (!IsDebugNet()) {
     return false;
+  }
 
   debugPrint(
       logger_,
@@ -306,13 +277,14 @@ bool extMeasure::ouRCvalues(const char* msg, uint jj)
       "{:g}\n\tdgCap : {:g}\n\tRes  : {:g}\n\n",
       msg,
       msg,
-      _rc[jj]->_fringe,
-      _rc[jj]->_coupling,
-      _rc[jj]->_diag,
-      _rc[jj]->_res);
+      _rc[jj]->fringe_,
+      _rc[jj]->coupling_,
+      _rc[jj]->diag_,
+      _rc[jj]->res_);
 
   return true;
 }
+
 bool extMeasure::OverSubDebug(extDistRC* rc,
                               int lenOverSub,
                               int lenOverSub_res,
@@ -320,8 +292,9 @@ bool extMeasure::OverSubDebug(extDistRC* rc,
                               double cap,
                               const char* openDist)
 {
-  if (!IsDebugNet())
+  if (!IsDebugNet()) {
     return false;
+  }
 
   char buf[100];
   sprintf(buf, "Over SUB %s", openDist);
@@ -347,10 +320,12 @@ bool extMeasure::OverSubDebug(extDistRC* rc,
 
   return true;
 }
+
 bool extMeasure::Debug_DiagValues(double res, double cap, const char* openDist)
 {
-  if (!IsDebugNet())
+  if (!IsDebugNet()) {
     return false;
+  }
 
   debugPrint(logger_,
              RCX,
@@ -364,20 +339,24 @@ bool extMeasure::Debug_DiagValues(double res, double cap, const char* openDist)
 
   return true;
 }
+
 bool extMeasure::OverSubDebug(extDistRC* rc, int lenOverSub, int lenOverSub_res)
 {
-  if (!IsDebugNet())
+  if (!IsDebugNet()) {
     return false;
+  }
 
   rc->printDebugRC("Over SUB", logger_);
   rcSegInfo();
 
   return true;
 }
+
 bool extMeasure::DebugStart(bool allNets)
 {
-  if (!IsDebugNet() && !allNets)
+  if (!IsDebugNet() && !allNets) {
     return false;
+  }
   if (_dist < 0) {
     debugPrint(logger_,
                RCX,
@@ -430,6 +409,7 @@ bool extMeasure::DebugStart(bool allNets)
              GetDBcoords(_ur[1]) - GetDBcoords(_ll[1]));
   return true;
 }
+/* DELETE ???
 bool extMeasure::DebugDiagCoords(int met,
                                  int targetMet,
                                  int len1,
@@ -437,20 +417,19 @@ bool extMeasure::DebugDiagCoords(int met,
                                  int ll[2],
                                  int ur[2])
 {
-  if (!IsDebugNet())
+  if (!IsDebugNet()) {
     return false;
+  }
   debugPrint(
       logger_,
       RCX,
       "debug_net",
       1,
       "[DIAG_EXT:C]"
-      "\t----- Diagonal Coupling Coords ----- \n\tDiag: M{} to M{}\n\tDist: {} {:.3f}\n\tLen : {} {:.3f} \
-        \n\tloX : {} {:.3f} \n\thiX : {} {:.3f} \n\tloY : {} {:.3f} \n\thiY : {} {:.3f} \
-        \n\tDX  : {} {:.3f} \n\tDY  : {} {:.3f} \n",
-      met,
-      targetMet,
-      diagDist,
+      "\t----- Diagonal Coupling Coords ----- \n\tDiag: M{} to M{}\n\tDist: {}
+{:.3f}\n\tLen : {} {:.3f} \
+        \n\tloX : {} {:.3f} \n\thiX : {} {:.3f} \n\tloY : {} {:.3f} \n\thiY : {}
+{:.3f} \ \n\tDX  : {} {:.3f} \n\tDY  : {} {:.3f} \n", met, targetMet, diagDist,
       GetDBcoords(diagDist),
       len1,
       GetDBcoords(len1),
@@ -468,6 +447,7 @@ bool extMeasure::DebugDiagCoords(int met,
       GetDBcoords(ur[1]) - GetDBcoords(ll[1]));
   return true;
 }
+*/
 // -----------------------------------------------------------------
 //
 // from extRCmodel.cpp
@@ -478,9 +458,10 @@ void extDistRC::printDebug(const char* from,
                            uint dist,
                            extDistRC* rcUnit)
 {
-  if (rcUnit != NULL)
+  if (rcUnit != nullptr) {
     debugPrint(
-        logger_, RCX, "debug_net", 1, "[DistRC:C]\t--\trcUnit is not NULL");
+        logger_, RCX, "debug_net", 1, "[DistRC:C]\t--\trcUnit is not nullptr");
+  }
 
   debugPrint(logger_,
              RCX,
@@ -490,16 +471,18 @@ void extDistRC::printDebug(const char* from,
              "\t{}: {} {:g} {:g} {:g} R {:g} {} {}",
              from,
              name,
-             _coupling,
-             _fringe,
-             _diag,
-             _res,
+             coupling_,
+             fringe_,
+             diag_,
+             res_,
              len,
              dist);
-  if (rcUnit == NULL) {
-    debugPrint(logger_, RCX, "debug_net", 1, "[DistRC:C]\t--\trcUnit is NULL");
-  } else
+  if (rcUnit == nullptr) {
+    debugPrint(
+        logger_, RCX, "debug_net", 1, "[DistRC:C]\t--\trcUnit is nullptr");
+  } else {
     rcUnit->printDebugRC("   ", logger_);
+  }
 }
 
 void extDistRC::printDebugRC(const char* from, Logger* logger)
@@ -513,17 +496,19 @@ void extDistRC::printDebugRC(const char* from, Logger* logger)
              "{:g}\n\tDiagC "
              ": {:g}\n\ttotCap: {:g}\n\tRes  : {:g}\n",
              from,
-             _sep,
-             _coupling,
-             _fringe,
-             _diag,
-             _coupling + _fringe + _diag,
-             _res);
+             sep_,
+             coupling_,
+             fringe_,
+             diag_,
+             coupling_ + fringe_ + diag_,
+             res_);
 }
+
 double extDistRC::GetDBcoords(int x, int db_factor)
 {
   return 1.0 * x / db_factor;
 }
+
 void extDistRC::printDebugRC_diag(int met,
                                   int overMet,
                                   int underMet,
@@ -554,13 +539,14 @@ void extDistRC::printDebugRC_diag(int met,
              ": {:g}\n\t\t\ttotCap: {:g}\n\t\t\tRes   : {:g}\n",
              tmp,
              tmp1,
-             _sep,
-             _coupling,
-             _fringe,
-             _diag,
-             _coupling + _fringe + _diag,
-             _res);
+             sep_,
+             coupling_,
+             fringe_,
+             diag_,
+             coupling_ + fringe_ + diag_,
+             res_);
 }
+
 void extDistRC::printDebugRC(int met,
                              int overMet,
                              int underMet,
@@ -570,12 +556,13 @@ void extDistRC::printDebugRC(int met,
                              Logger* logger)
 {
   char tmp[100];
-  if (overMet > 0 && underMet > 0)
+  if (overMet > 0 && underMet > 0) {
     sprintf(tmp, "M%d over M%d under M%d ", met, underMet, overMet);
-  else if (underMet > 0)
+  } else if (underMet > 0) {
     sprintf(tmp, "M%d over M%d ", met, underMet);
-  else if (overMet > 0)
+  } else if (overMet > 0) {
     sprintf(tmp, "M%d under M%d", met, overMet);
+  }
 
   char tmp1[100];
   sprintf(tmp1,
@@ -584,9 +571,10 @@ void extDistRC::printDebugRC(int met,
           GetDBcoords(width, dbUnit),
           dist,
           GetDBcoords(dist, dbUnit));
-  if (dist < 0)
+  if (dist < 0) {
     sprintf(
         tmp1, "Width=%d (%.3f) MaxDist ", width, GetDBcoords(width, dbUnit));
+  }
 
   debugPrint(logger,
              RCX,
@@ -598,13 +586,14 @@ void extDistRC::printDebugRC(int met,
              ": {:g}\n\t\t\ttotCap: {:g}\n\t\t\tRes   : {:g}\n",
              tmp,
              tmp1,
-             _sep,
-             _coupling,
-             _fringe,
-             _diag,
-             _coupling + _fringe + _diag,
-             _res);
+             sep_,
+             coupling_,
+             fringe_,
+             diag_,
+             coupling_ + fringe_ + diag_,
+             res_);
 }
+
 void extDistRC::printDebugRC_sum(int len, int dbUnit, Logger* logger)
 {
   debugPrint(logger,
@@ -617,12 +606,13 @@ void extDistRC::printDebugRC_sum(int len, int dbUnit, Logger* logger)
              ": {:.6f}\n\t\t\ttotCap: {:.6f}\n\t\t\tRes   : {:.6f}\n",
              len,
              GetDBcoords(len, dbUnit),
-             _coupling,
-             _fringe,
-             _diag,
-             _coupling + _fringe + _diag,
-             _res);
+             coupling_,
+             fringe_,
+             diag_,
+             coupling_ + fringe_ + diag_,
+             res_);
 }
+
 void extDistRC::printDebugRC_values(const char* msg)
 {
   debugPrint(logger_,
@@ -634,11 +624,11 @@ void extDistRC::printDebugRC_values(const char* msg)
              "{:.6f}\n\t\t\tDiagC "
              ": {:.6f}\n\t\t\ttotCap: {:.6f}\n\t\t\tRes   : {:.6f}\n",
              msg,
-             _coupling,
-             _fringe,
-             _diag,
-             _coupling + _fringe + _diag,
-             _res);
+             coupling_,
+             fringe_,
+             diag_,
+             coupling_ + fringe_ + diag_,
+             res_);
 }
 
 }  // namespace rcx

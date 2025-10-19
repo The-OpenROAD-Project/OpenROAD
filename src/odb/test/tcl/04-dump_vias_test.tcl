@@ -8,7 +8,7 @@ set lib [odb::read_lef $db [file join $data_dir "gscl45nm.lef"]]
 set tech [$lib getTech]
 set vias [$tech getVias]
 foreach via $vias {
-    puts [$via getName]
+  puts [$via getName]
 }
 
 exit [expr [llength $vias] != 14]

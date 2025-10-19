@@ -1,5 +1,8 @@
 # repair_timing -setup thru latch
 source helpers.tcl
+if { ![info exists repair_args] } {
+  set repair_args {}
+}
 read_liberty sky130hd/sky130hd_tt.lib
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130hd_std_cell.lef
@@ -13,4 +16,6 @@ estimate_parasitics -placement
 # force violation at r3/D to repair
 set_load 1.0 l2q
 
-repair_timing -setup
+write_verilog_for_eqy repair_setup3 before "None"
+repair_timing -setup -verbose {*}$repair_args
+run_equivalence_test repair_setup3 ./sky130hd/work_around_yosys/ "None"

@@ -1,36 +1,5 @@
-#############################################################################
-##
-## BSD 3-Clause License
-##
-## Copyright (c) 2020, The Regents of the University of California
-## All rights reserved.
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are met:
-##
-## * Redistributions of source code must retain the above copyright notice, this
-##   list of conditions and the following disclaimer.
-##
-## * Redistributions in binary form must reproduce the above copyright notice,
-##   this list of conditions and the following disclaimer in the documentation
-##   and/or other materials provided with the distribution.
-##
-## * Neither the name of the copyright holder nor the names of its
-##   contributors may be used to endorse or promote products derived from
-##   this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-## POSSIBILITY OF SUCH DAMAGE.
-#############################################################################
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2020-2025, The OpenROAD Authors
 
 sta::define_cmd_args "create_toolbar_button" {[-name name] \
                                               -text button_text \
@@ -101,75 +70,251 @@ proc create_menu_item { args } {
 }
 
 sta::define_cmd_args "save_image" {[-area {x0 y0 x1 y1}] \
+                                   [-width width] \
                                    [-resolution microns_per_pixel] \
                                    [-display_option option] \
                                    path
-}
+} ;# checker off
 
 proc save_image { args } {
-  set options [gui::parse_options $args]
+  ord::parse_list_args "save_image" args list {-display_option}
   sta::parse_key_args "save_image" args \
-    keys {-area -resolution -display_option} flags {}
+    keys {-area -width -resolution} flags {} ;# checker off
+
+  set options [gui::DisplayControlMap]
+  foreach opt $list(-display_option) {
+    if { [llength $opt] != 2 } {
+      utl::error GUI 19 "Display option must have 2 elements {control name} {value}."
+    }
+
+    set key [lindex $opt 0]
+    set val [lindex $opt 1]
+
+    $options set $key $val
+  }
 
   set resolution 0
   if { [info exists keys(-resolution)] } {
     sta::check_positive_float "-resolution" $keys(-resolution)
     set tech [ord::get_db_tech]
-    if {$tech == "NULL"} {
+    if { $tech == "NULL" } {
       utl::error GUI 17 "No technology loaded."
     }
     set resolution [expr $keys(-resolution) * [$tech getLefUnits]]
-    if {$resolution < 1} {
+    if { $resolution < 1 } {
       set resolution 1.0
-      utl::warn GUI 31 "Resolution too high for design, defaulting to [expr $resolution / [$tech getLefUnits]] um per pixel"
+      set res_per_pixel [expr $resolution / [$tech getLefUnits]]
+      utl::warn GUI 31 "Resolution too high for design, defaulting to ${res_per_pixel}um per pixel"
     }
   }
 
   set area "0 0 0 0"
   if { [info exists keys(-area)] } {
     set area $keys(-area)
-    if {[llength $area] != 4} {
+    if { [llength $area] != 4 } {
       utl::error GUI 18 "Area must contain 4 elements."
+    }
+  }
+
+  set width 0
+  if { [info exists keys(-width)] } {
+    if { $resolution != 0 } {
+      utl::error GUI 96 "Cannot set -width if -resolution has already been specified."
+    }
+    sta::check_positive_int "-width" $keys(-width)
+    set width $keys(-width)
+    if { $width == 0 } {
+      utl::error GUI 98 "Specified -width cannot be zero."
     }
   }
 
   sta::check_argc_eq1 "save_image" $args
   set path [lindex $args 0]
 
-  gui::save_image $path {*}$area $resolution $options
+  gui::save_image $path {*}$area $width $resolution $options
 
   # delete map
   rename $options ""
 }
 
+sta::define_cmd_args "save_animated_gif" {-start|-add|-end \
+                                          [-area {x0 y0 x1 y1}] \
+                                          [-width width] \
+                                          [-resolution microns_per_pixel] \
+                                          [-delay delay] \
+                                          [path]
+}
+
+proc save_animated_gif { args } {
+  sta::parse_key_args "save_animated_gif" args \
+    keys {-area -width -resolution -delay} flags {-start -end -add}
+
+  set resolution 0
+  if { [info exists keys(-resolution)] } {
+    sta::check_positive_float "-resolution" $keys(-resolution)
+    set tech [ord::get_db_tech]
+    if { $tech == "NULL" } {
+      utl::error GUI 52 "No technology loaded."
+    }
+    set resolution [expr $keys(-resolution) * [$tech getLefUnits]]
+    if { $resolution < 1 } {
+      set resolution 1.0
+      set res_per_pixel [expr $resolution / [$tech getLefUnits]]
+      utl::warn GUI 55 "Resolution too high for design, defaulting to ${res_per_pixel}um per pixel"
+    }
+  }
+
+  set area "0 0 0 0"
+  if { [info exists keys(-area)] } {
+    set area $keys(-area)
+    if { [llength $area] != 4 } {
+      utl::error GUI 48 "Area must contain 4 elements."
+    }
+  }
+
+  set width 0
+  if { [info exists keys(-width)] } {
+    if { $resolution != 0 } {
+      utl::error GUI 99 "Cannot set -width if -resolution has already been specified."
+    }
+    sta::check_positive_int "-width" $keys(-width)
+    set width $keys(-width)
+    if { $width == 0 } {
+      utl::error GUI 105 "Specified -width cannot be zero."
+    }
+  }
+
+  set delay 0
+  if { [info exists keys(-delay)] } {
+    set delay $keys(-delay)
+  }
+
+  if { [info exists flags(-start)] } {
+    sta::check_argc_eq1 "save_animated_gif" $args
+    set path [lindex $args 0]
+
+    gui::gif_start $path
+  } elseif { [info exists flags(-add)] } {
+    sta::check_argc_eq0 "save_animated_gif" $args
+
+    gui::gif_add {*}$area $width $resolution $delay
+  } elseif { [info exists flags(-end)] } {
+    sta::check_argc_eq0 "save_animated_gif" $args
+
+    gui::gif_end
+  } else {
+    utl::error GUI 106 "-start, -end, or -add is required"
+  }
+}
+
+sta::define_cmd_args "save_clocktree_image" {
+  [-width width] \
+  [-height height] \
+  [-corner corner] \
+  -clock clock \
+  path
+}
+
+proc save_clocktree_image { args } {
+  sta::parse_key_args "save_clocktree_image" args \
+    keys {-clock -width -height -corner} flags {}
+
+  sta::check_argc_eq1 "save_clocktree_image" $args
+  set path [lindex $args 0]
+
+  set width 0
+  if { [info exists keys(-width)] } {
+    set width $keys(-width)
+  }
+  set height 0
+  if { [info exists keys(-height)] } {
+    set height $keys(-height)
+  }
+  set corner ""
+  if { [info exists keys(-corner)] } {
+    set corner $keys(-corner)
+  }
+
+  if { [info exists keys(-clock)] } {
+    set clock $keys(-clock)
+  } else {
+    utl::error GUI 88 "-clock is required"
+  }
+
+  gui::save_clocktree_image $path $clock $corner $width $height
+}
+
+sta::define_cmd_args "save_histogram_image" {
+  [-width width] \
+  [-height height] \
+  [-mode mode] \
+  path
+}
+
+proc save_histogram_image { args } {
+  sta::parse_key_args "save_histogram_image" args \
+    keys {-width -height -mode} flags {}
+
+  sta::check_argc_eq1 "save_histogram_image" $args
+  set path [lindex $args 0]
+
+  set width 0
+  if { [info exists keys(-width)] } {
+    set width $keys(-width)
+  }
+  set height 0
+  if { [info exists keys(-height)] } {
+    set height $keys(-height)
+  }
+  set mode "setup"
+  if { [info exists keys(-mode)] } {
+    set mode $keys(-mode)
+  }
+
+  gui::save_histogram_image $path $mode $width $height
+}
+
 sta::define_cmd_args "select" {-type object_type \
                                [-name name_regex] \
                                [-case_insensitive] \
-                               [-highlight group]
+                               [-highlight group] \
+                               [-filter attribute_and_value]
 }
 
 proc select { args } {
   sta::parse_key_args "select" args \
-    keys {-type -name -highlight} flags {-case_insensitive}
+    keys {-type -name -highlight -filter} flags {-case_insensitive}
   sta::check_argc_eq0 "select" $args
-  
+
   set type ""
   if { [info exists keys(-type)] } {
     set type $keys(-type)
   } else {
     utl::error GUI 38 "Must specify -type."
   }
-  
+
   set highlight -1
   if { [info exists keys(-highlight)] } {
     set highlight $keys(-highlight)
   }
-  
+
   set name ""
   if { [info exists keys(-name)] } {
     set name $keys(-name)
   }
-  
+
+  set attribute ""
+  set value ""
+  if { [info exists keys(-filter)] } {
+    set filter $keys(-filter)
+    set filter [split $filter "="]
+    if { [llength $filter] != 2 } {
+      utl::error GUI 56 "Invalid syntax for -filter. Use -filter attribute=value."
+    }
+    set attribute [lindex $filter 0]
+    set value [lindex $filter 1]
+  }
+
   set case_sense 1
   if { [info exists flags(-case_insensitive)] } {
     if { $name == "" } {
@@ -177,8 +322,8 @@ proc select { args } {
     }
     set case_sense 0
   }
-  
-  return [gui::select $type $name $case_sense $highlight]
+
+  return [gui::select $type $name $attribute $value $case_sense $highlight]
 }
 
 sta::define_cmd_args "display_timing_cone" {pin \
@@ -215,10 +360,10 @@ proc display_timing_cone { args } {
   foreach net $nets {
     lappend pins [sta::net_load_pins $net]
   }
-  if {[llength $pins] == 0} {
+  if { [llength $pins] == 0 } {
     utl::error GUI 68 "Pin not found."
   }
-  if {[llength $pins] != 1} {
+  if { [llength $pins] != 1 } {
     utl::error GUI 69 "Multiple pin timing cones are not supported."
   }
 
@@ -259,7 +404,7 @@ proc focus_net { args } {
   if { $net == "NULL" } {
     utl::error GUI 71 "Unable to find net \"$net_name\"."
   }
-  
+
   if { [info exists flags(-remove)] } {
     gui::remove_focus_net $net
   } else {
@@ -267,29 +412,54 @@ proc focus_net { args } {
   }
 }
 
-namespace eval gui {
-  proc parse_options { args_var } {
-    set options [gui::DisplayControlMap]
-    while { $args_var != {} } {
-      set arg [lindex $args_var 0]
-      if { $arg == "-display_option" } {
-        set opt [lindex $args_var 1]
+sta::define_cmd_args "add_label" {-position {x y}
+                                  [-anchor anchor]
+                                  [-color color]
+                                  [-size size]
+                                  [-name name]
+                                  text
+}
 
-        if {[llength $opt] != 2} {
-          utl::error GUI 19 "Display option must have 2 elements {control name} {value}."
-        }
+proc add_label { args } {
+  sta::parse_key_args "add_label" args \
+    keys {-position -anchor -color -size -name} flags {}
 
-        set key [lindex $opt 0]
-        set val [lindex $opt 1]
+  sta::check_argc_eq1 "add_label" $args
 
-        $options set $key $val
-
-        set args_var [lrange $args_var 1 end]
-      } else {
-        set args_var [lrange $args_var 1 end]
-      }
-    }
-
-    return $options
+  if { ![info exists keys(-position)] } {
+    utl::error GUI 46 "-position is required"
   }
+  set pos $keys(-position)
+  if { [llength $pos] != 2 } {
+    utl::error GUI 47 "-position must contain x and y"
+  }
+
+  set anchor ""
+  if { [info exists keys(-anchor)] } {
+    set anchor $keys(-anchor)
+  }
+
+  set color ""
+  if { [info exists keys(-color)] } {
+    set color $keys(-color)
+  }
+
+  set size 0
+  if { [info exists keys(-size)] } {
+    set size $keys(-size)
+  }
+
+  set name ""
+  if { [info exists keys(-name)] } {
+    set name $keys(-name)
+  }
+
+  return [gui::add_label \
+    [lindex $pos 0] \
+    [lindex $pos 1] \
+    [lindex $args 0] \
+    $anchor \
+    $color \
+    $size \
+    $name]
 }

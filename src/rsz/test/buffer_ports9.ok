@@ -1,0 +1,62 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING IFP-0028] Core area lower left (10.000, 10.000) snapped to (10.070, 11.200).
+[INFO IFP-0001] Added 56 rows of 420 site FreePDK45_38x28_10R_NP_162NW_34O.
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0001] Number of available slots 1212
+[INFO PPL-0002] Number of I/O             4
+[INFO PPL-0003] Number of I/O w/sink      4
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 201.52 um.
+[INFO GPL-0005] Execute conjugate gradient initial placement.
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: ( 10.070 11.200 ) ( 89.870 89.600 ) um
+[INFO GPL-0006] Number of instances:                 1
+[INFO GPL-0007] Movable instances:                   1
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                      3
+[INFO GPL-0011] Number of pins:                      7
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 100.000 100.000 ) um
+[INFO GPL-0013] Core BBox: ( 10.070 11.200 ) ( 89.870 89.600 ) um
+[INFO GPL-0016] Core area:                    6256.320 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:          4.522 um^2
+[INFO GPL-0019] Utilization:                     0.072 %
+[INFO GPL-0020] Standard cells area:             4.522 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 901740
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 27780
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 27780
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 27780
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 27780
+[INFO GPL-0023] Placement target density:       0.7000
+[INFO GPL-0024] Movable insts average area:      4.522 um^2
+[INFO GPL-0025] Ideal bin area:                  6.460 um^2
+[INFO GPL-0026] Ideal bin count:                   968
+[INFO GPL-0027] Total bin area:               6256.320 um^2
+[INFO GPL-0028] Bin count (X, Y):          16 ,     16
+[INFO GPL-0029] Bin size (W * H):       4.987 *  4.900 um
+[INFO GPL-0030] Number of bins:                    256
+[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        0 |   0.0000 |  4.494550e+01 |   +0.00% |  3.71e-14 |      
+        0 |   0.0000 |  4.494550e+01 |          |  3.85e-14 |      
+---------------------------------------------------------------
+[INFO GPL-1001] Global placement finished at iteration 0
+[INFO GPL-1002] Placed Cell Area                4.5220
+[INFO GPL-1003] Available Free Area          6256.3200
+[INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.0008
+[INFO GPL-1008]     - For 80% usage of free space: 0.0009
+[INFO GPL-1009]     - For 50% usage of free space: 0.0014
+[INFO GPL-1014] Final placement area: 4.52 (+0.00%)
+[INFO RSZ-0027] Inserted 2 BUF_X16 input buffers.
+[INFO RSZ-0028] Inserted 2 BUF_X16 output buffers.
+No differences found.

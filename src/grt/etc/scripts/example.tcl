@@ -15,15 +15,22 @@ exit
 
 # fr_import_lef:                string input. set the lef file that will be loaded
 # fr_import_def:                string input. set the def file that will be loaded
-# set_output_file:              string input. indicate the name of the generated guides file. do not need ".guide" extension
+# set_output_file:              string input. indicate the name of the generated
+#                                 guides file. do not need ".guide" extension
 
 # set_pitches_in_tile:          integer input. indicate the number of routing tracks per tile
-# set_capacity_adjustment:      float input. indicate the percentage reduction of each edge. optional
-# set_layer_adjustment:         integer, float inputs. indicate the percentage reduction of each edge in a specified layer
-# set_region_adjustment:        int, int, int, int, int, float. indicate the percentage reduction of each edge in a specified region
-# set_min_layer:                integer input. indicate the min routing layer available for FastRoute. optional
-# set_max_layer:                integer input. indicate the max routing layer available for FastRoute. optional
-# set_unidirectional_routing:   boolean input. indicate if unidirectional routing is activated. optional
+# set_capacity_adjustment:      float input. indicate the percentage reduction
+#                                 of each edge. optional
+# set_layer_adjustment:         integer, float inputs. indicate the percentage
+#                                 reduction of each edge in a specified layer
+# set_region_adjustment:        int, int, int, int, int, float. indicate the
+#                                 percentage reduction of each edge in a specified region
+# set_min_layer:                integer input. indicate the min routing layer
+#                                 available for FastRoute. optional
+# set_max_layer:                integer input. indicate the max routing layer
+#                                 available for FastRoute. optional
+# set_unidirectional_routing:   boolean input. indicate if unidirectional
+#                                 routing is activated. optional
 
 
 # start_fastroute:              initialize FastRoute4-lefdef structures

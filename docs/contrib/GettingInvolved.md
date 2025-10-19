@@ -27,7 +27,7 @@ If you find code in our project that does *not* follow this guide, then within e
 you edit, follow the style in that file.
 
 Please pay careful attention to the
-[tool checklist](DeveloperGuide.md#Tool Checklist) for all code. If you want
+[tool checklist](DeveloperGuide.md#tool-checklist) for all code. If you want
 to add or improve functionality in OpenROAD, please start with the
 top-level [app](https://github.com/The-OpenROAD-Project/OpenROAD/) repo. You
 can see in the `src` directory that submodules exist pointing to tested
@@ -61,11 +61,11 @@ project like OpenROAD with many application subcomponents, the software
 architecture can quickly get out of control. Changes with lots of new
 dependencies which are not necessary are less likely to be integrated.
 
-If you want to add Tcl code to define a new tool command, look at pdngen
+If you want to add Tcl code to define a new tool command, look at [pdngen](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/src/pdn)
 as an example of how to do so. Take a look at the
-[cmake file](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/CMakeLists.txt)
+[CMake file](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/CMakeLists.txt)
 which automatically sources the Tcl code and the
-[Tcl file](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/pdn/src/PdnGen.tcl)
+[Tcl file](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/pdn/src/pdn.tcl)
 itself.
 
 To accept contributions, we require each commit to be made with a DCO (Developer

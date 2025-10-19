@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
+
 %typemap(out) odb::defout::Version, defout::Version
 {
   Tcl_Obj *obj;

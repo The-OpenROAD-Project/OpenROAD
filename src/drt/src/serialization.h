@@ -1,45 +1,26 @@
-/* Authors: Matt Liberty */
-/*
- * Copyright (c) 2020, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #pragma once
 
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/polygon/polygon.hpp>
-#include <boost/serialization/array.hpp>
-#include <boost/serialization/list.hpp>
-#include <boost/serialization/map.hpp>
-#include <boost/serialization/set.hpp>
-#include <boost/serialization/split_member.hpp>
-#include <boost/serialization/unique_ptr.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/weak_ptr.hpp>
+#include <cstdlib>
+#include <iostream>
+#include <list>
+#include <tuple>
+#include <vector>
 
+#include "boost/archive/binary_iarchive.hpp"
+#include "boost/archive/binary_oarchive.hpp"
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
+#include "boost/serialization/array.hpp"
+#include "boost/serialization/list.hpp"
+#include "boost/serialization/map.hpp"
+#include "boost/serialization/set.hpp"
+#include "boost/serialization/split_member.hpp"
+#include "boost/serialization/unique_ptr.hpp"
+#include "boost/serialization/vector.hpp"
+#include "boost/serialization/weak_ptr.hpp"
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
 #include "db/drObj/drPin.h"
@@ -47,14 +28,19 @@
 #include "db/gcObj/gcPin.h"
 #include "db/gcObj/gcShape.h"
 #include "db/infra/frBox.h"
+#include "db/obj/frAccess.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 #include "distributed/drUpdate.h"
+#include "distributed/paUpdate.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "global.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+
 namespace gtl = boost::polygon;
 namespace bg = boost::geometry;
 
@@ -62,7 +48,7 @@ namespace boost::serialization {
 
 // Enable serialization of a std::tuple using recursive templates.
 // For some reason boost serialize seems to leave out this std class.
-template <uint N>
+template <unsigned int N>
 struct TupleSerializer
 {
   template <class Archive, typename... Types>
@@ -95,19 +81,19 @@ void serialize(Archive& ar, std::tuple<Types...>& t, const unsigned int version)
 // Sadly boost polygon lacks serializers so here are some home grown ones.
 template <class Archive>
 void serialize(Archive& ar,
-               gtl::point_data<fr::frCoord>& point,
+               gtl::point_data<drt::frCoord>& point,
                const unsigned int version)
 {
-  if (fr::is_loading(ar)) {
-    fr::frCoord x = 0;
-    fr::frCoord y = 0;
+  if (drt::is_loading(ar)) {
+    drt::frCoord x = 0;
+    drt::frCoord y = 0;
     (ar) & x;
     (ar) & y;
     point.x(x);
     point.y(y);
   } else {
-    fr::frCoord x = point.x();
-    fr::frCoord y = point.y();
+    drt::frCoord x = point.x();
+    drt::frCoord y = point.y();
     (ar) & x;
     (ar) & y;
   }
@@ -115,12 +101,12 @@ void serialize(Archive& ar,
 
 template <class Archive>
 void serialize(Archive& ar,
-               gtl::interval_data<fr::frCoord>& interval,
+               gtl::interval_data<drt::frCoord>& interval,
                const unsigned int version)
 {
-  if (fr::is_loading(ar)) {
-    fr::frCoord low = 0;
-    fr::frCoord high = 0;
+  if (drt::is_loading(ar)) {
+    drt::frCoord low = 0;
+    drt::frCoord high = 0;
     (ar) & low;
     (ar) & high;
     interval.low(low);
@@ -135,19 +121,19 @@ void serialize(Archive& ar,
 
 template <class Archive>
 void serialize(Archive& ar,
-               gtl::segment_data<fr::frCoord>& segment,
+               gtl::segment_data<drt::frCoord>& segment,
                const unsigned int version)
 {
-  if (fr::is_loading(ar)) {
-    gtl::point_data<fr::frCoord> low;
-    gtl::point_data<fr::frCoord> high;
+  if (drt::is_loading(ar)) {
+    gtl::point_data<drt::frCoord> low;
+    gtl::point_data<drt::frCoord> high;
     (ar) & low;
     (ar) & high;
     segment.low(low);
     segment.high(high);
   } else {
-    gtl::point_data<fr::frCoord> low = segment.low();
-    gtl::point_data<fr::frCoord> high = segment.high();
+    gtl::point_data<drt::frCoord> low = segment.low();
+    gtl::point_data<drt::frCoord> high = segment.high();
     (ar) & low;
     (ar) & high;
   }
@@ -155,12 +141,12 @@ void serialize(Archive& ar,
 
 template <class Archive>
 void serialize(Archive& ar,
-               gtl::rectangle_data<fr::frCoord>& rect,
+               gtl::rectangle_data<drt::frCoord>& rect,
                const unsigned int version)
 {
-  if (fr::is_loading(ar)) {
-    gtl::interval_data<fr::frCoord> h;
-    gtl::interval_data<fr::frCoord> v;
+  if (drt::is_loading(ar)) {
+    gtl::interval_data<drt::frCoord> h;
+    gtl::interval_data<drt::frCoord> v;
     (ar) & h;
     (ar) & v;
     rect.set(gtl::HORIZONTAL, h);
@@ -175,50 +161,50 @@ void serialize(Archive& ar,
 
 template <class Archive>
 void serialize(Archive& ar,
-               gtl::polygon_90_data<fr::frCoord>& polygon,
+               gtl::polygon_90_data<drt::frCoord>& polygon,
                const unsigned int version)
 {
-  if (fr::is_loading(ar)) {
-    std::vector<fr::frCoord> coordinates;
+  if (drt::is_loading(ar)) {
+    std::vector<drt::frCoord> coordinates;
     (ar) & coordinates;
     polygon.set_compact(coordinates.begin(), coordinates.end());
   } else {
-    std::vector<fr::frCoord> coordinates(polygon.begin_compact(),
-                                         polygon.end_compact());
+    std::vector<drt::frCoord> coordinates(polygon.begin_compact(),
+                                          polygon.end_compact());
     (ar) & coordinates;
   }
 }
 
 template <class Archive>
 void serialize(Archive& ar,
-               gtl::polygon_90_with_holes_data<fr::frCoord>& polygon,
+               gtl::polygon_90_with_holes_data<drt::frCoord>& polygon,
                const unsigned int version)
 {
-  if (fr::is_loading(ar)) {
-    gtl::polygon_90_data<fr::frCoord> outside;
+  if (drt::is_loading(ar)) {
+    gtl::polygon_90_data<drt::frCoord> outside;
     (ar) & outside;
     polygon.set(outside.begin(), outside.end());
 
-    std::list<gtl::polygon_90_data<fr::frCoord>> holes;
+    std::list<gtl::polygon_90_data<drt::frCoord>> holes;
     (ar) & holes;
     polygon.set_holes(holes.begin(), holes.end());
   } else {
-    gtl::polygon_90_data<fr::frCoord> outside;
+    gtl::polygon_90_data<drt::frCoord> outside;
     outside.set(polygon.begin(), polygon.end());
     (ar) & outside;
-    std::list<gtl::polygon_90_data<fr::frCoord>> holes(polygon.begin_holes(),
-                                                       polygon.end_holes());
+    std::list<gtl::polygon_90_data<drt::frCoord>> holes(polygon.begin_holes(),
+                                                        polygon.end_holes());
     (ar) & holes;
   }
 }
 
 template <class Archive>
 void serialize(Archive& ar,
-               gtl::polygon_90_set_data<fr::frCoord>& polygon_set,
+               gtl::polygon_90_set_data<drt::frCoord>& polygon_set,
                const unsigned int version)
 {
-  std::vector<gtl::polygon_90_with_holes_data<fr::frCoord>> polygons;
-  if (fr::is_loading(ar)) {
+  std::vector<gtl::polygon_90_with_holes_data<drt::frCoord>> polygons;
+  if (drt::is_loading(ar)) {
     (ar) & polygons;
     polygon_set.insert(polygons.begin(), polygons.end());
   } else {
@@ -229,31 +215,31 @@ void serialize(Archive& ar,
 
 // Sadly boost geometry lacks serializers so here are some home grown ones.
 template <class Archive>
-void serialize(Archive& ar, fr::point_t& point, const unsigned int version)
+void serialize(Archive& ar, drt::point_t& point, const unsigned int version)
 {
-  if (fr::is_loading(ar)) {
-    fr::frCoord x = 0;
-    fr::frCoord y = 0;
+  if (drt::is_loading(ar)) {
+    drt::frCoord x = 0;
+    drt::frCoord y = 0;
     (ar) & x;
     (ar) & y;
     point.x(x);
     point.y(y);
   } else {
-    fr::frCoord x = point.x();
-    fr::frCoord y = point.y();
+    drt::frCoord x = point.x();
+    drt::frCoord y = point.y();
     (ar) & x;
     (ar) & y;
   }
 }
 
 template <class Archive>
-void serialize(Archive& ar, fr::segment_t& segment, const unsigned int version)
+void serialize(Archive& ar, drt::segment_t& segment, const unsigned int version)
 {
-  if (fr::is_loading(ar)) {
-    fr::frCoord xl = 0;
-    fr::frCoord xh = 0;
-    fr::frCoord yl = 0;
-    fr::frCoord yh = 0;
+  if (drt::is_loading(ar)) {
+    drt::frCoord xl = 0;
+    drt::frCoord xh = 0;
+    drt::frCoord yl = 0;
+    drt::frCoord yh = 0;
     (ar) & xl;
     (ar) & xh;
     (ar) & yl;
@@ -263,10 +249,10 @@ void serialize(Archive& ar, fr::segment_t& segment, const unsigned int version)
     bg::set<1, 0>(segment, yl);
     bg::set<1, 1>(segment, yh);
   } else {
-    fr::frCoord xl = bg::get<0, 0>(segment);
-    fr::frCoord xh = bg::get<0, 1>(segment);
-    fr::frCoord yl = bg::get<1, 0>(segment);
-    fr::frCoord yh = bg::get<1, 1>(segment);
+    drt::frCoord xl = bg::get<0, 0>(segment);
+    drt::frCoord xh = bg::get<0, 1>(segment);
+    drt::frCoord yl = bg::get<1, 0>(segment);
+    drt::frCoord yh = bg::get<1, 1>(segment);
     (ar) & xl;
     (ar) & xh;
     (ar) & yl;
@@ -278,15 +264,15 @@ void serialize(Archive& ar, fr::segment_t& segment, const unsigned int version)
 template <class Archive>
 void serialize(Archive& ar, odb::Rect& r, const unsigned int version)
 {
-  if (fr::is_loading(ar)) {
-    fr::frCoord xlo = 0, ylo = 0, xhi = 0, yhi = 0;
+  if (drt::is_loading(ar)) {
+    drt::frCoord xlo = 0, ylo = 0, xhi = 0, yhi = 0;
     (ar) & xlo;
     (ar) & ylo;
     (ar) & xhi;
     (ar) & yhi;
     r.reset(xlo, ylo, xhi, yhi);
   } else {
-    fr::frCoord xlo, ylo, xhi, yhi;
+    drt::frCoord xlo, ylo, xhi, yhi;
     xlo = r.xMin();
     ylo = r.yMin();
     xhi = r.xMax();
@@ -301,13 +287,13 @@ void serialize(Archive& ar, odb::Rect& r, const unsigned int version)
 template <class Archive>
 void serialize(Archive& ar, odb::Point& p, const unsigned int version)
 {
-  if (fr::is_loading(ar)) {
-    fr::frCoord x = 0, y = 0;
+  if (drt::is_loading(ar)) {
+    drt::frCoord x = 0, y = 0;
     (ar) & x;
     (ar) & y;
-    p.set(x, y);
+    p = {x, y};
   } else {
-    fr::frCoord x, y;
+    drt::frCoord x, y;
     x = p.x();
     y = p.y();
     (ar) & x;
@@ -319,7 +305,7 @@ template <class Archive>
 void serialize(Archive& ar, odb::dbSigType& type, const unsigned int version)
 {
   odb::dbSigType::Value v = odb::dbSigType::SIGNAL;
-  if (fr::is_loading(ar)) {
+  if (drt::is_loading(ar)) {
     (ar) & v;
     type = odb::dbSigType(v);
   } else {
@@ -332,7 +318,7 @@ template <class Archive>
 void serialize(Archive& ar, odb::dbIoType& type, const unsigned int version)
 {
   odb::dbIoType::Value v = odb::dbIoType::INOUT;
-  if (fr::is_loading(ar)) {
+  if (drt::is_loading(ar)) {
     (ar) & v;
     type = odb::dbIoType(v);
   } else {
@@ -347,7 +333,7 @@ void serialize(Archive& ar,
                const unsigned int version)
 {
   odb::dbTechLayerType::Value v = odb::dbTechLayerType::NONE;
-  if (fr::is_loading(ar)) {
+  if (drt::is_loading(ar)) {
     (ar) & v;
     type = odb::dbTechLayerType(v);
   } else {
@@ -359,8 +345,8 @@ void serialize(Archive& ar,
 template <class Archive>
 void serialize(Archive& ar, odb::dbMasterType& type, const unsigned int version)
 {
-  odb::dbMasterType::Value v = odb::dbMasterType::NONE;
-  if (fr::is_loading(ar)) {
+  odb::dbMasterType::Value v = odb::dbMasterType::CORE;
+  if (drt::is_loading(ar)) {
     (ar) & v;
     type = odb::dbMasterType(v);
   } else {
@@ -375,7 +361,7 @@ void serialize(Archive& ar,
                const unsigned int version)
 {
   odb::dbTechLayerDir::Value v = odb::dbTechLayerDir::NONE;
-  if (fr::is_loading(ar)) {
+  if (drt::is_loading(ar)) {
     (ar) & v;
     type = odb::dbTechLayerDir(v);
   } else {
@@ -388,7 +374,7 @@ template <class Archive>
 void serialize(Archive& ar, odb::dbOrientType& type, const unsigned int version)
 {
   odb::dbOrientType::Value v = odb::dbOrientType::R0;
-  if (fr::is_loading(ar)) {
+  if (drt::is_loading(ar)) {
     (ar) & v;
     type = odb::dbOrientType(v);
   } else {
@@ -404,7 +390,7 @@ void serialize(Archive& ar,
 {
   odb::dbOrientType type = odb::dbOrientType::R0;
   odb::Point offset;
-  if (fr::is_loading(ar)) {
+  if (drt::is_loading(ar)) {
     (ar) & type;
     (ar) & offset;
     transform.setOrient(type);
@@ -419,7 +405,7 @@ void serialize(Archive& ar,
 
 }  // namespace boost::serialization
 
-namespace fr {
+namespace drt {
 
 template <class Archive>
 void registerTypes(Archive& ar)
@@ -430,6 +416,7 @@ void registerTypes(Archive& ar)
   // https://www.boost.org/doc/libs/1_76_0/libs/serialization/doc/serialization.html#derivedpointers
 
   ar.template register_type<drUpdate>();
+  ar.template register_type<paUpdate>();
   ar.template register_type<frRect>();
   ar.template register_type<frPathSeg>();
   ar.template register_type<frPatchWire>();
@@ -446,6 +433,9 @@ void registerTypes(Archive& ar)
   ar.template register_type<frMarker>();
   ar.template register_type<frVia>();
   ar.template register_type<frBox3D>();
+
+  ar.template register_type<frPinAccess>();
+  ar.template register_type<frAccessPoint>();
 }
 
 inline bool inBounds(int id, int sz)
@@ -471,34 +461,48 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         (ar) & id;
         (ar) & modified;
         if (fake) {
-          if (id == 0)
+          if (id == 0) {
             obj = design->getTopBlock()->getFakeVSSNet();
-          else
+          } else {
             obj = design->getTopBlock()->getFakeVDDNet();
+          }
         } else {
-          if (special)
+          if (special) {
             obj = design->getTopBlock()->getSNet(id);
-          else
+          } else {
             obj = design->getTopBlock()->getNet(id);
+          }
         }
-        if (obj != nullptr && modified)
+        if (obj != nullptr && modified) {
           ((frNet*) obj)->setModified(true);
+        }
         break;
       }
       case frcBTerm: {
         int id = -1;
         (ar) & id;
-        if (!inBounds(id, design->getTopBlock()->getTerms().size()))
+        if (!inBounds(id, design->getTopBlock()->getTerms().size())) {
           exit(1);  // should throw error
+        }
         obj = design->getTopBlock()->getTerms().at(id).get();
         break;
       }
       case frcBlockage: {
         int id = -1;
         (ar) & id;
-        if (!inBounds(id, design->getTopBlock()->getBlockages().size()))
+        if (!inBounds(id, design->getTopBlock()->getBlockages().size())) {
           exit(1);
+        }
         obj = design->getTopBlock()->getBlockages().at(id).get();
+        break;
+      }
+      case frcInst: {
+        int inst_id = -1;
+        (ar) & inst_id;
+        if (!inBounds(inst_id, design->getTopBlock()->getInsts().size())) {
+          exit(1);
+        }
+        obj = design->getTopBlock()->getInsts().at(inst_id).get();
         break;
       }
       case frcInstTerm: {
@@ -506,11 +510,13 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         int id = 0;
         (ar) & inst_id;
         (ar) & id;
-        if (!inBounds(inst_id, design->getTopBlock()->getInsts().size()))
+        if (!inBounds(inst_id, design->getTopBlock()->getInsts().size())) {
           exit(1);
+        }
         auto inst = design->getTopBlock()->getInsts().at(inst_id).get();
-        if (!inBounds(id, inst->getInstTerms().size()))
+        if (!inBounds(id, inst->getInstTerms().size())) {
           exit(1);
+        }
         obj = inst->getInstTerms().at(id).get();
         break;
       }
@@ -519,12 +525,89 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         int id = 0;
         (ar) & inst_id;
         (ar) & id;
-        if (!inBounds(inst_id, design->getTopBlock()->getInsts().size()))
+        if (!inBounds(inst_id, design->getTopBlock()->getInsts().size())) {
           exit(1);
+        }
         auto inst = design->getTopBlock()->getInsts().at(inst_id).get();
-        if (!inBounds(id, inst->getInstBlockages().size()))
+        if (!inBounds(id, inst->getInstBlockages().size())) {
           exit(1);
+        }
         obj = inst->getInstBlockages().at(id).get();
+        break;
+      }
+      case frcMaster: {
+        int id = 0;
+        (ar) & id;
+        id--;
+        if (!inBounds(id, design->getMasters().size())) {
+          exit(1);
+        }
+        obj = design->getMasters().at(id).get();
+        break;
+      }
+      case frcMTerm: {
+        frBlockObject* blockObj;
+        serializeBlockObject(ar, blockObj);
+        frMaster* master = (frMaster*) blockObj;
+        int id = 0;
+        (ar) & id;
+        if (!inBounds(id, master->getTerms().size())) {
+          std::cout << "frcMTerm" << std::endl;
+          exit(1);
+        }
+        obj = master->getTerms().at(id).get();
+        break;
+      }
+      case frcMPin: {
+        frBlockObject* blockObj;
+        serializeBlockObject(ar, blockObj);
+        frMTerm* term = (frMTerm*) blockObj;
+        int id = 0;
+        (ar) & id;
+        if (!inBounds(id, term->getPins().size())) {
+          std::cout << "frcMPin" << std::endl;
+          exit(1);
+        }
+        obj = term->getPins().at(id).get();
+        break;
+      }
+      case frcBPin: {
+        frBlockObject* blockObj;
+        serializeBlockObject(ar, blockObj);
+        frBTerm* term = (frBTerm*) blockObj;
+        int id = 0;
+        (ar) & id;
+        if (!inBounds(id, term->getPins().size())) {
+          std::cout << "frcBPin" << std::endl;
+          exit(1);
+        }
+        obj = term->getPins().at(id).get();
+        break;
+      }
+      case frcPinAccess: {
+        frBlockObject* blockObj;
+        serializeBlockObject(ar, blockObj);
+        frPin* pin = (frPin*) blockObj;
+        int id = 0;
+        (ar) & id;
+        if (!inBounds(id, pin->getNumPinAccess())) {
+          std::cout << "frcPinAccess" << std::endl;
+          exit(1);
+        }
+        obj = pin->getPinAccess(id);
+        break;
+      }
+      case frcAccessPoint: {
+        frBlockObject* blockObj;
+        serializeBlockObject(ar, blockObj);
+        frPinAccess* pa = (frPinAccess*) blockObj;
+        int id = 0;
+        (ar) & id;
+        if (!inBounds(id, pa->getAccessPoints().size())) {
+          std::cout << "frcAccessPoint " << id << std::endl;
+          exit(1);
+        }
+        obj = pa->getAccessPoints().at(id).get();
         break;
       }
       case frcBlock:
@@ -535,10 +618,11 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
     }
   } else {
     frBlockObjectEnum type;
-    if (obj != nullptr)
+    if (obj != nullptr) {
       type = obj->typeId();
-    else
+    } else {
       type = frcBlock;
+    }
     (ar) & type;
     switch (type) {
       case frcNet: {
@@ -549,10 +633,11 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         (ar) & fake;
         (ar) & special;
         if (fake) {
-          if (((frNet*) obj)->getType() == odb::dbSigType::GROUND)
+          if (((frNet*) obj)->getType() == odb::dbSigType::GROUND) {
             id = 0;
-          else
+          } else {
             id = 1;
+          }
         }
         (ar) & id;
         (ar) & modified;
@@ -566,6 +651,11 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
       case frcBlockage: {
         int id = ((frBlockage*) obj)->getIndexInOwner();
         (ar) & id;
+        break;
+      }
+      case frcInst: {
+        int inst_id = ((frInst*) obj)->getId();
+        (ar) & inst_id;
         break;
       }
       case frcInstTerm: {
@@ -582,6 +672,46 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         (ar) & id;
         break;
       }
+      case frcMaster: {
+        int id = ((frMaster*) obj)->getId();
+        (ar) & id;
+        break;
+      }
+      case frcMTerm: {
+        frBlockObject* master = ((frMTerm*) obj)->getMaster();
+        serializeBlockObject(ar, master);
+        int id = ((frMTerm*) obj)->getIndexInOwner();
+        (ar) & id;
+        break;
+      }
+      case frcMPin: {
+        frBlockObject* mterm = ((frMPin*) obj)->getTerm();
+        serializeBlockObject(ar, mterm);
+        int id = ((frMPin*) obj)->getId();
+        (ar) & id;
+        break;
+      }
+      case frcBPin: {
+        frBlockObject* bterm = ((frBPin*) obj)->getTerm();
+        serializeBlockObject(ar, bterm);
+        int id = ((frBPin*) obj)->getId();
+        (ar) & id;
+        break;
+      }
+      case frcPinAccess: {
+        frBlockObject* pin = ((frPinAccess*) obj)->getPin();
+        serializeBlockObject(ar, pin);
+        int id = ((frPinAccess*) obj)->getId();
+        (ar) & id;
+        break;
+      }
+      case frcAccessPoint: {
+        frBlockObject* pa = ((frAccessPoint*) obj)->getPinAccess();
+        serializeBlockObject(ar, pa);
+        int id = ((frAccessPoint*) obj)->getId();
+        (ar) & id;
+        break;
+      }
       case frcBlock:
         break;
       default:
@@ -592,82 +722,80 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
 }
 
 template <class Archive>
-void serializeViaDef(Archive& ar, frViaDef*& viadef)
+void serializeViaDef(Archive& ar, const frViaDef*& viadef)
 {
   frDesign* design = ar.getDesign();
   if (is_loading(ar)) {
     int via_id = -1;
     (ar) & via_id;
-    if (via_id >= 0)
+    if (via_id >= 0) {
       viadef = design->getTech()->getVias().at(via_id).get();
-    else
+    } else {
       viadef = nullptr;
+    }
   } else {
     int via_id;
-    if (viadef != nullptr)
+    if (viadef != nullptr) {
       via_id = viadef->getId();
-    else
+    } else {
       via_id = -1;
+    }
     (ar) & via_id;
   }
 }
 
 template <class Archive>
-void serializeGlobals(Archive& ar)
+void serializeGlobals(Archive& ar, RouterConfiguration* router_cfg)
 {
-  (ar) & DBPROCESSNODE;
-  (ar) & OUT_MAZE_FILE;
-  (ar) & DRC_RPT_FILE;
-  (ar) & CMAP_FILE;
-  (ar) & OR_SEED;
-  (ar) & OR_K;
-  (ar) & MAX_THREADS;
-  (ar) & BATCHSIZE;
-  (ar) & BATCHSIZETA;
-  (ar) & MTSAFEDIST;
-  (ar) & DRCSAFEDIST;
-  (ar) & VERBOSE;
-  (ar) & BOTTOM_ROUTING_LAYER_NAME;
-  (ar) & TOP_ROUTING_LAYER_NAME;
-  (ar) & BOTTOM_ROUTING_LAYER;
-  (ar) & TOP_ROUTING_LAYER;
-  (ar) & ALLOW_PIN_AS_FEEDTHROUGH;
-  (ar) & USENONPREFTRACKS;
-  (ar) & USEMINSPACING_OBS;
-  (ar) & ENABLE_BOUNDARY_MAR_FIX;
-  (ar) & ENABLE_VIA_GEN;
-  (ar) & VIAINPIN_BOTTOMLAYER_NAME;
-  (ar) & VIAINPIN_TOPLAYER_NAME;
-  (ar) & VIAINPIN_BOTTOMLAYERNUM;
-  (ar) & VIAINPIN_TOPLAYERNUM;
-  (ar) & VIA_ACCESS_LAYERNUM;
-  (ar) & MINNUMACCESSPOINT_MACROCELLPIN;
-  (ar) & MINNUMACCESSPOINT_STDCELLPIN;
-  (ar) & ACCESS_PATTERN_END_ITERATION_NUM;
-  (ar) & END_ITERATION;
-  (ar) & NDR_NETS_RIPUP_HARDINESS;
-  (ar) & CLOCK_NETS_TRUNK_RIPUP_HARDINESS;
-  (ar) & CLOCK_NETS_LEAF_RIPUP_HARDINESS;
-  (ar) & AUTO_TAPER_NDR_NETS;
-  (ar) & TAPERBOX_RADIUS;
-  (ar) & NDR_NETS_ABS_PRIORITY;
-  (ar) & CLOCK_NETS_ABS_PRIORITY;
-  (ar) & TAVIACOST;
-  (ar) & TAPINCOST;
-  (ar) & TAALIGNCOST;
-  (ar) & TADRCCOST;
-  (ar) & TASHAPEBLOATWIDTH;
-  (ar) & VIACOST;
-  (ar) & GRIDCOST;
-  (ar) & ROUTESHAPECOST;
-  (ar) & MARKERCOST;
-  (ar) & MARKERBLOATWIDTH;
-  (ar) & BLOCKCOST;
-  (ar) & GUIDECOST;
-  (ar) & SHAPEBLOATWIDTH;
-  (ar) & MISALIGNMENTCOST;
-  (ar) & HISTCOST;
-  (ar) & CONGCOST;
+  (ar) & router_cfg->DBPROCESSNODE;
+  (ar) & router_cfg->OUT_MAZE_FILE;
+  (ar) & router_cfg->DRC_RPT_FILE;
+  (ar) & router_cfg->CMAP_FILE;
+  (ar) & router_cfg->OR_SEED;
+  (ar) & router_cfg->OR_K;
+  (ar) & router_cfg->MAX_THREADS;
+  (ar) & router_cfg->BATCHSIZE;
+  (ar) & router_cfg->BATCHSIZETA;
+  (ar) & router_cfg->MTSAFEDIST;
+  (ar) & router_cfg->DRCSAFEDIST;
+  (ar) & router_cfg->VERBOSE;
+  (ar) & router_cfg->BOTTOM_ROUTING_LAYER;
+  (ar) & router_cfg->TOP_ROUTING_LAYER;
+  (ar) & router_cfg->ALLOW_PIN_AS_FEEDTHROUGH;
+  (ar) & router_cfg->USENONPREFTRACKS;
+  (ar) & router_cfg->USEMINSPACING_OBS;
+  (ar) & router_cfg->ENABLE_BOUNDARY_MAR_FIX;
+  (ar) & router_cfg->ENABLE_VIA_GEN;
+  (ar) & router_cfg->VIAINPIN_BOTTOMLAYER_NAME;
+  (ar) & router_cfg->VIAINPIN_TOPLAYER_NAME;
+  (ar) & router_cfg->VIAINPIN_BOTTOMLAYERNUM;
+  (ar) & router_cfg->VIAINPIN_TOPLAYERNUM;
+  (ar) & router_cfg->VIA_ACCESS_LAYERNUM;
+  (ar) & router_cfg->MINNUMACCESSPOINT_MACROCELLPIN;
+  (ar) & router_cfg->MINNUMACCESSPOINT_STDCELLPIN;
+  (ar) & router_cfg->ACCESS_PATTERN_END_ITERATION_NUM;
+  (ar) & router_cfg->END_ITERATION;
+  (ar) & router_cfg->NDR_NETS_RIPUP_HARDINESS;
+  (ar) & router_cfg->CLOCK_NETS_TRUNK_RIPUP_HARDINESS;
+  (ar) & router_cfg->CLOCK_NETS_LEAF_RIPUP_HARDINESS;
+  (ar) & router_cfg->AUTO_TAPER_NDR_NETS;
+  (ar) & router_cfg->TAPERBOX_RADIUS;
+  (ar) & router_cfg->NDR_NETS_ABS_PRIORITY;
+  (ar) & router_cfg->CLOCK_NETS_ABS_PRIORITY;
+  (ar) & router_cfg->TAPINCOST;
+  (ar) & router_cfg->TAALIGNCOST;
+  (ar) & router_cfg->TADRCCOST;
+  (ar) & router_cfg->TASHAPEBLOATWIDTH;
+  (ar) & router_cfg->VIACOST;
+  (ar) & router_cfg->GRIDCOST;
+  (ar) & router_cfg->ROUTESHAPECOST;
+  (ar) & router_cfg->MARKERCOST;
+  (ar) & router_cfg->MARKERBLOATWIDTH;
+  (ar) & router_cfg->BLOCKCOST;
+  (ar) & router_cfg->GUIDECOST;
+  (ar) & router_cfg->SHAPEBLOATWIDTH;
+  (ar) & router_cfg->HISTCOST;
+  (ar) & router_cfg->CONGCOST;
 }
 
-}  // namespace fr
+}  // namespace drt

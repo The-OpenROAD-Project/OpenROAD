@@ -1,194 +1,158 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbMaster.h"
 
-#include "db.h"
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+
+#include "dbBlock.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbHashTable.h"
 #include "dbHashTable.hpp"
 #include "dbLib.h"
 #include "dbMPin.h"
 #include "dbMPinItr.h"
 #include "dbMTerm.h"
+#include "dbMasterEdgeType.h"
+#include "dbPolygon.h"
+#include "dbPolygonItr.h"
 #include "dbSite.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbTarget.h"
-#include "dbTargetItr.h"
 #include "dbTechLayerAntennaRule.h"
-#include "dbTransform.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace odb {
+
+class _dbInstHdr;
 
 template class dbHashTable<_dbMTerm>;
 template class dbTable<_dbMaster>;
 
 bool _dbMaster::operator==(const _dbMaster& rhs) const
 {
-  if (_flags._frozen != rhs._flags._frozen)
+  if (_flags._frozen != rhs._flags._frozen) {
     return false;
+  }
 
-  if (_flags._x_symmetry != rhs._flags._x_symmetry)
+  if (_flags._x_symmetry != rhs._flags._x_symmetry) {
     return false;
+  }
 
-  if (_flags._y_symmetry != rhs._flags._y_symmetry)
+  if (_flags._y_symmetry != rhs._flags._y_symmetry) {
     return false;
+  }
 
-  if (_flags._R90_symmetry != rhs._flags._R90_symmetry)
+  if (_flags._R90_symmetry != rhs._flags._R90_symmetry) {
     return false;
+  }
 
-  if (_flags._type != rhs._flags._type)
+  if (_flags._type != rhs._flags._type) {
     return false;
+  }
 
-  if (_x != rhs._x)
+  if (_x != rhs._x) {
     return false;
+  }
 
-  if (_y != rhs._y)
+  if (_y != rhs._y) {
     return false;
+  }
 
-  if (_height != rhs._height)
+  if (_height != rhs._height) {
     return false;
+  }
 
-  if (_width != rhs._width)
+  if (_width != rhs._width) {
     return false;
+  }
 
-  if (_mterm_cnt != rhs._mterm_cnt)
+  if (_mterm_cnt != rhs._mterm_cnt) {
     return false;
+  }
 
-  if (_id != rhs._id)
+  if (_id != rhs._id) {
     return false;
+  }
 
   if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0)
+    if (strcmp(_name, rhs._name) != 0) {
       return false;
-  } else if (_name || rhs._name)
+    }
+  } else if (_name || rhs._name) {
     return false;
+  }
 
-  if (_next_entry != rhs._next_entry)
+  if (_next_entry != rhs._next_entry) {
     return false;
+  }
 
-  if (_leq != rhs._leq)
+  if (_leq != rhs._leq) {
     return false;
+  }
 
-  if (_eeq != rhs._eeq)
+  if (_eeq != rhs._eeq) {
     return false;
+  }
 
-  if (_obstructions != rhs._obstructions)
+  if (_obstructions != rhs._obstructions) {
     return false;
+  }
 
-  if (_site != rhs._site)
+  if (_poly_obstructions != rhs._poly_obstructions) {
     return false;
+  }
 
-  if (_mterm_hash != rhs._mterm_hash)
+  if (_lib_for_site != rhs._lib_for_site) {
     return false;
+  }
 
-  if (*_mterm_tbl != *rhs._mterm_tbl)
+  if (_site != rhs._site) {
     return false;
+  }
 
-  if (*_mpin_tbl != *rhs._mpin_tbl)
+  if (_mterm_hash != rhs._mterm_hash) {
     return false;
+  }
 
-  if (*_target_tbl != *rhs._target_tbl)
+  if (*_mterm_tbl != *rhs._mterm_tbl) {
     return false;
+  }
 
-  if (*_box_tbl != *rhs._box_tbl)
+  if (*_mpin_tbl != *rhs._mpin_tbl) {
     return false;
+  }
 
-  if (*_antenna_pin_model_tbl != *rhs._antenna_pin_model_tbl)
+  if (*_box_tbl != *rhs._box_tbl) {
     return false;
+  }
+
+  if (*_poly_box_tbl != *rhs._poly_box_tbl) {
+    return false;
+  }
+
+  if (*_antenna_pin_model_tbl != *rhs._antenna_pin_model_tbl) {
+    return false;
+  }
+
+  if (*edge_types_tbl_ != *rhs.edge_types_tbl_) {
+    return false;
+  }
 
   return true;
-}
-
-void _dbMaster::differences(dbDiff& diff,
-                            const char* field,
-                            const _dbMaster& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._frozen);
-  DIFF_FIELD(_flags._x_symmetry);
-  DIFF_FIELD(_flags._y_symmetry);
-  DIFF_FIELD(_flags._R90_symmetry);
-  DIFF_FIELD(_flags._type);
-  DIFF_FIELD(_x);
-  DIFF_FIELD(_y);
-  DIFF_FIELD(_height);
-  DIFF_FIELD(_width);
-  DIFF_FIELD(_mterm_cnt);
-  DIFF_FIELD(_id);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_leq);
-  DIFF_FIELD(_eeq);
-  DIFF_FIELD(_obstructions);
-  DIFF_FIELD(_site);
-  DIFF_HASH_TABLE(_mterm_hash);
-  DIFF_TABLE_NO_DEEP(_mterm_tbl);
-  DIFF_TABLE_NO_DEEP(_mpin_tbl);
-  DIFF_TABLE_NO_DEEP(_target_tbl);
-  DIFF_TABLE_NO_DEEP(_box_tbl);
-  DIFF_TABLE_NO_DEEP(_antenna_pin_model_tbl);
-  DIFF_END
-}
-
-void _dbMaster::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._frozen);
-  DIFF_OUT_FIELD(_flags._x_symmetry);
-  DIFF_OUT_FIELD(_flags._y_symmetry);
-  DIFF_OUT_FIELD(_flags._R90_symmetry);
-  DIFF_OUT_FIELD(_flags._type);
-  DIFF_OUT_FIELD(_x);
-  DIFF_OUT_FIELD(_y);
-  DIFF_OUT_FIELD(_height);
-  DIFF_OUT_FIELD(_width);
-  DIFF_OUT_FIELD(_mterm_cnt);
-  DIFF_OUT_FIELD(_id);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_leq);
-  DIFF_OUT_FIELD(_eeq);
-  DIFF_OUT_FIELD(_obstructions);
-  DIFF_OUT_FIELD(_site);
-  DIFF_OUT_HASH_TABLE(_mterm_hash);
-  DIFF_OUT_TABLE_NO_DEEP(_mterm_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_mpin_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_target_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_box_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_antenna_pin_model_tbl);
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -214,94 +178,57 @@ _dbMaster::_dbMaster(_dbDatabase* db)
   _width = 0;
   _mterm_cnt = 0;
   _id = 0;
-  _name = 0;
+  _name = nullptr;
 
-  _mterm_tbl = new dbTable<_dbMTerm>(
-      db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbMTermObj, 4, 2);
+  _mterm_tbl = new dbTable<_dbMTerm, 4>(
+      db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbMTermObj);
 
-  _mpin_tbl = new dbTable<_dbMPin>(
-      db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbMPinObj, 4, 2);
+  _mpin_tbl = new dbTable<_dbMPin, 4>(
+      db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbMPinObj);
 
-  _target_tbl = new dbTable<_dbTarget>(
-      db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbTargetObj, 4, 2);
+  _box_tbl = new dbTable<_dbBox, 8>(
+      db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbBoxObj);
 
-  _box_tbl = new dbTable<_dbBox>(
-      db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbBoxObj, 8, 3);
+  _poly_box_tbl = new dbTable<_dbPolygon, 8>(
+      db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbPolygonObj);
 
-  _antenna_pin_model_tbl = new dbTable<_dbTechAntennaPinModel>(
+  _antenna_pin_model_tbl = new dbTable<_dbTechAntennaPinModel, 8>(
       db,
       this,
       (GetObjTbl_t) &_dbMaster::getObjectTable,
-      dbTechAntennaPinModelObj,
-      8,
-      3);
+      dbTechAntennaPinModelObj);
+  edge_types_tbl_ = new dbTable<_dbMasterEdgeType, 8>(
+      db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbMasterEdgeTypeObj);
 
-  _box_itr = new dbBoxItr(_box_tbl);
+  _box_itr = new dbBoxItr<8>(_box_tbl, _poly_box_tbl, true);
+
+  _pbox_itr = new dbPolygonItr(_poly_box_tbl);
+
+  _pbox_box_itr = new dbBoxItr<8>(_box_tbl, _poly_box_tbl, false);
 
   _mpin_itr = new dbMPinItr(_mpin_tbl);
-
-  _target_itr = new dbTargetItr(_target_tbl);
 
   _mterm_hash.setTable(_mterm_tbl);
 
   _sta_cell = nullptr;
 }
 
-_dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
-    : _flags(m._flags),
-      _x(m._x),
-      _y(m._y),
-      _height(m._height),
-      _width(m._width),
-      _mterm_cnt(m._mterm_cnt),
-      _id(m._id),
-      _name(NULL),
-      _next_entry(m._next_entry),
-      _leq(m._leq),
-      _eeq(m._eeq),
-      _obstructions(m._obstructions),
-      _site(m._site),
-      _mterm_hash(m._mterm_hash),
-      _sta_cell(m._sta_cell)
-{
-  if (m._name) {
-    _name = strdup(m._name);
-    ZALLOCATED(_name);
-  }
-
-  _mterm_tbl = new dbTable<_dbMTerm>(db, this, *m._mterm_tbl);
-
-  _mpin_tbl = new dbTable<_dbMPin>(db, this, *m._mpin_tbl);
-
-  _target_tbl = new dbTable<_dbTarget>(db, this, *m._target_tbl);
-
-  _box_tbl = new dbTable<_dbBox>(db, this, *m._box_tbl);
-
-  _antenna_pin_model_tbl = new dbTable<_dbTechAntennaPinModel>(
-      db, this, *m._antenna_pin_model_tbl);
-
-  _box_itr = new dbBoxItr(_box_tbl);
-
-  _mpin_itr = new dbMPinItr(_mpin_tbl);
-
-  _target_itr = new dbTargetItr(_target_tbl);
-
-  _mterm_hash.setTable(_mterm_tbl);
-}
-
 _dbMaster::~_dbMaster()
 {
   delete _mterm_tbl;
   delete _mpin_tbl;
-  delete _target_tbl;
   delete _box_tbl;
+  delete _poly_box_tbl;
   delete _antenna_pin_model_tbl;
+  delete edge_types_tbl_;
   delete _box_itr;
+  delete _pbox_itr;
+  delete _pbox_box_itr;
   delete _mpin_itr;
-  delete _target_itr;
 
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
@@ -319,18 +246,22 @@ dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
   stream << master._leq;
   stream << master._eeq;
   stream << master._obstructions;
+  stream << master._poly_obstructions;
+  stream << master._lib_for_site;
   stream << master._site;
   stream << master._mterm_hash;
   stream << *master._mterm_tbl;
   stream << *master._mpin_tbl;
-  stream << *master._target_tbl;
   stream << *master._box_tbl;
+  stream << *master._poly_box_tbl;
   stream << *master._antenna_pin_model_tbl;
+  stream << *master.edge_types_tbl_;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
 {
+  _dbDatabase* db = master.getImpl()->getDatabase();
   uint* bit_field = (uint*) &master._flags;
   stream >> *bit_field;
   stream >> master._x;
@@ -344,13 +275,32 @@ dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
   stream >> master._leq;
   stream >> master._eeq;
   stream >> master._obstructions;
+  if (db->isSchema(db_schema_polygon)) {
+    stream >> master._poly_obstructions;
+  }
+  if (db->isSchema(db_schema_dbmaster_lib_for_site)) {
+    stream >> master._lib_for_site;
+  } else {
+    // The site was copied into the same dbLib previously
+    master._lib_for_site = master.getOwner()->getId();
+  }
   stream >> master._site;
   stream >> master._mterm_hash;
   stream >> *master._mterm_tbl;
   stream >> *master._mpin_tbl;
-  stream >> *master._target_tbl;
+  if (!db->isSchema(db_rm_target)) {
+    // obsolete table is always unpopulated so type/values unimportant
+    dbTable<_dbMaster, 4> dummy(nullptr, nullptr, nullptr, dbDatabaseObj);
+    stream >> dummy;
+  }
   stream >> *master._box_tbl;
+  if (db->isSchema(db_schema_polygon)) {
+    stream >> *master._poly_box_tbl;
+  }
   stream >> *master._antenna_pin_model_tbl;
+  if (db->isSchema(db_schema_master_edge_type)) {
+    stream >> *master.edge_types_tbl_;
+  }
   return stream;
 }
 
@@ -361,12 +311,14 @@ dbObjectTable* _dbMaster::getObjectTable(dbObjectType type)
       return _mterm_tbl;
     case dbMPinObj:
       return _mpin_tbl;
-    case dbTargetObj:
-      return _target_tbl;
     case dbBoxObj:
       return _box_tbl;
+    case dbPolygonObj:
+      return _poly_box_tbl;
     case dbTechAntennaPinModelObj:
       return _antenna_pin_model_tbl;
+    case dbMasterEdgeTypeObj:
+      return edge_types_tbl_;
     default:
       break;  // DIMITRIS_COMP_WARN
   }
@@ -380,7 +332,7 @@ dbObjectTable* _dbMaster::getObjectTable(dbObjectType type)
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbMaster::getName()
+std::string dbMaster::getName() const
 {
   _dbMaster* master = (_dbMaster*) this;
   return master->_name;
@@ -392,11 +344,10 @@ const char* dbMaster::getConstName()
   return master->_name;
 }
 
-void dbMaster::getOrigin(int& x, int& y)
+Point dbMaster::getOrigin()
 {
   _dbMaster* master = (_dbMaster*) this;
-  x = master->_x;
-  y = master->_y;
+  return {master->_x, master->_y};
 }
 
 void dbMaster::setOrigin(int x, int y)
@@ -442,6 +393,11 @@ void dbMaster::setHeight(uint h)
   master->_height = h;
 }
 
+int64_t dbMaster::getArea() const
+{
+  return getWidth() * static_cast<int64_t>(getHeight());
+}
+
 dbMasterType dbMaster::getType() const
 {
   _dbMaster* master = (_dbMaster*) this;
@@ -458,8 +414,9 @@ dbMaster* dbMaster::getLEQ()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  if (master->_leq == 0)
-    return NULL;
+  if (master->_leq == 0) {
+    return nullptr;
+  }
 
   _dbLib* lib = (_dbLib*) master->getOwner();
   return (dbMaster*) lib->_master_tbl->getPtr(master->_leq);
@@ -475,8 +432,9 @@ dbMaster* dbMaster::getEEQ()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  if (master->_eeq == 0)
-    return NULL;
+  if (master->_eeq == 0) {
+    return nullptr;
+  }
 
   _dbLib* lib = (_dbLib*) master->getOwner();
   return (dbMaster*) lib->_master_tbl->getPtr(master->_eeq);
@@ -494,6 +452,12 @@ dbSet<dbMTerm> dbMaster::getMTerms()
   return dbSet<dbMTerm>(master, master->_mterm_tbl);
 }
 
+dbSet<dbMasterEdgeType> dbMaster::getEdgeTypes()
+{
+  _dbMaster* master = (_dbMaster*) this;
+  return dbSet<dbMasterEdgeType>(master, master->edge_types_tbl_);
+}
+
 dbMTerm* dbMaster::findMTerm(const char* name)
 {
   _dbMaster* master = (_dbMaster*) this;
@@ -503,29 +467,33 @@ dbMTerm* dbMaster::findMTerm(const char* name)
 dbMTerm* dbMaster::findMTerm(dbBlock* block, const char* name)
 {
   dbMTerm* mterm = findMTerm(name);
-  if (mterm)
+  if (mterm) {
     return mterm;
-  char blk_left_bus_del, blk_right_bus_del, lib_left_bus_del, lib_right_bus_del;
-  char ttname[max_name_length];
-  uint ii = 0;
-  block->getBusDelimeters(blk_left_bus_del, blk_right_bus_del);
-  getLib()->getBusDelimeters(lib_left_bus_del, lib_right_bus_del);
-  if (lib_left_bus_del == '\0' || lib_right_bus_del == '\0')
-    return mterm;
+  }
+  char blk_left_bus_del, blk_right_bus_del;
+  block->getBusDelimiters(blk_left_bus_del, blk_right_bus_del);
 
+  char lib_left_bus_del, lib_right_bus_del;
+  ;
+  getLib()->getBusDelimiters(lib_left_bus_del, lib_right_bus_del);
+
+  if (lib_left_bus_del == '\0' || lib_right_bus_del == '\0') {
+    return mterm;
+  }
+
+  uint ii = 0;
+  std::string ttname(name);
   if (lib_left_bus_del != blk_left_bus_del
       || lib_right_bus_del != blk_right_bus_del) {
     while (name[ii] != '\0') {
-      if (name[ii] == blk_left_bus_del)
+      if (name[ii] == blk_left_bus_del) {
         ttname[ii] = lib_left_bus_del;
-      else if (name[ii] == blk_right_bus_del)
+      } else if (name[ii] == blk_right_bus_del) {
         ttname[ii] = lib_right_bus_del;
-      else
-        ttname[ii] = name[ii];
+      }
       ii++;
     }
-    ttname[ii] = '\0';
-    mterm = findMTerm(ttname);
+    mterm = findMTerm(ttname.c_str());
   }
   return mterm;
 }
@@ -535,10 +503,19 @@ dbLib* dbMaster::getLib()
   return (dbLib*) getImpl()->getOwner();
 }
 
-dbSet<dbBox> dbMaster::getObstructions()
+dbSet<dbBox> dbMaster::getObstructions(bool include_decomposed_polygons)
 {
   _dbMaster* master = (_dbMaster*) this;
-  return dbSet<dbBox>(master, master->_box_itr);
+  if (include_decomposed_polygons) {
+    return dbSet<dbBox>(master, master->_box_itr);
+  }
+  return dbSet<dbBox>(master, master->_pbox_box_itr);
+}
+
+dbSet<dbPolygon> dbMaster::getPolygonObstructions()
+{
+  _dbMaster* master = (_dbMaster*) this;
+  return dbSet<dbPolygon>(master, master->_pbox_itr);
 }
 
 bool dbMaster::isFrozen()
@@ -556,16 +533,20 @@ int dbMaster::getMTermCount()
 void dbMaster::setSite(dbSite* site)
 {
   _dbMaster* master = (_dbMaster*) this;
+  master->_lib_for_site = site->getLib()->getImpl()->getOID();
   master->_site = site->getImpl()->getOID();
 }
 
 dbSite* dbMaster::getSite()
 {
   _dbMaster* master = (_dbMaster*) this;
-  _dbLib* lib = (_dbLib*) master->getOwner();
 
-  if (master->_site == 0)
-    return NULL;
+  if (master->_site == 0) {
+    return nullptr;
+  }
+
+  _dbDatabase* db = (_dbDatabase*) getDb();
+  _dbLib* lib = (_dbLib*) db->_lib_tbl->getPtr(master->_lib_for_site);
 
   return (dbSite*) lib->_site_tbl->getPtr(master->_site);
 }
@@ -610,24 +591,21 @@ void dbMaster::setFrozen()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  if (master->_flags._frozen == 1)
+  if (master->_flags._frozen == 1) {
     return;
+  }
 
   master->_flags._frozen = 1;
 
   // set the order id on the mterm.
   // this id is used to index mterms on a inst-hdr
-  dbSet<dbMTerm> mterms = getMTerms();
-  dbSet<dbMTerm>::iterator itr;
   int i = 0;
-
-  for (itr = mterms.begin(); itr != mterms.end(); ++itr) {
-    _dbMTerm* mterm = (_dbMTerm*) *itr;
-    mterm->_order_id = i++;
+  for (dbMTerm* mterm : getMTerms()) {
+    ((_dbMTerm*) mterm)->_order_id = i++;
   }
 }
 
-void dbMaster::setSequential(uint v)
+void dbMaster::setSequential(bool v)
 {
   _dbMaster* master = (_dbMaster*) this;
   master->_flags._sequential = v;
@@ -636,7 +614,7 @@ void dbMaster::setSequential(uint v)
 bool dbMaster::isSequential()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_flags._sequential > 0 ? true : false;
+  return master->_flags._sequential;
 }
 void dbMaster::setMark(uint mark)
 {
@@ -672,32 +650,14 @@ void dbMaster::getPlacementBoundary(Rect& r)
 
 void dbMaster::transform(dbTransform& t)
 {
-  //_dbMaster * master = (_dbMaster *) this;
-  dbSet<dbBox> obs = getObstructions();
-  dbSet<dbBox>::iterator itr;
-
-  for (itr = obs.begin(); itr != obs.end(); ++itr) {
-    _dbBox* box = (_dbBox*) *itr;
-    t.apply(box->_shape._rect);
+  for (dbBox* box : getObstructions()) {
+    t.apply(((_dbBox*) box)->_shape._rect);
   }
 
-  dbSet<dbMTerm> mterms = getMTerms();
-  dbSet<dbMTerm>::iterator mitr;
-
-  for (mitr = mterms.begin(); mitr != mterms.end(); ++mitr) {
-    dbMTerm* mterm = *mitr;
-    dbSet<dbMPin> mpins = mterm->getMPins();
-    dbSet<dbMPin>::iterator pitr;
-
-    for (pitr = mpins.begin(); pitr != mpins.end(); ++pitr) {
-      dbMPin* mpin = *pitr;
-
-      dbSet<dbBox> geoms = mpin->getGeometry();
-      dbSet<dbBox>::iterator gitr;
-
-      for (gitr = geoms.begin(); gitr != geoms.end(); ++gitr) {
-        _dbBox* box = (_dbBox*) *gitr;
-        t.apply(box->_shape._rect);
+  for (dbMTerm* mterm : getMTerms()) {
+    for (dbMPin* mpin : mterm->getMPins()) {
+      for (dbBox* box : mpin->getGeometry()) {
+        t.apply(((_dbBox*) box)->_shape._rect);
       }
     }
   }
@@ -711,17 +671,38 @@ int dbMaster::getMasterId()
 
 dbMaster* dbMaster::create(dbLib* lib_, const char* name_)
 {
-  if (lib_->findMaster(name_))
-    return NULL;
+  if (lib_->findMaster(name_)) {
+    return nullptr;
+  }
 
   _dbLib* lib = (_dbLib*) lib_;
   _dbDatabase* db = lib->getDatabase();
   _dbMaster* master = lib->_master_tbl->create();
-  master->_name = strdup(name_);
-  ZALLOCATED(master->_name);
+  master->_name = safe_strdup(name_);
   master->_id = db->_master_id++;
   lib->_master_hash.insert(master);
   return (dbMaster*) master;
+}
+
+void dbMaster::destroy(dbMaster* master)
+{
+  auto db = master->getDb();
+  _dbMaster* master_impl = (_dbMaster*) master;
+  if (db->getChip() && db->getChip()->getBlock()) {
+    _dbBlock* block = (_dbBlock*) db->getChip()->getBlock();
+    _dbInstHdr* inst_hdr = block->_inst_hdr_hash.find(master_impl->_id);
+    if (inst_hdr) {
+      master->getImpl()->getLogger()->error(
+          utl::ODB,
+          431,
+          "Can't delete master {} which still has instances",
+          master->getName());
+    }
+  }
+
+  _dbLib* lib = (_dbLib*) master->getLib();
+  lib->_master_hash.remove(master_impl);
+  lib->_master_tbl->destroy(master_impl);
 }
 
 dbMaster* dbMaster::getMaster(dbLib* lib_, uint dbid_)
@@ -775,7 +756,6 @@ bool dbMaster::isFiller()
     case dbMasterType::PAD_INOUT:
     case dbMasterType::PAD_POWER:
     case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
       return false;
   }
   // gcc warning
@@ -827,11 +807,25 @@ bool dbMaster::isCoreAutoPlaceable()
     case dbMasterType::PAD_INOUT:
     case dbMasterType::PAD_POWER:
     case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
       return false;
   }
   // gcc warning
   return false;
+}
+
+void _dbMaster::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["mterm_hash"].add(_mterm_hash);
+  _mterm_tbl->collectMemInfo(info.children_["mterm"]);
+  _mpin_tbl->collectMemInfo(info.children_["mpin"]);
+  _box_tbl->collectMemInfo(info.children_["box"]);
+  _poly_box_tbl->collectMemInfo(info.children_["poly_box"]);
+  _antenna_pin_model_tbl->collectMemInfo(info.children_["antenna_pin_model"]);
+  edge_types_tbl_->collectMemInfo(info.children_["edge_types"]);
 }
 
 }  // namespace odb

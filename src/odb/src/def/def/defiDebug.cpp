@@ -22,22 +22,22 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
 
 #include "defiDebug.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
+#include "defiKRDefs.hpp"
 #include "defrData.hpp"
 #include "defrSettings.hpp"
-#include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 extern defrContext defContext;
 
@@ -76,7 +76,7 @@ void defiError(int check, int msgNum, const char* mess, defrData* defData)
     defData = defContext.data;
   }
 
-  return defData->defiError(check, msgNum, mess);
+  defData->defiError(check, msgNum, mess);
 }
 
 const char* upperCase(const char* str, defrData* defData)
@@ -97,4 +97,4 @@ const char* DEFCASE(const char* ch, defrData* defData)
   return defData->DEFCASE(ch);
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

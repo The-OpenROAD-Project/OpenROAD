@@ -1,0 +1,298 @@
+# HG changeset patch
+# User David Torres Sanchez <d.torressanchez@lancaster.ac.uk>
+# Date 1637826358 -3600
+#      Thu Nov 25 08:45:58 2021 +0100
+# Node ID 93c983122692826b48d3a40bc40100c8a4ea7650
+# Parent  a278d16bd2d082aa3c52ff4a9b0e2224ddc0549a
+Fix C++20 compatibility issue (#631)
+
+diff --git a/lemon/bits/array_map.h b/lemon/bits/array_map.h
+--- a/lemon/bits/array_map.h
++++ b/lemon/bits/array_map.h
+@@ -75,6 +75,7 @@
+     typedef typename Notifier::ObserverBase Parent;
+ 
+     typedef std::allocator<Value> Allocator;
++    typedef std::allocator_traits<std::allocator<Value>> AllocatorTraits;
+ 
+   public:
+ 
+@@ -87,8 +88,8 @@
+       Notifier* nf = Parent::notifier();
+       Item it;
+       for (nf->first(it); it != INVALID; nf->next(it)) {
+-        int id = nf->id(it);;
+-        allocator.construct(&(values[id]), Value());
++        int id = nf->id(it);
++        AllocatorTraits::construct(allocator, &(values[id]), Value());
+       }
+     }
+ 
+@@ -101,8 +102,8 @@
+       Notifier* nf = Parent::notifier();
+       Item it;
+       for (nf->first(it); it != INVALID; nf->next(it)) {
+-        int id = nf->id(it);;
+-        allocator.construct(&(values[id]), value);
++        int id = nf->id(it);
++        AllocatorTraits::construct(allocator, &(values[id]), value);
+       }
+     }
+ 
+@@ -120,8 +121,8 @@
+       Notifier* nf = Parent::notifier();
+       Item it;
+       for (nf->first(it); it != INVALID; nf->next(it)) {
+-        int id = nf->id(it);;
+-        allocator.construct(&(values[id]), copy.values[id]);
++        int id = nf->id(it);
++        AllocatorTraits::construct(allocator, &(values[id]), copy.values[id]);
+       }
+     }
+ 
+@@ -216,17 +217,17 @@
+         Value* new_values = allocator.allocate(new_capacity);
+         Item it;
+         for (nf->first(it); it != INVALID; nf->next(it)) {
+-          int jd = nf->id(it);;
++          int jd = nf->id(it);
+           if (id != jd) {
+-            allocator.construct(&(new_values[jd]), values[jd]);
+-            allocator.destroy(&(values[jd]));
++            AllocatorTraits::construct(allocator, &(new_values[jd]), values[jd]);
++            AllocatorTraits::destroy(allocator, &(values[jd]));
+           }
+         }
+         if (capacity != 0) allocator.deallocate(values, capacity);
+         values = new_values;
+         capacity = new_capacity;
+       }
+-      allocator.construct(&(values[id]), Value());
++      AllocatorTraits::construct(allocator, &(values[id]), Value());
+     }
+ 
+     // \brief Adds more new keys to the map.
+@@ -260,8 +261,8 @@
+             }
+           }
+           if (found) continue;
+-          allocator.construct(&(new_values[id]), values[id]);
+-          allocator.destroy(&(values[id]));
++          AllocatorTraits::construct(allocator, &(new_values[id]), values[id]);
++          AllocatorTraits::destroy(allocator, &(values[id]));
+         }
+         if (capacity != 0) allocator.deallocate(values, capacity);
+         values = new_values;
+@@ -269,7 +270,7 @@
+       }
+       for (int i = 0; i < int(keys.size()); ++i) {
+         int id = nf->id(keys[i]);
+-        allocator.construct(&(values[id]), Value());
++        AllocatorTraits::construct(allocator, &(values[id]), Value());
+       }
+     }
+ 
+@@ -279,7 +280,7 @@
+     // and it overrides the erase() member function of the observer base.
+     virtual void erase(const Key& key) {
+       int id = Parent::notifier()->id(key);
+-      allocator.destroy(&(values[id]));
++      AllocatorTraits::destroy(allocator, &(values[id]));
+     }
+ 
+     // \brief Erase more keys from the map.
+@@ -289,7 +290,7 @@
+     virtual void erase(const std::vector<Key>& keys) {
+       for (int i = 0; i < int(keys.size()); ++i) {
+         int id = Parent::notifier()->id(keys[i]);
+-        allocator.destroy(&(values[id]));
++        AllocatorTraits::destroy(allocator, &(values[id]));
+       }
+     }
+ 
+@@ -302,8 +303,8 @@
+       allocate_memory();
+       Item it;
+       for (nf->first(it); it != INVALID; nf->next(it)) {
+-        int id = nf->id(it);;
+-        allocator.construct(&(values[id]), Value());
++        int id = nf->id(it);
++        AllocatorTraits::construct(allocator, &(values[id]), Value());
+       }
+     }
+ 
+@@ -317,7 +318,7 @@
+         Item it;
+         for (nf->first(it); it != INVALID; nf->next(it)) {
+           int id = nf->id(it);
+-          allocator.destroy(&(values[id]));
++          AllocatorTraits::destroy(allocator, &(values[id]));
+         }
+         allocator.deallocate(values, capacity);
+         capacity = 0;
+diff --git a/lemon/path.h b/lemon/path.h
+--- a/lemon/path.h
++++ b/lemon/path.h
+@@ -448,7 +448,7 @@
+       data.resize(len);
+       int index = 0;
+       for (typename CPath::ArcIt it(path); it != INVALID; ++it) {
+-        data[index] = it;;
++        data[index] = it;
+         ++index;
+       }
+     }
+@@ -460,7 +460,7 @@
+       int index = len;
+       for (typename CPath::RevArcIt it(path); it != INVALID; ++it) {
+         --index;
+-        data[index] = it;;
++        data[index] = it;
+       }
+     }
+ 
+@@ -503,7 +503,9 @@
+ 
+     Node *first, *last;
+ 
+-    std::allocator<Node> alloc;
++  private:
++    typedef std::allocator<Node> Allocator;
++    typedef std::allocator_traits<std::allocator<Node>> AllocatorTraits;
+ 
+   public:
+ 
+@@ -663,8 +665,8 @@
+     void clear() {
+       while (first != 0) {
+         last = first->next;
+-        alloc.destroy(first);
+-        alloc.deallocate(first, 1);
++        AllocatorTraits::destroy(_allocator, first);
++        _allocator.deallocate(first, 1);
+         first = last;
+       }
+     }
+@@ -676,8 +678,8 @@
+ 
+     /// \brief Add a new arc before the current path
+     void addFront(const Arc& arc) {
+-      Node *node = alloc.allocate(1);
+-      alloc.construct(node, Node());
++      Node *node = _allocator.allocate(1);
++      AllocatorTraits::construct(_allocator, node, Node());
+       node->prev = 0;
+       node->next = first;
+       node->arc = arc;
+@@ -698,8 +700,8 @@
+       } else {
+         last = 0;
+       }
+-      alloc.destroy(node);
+-      alloc.deallocate(node, 1);
++      AllocatorTraits::destroy(_allocator, node);
++      _allocator.deallocate(node, 1);
+     }
+ 
+     /// \brief The last arc of the path.
+@@ -709,8 +711,8 @@
+ 
+     /// \brief Add a new arc behind the current path.
+     void addBack(const Arc& arc) {
+-      Node *node = alloc.allocate(1);
+-      alloc.construct(node, Node());
++      Node *node = _allocator.allocate(1);
++      AllocatorTraits::construct(_allocator, node, Node());
+       node->next = 0;
+       node->prev = last;
+       node->arc = arc;
+@@ -731,8 +733,8 @@
+       } else {
+         first = 0;
+       }
+-      alloc.destroy(node);
+-      alloc.deallocate(node, 1);
++      AllocatorTraits::destroy(_allocator, node);
++      _allocator.deallocate(node, 1);
+     }
+ 
+     /// \brief Splice a path to the back of the current path.
+@@ -847,6 +849,9 @@
+       }
+     }
+ 
++  private:
++    Allocator _allocator;
++
+   };
+ 
+   /// \brief A structure for representing directed paths in a digraph.
+@@ -875,7 +880,7 @@
+     /// \brief Default constructor
+     ///
+     /// Default constructor
+-    StaticPath() : len(0), _arcs(0) {}
++    StaticPath() : _len(0), _arcs(0) {}
+ 
+     /// \brief Copy constructor
+     ///
+@@ -1003,14 +1008,14 @@
+     }
+ 
+     /// \brief The length of the path.
+-    int length() const { return len; }
++    int length() const { return _len; }
+ 
+     /// \brief Return true when the path is empty.
+-    int empty() const { return len == 0; }
++    int empty() const { return _len == 0; }
+ 
+     /// \brief Reset the path to an empty one.
+     void clear() {
+-      len = 0;
++      _len = 0;
+       if (_arcs) delete[] _arcs;
+       _arcs = 0;
+     }
+@@ -1022,7 +1027,7 @@
+ 
+     /// \brief The last arc of the path.
+     const Arc& back() const {
+-      return _arcs[len - 1];
++      return _arcs[_len - 1];
+     }
+ 
+ 
+@@ -1030,8 +1035,8 @@
+ 
+     template <typename CPath>
+     void build(const CPath& path) {
+-      len = path.length();
+-      _arcs = new Arc[len];
++      _len = path.length();
++      _arcs = new Arc[_len];
+       int index = 0;
+       for (typename CPath::ArcIt it(path); it != INVALID; ++it) {
+         _arcs[index] = it;
+@@ -1041,9 +1046,9 @@
+ 
+     template <typename CPath>
+     void buildRev(const CPath& path) {
+-      len = path.length();
+-      _arcs = new Arc[len];
+-      int index = len;
++      _len = path.length();
++      _arcs = new Arc[_len];
++      int index = _len;
+       for (typename CPath::RevArcIt it(path); it != INVALID; ++it) {
+         --index;
+         _arcs[index] = it;
+@@ -1051,7 +1056,7 @@
+     }
+ 
+   private:
+-    int len;
++    int _len;
+     Arc* _arcs;
+   };
+ 

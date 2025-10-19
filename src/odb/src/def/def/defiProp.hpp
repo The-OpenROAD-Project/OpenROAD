@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -30,11 +30,11 @@
 #ifndef defiProp_h
 #define defiProp_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 class defrData;
 
@@ -42,11 +42,8 @@ class defrData;
 class defiProp
 {
  public:
-  defiProp(defrData* data = NULL);
+  defiProp(defrData* data);
   void Init();
-
-  DEF_COPY_CONSTRUCTOR_H(defiProp);
-  DEF_ASSIGN_OPERATOR_H(defiProp);
 
   void Destroy();
   ~defiProp();
@@ -96,8 +93,6 @@ class defiProp
   defrData* defData;
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

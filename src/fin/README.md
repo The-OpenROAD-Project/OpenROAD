@@ -6,11 +6,27 @@ configuration file.
 
 ## Commands
 
-```
-% density_fill -rules <json_file> [-area <list of lx ly ux uy>]
+```{note}
+- Parameters in square brackets `[-param param]` are optional.
+- Parameters without square brackets `-param2 param2` are required.
 ```
 
-If `-area` is not specified, the core area will be used.
+### Density Fill
+
+This command performs density fill to meet metal density DRC rules.
+
+```tcl
+density_fill
+    [-rules rules_file]
+    [-area {lx ly ux uy}]
+```
+
+#### Options
+
+| Switch Name | Description | 
+| ----- | ----- |
+| `-rules` | Specify `json` rule file. |
+| `-area` | Optional. If not specified, the core area will be used. |
 
 ## Example scripts
 
@@ -19,7 +35,7 @@ The rules `json` file controls fill and you can see an example
 
 The schema for the `json` is:
 
-``` json
+```json
 {
   "layers": {
     "<group_name>": {
@@ -57,6 +73,14 @@ This all started out in `klayout` so there are some obsolete fields that the
 parser accepts but ignores (e.g., `space_to_outline`).
 
 ## Regression tests
+
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
+
+Simply run the following script: 
+
+```shell
+./test/regression
+```
 
 ## Limitations
 

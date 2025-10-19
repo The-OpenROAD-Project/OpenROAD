@@ -22,35 +22,28 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
 
 #include "lefiMisc.hpp"
 
-#include <stdlib.h>
 #include <string.h>
 
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "lefiDebug.hpp"
+#include "lefiKRDefs.hpp"
 #include "lefiUtil.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
-
-// ****
-// lefiGeomPolygon
-// ****
-
-lefiGeomPolygon::lefiGeomPolygon() : numPoints(), x(NULL), y(NULL), colorMask(0)
-{
-}
-
-LEF_COPY_CONSTRUCTOR_C(lefiGeomPolygon){
-    LEF_COPY_FUNC(numPoints)
-        LEF_MALLOC_FUNC(x, double, sizeof(double) * numPoints)
-            LEF_MALLOC_FUNC(y, double, sizeof(double) * numPoints)
-                LEF_COPY_FUNC(colorMask)}
+BEGIN_LEF_PARSER_NAMESPACE
 
 // *****************************************************************************
 // lefiGeometries
@@ -69,45 +62,22 @@ void lefiGeometries::Init()
   items_ = (void**) lefMalloc(sizeof(void*) * 2);
   numPoints_ = 0;
   pointsAllocated_ = 0;
-  x_ = 0;
-  y_ = 0;
+  x_ = nullptr;
+  y_ = nullptr;
   xStart_ = -1;
   yStart_ = -1;
   xStep_ = -1;
   yStep_ = -1;
 }
 
-LEF_COPY_CONSTRUCTOR_C(lefiGeometries)
-{
-  //    printf("lefiGeometries CONSTRUCTOR START\n");
-  //    fflush(stdout);
-  this->Init();
-
-  //    printf("AFTER  INIT\n");
-  //    fflush(stdout);
-  for (int i = 0; i < prev.numItems_; i++) {
-    add(prev.items_[i], prev.itemType_[i]);
-  }
-
-  LEF_COPY_FUNC(numPoints_);
-  LEF_COPY_FUNC(pointsAllocated_);
-  LEF_MALLOC_FUNC(x_, double, sizeof(double) * numPoints_);
-  LEF_MALLOC_FUNC(y_, double, sizeof(double) * numPoints_);
-
-  LEF_COPY_FUNC(xStart_);
-  LEF_COPY_FUNC(yStart_);
-  LEF_COPY_FUNC(xStep_);
-  LEF_COPY_FUNC(yStep_);
-}
-
 void lefiGeometries::Destroy()
 {
   clear();
-  lefFree((char*) (items_));
-  lefFree((char*) (itemType_));
+  lefFree(items_);
+  lefFree(itemType_);
   if (x_) {
-    lefFree((double*) (x_));
-    lefFree((double*) (y_));
+    lefFree(x_);
+    lefFree(y_);
   }
   pointsAllocated_ = 0;
 }
@@ -121,43 +91,43 @@ void lefiGeometries::clear()
 {
   for (int i = 0; i < numItems_; i++) {
     if (itemType_[i] == lefiGeomViaE) {
-      lefFree(((lefiGeomVia*) (items_[i]))->name);
+      lefFree(((lefiGeomVia*) items_[i])->name);
     }
     if (itemType_[i] == lefiGeomViaIterE) {
-      lefFree(((lefiGeomViaIter*) (items_[i]))->name);
+      lefFree(((lefiGeomViaIter*) items_[i])->name);
     }
     if (itemType_[i] == lefiGeomPathE) {
       ((lefiGeomPath*) (items_[i]))->numPoints = 0;
-      lefFree((double*) ((lefiGeomPath*) items_[i])->x);
-      lefFree((double*) ((lefiGeomPath*) items_[i])->y);
+      lefFree(((lefiGeomPath*) items_[i])->x);
+      lefFree(((lefiGeomPath*) items_[i])->y);
     }
     if (itemType_[i] == lefiGeomPathIterE) {
       ((lefiGeomPathIter*) (items_[i]))->numPoints = 0;
-      lefFree((double*) ((lefiGeomPathIter*) items_[i])->x);
-      lefFree((double*) ((lefiGeomPathIter*) items_[i])->y);
+      lefFree(((lefiGeomPathIter*) items_[i])->x);
+      lefFree(((lefiGeomPathIter*) items_[i])->y);
     }
     if (itemType_[i] == lefiGeomPolygonE) {
       ((lefiGeomPolygon*) (items_[i]))->numPoints = 0;
-      lefFree((double*) ((lefiGeomPolygon*) items_[i])->x);
-      lefFree((double*) ((lefiGeomPolygon*) items_[i])->y);
+      lefFree(((lefiGeomPolygon*) items_[i])->x);
+      lefFree(((lefiGeomPolygon*) items_[i])->y);
     }
     if (itemType_[i] == lefiGeomPolygonIterE) {
       ((lefiGeomPolygonIter*) (items_[i]))->numPoints = 0;
-      lefFree((double*) ((lefiGeomPolygonIter*) items_[i])->x);
-      lefFree((double*) ((lefiGeomPolygonIter*) items_[i])->y);
+      lefFree(((lefiGeomPolygonIter*) items_[i])->x);
+      lefFree(((lefiGeomPolygonIter*) items_[i])->y);
     }
-    lefFree((char*) (items_[i]));
+    lefFree(items_[i]);
   }
   numItems_ = 0;
 }
 
 void lefiGeometries::clearPolyItems()
 {
-  lefFree((char*) (items_));
-  lefFree((char*) (itemType_));
+  lefFree(items_);
+  lefFree(itemType_);
   if (x_) {
-    lefFree((double*) (x_));
-    lefFree((double*) (y_));
+    lefFree(x_);
+    lefFree(y_);
   }
   numPoints_ = 0;
   pointsAllocated_ = 0;
@@ -170,18 +140,19 @@ void lefiGeometries::add(void* v, lefiGeomEnum e)
     int i;
     void** newi;
     lefiGeomEnum* newe;
-    if (itemsAllocated_ == 0)  // 9/12/2002 - for C version
+    if (itemsAllocated_ == 0) {  // 9/12/2002 - for C version
       itemsAllocated_ = 2;
-    else
+    } else {
       itemsAllocated_ *= 2;
+    }
     newe = (lefiGeomEnum*) lefMalloc(sizeof(lefiGeomEnum) * itemsAllocated_);
     newi = (void**) lefMalloc(sizeof(void*) * itemsAllocated_);
     for (i = 0; i < numItems_; i++) {
       newe[i] = itemType_[i];
       newi[i] = items_[i];
     }
-    lefFree((char*) (items_));
-    lefFree((char*) (itemType_));
+    lefFree(items_);
+    lefFree(itemType_);
     items_ = newi;
     itemType_ = newe;
   }
@@ -249,8 +220,8 @@ void lefiGeometries::addPath(int colorMask)
       p->y[i] = y_[i];
     }
   } else {
-    p->x = 0;
-    p->y = 0;
+    p->x = nullptr;
+    p->y = nullptr;
   }
 
   p->colorMask = colorMask;
@@ -274,8 +245,8 @@ void lefiGeometries::addPathIter(int colorMask)
       p->y[i] = y_[i];
     }
   } else {
-    p->x = 0;
-    p->y = 0;
+    p->x = nullptr;
+    p->y = nullptr;
   }
 
   p->colorMask = colorMask;
@@ -341,8 +312,8 @@ void lefiGeometries::addPolygon(int colorMask)
       p->y[i] = y_[i];
     }
   } else {
-    p->x = 0;
-    p->y = 0;
+    p->x = nullptr;
+    p->y = nullptr;
   }
 
   p->colorMask = colorMask;
@@ -367,8 +338,8 @@ void lefiGeometries::addPolygonIter(int colorMask)
       p->y[i] = y_[i];
     }
   } else {
-    p->x = 0;
-    p->y = 0;
+    p->x = nullptr;
+    p->y = nullptr;
   }
 
   p->xStart = xStart_;
@@ -450,18 +421,19 @@ void lefiGeometries::addToList(double x, double y)
     int i;
     double* nx;
     double* ny;
-    if (pointsAllocated_ == 0)
+    if (pointsAllocated_ == 0) {
       pointsAllocated_ = 2;
-    else
+    } else {
       pointsAllocated_ *= 2;
+    }
     nx = (double*) lefMalloc(sizeof(double) * pointsAllocated_);
     ny = (double*) lefMalloc(sizeof(double) * pointsAllocated_);
     for (i = 0; i < numPoints_; i++) {
       nx[i] = x_[i];
       ny[i] = y_[i];
     }
-    lefFree((char*) (x_));
-    lefFree((char*) (y_));
+    lefFree(x_);
+    lefFree(y_);
     x_ = nx;
     y_ = ny;
   }
@@ -472,8 +444,6 @@ void lefiGeometries::addToList(double x, double y)
 
 int lefiGeometries::numItems() const
 {
-  //    printf("numItems addr: %x\n", &numItems_);
-  //    fflush(stdout);
   return numItems_;
 }
 
@@ -502,7 +472,7 @@ lefiGeomRect* lefiGeometries::getRect(int index) const
             index,
             numItems_);
     lefiError(0, 1361, msg);
-    return 0;
+    return nullptr;
   }
   return (lefiGeomRect*) (items_[index]);
 }
@@ -517,7 +487,7 @@ lefiGeomRectIter* lefiGeometries::getRectIter(int index) const
             index,
             numItems_);
     lefiError(0, 1362, msg);
-    return 0;
+    return nullptr;
   }
   return (lefiGeomRectIter*) (items_[index]);
 }
@@ -532,7 +502,7 @@ lefiGeomPath* lefiGeometries::getPath(int index) const
             index,
             numItems_);
     lefiError(0, 1363, msg);
-    return 0;
+    return nullptr;
   }
   return (lefiGeomPath*) (items_[index]);
 }
@@ -547,15 +517,13 @@ lefiGeomPathIter* lefiGeometries::getPathIter(int index) const
             index,
             numItems_);
     lefiError(0, 1364, msg);
-    return 0;
+    return nullptr;
   }
   return (lefiGeomPathIter*) (items_[index]);
 }
 
 char* lefiGeometries::getLayer(int index) const
 {
-  //    printf("inside getLayer, items_[%d] address: %x\n", index,
-  //    &(items_[index])); fflush(stdout);
   char msg[160];
   if (index < 0 || index >= numItems_) {
     sprintf(msg,
@@ -564,7 +532,7 @@ char* lefiGeometries::getLayer(int index) const
             index,
             numItems_);
     lefiError(0, 1365, msg);
-    return 0;
+    return nullptr;
   }
   return (char*) (items_[index]);
 }
@@ -640,7 +608,7 @@ lefiGeomPolygon* lefiGeometries::getPolygon(int index) const
             index,
             numItems_);
     lefiError(0, 1370, msg);
-    return 0;
+    return nullptr;
   }
   return (lefiGeomPolygon*) (items_[index]);
 }
@@ -655,7 +623,7 @@ lefiGeomPolygonIter* lefiGeometries::getPolygonIter(int index) const
             index,
             numItems_);
     lefiError(0, 1371, msg);
-    return 0;
+    return nullptr;
   }
   return (lefiGeomPolygonIter*) (items_[index]);
 }
@@ -670,7 +638,7 @@ char* lefiGeometries::getClass(int index) const
             index,
             numItems_);
     lefiError(0, 1372, msg);
-    return 0;
+    return nullptr;
   }
   return (char*) (items_[index]);
 }
@@ -685,7 +653,7 @@ lefiGeomVia* lefiGeometries::getVia(int index) const
             index,
             numItems_);
     lefiError(0, 1373, msg);
-    return 0;
+    return nullptr;
   }
   return (lefiGeomVia*) (items_[index]);
 }
@@ -700,7 +668,7 @@ lefiGeomViaIter* lefiGeometries::getViaIter(int index) const
             index,
             numItems_);
     lefiError(0, 1374, msg);
-    return 0;
+    return nullptr;
   }
   return (lefiGeomViaIter*) (items_[index]);
 }
@@ -723,8 +691,9 @@ void lefiGeometries::print(FILE* f) const
         break;
 
       case lefiGeomLayerExceptPgNetE:
-        if (getLayerMinSpacing(i))
+        if (getLayerMinSpacing(i)) {
           fprintf(f, "EXCEPTPGNET \n");
+        }
         break;
 
       case lefiGeomLayerMinSpacingE:
@@ -746,8 +715,9 @@ void lefiGeometries::print(FILE* f) const
         if (path->colorMask) {
           fprintf(f, " MASK %d", path->colorMask);
         }
-        for (l = 0; l < path->numPoints; l++)
+        for (l = 0; l < path->numPoints; l++) {
           fprintf(f, " %g,%g", path->x[l], path->y[l]);
+        }
         fprintf(f, "\n");
         break;
 
@@ -900,10 +870,12 @@ void lefiSpacing::Init()
 
 void lefiSpacing::Destroy()
 {
-  if (name1_)
+  if (name1_) {
     lefFree(name1_);
-  if (name2_)
+  }
+  if (name2_) {
     lefFree(name2_);
+  }
 }
 
 lefiSpacing::~lefiSpacing()
@@ -971,8 +943,9 @@ void lefiSpacing::print(FILE* f) const
 {
   fprintf(f, "SPACING %s %s %g", name1(), name2(), distance());
 
-  if (hasStack())
+  if (hasStack()) {
     fprintf(f, "  STACK");
+  }
 
   fprintf(f, "\n");
 }
@@ -1002,8 +975,8 @@ void lefiIRDrop::Destroy()
 {
   lefFree(name_);
   clear();
-  lefFree((char*) (value1_));
-  lefFree((char*) (value2_));
+  lefFree(value1_);
+  lefFree(value2_);
 }
 
 lefiIRDrop::~lefiIRDrop()
@@ -1050,8 +1023,8 @@ void lefiIRDrop::setValues(double value1, double value2)
         v1[i] = value1_[i];
         v2[i] = value2_[i];
       }
-      lefFree((char*) (value1_));
-      lefFree((char*) (value2_));
+      lefFree(value1_);
+      lefFree(value2_);
     }
     value1_ = v1;
     value2_ = v2;
@@ -1161,80 +1134,18 @@ void lefiMinFeature::print(FILE* f) const
 // *****************************************************************************
 
 lefiSite::lefiSite()
-    : nameSize_(16),
-      name_(0),
-      numRowPattern_(0),
-      rowPatternAllocated_(0),
-      siteNames_(0),
-      siteOrients_(0)
 {
   Init();
-}
-
-LEF_COPY_CONSTRUCTOR_C(lefiSite)
-    : nameSize_(16),
-      name_(0),
-      numRowPattern_(0),
-      rowPatternAllocated_(0),
-      siteNames_(0),
-      siteOrients_(0)
-{
-  LEF_COPY_FUNC(nameSize_);
-  LEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-
-  LEF_COPY_FUNC(hasClass_);
-
-  for (int i = 0; i < 8; i++) {
-    siteClass_[i] = prev.siteClass_[i];
-  }
-
-  LEF_COPY_FUNC(sizeX_);
-  LEF_COPY_FUNC(sizeY_);
-  LEF_COPY_FUNC(hasSize_);
-  LEF_COPY_FUNC(symmetry_);
-  LEF_COPY_FUNC(numRowPattern_);
-  LEF_COPY_FUNC(rowPatternAllocated_);
-
-  LEF_MALLOC_FUNC_FOR_2D_STR(siteNames_, numRowPattern_);
-  LEF_MALLOC_FUNC(siteOrients_, int, sizeof(int) * numRowPattern_);
-}
-
-LEF_ASSIGN_OPERATOR_C(lefiSite)
-{
-  CHECK_SELF_ASSIGN
-  name_ = 0;
-  siteNames_ = 0;
-  siteOrients_ = 0;
-
-  LEF_COPY_FUNC(nameSize_);
-  LEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-
-  LEF_COPY_FUNC(hasClass_);
-
-  for (int i = 0; i < 8; i++) {
-    siteClass_[i] = prev.siteClass_[i];
-  }
-
-  LEF_COPY_FUNC(sizeX_);
-  LEF_COPY_FUNC(sizeY_);
-  LEF_COPY_FUNC(hasSize_);
-  LEF_COPY_FUNC(symmetry_);
-  LEF_COPY_FUNC(numRowPattern_);
-  LEF_COPY_FUNC(rowPatternAllocated_);
-
-  LEF_MALLOC_FUNC_FOR_2D_STR(siteNames_, numRowPattern_);
-  LEF_MALLOC_FUNC(siteOrients_, int, sizeof(int) * numRowPattern_);
-  return *this;
 }
 
 void lefiSite::Init()
 {
   nameSize_ = 16;
-  name_ = (char*) lefMalloc(sizeof(char) * nameSize_);
+  name_ = (char*) lefMalloc(16);
   numRowPattern_ = 0;
   rowPatternAllocated_ = 0;
-  siteNames_ = 0;
-  siteOrients_ = 0;
+  siteNames_ = nullptr;
+  siteOrients_ = nullptr;
 }
 
 void lefiSite::Destroy()
@@ -1243,8 +1154,9 @@ void lefiSite::Destroy()
 
   lefFree(name_);
   if (numRowPattern_) {
-    for (i = 0; i < numRowPattern_; i++)
+    for (i = 0; i < numRowPattern_; i++) {
       lefFree(siteNames_[i]);
+    }
     lefFree(siteNames_);
     lefFree(siteOrients_);
     numRowPattern_ = 0;
@@ -1271,8 +1183,9 @@ void lefiSite::setName(const char* name)
   hasSize_ = 0;
   symmetry_ = 0;
   if (numRowPattern_) {
-    for (i = 0; i < numRowPattern_; i++)
+    for (i = 0; i < numRowPattern_; i++) {
       lefFree(siteNames_[i]);
+    }
     numRowPattern_ = 0;
   }
 }
@@ -1321,8 +1234,8 @@ void lefiSite::addRowPattern(const char* name, int orient)
       so[i] = siteOrients_[i];
     }
     if (siteNames_) {
-      lefFree((char*) (siteNames_));
-      lefFree((char*) (siteOrients_));
+      lefFree(siteNames_);
+      lefFree(siteOrients_);
     }
     siteNames_ = sn;
     siteOrients_ = so;
@@ -1330,6 +1243,16 @@ void lefiSite::addRowPattern(const char* name, int orient)
   siteNames_[numRowPattern_] = strdup(name);
   siteOrients_[numRowPattern_] = orient;
   numRowPattern_ += 1;
+}
+
+std::vector<std::pair<std::string, std::string>> lefiSite::getRowPatterns()
+    const
+{
+  std::vector<std::pair<std::string, std::string>> patterns(numRowPattern_);
+  for (int i = 0; i < numRowPattern_; i++) {
+    patterns[i] = {siteName(i), siteOrientStr(i)};
+  }
+  return patterns;
 }
 
 const char* lefiSite::name() const
@@ -1406,20 +1329,25 @@ void lefiSite::print(FILE* f) const
 {
   fprintf(f, "SITE %s", name());
 
-  if (hasClass())
+  if (hasClass()) {
     fprintf(f, " CLASS %s", siteClass());
+  }
 
-  if (hasSize())
+  if (hasSize()) {
     fprintf(f, " SIZE %g %g", sizeX(), sizeY());
+  }
 
-  if (hasXSymmetry())
+  if (hasXSymmetry()) {
     fprintf(f, " SYMMETRY X");
+  }
 
-  if (hasYSymmetry())
+  if (hasYSymmetry()) {
     fprintf(f, " SYMMETRY Y");
+  }
 
-  if (has90Symmetry())
+  if (has90Symmetry()) {
     fprintf(f, " SYMMETRY R90");
+  }
 
   fprintf(f, "\n");
 }
@@ -1431,20 +1359,6 @@ void lefiSite::print(FILE* f) const
 lefiSitePattern::lefiSitePattern()
 {
   Init();
-}
-
-LEF_COPY_CONSTRUCTOR_C(lefiSitePattern)
-{
-  this->Init();
-  LEF_COPY_FUNC(nameSize_);
-  LEF_MALLOC_FUNC(name_, char, sizeof(char) * nameSize_);
-  LEF_COPY_FUNC(orient_);
-  LEF_COPY_FUNC(x_);
-  LEF_COPY_FUNC(y_);
-  LEF_COPY_FUNC(xStart_);
-  LEF_COPY_FUNC(yStart_);
-  LEF_COPY_FUNC(xStep_);
-  LEF_COPY_FUNC(yStep_);
 }
 
 void lefiSitePattern::Init()
@@ -1516,8 +1430,9 @@ double lefiSitePattern::y() const
 
 int lefiSitePattern::hasStepPattern() const
 {
-  if (xStart_ == -1 && yStart_ == -1 && xStep_ == -1 && yStep_ == -1)
+  if (xStart_ == -1 && yStart_ == -1 && xStep_ == -1 && yStep_ == -1) {
     return 0;
+  }
   return 1;
 }
 
@@ -1571,14 +1486,15 @@ void lefiTrackPattern::Init()
 
 void lefiTrackPattern::Destroy()
 {
-  if (name_)
+  if (name_) {
     lefFree(name_);
+  }
   clear();
-  name_ = 0;
+  name_ = nullptr;
   start_ = 0;
   numTracks_ = 0;
   space_ = 0;
-  lefFree((char*) (layerNames_));
+  lefFree(layerNames_);
 }
 
 void lefiTrackPattern::clear()
@@ -1619,14 +1535,16 @@ void lefiTrackPattern::addLayer(const char* name)
     int i;
     char** nn;
 
-    if (layerAllocated_ == 0)
+    if (layerAllocated_ == 0) {
       layerAllocated_ = 2;
-    else
+    } else {
       layerAllocated_ *= 2;
+    }
     nn = (char**) lefMalloc(sizeof(char*) * layerAllocated_);
-    for (i = 0; i < numLayers_; i++)
+    for (i = 0; i < numLayers_; i++) {
       nn[i] = layerNames_[i];
-    lefFree((char*) (layerNames_));
+    }
+    lefFree(layerNames_);
     layerNames_ = nn;
   }
   len = strlen(name) + 1;
@@ -1670,7 +1588,7 @@ const char* lefiTrackPattern::layerName(int index) const
             index,
             numLayers_);
     lefiError(0, 1377, msg);
-    return 0;
+    return nullptr;
   }
   return layerNames_[index];
 }
@@ -1686,8 +1604,9 @@ void lefiTrackPattern::print(FILE* f) const
           space());
   if (numLayers() > 0) {
     fprintf(f, "    LAYER ");
-    for (i = 0; i < numLayers(); i++)
+    for (i = 0; i < numLayers(); i++) {
       fprintf(f, "%s ", layerName(i));
+    }
     fprintf(f, "\n");
   }
 }
@@ -1712,9 +1631,10 @@ void lefiGcellPattern::Init()
 
 void lefiGcellPattern::Destroy()
 {
-  if (name_)
+  if (name_) {
     lefFree(name_);
-  name_ = 0;
+  }
+  name_ = nullptr;
   start_ = 0;
   numCRs_ = 0;
   space_ = 0;
@@ -1784,14 +1704,15 @@ lefiUseMinSpacing::lefiUseMinSpacing()
 
 void lefiUseMinSpacing::Init()
 {
-  name_ = 0;
+  name_ = nullptr;
   value_ = 0;
 }
 
 void lefiUseMinSpacing::Destroy()
 {
-  if (name_)
+  if (name_) {
     lefFree(name_);
+  }
 }
 
 lefiUseMinSpacing::~lefiUseMinSpacing()
@@ -1828,8 +1749,8 @@ void lefiUseMinSpacing::print(FILE* f) const
 
 lefiMaxStackVia::lefiMaxStackVia()
 {
-  bottomLayer_ = 0;
-  topLayer_ = 0;
+  bottomLayer_ = nullptr;
+  topLayer_ = nullptr;
   Init();
 }
 
@@ -1837,22 +1758,26 @@ void lefiMaxStackVia::Init()
 {
   value_ = 0;
   hasRange_ = 0;
-  if (bottomLayer_)         // This is for C version, since C will
+  if (bottomLayer_) {       // This is for C version, since C will
     lefFree(bottomLayer_);  // call this function before calling
-  if (topLayer_)            // setMaxStackViaRange when more than 1 lef
-    lefFree(topLayer_);     // files are parse. C++ skips this function
-  bottomLayer_ = 0;
-  topLayer_ = 0;
+  }
+  if (topLayer_) {       // setMaxStackViaRange when more than 1 lef
+    lefFree(topLayer_);  // files are parse. C++ skips this function
+  }
+  bottomLayer_ = nullptr;
+  topLayer_ = nullptr;
 }
 
 void lefiMaxStackVia::Destroy()
 {
-  if (bottomLayer_)
+  if (bottomLayer_) {
     lefFree(bottomLayer_);
-  if (topLayer_)
+  }
+  if (topLayer_) {
     lefFree(topLayer_);
-  bottomLayer_ = 0;
-  topLayer_ = 0;
+  }
+  bottomLayer_ = nullptr;
+  topLayer_ = nullptr;
   hasRange_ = 0;
   value_ = 0;
 }
@@ -1871,10 +1796,12 @@ void lefiMaxStackVia::setMaxStackViaRange(const char* bottomLayer,
                                           const char* topLayer)
 {
   hasRange_ = 1;
-  if (bottomLayer_)         // May be lefrReset is called and
+  if (bottomLayer_) {       // May be lefrReset is called and
     lefFree(bottomLayer_);  // bottomLayer_ and/or topLayer_ have
-  if (topLayer_)            // value malloc on them
+  }
+  if (topLayer_) {  // value malloc on them
     lefFree(topLayer_);
+  }
   bottomLayer_ = (char*) lefMalloc(strlen(bottomLayer) + 1);
   strcpy(bottomLayer_, CASE(bottomLayer));
   topLayer_ = (char*) lefMalloc(strlen(topLayer) + 1);
@@ -1906,8 +1833,9 @@ const char* lefiMaxStackVia::maxStackViaTopLayer() const
 void lefiMaxStackVia::print(FILE* f) const
 {
   fprintf(f, "MAXVIASTACK %d", maxStackVia());
-  if (hasMaxStackViaRange())
+  if (hasMaxStackViaRange()) {
     fprintf(f, " RANGE %s %s", maxStackViaBottomLayer(), maxStackViaTopLayer());
+  }
   fprintf(f, "\n");
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

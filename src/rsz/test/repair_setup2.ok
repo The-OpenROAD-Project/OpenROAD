@@ -1,18 +1,35 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: td1
 [INFO ODB-0130]     Created 6 pins.
 [INFO ODB-0131]     Created 3 components and 15 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 7 nets and 9 connections.
-worst slack -0.28
-[INFO RSZ-0058] Using max wire length 720um.
-[INFO RSZ-0037] Found 3 long wires.
-[INFO RSZ-0038] Inserted 3 buffers in 3 nets.
-[INFO RSZ-0039] Resized 2 instances.
-[INFO RSZ-0041] Resized 2 instances.
+worst slack max -0.28
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |         7
+    final |    +92.3% |       0 |       2 |             2 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0036] Found 2 capacitance violations.
+[INFO RSZ-0038] Inserted 2 buffers in 2 nets.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 2 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 2 out of 2 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
+--------------------------------------------------------------------------------------------------------------
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.209 |       -0.3 |      2 | y2
+        7 |       1 |       3 |        0 |      0 |     1 |   +20.0% |   -0.164 |       -0.2 |      2 | y2
+       10 |       1 |       5 |        0 |      0 |     1 |   +48.0% |   -0.164 |       -0.2 |      2 | y2
+       13 |       1 |       3 |        0 |      0 |     1 |   +20.0% |   -0.164 |       -0.2 |      2 | y2
+      14* |       1 |       3 |        0 |      0 |     1 |   +20.0% |   -0.164 |       -0.2 |      2 | y2
+      15* |       1 |       3 |        0 |      0 |     1 |   +20.0% |   -0.164 |       -0.2 |      2 | y2
+    final |       1 |       3 |        0 |      0 |     1 |   +20.0% |   -0.164 |       -0.2 |      2 | y2
+--------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 1 buffers.
+[INFO RSZ-0051] Resized 3 instances: 3 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 1 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack -0.12
+Repair timing output passed/skipped equivalence test
+worst slack max -0.16

@@ -22,21 +22,39 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
 
 #include "defiSlot.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <sstream>
 
 #include "defiDebug.hpp"
-#include "lex.h"
+#include "defiKRDefs.hpp"
+#include "defiMisc.hpp"
+#include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
+
+namespace {
+
+void defiError6160(int index, int numRectangles, defrData* defData)
+{
+  std::stringstream msg;
+  msg << "ERROR (DEFPARS-6160): The index number " << index
+      << " specified for the SLOT ";
+  msg << "RECTANGLE is invalid.\nValid index number is from 0 to "
+      << numRectangles << ". ";
+  msg << "Specify a valid index number and then try again.";
+  defiError(0, 6160, msg.str().c_str(), defData);
+}
+
+}  // namespace
 
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
@@ -62,8 +80,8 @@ void defiSlot::Init()
   yh_ = (int*) malloc(sizeof(int) * 1);
   rectsAllocated_ = 1;  // At least 1 rectangle will define
   polysAllocated_ = 0;
-  polygons_ = 0;
-  layerName_ = 0;
+  polygons_ = nullptr;
+  layerName_ = nullptr;
 }
 
 defiSlot::~defiSlot()
@@ -93,21 +111,23 @@ void defiSlot::clearPoly()
 
 void defiSlot::Destroy()
 {
-  if (layerName_)
+  if (layerName_) {
     free(layerName_);
+  }
   free((char*) (xl_));
   free((char*) (yl_));
   free((char*) (xh_));
   free((char*) (yh_));
   rectsAllocated_ = 0;
-  xl_ = 0;
-  yl_ = 0;
-  xh_ = 0;
-  yh_ = 0;
+  xl_ = nullptr;
+  yl_ = nullptr;
+  xh_ = nullptr;
+  yh_ = nullptr;
   clearPoly();
-  if (polygons_)
+  if (polygons_) {
     free((char*) (polygons_));
-  polygons_ = 0;
+  }
+  polygons_ = nullptr;
   clear();
 }
 
@@ -115,8 +135,9 @@ void defiSlot::setLayer(const char* name)
 {
   int len = strlen(name) + 1;
   if (layerNameLength_ < len) {
-    if (layerName_)
+    if (layerName_) {
       free(layerName_);
+    }
     layerName_ = (char*) malloc(len);
     layerNameLength_ = len;
   }
@@ -167,10 +188,12 @@ void defiSlot::addPolygon(defiGeometries* geom)
     polysAllocated_ = (polysAllocated_ == 0) ? 2 : polysAllocated_ * 2;
     poly = (struct defiPoints**) malloc(sizeof(struct defiPoints*)
                                         * polysAllocated_);
-    for (i = 0; i < numPolys_; i++)
+    for (i = 0; i < numPolys_; i++) {
       poly[i] = polygons_[i];
-    if (polygons_)
+    }
+    if (polygons_) {
       free((char*) (polygons_));
+    }
     polygons_ = poly;
   }
   p = (struct defiPoints*) malloc(sizeof(struct defiPoints));
@@ -203,15 +226,8 @@ int defiSlot::numRectangles() const
 
 int defiSlot::xl(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numRectangles_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6160): The index number %d specified for the SLOT "
-            "RECTANGLE is invalid.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numRectangles_);
-    defiError(0, 6160, msg, defData);
+    defiError6160(index, numRectangles_, defData);
     return 0;
   }
   return xl_[index];
@@ -219,15 +235,8 @@ int defiSlot::xl(int index) const
 
 int defiSlot::yl(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numRectangles_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6160): The index number %d specified for the SLOT "
-            "RECTANGLE is invalid.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numRectangles_);
-    defiError(0, 6160, msg, defData);
+    defiError6160(index, numRectangles_, defData);
     return 0;
   }
   return yl_[index];
@@ -235,15 +244,8 @@ int defiSlot::yl(int index) const
 
 int defiSlot::xh(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numRectangles_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6160): The index number %d specified for the SLOT "
-            "RECTANGLE is invalid.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numRectangles_);
-    defiError(0, 6160, msg, defData);
+    defiError6160(index, numRectangles_, defData);
     return 0;
   }
   return xh_[index];
@@ -251,15 +253,8 @@ int defiSlot::xh(int index) const
 
 int defiSlot::yh(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numRectangles_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6160): The index number %d specified for the SLOT "
-            "RECTANGLE is invalid.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numRectangles_);
-    defiError(0, 6160, msg, defData);
+    defiError6160(index, numRectangles_, defData);
     return 0;
   }
   return yh_[index];
@@ -282,8 +277,9 @@ void defiSlot::print(FILE* f) const
   int i, j;
   struct defiPoints points;
 
-  if (hasLayer())
+  if (hasLayer()) {
     fprintf(f, "- LAYER %s\n", layerName());
+  }
 
   for (i = 0; i < numRectangles(); i++) {
     fprintf(f, "   RECT %d %d %d %d\n", xl(i), yl(i), xh(i), yh(i));
@@ -292,10 +288,11 @@ void defiSlot::print(FILE* f) const
   for (i = 0; i < numPolygons(); i++) {
     fprintf(f, "   POLYGON ");
     points = getPolygon(i);
-    for (j = 0; j < points.numPoints; j++)
+    for (j = 0; j < points.numPoints; j++) {
       fprintf(f, "%d %d ", points.x[j], points.y[j]);
+    }
     fprintf(f, "\n");
   }
   fprintf(f, "\n");
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -30,12 +30,12 @@
 #ifndef defiBLOCKAGES_h
 #define defiBLOCKAGES_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 #include "defiMisc.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 class defrData;
 
 class defiBlockage
@@ -46,9 +46,6 @@ class defiBlockage
 
   void Destroy();
   ~defiBlockage();
-
-  DEF_COPY_CONSTRUCTOR_H(defiBlockage);
-  DEF_ASSIGN_OPERATOR_H(defiBlockage);
 
   void clear();
   void clearPoly();
@@ -129,8 +126,6 @@ class defiBlockage
   defrData* defData;
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

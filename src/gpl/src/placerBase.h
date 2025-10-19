@@ -1,50 +1,24 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2018-2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
-#ifndef __PLACER_BASE__
-#define __PLACER_BASE__
+#pragma once
 
+#include <climits>
+#include <cstdint>
 #include <memory>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace odb {
 class dbDatabase;
 
-class dbInst;
-class dbITerm;
 class dbBTerm;
+class dbGroup;
+class dbITerm;
+class dbInst;
 class dbNet;
+class dbObject;
 
 class dbPlacementStatus;
 class dbSigType;
@@ -52,6 +26,7 @@ class dbSigType;
 class dbBox;
 
 class Rect;
+class Point;
 
 }  // namespace odb
 
@@ -64,16 +39,13 @@ namespace gpl {
 class Pin;
 class Net;
 class GCell;
+class PlacerBaseCommon;
 
 class Instance
 {
  public:
   Instance();
-  Instance(odb::dbInst* inst,
-           int padLeft,
-           int padRight,
-           int site_height,
-           utl::Logger* logger);
+  Instance(odb::dbInst* inst, PlacerBaseCommon* pbc, utl::Logger* logger);
   Instance(int lx, int ly, int ux, int uy);  // dummy instance
   ~Instance();
 
@@ -100,11 +72,12 @@ class Instance
   // unusable sites.  It will have inst_ as nullptr
   bool isDummy() const;
 
+  void copyDbLocation(PlacerBaseCommon* pbc);
   void setLocation(int x, int y);
   void setCenterLocation(int x, int y);
 
   void dbSetPlaced();
-  void dbSetPlacementStatus(odb::dbPlacementStatus ps);
+  void dbSetPlacementStatus(const odb::dbPlacementStatus& ps);
   void dbSetLocation();
   void dbSetLocation(int x, int y);
   void dbSetCenterLocation(int x, int y);
@@ -120,21 +93,22 @@ class Instance
   int64_t area() const;
 
   void setExtId(int extId);
-  int extId() const { return extId_; }
+  int getExtId() const { return extId_; }
 
   void addPin(Pin* pin);
-  const std::vector<Pin*>& pins() const { return pins_; }
+  const std::vector<Pin*>& getPins() const { return pins_; }
+  void snapOutward(const odb::Point& origin, int step_x, int step_y);
 
  private:
-  odb::dbInst* inst_;
+  odb::dbInst* inst_ = nullptr;
   std::vector<Pin*> pins_;
-  int lx_;
-  int ly_;
-  int ux_;
-  int uy_;
-  int extId_;
-  bool is_macro_;
-  bool is_locked_;
+  int lx_ = 0;
+  int ly_ = 0;
+  int ux_ = 0;
+  int uy_ = 0;
+  int extId_ = INT_MIN;
+  bool is_macro_ = false;
+  bool is_locked_ = false;
 };
 
 class Pin
@@ -142,11 +116,11 @@ class Pin
  public:
   Pin();
   Pin(odb::dbITerm* iTerm);
-  Pin(odb::dbBTerm* bTerm);
+  Pin(odb::dbBTerm* bTerm, utl::Logger* logger);
   ~Pin();
 
-  odb::dbITerm* dbITerm() const;
-  odb::dbBTerm* dbBTerm() const;
+  odb::dbITerm* getDbITerm() const;
+  odb::dbBTerm* getDbBTerm() const;
 
   bool isITerm() const;
   bool isBTerm() const;
@@ -169,8 +143,8 @@ class Pin
   int cx() const;
   int cy() const;
 
-  int offsetCx() const;
-  int offsetCy() const;
+  int getOffsetCx() const;
+  int getOffsetCy() const;
 
   void updateLocation(const Instance* inst);
 
@@ -179,26 +153,28 @@ class Pin
 
   bool isPlaceInstConnected() const;
 
-  Instance* instance() const { return inst_; }
-  Net* net() const { return net_; }
-  std::string name() const;
+  Instance* getInstance() const { return inst_; }
+  Net* getNet() const { return net_; }
+  std::string getName() const;
+
+  void updateCoordi(odb::dbITerm* iTerm);
 
  private:
-  void* term_;
-  Instance* inst_;
-  Net* net_;
+  odb::dbObject* term_ = nullptr;
+  Instance* inst_ = nullptr;
+  Net* net_ = nullptr;
 
   // pin center coordinate is enough
   // Pins' placed location.
-  int cx_;
-  int cy_;
+  int cx_ = 0;
+  int cy_ = 0;
 
   // offset coordinates inside instance.
   // origin point is center point of instance.
   // (e.g. (DX/2,DY/2) )
   // This will increase efficiency for bloating
-  int offsetCx_;
-  int offsetCy_;
+  int offsetCx_ = 0;
+  int offsetCy_ = 0;
 
   unsigned char iTermField_ : 1;
   unsigned char bTermField_ : 1;
@@ -207,8 +183,7 @@ class Pin
   unsigned char maxPinXField_ : 1;
   unsigned char maxPinYField_ : 1;
 
-  void updateCoordi(odb::dbITerm* iTerm);
-  void updateCoordi(odb::dbBTerm* bTerm);
+  void updateCoordi(odb::dbBTerm* bTerm, utl::Logger* logger);
 };
 
 class Net
@@ -226,35 +201,35 @@ class Net
   int cy() const;
 
   // HPWL: half-parameter-wire-length
-  int64_t hpwl() const;
+  int64_t getHpwl() const;
 
   void updateBox(bool skipIoMode = false);
 
-  const std::vector<Pin*>& pins() const { return pins_; }
+  const std::vector<Pin*>& getPins() const { return pins_; }
 
-  odb::dbNet* dbNet() const { return net_; }
+  odb::dbNet* getDbNet() const { return net_; }
   odb::dbSigType getSigType() const;
 
   void addPin(Pin* pin);
 
  private:
-  odb::dbNet* net_;
+  odb::dbNet* net_ = nullptr;
   std::vector<Pin*> pins_;
-  int lx_;
-  int ly_;
-  int ux_;
-  int uy_;
+  int lx_ = 0;
+  int ly_ = 0;
+  int ux_ = 0;
+  int uy_ = 0;
 };
 
 class Die
 {
  public:
   Die();
-  Die(const odb::Rect& dieBox, const odb::Rect& coreRect);
+  Die(const odb::Rect& dieRect, const odb::Rect& coreRect);
   ~Die();
 
-  void setDieBox(const odb::Rect& dieBox);
-  void setCoreBox(const odb::Rect& coreBox);
+  void setDieBox(const odb::Rect& dieRect);
+  void setCoreBox(const odb::Rect& coreRect);
 
   int dieLx() const { return dieLx_; }
   int dieLy() const { return dieLy_; }
@@ -279,14 +254,14 @@ class Die
   int64_t coreArea() const;
 
  private:
-  int dieLx_;
-  int dieLy_;
-  int dieUx_;
-  int dieUy_;
-  int coreLx_;
-  int coreLy_;
-  int coreUx_;
-  int coreUy_;
+  int dieLx_ = 0;
+  int dieLy_ = 0;
+  int dieUx_ = 0;
+  int dieUy_ = 0;
+  int coreLx_ = 0;
+  int coreLy_ = 0;
+  int coreUx_ = 0;
+  int coreUy_ = 0;
 };
 
 class PlacerBaseVars
@@ -300,59 +275,49 @@ class PlacerBaseVars
   void reset();
 };
 
-class PlacerBase
+// Class includes everything from PlacerBase that is not region specific
+class PlacerBaseCommon
 {
  public:
-  PlacerBase();
+  PlacerBaseCommon();
   // temp padLeft/Right before OpenDB supporting...
-  PlacerBase(odb::dbDatabase* db, PlacerBaseVars pbVars, utl::Logger* log);
-  ~PlacerBase();
+  PlacerBaseCommon(odb::dbDatabase* db,
+                   PlacerBaseVars pbVars,
+                   utl::Logger* log);
+  ~PlacerBaseCommon();
 
-  const std::vector<Instance*>& insts() const { return insts_; }
-  const std::vector<Pin*>& pins() const { return pins_; }
-  const std::vector<Net*>& nets() const { return nets_; }
-
-  //
-  // placeInsts : a real instance that need to be placed
-  // fixedInsts : a real instance that is fixed (e.g. macros, tapcells)
-  // dummyInsts : a fake instance that is for unusable site handling
-  //
-  // nonPlaceInsts : fixedInsts + dummyInsts to enable fast-iterate on Bin-init
-  //
   const std::vector<Instance*>& placeInsts() const { return placeInsts_; }
-  const std::vector<Instance*>& fixedInsts() const { return fixedInsts_; }
-  const std::vector<Instance*>& dummyInsts() const { return dummyInsts_; }
-  const std::vector<Instance*>& nonPlaceInsts() const { return nonPlaceInsts_; }
+  const std::vector<Instance*>& getInsts() const { return insts_; }
+  const std::vector<Pin*>& getPins() const { return pins_; }
+  const std::vector<Net*>& getNets() const { return nets_; }
 
-  Die& die() { return die_; }
+  Die& getDie() { return die_; }
 
   // Pb : PlacerBase
   Instance* dbToPb(odb::dbInst* inst) const;
-  Pin* dbToPb(odb::dbITerm* pin) const;
-  Pin* dbToPb(odb::dbBTerm* pin) const;
+  Pin* dbToPb(odb::dbITerm* term) const;
+  Pin* dbToPb(odb::dbBTerm* term) const;
   Net* dbToPb(odb::dbNet* net) const;
 
   int siteSizeX() const { return siteSizeX_; }
   int siteSizeY() const { return siteSizeY_; }
 
-  int padLeft() const { return pbVars_.padLeft; }
-  int padRight() const { return pbVars_.padRight; }
+  int getPadLeft() const { return pbVars_.padLeft; }
+  int getPadRight() const { return pbVars_.padRight; }
+  bool isSkipIoMode() const { return pbVars_.skipIoMode; }
 
-  int64_t hpwl() const;
+  int64_t getHpwl() const;
   void printInfo() const;
 
-  int64_t placeInstsArea() const { return placeInstsArea_; }
-  int64_t nonPlaceInstsArea() const { return nonPlaceInstsArea_; }
-  int64_t macroInstsArea() const { return macroInstsArea_; }
-  int64_t stdInstsArea() const { return stdInstsArea_; }
+  int64_t getMacroInstsArea() const { return macroInstsArea_; }
 
   odb::dbDatabase* db() const { return db_; }
 
   void unlockAll();
 
  private:
-  odb::dbDatabase* db_;
-  utl::Logger* log_;
+  odb::dbDatabase* db_ = nullptr;
+  utl::Logger* log_ = nullptr;
 
   PlacerBaseVars pbVars_;
 
@@ -366,26 +331,94 @@ class PlacerBase
   std::vector<Pin*> pins_;
   std::vector<Net*> nets_;
 
+  std::vector<Instance*> placeInsts_;
+
   std::unordered_map<odb::dbInst*, Instance*> instMap_;
-  std::unordered_map<void*, Pin*> pinMap_;
+  // The key is a dbITerm or a dbBTerm
+  std::unordered_map<odb::dbObject*, Pin*> pinMap_;
   std::unordered_map<odb::dbNet*, Net*> netMap_;
+
+  int siteSizeX_ = 0;
+  int siteSizeY_ = 0;
+
+  int64_t macroInstsArea_ = 0;
+
+  void init();
+  void reset();
+};
+
+class PlacerBase
+{
+ public:
+  PlacerBase();
+  // temp padLeft/Right before OpenDB supporting...
+  PlacerBase(odb::dbDatabase* db,
+             std::shared_ptr<PlacerBaseCommon> pbCommon,
+             utl::Logger* log,
+             odb::dbGroup* group = nullptr);
+  ~PlacerBase();
+
+  const std::vector<Instance*>& getInsts() const { return insts_; }
+
+  //
+  // placeInsts : a real instance that need to be placed
+  // fixedInsts : a real instance that is fixed (e.g. macros, tapcells)
+  // dummyInsts : a fake instance that is for unusable site handling
+  //
+  // nonPlaceInsts : fixedInsts + dummyInsts to enable fast-iterate on Bin-init
+  //
+  const std::vector<Instance*>& placeInsts() const { return placeInsts_; }
+  const std::vector<Instance*>& fixedInsts() const { return fixedInsts_; }
+  const std::vector<Instance*>& dummyInsts() const { return dummyInsts_; }
+  const std::vector<Instance*>& nonPlaceInsts() const { return nonPlaceInsts_; }
+
+  Die& getDie() { return die_; }
+
+  int getSiteSizeX() const { return siteSizeX_; }
+  int getSiteSizeY() const { return siteSizeY_; }
+
+  int64_t getHpwl() const;
+  void printInfo() const;
+
+  int64_t placeInstsArea() const { return placeInstsArea_; }
+  int64_t nonPlaceInstsArea() const { return nonPlaceInstsArea_; }
+  int64_t macroInstsArea() const;
+  int64_t stdInstsArea() const { return stdInstsArea_; }
+
+  odb::dbDatabase* db() const { return db_; }
+  odb::dbGroup* group() const { return group_; }
+
+  void unlockAll();
+
+ private:
+  odb::dbDatabase* db_ = nullptr;
+  utl::Logger* log_ = nullptr;
+
+  Die die_;
+
+  std::vector<Instance> instStor_;
+
+  std::vector<Instance*> insts_;
 
   std::vector<Instance*> placeInsts_;
   std::vector<Instance*> fixedInsts_;
   std::vector<Instance*> dummyInsts_;
   std::vector<Instance*> nonPlaceInsts_;
 
-  int siteSizeX_;
-  int siteSizeY_;
+  int siteSizeX_ = 0;
+  int siteSizeY_ = 9;
 
-  int64_t placeInstsArea_;
-  int64_t nonPlaceInstsArea_;
+  int64_t placeInstsArea_ = 0;
+  int64_t nonPlaceInstsArea_ = 0;
 
   // macroInstsArea_ + stdInstsArea_ = placeInstsArea_;
   // macroInstsArea_ should be separated
   // because of target_density tuning
-  int64_t macroInstsArea_;
-  int64_t stdInstsArea_;
+  int64_t macroInstsArea_ = 0;
+  int64_t stdInstsArea_ = 0;
+
+  std::shared_ptr<PlacerBaseCommon> pbCommon_;
+  odb::dbGroup* group_ = nullptr;
 
   void init();
   void initInstsForUnusableSites();
@@ -394,5 +427,3 @@ class PlacerBase
 };
 
 }  // namespace gpl
-
-#endif

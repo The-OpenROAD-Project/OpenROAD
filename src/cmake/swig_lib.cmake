@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2021-2025, The OpenROAD Authors
+
 # Sets up swig for a .i file and encode .tcl files
 # Arguments
 #   NAME <library>: the generated library name
@@ -58,9 +61,9 @@ function(swig_lib)
 
   # Setup swig of I_FILE.
   set_property(SOURCE ${ARG_I_FILE}
-               PROPERTY COMPILE_OPTIONS ${LANGUAGE_OPTIONS}
-                                        -Werror
-                                        -w317,325,378,401,402,467,472,503,509)
+    PROPERTY COMPILE_OPTIONS ${LANGUAGE_OPTIONS}
+      -Werror
+      -w317,325,378,401,402,451,467,472,503,509)
 
   set_property(SOURCE ${ARG_I_FILE}
                PROPERTY SWIG_MODULE_NAME ${ARG_NAME})
@@ -82,7 +85,7 @@ function(swig_lib)
   foreach(GEN_SRC ${GEN_SRCS})
     set_source_files_properties(${GEN_SRC}
       PROPERTIES
-        COMPILE_OPTIONS "-Wno-cast-qual;-Wno-missing-braces"
+        COMPILE_OPTIONS "-Wno-cast-qual;-Wno-missing-braces;-Wno-missing-field-initializers"
     )
   endforeach()
 
@@ -135,7 +138,11 @@ function(swig_lib)
     set(LANG_INIT ${CMAKE_CURRENT_BINARY_DIR}/${ARG_NAME}-${ARG_LANGUAGE}InitVar.cc)
 
     add_custom_command(OUTPUT ${LANG_INIT}
-      COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${LANG_INIT} ${ARG_NAME}_${ARG_LANGUAGE}_inits ${ARG_SCRIPTS}
+      COMMAND ${CMAKE_SOURCE_DIR}/etc/file_to_string.py
+      --inputs ${ARG_SCRIPTS}
+      --output ${LANG_INIT}
+      --varname ${ARG_NAME}_${ARG_LANGUAGE}_inits
+      --namespace ${ARG_NAMESPACE}
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       DEPENDS ${ARG_SCRIPTS}
     )

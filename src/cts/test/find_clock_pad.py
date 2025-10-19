@@ -8,7 +8,7 @@ tech.readLef("pad.lef")
 tech.readLiberty("Nangate45/Nangate45_typ.lib")
 tech.readLiberty("pad.lib")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("find_clock_pad.def")
 
 design.evalTclString("create_clock -name clk -period 10 clk1")

@@ -12,4 +12,4 @@ read_def ${design_dir}/${design}_fragmented_row.def
 read_liberty ${lib_dir}/NangateOpenCellLibrary_typical.lib
 read_sdc ${design_dir}/${design}.sdc
 
-global_placement -timing_driven -verbose 3 -skip_initial_place
+global_placement -timing_driven -skip_initial_place

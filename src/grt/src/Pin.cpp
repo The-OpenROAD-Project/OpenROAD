@@ -1,41 +1,17 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "Pin.h"
 
+#include <algorithm>
+#include <map>
+#include <string>
+#include <vector>
+
 #include "grt/GlobalRouter.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace grt {
 
@@ -45,7 +21,7 @@ Pin::Pin(
     const std::vector<odb::dbTechLayer*>& layers,
     const std::map<odb::dbTechLayer*, std::vector<odb::Rect>>& boxes_per_layer,
     bool connected_to_pad_or_macro)
-    : iterm_(iterm),
+    : iterm(iterm),
       position_(position),
       edge_(PinEdge::none),
       is_port_(false),
@@ -61,7 +37,7 @@ Pin::Pin(
   }
 
   if (connected_to_pad_or_macro) {
-    determineEdge(iterm->getInst()->getBBox()->getBox(), position_, layers);
+    determineEdge(iterm->getInst()->getBBox()->getBox(), layers);
   } else {
     connection_layer_ = layers_.back();
   }
@@ -73,7 +49,7 @@ Pin::Pin(
     const std::vector<odb::dbTechLayer*>& layers,
     const std::map<odb::dbTechLayer*, std::vector<odb::Rect>>& boxes_per_layer,
     const odb::Point& die_center)
-    : bterm_(bterm),
+    : bterm(bterm),
       position_(position),
       edge_(PinEdge::none),
       is_port_(true),
@@ -88,26 +64,49 @@ Pin::Pin(
     boxes_per_layer_[layer->getRoutingLevel()] = boxes;
   }
 
-  determineEdge(bterm->getBlock()->getDieArea(), position_, layers);
+  determineEdge(bterm->getBlock()->getDieArea(), layers);
 }
 
 void Pin::determineEdge(const odb::Rect& bounds,
-                        const odb::Point& pin_position,
                         const std::vector<odb::dbTechLayer*>& layers)
 {
-  // Determine which edge is closest to the pin
-  const int n_dist = bounds.yMax() - pin_position.y();
-  const int s_dist = pin_position.y() - bounds.yMin();
-  const int e_dist = bounds.xMax() - pin_position.x();
-  const int w_dist = pin_position.x() - bounds.xMin();
-  const int min_dist = std::min({n_dist, s_dist, w_dist, e_dist});
-  if (n_dist == min_dist) {
+  odb::Point lower_left;
+  odb::Point upper_right;
+  int n_count = 0;
+  int s_count = 0;
+  int e_count = 0;
+  int w_count = 0;
+  for (const auto& [layer, boxes] : boxes_per_layer_) {
+    for (const auto& box : boxes) {
+      lower_left = box.ll();
+      upper_right = box.ur();
+      // Determine which edge is closest to the pin box
+      const int n_dist = bounds.yMax() - upper_right.y();
+      const int s_dist = lower_left.y() - bounds.yMin();
+      const int e_dist = bounds.xMax() - upper_right.x();
+      const int w_dist = lower_left.x() - bounds.xMin();
+      const int min_dist = std::min({n_dist, s_dist, w_dist, e_dist});
+      if (n_dist == min_dist) {
+        n_count += 1;
+      } else if (s_dist == min_dist) {
+        s_count += 1;
+      } else if (e_dist == min_dist) {
+        e_count += 1;
+      } else {
+        w_count += 1;
+      }
+    }
+  }
+
+  // voting system to determine the pin edge after checking all pin boxes
+  int edge_count = std::max({n_count, s_count, e_count, w_count});
+  if (edge_count == n_count) {
     edge_ = PinEdge::north;
-  } else if (s_dist == min_dist) {
+  } else if (edge_count == s_count) {
     edge_ = PinEdge::south;
-  } else if (e_dist == min_dist) {
+  } else if (edge_count == e_count) {
     edge_ = PinEdge::east;
-  } else {
+  } else if (edge_count == w_count) {
     edge_ = PinEdge::west;
   }
 
@@ -134,42 +133,67 @@ void Pin::determineEdge(const odb::Rect& bounds,
 
 odb::dbITerm* Pin::getITerm() const
 {
-  if (is_port_)
+  if (is_port_) {
     return nullptr;
-  else
-    return iterm_;
+  }
+
+  return iterm;
 }
 
 odb::dbBTerm* Pin::getBTerm() const
 {
-  if (is_port_)
-    return bterm_;
-  else
-    return nullptr;
+  if (is_port_) {
+    return bterm;
+  }
+
+  return nullptr;
 }
 
 std::string Pin::getName() const
 {
-  if (is_port_)
-    return bterm_->getName();
-  else
-    return getITermName(iterm_);
+  if (is_port_) {
+    return bterm->getName();
+  }
+
+  return getITermName(iterm);
 }
 
 bool Pin::isDriver()
 {
   if (is_port_) {
-    return (bterm_->getIoType() == odb::dbIoType::INPUT);
-  } else {
-    odb::dbMTerm* mterm = iterm_->getMTerm();
-    odb::dbIoType type = mterm->getIoType();
-    return type == odb::dbIoType::OUTPUT || type == odb::dbIoType::INOUT;
+    return (bterm->getIoType() == odb::dbIoType::INPUT);
   }
+  odb::dbMTerm* mterm = iterm->getMTerm();
+  odb::dbIoType type = mterm->getIoType();
+  return type == odb::dbIoType::OUTPUT || type == odb::dbIoType::INOUT;
 }
 
-int Pin::getConnectionLayer() const
+odb::Point Pin::getPositionNearInstEdge(const odb::Rect& pin_box,
+                                        const odb::Point& rect_middle) const
 {
-  return connection_layer_;
+  odb::Point pin_pos = rect_middle;
+  if (getEdge() == PinEdge::north) {
+    pin_pos.setY(pin_box.yMax());
+  } else if (getEdge() == PinEdge::south) {
+    pin_pos.setY(pin_box.yMin());
+  } else if (getEdge() == PinEdge::east) {
+    pin_pos.setX(pin_box.xMax());
+  } else if (getEdge() == PinEdge::west) {
+    pin_pos.setX(pin_box.xMin());
+  }
+
+  return pin_pos;
+}
+
+bool Pin::isCorePin() const
+{
+  if (iterm == nullptr) {
+    return false;
+  }
+
+  odb::dbInst* inst = iterm->getInst();
+  return inst->isCore();
+  ;
 }
 
 }  // namespace grt

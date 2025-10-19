@@ -1,58 +1,31 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#ifndef _FR_BASE_TYPES_H_
-#define _FR_BASE_TYPES_H_
+#pragma once
 
-#include <boost/geometry/geometries/box.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/geometries/segment.hpp>
-#include <boost/geometry/strategies/strategies.hpp>
-#include <boost/serialization/base_object.hpp>
 #include <cstdint>
 #include <list>
 #include <map>
+#include <ostream>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/geometries/box.hpp"
+#include "boost/geometry/geometries/point_xy.hpp"
+#include "boost/geometry/geometries/segment.hpp"
+#include "boost/geometry/geometry.hpp"
+#include "boost/geometry/strategies/strategies.hpp"
+#include "boost/serialization/base_object.hpp"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
-namespace odb {
-class Rect;
-}
 namespace boost::serialization {
 class access;
 }
 
-namespace fr {
-using Logger = utl::Logger;
+namespace drt {
 const utl::ToolId DRT = utl::DRT;
 using frLayerNum = int;
 using frCoord = int;
@@ -71,11 +44,6 @@ template <typename T>
 using frList = std::list<T>;
 template <typename T>
 using frListIter = typename std::list<T>::iterator;
-using odb::dbIoType;
-using odb::dbMasterType;
-using odb::dbSigType;
-using odb::dbTechLayerDir;
-using odb::dbTechLayerType;
 
 enum frEndStyleEnum
 {
@@ -194,6 +162,7 @@ enum class frConstraintTypeEnum
   frcLef58SpacingEndOfLineWithinEncloseCutConstraint,
   frcLef58SpacingEndOfLineWithinParallelEdgeConstraint,
   frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint,
+  frcLef58SpacingWrongDirConstraint,
   frcLef58CutClassConstraint,  // not supported
   frcNonSufficientMetalConstraint,
   frcSpacingSamenetConstraint,
@@ -205,7 +174,15 @@ enum class frConstraintTypeEnum
   frcLef58EolKeepOutConstraint,
   frcLef58MinimumCutConstraint,
   frcMetalWidthViaConstraint,
-  frcLef58AreaConstraint
+  frcLef58AreaConstraint,
+  frcLef58KeepOutZoneConstraint,
+  frcLef58TwoWiresForbiddenSpcConstraint,
+  frcLef58ForbiddenSpcConstraint,
+  frcLef58EnclosureConstraint,
+  frcSpacingRangeConstraint,
+  frcLef58MaxSpacingConstraint,
+  frcSpacingTableOrth,
+  frcLef58WidthTableOrth
 };
 
 std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type);
@@ -247,7 +224,7 @@ enum class frMinstepTypeEnum
 
 std::ostream& operator<<(std::ostream& os, frMinstepTypeEnum type);
 
-#define OPPOSITEDIR 7  // used in FlexGC_main.cpp
+constexpr int OPPOSITEDIR = 7;  // used in FlexGC_main.cpp
 enum class frDirEnum
 {
   UNKNOWN = 0,
@@ -258,6 +235,24 @@ enum class frDirEnum
   N = 5,
   U = 6
 };
+
+std::ostream& operator<<(std::ostream& os, frDirEnum dir);
+
+static constexpr frDirEnum frDirEnumAll[] = {frDirEnum::D,
+                                             frDirEnum::S,
+                                             frDirEnum::W,
+                                             frDirEnum::E,
+                                             frDirEnum::N,
+                                             frDirEnum::U};
+
+static constexpr frDirEnum frDirEnumPlanar[]
+    = {frDirEnum::S, frDirEnum::W, frDirEnum::E, frDirEnum::N};
+
+static constexpr frDirEnum frDirEnumVia[] = {frDirEnum::U, frDirEnum::D};
+
+static constexpr frDirEnum frDirEnumVert[] = {frDirEnum::N, frDirEnum::S};
+
+static constexpr frDirEnum frDirEnumHorz[] = {frDirEnum::W, frDirEnum::E};
 
 enum class AccessPointTypeEnum
 {
@@ -277,68 +272,54 @@ enum class frAccessPointEnum
   NearbyGrid = 4  // nearby grid or 1/2 grid
 };
 
+enum class RipUpMode
+{
+  DRC = 0,
+  ALL = 1,
+  NEARDRC = 2,
+  INCR = 3,
+  VIASWAP = 4
+};
+
 namespace bg = boost::geometry;
 
-typedef bg::model::d2::point_xy<frCoord, bg::cs::cartesian> point_t;
-typedef bg::model::box<point_t> box_t;
-typedef bg::model::segment<point_t> segment_t;
+using point_t = bg::model::d2::point_xy<frCoord, bg::cs::cartesian>;
+using box_t = bg::model::box<point_t>;
+using segment_t = bg::model::segment<point_t>;
 
 template <typename T>
 using rq_box_value_t = std::pair<odb::Rect, T>;
 
 struct frDebugSettings
 {
-  frDebugSettings()
-      : debugDR(false),
-        debugDumpDR(false),
-        debugMaze(false),
-        debugPA(false),
-        debugTA(false),
-        draw(true),
-        allowPause(true),
-        x(-1),
-        y(-1),
-        iter(0),
-        paMarkers(false),
-        paEdge(false),
-        paCommit(false),
-        mazeEndIter(-1),
-        drcCost(-1),
-        markerCost(-1),
-        fixedShapeCost(-1),
-        markerDecay(-1),
-        ripupMode(-1),
-        followGuide(-1)
-
-  {
-  }
-
   bool is_on() const { return debugDR || debugPA; }
 
-  bool debugDR;
-  bool debugDumpDR;
-  bool debugMaze;
-  bool debugPA;
-  bool debugTA;
-  bool draw;
-  bool allowPause;
+  bool debugDR{false};
+  bool debugDumpDR{false};
+  bool debugMaze{false};
+  bool debugPA{false};
+  bool debugTA{false};
+  bool draw{true};
+  bool allowPause{true};
   std::string netName;
   std::string pinName;
-  int x;
-  int y;
-  int iter;
-  bool paMarkers;
-  bool paEdge;
-  bool paCommit;
+  odb::Rect box{-1, -1, -1, -1};
+  int iter{0};
+  bool paMarkers{false};
+  bool paEdge{false};
+  bool paCommit{false};
   std::string dumpDir;
+  std::string snapshotDir{"."};
 
-  int mazeEndIter;
-  int drcCost;
-  int markerCost;
-  int fixedShapeCost;
-  float markerDecay;
-  int ripupMode;
-  int followGuide;
+  int mazeEndIter{-1};
+  int drcCost{-1};
+  int markerCost{-1};
+  int fixedShapeCost{-1};
+  float markerDecay{-1};
+  int ripupMode{-1};
+  int followGuide{-1};
+  bool writeNetTracks{false};
+  bool dumpLastWorker{false};
 };
 
 // Avoids the need to split the whole serializer like
@@ -347,9 +328,9 @@ struct frDebugSettings
 template <class Archive>
 inline bool is_loading(const Archive& ar)
 {
-  return std::is_same<typename Archive::is_loading, boost::mpl::true_>::value;
+  return std::is_same_v<typename Archive::is_loading, boost::mpl::true_>;
 }
 
-}  // namespace fr
+using utl::format_as;
 
-#endif
+}  // namespace drt

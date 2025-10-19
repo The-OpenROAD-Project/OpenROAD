@@ -22,23 +22,24 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
 
 #include "lefiDebug.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
+#include "lefiKRDefs.hpp"
 #include "lefrData.hpp"
 #include "lefrReader.hpp"
 #include "lefrSettings.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // ******************
 //   Debug flags:
@@ -76,24 +77,27 @@ void lefiError(int check, int msgNum, const char* str)
 
   if (!check) {
     if ((lefSettings->TotalMsgLimit > 0)
-        && (lefData->lefErrMsgPrinted >= lefSettings->TotalMsgLimit))
+        && (lefData->lefErrMsgPrinted >= lefSettings->TotalMsgLimit)) {
       return;
+    }
     if (lefSettings->MsgLimit[msgNum] > 0) {
       if (lefData->msgLimit[0][msgNum]
-          >= lefSettings->MsgLimit[msgNum])  // over the limit
+          >= lefSettings->MsgLimit[msgNum]) {  // over the limit
         return;
+      }
       lefData->msgLimit[0][msgNum] = lefData->msgLimit[0][msgNum] + 1;
     }
     lefData->lefErrMsgPrinted++;
   }
 
-  if (lefSettings->ErrorLogFunction)
+  if (lefSettings->ErrorLogFunction) {
     (*lefSettings->ErrorLogFunction)(str);
-  else
+  } else {
     fprintf(stderr, "%s", str);
+  }
 }
 
-static char lefiShift[]
+static const char lefiShift[]
     = {'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
        '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
        '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', ' ',  '!',  '"',  '#',
@@ -124,7 +128,7 @@ const char* lefUpperCase(const char* str)
   int len = strlen(str) + 1;
 
   if (len > lefData->shiftBufLength) {
-    if (lefData->shiftBuf == 0) {
+    if (lefData->shiftBuf == nullptr) {
       len = len < 64 ? 64 : len;
       lefData->shiftBuf = (char*) lefMalloc(len);
       lefData->shiftBufLength = len;
@@ -137,7 +141,7 @@ const char* lefUpperCase(const char* str)
 
   to = lefData->shiftBuf;
   while (*place) {
-    int i = (int) *place;
+    int i = static_cast<unsigned char>(*place);
     place++;
     *to++ = lefiShift[i];
   }
@@ -154,4 +158,4 @@ const char* CASE(const char* x)
              : x;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

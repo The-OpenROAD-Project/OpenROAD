@@ -1,38 +1,18 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#ifndef _FR_BLOCK_H_
-#define _FR_BLOCK_H_
+#pragma once
 
 #include <algorithm>
+#include <map>
+#include <memory>
+#include <string>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 #include "db/obj/frBTerm.h"
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frBlockage.h"
 #include "db/obj/frBoundary.h"
 #include "db/obj/frGCellPattern.h"
@@ -41,8 +21,10 @@
 #include "db/obj/frNet.h"
 #include "db/obj/frTrackPattern.h"
 #include "frBaseTypes.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
-namespace fr {
+namespace drt {
 namespace io {
 class Parser;
 }
@@ -51,13 +33,13 @@ class frBlock : public frBlockObject
 {
  public:
   // constructors
-  frBlock(const frString& name) : frBlockObject(), name_(name), dbUnit_(0){};
+  frBlock(const frString& name) : name_(name) {}
   // getters
   frUInt4 getDBUPerUU() const { return dbUnit_; }
-  Rect getBBox() const
+  odb::Rect getBBox() const
   {
-    Rect box;
-    if (boundaries_.size()) {
+    odb::Rect box;
+    if (!boundaries_.empty()) {
       box = boundaries_.begin()->getBBox();
     }
     frCoord llx = box.xMin();
@@ -65,14 +47,14 @@ class frBlock : public frBlockObject
     frCoord urx = box.xMax();
     frCoord ury = box.yMax();
     for (auto& boundary : boundaries_) {
-      Rect tmpBox = boundary.getBBox();
+      odb::Rect tmpBox = boundary.getBBox();
       llx = llx < tmpBox.xMin() ? llx : tmpBox.xMin();
       lly = lly < tmpBox.yMin() ? lly : tmpBox.yMin();
       urx = urx > tmpBox.xMax() ? urx : tmpBox.xMax();
       ury = ury > tmpBox.yMax() ? ury : tmpBox.yMax();
     }
     for (auto& inst : getInsts()) {
-      Rect tmpBox = inst->getBBox();
+      odb::Rect tmpBox = inst->getBBox();
       llx = llx < tmpBox.xMin() ? llx : tmpBox.xMin();
       lly = lly < tmpBox.yMin() ? lly : tmpBox.yMin();
       urx = urx > tmpBox.xMax() ? urx : tmpBox.xMax();
@@ -81,7 +63,7 @@ class frBlock : public frBlockObject
     for (auto& term : getTerms()) {
       for (auto& pin : term->getPins()) {
         for (auto& fig : pin->getFigs()) {
-          Rect tmpBox = fig->getBBox();
+          odb::Rect tmpBox = fig->getBBox();
           llx = llx < tmpBox.xMin() ? llx : tmpBox.xMin();
           lly = lly < tmpBox.yMin() ? lly : tmpBox.yMin();
           urx = urx > tmpBox.xMax() ? urx : tmpBox.xMax();
@@ -89,7 +71,7 @@ class frBlock : public frBlockObject
         }
       }
     }
-    return Rect(llx, lly, urx, ury);
+    return odb::Rect(llx, lly, urx, ury);
   }
   const std::vector<frBoundary>& getBoundaries() const { return boundaries_; }
   const std::vector<std::unique_ptr<frBlockage>>& getBlockages() const
@@ -115,34 +97,38 @@ class frBlock : public frBlockObject
   {
     return insts_;
   }
-  frInst* findInst(std::string name) const
+  frInst* findInst(const std::string& name) const
   {
-    if (name2inst_.find(name) != name2inst_.end())
+    if (name2inst_.find(name) != name2inst_.end()) {
       return name2inst_.at(name);
-    else
-      return nullptr;
+    }
+    return nullptr;
   }
+  frInst* findInst(odb::dbInst* inst) { return findInst(inst->getName()); }
   frNet* getNet(int id) const
   {
-    if (id >= nets_.size())
+    if (id >= nets_.size()) {
       return nullptr;
+    }
     return nets_[id].get();
   }
   frNet* getSNet(int id) const
   {
-    if (id >= snets_.size())
+    if (id >= snets_.size()) {
       return nullptr;
+    }
     return snets_[id].get();
   }
   const std::vector<std::unique_ptr<frNet>>& getNets() const { return nets_; }
-  frNet* findNet(std::string name) const
+  frNet* findNet(const std::string& name) const
   {
-    if (name2net_.find(name) != name2net_.end())
+    if (name2net_.find(name) != name2net_.end()) {
       return name2net_.at(name);
-    else if (name2snet_.find(name) != name2snet_.end())
+    }
+    if (name2snet_.find(name) != name2snet_.end()) {
       return name2snet_.at(name);
-    else
-      return nullptr;
+    }
+    return nullptr;
   }
   const std::vector<std::unique_ptr<frNet>>& getSNets() const { return snets_; }
   std::vector<frTrackPattern*> getTrackPatterns() const
@@ -161,8 +147,9 @@ class frBlock : public frBlockObject
   {
     std::vector<frTrackPattern*> tps;
     for (auto& t : trackPatterns_.at(layerNum)) {
-      if (t->isHorizontal() == isHorizontal)
+      if (t->isHorizontal() == isHorizontal) {
         tps.push_back(t.get());
+      }
     }
     return tps;
   }
@@ -180,18 +167,16 @@ class frBlock : public frBlockObject
     auto it = name2term_.find(in);
     if (it == name2term_.end()) {
       return nullptr;
-    } else {
-      return it->second;
     }
+    return it->second;
   }
   frInst* getInst(const std::string& in) const
   {
     auto it = name2inst_.find(in);
     if (it == name2inst_.end()) {
       return nullptr;
-    } else {
-      return it->second;
     }
+    return it->second;
   }
   frCoord getGCellSizeHorizontal()
   {
@@ -199,24 +184,24 @@ class frBlock : public frBlockObject
   }
   frCoord getGCellSizeVertical() { return getGCellPatterns()[1].getSpacing(); }
   // idx must be legal
-  Rect getGCellBox(const Point& idx1) const
+  odb::Rect getGCellBox(const odb::Point& idx1) const
   {
-    Point idx(idx1);
-    Rect dieBox = getDieBox();
+    odb::Point idx(idx1);
+    odb::Rect dieBox = getDieBox();
     auto& gp = getGCellPatterns();
     auto& xgp = gp[0];
     auto& ygp = gp[1];
     if (idx.x() <= 0) {
-      idx.set(0, idx.y());
+      idx = {0, idx.y()};
     }
     if (idx.y() <= 0) {
-      idx.set(idx.x(), 0);
+      idx = {idx.x(), 0};
     }
     if (idx.x() >= (int) xgp.getCount() - 1) {
-      idx.set((int) xgp.getCount() - 1, idx.y());
+      idx = {(int) xgp.getCount() - 1, idx.y()};
     }
     if (idx.y() >= (int) ygp.getCount() - 1) {
-      idx.set(idx.x(), (int) ygp.getCount() - 1);
+      idx = {idx.x(), (int) ygp.getCount() - 1};
     }
     frCoord xl = (frCoord) xgp.getSpacing() * idx.x() + xgp.getStartCoord();
     frCoord yl = (frCoord) ygp.getSpacing() * idx.y() + ygp.getStartCoord();
@@ -236,11 +221,11 @@ class frBlock : public frBlockObject
     if (idx.y() >= (int) ygp.getCount() - 1) {
       yh = dieBox.yMax();
     }
-    return Rect(xl, yl, xh, yh);
+    return odb::Rect(xl, yl, xh, yh);
   }
-  Point getGCellCenter(const Point& idx) const
+  odb::Point getGCellCenter(const odb::Point& idx) const
   {
-    Rect dieBox = getDieBox();
+    odb::Rect dieBox = getDieBox();
     auto& gp = getGCellPatterns();
     auto& xgp = gp[0];
     auto& ygp = gp[1];
@@ -262,9 +247,9 @@ class frBlock : public frBlockObject
     if (idx.y() == (int) ygp.getCount() - 1) {
       yh = dieBox.yMax();
     }
-    return Point((xl + xh) / 2, (yl + yh) / 2);
+    return odb::Point((xl + xh) / 2, (yl + yh) / 2);
   }
-  Point getGCellIdx(const Point& pt) const
+  odb::Point getGCellIdx(const odb::Point& pt) const
   {
     auto& gp = getGCellPatterns();
     auto& xgp = gp[0];
@@ -283,7 +268,15 @@ class frBlock : public frBlockObject
     if (idxY >= (int) ygp.getCount()) {
       idxY = (int) ygp.getCount() - 1;
     }
-    return Point(idxX, idxY);
+    return odb::Point(idxX, idxY);
+  }
+  bool isValidGCellIdx(const odb::Point& pt) const
+  {
+    const auto& gp = getGCellPatterns();
+    const auto& xgp = gp[0];
+    const auto& ygp = gp[1];
+    return pt.x() >= 0 && pt.x() < xgp.getCount() && pt.y() >= 0
+           && pt.y() < ygp.getCount();
   }
   const frList<std::unique_ptr<frMarker>>& getMarkers() const
   {
@@ -299,12 +292,19 @@ class frBlock : public frBlockObject
   void addTerm(std::unique_ptr<frBTerm> in)
   {
     in->setIndexInOwner(terms_.size());
-    in->setBlock(this);
+    in->setId(upcoming_term_id_++);
     name2term_[in->getName()] = in.get();
     terms_.push_back(std::move(in));
   }
   void addInst(std::unique_ptr<frInst> in)
   {
+    in->setId(upcoming_inst_id_++);
+    for (auto& iterm : in->getInstTerms()) {
+      iterm->setId(upcoming_term_id_++);
+    }
+    for (auto& iblk : in->getInstBlockages()) {
+      iblk->setId(upcoming_blkg_id_++);
+    }
     name2inst_[in->getName()] = in.get();
     insts_.push_back(std::move(in));
   }
@@ -312,8 +312,9 @@ class frBlock : public frBlockObject
   {
     for (const auto& iterm : inst->getInstTerms()) {
       auto net = iterm->getNet();
-      if (net != nullptr)
+      if (net != nullptr) {
         net->removeInstTerm(iterm.get());
+      }
     }
     name2inst_.erase(inst->getName());
     inst->setToBeDeleted(true);
@@ -327,8 +328,9 @@ class frBlock : public frBlockObject
                                 }),
                  insts_.end());
     int id = 0;
-    for (const auto& inst : insts_)
+    for (const auto& inst : insts_) {
       inst->setId(id++);
+    }
   }
   void addNet(std::unique_ptr<frNet> in)
   {
@@ -342,11 +344,11 @@ class frBlock : public frBlockObject
     name2snet_[in->getName()] = in.get();
     snets_.push_back(std::move(in));
   }
-  const Rect& getDieBox() const { return dieBox_; }
-  void setBoundaries(const std::vector<frBoundary> in)
+  const odb::Rect& getDieBox() const { return dieBox_; }
+  void setBoundaries(const std::vector<frBoundary>& in)
   {
     boundaries_ = in;
-    if (boundaries_.size()) {
+    if (!boundaries_.empty()) {
       dieBox_ = boundaries_.begin()->getBBox();
     }
     frCoord llx = dieBox_.xMin();
@@ -354,7 +356,7 @@ class frBlock : public frBlockObject
     frCoord urx = dieBox_.xMax();
     frCoord ury = dieBox_.yMax();
     for (auto& boundary : boundaries_) {
-      Rect tmpBox = boundary.getBBox();
+      odb::Rect tmpBox = boundary.getBBox();
       llx = std::min(llx, tmpBox.xMin());
       lly = std::min(lly, tmpBox.yMin());
       urx = std::max(urx, tmpBox.xMax());
@@ -372,6 +374,7 @@ class frBlock : public frBlockObject
   void addBlockage(std::unique_ptr<frBlockage> in)
   {
     in->setIndexInOwner(blockages_.size());
+    in->setId(upcoming_blkg_id_++);
     blockages_.push_back(std::move(in));
   }
   void setGCellPatterns(const std::vector<frGCellPattern>& gpIn)
@@ -393,11 +396,10 @@ class frBlock : public frBlockObject
   }
   // others
   frBlockObjectEnum typeId() const override { return frcBlock; }
-  ~frBlock() {}
 
  private:
   frString name_;
-  frUInt4 dbUnit_;
+  frUInt4 dbUnit_{0};
 
   std::map<std::string, frInst*> name2inst_;
   std::vector<std::unique_ptr<frInst>> insts_;
@@ -422,11 +424,12 @@ class frBlock : public frBlockObject
 
   std::vector<std::unique_ptr<frNet>>
       fakeSNets_;  // 0 is floating VSS, 1 is floating VDD
-  Rect dieBox_;
+  odb::Rect dieBox_;
 
+  frUInt4 upcoming_inst_id_{0};
+  frUInt4 upcoming_term_id_{0};
+  frUInt4 upcoming_blkg_id_{0};
   friend class io::Parser;
 };
 
-}  // namespace fr
-
-#endif
+}  // namespace drt

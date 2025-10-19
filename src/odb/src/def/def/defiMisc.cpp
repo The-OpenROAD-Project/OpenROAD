@@ -22,48 +22,22 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
 
 #include "defiMisc.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
-#include "lex.h"
+#include "defiKRDefs.hpp"
+#include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
-
-////////////////////////////////////////////////////
-//
-//    defiPoints
-//    Below does not working in some examples...
-//
-////////////////////////////////////////////////////
-
-defiPoints::defiPoints() : numPoints(0), x(0), y(0)
-{
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiPoints) : numPoints(0), x(0), y(0)
-{
-  DEF_COPY_FUNC(numPoints);
-  DEF_MALLOC_FUNC(x, int, sizeof(int) * numPoints);
-  DEF_MALLOC_FUNC(y, int, sizeof(int) * numPoints);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiPoints)
-{
-  CHECK_SELF_ASSIGN
-  DEF_COPY_FUNC(numPoints);
-  DEF_MALLOC_FUNC(x, int, sizeof(int) * numPoints);
-  DEF_MALLOC_FUNC(y, int, sizeof(int) * numPoints);
-  return *this;
-}
+BEGIN_DEF_PARSER_NAMESPACE
 
 ////////////////////////////////////////////////////
 //
@@ -108,8 +82,9 @@ void defiGeometries::startList(int x, int y)
     x_ = (int*) malloc(sizeof(int) * 16);
     y_ = (int*) malloc(sizeof(int) * 16);
     numPoints_ = 0;
-  } else  // reset the numPoints to 0
+  } else {  // reset the numPoints to 0
     numPoints_ = 0;
+  }
   addToList(x, y);
 }
 
@@ -172,7 +147,7 @@ defiStyles::defiStyles()
 void defiStyles::Init()
 {
   styleNum_ = 0;
-  polygon_ = 0;
+  polygon_ = nullptr;
 }
 
 defiStyles::~defiStyles()
@@ -196,7 +171,7 @@ void defiStyles::clear()
     free((char*) (polygon_));
   }
   styleNum_ = 0;
-  polygon_ = 0;
+  polygon_ = nullptr;
 }
 
 void defiStyles::setStyle(int styleNum)
@@ -209,7 +184,7 @@ void defiStyles::setPolygon(defiGeometries* geom)
   struct defiPoints* p;
   int i, x, y;
 
-  if (polygon_ == 0) {
+  if (polygon_ == nullptr) {
     p = (struct defiPoints*) malloc(sizeof(struct defiPoints));
     p->numPoints = geom->numPoints();
     p->x = (int*) malloc(sizeof(int) * p->numPoints);
@@ -246,4 +221,4 @@ struct defiPoints defiStyles::getPolygon() const
 {
   return *(polygon_);
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

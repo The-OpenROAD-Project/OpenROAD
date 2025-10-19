@@ -10,7 +10,7 @@ proc write_nets { filename } {
 proc write_net { net stream } {
   set pins [get_pins -of_object $net]
   set ports [get_ports -of_object $net]
-  set pin_count [expr [llength $ports] + [llength $pins]]
+  set pin_count [expr { [llength $ports] + [llength $pins] }]
   if { $pin_count > 2 } {
     set drvr "NULL"
     set drvr_index 0
@@ -49,7 +49,8 @@ proc write_pin { pin stream } {
   } else {
     lassign [sta::pin_location $pin] x y
   }
-  puts $stream "[get_full_name $pin] [sta::format_distance $x 2 ] [sta::format_distance $y 2]"
+  puts $stream "[get_full_name $pin] [sta::format_distance $x 2]\
+                  [sta::format_distance $y 2]"
 }
 
 # Each net is
@@ -79,7 +80,7 @@ proc read_nets { filename } {
   return $nets
 }
 
-proc write_gcd_nets {} {
+proc write_gcd_nets { } {
   read_liberty Nangate45/Nangate45_typ.lib
   read_lef Nangate45/Nangate45.lef
   read_def ../../rsz/test/gcd_nangate45_placed.def
@@ -127,7 +128,7 @@ proc report_flute_net { net } {
 
 proc find_net { nets net_name } {
   foreach net $nets {
-  set pins [lassign $net name drvr_index]
+    set pins [lassign $net name drvr_index]
     if { $name == $net_name } {
       return $net
     }

@@ -1,42 +1,22 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "util.h"
+#include "odb/util.h"
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <limits>
 #include <map>
 #include <numeric>
 #include <string>
+#include <utility>
+#include <vector>
 
-#include "db.h"
+#include "odb/db.h"
+#include "odb/dbCCSegSet.h"
+#include "odb/dbShape.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -90,9 +70,10 @@ static void cutRow(dbBlock* block,
 
   vector<dbBox*> row_blockage_bboxs = row_blockages;
   vector<std::pair<int, int>> row_blockage_xs;
+  row_blockage_xs.reserve(row_blockages.size());
   for (dbBox* row_blockage_bbox : row_blockages) {
-    row_blockage_xs.push_back(
-        std::make_pair(row_blockage_bbox->xMin(), row_blockage_bbox->xMax()));
+    row_blockage_xs.emplace_back(row_blockage_bbox->xMin(),
+                                 row_blockage_bbox->xMax());
   }
 
   std::sort(row_blockage_xs.begin(), row_blockage_xs.end());
@@ -103,7 +84,7 @@ static void cutRow(dbBlock* block,
   for (std::pair<int, int> blockage : row_blockage_xs) {
     const int blockage_x0 = blockage.first;
     const int new_row_end_x
-        = makeSiteLoc(blockage_x0 - halo_x, site_width, 1, start_origin_x);
+        = makeSiteLoc(blockage_x0 - halo_x, site_width, true, start_origin_x);
     buildRow(block,
              row_name + "_" + std::to_string(row_sub_idx),
              row_site,
@@ -116,7 +97,7 @@ static void cutRow(dbBlock* block,
     row_sub_idx++;
     const int blockage_x1 = blockage.second;
     start_origin_x
-        = makeSiteLoc(blockage_x1 + halo_x, site_width, 0, start_origin_x);
+        = makeSiteLoc(blockage_x1 + halo_x, site_width, false, start_origin_x);
   }
   // Make last row
   buildRow(block,
@@ -165,6 +146,16 @@ int makeSiteLoc(int x, double site_width, bool at_left_from_macro, int offset)
   return site_x1 * site_width + offset;
 }
 
+template <typename T>
+bool hasOverflow(T a, T b)
+{
+  if ((b > 0 && a > std::numeric_limits<T>::max() - b)
+      || (b < 0 && a < std::numeric_limits<T>::lowest() - b)) {
+    return true;
+  }
+  return false;
+}
+
 void cutRows(dbBlock* block,
              const int min_row_width,
              const vector<dbBox*>& blockages,
@@ -177,10 +168,13 @@ void cutRows(dbBlock* block,
   }
   auto rows = block->getRows();
   const int initial_rows_count = rows.size();
-  const int initial_sites_count
-      = std::accumulate(rows.begin(), rows.end(), 0, [](int sum, dbRow* row) {
-          return sum + row->getSiteCount();
-        });
+  const std::int64_t initial_sites_count
+      = std::accumulate(rows.begin(),
+                        rows.end(),
+                        (std::int64_t) 0,
+                        [&](std::int64_t sum, dbRow* row) {
+                          return sum + (std::int64_t) row->getSiteCount();
+                        });
 
   std::map<dbRow*, int> placed_row_insts;
   for (dbInst* inst : block->getInsts()) {
@@ -221,10 +215,13 @@ void cutRows(dbBlock* block,
     }
   }
 
-  const int final_sites_count
-      = std::accumulate(rows.begin(), rows.end(), 0, [](int sum, dbRow* row) {
-          return sum + row->getSiteCount();
-        });
+  const std::int64_t final_sites_count
+      = std::accumulate(rows.begin(),
+                        rows.end(),
+                        (std::int64_t) 0,
+                        [&](std::int64_t sum, dbRow* row) {
+                          return sum + (std::int64_t) row->getSiteCount();
+                        });
 
   logger->info(utl::ODB,
                303,
@@ -235,6 +232,134 @@ void cutRows(dbBlock* block,
                blockages.size(),
                block->getRows().size(),
                final_sites_count);
+}
+
+std::string generateMacroPlacementString(dbBlock* block)
+{
+  std::string macro_placement;
+
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (inst->isBlock()) {
+      macro_placement += fmt::format(
+          "place_macro -macro_name {{{}}} -location {{{} {}}} -orientation "
+          "{}\n",
+          inst->getName(),
+          block->dbuToMicrons(inst->getLocation().x()),
+          block->dbuToMicrons(inst->getLocation().y()),
+          inst->getOrient().getString());
+    }
+  }
+
+  return macro_placement;
+}
+
+void set_bterm_top_layer_grid(dbBlock* block,
+                              dbTechLayer* layer,
+                              int x_step,
+                              int y_step,
+                              Rect region,
+                              int width,
+                              int height,
+                              int keepout)
+{
+  Polygon polygon_region(region);
+  dbBlock::dbBTermTopLayerGrid top_layer_grid
+      = {layer, x_step, y_step, polygon_region, width, height, keepout};
+  block->setBTermTopLayerGrid(top_layer_grid);
+}
+
+bool hasOneSiteMaster(dbDatabase* db)
+{
+  for (dbLib* lib : db->getLibs()) {
+    for (dbMaster* master : lib->getMasters()) {
+      if (master->isBlock() || master->isPad() || master->isCover()) {
+        continue;
+      }
+
+      // Ignore IO corner cells
+      dbMasterType type = master->getType();
+      if (type == dbMasterType::ENDCAP_TOPLEFT
+          || type == dbMasterType::ENDCAP_TOPRIGHT
+          || type == dbMasterType::ENDCAP_BOTTOMLEFT
+          || type == dbMasterType::ENDCAP_BOTTOMRIGHT) {
+        continue;
+      }
+
+      dbSite* site = master->getSite();
+      if (site == nullptr) {
+        continue;
+      }
+
+      if (site->getClass() == dbSiteClass::PAD) {
+        continue;
+      }
+
+      if (site->getWidth() == master->getWidth()) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+int64_t WireLengthEvaluator::hpwl() const
+{
+  int64_t hpwl_sum = 0;
+  for (dbNet* net : block_->getNets()) {
+    int64_t net_hpwl_x, net_hpwl_y;
+    hpwl_sum += hpwl(net, net_hpwl_x, net_hpwl_y);
+  }
+  return hpwl_sum;
+}
+
+int64_t WireLengthEvaluator::hpwl(int64_t& hpwl_x, int64_t& hpwl_y) const
+{
+  int64_t hpwl_sum = 0;
+  for (dbNet* net : block_->getNets()) {
+    int64_t net_hpwl_x = 0;
+    int64_t net_hpwl_y = 0;
+    hpwl_sum += hpwl(net, net_hpwl_x, net_hpwl_y);
+    hpwl_x += net_hpwl_x;
+    hpwl_y += net_hpwl_y;
+  }
+  return hpwl_sum;
+}
+
+int64_t WireLengthEvaluator::hpwl(dbNet* net,
+                                  int64_t& hpwl_x,
+                                  int64_t& hpwl_y) const
+{
+  if (net->getSigType().isSupply() || net->isSpecial()) {
+    return 0;
+  }
+
+  Rect bbox = net->getTermBBox();
+  if (bbox.isInverted()) {
+    hpwl_x = 0;
+    hpwl_y = 0;
+    return 0;
+  }
+
+  hpwl_x = bbox.dx();
+  hpwl_y = bbox.dy();
+
+  return hpwl_x + hpwl_y;
+}
+
+void WireLengthEvaluator::reportEachNetHpwl(utl::Logger* logger) const
+{
+  for (dbNet* net : block_->getNets()) {
+    int64_t tmp;
+    logger->report("{} {}",
+                   net->getConstName(),
+                   block_->dbuToMicrons(hpwl(net, tmp, tmp)));
+  }
+}
+
+void WireLengthEvaluator::reportHpwl(utl::Logger* logger) const
+{
+  logger->report("{}", block_->dbuToMicrons(hpwl()));
 }
 
 }  // namespace odb

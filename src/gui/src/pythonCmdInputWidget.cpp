@@ -303,7 +303,7 @@ void PythonCmdInputWidget::exitHandler()
 void PythonCmdInputWidget::init()
 {
   PyImport_AppendInittab("emb", emb::PyInit_emb);
-  ord::pyAppInit();
+  ord::pyAppInit(false);
 
   PyImport_ImportModule("emb");
 

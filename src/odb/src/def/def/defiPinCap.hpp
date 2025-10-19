@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -30,12 +30,12 @@
 #ifndef defiPinCap_h
 #define defiPinCap_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 #include "defiMisc.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 class defrData;
 
@@ -61,9 +61,6 @@ class defiPinAntennaModel
  public:
   defiPinAntennaModel(defrData* data);
   void Init();
-
-  DEF_COPY_CONSTRUCTOR_H(defiPinAntennaModel);
-  DEF_ASSIGN_OPERATOR_H(defiPinAntennaModel);
 
   ~defiPinAntennaModel();
   void clear();
@@ -102,7 +99,7 @@ class defiPinAntennaModel
   const char* APinMaxCutCarLayer(int index) const;
 
  protected:
-  char* oxide_;
+  char* oxide_{nullptr};
 
   int numAPinGateArea_;  // 5.4
   int APinGateAreaAllocated_;
@@ -133,8 +130,6 @@ class defiPinPort
   defiPinPort(defrData* data);
   void Init();
 
-  DEF_COPY_CONSTRUCTOR_H(defiPinPort);
-  DEF_ASSIGN_OPERATOR_H(defiPinPort);
   ~defiPinPort();
 
   void clear();
@@ -217,9 +212,6 @@ class defiPin
  public:
   defiPin(defrData* data);
   void Init();
-
-  DEF_COPY_CONSTRUCTOR_H(defiPin);
-  DEF_ASSIGN_OPERATOR_H(defiPin);
 
   ~defiPin();
   void Destroy();
@@ -433,8 +425,6 @@ class defiPin
   defrData* defData;
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

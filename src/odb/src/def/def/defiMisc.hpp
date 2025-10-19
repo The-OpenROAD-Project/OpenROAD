@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -30,11 +30,11 @@
 #ifndef defiMisc_h
 #define defiMisc_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 class defrData;
 
@@ -43,10 +43,6 @@ struct defiPoints
   int numPoints;
   int* x;
   int* y;
-
-  defiPoints();
-  DEF_COPY_CONSTRUCTOR_H(defiPoints);
-  DEF_ASSIGN_OPERATOR_H(defiPoints);
 };
 
 class defiGeometries
@@ -97,8 +93,6 @@ class defiStyles
   int numPointAlloc_;
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

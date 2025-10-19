@@ -2,14 +2,15 @@
 
 # Make an array of FF and connect all their clocks to a single
 # top level terminal
-make_array = '''
+make_array = """
 proc make_array { sinks { width 200000 } { height 200000 } \
                       { clock_gate -1 } } {
   set db [ord::get_db]
-  set chip [odb::dbChip_create $db]
+  set tech [$db getTech]
+  set chip [odb::dbChip_create $db $tech]
   set block [odb::dbBlock_create $chip "multi_sink"]
   set master [$db findMaster "DFF_X1"]
-  set tech [$db getTech]
+  
   set layer [$tech findLayer "metal6"]
   set min_width [$layer getWidth]
 
@@ -30,12 +31,12 @@ proc make_array { sinks { width 200000 } { height 200000 } \
 
   if {$clock_gate >= 0} {
     set clock_master [$db findMaster "BUF_X1"]
-    set clock_gate_inst [odb::dbInst_create $block $clock_master "CKGATE"]
+    set clock_gate_inst [odb::dbInst_create $block $clock_master "CELL/CKGATE"]
     $clock_gate_inst setOrigin [expr $width / 2] [expr $height / 2]
     $clock_gate_inst setPlacementStatus PLACED
     [$clock_gate_inst findITerm "A"] connect $clk
 
-    set clk2 [odb::dbNet_create $block "clk2"]
+    set clk2 [odb::dbNet_create $block "CELL/clk2"]
     [$clock_gate_inst findITerm "Z"] connect $clk2
   }
 
@@ -63,4 +64,4 @@ proc make_array { sinks { width 200000 } { height 200000 } \
   }
   return $block
 }
-'''
+"""

@@ -1,45 +1,19 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbTechLayerRule.h"
 
-#include "db.h"
+#include <cassert>
+
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechNonDefaultRule.h"
+#include "odb/db.h"
 
 namespace odb {
 
@@ -105,73 +79,48 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerRule& rule)
 
 bool _dbTechLayerRule::operator==(const _dbTechLayerRule& rhs) const
 {
-  if (_width != rhs._width)
+  if (_width != rhs._width) {
     return false;
+  }
 
-  if (_spacing != rhs._spacing)
+  if (_spacing != rhs._spacing) {
     return false;
+  }
 
-  if (_resistance != rhs._resistance)
+  if (_resistance != rhs._resistance) {
     return false;
+  }
 
-  if (_capacitance != rhs._capacitance)
+  if (_capacitance != rhs._capacitance) {
     return false;
+  }
 
-  if (_edge_capacitance != rhs._edge_capacitance)
+  if (_edge_capacitance != rhs._edge_capacitance) {
     return false;
+  }
 
-  if (_wire_extension != rhs._wire_extension)
+  if (_wire_extension != rhs._wire_extension) {
     return false;
+  }
 
-  if (_non_default_rule != rhs._non_default_rule)
+  if (_non_default_rule != rhs._non_default_rule) {
     return false;
+  }
 
-  if (_layer != rhs._layer)
+  if (_layer != rhs._layer) {
     return false;
+  }
 
   return true;
 }
 
-void _dbTechLayerRule::differences(dbDiff& diff,
-                                   const char* field,
-                                   const _dbTechLayerRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._block_rule);
-  DIFF_FIELD(_width);
-  DIFF_FIELD(_spacing);
-  DIFF_FIELD(_resistance);
-  DIFF_FIELD(_capacitance);
-  DIFF_FIELD(_edge_capacitance);
-  DIFF_FIELD(_wire_extension);
-  DIFF_FIELD(_non_default_rule);
-  DIFF_FIELD(_layer);
-  DIFF_END
-}
-
-void _dbTechLayerRule::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._block_rule);
-  DIFF_OUT_FIELD(_width);
-  DIFF_OUT_FIELD(_spacing);
-  DIFF_OUT_FIELD(_resistance);
-  DIFF_OUT_FIELD(_capacitance);
-  DIFF_OUT_FIELD(_edge_capacitance);
-  DIFF_OUT_FIELD(_wire_extension);
-  DIFF_OUT_FIELD(_non_default_rule);
-  DIFF_OUT_FIELD(_layer);
-  DIFF_END
-}
-
 _dbTech* _dbTechLayerRule::getTech()
 {
-#if 0  // dead code generates warnings -cherry
-    if (_flags._block_rule == 0)
-        (_dbTech *) getOwner();
-#endif
+  if (_flags._block_rule == 0) {
+    return (_dbTech*) getOwner();
+  }
 
-  return (_dbTech*) getDb()->getTech();
+  return (_dbTech*) getBlock()->getTech();
 }
 
 _dbBlock* _dbTechLayerRule::getBlock()
@@ -197,18 +146,18 @@ dbTechNonDefaultRule* dbTechLayerRule::getNonDefaultRule()
 {
   _dbTechLayerRule* rule = (_dbTechLayerRule*) this;
 
-  if (rule->_non_default_rule == 0)
-    return NULL;
+  if (rule->_non_default_rule == 0) {
+    return nullptr;
+  }
 
   if (isBlockRule()) {
     _dbBlock* block = rule->getBlock();
     return (dbTechNonDefaultRule*) block->_non_default_rule_tbl->getPtr(
         rule->_non_default_rule);
-  } else {
-    _dbTech* tech = rule->getTech();
-    return (dbTechNonDefaultRule*) tech->_non_default_rule_tbl->getPtr(
-        rule->_non_default_rule);
   }
+  _dbTech* tech = rule->getTech();
+  return (dbTechNonDefaultRule*) tech->_non_default_rule_tbl->getPtr(
+      rule->_non_default_rule);
 }
 
 bool dbTechLayerRule::isBlockRule()
@@ -294,25 +243,26 @@ dbTechLayerRule* dbTechLayerRule::create(dbTechNonDefaultRule* rule_,
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) rule_;
   _dbTechLayer* layer = (_dbTechLayer*) layer_;
-  dbTable<_dbTechLayerRule>* layer_rule_tbl = NULL;
+
+  auto make_layer = [layer, rule](auto& tbl) -> dbTechLayerRule* {
+    if (rule->_layer_rules[layer->_number] != 0) {
+      return nullptr;
+    }
+
+    _dbTechLayerRule* layer_rule = tbl->create();
+    layer_rule->_non_default_rule = rule->getOID();
+    layer_rule->_layer = layer->getOID();
+    layer_rule->_flags._block_rule = rule->_flags._block_rule;
+    rule->_layer_rules[layer->_number] = layer_rule->getOID();
+    return (dbTechLayerRule*) layer_rule;
+  };
 
   if (rule->_flags._block_rule) {
     _dbBlock* block = rule->getBlock();
-    layer_rule_tbl = block->_layer_rule_tbl;
-  } else {
-    _dbTech* tech = rule->getTech();
-    layer_rule_tbl = tech->_layer_rule_tbl;
+    return make_layer(block->_layer_rule_tbl);
   }
-
-  if (rule->_layer_rules[layer->_number] != 0)
-    return NULL;
-
-  _dbTechLayerRule* layer_rule = layer_rule_tbl->create();
-  layer_rule->_non_default_rule = rule->getOID();
-  layer_rule->_layer = layer->getOID();
-  layer_rule->_flags._block_rule = rule->_flags._block_rule;
-  rule->_layer_rules[layer->_number] = layer_rule->getOID();
-  return (dbTechLayerRule*) layer_rule;
+  _dbTech* tech = rule->getTech();
+  return make_layer(tech->_layer_rule_tbl);
 }
 
 dbTechLayerRule* dbTechLayerRule::getTechLayerRule(dbTech* tech_, uint dbid_)
@@ -325,6 +275,12 @@ dbTechLayerRule* dbTechLayerRule::getTechLayerRule(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbTechLayerRule*) block->_layer_rule_tbl->getPtr(dbid_);
+}
+
+void _dbTechLayerRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 }  // namespace odb

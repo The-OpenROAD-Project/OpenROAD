@@ -25,7 +25,7 @@
 /*                                                                            */
 /*  $Author: dell $ */
 /*  $Revision: #1 $ */
-/*  $Date: 2017/06/06 $ */
+/*  $Date: 2020/09/29 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
@@ -33,7 +33,7 @@
 #ifndef CLEFINONDEFAULT_H
 #define CLEFINONDEFAULT_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 
@@ -46,7 +46,7 @@ EXTERN const char* lefiNonDefault_propName(const lefiNonDefault* obj,
 EXTERN const char* lefiNonDefault_propValue(const lefiNonDefault* obj,
                                             int index);
 EXTERN double lefiNonDefault_propNumber(const lefiNonDefault* obj, int index);
-EXTERN const char lefiNonDefault_propType(const lefiNonDefault* obj, int index);
+EXTERN char lefiNonDefault_propType(const lefiNonDefault* obj, int index);
 EXTERN int lefiNonDefault_propIsNumber(const lefiNonDefault* obj, int index);
 EXTERN int lefiNonDefault_propIsString(const lefiNonDefault* obj, int index);
 

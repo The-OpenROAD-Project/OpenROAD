@@ -25,7 +25,7 @@
 /*                                                                            */
 /*  $Author: dell $ */
 /*  $Revision: #1 $ */
-/*  $Date: 2017/06/06 $ */
+/*  $Date: 2020/09/29 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
@@ -33,16 +33,13 @@
 #ifndef CLEFIUTIL_H
 #define CLEFIUTIL_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 
 /* Structure to return Macro data to FE                                       */
 
 /*int lefiValidTime();                                                        */
-EXTERN int lefiValidUser();
-
-EXTERN char* lefiUser();
 
 EXTERN char* lefiOrientStr(int orient);
 

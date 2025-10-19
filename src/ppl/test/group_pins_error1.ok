@@ -1,0 +1,11 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 88 components and 422 component-terminals.
+[INFO ODB-0133]     Created 54 nets and 88 connections.
+Found 0 macro blocks.
+[INFO PPL-0044] Pin group: [ resp_msg[10] resp_msg[11] resp_msg[12] resp_msg[13] ]
+[INFO PPL-0044] Pin group: [ req_msg[10] req_msg[11] req_msg[12] resp_msg[13] ]
+[INFO PPL-0044] Pin group: [ req_msg[14] req_msg[15] req_msg[2] resp_msg[11] ]
+[ERROR PPL-0104] Pins  resp_msg[13] resp_msg[11] are assigned to multiple groups.
+PPL-0104

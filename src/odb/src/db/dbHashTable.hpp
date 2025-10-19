@@ -1,39 +1,11 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include "dbCore.h"
 #include "dbHashTable.h"
+#include "odb/dbId.h"
 
 namespace odb {
 
@@ -42,44 +14,43 @@ inline unsigned int hash_string(const char* str)
   unsigned int hash = 0;
   int c;
 
-  while ((c = *str++) != '\0')
+  while ((c = static_cast<unsigned char>(*str++)) != '\0') {
     hash = c + (hash << 6) + (hash << 16) - hash;
+  }
 
   return hash;
 }
 
-template <class T>
-dbHashTable<T>::dbHashTable()
+template <class T, uint page_size>
+dbHashTable<T, page_size>::dbHashTable()
 {
-  _obj_tbl = NULL;
+  _obj_tbl = nullptr;
   _num_entries = 0;
 }
 
-template <class T>
-dbHashTable<T>::dbHashTable(const dbHashTable<T>& t)
+template <class T, uint page_size>
+dbHashTable<T, page_size>::dbHashTable(const dbHashTable<T, page_size>& t)
     : _hash_tbl(t._hash_tbl), _num_entries(t._num_entries), _obj_tbl(t._obj_tbl)
 {
 }
 
-template <class T>
-dbHashTable<T>::~dbHashTable()
+template <class T, uint page_size>
+bool dbHashTable<T, page_size>::operator==(
+    const dbHashTable<T, page_size>& rhs) const
 {
-}
-
-template <class T>
-bool dbHashTable<T>::operator==(const dbHashTable<T>& rhs) const
-{
-  if (_num_entries != rhs._num_entries)
+  if (_num_entries != rhs._num_entries) {
     return false;
+  }
 
-  if (_hash_tbl != rhs._hash_tbl)
+  if (_hash_tbl != rhs._hash_tbl) {
     return false;
+  }
 
   return true;
 }
 
-template <class T>
-void dbHashTable<T>::growTable()
+template <class T, uint page_size>
+void dbHashTable<T, page_size>::growTable()
 {
   uint sz = _hash_tbl.size();
   dbId<T> entries;
@@ -101,8 +72,9 @@ void dbHashTable<T>::growTable()
 
   // double the size of the hash-table
   dbId<T> nullId;
-  for (i = 0; i < sz; ++i)
+  for (i = 0; i < sz; ++i) {
     _hash_tbl.push_back(nullId);
+  }
 
   // reinsert the entries
   sz = _hash_tbl.size() - 1;
@@ -119,8 +91,8 @@ void dbHashTable<T>::growTable()
   }
 }
 
-template <class T>
-void dbHashTable<T>::shrinkTable()
+template <class T, uint page_size>
+void dbHashTable<T, page_size>::shrinkTable()
 {
   uint sz = _hash_tbl.size();
   dbId<T> entries;
@@ -146,8 +118,9 @@ void dbHashTable<T>::shrinkTable()
 
   // halve the size of the hash-table
   dbId<T> nullId;
-  for (i = 0; i < sz; ++i)
+  for (i = 0; i < sz; ++i) {
     _hash_tbl.push_back(nullId);
+  }
 
   sz -= 1;
   // reinsert the entries
@@ -164,8 +137,8 @@ void dbHashTable<T>::shrinkTable()
   }
 }
 
-template <class T>
-void dbHashTable<T>::insert(T* object)
+template <class T, uint page_size>
+void dbHashTable<T, page_size>::insert(T* object)
 {
   ++_num_entries;
   uint sz = _hash_tbl.size();
@@ -189,13 +162,14 @@ void dbHashTable<T>::insert(T* object)
   e = object->getOID();
 }
 
-template <class T>
-T* dbHashTable<T>::find(const char* name)
+template <class T, uint page_size>
+T* dbHashTable<T, page_size>::find(const char* name)
 {
   uint sz = _hash_tbl.size();
 
-  if (sz == 0)
-    return 0;
+  if (sz == 0) {
+    return nullptr;
+  }
 
   uint hid = hash_string(name) & (sz - 1);
   dbId<T> cur = _hash_tbl[hid];
@@ -203,22 +177,24 @@ T* dbHashTable<T>::find(const char* name)
   while (cur != 0) {
     T* entry = _obj_tbl->getPtr(cur);
 
-    if (strcmp(entry->_name, name) == 0)
+    if (strcmp(entry->_name, name) == 0) {
       return entry;
+    }
 
     cur = entry->_next_entry;
   }
 
-  return NULL;
+  return nullptr;
 }
 
-template <class T>
-int dbHashTable<T>::hasMember(const char* name)
+template <class T, uint page_size>
+int dbHashTable<T, page_size>::hasMember(const char* name)
 {
   uint sz = _hash_tbl.size();
 
-  if (sz == 0)
+  if (sz == 0) {
     return false;
+  }
 
   uint hid = hash_string(name) & (sz - 1);
   dbId<T> cur = _hash_tbl[hid];
@@ -226,8 +202,9 @@ int dbHashTable<T>::hasMember(const char* name)
   while (cur != 0) {
     T* entry = _obj_tbl->getPtr(cur);
 
-    if (strcmp(entry->_name, name) == 0)
+    if (strcmp(entry->_name, name) == 0) {
       return true;
+    }
 
     cur = entry->_next_entry;
   }
@@ -235,8 +212,8 @@ int dbHashTable<T>::hasMember(const char* name)
   return false;
 }
 
-template <class T>
-void dbHashTable<T>::remove(T* object)
+template <class T, uint page_size>
+void dbHashTable<T, page_size>::remove(T* object)
 {
   uint sz = _hash_tbl.size();
   uint hid = hash_string(object->_name) & (sz - 1);
@@ -247,9 +224,9 @@ void dbHashTable<T>::remove(T* object)
     T* entry = _obj_tbl->getPtr(cur);
 
     if (entry == object) {
-      if (prev == 0)
+      if (prev == 0) {
         _hash_tbl[hid] = entry->_next_entry;
-      else {
+      } else {
         T* p = _obj_tbl->getPtr(prev);
         p->_next_entry = entry->_next_entry;
       }
@@ -258,8 +235,9 @@ void dbHashTable<T>::remove(T* object)
 
       uint r = (_num_entries + _num_entries / 10) / sz;
 
-      if ((r < (CHAIN_LENGTH >> 1)) && (sz > 1))
+      if ((r < (CHAIN_LENGTH >> 1)) && (sz > 1)) {
         shrinkTable();
+      }
 
       return;
     }
@@ -269,42 +247,20 @@ void dbHashTable<T>::remove(T* object)
   }
 }
 
-template <class T>
-dbOStream& operator<<(dbOStream& stream, const dbHashTable<T>& table)
+template <class T, uint page_size>
+dbOStream& operator<<(dbOStream& stream, const dbHashTable<T, page_size>& table)
 {
   stream << table._hash_tbl;
   stream << table._num_entries;
   return stream;
 }
 
-template <class T>
-dbIStream& operator>>(dbIStream& stream, dbHashTable<T>& table)
+template <class T, uint page_size>
+dbIStream& operator>>(dbIStream& stream, dbHashTable<T, page_size>& table)
 {
   stream >> table._hash_tbl;
   stream >> table._num_entries;
   return stream;
-}
-
-template <class T>
-void dbHashTable<T>::differences(dbDiff& diff,
-                                 const char* field,
-                                 const dbHashTable<T>& rhs) const
-{
-  diff.report("<> %s", field);
-  diff.increment();
-  DIFF_FIELD(_num_entries)
-  DIFF_VECTOR(_hash_tbl);
-  diff.decrement();
-}
-
-template <class T>
-void dbHashTable<T>::out(dbDiff& diff, char side, const char* field) const
-{
-  diff.report("%c %s", side, field);
-  diff.increment();
-  DIFF_OUT_FIELD(_num_entries)
-  DIFF_OUT_VECTOR(_hash_tbl);
-  diff.decrement();
 }
 
 }  // namespace odb

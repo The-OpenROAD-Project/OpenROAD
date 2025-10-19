@@ -1,7 +1,11 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2019-2025, The OpenROAD Authors
+
 add_library(defin
     definNet.cpp 
     definSNet.cpp 
     definComponent.cpp 
+    definComponentMaskShift.cpp
     definVia.cpp 
     definPin.cpp 
     definBlockage.cpp 
@@ -33,7 +37,7 @@ target_link_libraries(defin
         zutil
         def
         defzlib
-        utl
+        utl_lib
 )
 
 set_target_properties(defin

@@ -22,24 +22,27 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
 
 #include "defzlib.hpp"
 
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <zlib.h>
 
+#include <climits>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
+#include "defiDefs.hpp"
+#include "defiKRDefs.hpp"
 #include "defrReader.hpp"
-#include "zlib.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 /*
  * Private functions:
@@ -54,8 +57,9 @@ size_t defGZip_read(FILE* file, char* buf, size_t len)
  */
 defGZFile defGZipOpen(const char* gzipPath, const char* mode)
 {
-  if (!gzipPath)
-    return NULL;
+  if (!gzipPath) {
+    return nullptr;
+  }
 
   defGZFile fptr = gzopen(gzipPath, mode);
 
@@ -64,8 +68,8 @@ defGZFile defGZipOpen(const char* gzipPath, const char* mode)
     /* set the read function to read from a compressed file */
     defrSetReadFunction(defGZip_read);
     return (defGZFile) fptr;
-  } else
-    return NULL;
+  }
+  return nullptr;
 }
 
 int defGZipClose(defGZFile filePtr)
@@ -86,8 +90,9 @@ void defrSetGZipReadFunction()
 
 defGZFile defrGZipOpen(const char* gzipPath, const char* mode)
 {
-  if (!gzipPath)
-    return NULL;
+  if (!gzipPath) {
+    return nullptr;
+  }
 
   return gzopen(gzipPath, mode);
 }
@@ -97,4 +102,4 @@ int defrGZipClose(defGZFile filePtr)
   return (gzclose((gzFile) filePtr));
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

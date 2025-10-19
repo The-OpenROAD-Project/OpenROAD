@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  Mac-Build:
     if: github.repository_owner != 'The-OpenROAD-Project' && github.repository_owner != 'The-OpenROAD-Project-private' && github.repository_owner != 'The-OpenROAD-Project-staging'
     runs-on: macos-latest
     steps:
@@ -15,7 +15,7 @@ jobs:
         with:
           xcode-version: latest-stable
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v5
         with:
           submodules: 'recursive'
       - name: Install dependencies
@@ -47,7 +47,7 @@ jobs:
           rm -rf "${{ github.workspace }}"
           mkdir -p "${{ github.workspace }}"
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
         with:
           submodules: 'recursive'
       - name: Build OpenROAD

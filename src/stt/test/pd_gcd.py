@@ -2,6 +2,7 @@
 from openroad import Design, Tech
 import helpers
 import stt_aux
+
 tech = Tech()
 design = Design(tech)
 

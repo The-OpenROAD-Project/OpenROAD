@@ -1,54 +1,48 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cmath>
+#include <cstdlib>
+#include <iostream>
+#include <limits>
+#include <utility>
+#include <vector>
 
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "ta/FlexTA.h"
 
-using namespace std;
-using namespace fr;
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
 
-frSquaredDistance FlexTAWorker::box2boxDistSquare(const Rect& box1,
-                                                  const Rect& box2,
+namespace drt {
+
+frSquaredDistance FlexTAWorker::box2boxDistSquare(const odb::Rect& box1,
+                                                  const odb::Rect& box2,
                                                   frCoord& dx,
                                                   frCoord& dy)
 {
-  dx = max(max(box1.xMin(), box2.xMin()) - min(box1.xMax(), box2.xMax()), 0);
-  dy = max(max(box1.yMin(), box2.yMin()) - min(box1.yMax(), box2.yMax()), 0);
+  dx = std::max(
+      std::max(box1.xMin(), box2.xMin()) - std::min(box1.xMax(), box2.xMax()),
+      0);
+  dy = std::max(
+      std::max(box1.yMin(), box2.yMin()) - std::min(box1.yMax(), box2.yMax()),
+      0);
   return (frSquaredDistance) dx * dx + (frSquaredDistance) dy * dy;
 }
 
 // must be current TA layer
-void FlexTAWorker::modMinSpacingCostPlanar(const Rect& box,
+void FlexTAWorker::modMinSpacingCostPlanar(const odb::Rect& box,
                                            frLayerNum lNum,
                                            taPinFig* fig,
                                            bool isAddCost,
-                                           set<taPin*, frBlockObjectComp>* pinS)
+                                           frOrderedIdSet<taPin*>* pinS)
 {
   // obj1 = curr obj
   frCoord width1 = box.minDXDY();
@@ -60,10 +54,11 @@ void FlexTAWorker::modMinSpacingCostPlanar(const Rect& box,
   frCoord halfwidth2 = width2 / 2;
   // spacing value needed
   frCoord bloatDist = layer->getMinSpacingValue(width1, width2, length1, false);
-  if (fig->getNet()->getNondefaultRule())
-    bloatDist
-        = max(bloatDist,
-              fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
+  if (fig->getNet()->getNondefaultRule()) {
+    bloatDist = std::max(
+        bloatDist,
+        fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
+  }
 
   frSquaredDistance bloatDistSquare = (frSquaredDistance) bloatDist * bloatDist;
 
@@ -74,7 +69,7 @@ void FlexTAWorker::modMinSpacingCostPlanar(const Rect& box,
   frCoord boxHigh = isH ? box.yMax() : box.xMax();
   frCoord boxLeft = isH ? box.xMin() : box.yMin();
   frCoord boxRight = isH ? box.xMax() : box.yMax();
-  Rect box1(boxLeft, boxLow, boxRight, boxHigh);
+  odb::Rect box1(boxLeft, boxLow, boxRight, boxHigh);
 
   int idx1, idx2;
   getTrackIdx(boxLow - bloatDist - halfwidth2 + 1,
@@ -83,14 +78,13 @@ void FlexTAWorker::modMinSpacingCostPlanar(const Rect& box,
               idx1,
               idx2);
 
-  Rect box2(-halfwidth2, -halfwidth2, halfwidth2, halfwidth2);
-  dbTransform xform;
+  odb::Rect box2(-halfwidth2, -halfwidth2, halfwidth2, halfwidth2);
   frCoord dx, dy;
   auto& trackLocs = getTrackLocs(lNum);
   auto& workerRegionQuery = getWorkerRegionQuery();
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
-    xform.setOffset(Point(boxLeft, trackLoc));
+    odb::dbTransform xform(odb::Point(boxLeft, trackLoc));
     xform.apply(box2);
     box2boxDistSquare(box1, box2, dx, dy);
     if (dy >= bloatDist) {
@@ -100,11 +94,11 @@ void FlexTAWorker::modMinSpacingCostPlanar(const Rect& box,
                                    - 1.0 * (frSquaredDistance) dy * dy));
     if ((frSquaredDistance) maxX * maxX + (frSquaredDistance) dy * dy
         == bloatDistSquare) {
-      maxX = max(0, maxX - 1);
+      maxX = std::max(0, maxX - 1);
     }
     frCoord blockLeft = boxLeft - maxX - halfwidth2;
     frCoord blockRight = boxRight + maxX + halfwidth2;
-    Rect tmpBox;
+    odb::Rect tmpBox;
     if (isH) {
       tmpBox.init(blockLeft, trackLoc, blockRight, trackLoc);
     } else {
@@ -126,20 +120,20 @@ void FlexTAWorker::modMinSpacingCostPlanar(const Rect& box,
 }
 
 // given a shape on any routing layer n, block via @(n+1) if isUpperVia is true
-void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
+void FlexTAWorker::modMinSpacingCostVia(const odb::Rect& box,
                                         frLayerNum lNum,
                                         taPinFig* fig,
                                         bool isAddCost,
                                         bool isUpperVia,
                                         bool isCurrPs,
-                                        set<taPin*, frBlockObjectComp>* pinS)
+                                        frOrderedIdSet<taPin*>* pinS)
 {
   // obj1 = curr obj
   frCoord width1 = box.minDXDY();
   frCoord length1 = box.maxDXDY();
   // obj2 = other obj
   // default via dimension
-  frViaDef* viaDef = nullptr;
+  const frViaDef* viaDef = nullptr;
   frLayerNum cutLNum = 0;
   if (isUpperVia) {
     viaDef
@@ -158,7 +152,7 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
     return;
   }
   frVia via(viaDef);
-  Rect viaBox(0, 0, 0, 0);
+  odb::Rect viaBox(0, 0, 0, 0);
   if (isUpperVia) {
     viaBox = via.getLayer1BBox();
   } else {
@@ -181,20 +175,22 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
                     == getDir()) {
     followTrackLNum = cutLNum + 1;
   } else {
-    cout << "Warning: via layer connected to non-routing layer, skipped in "
-            "modMinSpacingCostVia"
-         << endl;
+    std::cout
+        << "Warning: via layer connected to non-routing layer, skipped in "
+           "modMinSpacingCostVia"
+        << std::endl;
     return;
   }
 
   // spacing value needed
   auto layer = getTech()->getLayer(lNum);
   frCoord bloatDist = layer->getMinSpacingValue(
-      width1, width2, isCurrPs ? length2 : min(length1, length2), false);
-  if (fig->getNet()->getNondefaultRule())
-    bloatDist
-        = max(bloatDist,
-              fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
+      width1, width2, isCurrPs ? length2 : std::min(length1, length2), false);
+  if (fig->getNet()->getNondefaultRule()) {
+    bloatDist = std::max(
+        bloatDist,
+        fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
+  }
   int idx1, idx2;
   if (isH) {
     getTrackIdx(box.yMin() - bloatDist - (viaBox.yMax() - 0) + 1,
@@ -212,17 +208,17 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
 
   auto& trackLocs = getTrackLocs(followTrackLNum);
   auto& workerRegionQuery = getWorkerRegionQuery();
-  Rect tmpBx;
-  dbTransform xform;
+  odb::Rect tmpBx;
+  odb::dbTransform xform;
   frCoord dx, dy, prl;
   frCoord maxX, blockLeft, blockRight;
-  Rect blockBox;
+  odb::Rect blockBox;
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
     if (isH) {
-      xform.setOffset(Point(box.xMin(), trackLoc));
+      xform.setOffset(odb::Point(box.xMin(), trackLoc));
     } else {
-      xform.setOffset(Point(trackLoc, box.yMin()));
+      xform.setOffset(odb::Point(trackLoc, box.yMin()));
     }
     tmpBx = viaBox;
     xform.apply(tmpBx);
@@ -230,40 +226,41 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
     if (isH) {           // track is horizontal
       if (dy > 0) {      // via at the bottom of box
         if (isCurrPs) {  // prl maxed out to be viaBox
-          prl = viaBox.xMax() - viaBox.xMin();
+          prl = viaBox.dx();
         } else {  // prl maxed out to be smaller of box and viaBox
-          prl = min(box.xMax() - box.xMin(), viaBox.xMax() - viaBox.xMin());
+          prl = std::min(box.dx(), viaBox.dx());
         }
         // via at the side of box
       } else {
         if (isCurrPs) {  // prl maxed out to be viaBox
-          prl = viaBox.yMax() - viaBox.yMin();
+          prl = viaBox.dy();
         } else {  // prl maxed out to be smaller of box and viaBox
-          prl = min(box.yMax() - box.yMin(), viaBox.yMax() - viaBox.yMin());
+          prl = std::min(box.dy(), viaBox.dy());
         }
       }
     } else {             // track is vertical
       if (dx > 0) {      // via at the bottom of box
         if (isCurrPs) {  // prl maxed out to be viaBox
-          prl = viaBox.yMax() - viaBox.yMin();
+          prl = viaBox.dy();
         } else {  // prl maxed out to be smaller of box and viaBox
-          prl = min(box.yMax() - box.yMin(), viaBox.yMax() - viaBox.yMin());
+          prl = std::min(box.dy(), viaBox.dy());
         }
         // via at the side of box
       } else {
         if (isCurrPs) {  // prl maxed out to be viaBox
-          prl = viaBox.xMax() - viaBox.xMin();
+          prl = viaBox.dx();
         } else {  // prl maxed out to be smaller of box and viaBox
-          prl = min(box.xMax() - box.xMin(), viaBox.xMax() - viaBox.xMin());
+          prl = std::min(box.dx(), viaBox.dx());
         }
       }
     }
 
     frCoord reqDist = layer->getMinSpacingValue(width1, width2, prl, false);
-    if (fig->getNet()->getNondefaultRule())
-      reqDist
-          = max(reqDist,
-                fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
+    if (fig->getNet()->getNondefaultRule()) {
+      reqDist = std::max(
+          reqDist,
+          fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
+    }
 
     if (isH) {
       if (dy >= reqDist) {
@@ -271,7 +268,7 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
       }
       maxX = (frCoord) (sqrt(1.0 * reqDist * reqDist - 1.0 * dy * dy));
       if (maxX * maxX + dy * dy == reqDist * reqDist) {
-        maxX = max(0, maxX - 1);
+        maxX = std::max(0, maxX - 1);
       }
       blockLeft = box.xMin() - maxX - (viaBox.xMax() - 0);
       blockRight = box.xMax() + maxX + (0 - viaBox.xMin());
@@ -283,7 +280,7 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
       }
       maxX = (frCoord) (sqrt(1.0 * reqDist * reqDist - 1.0 * dx * dx));
       if (maxX * maxX + dx * dx == reqDist * reqDist) {
-        maxX = max(0, maxX - 1);
+        maxX = std::max(0, maxX - 1);
       }
       blockLeft = box.yMin() - maxX - (viaBox.yMax() - 0);
       blockRight = box.yMax() + maxX + (0 - viaBox.yMin());
@@ -293,12 +290,12 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
 
     auto con = layer->getMinSpacing();
     if (isAddCost) {
-      workerRegionQuery.addCost(blockBox, cutLNum, fig, con);
+      workerRegionQuery.addViaCost(blockBox, cutLNum, fig, con);
       if (pinS) {
         workerRegionQuery.query(blockBox, cutLNum, *pinS);
       }
     } else {
-      workerRegionQuery.removeCost(blockBox, cutLNum, fig, con);
+      workerRegionQuery.removeViaCost(blockBox, cutLNum, fig, con);
       if (pinS) {
         workerRegionQuery.query(blockBox, cutLNum, *pinS);
       }
@@ -306,11 +303,11 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
   }
 }
 
-void FlexTAWorker::modCutSpacingCost(const Rect& box,
+void FlexTAWorker::modCutSpacingCost(const odb::Rect& box,
                                      frLayerNum lNum,
                                      taPinFig* fig,
                                      bool isAddCost,
-                                     set<taPin*, frBlockObjectComp>* pinS)
+                                     frOrderedIdSet<taPin*>* pinS)
 {
   if (!getDesign()->getTech()->getLayer(lNum)->hasCutSpacing()) {
     return;
@@ -318,9 +315,10 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
   // obj1 = curr obj
   // obj2 = other obj
   // default via dimension
-  frViaDef* viaDef = getDesign()->getTech()->getLayer(lNum)->getDefaultViaDef();
+  const frViaDef* viaDef
+      = getDesign()->getTech()->getLayer(lNum)->getDefaultViaDef();
   frVia via(viaDef);
-  Rect viaBox = via.getCutBBox();
+  odb::Rect viaBox = via.getCutBBox();
 
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   frLayerNum followTrackLNum;
@@ -336,16 +334,17 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
                     == getDir()) {
     followTrackLNum = lNum + 1;
   } else {
-    cout << "Warning: via layer connected to non-routing layer, skipped in "
-            "modMinSpacingCostVia"
-         << endl;
+    std::cout
+        << "Warning: via layer connected to non-routing layer, skipped in "
+           "modMinSpacingCostVia"
+        << std::endl;
     return;
   }
 
   // spacing value needed
   frCoord bloatDist = 0;
   for (auto con : getDesign()->getTech()->getLayer(lNum)->getCutSpacing()) {
-    bloatDist = max(bloatDist, con->getCutSpacing());
+    bloatDist = std::max(bloatDist, con->getCutSpacing());
   }
 
   int idx1, idx2;
@@ -365,21 +364,21 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
 
   auto& trackLocs = getTrackLocs(followTrackLNum);
   auto& workerRegionQuery = getWorkerRegionQuery();
-  Rect tmpBx;
-  dbTransform xform;
+  odb::Rect tmpBx;
+  odb::dbTransform xform;
   frCoord dx, dy, c2ctrackdist;
   frCoord reqDist = 0;
   frCoord maxX, blockLeft, blockRight;
-  Rect blockBox;
-  Point boxCenter, tmpBxCenter;
-  boxCenter.set((box.xMin() + box.xMax()) / 2, (box.yMin() + box.yMax()) / 2);
+  odb::Rect blockBox;
+  odb::Point boxCenter;
+  boxCenter = {(box.xMin() + box.xMax()) / 2, (box.yMin() + box.yMax()) / 2};
   bool hasViol = false;
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
     if (isH) {
-      xform.setOffset(Point(box.xMin(), trackLoc));
+      xform.setOffset(odb::Point(box.xMin(), trackLoc));
     } else {
-      xform.setOffset(Point(trackLoc, box.yMin()));
+      xform.setOffset(odb::Point(trackLoc, box.yMin()));
     }
     tmpBx = viaBox;
     xform.apply(tmpBx);
@@ -412,7 +411,7 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
           maxX = (frCoord) (sqrt(1.0 * reqDist * reqDist - 1.0 * dy * dy));
         }
         if (maxX * maxX + dy * dy == reqDist * reqDist) {
-          maxX = max(0, maxX - 1);
+          maxX = std::max(0, maxX - 1);
         }
         if (isC2C) {
           blockLeft = boxCenter.x() - maxX;
@@ -439,7 +438,7 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
           maxX = (frCoord) (sqrt(1.0 * reqDist * reqDist - 1.0 * dx * dx));
         }
         if (maxX * maxX + dx * dx == reqDist * reqDist) {
-          maxX = max(0, maxX - 1);
+          maxX = std::max(0, maxX - 1);
         }
         if (isC2C) {
           blockLeft = boxCenter.y() - maxX;
@@ -462,18 +461,19 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
       } else if (con->isParallelOverlap()) {
         if (isH) {
           if (dy > 0) {
-            blockBox.init(max(box.xMin() - (viaBox.xMax() - 0) + 1, blockLeft),
-                          trackLoc,
-                          min(box.xMax() + (0 - viaBox.xMin()) - 1, blockRight),
-                          trackLoc);
+            blockBox.init(
+                std::max(box.xMin() - (viaBox.xMax() - 0) + 1, blockLeft),
+                trackLoc,
+                std::min(box.xMax() + (0 - viaBox.xMin()) - 1, blockRight),
+                trackLoc);
           }
         } else {
           if (dx > 0) {
             blockBox.init(
                 trackLoc,
-                max(box.yMin() - (viaBox.yMax() - 0) + 1, blockLeft),
+                std::max(box.yMin() - (viaBox.yMax() - 0) + 1, blockLeft),
                 trackLoc,
-                min(box.yMax() + (0 - viaBox.yMin()) - 1, blockRight));
+                std::min(box.yMax() + (0 - viaBox.yMin()) - 1, blockRight));
           }
         }
         if (blockBox.xMin() <= blockBox.xMax()
@@ -481,8 +481,7 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
           hasViol = true;
         }
       } else if (con->isArea()) {
-        auto currArea = max(box.maxDXDY() * box.minDXDY(),
-                            tmpBx.maxDXDY() * tmpBx.minDXDY());
+        auto currArea = std::max(box.area(), tmpBx.area());
         if (currArea >= con->getCutArea()) {
           hasViol = true;
         }
@@ -491,12 +490,12 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
       }
       if (hasViol) {
         if (isAddCost) {
-          workerRegionQuery.addCost(blockBox, lNum, fig, con);
+          workerRegionQuery.addViaCost(blockBox, lNum, fig, con);
           if (pinS) {
             workerRegionQuery.query(blockBox, lNum, *pinS);
           }
         } else {
-          workerRegionQuery.removeCost(blockBox, lNum, fig, con);
+          workerRegionQuery.removeViaCost(blockBox, lNum, fig, con);
           if (pinS) {
             workerRegionQuery.query(blockBox, lNum, *pinS);
           }
@@ -506,24 +505,24 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
   }
 }
 
-void FlexTAWorker::addCost(taPinFig* fig, set<taPin*, frBlockObjectComp>* pinS)
+void FlexTAWorker::addCost(taPinFig* fig, frOrderedIdSet<taPin*>* pinS)
 {
   modCost(fig, true, pinS);
 }
 
-void FlexTAWorker::subCost(taPinFig* fig, set<taPin*, frBlockObjectComp>* pinS)
+void FlexTAWorker::subCost(taPinFig* fig, frOrderedIdSet<taPin*>* pinS)
 {
   modCost(fig, false, pinS);
 }
 
 void FlexTAWorker::modCost(taPinFig* fig,
                            bool isAddCost,
-                           set<taPin*, frBlockObjectComp>* pinS)
+                           frOrderedIdSet<taPin*>* pinS)
 {
   if (fig->typeId() == tacPathSeg) {
     auto obj = static_cast<taPathSeg*>(fig);
     auto layerNum = obj->getLayerNum();
-    Rect box = obj->getBBox();
+    odb::Rect box = obj->getBBox();
     modMinSpacingCostPlanar(
         box, layerNum, obj, isAddCost, pinS);  // must be current TA layer
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, true, true, pinS);
@@ -531,7 +530,7 @@ void FlexTAWorker::modCost(taPinFig* fig,
   } else if (fig->typeId() == tacVia) {
     auto obj = static_cast<taVia*>(fig);
     // assumes enclosure for via is always rectangle
-    Rect box = obj->getLayer1BBox();
+    odb::Rect box = obj->getLayer1BBox();
     auto layerNum = obj->getViaDef()->getLayer1Num();
     // current TA layer
     if (getDir() == getDesign()->getTech()->getLayer(layerNum)->getDir()) {
@@ -550,9 +549,8 @@ void FlexTAWorker::modCost(taPinFig* fig,
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, true, false, pinS);
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, false, false, pinS);
 
-    dbTransform xform;
-    Point pt = obj->getOrigin();
-    xform.setOffset(pt);
+    odb::Point pt = obj->getOrigin();
+    odb::dbTransform xform(pt);
     for (auto& uFig : obj->getViaDef()->getCutFigs()) {
       auto rect = static_cast<frRect*>(uFig.get());
       box = rect->getBBox();
@@ -561,7 +559,7 @@ void FlexTAWorker::modCost(taPinFig* fig,
       modCutSpacingCost(box, layerNum, obj, isAddCost, pinS);
     }
   } else {
-    cout << "Error: unsupported region query add" << endl;
+    std::cout << "Error: unsupported region query add" << std::endl;
   }
 }
 
@@ -572,16 +570,16 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
 {
   lNum = iroute->getGuide()->getBeginLayerNum();
   auto [gbp, gep] = iroute->getGuide()->getPoints();
-  Point gIdx = getDesign()->getTopBlock()->getGCellIdx(gbp);
-  Rect gBox = getDesign()->getTopBlock()->getGCellBox(gIdx);
+  odb::Point gIdx = getDesign()->getTopBlock()->getGCellIdx(gbp);
+  odb::Rect gBox = getDesign()->getTopBlock()->getGCellBox(gIdx);
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   frCoord coordLow = isH ? gBox.yMin() : gBox.xMin();
   frCoord coordHigh = isH ? gBox.yMax() : gBox.xMax();
   coordHigh--;  // to avoid higher track == guide top/right
   if (getTech()->getLayer(lNum)->isUnidirectional()) {
-    const Rect& dieBx = design_->getTopBlock()->getDieBox();
-    frViaDef* via = nullptr;
-    Rect testBox;
+    const odb::Rect& dieBx = design_->getTopBlock()->getDieBox();
+    const frViaDef* via = nullptr;
+    odb::Rect testBox;
     if (lNum + 1 <= getTech()->getTopLayerNum()) {
       via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
       testBox = via->getLayer1ShapeBox();
@@ -599,10 +597,12 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
       diffLow = dieBx.xMin() - (coordLow - testBox.dx() / 2);
       diffHigh = coordHigh + testBox.dx() / 2 - dieBx.xMax();
     }
-    if (diffLow > 0)
+    if (diffLow > 0) {
       coordLow += diffLow;
-    if (diffHigh > 0)
+    }
+    if (diffHigh > 0) {
       coordHigh -= diffHigh;
+    }
   }
   getTrackIdx(coordLow, coordHigh, lNum, idx1, idx2);
   if (idx2 < idx1) {
@@ -617,68 +617,77 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
   }
 }
 
-frUInt4 FlexTAWorker::assignIroute_getWlenCost(taPin* iroute, frCoord trackLoc)
+// This adds a cost based on the connected iroutes. For a vertical iroute if
+// there are more connected iroutes to the right, we should force this iroute
+// towards the right of the gcell (and vice versa). The cost is scaled based on
+// the net number of iroutes in that direction.
+frUInt4 FlexTAWorker::assignIroute_getNextIrouteDirCost(taPin* iroute,
+                                                        frCoord trackLoc)
 {
   auto guide = iroute->getGuide();
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   auto [begin, end] = guide->getPoints();
-  Point idx = getDesign()->getTopBlock()->getGCellIdx(end);
-  Rect endBox = getDesign()->getTopBlock()->getGCellBox(idx);
-  int wlen = 0;
-  auto wlen_helper = iroute->getWlenHelper();
-  if (wlen_helper <= 0) {
+  odb::Point idx = getDesign()->getTopBlock()->getGCellIdx(end);
+  odb::Rect endBox = getDesign()->getTopBlock()->getGCellBox(idx);
+  int nextIrouteDirCost = 0;
+  auto nextIrouteDir = iroute->getNextIrouteDir();
+  if (nextIrouteDir <= 0) {
     if (isH) {
-      wlen = abs(wlen_helper) * (trackLoc - endBox.yMin());
+      nextIrouteDirCost = abs(nextIrouteDir) * (trackLoc - endBox.yMin());
     } else {
-      wlen = abs(wlen_helper) * (trackLoc - endBox.xMin());
+      nextIrouteDirCost = abs(nextIrouteDir) * (trackLoc - endBox.xMin());
     }
   } else {
     if (isH) {
-      wlen = abs(wlen_helper) * (endBox.yMax() - trackLoc);
+      nextIrouteDirCost = abs(nextIrouteDir) * (endBox.yMax() - trackLoc);
     } else {
-      wlen = abs(wlen_helper) * (endBox.xMax() - trackLoc);
+      nextIrouteDirCost = abs(nextIrouteDir) * (endBox.xMax() - trackLoc);
     }
   }
-  if (wlen < 0) {
+  if (nextIrouteDirCost < 0) {
     double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-    cout << "Error: getWlenCost has wlenCost < 0"
-         << ", trackLoc@" << trackLoc / dbu << " box (" << endBox.xMin() / dbu
-         << ", " << endBox.yMin() / dbu << ") (" << endBox.xMax() / dbu << ", "
-         << endBox.yMax() / dbu << ")" << endl;
+    std::cout << "Error: nextIrouteDirCost < 0" << ", trackLoc@"
+              << trackLoc / dbu << " box (" << endBox.xMin() / dbu << ", "
+              << endBox.yMin() / dbu << ") (" << endBox.xMax() / dbu << ", "
+              << endBox.yMax() / dbu << ")" << std::endl;
     return (frUInt4) 0;
-  } else {
-    return (frUInt4) wlen;
   }
+  return (frUInt4) nextIrouteDirCost;
 }
 
 frUInt4 FlexTAWorker::assignIroute_getPinCost(taPin* iroute, frCoord trackLoc)
 {
   frUInt4 sol = 0;
-  if (iroute->hasWlenHelper2()) {
-    sol = abs(trackLoc - iroute->getWlenHelper2());
-    if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+  if (iroute->hasPinCoord()) {
+    sol = abs(trackLoc - iroute->getPinCoord());
+
+    // add cost to locations that will cause forbidden via spacing to
+    // boundary pin
+    auto layerNum = iroute->getGuide()->getBeginLayerNum();
+    auto layer = getTech()->getLayer(layerNum);
+
+    if (layer->isUnidirectional()) {
       bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
-      auto layerNum = iroute->getGuide()->getBeginLayerNum();
       int zIdx = layerNum / 2 - 1;
       if (sol) {
         if (isH) {
           // if cannot use bottom or upper layer to bridge, then add cost
           if ((getTech()->isVia2ViaForbiddenLen(
                    zIdx, false, false, false, sol, nullptr)
-               || layerNum - 2 < BOTTOM_ROUTING_LAYER)
+               || layerNum - 2 < router_cfg_->BOTTOM_ROUTING_LAYER)
               && (getTech()->isVia2ViaForbiddenLen(
                       zIdx, true, true, false, sol, nullptr)
                   || layerNum + 2 > getTech()->getTopLayerNum())) {
-            sol += TADRCCOST;
+            sol += router_cfg_->TADRCCOST;
           }
         } else {
           if ((getTech()->isVia2ViaForbiddenLen(
                    zIdx, false, false, true, sol, nullptr)
-               || layerNum - 2 < BOTTOM_ROUTING_LAYER)
+               || layerNum - 2 < router_cfg_->BOTTOM_ROUTING_LAYER)
               && (getTech()->isVia2ViaForbiddenLen(
                       zIdx, true, true, true, sol, nullptr)
                   || layerNum + 2 > getTech()->getTopLayerNum())) {
-            sol += TADRCCOST;
+            sol += router_cfg_->TADRCCOST;
           }
         }
       }
@@ -688,11 +697,12 @@ frUInt4 FlexTAWorker::assignIroute_getPinCost(taPin* iroute, frCoord trackLoc)
 }
 
 frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
-                                                     Rect& box,
+                                                     odb::Rect& box,
                                                      frLayerNum lNum)
 {
+  auto layer = getDesign()->getTech()->getLayer(lNum);
   auto& workerRegionQuery = getWorkerRegionQuery();
-  vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>> result;
+  std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>> result;
   int overlap = 0;
   if (iroute->getGuide()->getNet()->getNondefaultRule()) {
     int r = iroute->getGuide()->getNet()->getNondefaultRule()->getWidth(lNum / 2
@@ -703,15 +713,81 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
     box.bloat(r, box);
   }
   workerRegionQuery.queryCost(box, lNum, result);
+
+  auto getPartialBox = [this, lNum](odb::Rect box, bool begin) {
+    auto layer = getTech()->getLayer(lNum);
+    odb::Rect result;
+    frCoord addHorz = 0;
+    frCoord addVert = 0;
+    if (layer->isHorizontal()) {
+      addHorz = getDesign()->getTopBlock()->getGCellSizeHorizontal() / 2;
+    } else {
+      addVert = getDesign()->getTopBlock()->getGCellSizeVertical() / 2;
+    }
+    if (begin) {
+      result.reset(box.xMin(),
+                   box.yMin(),
+                   std::min(box.xMax(), box.xMin() + addHorz),
+                   std::min(box.yMax(), box.yMin() + addVert));
+    } else {
+      result.reset(std::max(box.xMin(), box.xMax() - addHorz),
+                   std::max(box.yMin(), box.yMax() - addVert),
+                   box.xMax(),
+                   box.yMax());
+    }
+    return result;
+  };
+  std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>
+      tmpResult;
+  if (layer->getType() == dbTechLayerType::CUT) {
+    workerRegionQuery.queryViaCost(box, lNum, tmpResult);
+    result.insert(result.end(), tmpResult.begin(), tmpResult.end());
+  } else {
+    odb::Rect tmpBox = getPartialBox(box, true);
+    workerRegionQuery.queryViaCost(tmpBox, lNum, tmpResult);
+    result.insert(result.end(), tmpResult.begin(), tmpResult.end());
+    tmpResult.clear();
+    tmpBox = getPartialBox(box, false);
+    workerRegionQuery.queryViaCost(tmpBox, lNum, tmpResult);
+    result.insert(result.end(), tmpResult.begin(), tmpResult.end());
+  }
   bool isCut = false;
+
+  // save same net overlaps
+  std::vector<odb::Rect> sameNetOverlaps;
   for (auto& [bounds, pr] : result) {
     auto& [obj, con] = pr;
-    frCoord tmpOvlp
-        = -max(box.xMin(), bounds.xMin()) + min(box.xMax(), bounds.xMax())
-          - max(box.yMin(), bounds.yMin()) + min(box.yMax(), bounds.yMax()) + 1;
+    if (obj != nullptr && obj->typeId() == frcNet) {
+      if (iroute->getGuide()->getNet() == obj) {
+        sameNetOverlaps.push_back(bounds);
+      }
+    }
+  }
+
+  for (auto& [bounds, pr] : result) {
+    // if the overlap bounds intersect with the pin connection, do not add drc
+    // cost
+    bool pinConn = false;
+    for (const odb::Rect& sameNetOverlap : sameNetOverlaps) {
+      if (sameNetOverlap.intersects(bounds)) {
+        pinConn = true;
+        break;
+      }
+    }
+    if (pinConn) {
+      continue;
+    }
+
+    auto& [obj, con] = pr;
+    frCoord tmpOvlp = -std::max(box.xMin(), bounds.xMin())
+                      + std::min(box.xMax(), bounds.xMax())
+                      - std::max(box.yMin(), bounds.yMin())
+                      + std::min(box.yMax(), bounds.yMax()) + 1;
     if (tmpOvlp <= 0) {
-      cout << "Error: assignIroute_getDRCCost_helper overlap < 0" << endl;
-      exit(1);
+      logger_->error(DRT,
+                     412,
+                     "assignIroute_getDRCCost_helper overlap value is {}.",
+                     tmpOvlp);
     }
     // unknown obj, always add cost
     if (obj == nullptr) {
@@ -733,8 +809,8 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
         overlap += tmpOvlp;
       }
     } else {
-      cout << "Warning: assignIroute_getDRCCost_helper unsupported type"
-           << endl;
+      std::cout << "Warning: assignIroute_getDRCCost_helper unsupported type"
+                << std::endl;
     }
   }
   frCoord pitch = 0;
@@ -753,11 +829,15 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
     pitch = getDesign()->getTech()->getLayer(lNum - 1)->getPitch();
     isCut = true;
   } else {
-    cout << "Error: assignIroute_getDRCCost_helper unknown layer type" << endl;
+    std::cout << "Error: assignIroute_getDRCCost_helper unknown layer type"
+              << std::endl;
     exit(1);
   }
   // always penalize two pitch per cut, regardless of cnts
-  return (overlap == 0) ? 0 : (isCut ? pitch * 2 : max(pitch * 2, overlap));
+  if (overlap == 0) {
+    return 0;
+  }
+  return isCut ? pitch * 2 : std::max(pitch * 2, overlap);
 }
 
 frUInt4 FlexTAWorker::assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc)
@@ -769,13 +849,13 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc)
       auto obj = static_cast<taPathSeg*>(uPinFig.get());
       auto [bp, ep] = obj->getPoints();
       if (isH) {
-        bp.set(bp.x(), trackLoc);
-        ep.set(ep.x(), trackLoc);
+        bp = {bp.x(), trackLoc};
+        ep = {ep.x(), trackLoc};
       } else {
-        bp.set(trackLoc, bp.y());
-        ep.set(trackLoc, ep.y());
+        bp = {trackLoc, bp.y()};
+        ep = {trackLoc, ep.y()};
       }
-      Rect bbox(bp, ep);
+      odb::Rect bbox(bp, ep);
       frUInt4 wireCost
           = assignIroute_getDRCCost_helper(iroute, bbox, obj->getLayerNum());
       cost += wireCost;
@@ -783,16 +863,17 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc)
       auto obj = static_cast<taVia*>(uPinFig.get());
       auto bp = obj->getOrigin();
       if (isH) {
-        bp.set(bp.x(), trackLoc);
+        bp = {bp.x(), trackLoc};
       } else {
-        bp.set(trackLoc, bp.y());
+        bp = {trackLoc, bp.y()};
       }
-      Rect bbox(bp, bp);
+      odb::Rect bbox(bp, bp);
       frUInt4 viaCost = assignIroute_getDRCCost_helper(
           iroute, bbox, obj->getViaDef()->getCutLayerNum());
       cost += viaCost;
     } else {
-      cout << "Error: assignIroute_updateIroute unsupported pinFig" << endl;
+      std::cout << "Error: assignIroute_updateIroute unsupported pinFig"
+                << std::endl;
       exit(1);
     }
   }
@@ -811,8 +892,8 @@ frUInt4 FlexTAWorker::assignIroute_getAlignCost(taPin* iroute, frCoord trackLoc)
       auto lNum = obj->getLayerNum();
       pitch = getDesign()->getTech()->getLayer(lNum)->getPitch();
       auto& workerRegionQuery = getWorkerRegionQuery();
-      set<taPin*, frBlockObjectComp> result;
-      Rect box;
+      frOrderedIdSet<taPin*> result;
+      odb::Rect box;
       if (isH) {
         box.init(bp.x(), trackLoc, ep.x(), trackLoc);
       } else {
@@ -840,16 +921,20 @@ frUInt4 FlexTAWorker::assignIroute_getCost(taPin* iroute,
   frCoord irouteLayerPitch
       = getTech()->getLayer(iroute->getGuide()->getBeginLayerNum())->getPitch();
   outDrcCost = assignIroute_getDRCCost(iroute, trackLoc);
-  int drcCost = (isInitTA()) ? (0.05 * outDrcCost) : (TADRCCOST * outDrcCost);
-  int wlenCost = assignIroute_getWlenCost(iroute, trackLoc);
+  int drcCost = (isInitTA()) ? (0.05 * outDrcCost)
+                             : (router_cfg_->TADRCCOST * outDrcCost);
+  int nextIrouteDirCost = assignIroute_getNextIrouteDirCost(iroute, trackLoc);
   // int pinCost    = TAPINCOST * assignIroute_getPinCost(iroute, trackLoc);
   int tmpPinCost = assignIroute_getPinCost(iroute, trackLoc);
-  int pinCost
-      = (tmpPinCost == 0) ? 0 : TAPINCOST * irouteLayerPitch + tmpPinCost;
+  int pinCost = (tmpPinCost == 0)
+                    ? 0
+                    : router_cfg_->TAPINCOST * irouteLayerPitch + tmpPinCost;
   int tmpAlignCost = assignIroute_getAlignCost(iroute, trackLoc);
   int alignCost
-      = (tmpAlignCost == 0) ? 0 : TAALIGNCOST * irouteLayerPitch + tmpAlignCost;
-  return max(drcCost + wlenCost + pinCost - alignCost, 0);
+      = (tmpAlignCost == 0)
+            ? 0
+            : router_cfg_->TAALIGNCOST * irouteLayerPitch + tmpAlignCost;
+  return std::max(drcCost + nextIrouteDirCost + pinCost - alignCost, 0);
 }
 
 void FlexTAWorker::assignIroute_bestTrack_helper(taPin* iroute,
@@ -887,19 +972,16 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute,
   int bestTrackIdx = -1;
   frUInt4 bestCost = std::numeric_limits<frUInt4>::max();
   frUInt4 drcCost = 0;
-  // while (1) {
-  //  if wlen2, then try from  wlen2
-  //  else try from wlen1 dir
-  if (iroute->hasWlenHelper2()) {
-    // cout <<"if" <<endl;
-    frCoord wlen2coord = iroute->getWlenHelper2();
-    if (iroute->getWlenHelper() > 0) {
-      int startTrackIdx = int(std::lower_bound(trackLocs_[lNum].begin(),
-                                               trackLocs_[lNum].end(),
-                                               wlen2coord)
-                              - trackLocs_[lNum].begin());
-      startTrackIdx = min(startTrackIdx, idx2);
-      startTrackIdx = max(startTrackIdx, idx1);
+  if (iroute->hasPinCoord()) {
+    // std::cout <<"if" <<std::endl;
+    frCoord pinCoord = iroute->getPinCoord();
+    if (iroute->getNextIrouteDir() > 0) {
+      int startTrackIdx
+          = int(std::lower_bound(
+                    trackLocs_[lNum].begin(), trackLocs_[lNum].end(), pinCoord)
+                - trackLocs_[lNum].begin());
+      startTrackIdx = std::min(startTrackIdx, idx2);
+      startTrackIdx = std::max(startTrackIdx, idx1);
       for (int i = startTrackIdx; i <= idx2; i++) {
         assignIroute_bestTrack_helper(
             iroute, lNum, i, bestCost, bestTrackLoc, bestTrackIdx, drcCost);
@@ -916,14 +998,14 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute,
           }
         }
       }
-    } else if (iroute->getWlenHelper() == 0) {
-      int startTrackIdx = int(std::lower_bound(trackLocs_[lNum].begin(),
-                                               trackLocs_[lNum].end(),
-                                               wlen2coord)
-                              - trackLocs_[lNum].begin());
-      startTrackIdx = min(startTrackIdx, idx2);
-      startTrackIdx = max(startTrackIdx, idx1);
-      // cout <<"startTrackIdx " <<startTrackIdx <<endl;
+    } else if (iroute->getNextIrouteDir() == 0) {
+      int startTrackIdx
+          = int(std::lower_bound(
+                    trackLocs_[lNum].begin(), trackLocs_[lNum].end(), pinCoord)
+                - trackLocs_[lNum].begin());
+      startTrackIdx = std::min(startTrackIdx, idx2);
+      startTrackIdx = std::max(startTrackIdx, idx1);
+      // std::cout <<"startTrackIdx " <<startTrackIdx <<std::endl;
       for (int i = 0; i <= idx2 - idx1; i++) {
         int currTrackIdx = startTrackIdx + i;
         if (currTrackIdx >= idx1 && currTrackIdx <= idx2) {
@@ -953,12 +1035,12 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute,
         }
       }
     } else {
-      int startTrackIdx = int(std::lower_bound(trackLocs_[lNum].begin(),
-                                               trackLocs_[lNum].end(),
-                                               wlen2coord)
-                              - trackLocs_[lNum].begin());
-      startTrackIdx = min(startTrackIdx, idx2);
-      startTrackIdx = max(startTrackIdx, idx1);
+      int startTrackIdx
+          = int(std::lower_bound(
+                    trackLocs_[lNum].begin(), trackLocs_[lNum].end(), pinCoord)
+                - trackLocs_[lNum].begin());
+      startTrackIdx = std::min(startTrackIdx, idx2);
+      startTrackIdx = std::max(startTrackIdx, idx1);
       for (int i = startTrackIdx; i >= idx1; i--) {
         assignIroute_bestTrack_helper(
             iroute, lNum, i, bestCost, bestTrackLoc, bestTrackIdx, drcCost);
@@ -977,8 +1059,7 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute,
       }
     }
   } else {
-    // cout <<"else" <<endl;
-    if (iroute->getWlenHelper() > 0) {
+    if (iroute->getNextIrouteDir() > 0) {
       for (int i = idx2; i >= idx1; i--) {
         assignIroute_bestTrack_helper(
             iroute, lNum, i, bestCost, bestTrackLoc, bestTrackIdx, drcCost);
@@ -986,7 +1067,7 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute,
           break;
         }
       }
-    } else if (iroute->getWlenHelper() == 0) {
+    } else if (iroute->getNextIrouteDir() == 0) {
       for (int i = (idx1 + idx2) / 2; i <= idx2; i++) {
         assignIroute_bestTrack_helper(
             iroute, lNum, i, bestCost, bestTrackLoc, bestTrackIdx, drcCost);
@@ -1015,13 +1096,13 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute,
   }
   if (bestTrackIdx == -1) {
     auto guide = iroute->getGuide();
-    Rect box = guide->getBBox();
-    cout << "Error: assignIroute_bestTrack select no track for "
-         << guide->getNet()->getName() << " @(" << box.xMin() / dbu << ", "
-         << box.yMin() / dbu << ") (" << box.xMax() / dbu << ", "
-         << box.yMax() / dbu << " "
-         << getDesign()->getTech()->getLayer(lNum)->getName()
-         << " idx1/2=" << idx1 << "/" << idx2 << endl;
+    odb::Rect box = guide->getBBox();
+    std::cout << "Error: assignIroute_bestTrack select no track for "
+              << guide->getNet()->getName() << " @(" << box.xMin() / dbu << ", "
+              << box.yMin() / dbu << ") (" << box.xMax() / dbu << ", "
+              << box.yMax() / dbu << " "
+              << getDesign()->getTech()->getLayer(lNum)->getName()
+              << " idx1/2=" << idx1 << "/" << idx2 << std::endl;
     exit(1);
   }
   totCost_ += drcCost;
@@ -1029,10 +1110,9 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute,
   return bestTrackLoc;
 }
 
-void FlexTAWorker::assignIroute_updateIroute(
-    taPin* iroute,
-    frCoord bestTrackLoc,
-    set<taPin*, frBlockObjectComp>* pinS)
+void FlexTAWorker::assignIroute_updateIroute(taPin* iroute,
+                                             frCoord bestTrackLoc,
+                                             frOrderedIdSet<taPin*>* pinS)
 {
   auto& workerRegionQuery = getWorkerRegionQuery();
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
@@ -1043,24 +1123,25 @@ void FlexTAWorker::assignIroute_updateIroute(
       auto obj = static_cast<taPathSeg*>(uPinFig.get());
       auto [bp, ep] = obj->getPoints();
       if (isH) {
-        bp.set(bp.x(), bestTrackLoc);
-        ep.set(ep.x(), bestTrackLoc);
+        bp = {bp.x(), bestTrackLoc};
+        ep = {ep.x(), bestTrackLoc};
       } else {
-        bp.set(bestTrackLoc, bp.y());
-        ep.set(bestTrackLoc, ep.y());
+        bp = {bestTrackLoc, bp.y()};
+        ep = {bestTrackLoc, ep.y()};
       }
       obj->setPoints(bp, ep);
     } else if (uPinFig->typeId() == tacVia) {
       auto obj = static_cast<taVia*>(uPinFig.get());
       auto bp = obj->getOrigin();
       if (isH) {
-        bp.set(bp.x(), bestTrackLoc);
+        bp = {bp.x(), bestTrackLoc};
       } else {
-        bp.set(bestTrackLoc, bp.y());
+        bp = {bestTrackLoc, bp.y()};
       }
       obj->setOrigin(bp);
     } else {
-      cout << "Error: assignIroute_updateIroute unsupported pinFig" << endl;
+      std::cout << "Error: assignIroute_updateIroute unsupported pinFig"
+                << std::endl;
       exit(1);
     }
   }
@@ -1073,7 +1154,7 @@ void FlexTAWorker::assignIroute_updateIroute(
 }
 
 void FlexTAWorker::assignIroute_init(taPin* iroute,
-                                     set<taPin*, frBlockObjectComp>* pinS)
+                                     frOrderedIdSet<taPin*>* pinS)
 {
   auto& workerRegionQuery = getWorkerRegionQuery();
   // subCost
@@ -1086,16 +1167,16 @@ void FlexTAWorker::assignIroute_init(taPin* iroute,
   }
 }
 
-void FlexTAWorker::assignIroute_updateOthers(
-    set<taPin*, frBlockObjectComp>& pinS)
+void FlexTAWorker::assignIroute_updateOthers(frOrderedIdSet<taPin*>& pinS)
 {
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   if (isInitTA()) {
     return;
   }
   for (auto& iroute : pinS) {
-    if (iroute->getGuide()->getNet()->isClock() && !hardIroutesMode)
+    if (iroute->getGuide()->getNet()->isClock() && !hardIroutesMode_) {
       continue;
+    }
     removeFromReassignIroutes(iroute);
     // recalculate cost
     frUInt4 drcCost = 0;
@@ -1112,9 +1193,10 @@ void FlexTAWorker::assignIroute_updateOthers(
       }
     }
     if (trackLoc == std::numeric_limits<frCoord>::max()) {
-      cout << "Error: FlexTAWorker::assignIroute_updateOthers does not find "
-              "trackLoc"
-           << endl;
+      std::cout
+          << "Error: FlexTAWorker::assignIroute_updateOthers does not find "
+             "trackLoc"
+          << std::endl;
       exit(1);
     }
     totCost_ -= iroute->getCost();
@@ -1129,7 +1211,7 @@ void FlexTAWorker::assignIroute_updateOthers(
 
 void FlexTAWorker::assignIroute(taPin* iroute)
 {
-  set<taPin*, frBlockObjectComp> pinS;
+  frOrderedIdSet<taPin*> pinS;
   assignIroute_init(iroute, &pinS);
   frLayerNum lNum;
   int idx1, idx2;
@@ -1143,7 +1225,7 @@ void FlexTAWorker::assignIroute(taPin* iroute)
 void FlexTAWorker::assign()
 {
   int maxBufferSize = 20;
-  vector<taPin*> buffers(maxBufferSize, nullptr);
+  std::vector<taPin*> buffers(maxBufferSize, nullptr);
   int currBufferIdx = 0;
   auto iroute = popFromReassignIroutes();
   while (iroute != nullptr) {
@@ -1167,3 +1249,5 @@ void FlexTAWorker::assign()
     iroute = popFromReassignIroutes();
   }
 }
+
+}  // namespace drt

@@ -33,58 +33,67 @@
 
 #define EXTERN extern "C"
 
+#include <cstdio>
+
+#include "defiMisc.hpp"
 #include "defiSlot.h"
 #include "defiSlot.hpp"
+
+union udefiPoints
+{
+  DefParser::defiPoints cpp;
+  ::defiPoints c;
+};
 
 // Wrappers definitions.
 int defiSlot_hasLayer(const ::defiSlot* obj)
 {
-  return ((LefDefParser::defiSlot*) obj)->hasLayer();
+  return ((DefParser::defiSlot*) obj)->hasLayer();
 }
 
 const char* defiSlot_layerName(const ::defiSlot* obj)
 {
-  return ((const LefDefParser::defiSlot*) obj)->layerName();
+  return ((const DefParser::defiSlot*) obj)->layerName();
 }
 
 int defiSlot_numRectangles(const ::defiSlot* obj)
 {
-  return ((LefDefParser::defiSlot*) obj)->numRectangles();
+  return ((DefParser::defiSlot*) obj)->numRectangles();
 }
 
 int defiSlot_xl(const ::defiSlot* obj, int index)
 {
-  return ((LefDefParser::defiSlot*) obj)->xl(index);
+  return ((DefParser::defiSlot*) obj)->xl(index);
 }
 
 int defiSlot_yl(const ::defiSlot* obj, int index)
 {
-  return ((LefDefParser::defiSlot*) obj)->yl(index);
+  return ((DefParser::defiSlot*) obj)->yl(index);
 }
 
 int defiSlot_xh(const ::defiSlot* obj, int index)
 {
-  return ((LefDefParser::defiSlot*) obj)->xh(index);
+  return ((DefParser::defiSlot*) obj)->xh(index);
 }
 
 int defiSlot_yh(const ::defiSlot* obj, int index)
 {
-  return ((LefDefParser::defiSlot*) obj)->yh(index);
+  return ((DefParser::defiSlot*) obj)->yh(index);
 }
 
 int defiSlot_numPolygons(const ::defiSlot* obj)
 {
-  return ((LefDefParser::defiSlot*) obj)->numPolygons();
+  return ((DefParser::defiSlot*) obj)->numPolygons();
 }
 
 ::defiPoints defiSlot_getPolygon(const ::defiSlot* obj, int index)
 {
-  LefDefParser::defiPoints tmp;
-  tmp = ((LefDefParser::defiSlot*) obj)->getPolygon(index);
-  return *((::defiPoints*) &tmp);
+  udefiPoints tmp;
+  tmp.cpp = ((DefParser::defiSlot*) obj)->getPolygon(index);
+  return tmp.c;
 }
 
 void defiSlot_print(const ::defiSlot* obj, FILE* f)
 {
-  ((LefDefParser::defiSlot*) obj)->print(f);
+  ((DefParser::defiSlot*) obj)->print(f);
 }

@@ -20,9 +20,9 @@
 // For updates, support, or to become part of the LEF/DEF Community,
 // check www.openeda.org for details.
 //
-//  $Author: icftcm $
-//  $Revision: #2 $
-//  $Date: 2017/06/19 $
+//  $Author: dell $
+//  $Revision: #1 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -30,13 +30,13 @@
 #ifndef defiNet_h
 #define defiNet_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 #include "defiMisc.hpp"
 #include "defiPath.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 class defrData;
 
@@ -56,8 +56,6 @@ class defiWire
  public:
   defiWire(defrData* data);
   ~defiWire();
-  DEF_COPY_CONSTRUCTOR_H(defiWire);
-  DEF_ASSIGN_OPERATOR_H(defiWire);
 
   void Init(const char* type, const char* wireShieldName);
   void Destroy();
@@ -74,13 +72,12 @@ class defiWire
   void bumpPaths(long long size);
 
  protected:
-  char* type_;
-  char* wireShieldName_;  // It only set from specialnet SHIELD, 5.4
-  int numPaths_;
-  long long pathsAllocated_;
-  defiPath** paths_;
-
   defrData* defData;
+  defiPath** paths_{nullptr};
+  char* type_{nullptr};
+  char* wireShieldName_{nullptr};  // It only set from specialnet SHIELD, 5.4
+  int numPaths_{0};
+  long long pathsAllocated_{0};
 };
 
 class defiSubnet
@@ -88,9 +85,6 @@ class defiSubnet
  public:
   defiSubnet(defrData* data);
   void Init();
-
-  DEF_COPY_CONSTRUCTOR_H(defiSubnet);
-  DEF_ASSIGN_OPERATOR_H(defiSubnet);
 
   void Destroy();
   ~defiSubnet();
@@ -173,9 +167,6 @@ class defiVpin
   defiVpin(defrData* data);
   ~defiVpin();
 
-  DEF_COPY_CONSTRUCTOR_H(defiVpin);
-  DEF_ASSIGN_OPERATOR_H(defiVpin);
-
   void Init(const char* name);
   void Destroy();
   void setLayer(const char* name);
@@ -218,9 +209,6 @@ class defiShield
   defiShield(defrData* data);
   ~defiShield();
 
-  DEF_COPY_CONSTRUCTOR_H(defiShield);
-  DEF_ASSIGN_OPERATOR_H(defiShield);
-
   void Init(const char* name);
   void Destroy();
   void clear();
@@ -249,9 +237,6 @@ class defiNet
  public:
   defiNet(defrData* data);
   void Init();
-
-  DEF_COPY_CONSTRUCTOR_H(defiNet);
-  DEF_ASSIGN_OPERATOR_H(defiNet);
 
   void Destroy();
   ~defiNet();
@@ -587,8 +572,6 @@ class defiNet
   defrData* defData;
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

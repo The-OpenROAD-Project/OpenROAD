@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -30,11 +30,11 @@
 #ifndef defiComponent_h
 #define defiComponent_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 class defrData;
 
@@ -49,11 +49,9 @@ class defrData;
 class defiComponentMaskShiftLayer
 {
  public:
-  defiComponentMaskShiftLayer();
   defiComponentMaskShiftLayer(defrData* data);
   ~defiComponentMaskShiftLayer();
-  DEF_COPY_CONSTRUCTOR_H(defiComponentMaskShiftLayer);
-  DEF_ASSIGN_OPERATOR_H(defiComponentMaskShiftLayer);
+
   void Init();
   void Destroy();
   void addMaskShiftLayer(const char* layer);
@@ -77,14 +75,13 @@ class defiComponent
   defiComponent(defrData* defData);
   void Init();
 
-  DEF_COPY_CONSTRUCTOR_H(defiComponent);
   void Destroy();
   ~defiComponent();
 
   void IdAndName(const char* id, const char* name);
   void setGenerate(const char* genName, const char* macroName);
   void setPlacementStatus(int n);
-  void setPlacementLocation(int x, int y, int orient = -1);  // changed by Mgwoo
+  void setPlacementLocation(int x, int y, int orient);
   void setRegionName(const char* name);
   void setRegionBounds(int xl, int yl, int xh, int yh);
   void setEEQ(const char* name);
@@ -247,8 +244,6 @@ class defiComponent
   defrData* defData;
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

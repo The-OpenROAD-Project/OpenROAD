@@ -1,42 +1,15 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbTechLayer.h"
 
-#include "db.h"
+#include <cstdint>
+#include <cstring>
+#include <utility>
+#include <vector>
+
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
-#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayerAreaRule.h"
@@ -49,420 +22,340 @@
 #include "dbTechLayerCutSpacingTableOrthRule.h"
 #include "dbTechLayerEolExtensionRule.h"
 #include "dbTechLayerEolKeepOutRule.h"
+#include "dbTechLayerForbiddenSpacingRule.h"
+#include "dbTechLayerKeepOutZoneRule.h"
+#include "dbTechLayerMaxSpacingRule.h"
 #include "dbTechLayerMinCutRule.h"
 #include "dbTechLayerMinStepRule.h"
 #include "dbTechLayerSpacingEolRule.h"
 #include "dbTechLayerSpacingTablePrlRule.h"
+#include "dbTechLayerTwoWiresForbiddenSpcRule.h"
 #include "dbTechLayerWidthTableRule.h"
+#include "dbTechLayerWrongDirSpacingRule.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 // User Code Begin Includes
 #include "dbHashTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayerAntennaRule.h"
 #include "dbTechLayerSpacingRule.h"
 #include "dbTechMinCutOrAreaRule.h"
-#include "lefout.h"
+#include "odb/lefout.h"
+#include "spdlog/fmt/ostr.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayer>;
 
 bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
 {
-  if (flags_.num_masks_ != rhs.flags_.num_masks_)
+  if (flags_.num_masks_ != rhs.flags_.num_masks_) {
     return false;
-
-  if (flags_.has_max_width_ != rhs.flags_.has_max_width_)
+  }
+  if (flags_.has_max_width_ != rhs.flags_.has_max_width_) {
     return false;
-
-  if (flags_.has_thickness_ != rhs.flags_.has_thickness_)
+  }
+  if (flags_.has_thickness_ != rhs.flags_.has_thickness_) {
     return false;
-
-  if (flags_.has_area_ != rhs.flags_.has_area_)
+  }
+  if (flags_.has_area_ != rhs.flags_.has_area_) {
     return false;
-
-  if (flags_.has_protrusion_ != rhs.flags_.has_protrusion_)
+  }
+  if (flags_.has_protrusion_ != rhs.flags_.has_protrusion_) {
     return false;
-
-  if (flags_.has_alias_ != rhs.flags_.has_alias_)
+  }
+  if (flags_.has_alias_ != rhs.flags_.has_alias_) {
     return false;
-
-  if (flags_.has_xy_pitch_ != rhs.flags_.has_xy_pitch_)
+  }
+  if (flags_.has_xy_pitch_ != rhs.flags_.has_xy_pitch_) {
     return false;
-
-  if (flags_.has_xy_offset_ != rhs.flags_.has_xy_offset_)
+  }
+  if (flags_.has_xy_offset_ != rhs.flags_.has_xy_offset_) {
     return false;
-
-  if (flags_.rect_only_ != rhs.flags_.rect_only_)
+  }
+  if (flags_.rect_only_ != rhs.flags_.rect_only_) {
     return false;
-
-  if (flags_.right_way_on_grid_only_ != rhs.flags_.right_way_on_grid_only_)
+  }
+  if (flags_.right_way_on_grid_only_ != rhs.flags_.right_way_on_grid_only_) {
     return false;
-
+  }
   if (flags_.right_way_on_grid_only_check_mask_
-      != rhs.flags_.right_way_on_grid_only_check_mask_)
+      != rhs.flags_.right_way_on_grid_only_check_mask_) {
     return false;
-
+  }
   if (flags_.rect_only_except_non_core_pins_
-      != rhs.flags_.rect_only_except_non_core_pins_)
+      != rhs.flags_.rect_only_except_non_core_pins_) {
     return false;
-
-  if (flags_.lef58_type_ != rhs.flags_.lef58_type_)
+  }
+  if (flags_.lef58_type_ != rhs.flags_.lef58_type_) {
     return false;
-
-  if (wrong_way_width_ != rhs.wrong_way_width_)
+  }
+  if (wrong_way_width_ != rhs.wrong_way_width_) {
     return false;
-
-  if (*cut_class_rules_tbl_ != *rhs.cut_class_rules_tbl_)
+  }
+  if (layer_adjustment_ != rhs.layer_adjustment_) {
     return false;
-
-  if (cut_class_rules_hash_ != rhs.cut_class_rules_hash_)
+  }
+  if (*cut_class_rules_tbl_ != *rhs.cut_class_rules_tbl_) {
     return false;
-
-  if (*spacing_eol_rules_tbl_ != *rhs.spacing_eol_rules_tbl_)
+  }
+  if (cut_class_rules_hash_ != rhs.cut_class_rules_hash_) {
     return false;
-
-  if (*cut_spacing_rules_tbl_ != *rhs.cut_spacing_rules_tbl_)
+  }
+  if (*spacing_eol_rules_tbl_ != *rhs.spacing_eol_rules_tbl_) {
     return false;
-
-  if (*minstep_rules_tbl_ != *rhs.minstep_rules_tbl_)
+  }
+  if (*cut_spacing_rules_tbl_ != *rhs.cut_spacing_rules_tbl_) {
     return false;
-
-  if (*corner_spacing_rules_tbl_ != *rhs.corner_spacing_rules_tbl_)
+  }
+  if (*minstep_rules_tbl_ != *rhs.minstep_rules_tbl_) {
     return false;
-
-  if (*spacing_table_prl_rules_tbl_ != *rhs.spacing_table_prl_rules_tbl_)
+  }
+  if (*corner_spacing_rules_tbl_ != *rhs.corner_spacing_rules_tbl_) {
     return false;
-
-  if (*cut_spacing_table_orth_tbl_ != *rhs.cut_spacing_table_orth_tbl_)
+  }
+  if (*spacing_table_prl_rules_tbl_ != *rhs.spacing_table_prl_rules_tbl_) {
     return false;
-
-  if (*cut_spacing_table_def_tbl_ != *rhs.cut_spacing_table_def_tbl_)
+  }
+  if (*cut_spacing_table_orth_tbl_ != *rhs.cut_spacing_table_orth_tbl_) {
     return false;
-
-  if (*cut_enc_rules_tbl_ != *rhs.cut_enc_rules_tbl_)
+  }
+  if (*cut_spacing_table_def_tbl_ != *rhs.cut_spacing_table_def_tbl_) {
     return false;
-
-  if (*eol_ext_rules_tbl_ != *rhs.eol_ext_rules_tbl_)
+  }
+  if (*cut_enc_rules_tbl_ != *rhs.cut_enc_rules_tbl_) {
     return false;
-
-  if (*array_spacing_rules_tbl_ != *rhs.array_spacing_rules_tbl_)
+  }
+  if (*eol_ext_rules_tbl_ != *rhs.eol_ext_rules_tbl_) {
     return false;
-
-  if (*eol_keep_out_rules_tbl_ != *rhs.eol_keep_out_rules_tbl_)
+  }
+  if (*array_spacing_rules_tbl_ != *rhs.array_spacing_rules_tbl_) {
     return false;
-
-  if (*width_table_rules_tbl_ != *rhs.width_table_rules_tbl_)
+  }
+  if (*eol_keep_out_rules_tbl_ != *rhs.eol_keep_out_rules_tbl_) {
     return false;
-
-  if (*min_cuts_rules_tbl_ != *rhs.min_cuts_rules_tbl_)
+  }
+  if (*max_spacing_rules_tbl_ != *rhs.max_spacing_rules_tbl_) {
     return false;
-
-  if (*area_rules_tbl_ != *rhs.area_rules_tbl_)
+  }
+  if (*width_table_rules_tbl_ != *rhs.width_table_rules_tbl_) {
     return false;
+  }
+  if (*min_cuts_rules_tbl_ != *rhs.min_cuts_rules_tbl_) {
+    return false;
+  }
+  if (*area_rules_tbl_ != *rhs.area_rules_tbl_) {
+    return false;
+  }
+  if (*forbidden_spacing_rules_tbl_ != *rhs.forbidden_spacing_rules_tbl_) {
+    return false;
+  }
+  if (*keepout_zone_rules_tbl_ != *rhs.keepout_zone_rules_tbl_) {
+    return false;
+  }
+  if (*wrongdir_spacing_rules_tbl_ != *rhs.wrongdir_spacing_rules_tbl_) {
+    return false;
+  }
+  if (*two_wires_forbidden_spc_rules_tbl_
+      != *rhs.two_wires_forbidden_spc_rules_tbl_) {
+    return false;
+  }
 
   // User Code Begin ==
-  if (flags_.type_ != rhs.flags_.type_)
+  if (flags_.type_ != rhs.flags_.type_) {
     return false;
+  }
 
-  if (flags_.direction_ != rhs.flags_.direction_)
+  if (flags_.direction_ != rhs.flags_.direction_) {
     return false;
+  }
 
-  if (flags_.minstep_type_ != rhs.flags_.minstep_type_)
+  if (flags_.minstep_type_ != rhs.flags_.minstep_type_) {
     return false;
+  }
 
-  if (_pitch_x != rhs._pitch_x)
+  if (_pitch_x != rhs._pitch_x) {
     return false;
+  }
 
-  if (_pitch_y != rhs._pitch_y)
+  if (_pitch_y != rhs._pitch_y) {
     return false;
+  }
 
-  if (_offset_x != rhs._offset_x)
+  if (_offset_x != rhs._offset_x) {
     return false;
+  }
 
-  if (_offset_y != rhs._offset_y)
+  if (_offset_y != rhs._offset_y) {
     return false;
+  }
 
-  if (_width != rhs._width)
+  if (_width != rhs._width) {
     return false;
+  }
 
-  if (_spacing != rhs._spacing)
+  if (_spacing != rhs._spacing) {
     return false;
+  }
 
-  if (_resistance != rhs._resistance)
+  if (_resistance != rhs._resistance) {
     return false;
+  }
 
-  if (_capacitance != rhs._capacitance)
+  if (_capacitance != rhs._capacitance) {
     return false;
+  }
 
-  if (_edge_capacitance != rhs._edge_capacitance)
+  if (_edge_capacitance != rhs._edge_capacitance) {
     return false;
+  }
 
-  if (_wire_extension != rhs._wire_extension)
+  if (_wire_extension != rhs._wire_extension) {
     return false;
+  }
 
-  if (_number != rhs._number)
+  if (_number != rhs._number) {
     return false;
+  }
 
-  if (_rlevel != rhs._rlevel)
+  if (_rlevel != rhs._rlevel) {
     return false;
+  }
 
-  if (_area != rhs._area)
+  if (_area != rhs._area) {
     return false;
+  }
 
-  if (_thickness != rhs._thickness)
+  if (_thickness != rhs._thickness) {
     return false;
+  }
 
-  if (_min_step != rhs._min_step)
+  if (_min_step != rhs._min_step) {
     return false;
+  }
 
-  if (_max_width != rhs._max_width)
+  if (_max_width != rhs._max_width) {
     return false;
+  }
 
-  if (_min_width != rhs._min_width)
+  if (_min_width != rhs._min_width) {
     return false;
+  }
 
-  if (_min_step_max_length != rhs._min_step_max_length)
+  if (_min_step_max_length != rhs._min_step_max_length) {
     return false;
+  }
 
-  if (_min_step_max_edges != rhs._min_step_max_edges)
+  if (_min_step_max_edges != rhs._min_step_max_edges) {
     return false;
+  }
 
-  if (_pt._width != rhs._pt._width)
+  if (_first_last_pitch != rhs._first_last_pitch) {
     return false;
+  }
 
-  if (_pt._length != rhs._pt._length)
+  if (_pt._width != rhs._pt._width) {
     return false;
+  }
 
-  if (_pt._from_width != rhs._pt._from_width)
+  if (_pt._length != rhs._pt._length) {
     return false;
+  }
+
+  if (_pt._from_width != rhs._pt._from_width) {
+    return false;
+  }
 
   if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0)
+    if (strcmp(_name, rhs._name) != 0) {
       return false;
-  } else if (_name || rhs._name)
+    }
+  } else if (_name || rhs._name) {
     return false;
+  }
 
   if (_alias && rhs._alias) {
-    if (strcmp(_alias, rhs._alias) != 0)
+    if (strcmp(_alias, rhs._alias) != 0) {
       return false;
-  } else if (_alias || rhs._alias)
+    }
+  } else if (_alias || rhs._alias) {
     return false;
+  }
 
-  if (_upper != rhs._upper)
+  if (_upper != rhs._upper) {
     return false;
+  }
 
-  if (_lower != rhs._lower)
+  if (_lower != rhs._lower) {
     return false;
+  }
 
-  if (*_spacing_rules_tbl != *rhs._spacing_rules_tbl)
+  if (*_spacing_rules_tbl != *rhs._spacing_rules_tbl) {
     return false;
+  }
 
-  if (*_min_cut_rules_tbl != *rhs._min_cut_rules_tbl)
+  if (*_min_cut_rules_tbl != *rhs._min_cut_rules_tbl) {
     return false;
+  }
 
-  if (*_min_enc_rules_tbl != *rhs._min_enc_rules_tbl)
+  if (*_min_enc_rules_tbl != *rhs._min_enc_rules_tbl) {
     return false;
+  }
 
-  if (*_v55inf_tbl != *rhs._v55inf_tbl)
+  if (*_v55inf_tbl != *rhs._v55inf_tbl) {
     return false;
+  }
 
-  if (_v55sp_length_idx != rhs._v55sp_length_idx)
+  if (_v55sp_length_idx != rhs._v55sp_length_idx) {
     return false;
+  }
 
-  if (_v55sp_width_idx != rhs._v55sp_width_idx)
+  if (_v55sp_width_idx != rhs._v55sp_width_idx) {
     return false;
+  }
 
-  if (_v55sp_spacing != rhs._v55sp_spacing)
+  if (_v55sp_spacing != rhs._v55sp_spacing) {
     return false;
+  }
 
-  if (_two_widths_sp_idx != rhs._two_widths_sp_idx)
+  if (_two_widths_sp_idx != rhs._two_widths_sp_idx) {
     return false;
+  }
 
-  if (_two_widths_sp_prl != rhs._two_widths_sp_prl)
+  if (_two_widths_sp_prl != rhs._two_widths_sp_prl) {
     return false;
+  }
 
-  if (_two_widths_sp_spacing != rhs._two_widths_sp_spacing)
+  if (_two_widths_sp_spacing != rhs._two_widths_sp_spacing) {
     return false;
+  }
 
-  if (_oxide1 != rhs._oxide1)
+  if (_oxide1 != rhs._oxide1) {
     return false;
+  }
 
-  if (_oxide2 != rhs._oxide2)
+  if (_oxide2 != rhs._oxide2) {
     return false;
+  }
   // User Code End ==
   return true;
 }
+
 bool _dbTechLayer::operator<(const _dbTechLayer& rhs) const
 {
   // User Code Begin <
-  if (_number >= rhs._number)
+  if (_number >= rhs._number) {
     return false;
+  }
   // User Code End <
   return true;
 }
-void _dbTechLayer::differences(dbDiff& diff,
-                               const char* field,
-                               const _dbTechLayer& rhs) const
-{
-  DIFF_BEGIN
 
-  DIFF_FIELD(flags_.num_masks_);
-  DIFF_FIELD(flags_.has_max_width_);
-  DIFF_FIELD(flags_.has_thickness_);
-  DIFF_FIELD(flags_.has_area_);
-  DIFF_FIELD(flags_.has_protrusion_);
-  DIFF_FIELD(flags_.has_alias_);
-  DIFF_FIELD(flags_.has_xy_pitch_);
-  DIFF_FIELD(flags_.has_xy_offset_);
-  DIFF_FIELD(flags_.rect_only_);
-  DIFF_FIELD(flags_.right_way_on_grid_only_);
-  DIFF_FIELD(flags_.right_way_on_grid_only_check_mask_);
-  DIFF_FIELD(flags_.rect_only_except_non_core_pins_);
-  DIFF_FIELD(flags_.lef58_type_);
-  DIFF_FIELD(wrong_way_width_);
-  DIFF_TABLE(cut_class_rules_tbl_);
-  DIFF_HASH_TABLE(cut_class_rules_hash_);
-  DIFF_TABLE(spacing_eol_rules_tbl_);
-  DIFF_TABLE(cut_spacing_rules_tbl_);
-  DIFF_TABLE(minstep_rules_tbl_);
-  DIFF_TABLE(corner_spacing_rules_tbl_);
-  DIFF_TABLE(spacing_table_prl_rules_tbl_);
-  DIFF_TABLE(cut_spacing_table_orth_tbl_);
-  DIFF_TABLE(cut_spacing_table_def_tbl_);
-  DIFF_TABLE(cut_enc_rules_tbl_);
-  DIFF_TABLE(eol_ext_rules_tbl_);
-  DIFF_TABLE(array_spacing_rules_tbl_);
-  DIFF_TABLE(eol_keep_out_rules_tbl_);
-  DIFF_TABLE(width_table_rules_tbl_);
-  DIFF_TABLE(min_cuts_rules_tbl_);
-  DIFF_TABLE(area_rules_tbl_);
-  // User Code Begin Differences
-  DIFF_FIELD(flags_.type_);
-  DIFF_FIELD(flags_.direction_);
-  DIFF_FIELD(flags_.minstep_type_);
-  DIFF_FIELD(_pitch_x);
-  DIFF_FIELD(_pitch_y);
-  DIFF_FIELD(_offset_x);
-  DIFF_FIELD(_offset_y);
-  DIFF_FIELD(_width);
-  DIFF_FIELD(_spacing);
-  DIFF_FIELD(_resistance);
-  DIFF_FIELD(_capacitance);
-  DIFF_FIELD(_edge_capacitance);
-  DIFF_FIELD(_wire_extension);
-  DIFF_FIELD(_number);
-  DIFF_FIELD(_rlevel);
-  DIFF_FIELD(_area);
-  DIFF_FIELD(_thickness);
-  DIFF_FIELD(_min_step);
-  DIFF_FIELD(_max_width);
-  DIFF_FIELD(_min_width);
-  DIFF_FIELD(_min_step_max_length);
-  DIFF_FIELD(_min_step_max_edges);
-  DIFF_FIELD(_pt._length);
-  DIFF_FIELD(_pt._from_width);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_alias);
-  DIFF_FIELD(_upper);
-  DIFF_FIELD(_lower);
-  DIFF_TABLE_NO_DEEP(_spacing_rules_tbl);
-  DIFF_TABLE_NO_DEEP(_min_cut_rules_tbl);
-  DIFF_TABLE_NO_DEEP(_min_enc_rules_tbl);
-  DIFF_TABLE_NO_DEEP(_v55inf_tbl);
-  DIFF_VECTOR(_v55sp_length_idx);
-  DIFF_VECTOR(_v55sp_width_idx);
-  DIFF_MATRIX(_v55sp_spacing);
-  DIFF_VECTOR(_two_widths_sp_idx);
-  DIFF_VECTOR(_two_widths_sp_prl);
-  DIFF_MATRIX(_two_widths_sp_spacing);
-  DIFF_FIELD(_oxide1);
-  DIFF_FIELD(_oxide2);
-  // User Code End Differences
-  DIFF_END
-}
-void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.num_masks_);
-  DIFF_OUT_FIELD(flags_.has_max_width_);
-  DIFF_OUT_FIELD(flags_.has_thickness_);
-  DIFF_OUT_FIELD(flags_.has_area_);
-  DIFF_OUT_FIELD(flags_.has_protrusion_);
-  DIFF_OUT_FIELD(flags_.has_alias_);
-  DIFF_OUT_FIELD(flags_.has_xy_pitch_);
-  DIFF_OUT_FIELD(flags_.has_xy_offset_);
-  DIFF_OUT_FIELD(flags_.rect_only_);
-  DIFF_OUT_FIELD(flags_.right_way_on_grid_only_);
-  DIFF_OUT_FIELD(flags_.right_way_on_grid_only_check_mask_);
-  DIFF_OUT_FIELD(flags_.rect_only_except_non_core_pins_);
-  DIFF_OUT_FIELD(flags_.lef58_type_);
-  DIFF_OUT_FIELD(wrong_way_width_);
-  DIFF_OUT_TABLE(cut_class_rules_tbl_);
-  DIFF_OUT_HASH_TABLE(cut_class_rules_hash_);
-  DIFF_OUT_TABLE(spacing_eol_rules_tbl_);
-  DIFF_OUT_TABLE(cut_spacing_rules_tbl_);
-  DIFF_OUT_TABLE(minstep_rules_tbl_);
-  DIFF_OUT_TABLE(corner_spacing_rules_tbl_);
-  DIFF_OUT_TABLE(spacing_table_prl_rules_tbl_);
-  DIFF_OUT_TABLE(cut_spacing_table_orth_tbl_);
-  DIFF_OUT_TABLE(cut_spacing_table_def_tbl_);
-  DIFF_OUT_TABLE(cut_enc_rules_tbl_);
-  DIFF_OUT_TABLE(eol_ext_rules_tbl_);
-  DIFF_OUT_TABLE(array_spacing_rules_tbl_);
-  DIFF_OUT_TABLE(eol_keep_out_rules_tbl_);
-  DIFF_OUT_TABLE(width_table_rules_tbl_);
-  DIFF_OUT_TABLE(min_cuts_rules_tbl_);
-  DIFF_OUT_TABLE(area_rules_tbl_);
-
-  // User Code Begin Out
-  DIFF_OUT_FIELD(flags_.type_);
-  DIFF_OUT_FIELD(flags_.direction_);
-  DIFF_OUT_FIELD(flags_.minstep_type_);
-  DIFF_OUT_FIELD(_pitch_x);
-  DIFF_OUT_FIELD(_pitch_y);
-  DIFF_OUT_FIELD(_offset_x);
-  DIFF_OUT_FIELD(_offset_y);
-  DIFF_OUT_FIELD(_width);
-  DIFF_OUT_FIELD(_spacing);
-  DIFF_OUT_FIELD(_resistance);
-  DIFF_OUT_FIELD(_capacitance);
-  DIFF_OUT_FIELD(_edge_capacitance);
-  DIFF_OUT_FIELD(_wire_extension);
-  DIFF_OUT_FIELD(_number);
-  DIFF_OUT_FIELD(_rlevel);
-  DIFF_OUT_FIELD(_area);
-  DIFF_OUT_FIELD(_thickness);
-  DIFF_OUT_FIELD(_min_step);
-  DIFF_OUT_FIELD(_max_width);
-  DIFF_OUT_FIELD(_min_width);
-  DIFF_OUT_FIELD(_min_step_max_length);
-  DIFF_OUT_FIELD(_min_step_max_edges);
-  DIFF_OUT_FIELD(_pt._length);
-  DIFF_OUT_FIELD(_pt._from_width);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_alias);
-  DIFF_OUT_FIELD(_upper);
-  DIFF_OUT_FIELD(_lower);
-  DIFF_OUT_TABLE_NO_DEEP(_spacing_rules_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_min_cut_rules_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_min_enc_rules_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_v55inf_tbl);
-  DIFF_OUT_VECTOR(_v55sp_length_idx);
-  DIFF_OUT_VECTOR(_v55sp_width_idx);
-  DIFF_OUT_MATRIX(_v55sp_spacing);
-  DIFF_OUT_VECTOR(_two_widths_sp_idx);
-  DIFF_OUT_VECTOR(_two_widths_sp_prl);
-  DIFF_OUT_MATRIX(_two_widths_sp_spacing);
-  DIFF_OUT_FIELD(_oxide1);
-  DIFF_OUT_FIELD(_oxide2);
-  // User Code End Out
-  DIFF_END
-}
 _dbTechLayer::_dbTechLayer(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
+  wrong_way_width_ = 0;
+  layer_adjustment_ = 0;
   cut_class_rules_tbl_ = new dbTable<_dbTechLayerCutClassRule>(
       db,
       this,
@@ -525,6 +418,11 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerEolKeepOutRuleObj);
+  max_spacing_rules_tbl_ = new dbTable<_dbTechLayerMaxSpacingRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerMaxSpacingRuleObj);
   width_table_rules_tbl_ = new dbTable<_dbTechLayerWidthTableRule>(
       db,
       this,
@@ -540,6 +438,27 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerAreaRuleObj);
+  forbidden_spacing_rules_tbl_ = new dbTable<_dbTechLayerForbiddenSpacingRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerForbiddenSpacingRuleObj);
+  keepout_zone_rules_tbl_ = new dbTable<_dbTechLayerKeepOutZoneRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerKeepOutZoneRuleObj);
+  wrongdir_spacing_rules_tbl_ = new dbTable<_dbTechLayerWrongDirSpacingRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerWrongDirSpacingRuleObj);
+  two_wires_forbidden_spc_rules_tbl_
+      = new dbTable<_dbTechLayerTwoWiresForbiddenSpcRule>(
+          db,
+          this,
+          (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+          dbTechLayerTwoWiresForbiddenSpcRuleObj);
   // User Code Begin Constructor
   flags_.type_ = dbTechLayerType::ROUTING;
   flags_.direction_ = dbTechLayerDir::NONE;
@@ -567,11 +486,12 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
   _min_width = 0;
   _min_step_max_length = -1;
   _min_step_max_edges = -1;
+  _first_last_pitch = -1;
   _v55sp_length_idx.clear();
   _v55sp_width_idx.clear();
   _v55sp_spacing.clear();
-  _name = 0;
-  _alias = 0;
+  _name = nullptr;
+  _alias = nullptr;
 
   _spacing_rules_tbl = new dbTable<_dbTechLayerSpacingRule>(
       db,
@@ -579,144 +499,35 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerSpacingRuleObj);
 
-  _min_cut_rules_tbl = new dbTable<_dbTechMinCutRule>(
+  _min_cut_rules_tbl = new dbTable<_dbTechMinCutRule, 8>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
-      dbTechMinCutRuleObj,
-      8,
-      3);
+      dbTechMinCutRuleObj);
 
-  _min_enc_rules_tbl = new dbTable<_dbTechMinEncRule>(
+  _min_enc_rules_tbl = new dbTable<_dbTechMinEncRule, 8>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
-      dbTechMinEncRuleObj,
-      8,
-      3);
+      dbTechMinEncRuleObj);
 
-  _v55inf_tbl = new dbTable<_dbTechV55InfluenceEntry>(
+  _v55inf_tbl = new dbTable<_dbTechV55InfluenceEntry, 8>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
-      dbTechV55InfluenceEntryObj,
-      8,
-      3);
+      dbTechV55InfluenceEntryObj);
   // User Code End Constructor
-}
-_dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
-{
-  flags_.num_masks_ = r.flags_.num_masks_;
-  flags_.has_max_width_ = r.flags_.has_max_width_;
-  flags_.has_thickness_ = r.flags_.has_thickness_;
-  flags_.has_area_ = r.flags_.has_area_;
-  flags_.has_protrusion_ = r.flags_.has_protrusion_;
-  flags_.has_alias_ = r.flags_.has_alias_;
-  flags_.has_xy_pitch_ = r.flags_.has_xy_pitch_;
-  flags_.has_xy_offset_ = r.flags_.has_xy_offset_;
-  flags_.rect_only_ = r.flags_.rect_only_;
-  flags_.right_way_on_grid_only_ = r.flags_.right_way_on_grid_only_;
-  flags_.right_way_on_grid_only_check_mask_
-      = r.flags_.right_way_on_grid_only_check_mask_;
-  flags_.rect_only_except_non_core_pins_
-      = r.flags_.rect_only_except_non_core_pins_;
-  flags_.lef58_type_ = r.flags_.lef58_type_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  wrong_way_width_ = r.wrong_way_width_;
-  cut_class_rules_tbl_ = new dbTable<_dbTechLayerCutClassRule>(
-      db, this, *r.cut_class_rules_tbl_);
-  cut_class_rules_hash_.setTable(cut_class_rules_tbl_);
-  spacing_eol_rules_tbl_ = new dbTable<_dbTechLayerSpacingEolRule>(
-      db, this, *r.spacing_eol_rules_tbl_);
-  cut_spacing_rules_tbl_ = new dbTable<_dbTechLayerCutSpacingRule>(
-      db, this, *r.cut_spacing_rules_tbl_);
-  minstep_rules_tbl_
-      = new dbTable<_dbTechLayerMinStepRule>(db, this, *r.minstep_rules_tbl_);
-  corner_spacing_rules_tbl_ = new dbTable<_dbTechLayerCornerSpacingRule>(
-      db, this, *r.corner_spacing_rules_tbl_);
-  spacing_table_prl_rules_tbl_ = new dbTable<_dbTechLayerSpacingTablePrlRule>(
-      db, this, *r.spacing_table_prl_rules_tbl_);
-  cut_spacing_table_orth_tbl_
-      = new dbTable<_dbTechLayerCutSpacingTableOrthRule>(
-          db, this, *r.cut_spacing_table_orth_tbl_);
-  cut_spacing_table_def_tbl_ = new dbTable<_dbTechLayerCutSpacingTableDefRule>(
-      db, this, *r.cut_spacing_table_def_tbl_);
-  cut_enc_rules_tbl_ = new dbTable<_dbTechLayerCutEnclosureRule>(
-      db, this, *r.cut_enc_rules_tbl_);
-  eol_ext_rules_tbl_ = new dbTable<_dbTechLayerEolExtensionRule>(
-      db, this, *r.eol_ext_rules_tbl_);
-  array_spacing_rules_tbl_ = new dbTable<_dbTechLayerArraySpacingRule>(
-      db, this, *r.array_spacing_rules_tbl_);
-  eol_keep_out_rules_tbl_ = new dbTable<_dbTechLayerEolKeepOutRule>(
-      db, this, *r.eol_keep_out_rules_tbl_);
-  width_table_rules_tbl_ = new dbTable<_dbTechLayerWidthTableRule>(
-      db, this, *r.width_table_rules_tbl_);
-  min_cuts_rules_tbl_
-      = new dbTable<_dbTechLayerMinCutRule>(db, this, *r.min_cuts_rules_tbl_);
-  area_rules_tbl_
-      = new dbTable<_dbTechLayerAreaRule>(db, this, *r.area_rules_tbl_);
-  // User Code Begin CopyConstructor
-  flags_ = r.flags_;
-  _pitch_x = r._pitch_x;
-  _pitch_y = r._pitch_y;
-  _offset_x = r._offset_x;
-  _offset_y = r._offset_y;
-  _width = r._width;
-  _spacing = r._spacing;
-  _resistance = r._resistance;
-  _capacitance = r._capacitance;
-  _edge_capacitance = r._edge_capacitance;
-  _wire_extension = r._wire_extension;
-  _number = r._number;
-  _rlevel = r._rlevel;
-  _area = r._area;
-  _thickness = r._thickness;
-  _max_width = r._max_width;
-  _min_width = r._min_width;
-  _min_step = r._min_step;
-  _min_step_max_length = r._min_step_max_length;
-  _min_step_max_edges = r._min_step_max_edges;
-  _pt = r._pt;
-  _name = NULL;
-  _alias = NULL;
-  _upper = r._upper;
-  _lower = r._lower;
-  _v55sp_length_idx = r._v55sp_length_idx;
-  _v55sp_width_idx = r._v55sp_width_idx;
-  _v55sp_spacing = r._v55sp_spacing;
-  _two_widths_sp_idx = r._two_widths_sp_idx;
-  _two_widths_sp_prl = r._two_widths_sp_prl;
-  _two_widths_sp_spacing = r._two_widths_sp_spacing;
-  _oxide1 = r._oxide1;
-  _oxide2 = r._oxide2;
-
-  if (r._name) {
-    _name = strdup(r._name);
-    ZALLOCATED(_name);
-  }
-
-  if (r._alias) {
-    _alias = strdup(r._alias);
-    ZALLOCATED(_alias);
-  }
-
-  _spacing_rules_tbl
-      = new dbTable<_dbTechLayerSpacingRule>(db, this, *r._spacing_rules_tbl);
-
-  _min_cut_rules_tbl
-      = new dbTable<_dbTechMinCutRule>(db, this, *r._min_cut_rules_tbl);
-
-  _min_enc_rules_tbl
-      = new dbTable<_dbTechMinEncRule>(db, this, *r._min_enc_rules_tbl);
-
-  _v55inf_tbl = new dbTable<_dbTechV55InfluenceEntry>(db, this, *r._v55inf_tbl);
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
+  if (obj.getDatabase()->isSchema(db_schema_orth_spc_tbl)) {
+    stream >> obj.orth_spacing_tbl_;
+  }
   stream >> *obj.cut_class_rules_tbl_;
   stream >> obj.cut_class_rules_hash_;
   stream >> *obj.spacing_eol_rules_tbl_;
@@ -730,10 +541,31 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.eol_ext_rules_tbl_;
   stream >> *obj.array_spacing_rules_tbl_;
   stream >> *obj.eol_keep_out_rules_tbl_;
+  if (obj.getDatabase()->isSchema(db_schema_max_spacing)) {
+    stream >> *obj.max_spacing_rules_tbl_;
+  }
   stream >> *obj.width_table_rules_tbl_;
   stream >> *obj.min_cuts_rules_tbl_;
   stream >> *obj.area_rules_tbl_;
+  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing)) {
+    stream >> *obj.forbidden_spacing_rules_tbl_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_keepout_zone)) {
+    stream >> *obj.keepout_zone_rules_tbl_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_wrongdir_spacing)) {
+    stream >> *obj.wrongdir_spacing_rules_tbl_;
+  }
+  if (obj.getDatabase()->isSchema(
+          db_schema_lef58_two_wires_forbidden_spacing)) {
+    stream >> *obj.two_wires_forbidden_spc_rules_tbl_;
+  }
   // User Code Begin >>
+  if (obj.getDatabase()->isSchema(db_schema_layer_adjustment)) {
+    stream >> obj.layer_adjustment_;
+  } else {
+    obj.layer_adjustment_ = 0.0;
+  }
   stream >> obj._pitch_x;
   stream >> obj._pitch_y;
   stream >> obj._offset_x;
@@ -772,23 +604,31 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> obj._two_widths_sp_spacing;
   stream >> obj._oxide1;
   stream >> obj._oxide2;
-  if (obj.getDatabase()->isSchema(db_schema_wrongway_width))
+  if (obj.getDatabase()->isSchema(db_schema_wrongway_width)) {
     stream >> obj.wrong_way_width_;
-  else {
+  } else {
     obj.wrong_way_width_ = obj._width;
-    for (auto rule : ((dbTechLayer*) &obj)->getTechLayerWidthTableRules())
+    for (auto rule : ((dbTechLayer*) &obj)->getTechLayerWidthTableRules()) {
       if (rule->isWrongDirection()) {
         obj.wrong_way_width_ = *rule->getWidthTable().begin();
         break;
       }
+    }
+  }
+  if (obj.getDatabase()->isSchema(db_schema_lef58_pitch)) {
+    stream >> obj._first_last_pitch;
   }
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
+  stream << obj.orth_spacing_tbl_;
   stream << *obj.cut_class_rules_tbl_;
   stream << obj.cut_class_rules_hash_;
   stream << *obj.spacing_eol_rules_tbl_;
@@ -802,10 +642,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.eol_ext_rules_tbl_;
   stream << *obj.array_spacing_rules_tbl_;
   stream << *obj.eol_keep_out_rules_tbl_;
+  stream << *obj.max_spacing_rules_tbl_;
   stream << *obj.width_table_rules_tbl_;
   stream << *obj.min_cuts_rules_tbl_;
   stream << *obj.area_rules_tbl_;
+  stream << *obj.forbidden_spacing_rules_tbl_;
+  stream << *obj.keepout_zone_rules_tbl_;
+  stream << *obj.wrongdir_spacing_rules_tbl_;
+  stream << *obj.two_wires_forbidden_spc_rules_tbl_;
   // User Code Begin <<
+  stream << obj.layer_adjustment_;
   stream << obj._pitch_x;
   stream << obj._pitch_y;
   stream << obj._offset_x;
@@ -844,8 +690,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << obj._two_widths_sp_spacing;
   stream << obj._oxide1;
   stream << obj._oxide2;
-  if (obj.getDatabase()->isSchema(db_schema_wrongway_width))
-    stream << obj.wrong_way_width_;
+  stream << obj.wrong_way_width_;
+  stream << obj._first_last_pitch;
   // User Code End <<
   return stream;
 }
@@ -877,12 +723,22 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       return array_spacing_rules_tbl_;
     case dbTechLayerEolKeepOutRuleObj:
       return eol_keep_out_rules_tbl_;
+    case dbTechLayerMaxSpacingRuleObj:
+      return max_spacing_rules_tbl_;
     case dbTechLayerWidthTableRuleObj:
       return width_table_rules_tbl_;
     case dbTechLayerMinCutRuleObj:
       return min_cuts_rules_tbl_;
     case dbTechLayerAreaRuleObj:
       return area_rules_tbl_;
+    case dbTechLayerForbiddenSpacingRuleObj:
+      return forbidden_spacing_rules_tbl_;
+    case dbTechLayerKeepOutZoneRuleObj:
+      return keepout_zone_rules_tbl_;
+    case dbTechLayerWrongDirSpacingRuleObj:
+      return wrongdir_spacing_rules_tbl_;
+    case dbTechLayerTwoWiresForbiddenSpcRuleObj:
+      return two_wires_forbidden_spc_rules_tbl_;
       // User Code Begin getObjectTable
     case dbTechLayerSpacingRuleObj:
       return _spacing_rules_tbl;
@@ -901,6 +757,83 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
   }
   return getTable()->getObjectTable(type);
 }
+void _dbTechLayer::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  cut_class_rules_tbl_->collectMemInfo(info.children_["cut_class_rules_tbl_"]);
+
+  spacing_eol_rules_tbl_->collectMemInfo(
+      info.children_["spacing_eol_rules_tbl_"]);
+
+  cut_spacing_rules_tbl_->collectMemInfo(
+      info.children_["cut_spacing_rules_tbl_"]);
+
+  minstep_rules_tbl_->collectMemInfo(info.children_["minstep_rules_tbl_"]);
+
+  corner_spacing_rules_tbl_->collectMemInfo(
+      info.children_["corner_spacing_rules_tbl_"]);
+
+  spacing_table_prl_rules_tbl_->collectMemInfo(
+      info.children_["spacing_table_prl_rules_tbl_"]);
+
+  cut_spacing_table_orth_tbl_->collectMemInfo(
+      info.children_["cut_spacing_table_orth_tbl_"]);
+
+  cut_spacing_table_def_tbl_->collectMemInfo(
+      info.children_["cut_spacing_table_def_tbl_"]);
+
+  cut_enc_rules_tbl_->collectMemInfo(info.children_["cut_enc_rules_tbl_"]);
+
+  eol_ext_rules_tbl_->collectMemInfo(info.children_["eol_ext_rules_tbl_"]);
+
+  array_spacing_rules_tbl_->collectMemInfo(
+      info.children_["array_spacing_rules_tbl_"]);
+
+  eol_keep_out_rules_tbl_->collectMemInfo(
+      info.children_["eol_keep_out_rules_tbl_"]);
+
+  max_spacing_rules_tbl_->collectMemInfo(
+      info.children_["max_spacing_rules_tbl_"]);
+
+  width_table_rules_tbl_->collectMemInfo(
+      info.children_["width_table_rules_tbl_"]);
+
+  min_cuts_rules_tbl_->collectMemInfo(info.children_["min_cuts_rules_tbl_"]);
+
+  area_rules_tbl_->collectMemInfo(info.children_["area_rules_tbl_"]);
+
+  forbidden_spacing_rules_tbl_->collectMemInfo(
+      info.children_["forbidden_spacing_rules_tbl_"]);
+
+  keepout_zone_rules_tbl_->collectMemInfo(
+      info.children_["keepout_zone_rules_tbl_"]);
+
+  wrongdir_spacing_rules_tbl_->collectMemInfo(
+      info.children_["wrongdir_spacing_rules_tbl_"]);
+
+  two_wires_forbidden_spc_rules_tbl_->collectMemInfo(
+      info.children_["two_wires_forbidden_spc_rules_tbl_"]);
+
+  // User Code Begin collectMemInfo
+  info.children_["orth_spacing"].add(orth_spacing_tbl_);
+  info.children_["cut_class_rules_hash"].add(cut_class_rules_hash_);
+  info.children_["name"].add(_name);
+  info.children_["alias"].add(_alias);
+  _spacing_rules_tbl->collectMemInfo(info.children_["spacing_rules_tbl"]);
+  _min_cut_rules_tbl->collectMemInfo(info.children_["min_cut_rules_tbl"]);
+  _min_enc_rules_tbl->collectMemInfo(info.children_["min_enc_rules_tbl"]);
+  _v55inf_tbl->collectMemInfo(info.children_["v55inf_tbl"]);
+  info.children_["v55sp_length_idx"].add(_v55sp_length_idx);
+  info.children_["v55sp_width_idx"].add(_v55sp_width_idx);
+  info.children_["v55sp_spacing"].add(_v55sp_spacing);
+  info.children_["two_widths_sp_idx"].add(_two_widths_sp_idx);
+  info.children_["two_widths_sp_prl"].add(_two_widths_sp_prl);
+  info.children_["two_widths_sp_spacing"].add(_two_widths_sp_spacing);
+  // User Code End collectMemInfo
+}
+
 _dbTechLayer::~_dbTechLayer()
 {
   delete cut_class_rules_tbl_;
@@ -915,24 +848,34 @@ _dbTechLayer::~_dbTechLayer()
   delete eol_ext_rules_tbl_;
   delete array_spacing_rules_tbl_;
   delete eol_keep_out_rules_tbl_;
+  delete max_spacing_rules_tbl_;
   delete width_table_rules_tbl_;
   delete min_cuts_rules_tbl_;
   delete area_rules_tbl_;
+  delete forbidden_spacing_rules_tbl_;
+  delete keepout_zone_rules_tbl_;
+  delete wrongdir_spacing_rules_tbl_;
+  delete two_wires_forbidden_spc_rules_tbl_;
   // User Code Begin Destructor
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 
-  if (_spacing_rules_tbl)
+  {
     delete _spacing_rules_tbl;
+  }
 
-  if (_min_cut_rules_tbl)
+  {
     delete _min_cut_rules_tbl;
+  }
 
-  if (_min_enc_rules_tbl)
+  {
     delete _min_enc_rules_tbl;
+  }
 
-  if (_v55inf_tbl)
+  {
     delete _v55inf_tbl;
+  }
   // User Code End Destructor
 }
 
@@ -953,12 +896,14 @@ uint _dbTechLayer::getTwIdx(const int width, const int prl) const
 {
   auto pos = std::lower_bound(
       _two_widths_sp_idx.begin(), _two_widths_sp_idx.end(), width);
-  if (pos != _two_widths_sp_idx.begin())
+  if (pos != _two_widths_sp_idx.begin()) {
     --pos;
+  }
   int idx = std::max(0, (int) std::distance(_two_widths_sp_idx.begin(), pos));
   for (; idx >= 0; idx--) {
-    if (prl >= _two_widths_sp_prl[idx])
+    if (prl >= _two_widths_sp_prl[idx]) {
       return idx;
+    }
   }
   return 0;
 }
@@ -981,6 +926,26 @@ uint dbTechLayer::getWrongWayWidth() const
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return obj->wrong_way_width_;
+}
+
+void dbTechLayer::setLayerAdjustment(float layer_adjustment)
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+
+  obj->layer_adjustment_ = layer_adjustment;
+}
+
+float dbTechLayer::getLayerAdjustment() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return obj->layer_adjustment_;
+}
+
+void dbTechLayer::getOrthSpacingTable(
+    std::vector<std::pair<int, int>>& tbl) const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  tbl = obj->orth_spacing_tbl_;
 }
 
 dbSet<dbTechLayerCutClassRule> dbTechLayer::getTechLayerCutClassRules() const
@@ -1076,6 +1041,13 @@ dbSet<dbTechLayerEolKeepOutRule> dbTechLayer::getTechLayerEolKeepOutRules()
   return dbSet<dbTechLayerEolKeepOutRule>(obj, obj->eol_keep_out_rules_tbl_);
 }
 
+dbSet<dbTechLayerMaxSpacingRule> dbTechLayer::getTechLayerMaxSpacingRules()
+    const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerMaxSpacingRule>(obj, obj->max_spacing_rules_tbl_);
+}
+
 dbSet<dbTechLayerWidthTableRule> dbTechLayer::getTechLayerWidthTableRules()
     const
 {
@@ -1093,6 +1065,37 @@ dbSet<dbTechLayerAreaRule> dbTechLayer::getTechLayerAreaRules() const
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return dbSet<dbTechLayerAreaRule>(obj, obj->area_rules_tbl_);
+}
+
+dbSet<dbTechLayerForbiddenSpacingRule>
+dbTechLayer::getTechLayerForbiddenSpacingRules() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerForbiddenSpacingRule>(
+      obj, obj->forbidden_spacing_rules_tbl_);
+}
+
+dbSet<dbTechLayerKeepOutZoneRule> dbTechLayer::getTechLayerKeepOutZoneRules()
+    const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerKeepOutZoneRule>(obj, obj->keepout_zone_rules_tbl_);
+}
+
+dbSet<dbTechLayerWrongDirSpacingRule>
+dbTechLayer::getTechLayerWrongDirSpacingRules() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerWrongDirSpacingRule>(
+      obj, obj->wrongdir_spacing_rules_tbl_);
+}
+
+dbSet<dbTechLayerTwoWiresForbiddenSpcRule>
+dbTechLayer::getTechLayerTwoWiresForbiddenSpcRules() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerTwoWiresForbiddenSpcRule>(
+      obj, obj->two_wires_forbidden_spc_rules_tbl_);
 }
 
 void dbTechLayer::setRectOnly(bool rect_only)
@@ -1245,7 +1248,7 @@ std::string dbTechLayer::getAlias()
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
-  if (layer->_alias == NULL) {
+  if (layer->_alias == nullptr) {
     return "";
   }
 
@@ -1256,12 +1259,12 @@ void dbTechLayer::setAlias(const char* alias)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
-  if (layer->_alias)
+  if (layer->_alias) {
     free((void*) layer->_alias);
+  }
 
-  layer->flags_.has_alias_ = 1;
-  layer->_alias = strdup(alias);
-  ZALLOCATED(layer->_alias);
+  layer->flags_.has_alias_ = true;
+  layer->_alias = safe_strdup(alias);
 }
 
 uint dbTechLayer::getWidth() const
@@ -1331,12 +1334,12 @@ int dbTechLayer::getSpacing(int w, int l)
     uint rmin, rmax;
     if (cur_rule->getRange(rmin, rmax)) {
       if ((width >= rmin) && (width <= rmax)) {
-        spacing = MIN(spacing, cur_rule->getSpacing());
+        spacing = std::min(spacing, cur_rule->getSpacing());
         found_spacing = true;
       }
       if (width > rmax) {
         found_over_spacing = true;
-        over_spacing = MIN(over_spacing, cur_rule->getSpacing());
+        over_spacing = std::min(over_spacing, cur_rule->getSpacing());
       }
     }
   }
@@ -1346,12 +1349,14 @@ int dbTechLayer::getSpacing(int w, int l)
   if (getV55SpacingTable(v55rules)) {
     for (i = 1; (i < layer->_v55sp_width_idx.size())
                 && (width > layer->_v55sp_width_idx[i]);
-         i++)
+         i++) {
       ;
+    }
     for (j = 1; (j < layer->_v55sp_length_idx.size())
                 && (length > layer->_v55sp_length_idx[j]);
-         j++)
+         j++) {
       ;
+    }
     found_spacing = true;
     spacing = v55rules[i - 1][j - 1];
   }
@@ -1427,8 +1432,8 @@ dbSet<dbTechLayerSpacingRule> dbTechLayer::getV54SpacingRules() const
 bool dbTechLayer::hasV55SpacingRules() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  return ((layer->_v55sp_length_idx.size() > 0)
-          && (layer->_v55sp_width_idx.size() > 0)
+  return ((!layer->_v55sp_length_idx.empty())
+          && (!layer->_v55sp_width_idx.empty())
           && (layer->_v55sp_spacing.numElems() > 0));
 }
 
@@ -1436,8 +1441,9 @@ bool dbTechLayer::getV55SpacingWidthsAndLengths(
     std::vector<uint>& width_idx,
     std::vector<uint>& length_idx) const
 {
-  if (!hasV55SpacingRules())
+  if (!hasV55SpacingRules()) {
     return false;
+  }
   _dbTechLayer* layer = (_dbTechLayer*) this;
   width_idx = layer->_v55sp_width_idx;
   length_idx = layer->_v55sp_length_idx;
@@ -1448,28 +1454,30 @@ void dbTechLayer::printV55SpacingRules(lefout& writer) const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
-  fprintf(writer.out(), "SPACINGTABLE\n");
-  fprintf(writer.out(), "  PARALLELRUNLENGTH");
+  fmt::print(writer.out(), "SPACINGTABLE\n");
+  fmt::print(writer.out(), "  PARALLELRUNLENGTH");
   dbVector<uint>::const_iterator v55_itr;
   uint wddx, lndx;
 
   for (v55_itr = layer->_v55sp_length_idx.begin();
        v55_itr != layer->_v55sp_length_idx.end();
-       v55_itr++)
-    fprintf(writer.out(), " %.3f", writer.lefdist(*v55_itr));
+       v55_itr++) {
+    fmt::print(writer.out(), " {:.3f}", writer.lefdist(*v55_itr));
+  }
 
   for (wddx = 0, v55_itr = layer->_v55sp_width_idx.begin();
        v55_itr != layer->_v55sp_width_idx.end();
        wddx++, v55_itr++) {
-    fprintf(writer.out(), "\n");
-    fprintf(writer.out(), "  WIDTH %.3f\t", writer.lefdist(*v55_itr));
-    for (lndx = 0; lndx < layer->_v55sp_spacing.numCols(); lndx++)
-      fprintf(writer.out(),
-              " %.3f",
-              writer.lefdist(layer->_v55sp_spacing(wddx, lndx)));
+    fmt::print(writer.out(), "\n");
+    fmt::print(writer.out(), "  WIDTH {:.3f}\t", writer.lefdist(*v55_itr));
+    for (lndx = 0; lndx < layer->_v55sp_spacing.numCols(); lndx++) {
+      fmt::print(writer.out(),
+                 " {:.3f}",
+                 writer.lefdist(layer->_v55sp_spacing(wddx, lndx)));
+    }
   }
 
-  fprintf(writer.out(), " ;\n");
+  fmt::print(writer.out(), " ;\n");
 }
 
 bool dbTechLayer::getV55SpacingTable(
@@ -1477,8 +1485,9 @@ bool dbTechLayer::getV55SpacingTable(
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
-  if (layer->_v55sp_spacing.numElems() == 0)
+  if (layer->_v55sp_spacing.numElems() == 0) {
     return false;
+  }
 
   uint i, j;
   sptbl.clear();
@@ -1487,8 +1496,9 @@ bool dbTechLayer::getV55SpacingTable(
   tmpvec.reserve(layer->_v55sp_spacing.numCols());
   for (i = 0; i < layer->_v55sp_spacing.numRows(); i++) {
     tmpvec.clear();
-    for (j = 0; j < layer->_v55sp_spacing.numCols(); j++)
+    for (j = 0; j < layer->_v55sp_spacing.numCols(); j++) {
       tmpvec.push_back(layer->_v55sp_spacing(i, j));
+    }
     sptbl[i] = tmpvec;
   }
 
@@ -1497,8 +1507,9 @@ bool dbTechLayer::getV55SpacingTable(
 
 int dbTechLayer::findV55Spacing(const int width, const int prl) const
 {
-  if (!hasV55SpacingRules())
+  if (!hasV55SpacingRules()) {
     return 0;
+  }
   _dbTechLayer* layer = (_dbTechLayer*) this;
   uint rowIdx = layer->getV55RowIdx(width);
   uint colIdx = layer->getV55ColIdx(prl);
@@ -1544,7 +1555,7 @@ void dbTechLayer::addV55SpacingTableEntry(uint inrow, uint incol, uint spacing)
 bool dbTechLayer::hasTwoWidthsSpacingRules() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  return ((layer->_two_widths_sp_idx.size() > 0)
+  return ((!layer->_two_widths_sp_idx.empty())
           && (layer->_two_widths_sp_spacing.numElems() > 0));
 }
 
@@ -1552,21 +1563,22 @@ void dbTechLayer::printTwoWidthsSpacingRules(lefout& writer) const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
-  fprintf(writer.out(), "SPACINGTABLE TWOWIDTHS");
+  fmt::print(writer.out(), "SPACINGTABLE TWOWIDTHS");
   dbVector<uint>::const_iterator itr;
   uint wddx, lndx;
 
   for (wddx = 0, itr = layer->_two_widths_sp_idx.begin();
        itr != layer->_two_widths_sp_idx.end();
        wddx++, itr++) {
-    fprintf(writer.out(), "\n  WIDTH %.3f\t", writer.lefdist(*itr));
-    for (lndx = 0; lndx < layer->_two_widths_sp_spacing.numCols(); lndx++)
-      fprintf(writer.out(),
-              " %.3f",
-              writer.lefdist(layer->_two_widths_sp_spacing(wddx, lndx)));
+    fmt::print(writer.out(), "\n  WIDTH {:.3f}\t", writer.lefdist(*itr));
+    for (lndx = 0; lndx < layer->_two_widths_sp_spacing.numCols(); lndx++) {
+      fmt::print(writer.out(),
+                 " {:.3f}",
+                 writer.lefdist(layer->_two_widths_sp_spacing(wddx, lndx)));
+    }
   }
 
-  fprintf(writer.out(), " ;\n");
+  fmt::print(writer.out(), " ;\n");
 }
 
 uint dbTechLayer::getTwoWidthsSpacingTableEntry(uint row, uint col) const
@@ -1604,8 +1616,9 @@ bool dbTechLayer::getTwoWidthsSpacingTable(
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
-  if (layer->_two_widths_sp_spacing.numElems() == 0)
+  if (layer->_two_widths_sp_spacing.numElems() == 0) {
     return false;
+  }
 
   uint i, j;
   sptbl.clear();
@@ -1614,8 +1627,9 @@ bool dbTechLayer::getTwoWidthsSpacingTable(
   tmpvec.reserve(layer->_two_widths_sp_spacing.numCols());
   for (i = 0; i < layer->_two_widths_sp_spacing.numRows(); i++) {
     tmpvec.clear();
-    for (j = 0; j < layer->_two_widths_sp_spacing.numCols(); j++)
+    for (j = 0; j < layer->_two_widths_sp_spacing.numCols(); j++) {
       tmpvec.push_back(layer->_two_widths_sp_spacing(i, j));
+    }
     sptbl[i] = tmpvec;
   }
 
@@ -1648,8 +1662,9 @@ int dbTechLayer::findTwSpacing(const int width1,
                                const int width2,
                                const int prl) const
 {
-  if (!hasTwoWidthsSpacingRules())
+  if (!hasTwoWidthsSpacingRules()) {
     return 0;
+  }
   auto reqPrl = std::max(0, prl);
   _dbTechLayer* layer = (_dbTechLayer*) this;
   auto rowIdx = layer->getTwIdx(width1, reqPrl);
@@ -1660,17 +1675,12 @@ int dbTechLayer::findTwSpacing(const int width1,
 bool dbTechLayer::getMinimumCutRules(std::vector<dbTechMinCutRule*>& cut_rules)
 {
   cut_rules.clear();
-  dbSet<dbTechMinCutRule> rules = getMinCutRules();
 
-  if (rules.size() == 0)
-    return false;
+  for (dbTechMinCutRule* rule : getMinCutRules()) {
+    cut_rules.push_back(rule);
+  }
 
-  dbSet<dbTechMinCutRule>::iterator itr;
-
-  for (itr = rules.begin(); itr != rules.end(); ++itr)
-    cut_rules.push_back((dbTechMinCutRule*) *itr);
-
-  return true;
+  return !cut_rules.empty();
 }
 
 dbSet<dbTechMinCutRule> dbTechLayer::getMinCutRules()
@@ -1700,17 +1710,11 @@ bool dbTechLayer::getMinEnclosureRules(
 {
   enc_rules.clear();
 
-  dbSet<dbTechMinEncRule> rules = getMinEncRules();
+  for (dbTechMinEncRule* rule : getMinEncRules()) {
+    enc_rules.push_back(rule);
+  }
 
-  if (rules.size() == 0)
-    return false;
-
-  dbSet<dbTechMinEncRule>::iterator itr;
-
-  for (itr = rules.begin(); itr != rules.end(); ++itr)
-    enc_rules.push_back(*itr);
-
-  return true;
+  return !enc_rules.empty();
 }
 
 dbTechLayerAntennaRule* dbTechLayer::createDefaultAntennaRule()
@@ -1720,7 +1724,7 @@ dbTechLayerAntennaRule* dbTechLayer::createDefaultAntennaRule()
       = (_dbTechLayerAntennaRule*) getDefaultAntennaRule();
 
   // Reinitialize the object to its default state...
-  if (r != NULL) {
+  if (r != nullptr) {
     r->~_dbTechLayerAntennaRule();
     new (r) _dbTechLayerAntennaRule(layer->getDatabase());
     r->_layer = getImpl()->getOID();
@@ -1741,7 +1745,7 @@ dbTechLayerAntennaRule* dbTechLayer::createOxide2AntennaRule()
       = (_dbTechLayerAntennaRule*) getOxide2AntennaRule();
 
   // Reinitialize the object to its default state...
-  if (r != NULL) {
+  if (r != nullptr) {
     r->~_dbTechLayerAntennaRule();
     new (r) _dbTechLayerAntennaRule(layer->getDatabase());
     r->_layer = getImpl()->getOID();
@@ -1772,8 +1776,9 @@ dbTechLayerAntennaRule* dbTechLayer::getDefaultAntennaRule() const
   _dbTechLayer* layer = (_dbTechLayer*) this;
   _dbTech* tech = (_dbTech*) layer->getOwner();
 
-  if (layer->_oxide1 == 0)
-    return NULL;
+  if (layer->_oxide1 == 0) {
+    return nullptr;
+  }
 
   return (dbTechLayerAntennaRule*) tech->_antenna_rule_tbl->getPtr(
       layer->_oxide1);
@@ -1784,8 +1789,9 @@ dbTechLayerAntennaRule* dbTechLayer::getOxide2AntennaRule() const
   _dbTechLayer* layer = (_dbTechLayer*) this;
   _dbTech* tech = (_dbTech*) layer->getOwner();
 
-  if (layer->_oxide2 == 0)
-    return NULL;
+  if (layer->_oxide2 == 0) {
+    return nullptr;
+  }
 
   return (dbTechLayerAntennaRule*) tech->_antenna_rule_tbl->getPtr(
       layer->_oxide2);
@@ -1795,15 +1801,19 @@ void dbTechLayer::writeAntennaRulesLef(lefout& writer) const
 {
   bool prt_model = (hasDefaultAntennaRule() && hasOxide2AntennaRule());
 
-  if (prt_model)
-    fprintf(writer.out(), "    ANTENNAMODEL OXIDE1 ;\n");
-  if (hasDefaultAntennaRule())
+  if (prt_model) {
+    fmt::print(writer.out(), "    ANTENNAMODEL OXIDE1 ;\n");
+  }
+  if (hasDefaultAntennaRule()) {
     getDefaultAntennaRule()->writeLef(writer);
+  }
 
-  if (prt_model)
-    fprintf(writer.out(), "    ANTENNAMODEL OXIDE2 ;\n");
-  if (hasOxide2AntennaRule())
+  if (prt_model) {
+    fmt::print(writer.out(), "    ANTENNAMODEL OXIDE2 ;\n");
+  }
+  if (hasOxide2AntennaRule()) {
     getOxide2AntennaRule()->writeLef(writer);
+  }
 }
 
 uint dbTechLayer::getNumMasks() const
@@ -1836,7 +1846,7 @@ bool dbTechLayer::getThickness(uint& inthk) const
 void dbTechLayer::setThickness(uint thickness)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  layer->flags_.has_thickness_ = 1;
+  layer->flags_.has_thickness_ = true;
   layer->_thickness = thickness;
 }
 
@@ -1850,8 +1860,9 @@ double  // Now denominated in squm
 dbTechLayer::getArea() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  if (layer->flags_.has_area_)
+  if (layer->flags_.has_area_) {
     return layer->_area;
+  }
 
   return 0.0;  // Default
 }
@@ -1859,7 +1870,7 @@ dbTechLayer::getArea() const
 void dbTechLayer::setArea(double area)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  layer->flags_.has_area_ = 1;
+  layer->flags_.has_area_ = true;
   layer->_area = area;
 }
 
@@ -1872,8 +1883,9 @@ bool dbTechLayer::hasMaxWidth() const
 uint dbTechLayer::getMaxWidth() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  if (layer->flags_.has_max_width_)
+  if (layer->flags_.has_max_width_) {
     return layer->_max_width;
+  }
 
   return MAX_INT;  // Default
 }
@@ -1881,7 +1893,7 @@ uint dbTechLayer::getMaxWidth() const
 void dbTechLayer::setMaxWidth(uint max_width)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  layer->flags_.has_max_width_ = 1;
+  layer->flags_.has_max_width_ = true;
   layer->_max_width = max_width;
 }
 
@@ -1906,8 +1918,9 @@ bool dbTechLayer::hasMinStep() const
 uint dbTechLayer::getMinStep() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  if (layer->_min_step >= 0)
+  if (layer->_min_step >= 0) {
     return layer->_min_step;
+  }
 
   return 0;  // Default
 }
@@ -1927,8 +1940,9 @@ bool dbTechLayer::hasProtrusion() const
 uint dbTechLayer::getProtrusionWidth() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  if (layer->flags_.has_protrusion_)
+  if (layer->flags_.has_protrusion_) {
     return layer->_pt._width;
+  }
 
   return 0;  // Default
 }
@@ -1936,8 +1950,9 @@ uint dbTechLayer::getProtrusionWidth() const
 uint dbTechLayer::getProtrusionLength() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  if (layer->flags_.has_protrusion_)
+  if (layer->flags_.has_protrusion_) {
     return layer->_pt._length;
+  }
 
   return 0;  // Default
 }
@@ -1945,8 +1960,9 @@ uint dbTechLayer::getProtrusionLength() const
 uint dbTechLayer::getProtrusionFromWidth() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  if (layer->flags_.has_protrusion_)
+  if (layer->flags_.has_protrusion_) {
     return layer->_pt._from_width;
+  }
 
   return 0;  // Default
 }
@@ -1956,7 +1972,7 @@ void dbTechLayer::setProtrusion(uint pt_width,
                                 uint pt_from_width)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  layer->flags_.has_protrusion_ = 1;
+  layer->flags_.has_protrusion_ = true;
   layer->_pt._width = pt_width;
   layer->_pt._length = pt_length;
   layer->_pt._from_width = pt_from_width;
@@ -1980,6 +1996,12 @@ int dbTechLayer::getPitchY()
   return layer->_pitch_y;
 }
 
+int dbTechLayer::getFirstLastPitch()
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  return layer->_first_last_pitch;
+}
+
 void dbTechLayer::setPitch(int pitch)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
@@ -1994,6 +2016,12 @@ void dbTechLayer::setPitchXY(int pitch_x, int pitch_y)
   layer->_pitch_x = pitch_x;
   layer->_pitch_y = pitch_y;
   layer->flags_.has_xy_pitch_ = true;
+}
+
+void dbTechLayer::setFirstLastPitch(int first_last_pitch)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  layer->_first_last_pitch = first_last_pitch;
 }
 
 bool dbTechLayer::hasXYPitch()
@@ -2149,8 +2177,9 @@ dbTechLayer* dbTechLayer::getLowerLayer()
   _dbTechLayer* layer = (_dbTechLayer*) this;
   _dbTech* tech = (_dbTech*) layer->getOwner();
 
-  if (layer->_lower == 0)
-    return NULL;
+  if (layer->_lower == 0) {
+    return nullptr;
+  }
 
   return (dbTechLayer*) tech->_layer_tbl->getPtr(layer->_lower);
 }
@@ -2160,31 +2189,45 @@ dbTechLayer* dbTechLayer::getUpperLayer()
   _dbTechLayer* layer = (_dbTechLayer*) this;
   _dbTech* tech = (_dbTech*) layer->getOwner();
 
-  if (layer->_upper == 0)
-    return NULL;
+  if (layer->_upper == 0) {
+    return nullptr;
+  }
 
   return (dbTechLayer*) tech->_layer_tbl->getPtr(layer->_upper);
 }
 
-dbTech* dbTechLayer::getTech()
+dbTech* dbTechLayer::getTech() const
 {
   return (dbTech*) getImpl()->getOwner();
+}
+
+bool dbTechLayer::hasOrthSpacingTable() const
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  return !layer->orth_spacing_tbl_.empty();
+}
+
+void dbTechLayer::addOrthSpacingTableEntry(const int within, const int spacing)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  layer->orth_spacing_tbl_.emplace_back(within, spacing);
 }
 
 dbTechLayer* dbTechLayer::create(dbTech* tech_,
                                  const char* name_,
                                  dbTechLayerType type)
 {
-  if (type.getValue() == dbTechLayerType::NONE)
-    return NULL;
+  if (type.getValue() == dbTechLayerType::NONE) {
+    return nullptr;
+  }
 
-  if (tech_->findLayer(name_))
-    return NULL;
+  if (tech_->findLayer(name_)) {
+    return nullptr;
+  }
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechLayer* layer = tech->_layer_tbl->create();
-  layer->_name = strdup(name_);
-  ZALLOCATED(layer->_name);
+  layer->_name = safe_strdup(name_);
   layer->_number = tech->_layer_cnt++;
   layer->flags_.type_ = type.getValue();
 

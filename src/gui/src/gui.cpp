@@ -1,59 +1,57 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "gui/gui.h"
 
 #include <QApplication>
-#include <boost/algorithm/string/predicate.hpp>
+#include <QColor>
+#include <QPushButton>
+#include <QString>
+#include <QWidget>
+#include <algorithm>
+#include <any>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <exception>
+#include <map>
+#include <memory>
+#include <typeindex>
+#include <utility>
+#include <variant>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QRegularExpression>
+#else
+#include <QRegExp>
+#endif
+#include <cmath>
+#include <optional>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
+#include "boost/algorithm/string/predicate.hpp"
+#include "chartsWidget.h"
 #include "clockWidget.h"
-#include "db.h"
-#include "dbShape.h"
-#include "defin.h"
 #include "displayControls.h"
 #include "drcWidget.h"
-#include "geom.h"
+#include "gif.h"
+#include "heatMapPinDensity.h"
 #include "heatMapPlacementDensity.h"
+#include "helpWidget.h"
 #include "inspector.h"
 #include "layoutViewer.h"
-#include "lefin.h"
 #include "mainWindow.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbShape.h"
+#include "odb/geom.h"
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
 #include "scriptWidget.h"
-#include "sta/StaMain.hh"
+#include "timingWidget.h"
 #include "utl/Logger.h"
+#include "utl/decode.h"
 #include "utl/exception.h"
 
 extern int cmd_argc;
@@ -73,7 +71,7 @@ static void message_handler(QtMsgType type,
   // suppress messages when built as a release, but preserve them in debug
   // builds
   if (application != nullptr) {
-    if (application->platformName() == "offscreen"
+    if (QApplication::platformName() == "offscreen"
         && msg.contains("This plugin does not support")) {
       suppress = true;
     }
@@ -96,7 +94,7 @@ static void message_handler(QtMsgType type,
   }
   switch (type) {
     case QtDebugMsg:
-      logger->debug(utl::GUI, 1, print_msg);
+      debugPrint(logger, utl::GUI, "qt", 1, print_msg);
       break;
     case QtInfoMsg:
       logger->info(utl::GUI, 75, print_msg);
@@ -136,7 +134,7 @@ StringToDBU Descriptor::Property::convert_string;
 // Heatmap / Spectrum colors
 // https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
 // https://gist.github.com/mikhailov-work/6a308c20e494d9e0ccc29036b28faa7a
-const unsigned char SpectrumGenerator::spectrum_[256][3]
+const unsigned char SpectrumGenerator::kSpectrum[256][3]
     = {{48, 18, 59},   {50, 21, 67},   {51, 24, 74},    {52, 27, 81},
        {53, 30, 88},   {54, 33, 95},   {55, 36, 102},   {56, 39, 109},
        {57, 42, 115},  {58, 45, 121},  {59, 47, 128},   {60, 50, 134},
@@ -225,6 +223,7 @@ Gui::Gui()
     : continue_after_close_(false),
       logger_(nullptr),
       db_(nullptr),
+      pin_density_heat_map_(nullptr),
       placement_density_heat_map_(nullptr)
 {
   resetConversions();
@@ -277,7 +276,7 @@ void Gui::pause(int timeout)
   main_window->pause(timeout);
 }
 
-Selected Gui::makeSelected(std::any object)
+Selected Gui::makeSelected(const std::any& object)
 {
   if (!object.has_value()) {
     return Selected();
@@ -286,16 +285,16 @@ Selected Gui::makeSelected(std::any object)
   auto it = descriptors_.find(object.type());
   if (it != descriptors_.end()) {
     return it->second->makeSelected(object);
-  } else {
-    logger_->warn(utl::GUI,
-                  33,
-                  "No descriptor is registered for {}.",
-                  object.type().name());
-    return Selected();  // FIXME: null descriptor
   }
+  char* type_name
+      = abi::__cxa_demangle(object.type().name(), nullptr, nullptr, nullptr);
+  logger_->warn(
+      utl::GUI, 33, "No descriptor is registered for type {}.", type_name);
+  free(type_name);
+  return Selected();  // FIXME: null descriptor
 }
 
-void Gui::setSelected(Selected selection)
+void Gui::setSelected(const Selected& selection)
 {
   main_window->setSelected(selection);
 }
@@ -342,16 +341,22 @@ bool Gui::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const
 
 void Gui::selectHighlightConnectedInsts(bool select_flag, int highlight_group)
 {
-  return main_window->selectHighlightConnectedInsts(select_flag,
-                                                    highlight_group);
+  main_window->selectHighlightConnectedInsts(select_flag, highlight_group);
 }
 void Gui::selectHighlightConnectedNets(bool select_flag,
                                        bool output,
                                        bool input,
                                        int highlight_group)
 {
-  return main_window->selectHighlightConnectedNets(
+  main_window->selectHighlightConnectedNets(
       select_flag, output, input, highlight_group);
+}
+
+void Gui::selectHighlightConnectedBufferTrees(bool select_flag,
+                                              int highlight_group)
+{
+  main_window->selectHighlightConnectedBufferTrees(select_flag,
+                                                   highlight_group);
 }
 
 void Gui::addInstToHighlightSet(const char* name, int highlight_group)
@@ -363,6 +368,7 @@ void Gui::addInstToHighlightSet(const char* name, int highlight_group)
 
   auto inst = block->findInst(name);
   if (!inst) {
+    logger_->error(utl::GUI, 100, "No instance named {} found.", name);
     return;
   }
   SelectionSet sel_inst_set;
@@ -379,6 +385,7 @@ void Gui::addNetToHighlightSet(const char* name, int highlight_group)
 
   auto net = block->findNet(name);
   if (!net) {
+    logger_->error(utl::GUI, 101, "No net named {} found.", name);
     return;
   }
   SelectionSet selection_set;
@@ -406,6 +413,22 @@ void Gui::animateSelection(int repeat)
   main_window->getLayoutViewer()->selectionAnimation(repeat);
 }
 
+std::string Gui::addLabel(int x,
+                          int y,
+                          const std::string& text,
+                          std::optional<Painter::Color> color,
+                          std::optional<int> size,
+                          std::optional<Painter::Anchor> anchor,
+                          const std::optional<std::string>& name)
+{
+  return main_window->addLabel(x, y, text, color, size, anchor, name);
+}
+
+void Gui::deleteLabel(const std::string& name)
+{
+  main_window->deleteLabel(name);
+}
+
 std::string Gui::addRuler(int x0,
                           int y0,
                           int x1,
@@ -422,52 +445,155 @@ void Gui::deleteRuler(const std::string& name)
   main_window->deleteRuler(name);
 }
 
+/**
+ * @brief Checks if a Qt wildcard pattern is a simple literal string.
+ *
+ * This function determines if a string intended for use with
+ * QRegExp::WildcardUnix contains any active (i.e., unescaped) wildcard
+ * characters ('*', '?', '[').
+ *
+ * @param pattern The wildcard pattern string to check.
+ * @return True if the pattern has no active wildcards; false otherwise.
+ */
+static bool isSimpleStringPattern(const std::string& pattern)
+{
+  bool previous_was_escape = false;
+  for (const char ch : pattern) {
+    if (previous_was_escape) {
+      // The previous character was '\', so this character is just a literal.
+      previous_was_escape = false;
+      continue;
+    }
+
+    if (ch == '\\') {
+      // This is an escape character for the next character in the loop.
+      previous_was_escape = true;
+    } else if (ch == '*' || ch == '?' || ch == '[') {
+      // Found an unescaped wildcard, so it's not a simple string.
+      return false;
+    }
+  }
+  // If the loop completes, no unescaped wildcards were found.
+  return true;
+}
+
 int Gui::select(const std::string& type,
                 const std::string& name_filter,
+                const std::string& attribute,
+                const std::any& value,
                 bool filter_case_sensitive,
                 int highlight_group)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  // Define case sensitivity options for QRegularExpression
+  const QRegularExpression::PatternOptions options
+      = filter_case_sensitive ? QRegularExpression::NoPatternOption
+                              : QRegularExpression::CaseInsensitiveOption;
+
+  // Convert the wildcard string to a regex pattern and create the
+  // object
+  const QRegularExpression reg_filter(
+      QRegularExpression::wildcardToRegularExpression(
+          QString::fromStdString(name_filter)),
+      options);
+#else
+  const QRegExp reg_filter(
+      QString::fromStdString(name_filter),
+      filter_case_sensitive ? Qt::CaseSensitive : Qt::CaseInsensitive,
+      QRegExp::WildcardUnix);
+#endif
+  const bool is_simple = isSimpleStringPattern(name_filter);
   for (auto& [object_type, descriptor] : descriptors_) {
-    if (descriptor->getTypeName() == type) {
-      SelectionSet selected;
-      if (descriptor->getAllObjects(selected)) {
-        if (!name_filter.empty()) {
-          // convert to vector
-          std::vector<Selected> selected_vector(selected.begin(),
-                                                selected.end());
-          // remove elements
-          QRegExp reg_filter(
-              QString::fromStdString(name_filter),
-              filter_case_sensitive ? Qt::CaseSensitive : Qt::CaseInsensitive,
-              QRegExp::WildcardUnix);
-          auto remove_if = std::remove_if(
-              selected_vector.begin(),
-              selected_vector.end(),
-              [&name_filter, &reg_filter](auto sel) -> bool {
-                const std::string name = sel.getName();
-                if (name == name_filter) {
-                  // direct match, so don't remove
-                  return false;
-                }
-                return !reg_filter.exactMatch(QString::fromStdString(name));
-              });
-          selected_vector.erase(remove_if, selected_vector.end());
-          // rebuild selectionset
-          selected.clear();
-          selected.insert(selected_vector.begin(), selected_vector.end());
-        }
-        main_window->addSelected(selected);
-        if (highlight_group != -1) {
-          main_window->addHighlighted(selected, highlight_group);
+    if (descriptor->getTypeName() != type) {
+      continue;
+    }
+    SelectionSet selected_set;
+    descriptor->visitAllObjects([&](const Selected& sel) {
+      if (!name_filter.empty()) {
+        const std::string sel_name = sel.getName();
+        if (is_simple) {
+          if (sel_name != name_filter) {
+            return;
+          }
+        } else {
+          if (
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+              !reg_filter.match(QString::fromStdString(sel_name)).hasMatch()
+#else
+              !reg_filter.exactMatch(QString::fromStdString(sel_name))
+#endif
+          ) {
+            return;
+          }
         }
       }
 
-      // already found the descriptor, so return to exit loop
-      return selected.size();
+      if (!attribute.empty()) {
+        bool is_valid_attribute = false;
+        Descriptor::Properties properties
+            = descriptor->getProperties(sel.getObject());
+        if (!filterSelectionProperties(
+                properties, attribute, value, is_valid_attribute)) {
+          return;  // doesn't match the attribute filter
+        }
+
+        if (!is_valid_attribute) {
+          logger_->error(
+              utl::GUI, 59, "Entered attribute {} is not valid.", attribute);
+        }
+      }
+      selected_set.insert(sel);
+    });
+
+    main_window->addSelected(selected_set, true);
+    if (highlight_group != -1) {
+      main_window->addHighlighted(selected_set, highlight_group);
     }
+
+    // already found the descriptor, so return to exit loop
+    return selected_set.size();
   }
 
   logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
+}
+
+bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
+                                    const std::string& attribute,
+                                    const std::any& value,
+                                    bool& is_valid_attribute)
+{
+  for (const Descriptor::Property& property : properties) {
+    if (attribute == property.name) {
+      is_valid_attribute = true;
+      if (auto props_selected_set
+          = std::any_cast<SelectionSet>(&property.value)) {
+        if (Descriptor::Property::toString(value) == "CONNECTED"
+            && (*props_selected_set).size() != 0) {
+          return true;
+        }
+        for (const auto& selected : *props_selected_set) {
+          if (Descriptor::Property::toString(value) == selected.getName()) {
+            return true;
+          }
+        }
+      } else if (auto props_list
+                 = std::any_cast<Descriptor::PropertyList>(&property.value)) {
+        for (const auto& prop : *props_list) {
+          if (Descriptor::Property::toString(prop.first)
+                  == Descriptor::Property::toString(value)
+              || Descriptor::Property::toString(prop.second)
+                     == Descriptor::Property::toString(value)) {
+            return true;
+          }
+        }
+      } else if (Descriptor::Property::toString(value)
+                 == Descriptor::Property::toString(property.value)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 void Gui::clearSelections()
@@ -480,15 +606,20 @@ void Gui::clearHighlights(int highlight_group)
   main_window->clearHighlighted(highlight_group);
 }
 
+void Gui::clearLabels()
+{
+  main_window->clearLabels();
+}
+
 void Gui::clearRulers()
 {
   main_window->clearRulers();
 }
 
-const std::string Gui::addToolbarButton(const std::string& name,
-                                        const std::string& text,
-                                        const std::string& script,
-                                        bool echo)
+std::string Gui::addToolbarButton(const std::string& name,
+                                  const std::string& text,
+                                  const std::string& script,
+                                  bool echo)
 {
   return main_window->addToolbarButton(
       name, QString::fromStdString(text), QString::fromStdString(script), echo);
@@ -499,12 +630,12 @@ void Gui::removeToolbarButton(const std::string& name)
   main_window->removeToolbarButton(name);
 }
 
-const std::string Gui::addMenuItem(const std::string& name,
-                                   const std::string& path,
-                                   const std::string& text,
-                                   const std::string& script,
-                                   const std::string& shortcut,
-                                   bool echo)
+std::string Gui::addMenuItem(const std::string& name,
+                             const std::string& path,
+                             const std::string& text,
+                             const std::string& script,
+                             const std::string& shortcut,
+                             bool echo)
 {
   return main_window->addMenuItem(name,
                                   QString::fromStdString(path),
@@ -519,18 +650,23 @@ void Gui::removeMenuItem(const std::string& name)
   main_window->removeMenuItem(name);
 }
 
-const std::string Gui::requestUserInput(const std::string& title,
-                                        const std::string& question)
+std::string Gui::requestUserInput(const std::string& title,
+                                  const std::string& question)
 {
   return main_window->requestUserInput(QString::fromStdString(title),
                                        QString::fromStdString(question));
 }
 
-void Gui::loadDRC(const std::string& filename)
+void Gui::selectMarkers(odb::dbMarkerCategory* markers)
 {
-  if (!filename.empty()) {
-    main_window->getDRCViewer()->loadReport(QString::fromStdString(filename));
-  }
+  main_window->getDRCViewer()->selectCategory(markers);
+}
+
+void Gui::setDisplayControlsColor(const std::string& name,
+                                  const Painter::Color& color)
+{
+  const QColor qcolor(color.r, color.g, color.b, color.a);
+  main_window->getControls()->setControlByPath(name, qcolor);
 }
 
 void Gui::setDisplayControlsVisible(const std::string& name, bool value)
@@ -602,6 +738,7 @@ void Gui::setResolution(double pixels_per_dbu)
 
 void Gui::saveImage(const std::string& filename,
                     const odb::Rect& region,
+                    int width_px,
                     double dbu_per_pixel,
                     const std::map<std::string, bool>& display_settings)
 {
@@ -611,9 +748,9 @@ void Gui::saveImage(const std::string& filename,
   odb::Rect save_region = region;
   const bool use_die_area = region.dx() == 0 || region.dy() == 0;
   const bool is_offscreen
-      = main_window->testAttribute(
-            Qt::WA_DontShowOnScreen) /* if not interactive this will be set */
-        || !enabled();
+      = main_window == nullptr
+        || main_window->testAttribute(
+            Qt::WA_DontShowOnScreen); /* if not interactive this will be set */
   if (is_offscreen
       && use_die_area) {  // if gui is active and interactive the visible are of
                           // the layout viewer will be used.
@@ -659,6 +796,7 @@ void Gui::saveImage(const std::string& filename,
     save_cmds += std::to_string(save_region.yMin() / dbu_per_micron) + " ";
     save_cmds += std::to_string(save_region.xMax() / dbu_per_micron) + " ";
     save_cmds += std::to_string(save_region.yMax() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(width_px) + " ";
     save_cmds += std::to_string(dbu_per_pixel) + " ";
     save_cmds += "$::gui::display_settings\n";
     // delete display settings map
@@ -675,33 +813,121 @@ void Gui::saveImage(const std::string& filename,
     }
 
     main_window->getLayoutViewer()->saveImage(
-        filename.c_str(), save_region, dbu_per_pixel);
+        filename.c_str(), save_region, width_px, dbu_per_pixel);
     // restore settings
     main_window->getControls()->restore();
   }
 }
 
 void Gui::saveClockTreeImage(const std::string& clock_name,
-                             const std::string& filename)
+                             const std::string& filename,
+                             const std::string& corner,
+                             int width_px,
+                             int height_px)
 {
   if (!enabled()) {
     return;
   }
-  main_window->getClockViewer()->saveImage(clock_name, filename);
+  std::optional<int> width;
+  std::optional<int> height;
+  if (width_px > 0) {
+    width = width_px;
+  }
+  if (height_px > 0) {
+    height = height_px;
+  }
+  main_window->getClockViewer()->saveImage(
+      clock_name, filename, corner, width, height);
 }
 
-void Gui::showWidget(const std::string& name, bool show)
+void Gui::saveHistogramImage(const std::string& filename,
+                             const std::string& mode,
+                             int width_px,
+                             int height_px)
 {
+  if (!enabled()) {
+    return;
+  }
+  std::optional<int> width;
+  std::optional<int> height;
+  if (width_px > 0) {
+    width = width_px;
+  }
+  if (height_px > 0) {
+    height = height_px;
+  }
+  const ChartsWidget::Mode chart_mode
+      = main_window->getChartsWidget()->modeFromString(mode);
+  main_window->getChartsWidget()->saveImage(
+      filename, chart_mode, width, height);
+}
+
+void Gui::selectClockviewerClock(const std::string& clock_name,
+                                 std::optional<int> depth)
+{
+  if (!enabled()) {
+    return;
+  }
+  main_window->getClockViewer()->selectClock(clock_name, depth);
+}
+
+static QWidget* findWidget(const std::string& name)
+{
+  if (name == "main_window" || name == "OpenROAD") {
+    return main_window;
+  }
+
   const QString find_name = QString::fromStdString(name);
   for (const auto& widget : main_window->findChildren<QDockWidget*>()) {
     if (widget->objectName() == find_name
         || widget->windowTitle() == find_name) {
-      if (show) {
-        widget->show();
-        widget->raise();
-      } else {
-        widget->hide();
-      }
+      return widget;
+    }
+  }
+  return nullptr;
+}
+
+void Gui::showWidget(const std::string& name, bool show)
+{
+  auto* widget = findWidget(name);
+  if (widget == nullptr) {
+    return;
+  }
+
+  if (show) {
+    widget->show();
+    widget->raise();
+  } else {
+    widget->hide();
+  }
+}
+
+void Gui::triggerAction(const std::string& name)
+{
+  const size_t dot_idx = name.find_last_of('.');
+  auto* widget = findWidget(name.substr(0, dot_idx));
+  if (widget == nullptr) {
+    return;
+  }
+
+  const QString find_name = QString::fromStdString(name.substr(dot_idx + 1));
+
+  // Find QAction
+  for (QAction* action : widget->findChildren<QAction*>()) {
+    logger_->report("{} {}",
+                    action->objectName().toStdString(),
+                    action->text().toStdString());
+    if (action->objectName() == find_name || action->text() == find_name) {
+      action->trigger();
+      return;
+    }
+  }
+
+  // Find QPushButton
+  for (QPushButton* button : widget->findChildren<QPushButton*>()) {
+    if (button->objectName() == find_name || button->text() == find_name) {
+      button->click();
+      return;
     }
   }
 }
@@ -763,6 +989,7 @@ void Gui::setHeatMapSetting(const std::string& name,
   const std::string rebuild_map_option = "rebuild";
   if (option == rebuild_map_option) {
     source->destroyMap();
+    source->ensureMap();
   } else {
     auto settings = source->getSettings();
 
@@ -779,7 +1006,7 @@ void Gui::setHeatMapSetting(const std::string& name,
                      options.join(", ").toStdString());
     }
 
-    auto current_value = settings[option];
+    auto& current_value = settings[option];
     if (std::holds_alternative<bool>(current_value)) {
       // is bool
       if (auto* s = std::get_if<bool>(&value)) {
@@ -825,10 +1052,50 @@ void Gui::setHeatMapSetting(const std::string& name,
   source->getRenderer()->redraw();
 }
 
+Renderer::Setting Gui::getHeatMapSetting(const std::string& name,
+                                         const std::string& option)
+{
+  HeatMapDataSource* source = getHeatMap(name);
+
+  const std::string map_has_option = "has_data";
+  if (option == map_has_option) {
+    return source->hasData();
+  }
+
+  auto settings = source->getSettings();
+
+  if (settings.count(option) == 0) {
+    QStringList options;
+    for (const auto& [key, kv] : settings) {
+      options.append(QString::fromStdString(key));
+    }
+    logger_->error(utl::GUI,
+                   95,
+                   "{} is not a valid option. Valid options are: {}",
+                   option,
+                   options.join(", ").toStdString());
+  }
+
+  return settings[option];
+}
+
 void Gui::dumpHeatMap(const std::string& name, const std::string& file)
 {
   HeatMapDataSource* source = getHeatMap(name);
   source->dumpToFile(file);
+}
+
+void Gui::setMainWindowTitle(const std::string& title)
+{
+  main_window_title_ = title;
+  if (main_window) {
+    main_window->setTitle(title);
+  }
+}
+
+std::string Gui::getMainWindowTitle()
+{
+  return main_window_title_;
 }
 
 Renderer::~Renderer()
@@ -847,9 +1114,8 @@ bool Renderer::checkDisplayControl(const std::string& name)
 
   if (group_name.empty()) {
     return Gui::get()->checkDisplayControlsVisible(name);
-  } else {
-    return Gui::get()->checkDisplayControlsVisible(group_name + "/" + name);
   }
+  return Gui::get()->checkDisplayControlsVisible(group_name + "/" + name);
 }
 
 void Renderer::setDisplayControl(const std::string& name, bool value)
@@ -857,10 +1123,9 @@ void Renderer::setDisplayControl(const std::string& name, bool value)
   const std::string& group_name = getDisplayControlGroupName();
 
   if (group_name.empty()) {
-    return Gui::get()->setDisplayControlsVisible(name, value);
+    Gui::get()->setDisplayControlsVisible(name, value);
   } else {
-    return Gui::get()->setDisplayControlsVisible(group_name + "/" + name,
-                                                 value);
+    Gui::get()->setDisplayControlsVisible(group_name + "/" + name, value);
   }
 }
 
@@ -878,7 +1143,7 @@ void Renderer::addDisplayControl(
                                     mutual_exclusivity.end());
 }
 
-const Renderer::Settings Renderer::getSettings()
+Renderer::Settings Renderer::getSettings()
 {
   Settings settings;
   for (const auto& [key, init_value] : controls_) {
@@ -915,7 +1180,7 @@ Painter::Color SpectrumGenerator::getColor(double value, int alpha) const
   }
 
   return Painter::Color(
-      spectrum_[index][0], spectrum_[index][1], spectrum_[index][2], alpha);
+      kSpectrum[index][0], kSpectrum[index][1], kSpectrum[index][2], alpha);
 }
 
 void SpectrumGenerator::drawLegend(
@@ -931,7 +1196,7 @@ void SpectrumGenerator::drawLegend(
   const int legend_top = bounds.yMax() - legend_offset;
   const int legend_right = bounds.xMax() - legend_offset;
   const int legend_left = legend_right - legend_width;
-  const Painter::Anchor key_anchor = Painter::Anchor::RIGHT_CENTER;
+  const Painter::Anchor key_anchor = Painter::Anchor::kRightCenter;
 
   odb::Rect legend_bounds(
       legend_left, legend_top, legend_right + text_offset, legend_top);
@@ -953,8 +1218,8 @@ void SpectrumGenerator::drawLegend(
   }
 
   // draw background
-  painter.setPen(Painter::dark_gray, true);
-  painter.setBrush(Painter::dark_gray);
+  painter.setPen(Painter::kDarkGray, true);
+  painter.setBrush(Painter::kDarkGray);
   painter.drawRect(legend_bounds, 10, 10);
 
   // draw color map
@@ -969,8 +1234,8 @@ void SpectrumGenerator::drawLegend(
   }
 
   // draw key values
-  painter.setPen(Painter::black, true);
-  painter.setBrush(Painter::transparent);
+  painter.setPen(Painter::kBlack, true);
+  painter.setBrush(Painter::kTransparent);
   for (const auto& [pt, text] : legend_key_points) {
     painter.drawString(pt.x(), pt.y(), key_anchor, text);
   }
@@ -1009,44 +1274,66 @@ const Selected& Gui::getInspectorSelection()
   return main_window->getInspector()->getSelection();
 }
 
-void Gui::timingCone(odbTerm term, bool fanin, bool fanout)
+void Gui::timingCone(Term term, bool fanin, bool fanout)
 {
   main_window->timingCone(term, fanin, fanout);
 }
 
-void Gui::timingPathsThrough(const std::set<odbTerm>& terms)
+void Gui::timingPathsThrough(const std::set<Term>& terms)
 {
   main_window->timingPathsThrough(terms);
 }
 
 void Gui::addFocusNet(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->addFocusNet(net);
+  main_window->getLayoutTabs()->addFocusNet(net);
 }
 
 void Gui::addRouteGuides(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->addRouteGuides(net);
+  main_window->getLayoutTabs()->addRouteGuides(net);
+}
+
+Chart* Gui::addChart(const std::string& name,
+                     const std::string& x_label,
+                     const std::vector<std::string>& y_labels)
+{
+  return main_window->getChartsWidget()->addChart(name, x_label, y_labels);
 }
 
 void Gui::removeRouteGuides(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->removeRouteGuides(net);
+  main_window->getLayoutTabs()->removeRouteGuides(net);
+}
+
+void Gui::addNetTracks(odb::dbNet* net)
+{
+  main_window->getLayoutTabs()->addNetTracks(net);
+}
+
+void Gui::removeNetTracks(odb::dbNet* net)
+{
+  main_window->getLayoutTabs()->removeNetTracks(net);
 }
 
 void Gui::removeFocusNet(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->removeFocusNet(net);
+  main_window->getLayoutTabs()->removeFocusNet(net);
 }
 
 void Gui::clearFocusNets()
 {
-  main_window->getLayoutViewer()->clearFocusNets();
+  main_window->getLayoutTabs()->clearFocusNets();
 }
 
 void Gui::clearRouteGuides()
 {
-  main_window->getLayoutViewer()->clearRouteGuides();
+  main_window->getLayoutTabs()->clearRouteGuides();
+}
+
+void Gui::clearNetTracks()
+{
+  main_window->getLayoutTabs()->clearNetTracks();
 }
 
 void Gui::setLogger(utl::Logger* logger)
@@ -1073,7 +1360,8 @@ void Gui::hideGui()
 
 void Gui::showGui(Interpreter interpreter,
                   const std::string& cmds,
-                  bool interactive)
+                  bool interactive,
+                  bool load_settings)
 {
   if (enabled()) {
     logger_->warn(utl::GUI, 8, "GUI already active.");
@@ -1084,19 +1372,228 @@ void Gui::showGui(Interpreter interpreter,
   // passing in cmd_argc and cmd_argv to meet Qt application requirement for
   // arguments nullptr for tcl interp to indicate nothing to setup and commands
   // and interactive setting
-  startGui(cmd_argc, cmd_argv, interpreter, nullptr, cmds, interactive);
+  startGui(cmd_argc,
+           cmd_argv,
+           interpreter,
+           nullptr,
+           cmds,
+           interactive,
+           load_settings);
 }
 
-void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
+void Gui::minimize()
+{
+  main_window->showMinimized();
+}
+
+void Gui::unminimize()
+{
+  main_window->showNormal();
+}
+
+void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
 {
   db_ = db;
   setLogger(logger);
 
-  // placement density heatmap
+  pin_density_heat_map_ = std::make_unique<PinDensityDataSource>(logger);
+  pin_density_heat_map_->registerHeatMap();
+
   placement_density_heat_map_
       = std::make_unique<PlacementDensityDataSource>(logger);
   placement_density_heat_map_->registerHeatMap();
+
+  power_density_heat_map_
+      = std::make_unique<PowerDensityDataSource>(sta, logger);
+  power_density_heat_map_->registerHeatMap();
 }
+
+void Gui::selectHelp(const std::string& item)
+{
+  if (!enabled()) {
+    return;
+  }
+
+  main_window->getHelpViewer()->selectHelp(item);
+}
+
+void Gui::selectChart(const std::string& name)
+{
+  if (!enabled()) {
+    return;
+  }
+
+  const ChartsWidget::Mode mode
+      = main_window->getChartsWidget()->modeFromString(name);
+  main_window->getChartsWidget()->setMode(mode);
+}
+
+void Gui::updateTimingReport()
+{
+  main_window->getTimingWidget()->populatePaths();
+}
+
+// See class header for documentation.
+std::size_t Gui::TypeInfoHasher::operator()(const std::type_index& x) const
+{
+#ifdef __GLIBCXX__
+  return std::hash<std::type_index>{}(x);
+#else
+  return std::hash<std::string_view>{}(std::string_view(x.name()));
+#endif
+}
+// See class header for documentation.
+bool Gui::TypeInfoComparator::operator()(const std::type_index& a,
+                                         const std::type_index& b) const
+{
+#ifdef __GLIBCXX__
+  return a == b;
+#else
+  return strcmp(a.name(), b.name()) == 0;
+#endif
+}
+
+void Gui::gifStart(const std::string& filename)
+{
+  if (!enabled()) {
+    logger_->error(utl::GUI, 49, "Cannot generate GIF without GUI enabled");
+  }
+
+  if (filename.empty()) {
+    logger_->error(utl::GUI, 81, "Filename is required to save a GIF.");
+  }
+
+  gif_ = std::make_unique<GIF>();
+  gif_->filename = filename;
+  gif_->writer = nullptr;
+}
+
+void Gui::gifAddFrame(const odb::Rect& region,
+                      int width_px,
+                      double dbu_per_pixel,
+                      std::optional<int> delay)
+{
+  if (gif_ == nullptr) {
+    logger_->warn(utl::GUI, 51, "GIF not active");
+    return;
+  }
+
+  if (db_ == nullptr) {
+    logger_->error(utl::GUI, 50, "No design loaded.");
+  }
+  odb::Rect save_region = region;
+  const bool use_die_area = region.dx() == 0 || region.dy() == 0;
+  const bool is_offscreen
+      = main_window == nullptr
+        || main_window->testAttribute(
+            Qt::WA_DontShowOnScreen); /* if not interactive this will be set */
+  if (is_offscreen
+      && use_die_area) {  // if gui is active and interactive the visible are of
+                          // the layout viewer will be used.
+    auto* chip = db_->getChip();
+    if (chip == nullptr) {
+      logger_->error(utl::GUI, 79, "No design loaded.");
+    }
+
+    auto* block = chip->getBlock();
+    if (block == nullptr) {
+      logger_->error(utl::GUI, 80, "No design loaded.");
+    }
+
+    save_region
+        = block->getBBox()
+              ->getBox();  // get die area since screen area is not reliable
+    const double bloat_by = 0.05;  // 5%
+    const int bloat = std::min(save_region.dx(), save_region.dy()) * bloat_by;
+
+    save_region.bloat(bloat, save_region);
+  }
+
+  QImage img = main_window->getLayoutViewer()->createImage(
+      save_region, width_px, dbu_per_pixel);
+
+  if (gif_->writer == nullptr) {
+    gif_->writer = std::make_unique<GifWriter>();
+    gif_->width = img.width();
+    gif_->height = img.height();
+    GifBegin(gif_->writer.get(),
+             gif_->filename.c_str(),
+             gif_->width,
+             gif_->height,
+             delay.value_or(kDefaultGifDelay));
+  } else {
+    // scale IMG if not matched
+    img = img.scaled(gif_->width, gif_->height, Qt::KeepAspectRatio);
+  }
+
+  std::vector<uint8_t> frame(gif_->width * gif_->height * 4, 0);
+  for (int x = 0; x < img.width(); x++) {
+    if (x >= gif_->width) {
+      continue;
+    }
+    for (int y = 0; y < img.height(); y++) {
+      if (y >= gif_->height) {
+        continue;
+      }
+
+      const QRgb pixel = img.pixel(x, y);
+      const int frame_offset = (y * gif_->width + x) * 4;
+      frame[frame_offset + 0] = qRed(pixel);
+      frame[frame_offset + 1] = qGreen(pixel);
+      frame[frame_offset + 2] = qBlue(pixel);
+      frame[frame_offset + 3] = qAlpha(pixel);
+    }
+  }
+
+  GifWriteFrame(gif_->writer.get(),
+                frame.data(),
+                gif_->width,
+                gif_->height,
+                delay.value_or(kDefaultGifDelay));
+}
+
+void Gui::gifEnd()
+{
+  if (gif_ == nullptr) {
+    logger_->warn(utl::GUI, 58, "GIF not active");
+    return;
+  }
+
+  if (gif_->writer == nullptr) {
+    logger_->warn(utl::GUI,
+                  75,
+                  "Nothing to save to {}. No frames added to gif.",
+                  gif_->filename);
+    gif_ = nullptr;
+    return;
+  }
+
+  GifEnd(gif_->writer.get());
+  gif_ = nullptr;
+}
+
+class SafeApplication : public QApplication
+{
+ public:
+  using QApplication::QApplication;
+
+  bool notify(QObject* receiver, QEvent* event) override
+  {
+    try {
+      return QApplication::notify(receiver, event);
+    } catch (std::exception& ex) {
+      // Ignored here as the message will be logged in the GUI
+      qDebug() << "Caught exception:" << ex.what();
+
+      // Returning true indicates the event has been handled. In this case,
+      // we've "handled" it by catching the exception, so we prevent
+      // further processing that might rely on a corrupt state.
+      return true;
+    }
+
+    return false;
+  }
+};
 
 //////////////////////////////////////////////////
 
@@ -1107,13 +1604,29 @@ int startGui(int& argc,
              Interpreter interpreter,
              Tcl_Interp* interp,
              const std::string& script,
-             bool interactive)
+             bool interactive,
+             bool load_settings,
+             bool minimize)
 {
+#ifdef STATIC_QPA_PLUGIN_XCB
+  const char* qt_qpa_platform_env = getenv("QT_QPA_PLATFORM");
+  std::string qpa_platform
+      = qt_qpa_platform_env == nullptr ? "" : qt_qpa_platform_env;
+  if (qpa_platform != "") {
+    if (qpa_platform.find("xcb") == std::string::npos
+        && qpa_platform.find("offscreen") == std::string::npos) {
+      // OpenROAD logger is not available yet, using cout.
+      std::cout << "Your system has set QT_QPA_PLATFORM='" << qpa_platform
+                << "', openroad only supports 'offscreen' and 'xcb', please "
+                   "include one of these plugins in your platform env\n";
+    }
+  }
+#endif
   auto gui = gui::Gui::get();
   // ensure continue after close is false
   gui->clearContinueAfterClose();
 
-  QApplication app(argc, argv);
+  SafeApplication app(argc, argv);
   application = &app;
 
   // Default to 12 point for easier reading
@@ -1124,9 +1637,13 @@ int startGui(int& argc,
   auto* open_road = ord::OpenRoad::openRoad();
 
   // create new MainWindow
-  main_window = new gui::MainWindow;
+  main_window = new gui::MainWindow(load_settings);
+  if (minimize) {
+    main_window->showMinimized();
+  }
+  main_window->setTitle(gui->getMainWindowTitle());
 
-  open_road->addObserver(main_window);
+  open_road->getDb()->addObserver(main_window);
   if (!interactive) {
     gui->setContinueAfterClose();
     main_window->setAttribute(Qt::WA_DontShowOnScreen);
@@ -1145,7 +1662,7 @@ int startGui(int& argc,
   auto post_or_init = [&]() {
     // init remainder of GUI, to be called immediately after OpenRoad is
     // guaranteed to be initialized.
-    main_window->init(open_road->getSta());
+    main_window->init(open_road->getSta(), open_road->getDocsPath());
     // announce design created to ensure GUI gets setup
     main_window->postReadDb(main_window->getDb());
   };
@@ -1164,7 +1681,7 @@ int startGui(int& argc,
   }
 
   // Exit the app if someone chooses exit from the menu in the window
-  QObject::connect(main_window, SIGNAL(exit()), &app, SLOT(quit()));
+  QObject::connect(main_window, &MainWindow::exit, &app, &QApplication::quit);
   // Track the exit in case it originated during a script
   bool exit_requested = false;
   int exit_code = EXIT_SUCCESS;
@@ -1176,7 +1693,7 @@ int startGui(int& argc,
 
   // Save the window's status into the settings when quitting.
   QObject::connect(
-      &app, SIGNAL(aboutToQuit()), main_window, SLOT(saveSettings()));
+      &app, &QApplication::aboutToQuit, main_window, &MainWindow::saveSettings);
 
   // execute commands to restore state of gui
   std::string restore_commands;
@@ -1197,7 +1714,7 @@ int startGui(int& argc,
     // disconnect tcl return lister
     QObject::disconnect(tcl_return_code_connect);
 
-    if (!tcl_ok) {
+    if (!exit_requested && !tcl_ok) {
       auto& cmds = gui->getRestoreStateCommands();
       if (cmds[cmds.size() - 1]
           == "exit") {  // exit, will be the last command if it is present
@@ -1229,11 +1746,11 @@ int startGui(int& argc,
   }
 
   if (do_exec) {
-    exit_code = app.exec();
+    exit_code = QApplication::exec();
   }
 
   // cleanup
-  open_road->removeObserver(main_window);
+  open_road->getDb()->removeObserver(main_window);
 
   if (!exception.hasException()) {
     // don't save anything if exception occured
@@ -1243,6 +1760,8 @@ int startGui(int& argc,
       gui->addRestoreStateCommand(cmd);
     }
   }
+
+  main_window->exit();
 
   // delete main window and set to nullptr
   delete main_window;
@@ -1254,7 +1773,19 @@ int startGui(int& argc,
   // rethow exception, if one happened after cleanup of main_window
   exception.rethrow();
 
-  if (!gui->isContinueAfterClose() || exit_requested) {
+  debugPrint(open_road->getLogger(),
+             utl::GUI,
+             "init",
+             1,
+             "Exit state: interactive ({}), isContinueAfterClose ({}), "
+             "exit_requested ({}), exit_code ({})",
+             interactive,
+             gui->isContinueAfterClose(),
+             exit_requested,
+             exit_code);
+
+  const bool do_exit = !gui->isContinueAfterClose() && exit_requested;
+  if (interactive && do_exit) {
     // if exiting, go ahead and exit with gui return code.
     exit(exit_code);
   }
@@ -1271,7 +1802,7 @@ void Selected::highlight(Painter& painter,
   painter.setPen(pen, true, pen_width);
   painter.setBrush(brush, brush_style);
 
-  return descriptor_->highlight(object_, painter);
+  descriptor_->highlight(object_, painter);
 }
 
 Descriptor::Properties Selected::getProperties() const
@@ -1282,6 +1813,12 @@ Descriptor::Properties Selected::getProperties() const
   odb::Rect bbox;
   if (getBBox(bbox)) {
     props.push_back({"BBox", bbox});
+    // convenience; the user may want to know the dimensions
+    props.push_back(
+        {"BBox Width, Height",
+         std::string("(") + Descriptor::Property::convert_dbu(bbox.dx(), false)
+             + ", " + Descriptor::Property::convert_dbu(bbox.dy(), false)
+             + ")"});
   }
 
   return props;
@@ -1325,42 +1862,39 @@ std::string Descriptor::Property::toString(const std::any& value)
     return *v ? "True" : "False";
   } else if (auto v = std::any_cast<odb::Rect>(&value)) {
     std::string text = "(";
-    text += convert_dbu(v->xMin(), false) + ",";
+    text += convert_dbu(v->xMin(), false) + ", ";
     text += convert_dbu(v->yMin(), false) + "), (";
-    text += convert_dbu(v->xMax(), false) + ",";
+    text += convert_dbu(v->xMax(), false) + ", ";
     text += convert_dbu(v->yMax(), false) + ")";
+    return text;
+  } else if (auto v = std::any_cast<odb::Point>(&value)) {
+    std::string text = fmt::format(
+        "({},{})", convert_dbu(v->x(), false), convert_dbu(v->y(), false));
     return text;
   }
 
   return "<unknown>";
 }
 
-}  // namespace gui
-
-namespace sta {
 // Tcl files encoded into strings.
 extern const char* gui_tcl_inits[];
-}  // namespace sta
-
-extern "C" {
-struct Tcl_Interp;
-}
-
-namespace ord {
 
 extern "C" {
 extern int Gui_Init(Tcl_Interp* interp);
 }
 
-void initGui(OpenRoad* openroad)
+void initGui(Tcl_Interp* interp,
+             odb::dbDatabase* db,
+             sta::dbSta* sta,
+             utl::Logger* logger)
 {
   // Define swig TCL commands.
-  Gui_Init(openroad->tclInterp());
-  sta::evalTclInit(openroad->tclInterp(), sta::gui_tcl_inits);
+  Gui_Init(interp);
+  utl::evalTclInit(interp, gui::gui_tcl_inits);
 
   // ensure gui is made
   auto* gui = gui::Gui::get();
-  gui->init(openroad->getDb(), openroad->getLogger());
+  gui->init(db, sta, logger);
 }
 
-}  // namespace ord
+}  // namespace gui

@@ -11,6 +11,7 @@ module block1 (in, clk, out);
    output out;
 
    snl_bufx1 u1 (.A(in), .Z(u1out));
+   (* src = "hier1.v:15.3-15.47" *)
    snl_ffqx1 r1 (.D(u1out), .CP(clk), .Q(r1q));
    snl_bufx1 u2 (.A(r1q), .Z(out));
 endmodule // top

@@ -1,0 +1,45 @@
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13178, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13211, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13244, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13277, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13310, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13343, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13376, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14772, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14805, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14838, timing group from output port.
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+Net top/HIER1/MI0
+ Pin capacitance: 2.21-2.89
+ Wire capacitance: 0.00
+ Total capacitance: 2.21-2.89
+ Number of drivers: 1
+ Number of loads: 5
+ Number of pins: 6
+
+Driver pins
+ hier1/tie0/H output (TIEHIx1_ASAP7_75t_R)
+
+Load pins
+ alu0/hier2/load1/A input (BUFx2_ASAP7_75t_R) 0.44-0.58
+ alu0/load2/A input (BUFx2_ASAP7_75t_R) 0.44-0.58
+ hier3/alu1/hier2/load1/A input (BUFx2_ASAP7_75t_R) 0.44-0.58
+ hier3/alu1/load2/A input (BUFx2_ASAP7_75t_R) 0.44-0.58
+ load0/A input (BUFx2_ASAP7_75t_R) 0.44-0.58
+
+Hierarchical pins
+ alu0/MI1 input
+ alu0/hier2/MI2 input
+ hier1/MI0 output
+ hier3/MI3 input
+ hier3/alu1/MI1 input
+ hier3/alu1/hier2/MI2 input
+
+[INFO RSZ-0042] Inserted 3 tie TIEHIx1_ASAP7_75t_R instances.
+0.0 0.0
+0.0 0.0
+0.0 0.1
+No differences found.
+No differences found.

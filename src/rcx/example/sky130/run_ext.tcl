@@ -1,7 +1,7 @@
 set DIR ../../test
 
 # Read LEF and DEF
-read_lef ${DIR}/sky130/sky130_tech.lef 
+read_lef ${DIR}/sky130/sky130_tech.lef
 read_lef ${DIR}/sky130/sky130_std_cell.lef
 
 read_def -order_wires ${DIR}/gcd.def

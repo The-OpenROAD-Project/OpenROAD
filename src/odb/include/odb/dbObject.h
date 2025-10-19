@@ -1,57 +1,26 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
-#include "odb.h"
+#include "odb/odb.h"
+
 namespace utl {
 class Logger;
 }
+
 namespace odb {
 
 ///
 /// When adding a new database object, you must add a dbObjectType enumerator
 /// and edit dbObject.cpp and assign an unique "character" code for its
-/// database-name. See the methods:
-///    void getDbName( char name[max_name_length] );
-///    static dbObject * resolveDbName( dbDatabase * db, const char * name );
-/// in dbObject.cpp
+/// database-name.
 ///
 class _dbDatabase;
 class dbOStream;
 class dbIStream;
 class dbObjectPage;
 class dbObjectTable;
-class dbDiff;
 class _dbObject;
 
 ///
@@ -62,10 +31,9 @@ class _dbObject;
 ///
 enum dbObjectType
 {
-  dbDatabaseObj,
 
   // Design Objects
-  dbChipObj,
+  dbGdsLibObj,
   dbBlockObj,
   dbInstHdrObj,
   dbInstObj,
@@ -89,43 +57,82 @@ enum dbObjectType
   dbHierObj,
   dbBPinObj,
   // Generator Code Begin DbObjectType
-  dbTechLayerObj,
-  dbTechLayerSpacingEolRuleObj,
-  dbTechLayerMinStepRuleObj,
-  dbTechLayerCornerSpacingRuleObj,
-  dbTechLayerSpacingTablePrlRuleObj,
-  dbTechLayerEolKeepOutRuleObj,
-  dbTechLayerCutClassRuleObj,
-  dbTechLayerCutSpacingRuleObj,
-  dbTechLayerCutSpacingTableOrthRuleObj,
-  dbTechLayerCutSpacingTableDefRuleObj,
-  dbTechLayerCutEnclosureRuleObj,
-  dbTechLayerEolExtensionRuleObj,
-  dbTechLayerArraySpacingRuleObj,
-  dbTechLayerWidthTableRuleObj,
-  dbTechLayerMinCutRuleObj,
-  dbGuideObj,
-  dbMetalWidthViaMapObj,
-  dbTechLayerAreaRuleObj,
-  dbModuleObj,
-  dbModInstObj,
-  dbGroupObj,
-  dbGCellGridObj,
   dbAccessPointObj,
+  dbBusPortObj,
+  dbCellEdgeSpacingObj,
+  dbChipObj,
+  dbChipBumpObj,
+  dbChipBumpInstObj,
+  dbChipConnObj,
+  dbChipInstObj,
+  dbChipNetObj,
+  dbChipRegionObj,
+  dbChipRegionInstObj,
+  dbDatabaseObj,
+  dbDftObj,
+  dbGCellGridObj,
+  dbGDSARefObj,
+  dbGDSBoundaryObj,
+  dbGDSBoxObj,
+  dbGDSPathObj,
+  dbGDSSRefObj,
+  dbGDSStructureObj,
+  dbGDSTextObj,
   dbGlobalConnectObj,
-  dbPowerDomainObj,
-  dbLogicPortObj,
-  dbPowerSwitchObj,
+  dbGroupObj,
+  dbGuideObj,
   dbIsolationObj,
+  dbLevelShifterObj,
+  dbLogicPortObj,
+  dbMarkerObj,
+  dbMarkerCategoryObj,
+  dbMasterEdgeTypeObj,
+  dbMetalWidthViaMapObj,
+  dbModBTermObj,
+  dbModInstObj,
+  dbModITermObj,
+  dbModNetObj,
+  dbModuleObj,
+  dbNetTrackObj,
+  dbPolygonObj,
+  dbPowerDomainObj,
+  dbPowerSwitchObj,
+  dbPropertyObj,
+  dbScanChainObj,
+  dbScanInstObj,
+  dbScanListObj,
+  dbScanPartitionObj,
+  dbScanPinObj,
+  dbTechLayerObj,
+  dbTechLayerAreaRuleObj,
+  dbTechLayerArraySpacingRuleObj,
+  dbTechLayerCornerSpacingRuleObj,
+  dbTechLayerCutClassRuleObj,
+  dbTechLayerCutEnclosureRuleObj,
+  dbTechLayerCutSpacingRuleObj,
+  dbTechLayerCutSpacingTableDefRuleObj,
+  dbTechLayerCutSpacingTableOrthRuleObj,
+  dbTechLayerEolExtensionRuleObj,
+  dbTechLayerEolKeepOutRuleObj,
+  dbTechLayerForbiddenSpacingRuleObj,
+  dbTechLayerKeepOutZoneRuleObj,
+  dbTechLayerMaxSpacingRuleObj,
+  dbTechLayerMinCutRuleObj,
+  dbTechLayerMinStepRuleObj,
+  dbTechLayerSpacingEolRuleObj,
+  dbTechLayerSpacingTablePrlRuleObj,
+  dbTechLayerTwoWiresForbiddenSpcRuleObj,
+  dbTechLayerWidthTableRuleObj,
+  dbTechLayerWrongDirSpacingRuleObj,
   // Generator Code End DbObjectType
 
   // Lib Objects
   dbLibObj,
+  dbGDSLibObj,
   dbSiteObj,
   dbMasterObj,
   dbMPinObj,
   dbMTermObj,
-  dbTargetObj,
   dbTechAntennaPinModelObj,
 
   // Tech Objects
@@ -144,7 +151,6 @@ enum dbObjectType
   dbTechViaLayerRuleObj,
 
   // Property
-  dbPropertyObj,
   dbNameObj
 };
 
@@ -156,20 +162,21 @@ class dbObject
   dbObjectType getObjectType() const;
   dbDatabase* getDb() const;
   uint getId() const;
-  static const int max_name_length = 256;
-  void getDbName(char name[max_name_length]) const;
-  const char* getObjName() const;
+  const char* getTypeName() const;
 
-  static dbObject* resolveDbName(dbDatabase* db, const char* name);
-  static const char* getObjName(dbObjectType type);
+  static const char* getTypeName(dbObjectType type);
+  static dbObjectType getType(const char* name, utl::Logger* logger);
   // These are not intended for client use as the returned class is
   // not exported.  They are for internal db convenience.
   _dbObject* getImpl();
   const _dbObject* getImpl() const;
 
  protected:
-  dbObject() {}
-  ~dbObject() {}
+  dbObject() = default;
+  ~dbObject() = default;
 };
+
+dbIStream& operator>>(dbIStream& stream, dbObjectType& type);
+dbOStream& operator<<(dbOStream& stream, dbObjectType type);
 
 }  // namespace odb

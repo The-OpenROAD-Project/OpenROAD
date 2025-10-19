@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -30,11 +30,11 @@
 #ifndef defiRowTrack_h
 #define defiRowTrack_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 class defrData;
 
@@ -43,9 +43,6 @@ class defiRow
  public:
   defiRow(defrData* data);
   void Init();
-
-  DEF_COPY_CONSTRUCTOR_H(defiRow);
-  DEF_ASSIGN_OPERATOR_H(defiRow);
 
   ~defiRow();
   void Destroy();
@@ -118,9 +115,6 @@ class defiTrack
   defiTrack(defrData* data);
   void Init();
 
-  DEF_COPY_CONSTRUCTOR_H(defiTrack);
-  DEF_ASSIGN_OPERATOR_H(defiTrack);
-
   ~defiTrack();
   void Destroy();
 
@@ -161,9 +155,6 @@ class defiGcellGrid
   defiGcellGrid(defrData* data);
   void Init();
 
-  DEF_COPY_CONSTRUCTOR_H(defiGcellGrid);
-  DEF_ASSIGN_OPERATOR_H(defiGcellGrid);
-
   ~defiGcellGrid();
   void Destroy();
 
@@ -186,8 +177,6 @@ class defiGcellGrid
   defrData* defData;
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

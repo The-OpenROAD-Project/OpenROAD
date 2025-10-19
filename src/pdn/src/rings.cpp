@@ -1,50 +1,24 @@
-//////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include "rings.h"
+
+#include <algorithm>
+#include <array>
+#include <utility>
+#include <vector>
 
 #include "domain.h"
 #include "grid.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 
 namespace pdn {
 
 Rings::Rings(Grid* grid, const std::array<Layer, 2>& layers)
-    : GridComponent(grid),
-      layers_(layers),
-      offset_({0, 0, 0, 0}),
-      extend_to_boundary_(false)
+    : GridComponent(grid), layers_(layers)
 {
 }
 
@@ -62,12 +36,49 @@ void Rings::checkLayerSpecifications() const
     }
   }
 
-  if (layers_[0].layer->getDirection() == layers_[1].layer->getDirection()) {
-    getLogger()->error(
-        utl::PDN,
-        180,
-        "Ring cannot be build with layers following the same direction: {}",
-        layers_[0].layer->getDirection().getString());
+  checkDieArea();
+}
+
+void Rings::checkDieArea() const
+{
+  int hor_width;
+  int ver_width;
+  getTotalWidth(hor_width, ver_width);
+
+  odb::Rect ring_outline = getInnerRingOutline();
+  ring_outline.set_xlo(ring_outline.xMin() - hor_width);
+  ring_outline.set_xhi(ring_outline.xMax() + hor_width);
+  ring_outline.set_ylo(ring_outline.yMin() - ver_width);
+  ring_outline.set_yhi(ring_outline.yMax() + ver_width);
+
+  const odb::Rect die_area = getBlock()->getDieArea();
+
+  if (!die_area.contains(ring_outline)) {
+    if (allow_outside_die_) {
+      getLogger()->warn(
+          utl::PDN, 239, "Ring shape falls outside the die bounds.");
+    } else {
+      const double dbus = getBlock()->getDbUnitsPerMicron();
+
+      int xbounds = std::max(die_area.xMin() - ring_outline.xMin(),
+                             ring_outline.xMax() - die_area.xMax());
+      if (xbounds < 0) {
+        xbounds = 0;
+      }
+      int ybounds = std::max(die_area.yMin() - ring_outline.yMin(),
+                             ring_outline.yMax() - die_area.yMax());
+      if (ybounds < 0) {
+        ybounds = 0;
+      }
+      getLogger()->error(
+          utl::PDN,
+          351,
+          "PDN rings do not fit inside the die area by {} um in X and {} um in "
+          "Y. Either reduce the ring area or increase the core to die spacing "
+          "to accommodate. Use -allow_out_of_die if this is intentional.",
+          xbounds / dbus,
+          ybounds / dbus);
+    }
   }
 }
 
@@ -172,7 +183,19 @@ void Rings::setExtendToBoundary(bool value)
   extend_to_boundary_ = value;
 }
 
-void Rings::makeShapes(const ShapeTreeMap& other_shapes)
+odb::Rect Rings::getInnerRingOutline() const
+{
+  auto* grid = getGrid();
+  odb::Rect core = grid->getDomainArea();
+  core.set_xlo(core.xMin() - offset_[0]);
+  core.set_ylo(core.yMin() - offset_[1]);
+  core.set_xhi(core.xMax() + offset_[2]);
+  core.set_yhi(core.yMax() + offset_[3]);
+
+  return core;
+}
+
+void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -192,53 +215,66 @@ void Rings::makeShapes(const ShapeTreeMap& other_shapes)
     boundary = grid->getGridBoundary();
   }
 
-  odb::Rect core = grid->getDomainArea();
-  core.set_xlo(core.xMin() - offset_[0]);
-  core.set_ylo(core.yMin() - offset_[1]);
-  core.set_xhi(core.xMax() + offset_[2]);
-  core.set_yhi(core.yMax() + offset_[3]);
+  const odb::Rect core = getInnerRingOutline();
 
-  for (const auto& layer_def : layers_) {
-    auto* layer = layer_def.layer;
-    const int width = layer_def.width;
-    const int pitch = layer_def.spacing + width;
-    if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+  bool single_layer_ring = false;
+  if (layers_[0].layer == layers_[1].layer) {
+    single_layer_ring = true;
+  }
+
+  using LayerPair = std::pair<Layer*, Layer*>;
+  const std::array<LayerPair, 2> build_layers{
+      LayerPair{&layers_[0], &layers_[1]}, LayerPair{&layers_[1], &layers_[0]}};
+
+  bool processed_horizontal = false;
+  for (const auto& [layer_def, layer_other] : build_layers) {
+    auto* layer = layer_def->layer;
+    const int width = layer_def->width;
+    const int pitch = layer_def->spacing + width;
+
+    const int other_width = layer_other->width;
+    const int other_pitch = layer_other->spacing + other_width;
+    if ((single_layer_ring && !processed_horizontal)
+        || (!single_layer_ring
+            && layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL)) {
+      processed_horizontal = true;
+
       // bottom
-      int x_start = core.xMin() - width;
-      int x_end = core.xMax() + width;
+      int x_start = core.xMin() - other_width;
+      int x_end = core.xMax() + other_width;
       if (extend_to_boundary_) {
         x_start = boundary.xMin();
         x_end = boundary.xMax();
       }
       int y_start = core.yMin() - width;
       int y_end = core.yMin();
-      for (auto itr = nets.begin(); itr != nets.end(); itr++) {
+      for (auto net : nets) {
         addShape(new Shape(layer,
-                           *itr,
+                           net,
                            odb::Rect(x_start, y_start, x_end, y_end),
                            odb::dbWireShapeType::RING));
         if (!extend_to_boundary_) {
-          x_start -= pitch;
-          x_end += pitch;
+          x_start -= other_pitch;
+          x_end += other_pitch;
         }
         y_start -= pitch;
         y_end -= pitch;
       }
       // top
       if (!extend_to_boundary_) {
-        x_start = core.xMin() - width;
-        x_end = core.xMax() + width;
+        x_start = core.xMin() - other_width;
+        x_end = core.xMax() + other_width;
       }
       y_start = core.yMax();
       y_end = y_start + width;
-      for (auto itr = nets.begin(); itr != nets.end(); itr++) {
+      for (auto net : nets) {
         addShape(new Shape(layer,
-                           *itr,
+                           net,
                            odb::Rect(x_start, y_start, x_end, y_end),
                            odb::dbWireShapeType::RING));
         if (!extend_to_boundary_) {
-          x_start -= pitch;
-          x_end += pitch;
+          x_start -= other_pitch;
+          x_end += other_pitch;
         }
         y_start += pitch;
         y_end += pitch;
@@ -247,50 +283,59 @@ void Rings::makeShapes(const ShapeTreeMap& other_shapes)
       // left
       int x_start = core.xMin() - width;
       int x_end = core.xMin();
-      int y_start = core.yMin() - width;
-      int y_end = core.yMax() + width;
+      int y_start = core.yMin() - other_width;
+      int y_end = core.yMax() + other_width;
       if (extend_to_boundary_) {
         y_start = boundary.yMin();
         y_end = boundary.yMax();
       }
-      for (auto itr = nets.begin(); itr != nets.end(); itr++) {
+      for (auto net : nets) {
         addShape(new Shape(layer,
-                           *itr,
+                           net,
                            odb::Rect(x_start, y_start, x_end, y_end),
                            odb::dbWireShapeType::RING));
         x_start -= pitch;
         x_end -= pitch;
         if (!extend_to_boundary_) {
-          y_start -= pitch;
-          y_end += pitch;
+          y_start -= other_pitch;
+          y_end += other_pitch;
         }
       }
       // right
       x_start = core.xMax();
       x_end = x_start + width;
       if (!extend_to_boundary_) {
-        y_start = core.yMin() - width;
-        y_end = core.yMax() + width;
+        y_start = core.yMin() - other_width;
+        y_end = core.yMax() + other_width;
       }
-      for (auto itr = nets.begin(); itr != nets.end(); itr++) {
+      for (auto net : nets) {
         addShape(new Shape(layer,
-                           *itr,
+                           net,
                            odb::Rect(x_start, y_start, x_end, y_end),
                            odb::dbWireShapeType::RING));
         x_start += pitch;
         x_end += pitch;
         if (!extend_to_boundary_) {
-          y_start -= pitch;
-          y_end += pitch;
+          y_start -= other_pitch;
+          y_end += other_pitch;
         }
+      }
+    }
+  }
+
+  if (single_layer_ring) {
+    for (const auto& [layer, shapes] : getShapes()) {
+      for (const auto& shape : shapes) {
+        shape->setLocked();
       }
     }
   }
 }
 
-const std::vector<odb::dbTechLayer*> Rings::getLayers() const
+std::vector<odb::dbTechLayer*> Rings::getLayers() const
 {
   std::vector<odb::dbTechLayer*> layers;
+  layers.reserve(layers_.size());
   for (const auto& layer_def : layers_) {
     layers.push_back(layer_def.layer);
   }

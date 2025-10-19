@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2019-2025, The OpenROAD Authors
+
 add_library(lefout
     lefout.cpp
 )
@@ -10,7 +13,7 @@ target_include_directories(lefout
 
 target_link_libraries(lefout
     db
-    utl
+    utl_lib
     Boost::boost
 )
 

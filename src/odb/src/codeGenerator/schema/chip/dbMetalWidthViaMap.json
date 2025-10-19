@@ -1,0 +1,49 @@
+{
+  "name": "dbMetalWidthViaMap",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "bool",
+      "default": "false",
+      "name": "via_cut_class_"
+    },
+    {
+      "type": "dbId<_dbTechLayer>",
+      "name": "cut_layer_",
+      "flags":["no-get"],
+      "parent": "dbTechLayer"
+    },
+    {
+      "name":"below_layer_width_low_",
+      "type":"int",
+      "default":0
+    },
+    {
+      "name":"below_layer_width_high_",
+      "type":"int",
+      "default":0
+    },
+    {
+      "name":"above_layer_width_low_",
+      "type":"int",
+      "default":0
+    },
+    {
+      "name":"above_layer_width_high_",
+      "type":"int",
+      "default":0
+    },
+    {
+      "name":"via_name_",
+      "type":"std::string"
+    },
+    {
+      "name":"pg_via_",
+      "type":"bool",
+      "default": "false"
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
+  }

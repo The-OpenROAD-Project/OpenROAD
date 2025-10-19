@@ -1,39 +1,22 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#ifndef _FR_FLEXGC_H_
-#define _FR_FLEXGC_H_
+#pragma once
 
 #include <memory>
+#include <set>
+#include <tuple>
+#include <vector>
 
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frMarker.h"
+#include "db/tech/frTechObject.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
+#include "utl/Logger.h"
 
-namespace fr {
+namespace drt {
 class drNet;
 class drPatchWire;
 class FlexDRWorker;
@@ -45,13 +28,15 @@ class FlexGCWorker
  public:
   // constructors
   FlexGCWorker(frTechObject* techIn,
-               Logger* logger,
+               utl::Logger* logger,
+               RouterConfiguration* router_cfg,
                FlexDRWorker* drWorkerIn = nullptr);
   ~FlexGCWorker();
   // setters
-  void setExtBox(const Rect& in);
-  void setDrcBox(const Rect& in);
+  void setExtBox(const odb::Rect& in);
+  void setDrcBox(const odb::Rect& in);
   bool setTargetNet(frBlockObject* in);
+  bool setTargetNet(drNet* in);
   gcNet* getTargetNet();
   void resetTargetNet();
   void addTargetObj(frBlockObject* in);
@@ -71,7 +56,7 @@ class FlexGCWorker
   // others
   void init(const frDesign* design);
   int main();
-  void end();
+  void clearPWires();
   // initialization from FlexPA, initPA0 --> addPAObj --> initPA1
   void initPA0(const frDesign* design);
   void initPA1();
@@ -86,17 +71,14 @@ class FlexGCWorker
 };
 struct MarkerId
 {
-  Rect box;
+  odb::Rect box;
   frLayerNum lNum;
   frConstraint* con;
-  frBlockObject* src1;
-  frBlockObject* src2;
+  std::set<frBlockObject*> srcs;
   bool operator<(const MarkerId& rhs) const
   {
-    return std::tie(box, lNum, con, src1, src2)
-           < std::tie(rhs.box, rhs.lNum, rhs.con, rhs.src1, rhs.src2);
+    return std::tie(box, lNum, con, srcs)
+           < std::tie(rhs.box, rhs.lNum, rhs.con, rhs.srcs);
   }
 };
-}  // namespace fr
-
-#endif
+}  // namespace drt

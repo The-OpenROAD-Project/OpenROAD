@@ -1,70 +1,78 @@
-################################################################################
-## BSD 3-Clause License
-##
-## Copyright (c) 2020, The Regents of the University of California
-## All rights reserved.
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are met:
-##
-## * Redistributions of source code must retain the above copyright notice, this
-##   list of conditions and the following disclaimer.
-##
-## * Redistributions in binary form must reproduce the above copyright notice,
-##   this list of conditions and the following disclaimer in the documentation
-##   and#or other materials provided with the distribution.
-##
-## * Neither the name of the copyright holder nor the names of its
-##   contributors may be used to endorse or promote products derived from
-##   this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-## POSSIBILITY OF SUCH DAMAGE.
-################################################################################
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2020-2025, The OpenROAD Authors
 
 include("openroad")
+
+add_library(rcx_lib
+  ext.cpp
+  extBench.cpp
+  extBenchDB.cpp
+  extCC.cpp
+  extCoords.cpp
+  extFlow.cpp
+  extRCmodel.cpp
+  extSpef.cpp
+  extSpefIn.cpp
+  extmain.cpp
+  extmeasure.cpp
+  extDebugPrint.cpp
+  extstats.cpp
+  extprocess.cpp
+  netRC.cpp
+  extmeasure_res.cpp
+  name.cpp
+  grids.cpp
+  gs.cpp
+  dbUtil.cpp
+  process_ext.cpp
+  extRCmodel_process.cpp
+  extRCmodel_solver.cpp
+  extSolverGen.cpp
+  extModelGen.cpp
+  extFlow_v2.cpp
+  extmeasure_diag.cpp
+  extSegment.cpp
+  findsegments.cpp
+  extmeasure_couple.cpp
+  extmeasure_dist.cpp
+  extmeasure_flow.cpp
+  extmeasure_print.cpp
+  extmeasure_calc.cpp
+  extmeasure_rc_flow.cpp
+  extRCmodel_process.cpp
+  extRCmodel_solver.cpp
+  extDefPatterns.cpp
+  extDefPatternsVia.cpp
+  extPatterns.cpp
+  extRulesVia.cpp
+  extmeasure_print.cpp
+#  extmeasure_res_v2.cpp
+  extmain_v2.cpp
+  extmeasure_diag_opt.cpp
+  parse.cpp
+  find_some_net.cpp
+)
+
+target_include_directories(rcx_lib
+  PUBLIC
+    ../include
+)
+
+target_link_libraries(rcx_lib
+  PUBLIC
+    odb
+    utl_lib
+)
 
 swig_lib(NAME      rcx
          NAMESPACE rcx
          I_FILE    ext.i
-         SCRIPTS   OpenRCX.tcl
+         SCRIPTS   OpenRCX.tcl OpenRCX_process.tcl
 )
-
 
 target_sources(rcx
   PRIVATE
-    ext.cpp
-    extBench.cpp
-    extBenchDB.cpp
-    extCC.cpp
-    extCoords.cpp
-    extFlow.cpp
-    extRCap.cpp
-    extRCmodel.cpp
-    extSpef.cpp
-    extSpefIn.cpp
-    extmain.cpp
-    extmeasure.cpp
-    extDebugPrint.cpp
-    extplanes.cpp
-    extstats.cpp
-    extprocess.cpp
-    exttree.cpp
-    ext2dBox.cpp
-    hierSpef.cpp
-    netRC.cpp
-    powerConn.cpp
     MakeOpenRCX.cpp
-    extmeasure_res.cpp
 )
 
 target_include_directories(rcx
@@ -74,10 +82,8 @@ target_include_directories(rcx
 
 target_link_libraries(rcx
   PUBLIC
-    odb
-    utl
-  PRIVATE
-    OpenSTA
+    rcx_lib
+    utl_lib
 )
 
 messages(
@@ -88,37 +94,29 @@ messages(
 ############################################################
 # Unit testing
 ############################################################
-enable_testing()
+if(ENABLE_TESTS)
+  enable_testing()
 
-add_executable(rcxUnitTest
-  ${PROJECT_SOURCE_DIR}/test/ext2dBoxTest.cpp
-)
-
-target_include_directories(rcxUnitTest
-  PRIVATE
-  ${PROJECT_SOURCE_DIR}/src
-  ${OPENROAD_HOME}/include
-)
-
-target_link_libraries(rcxUnitTest
-  rcx
-)
-
-# Use the shared library if found.  We need to pass this info to
-# the code to select the corresponding include.  Using the shared
-# library speeds up compilation.
-if (Boost_unit_test_framework_FOUND)
-  message(STATUS "Boost unit_test_framework library found")
-  target_link_libraries(trTest
-    Boost::unit_test_framework
+  add_executable(rcxUnitTest
+    ${PROJECT_SOURCE_DIR}/test/ext2dBoxTest.cpp
   )
-  target_compile_definitions(trTest
+
+  target_include_directories(rcxUnitTest
     PRIVATE
-    HAS_BOOST_UNIT_TEST_LIBRARY
+    ${PROJECT_SOURCE_DIR}/src
+    ${OPENROAD_HOME}/include
   )
-endif()
 
-add_test(NAME trTest COMMAND trTest)
+  target_link_libraries(rcxUnitTest
+    rcx_lib
+    GTest::gtest
+    GTest::gtest_main
+    GTest::gmock
+  )
+
+  add_test(NAME rcxUnitTest COMMAND rcxUnitTest)
+  add_dependencies(build_and_test rcxUnitTest)
+endif()
 
 if (Python3_FOUND AND BUILD_PYTHON)
   swig_lib(NAME          rcx_py
@@ -136,7 +134,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
   target_link_libraries(rcx_py
     PUBLIC
-      rcx
+      rcx_lib
   )
 
 endif()

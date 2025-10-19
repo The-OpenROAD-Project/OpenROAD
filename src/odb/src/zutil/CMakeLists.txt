@@ -1,21 +1,21 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2019-2025, The OpenROAD Authors
+
 add_library(zutil
-    misc_functions.cpp
-    files.cpp
-    name.cpp
-    mem.cpp
-    parse.cpp
     poly_decomp.cpp
     util.cpp
 )
 
 target_link_libraries(zutil
-    PUBLIC
-        utl
+  PUBLIC
+    db
+    utl_lib
+    Boost::boost
 )
 
 target_include_directories(zutil
   PUBLIC
-    ${PROJECT_SOURCE_DIR}/include/odb
+    ${PROJECT_SOURCE_DIR}/include
     ${TCL_INCLUDE_PATH}
 )
 

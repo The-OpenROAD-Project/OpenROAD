@@ -1,37 +1,28 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
+#include <iostream>
+#include <memory>
+#include <set>
+#include <utility>
+#include <vector>
+
+#include "db/infra/frSegStyle.h"
+#include "db/obj/frBTerm.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frMarker.h"
+#include "db/obj/frShape.h"
+#include "db/obj/frVia.h"
 #include "dr/FlexDR.h"
+#include "frBaseTypes.h"
+#include "frDesign.h"
+#include "odb/geom.h"
 
-using namespace std;
-using namespace fr;
+namespace drt {
 
-void FlexDRWorker::endGetModNets(set<frNet*, frBlockObjectComp>& modNets)
+void FlexDRWorker::endGetModNets(frOrderedIdSet<frNet*>& modNets)
 {
   for (auto& net : nets_) {
     if (net->isModified()) {
@@ -46,14 +37,28 @@ void FlexDRWorker::endGetModNets(set<frNet*, frBlockObjectComp>& modNets)
   }
 }
 
-void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
-                                         frPathSeg* pathSeg,
-                                         set<pair<Point, frLayerNum>>& boundPts)
+void FlexDRWorker::endRemoveNets_pathSeg(
+    frDesign* design,
+    frPathSeg* pathSeg,
+    std::set<std::pair<odb::Point, frLayerNum>>& boundPts)
 {
   auto [begin, end] = pathSeg->getPoints();
   auto routeBox = getRouteBox();
   auto net = pathSeg->getNet();
   auto regionQuery = design->getRegionQuery();
+  if (pathSeg->isApPathSeg()) {
+    if (getRouteBox().intersects(pathSeg->getApLoc())) {
+      if (save_updates_) {
+        drUpdate update(drUpdate::REMOVE_FROM_NET);
+        update.setNet(net);
+        update.setIndexInOwner(pathSeg->getIndexInOwner());
+        design_->addUpdate(update);
+      }
+      regionQuery->removeDRObj(pathSeg);
+      net->removeShape(pathSeg);
+    }
+    return;
+  }
   // vertical seg
   if (begin.x() == end.x()) {
     // if cross routeBBox
@@ -66,19 +71,16 @@ void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
     // -------------------
     if (isInitDR()
         && (begin.x() == routeBox.xMin() || begin.x() == routeBox.xMax())) {
-      if (begin.y() < routeBox.yMin() || end.y() > routeBox.yMax()
-          || pathSeg->getBeginStyle() != frcTruncateEndStyle
-          || pathSeg->getEndStyle() != frcTruncateEndStyle)
-        return;
+      return;
     }
     bool condition2 = (begin.y() <= routeBox.yMax());  // orthogonal to wire
     if (routeBox.xMin() <= begin.x() && begin.x() <= routeBox.xMax()
         && !(begin.y() > routeBox.yMax() || end.y() < routeBox.yMin())) {
       // bottom seg to ext
       if (begin.y() < routeBox.yMin()) {
-        auto uPathSeg = make_unique<frPathSeg>(*pathSeg);
+        auto uPathSeg = std::make_unique<frPathSeg>(*pathSeg);
         auto ps = uPathSeg.get();
-        Point boundPt(end.x(), min(end.y(), routeBox.yMin()));
+        odb::Point boundPt(end.x(), std::min(end.y(), routeBox.yMin()));
         uPathSeg->setPoints(begin, boundPt);
         // change boundary style to ext if orig pathSeg crosses boundary
         if (end.y() > routeBox.yMin()) {
@@ -92,7 +94,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
           update.setPathSeg(*ps);
           design_->addUpdate(update);
         }
-        unique_ptr<frShape> uShape(std::move(uPathSeg));
+        std::unique_ptr<frShape> uShape(std::move(uPathSeg));
         auto sptr = uShape.get();
         net->addShape(std::move(uShape));
         regionQuery->addDRObj(sptr);
@@ -101,14 +103,14 @@ void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
 
         // only insert true boundary point
         if (end.y() >= routeBox.yMin()) {
-          boundPts.insert(make_pair(boundPt, lNum));
+          boundPts.insert(std::make_pair(boundPt, lNum));
         }
       }
       // top seg to ext
       if (end.y() > routeBox.yMax()) {
-        auto uPathSeg = make_unique<frPathSeg>(*pathSeg);
+        auto uPathSeg = std::make_unique<frPathSeg>(*pathSeg);
         auto ps = uPathSeg.get();
-        Point boundPt(begin.x(), max(begin.y(), routeBox.yMax()));
+        odb::Point boundPt(begin.x(), std::max(begin.y(), routeBox.yMax()));
         uPathSeg->setPoints(boundPt, end);
         // change boundary style to ext if orig pathSeg crosses boundary
         if (begin.y() < routeBox.yMax()) {
@@ -123,7 +125,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
           update.setPathSeg(*ps);
           design_->addUpdate(update);
         }
-        unique_ptr<frShape> uShape(std::move(uPathSeg));
+        std::unique_ptr<frShape> uShape(std::move(uPathSeg));
         auto sptr = uShape.get();
         net->addShape(std::move(uShape));
         regionQuery->addDRObj(sptr);
@@ -132,7 +134,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
 
         // only insert true boundary piont
         if (condition2) {
-          boundPts.insert(make_pair(boundPt, lNum));
+          boundPts.insert(std::make_pair(boundPt, lNum));
         }
       }
       if (save_updates_) {
@@ -148,10 +150,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
   } else if (begin.y() == end.y()) {
     if (isInitDR()
         && (begin.y() == routeBox.yMin() || begin.y() == routeBox.yMax())) {
-      if (begin.x() < routeBox.xMin() || end.x() > routeBox.xMax()
-          || pathSeg->getBeginStyle() != frcTruncateEndStyle
-          || pathSeg->getEndStyle() != frcTruncateEndStyle)
-        return;
+      return;
     }
     // if cross routeBBox
     bool condition2 = /*isInitDR() ? (begin.x() < routeBox.xMax()):*/ (
@@ -160,9 +159,9 @@ void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
         && !(begin.x() > routeBox.xMax() || end.x() < routeBox.xMin())) {
       // left seg to ext
       if (begin.x() < routeBox.xMin()) {
-        auto uPathSeg = make_unique<frPathSeg>(*pathSeg);
+        auto uPathSeg = std::make_unique<frPathSeg>(*pathSeg);
         auto ps = uPathSeg.get();
-        Point boundPt(min(end.x(), routeBox.xMin()), end.y());
+        odb::Point boundPt(std::min(end.x(), routeBox.xMin()), end.y());
         uPathSeg->setPoints(begin, boundPt);
         // change boundary style to ext if orig pathSeg crosses boundary
         if (end.x() > routeBox.xMin()) {
@@ -176,7 +175,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
           update.setPathSeg(*ps);
           design_->addUpdate(update);
         }
-        unique_ptr<frShape> uShape(std::move(uPathSeg));
+        std::unique_ptr<frShape> uShape(std::move(uPathSeg));
         auto sptr = uShape.get();
         net->addShape(std::move(uShape));
         regionQuery->addDRObj(sptr);
@@ -185,14 +184,14 @@ void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
 
         // only insert true boundary point
         if (end.x() >= routeBox.xMin()) {
-          boundPts.insert(make_pair(boundPt, lNum));
+          boundPts.insert(std::make_pair(boundPt, lNum));
         }
       }
       // right seg to ext
       if (end.x() > routeBox.xMax()) {
-        auto uPathSeg = make_unique<frPathSeg>(*pathSeg);
+        auto uPathSeg = std::make_unique<frPathSeg>(*pathSeg);
         auto ps = uPathSeg.get();
-        Point boundPt(max(begin.x(), routeBox.xMax()), begin.y());
+        odb::Point boundPt(std::max(begin.x(), routeBox.xMax()), begin.y());
         uPathSeg->setPoints(boundPt, end);
         // change boundary style to ext if orig pathSeg crosses at boundary
         if (begin.x() < routeBox.xMax()) {
@@ -207,7 +206,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
           update.setPathSeg(*ps);
           design_->addUpdate(update);
         }
-        unique_ptr<frShape> uShape(std::move(uPathSeg));
+        std::unique_ptr<frShape> uShape(std::move(uPathSeg));
         auto sptr = uShape.get();
         net->addShape(std::move(uShape));
         regionQuery->addDRObj(sptr);
@@ -216,7 +215,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
 
         // only insert true boundary point
         if (condition2) {
-          boundPts.insert(make_pair(boundPt, lNum));
+          boundPts.insert(std::make_pair(boundPt, lNum));
         }
       }
       if (save_updates_) {
@@ -233,24 +232,15 @@ void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
 
 void FlexDRWorker::endRemoveNets_via(frDesign* design, frVia* via)
 {
-  auto gridBBox = getRouteBox();
-  auto regionQuery = design->getRegionQuery();
-  auto net = via->getNet();
-  Point viaPoint = via->getOrigin();
-  if (isInitDR()
-      && (viaPoint.x() == gridBBox.xMin() || viaPoint.x() == gridBBox.xMax()
-          || viaPoint.y() == gridBBox.yMin()
-          || viaPoint.y() == gridBBox.yMax())) {
-    return;
-  }
-  if (viaPoint.x() >= gridBBox.xMin() && viaPoint.y() >= gridBBox.yMin()
-      && viaPoint.x() <= gridBBox.xMax() && viaPoint.y() <= gridBBox.yMax()) {
+  if (isRouteVia(via)) {
+    auto net = via->getNet();
     if (save_updates_) {
       drUpdate update(drUpdate::REMOVE_FROM_NET);
       update.setNet(net);
       update.setIndexInOwner(via->getIndexInOwner());
       design_->addUpdate(update);
     }
+    auto regionQuery = design->getRegionQuery();
     regionQuery->removeDRObj(via);  // delete rq
     net->removeVia(via);
   }
@@ -258,23 +248,15 @@ void FlexDRWorker::endRemoveNets_via(frDesign* design, frVia* via)
 
 void FlexDRWorker::endRemoveNets_patchWire(frDesign* design, frPatchWire* pwire)
 {
-  auto gridBBox = getRouteBox();
-  auto regionQuery = design->getRegionQuery();
-  auto net = pwire->getNet();
-  Point origin = pwire->getOrigin();
-  if (isInitDR()
-      && (origin.x() == gridBBox.xMin() || origin.x() == gridBBox.xMax()
-          || origin.y() == gridBBox.yMin() || origin.y() == gridBBox.yMax())) {
-    return;
-  }
-  if (origin.x() >= gridBBox.xMin() && origin.y() >= gridBBox.yMin()
-      && origin.x() <= gridBBox.xMax() && origin.y() <= gridBBox.yMax()) {
+  if (isRoutePatchWire(pwire)) {
+    auto net = pwire->getNet();
     if (save_updates_) {
       drUpdate update(drUpdate::REMOVE_FROM_NET);
       update.setNet(net);
       update.setIndexInOwner(pwire->getIndexInOwner());
       design_->addUpdate(update);
     }
+    auto regionQuery = design->getRegionQuery();
     regionQuery->removeDRObj(pwire);  // delete rq
     net->removePatchWire(pwire);
   }
@@ -282,11 +264,12 @@ void FlexDRWorker::endRemoveNets_patchWire(frDesign* design, frPatchWire* pwire)
 
 void FlexDRWorker::endRemoveNets(
     frDesign* design,
-    set<frNet*, frBlockObjectComp>& modNets,
-    map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp>& boundPts)
+    frOrderedIdSet<frNet*>& modNets,
+    frOrderedIdMap<frNet*, std::set<std::pair<odb::Point, frLayerNum>>>&
+        boundPts)
 {
-  vector<frBlockObject*> result;
-  design->getRegionQuery()->queryDRObj(getRouteBox(), result);
+  std::vector<frBlockObject*> result;
+  design->getRegionQuery()->queryDRObj(getExtBox(), result);
   for (auto rptr : result) {
     if (rptr->typeId() == frcPathSeg) {
       auto cptr = static_cast<frPathSeg*>(rptr);
@@ -295,7 +278,7 @@ void FlexDRWorker::endRemoveNets(
           endRemoveNets_pathSeg(design, cptr, boundPts[cptr->getNet()]);
         }
       } else {
-        cout << "Error: endRemoveNet hasNet() empty" << endl;
+        std::cout << "Error: endRemoveNet hasNet() empty" << std::endl;
       }
     } else if (rptr->typeId() == frcVia) {
       auto cptr = static_cast<frVia*>(rptr);
@@ -304,7 +287,7 @@ void FlexDRWorker::endRemoveNets(
           endRemoveNets_via(design, cptr);
         }
       } else {
-        cout << "Error: endRemoveNet hasNet() empty" << endl;
+        std::cout << "Error: endRemoveNet hasNet() empty" << std::endl;
       }
     } else if (rptr->typeId() == frcPatchWire) {
       auto cptr = static_cast<frPatchWire*>(rptr);
@@ -313,10 +296,10 @@ void FlexDRWorker::endRemoveNets(
           endRemoveNets_patchWire(design, cptr);
         }
       } else {
-        cout << "Error: endRemoveNet hasNet() empty" << endl;
+        std::cout << "Error: endRemoveNet hasNet() empty" << std::endl;
       }
     } else {
-      cout << "Error: endRemoveNets unsupported type" << endl;
+      std::cout << "Error: endRemoveNets unsupported type" << std::endl;
     }
   }
 }
@@ -324,7 +307,7 @@ void FlexDRWorker::endRemoveNets(
 void FlexDRWorker::endAddNets_pathSeg(frDesign* design, drPathSeg* pathSeg)
 {
   auto net = pathSeg->getNet()->getFrNet();
-  unique_ptr<frShape> uShape = make_unique<frPathSeg>(*pathSeg);
+  std::unique_ptr<frShape> uShape = std::make_unique<frPathSeg>(*pathSeg);
   auto rptr = uShape.get();
   net->addShape(std::move(uShape));
   design->getRegionQuery()->addDRObj(rptr);
@@ -339,7 +322,7 @@ void FlexDRWorker::endAddNets_pathSeg(frDesign* design, drPathSeg* pathSeg)
 void FlexDRWorker::endAddNets_via(frDesign* design, drVia* via)
 {
   auto net = via->getNet()->getFrNet();
-  unique_ptr<frVia> uVia = make_unique<frVia>(*via);
+  std::unique_ptr<frVia> uVia = std::make_unique<frVia>(*via);
   auto rptr = uVia.get();
   net->addVia(std::move(uVia));
   design->getRegionQuery()->addDRObj(rptr);
@@ -354,7 +337,7 @@ void FlexDRWorker::endAddNets_via(frDesign* design, drVia* via)
 void FlexDRWorker::endAddNets_patchWire(frDesign* design, drPatchWire* pwire)
 {
   auto net = pwire->getNet()->getFrNet();
-  unique_ptr<frShape> uShape = make_unique<frPatchWire>(*pwire);
+  std::unique_ptr<frShape> uShape = std::make_unique<frPatchWire>(*pwire);
   auto rptr = uShape.get();
   net->addPatchWire(std::move(uShape));
   design->getRegionQuery()->addDRObj(rptr);
@@ -366,21 +349,22 @@ void FlexDRWorker::endAddNets_patchWire(frDesign* design, drPatchWire* pwire)
   }
 }
 
-void FlexDRWorker::endAddNets_merge(frDesign* design,
-                                    frNet* net,
-                                    set<pair<Point, frLayerNum>>& boundPts)
+void FlexDRWorker::endAddNets_merge(
+    frDesign* design,
+    frNet* net,
+    std::set<std::pair<odb::Point, frLayerNum>>& boundPts)
 {
   frRegionQuery::Objects<frBlockObject> result;
-  vector<frBlockObject*> drObjs;
-  vector<frPathSeg*> horzPathSegs;
-  vector<frPathSeg*> vertPathSegs;
+  std::vector<frBlockObject*> drObjs;
+  std::vector<frPathSeg*> horzPathSegs;
+  std::vector<frPathSeg*> vertPathSegs;
   bool hasPatchMetal = false;
   auto regionQuery = design->getRegionQuery();
   for (auto& [pt, lNum] : boundPts) {
     hasPatchMetal = false;
     bool skip = false;
     result.clear();
-    regionQuery->query(Rect(pt, pt), lNum, result);
+    regionQuery->query(odb::Rect(pt, pt), lNum, result);
     for (auto& [bx, obj] : result) {
       auto type = obj->typeId();
       if (type == frcInstTerm) {
@@ -410,7 +394,7 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
     drObjs.clear();
     horzPathSegs.clear();
     vertPathSegs.clear();
-    regionQuery->queryDRObj(Rect(pt, pt), lNum, drObjs);
+    regionQuery->queryDRObj(odb::Rect(pt, pt), lNum, drObjs);
     for (auto& obj : drObjs) {
       if (obj->typeId() == frcPathSeg) {
         auto ps = static_cast<frPathSeg*>(obj);
@@ -432,7 +416,7 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
         if (!(pwire->getNet() == net)) {
           continue;
         }
-        Point bp = pwire->getOrigin();
+        odb::Point bp = pwire->getOrigin();
         if (bp == pt) {
           hasPatchMetal = true;
           break;
@@ -442,12 +426,13 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
     // merge horz pathseg
     if ((int) horzPathSegs.size() == 2 && vertPathSegs.empty() && !hasPatchMetal
         && horzPathSegs[0]->isTapered() == horzPathSegs[1]->isTapered()) {
-      unique_ptr<frShape> uShape = make_unique<frPathSeg>(*horzPathSegs[0]);
+      std::unique_ptr<frShape> uShape
+          = std::make_unique<frPathSeg>(*horzPathSegs[0]);
       auto rptr = static_cast<frPathSeg*>(uShape.get());
       auto [bp1, ep1] = horzPathSegs[0]->getPoints();
       auto [bp2, ep2] = horzPathSegs[1]->getPoints();
-      Point bp(min(bp1.x(), bp2.x()), bp1.y());
-      Point ep(max(ep1.x(), ep2.x()), ep1.y());
+      odb::Point bp(std::min(bp1.x(), bp2.x()), bp1.y());
+      odb::Point ep(std::max(ep1.x(), ep2.x()), ep1.y());
       rptr->setPoints(bp, ep);
 
       frSegStyle style = horzPathSegs[0]->getStyle();
@@ -483,12 +468,13 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
     }
     if ((int) vertPathSegs.size() == 2 && horzPathSegs.empty() && !hasPatchMetal
         && vertPathSegs[0]->isTapered() == vertPathSegs[1]->isTapered()) {
-      unique_ptr<frShape> uShape = make_unique<frPathSeg>(*vertPathSegs[0]);
+      std::unique_ptr<frShape> uShape
+          = std::make_unique<frPathSeg>(*vertPathSegs[0]);
       auto rptr = static_cast<frPathSeg*>(uShape.get());
       auto [bp1, ep1] = vertPathSegs[0]->getPoints();
       auto [bp2, ep2] = vertPathSegs[1]->getPoints();
-      Point bp(bp1.x(), min(bp1.y(), bp2.y()));
-      Point ep(ep1.x(), max(ep1.y(), ep2.y()));
+      odb::Point bp(bp1.x(), std::min(bp1.y(), bp2.y()));
+      odb::Point ep(ep1.x(), std::max(ep1.y(), ep2.y()));
       rptr->setPoints(bp, ep);
 
       frSegStyle style = vertPathSegs[0]->getStyle();
@@ -525,9 +511,89 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
   }
 }
 
+bool FlexDRWorker::endAddNets_updateExtFigs_pathSeg(drNet* net,
+                                                    const Point3D& update_pt,
+                                                    frPathSeg* path_seg)
+{
+  frNet* fr_net = net->getFrNet();
+  if (path_seg->getNet() != fr_net) {
+    return false;
+  }
+  const auto [bp, ep] = path_seg->getPoints();
+  if (bp != update_pt && ep != update_pt) {
+    return false;
+  }
+  // remove from rq before updating bbox
+  getDesign()->getRegionQuery()->removeDRObj(path_seg);
+  if (save_updates_) {
+    drUpdate update(
+        drUpdate::REMOVE_FROM_RQ, fr_net, path_seg->getIndexInOwner());
+    getDesign()->addUpdate(update);
+  }
+  // update path_seg style
+  frSegStyle updated_style;
+  net->getExtFigUpdate(update_pt, updated_style);
+  path_seg->setStyle(updated_style);
+  // add to rq after updating bbox
+  getDesign()->getRegionQuery()->addDRObj(path_seg);
+  if (save_updates_) {
+    drUpdate update(
+        drUpdate::UPDATE_SHAPE, fr_net, path_seg->getIndexInOwner());
+    // UPDATE_SHAPE with pathSeg adds to rq
+    update.setPathSeg(*path_seg);
+    getDesign()->addUpdate(update);
+  }
+  return true;
+}
+
+bool FlexDRWorker::endAddNets_updateExtFigs_via(drNet* net,
+                                                const Point3D& update_pt,
+                                                frVia* via)
+{
+  frNet* fr_net = net->getFrNet();
+  if (via->getNet() != fr_net || via->getOrigin() != update_pt) {
+    return false;
+  }
+  // update via connections
+  bool is_bottom_connected, is_top_connected;
+  net->getExtFigUpdate(update_pt, is_bottom_connected, is_top_connected);
+  via->setBottomConnected(is_bottom_connected);
+  via->setTopConnected(is_top_connected);
+  if (save_updates_) {
+    drUpdate update(drUpdate::UPDATE_SHAPE, fr_net, via->getIndexInOwner());
+    update.setVia(*via);
+    getDesign()->addUpdate(update);
+  }
+  return true;
+}
+
+void FlexDRWorker::endAddNets_updateExtFigs(drNet* net)
+{
+  const std::vector<Point3D> locs = net->getExtFigsUpdatesLocs();
+  auto region_query = design_->getRegionQuery();
+  for (const auto& pt : locs) {
+    frRegionQuery::Objects<frBlockObject> result;
+    region_query->queryDRObj({pt, pt}, pt.z(), result);
+    const bool is_via = net->isExtFigUpdateVia(pt);
+    for (const auto& [_, obj] : result) {
+      if (is_via && obj->typeId() == frcVia) {
+        auto via = static_cast<frVia*>(obj);
+        if (endAddNets_updateExtFigs_via(net, pt, via)) {
+          break;
+        }
+      } else if (!is_via && obj->typeId() == frcPathSeg) {
+        auto path_seg = static_cast<frPathSeg*>(obj);
+        if (endAddNets_updateExtFigs_pathSeg(net, pt, path_seg)) {
+          break;
+        }
+      }
+    }
+  }
+}
 void FlexDRWorker::endAddNets(
     frDesign* design,
-    map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp>& boundPts)
+    frOrderedIdMap<frNet*, std::set<std::pair<odb::Point, frLayerNum>>>&
+        boundPts)
 {
   for (auto& net : nets_) {
     if (!net->isModified()) {
@@ -542,8 +608,11 @@ void FlexDRWorker::endAddNets(
       } else if (connFig->typeId() == drcPatchWire) {
         endAddNets_patchWire(design, static_cast<drPatchWire*>(connFig.get()));
       } else {
-        cout << "Error: endAddNets unsupported type" << endl;
+        std::cout << "Error: endAddNets unsupported type" << std::endl;
       }
+    }
+    if (net->hasExtFigUpdates()) {
+      endAddNets_updateExtFigs(net.get());
     }
   }
   for (auto& [net, bPts] : boundPts) {
@@ -555,7 +624,7 @@ void FlexDRWorker::endRemoveMarkers(frDesign* design)
 {
   auto regionQuery = design->getRegionQuery();
   auto topBlock = design->getTopBlock();
-  vector<frMarker*> result;
+  std::vector<frMarker*> result;
   regionQuery->queryMarker(getDrcBox(), result);
   for (auto mptr : result) {
     if (save_updates_) {
@@ -575,7 +644,7 @@ void FlexDRWorker::endAddMarkers(frDesign* design)
   // for (auto &m: getMarkers()) {
   for (auto& m : getBestMarkers()) {
     if (getDrcBox().intersects(m.getBBox())) {
-      auto uptr = make_unique<frMarker>(m);
+      auto uptr = std::make_unique<frMarker>(m);
       auto ptr = uptr.get();
       regionQuery->addMarker(ptr);
       topBlock->addMarker(std::move(uptr));
@@ -603,7 +672,7 @@ void FlexDRWorker::cleanup()
   markers_.clear();
   markers_.shrink_to_fit();
   rq_.cleanup();
-  specialAccessAPs.clear();
+  specialAccessAPs_.clear();
 }
 
 bool FlexDRWorker::end(frDesign* design)
@@ -616,25 +685,30 @@ bool FlexDRWorker::end(frDesign* design)
   if (getDRIter() && getInitNumMarkers() == 0 && !needRecheck_) {
     return false;
     // do not write back if current clip is worse than input
-  } else if (getRipupMode() == 0 && getBestNumMarkers() > getInitNumMarkers()) {
+  }
+  if ((getRipupMode() == RipUpMode::DRC || getRipupMode() == RipUpMode::NEARDRC
+       || getRipupMode() == RipUpMode::VIASWAP)
+      && getBestNumMarkers() > getInitNumMarkers()) {
     // cout <<"skip clip with #init/final = " <<getInitNumMarkers() <<"/"
     // <<getNumMarkers() <<endl;
     return false;
-  } else if (getDRIter() && getRipupMode() == 1
-             && getBestNumMarkers() > 5 * getInitNumMarkers()) {
+  }
+  if (getDRIter() && getRipupMode() == RipUpMode::ALL
+      && getBestNumMarkers() > 5 * getInitNumMarkers()) {
     return false;
   }
-  save_updates_ = dist_on_ || debugSettings_->debugDumpDR;
-  set<frNet*, frBlockObjectComp> modNets;
+  save_updates_ = dist_on_;
+  frOrderedIdSet<frNet*> modNets;
   endGetModNets(modNets);
   // get lock
-  map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp> boundPts;
+  frOrderedIdMap<frNet*, std::set<std::pair<odb::Point, frLayerNum>>> boundPts;
   endRemoveNets(design, modNets, boundPts);
   endAddNets(design, boundPts);  // if two subnets have diff isModified()
                                  // status, then should always write back
   endRemoveMarkers(design);
   endAddMarkers(design);
-  return true;
   // release lock
   return true;
 }
+
+}  // namespace drt

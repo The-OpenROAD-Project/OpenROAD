@@ -1,50 +1,30 @@
-/////////////////////////////////////////////////////////////////////////////
-// Original authors: SangGi Do(sanggido@unist.ac.kr), Mingyu
-// Woo(mwoo@eng.ucsd.edu)
-//          (respective Ph.D. advisors: Seokhyeong Kang, Andrew B. Kahng)
-// Rewrite by James Cherry, Parallax Software, Inc.
-//
-// Copyright (c) 2019, The Regents of the University of California
-// Copyright (c) 2018, SangGi Do and Mingyu Woo
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include "dpl/Opendp.h"
 
+#include <algorithm>
 #include <cfloat>
 #include <cmath>
-#include <limits>
-#include <map>
+#include <cstdint>
+#include <iterator>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "Graphics.h"
+#include "PlacementDRC.h"
+#include "boost/geometry/geometry.hpp"
+#include "dpl/OptMirror.h"
+#include "graphics/DplObserver.h"
+#include "infrastructure/Coordinates.h"
+#include "infrastructure/Grid.h"
+#include "infrastructure/Objects.h"
+#include "infrastructure/Padding.h"
+#include "infrastructure/network.h"
+#include "odb/db.h"
+#include "odb/util.h"
+#include "util/journal.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -54,140 +34,76 @@ using std::string;
 
 using utl::DPL;
 
-using odb::dbBox;
-using odb::dbBPin;
-using odb::dbBTerm;
-using odb::dbITerm;
-using odb::dbMasterType;
-using odb::dbMPin;
-using odb::dbMTerm;
-using odb::dbNet;
-using odb::dbPlacementStatus;
+using odb::dbInst;
 using odb::Rect;
 
-Cell::Cell()
-    : db_inst_(nullptr),
-      x_(0),
-      y_(0),
-      width_(0),
-      height_(0),
-      is_placed_(false),
-      hold_(false),
-      group_(nullptr),
-      region_(nullptr)
-{
-}
+////////////////////////////////////////////////////////////////
 
-const char* Cell::name() const
+bool Opendp::isMultiRow(const Node* cell) const
 {
-  return db_inst_->getConstName();
-}
-
-int64_t Cell::area() const
-{
-  dbMaster* master = db_inst_->getMaster();
-  return int64_t(master->getWidth()) * master->getHeight();
+  return network_->getMaster(cell->getDbInst()->getMaster())->isMultiRow();
 }
 
 ////////////////////////////////////////////////////////////////
 
-bool Opendp::isFixed(const Cell* cell) const
+Opendp::Opendp(odb::dbDatabase* db, Logger* logger) : logger_(logger), db_(db)
 {
-  return cell == &dummy_cell_ || cell->db_inst_->isFixed();
+  dummy_cell_ = std::make_unique<Node>();
+  dummy_cell_->setPlaced(true);
+  padding_ = std::make_shared<Padding>();
+  grid_ = std::make_unique<Grid>();
+  grid_->init(logger);
+  network_ = std::make_unique<Network>();
+  arch_ = std::make_unique<Architecture>();
 }
 
-bool Opendp::isMultiRow(const Cell* cell) const
+Opendp::~Opendp() = default;
+
+void Opendp::setPaddingGlobal(const int left, const int right)
 {
-  auto iter = db_master_map_.find(cell->db_inst_->getMaster());
-  assert(iter != db_master_map_.end());
-  return iter->second.is_multi_row;
+  padding_->setPaddingGlobal(GridX{left}, GridX{right});
 }
 
-////////////////////////////////////////////////////////////////
-
-Group::Group() : util(0.0)
+void Opendp::setPadding(odb::dbInst* inst, const int left, const int right)
 {
+  padding_->setPadding(inst, GridX{left}, GridX{right});
 }
 
-Opendp::Opendp()
-    : logger_(nullptr),
-      db_(nullptr),
-      block_(nullptr),
-      pad_left_(0),
-      pad_right_(0),
-      row_height_(0),
-      site_width_(0),
-      row_count_(0),
-      row_site_count_(0),
-      have_multi_row_cells_(false),
-      max_displacement_x_(0),
-      max_displacement_y_(0),
-      grid_(nullptr),
-      filler_count_(0),
-      have_fillers_(false),
-      hpwl_before_(0),
-      displacement_avg_(0),
-      displacement_sum_(0),
-      displacement_max_(0)
+void Opendp::setPadding(odb::dbMaster* master, const int left, const int right)
 {
-  dummy_cell_.is_placed_ = true;
+  padding_->setPadding(master, GridX{left}, GridX{right});
 }
 
-Opendp::~Opendp()
+void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
 {
-  deleteGrid();
+  debug_observer_ = std::move(observer);
 }
 
-void Opendp::init(dbDatabase* db, Logger* logger)
+void Opendp::setJournal(Journal* journal)
 {
-  db_ = db;
-  logger_ = logger;
+  journal_ = journal;
 }
 
-void Opendp::initBlock()
+Journal* Opendp::getJournal() const
 {
-  block_ = db_->getChip()->getBlock();
-  core_ = block_->getCoreArea();
+  return journal_;
 }
 
-void Opendp::setPaddingGlobal(int left, int right)
-{
-  pad_left_ = left;
-  pad_right_ = right;
-}
-
-void Opendp::setPadding(dbInst* inst, int left, int right)
-{
-  inst_padding_map_[inst] = std::make_pair(left, right);
-}
-
-void Opendp::setPadding(dbMaster* master, int left, int right)
-{
-  master_padding_map_[master] = std::make_pair(left, right);
-}
-
-bool Opendp::havePadding() const
-{
-  return pad_left_ > 0 || pad_right_ > 0 || !master_padding_map_.empty()
-         || !inst_padding_map_.empty();
-}
-
-void Opendp::setDebug(bool displacement,
-                      float min_displacement,
-                      const dbInst* debug_instance)
-{
-  if (Graphics::guiActive()) {
-    graphics_
-        = std::make_unique<Graphics>(this, min_displacement, debug_instance);
-  }
-}
-
-void Opendp::detailedPlacement(int max_displacement_x, int max_displacement_y)
+void Opendp::detailedPlacement(const int max_displacement_x,
+                               const int max_displacement_y,
+                               const std::string& report_file_name)
 {
   importDb();
+  adjustNodesOrient();
+  for (const auto& node : network_->getNodes()) {
+    if (node->getType() == Node::CELL && !node->isFixed()) {
+      node->setPlaced(false);
+    }
+  }
 
-  if (have_fillers_)
+  if (have_fillers_) {
     logger_->warn(DPL, 37, "Use remove_fillers before detailed placement.");
+  }
 
   if (max_displacement_x == 0 || max_displacement_y == 0) {
     // defaults
@@ -198,7 +114,8 @@ void Opendp::detailedPlacement(int max_displacement_x, int max_displacement_y)
     max_displacement_y_ = max_displacement_y;
   }
 
-  hpwl_before_ = hpwl();
+  odb::WireLengthEvaluator eval(block_);
+  hpwl_before_ = eval.hpwl();
   detailedPlacement();
   // Save displacement stats before updating instance DB locations.
   findDisplacementStats();
@@ -208,26 +125,34 @@ void Opendp::detailedPlacement(int max_displacement_x, int max_displacement_y)
                   34,
                   "Detailed placement failed on the following {} instances:",
                   placement_failures_.size());
-    for (auto inst : placement_failures_)
-      logger_->info(DPL, 35, " {}", inst->getName());
+    for (auto cell : placement_failures_) {
+      logger_->info(DPL, 35, " {}", cell->name());
+    }
+
+    saveFailures({}, {}, {}, {}, {}, {}, {}, placement_failures_, {}, {});
+    if (!report_file_name.empty()) {
+      writeJsonReport(report_file_name);
+    }
     logger_->error(DPL, 36, "Detailed placement failed.");
   }
 }
 
 void Opendp::updateDbInstLocations()
 {
-  for (Cell& cell : cells_) {
-    if (!isFixed(&cell) && isStdCell(&cell)) {
-      dbInst* db_inst_ = cell.db_inst_;
+  for (auto& cell : network_->getNodes()) {
+    if (!cell->isFixed() && cell->isStdCell()) {
+      odb::dbInst* db_inst_ = cell->getDbInst();
       // Only move the instance if necessary to avoid triggering callbacks.
-      if (db_inst_->getOrient() != cell.orient_)
-        db_inst_->setOrient(cell.orient_);
-      int x = core_.xMin() + cell.x_;
-      int y = core_.yMin() + cell.y_;
+      if (db_inst_->getOrient() != cell->getOrient()) {
+        db_inst_->setOrient(cell->getOrient());
+      }
+      const DbuX x = core_.xMin() + cell->getLeft();
+      const DbuY y = core_.yMin() + cell->getBottom();
       int inst_x, inst_y;
       db_inst_->getLocation(inst_x, inst_y);
-      if (x != inst_x || y != inst_y)
-        db_inst_->setLocation(x, y);
+      if (x != inst_x || y != inst_y) {
+        db_inst_->setLocation(x.v, y.v);
+      }
     }
   }
 }
@@ -237,23 +162,26 @@ void Opendp::reportLegalizationStats() const
   logger_->report("Placement Analysis");
   logger_->report("---------------------------------");
   logger_->report("total displacement   {:10.1f} u",
-                  dbuToMicrons(displacement_sum_));
+                  block_->dbuToMicrons(displacement_sum_));
   logger_->metric("design__instance__displacement__total",
-                  dbuToMicrons(displacement_sum_));
+                  block_->dbuToMicrons(displacement_sum_));
   logger_->report("average displacement {:10.1f} u",
-                  dbuToMicrons(displacement_avg_));
+                  block_->dbuToMicrons(displacement_avg_));
   logger_->metric("design__instance__displacement__mean",
-                  dbuToMicrons(displacement_avg_));
+                  block_->dbuToMicrons(displacement_avg_));
   logger_->report("max displacement     {:10.1f} u",
-                  dbuToMicrons(displacement_max_));
+                  block_->dbuToMicrons(displacement_max_));
   logger_->metric("design__instance__displacement__max",
-                  dbuToMicrons(displacement_max_));
+                  block_->dbuToMicrons(displacement_max_));
   logger_->report("original HPWL        {:10.1f} u",
-                  dbuToMicrons(hpwl_before_));
-  double hpwl_legal = hpwl();
-  logger_->report("legalized HPWL       {:10.1f} u", dbuToMicrons(hpwl_legal));
-  logger_->metric("route__wirelength__estimated", dbuToMicrons(hpwl_legal));
-  int hpwl_delta
+                  block_->dbuToMicrons(hpwl_before_));
+  odb::WireLengthEvaluator eval(block_);
+  const double hpwl_legal = eval.hpwl();
+  logger_->report("legalized HPWL       {:10.1f} u",
+                  block_->dbuToMicrons(hpwl_legal));
+  logger_->metric("route__wirelength__estimated",
+                  block_->dbuToMicrons(hpwl_legal));
+  const int hpwl_delta
       = (hpwl_before_ == 0.0)
             ? 0.0
             : round((hpwl_legal - hpwl_before_) / hpwl_before_ * 100);
@@ -268,333 +196,306 @@ void Opendp::findDisplacementStats()
   displacement_avg_ = 0;
   displacement_sum_ = 0;
   displacement_max_ = 0;
-
-  for (const Cell& cell : cells_) {
-    int displacement = disp(&cell);
+  for (auto& cell : network_->getNodes()) {
+    if (cell->getType() != Node::CELL) {
+      continue;
+    }
+    const int displacement = disp(cell.get());
     displacement_sum_ += displacement;
     if (displacement > displacement_max_) {
       displacement_max_ = displacement;
     }
   }
-  if (cells_.size())
-    displacement_avg_ = displacement_sum_ / cells_.size();
-  else
+  if (network_->getNumCells() != 0) {
+    displacement_avg_ = displacement_sum_ / network_->getNumCells();
+  } else {
     displacement_avg_ = 0.0;
-}
-
-// Note that this does NOT use cell/core coordinates.
-int64_t Opendp::hpwl() const
-{
-  int64_t hpwl_sum = 0;
-  for (dbNet* net : block_->getNets())
-    hpwl_sum += hpwl(net);
-  return hpwl_sum;
-}
-
-int64_t Opendp::hpwl(dbNet* net) const
-{
-  if (net->getSigType().isSupply())
-    return 0;
-  else {
-    Rect bbox = net->getTermBBox();
-    return bbox.dx() + bbox.dy();
   }
 }
 
 ////////////////////////////////////////////////////////////////
 
-Point Opendp::initialLocation(const Cell* cell, bool padded) const
+void Opendp::optimizeMirroring()
 {
-  int loc_x, loc_y;
-  cell->db_inst_->getLocation(loc_x, loc_y);
-  loc_x -= core_.xMin();
-  if (padded)
-    loc_x -= padLeft(cell) * site_width_;
-  loc_y -= core_.yMin();
-  return Point(loc_x, loc_y);
+  OptimizeMirroring opt(logger_, db_);
+  opt.run();
 }
 
-int Opendp::disp(const Cell* cell) const
+int Opendp::disp(const Node* cell) const
 {
-  Point init = initialLocation(cell, false);
-  return abs(init.getX() - cell->x_) + abs(init.getY() - cell->y_);
+  const DbuPt init = initialLocation(cell, false);
+  return sumXY(abs(init.x - cell->getLeft()), abs(init.y - cell->getBottom()));
 }
 
-bool Opendp::isPaddedType(dbInst* inst) const
+int Opendp::padGlobalLeft() const
 {
-  dbMasterType type = inst->getMaster()->getType();
-  // Use switch so if new types are added we get a compiler warning.
-  switch (type) {
-    case dbMasterType::CORE:
-    case dbMasterType::CORE_ANTENNACELL:
-    case dbMasterType::CORE_FEEDTHRU:
-    case dbMasterType::CORE_TIEHIGH:
-    case dbMasterType::CORE_TIELOW:
-    case dbMasterType::CORE_WELLTAP:
-    case dbMasterType::ENDCAP:
-    case dbMasterType::ENDCAP_PRE:
-    case dbMasterType::ENDCAP_POST:
-    case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
-      return true;
-    case dbMasterType::CORE_SPACER:
-    case dbMasterType::BLOCK:
-    case dbMasterType::BLOCK_BLACKBOX:
-    case dbMasterType::BLOCK_SOFT:
-    case dbMasterType::ENDCAP_TOPLEFT:
-    case dbMasterType::ENDCAP_TOPRIGHT:
-    case dbMasterType::ENDCAP_BOTTOMLEFT:
-    case dbMasterType::ENDCAP_BOTTOMRIGHT:
-    case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_TOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
-      // These classes are completely ignored by the placer.
-    case dbMasterType::COVER:
-    case dbMasterType::COVER_BUMP:
-    case dbMasterType::RING:
-    case dbMasterType::PAD:
-    case dbMasterType::PAD_AREAIO:
-    case dbMasterType::PAD_INPUT:
-    case dbMasterType::PAD_OUTPUT:
-    case dbMasterType::PAD_INOUT:
-    case dbMasterType::PAD_POWER:
-    case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
-      return false;
+  return padding_->padGlobalLeft().v;
+}
+
+int Opendp::padGlobalRight() const
+{
+  return padding_->padGlobalRight().v;
+}
+
+int Opendp::padLeft(odb::dbInst* inst) const
+{
+  return padding_->padLeft(inst).v;
+}
+
+int Opendp::padRight(odb::dbInst* inst) const
+{
+  return padding_->padRight(inst).v;
+}
+
+void Opendp::initGrid()
+{
+  grid_->initGrid(
+      db_, block_, padding_, max_displacement_x_, max_displacement_y_);
+}
+
+void Opendp::deleteGrid()
+{
+  grid_->clear();
+}
+
+void Opendp::findOverlapInRtree(const bgBox& queryBox,
+                                std::vector<bgBox>& overlaps) const
+{
+  overlaps.clear();
+  regions_rtree_.query(boost::geometry::index::intersects(queryBox),
+                       std::back_inserter(overlaps));
+}
+
+void Opendp::setFixedGridCells()
+{
+  for (auto& cell : network_->getNodes()) {
+    if (cell->getType() == Node::CELL && cell->isFixed()) {
+      grid_->visitCellPixels(*cell, true, [&](Pixel* pixel, bool padded) {
+        if (padded) {
+          pixel->padding_reserved_by = cell.get();
+        } else {
+          setGridCell(*cell, pixel);
+        }
+      });
+    }
   }
-  // gcc warniing
-  return false;
 }
 
-bool Opendp::isStdCell(const Cell* cell) const
+void Opendp::setGridCell(Node& cell, Pixel* pixel)
 {
-  dbMasterType type = cell->db_inst_->getMaster()->getType();
-  // Use switch so if new types are added we get a compiler warning.
-  switch (type) {
-    case dbMasterType::CORE:
-    case dbMasterType::CORE_ANTENNACELL:
-    case dbMasterType::CORE_FEEDTHRU:
-    case dbMasterType::CORE_TIEHIGH:
-    case dbMasterType::CORE_TIELOW:
-    case dbMasterType::CORE_SPACER:
-    case dbMasterType::CORE_WELLTAP:
-      return true;
-    case dbMasterType::BLOCK:
-    case dbMasterType::BLOCK_BLACKBOX:
-    case dbMasterType::BLOCK_SOFT:
-    case dbMasterType::ENDCAP:
-    case dbMasterType::ENDCAP_PRE:
-    case dbMasterType::ENDCAP_POST:
-    case dbMasterType::ENDCAP_TOPLEFT:
-    case dbMasterType::ENDCAP_TOPRIGHT:
-    case dbMasterType::ENDCAP_BOTTOMLEFT:
-    case dbMasterType::ENDCAP_BOTTOMRIGHT:
-    case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_TOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
-      // These classes are completely ignored by the placer.
-    case dbMasterType::COVER:
-    case dbMasterType::COVER_BUMP:
-    case dbMasterType::RING:
-    case dbMasterType::PAD:
-    case dbMasterType::PAD_AREAIO:
-    case dbMasterType::PAD_INPUT:
-    case dbMasterType::PAD_OUTPUT:
-    case dbMasterType::PAD_INOUT:
-    case dbMasterType::PAD_POWER:
-    case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
-      return false;
+  pixel->cell = &cell;
+  pixel->util = 1.0;
+  if (cell.isBlock()) {
+    // Try the is_hopeless strategy to get off of a block
+    pixel->is_hopeless = true;
   }
-  // gcc warniing
-  return false;
+}
+
+void Opendp::groupAssignCellRegions()
+{
+  const int64_t site_width = grid_->getSiteWidth().v;
+  const GridX row_site_count = grid_->getRowSiteCount();
+  const GridY row_count = grid_->getRowCount();
+
+  for (auto& group : arch_->getRegions()) {
+    int64_t total_site_area = 0;
+    if (!group->getCells().empty()) {
+      for (GridX x{0}; x < row_site_count; x++) {
+        for (GridY y{0}; y < row_count; y++) {
+          const Pixel* pixel = grid_->gridPixel(x, y);
+          if (pixel->is_valid && pixel->group == group) {
+            total_site_area += grid_->rowHeight(y).v * site_width;
+          }
+        }
+      }
+    }
+
+    double cell_area = 0;
+    for (Node* cell : group->getCells()) {
+      cell_area += cell->area();
+
+      for (const auto& rect : group->getRects()) {
+        if (isInside(cell, rect)) {
+          cell->setRegion(&rect);
+        }
+      }
+      if (cell->getRegion() == nullptr) {
+        cell->setRegion(group->getRects().data());
+      }
+    }
+    group->setUtil(total_site_area ? cell_area / total_site_area : 0.0);
+  }
+}
+
+void Opendp::groupInitPixels2()
+{
+  for (GridX x{0}; x < grid_->getRowSiteCount(); x++) {
+    for (GridY y{0}; y < grid_->getRowCount(); y++) {
+      const Rect sub(x.v * grid_->getSiteWidth().v,
+                     grid_->gridYToDbu(y).v,
+                     (x + 1).v * grid_->getSiteWidth().v,
+                     grid_->gridYToDbu(y + 1).v);
+      Pixel* pixel = grid_->gridPixel(x, y);
+      for (auto& group : arch_->getRegions()) {
+        for (const Rect& rect : group->getRects()) {
+          if (!isInside(sub, rect) && checkOverlap(sub, rect)) {
+            pixel->util = 0.0;
+            pixel->cell = dummy_cell_.get();
+            pixel->is_valid = false;
+            debugPrint(logger_,
+                       DPL,
+                       "group",
+                       1,
+                       "Block pixel [({}, {}) on region boundary",
+                       x.v,
+                       y.v);
+          }
+        }
+      }
+    }
+  }
+}
+
+odb::dbInst* Opendp::getAdjacentInstance(odb::dbInst* inst, bool left) const
+{
+  const Rect inst_rect = inst->getBBox()->getBox();
+  DbuX x_dbu = left ? DbuX{inst_rect.xMin() - 1} : DbuX{inst_rect.xMax() + 1};
+  x_dbu -= core_.xMin();
+  GridX x = grid_->gridX(x_dbu);
+
+  GridY y = grid_->gridSnapDownY(DbuY{inst_rect.yMin() - core_.yMin()});
+
+  Pixel* pixel = grid_->gridPixel(x, y);
+
+  odb::dbInst* adjacent_inst = nullptr;
+
+  // do not return macros, endcaps and tapcells
+  if (pixel != nullptr && pixel->cell && pixel->cell->getDbInst()->isCore()) {
+    adjacent_inst = pixel->cell->getDbInst();
+  }
+
+  return adjacent_inst;
+}
+
+std::vector<dbInst*> Opendp::getAdjacentInstancesCluster(dbInst* inst) const
+{
+  const bool left = true;
+  const bool right = false;
+  std::vector<odb::dbInst*> adj_inst_cluster;
+
+  odb::dbInst* left_inst = getAdjacentInstance(inst, left);
+  while (left_inst != nullptr) {
+    adj_inst_cluster.push_back(left_inst);
+    // the right instance can be ignored, since it was added in the line above
+    left_inst = getAdjacentInstance(left_inst, left);
+  }
+
+  std::reverse(adj_inst_cluster.begin(), adj_inst_cluster.end());
+  adj_inst_cluster.push_back(inst);
+
+  odb::dbInst* right_inst = getAdjacentInstance(inst, right);
+  while (right_inst != nullptr) {
+    adj_inst_cluster.push_back(right_inst);
+    // the left instance can be ignored, since it was added in the line above
+    right_inst = getAdjacentInstance(right_inst, right);
+  }
+
+  return adj_inst_cluster;
 }
 
 /* static */
-bool Opendp::isBlock(const Cell* cell)
+bool Opendp::isInside(const Rect& cell, const Rect& box)
 {
-  dbMasterType type = cell->db_inst_->getMaster()->getType();
-  return type == dbMasterType::BLOCK;
+  return cell.xMin() >= box.xMin() && cell.xMax() <= box.xMax()
+         && cell.yMin() >= box.yMin() && cell.yMax() <= box.yMax();
 }
 
-int Opendp::gridEndX() const
+bool Opendp::checkOverlap(const Rect& cell, const Rect& box)
 {
-  return gridEndX(core_.dx());
+  return box.xMin() < cell.xMax() && box.xMax() > cell.xMin()
+         && box.yMin() < cell.yMax() && box.yMax() > cell.yMin();
 }
 
-int Opendp::gridEndY() const
+void Opendp::groupInitPixels()
 {
-  return gridEndY(core_.dy());
+  for (GridX x{0}; x < grid_->getRowSiteCount(); x++) {
+    for (GridY y{0}; y < grid_->getRowCount(); y++) {
+      Pixel* pixel = grid_->gridPixel(x, y);
+      pixel->util = 0.0;
+    }
+  }
+  for (auto& group : arch_->getRegions()) {
+    if (group->getCells().empty()) {
+      if (group->getId() != 0) {
+        logger_->warn(
+            DPL, 42, "No cells found in group {}. ", group->getName());
+      }
+      continue;
+    }
+    const DbuX site_width = grid_->getSiteWidth();
+    for (const DbuRect rect : group->getRects()) {
+      debugPrint(logger_,
+                 DPL,
+                 "detailed",
+                 1,
+                 "Group {} region [x{} y{}] [x{} y{}]",
+                 group->getName(),
+                 rect.xl.v,
+                 rect.yl.v,
+                 rect.xh.v,
+                 rect.yh.v);
+      const GridRect grid_rect{grid_->gridWithin(rect)};
+
+      for (GridY k{grid_rect.ylo}; k < grid_rect.yhi; k++) {
+        for (GridX l{grid_rect.xlo}; l < grid_rect.xhi; l++) {
+          Pixel* pixel = grid_->gridPixel(l, k);
+          pixel->util += 1.0;
+        }
+        if (rect.xl % site_width != 0) {
+          Pixel* pixel = grid_->gridPixel(grid_rect.xlo, k);
+          pixel->util
+              -= (rect.xl % site_width).v / static_cast<double>(site_width.v);
+        }
+        if (rect.xh % site_width != 0) {
+          Pixel* pixel = grid_->gridPixel(grid_rect.xhi - 1, k);
+          pixel->util -= ((site_width - rect.xh) % site_width).v
+                         / static_cast<double>(site_width.v);
+        }
+      }
+    }
+    for (const DbuRect rect : group->getRects()) {
+      const GridRect grid_rect{grid_->gridWithin(rect)};
+
+      for (GridY k{grid_rect.ylo}; k < grid_rect.yhi; k++) {
+        for (GridX l{grid_rect.xlo}; l < grid_rect.xhi; l++) {
+          // Assign group to each pixel.
+          Pixel* pixel = grid_->gridPixel(l, k);
+          if (pixel->util == 1.0) {
+            pixel->group = group;
+            pixel->is_valid = true;
+            pixel->util = 1.0;
+          } else if (pixel->util > 0.0 && pixel->util < 1.0) {
+            pixel->cell = dummy_cell_.get();
+            pixel->util = 0.0;
+            pixel->is_valid = false;
+          }
+        }
+      }
+    }
+  }
 }
 
-int Opendp::padLeft(const Cell* cell) const
-{
-  return padLeft(cell->db_inst_);
-}
-
-int Opendp::padLeft(dbInst* inst) const
-{
-  if (isPaddedType(inst)) {
-    auto itr1 = inst_padding_map_.find(inst);
-    if (itr1 != inst_padding_map_.end())
-      return itr1->second.first;
-    auto itr2 = master_padding_map_.find(inst->getMaster());
-    if (itr2 != master_padding_map_.end())
-      return itr2->second.first;
-    else
-      return pad_left_;
-  } else
-    return 0;
-}
-
-int Opendp::padRight(const Cell* cell) const
-{
-  return padRight(cell->db_inst_);
-}
-
-int Opendp::padRight(dbInst* inst) const
-{
-  if (isPaddedType(inst)) {
-    auto itr1 = inst_padding_map_.find(inst);
-    if (itr1 != inst_padding_map_.end())
-      return itr1->second.second;
-    auto itr2 = master_padding_map_.find(inst->getMaster());
-    if (itr2 != master_padding_map_.end())
-      return itr2->second.second;
-    else
-      return pad_right_;
-  } else
-    return 0;
-}
-
-int Opendp::paddedWidth(const Cell* cell) const
-{
-  return cell->width_ + (padLeft(cell) + padRight(cell)) * site_width_;
-}
-
-int Opendp::gridPaddedWidth(const Cell* cell) const
-{
-  return divCeil(paddedWidth(cell), site_width_);
-}
-
-int Opendp::gridHeight(const Cell* cell) const
-{
-  return divCeil(cell->height_, row_height_);
-}
-
-int64_t Opendp::paddedArea(const Cell* cell) const
-{
-  return int64_t(paddedWidth(cell)) * cell->height_;
-}
-
-// Callers should probably be using gridPaddedWidth.
-int Opendp::gridNearestWidth(const Cell* cell) const
-{
-  return divRound(paddedWidth(cell), site_width_);
-}
-
-// Callers should probably be using gridHeight.
-int Opendp::gridNearestHeight(const Cell* cell) const
-{
-  return divRound(cell->height_, row_height_);
-}
-
-int Opendp::gridX(int x) const
-{
-  return x / site_width_;
-}
-
-int Opendp::gridEndX(int x) const
-{
-  return divCeil(x, site_width_);
-}
-
-int Opendp::gridY(int y) const
-{
-  return y / row_height_;
-}
-
-int Opendp::gridEndY(int y) const
-{
-  return divCeil(y, row_height_);
-}
-
-int Opendp::gridX(const Cell* cell) const
-{
-  return gridX(cell->x_);
-}
-
-int Opendp::gridPaddedX(const Cell* cell) const
-{
-  return gridX(cell->x_ - padLeft(cell) * site_width_);
-}
-
-int Opendp::gridY(const Cell* cell) const
-{
-  return gridY(cell->y_);
-}
-
-void Opendp::setGridPaddedLoc(Cell* cell, int x, int y) const
-{
-  cell->x_ = (x + padLeft(cell)) * site_width_;
-  cell->y_ = y * row_height_;
-}
-
-int Opendp::gridPaddedEndX(const Cell* cell) const
-{
-  return divCeil(cell->x_ + cell->width_ + padRight(cell) * site_width_,
-                 site_width_);
-}
-
-int Opendp::gridEndX(const Cell* cell) const
-{
-  return divCeil(cell->x_ + cell->width_, site_width_);
-}
-
-int Opendp::gridEndY(const Cell* cell) const
-{
-  return divCeil(cell->y_ + cell->height_, row_height_);
-}
-
-double Opendp::dbuToMicrons(int64_t dbu) const
-{
-  double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
-  return dbu / dbu_micron;
-}
-
-double Opendp::dbuAreaToMicrons(int64_t dbu_area) const
-{
-  double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
-  return dbu_area / (dbu_micron * dbu_micron);
-}
-
-int divRound(int dividend, int divisor)
+int divRound(const int dividend, const int divisor)
 {
   return round(static_cast<double>(dividend) / divisor);
 }
 
-int divCeil(int dividend, int divisor)
+int divCeil(const int dividend, const int divisor)
 {
   return ceil(static_cast<double>(dividend) / divisor);
 }
 
-int divFloor(int dividend, int divisor)
+int divFloor(const int dividend, const int divisor)
 {
   return dividend / divisor;
 }

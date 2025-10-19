@@ -11,6 +11,6 @@ estimate_parasitics -placement
 
 set_routing_alpha 0
 
-report_check_types -max_slew -max_cap
+puts "Found [sta::max_slew_violation_count] slew violations"
 repair_design
-report_check_types -max_slew -max_cap
+puts "Found [sta::max_slew_violation_count] slew violations"

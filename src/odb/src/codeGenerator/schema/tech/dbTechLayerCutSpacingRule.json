@@ -1,0 +1,312 @@
+{
+  "name": "dbTechLayerCutSpacingRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "bit",
+      "name": "center_to_center_"
+    },
+    {
+      "type": "int",
+      "name": "cut_spacing_",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "same_net_"
+    },
+    {
+      "type": "bit",
+      "name": "same_metal_"
+    },
+    {
+      "type": "bit",
+      "name": "same_via_"
+    },
+    {
+      "type": "uint",
+      "name": "cut_spacing_type_",
+      "flags": [
+        "no-get",
+        "no-set"
+      ],
+      "bits": 3
+    },
+    {
+      "type": "dbId<_dbTechLayer>",
+      "name": "second_layer_",
+      "flags": [
+        "no-get"
+      ],
+      "parent": "dbTechLayer"
+    },
+    {
+      "type": "bit",
+      "name": "stack_"
+    },
+    {
+      "type": "bit",
+      "name": "orthogonal_spacing_valid_"
+    },
+    {
+      "type": "bit",
+      "name": "above_width_enclosure_valid_"
+    },
+    {
+      "type": "int",
+      "name": "orthogonal_spacing_",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "short_edge_only_"
+    },
+    {
+      "type": "bit",
+      "name": "concave_corner_width_"
+    },
+    {
+      "type": "bit",
+      "name": "concave_corner_parallel_"
+    },
+    {
+      "type": "bit",
+      "name": "concave_corner_edge_length_"
+    },
+    {
+      "type": "int",
+      "name": "width_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "enclosure_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "edge_length_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "par_within_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "par_enclosure_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "edge_enclosure_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "adj_enclosure_",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "concave_corner_"
+    },
+    {
+      "type": "bit",
+      "name": "extension_valid_"
+    },
+    {
+      "type": "bit",
+      "name": "non_eol_convex_corner_"
+    },
+    {
+      "type": "bit",
+      "name": "eol_width_valid_"
+    },
+    {
+      "type": "bit",
+      "name": "min_length_valid_"
+    },
+    {
+      "type": "bit",
+      "name": "above_width_valid_"
+    },
+    {
+      "type": "bit",
+      "name": "mask_overlap_"
+    },
+    {
+      "type": "bit",
+      "name": "wrong_direction_"
+    },
+    {
+      "type": "int",
+      "name": "above_enclosure_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "above_width_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "min_length_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "extension_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "eol_width_",
+      "default": 0
+    },
+    {
+      "type": "uint",
+      "name": "adjacent_cuts_",
+      "bits": 2
+    },
+    {
+      "type": "bit",
+      "name": "exact_aligned_"
+    },
+    {
+      "type": "uint",
+      "name": "num_cuts_",
+      "comment": "// EXACTALIGNED exactAlignedCut | EXCEPTSAMEVIA numCuts",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "within_",
+      "comment": "// WITHIN cutWithin | PARALLELWITHIN within | SAMEMETALSHAREDEDGE parwithin",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "second_within_",
+      "comment": "// WITHIN cutWithin cutWithin2",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "cut_class_to_all_"
+    },
+    {
+      "type": "bit",
+      "name": "no_prl_"
+    },
+    {
+      "type": "bit",
+      "name": "same_mask_"
+    },
+    {
+      "type": "bit",
+      "name": "except_same_pgnet_"
+    },
+    {
+      "type": "dbId<_dbTechLayerCutClassRule>",
+      "name": "cut_class_",
+      "flags": [
+        "no-get"
+      ],
+      "parent": "dbTechLayer"
+    },
+    {
+      "type": "bit",
+      "name": "side_parallel_overlap_"
+    },
+    {
+      "type": "bit",
+      "name": "except_same_net_"
+    },
+    {
+      "type": "bit",
+      "name": "except_same_metal_"
+    },
+    {
+      "type": "bit",
+      "name": "except_same_metal_overlap_"
+    },
+    {
+      "type": "bit",
+      "name": "except_same_via_"
+    },
+    {
+      "type": "bit",
+      "name": "above_"
+    },
+    {
+      "type": "bit",
+      "name": "except_two_edges_"
+    },
+    {
+      "type": "bit",
+      "name": "two_cuts_valid_"
+    },
+    {
+      "type": "bit",
+      "name": "same_cut_"
+    },
+    {
+      "type": "bit",
+      "name": "long_edge_only_"
+    },
+    {
+      "type": "bit",
+      "name": "prl_valid_"
+    },
+    {
+      "type": "bit",
+      "name": "below_"
+    },
+    {
+      "type": "bit",
+      "name": "par_within_enclosure_valid_"
+    },
+    {
+      "type": "uint",
+      "name": "two_cuts_",
+      "default": 0
+    },
+    {
+      "type": "uint",
+      "name": "prl_",
+      "default": 0
+    },
+    {
+      "type": "uint",
+      "name": "par_length_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "cut_area_",
+      "default": 0
+    }
+  ],
+  "enums": [
+    {
+      "name": "CutSpacingType",
+      "values": [
+        "NONE",
+        "MAXXY",
+        "SAMEMASK",
+        "LAYER",
+        "ADJACENTCUTS",
+        "PARALLELOVERLAP",
+        "PARALLELWITHIN",
+        "SAMEMETALSHAREDEDGE",
+        "AREA"
+      ],
+      "public": true
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
+}

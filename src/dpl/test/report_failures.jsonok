@@ -1,0 +1,94 @@
+{
+    "DPL": {
+        "description": "",
+        "source": "",
+        "max_markers": "10000",
+        "category": {
+            "Placement_failures": {
+                "description": "Cells that DPL failed to place.",
+                "source": "",
+                "max_markers": "10000",
+                "violations": [
+                    {
+                        "visited": "false",
+                        "visible": "true",
+                        "waived": "false",
+                        "shape": [
+                            {
+                                "type": "box",
+                                "points": [
+                                    {
+                                        "x": "14.0000",
+                                        "y": "14.0000"
+                                    },
+                                    {
+                                        "x": "14.5700",
+                                        "y": "15.4000"
+                                    }
+                                ]
+                            }
+                        ],
+                        "sources": [
+                            {
+                                "type": "inst",
+                                "name": "f2\/_285_"
+                            }
+                        ]
+                    },
+                    {
+                        "visited": "false",
+                        "visible": "true",
+                        "waived": "false",
+                        "shape": [
+                            {
+                                "type": "box",
+                                "points": [
+                                    {
+                                        "x": "14.0000",
+                                        "y": "14.0000"
+                                    },
+                                    {
+                                        "x": "14.5700",
+                                        "y": "15.4000"
+                                    }
+                                ]
+                            }
+                        ],
+                        "sources": [
+                            {
+                                "type": "inst",
+                                "name": "f2\/_289_"
+                            }
+                        ]
+                    },
+                    {
+                        "visited": "false",
+                        "visible": "true",
+                        "waived": "false",
+                        "shape": [
+                            {
+                                "type": "box",
+                                "points": [
+                                    {
+                                        "x": "14.0000",
+                                        "y": "14.0000"
+                                    },
+                                    {
+                                        "x": "14.3800",
+                                        "y": "15.4000"
+                                    }
+                                ]
+                            }
+                        ],
+                        "sources": [
+                            {
+                                "type": "inst",
+                                "name": "f2\/_293_"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

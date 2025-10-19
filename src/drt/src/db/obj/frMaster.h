@@ -1,41 +1,23 @@
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#ifndef _FR_MASTER_H_
-#define _FR_MASTER_H_
+#pragma once
 
 #include <algorithm>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frBlockage.h"
 #include "db/obj/frBoundary.h"
 #include "db/obj/frMTerm.h"
 #include "frBaseTypes.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
-namespace fr {
+namespace drt {
 namespace io {
 class Parser;
 }
@@ -43,13 +25,12 @@ class frMaster : public frBlockObject
 {
  public:
   // constructors
-  frMaster(const frString& name)
-      : frBlockObject(), name_(name), masterType_(dbMasterType::NONE){};
+  frMaster(const frString& name) : name_(name) {}
   // getters
-  Rect getBBox() const
+  odb::Rect getBBox() const
   {
-    Rect box;
-    if (boundaries_.size()) {
+    odb::Rect box;
+    if (!boundaries_.empty()) {
       box = boundaries_.begin()->getBBox();
     }
     frCoord llx = box.xMin();
@@ -57,7 +38,7 @@ class frMaster : public frBlockObject
     frCoord urx = box.xMax();
     frCoord ury = box.yMax();
     for (auto& boundary : boundaries_) {
-      Rect tmpBox = boundary.getBBox();
+      odb::Rect tmpBox = boundary.getBBox();
       llx = llx < tmpBox.xMin() ? llx : tmpBox.xMin();
       lly = lly < tmpBox.yMin() ? lly : tmpBox.yMin();
       urx = urx > tmpBox.xMax() ? urx : tmpBox.xMax();
@@ -66,7 +47,7 @@ class frMaster : public frBlockObject
     for (auto& term : getTerms()) {
       for (auto& pin : term->getPins()) {
         for (auto& fig : pin->getFigs()) {
-          Rect tmpBox = fig->getBBox();
+          odb::Rect tmpBox = fig->getBBox();
           llx = llx < tmpBox.xMin() ? llx : tmpBox.xMin();
           lly = lly < tmpBox.yMin() ? lly : tmpBox.yMin();
           urx = urx > tmpBox.xMax() ? urx : tmpBox.xMax();
@@ -74,9 +55,9 @@ class frMaster : public frBlockObject
         }
       }
     }
-    return Rect(llx, lly, urx, ury);
+    return odb::Rect(llx, lly, urx, ury);
   }
-  Rect getDieBox() const { return dieBox_; }
+  odb::Rect getDieBox() const { return dieBox_; }
   const std::vector<frBoundary>& getBoundaries() const { return boundaries_; }
   const std::vector<std::unique_ptr<frBlockage>>& getBlockages() const
   {
@@ -96,7 +77,7 @@ class frMaster : public frBlockObject
     }
     return nullptr;
   }
-  dbMasterType getMasterType() { return masterType_; }
+  odb::dbMasterType getMasterType() { return masterType_; }
 
   // setters
   void addTerm(std::unique_ptr<frMTerm> in)
@@ -105,7 +86,7 @@ class frMaster : public frBlockObject
     in->setMaster(this);
     terms_.push_back(std::move(in));
   }
-  void setBoundaries(const std::vector<frBoundary> in)
+  void setBoundaries(const std::vector<frBoundary>& in)
   {
     boundaries_ = in;
     if (!boundaries_.empty()) {
@@ -116,7 +97,7 @@ class frMaster : public frBlockObject
     frCoord urx = dieBox_.xMax();
     frCoord ury = dieBox_.yMax();
     for (auto& boundary : boundaries_) {
-      Rect tmpBox = boundary.getBBox();
+      odb::Rect tmpBox = boundary.getBBox();
       llx = std::min(llx, tmpBox.xMin());
       lly = std::min(lly, tmpBox.yMin());
       urx = std::max(urx, tmpBox.xMax());
@@ -134,7 +115,7 @@ class frMaster : public frBlockObject
   {
     blockages_.push_back(std::move(in));
   }
-  void setMasterType(const dbMasterType& in) { masterType_ = in; }
+  void setMasterType(const odb::dbMasterType& in) { masterType_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return frcMaster; }
 
@@ -142,12 +123,10 @@ class frMaster : public frBlockObject
   std::vector<std::unique_ptr<frMTerm>> terms_;
   std::vector<std::unique_ptr<frBlockage>> blockages_;
   std::vector<frBoundary> boundaries_;
-  Rect dieBox_;
+  odb::Rect dieBox_;
   frString name_;
-  dbMasterType masterType_;
+  odb::dbMasterType masterType_{odb::dbMasterType::CORE};
 
   friend class io::Parser;
 };
-}  // namespace fr
-
-#endif
+}  // namespace drt

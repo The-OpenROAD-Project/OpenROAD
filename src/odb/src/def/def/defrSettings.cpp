@@ -1,6 +1,6 @@
 // *****************************************************************************
 // *****************************************************************************
-// Copyright 2013 - 2014, Cadence Design Systems
+// Copyright 2013 - 2019, Cadence Design Systems
 //
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
 // Distribution,  Product Version 5.8.
@@ -28,60 +28,23 @@
 // *****************************************************************************
 #include "defrSettings.hpp"
 
+#include <cstring>
+
 #include "def_parser.hpp"
+#include "defiKRDefs.hpp"
 
-using namespace std;
+BEGIN_DEF_PARSER_NAMESPACE
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+defrSettings* defSettings = nullptr;
 
-defrSettings* defSettings = NULL;
+const char* defrSettings::defOxides[] = {
+    "OXIDE1",  "OXIDE2",  "OXIDE3",  "OXIDE4",  "OXIDE5",  "OXIDE6",  "OXIDE7",
+    "OXIDE8",  "OXIDE9",  "OXIDE10", "OXIDE11", "OXIDE12", "OXIDE13", "OXIDE14",
+    "OXIDE15", "OXIDE16", "OXIDE17", "OXIDE18", "OXIDE19", "OXIDE20", "OXIDE21",
+    "OXIDE22", "OXIDE23", "OXIDE24", "OXIDE25", "OXIDE26", "OXIDE27", "OXIDE28",
+    "OXIDE29", "OXIDE30", "OXIDE31", "OXIDE32"};
 
 defrSettings::defrSettings()
-    : defiDeltaNumberLines(10000),
-      AssertionWarnings(999),
-      BlockageWarnings(999),
-      CaseSensitiveWarnings(999),
-      ComponentWarnings(999),
-      ConstraintWarnings(999),
-      DefaultCapWarnings(999),
-      FillWarnings(999),
-      GcellGridWarnings(999),
-      IOTimingWarnings(999),
-      LogFileAppend(0),
-      NetWarnings(999),
-      NonDefaultWarnings(999),
-      PinExtWarnings(999),
-      PinWarnings(999),
-      RegionWarnings(999),
-      RowWarnings(999),
-      TrackWarnings(999),
-      ScanchainWarnings(999),
-      SNetWarnings(999),
-      StylesWarnings(999),
-      UnitsWarnings(999),
-      VersionWarnings(999),
-      ViaWarnings(999),
-      nDDMsgs(0),
-      disableDMsgs(NULL),
-      totalDefMsgLimit(0),
-      AddPathToNet(0),
-      AllowComponentNets(0),
-      CommentChar('#'),
-      DisPropStrProcess(0),
-      reader_case_sensitive_set(0),
-      ReadFunction(NULL),
-      ErrorLogFunction(NULL),
-      WarningLogFunction(NULL),
-      ContextErrorLogFunction(NULL),
-      ContextWarningLogFunction(NULL),
-      MagicCommentFoundFunction(NULL),
-      MallocFunction(NULL),
-      ReallocFunction(NULL),
-      FreeFunction(NULL),
-      LineNumberFunction(NULL),
-      LongLineNumberFunction(NULL),
-      ContextLineNumberFunction(NULL),
-      ContextLongLineNumberFunction(NULL)
 {
   memset(MsgLimit, 0, DEF_MSGS * sizeof(int));
   memset(UnusedCallbacks, 0, CBMAX * sizeof(int));
@@ -227,6 +190,34 @@ void defrSettings::init_symbol_table()
   Keyword_set["OXIDE2"] = K_OXIDE2;
   Keyword_set["OXIDE3"] = K_OXIDE3;
   Keyword_set["OXIDE4"] = K_OXIDE4;
+  Keyword_set["OXIDE5"] = K_OXIDE5;
+  Keyword_set["OXIDE6"] = K_OXIDE6;
+  Keyword_set["OXIDE7"] = K_OXIDE7;
+  Keyword_set["OXIDE8"] = K_OXIDE8;
+  Keyword_set["OXIDE9"] = K_OXIDE9;
+  Keyword_set["OXIDE10"] = K_OXIDE10;
+  Keyword_set["OXIDE11"] = K_OXIDE11;
+  Keyword_set["OXIDE12"] = K_OXIDE12;
+  Keyword_set["OXIDE13"] = K_OXIDE13;
+  Keyword_set["OXIDE14"] = K_OXIDE14;
+  Keyword_set["OXIDE15"] = K_OXIDE15;
+  Keyword_set["OXIDE16"] = K_OXIDE16;
+  Keyword_set["OXIDE17"] = K_OXIDE17;
+  Keyword_set["OXIDE18"] = K_OXIDE18;
+  Keyword_set["OXIDE19"] = K_OXIDE19;
+  Keyword_set["OXIDE20"] = K_OXIDE20;
+  Keyword_set["OXIDE21"] = K_OXIDE21;
+  Keyword_set["OXIDE22"] = K_OXIDE22;
+  Keyword_set["OXIDE23"] = K_OXIDE23;
+  Keyword_set["OXIDE24"] = K_OXIDE24;
+  Keyword_set["OXIDE25"] = K_OXIDE25;
+  Keyword_set["OXIDE26"] = K_OXIDE26;
+  Keyword_set["OXIDE27"] = K_OXIDE27;
+  Keyword_set["OXIDE28"] = K_OXIDE28;
+  Keyword_set["OXIDE29"] = K_OXIDE29;
+  Keyword_set["OXIDE30"] = K_OXIDE30;
+  Keyword_set["OXIDE31"] = K_OXIDE31;
+  Keyword_set["OXIDE32"] = K_OXIDE32;
   Keyword_set["PADRING"] = K_PADRING;
   Keyword_set["PARTIAL"] = K_PARTIAL;
   Keyword_set["PARTITION"] = K_PARTITION;
@@ -333,9 +324,4 @@ void defrSettings::init_symbol_table()
   Keyword_set["Y"] = K_Y;
 }
 
-defrSession::defrSession()
-    : FileName(0), reader_case_sensitive(0), UserData(NULL)
-{
-}
-
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

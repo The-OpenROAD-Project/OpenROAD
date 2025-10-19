@@ -24,5 +24,5 @@ report_worst_slack -max
 
 # Verilog "ports" are based on net names so make sure port nets
 # are preserved on inputs and outputs.
-report_net -connections -verbose in2
-report_net -connections -verbose out
+report_net in2
+report_net out

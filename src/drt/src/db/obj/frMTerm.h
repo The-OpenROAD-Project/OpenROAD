@@ -1,63 +1,27 @@
-/*
- * Copyright (c) 2021, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
-#ifndef _FR_MTERM_H_
-#define _FR_MTERM_H_
+#pragma once
 
 #include <memory>
+#include <utility>
+#include <vector>
 
+#include "db/obj/frAccess.h"
 #include "db/obj/frMPin.h"
 #include "db/obj/frTerm.h"
+#include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frMaster;
 
 class frMTerm : public frTerm
 {
  public:
   // constructors
-  frMTerm(const frString& name) : frTerm(name), master_(nullptr), pins_() {}
-  frMTerm(const frMTerm& in) : frTerm(in), master_(in.master_)
-  {
-    for (auto& uPin : in.getPins()) {
-      auto pin = uPin.get();
-      auto tmp = std::make_unique<frMPin>(*pin);
-      addPin(std::move(tmp));
-    }
-  }
-  frMTerm(const frMTerm& in, const dbTransform& xform)
-      : frTerm(in), master_(in.master_)
-  {
-    for (auto& uPin : in.getPins()) {
-      auto pin = uPin.get();
-      auto tmp = std::make_unique<frMPin>(*pin, xform);
-      addPin(std::move(tmp));
-    }
-  }
+  frMTerm(const frString& name) : frTerm(name) {}
+  frMTerm(const frMTerm& in) = delete;
+  frMTerm& operator=(const frMTerm&) = delete;
   // getters
   bool hasNet() const override { return false; }
   frNet* getNet() const override { return nullptr; }
@@ -71,12 +35,14 @@ class frMTerm : public frTerm
     for (auto& uFig : in->getFigs()) {
       auto pinFig = uFig.get();
       if (pinFig->typeId() == frcRect) {
-        if (bbox_.dx() == 0 && bbox_.dy() == 0)
+        if (bbox_.dx() == 0 && bbox_.dy() == 0) {
           bbox_ = static_cast<frRect*>(pinFig)->getBBox();
-        else
+        } else {
           bbox_.merge(static_cast<frRect*>(pinFig)->getBBox());
+        }
       }
     }
+    in->setId(pins_.size());
     pins_.push_back(std::move(in));
   }
   // others
@@ -103,22 +69,20 @@ class frMTerm : public frTerm
     return nullptr;
   }
   // fills outShapes with copies of the pinFigs
-  void getShapes(std::vector<frRect>& outShapes) override
+  void getShapes(std::vector<frRect>& outShapes) const override
   {
-    for (auto& pin : pins_) {
-      for (auto& pinShape : pin->getFigs()) {
+    for (const auto& pin : pins_) {
+      for (const auto& pinShape : pin->getFigs()) {
         if (pinShape->typeId() == frcRect) {
-          outShapes.push_back(*static_cast<frRect*>(pinShape.get()));
+          outShapes.push_back(*static_cast<const frRect*>(pinShape.get()));
         }
       }
     }
   }
 
  protected:
-  frMaster* master_;
+  frMaster* master_{nullptr};
   std::vector<std::unique_ptr<frMPin>> pins_;  // set later
 };
 
-}  // namespace fr
-
-#endif
+}  // namespace drt

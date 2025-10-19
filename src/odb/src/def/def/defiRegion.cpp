@@ -22,20 +22,48 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
 
 #include "defiRegion.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <sstream>
 
 #include "defiDebug.hpp"
-#include "lex.h"
+#include "defiKRDefs.hpp"
+#include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
+
+namespace {
+
+void defiError6130(int index, int numProps, defrData* defData)
+{
+  std::stringstream msg;
+  msg << "ERROR (DEFPARS-6130): The index number " << index
+      << " specified for the ";
+  msg << "REGION PROPERTY is invalide.\nValid index number is from 0 to "
+      << numProps << ". ";
+  msg << "Specify a valid index number and then try again.";
+  defiError(0, 6130, msg.str().c_str(), defData);
+}
+
+void defiError6131(int index, int numRectangles, defrData* defData)
+{
+  std::stringstream msg;
+  msg << "ERROR (DEFPARS-6131): The index number " << index
+      << " specified for the ";
+  msg << "REGION RECTANGLE is invalide.\nValid index number is from 0 to ";
+  msg << numRectangles << ". Specify a valid index number and then try again.";
+  defiError(0, 6131, msg.str().c_str(), defData);
+}
+
+}  // namespace
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -52,13 +80,13 @@ defiRegion::defiRegion(defrData* data) : defData(data)
 
 void defiRegion::Init()
 {
-  name_ = 0;
+  name_ = nullptr;
   nameLength_ = 0;
-  type_ = 0;
-  xl_ = 0;
-  yl_ = 0;
-  xh_ = 0;
-  yh_ = 0;
+  type_ = nullptr;
+  xl_ = nullptr;
+  yl_ = nullptr;
+  xh_ = nullptr;
+  yh_ = nullptr;
   numProps_ = 0;
   propsAllocated_ = 2;
   propNames_ = (char**) malloc(sizeof(char*) * 2);
@@ -89,17 +117,19 @@ void defiRegion::clear()
   }
   numProps_ = 0;
   numRectangles_ = 0;
-  if (type_)
+  if (type_) {
     free(type_);
-  type_ = 0;
+  }
+  type_ = nullptr;
 }
 
 void defiRegion::Destroy()
 {
-  if (name_)
+  if (name_) {
     free(name_);
+  }
   clear();
-  name_ = 0;
+  name_ = nullptr;
   nameLength_ = 0;
   free((char*) (xl_));
   free((char*) (yl_));
@@ -149,8 +179,9 @@ void defiRegion::setup(const char* name)
   clear();
 
   if (len > nameLength_) {
-    if (name_)
+    if (name_) {
       free(name_);
+    }
     nameLength_ = len;
     name_ = (char*) malloc(len);
   }
@@ -248,8 +279,9 @@ void defiRegion::addNumProperty(const char* name,
 void defiRegion::setType(const char* type)
 {
   int len;
-  if (type_)
+  if (type_) {
     free(type_);
+  }
   len = strlen(type) + 1;
   type_ = (char*) malloc(len);
   strcpy(type_, defData->DEFCASE(type));
@@ -277,47 +309,26 @@ int defiRegion::numProps() const
 
 const char* defiRegion::propName(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6130): The index number %d specified for the "
-            "REGION PROPERTY is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6130, msg, defData);
-    return 0;
+    defiError6130(index, numProps_, defData);
+    return nullptr;
   }
   return propNames_[index];
 }
 
 const char* defiRegion::propValue(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6130): The index number %d specified for the "
-            "REGION PROPERTY is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6130, msg, defData);
-    return 0;
+    defiError6130(index, numProps_, defData);
+    return nullptr;
   }
   return propValues_[index];
 }
 
 double defiRegion::propNumber(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6130): The index number %d specified for the "
-            "REGION PROPERTY is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6130, msg, defData);
+    defiError6130(index, numProps_, defData);
     return 0;
   }
   return propDValues_[index];
@@ -325,15 +336,8 @@ double defiRegion::propNumber(int index) const
 
 char defiRegion::propType(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6130): The index number %d specified for the "
-            "REGION PROPERTY is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6130, msg, defData);
+    defiError6130(index, numProps_, defData);
     return 0;
   }
   return propTypes_[index];
@@ -341,15 +345,8 @@ char defiRegion::propType(int index) const
 
 int defiRegion::propIsNumber(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6130): The index number %d specified for the "
-            "REGION PROPERTY is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6130, msg, defData);
+    defiError6130(index, numProps_, defData);
     return 0;
   }
   return propDValues_[index] ? 1 : 0;
@@ -357,15 +354,8 @@ int defiRegion::propIsNumber(int index) const
 
 int defiRegion::propIsString(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6130): The index number %d specified for the "
-            "REGION PROPERTY is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6130, msg, defData);
+    defiError6130(index, numProps_, defData);
     return 0;
   }
   return propDValues_[index] ? 0 : 1;
@@ -378,15 +368,8 @@ const char* defiRegion::name() const
 
 int defiRegion::xl(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numRectangles_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6131): The index number %d specified for the "
-            "REGION RECTANGLE is invalide.\nValid index number is from 0 to "
-            "%d. Specify a valid index number and then try again.",
-            index,
-            numRectangles_);
-    defiError(0, 6131, msg, defData);
+    defiError6131(index, numRectangles_, defData);
     return 0;
   }
   return xl_[index];
@@ -394,15 +377,8 @@ int defiRegion::xl(int index) const
 
 int defiRegion::yl(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numRectangles_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6131): The index number %d specified for the "
-            "REGION RECTANGLE is invalide.\nValid index number is from 0 to "
-            "%d. Specify a valid index number and then try again.",
-            index,
-            numRectangles_);
-    defiError(0, 6131, msg, defData);
+    defiError6131(index, numRectangles_, defData);
     return 0;
   }
   return yl_[index];
@@ -410,15 +386,8 @@ int defiRegion::yl(int index) const
 
 int defiRegion::xh(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numRectangles_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6131): The index number %d specified for the "
-            "REGION RECTANGLE is invalide.\nValid index number is from 0 to "
-            "%d. Specify a valid index number and then try again.",
-            index,
-            numRectangles_);
-    defiError(0, 6131, msg, defData);
+    defiError6131(index, numRectangles_, defData);
     return 0;
   }
   return xh_[index];
@@ -426,15 +395,8 @@ int defiRegion::xh(int index) const
 
 int defiRegion::yh(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numRectangles_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6131): The index number %d specified for the "
-            "REGION RECTANGLE is invalide.\nValid index number is from 0 to "
-            "%d. Specify a valid index number and then try again.",
-            index,
-            numRectangles_);
-    defiError(0, 6131, msg, defData);
+    defiError6131(index, numRectangles_, defData);
     return 0;
   }
   return yh_[index];
@@ -450,4 +412,4 @@ void defiRegion::print(FILE* f) const
   fprintf(f, "\n");
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

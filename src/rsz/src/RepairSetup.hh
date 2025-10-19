@@ -1,145 +1,171 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
+#include <unordered_set>
+#include <vector>
 
-#include "utl/Logger.h"
+#include "boost/functional/hash.hpp"
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-
-#include "sta/StaState.hh"
+#include "rsz/Resizer.hh"
+#include "sta/FuncExpr.hh"
 #include "sta/MinMax.hh"
+#include "sta/StaState.hh"
+#include "utl/Logger.h"
 
 namespace sta {
 class PathExpanded;
 }
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace rsz {
 
 class Resizer;
+class RemoveBuffer;
+class BaseMove;
 
-using std::vector;
-
+using odb::Point;
 using utl::Logger;
 
-using sta::StaState;
-using sta::dbSta;
+using sta::Corner;
 using sta::dbNetwork;
-using sta::Pin;
-using sta::Net;
-using sta::PathRef;
-using sta::MinMax;
-using sta::Slack;
-using sta::PathExpanded;
+using sta::dbSta;
+using sta::DcalcAnalysisPt;
+using sta::Delay;
+using sta::Instance;
 using sta::LibertyCell;
 using sta::LibertyPort;
+using sta::MinMax;
+using sta::Net;
+using sta::Path;
+using sta::PathExpanded;
+using sta::Pin;
+using sta::RiseFall;
+using sta::RiseFallBoth;
+using sta::Slack;
+using sta::Slew;
+using sta::StaState;
 using sta::TimingArc;
-using sta::DcalcAnalysisPt;
 using sta::Vertex;
-using sta::Corner;
 
-class BufferedNet;
-enum class BufferedNetType;
-typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
-typedef vector<BufferedNetPtr> BufferedNetSeq;
-
-class RepairSetup : StaState
+struct OptoParams
 {
-public:
-  RepairSetup(Resizer *resizer);
-  void repairSetup(float setup_slack_margin,
-                   int max_passes);
-  // For testing.
-  void repairSetup(Pin *drvr_pin);
-  // Rebuffer one net (for testing).
-  // resizerPreamble() required.
-  void rebufferNet(const Pin *drvr_pin);
+  int iteration;
+  float initial_tns;
+  const float setup_slack_margin;
+  const bool verbose;
+  const bool skip_pin_swap;
+  const bool skip_gate_cloning;
+  const bool skip_size_down;
+  const bool skip_buffering;
+  const bool skip_buffer_removal;
+  const bool skip_vt_swap;
 
-private:
-  void init();
-  bool repairSetup(PathRef &path,
-                   Slack path_slack);
-  bool upsizeDrvr(PathRef *drvr_path,
-                  int drvr_index,
-                  PathExpanded *expanded);
-  void splitLoads(PathRef *drvr_path,
-                  int drvr_index,
-                  Slack drvr_slack,
-                  PathExpanded *expanded);
-  LibertyCell *upsizeCell(LibertyPort *in_port,
-                          LibertyPort *drvr_port,
-                          float load_cap,
-                          float prev_drive,
-                          const DcalcAnalysisPt *dcalc_ap);
-  int fanout(Vertex *vertex);
-  bool hasTopLevelOutputPort(Net *net);
-
-  int rebuffer(const Pin *drvr_pin);
-  BufferedNetSeq rebufferBottomUp(BufferedNetPtr bnet,
-                                  int level);
-  int rebufferTopDown(BufferedNetPtr choice,
-                      Net *net,
-                      int level);
-  BufferedNetSeq
-  addWireAndBuffer(BufferedNetSeq Z,
-                   BufferedNetPtr bnet_wire,
-                   int level);
-  float pinCapacitance(const Pin *pin,
-                       const DcalcAnalysisPt *dcalc_ap);
-  float bufferInputCapacitance(LibertyCell *buffer_cell,
-                               const DcalcAnalysisPt *dcalc_ap);
-  Slack slackPenalized(BufferedNetPtr bnet);
-  Slack slackPenalized(BufferedNetPtr bnet,
-                       int index);
-
-  Logger *logger_;
-  dbSta *sta_;
-  dbNetwork *db_network_;
-  Resizer *resizer_;
-  const Corner *corner_;
-  LibertyPort *drvr_port_;
-
-  int resize_count_;
-  int inserted_buffer_count_;
-  int rebuffer_net_count_;
-  const MinMax *min_;
-  const MinMax *max_;
-
-  static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 50;
-  static constexpr int rebuffer_max_fanout_ = 20;
-  static constexpr int split_load_min_fanout_ = 8;
-  static constexpr double rebuffer_buffer_penalty_ = .01;
+  OptoParams(const float margin,
+             const bool verbose,
+             const bool skip_pin_swap,
+             const bool skip_gate_cloning,
+             const bool skip_size_down,
+             const bool skip_buffering,
+             const bool skip_buffer_removal,
+             const bool skip_vt_swap)
+      : setup_slack_margin(margin),
+        verbose(verbose),
+        skip_pin_swap(skip_pin_swap),
+        skip_gate_cloning(skip_gate_cloning),
+        skip_size_down(skip_size_down),
+        skip_buffering(skip_buffering),
+        skip_buffer_removal(skip_buffer_removal),
+        skip_vt_swap(skip_vt_swap)
+  {
+    iteration = 0;
+    initial_tns = 0.0;
+  }
 };
 
-} // namespace
+class RepairSetup : public sta::dbStaState
+{
+ public:
+  RepairSetup(Resizer* resizer);
+  bool repairSetup(float setup_slack_margin,
+                   // Percent of violating ends to repair to
+                   // reduce tns (0.0-1.0).
+                   double repair_tns_end_percent,
+                   int max_passes,
+                   int max_repairs_per_pass,
+                   bool verbose,
+                   const std::vector<MoveType>& sequence,
+                   bool skip_pin_swap,
+                   bool skip_gate_cloning,
+                   bool skip_size_down,
+                   bool skip_buffering,
+                   bool skip_buffer_removal,
+                   bool skip_last_gasp,
+                   bool skip_vt_swap,
+                   bool skip_crit_vt_swap);
+  // For testing.
+  void repairSetup(const Pin* end_pin);
+  // For testing.
+  void reportSwappablePins();
+  // Rebuffer one net (for testing).
+  // resizerPreamble() required.
+
+ private:
+  void init();
+  bool repairPath(Path* path, Slack path_slack, float setup_slack_margin);
+  int fanout(Vertex* vertex);
+  bool hasTopLevelOutputPort(Net* net);
+
+  void printProgress(int iteration,
+                     bool force,
+                     bool end,
+                     bool last_gasp,
+                     int num_viols) const;
+  bool terminateProgress(int iteration,
+                         float initial_tns,
+                         float& prev_tns,
+                         float& fix_rate_threshold,
+                         int endpt_index,
+                         int num_endpts);
+  void repairSetupLastGasp(const OptoParams& params, int& num_viols);
+  bool swapVTCritCells(const OptoParams& params, int& num_viols);
+  void traverseFaninCone(Vertex* endpoint,
+                         std::unordered_map<Instance*, float>& crit_insts,
+                         std::unordered_set<Vertex*>& visited,
+                         std::unordered_set<Instance*>& notSwappable,
+                         const OptoParams& params);
+  Slack getInstanceSlack(Instance* inst);
+
+  Logger* logger_ = nullptr;
+  dbNetwork* db_network_ = nullptr;
+  Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
+
+  bool fallback_ = false;
+  float min_viol_ = 0.0;
+  float max_viol_ = 0.0;
+  int max_repairs_per_pass_ = 1;
+  int removed_buffer_count_ = 0;
+  double initial_design_area_ = 0;
+
+  std::vector<BaseMove*> move_sequence;
+
+  const MinMax* min_ = MinMax::min();
+  const MinMax* max_ = MinMax::max();
+
+  sta::UnorderedMap<LibertyPort*, sta::LibertyPortSet> equiv_pin_map_;
+
+  static constexpr int decreasing_slack_max_passes_ = 50;
+  static constexpr int print_interval_ = 10;
+  static constexpr int opto_small_interval_ = 100;
+  static constexpr int opto_large_interval_ = 1000;
+  static constexpr float inc_fix_rate_threshold_
+      = 0.0001;  // default fix rate threshold = 0.01%
+  static constexpr int max_last_gasp_passes_ = 10;
+};
+
+}  // namespace rsz

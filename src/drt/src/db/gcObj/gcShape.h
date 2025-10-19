@@ -1,95 +1,52 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#ifndef _GC_SHAPE_H_
-#define _GC_SHAPE_H_
+#pragma once
 
-#include <boost/polygon/polygon.hpp>
+#include <algorithm>
+#include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcFig.h"
+#include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace gtl = boost::polygon;
 
-namespace fr {
-class gcCorner;
+namespace drt {
 class gcSegment;
 class gcRect;
 class gcPolygon;
-}  // namespace fr
+}  // namespace drt
 
 template <>
-struct gtl::geometry_concept<fr::gcSegment>
+struct gtl::geometry_concept<drt::gcSegment>
 {
-  typedef segment_concept type;
+  using type = segment_concept;
 };
 template <>
-struct gtl::geometry_concept<fr::gcRect>
+struct gtl::geometry_concept<drt::gcRect>
 {
-  typedef gtl::rectangle_concept type;
+  using type = gtl::rectangle_concept;
 };
 template <>
-struct gtl::geometry_concept<fr::gcPolygon>
+struct gtl::geometry_concept<drt::gcPolygon>
 {
-  typedef polygon_90_with_holes_concept type;
+  using type = polygon_90_with_holes_concept;
 };
 
-namespace fr {
-// class gcEdge;
+namespace drt {
+
 class gcShape : public gcPinFig
 {
  public:
-  // setters
   virtual void setLayerNum(frLayerNum tmpLayerNum) = 0;
-  // getters
   virtual frLayerNum getLayerNum() const = 0;
-  // others
- protected:
-  // constructors
-  gcShape() : gcPinFig() {}
-  gcShape(const gcShape& in) : gcPinFig(in) {}
 };
 
 class gcCorner : public gtl::point_data<frCoord>
 {
  public:
-  // constructors
-  gcCorner()
-      : prevCorner_(nullptr),
-        nextCorner_(nullptr),
-        prevEdge_(nullptr),
-        nextEdge_(nullptr),
-        cornerType_(frCornerTypeEnum::UNKNOWN),
-        cornerDir_(frCornerDirEnum::UNKNOWN),
-        fixed_(false)
-  {
-  }
-  gcCorner(const gcCorner& in) = default;
-
   // getters
   gcCorner* getPrevCorner() const { return prevCorner_; }
   gcCorner* getNextCorner() const { return nextCorner_; }
@@ -98,6 +55,9 @@ class gcCorner : public gtl::point_data<frCoord>
   frCornerTypeEnum getType() const { return cornerType_; }
   frCornerDirEnum getDir() const { return cornerDir_; }
   bool isFixed() const { return fixed_; }
+  bool hasPin() const { return pin_; }
+  gcPin* getPin() const { return pin_; }
+  frLayerNum getLayerNum() const { return layer_num_; }
 
   // setters
   void setPrevCorner(gcCorner* in) { prevCorner_ = in; }
@@ -107,47 +67,26 @@ class gcCorner : public gtl::point_data<frCoord>
   void setType(frCornerTypeEnum in) { cornerType_ = in; }
   void setDir(frCornerDirEnum in) { cornerDir_ = in; }
   void setFixed(bool in) { fixed_ = in; }
+  void addToPin(gcPin* in) { pin_ = in; }
+  void removeFromPin() { pin_ = nullptr; }
+  void setLayerNum(const frLayerNum in) { layer_num_ = in; }
 
  private:
-  gcCorner* prevCorner_;
-  gcCorner* nextCorner_;
-  gcSegment* prevEdge_;
-  gcSegment* nextEdge_;
-  frCornerTypeEnum cornerType_;
-  frCornerDirEnum cornerDir_;  // points away from poly for convex and concave
-  bool fixed_;
+  gcPin* pin_{nullptr};
+  gcCorner* prevCorner_{nullptr};
+  gcCorner* nextCorner_{nullptr};
+  gcSegment* prevEdge_{nullptr};
+  gcSegment* nextEdge_{nullptr};
+  frCornerTypeEnum cornerType_{frCornerTypeEnum::UNKNOWN};
+  // points away from poly for convex and concave
+  frCornerDirEnum cornerDir_{frCornerDirEnum::UNKNOWN};
+  bool fixed_{false};
+  frLayerNum layer_num_{-1};
 };
 
 class gcSegment : public gtl::segment_data<frCoord>, public gcShape
 {
  public:
-  // constructors
-  gcSegment()
-      : gtl::segment_data<frCoord>(),
-        gcShape(),
-        layer_(-1),
-        pin_(nullptr),
-        net_(nullptr),
-        prev_edge_(nullptr),
-        next_edge_(nullptr),
-        lowCorner_(nullptr),
-        highCorner_(nullptr),
-        fixed_(false)
-  {
-  }
-  gcSegment(const gcSegment& in)
-      : gtl::segment_data<frCoord>(in),
-        gcShape(in),
-        layer_(in.layer_),
-        pin_(in.pin_),
-        net_(in.net_),
-        prev_edge_(in.prev_edge_),
-        next_edge_(in.next_edge_),
-        lowCorner_(in.lowCorner_),
-        highCorner_(in.highCorner_),
-        fixed_(in.fixed_)
-  {
-  }
   // getters
   gcSegment* getPrevEdge() const { return prev_edge_; }
   gcSegment* getNextEdge() const { return next_edge_; }
@@ -210,6 +149,12 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
         return frDirEnum::UNKNOWN;
     }
   }
+  gtl::orientation_2d getOrientation() const
+  {
+    const frDirEnum dir = getDir();
+    return (dir == frDirEnum::W || dir == frDirEnum::E) ? gtl::HORIZONTAL
+                                                        : gtl::VERTICAL;
+  }
   // setters
   void setSegment(const gtl::segment_data<frCoord>& in)
   {
@@ -266,40 +211,23 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
   int length() { return gtl::length(*this); }
 
  private:
-  frLayerNum layer_;
-  gcPin* pin_;
-  gcNet* net_;
-  gcSegment* prev_edge_;
-  gcSegment* next_edge_;
-  gcCorner* lowCorner_;
-  gcCorner* highCorner_;
-  bool fixed_;
+  frLayerNum layer_{-1};
+  gcPin* pin_{nullptr};
+  gcNet* net_{nullptr};
+  gcSegment* prev_edge_{nullptr};
+  gcSegment* next_edge_{nullptr};
+  gcCorner* lowCorner_{nullptr};
+  gcCorner* highCorner_{nullptr};
+  bool fixed_{false};
 };
 
 class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
 {
  public:
   // constructors
-  gcRect()
-      : gtl::rectangle_data<frCoord>(),
-        gcShape(),
-        layer_(-1),
-        pin_(nullptr),
-        net_(nullptr),
-        fixed_(false),
-        tapered_(false)
-  {
-  }
-  gcRect(const gcRect& in)
-      : gtl::rectangle_data<frCoord>(in),
-        gcShape(in),
-        layer_(in.layer_),
-        pin_(in.pin_),
-        net_(in.net_),
-        fixed_(in.fixed_),
-        tapered_(in.tapered_)
-  {
-  }
+  gcRect() = default;
+  gcRect& operator=(const gcRect&) = default;
+  gcRect(const gcRect& in) = default;
   gcRect(const gtl::rectangle_data<frCoord>& shapeIn,
          frLayerNum layerIn,
          gcPin* pinIn,
@@ -309,8 +237,7 @@ class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
         layer_(layerIn),
         pin_(pinIn),
         net_(netIn),
-        fixed_(fixedIn),
-        tapered_(false)
+        fixed_(fixedIn)
   {
   }
   // setters
@@ -325,14 +252,14 @@ class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
     gtl::yl((*this), yl);
     gtl::yh((*this), yh);
   }
-  void setRect(const Point& bp, const Point& ep)
+  void setRect(const odb::Point& bp, const odb::Point& ep)
   {
     gtl::xl((*this), bp.x());
     gtl::xh((*this), ep.x());
     gtl::yl((*this), bp.y());
     gtl::yh((*this), ep.y());
   }
-  void setRect(const Rect& in)
+  void setRect(const odb::Rect& in)
   {
     gtl::xl((*this), in.xMin());
     gtl::xh((*this), in.xMax());
@@ -394,18 +321,18 @@ class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
 
   void setTapered(bool t) { tapered_ = t; }
 
-  bool intersects(const Rect& bx)
+  bool intersects(const odb::Rect& bx)
   {
     return gtl::xl(*this) <= bx.xMax() && gtl::xh(*this) >= bx.xMin()
            && gtl::yl(*this) <= bx.yMax() && gtl::yh(*this) >= bx.yMin();
   }
 
  protected:
-  frLayerNum layer_;
-  gcPin* pin_;
-  gcNet* net_;
-  bool fixed_;
-  bool tapered_;
+  frLayerNum layer_{-1};
+  gcPin* pin_{nullptr};
+  gcNet* net_{nullptr};
+  bool fixed_{false};
+  bool tapered_{false};
 };
 
 class gcPolygon : public gtl::polygon_90_with_holes_data<frCoord>,
@@ -413,22 +340,8 @@ class gcPolygon : public gtl::polygon_90_with_holes_data<frCoord>,
 {
  public:
   // constructors
-  gcPolygon()
-      : gtl::polygon_90_with_holes_data<frCoord>(),
-        gcShape(),
-        layer_(-1),
-        pin_(nullptr),
-        net_(nullptr)
-  {
-  }
-  gcPolygon(const gcPolygon& in)
-      : gtl::polygon_90_with_holes_data<frCoord>(in),
-        gcShape(in),
-        layer_(in.layer_),
-        pin_(in.pin_),
-        net_(in.net_)
-  {
-  }
+  gcPolygon() = default;
+  gcPolygon(const gcPolygon& in) = default;
   gcPolygon(const gtl::polygon_90_with_holes_data<frCoord>& shapeIn,
             frLayerNum layerIn,
             gcPin* pinIn,
@@ -445,7 +358,7 @@ class gcPolygon : public gtl::polygon_90_with_holes_data<frCoord>,
     gtl::polygon_90_with_holes_data<frCoord>::operator=(in);
   }
   // ensure gtl assumption: counterclockwise for outer and clockwise for holes
-  void setPolygon(const std::vector<Point>& in)
+  void setPolygon(const std::vector<odb::Point>& in)
   {
     std::vector<gtl::point_data<frCoord>> points;
     gtl::point_data<frCoord> tmp;
@@ -457,7 +370,7 @@ class gcPolygon : public gtl::polygon_90_with_holes_data<frCoord>,
     gtl::polygon_90_data<frCoord> poly;
     poly.set(points.begin(), points.end());
     gtl::polygon_90_set_data<frCoord> ps;
-    using namespace gtl::operators;
+    using gtl::operators::operator+=;
     ps += poly;
     std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
     ps.get(polys);
@@ -502,11 +415,9 @@ class gcPolygon : public gtl::polygon_90_with_holes_data<frCoord>,
 
   // edge iterator
  protected:
-  frLayerNum layer_;
-  gcPin* pin_;
-  gcNet* net_;
+  frLayerNum layer_{-1};
+  gcPin* pin_{nullptr};
+  gcNet* net_{nullptr};
 };
 
-}  // namespace fr
-
-#endif
+}  // namespace drt

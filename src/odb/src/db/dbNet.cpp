@@ -1,52 +1,26 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbNet.h"
 
 #include <algorithm>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <set>
+#include <string>
+#include <vector>
 
-#include "db.h"
 #include "dbBTerm.h"
 #include "dbBTermItr.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbCCSeg.h"
 #include "dbCCSegItr.h"
 #include "dbCapNode.h"
 #include "dbCapNodeItr.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
-#include "dbExtControl.h"
 #include "dbGroup.h"
 #include "dbGuide.h"
 #include "dbGuideItr.h"
@@ -55,32 +29,35 @@
 #include "dbInst.h"
 #include "dbJournal.h"
 #include "dbMTerm.h"
+#include "dbModNet.h"
+#include "dbNetTrack.h"
+#include "dbNetTrackItr.h"
 #include "dbRSeg.h"
 #include "dbRSegItr.h"
 #include "dbSWire.h"
 #include "dbSWireItr.h"
-#include "dbSet.h"
-#include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbWire.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbExtControl.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {
 
 template class dbTable<_dbNet>;
-static void set_symmetric_diff(dbDiff& diff,
-                               std::vector<_dbBTerm*>& lhs,
-                               std::vector<_dbBTerm*>& rhs);
-static void set_symmetric_diff(dbDiff& diff,
-                               std::vector<_dbITerm*>& lhs,
-                               std::vector<_dbITerm*>& rhs);
 
 _dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
     : _flags(n._flags),
-      _name(NULL),
+      _name(nullptr),
       _next_entry(n._next_entry),
       _iterms(n._iterms),
       _bterms(n._bterms),
@@ -91,6 +68,7 @@ _dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
       _r_segs(n._r_segs),
       _non_default_rule(n._non_default_rule),
       guides_(n.guides_),
+      tracks_(n.tracks_),
       _groups(n._groups),
       _weight(n._weight),
       _xtalk(n._xtalk),
@@ -99,8 +77,7 @@ _dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
 
 {
   if (n._name) {
-    _name = strdup(n._name);
-    ZALLOCATED(_name);
+    _name = safe_strdup(n._name);
   }
   _drivingIterm = -1;
 }
@@ -112,7 +89,7 @@ _dbNet::_dbNet(_dbDatabase* db)
   _flags._special = 0;
   _flags._wild_connect = 0;
   _flags._wire_ordered = 0;
-  _flags._buffered = 0;
+  _flags._unused2 = 0;
   _flags._disconnected = 0;
   _flags._spef = 0;
   _flags._select = 0;
@@ -121,7 +98,7 @@ _dbNet::_dbNet(_dbDatabase* db)
   _flags._wire_altered = 0;
   _flags._extracted = 0;
   _flags._rc_graph = 0;
-  _flags._reduced = 0;
+  _flags._unused = 0;
   _flags._set_io = 0;
   _flags._io = 0;
   _flags._dont_touch = 0;
@@ -129,7 +106,8 @@ _dbNet::_dbNet(_dbDatabase* db)
   _flags._source = dbSourceType::NONE;
   _flags._rc_disconnected = 0;
   _flags._block_rule = 0;
-  _name = 0;
+  _flags._has_jumpers = 0;
+  _name = nullptr;
   _gndc_calibration_factor = 1.0;
   _cc_calibration_factor = 1.0;
   _weight = 1;
@@ -141,8 +119,9 @@ _dbNet::_dbNet(_dbDatabase* db)
 
 _dbNet::~_dbNet()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbNet& net)
@@ -167,6 +146,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbNet& net)
   stream << net._ccAdjustOrder;
   stream << net._groups;
   stream << net.guides_;
+  stream << net.tracks_;
   return stream;
 }
 
@@ -192,6 +172,10 @@ dbIStream& operator>>(dbIStream& stream, _dbNet& net)
   stream >> net._ccAdjustOrder;
   stream >> net._groups;
   stream >> net.guides_;
+  _dbDatabase* db = net.getImpl()->getDatabase();
+  if (db->isSchema(db_schema_net_tracks)) {
+    stream >> net.tracks_;
+  }
 
   return stream;
 }
@@ -203,418 +187,166 @@ bool _dbNet::operator<(const _dbNet& rhs) const
 
 bool _dbNet::operator==(const _dbNet& rhs) const
 {
-  if (_flags._sig_type != rhs._flags._sig_type)
+  if (_flags._sig_type != rhs._flags._sig_type) {
     return false;
+  }
 
-  if (_flags._wire_type != rhs._flags._wire_type)
+  if (_flags._wire_type != rhs._flags._wire_type) {
     return false;
+  }
 
-  if (_flags._special != rhs._flags._special)
+  if (_flags._special != rhs._flags._special) {
     return false;
+  }
 
-  if (_flags._wild_connect != rhs._flags._wild_connect)
+  if (_flags._wild_connect != rhs._flags._wild_connect) {
     return false;
+  }
 
-  if (_flags._wire_ordered != rhs._flags._wire_ordered)
+  if (_flags._wire_ordered != rhs._flags._wire_ordered) {
     return false;
+  }
 
-  if (_flags._buffered != rhs._flags._buffered)
+  if (_flags._disconnected != rhs._flags._disconnected) {
     return false;
+  }
 
-  if (_flags._disconnected != rhs._flags._disconnected)
+  if (_flags._spef != rhs._flags._spef) {
     return false;
+  }
 
-  if (_flags._spef != rhs._flags._spef)
+  if (_flags._select != rhs._flags._select) {
     return false;
+  }
 
-  if (_flags._select != rhs._flags._select)
+  if (_flags._mark != rhs._flags._mark) {
     return false;
+  }
 
-  if (_flags._mark != rhs._flags._mark)
+  if (_flags._mark_1 != rhs._flags._mark_1) {
     return false;
+  }
 
-  if (_flags._mark_1 != rhs._flags._mark_1)
+  if (_flags._wire_altered != rhs._flags._wire_altered) {
     return false;
+  }
 
-  if (_flags._wire_altered != rhs._flags._wire_altered)
+  if (_flags._extracted != rhs._flags._extracted) {
     return false;
+  }
 
-  if (_flags._extracted != rhs._flags._extracted)
+  if (_flags._rc_graph != rhs._flags._rc_graph) {
     return false;
+  }
 
-  if (_flags._rc_graph != rhs._flags._rc_graph)
+  if (_flags._set_io != rhs._flags._set_io) {
     return false;
+  }
 
-  if (_flags._reduced != rhs._flags._reduced)
+  if (_flags._io != rhs._flags._io) {
     return false;
+  }
 
-  if (_flags._set_io != rhs._flags._set_io)
+  if (_flags._dont_touch != rhs._flags._dont_touch) {
     return false;
+  }
 
-  if (_flags._io != rhs._flags._io)
+  if (_flags._fixed_bump != rhs._flags._fixed_bump) {
     return false;
+  }
 
-  if (_flags._dont_touch != rhs._flags._dont_touch)
+  if (_flags._source != rhs._flags._source) {
     return false;
+  }
 
-  if (_flags._fixed_bump != rhs._flags._fixed_bump)
+  if (_flags._rc_disconnected != rhs._flags._rc_disconnected) {
     return false;
+  }
 
-  if (_flags._source != rhs._flags._source)
+  if (_flags._block_rule != rhs._flags._block_rule) {
     return false;
-
-  if (_flags._rc_disconnected != rhs._flags._rc_disconnected)
-    return false;
-
-  if (_flags._block_rule != rhs._flags._block_rule)
-    return false;
+  }
 
   if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0)
+    if (strcmp(_name, rhs._name) != 0) {
       return false;
-  } else if (_name || rhs._name)
+    }
+  } else if (_name || rhs._name) {
     return false;
+  }
 
-  if (_gndc_calibration_factor != rhs._gndc_calibration_factor)
+  if (_gndc_calibration_factor != rhs._gndc_calibration_factor) {
     return false;
-  if (_cc_calibration_factor != rhs._cc_calibration_factor)
+  }
+  if (_cc_calibration_factor != rhs._cc_calibration_factor) {
     return false;
+  }
 
-  if (_next_entry != rhs._next_entry)
+  if (_next_entry != rhs._next_entry) {
     return false;
+  }
 
-  if (_iterms != rhs._iterms)
+  if (_iterms != rhs._iterms) {
     return false;
+  }
 
-  if (_bterms != rhs._bterms)
+  if (_bterms != rhs._bterms) {
     return false;
+  }
 
-  if (_wire != rhs._wire)
+  if (_wire != rhs._wire) {
     return false;
+  }
 
-  if (_global_wire != rhs._global_wire)
+  if (_global_wire != rhs._global_wire) {
     return false;
+  }
 
-  if (_swires != rhs._swires)
+  if (_swires != rhs._swires) {
     return false;
+  }
 
-  if (_cap_nodes != rhs._cap_nodes)
+  if (_cap_nodes != rhs._cap_nodes) {
     return false;
+  }
 
-  if (_r_segs != rhs._r_segs)
+  if (_r_segs != rhs._r_segs) {
     return false;
+  }
 
-  if (_non_default_rule != rhs._non_default_rule)
+  if (_non_default_rule != rhs._non_default_rule) {
     return false;
+  }
 
-  if (_weight != rhs._weight)
+  if (_weight != rhs._weight) {
     return false;
+  }
 
-  if (_xtalk != rhs._xtalk)
+  if (_xtalk != rhs._xtalk) {
     return false;
+  }
 
-  if (_ccAdjustFactor != rhs._ccAdjustFactor)
+  if (_ccAdjustFactor != rhs._ccAdjustFactor) {
     return false;
+  }
 
-  if (_ccAdjustOrder != rhs._ccAdjustOrder)
+  if (_ccAdjustOrder != rhs._ccAdjustOrder) {
     return false;
+  }
 
-  if (_groups != rhs._groups)
+  if (_groups != rhs._groups) {
     return false;
+  }
 
-  if (guides_ != rhs.guides_)
+  if (guides_ != rhs.guides_) {
     return false;
+  }
+
+  if (tracks_ != rhs.tracks_) {
+    return false;
+  }
 
   return true;
-}
-
-void _dbNet::differences(dbDiff& diff,
-                         const char* field,
-                         const _dbNet& rhs) const
-{
-  _dbBlock* lhs_block = (_dbBlock*) getOwner();
-  _dbBlock* rhs_block = (_dbBlock*) rhs.getOwner();
-
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_flags._sig_type);
-  DIFF_FIELD(_flags._wire_type);
-  DIFF_FIELD(_flags._special);
-  DIFF_FIELD(_flags._wild_connect);
-  DIFF_FIELD(_flags._wire_ordered);
-  DIFF_FIELD(_flags._buffered);
-  DIFF_FIELD(_flags._disconnected);
-  DIFF_FIELD(_flags._spef);
-  DIFF_FIELD(_flags._select);
-  DIFF_FIELD(_flags._mark);
-  DIFF_FIELD(_flags._mark_1);
-  DIFF_FIELD(_flags._wire_altered);
-  DIFF_FIELD(_flags._extracted);
-  DIFF_FIELD(_flags._rc_graph);
-  DIFF_FIELD(_flags._reduced);
-  DIFF_FIELD(_flags._set_io);
-  DIFF_FIELD(_flags._io);
-  DIFF_FIELD(_flags._dont_touch);
-  DIFF_FIELD(_flags._fixed_bump);
-  DIFF_FIELD(_flags._source);
-  DIFF_FIELD(_flags._rc_disconnected);
-  DIFF_FIELD(_flags._block_rule);
-  DIFF_FIELD_NO_DEEP(_gndc_calibration_factor);
-  DIFF_FIELD_NO_DEEP(_cc_calibration_factor);
-  DIFF_FIELD_NO_DEEP(_next_entry);
-
-  if (!diff.deepDiff()) {
-    DIFF_FIELD(_bterms);
-  } else {
-    dbSet<_dbBTerm>::iterator itr;
-
-    dbSet<_dbBTerm> lhs_set((dbObject*) this, lhs_block->_net_bterm_itr);
-    std::vector<_dbBTerm*> lhs_vec;
-
-    for (itr = lhs_set.begin(); itr != lhs_set.end(); ++itr)
-      lhs_vec.push_back(*itr);
-
-    dbSet<_dbBTerm> rhs_set((dbObject*) &rhs, rhs_block->_net_bterm_itr);
-    std::vector<_dbBTerm*> rhs_vec;
-
-    for (itr = rhs_set.begin(); itr != rhs_set.end(); ++itr)
-      rhs_vec.push_back(*itr);
-
-    set_symmetric_diff(diff, lhs_vec, rhs_vec);
-  }
-
-  if (!diff.deepDiff()) {
-    DIFF_FIELD(_iterms);
-  } else {
-    dbSet<_dbITerm>::iterator itr;
-
-    dbSet<_dbITerm> lhs_set((dbObject*) this, lhs_block->_net_iterm_itr);
-    std::vector<_dbITerm*> lhs_vec;
-
-    for (itr = lhs_set.begin(); itr != lhs_set.end(); ++itr)
-      lhs_vec.push_back(*itr);
-
-    dbSet<_dbITerm> rhs_set((dbObject*) &rhs, rhs_block->_net_iterm_itr);
-    std::vector<_dbITerm*> rhs_vec;
-
-    for (itr = rhs_set.begin(); itr != rhs_set.end(); ++itr)
-      rhs_vec.push_back(*itr);
-
-    set_symmetric_diff(diff, lhs_vec, rhs_vec);
-  }
-
-  DIFF_OBJECT(_wire, lhs_block->_wire_tbl, rhs_block->_wire_tbl);
-  DIFF_OBJECT(_global_wire, lhs_block->_wire_tbl, rhs_block->_wire_tbl);
-  DIFF_SET(_swires, lhs_block->_swire_itr, rhs_block->_swire_itr);
-  DIFF_SET(_cap_nodes, lhs_block->_cap_node_itr, rhs_block->_cap_node_itr);
-  DIFF_SET(_r_segs, lhs_block->_r_seg_itr, rhs_block->_r_seg_itr);
-  DIFF_FIELD(_non_default_rule);
-  DIFF_FIELD(_weight);
-  DIFF_FIELD(_xtalk);
-  DIFF_FIELD(_ccAdjustFactor);
-  DIFF_FIELD(_ccAdjustOrder);
-  DIFF_VECTOR(_groups);
-  DIFF_FIELD(guides_);
-  DIFF_END
-}
-
-void _dbNet::out(dbDiff& diff, char side, const char* field) const
-{
-  _dbBlock* block = (_dbBlock*) getOwner();
-
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_flags._sig_type);
-  DIFF_OUT_FIELD(_flags._wire_type);
-  DIFF_OUT_FIELD(_flags._special);
-  DIFF_OUT_FIELD(_flags._wild_connect);
-  DIFF_OUT_FIELD(_flags._wire_ordered);
-  DIFF_OUT_FIELD(_flags._buffered);
-  DIFF_OUT_FIELD(_flags._disconnected);
-  DIFF_OUT_FIELD(_flags._spef);
-  DIFF_OUT_FIELD(_flags._select);
-  DIFF_OUT_FIELD(_flags._mark);
-  DIFF_OUT_FIELD(_flags._mark_1);
-  DIFF_OUT_FIELD(_flags._wire_altered);
-  DIFF_OUT_FIELD(_flags._extracted);
-  DIFF_OUT_FIELD(_flags._rc_graph);
-  DIFF_OUT_FIELD(_flags._reduced);
-  DIFF_OUT_FIELD(_flags._set_io);
-  DIFF_OUT_FIELD(_flags._io);
-  DIFF_OUT_FIELD(_flags._dont_touch);
-  DIFF_OUT_FIELD(_flags._fixed_bump);
-  DIFF_OUT_FIELD(_flags._source);
-  DIFF_OUT_FIELD(_flags._rc_disconnected);
-  DIFF_OUT_FIELD(_flags._block_rule);
-  DIFF_OUT_FIELD_NO_DEEP(_gndc_calibration_factor);
-  DIFF_OUT_FIELD_NO_DEEP(_cc_calibration_factor);
-  DIFF_OUT_FIELD_NO_DEEP(_next_entry);
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_FIELD(_bterms);
-  } else {
-    dbSet<_dbBTerm>::iterator itr;
-    dbSet<_dbBTerm> bterms((dbObject*) this, block->_net_bterm_itr);
-    diff.begin_object("%c _bterms\n", side);
-
-    for (itr = bterms.begin(); itr != bterms.end(); ++itr)
-      diff.report("%c %s\n", side, (*itr)->_name);
-
-    diff.end_object();
-  }
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_FIELD(_iterms);
-  } else {
-    dbSet<_dbITerm>::iterator itr;
-    dbSet<_dbITerm> iterms((dbObject*) this, block->_net_iterm_itr);
-    diff.begin_object("%c _iterms\n", side);
-
-    for (itr = iterms.begin(); itr != iterms.end(); ++itr) {
-      _dbITerm* it = *itr;
-      _dbInst* inst = it->getInst();
-      _dbMTerm* mt = it->getMTerm();
-      diff.report("%c (%s %s)\n", side, inst->_name, mt->_name);
-    }
-
-    diff.end_object();
-  }
-
-  DIFF_OUT_OBJECT(_wire, block->_wire_tbl);
-  DIFF_OUT_OBJECT(_global_wire, block->_wire_tbl);
-  DIFF_OUT_SET(_swires, block->_swire_itr);
-  DIFF_OUT_SET(_cap_nodes, block->_cap_node_itr);
-  DIFF_OUT_SET(_r_segs, block->_r_seg_itr);
-  DIFF_OUT_FIELD(_non_default_rule);
-  DIFF_OUT_FIELD(_weight);
-  DIFF_OUT_FIELD(_xtalk);
-  DIFF_OUT_FIELD(_ccAdjustFactor);
-  DIFF_OUT_FIELD(_ccAdjustOrder);
-  DIFF_OUT_VECTOR(_groups);
-  DIFF_OUT_FIELD(guides_);
-  DIFF_END
-}
-
-void set_symmetric_diff(dbDiff& diff,
-                        std::vector<_dbBTerm*>& lhs,
-                        std::vector<_dbBTerm*>& rhs)
-{
-  diff.begin_object("<> _bterms\n");
-
-  std::sort(lhs.begin(), lhs.end(), dbDiffCmp<_dbBTerm>());
-  std::sort(rhs.begin(), rhs.end(), dbDiffCmp<_dbBTerm>());
-
-  std::vector<_dbBTerm*>::iterator end;
-  std::vector<_dbBTerm*> symmetric_diff;
-
-  symmetric_diff.resize(lhs.size() + rhs.size());
-
-  end = std::set_symmetric_difference(lhs.begin(),
-                                      lhs.end(),
-                                      rhs.begin(),
-                                      rhs.end(),
-                                      symmetric_diff.begin(),
-                                      dbDiffCmp<_dbBTerm>());
-
-  std::vector<_dbBTerm*>::iterator i1 = lhs.begin();
-  std::vector<_dbBTerm*>::iterator i2 = rhs.begin();
-  std::vector<_dbBTerm*>::iterator sd = symmetric_diff.begin();
-
-  while ((i1 != lhs.end()) && (i2 != rhs.end())) {
-    _dbBTerm* o1 = *i1;
-    _dbBTerm* o2 = *i2;
-
-    if (o1 == *sd) {
-      diff.report("%c %s\n", dbDiff::LEFT, o1->_name);
-      ++i1;
-      ++sd;
-    } else if (o2 == *sd) {
-      diff.report("%c %s\n", dbDiff::RIGHT, o2->_name);
-      ++i2;
-      ++sd;
-    } else  // equal keys
-    {
-      ++i1;
-      ++i2;
-    }
-  }
-
-  for (; i1 != lhs.end(); ++i1) {
-    _dbBTerm* o1 = *i1;
-    diff.report("%c %s\n", dbDiff::LEFT, o1->_name);
-  }
-
-  for (; i2 != rhs.end(); ++i2) {
-    _dbBTerm* o2 = *i2;
-    diff.report("%c %s\n", dbDiff::RIGHT, o2->_name);
-  }
-
-  diff.end_object();
-}
-
-void set_symmetric_diff(dbDiff& diff,
-                        std::vector<_dbITerm*>& lhs,
-                        std::vector<_dbITerm*>& rhs)
-{
-  diff.begin_object("<> _iterms\n");
-
-  std::sort(lhs.begin(), lhs.end(), dbDiffCmp<_dbITerm>());
-  std::sort(rhs.begin(), rhs.end(), dbDiffCmp<_dbITerm>());
-
-  std::vector<_dbITerm*>::iterator end;
-  std::vector<_dbITerm*> symmetric_diff;
-
-  symmetric_diff.resize(lhs.size() + rhs.size());
-
-  end = std::set_symmetric_difference(lhs.begin(),
-                                      lhs.end(),
-                                      rhs.begin(),
-                                      rhs.end(),
-                                      symmetric_diff.begin(),
-                                      dbDiffCmp<_dbITerm>());
-
-  std::vector<_dbITerm*>::iterator i1 = lhs.begin();
-  std::vector<_dbITerm*>::iterator i2 = rhs.begin();
-  std::vector<_dbITerm*>::iterator sd = symmetric_diff.begin();
-
-  while ((i1 != lhs.end()) && (i2 != rhs.end())) {
-    _dbITerm* o1 = *i1;
-    _dbITerm* o2 = *i2;
-
-    if (o1 == *sd) {
-      _dbInst* inst = o1->getInst();
-      _dbMTerm* mterm = o1->getMTerm();
-      diff.report("%c (%s %s)\n", dbDiff::LEFT, inst->_name, mterm->_name);
-      ++i1;
-      ++sd;
-    } else if (o2 == *sd) {
-      _dbInst* inst = o2->getInst();
-      _dbMTerm* mterm = o2->getMTerm();
-      diff.report("%c (%s %s)\n", dbDiff::RIGHT, inst->_name, mterm->_name);
-      ++i2;
-      ++sd;
-    } else  // equal keys
-    {
-      ++i1;
-      ++i2;
-    }
-  }
-
-  for (; i1 != lhs.end(); ++i1) {
-    _dbITerm* o1 = *i1;
-    _dbInst* inst = o1->getInst();
-    _dbMTerm* mterm = o1->getMTerm();
-    diff.report("%c (%s %s)\n", dbDiff::LEFT, inst->_name, mterm->_name);
-  }
-
-  for (; i2 != rhs.end(); ++i2) {
-    _dbITerm* o2 = *i2;
-    _dbInst* inst = o2->getInst();
-    _dbMTerm* mterm = o2->getMTerm();
-    diff.report("%c (%s %s)\n", dbDiff::RIGHT, inst->_name, mterm->_name);
-  }
-
-  diff.end_object();
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -623,43 +355,92 @@ void set_symmetric_diff(dbDiff& diff,
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbNet::getName()
+std::string dbNet::getName() const
 {
   _dbNet* net = (_dbNet*) this;
   return net->_name;
 }
 
-const char* dbNet::getConstName()
+const char* dbNet::getConstName() const
 {
   _dbNet* net = (_dbNet*) this;
   return net->_name;
 }
+
 void dbNet::printNetName(FILE* fp, bool idFlag, bool newLine)
 {
-  if (idFlag)
+  if (idFlag) {
     fprintf(fp, " %d", getId());
+  }
 
   _dbNet* net = (_dbNet*) this;
   fprintf(fp, " %s", net->_name);
 
-  if (newLine)
+  if (newLine) {
     fprintf(fp, "\n");
+  }
 }
+
 bool dbNet::rename(const char* name)
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
-  if (block->_net_hash.hasMember(name))
+  if (block->_net_hash.hasMember(name)) {
     return false;
+  }
+
+  if (block->_journal) {
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: net {}, rename to {}",
+               getId(),
+               name);
+    block->_journal->updateField(this, _dbNet::NAME, net->_name, name);
+  }
 
   block->_net_hash.remove(net);
   free((void*) net->_name);
-  net->_name = strdup(name);
-  ZALLOCATED(net->_name);
+  net->_name = safe_strdup(name);
   block->_net_hash.insert(net);
 
   return true;
+}
+
+void dbNet::swapNetNames(dbNet* source, bool ok_to_journal)
+{
+  _dbNet* dest_net = (_dbNet*) this;
+  _dbNet* source_net = (_dbNet*) source;
+  _dbBlock* block = (_dbBlock*) source_net->getOwner();
+
+  char* dest_name_ptr = dest_net->_name;
+  char* source_name_ptr = source_net->_name;
+
+  // allow undo..
+  if (block->_journal && ok_to_journal) {
+    block->_journal->beginAction(dbJournal::SWAP_OBJECT);
+    // a name
+    block->_journal->pushParam(dbNameObj);
+    // the type of name swap
+    block->_journal->pushParam(dbNetObj);
+    // stash the source and dest in that order,
+    // let undo reorder
+    block->_journal->pushParam(source_net->getId());
+    block->_journal->pushParam(dest_net->getId());
+    block->_journal->endAction();
+  }
+
+  block->_net_hash.remove(dest_net);
+  block->_net_hash.remove(source_net);
+
+  // swap names without copy, just swap the pointers
+  dest_net->_name = source_name_ptr;
+  source_net->_name = dest_name_ptr;
+
+  block->_net_hash.insert(dest_net);
+  block->_net_hash.insert(source_net);
 }
 
 bool dbNet::isRCDisconnected()
@@ -740,11 +521,13 @@ void dbNet::setDrivingITerm(int id)
   _dbNet* net = (_dbNet*) this;
   net->_drivingIterm = id;
 }
-int dbNet::getDrivingITerm()
+
+int dbNet::getDrivingITerm() const
 {
   _dbNet* net = (_dbNet*) this;
   return net->_drivingIterm;
 }
+
 bool dbNet::hasFixedBump()
 {
   _dbNet* net = (_dbNet*) this;
@@ -877,22 +660,20 @@ void dbNet::setCcMatchRatio(float ratio)
 
 void dbNet::calibrateCouplingCap(int corner)
 {
-  float srcnetCcCalibFactor = getCcCalibFactor();
-  float factor, tgtnetCcCalibFactor;
+  const float srcnetCcCalibFactor = getCcCalibFactor();
   std::vector<dbCCSeg*> ccSet;
   getSrcCCSegs(ccSet);
-  std::vector<dbCCSeg*>::iterator cc_itr;
-  dbCCSeg* cc;
-  for (cc_itr = ccSet.begin(); cc_itr != ccSet.end(); ++cc_itr) {
-    cc = *cc_itr;
-    tgtnetCcCalibFactor = cc->getTargetNet()->getCcCalibFactor();
-    factor = (srcnetCcCalibFactor + tgtnetCcCalibFactor) / 2;
-    if (factor == 1.0)
+  for (dbCCSeg* cc : ccSet) {
+    const float tgtnetCcCalibFactor = cc->getTargetNet()->getCcCalibFactor();
+    const float factor = (srcnetCcCalibFactor + tgtnetCcCalibFactor) / 2;
+    if (factor == 1.0) {
       continue;
-    if (corner < 0)
+    }
+    if (corner < 0) {
       cc->adjustCapacitance(factor);
-    else
+    } else {
       cc->adjustCapacitance(factor, corner);
+    }
   }
 }
 
@@ -901,54 +682,35 @@ void dbNet::calibrateCouplingCap()
   calibrateCouplingCap(-1);
 }
 
-bool dbNet::anchoredRSeg()
-{
-  dbSet<dbRSeg> rSet = getRSegs();
-  dbSet<dbRSeg>::iterator rc_itr;
-  dbRSeg* rc = NULL;
-  for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
-    rc = *rc_itr;
-    if (rc->getShapeId() != 0)
-      return true;
-  }
-  return false;
-}
 uint dbNet::getRSegCount()
 {
-  dbSet<dbRSeg> rSet = getRSegs();
-  uint cnt = rSet.size();
-  return cnt;
+  return getRSegs().size();
 }
 
 uint dbNet::maxInternalCapNum()
 {
   uint max_n = 0;
-  dbSet<dbCapNode> nodeSet = getCapNodes();
-  dbSet<dbCapNode>::iterator rc_itr;
-  dbCapNode* capn;
-  for (rc_itr = nodeSet.begin(); rc_itr != nodeSet.end(); ++rc_itr) {
-    capn = *rc_itr;
-    if (!capn->isInternal())
+  for (dbCapNode* capn : getCapNodes()) {
+    if (!capn->isInternal()) {
       continue;
+    }
 
-    uint n = capn->getNode();
-    if (max_n < n)
+    const uint n = capn->getNode();
+    if (max_n < n) {
       max_n = n;
+    }
   }
   return max_n;
 }
 void dbNet::collapseInternalCapNum(FILE* mapFile)
 {
-  dbSet<dbCapNode> nodeSet = getCapNodes();
   uint cnt = 1;
-  dbSet<dbCapNode>::iterator rc_itr;
-  dbCapNode* capn;
-  for (rc_itr = nodeSet.begin(); rc_itr != nodeSet.end(); ++rc_itr) {
+  for (dbCapNode* capn : getCapNodes()) {
     cnt++;
-    capn = *rc_itr;
     if (capn->isInternal()) {
-      if (mapFile)
+      if (mapFile) {
         fprintf(mapFile, "    %8d : %8d\n", capn->getNode(), cnt);
+      }
       capn->setNode(cnt);
     }
   }
@@ -956,35 +718,23 @@ void dbNet::collapseInternalCapNum(FILE* mapFile)
 
 uint dbNet::getCapNodeCount()
 {
-  dbSet<dbCapNode> nodeSet = getCapNodes();
-  uint cnt = nodeSet.size();
-  return cnt;
+  return getCapNodes().size();
 }
 
 uint dbNet::getCcCount()
 {
-  dbSet<dbCapNode> nodeSet = getCapNodes();
-  dbSet<dbCapNode>::iterator rc_itr;
-  dbSet<dbCCSeg> ccSegs;
-  dbCapNode* node;
   uint count = 0;
-  for (rc_itr = nodeSet.begin(); rc_itr != nodeSet.end(); ++rc_itr) {
-    node = *rc_itr;
-    ccSegs = node->getCCSegs();
-    count += ccSegs.size();
+  for (dbCapNode* node : getCapNodes()) {
+    count += node->getCCSegs().size();
   }
   return count;
 }
 
-bool dbNet::groundCC(float gndFactor)
+bool dbNet::groundCC(const float gndFactor)
 {
-  dbSet<dbCapNode> nodeSet = getCapNodes();
-  dbSet<dbCapNode>::iterator rc_itr;
-  dbCapNode* node;
   bool grounded = false;
 
-  for (rc_itr = nodeSet.begin(); rc_itr != nodeSet.end(); ++rc_itr) {
-    node = *rc_itr;
+  for (dbCapNode* node : getCapNodes()) {
     grounded |= node->groundCC(gndFactor);
   }
   return grounded;
@@ -996,98 +746,79 @@ bool dbNet::adjustCC(uint adjOrder,
                      std::vector<dbCCSeg*>& adjustedCC,
                      std::vector<dbNet*>& halonets)
 {
-  if (((_dbNet*) this)->_ccAdjustFactor > 0) {
+  _dbNet* net = (_dbNet*) this;
+  if (net->_ccAdjustFactor > 0) {
     getImpl()->getLogger()->warn(
         utl::ODB,
         48,
         "Net {} {} had been CC adjusted by {}. Please unadjust first.",
         getId(),
         getConstName(),
-        ((_dbNet*) this)->_ccAdjustFactor);
+        net->_ccAdjustFactor);
     return false;
   }
-  dbSet<dbCapNode> nodeSet = getCapNodes();
-  dbSet<dbCapNode>::iterator rc_itr;
-  dbCapNode* node;
   bool needAdjust = false;
-  for (rc_itr = nodeSet.begin(); !needAdjust && rc_itr != nodeSet.end();
-       ++rc_itr) {
-    node = *rc_itr;
-    if (node->needAdjustCC(ccThreshHold))
+  for (dbCapNode* node : getCapNodes()) {
+    if (node->needAdjustCC(ccThreshHold)) {
       needAdjust = true;
+    }
   }
-  if (!needAdjust)
+  if (!needAdjust) {
     return false;
+  }
 
-  for (rc_itr = nodeSet.begin(); rc_itr != nodeSet.end(); ++rc_itr) {
-    node = *rc_itr;
+  for (dbCapNode* node : getCapNodes()) {
     node->adjustCC(adjOrder, adjFactor, adjustedCC, halonets);
   }
-  ((_dbNet*) this)->_ccAdjustFactor = adjFactor;
-  ((_dbNet*) this)->_ccAdjustOrder = adjOrder;
+  net->_ccAdjustFactor = adjFactor;
+  net->_ccAdjustOrder = adjOrder;
   return true;
 }
 
 void dbNet::undoAdjustedCC(std::vector<dbCCSeg*>& adjustedCC,
                            std::vector<dbNet*>& halonets)
 {
-  if (((_dbNet*) this)->_ccAdjustFactor < 0)
+  _dbNet* net = (_dbNet*) this;
+  if (net->_ccAdjustFactor < 0) {
     return;
-  uint adjOrder = ((_dbNet*) this)->_ccAdjustOrder;
-  float adjFactor = 1 / ((_dbNet*) this)->_ccAdjustFactor;
-  dbSet<dbCapNode> nodeSet = getCapNodes();
-  dbSet<dbCapNode>::iterator rc_itr;
-  dbCapNode* node;
-  for (rc_itr = nodeSet.begin(); rc_itr != nodeSet.end(); ++rc_itr) {
-    node = *rc_itr;
+  }
+  const uint adjOrder = net->_ccAdjustOrder;
+  const float adjFactor = 1 / net->_ccAdjustFactor;
+  for (dbCapNode* node : getCapNodes()) {
     node->adjustCC(adjOrder, adjFactor, adjustedCC, halonets);
   }
-  ((_dbNet*) this)->_ccAdjustFactor = -1;
-  ((_dbNet*) this)->_ccAdjustOrder = 0;
+  net->_ccAdjustFactor = -1;
+  net->_ccAdjustOrder = 0;
 }
 
 void dbNet::adjustNetGndCap(uint corner, float factor)
 {
-  if (factor == 1.0)
+  if (factor == 1.0) {
     return;
+  }
   bool foreign = ((dbBlock*) getImpl()->getOwner())->getExtControl()->_foreign;
   if (foreign) {
-    dbSet<dbCapNode> nodeSet = getCapNodes();
-    dbSet<dbCapNode>::iterator rc_itr;
-    dbCapNode* node;
-    for (rc_itr = nodeSet.begin(); rc_itr != nodeSet.end(); ++rc_itr) {
-      node = *rc_itr;
+    for (dbCapNode* node : getCapNodes()) {
       node->adjustCapacitance(factor, corner);
     }
   } else {
-    dbSet<dbRSeg> rSet = getRSegs();
-    dbSet<dbRSeg>::iterator rc_itr;
-    dbRSeg* rc;
-    for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
-      rc = *rc_itr;
+    for (dbRSeg* rc : getRSegs()) {
       rc->adjustCapacitance(factor, corner);
     }
   }
 }
 void dbNet::adjustNetGndCap(float factor)
 {
-  if (factor == 1.0)
+  if (factor == 1.0) {
     return;
+  }
   bool foreign = ((dbBlock*) getImpl()->getOwner())->getExtControl()->_foreign;
   if (foreign) {
-    dbSet<dbCapNode> nodeSet = getCapNodes();
-    dbSet<dbCapNode>::iterator rc_itr;
-    dbCapNode* node;
-    for (rc_itr = nodeSet.begin(); rc_itr != nodeSet.end(); ++rc_itr) {
-      node = *rc_itr;
+    for (dbCapNode* node : getCapNodes()) {
       node->adjustCapacitance(factor);
     }
   } else {
-    dbSet<dbRSeg> rSet = getRSegs();
-    dbSet<dbRSeg>::iterator rc_itr;
-    dbRSeg* rc;
-    for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
-      rc = *rc_itr;
+    for (dbRSeg* rc : getRSegs()) {
       rc->adjustCapacitance(factor);
     }
   }
@@ -1105,25 +836,19 @@ void dbNet::calibrateCapacitance()
 }
 void dbNet::adjustNetRes(float factor, uint corner)
 {
-  if (factor == 1.0)
+  if (factor == 1.0) {
     return;
-  dbSet<dbRSeg> rSet = getRSegs();
-  dbSet<dbRSeg>::iterator rc_itr;
-  dbRSeg* rc = NULL;
-  for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
-    rc = *rc_itr;
+  }
+  for (dbRSeg* rc : getRSegs()) {
     rc->adjustResistance(factor, corner);
   }
 }
 void dbNet::adjustNetRes(float factor)
 {
-  if (factor == 1.0)
+  if (factor == 1.0) {
     return;
-  dbSet<dbRSeg> rSet = getRSegs();
-  dbSet<dbRSeg>::iterator rc_itr;
-  dbRSeg* rc = NULL;
-  for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
-    rc = *rc_itr;
+  }
+  for (dbRSeg* rc : getRSegs()) {
     rc->adjustResistance(factor);
   }
 }
@@ -1190,20 +915,25 @@ bool dbNet::isEnclosed(Rect* bbox)  // assuming no intersection
   uint cnt = 0;
   while (pitr.getNextPath(path)) {
     if (path.point.getX() > bbox->xMax() || path.point.getX() < bbox->xMin()
-        || path.point.getY() > bbox->yMax() || path.point.getY() < bbox->yMin())
+        || path.point.getY() > bbox->yMax()
+        || path.point.getY() < bbox->yMin()) {
       return false;
+    }
     cnt++;
-    if (cnt >= 4)
+    if (cnt >= 4) {
       return true;
+    }
     while (pitr.getNextShape(pathShape)) {
       if (pathShape.point.getX() > bbox->xMax()
           || pathShape.point.getX() < bbox->xMin()
           || pathShape.point.getY() > bbox->yMax()
-          || pathShape.point.getY() < bbox->yMin())
+          || pathShape.point.getY() < bbox->yMin()) {
         return false;
+      }
       cnt++;
-      if (cnt >= 4)
+      if (cnt >= 4) {
         return true;
+      }
     }
   }
   return true;
@@ -1261,84 +991,6 @@ void dbNet::setMark_1(bool value)
   }
 }
 
-uint dbNet::wireEqual(dbNet* target)
-{
-  dbWire* srcw = getWire();
-  dbWire* tgtw = target->getWire();
-  if (srcw == NULL && tgtw == NULL)
-    return 0;
-  if (srcw == NULL || tgtw == NULL)
-    return 3;
-  if (!isWireOrdered() || !target->isWireOrdered())
-    return 4;
-  return (srcw->equal(tgtw));
-}
-
-void dbNet::wireMatch(dbNet* target)
-{
-  dbWire* srcw = getWire();
-  dbWire* tgtw = target->getWire();
-  if (srcw == NULL && tgtw == NULL)
-    return;
-  if (srcw == NULL || tgtw == NULL)
-    return;
-  if (!isWireOrdered() || !target->isWireOrdered())
-    return;
-  /************************************************ dimitris_fix LOOK_AGAIN */
-  // srcw->match(tgtw);
-}
-
-void dbNet::donateWire(dbNet* tnet, dbRSeg** new_rsegs)
-{
-  dbWire* wire = getWire();
-
-  if (!wire || wire->length() == 0)
-    return;
-
-  dbWire* twire;
-
-  if (tnet == this)  // discard iterm and bterm by donate
-  {
-    wire->detach();
-    twire = dbWire::create(this);
-    wire->donateWireSeg(twire, new_rsegs);
-    dbWire::destroy(wire);
-  } else {
-    twire = tnet->getWire();
-
-    if (!twire)
-      twire = dbWire::create(tnet);
-
-    wire->donateWireSeg(twire, new_rsegs);
-  }
-}
-
-void dbNet::printWire(int fid, int tid, char* type)
-{
-  FILE* fp;
-  char fn[40];
-  if (type) {
-    sprintf(fn, "%s%d", type, getId());
-    fp = fopen(fn, "w");
-  } else
-    fp = stdout;
-  fprintf(fp, "dbWire of Net %d %s :\n", getId(), getConstName());
-  if (getWire() && getWire()->length())
-    getWire()->printWire(fp, fid, tid);
-  if (fp != stdout)
-    fclose(fp);
-}
-
-void dbNet::printWire()
-{
-  printWire(0, 0, NULL);
-}
-
-void dbNet::printWire(char* type)
-{
-  printWire(0, 0, type);
-}
-
 bool dbNet::isWireOrdered()
 {
   _dbNet* net = (_dbNet*) this;
@@ -1367,34 +1019,6 @@ void dbNet::setWireOrdered(bool value)
   }
 }
 
-bool dbNet::isBuffered()
-{
-  _dbNet* net = (_dbNet*) this;
-  return net->_flags._buffered == 1;
-}
-
-void dbNet::setBuffered(bool value)
-{
-  _dbNet* net = (_dbNet*) this;
-
-  _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
-
-  net->_flags._buffered = (value == true) ? 1 : 0;
-
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: net {}, setBuffered: {}",
-               getId(),
-               value);
-    block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
-  }
-}
-
 bool dbNet::isDisconnected()
 {
   _dbNet* net = (_dbNet*) this;
@@ -1407,8 +1031,6 @@ void dbNet::setDisconnected(bool value)
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags =
-  // flagsToUInt(net);
 
   net->_flags._disconnected = (value == true) ? 1 : 0;
 
@@ -1431,12 +1053,11 @@ void dbNet::setWireAltered(bool value)
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags =
-  // flagsToUInt(net);
 
   net->_flags._wire_altered = (value == true) ? 1 : 0;
-  if (value)
+  if (value) {
     net->_flags._wire_ordered = 0;
+  }
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -1463,8 +1084,6 @@ void dbNet::setExtracted(bool value)
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags =
-  // flagsToUInt(net);
 
   net->_flags._extracted = (value == true) ? 1 : 0;
 
@@ -1515,38 +1134,12 @@ bool dbNet::isRCgraph()
   return net->_flags._rc_graph == 1;
 }
 
-void dbNet::setReduced(bool value)
-{
-  _dbNet* net = (_dbNet*) this;
-  _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
-  net->_flags._reduced = (value == true) ? 1 : 0;
-
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: net {}, setReduced: {}",
-               getId(),
-               value);
-    block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
-  }
-}
-
-bool dbNet::isReduced()
-{
-  _dbNet* net = (_dbNet*) this;
-  return net->_flags._reduced == 1;
-}
-
-dbBlock* dbNet::getBlock()
+dbBlock* dbNet::getBlock() const
 {
   return (dbBlock*) getImpl()->getOwner();
 }
 
-dbSet<dbITerm> dbNet::getITerms()
+dbSet<dbITerm> dbNet::getITerms() const
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
@@ -1565,7 +1158,7 @@ dbITerm* dbNet::get1stITerm()
   return it;
 }
 
-dbSet<dbBTerm> dbNet::getBTerms()
+dbSet<dbBTerm> dbNet::getBTerms() const
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
@@ -1583,55 +1176,52 @@ dbBTerm* dbNet::get1stBTerm()
   }
   return bt;
 }
-dbITerm* dbNet::getFirstOutput()
+
+dbITerm* dbNet::getFirstOutput() const
 {
-  if (getDrivingITerm() > 0)
+  if (getDrivingITerm() > 0) {
     return dbITerm::getITerm((dbBlock*) getImpl()->getOwner(),
                              getDrivingITerm());
+  }
 
-  dbSet<dbITerm> iterms = getITerms();
-  dbSet<dbITerm>::iterator iitr;
-
-  for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
-    dbITerm* tr = *iitr;
-
-    if ((tr->getSigType() == dbSigType::GROUND)
-        || (tr->getSigType() == dbSigType::POWER))
+  for (dbITerm* tr : getITerms()) {
+    if (tr->getSigType().isSupply()) {
       continue;
+    }
 
-    if (tr->isClocked())
+    if (tr->isClocked()) {
       continue;
+    }
 
-    if (tr->getIoType() != dbIoType::OUTPUT)
+    if (tr->getIoType() != dbIoType::OUTPUT) {
       continue;
+    }
 
     return tr;
   }
-  // warning(0, "instance %s has no output pin\n", getConstName());
-  return NULL;
+
+  return nullptr;
 }
+
 dbITerm* dbNet::get1stSignalInput(bool io)
 {
-  dbSet<dbITerm> iterms = getITerms();
-  dbSet<dbITerm>::iterator iitr;
-
-  for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
-    dbITerm* tr = *iitr;
-
-    if ((tr->getSigType() == dbSigType::GROUND)
-        || (tr->getSigType() == dbSigType::POWER))
+  for (dbITerm* tr : getITerms()) {
+    if (tr->getSigType().isSupply()) {
       continue;
+    }
 
-    if (tr->getIoType() != dbIoType::INPUT)
+    if (tr->getIoType() != dbIoType::INPUT) {
       continue;
+    }
 
-    if (io && (tr->getIoType() != dbIoType::INOUT))
+    if (io && (tr->getIoType() != dbIoType::INOUT)) {
       continue;
+    }
 
     return tr;
   }
-  // warning(0, "instance %s has no output pin\n", getConstName());
-  return NULL;
+
+  return nullptr;
 }
 
 dbSet<dbSWire> dbNet::getSWires()
@@ -1640,14 +1230,15 @@ dbSet<dbSWire> dbNet::getSWires()
   _dbBlock* block = (_dbBlock*) net->getOwner();
   return dbSet<dbSWire>(net, block->_swire_itr);
 }
-dbSWire*  // Dimitris 9/11/07
-dbNet::getFirstSWire()
+
+dbSWire* dbNet::getFirstSWire()
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
-  if (net->_swires == 0)
-    return NULL;
+  if (net->_swires == 0) {
+    return nullptr;
+  }
 
   return (dbSWire*) block->_swire_tbl->getPtr(net->_swires);
 }
@@ -1657,8 +1248,9 @@ dbWire* dbNet::getWire()
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
-  if (net->_wire == 0)
-    return NULL;
+  if (net->_wire == 0) {
+    return nullptr;
+  }
 
   return (dbWire*) block->_wire_tbl->getPtr(net->_wire);
 }
@@ -1668,8 +1260,9 @@ dbWire* dbNet::getGlobalWire()
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
-  if (net->_global_wire == 0)
-    return NULL;
+  if (net->_global_wire == 0) {
+    return nullptr;
+  }
 
   return (dbWire*) block->_wire_tbl->getPtr(net->_global_wire);
 }
@@ -1678,11 +1271,10 @@ bool dbNet::setIOflag()
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
+  const uint prev_flags = flagsToUInt(net);
   net->_flags._set_io = 1;
   net->_flags._io = 0;
-  dbSet<dbBTerm> bterms = getBTerms();
-  uint n = bterms.size();
+  const uint n = getBTerms().size();
 
   if (n > 0) {
     net->_flags._io = 1;
@@ -1714,14 +1306,15 @@ bool dbNet::setIOflag()
 
   return false;
 }
+
 bool dbNet::isIO()
 {
   _dbNet* net = (_dbNet*) this;
 
-  if (net->_flags._set_io > 0)
+  if (net->_flags._set_io > 0) {
     return net->_flags._io == 1;
-  else
-    return setIOflag();
+  }
+  return setIOflag();
 }
 
 void dbNet::setDoNotTouch(bool v)
@@ -1748,8 +1341,6 @@ void dbNet::setSpecial()
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags =
-  // flagsToUInt(net);
 
   net->_flags._special = 1;
 
@@ -1771,8 +1362,6 @@ void dbNet::clearSpecial()
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags =
-  // flagsToUInt(net);
 
   net->_flags._special = 0;
 
@@ -1786,6 +1375,51 @@ void dbNet::clearSpecial()
     block->_journal->updateField(
         this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
+}
+
+bool dbNet::isConnectedByAbutment()
+{
+  if (getITermCount() > 2 || getBTermCount() > 0) {
+    return false;
+  }
+
+  bool first_mterm = true;
+  std::vector<Rect> first_pin_boxes;
+  for (dbITerm* iterm : getITerms()) {
+    dbMTerm* mterm = iterm->getMTerm();
+    dbMaster* master = mterm->getMaster();
+    if (!master->isBlock()) {
+      return false;
+    }
+
+    dbInst* inst = iterm->getInst();
+    if (inst->isPlaced()) {
+      const dbTransform transform = inst->getTransform();
+
+      for (dbMPin* mpin : mterm->getMPins()) {
+        for (dbBox* box : mpin->getGeometry()) {
+          dbTechLayer* tech_layer = box->getTechLayer();
+          if (tech_layer->getType() != dbTechLayerType::ROUTING) {
+            continue;
+          }
+          odb::Rect rect = box->getBox();
+          transform.apply(rect);
+          if (first_mterm) {
+            first_pin_boxes.push_back(rect);
+          } else {
+            for (const Rect& first_pin_box : first_pin_boxes) {
+              if (rect.intersects(first_pin_box)) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    }
+    first_mterm = false;
+  }
+
+  return false;
 }
 
 bool dbNet::isWildConnected()
@@ -1838,39 +1472,6 @@ void dbNet::clearWildConnected()
   }
 }
 
-void dbNet::printRSeg(char* type)
-{
-  FILE* fp;
-  char fn[40];
-  if (type) {
-    sprintf(fn, "%s%d", type, getId());
-    fp = fopen(fn, "w");
-  } else
-    fp = stdout;
-  fprintf(fp, "dbRSeg of Net %d %s :\n", getId(), getConstName());
-  dbSet<dbRSeg> rSet = getRSegs();
-  dbSet<dbRSeg>::iterator rc_itr;
-  dbRSeg* rseg;
-  int cnt = 0;
-  int rx, ry;
-  for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
-    rseg = *rc_itr;
-    rseg->getCoords(rx, ry);
-    fprintf(fp,
-            "  %d  id= %d, src= %d, tgt= %d, R= %g, C= %g\n",
-            cnt,
-            rseg->getId(),
-            rseg->getSourceNode(),
-            rseg->getTargetNode(),
-            rseg->getResistance(),
-            rseg->getCapacitance());  // zzzz corner ?
-    fprintf(fp, "      x= %d, y=%d\n", rx, ry);
-    cnt++;
-  }
-  if (fp != stdout)
-    fclose(fp);
-}
-
 dbSet<dbRSeg> dbNet::getRSegs()
 {
   _dbNet* net = (_dbNet*) this;
@@ -1900,42 +1501,12 @@ void dbNet::reverseRSegs()
 
 dbRSeg* dbNet::findRSeg(uint srcn, uint tgtn)
 {
-  dbSet<dbRSeg> segs = getRSegs();
-  dbSet<dbRSeg>::iterator sitr;
-
-  dbRSeg* rseg;
-  for (sitr = segs.begin(); sitr != segs.end(); sitr++) {
-    rseg = *sitr;
-    if (rseg->getSourceNode() == srcn && rseg->getTargetNode() == tgtn)
+  for (dbRSeg* rseg : getRSegs()) {
+    if (rseg->getSourceNode() == srcn && rseg->getTargetNode() == tgtn) {
       return rseg;
+    }
   }
-  return NULL;
-}
-
-int ttttsv = 0;
-void dbNet::createZeroRc(bool foreign)
-{
-  dbCapNode* cap1 = dbCapNode::create(this, 1, foreign);
-  dbITerm* iterm = get1stITerm();
-  cap1->setITermFlag();
-  cap1->setNode(iterm->getId());
-  dbCapNode* cap2 = dbCapNode::create(this, 2, foreign);
-  cap2->setInternalFlag();
-  if (ttttsv) {
-    cap1->setCapacitance(0.0001, 0);
-    cap2->setCapacitance(0.0001, 0);
-  }
-  dbRSeg* rseg1 = dbRSeg::create(
-      this, 0 /*x*/, 0 /*y*/, 0 /*path_dir*/, !foreign /*allocate_cap*/);
-  dbRSeg* rseg0 = dbRSeg::create(
-      this, 0 /*x*/, 0 /*y*/, 0 /*path_dir*/, !foreign /*allocate_cap*/);
-  rseg0->setSourceNode(0);
-  rseg0->setTargetNode(cap1->getId());
-  rseg1->setSourceNode(cap1->getId());
-  rseg1->setTargetNode(cap2->getId());
-  if (ttttsv)
-    rseg1->setResistance(1.0, 0);
-  // rseg1->setCapacitance(0.0001, 0);
+  return nullptr;
 }
 
 void dbNet::set1stRSegId(uint rid)
@@ -1971,310 +1542,22 @@ uint dbNet::get1stRSegId()
 dbRSeg* dbNet::getZeroRSeg()
 {
   _dbNet* net = (_dbNet*) this;
-  if (net->_r_segs == 0)
-    return NULL;
+  if (net->_r_segs == 0) {
+    return nullptr;
+  }
   dbRSeg* zrc = dbRSeg::getRSeg((dbBlock*) net->getOwner(), net->_r_segs);
   return zrc;
 }
 
 dbCapNode* dbNet::findCapNode(uint nodeId)
 {
-  dbSet<dbCapNode> capNodes = getCapNodes();
-  dbSet<dbCapNode>::iterator itr;
-
-  for (itr = capNodes.begin(); itr != capNodes.end(); ++itr) {
-    dbCapNode* n = *itr;
-
-    if (n->getNode() == nodeId)
+  for (dbCapNode* n : getCapNodes()) {
+    if (n->getNode() == nodeId) {
       return n;
-  }
-
-  return NULL;
-}
-
-void dbNet::printCapN(char* type)
-{
-  FILE* fp;
-  char fn[40];
-  if (type) {
-    sprintf(fn, "%s%d", type, getId());
-    fp = fopen(fn, "w");
-  } else
-    fp = stdout;
-  fprintf(fp, "dbCapNode of Net %d %s :\n", getId(), getConstName());
-  dbSet<dbCapNode> capNodes = getCapNodes();
-  dbSet<dbCapNode>::iterator citr;
-
-  dbCapNode* capn;
-  int cnt = 0;
-  for (citr = capNodes.begin(); citr != capNodes.end(); ++citr) {
-    capn = *citr;
-    uint itermf = capn->isITerm() ? 1 : 0;
-    uint btermf = capn->isBTerm() ? 1 : 0;
-    uint interf = capn->isInternal() ? 1 : 0;
-    uint branch = capn->isBranch() ? 1 : 0;
-    uint foreign = capn->isForeign() ? 1 : 0;
-    uint treenode = capn->isTreeNode() ? 1 : 0;
-    // uint srcbterm = capn->isSourceNodeBterm() ? 1 : 0;
-    fprintf(fp,
-            "  %d  id= %d, node= %d, childCnt= %d, iterm= %d, bterm= %d, "
-            "internal= %d, branch= %d, foreign= %d, treenode= %d\n",
-            cnt,
-            capn->getId(),
-            capn->getNode(),
-            capn->getChildrenCnt(),
-            itermf,
-            btermf,
-            interf,
-            branch,
-            foreign,
-            treenode);
-    cnt++;
-  }
-  if (fp != stdout)
-    fclose(fp);
-}
-
-// void dbNet::donateCornerRC(dbBlock *pblock, dbITerm *donorterm, dbITerm
-// *rcvterm, dbRSeg *& bridgeRseg, std::vector<dbCCSeg*> * gndcc, dbRSeg *&
-// rtrseg, dbCapNode *& lastrcapnd, dbRSeg *& 1stdrseg, dbRSeg *& dtrseg,
-// dbCapNode *& 1stdcapnd)
-
-void dbNet::donateRC(dbITerm* donorterm,
-                     dbITerm* rcvterm,
-                     dbRSeg*& rtrseg,
-                     dbRSeg*& lastrrseg,
-                     dbCapNode*& lastrcapnd,
-                     uint& ricapndMax,
-                     dbRSeg*& fstdrseg,
-                     dbRSeg*& dtrseg,
-                     dbCapNode*& fstdcapnd,
-                     std::vector<dbCCSeg*>* gndcc,
-                     dbRSeg*& bridgeRseg)
-{
-  rtrseg = NULL;
-  lastrcapnd = NULL;
-  ricapndMax = 0;
-  fstdrseg = NULL;
-  dtrseg = NULL;
-  fstdcapnd = NULL;
-  bridgeRseg = NULL;
-
-  dbBlock* block = (dbBlock*) getImpl()->getOwner();
-  dbBlock* pblock = block;  // needed in case of independent spef corner
-  dbNet* rcvnet = rcvterm->getNet();
-
-  // donor rsegs
-  dtrseg = NULL;
-  dbRSeg* drseg = NULL;
-  dbSet<dbRSeg> drSet = getRSegs();
-  dbSet<dbRSeg>::iterator rc_itr;
-  for (rc_itr = drSet.begin(); rc_itr != drSet.end(); ++rc_itr) {
-    drseg = *rc_itr;
-    if (!dtrseg
-        && dbCapNode::getCapNode(block, drseg->getSourceNode())
-                   ->getITerm(pblock)
-               == donorterm) {
-      dtrseg = drseg;
-      break;
     }
   }
-  if (!drseg)
-    getImpl()->getLogger()->error(utl::ODB,
-                                  49,
-                                  "Donor net {} {} has no rc data",
-                                  getId(),
-                                  getConstName());
-  if (!dtrseg)
-    getImpl()->getLogger()->error(
-        utl::ODB,
-        50,
-        "Donor net {} {} has no capnode attached to iterm {}/{}",
-        getId(),
-        getConstName(),
-        donorterm->getInst()->getConstName(),
-        donorterm->getMTerm()->getConstName());
-  fstdrseg = getZeroRSeg();
 
-  // receiver rsegs
-  rtrseg = NULL;
-  dbRSeg* rrseg = NULL;
-  dbSet<dbRSeg> rSet = rcvnet->getRSegs();
-  for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
-    rrseg = *rc_itr;
-    if (!rtrseg
-        && dbCapNode::getCapNode(block, rrseg->getTargetNode())
-                   ->getITerm(pblock)
-               == rcvterm)
-      rtrseg = rrseg;
-    lastrrseg = rrseg;
-  }
-  if (!rtrseg)
-    getImpl()->getLogger()->error(
-        utl::ODB,
-        51,
-        "Receiver net {} {} has no capnode attached to iterm {}/{}",
-        rcvnet->getId(),
-        rcvnet->getConstName(),
-        rcvterm->getInst()->getConstName(),
-        rcvterm->getMTerm()->getConstName());
-
-  // receiver capnodes
-  dbCapNode* rcapnd = NULL;
-  dbSet<dbCapNode> rnodeSet = rcvnet->getCapNodes();
-  dbSet<dbCapNode>::iterator capn_itr;
-  for (capn_itr = rnodeSet.begin(); capn_itr != rnodeSet.end(); ++capn_itr) {
-    rcapnd = *capn_itr;
-    if (rcapnd->isInternal()) {
-      if (rcapnd->getNode() > ricapndMax)
-        ricapndMax = rcapnd->getNode();
-    }
-  }
-  ricapndMax += 3;
-  lastrcapnd = rcapnd;
-
-  uint rcvnid = rcvnet->getId();
-
-  // donor capnodes
-  dbCapNode* other = NULL;
-  dbCapNode* capnd = NULL;
-  uint cCnt = ((dbBlock*) getImpl()->getOwner())->getCornersPerBlock();
-  dbSet<dbCapNode> nodeSet = getCapNodes();
-  uint cid;
-  for (capn_itr = nodeSet.begin(); capn_itr != nodeSet.end(); ++capn_itr) {
-    capnd = *capn_itr;
-    if (!fstdcapnd)
-      fstdcapnd = capnd;
-    dbSet<dbCCSeg> ccSegs = capnd->getCCSegs();
-    dbCCSeg* ccSeg;
-    dbSet<dbCCSeg>::iterator ccitr;
-    for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ccitr++) {
-      ccSeg = *ccitr;
-      other = ccSeg->getTheOtherCapn(capnd, cid);
-      if (other->getNet() == rcvnet) {
-        for (uint ii = 0; ii < cCnt; ii++) {
-          capnd->addCapacitance(ccSeg->getCapacitance(ii), ii);
-          other->addCapacitance(ccSeg->getCapacitance(ii), ii);
-        }
-        gndcc->push_back(ccSeg);
-        dbCCSeg::disconnect(ccSeg);
-      }
-    }
-    capnd->setNet(rcvnid);
-    if (capnd->isInternal())
-      capnd->setNode(capnd->getNode() + ricapndMax);
-  }
-
-  lastrcapnd->setNext(fstdcapnd->getId());
-
-  dbCapNode* donorSrcCapNode
-      = dbCapNode::getCapNode(block, dtrseg->getSourceNode());
-  donorSrcCapNode->setInternalFlag();
-  donorSrcCapNode->resetITermFlag();
-  donorSrcCapNode->setNode(ricapndMax - 1);
-  dbCapNode* rcvTgtCapNod
-      = dbCapNode::getCapNode(block, rtrseg->getTargetNode());
-  rcvTgtCapNod->setInternalFlag();
-  rcvTgtCapNod->resetITermFlag();
-  rcvTgtCapNod->setNode(ricapndMax - 2);
-  bool foreign = block->getExtControl()->_foreign;
-  dbRSeg* zrrseg = rcvnet->getZeroRSeg();
-  bridgeRseg = dbRSeg::create(
-      rcvnet, 0 /*x*/, 0 /*y*/, 0 /*pathDir*/, !foreign /*allocateCap*/);
-  rcvnet->set1stRSegId(zrrseg->getId());
-  bridgeRseg->setSourceNode(rcvTgtCapNod->getId());
-  bridgeRseg->setTargetNode(donorSrcCapNode->getId());
-  for (uint ii = 0; ii < cCnt; ii++) {
-    bridgeRseg->setResistance(0, ii);
-    if (!foreign)
-      bridgeRseg->setCapacitance(0, ii);
-  }
-  lastrrseg->setNext(bridgeRseg->getId());
-  bridgeRseg->setNext(dtrseg->getId());
-
-  set1stRSegId(0);
-  set1stCapNodeId(0);
-}
-
-// void dbNet::donateRC(dbITerm *rcvterm, dbNet *rcvnet)
-//{
-//    dbBlock *block = (dbBlock *)getOwner();
-//    donateCornerRC(block, rcvterm, rcvnet);
-//    if (!block->extCornersAreIndependent())
-//        return;
-//    dbBlock *extBlock;
-//    dbNet *dNet;
-//    dbNet *rNet;
-//    int numcorners = block->getCornerCount();
-//    for (int corner = 1; corner < numcorners; corner++) {
-//        extBlock = block->findExtCornerBlock(corner);
-//        dNet = dbNet::getNet(extBlock, getId());
-//        rNet = dbNet::getNet(extBlock, rcvnet->getId());
-//        dNet->donateCornerRC(block, rcvterm, rNet);
-//    }
-//}
-
-void dbNet::unDonateRC(dbRSeg* rtrseg,
-                       dbRSeg* lastrrseg,
-                       dbITerm* it,
-                       dbCapNode* lastrcapnd,
-                       uint ricapndCnt,
-                       dbRSeg* dtrseg,
-                       dbRSeg* fstdrseg,
-                       dbCapNode* fstdcapnd,
-                       dbITerm* ot,
-                       std::vector<dbCCSeg*>* gndcc)
-{
-  lastrrseg->setNext(0);
-
-  rtrseg->getTargetCapNode()->resetInternalFlag();
-  rtrseg->getTargetCapNode()->setITermFlag();
-  rtrseg->getTargetCapNode()->setNode(it->getId());
-  lastrcapnd->setNext(0);
-
-  dtrseg->getSourceCapNode()->resetInternalFlag();
-  dtrseg->getSourceCapNode()->setITermFlag();
-  dtrseg->getSourceCapNode()->setNode(ot->getId());
-
-  set1stRSegId(fstdrseg->getId());
-  set1stCapNodeId(fstdcapnd->getId());
-  uint donorNetId = getId();
-  dbSet<dbCapNode> nodeSet = getCapNodes();
-  dbSet<dbCapNode>::iterator capn_itr;
-  dbCapNode* capnd;
-  for (capn_itr = nodeSet.begin(); capn_itr != nodeSet.end(); ++capn_itr) {
-    capnd = *capn_itr;
-    capnd->setNet(donorNetId);
-    if (capnd->isInternal())
-      capnd->setNode(capnd->getNode() - ricapndCnt);
-  }
-  uint cCnt = ((dbBlock*) getImpl()->getOwner())->getCornersPerBlock();
-  dbCCSeg* ccseg;
-  dbCapNode* srcn;
-  dbCapNode* tgtn;
-  double cap;
-  for (uint ii = 0; ii < gndcc->size(); ii++) {
-    ccseg = (*gndcc)[ii];
-    srcn = ccseg->getSourceCapNode();
-    tgtn = ccseg->getTargetCapNode();
-    for (uint jj = 0; jj < cCnt; jj++) {
-      cap = ccseg->getCapacitance(jj);
-      srcn->addCapacitance(-cap, jj);
-      tgtn->addCapacitance(-cap, jj);
-    }
-    dbCCSeg::connect(ccseg);
-  }
-}
-
-void dbNet::printWnP(char* type)
-{
-  char tag[20];
-  sprintf(tag, "%s_w_", type);
-  printWire(tag);
-  sprintf(tag, "%s_r_", type);
-  printRSeg(tag);
-  sprintf(tag, "%s_c_", type);
-  printCapN(tag);
+  return nullptr;
 }
 
 dbSet<dbCapNode> dbNet::getCapNodes()
@@ -2298,13 +1581,14 @@ void dbNet::setTermExtIds(int capId)  // 1: capNodeId, 0: reset
                  1,
                  "ECO: set net {} term extId",
                  getId());
-    } else
+    } else {
       debugPrint(getImpl()->getLogger(),
                  utl::ODB,
                  "DB_ECO",
                  1,
                  "ECO: reset net {} term extId",
                  getId());
+    }
     block->_journal->beginAction(dbJournal::UPDATE_FIELD);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(getId());
@@ -2363,61 +1647,36 @@ uint dbNet::get1stCapNodeId()
 
 void dbNet::reverseCCSegs()
 {
-  dbSet<dbCapNode> nodes = getCapNodes();
-  dbSet<dbCapNode>::iterator itr;
-
-  for (itr = nodes.begin(); itr != nodes.end(); ++itr) {
-    dbCapNode* node = *itr;
+  for (dbCapNode* node : getCapNodes()) {
     node->getCCSegs().reverse();
   }
 }
 
 void dbNet::getSrcCCSegs(std::vector<dbCCSeg*>& S)
 {
-  dbSet<dbCapNode> nodes = getCapNodes();
-  dbSet<dbCapNode>::iterator itr;
-
-  for (itr = nodes.begin(); itr != nodes.end(); ++itr) {
-    dbCapNode* node = *itr;
-    uint cap_id = node->getImpl()->getOID();
-    dbSet<dbCCSeg> segs = node->getCCSegs();
-    dbSet<dbCCSeg>::iterator sitr;
-
-    for (sitr = segs.begin(); sitr != segs.end(); ++sitr) {
-      _dbCCSeg* seg = (_dbCCSeg*) *sitr;
-      if (seg->_cap_node[0] == cap_id)
-        S.push_back((dbCCSeg*) seg);
+  for (dbCapNode* node : getCapNodes()) {
+    const uint cap_id = node->getImpl()->getOID();
+    for (dbCCSeg* seg : node->getCCSegs()) {
+      _dbCCSeg* seg_impl = (_dbCCSeg*) seg;
+      if (seg_impl->_cap_node[0] == cap_id) {
+        S.push_back(seg);
+      }
     }
   }
 }
 
 void dbNet::getTgtCCSegs(std::vector<dbCCSeg*>& S)
 {
-  dbSet<dbCapNode> nodes = getCapNodes();
-  dbSet<dbCapNode>::iterator itr;
-
-  for (itr = nodes.begin(); itr != nodes.end(); ++itr) {
-    dbCapNode* node = *itr;
-    uint cap_id = node->getImpl()->getOID();
-    dbSet<dbCCSeg> segs = node->getCCSegs();
-    dbSet<dbCCSeg>::iterator sitr;
-
-    for (sitr = segs.begin(); sitr != segs.end(); ++sitr) {
-      _dbCCSeg* seg = (_dbCCSeg*) *sitr;
-      if (seg->_cap_node[1] == cap_id)
-        S.push_back((dbCCSeg*) seg);
+  for (dbCapNode* node : getCapNodes()) {
+    const uint cap_id = node->getImpl()->getOID();
+    for (dbCCSeg* seg : node->getCCSegs()) {
+      _dbCCSeg* seg_impl = (_dbCCSeg*) seg;
+      if (seg_impl->_cap_node[1] == cap_id) {
+        S.push_back(seg);
+      }
     }
   }
 }
-
-/*
-void
-dbNet::unlinkCapNodes()
-{
-    _dbNet * net = (_dbNet *) this;
-    net->_cap_nodes = 0;
-}
-*/
 
 void dbNet::destroyCapNodes(bool cleanExtid)
 {
@@ -2430,11 +1689,12 @@ void dbNet::destroyCapNodes(bool cleanExtid)
     uint oid = cn->getNode();
 
     if (cleanExtid) {
-      if (cn->isITerm())
+      if (cn->isITerm()) {
         (dbITerm::getITerm(block, oid))->setExtId(0);
 
-      else if (cn->isBTerm())
+      } else if (cn->isBTerm()) {
         (dbBTerm::getBTerm(block, oid))->setExtId(0);
+      }
     }
 
     itr = dbCapNode::destroy(itr);
@@ -2446,21 +1706,19 @@ void dbNet::destroyRSegs()
   dbSet<dbRSeg> segs = getRSegs();
   dbSet<dbRSeg>::iterator sitr;
 
-  for (sitr = segs.begin(); sitr != segs.end();)
+  for (sitr = segs.begin(); sitr != segs.end();) {
     sitr = dbRSeg::destroy(sitr);
+  }
 
   dbRSeg* zrc = getZeroRSeg();
-  if (zrc)
+  if (zrc) {
     dbRSeg::destroy(zrc);
+  }
 }
 
 void dbNet::destroyCCSegs()
 {
-  dbSet<dbCapNode> capNodes = getCapNodes();
-  dbSet<dbCapNode>::iterator citr;
-
-  for (citr = capNodes.begin(); citr != capNodes.end(); ++citr) {
-    dbCapNode* n = *citr;
+  for (dbCapNode* n : getCapNodes()) {
     dbSet<dbCCSeg> ccSegs = n->getCCSegs();
     dbSet<dbCCSeg>::iterator ccitr;
 
@@ -2474,31 +1732,22 @@ void dbNet::destroyCCSegs()
   }
 }
 
-void dbNet::getCouplingNets(uint corner,
-                            double ccThreshold,
+void dbNet::getCouplingNets(const uint corner,
+                            const double ccThreshold,
                             std::set<dbNet*>& cnets)
 {
-  dbSet<dbCapNode> capNodes = getCapNodes();
-  dbSet<dbCapNode>::iterator citr;
   std::vector<dbNet*> inets;
   std::vector<double> netccap;
-  dbNet* tnet;
-  double cccap;
-  uint ii;
 
-  for (citr = capNodes.begin(); citr != capNodes.end(); ++citr) {
-    dbCapNode* n = *citr;
-    dbSet<dbCCSeg> ccSegs = n->getCCSegs();
-    dbSet<dbCCSeg>::iterator ccitr;
-
-    for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
-      dbCCSeg* cc = *ccitr;
-      cccap = cc->getCapacitance(corner);
-      tnet = cc->getSourceCapNode()->getNet();
-      if (tnet == this)
+  for (dbCapNode* n : getCapNodes()) {
+    for (dbCCSeg* cc : n->getCCSegs()) {
+      const double cccap = cc->getCapacitance(corner);
+      dbNet* tnet = cc->getSourceCapNode()->getNet();
+      if (tnet == this) {
         tnet = cc->getTargetCapNode()->getNet();
+      }
       if (tnet->isMarked()) {
-        for (ii = 0; ii < inets.size(); ii++) {
+        for (uint ii = 0; ii < inets.size(); ii++) {
           if (inets[ii] == tnet) {
             netccap[ii] += cccap;
             break;
@@ -2511,9 +1760,10 @@ void dbNet::getCouplingNets(uint corner,
       tnet->setMark(true);
     }
   }
-  for (ii = 0; ii < inets.size(); ii++) {
-    if (netccap[ii] >= ccThreshold && cnets.find(inets[ii]) == cnets.end())
+  for (uint ii = 0; ii < inets.size(); ii++) {
+    if (netccap[ii] >= ccThreshold && cnets.find(inets[ii]) == cnets.end()) {
       cnets.insert(inets[ii]);
+    }
     inets[ii]->setMark(false);
   }
 }
@@ -2521,8 +1771,9 @@ void dbNet::getCouplingNets(uint corner,
 void dbNet::getGndTotalCap(double* gndcap, double* totalcap, double mcf)
 {
   dbSigType type = getSigType();
-  if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
+  if (type.isSupply()) {
     return;
+  }
   dbSet<dbRSeg> rSet = getRSegs();
   if (rSet.begin() == rSet.end()) {
     getImpl()->getLogger()->warn(utl::ODB,
@@ -2535,26 +1786,21 @@ void dbNet::getGndTotalCap(double* gndcap, double* totalcap, double mcf)
   bool foreign = ((dbBlock*) getImpl()->getOwner())->getExtControl()->_foreign;
   bool first = true;
   if (foreign) {
-    dbSet<dbCapNode> nodeSet = getCapNodes();
-    dbSet<dbCapNode>::iterator rc_itr;
-    dbCapNode* node;
-    for (rc_itr = nodeSet.begin(); rc_itr != nodeSet.end(); ++rc_itr) {
-      node = *rc_itr;
-      if (first)
+    for (dbCapNode* node : getCapNodes()) {
+      if (first) {
         node->getGndTotalCap(gndcap, totalcap, mcf);
-      else
+      } else {
         node->addGndTotalCap(gndcap, totalcap, mcf);
+      }
       first = false;
     }
   } else {
-    dbRSeg* rc;
-    dbSet<dbRSeg>::iterator rc_itr;
-    for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
-      rc = *rc_itr;
-      if (first)
+    for (dbRSeg* rc : rSet) {
+      if (first) {
         rc->getGndTotalCap(gndcap, totalcap, mcf);
-      else
+      } else {
         rc->addGndTotalCap(gndcap, totalcap, mcf);
+      }
       first = false;
     }
   }
@@ -2567,8 +1813,9 @@ void dbNet::preExttreeMergeRC(double max_cap, uint corner)
   dbCapNode* tgtNode;
   std::vector<dbRSeg*> mrsegs;
   dbSigType type = getSigType();
-  if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
+  if ((type == dbSigType::POWER) || (type == dbSigType::GROUND)) {
     return;
+  }
   dbSet<dbRSeg> rSet = getRSegs();
   if (rSet.begin() == rSet.end()) {
     getImpl()->getLogger()->warn(utl::ODB,
@@ -2579,29 +1826,26 @@ void dbNet::preExttreeMergeRC(double max_cap, uint corner)
     return;
   }
   dbRSeg* prc = getZeroRSeg();
-  dbRSeg* rc;
   bool firstRC = true;
   uint cnt = 1;
-  prc->getGndTotalCap(NULL, &totalcap[0], 1 /*mcf*/);
-  dbSet<dbRSeg>::iterator rc_itr;
-  for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
-    rc = *rc_itr;
+  prc->getGndTotalCap(nullptr, &totalcap[0], 1 /*mcf*/);
+  for (dbRSeg* rc : rSet) {
     mrsegs.push_back(rc);
-    if (firstRC && cnt != 1)
-      rc->getGndTotalCap(NULL, &totalcap[0], 1 /*mcf*/);
-    else
-      rc->addGndTotalCap(NULL, &totalcap[0], 1 /*mcf*/);
+    if (firstRC && cnt != 1) {
+      rc->getGndTotalCap(nullptr, &totalcap[0], 1 /*mcf*/);
+    } else {
+      rc->addGndTotalCap(nullptr, &totalcap[0], 1 /*mcf*/);
+    }
     cnt++;
     firstRC = false;
     tgtNode = dbCapNode::getCapNode(block, rc->getTargetNode());
-    if (rc->getSourceNode() == rc->getTargetNode())
+    if (rc->getSourceNode() == rc->getTargetNode()) {
       continue;
+    }
     if (!tgtNode->isTreeNode() && totalcap[corner] <= max_cap
-        && !tgtNode->isDangling())
+        && !tgtNode->isDangling()) {
       continue;
-#ifdef EXT
-    prc->mergeRCs(mrsegs);
-#endif
+    }
     prc = rc;
     mrsegs.clear();
     firstRC = true;
@@ -2619,16 +1863,8 @@ void dbNet::destroyParasitics()
 double dbNet::getTotalCouplingCap(uint corner)
 {
   double cap = 0.0;
-  dbSet<dbCapNode> capNodes = getCapNodes();
-  dbSet<dbCapNode>::iterator citr;
-
-  for (citr = capNodes.begin(); citr != capNodes.end(); ++citr) {
-    dbCapNode* n = *citr;
-    dbSet<dbCCSeg> ccSegs = n->getCCSegs();
-    dbSet<dbCCSeg>::iterator ccitr;
-
-    for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
-      dbCCSeg* cc = *ccitr;
+  for (dbCapNode* n : getCapNodes()) {
+    for (dbCCSeg* cc : n->getCCSegs()) {
       cap += cc->getCapacitance(corner);
     }
   }
@@ -2643,39 +1879,27 @@ double dbNet::getTotalCapacitance(uint corner, bool cc)
   bool foreign = ((dbBlock*) getImpl()->getOwner())->getExtControl()->_foreign;
 
   if (foreign) {
-    dbSet<dbCapNode> nodeSet = getCapNodes();
-    dbSet<dbCapNode>::iterator rc_itr;
-    dbCapNode* node;
-    for (rc_itr = nodeSet.begin(); rc_itr != nodeSet.end(); ++rc_itr) {
-      node = *rc_itr;
+    for (dbCapNode* node : getCapNodes()) {
       cap1 = node->getCapacitance(corner);
       cap += cap1;
     }
   } else {
-    dbSet<dbRSeg> rSet = getRSegs();
-    dbSet<dbRSeg>::iterator rc_itr;
-    dbRSeg* rc;
-    for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
-      rc = *rc_itr;
+    for (dbRSeg* rc : getRSegs()) {
       cap1 = rc->getCapacitance(corner);
       cap += cap1;
     }
   }
-  if (cc)
+  if (cc) {
     cap += getTotalCouplingCap(corner);
+  }
   return cap;
 }
 
 double dbNet::getTotalResistance(uint corner)
 {
-  dbSet<dbRSeg> rSet = this->getRSegs();
-  dbSet<dbRSeg>::iterator rc_itr;
-
   double cap = 0.0;
 
-  for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
-    dbRSeg* rc = *rc_itr;
-
+  for (dbRSeg* rc : getRSegs()) {
     cap += rc->getResistance(corner);
   }
   return cap;
@@ -2688,7 +1912,7 @@ void dbNet::setNonDefaultRule(dbTechNonDefaultRule* rule)
   uint prev_rule = net->_non_default_rule;
   bool prev_block_rule = net->_flags._block_rule;
 
-  if (rule == NULL) {
+  if (rule == nullptr) {
     net->_non_default_rule = 0U;
     net->_flags._block_rule = 0;
   } else {
@@ -2722,8 +1946,9 @@ dbTechNonDefaultRule* dbNet::getNonDefaultRule()
 {
   _dbNet* net = (_dbNet*) this;
 
-  if (net->_non_default_rule == 0)
-    return NULL;
+  if (net->_non_default_rule == 0) {
+    return nullptr;
+  }
 
   dbDatabase* db = (dbDatabase*) net->getDatabase();
 
@@ -2743,15 +1968,17 @@ void dbNet::getSignalWireCount(uint& wireCnt, uint& viaCnt)
   dbWirePath path;
   dbWirePathShape pshape;
   dbWire* wire = getWire();
-  if (wire == NULL)
+  if (wire == nullptr) {
     return;
+  }
   dbWirePathItr pitr;
   for (pitr.begin(wire); pitr.getNextPath(path);) {
     while (pitr.getNextShape(pshape)) {
-      if (pshape.shape.isVia())
+      if (pshape.shape.isVia()) {
         viaCnt++;
-      else
+      } else {
         wireCnt++;
+      }
     }
   }
 }
@@ -2768,8 +1995,9 @@ void dbNet::getNetStats(uint& wireCnt,
   dbWirePath path;
   dbWirePathShape pshape;
   dbWire* wire = getWire();
-  if (wire == NULL)
+  if (wire == nullptr) {
     return;
+  }
   dbWirePathItr pitr;
   for (pitr.begin(wire); pitr.getNextPath(path);) {
     while (pitr.getNextShape(pshape)) {
@@ -2780,64 +2008,49 @@ void dbNet::getNetStats(uint& wireCnt,
       wireCnt++;
 
       uint level = pshape.shape.getTechLayer()->getRoutingLevel();
-      if (levelTable)
+      if (levelTable) {
         levelTable[level]++;
-      len += MAX(pshape.shape.xMax() - pshape.shape.xMin(),
-                 pshape.shape.yMax() - pshape.shape.yMin());
+      }
+      len += std::max(pshape.shape.xMax() - pshape.shape.xMin(),
+                      pshape.shape.yMax() - pshape.shape.yMin());
     }
   }
 }
 void dbNet::getPowerWireCount(uint& wireCnt, uint& viaCnt)
 {
-  dbSet<dbSWire> swires = getSWires();
-  dbSet<dbSWire>::iterator itr;
-  for (itr = swires.begin(); itr != swires.end(); ++itr) {
-    dbSWire* swire = *itr;
-    dbSet<dbSBox> wires = swire->getWires();
-    dbSet<dbSBox>::iterator box_itr;
-    for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
-      dbSBox* s = *box_itr;
-      if (s->isVia())
+  for (dbSWire* swire : getSWires()) {
+    for (dbSBox* s : swire->getWires()) {
+      if (s->isVia()) {
         viaCnt++;
-      else
+      } else {
         wireCnt++;
+      }
     }
   }
 }
 
 void dbNet::getWireCount(uint& wireCnt, uint& viaCnt)
 {
-  if (getSigType() == dbSigType::POWER || getSigType() == dbSigType::GROUND)
+  if (getSigType() == dbSigType::POWER || getSigType() == dbSigType::GROUND) {
     getPowerWireCount(wireCnt, viaCnt);
-  else
+  } else {
     getSignalWireCount(wireCnt, viaCnt);
+  }
 }
 
 uint dbNet::getITermCount()
 {
-  uint itc = 0;
-  dbSet<dbITerm> iterms = getITerms();
-  dbSet<dbITerm>::iterator iterm_itr;
-  for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr)
-    itc++;
-  return itc;
+  return getITerms().size();
 }
 
 uint dbNet::getBTermCount()
 {
-  uint btc = 0;
-  dbSet<dbBTerm> bterms = getBTerms();
-  dbSet<dbBTerm>::iterator bterm_itr;
-  for (bterm_itr = bterms.begin(); bterm_itr != bterms.end(); ++bterm_itr)
-    btc++;
-  return btc;
+  return getBTerms().size();
 }
 
 uint dbNet::getTermCount()
 {
-  uint itc = getITermCount();
-  uint btc = getBTermCount();
-  return itc + btc;
+  return getITermCount() + getBTermCount();
 }
 
 Rect dbNet::getTermBBox()
@@ -2883,8 +2096,9 @@ void dbNet::destroySWires()
 
   dbSet<dbSWire> swires = getSWires();
 
-  for (auto sitr = swires.begin(); sitr != swires.end();)
+  for (auto sitr = swires.begin(); sitr != swires.end();) {
     sitr = dbSWire::destroy(sitr);
+  }
 
   net->_swires = 0;
 }
@@ -2893,9 +2107,11 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
 {
   _dbBlock* block = (_dbBlock*) block_;
 
-  if (!skipExistingCheck && block->_net_hash.hasMember(name_))
-    return NULL;
+  if (!skipExistingCheck && block->_net_hash.hasMember(name_)) {
+    return nullptr;
+  }
 
+  _dbNet* net = block->_net_tbl->create();
   if (block->_journal) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
@@ -2906,18 +2122,16 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(name_);
+    block->_journal->pushParam(net->getOID());
     block->_journal->endAction();
   }
 
-  _dbNet* net = block->_net_tbl->create();
-  net->_name = strdup(name_);
-  ZALLOCATED(net->_name);
+  net->_name = safe_strdup(name_);
   block->_net_hash.insert(net);
 
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-       ++cbitr)
-    (**cbitr)().inDbNetCreate((dbNet*) net);  // client ECO optimization - payam
+  for (auto cb : block->_callbacks) {
+    cb->inDbNetCreate((dbNet*) net);
+  }
 
   return (dbNet*) net;
 }
@@ -2926,6 +2140,7 @@ void dbNet::destroy(dbNet* net_)
 {
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
+  dbBlock* dbblock = (dbBlock*) block;
 
   if (net->_flags._dont_touch) {
     net->getLogger()->error(
@@ -2942,27 +2157,37 @@ void dbNet::destroy(dbNet* net_)
   }
 
   dbSet<dbBTerm> bterms = net_->getBTerms();
-
-  dbSet<dbBTerm>::iterator bitr;
-
-  for (bitr = bterms.begin(); bitr != bterms.end();)
+  for (auto bitr = bterms.begin(); bitr != bterms.end();) {
     bitr = dbBTerm::destroy(bitr);
+  }
 
   dbSet<dbSWire> swires = net_->getSWires();
-  ;
-  dbSet<dbSWire>::iterator sitr;
-
-  for (sitr = swires.begin(); sitr != swires.end();)
+  for (auto sitr = swires.begin(); sitr != swires.end();) {
     sitr = dbSWire::destroy(sitr);
+  }
 
   if (net->_wire != 0) {
     dbWire* wire = (dbWire*) block->_wire_tbl->getPtr(net->_wire);
     dbWire::destroy(wire);
   }
 
-  for (dbId<_dbGroup> _group_id : net->_groups) {
+  for (const dbId<_dbGroup>& _group_id : net->_groups) {
     dbGroup* group = (dbGroup*) block->_group_tbl->getPtr(_group_id);
     group->removeNet(net_);
+  }
+
+  dbSet<dbGuide> guides = net_->getGuides();
+  for (auto gitr = guides.begin(); gitr != guides.end();) {
+    gitr = dbGuide::destroy(gitr);
+  }
+
+  dbSet<dbGlobalConnect> connects = dbblock->getGlobalConnects();
+  for (auto gitr = connects.begin(); gitr != connects.end();) {
+    if (gitr->getNet()->getId() == net_->getId()) {
+      gitr = dbGlobalConnect::destroy(gitr);
+    } else {
+      gitr++;
+    }
   }
 
   if (block->_journal) {
@@ -2974,17 +2199,17 @@ void dbNet::destroy(dbNet* net_)
                net->getId());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbNetObj);
-    block->_journal->pushParam(net->getId());
+    block->_journal->pushParam(net_->getName());
+    block->_journal->pushParam(net->getOID());
+    uint* flags = (uint*) &net->_flags;
+    block->_journal->pushParam(*flags);
+    block->_journal->pushParam(net->_non_default_rule);
     block->_journal->endAction();
   }
 
-  // Bugzilla #7: The notification of the the net destruction must
-  // be done after pin manipulation is completed. The notification is
-  // now after the pin disconnection - payam 01/10/2006
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-       ++cbitr)
-    (**cbitr)().inDbNetDestroy(net_);  // client ECO optimization - payam
+  for (auto cb : block->_callbacks) {
+    cb->inDbNetDestroy(net_);
+  }
 
   dbProperty::destroyProperties(net);
   block->_net_hash.remove(net);
@@ -3008,57 +2233,65 @@ dbNet* dbNet::getNet(dbBlock* block_, uint dbid_)
 dbNet* dbNet::getValidNet(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  if (!block->_net_tbl->validId(dbid_))
-    return NULL;
+  if (!block->_net_tbl->validId(dbid_)) {
+    return nullptr;
+  }
   return (dbNet*) block->_net_tbl->getPtr(dbid_);
+}
+
+bool dbNet::canMergeNet(dbNet* in_net)
+{
+  if (isDoNotTouch() || in_net->isDoNotTouch()) {
+    return false;
+  }
+
+  for (dbITerm* iterm : in_net->getITerms()) {
+    if (iterm->getInst()->isDoNotTouch()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void dbNet::mergeNet(dbNet* in_net)
+{
+  _dbNet* net = (_dbNet*) this;
+  _dbBlock* block = (_dbBlock*) net->getOwner();
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbNetPreMerge(this, in_net);
+  }
+
+  // in_net->getITerms() returns a terminal iterator, and iterm->connect() can
+  // invalidate the iterator by disconnecting a dbITerm.
+  // Calling iterm->connect() during iteration with the iterator is not safe.
+  // Thus create another vector for safe iterms iteration.
+  auto iterms_set = in_net->getITerms();
+  std::vector<dbITerm*> iterms(iterms_set.begin(), iterms_set.end());
+  for (dbITerm* iterm : iterms) {
+    iterm->connect(this);
+  }
+
+  // Create vector for safe iteration.
+  auto bterms_set = in_net->getBTerms();
+  std::vector<dbBTerm*> bterms(bterms_set.begin(), bterms_set.end());
+  for (dbBTerm* bterm : bterms) {
+    bterm->connect(this);
+  }
 }
 
 void dbNet::markNets(std::vector<dbNet*>& nets, dbBlock* block, bool mk)
 {
-  uint j;
-  dbNet* net;
-  if (nets.size() == 0) {
-    dbSet<dbNet> bnets = block->getNets();
-    dbSet<dbNet>::iterator nitr;
-    for (nitr = bnets.begin(); nitr != bnets.end(); ++nitr) {
-      net = (dbNet*) *nitr;
+  if (nets.empty()) {
+    for (dbNet* net : block->getNets()) {
       net->setMark(mk);
     }
   } else {
-    for (j = 0; j < nets.size(); j++) {
-      net = nets[j];
+    for (dbNet* net : nets) {
       net->setMark(mk);
     }
   }
-}
-uint dbNet::setLevelAtFanout(uint level,
-                             bool fromPI,
-                             std::vector<dbInst*>& instVector)
-{
-  uint cnt = 0;
-  dbSet<dbITerm> iterms = getITerms();
-  dbSet<dbITerm>::iterator iitr;
-  for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
-    dbITerm* iterm = *iitr;
-    if (!((iterm->getIoType() == dbIoType::INPUT)
-          || (iterm->getIoType() == dbIoType::INOUT)))
-      continue;
-
-    dbInst* inst = iterm->getInst();
-    // if (strcmp("INV_26", inst->getConstName())==0)
-    //	notice(0, "inst %d %s\n", inst->getId(), inst->getConstName());
-
-    if (inst->getMaster()->isSequential())
-      continue;
-    if (inst->getLevel() != 0)
-      continue;
-    if (inst->getMaster()->getType() != dbMasterType::CORE)
-      continue;
-    inst->setLevel(level, fromPI);
-    instVector.push_back(inst);
-    cnt++;
-  }
-  return cnt;
 }
 
 dbSet<dbGuide> dbNet::getGuides() const
@@ -3070,84 +2303,166 @@ dbSet<dbGuide> dbNet::getGuides() const
 
 void dbNet::clearGuides()
 {
-  auto guides = getGuides();
+  dbSet<dbGuide> guides = getGuides();
   dbSet<dbGuide>::iterator itr = guides.begin();
   while (itr != guides.end()) {
-    auto curGuide = *itr++;
-    dbGuide::destroy(curGuide);
+    itr = dbGuide::destroy(itr);
   }
 }
 
-#if 0
-//
-// Helper fn: given a net create two terms at endpoints (x1,y1) and (x2,y2)
-// Return true iff successful.
-//
-std::pair<dbBTerm *,dbBTerm *>
-dbNet::createTerms4SingleNet(int x1, int y1, int x2, int y2, dbTechLayer *inly)
+dbSet<dbNetTrack> dbNet::getTracks() const
 {
-  int fwidth = MIN(x2 - x1, y2 - y1);
-  uint hwidth = fwidth/2;
-
-  std::pair<dbBTerm *,dbBTerm *> retpr;
-  retpr.first  = NULL;
-  retpr.second = NULL;
-
-  std::string term_str(this->getName());
-  term_str = term_str + "_BL";
-  dbBTerm *blterm = dbBTerm::create(this, term_str.c_str());
-
-  if (!blterm)
-    return retpr;
-
-  term_str = this->getName();
-  term_str = term_str + "_BU";
-  dbBTerm *buterm = dbBTerm::create(this, term_str.c_str());
-
-  if (!buterm)
-  {
-      dbBTerm::destroy(blterm);
-      return retpr;
-  }
-
-  // TWG: Added bpins
-  dbBPin * blpin = dbBPin::create(blterm);
-  dbBPin * bupin = dbBPin::create(buterm);
-
-  if ((x2 - x1) == fwidth)
-  {
-      int x = x1+hwidth;
-	  /*
-	  if ((y2-y1)==fwidth) {
-		  dbBox::create(blpin, inly, -hwidth+x, y1, hwidth+x, hwidth+y1);
-		  dbBox::create(bupin, inly, -hwidth+x, y2, hwidth+x, hwidth+y2);
-	  }
-	  else {
-		  dbBox::create(blpin, inly, -hwidth+x, -hwidth+y1, hwidth+x, hwidth+y1);
-		  dbBox::create(bupin, inly, -hwidth+x, -hwidth+y2, hwidth+x, hwidth+y2);
-	  }
-	  */
-      dbBox::create(blpin, inly, -hwidth+x, -hwidth+y1, hwidth+x, hwidth+y1);
-      dbBox::create(bupin, inly, -hwidth+x, -hwidth+y2, hwidth+x, hwidth+y2);
-  }
-  else
-  {
-      int y = y1+hwidth;
-      dbBox::create(blpin, inly, -hwidth+x1, -hwidth+y, hwidth+x1, hwidth+y);
-      dbBox::create(bupin, inly, -hwidth+x2, -hwidth+y, hwidth+x2, hwidth+y);
-  }
-
-  blterm->setSigType(dbSigType::SIGNAL);
-  buterm->setSigType(dbSigType::SIGNAL);
-  blterm->setIoType(dbIoType::INPUT);
-  buterm->setIoType(dbIoType::OUTPUT);
-  blpin->setPlacementStatus(dbPlacementStatus::PLACED);
-  bupin->setPlacementStatus(dbPlacementStatus::PLACED);
-
-  retpr.first = blterm;
-  retpr.second = buterm;
-  return retpr;
+  _dbNet* net = (_dbNet*) this;
+  _dbBlock* block = (_dbBlock*) net->getOwner();
+  return dbSet<dbNetTrack>(net, block->_net_track_itr);
 }
 
-#endif
+void dbNet::clearTracks()
+{
+  dbSet<dbNetTrack> tracks = getTracks();
+  dbSet<dbNetTrack>::iterator itr = tracks.begin();
+  while (itr != tracks.end()) {
+    itr = dbNetTrack::destroy(itr);
+  }
+}
+
+bool dbNet::hasJumpers()
+{
+  bool has_jumpers = false;
+  _dbNet* net = (_dbNet*) this;
+  _dbDatabase* db = net->getImpl()->getDatabase();
+  if (db->isSchema(db_schema_has_jumpers)) {
+    has_jumpers = net->_flags._has_jumpers == 1;
+  }
+  return has_jumpers;
+}
+
+void dbNet::setJumpers(bool has_jumpers)
+{
+  _dbNet* net = (_dbNet*) this;
+  _dbDatabase* db = net->getImpl()->getDatabase();
+  if (db->isSchema(db_schema_has_jumpers)) {
+    net->_flags._has_jumpers = has_jumpers ? 1 : 0;
+  }
+}
+
+dbModInst* dbNet::findMainParentModInst() const
+{
+  dbBlock* block = getBlock();
+  const char delim = block->getHierarchyDelimiter();
+  const std::string net_name = getName();
+  const size_t last_delim_pos = net_name.find_last_of(delim);
+
+  if (last_delim_pos != std::string::npos) {
+    const std::string net_parent_hier_name = net_name.substr(0, last_delim_pos);
+    return block->findModInst(net_parent_hier_name.c_str());
+  }
+
+  return nullptr;
+}
+
+dbModule* dbNet::findMainParentModule() const
+{
+  dbModInst* parent_mod_inst = findMainParentModInst();
+  if (parent_mod_inst) {
+    return parent_mod_inst->getMaster();
+  }
+
+  return getBlock()->getTopModule();
+}
+
+bool dbNet::findRelatedModNets(std::set<dbModNet*>& modnet_set) const
+{
+  modnet_set.clear();
+
+  std::vector<dbModNet*> nets_to_visit;
+
+  // Helper to add a modnet to the result set and the visit queue if it's new.
+  auto visitIfNew = [&](dbModNet* modnet) {
+    if (modnet && modnet_set.insert(modnet).second) {
+      nets_to_visit.push_back(modnet);
+    }
+  };
+
+  // Find initial set of modnets from the current dbNet.
+  for (dbITerm* iterm : getITerms()) {
+    visitIfNew(iterm->getModNet());
+  }
+  for (dbBTerm* bterm : getBTerms()) {
+    visitIfNew(bterm->getModNet());
+  }
+
+  // Perform a DFS traversal to find all connected modnets.
+  while (!nets_to_visit.empty()) {
+    dbModNet* current_mod_net = nets_to_visit.back();
+    nets_to_visit.pop_back();
+
+    for (dbModITerm* mod_iterm : current_mod_net->getModITerms()) {
+      if (dbModBTerm* mod_bterm = mod_iterm->getChildModBTerm()) {
+        visitIfNew(mod_bterm->getModNet());
+      }
+    }
+
+    for (dbModBTerm* mod_bterm : current_mod_net->getModBTerms()) {
+      if (dbModITerm* mod_iterm = mod_bterm->getParentModITerm()) {
+        visitIfNew(mod_iterm->getModNet());
+      }
+    }
+  }
+
+  return !modnet_set.empty();
+}
+
+void _dbNet::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["groups"].add(_groups);
+}
+
+bool dbNet::isDeeperThan(const dbNet* net) const
+{
+  std::string this_name = getName();
+  std::string other_name = net->getName();
+
+  char delim = getBlock()->getHierarchyDelimiter();
+  size_t this_depth = std::count(this_name.begin(), this_name.end(), delim);
+  size_t other_depth = std::count(other_name.begin(), other_name.end(), delim);
+
+  return (other_depth < this_depth);
+}
+
+dbModNet* dbNet::findModNetInHighestHier() const
+{
+  std::set<dbModNet*> modnets;
+  if (findRelatedModNets(modnets) == false) {
+    return nullptr;
+  }
+
+  dbModNet* highest = nullptr;
+  size_t min_delimiters = (size_t) -1;
+  char delim = getBlock()->getHierarchyDelimiter();
+
+  for (dbModNet* modnet : modnets) {
+    std::string name = modnet->getHierarchicalName();
+    size_t num_delimiters = std::count(name.begin(), name.end(), delim);
+    if (highest == nullptr || num_delimiters < min_delimiters) {
+      min_delimiters = num_delimiters;
+      highest = modnet;
+    }
+  }
+
+  return highest;
+}
+
+void dbNet::renameWithModNetInHighestHier()
+{
+  dbModNet* highest_mod_net = findModNetInHighestHier();
+  if (highest_mod_net) {
+    rename(highest_mod_net->getHierarchicalName().c_str());
+  }
+}
+
 }  // namespace odb

@@ -1,159 +1,115 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#ifndef _GR_NODE_H_
-#define _GR_NODE_H_
+#pragma once
 
 #include <iostream>
+#include <list>
 #include <memory>
 
-#include "frBaseTypes.h"
-// #include "db/obj/frNode.h"
 #include "db/grObj/grBlockObject.h"
+#include "db/infra/frPoint.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frNode.h"
+#include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class grNet;
-class frNode;
 
 class grNode : public grBlockObject
 {
  public:
   // constructor
-  grNode()
-      : grBlockObject(),
-        net(nullptr),
-        loc(),
-        layerNum(0),
-        connFig(nullptr),
-        pin(nullptr),
-        type(frNodeTypeEnum::frcSteiner),
-        /*fNode(nullptr),*/ parent(nullptr),
-        children()
-  {
-  }
+  grNode() = default;
   grNode(grNode& in)
       : grBlockObject(),
-        net(in.net),
-        loc(in.loc),
-        layerNum(in.layerNum),
-        connFig(in.connFig),
-        pin(in.pin),
-        type(in.type),
-        parent(in.parent),
-        children(in.children)
+        net_(in.net_),
+        loc_(in.loc_),
+        layerNum_(in.layerNum_),
+        connFig_(in.connFig_),
+        pin_(in.pin_),
+        type_(in.type_),
+        parent_(in.parent_),
+        children_(in.children_)
   {
   }
   grNode(frNode& in)
-      : grBlockObject(),
-        net(nullptr),
-        loc(in.loc),
-        layerNum(in.layerNum),
-        connFig(nullptr),
-        pin(in.pin),
-        type(in.type),
-        parent(nullptr),
-        children()
+      : loc_(in.loc_), layerNum_(in.layerNum_), pin_(in.pin_), type_(in.type_)
   {
   }
 
   // setters
-  void addToNet(grNet* in) { net = in; }
-  void setLoc(const Point& in) { loc = in; }
-  void setLayerNum(frLayerNum in) { layerNum = in; }
-  void setConnFig(grBlockObject* in) { connFig = in; }
-  void setPin(frBlockObject* in) { pin = in; }
-  void setType(frNodeTypeEnum in) { type = in; }
-  void setParent(grNode* in) { parent = in; }
+  void addToNet(grNet* in) { net_ = in; }
+  void setLoc(const odb::Point& in) { loc_ = in; }
+  void setLayerNum(frLayerNum in) { layerNum_ = in; }
+  void setConnFig(grBlockObject* in) { connFig_ = in; }
+  void setPin(frBlockObject* in) { pin_ = in; }
+  void setType(frNodeTypeEnum in) { type_ = in; }
+  void setParent(grNode* in) { parent_ = in; }
   void addChild(grNode* in)
   {
     bool exist = false;
-    for (auto child : children) {
+    for (auto child : children_) {
       if (child == in) {
         exist = true;
       }
     }
     if (!exist) {
-      children.push_back(in);
+      children_.push_back(in);
     } else {
       std::cout << "Warning: grNode child already exists\n";
     }
   }
-  void clearChildren() { children.clear(); }
+  void clearChildren() { children_.clear(); }
   void removeChild(grNode* in)
   {
-    for (auto it = children.begin(); it != children.end(); it++) {
+    for (auto it = children_.begin(); it != children_.end(); it++) {
       if (*it == in) {
-        children.erase(it);
+        children_.erase(it);
         break;
       }
     }
   }
-  void setIter(frListIter<std::unique_ptr<grNode>>& in) { iter = in; }
+  void setIter(frListIter<std::unique_ptr<grNode>>& in) { iter_ = in; }
   void reset()
   {
-    parent = nullptr;
-    children.clear();
+    parent_ = nullptr;
+    children_.clear();
   }
 
   // getters
-  bool hasNet() { return (net != nullptr); }
-  grNet* getNet() { return net; }
-  Point getLoc() { return loc; }
-  frLayerNum getLayerNum() { return layerNum; }
-  grBlockObject* getConnFig() { return connFig; }
-  frBlockObject* getPin() { return pin; }
-  frNodeTypeEnum getType() { return type; }
-  bool hasParent() { return (parent != nullptr); }
-  grNode* getParent() { return parent; }
-  bool hasChildren() { return (!children.empty()); }
-  std::list<grNode*>& getChildren() { return children; }
-  const std::list<grNode*>& getChildren() const { return children; }
-  frListIter<std::unique_ptr<grNode>> getIter() { return iter; }
+  bool hasNet() { return (net_ != nullptr); }
+  grNet* getNet() { return net_; }
+  odb::Point getLoc() { return loc_; }
+  frLayerNum getLayerNum() { return layerNum_; }
+  grBlockObject* getConnFig() { return connFig_; }
+  frBlockObject* getPin() { return pin_; }
+  frNodeTypeEnum getType() { return type_; }
+  bool hasParent() { return (parent_ != nullptr); }
+  grNode* getParent() { return parent_; }
+  bool hasChildren() { return (!children_.empty()); }
+  std::list<grNode*>& getChildren() { return children_; }
+  const std::list<grNode*>& getChildren() const { return children_; }
+  frListIter<std::unique_ptr<grNode>> getIter() { return iter_; }
 
   frBlockObjectEnum typeId() const override { return grcNode; }
 
  protected:
-  grNet* net;
-  Point loc;
-  frLayerNum layerNum;
-  grBlockObject* connFig;  // wire / via / patch to parent
-  frBlockObject* pin;      // term / instTerm / null if boundary pin or steiner
-  frNodeTypeEnum type;
+  grNet* net_{nullptr};
+  odb::Point loc_;
+  frLayerNum layerNum_{0};
+  grBlockObject* connFig_{nullptr};  // wire / via / patch to parent
+  frBlockObject* pin_{
+      nullptr};  // term / instTerm / null if boundary pin or steiner
+  frNodeTypeEnum type_{frNodeTypeEnum::frcSteiner};
 
   // frNode *fNode; // corresponding frNode
-  grNode* parent;
-  std::list<grNode*> children;
+  grNode* parent_{nullptr};
+  std::list<grNode*> children_;
 
-  frListIter<std::unique_ptr<grNode>> iter;
+  frListIter<std::unique_ptr<grNode>> iter_;
 
   friend class frNode;
 };
-}  // namespace fr
-
-#endif
+}  // namespace drt

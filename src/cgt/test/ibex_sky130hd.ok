@@ -1,0 +1,23 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+Derived GENLIB library "sky130_fd_sc_hd__ss_n40C_1v40" with 317 gates.
+[INFO CGT-0003] Clock gating instance 0/946
+[INFO CGT-0004] Accepted clock enable 'ex_block_i.gen_multdiv_fast.multdiv_i.md_state_q\[5\] | _03749_ | _03000_ | _04094_ | _03636_ | _04093_' for instance _20290_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mcountinhibit_q\[0\] | _05037_ | _04531_ | _04533_ | _04495_ | _04405_ | _05854_ | _04404_' for instance cs_registers_i.mcountinhibit_q\[0\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mcycle_counter_i.counter_val_o\[10\] | _04468_ | _04455_ | _04454_ | _03183_ | _04428_ | _04221_' for instance cs_registers_i.mcycle_counter_i.counter_val_o\[10\]$_DFFE_PN0P_
+[INFO CGT-0003] Clock gating instance 100/946
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.priv_mode_id_o\[0\] | _05701_ | _05615_ | _05886_ | _05832_ | _03109_ | _04166_ | _05831_ | _03034_' for instance cs_registers_i.priv_mode_id_o\[0\]$_DFFE_PN1P_
+[INFO CGT-0003] Clock gating instance 200/946
+[INFO CGT-0003] Clock gating instance 300/946
+[INFO CGT-0003] Clock gating instance 400/946
+[INFO CGT-0003] Clock gating instance 500/946
+[INFO CGT-0004] Accepted clock enable 'id_stage_i.controller_i.ctrl_fsm_cs\[0\] | _04129_ | _03958_ | _02972_ | _03082_ | id_stage_i.controller_i.id_wb_pending' for instance id_stage_i.controller_i.ctrl_fsm_cs\[0\]$_DFFE_PN0P_
+[INFO CGT-0003] Clock gating instance 600/946
+[INFO CGT-0004] Accepted clock enable 'if_stage_i.gen_prefetch_buffer.prefetch_buffer_i.fifo_i.rdata_q\[0\] | _01591_ | _01587_ | _10021_ | _01432_ | _01412_ | _09983_ | _05669_' for instance if_stage_i.gen_prefetch_buffer.prefetch_buffer_i.fifo_i.rdata_q\[0\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'if_stage_i.gen_prefetch_buffer.prefetch_buffer_i.fifo_i.rdata_q\[16\] | _01397_ | _01430_ | _01395_ | _09983_ | _01109_ | _01047_ | _01284_ | _05669_ | _09954_ | _09953_ | if_stage_i.gen_prefetch_buffer.prefetch_buffer_i.fifo_i.valid_q\[0\] | crash_dump_o[97]' for instance if_stage_i.gen_prefetch_buffer.prefetch_buffer_i.fifo_i.rdata_q\[16\]$_DFFE_PN0P_
+[INFO CGT-0003] Clock gating instance 700/946
+[INFO CGT-0003] Clock gating instance 800/946
+[INFO CGT-0003] Clock gating instance 900/946
+[INFO CGT-0004] Accepted clock enable 'load_store_unit_i.rdata_offset_q\[0\] | _02679_ | _02887_ | _02236_ | _02463_ | _01364_' for instance load_store_unit_i.rdata_offset_q\[0\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'load_store_unit_i.rdata_q\[0\] | _02225_ | _02217_ | _02224_ | _01359_ | _01364_ | _01345_ | _02210_ | _03111_' for instance load_store_unit_i.rdata_q\[0\]$_DFFE_PN0P_
+No differences found.

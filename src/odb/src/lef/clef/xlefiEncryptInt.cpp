@@ -26,7 +26,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -39,5 +39,5 @@
 // Wrappers definitions.
 void lefrEnableReadEncrypted()
 {
-  LefDefParser::lefrEnableReadEncrypted();
+  LefParser::lefrEnableReadEncrypted();
 }

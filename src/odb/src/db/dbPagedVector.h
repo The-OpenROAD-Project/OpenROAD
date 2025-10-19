@@ -1,46 +1,16 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
-#include "ZException.h"
-#include "dbDiff.h"
-#include "dbStream.h"
-#include "odb.h"
+#include "odb/ZException.h"
+#include "odb/dbStream.h"
+#include "odb/odb.h"
+
 namespace odb {
 
 template <class T, const uint P, const uint S>
 class dbPagedVector;
-class dbDiff;
 
 //
 // Vector - Creates a vector of type T. However, the vector is created
@@ -76,8 +46,9 @@ class dbPagedVector
   {
     uint id = _next_idx;
     uint i;
-    for (i = 0; i < cnt; ++i)
+    for (i = 0; i < cnt; ++i) {
       push_back(item);
+    }
     return id;
   }
 
@@ -106,10 +77,6 @@ class dbPagedVector
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const dbPagedVector<T, page_size, page_shift>& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
 };
 
 template <class T, const uint P, const uint S>
@@ -120,14 +87,14 @@ unsigned int dbPagedVector<T, P, S>::getIdx(uint chunkSize, const T& ival)
     idx = _next_idx;
     _next_idx += chunkSize;
     unsigned int page = ((_next_idx - 1) & ~(P - 1)) >> S;
-    if (page == _page_cnt)
+    if (page == _page_cnt) {
       newPage();
-    // return idx;
+    }
   } else {
     idx = (uint) _freedIdxHead;
-    if (idx == (uint) _freedIdxTail)
+    if (idx == (uint) _freedIdxTail) {
       _freedIdxHead = -1;
-    else {
+    } else {
       unsigned int page = (idx & ~(P - 1)) >> S;
       unsigned int offset = idx & (P - 1);
       uint* fidxp = (uint*) (&_pages[page][offset]);
@@ -162,7 +129,7 @@ void dbPagedVector<T, P, S>::freeIdx(uint idx)
 template <class T, const uint P, const uint S>
 dbPagedVector<T, P, S>::dbPagedVector()
 {
-  _pages = NULL;
+  _pages = nullptr;
   _page_cnt = 0;
   _page_tbl_size = 0;
   _next_idx = 0;
@@ -172,7 +139,7 @@ dbPagedVector<T, P, S>::dbPagedVector()
 template <class T, const uint P, const uint S>
 dbPagedVector<T, P, S>::dbPagedVector(const dbPagedVector<T, P, S>& V)
 {
-  _pages = NULL;
+  _pages = nullptr;
   _page_cnt = 0;
   _page_tbl_size = 0;
   _next_idx = 0;
@@ -191,13 +158,14 @@ void dbPagedVector<T, P, S>::clear()
   if (_pages) {
     unsigned int i;
 
-    for (i = 0; i < _page_cnt; ++i)
+    for (i = 0; i < _page_cnt; ++i) {
       delete[] _pages[i];
+    }
 
     delete[] _pages;
   }
 
-  _pages = NULL;
+  _pages = nullptr;
   _page_cnt = 0;
   _page_tbl_size = 0;
   _next_idx = 0;
@@ -216,20 +184,23 @@ void dbPagedVector<T, P, S>::resizePageTbl()
   T** old_tbl = _pages;
   unsigned int old_tbl_size = _page_tbl_size;
 
-  if (_page_tbl_size == 1)
+  if (_page_tbl_size == 1) {
     ++_page_tbl_size;
-  else
+  } else {
     _page_tbl_size += (unsigned int) ((float) _page_tbl_size * (0.5));
+  }
 
   _pages = new T*[_page_tbl_size];
 
   unsigned int i;
 
-  for (i = 0; i < old_tbl_size; ++i)
+  for (i = 0; i < old_tbl_size; ++i) {
     _pages[i] = old_tbl[i];
+  }
 
-  for (; i < _page_tbl_size; ++i)
-    _pages[i] = NULL;
+  for (; i < _page_tbl_size; ++i) {
+    _pages[i] = nullptr;
+  }
 
   delete[] old_tbl;
 }
@@ -255,8 +226,9 @@ void dbPagedVector<T, P, S>::push_back(const T& item)
 {
   unsigned int page = (_next_idx & ~(P - 1)) >> S;
 
-  if (page == _page_cnt)
+  if (page == _page_cnt) {
     newPage();
+  }
 
   unsigned int offset = _next_idx & (P - 1);
   ++_next_idx;
@@ -271,78 +243,21 @@ inline bool dbPagedVector<T, P, S>::operator==(
 {
   uint sz = size();
 
-  if (sz != rhs.size())
+  if (sz != rhs.size()) {
     return false;
+  }
 
   uint i;
   for (i = 0; i < sz; ++i) {
     const T& l = (*this)[i];
     const T& r = rhs[i];
 
-    if (l != r)
+    if (l != r) {
       return false;
+    }
   }
 
   return true;
-}
-
-template <class T, const uint P, const uint S>
-inline void dbPagedVector<T, P, S>::differences(
-    dbDiff& diff,
-    const char* field,
-    const dbPagedVector<T, P, S>& rhs) const
-{
-  uint sz1 = size();
-  uint sz2 = rhs.size();
-  unsigned int i = 0;
-
-  for (; i < sz1 && i < sz2; ++i) {
-    const T& o1 = (*this)[i];
-    const T& o2 = rhs[i];
-
-    if (o1 != o2) {
-      diff.report("< %s[%d] = ", field, i);
-      diff << o1;
-      diff << "\n";
-      diff.report("> %s[%d] = ", field, i);
-      diff << o2;
-      diff << "\n";
-    }
-  }
-
-  if (i < sz1) {
-    for (; i < sz1; ++i) {
-      const T& o1 = (*this)[i];
-      diff.report("< %s[%d] = ", field, i);
-      diff << o1;
-      diff << "\n";
-    }
-  }
-
-  if (i < sz2) {
-    for (; i < sz2; ++i) {
-      const T& o2 = rhs[i];
-      diff.report("> %s[%d] = ", field, i);
-      diff << o2;
-      diff << "\n";
-    }
-  }
-}
-
-template <class T, const uint P, const uint S>
-inline void dbPagedVector<T, P, S>::out(dbDiff& diff,
-                                        char side,
-                                        const char* field) const
-{
-  uint sz1 = size();
-  unsigned int i = 0;
-
-  for (; i < sz1; ++i) {
-    const T& o1 = (*this)[i];
-    diff.report("%c %s[%d] = ", side, field, i);
-    diff << o1;
-    diff << "\n";
-  }
 }
 
 template <class T, const uint P, const uint S>

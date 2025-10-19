@@ -1,237 +1,41 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include "drcWidget.h"
 
 #include <QApplication>
+#include <QComboBox>
 #include <QFileDialog>
 #include <QHeaderView>
+#include <QPushButton>
 #include <QVBoxLayout>
-#include <array>
-#include <boost/property_tree/json_parser.hpp>
-#include <fstream>
-#include <iomanip>
-#include <map>
-#include <regex>
-#include <sstream>
+#include <QVariant>
+#include <QWidget>
+#include <algorithm>
+#include <any>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
+#include "dbDescriptors.h"
+#include "gui/gui.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
-Q_DECLARE_METATYPE(gui::DRCViolation*);
+Q_DECLARE_METATYPE(odb::dbMarker*);
 
 namespace gui {
-
-///////
-
-DRCViolation::DRCViolation(const std::string& name,
-                           const std::string& type,
-                           const std::vector<std::any>& srcs,
-                           const std::vector<DRCShape>& shapes,
-                           odb::dbTechLayer* layer,
-                           const std::string& comment,
-                           int file_line)
-    : name_(name),
-      type_(type),
-      srcs_(srcs),
-      shapes_(shapes),
-      layer_(layer),
-      comment_(comment),
-      file_line_(file_line),
-      viewed_(false),
-      visible_(true)
-{
-  computeBBox();
-}
-
-DRCViolation::DRCViolation(const std::string& name,
-                           const std::string& type,
-                           const std::vector<DRCShape>& shapes,
-                           const std::string& comment,
-                           int file_line)
-    : DRCViolation(name, type, {}, shapes, nullptr, comment, file_line)
-{
-}
-
-void DRCViolation::computeBBox()
-{
-  QPolygon outline;
-  for (const auto& shape : shapes_) {
-    if (auto s = std::get_if<DRCLine>(&shape)) {
-      outline << QPoint((*s).first.x(), (*s).first.y());
-      outline << QPoint((*s).second.x(), (*s).second.y());
-    } else if (auto s = std::get_if<DRCRect>(&shape)) {
-      outline = outline.united(
-          QRect((*s).xMin(), (*s).yMin(), (*s).dx(), (*s).dy()));
-    } else if (auto s = std::get_if<DRCPoly>(&shape)) {
-      for (const auto& pt : *s) {
-        outline << QPoint(pt.x(), pt.y());
-      }
-    }
-  }
-
-  QRect bounds = outline.boundingRect();
-  bbox_
-      = odb::Rect(bounds.left(), bounds.bottom(), bounds.right(), bounds.top());
-}
-
-void DRCViolation::paint(Painter& painter)
-{
-  const int min_box = 20.0 / painter.getPixelsPerDBU();
-
-  const odb::Rect& box = getBBox();
-  if (box.maxDXDY() < min_box) {
-    // box is too small to be useful, so draw X instead
-    odb::Point center(box.xMin() + box.dx() / 2, box.yMin() + box.dy() / 2);
-    painter.drawX(center.x(), center.y(), min_box);
-  } else {
-    for (const auto& shape : shapes_) {
-      if (auto s = std::get_if<DRCLine>(&shape)) {
-        const odb::Point& p1 = (*s).first;
-        const odb::Point& p2 = (*s).second;
-        painter.drawLine(p1.x(), p1.y(), p2.x(), p2.y());
-      } else if (auto s = std::get_if<DRCRect>(&shape)) {
-        painter.drawRect(*s);
-      } else if (auto s = std::get_if<DRCPoly>(&shape)) {
-        painter.drawPolygon(*s);
-      }
-    }
-  }
-}
-
-///////
-
-DRCDescriptor::DRCDescriptor(
-    const std::vector<std::unique_ptr<DRCViolation>>& violations)
-    : violations_(violations)
-{
-}
-
-std::string DRCDescriptor::getName(std::any object) const
-{
-  auto vio = std::any_cast<DRCViolation*>(object);
-  return vio->getType();
-}
-
-std::string DRCDescriptor::getTypeName() const
-{
-  return "DRC";
-}
-
-bool DRCDescriptor::getBBox(std::any object, odb::Rect& bbox) const
-{
-  auto vio = std::any_cast<DRCViolation*>(object);
-  bbox = vio->getBBox();
-  return true;
-}
-
-void DRCDescriptor::highlight(std::any object, Painter& painter) const
-{
-  auto vio = std::any_cast<DRCViolation*>(object);
-  vio->paint(painter);
-}
-
-Descriptor::Properties DRCDescriptor::getProperties(std::any object) const
-{
-  auto vio = std::any_cast<DRCViolation*>(object);
-  Properties props;
-
-  auto gui = Gui::get();
-
-  auto layer = vio->getLayer();
-  if (layer != nullptr) {
-    props.push_back({"Layer", gui->makeSelected(layer)});
-  }
-
-  auto srcs = vio->getSources();
-  if (!srcs.empty()) {
-    SelectionSet sources;
-    for (auto& src : srcs) {
-      auto select = gui->makeSelected(src);
-      if (select) {
-        sources.insert(select);
-      }
-    }
-    props.push_back({"Sources", sources});
-  }
-
-  auto& comment = vio->getComment();
-  if (!comment.empty()) {
-    props.push_back({"Comment", vio->getComment()});
-  }
-
-  int line_number = vio->getFileLine();
-  if (line_number != 0) {
-    props.push_back({"Line number:", line_number});
-  }
-
-  return props;
-}
-
-Selected DRCDescriptor::makeSelected(std::any object) const
-{
-  if (auto vio = std::any_cast<DRCViolation*>(&object)) {
-    return Selected(*vio, this);
-  }
-  return Selected();
-}
-
-bool DRCDescriptor::lessThan(std::any l, std::any r) const
-{
-  auto l_drc = std::any_cast<DRCViolation*>(l);
-  auto r_drc = std::any_cast<DRCViolation*>(r);
-  return l_drc < r_drc;
-}
-
-bool DRCDescriptor::getAllObjects(SelectionSet& objects) const
-{
-  for (auto& violation : violations_) {
-    objects.insert(makeSelected(violation.get()));
-  }
-  return true;
-}
-
-///////
 
 QVariant DRCItemModel::data(const QModelIndex& index, int role) const
 {
   if (role == Qt::FontRole) {
     auto item_data = itemFromIndex(index)->data();
     if (item_data.isValid()) {
-      DRCViolation* item = item_data.value<DRCViolation*>();
+      odb::dbMarker* item = item_data.value<odb::dbMarker*>();
       QFont font = QApplication::font();
-      font.setBold(!item->isViewed());
+      font.setBold(!item->isVisited());
       return font;
     }
   }
@@ -247,8 +51,9 @@ DRCWidget::DRCWidget(QWidget* parent)
       view_(new ObjectTree(this)),
       model_(new DRCItemModel(this)),
       block_(nullptr),
+      categories_(new QComboBox(this)),
       load_(new QPushButton("Load...", this)),
-      renderer_(std::make_unique<DRCRenderer>(violations_))
+      renderer_(std::make_unique<DRCRenderer>())
 {
   setObjectName("drc_viewer");  // for settings
 
@@ -259,35 +64,35 @@ DRCWidget::DRCWidget(QWidget* parent)
   header->setSectionResizeMode(0, QHeaderView::ResizeToContents);
   header->setSectionResizeMode(1, QHeaderView::Stretch);
 
+  QHBoxLayout* selection_layout = new QHBoxLayout;
+  selection_layout->addWidget(categories_);
+  selection_layout->addWidget(load_);
+
   QWidget* container = new QWidget(this);
   QVBoxLayout* layout = new QVBoxLayout;
+  layout->addLayout(selection_layout);
   layout->addWidget(view_);
-  layout->addWidget(load_);
 
   container->setLayout(layout);
   setWidget(container);
 
-  connect(view_,
-          SIGNAL(clicked(const QModelIndex&)),
+  connect(view_, &ObjectTree::clicked, this, &DRCWidget::clicked);
+  connect(view_, &ObjectTree::doubleClicked, this, &DRCWidget::doubleClicked);
+  connect(view_->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
           this,
-          SLOT(clicked(const QModelIndex&)));
-  connect(
-      view_->selectionModel(),
-      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-      this,
-      SLOT(selectionChanged(const QItemSelection&, const QItemSelection&)));
-  connect(load_, SIGNAL(released()), this, SLOT(selectReport()));
+          &DRCWidget::selectionChanged);
+  connect(load_, &QPushButton::released, this, &DRCWidget::selectReport);
+  connect(categories_,
+          qOverload<int>(&QComboBox::currentIndexChanged),
+          this,
+          &DRCWidget::updateModel);
 
   view_->setMouseTracking(true);
-  connect(view_,
-          SIGNAL(entered(const QModelIndex&)),
-          this,
-          SLOT(focusIndex(const QModelIndex&)));
+  connect(view_, &ObjectTree::entered, this, &DRCWidget::focusIndex);
 
-  connect(view_, SIGNAL(viewportEntered()), this, SLOT(defocus()));
-  connect(view_, SIGNAL(mouseExited()), this, SLOT(defocus()));
-
-  Gui::get()->registerDescriptor<DRCViolation*>(new DRCDescriptor(violations_));
+  connect(view_, &ObjectTree::viewportEntered, this, &DRCWidget::defocus);
+  connect(view_, &ObjectTree::mouseExited, this, &DRCWidget::defocus);
 }
 
 void DRCWidget::focusIndex(const QModelIndex& focus_index)
@@ -297,8 +102,8 @@ void DRCWidget::focusIndex(const QModelIndex& focus_index)
   QStandardItem* item = model_->itemFromIndex(focus_index);
   QVariant data = item->data();
   if (data.isValid()) {
-    DRCViolation* violation = data.value<DRCViolation*>();
-    emit focus(Gui::get()->makeSelected(violation));
+    odb::dbMarker* marker = data.value<odb::dbMarker*>();
+    emit focus(Gui::get()->makeSelected(marker));
   }
 }
 
@@ -314,6 +119,10 @@ void DRCWidget::setLogger(utl::Logger* logger)
 
 void DRCWidget::selectReport()
 {
+  if (!block_) {
+    logger_->error(utl::GUI, 104, "No database has been loaded");
+  }
+
   // OpenLane uses .drc and OpenROAD-flow-scripts uses .rpt
   QString filename = QFileDialog::getOpenFileName(
       this,
@@ -366,10 +175,10 @@ bool DRCWidget::setVisibleDRC(QStandardItem* item,
 {
   QVariant data = item->data();
   if (data.isValid()) {
-    auto violation = data.value<DRCViolation*>();
-    if (item->isCheckable() && violation->isVisible() != visible) {
+    odb::dbMarker* marker = data.value<odb::dbMarker*>();
+    if (item->isCheckable() && marker->isVisible() != visible) {
       item->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
-      violation->setIsVisible(visible);
+      marker->setVisible(visible);
       renderer_->redraw();
       if (announce_parent) {
         toggleParent(item);
@@ -381,20 +190,21 @@ bool DRCWidget::setVisibleDRC(QStandardItem* item,
   return false;
 }
 
-void DRCWidget::clicked(const QModelIndex& index)
+void DRCWidget::showMarker(const QModelIndex& index, bool open_inspector)
 {
   QStandardItem* item = model_->itemFromIndex(index);
   QVariant data = item->data();
   if (data.isValid()) {
-    auto violation = data.value<DRCViolation*>();
+    odb::dbMarker* marker = data.value<odb::dbMarker*>();
     const bool is_visible = item->checkState() == Qt::Checked;
     if (setVisibleDRC(item, is_visible, true)) {
       // do nothing, since its handled in function
     } else if (qGuiApp->keyboardModifiers() & Qt::ControlModifier) {
-      violation->clearViewed();
+      marker->setVisited(false);
     } else {
-      Selected t = Gui::get()->makeSelected(violation);
-      emit selectDRC(t);
+      Selected t = Gui::get()->makeSelected(marker);
+      emit selectDRC(t, open_inspector);
+      focusIndex(index);
     }
   } else {
     if (item->hasChildren()) {
@@ -407,18 +217,36 @@ void DRCWidget::clicked(const QModelIndex& index)
   }
 }
 
+void DRCWidget::clicked(const QModelIndex& index)
+{
+  showMarker(index, false);
+}
+
+void DRCWidget::doubleClicked(const QModelIndex& index)
+{
+  showMarker(index, true);
+}
+
 void DRCWidget::setBlock(odb::dbBlock* block)
 {
   block_ = block;
+
+  addOwner(block_);
+  updateMarkerGroups();
 }
 
 void DRCWidget::showEvent(QShowEvent* event)
 {
+  addOwner(block_);
+
+  updateMarkerGroups();
   toggleRenderer(true);
 }
 
 void DRCWidget::hideEvent(QHideEvent* event)
 {
+  removeOwner();
+
   toggleRenderer(false);
 }
 
@@ -438,71 +266,104 @@ void DRCWidget::toggleRenderer(bool visible)
 
 void DRCWidget::updateModel()
 {
-  auto makeItem = [](const QString& text) {
+  const std::string name = categories_->currentText().toStdString();
+  odb::dbMarkerCategory* category = block_->findMarkerCategory(name.c_str());
+
+  model_->removeRows(0, model_->rowCount());
+
+  if (category != nullptr) {
+    for (odb::dbMarkerCategory* subcategory : category->getMarkerCategories()) {
+      populateCategory(subcategory, model_->invisibleRootItem());
+    }
+  }
+
+  toggleRenderer(!this->isHidden());
+  renderer_->setCategory(category);
+}
+
+void DRCWidget::populateCategory(odb::dbMarkerCategory* category,
+                                 QStandardItem* model)
+{
+  if (category == nullptr) {
+    return;
+  }
+
+  auto make_item = [](const QString& text) {
     QStandardItem* item = new QStandardItem(text);
     item->setEditable(false);
     item->setSelectable(false);
     return item;
   };
 
-  model_->removeRows(0, model_->rowCount());
+  QStandardItem* type_group = make_item(category->getName());
+  type_group->setCheckable(true);
+  type_group->setCheckState(Qt::Checked);
 
-  std::map<std::string, std::vector<DRCViolation*>> violation_by_type;
-  for (const auto& violation : violations_) {
-    violation_by_type[violation->getType()].push_back(violation.get());
+  for (odb::dbMarkerCategory* subcategory : category->getMarkerCategories()) {
+    populateCategory(subcategory, type_group);
   }
 
-  for (const auto& [type, violation_list] : violation_by_type) {
-    QStandardItem* type_group = makeItem(QString::fromStdString(type));
-    type_group->setCheckable(true);
-    type_group->setCheckState(Qt::Checked);
+  int violation_idx = 1;
+  QStandardItem* marker_item_child = nullptr;
+  for (odb::dbMarker* marker : category->getMarkers()) {
+    QStandardItem* marker_item
+        = make_item(QString::fromStdString(marker->getName()));
+    marker_item_child = marker_item;
+    marker_item->setSelectable(true);
+    marker_item->setData(QVariant::fromValue(marker));
+    QStandardItem* marker_index = make_item(QString::number(violation_idx++));
+    marker_index->setData(QVariant::fromValue(marker));
+    marker_index->setCheckable(true);
+    marker_index->setCheckState(marker->isVisible() ? Qt::Checked
+                                                    : Qt::Unchecked);
 
-    int violation_idx = 1;
-    for (const auto& violation : violation_list) {
-      QStandardItem* violation_item
-          = makeItem(QString::fromStdString(violation->getName()));
-      violation_item->setSelectable(true);
-      violation_item->setData(QVariant::fromValue(violation));
-      QStandardItem* violation_index
-          = makeItem(QString::number(violation_idx++));
-      violation_index->setData(QVariant::fromValue(violation));
-      violation_index->setCheckable(true);
-      violation_index->setCheckState(violation->isVisible() ? Qt::Checked
-                                                            : Qt::Unchecked);
-
-      type_group->appendRow({violation_index, violation_item});
-    }
-
-    model_->appendRow(
-        {type_group,
-         makeItem(QString::number(violation_list.size()) + " violations")});
+    type_group->appendRow({marker_index, marker_item});
   }
 
-  toggleRenderer(!this->isHidden());
-  renderer_->redraw();
+  if (marker_item_child != nullptr) {
+    toggleParent(marker_item_child);
+  }
+
+  model->appendRow(
+      {type_group,
+       make_item(QString::number(category->getMarkerCount()) + " markers")});
 }
 
 void DRCWidget::updateSelection(const Selected& selection)
 {
   const std::any& object = selection.getObject();
-  if (auto s = std::any_cast<DRCViolation*>(&object)) {
-    (*s)->setViewed();
+  if (auto s = std::any_cast<odb::dbMarker*>(&object)) {
+    (*s)->setVisited(true);
     emit update();
   }
 }
 
+void DRCWidget::selectCategory(odb::dbMarkerCategory* category)
+{
+  if (category == nullptr) {
+    categories_->setCurrentText("");
+  } else {
+    category = category->getTopCategory();
+    categories_->setCurrentText(category->getName());
+  }
+
+  updateModel();
+  show();
+  raise();
+}
+
 void DRCWidget::loadReport(const QString& filename)
 {
-  Gui::get()->removeSelected<DRCViolation*>();
+  Gui::get()->removeSelected<odb::dbMarker*>();
+  Gui::get()->removeSelected<odb::dbMarkerCategory*>();
 
-  violations_.clear();
-
+  odb::dbMarkerCategory* category = nullptr;
   try {
     // OpenLane uses .drc and OpenROAD-flow-scripts uses .rpt
     if (filename.endsWith(".rpt") || filename.endsWith(".drc")) {
-      loadTRReport(filename);
+      category = loadTRReport(filename);
     } else if (filename.endsWith(".json")) {
-      loadJSONReport(filename);
+      category = loadJSONReport(filename);
     } else {
       logger_->error(utl::GUI,
                      32,
@@ -512,327 +373,138 @@ void DRCWidget::loadReport(const QString& filename)
   } catch (std::runtime_error&) {
   }  // catch errors
 
+  if (category != nullptr) {
+    selectCategory(category);
+  }
+
   updateModel();
   show();
   raise();
 }
 
-void DRCWidget::loadTRReport(const QString& filename)
+odb::dbMarkerCategory* DRCWidget::loadTRReport(const QString& filename)
 {
-  std::ifstream report(filename.toStdString());
-  if (!report.is_open()) {
-    logger_->error(utl::GUI,
-                   30,
-                   "Unable to open TritonRoute DRC report: {}",
-                   filename.toStdString());
-  }
-
-  std::regex violation_type("\\s*violation type: (.*)");
-  std::regex srcs("\\s*srcs: (.*)");
-  std::regex congestion_line("\\s*congestion information: (.*)");
-  std::regex bbox_layer("\\s*bbox = (.*) on Layer (.*)");
-  std::regex bbox_corners(
-      "\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)\\s*-\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)");
-
-  int line_number = 0;
-  auto tech = block_->getDataBase()->getTech();
-  while (!report.eof()) {
-    std::string line;
-    std::smatch base_match;
-
-    // type of violation
-    line_number++;
-    std::getline(report, line);
-    if (line.empty()) {
-      continue;
-    }
-
-    int violation_line_number = line_number;
-    std::string type;
-    if (std::regex_match(line, base_match, violation_type)) {
-      type = base_match[1].str();
-    } else {
-      logger_->error(utl::GUI,
-                     45,
-                     "Unable to parse line as violation type (line: {}): {}",
-                     line_number,
-                     line);
-    }
-
-    // sources of violation
-    line_number++;
-    int source_line_number = line_number;
-    std::getline(report, line);
-    std::string sources;
-    if (std::regex_match(line, base_match, srcs)) {
-      sources = base_match[1].str();
-    } else {
-      logger_->error(utl::GUI,
-                     46,
-                     "Unable to parse line as violation source (line: {}): {}",
-                     line_number,
-                     line);
-    }
-
-    line_number++;
-    std::getline(report, line);
-    std::string congestion_information = "";
-
-    // congestion information (optional)
-    if (std::regex_match(line, base_match, congestion_line)) {
-      congestion_information = base_match[1].str();
-      line_number++;
-      std::getline(report, line);
-    }
-
-    // bounding box and layer
-    if (!std::regex_match(line, base_match, bbox_layer)) {
-      logger_->error(
-          utl::GUI,
-          47,
-          "Unable to parse line as violation location (line: {}): {}",
-          line_number,
-          line);
-    }
-
-    std::string bbox = base_match[1].str();
-    odb::dbTechLayer* layer = tech->findLayer(base_match[2].str().c_str());
-    if (layer == nullptr && base_match[2].str() != "-") {
-      logger_->warn(utl::GUI,
-                    40,
-                    "Unable to find tech layer (line: {}): {}",
-                    line_number,
-                    base_match[2].str());
-    }
-
-    odb::Rect rect;
-    if (std::regex_match(bbox, base_match, bbox_corners)) {
-      try {
-        rect.set_xlo(std::stod(base_match[1].str())
-                     * block_->getDbUnitsPerMicron());
-        rect.set_ylo(std::stod(base_match[2].str())
-                     * block_->getDbUnitsPerMicron());
-        rect.set_xhi(std::stod(base_match[3].str())
-                     * block_->getDbUnitsPerMicron());
-        rect.set_yhi(std::stod(base_match[4].str())
-                     * block_->getDbUnitsPerMicron());
-      } catch (std::invalid_argument&) {
-        logger_->error(utl::GUI,
-                       48,
-                       "Unable to parse bounding box (line: {}): {}",
-                       line_number,
-                       bbox);
-      } catch (std::out_of_range&) {
-        logger_->error(utl::GUI,
-                       49,
-                       "Unable to parse bounding box (line: {}): {}",
-                       line_number,
-                       bbox);
-      }
-    } else {
-      logger_->error(utl::GUI,
-                     50,
-                     "Unable to parse bounding box (line: {}): {}",
-                     line_number,
-                     bbox);
-    }
-
-    std::vector<std::any> srcs_list;
-    std::stringstream srcs_stream(sources);
-    std::string single_source;
-    std::string comment = "";
-
-    // split sources list
-    while (getline(srcs_stream, single_source, ' ')) {
-      if (single_source.empty()) {
-        continue;
-      }
-
-      auto ident = single_source.find(":");
-      std::string item_type = single_source.substr(0, ident);
-      std::string item_name = single_source.substr(ident + 1);
-
-      std::any item;
-
-      if (item_type == "net") {
-        odb::dbNet* net = block_->findNet(item_name.c_str());
-        if (net != nullptr) {
-          item = net;
-        } else {
-          logger_->warn(utl::GUI,
-                        44,
-                        "Unable to find net (line: {}): {}",
-                        source_line_number,
-                        item_name);
-        }
-      } else if (item_type == "inst") {
-        odb::dbInst* inst = block_->findInst(item_name.c_str());
-        if (inst != nullptr) {
-          item = inst;
-        } else {
-          logger_->warn(utl::GUI,
-                        43,
-                        "Unable to find instance (line: {}): {}",
-                        source_line_number,
-                        item_name);
-        }
-      } else if (item_type == "iterm") {
-        odb::dbITerm* iterm = block_->findITerm(item_name.c_str());
-        if (iterm != nullptr) {
-          item = iterm;
-        } else {
-          logger_->warn(utl::GUI,
-                        42,
-                        "Unable to find iterm (line: {}): {}",
-                        source_line_number,
-                        item_name);
-        }
-      } else if (item_type == "bterm") {
-        odb::dbBTerm* bterm = block_->findBTerm(item_name.c_str());
-        if (bterm != nullptr) {
-          item = bterm;
-        } else {
-          logger_->warn(utl::GUI,
-                        41,
-                        "Unable to find bterm (line: {}): {}",
-                        source_line_number,
-                        item_name);
-        }
-      } else if (item_type == "obstruction") {
-        bool found = false;
-        if (layer != nullptr) {
-          for (const auto obs : block_->getObstructions()) {
-            auto obs_bbox = obs->getBBox();
-            if (obs_bbox->getTechLayer() == layer) {
-              odb::Rect obs_rect = obs_bbox->getBox();
-              if (obs_rect.intersects(rect)) {
-                srcs_list.push_back(obs);
-                found = true;
-              }
-            }
-          }
-        }
-        if (!found) {
-          logger_->warn(utl::GUI,
-                        52,
-                        "Unable to find obstruction (line: {})",
-                        source_line_number);
-        }
-      } else {
-        logger_->warn(utl::GUI,
-                      51,
-                      "Unknown source type (line: {}): {}",
-                      source_line_number,
-                      item_type);
-      }
-
-      if (item.has_value()) {
-        srcs_list.push_back(item);
-      } else {
-        if (!item_name.empty()) {
-          comment += single_source + " ";
-        }
-      }
-    }
-
-    std::string name = "Layer: ";
-    if (layer != nullptr) {
-      name += layer->getName();
-    } else {
-      name += "<unknown>";
-    }
-    name += ", Sources: " + sources;
-
-    comment += congestion_information;
-
-    std::vector<DRCViolation::DRCShape> shapes({rect});
-    violations_.push_back(std::make_unique<DRCViolation>(
-        name, type, srcs_list, shapes, layer, comment, violation_line_number));
-  }
-
-  report.close();
+  const std::string file = filename.toStdString();
+  return odb::dbMarkerCategory::fromTR(block_, "DRC", file);
 }
 
-void DRCWidget::loadJSONReport(const QString& filename)
+odb::dbMarkerCategory* DRCWidget::loadJSONReport(const QString& filename)
 {
-  boost::property_tree::ptree tree;
-  try {
-    boost::property_tree::json_parser::read_json(filename.toStdString(), tree);
-  } catch (const boost::property_tree::json_parser_error& e1) {
-    logger_->error(utl::GUI,
-                   55,
-                   "Unable to parse JSON file {}: {}",
-                   filename.toStdString(),
-                   e1.what());
+  const std::string file = filename.toStdString();
+  const auto categories = odb::dbMarkerCategory::fromJSON(block_, file);
+
+  if (categories.size() > 1) {
+    logger_->warn(utl::GUI,
+                  30,
+                  "Multiple marker categories loaded, only the first one will "
+                  "be selected.");
   }
 
-  for (const auto& rule : tree.get_child("DRC")) {
-    auto& drc_rule = rule.second;
+  if (categories.empty()) {
+    return nullptr;
+  }
 
-    const std::string violation_type = drc_rule.get<std::string>("name");
-    const std::string violation_text = drc_rule.get<std::string>("description");
+  return *categories.begin();
+}
 
-    int i = 0;
-    for (const auto& violation_shape : drc_rule.get_child("violations")) {
-      auto& shape = violation_shape.second;
+void DRCWidget::updateMarkerGroups()
+{
+  updateMarkerGroupsWithIgnore(nullptr);
+}
 
-      std::vector<odb::Point> shape_points;
-      for (const auto& shape_pt : shape.get_child("shape")) {
-        auto& pt = shape_pt.second;
-        shape_points.push_back(
-            odb::Point(pt.get<double>("x") * block_->getDbUnitsPerMicron(),
-                       pt.get<double>("y") * block_->getDbUnitsPerMicron()));
-      }
+void DRCWidget::updateMarkerGroupsWithIgnore(odb::dbMarkerCategory* ignore)
+{
+  if (block_ == nullptr) {
+    return;
+  }
 
-      std::vector<DRCViolation::DRCShape> shapes;
-      const std::string shape_type = shape.get<std::string>("type");
-      if (shape_type == "box") {
-        shapes.push_back(
-            DRCViolation::DRCRect(shape_points[0], shape_points[1]));
-      } else if (shape_type == "edge") {
-        shapes.push_back(
-            DRCViolation::DRCLine(shape_points[0], shape_points[1]));
-      } else if (shape_type == "polygon") {
-        shapes.push_back(DRCViolation::DRCPoly(shape_points));
-      } else {
-        logger_->error(
-            utl::GUI, 56, "Unable to parse violation shape: {}", shape_type);
-      }
+  const std::string current_text = categories_->currentText().toStdString();
+  const bool remove_current
+      = ignore != nullptr && ignore->getName() == current_text;
 
-      std::string name = violation_type + " - " + std::to_string(++i);
-      violations_.push_back(std::make_unique<DRCViolation>(
-          name, violation_type, shapes, violation_text, 0));
+  categories_->clear();
+
+  categories_->addItem("");
+  for (auto* category : block_->getMarkerCategories()) {
+    if (ignore == category) {
+      continue;
     }
+    categories_->addItem(QString::fromStdString(category->getName()));
+  }
+
+  if (remove_current) {
+    categories_->setCurrentText("");
+  } else {
+    categories_->setCurrentText(QString::fromStdString(current_text));
+  }
+}
+
+void DRCWidget::inDbMarkerCategoryCreate(odb::dbMarkerCategory* category)
+{
+  updateMarkerGroups();
+}
+
+void DRCWidget::inDbMarkerCategoryDestroy(odb::dbMarkerCategory* category)
+{
+  updateMarkerGroupsWithIgnore(category);
+}
+
+void DRCWidget::inDbMarkerCreate(odb::dbMarker* marker)
+{
+  const std::string name = categories_->currentText().toStdString();
+  odb::dbMarkerCategory* category = block_->findMarkerCategory(name.c_str());
+
+  if (marker->getCategory()->getTopCategory() == category) {
+    updateModel();
+  }
+}
+
+void DRCWidget::inDbMarkerDestroy(odb::dbMarker* marker)
+{
+  const std::string name = categories_->currentText().toStdString();
+  odb::dbMarkerCategory* category = block_->findMarkerCategory(name.c_str());
+
+  if (marker->getCategory()->getTopCategory() == category) {
+    updateModel();
   }
 }
 
 ////////
 
-DRCRenderer::DRCRenderer(
-    const std::vector<std::unique_ptr<DRCViolation>>& violations)
-    : violations_(violations)
+DRCRenderer::DRCRenderer() : category_(nullptr)
 {
 }
 
 void DRCRenderer::drawObjects(Painter& painter)
 {
-  Painter::Color pen_color = Painter::white;
+  if (category_ == nullptr) {
+    return;
+  }
+
+  DbMarkerDescriptor* desc
+      = (DbMarkerDescriptor*) Gui::get()->getDescriptor<odb::dbMarker*>();
+
+  Painter::Color pen_color = Painter::kWhite;
   Painter::Color brush_color = pen_color;
   brush_color.a = 50;
 
   painter.setPen(pen_color, true, 0);
-  painter.setBrush(brush_color, Painter::Brush::DIAGONAL);
-  for (const auto& violation : violations_) {
-    if (!violation->isVisible()) {
+  painter.setBrush(brush_color, Painter::Brush::kDiagonal);
+  for (odb::dbMarker* marker : category_->getAllMarkers()) {
+    if (!marker->isVisible()) {
       continue;
     }
-    violation->paint(painter);
+    desc->paintMarker(marker, painter);
   }
 }
 
 SelectionSet DRCRenderer::select(odb::dbTechLayer* layer,
                                  const odb::Rect& region)
 {
+  if (category_ == nullptr) {
+    return SelectionSet();
+  }
+
   if (layer != nullptr) {
     return SelectionSet();
   }
@@ -840,15 +512,21 @@ SelectionSet DRCRenderer::select(odb::dbTechLayer* layer,
   auto gui = Gui::get();
 
   SelectionSet selections;
-  for (const auto& violation : violations_) {
-    if (!violation->isVisible()) {
+  for (odb::dbMarker* marker : category_->getAllMarkers()) {
+    if (!marker->isVisible()) {
       continue;
     }
-    if (violation->getBBox().intersects(region)) {
-      selections.insert(gui->makeSelected(violation.get()));
+    if (marker->getBBox().intersects(region)) {
+      selections.insert(gui->makeSelected(marker));
     }
   }
   return selections;
+}
+
+void DRCRenderer::setCategory(odb::dbMarkerCategory* category)
+{
+  category_ = category;
+  redraw();
 }
 
 }  // namespace gui

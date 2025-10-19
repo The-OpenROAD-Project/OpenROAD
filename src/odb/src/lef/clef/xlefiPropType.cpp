@@ -26,7 +26,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -37,7 +37,7 @@
 #include "lefiPropType.hpp"
 
 // Wrappers definitions.
-const char lefiPropType_propType(const ::lefiPropType* obj, char* name)
+char lefiPropType_propType(const ::lefiPropType* obj, char* name)
 {
-  return ((const LefDefParser::lefiPropType*) obj)->propType(name);
+  return ((const LefParser::lefiPropType*) obj)->propType(name);
 }

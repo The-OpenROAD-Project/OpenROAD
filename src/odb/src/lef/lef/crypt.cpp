@@ -32,26 +32,21 @@
  *
  */
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <unistd.h>
+
+#include <cstdarg>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
-
-#ifdef WIN32
-#include <io.h>
-#else  // not WIN32
-#include <unistd.h>
-
-#endif  // WIN32
+BEGIN_LEF_PARSER_NAMESPACE
 
 FILE* encOpenFileForRead(char* filename)
 {
   return fopen(filename, "r");
 }
 
-FILE* encOpenFileForWrite(char* filename, int /* unused: encrypt_f */)
+FILE* encOpenFileForWrite(char* filename, int encrypt_f)
 {
   return fopen(filename, "w");
 }
@@ -61,7 +56,7 @@ int encCloseFile(FILE* fp)
   return fclose(fp);
 }
 
-void encClearBuf(FILE* /* unused: fp */)
+void encClearBuf(FILE* fp)
 {
 }
 
@@ -73,7 +68,7 @@ void encWritingEncrypted()
 {
 }
 
-int encIsEncrypted(unsigned char* /* unused: buf */)
+int encIsEncrypted(unsigned char* buf)
 {
   return false;
 }
@@ -97,4 +92,4 @@ void encPrint(FILE* fp, char* format, ...)
   va_end(ap);
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

@@ -2,7 +2,7 @@
 source "helpers.tcl"
 source "hi_fanout.tcl"
 
-set def_filename [make_result_file "repair_fanout1.def"]
+set def_filename [make_result_file "repair_design4.def"]
 write_hi_fanout_def $def_filename 35
 
 read_liberty Nangate45/Nangate45_typ.lib

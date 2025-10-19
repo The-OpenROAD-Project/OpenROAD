@@ -1,54 +1,42 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <QColor>
 #include <QFrame>
 #include <QLine>
 #include <QMainWindow>
 #include <QMap>
 #include <QMenu>
-#include <QOpenGLWidget>
+#include <QMutex>
+#include <QPaintEvent>
+#include <QPainter>
 #include <QPixmap>
 #include <QScrollArea>
 #include <QShortcut>
+#include <QString>
+#include <QThread>
 #include <QTimer>
+#include <QWaitCondition>
+#include <QWidget>
 #include <chrono>
+#include <functional>
 #include <map>
 #include <memory>
+#include <set>
+#include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 #include "gui/gui.h"
+#include "label.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/geom.h"
 #include "options.h"
+#include "renderThread.h"
 #include "search.h"
 
 namespace utl {
@@ -66,9 +54,11 @@ class dbTechLayer;
 
 namespace gui {
 
+class GuiPainter;
 class LayoutScroll;
 class Ruler;
 class ScriptWidget;
+class LayoutViewer;
 
 // This class draws the layout.  It supports:
 //   * zoom in/out with ctrl-mousewheel
@@ -83,31 +73,42 @@ class LayoutViewer : public QWidget
   Q_OBJECT
 
  public:
-  enum CONTEXT_MENU_ACTIONS
+  enum ContextMenuActions
   {
-    SELECT_CONNECTED_INST_ACT,
-    SELECT_OUTPUT_NETS_ACT,
-    SELECT_INPUT_NETS_ACT,
-    SELECT_ALL_NETS_ACT,
+    kSelectConnectedInstAct,
+    kSelectOutputNetsAct,
+    kSelectInputNetsAct,
+    kSelectAllNetsAct,
+    kSelectAllBufferTreesAct,
 
-    HIGHLIGHT_CONNECTED_INST_ACT,
-    HIGHLIGHT_OUTPUT_NETS_ACT,
-    HIGHLIGHT_INPUT_NETS_ACT,
-    HIGHLIGHT_ALL_NETS_ACT,
+    kHighlightConnectedInstAct,
+    kHighlightOutputNetsAct,
+    kHighlightInputNetsAct,
+    kHighlightAllNetsAct,
+    kHighlightAllBufferTreesAct0,
+    kHighlightAllBufferTreesAct1,
+    kHighlightAllBufferTreesAct2,
+    kHighlightAllBufferTreesAct3,
+    kHighlightAllBufferTreesAct4,
+    kHighlightAllBufferTreesAct5,
+    kHighlightAllBufferTreesAct6,
+    kHighlightAllBufferTreesAct7,
 
-    VIEW_ZOOMIN_ACT,
-    VIEW_ZOOMOUT_ACT,
-    VIEW_ZOOMFIT_ACT,
+    kViewZoominAct,
+    kViewZoomoutAct,
+    kViewZoomfitAct,
 
-    SAVE_WHOLE_IMAGE_ACT,
-    SAVE_VISIBLE_IMAGE_ACT,
+    kSaveWholeImageAct,
+    kSaveVisibleImageAct,
 
-    CLEAR_SELECTIONS_ACT,
-    CLEAR_HIGHLIGHTS_ACT,
-    CLEAR_RULERS_ACT,
-    CLEAR_FOCUS_ACT,
-    CLEAR_GUIDES_ACT,
-    CLEAR_ALL_ACT
+    kClearSelectionsAct,
+    kClearHighlightsAct,
+    kClearRulersAct,
+    kClearLabelsAct,
+    kClearFocusAct,
+    kClearGuidesAct,
+    kClearNetTracksAct,
+    kClearAllAct
   };
 
   struct ModuleSettings
@@ -125,56 +126,61 @@ class LayoutViewer : public QWidget
                ScriptWidget* output_widget,
                const SelectionSet& selected,
                const HighlightSet& highlighted,
-               const std::vector<std::unique_ptr<Ruler>>& rulers,
+               const Rulers& rulers,
+               const Labels& labels,
+               const std::map<odb::dbModule*, ModuleSettings>& module_settings,
+               const std::set<odb::dbNet*>& focus_nets,
+               const std::set<odb::dbNet*>& route_guides,
+               const std::set<odb::dbNet*>& net_tracks,
                Gui* gui,
-               std::function<bool(void)> usingDBU,
-               std::function<bool(void)> showRulerAsEuclidian,
+               const std::function<bool()>& using_dbu,
+               const std::function<bool()>& show_ruler_as_euclidian,
+               const std::function<bool()>& show_db_view,
                QWidget* parent = nullptr);
 
+  odb::dbBlock* getBlock() const { return block_; }
   void setLogger(utl::Logger* logger);
   qreal getPixelsPerDBU() { return pixels_per_dbu_; }
   void setScroller(LayoutScroll* scroller);
 
   void restoreTclCommands(std::vector<std::string>& cmds);
 
-  void addFocusNet(odb::dbNet* net);
-  void removeFocusNet(odb::dbNet* net);
-  void addRouteGuides(odb::dbNet* net);
-  void removeRouteGuides(odb::dbNet* net);
-  void clearFocusNets();
-  void clearRouteGuides();
-  const std::set<odb::dbNet*>& getFocusNets() { return focus_nets_; }
-  const std::set<odb::dbNet*>& getRouteGuides() { return route_guides_; }
-
-  const std::map<odb::dbModule*, ModuleSettings>& getModuleSettings()
-  {
-    return modules_;
-  }
-
   // conversion functions
-  odb::Rect screenToDBU(const QRectF& rect);
-  odb::Point screenToDBU(const QPointF& point);
-  QRectF dbuToScreen(const odb::Rect& dbu_rect);
-  QPointF dbuToScreen(const odb::Point& dbu_point);
+  odb::Rect screenToDBU(const QRectF& rect) const;
+  odb::Point screenToDBU(const QPointF& point) const;
+  QRectF dbuToScreen(const odb::Rect& dbu_rect) const;
+  QPointF dbuToScreen(const odb::Point& dbu_point) const;
 
   // save image of the layout
   void saveImage(const QString& filepath,
-                 const odb::Rect& rect = odb::Rect(),
+                 const odb::Rect& region = odb::Rect(),
+                 int width_px = 0,
                  double dbu_per_pixel = 0);
+  QImage createImage(const odb::Rect& region = odb::Rect(),
+                     int width_px = 0,
+                     double dbu_per_pixel = 0);
 
   // From QWidget
-  virtual void paintEvent(QPaintEvent* event) override;
-  virtual void resizeEvent(QResizeEvent* event) override;
-  virtual void mousePressEvent(QMouseEvent* event) override;
-  virtual void mouseMoveEvent(QMouseEvent* event) override;
-  virtual void mouseReleaseEvent(QMouseEvent* event) override;
+  void paintEvent(QPaintEvent* event) override;
+  void resizeEvent(QResizeEvent* event) override;
+  void mousePressEvent(QMouseEvent* event) override;
+  void mouseMoveEvent(QMouseEvent* event) override;
+  void mouseReleaseEvent(QMouseEvent* event) override;
+
+  odb::Rect getVisibleBounds()
+  {
+    return screenToDBU(visibleRegion().boundingRect());
+  }
+
+  bool isCursorInsideViewport();
+  void updateCursorCoordinates();
 
  signals:
   // indicates the current location of the mouse
   void location(int x, int y);
 
   // indicates a new object has been selected
-  void selected(const Selected& selected, bool showConnectivity = false);
+  void selected(const Selected& selected, bool show_connectivity = false);
 
   // add additional object to selected set
   void addSelected(const Selected& selected);
@@ -207,8 +213,8 @@ class LayoutViewer : public QWidget
   // zoom to the specified rect
   void zoomTo(const odb::Rect& rect_dbu);
 
-  // indicates a design has been loaded
-  void designLoaded(odb::dbBlock* block);
+  // indicates a block has been loaded
+  void blockLoaded(odb::dbBlock* block);
 
   // fit the whole design in the window
   void fit();
@@ -220,7 +226,7 @@ class LayoutViewer : public QWidget
   void updateCenter(int dx, int dy);
 
   // set the layout resolution
-  void setResolution(qreal dbu_per_pixel);
+  void setResolution(qreal pixels_per_dbu);
 
   // update the fit resolution (the maximum pixels_per_dbu without scroll bars)
   void viewportUpdated();
@@ -228,8 +234,12 @@ class LayoutViewer : public QWidget
   // signals that the cache should be flushed and a full repaint should occur.
   void fullRepaint();
 
-  void selectHighlightConnectedInst(bool selectFlag);
-  void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);
+  odb::Point getVisibleCenter();
+
+  void selectHighlightConnectedInst(bool select_flag);
+  void selectHighlightConnectedNets(bool select_flag, bool output, bool input);
+  void selectHighlightConnectedBufferTrees(bool select_flag,
+                                           int highlight_group = 0);
 
   void updateContextMenuItems();
   void showLayoutCustomMenu(QPoint pos);
@@ -242,29 +252,32 @@ class LayoutViewer : public QWidget
   void selection(const Selected& selection);
   void selectionFocus(const Selected& focus);
   void selectionAnimation(const Selected& selection,
-                          int repeats = animation_repeats_,
-                          int update_interval = animation_interval_);
-  void selectionAnimation(int repeats = animation_repeats_,
-                          int update_interval = animation_interval_)
+                          int repeats = kAnimationRepeats,
+                          int update_interval = kAnimationInterval);
+  void selectionAnimation(int repeats = kAnimationRepeats,
+                          int update_interval = kAnimationInterval)
   {
     selectionAnimation(inspector_selection_, repeats, update_interval);
   }
 
-  void updateModuleVisibility(odb::dbModule* module, bool visible);
-  void updateModuleColor(odb::dbModule* module,
-                         const QColor& color,
-                         bool user_selected);
+  void exit();
+
+  void resetCache();
+
+  void commandAboutToExecute();
+  void commandFinishedExecuting();
+  void executionPaused();
 
  private slots:
   void setBlock(odb::dbBlock* block);
-  void setResetRepaintInterval();
-  void setLongRepaintInterval();
+  void updatePixmap(const QImage& image, const QRect& bounds);
+  void handleLoadingIndication();
 
  private:
   struct Boxes
   {
-    std::vector<QRect> obs;
-    std::vector<QRect> mterms;
+    std::vector<QPolygon> obs;
+    std::map<odb::dbMTerm*, std::vector<QPolygon>> mterms;
   };
 
   using LayerBoxes = std::map<odb::dbTechLayer*, Boxes>;
@@ -273,42 +286,14 @@ class LayoutViewer : public QWidget
   void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
   const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
   void setPixelsPerDBU(qreal pixels_per_dbu);
-  void drawBlock(QPainter* painter, const odb::Rect& bounds, int depth);
-  void drawRegions(QPainter* painter);
-  void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
-  QColor getColor(odb::dbTechLayer* layer);
-  Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
-  void drawTracks(odb::dbTechLayer* layer,
-                  QPainter* painter,
-                  const odb::Rect& bounds);
-
-  void drawInstanceOutlines(QPainter* painter,
-                            const std::vector<odb::dbInst*>& insts);
-  void drawInstanceShapes(odb::dbTechLayer* layer,
-                          QPainter* painter,
-                          const std::vector<odb::dbInst*>& insts);
-  void drawInstanceNames(QPainter* painter,
-                         const std::vector<odb::dbInst*>& insts);
-  void drawBlockages(QPainter* painter, const odb::Rect& bounds);
-  void drawObstructions(odb::dbTechLayer* layer,
-                        QPainter* painter,
-                        const odb::Rect& bounds);
-  void drawRows(QPainter* painter, const odb::Rect& bounds);
-  void drawManufacturingGrid(QPainter* painter, const odb::Rect& bounds);
-  void drawGCellGrid(QPainter* painter, const odb::Rect& bounds);
-  void drawSelected(Painter& painter);
-  void drawHighlighted(Painter& painter);
-  void drawPinMarkers(Painter& painter, const odb::Rect& bounds);
-  void drawAccessPoints(Painter& painter,
-                        const std::vector<odb::dbInst*>& insts);
-  void drawRouteGuides(Painter& painter, odb::dbTechLayer* layer);
-  void drawModuleView(QPainter* painter,
-                      const std::vector<odb::dbInst*>& insts);
-  void drawRulers(Painter& painter);
-  void drawScaleBar(QPainter* painter, const QRect& rect);
   void selectAt(odb::Rect region_dbu, std::vector<Selected>& selection);
   SelectionSet selectAt(odb::Rect region_dbu);
-  Selected selectAtPoint(odb::Point pt_dbu);
+  void selectViaShapesAt(odb::dbTechLayer* cut_layer,
+                         odb::dbTechLayer* select_layer,
+                         const odb::Rect& region,
+                         int shape_limit,
+                         std::vector<Selected>& selections);
+  Selected selectAtPoint(const odb::Point& pt_dbu);
 
   void zoom(const odb::Point& focus, qreal factor, bool do_delta_focus);
 
@@ -318,15 +303,14 @@ class LayoutViewer : public QWidget
 
   bool hasDesign() const;
 
-  odb::Point getVisibleCenter();
+  int fineViewableResolution() const;
+  int nominalViewableResolution() const;
+  int coarseViewableResolution() const;
+  int instanceSizeLimit() const;
+  int shapeSizeLimit() const;
 
-  int fineViewableResolution();
-  int nominalViewableResolution();
-  int coarseViewableResolution();
-  int instanceSizeLimit();
-  int shapeSizeLimit();
-
-  std::vector<std::pair<odb::dbObject*, odb::Rect>> getRowRects(
+  std::vector<std::tuple<odb::dbObject*, odb::Rect, int>> getRowRects(
+      odb::dbBlock* block,
       const odb::Rect& bounds);
 
   void generateCutLayerMaximumSizes();
@@ -338,6 +322,12 @@ class LayoutViewer : public QWidget
   std::pair<Edge, bool> searchNearestEdge(const odb::Point& pt,
                                           bool horizontal,
                                           bool vertical);
+  void searchNearestViaEdge(
+      odb::dbTechLayer* cut_layer,
+      odb::dbTechLayer* search_layer,
+      const odb::Rect& search_line,
+      int shape_limit,
+      const std::function<void(const odb::Rect& rect)>& check_rect);
   int edgeToPointDistance(const odb::Point& pt, const Edge& edge) const;
   bool compareEdges(const Edge& lhs, const Edge& rhs) const;
 
@@ -348,12 +338,15 @@ class LayoutViewer : public QWidget
 
   odb::Point findNextRulerPoint(const odb::Point& mouse);
 
-  // build a cache of the layout to speed up future repainting
-  void updateBlockPainting(const QRect& area);
-
   void updateScaleAndCentering(const QSize& new_size);
 
   bool isNetVisible(odb::dbNet* net);
+
+  void drawScaleBar(QPainter* painter, const QRect& rect);
+  void drawLoadingIndicator(QPainter* painter, const QRect& bounds);
+  QRect computeIndicatorBackground(QPainter* painter,
+                                   const QRect& bounds) const;
+  void setLoadingState();
 
   void populateModuleColors();
 
@@ -362,8 +355,13 @@ class LayoutViewer : public QWidget
   ScriptWidget* output_widget_;
   const SelectionSet& selected_;
   const HighlightSet& highlighted_;
-  const std::vector<std::unique_ptr<Ruler>>& rulers_;
+  const Rulers& rulers_;
+  const Labels& labels_;
   LayoutScroll* scroller_;
+
+  // Use to avoid painting while a command is executing unless paused.
+  bool command_executing_ = false;
+  bool paused_ = false;
 
   // holds the current resolution for drawing the layout (units are pixels /
   // dbu)
@@ -380,11 +378,14 @@ class LayoutViewer : public QWidget
   QPoint mouse_press_pos_;
   QPoint mouse_move_pos_;
   bool rubber_band_showing_;
+  bool is_view_dragging_;
   Gui* gui_;
-  std::function<bool(void)> usingDBU_;
-  std::function<bool(void)> showRulerAsEuclidian_;
 
-  std::map<odb::dbModule*, ModuleSettings> modules_;
+  std::function<bool()> using_dbu_;
+  std::function<bool()> show_ruler_as_euclidian_;
+  std::function<bool()> show_db_view_;
+
+  const std::map<odb::dbModule*, ModuleSettings>& modules_;
 
   bool building_ruler_;
   std::unique_ptr<odb::Point> ruler_start_;
@@ -406,16 +407,13 @@ class LayoutViewer : public QWidget
   };
   std::unique_ptr<AnimatedSelected> animate_selection_;
 
-  // Hold the last painted drawing of the layout
-  std::unique_ptr<QPixmap> block_drawing_;
   bool repaint_requested_;
-  std::chrono::time_point<std::chrono::system_clock> last_paint_time_;
-  int repaint_interval_;  // milliseconds
 
   utl::Logger* logger_;
 
   QMenu* layout_context_menu_;
-  QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;
+  QMenu* highlight_color_menu_;
+  QMap<ContextMenuActions, QAction*> menu_actions_;
 
   // shift required when drawing the layout to center the layout in the window
   // (units: pixels)
@@ -431,18 +429,23 @@ class LayoutViewer : public QWidget
   // drawn.
   std::map<odb::dbTechLayer*, int> cut_maximum_size_;
 
-  // Set of nets to focus drawing on, if empty draw everything
-  std::set<odb::dbNet*> focus_nets_;
-  // Set of nets to draw route guides for, if empty draw nothing
-  std::set<odb::dbNet*> route_guides_;
+  const std::set<odb::dbNet*>& focus_nets_;
+  const std::set<odb::dbNet*>& route_guides_;
+  const std::set<odb::dbNet*>& net_tracks_;
 
-  static constexpr qreal zoom_scale_factor_ = 1.2;
+  RenderThread viewer_thread_;
+  QPixmap draw_pixmap_;
+  QRect draw_pixmap_bounds_;
+  QTimer* loading_timer_;
+  std::string loading_indicator_;
+
+  static constexpr qreal kZoomScaleFactor = 1.2;
 
   // parameters used to animate the selection of objects
-  static constexpr int animation_repeats_ = 6;
-  static constexpr int animation_interval_ = 300;
+  static constexpr int kAnimationRepeats = 6;
+  static constexpr int kAnimationInterval = 300;
 
-  const QColor background_ = Qt::black;
+  friend class RenderThread;
 };
 
 // The LayoutViewer widget can become quite large as you zoom
@@ -451,8 +454,11 @@ class LayoutScroll : public QScrollArea
 {
   Q_OBJECT
  public:
-  LayoutScroll(LayoutViewer* viewer, QWidget* parent = 0);
-
+  LayoutScroll(LayoutViewer* viewer,
+               const std::function<bool()>& default_mouse_wheel_zoom,
+               const std::function<int()>& arrow_keys_scroll_step,
+               QWidget* parent = nullptr);
+  bool isScrollingWithCursor();
  signals:
   // indicates that the viewport (visible area of the layout) has changed
   void viewportChanged();
@@ -465,9 +471,15 @@ class LayoutScroll : public QScrollArea
   void resizeEvent(QResizeEvent* event) override;
   void scrollContentsBy(int dx, int dy) override;
   void wheelEvent(QWheelEvent* event) override;
+  bool eventFilter(QObject* object, QEvent* event) override;
+  void keyPressEvent(QKeyEvent* event) override;
 
  private:
+  std::function<bool()> default_mouse_wheel_zoom_;
+  std::function<int()> arrow_keys_scroll_step_;
   LayoutViewer* viewer_;
+
+  bool scrolling_with_cursor_;
 };
 
 }  // namespace gui

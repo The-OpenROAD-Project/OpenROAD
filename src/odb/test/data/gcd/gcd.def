@@ -623,8 +623,8 @@ PINS 54 ;
     - resp_msg[2] + NET resp_msg[2] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 145790 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
     - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 140 147980 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
     - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 174910 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL + FIXED ( 200120 178220 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 140 31500 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
+    - resp_rdy + NET resp_rdy_i + DIRECTION INPUT + USE SIGNAL + FIXED ( 200120 178220 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
+    - resp_val + NET resp_val_i + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 140 31500 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
 END PINS
 SPECIALNETS 2 ;
     - VDD ( * VDD ) + USE POWER
@@ -1028,8 +1028,8 @@ NETS 385 ;
     - resp_msg[2] ( PIN resp_msg[2] ) ( _422_ ZN ) ( _423_ A2 ) + USE SIGNAL ;
     - resp_msg[1] ( PIN resp_msg[1] ) ( _416_ Z ) ( _417_ A2 ) + USE SIGNAL ;
     - resp_msg[0] ( PIN resp_msg[0] ) ( _299_ Z ) ( _396_ A2 ) ( _401_ A2 ) + USE SIGNAL ;
-    - resp_rdy ( PIN resp_rdy ) ( _312_ A2 ) ( _321_ A3 ) + USE SIGNAL ;
-    - resp_val ( PIN resp_val ) ( _298_ ZN ) ( _312_ A1 ) ( _321_ A1 ) + USE SIGNAL ;
+    - resp_rdy_i ( PIN resp_rdy ) ( _312_ A2 ) ( _321_ A3 ) + USE SIGNAL ;
+    - resp_val_i ( PIN resp_val ) ( _298_ ZN ) ( _312_ A1 ) ( _321_ A1 ) + USE SIGNAL ;
     - _000_ ( _324_ ZN ) ( _576_ D ) + USE SIGNAL ;
     - _001_ ( _314_ ZN ) ( _577_ D ) + USE SIGNAL ;
     - _002_ ( _320_ ZN ) ( _578_ D ) + USE SIGNAL ;

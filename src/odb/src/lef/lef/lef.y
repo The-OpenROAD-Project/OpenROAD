@@ -3,7 +3,7 @@
 // ATTENTION: THIS IS AN AUTO-GENERATED FILE. DO NOT CHANGE IT!               
 // ************************************************************************** 
 // ************************************************************************** 
-// Copyright 2012 - 2017, Cadence Design Systems                                     
+// Copyright 2012 - 2019, Cadence Design Systems                                     
 //                                                                            
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source             
 // Distribution,  Product Version 5.8.                                        
@@ -25,7 +25,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $                            
 // ************************************************************************** 
 // ************************************************************************** 
@@ -50,9 +50,9 @@
 //   Highest message number = 4700
 
 %{
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
 
 #include "lex.h"
 #include "lefiDefs.hpp"
@@ -68,7 +68,7 @@
   #include "lef_parser.hpp"
 #endif
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 #define LYPROP_ECAP "EDGE_CAPACITANCE"
 
@@ -200,7 +200,7 @@ int zeroOrGt(double values) {
         double    dval ;
         int       integer ;
         char *    string ;
-        LefDefParser::lefPOINT  pt;
+        LefParser::lefPOINT  pt;
 }
 
 %token <string> K_HISTORY
@@ -282,8 +282,16 @@ int zeroOrGt(double values) {
 %token K_DENSITYCHECKSTEP K_FILLACTIVESPACING K_MINIMUMCUT K_ADJACENTCUTS
 %token K_ANTENNAMODEL K_BUMP K_ENCLOSURE K_FROMABOVE K_FROMBELOW
 %token K_IMPLANT K_LENGTH K_MAXVIASTACK K_AREAIO K_BLACKBOX
-%token K_MAXWIDTH K_MINENCLOSEDAREA K_MINSTEP K_ORIENT K_OXIDE1 K_OXIDE2
-%token K_OXIDE3 K_OXIDE4 K_PARALLELRUNLENGTH K_MINWIDTH
+%token K_MAXWIDTH K_MINENCLOSEDAREA K_MINSTEP K_ORIENT 
+%token K_OXIDE1 K_OXIDE2 K_OXIDE3 K_OXIDE4
+%token K_OXIDE5 K_OXIDE6 K_OXIDE7 K_OXIDE8
+%token K_OXIDE9 K_OXIDE10 K_OXIDE11 K_OXIDE12
+%token K_OXIDE13 K_OXIDE14 K_OXIDE15 K_OXIDE16
+%token K_OXIDE17 K_OXIDE18 K_OXIDE19 K_OXIDE20
+%token K_OXIDE21 K_OXIDE22 K_OXIDE23 K_OXIDE24
+%token K_OXIDE25 K_OXIDE26 K_OXIDE27 K_OXIDE28
+%token K_OXIDE29 K_OXIDE30 K_OXIDE31 K_OXIDE32
+%token K_PARALLELRUNLENGTH K_MINWIDTH
 %token K_PROTRUSIONWIDTH K_SPACINGTABLE K_WITHIN
 %token K_ABOVE K_BELOW K_CENTERTOCENTER K_CUTSIZE K_CUTSPACING K_DENSITY
 %token K_DIAG45 K_DIAG135 K_MASK
@@ -478,7 +486,7 @@ rule:  version | busbitchars | case_sensitivity | units_section
 case_sensitivity: K_NAMESCASESENSITIVE K_ON ';'
           {
             if (lefData->versionNum < 5.6) {
-              lefData->namesCaseSensitive = TRUE;
+              lefData->namesCaseSensitive = true;
               if (lefCallbacks->CaseSensitiveCbk)
                 CALLBACK(lefCallbacks->CaseSensitiveCbk, 
                          lefrCaseSensitiveCbkType,
@@ -492,7 +500,7 @@ case_sensitivity: K_NAMESCASESENSITIVE K_ON ';'
       | K_NAMESCASESENSITIVE K_OFF ';'
           {
             if (lefData->versionNum < 5.6) {
-              lefData->namesCaseSensitive = FALSE;
+              lefData->namesCaseSensitive = false;
               if (lefCallbacks->CaseSensitiveCbk)
                 CALLBACK(lefCallbacks->CaseSensitiveCbk, lefrCaseSensitiveCbkType,
                                lefData->namesCaseSensitive);
@@ -599,9 +607,11 @@ start_units: K_UNITS
           CHKERR();
         }
       }
-      if (lefData->hasSite) {
-        lefError(1713, "SITE statement was defined before UNITS.\nRefer the LEF Language Reference manual for the order of LEF statements.");
-        CHKERR();
+      if (lefData->versionNum < 5.6) {
+        if (lefData->hasSite) {//SITE is defined before UNIT and is illegal in pre 5.6
+          lefError(1713, "SITE statement was defined before UNITS.\nRefer the LEF Language Reference manual for the order of LEF statements.");
+          CHKERR();
+        }
       }
     }
 
@@ -2242,7 +2252,7 @@ layer_arraySpacing_arraycuts:       // 5.7
 layer_arraySpacing_arraycut:
   K_ARRAYCUTS int_number K_SPACING int_number
     {
-      if (lefCallbacks->LayerCbk)
+      if (lefCallbacks->LayerCbk) {
          lefData->lefrLayer.addArraySpacingArray((int)$2, $4);
          if (lefData->arrayCutsVal > (int)$2) {
             // Mulitiple ARRAYCUTS value needs to me in ascending order 
@@ -2253,6 +2263,7 @@ layer_arraySpacing_arraycut:
             }
          }
          lefData->arrayCutsVal = (int)$2;
+      }
     }
 
 sp_options:
@@ -2312,14 +2323,6 @@ sp_options:
          if (lefCallbacks->LayerCbk) { // write error only if cbk is set 
             if (lefData->layerWarnings++ < lefSettings->LayerWarnings) {
               lefError(1592, "A PARALLELRUNLENGTH statement was already defined in the layer.\nIt is PARALLELRUNLENGTH or TWOWIDTHS is allowed per layer.");
-              CHKERR();
-            }
-         }
-      }
-      if (lefData->hasTwoWidths) { // 5.7 - only 1 TWOWIDTHS per layer
-         if (lefCallbacks->LayerCbk) { // write error only if cbk is set 
-            if (lefData->layerWarnings++ < lefSettings->LayerWarnings) {
-              lefError(1593, "A TWOWIDTHS table statement was already defined in the layer.\nOnly one TWOWIDTHS statement is allowed per layer.");
               CHKERR();
             }
          }
@@ -2761,6 +2764,146 @@ layer_oxide:
     if (lefCallbacks->LayerCbk)
        lefData->lefrLayer.addAntennaModel(4);
     }
+  | K_OXIDE5
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(5);
+    }
+  | K_OXIDE6
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(6);
+    }
+  | K_OXIDE7
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(7);
+    }
+  | K_OXIDE8
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(8);
+    }
+  | K_OXIDE9
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(9);
+    }
+  | K_OXIDE10
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(10);
+    }
+  | K_OXIDE11
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(11);
+    }
+  | K_OXIDE12
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(12);
+    }
+  | K_OXIDE13
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(13);
+    }
+  | K_OXIDE14
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(14);
+    }
+  | K_OXIDE15
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(15);
+    }
+  | K_OXIDE16
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(16);
+    }
+  | K_OXIDE17
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(17);
+    }
+  | K_OXIDE18
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(18);
+    }
+  | K_OXIDE19
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(19);
+    }
+  | K_OXIDE20
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(20);
+    }
+  | K_OXIDE21
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(21);
+    }
+  | K_OXIDE22
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(22);
+    }
+  | K_OXIDE23
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(23);
+    }
+  | K_OXIDE24
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(24);
+    }
+  | K_OXIDE25
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(25);
+    }
+  | K_OXIDE26
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(26);
+    }
+  | K_OXIDE27
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(27);
+    }
+  | K_OXIDE28
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(28);
+    }
+  | K_OXIDE29
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(29);
+    }
+  | K_OXIDE30
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(30);
+    }
+  | K_OXIDE31
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(31);
+    }
+  | K_OXIDE32
+    {
+    if (lefCallbacks->LayerCbk)
+       lefData->lefrLayer.addAntennaModel(32);
+    }
 
 layer_sp_parallel_widths: // empty 
     { }
@@ -3131,8 +3274,8 @@ via_geometry:
         }
       }
       lefData->lefrGeometriesPtr->clearPolyItems(); // free items fields
-      lefFree((char*)(lefData->lefrGeometriesPtr)); // Don't need anymore, poly data has
-      lefData->lefrDoGeometries = 0;                // copied
+      lefFree(lefData->lefrGeometriesPtr); // Don't need anymore, poly data has
+      lefData->lefrDoGeometries = 0;       // copied
     }
 
 end_via: K_END {lefData->lefDumbMode = 1; lefData->lefNoNum = 1;} T_STRING 
@@ -5417,6 +5560,146 @@ pin_layer_oxide:
     if (lefCallbacks->PinCbk)
        lefData->lefrPin.addAntennaModel(4);
     }
+  | K_OXIDE5
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(5);
+    }
+  | K_OXIDE6
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(6);
+    }
+  | K_OXIDE7
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(7);
+    }
+  | K_OXIDE8
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(8);
+    }
+  | K_OXIDE9
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(9);
+    }
+  | K_OXIDE10
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(10);
+    }
+  | K_OXIDE11
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(11);
+    }
+  | K_OXIDE12
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(12);
+    }
+  | K_OXIDE13
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(13);
+    }
+  | K_OXIDE14
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(14);
+    }
+  | K_OXIDE15
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(15);
+    }
+  | K_OXIDE16
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(16);
+    }
+  | K_OXIDE17
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(17);
+    }
+  | K_OXIDE18
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(18);
+    }
+  | K_OXIDE19
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(19);
+    }
+  | K_OXIDE20
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(20);
+    }
+  | K_OXIDE21
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(21);
+    }
+  | K_OXIDE22
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(22);
+    }
+  | K_OXIDE23
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(23);
+    }
+  | K_OXIDE24
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(24);
+    }
+  | K_OXIDE25
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(25);
+    }
+  | K_OXIDE26
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(26);
+    }
+  | K_OXIDE27
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(27);
+    }
+  | K_OXIDE28
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(28);
+    }
+  | K_OXIDE29
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(29);
+    }
+  | K_OXIDE30
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(30);
+    }
+  | K_OXIDE31
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(31);
+    }
+  | K_OXIDE32
+    {
+    if (lefCallbacks->PinCbk)
+       lefData->lefrPin.addAntennaModel(32);
+    }
 
 pin_prop_list:
   pin_name_value_pair
@@ -6229,15 +6512,15 @@ one_cap: K_MINPINS int_number K_WIRECAP int_number ';'
     { if (lefCallbacks->ArrayCbk) lefData->lefrArray.addDefaultCap((int)$2, $4); }
 
 msg_statement:
-  K_MESSAGE {lefData->lefDumbMode=1;lefData->lefNlToken=TRUE;} T_STRING '=' s_expr dtrm
+  K_MESSAGE {lefData->lefDumbMode=1;lefData->lefNlToken=true;} T_STRING '=' s_expr dtrm
     {  }
 
 create_file_statement:
-  K_CREATEFILE {lefData->lefDumbMode=1;lefData->lefNlToken=TRUE;} T_STRING '=' s_expr dtrm
+  K_CREATEFILE {lefData->lefDumbMode=1;lefData->lefNlToken=true;} T_STRING '=' s_expr dtrm
     { }
 
 def_statement:
-  K_DEFINE {lefData->lefDumbMode=1;lefData->lefNlToken=TRUE;} T_STRING '=' expression dtrm
+  K_DEFINE {lefData->lefDumbMode=1;lefData->lefNlToken=true;} T_STRING '=' expression dtrm
     {
       if (lefData->versionNum < 5.6)
         lefAddNumDefine($3, $5);
@@ -6246,7 +6529,7 @@ def_statement:
            if (lefData->arrayWarnings++ < lefSettings->ArrayWarnings)
              lefWarning(2067, "DEFINE statement is obsolete in version 5.6 and later.\nThe LEF parser will ignore this statement.\nTo avoid this warning in the future, remove this statement from the LEF file with version 5.6 or later.");
     }
-  |  K_DEFINES {lefData->lefDumbMode=1;lefData->lefNlToken=TRUE;} T_STRING '=' s_expr dtrm
+  |  K_DEFINES {lefData->lefDumbMode=1;lefData->lefNlToken=true;} T_STRING '=' s_expr dtrm
     {
       if (lefData->versionNum < 5.6)
         lefAddStringDefine($3, $5);
@@ -6255,7 +6538,7 @@ def_statement:
            if (lefData->arrayWarnings++ < lefSettings->ArrayWarnings)
              lefWarning(2068, "DEFINES statement is obsolete in version 5.6 and later.\nThe LEF parser will ignore this statement.\nTo avoid this warning in the future, remove this statement from the LEF file with version 5.6 or later.");
     }
-  |  K_DEFINEB {lefData->lefDumbMode=1;lefData->lefNlToken=TRUE;} T_STRING '=' b_expr dtrm
+  |  K_DEFINEB {lefData->lefDumbMode=1;lefData->lefNlToken=true;} T_STRING '=' b_expr dtrm
     {
       if (lefData->versionNum < 5.6)
         lefAddBooleanDefine($3, $5);
@@ -6267,8 +6550,8 @@ def_statement:
 
 // terminator for &defines.  Can be semicolon or newline 
 dtrm:
-  |  ';' {lefData->lefNlToken = FALSE;}
-  |  '\n'        {lefData->lefNlToken = FALSE;}
+  |  ';' {lefData->lefNlToken = false;}
+  |  '\n'        {lefData->lefNlToken = false;}
 
 then:
   K_THEN
@@ -6320,7 +6603,7 @@ s_expr:
     { $$ = $2; }
   | K_IF b_expr then s_expr else s_expr %prec IF
     {
-      lefData->lefDefIf = TRUE;
+      lefData->lefDefIf = true;
       if ($2 != 0) {
         $$ = $4;        
       } else {
@@ -7145,8 +7428,8 @@ antenna_output: K_ANTENNAOUTPUTDIFFAREA NUMBER ';'
           CALLBACK(lefCallbacks->AntennaOutputCbk, lefrAntennaOutputCbkType, $2);
     }
 
-extension_opt:  // empty 
-    | extension
+extension_opt:  // Allowing empty and multiple extensions.
+    | extension_opt extension
 
 extension: K_BEGINEXT
     { 
@@ -7158,4 +7441,4 @@ extension: K_BEGINEXT
 
 %%
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

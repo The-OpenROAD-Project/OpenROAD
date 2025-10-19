@@ -1,51 +1,31 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbVia.h"
 
-#include "db.h"
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+#include <vector>
+
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbChip.h"
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
-#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbTechViaGenerateRule.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace odb {
 
@@ -60,106 +40,77 @@ static void create_via_boxes(_dbVia* via, const dbViaParams& P);
 
 bool _dbVia::operator==(const _dbVia& rhs) const
 {
-  if (_flags._is_rotated != rhs._flags._is_rotated)
+  if (_flags._is_rotated != rhs._flags._is_rotated) {
     return false;
+  }
 
-  if (_flags._is_tech_via != rhs._flags._is_tech_via)
+  if (_flags._is_tech_via != rhs._flags._is_tech_via) {
     return false;
+  }
 
-  if (_flags._has_params != rhs._flags._has_params)
+  if (_flags._has_params != rhs._flags._has_params) {
     return false;
+  }
 
-  if (_flags._orient != rhs._flags._orient)
+  if (_flags._orient != rhs._flags._orient) {
     return false;
+  }
 
-  if (_flags.default_ != rhs._flags.default_)
+  if (_flags.default_ != rhs._flags.default_) {
     return false;
+  }
 
   if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0)
+    if (strcmp(_name, rhs._name) != 0) {
       return false;
-  } else if (_name || rhs._name)
+    }
+  } else if (_name || rhs._name) {
     return false;
+  }
 
   if (_pattern && rhs._pattern) {
-    if (strcmp(_pattern, rhs._pattern) != 0)
+    if (strcmp(_pattern, rhs._pattern) != 0) {
       return false;
-  } else if (_pattern || rhs._pattern)
+    }
+  } else if (_pattern || rhs._pattern) {
     return false;
+  }
 
-  if (_bbox != rhs._bbox)
+  if (_bbox != rhs._bbox) {
     return false;
+  }
 
-  if (_boxes != rhs._boxes)
+  if (_boxes != rhs._boxes) {
     return false;
+  }
 
-  if (_top != rhs._top)
+  if (_top != rhs._top) {
     return false;
+  }
 
-  if (_bottom != rhs._bottom)
+  if (_bottom != rhs._bottom) {
     return false;
+  }
 
-  if (_generate_rule != rhs._generate_rule)
+  if (_generate_rule != rhs._generate_rule) {
     return false;
+  }
 
-  if (_rotated_via_id != rhs._rotated_via_id)
+  if (_rotated_via_id != rhs._rotated_via_id) {
     return false;
+  }
 
-  if (_via_params != rhs._via_params)
+  if (_via_params != rhs._via_params) {
     return false;
+  }
 
   return true;
 }
 
-void _dbVia::differences(dbDiff& diff,
-                         const char* field,
-                         const _dbVia& rhs) const
-{
-  _dbBlock* lhs_block = (_dbBlock*) getOwner();
-  _dbBlock* rhs_block = (_dbBlock*) rhs.getOwner();
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_flags._is_rotated);
-  DIFF_FIELD(_flags._is_tech_via);
-  DIFF_FIELD(_flags._has_params);
-  DIFF_FIELD(_flags._orient);
-  DIFF_FIELD(_flags.default_);
-  DIFF_FIELD(_pattern);
-  DIFF_OBJECT(_bbox, lhs_block->_box_tbl, rhs_block->_box_tbl);
-  DIFF_SET(_boxes, lhs_block->_box_itr, rhs_block->_box_itr);
-  DIFF_FIELD(_top);
-  DIFF_FIELD(_bottom);
-  DIFF_FIELD(_generate_rule);
-  DIFF_FIELD(_rotated_via_id);
-  DIFF_STRUCT(_via_params);
-  DIFF_END
-}
-
-void _dbVia::out(dbDiff& diff, char side, const char* field) const
-{
-  _dbBlock* block = (_dbBlock*) getOwner();
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_flags._is_rotated);
-  DIFF_OUT_FIELD(_flags._is_tech_via);
-  DIFF_OUT_FIELD(_flags._has_params);
-  DIFF_OUT_FIELD(_flags._orient);
-  DIFF_OUT_FIELD(_flags.default_);
-  DIFF_OUT_FIELD(_pattern);
-  DIFF_OUT_OBJECT(_bbox, block->_box_tbl);
-  DIFF_OUT_SET(_boxes, block->_box_itr);
-  DIFF_OUT_FIELD(_top);
-  DIFF_OUT_FIELD(_bottom);
-  DIFF_OUT_FIELD(_generate_rule);
-  DIFF_OUT_FIELD(_rotated_via_id);
-  DIFF_OUT_STRUCT(_via_params);
-  DIFF_END
-}
-
 _dbVia::_dbVia(_dbDatabase*, const _dbVia& v)
     : _flags(v._flags),
-      _name(NULL),
-      _pattern(NULL),
+      _name(nullptr),
+      _pattern(nullptr),
       _bbox(v._bbox),
       _boxes(v._boxes),
       _top(v._top),
@@ -169,13 +120,11 @@ _dbVia::_dbVia(_dbDatabase*, const _dbVia& v)
       _via_params(v._via_params)
 {
   if (v._name) {
-    _name = strdup(v._name);
-    ZALLOCATED(_name);
+    _name = safe_strdup(v._name);
   }
 
   if (v._pattern) {
-    _pattern = strdup(v._pattern);
-    ZALLOCATED(_pattern);
+    _pattern = safe_strdup(v._pattern);
   }
 }
 
@@ -187,17 +136,25 @@ _dbVia::_dbVia(_dbDatabase*)
   _flags._orient = dbOrientType::R0;
   _flags.default_ = false;
   _flags._spare_bits = 0;
-  _name = 0;
-  _pattern = 0;
+  _name = nullptr;
+  _pattern = nullptr;
 }
 
 _dbVia::~_dbVia()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 
-  if (_pattern)
+  if (_pattern) {
     free((void*) _pattern);
+  }
+}
+
+_dbTech* _dbVia::getTech()
+{
+  _dbBlock* block = (_dbBlock*) getOwner();
+  return block->getTech();
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbVia& v)
@@ -255,7 +212,7 @@ std::string dbVia::getPattern()
 {
   _dbVia* via = (_dbVia*) this;
 
-  if (via->_pattern == 0) {
+  if (via->_pattern == nullptr) {
     return "";
   }
 
@@ -266,12 +223,11 @@ void dbVia::setPattern(const char* name)
 {
   _dbVia* via = (_dbVia*) this;
 
-  if (via->_pattern != 0) {
+  if (via->_pattern != nullptr) {
     return;
   }
 
-  via->_pattern = strdup(name);
-  ZALLOCATED(via->_pattern);
+  via->_pattern = safe_strdup(name);
 }
 
 dbBlock* dbVia::getBlock()
@@ -283,8 +239,9 @@ dbBox* dbVia::getBBox()
 {
   _dbVia* via = (_dbVia*) this;
 
-  if (via->_bbox == 0)
-    return NULL;
+  if (via->_bbox == 0) {
+    return nullptr;
+  }
 
   _dbBlock* block = (_dbBlock*) via->getOwner();
   return (dbBox*) block->_box_tbl->getPtr(via->_bbox);
@@ -307,11 +264,11 @@ dbTechVia* dbVia::getTechVia()
 {
   _dbVia* via = (_dbVia*) this;
 
-  if ((via->_flags._is_rotated == 0) || (via->_flags._is_tech_via == 0))
-    return NULL;
+  if ((via->_flags._is_rotated == 0) || (via->_flags._is_tech_via == 0)) {
+    return nullptr;
+  }
 
-  _dbDatabase* db = via->getDatabase();
-  _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+  _dbTech* tech = via->getTech();
   _dbTechVia* v = tech->_via_tbl->getPtr(via->_rotated_via_id);
   return (dbTechVia*) v;
 }
@@ -320,8 +277,9 @@ dbVia* dbVia::getBlockVia()
 {
   _dbVia* via = (_dbVia*) this;
 
-  if ((via->_flags._is_rotated == 0) || (via->_flags._is_tech_via == 1))
-    return NULL;
+  if ((via->_flags._is_rotated == 0) || (via->_flags._is_tech_via == 1)) {
+    return nullptr;
+  }
 
   _dbBlock* block = (_dbBlock*) via->getOwner();
   _dbVia* v = block->_via_tbl->getPtr(via->_rotated_via_id);
@@ -339,11 +297,11 @@ dbTechLayer* dbVia::getTopLayer()
 {
   _dbVia* via = (_dbVia*) this;
 
-  if (via->_top == 0)
-    return NULL;
+  if (via->_top == 0) {
+    return nullptr;
+  }
 
-  _dbDatabase* db = via->getDatabase();
-  _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+  _dbTech* tech = via->getTech();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(via->_top);
 }
 
@@ -351,11 +309,11 @@ dbTechLayer* dbVia::getBottomLayer()
 {
   _dbVia* via = (_dbVia*) this;
 
-  if (via->_bottom == 0)
-    return NULL;
+  if (via->_bottom == 0) {
+    return nullptr;
+  }
 
-  _dbDatabase* db = via->getDatabase();
-  _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+  _dbTech* tech = via->getTech();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(via->_bottom);
 }
 
@@ -375,13 +333,12 @@ dbTechViaGenerateRule* dbVia::getViaGenerateRule()
 {
   _dbVia* via = (_dbVia*) this;
 
-  if (via->_generate_rule == 0)
-    return NULL;
+  if (via->_generate_rule == 0) {
+    return nullptr;
+  }
 
-  _dbDatabase* db = via->getDatabase();
-  _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
-  _dbTechViaGenerateRule* rule
-      = tech->_via_generate_rule_tbl->getPtr(via->_generate_rule);
+  _dbTech* tech = via->getTech();
+  auto rule = tech->_via_generate_rule_tbl->getPtr(via->_generate_rule);
   return (dbTechViaGenerateRule*) rule;
 }
 
@@ -396,11 +353,10 @@ void dbVia::setViaParams(const dbViaParams& params)
   dbSet<dbBox>::iterator itr;
 
   for (itr = boxes.begin(); itr != boxes.end();) {
-    dbSet<dbBox>::iterator n = ++itr;
-    _dbBox* box = (_dbBox*) *itr;
+    dbSet<dbBox>::iterator cur = itr++;
+    _dbBox* box = (_dbBox*) *cur;
     dbProperty::destroyProperties(box);
     block->_box_tbl->destroy(box);
-    itr = n;
   }
 
   via->_boxes = 0U;
@@ -410,18 +366,20 @@ void dbVia::setViaParams(const dbViaParams& params)
   create_via_boxes(via, params);
 }
 
-void dbVia::getViaParams(dbViaParams& params)
+dbViaParams dbVia::getViaParams()
 {
+  dbViaParams params;
+
   _dbVia* via = (_dbVia*) this;
 
-  if (via->_flags._has_params == 0)
+  if (via->_flags._has_params == 0) {
     params = dbViaParams();
-  else {
+  } else {
     params = via->_via_params;
-    _dbDatabase* db = via->getDatabase();
-    _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
-    params._tech = (dbTech*) tech;
+    params._tech = (dbTech*) via->getTech();
   }
+
+  return params;
 }
 
 void dbVia::setDefault(bool val)
@@ -438,13 +396,13 @@ bool dbVia::isDefault()
 
 dbVia* dbVia::create(dbBlock* block_, const char* name_)
 {
-  if (block_->findVia(name_))
-    return NULL;
+  if (block_->findVia(name_)) {
+    return nullptr;
+  }
 
   _dbBlock* block = (_dbBlock*) block_;
   _dbVia* via = block->_via_tbl->create();
-  via->_name = strdup(name_);
-  ZALLOCATED(via->_name);
+  via->_name = safe_strdup(name_);
   return (dbVia*) via;
 }
 
@@ -455,21 +413,19 @@ dbVia* dbVia::create(dbBlock* block,
 {
   _dbVia* via = (_dbVia*) dbVia::create(block, name);
 
-  if (via == NULL)
-    return NULL;
+  if (via == nullptr) {
+    return nullptr;
+  }
 
   via->_flags._is_rotated = 1;
   via->_flags._orient = orient;
   via->_rotated_via_id = blk_via->getId();
 
   dbTransform t(orient);
-  dbSet<dbBox> boxes = blk_via->getBoxes();
-  dbSet<dbBox>::iterator itr;
 
-  for (itr = boxes.begin(); itr != boxes.end(); ++itr) {
-    _dbBox* box = (_dbBox*) *itr;
-    dbTechLayer* l = (dbTechLayer*) box->getTechLayer();
-    Rect r = box->_shape._rect;
+  for (dbBox* box : blk_via->getBoxes()) {
+    dbTechLayer* l = box->getTechLayer();
+    Rect r = ((_dbBox*) box)->_shape._rect;
     t.apply(r);
     dbBox::create((dbVia*) via, l, r.xMin(), r.yMin(), r.xMax(), r.yMax());
   }
@@ -484,8 +440,9 @@ dbVia* dbVia::create(dbBlock* block,
 {
   _dbVia* via = (_dbVia*) dbVia::create(block, name);
 
-  if (via == NULL)
-    return NULL;
+  if (via == nullptr) {
+    return nullptr;
+  }
 
   via->_flags._is_rotated = 1;
   via->_flags._is_tech_via = 1;
@@ -493,13 +450,10 @@ dbVia* dbVia::create(dbBlock* block,
   via->_rotated_via_id = tech_via->getId();
 
   dbTransform t(orient);
-  dbSet<dbBox> boxes = tech_via->getBoxes();
-  dbSet<dbBox>::iterator itr;
 
-  for (itr = boxes.begin(); itr != boxes.end(); ++itr) {
-    _dbBox* box = (_dbBox*) *itr;
-    dbTechLayer* l = (dbTechLayer*) box->getTechLayer();
-    Rect r = box->_shape._rect;
+  for (dbBox* box : tech_via->getBoxes()) {
+    dbTechLayer* l = box->getTechLayer();
+    Rect r = ((_dbBox*) box)->_shape._rect;
     t.apply(r);
     dbBox::create((dbVia*) via, l, r.xMin(), r.yMin(), r.xMax(), r.yMax());
   }
@@ -507,9 +461,7 @@ dbVia* dbVia::create(dbBlock* block,
   return (dbVia*) via;
 }
 
-static dbVia* copyVia(dbBlock* block, dbVia* via, bool copyRotatedVia);
-
-dbVia* copyVia(dbBlock* block_, dbVia* via_, bool copyRotatedVia)
+static dbVia* copyVia(dbBlock* block_, dbVia* via_, bool copyRotatedVia)
 {
   _dbBlock* block = (_dbBlock*) block_;
   _dbVia* via = (_dbVia*) via_;
@@ -517,35 +469,30 @@ dbVia* copyVia(dbBlock* block_, dbVia* via_, bool copyRotatedVia)
   _dbVia* cvia = block->_via_tbl->create();
 
   cvia->_flags = via->_flags;
-  cvia->_name = strdup(via->_name);
-  ZALLOCATED(cvia->_name);
+  cvia->_name = safe_strdup(via->_name);
 
   if (via->_pattern) {
-    cvia->_pattern = strdup(via->_pattern);
-    ZALLOCATED(cvia->_pattern);
+    cvia->_pattern = safe_strdup(via->_pattern);
   }
 
   cvia->_top = via->_top;
   cvia->_bottom = via->_bottom;
 
-  dbSet<dbBox> boxes = via_->getBoxes();
-  dbSet<dbBox>::iterator itr;
-
-  for (itr = boxes.begin(); itr != boxes.end(); ++itr) {
-    dbBox* b = *itr;
+  for (dbBox* b : via_->getBoxes()) {
     dbTechLayer* l = b->getTechLayer();
     dbBox::create((dbVia*) cvia, l, b->xMin(), b->yMin(), b->xMax(), b->yMax());
   }
 
   if (via->_flags._is_rotated) {
-    if (via->_flags._is_tech_via)
+    if (via->_flags._is_tech_via) {
       cvia->_rotated_via_id = via->_rotated_via_id;
-    else {
+    } else {
       _dbVia* bv = (_dbVia*) via_->getBlockVia();
       _dbVia* cbv = (_dbVia*) block_->findVia(bv->_name);
 
-      if (copyRotatedVia && (cbv == NULL))
+      if (copyRotatedVia && (cbv == nullptr)) {
         cbv = (_dbVia*) copyVia(block_, (dbVia*) bv, true);
+      }
 
       assert(cbv);
       cvia->_rotated_via_id = cbv->getOID();
@@ -562,27 +509,26 @@ dbVia* dbVia::copy(dbBlock* dst, dbVia* src)
 
 bool dbVia::copy(dbBlock* dst_, dbBlock* src_)
 {
-  dbSet<dbVia> vias = src_->getVias();
-  dbSet<dbVia>::iterator itr;
-
   // copy non rotated via's first
-  for (itr = vias.begin(); itr != vias.end(); ++itr) {
-    dbVia* v = *itr;
+  for (dbVia* v : src_->getVias()) {
     _dbVia* via = (_dbVia*) v;
 
-    if (!v->isViaRotated())
-      if (!dst_->findVia(via->_name))
+    if (!v->isViaRotated()) {
+      if (!dst_->findVia(via->_name)) {
         copyVia(dst_, v, false);
+      }
+    }
   }
 
   // copy rotated via's last
-  for (itr = vias.begin(); itr != vias.end(); ++itr) {
-    dbVia* v = *itr;
+  for (dbVia* v : src_->getVias()) {
     _dbVia* via = (_dbVia*) v;
 
-    if (v->isViaRotated())
-      if (!dst_->findVia(via->_name))
+    if (v->isViaRotated()) {
+      if (!dst_->findVia(via->_name)) {
         copyVia(dst_, v, false);
+      }
+    }
   }
 
   return true;
@@ -661,6 +607,15 @@ void create_via_boxes(_dbVia* via, const dbViaParams& P)
       = maxY + P.getYBottomEnclosure() + P.getYOrigin() + P.getYBottomOffset();
   dbBox::create(
       (dbVia*) via, P.getBottomLayer(), bot_minX, bot_minY, bot_maxX, bot_maxY);
+}
+
+void _dbVia::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["pattern"].add(_pattern);
 }
 
 }  // namespace odb

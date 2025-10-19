@@ -26,34 +26,52 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "frDesign.h"
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
-using namespace fr;
+#include "db/obj/frInst.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
+#include "frDesign.h"
+#include "global.h"
+#include "gtest/gtest.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "utl/Logger.h"
 
 namespace odb {
 class dbTechLayerCutSpacingTableDefRule;
 }
+
+namespace drt {
+
 // General Fixture for tests using db objects.
-class Fixture
+class Fixture : public ::testing::Test
 {
- public:
+ protected:
   Fixture();
   virtual ~Fixture() = default;
 
   void addLayer(frTechObject* tech,
                 const char* name,
-                dbTechLayerType type,
-                dbTechLayerDir dir = dbTechLayerDir::NONE);
+                odb::dbTechLayerType type,
+                odb::dbTechLayerDir dir = odb::dbTechLayerDir::NONE);
+
+  odb::dbInst* createDummyInst(odb::dbMaster* master);
 
   void setupTech(frTechObject* tech);
 
   void makeDesign();
 
-  frMaster* makeMacro(const char* name,
-                      frCoord originX = 0,
-                      frCoord originY = 0,
-                      frCoord sizeX = 0,
-                      frCoord sizeY = 0);
+  std::pair<frMaster*, odb::dbMaster*> makeMacro(const char* name,
+                                                 frCoord originX = 0,
+                                                 frCoord originY = 0,
+                                                 frCoord sizeX = 0,
+                                                 frCoord sizeY = 0);
 
   frBlockage* makeMacroObs(frMaster* master,
                            frCoord xl,
@@ -71,7 +89,9 @@ class Fixture
                        frCoord yh,
                        frLayerNum lNum = 2);
 
-  frInst* makeInst(const char* name, frMaster* master, frCoord x, frCoord y);
+  frInst* makeInst(const char* name,
+                   frMaster* master,
+                   odb::dbMaster* db_master);
 
   frLef58CornerSpacingConstraint* makeCornerConstraint(
       frLayerNum layer_num,
@@ -83,9 +103,12 @@ class Fixture
   void makeMetalWidthViaMap(frLayerNum layer_num,
                             odb::dbMetalWidthViaMap* rule);
 
+  void makeKeepOutZoneRule(frLayerNum layer_num,
+                           odb::dbTechLayerKeepOutZoneRule* dbRule);
+
   void makeMinStepConstraint(frLayerNum layer_num);
 
-  void makeMinStep58Constraint(frLayerNum layer_num);
+  frLef58MinStepConstraint* makeMinStep58Constraint(frLayerNum layer_num);
 
   void makeRectOnlyConstraint(frLayerNum layer_num);
 
@@ -113,6 +136,11 @@ class Fixture
       frCoord within = 50,
       frCoord end_prl_spacing = 0,
       frCoord end_prl = 0);
+
+  frSpacingRangeConstraint* makeSpacingRangeConstraint(frLayerNum layer_num,
+                                                       frCoord spacing,
+                                                       frCoord minWidth,
+                                                       frCoord maxWidth);
 
   std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
   makeLef58SpacingEolParEdgeConstraint(frLef58SpacingEndOfLineConstraint* con,
@@ -142,7 +170,18 @@ class Fixture
 
   void makeLef58CutSpcTbl(frLayerNum layer_num,
                           odb::dbTechLayerCutSpacingTableDefRule* dbRule);
+  void makeLef58TwoWiresForbiddenSpc(
+      frLayerNum layer_num,
+      odb::dbTechLayerTwoWiresForbiddenSpcRule* dbRule);
+  void makeLef58ForbiddenSpc(frLayerNum layer_num,
+                             odb::dbTechLayerForbiddenSpacingRule* dbRule);
 
+  frLef58EnclosureConstraint* makeLef58EnclosureConstrainut(
+      frLayerNum layer_num,
+      int cut_class_idx,
+      frCoord width,
+      frCoord firstOverhang,
+      frCoord secondOverhang);
   void makeMinimumCut(frLayerNum layerNum,
                       frCoord width,
                       frCoord length,
@@ -154,23 +193,23 @@ class Fixture
 
   frViaDef* makeViaDef(const char* name,
                        frLayerNum layer_num,
-                       const Point& ll,
-                       const Point& ur);
+                       const odb::Point& ll,
+                       const odb::Point& ur);
 
-  frVia* makeVia(frViaDef* via, frNet* net, const Point& origin);
+  frVia* makeVia(frViaDef* via, frNet* net, const odb::Point& origin);
 
   void makePathseg(frNet* net,
                    frLayerNum layer_num,
-                   const Point& begin,
-                   const Point& end,
+                   const odb::Point& begin,
+                   const odb::Point& end,
                    frUInt4 width = 100,
                    frEndStyleEnum begin_style = frcTruncateEndStyle,
                    frEndStyleEnum end_style = frcTruncateEndStyle);
 
   void makePathsegExt(frNet* net,
                       frLayerNum layer_num,
-                      const Point& begin,
-                      const Point& end,
+                      const odb::Point& begin,
+                      const odb::Point& end,
                       frUInt4 width = 100)
   {
     makePathseg(net,
@@ -199,23 +238,36 @@ class Fixture
       std::vector<frCoord> widthTbl,
       std::vector<frCoord> prlTbl,
       std::vector<std::vector<frCoord>> spacingTbl);
+
+  frLef58WidthTableOrthConstraint* makeWidthTblOrthConstraint(
+      frLayerNum layer_num,
+      frCoord horz_spc,
+      frCoord vert_spc);
   void initRegionQuery();
+  frLef58CutSpacingConstraint* makeLef58CutSpacingConstraint_parallelOverlap(
+      frLayerNum layer_num,
+      frCoord spacing);
   frLef58CutSpacingConstraint* makeLef58CutSpacingConstraint_adjacentCut(
       frLayerNum layer_num,
       frCoord spacing,
       int adjacent_cuts,
       int two_cuts,
       frCoord within);
-
+  void makeLef58WrongDirSpcConstraint(
+      frLayerNum layer_num,
+      odb::dbTechLayerWrongDirSpacingRule* dbRule);
+  void makeSpacingTableOrthConstraint(frLayerNum layer_num,
+                                      frCoord within,
+                                      frCoord spc);
   // Public data members are accessible from inside the test function
-  std::unique_ptr<fr::Logger> logger;
+  std::unique_ptr<utl::Logger> logger;
+  std::unique_ptr<RouterConfiguration> router_cfg;
   std::unique_ptr<frDesign> design;
   frUInt4 numBlockages, numTerms, numMasters, numInsts;
   odb::dbTech* db_tech;
+
+ private:
+  odb::dbDatabase* db_;
 };
 
-// BOOST_TEST wants an operator<< for any type it compares.  We
-// don't have those for enums and they are tedious to write.
-// Just compare them as integers to avoid this requirement.
-#define TEST_ENUM_EQUAL(L, R) \
-  BOOST_TEST(static_cast<int>(L) == static_cast<int>(R))
+}  // namespace drt

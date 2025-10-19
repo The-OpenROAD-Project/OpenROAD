@@ -1,136 +1,84 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbTechMinCutOrAreaRule.h"
 
-#include "db.h"
+#include <cassert>
+
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
-#include "lefout.h"
+#include "odb/db.h"
+#include "odb/lefout.h"
 
 namespace odb {
 
 template class dbTable<_dbTechMinCutRule>;
 template class dbTable<_dbTechMinEncRule>;
 
+void _dbTechMinCutRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
+void _dbTechMinEncRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 bool _dbTechMinCutRule::operator==(const _dbTechMinCutRule& rhs) const
 {
-  if (_flags._rule != rhs._flags._rule)
+  if (_flags._rule != rhs._flags._rule) {
     return false;
+  }
 
-  if (_flags._cuts_length != rhs._flags._cuts_length)
+  if (_flags._cuts_length != rhs._flags._cuts_length) {
     return false;
+  }
 
-  if (_num_cuts != rhs._num_cuts)
+  if (_num_cuts != rhs._num_cuts) {
     return false;
+  }
 
-  if (_width != rhs._width)
+  if (_width != rhs._width) {
     return false;
+  }
 
-  if (_cut_distance != rhs._cut_distance)
+  if (_cut_distance != rhs._cut_distance) {
     return false;
+  }
 
-  if (_length != rhs._length)
+  if (_length != rhs._length) {
     return false;
+  }
 
-  if (_distance != rhs._distance)
+  if (_distance != rhs._distance) {
     return false;
+  }
 
   return true;
-}
-
-void _dbTechMinCutRule::differences(dbDiff& diff,
-                                    const char* field,
-                                    const _dbTechMinCutRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._rule);
-  DIFF_FIELD(_flags._cuts_length);
-  DIFF_FIELD(_num_cuts);
-  DIFF_FIELD(_width);
-  DIFF_FIELD(_cut_distance);
-  DIFF_FIELD(_length);
-  DIFF_FIELD(_distance);
-  DIFF_END
-}
-
-void _dbTechMinCutRule::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._rule);
-  DIFF_OUT_FIELD(_flags._cuts_length);
-  DIFF_OUT_FIELD(_num_cuts);
-  DIFF_OUT_FIELD(_width);
-  DIFF_OUT_FIELD(_cut_distance);
-  DIFF_OUT_FIELD(_length);
-  DIFF_OUT_FIELD(_distance);
-  DIFF_END
 }
 
 bool _dbTechMinEncRule::operator==(const _dbTechMinEncRule& rhs) const
 {
-  if (_flags._has_width != rhs._flags._has_width)
+  if (_flags._has_width != rhs._flags._has_width) {
     return false;
+  }
 
-  if (_area != rhs._area)
+  if (_area != rhs._area) {
     return false;
+  }
 
-  if (_width != rhs._width)
+  if (_width != rhs._width) {
     return false;
+  }
 
   return true;
-}
-
-void _dbTechMinEncRule::differences(dbDiff& diff,
-                                    const char* field,
-                                    const _dbTechMinEncRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._has_width);
-  DIFF_FIELD(_area);
-  DIFF_FIELD(_width);
-  DIFF_END
-}
-
-void _dbTechMinEncRule::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_BEGIN
-  DIFF_OUT_FIELD(_flags._has_width);
-  DIFF_OUT_FIELD(_area);
-  DIFF_OUT_FIELD(_width);
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -197,8 +145,9 @@ bool dbTechMinCutRule::getMinimumCuts(uint& numcuts, uint& width) const
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
 
-  if (_lsm->_flags._rule == _dbTechMinCutRule::NONE)
+  if (_lsm->_flags._rule == _dbTechMinCutRule::NONE) {
     return false;
+  }
 
   numcuts = _lsm->_num_cuts;
   width = _lsm->_width;
@@ -221,12 +170,13 @@ void dbTechMinCutRule::setMinimumCuts(uint numcuts,
     below_only = false;
   }
 
-  if (above_only)
+  if (above_only) {
     _lsm->_flags._rule = _dbTechMinCutRule::MINIMUM_CUT_ABOVE;
-  else if (below_only)
+  } else if (below_only) {
     _lsm->_flags._rule = _dbTechMinCutRule::MINIMUM_CUT_BELOW;
-  else
+  } else {
     _lsm->_flags._rule = _dbTechMinCutRule::MINIMUM_CUT;
+  }
 }
 
 bool dbTechMinCutRule::isAboveOnly() const
@@ -246,8 +196,9 @@ bool dbTechMinCutRule::getLengthForCuts(uint& length, uint& distance) const
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
 
   if ((_lsm->_flags._rule == _dbTechMinCutRule::NONE)
-      || !(_lsm->_flags._cuts_length))
+      || !(_lsm->_flags._cuts_length)) {
     return false;
+  }
 
   length = _lsm->_length;
   distance = _lsm->_distance;
@@ -292,28 +243,30 @@ void dbTechMinCutRule::writeLef(lefout& writer) const
   uint numcuts = 0;
   uint cut_width = 0;
   getMinimumCuts(numcuts, cut_width);
-  fprintf(writer.out(),
-          "    MINIMUMCUT %d  WIDTH %g ",
-          numcuts,
-          writer.lefdist(cut_width));
+  fmt::print(writer.out(),
+             "    MINIMUMCUT {}  WIDTH {:g} ",
+             numcuts,
+             writer.lefdist(cut_width));
 
   uint cut_distance;
   if (getCutDistance(cut_distance)) {
-    fprintf(writer.out(), "WITHIN %g ", writer.lefdist(cut_distance));
+    fmt::print(writer.out(), "WITHIN {:g} ", writer.lefdist(cut_distance));
   }
 
-  if (isAboveOnly())
-    fprintf(writer.out(), "FROMABOVE ");
-  else if (isBelowOnly())
-    fprintf(writer.out(), "FROMBELOW ");
+  if (isAboveOnly()) {
+    fmt::print(writer.out(), "{}", "FROMABOVE ");
+  } else if (isBelowOnly()) {
+    fmt::print(writer.out(), "{}", "FROMBELOW ");
+  }
 
   uint length, distance;
-  if (getLengthForCuts(length, distance))
-    fprintf(writer.out(),
-            "LENGTH %g  WITHIN %g ",
-            writer.lefdist(length),
-            writer.lefdist(distance));
-  fprintf(writer.out(), ";\n");
+  if (getLengthForCuts(length, distance)) {
+    fmt::print(writer.out(),
+               "LENGTH {:g}  WITHIN {:g} ",
+               writer.lefdist(length),
+               writer.lefdist(distance));
+  }
+  fmt::print(writer.out(), ";\n");
 }
 
 dbTechMinCutRule* dbTechMinCutRule::create(dbTechLayer* inly)
@@ -354,8 +307,9 @@ bool dbTechMinEncRule::getEnclosureWidth(uint& width) const
 {
   _dbTechMinEncRule* _lsm = (_dbTechMinEncRule*) this;
 
-  if (!(_lsm->_flags._has_width))
+  if (!(_lsm->_flags._has_width)) {
     return false;
+  }
 
   width = _lsm->_width;
   return true;
@@ -373,10 +327,12 @@ void dbTechMinEncRule::writeLef(lefout& writer) const
 {
   uint enc_area, enc_width;
   getEnclosure(enc_area);
-  fprintf(writer.out(), "    MINENCLOSEDAREA %g ", writer.lefarea(enc_area));
-  if (getEnclosureWidth(enc_width))
-    fprintf(writer.out(), "WIDTH %g ", writer.lefdist(enc_width));
-  fprintf(writer.out(), ";\n");
+  fmt::print(
+      writer.out(), "    MINENCLOSEDAREA {:g} ", writer.lefarea(enc_area));
+  if (getEnclosureWidth(enc_width)) {
+    fmt::print(writer.out(), "WIDTH {:g} ", writer.lefdist(enc_width));
+  }
+  fmt::print(writer.out(), "{}", ";\n");
 }
 
 dbTechMinEncRule* dbTechMinEncRule::create(dbTechLayer* inly)

@@ -17,7 +17,7 @@ TRACKS Y 480 DO 292 STEP 960 LAYER met4 ;
 TRACKS X 1850 DO 84 STEP 3330 LAYER met5 ;
 TRACKS Y 1850 DO 84 STEP 3330 LAYER met5 ;
 COMPONENTS 3 ;
-    - _546_ sky130_fd_sc_hs__o211ai_1 + PLACED ( 92160 206460 ) N ;
+    - _546_ sky130_fd_sc_hs__o211ai_1 + PLACED ( 92160 207460 ) N ;
     - _667_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 200160 126540 ) N ;
     - _668_ sky130_fd_sc_hs__dfxtp_1 + PLACED ( 197760 166500 ) N ;
 END COMPONENTS

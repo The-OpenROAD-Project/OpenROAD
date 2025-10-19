@@ -1,8 +1,8 @@
 # test for set_voltage_domain -secondary_power
 source "helpers.tcl"
 
-read_lef sky130hvl/sky130_fd_sc_hvl.tlef 
-read_lef sky130hvl/sky130_fd_sc_hvl_merged.lef 
+read_lef sky130hvl/sky130_fd_sc_hvl.tlef
+read_lef sky130hvl/sky130_fd_sc_hvl_merged.lef
 read_lef sky130_secondary_nets/capacitor_test_nf.lef
 read_lef sky130_secondary_nets/LDO_COMPARATOR_LATCH.lef
 read_lef sky130_secondary_nets/PMOS.lef

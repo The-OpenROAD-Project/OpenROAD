@@ -22,21 +22,24 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
 
 #include "defiSite.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
+#include "defiKRDefs.hpp"
+#include "defiMisc.hpp"
 #include "defiUtil.hpp"
-#include "lex.h"
+#include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -70,8 +73,9 @@ void defiSite::Destroy()
 
 void defiSite::clear()
 {
-  if (siteName_)
+  if (siteName_) {
     *siteName_ = '\0';
+  }
   x_num_ = 0.0;
   y_num_ = 0.0;
   x_step_ = 0.0;
@@ -84,10 +88,12 @@ void defiSite::setName(const char* name)
   int len = 1;
   char* from = (char*) name;
   clear();
-  while (*from++)
+  while (*from++) {
     len++;
-  if (nameSize_ < len)
+  }
+  if (nameSize_ < len) {
     bumpName(len);
+  }
   strcpy(siteName_, defData->DEFCASE(name));
 }
 
@@ -189,33 +195,7 @@ void defiBox::Init()
   yl_ = 0;
   xh_ = 0;
   yh_ = 0;
-  points_ = 0;
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiBox)
-{
-  this->Init();
-
-  DEF_COPY_FUNC(xl_);
-  DEF_COPY_FUNC(yl_);
-  DEF_COPY_FUNC(xh_);
-  DEF_COPY_FUNC(yh_);
-
-  DEF_MALLOC_FUNC_WITH_OPERATOR(points_, defiPoints, sizeof(defiPoints) * 1);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiBox)
-{
-  CHECK_SELF_ASSIGN
-  this->Init();
-
-  DEF_COPY_FUNC(xl_);
-  DEF_COPY_FUNC(yl_);
-  DEF_COPY_FUNC(xh_);
-  DEF_COPY_FUNC(yh_);
-
-  DEF_MALLOC_FUNC_WITH_OPERATOR(points_, defiPoints, sizeof(defiPoints) * 1);
-  return *this;
+  points_ = nullptr;
 }
 
 defiBox::~defiBox()
@@ -298,4 +278,4 @@ void defiBox::print(FILE* f) const
   fprintf(f, "Box %d,%d %d %d\n", xl(), yl(), xh(), yh());
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

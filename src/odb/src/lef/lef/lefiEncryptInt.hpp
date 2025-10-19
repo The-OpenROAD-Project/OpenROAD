@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -30,19 +30,17 @@
 #ifndef DEFI_ENCRYPTINT_H
 #define DEFI_ENCRYPTINT_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // Unable the reader to read encrypted lef file.
 //  This function must be called before lefrRead().
 // /
 extern void lefrEnableReadEncrypted();
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

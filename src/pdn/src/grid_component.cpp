@@ -1,42 +1,25 @@
-//////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include "grid_component.h"
 
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "boost/geometry/geometry.hpp"
 #include "connect.h"
 #include "grid.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
+#include "via.h"
 
 namespace pdn {
 
@@ -60,7 +43,7 @@ VoltageDomain* GridComponent::getDomain() const
   return grid_->getDomain();
 }
 
-const std::string GridComponent::typeToString(Type type)
+std::string GridComponent::typeToString(Type type)
 {
   switch (type) {
     case Ring:
@@ -104,14 +87,12 @@ ShapePtr GridComponent::addShape(Shape* shape)
              "Checking against {} shapes",
              shapes.size());
   // check if shape will intersect anything already added
-  std::vector<ShapeValue> intersecting;
-  for (auto it = shapes.qbegin(bgi::intersects(shape_ptr->getRectBox()));
+  std::vector<ShapePtr> intersecting;
+  for (auto it = shapes.qbegin(bgi::intersects(shape_ptr->getRect()));
        it != shapes.qend();
        it++) {
-    auto& intersecting_shape = it->second;
-    const odb::Rect intersecting_area
-        = shape_ptr->getRect().intersect(intersecting_shape->getRect());
-    if (intersecting_area.area() == 0) {
+    auto& intersecting_shape = *it;
+    if (!shape_ptr->getRect().overlaps(intersecting_shape->getRect())) {
       continue;
     }
     if (intersecting_shape->getNet() != shape_ptr->getNet()) {
@@ -124,6 +105,10 @@ ShapePtr GridComponent::addShape(Shape* shape)
                  intersecting_shape->getReportText(),
                  shape_ptr->getReportText());
       return nullptr;
+    }
+
+    if (areIntersectionsAllowed()) {
+      continue;
     }
 
     const odb::Rect& other_rect = intersecting_shape->getRect();
@@ -149,12 +134,12 @@ ShapePtr GridComponent::addShape(Shape* shape)
 
   for (const auto& shape_entry : intersecting) {
     // merge and delete intersection
-    shape_ptr->merge(shape_entry.second.get());
+    shape_ptr->merge(shape_entry.get());
     shapes.remove(shape_entry);
   }
 
   shape_ptr->generateObstruction();
-  shapes.insert({shape_ptr->getRectBox(), shape_ptr});
+  shapes.insert(shape_ptr);
 
   // add bpins that touch edges
   odb::Rect die_area = getBlock()->getDieArea();
@@ -199,9 +184,9 @@ void GridComponent::removeShape(Shape* shape)
   }
 
   auto& shapes = shapes_[shape->getLayer()];
-  for (const auto& [box, tree_shape] : shapes) {
+  for (const auto& tree_shape : shapes) {
     if (tree_shape.get() == shape) {
-      shapes.remove({box, tree_shape});
+      shapes.remove(tree_shape);
       return;
     }
   }
@@ -234,7 +219,8 @@ void GridComponent::replaceShape(Shape* shape,
   }
 }
 
-void GridComponent::getObstructions(ShapeTreeMap& obstructions) const
+void GridComponent::getObstructions(
+    Shape::ObstructionTreeMap& obstructions) const
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -244,30 +230,31 @@ void GridComponent::getObstructions(ShapeTreeMap& obstructions) const
              getGrid()->getName());
   for (const auto& [layer, shapes] : shapes_) {
     auto& obs = obstructions[layer];
-    for (const auto& [box, shape] : shapes) {
-      obs.insert({shape->getObstructionBox(), shape});
+    for (const auto& shape : shapes) {
+      obs.insert(shape);
     }
   }
 }
 
-void GridComponent::removeObstructions(ShapeTreeMap& obstructions) const
+void GridComponent::removeObstructions(
+    Shape::ObstructionTreeMap& obstructions) const
 {
   for (const auto& [layer, shapes] : shapes_) {
     auto& obs = obstructions[layer];
-    for (const auto& [box, shape] : shapes) {
-      obs.remove({shape->getObstructionBox(), shape});
+    for (const auto& shape : shapes) {
+      obs.remove(shape);
     }
   }
 }
 
-void GridComponent::getShapes(ShapeTreeMap& shapes) const
+void GridComponent::getShapes(Shape::ShapeTreeMap& shapes) const
 {
   for (const auto& [layer, layer_shapes] : shapes_) {
     shapes[layer].insert(layer_shapes.begin(), layer_shapes.end());
   }
 }
 
-void GridComponent::removeShapes(ShapeTreeMap& shapes) const
+void GridComponent::removeShapes(Shape::ShapeTreeMap& shapes) const
 {
   for (const auto& [layer, layer_shapes] : shapes_) {
     auto& other_shapes = shapes[layer];
@@ -275,7 +262,7 @@ void GridComponent::removeShapes(ShapeTreeMap& shapes) const
   }
 }
 
-void GridComponent::cutShapes(const ShapeTreeMap& obstructions)
+void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -297,13 +284,13 @@ void GridComponent::cutShapes(const ShapeTreeMap& obstructions)
     }
     const auto& obs = obstructions.at(layer);
     std::map<Shape*, std::vector<Shape*>> replacement_shapes;
-    for (const auto& [box, shape] : shapes) {
+    for (const auto& shape : shapes) {
       std::vector<Shape*> replacements;
-      if (!shape->cut(obs, replacements)) {
+      if (!shape->cut(obs, getGrid(), replacements)) {
         continue;
       }
 
-      replacement_shapes[shape.get()] = replacements;
+      replacement_shapes[shape.get()] = std::move(replacements);
     }
 
     for (const auto& [shape, replacement] : replacement_shapes) {
@@ -319,17 +306,19 @@ void GridComponent::cutShapes(const ShapeTreeMap& obstructions)
              getShapeCount());
 }
 
-void GridComponent::writeToDb(
+std::map<Shape*, std::vector<odb::dbBox*>> GridComponent::writeToDb(
     const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
     bool add_pins,
     const std::set<odb::dbTechLayer*>& convert_layer_to_pin) const
 {
   std::vector<ShapePtr> all_shapes;
   for (const auto& [layer, shapes] : shapes_) {
-    for (const auto& [box, shape] : shapes) {
+    for (const auto& shape : shapes) {
       all_shapes.push_back(shape);
     }
   }
+
+  std::map<Shape*, std::vector<odb::dbBox*>> shape_map;
 
   // sort shapes so they get written to db in the same order
   std::sort(
@@ -350,13 +339,16 @@ void GridComponent::writeToDb(
     }
     const bool is_pin_layer = convert_layer_to_pin.find(shape->getLayer())
                               != convert_layer_to_pin.end();
-    shape->writeToDb(net->second, add_pins, is_pin_layer);
+    shape_map[shape.get()]
+        = shape->writeToDb(net->second, add_pins, is_pin_layer);
   }
+
+  return shape_map;
 }
 
 void GridComponent::checkLayerWidth(odb::dbTechLayer* layer,
                                     int width,
-                                    odb::dbTechLayerDir direction) const
+                                    const odb::dbTechLayerDir& direction) const
 {
   const TechLayer tech_layer(layer);
 
@@ -432,12 +424,26 @@ void GridComponent::checkLayerWidth(odb::dbTechLayer* layer,
                          widths);
     }
   }
+
+  odb::dbTech* tech = layer->getTech();
+  if (tech->hasManufacturingGrid()) {
+    const int double_grid = 2 * tech->getManufacturingGrid();
+    if (width % double_grid != 0) {
+      getLogger()->error(
+          utl::PDN,
+          117,
+          "Width ({:.4f} um) specified must be a multiple of {:.4f} um.",
+          tech_layer.dbuToMicron(width),
+          tech_layer.dbuToMicron(double_grid));
+    }
+  }
 }
 
-void GridComponent::checkLayerSpacing(odb::dbTechLayer* layer,
-                                      int width,
-                                      int spacing,
-                                      odb::dbTechLayerDir /* direction */) const
+void GridComponent::checkLayerSpacing(
+    odb::dbTechLayer* layer,
+    int width,
+    int spacing,
+    const odb::dbTechLayerDir& /* direction */) const
 {
   const TechLayer tech_layer(layer);
 
@@ -451,6 +457,19 @@ void GridComponent::checkLayerSpacing(odb::dbTechLayer* layer,
                        tech_layer.dbuToMicron(spacing),
                        layer->getName(),
                        tech_layer.dbuToMicron(min_spacing));
+  }
+
+  odb::dbTech* tech = layer->getTech();
+  if (tech->hasManufacturingGrid()) {
+    const int grid = tech->getManufacturingGrid();
+    if (spacing % grid != 0) {
+      getLogger()->error(
+          utl::PDN,
+          118,
+          "Spacing ({:.4f} um) specified must be a multiple of {:.4f} um.",
+          tech_layer.dbuToMicron(spacing),
+          tech_layer.dbuToMicron(grid));
+    }
   }
 }
 
@@ -485,9 +504,8 @@ std::vector<odb::dbNet*> GridComponent::getNets() const
 {
   if (nets_.empty()) {
     return grid_->getNets(starts_with_power_);
-  } else {
-    return nets_;
   }
+  return nets_;
 }
 
 int GridComponent::getNetCount() const

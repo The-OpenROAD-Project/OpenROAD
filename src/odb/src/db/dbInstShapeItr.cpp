@@ -1,49 +1,23 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "ZException.h"
-#include "db.h"
-#include "dbShape.h"
+#include <cassert>
+
+#include "odb/ZException.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/geom.h"
 
 namespace odb {
 
 dbInstShapeItr::dbInstShapeItr(bool expand_vias)
 {
   _state = 0;
-  _inst = NULL;
-  _master = NULL;
-  _mpin = NULL;
+  _inst = nullptr;
+  _master = nullptr;
+  _mpin = nullptr;
   _type = ALL;
-  _via = NULL;
+  _via = nullptr;
   _via_x = 0;
   _via_y = 0;
   _expand_vias = expand_vias;
@@ -51,11 +25,9 @@ dbInstShapeItr::dbInstShapeItr(bool expand_vias)
 
 void dbInstShapeItr::begin(dbInst* inst, IteratorType type)
 {
-  int x, y;
   _inst = inst;
-  _inst->getOrigin(x, y);
   _master = _inst->getMaster();
-  _transform = dbTransform(inst->getOrient(), Point(x, y));
+  _transform = _inst->getTransform();
   _type = type;
   _state = 0;
 }
@@ -64,11 +36,9 @@ void dbInstShapeItr::begin(dbInst* inst,
                            IteratorType type,
                            const dbTransform& t)
 {
-  int x, y;
   _inst = inst;
-  _inst->getOrigin(x, y);
   _master = _inst->getMaster();
-  _transform = dbTransform(inst->getOrient(), Point(x, y));
+  _transform = _inst->getTransform();
   _transform.concat(t);
   _type = type;
   _state = 0;
@@ -93,10 +63,11 @@ void dbInstShapeItr::getShape(dbBox* box, dbShape& shape)
 
   dbTechVia* via = box->getTechVia();
 
-  if (via)
+  if (via) {
     shape.setVia(via, r);
-  else
+  } else {
     shape.setSegment(box->getTechLayer(), r);
+  }
 }
 
 #define INIT 0
@@ -109,8 +80,6 @@ void dbInstShapeItr::getShape(dbBox* box, dbShape& shape)
 
 bool dbInstShapeItr::next(dbShape& shape)
 {
-  ZASSERT(_inst);
-
 next_state:
 
   switch (_state) {
@@ -129,9 +98,9 @@ next_state:
     }
 
     case MTERM_ITR: {
-      if (_mterm_itr == _mterms.end())
+      if (_mterm_itr == _mterms.end()) {
         _state = PINS_DONE;
-      else {
+      } else {
         dbMTerm* mterm = *_mterm_itr;
         ++_mterm_itr;
         _mpins = mterm->getMPins();
@@ -143,9 +112,9 @@ next_state:
     }
 
     case MPIN_ITR: {
-      if (_mpin_itr == _mpins.end())
+      if (_mpin_itr == _mpins.end()) {
         _state = MTERM_ITR;
-      else {
+      } else {
         _mpin = *_mpin_itr;
         ++_mpin_itr;
         _boxes = _mpin->getGeometry();
@@ -157,9 +126,9 @@ next_state:
     }
 
     case MBOX_ITR: {
-      if (_box_itr == _boxes.end())
+      if (_box_itr == _boxes.end()) {
         _state = MPIN_ITR;
-      else {
+      } else {
         dbBox* box = *_box_itr;
         ++_box_itr;
 
@@ -168,50 +137,44 @@ next_state:
           return true;
         }
 
-        else {
-          box->getViaXY(_via_x, _via_y);
-          _via = box->getTechVia();
-          assert(_via);
-          _via_boxes = _via->getBoxes();
-          _via_box_itr = _via_boxes.begin();
-          _prev_state = MBOX_ITR;
-          _state = VIA_BOX_ITR;
-        }
+        box->getViaXY(_via_x, _via_y);
+        _via = box->getTechVia();
+        assert(_via);
+        _via_boxes = _via->getBoxes();
+        _via_box_itr = _via_boxes.begin();
+        _prev_state = MBOX_ITR;
+        _state = VIA_BOX_ITR;
       }
 
       goto next_state;
     }
 
     case OBS_ITR: {
-      if (_box_itr == _boxes.end())
+      if (_box_itr == _boxes.end()) {
         return false;
-
-      else {
-        dbBox* box = *_box_itr;
-        ++_box_itr;
-
-        if ((_expand_vias == false) || (box->isVia() == false)) {
-          getShape(box, shape);
-          return true;
-        }
-
-        else {
-          box->getViaXY(_via_x, _via_y);
-          _via = box->getTechVia();
-          assert(_via);
-          _via_boxes = _via->getBoxes();
-          _via_box_itr = _via_boxes.begin();
-          _prev_state = OBS_ITR;
-          _state = VIA_BOX_ITR;
-        }
       }
+      dbBox* box = *_box_itr;
+      ++_box_itr;
+
+      if ((_expand_vias == false) || (box->isVia() == false)) {
+        getShape(box, shape);
+        return true;
+      }
+
+      box->getViaXY(_via_x, _via_y);
+      _via = box->getTechVia();
+      assert(_via);
+      _via_boxes = _via->getBoxes();
+      _via_box_itr = _via_boxes.begin();
+      _prev_state = OBS_ITR;
+      _state = VIA_BOX_ITR;
       goto next_state;
     }
 
     case VIA_BOX_ITR: {
-      if (_via_box_itr == _via_boxes.end())
+      if (_via_box_itr == _via_boxes.end()) {
         _state = _prev_state;
-      else {
+      } else {
         dbBox* box = *_via_box_itr;
         ++_via_box_itr;
         getViaBox(box, shape);

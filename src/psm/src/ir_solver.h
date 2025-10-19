@@ -1,214 +1,232 @@
-/*
-BSD 3-Clause License
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
 
-Copyright (c) 2020, The Regents of the University of Minnesota
-
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
 #pragma once
 
-#include "gmat.h"
+#include <Eigen/Sparse>
+#include <cstddef>
+#include <map>
+#include <memory>
+#include <optional>
+#include <set>
+#include <string>
+#include <vector>
+
+#include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon.hpp"
+#include "connection.h"
+#include "debug_gui.h"
+#include "ir_network.h"
+#include "node.h"
 #include "odb/db.h"
+#include "odb/geom.h"
+#include "psm/pdnsim.h"
 #include "utl/Logger.h"
 
 namespace sta {
 class dbSta;
+class Corner;
+}  // namespace sta
+
+namespace est {
+class EstimateParasitics;
 }
 
 namespace psm {
-
-//! Class for IR solver
-/*
- * Builds the equations GV=J and uses SuperLU
- * to solve the matrix equations
- */
-struct ViaCut
-{
-  Point loc = Point(0, 0);
-  NodeEnclosure bot_encl{0, 0, 0, 0};
-  NodeEnclosure top_encl{0, 0, 0, 0};
-};
+class IRNetwork;
 
 class IRSolver
 {
  public:
-  struct BumpData
+  using Voltage = double;
+  using Current = double;
+  using Power = float;
+
+  struct Results
   {
-    int x;
-    int y;
-    int size;
-    double voltage;
+    Voltage net_voltage = 0.0;
+    Voltage worst_voltage = 0.0;
+    Voltage worst_ir_drop = 0.0;
+    Voltage avg_voltage = 0.0;
+    Voltage avg_ir_drop = 0.0;
+    float max_percent = 0.0;
+  };
+  struct EMResults
+  {
+    Current max_current = 0.0;
+    Current avg_current = 0.0;
+    std::size_t resistors = 0;
+  };
+  struct ConnectivityResults
+  {
+    std::set<Node*, Node::Compare> unconnected_nodes;
+    std::set<ITermNode*, Node::Compare> unconnected_iterms;
   };
 
-  //! Constructor for IRSolver class
-  /*
-   * This constructor creates an instance of the class using
-   * the given inputs.
-   */
-  IRSolver(odb::dbDatabase* db,
-           sta::dbSta* sta,
-           utl::Logger* logger,
-           std::string vsrc_loc,
-           std::string power_net,
-           std::string out_file,
-           std::string em_out_file,
-           std::string spice_out_file,
-           bool em_analyze,
-           int bump_pitch_x,
-           int bump_pitch_y,
-           float node_density_um,
-           int node_density_factor_user,
-           const std::map<std::string, float>& net_voltage_map);
-  //! IRSolver destructor
-  ~IRSolver();
-  //! Returns the created G matrix for the design
-  GMat* getGMat();
-  //! Returns current map represented as a 1D vector
-  std::vector<double> getJ();
-  //! Function to solve for IR drop
-  void solveIR();
-  //! Function to get the power value from OpenSTA
-  std::vector<std::pair<odb::dbInst*, double>> getPower();
-  std::pair<double, double> getSupplyVoltage();
+  IRSolver(
+      odb::dbNet* net,
+      bool floorplanning,
+      sta::dbSta* sta,
+      est::EstimateParasitics* estimate_parasitics,
+      utl::Logger* logger,
+      const std::map<odb::dbNet*, std::map<sta::Corner*, Voltage>>&
+          user_voltages,
+      const std::map<odb::dbInst*, std::map<sta::Corner*, Power>>& user_powers,
+      const PDNSim::GeneratedSourceSettings& generated_source_settings);
 
-  bool getConnectionTest();
+  odb::dbNet* getNet() const { return net_; };
 
-  int getMinimumResolution();
+  bool check(bool check_bterms);
 
-  int printSpice();
+  void solve(sta::Corner* corner,
+             GeneratedSourceType source_type,
+             const std::string& source_file);
 
-  bool build();
-  bool buildConnection();
+  void report(sta::Corner* corner) const;
+  void reportEM(sta::Corner* corner) const;
 
-  const std::vector<BumpData>& getBumps() const { return C4Bumps_; }
-  int getTopLayer() const { return top_layer_; }
+  Results getSolution(sta::Corner* corner) const;
+  EMResults getEMSolution(sta::Corner* corner) const;
+  PDNSim::IRDropByPoint getIRDrop(odb::dbTechLayer* layer,
+                                  sta::Corner* corner) const;
+  ConnectivityResults getConnectivityResults() const;
 
-  double getWorstCaseVoltage() const { return wc_voltage; }
-  double getMaxCurrent() const { return max_cur; }
-  double getAvgCurrent() const { return avg_cur; }
-  int getNumResistors() const { return num_res; }
-  double getAvgVoltage() const { return avg_voltage; }
-  float getSupplyVoltageSrc() const { return supply_voltage_src; }
+  void enableGui(bool enable);
+
+  void writeErrorFile(const std::string& error_file) const;
+  void writeInstanceVoltageFile(const std::string& voltage_file,
+                                sta::Corner* corner) const;
+  void writeEMFile(const std::string& em_file, sta::Corner* corner) const;
+  void writeSpiceFile(GeneratedSourceType source_type,
+                      const std::string& spice_file,
+                      sta::Corner* corner,
+                      const std::string& voltage_source_file) const;
+
+  bool belongsTo(Node* node) const;
+  bool belongsTo(Connection* connection) const;
+
+  std::vector<sta::Corner*> getCorners() const;
+  bool hasSolution(sta::Corner* corner) const;
+  Voltage getNetVoltage(sta::Corner* corner) const;
+  std::optional<Voltage> getVoltage(sta::Corner* corner, Node* node) const;
+
+  std::optional<Voltage> getSDCVoltage(sta::Corner* corner,
+                                       odb::dbNet* net) const;
+  std::optional<Voltage> getPVTVoltage(sta::Corner* corner) const;
+  std::optional<Voltage> getUserVoltage(sta::Corner* corner,
+                                        odb::dbNet* net) const;
+  std::optional<Voltage> getSolutionVoltage(sta::Corner* corner) const;
+
+  odb::dbNet* getPowerNet() const;
+
+  Connection::ResistanceMap getResistanceMap(sta::Corner* corner) const;
+  void assertResistanceMap(sta::Corner* corner) const;
+
+  IRNetwork* getNetwork() const { return network_.get(); }
 
  private:
-  //! Function to add C4 bumps to the G matrix
-  bool addC4Bump();
-  //! Function that parses the Vsrc file
-  void readC4Data();
-  //! Function to create a J vector from the current map
-  bool createJ();
-  //! Function to create a G matrix using the nodes
-  bool createGmat(bool connection_only = false);
-  //! Function to find and store the upper and lower PDN layers and return a
-  //! list
-  // of wires for all PDN tasks
-  std::vector<odb::dbSBox*> findPdnWires(odb::dbNet* power_net);
-  //! Function to create the nodes of vias in the G matrix
-  void createGmatViaNodes(const std::vector<odb::dbSBox*>& power_wires);
-  //! Function to create the nodes of wires in the G matrix
-  void createGmatWireNodes(const std::vector<odb::dbSBox*>& power_wires,
-                           const std::vector<odb::Rect>& macros);
-  //! Function to find and store the macro boundaries
-  std::vector<odb::Rect> getMacroBoundaries();
+  template <typename T>
+  using ValueNodeMap = std::map<const Node*, T>;
 
-  NodeEnclosure getViaEnclosure(int layer, odb::dbSet<odb::dbBox> via_boxes);
+  odb::dbBlock* getBlock() const;
+  odb::dbTech* getTech() const;
 
-  std::map<Point, ViaCut> getViaCuts(Point loc,
-                                     odb::dbSet<odb::dbBox> via_boxes,
-                                     int lb,
-                                     int lt,
-                                     bool has_params,
-                                     odb::dbViaParams params);
+  bool checkOpen();
+  bool checkBTerms() const;
+  bool checkShort() const;
 
-  //! Function to create the nodes for the c4 bumps
-  int createC4Nodes(bool connection_only, int unit_micron);
-  //! Function to create the connections of the G matrix
-  void createGmatConnections(const std::vector<odb::dbSBox*>& power_wires,
-                             bool connection_only);
-  bool checkConnectivity(bool connection_only = false);
-  bool checkValidR(double R);
-  bool getResult();
+  std::map<odb::dbInst*, Power> getInstancePower(sta::Corner* corner) const;
+  Voltage getPowerNetVoltage(sta::Corner* corner) const;
 
-  float supply_voltage_src{0};
-  //! Worst case voltage at the lowest layer nodes
-  double wc_voltage{0};
-  //! Worst case current at the lowest layer nodes
-  double max_cur{0};
-  //! Average current at the lowest layer nodes
-  double avg_cur{0};
-  //! number of resistances
-  int num_res{0};
-  //! Average voltage at lowest layer nodes
-  double avg_voltage{0};
-  //! Vector of worstcase voltages in the lowest layers
-  std::vector<double> wc_volt_layer;
-  //! Pointer to the Db
-  odb::dbDatabase* db_;
-  //! Pointer to STA
-  sta::dbSta* sta_;
-  //! Pointer to Logger
+  Connection::ConnectionMap<Current> generateCurrentMap(
+      sta::Corner* corner) const;
+
+  Connection::ConnectionMap<Connection::Conductance> generateConductanceMap(
+      sta::Corner* corner) const;
+  Voltage generateSourceNodes(
+      GeneratedSourceType source_type,
+      const std::string& source_file,
+      sta::Corner* corner,
+      std::vector<std::unique_ptr<SourceNode>>& sources) const;
+  std::vector<std::unique_ptr<SourceNode>> generateSourceNodesFromBTerms()
+      const;
+  std::vector<std::unique_ptr<SourceNode>> generateSourceNodesGenericFull()
+      const;
+  std::vector<std::unique_ptr<SourceNode>> generateSourceNodesGenericStraps()
+      const;
+  std::vector<std::unique_ptr<SourceNode>> generateSourceNodesGenericBumps()
+      const;
+  std::vector<std::unique_ptr<SourceNode>> generateSourceNodesFromShapes(
+      const std::set<odb::Rect>& shapes) const;
+  Voltage generateSourceNodesFromSourceFile(
+      const std::string& source_file,
+      sta::Corner* corner,
+      std::vector<std::unique_ptr<SourceNode>>& sources) const;
+
+  void reportUnconnectedNodes() const;
+  void reportMissingBTerm() const;
+  bool wasNodeVisited(const std::unique_ptr<ITermNode>& node) const;
+  bool wasNodeVisited(const std::unique_ptr<Node>& node) const;
+  bool wasNodeVisited(const Node* node) const;
+
+  std::map<Node*, Connection::ConnectionSet> getNodeConnectionMap(
+      const Connection::ConnectionMap<Connection::Conductance>& conductance)
+      const;
+  void buildNodeCurrentMap(sta::Corner* corner,
+                           ValueNodeMap<Current>& currents) const;
+  std::map<Node*, std::size_t> assignNodeIDs(const Node::NodeSet& nodes,
+                                             std::size_t start = 0) const;
+  std::map<Node*, std::size_t> assignNodeIDs(
+      const std::vector<std::unique_ptr<SourceNode>>& nodes,
+      std::size_t start = 0) const;
+  void buildCondMatrixAndVoltages(
+      bool is_ground,
+      const std::map<Node*, Connection::ConnectionSet>& node_connections,
+      const ValueNodeMap<Current>& currents,
+      const Connection::ConnectionMap<Connection::Conductance>& conductance,
+      const std::map<Node*, std::size_t>& node_index,
+      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+      Eigen::VectorXd& j_vector) const;
+  void addSourcesToMatrixAndVoltages(
+      Voltage src_voltage,
+      const std::vector<std::unique_ptr<psm::SourceNode>>& sources,
+      const std::map<Node*, std::size_t>& node_index,
+      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+      Eigen::VectorXd& j_vector) const;
+
+  std::string getMetricKey(const std::string& key, sta::Corner* corner) const;
+
+  void dumpVector(const Eigen::VectorXd& vector, const std::string& name) const;
+  void dumpMatrix(const Eigen::SparseMatrix<Connection::Conductance>& matrix,
+                  const std::string& name) const;
+  void dumpConductance(
+      const Connection::ConnectionMap<Connection::Conductance>& cond,
+      const std::string& name) const;
+
+  odb::dbNet* net_;
+
   utl::Logger* logger_;
-  //! Voltage source file
-  std::string vsrc_file_;
-  std::string power_net_;
-  //! Resistance configuration file
-  std::string out_file_;
-  std::string em_out_file_;
-  bool em_flag_;
-  std::string spice_out_file_;
-  //! G matrix for voltage
-  std::unique_ptr<GMat> Gmat_;
-  //! Node density in the lower most layer to append the current sources
-  int node_density_{0};              // Initialize to zero
-  int node_density_factor_{5};       // Default value
-  int node_density_factor_user_{0};  // User defined value
-  float node_density_um_{-1};  // Initialize to negative unless set by user
-  //! Routing Level of the top layer
-  int top_layer_{0};
-  int bump_pitch_x_{0};
-  int bump_pitch_y_{0};
-  int bump_pitch_default_{140};
-  int bump_size_{10};
+  est::EstimateParasitics* estimate_parasitics_;
+  sta::dbSta* sta_;
 
-  int bottom_layer_{10};
+  std::unique_ptr<IRNetwork> network_;
 
-  bool result_{false};
-  bool connection_{false};
+  std::unique_ptr<DebugGui> gui_;
 
-  odb::dbSigType power_net_type_;
-  std::map<std::string, float> net_voltage_map_;
-  //! Current vector 1D
-  std::vector<double> J_;
-  //! C4 bump locations and values
-  std::vector<BumpData> C4Bumps_;
-  //! Per unit R and via R for each routing layer
-  std::vector<std::tuple<int, double, double>> layer_res_;
-  //! Locations of the C4 bumps in the G matrix
-  std::map<NodeIdx, double> C4Nodes_;
+  const std::map<odb::dbNet*, std::map<sta::Corner*, Voltage>>& user_voltages_;
+  const std::map<odb::dbInst*, std::map<sta::Corner*, Power>>& user_powers_;
+  std::map<sta::Corner*, Voltage> solution_voltages_;
+
+  const PDNSim::GeneratedSourceSettings& generated_source_settings_;
+
+  // Holds nodes that were visited during the open net check
+  std::set<const Node*> visited_;
+  std::optional<bool> connected_;
+
+  std::map<sta::Corner*, ValueNodeMap<Voltage>> voltages_;
+  std::map<sta::Corner*, ValueNodeMap<Current>> currents_;
+
+  static constexpr Current kSpiceFileMinCurrent = 1e-18;
 };
+
 }  // namespace psm

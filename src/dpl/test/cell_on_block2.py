@@ -6,7 +6,7 @@ tech = Tech()
 tech.readLef("sky130hd/sky130hd.tlef")
 tech.readLef("sky130hd/sky130hd_std_cell.lef")
 tech.readLef("cell_on_block2.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("cell_on_block2.def")
 
 dpl_aux.set_placement_padding(design, globl=True, right=4)

@@ -1,49 +1,44 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#ifndef _FR_FLEXDR_H_
-#define _FR_FLEXDR_H_
+#pragma once
 
 #include <triton_route/TritonRoute.h>
 
-#include <boost/polygon/polygon.hpp>
-#include <boost/serialization/export.hpp>
+#include <cstdint>
 #include <deque>
+#include <list>
+#include <map>
 #include <memory>
+#include <queue>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include "boost/polygon/polygon.hpp"
+#include "boost/serialization/export.hpp"
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
-#include "dr/FlexDR_graphics.h"
+#include "db/infra/frSegStyle.h"
+#include "db/infra/frTime.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frShape.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frLayer.h"
+#include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
+#include "dr/AbstractDRGraphics.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
 #include "dst/JobMessage.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
+#include "frRegionQuery.h"
 #include "gc/FlexGC.h"
+#include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 namespace dst {
@@ -52,11 +47,11 @@ class Distributed;
 namespace odb {
 class dbDatabase;
 }
-namespace ord {
+namespace utl {
 class Logger;
 }
 
-namespace fr {
+namespace drt {
 
 class frConstraint;
 struct SearchRepairArgs;
@@ -66,36 +61,11 @@ struct FlexDRViaData
   // std::pair<layer1area, layer2area>
   std::vector<std::pair<frCoord, frCoord>> halfViaEncArea;
 
-  // via2viaMinLen[z][0], last via=down, curr via=down
-  // via2viaMinLen[z][1], last via=down, curr via=up
-  // via2viaMinLen[z][2], last via=up,   curr via=down
-  // via2viaMinLen[z][3], last via=up,   curr via=up
-  std::vector<std::pair<std::vector<frCoord>, std::vector<bool>>> via2viaMinLen;
-
-  // via2viaMinLen[z][0], prev via=down, curr via=down, min required x dist
-  // via2viaMinLen[z][1], prev via=down, curr via=down, min required y dist
-  // via2viaMinLen[z][2], prev via=down, curr via=up,   min required x dist
-  // via2viaMinLen[z][3], prev via=down, curr via=up,   min required y dist
-  // via2viaMinLen[z][4], prev via=up,   curr via=down, min required x dist
-  // via2viaMinLen[z][5], prev via=up,   curr via=down, min required y dist
-  // via2viaMinLen[z][6], prev via=up,   curr via=up,   min required x dist
-  // via2viaMinLen[z][7], prev via=up,   curr via=up,   min required y dist
-  std::vector<std::vector<frCoord>> via2viaMinLenNew;
-
-  // via2turnMinLen[z][0], last via=down, min required x dist
-  // via2turnMinLen[z][1], last via=down, min required y dist
-  // via2turnMinLen[z][2], last via=up,   min required x dist
-  // via2turnMinLen[z][3], last via=up,   min required y dist
-  std::vector<std::vector<frCoord>> via2turnMinLen;
-
  private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
     (ar) & halfViaEncArea;
-    (ar) & via2viaMinLen;
-    (ar) & via2viaMinLenNew;
-    (ar) & via2turnMinLen;
   }
   friend class boost::serialization::access;
 };
@@ -112,15 +82,30 @@ class FlexDR
     frUInt4 workerMarkerCost;
     frUInt4 workerFixedShapeCost;
     float workerMarkerDecay;
-    int ripupMode;
+    RipUpMode ripupMode;
     bool followGuide;
+    bool isEqualIgnoringSizeAndOffset(const SearchRepairArgs& other) const;
+  };
+  struct IterationProgress
+  {
+    int total_num_workers{0};
+    int cnt_done_workers{0};
+    int last_reported_perc{0};
+    frTime time;
+  };
+  struct IterationsControl
+  {
+    bool skip_till_changed{false};
+    SearchRepairArgs last_args;
+    bool fixing_max_spacing{false};
   };
 
   // constructors
-  FlexDR(triton_route::TritonRoute* router,
+  FlexDR(TritonRoute* router,
          frDesign* designIn,
-         Logger* loggerIn,
-         odb::dbDatabase* dbIn);
+         utl::Logger* loggerIn,
+         odb::dbDatabase* dbIn,
+         RouterConfiguration* router_cfg);
   ~FlexDR();
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
@@ -133,16 +118,16 @@ class FlexDR
   void end(bool done = false);
 
   const FlexDRViaData* getViaData() const { return &via_data_; }
-  void setDebug(frDebugSettings* settings);
+  void setDebug(std::unique_ptr<AbstractDRGraphics> dr_graphics);
 
   // For post-deserialization update
-  void setLogger(Logger* logger) { logger_ = logger; }
+  void setLogger(utl::Logger* logger) { logger_ = logger; }
   void setDB(odb::dbDatabase* db) { db_ = db; }
-  FlexDRGraphics* getGraphics() { return graphics_.get(); }
+  AbstractDRGraphics* getGraphics() { return graphics_.get(); }
   // distributed
   void setDistributed(dst::Distributed* dist,
                       const std::string& remote_ip,
-                      unsigned short remote_port,
+                      uint16_t remote_port,
                       const std::string& dir)
   {
     dist_on_ = true;
@@ -156,20 +141,24 @@ class FlexDR
       std::vector<std::unique_ptr<FlexDRWorker>>& batch);
 
   void reportGuideCoverage();
+  void incIter() { ++iter_; }
+  // maxSpacing fix
+  void fixMaxSpacing();
 
  private:
-  triton_route::TritonRoute* router_;
+  IterationsControl control_;
+  TritonRoute* router_;
   frDesign* design_;
-  Logger* logger_;
+  utl::Logger* logger_;
   odb::dbDatabase* db_;
-  std::vector<std::vector<std::map<frNet*,
-                                   std::set<std::pair<Point, frLayerNum>>,
-                                   frBlockObjectComp>>>
+  RouterConfiguration* router_cfg_;
+  std::vector<std::vector<
+      frOrderedIdMap<frNet*, std::set<std::pair<odb::Point, frLayerNum>>>>>
       gcell2BoundaryPin_;
 
   FlexDRViaData via_data_;
   std::vector<int> numViols_;
-  std::unique_ptr<FlexDRGraphics> graphics_;
+  std::unique_ptr<AbstractDRGraphics> graphics_{nullptr};
   std::string debugNetName_;
   int numWorkUnits_;
 
@@ -177,9 +166,9 @@ class FlexDR
   dst::Distributed* dist_;
   bool dist_on_;
   std::string dist_ip_;
-  unsigned short dist_port_;
+  uint16_t dist_port_;
   std::string dist_dir_;
-  std::string globals_path_;
+  std::string router_cfg_path_;
   bool increaseClipsize_;
   float clipSizeInc_;
   int iter_;
@@ -190,42 +179,35 @@ class FlexDR
   void getBatchInfo(int& batchStepX, int& batchStepY);
 
   void init_halfViaEncArea();
-  void init_via2viaMinLen();
-  frCoord init_via2viaMinLen_minSpc(frLayerNum lNum,
-                                    frViaDef* viaDef1,
-                                    frViaDef* viaDef2);
-  frCoord init_via2viaMinLen_minimumcut1(frLayerNum lNum,
-                                         frViaDef* viaDef1,
-                                         frViaDef* viaDef2);
-  bool init_via2viaMinLen_minimumcut2(frLayerNum lNum,
-                                      frViaDef* viaDef1,
-                                      frViaDef* viaDef2);
-
-  void init_via2viaMinLenNew();
-  frCoord init_via2viaMinLenNew_minSpc(frLayerNum lNum,
-                                       frViaDef* viaDef1,
-                                       frViaDef* viaDef2,
-                                       bool isCurrDirY);
-  frCoord init_via2viaMinLenNew_minimumcut1(frLayerNum lNum,
-                                            frViaDef* viaDef1,
-                                            frViaDef* viaDef2,
-                                            bool isCurrDirY);
-  frCoord init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
-                                       frViaDef* viaDef1,
-                                       frViaDef* viaDef2,
-                                       bool isCurrDirY);
-
-  frCoord init_via2turnMinLen_minSpc(frLayerNum lNum,
-                                     frViaDef* viaDef,
-                                     bool isCurrDirY);
-  frCoord init_via2turnMinLen_minStp(frLayerNum lNum,
-                                     frViaDef* viaDef,
-                                     bool isCurrDirY);
-  void init_via2turnMinLen();
 
   void removeGCell2BoundaryPin();
-  std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
-  initDR_mergeBoundaryPin(int i, int j, int size, const Rect& routeBox);
+  frOrderedIdMap<frNet*, std::set<std::pair<odb::Point, frLayerNum>>>
+  initDR_mergeBoundaryPin(int startX,
+                          int startY,
+                          int size,
+                          const odb::Rect& routeBox) const;
+  std::vector<frVia*> getLonelyVias(frLayer* layer, int max_spc, int cut_class);
+  std::unique_ptr<FlexDRWorker> createWorker(int x_offset,
+                                             int y_offset,
+                                             const SearchRepairArgs& args,
+                                             const odb::Rect& routeBox
+                                             = odb::Rect());
+  void reportIterationViolations() const;
+  void endWorkersBatch(
+      std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch);
+  void processWorkersBatch(
+      std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch,
+      IterationProgress& iter_prog);
+
+  void processWorkersBatchDistributed(
+      std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch,
+      int& version,
+      IterationProgress& iter_prog);
+  odb::Rect getDRVBBox(const odb::Rect& drv_rect) const;
+  void stubbornTilesFlow(const SearchRepairArgs& args,
+                         IterationProgress& iter_prog);
+  void optimizationFlow(const SearchRepairArgs& args,
+                        IterationProgress& iter_prog);
 };
 
 class FlexDRWorker;
@@ -236,11 +218,11 @@ class FlexDRWorkerRegionQuery
   ~FlexDRWorkerRegionQuery();
   void add(drConnFig* connFig);
   void remove(drConnFig* connFig);
-  void query(const Rect& box,
-             const frLayerNum layerNum,
+  void query(const odb::Rect& box,
+             frLayerNum layerNum,
              std::vector<drConnFig*>& result) const;
-  void query(const Rect& box,
-             const frLayerNum layerNum,
+  void query(const odb::Rect& box,
+             frLayerNum layerNum,
              std::vector<rq_box_value_t<drConnFig*>>& result) const;
   void init();
   void cleanup();
@@ -255,7 +237,7 @@ class FlexDRMinAreaVio
 {
  public:
   // constructors
-  FlexDRMinAreaVio() : net_(nullptr), gapArea_(0) {}
+  FlexDRMinAreaVio() = default;
   FlexDRMinAreaVio(drNet* netIn,
                    FlexMazeIdx bpIn,
                    FlexMazeIdx epIn,
@@ -282,9 +264,9 @@ class FlexDRMinAreaVio
   frCoord getGapArea() const { return gapArea_; }
 
  private:
-  drNet* net_;
+  drNet* net_ = nullptr;
   FlexMazeIdx bp_, ep_;
-  frCoord gapArea_;
+  frCoord gapArea_ = 0;
 };
 
 class FlexGCWorker;
@@ -292,72 +274,21 @@ class FlexDRWorker
 {
  public:
   // constructors
-  FlexDRWorker(FlexDRViaData* via_data, frDesign* design, Logger* logger)
+  FlexDRWorker(FlexDRViaData* via_data,
+               frDesign* design,
+               utl::Logger* logger,
+               RouterConfiguration* router_cfg)
       : design_(design),
         logger_(logger),
-        graphics_(nullptr),
-        debugSettings_(nullptr),
+        router_cfg_(router_cfg),
         via_data_(via_data),
-        routeBox_(),
-        extBox_(),
-        drcBox_(),
-        drIter_(0),
         mazeEndIter_(1),
-        followGuide_(false),
-        needRecheck_(false),
-        skipRouting_(false),
-        ripupMode_(1),
-        workerDRCCost_(ROUTESHAPECOST),
-        workerMarkerCost_(MARKERCOST),
-        workerFixedShapeCost_(0),
-        workerMarkerDecay_(0),
-        boundaryPin_(),
-        pinCnt_(0),
-        initNumMarkers_(0),
-        apSVia_(),
-        planarHistoryMarkers_(),
-        viaHistoryMarkers_(),
+        ripupMode_(RipUpMode::ALL),
+        workerDRCCost_(router_cfg->ROUTESHAPECOST),
+        workerMarkerCost_(router_cfg->MARKERCOST),
         historyMarkers_(std::vector<std::set<FlexMazeIdx>>(3)),
-        nets_(),
-        owner2nets_(),
-        gridGraph_(design->getTech(), this),
-        markers_(),
-        rq_(this),
-        gcWorker_(nullptr),
-        dist_(nullptr),
-        dist_port_(0),
-        dist_on_(false),
-        isCongested_(false),
-        save_updates_(false)
-  {
-  }
-  FlexDRWorker()
-      :  // for serialization
-        design_(nullptr),
-        logger_(nullptr),
-        graphics_(nullptr),
-        debugSettings_(nullptr),
-        via_data_(nullptr),
-        drIter_(0),
-        mazeEndIter_(0),
-        followGuide_(false),
-        needRecheck_(false),
-        skipRouting_(false),
-        ripupMode_(0),
-        workerDRCCost_(0),
-        workerMarkerCost_(0),
-        workerFixedShapeCost_(0),
-        workerMarkerDecay_(0),
-        boundaryPin_(),
-        pinCnt_(0),
-        initNumMarkers_(0),
-        rq_(this),
-        gcWorker_(nullptr),
-        dist_(nullptr),
-        dist_port_(0),
-        dist_on_(false),
-        isCongested_(false),
-        save_updates_(false)
+        gridGraph_(design->getTech(), logger, this, router_cfg),
+        rq_(this)
   {
   }
   // setters
@@ -365,28 +296,25 @@ class FlexDRWorker
   {
     debugSettings_ = settings;
   }
-  void setRouteBox(const Rect& boxIn) { routeBox_ = boxIn; }
-  void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }
-  void setDrcBox(const Rect& boxIn) { drcBox_ = boxIn; }
-  void setGCellBox(const Rect& boxIn) { gcellBox_ = boxIn; }
+  void setRouteBox(const odb::Rect& boxIn) { routeBox_ = boxIn; }
+  void setExtBox(const odb::Rect& boxIn) { extBox_ = boxIn; }
+  void setDrcBox(const odb::Rect& boxIn) { drcBox_ = boxIn; }
   void setDRIter(int in) { drIter_ = in; }
-  void setDRIter(int in,
-                 std::map<frNet*,
-                          std::set<std::pair<Point, frLayerNum>>,
-                          frBlockObjectComp>& bp)
+  void setDRIter(
+      int in,
+      frOrderedIdMap<frNet*, std::set<std::pair<odb::Point, frLayerNum>>>& bp)
   {
     drIter_ = in;
     boundaryPin_ = std::move(bp);
   }
   bool isCongested() const { return isCongested_; }
-  void setBoundaryPins(std::map<frNet*,
-                                std::set<std::pair<Point, frLayerNum>>,
-                                frBlockObjectComp>& bp)
+  void setBoundaryPins(
+      frOrderedIdMap<frNet*, std::set<std::pair<odb::Point, frLayerNum>>>& bp)
   {
     boundaryPin_ = std::move(bp);
   }
   void setMazeEndIter(int in) { mazeEndIter_ = in; }
-  void setRipupMode(int in) { ripupMode_ = in; }
+  void setRipupMode(RipUpMode in) { ripupMode_ = in; }
   void setFollowGuide(bool in) { followGuide_ = in; }
   void setCost(frUInt4 drcCostIn,
                frUInt4 markerCostIn,
@@ -439,40 +367,45 @@ class FlexDRWorker
   void setBestMarkers() { bestMarkers_ = markers_; }
   void clearMarkers() { markers_.clear(); }
   void setInitNumMarkers(int in) { initNumMarkers_ = in; }
-  void setGCWorker(unique_ptr<FlexGCWorker> in) { gcWorker_ = std::move(in); }
+  void setGCWorker(std::unique_ptr<FlexGCWorker> in)
+  {
+    gcWorker_ = std::move(in);
+  }
 
-  void setGraphics(FlexDRGraphics* in)
+  void setGraphics(AbstractDRGraphics* in)
   {
     graphics_ = in;
     gridGraph_.setGraphics(in);
   }
   void setViaData(FlexDRViaData* viaData) { via_data_ = viaData; }
+  void setWorkerId(const int id) { worker_id_ = id; }
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
-  void getRouteBox(Rect& boxIn) const { boxIn = routeBox_; }
-  const Rect& getRouteBox() const { return routeBox_; }
-  Rect& getRouteBox() { return routeBox_; }
-  void getExtBox(Rect& boxIn) const { boxIn = extBox_; }
-  const Rect& getExtBox() const { return extBox_; }
-  Rect& getExtBox() { return extBox_; }
-  const Rect& getDrcBox() const { return drcBox_; }
-  Rect& getDrcBox() { return drcBox_; }
-  const Rect& getGCellBox() const { return gcellBox_; }
+  void getRouteBox(odb::Rect& boxIn) const { boxIn = routeBox_; }
+  const odb::Rect& getRouteBox() const { return routeBox_; }
+  odb::Rect& getRouteBox() { return routeBox_; }
+  void getExtBox(odb::Rect& boxIn) const { boxIn = extBox_; }
+  const odb::Rect& getExtBox() const { return extBox_; }
+  odb::Rect& getExtBox() { return extBox_; }
+  const odb::Rect& getDrcBox() const { return drcBox_; }
+  odb::Rect& getDrcBox() { return drcBox_; }
   bool isInitDR() const { return (drIter_ == 0); }
   int getDRIter() const { return drIter_; }
   int getMazeEndIter() const { return mazeEndIter_; }
   bool isFollowGuide() const { return followGuide_; }
-  int getRipupMode() const { return ripupMode_; }
+  RipUpMode getRipupMode() const { return ripupMode_; }
   const std::vector<std::unique_ptr<drNet>>& getNets() const { return nets_; }
   std::vector<std::unique_ptr<drNet>>& getNets() { return nets_; }
   const std::vector<drNet*>* getDRNets(frNet* net) const
   {
+    if (net == nullptr || net->isSpecial()) {
+      return nullptr;
+    }
     auto it = owner2nets_.find(net);
     if (it != owner2nets_.end()) {
       return &(it->second);
-    } else {
-      return nullptr;
     }
+    return nullptr;
   }
   frDesign* getDesign() { return design_; }
   void setDesign(frDesign* design) { design_ = design; }
@@ -488,25 +421,35 @@ class FlexDRWorker
   FlexGCWorker* getGCWorker() { return gcWorker_.get(); }
   const FlexDRViaData* getViaData() const { return via_data_; }
   const FlexGridGraph& getGridGraph() const { return gridGraph_; }
+  frUInt4 getWorkerMarkerCost() const { return workerMarkerCost_; }
+  frUInt4 getWorkerDRCCost() const { return workerDRCCost_; }
+  int getWorkerId() const { return worker_id_; }
   // others
   int main(frDesign* design);
   void distributedMain(frDesign* design);
+  void writeUpdates(const std::string& file_name);
   void updateDesign(frDesign* design);
   std::string reloadedMain();
   bool end(frDesign* design);
 
-  Logger* getLogger() { return logger_; }
-  void setLogger(Logger* logger) { logger_ = logger; }
+  utl::Logger* getLogger() { return logger_; }
+  void setLogger(utl::Logger* logger)
+  {
+    logger_ = logger;
+    gridGraph_.setLogger(logger);
+  }
+  void setRouterCfg(RouterConfiguration* in) { router_cfg_ = in; }
 
-  static std::unique_ptr<FlexDRWorker> load(const std::string& file_name,
+  static std::unique_ptr<FlexDRWorker> load(const std::string& workerStr,
+                                            FlexDRViaData* via_data,
+                                            frDesign* design,
                                             utl::Logger* logger,
-                                            fr::frDesign* design,
-                                            FlexDRGraphics* graphics);
+                                            RouterConfiguration* router_cfg);
 
   // distributed
   void setDistributed(dst::Distributed* dist,
                       const std::string& remote_ip,
-                      unsigned short remote_port,
+                      uint16_t remote_port,
                       const std::string& dir)
   {
     dist_on_ = true;
@@ -518,7 +461,7 @@ class FlexDRWorker
 
   void setSharedVolume(const std::string& vol) { dist_dir_ = vol; }
 
-  const vector<Point3D> getSpecialAccessAPs() const { return specialAccessAPs; }
+  std::vector<Point3D> getSpecialAccessAPs() const { return specialAccessAPs_; }
   frCoord getHalfViaEncArea(frMIdx z, bool isLayer1, frNonDefaultRule* ndr);
   bool isSkipRouting() const { return skipRouting_; }
 
@@ -535,35 +478,48 @@ class FlexDRWorker
   };
 
  private:
-  typedef struct
+  struct RouteQueueEntry
   {
     frBlockObject* block;
     int numReroute;
     bool doRoute;
-  } RouteQueueEntry;
-  frDesign* design_;
-  Logger* logger_;
-  FlexDRGraphics* graphics_;  // owned by FlexDR
-  frDebugSettings* debugSettings_;
-  FlexDRViaData* via_data_;
-  Rect routeBox_;
-  Rect extBox_;
-  Rect drcBox_;
-  Rect gcellBox_;
-  int drIter_;
-  int mazeEndIter_;
-  bool followGuide_;
-  bool needRecheck_;
-  bool skipRouting_;
-  int ripupMode_;
+    frBlockObject* checkingObj;
+    RouteQueueEntry(frBlockObject* block_in,
+                    int num_reroute_in,
+                    bool do_route_in,
+                    frBlockObject* checking_obj_in)
+        : block(block_in),
+          numReroute(num_reroute_in),
+          doRoute(do_route_in),
+          checkingObj(checking_obj_in)
+    {
+    }
+  };
+  frDesign* design_{nullptr};
+  utl::Logger* logger_{nullptr};
+  RouterConfiguration* router_cfg_{nullptr};
+  AbstractDRGraphics* graphics_{nullptr};  // owned by FlexDR
+  frDebugSettings* debugSettings_{nullptr};
+  FlexDRViaData* via_data_{nullptr};
+  odb::Rect routeBox_;
+  odb::Rect extBox_;
+  odb::Rect drcBox_;
+  int drIter_{0};
+  int mazeEndIter_{0};
+  bool followGuide_{false};
+  bool needRecheck_{false};
+  bool skipRouting_{false};
+  RipUpMode ripupMode_{RipUpMode::DRC};
   // drNetOrderingEnum netOrderingMode;
-  frUInt4 workerDRCCost_, workerMarkerCost_, workerFixedShapeCost_;
-  float workerMarkerDecay_;
+  frUInt4 workerDRCCost_{0};
+  frUInt4 workerMarkerCost_{0};
+  frUInt4 workerFixedShapeCost_{0};
+  float workerMarkerDecay_{0};
   // used in init route as gr boundary pin
-  std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
+  frOrderedIdMap<frNet*, std::set<std::pair<odb::Point, frLayerNum>>>
       boundaryPin_;
-  int pinCnt_;
-  int initNumMarkers_;
+  int pinCnt_{0};
+  int initNumMarkers_{0};
   std::map<FlexMazeIdx, drAccessPattern*> apSVia_;
   std::set<FlexMazeIdx> planarHistoryMarkers_;
   std::set<FlexMazeIdx> viaHistoryMarkers_;
@@ -571,162 +527,166 @@ class FlexDRWorker
 
   // local storage
   std::vector<std::unique_ptr<drNet>> nets_;
-  std::map<frNet*, std::vector<drNet*>> owner2nets_;
+  frOrderedIdMap<frNet*, std::vector<drNet*>> owner2nets_;
   FlexGridGraph gridGraph_;
   std::vector<frMarker> markers_;
   std::vector<frMarker> bestMarkers_;
   FlexDRWorkerRegionQuery rq_;
+  std::vector<frNonDefaultRule*> ndrs_;
 
   // persistent gc worker
-  unique_ptr<FlexGCWorker> gcWorker_;
+  std::unique_ptr<FlexGCWorker> gcWorker_;
 
   // on-the-fly access points that require adding access edges in the grid graph
-  vector<Point3D> specialAccessAPs;
+  std::vector<Point3D> specialAccessAPs_;
 
   // distributed
-  dst::Distributed* dist_;
+  dst::Distributed* dist_{nullptr};
   std::string dist_ip_;
-  unsigned short dist_port_;
+  uint16_t dist_port_{0};
   std::string dist_dir_;
-  bool dist_on_;
-  bool isCongested_;
-  bool save_updates_;
+  bool dist_on_{false};
+  bool isCongested_{false};
+  bool save_updates_{false};
+  int worker_id_{0};
 
+  // hellpers
+  bool isRoutePatchWire(const frPatchWire* pwire) const;
+  bool isRouteVia(const frVia* via) const;
   // init
   void init(const frDesign* design);
   void initNets(const frDesign* design);
+  void initRipUpNetsFromMarkers();
   void initNetObjs(
       const frDesign* design,
-      std::set<frNet*, frBlockObjectComp>& nets,
-      std::map<frNet*,
-               std::vector<std::unique_ptr<drConnFig>>,
-               frBlockObjectComp>& netRouteObjs,
-      std::map<frNet*,
-               std::vector<std::unique_ptr<drConnFig>>,
-               frBlockObjectComp>& netExtObjs,
-      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides);
-  void initNetObjs_pathSeg(frPathSeg* pathSeg,
-                           std::set<frNet*, frBlockObjectComp>& nets,
-                           std::map<frNet*,
-                                    std::vector<std::unique_ptr<drConnFig>>,
-                                    frBlockObjectComp>& netRouteObjs,
-                           std::map<frNet*,
-                                    std::vector<std::unique_ptr<drConnFig>>,
-                                    frBlockObjectComp>& netExtObjs);
-  void initNetObjs_via(frVia* via,
-                       std::set<frNet*, frBlockObjectComp>& nets,
-                       std::map<frNet*,
-                                std::vector<std::unique_ptr<drConnFig>>,
-                                frBlockObjectComp>& netRouteObjs,
-                       std::map<frNet*,
-                                std::vector<std::unique_ptr<drConnFig>>,
-                                frBlockObjectComp>& netExtObjs);
-  void initNetObjs_patchWire(frPatchWire* pwire,
-                             std::set<frNet*, frBlockObjectComp>& nets,
-                             std::map<frNet*,
-                                      std::vector<std::unique_ptr<drConnFig>>,
-                                      frBlockObjectComp>& netRouteObjs,
-                             std::map<frNet*,
-                                      std::vector<std::unique_ptr<drConnFig>>,
-                                      frBlockObjectComp>& netExtObjs);
-  void initNets_segmentTerms(Point bp,
+      frOrderedIdSet<frNet*>& nets,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netRouteObjs,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netExtObjs,
+      frOrderedIdMap<frNet*, std::vector<frRect>>& netOrigGuides,
+      frOrderedIdMap<frNet*, std::vector<frRect>>& netGuides);
+  void initNetObjs_pathSeg(
+      frPathSeg* pathSeg,
+      frOrderedIdSet<frNet*>& nets,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netRouteObjs,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netExtObjs);
+  void initNetObjs_via(
+      const frVia* via,
+      frOrderedIdSet<frNet*>& nets,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netRouteObjs,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netExtObjs);
+  void initNetObjs_patchWire(
+      frPatchWire* pwire,
+      frOrderedIdSet<frNet*>& nets,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netRouteObjs,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netExtObjs);
+  void initNets_segmentTerms(const odb::Point& bp,
                              frLayerNum lNum,
-                             frNet* net,
-                             set<frBlockObject*, frBlockObjectComp>& terms);
+                             const frNet* net,
+                             frBlockObjectSet& terms);
   void initNets_initDR(
       const frDesign* design,
-      std::set<frNet*, frBlockObjectComp>& nets,
-      std::map<frNet*,
-               std::vector<std::unique_ptr<drConnFig>>,
-               frBlockObjectComp>& netRouteObjs,
-      std::map<frNet*,
-               std::vector<std::unique_ptr<drConnFig>>,
-               frBlockObjectComp>& netExtObjs,
-      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides);
-  void initNets_searchRepair(
-      const frDesign* design,
-      std::set<frNet*, frBlockObjectComp>& nets,
-      std::map<frNet*,
-               std::vector<std::unique_ptr<drConnFig>>,
-               frBlockObjectComp>& netRouteObjs,
-      std::map<frNet*,
-               std::vector<std::unique_ptr<drConnFig>>,
-               frBlockObjectComp>& netExtObjs,
-      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides);
-  void initNets_searchRepair_pin2epMap(
-      const frDesign* design,
+      frOrderedIdSet<frNet*>& nets,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netRouteObjs,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netExtObjs,
+      frOrderedIdMap<frNet*, std::vector<frRect>>& netOrigGuides,
+      frOrderedIdMap<frNet*, std::vector<frRect>>& netGuides);
+  int initNets_initDR_helper_getObjComponent(
+      drConnFig* obj,
+      const std::vector<std::vector<int>>& connectedComponents,
+      const std::vector<frRect>& netGuides);
+  void initNets_initDR_helper(
       frNet* net,
       std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
-      std::map<frBlockObject*,
-               std::set<std::pair<Point, frLayerNum>>,
-               frBlockObjectComp>& pin2epMap);
+      std::vector<std::unique_ptr<drConnFig>>& netExtObjs,
+      const std::vector<frBlockObject*>& netTerms,
+      const std::vector<frRect>& netOrigGuides,
+      const std::vector<frRect>& netGuides);
+
+  void initNets_searchRepair(
+      const frDesign* design,
+      const frOrderedIdSet<frNet*>& nets,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netRouteObjs,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netExtObjs,
+      frOrderedIdMap<frNet*, std::vector<frRect>>& netOrigGuides);
+  void initNets_searchRepair_pin2epMap(
+      const frDesign* design,
+      const frNet* net,
+      const std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
+      frOrderedIdMap<frBlockObject*,
+                     std::set<std::pair<odb::Point, frLayerNum>>>& pin2epMap);
 
   void initNets_searchRepair_pin2epMap_helper(
       const frDesign* design,
-      frNet* net,
-      const Point& bp,
+      const frNet* net,
+      const odb::Point& bp,
       frLayerNum lNum,
-      std::map<frBlockObject*,
-               std::set<std::pair<Point, frLayerNum>>,
-               frBlockObjectComp>& pin2epMap,
-      bool isPathSeg);
+      frOrderedIdMap<frBlockObject*,
+                     std::set<std::pair<odb::Point, frLayerNum>>>& pin2epMap);
   void initNets_searchRepair_nodeMap(
-      frNet* net,
-      std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
+      const std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
       std::vector<frBlockObject*>& netPins,
-      std::map<frBlockObject*,
-               std::set<std::pair<Point, frLayerNum>>,
-               frBlockObjectComp>& pin2epMap,
-      std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
+      const frOrderedIdMap<frBlockObject*,
+                           std::set<std::pair<odb::Point, frLayerNum>>>&
+          pin2epMap,
+      std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap);
 
   void initNets_searchRepair_nodeMap_routeObjEnd(
-      frNet* net,
-      std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
-      std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
+      const std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
+      std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap);
   void initNets_searchRepair_nodeMap_routeObjSplit(
-      frNet* net,
-      std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
-      std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
+      const std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
+      std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap);
   void initNets_searchRepair_nodeMap_routeObjSplit_helper(
-      const Point& crossPt,
+      const odb::Point& crossPt,
       frCoord trackCoord,
       frCoord splitCoord,
       frLayerNum lNum,
       std::vector<
           std::map<frCoord, std::map<frCoord, std::pair<frCoord, int>>>>&
           mergeHelper,
-      std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
+      std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap);
   void initNets_searchRepair_nodeMap_pin(
-      frNet* net,
-      std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
+      const std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
       std::vector<frBlockObject*>& netPins,
-      std::map<frBlockObject*,
-               std::set<std::pair<Point, frLayerNum>>,
-               frBlockObjectComp>& pin2epMap,
-      std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
+      const frOrderedIdMap<frBlockObject*,
+                           std::set<std::pair<odb::Point, frLayerNum>>>&
+          pin2epMap,
+      std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap);
   void initNets_searchRepair_connComp(
       frNet* net,
-      std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap,
+      std::map<std::pair<odb::Point, frLayerNum>, std::set<int>>& nodeMap,
       std::vector<int>& compIdx);
 
   void initNet(const frDesign* design,
                frNet* net,
                std::vector<std::unique_ptr<drConnFig>>& routeObjs,
                std::vector<std::unique_ptr<drConnFig>>& extObjs,
-               std::vector<frRect>& origGuides,
-               std::vector<frBlockObject*>& terms);
-  void initNet_term_new(const frDesign* design,
-                        drNet* dNet,
-                        std::vector<frBlockObject*>& terms);
+               const std::vector<frRect>& origGuides,
+               const std::vector<frBlockObject*>& terms,
+               std::vector<std::pair<odb::Point, frLayerNum>> bounds = {});
+  void initNet_term(const frDesign* design,
+                    drNet* dNet,
+                    const std::vector<frBlockObject*>& terms);
   template <typename T>
-  void initNet_term_new_helper(const frDesign* design,
-                               T* trueTerm,
-                               frBlockObject* term,
-                               frInst* inst,
-                               drNet* dNet,
-                               const string& name,
-                               const dbTransform& shiftXform);
-  void initNet_termGenAp_new(const frDesign* design, drPin* dPin);
+  void initNet_term_helper(const frDesign* design,
+                           T* trueTerm,
+                           frBlockObject* term,
+                           frInst* inst,
+                           drNet* dNet,
+                           const std::string& name,
+                           const odb::dbTransform& shiftXform);
   bool isRestrictedRouting(frLayerNum lNum);
   void initNet_addNet(std::unique_ptr<drNet> in);
   void getTrackLocs(bool isHorzTracks,
@@ -736,27 +696,25 @@ class FlexDRWorker
                     std::set<frCoord>& trackLocs);
   bool findAPTracks(frLayerNum startLayerNum,
                     frLayerNum endLayerNum,
-                    Rectangle& pinRect,
+                    const Rectangle& pinRect,
                     std::set<frCoord>& xLocs,
                     std::set<frCoord>& yLocs);
   void initNet_boundary(drNet* net,
-                        std::vector<std::unique_ptr<drConnFig>>& extObjs);
-  void initNets_regionQuery();
+                        const std::vector<std::unique_ptr<drConnFig>>& extObjs,
+                        std::vector<std::pair<odb::Point, frLayerNum>> bounds);
   void initNets_numPinsIn();
   void initNets_boundaryArea();
 
   void initGridGraph(const frDesign* design);
-  void initTrackCoords(
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap);
-  void initTrackCoords_route(
-      drNet* net,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap);
-  void initTrackCoords_pin(
-      drNet* net,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap);
+  void initTrackCoords(frLayerCoordTrackPatternMap& xMap,
+                       frLayerCoordTrackPatternMap& yMap);
+  void initTrackCoords_route(drNet* net,
+                             frLayerCoordTrackPatternMap& xMap,
+                             frLayerCoordTrackPatternMap& yMap);
+  void initTrackCoords_pin(drNet* net,
+                           frLayerCoordTrackPatternMap& xMap,
+                           frLayerCoordTrackPatternMap& yMap);
+  frLayerNum initTrackCoords_getNonPref(frLayerNum lNum);
   void initMazeIdx();
   void initMazeIdx_connFig(drConnFig* connFig);
   void initMazeIdx_ap(drAccessPattern* ap);
@@ -769,7 +727,7 @@ class FlexDRWorker
                           bool isAddPathCost,
                           bool isSkipVia = false);
   void modBlockedEdgesForMacroPin(frInstTerm* instTerm,
-                                  dbTransform& xForm,
+                                  const odb::dbTransform& xForm,
                                   bool isAddCost);
   void initMazeCost_ap();  // disable maze edge
   void initMazeCost_marker_route_queue(const frMarker& marker);
@@ -800,7 +758,7 @@ class FlexDRWorker
                   frCoord high,
                   frCoord line,
                   bool isVertical,
-                  bool innerIsHigh,
+                  bool innerDirIsIncreasing,
                   frLayer* layer,
                   ModCostType modType);
   void route_queue_resetRipup();
@@ -814,13 +772,18 @@ class FlexDRWorker
       std::set<frBlockObject*>& uniqueVictims,
       std::set<frBlockObject*>& uniqueAggressors,
       std::vector<RouteQueueEntry>& checks,
-      std::vector<RouteQueueEntry>& routes);
+      std::vector<RouteQueueEntry>& routes,
+      frBlockObject* checkingObj);
+  void getRipUpNetsFromMarker(frMarker* marker,
+                              std::set<drNet*>& nets,
+                              frCoord bloatDist = 0);
   void route_queue_update_queue(const std::vector<RouteQueueEntry>& checks,
                                 const std::vector<RouteQueueEntry>& routes,
                                 std::queue<RouteQueueEntry>& rerouteQueue);
   void route_queue_update_queue(
       const std::vector<std::unique_ptr<frMarker>>& markers,
-      std::queue<RouteQueueEntry>& rerouteQueue);
+      std::queue<RouteQueueEntry>& rerouteQueue,
+      frBlockObject* checkingObj = nullptr);
   bool canRipup(drNet* n);
   // route
   void addPathCost(drConnFig* connFig,
@@ -834,75 +797,100 @@ class FlexDRWorker
                    bool modEol = false,
                    bool modCutSpc = false);
   // minSpc
-  void modMinSpacingCostPlanar(const Rect& box,
+  void modMinSpacingCostPlanar(const odb::Rect& box,
                                frMIdx z,
                                ModCostType type,
                                bool isBlockage = false,
                                frNonDefaultRule* ndr = nullptr,
-                               bool isMacroPin = false);
-  void modCornerToCornerSpacing(const Rect& box, frMIdx z, ModCostType type);
-  void modMinSpacingCostVia(const Rect& box,
+                               bool isMacroPin = false,
+                               bool resetHorz = true,
+                               bool resetVert = true);
+  void modMinSpacingCostPlanarHelper(const odb::Rect& box,
+                                     frMIdx z,
+                                     ModCostType type,
+                                     frCoord width,
+                                     frCoord minSpacing,
+                                     bool isBlockage,
+                                     bool isMacroPin,
+                                     bool resetHorz,
+                                     bool resetVert,
+                                     bool ndr);
+  void modCornerToCornerSpacing(const odb::Rect& box,
+                                frMIdx z,
+                                ModCostType type);
+  void modMinSpacingCostVia(const odb::Rect& box,
                             frMIdx z,
                             ModCostType type,
                             bool isUpperVia,
                             bool isCurrPs,
                             bool isBlockage = false,
                             frNonDefaultRule* ndr = nullptr);
+  void modMinSpacingCostViaHelper(const odb::Rect& box,
+                                  frMIdx z,
+                                  ModCostType type,
+                                  frCoord width,
+                                  frCoord minSpacing,
+                                  const frViaDef* viaDef,
+                                  drEolSpacingConstraint drCon,
+                                  bool isUpperVia,
+                                  bool isCurrPs,
+                                  bool isBlockage,
+                                  bool ndr);
 
-  void modCornerToCornerSpacing_helper(const Rect& box,
+  void modCornerToCornerSpacing_helper(const odb::Rect& box,
                                        frMIdx z,
                                        ModCostType type);
 
-  void modMinSpacingCostVia_eol(const Rect& box,
-                                const Rect& tmpBx,
+  void modMinSpacingCostVia_eol(const odb::Rect& box,
+                                const odb::Rect& tmpBx,
                                 ModCostType type,
-                                bool isUpperVia,
                                 const drEolSpacingConstraint& drCon,
-                                frMIdx i,
-                                frMIdx j,
-                                frMIdx z);
-  void modMinSpacingCostVia_eol_helper(const Rect& box,
-                                       const Rect& testBox,
+                                frMIdx idx,
+                                bool ndr = false);
+  void modMinSpacingCostVia_eol_helper(const odb::Rect& box,
+                                       const odb::Rect& testBox,
                                        ModCostType type,
-                                       bool isUpperVia,
-                                       frMIdx i,
-                                       frMIdx j,
-                                       frMIdx z);
+                                       frMIdx idx,
+                                       bool ndr = false);
   // eolSpc
-  void modEolSpacingCost_helper(const Rect& testbox,
+  void modEolSpacingCost_helper(const odb::Rect& testbox,
                                 frMIdx z,
                                 ModCostType type,
-                                int eolType);
-  void modEolSpacingRulesCost(const Rect& box,
+                                int eolType,
+                                bool resetHorz = true,
+                                bool resetVert = true);
+  void modEolSpacingRulesCost(const odb::Rect& box,
                               frMIdx z,
                               ModCostType type,
                               bool isSkipVia = false,
-                              frNonDefaultRule* ndr = nullptr);
+                              frNonDefaultRule* ndr = nullptr,
+                              bool resetHorz = true,
+                              bool resetVert = true);
   // cutSpc
-  void modCutSpacingCost(const Rect& box,
+  void modCutSpacingCost(const odb::Rect& box,
                          frMIdx z,
                          ModCostType type,
                          bool isBlockage = false,
                          int avoidI = -1,
                          int avoidJ = -1);
-  void modInterLayerCutSpacingCost(const Rect& box,
+  void modInterLayerCutSpacingCost(const odb::Rect& box,
                                    frMIdx z,
                                    ModCostType type,
                                    bool isUpperVia,
                                    bool isBlockage = false);
   // adjCut
   void modAdjCutSpacingCost_fixedObj(const frDesign* design,
-                                     const Rect& box,
+                                     const odb::Rect& box,
                                      frVia* origVia);
-  void modMinimumcutCostVia(const Rect& box,
+  void modMinimumcutCostVia(const odb::Rect& box,
                             frMIdx z,
                             ModCostType type,
                             bool isUpperVia);
   void modViaForbiddenThrough(const FlexMazeIdx& bi,
                               const FlexMazeIdx& ei,
                               ModCostType type);
-  void modBlockedPlanar(const Rect& box, frMIdx z, bool setBlock);
-  void modBlockedVia(const Rect& box, frMIdx z, bool setBlock);
+  void modBlockedPlanar(const odb::Rect& box, frMIdx z, bool setBlock);
+  void modBlockedVia(const odb::Rect& box, frMIdx z, bool setBlock);
 
   bool mazeIterInit_sortRerouteNets(int mazeIter,
                                     std::vector<drNet*>& rerouteNets);
@@ -912,46 +900,60 @@ class FlexDRWorker
 
   void mazeNetInit(drNet* net);
   void mazeNetEnd(drNet* net);
-  bool routeNet(drNet* net);
-  void routeNet_prep(drNet* net,
-                     std::set<drPin*, frBlockObjectComp>& pins,
-                     std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&
-                         mazeIdx2unConnPins,
-                     std::set<FlexMazeIdx>& apMazeIdx,
-                     std::set<FlexMazeIdx>& realPinAPMazeIdx,
-                     std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox,
-                     list<pair<drPin*, frBox3D>>& pinTaperBoxes);
+  bool routeNet(drNet* net, std::vector<FlexMazeIdx>& paths);
+  void routeNet_prep(
+      drNet* net,
+      frOrderedIdSet<drPin*>& unConnPins,
+      std::map<FlexMazeIdx, frOrderedIdSet<drPin*>>& mazeIdx2unConnPins,
+      std::set<FlexMazeIdx>& apMazeIdx,
+      std::set<FlexMazeIdx>& realPinAPMazeIdx,
+      std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox,
+      std::list<std::pair<drPin*, frBox3D>>& pinTaperBoxes);
   void routeNet_prepAreaMap(drNet* net,
                             std::map<FlexMazeIdx, frCoord>& areaMap);
   void routeNet_setSrc(
-      std::set<drPin*, frBlockObjectComp>& unConnPins,
-      std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&
-          mazeIdx2unConnPins,
+      frOrderedIdSet<drPin*>& unConnPins,
+      std::map<FlexMazeIdx, frOrderedIdSet<drPin*>>& mazeIdx2unConnPins,
       std::vector<FlexMazeIdx>& connComps,
       FlexMazeIdx& ccMazeIdx1,
       FlexMazeIdx& ccMazeIdx2,
-      Point& centerPt);
+      odb::Point& centerPt);
   void mazePinInit();
   drPin* routeNet_getNextDst(
       FlexMazeIdx& ccMazeIdx1,
       FlexMazeIdx& ccMazeIdx2,
-      std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&
-          mazeIdx2unConnPins,
-      list<pair<drPin*, frBox3D>>& pinTaperBoxes);
+      std::map<FlexMazeIdx, frOrderedIdSet<drPin*>>& mazeIdx2unConnPins,
+      std::list<std::pair<drPin*, frBox3D>>& pinTaperBoxes);
   void routeNet_postAstarUpdate(
       std::vector<FlexMazeIdx>& path,
       std::vector<FlexMazeIdx>& connComps,
-      std::set<drPin*, frBlockObjectComp>& unConnPins,
-      std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&
-          mazeIdx2unConnPins,
+      frOrderedIdSet<drPin*>& unConnPins,
+      std::map<FlexMazeIdx, frOrderedIdSet<drPin*>>& mazeIdx2unConnPins,
       bool isFirstConn);
   void routeNet_postAstarWritePath(
       drNet* net,
       std::vector<FlexMazeIdx>& points,
       const std::set<FlexMazeIdx>& realPinApMazeIdx,
       std::map<FlexMazeIdx, frBox3D*>& mazeIdx2Taperbox,
-      const set<FlexMazeIdx>& apMazeIdx);
+      const std::set<FlexMazeIdx>& apMazeIdx);
   bool addApPathSegs(const FlexMazeIdx& apIdx, drNet* net);
+  /**
+   * Updates external figures to connect to access-point if needed.
+   *
+   * While routing, there could be a case where we are routing a boundary pin to
+   * an access point at the same location of the boundary pin. In this case, the
+   * path would consist only of one point. The router may fail to addApPathSegs
+   * if planar access is not allowed. In that case, we should update the
+   * external object connected to the boundary pin to connect to the
+   * access-point directly. For each net we keep a list of such updates under
+   * drNet::ext_figs_updates_. This function modifies this list by going through
+   * all external objects of the net and updating the one that begins or ends at
+   * the current access-point/boundary-pin
+   * @param net The current net being routed
+   * @param ap_idx The graph idx of the access-point which is the same as the
+   * boundary pin idx. This is the one point that constructs the current path.
+   */
+  void addApExtFigUpdate(drNet* net, const FlexMazeIdx& ap_idx) const;
   void setNDRStyle(drNet* net,
                    frSegStyle& currStyle,
                    frMIdx startX,
@@ -971,7 +973,7 @@ class FlexDRWorker
                         frMIdx y,
                         frMIdx startZ,
                         frMIdx endZ,
-                        map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox);
+                        std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox);
   bool splitPathSeg(frMIdx& midX,
                     frMIdx& midY,
                     bool& taperFirstPiece,
@@ -988,36 +990,46 @@ class FlexDRWorker
                       frMIdx endX,
                       frMIdx endY,
                       frMIdx z,
-                      const set<FlexMazeIdx>& realApMazeIdx,
+                      const std::set<FlexMazeIdx>& realApMazeIdx,
                       drNet* net,
                       bool vertical,
                       bool taper,
                       int i,
-                      vector<FlexMazeIdx>& points,
-                      const set<FlexMazeIdx>& apMazeIdx);
+                      std::vector<FlexMazeIdx>& points,
+                      const std::set<FlexMazeIdx>& apMazeIdx);
   bool isInWorkerBorder(frCoord x, frCoord y) const;
   void checkPathSegStyle(drPathSeg* ps,
                          bool isBegin,
                          frSegStyle& style,
-                         const set<FlexMazeIdx>& apMazeIdx,
+                         const std::set<FlexMazeIdx>& apMazeIdx,
                          const FlexMazeIdx& idx);
-  void checkViaConnectivityToAP(drVia* ps,
+  void checkViaConnectivityToAP(drVia* via,
                                 bool isBottom,
                                 frNet* net,
-                                const set<FlexMazeIdx>& apMazeIdx,
+                                const std::set<FlexMazeIdx>& apMazeIdx,
                                 const FlexMazeIdx& idx);
-  bool hasAccessPoint(const Point& pt, frLayerNum lNum, frNet* net);
+  bool hasAccessPoint(const odb::Point& pt, frLayerNum lNum, frNet* net);
   void routeNet_postAstarPatchMinAreaVio(
       drNet* net,
       const std::vector<FlexMazeIdx>& path,
       const std::map<FlexMazeIdx, frCoord>& areaMap);
+  void routeNet_postAstarPatchMinAreaVio_helper(
+      drNet* net,
+      drt::frLayer* curr_layer,
+      frArea reqArea,
+      frArea currArea,
+      frCoord startViaHalfEncArea,
+      frCoord endViaHalfEncArea,
+      std::vector<FlexMazeIdx>& points,
+      int point_idx,
+      int prev_point_idx);
   void routeNet_postAstarAddPatchMetal(drNet* net,
                                        const FlexMazeIdx& bpIdx,
                                        const FlexMazeIdx& epIdx,
                                        frCoord gapArea,
                                        frCoord patchWidth,
-                                       bool bpPatchStyle = true,
-                                       bool epPatchStyle = false);
+                                       bool bpPatchLeft = true,
+                                       bool epPatchLeft = false);
   int routeNet_postAstarAddPathMetal_isClean(const FlexMazeIdx& bpIdx,
                                              bool isPatchHorz,
                                              bool isPatchLeft,
@@ -1029,45 +1041,83 @@ class FlexDRWorker
                                                 frCoord patchLength,
                                                 frCoord patchWidth);
   void routeNet_postRouteAddPathCost(drNet* net);
-  void routeNet_AddCutSpcCost(vector<FlexMazeIdx>& path);
+  void routeNet_AddCutSpcCost(std::vector<FlexMazeIdx>& path);
   void routeNet_postRouteAddPatchMetalCost(drNet* net);
 
   // end
   void cleanup();
   void identifyCongestionLevel();
-  void endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets);
-  void endRemoveNets(frDesign* design,
-                     std::set<frNet*, frBlockObjectComp>& modNets,
-                     std::map<frNet*,
-                              std::set<std::pair<Point, frLayerNum>>,
-                              frBlockObjectComp>& boundPts);
-  void endRemoveNets_pathSeg(frDesign* design,
-                             frPathSeg* pathSeg,
-                             std::set<std::pair<Point, frLayerNum>>& boundPts);
+  void endGetModNets(frOrderedIdSet<frNet*>& modNets);
+  void endRemoveNets(
+      frDesign* design,
+      frOrderedIdSet<frNet*>& modNets,
+      frOrderedIdMap<frNet*, std::set<std::pair<odb::Point, frLayerNum>>>&
+          boundPts);
+  void endRemoveNets_pathSeg(
+      frDesign* design,
+      frPathSeg* pathSeg,
+      std::set<std::pair<odb::Point, frLayerNum>>& boundPts);
   void endRemoveNets_via(frDesign* design, frVia* via);
   void endRemoveNets_patchWire(frDesign* design, frPatchWire* pwire);
-  void endAddNets(frDesign* design,
-                  std::map<frNet*,
-                           std::set<std::pair<Point, frLayerNum>>,
-                           frBlockObjectComp>& boundPts);
+  void endAddNets(
+      frDesign* design,
+      frOrderedIdMap<frNet*, std::set<std::pair<odb::Point, frLayerNum>>>&
+          boundPts);
   void endAddNets_pathSeg(frDesign* design, drPathSeg* pathSeg);
   void endAddNets_via(frDesign* design, drVia* via);
   void endAddNets_patchWire(frDesign* design, drPatchWire* pwire);
   void endAddNets_merge(frDesign* design,
                         frNet* net,
-                        std::set<std::pair<Point, frLayerNum>>& boundPts);
-
+                        std::set<std::pair<odb::Point, frLayerNum>>& boundPts);
+  /**
+   * Commits updates made by FlexDRWorker::addApExtFigUpdate to the design.
+   *
+   * This function goes through the ext_figs_updates_ of each net and applies
+   * the required updates to the external objects.
+   *
+   * @param net The currently being modified drNet
+   */
+  void endAddNets_updateExtFigs(drNet* net);
+  /**
+   * Applies update to external pathsegs.
+   *
+   * This is a helper function for endAddNets_updateExtFigs that is responsible
+   * for handling a pathseg update.
+   *
+   * @param update_pt The boundary point that should touch the external
+   * path_seg.
+   * @param path_seg The external pathseg being updated.
+   * @returns True if the updates apply to the passed pathseg and False
+   * otherwise.
+   */
+  bool endAddNets_updateExtFigs_pathSeg(drNet* net,
+                                        const Point3D& update_pt,
+                                        frPathSeg* path_seg);
+  /**
+   * Applies update to external via.
+   *
+   * This is a helper function for endAddNets_updateExtFigs that is responsible
+   * for handling a via update.
+   *
+   * @param update_pt The boundary point that should touch the external
+   * path_seg.
+   * @param via The external via being updated.
+   * @returns True if the updates apply to the passed via and False otherwise.
+   */
+  bool endAddNets_updateExtFigs_via(drNet* net,
+                                    const Point3D& update_pt,
+                                    frVia* via);
   void endRemoveMarkers(frDesign* design);
   void endAddMarkers(frDesign* design);
 
   // helper functions
-  frCoord snapCoordToManufacturingGrid(const frCoord coord,
-                                       const int lowerLeftCoord);
+  frCoord snapCoordToManufacturingGrid(frCoord coord, int lowerLeftCoord);
+  void writeGCPatchesToDRWorker(drNet* target_net = nullptr,
+                                const std::vector<FlexMazeIdx>& valid_indices
+                                = {});
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
+  void serialize(Archive& ar, unsigned int version);
   friend class boost::serialization::access;
 };
-}  // namespace fr
-
-#endif
+}  // namespace drt

@@ -39,9 +39,9 @@
 //
 // This program support lef/def 5.6.
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #ifdef ibmrs
 #include <strings.h>
 #endif
@@ -68,7 +68,7 @@ int main(int argc, char** argv)
   char *fileName1, *fileName2;  // For the filenames to compare
   char *lefOut1, *lefOut2;      // For the tmp output files
 
-#ifdef WIN32
+#if (defined WIN32 && _MSC_VER < 1800)
                             // Enable two-digit exponent format
   _set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
@@ -90,12 +90,14 @@ int main(int argc, char** argv)
 
   // just read in the 1st file to memory
   printf("Reading file: %s\n", fileName1);
-  if (diffLefReadFile(fileName1, lefOut1) != 0)
+  if (diffLefReadFile(fileName1, lefOut1) != 0) {
     return (1);
+  }
   // read and compare with the 1st file in memory
   printf("Reading file: %s\n", fileName2);
-  if (diffLefReadFile(fileName2, lefOut2) != 0)
+  if (diffLefReadFile(fileName2, lefOut2) != 0) {
     return (1);
+  }
 
   return (0);
 }

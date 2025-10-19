@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 %{
 #include "pdn/PdnGen.hh"
@@ -140,7 +108,8 @@ void make_instance_grid(pdn::VoltageDomain* domain,
                         int y1,
                         bool pg_pins_to_boundary,
                         bool default_grid, 
-                        const std::vector<odb::dbTechLayer*>& generate_obstructions)
+                        const std::vector<odb::dbTechLayer*>& generate_obstructions,
+                        bool is_bump)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = POWER;
@@ -149,7 +118,7 @@ void make_instance_grid(pdn::VoltageDomain* domain,
   }
   
   std::array<int, 4> halo{x0, y0, x1, y1};
-  pdngen->makeInstanceGrid(domain, name, starts_with, inst, halo, pg_pins_to_boundary, default_grid, generate_obstructions);
+  pdngen->makeInstanceGrid(domain, name, starts_with, inst, halo, pg_pins_to_boundary, default_grid, generate_obstructions, is_bump);
 }
 
 void make_existing_grid(const char* name, 
@@ -178,7 +147,8 @@ void make_ring(const char* grid_name,
                int pad_offset_y1, 
                bool extend,
                const std::vector<odb::dbTechLayer*>& pad_pin_layers,
-               const std::vector<odb::dbNet*>& nets)
+               const std::vector<odb::dbNet*>& nets,
+               bool allow_outside_of_die)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = GRID;
@@ -198,9 +168,44 @@ void make_ring(const char* grid_name,
                      {pad_offset_x0, pad_offset_y0, pad_offset_x1, pad_offset_y1},
                      extend,
                      pad_pin_layers,
-                     nets);
+                     nets,
+                     allow_outside_of_die);
   }
 }
+
+void createSrouteWires(
+    const char* net,
+    const char* outerNet,
+    odb::dbTechLayer* layer0,
+    odb::dbTechLayer* layer1,
+    int cut_pitch_x,
+    int cut_pitch_y,
+    const std::vector<odb::dbTechViaGenerateRule*>& vias,
+    const std::vector<odb::dbTechVia*>& techvias,
+    int max_rows,
+    int max_columns,
+    const std::vector<odb::dbTechLayer*>& ongrid,
+    std::vector<int> metalwidths,
+    std::vector<int> metalspaces,
+    const std::vector<odb::dbInst*>& insts)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->createSrouteWires(net,
+                            outerNet,
+                            layer0,
+                            layer1,
+                            cut_pitch_x,
+                            cut_pitch_y,
+                            vias,
+                            techvias,
+                            max_rows,
+                            max_columns,
+                            ongrid,
+                            metalwidths,
+                            metalspaces,
+                            insts);
+}
+
 
 void make_followpin(const char* grid_name, 
                     odb::dbTechLayer* layer, 
@@ -262,12 +267,13 @@ void make_connect(const char* grid_name,
                   const std::vector<odb::dbTechLayer*>& ongrid,
                   const std::vector<odb::dbTechLayer*>& split_cuts_layers,
                   const std::vector<int>& split_cut_pitches,
+                  const bool split_cut_stagger,
                   const char* dont_use_vias)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  std::map<odb::dbTechLayer*, int> split_cuts;
+  std::map<odb::dbTechLayer*, std::pair<int, bool>> split_cuts;
   for (size_t i = 0; i < split_cuts_layers.size(); i++) {
-    split_cuts[split_cuts_layers[i]] = split_cut_pitches[i];
+    split_cuts[split_cuts_layers[i]] = {split_cut_pitches[i], split_cut_stagger};
   }
   for (auto* grid : pdngen->findGrid(grid_name)) {
     pdngen->makeConnect(grid, layer0, layer1, cut_pitch_x, cut_pitch_y, vias, techvias, max_rows, max_columns, ongrid, split_cuts, dont_use_vias);

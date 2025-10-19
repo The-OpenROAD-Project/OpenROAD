@@ -1,44 +1,18 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2018-2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
-#ifndef __REPLACE_NESTEROV_PLACE__
-#define __REPLACE_NESTEROV_PLACE__
+#pragma once
 
+#include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "nesterovBase.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "point.h"
+#include "utl/prometheus/gauge.h"
 
 namespace utl {
 class Logger;
@@ -51,50 +25,21 @@ class dbInst;
 namespace gpl {
 
 class PlacerBase;
+class PlacerBaseCommon;
 class Instance;
-class NesterovBase;
 class RouteBase;
 class TimingBase;
 class Graphics;
-
-class NesterovPlaceVars
-{
- public:
-  int maxNesterovIter;
-  int maxBackTrack;
-  float initDensityPenalty;           // INIT_LAMBDA
-  float initWireLengthCoef;           // base_wcof
-  float targetOverflow;               // overflow
-  float minPhiCoef;                   // pcof_min
-  float maxPhiCoef;                   // pcof_max
-  float minPreconditioner;            // MIN_PRE
-  float initialPrevCoordiUpdateCoef;  // z_ref_alpha
-  float referenceHpwl;                // refDeltaHpwl
-  float routabilityCheckOverflow;
-
-  static const int maxRecursionWlCoef = 10;
-  static const int maxRecursionInitSLPCoef = 10;
-
-  bool forceCPU;
-  bool timingDrivenMode;
-  bool routabilityDrivenMode;
-  bool debug;
-  int debug_pause_iterations;
-  int debug_update_iterations;
-  bool debug_draw_bins;
-  odb::dbInst* debug_inst;
-
-  NesterovPlaceVars();
-  void reset();
-};
 
 class NesterovPlace
 {
  public:
   NesterovPlace();
   NesterovPlace(const NesterovPlaceVars& npVars,
-                std::shared_ptr<PlacerBase> pb,
-                std::shared_ptr<NesterovBase> nb,
+                const std::shared_ptr<PlacerBaseCommon>& pbc,
+                const std::shared_ptr<NesterovBaseCommon>& nbc,
+                std::vector<std::shared_ptr<PlacerBase>>& pbVec,
+                std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                 std::shared_ptr<RouteBase> rb,
                 std::shared_ptr<TimingBase> tb,
                 utl::Logger* log);
@@ -103,107 +48,153 @@ class NesterovPlace
   // return iteration count
   int doNesterovPlace(int start_iter = 0);
 
-  void updateGradients(std::vector<FloatPoint>& sumGrads,
-                       std::vector<FloatPoint>& wireLengthGrads,
-                       std::vector<FloatPoint>& densityGrads);
-
   void updateWireLengthCoef(float overflow);
 
-  void updateInitialPrevSLPCoordi();
-
-  float getStepLength(const std::vector<FloatPoint>& prevCoordi_,
-                      const std::vector<FloatPoint>& prevSumGrads_,
-                      const std::vector<FloatPoint>& curCoordi_,
-                      const std::vector<FloatPoint>& curSumGrads_);
-
-  void updateNextIter();
-  float getPhiCoef(float scaledDiffHpwl) const;
+  void updateNextIter(int iter);
 
   void updateDb();
 
+  void checkInvalidValues(float wireLengthGradSum, float densityGradSum);
+
   float getWireLengthCoefX() const { return wireLengthCoefX_; }
   float getWireLengthCoefY() const { return wireLengthCoefY_; }
-  float getDensityPenalty() const { return densityPenalty_; }
 
   void setTargetOverflow(float overflow) { npVars_.targetOverflow = overflow; }
   void setMaxIters(int limit) { npVars_.maxNesterovIter = limit; }
 
+  void updatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
+  void updateCurGradient(const std::shared_ptr<NesterovBase>& nb);
+  void updateNextGradient(const std::shared_ptr<NesterovBase>& nb);
+
+  void resizeGCell(odb::dbInst*);
+  void moveGCell(odb::dbInst*);
+
+  void createCbkGCell(odb::dbInst*);
+  void createGNet(odb::dbNet*);
+  void createCbkITerm(odb::dbITerm*);
+
+  void destroyCbkGCell(odb::dbInst*);
+  void destroyCbkGNet(odb::dbNet*);
+  void destroyCbkITerm(odb::dbITerm*);
+
  private:
-  std::shared_ptr<PlacerBase> pb_;
-  std::shared_ptr<NesterovBase> nb_;
-  utl::Logger* log_;
+  void updateIterGraphics(int iter,
+                          const std::string& reports_dir,
+                          const std::string& routability_driven_dir,
+                          int routability_driven_count,
+                          int timing_driven_count,
+                          bool& final_routability_image_saved);
+  void runTimingDriven(int iter,
+                       const std::string& timing_driven_dir,
+                       int routability_driven_count,
+                       int& timing_driven_count,
+                       int64_t& td_accumulated_delta_area,
+                       bool is_routability_gpl_iter);
+  bool isDiverged(float& diverge_snapshot_WlCoefX,
+                  float& diverge_snapshot_WlCoefY,
+                  bool& is_diverge_snapshot_saved);
+  void routabilitySnapshot(int iter,
+                           float curA,
+                           const std::string& routability_driven_dir,
+                           int routability_driven_count,
+                           int timing_driven_count,
+                           bool& is_routability_snapshot_saved,
+                           float& route_snapshot_WlCoefX,
+                           float& route_snapshot_WlCoefY,
+                           float& route_snapshotA);
+  void runRoutability(int iter,
+                      int timing_driven_count,
+                      const std::string& routability_driven_dir,
+                      float route_snapshotA,
+                      float route_snapshot_WlCoefX,
+                      float route_snapshot_WlCoefY,
+                      int& routability_driven_count,
+                      float& curA,
+                      int64_t& end_routability_area);
+  bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
+  std::string getReportsDir() const;
+  void cleanReportsDirs(const std::string& timing_driven_dir,
+                        const std::string& routability_driven_dir) const;
+  void doBackTracking(float coeff);
+  void reportResults(int nesterov_iter,
+                     int64_t original_area,
+                     int64_t end_routability_area,
+                     int64_t td_accumulated_delta_area);
+
+  std::shared_ptr<PlacerBaseCommon> pbc_;
+  std::shared_ptr<NesterovBaseCommon> nbc_;
+  std::vector<std::shared_ptr<PlacerBase>> pbVec_;
+  std::vector<std::shared_ptr<NesterovBase>> nbVec_;
+  utl::Logger* log_ = nullptr;
   std::shared_ptr<RouteBase> rb_;
   std::shared_ptr<TimingBase> tb_;
   NesterovPlaceVars npVars_;
   std::unique_ptr<Graphics> graphics_;
 
-  // SLP is Step Length Prediction.
-  //
-  // y_st, y_dst, y_wdst, w_pdst
-  std::vector<FloatPoint> curSLPCoordi_;
-  std::vector<FloatPoint> curSLPWireLengthGrads_;
-  std::vector<FloatPoint> curSLPDensityGrads_;
-  std::vector<FloatPoint> curSLPSumGrads_;
+  float total_sum_overflow_ = 0;
+  float total_sum_overflow_unscaled_ = 0;
+  // The average here is between regions (NB objects)
+  float average_overflow_ = 0;
+  float average_overflow_unscaled_ = 0;
 
-  // y0_st, y0_dst, y0_wdst, y0_pdst
-  std::vector<FloatPoint> nextSLPCoordi_;
-  std::vector<FloatPoint> nextSLPWireLengthGrads_;
-  std::vector<FloatPoint> nextSLPDensityGrads_;
-  std::vector<FloatPoint> nextSLPSumGrads_;
-
-  // z_st, z_dst, z_wdst, z_pdst
-  std::vector<FloatPoint> prevSLPCoordi_;
-  std::vector<FloatPoint> prevSLPWireLengthGrads_;
-  std::vector<FloatPoint> prevSLPDensityGrads_;
-  std::vector<FloatPoint> prevSLPSumGrads_;
-
-  // x_st and x0_st
-  std::vector<FloatPoint> curCoordi_;
-  std::vector<FloatPoint> nextCoordi_;
-
-  // save initial coordinates -- needed for RD
-  std::vector<FloatPoint> initCoordi_;
+  // Snapshot saving for revert if diverge
+  float diverge_snapshot_average_overflow_unscaled_ = 0;
+  int64_t min_hpwl_ = INT64_MAX;
+  int diverge_snapshot_iter_ = 0;
+  bool is_min_hpwl_ = false;
 
   // densityPenalty stor
   std::vector<float> densityPenaltyStor_;
 
-  float wireLengthGradSum_;
-  float densityGradSum_;
-
-  // alpha
-  float stepLength_;
-
-  // opt_phi_cof
-  float densityPenalty_;
-
   // base_wcof
-  float baseWireLengthCoef_;
+  float baseWireLengthCoef_ = 0;
 
   // wlen_cof
-  float wireLengthCoefX_;
-  float wireLengthCoefY_;
+  float wireLengthCoefX_ = 0;
+  float wireLengthCoefY_ = 0;
 
-  // phi is described in ePlace paper.
-  float sumOverflow_;
-  float sumOverflowUnscaled_;
+  // observability metrics
+  utl::Gauge<double>* hpwl_gauge_ = nullptr;
 
   // half-parameter-wire-length
-  int64_t prevHpwl_;
+  int64_t prevHpwl_ = 0;
 
-  float isDiverged_;
-  float isRoutabilityNeed_;
+  int num_region_diverged_ = 0;
+  bool is_routability_need_ = true;
+  float routability_save_snapshot_ = 0.6;
 
   std::string divergeMsg_;
-  int divergeCode_;
+  int divergeCode_ = 0;
 
-  int recursionCntWlCoef_;
-  int recursionCntInitSLPCoef_;
-
-  void cutFillerCoordinates();
+  int recursionCntWlCoef_ = 0;
+  int recursionCntInitSLPCoef_ = 0;
 
   void init();
   void reset();
-};
-}  // namespace gpl
 
-#endif
+  std::unique_ptr<nesterovDbCbk> db_cbk_;
+};
+
+class nesterovDbCbk : public odb::dbBlockCallBackObj
+{
+ public:
+  nesterovDbCbk(NesterovPlace* nesterov_place_);
+
+  void inDbInstCreate(odb::dbInst*) override;
+  void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
+  void inDbInstDestroy(odb::dbInst*) override;
+
+  void inDbITermCreate(odb::dbITerm*) override;
+  void inDbITermDestroy(odb::dbITerm*) override;
+
+  void inDbNetCreate(odb::dbNet*) override;
+  void inDbNetDestroy(odb::dbNet*) override;
+
+  void inDbInstSwapMasterAfter(odb::dbInst*) override;
+  void inDbPostMoveInst(odb::dbInst*) override;
+
+ private:
+  NesterovPlace* nesterov_place_;
+};
+
+}  // namespace gpl

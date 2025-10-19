@@ -1,11 +1,10 @@
-
 from openroad import Design, Tech
 import helpers
 import dpl_aux
 
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("ibex_core_replace.def")
 
 dpl_aux.detailed_placement(design)

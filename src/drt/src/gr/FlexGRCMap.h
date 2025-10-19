@@ -1,56 +1,40 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#ifndef _FLEX_GR_CMAP_H_
-#define _FLEX_GR_CMAP_H_
+#pragma once
 
-#define CMAPHISTSIZE 8
-#define CMAPSUPPLYSIZE 8
-#define CMAPDEMANDSIZE 16
-#define CMAPFRACSIZE 1
+constexpr int CMAPHISTSIZE = 8;
+constexpr int CMAPSUPPLYSIZE = 8;
+constexpr int CMAPDEMANDSIZE = 16;
+constexpr int CMAPFRACSIZE = 1;
 
+#include <cstdint>
+#include <map>
+#include <memory>
+#include <set>
+#include <vector>
+
+#include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
+#include "odb/dbTypes.h"
 
-namespace fr {
+namespace drt {
 class frTrackPattern;
 class FlexGRCMap
 {
  public:
   // constructors
-  FlexGRCMap(frDesign* designIn) : design_(designIn), bits_()
+  FlexGRCMap(frDesign* designIn, RouterConfiguration* router_cfg)
+      : design_(designIn), router_cfg_(router_cfg)
   {
     auto& gCellPatterns = design_->getTopBlock()->getGCellPatterns();
     numLayers_ = design_->getTech()->getLayers().size();
     xgp_ = &(gCellPatterns.at(0));
     ygp_ = &(gCellPatterns.at(1));
   }
-  FlexGRCMap(FlexGRCMap* in)
+  FlexGRCMap(FlexGRCMap* in, RouterConfiguration* router_cfg)
       : design_(in->design_),
         xgp_(in->xgp_),
         ygp_(in->ygp_),
@@ -59,7 +43,8 @@ class FlexGRCMap
         zMap_(in->zMap_),
         layerTrackPitches_(in->layerTrackPitches_),
         layerLine2ViaPitches_(in->layerLine2ViaPitches_),
-        layerPitches_(in->layerPitches_)
+        layerPitches_(in->layerPitches_),
+        router_cfg_(router_cfg)
   {
   }
   // getters
@@ -67,7 +52,7 @@ class FlexGRCMap
 
   frLayerNum getNumLayers() { return numLayers_; }
 
-  std::map<frLayerNum, dbTechLayerDir> getZMap() { return zMap_; }
+  std::map<frLayerNum, odb::dbTechLayerDir> getZMap() { return zMap_; }
 
   unsigned getSupply(unsigned x,
                      unsigned y,
@@ -93,9 +78,8 @@ class FlexGRCMap
     }
     if (isRaw) {
       return supply << CMAPFRACSIZE;
-    } else {
-      return supply;
     }
+    return supply;
   }
 
   unsigned getRawSupply(unsigned x, unsigned y, unsigned z, frDirEnum dir) const
@@ -128,9 +112,8 @@ class FlexGRCMap
     }
     if (isRaw) {
       return supply << CMAPFRACSIZE;
-    } else {
-      return supply;
     }
+    return supply;
   }
 
   unsigned getRawSupply2D(unsigned x, unsigned y, frDirEnum dir) const
@@ -162,9 +145,8 @@ class FlexGRCMap
     }
     if (isRaw) {
       return demand;
-    } else {
-      return demand >> CMAPFRACSIZE;
     }
+    return demand >> CMAPFRACSIZE;
   }
 
   unsigned getRawDemand(unsigned x, unsigned y, unsigned z, frDirEnum dir) const
@@ -197,9 +179,8 @@ class FlexGRCMap
     }
     if (isRaw) {
       return demand;
-    } else {
-      return demand >> CMAPFRACSIZE;
     }
+    return demand >> CMAPFRACSIZE;
   }
 
   unsigned getRawDemand2D(unsigned x, unsigned y, frDirEnum dir) const
@@ -528,11 +509,13 @@ class FlexGRCMap
   // [31-24] supply E; [23-16] supply N
   // [15-8] cong history
   // [3] block E [2] block N [1] overflow E; [0] overflow N
-  std::vector<unsigned long long> bits_;
-  std::map<frLayerNum, dbTechLayerDir> zMap_;
+  std::vector<uint64_t> bits_;
+  std::map<frLayerNum, odb::dbTechLayerDir> zMap_;
   std::vector<frCoord> layerTrackPitches_;
   std::vector<frCoord> layerLine2ViaPitches_;
   std::vector<frCoord> layerPitches_;
+
+  RouterConfiguration* router_cfg_;
 
   // internal getters
   bool getBit(unsigned idx, unsigned pos) const
@@ -568,7 +551,7 @@ class FlexGRCMap
   void setBits(unsigned idx, unsigned pos, unsigned length, unsigned val)
   {
     bits_[idx] &= ~(((1ull << length) - 1) << pos);  // clear related bits to 0
-    bits_[idx] |= ((unsigned long long) val & ((1ull << length) - 1))
+    bits_[idx] |= ((uint64_t) val & ((1ull << length) - 1))
                   << pos;  // only get last length bits of val
   }
 
@@ -590,7 +573,6 @@ class FlexGRCMap
         break;
       default:;
     }
-    return;
   }
 
   void reverse(unsigned& x, unsigned& y, unsigned& z, frDirEnum& dir) const
@@ -622,7 +604,6 @@ class FlexGRCMap
         break;
       default:;
     }
-    return;
   }
 
   bool isValid(unsigned x, unsigned y, unsigned z) const
@@ -631,9 +612,8 @@ class FlexGRCMap
         || y >= ygp_->getCount()
         || z >= design_->getTech()->getLayers().size()) {
       return false;
-    } else {
-      return true;
     }
+    return true;
   }
 
   bool isValid(unsigned x, unsigned y, unsigned z, frDirEnum dir) const
@@ -654,7 +634,7 @@ class FlexGRCMap
       frLayerNum lNum,
       const std::set<frCoord>& trackLocs,
       const std::vector<rq_box_value_t<frBlockObject*>>& results,
-      const frCoord bloatDist);
+      frCoord bloatDist);
   void getTrackLocs(const std::vector<std::unique_ptr<frTrackPattern>>& tps,
                     bool isHorz,
                     frCoord low,
@@ -663,10 +643,8 @@ class FlexGRCMap
   unsigned getNumPins(
       const std::vector<rq_box_value_t<frBlockObject*>>& results);
   frCoord calcBloatDist(frBlockObject* obj,
-                        const frLayerNum lNum,
-                        const Rect& box,
+                        frLayerNum lNum,
+                        const odb::Rect& box,
                         bool isOBS);
 };
-}  // namespace fr
-
-#endif
+}  // namespace drt

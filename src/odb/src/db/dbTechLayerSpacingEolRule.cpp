@@ -1,466 +1,270 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbTechLayerSpacingEolRule.h"
 
-#include "db.h"
+#include <cstdint>
+#include <cstring>
+
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
-
+#include "odb/db.h"
 // User Code Begin Includes
 #include "dbTech.h"
 #include "dbTechLayer.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerSpacingEolRule>;
 
 bool _dbTechLayerSpacingEolRule::operator==(
     const _dbTechLayerSpacingEolRule& rhs) const
 {
-  if (flags_.exact_width_valid_ != rhs.flags_.exact_width_valid_)
+  if (flags_.exact_width_valid_ != rhs.flags_.exact_width_valid_) {
     return false;
-
-  if (flags_.wrong_dir_spacing_valid_ != rhs.flags_.wrong_dir_spacing_valid_)
+  }
+  if (flags_.wrong_dir_spacing_valid_ != rhs.flags_.wrong_dir_spacing_valid_) {
     return false;
-
-  if (flags_.opposite_width_valid_ != rhs.flags_.opposite_width_valid_)
+  }
+  if (flags_.opposite_width_valid_ != rhs.flags_.opposite_width_valid_) {
     return false;
-
-  if (flags_.within_valid_ != rhs.flags_.within_valid_)
+  }
+  if (flags_.within_valid_ != rhs.flags_.within_valid_) {
     return false;
-
-  if (flags_.wrong_dir_within_valid_ != rhs.flags_.wrong_dir_within_valid_)
+  }
+  if (flags_.wrong_dir_within_valid_ != rhs.flags_.wrong_dir_within_valid_) {
     return false;
-
-  if (flags_.same_mask_valid_ != rhs.flags_.same_mask_valid_)
+  }
+  if (flags_.same_mask_valid_ != rhs.flags_.same_mask_valid_) {
     return false;
-
-  if (flags_.except_exact_width_valid_ != rhs.flags_.except_exact_width_valid_)
+  }
+  if (flags_.except_exact_width_valid_
+      != rhs.flags_.except_exact_width_valid_) {
     return false;
-
+  }
   if (flags_.fill_concave_corner_valid_
-      != rhs.flags_.fill_concave_corner_valid_)
+      != rhs.flags_.fill_concave_corner_valid_) {
     return false;
-
-  if (flags_.withcut_valid_ != rhs.flags_.withcut_valid_)
+  }
+  if (flags_.withcut_valid_ != rhs.flags_.withcut_valid_) {
     return false;
-
-  if (flags_.cut_class_valid_ != rhs.flags_.cut_class_valid_)
+  }
+  if (flags_.cut_class_valid_ != rhs.flags_.cut_class_valid_) {
     return false;
-
-  if (flags_.with_cut_above_valid_ != rhs.flags_.with_cut_above_valid_)
+  }
+  if (flags_.with_cut_above_valid_ != rhs.flags_.with_cut_above_valid_) {
     return false;
-
-  if (flags_.enclosure_end_valid_ != rhs.flags_.enclosure_end_valid_)
+  }
+  if (flags_.enclosure_end_valid_ != rhs.flags_.enclosure_end_valid_) {
     return false;
-
+  }
   if (flags_.enclosure_end_within_valid_
-      != rhs.flags_.enclosure_end_within_valid_)
+      != rhs.flags_.enclosure_end_within_valid_) {
     return false;
-
-  if (flags_.end_prl_spacing_valid_ != rhs.flags_.end_prl_spacing_valid_)
+  }
+  if (flags_.end_prl_spacing_valid_ != rhs.flags_.end_prl_spacing_valid_) {
     return false;
-
-  if (flags_.prl_valid_ != rhs.flags_.prl_valid_)
+  }
+  if (flags_.prl_valid_ != rhs.flags_.prl_valid_) {
     return false;
-
-  if (flags_.end_to_end_valid_ != rhs.flags_.end_to_end_valid_)
+  }
+  if (flags_.end_to_end_valid_ != rhs.flags_.end_to_end_valid_) {
     return false;
-
-  if (flags_.cut_spaces_valid_ != rhs.flags_.cut_spaces_valid_)
+  }
+  if (flags_.cut_spaces_valid_ != rhs.flags_.cut_spaces_valid_) {
     return false;
-
-  if (flags_.extension_valid_ != rhs.flags_.extension_valid_)
+  }
+  if (flags_.extension_valid_ != rhs.flags_.extension_valid_) {
     return false;
-
+  }
   if (flags_.wrong_dir_extension_valid_
-      != rhs.flags_.wrong_dir_extension_valid_)
+      != rhs.flags_.wrong_dir_extension_valid_) {
     return false;
-
-  if (flags_.other_end_width_valid_ != rhs.flags_.other_end_width_valid_)
+  }
+  if (flags_.other_end_width_valid_ != rhs.flags_.other_end_width_valid_) {
     return false;
-
-  if (flags_.max_length_valid_ != rhs.flags_.max_length_valid_)
+  }
+  if (flags_.max_length_valid_ != rhs.flags_.max_length_valid_) {
     return false;
-
-  if (flags_.min_length_valid_ != rhs.flags_.min_length_valid_)
+  }
+  if (flags_.min_length_valid_ != rhs.flags_.min_length_valid_) {
     return false;
-
-  if (flags_.two_sides_valid_ != rhs.flags_.two_sides_valid_)
+  }
+  if (flags_.two_sides_valid_ != rhs.flags_.two_sides_valid_) {
     return false;
-
-  if (flags_.equal_rect_width_valid_ != rhs.flags_.equal_rect_width_valid_)
+  }
+  if (flags_.equal_rect_width_valid_ != rhs.flags_.equal_rect_width_valid_) {
     return false;
-
-  if (flags_.parallel_edge_valid_ != rhs.flags_.parallel_edge_valid_)
+  }
+  if (flags_.parallel_edge_valid_ != rhs.flags_.parallel_edge_valid_) {
     return false;
-
-  if (flags_.subtract_eol_width_valid_ != rhs.flags_.subtract_eol_width_valid_)
+  }
+  if (flags_.subtract_eol_width_valid_
+      != rhs.flags_.subtract_eol_width_valid_) {
     return false;
-
-  if (flags_.par_prl_valid_ != rhs.flags_.par_prl_valid_)
+  }
+  if (flags_.par_prl_valid_ != rhs.flags_.par_prl_valid_) {
     return false;
-
-  if (flags_.par_min_length_valid_ != rhs.flags_.par_min_length_valid_)
+  }
+  if (flags_.par_min_length_valid_ != rhs.flags_.par_min_length_valid_) {
     return false;
-
-  if (flags_.two_edges_valid_ != rhs.flags_.two_edges_valid_)
+  }
+  if (flags_.two_edges_valid_ != rhs.flags_.two_edges_valid_) {
     return false;
-
-  if (flags_.same_metal_valid_ != rhs.flags_.same_metal_valid_)
+  }
+  if (flags_.same_metal_valid_ != rhs.flags_.same_metal_valid_) {
     return false;
-
+  }
   if (flags_.non_eol_corner_only_valid_
-      != rhs.flags_.non_eol_corner_only_valid_)
+      != rhs.flags_.non_eol_corner_only_valid_) {
     return false;
-
-  if (flags_.parallel_same_mask_valid_ != rhs.flags_.parallel_same_mask_valid_)
+  }
+  if (flags_.parallel_same_mask_valid_
+      != rhs.flags_.parallel_same_mask_valid_) {
     return false;
-
-  if (flags_.enclose_cut_valid_ != rhs.flags_.enclose_cut_valid_)
+  }
+  if (flags_.enclose_cut_valid_ != rhs.flags_.enclose_cut_valid_) {
     return false;
-
-  if (flags_.below_valid_ != rhs.flags_.below_valid_)
+  }
+  if (flags_.below_valid_ != rhs.flags_.below_valid_) {
     return false;
-
-  if (flags_.above_valid_ != rhs.flags_.above_valid_)
+  }
+  if (flags_.above_valid_ != rhs.flags_.above_valid_) {
     return false;
-
-  if (flags_.cut_spacing_valid_ != rhs.flags_.cut_spacing_valid_)
+  }
+  if (flags_.cut_spacing_valid_ != rhs.flags_.cut_spacing_valid_) {
     return false;
-
-  if (flags_.all_cuts_valid_ != rhs.flags_.all_cuts_valid_)
+  }
+  if (flags_.all_cuts_valid_ != rhs.flags_.all_cuts_valid_) {
     return false;
-
-  if (flags_.to_concave_corner_valid_ != rhs.flags_.to_concave_corner_valid_)
+  }
+  if (flags_.to_concave_corner_valid_ != rhs.flags_.to_concave_corner_valid_) {
     return false;
-
+  }
   if (flags_.min_adjacent_length_valid_
-      != rhs.flags_.min_adjacent_length_valid_)
+      != rhs.flags_.min_adjacent_length_valid_) {
     return false;
-
-  if (flags_.two_min_adj_length_valid_ != rhs.flags_.two_min_adj_length_valid_)
+  }
+  if (flags_.two_min_adj_length_valid_
+      != rhs.flags_.two_min_adj_length_valid_) {
     return false;
-
-  if (flags_.to_notch_length_valid_ != rhs.flags_.to_notch_length_valid_)
+  }
+  if (flags_.to_notch_length_valid_ != rhs.flags_.to_notch_length_valid_) {
     return false;
-
-  if (eol_space_ != rhs.eol_space_)
+  }
+  if (eol_space_ != rhs.eol_space_) {
     return false;
-
-  if (eol_width_ != rhs.eol_width_)
+  }
+  if (eol_width_ != rhs.eol_width_) {
     return false;
-
-  if (wrong_dir_space_ != rhs.wrong_dir_space_)
+  }
+  if (wrong_dir_space_ != rhs.wrong_dir_space_) {
     return false;
-
-  if (opposite_width_ != rhs.opposite_width_)
+  }
+  if (opposite_width_ != rhs.opposite_width_) {
     return false;
-
-  if (eol_within_ != rhs.eol_within_)
+  }
+  if (eol_within_ != rhs.eol_within_) {
     return false;
-
-  if (wrong_dir_within_ != rhs.wrong_dir_within_)
+  }
+  if (wrong_dir_within_ != rhs.wrong_dir_within_) {
     return false;
-
-  if (exact_width_ != rhs.exact_width_)
+  }
+  if (exact_width_ != rhs.exact_width_) {
     return false;
-
-  if (other_width_ != rhs.other_width_)
+  }
+  if (other_width_ != rhs.other_width_) {
     return false;
-
-  if (fill_triangle_ != rhs.fill_triangle_)
+  }
+  if (fill_triangle_ != rhs.fill_triangle_) {
     return false;
-
-  if (cut_class_ != rhs.cut_class_)
+  }
+  if (cut_class_ != rhs.cut_class_) {
     return false;
-
-  if (with_cut_space_ != rhs.with_cut_space_)
+  }
+  if (with_cut_space_ != rhs.with_cut_space_) {
     return false;
-
-  if (enclosure_end_width_ != rhs.enclosure_end_width_)
+  }
+  if (enclosure_end_width_ != rhs.enclosure_end_width_) {
     return false;
-
-  if (enclosure_end_within_ != rhs.enclosure_end_within_)
+  }
+  if (enclosure_end_within_ != rhs.enclosure_end_within_) {
     return false;
-
-  if (end_prl_space_ != rhs.end_prl_space_)
+  }
+  if (end_prl_space_ != rhs.end_prl_space_) {
     return false;
-
-  if (end_prl_ != rhs.end_prl_)
+  }
+  if (end_prl_ != rhs.end_prl_) {
     return false;
-
-  if (end_to_end_space_ != rhs.end_to_end_space_)
+  }
+  if (end_to_end_space_ != rhs.end_to_end_space_) {
     return false;
-
-  if (one_cut_space_ != rhs.one_cut_space_)
+  }
+  if (one_cut_space_ != rhs.one_cut_space_) {
     return false;
-
-  if (two_cut_space_ != rhs.two_cut_space_)
+  }
+  if (two_cut_space_ != rhs.two_cut_space_) {
     return false;
-
-  if (extension_ != rhs.extension_)
+  }
+  if (extension_ != rhs.extension_) {
     return false;
-
-  if (wrong_dir_extension_ != rhs.wrong_dir_extension_)
+  }
+  if (wrong_dir_extension_ != rhs.wrong_dir_extension_) {
     return false;
-
-  if (other_end_width_ != rhs.other_end_width_)
+  }
+  if (other_end_width_ != rhs.other_end_width_) {
     return false;
-
-  if (max_length_ != rhs.max_length_)
+  }
+  if (max_length_ != rhs.max_length_) {
     return false;
-
-  if (min_length_ != rhs.min_length_)
+  }
+  if (min_length_ != rhs.min_length_) {
     return false;
-
-  if (par_space_ != rhs.par_space_)
+  }
+  if (par_space_ != rhs.par_space_) {
     return false;
-
-  if (par_within_ != rhs.par_within_)
+  }
+  if (par_within_ != rhs.par_within_) {
     return false;
-
-  if (par_prl_ != rhs.par_prl_)
+  }
+  if (par_prl_ != rhs.par_prl_) {
     return false;
-
-  if (par_min_length_ != rhs.par_min_length_)
+  }
+  if (par_min_length_ != rhs.par_min_length_) {
     return false;
-
-  if (enclose_dist_ != rhs.enclose_dist_)
+  }
+  if (enclose_dist_ != rhs.enclose_dist_) {
     return false;
-
-  if (cut_to_metal_space_ != rhs.cut_to_metal_space_)
+  }
+  if (cut_to_metal_space_ != rhs.cut_to_metal_space_) {
     return false;
-
-  if (min_adj_length_ != rhs.min_adj_length_)
+  }
+  if (min_adj_length_ != rhs.min_adj_length_) {
     return false;
-
-  if (min_adj_length1_ != rhs.min_adj_length1_)
+  }
+  if (min_adj_length1_ != rhs.min_adj_length1_) {
     return false;
-
-  if (min_adj_length2_ != rhs.min_adj_length2_)
+  }
+  if (min_adj_length2_ != rhs.min_adj_length2_) {
     return false;
-
-  if (notch_length_ != rhs.notch_length_)
+  }
+  if (notch_length_ != rhs.notch_length_) {
     return false;
+  }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbTechLayerSpacingEolRule::operator<(
     const _dbTechLayerSpacingEolRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
-void _dbTechLayerSpacingEolRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerSpacingEolRule& rhs) const
-{
-  DIFF_BEGIN
 
-  DIFF_FIELD(flags_.exact_width_valid_);
-  DIFF_FIELD(flags_.wrong_dir_spacing_valid_);
-  DIFF_FIELD(flags_.opposite_width_valid_);
-  DIFF_FIELD(flags_.within_valid_);
-  DIFF_FIELD(flags_.wrong_dir_within_valid_);
-  DIFF_FIELD(flags_.same_mask_valid_);
-  DIFF_FIELD(flags_.except_exact_width_valid_);
-  DIFF_FIELD(flags_.fill_concave_corner_valid_);
-  DIFF_FIELD(flags_.withcut_valid_);
-  DIFF_FIELD(flags_.cut_class_valid_);
-  DIFF_FIELD(flags_.with_cut_above_valid_);
-  DIFF_FIELD(flags_.enclosure_end_valid_);
-  DIFF_FIELD(flags_.enclosure_end_within_valid_);
-  DIFF_FIELD(flags_.end_prl_spacing_valid_);
-  DIFF_FIELD(flags_.prl_valid_);
-  DIFF_FIELD(flags_.end_to_end_valid_);
-  DIFF_FIELD(flags_.cut_spaces_valid_);
-  DIFF_FIELD(flags_.extension_valid_);
-  DIFF_FIELD(flags_.wrong_dir_extension_valid_);
-  DIFF_FIELD(flags_.other_end_width_valid_);
-  DIFF_FIELD(flags_.max_length_valid_);
-  DIFF_FIELD(flags_.min_length_valid_);
-  DIFF_FIELD(flags_.two_sides_valid_);
-  DIFF_FIELD(flags_.equal_rect_width_valid_);
-  DIFF_FIELD(flags_.parallel_edge_valid_);
-  DIFF_FIELD(flags_.subtract_eol_width_valid_);
-  DIFF_FIELD(flags_.par_prl_valid_);
-  DIFF_FIELD(flags_.par_min_length_valid_);
-  DIFF_FIELD(flags_.two_edges_valid_);
-  DIFF_FIELD(flags_.same_metal_valid_);
-  DIFF_FIELD(flags_.non_eol_corner_only_valid_);
-  DIFF_FIELD(flags_.parallel_same_mask_valid_);
-  DIFF_FIELD(flags_.enclose_cut_valid_);
-  DIFF_FIELD(flags_.below_valid_);
-  DIFF_FIELD(flags_.above_valid_);
-  DIFF_FIELD(flags_.cut_spacing_valid_);
-  DIFF_FIELD(flags_.all_cuts_valid_);
-  DIFF_FIELD(flags_.to_concave_corner_valid_);
-  DIFF_FIELD(flags_.min_adjacent_length_valid_);
-  DIFF_FIELD(flags_.two_min_adj_length_valid_);
-  DIFF_FIELD(flags_.to_notch_length_valid_);
-  DIFF_FIELD(eol_space_);
-  DIFF_FIELD(eol_width_);
-  DIFF_FIELD(wrong_dir_space_);
-  DIFF_FIELD(opposite_width_);
-  DIFF_FIELD(eol_within_);
-  DIFF_FIELD(wrong_dir_within_);
-  DIFF_FIELD(exact_width_);
-  DIFF_FIELD(other_width_);
-  DIFF_FIELD(fill_triangle_);
-  DIFF_FIELD(cut_class_);
-  DIFF_FIELD(with_cut_space_);
-  DIFF_FIELD(enclosure_end_width_);
-  DIFF_FIELD(enclosure_end_within_);
-  DIFF_FIELD(end_prl_space_);
-  DIFF_FIELD(end_prl_);
-  DIFF_FIELD(end_to_end_space_);
-  DIFF_FIELD(one_cut_space_);
-  DIFF_FIELD(two_cut_space_);
-  DIFF_FIELD(extension_);
-  DIFF_FIELD(wrong_dir_extension_);
-  DIFF_FIELD(other_end_width_);
-  DIFF_FIELD(max_length_);
-  DIFF_FIELD(min_length_);
-  DIFF_FIELD(par_space_);
-  DIFF_FIELD(par_within_);
-  DIFF_FIELD(par_prl_);
-  DIFF_FIELD(par_min_length_);
-  DIFF_FIELD(enclose_dist_);
-  DIFF_FIELD(cut_to_metal_space_);
-  DIFF_FIELD(min_adj_length_);
-  DIFF_FIELD(min_adj_length1_);
-  DIFF_FIELD(min_adj_length2_);
-  DIFF_FIELD(notch_length_);
-  // User Code Begin Differences
-  // User Code End Differences
-  DIFF_END
-}
-void _dbTechLayerSpacingEolRule::out(dbDiff& diff,
-                                     char side,
-                                     const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.exact_width_valid_);
-  DIFF_OUT_FIELD(flags_.wrong_dir_spacing_valid_);
-  DIFF_OUT_FIELD(flags_.opposite_width_valid_);
-  DIFF_OUT_FIELD(flags_.within_valid_);
-  DIFF_OUT_FIELD(flags_.wrong_dir_within_valid_);
-  DIFF_OUT_FIELD(flags_.same_mask_valid_);
-  DIFF_OUT_FIELD(flags_.except_exact_width_valid_);
-  DIFF_OUT_FIELD(flags_.fill_concave_corner_valid_);
-  DIFF_OUT_FIELD(flags_.withcut_valid_);
-  DIFF_OUT_FIELD(flags_.cut_class_valid_);
-  DIFF_OUT_FIELD(flags_.with_cut_above_valid_);
-  DIFF_OUT_FIELD(flags_.enclosure_end_valid_);
-  DIFF_OUT_FIELD(flags_.enclosure_end_within_valid_);
-  DIFF_OUT_FIELD(flags_.end_prl_spacing_valid_);
-  DIFF_OUT_FIELD(flags_.prl_valid_);
-  DIFF_OUT_FIELD(flags_.end_to_end_valid_);
-  DIFF_OUT_FIELD(flags_.cut_spaces_valid_);
-  DIFF_OUT_FIELD(flags_.extension_valid_);
-  DIFF_OUT_FIELD(flags_.wrong_dir_extension_valid_);
-  DIFF_OUT_FIELD(flags_.other_end_width_valid_);
-  DIFF_OUT_FIELD(flags_.max_length_valid_);
-  DIFF_OUT_FIELD(flags_.min_length_valid_);
-  DIFF_OUT_FIELD(flags_.two_sides_valid_);
-  DIFF_OUT_FIELD(flags_.equal_rect_width_valid_);
-  DIFF_OUT_FIELD(flags_.parallel_edge_valid_);
-  DIFF_OUT_FIELD(flags_.subtract_eol_width_valid_);
-  DIFF_OUT_FIELD(flags_.par_prl_valid_);
-  DIFF_OUT_FIELD(flags_.par_min_length_valid_);
-  DIFF_OUT_FIELD(flags_.two_edges_valid_);
-  DIFF_OUT_FIELD(flags_.same_metal_valid_);
-  DIFF_OUT_FIELD(flags_.non_eol_corner_only_valid_);
-  DIFF_OUT_FIELD(flags_.parallel_same_mask_valid_);
-  DIFF_OUT_FIELD(flags_.enclose_cut_valid_);
-  DIFF_OUT_FIELD(flags_.below_valid_);
-  DIFF_OUT_FIELD(flags_.above_valid_);
-  DIFF_OUT_FIELD(flags_.cut_spacing_valid_);
-  DIFF_OUT_FIELD(flags_.all_cuts_valid_);
-  DIFF_OUT_FIELD(flags_.to_concave_corner_valid_);
-  DIFF_OUT_FIELD(flags_.min_adjacent_length_valid_);
-  DIFF_OUT_FIELD(flags_.two_min_adj_length_valid_);
-  DIFF_OUT_FIELD(flags_.to_notch_length_valid_);
-  DIFF_OUT_FIELD(eol_space_);
-  DIFF_OUT_FIELD(eol_width_);
-  DIFF_OUT_FIELD(wrong_dir_space_);
-  DIFF_OUT_FIELD(opposite_width_);
-  DIFF_OUT_FIELD(eol_within_);
-  DIFF_OUT_FIELD(wrong_dir_within_);
-  DIFF_OUT_FIELD(exact_width_);
-  DIFF_OUT_FIELD(other_width_);
-  DIFF_OUT_FIELD(fill_triangle_);
-  DIFF_OUT_FIELD(cut_class_);
-  DIFF_OUT_FIELD(with_cut_space_);
-  DIFF_OUT_FIELD(enclosure_end_width_);
-  DIFF_OUT_FIELD(enclosure_end_within_);
-  DIFF_OUT_FIELD(end_prl_space_);
-  DIFF_OUT_FIELD(end_prl_);
-  DIFF_OUT_FIELD(end_to_end_space_);
-  DIFF_OUT_FIELD(one_cut_space_);
-  DIFF_OUT_FIELD(two_cut_space_);
-  DIFF_OUT_FIELD(extension_);
-  DIFF_OUT_FIELD(wrong_dir_extension_);
-  DIFF_OUT_FIELD(other_end_width_);
-  DIFF_OUT_FIELD(max_length_);
-  DIFF_OUT_FIELD(min_length_);
-  DIFF_OUT_FIELD(par_space_);
-  DIFF_OUT_FIELD(par_within_);
-  DIFF_OUT_FIELD(par_prl_);
-  DIFF_OUT_FIELD(par_min_length_);
-  DIFF_OUT_FIELD(enclose_dist_);
-  DIFF_OUT_FIELD(cut_to_metal_space_);
-  DIFF_OUT_FIELD(min_adj_length_);
-  DIFF_OUT_FIELD(min_adj_length1_);
-  DIFF_OUT_FIELD(min_adj_length2_);
-  DIFF_OUT_FIELD(notch_length_);
-
-  // User Code Begin Out
-  // User Code End Out
-  DIFF_END
-}
 _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(_dbDatabase* db)
 {
-  uint64_t* flags__bit_field = (uint64_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   eol_space_ = 0;
   eol_width_ = 0;
   wrong_dir_space_ = 0;
@@ -530,93 +334,13 @@ _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(_dbDatabase* db)
   notch_length_ = 0;
   // User Code End Constructor
 }
-_dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(
-    _dbDatabase* db,
-    const _dbTechLayerSpacingEolRule& r)
-{
-  flags_.exact_width_valid_ = r.flags_.exact_width_valid_;
-  flags_.wrong_dir_spacing_valid_ = r.flags_.wrong_dir_spacing_valid_;
-  flags_.opposite_width_valid_ = r.flags_.opposite_width_valid_;
-  flags_.within_valid_ = r.flags_.within_valid_;
-  flags_.wrong_dir_within_valid_ = r.flags_.wrong_dir_within_valid_;
-  flags_.same_mask_valid_ = r.flags_.same_mask_valid_;
-  flags_.except_exact_width_valid_ = r.flags_.except_exact_width_valid_;
-  flags_.fill_concave_corner_valid_ = r.flags_.fill_concave_corner_valid_;
-  flags_.withcut_valid_ = r.flags_.withcut_valid_;
-  flags_.cut_class_valid_ = r.flags_.cut_class_valid_;
-  flags_.with_cut_above_valid_ = r.flags_.with_cut_above_valid_;
-  flags_.enclosure_end_valid_ = r.flags_.enclosure_end_valid_;
-  flags_.enclosure_end_within_valid_ = r.flags_.enclosure_end_within_valid_;
-  flags_.end_prl_spacing_valid_ = r.flags_.end_prl_spacing_valid_;
-  flags_.prl_valid_ = r.flags_.prl_valid_;
-  flags_.end_to_end_valid_ = r.flags_.end_to_end_valid_;
-  flags_.cut_spaces_valid_ = r.flags_.cut_spaces_valid_;
-  flags_.extension_valid_ = r.flags_.extension_valid_;
-  flags_.wrong_dir_extension_valid_ = r.flags_.wrong_dir_extension_valid_;
-  flags_.other_end_width_valid_ = r.flags_.other_end_width_valid_;
-  flags_.max_length_valid_ = r.flags_.max_length_valid_;
-  flags_.min_length_valid_ = r.flags_.min_length_valid_;
-  flags_.two_sides_valid_ = r.flags_.two_sides_valid_;
-  flags_.equal_rect_width_valid_ = r.flags_.equal_rect_width_valid_;
-  flags_.parallel_edge_valid_ = r.flags_.parallel_edge_valid_;
-  flags_.subtract_eol_width_valid_ = r.flags_.subtract_eol_width_valid_;
-  flags_.par_prl_valid_ = r.flags_.par_prl_valid_;
-  flags_.par_min_length_valid_ = r.flags_.par_min_length_valid_;
-  flags_.two_edges_valid_ = r.flags_.two_edges_valid_;
-  flags_.same_metal_valid_ = r.flags_.same_metal_valid_;
-  flags_.non_eol_corner_only_valid_ = r.flags_.non_eol_corner_only_valid_;
-  flags_.parallel_same_mask_valid_ = r.flags_.parallel_same_mask_valid_;
-  flags_.enclose_cut_valid_ = r.flags_.enclose_cut_valid_;
-  flags_.below_valid_ = r.flags_.below_valid_;
-  flags_.above_valid_ = r.flags_.above_valid_;
-  flags_.cut_spacing_valid_ = r.flags_.cut_spacing_valid_;
-  flags_.all_cuts_valid_ = r.flags_.all_cuts_valid_;
-  flags_.to_concave_corner_valid_ = r.flags_.to_concave_corner_valid_;
-  flags_.min_adjacent_length_valid_ = r.flags_.min_adjacent_length_valid_;
-  flags_.two_min_adj_length_valid_ = r.flags_.two_min_adj_length_valid_;
-  flags_.to_notch_length_valid_ = r.flags_.to_notch_length_valid_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  eol_space_ = r.eol_space_;
-  eol_width_ = r.eol_width_;
-  wrong_dir_space_ = r.wrong_dir_space_;
-  opposite_width_ = r.opposite_width_;
-  eol_within_ = r.eol_within_;
-  wrong_dir_within_ = r.wrong_dir_within_;
-  exact_width_ = r.exact_width_;
-  other_width_ = r.other_width_;
-  fill_triangle_ = r.fill_triangle_;
-  cut_class_ = r.cut_class_;
-  with_cut_space_ = r.with_cut_space_;
-  enclosure_end_width_ = r.enclosure_end_width_;
-  enclosure_end_within_ = r.enclosure_end_within_;
-  end_prl_space_ = r.end_prl_space_;
-  end_prl_ = r.end_prl_;
-  end_to_end_space_ = r.end_to_end_space_;
-  one_cut_space_ = r.one_cut_space_;
-  two_cut_space_ = r.two_cut_space_;
-  extension_ = r.extension_;
-  wrong_dir_extension_ = r.wrong_dir_extension_;
-  other_end_width_ = r.other_end_width_;
-  max_length_ = r.max_length_;
-  min_length_ = r.min_length_;
-  par_space_ = r.par_space_;
-  par_within_ = r.par_within_;
-  par_prl_ = r.par_prl_;
-  par_min_length_ = r.par_min_length_;
-  enclose_dist_ = r.enclose_dist_;
-  cut_to_metal_space_ = r.cut_to_metal_space_;
-  min_adj_length_ = r.min_adj_length_;
-  min_adj_length1_ = r.min_adj_length1_;
-  min_adj_length2_ = r.min_adj_length2_;
-  notch_length_ = r.notch_length_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
-}
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
 {
-  uint64_t* flags__bit_field = (uint64_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint64_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.eol_space_;
   stream >> obj.eol_width_;
   stream >> obj.wrong_dir_space_;
@@ -650,14 +374,15 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
   stream >> obj.min_adj_length1_;
   stream >> obj.min_adj_length2_;
   stream >> obj.notch_length_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj)
 {
-  uint64_t* flags__bit_field = (uint64_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint64_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj.eol_space_;
   stream << obj.eol_width_;
   stream << obj.wrong_dir_space_;
@@ -691,19 +416,14 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj)
   stream << obj.min_adj_length1_;
   stream << obj.min_adj_length2_;
   stream << obj.notch_length_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
-_dbTechLayerSpacingEolRule::~_dbTechLayerSpacingEolRule()
+void _dbTechLayerSpacingEolRule::collectMemInfo(MemInfo& info)
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
+  info.cnt++;
+  info.size += sizeof(*this);
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -1759,4 +1479,4 @@ void dbTechLayerSpacingEolRule::destroy(dbTechLayerSpacingEolRule* rule)
 
 // User Code End dbTechLayerSpacingEolRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

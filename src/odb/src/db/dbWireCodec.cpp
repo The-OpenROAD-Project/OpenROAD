@@ -1,48 +1,27 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "dbWireCodec.h"
+#include "odb/dbWireCodec.h"
 
-#include <ctype.h>
+#include <cctype>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <optional>
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTech.h"
 #include "dbTechLayerRule.h"
+#include "dbVector.h"
 #include "dbWire.h"
 #include "dbWireOpcode.h"
+#include "odb/ZException.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -138,10 +117,11 @@ void dbWireEncoder::initPath(dbTechLayer* layer,
   _layer = layer;
   _non_default_rule = rule->getImpl()->getOID();
 
-  if (rule->isBlockRule())
+  if (rule->isBlockRule()) {
     _rule_opcode = WOP_RULE | WOP_BLOCK_RULE;
-  else
+  } else {
     _rule_opcode = WOP_RULE;
+  }
 
   _prev_extended_colinear_pnt = false;
   _x = 0;
@@ -174,17 +154,17 @@ void dbWireEncoder::begin(dbWire* wire)
   clear();
   _wire = (_dbWire*) wire;
   _block = wire->getBlock();
-  _tech = _block->getDb()->getTech();
+  _tech = _block->getTech();
 }
 
 void dbWireEncoder::clear()
 {
-  _wire = NULL;
-  _block = NULL;
-  _tech = NULL;
+  _wire = nullptr;
+  _block = nullptr;
+  _tech = nullptr;
   _data.clear();
   _opcodes.clear();
-  _layer = NULL;
+  _layer = nullptr;
   _idx = 0;
   _x = 0;
   _y = 0;
@@ -202,7 +182,7 @@ void dbWireEncoder::append(dbWire* wire)
   _tech = _block->getDb()->getTech();
   _data = _wire->_data;
   _opcodes = _wire->_opcodes;
-  _layer = NULL;
+  _layer = nullptr;
   _idx = _data.size();
   _x = 0;
   _y = 0;
@@ -263,11 +243,13 @@ int dbWireEncoder::addPoint(int x, int y, uint property)
     }
 
     if (_point_cnt
-        && ((_point_cnt & (WOP_NON_DEFAULT_WIDTH_POINT_CNT - 1)) == 0))
+        && ((_point_cnt & (WOP_NON_DEFAULT_WIDTH_POINT_CNT - 1)) == 0)) {
       addOp(_rule_opcode, _non_default_rule);
+    }
   }
-  if (_point_cnt != 1)
+  if (_point_cnt != 1) {
     addOp(WOP_PROPERTY, property);
+  }
 
   _prev_extended_colinear_pnt = false;
   return jct_id;
@@ -344,11 +326,13 @@ int dbWireEncoder::addPoint(int x, int y, int ext, uint property)
     }
 
     if (_point_cnt
-        && ((_point_cnt & (WOP_NON_DEFAULT_WIDTH_POINT_CNT - 1)) == 0))
+        && ((_point_cnt & (WOP_NON_DEFAULT_WIDTH_POINT_CNT - 1)) == 0)) {
       addOp(_rule_opcode, _non_default_rule);
+    }
   }
-  if (_point_cnt != 1)
+  if (_point_cnt != 1) {
     addOp(WOP_PROPERTY, property);
+  }
 
   return jct_id;
 }
@@ -392,6 +376,7 @@ int dbWireEncoder::addTechVia(dbTechVia* via)
     ZASSERT(DB_WIRE_ENCODER_INVALID_VIA_LAYER);
     addOp(WOP_TECH_VIA, 0);
   }
+  clearColor();
 
   _via_cnt++;
   return jct_id;
@@ -593,8 +578,9 @@ void dbWireEncoder::newPathExt(int jct_id,
 
 void dbWireEncoder::end()
 {
-  if (_opcodes.size() == 0)
+  if (_opcodes.empty()) {
     return;
+  }
 
   uint n = _opcodes.size();
 
@@ -613,6 +599,57 @@ void dbWireEncoder::end()
   // Should we calculate the bbox???
   ((_dbBlock*) _block)->_flags._valid_bbox = 0;
   _point_cnt = 0;
+
+  for (auto callback : ((_dbBlock*) _block)->_callbacks) {
+    callback->inDbWirePostModify((dbWire*) _wire);
+  }
+}
+
+void dbWireEncoder::setColor(uint8_t mask_color)
+{
+  // LEF/DEF says 3 is the max number of supported masks per layer.
+  // 0 is also not a valid mask.
+  if (mask_color < 1 || mask_color > 3) {
+    utl::Logger* logger = _wire->getImpl()->getLogger();
+    logger->error(utl::ODB,
+                  1102,
+                  "Mask color: {}, but must be between 1 and 3",
+                  mask_color);
+  }
+
+  addOp(WOP_COLOR, mask_color);
+}
+
+void dbWireEncoder::clearColor()
+{
+  // 0 is a special value representing no mask color.
+  addOp(WOP_COLOR, 0);
+}
+
+void dbWireEncoder::setViaColor(uint8_t bottom_color,
+                                uint8_t cut_color,
+                                uint8_t top_color)
+{
+  // LEF/DEF says 3 is the max number of supported masks per layer.
+  // 0 is also not a valid mask.
+  for (const auto color : {bottom_color, cut_color, top_color}) {
+    if (color > 3) {
+      utl::Logger* logger = _wire->getImpl()->getLogger();
+      logger->error(
+          utl::ODB, 1103, "Mask color: {}, but must be between 0 and 3", color);
+    }
+  }
+
+  // encode as XX BB CC TT
+  const uint8_t mask_color = bottom_color << 4 | cut_color << 2 | top_color;
+
+  addOp(WOP_VIACOLOR, mask_color);
+}
+
+void dbWireEncoder::clearViaColor()
+{
+  // 0 is a special value representing no mask color.
+  addOp(WOP_VIACOLOR, 0);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -627,9 +664,9 @@ void dbWireEncoder::end()
 
 dbWireDecoder::dbWireDecoder()
 {
-  _wire = NULL;
-  _block = NULL;
-  _tech = NULL;
+  _wire = nullptr;
+  _block = nullptr;
+  _tech = nullptr;
 }
 
 dbWireDecoder::~dbWireDecoder()
@@ -644,7 +681,7 @@ void dbWireDecoder::begin(dbWire* wire)
   _x = 0;
   _y = 0;
   _default_width = true;
-  _layer = NULL;
+  _layer = nullptr;
   _idx = 0;
   _jct_id = -1;
   _opcode = END_DECODE;
@@ -683,21 +720,22 @@ inline unsigned char dbWireDecoder::peekOp()
 //
 inline void dbWireDecoder::flushRule()
 {
-  if (_idx != (int) _wire->_opcodes.size())
-    if ((_wire->_opcodes[_idx] & WOP_OPCODE_MASK) == WOP_RULE)
+  if (_idx != (int) _wire->_opcodes.size()) {
+    if ((_wire->_opcodes[_idx] & WOP_OPCODE_MASK) == WOP_RULE) {
       ++_idx;
+    }
+  }
 }
 
 dbWireDecoder::OpCode dbWireDecoder::peek() const
 {
-  ZASSERT(_wire);
-
   int idx = _idx;
 
 nextOpCode:
 
-  if (idx == (int) _wire->_opcodes.size())
+  if (idx == (int) _wire->_opcodes.size()) {
     return END_DECODE;
+  }
 
   unsigned char opcode = _wire->_opcodes[idx];
 
@@ -717,8 +755,9 @@ nextOpCode:
     case WOP_X:
     case WOP_Y:
     case WOP_COLINEAR:
-      if (opcode & WOP_EXTENSION)
+      if (opcode & WOP_EXTENSION) {
         return POINT_EXT;
+      }
 
       return POINT;
 
@@ -748,12 +787,11 @@ nextOpCode:
 
 dbWireDecoder::OpCode dbWireDecoder::next()
 {
-  ZASSERT(_wire);
-
 nextOpCode:
 
-  if (_idx == (int) _wire->_opcodes.size())
+  if (_idx == (int) _wire->_opcodes.size()) {
     return END_DECODE;
+  }
 
   _jct_id = _idx;
   unsigned char opcode = nextOp(_operand);
@@ -882,8 +920,9 @@ nextOpCode:
       if (opcode & WOP_EXTENSION) {
         nextOp(_operand2);
         _opcode = POINT_EXT;
-      } else
+      } else {
         _opcode = POINT;
+      }
 
       // if ( peekOp() == WOP_PROPERTY )
       //{
@@ -905,8 +944,9 @@ nextOpCode:
       if (opcode & WOP_EXTENSION) {
         nextOp(_operand2);
         _opcode = POINT_EXT;
-      } else
+      } else {
         _opcode = POINT;
+      }
 
       // if ( peekOp() == WOP_PROPERTY )
       //{
@@ -926,8 +966,9 @@ nextOpCode:
       if (opcode & WOP_EXTENSION) {
         _operand2 = _operand;
         _opcode = POINT_EXT;
-      } else
+      } else {
         _opcode = POINT;
+      }
 
       // if ( peekOp() == WOP_PROPERTY )
       //{
@@ -944,10 +985,11 @@ nextOpCode:
     case WOP_VIA: {
       dbVia* via = dbVia::getVia(_block, _operand);
 
-      if (opcode & WOP_VIA_EXIT_TOP)
+      if (opcode & WOP_VIA_EXIT_TOP) {
         _layer = via->getTopLayer();
-      else
+      } else {
         _layer = via->getBottomLayer();
+      }
 
       return _opcode = VIA;
     }
@@ -955,10 +997,11 @@ nextOpCode:
     case WOP_TECH_VIA: {
       dbTechVia* via = dbTechVia::getTechVia(_tech, _operand);
 
-      if (opcode & WOP_VIA_EXIT_TOP)
+      if (opcode & WOP_VIA_EXIT_TOP) {
         _layer = via->getTopLayer();
-      else
+      } else {
         _layer = via->getBottomLayer();
+      }
 
       return _opcode = TECH_VIA;
     }
@@ -1019,6 +1062,31 @@ nextOpCode:
     case WOP_NOP:
       goto nextOpCode;
 
+    case WOP_COLOR: {
+      // 3 MSB bits of the opcode represent the color
+      _color = static_cast<uint8_t>(_operand);
+
+      if (_color.value() == 0) {
+        _color = std::nullopt;
+      }
+
+      goto nextOpCode;
+    }
+
+    case WOP_VIACOLOR: {
+      uint8_t viacolor = static_cast<uint8_t>(_operand);
+      if (viacolor == 0) {
+        _viacolor = std::nullopt;
+      } else {
+        _viacolor = ViaColor();
+        _viacolor.value().bottom_color = (viacolor & 0x30) >> 4;
+        _viacolor.value().cut_color = (viacolor & 0x0c) >> 2;
+        _viacolor.value().top_color = (viacolor & 0x03);
+      }
+
+      goto nextOpCode;
+    }
+
     default:
       ZASSERT(DB_WIRE_DECODE_INVALID_OPCODE);
       goto nextOpCode;
@@ -1036,9 +1104,8 @@ dbTechLayerRule* dbWireDecoder::getRule() const
 
   if (_block_rule) {
     return dbTechLayerRule::getTechLayerRule(_block, _operand);
-  } else {
-    return dbTechLayerRule::getTechLayerRule(_tech, _operand);
   }
+  return dbTechLayerRule::getTechLayerRule(_tech, _operand);
 }
 
 void dbWireDecoder::getPoint(int& x, int& y) const
@@ -1074,6 +1141,16 @@ dbTechVia* dbWireDecoder::getTechVia() const
   ZASSERT(_opcode == TECH_VIA);
   dbTechVia* via = dbTechVia::getTechVia(_tech, _operand);
   return via;
+}
+
+std::optional<uint8_t> dbWireDecoder::getColor() const
+{
+  return _color;
+}
+
+std::optional<dbWireDecoder::ViaColor> dbWireDecoder::getViaColor() const
+{
+  return _viacolor;
 }
 
 void dbWireDecoder::getRect(int& deltaX1,
@@ -1118,16 +1195,18 @@ int dbWireDecoder::getJunctionValue() const
 {
   ZASSERT((_opcode == JUNCTION) || (_opcode == SHORT) || (_opcode == VWIRE));
 
-  if (_opcode == SHORT || _opcode == VWIRE)
+  if (_opcode == SHORT || _opcode == VWIRE) {
     return _operand2;
+  }
 
   return _operand;
 }
 
 void dumpDecoder4Net(dbNet* innet)
 {
-  if (!innet)
+  if (!innet) {
     return;
+  }
 
   const char* prfx = "dumpDecoder:";
   dbWire* wire0 = innet->getWire();
@@ -1148,7 +1227,7 @@ void dumpDecoder4Net(dbNet* innet)
   dbTechLayer* layer;
   dbWireType wtype;
   dbTechLayerRule* lyr_rule = nullptr;
-  while (1) {
+  while (true) {
     opcode = decoder.next();
     if (opcode == dbWireDecoder::END_DECODE) {
       logger->info(
@@ -1184,7 +1263,7 @@ void dumpDecoder4Net(dbNet* innet)
 
       case dbWireDecoder::JUNCTION: {
         uint jct = decoder.getJunctionValue();
-        lyr_rule = NULL;
+        lyr_rule = nullptr;
         opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
           opcode = decoder.next();
@@ -1194,7 +1273,7 @@ void dumpDecoder4Net(dbNet* innet)
         if (opcode == dbWireDecoder::POINT_EXT) {
           opcode = decoder.next();
           decoder.getPoint(x, y, ext);
-          if (lyr_rule)
+          if (lyr_rule) {
             logger->info(
                 utl::ODB,
                 68,
@@ -1206,7 +1285,7 @@ void dumpDecoder4Net(dbNet* innet)
                 y,
                 ext,
                 lyr_rule->getNonDefaultRule()->getName());
-          else
+          } else {
             logger->info(utl::ODB,
                          69,
                          "{} New path at junction {}, point(ext) {} {} {}",
@@ -1215,10 +1294,11 @@ void dumpDecoder4Net(dbNet* innet)
                          x,
                          y,
                          ext);
+          }
         } else if (opcode == dbWireDecoder::POINT) {
           opcode = decoder.next();
           decoder.getPoint(x, y);
-          if (lyr_rule)
+          if (lyr_rule) {
             logger->info(
                 utl::ODB,
                 70,
@@ -1228,7 +1308,7 @@ void dumpDecoder4Net(dbNet* innet)
                 x,
                 y,
                 lyr_rule->getNonDefaultRule()->getName());
-          else
+          } else {
             logger->info(utl::ODB,
                          71,
                          "{} New path at junction {}, point {} {}",
@@ -1236,6 +1316,7 @@ void dumpDecoder4Net(dbNet* innet)
                          jct,
                          x,
                          y);
+          }
 
         } else {
           logger->warn(utl::ODB,
@@ -1250,21 +1331,22 @@ void dumpDecoder4Net(dbNet* innet)
         uint jval = decoder.getJunctionValue();
         layer = decoder.getLayer();
         wtype = decoder.getWireType();
-        lyr_rule = NULL;
+        lyr_rule = nullptr;
         opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
           opcode = decoder.next();
           lyr_rule = decoder.getRule();
         }
-        if (lyr_rule)
+        if (lyr_rule) {
           logger->info(utl::ODB,
                        73,
                        "{} Short at junction {}, with rule {}",
                        prfx,
                        jval,
                        lyr_rule->getNonDefaultRule()->getName());
-        else
+        } else {
           logger->info(utl::ODB, 74, "{} Short at junction {}", prfx, jval);
+        }
         break;
       }
 
@@ -1272,22 +1354,23 @@ void dumpDecoder4Net(dbNet* innet)
         uint jval = decoder.getJunctionValue();
         layer = decoder.getLayer();
         wtype = decoder.getWireType();
-        lyr_rule = NULL;
+        lyr_rule = nullptr;
         opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
           opcode = decoder.next();
           lyr_rule = decoder.getRule();
         }
-        if (lyr_rule)
+        if (lyr_rule) {
           logger->info(utl::ODB,
                        75,
                        "{} Virtual wire at junction {}, with rule {}",
                        prfx,
                        jval,
                        lyr_rule->getNonDefaultRule()->getName());
-        else
+        } else {
           logger->info(
               utl::ODB, 76, "{} Virtual wire at junction {}", prfx, jval);
+        }
         break;
       }
 
@@ -1371,7 +1454,7 @@ void dumpDecoder4Net(dbNet* innet)
         break;
       }
     }  // switch opcode
-  }    // while
+  }  // while
 }
 
 void dumpDecoder(dbBlock* inblk, const char* net_name_or_id)
@@ -1383,11 +1466,13 @@ void dumpDecoder(dbBlock* inblk, const char* net_name_or_id)
     return;
   }
 
-  dbNet* innet = NULL;
+  dbNet* innet = nullptr;
   const char* ckdigit;
-  for (ckdigit = net_name_or_id; *ckdigit; ckdigit++)
-    if (!isdigit(*ckdigit))
+  for (ckdigit = net_name_or_id; *ckdigit; ckdigit++) {
+    if (!isdigit(*ckdigit)) {
       break;
+    }
+  }
 
   innet = (*ckdigit == '\0') ? dbNet::getNet(inblk, atoi(net_name_or_id))
                              : inblk->findNet(net_name_or_id);

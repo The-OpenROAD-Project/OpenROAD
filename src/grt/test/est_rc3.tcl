@@ -8,4 +8,4 @@ read_guides "est_rc3.guide"
 set_routing_layers -signal metal2-metal10
 estimate_parasitics -global_routing
 
-report_net -connections -verbose -digits 3 clk
+report_net -digits 3 clk

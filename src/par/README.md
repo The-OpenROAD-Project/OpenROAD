@@ -1,288 +1,666 @@
-# PartitionMgr
+# Partition Manager
 
-PartitionMgr is a tool that performs partitioning/clustering on a specific
-netlist. It provides a wrapper of three well-known permissively open-sourced tools:
-Chaco, GPMetis and MLPart.
+The partitioning module (`par`) is based on TritonPart, an open-source 
+constraints-driven partitioner. `par` can be used 
+to partition a hypergraph or a gate-level netlist.
+
+## Highlights
+- Start of the art multiple-constraints driven partitioning “multi-tool”
+- Optimizes cost function based on user requirement
+- Permissive open-source license
+- Solves multi-way partitioning with following features:
+  - Multidimensional real-value weights on vertices and hyperedges
+  - Multilevel coarsening and refinement framework
+  - Fixed vertices constraint
+  - Timing-driven partitioning framework 
+  - Group constraint: Groups of vertices need to be in same block
+  - Embedding-aware partitioning
+  
+## Dependency
+
+We use Google OR-Tools as our ILP solver. 
+
+Our recommendation is to follow the OpenROAD [DependencyInstaller](../etc/DependencyInstaller.sh) for installation of this requirement.
+
+Alternatively, you may also install Google OR-Tools 
+following these [instructions](https://developers.google.com/optimization/install).
+
+```{warning}
+Due to a build issue, TritonPart is not supported for macOS. Stay tuned to this page for updates!
+```
+
+## Main Algorithm
+
+An overview of the TritonPart algorithm is shown below. It takes as inputs 
+- Hypergraph $H(V,E)$ in `.hgr` format.
+- Vertex weight $w_v \in \mathcal{R}_+^m$
+- Hyperedge weight $w_e \in \mathcal{R}_+^n$
+- Number of blocks $K$.
+- Imbalance factor $\epsilon$.
+- User-specified cost function $\phi$.
+
+There are five main steps in the main algorithm,
+mainly 1) constraints-driven coarsening,
+2) initial partitioning, 3) refinement, 4) cut-overlay clustering and
+partitioning (COCP), and 5) V-cycle refinement. The steps for the 
+timing-aware algorithm may be found in the next [section](#timing-aware-algorithm). 
+
+1. Constraints-Driven Coarsening
+
+The first step involves multilevel coarsening. Specifically, at each level,
+clusters of vertices are identified, and the merged and represented
+as a single vertex in the resulting coarser hypergraph. In this algorithm,
+the First-Choice scheme is used, which traverses the vertices in the 
+hypergraph according to a given ordering and merges pairs of vertices with
+high connectivity. The connectivity between a pair of vertices $(u,v)$
+is measured as follows:
+
+$$r(u, v) = \sum_{e\in \{I(v)\cap I(u)\}} \frac{\langle \alpha, w_e\rangle}{|e|-1}$$
+
+To efficiently manage multiple constraints, the following enhancements are 
+made to the coarsening scheme above:
+
+- **Fixed Vertex Constraint**: Fixed vertices that belong to the same partitioning block are merged into a single vertex. 
+- **Grouping Constraint**: Vertices that belong to the same group are merged into a single vertex.
+- **Embedding Constraint**: The embedding information is incorporated into the heavy-edge rating function. The new connectivity is updated as follows:
+
+$$\hat{r}(u, v) = r(u, v) + \rho\frac{1}{||X_u - X_v||_2}$$
+
+where $\rho$ is a normalization factor set to the average distance between two
+vertex embeddings. When vertices $v_1, ... , v_t$ are merged into a single
+vertex $v_{coarse}$, the corresponding vertex embedding $X_{v_{coarse}}$
+is defined as the *center of gravity* of $t$ vertices:
+
+$$X_{v_{coarse}} = \sum_{j=1}^{t} \frac{||w_{v_j}||}{M} X_{v_j},\ where\ M= \sum_{j=1}^t ||w_{v_j}|| $$
+
+- **Community Guidance**: Only vertices within the same community are
+  considered for merging.
+- **Tie-breaking mechanism**: If multiple neighbor pairs have the same rating
+  score, combine the lexicographically first unmatched vertex to break ties.
+
+2. Initial Partitioning
+
+After completing the coarsening process, an initial partitioning solution for
+the coarsest hypergraph $H_c$ is derived. Two sub-steps are involved in this:
+the best partitioning solution from random and VILE partitioning is chosen
+from $\eta = 50$ runs as a warm-start to the ILP-based partitioner. The
+optimization is based on only the cut size rather than the cost function
+$\phi$ to keep the runtime reasonable.
+
+3. Refinement
+
+After a feasible solution $H_{c_\xi}$ is obtained by initial partitioning,
+uncoarsening and move-based refinement is performed to improve the
+partitioning solution. Three refinement heuristics are applied in sequence:
+- **$K$-way pairwise FM (PM)**: This addresses multi-way partitioning
+  as concurrent bi-partitioning problems in a restricted version of K-way
+  Fiduccia–Mattheyses (FM) algorithm. First, $\lfloor K/2\rfloor $ pairs of
+  blocks are obtained, with refinement-specific vertex movements restricted
+  to associated paired blocks. Next, two-way FM is concurrently performed on
+  all the block pairs. finally, a new configuration of block pairs is computed
+  at the end of the PM.
+- **Direct $K$-way FM**: Using $K$ priority queues, for each block $V_i$,
+  establish a priority queue that stores the vertices that can be potentially
+  moved from the current block to block $V_i$. This queue is ordered according
+  to the gain of the vertices. Gain is defined as the reduction in cost
+  function from the movement of the vertex from the current block to $V_i$.
+  Next, after a vertex move, each priority queue is updated independently, thus
+  enabling parallel updates via multi-threading. Next, early-stop is implemented
+  by limiting the maximum number of vertices moved to 100 per pass. Finally,
+  the *corking effect* is mitigated by traversing the priority queue belonging
+  to the vertex with the highest gain and identifying a feasible vertex move.
+- **Greedy Hyperedge Refinement (HER)**: First, randomly visit all
+  hyperedges. For each hyperedge $e$ that crosses the partition boundary,
+  determine whether a subset of vertices in $e$ can be moved without violating
+  the multi-dimensional balance constraints. The objective is to make $e$
+  entirely constrained in a block.
+
+4. Cut-Overlay Clustering and Partitioning (COCP)
+
+Cut-overlay Clustering and Partitioning (COCP) is a mechanism to
+combine multiple good-quality partitioning solutions to generate an
+improved solution. To begin, the sets of hyperedges cut in the $\theta$
+candidate solutions are denoted as $E_1,..., E_\theta \subset E$.  First,
+$\cup_{i=1}^\theta E_i$ is removed from the hypergraph $H(V, E)$, resulting in
+a number of connected components. Next, all vertices within each connected
+component are merged to form a coarser hypergraph $H_{overlay}$. If the
+number of vertices in $H_{overlay}$ is less than $thr_{ilp}$, ILP-based
+partitioning is performed. If not, a single round of constraints-driven
+coarsening is conducted to further reduce the size of $H_{overlay}$
+and generate a coarser hypergraph $H_{overlay}^{'}$. Finally, multilevel
+refinement is performed to further improve the partitioning solution at
+each level of the hierarchy and return the improved solution $S^{'}$.
+
+5. V-Cycle Refinement
+
+Cut-overlay clustering and partitioning produces a high-quality partitioning
+solution $S^{'}$. To improve it, there are three phases similar to *hMETIS*,
+namely multilevel coarsening, ILP-based partitioning, and refinement.
+Firstly, in multilevel partitioning, $S^{'}$ is used as a community guidance
+for the constraints-driven coarsening. Only vertices within the same block
+are permitted to be merged to ensure that the current solution $S^{'}$
+is preserved in the coarsest hypergraph $H_{c_\xi}$. In the ILP-based
+partitioning phase, if the number of vertices in $H_{c_\xi}$ does not exceed
+$thr_{ilp}$, run ILP-based partitioning to improve $S^{'}$. Otherwise,
+continue with $S^{'}$ in successive iterations of these two steps (default
+set to 2). The refinement phase is conducted as per step 3.
+
+![](./doc/algo.webp)<center>TritonPart algorithm at a glance</center>
+
+## Timing Aware Algorithm
+
+`par` can also be used as a timing-aware partitioning framework. A slack
+propagation methodology is used that optimizes cuts for both timing-critical
+and timing-noncritical paths.
+
+1. Extraction of Timing Paths and Slack Information
+
+First, the top $P$ timing-critical paths and the slack information of each
+hyperedge using the wireload model (WLM) is obtained from *OpenSTA*. The
+timing cost of each path is then calculated:
+
+$$t_p = (1- \frac{slack_p - \Delta}{clock\_period})^\mu$$
+
+where a fixed extra delay $\Delta$ is introduced for timing guardband,
+and $\mu$ (default 2) is the exponent.
+
+The snaking factor of a path $SF(p)$ is defined as the maximum number
+of block reentries along the path $p$. The timing cost of a hyperedge is
+computed using the timing weight corresponding to hyperedge slack $slack_e$
+and the accumulated timing cost of all paths traversing the hyperedge.
+
+$$t_e = (1- \frac{slack_e -\Delta}{clock\_period})^\mu + \sum_{\{p|e\in p\}}t_p$$
+
+2. Timing-aware Coarsening
+
+The timing-aware feature is achieved by adding a timing cost of hyperedge
+$t_e$ to the connectivity score earlier mentioned. If vertices $(u,v)$
+are associated with multiple critical paths, then they are more likely to
+be merged. This is reflected in the update score function:
+
+$$r_t(u,v) = \hat{r}(u,v) + \sum_{e\in\{I(v) \cap I(u)\}} \frac{\beta t_e}{|e| - 1}$$
+
+3. Timing-aware Refinement
+
+Timing-aware refinement is based on a similar cost function as the main
+algorithm. Instead, an additional slack propagation step is performed at
+the end of each PM/FM/HER pass.
 
 ## Commands
 
-PartitionMgr offers six commands: partition_netlist, evaluate_partitioning,
-write_partitioning_to_db, cluster_netlist, write_clustering_to_db and
-report_netlist_partitions.
-
-### `partition_netlist`
-
-Divides the netlist into N partitions and returns
-the id (partition_id) of the partitioning solution. The command may be
-called many times with different parameters. Each time, the command will
-generate a new solution.
-
-The following Tcl snippet shows how to call partition_netlist:
-
-```
-partition_netlist -tool <name>
-                  -num_partitions <value>
-                  [-graph_model <name>]
-                  [-clique_threshold <value>]
-                  [-weight_model <name>]
-                  [-max_edge_weight <value>]
-                  [-max_vertex_weight range]
-                  [-num_starts <value>]
-                  [-random_seed <value>]
-                  [-seeds <value>]
-                  [-balance_constraint <value>]
-                  [-coarsening_ratio <value>]
-                  [-coarsening_vertices <value>]
-                  [-enable_term_prop <value>]
-                  [-cut_hop_ratio <value>]
-                  [-architecture <value>]
-                  [-refinement <value>]
-                  [-partition_id <value>]
+```{note}
+- Parameters in square brackets `[-param param]` are optional.
+- Parameters without square brackets `-param2 param2` are required.
 ```
 
-Argument description:
+### Partition Hypergraph Netlist 
 
--   `tool` (Mandatory) defines the partitioning tool. Can be "chaco",
-    "gpmetis" or "mlpart".
--   `num_partitions` (Mandatory) defines the final number of partitions. Can
-    be any integer greater than 1.
--   `graph_model` is the hypergraph to graph decomposition approach. Can be
-    "clique", "star" or "hybrid".
--   `clique_threshold` is the maximum degree of a net decomposed with the clique
-    net model. If using the clique net model, nets with degree higher than
-    the threshold are ignored. In the hybrid net model, nets with degree higher
-    than the threshold are decomposed using the star model.
--   `weight_model` is the edge weight scheme for the graph model of the
-    netlist. Can be any integer from 1 to 7.
--   `max_edge_weight` defines the maximum weight of an edge.
--   `max_vertex_weight` defines the maximum weight of a vertex.
--   `num_starts` is the number of solutions generated with different
-    random seeds.
--   `random_seed` is the seed used when generating new random set seeds.
--   `seeds` is the number of solutions generated with set seeds.
--   `balance_constraint` is the maximum vertex area percentage difference between two
-    partitions. E.g., a 50% difference means that neither partition in a 2-way partitioning can contain less than 25% or more than 75% of the total vertex area in the netlist.
--   `coarsening_ratio` defines the minimal acceptable reduction in the
-    number of vertices in the coarsening step.
--   `coarsening_vertices` defines the maximum number of vertices that the
-    algorithm aims to have in its most-coarsened graph or hypergraph.
--   `enable_term_prop` enables terminal propagation (Dunlop and Kernighan, 1985), which aims to improve
-    data locality. This adds constraints to the Kernighan-Lin (KL) algorithm. Improves the number of edge cuts and
-    terminals, at the cost of additional runtime.
--   `cut_hop_ratio` controls the relative importance of generating a new
-    cut edge versus increasing the interprocessor distance associated with an
-    existing cut edge (tradeoff of data locality versus cut edges). This is largely specific to Chaco.
--   `architecture` defines the topology (for parallel processors) to be used
-    in the partitioning. These can be 2D or 3D topologies, and they define the
-    total number of partitions. This is largely specific to Chaco.
--   `refinement` specifies how many times a KL refinement is run. Incurs a modest
-    runtime hit, but can generate better partitioning results.
--   `partition_id` is the partition_id (output from partition_netlist)
-    from a previous computation. This is used to generate better results based
-    on past results or to run further partitioning.
+This command performs hypergraph netlist partitioning.
 
-### `evaluate_partitioning`
-
-Evaluates the partitioning solution(s) based on
-a specific objective function. This function is run for each partitioning
-solution that is supplied in the partition_ids parameter (return value
-from partition_netlist) and returns the best partitioning solution according to the specified
-objective (i.e., metric).
-
-```
-evaluate_partitioning -partition_ids <id> -evaluation_function <function>
+```tcl
+triton_part_hypergraph
+    -hypergraph_file hypergraph_file  
+    -num_parts num_parts  
+    -balance_constraint balance_constraint 
+    [-base_balance base_balance]
+    [-scale_factor scale_factor]
+    [-seed seed] 
+    [-vertex_dimension vertex_dimension] 
+    [-hyperedge_dimension hyperedge_dimension] 
+    [-placement_dimension placement_dimension] 
+    [-fixed_file fixed_file] 
+    [-community_file community_file] 
+    [-group_file group_file] 
+    [-placement_file placement_file] 
+    [-e_wt_factors e_wt_factors] 
+    [-v_wt_factors <v_wt_factors>] 
+    [-placement_wt_factors <placement_wt_factors>]
+    [-thr_coarsen_hyperedge_size_skip thr_coarsen_hyperedge_size_skip] 
+    [-thr_coarsen_vertices thr_coarsen_vertices] 
+    [-thr_coarsen_hyperedges thr_coarsen_hyperedges] 
+    [-coarsening_ratio coarsening_ratio] 
+    [-max_coarsen_iters max_coarsen_iters] 
+    [-adj_diff_ratio adj_diff_ratio] 
+    [-min_num_vertices_each_part min_num_vertices_each_part] 
+    [-num_initial_solutions num_initial_solutions] 
+    [-num_best_initial_solutions num_best_initial_solutions] 
+    [-refiner_iters refiner_iters] 
+    [-max_moves max_moves] 
+    [-early_stop_ratio early_stop_ratio] 
+    [-total_corking_passes total_corking_passes] 
+    [-v_cycle_flag v_cycle_flag ] 
+    [-max_num_vcycle max_num_vcycle] 
+    [-num_coarsen_solutions num_coarsen_solutions] 
+    [-num_vertices_threshold_ilp num_vertices_threshold_ilp] 
+    [-global_net_threshold global_net_threshold] 
 ```
 
-Argument description:
+#### Options
 
--   `-partition_ids` (mandatory) are the partitioning solution id's. These
-    are the return values from the partition_netlist command. They can be a
-    list of values or only one id.
--   `-evaluation_function` (mandatory) is the objective function that is
-    evaluated for each partitioning solution. It can be `terminals`, `hyperedges`,
-    `size`, `area`, `runtime`, or `hops`.
+| Switch Name | Description | 
+| ----- | ----- |
+| `-num_parts` | Number of partitions. The default value is `2`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-balance_constraint` | Allowed imbalance between blocks. The default value is `1.0`, and the allowed values are floats. |
+| `-base_balance` | Tcl list of baseline imbalance between partitions. The default value is `{1.0}`, and the allowed values are floats that sum up to `1.0`. |
+| `-scale_factor` | KIV. The default value is `{1.0}`, and the allowed values are floats that sum up to `1.0`. |
+| `-seed` | Random seed. The default value is `0`, and the allowed values are integers `[-MAX_INT, MAX_INT]`. |
+| `-vertex_dimension` | Number of vertices in the hypergraph. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-hyperedge_dimension` | Number of hyperedges in hypergraph. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-placement_dimension` | Number of dimensions for canvas if placement information is provided. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-hypergraph_file` | Path to hypergraph file. |
+| `-fixed_file` | Path to fixed vertices constraint file. |
+| `-community_file` | Path to `community` attributes file to guide the partitioning process. |
+| `-group_file` | Path to `stay together` attributes file. |
+| `-placement_file` | Placement information file, each line corresponds to a group fixed vertices, community, and placement attributes following the [hMETIS](https://course.ece.cmu.edu/~ee760/760docs/hMetisManual.pdf) format. |
+| `-e_wt_factors` | Hyperedge weight factor. |
+| `-v_wt_factors` | Vertex weight factors. |
+| `-placement_wt_factors` | Placement weight factors. |
+| `-thr_coarsen_hyperedge_size_skip` | Threshold for ignoring large hyperedge (default 200, integer). |
+| `-thr_coarsen_vertices` | Number of vertices of coarsest hypergraph (default 10, integer). |
+| `-thr_coarsen_hyperedges` | Number of vertices of coarsest hypergraph (default 50, integer). |
+| `-coarsening_ratio` | Coarsening ratio of two adjacent hypergraphs (default 1.6, float). |
+| `-max_coarsen_iters` | Number of iterations (default 30, integer). |
+| `-adj_diff_ratio` | Minimum difference of two adjacent hypergraphs (default 0.0001, float). |
+| `-min_num_vertices_each_part` | Minimum number of vertices in each partition (default 4, integer). |
+| `-num_initial_solutions` | Number of initial solutions (default 50, integer). |
+| `-num_best_initial_solutions` | Number of top initial solutions to filter out (default 10, integer). |
+| `-refiner_iters` | Refinement iterations (default 10, integer). |
+| `-max_moves` | The allowed moves for each Fiduccia-Mattheyes (FM) algorithm pass or greedy refinement (default 60, integer). |
+| `-early_stop_ratio` | Describes the ratio $e$ where if the $n_{moved vertices} > n_{vertices} * e$, the tool exits the current FM pass. The intention behind this is that most of the gains are achieved by the first few FM moves. (default 0.5, float). |
+| `-total_corking_passes` | Maximum level of traversing the buckets to solve the "corking effect" (default 25, integer). |
+| `-v_cycle_flag` | Disables v-cycle is used to refine partitions (default true, bool). |
+| `-max_num_vcycle` | Maximum number of `vcycles` (default 1, integer). |
+| `-num_coarsen_solutions` | Number of coarsening solutions with different randoms seed (default 3, integer). |
+| `-num_vertices_threshold_ilp` | Describes threshold $t$, the number of vertices used for integer linear programming (ILP) partitioning. if $n_{vertices} > t$, do not use ILP-based partitioning.(default 50, integer). |
+| `-global_net_threshold` | If the net is larger than this, it will be ignored by TritonPart (default 1000, integer). |
 
-The following Tcl snippet shows how to call evaluate_partitioning:
+### Evaluate Hypergraph Partition
 
-``` tcl
-set id [ partition_netlist -tool chaco -num_partitions 4 -num_starts 5 ]
+This command evaluates hypergraph partition.
 
-evaluate_partitioning -partition_ids $id -evaluation_function function
+```tcl
+evaluate_hypergraph_solution
+  -num_parts num_parts
+  -balance_constraint balance_constraint
+  -hypergraph_file hypergraph_file
+  -solution_file solution_file
+  [-base_balance base_balance]
+  [-scale_factor scale_factor]
+  [-vertex_dimension vertex_dimension]
+  [-hyperedge_dimension hyperedge_dimension]
+  [-fixed_file fixed_file]
+  [-group_file group_file]
+  [-e_wt_factors e_wt_factors]
+  [-v_wt_factors v_wt_factors] 
 ```
 
-### `write_partitioning_to_db`
+#### Options
 
-Writes the partition id of each instance (i.e., the cluster that contains
-the instance) to the DB as a property called `partitioning_id`.
+| Switch Name | Description | 
+| ----- | ----- |
+| `-num_parts` | Number of partitions. The default value is `2`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-balance_constraint` | Allowed imbalance between blocks. The default value is `1.0`, and the allowed values are floats. |
+| `-vertex_dimension` | Number of vertices in the hypergraph. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-hyperedge_dimension` | Number of hyperedges in hypergraph. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-hypergraph_file` | Path to hypergraph file. |
+| `-solution_file` | Path to solution file. |
+| `-base_balance` | Tcl list of baseline imbalance between partitions. The default value is `{1.0}`, and the allowed values are floats that sum up to `1.0`. |
+| `-scale_factor` | KIV. The default value is `{1.0}`, and the allowed values are floats that sum up to `1.0`. |
+| `-fixed_file` | Path to fixed vertices constraint file. |
+| `-group_file` | Path to `stay together` attributes file. |
+| `-e_wt_factors` | Hyperedge weight factor. |
+| `-v_wt_factors` | Vertex weight factor. |
 
-The following Tcl snippet shows how to call `write_partitioning_to_db`:
 
-```
-write_partitioning_to_db -partitioning_id <id> [-dump_to_file <file>]
-```
+### Partition Netlist 
 
-Argument description:
+This command partitions the design netlist. Note that design must be loaded in memory.
 
--   `-partitioning_id` (Mandatory) is the partitioning solution id. These
-    are the return values from the partition_netlist command.
--   `-dump_to_file` is the file where the vertex assignment results will
-    be saved. The assignment results consist of lines that each contain a vertex name (e.g. an instance)
-    and the partition it is part of.
-
-Another Tcl snippet showing the use of `write_partitioning_to_db` is:
-
-``` tcl
-set id [partition_netlist -tool chaco -num_partitions 4 -num_starts 5]
-evaluate_partitioning -partition_ids $id -evaluation_function "hyperedges"
-write_partitioning_to_db -partitioning_id $id -dump_to_file "file.txt"
-```
-
-### `write_partition_verilog`
-
-Writes the partitioned network to a Verilog file containing modules for
-each partition.
-
-```
-write_partition_verilog -partitioning_id <id>
-                        [-port_prefix <prefix>]
-                        [-module_suffix <suffix>]
-                        <file.v>
-```
-
-Argument description:
-
--   `partitioning_id` (Mandatory) is the partitioning solution id. These
-    are the return values from the partition_netlist command.
--   `filename` (Mandatory) is the path to the Verilog file.
--   `port_prefix` is the prefix to add to the internal ports created during
-    partitioning; default is `partition_`.
--   `module_suffix` is the suffix to add to the submodules; default is `_partition`.
-
-The following Tcl snippet shows how to call write_partition_verilog:
-
-``` tcl
-set id [partition_netlist -tool chaco -num_partitions 4 -num_starts 5 ]
-evaluate_partitioning -partition_ids $id -evaluation_function "hyperedges"
-write_partition_verilog -partitioning_id $id -port_prefix prefix -module_suffix suffix filename.v
-```
-
-### `cluster_netlist`
-
-Divides the netlist into N clusters and returns the id (cluster_id) of the
-clustering solution. The command may be called many times with different
-parameters. Each time, the command will generate a new solution.  (Note that when we partition
-a netlist, we typically seek N = O(1) partitions. On the other hand, when we cluster a netlist, we typically
-seek N = Theta(|V|) clusters.)
-
-```
-cluster_netlist -tool name
-                [-coarsening_ratio value]
-                [-coarsening_vertices value]
-                [-level value]
-```
-
-Argument description:
-
--   `tool` (Mandatory) defines the multilevel partitioning tool whose recursive coarsening is used to induce a clustering. Can be "chaco",
-    "gpmetis", or "mlpart".
--   `coarsening_ratio` defines the minimal acceptable reduction in the
-    number of vertices in the coarsening step.
--   `coarsening_vertices` defines the maximum number of vertices that the
-    algorithm aims to coarsen a graph to.
--   `level` defines which is the level of clustering to return.
-
-### `write_clustering_to_db`
-
-Writes the cluster id of each instance (i.e., the cluster that contains the
-instance) to the DB as a property called `cluster_id`.
-
-```
-write_clustering_to_db -clustering_id <id> [-dump_to_file <name>]
+```tcl
+triton_part_design
+    [-num_parts num_parts]
+    [-balance_constraint balance_constraint]
+    [-base_balance base_balance]
+    [-scale_factor scale_factor]
+    [-seed seed]
+    [-timing_aware_flag timing_aware_flag]
+    [-top_n top_n]
+    [-placement_flag placement_flag]
+    [-fence_flag fence_flag]
+    [-fence_lx fence_lx]
+    [-fence_ly fence_ly]
+    [-fence_ux fence_ux]
+    [-fence_uy fence_uy]
+    [-fixed_file fixed_file]
+    [-community_file community_file]
+    [-group_file group_file]
+    [-solution_file solution_file]
+    [-net_timing_factor net_timing_factor]
+    [-path_timing_factor path_timing_factor]
+    [-path_snaking_factor path_snaking_factor]
+    [-timing_exp_factor timing_exp_factor]
+    [-extra_delay extra_delay]
+    [-guardband_flag guardband_flag]
+    [-e_wt_factors e_wt_factors]
+    [-v_wt_factors v_wt_factors]
+    [-placement_wt_factors placement_wt_factors]
+    [-thr_coarsen_hyperedge_size_skip thr_coarsen_hyperedge_size_skip]
+    [-thr_coarsen_vertices thr_coarsen_vertices]
+    [-thr_coarsen_hyperedges thr_coarsen_hyperedges]
+    [-coarsening_ratio coarsening_ratio]
+    [-max_coarsen_iters max_coarsen_iters]
+    [-adj_diff_ratio adj_diff_ratio]
+    [-min_num_vertices_each_part min_num_vertices_each_part]
+    [-num_initial_solutions num_initial_solutions]
+    [-num_best_initial_solutions num_best_initial_solutions]
+    [-refiner_iters refiner_iters]
+    [-max_moves max_moves]
+    [-early_stop_ratio early_stop_ratio]
+    [-total_corking_passes total_corking_passes]
+    [-v_cycle_flag v_cycle_flag ]
+    [-max_num_vcycle max_num_vcycle]
+    [-num_coarsen_solutions num_coarsen_solutions]
+    [-num_vertices_threshold_ilp num_vertices_threshold_ilp]
+    [-global_net_threshold global_net_threshold]
 ```
 
-Argument description:
+#### Options
 
--   `clustering_id` (Mandatory) is the clustering solution id. These are
-    the return values from the cluster_netlist command.
--   `dump_to_file` is the file where the vertex assignment results will
-    be saved. The assignment results consist of lines that each contain a vertex name (e.g. an instance)
-    and the cluster it is part of.
+| Switch Name | Description |
+| ----- | ----- |
+| `-num_parts` | Number of partitions. The default value is `2`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-balance_constraint` | Allowed imbalance between blocks. The default value is `1.0`, and the allowed values are floats. |
+| `-base_balance` | Tcl list of baseline imbalance between partitions. The default value is `{1.0}`, and the allowed values are floats that sum up to `1.0`. |
+| `-scale_factor` | KIV. The default value is `{1.0}`, and the allowed values are floats that sum up to `1.0`. |
+| `-seed` | Random seed. The default value is `1`, and the allowed values are integers `[-MAX_INT, MAX_INT]`. |
+| `-timing_aware_flag` | Enable timing-driven mode. The default value is `true`, and the allowed values are booleans. |
+| `-top_n` | Extract the top n critical timing paths. The default value is `1000`, and the allowed values are integers `[0, MAX_INT`. |
+| `-placement_flag` | Enable placement driven partitioning. The default value is `false`, and the allowed values are booleans. |
+| `-fence_flag ` | Consider fences in the partitioning. The default value is `false`, and the allowed values are booleans. |
+| `-fence_lx ` | Fence lower left x in microns. The default value is `0.0`, and the allowed values are floats. |
+| `-fence_ly ` | Fence lower left y in microns. The default value is `0.0`, and the allowed values are floats. |
+| `-fence_ux ` | Fence upper right x in microns. The default value is `0.0`, and the allowed values are floats. |
+| `-fence_uy ` | Fence upper right y in microns. The default value is `0.0`, and the allowed values are floats. |
+| `-fixed_file` | Path to fixed vertices constraint file |
+| `-community_file` | Path to `community` attributes file to guide the partitioning process. |
+| `-group_file` | Path to `stay together` attributes file. |
+| `-solution_file` | Path to solution file. |
+| `-net_timing_factor` | Hyperedge timing weight factor (default 1.0, float). |
+| `-path_timing_factor` | Cutting critical timing path weight factor (default 1.0, float). |
+| `-path_snaking_factor` | Snaking a critical path weight factor (default 1.0, float). |
+| `-timing_exp_factor` | Timing exponential factor for normalized slack (default 1.0, float). |
+| `-extra_delay` | Extra delay introduced by a cut (default 1e-9, float). |
+| `-guardband_flag` | Enable timing guardband option (default false, bool). |
+| `-e_wt_factors` | Hyperedge weight factor. |
+| `-v_wt_factors` | Vertex weight factor. |
+| `-placement_wt_factors` | Placement weight factor. |
+| `-thr_coarsen_hyperedge_size_skip` | Threshold for ignoring large hyperedge. The default value is `1000`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-thr_coarsen_vertices` | Number of vertices of coarsest hypergraph. The default value is `10`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-thr_coarsen_hyperedges` | Number of vertices of the coarsest hypergraph. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-coarsening_ratio` | Coarsening ratio of two adjacent hypergraphs. The default value is `1.5`, and the allowed values are floats. |
+| `-max_coarsen_iters` | Number of iterations. The default value is `30`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-adj_diff_ratio` | Minimum ratio difference of two adjacent hypergraphs. The default value is `0.0001`, and the allowed values are floats. |
+| `-min_num_vertices_each_part` | Minimum number of vertices in each partition. The default value is `4`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-num_initial_solutions` | Number of initial solutions. The default value is `100`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-num_best_initial_solutions` | Number of top initial solutions to filter out. The default value is `10`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-refiner_iters` | Refinement iterations. The default value is `10`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-max_moves` | The allowed moves for each Fiduccia-Mattheyes (FM) algorithm pass or greedy refinement. The default value is `100`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-early_stop_ratio` | Describes the ratio $e$ where if the $n_{moved vertices} > n_{vertices} * e$, the tool exists the current FM pass. The intention behind this is that most of the gains are achieved by the first few FM moves. The default value is `0.5`, and the allowed values are floats. |
+| `-total_corking_passes` | Maximum level of traversing the buckets to solve the "corking effect". The default value is `25`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-v_cycle_flag` | Disables v-cycle is used to refine partitions. The default value is `true`, and the allowed values are booleans. |
+| `-max_num_vcycle` | Maximum number of vcycles. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-num_coarsen_solutions` | Number of coarsening solutions with different randoms seed. The default value is `4`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-num_vertices_threshold_ilp` | Describes threshold $t$, the number of vertices used for integer linear programming (ILP) partitioning. if $n_{vertices} > t$, do not use ILP-based partitioning. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-global_net_threshold` | If the net is larger than this, it will be ignored by TritonPart. The default value is `1000`, and the allowed values are integers `[0, MAX_INT]`. |
 
-The following Tcl snippet shows how to call write_clustering_to_db:
+### Evaluate Netlist Partition
+
+This command evaluates partition design solution.
+
+```tcl
+evaluate_part_design_solution
+    [-num_parts num_parts]
+    [-balance_constraint balance_constraint]
+    [-base_balance base_balance]
+    [-scale_factor scale_factor]
+    [-timing_aware_flag timing_aware_flag]
+    [-top_n top_n]
+    [-fence_flag fence_flag]
+    [-fence_lx fence_lx]
+    [-fence_ly fence_ly]
+    [-fence_ux fence_ux]
+    [-fence_uy fence_uy]
+    [-fixed_file fixed_file]
+    [-community_file community_file]
+    [-group_file group_file]
+    [-hypergraph_file hypergraph_file]
+    [-hypergraph_int_weight_file hypergraph_int_weight_file]
+    [-solution_file solution_file]
+    [-net_timing_factor net_timing_factor]
+    [-path_timing_factor path_timing_factor]
+    [-path_snaking_factor path_snaking_factor]
+    [-timing_exp_factor timing_exp_factor]
+    [-extra_delay extra_delay]
+    [-guardband_flag guardband_flag]
+    [-e_wt_factors e_wt_factors]
+    [-v_wt_factors v_wt_factors]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-num_parts` | Number of partitions. The default value is `2`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-balance_constraint` | Allowed imbalance between blocks. The default value is `1.0`, and the allowed values are floats. |
+| `-base_balance` | Tcl list of baseline imbalance between partitions. The default value is `{1.0}`, and the allowed values are floats that sum up to `1.0`. |
+| `-scale_factor` | KIV. The default value is `{1.0}`, and the allowed values are floats that sum up to `1.0`. |
+| `-timing_aware_flag` | Enable timing-driven mode. The default value is `true`, and the allowed values are booleans. |
+| `-top_n` | Extract the top n critical timing paths. The default value is `1000`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-fence_flag ` | Consider fences in the partitioning. The default value is `false`, and the allowed values are booleans. |
+| `-fence_lx ` | Fence lower left x in microns. The default value is `0.0`, and the allowed values are floats. |
+| `-fence_ly ` | Fence lower left y in microns. The default value is `0.0`, and the allowed values are floats. |
+| `-fence_ux ` | Fence upper right x in microns. The default value is `0.0`, and the allowed values are floats. |
+| `-fence_uy ` | Fence upper right y in microns. The default value is `0.0`, and the allowed values are floats. | 
+| `-fixed_file` | Path to fixed vertices constraint file. |
+| `-community_file` | Path to `community` attributes file to guide the partitioning process. |
+| `-group_file` | Path to `stay together` attributes file. |
+| `-hypergraph_file` | Path to hypergraph file. |
+| `-hypergraph_int_weight_file` | Path to `hMETIS` format integer weight file. |
+| `-solution_file` | Path to solution file. |
+| `-net_timing_factor` | Hyperedge timing weight factor. The default value is `1.0`, and the allowed values are floats. |
+| `-path_timing_factor` | Cutting critical timing path weight factor. The default value is `1.0`, and the allowed values are floats. |
+| `-path_snaking_factor` | Snaking a critical path weight factor. The default value is `1.0`, and the allowed values are floats. |
+| `-timing_exp_factor` | Timing exponential factor for normalized slack. The default value is `1.0`, and the allowed values are floats. |
+| `-extra_delay` | Extra delay introduced by a cut. The default value is `1e-9`, and the allowed values are floats. |
+| `-guardband_flag` | Enable timing guardband option. The default value is 1`false`, and the allowed values are booleans. |
+| `-e_wt_factors` | Hyperedge weight factors. |
+| `-v_wt_factors` | Vertex weight factors. |
+
+### Write Partition to Verilog
+
+This command writes the partition result to verilog.
+
+```tcl
+write_partition_verilog
+    [-port_prefix prefix]
+    [-module_suffix suffix]
+    [-partitioning_id part_id]
+    [file]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-port_prefix` | Port name prefix. |
+| `-module_suffix` | Module name suffix. |
+| `file` | Filename to write partition verilog to. |
+
+### Read the Partition file
+
+This command reads the partition file into design.
+
+```tcl
+read_partitioning
+    -read_file name
+    [-instance_map_file file_path]
+```
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-read_file` | Read partitioning file (usually with the extension `.part`). The file format must match the same format as the output of `write_partition_verilog`. |
+| `-instance_map_file` | Instance mapping file. |
+
+## Example Scripts
+
+## How to partition a hypergraph in the way you would using hMETIS (min-cut partitioning)
 
 ```
-set id [cluster_netlist -tool chaco -level 2 ]
-write_clustering_to_db -clustering_id $id -dump_to_file name
+triton_part_hypergraph -hypergraph_file des90.hgr -num_parts 5 -balance_constraint 2 -seed 2
 ```
+You can also check the provided example [here](./examples/min-cut-partitioning/run_openroad.tcl).
 
-### `report_netlist_partitions`
-
-Reports the number of partitions for a specific partition_id and the number
-of vertices present in each one.
+## How to perform the embedding-aware partitioning
 
 ```
-report_netlist_partitions -partitioning_id <id>
-```
+set num_parts 2
+set balance_constraint 2
+set seed 0
+set design sparcT1_chip2
+set hypergraph_file "${design}.hgr"
+set placement_file "${design}.hgr.ubfactor.2.numparts.2.embedding.dat"
+set solution_file "${design}.hgr.part.${num_parts}"
 
-Argument description:
-
--   `partitioning_id` (Mandatory) is the partitioning solution id. These
-    are the return values from the partition_netlist command.
-
-The following Tcl snippet shows how to call report_netlist_partitions:
-
-```
-set id [partition_netlist -tool chaco -num_partitions 4 -num_starts 5 ]
-evaluate_partitioning -partition_ids $id -evaluation_function "hyperedges"
-report_netlist_partitions -partitioning_id $id
-```
-
-### `read_partitioning`
-
-Reads in a graph file from an external partitioner, and returns
-the id (partition_id) of the partitioning solution read in.
+triton_part_hypergraph  -hypergraph_file $hypergraph_file -num_parts $num_parts \
+                        -balance_constraint $balance_constraint \
+                        -seed $seed  \
+                        -placement_file ${placement_file} -placement_wt_factors { 0.00005 0.00005 } \
+                        -placement_dimension 2
 
 ```
-read_partitioning -read_file graph_file
-                  [-instance_map_file instance_map_file]
+
+You can find the provided example [here](./examples/embedding-aware-partitioning/run_placement_aware_flow.tcl).
+
+
+## How to partition a netlist
+
+```
+# set technology information
+set ALL_LEFS “list_of_lefs”
+set ALL_LIBS “list_of_libs”
+# set design information
+set design “design_name”
+set top_design “top_design”
+set netlist “netlist.v”
+set sdc “timing.sdc”
+foreach lef_file ${ALL_LEFS} {
+  read_lef $lef_file
+}
+foreach lib_file ${ALL_LIBS} {
+  read_lib $lib_file
+}
+read_verilog $netlist
+link_design $top_design
+read_sdc $sdc
+
+set num_parts 5
+set balance_constraint 2
+set seed 0
+set top_n 100000
+# set the extra_delay_cut to 20% of the clock period
+# the extra_delay_cut is introduced for each cut hyperedge
+set extra_delay_cut 9.2e-10  
+set timing_aware_flag true
+set timing_guardband true
+set part_design_solution_file "${design}_part_design.hgr.part.${num_parts}"
+
+##############################################################################################
+## TritonPart with slack progagation
+##############################################################################################
+puts "Start TritonPart with slack propagation"
+# call triton_part to partition the netlist
+triton_part_design -num_parts $num_parts -balance_constraint $balance_constraint \
+                   -seed $seed -top_n $top_n \
+                   -timing_aware_flag $timing_aware_flag -extra_delay $extra_delay_cut \
+                   -guardband_flag $timing_guardband \
+                   -solution_file $part_design_solution_file 
 ```
 
-Argument description:
-
--   `graph_file` (Mandatory) is the path to the graph file.
--   `instance_map_file` (Optional) is the path to the instance map file, if needed. This file should contain one instance name per line to correspond to the partitions in the `graph_file`.
+You can find the provided example [here](./examples/timing-aware-partitioning/run_timing_aware_flow.tcl).
 
 ## Regression tests
 
-## Limitations
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
 
-## FAQs
+Simply run the following script: 
 
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+PartitionMgr+in%3Atitle)
-about this tool.
+```shell
+./test/regression
+```
+
+# ArtNet Spec File Generation Flow
+
+ArtNet is the hierarchical clustering-based artificial netlist generator with the capability to support heterogeneous designs with macros. 
+ArtNet enables netlist generation from (1) user-specified parameters, and (2) from parameters of a given target design. 
+| <img src="doc/ArtNet_usecases.png" width=650px> |
+|:--:|
+| *Use Cases of ArtNet* |
+
+## Netlist Parameters
+
+| <img src="doc/ArtNet_ParamTable.png" width=550px> |
+|:--:|
+| *Description of Netlist Parameters* |
+
+What is Rent's exponent?
+- Rent's Rule [(*link*)](https://ieeexplore.ieee.org/document/1671752)
+  - A heuristic used to describe the relationship between the number of external pins (connections) and the size of a circuit (usually in terms of the number of gates). It provides a simple way to estimate how the complexity of a circuit grows as the number of components increases.
+  - **Region1** refers to the portion of the circuit where Rent's rule is typically valid. In this region, the relationship between internal and external connections follows the power-law form described by Rent's rule.
+  - In **Region 2**, the structure of the circuit may deviate from Rent¡¯s rule and the simple power-law relationship no longer holds as closely.
+| <img src="doc/RentsRule.png" width=750px> |
+|:--:|
+| *Region I and II in #Terminals-#Gate Plot* |
+
+## Spec File Description
+- The spec file, which is the input file for ArtNet, is structured as follows.
+| <img src="doc/ArtNet_specFile.png" width=550px> |
+|:--:|
+| *Example of SpecFile* |
+
+- **LIBRARY**: Defines the master names of all standard cells and macros used in the entire circuit.
+- **MODULE**: Specifies a submodule within the logical hierarchy under the top module. Multiple types of submodules can be defined; the example includes a single submodule named *sub_module*.
+- **LIBRARIES**: Lists the masters and MODULEs used within the circuit or submodule. MODULEs can also include LIBRARIES with other MODULE definitions, representing multi-level hierarchy..
+- **DISTRIBUTION**: Indicates the quantity of each master or MODULE defined in LIBRARIES.
+  - For example, in the top module, if LIBRARIES includes *lib* and *sub_module*, the first DISTRIBUTION line refers to the number of each cell in LIBRARY *lib* (e.g., 1200 DFFHQx4, 3000 INVx2, etc.).
+  - The second DISTRIBUTION line shows that 10 instances of *sub_module* are used under the top module.
+- **SIZE**: 
+  - The first SIZE defines the physical region size of Region 1 (recommended: 0.25x ~ 0.50x of total number of instances).
+  - The second SIZE indicates the total number of instances in the MODULE or CIRCUIT (recommended: 100 ~ 10^9).
+- **p/q**: Represent the interconnect complexity.
+  - p: Rent¡¯s exponent (recommended: 0.4 ~ 0.7)
+  - q: the standard deviation of Rent¡¯s exponent. (recommended: 0.01 ~ 0.2)
+- **I/O**: The number of primary inputs and outputs for the MODULE or CIRCUIT. (recommended: 10 ~ 1000)
+
+### Parameter Extraction Command
+
+This command performs ArtNet spec file generation.
+
+```tcl
+write_artnet_spec 
+      [ -out_file file ]
+```
+#### Options
+
+| Switch Name | Description | 
+| ----- | ----- |
+| `-out_file` | Name of output spec file. |
 
 
-## External references
-
--   [Chaco](https://cfwebprod.sandia.gov/cfdocs/CompResearch/templates/insert/softwre.cfm?sw=36).
--   [GPMetis](http://glaros.dtc.umn.edu/gkhome/metis/metis/overview).
--   [MLPart](https://vlsicad.ucsd.edu/GSRC/bookshelf/Slots/Partitioning/MLPart/).
-
-
-## Authors
-
-PartitionMgr is written by Mateus Foga&ccedil;a and Isadora Oliveira from the
-Federal University of Rio Grande do Sul (UFRGS), Brazil, and Marcelo Danigno
-from the Federal University of Rio Grande (FURG), Brazil.
-
-Mateus's and Isadora's advisor is Prof. Ricardo Reis; Marcelo's advisor is
-Prof. Paulo Butzen.
-
-Many guidance provided by:
-
--    Andrew B. Kahng
--    Tom Spyrou
+## References
+1. Bustany, I., Kahng, A. B., Koutis, I., Pramanik, B., & Wang, Z. (2023). K-SpecPart: A Supervised Spectral Framework for Multi-Way Hypergraph Partitioning Solution Improvement. arXiv preprint arXiv:2305.06167. [(.pdf)](https://arxiv.org/pdf/2305.06167)
+1. Bustany, I., Gasparyan, G., Kahng, A. B., Koutis, I., Pramanik, B., & Wang, Z. (2023). "An Open-Source Constraints-Driven General Partitioning Multi-Tool for VLSI Physical Design", Proc. ACM/IEEE International Conference of Computer-Aided Design 2023,[(.pdf)](https://vlsicad.ucsd.edu/Publications/Conferences/401/c401.pdf).
+1. Landman, B. S., & Russo, R. L. (1971). "On a Pin Versus Block Relationship for Partitions of Logic Graphs", IEEE Trans. on Computers, 20(12) pp.1469-1479,[(*link*)](https://ieeexplore.ieee.org/document/1671752).
 
 ## License
 
-BSD 3-Clause License. See [LICENSE](LICENSE) file.
+BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

@@ -22,12 +22,13 @@
  *******************************************************************************
  ******************************************************************************/
 
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#include <climits>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefrReader.h"
 #include "lefzlib.h"
@@ -48,8 +49,9 @@ lefGZFile lefGZipOpen(const char* gzipPath, const char* mode)
 {
   lefGZFile fptr;
 
-  if (!gzipPath)
+  if (!gzipPath) {
     return NULL;
+  }
 
   fptr = gzopen(gzipPath, mode);
 
@@ -58,8 +60,9 @@ lefGZFile lefGZipOpen(const char* gzipPath, const char* mode)
     /* set the read function to read from a compressed file */
     lefrSetReadFunction(lefGZip_read);
     return (lefGZFile) fptr;
-  } else
+  } else {
     return NULL;
+  }
 }
 
 int lefGZipClose(lefGZFile filePtr)

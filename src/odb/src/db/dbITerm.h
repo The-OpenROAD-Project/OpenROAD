@@ -1,54 +1,28 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 
+#include "boost/container/flat_map.hpp"
 #include "dbCore.h"
 #include "dbDatabase.h"
-#include "dbId.h"
-#include "odb.h"
+#include "odb/db.h"
+#include "odb/dbId.h"
+#include "odb/odb.h"
 
 namespace odb {
 
 class _dbNet;
+class _dbModNet;
 class _dbMTerm;
 class _dbInst;
 class _dbITerm;
 class _dbDatabase;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbAccessPoint;
 class _dbMPin;
 
@@ -75,20 +49,22 @@ class _dbITerm : public _dbObject
   dbITermFlags _flags;
   uint _ext_id;
   dbId<_dbNet> _net;
+  dbId<_dbModNet> _mnet;
   dbId<_dbInst> _inst;
   dbId<_dbITerm> _next_net_iterm;
   dbId<_dbITerm> _prev_net_iterm;
+  dbId<_dbITerm> _next_modnet_iterm;
+  dbId<_dbITerm> _prev_modnet_iterm;
   uint32_t _sta_vertex_id;  // not saved
-  std::map<dbId<_dbMPin>, dbId<_dbAccessPoint>> aps_;
+  boost::container::flat_map<dbId<_dbMPin>, dbId<_dbAccessPoint>> aps_;
 
   _dbITerm(_dbDatabase*);
   _dbITerm(_dbDatabase*, const _dbITerm& i);
-  ~_dbITerm();
+
   bool operator==(const _dbITerm& rhs) const;
   bool operator!=(const _dbITerm& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbITerm& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbITerm& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   _dbMTerm* getMTerm() const;
   _dbInst* getInst() const;
@@ -96,6 +72,8 @@ class _dbITerm : public _dbObject
 
 inline _dbITerm::_dbITerm(_dbDatabase*)
 {
+  // For pointer tagging the bottom 3 bits.
+  static_assert(alignof(_dbITerm) % 8 == 0);
   _flags._mterm_idx = 0;
   _flags._spare_bits = 0;
   _flags._clocked = 0;
@@ -114,11 +92,9 @@ inline _dbITerm::_dbITerm(_dbDatabase*, const _dbITerm& i)
       _inst(i._inst),
       _next_net_iterm(i._next_net_iterm),
       _prev_net_iterm(i._prev_net_iterm),
+      _next_modnet_iterm(i._next_modnet_iterm),
+      _prev_modnet_iterm(i._prev_modnet_iterm),
       _sta_vertex_id(0)
-{
-}
-
-inline _dbITerm::~_dbITerm()
 {
 }
 
@@ -131,12 +107,17 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbITerm& iterm)
   stream << iterm._inst;
   stream << iterm._next_net_iterm;
   stream << iterm._prev_net_iterm;
+  stream << iterm._mnet;
+  stream << iterm._next_modnet_iterm;
+  stream << iterm._prev_modnet_iterm;
   stream << iterm.aps_;
   return stream;
 }
 
 inline dbIStream& operator>>(dbIStream& stream, _dbITerm& iterm)
 {
+  dbBlock* block = (dbBlock*) (iterm.getOwner());
+  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   uint* bit_field = (uint*) &iterm._flags;
   stream >> *bit_field;
   stream >> iterm._ext_id;
@@ -144,6 +125,11 @@ inline dbIStream& operator>>(dbIStream& stream, _dbITerm& iterm)
   stream >> iterm._inst;
   stream >> iterm._next_net_iterm;
   stream >> iterm._prev_net_iterm;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream >> iterm._mnet;
+    stream >> iterm._next_modnet_iterm;
+    stream >> iterm._prev_modnet_iterm;
+  }
   stream >> iterm.aps_;
   return stream;
 }

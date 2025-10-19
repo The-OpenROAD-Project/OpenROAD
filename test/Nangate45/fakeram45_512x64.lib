@@ -7,7 +7,7 @@ library(fakeram45_512x64) {
     time_unit : "1ns";
     voltage_unit : "1V";
     current_unit : "1uA";
-    leakage_power_unit : "1nw";
+    leakage_power_unit : "1nW";
     nom_process : 1;
     nom_temperature : 25.000;
     nom_voltage : 1.1;

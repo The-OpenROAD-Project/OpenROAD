@@ -22,30 +22,30 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
 
 #include "defiPath.hpp"
 
-#include <stdlib.h>
-#include <string.h>
-
-#include <iostream>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
+#include "defiKRDefs.hpp"
 #include "defiUtil.hpp"
-#include "lex.h"
+#include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 defiPath::defiPath(defrData* data)
-    : keys_(NULL),
-      data_(NULL),
+    : keys_(nullptr),
+      data_(nullptr),
       numUsed_(0),
       numAllocated_(0),
-      pointer_(NULL),
+      pointer_(nullptr),
       numX_(0),
       numY_(0),
       stepX_(0),
@@ -61,225 +61,9 @@ defiPath::defiPath(defiPath* defiPathRef)
 {
   *this = *defiPathRef;
 
-  defiPathRef->pointer_ = NULL;
-  defiPathRef->keys_ = NULL;
-  defiPathRef->data_ = NULL;
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiPath)
-    : keys_(NULL),
-      data_(NULL),
-      numUsed_(0),
-      numAllocated_(0),
-      pointer_(NULL),
-      numX_(0),
-      numY_(0),
-      stepX_(0),
-      stepY_(0),
-      deltaX_(0),
-      deltaY_(0),
-      mask_(0),
-      defData(prev.defData)
-{
-  this->Init();
-
-  //    DEF_COPY_FUNC( numUsed_ );
-  //    DEF_COPY_FUNC( numAllocated_ );
-  DEF_MALLOC_FUNC(keys_, int, sizeof(int) * prev.numUsed_);
-
-  // numUsed_ and numAllocated_ is automatically increasing
-  // by using below functions.
-  for (int i = 0; i < prev.numUsed_; i++) {
-    if (prev.keys_[i] == 'L') {
-      addLayer((char*) prev.data_[i]);
-      //            fprintf(fout, " layer %s\n", (char*)(prev.data_[i]));
-    } else if (prev.keys_[i] == 'R') {
-      addTaperRule(prev.data_[i] ? (char*) (prev.data_[i]) : "");
-      //            fprintf(fout, " taperrule %s\n", prev.data_[i] ?
-      //            (char*)(prev.data_[i]) : "" );
-    } else if (prev.keys_[i] == 'T') {
-      setTaper();
-      //            fprintf(fout, " taper %s\n", prev.data_[i] ?
-      //            (char*)(prev.data_[i]) : "" );
-    } else if (prev.keys_[i] == 'S') {
-      addShape(prev.data_[i] ? (char*) (prev.data_[i]) : "");
-      //            fprintf(fout, " shape %s\n", prev.data_[i] ?
-      //            (char*)(prev.data_[i]) : "" );
-    } else if (prev.keys_[i] == 'V') {
-      addVia(prev.data_[i] ? (char*) (prev.data_[i]) : "");
-      //            fprintf(fout, " via %s\n", prev.data_[i] ?
-      //            (char*)(prev.data_[i]) : "" );
-    } else if (prev.keys_[i] == 'O') {
-      addViaRotation(prev.data_[i] ? *(int*) (prev.data_[i]) : -1);
-      //            fprintf(fout, " via rotation %s\n",
-      //                    prev.data_[i] ? (char*)(prev.data_[i]) : "" );
-    } else if (prev.keys_[i] == 'M') {
-      addViaMask(prev.data_[i] ? *(int*) (prev.data_[i]) : 0);
-      //            fprintf(fout, " mask %d\n", getMask() );
-    } else if (prev.keys_[i] == 'E') {
-      addViaRect(((struct defiViaRect*) (prev.data_[i]))->deltaX1,
-                 ((struct defiViaRect*) (prev.data_[i]))->deltaY1,
-                 ((struct defiViaRect*) (prev.data_[i]))->deltaX2,
-                 ((struct defiViaRect*) (prev.data_[i]))->deltaY2);
-      //            fprintf(fout, " rect %d,%d,%d,%d\n",
-      //                    ((struct defiViaRect*)(prev.data_[i]))->deltaX1,
-      //                    ((struct defiViaRect*)(prev.data_[i]))->deltaY1,
-      //                    ((struct defiViaRect*)(prev.data_[i]))->deltaX2,
-      //                    ((struct defiViaRect*)(prev.data_[i]))->deltaY2);
-    } else if (prev.keys_[i] == 'W') {
-      addWidth(*((int*) (prev.data_[i])));
-      //            wptr = (int*)(prev.data_[i]);
-      //            fprintf(fout, " width %d\n", *wptr);
-    } else if (prev.keys_[i] == 'P') {
-      addPoint(((struct defiPnt*) (prev.data_[i]))->x,
-               ((struct defiPnt*) (prev.data_[i]))->y);
-      //            fprintf(fout, " point %d,%d\n",
-      //                    ((struct defiPnt*)(prev.data_[i]))->x,
-      //                    ((struct defiPnt*)(prev.data_[i]))->y);
-    } else if (prev.keys_[i] == 'F') {
-      addFlushPoint(((struct defiPnt*) (prev.data_[i]))->x,
-                    ((struct defiPnt*) (prev.data_[i]))->y,
-                    ((struct defiPnt*) (prev.data_[i]))->ext);
-      //            fprintf(fout, " flushpoint %d,%d,%d\n",
-      //                    ((struct defiPnt*)(prev.data_[i]))->x,
-      //                    ((struct defiPnt*)(prev.data_[i]))->y,
-      //                    ((struct defiPnt*)(prev.data_[i]))->ext);
-    } else if (prev.keys_[i] == 'U') {
-      addVirtualPoint(((struct defiPnt*) (prev.data_[i]))->x,
-                      ((struct defiPnt*) (prev.data_[i]))->y);
-      //            fprintf(fout, " virtualpoint %d,%d\n",
-      //                    ((struct defiPnt*)(prev.data_[i]))->x,
-      //                    ((struct defiPnt*)(prev.data_[i]))->y);
-    } else if (prev.keys_[i] == 'D') {
-      addViaData(((struct defiViaData*) (prev.data_[i]))->numX,
-                 ((struct defiViaData*) (prev.data_[i]))->numY,
-                 ((struct defiViaData*) (prev.data_[i]))->stepX,
-                 ((struct defiViaData*) (prev.data_[i]))->stepY);
-      //            fprintf(fout, " DO %d BY %d STEP %d %d\n",
-      //                    ((struct defiViaData*)(prev.data_[i]))->numX,
-      //                    ((struct defiViaData*)(prev.data_[i]))->numY,
-      //                    ((struct defiViaData*)(prev.data_[i]))->stepX,
-      //                    ((struct defiViaData*)(prev.data_[i]))->stepY);
-    }
-  }
-
-  DEF_COPY_FUNC(numX_);
-  DEF_COPY_FUNC(numY_);
-  DEF_COPY_FUNC(stepX_);
-  DEF_COPY_FUNC(stepY_);
-  DEF_COPY_FUNC(deltaX_);
-  DEF_COPY_FUNC(deltaY_);
-  DEF_COPY_FUNC(mask_);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiPath)
-{
-  CHECK_SELF_ASSIGN
-  this->defData = prev.defData;
-  this->keys_ = NULL;
-  this->data_ = NULL;
-  this->pointer_ = NULL;
-  this->numUsed_ = 0;
-  this->numAllocated_ = 0;
-  this->numX_ = 0;
-  this->numY_ = 0;
-  this->stepX_ = 0;
-  this->stepY_ = 0;
-  this->deltaX_ = 0;
-  this->deltaY_ = 0;
-  this->mask_ = 0;
-
-  this->Init();
-
-  //    DEF_COPY_FUNC( numUsed_ );
-  //    DEF_COPY_FUNC( numAllocated_ );
-
-  DEF_MALLOC_FUNC(keys_, int, sizeof(int) * prev.numUsed_);
-
-  // numUsed_ and numAllocated_ is automatically increasing
-  // by using below functions.
-  for (int i = 0; i < prev.numUsed_; i++) {
-    if (prev.keys_[i] == 'L') {
-      addLayer((char*) prev.data_[i]);
-      //            fprintf(fout, " layer %s\n", (char*)(prev.data_[i]));
-    } else if (prev.keys_[i] == 'R') {
-      addTaperRule(prev.data_[i] ? (char*) (prev.data_[i]) : "");
-      //            fprintf(fout, " taperrule %s\n", prev.data_[i] ?
-      //            (char*)(prev.data_[i]) : "" );
-    } else if (prev.keys_[i] == 'T') {
-      setTaper();
-      //            fprintf(fout, " taper %s\n", prev.data_[i] ?
-      //            (char*)(prev.data_[i]) : "" );
-    } else if (prev.keys_[i] == 'S') {
-      addShape(prev.data_[i] ? (char*) (prev.data_[i]) : "");
-      //            fprintf(fout, " shape %s\n", prev.data_[i] ?
-      //            (char*)(prev.data_[i]) : "" );
-    } else if (prev.keys_[i] == 'V') {
-      addVia(prev.data_[i] ? (char*) (prev.data_[i]) : "");
-      //            fprintf(fout, " via %s\n", prev.data_[i] ?
-      //            (char*)(prev.data_[i]) : "" );
-    } else if (prev.keys_[i] == 'O') {
-      addViaRotation(prev.data_[i] ? *(int*) (prev.data_[i]) : -1);
-      //            fprintf(fout, " via rotation %s\n",
-      //                    prev.data_[i] ? (char*)(prev.data_[i]) : "" );
-    } else if (prev.keys_[i] == 'M') {
-      addViaMask(prev.data_[i] ? *(int*) (prev.data_[i]) : 0);
-      //            fprintf(fout, " mask %d\n", getMask() );
-    } else if (prev.keys_[i] == 'E') {
-      addViaRect(((struct defiViaRect*) (prev.data_[i]))->deltaX1,
-                 ((struct defiViaRect*) (prev.data_[i]))->deltaY1,
-                 ((struct defiViaRect*) (prev.data_[i]))->deltaX2,
-                 ((struct defiViaRect*) (prev.data_[i]))->deltaY2);
-      //            fprintf(fout, " rect %d,%d,%d,%d\n",
-      //                    ((struct defiViaRect*)(prev.data_[i]))->deltaX1,
-      //                    ((struct defiViaRect*)(prev.data_[i]))->deltaY1,
-      //                    ((struct defiViaRect*)(prev.data_[i]))->deltaX2,
-      //                    ((struct defiViaRect*)(prev.data_[i]))->deltaY2);
-    } else if (prev.keys_[i] == 'W') {
-      addWidth(*((int*) (prev.data_[i])));
-      //            wptr = (int*)(prev.data_[i]);
-      //            fprintf(fout, " width %d\n", *wptr);
-    } else if (prev.keys_[i] == 'P') {
-      addPoint(((struct defiPnt*) (prev.data_[i]))->x,
-               ((struct defiPnt*) (prev.data_[i]))->y);
-      //            fprintf(fout, " point %d,%d\n",
-      //                    ((struct defiPnt*)(prev.data_[i]))->x,
-      //                    ((struct defiPnt*)(prev.data_[i]))->y);
-    } else if (prev.keys_[i] == 'F') {
-      addFlushPoint(((struct defiPnt*) (prev.data_[i]))->x,
-                    ((struct defiPnt*) (prev.data_[i]))->y,
-                    ((struct defiPnt*) (prev.data_[i]))->ext);
-      //            fprintf(fout, " flushpoint %d,%d,%d\n",
-      //                    ((struct defiPnt*)(prev.data_[i]))->x,
-      //                    ((struct defiPnt*)(prev.data_[i]))->y,
-      //                    ((struct defiPnt*)(prev.data_[i]))->ext);
-    } else if (prev.keys_[i] == 'U') {
-      addVirtualPoint(((struct defiPnt*) (prev.data_[i]))->x,
-                      ((struct defiPnt*) (prev.data_[i]))->y);
-      //            fprintf(fout, " virtualpoint %d,%d\n",
-      //                    ((struct defiPnt*)(prev.data_[i]))->x,
-      //                    ((struct defiPnt*)(prev.data_[i]))->y);
-    } else if (prev.keys_[i] == 'D') {
-      addViaData(((struct defiViaData*) (prev.data_[i]))->numX,
-                 ((struct defiViaData*) (prev.data_[i]))->numY,
-                 ((struct defiViaData*) (prev.data_[i]))->stepX,
-                 ((struct defiViaData*) (prev.data_[i]))->stepY);
-      //            fprintf(fout, " DO %d BY %d STEP %d %d\n",
-      //                    ((struct defiViaData*)(prev.data_[i]))->numX,
-      //                    ((struct defiViaData*)(prev.data_[i]))->numY,
-      //                    ((struct defiViaData*)(prev.data_[i]))->stepX,
-      //                    ((struct defiViaData*)(prev.data_[i]))->stepY);
-    }
-  }
-
-  DEF_COPY_FUNC(numX_);
-  DEF_COPY_FUNC(numY_);
-  DEF_COPY_FUNC(stepX_);
-  DEF_COPY_FUNC(stepY_);
-  DEF_COPY_FUNC(deltaX_);
-  DEF_COPY_FUNC(deltaY_);
-  DEF_COPY_FUNC(mask_);
-  return *this;
+  defiPathRef->pointer_ = nullptr;
+  defiPathRef->keys_ = nullptr;
+  defiPathRef->data_ = nullptr;
 }
 
 defiPath::~defiPath()
@@ -314,25 +98,25 @@ void defiPath::clear()
 
   for (i = 0; i < numUsed_; i++) {
     free(data_[i]);
-    data_[i] = NULL;
+    data_[i] = nullptr;
   }
 
   numUsed_ = 0;
 
   delete pointer_;
-  pointer_ = NULL;
+  pointer_ = nullptr;
 }
 
 void defiPath::Destroy()
 {
   if (keys_) {
     free((char*) (keys_));
-    keys_ = NULL;
   }
+  keys_ = nullptr;
   if (data_) {
     clear();
     free((char*) (data_));
-    data_ = NULL;
+    data_ = nullptr;
   }
 }
 
@@ -422,44 +206,50 @@ int defiPath::prev() const
 
 int defiPath::getTaper() const
 {
-  if (keys_[*(pointer_)] != 'T')
+  if (keys_[*(pointer_)] != 'T') {
     return 0;
+  }
   return 1;
 }
 
 const char* defiPath::getTaperRule() const
 {
-  if (keys_[*(pointer_)] != 'R')
-    return 0;
+  if (keys_[*(pointer_)] != 'R') {
+    return nullptr;
+  }
   return (char*) (data_[*(pointer_)]);
 }
 
 const char* defiPath::getLayer() const
 {
-  if (keys_[*(pointer_)] != 'L')
-    return 0;
+  if (keys_[*(pointer_)] != 'L') {
+    return nullptr;
+  }
   return (char*) (data_[*(pointer_)]);
 }
 
 const char* defiPath::getVia() const
 {
-  if (keys_[*(pointer_)] != 'V')
-    return 0;
+  if (keys_[*(pointer_)] != 'V') {
+    return nullptr;
+  }
   return (char*) (data_[*(pointer_)]);
 }
 
 const char* defiPath::getShape() const
 {
-  if (keys_[*(pointer_)] != 'S')
-    return 0;
+  if (keys_[*(pointer_)] != 'S') {
+    return nullptr;
+  }
   return (char*) (data_[*(pointer_)]);
 }
 
 int defiPath::getStyle() const
 {
   int* style;
-  if (keys_[*(pointer_)] != 'Y')
+  if (keys_[*(pointer_)] != 'Y') {
     return 0;
+  }
   style = (int*) (data_[*(pointer_)]);
   return *style;
 }
@@ -467,8 +257,9 @@ int defiPath::getStyle() const
 int defiPath::getWidth() const
 {
   int* wptr;
-  if (keys_[*(pointer_)] != 'W')
+  if (keys_[*(pointer_)] != 'W') {
     return 0;
+  }
   wptr = (int*) (data_[*(pointer_)]);
   return *wptr;
 }
@@ -476,8 +267,9 @@ int defiPath::getWidth() const
 int defiPath::getViaRotation() const
 {
   int* wptr;
-  if (keys_[*(pointer_)] != 'O')
+  if (keys_[*(pointer_)] != 'O') {
     return 0;
+  }
   wptr = (int*) (data_[*(pointer_)]);
   return *wptr;
 }
@@ -485,8 +277,9 @@ int defiPath::getViaRotation() const
 int defiPath::getMask() const
 {
   int* wptr;
-  if (keys_[*(pointer_)] != 'M')
+  if (keys_[*(pointer_)] != 'M') {
     return 0;
+  }
   wptr = (int*) (data_[*(pointer_)]);
   return *wptr;
 }
@@ -494,8 +287,9 @@ int defiPath::getMask() const
 int defiPath::getViaBottomMask() const
 {
   int* wptr;
-  if (keys_[*(pointer_)] != 'C')
+  if (keys_[*(pointer_)] != 'C') {
     return 0;
+  }
   wptr = (int*) (data_[*(pointer_)]);
 
   int viaMask = *wptr;
@@ -506,8 +300,9 @@ int defiPath::getViaBottomMask() const
 int defiPath::getViaCutMask() const
 {
   int* wptr;
-  if (keys_[*(pointer_)] != 'C')
+  if (keys_[*(pointer_)] != 'C') {
     return 0;
+  }
   wptr = (int*) (data_[*(pointer_)]);
 
   int viaMask = *wptr;
@@ -518,8 +313,9 @@ int defiPath::getViaCutMask() const
 int defiPath::getViaTopMask() const
 {
   int* wptr;
-  if (keys_[*(pointer_)] != 'C')
+  if (keys_[*(pointer_)] != 'C') {
     return 0;
+  }
   wptr = (int*) (data_[*(pointer_)]);
 
   int viaMask = *wptr;
@@ -530,8 +326,9 @@ int defiPath::getViaTopMask() const
 const char* defiPath::getViaRotationStr() const
 {
   int* wptr;
-  if (keys_[*(pointer_)] != 'O')
-    return 0;
+  if (keys_[*(pointer_)] != 'O') {
+    return nullptr;
+  }
   wptr = (int*) (data_[*(pointer_)]);
   return defiOrientStr(*wptr);
 }
@@ -541,8 +338,9 @@ void defiPath::getViaRect(int* deltaX1,
                           int* deltaX2,
                           int* deltaY2) const
 {
-  if (keys_[*(pointer_)] != 'E')
+  if (keys_[*(pointer_)] != 'E') {
     return;
+  }
   *deltaX1 = ((struct defiViaRect*) (data_[*(pointer_)]))->deltaX1;
   *deltaY1 = ((struct defiViaRect*) (data_[*(pointer_)]))->deltaY1;
   *deltaX2 = ((struct defiViaRect*) (data_[*(pointer_)]))->deltaX2;
@@ -551,8 +349,9 @@ void defiPath::getViaRect(int* deltaX1,
 
 void defiPath::getViaData(int* numX, int* numY, int* stepX, int* stepY) const
 {
-  if (keys_[*(pointer_)] != 'D')
+  if (keys_[*(pointer_)] != 'D') {
     return;
+  }
   *numX = ((struct defiViaData*) (data_[*(pointer_)]))->numX;
   *numY = ((struct defiViaData*) (data_[*(pointer_)]))->numY;
   *stepX = ((struct defiViaData*) (data_[*(pointer_)]))->stepX;
@@ -561,8 +360,9 @@ void defiPath::getViaData(int* numX, int* numY, int* stepX, int* stepY) const
 
 void defiPath::getFlushPoint(int* x, int* y, int* ext) const
 {
-  if (keys_[*(pointer_)] != 'F')
+  if (keys_[*(pointer_)] != 'F') {
     return;
+  }
   *x = ((struct defiPnt*) (data_[*(pointer_)]))->x;
   *y = ((struct defiPnt*) (data_[*(pointer_)]))->y;
   *ext = ((struct defiPnt*) (data_[*(pointer_)]))->ext;
@@ -570,16 +370,18 @@ void defiPath::getFlushPoint(int* x, int* y, int* ext) const
 
 void defiPath::getVirtualPoint(int* x, int* y) const
 {
-  if (keys_[*(pointer_)] != 'U')
+  if (keys_[*(pointer_)] != 'U') {
     return;
+  }
   *x = ((struct defiPnt*) (data_[*(pointer_)]))->x;
   *y = ((struct defiPnt*) (data_[*(pointer_)]))->y;
 }
 
 void defiPath::getPoint(int* x, int* y) const
 {
-  if (keys_[*(pointer_)] != 'P')
+  if (keys_[*(pointer_)] != 'P') {
     return;
+  }
   *x = ((struct defiPnt*) (data_[*(pointer_)]))->x;
   *y = ((struct defiPnt*) (data_[*(pointer_)]))->y;
 }
@@ -587,8 +389,9 @@ void defiPath::getPoint(int* x, int* y) const
 void defiPath::addWidth(int w)
 {
   int* wValue;
-  if (numUsed_ == numAllocated_)
+  if (numUsed_ == numAllocated_) {
     bumpSize(numAllocated_ * 2);
+  }
   wValue = (int*) malloc(sizeof(int));
   *wValue = w;
   keys_[numUsed_] = 'W';
@@ -599,8 +402,9 @@ void defiPath::addWidth(int w)
 void defiPath::addVia(const char* l)
 {
   int len = strlen(l) + 1;
-  if (numUsed_ == numAllocated_)
+  if (numUsed_ == numAllocated_) {
     bumpSize(numAllocated_ * 2);
+  }
   keys_[numUsed_] = 'V';
   data_[numUsed_] = malloc(len);
   strcpy((char*) (data_[numUsed_]), defData->DEFCASE(l));
@@ -610,8 +414,9 @@ void defiPath::addVia(const char* l)
 void defiPath::addViaRotation(int o)
 {
   int* orient;
-  if (numUsed_ == numAllocated_)
+  if (numUsed_ == numAllocated_) {
     bumpSize(numAllocated_ * 2);
+  }
   orient = (int*) malloc(sizeof(int));
   *orient = o;
   keys_[numUsed_] = 'O';
@@ -621,8 +426,9 @@ void defiPath::addViaRotation(int o)
 
 void defiPath::addViaRect(int deltaX1, int deltaY1, int deltaX2, int deltaY2)
 {
-  if (numUsed_ == numAllocated_)
+  if (numUsed_ == numAllocated_) {
     bumpSize(numAllocated_ * 2);
+  }
   keys_[numUsed_] = 'E';  // RECT
   data_[numUsed_] = malloc(sizeof(struct defiViaRect));
   ((struct defiViaRect*) (data_[numUsed_]))->deltaX1 = deltaX1;
@@ -634,8 +440,9 @@ void defiPath::addViaRect(int deltaX1, int deltaY1, int deltaX2, int deltaY2)
 
 void defiPath::addViaData(int numX, int numY, int stepX, int stepY)
 {
-  if (numUsed_ == numAllocated_)
+  if (numUsed_ == numAllocated_) {
     bumpSize(numAllocated_ * 2);
+  }
   keys_[numUsed_] = 'D';
   data_[numUsed_] = malloc(sizeof(struct defiViaData));
   ((struct defiViaData*) (data_[numUsed_]))->numX = numX;
@@ -648,8 +455,9 @@ void defiPath::addViaData(int numX, int numY, int stepX, int stepY)
 void defiPath::addLayer(const char* l)
 {
   int len = strlen(l) + 1;
-  if (numUsed_ == numAllocated_)
+  if (numUsed_ == numAllocated_) {
     bumpSize(numAllocated_ * 2);
+  }
   keys_[numUsed_] = 'L';
   data_[numUsed_] = malloc(len);
   strcpy((char*) (data_[numUsed_]), defData->DEFCASE(l));
@@ -659,8 +467,9 @@ void defiPath::addLayer(const char* l)
 void defiPath::addTaperRule(const char* l)
 {
   int len = strlen(l) + 1;
-  if (numUsed_ == numAllocated_)
+  if (numUsed_ == numAllocated_) {
     bumpSize(numAllocated_ * 2);
+  }
   keys_[numUsed_] = 'R';
   data_[numUsed_] = malloc(len);
   strcpy((char*) (data_[numUsed_]), defData->DEFCASE(l));
@@ -669,8 +478,9 @@ void defiPath::addTaperRule(const char* l)
 
 void defiPath::addPoint(int x, int y)
 {
-  if (numUsed_ == numAllocated_)
+  if (numUsed_ == numAllocated_) {
     bumpSize(numAllocated_ * 2);
+  }
   keys_[numUsed_] = 'P';
   data_[numUsed_] = malloc(sizeof(struct defiPnt));
   ((struct defiPnt*) (data_[numUsed_]))->x = x;
@@ -681,8 +491,9 @@ void defiPath::addPoint(int x, int y)
 void defiPath::addMask(int colorMask)
 {
   int* mask;
-  if (numUsed_ == numAllocated_)
+  if (numUsed_ == numAllocated_) {
     bumpSize(numAllocated_ * 2);
+  }
   mask = (int*) malloc(sizeof(int));
   *mask = colorMask;
   keys_[numUsed_] = 'M';  // Mask for points
@@ -693,8 +504,9 @@ void defiPath::addMask(int colorMask)
 void defiPath::addViaMask(int colorMask)
 {
   int* mask;
-  if (numUsed_ == numAllocated_)
+  if (numUsed_ == numAllocated_) {
     bumpSize(numAllocated_ * 2);
+  }
   mask = (int*) malloc(sizeof(int));
   *mask = colorMask;
   keys_[numUsed_] = 'C';  // viaMask
@@ -704,8 +516,9 @@ void defiPath::addViaMask(int colorMask)
 
 void defiPath::addFlushPoint(int x, int y, int ext)
 {
-  if (numUsed_ == numAllocated_)
+  if (numUsed_ == numAllocated_) {
     bumpSize(numAllocated_ * 2);
+  }
   keys_[numUsed_] = 'F';
   data_[numUsed_] = malloc(sizeof(struct defiPnt));
   ((struct defiPnt*) (data_[numUsed_]))->x = x;
@@ -716,8 +529,9 @@ void defiPath::addFlushPoint(int x, int y, int ext)
 
 void defiPath::addVirtualPoint(int x, int y)
 {
-  if (numUsed_ == numAllocated_)
+  if (numUsed_ == numAllocated_) {
     bumpSize(numAllocated_ * 2);
+  }
   keys_[numUsed_] = 'U';
   data_[numUsed_] = malloc(sizeof(struct defiPnt));
   ((struct defiPnt*) (data_[numUsed_]))->x = x;
@@ -727,18 +541,20 @@ void defiPath::addVirtualPoint(int x, int y)
 
 void defiPath::setTaper()
 {
-  if (numUsed_ == numAllocated_)
+  if (numUsed_ == numAllocated_) {
     bumpSize(numAllocated_ * 2);
+  }
   keys_[numUsed_] = 'T';
-  data_[numUsed_] = 0;
+  data_[numUsed_] = nullptr;
   (numUsed_)++;
 }
 
 void defiPath::addShape(const char* l)
 {
   int len = strlen(l) + 1;
-  if (numUsed_ == numAllocated_)
+  if (numUsed_ == numAllocated_) {
     bumpSize(numAllocated_ * 2);
+  }
   keys_[numUsed_] = 'S';
   data_[numUsed_] = malloc(len);
   strcpy((char*) (data_[numUsed_]), defData->DEFCASE(l));
@@ -748,8 +564,9 @@ void defiPath::addShape(const char* l)
 void defiPath::addStyle(int s)
 {
   int* style;
-  if (numUsed_ == numAllocated_)
+  if (numUsed_ == numAllocated_) {
     bumpSize(numAllocated_ * 2);
+  }
   style = (int*) malloc(sizeof(int));
   *style = s;
   keys_[numUsed_] = 'Y';
@@ -761,8 +578,9 @@ void defiPath::print(FILE* fout) const
 {
   int i;
   int* wptr;
-  if (fout == 0)
+  if (fout == nullptr) {
     fout = stdout;
+  }
   fprintf(fout, "Path:\n");
   for (i = 0; i < numUsed_; i++) {
     if (keys_[i] == 'L') {
@@ -820,23 +638,24 @@ void defiPath::print(FILE* fout) const
 
 void defiPath::bumpSize(int size)
 {
-  int i;
-  int* newKeys = (int*) malloc(size * sizeof(int*));
+  int* newKeys = (int*) malloc(size * sizeof(int));
   void** newData = (void**) malloc(size * sizeof(void*));
 
-  for (i = 0; i < numUsed_; i++) {
+  for (int i = 0; i < numUsed_; i++) {
     newKeys[i] = keys_[i];
     newData[i] = data_[i];
   }
 
-  if (keys_)
+  if (keys_) {
     free((char*) (keys_));
-  if (data_)
+  }
+  if (data_) {
     free((char*) (data_));
+  }
 
   keys_ = newKeys;
   data_ = newData;
   numAllocated_ = size;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

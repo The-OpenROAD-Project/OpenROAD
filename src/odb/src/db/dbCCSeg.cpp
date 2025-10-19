@@ -1,45 +1,22 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbCCSeg.h"
 
-#include "db.h"
+#include <cstdio>
+
 #include "dbBlock.h"
 #include "dbCapNode.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbJournal.h"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/ZException.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -48,56 +25,35 @@ template class dbTable<_dbCCSeg>;
 
 bool _dbCCSeg::operator==(const _dbCCSeg& rhs) const
 {
-  if (_flags._spef_mark_1 != rhs._flags._spef_mark_1)
+  if (_flags._spef_mark_1 != rhs._flags._spef_mark_1) {
     return false;
+  }
 
-  if (_flags._mark != rhs._flags._mark)
+  if (_flags._mark != rhs._flags._mark) {
     return false;
+  }
 
-  if (_flags._inFileCnt != rhs._flags._inFileCnt)
+  if (_flags._inFileCnt != rhs._flags._inFileCnt) {
     return false;
+  }
 
-  if (_cap_node[0] != rhs._cap_node[0])
+  if (_cap_node[0] != rhs._cap_node[0]) {
     return false;
+  }
 
-  if (_cap_node[1] != rhs._cap_node[1])
+  if (_cap_node[1] != rhs._cap_node[1]) {
     return false;
+  }
 
-  if (_next[0] != rhs._next[0])
+  if (_next[0] != rhs._next[0]) {
     return false;
+  }
 
-  if (_next[1] != rhs._next[1])
+  if (_next[1] != rhs._next[1]) {
     return false;
+  }
 
   return true;
-}
-
-void _dbCCSeg::differences(dbDiff& diff,
-                           const char* field,
-                           const _dbCCSeg& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._spef_mark_1);
-  DIFF_FIELD(_flags._mark);
-  DIFF_FIELD(_flags._inFileCnt);
-  DIFF_FIELD(_cap_node[0]);
-  DIFF_FIELD(_cap_node[1]);
-  DIFF_FIELD(_next[0]);
-  DIFF_FIELD(_next[1]);
-  DIFF_END
-}
-
-void _dbCCSeg::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._spef_mark_1);
-  DIFF_OUT_FIELD(_flags._mark);
-  DIFF_OUT_FIELD(_flags._inFileCnt);
-  DIFF_OUT_FIELD(_cap_node[0]);
-  DIFF_OUT_FIELD(_cap_node[1]);
-  DIFF_OUT_FIELD(_next[0]);
-  DIFF_OUT_FIELD(_next[1]);
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -141,8 +97,9 @@ void dbCCSeg::adjustCapacitance(float factor)
 {
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
   uint corner;
-  for (corner = 0; corner < block->_corners_per_block; corner++)
+  for (corner = 0; corner < block->_corners_per_block; corner++) {
     adjustCapacitance(factor, corner);
+  }
 }
 
 double dbCCSeg::getCapacitance(int corner)
@@ -188,8 +145,9 @@ void dbCCSeg::setAllCcCap(double* ttcap)
     char ccCaps[400];
     int pos = 0;
     ccCaps[0] = '\0';
-    for (uint ii = 0; ii < cornerCnt; ii++)
+    for (uint ii = 0; ii < cornerCnt; ii++) {
       pos += sprintf(&ccCaps[pos], "%f ", ttcap[ii]);
+    }
     debugPrint(getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -201,8 +159,9 @@ void dbCCSeg::setAllCcCap(double* ttcap)
     block->_journal->pushParam(dbCCSegObj);
     block->_journal->pushParam(getId());
     block->_journal->pushParam(_dbCCSeg::SETALLCCCAP);
-    for (uint ii = 0; ii < cornerCnt; ii++)
+    for (uint ii = 0; ii < cornerCnt; ii++) {
       block->_journal->pushParam(ttcap[ii]);
+    }
     block->_journal->endAction();
   }
 }
@@ -389,11 +348,11 @@ void dbCCSeg::printCapnCC(uint capn)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
   uint sidx;
-  if (capn == seg->_cap_node[0])
+  if (capn == seg->_cap_node[0]) {
     sidx = 0;
-  else if (capn == seg->_cap_node[1])
+  } else if (capn == seg->_cap_node[1]) {
     sidx = 1;
-  else {
+  } else {
     debugPrint(getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -426,11 +385,11 @@ bool dbCCSeg::checkCapnCC(uint capn)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
   uint sidx;
-  if (capn == seg->_cap_node[0])
+  if (capn == seg->_cap_node[0]) {
     sidx = 0;
-  else if (capn == seg->_cap_node[1])
+  } else if (capn == seg->_cap_node[1]) {
     sidx = 1;
-  else {
+  } else {
     getImpl()->getLogger()->info(utl::ODB,
                                  22,
                                  "ccSeg {} has capnd {} {}, not {} !",
@@ -460,7 +419,7 @@ tgt_cap_node)
     if (pseg && src_cap_node==0 && tgt_cap_node==0)
     {
         tnet->_cc_tgt_segs = pseg->getOID();
-        return NULL;
+        return nullptr;
     }
     dbTable<_dbCCSeg> *cct = ((_dbBlock *)tnet->getOwner())->_cc_seg_tbl;
     _dbCCSeg *seg;
@@ -475,7 +434,7 @@ tgt_cap_node)
         psid = tsid;
     }
     if (!tsid)
-        return NULL;
+        return nullptr;
     if (psid)
         cct->getPtr(psid)->_next_target = seg->_next_target;
     else
@@ -494,26 +453,30 @@ static _dbCCSeg* findParallelCCSeg(_dbBlock* block,
 {
   uint src_id = src->getOID();
   uint tgt_id = tgt->getOID();
-  _dbCCSeg* pccs = NULL;
-  _dbCCSeg* ccs = NULL;
+  _dbCCSeg* pccs = nullptr;
+  _dbCCSeg* ccs = nullptr;
   uint seg;
 
   for (seg = tgt->_cc_segs; seg;) {
     ccs = block->_cc_seg_tbl->getPtr(seg);
 
-    if (ccs->_cap_node[0] == tgt_id && ccs->_cap_node[1] == src_id)
+    if (ccs->_cap_node[0] == tgt_id && ccs->_cap_node[1] == src_id) {
       break;
+    }
 
-    if (ccs->_cap_node[1] == tgt_id && ccs->_cap_node[0] == src_id)
+    if (ccs->_cap_node[1] == tgt_id && ccs->_cap_node[0] == src_id) {
       break;
+    }
 
     pccs = ccs;
     seg = ccs->next(tgt_id);
   }
-  if (!seg)
-    return NULL;
-  if (!pccs || !reInsert)
+  if (!seg) {
+    return nullptr;
+  }
+  if (!pccs || !reInsert) {
     return ccs;
+  }
   pccs->_next[pccs->idx(tgt_id)] = ccs->next(tgt_id);
   ccs->_next[ccs->idx(tgt_id)] = tgt->_cc_segs;
   tgt->_cc_segs = ccs->getOID();
@@ -561,8 +524,12 @@ dbCCSeg* dbCCSeg::create(dbCapNode* src_, dbCapNode* tgt_, bool mergeParallel)
   }
 
   _dbCCSeg* seg;
-  if (mergeParallel && (seg = findParallelCCSeg(block, src, tgt, true)))
-    return (dbCCSeg*) seg;
+  if (mergeParallel) {
+    seg = findParallelCCSeg(block, src, tgt, true);
+    if (seg) {
+      return (dbCCSeg*) seg;
+    }
+  }
 
   seg = block->_cc_seg_tbl->create();
   // seg->_flags._cnt = block->_num_corners;
@@ -570,8 +537,9 @@ dbCCSeg* dbCCSeg::create(dbCapNode* src_, dbCapNode* tgt_, bool mergeParallel)
   // set corner values
   uint cornerCnt = block->_corners_per_block;
   if (block->_maxCCSegId >= seg->getOID()) {
-    for (uint ii = 0; ii < cornerCnt; ii++)
+    for (uint ii = 0; ii < cornerCnt; ii++) {
       (*block->_cc_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = 0.0;
+    }
   } else {
     block->_maxCCSegId = seg->getOID();
     uint ccCapIdx = block->_cc_val_tbl->getIdx(cornerCnt, (float) 0.0);
@@ -597,9 +565,9 @@ static void unlink_cc_seg(_dbBlock* block, _dbCapNode* node, _dbCCSeg* s)
 
   while (next) {
     if (next == seg) {
-      if (prev == 0)
+      if (prev == 0) {
         node->_cc_segs = s->next(cid);
-      else {
+      } else {
         _dbCCSeg* p = block->_cc_seg_tbl->getPtr(prev);
         p->next(cid) = s->next(cid);
       }
@@ -795,6 +763,12 @@ dbCCSeg* dbCCSeg::getCCSeg(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbCCSeg*) block->_cc_seg_tbl->getPtr(dbid_);
+}
+
+void _dbCCSeg::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 }  // namespace odb

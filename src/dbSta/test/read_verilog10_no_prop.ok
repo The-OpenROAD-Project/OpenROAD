@@ -1,0 +1,10 @@
+[INFO ODB-0227] LEF file: liberty1.lef, created 2 layers, 6 library cells
+top
+b1 block1
+b1/r1 snl_ffqx1
+b1/u1 snl_bufx1
+b1/u2 snl_bufx1
+b2 block1_b2
+b2/r1 snl_ffqx1
+b2/u1 snl_bufx1
+b2/u2 snl_bufx1

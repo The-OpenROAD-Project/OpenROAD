@@ -1,0 +1,19 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 103 pins.
+[INFO ODB-0131]     Created 103 components and 412 component-terminals.
+[INFO ODB-0133]     Created 103 nets and 103 connections.
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0044] Pin group: [ bus[0] bus[1] bus[2] bus[3] bus[4] ... ]
+[INFO PPL-0044] Pin group: [ clk ]
+[INFO PPL-0067] Restrict pins [ clk bus[0] bus[1] bus[2] bus[3] ... ] to region 0.00u-100.80u at the LEFT edge.
+[INFO PPL-0001] Number of available slots 1220
+[INFO PPL-0002] Number of I/O             103
+[INFO PPL-0003] Number of I/O w/sink      103
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0006] Number of I/O Groups    2
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 4573.86 um.
+No differences found.

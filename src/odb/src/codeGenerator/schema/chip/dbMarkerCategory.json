@@ -1,0 +1,27 @@
+{
+  "name":"dbMarkerCategory",
+  "type":"dbObject",
+  "fields":[
+    {
+      "name":"_name",
+      "type":"char *",
+      "default": "nullptr",
+      "flags":["no-set"]
+    },
+    {
+      "name":"description_",
+      "type":"std::string"
+    },
+    {
+      "name":"source_",
+      "type":"std::string",
+      "flags":["no-get"]
+    },
+    {
+      "name": "max_markers_",
+      "type": "int",
+      "default": "10000"
+    }
+  ],
+  "cpp_includes":["dbBlock.h"]
+}

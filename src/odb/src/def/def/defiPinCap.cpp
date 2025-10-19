@@ -1,6 +1,6 @@
 // *****************************************************************************
 // *****************************************************************************
-// Copyright 2013 - 2015, Cadence Design Systems
+// Copyright 2013 - 2019, Cadence Design Systems
 //
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
 // Distribution,  Product Version 5.8.
@@ -22,22 +22,28 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
 
 #include "defiPinCap.hpp"
 
-#include <stdlib.h>
 #include <string.h>
+
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiComponent.hpp"
 #include "defiDebug.hpp"
+#include "defiKRDefs.hpp"
+#include "defiMisc.hpp"
 #include "defiUtil.hpp"
-#include "lex.h"
+#include "defrData.hpp"
+#include "defrSettings.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
@@ -80,8 +86,7 @@ void defiPinCap::print(FILE* f) const
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
 
-defiPinAntennaModel::defiPinAntennaModel(defrData* data)
-    : oxide_(0), defData(data)
+defiPinAntennaModel::defiPinAntennaModel(defrData* data) : defData(data)
 {
   Init();
 }
@@ -90,77 +95,20 @@ void defiPinAntennaModel::Init()
 {
   numAPinGateArea_ = 0;        // 5.4
   APinGateAreaAllocated_ = 0;  // 5.4
-  APinGateArea_ = 0;
-  APinGateAreaLayer_ = 0;
+  APinGateArea_ = nullptr;
+  APinGateAreaLayer_ = nullptr;
   numAPinMaxAreaCar_ = 0;        // 5.4
   APinMaxAreaCarAllocated_ = 0;  // 5.4
-  APinMaxAreaCar_ = 0;
-  APinMaxAreaCarLayer_ = 0;
+  APinMaxAreaCar_ = nullptr;
+  APinMaxAreaCarLayer_ = nullptr;
   numAPinMaxSideAreaCar_ = 0;        // 5.4
   APinMaxSideAreaCarAllocated_ = 0;  // 5.4
-  APinMaxSideAreaCar_ = 0;
-  APinMaxSideAreaCarLayer_ = 0;
+  APinMaxSideAreaCar_ = nullptr;
+  APinMaxSideAreaCarLayer_ = nullptr;
   numAPinMaxCutCar_ = 0;        // 5.4
   APinMaxCutCarAllocated_ = 0;  // 5.4
-  APinMaxCutCar_ = 0;
-  APinMaxCutCarLayer_ = 0;
-  oxide_ = 0;
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiPinAntennaModel)
-{
-  this->Init();
-
-  DEF_MALLOC_FUNC(oxide_, char, sizeof(char) * (strlen(prev.oxide_) + 1));
-  DEF_COPY_FUNC(numAPinGateArea_);
-  DEF_COPY_FUNC(APinGateAreaAllocated_);
-  DEF_MALLOC_FUNC(APinGateArea_, int, sizeof(int) * numAPinGateArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinGateAreaLayer_, numAPinGateArea_);
-
-  DEF_COPY_FUNC(numAPinMaxAreaCar_);
-  DEF_COPY_FUNC(APinMaxAreaCarAllocated_);
-  DEF_MALLOC_FUNC(APinMaxAreaCar_, int, sizeof(int) * numAPinMaxAreaCar_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinMaxAreaCarLayer_, numAPinMaxAreaCar_);
-
-  DEF_COPY_FUNC(numAPinMaxSideAreaCar_);
-  DEF_COPY_FUNC(APinMaxSideAreaCarAllocated_);
-  DEF_MALLOC_FUNC(
-      APinMaxSideAreaCar_, int, sizeof(int) * numAPinMaxSideAreaCar_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinMaxSideAreaCarLayer_, numAPinMaxSideAreaCar_);
-
-  DEF_COPY_FUNC(numAPinMaxCutCar_);
-  DEF_COPY_FUNC(APinMaxCutCarAllocated_);
-  DEF_MALLOC_FUNC(APinMaxCutCar_, int, sizeof(int) * numAPinMaxCutCar_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinMaxCutCarLayer_, numAPinMaxCutCar_);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiPinAntennaModel)
-{
-  CHECK_SELF_ASSIGN
-  this->Init();
-
-  DEF_MALLOC_FUNC(oxide_, char, sizeof(char) * (strlen(prev.oxide_) + 1));
-  DEF_COPY_FUNC(numAPinGateArea_);
-  DEF_COPY_FUNC(APinGateAreaAllocated_);
-  DEF_MALLOC_FUNC(APinGateArea_, int, sizeof(int) * numAPinGateArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinGateAreaLayer_, numAPinGateArea_);
-
-  DEF_COPY_FUNC(numAPinMaxAreaCar_);
-  DEF_COPY_FUNC(APinMaxAreaCarAllocated_);
-  DEF_MALLOC_FUNC(APinMaxAreaCar_, int, sizeof(int) * numAPinMaxAreaCar_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinMaxAreaCarLayer_, numAPinMaxAreaCar_);
-
-  DEF_COPY_FUNC(numAPinMaxSideAreaCar_);
-  DEF_COPY_FUNC(APinMaxSideAreaCarAllocated_);
-  DEF_MALLOC_FUNC(
-      APinMaxSideAreaCar_, int, sizeof(int) * numAPinMaxSideAreaCar_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinMaxSideAreaCarLayer_, numAPinMaxSideAreaCar_);
-
-  DEF_COPY_FUNC(numAPinMaxCutCar_);
-  DEF_COPY_FUNC(APinMaxCutCarAllocated_);
-  DEF_MALLOC_FUNC(APinMaxCutCar_, int, sizeof(int) * numAPinMaxCutCar_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinMaxCutCarLayer_, numAPinMaxCutCar_);
-  return *this;
+  APinMaxCutCar_ = nullptr;
+  APinMaxCutCarLayer_ = nullptr;
 }
 
 defiPinAntennaModel::~defiPinAntennaModel()
@@ -172,31 +120,36 @@ void defiPinAntennaModel::clear()
 {
   int i;
 
-  if (oxide_)
+  if (oxide_) {
     free((char*) (oxide_));
-  oxide_ = 0;
+  }
+  oxide_ = nullptr;
 
   for (i = 0; i < numAPinGateArea_; i++) {
-    if (APinGateAreaLayer_[i])
+    if (APinGateAreaLayer_[i]) {
       free(APinGateAreaLayer_[i]);
+    }
   }
   numAPinGateArea_ = 0;
 
   for (i = 0; i < numAPinMaxAreaCar_; i++) {
-    if (APinMaxAreaCarLayer_[i])
+    if (APinMaxAreaCarLayer_[i]) {
       free(APinMaxAreaCarLayer_[i]);
+    }
   }
   numAPinMaxAreaCar_ = 0;
 
   for (i = 0; i < numAPinMaxSideAreaCar_; i++) {
-    if (APinMaxSideAreaCarLayer_[i])
+    if (APinMaxSideAreaCarLayer_[i]) {
       free(APinMaxSideAreaCarLayer_[i]);
+    }
   }
   numAPinMaxSideAreaCar_ = 0;
 
   for (i = 0; i < numAPinMaxCutCar_; i++) {
-    if (APinMaxCutCarLayer_[i])
+    if (APinMaxCutCarLayer_[i]) {
       free(APinMaxCutCarLayer_[i]);
+    }
   }
   numAPinMaxCutCar_ = 0;
 }
@@ -204,41 +157,44 @@ void defiPinAntennaModel::clear()
 void defiPinAntennaModel::Destroy()
 {
   clear();
-  if (APinGateArea_)
+  if (APinGateArea_) {
     free((char*) (APinGateArea_));
-  if (APinGateAreaLayer_)
+  }
+  if (APinGateAreaLayer_) {
     free((char*) (APinGateAreaLayer_));
-  if (APinMaxAreaCar_)
+  }
+  if (APinMaxAreaCar_) {
     free((char*) (APinMaxAreaCar_));
-  if (APinMaxAreaCarLayer_)
+  }
+  if (APinMaxAreaCarLayer_) {
     free((char*) (APinMaxAreaCarLayer_));
-  if (APinMaxSideAreaCar_)
+  }
+  if (APinMaxSideAreaCar_) {
     free((char*) (APinMaxSideAreaCar_));
-  if (APinMaxSideAreaCarLayer_)
+  }
+  if (APinMaxSideAreaCarLayer_) {
     free((char*) (APinMaxSideAreaCarLayer_));
-  if (APinMaxCutCar_)
+  }
+  if (APinMaxCutCar_) {
     free((char*) (APinMaxCutCar_));
-  if (APinMaxCutCarLayer_)
+  }
+  if (APinMaxCutCarLayer_) {
     free((char*) (APinMaxCutCarLayer_));
+  }
 }
 
 // 5.5
 void defiPinAntennaModel::setAntennaModel(int aOxide)
 {
-  switch (aOxide) {
-    case 2:
-      oxide_ = strdup("OXIDE2");
-      break;
-    case 3:
-      oxide_ = strdup("OXIDE3");
-      break;
-    case 4:
-      oxide_ = strdup("OXIDE4");
-      break;
-    default:
-      oxide_ = strdup("OXIDE1");
-      break;
+  if (oxide_) {
+    free(oxide_);
   }
+
+  if (aOxide < 1 || aOxide > defMaxOxides) {
+    aOxide = 1;
+  }
+
+  oxide_ = strdup(defrSettings::defOxides[aOxide - 1]);
 }
 
 void defiPinAntennaModel::addAPinGateArea(int value, const char* layer)
@@ -250,10 +206,11 @@ void defiPinAntennaModel::addAPinGateArea(int value, const char* layer)
     int* nd;
     char** nl;
 
-    if (APinGateAreaAllocated_ == 0)
+    if (APinGateAreaAllocated_ == 0) {
       max = APinGateAreaAllocated_ = 2;
-    else
+    } else {
       max = APinGateAreaAllocated_ *= 2;
+    }
     nd = (int*) malloc(sizeof(int) * max);
     nl = (char**) malloc(sizeof(char*) * max);
     for (i = 0; i < lim; i++) {
@@ -269,8 +226,9 @@ void defiPinAntennaModel::addAPinGateArea(int value, const char* layer)
   if (layer) {
     APinGateAreaLayer_[numAPinGateArea_] = (char*) malloc(strlen(layer) + 1);
     strcpy(APinGateAreaLayer_[numAPinGateArea_], defData->DEFCASE(layer));
-  } else
-    APinGateAreaLayer_[numAPinGateArea_] = NULL;
+  } else {
+    APinGateAreaLayer_[numAPinGateArea_] = nullptr;
+  }
   numAPinGateArea_ += 1;
 }
 
@@ -283,10 +241,11 @@ void defiPinAntennaModel::addAPinMaxAreaCar(int value, const char* layer)
     int* nd;
     char** nl;
 
-    if (APinMaxAreaCarAllocated_ == 0)
+    if (APinMaxAreaCarAllocated_ == 0) {
       max = APinMaxAreaCarAllocated_ = 2;
-    else
+    } else {
       max = APinMaxAreaCarAllocated_ *= 2;
+    }
     nd = (int*) malloc(sizeof(int) * max);
     nl = (char**) malloc(sizeof(char*) * max);
     for (i = 0; i < lim; i++) {
@@ -303,8 +262,9 @@ void defiPinAntennaModel::addAPinMaxAreaCar(int value, const char* layer)
     APinMaxAreaCarLayer_[numAPinMaxAreaCar_]
         = (char*) malloc(strlen(layer) + 1);
     strcpy(APinMaxAreaCarLayer_[numAPinMaxAreaCar_], defData->DEFCASE(layer));
-  } else
-    APinMaxAreaCarLayer_[numAPinMaxAreaCar_] = NULL;
+  } else {
+    APinMaxAreaCarLayer_[numAPinMaxAreaCar_] = nullptr;
+  }
   numAPinMaxAreaCar_ += 1;
 }
 
@@ -317,10 +277,11 @@ void defiPinAntennaModel::addAPinMaxSideAreaCar(int value, const char* layer)
     int* nd;
     char** nl;
 
-    if (APinMaxSideAreaCarAllocated_ == 0)
+    if (APinMaxSideAreaCarAllocated_ == 0) {
       max = APinMaxSideAreaCarAllocated_ = 2;
-    else
+    } else {
       max = APinMaxSideAreaCarAllocated_ *= 2;
+    }
     nd = (int*) malloc(sizeof(int) * max);
     nl = (char**) malloc(sizeof(char*) * max);
     for (i = 0; i < lim; i++) {
@@ -338,8 +299,9 @@ void defiPinAntennaModel::addAPinMaxSideAreaCar(int value, const char* layer)
         = (char*) malloc(strlen(layer) + 1);
     strcpy(APinMaxSideAreaCarLayer_[numAPinMaxSideAreaCar_],
            defData->DEFCASE(layer));
-  } else
-    APinMaxSideAreaCarLayer_[numAPinMaxSideAreaCar_] = NULL;
+  } else {
+    APinMaxSideAreaCarLayer_[numAPinMaxSideAreaCar_] = nullptr;
+  }
   numAPinMaxSideAreaCar_ += 1;
 }
 
@@ -352,10 +314,11 @@ void defiPinAntennaModel::addAPinMaxCutCar(int value, const char* layer)
     int* nd;
     char** nl;
 
-    if (APinMaxCutCarAllocated_ == 0)
+    if (APinMaxCutCarAllocated_ == 0) {
       max = APinMaxCutCarAllocated_ = 2;
-    else
+    } else {
       max = APinMaxCutCarAllocated_ *= 2;
+    }
     nd = (int*) malloc(sizeof(int) * max);
     nl = (char**) malloc(sizeof(char*) * max);
     for (i = 0; i < lim; i++) {
@@ -371,8 +334,9 @@ void defiPinAntennaModel::addAPinMaxCutCar(int value, const char* layer)
   if (layer) {
     APinMaxCutCarLayer_[numAPinMaxCutCar_] = (char*) malloc(strlen(layer) + 1);
     strcpy(APinMaxCutCarLayer_[numAPinMaxCutCar_], defData->DEFCASE(layer));
-  } else
-    APinMaxCutCarLayer_[numAPinMaxCutCar_] = NULL;
+  } else {
+    APinMaxCutCarLayer_[numAPinMaxCutCar_] = nullptr;
+  }
   numAPinMaxCutCar_ += 1;
 }
 
@@ -500,109 +464,31 @@ void defiPinPort::Init()
 {
   layersAllocated_ = 0;
   numLayers_ = 0;
-  layers_ = 0;
-  layerMinSpacing_ = 0;
-  layerMask_ = 0;
-  layerEffectiveWidth_ = 0;
-  xl_ = 0;
-  yl_ = 0;
-  xh_ = 0;
-  yh_ = 0;
+  layers_ = nullptr;
+  layerMinSpacing_ = nullptr;
+  layerMask_ = nullptr;
+  layerEffectiveWidth_ = nullptr;
+  xl_ = nullptr;
+  yl_ = nullptr;
+  xh_ = nullptr;
+  yh_ = nullptr;
   polysAllocated_ = 0;
   numPolys_ = 0;
-  polygonNames_ = 0;
-  polyMinSpacing_ = 0;
-  polyMask_ = 0;
-  polyEffectiveWidth_ = 0;
-  polygons_ = 0;
+  polygonNames_ = nullptr;
+  polyMinSpacing_ = nullptr;
+  polyMask_ = nullptr;
+  polyEffectiveWidth_ = nullptr;
+  polygons_ = nullptr;
   viasAllocated_ = 0;
   numVias_ = 0;
-  viaNames_ = 0;
-  viaX_ = 0;
-  viaY_ = 0;
-  viaMask_ = 0;
+  viaNames_ = nullptr;
+  viaX_ = nullptr;
+  viaY_ = nullptr;
+  viaMask_ = nullptr;
   placeType_ = 0;
   x_ = 0;
   y_ = 0;
   orient_ = 0;
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiPinPort)
-{
-  this->Init();
-
-  DEF_COPY_FUNC(layersAllocated_);
-  DEF_COPY_FUNC(numLayers_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(layers_, numLayers_);
-
-  DEF_MALLOC_FUNC(layerMinSpacing_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerEffectiveWidth_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(xl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(xh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerMask_, int, sizeof(int) * numLayers_);
-
-  DEF_COPY_FUNC(polysAllocated_);
-  DEF_COPY_FUNC(numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(polygonNames_, numPolys_);
-
-  DEF_MALLOC_FUNC(polyMinSpacing_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC(polyMask_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC(polyEffectiveWidth_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_POINT(polygons_, numPolys_);
-
-  DEF_COPY_FUNC(viasAllocated_);
-  DEF_COPY_FUNC(numVias_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(viaNames_, numVias_);
-
-  DEF_MALLOC_FUNC(viaX_, int, sizeof(int) * numVias_);
-  DEF_MALLOC_FUNC(viaY_, int, sizeof(int) * numVias_);
-  DEF_MALLOC_FUNC(viaMask_, int, sizeof(int) * numVias_);
-  DEF_COPY_FUNC(placeType_);
-  DEF_COPY_FUNC(x_);
-  DEF_COPY_FUNC(y_);
-  DEF_COPY_FUNC(orient_);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiPinPort)
-{
-  CHECK_SELF_ASSIGN
-  this->Init();
-
-  DEF_COPY_FUNC(layersAllocated_);
-  DEF_COPY_FUNC(numLayers_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(layers_, numLayers_);
-
-  DEF_MALLOC_FUNC(layerMinSpacing_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerEffectiveWidth_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(xl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(xh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerMask_, int, sizeof(int) * numLayers_);
-
-  DEF_COPY_FUNC(polysAllocated_);
-  DEF_COPY_FUNC(numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(polygonNames_, numPolys_);
-
-  DEF_MALLOC_FUNC(polyMinSpacing_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC(polyMask_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC(polyEffectiveWidth_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_POINT(polygons_, numPolys_);
-
-  DEF_COPY_FUNC(viasAllocated_);
-  DEF_COPY_FUNC(numVias_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(viaNames_, numVias_);
-
-  DEF_MALLOC_FUNC(viaX_, int, sizeof(int) * numVias_);
-  DEF_MALLOC_FUNC(viaY_, int, sizeof(int) * numVias_);
-  DEF_MALLOC_FUNC(viaMask_, int, sizeof(int) * numVias_);
-  DEF_COPY_FUNC(placeType_);
-  DEF_COPY_FUNC(x_);
-  DEF_COPY_FUNC(y_);
-  DEF_COPY_FUNC(orient_);
-  return *this;
 }
 
 defiPinPort::~defiPinPort()
@@ -620,9 +506,11 @@ void defiPinPort::clear()
   y_ = 0;
 
   if (layers_) {
-    for (i = 0; i < numLayers_; i++)
-      if (layers_[i])
+    for (i = 0; i < numLayers_; i++) {
+      if (layers_[i]) {
         free(layers_[i]);
+      }
+    }
     free((char*) (layers_));
     free((char*) (xl_));
     free((char*) (yl_));
@@ -632,17 +520,18 @@ void defiPinPort::clear()
     free((char*) (layerMask_));
     free((char*) (layerEffectiveWidth_));
   }
-  layers_ = 0;
-  layerMinSpacing_ = 0;
-  layerEffectiveWidth_ = 0;
-  layerMask_ = 0;
+  layers_ = nullptr;
+  layerMinSpacing_ = nullptr;
+  layerEffectiveWidth_ = nullptr;
+  layerMask_ = nullptr;
   numLayers_ = 0;
   layersAllocated_ = 0;
   if (polygonNames_) {
     struct defiPoints* p;
     for (i = 0; i < numPolys_; i++) {
-      if (polygonNames_[i])
+      if (polygonNames_[i]) {
         free((char*) (polygonNames_[i]));
+      }
       p = polygons_[i];
       free((char*) (p->x));
       free((char*) (p->y));
@@ -653,27 +542,29 @@ void defiPinPort::clear()
     free((char*) (polyMinSpacing_));
     free((char*) (polyMask_));
     free((char*) (polyEffectiveWidth_));
-    polygonNames_ = 0;
-    polygons_ = 0;
-    polyMinSpacing_ = 0;
-    polyEffectiveWidth_ = 0;
-    polyMask_ = 0;
+    polygonNames_ = nullptr;
+    polygons_ = nullptr;
+    polyMinSpacing_ = nullptr;
+    polyEffectiveWidth_ = nullptr;
+    polyMask_ = nullptr;
   }
   numPolys_ = 0;
   polysAllocated_ = 0;
   if (viaNames_) {
-    for (i = 0; i < numVias_; i++)
-      if (viaNames_[i])
+    for (i = 0; i < numVias_; i++) {
+      if (viaNames_[i]) {
         free(viaNames_[i]);
+      }
+    }
     free((char*) (viaNames_));
     free((char*) (viaX_));
     free((char*) (viaY_));
     free((char*) (viaMask_));
   }
-  viaNames_ = 0;
+  viaNames_ = nullptr;
   numVias_ = 0;
   viasAllocated_ = 0;
-  viaMask_ = 0;
+  viaMask_ = nullptr;
 }
 
 void defiPinPort::addLayer(const char* layer)
@@ -795,7 +686,7 @@ void defiPinPort::addPolygon(const char* layerName)
     polyMask_ = pm;
   }
   polygonNames_[numPolys_] = strdup(layerName);
-  polygons_[numPolys_] = 0;
+  polygons_[numPolys_] = nullptr;
   polyMinSpacing_[numPolys_] = -1;
   polyEffectiveWidth_[numPolys_] = -1;
   polyMask_[numPolys_] = 0;
@@ -892,27 +783,33 @@ const char* defiPinPort::layer(int index) const
 
 void defiPinPort::bounds(int index, int* xl, int* yl, int* xh, int* yh) const
 {
-  if (xl)
+  if (xl) {
     *xl = xl_[index];
-  if (yl)
+  }
+  if (yl) {
     *yl = yl_[index];
-  if (xh)
+  }
+  if (xh) {
     *xh = xh_[index];
-  if (yh)
+  }
+  if (yh) {
     *yh = yh_[index];
+  }
 }
 
 int defiPinPort::hasLayerSpacing(int index) const
 {
-  if (layerMinSpacing_[index] == -1)
+  if (layerMinSpacing_[index] == -1) {
     return 0;
+  }
   return 1;
 }
 
 int defiPinPort::hasLayerDesignRuleWidth(int index) const
 {
-  if (layerEffectiveWidth_[index] == -1)
+  if (layerEffectiveWidth_[index] == -1) {
     return 0;
+  }
   return 1;
 }
 
@@ -940,7 +837,7 @@ const char* defiPinPort::polygonName(int index) const
 {
   if (index < 0 || index > numPolys_) {
     defiError(1, 0, "index out of bounds", defData);
-    return 0;
+    return nullptr;
   }
   return polygonNames_[index];
 }
@@ -952,15 +849,17 @@ struct defiPoints defiPinPort::getPolygon(int index) const
 
 int defiPinPort::hasPolygonSpacing(int index) const
 {
-  if (polyMinSpacing_[index] == -1)
+  if (polyMinSpacing_[index] == -1) {
     return 0;
+  }
   return 1;
 }
 
 int defiPinPort::hasPolygonDesignRuleWidth(int index) const
 {
-  if (polyEffectiveWidth_[index] == -1)
+  if (polyEffectiveWidth_[index] == -1) {
     return 0;
+  }
   return 1;
 }
 
@@ -988,7 +887,7 @@ const char* defiPinPort::viaName(int index) const
 {
   if (index < 0 || index > numVias_) {
     defiError(1, 0, "index out of bounds", defData);
-    return 0;
+    return nullptr;
   }
   return viaNames_[index];
 }
@@ -1074,269 +973,65 @@ defiPin::defiPin(defrData* data) : defData(data)
 void defiPin::Init()
 {
   pinNameLength_ = 0;
-  pinName_ = 0;
+  pinName_ = nullptr;
   netNameLength_ = 0;
-  netName_ = 0;
+  netName_ = nullptr;
   useLength_ = 0;
-  use_ = 0;
+  use_ = nullptr;
   directionLength_ = 0;
-  direction_ = 0;
+  direction_ = nullptr;
   hasDirection_ = 0;
   hasUse_ = 0;
   placeType_ = 0;
   orient_ = 0;
-  xl_ = 0;
-  yl_ = 0;
-  xh_ = 0;
-  yh_ = 0;
+  xl_ = nullptr;
+  yl_ = nullptr;
+  xh_ = nullptr;
+  yh_ = nullptr;
   x_ = 0;
   y_ = 0;
   netExprLength_ = 0;                  // 5.6
-  netExpr_ = 0;                        // 5.6
+  netExpr_ = nullptr;                  // 5.6
   hasNetExpr_ = 0;                     // 5.6
   supplySensLength_ = 0;               // 5.6
-  supplySens_ = 0;                     // 5.6
+  supplySens_ = nullptr;               // 5.6
   hasSupplySens_ = 0;                  // 5.6
   groundSensLength_ = 0;               // 5.6
-  groundSens_ = 0;                     // 5.6
+  groundSens_ = nullptr;               // 5.6
   hasGroundSens_ = 0;                  // 5.6
-  layers_ = 0;                         // 5.6
+  layers_ = nullptr;                   // 5.6
   layersAllocated_ = 0;                // 5.6
   numLayers_ = 0;                      // 5.6
-  polygonNames_ = 0;                   // 5.6
+  polygonNames_ = nullptr;             // 5.6
   numPolys_ = 0;                       // 5.6
   polysAllocated_ = 0;                 // 5.6
-  polygons_ = 0;                       // 5.6
+  polygons_ = nullptr;                 // 5.6
   numAPinPartialMetalArea_ = 0;        // 5.4
   APinPartialMetalAreaAllocated_ = 0;  // 5.4
-  APinPartialMetalArea_ = 0;
-  APinPartialMetalAreaLayer_ = 0;
+  APinPartialMetalArea_ = nullptr;
+  APinPartialMetalAreaLayer_ = nullptr;
   numAPinPartialMetalSideArea_ = 0;        // 5.4
   APinPartialMetalSideAreaAllocated_ = 0;  // 5.4
-  APinPartialMetalSideArea_ = 0;
-  APinPartialMetalSideAreaLayer_ = 0;
+  APinPartialMetalSideArea_ = nullptr;
+  APinPartialMetalSideAreaLayer_ = nullptr;
   numAPinDiffArea_ = 0;        // 5.4
   APinDiffAreaAllocated_ = 0;  // 5.4
-  APinDiffArea_ = 0;
-  APinDiffAreaLayer_ = 0;
+  APinDiffArea_ = nullptr;
+  APinDiffAreaLayer_ = nullptr;
   numAPinPartialCutArea_ = 0;        // 5.4
   APinPartialCutAreaAllocated_ = 0;  // 5.4
-  APinPartialCutArea_ = 0;
-  APinPartialCutAreaLayer_ = 0;
-  antennaModel_ = 0;
-  viaNames_ = 0;       // 5.7
-  viasAllocated_ = 0;  // 5.7
-  numVias_ = 0;        // 5.7
-  viaX_ = 0;           // 5.7
-  viaY_ = 0;           // 5.7
-  numPorts_ = 0;       // 5.7
-  pinPort_ = 0;        // 5.7
+  APinPartialCutArea_ = nullptr;
+  APinPartialCutAreaLayer_ = nullptr;
+  antennaModel_ = nullptr;
+  viaNames_ = nullptr;  // 5.7
+  viasAllocated_ = 0;   // 5.7
+  numVias_ = 0;         // 5.7
+  viaX_ = nullptr;      // 5.7
+  viaY_ = nullptr;      // 5.7
+  numPorts_ = 0;        // 5.7
+  pinPort_ = nullptr;   // 5.7
   numAntennaModel_ = 0;
   antennaModelAllocated_ = 0;
-  polyMinSpacing_ = 0;
-  polyEffectiveWidth_ = 0;
-  polyMask_ = 0;
-  layerMinSpacing_ = 0;
-  layerEffectiveWidth_ = 0;
-  layerMask_ = 0;
-  viaMask_ = 0;
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiPin)
-{
-  this->Init();
-
-  DEF_COPY_FUNC(pinNameLength_);
-  DEF_MALLOC_FUNC(pinName_, char, sizeof(char) * (strlen(prev.pinName_) + 1));
-  DEF_COPY_FUNC(netNameLength_);
-  DEF_MALLOC_FUNC(netName_, char, sizeof(char) * (strlen(prev.netName_) + 1));
-  DEF_COPY_FUNC(hasDirection_);
-  DEF_COPY_FUNC(hasUse_);
-  DEF_COPY_FUNC(placeType_);
-  DEF_COPY_FUNC(orient_);
-  DEF_COPY_FUNC(useLength_);
-  DEF_MALLOC_FUNC(use_, char, sizeof(char) * (strlen(prev.use_) + 1));
-  DEF_COPY_FUNC(directionLength_);
-  DEF_MALLOC_FUNC(
-      direction_, char, sizeof(char) * (strlen(prev.direction_) + 1));
-
-  DEF_COPY_FUNC(layersAllocated_);
-  DEF_COPY_FUNC(numLayers_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(layers_, numLayers_);
-  DEF_MALLOC_FUNC(xl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(xh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerMinSpacing_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerEffectiveWidth_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerMask_, int, sizeof(int) * numLayers_);
-
-  DEF_COPY_FUNC(numPolys_);
-  DEF_COPY_FUNC(polysAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(polygonNames_, numPolys_);
-  DEF_MALLOC_FUNC(polyMinSpacing_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC(polyEffectiveWidth_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC(polyMask_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_POINT(polygons_, numPolys_);
-
-  DEF_COPY_FUNC(x_);
-  DEF_COPY_FUNC(y_);
-  DEF_COPY_FUNC(hasSpecial_);
-
-  DEF_COPY_FUNC(numVias_);
-  DEF_COPY_FUNC(viasAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(viaNames_, numVias_);
-  DEF_MALLOC_FUNC(viaX_, int, sizeof(int) * numVias_);
-  DEF_MALLOC_FUNC(viaY_, int, sizeof(int) * numVias_);
-  DEF_MALLOC_FUNC(viaMask_, int, sizeof(int) * numVias_);
-
-  DEF_COPY_FUNC(numPorts_);
-  DEF_COPY_FUNC(portsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_MALLOC_NEW(pinPort_, defiPinPort, numPorts_, 1);
-
-  DEF_COPY_FUNC(numAntennaModel_);
-  DEF_COPY_FUNC(antennaModelAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D(
-      antennaModel_, defiPinAntennaModel, numAntennaModel_, 1);
-
-  DEF_COPY_FUNC(numAPinPartialMetalArea_);
-  DEF_COPY_FUNC(APinPartialMetalAreaAllocated_);
-  DEF_MALLOC_FUNC(
-      APinPartialMetalArea_, int, sizeof(int) * numAPinPartialMetalArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinPartialMetalAreaLayer_,
-                             numAPinPartialMetalArea_);
-
-  DEF_COPY_FUNC(numAPinPartialMetalSideArea_);
-  DEF_COPY_FUNC(APinPartialMetalSideAreaAllocated_);
-  DEF_MALLOC_FUNC(APinPartialMetalSideArea_,
-                  int,
-                  sizeof(int) * numAPinPartialMetalSideArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinPartialMetalSideAreaLayer_,
-                             numAPinPartialMetalSideArea_);
-
-  DEF_COPY_FUNC(numAPinDiffArea_);
-  DEF_COPY_FUNC(APinDiffAreaAllocated_);
-  DEF_MALLOC_FUNC(APinDiffArea_, int, sizeof(int) * numAPinDiffArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinDiffAreaLayer_, numAPinDiffArea_);
-
-  DEF_COPY_FUNC(numAPinPartialCutArea_);
-  DEF_COPY_FUNC(APinPartialCutAreaAllocated_);
-  DEF_MALLOC_FUNC(
-      APinPartialCutArea_, int, sizeof(int) * numAPinPartialCutArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinPartialCutAreaLayer_, numAPinPartialCutArea_);
-
-  DEF_COPY_FUNC(netExprLength_);
-  DEF_COPY_FUNC(hasNetExpr_);
-  DEF_MALLOC_FUNC(netExpr_, char, sizeof(char) * (strlen(prev.netExpr_) + 1));
-
-  DEF_COPY_FUNC(supplySensLength_);
-  DEF_COPY_FUNC(hasSupplySens_);
-  DEF_MALLOC_FUNC(
-      supplySens_, char, sizeof(char) * (strlen(prev.supplySens_) + 1));
-
-  DEF_COPY_FUNC(groundSensLength_);
-  DEF_COPY_FUNC(hasGroundSens_);
-  DEF_MALLOC_FUNC(
-      groundSens_, char, sizeof(char) * (strlen(prev.groundSens_) + 1));
-}
-
-DEF_ASSIGN_OPERATOR_C(defiPin)
-{
-  CHECK_SELF_ASSIGN
-  this->Init();
-  DEF_COPY_FUNC(pinNameLength_);
-  DEF_MALLOC_FUNC(pinName_, char, sizeof(char) * (strlen(prev.pinName_) + 1));
-  DEF_COPY_FUNC(netNameLength_);
-  DEF_MALLOC_FUNC(netName_, char, sizeof(char) * (strlen(prev.netName_) + 1));
-  DEF_COPY_FUNC(hasDirection_);
-  DEF_COPY_FUNC(hasUse_);
-  DEF_COPY_FUNC(placeType_);
-  DEF_COPY_FUNC(orient_);
-  DEF_COPY_FUNC(useLength_);
-  DEF_MALLOC_FUNC(use_, char, sizeof(char) * (strlen(prev.use_) + 1));
-  DEF_COPY_FUNC(directionLength_);
-  DEF_MALLOC_FUNC(
-      direction_, char, sizeof(char) * (strlen(prev.direction_) + 1));
-
-  DEF_COPY_FUNC(layersAllocated_);
-  DEF_COPY_FUNC(numLayers_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(layers_, numLayers_);
-  DEF_MALLOC_FUNC(xl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(xh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerMinSpacing_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerEffectiveWidth_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerMask_, int, sizeof(int) * numLayers_);
-
-  DEF_COPY_FUNC(numPolys_);
-  DEF_COPY_FUNC(polysAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(polygonNames_, numPolys_);
-  DEF_MALLOC_FUNC(polyMinSpacing_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC(polyEffectiveWidth_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC(polyMask_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_POINT(polygons_, numPolys_);
-
-  DEF_COPY_FUNC(x_);
-  DEF_COPY_FUNC(y_);
-  DEF_COPY_FUNC(hasSpecial_);
-
-  DEF_COPY_FUNC(numVias_);
-  DEF_COPY_FUNC(viasAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(viaNames_, numVias_);
-  DEF_MALLOC_FUNC(viaX_, int, sizeof(int) * numVias_);
-  DEF_MALLOC_FUNC(viaY_, int, sizeof(int) * numVias_);
-  DEF_MALLOC_FUNC(viaMask_, int, sizeof(int) * numVias_);
-
-  DEF_COPY_FUNC(numPorts_);
-  DEF_COPY_FUNC(portsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_MALLOC_NEW(pinPort_, defiPinPort, numPorts_, 1);
-
-  DEF_COPY_FUNC(numAntennaModel_);
-  DEF_COPY_FUNC(antennaModelAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D(
-      antennaModel_, defiPinAntennaModel, numAntennaModel_, 1);
-
-  DEF_COPY_FUNC(numAPinPartialMetalArea_);
-  DEF_COPY_FUNC(APinPartialMetalAreaAllocated_);
-  DEF_MALLOC_FUNC(
-      APinPartialMetalArea_, int, sizeof(int) * numAPinPartialMetalArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinPartialMetalAreaLayer_,
-                             numAPinPartialMetalArea_);
-
-  DEF_COPY_FUNC(numAPinPartialMetalSideArea_);
-  DEF_COPY_FUNC(APinPartialMetalSideAreaAllocated_);
-  DEF_MALLOC_FUNC(APinPartialMetalSideArea_,
-                  int,
-                  sizeof(int) * numAPinPartialMetalSideArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinPartialMetalSideAreaLayer_,
-                             numAPinPartialMetalSideArea_);
-
-  DEF_COPY_FUNC(numAPinDiffArea_);
-  DEF_COPY_FUNC(APinDiffAreaAllocated_);
-  DEF_MALLOC_FUNC(APinDiffArea_, int, sizeof(int) * numAPinDiffArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinDiffAreaLayer_, numAPinDiffArea_);
-
-  DEF_COPY_FUNC(numAPinPartialCutArea_);
-  DEF_COPY_FUNC(APinPartialCutAreaAllocated_);
-  DEF_MALLOC_FUNC(
-      APinPartialCutArea_, int, sizeof(int) * numAPinPartialCutArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinPartialCutAreaLayer_, numAPinPartialCutArea_);
-
-  DEF_COPY_FUNC(netExprLength_);
-  DEF_COPY_FUNC(hasNetExpr_);
-  DEF_MALLOC_FUNC(netExpr_, char, sizeof(char) * (strlen(prev.netExpr_) + 1));
-
-  DEF_COPY_FUNC(supplySensLength_);
-  DEF_COPY_FUNC(hasSupplySens_);
-  DEF_MALLOC_FUNC(
-      supplySens_, char, sizeof(char) * (strlen(prev.supplySens_) + 1));
-
-  DEF_COPY_FUNC(groundSensLength_);
-  DEF_COPY_FUNC(hasGroundSens_);
-  DEF_MALLOC_FUNC(
-      groundSens_, char, sizeof(char) * (strlen(prev.groundSens_) + 1));
-  return *this;
 }
 
 defiPin::~defiPin()
@@ -1360,9 +1055,11 @@ void defiPin::clear()
   y_ = 0;
 
   if (layers_) {
-    for (i = 0; i < numLayers_; i++)
-      if (layers_[i])
+    for (i = 0; i < numLayers_; i++) {
+      if (layers_[i]) {
         free(layers_[i]);
+      }
+    }
     free((char*) (layers_));
     free((char*) (xl_));
     free((char*) (yl_));
@@ -1372,18 +1069,19 @@ void defiPin::clear()
     free((char*) (layerMask_));
     free((char*) (layerEffectiveWidth_));
   }
-  layers_ = 0;
-  layerMinSpacing_ = 0;
-  layerMask_ = 0;
-  layerEffectiveWidth_ = 0;
+  layers_ = nullptr;
+  layerMinSpacing_ = nullptr;
+  layerMask_ = nullptr;
+  layerEffectiveWidth_ = nullptr;
   numLayers_ = 0;
   layersAllocated_ = 0;
   // 5.6
   if (polygonNames_) {
     struct defiPoints* p;
     for (i = 0; i < numPolys_; i++) {
-      if (polygonNames_[i])
+      if (polygonNames_[i]) {
         free((char*) (polygonNames_[i]));
+      }
       p = polygons_[i];
       free((char*) (p->x));
       free((char*) (p->y));
@@ -1394,27 +1092,29 @@ void defiPin::clear()
     free((char*) (polyMinSpacing_));
     free((char*) (polyMask_));
     free((char*) (polyEffectiveWidth_));
-    polygonNames_ = 0;
-    polygons_ = 0;
-    polyMinSpacing_ = 0;
-    polyMask_ = 0;
-    polyEffectiveWidth_ = 0;
+    polygonNames_ = nullptr;
+    polygons_ = nullptr;
+    polyMinSpacing_ = nullptr;
+    polyMask_ = nullptr;
+    polyEffectiveWidth_ = nullptr;
   }
   numPolys_ = 0;
   polysAllocated_ = 0;
   // 5.7
   if (viaNames_) {
-    for (i = 0; i < numVias_; i++)
-      if (viaNames_[i])
+    for (i = 0; i < numVias_; i++) {
+      if (viaNames_[i]) {
         free(viaNames_[i]);
+      }
+    }
     free((char*) (viaNames_));
     free((char*) (viaX_));
     free((char*) (viaY_));
     free((char*) (viaMask_));
   }
-  viaNames_ = 0;
+  viaNames_ = nullptr;
   numVias_ = 0;
-  viaMask_ = 0;
+  viaMask_ = nullptr;
   viasAllocated_ = 0;
   // 5.7
   if (pinPort_) {
@@ -1422,36 +1122,39 @@ void defiPin::clear()
       if (pinPort_[i]) {
         pinPort_[i]->clear();
         delete pinPort_[i];
-        //         free(pinPort_[i]);
       }
     }
     free(pinPort_);
   }
-  pinPort_ = 0;
+  pinPort_ = nullptr;
   numPorts_ = 0;
   portsAllocated_ = 0;
 
   for (i = 0; i < numAPinPartialMetalArea_; i++) {
-    if (APinPartialMetalAreaLayer_[i])
+    if (APinPartialMetalAreaLayer_[i]) {
       free(APinPartialMetalAreaLayer_[i]);
+    }
   }
   numAPinPartialMetalArea_ = 0;
 
   for (i = 0; i < numAPinPartialMetalSideArea_; i++) {
-    if (APinPartialMetalSideAreaLayer_[i])
+    if (APinPartialMetalSideAreaLayer_[i]) {
       free(APinPartialMetalSideAreaLayer_[i]);
+    }
   }
   numAPinPartialMetalSideArea_ = 0;
 
   for (i = 0; i < numAPinDiffArea_; i++) {
-    if (APinDiffAreaLayer_[i])
+    if (APinDiffAreaLayer_[i]) {
       free(APinDiffAreaLayer_[i]);
+    }
   }
   numAPinDiffArea_ = 0;
 
   for (i = 0; i < numAPinPartialCutArea_; i++) {
-    if (APinPartialCutAreaLayer_[i])
+    if (APinPartialCutAreaLayer_[i]) {
       free(APinPartialCutAreaLayer_[i]);
+    }
   }
   numAPinPartialCutArea_ = 0;
 
@@ -1465,27 +1168,34 @@ void defiPin::clear()
 
 void defiPin::Destroy()
 {
-  if (pinName_)
+  if (pinName_) {
     free(pinName_);
-  if (netName_)
+  }
+  if (netName_) {
     free(netName_);
-  if (use_)
+  }
+  if (use_) {
     free(use_);
-  if (direction_)
+  }
+  if (direction_) {
     free(direction_);
-  if (netExpr_)
+  }
+  if (netExpr_) {
     free(netExpr_);
-  if (supplySens_)
+  }
+  if (supplySens_) {
     free(supplySens_);
-  if (groundSens_)
+  }
+  if (groundSens_) {
     free(groundSens_);
-  pinName_ = 0;
-  netName_ = 0;
-  use_ = 0;
-  direction_ = 0;
-  netExpr_ = 0;
-  supplySens_ = 0;
-  groundSens_ = 0;
+  }
+  pinName_ = nullptr;
+  netName_ = nullptr;
+  use_ = nullptr;
+  direction_ = nullptr;
+  netExpr_ = nullptr;
+  supplySens_ = nullptr;
+  groundSens_ = nullptr;
   pinNameLength_ = 0;
   netNameLength_ = 0;
   useLength_ = 0;
@@ -1497,32 +1207,42 @@ void defiPin::Destroy()
   clear();
 
   // 5.4
-  if (APinPartialMetalArea_)
+  if (APinPartialMetalArea_) {
     free((char*) (APinPartialMetalArea_));
-  if (APinPartialMetalAreaLayer_)
+  }
+  if (APinPartialMetalAreaLayer_) {
     free((char*) (APinPartialMetalAreaLayer_));
-  if (APinPartialMetalSideArea_)
+  }
+  if (APinPartialMetalSideArea_) {
     free((char*) (APinPartialMetalSideArea_));
-  if (APinPartialMetalSideAreaLayer_)
+  }
+  if (APinPartialMetalSideAreaLayer_) {
     free((char*) (APinPartialMetalSideAreaLayer_));
-  if (APinDiffArea_)
+  }
+  if (APinDiffArea_) {
     free((char*) (APinDiffArea_));
-  if (APinDiffAreaLayer_)
+  }
+  if (APinDiffAreaLayer_) {
     free((char*) (APinDiffAreaLayer_));
-  if (APinPartialCutArea_)
+  }
+  if (APinPartialCutArea_) {
     free((char*) (APinPartialCutArea_));
-  if (APinPartialCutAreaLayer_)
+  }
+  if (APinPartialCutAreaLayer_) {
     free((char*) (APinPartialCutAreaLayer_));
-  if (antennaModel_)
+  }
+  if (antennaModel_) {
     free((char*) (antennaModel_));
+  }
 }
 
 void defiPin::Setup(const char* pinName, const char* netName)
 {
   int len = strlen(pinName) + 1;
   if (pinNameLength_ < len) {
-    if (pinName_)
+    if (pinName_) {
       free(pinName_);
+    }
     pinName_ = (char*) malloc(len);
     pinNameLength_ = len;
   }
@@ -1530,8 +1250,9 @@ void defiPin::Setup(const char* pinName, const char* netName)
 
   len = strlen(netName) + 1;
   if (netNameLength_ < len) {
-    if (netName_)
+    if (netName_) {
       free(netName_);
+    }
     netName_ = (char*) malloc(len);
     netNameLength_ = len;
   }
@@ -1544,8 +1265,9 @@ void defiPin::setDirection(const char* dir)
 {
   int len = strlen(dir) + 1;
   if (directionLength_ < len) {
-    if (direction_)
+    if (direction_) {
       free(direction_);
+    }
     direction_ = (char*) malloc(len);
     directionLength_ = len;
   }
@@ -1557,8 +1279,9 @@ void defiPin::setNetExpr(const char* name)
 {
   int len = strlen(name) + 1;
   if (netExprLength_ < len) {
-    if (netExpr_)
+    if (netExpr_) {
       free(netExpr_);
+    }
     netExpr_ = (char*) malloc(len);
     netExprLength_ = len;
   }
@@ -1570,8 +1293,9 @@ void defiPin::setSupplySens(const char* name)
 {
   int len = strlen(name) + 1;
   if (supplySensLength_ < len) {
-    if (supplySens_)
+    if (supplySens_) {
       free(supplySens_);
+    }
     supplySens_ = (char*) malloc(len);
     supplySensLength_ = len;
   }
@@ -1583,8 +1307,9 @@ void defiPin::setGroundSens(const char* name)
 {
   int len = strlen(name) + 1;
   if (groundSensLength_ < len) {
-    if (groundSens_)
+    if (groundSens_) {
       free(groundSens_);
+    }
     groundSens_ = (char*) malloc(len);
     groundSensLength_ = len;
   }
@@ -1596,8 +1321,9 @@ void defiPin::setUse(const char* use)
 {
   int len = strlen(use) + 1;
   if (useLength_ < len) {
-    if (use_)
+    if (use_) {
       free(use_);
+    }
     use_ = (char*) malloc(len);
     useLength_ = len;
   }
@@ -1713,8 +1439,9 @@ void defiPin::changePinName(const char* pinName)
 {
   int len = strlen(pinName) + 1;
   if (pinNameLength_ < len) {
-    if (pinName_)
+    if (pinName_) {
       free(pinName_);
+    }
     pinName_ = (char*) malloc(len);
     pinNameLength_ = len;
   }
@@ -1733,10 +1460,7 @@ int defiPin::hasUse() const
 
 int defiPin::hasLayer() const
 {
-  if (numLayers_ || numPolys_)  // 5.6, either layer or polygon is
-    return 1;                   // non-zero
-  else
-    return 0;
+  return numLayers_ || numPolys_;  // 5.6, either layer or polygon is
 }
 
 int defiPin::hasPlacement() const
@@ -1796,29 +1520,35 @@ const char* defiPin::layer(int index) const
 
 void defiPin::bounds(int index, int* xl, int* yl, int* xh, int* yh) const
 {
-  if (xl)
+  if (xl) {
     *xl = xl_[index];
-  if (yl)
+  }
+  if (yl) {
     *yl = yl_[index];
-  if (xh)
+  }
+  if (xh) {
     *xh = xh_[index];
-  if (yh)
+  }
+  if (yh) {
     *yh = yh_[index];
+  }
 }
 
 // 5.6
 int defiPin::hasLayerSpacing(int index) const
 {
-  if (layerMinSpacing_[index] == -1)
+  if (layerMinSpacing_[index] == -1) {
     return 0;
+  }
   return 1;
 }
 
 // 5.6
 int defiPin::hasLayerDesignRuleWidth(int index) const
 {
-  if (layerEffectiveWidth_[index] == -1)
+  if (layerEffectiveWidth_[index] == -1) {
     return 0;
+  }
   return 1;
 }
 
@@ -1857,21 +1587,22 @@ void defiPin::setSpecial()
 // 5.5
 void defiPin::addAntennaModel(int oxide)
 {
-  // For version 5.5 only OXIDE1, OXIDE2, OXIDE3, & OXIDE4
+  // For version 5.5 only OXIDE1, OXIDE2, OXIDE3, OXIDE4 ...
   // are defined within a pin
   defiPinAntennaModel* amo;
   int i;
 
   if (numAntennaModel_ == 0) {  // does not have antennaModel
-    if (!antennaModel_)         // only need to malloc if it is nill
-      antennaModel_
-          = (defiPinAntennaModel**) malloc(sizeof(defiPinAntennaModel*) * 4);
-    antennaModelAllocated_ = 4;
-    for (i = 0; i < 4; i++) {
+    if (!antennaModel_) {       // only need to malloc if it is nill
+      antennaModel_ = (defiPinAntennaModel**) malloc(
+          sizeof(defiPinAntennaModel*) * defMaxOxides);
+    }
+    antennaModelAllocated_ = defMaxOxides;
+    for (i = 0; i < defMaxOxides; i++) {
       antennaModel_[i] = new defiPinAntennaModel(defData);
     }
     numAntennaModel_++;
-    antennaModelAllocated_ = 4;
+    antennaModelAllocated_ = defMaxOxides;
     amo = antennaModel_[0];
   } else {
     amo = antennaModel_[numAntennaModel_];
@@ -1903,10 +1634,11 @@ void defiPin::addAPinPartialMetalArea(int value, const char* layer)
     int* nd;
     char** nl;
 
-    if (APinPartialMetalAreaAllocated_ == 0)
+    if (APinPartialMetalAreaAllocated_ == 0) {
       max = APinPartialMetalAreaAllocated_ = 2;
-    else
+    } else {
       max = APinPartialMetalAreaAllocated_ *= 2;
+    }
     nd = (int*) malloc(sizeof(int) * max);
     nl = (char**) malloc(sizeof(char*) * max);
     for (i = 0; i < lim; i++) {
@@ -1924,8 +1656,9 @@ void defiPin::addAPinPartialMetalArea(int value, const char* layer)
         = (char*) malloc(strlen(layer) + 1);
     strcpy(APinPartialMetalAreaLayer_[numAPinPartialMetalArea_],
            defData->DEFCASE(layer));
-  } else
-    APinPartialMetalAreaLayer_[numAPinPartialMetalArea_] = NULL;
+  } else {
+    APinPartialMetalAreaLayer_[numAPinPartialMetalArea_] = nullptr;
+  }
   numAPinPartialMetalArea_ += 1;
 }
 
@@ -1938,10 +1671,11 @@ void defiPin::addAPinPartialMetalSideArea(int value, const char* layer)
     int* nd;
     char** nl;
 
-    if (APinPartialMetalSideAreaAllocated_ == 0)
+    if (APinPartialMetalSideAreaAllocated_ == 0) {
       max = APinPartialMetalSideAreaAllocated_ = 2;
-    else
+    } else {
       max = APinPartialMetalSideAreaAllocated_ *= 2;
+    }
     nd = (int*) malloc(sizeof(int) * max);
     nl = (char**) malloc(sizeof(char*) * max);
     for (i = 0; i < lim; i++) {
@@ -1959,15 +1693,17 @@ void defiPin::addAPinPartialMetalSideArea(int value, const char* layer)
         = (char*) malloc(strlen(layer) + 1);
     strcpy(APinPartialMetalSideAreaLayer_[numAPinPartialMetalSideArea_],
            defData->DEFCASE(layer));
-  } else
-    APinPartialMetalSideAreaLayer_[numAPinPartialMetalSideArea_] = NULL;
+  } else {
+    APinPartialMetalSideAreaLayer_[numAPinPartialMetalSideArea_] = nullptr;
+  }
   numAPinPartialMetalSideArea_ += 1;
 }
 
 void defiPin::addAPinGateArea(int value, const char* layer)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antennaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antennaModel yet
     addAntennaModel(1);
+  }
   antennaModel_[numAntennaModel_ - 1]->addAPinGateArea(value, layer);
 }
 
@@ -1980,10 +1716,11 @@ void defiPin::addAPinDiffArea(int value, const char* layer)
     int* nd;
     char** nl;
 
-    if (APinDiffAreaAllocated_ == 0)
+    if (APinDiffAreaAllocated_ == 0) {
       max = APinDiffAreaAllocated_ = 2;
-    else
+    } else {
       max = APinDiffAreaAllocated_ *= 2;
+    }
     nd = (int*) malloc(sizeof(int) * max);
     nl = (char**) malloc(sizeof(char*) * max);
     for (i = 0; i < lim; i++) {
@@ -1999,22 +1736,25 @@ void defiPin::addAPinDiffArea(int value, const char* layer)
   if (layer) {
     APinDiffAreaLayer_[numAPinDiffArea_] = (char*) malloc(strlen(layer) + 1);
     strcpy(APinDiffAreaLayer_[numAPinDiffArea_], defData->DEFCASE(layer));
-  } else
-    APinDiffAreaLayer_[numAPinDiffArea_] = NULL;
+  } else {
+    APinDiffAreaLayer_[numAPinDiffArea_] = nullptr;
+  }
   numAPinDiffArea_ += 1;
 }
 
 void defiPin::addAPinMaxAreaCar(int value, const char* layer)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antennaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antennaModel yet
     addAntennaModel(1);
+  }
   antennaModel_[numAntennaModel_ - 1]->addAPinMaxAreaCar(value, layer);
 }
 
 void defiPin::addAPinMaxSideAreaCar(int value, const char* layer)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antennaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antennaModel yet
     addAntennaModel(1);
+  }
   antennaModel_[numAntennaModel_ - 1]->addAPinMaxSideAreaCar(value, layer);
 }
 
@@ -2027,10 +1767,11 @@ void defiPin::addAPinPartialCutArea(int value, const char* layer)
     int* nd;
     char** nl;
 
-    if (APinPartialCutAreaAllocated_ == 0)
+    if (APinPartialCutAreaAllocated_ == 0) {
       max = APinPartialCutAreaAllocated_ = 2;
-    else
+    } else {
       max = APinPartialCutAreaAllocated_ *= 2;
+    }
     nd = (int*) malloc(sizeof(int) * max);
     nl = (char**) malloc(sizeof(char*) * max);
     for (i = 0; i < lim; i++) {
@@ -2048,15 +1789,17 @@ void defiPin::addAPinPartialCutArea(int value, const char* layer)
         = (char*) malloc(strlen(layer) + 1);
     strcpy(APinPartialCutAreaLayer_[numAPinPartialCutArea_],
            defData->DEFCASE(layer));
-  } else
-    APinPartialCutAreaLayer_[numAPinPartialCutArea_] = NULL;
+  } else {
+    APinPartialCutAreaLayer_[numAPinPartialCutArea_] = nullptr;
+  }
   numAPinPartialCutArea_ += 1;
 }
 
 void defiPin::addAPinMaxCutCar(int value, const char* layer)
 {
-  if (numAntennaModel_ == 0)  // haven't created any antennaModel yet
+  if (numAntennaModel_ == 0) {  // haven't created any antennaModel yet
     addAntennaModel(1);
+  }
   antennaModel_[numAntennaModel_ - 1]->addAPinMaxCutCar(value, layer);
 }
 
@@ -2209,7 +1952,7 @@ void defiPin::addPolygon(const char* layerName)
     polyMask_ = pm;
   }
   polygonNames_[numPolys_] = strdup(layerName);
-  polygons_[numPolys_] = 0;
+  polygons_[numPolys_] = nullptr;
   polyMinSpacing_[numPolys_] = -1;
   polyEffectiveWidth_[numPolys_] = -1;
   polyMask_[numPolys_] = 0;
@@ -2263,7 +2006,7 @@ const char* defiPin::polygonName(int index) const
 {
   if (index < 0 || index > numPolys_) {
     defiError(1, 0, "index out of bounds", defData);
-    return 0;
+    return nullptr;
   }
   return polygonNames_[index];
 }
@@ -2277,16 +2020,18 @@ struct defiPoints defiPin::getPolygon(int index) const
 // 5.6
 int defiPin::hasPolygonSpacing(int index) const
 {
-  if (polyMinSpacing_[index] == -1)
+  if (polyMinSpacing_[index] == -1) {
     return 0;
+  }
   return 1;
 }
 
 // 5.6
 int defiPin::hasPolygonDesignRuleWidth(int index) const
 {
-  if (polyEffectiveWidth_[index] == -1)
+  if (polyEffectiveWidth_[index] == -1) {
     return 0;
+  }
   return 1;
 }
 
@@ -2393,7 +2138,7 @@ const char* defiPin::viaName(int index) const
 {
   if (index < 0 || index > numVias_) {
     defiError(1, 0, "index out of bounds", defData);
-    return 0;
+    return nullptr;
   }
   return viaNames_[index];
 }
@@ -2416,9 +2161,8 @@ int defiPin::viaTopMask(int index) const
 
   if (cutMaskNum) {
     return cutMaskNum /= 10;
-  } else {
-    return 0;
   }
+  return 0;
 }
 
 int defiPin::viaCutMask(int index) const
@@ -2427,9 +2171,8 @@ int defiPin::viaCutMask(int index) const
 
   if (cutMaskNum) {
     return cutMaskNum % 10;
-  } else {
-    return 0;
   }
+  return 0;
 }
 
 int defiPin::viaBottomMask(int index) const
@@ -2450,8 +2193,9 @@ void defiPin::addPort()
     } else {
       portsAllocated_ = portsAllocated_ * 2;
       pp = (defiPinPort**) malloc(sizeof(defiPinPort*) * portsAllocated_);
-      for (i = 0; i < numPorts_; i++)
+      for (i = 0; i < numPorts_; i++) {
         pp[i] = pinPort_[i];
+      }
       free((char*) (pinPort_));
       pinPort_ = pp;
     }
@@ -2561,7 +2305,7 @@ defiPinPort* defiPin::pinPort(int index) const
 {
   if (index < 0 || index > numPorts_) {
     defiError(1, 0, "index out of bounds", defData);
-    return 0;
+    return nullptr;
   }
   return pinPort_[index];
 }
@@ -2572,16 +2316,21 @@ void defiPin::print(FILE* f) const
   int i;
 
   fprintf(f, "PINS '%s' on net '%s'\n", pinName(), netName());
-  if (hasDirection())
+  if (hasDirection()) {
     fprintf(f, "+ DIRECTION '%s'\n", direction());
-  if (hasNetExpr())
+  }
+  if (hasNetExpr()) {
     fprintf(f, "+ NETEXPR '%s'\n", netExpr());
-  if (hasSupplySensitivity())
+  }
+  if (hasSupplySensitivity()) {
     fprintf(f, "+ SUPPLYSENSITIVITY '%s'\n", supplySensitivity());
-  if (hasGroundSensitivity())
+  }
+  if (hasGroundSensitivity()) {
     fprintf(f, "+ GROUNDSENSITIVITY '%s'\n", groundSensitivity());
-  if (hasUse())
+  }
+  if (hasUse()) {
     fprintf(f, "+ USE '%s'\n", use());
+  }
   if (hasLayer()) {
     for (i = 0; i < numLayer(); i++) {
       bounds(i, &xl, &yl, &xh, &yh);
@@ -2601,14 +2350,16 @@ void defiPin::print(FILE* f) const
   for (i = 0; i < numVias(); i++) {
     fprintf(f, "+ VIA %s %d %d\n", viaName(i), viaPtX(i), viaPtY(i));
   }
-  if (hasPlacement())
+  if (hasPlacement()) {
     fprintf(f,
             "  PLACED %s%s%d %d\n",
             isFixed() ? " FIXED" : "",
             isCover() ? " COVER" : "",
             placementX(),
             placementY());
-  if (hasSpecial())
+  }
+  if (hasSpecial()) {
     fprintf(f, "+ SPECIAL\n");
+  }
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

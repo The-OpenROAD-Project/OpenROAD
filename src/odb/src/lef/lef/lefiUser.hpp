@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -42,6 +42,7 @@
 #include "lefiArray.hpp"
 #include "lefiCrossTalk.hpp"
 #include "lefiDebug.hpp"
+#include "lefiKRDefs.hpp"
 #include "lefiLayer.hpp"
 #include "lefiMacro.hpp"
 #include "lefiMisc.hpp"
@@ -52,12 +53,10 @@
 #include "lefiVia.hpp"
 #include "lefiViaRule.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // NEW CALLBACK add the reference here
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

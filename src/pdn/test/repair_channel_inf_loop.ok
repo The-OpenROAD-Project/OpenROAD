@@ -1,0 +1,13 @@
+[INFO ODB-0227] LEF file: repair_channel_inf_loop/tech_macro.lef, created 7 layers, 3 vias, 1 library cells
+[INFO ODB-0127] Reading DEF file: repair_channel_inf_loop/floorplan.def
+[INFO ODB-0128] Design: test
+[INFO ODB-0130]     Created 5 pins.
+[INFO ODB-0131]     Created 1 components and 3 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 2 connections.
+[INFO ODB-0133]     Created 4 nets and 0 connections.
+[INFO ODB-0134] Finished DEF file: repair_channel_inf_loop/floorplan.def
+[INFO PDN-0001] Inserting grid: Core
+[WARNING PDN-0178] Remaining channel (0.0000, -1.3150) - (2621.0800, 112.3150) on M1 for nets: GND, VDD
+[WARNING PDN-0178] Remaining channel (0.0000, 112.3150) - (1812.5800, 1028.0650) on M1 for nets: GND, VDD
+[ERROR PDN-0179] Unable to repair all channels.
+PDN-0179

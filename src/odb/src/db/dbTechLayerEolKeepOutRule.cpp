@@ -1,139 +1,67 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbTechLayerEolKeepOutRule.h"
 
-#include "db.h"
+#include <cstdint>
+#include <cstring>
+#include <string>
+
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin Includes
-// User Code End Includes
+#include "odb/db.h"
 namespace odb {
-
 template class dbTable<_dbTechLayerEolKeepOutRule>;
 
 bool _dbTechLayerEolKeepOutRule::operator==(
     const _dbTechLayerEolKeepOutRule& rhs) const
 {
-  if (flags_.class_valid_ != rhs.flags_.class_valid_)
+  if (flags_.class_valid_ != rhs.flags_.class_valid_) {
     return false;
-
-  if (flags_.corner_only_ != rhs.flags_.corner_only_)
+  }
+  if (flags_.corner_only_ != rhs.flags_.corner_only_) {
     return false;
-
-  if (flags_.except_within_ != rhs.flags_.except_within_)
+  }
+  if (flags_.except_within_ != rhs.flags_.except_within_) {
     return false;
-
-  if (eol_width_ != rhs.eol_width_)
+  }
+  if (eol_width_ != rhs.eol_width_) {
     return false;
-
-  if (backward_ext_ != rhs.backward_ext_)
+  }
+  if (backward_ext_ != rhs.backward_ext_) {
     return false;
-
-  if (forward_ext_ != rhs.forward_ext_)
+  }
+  if (forward_ext_ != rhs.forward_ext_) {
     return false;
-
-  if (side_ext_ != rhs.side_ext_)
+  }
+  if (side_ext_ != rhs.side_ext_) {
     return false;
-
-  if (within_low_ != rhs.within_low_)
+  }
+  if (within_low_ != rhs.within_low_) {
     return false;
-
-  if (within_high_ != rhs.within_high_)
+  }
+  if (within_high_ != rhs.within_high_) {
     return false;
-
-  if (class_name_ != rhs.class_name_)
+  }
+  if (class_name_ != rhs.class_name_) {
     return false;
+  }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbTechLayerEolKeepOutRule::operator<(
     const _dbTechLayerEolKeepOutRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
-void _dbTechLayerEolKeepOutRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerEolKeepOutRule& rhs) const
-{
-  DIFF_BEGIN
 
-  DIFF_FIELD(flags_.class_valid_);
-  DIFF_FIELD(flags_.corner_only_);
-  DIFF_FIELD(flags_.except_within_);
-  DIFF_FIELD(eol_width_);
-  DIFF_FIELD(backward_ext_);
-  DIFF_FIELD(forward_ext_);
-  DIFF_FIELD(side_ext_);
-  DIFF_FIELD(within_low_);
-  DIFF_FIELD(within_high_);
-  DIFF_FIELD(class_name_);
-  // User Code Begin Differences
-  // User Code End Differences
-  DIFF_END
-}
-void _dbTechLayerEolKeepOutRule::out(dbDiff& diff,
-                                     char side,
-                                     const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.class_valid_);
-  DIFF_OUT_FIELD(flags_.corner_only_);
-  DIFF_OUT_FIELD(flags_.except_within_);
-  DIFF_OUT_FIELD(eol_width_);
-  DIFF_OUT_FIELD(backward_ext_);
-  DIFF_OUT_FIELD(forward_ext_);
-  DIFF_OUT_FIELD(side_ext_);
-  DIFF_OUT_FIELD(within_low_);
-  DIFF_OUT_FIELD(within_high_);
-  DIFF_OUT_FIELD(class_name_);
-
-  // User Code Begin Out
-  // User Code End Out
-  DIFF_END
-}
 _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   eol_width_ = 0;
   backward_ext_ = 0;
   forward_ext_ = 0;
@@ -141,32 +69,14 @@ _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(_dbDatabase* db)
   within_low_ = 0;
   within_high_ = 0;
   class_name_ = "";
-  // User Code Begin Constructor
-  // User Code End Constructor
-}
-_dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(
-    _dbDatabase* db,
-    const _dbTechLayerEolKeepOutRule& r)
-{
-  flags_.class_valid_ = r.flags_.class_valid_;
-  flags_.corner_only_ = r.flags_.corner_only_;
-  flags_.except_within_ = r.flags_.except_within_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  eol_width_ = r.eol_width_;
-  backward_ext_ = r.backward_ext_;
-  forward_ext_ = r.forward_ext_;
-  side_ext_ = r.side_ext_;
-  within_low_ = r.within_low_;
-  within_high_ = r.within_high_;
-  class_name_ = r.class_name_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolKeepOutRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.eol_width_;
   stream >> obj.backward_ext_;
   stream >> obj.forward_ext_;
@@ -174,14 +84,15 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolKeepOutRule& obj)
   stream >> obj.within_low_;
   stream >> obj.within_high_;
   stream >> obj.class_name_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerEolKeepOutRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj.eol_width_;
   stream << obj.backward_ext_;
   stream << obj.forward_ext_;
@@ -189,19 +100,18 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerEolKeepOutRule& obj)
   stream << obj.within_low_;
   stream << obj.within_high_;
   stream << obj.class_name_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
-_dbTechLayerEolKeepOutRule::~_dbTechLayerEolKeepOutRule()
+void _dbTechLayerEolKeepOutRule::collectMemInfo(MemInfo& info)
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
-}
+  info.cnt++;
+  info.size += sizeof(*this);
 
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
+  // User Code Begin collectMemInfo
+  info.children_["class_name"].add(class_name_);
+  // User Code End collectMemInfo
+}
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -287,7 +197,7 @@ int dbTechLayerEolKeepOutRule::getWithinHigh() const
   return obj->within_high_;
 }
 
-void dbTechLayerEolKeepOutRule::setClassName(std::string class_name)
+void dbTechLayerEolKeepOutRule::setClassName(const std::string& class_name)
 {
   _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
 
@@ -370,4 +280,4 @@ void dbTechLayerEolKeepOutRule::destroy(dbTechLayerEolKeepOutRule* rule)
 
 // User Code End dbTechLayerEolKeepOutRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

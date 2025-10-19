@@ -1,0 +1,31 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN single_row ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 5760 3330 ) ;
+ROW ROW_0 unit 0 0 N DO 4 BY 1 STEP 480 0 ;
+TRACKS X 240 DO 12 STEP 480 LAYER li1 ;
+TRACKS Y 185 DO 9 STEP 370 LAYER li1 ;
+TRACKS X 185 DO 15 STEP 370 LAYER met1 ;
+TRACKS Y 185 DO 9 STEP 370 LAYER met1 ;
+GCELLGRID X 0 DO 1 STEP 5550 ;
+GCELLGRID Y 0 DO 1 STEP 5550 ;
+COMPONENTS 1 ;
+    - buffer sky130_fd_sc_hs__buf_1 + PLACED ( 1920 0 ) N ;
+END COMPONENTS
+PINS 2 ;
+    - a_i + NET a_i + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER li1 ( -85 -165 ) ( 85 165 )
+        + PLACED ( 2160 165 ) N ;
+    - b_o + NET b_o + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER li1 ( -85 -165 ) ( 85 165 )
+        + PLACED ( 4080 3165 ) N ;
+END PINS
+NETS 2 ;
+    - a_i ( PIN a_i ) ( buffer A ) + USE SIGNAL ;
+    - b_o ( PIN b_o ) ( buffer X ) + USE SIGNAL ;
+END NETS
+END DESIGN

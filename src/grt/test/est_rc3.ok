@@ -1,12 +1,9 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
+[WARNING GRT-0008] The read_guides command does not allow parasitics estimation from the guides file.
 Net clk
  Pin capacitance: 29.975-33.238
  Wire capacitance: 17.722-17.722

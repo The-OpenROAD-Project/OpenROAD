@@ -1,50 +1,33 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include "browserWidget.h"
 
+#include <QColor>
 #include <QColorDialog>
 #include <QEvent>
 #include <QHeaderView>
 #include <QLocale>
+#include <QMenu>
 #include <QMouseEvent>
+#include <QPushButton>
+#include <QSettings>
 #include <QString>
+#include <QWidget>
+#include <algorithm>
+#include <any>
+#include <cstdint>
+#include <map>
+#include <optional>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "dbDescriptors.h"
 #include "db_sta/dbSta.hh"
 #include "displayControls.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbInst*);
@@ -52,6 +35,65 @@ Q_DECLARE_METATYPE(odb::dbModule*);
 Q_DECLARE_METATYPE(QStandardItem*);
 
 namespace gui {
+
+const int BrowserWidget::kSortRole = Qt::UserRole + 2;
+
+struct BrowserWidget::ModuleStats
+{
+  int64_t area = 0;
+  int macros = 0;
+  int insts = 0;
+  int modules = 0;
+
+  int hier_macros = 0;
+  int hier_insts = 0;
+  int hier_modules = 0;
+
+  void incrementInstances()
+  {
+    insts++;
+    hier_insts++;
+  }
+
+  void resetInstances() { hier_insts = 0; }
+
+  void incrementMacros()
+  {
+    macros++;
+    hier_macros++;
+  }
+
+  void resetMacros() { hier_macros = 0; }
+
+  void incrementModules()
+  {
+    modules++;
+    hier_modules++;
+  }
+
+  void resetModules() { hier_modules = 0; }
+
+  ModuleStats& operator+=(const ModuleStats& other)
+  {
+    area += other.area;
+    macros += other.macros;
+    insts += other.insts;
+    modules += other.modules;
+
+    hier_macros += other.hier_macros;
+    hier_insts += other.hier_insts;
+    hier_modules += other.hier_modules;
+
+    return *this;
+  }
+
+  friend ModuleStats operator+(ModuleStats lhs, const ModuleStats& other)
+  {
+    lhs += other;
+
+    return lhs;
+  }
+};
 
 ///////
 
@@ -71,6 +113,7 @@ BrowserWidget::BrowserWidget(
       view_(new QTreeView(this)),
       model_(new QStandardItemModel(this)),
       model_modified_(false),
+      initial_load_(true),
       ignore_selection_(false),
       menu_(new QMenu(this))
 {
@@ -84,8 +127,16 @@ BrowserWidget::BrowserWidget(
 
   display_controls_warning_->setStyleSheet("color: red;");
 
-  model_->setHorizontalHeaderLabels(
-      {"Instance", "Master", "Instances", "Macros", "Modules", "Area"});
+  model_->setHorizontalHeaderLabels({"Instance",
+                                     "Module",
+                                     "Instances",
+                                     "Macros",
+                                     "Modules",
+                                     "Area",
+                                     "Local Instances",
+                                     "Local Macros",
+                                     "Local Modules"});
+  model_->setSortRole(kSortRole);
   view_->setModel(model_);
   view_->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -96,54 +147,44 @@ BrowserWidget::BrowserWidget(
   QHeaderView* header = view_->header();
   header->setSectionsMovable(true);
   header->setStretchLastSection(false);
-  header->setSectionResizeMode(Instance, QHeaderView::Interactive);
-  header->setSectionResizeMode(Master, QHeaderView::Interactive);
-  header->setSectionResizeMode(Instances, QHeaderView::Interactive);
-  header->setSectionResizeMode(Macros, QHeaderView::Interactive);
-  header->setSectionResizeMode(Modules, QHeaderView::Interactive);
-  header->setSectionResizeMode(Area, QHeaderView::Interactive);
+  header->setSectionResizeMode(kInstance, QHeaderView::Interactive);
+  header->setSectionResizeMode(kMaster, QHeaderView::Interactive);
+  header->setSectionResizeMode(kInstances, QHeaderView::Interactive);
+  header->setSectionResizeMode(kMacros, QHeaderView::Interactive);
+  header->setSectionResizeMode(kModules, QHeaderView::Interactive);
+  header->setSectionResizeMode(kArea, QHeaderView::Interactive);
 
   setWidget(widget);
 
-  connect(view_,
-          SIGNAL(clicked(const QModelIndex&)),
-          this,
-          SLOT(clicked(const QModelIndex&)));
+  connect(view_, &QTreeView::clicked, this, &BrowserWidget::clicked);
 
   connect(view_,
-          SIGNAL(customContextMenuRequested(const QPoint&)),
+          &QTreeView::customContextMenuRequested,
           this,
-          SLOT(itemContextMenu(const QPoint&)));
+          &BrowserWidget::itemContextMenu);
 
-  connect(view_,
-          SIGNAL(collapsed(const QModelIndex&)),
-          this,
-          SLOT(itemCollapsed(const QModelIndex&)));
-  connect(view_,
-          SIGNAL(expanded(const QModelIndex&)),
-          this,
-          SLOT(itemExpanded(const QModelIndex&)));
+  connect(view_, &QTreeView::collapsed, this, &BrowserWidget::itemCollapsed);
+  connect(view_, &QTreeView::expanded, this, &BrowserWidget::itemExpanded);
 
-  connect(
-      view_->selectionModel(),
-      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-      this,
-      SLOT(selectionChanged(const QItemSelection&, const QItemSelection&)));
+  connect(view_->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
+          this,
+          &BrowserWidget::selectionChanged);
 
   connect(model_,
-          SIGNAL(itemChanged(QStandardItem*)),
+          &QStandardItemModel::itemChanged,
           this,
-          SLOT(itemChanged(QStandardItem*)));
+          &BrowserWidget::itemChanged);
 
   connect(this,
-          SIGNAL(updateModuleColor(odb::dbModule*, const QColor&, bool)),
+          &BrowserWidget::updateModuleColor,
           this,
-          SLOT(updateModuleColorIcon(odb::dbModule*, const QColor&)));
+          &BrowserWidget::updateModuleColorIcon);
 
   connect(display_controls_warning_,
-          SIGNAL(pressed()),
+          &QPushButton::pressed,
           this,
-          SLOT(enableModuleView()));
+          &BrowserWidget::enableModuleView);
 }
 
 void BrowserWidget::displayControlsUpdated()
@@ -258,11 +299,10 @@ Selected BrowserWidget::getSelectedFromIndex(const QModelIndex& index)
     auto* inst = data.value<odb::dbInst*>();
     if (inst != nullptr) {
       return gui->makeSelected(inst);
-    } else {
-      auto* module = data.value<odb::dbModule*>();
-      if (module != nullptr) {
-        return gui->makeSelected(module);
-      }
+    }
+    auto* module = data.value<odb::dbModule*>();
+    if (module != nullptr) {
+      return gui->makeSelected(module);
     }
   }
 
@@ -289,7 +329,7 @@ void BrowserWidget::clicked(const QModelIndex& index)
   Selected sel = getSelectedFromIndex(index);
 
   if (sel) {
-    emit select({sel});
+    emit select({std::move(sel)});
   }
 }
 
@@ -348,7 +388,7 @@ void BrowserWidget::updateModel()
 
   std::vector<odb::dbInst*> insts;
   for (auto* inst : block_->getInsts()) {
-    if (inst->getModule() != nullptr) {
+    if (!inst->isPhysicalOnly()) {
       continue;
     }
 
@@ -356,9 +396,13 @@ void BrowserWidget::updateModel()
   }
   addInstanceItems(insts, "Physical only", root);
 
-  view_->header()->resizeSections(QHeaderView::ResizeToContents);
+  if (initial_load_) {
+    view_->header()->resizeSections(QHeaderView::ResizeToContents);
+    initial_load_ = false;
+  }
   model_modified_ = false;
   setUpdatesEnabled(true);
+  view_->setSortingEnabled(true);
 }
 
 void BrowserWidget::clearModel()
@@ -403,15 +447,15 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(
     QStandardItem* item = nullptr;
     ModuleStats stats;
   };
-  std::map<DbInstDescriptor::Type, Leaf> leaf_types;
+  std::map<sta::dbSta::InstType, Leaf> leaf_types;
   for (auto* inst : insts) {
-    auto type = inst_descriptor_->getInstanceType(inst);
+    auto type = sta_->getInstanceType(inst);
     auto& leaf_parent = leaf_types[type];
     if (leaf_parent.item == nullptr) {
-      leaf_parent.item
-          = make_leaf_item(inst_descriptor_->getInstanceTypeText(type));
+      leaf_parent.item = make_leaf_item(sta_->getInstanceTypeText(type));
     }
-    leaf_parent.stats += addInstanceItem(inst, leaf_parent.item);
+    const bool create_row = type == sta::dbSta::InstType::BLOCK;
+    leaf_parent.stats += addInstanceItem(inst, leaf_parent.item, create_row);
   }
 
   ModuleStats total;
@@ -432,17 +476,13 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(
 }
 
 BrowserWidget::ModuleStats BrowserWidget::addInstanceItem(odb::dbInst* inst,
-                                                          QStandardItem* parent)
+                                                          QStandardItem* parent,
+                                                          bool create_row)
 {
-  QStandardItem* item = new QStandardItem(inst->getConstName());
-  item->setEditable(false);
-  item->setSelectable(true);
-  item->setData(QVariant::fromValue(inst));
-
   auto* box = inst->getBBox();
 
   ModuleStats stats;
-  stats.area = box->getDX() * box->getDY();
+  stats.area = box->getDX() * (int64_t) box->getDY();
 
   if (inst->isBlock()) {
     stats.incrementMacros();
@@ -450,7 +490,15 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItem(odb::dbInst* inst,
     stats.incrementInstances();
   }
 
-  makeRowItems(item, inst->getMaster()->getConstName(), stats, parent, true);
+  if (create_row) {
+    QStandardItem* item = new QStandardItem(inst->getConstName());
+    item->setEditable(false);
+    item->setSelectable(true);
+    item->setData(QVariant::fromValue(inst));
+    item->setData(inst->getConstName(), kSortRole);
+
+    makeRowItems(item, inst->getMaster()->getConstName(), stats, parent, true);
+  }
 
   return stats;
 }
@@ -470,6 +518,7 @@ BrowserWidget::ModuleStats BrowserWidget::addModuleItem(odb::dbModule* module,
   item->setEditable(false);
   item->setSelectable(true);
   item->setData(QVariant::fromValue(module));
+  item->setData(item_name, kSortRole);
 
   item->setCheckable(true);
   auto& settings = modulesettings_.at(module);
@@ -498,56 +547,62 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
                                  QStandardItem* parent,
                                  bool is_leaf) const
 {
-  QLocale locale(QLocale::English);  // for number formatting
-
   double scale_to_um
       = block_->getDbUnitsPerMicron() * block_->getDbUnitsPerMicron();
 
-  QString units = "\u03BC";  // mu
+  QString units = "μ";
   double disp_area = stats.area / scale_to_um;
   if (disp_area > 1e6) {
     disp_area /= (1e3 * 1e3);
     units = "m";
   }
 
-  QString text
-      = locale.toString(disp_area, 'f', 3) + " " + units + "m\u00B2";  // m2
+  QString text = QString::number(disp_area, 'f', 3) + " " + units + "m²";
 
-  auto makeDataItem
-      = [item](const QString& text, bool right_align = true) -> QStandardItem* {
+  auto make_data_item
+      = [item](const QString& text,
+               std::optional<int64_t> sort_value) -> QStandardItem* {
     QStandardItem* data_item = new QStandardItem(text);
     data_item->setEditable(false);
-    if (right_align) {
-      data_item->setData(Qt::AlignRight, Qt::TextAlignmentRole);
-    }
     data_item->setData(QVariant::fromValue(item));
+    if (sort_value) {
+      data_item->setData(qint64(sort_value.value()), kSortRole);
+      data_item->setData(Qt::AlignRight, Qt::TextAlignmentRole);
+    } else {
+      data_item->setData(text, kSortRole);
+    }
     return data_item;
   };
 
-  auto makeHierText
-      = [&locale](int current, int total, bool is_leaf) -> QString {
-    if (!is_leaf) {
-      return locale.toString(current) + "/" + locale.toString(total);
-    } else {
-      return locale.toString(total);
-    }
-  };
-
   QStandardItem* master_item
-      = makeDataItem(QString::fromStdString(master), false);
+      = make_data_item(QString::fromStdString(master), {});
 
-  QStandardItem* area = makeDataItem(text);
+  QStandardItem* area = make_data_item(text, stats.area);
 
+  QStandardItem* local_insts
+      = make_data_item(QString::number(stats.hier_insts), stats.hier_insts);
   QStandardItem* insts
-      = makeDataItem(makeHierText(stats.hier_insts, stats.insts, is_leaf));
+      = make_data_item(QString::number(stats.insts), stats.insts);
 
+  QStandardItem* local_macros
+      = make_data_item(QString::number(stats.hier_macros), stats.hier_macros);
   QStandardItem* macros
-      = makeDataItem(makeHierText(stats.hier_macros, stats.macros, is_leaf));
+      = make_data_item(QString::number(stats.macros), stats.macros);
 
   QStandardItem* modules
-      = makeDataItem(makeHierText(stats.hier_modules, stats.modules, is_leaf));
+      = make_data_item(QString::number(stats.hier_modules), stats.hier_modules);
+  QStandardItem* local_modules
+      = make_data_item(QString::number(stats.modules), stats.modules);
 
-  parent->appendRow({item, master_item, insts, macros, modules, area});
+  parent->appendRow({item,
+                     master_item,
+                     insts,
+                     macros,
+                     modules,
+                     area,
+                     local_insts,
+                     local_macros,
+                     local_modules});
 }
 
 void BrowserWidget::inDbInstCreate(odb::dbInst*)
@@ -622,7 +677,7 @@ void BrowserWidget::itemChanged(QStandardItem* item)
   // toggle children
   if (state != Qt::PartiallyChecked) {
     for (int r = 0; r < item->rowCount(); r++) {
-      QStandardItem* child = item->child(r, Instance);
+      QStandardItem* child = item->child(r, kInstance);
       if (child->isCheckable()) {
         child->setCheckState(state);
       }
@@ -642,7 +697,7 @@ void BrowserWidget::toggleParent(QStandardItem* item)
 
   std::vector<Qt::CheckState> childstates;
   for (int r = 0; r < parent->rowCount(); r++) {
-    QStandardItem* child = parent->child(r, Instance);
+    QStandardItem* child = parent->child(r, kInstance);
     if (child->isCheckable()) {
       childstates.push_back(child->checkState());
     }
@@ -687,7 +742,7 @@ bool BrowserWidget::eventFilter(QObject* obj, QEvent* event)
   return QDockWidget::eventFilter(obj, event);
 }
 
-const QIcon BrowserWidget::makeModuleIcon(const QColor& color)
+QIcon BrowserWidget::makeModuleIcon(const QColor& color)
 {
   QPixmap swatch(20, 20);
   swatch.fill(color);

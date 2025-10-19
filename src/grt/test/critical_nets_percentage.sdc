@@ -1,4 +1,4 @@
-create_clock -name core_clock -period 1.78 [get_ports clk]  
+create_clock -name core_clock -period 1.78 [get_ports clk]
 set clk [lindex [all_clocks] 0]
 set period [get_property $clk period]
 set delay [expr $period * 0.2]

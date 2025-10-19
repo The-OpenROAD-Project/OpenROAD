@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -30,11 +30,11 @@
 #ifndef defiPath_h
 #define defiPath_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 // TX_DIR:TRANSLATION ON
 
@@ -91,9 +91,6 @@ class defiPath
   defiPath(defrData* data);
   // This is 'data ownership transfer' constructor.
   defiPath(defiPath* defiPathRef);
-
-  DEF_COPY_CONSTRUCTOR_H(defiPath);
-  DEF_ASSIGN_OPERATOR_H(defiPath);
 
   void Init();
 
@@ -171,8 +168,6 @@ class defiPath
   defrData* defData;
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

@@ -25,7 +25,7 @@
 /*                                                                            */
 /*  $Author: dell $ */
 /*  $Revision: #1 $ */
-/*  $Date: 2017/06/06 $ */
+/*  $Date: 2020/09/29 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
@@ -33,7 +33,7 @@
 #ifndef CDEFWWRITER_H
 #define CDEFWWRITER_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 
@@ -1740,7 +1740,7 @@ EXTERN int defwCurrentLineNumber();
  * extern void defwVError ( const char *, va_list );
  * extern void defwVWarning ( const char *, va_list );
  * extern int  defwGetCurrentLineNumber (void);
- * extern const char *defwGetCurrentFileName (void);
+ * extern const char *defwGetCurrentFileName();
  */
 
 /* This routine will print the error message. */

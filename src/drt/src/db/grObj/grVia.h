@@ -1,69 +1,39 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#ifndef _GR_VIA_H_
-#define _GR_VIA_H_
+#pragma once
 
 #include <memory>
 
 #include "db/grObj/grRef.h"
 #include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
-namespace fr {
+namespace drt {
 
 class grVia : public grRef
 {
  public:
   // constructor
-  grVia()
-      : grRef(),
-        origin(),
-        viaDef(nullptr),
-        child(nullptr),
-        parent(nullptr),
-        owner(nullptr)
-  {
-  }
+  grVia() = default;
   grVia(const grVia& in)
       : grRef(in),
-        origin(in.origin),
-        viaDef(in.viaDef),
-        child(in.child),
-        parent(in.parent),
-        owner(in.owner)
+        origin_(in.origin_),
+        viaDef_(in.viaDef_),
+        child_(in.child_),
+        parent_(in.parent_),
+        owner_(in.owner_)
   {
   }
 
   // getters
-  frViaDef* getViaDef() const { return viaDef; }
+  const frViaDef* getViaDef() const { return viaDef_; }
 
   // setters
-  void setViaDef(frViaDef* in) { viaDef = in; }
+  void setViaDef(const frViaDef* in) { viaDef_ = in; }
 
   // others
   frBlockObjectEnum typeId() const override { return grcVia; }
@@ -77,13 +47,16 @@ class grVia : public grRef
    * setTransform
    */
 
-  dbOrientType getOrient() const override { return dbOrientType(); }
-  void setOrient(const dbOrientType& in) override { ; }
-  Point getOrigin() const override { return origin; }
-  void setOrigin(const Point& in) override { origin = in; }
+  odb::dbOrientType getOrient() const override { return odb::dbOrientType(); }
+  void setOrient(const odb::dbOrientType& in) override { ; }
+  odb::Point getOrigin() const override { return origin_; }
+  void setOrigin(const odb::Point& in) override { origin_ = in; }
 
-  dbTransform getTransform() const override { return dbTransform(origin); }
-  void setTransform(const dbTransform& in) override { ; }
+  odb::dbTransform getTransform() const override
+  {
+    return odb::dbTransform(origin_);
+  }
+  void setTransform(const odb::dbTransform& in) override { ; }
 
   /* from gfrPinFig
    * hasPin
@@ -91,16 +64,13 @@ class grVia : public grRef
    * addToPin
    * removeFromPin
    */
-  bool hasPin() const override
-  {
-    return (owner) && (owner->typeId() == grcPin);
-  }
-  grPin* getPin() const override { return reinterpret_cast<grPin*>(owner); }
+  bool hasPin() const override { return owner_ && owner_->typeId() == grcPin; }
+  grPin* getPin() const override { return reinterpret_cast<grPin*>(owner_); }
   void addToPin(grPin* in) override
   {
-    owner = reinterpret_cast<frBlockObject*>(in);
+    owner_ = reinterpret_cast<frBlockObject*>(in);
   }
-  void removeFromPin() override { owner = nullptr; }
+  void removeFromPin() override { owner_ = nullptr; }
 
   /* from grConnFig
    * hasNet
@@ -118,33 +88,33 @@ class grVia : public grRef
    */
   // if obj hasNet, then it is global GR net
   // if obj hasGrNet, then it is GR worker subnet
-  bool hasNet() const override
-  {
-    return (owner) && (owner->typeId() == frcNet);
-  }
+  bool hasNet() const override { return owner_ && owner_->typeId() == frcNet; }
   bool hasGrNet() const override
   {
-    return (owner) && (owner->typeId() == grcNet);
+    return owner_ && owner_->typeId() == grcNet;
   }
-  frNet* getNet() const override { return reinterpret_cast<frNet*>(owner); }
-  grNet* getGrNet() const override { return reinterpret_cast<grNet*>(owner); }
-  frNode* getChild() const override { return reinterpret_cast<frNode*>(child); }
+  frNet* getNet() const override { return reinterpret_cast<frNet*>(owner_); }
+  grNet* getGrNet() const override { return reinterpret_cast<grNet*>(owner_); }
+  frNode* getChild() const override
+  {
+    return reinterpret_cast<frNode*>(child_);
+  }
   frNode* getParent() const override
   {
-    return reinterpret_cast<frNode*>(parent);
+    return reinterpret_cast<frNode*>(parent_);
   }
   grNode* getGrChild() const override
   {
-    return reinterpret_cast<grNode*>(child);
+    return reinterpret_cast<grNode*>(child_);
   }
   grNode* getGrParent() const override
   {
-    return reinterpret_cast<grNode*>(parent);
+    return reinterpret_cast<grNode*>(parent_);
   }
-  void addToNet(frBlockObject* in) override { owner = in; }
-  void removeFromNet() override { owner = nullptr; }
-  void setChild(frBlockObject* in) override { child = in; }
-  void setParent(frBlockObject* in) override { parent = in; }
+  void addToNet(frBlockObject* in) override { owner_ = in; }
+  void removeFromNet() override { owner_ = nullptr; }
+  void setChild(frBlockObject* in) override { child_ = in; }
+  void setParent(frBlockObject* in) override { parent_ = in; }
 
   /* from grFig
    * getBBox
@@ -152,19 +122,17 @@ class grVia : public grRef
    * overlaps
    */
 
-  Rect getBBox() const override { return Rect(origin, origin); }
+  odb::Rect getBBox() const override { return odb::Rect(origin_, origin_); }
 
-  void setIter(frListIter<std::unique_ptr<grVia>>& in) { iter = in; }
-  frListIter<std::unique_ptr<grVia>> getIter() const { return iter; }
+  void setIter(frListIter<std::unique_ptr<grVia>>& in) { iter_ = in; }
+  frListIter<std::unique_ptr<grVia>> getIter() const { return iter_; }
 
  protected:
-  Point origin;
-  frViaDef* viaDef;
-  frBlockObject* child;
-  frBlockObject* parent;
-  frBlockObject* owner;
-  frListIter<std::unique_ptr<grVia>> iter;
+  odb::Point origin_;
+  const frViaDef* viaDef_{nullptr};
+  frBlockObject* child_{nullptr};
+  frBlockObject* parent_{nullptr};
+  frBlockObject* owner_{nullptr};
+  frListIter<std::unique_ptr<grVia>> iter_;
 };
-}  // namespace fr
-
-#endif
+}  // namespace drt

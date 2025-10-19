@@ -1,44 +1,33 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "inspector.h"
 
 #include <QApplication>
+#include <QColor>
 #include <QComboBox>
+#include <QDebug>
 #include <QHeaderView>
 #include <QLineEdit>
+#include <QMenu>
+#include <QMessageBox>
 #include <QPushButton>
+#include <QString>
+#include <QVariant>
+#include <QWidget>
+#include <algorithm>
+#include <any>
+#include <cmath>
+#include <iterator>
+#include <map>
+#include <set>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "gui/gui.h"
+#include "gui_utils.h"
 
 Q_DECLARE_METATYPE(gui::Selected);
 Q_DECLARE_METATYPE(gui::Descriptor::Editor);
@@ -47,8 +36,6 @@ Q_DECLARE_METATYPE(std::any);
 Q_DECLARE_METATYPE(std::string);
 
 namespace gui {
-
-using namespace odb;
 
 SelectedItemModel::SelectedItemModel(const Selected& object,
                                      const QColor& selectable,
@@ -66,7 +53,7 @@ QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
 {
   if (role == Qt::ForegroundRole) {
     const bool has_selected
-        = itemFromIndex(index)->data(EditorItemDelegate::selected_).isValid();
+        = itemFromIndex(index)->data(EditorItemDelegate::kSelected).isValid();
 
     if (has_selected) {
       return QBrush(selectable_item_);
@@ -75,7 +62,7 @@ QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
     if (index.column() == 1) {
       if (role == Qt::BackgroundRole) {
         const bool has_editor
-            = itemFromIndex(index)->data(EditorItemDelegate::editor_).isValid();
+            = itemFromIndex(index)->data(EditorItemDelegate::kEditor).isValid();
 
         if (has_editor) {
           return QBrush(editable_item_);
@@ -99,24 +86,32 @@ void SelectedItemModel::updateObject()
 
   auto editors = object_.getEditors();
 
-  for (const auto& prop : object_.getProperties()) {
-    QStandardItem* name_item = nullptr;
-    QStandardItem* value_item = nullptr;
+  try {
+    for (const auto& prop : object_.getProperties()) {
+      QStandardItem* name_item = nullptr;
+      QStandardItem* value_item = nullptr;
 
-    makePropertyItem(prop, name_item, value_item);
+      makePropertyItem(prop, name_item, value_item);
 
-    appendRow({name_item, value_item});
+      appendRow({name_item, value_item});
 
-    // make editor if found
-    auto editor_found = editors.find(prop.name);
-    if (editor_found != editors.end()) {
-      auto editor = (*editor_found).second;
-      makeItemEditor(prop.name,
-                     value_item,
-                     object_,
-                     EditorItemDelegate::getEditorType(prop.value),
-                     editor);
+      // make editor if found
+      auto editor_found = editors.find(prop.name);
+      if (editor_found != editors.end()) {
+        auto& editor = (*editor_found).second;
+        makeItemEditor(prop.name,
+                       value_item,
+                       object_,
+                       EditorItemDelegate::getEditorType(prop.value),
+                       editor);
+      }
     }
+  } catch (const std::runtime_error& error) {
+    QMessageBox::critical(qobject_cast<QWidget*>(parent()),
+                          error.what(),
+                          "Failed to populate properties.");
+    appendRow({makeItem(QString::fromStdString("error")),
+               makeItem(QString(error.what()))});
   }
 
   endResetModel();
@@ -155,13 +150,19 @@ QStandardItem* SelectedItemModel::makeItem(const QString& name)
   auto item = new QStandardItem(name);
   item->setEditable(false);
   item->setSelectable(false);
+  item->setData(Qt::AlignTop, Qt::TextAlignmentRole);
+  if (name.contains('\n')) {
+    QFont font("Monospace");
+    font.setStyleHint(QFont::Monospace);
+    item->setData(font, Qt::FontRole);
+  }
   return item;
 }
 
-QStandardItem* SelectedItemModel::makeItem(const std::any& item,
+QStandardItem* SelectedItemModel::makeItem(const std::any& item_param,
                                            bool short_name)
 {
-  if (auto selected = std::any_cast<Selected>(&item)) {
+  if (auto selected = std::any_cast<Selected>(&item_param)) {
     QStandardItem* item = nullptr;
     if (short_name) {
       item = makeItem(QString::fromStdString(selected->getShortName()));
@@ -169,12 +170,11 @@ QStandardItem* SelectedItemModel::makeItem(const std::any& item,
       item = makeItem(QString::fromStdString(selected->getName()));
     }
     item->setData(QVariant::fromValue(*selected),
-                  EditorItemDelegate::selected_);
+                  EditorItemDelegate::kSelected);
     return item;
-  } else {
-    return makeItem(
-        QString::fromStdString(Descriptor::Property::toString(item)));
   }
+  return makeItem(
+      QString::fromStdString(Descriptor::Property::toString(item_param)));
 }
 
 template <typename Iterator>
@@ -216,23 +216,23 @@ void SelectedItemModel::makeItemEditor(const std::string& name,
                                        const Descriptor::Editor& editor)
 {
   item->setData(QVariant::fromValue(selected),
-                EditorItemDelegate::editor_select_);
-  item->setData(QVariant::fromValue(name), EditorItemDelegate::editor_name_);
+                EditorItemDelegate::kEditorSelect);
+  item->setData(QVariant::fromValue(name), EditorItemDelegate::kEditorName);
 
   Descriptor::Editor used_editor = editor;
-  if (type == EditorItemDelegate::BOOL) {
+  if (type == EditorItemDelegate::kBool) {
     // for BOOL, replace options with true/false options
     used_editor.options = {{"True", true}, {"False", false}};
   }
 
-  item->setData(QVariant::fromValue(used_editor), EditorItemDelegate::editor_);
+  item->setData(QVariant::fromValue(used_editor), EditorItemDelegate::kEditor);
   if (used_editor.options.empty()) {
     // options are empty so use selected type
-    item->setData(QVariant::fromValue(type), EditorItemDelegate::editor_type_);
+    item->setData(QVariant::fromValue(type), EditorItemDelegate::kEditorType);
   } else {
     // options are not empty so use list type
-    item->setData(QVariant::fromValue(EditorItemDelegate::LIST),
-                  EditorItemDelegate::editor_type_);
+    item->setData(QVariant::fromValue(EditorItemDelegate::kList),
+                  EditorItemDelegate::kEditorType);
   }
 }
 
@@ -252,10 +252,10 @@ QWidget* EditorItemDelegate::createEditor(
     const QModelIndex& index) const
 {
   auto type = index.model()
-                  ->data(index, editor_type_)
+                  ->data(index, kEditorType)
                   .value<EditorItemDelegate::EditType>();
   QWidget* editor;
-  if (type == LIST) {
+  if (type == kList) {
     editor = new QComboBox(parent);
   } else {
     editor = new QLineEdit(parent);
@@ -268,13 +268,13 @@ void EditorItemDelegate::setEditorData(QWidget* editor,
                                        const QModelIndex& index) const
 {
   auto type = index.model()
-                  ->data(index, editor_type_)
+                  ->data(index, kEditorType)
                   .value<EditorItemDelegate::EditType>();
   auto [callback, values]
-      = index.model()->data(index, editor_).value<Descriptor::Editor>();
+      = index.model()->data(index, kEditor).value<Descriptor::Editor>();
   QString value = index.model()->data(index, Qt::EditRole).toString();
 
-  if (type != LIST) {
+  if (type != kList) {
     QLineEdit* line_edit = static_cast<QLineEdit*>(editor);
     line_edit->setText(value);
   } else {
@@ -301,9 +301,9 @@ void EditorItemDelegate::setModelData(QWidget* editor,
                                       const QModelIndex& index) const
 {
   auto type
-      = model->data(index, editor_type_).value<EditorItemDelegate::EditType>();
+      = model->data(index, kEditorType).value<EditorItemDelegate::EditType>();
   auto [callback, values]
-      = model->data(index, editor_).value<Descriptor::Editor>();
+      = model->data(index, kEditor).value<Descriptor::Editor>();
 
   const QString old_value = index.model()->data(index, Qt::EditRole).toString();
 
@@ -311,12 +311,12 @@ void EditorItemDelegate::setModelData(QWidget* editor,
   QString value;
   std::any callback_value;
   bool value_valid = false;
-  if (type != LIST) {
+  if (type != kList) {
     QLineEdit* line_edit = static_cast<QLineEdit*>(editor);
     value = line_edit->text();
-    if (type == NUMBER) {
+    if (type == kNumber) {
       callback_value = value.toDouble(&value_valid);
-    } else if (type == STRING) {
+    } else if (type == kString) {
       callback_value = value.toStdString();
       value_valid = true;
     }
@@ -338,13 +338,13 @@ void EditorItemDelegate::setModelData(QWidget* editor,
   QString edit_save = old_value;  // default to set to old value
   if (accepted) {
     // retrieve property again
-    auto selected = model->data(index, editor_select_).value<Selected>();
-    auto item_name = model->data(index, editor_name_).value<std::string>();
+    auto selected = model->data(index, kEditorSelect).value<Selected>();
+    auto item_name = model->data(index, kEditorName).value<std::string>();
 
     auto new_property = selected.getProperty(item_name);
-    if (model->data(index, selected_).isValid()) {
+    if (model->data(index, kSelected).isValid()) {
       auto new_selected = std::any_cast<Selected>(new_property);
-      model->setData(index, QVariant::fromValue(new_selected), selected_);
+      model->setData(index, QVariant::fromValue(new_selected), kSelected);
     }
     edit_save
         = QString::fromStdString(Descriptor::Property::toString(new_property));
@@ -360,22 +360,27 @@ EditorItemDelegate::EditType EditorItemDelegate::getEditorType(
     const std::any& value)
 {
   if (std::any_cast<const char*>(&value)) {
-    return EditorItemDelegate::STRING;
-  } else if (std::any_cast<const std::string>(&value)) {
-    return EditorItemDelegate::STRING;
-  } else if (std::any_cast<int>(&value)) {
-    return EditorItemDelegate::NUMBER;
-  } else if (std::any_cast<unsigned int>(&value)) {
-    return EditorItemDelegate::NUMBER;
-  } else if (std::any_cast<double>(&value)) {
-    return EditorItemDelegate::NUMBER;
-  } else if (std::any_cast<float>(&value)) {
-    return EditorItemDelegate::NUMBER;
-  } else if (std::any_cast<bool>(&value)) {
-    return EditorItemDelegate::BOOL;
-  } else {
-    return EditorItemDelegate::STRING;
+    return EditorItemDelegate::kString;
   }
+  if (std::any_cast<const std::string>(&value)) {
+    return EditorItemDelegate::kString;
+  }
+  if (std::any_cast<int>(&value)) {
+    return EditorItemDelegate::kNumber;
+  }
+  if (std::any_cast<unsigned int>(&value)) {
+    return EditorItemDelegate::kNumber;
+  }
+  if (std::any_cast<double>(&value)) {
+    return EditorItemDelegate::kNumber;
+  }
+  if (std::any_cast<float>(&value)) {
+    return EditorItemDelegate::kNumber;
+  }
+  if (std::any_cast<bool>(&value)) {
+    return EditorItemDelegate::kBool;
+  }
+  return EditorItemDelegate::kString;
 }
 
 ////////
@@ -494,9 +499,7 @@ void ActionLayout::setGeometry(const QRect& rect)
   const int button_height = rowHeight();
 
   int y = effective_rect.y();
-  for (auto row_itr = rows.begin(); row_itr != rows.end(); row_itr++) {
-    ItemList& items = *row_itr;
-
+  for (ItemList& items : rows) {
     int x = effective_rect.x();
     int empty_space = effective_rect.right() - (x + rowWidth(items));
     const int size_adder
@@ -621,15 +624,12 @@ Inspector::Inspector(const SelectionSet& selected,
       action_layout_(new ActionLayout),
       selected_(selected),
       selected_itr_(selected.begin()),
-      selection_(Selected()),
       button_frame_(new QFrame(this)),
-      button_next_(
-          new QPushButton("Next \u2192", this)),  // \u2192 = right arrow
-      button_prev_(
-          new QPushButton("\u2190 Previous", this)),  // \u2190 = left arrow
+      button_next_(new QPushButton("Next →", this)),
+      button_prev_(new QPushButton("← Previous", this)),
       selected_itr_label_(new QLabel(this)),
-      mouse_timer_(),
-      clicked_index_(),
+      commands_menu_(new QMenu("Commands Menu", this)),
+      readonly_(false),
       highlighted_(highlighted)
 {
   setObjectName("inspector");  // for settings
@@ -637,7 +637,7 @@ Inspector::Inspector(const SelectionSet& selected,
   view_->setItemDelegate(new EditorItemDelegate(model_, this));
 
   QHeaderView* header = view_->header();
-  header->setSectionResizeMode(Name, QHeaderView::Interactive);
+  header->setSectionResizeMode(kName, QHeaderView::Interactive);
 
   QWidget* container = new QWidget(this);
 
@@ -664,45 +664,84 @@ Inspector::Inspector(const SelectionSet& selected,
   });
 
   connect(model_,
-          SIGNAL(selectedItemChanged(const QModelIndex&)),
+          &SelectedItemModel::selectedItemChanged,
           this,
-          SLOT(updateSelectedFields(const QModelIndex&)));
+          &Inspector::updateSelectedFields);
 
-  connect(view_,
-          SIGNAL(clicked(const QModelIndex&)),
-          this,
-          SLOT(clicked(const QModelIndex&)));
+  connect(view_, &ObjectTree::clicked, this, &Inspector::clicked);
+  connect(view_, &ObjectTree::doubleClicked, this, &Inspector::doubleClicked);
 
-  connect(button_prev_, SIGNAL(pressed()), this, SLOT(selectPrevious()));
+  connect(
+      button_prev_, &QPushButton::pressed, this, &Inspector::selectPrevious);
 
-  connect(button_next_, SIGNAL(pressed()), this, SLOT(selectNext()));
+  connect(button_next_, &QPushButton::pressed, this, &Inspector::selectNext);
 
   view_->setMouseTracking(true);
-  connect(view_,
-          SIGNAL(entered(const QModelIndex&)),
-          this,
-          SLOT(focusIndex(const QModelIndex&)));
+  view_->setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(view_, &ObjectTree::entered, this, &Inspector::focusIndex);
 
-  connect(view_, SIGNAL(viewportEntered()), this, SLOT(defocus()));
-  connect(view_, SIGNAL(mouseExited()), this, SLOT(defocus()));
+  connect(view_, &ObjectTree::viewportEntered, this, &Inspector::defocus);
+  connect(view_, &ObjectTree::mouseExited, this, &Inspector::defocus);
 
-  mouse_timer_.setInterval(mouse_double_click_scale_
+  mouse_timer_.setInterval(kMouseDoubleClickScale
                            * QApplication::doubleClickInterval());
   mouse_timer_.setSingleShot(true);
-  connect(&mouse_timer_, SIGNAL(timeout()), this, SLOT(indexClicked()));
+  connect(&mouse_timer_, &QTimer::timeout, this, &Inspector::indexClicked);
+
+  setCommandsMenu();
+}
+
+void Inspector::setCommandsMenu()
+{
+  connect(view_,
+          &ObjectTree::customContextMenuRequested,
+          this,
+          &Inspector::showCommandsMenu);
+
+  connect(commands_menu_->addAction("Report Path"),
+          &QAction::triggered,
+          [this] { writePathReportCommand(); });
+}
+
+void Inspector::showCommandsMenu(const QPoint& pos)
+{
+  clicked_index_ = view_->indexAt(pos);
+  QStandardItem* item = model_->itemFromIndex(clicked_index_);
+
+  if (!item) {
+    return;
+  }
+
+  Selected selected
+      = item->data(EditorItemDelegate::kSelected).value<Selected>();
+
+  if (selected) {
+    if (selected.getTypeName() == "ITerm") {
+      report_text_ = selected.getName();
+      commands_menu_->popup(view_->viewport()->mapToGlobal(pos));
+    }
+  }
+}
+
+void Inspector::writePathReportCommand()
+{
+  QString command = "report_checks -through ";
+  command += Utils::wrapInCurly(QString::fromStdString(report_text_));
+
+  emit setCommand(command);
 }
 
 void Inspector::adjustHeaders()
 {
   if (selection_) {
     // resize to fit the contents
-    view_->resizeColumnToContents(Name);
-    view_->resizeColumnToContents(Value);
+    view_->resizeColumnToContents(kName);
+    view_->resizeColumnToContents(kValue);
 
     const auto margins = view_->contentsMargins();
     const int width = view_->size().width() - margins.left() - margins.right();
-    const int name_width = view_->columnWidth(Name);
-    const int value_width = view_->columnWidth(Value);
+    const int name_width = view_->columnWidth(kName);
+    const int value_width = view_->columnWidth(kValue);
 
     const int max_name_width = width - value_width;
 
@@ -712,7 +751,7 @@ void Inspector::adjustHeaders()
       // check if using a smaller name column will be useful,
       // otherwise keep full width column.
       if (min_name_width <= max_name_width) {
-        view_->setColumnWidth(Name, max_name_width);
+        view_->setColumnWidth(kName, max_name_width);
       }
     }
   }
@@ -759,6 +798,8 @@ int Inspector::getSelectedIteratorPosition()
 
 void Inspector::inspect(const Selected& object)
 {
+  QApplication::setOverrideCursor(Qt::WaitCursor);
+
   if (deselect_action_) {
     deselect_action_();
   }
@@ -769,6 +810,12 @@ void Inspector::inspect(const Selected& object)
     navigation_history_.clear();
   }
 
+  if (object) {
+    qDebug() << "Inspector change selection to"
+             << QString::fromStdString(object.getName());
+  } else {
+    qDebug() << "Inspector change selection to nothing";
+  }
   selection_ = object;
   emit selection(object);
 
@@ -789,6 +836,8 @@ void Inspector::inspect(const Selected& object)
   }
 
   adjustHeaders();
+
+  QApplication::restoreOverrideCursor();
 }
 
 void Inspector::reload()
@@ -797,14 +846,16 @@ void Inspector::reload()
   model_->updateObject();
 }
 
-void Inspector::highlightChanged()
+void Inspector::setReadOnly()
 {
-  loadActions();
+  readonly_ = true;
+  reload();
 }
 
-void Inspector::focusNetsChanged()
+void Inspector::unsetReadOnly()
 {
-  loadActions();
+  readonly_ = false;
+  reload();
 }
 
 void Inspector::loadActions()
@@ -826,7 +877,7 @@ void Inspector::loadActions()
 
   // add action buttons
   for (const auto& action : selection_.getActions()) {
-    if (action.name == Descriptor::deselect_action_) {
+    if (action.name == Descriptor::kDeselectAction) {
       deselect_action_ = action.callback;
     } else {
       makeAction(action);
@@ -863,7 +914,7 @@ void Inspector::makeAction(const Descriptor::Action& action)
       {"De-focus", ":/defocus.png"},
       {"Navigate back", ":/undo.png"}};
   std::vector<std::pair<std::string, QString>> symbol_replacements{
-      {"Fanin Cone", "\u25B7"}, {"Fanout Cone", "\u25C1"}};
+      {"Fanin Cone", "▷"}, {"Fanout Cone", "◁"}};
 
   const std::string& name = action.name;
 
@@ -895,6 +946,10 @@ void Inspector::makeAction(const Descriptor::Action& action)
   });
   action_layout_->addWidget(button);
   actions_[button] = action.callback;
+
+  if (readonly_ && name == "Delete") {
+    button->setEnabled(false);
+  }
 }
 
 void Inspector::clicked(const QModelIndex& index)
@@ -903,11 +958,24 @@ void Inspector::clicked(const QModelIndex& index)
   // timer to be able to tell the difference
   if (!mouse_timer_.isActive()) {
     clicked_index_ = index;
+
+    // Bypass the timer for those items for which there's
+    // no double click handling
+    QStandardItem* item = model_->itemFromIndex(index);
+    QVariant edit_data = item->data(EditorItemDelegate::kEditor);
+    if (!edit_data.isValid()) {
+      indexClicked();
+      return;
+    }
+
     mouse_timer_.start();
-  } else {
-    mouse_timer_.stop();
-    emit indexDoubleClicked(index);
   }
+}
+
+void Inspector::doubleClicked(const QModelIndex& index)
+{
+  mouse_timer_.stop();
+  emit indexDoubleClicked(index);
 }
 
 void Inspector::indexClicked()
@@ -915,7 +983,7 @@ void Inspector::indexClicked()
   // handle single click event
   QStandardItem* item = model_->itemFromIndex(clicked_index_);
   auto new_selected
-      = item->data(EditorItemDelegate::selected_).value<Selected>();
+      = item->data(EditorItemDelegate::kSelected).value<Selected>();
   if (new_selected) {
     if (navigation_history_.empty()) {
       // add starting object
@@ -936,9 +1004,9 @@ void Inspector::indexDoubleClicked(const QModelIndex& index)
 {
   // handle single click event
   QStandardItem* item = model_->itemFromIndex(index);
-  QVariant item_data = item->data(EditorItemDelegate::editor_);
+  QVariant item_data = item->data(EditorItemDelegate::kEditor);
 
-  if (item_data.isValid()) {
+  if (!readonly_ && item_data.isValid()) {
     // set editable
     item->setEditable(true);
     // start editing
@@ -951,7 +1019,7 @@ void Inspector::focusIndex(const QModelIndex& focus_index)
   defocus();
 
   QStandardItem* item = model_->itemFromIndex(focus_index);
-  QVariant item_data = item->data(EditorItemDelegate::selected_);
+  QVariant item_data = item->data(EditorItemDelegate::kSelected);
 
   if (item_data.isValid()) {
     Selected sel = item_data.value<Selected>();
@@ -990,6 +1058,8 @@ void Inspector::update(const Selected& object)
 
 void Inspector::handleAction(QWidget* action)
 {
+  // Copy the callback as the action may be deleted from within the
+  // callback.
   auto callback = actions_[action];
   Selected new_selection;
   try {
@@ -999,6 +1069,7 @@ void Inspector::handleAction(QWidget* action)
   }
 
   if (new_selection && new_selection == selection_) {
+    loadActions();
     return;
   }
 
@@ -1081,7 +1152,8 @@ void Inspector::navigateBack()
     }
   }
 
-  emit inspect(next);
+  qDebug() << "Navigate to" << QString::fromStdString(next.getName());
+  emit selected(next);
 }
 
 ////////////

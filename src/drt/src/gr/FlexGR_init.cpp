@@ -1,39 +1,29 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
+#include <cstdlib>
 #include <deque>
+#include <iomanip>
 #include <iostream>
+#include <map>
+#include <memory>
+#include <utility>
+#include <vector>
 
-#include "FlexGR.h"
-#include "FlexGRCMap.h"
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frViaDef.h"
+#include "frBaseTypes.h"
+#include "gr/FlexGR.h"
+#include "gr/FlexGRCMap.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
-using namespace std;
-using namespace fr;
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
+
+namespace drt {
 
 void FlexGR::init()
 {
@@ -83,8 +73,8 @@ void FlexGR::initLayerPitch()
     }
 
     // calculate line-2-via pitch
-    frViaDef* downVia = nullptr;
-    frViaDef* upVia = nullptr;
+    const frViaDef* downVia = nullptr;
+    const frViaDef* upVia = nullptr;
     if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1) {
       downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
     }
@@ -98,7 +88,7 @@ void FlexGR::initLayerPitch()
 
     if (downVia) {
       frVia via(downVia);
-      Rect viaBox = via.getLayer2BBox();
+      odb::Rect viaBox = via.getLayer2BBox();
       frCoord enclosureWidth = viaBox.minDXDY();
       frCoord prl = isLayerHorz ? (viaBox.xMax() - viaBox.xMin())
                                 : (viaBox.yMax() - viaBox.yMin());
@@ -119,7 +109,7 @@ void FlexGR::initLayerPitch()
         } else if (con->typeId()
                    == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
           minReqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-              max(enclosureWidth, defaultWidth), prl);
+              std::max(enclosureWidth, defaultWidth), prl);
         } else if (con->typeId()
                    == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
           minReqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
@@ -141,7 +131,7 @@ void FlexGR::initLayerPitch()
 
     if (upVia) {
       frVia via(upVia);
-      Rect viaBox = via.getLayer1BBox();
+      odb::Rect viaBox = via.getLayer1BBox();
       frCoord enclosureWidth = viaBox.minDXDY();
       frCoord prl = isLayerHorz ? (viaBox.xMax() - viaBox.xMin())
                                 : (viaBox.yMax() - viaBox.yMin());
@@ -162,7 +152,7 @@ void FlexGR::initLayerPitch()
         } else if (con->typeId()
                    == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
           minReqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-              max(enclosureWidth, defaultWidth), prl);
+              std::max(enclosureWidth, defaultWidth), prl);
         } else if (con->typeId()
                    == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
           minReqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
@@ -183,27 +173,28 @@ void FlexGR::initLayerPitch()
     }
 
     if (minLine2ViaPitch > trackPitches_[zIdx]) {
-      layerPitches_[zIdx] = max(line2ViaPitchDown, line2ViaPitchUp);
+      layerPitches_[zIdx] = std::max(line2ViaPitchDown, line2ViaPitchUp);
     } else {
       layerPitches_[zIdx] = trackPitches_[zIdx];
     }
 
     // output
-    cout << layer->getName();
+    std::cout << layer->getName();
     if (isLayerHorz) {
-      cout << " H ";
+      std::cout << " H ";
     } else {
-      cout << " V ";
+      std::cout << " V ";
     }
-    cout << "Track-Pitch = " << fixed << setprecision(5)
-         << trackPitches_[zIdx]
-                / (double) (design_->getTopBlock()->getDBUPerUU())
-         << "  line-2-Via Pitch = " << fixed << setprecision(5)
-         << minLine2ViaPitch / (double) (design_->getTopBlock()->getDBUPerUU())
-         << endl;
+    std::cout << "Track-Pitch = " << std::fixed << std::setprecision(5)
+              << trackPitches_[zIdx]
+                     / (double) (design_->getTopBlock()->getDBUPerUU())
+              << "  line-2-Via Pitch = " << std::fixed << std::setprecision(5)
+              << minLine2ViaPitch
+                     / (double) (design_->getTopBlock()->getDBUPerUU())
+              << std::endl;
     if (trackPitches_[zIdx] < minLine2ViaPitch) {
-      cout << "Warning: Track pitch is too small compared with line-2-via "
-              "pitch\n";
+      std::cout << "Warning: Track pitch is too small compared with line-2-via "
+                   "pitch\n";
     }
 
     if (zIdx == 0) {
@@ -220,11 +211,12 @@ void FlexGR::initGCell()
   if (gcellPatterns.empty()) {
     auto layer = design_->getTech()->getLayer(2);
     auto pitch = layer->getPitch();
-    cout << endl
-         << "Generating GCell with size = 15 tracks, using layer "
-         << layer->getName() << " pitch  = "
-         << pitch / (double) (design_->getTopBlock()->getDBUPerUU()) << "\n";
-    Rect dieBox = design_->getTopBlock()->getDieBox();
+    std::cout << std::endl
+              << "Generating GCell with size = 15 tracks, using layer "
+              << layer->getName() << " pitch  = "
+              << pitch / (double) (design_->getTopBlock()->getDBUPerUU())
+              << "\n";
+    odb::Rect dieBox = design_->getTopBlock()->getDieBox();
 
     frGCellPattern xgp, ygp;
     // set xgp
@@ -244,6 +236,10 @@ void FlexGR::initGCell()
     ygp.setStartCoord(startCoordY);
     frCoord GCELLGRIDY = pitch * 15;
     ygp.setSpacing(GCELLGRIDY);
+    if (GCELLGRIDY == 0) {
+      std::cout << "Pitch is zero for " << layer->getName() << "\n";
+      exit(1);
+    }
     ygp.setCount((dieBox.yMax() - startCoordY) / GCELLGRIDY);
 
     design_->getTopBlock()->setGCellPatterns({xgp, ygp});
@@ -252,13 +248,13 @@ void FlexGR::initGCell()
 
 void FlexGR::initCMap()
 {
-  cout << endl << "initializing congestion map...\n";
-  auto cmap = make_unique<FlexGRCMap>(design_);
+  std::cout << std::endl << "initializing congestion map...\n";
+  auto cmap = std::make_unique<FlexGRCMap>(design_, router_cfg_);
   cmap->setLayerTrackPitches(trackPitches_);
   cmap->setLayerLine2ViaPitches(line2ViaPitches_);
   cmap->setLayerPitches(layerPitches_);
   cmap->init();
-  auto cmap2D = make_unique<FlexGRCMap>(design_);
+  auto cmap2D = std::make_unique<FlexGRCMap>(design_, router_cfg_);
   cmap2D->initFrom3D(cmap.get());
   // cmap->print2D(true);
   // cmap->print();
@@ -270,7 +266,7 @@ void FlexGR::initCMap()
 
 void FlexGRWorker::initBoundary()
 {
-  vector<grBlockObject*> result;
+  std::vector<grBlockObject*> result;
   getRegionQuery()->queryGRObj(extBox_, result);
   for (auto rptr : result) {
     if (rptr->typeId() == grcPathSeg) {
@@ -278,7 +274,7 @@ void FlexGRWorker::initBoundary()
       if (cptr->hasNet()) {
         initBoundary_splitPathSeg(cptr);
       } else {
-        cout << "Error: initNetObjs hasNet() empty" << endl;
+        std::cout << "Error: initNetObjs hasNet() empty" << std::endl;
       }
     }
   }
@@ -292,7 +288,7 @@ void FlexGRWorker::initBoundary_splitPathSeg(grPathSeg* pathSeg)
   if (extBox_.intersects(bp) && extBox_.intersects(ep)) {
     return;
   }
-  Point breakPt1, breakPt2;
+  odb::Point breakPt1, breakPt2;
   initBoundary_splitPathSeg_getBreakPts(bp, ep, breakPt1, breakPt2);
   auto parent = pathSeg->getParent();
   auto child = pathSeg->getChild();
@@ -303,7 +299,7 @@ void FlexGRWorker::initBoundary_splitPathSeg(grPathSeg* pathSeg)
   } else {
     // break on both sides
 
-    Point childLoc = child->getLoc();
+    odb::Point childLoc = child->getLoc();
     if (childLoc == bp) {
       auto breakNode1
           = initBoundary_splitPathSeg_split(child, parent, breakPt1);
@@ -317,10 +313,10 @@ void FlexGRWorker::initBoundary_splitPathSeg(grPathSeg* pathSeg)
 }
 
 // breakPt1 <= breakPt2 always
-void FlexGRWorker::initBoundary_splitPathSeg_getBreakPts(const Point& bp,
-                                                         const Point& ep,
-                                                         Point& breakPt1,
-                                                         Point& breakPt2)
+void FlexGRWorker::initBoundary_splitPathSeg_getBreakPts(const odb::Point& bp,
+                                                         const odb::Point& ep,
+                                                         odb::Point& breakPt1,
+                                                         odb::Point& breakPt2)
 {
   bool hasBreakPt1 = false;
   bool hasBreakPt2 = false;
@@ -329,26 +325,26 @@ void FlexGRWorker::initBoundary_splitPathSeg_getBreakPts(const Point& bp,
     // V
     // break point at bottom
     if (bp.y() < extBox_.yMin()) {
-      breakPt1.set(bp.x(), extBox_.yMin());
+      breakPt1 = {bp.x(), extBox_.yMin()};
       hasBreakPt1 = true;
     }
     if (ep.y() > extBox_.yMax()) {
-      breakPt2.set(ep.x(), extBox_.yMax());
+      breakPt2 = {ep.x(), extBox_.yMax()};
       hasBreakPt2 = true;
     }
   } else if (bp.y() == ep.y()) {
     // H
     if (bp.x() < extBox_.xMin()) {
-      breakPt1.set(extBox_.xMin(), bp.y());
+      breakPt1 = {extBox_.xMin(), bp.y()};
       hasBreakPt1 = true;
     }
     if (ep.x() > extBox_.xMax()) {
-      breakPt2.set(extBox_.xMax(), ep.y());
+      breakPt2 = {extBox_.xMax(), ep.y()};
       hasBreakPt2 = true;
     }
   } else {
-    cout << "Error: jackpot in "
-            "FlexGRWorker::initBoundary_splitPathSeg_getBreakPts\n";
+    std::cout << "Error: jackpot in "
+                 "FlexGRWorker::initBoundary_splitPathSeg_getBreakPts\n";
   }
 
   if (hasBreakPt1 && !hasBreakPt2) {
@@ -358,24 +354,24 @@ void FlexGRWorker::initBoundary_splitPathSeg_getBreakPts(const Point& bp,
   } else if (hasBreakPt1 && hasBreakPt2) {
     ;
   } else {
-    cout << "Error: at least one breakPt should be created in "
-            "FlexGRWorker::initBoundary_splitPathSeg_getBreakPts\n";
+    std::cout << "Error: at least one breakPt should be created in "
+                 "FlexGRWorker::initBoundary_splitPathSeg_getBreakPts\n";
   }
 }
 
 frNode* FlexGRWorker::initBoundary_splitPathSeg_split(frNode* child,
                                                       frNode* parent,
-                                                      const Point& breakPt)
+                                                      const odb::Point& breakPt)
 {
   // frNet
   auto pathSeg = static_cast<grPathSeg*>(child->getConnFig());
   auto net = pathSeg->getNet();
   auto lNum = pathSeg->getLayerNum();
   auto [bp, ep] = pathSeg->getPoints();
-  Point childLoc = child->getLoc();
+  odb::Point childLoc = child->getLoc();
   bool isChildBP = (childLoc == bp);
 
-  auto uBreakNode = make_unique<frNode>();
+  auto uBreakNode = std::make_unique<frNode>();
   auto breakNode = uBreakNode.get();
   breakNode->addToNet(net);
   breakNode->setLoc(breakPt);
@@ -393,7 +389,7 @@ frNode* FlexGRWorker::initBoundary_splitPathSeg_split(frNode* child,
 
   // create new pathSegs
   // child - breakPt
-  auto uPathSeg1 = make_unique<grPathSeg>();
+  auto uPathSeg1 = std::make_unique<grPathSeg>();
   auto pathSeg1 = uPathSeg1.get();
   pathSeg1->setChild(child);
   child->setConnFig(pathSeg1);
@@ -407,7 +403,7 @@ frNode* FlexGRWorker::initBoundary_splitPathSeg_split(frNode* child,
   pathSeg1->setLayerNum(lNum);
 
   // breakPt - parent
-  auto uPathSeg2 = make_unique<grPathSeg>();
+  auto uPathSeg2 = std::make_unique<grPathSeg>();
   auto pathSeg2 = uPathSeg2.get();
   pathSeg2->setChild(breakNode);
   breakNode->setConnFig(pathSeg2);
@@ -425,8 +421,8 @@ frNode* FlexGRWorker::initBoundary_splitPathSeg_split(frNode* child,
   getRegionQuery()->addGRObj(pathSeg2);
 
   // update net ownership
-  unique_ptr<grShape> uGRConnFig1(std::move(uPathSeg1));
-  unique_ptr<grShape> uGRConnFig2(std::move(uPathSeg2));
+  std::unique_ptr<grShape> uGRConnFig1(std::move(uPathSeg1));
+  std::unique_ptr<grShape> uGRConnFig2(std::move(uPathSeg2));
 
   net->addGRShape(uGRConnFig1);
   net->addGRShape(uGRConnFig2);
@@ -449,8 +445,8 @@ void FlexGRWorker::init()
 
 void FlexGRWorker::initNets()
 {
-  set<frNet*, frBlockObjectComp> nets;
-  map<frNet*, vector<frNode*>, frBlockObjectComp> netRoots;
+  frOrderedIdSet<frNet*> nets;
+  frOrderedIdMap<frNet*, std::vector<frNode*>> netRoots;
 
   initNets_roots(nets, netRoots);
   initNets_searchRepair(nets, netRoots);
@@ -459,10 +455,10 @@ void FlexGRWorker::initNets()
 
 // get all roots of subnets
 void FlexGRWorker::initNets_roots(
-    set<frNet*, frBlockObjectComp>& nets,
-    map<frNet*, vector<frNode*>, frBlockObjectComp>& netRoots)
+    frOrderedIdSet<frNet*>& nets,
+    frOrderedIdMap<frNet*, std::vector<frNode*>>& netRoots)
 {
-  vector<grBlockObject*> result;
+  std::vector<grBlockObject*> result;
   getRegionQuery()->queryGRObj(routeBox_, result);
 
   for (auto rptr : result) {
@@ -471,18 +467,18 @@ void FlexGRWorker::initNets_roots(
       if (cptr->hasNet()) {
         initNetObjs_roots_pathSeg(cptr, nets, netRoots);
       } else {
-        cout << "Error: initNetObjs hasNet() empty" << endl;
+        std::cout << "Error: initNetObjs hasNet() empty" << std::endl;
       }
     } else if (rptr->typeId() == grcVia) {
       auto cptr = static_cast<grVia*>(rptr);
       if (cptr->hasNet()) {
         initNetObjs_roots_via(cptr, nets, netRoots);
       } else {
-        cout << "Error: initNetObjs hasNet() empty" << endl;
+        std::cout << "Error: initNetObjs hasNet() empty" << std::endl;
       }
     } else {
-      cout << rptr->typeId() << endl;
-      cout << "Error: initNetObjs unsupported type" << endl;
+      std::cout << rptr->typeId() << std::endl;
+      std::cout << "Error: initNetObjs unsupported type" << std::endl;
     }
   }
 }
@@ -491,8 +487,8 @@ void FlexGRWorker::initNets_roots(
 // root (i.e., outgoing edge)
 void FlexGRWorker::initNetObjs_roots_pathSeg(
     grPathSeg* pathSeg,
-    set<frNet*, frBlockObjectComp>& nets,
-    map<frNet*, vector<frNode*>, frBlockObjectComp>& netRoots)
+    frOrderedIdSet<frNet*>& nets,
+    frOrderedIdMap<frNet*, std::vector<frNode*>>& netRoots)
 {
   auto net = pathSeg->getNet();
   nets.insert(net);
@@ -517,8 +513,8 @@ void FlexGRWorker::initNetObjs_roots_pathSeg(
 // grandparent is a subnet root
 void FlexGRWorker::initNetObjs_roots_via(
     grVia* via,
-    set<frNet*, frBlockObjectComp>& nets,
-    map<frNet*, vector<frNode*>, frBlockObjectComp>& netRoots)
+    frOrderedIdSet<frNet*>& nets,
+    frOrderedIdMap<frNet*, std::vector<frNode*>>& netRoots)
 {
   auto net = via->getNet();
   nets.insert(net);
@@ -531,24 +527,24 @@ void FlexGRWorker::initNetObjs_roots_via(
 }
 
 void FlexGRWorker::initNets_searchRepair(
-    set<frNet*, frBlockObjectComp>& nets,
-    map<frNet*, vector<frNode*>, frBlockObjectComp>& netRoots)
+    frOrderedIdSet<frNet*>& nets,
+    frOrderedIdMap<frNet*, std::vector<frNode*>>& netRoots)
 {
   for (auto net : nets) {
     initNet(net, netRoots[net]);
   }
 }
 
-void FlexGRWorker::initNet(frNet* net, const vector<frNode*>& netRoots)
+void FlexGRWorker::initNet(frNet* net, const std::vector<frNode*>& netRoots)
 {
-  set<frNode*, frBlockObjectComp> uniqueRoots;
+  frOrderedIdSet<frNode*> uniqueRoots;
   for (auto fRoot : netRoots) {
     if (uniqueRoots.find(fRoot) != uniqueRoots.end()) {
       continue;
     }
     uniqueRoots.insert(fRoot);
 
-    auto uGRNet = make_unique<grNet>();
+    auto uGRNet = std::make_unique<grNet>();
     auto gNet = uGRNet.get();
     gNet->setFrNet(net);
 
@@ -568,12 +564,12 @@ void FlexGRWorker::initNet(frNet* net, const vector<frNode*>& netRoots)
 void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
 {
   // map from loc to gcell node
-  // map<pair<Point, frlayerNum>, grNode*> loc2GCellNode;
-  vector<pair<frNode*, grNode*>> pinNodePairs;
-  map<grNode*, frNode*, frBlockObjectComp> gr2FrPinNode;
+  // std::map<std::pair<odb::Point, frlayerNum>, grNode*> loc2GCellNode;
+  std::vector<std::pair<frNode*, grNode*>> pinNodePairs;
+  frOrderedIdMap<grNode*, frNode*> gr2FrPinNode;
   // parent grNode to children frNode
-  deque<pair<grNode*, frNode*>> nodeQ;
-  nodeQ.push_back(make_pair(nullptr, fRoot));
+  std::deque<std::pair<grNode*, frNode*>> nodeQ;
+  nodeQ.emplace_back(nullptr, fRoot);
 
   grNode* parent = nullptr;
   frNode* child = nullptr;
@@ -585,7 +581,7 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
     nodeQ.pop_front();
 
     bool isRoot = (parent == nullptr);
-    Point parentLoc;
+    odb::Point parentLoc;
     if (!isRoot) {
       parentLoc = parent->getLoc();
     }
@@ -600,7 +596,7 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
 
     // root at boundary
     if (!isRoot && parent->getType() == frNodeTypeEnum::frcBoundaryPin) {
-      Point gcellLoc = getBoundaryPinGCellNodeLoc(parentLoc);
+      odb::Point gcellLoc = getBoundaryPinGCellNodeLoc(parentLoc);
       // if parent is boundary pin, child must be on the same layer
       if (gcellLoc != childLoc) {
         needGenParentGCellNode = true;
@@ -609,7 +605,7 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
     // leaf at boundary
     if (!needGenParentGCellNode && !isRoot
         && child->getType() == frNodeTypeEnum::frcBoundaryPin) {
-      Point gcellLoc = getBoundaryPinGCellNodeLoc(childLoc);
+      odb::Point gcellLoc = getBoundaryPinGCellNodeLoc(childLoc);
       // no need to gen gcell node if immediate parent is the gcell node we need
       if (gcellLoc != parentLoc) {
         needGenChildGCellNode = true;
@@ -620,12 +616,12 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
     // deep copy node -- if need to generate (either parent or child), gen new
     // node instead of copy
     if (needGenParentGCellNode) {
-      auto uGCellNode = make_unique<grNode>();
+      auto uGCellNode = std::make_unique<grNode>();
       auto gcellNode = uGCellNode.get();
       net->addNode(uGCellNode);
 
       gcellNode->addToNet(net);
-      Point gcellNodeLoc = getBoundaryPinGCellNodeLoc(parentLoc);
+      odb::Point gcellNodeLoc = getBoundaryPinGCellNodeLoc(parentLoc);
 
       gcellNode->setLoc(gcellNodeLoc);
       gcellNode->setLayerNum(parent->getLayerNum());
@@ -636,12 +632,12 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
 
       newNode = gcellNode;
     } else if (needGenChildGCellNode) {
-      auto uGCellNode = make_unique<grNode>();
+      auto uGCellNode = std::make_unique<grNode>();
       auto gcellNode = uGCellNode.get();
       net->addNode(uGCellNode);
 
       gcellNode->addToNet(net);
-      Point gcellNodeLoc = getBoundaryPinGCellNodeLoc(childLoc);
+      odb::Point gcellNodeLoc = getBoundaryPinGCellNodeLoc(childLoc);
 
       gcellNode->setLoc(gcellNodeLoc);
       gcellNode->setLayerNum(child->getLayerNum());
@@ -652,7 +648,7 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
 
       newNode = gcellNode;
     } else {
-      auto uChildNode = make_unique<grNode>(*child);
+      auto uChildNode = std::make_unique<grNode>(*child);
       auto childNode = uChildNode.get();
       net->addNode(uChildNode);
 
@@ -669,7 +665,7 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
       // add to pinNodePairs
       if (child->getType() == frNodeTypeEnum::frcBoundaryPin
           || child->getType() == frNodeTypeEnum::frcPin) {
-        pinNodePairs.push_back(make_pair(child, childNode));
+        pinNodePairs.emplace_back(child, childNode);
         gr2FrPinNode[childNode] = child;
 
         if (isRoot) {
@@ -680,13 +676,13 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
 
     // push edge to queue
     if (needGenParentGCellNode) {
-      nodeQ.push_back(make_pair(newNode, child));
+      nodeQ.emplace_back(newNode, child);
     } else if (needGenChildGCellNode) {
-      nodeQ.push_back(make_pair(newNode, child));
+      nodeQ.emplace_back(newNode, child);
     } else {
       if (isRoot || child->getType() == frNodeTypeEnum::frcSteiner) {
         for (auto grandChild : child->getChildren()) {
-          nodeQ.push_back(make_pair(newNode, grandChild));
+          nodeQ.emplace_back(newNode, grandChild);
         }
       }
     }
@@ -696,20 +692,21 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
   net->setGR2FrPinNode(gr2FrPinNode);
 }
 
-Point FlexGRWorker::getBoundaryPinGCellNodeLoc(const Point& boundaryPinLoc)
+odb::Point FlexGRWorker::getBoundaryPinGCellNodeLoc(
+    const odb::Point& boundaryPinLoc)
 {
-  Point gcellNodeLoc;
+  odb::Point gcellNodeLoc;
   if (boundaryPinLoc.x() == extBox_.xMin()) {
-    gcellNodeLoc.set(routeBox_.xMin(), boundaryPinLoc.y());
+    gcellNodeLoc = {routeBox_.xMin(), boundaryPinLoc.y()};
   } else if (boundaryPinLoc.x() == extBox_.xMax()) {
-    gcellNodeLoc.set(routeBox_.xMax(), boundaryPinLoc.y());
+    gcellNodeLoc = {routeBox_.xMax(), boundaryPinLoc.y()};
   } else if (boundaryPinLoc.y() == extBox_.yMin()) {
-    gcellNodeLoc.set(boundaryPinLoc.x(), routeBox_.yMin());
+    gcellNodeLoc = {boundaryPinLoc.x(), routeBox_.yMin()};
   } else if (boundaryPinLoc.y() == extBox_.yMax()) {
-    gcellNodeLoc.set(boundaryPinLoc.x(), routeBox_.yMax());
+    gcellNodeLoc = {boundaryPinLoc.x(), routeBox_.yMax()};
   } else {
-    cout << "Error: non-boundary pin loc in "
-            "FlexGRWorker::getBoundaryPinGCellNodeLoc\n";
+    std::cout << "Error: non-boundary pin loc in "
+                 "FlexGRWorker::getBoundaryPinGCellNodeLoc\n";
   }
   return gcellNodeLoc;
 }
@@ -721,25 +718,26 @@ void FlexGRWorker::initNet_initRoot(grNet* net)
   net->setRoot(rootNode);
   // sanity check
   if (rootNode->getType() == frNodeTypeEnum::frcBoundaryPin) {
-    Point rootLoc = rootNode->getLoc();
+    odb::Point rootLoc = rootNode->getLoc();
     if (extBox_.intersects(rootLoc) && routeBox_.intersects(rootLoc)) {
-      cout << "Error: root should be on an outgoing edge\n";
+      std::cout << "Error: root should be on an outgoing edge\n";
     }
   } else if (rootNode->getType() == frNodeTypeEnum::frcPin) {
-    Point rootLoc = rootNode->getLoc();
-    Point globalRootLoc = rootNode->getNet()->getFrNet()->getRoot()->getLoc();
+    odb::Point rootLoc = rootNode->getLoc();
+    odb::Point globalRootLoc
+        = rootNode->getNet()->getFrNet()->getRoot()->getLoc();
     if (rootLoc != globalRootLoc) {
-      cout << "Error: local root and global root location mismatch\n";
+      std::cout << "Error: local root and global root location mismatch\n";
     }
   } else {
-    cout << "Error: root should not be steiner\n";
+    std::cout << "Error: root should not be steiner\n";
   }
 }
 
 // based on topology, add / remove congestion map (in gridGraph)
 void FlexGRWorker::initNet_updateCMap(grNet* net, bool isAdd)
 {
-  deque<grNode*> nodeQ;
+  std::deque<grNode*> nodeQ;
   nodeQ.push_back(net->getRoot());
 
   while (!nodeQ.empty()) {
@@ -763,7 +761,7 @@ void FlexGRWorker::initNet_updateCMap(grNet* net, bool isAdd)
         auto parentLoc = parent->getLoc();
         auto nodeLoc = node->getLoc();
         FlexMazeIdx bi, ei;
-        Point bp, ep;
+        odb::Point bp, ep;
         frLayerNum lNum = parent->getLayerNum();
         if (parentLoc < nodeLoc) {
           bp = parentLoc;
@@ -798,7 +796,8 @@ void FlexGRWorker::initNet_updateCMap(grNet* net, bool isAdd)
             }
           }
         } else {
-          cout << "Error: non-colinear pathSeg in updateCMap_net" << endl;
+          std::cout << "Error: non-colinear pathSeg in updateCMap_net"
+                    << std::endl;
         }
       }
     }
@@ -808,13 +807,13 @@ void FlexGRWorker::initNet_updateCMap(grNet* net, bool isAdd)
 // initialize pinGCellNodes as well as removing overlapping pinGCellNodes
 void FlexGRWorker::initNet_initPinGCellNodes(grNet* net)
 {
-  vector<pair<grNode*, grNode*>> pinGCellNodePairs;
-  map<grNode*, vector<grNode*>, frBlockObjectComp> gcell2PinNodes;
-  vector<grNode*> pinGCellNodes;
-  map<FlexMazeIdx, grNode*> midx2PinGCellNode;
+  std::vector<std::pair<grNode*, grNode*>> pinGCellNodePairs;
+  frOrderedIdMap<grNode*, std::vector<grNode*>> gcell2PinNodes;
+  std::vector<grNode*> pinGCellNodes;
+  std::map<FlexMazeIdx, grNode*> midx2PinGCellNode;
   grNode* rootGCellNode = nullptr;
 
-  deque<grNode*> nodeQ;
+  std::deque<grNode*> nodeQ;
   nodeQ.push_back(net->getRoot());
   while (!nodeQ.empty()) {
     auto node = nodeQ.front();
@@ -837,7 +836,7 @@ void FlexGRWorker::initNet_initPinGCellNodes(grNet* net)
       rootGCellNode = gcellNode;
     }
 
-    Point gcellNodeLoc = gcellNode->getLoc();
+    odb::Point gcellNodeLoc = gcellNode->getLoc();
     frLayerNum gcellNodeLNum = gcellNode->getLayerNum();
     FlexMazeIdx gcellNodeMIdx;
     gridGraph_.getMazeIdx(gcellNodeLoc, gcellNodeLNum, gcellNodeMIdx);
@@ -847,14 +846,14 @@ void FlexGRWorker::initNet_initPinGCellNodes(grNet* net)
     } else {
       if (gcellNode != midx2PinGCellNode[gcellNodeMIdx]) {
         // disjoint pinGCellNode overlap
-        cout << "Warning: overlapping disjoint pinGCellNodes detected of "
-             << net->getFrNet()->getName() << "\n";
+        std::cout << "Warning: overlapping disjoint pinGCellNodes detected of "
+                  << net->getFrNet()->getName() << "\n";
         // ripup to make sure congestion map is up-to-date
         net->setRipup(true);
         if (midx2PinGCellNode[gcellNodeMIdx] == rootGCellNode) {
           // loop back to rootGCellNode, need to directly connect child node to
           // root
-          cout << "  between rootGCellNode and non-rootGCellNode\n";
+          std::cout << "  between rootGCellNode and non-rootGCellNode\n";
           node->getParent()->removeChild(node);
           if (node->getConnFig()) {
             auto pathSeg = static_cast<grPathSeg*>(node->getConnFig());
@@ -867,7 +866,7 @@ void FlexGRWorker::initNet_initPinGCellNodes(grNet* net)
           // merge the gcellNode to existing leaf node (directly connect all
           // children of the gcellNode to existing leaf) do not care about their
           // parents because it will be rerouted anyway
-          cout << "  between non-rootGCellNode and non-rootGCellNode\n";
+          std::cout << "  between non-rootGCellNode and non-rootGCellNode\n";
           node->getParent()->removeChild(node);
           if (node->getConnFig()) {
             auto pathSeg = static_cast<grPathSeg*>(node->getConnFig());
@@ -881,7 +880,7 @@ void FlexGRWorker::initNet_initPinGCellNodes(grNet* net)
     }
 
     if (gcellNode) {
-      pinGCellNodePairs.push_back(make_pair(node, gcellNode));
+      pinGCellNodePairs.emplace_back(node, gcellNode);
       if (gcell2PinNodes.find(gcellNode) == gcell2PinNodes.end()) {
         pinGCellNodes.push_back(gcellNode);
       }
@@ -897,14 +896,14 @@ void FlexGRWorker::initNet_initPinGCellNodes(grNet* net)
   } else if (pinGCellNodes.size() > 1) {
     net->setTrivial(false);
   } else {
-    cout << "Error: pinGCellNodes should contain at least one element\n";
+    std::cout << "Error: pinGCellNodes should contain at least one element\n";
   }
 }
 
 // generate route and ext objs based on subnet tree node information
 void FlexGRWorker::initNet_initObjs(grNet* net)
 {
-  deque<grNode*> nodeQ;
+  std::deque<grNode*> nodeQ;
   nodeQ.push_back(net->getRoot());
   while (!nodeQ.empty()) {
     auto node = nodeQ.front();
@@ -936,9 +935,9 @@ void FlexGRWorker::initNet_initObjs(grNet* net)
     if (node->getLayerNum() == node->getParent()->getLayerNum()) {
       // pathSeg
       auto parent = node->getParent();
-      Point childLoc = node->getLoc();
-      Point parentLoc = parent->getLoc();
-      Point bp, ep;
+      odb::Point childLoc = node->getLoc();
+      odb::Point parentLoc = parent->getLoc();
+      odb::Point bp, ep;
       if (childLoc < parentLoc) {
         bp = childLoc;
         ep = parentLoc;
@@ -947,14 +946,14 @@ void FlexGRWorker::initNet_initObjs(grNet* net)
         ep = childLoc;
       }
 
-      auto uPathSeg = make_unique<grPathSeg>();
+      auto uPathSeg = std::make_unique<grPathSeg>();
       uPathSeg->setChild(node);
       uPathSeg->setParent(parent);
       uPathSeg->addToNet(net);
       uPathSeg->setPoints(bp, ep);
       uPathSeg->setLayerNum(node->getLayerNum());
 
-      unique_ptr<grConnFig> uGRConnFig(std::move(uPathSeg));
+      std::unique_ptr<grConnFig> uGRConnFig(std::move(uPathSeg));
       if (isExt) {
         net->addExtConnFig(uGRConnFig);
       } else {
@@ -964,11 +963,11 @@ void FlexGRWorker::initNet_initObjs(grNet* net)
       // via
       auto parent = node->getParent();
       frLayerNum beginLayerNum, endLayerNum;
-      Point loc = node->getLoc();
+      odb::Point loc = node->getLoc();
       beginLayerNum = node->getLayerNum();
       endLayerNum = parent->getLayerNum();
 
-      auto uVia = make_unique<grVia>();
+      auto uVia = std::make_unique<grVia>();
       uVia->setChild(node);
       uVia->setParent(parent);
       uVia->addToNet(net);
@@ -977,7 +976,7 @@ void FlexGRWorker::initNet_initObjs(grNet* net)
                           ->getLayer((beginLayerNum + endLayerNum) / 2)
                           ->getDefaultViaDef());
 
-      unique_ptr<grConnFig> uGRConnFig(std::move(uVia));
+      std::unique_ptr<grConnFig> uGRConnFig(std::move(uVia));
       if (isExt) {
         net->addExtConnFig(uGRConnFig);
       } else {
@@ -987,7 +986,7 @@ void FlexGRWorker::initNet_initObjs(grNet* net)
   }
 }
 
-void FlexGRWorker::initNet_addNet(unique_ptr<grNet>& in)
+void FlexGRWorker::initNet_addNet(std::unique_ptr<grNet>& in)
 {
   owner2nets_[in->getFrNet()].push_back(in.get());
   nets_.push_back(std::move(in));
@@ -1001,7 +1000,7 @@ void FlexGRWorker::initNets_regionQuery()
 
 void FlexGRWorker::initNets_printNets()
 {
-  cout << endl << "printing grNets\n";
+  std::cout << std::endl << "printing grNets\n";
   for (auto& net : nets_) {
     initNets_printNet(net.get());
   }
@@ -1010,28 +1009,29 @@ void FlexGRWorker::initNets_printNets()
 void FlexGRWorker::initNets_printNet(grNet* net)
 {
   auto root = net->getRoot();
-  deque<grNode*> nodeQ;
+  std::deque<grNode*> nodeQ;
   nodeQ.push_back(root);
 
-  cout << "start traversing subnet of " << net->getFrNet()->getName() << endl;
+  std::cout << "start traversing subnet of " << net->getFrNet()->getName()
+            << std::endl;
 
   while (!nodeQ.empty()) {
     auto node = nodeQ.front();
     nodeQ.pop_front();
 
-    cout << "  ";
+    std::cout << "  ";
     if (node->getType() == frNodeTypeEnum::frcSteiner) {
-      cout << "steiner node ";
+      std::cout << "steiner node ";
     } else if (node->getType() == frNodeTypeEnum::frcPin) {
-      cout << "pin node ";
+      std::cout << "pin node ";
     } else if (node->getType() == frNodeTypeEnum::frcBoundaryPin) {
-      cout << "boundary pin node ";
+      std::cout << "boundary pin node ";
     }
-    cout << "at ";
-    Point loc = node->getLoc();
+    std::cout << "at ";
+    odb::Point loc = node->getLoc();
     frLayerNum lNum = node->getLayerNum();
-    cout << "(" << loc.x() << ", " << loc.y() << ") on layerNum " << lNum
-         << endl;
+    std::cout << "(" << loc.x() << ", " << loc.y() << ") on layerNum " << lNum
+              << std::endl;
 
     for (auto child : node->getChildren()) {
       nodeQ.push_back(child);
@@ -1040,9 +1040,9 @@ void FlexGRWorker::initNets_printNet(grNet* net)
 }
 
 void FlexGRWorker::initNets_printFNets(
-    map<frNet*, vector<frNode*>, frBlockObjectComp>& netRoots)
+    frOrderedIdMap<frNet*, std::vector<frNode*>>& netRoots)
 {
-  cout << endl << "printing frNets\n";
+  std::cout << std::endl << "printing frNets\n";
   for (auto& [net, roots] : netRoots) {
     for (auto root : roots) {
       initNets_printFNet(root);
@@ -1052,10 +1052,11 @@ void FlexGRWorker::initNets_printFNets(
 
 void FlexGRWorker::initNets_printFNet(frNode* root)
 {
-  deque<frNode*> nodeQ;
+  std::deque<frNode*> nodeQ;
   nodeQ.push_back(root);
 
-  cout << "start traversing subnet of " << root->getNet()->getName() << endl;
+  std::cout << "start traversing subnet of " << root->getNet()->getName()
+            << std::endl;
 
   bool isRoot = true;
 
@@ -1063,19 +1064,19 @@ void FlexGRWorker::initNets_printFNet(frNode* root)
     auto node = nodeQ.front();
     nodeQ.pop_front();
 
-    cout << "  ";
+    std::cout << "  ";
     if (node->getType() == frNodeTypeEnum::frcSteiner) {
-      cout << "steiner node ";
+      std::cout << "steiner node ";
     } else if (node->getType() == frNodeTypeEnum::frcPin) {
-      cout << "pin node ";
+      std::cout << "pin node ";
     } else if (node->getType() == frNodeTypeEnum::frcBoundaryPin) {
-      cout << "boundary pin node ";
+      std::cout << "boundary pin node ";
     }
-    cout << "at ";
-    Point loc = node->getLoc();
+    std::cout << "at ";
+    odb::Point loc = node->getLoc();
     frLayerNum lNum = node->getLayerNum();
-    cout << "(" << loc.x() << ", " << loc.y() << ") on layerNum " << lNum
-         << endl;
+    std::cout << "(" << loc.x() << ", " << loc.y() << ") on layerNum " << lNum
+              << std::endl;
 
     if (isRoot || node->getType() == frNodeTypeEnum::frcSteiner) {
       for (auto child : node->getChildren()) {
@@ -1100,8 +1101,8 @@ void FlexGRWorker::initGridGraph()
 void FlexGRWorker::initGridGraph_fromCMap()
 {
   auto cmap = getCMap();
-  Point gcellIdxLL = getRouteGCellIdxLL();
-  Point gcellIdxUR = getRouteGCellIdxUR();
+  odb::Point gcellIdxLL = getRouteGCellIdxLL();
+  odb::Point gcellIdxUR = getRouteGCellIdxUR();
   int idxLLX = gcellIdxLL.x();
   int idxLLY = gcellIdxLL.y();
   int idxURX = gcellIdxUR.x();
@@ -1164,3 +1165,5 @@ void FlexGRWorker::initGridGraph_fromCMap()
     }
   }
 }
+
+}  // namespace drt

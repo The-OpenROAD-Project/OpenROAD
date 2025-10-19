@@ -1,44 +1,29 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "FlexGRCMap.h"
+#include "gr/FlexGRCMap.h"
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <iterator>
+#include <memory>
+#include <set>
+#include <vector>
 
-using namespace std;
-using namespace fr;
+#include "db/obj/frBTerm.h"
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+
+using odb::dbTechLayerType;
+
+namespace drt {
 
 void FlexGRCMap::initFrom3D(FlexGRCMap* cmap3D)
 {
   // fake zMap
-  zMap_[0] = dbTechLayerDir::NONE;
+  zMap_[0] = odb::dbTechLayerDir::NONE;
 
   // resize cmap
   unsigned size = xgp_->getCount() * ygp_->getCount();
@@ -47,7 +32,7 @@ void FlexGRCMap::initFrom3D(FlexGRCMap* cmap3D)
   // init supply / demand (from 3D cmap)
   unsigned zIdx = 0;
   for (auto& [layerIdx, dir] : cmap3D->getZMap()) {
-    if (dir == dbTechLayerDir::HORIZONTAL) {
+    if (dir == odb::dbTechLayerDir::HORIZONTAL) {
       for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
         // non-transition via layer
         for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
@@ -65,7 +50,7 @@ void FlexGRCMap::initFrom3D(FlexGRCMap* cmap3D)
           }
         }
       }
-    } else if (dir == dbTechLayerDir::VERTICAL) {
+    } else if (dir == odb::dbTechLayerDir::VERTICAL) {
       for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
         for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
           // supply
@@ -83,8 +68,8 @@ void FlexGRCMap::initFrom3D(FlexGRCMap* cmap3D)
         }
       }
     } else {
-      cout << "Warning: unsupported routing direction for layerIdx = "
-           << layerIdx << "\n";
+      std::cout << "Warning: unsupported routing direction for layerIdx = "
+                << layerIdx << "\n";
     }
     zIdx++;
   }
@@ -127,10 +112,10 @@ void FlexGRCMap::init()
   // init supply (only for pref routing direction)
   unsigned cmapLayerIdx = 0;
   for (auto& [layerIdx, dir] : zMap_) {
-    if (dir == dbTechLayerDir::HORIZONTAL) {
+    if (dir == odb::dbTechLayerDir::HORIZONTAL) {
       for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
-        Rect startGCellBox
-            = design_->getTopBlock()->getGCellBox(Point(0, yIdx));
+        odb::Rect startGCellBox
+            = design_->getTopBlock()->getGCellBox(odb::Point(0, yIdx));
         frCoord low = startGCellBox.yMin();
         frCoord high = startGCellBox.yMax();
         // non-transition via layer
@@ -155,10 +140,10 @@ void FlexGRCMap::init()
           }
         }
       }
-    } else if (dir == dbTechLayerDir::VERTICAL) {
+    } else if (dir == odb::dbTechLayerDir::VERTICAL) {
       for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
-        Rect startGCellBox
-            = design_->getTopBlock()->getGCellBox(Point(xIdx, 0));
+        odb::Rect startGCellBox
+            = design_->getTopBlock()->getGCellBox(odb::Point(xIdx, 0));
         frCoord low = startGCellBox.xMin();
         frCoord high = startGCellBox.xMax();
         if (layerTrackPitches_[cmapLayerIdx] == layerPitches_[cmapLayerIdx]) {
@@ -183,26 +168,26 @@ void FlexGRCMap::init()
         }
       }
     } else {
-      cout << "Warning: unsupported routing direction for layerIdx = "
-           << layerIdx << "\n";
+      std::cout << "Warning: unsupported routing direction for layerIdx = "
+                << layerIdx << "\n";
     }
     cmapLayerIdx++;
   }
 
   // update demand for fixed objects (only for pref routing direction)
   cmapLayerIdx = 0;
-  set<frCoord> trackLocs;
-  vector<rq_box_value_t<frBlockObject*>> queryResult;
+  std::set<frCoord> trackLocs;
+  std::vector<rq_box_value_t<frBlockObject*>> queryResult;
   auto regionQuery = design_->getRegionQuery();
   unsigned numBlkTracks = 0;
   // layerIdx == tech layer num
   for (auto& [layerIdx, dir] : zMap_) {
     frCoord width = design_->getTech()->getLayer(layerIdx)->getWidth();
-    if (dir == dbTechLayerDir::HORIZONTAL) {
+    if (dir == odb::dbTechLayerDir::HORIZONTAL) {
       for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
         trackLocs.clear();
-        Rect startGCellBox
-            = design_->getTopBlock()->getGCellBox(Point(0, yIdx));
+        odb::Rect startGCellBox
+            = design_->getTopBlock()->getGCellBox(odb::Point(0, yIdx));
         frCoord low = startGCellBox.yMin();
         frCoord high = startGCellBox.yMax();
         getTrackLocs(design_->getTopBlock()->getTrackPatterns(layerIdx),
@@ -215,8 +200,8 @@ void FlexGRCMap::init()
           // add initial demand
           // addRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E, 1);
           // add blocked track demand
-          Rect currGCellBox
-              = design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx));
+          odb::Rect currGCellBox
+              = design_->getTopBlock()->getGCellBox(odb::Point(xIdx, yIdx));
           queryResult.clear();
           regionQuery->query(currGCellBox, layerIdx, queryResult);
           numBlkTracks
@@ -225,11 +210,11 @@ void FlexGRCMap::init()
           addDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E, numBlkTracks);
         }
       }
-    } else if (dir == dbTechLayerDir::VERTICAL) {
+    } else if (dir == odb::dbTechLayerDir::VERTICAL) {
       for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
         trackLocs.clear();
-        Rect startGCellBox
-            = design_->getTopBlock()->getGCellBox(Point(xIdx, 0));
+        odb::Rect startGCellBox
+            = design_->getTopBlock()->getGCellBox(odb::Point(xIdx, 0));
         frCoord low = startGCellBox.xMin();
         frCoord high = startGCellBox.xMax();
         getTrackLocs(design_->getTopBlock()->getTrackPatterns(layerIdx),
@@ -242,8 +227,8 @@ void FlexGRCMap::init()
           // add initial demand
           // addRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N, 1);
           // add blocked track demand
-          Rect currGCellBox
-              = design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx));
+          odb::Rect currGCellBox
+              = design_->getTopBlock()->getGCellBox(odb::Point(xIdx, yIdx));
           queryResult.clear();
           regionQuery->query(currGCellBox, layerIdx, queryResult);
           numBlkTracks
@@ -258,37 +243,37 @@ void FlexGRCMap::init()
 
   // update demand for rpins (only for pref routing direction)
   cmapLayerIdx = 0;
-  vector<rq_box_value_t<frRPin*>> rpinQueryResult;
+  std::vector<rq_box_value_t<frRPin*>> rpinQueryResult;
   // layerIdx == tech layer num
   for (auto& [layerIdx, dir] : zMap_) {
-    if (dir == dbTechLayerDir::HORIZONTAL) {
+    if (dir == odb::dbTechLayerDir::HORIZONTAL) {
       for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
         for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
-          Rect currGCellBox
-              = design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx));
+          odb::Rect currGCellBox
+              = design_->getTopBlock()->getGCellBox(odb::Point(xIdx, yIdx));
           rpinQueryResult.clear();
           regionQuery->queryRPin(currGCellBox, layerIdx, rpinQueryResult);
 
           unsigned numRPins = rpinQueryResult.size();
 
-          if (layerIdx > VIA_ACCESS_LAYERNUM) {
+          if (layerIdx > router_cfg_->VIA_ACCESS_LAYERNUM) {
             addRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E, numRPins);
           } else {
             addRawDemand(xIdx, yIdx, cmapLayerIdx + 1, frDirEnum::N, numRPins);
           }
         }
       }
-    } else if (dir == dbTechLayerDir::VERTICAL) {
+    } else if (dir == odb::dbTechLayerDir::VERTICAL) {
       for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
         for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
-          Rect currGCellBox
-              = design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx));
+          odb::Rect currGCellBox
+              = design_->getTopBlock()->getGCellBox(odb::Point(xIdx, yIdx));
           rpinQueryResult.clear();
           regionQuery->queryRPin(currGCellBox, layerIdx, rpinQueryResult);
 
           unsigned numRPins = rpinQueryResult.size();
 
-          if (layerIdx > VIA_ACCESS_LAYERNUM) {
+          if (layerIdx > router_cfg_->VIA_ACCESS_LAYERNUM) {
             addRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N, numRPins);
           } else {
             addRawDemand(xIdx, yIdx, cmapLayerIdx + 1, frDirEnum::E, numRPins);
@@ -302,7 +287,7 @@ void FlexGRCMap::init()
   // update blocked track
   cmapLayerIdx = 0;
   for (auto& [layerIdx, dir] : zMap_) {
-    if (dir == dbTechLayerDir::HORIZONTAL) {
+    if (dir == odb::dbTechLayerDir::HORIZONTAL) {
       for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
         for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
           if (getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E)
@@ -311,7 +296,7 @@ void FlexGRCMap::init()
           }
         }
       }
-    } else if (dir == dbTechLayerDir::VERTICAL) {
+    } else if (dir == odb::dbTechLayerDir::VERTICAL) {
       for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
         for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
           if (getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N)
@@ -329,25 +314,26 @@ void FlexGRCMap::init()
 unsigned FlexGRCMap::getNumBlkTracks(
     bool isHorz,
     frLayerNum lNum,
-    const set<frCoord>& trackLocs,
-    const vector<rq_box_value_t<frBlockObject*>>& results,
+    const std::set<frCoord>& trackLocs,
+    const std::vector<rq_box_value_t<frBlockObject*>>& results,
     const frCoord bloatDist = 0)
 {
-  set<frCoord> openTrackLocs = trackLocs;
+  std::set<frCoord> openTrackLocs = trackLocs;
   frCoord low, high;
   frCoord actBloatDist;
   auto layer = getDesign()->getTech()->getLayer(lNum);
   for (auto& [box, obj] : results) {
     actBloatDist = bloatDist;
     if (obj->typeId() == frcInstTerm) {
-      dbSigType sigType = static_cast<frInstTerm*>(obj)->getTerm()->getType();
+      odb::dbSigType sigType
+          = static_cast<frInstTerm*>(obj)->getTerm()->getType();
       if (sigType.isSupply()) {
         actBloatDist = calcBloatDist(obj, lNum, box, false);
       }
     }
     if (obj->typeId() == frcBlockage || obj->typeId() == frcInstBlockage) {
       auto inst = (static_cast<frInstBlockage*>(obj))->getInst();
-      if (inst->getMaster()->getMasterType() == dbMasterType::BLOCK) {
+      if (inst->getMaster()->getMasterType() == odb::dbMasterType::BLOCK) {
         // actBloatDist = calcBloatDist(obj, lNum, boostB);
         // currently hack to prevent via EOL violation from above / below layer
         // (see TA prevention for prl)
@@ -376,19 +362,19 @@ unsigned FlexGRCMap::getNumBlkTracks(
 
 frCoord FlexGRCMap::calcBloatDist(frBlockObject* obj,
                                   const frLayerNum lNum,
-                                  const Rect& box,
+                                  const odb::Rect& box,
                                   bool isOBS)
 {
   auto layer = getDesign()->getTech()->getLayer(lNum);
   frCoord width = layer->getWidth();
   // use width if minSpc does not exist
   frCoord bloatDist = width;
-  frCoord objWidth = min(box.xMax() - box.xMin(), box.yMax() - box.yMin());
-  frCoord prl = (layer->getDir() == dbTechLayerDir::HORIZONTAL)
+  frCoord objWidth = std::min(box.xMax() - box.xMin(), box.yMax() - box.yMin());
+  frCoord prl = (layer->getDir() == odb::dbTechLayerDir::HORIZONTAL)
                     ? (box.xMax() - box.xMin())
                     : (box.yMax() - box.yMin());
   if (obj->typeId() == frcBlockage || obj->typeId() == frcInstBlockage) {
-    if (isOBS && USEMINSPACING_OBS) {
+    if (isOBS && router_cfg_->USEMINSPACING_OBS) {
       objWidth = width;
     }
   }
@@ -412,10 +398,10 @@ frCoord FlexGRCMap::calcBloatDist(frBlockObject* obj,
 }
 
 unsigned FlexGRCMap::getNumPins(
-    const vector<rq_box_value_t<frBlockObject*>>& results)
+    const std::vector<rq_box_value_t<frBlockObject*>>& results)
 {
   unsigned numPins = 0;
-  set<frBlockObject*> pins;
+  std::set<frBlockObject*> pins;
   for (auto& [box, obj] : results) {
     if (obj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(obj);
@@ -433,11 +419,12 @@ unsigned FlexGRCMap::getNumPins(
   return numPins;
 }
 
-void FlexGRCMap::getTrackLocs(const vector<unique_ptr<frTrackPattern>>& tps,
-                              bool isHorz,
-                              frCoord low,
-                              frCoord high,
-                              set<frCoord>& trackLocs)
+void FlexGRCMap::getTrackLocs(
+    const std::vector<std::unique_ptr<frTrackPattern>>& tps,
+    bool isHorz,
+    frCoord low,
+    frCoord high,
+    std::set<frCoord>& trackLocs)
 {
   for (auto& tp : tps) {
     bool skip = true;
@@ -470,11 +457,12 @@ void FlexGRCMap::getTrackLocs(const vector<unique_ptr<frTrackPattern>>& tps,
 
 // when line2ViaPitch != 0, the function is used to calculate estimated track
 // numbers for transition layer
-unsigned FlexGRCMap::getNumTracks(const vector<unique_ptr<frTrackPattern>>& tps,
-                                  bool isHorz,
-                                  frCoord low,
-                                  frCoord high,
-                                  frCoord line2ViaPitch)
+unsigned FlexGRCMap::getNumTracks(
+    const std::vector<std::unique_ptr<frTrackPattern>>& tps,
+    bool isHorz,
+    frCoord low,
+    frCoord high,
+    frCoord line2ViaPitch)
 {
   unsigned numTrack = 0;
   if (line2ViaPitch == 0) {
@@ -540,32 +528,32 @@ unsigned FlexGRCMap::getNumTracks(const vector<unique_ptr<frTrackPattern>>& tps,
 
 void FlexGRCMap::printLayers()
 {
-  cout << "start printing layers in CMap\n";
+  std::cout << "start printing layers in CMap\n";
 
   for (auto& [layerNum, dir] : zMap_) {
-    cout << "  layerNum = " << layerNum << " dir = ";
-    if (dir == dbTechLayerDir::HORIZONTAL) {
-      cout << "H";
-    } else if (dir == dbTechLayerDir::VERTICAL) {
-      cout << "V";
+    std::cout << "  layerNum = " << layerNum << " dir = ";
+    if (dir == odb::dbTechLayerDir::HORIZONTAL) {
+      std::cout << "H";
+    } else if (dir == odb::dbTechLayerDir::VERTICAL) {
+      std::cout << "V";
     }
-    cout << endl;
+    std::cout << std::endl;
   }
 }
 
 void FlexGRCMap::print(bool isAll)
 {
-  ofstream congMap;
-  cout << "printing congestion map...\n";
+  std::ofstream congMap;
+  std::cout << "printing congestion map...\n";
 
-  if (!CMAP_FILE.empty()) {
-    congMap.open(CMAP_FILE.c_str());
+  if (!router_cfg_->CMAP_FILE.empty()) {
+    congMap.open(router_cfg_->CMAP_FILE.c_str());
   }
 
   if (congMap.is_open()) {
     congMap << "#     Area              demand/supply tracks\n";
   } else {
-    cout << "#     Area              demand/supply tracks\n";
+    std::cout << "#     Area              demand/supply tracks\n";
   }
 
   unsigned layerIdx = 0;
@@ -575,13 +563,14 @@ void FlexGRCMap::print(bool isAll)
               << design_->getTech()->getLayer(layerNum)->getName()
               << "----------------------\n";
     } else {
-      cout << "----------------------"
-           << design_->getTech()->getLayer(layerNum)->getName()
-           << "----------------------\n";
+      std::cout << "----------------------"
+                << design_->getTech()->getLayer(layerNum)->getName()
+                << "----------------------\n";
     }
     for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
       for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
-        Rect gcellBox = design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx));
+        odb::Rect gcellBox
+            = design_->getTopBlock()->getGCellBox(odb::Point(xIdx, yIdx));
         unsigned demandV = getDemand(xIdx, yIdx, layerIdx, frDirEnum::N);
         unsigned demandH = getDemand(xIdx, yIdx, layerIdx, frDirEnum::E);
         unsigned supplyV = getSupply(xIdx, yIdx, layerIdx, frDirEnum::N);
@@ -591,14 +580,13 @@ void FlexGRCMap::print(bool isAll)
           if (congMap.is_open()) {
             congMap << "(" << gcellBox.xMin() << ", " << gcellBox.yMin()
                     << ") (" << gcellBox.xMax() << ", " << gcellBox.yMax()
-                    << ")"
-                    << " V: " << demandV << "/" << supplyV << " H: " << demandH
-                    << "/" << supplyH << "\n";
+                    << ")" << " V: " << demandV << "/" << supplyV
+                    << " H: " << demandH << "/" << supplyH << "\n";
           } else {
-            cout << "(" << gcellBox.xMin() << ", " << gcellBox.yMin() << ") ("
-                 << gcellBox.xMax() << ", " << gcellBox.yMax() << ")"
-                 << " V: " << demandV << "/" << supplyV << " H: " << demandH
-                 << "/" << supplyH << "\n";
+            std::cout << "(" << gcellBox.xMin() << ", " << gcellBox.yMin()
+                      << ") (" << gcellBox.xMax() << ", " << gcellBox.yMax()
+                      << ")" << " V: " << demandV << "/" << supplyV
+                      << " H: " << demandH << "/" << supplyH << "\n";
           }
         }
       }
@@ -612,16 +600,16 @@ void FlexGRCMap::print(bool isAll)
 
 void FlexGRCMap::print2D(bool isAll)
 {
-  cout << "printing 2D congestion map...\n";
-  ofstream congMap;
-  if (!CMAP_FILE.empty()) {
-    congMap.open(CMAP_FILE.c_str());
+  std::cout << "printing 2D congestion map...\n";
+  std::ofstream congMap;
+  if (!router_cfg_->CMAP_FILE.empty()) {
+    congMap.open(router_cfg_->CMAP_FILE.c_str());
   }
 
   if (congMap.is_open()) {
     congMap << "#     Area              demand/supply tracks\n";
   } else {
-    cout << "#     Area              demand/supply tracks\n";
+    std::cout << "#     Area              demand/supply tracks\n";
   }
 
   for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
@@ -638,7 +626,8 @@ void FlexGRCMap::print2D(bool isAll)
         supplyV += getSupply(xIdx, yIdx, layerIdx, frDirEnum::N);
       }
 
-      Rect gcellBox = design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx));
+      odb::Rect gcellBox
+          = design_->getTopBlock()->getGCellBox(odb::Point(xIdx, yIdx));
       if (isAll || (demandV > supplyV) || (demandH > supplyH)) {
         if (congMap.is_open()) {
           congMap << "(" << gcellBox.xMin() << ", " << gcellBox.yMin() << ") ("
@@ -646,10 +635,10 @@ void FlexGRCMap::print2D(bool isAll)
                   << " V: " << demandV << "/" << supplyV << " H: " << demandH
                   << "/" << supplyH << "\n";
         } else {
-          cout << "(" << gcellBox.xMin() << ", " << gcellBox.yMin() << ") ("
-               << gcellBox.xMax() << ", " << gcellBox.yMax() << ")"
-               << " V: " << demandV << "/" << supplyV << " H: " << demandH
-               << "/" << supplyH << "\n";
+          std::cout << "(" << gcellBox.xMin() << ", " << gcellBox.yMin()
+                    << ") (" << gcellBox.xMax() << ", " << gcellBox.yMax()
+                    << ")" << " V: " << demandV << "/" << supplyV
+                    << " H: " << demandH << "/" << supplyH << "\n";
         }
       }
     }
@@ -658,3 +647,5 @@ void FlexGRCMap::print2D(bool isAll)
     congMap.close();
   }
 }
+
+}  // namespace drt

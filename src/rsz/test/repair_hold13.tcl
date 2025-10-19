@@ -23,5 +23,6 @@ report_worst_slack -max
 
 repair_timing -hold
 
+write_verilog_for_eqy repair_hold13 before "None"
 report_checks -path_delay min_max
-
+run_equivalence_test repair_hold13 ./sky130hd/work_around_yosys/ "None"

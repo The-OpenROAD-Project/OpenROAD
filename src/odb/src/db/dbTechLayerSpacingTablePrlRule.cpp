@@ -1,131 +1,59 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbTechLayerSpacingTablePrlRule.h"
 
-#include "db.h"
+#include <cstdint>
+#include <cstring>
+#include <tuple>
+
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin Includes
-// User Code End Includes
+#include "odb/db.h"
 namespace odb {
-
 template class dbTable<_dbTechLayerSpacingTablePrlRule>;
 
 bool _dbTechLayerSpacingTablePrlRule::operator==(
     const _dbTechLayerSpacingTablePrlRule& rhs) const
 {
-  if (flags_.wrong_direction_ != rhs.flags_.wrong_direction_)
+  if (flags_.wrong_direction_ != rhs.flags_.wrong_direction_) {
     return false;
-
-  if (flags_.same_mask_ != rhs.flags_.same_mask_)
+  }
+  if (flags_.same_mask_ != rhs.flags_.same_mask_) {
     return false;
-
-  if (flags_.exceept_eol_ != rhs.flags_.exceept_eol_)
+  }
+  if (flags_.exceept_eol_ != rhs.flags_.exceept_eol_) {
     return false;
-
-  if (eol_width_ != rhs.eol_width_)
+  }
+  if (eol_width_ != rhs.eol_width_) {
     return false;
+  }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbTechLayerSpacingTablePrlRule::operator<(
     const _dbTechLayerSpacingTablePrlRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
-void _dbTechLayerSpacingTablePrlRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerSpacingTablePrlRule& rhs) const
-{
-  DIFF_BEGIN
 
-  DIFF_FIELD(flags_.wrong_direction_);
-  DIFF_FIELD(flags_.same_mask_);
-  DIFF_FIELD(flags_.exceept_eol_);
-  DIFF_FIELD(eol_width_);
-  // User Code Begin Differences
-  // User Code End Differences
-  DIFF_END
-}
-void _dbTechLayerSpacingTablePrlRule::out(dbDiff& diff,
-                                          char side,
-                                          const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.wrong_direction_);
-  DIFF_OUT_FIELD(flags_.same_mask_);
-  DIFF_OUT_FIELD(flags_.exceept_eol_);
-  DIFF_OUT_FIELD(eol_width_);
-
-  // User Code Begin Out
-  // User Code End Out
-  DIFF_END
-}
 _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
     _dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   eol_width_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
-}
-_dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
-    _dbDatabase* db,
-    const _dbTechLayerSpacingTablePrlRule& r)
-{
-  flags_.wrong_direction_ = r.flags_.wrong_direction_;
-  flags_.same_mask_ = r.flags_.same_mask_;
-  flags_.exceept_eol_ = r.flags_.exceept_eol_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  eol_width_ = r.eol_width_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.eol_width_;
   stream >> obj.length_tbl_;
   stream >> obj.width_tbl_;
@@ -136,11 +64,14 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerSpacingTablePrlRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj.eol_width_;
   stream << obj.length_tbl_;
   stream << obj.width_tbl_;
@@ -152,14 +83,22 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
-_dbTechLayerSpacingTablePrlRule::~_dbTechLayerSpacingTablePrlRule()
+void _dbTechLayerSpacingTablePrlRule::collectMemInfo(MemInfo& info)
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
-}
+  info.cnt++;
+  info.size += sizeof(*this);
 
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
+  // User Code Begin collectMemInfo
+  info.children_["length_tbl"].add(length_tbl_);
+  info.children_["width_tbl"].add(width_tbl_);
+  MemInfo& spacing_info = info.children_["spacing_tbl"];
+  for (const auto& s : spacing_tbl_) {
+    spacing_info.add(s);
+  }
+  info.children_["influence_tbl"].add(influence_tbl_);
+  info.children_["within_tbl"].add(_within_tbl);
+  // User Code End collectMemInfo
+}
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -344,4 +283,4 @@ std::pair<int, int> dbTechLayerSpacingTablePrlRule::getExceptWithin(
 
 // User Code End dbTechLayerSpacingTablePrlRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

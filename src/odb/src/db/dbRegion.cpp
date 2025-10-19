@@ -1,50 +1,30 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbRegion.h"
 
-#include "db.h"
+#include <string.h>
+
+#include <cstdlib>
+#include <cstring>
+#include <string>
+
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbGroup.h"
 #include "dbInst.h"
-#include "dbRegion.h"
 #include "dbRegionGroupItr.h"
 #include "dbRegionInstItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 
 namespace odb {
 
@@ -54,101 +34,84 @@ _dbRegion::_dbRegion(_dbDatabase*)
 {
   _flags._type = dbRegionType::INCLUSIVE;
   _flags._invalid = false;
-  _name = NULL;
+  _flags._spare_bits = false;
+  _name = nullptr;
 }
 
 _dbRegion::_dbRegion(_dbDatabase*, const _dbRegion& r)
     : _flags(r._flags),
-      _name(NULL),
+      _name(nullptr),
       _insts(r._insts),
       _boxes(r._boxes),
       groups_(r.groups_)
 {
-  if (r._name)
+  if (r._name) {
     _name = strdup(r._name);
+  }
 }
 
 _dbRegion::~_dbRegion()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 bool _dbRegion::operator==(const _dbRegion& rhs) const
 {
-  if (_flags._type != rhs._flags._type)
+  if (_flags._type != rhs._flags._type) {
     return false;
+  }
 
-  if (_flags._invalid != rhs._flags._invalid)
+  if (_flags._invalid != rhs._flags._invalid) {
     return false;
+  }
 
   if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0)
+    if (strcmp(_name, rhs._name) != 0) {
       return false;
-  } else if (_name || rhs._name)
+    }
+  } else if (_name || rhs._name) {
     return false;
+  }
 
-  if (_insts != rhs._insts)
+  if (_insts != rhs._insts) {
     return false;
+  }
 
-  if (groups_ != rhs.groups_)
+  if (groups_ != rhs.groups_) {
     return false;
+  }
 
   return true;
 }
 
 bool _dbRegion::operator<(const _dbRegion& rhs) const
 {
-  if (_flags._type < rhs._flags._type)
+  if (_flags._type < rhs._flags._type) {
     return false;
+  }
 
-  if (_flags._type > rhs._flags._type)
+  if (_flags._type > rhs._flags._type) {
     return true;
+  }
 
-  if (_flags._invalid < rhs._flags._invalid)
+  if (_flags._invalid < rhs._flags._invalid) {
     return false;
+  }
 
-  if (_flags._invalid > rhs._flags._invalid)
+  if (_flags._invalid > rhs._flags._invalid) {
     return true;
+  }
 
-  if (_insts < rhs._insts)
+  if (_insts < rhs._insts) {
     return true;
+  }
 
-  if (groups_ < rhs.groups_)
+  if (groups_ < rhs.groups_) {
     return true;
+  }
   return _boxes < rhs._boxes;
-}
-
-void _dbRegion::differences(dbDiff& diff,
-                            const char* field,
-                            const _dbRegion& rhs) const
-{
-  if (diff.deepDiff())
-    return;
-
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._type);
-  DIFF_FIELD(_flags._invalid);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_insts);
-  DIFF_FIELD(_boxes);
-  DIFF_FIELD(groups_);
-  DIFF_END
-}
-
-void _dbRegion::out(dbDiff& diff, char side, const char* field) const
-{
-  if (diff.deepDiff())
-    return;
-
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._type);
-  DIFF_OUT_FIELD(_flags._invalid);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_insts);
-  DIFF_OUT_FIELD(_boxes);
-  DIFF_OUT_FIELD(groups_);
-  DIFF_END
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbRegion& r)
@@ -278,8 +241,9 @@ void dbRegion::removeGroup(dbGroup* group)
 {
   _dbRegion* region = (_dbRegion*) this;
   _dbGroup* _group = (_dbGroup*) group;
-  if (_group->region_ != region->getOID())
+  if (_group->region_ != region->getOID()) {
     return;
+  }
   _dbBlock* block = (_dbBlock*) region->getOwner();
 
   uint id = _group->getOID();
@@ -315,8 +279,9 @@ void dbRegion::addGroup(dbGroup* group)
 {
   _dbRegion* _region = (_dbRegion*) this;
   _dbGroup* _group = (_dbGroup*) group;
-  if (_group->region_)
+  if (_group->region_) {
     return;
+  }
   if (_region->groups_.isValid()) {
     _dbGroup* prev_group = (_dbGroup*) dbGroup::getGroup(
         (dbBlock*) _region->getOwner(), _region->groups_);
@@ -340,14 +305,15 @@ dbRegion* dbRegion::create(dbBlock* block_, const char* name)
 {
   _dbBlock* block = (_dbBlock*) block_;
 
-  if (block_->findRegion(name))
-    return NULL;
+  if (block_->findRegion(name)) {
+    return nullptr;
+  }
 
   _dbRegion* region = block->_region_tbl->create();
-  region->_name = strdup(name);
-  ZALLOCATED(region->_name);
-  for (auto callback : block->_callbacks)
+  region->_name = safe_strdup(name);
+  for (auto callback : block->_callbacks) {
     callback->inDbRegionCreate((dbRegion*) region);
+  }
   return (dbRegion*) region;
 }
 
@@ -356,8 +322,9 @@ void dbRegion::destroy(dbRegion* region_)
   _dbRegion* region = (_dbRegion*) region_;
   _dbBlock* block = (_dbBlock*) region->getOwner();
 
-  for (auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks) {
     callback->inDbRegionDestroy((dbRegion*) region);
+  }
 
   dbSet<dbInst> insts = region_->getRegionInsts();
   dbSet<dbInst>::iterator iitr;
@@ -404,6 +371,14 @@ dbRegion* dbRegion::getRegion(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbRegion*) block->_region_tbl->getPtr(dbid_);
+}
+
+void _dbRegion::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
 }
 
 }  // namespace odb

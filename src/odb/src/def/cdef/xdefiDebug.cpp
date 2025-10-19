@@ -39,25 +39,25 @@
 // Wrappers definitions.
 void defiSetDebug(int num, int value)
 {
-  LefDefParser::defiSetDebug(num, value);
+  DefParser::defiSetDebug(num, value);
 }
 
 int defiDebug(int num)
 {
-  return LefDefParser::defiDebug(num);
+  return DefParser::defiDebug(num);
 }
 
 void defiError(int check, int msgNum, const char* message)
 {
-  LefDefParser::defiError(check, msgNum, message);
+  DefParser::defiError(check, msgNum, message);
 }
 
 const char* upperCase(const char* c)
 {
-  return LefDefParser::upperCase(c);
+  return DefParser::upperCase(c);
 }
 
 const char* DEFCASE(const char* ch)
 {
-  return LefDefParser::DEFCASE(ch);
+  return DefParser::DEFCASE(ch);
 }

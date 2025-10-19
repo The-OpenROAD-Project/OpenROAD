@@ -1,8 +1,4 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: repair_slew5
 [INFO ODB-0130]     Created 3 pins.
 [INFO ODB-0131]     Created 13 components and 73 component-terminals.
@@ -44,17 +40,24 @@ x4/A                                    0.15    0.18   -0.03 (VIOLATED)
 x6/A                                    0.15    0.18   -0.03 (VIOLATED)
 x7/A                                    0.15    0.18   -0.03 (VIOLATED)
 
-[INFO RSZ-0058] Using max wire length 720um.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        14
+    final |    +60.4% |       7 |       1 |             7 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 7 slew violations.
+[INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0039] Resized 7 instances.
+[INFO RSZ-0038] Inserted 1 buffers in 7 nets.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u6/A4                                   0.15    0.11    0.04 (MET)
+u3/ZN                                   0.15    0.10    0.05 (MET)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-u1/ZN                                  41.50   36.82    4.68 (MET)
+u1/ZN                                  20.90    9.31   11.59 (MET)
 

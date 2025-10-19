@@ -1,39 +1,14 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include "cmdInputWidget.h"
 
+#include <QFile>
 #include <QMimeData>
+#include <QSettings>
+#include <QString>
 #include <QTextStream>
+#include <QWidget>
 
 namespace gui {
 
@@ -42,8 +17,6 @@ CmdInputWidget::CmdInputWidget(const QString& interp_name, QWidget* parent)
       line_height_(0),
       document_margins_(0),
       max_height_(QWIDGETSIZE_MAX),
-      history_(),
-      history_buffer_last_(),
       historyPosition_(0)
 {
   setObjectName("interperter_scripting");  // for settings
@@ -55,18 +28,17 @@ CmdInputWidget::CmdInputWidget(const QString& interp_name, QWidget* parent)
   // precompute size for updating text box size
   document_margins_ = 2 * (document()->documentMargin() + 3);
 
-  connect(this, SIGNAL(textChanged()), this, SLOT(updateSize()));
+  connect(
+      this, &CmdInputWidget::textChanged, this, &CmdInputWidget::updateSize);
   updateSize();
 
   connect(this,
-          SIGNAL(commandFinishedExecuting(bool)),
+          &CmdInputWidget::commandFinishedExecuting,
           this,
-          SLOT(commandFinished(bool)));
+          &CmdInputWidget::commandFinished);
 }
 
-CmdInputWidget::~CmdInputWidget()
-{
-}
+CmdInputWidget::~CmdInputWidget() = default;
 
 void CmdInputWidget::setWidgetFont(const QFont& font)
 {
@@ -132,13 +104,12 @@ bool CmdInputWidget::handleEnterKeyPress(QKeyEvent* event)
       // does not get inserted by Qt, so manually inserting
       insertPlainText("\n");
       return true;
-    } else {
-      // Check if command complete and attempt to execute, otherwise do nothing
-      if (isCommandComplete(toPlainText().simplified().toStdString())) {
-        // execute command
-        executeCommand(text());
-        return true;
-      }
+    }
+    // Check if command complete and attempt to execute, otherwise do nothing
+    if (isCommandComplete(toPlainText().simplified().toStdString())) {
+      // execute command
+      executeCommand(text());
+      return true;
     }
   }
 

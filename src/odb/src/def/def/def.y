@@ -1,6 +1,6 @@
-// ******************************************************************************
-// ******************************************************************************
-// Copyright 2013-2017, Cadence Design Systems
+//******************************************************************************
+//******************************************************************************
+// Copyright 2013-2019, Cadence Design Systems
 // 
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
 // Distribution,  Product Version 5.8. 
@@ -19,13 +19,13 @@
 // 
 // For updates, support, or to become part of the LEF/DEF Community,
 // check www.openeda.org for details.
-// ******************************************************************************
+//******************************************************************************
 // 
-//  $Author: icftcm $
-//  $Revision: #2 $
-//  $Date: 2017/06/07 $
+//  $Author: dell $
+//  $Revision: #1 $
+//  $Date: 2020/09/29 $
 //  $State:  $
-// ****************************************************************************
+//****************************************************************************
 
 //  Error message number:
 //  5000 - def reader, defrReader.cpp
@@ -51,17 +51,18 @@
 //  6180 - defiVia.cpp
 //  6500 - def parser, error, def.y
 %define api.pure
-%lex-param {defrData *defData}
-%parse-param {defrData *defData}
+%lex-param {DefParser::defrData *defData}
+%parse-param {DefParser::defrData *defData}
 
 
 %{
-#include <stdlib.h>
-#include <string.h>
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
+
 #include "defrReader.hpp"
 #include "defiUser.hpp"
 #include "defrCallBacks.hpp"
-#include "lex.h"
 
 #define DEF_MAX_INT 2147483647
 #define YYDEBUG 1     // this is temp fix for pcr 755132 
@@ -72,8 +73,10 @@
 #include "defrSettings.hpp"
 #include "defrCallBacks.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
+using std::round;
+  
 // Macro to describe how we handle a callback.
 // If the function was set then call it.
 // If the function returns non zero then there was an error
@@ -193,6 +196,13 @@ void yyerror(defrData *defData, const char *s)
 %token <keyword> K_FIXEDBUMP K_FENCE K_FREQUENCY K_GUIDE K_MAXBITS
 %token <keyword> K_PARTITION K_TYPE K_ANTENNAMODEL K_DRCFILL
 %token <keyword> K_OXIDE1 K_OXIDE2 K_OXIDE3 K_OXIDE4
+%token <keyword> K_OXIDE5 K_OXIDE6 K_OXIDE7 K_OXIDE8
+%token <keyword> K_OXIDE9 K_OXIDE10 K_OXIDE11 K_OXIDE12
+%token <keyword> K_OXIDE13 K_OXIDE14 K_OXIDE15 K_OXIDE16
+%token <keyword> K_OXIDE17 K_OXIDE18 K_OXIDE19 K_OXIDE20
+%token <keyword> K_OXIDE21 K_OXIDE22 K_OXIDE23 K_OXIDE24
+%token <keyword> K_OXIDE25 K_OXIDE26 K_OXIDE27 K_OXIDE28
+%token <keyword> K_OXIDE29 K_OXIDE30 K_OXIDE31 K_OXIDE32
 %token <keyword> K_CUTSIZE K_CUTSPACING K_DESIGNRULEWIDTH K_DIAGWIDTH
 %token <keyword> K_ENCLOSURE K_HALO K_GROUNDSENSITIVITY
 %token <keyword> K_HARDSPACING K_LAYERS K_MINCUTS K_NETEXPR 
@@ -465,7 +475,7 @@ property_def: K_DESIGN {defData->dumb_mode = 1; defData->no_num = 1; defData->Pr
                 defData->session->NDefProp.setPropType(defData->DEFCASE($3), defData->defPropDefType);
               }
             }
-        | error ';' { yyerrok; yyclearin;};
+        | error ';' { yyerrok; yyclearin;}
 
 property_type_and_val: K_INTEGER { defData->real_num = 0; } opt_range opt_num_val
             {
@@ -574,7 +584,7 @@ start_def_cap: K_DEFAULTCAP NUMBER
         {
           if (defData->VersionNum < 5.4) {
              if (defData->callbacks->DefaultCapCbk)
-                CALLBACK(defData->callbacks->DefaultCapCbk, defrDefaultCapCbkType, ROUND($2));
+                CALLBACK(defData->callbacks->DefaultCapCbk, defrDefaultCapCbkType, round($2));
           } else {
              if (defData->callbacks->DefaultCapCbk) // write error only if cbk is set 
                 if (defData->defaultCapWarnings++ < defData->settings->DefaultCapWarnings)
@@ -590,7 +600,7 @@ pin_cap: K_MINPINS NUMBER K_WIRECAP NUMBER ';'
           {
             if (defData->VersionNum < 5.4) {
               if (defData->callbacks->PinCapCbk) {
-                defData->PinCap.setPin(ROUND($2));
+                defData->PinCap.setPin(round($2));
                 defData->PinCap.setCap($4);
                 CALLBACK(defData->callbacks->PinCapCbk, defrPinCapCbkType, &(defData->PinCap));
               }
@@ -606,7 +616,7 @@ pin_rule: start_pins pins end_pins
 start_pins: K_PINS NUMBER ';'
           { 
             if (defData->callbacks->StartPinsCbk)
-              CALLBACK(defData->callbacks->StartPinsCbk, defrStartPinsCbkType, ROUND($2));
+              CALLBACK(defData->callbacks->StartPinsCbk, defrStartPinsCbkType, round($2));
           }
 
 pins: // empty 
@@ -620,6 +630,7 @@ pin: '-' {defData->dumb_mode = 1; defData->no_num = 1; } T_STRING '+' K_NET
               defData->Pin.Setup($3, $7);
             }
             defData->hasPort = 0;
+            defData->hadPortOnce = 0;
           }
         pin_options ';'
           { 
@@ -728,19 +739,29 @@ pin_option: '+' K_SPECIAL
                  }
                }
             } else {
-               if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
-                 defData->Pin.addPort();
+               if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk) {
+                   defData->Pin.addPort();
+               }
+
                defData->hasPort = 1;
+               defData->hadPortOnce = 1;
             }
           }
 
         | '+' K_LAYER { defData->dumb_mode = 1; } T_STRING
           {
             if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk) {
-              if (defData->hasPort)
+              if (defData->hasPort) {
                  defData->Pin.addPortLayer($4);
-              else
+              } else if (defData->hadPortOnce) {
+                 if ((defData->pinWarnings++ < defData->settings->PinWarnings) &&
+                   (defData->pinWarnings++ < defData->settings->PinExtWarnings)) {
+                   defData->defError(7418, "syntax error");
+                   CHKERR();
+                 }
+              } else {
                  defData->Pin.addLayer($4);
+              }
             }
           }
           pin_layer_mask_opt pin_layer_spacing_opt pt pt
@@ -748,7 +769,7 @@ pin_option: '+' K_SPECIAL
             if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk) {
               if (defData->hasPort)
                  defData->Pin.addPortLayerPts($8.x, $8.y, $9.x, $9.y);
-              else
+              else if (!defData->hadPortOnce)
                  defData->Pin.addLayerPts($8.x, $8.y, $9.x, $9.y);
             }
           }
@@ -769,10 +790,17 @@ pin_option: '+' K_SPECIAL
               }
             } else {
               if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk) {
-                if (defData->hasPort)
+                if (defData->hasPort) {
                    defData->Pin.addPortPolygon($4);
-                else
+                } else if (defData->hadPortOnce) {
+                   if ((defData->pinWarnings++ < defData->settings->PinWarnings) &&
+                     (defData->pinWarnings++ < defData->settings->PinExtWarnings)) {
+                     defData->defError(7418, "syntax error");
+                     CHKERR();
+                   }
+                } else {
                    defData->Pin.addPolygon($4);
+                }
               }
             }
             
@@ -784,7 +812,7 @@ pin_option: '+' K_SPECIAL
               if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk) {
                 if (defData->hasPort)
                    defData->Pin.addPortPolygonPts(&defData->Geometries);
-                else
+                else if (!defData->hadPortOnce)
                    defData->Pin.addPolygonPts(&defData->Geometries);
               }
             }
@@ -805,12 +833,19 @@ pin_option: '+' K_SPECIAL
               }
             } else {
               if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk) {
-                if (defData->hasPort)
+                if (defData->hasPort) {
                    defData->Pin.addPortVia($4, (int)$7,
                                                (int)$8, $5);
-                else
+                } else if (defData->hadPortOnce) {
+                   if ((defData->pinWarnings++ < defData->settings->PinWarnings) &&
+                     (defData->pinWarnings++ < defData->settings->PinExtWarnings)) {
+                     defData->defError(7418, "syntax error");
+                     CHKERR();
+                   }
+                } else {
                    defData->Pin.addVia($4, (int)$7,
                                                (int)$8, $5);
+                }
               }
             }
           }
@@ -821,8 +856,16 @@ pin_option: '+' K_SPECIAL
               if (defData->hasPort) {
                  defData->Pin.setPortPlacement($1, $2.x, $2.y, $3);
                  defData->hasPort = 0;
-              } else
+                 defData->hadPortOnce = 1;
+              } else if (defData->hadPortOnce) {
+                 if ((defData->pinWarnings++ < defData->settings->PinWarnings) &&
+                   (defData->pinWarnings++ < defData->settings->PinExtWarnings)) {
+                   defData->defError(7418, "syntax error");
+                   CHKERR();
+                 }
+              } else {
                  defData->Pin.setPlacement($1, $2.x, $2.y, $3);
+              }
             }
           }
 
@@ -1142,6 +1185,147 @@ pin_oxide: K_OXIDE1
             if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
               defData->Pin.addAntennaModel(defData->aOxide);
           }
+        | K_OXIDE5 
+          { defData->aOxide = 5;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE6
+          { defData->aOxide = 6;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE7
+          { defData->aOxide = 7;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE8
+          { defData->aOxide = 8;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE9 
+          { defData->aOxide = 9;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE10
+          { defData->aOxide = 10;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE11
+          { defData->aOxide = 11;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE12
+          { defData->aOxide = 12;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE13 
+          { defData->aOxide = 13;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE14
+          { defData->aOxide = 14;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE15
+          { defData->aOxide = 15;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE16
+          { defData->aOxide = 16;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE17
+          { defData->aOxide = 17;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE18
+          { defData->aOxide = 18;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE19
+          { defData->aOxide = 19;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE20
+          { defData->aOxide = 20;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE21
+          { defData->aOxide = 21;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE22
+          { defData->aOxide = 22;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE23
+          { defData->aOxide = 23;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE24
+          { defData->aOxide = 24;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE25
+          { defData->aOxide = 25;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE26
+          { defData->aOxide = 26;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE27
+          { defData->aOxide = 27;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE28
+          { defData->aOxide = 28;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE29 
+          { defData->aOxide = 29;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE30
+          { defData->aOxide = 30;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE31
+          { defData->aOxide = 31;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE32
+          { defData->aOxide = 32;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+
 
 use_type: K_SIGNAL
           { $$ = (char*)"SIGNAL"; }
@@ -1232,7 +1416,7 @@ row_do_option: // empty
             }
           }
           if (defData->callbacks->RowCbk)
-            defData->Row.setDo(ROUND($2), ROUND($4), defData->xStep, defData->yStep);
+            defData->Row.setDo(round($2), round($4), defData->xStep, defData->yStep);
         }
 
 row_step_option: // empty 
@@ -1319,7 +1503,7 @@ tracks_rule: track_start NUMBER
               }
           }
           if (defData->callbacks->TrackCbk) {
-            defData->Track.setDo(ROUND($2), ROUND($5), $7);
+            defData->Track.setDo(round($2), round($5), $7);
             CALLBACK(defData->callbacks->TrackCbk, defrTrackCbkType, &defData->Track);
           }
         }
@@ -1390,7 +1574,7 @@ gcellgrid: K_GCELLGRID track_type NUMBER
               }
           }
           if (defData->callbacks->GcellGridCbk) {
-            defData->GcellGrid.setup($2, ROUND($3), ROUND($5), $7);
+            defData->GcellGrid.setup($2, round($3), round($5), $7);
             CALLBACK(defData->callbacks->GcellGridCbk, defrGcellGridCbkType, &defData->GcellGrid);
           }
         }
@@ -1410,7 +1594,7 @@ via_section: via via_declarations via_end
 via: K_VIAS NUMBER ';' 
         {
           if (defData->callbacks->ViaStartCbk)
-            CALLBACK(defData->callbacks->ViaStartCbk, defrViaStartCbkType, ROUND($2));
+            CALLBACK(defData->callbacks->ViaStartCbk, defrViaStartCbkType, round($2));
         }
 
 via_declarations: // empty 
@@ -1572,25 +1756,25 @@ pt: '(' NUMBER NUMBER ')'
           {
             defData->save_x = $2;
             defData->save_y = $3;
-            $$.x = ROUND($2);
-            $$.y = ROUND($3);
+            $$.x = round($2);
+            $$.y = round($3);
           }
         | '(' '*' NUMBER ')'
           {
             defData->save_y = $3;
-            $$.x = ROUND(defData->save_x);
-            $$.y = ROUND($3);
+            $$.x = round(defData->save_x);
+            $$.y = round($3);
           }
         | '(' NUMBER '*' ')'
           {
             defData->save_x = $2;
-            $$.x = ROUND($2);
-            $$.y = ROUND(defData->save_y);
+            $$.x = round($2);
+            $$.y = round(defData->save_y);
           }
         | '(' '*' '*' ')'
           {
-            $$.x = ROUND(defData->save_x);
-            $$.y = ROUND(defData->save_y);
+            $$.x = round(defData->save_x);
+            $$.y = round(defData->save_y);
           }
           
 mask: // empty 
@@ -1613,7 +1797,7 @@ regions_section: regions_start regions_stmts K_END K_REGIONS
 regions_start: K_REGIONS NUMBER ';'
         {
           if (defData->callbacks->RegionStartCbk)
-            CALLBACK(defData->callbacks->RegionStartCbk, defrRegionStartCbkType, ROUND($2));
+            CALLBACK(defData->callbacks->RegionStartCbk, defrRegionStartCbkType, round($2));
         }
 
 regions_stmts: // empty 
@@ -1727,7 +1911,7 @@ start_comps: K_COMPS NUMBER ';'
          { 
             if (defData->callbacks->ComponentStartCbk)
               CALLBACK(defData->callbacks->ComponentStartCbk, defrComponentStartCbkType,
-                       ROUND($2));
+                       round($2));
          }
          
 layer_statement : // empty 
@@ -1981,7 +2165,7 @@ opt_paren:
        pt
          { $$ = $1; }
        | NUMBER NUMBER
-         { $$.x = ROUND($1); $$.y = ROUND($2); }
+         { $$.x = round($1); $$.y = round($2); }
 
 comp_type: placement_status pt orient
         {
@@ -1992,10 +2176,11 @@ comp_type: placement_status pt orient
         }
         | '+' K_UNPLACED
         {
-          if (defData->callbacks->ComponentCbk)
+          if (defData->callbacks->ComponentCbk) {
             defData->Component.setPlacementStatus(
                                          DEFI_COMPONENT_UNPLACED);
             defData->Component.setPlacementLocation(-1, -1, -1);
+	  }
         }
         | '+' K_UNPLACED pt orient
         {
@@ -2031,7 +2216,7 @@ placement_status: '+' K_FIXED
 weight: '+' K_WEIGHT NUMBER 
         {
           if (defData->callbacks->ComponentCbk)
-            defData->Component.setWeight(ROUND($3));
+            defData->Component.setWeight(round($3));
         }
 
 end_comps: K_END K_COMPS
@@ -2046,7 +2231,7 @@ nets_section:  start_nets net_rules end_nets
 start_nets: K_NETS NUMBER ';'
         { 
           if (defData->callbacks->NetStartCbk)
-            CALLBACK(defData->callbacks->NetStartCbk, defrNetStartCbkType, ROUND($2));
+            CALLBACK(defData->callbacks->NetStartCbk, defrNetStartCbkType, round($2));
           defData->netOsnet = 1;
         }
 
@@ -2069,7 +2254,7 @@ net_and_connections: net_start
         {defData->dumb_mode = 0; defData->no_num = 0; }
 
 /* pcr 235555 & 236210 */
-net_start: '-' {defData->dumb_mode = DEF_MAX_INT; defData->no_num = DEF_MAX_INT; defData->nondef_is_keyword = TRUE; defData->mustjoin_is_keyword = TRUE;} net_name 
+net_start: '-' {defData->dumb_mode = DEF_MAX_INT; defData->no_num = DEF_MAX_INT; defData->nondef_is_keyword = true; defData->mustjoin_is_keyword = true;} net_name 
 
 net_name: T_STRING
         {
@@ -2145,16 +2330,16 @@ net_option: '+' net_type
         }
          paths
         {
-          defData->by_is_keyword = FALSE;
-          defData->do_is_keyword = FALSE;
-          defData->new_is_keyword = FALSE;
-          defData->nondef_is_keyword = FALSE;
-          defData->mustjoin_is_keyword = FALSE;
-          defData->step_is_keyword = FALSE;
-          defData->orient_is_keyword = FALSE;
-          defData->virtual_is_keyword = FALSE;
-          defData->rect_is_keyword = FALSE;
-          defData->mask_is_keyword = FALSE;
+          defData->by_is_keyword = false;
+          defData->do_is_keyword = false;
+          defData->new_is_keyword = false;
+          defData->nondef_is_keyword = false;
+          defData->mustjoin_is_keyword = false;
+          defData->step_is_keyword = false;
+          defData->orient_is_keyword = false;
+          defData->virtual_is_keyword = false;
+          defData->rect_is_keyword = false;
+          defData->mask_is_keyword = false;
           defData->needNPCbk = 0;
         }
 
@@ -2203,10 +2388,10 @@ net_option: '+' net_type
         { if (defData->callbacks->NetCbk) defData->Net.setPattern($3); }
 
         | '+' K_WEIGHT NUMBER
-        { if (defData->callbacks->NetCbk) defData->Net.setWeight(ROUND($3)); }
+        { if (defData->callbacks->NetCbk) defData->Net.setWeight(round($3)); }
 
         | '+' K_XTALK NUMBER
-        { if (defData->callbacks->NetCbk) defData->Net.setXTalk(ROUND($3)); }
+        { if (defData->callbacks->NetCbk) defData->Net.setXTalk(round($3)); }
 
         | '+' K_ESTCAP NUMBER
         { if (defData->callbacks->NetCbk) defData->Net.setCap($3); }
@@ -2238,43 +2423,43 @@ net_option: '+' net_type
           // move NOSHIELD in net_type 
           if (defData->VersionNum < 5.4) {   // PCR 445209 
             if (defData->callbacks->NetCbk) defData->Net.addNoShield("");
-            defData->by_is_keyword = FALSE;
-            defData->do_is_keyword = FALSE;
-            defData->new_is_keyword = FALSE;
-            defData->step_is_keyword = FALSE;
-            defData->orient_is_keyword = FALSE;
-            defData->virtual_is_keyword = FALSE;
-            defData->mask_is_keyword = FALSE;
-            defData->rect_is_keyword = FALSE;
-            defData->shield = TRUE;    // save the path info in the defData->shield paths 
+            defData->by_is_keyword = false;
+            defData->do_is_keyword = false;
+            defData->new_is_keyword = false;
+            defData->step_is_keyword = false;
+            defData->orient_is_keyword = false;
+            defData->virtual_is_keyword = false;
+            defData->mask_is_keyword = false;
+            defData->rect_is_keyword = false;
+            defData->shield = true;    // save the path info in the defData->shield paths 
           } else
             if (defData->callbacks->NetCbk) defData->Net.addWire("NOSHIELD", NULL);
         }
         paths
         {
           if (defData->VersionNum < 5.4) {   // PCR 445209 
-            defData->shield = FALSE;
-            defData->by_is_keyword = FALSE;
-            defData->do_is_keyword = FALSE;
-            defData->new_is_keyword = FALSE;
-            defData->step_is_keyword = FALSE;
-            defData->nondef_is_keyword = FALSE;
-            defData->mustjoin_is_keyword = FALSE;
-            defData->orient_is_keyword = FALSE;
-            defData->virtual_is_keyword = FALSE;
-            defData->rect_is_keyword = FALSE;
-            defData->mask_is_keyword = FALSE;
+            defData->shield = false;
+            defData->by_is_keyword = false;
+            defData->do_is_keyword = false;
+            defData->new_is_keyword = false;
+            defData->step_is_keyword = false;
+            defData->nondef_is_keyword = false;
+            defData->mustjoin_is_keyword = false;
+            defData->orient_is_keyword = false;
+            defData->virtual_is_keyword = false;
+            defData->rect_is_keyword = false;
+            defData->mask_is_keyword = false;
           } else {
-            defData->by_is_keyword = FALSE;
-            defData->do_is_keyword = FALSE;
-            defData->new_is_keyword = FALSE;
-            defData->step_is_keyword = FALSE;
-            defData->nondef_is_keyword = FALSE;
-            defData->mustjoin_is_keyword = FALSE;
-            defData->orient_is_keyword = FALSE;
-            defData->virtual_is_keyword = FALSE;
-            defData->rect_is_keyword = FALSE;
-            defData->mask_is_keyword = FALSE;
+            defData->by_is_keyword = false;
+            defData->do_is_keyword = false;
+            defData->new_is_keyword = false;
+            defData->step_is_keyword = false;
+            defData->nondef_is_keyword = false;
+            defData->mustjoin_is_keyword = false;
+            defData->orient_is_keyword = false;
+            defData->virtual_is_keyword = false;
+            defData->rect_is_keyword = false;
+            defData->mask_is_keyword = false;
           }
           defData->needNPCbk = 0;
         }
@@ -2296,16 +2481,16 @@ net_option: '+' net_type
           }
         } 
         comp_names {
-          defData->routed_is_keyword = TRUE;
-          defData->fixed_is_keyword = TRUE;
-          defData->cover_is_keyword = TRUE;
+          defData->routed_is_keyword = true;
+          defData->fixed_is_keyword = true;
+          defData->cover_is_keyword = true;
         } subnet_options {
           if (defData->callbacks->NetCbk) {
             defData->Net.addSubnet(defData->Subnet);
             defData->Subnet = NULL;
-            defData->routed_is_keyword = FALSE;
-            defData->fixed_is_keyword = FALSE;
-            defData->cover_is_keyword = FALSE;
+            defData->routed_is_keyword = false;
+            defData->fixed_is_keyword = false;
+            defData->cover_is_keyword = false;
           }
         }
 
@@ -2367,12 +2552,12 @@ netsource_type: K_NETLIST
 vpin_stmt: vpin_begin vpin_layer_opt pt pt 
         {
           // vpin_options may have to deal with orient 
-          defData->orient_is_keyword = TRUE;
+          defData->orient_is_keyword = true;
         }
         vpin_options
         { if (defData->callbacks->NetCbk)
             defData->Net.addVpinBounds($3.x, $3.y, $4.x, $4.y);
-          defData->orient_is_keyword = FALSE;
+          defData->orient_is_keyword = false;
         }
 
 vpin_begin: '+' K_VPIN {defData->dumb_mode = 1; defData->no_num = 1;} T_STRING
@@ -2433,18 +2618,18 @@ path:  T_STRING
         }
       }
     opt_taper_style_s  path_pt
-      { defData->dumb_mode = DEF_MAX_INT; defData->by_is_keyword = TRUE; defData->do_is_keyword = TRUE;
+      { defData->dumb_mode = DEF_MAX_INT; defData->by_is_keyword = true; defData->do_is_keyword = true;
 /*
-       dumb_mode = 1; by_is_keyword = TRUE; do_is_keyword = TRUE;
+       dumb_mode = 1; by_is_keyword = true; do_is_keyword = true;
 */
-        defData->new_is_keyword = TRUE; defData->step_is_keyword = TRUE; 
-        defData->orient_is_keyword = TRUE; defData->virtual_is_keyword = TRUE;
-        defData->mask_is_keyword = TRUE, defData->rect_is_keyword = TRUE;  }
+        defData->new_is_keyword = true; defData->step_is_keyword = true; 
+        defData->orient_is_keyword = true; defData->virtual_is_keyword = true;
+        defData->mask_is_keyword = true, defData->rect_is_keyword = true;  }
     
        path_item_list
      
-      { defData->dumb_mode = 0;   defData->virtual_is_keyword = FALSE; defData->mask_is_keyword = FALSE,
-       defData->rect_is_keyword = FALSE; }
+      { defData->dumb_mode = 0;   defData->virtual_is_keyword = false; defData->mask_is_keyword = false,
+       defData->rect_is_keyword = false; }
     
 virtual_statement :
     K_VIRTUAL virtual_pt
@@ -2673,9 +2858,9 @@ path_item:
     {
        // reset defData->dumb_mode to 1 just incase the next token is a via of the path
         // 2/5/2004 - pcr 686781
-        defData->dumb_mode = DEF_MAX_INT; defData->by_is_keyword = TRUE; defData->do_is_keyword = TRUE;
-        defData->new_is_keyword = TRUE; defData->step_is_keyword = TRUE;
-        defData->orient_is_keyword = TRUE;
+        defData->dumb_mode = DEF_MAX_INT; defData->by_is_keyword = true; defData->do_is_keyword = true;
+        defData->new_is_keyword = true; defData->step_is_keyword = true;
+        defData->orient_is_keyword = true;
     }  
 
       
@@ -2684,7 +2869,7 @@ path_pt :
       {
         if (defData->NeedPathData && ((defData->callbacks->NetCbk && (defData->netOsnet==1)) ||
           (defData->callbacks->SNetCbk && (defData->netOsnet==2))))
-          defData->PathObj.addPoint(ROUND($2), ROUND($3)); 
+          defData->PathObj.addPoint(round($2), round($3)); 
         defData->save_x = $2;
         defData->save_y = $3; 
       }
@@ -2692,27 +2877,27 @@ path_pt :
       {
         if (defData->NeedPathData && ((defData->callbacks->NetCbk && (defData->netOsnet==1)) ||
           (defData->callbacks->SNetCbk && (defData->netOsnet==2))))
-          defData->PathObj.addPoint(ROUND(defData->save_x), ROUND($3)); 
+          defData->PathObj.addPoint(round(defData->save_x), round($3)); 
         defData->save_y = $3;
       }
     | '(' NUMBER '*' ')'
       {
         if (defData->NeedPathData && ((defData->callbacks->NetCbk && (defData->netOsnet==1)) ||
           (defData->callbacks->SNetCbk && (defData->netOsnet==2))))
-          defData->PathObj.addPoint(ROUND($2), ROUND(defData->save_y)); 
+          defData->PathObj.addPoint(round($2), round(defData->save_y)); 
         defData->save_x = $2;
       }
     | '(' '*' '*' ')'
       {
         if (defData->NeedPathData && ((defData->callbacks->NetCbk && (defData->netOsnet==1)) ||
             (defData->callbacks->SNetCbk && (defData->netOsnet==2))))
-          defData->PathObj.addPoint(ROUND(defData->save_x), ROUND(defData->save_y)); 
+          defData->PathObj.addPoint(round(defData->save_x), round(defData->save_y)); 
       }
     | '(' NUMBER NUMBER NUMBER ')'
       {
         if (defData->NeedPathData && ((defData->callbacks->NetCbk && (defData->netOsnet==1)) ||
             (defData->callbacks->SNetCbk && (defData->netOsnet==2))))
-          defData->PathObj.addFlushPoint(ROUND($2), ROUND($3), ROUND($4)); 
+          defData->PathObj.addFlushPoint(round($2), round($3), round($4)); 
         defData->save_x = $2;
         defData->save_y = $3;
       }
@@ -2720,24 +2905,24 @@ path_pt :
       {
         if (defData->NeedPathData && ((defData->callbacks->NetCbk && (defData->netOsnet==1)) ||
           (defData->callbacks->SNetCbk && (defData->netOsnet==2))))
-          defData->PathObj.addFlushPoint(ROUND(defData->save_x), ROUND($3),
-          ROUND($4)); 
+          defData->PathObj.addFlushPoint(round(defData->save_x), round($3),
+          round($4)); 
         defData->save_y = $3;
       }
     | '(' NUMBER '*' NUMBER ')'
       {
         if (defData->NeedPathData && ((defData->callbacks->NetCbk && (defData->netOsnet==1)) ||
           (defData->callbacks->SNetCbk && (defData->netOsnet==2))))
-          defData->PathObj.addFlushPoint(ROUND($2), ROUND(defData->save_y),
-          ROUND($4)); 
+          defData->PathObj.addFlushPoint(round($2), round(defData->save_y),
+          round($4)); 
         defData->save_x = $2;
       }
     | '(' '*' '*' NUMBER ')'
       {
         if (defData->NeedPathData && ((defData->callbacks->NetCbk && (defData->netOsnet==1)) ||
           (defData->callbacks->SNetCbk && (defData->netOsnet==2))))
-          defData->PathObj.addFlushPoint(ROUND(defData->save_x), ROUND(defData->save_y),
-          ROUND($4)); 
+          defData->PathObj.addFlushPoint(round(defData->save_x), round(defData->save_y),
+          round($4)); 
       }
 
 virtual_pt :
@@ -2745,7 +2930,7 @@ virtual_pt :
       {
         if (defData->NeedPathData && ((defData->callbacks->NetCbk && (defData->netOsnet==1)) ||
           (defData->callbacks->SNetCbk && (defData->netOsnet==2))))
-          defData->PathObj.addVirtualPoint(ROUND($2), ROUND($3)); 
+          defData->PathObj.addVirtualPoint(round($2), round($3)); 
         defData->save_x = $2;
         defData->save_y = $3;
       }
@@ -2753,21 +2938,21 @@ virtual_pt :
       {
         if (defData->NeedPathData && ((defData->callbacks->NetCbk && (defData->netOsnet==1)) ||
           (defData->callbacks->SNetCbk && (defData->netOsnet==2))))
-          defData->PathObj.addVirtualPoint(ROUND(defData->save_x), ROUND($3)); 
+          defData->PathObj.addVirtualPoint(round(defData->save_x), round($3)); 
         defData->save_y = $3;
       }
     | '(' NUMBER '*' ')'
       {
         if (defData->NeedPathData && ((defData->callbacks->NetCbk && (defData->netOsnet==1)) ||
           (defData->callbacks->SNetCbk && (defData->netOsnet==2))))
-          defData->PathObj.addVirtualPoint(ROUND($2), ROUND(defData->save_y)); 
+          defData->PathObj.addVirtualPoint(round($2), round(defData->save_y)); 
         defData->save_x = $2;
       }
     | '(' '*' '*' ')'
       {
         if (defData->NeedPathData && ((defData->callbacks->NetCbk && (defData->netOsnet==1)) ||
           (defData->callbacks->SNetCbk && (defData->netOsnet==2))))
-          defData->PathObj.addVirtualPoint(ROUND(defData->save_x), ROUND(defData->save_y));
+          defData->PathObj.addVirtualPoint(round(defData->save_x), round(defData->save_y));
       }
  
 rect_pts :
@@ -2932,14 +3117,14 @@ snet_other_option: '+' net_type
                CALLBACK(defData->callbacks->SNetWireCbk, defrSNetWireCbkType, &defData->Net);
                defData->Net.freeWire();
             }
-            defData->by_is_keyword = FALSE;
-            defData->do_is_keyword = FALSE;
-            defData->new_is_keyword = FALSE;
-            defData->step_is_keyword = FALSE;
-            defData->orient_is_keyword = FALSE;
-            defData->virtual_is_keyword = FALSE;
-            defData->mask_is_keyword = FALSE;
-            defData->rect_is_keyword = FALSE;
+            defData->by_is_keyword = false;
+            defData->do_is_keyword = false;
+            defData->new_is_keyword = false;
+            defData->step_is_keyword = false;
+            defData->orient_is_keyword = false;
+            defData->virtual_is_keyword = false;
+            defData->mask_is_keyword = false;
+            defData->rect_is_keyword = false;
             defData->needSNPCbk = 0;
             }
  
@@ -3083,16 +3268,14 @@ snet_other_option: '+' net_type
             { if (defData->callbacks->SNetCbk) defData->Net.setPattern($3); }
  
         | '+' K_WEIGHT NUMBER
-            { if (defData->callbacks->SNetCbk) defData->Net.setWeight(ROUND($3)); }
+            { if (defData->callbacks->SNetCbk) defData->Net.setWeight(round($3)); }
  
         | '+' K_ESTCAP NUMBER
             { 
               // 11/12/2002 - this is obsolete in 5.5, & will be ignored 
               if (defData->VersionNum < 5.5) {
-                 if (defData->callbacks->SNetCbk) {
-                   defData->Net.setCap($3);
-                 }
-              } else  {
+                 if (defData->callbacks->SNetCbk) defData->Net.setCap($3);
+              } else {
                  defData->defWarning(7024, "The ESTCAP statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
               }
             }
@@ -3140,17 +3323,17 @@ shield_layer: // PCR 902306
               // can't just move SHIELD in net_type 
               if (defData->VersionNum < 5.4) { // PCR 445209 
                 if (defData->callbacks->SNetCbk) defData->Net.addShield(defData->shieldName);
-                defData->by_is_keyword = FALSE;
-                defData->do_is_keyword = FALSE;
-                defData->new_is_keyword = FALSE;
-                defData->step_is_keyword = FALSE;
-                defData->orient_is_keyword = FALSE;
-                defData->virtual_is_keyword = FALSE;
-                defData->mask_is_keyword = FALSE;
-                defData->rect_is_keyword = FALSE;
+                defData->by_is_keyword = false;
+                defData->do_is_keyword = false;
+                defData->new_is_keyword = false;
+                defData->step_is_keyword = false;
+                defData->orient_is_keyword = false;
+                defData->virtual_is_keyword = false;
+                defData->mask_is_keyword = false;
+                defData->rect_is_keyword = false;
                 defData->specialWire_routeStatus = (char*)"ROUTED";
                 defData->specialWire_routeStatusName = (char*)"";
-                defData->shield = TRUE;   // save the path info in the defData->shield paths 
+                defData->shield = true;   // save the path info in the defData->shield paths 
               } else
                 if (defData->callbacks->SNetCbk) defData->Net.addWire("SHIELD", defData->shieldName);
                 defData->specialWire_routeStatus = (char*)"ROUTED";
@@ -3167,26 +3350,26 @@ shield_layer: // PCR 902306
                    defData->Net.freeWire();
               }
               if (defData->VersionNum < 5.4) {  // PCR 445209 
-                defData->shield = FALSE;
-                defData->by_is_keyword = FALSE;
-                defData->do_is_keyword = FALSE;
-                defData->new_is_keyword = FALSE;
-                defData->step_is_keyword = FALSE;
-                defData->nondef_is_keyword = FALSE;
-                defData->mustjoin_is_keyword = FALSE;
-                defData->orient_is_keyword = FALSE;
-                defData->virtual_is_keyword = FALSE;
-                defData->mask_is_keyword = FALSE;
-                defData->rect_is_keyword = FALSE;
+                defData->shield = false;
+                defData->by_is_keyword = false;
+                defData->do_is_keyword = false;
+                defData->new_is_keyword = false;
+                defData->step_is_keyword = false;
+                defData->nondef_is_keyword = false;
+                defData->mustjoin_is_keyword = false;
+                defData->orient_is_keyword = false;
+                defData->virtual_is_keyword = false;
+                defData->mask_is_keyword = false;
+                defData->rect_is_keyword = false;
               } else {
-                defData->by_is_keyword = FALSE;
-                defData->do_is_keyword = FALSE;
-                defData->new_is_keyword = FALSE;
-                defData->step_is_keyword = FALSE;
-                defData->orient_is_keyword = FALSE;
-                defData->virtual_is_keyword = FALSE;
-                defData->mask_is_keyword = FALSE;
-                defData->rect_is_keyword = FALSE;
+                defData->by_is_keyword = false;
+                defData->do_is_keyword = false;
+                defData->new_is_keyword = false;
+                defData->step_is_keyword = false;
+                defData->orient_is_keyword = false;
+                defData->virtual_is_keyword = false;
+                defData->mask_is_keyword = false;
+                defData->rect_is_keyword = false;
               }
               defData->needSNPCbk = 0;
             }
@@ -3195,9 +3378,7 @@ snet_width: '+' K_WIDTH { defData->dumb_mode = 1; } T_STRING NUMBER
             {
               // 11/12/2002 - this is obsolete in 5.5, & will be ignored 
               if (defData->VersionNum < 5.5) {
-                  if (defData->callbacks->SNetCbk) {
-                      defData->Net.setWidth($4, $5);
-                  }
+                 if (defData->callbacks->SNetCbk) defData->Net.setWidth($4, $5);
               } else {
                  defData->defWarning(7026, "The WIDTH statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
               }
@@ -3329,25 +3510,25 @@ spath:  T_STRING
       }
     width opt_spaths path_pt
 /*
-      { dumb_mode = 1; new_is_keyword = TRUE; }
+      { dumb_mode = 1; new_is_keyword = true; }
 */
-      { defData->dumb_mode = DEF_MAX_INT; defData->by_is_keyword = TRUE; defData->do_is_keyword = TRUE;
-        defData->new_is_keyword = TRUE; defData->step_is_keyword = TRUE;
-         defData->orient_is_keyword = TRUE; defData->rect_is_keyword = TRUE, defData->mask_is_keyword = TRUE; 
-         defData->virtual_is_keyword = TRUE;  }
+      { defData->dumb_mode = DEF_MAX_INT; defData->by_is_keyword = true; defData->do_is_keyword = true;
+        defData->new_is_keyword = true; defData->step_is_keyword = true;
+         defData->orient_is_keyword = true; defData->rect_is_keyword = true, defData->mask_is_keyword = true; 
+         defData->virtual_is_keyword = true;  }
 
     path_item_list
-      { defData->dumb_mode = 0; defData->rect_is_keyword = FALSE, defData->mask_is_keyword = FALSE, defData->virtual_is_keyword = FALSE; }
+      { defData->dumb_mode = 0; defData->rect_is_keyword = false, defData->mask_is_keyword = false, defData->virtual_is_keyword = false; }
 
 width: NUMBER
       { if (defData->NeedPathData && defData->callbacks->SNetCbk)
-          defData->PathObj.addWidth(ROUND($1));
+          defData->PathObj.addWidth(round($1));
       }
 
 start_snets: K_SNETS NUMBER ';'
       { 
         if (defData->callbacks->SNetStartCbk)
-          CALLBACK(defData->callbacks->SNetStartCbk, defrSNetStartCbkType, ROUND($2));
+          CALLBACK(defData->callbacks->SNetStartCbk, defrSNetStartCbkType, round($2));
         defData->netOsnet = 2;
       }
 
@@ -3364,7 +3545,7 @@ groups_section: groups_start group_rules groups_end
 groups_start: K_GROUPS NUMBER ';'
       {
         if (defData->callbacks->GroupsStartCbk)
-           CALLBACK(defData->callbacks->GroupsStartCbk, defrGroupsStartCbkType, ROUND($2));
+           CALLBACK(defData->callbacks->GroupsStartCbk, defrGroupsStartCbkType, round($2));
       }
 
 group_rules: // empty 
@@ -3473,32 +3654,26 @@ group_soft_option: K_MAXX NUMBER
       {
         // 11/12/2002 - this is obsolete in 5.5, & will be ignored 
         if (defData->VersionNum < 5.5) {
-            if (defData->callbacks->GroupCbk) {
-              defData->Group.setMaxX(ROUND($2));
-            }
+          if (defData->callbacks->GroupCbk) defData->Group.setMaxX(round($2));
         } else {
-            defData->defWarning(7028, "The GROUP SOFT MAXX statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
+          defData->defWarning(7028, "The GROUP SOFT MAXX statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
         }
       }
       | K_MAXY NUMBER
       { 
         // 11/12/2002 - this is obsolete in 5.5, & will be ignored 
         if (defData->VersionNum < 5.5) {
-            if (defData->callbacks->GroupCbk) {
-              defData->Group.setMaxY(ROUND($2));
-            }
+          if (defData->callbacks->GroupCbk) defData->Group.setMaxY(round($2));
         } else {
-            defData->defWarning(7029, "The GROUP SOFT MAXY statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
+          defData->defWarning(7029, "The GROUP SOFT MAXY statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
         }
       }
       | K_MAXHALFPERIMETER NUMBER
       { 
         // 11/12/2002 - this is obsolete in 5.5, & will be ignored 
         if (defData->VersionNum < 5.5) {
-            if (defData->callbacks->GroupCbk) {
-                defData->Group.setPerim(ROUND($2));
-            }
-        } else {
+          if (defData->callbacks->GroupCbk) defData->Group.setPerim(round($2));
+        } else { 
           defData->defWarning(7030, "The GROUP SOFT MAXHALFPERIMETER statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
         }
       }
@@ -3521,7 +3696,7 @@ assertions_start: K_ASSERTIONS NUMBER ';'
       {
         if ((defData->VersionNum < 5.4) && (defData->callbacks->AssertionsStartCbk)) {
           CALLBACK(defData->callbacks->AssertionsStartCbk, defrAssertionsStartCbkType,
-                   ROUND($2));
+                   round($2));
         } else {
           if (defData->callbacks->AssertionCbk)
             if (defData->assertionWarnings++ < defData->settings->AssertionWarnings)
@@ -3535,7 +3710,7 @@ constraints_start: K_CONSTRAINTS NUMBER ';'
       {
         if ((defData->VersionNum < 5.4) && (defData->callbacks->ConstraintsStartCbk)) {
           CALLBACK(defData->callbacks->ConstraintsStartCbk, defrConstraintsStartCbkType,
-                   ROUND($2));
+                   round($2));
         } else {
           if (defData->callbacks->ConstraintCbk)
             if (defData->constraintWarnings++ < defData->settings->ConstraintWarnings)
@@ -3665,7 +3840,7 @@ scanchains_section: scanchain_start scanchain_rules scanchain_end
 scanchain_start: K_SCANCHAINS NUMBER ';'
       { if (defData->callbacks->ScanchainsStartCbk)
           CALLBACK(defData->callbacks->ScanchainsStartCbk, defrScanchainsStartCbkType,
-                   ROUND($2));
+                   round($2));
       }
 
 scanchain_rules: // empty 
@@ -3682,7 +3857,7 @@ start_scan: '-' {defData->dumb_mode = 1; defData->no_num = 1;} T_STRING
       {
         if (defData->callbacks->ScanchainCbk)
           defData->Scanchain.setName($3);
-        defData->bit_is_keyword = TRUE;
+        defData->bit_is_keyword = true;
       }
 
 scan_members: 
@@ -3928,13 +4103,13 @@ ordered_pins: // empty
 partition_maxbits: // empty 
       { $$ = -1; }
       | K_MAXBITS NUMBER
-      { $$ = ROUND($2); }
+      { $$ = round($2); }
     
 scanchain_end: K_END K_SCANCHAINS
       { 
         if (defData->callbacks->ScanchainsEndCbk)
           CALLBACK(defData->callbacks->ScanchainsEndCbk, defrScanchainsEndCbkType, 0);
-        defData->bit_is_keyword = FALSE;
+        defData->bit_is_keyword = false;
         defData->dumb_mode = 0; defData->no_num = 0;
       }
 
@@ -3945,7 +4120,7 @@ iotiming_section: iotiming_start iotiming_rules iotiming_end
 iotiming_start: K_IOTIMINGS NUMBER ';'
       {
         if (defData->VersionNum < 5.4 && defData->callbacks->IOTimingsStartCbk) {
-          CALLBACK(defData->callbacks->IOTimingsStartCbk, defrIOTimingsStartCbkType, ROUND($2));
+          CALLBACK(defData->callbacks->IOTimingsStartCbk, defrIOTimingsStartCbkType, round($2));
         } else {
           if (defData->callbacks->IOTimingsStartCbk)
             if (defData->iOTimingWarnings++ < defData->settings->IOTimingWarnings)
@@ -4043,7 +4218,7 @@ floorplan_contraints_section: fp_start fp_stmts K_END K_FPC
 fp_start: K_FPC NUMBER ';'
       {
         if (defData->callbacks->FPCStartCbk)
-          CALLBACK(defData->callbacks->FPCStartCbk, defrFPCStartCbkType, ROUND($2));
+          CALLBACK(defData->callbacks->FPCStartCbk, defrFPCStartCbkType, round($2));
       }
 
 fp_stmts: // empty 
@@ -4097,7 +4272,7 @@ timingdisables_start: K_TIMINGDISABLES NUMBER ';'
       { 
         if (defData->callbacks->TimingDisablesStartCbk)
           CALLBACK(defData->callbacks->TimingDisablesStartCbk, defrTimingDisablesStartCbkType,
-                   ROUND($2));
+                   round($2));
       }
 
 timingdisables_rules: // empty 
@@ -4161,7 +4336,7 @@ partitions_start: K_PARTITIONS NUMBER ';'
       {
         if (defData->callbacks->PartitionsStartCbk)
           CALLBACK(defData->callbacks->PartitionsStartCbk, defrPartitionsStartCbkType,
-                   ROUND($2));
+                   round($2));
       }
 
 partition_rules: // empty 
@@ -4330,11 +4505,11 @@ subnet_option: subnet_type
       }
       paths
       {  
-        defData->by_is_keyword = FALSE;
-        defData->do_is_keyword = FALSE;
-        defData->new_is_keyword = FALSE;
-        defData->step_is_keyword = FALSE;
-        defData->orient_is_keyword = FALSE;
+        defData->by_is_keyword = false;
+        defData->do_is_keyword = false;
+        defData->new_is_keyword = false;
+        defData->step_is_keyword = false;
+        defData->orient_is_keyword = false;
         defData->needNPCbk = 0;
       }
       | K_NONDEFAULTRULE { defData->dumb_mode = 1; defData->no_num = 1; } T_STRING
@@ -4353,7 +4528,7 @@ pin_props_section: begin_pin_props pin_prop_list end_pin_props ;
 
 begin_pin_props: K_PINPROPERTIES NUMBER opt_semi
       { if (defData->callbacks->PinPropStartCbk)
-          CALLBACK(defData->callbacks->PinPropStartCbk, defrPinPropStartCbkType, ROUND($2)); }
+          CALLBACK(defData->callbacks->PinPropStartCbk, defrPinPropStartCbkType, round($2)); }
 
 opt_semi:
       // empty 
@@ -4424,7 +4599,7 @@ blockage_section: blockage_start blockage_defs blockage_end ;
 
 blockage_start: K_BLOCKAGES NUMBER ';'
       { if (defData->callbacks->BlockageStartCbk)
-          CALLBACK(defData->callbacks->BlockageStartCbk, defrBlockageStartCbkType, ROUND($2)); }
+          CALLBACK(defData->callbacks->BlockageStartCbk, defrBlockageStartCbkType, round($2)); }
 
 blockage_end: K_END K_BLOCKAGES
       { if (defData->callbacks->BlockageEndCbk)
@@ -4806,7 +4981,7 @@ slot_section: slot_start slot_defs slot_end ;
 
 slot_start: K_SLOTS NUMBER ';'
       { if (defData->callbacks->SlotStartCbk)
-          CALLBACK(defData->callbacks->SlotStartCbk, defrSlotStartCbkType, ROUND($2)); }
+          CALLBACK(defData->callbacks->SlotStartCbk, defrSlotStartCbkType, round($2)); }
 
 slot_end: K_END K_SLOTS
       { if (defData->callbacks->SlotEndCbk)
@@ -4858,7 +5033,7 @@ fill_section: fill_start fill_defs fill_end ;
 
 fill_start: K_FILLS NUMBER ';'
       { if (defData->callbacks->FillStartCbk)
-          CALLBACK(defData->callbacks->FillStartCbk, defrFillStartCbkType, ROUND($2)); }
+          CALLBACK(defData->callbacks->FillStartCbk, defrFillStartCbkType, round($2)); }
 
 fill_end: K_END K_FILLS
       { if (defData->callbacks->FillEndCbk)
@@ -5027,7 +5202,7 @@ nondefault_start: K_NONDEFAULTRULES NUMBER ';'
           }
         } else if (defData->callbacks->NonDefaultStartCbk)
           CALLBACK(defData->callbacks->NonDefaultStartCbk, defrNonDefaultStartCbkType,
-                   ROUND($2));
+                   round($2));
       }
 
 nondefault_end: K_END K_NONDEFAULTRULES
@@ -5167,7 +5342,7 @@ styles_start: K_STYLES NUMBER ';'
             }
           }
         } else if (defData->callbacks->StylesStartCbk)
-          CALLBACK(defData->callbacks->StylesStartCbk, defrStylesStartCbkType, ROUND($2));
+          CALLBACK(defData->callbacks->StylesStartCbk, defrStylesStartCbkType, round($2));
       }
 
 styles_end: K_END K_STYLES
@@ -5196,4 +5371,4 @@ styles_rule: '-' K_STYLE NUMBER
 
 %%
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

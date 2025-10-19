@@ -1,112 +1,84 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 // OpenDB --- Transformation utilities
 
-#include "dbTransform.h"
+#include "odb/dbTransform.h"
 
-#ifndef DB_TRANSFORM_TEST
-#include "dbDiff.h"
-#include "dbStream.h"
-#endif
+#include <stdexcept>
+#include <vector>
+
+#include "odb/dbStream.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace odb {
 
-static dbOrientType::Value orientMul[8][8] = {{dbOrientType::R0,
-                                               dbOrientType::R90,
-                                               dbOrientType::R180,
-                                               dbOrientType::R270,
-                                               dbOrientType::MY,
-                                               dbOrientType::MYR90,
-                                               dbOrientType::MX,
-                                               dbOrientType::MXR90},
-                                              {dbOrientType::R90,
-                                               dbOrientType::R180,
-                                               dbOrientType::R270,
-                                               dbOrientType::R0,
-                                               dbOrientType::MXR90,
-                                               dbOrientType::MY,
-                                               dbOrientType::MYR90,
-                                               dbOrientType::MX},
-                                              {dbOrientType::R180,
-                                               dbOrientType::R270,
-                                               dbOrientType::R0,
-                                               dbOrientType::R90,
-                                               dbOrientType::MX,
-                                               dbOrientType::MXR90,
-                                               dbOrientType::MY,
-                                               dbOrientType::MYR90},
-                                              {dbOrientType::R270,
-                                               dbOrientType::R0,
-                                               dbOrientType::R90,
-                                               dbOrientType::R180,
-                                               dbOrientType::MYR90,
-                                               dbOrientType::MX,
-                                               dbOrientType::MXR90,
-                                               dbOrientType::MY},
-                                              {dbOrientType::MY,
-                                               dbOrientType::MYR90,
-                                               dbOrientType::MX,
-                                               dbOrientType::MXR90,
-                                               dbOrientType::R0,
-                                               dbOrientType::R90,
-                                               dbOrientType::R180,
-                                               dbOrientType::R270},
-                                              {dbOrientType::MYR90,
-                                               dbOrientType::MX,
-                                               dbOrientType::MXR90,
-                                               dbOrientType::MY,
-                                               dbOrientType::R270,
-                                               dbOrientType::R0,
-                                               dbOrientType::R90,
-                                               dbOrientType::R180},
-                                              {dbOrientType::MX,
-                                               dbOrientType::MXR90,
-                                               dbOrientType::MY,
-                                               dbOrientType::MYR90,
-                                               dbOrientType::R180,
-                                               dbOrientType::R270,
-                                               dbOrientType::R0,
-                                               dbOrientType::R90},
-                                              {dbOrientType::MXR90,
-                                               dbOrientType::MY,
-                                               dbOrientType::MYR90,
-                                               dbOrientType::MX,
-                                               dbOrientType::R90,
-                                               dbOrientType::R180,
-                                               dbOrientType::R270,
-                                               dbOrientType::R0}};
+static const dbOrientType::Value orientMul[8][8] = {{dbOrientType::R0,
+                                                     dbOrientType::R90,
+                                                     dbOrientType::R180,
+                                                     dbOrientType::R270,
+                                                     dbOrientType::MY,
+                                                     dbOrientType::MYR90,
+                                                     dbOrientType::MX,
+                                                     dbOrientType::MXR90},
+                                                    {dbOrientType::R90,
+                                                     dbOrientType::R180,
+                                                     dbOrientType::R270,
+                                                     dbOrientType::R0,
+                                                     dbOrientType::MXR90,
+                                                     dbOrientType::MY,
+                                                     dbOrientType::MYR90,
+                                                     dbOrientType::MX},
+                                                    {dbOrientType::R180,
+                                                     dbOrientType::R270,
+                                                     dbOrientType::R0,
+                                                     dbOrientType::R90,
+                                                     dbOrientType::MX,
+                                                     dbOrientType::MXR90,
+                                                     dbOrientType::MY,
+                                                     dbOrientType::MYR90},
+                                                    {dbOrientType::R270,
+                                                     dbOrientType::R0,
+                                                     dbOrientType::R90,
+                                                     dbOrientType::R180,
+                                                     dbOrientType::MYR90,
+                                                     dbOrientType::MX,
+                                                     dbOrientType::MXR90,
+                                                     dbOrientType::MY},
+                                                    {dbOrientType::MY,
+                                                     dbOrientType::MYR90,
+                                                     dbOrientType::MX,
+                                                     dbOrientType::MXR90,
+                                                     dbOrientType::R0,
+                                                     dbOrientType::R90,
+                                                     dbOrientType::R180,
+                                                     dbOrientType::R270},
+                                                    {dbOrientType::MYR90,
+                                                     dbOrientType::MX,
+                                                     dbOrientType::MXR90,
+                                                     dbOrientType::MY,
+                                                     dbOrientType::R270,
+                                                     dbOrientType::R0,
+                                                     dbOrientType::R90,
+                                                     dbOrientType::R180},
+                                                    {dbOrientType::MX,
+                                                     dbOrientType::MXR90,
+                                                     dbOrientType::MY,
+                                                     dbOrientType::MYR90,
+                                                     dbOrientType::R180,
+                                                     dbOrientType::R270,
+                                                     dbOrientType::R0,
+                                                     dbOrientType::R90},
+                                                    {dbOrientType::MXR90,
+                                                     dbOrientType::MY,
+                                                     dbOrientType::MYR90,
+                                                     dbOrientType::MX,
+                                                     dbOrientType::R90,
+                                                     dbOrientType::R180,
+                                                     dbOrientType::R270,
+                                                     dbOrientType::R0}};
 
-#ifndef DB_TRANSFORM_TEST
 dbOStream& operator<<(dbOStream& stream, const dbTransform& t)
 {
   stream << (int) t._orient;
@@ -122,14 +94,6 @@ dbIStream& operator>>(dbIStream& stream, dbTransform& t)
   stream >> t._offset;
   return stream;
 }
-
-dbDiff& operator<<(dbDiff& diff, const dbTransform& t)
-{
-  diff << (int) t._orient;
-  diff << t._offset;
-  return diff;
-}
-#endif
 
 //
 // The transform matrix is written as:
@@ -172,28 +136,28 @@ void dbTransform::invert(dbTransform& result) const
       break;
 
     case dbOrientType::MY:
-      offset.x() = -offset.x();
+      offset.setX(-offset.x());
       orient = dbOrientType::MY;
       break;
 
     case dbOrientType::MYR90:
-      offset.x() = -offset.x();
+      offset.setX(-offset.x());
       offset.rotate90();
       orient = dbOrientType::MYR90;
       break;
 
     case dbOrientType::MX:
-      offset.y() = -offset.y();
+      offset.setY(-offset.y());
       orient = dbOrientType::MX;
       break;
 
     case dbOrientType::MXR90:
-      offset.y() = -offset.y();
+      offset.setY(-offset.y());
       offset.rotate90();
       orient = dbOrientType::MXR90;
       break;
     default:
-      throw ZException("Unknown orientation");
+      throw std::runtime_error("Unknown orientation");
   }
 
   result._offset = offset;
@@ -219,26 +183,26 @@ void dbTransform::apply(Point& p) const
       break;
 
     case dbOrientType::MY:
-      p.x() = -p.x();
+      p.setX(-p.x());
       break;
 
     case dbOrientType::MYR90:
-      p.x() = -p.x();
+      p.setX(-p.x());
       p.rotate90();
       break;
 
     case dbOrientType::MX:
-      p.y() = -p.y();
+      p.setY(-p.y());
       break;
 
     case dbOrientType::MXR90:
-      p.y() = -p.y();
+      p.setY(-p.y());
       p.rotate90();
       break;
   }
 
-  p.x() += _offset.x();
-  p.y() += _offset.y();
+  p.addX(_offset.x());
+  p.addY(_offset.y());
 }
 
 void dbTransform::apply(Rect& r) const
@@ -248,6 +212,15 @@ void dbTransform::apply(Rect& r) const
   apply(ll);
   apply(ur);
   r.init(ll.x(), ll.y(), ur.x(), ur.y());
+}
+
+void dbTransform::apply(Polygon& p) const
+{
+  std::vector<Point> points = p.getPoints();
+  for (Point& pt : points) {
+    apply(pt);
+  }
+  p.setPoints(points);
 }
 
 void dbTransform::concat(const dbTransform& t, dbTransform& result)

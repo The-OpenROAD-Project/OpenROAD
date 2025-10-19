@@ -1,13 +1,3 @@
-record_tests {
-  error1
-  get_core_die_areas
-}
-
-define_test_group "non_flow" {
-  error1
-  get_core_die_areas
-}
-
 # Flow tests only check the last line in the log (pass/fail).
 # Ordered by instance count.
 record_flow_tests {
@@ -28,5 +18,7 @@ record_flow_tests {
   jpeg_sky130hd
 }
 
-# sidelined because drt blows chow
-
+# Database loading tests for -db flag functionality
+record_test open_db $test_dir "compare_logfile" "-db gcd_sky130hd.odb"
+# For invalid DB, allow non-zero exit but require log to match ok
+record_test open_db_invalid $test_dir "compare_logfile_allow_error" "-db nonexistent_file.odb"

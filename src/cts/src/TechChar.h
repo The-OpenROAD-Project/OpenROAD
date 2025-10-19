@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -39,18 +7,31 @@
 #include <bitset>
 #include <cassert>
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <deque>
 #include <functional>
 #include <iostream>
+#include <map>
+#include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "CtsOptions.h"
+#include "boost/functional/hash.hpp"
+#include "boost/unordered/unordered_map.hpp"
 #include "db_sta/dbNetwork.hh"
-#include "ord/OpenRoad.hh"
+#include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
+#include "odb/db.h"
+#include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
+#include "sta/Graph.hh"
+#include "sta/Liberty.hh"
 
 namespace utl {
 class Logger;
@@ -59,6 +40,23 @@ class Logger;
 namespace cts {
 
 using utl::Logger;
+
+struct PairHash
+{
+  std::size_t operator()(const std::pair<size_t, size_t>& iPair) const
+  {
+    return boost::hash_value(iPair);
+  }
+};
+
+struct PairEqual
+{
+  bool operator()(const std::pair<size_t, size_t>& p1,
+                  const std::pair<size_t, size_t>& p2) const
+  {
+    return ((p1.first == p2.first) && (p1.second == p2.second));
+  }
+};
 
 class WireSegment
 {
@@ -82,7 +80,10 @@ class WireSegment
 
   void addBuffer(double location) { bufferLocations_.push_back(location); }
 
-  void addBufferMaster(std::string name) { bufferMasters_.push_back(name); }
+  void addBufferMaster(const std::string& name)
+  {
+    bufferMasters_.push_back(name);
+  }
 
   double getPower() const { return power_; }
   unsigned getDelay() const { return delay_; }
@@ -91,7 +92,7 @@ class WireSegment
   uint8_t getLength() const { return length_; }
   uint8_t getLoad() const { return load_; }
   uint8_t getOutputSlew() const { return outputSlew_; }
-  bool isBuffered() const { return bufferLocations_.size() > 0; }
+  bool isBuffered() const { return !bufferLocations_.empty(); }
   unsigned getNumBuffers() const { return bufferLocations_.size(); }
   const std::vector<double>& getBufferLocations() { return bufferLocations_; }
   const std::vector<std::string>& getBufferMasters() { return bufferMasters_; }
@@ -130,10 +131,10 @@ class TechChar
 {
  public:
   TechChar(CtsOptions* options,
-           ord::OpenRoad* openroad,
            odb::dbDatabase* db,
            sta::dbSta* sta,
            rsz::Resizer* resizer,
+           est::EstimateParasitics* estimate_parasitics,
            sta::dbNetwork* db_network,
            Logger* logger);
 
@@ -144,13 +145,13 @@ class TechChar
   void reportSegments(uint8_t length, uint8_t load, uint8_t outputSlew) const;
 
   void forEachWireSegment(
-      const std::function<void(unsigned, const WireSegment&)> func) const;
+      const std::function<void(unsigned, const WireSegment&)>& func) const;
 
   void forEachWireSegment(
       uint8_t length,
       uint8_t load,
       uint8_t outputSlew,
-      const std::function<void(unsigned, const WireSegment&)> func) const;
+      const std::function<void(unsigned, const WireSegment&)>& func) const;
 
   const WireSegment& getWireSegment(unsigned idx) const
   {
@@ -170,7 +171,7 @@ class TechChar
   double getCapPerDBU() const { return capPerDBU_; }
   utl::Logger* getLogger() { return options_->getLogger(); }
 
- protected:
+ private:
   // SolutionData represents the various different structures of the
   // characterization segment. Ports, insts, nets...
   struct SolutionData
@@ -215,7 +216,7 @@ class TechChar
     }
   };
 
-  typedef uint32_t Key;
+  using Key = uint32_t;
 
   void printCharacterization() const;
   void printSolution() const;
@@ -229,7 +230,7 @@ class TechChar
                                  uint8_t inputSlew);
 
   void compileLut(const std::vector<ResultData>& lutSols);
-  void setLengthUnit(unsigned length) { LENGTH_UNIT_MICRON = length; }
+  void setLengthUnit(unsigned length) { lengthUnit_ = length; }
   unsigned computeKey(uint8_t length, uint8_t load, uint8_t outputSlew) const
   {
     return length | (load << NUM_BITS_PER_FIELD)
@@ -248,6 +249,18 @@ class TechChar
   // Characterization attributes
 
   void initCharacterization();
+  void finalizeRootSinkBuffers();
+  void trimSortBufferList(std::vector<std::string>& buffers);
+  float getMaxCapLimit(const std::string& buf);
+  void collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
+                                      sta::LibertyPort* input,
+                                      sta::LibertyPort* output,
+                                      std::vector<float>& axisSlews,
+                                      std::vector<float>& axisLoads);
+  void sortAndUniquify(std::vector<float>& values, const std::string& name);
+  void reduceOrExpand(std::vector<float>& values, unsigned limit);
+  std::vector<float>::iterator smallestDiffIter(std::vector<float>& values);
+  std::vector<float>::iterator largestDiffIter(std::vector<float>& values);
   std::vector<SolutionData> createPatterns(unsigned setupWirelength);
   void createStaInstance();
   void setParasitics(const std::vector<SolutionData>& topologiesVector,
@@ -258,19 +271,28 @@ class TechChar
                                     float inSlew,
                                     unsigned setupWirelength);
   void updateBufferTopologies(SolutionData& solution);
+  void updateBufferTopologiesOld(TechChar::SolutionData& solution);
+  size_t cellNameToID(const std::string& masterName);
+  std::vector<size_t> getCurrConfig(const SolutionData& solution);
+  std::vector<size_t> getNextConfig(const std::vector<size_t>& currConfig);
+  odb::dbMaster* getMasterFromConfig(std::vector<size_t> nextConfig,
+                                     unsigned nodeIndex);
+  void swapTopologyBuffer(SolutionData& solution,
+                          unsigned nodeIndex,
+                          const std::string& newMasterName);
   std::vector<ResultData> characterizationPostProcess();
   unsigned normalizeCharResults(float value,
                                 float iter,
                                 unsigned* min,
                                 unsigned* max);
   void initClockLayerResCap(float dbUnitsPerMicron);
+  unsigned getBufferingCombo(size_t numBuffers, size_t numNodes);
+  bool isTopologyMonotonic(const std::vector<size_t>& row);
 
   static constexpr unsigned NUM_BITS_PER_FIELD = 10;
   static constexpr unsigned MAX_NORMALIZED_VAL = (1 << NUM_BITS_PER_FIELD) - 1;
-  unsigned LENGTH_UNIT_MICRON = 10;
 
   unsigned lengthUnit_ = 0;
-  unsigned charLengthUnit_ = 0;
   unsigned lengthUnitRatio_ = 0;
 
   unsigned minSegmentLength_ = 0;
@@ -281,17 +303,16 @@ class TechChar
   unsigned maxSlew_ = 0;
 
   unsigned actualMinInputCap_ = 0;
-  unsigned actualMinInputSlew_ = 0;
 
   std::deque<WireSegment> wireSegments_;
   std::unordered_map<Key, std::deque<unsigned>> keyToWireSegments_;
 
   CtsOptions* options_;
-  ord::OpenRoad* openroad_;
   odb::dbDatabase* db_;
   rsz::Resizer* resizer_;
+  est::EstimateParasitics* estimate_parasitics_;
   sta::dbSta* openSta_;
-  sta::dbSta* openStaChar_;
+  std::unique_ptr<sta::dbSta> openStaChar_;
   sta::dbNetwork* db_network_;
   Logger* logger_;
   sta::PathAnalysisPt* charPathAnalysis_ = nullptr;
@@ -304,12 +325,15 @@ class TechChar
   double capPerDBU_;  // farads/dbu
   float charSlewStepSize_ = 0.0;
   float charCapStepSize_ = 0.0;
-  std::set<std::string> masterNames_;
+  std::vector<std::string> masterNames_;
   std::vector<float> wirelengthsToTest_;
   std::vector<float> loadsToTest_;
   std::vector<float> slewsToTest_;
 
   std::map<CharKey, std::vector<ResultData>> solutionMap_;
+  // keep track of acceptable buffering combinations in topology
+  boost::unordered_map<std::pair<size_t, size_t>, unsigned, PairHash, PairEqual>
+      bufferingComboTable_;
 };
 
 }  // namespace cts

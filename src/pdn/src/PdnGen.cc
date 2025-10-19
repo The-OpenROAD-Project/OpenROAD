@@ -1,53 +1,31 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include "pdn/PdnGen.hh"
 
+#include <algorithm>
+#include <array>
+#include <cstring>
 #include <map>
+#include <memory>
 #include <set>
+#include <stdexcept>
+#include <utility>
+#include <vector>
 
+#include "boost/geometry/geometry.hpp"
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbTransform.h"
-#include "ord/OpenRoad.hh"
 #include "power_cells.h"
 #include "renderer.h"
 #include "rings.h"
+#include "sroute.h"
 #include "straps.h"
+#include "techlayer.h"
 #include "utl/Logger.h"
 #include "via_repair.h"
 
@@ -55,27 +33,12 @@ namespace pdn {
 
 using utl::Logger;
 
-using odb::dbBlock;
-using odb::dbBox;
-using odb::dbInst;
-using odb::dbITerm;
-using odb::dbMaster;
-using odb::dbMTerm;
-using odb::dbNet;
-
-using utl::PDN;
-
-PdnGen::PdnGen() : db_(nullptr), logger_(nullptr)
+PdnGen::PdnGen(dbDatabase* db, Logger* logger) : db_(db), logger_(logger)
 {
+  sroute_ = std::make_unique<SRoute>(this, db, logger_);
 }
 
 PdnGen::~PdnGen() = default;
-
-void PdnGen::init(dbDatabase* db, Logger* logger)
-{
-  db_ = db;
-  logger_ = logger;
-}
 
 void PdnGen::reset()
 {
@@ -94,6 +57,7 @@ void PdnGen::resetShapes()
 
 void PdnGen::buildGrids(bool trim)
 {
+  debugPrint(logger_, utl::PDN, "Make", 1, "Build - begin");
   auto* block = db_->getChip()->getBlock();
 
   resetShapes();
@@ -107,42 +71,50 @@ void PdnGen::buildGrids(bool trim)
     insts_in_grids.insert(insts_in_grid.begin(), insts_in_grid.end());
   }
 
-  ShapeTreeMap block_obs;
-  Grid::makeInitialObstructions(block, block_obs, insts_in_grids);
-
-  ShapeTreeMap all_shapes;
+  ShapeVectorMap block_obs_vec;
+  Grid::makeInitialObstructions(block, block_obs_vec, insts_in_grids, logger_);
+  for (auto* grid : grids) {
+    grid->getGridLevelObstructions(block_obs_vec);
+  }
+  ShapeVectorMap all_shapes_vec;
 
   // get special shapes
-  std::set<odb::dbNet*> nets;
-  for (auto* domain : getDomains()) {
-    for (auto* net : domain->getNets()) {
-      nets.insert(net);
-    }
-  }
-  Grid::makeInitialShapes(block, all_shapes);
-  for (const auto& [layer, layer_shapes] : all_shapes) {
-    auto& layer_obs = block_obs[layer];
-    for (const auto& [box, shape] : layer_shapes) {
-      layer_obs.insert({shape->getObstructionBox(), shape});
+  Grid::makeInitialShapes(block, all_shapes_vec, logger_);
+  for (const auto& [layer, layer_shapes] : all_shapes_vec) {
+    auto& layer_obs = block_obs_vec[layer];
+    for (const auto& shape : layer_shapes) {
+      layer_obs.push_back(shape);
     }
   }
 
+  Shape::ObstructionTreeMap block_obs;
+  for (const auto& [layer, shapes] : block_obs_vec) {
+    block_obs[layer] = Shape::ObstructionTree(shapes.begin(), shapes.end());
+  }
+  block_obs_vec.clear();
+
+  Shape::ShapeTreeMap all_shapes;
+  for (const auto& [layer, shapes] : all_shapes_vec) {
+    all_shapes[layer] = Shape::ShapeTree(shapes.begin(), shapes.end());
+  }
+  all_shapes_vec.clear();
+
   for (auto* grid : grids) {
-    ShapeTreeMap obs_local = block_obs;
-    for (auto* grid_other : grids) {
-      if (grid != grid_other) {
-        grid_other->getGridLevelObstructions(obs_local);
-        grid_other->getObstructions(obs_local);
-      }
-    }
-    grid->makeShapes(all_shapes, obs_local);
+    debugPrint(
+        logger_, utl::PDN, "Make", 2, "Build start grid - {}", grid->getName());
+    grid->makeShapes(all_shapes, block_obs);
     for (const auto& [layer, shapes] : grid->getShapes()) {
       auto& all_shapes_layer = all_shapes[layer];
       for (auto& shape : shapes) {
         all_shapes_layer.insert(shape);
       }
     }
+    grid->getObstructions(block_obs);
+    debugPrint(
+        logger_, utl::PDN, "Make", 2, "Build end grid - {}", grid->getName());
   }
+
+  updateVias();
 
   if (trim) {
     trimShapes();
@@ -150,7 +122,24 @@ void PdnGen::buildGrids(bool trim)
     cleanupVias();
   }
 
+  bool failed = false;
+  for (auto* grid : grids) {
+    if (grid->hasShapes() || grid->hasVias()) {
+      continue;
+    }
+    logger_->warn(utl::PDN,
+                  232,
+                  "The grid \"{}\" ({}) does not contain any shapes or vias.",
+                  grid->getLongName(),
+                  Grid::typeToString(grid->type()));
+    failed = true;
+  }
+  if (failed) {
+    logger_->error(utl::PDN, 233, "Failed to generate full power grid.");
+  }
+
   updateRenderer();
+  debugPrint(logger_, utl::PDN, "Make", 1, "Build - end");
 }
 
 void PdnGen::cleanupVias()
@@ -159,31 +148,35 @@ void PdnGen::cleanupVias()
   for (auto* grid : getGrids()) {
     grid->removeInvalidVias();
   }
+  updateVias();
   debugPrint(logger_, utl::PDN, "Make", 2, "Cleanup vias - end");
+}
+
+void PdnGen::updateVias()
+{
+  const auto grids = getGrids();
+
+  for (auto* grid : grids) {
+    for (const auto& [layer, shapes] : grid->getShapes()) {
+      for (const auto& shape : shapes) {
+        shape->clearVias();
+      }
+    }
+
+    std::vector<ViaPtr> all_vias;
+    grid->getVias(all_vias);
+
+    for (const auto& via : all_vias) {
+      via->getLowerShape()->addVia(via);
+      via->getUpperShape()->addVia(via);
+    }
+  }
 }
 
 void PdnGen::trimShapes()
 {
   debugPrint(logger_, utl::PDN, "Make", 2, "Trim shapes - start");
   auto grids = getGrids();
-
-  std::vector<ViaPtr> all_vias;
-  for (auto* grid : grids) {
-    grid->getVias(all_vias);
-  }
-
-  for (auto* grid : grids) {
-    for (const auto& [layer, shapes] : grid->getShapes()) {
-      for (const auto& [box, shape] : shapes) {
-        shape->clearVias();
-      }
-    }
-  }
-
-  for (const auto& via : all_vias) {
-    via->getLowerShape()->addVia(via);
-    via->getUpperShape()->addVia(via);
-  }
 
   for (auto* grid : grids) {
     if (grid->type() == Grid::Existing) {
@@ -192,7 +185,7 @@ void PdnGen::trimShapes()
     }
     const auto& pin_layers = grid->getPinLayers();
     for (const auto& [layer, shapes] : grid->getShapes()) {
-      for (const auto& [box, shape] : shapes) {
+      for (const auto& shape : shapes) {
         if (!shape->isModifiable()) {
           continue;
         }
@@ -223,7 +216,7 @@ void PdnGen::trimShapes()
 
         auto* component = shape->getGridComponent();
         if (new_shape == nullptr) {
-          if (shape->isRemovable()) {
+          if (shape->isRemovable(is_pin_layer)) {
             component->removeShape(shape.get());
           }
         } else {
@@ -291,7 +284,14 @@ void PdnGen::setCoreDomain(odb::dbNet* power,
   core_domain_ = std::make_unique<VoltageDomain>(
       this, block, power, ground, secondary, logger_);
 
-  core_domain_->setSwitchedPower(switched_power);
+  if (importUPF(core_domain_.get())) {
+    if (switched_power) {
+      logger_->error(
+          utl::PDN, 210, "Cannot specify switched power net when using UPF.");
+    }
+  } else {
+    core_domain_->setSwitchedPower(switched_power);
+  }
 }
 
 void PdnGen::makeRegionVoltageDomain(
@@ -317,7 +317,16 @@ void PdnGen::makeRegionVoltageDomain(
   auto* block = db_->getChip()->getBlock();
   auto domain = std::make_unique<VoltageDomain>(
       this, name, block, power, ground, secondary_nets, region, logger_);
-  domain->setSwitchedPower(switched_power);
+
+  if (importUPF(domain.get())) {
+    if (switched_power) {
+      logger_->error(
+          utl::PDN, 199, "Cannot specify switched power net when using UPF.");
+    }
+  } else {
+    domain->setSwitchedPower(switched_power);
+  }
+
   domains_.push_back(std::move(domain));
 }
 
@@ -404,12 +413,29 @@ void PdnGen::makeCoreGrid(
   auto grid = std::make_unique<CoreGrid>(
       domain, name, starts_with == POWER, generate_obstructions);
   grid->setPinLayers(pin_layers);
-  if (powercell != nullptr) {
-    grid->setSwitchedPower(new GridSwitchedPower(
-        grid.get(),
-        powercell,
-        powercontrol,
-        GridSwitchedPower::fromString(powercontrolnetwork, logger_)));
+
+  PowerSwitchNetworkType control_network = PowerSwitchNetworkType::DAISY;
+  if (strlen(powercontrolnetwork) > 0) {
+    control_network
+        = GridSwitchedPower::fromString(powercontrolnetwork, logger_);
+  }
+  if (importUPF(grid.get(), control_network)) {
+    if (powercell != nullptr) {
+      logger_->error(
+          utl::PDN, 201, "Cannot specify power switch when UPF is available.");
+    }
+    if (powercontrol != nullptr) {
+      logger_->error(
+          utl::PDN, 202, "Cannot specify power control when UPF is available.");
+    }
+  } else {
+    if (powercell != nullptr) {
+      grid->setSwitchedPower(new GridSwitchedPower(
+          grid.get(),
+          powercell,
+          powercontrol,
+          GridSwitchedPower::fromString(powercontrolnetwork, logger_)));
+    }
   }
   domain->addGrid(std::move(grid));
 }
@@ -436,7 +462,8 @@ void PdnGen::makeInstanceGrid(
     const std::array<int, 4>& halo,
     bool pg_pins_to_boundary,
     bool default_grid,
-    const std::vector<odb::dbTechLayer*>& generate_obstructions)
+    const std::vector<odb::dbTechLayer*>& generate_obstructions,
+    bool is_bump)
 {
   auto* check_grid = instanceGrid(inst);
   if (check_grid != nullptr) {
@@ -467,14 +494,23 @@ void PdnGen::makeInstanceGrid(
     }
   }
 
-  auto grid = std::make_unique<InstanceGrid>(
-      domain, name, starts_with == POWER, inst, generate_obstructions);
+  std::unique_ptr<InstanceGrid> grid = nullptr;
+  if (is_bump) {
+    grid = std::make_unique<BumpGrid>(domain, name, inst);
+  } else {
+    grid = std::make_unique<InstanceGrid>(
+        domain, name, starts_with == POWER, inst, generate_obstructions);
+  }
   if (!std::all_of(halo.begin(), halo.end(), [](int v) { return v == 0; })) {
     grid->addHalo(halo);
   }
   grid->setGridToBoundary(pg_pins_to_boundary);
 
   grid->setReplaceable(default_grid);
+
+  if (!grid->isValid()) {
+    return;
+  }
 
   domain->addGrid(std::move(grid));
 }
@@ -502,7 +538,8 @@ void PdnGen::makeRing(Grid* grid,
                       const std::array<int, 4>& pad_offset,
                       bool extend,
                       const std::vector<odb::dbTechLayer*>& pad_pin_layers,
-                      const std::vector<odb::dbNet*>& nets)
+                      const std::vector<odb::dbNet*>& nets,
+                      bool allow_out_of_die)
 {
   std::array<Rings::Layer, 2> layers{Rings::Layer{layer0, width0, spacing0},
                                      Rings::Layer{layer1, width1, spacing1}};
@@ -515,6 +552,9 @@ void PdnGen::makeRing(Grid* grid,
   ring->setExtendToBoundary(extend);
   if (starts_with != GRID) {
     ring->setStartWithPower(starts_with == POWER);
+  }
+  if (allow_out_of_die) {
+    ring->setAllowOutsideDieArea();
   }
   ring->setNets(nets);
   grid->addRing(std::move(ring));
@@ -559,18 +599,19 @@ void PdnGen::makeStrap(Grid* grid,
   grid->addStrap(std::move(strap));
 }
 
-void PdnGen::makeConnect(Grid* grid,
-                         odb::dbTechLayer* layer0,
-                         odb::dbTechLayer* layer1,
-                         int cut_pitch_x,
-                         int cut_pitch_y,
-                         const std::vector<odb::dbTechViaGenerateRule*>& vias,
-                         const std::vector<odb::dbTechVia*>& techvias,
-                         int max_rows,
-                         int max_columns,
-                         const std::vector<odb::dbTechLayer*>& ongrid,
-                         const std::map<odb::dbTechLayer*, int>& split_cuts,
-                         const std::string& dont_use_vias)
+void PdnGen::makeConnect(
+    Grid* grid,
+    odb::dbTechLayer* layer0,
+    odb::dbTechLayer* layer1,
+    int cut_pitch_x,
+    int cut_pitch_y,
+    const std::vector<odb::dbTechViaGenerateRule*>& vias,
+    const std::vector<odb::dbTechVia*>& techvias,
+    int max_rows,
+    int max_columns,
+    const std::vector<odb::dbTechLayer*>& ongrid,
+    const std::map<odb::dbTechLayer*, std::pair<int, bool>>& split_cuts,
+    const std::string& dont_use_vias)
 {
   auto con = std::make_unique<Connect>(grid, layer0, layer1);
   con->setCutPitch(cut_pitch_x, cut_pitch_y);
@@ -586,7 +627,13 @@ void PdnGen::makeConnect(Grid* grid,
   con->setMaxRows(max_rows);
   con->setMaxColumns(max_columns);
   con->setOnGrid(ongrid);
-  con->setSplitCuts(split_cuts);
+
+  std::map<odb::dbTechLayer*, Connect::SplitCut> split_cuts_map;
+  for (const auto& [layer, cut_def] : split_cuts) {
+    split_cuts_map[layer]
+        = Connect::SplitCut{std::get<0>(cut_def), std::get<1>(cut_def)};
+  }
+  con->setSplitCuts(split_cuts_map);
 
   if (!dont_use_vias.empty()) {
     con->filterVias(dont_use_vias);
@@ -626,6 +673,38 @@ void PdnGen::updateRenderer() const
   }
 }
 
+void PdnGen::createSrouteWires(
+    const char* net,
+    const char* outerNet,
+    odb::dbTechLayer* layer0,
+    odb::dbTechLayer* layer1,
+    int cut_pitch_x,
+    int cut_pitch_y,
+    const std::vector<odb::dbTechViaGenerateRule*>& vias,
+    const std::vector<odb::dbTechVia*>& techvias,
+    int max_rows,
+    int max_columns,
+    const std::vector<odb::dbTechLayer*>& ongrid,
+    std::vector<int> metalwidths,
+    std::vector<int> metalspaces,
+    const std::vector<odb::dbInst*>& insts)
+{
+  sroute_->createSrouteWires(net,
+                             outerNet,
+                             layer0,
+                             layer1,
+                             cut_pitch_x,
+                             cut_pitch_y,
+                             vias,
+                             techvias,
+                             max_rows,
+                             max_columns,
+                             ongrid,
+                             metalwidths,
+                             metalspaces,
+                             insts);
+}
+
 void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
 {
   std::map<odb::dbNet*, odb::dbSWire*> net_map;
@@ -661,37 +740,69 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
 
   // collect all the SWires from the block
   auto* block = db_->getChip()->getBlock();
-  ShapeTreeMap obstructions;
+  ShapeVectorMap net_shapes_vec;
   for (auto* net : block->getNets()) {
-    ShapeTreeMap net_shapes;
-    Shape::populateMapFromDb(net, net_shapes);
-    for (const auto& [layer, net_obs_layer] : net_shapes) {
-      auto& obs_layer = obstructions[layer];
-      for (const auto& [box, shape] : net_obs_layer) {
-        obs_layer.insert({shape->getObstructionBox(), shape});
+    Shape::populateMapFromDb(net, net_shapes_vec);
+  }
+  const Shape::ObstructionTreeMap obstructions(net_shapes_vec.begin(),
+                                               net_shapes_vec.end());
+  net_shapes_vec.clear();
+
+  // Remove existing non-fixed bpins
+  for (auto& [net, swire] : net_map) {
+    for (auto* bterm : net->getBTerms()) {
+      auto bpins = bterm->getBPins();
+      std::set<odb::dbBPin*> pins(bpins.begin(), bpins.end());
+      for (auto* bpin : pins) {
+        if (!bpin->getPlacementStatus().isFixed()) {
+          odb::dbBPin::destroy(bpin);
+        }
       }
     }
   }
 
+  std::map<Shape*, std::vector<odb::dbBox*>> shape_map;
   for (auto* domain : domains) {
     for (const auto& grid : domain->getGrids()) {
-      grid->writeToDb(net_map, add_pins, obstructions);
+      const auto db_shapes = grid->writeToDb(net_map, add_pins, obstructions);
+      shape_map.insert(db_shapes.begin(), db_shapes.end());
+
       grid->makeRoutingObstructions(db_->getChip()->getBlock());
     }
   }
 
-  if (!report_file.empty()) {
-    std::ofstream file(report_file);
-    if (!file) {
-      logger_->warn(
-          utl::PDN, 228, "Unable to open \"{}\" to write.", report_file);
-      return;
-    }
-
-    for (auto* grid : getGrids()) {
-      for (const auto& connect : grid->getConnect()) {
-        connect->writeFailedVias(file);
+  // Cleanup floating shapes due to failed vias
+  for (const auto& [shape, db_shapes] : shape_map) {
+    if (!shape->isLocked() && !shape->hasInternalConnections()) {
+      for (odb::dbBox* db_box : db_shapes) {
+        if (db_box == nullptr) {
+          continue;
+        }
+        if (db_box->getObjectType() == odb::dbObjectType::dbSBoxObj) {
+          odb::dbSBox::destroy((odb::dbSBox*) db_box);
+        } else {
+          odb::dbBox::destroy(db_box);
+        }
       }
+    }
+  }
+
+  // remove stale results
+  odb::dbMarkerCategory* category = block->findMarkerCategory("PDN");
+  if (category != nullptr) {
+    odb::dbMarkerCategory::destroy(category);
+  }
+
+  for (auto* grid : getGrids()) {
+    for (const auto& connect : grid->getConnect()) {
+      connect->recordFailedVias();
+    }
+  }
+
+  if (!report_file.empty()) {
+    odb::dbMarkerCategory* category = block->findMarkerCategory("PDN");
+    if (category != nullptr) {
+      category->writeTR(report_file);
     }
   }
 }
@@ -719,8 +830,10 @@ void PdnGen::ripUp(odb::dbNet* net)
     return;
   }
 
-  ShapeTreeMap net_shapes;
-  Shape::populateMapFromDb(net, net_shapes);
+  ShapeVectorMap net_shapes_vec;
+  Shape::populateMapFromDb(net, net_shapes_vec);
+  Shape::ShapeTreeMap net_shapes = Shape::convertVectorToTree(net_shapes_vec);
+
   // remove bterms that connect to swires
   std::set<odb::dbBTerm*> terms;
   for (auto* bterm : net->getBTerms()) {
@@ -738,9 +851,7 @@ void PdnGen::ripUp(odb::dbNet* net)
 
         odb::Rect rect = box->getBox();
         const auto& shapes = net_shapes[layer];
-        Box search_box(Point(rect.xMin(), rect.yMin()),
-                       Point(rect.xMax(), rect.yMax()));
-        if (shapes.qbegin(bgi::intersects(search_box)) != shapes.qend()) {
+        if (shapes.qbegin(bgi::intersects(rect)) != shapes.qend()) {
           remove = true;
           break;
         }
@@ -800,14 +911,27 @@ void PdnGen::checkDesign(odb::dbBlock* block) const
     }
     for (auto* term : inst->getITerms()) {
       if (term->getSigType().isSupply() && term->getNet() == nullptr) {
-        logger_->warn(
-            utl::PDN,
-            189,
-            "Supply pin {} of instance {} is not connected to any net.",
-            term->getMTerm()->getName(),
-            inst->getName());
+        logger_->warn(utl::PDN,
+                      189,
+                      "Supply pin {} is not connected to any net.",
+                      term->getName());
       }
     }
+  }
+
+  bool unplaced_macros = false;
+  for (auto* inst : block->getInsts()) {
+    if (!inst->isBlock()) {
+      continue;
+    }
+    if (!inst->getPlacementStatus().isFixed()) {
+      unplaced_macros = true;
+      logger_->warn(
+          utl::PDN, 234, "{} has not been placed and fixed.", inst->getName());
+    }
+  }
+  if (unplaced_macros) {
+    logger_->error(utl::PDN, 235, "Design has unplaced macros.");
   }
 }
 
@@ -827,6 +951,185 @@ void PdnGen::repairVias(const std::set<odb::dbNet*>& nets)
   ViaRepair repair(logger_, nets);
   repair.repair();
   repair.report();
+}
+
+bool PdnGen::importUPF(VoltageDomain* domain)
+{
+  auto* block = db_->getChip()->getBlock();
+
+  bool has_upf = false;
+  odb::dbPowerDomain* power_domain = nullptr;
+  for (auto* upf_domain : block->getPowerDomains()) {
+    has_upf = true;
+
+    if (domain == core_domain_.get()) {
+      if (upf_domain->isTop()) {
+        power_domain = upf_domain;
+        break;
+      }
+    } else {
+      odb::dbGroup* upf_group = upf_domain->getGroup();
+
+      if (upf_group != nullptr
+          && upf_group->getRegion() == domain->getRegion()) {
+        power_domain = upf_domain;
+        break;
+      }
+    }
+  }
+
+  if (power_domain != nullptr) {
+    const auto power_switches = power_domain->getPowerSwitches();
+    if (power_switches.size() > 1) {
+      logger_->error(
+          utl::PDN,
+          203,
+          "Unable to process power domain with more than 1 power switch");
+    }
+
+    for (auto* pswitch : power_switches) {
+      auto port_map = pswitch->getPortMap();
+      if (port_map.empty()) {
+        logger_->error(
+            utl::PDN,
+            204,
+            "Unable to process power switch, {}, without port mapping",
+            pswitch->getName());
+      }
+
+      odb::dbMaster* master = pswitch->getLibCell();
+      odb::dbMTerm* control = nullptr;
+      odb::dbMTerm* acknowledge = nullptr;
+      odb::dbMTerm* switched_power = nullptr;
+      odb::dbMTerm* alwayson_power = nullptr;
+      odb::dbMTerm* ground = nullptr;
+
+      const auto control_port = pswitch->getControlPorts();
+      const auto input_supply = pswitch->getInputSupplyPorts();
+      const auto output_supply = pswitch->getOutputSupplyPort();
+      const auto ack_port = pswitch->getAcknowledgePorts();
+
+      for (auto* mterm : master->getMTerms()) {
+        if (mterm->getSigType() == odb::dbSigType::GROUND) {
+          ground = mterm;
+        }
+      }
+
+      control = port_map[control_port[0].port_name];
+      alwayson_power = port_map[input_supply[0].port_name];
+      switched_power = port_map[output_supply.port_name];
+      acknowledge = port_map[ack_port[0].port_name];
+
+      if (control == nullptr) {
+        logger_->error(utl::PDN,
+                       205,
+                       "Unable to determine control port for: {}",
+                       master->getName());
+      }
+
+      if (alwayson_power == nullptr) {
+        logger_->error(utl::PDN,
+                       206,
+                       "Unable to determine always on power port for: {}",
+                       master->getName());
+      }
+
+      if (switched_power == nullptr) {
+        logger_->error(utl::PDN,
+                       207,
+                       "Unable to determine switched power port for: {}",
+                       master->getName());
+      }
+
+      if (ground == nullptr) {
+        logger_->error(utl::PDN,
+                       208,
+                       "Unable to determine ground port for: {}",
+                       master->getName());
+      }
+
+      auto* switched_net
+          = block->findNet(output_supply.supply_net_name.c_str());
+      if (switched_net == nullptr) {
+        logger_->error(utl::PDN, 238, "Unable to determine switched power net");
+      }
+      domain->setSwitchedPower(switched_net);
+
+      if (findSwitchedPowerCell(master->getName())) {
+        logger_->warn(utl::PDN,
+                      209,
+                      "Power switch for {} already exists",
+                      pswitch->getName());
+      } else {
+        makeSwitchedPowerCell(master,
+                              control,
+                              acknowledge,
+                              switched_power,
+                              alwayson_power,
+                              ground);
+      }
+    }
+  }
+
+  return has_upf;
+}
+
+bool PdnGen::importUPF(Grid* grid, PowerSwitchNetworkType type) const
+{
+  auto* block = db_->getChip()->getBlock();
+
+  auto* domain = grid->getDomain();
+
+  bool has_upf = false;
+  odb::dbPowerDomain* power_domain = nullptr;
+  for (auto* upf_domain : block->getPowerDomains()) {
+    has_upf = true;
+
+    if (domain == core_domain_.get()) {
+      if (upf_domain->isTop()) {
+        power_domain = upf_domain;
+        break;
+      }
+    } else {
+      odb::dbGroup* upf_group = upf_domain->getGroup();
+
+      if (upf_group != nullptr
+          && upf_group->getRegion() == domain->getRegion()) {
+        power_domain = upf_domain;
+        break;
+      }
+    }
+  }
+
+  if (power_domain != nullptr) {
+    auto power_switches = power_domain->getPowerSwitches();
+    if (!power_switches.empty()) {
+      auto pswitch = power_switches[0];
+
+      auto* pdn_switch
+          = findSwitchedPowerCell(pswitch->getLibCell()->getName());
+
+      const auto& control_ports = pswitch->getControlPorts();
+      const auto& control_net = control_ports[0].net_name;
+      if (control_net.empty()) {
+        logger_->error(
+            utl::PDN,
+            236,
+            "Cannot handle undefined control net for power switch: {}",
+            pswitch->getName());
+      }
+      auto control = block->findNet(control_net.c_str());
+      if (control == nullptr) {
+        logger_->error(
+            utl::PDN, 237, "Unable to find control net: {}", control_net);
+      }
+
+      grid->setSwitchedPower(
+          new GridSwitchedPower(grid, pdn_switch, control, type));
+    }
+  }
+
+  return has_upf;
 }
 
 }  // namespace pdn

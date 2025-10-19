@@ -1,43 +1,17 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbNet.h"
-#include "dbShape.h"
 #include "dbTable.h"
 #include "dbWire.h"
-#include "dbWireCodec.h"
 #include "dbWireOpcode.h"
+#include "odb/ZException.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/dbWireCodec.h"
+#include "odb/geom.h"
 
 namespace odb {
 
@@ -50,9 +24,9 @@ namespace odb {
 //////////////////////////////////////////////////////////////////////////////////
 dbWireShapeItr::dbWireShapeItr()
 {
-  _wire = NULL;
-  _block = NULL;
-  _tech = NULL;
+  _wire = nullptr;
+  _block = nullptr;
+  _tech = nullptr;
 }
 
 dbWireShapeItr::~dbWireShapeItr()
@@ -76,14 +50,14 @@ void dbWireShapeItr::begin(dbWire* wire)
 {
   _wire = (_dbWire*) wire;
   _block = wire->getBlock();
-  _tech = _block->getDb()->getTech();
+  _tech = _block->getTech();
   _idx = 0;
   _prev_x = 0;
   _prev_y = 0;
   _prev_ext = 0;
   _has_prev_ext = false;
-  _layer = NULL;
-  _via = NULL;
+  _layer = nullptr;
+  _via = nullptr;
   _dw = 0;
   _point_cnt = 0;
   _has_width = false;
@@ -91,14 +65,14 @@ void dbWireShapeItr::begin(dbWire* wire)
 
 bool dbWireShapeItr::next(dbShape& shape)
 {
-  ZASSERT(_wire);
   int operand;
 
 nextOpCode:
   _shape_id = _idx;
 
-  if (_idx == (int) _wire->_opcodes.size())
+  if (_idx == (int) _wire->_opcodes.size()) {
     return false;
+  }
 
   unsigned char opcode = nextOp(operand);
 
@@ -145,10 +119,11 @@ nextOpCode:
       int cur_x = operand;
       int cur_y;
 
-      if (_point_cnt == 0)
+      if (_point_cnt == 0) {
         opcode = nextOp(cur_y);
-      else
+      } else {
         cur_y = _prev_y;
+      }
 
       int cur_ext;
       bool has_cur_ext;
@@ -169,7 +144,7 @@ nextOpCode:
         goto nextOpCode;
       }
       auto dw = _dw;
-      if (_layer->getDirection() == dbTechLayerDir::VERTICAL) {
+      if (!_has_width && _layer->getDirection() == dbTechLayerDir::VERTICAL) {
         dw = _layer->getWrongWayWidth() / 2;
       }
 
@@ -208,7 +183,7 @@ nextOpCode:
       }
       auto dw = _dw;
 
-      if (_layer->getDirection() == dbTechLayerDir::HORIZONTAL) {
+      if (!_has_width && _layer->getDirection() == dbTechLayerDir::HORIZONTAL) {
         dw = _layer->getWrongWayWidth() / 2;
       }
       shape.setSegment(_prev_x,
@@ -269,21 +244,24 @@ nextOpCode:
     case WOP_VIA: {
       dbVia* via = dbVia::getVia(_block, operand);
 
-      if (opcode & WOP_VIA_EXIT_TOP)
+      if (opcode & WOP_VIA_EXIT_TOP) {
         _layer = via->getTopLayer();
-      else
+      } else {
         _layer = via->getBottomLayer();
+      }
 
-      if (_has_width == false)
+      if (_has_width == false) {
         _dw = _layer->getWidth() >> 1;
+      }
 
       _prev_ext = 0;
       _has_prev_ext = false;
 
       dbBox* box = via->getBBox();
 
-      if (box == NULL)
+      if (box == nullptr) {
         goto nextOpCode;
+      }
 
       Rect b = box->getBox();
       int xmin = b.xMin() + _prev_x;
@@ -298,21 +276,24 @@ nextOpCode:
     case WOP_TECH_VIA: {
       dbTechVia* via = dbTechVia::getTechVia(_tech, operand);
 
-      if (opcode & WOP_VIA_EXIT_TOP)
+      if (opcode & WOP_VIA_EXIT_TOP) {
         _layer = via->getTopLayer();
-      else
+      } else {
         _layer = via->getBottomLayer();
+      }
 
-      if (_has_width == false)
+      if (_has_width == false) {
         _dw = _layer->getWidth() >> 1;
+      }
 
       _prev_ext = 0;
       _has_prev_ext = false;
 
       dbBox* box = via->getBBox();
 
-      if (box == NULL)
+      if (box == nullptr) {
         goto nextOpCode;
+      }
 
       Rect b = box->getBox();
       int xmin = b.xMin() + _prev_x;
@@ -344,6 +325,8 @@ nextOpCode:
     case WOP_BTERM:
     case WOP_OPERAND:
     case WOP_PROPERTY:
+    case WOP_COLOR:
+    case WOP_VIACOLOR:
     case WOP_NOP:
       goto nextOpCode;
 

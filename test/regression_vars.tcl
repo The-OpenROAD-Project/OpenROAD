@@ -1,60 +1,50 @@
-###############################################################################
-##
-## BSD 3-Clause License
-##
-## Copyright (c) 2019, Parallax Software, Inc.
-## All rights reserved.
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are met:
-##
-## * Redistributions of source code must retain the above copyright notice, this
-##   list of conditions and the following disclaimer.
-##
-## * Redistributions in binary form must reproduce the above copyright notice,
-##   this list of conditions and the following disclaimer in the documentation
-##   and#or other materials provided with the distribution.
-##
-## * Neither the name of the copyright holder nor the names of its
-##   contributors may be used to endorse or promote products derived from
-##   this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-## POSSIBILITY OF SUCH DAMAGE.
-##
-###############################################################################
+# Copied from OpenSTA/test/regression_vars.tcl
+# Copyright (c) 2021, Parallax Software, Inc.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # regression.tcl variables for OpenROAD.
 
 # Application program to run tests on.
 set app "openroad"
-set app_path [file join $openroad_dir "build" "src" $app]
+if { [info exist ::env(OPENROAD_EXE)] } {
+  set app_path "$::env(OPENROAD_EXE)"
+} else {
+  set app_path [file join $openroad_dir "build" "bin" $app]
+}
 # Application options.
 set app_options "-no_init -no_splash -exit"
 # Log files for each test are placed in result_dir.
 set result_dir [file join $test_dir "results"]
 # Collective diffs.
 set diff_file [file join $result_dir "diffs"]
+if { [info exist ::env(DIFF_LOCATION)] } {
+  set diff_file "$::env(DIFF_LOCATION)"
+}
 # File containing list of failed tests.
 set failure_file [file join $result_dir "failures"]
 # Use the DIFF_OPTIONS envar to change the diff options
 # (Solaris diff doesn't support this envar)
 set diff_options "-c"
-if [info exists env(DIFF_OPTIONS)] {
+if { [info exists env(DIFF_OPTIONS)] } {
   set diff_options $env(DIFF_OPTIONS)
 }
 
 set valgrind_suppress [file join $openroad_dir "test" valgrind.suppress]
-set valgrind_options "--num-callers=20 --leak-check=full --freelist-vol=100000000 --leak-resolution=high --suppressions=$valgrind_suppress"
+set valgrind_options "--num-callers=20 --leak-check=full \
+                      --freelist-vol=100000000 --leak-resolution=high \
+                      --suppressions=$valgrind_suppress"
 if { [exec "uname"] == "Darwin" } {
   append valgrind_options " --dsymutil=yes"
 }
@@ -84,6 +74,10 @@ proc record_flow_tests { tests } {
 
 proc record_tests1 { tests cmp_logfile } {
   global test_dir
+  if { [info exist ::env(CTEST_TESTNAME)] } {
+    set tests "$::env(CTEST_TESTNAME)"
+    set cmp_logfile "$::env(TEST_TYPE)"
+  }
   foreach test $tests {
     # Prune commented tests from the list.
     if { [string index $test 0] != "#" } {
@@ -93,17 +87,20 @@ proc record_tests1 { tests cmp_logfile } {
 }
 
 # Record a test in the regression suite.
-proc record_test { test cmd_dir pass_criteria } {
-  global cmd_dirs test_groups test_pass_criteria test_langs
+proc record_test { test cmd_dir pass_criteria { test_options "" } } {
+  global cmd_dirs test_groups test_pass_criteria test_langs test_specific_options
   set cmd_dirs($test) $cmd_dir
   lappend test_groups(all) $test
   set test_pass_criteria($test) $pass_criteria
   set test_langs($test) [list]
-  if {[file exists [file join $cmd_dir "$test.tcl"]]} {
+  if { $test_options != "" } {
+    set test_specific_options($test) $test_options
+  }
+  if { [file exists [file join $cmd_dir "$test.tcl"]] } {
     lappend test_langs($test) tcl
   }
 
-  if {[file exists [file join $cmd_dir "$test.py"]]} {
+  if { [file exists [file join $cmd_dir "$test.py"]] } {
     lappend test_langs($test) py
   }
   return $test
@@ -126,7 +123,7 @@ proc group_tests { group } {
 }
 
 # Clear the test lists.
-proc clear_tests {} {
+proc clear_tests { } {
   global test_groups
   unset test_groups
 }

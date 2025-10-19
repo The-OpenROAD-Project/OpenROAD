@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130_pll/pll_openmiddle.lef, created 1 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0131]     Created 1 components and 2 component-terminals.
+[INFO PDN-0001] Inserting grid: Core
+[INFO PDN-0001] Inserting grid: Macro - PLL
+[WARNING PDN-0110] No via inserted between met4 and met5 at (49.1200, 90.6000) - (51.1200, 91.8800) on VSS
+[WARNING PDN-0110] No via inserted between met4 and met5 at (89.1200, 90.6000) - (91.1200, 91.8800) on VSS
+No differences found.

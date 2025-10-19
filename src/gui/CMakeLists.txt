@@ -1,9 +1,12 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2020-2025, The OpenROAD Authors
+
 # Allow users to not build without the gui even if Qt is found
 option(BUILD_GUI "Build the GUI" ON)
 
 # If Qt is not installed there will not be cmake
 # support for the package so this needs to be "quiet".
-find_package(Qt5 QUIET COMPONENTS Core Widgets)
+find_package(Qt5 QUIET COMPONENTS Core Widgets Charts)
 
 include("openroad")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -29,6 +32,9 @@ if (Qt5_FOUND AND BUILD_GUI)
   target_sources(gui
    PRIVATE
     src/layoutViewer.cpp
+    src/layoutTabs.cpp
+    src/renderThread.cpp
+    src/painter.cpp
     src/mainWindow.cpp
     src/scriptWidget.cpp
     src/cmdInputWidget.cpp
@@ -39,23 +45,32 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/gui.cpp
     src/search.cpp 
     src/findDialog.cpp
+    src/gotoDialog.cpp
     src/inspector.cpp
     src/dbDescriptors.cpp
+    src/staDescriptors.cpp
     src/highlightGroupDialog.cpp
     src/selectHighlightWindow.cpp
     src/staGui.cpp
     src/staGuiInterface.cpp
     src/timingWidget.cpp
     src/drcWidget.cpp
+    src/helpWidget.cpp
     src/ruler.cpp
+    src/label.cpp
     src/heatMap.cpp
     src/heatMapSetup.cpp
+    src/heatMapPinDensity.cpp
     src/heatMapPlacementDensity.cpp
     src/browserWidget.cpp
     src/globalConnectDialog.cpp
     src/clockWidget.cpp
     src/gui_utils.cpp
     src/colorGenerator.cpp
+    src/bufferTreeDescriptor.cpp
+    src/chartsWidget.cpp
+    src/GUIProgress.cpp
+    src/dropdownCheckboxes.cpp
     resources/resource.qrc
   )
 
@@ -65,8 +80,10 @@ if (Qt5_FOUND AND BUILD_GUI)
     PRIVATE
       Qt5::Core
       Qt5::Widgets
-      utl
+      Qt5::Charts
+      utl_lib
       Boost::boost
+      OpenSTA
   )
 
 messages(
@@ -82,7 +99,11 @@ if (Python3_FOUND AND BUILD_PYTHON)
 endif()
 
 else()
-  message(STATUS "GUI is not enabled")
+  if(BUILD_GUI)
+    message(STATUS "QT5 not found. GUI is disabled")
+  else()
+    message(STATUS "GUI is not enabled")
+  endif()
   add_library(gui 
     src/stub.cpp 
     src/stub_heatMap.cpp
@@ -90,6 +111,10 @@ else()
   target_link_libraries(gui
     PUBLIC
       odb
+  )
+  target_include_directories(gui
+    PRIVATE
+      ${OPENROAD_HOME}/third-party/gif-h
   )
 endif()
 
@@ -99,4 +124,20 @@ target_include_directories(gui
   PRIVATE
     ${OPENSTA_HOME}/include
     ${DBSTA_HOME}/include
+    ${OPENROAD_HOME}/third-party/gif-h
 )
+
+add_subdirectory(test)
+
+set(OPENROAD_SHARE_GUI_DIR ${OPENROAD_SHARE}/gui)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  # configure desktop file
+  configure_file(
+    resources/openroad.desktop.cmake
+    resources/openroad.desktop
+  )
+
+  install(FILES resources/icon.png DESTINATION ${OPENROAD_SHARE_GUI_DIR})
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/resources/openroad.desktop DESTINATION ${CMAKE_INSTALL_PREFIX}/share/applications/)
+endif()

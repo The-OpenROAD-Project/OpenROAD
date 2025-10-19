@@ -1,72 +1,38 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
-#ifndef _FLEX_GR_GRID_GRAPH_H_
-#define _FLEX_GR_GRID_GRAPH_H_
+#pragma once
 
-#define GRGRIDGRAPHHISTCOSTSIZE 8
-#define GRSUPPLYSIZE 8
-#define GRDEMANDSIZE 16
-#define GRFRACSIZE 1
+constexpr int GRGRIDGRAPHHISTCOSTSIZE = 8;
+constexpr int GRSUPPLYSIZE = 8;
+constexpr int GRDEMANDSIZE = 16;
+constexpr int GRFRACSIZE = 1;
 
+#include <algorithm>
+#include <bitset>
+#include <cstdint>
 #include <iostream>
 #include <map>
+#include <vector>
 
 #include "db/grObj/grPin.h"
+#include "db/tech/frTechObject.h"
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
 #include "gr/FlexGRWavefront.h"
 
-namespace fr {
+namespace drt {
 class FlexGRWorker;
 class FlexGRGridGraph
 {
  public:
   // constructors
-  FlexGRGridGraph(frDesign* designIn, FlexGRWorker* workerIn)
-      : design_(designIn),
-        grWorker_(workerIn),
-        xgp_(nullptr),
-        ygp_(nullptr),
-        bits_(),
-        prevDirs_(),
-        srcs_(),
-        dsts_(),
-        xCoords_(),
-        yCoords_(),
-        zCoords_(),
-        zHeights_(),
-        zDirs_(),
-        ggCongCost_(0),
-        ggHistCost_(0),
-        wavefront_(),
-        is2DRouting_(false)
+  FlexGRGridGraph(frDesign* designIn,
+                  FlexGRWorker* workerIn,
+                  RouterConfiguration* router_cfg)
+      : design_(designIn), grWorker_(workerIn), router_cfg_(router_cfg)
   {
   }
   // getters
@@ -106,9 +72,9 @@ class FlexGRGridGraph
     zDim = zCoords_.size();
   }
 
-  Point& getPoint(frMIdx x, frMIdx y, Point& in) const
+  odb::Point& getPoint(frMIdx x, frMIdx y, odb::Point& in) const
   {
-    in.set(xCoords_[x], yCoords_[y]);
+    in = {xCoords_[x], yCoords_[y]};
     return in;
   }
 
@@ -201,9 +167,8 @@ class FlexGRGridGraph
     }
     if (isRaw) {
       return supply << GRFRACSIZE;
-    } else {
-      return supply;
     }
+    return supply;
   }
 
   unsigned getRawSupply(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
@@ -264,9 +229,9 @@ class FlexGRGridGraph
   frDirEnum getPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z) const
   {
     auto baseIdx = 3 * getIdx(x, y, z);
-    return (frDirEnum) (((unsigned short) (prevDirs_[baseIdx]) << 2)
-                        + ((unsigned short) (prevDirs_[baseIdx + 1]) << 1)
-                        + ((unsigned short) (prevDirs_[baseIdx + 2]) << 0));
+    return (frDirEnum) (((uint16_t) (prevDirs_[baseIdx]) << 2)
+                        + ((uint16_t) (prevDirs_[baseIdx + 1]) << 1)
+                        + ((uint16_t) (prevDirs_[baseIdx + 2]) << 0));
   }
 
   // unsafe access, no check
@@ -345,12 +310,16 @@ class FlexGRGridGraph
       auto idx = getIdx(x, y, z);
       switch (dir) {
         case frDirEnum::E:
-          return setBit(idx, 3);
+          setBit(idx, 3);
+          break;
         case frDirEnum::N:
-          return setBit(idx, 4);
+          setBit(idx, 4);
+          break;
         case frDirEnum::U:
-          return setBit(idx, 5);
-        default:;
+          setBit(idx, 5);
+          break;
+        default:
+          break;
       }
     }
   }
@@ -362,12 +331,16 @@ class FlexGRGridGraph
       auto idx = getIdx(x, y, z);
       switch (dir) {
         case frDirEnum::E:
-          return resetBit(idx, 3);
+          resetBit(idx, 3);
+          break;
         case frDirEnum::N:
-          return resetBit(idx, 4);
+          resetBit(idx, 4);
+          break;
         case frDirEnum::U:
-          return resetBit(idx, 5);
-        default:;
+          resetBit(idx, 5);
+          break;
+        default:
+          break;
       }
     }
   }
@@ -409,11 +382,14 @@ class FlexGRGridGraph
       auto idx = getIdx(x, y, z);
       switch (dir) {
         case frDirEnum::E:
-          return setBits(idx, 24, GRSUPPLYSIZE, supplyIn);
+          setBits(idx, 24, GRSUPPLYSIZE, supplyIn);
+          break;
         case frDirEnum::N:
-          return setBits(idx, 16, GRSUPPLYSIZE, supplyIn);
+          setBits(idx, 16, GRSUPPLYSIZE, supplyIn);
+          break;
         default:
           std::cout << "Error: unexpected dir in FlexGRGridGraph::setSupply\n";
+          break;
       }
     }
   }
@@ -426,13 +402,14 @@ class FlexGRGridGraph
       auto idx = getIdx(x, y, z);
       switch (dir) {
         case frDirEnum::E:
-          return setBits(
-              idx, 48 + GRFRACSIZE, GRDEMANDSIZE - GRFRACSIZE, demandIn);
+          setBits(idx, 48 + GRFRACSIZE, GRDEMANDSIZE - GRFRACSIZE, demandIn);
+          break;
         case frDirEnum::N:
-          return setBits(
-              idx, 32 + GRFRACSIZE, GRDEMANDSIZE - GRFRACSIZE, demandIn);
+          setBits(idx, 32 + GRFRACSIZE, GRDEMANDSIZE - GRFRACSIZE, demandIn);
+          break;
         default:
           std::cout << "Error: unexpected dir in FlexGRGridGraph::setDemand\n";
+          break;
       }
     }
   }
@@ -449,12 +426,15 @@ class FlexGRGridGraph
       auto idx = getIdx(x, y, z);
       switch (dir) {
         case frDirEnum::E:
-          return setBits(idx, 48, GRDEMANDSIZE, rawDemandIn);
+          setBits(idx, 48, GRDEMANDSIZE, rawDemandIn);
+          break;
         case frDirEnum::N:
-          return setBits(idx, 32, GRDEMANDSIZE, rawDemandIn);
+          setBits(idx, 32, GRDEMANDSIZE, rawDemandIn);
+          break;
         default:
           std::cout
               << "Error: unexpected dir in FlexGRGridGraph::setRawDemand\n";
+          break;
       }
     }
   }
@@ -557,26 +537,29 @@ class FlexGRGridGraph
   void setPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
   {
     auto baseIdx = 3 * getIdx(x, y, z);
-    prevDirs_[baseIdx] = ((unsigned short) dir >> 2) & 1;
-    prevDirs_[baseIdx + 1] = ((unsigned short) dir >> 1) & 1;
-    prevDirs_[baseIdx + 2] = ((unsigned short) dir) & 1;
+    prevDirs_[baseIdx] = ((uint16_t) dir >> 2) & 1;
+    prevDirs_[baseIdx + 1] = ((uint16_t) dir >> 1) & 1;
+    prevDirs_[baseIdx + 2] = ((uint16_t) dir) & 1;
   }
   // unsafe access, no idx check
-  void setSrc(frMIdx x, frMIdx y, frMIdx z) { srcs_[getIdx(x, y, z)] = 1; }
+  void setSrc(frMIdx x, frMIdx y, frMIdx z) { srcs_[getIdx(x, y, z)] = true; }
   void setSrc(const FlexMazeIdx& mi)
   {
-    srcs_[getIdx(mi.x(), mi.y(), mi.z())] = 1;
+    srcs_[getIdx(mi.x(), mi.y(), mi.z())] = true;
   }
   // unsafe access, no idx check
-  void setDst(frMIdx x, frMIdx y, frMIdx z) { dsts_[getIdx(x, y, z)] = 1; }
+  void setDst(frMIdx x, frMIdx y, frMIdx z) { dsts_[getIdx(x, y, z)] = true; }
   void setDst(const FlexMazeIdx& mi)
   {
-    dsts_[getIdx(mi.x(), mi.y(), mi.z())] = 1;
+    dsts_[getIdx(mi.x(), mi.y(), mi.z())] = true;
   }
-  void resetDst(frMIdx x, frMIdx y, frMIdx z) { dsts_[getIdx(x, y, z)] = 0; }
+  void resetDst(frMIdx x, frMIdx y, frMIdx z)
+  {
+    dsts_[getIdx(x, y, z)] = false;
+  }
   void resetDst(const FlexMazeIdx& mi)
   {
-    dsts_[getIdx(mi.x(), mi.y(), mi.z())] = 0;
+    dsts_[getIdx(mi.x(), mi.y(), mi.z())] = false;
   }
 
   void setCost(frUInt4 ggCongCostIn, frUInt4 ggHistCostIn)
@@ -598,7 +581,7 @@ class FlexGRGridGraph
               std::vector<FlexMazeIdx>& path,
               FlexMazeIdx& ccMazeIdx1,
               FlexMazeIdx& ccMazeIdx2,
-              const Point& centerPt);
+              const odb::Point& centerPt);
 
   void cleanup()
   {
@@ -623,10 +606,11 @@ class FlexGRGridGraph
   }
 
  private:
-  frDesign* design_;
-  FlexGRWorker* grWorker_;
-  frGCellPattern* xgp_;
-  frGCellPattern* ygp_;
+  frDesign* design_{nullptr};
+  FlexGRWorker* grWorker_{nullptr};
+  frGCellPattern* xgp_{nullptr};
+  frGCellPattern* ygp_{nullptr};
+  RouterConfiguration* router_cfg_;
 
   // [0] hasEEdge; [1] hasNEdge; [2] hasUEdge
   // [3] blockE;   [4] blockN;   [5] blockU
@@ -634,7 +618,7 @@ class FlexGRGridGraph
   // [15-8]  history cost
   // [31-24] supply H; [23-16] supply V // last bit is fractional
   // [63-48] demand H; [47-32] demand V // last bit is fractional
-  std::vector<unsigned long long> bits_;
+  std::vector<uint64_t> bits_;
   std::vector<bool> prevDirs_;
   std::vector<bool> srcs_;
   std::vector<bool> dsts_;
@@ -643,13 +627,13 @@ class FlexGRGridGraph
   std::vector<frLayerNum> zCoords_;
   std::vector<frCoord> zHeights_;
   std::vector<bool> zDirs_;  // is horz dir
-  unsigned ggCongCost_;
-  unsigned ggHistCost_;
+  unsigned ggCongCost_{0};
+  unsigned ggHistCost_{0};
 
   FlexGRWavefront wavefront_;
 
   // flags
-  bool is2DRouting_;
+  bool is2DRouting_{false};
 
   // internal getters
   bool getBit(frMIdx idx, frMIdx pos) const { return (bits_[idx] >> pos) & 1; }
@@ -673,7 +657,7 @@ class FlexGRGridGraph
     auto it = std::lower_bound(zCoords_.begin(), zCoords_.end(), in);
     return it - zCoords_.begin();
   }
-  FlexMazeIdx& getMazeIdx(const Point& p,
+  FlexMazeIdx& getMazeIdx(const odb::Point& p,
                           frLayerNum layerNum,
                           FlexMazeIdx& mIdx) const
   {
@@ -708,7 +692,7 @@ class FlexGRGridGraph
   void setBits(frMIdx idx, frMIdx pos, frUInt4 length, frUInt4 val)
   {
     bits_[idx] &= ~(((1ull << length) - 1) << pos);  // clear related bits to 0
-    bits_[idx] |= ((unsigned long long) val & ((1ull << length) - 1))
+    bits_[idx] |= ((uint64_t) val & ((1ull << length) - 1))
                   << pos;  // only get last length bits of val
   }
 
@@ -730,7 +714,6 @@ class FlexGRGridGraph
         break;
       default:;
     }
-    return;
   }
   void correctU(frMIdx& x, frMIdx& y, frMIdx& z, frDirEnum& dir) const
   {
@@ -741,7 +724,6 @@ class FlexGRGridGraph
         break;
       default:;
     }
-    return;
   }
 
   void reverse(frMIdx& x, frMIdx& y, frMIdx& z, frDirEnum& dir) const
@@ -773,24 +755,19 @@ class FlexGRGridGraph
         break;
       default:;
     }
-    return;
   }
   void getPrevGrid(frMIdx& gridX,
                    frMIdx& gridY,
                    frMIdx& gridZ,
-                   const frDirEnum dir) const;
-  void getNextGrid(frMIdx& gridX,
-                   frMIdx& gridY,
-                   frMIdx& gridZ,
-                   const frDirEnum dir);
+                   frDirEnum dir) const;
+  void getNextGrid(frMIdx& gridX, frMIdx& gridY, frMIdx& gridZ, frDirEnum dir);
   bool isValid(frMIdx x, frMIdx y, frMIdx z) const
   {
     if (x < 0 || y < 0 || z < 0 || x >= (frMIdx) xCoords_.size()
         || y >= (frMIdx) yCoords_.size() || z >= (frMIdx) zCoords_.size()) {
       return false;
-    } else {
-      return true;
     }
+    return true;
   }
 
   // internal init utility
@@ -804,7 +781,7 @@ class FlexGRGridGraph
                     const frDirEnum& dir);
   frCost getNextPathCost(const FlexGRWavefrontGrid& currGrid,
                          const frDirEnum& dir);
-  frDirEnum getLastDir(const std::bitset<WAVEFRONTBITSIZE>& buffer);
+  frDirEnum getLastDir(const std::bitset<GRWAVEFRONTBITSIZE>& buffer);
   void traceBackPath(const FlexGRWavefrontGrid& currGrid,
                      std::vector<FlexMazeIdx>& path,
                      std::vector<FlexMazeIdx>& root,
@@ -813,7 +790,7 @@ class FlexGRGridGraph
   void expandWavefront(FlexGRWavefrontGrid& currGrid,
                        const FlexMazeIdx& dstMazeIdx1,
                        const FlexMazeIdx& dstMazeIdx2,
-                       const Point& centerPt);
+                       const odb::Point& centerPt);
   bool isExpandable(const FlexGRWavefrontGrid& currGrid, frDirEnum dir);
   FlexMazeIdx getTailIdx(const FlexMazeIdx& currIdx,
                          const FlexGRWavefrontGrid& currGrid);
@@ -821,10 +798,8 @@ class FlexGRGridGraph
               const frDirEnum& dir,
               const FlexMazeIdx& dstMazeIdx1,
               const FlexMazeIdx& dstMazeIdx2,
-              const Point& centerPt);
+              const odb::Point& centerPt);
 
   friend class FlexGRWorker;
 };
-}  // namespace fr
-
-#endif
+}  // namespace drt

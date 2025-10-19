@@ -1,0 +1,24 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN scan_inserted_design ;
+
+SCANCHAINS 2 ;
+
+- chain_0
++ START PIN scan_in_1_top
++ FLOATING
+  my_bank1 ( IN scan_in_1 ) ( OUT outputs_32[31] )
++ PARTITION clk1
++ STOP PIN outputs_32_top[31] ;
+
+- chain_1
++ START PIN scan_in_2_top
++ FLOATING
+  my_bank2 ( IN scan_in_2 ) ( OUT outputs_64[63] )
++ PARTITION clk2
++ STOP PIN outputs_64_top[63] ;
+
+
+END SCANCHAINS
+END DESIGN

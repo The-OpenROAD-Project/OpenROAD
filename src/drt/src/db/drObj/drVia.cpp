@@ -1,47 +1,86 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "db/drObj/drVia.h"
+
+#include <algorithm>
 
 #include "db/drObj/drNet.h"
 #include "db/obj/frVia.h"
 #include "distributed/frArchive.h"
+#include "frBaseTypes.h"
+#include "odb/geom.h"
 
-using namespace std;
-using namespace fr;
+namespace drt {
 
 drVia::drVia(const frVia& in)
-    : viaDef_(in.getViaDef()), owner_(nullptr), beginMazeIdx_(), endMazeIdx_()
+    : origin_(in.getOrigin()),
+      viaDef_(in.getViaDef()),
+      tapered_(in.isTapered()),
+      bottomConnected_(in.isBottomConnected()),
+      topConnected_(in.isTopConnected()),
+      isLonely_(in.isLonely())
 {
-  origin_ = in.getOrigin();
-  setTapered(in.isTapered());
-  setBottomConnected(in.isBottomConnected());
-  setTopConnected(in.isTopConnected());
+}
+
+odb::Rect drVia::getBBox() const
+{
+  auto& layer1Figs = viaDef_->getLayer1Figs();
+  auto& layer2Figs = viaDef_->getLayer2Figs();
+  auto& cutFigs = viaDef_->getCutFigs();
+  bool isFirst = true;
+  frCoord xl = 0;
+  frCoord yl = 0;
+  frCoord xh = 0;
+  frCoord yh = 0;
+  for (auto& fig : layer1Figs) {
+    odb::Rect box = fig->getBBox();
+    if (isFirst) {
+      xl = box.xMin();
+      yl = box.yMin();
+      xh = box.xMax();
+      yh = box.yMax();
+      isFirst = false;
+    } else {
+      xl = std::min(xl, box.xMin());
+      yl = std::min(yl, box.yMin());
+      xh = std::max(xh, box.xMax());
+      yh = std::max(yh, box.yMax());
+    }
+  }
+  for (auto& fig : layer2Figs) {
+    odb::Rect box = fig->getBBox();
+    if (isFirst) {
+      xl = box.xMin();
+      yl = box.yMin();
+      xh = box.xMax();
+      yh = box.yMax();
+      isFirst = false;
+    } else {
+      xl = std::min(xl, box.xMin());
+      yl = std::min(yl, box.yMin());
+      xh = std::max(xh, box.xMax());
+      yh = std::max(yh, box.yMax());
+    }
+  }
+  for (auto& fig : cutFigs) {
+    odb::Rect box = fig->getBBox();
+    if (isFirst) {
+      xl = box.xMin();
+      yl = box.yMin();
+      xh = box.xMax();
+      yh = box.yMax();
+      isFirst = false;
+    } else {
+      xl = std::min(xl, box.xMin());
+      yl = std::min(yl, box.yMin());
+      xh = std::max(xh, box.xMax());
+      yh = std::max(yh, box.yMax());
+    }
+  }
+  odb::Rect box(xl, yl, xh, yh);
+  getTransform().apply(box);
+  return box;
 }
 
 template <class Archive>
@@ -78,3 +117,5 @@ template void drVia::serialize<frIArchive>(frIArchive& ar,
 
 template void drVia::serialize<frOArchive>(frOArchive& ar,
                                            const unsigned int file_version);
+
+}  // namespace drt

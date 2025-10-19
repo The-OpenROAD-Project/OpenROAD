@@ -1,44 +1,23 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include "stt/pd.h"
 
-#include <boost/heap/d_ary_heap.hpp>
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <deque>
+#include <limits>
+#include <map>
 #include <numeric>
+#include <tuple>
 #include <utility>
+#include <vector>
 
+#include "boost/heap/d_ary_heap.hpp"
 #include "lemon/list_graph.h"
 #include "odb/geom.h"
+#include "stt/SteinerTreeBuilder.h"
 
 namespace pdr {
 
@@ -63,7 +42,10 @@ using utl::Logger;
 using Neighbors = std::vector<int>;
 static vector<Neighbors> get_nearest_neighbors(const vector<Point>& pts)
 {
-  const int pt_count = pts.size();
+  thread_local static vector<int> data;
+  data.clear();
+
+  const size_t pt_count = pts.size();
 
   vector<Neighbors> neighbors(pt_count);
 
@@ -72,15 +54,19 @@ static vector<Neighbors> get_nearest_neighbors(const vector<Point>& pts)
   // this coordinate would have another node in its bbox and is
   // therefore not a nearest neighbor.  This depends on processing the
   // nodes in order of increasing y distance.
-  vector<int> ur(pt_count, std::numeric_limits<int>::max());
-  vector<int> ul(pt_count, std::numeric_limits<int>::min());
-  vector<int> lr(pt_count, std::numeric_limits<int>::max());
-  vector<int> ll(pt_count, std::numeric_limits<int>::min());
+  data.reserve(pt_count * 5);
+  data.resize(pt_count * 2, std::numeric_limits<int>::max());
+  data.resize(pt_count * 4, std::numeric_limits<int>::min());
+  data.resize(pt_count * 5);
+  int* const ur = &data[0];  // NOLINT
+  int* const lr = &data[pt_count];
+  int* const ul = &data[pt_count * 2];
+  int* const ll = &data[pt_count * 3];
+  int* const sorted = &data[pt_count * 4];
 
   // sort in y-axis
-  vector<int> sorted(pt_count);
-  std::iota(sorted.begin(), sorted.end(), 0);
-  stable_sort(sorted.begin(), sorted.end(), [=](int i, int j) {
+  std::iota(sorted, sorted + pt_count, 0);
+  std::stable_sort(sorted, sorted + pt_count, [&pts](int i, int j) {
     return std::make_pair(pts[i].getY(), pts[i].getX())
            < std::make_pair(pts[j].getY(), pts[j].getX());
   });
@@ -148,9 +134,10 @@ static void buildSpanningTree(const ListGraph::NodeMap<Point>& node_point,
                               const vector<Neighbors>& nn,
                               ListGraph& graph)
 {
-  using namespace boost::heap;
-  using Heap
-      = d_ary_heap<SearchEdge, arity<2>, mutable_<true>, compare<CmpEdge>>;
+  using Heap = boost::heap::d_ary_heap<SearchEdge,
+                                       boost::heap::arity<2>,
+                                       boost::heap::mutable_<true>,
+                                       boost::heap::compare<CmpEdge>>;
 
   const int num_nodes = graph.maxNodeId() + 1;
   int num_visited = 0;
@@ -161,7 +148,7 @@ static void buildSpanningTree(const ListGraph::NodeMap<Point>& node_point,
   vector<Heap::handle_type> handles(num_nodes);
 
   Heap heap;
-  handles[graph.id(driver_node)] = heap.push({0, 0, INVALID, driver_node});
+  handles[ListGraph::id(driver_node)] = heap.push({0, 0, INVALID, driver_node});
 
   while (!heap.empty()) {
     const SearchEdge edge = heap.top();
@@ -178,8 +165,8 @@ static void buildSpanningTree(const ListGraph::NodeMap<Point>& node_point,
     }
 
     // Add the neareset neighbors to the heap
-    for (const int neighbor : nn[graph.id(edge.node)]) {
-      auto neighbor_node = graph.nodeFromId(neighbor);
+    for (const int neighbor : nn[ListGraph::id(edge.node)]) {
+      auto neighbor_node = ListGraph::nodeFromId(neighbor);
       if (visited[neighbor_node]) {
         continue;  // already in the graph
       }
@@ -282,11 +269,10 @@ static CandidateSteiner best_steiner_for_node(
 // routing tree design".
 static void steinerize(ListGraph& graph, ListGraph::NodeMap<Point>& node_point)
 {
-  using namespace boost::heap;
-  using Heap = d_ary_heap<CandidateSteiner,
-                          arity<2>,
-                          mutable_<true>,
-                          compare<CmpCandidate>>;
+  using Heap = boost::heap::d_ary_heap<CandidateSteiner,
+                                       boost::heap::arity<2>,
+                                       boost::heap::mutable_<true>,
+                                       boost::heap::compare<CmpCandidate>>;
   Heap heap;
   std::map<ListGraph::Node, Heap::handle_type> handles;
 
@@ -345,7 +331,7 @@ static void steinerize(ListGraph& graph, ListGraph::NodeMap<Point>& node_point)
     handles[best.node]
         = heap.push(best_steiner_for_node(graph, best.node, node_point));
 
-    for (auto node : {opp1, opp2}) {
+    for (const auto& node : {opp1, opp2}) {
       *handles[node] = best_steiner_for_node(graph, node, node_point);
       heap.update(handles[node]);
     }
@@ -406,11 +392,11 @@ static void makeTreeRecursive(const ListGraph& graph,
                               const ListGraph::NodeMap<Point>& node_point,
                               Tree& tree)
 {
-  const int parent_id = graph.id(parent);
+  const int parent_id = ListGraph::id(parent);
   const int parent_x = node_point[parent].getX();
   const int parent_y = node_point[parent].getY();
 
-  const int n = graph.id(node);
+  const int n = ListGraph::id(node);
   const int x = node_point[node].getX();
   const int y = node_point[node].getY();
   tree.branch[n] = {x, y, parent_id};
@@ -461,7 +447,7 @@ Tree primDijkstra(const vector<int>& x,
 
   const auto nn = get_nearest_neighbors(pts);
 
-  auto driver_node = graph.nodeFromId(driver_index);
+  auto driver_node = ListGraph::nodeFromId(driver_index);
   buildSpanningTree(node_point, driver_node, alpha, nn, graph);
 
   steinerize(graph, node_point);

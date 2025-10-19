@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2025, The OpenROAD Authors
+
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(
+    default_visibility = ["//:__subpackages__"],
+    features = ["layering_check"],
+)
+
+cc_library(
+    name = "nangate45_fixture",
+    hdrs = ["include/tst/nangate45_fixture.h"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    includes = ["."],
+    visibility = ["//visibility:public"],
+    deps = [":tst"],
+)
+
+cc_library(
+    name = "sky130_fixture",
+    hdrs = ["include/tst/sky130_fixture.h"],
+    data = [
+        "//test:sky130hd_data",
+    ],
+    includes = ["."],
+    visibility = ["//visibility:public"],
+    deps = [":tst"],
+)
+
+cc_library(
+    name = "tst",
+    srcs = [
+        "src/fixture.cpp",
+    ],
+    hdrs = [
+        "include/tst/fixture.h",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@bazel_tools//tools/cpp/runfiles",
+        "@googletest//:gtest",
+        "@spdlog",
+        "@tk_tcl//:tcl",
+    ],
+)

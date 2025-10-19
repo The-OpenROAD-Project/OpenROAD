@@ -1,6 +1,4 @@
-[INFO ODB-0222] Reading LEF file: bus1.lef
-[INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  bus1.lef
+[INFO ODB-0227] LEF file: bus1.lef, created 1 library cells
 Instance bus1
  Cell: bus4
  Library: bus1
