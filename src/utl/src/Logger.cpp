@@ -58,6 +58,12 @@ Logger::Logger(const char* log_filename, const char* metrics_filename)
     }
   }
 
+  for (auto& levels : message_levels_) {
+    for (auto& level : levels) {
+      level.store(spdlog::level::off, std::memory_order_relaxed);
+    }
+  }
+
   prometheus_registry_ = std::make_shared<PrometheusRegistry>();
 }
 
@@ -178,10 +184,32 @@ void Logger::flushMetrics()
   }
 }
 
+void Logger::addWarningMetrics()
+{
+  // Add metrics for non-zero warnings
+  int warning_type_cnt = 0;
+  for (int i = 0; i < ToolId::SIZE; ++i) {
+    for (int j = 0; j <= max_message_id; ++j) {
+      if (message_counters_[i][j] > 0
+          && message_levels_[i][j] == spdlog::level::warn) {
+        warning_type_cnt++;
+        log_metric(
+            fmt::format("flow__warnings__count:{}-{}", tool_names_[i], j),
+            std::to_string(message_counters_[i][j]));
+      }
+    }
+  }
+
+  // Add a metric to report the number of unique warning types
+  log_metric("flow__warnings__type_count", std::to_string(warning_type_cnt));
+}
+
 void Logger::finalizeMetrics()
 {
   log_metric("flow__warnings__count", std::to_string(warning_count_));
   log_metric("flow__errors__count", std::to_string(error_count_));
+
+  addWarningMetrics();
 
   for (MetricsPolicy policy : metrics_policies_) {
     policy.applyPolicy(metrics_entries_);
