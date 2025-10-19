@@ -806,7 +806,7 @@ void Gui::saveImage(const std::string& filename,
     save_cmds += "gui::hide";
     showGui(Interpreter::Tcl, save_cmds, false);
   } else {
-    // save current displexitingay settings and apply new
+    // save current display settings and apply new
     main_window->getControls()->save();
     for (const auto& [control, value] : display_settings) {
       setDisplayControlsVisible(control, value);
