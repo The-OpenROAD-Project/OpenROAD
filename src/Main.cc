@@ -310,6 +310,7 @@ int main(int argc, char* argv[])
   return 0;
 }
 
+#ifdef ENABLE_PYTHON3
 void ord::pyAppInit(const bool exit_after_cmd_file)
 {
 #if PY_VERSION_HEX >= 0x03080000
@@ -318,6 +319,7 @@ void ord::pyAppInit(const bool exit_after_cmd_file)
   initPython();
 #endif  // PY_VERSION_HEX >= 0x03080000
 }
+#endif
 
 #ifdef ENABLE_READLINE
 static int tclReadlineInit(Tcl_Interp* interp)

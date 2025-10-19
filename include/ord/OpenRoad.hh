@@ -291,6 +291,8 @@ class OpenRoad
 
 int tclAppInit(Tcl_Interp* interp);
 int tclInit(Tcl_Interp* interp);
+#ifdef ENABLE_PYTHON3
 void pyAppInit(bool exit_after_cmd_file);
+#endif
 
 }  // namespace ord
