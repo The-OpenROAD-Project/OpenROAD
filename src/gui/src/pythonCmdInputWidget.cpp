@@ -130,12 +130,12 @@ static PyTypeObject StdoutType = {
     nullptr,                                      /* tp_new */
 };
 
-PyModuleDef embmodule = {
+static PyModuleDef embmodule = {
     PyModuleDef_HEAD_INIT,
     "emb",
-    0,
+    nullptr,
     -1,
-    0,
+    nullptr,
 };
 
 // Internal state
@@ -144,13 +144,13 @@ struct StreamPair
   PyObject* saved = nullptr;
   PyObject* current = nullptr;
 };
-std::map<std::string, StreamPair> streams;
+static std::map<std::string, StreamPair> streams;
 
 PyMODINIT_FUNC PyInit_emb(void)
 {
   StdoutType.tp_new = PyType_GenericNew;
   if (PyType_Ready(&StdoutType) < 0) {
-    return 0;
+    return nullptr;
   }
 
   PyObject* m = PyModule_Create(&embmodule);
@@ -161,20 +161,20 @@ PyMODINIT_FUNC PyInit_emb(void)
   return m;
 }
 
-void set_stream(const std::string& stream, stdout_write_type write)
+static void set_stream(const std::string& stream, stdout_write_type write)
 {
   auto& stream_pair = streams[stream];
   if (stream_pair.current == nullptr) {
     stream_pair.saved = PySys_GetObject(stream.c_str());
-    stream_pair.current = StdoutType.tp_new(&StdoutType, 0, 0);
+    stream_pair.current = StdoutType.tp_new(&StdoutType, nullptr, nullptr);
   }
 
   Stdout* impl = reinterpret_cast<Stdout*>(stream_pair.current);
-  impl->write = write;
+  impl->write = std::move(write);
   PySys_SetObject(stream.c_str(), stream_pair.current);
 }
 
-void reset_streams()
+static void reset_streams()
 {
   for (auto& [stream, stream_pair] : streams) {
     if (stream_pair.saved != nullptr) {
@@ -323,7 +323,7 @@ void PythonCmdInputWidget::init()
       return;
     }
     s.erase(s.find_last_not_of("\r\n") + 1);
-    s.erase(s.find_last_not_of("\n") + 1);
+    s.erase(s.find_last_not_of('\n') + 1);
     if (s.empty()) {
       return;
     }
@@ -340,7 +340,7 @@ void PythonCmdInputWidget::init()
       return;
     }
     s.erase(s.find_last_not_of("\r\n") + 1);
-    s.erase(s.find_last_not_of("\n") + 1);
+    s.erase(s.find_last_not_of('\n') + 1);
     if (s.empty()) {
       return;
     }

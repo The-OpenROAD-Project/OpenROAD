@@ -148,7 +148,6 @@ void ScriptWidget::setupInterpreterWidget()
           this,
           &ScriptWidget::addTextToOutput,
           Qt::QueuedConnection);
-
 }
 
 // When displaying text in Scripting, processing events in order to
