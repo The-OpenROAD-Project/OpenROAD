@@ -4,6 +4,7 @@
 #include "utl/Logger.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -21,6 +22,8 @@
 #else
 #include "spdlog/pattern_formatter.h"
 #endif
+#include "spdlog/common.h"
+#include "spdlog/fmt/bundled/format.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/ostream_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
