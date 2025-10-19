@@ -235,6 +235,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   void inDbSWireAddSBox(odb::dbSBox* box) override;
   void inDbSWireRemoveSBox(odb::dbSBox* box) override;
   void inDbBlockSetDieArea(odb::dbBlock* block) override;
+  void inDbBlockSetCoreArea(odb::dbBlock* block) override;
   void inDbBlockageCreate(odb::dbBlockage* blockage) override;
   void inDbBlockageDestroy(odb::dbBlockage* blockage) override;
   void inDbObstructionCreate(odb::dbObstruction* obs) override;

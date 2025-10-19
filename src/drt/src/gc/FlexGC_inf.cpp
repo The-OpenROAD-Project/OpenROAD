@@ -14,7 +14,10 @@
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
+
+using odb::dbTechLayerType;
 
 namespace drt {
 

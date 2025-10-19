@@ -205,10 +205,10 @@ void Opendp::insertDecapInPos(dbMaster* master,
 {
   // insert decap inst
   std::string inst_name = "DECAP_" + to_string(decap_count_);
-  dbInst* inst = dbInst::create(block_,
-                                master,
-                                inst_name.c_str(),
-                                /* physical_only */ true);
+  odb::dbInst* inst = odb::dbInst::create(block_,
+                                          master,
+                                          inst_name.c_str(),
+                                          /* physical_only */ true);
   const GridX grid_x = grid_->gridX(pos_x - core_.xMin());
   const GridY grid_y = grid_->gridSnapDownY(pos_y - core_.yMin());
   const odb::dbOrientType orient

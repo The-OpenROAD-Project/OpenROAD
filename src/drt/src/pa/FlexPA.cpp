@@ -30,6 +30,7 @@
 #include "omp.h"
 #include "pa/AbstractPAGraphics.h"
 #include "serialization.h"
+#include "utl/Logger.h"
 #include "utl/exception.h"
 
 BOOST_CLASS_EXPORT(drt::PinAccessJobDescription)
@@ -400,9 +401,9 @@ bool FlexPA::isStdCell(frInst* inst)
 
 bool FlexPA::isMacroCell(frInst* inst)
 {
-  dbMasterType masterType = inst->getMaster()->getMasterType();
+  odb::dbMasterType masterType = inst->getMaster()->getMasterType();
   return (masterType.isBlock() || masterType.isPad()
-          || masterType == dbMasterType::RING);
+          || masterType == odb::dbMasterType::RING);
 }
 
 bool FlexPA::isStdCellTerm(frInstTerm* inst_term)
@@ -437,7 +438,7 @@ int FlexPA::main()
 
   int std_cell_pin_cnt = 0;
   for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
-    if (inst->getMaster()->getMasterType() != dbMasterType::CORE) {
+    if (inst->getMaster()->getMasterType() != odb::dbMasterType::CORE) {
       continue;
     }
     for (auto& inst_term : inst->getInstTerms()) {

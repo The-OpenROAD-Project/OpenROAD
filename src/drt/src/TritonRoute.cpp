@@ -44,6 +44,7 @@
 #include "odb/db.h"
 #include "odb/dbId.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
@@ -54,6 +55,8 @@
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
+
+using odb::dbTechLayerType;
 
 namespace drt {
 

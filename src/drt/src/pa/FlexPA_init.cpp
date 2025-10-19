@@ -11,8 +11,12 @@
 #include "db/obj/frInst.h"
 #include "frBaseTypes.h"
 #include "gc/FlexGC.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "pa/FlexPA.h"
+
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
 
 namespace drt {
 

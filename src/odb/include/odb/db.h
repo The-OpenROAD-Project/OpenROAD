@@ -1118,10 +1118,29 @@ class dbBlock : public dbObject
   Polygon getDieAreaPolygon();
 
   ///
-  /// Get the core area. This computes the bbox of the rows
-  /// and is O(#rows) in runtime.
+  /// Compute the core area based on rows
+  ///
+  odb::Polygon computeCoreArea();
+
+  ///
+  /// Set the core area.
+  ///
+  void setCoreArea(const Rect& new_area);
+
+  ///
+  /// Set the core area with polygon. Allows for non-rectangular floorplans
+  ///
+  void setCoreArea(const Polygon& new_area);
+
+  ///
+  /// Get the core area.
   ///
   Rect getCoreArea();
+
+  ///
+  /// Get the core area.
+  ///
+  Polygon getCoreAreaPolygon();
 
   ///
   /// Add region in the die area where IO pins cannot be placed

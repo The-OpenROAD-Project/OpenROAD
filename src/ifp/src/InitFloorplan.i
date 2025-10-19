@@ -131,7 +131,8 @@ make_rows_with_spacing(ord::Design* design,
           odb::dbSite* site,
           const std::vector<odb::dbSite*>& additional_sites,
           ifp::RowParity row_parity,
-          const std::vector<odb::dbSite*>& flipped_sites)
+          const std::vector<odb::dbSite*>& flipped_sites,
+          const int gap)
 {
   std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
                                            flipped_sites.end());
@@ -140,7 +141,8 @@ make_rows_with_spacing(ord::Design* design,
                                              site,
                                              additional_sites,
                                              row_parity,
-                                             flipped_sites_set);
+                                             flipped_sites_set,
+                                             gap);
 }
 
 void
@@ -152,7 +154,8 @@ make_rows(ord::Design* design,
           odb::dbSite* site,
           const std::vector<odb::dbSite*>& additional_sites,
           ifp::RowParity row_parity,
-          const std::vector<odb::dbSite*>& flipped_sites)
+          const std::vector<odb::dbSite*>& flipped_sites,
+          const int gap)
 {
   
   std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
@@ -161,7 +164,8 @@ make_rows(ord::Design* design,
                                   site,
                                   additional_sites,
                                   row_parity,
-                                  flipped_sites_set);
+                                  flipped_sites_set,
+                                  gap);
 }
 
 void
@@ -198,12 +202,13 @@ void make_polygon_rows_simple(ord::Design* design,
                               odb::dbSite* base_site,
                               const std::vector<odb::dbSite*>& additional_sites,
                               ifp::RowParity row_parity,
-                              const std::vector<odb::dbSite*>& flipped_sites)
+                              const std::vector<odb::dbSite*>& flipped_sites,
+                              const int gap)
 {
   odb::Polygon polygon(core_polygon);
   std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
                                            flipped_sites.end());
-  design->getFloorplan().makePolygonRows(polygon, base_site, additional_sites, row_parity, flipped_sites_set);
+  design->getFloorplan().makePolygonRows(polygon, base_site, additional_sites, row_parity, flipped_sites_set, gap);
 }
 
 } // namespace

@@ -23,6 +23,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "omp.h"
 #include "pa/AbstractPAGraphics.h"
@@ -30,9 +31,10 @@
 #include "utl/Logger.h"
 #include "utl/exception.h"
 
-namespace drt {
-
+using odb::dbTechLayerDir;
 using utl::ThreadException;
+
+namespace drt {
 
 /**
  *

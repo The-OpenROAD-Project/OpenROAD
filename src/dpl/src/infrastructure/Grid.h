@@ -23,8 +23,6 @@
 
 namespace dpl {
 
-using odb::dbSite;
-
 struct GridIntervalX
 {
   GridX lo;
@@ -45,8 +43,8 @@ struct Pixel
   bool is_valid = false;     // false for dummy cells
   bool is_hopeless = false;  // too far from sites for diamond search
   uint8_t blocked_layers = 0;
-  // Cells that reserved this pixel for padding
-  std::unordered_set<Node*> padding_reserved_by;
+  // Cell that reserved this pixel for padding
+  Node* padding_reserved_by = nullptr;
 };
 
 // Return value for grid searches.
@@ -69,13 +67,13 @@ class Grid
  public:
   void init(Logger* logger) { logger_ = logger; }
   void setCore(const odb::Rect& core) { core_ = core; }
-  void initGrid(dbDatabase* db,
-                dbBlock* block,
+  void initGrid(odb::dbDatabase* db,
+                odb::dbBlock* block,
                 std::shared_ptr<Padding> padding,
                 int max_displacement_x,
                 int max_displacement_y);
   void allocateGrid();
-  void examineRows(dbBlock* block);
+  void examineRows(odb::dbBlock* block);
   std::unordered_set<int> getRowCoordinates() const;
 
   GridX gridX(DbuX x) const;
@@ -139,9 +137,9 @@ class Grid
 
   std::optional<odb::dbOrientType> getSiteOrientation(GridX x,
                                                       GridY y,
-                                                      dbSite* site) const;
-  std::pair<dbSite*, odb::dbOrientType> getShortestSite(GridX grid_x,
-                                                        GridY grid_y);
+                                                      odb::dbSite* site) const;
+  std::pair<odb::dbSite*, odb::dbOrientType> getShortestSite(GridX grid_x,
+                                                             GridY grid_y);
 
   void resize(int size) { pixels_.resize(size); }
   void resize(GridY size) { pixels_.resize(size.v); }
@@ -155,11 +153,11 @@ class Grid
   odb::Rect getCore() const { return core_; }
   bool cellFitsInCore(Node* cell) const;
 
-  bool isMultiHeight(dbMaster* master) const;
+  bool isMultiHeight(odb::dbMaster* master) const;
 
  private:
   // Maps a site to the right orientation to use in a given row
-  using SiteToOrientation = std::map<dbSite*, odb::dbOrientType>;
+  using SiteToOrientation = std::map<odb::dbSite*, odb::dbOrientType>;
 
   // Used to combine the SiteToOrientation for two intervals when merged
   template <typename MapType>
@@ -185,15 +183,15 @@ class Grid
 
   using Pixels = std::vector<std::vector<Pixel>>;
 
-  void markHopeless(dbBlock* block,
+  void markHopeless(odb::dbBlock* block,
                     int max_displacement_x,
                     int max_displacement_y);
-  void markBlocked(dbBlock* block);
-  void visitDbRows(dbBlock* block,
+  void markBlocked(odb::dbBlock* block);
+  void visitDbRows(odb::dbBlock* block,
                    const std::function<void(odb::dbRow*)>& func) const;
 
   Logger* logger_ = nullptr;
-  dbBlock* block_ = nullptr;
+  odb::dbBlock* block_ = nullptr;
   std::shared_ptr<Padding> padding_;
   Pixels pixels_;
   // Contains all the rows' yLo plus the yHi of the last row.  The extra

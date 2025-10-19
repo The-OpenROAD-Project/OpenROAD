@@ -1450,6 +1450,10 @@ void Gui::gifStart(const std::string& filename)
     logger_->error(utl::GUI, 49, "Cannot generate GIF without GUI enabled");
   }
 
+  if (filename.empty()) {
+    logger_->error(utl::GUI, 81, "Filename is required to save a GIF.");
+  }
+
   gif_ = std::make_unique<GIF>();
   gif_->filename = filename;
   gif_->writer = nullptr;
@@ -1543,6 +1547,15 @@ void Gui::gifEnd()
 {
   if (gif_ == nullptr) {
     logger_->warn(utl::GUI, 58, "GIF not active");
+    return;
+  }
+
+  if (gif_->writer == nullptr) {
+    logger_->warn(utl::GUI,
+                  75,
+                  "Nothing to save to {}. No frames added to gif.",
+                  gif_->filename);
+    gif_ = nullptr;
     return;
   }
 

@@ -137,12 +137,13 @@ class DbMasterDescriptor : public BaseDbDescriptor<odb::dbMaster>
                                   odb::dbMaster* master,
                                   std::set<odb::dbMaster*>& masters);
 
+  static void getInstances(odb::dbMaster* master,
+                           std::set<odb::dbInst*>& insts);
+
  protected:
   Properties getDBProperties(odb::dbMaster* master) const override;
 
  private:
-  void getInstances(odb::dbMaster* master, std::set<odb::dbInst*>& insts) const;
-
   sta::dbSta* sta_;
 };
 
@@ -866,6 +867,50 @@ class DbBoxDescriptor : public BaseDbDescriptor<odb::dbBox>
  private:
   odb::dbBox* getObject(const std::any& object) const override;
   odb::dbTransform getTransform(const std::any& object) const;
+};
+
+class DbMasterEdgeTypeDescriptor
+    : public BaseDbDescriptor<odb::dbMasterEdgeType>
+{
+ public:
+  DbMasterEdgeTypeDescriptor(odb::dbDatabase* db);
+
+  std::string getName(const std::any& object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
+
+  void highlight(const std::any& object, Painter& painter) const override;
+  static void highlightEdge(odb::dbMaster* master,
+                            odb::dbMasterEdgeType* edge,
+                            Painter& painter,
+                            const std::optional<int>& pen_width = {});
+
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
+
+ protected:
+  Properties getDBProperties(odb::dbMasterEdgeType* edge) const override;
+};
+
+class DbCellEdgeSpacingDescriptor
+    : public BaseDbDescriptor<odb::dbCellEdgeSpacing>
+{
+ public:
+  DbCellEdgeSpacingDescriptor(odb::dbDatabase* db);
+
+  std::string getName(const std::any& object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
+
+  void highlight(const std::any& object, Painter& painter) const override;
+
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
+
+ protected:
+  Properties getDBProperties(odb::dbCellEdgeSpacing* rule) const override;
 };
 
 };  // namespace gui

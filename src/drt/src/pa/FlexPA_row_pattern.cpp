@@ -26,6 +26,7 @@
 #include "omp.h"
 #include "pa/FlexPA.h"
 #include "serialization.h"
+#include "utl/Logger.h"
 #include "utl/exception.h"
 
 namespace drt {

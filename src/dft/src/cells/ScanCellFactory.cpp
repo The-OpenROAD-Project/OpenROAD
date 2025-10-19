@@ -19,6 +19,7 @@
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Sequential.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 
