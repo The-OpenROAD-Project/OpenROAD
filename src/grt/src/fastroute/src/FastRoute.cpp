@@ -1199,6 +1199,8 @@ NetRouteMap FastRouteCore::run()
   const int short_edge_len = 12;
   const int soft_ndr_overflow_th = 10000;
 
+  preProcessTechLayers();
+
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
   via_cost_ = 0;
   gen_brk_RSMT(false, false, false, false, noADJ);

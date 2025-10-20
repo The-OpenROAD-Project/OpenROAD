@@ -280,6 +280,8 @@ class FastRouteCore
   odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
   void updateSlacks(float percentage = 0.5);
+  void preProcessTechLayers();
+  odb::dbTechLayer* getTechLayer(int layer, bool is_via);
 
   // maze functions
   // Maze-routing in different orders
@@ -602,6 +604,7 @@ class FastRouteCore
   int congestion_report_iter_step_;
   std::string congestion_file_name_;
   std::vector<odb::dbTechLayerDir> layer_directions_;
+  std::vector<odb::dbTechLayer*> db_layers_;
   int x_range_;
   int y_range_;
 
@@ -652,7 +655,6 @@ class FastRouteCore
   std::vector<int> ycor_;
   std::vector<int> dcor_;
 
-  std::vector<int> nets_res_aware_;
   std::vector<FrNet*> nets_;
   std::unordered_map<odb::dbNet*, int> db_net_id_map_;  // db net -> net id
   // the copy of xs for nets, used for second FLUTE
