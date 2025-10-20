@@ -64,6 +64,33 @@ using BnetSeq = BufferedNetSeq;
 using BnetPtr = BufferedNetPtr;
 using BnetMetrics = BufferedNet::Metrics;
 
+class ScopedTimer
+{
+ public:
+  using Clock = std::chrono::steady_clock;
+
+  ScopedTimer(Logger* logger, double& accumulator)
+      : logger_(logger), accumulator_(accumulator)
+  {
+    if (logger_->debugCheck(RSZ, "rebuffer", 1)) {
+      start_ = Clock::now();
+    }
+  }
+
+  ~ScopedTimer()
+  {
+    if (logger_->debugCheck(RSZ, "rebuffer", 1)) {
+      accumulator_
+          += std::chrono::duration<double>{Clock::now() - start_}.count();
+    }
+  }
+
+ private:
+  Logger* logger_;
+  double& accumulator_;
+  std::chrono::time_point<Clock> start_;
+};
+
 // Template magic to make it easier to write algorithms descending
 // over the buffer tree in the form of lambdas; it allows recursive
 // lambda calling and it keeps track of the level number which is important
@@ -652,6 +679,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
               return opts1;
             }
 
+            ScopedTimer timer(logger_, long_wire_stepping_runtime_);
             int round = 0;
             while (location != node->location()) {
               debugPrint(logger_,
@@ -1977,33 +2005,6 @@ int Rebuffer::fanout(Vertex* vertex) const
   return fanout;
 }
 
-class ScopedTimer
-{
- public:
-  using Clock = std::chrono::steady_clock;
-
-  ScopedTimer(Logger* logger, double& accumulator)
-      : logger_(logger), accumulator_(accumulator)
-  {
-    if (logger_->debugCheck(RSZ, "rebuffer", 1)) {
-      start_ = Clock::now();
-    }
-  }
-
-  ~ScopedTimer()
-  {
-    if (logger_->debugCheck(RSZ, "rebuffer", 1)) {
-      accumulator_
-          += std::chrono::duration<double>{Clock::now() - start_}.count();
-    }
-  }
-
- private:
-  Logger* logger_;
-  double& accumulator_;
-  std::chrono::time_point<Clock> start_;
-};
-
 void Rebuffer::setPin(Pin* drvr_pin)
 {
   // set rebuffering globals
@@ -2035,6 +2036,7 @@ void Rebuffer::setPin(Pin* drvr_pin)
 void Rebuffer::fullyRebuffer(Pin* user_pin)
 {
   double sta_runtime = 0, bft_runtime = 0, ra_runtime = 0;
+  long_wire_stepping_runtime_ = 0;
 
   init();
   resizer_->ensureLevelDrvrVertices();
@@ -2333,6 +2335,12 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
   debugPrint(logger_, RSZ, "rebuffer", 1, "STA {:.2f}", sta_runtime);
   debugPrint(
       logger_, RSZ, "rebuffer", 1, "Buffer for timing {:.2f}", bft_runtime);
+  debugPrint(logger_,
+             RSZ,
+             "rebuffer",
+             1,
+             "  of which long wire stepping {:.2f}",
+             long_wire_stepping_runtime_);
   debugPrint(logger_, RSZ, "rebuffer", 1, "Recover area {:.2f}", ra_runtime);
 }
 
