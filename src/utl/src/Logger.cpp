@@ -23,7 +23,6 @@
 #include "spdlog/pattern_formatter.h"
 #endif
 #include "spdlog/common.h"
-#include "spdlog/fmt/bundled/format.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/ostream_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
@@ -196,9 +195,9 @@ void Logger::addWarningMetrics()
       if (message_counters_[i][j] > 0
           && message_levels_[i][j] == spdlog::level::warn) {
         warning_type_cnt++;
-        log_metric(
-            fmt::format("flow__warnings__count:{}-{}", tool_names_[i], j),
-            std::to_string(message_counters_[i][j]));
+        std::ostringstream metric_name;
+        metric_name << "flow__warnings__count:" << tool_names_[i] << "-" << j;
+        log_metric(metric_name.str(), std::to_string(message_counters_[i][j]));
       }
     }
   }
