@@ -158,6 +158,9 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
 
     for (odb::dbITerm* sinkIterm : driverNet->getITerms()) {
       if (sinkIterm->getIoType() == odb::dbIoType::INPUT) {
+        if (!propagateClock(sinkIterm)) {
+          continue;
+        }
         int sinkId = graph_.size();
         odb::dbInst* sinkInst = sinkIterm->getInst();
         std::string sinkName = sinkInst->getName();
@@ -197,7 +200,7 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
                 }
               }
             }
-
+            worseDelay_ = std::max(worseDelay_, (arrival + insDelay));
             graph_[sinkId].arrival = arrival + insDelay;
             debugPrint(logger_,
                        CTS,
@@ -288,7 +291,10 @@ float LatencyBalancer::computeAveSinkArrivals(TreeBuilder* builder)
     odb::dbITerm* iterm = sink.getDbInputPin();
     computeSinkArrivalRecur(topInputClockNet, iterm, sumArrivals, numSinks);
   });
-  float aveArrival = sumArrivals / (float) numSinks;
+  float aveArrival = 0.0;
+  if(numSinks) {
+    aveArrival = sumArrivals / (float) numSinks;
+  }
   builder->setAveSinkArrival(aveArrival);
   debugPrint(logger_,
              CTS,
