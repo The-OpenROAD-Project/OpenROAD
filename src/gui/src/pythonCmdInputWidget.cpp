@@ -30,6 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+// Clang-tidy doesn't understand that Python.h is a super-header and you should
+// not include sub-headers.
+// NOLINTBEGIN(misc-include-cleaner)
+
 // clang-format off
 // Python.h must come first to avoid conflict with Qt
 #define PY_SSIZE_T_CLEAN
@@ -350,3 +354,5 @@ void PythonCmdInputWidget::init()
 }
 
 }  // namespace gui
+
+// NOLINTEND(misc-include-cleaner)
