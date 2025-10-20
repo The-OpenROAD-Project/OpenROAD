@@ -5,7 +5,7 @@ set tech [odb::dbTech_create $db "tech"]
 
 read_3dbx "data/example.3dbx"
 set out_3dbx [make_result_file "write_3dbx.dbx"]
-set 3dbx_write_result [odb::write_dbx $lib $out_3dbx]
+set 3dbx_write_result [odb::write_dbx $out_3dbx]
 if { $3dbx_write_result != 1 } {
   puts "FAIL: dbv write error"
   exit 1
