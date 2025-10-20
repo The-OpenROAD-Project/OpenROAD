@@ -85,6 +85,7 @@ void RepairSetup::init()
 bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const double repair_tns_end_percent,
                               const int max_passes,
+                              int max_iterations,
                               const int max_repairs_per_pass,
                               const bool verbose,
                               const std::vector<MoveType>& sequence,
@@ -448,6 +449,9 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         end = worst_vertex;
       }
       pass++;
+      if (max_iterations > 0 && opto_iteration >= max_iterations) {
+        break;
+      }
     }  // while pass <= max_passes
     if (verbose || opto_iteration == 1) {
       printProgress(opto_iteration, true, false, false, num_viols);
@@ -457,6 +461,9 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out of setup fixing"
                  "due to no TNS progress for two opto cycles");
       // clang-format on
+      break;
+    }
+    if (max_iterations > 0 && opto_iteration >= max_iterations) {
       break;
     }
   }  // for each violating endpoint
@@ -473,7 +480,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                       skip_vt_swap);
     params.iteration = opto_iteration;
     params.initial_tns = initial_tns;
-    repairSetupLastGasp(params, num_viols);
+    repairSetupLastGasp(params, num_viols, max_iterations);
   }
 
   if (!skip_crit_vt_swap && !skip_vt_swap
@@ -865,7 +872,9 @@ bool RepairSetup::terminateProgress(const int iteration,
 
 // Perform some last fixing based on sizing only.
 // This is a greedy opto that does not degrade WNS or TNS.
-void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
+void RepairSetup::repairSetupLastGasp(const OptoParams& params,
+                                      int& num_viols,
+                                      int max_iterations)
 {
   move_sequence.clear();
   if (!params.skip_vt_swap) {
@@ -926,6 +935,10 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
   float fix_rate_threshold = inc_fix_rate_threshold_;
 
   for (const auto& end_original_slack : violating_ends) {
+    if (max_iterations > 0 && opto_iteration >= max_iterations) {
+      break;
+    }
+
     fallback_ = false;
     Vertex* end = end_original_slack.first;
     Slack end_slack = sta_->vertexSlack(end, max_);
@@ -1015,6 +1028,9 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
         end = worst_vertex;
       }
       pass++;
+      if (max_iterations > 0 && opto_iteration >= max_iterations) {
+        break;
+      }
     }  // while pass <= max_last_gasp_passes_
     if (params.verbose || opto_iteration == 1) {
       printProgress(opto_iteration, true, false, true, num_viols);
