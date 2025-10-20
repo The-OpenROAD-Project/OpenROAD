@@ -64,16 +64,6 @@ using BnetSeq = BufferedNetSeq;
 using BnetPtr = BufferedNetPtr;
 using BnetMetrics = BufferedNet::Metrics;
 
-// from Rebuffer.cc
-void characterizeChoiceTree(dbNetwork* nwk,
-                            int level,
-                            const BufferedNetPtr& choice,
-                            int& buffer_count,
-                            int& load_count,
-                            int& wire_count,
-                            int& junction_count,
-                            std::set<odb::dbModule*>& load_modules);
-
 // Template magic to make it easier to write algorithms descending
 // over the buffer tree in the form of lambdas; it allows recursive
 // lambda calling and it keeps track of the level number which is important
@@ -1769,79 +1759,6 @@ std::vector<Instance*> Rebuffer::collectImportedTreeBufferInstances(
   }
 
   return insts;
-}
-
-void characterizeChoiceTree(dbNetwork* nwk,
-                            int level,
-                            const BufferedNetPtr& choice,
-                            int& buffer_count,
-                            int& load_count,
-                            int& wire_count,
-                            int& junction_count,
-                            std::set<odb::dbModule*>& load_modules)
-{
-  switch (choice->type()) {
-    case BufferedNetType::buffer: {
-      buffer_count++;
-      characterizeChoiceTree(nwk,
-                             level + 1,
-                             choice->ref(),
-                             buffer_count,
-                             load_count,
-                             wire_count,
-                             junction_count,
-                             load_modules);
-      break;
-    }
-    case BufferedNetType::wire: {
-      wire_count++;
-      characterizeChoiceTree(nwk,
-                             level + 1,
-                             choice->ref(),
-                             buffer_count,
-                             load_count,
-                             wire_count,
-                             junction_count,
-                             load_modules);
-      break;
-    }
-    case BufferedNetType::junction: {
-      junction_count++;
-      characterizeChoiceTree(nwk,
-                             level + 1,
-                             choice->ref(),
-                             buffer_count,
-                             load_count,
-                             wire_count,
-                             junction_count,
-                             load_modules);
-      characterizeChoiceTree(nwk,
-                             level + 1,
-                             choice->ref2(),
-                             buffer_count,
-                             load_count,
-                             wire_count,
-                             junction_count,
-                             load_modules);
-      break;
-    }
-    case BufferedNetType::load: {
-      const Pin* load_pin = choice->loadPin();
-      odb::dbITerm* load_iterm = nullptr;
-      odb::dbBTerm* load_bterm = nullptr;
-      odb::dbModITerm* load_moditerm = nullptr;
-
-      nwk->staToDb(load_pin, load_iterm, load_bterm, load_moditerm);
-      if (load_iterm) {
-        dbInst* load_inst = load_iterm->getInst();
-        if (load_inst) {
-          load_modules.insert(load_inst->getModule());
-        }
-      }
-      load_count++;
-      break;
-    }
-  }
 }
 
 // Martin (2024-04-18): This is copied over from original RepairSetup
