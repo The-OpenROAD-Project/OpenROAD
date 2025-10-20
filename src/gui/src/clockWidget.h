@@ -30,9 +30,11 @@
 #include <variant>
 #include <vector>
 
+#include "db_sta/dbNetwork.hh"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "sta/Delay.hh"
+#include "sta/NetworkClass.hh"
 #include "staGuiInterface.h"
 
 namespace sta {

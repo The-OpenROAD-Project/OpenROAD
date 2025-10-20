@@ -35,6 +35,7 @@
 
 #include "defiMisc.h"
 #include "defiMisc.hpp"
+#include "defiTypedefs.h"
 
 union udefiPoints
 {
