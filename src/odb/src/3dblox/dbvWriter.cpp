@@ -78,7 +78,7 @@ void DbvWriter::writeChipletInternal(YAML::Node& chiplet_node,
       = chiplet->getThickness() / (double) db->getDbuPerMicron();
   chiplet_node["shrink"] = chiplet->getShrink();
   chiplet_node["tsv"] = chiplet->isTsv();
-  
+
   // Write cad_layer if enabled
   if (cad_layer) {
     auto offset_x = chiplet->getOffset().getX();

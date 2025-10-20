@@ -104,21 +104,6 @@ void BaseWriter::writeDef(YAML::Node& external_node,
   external_node["DEF_file"] = std::string(chiplet->getName()) + ".def";
 }
 
-// void writeVerilog(YAML::Node& external_node, odb::dbDatabase* db,
-// odb::dbChip* chiplet)
-// {
-//   sta::Network *network = sta::sta()->network();
-//   sta::writeVerilog(filename, false, false, remove_cells, network);
-//   delete remove_cells;
-// }
-
-// void writeLiberty(YAML::Node& external_node, odb::dbDatabase* db,
-// odb::dbChip* chiplet)
-// {
-//   liberty_writer = sta::LibertyWriter(lib, chiplet->getName(), );
-//   liberty_writer.writeLibrary();
-// }
-
 void BaseWriter::logError(const std::string& message)
 {
   if (logger_ != nullptr) {

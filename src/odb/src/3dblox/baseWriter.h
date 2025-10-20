@@ -46,9 +46,6 @@ class BaseWriter
   void writeDef(YAML::Node& external_node,
                 odb::dbDatabase* db,
                 odb::dbChip* chiplet);
-  // void writeVerilog(YAML::Node& external_node, odb::dbDatabase* db,
-  // odb::dbChip* chiplet); void writeLiberty(YAML::Node& external_node,
-  // odb::dbDatabase* db, odb::dbChip* chiplet); Utility methods
   void logError(const std::string& message);
   std::string trim(const std::string& str);
   void writeYamlToFile(const std::string& filename, const YAML::Node& root);
