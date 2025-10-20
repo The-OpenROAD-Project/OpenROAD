@@ -3210,17 +3210,18 @@ PortDirection* dbNetwork::dbToSta(const dbSigType& sig_type,
   if (sig_type == dbSigType::GROUND) {
     return PortDirection::ground();
   }
-  if (io_type == dbIoType::INPUT) {
-    return PortDirection::input();
-  }
-  if (io_type == dbIoType::OUTPUT) {
-    return PortDirection::output();
-  }
-  if (io_type == dbIoType::INOUT) {
-    return PortDirection::bidirect();
-  }
-  if (io_type == dbIoType::FEEDTHRU) {
-    return PortDirection::bidirect();
+  switch (io_type.getValue()) {
+    case dbIoType::INPUT:
+      return PortDirection::input();
+
+    case dbIoType::OUTPUT:
+      return PortDirection::output();
+
+    case dbIoType::INOUT:
+      return PortDirection::bidirect();
+
+    case dbIoType::FEEDTHRU:
+      return PortDirection::bidirect();
   }
   logger_->critical(ORD, 2008, "unknown master term type");
   return PortDirection::bidirect();
