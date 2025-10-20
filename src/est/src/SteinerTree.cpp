@@ -3,6 +3,7 @@
 
 #include "est/SteinerTree.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <string>
