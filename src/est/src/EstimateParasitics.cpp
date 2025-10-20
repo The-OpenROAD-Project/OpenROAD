@@ -620,9 +620,11 @@ void EstimateParasitics::makeWireParasitic(Net* net,
   parasitics->incrCap(n1, wire_cap / 2.0);
 
   // Reduce resistance if the net has NDR with increased width
-  if (db_network_->staToDb(net)->getNonDefaultRule()) {
+  odb::dbTechNonDefaultRule* ndr
+      = db_network_->staToDb(net)->getNonDefaultRule();
+  if (ndr) {
     std::vector<odb::dbTechLayerRule*> layer_rules;
-    db_network_->staToDb(net)->getNonDefaultRule()->getLayerRules(layer_rules);
+    ndr->getLayerRules(layer_rules);
     float ndr_ratio = (float) layer_rules.at(0)->getWidth()
                       / layer_rules.at(0)->getLayer()->getWidth();
     wire_res /= ndr_ratio;
@@ -731,10 +733,11 @@ void EstimateParasitics::estimateWireParasiticSteiner(const Pin* drvr_pin,
           double res = length * wire_res;
 
           // Reduce resistance if the net has NDR with increased width
-          if (db_network_->staToDb(net)->getNonDefaultRule()) {
+          odb::dbTechNonDefaultRule* ndr
+              = db_network_->staToDb(net)->getNonDefaultRule();
+          if (ndr) {
             std::vector<odb::dbTechLayerRule*> layer_rules;
-            db_network_->staToDb(net)->getNonDefaultRule()->getLayerRules(
-                layer_rules);
+            ndr->getLayerRules(layer_rules);
             float ratio = (float) layer_rules.at(0)->getWidth()
                           / layer_rules.at(0)->getLayer()->getWidth();
             res /= ratio;
