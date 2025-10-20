@@ -320,7 +320,7 @@ class Logger
 
   void flushMetrics();
   void finalizeMetrics();
-  // Add new metric for each non-zero warning. It also counts the number of
+  // Add new metrics for non-zero warnings. It also counts the number of
   // unique warning types.
   void addWarningMetrics();
 
