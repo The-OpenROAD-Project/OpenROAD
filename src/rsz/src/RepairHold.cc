@@ -405,7 +405,7 @@ bool RepairHold::repairHold(VertexSeq& ends,
     int pass = 1;
     while (worst_slack < hold_margin && progress && !resizer_->overMaxArea()
            && inserted_buffer_count_ <= max_buffer_count && pass <= max_passes
-           && pass <= max_iterations) {
+           && (max_iterations < 0 || pass <= max_iterations)) {
       if (verbose || pass == 1) {
         printProgress(pass, false, false);
       }
