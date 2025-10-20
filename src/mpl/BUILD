@@ -44,6 +44,7 @@ cc_library(
         "//src/par",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "@boost.polygon",
         "@boost.random",
     ],
 )

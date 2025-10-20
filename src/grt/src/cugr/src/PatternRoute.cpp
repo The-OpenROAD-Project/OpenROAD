@@ -21,6 +21,7 @@
 #include "geo.h"
 #include "robin_hood.h"
 #include "stt/SteinerTreeBuilder.h"
+#include "utl/Logger.h"
 
 namespace grt {
 
