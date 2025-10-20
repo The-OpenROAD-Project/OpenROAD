@@ -1104,10 +1104,10 @@ void PlacerBase::initInstsForUnusableSites()
   // Initialize siteGrid as Row (all sites are placeable by default)
   //
   std::vector<SiteInfo> siteGrid(siteCountX * siteCountY, SiteInfo::Row);
+  
 
   // Mark blockage areas as Blocked so that their sites will be blocked.
   for (dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
-    log_->report("Processing blockage!");
     dbInst* inst = blockage->getInstance();
     if (inst && !inst->isFixed()) {
       std::string msg
