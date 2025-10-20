@@ -6,6 +6,7 @@
 #include <odb/dbSet.h>
 
 #include <cstddef>
+#include <cstring>
 #include <fstream>
 #include <map>
 #include <memory>
@@ -368,9 +369,12 @@ void Verilog2db::makeDbModule(
   if (parent == nullptr) {
     module = block_->getTopModule();
   } else {
+    const char* name = network_->name(cell);
     // This uniquifies the cell
-    module = dbModule::makeUniqueDbModule(
-        network_->name(cell), network_->name(inst), block_);
+    module = dbModule::makeUniqueDbModule(name, network_->name(inst), block_);
+    if (strcmp(name, module->getName()) != 0) {
+      odb::dbStringProperty::create(module, "original_name", name);
+    }
 
     registerHierModule(module);
 
