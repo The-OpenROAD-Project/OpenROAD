@@ -46,6 +46,7 @@ class RepairHold : public sta::dbStaState
                   // Max buffer count as percent of design instance count.
                   float max_buffer_percent,
                   int max_passes,
+                  int max_iterations,
                   bool verbose);
   void repairHold(const Pin* end_pin,
                   double setup_margin,
@@ -84,6 +85,7 @@ class RepairHold : public sta::dbStaState
                   bool allow_setup_violations,
                   int max_buffer_count,
                   int max_passes,
+                  int max_iterations,
                   bool verbose);
   void repairHoldPass(VertexSeq& hold_failures,
                       LibertyCell* buffer_cell,

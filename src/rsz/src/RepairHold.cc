@@ -71,6 +71,7 @@ bool RepairHold::repairHold(
     // Max buffer count as percent of design instance count.
     const float max_buffer_percent,
     const int max_passes,
+    int max_iterations,
     const bool verbose)
 {
   bool repaired = false;
@@ -100,6 +101,7 @@ bool RepairHold::repairHold(
                           allow_setup_violations,
                           max_buffer_count,
                           max_passes,
+                          max_iterations,
                           verbose);
   }
 
@@ -134,6 +136,8 @@ void RepairHold::repairHold(const Pin* end_pin,
                hold_margin,
                allow_setup_violations,
                max_buffer_count,
+               max_passes,
+               // set max_iterations to max_passes for testing
                max_passes,
                false);
   }
@@ -382,6 +386,7 @@ bool RepairHold::repairHold(VertexSeq& ends,
                             const bool allow_setup_violations,
                             const int max_buffer_count,
                             const int max_passes,
+                            int max_iterations,
                             const bool verbose)
 {
   bool repaired = false;
@@ -399,8 +404,8 @@ bool RepairHold::repairHold(VertexSeq& ends,
     printProgress(0, true, false);
     int pass = 1;
     while (worst_slack < hold_margin && progress && !resizer_->overMaxArea()
-           && inserted_buffer_count_ <= max_buffer_count
-           && pass <= max_passes) {
+           && inserted_buffer_count_ <= max_buffer_count && pass <= max_passes
+           && pass <= max_iterations) {
       if (verbose || pass == 1) {
         printProgress(pass, false, false);
       }
