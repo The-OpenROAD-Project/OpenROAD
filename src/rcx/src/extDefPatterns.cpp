@@ -1307,7 +1307,7 @@ dbTechLayerRule* extRulesPat::GetRule(int routingLayer, int width)
     return nullptr;
   fprintf(stdout, " NewRule %s,layer=%d width=%d\n", rule_name, routingLayer,
 width); fflush(stdout);
-  // rule->getImpl()->getLogger()->info(utl::ODB,
+  // rule->getImpl()->getLogger()->info(utl::RCX,
   //                                    273,
   //                                    "Create ND RULE {} for layer/width
 {},{}",
