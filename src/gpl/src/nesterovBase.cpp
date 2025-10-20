@@ -1685,7 +1685,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   log_->info(GPL,
              33,
              "Initializing Nesterov region: {}",
-             pb_->group() ? pb_->group()->getName() : "No region");
+             pb_->group() ? pb_->group()->getName() : "Top-level");
 
   // Set a fixed seed
   srand(42);
@@ -1756,28 +1756,8 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
 
   bg_.setPlacerBase(pb_);
   bg_.setLogger(log_);
-  if (pb_->group()) {
-    // Use group region boundaries
-    auto boundaries = pb_->group()->getRegion()->getBoundaries();
-    if (!boundaries.empty()) {
-      odb::Rect bbox;
-      bbox.mergeInit();
-      for (auto boundary : boundaries) {
-        bbox.merge(boundary->getBox());
-      }
-      bg_.setRegionPoints(bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
-    } else {
-      bg_.setRegionPoints(pb_->getDie().coreLx(),
-                          pb_->getDie().coreLy(),
-                          pb_->getDie().coreUx(),
-                          pb_->getDie().coreUy());
-    }
-  } else {
-    bg_.setRegionPoints(pb_->getDie().coreLx(),
-                        pb_->getDie().coreLy(),
-                        pb_->getDie().coreUx(),
-                        pb_->getDie().coreUy());
-  }
+  const odb::Rect& region_bbox = pb_->getRegionBBox();
+  bg_.setRegionPoints(region_bbox.xMin(), region_bbox.yMin(), region_bbox.xMax(), region_bbox.yMax());
   bg_.setTargetDensity(targetDensity_);
 
   // update binGrid info
@@ -1990,14 +1970,21 @@ void NesterovBase::initFillerGCells()
     auto randX = randVal();
     auto randY = randVal();
 
+    // Use group region bounding box
+    const odb::Rect& region_bbox = pb_->getRegionBBox();
+    int region_dx = region_bbox.dx();
+    int region_dy = region_bbox.dy();
+    int region_lx = region_bbox.xMin();
+    int region_ly = region_bbox.yMin();
+
     // place filler cells on random coordi and
     // set size as avgDx and avgDy
-    GCell myGCell(randX % pb_->getDie().coreDx() + pb_->getDie().coreLx(),
-                  randY % pb_->getDie().coreDy() + pb_->getDie().coreLy(),
+    GCell filler_gcell(randX % region_dx + region_lx,
+                  randY % region_dy + region_ly,
                   fillerDx_,
                   fillerDy_);
 
-    fillerStor_.push_back(myGCell);
+    fillerStor_.push_back(filler_gcell);
   }
   // totalFillerArea_ = fillerStor_.size() * getFillerCellArea();
   initial_filler_area_ = totalFillerArea_;

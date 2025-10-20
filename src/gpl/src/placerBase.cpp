@@ -995,12 +995,20 @@ void PlacerBase::init()
 {
   die_ = pbCommon_->getDie();
   if (group_ != nullptr) {
-    region_area_ = 0;
     auto boundaries = group_->getRegion()->getBoundaries();
-    for (auto boundary : boundaries) {
-      region_area_ += boundary->getBox().area();
+    
+    if (!boundaries.empty()) {
+      region_bbox_.mergeInit();
+      for (auto boundary : boundaries) {
+        region_bbox_.merge(boundary->getBox());
+      }
+      region_area_ = region_bbox_.area();
+    } else {
+      region_bbox_ = odb::Rect(die_.coreLx(), die_.coreLy(), die_.coreUx(), die_.coreUy());
+      region_area_ = die_.coreArea();
     }
   } else {
+    region_bbox_ = odb::Rect(die_.coreLx(), die_.coreLy(), die_.coreUx(), die_.coreUy());
     region_area_ = die_.coreArea();
   }
 
@@ -1237,19 +1245,9 @@ void PlacerBase::printInfo() const
              block->dbuToMicrons(die_.coreLy()),
              block->dbuToMicrons(die_.coreUx()),
              block->dbuToMicrons(die_.coreUy()));
-  int64_t region_area;
-  if (group_ != nullptr) {
-    region_area = 0;
-    auto boundaries = group_->getRegion()->getBoundaries();
-    for (auto boundary : boundaries) {
-      region_area += boundary->getBox().area();
-    }
-  } else {
-    region_area = die_.coreArea();
-  }
 
   float util = static_cast<float>(placeInstsArea_)
-               / (region_area - nonPlaceInstsArea_) * 100;
+               / (region_area_ - nonPlaceInstsArea_) * 100;
 
   log_->info(GPL,
              16,
