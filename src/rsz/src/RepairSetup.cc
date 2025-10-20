@@ -85,7 +85,7 @@ void RepairSetup::init()
 bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const double repair_tns_end_percent,
                               const int max_passes,
-                              int max_iterations,
+                              const int max_iterations,
                               const int max_repairs_per_pass,
                               const bool verbose,
                               const std::vector<MoveType>& sequence,
@@ -874,7 +874,7 @@ bool RepairSetup::terminateProgress(const int iteration,
 // This is a greedy opto that does not degrade WNS or TNS.
 void RepairSetup::repairSetupLastGasp(const OptoParams& params,
                                       int& num_viols,
-                                      int max_iterations)
+                                      const int max_iterations)
 {
   move_sequence.clear();
   if (!params.skip_vt_swap) {

@@ -71,7 +71,7 @@ bool RepairHold::repairHold(
     // Max buffer count as percent of design instance count.
     const float max_buffer_percent,
     const int max_passes,
-    int max_iterations,
+    const int max_iterations,
     const bool verbose)
 {
   bool repaired = false;
@@ -386,7 +386,7 @@ bool RepairHold::repairHold(VertexSeq& ends,
                             const bool allow_setup_violations,
                             const int max_buffer_count,
                             const int max_passes,
-                            int max_iterations,
+                            const int max_iterations,
                             const bool verbose)
 {
   bool repaired = false;
