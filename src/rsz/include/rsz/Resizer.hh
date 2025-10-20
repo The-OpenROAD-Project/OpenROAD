@@ -276,6 +276,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool repairSetup(double setup_margin,
                    double repair_tns_end_percent,
                    int max_passes,
+                   int max_iterations,
                    int max_repairs_per_pass,
                    bool match_cell_footprint,
                    bool verbose,
@@ -304,6 +305,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                   // Max buffer count as percent of design instance count.
                   float max_buffer_percent,
                   int max_passes,
+                  int max_iterations,
                   bool match_cell_footprint,
                   bool verbose);
   void repairHold(const Pin* end_pin,
