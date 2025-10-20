@@ -9,18 +9,18 @@ worst slack min -3.24
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
         0 |       0 |       0 |            0 |    +0.0% |  -3.235 |  -6.187 | r3/D
-    final |       0 |       4 |            0 |   +46.7% |   0.418 |   0.000 | r3/D
+    final |       0 |       6 |            0 |   +40.0% |   0.212 |   0.000 | r3/D
 --------------------------------------------------------------------------------------
-[INFO RSZ-0032] Inserted 4 hold buffers.
+[INFO RSZ-0032] Inserted 6 hold buffers.
 Repair timing output passed/skipped equivalence test
-worst slack min 0.42
+worst slack min 0.21
 Placement Analysis
 ---------------------------------
-total displacement          5.4 u
-average displacement        0.2 u
-max displacement            1.0 u
-original HPWL            6878.7 u
-legalized HPWL           6876.1 u
+total displacement          8.7 u
+average displacement        0.4 u
+max displacement            3.2 u
+original HPWL            6886.7 u
+legalized HPWL           6887.7 u
 delta HPWL                    0 %
 
-worst slack min 0.77
+worst slack min 0.22
