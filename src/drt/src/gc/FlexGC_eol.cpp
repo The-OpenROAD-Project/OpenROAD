@@ -17,6 +17,8 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
+using odb::dbTechLayerType;
+
 namespace drt {
 
 bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_isEolEdge(

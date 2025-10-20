@@ -1364,6 +1364,12 @@ std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins() const
 
 const sta::ClockSet* TimingControlsDialog::getClocks()
 {
+  if (clock_box_->isAllSelected()) {
+    // returns nullptr if all clocks are selected,
+    // so the STA doesn't need to filter by clock
+    return nullptr;
+  }
+
   selected_clocks_.clear();
   for (const auto& clk_name : clock_box_->selectedItems()) {
     selected_clocks_.insert(qstring_to_clk_[clk_name]);

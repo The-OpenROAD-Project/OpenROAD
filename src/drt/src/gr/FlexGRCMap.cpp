@@ -16,6 +16,8 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
+using odb::dbTechLayerType;
+
 namespace drt {
 
 void FlexGRCMap::initFrom3D(FlexGRCMap* cmap3D)
@@ -323,7 +325,8 @@ unsigned FlexGRCMap::getNumBlkTracks(
   for (auto& [box, obj] : results) {
     actBloatDist = bloatDist;
     if (obj->typeId() == frcInstTerm) {
-      dbSigType sigType = static_cast<frInstTerm*>(obj)->getTerm()->getType();
+      odb::dbSigType sigType
+          = static_cast<frInstTerm*>(obj)->getTerm()->getType();
       if (sigType.isSupply()) {
         actBloatDist = calcBloatDist(obj, lNum, box, false);
       }

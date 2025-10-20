@@ -1439,7 +1439,7 @@ uint extDistWidthRCTable::readRulesUnder(Ath__parser* parser,
   }
   return cnt;
 }
-uint extRCModel::calcMinMaxRC(dbTech* tech, const char* out_file)
+uint extRCModel::calcMinMaxRC(odb::dbTech* tech, const char* out_file)
 {
   dbSet<odb::dbTechLayer> layers = tech->getLayers();
   dbSet<odb::dbTechLayer>::iterator itr;
@@ -1562,7 +1562,7 @@ void extMain::addItermShapesOnPlanes(dbInst* inst,
                                      const bool swap_coords)
 {
   for (odb::dbITerm* iterm : inst->getITerms()) {
-    dbShape s;
+    odb::dbShape s;
     dbITermShapeItr term_shapes;
     for (term_shapes.begin(iterm); term_shapes.next(s);) {
       if (s.isVia()) {
@@ -1580,7 +1580,7 @@ void extMain::addItermShapesOnPlanes(dbInst* inst,
   }
 }
 
-void extMain::addShapeOnGs(dbShape* s, const bool swap_coords)
+void extMain::addShapeOnGs(odb::dbShape* s, const bool swap_coords)
 {
   const int level = s->getTechLayer()->getRoutingLevel();
 
@@ -1596,7 +1596,7 @@ void extMain::addObsShapesOnPlanes(dbInst* inst,
                                    const bool swap_coords)
 {
   dbInstShapeItr obs_shapes;
-  dbShape s;
+  odb::dbShape s;
 
   for (obs_shapes.begin(inst, dbInstShapeItr::OBSTRUCTIONS);
        obs_shapes.next(s);) {

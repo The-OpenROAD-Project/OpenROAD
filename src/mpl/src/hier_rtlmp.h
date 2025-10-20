@@ -177,13 +177,14 @@ class HierRTLMP
   void adjustMacroBlockageWeight();
   void placeChildren(Cluster* parent, bool ignore_std_cell_area = false);
 
-  void findBlockagesWithinOutline(std::vector<Rect>& macro_blockages,
-                                  std::vector<Rect>& placement_blockages,
-                                  const Rect& outline) const;
+  std::vector<Rect> findBlockagesWithinOutline(const Rect& outline) const;
   void getBlockageRegionWithinOutline(
       std::vector<Rect>& blockages_within_outline,
       const Rect& blockage,
       const Rect& outline) const;
+  void eliminateOverlaps(std::vector<Rect>& blockages) const;
+  void createSoftMacrosForBlockages(const std::vector<Rect>& blockages,
+                                    std::vector<SoftMacro>& macros);
   void createFixedTerminals(Cluster* parent,
                             std::map<std::string, int>& soft_macro_id_map,
                             std::vector<SoftMacro>& soft_macros);

@@ -55,6 +55,8 @@
 #include "utl/ScopedTemporaryFile.h"
 #include "utl/exception.h"
 
+using odb::dbTechLayerType;
+
 BOOST_CLASS_EXPORT(drt::RoutingJobDescription)
 
 namespace drt {

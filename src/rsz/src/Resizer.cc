@@ -4354,6 +4354,7 @@ void Resizer::cloneClkInverter(Instance* inv)
 bool Resizer::repairSetup(double setup_margin,
                           double repair_tns_end_percent,
                           int max_passes,
+                          int max_iterations,
                           int max_repairs_per_pass,
                           bool match_cell_footprint,
                           bool verbose,
@@ -4379,6 +4380,7 @@ bool Resizer::repairSetup(double setup_margin,
   return repair_setup_->repairSetup(setup_margin,
                                     repair_tns_end_percent,
                                     max_passes,
+                                    max_iterations,
                                     max_repairs_per_pass,
                                     verbose,
                                     sequence,
@@ -4419,6 +4421,7 @@ bool Resizer::repairHold(
     // Max buffer count as percent of design instance count.
     float max_buffer_percent,
     int max_passes,
+    int max_iterations,
     bool match_cell_footprint,
     bool verbose)
 {
@@ -4445,6 +4448,7 @@ bool Resizer::repairHold(
                                   allow_setup_violations,
                                   max_buffer_percent,
                                   max_passes,
+                                  max_iterations,
                                   verbose);
 }
 

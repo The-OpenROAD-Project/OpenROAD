@@ -3,6 +3,7 @@
 
 #include <cstdio>
 
+#include "odb/db.h"
 #include "odb/dbSet.h"
 #include "parse.h"
 #include "rcx/extRCap.h"

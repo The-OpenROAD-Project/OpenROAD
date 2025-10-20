@@ -22,6 +22,7 @@
 #include "utl/exception.h"
 
 using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
 
 namespace drt {
 

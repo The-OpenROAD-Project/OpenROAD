@@ -6,16 +6,16 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "sta/Network.hh"
 
 namespace est {
 
 class EstimateParasitics;
 
-using odb::dbBlockCallBackObj;
 using sta::dbNetwork;
 using sta::Network;
 
-class OdbCallBack : public dbBlockCallBackObj
+class OdbCallBack : public odb::dbBlockCallBackObj
 {
  public:
   OdbCallBack(EstimateParasitics* estimate_parasitics,

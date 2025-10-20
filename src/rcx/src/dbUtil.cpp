@@ -19,8 +19,6 @@
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
-namespace rcx {
-
 using odb::dbBPin;
 using odb::dbIoType;
 using odb::dbPlacementStatus;
@@ -36,6 +34,8 @@ using odb::dbWireShapeType;
 using odb::dbWireType;
 using odb::Point;
 using utl::ODB;
+
+namespace rcx {
 
 dbCreateNetUtil::dbCreateNetUtil(utl::Logger* logger)
     : _tech(nullptr),
@@ -110,23 +110,23 @@ void dbCreateNetUtil::setBlock(odb::dbBlock* block, bool skipInit)
   }
 
   // Build mapping table to rule widths
-  dbSet<dbTechNonDefaultRule> nd_rules = _tech->getNonDefaultRules();
-  dbSet<dbTechNonDefaultRule>::iterator nditr;
-  // dbTechNonDefaultRule  *wdth_rule = nullptr;
+  dbSet<odb::dbTechNonDefaultRule> nd_rules = _tech->getNonDefaultRules();
+  dbSet<odb::dbTechNonDefaultRule>::iterator nditr;
+  // odb::dbTechNonDefaultRule  *wdth_rule = nullptr;
 
   for (nditr = nd_rules.begin(); nditr != nd_rules.end(); ++nditr) {
-    dbTechNonDefaultRule* nd_rule = *nditr;
-    std::vector<dbTechLayerRule*> layer_rules;
+    odb::dbTechNonDefaultRule* nd_rule = *nditr;
+    std::vector<odb::dbTechLayerRule*> layer_rules;
     nd_rule->getLayerRules(layer_rules);
-    std::vector<dbTechLayerRule*>::iterator lritr;
+    std::vector<odb::dbTechLayerRule*>::iterator lritr;
 
     for (lritr = layer_rules.begin(); lritr != layer_rules.end(); ++lritr) {
-      dbTechLayerRule* rule = *lritr;
+      odb::dbTechLayerRule* rule = *lritr;
 
       int rlevel = rule->getLayer()->getRoutingLevel();
 
       if (rlevel > 0) {
-        dbTechLayerRule*& r = _rules[rlevel][rule->getWidth()];
+        odb::dbTechLayerRule*& r = _rules[rlevel][rule->getWidth()];
 
         if (r == nullptr) {  // Don't overide any existing rule.
           r = rule;
@@ -138,11 +138,11 @@ void dbCreateNetUtil::setBlock(odb::dbBlock* block, bool skipInit)
   _vias.clear();
   _vias.resize(layerCount + 1, layerCount + 1);
 
-  dbSet<dbTechVia> vias = _tech->getVias();
-  dbSet<dbTechVia>::iterator vitr;
+  dbSet<odb::dbTechVia> vias = _tech->getVias();
+  dbSet<odb::dbTechVia>::iterator vitr;
 
   for (vitr = vias.begin(); vitr != vias.end(); ++vitr) {
-    dbTechVia* via = *vitr;
+    odb::dbTechVia* via = *vitr;
     odb::dbTechLayer* bot = via->getBottomLayer();
     odb::dbTechLayer* top = via->getTopLayer();
 
@@ -157,21 +157,21 @@ void dbCreateNetUtil::setBlock(odb::dbBlock* block, bool skipInit)
   }
 }
 
-dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
+odb::dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
 {
-  dbTechLayerRule*& rule = _rules[routingLayer][width];
+  odb::dbTechLayerRule*& rule = _rules[routingLayer][width];
 
   if (rule != nullptr) {
     return rule;
   }
 
   // Create a non-default-rule for this width
-  dbTechNonDefaultRule* nd_rule = nullptr;
+  odb::dbTechNonDefaultRule* nd_rule = nullptr;
   char rule_name[64];
 
   while (_ruleNameHint >= 0) {
     snprintf(rule_name, 64, "ADS_ND_%d", _ruleNameHint++);
-    nd_rule = dbTechNonDefaultRule::create(_tech, rule_name);
+    nd_rule = odb::dbTechNonDefaultRule::create(_tech, rule_name);
 
     if (nd_rule) {
       break;
@@ -192,26 +192,27 @@ dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
     odb::dbTechLayer* layer = _routingLayers[i];
 
     if (layer != nullptr) {
-      dbTechLayerRule* lr = dbTechLayerRule::create(nd_rule, layer);
+      odb::dbTechLayerRule* lr = odb::dbTechLayerRule::create(nd_rule, layer);
       lr->setWidth(width);
       lr->setSpacing(layer->getSpacing());
 
-      dbTechLayerRule*& r = _rules[i][width];
+      odb::dbTechLayerRule*& r = _rules[i][width];
       if (r == nullptr) {
         r = lr;
       }
     }
   }
 
-  // dbTechVia  *curly_via;
-  dbSet<dbTechVia> all_vias = _tech->getVias();
-  dbSet<dbTechVia>::iterator viter;
+  // odb::dbTechVia  *curly_via;
+  dbSet<odb::dbTechVia> all_vias = _tech->getVias();
+  dbSet<odb::dbTechVia>::iterator viter;
   std::string nd_via_name;
   for (viter = all_vias.begin(); viter != all_vias.end(); ++viter) {
     if (((*viter)->getNonDefaultRule() == nullptr) && ((*viter)->isDefault())) {
       nd_via_name = std::string(rule_name) + std::string("_")
                     + std::string((*viter)->getName());
-      // curly_via = dbTechVia::clone(nd_rule, (*viter), nd_via_name.c_str());
+      // curly_via = odb::dbTechVia::clone(nd_rule, (*viter),
+      // nd_via_name.c_str());
     }
   }
 
@@ -219,7 +220,7 @@ dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
   return rule;
 }
 
-dbTechVia* dbCreateNetUtil::getVia(int l1, int l2, odb::Rect& bbox)
+odb::dbTechVia* dbCreateNetUtil::getVia(int l1, int l2, odb::Rect& bbox)
 {
   int bot, top;
 
@@ -234,12 +235,12 @@ dbTechVia* dbCreateNetUtil::getVia(int l1, int l2, odb::Rect& bbox)
   uint dx = bbox.dx();
   uint dy = bbox.dy();
 
-  dbTechVia* def = nullptr;
-  std::vector<dbTechVia*>& vias = _vias(bot, top);
-  std::vector<dbTechVia*>::iterator itr;
+  odb::dbTechVia* def = nullptr;
+  std::vector<odb::dbTechVia*>& vias = _vias(bot, top);
+  std::vector<odb::dbTechVia*>::iterator itr;
 
   for (itr = vias.begin(); itr != vias.end(); ++itr) {
-    dbTechVia* via = *itr;
+    odb::dbTechVia* via = *itr;
 
     if (via->isDefault()) {
       def = via;
@@ -365,7 +366,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
     }
   }
 
-  dbTechLayerRule* rule = nullptr;
+  odb::dbTechLayerRule* rule = nullptr;
   if ((int) layer->getWidth() != width) {
     rule = getRule(routingLayer, width);
   }
@@ -395,10 +396,10 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
   return net;
 }
-dbSBox* dbCreateNetUtil::createSpecialWire(odb::dbNet* mainNet,
-                                           odb::Rect& r,
-                                           odb::dbTechLayer* layer,
-                                           uint /* unused: sboxId */)
+odb::dbSBox* dbCreateNetUtil::createSpecialWire(odb::dbNet* mainNet,
+                                                odb::Rect& r,
+                                                odb::dbTechLayer* layer,
+                                                uint /* unused: sboxId */)
 {
   dbSWire* swire = nullptr;
   if (mainNet == nullptr) {
@@ -407,18 +408,18 @@ dbSBox* dbCreateNetUtil::createSpecialWire(odb::dbNet* mainNet,
     swire = mainNet->getFirstSWire();
   }
 
-  return dbSBox::create(swire,
-                        layer,
-                        r.xMin(),
-                        r.yMin(),
-                        r.xMax(),
-                        r.yMax(),
-                        dbWireShapeType::NONE);
+  return odb::dbSBox::create(swire,
+                             layer,
+                             r.xMin(),
+                             r.yMin(),
+                             r.xMax(),
+                             r.yMax(),
+                             dbWireShapeType::NONE);
 
   // MIGHT NOT care abour sboxId!!
 }
 
-uint dbCreateNetUtil::getFirstShape(odb::dbNet* net, dbShape& s)
+uint dbCreateNetUtil::getFirstShape(odb::dbNet* net, odb::dbShape& s)
 {
   dbWirePath path;
   dbWirePathShape pshape;
@@ -441,7 +442,7 @@ bool dbCreateNetUtil::setFirstShapeProperty(odb::dbNet* net, uint prop)
     return false;
   }
 
-  dbShape s;
+  odb::dbShape s;
   uint jid = getFirstShape(net, s);
   net->getWire()->setProperty(jid, prop);
 
@@ -613,7 +614,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
     }
   }
 
-  dbTechLayerRule* rule = nullptr;
+  odb::dbTechLayerRule* rule = nullptr;
   if (layer->getWidth() != width) {
     rule = getRule(routingLayer, width);
   }

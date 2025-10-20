@@ -20,15 +20,6 @@ class Logger;
 
 namespace rcx {
 
-using odb::dbMatrix;
-using odb::dbObject;
-using odb::dbSBox;
-using odb::dbShape;
-using odb::dbTech;
-using odb::dbTechLayerRule;
-using odb::dbTechNonDefaultRule;
-using odb::dbTechVia;
-
 //
 // This class creates a new net along with a wire.
 //
@@ -62,19 +53,19 @@ class dbCreateNetUtil
                                   uint level,
                                   uint netId,
                                   uint shapeId);
-  dbSBox* createSpecialWire(odb::dbNet* mainNet,
-                            odb::Rect& r,
-                            odb::dbTechLayer* layer,
-                            uint sboxId);
+  odb::dbSBox* createSpecialWire(odb::dbNet* mainNet,
+                                 odb::Rect& r,
+                                 odb::dbTechLayer* layer,
+                                 uint sboxId);
   void setCurrentNet(odb::dbNet* net);
   odb::dbInst* createInst(odb::dbInst* inst0);
   std::vector<odb::dbTechLayer*> getRoutingLayer() { return _routingLayers; };
 
  private:
-  uint getFirstShape(odb::dbNet* net, dbShape& s);
+  uint getFirstShape(odb::dbNet* net, odb::dbShape& s);
   bool setFirstShapeProperty(odb::dbNet* net, uint prop);
-  dbTechLayerRule* getRule(int routingLayer, int width);
-  dbTechVia* getVia(int l1, int l2, odb::Rect& bbox);
+  odb::dbTechLayerRule* getRule(int routingLayer, int width);
+  odb::dbTechVia* getVia(int l1, int l2, odb::Rect& bbox);
   std::pair<odb::dbBTerm*, odb::dbBTerm*> createTerms4SingleNet(
       odb::dbNet* net,
       int x1,
@@ -83,13 +74,13 @@ class dbCreateNetUtil
       int y2,
       odb::dbTechLayer* inly);
 
-  using RuleMap = std::map<int, dbTechLayerRule*>;
-  dbTech* _tech;
+  using RuleMap = std::map<int, odb::dbTechLayerRule*>;
+  odb::dbTech* _tech;
   odb::dbBlock* _block;
   std::vector<RuleMap> _rules;
   std::vector<odb::dbTechLayer*> _routingLayers;
   int _ruleNameHint;
-  dbMatrix<std::vector<dbTechVia*>> _vias;
+  odb::dbMatrix<std::vector<odb::dbTechVia*>> _vias;
   bool _milosFormat;
   odb::dbNet* _currentNet;
   odb::dbNet** _mapArray;

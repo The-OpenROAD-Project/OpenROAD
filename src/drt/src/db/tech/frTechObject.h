@@ -244,9 +244,9 @@ class frTechObject
     logger->report("Reporting layer properties.");
     for (auto& layer : layers_) {
       auto type = layer->getType();
-      if (type == dbTechLayerType::CUT) {
+      if (type == odb::dbTechLayerType::CUT) {
         logger->report("Cut layer {}.", layer->getName());
-      } else if (type == dbTechLayerType::ROUTING) {
+      } else if (type == odb::dbTechLayerType::ROUTING) {
         logger->report("Routing layer {}.", layer->getName());
       }
       layer->printAllConstraints(logger);
@@ -257,7 +257,7 @@ class frTechObject
   {
     logger->info(DRT, 167, "List of default vias:");
     for (auto& layer : layers_) {
-      if (layer->getType() == dbTechLayerType::CUT
+      if (layer->getType() == odb::dbTechLayerType::CUT
           && layer->getLayerNum() >= router_cfg->BOTTOM_ROUTING_LAYER) {
         logger->report("  Layer {}", layer->getName());
         if (layer->getDefaultViaDef() != nullptr) {

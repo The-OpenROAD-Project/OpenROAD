@@ -96,6 +96,7 @@ class RepairSetup : public sta::dbStaState
                    // reduce tns (0.0-1.0).
                    double repair_tns_end_percent,
                    int max_passes,
+                   int max_iterations,
                    int max_repairs_per_pass,
                    bool verbose,
                    const std::vector<MoveType>& sequence,
@@ -131,7 +132,9 @@ class RepairSetup : public sta::dbStaState
                          float& fix_rate_threshold,
                          int endpt_index,
                          int num_endpts);
-  void repairSetupLastGasp(const OptoParams& params, int& num_viols);
+  void repairSetupLastGasp(const OptoParams& params,
+                           int& num_viols,
+                           int max_iterations);
   bool swapVTCritCells(const OptoParams& params, int& num_viols);
   void traverseFaninCone(Vertex* endpoint,
                          std::unordered_map<Instance*, float>& crit_insts,

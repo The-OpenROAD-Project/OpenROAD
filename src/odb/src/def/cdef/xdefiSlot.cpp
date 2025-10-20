@@ -38,6 +38,7 @@
 #include "defiMisc.hpp"
 #include "defiSlot.h"
 #include "defiSlot.hpp"
+#include "defiTypedefs.h"
 
 union udefiPoints
 {
