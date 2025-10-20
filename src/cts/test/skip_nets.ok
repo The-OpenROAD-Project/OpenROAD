@@ -149,9 +149,15 @@ CTS config:
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Leaf load cells 18
 [INFO CTS-0033] Balancing latency for clock clk
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_0_clk is inserted at (100608 169407)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_1_clk is inserted at (101216 138954)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_2_clk is inserted at (101824 108501)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_3_clk is inserted at (102432 78048)
-[INFO CTS-0036]  inserted 4 delay buffers
-[INFO CTS-0037] Total number of delay buffers: 4
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_0_clk is inserted at (53554 164304)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_1_clk is inserted at (53513 162428)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_2_clk is inserted at (53472 160552)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_3_clk is inserted at (53431 158676)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_4_clk is inserted at (100434 178107)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_5_clk is inserted at (100868 156355)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_6_clk is inserted at (101302 134603)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_7_clk is inserted at (101737 112851)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_8_clk is inserted at (102171 91099)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_9_clk is inserted at (102605 69347)
+[INFO CTS-0036]  inserted 10 delay buffers
+[INFO CTS-0037] Total number of delay buffers: 10

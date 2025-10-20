@@ -158,7 +158,7 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
 
     for (odb::dbITerm* sinkIterm : driverNet->getITerms()) {
       if (sinkIterm->getIoType() == odb::dbIoType::INPUT) {
-        if (!propagateClock(sinkIterm)) {
+        if (!isSink(sinkIterm) && !propagateClock(sinkIterm)) {
           continue;
         }
         int sinkId = graph_.size();
