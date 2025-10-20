@@ -302,7 +302,7 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
   } else {
     clockBuilder = initClock(driverNet, clkInputNet, sdcClockName, parent);
   }
-  if(clockBuilder != nullptr && net2builder_[clkInputNet] == nullptr) {
+  if (clockBuilder != nullptr && net2builder_[clkInputNet] == nullptr) {
     net2builder_[clkInputNet] = clockBuilder;
   }
   // Treat gated clocks as separate clock trees
@@ -320,9 +320,12 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
           if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()
               && !openSta_->sdc()->isLeafPinClock(
                   network_->dbToSta(outputPin))) {
-            if(clockBuilder == nullptr && net2builder_[clkInputNet] != nullptr) {
-              initOneClockTree(
-                outputNet, clkInputNet, sdcClockName, net2builder_[clkInputNet]);
+            if (clockBuilder == nullptr
+                && net2builder_[clkInputNet] != nullptr) {
+              initOneClockTree(outputNet,
+                               clkInputNet,
+                               sdcClockName,
+                               net2builder_[clkInputNet]);
             } else {
               initOneClockTree(
                   outputNet, clkInputNet, sdcClockName, clockBuilder);

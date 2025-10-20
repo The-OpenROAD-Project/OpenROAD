@@ -292,7 +292,7 @@ float LatencyBalancer::computeAveSinkArrivals(TreeBuilder* builder)
     computeSinkArrivalRecur(topInputClockNet, iterm, sumArrivals, numSinks);
   });
   float aveArrival = 0.0;
-  if(numSinks) {
+  if (numSinks) {
     aveArrival = sumArrivals / (float) numSinks;
   }
   builder->setAveSinkArrival(aveArrival);
