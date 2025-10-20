@@ -113,12 +113,6 @@ void ThreeDBlox::writeDbv(const std::string& dbv_file)
   writer.writeHierarchicalDbv(dbv_file, db_);
 }
 
-// void ThreeDBlox::writeHierarchicalDbv(const std::string& base_filename)
-// {
-//   DbvWriter writer(logger_);
-//   writer.writeHierarchicalDbv(base_filename, db_);
-// }
-
 void ThreeDBlox::writeDbx(const std::string& dbx_file)
 {
   DbxWriter writer(logger_);
