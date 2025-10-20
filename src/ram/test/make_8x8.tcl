@@ -15,16 +15,32 @@ generate_ram_netlist \
 
 ord::design_created
 
-# make_tracks -x_offset 0 -y_offset 0
-# set_io_pin_constraint -direction output -region top:*
-# set_io_pin_constraint -pin_names {D[0] D[1]} -region top:*
-# place_pins -hor_layers met3 -ver_layers met2
-#
-# filler_placement {sky130_fd_sc_hd__fill_1 sky130_fd_sc_hd__fill_2 \
-# 	sky130_fd_sc_hd__fill_4 sky130_fd_sc_hd__fill_8}
+add_global_connection -net VDD -pin_pattern {^VPWR$} -power
+add_global_connection -net VSS -pin_pattern {^VGND$} -ground
+global_connect
+set_voltage_domain -power VDD -ground VSS
+define_pdn_grid -name ram_grid -voltage_domains {CORE}
+add_pdn_stripe -grid ram_grid -layer met1 -followpins -width 0.48
+add_pdn_stripe -grid ram_grid -layer met2 -width 0.48 -pitch 45
+add_pdn_stripe -grid ram_grid -layer met3 -width 0.48 -pitch 20
+add_pdn_connect -layers {met1 met2}
+add_pdn_connect -layers {met2 met3}
+
+pdngen
+
+make_tracks -x_offset 0 -y_offset 0
+set_io_pin_constraint -direction output -region top:*
+set_io_pin_constraint -pin_names {D[*]} -region top:*
+place_pins -hor_layers met3 -ver_layers met2
+
+filler_placement {sky130_fd_sc_hd__fill_1 sky130_fd_sc_hd__fill_2 \
+	sky130_fd_sc_hd__fill_4 sky130_fd_sc_hd__fill_8}
+
+global_route
+detailed_route
 
 set lef_file [make_result_file make_8x8.lef]
-write_lef_abstract $lef_file
+write_abstract_lef $lef_file
 diff_files make_8x8.lefok $lef_file
 
 set def_file [make_result_file make_8x8.def]
