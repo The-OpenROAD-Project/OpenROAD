@@ -417,7 +417,8 @@ void FastRouteCore::preProcessTechLayers()
 odb::dbTechLayer* FastRouteCore::getTechLayer(const int layer,
                                               const bool is_via)
 {
-  return (is_via) ? db_layers_[2 * layer + 1] : db_layers_[2 * layer];
+  return (is_via) ? db_layers_[(2 * layer) + 1]
+                  : db_layers_[(uint64_t) 2 * layer];
 }
 
 // Get wire resistance cost for a specific metal layer
