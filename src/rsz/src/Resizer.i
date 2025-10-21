@@ -362,6 +362,7 @@ bool
 repair_setup(double setup_margin,
              double repair_tns_end_percent,
              int max_passes,
+             int max_iterations,
              int max_repairs_per_pass,
              bool match_cell_footprint,
              bool verbose,
@@ -378,9 +379,9 @@ repair_setup(double setup_margin,
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->repairSetup(setup_margin, repair_tns_end_percent,
-                       max_passes, max_repairs_per_pass,
-                       match_cell_footprint, verbose,
-                       sequence,
+                       max_passes, max_iterations,
+                       max_repairs_per_pass, match_cell_footprint,
+                       verbose, sequence,
                        skip_pin_swap, skip_gate_cloning,
                        skip_size_down,
                        skip_buffering, skip_buffer_removal,
@@ -409,6 +410,7 @@ repair_hold(double setup_margin,
             bool allow_setup_violations,
             float max_buffer_percent,
             int max_passes,
+            int max_iterations,
             bool match_cell_footprint,
             bool verbose)
 {
@@ -417,7 +419,8 @@ repair_hold(double setup_margin,
   return resizer->repairHold(setup_margin, hold_margin,
                       allow_setup_violations,
                       max_buffer_percent, max_passes,
-                      match_cell_footprint, verbose);
+                      max_iterations, match_cell_footprint,
+                      verbose);
 }
 
 void
