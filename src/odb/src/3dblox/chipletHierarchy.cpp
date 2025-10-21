@@ -68,13 +68,9 @@ ChipletHierarchyAnalyzer::buildDependencyGraph(odb::dbDatabase* db)
 {
   std::map<dbChip*, std::set<dbChip*>> dependencies;
 
-  // Initialize all chiplets with empty dependency sets
-  for (auto chiplet : db->getChips()) {
-    dependencies[chiplet] = std::set<dbChip*>();
-  }
-
   // Find dependencies by analyzing chiplet instances
   for (auto chiplet : db->getChips()) {
+    dependencies[chiplet] = std::set<dbChip*>();
     for (auto inst : chiplet->getChipInsts()) {
       auto master_chip = inst->getMasterChip();
       if (master_chip != nullptr) {

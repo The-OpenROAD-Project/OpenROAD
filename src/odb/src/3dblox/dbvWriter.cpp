@@ -27,8 +27,8 @@ void DbvWriter::writeFile(const std::string& filename, odb::dbDatabase* db)
 
 void DbvWriter::writeYamlContent(YAML::Node& root, odb::dbDatabase* db)
 {
-  BaseWriter::writeYamlContent(root, db);
-
+  YAML::Node header_node = root["Header"];
+  writeHeader(header_node, db);
   YAML::Node chiplets_node = root["ChipletDef"];
   writeChipletDefs(chiplets_node, db);
 }
@@ -45,7 +45,6 @@ void DbvWriter::writeChipletInternal(YAML::Node& chiplet_node,
                                      odb::dbChip* chiplet,
                                      odb::dbDatabase* db)
 {
-  bool cad_layer = false;  // TODO: use cad layer
   // Chiplet basic information
   auto chip_type = chiplet->getChipType();
   switch (chip_type) {
@@ -67,73 +66,45 @@ void DbvWriter::writeChipletInternal(YAML::Node& chiplet_node,
     default:
       break;
   }
+  double u = db->getDbuPerMicron();
   auto width = chiplet->getWidth();
   auto height = chiplet->getHeight();
-  YAML::Emitter dim_out;
-  dim_out << YAML::Flow << YAML::BeginSeq
-          << width / (double) db->getDbuPerMicron()
-          << height / (double) db->getDbuPerMicron() << YAML::EndSeq;
-  chiplet_node["design_area"] = YAML::Load(dim_out.c_str());
-  chiplet_node["thickness"]
-      = chiplet->getThickness() / (double) db->getDbuPerMicron();
+  YAML::Node dim_out;
+  dim_out.SetStyle(YAML::EmitterStyle::Flow);
+  dim_out.push_back(width / u);
+  dim_out.push_back(height / u);
+  chiplet_node["design_area"] = dim_out;
+  chiplet_node["thickness"] = chiplet->getThickness() / u;
   chiplet_node["shrink"] = chiplet->getShrink();
   chiplet_node["tsv"] = chiplet->isTsv();
 
-  // Write cad_layer if enabled
-  if (cad_layer) {
-    auto offset_x = chiplet->getOffset().getX();
-    auto offset_y = chiplet->getOffset().getY();
-    YAML::Emitter off_out;
-    off_out << YAML::Flow << YAML::BeginSeq
-            << offset_x / (double) db->getDbuPerMicron()
-            << offset_y / (double) db->getDbuPerMicron() << YAML::EndSeq;
-    chiplet_node["offset"] = YAML::Load(off_out.c_str());
-    YAML::Node cad_layer = chiplet_node["cad_layer"];
+  // Offset
+  auto offset_x = chiplet->getOffset().getX();
+  auto offset_y = chiplet->getOffset().getY();
+  YAML::Node off_out;
+  off_out.SetStyle(YAML::EmitterStyle::Flow);
+  off_out.push_back(offset_x / u);
+  off_out.push_back(offset_y / u);
+  chiplet_node["offset"] = off_out;
 
-    auto seal_ring_west
-        = chiplet->getSealRingWest() / (double) db->getDbuPerMicron();
-    auto scribe_line_west
-        = chiplet->getScribeLineWest() / (double) db->getDbuPerMicron();
+  // Seal Ring
+  YAML::Node sr_out;
+  sr_out.SetStyle(YAML::EmitterStyle::Flow);
+  sr_out.push_back(chiplet->getSealRingWest() / u);
+  sr_out.push_back(chiplet->getSealRingSouth() / u);
+  sr_out.push_back(chiplet->getSealRingEast() / u);
+  sr_out.push_back(chiplet->getSealRingNorth() / u);
+  chiplet_node["seal_ring_width"] = sr_out;
 
-    if (seal_ring_west != -1.0) {
-      auto seal_ring_north
-          = chiplet->getSealRingNorth() / (double) db->getDbuPerMicron();
-      auto seal_ring_east
-          = chiplet->getSealRingEast() / (double) db->getDbuPerMicron();
-      auto seal_ring_south
-          = chiplet->getSealRingSouth() / (double) db->getDbuPerMicron();
-      YAML::Emitter sr_out;
-      sr_out << YAML::Flow << YAML::BeginSeq
-             << chiplet->getSealRingWest() / (double) db->getDbuPerMicron()
-             << chiplet->getSealRingSouth() / (double) db->getDbuPerMicron()
-             << chiplet->getSealRingEast() / (double) db->getDbuPerMicron()
-             << chiplet->getSealRingNorth() / (double) db->getDbuPerMicron()
-             << YAML::EndSeq;
-      YAML::Node layer_id = cad_layer["108;102"];
-      layer_id["type"] = "seal_ring";
-      layer_id["seal_ring_width"] = YAML::Load(sr_out.c_str());
-    } else if (scribe_line_west != -1.0) {
-      auto scribe_line_north
-          = chiplet->getScribeLineNorth() / (double) db->getDbuPerMicron();
-      auto scribe_line_east
-          = chiplet->getScribeLineEast() / (double) db->getDbuPerMicron();
-      auto scribe_line_south
-          = chiplet->getScribeLineSouth() / (double) db->getDbuPerMicron();
-      YAML::Emitter sc_out;
-      sc_out << YAML::Flow << YAML::BeginSeq
-             << chiplet->getScribeLineWest() / (double) db->getDbuPerMicron()
-             << chiplet->getScribeLineSouth() / (double) db->getDbuPerMicron()
-             << chiplet->getScribeLineEast() / (double) db->getDbuPerMicron()
-             << chiplet->getScribeLineNorth() / (double) db->getDbuPerMicron()
-             << YAML::EndSeq;
-      YAML::Node layer_id = cad_layer["108;103"];
-      layer_id["type"] = "scribe_line";
-      layer_id["scribe_line_remaining_width"] = YAML::Load(sc_out.c_str());
-    } else {
-      YAML::Node layer_id = cad_layer["108;101"];
-      layer_id["type"] = "design_area";
-    }
-  }
+  // Scribe Line
+  YAML::Node sl_out;
+  sl_out.SetStyle(YAML::EmitterStyle::Flow);
+  sl_out.push_back(chiplet->getScribeLineWest() / u);
+  sl_out.push_back(chiplet->getScribeLineSouth() / u);
+  sl_out.push_back(chiplet->getScribeLineEast() / u);
+  sl_out.push_back(chiplet->getScribeLineNorth() / u);
+  chiplet_node["scribe_line_remaining_width"] = sl_out;
+
   // External files
   YAML::Node external_node = chiplet_node["external"];
   writeExternal(external_node, chiplet, db);
@@ -153,7 +124,7 @@ void DbvWriter::writeRegions(YAML::Node& regions_node,
   }
 }
 
-static const char* chip_region_side_to_string(odb::dbChipRegion::Side side)
+std::string chip_region_side_to_string(odb::dbChipRegion::Side side)
 {
   switch (side) {
     case odb::dbChipRegion::Side::FRONT:
@@ -165,7 +136,6 @@ static const char* chip_region_side_to_string(odb::dbChipRegion::Side side)
     case odb::dbChipRegion::Side::INTERNAL_EXT:
       return "internal_ext";
   }
-  return "front";
 }
 
 void DbvWriter::writeRegion(YAML::Node& region_node,
@@ -193,22 +163,23 @@ void DbvWriter::writeCoordinates(YAML::Node& coords_node,
                                  odb::dbDatabase* db)
 {
   const double u = db->getDbuPerMicron();
-  YAML::Emitter c0;
-  c0 << YAML::Flow << YAML::BeginSeq << rect.xMin() / u << rect.yMin() / u
-     << YAML::EndSeq;
-  YAML::Emitter c1;
-  c1 << YAML::Flow << YAML::BeginSeq << rect.xMax() / u << rect.yMin() / u
-     << YAML::EndSeq;
-  YAML::Emitter c2;
-  c2 << YAML::Flow << YAML::BeginSeq << rect.xMax() / u << rect.yMax() / u
-     << YAML::EndSeq;
-  YAML::Emitter c3;
-  c3 << YAML::Flow << YAML::BeginSeq << rect.xMin() / u << rect.yMax() / u
-     << YAML::EndSeq;
-  coords_node.push_back(YAML::Load(c0.c_str()));
-  coords_node.push_back(YAML::Load(c1.c_str()));
-  coords_node.push_back(YAML::Load(c2.c_str()));
-  coords_node.push_back(YAML::Load(c3.c_str()));
+  YAML::Node c0, c1, c2, c3;
+  c0.SetStyle(YAML::EmitterStyle::Flow);
+  c1.SetStyle(YAML::EmitterStyle::Flow);
+  c2.SetStyle(YAML::EmitterStyle::Flow);
+  c3.SetStyle(YAML::EmitterStyle::Flow);
+  c0.push_back(rect.xMin() / u);
+  c0.push_back(rect.yMin() / u);
+  c1.push_back(rect.xMax() / u);
+  c1.push_back(rect.yMin() / u);
+  c2.push_back(rect.xMax() / u);
+  c2.push_back(rect.yMax() / u);
+  c3.push_back(rect.xMin() / u);
+  c3.push_back(rect.yMax() / u);
+  coords_node.push_back(c0);
+  coords_node.push_back(c1);
+  coords_node.push_back(c2);
+  coords_node.push_back(c3);
 }
 
 void DbvWriter::writeLevelDependencies(
@@ -218,22 +189,18 @@ void DbvWriter::writeLevelDependencies(
 {
   // Find all dependencies for the current level chiplets
   std::set<int> dependency_levels;
+  ChipletHierarchyAnalyzer analyzer(logger_);
+  auto levels = analyzer.analyzeHierarchy(db);
 
   for (auto chiplet : chiplets) {
     // Find all chiplets that this chiplet depends on
     for (auto inst : chiplet->getChipInsts()) {
       auto master_chip = inst->getMasterChip();
-      if (master_chip != nullptr) {
-        // Find the level of the master chip
-        ChipletHierarchyAnalyzer analyzer(logger_);
-        auto levels = analyzer.analyzeHierarchy(db);
-
-        for (const auto& level : levels) {
-          for (auto level_chiplet : level.chiplets) {
-            if (level_chiplet == master_chip) {
-              dependency_levels.insert(level.level);
-              break;
-            }
+      for (const auto& level : levels) {
+        for (auto level_chiplet : level.chiplets) {
+          if (level_chiplet == master_chip) {
+            dependency_levels.insert(level.level);
+            break;
           }
         }
       }

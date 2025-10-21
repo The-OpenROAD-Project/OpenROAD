@@ -19,9 +19,6 @@
 #include "odb/defout.h"
 #include "odb/gdsout.h"
 #include "odb/lefout.h"
-#include "sta/LibertyWriter.hh"
-#include "sta/Sta.hh"
-#include "sta/VerilogWriter.hh"
 
 namespace utl {
 class Logger;
@@ -38,7 +35,6 @@ class BaseWriter
 
  protected:
   // Common YAML content writing
-  virtual void writeYamlContent(YAML::Node& root, odb::dbDatabase* db);
   void writeHeader(YAML::Node& header_node, odb::dbDatabase* db);
   void writeLef(YAML::Node& external_node,
                 odb::dbDatabase* db,

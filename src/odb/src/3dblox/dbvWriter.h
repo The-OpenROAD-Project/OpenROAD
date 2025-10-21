@@ -28,10 +28,8 @@ class DbvWriter : public BaseWriter
   void writeHierarchicalDbv(const std::string& base_filename,
                             odb::dbDatabase* db);
 
- protected:
-  void writeYamlContent(YAML::Node& root, odb::dbDatabase* db) override;
-
  private:
+  void writeYamlContent(YAML::Node& root, odb::dbDatabase* db);
   void writeLevelToFile(const std::string& filename,
                         const std::vector<odb::dbChip*>& chiplets,
                         odb::dbDatabase* db);
