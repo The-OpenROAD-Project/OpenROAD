@@ -559,10 +559,10 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
     return nullptr;
   }
 
+  // 3. Save mod nets and mod iterms
+  // - Because creating a new mod inst doesn't create them automatically.
   std::string new_name = this->getName();
   dbModule* parent = this->getParent();
-  // save mod nets and mod iterms because creating a new mod inst doesn't
-  // create them automatically
   std::map<std::string, dbModNet*> name_mod_net_map;
   for (dbModITerm* old_mod_iterm : this->getModITerms()) {
     dbModNet* old_mod_net = old_mod_iterm->getModNet();
