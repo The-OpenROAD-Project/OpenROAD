@@ -2403,11 +2403,12 @@ void dbNet::checkSanity() const
   size_t drvr_count = drvr_info_list.size();
   if (drvr_count > 1) {
     // Multiple drivers found.
-    logger->error(utl::ODB,
-                  49,
-                  "SanityCheck: dbNet '{}' has multiple drivers: {}",
-                  getName(),
-                  fmt::join(drvr_info_list, ""));
+    logger->error(
+        utl::ODB,
+        49,
+        "SanityCheck: dbNet '{}' has multiple drivers: {}",
+        getName(),
+        fmt::join(drvr_info_list, ""));  // NOLINT(misc-include-cleaner)
   }
 
   const uint iterm_count = getITerms().size();
