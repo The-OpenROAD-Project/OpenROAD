@@ -3,6 +3,7 @@
 
 #include "est/SteinerTree.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <string>
@@ -78,6 +79,18 @@ int SteinerTree::branchCount() const
 void SteinerTree::locAddPin(const odb::Point& loc, const Pin* pin)
 {
   loc_pin_map_[loc].push_back(pin);
+}
+
+int SteinerTree::getMaxIndex() const
+{
+  int max_index = -1;
+  for (int i = 0; i < branchCount(); i++) {
+    const stt::Branch& branch_pt = tree_.branch[i];
+    max_index = std::max(max_index, i);
+    max_index = std::max({max_index, branch_pt.n});
+  }
+
+  return max_index;
 }
 
 void SteinerTree::branch(int index,
