@@ -1101,10 +1101,33 @@ void PlacerBase::initInstsForUnusableSites()
   };
 
   //
-  // Initialize siteGrid as Row (all sites are placeable by default)
+  // Initialize siteGrid as Row. 
+  // All sites placeable so we avoid dummies creation due to regions
   //
   std::vector<SiteInfo> siteGrid(siteCountX * siteCountY, SiteInfo::Row);
-  
+
+  // If we have no group (top-level), check which sites are NOT covered by actual rows
+  // Create dummy instances for unusable sites (test simple02.tcl has an example on bottom right)
+  if (group_ == nullptr) {
+    std::fill(siteGrid.begin(), siteGrid.end(), SiteInfo::Blocked);
+    
+    // Mark only sites covered by actual rows as Row
+    for (dbRow* row : rows) {
+      Rect rect = row->getBBox();
+
+      std::pair<int, int> pairX = getMinMaxIdx(
+          rect.xMin(), rect.xMax(), die_.coreLx(), siteSizeX_, 0, siteCountX);
+
+      std::pair<int, int> pairY = getMinMaxIdx(
+          rect.yMin(), rect.yMax(), die_.coreLy(), siteSizeY_, 0, siteCountY);
+
+      for (int i = pairX.first; i < pairX.second; i++) {
+        for (int j = pairY.first; j < pairY.second; j++) {
+          siteGrid[j * siteCountX + i] = Row;
+        }
+      }
+    }
+  }
 
   // Mark blockage areas as Blocked so that their sites will be blocked.
   for (dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
@@ -1132,6 +1155,9 @@ void PlacerBase::initInstsForUnusableSites()
       for (int i = pairX.first; i < pairX.second; i++) {
         if (cells == 0 || filled / (float) cells <= filler_density) {
           siteGrid[j * siteCountX + i] = Blocked;
+          debugPrint(log_, GPL, "dummies", 1, "Blocking site at ({}, {}) due to blockage.",
+                       i,
+                       j);
           ++filled;
         }
         ++cells;
@@ -1169,6 +1195,10 @@ void PlacerBase::initInstsForUnusableSites()
     for (int i = pairX.first; i < pairX.second; i++) {
       for (int j = pairY.first; j < pairY.second; j++) {
         siteGrid[j * siteCountX + i] = FixedInst;
+        debugPrint(log_, GPL, "dummies", 1,"Blocking site at ({}, {}) due to fixed instance {}.",
+                     i,
+                     j,
+                     db_inst->getName());
       }
     }
   }
@@ -1186,11 +1216,11 @@ void PlacerBase::initInstsForUnusableSites()
           i++;
         }
         int endX = i;
-        Instance myInst(die_.coreLx() + siteSizeX_ * startX,
+        Instance dummy_gcell(die_.coreLx() + siteSizeX_ * startX,
                         die_.coreLy() + siteSizeY_ * j,
                         die_.coreLx() + siteSizeX_ * endX,
                         die_.coreLy() + siteSizeY_ * (j + 1));
-        instStor_.push_back(myInst);
+        instStor_.push_back(dummy_gcell);
       }
     }
   }
