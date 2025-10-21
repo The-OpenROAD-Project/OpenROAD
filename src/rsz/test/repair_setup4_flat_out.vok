@@ -12,28 +12,27 @@ module reg1 (clk,
  wire net1;
  wire net2;
  wire net3;
- wire net4;
 
  DFF_X1 r1 (.D(in),
     .CK(clk),
     .Q(r1q));
- DFF_X1 r10 (.D(net2),
+ DFF_X1 r10 (.D(net3),
     .CK(clk));
- DFF_X1 r11 (.D(net2),
+ DFF_X1 r11 (.D(net3),
     .CK(clk));
- DFF_X1 r12 (.D(net2),
+ DFF_X1 r12 (.D(net3),
     .CK(clk));
  DFF_X1 r2 (.D(u5z),
     .CK(clk));
- DFF_X1 r3 (.D(net3),
+ DFF_X1 r3 (.D(net2),
     .CK(clk));
- DFF_X1 r4 (.D(net3),
+ DFF_X1 r4 (.D(net2),
     .CK(clk));
- DFF_X1 r5 (.D(net2),
+ DFF_X1 r5 (.D(net3),
     .CK(clk));
- DFF_X1 r6 (.D(net3),
+ DFF_X1 r6 (.D(net2),
     .CK(clk));
- DFF_X1 r7 (.D(net3),
+ DFF_X1 r7 (.D(net2),
     .CK(clk));
  DFF_X1 r8 (.D(net2),
     .CK(clk));
@@ -49,12 +48,10 @@ module reg1 (clk,
     .Z(u4z));
  BUF_X1 u5 (.A(u4z),
     .Z(u5z));
- BUF_X4 rebuffer1 (.A(net4),
+ BUF_X4 rebuffer1 (.A(r1q),
     .Z(net1));
  BUF_X4 split2 (.A(net1),
     .Z(net2));
  BUF_X4 rebuffer3 (.A(net1),
     .Z(net3));
- BUF_X2 rebuffer4 (.A(r1q),
-    .Z(net4));
 endmodule
