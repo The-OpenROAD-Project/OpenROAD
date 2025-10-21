@@ -427,14 +427,14 @@ void InitialPlace::updateCoordi()
     if (!inst->isLocked()) {
       int new_x = instLocVecX_(idx);
       int new_y = instLocVecY_(idx);
-      
+
       // Constrain to core area
       const auto& die = pbc_->getDie();
       new_x = std::max(new_x, die.coreLx());
       new_x = std::min(new_x, die.coreUx());
       new_y = std::max(new_y, die.coreLy());
       new_y = std::min(new_y, die.coreUy());
-      
+
       // If instance has a region constraint, use that instead
       const auto db_inst = inst->dbInst();
       const auto group = db_inst->getGroup();
@@ -451,13 +451,13 @@ void InitialPlace::updateCoordi()
           region_x_max = std::max(region_x_max, boundary->xMax());
           region_y_max = std::max(region_y_max, boundary->yMax());
         }
-        
+
         new_x = std::max(new_x, region_x_min);
         new_x = std::min(new_x, region_x_max);
         new_y = std::max(new_y, region_y_min);
         new_y = std::min(new_y, region_y_max);
       }
-      
+
       inst->dbSetCenterLocation(new_x, new_y);
       inst->dbSetPlaced();
     }

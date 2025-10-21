@@ -1757,7 +1757,10 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   bg_.setPlacerBase(pb_);
   bg_.setLogger(log_);
   const odb::Rect& region_bbox = pb_->getRegionBBox();
-  bg_.setRegionPoints(region_bbox.xMin(), region_bbox.yMin(), region_bbox.xMax(), region_bbox.yMax());
+  bg_.setRegionPoints(region_bbox.xMin(),
+                      region_bbox.yMin(),
+                      region_bbox.xMax(),
+                      region_bbox.yMax());
   bg_.setTargetDensity(targetDensity_);
 
   // update binGrid info
@@ -1824,8 +1827,7 @@ void NesterovBase::initFillerGCells()
   fillerDy_ = static_cast<int>(dySum / (maxIdx - minIdx));
 
   int64_t region_area = pb_->getRegionArea();
-  whiteSpaceArea_
-      = region_area - pb_->nonPlaceInstsArea();
+  whiteSpaceArea_ = region_area - pb_->nonPlaceInstsArea();
 
   // if(pb_->group() == nullptr) {
   //   // nonPlaceInstsArea should not have density downscaling!!!
@@ -1980,9 +1982,9 @@ void NesterovBase::initFillerGCells()
     // place filler cells on random coordi and
     // set size as avgDx and avgDy
     GCell filler_gcell(randX % region_dx + region_lx,
-                  randY % region_dy + region_ly,
-                  fillerDx_,
-                  fillerDy_);
+                       randY % region_dy + region_ly,
+                       fillerDx_,
+                       fillerDy_);
 
     fillerStor_.push_back(filler_gcell);
   }

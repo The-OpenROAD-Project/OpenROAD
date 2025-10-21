@@ -341,7 +341,8 @@ void Graphics::drawNesterov(gui::Painter& painter)
     painter.setBrush(color);
 
     for (auto& pb_inst : pb->nonPlaceInsts()) {
-      painter.drawRect({pb_inst->lx(), pb_inst->ly(), pb_inst->ux(), pb_inst->uy()});
+      painter.drawRect(
+          {pb_inst->lx(), pb_inst->ly(), pb_inst->ux(), pb_inst->uy()});
     }
   }
 
@@ -393,7 +394,8 @@ void Graphics::drawNesterov(gui::Painter& painter)
     const float overall_x = wlGrad.x + densityPenalty * densityGrad.x;
     const float overall_y = wlGrad.y + densityPenalty * densityGrad.y;
     const float overall_magnitude = std::hypot(overall_x, overall_y);
-    const float max_magnitude = std::max({wl_magnitude, density_magnitude, overall_magnitude});
+    const float max_magnitude
+        = std::max({wl_magnitude, density_magnitude, overall_magnitude});
 
     auto scaleVector = [&](float vx, float vy) -> std::pair<float, float> {
       const float magnitude = std::hypot(vx, vy);
@@ -425,7 +427,8 @@ void Graphics::drawNesterov(gui::Painter& painter)
     // Draw Overall gradient line
     {
       auto [dx, dy] = scaleVector(overall_x, overall_y);
-      painter.setPen(gui::Painter::kBlack, true);  // Use black for Overall gradient
+      painter.setPen(gui::Painter::kBlack,
+                     true);  // Use black for Overall gradient
       painter.drawLine(
           cx, cy, cx + static_cast<int>(dx), cy + static_cast<int>(dy));
     }
