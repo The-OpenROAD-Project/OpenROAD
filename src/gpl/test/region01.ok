@@ -24,10 +24,10 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
 [INFO GPL-0004] CoreBBox: (  2.300  2.720 ) ( 375.360 375.360 ) um
 [INFO GPL-0032] Initializing region: Top-level
-[INFO GPL-0006] Number of instances:                 0
+[INFO GPL-0006] Number of instances:               182
 [INFO GPL-0007] Movable instances:                   0
 [INFO GPL-0008] Fixed instances:                     0
-[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0009] Dummy instances:                   182
 [INFO GPL-0010] Number of nets:                    666
 [INFO GPL-0011] Number of pins:                   2059
 [INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 377.475 377.475 ) um
@@ -35,7 +35,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0016] Core area:                  139017.078 um^2
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                139017.078 um^2
-[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0017] Fixed instances area:        22972.032 um^2
 [INFO GPL-0018] Movable instances area:          0.000 um^2
 [INFO GPL-0019] Utilization:                     0.000 %
 [INFO GPL-0020] Standard cells area:             0.000 um^2
@@ -163,25 +163,29 @@ Using 2 tracks default min distance between IO pins.
       300 |   0.4597 |  1.262486e+04 |   +4.60% |  6.03e-09 |  (spm_inst_1_domain)
       310 |   0.3686 |  1.315408e+04 |   +4.19% |  1.13e-08 |  (spm_inst_0_domain)
       310 |   0.4149 |  1.315408e+04 |   +4.19% |  9.82e-09 |  (spm_inst_1_domain)
-      320 |   0.3259 |  1.355176e+04 |   +3.02% |  1.85e-08 |  (spm_inst_0_domain)
-      320 |   0.3651 |  1.355176e+04 |   +3.02% |  1.60e-08 |  (spm_inst_1_domain)
-      330 |   0.2954 |  1.379868e+04 |   +1.82% |  3.01e-08 |  (spm_inst_0_domain)
-      330 |   0.3215 |  1.379868e+04 |   +1.82% |  2.61e-08 |  (spm_inst_1_domain)
-      340 |   0.2575 |  1.401419e+04 |   +1.56% |  4.90e-08 |  (spm_inst_0_domain)
-      340 |   0.2735 |  1.401419e+04 |   +1.56% |  4.25e-08 |  (spm_inst_1_domain)
-      350 |   0.2227 |  1.387330e+04 |   -1.01% |  7.99e-08 |  (spm_inst_0_domain)
-      350 |   0.2467 |  1.387330e+04 |   -1.01% |  6.92e-08 |  (spm_inst_1_domain)
-      360 |   0.2000 |  1.390266e+04 |   +0.21% |  1.30e-07 |  (spm_inst_0_domain)
-      360 |   0.2112 |  1.390266e+04 |   +0.21% |  1.13e-07 |  (spm_inst_1_domain)
-      370 |   0.1820 |  1.387295e+04 |   -0.21% |  2.12e-07 |  (spm_inst_0_domain)
-      370 |   0.1805 |  1.387295e+04 |   -0.21% |  1.84e-07 |  (spm_inst_1_domain)
-      380 |   0.1375 |  1.390407e+04 |   +0.22% |  3.45e-07 |  (spm_inst_0_domain)
-      380 |   0.1537 |  1.390407e+04 |   +0.22% |  2.99e-07 |  (spm_inst_1_domain)
-      390 |   0.1113 |  1.392398e+04 |   +0.14% |  5.62e-07 |  (spm_inst_0_domain)
-      390 |   0.1307 |  1.392398e+04 |   +0.14% |  4.87e-07 |  (spm_inst_1_domain)
-      397 |   0.0999 |  1.397737e+04 |          |  8.31e-07 | spm_inst_0_domain
+      320 |   0.3298 |  1.353935e+04 |   +2.93% |  1.76e-08 |  (spm_inst_0_domain)
+      320 |   0.3648 |  1.353935e+04 |   +2.93% |  1.60e-08 |  (spm_inst_1_domain)
+      330 |   0.3080 |  1.374963e+04 |   +1.55% |  2.59e-08 |  (spm_inst_0_domain)
+      330 |   0.3248 |  1.374963e+04 |   +1.55% |  2.45e-08 |  (spm_inst_1_domain)
+      340 |   0.2726 |  1.391760e+04 |   +1.22% |  3.81e-08 |  (spm_inst_0_domain)
+      340 |   0.2800 |  1.391760e+04 |   +1.22% |  3.62e-08 |  (spm_inst_1_domain)
+      350 |   0.2449 |  1.397663e+04 |   +0.42% |  5.62e-08 |  (spm_inst_0_domain)
+      350 |   0.2701 |  1.397663e+04 |   +0.42% |  5.33e-08 |  (spm_inst_1_domain)
+      360 |   0.2278 |  1.367460e+04 |   -2.16% |  8.28e-08 |  (spm_inst_0_domain)
+      360 |   0.2283 |  1.367460e+04 |   -2.16% |  7.85e-08 |  (spm_inst_1_domain)
+      370 |   0.2060 |  1.362133e+04 |   -0.39% |  1.22e-07 |  (spm_inst_0_domain)
+      370 |   0.2103 |  1.362133e+04 |   -0.39% |  1.16e-07 |  (spm_inst_1_domain)
+      380 |   0.1809 |  1.358312e+04 |   -0.28% |  1.80e-07 |  (spm_inst_0_domain)
+      380 |   0.1851 |  1.358312e+04 |   -0.28% |  1.70e-07 |  (spm_inst_1_domain)
+      390 |   0.1510 |  1.362744e+04 |   +0.33% |  2.65e-07 |  (spm_inst_0_domain)
+      390 |   0.1649 |  1.362744e+04 |   +0.33% |  2.51e-07 |  (spm_inst_1_domain)
+      400 |   0.1309 |  1.367873e+04 |   +0.38% |  3.90e-07 |  (spm_inst_0_domain)
+      400 |   0.1426 |  1.367873e+04 |   +0.38% |  3.69e-07 |  (spm_inst_1_domain)
+      410 |   0.1043 |  1.371135e+04 |   +0.24% |  5.74e-07 |  (spm_inst_0_domain)
+      410 |   0.1251 |  1.371135e+04 |   +0.24% |  5.44e-07 |  (spm_inst_1_domain)
+      419 |   0.0975 |  1.374203e+04 |          |  8.46e-07 | spm_inst_0_domain
 ---------------------------------------------------------------
-[INFO GPL-1016] Region 'spm_inst_0_domain' placement finished at iteration 397
+[INFO GPL-1016] Region 'spm_inst_0_domain' placement finished at iteration 419
 [INFO GPL-1002] Placed Cell Area             3487.0944
 [INFO GPL-1003] Available Free Area         23100.0000
 [INFO GPL-1004] Minimum Feasible Density        0.1600 (cell_area / free_area)
@@ -189,10 +193,9 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-1007]     - For 90% usage of free space: 0.1677
 [INFO GPL-1008]     - For 80% usage of free space: 0.1887
 [INFO GPL-1009]     - For 50% usage of free space: 0.3019
-      400 |   0.1011 |  1.398952e+04 |   +0.47% |  7.93e-07 |  (spm_inst_1_domain)
-      401 |   0.0976 |  1.399150e+04 |          |  8.74e-07 | spm_inst_1_domain
+      419 |   0.0998 |  1.374203e+04 |          |  8.02e-07 | spm_inst_1_domain
 ---------------------------------------------------------------
-[INFO GPL-1016] Region 'spm_inst_1_domain' placement finished at iteration 401
+[INFO GPL-1016] Region 'spm_inst_1_domain' placement finished at iteration 419
 [INFO GPL-1002] Placed Cell Area             3487.0944
 [INFO GPL-1003] Available Free Area         23100.0000
 [INFO GPL-1004] Minimum Feasible Density        0.1600 (cell_area / free_area)

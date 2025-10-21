@@ -8,6 +8,7 @@
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  1.140  1.120 ) ( 35.150 34.720 ) um
+[INFO GPL-0032] Initializing region: Top-level
 [INFO GPL-0006] Number of instances:               294
 [INFO GPL-0007] Movable instances:                 294
 [INFO GPL-0008] Fixed instances:                     0
@@ -17,11 +18,14 @@
 [INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 36.290 35.840 ) um
 [INFO GPL-0013] Core BBox: (  1.140  1.120 ) ( 35.150 34.720 ) um
 [INFO GPL-0016] Core area:                    1142.736 um^2
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                  1142.736 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
 [INFO GPL-0018] Movable instances area:        569.772 um^2
 [INFO GPL-0019] Utilization:                    49.860 %
 [INFO GPL-0020] Standard cells area:           569.772 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0033] Initializing Nesterov region: Top-level
 [INFO GPL-0023] Placement target density:       0.6000
 [INFO GPL-0024] Movable insts average area:      1.938 um^2
 [INFO GPL-0025] Ideal bin area:                  3.230 um^2
