@@ -3,9 +3,6 @@
 
 #include "dbNet.h"
 
-#include <spdlog/fmt/bundled/format.h>
-#include <spdlog/fmt/bundled/ranges.h>
-
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -2362,6 +2359,7 @@ void dbNet::checkSanity() const
       dbBlock* block = bterm->getBlock();
       dbModule* parent_module = block->getTopModule();
       drvr_info_list.push_back(
+          // NOLINTNEXTLINE(misc-include-cleaner)
           fmt::format("\n  - bterm: '{}' (parent_module: '{}', block: '{}')",
                       bterm->getName(),
                       parent_module->getName(),
@@ -2393,7 +2391,7 @@ void dbNet::checkSanity() const
         block_name = block->getName();
       }
 
-      drvr_info_list.push_back(fmt::format(
+      drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
           "\n  - iterm: '{}' (block: '{}', parent_module: '{}', master: '{}')",
           iterm->getName('/'),
           block_name,
