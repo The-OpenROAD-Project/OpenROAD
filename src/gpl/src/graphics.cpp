@@ -328,22 +328,20 @@ void Graphics::drawNesterov(gui::Painter& painter)
     drawCells(nb->getGCells(), painter, nb_idx);
   }
 
-  // Use different colors for each PlacerBase
-  std::vector<gui::Painter::Color> colors
-      = {gui::Painter::Color(gui::Painter::kMagenta, 50),
-         gui::Painter::Color(gui::Painter::kRed, 50),
-         gui::Painter::Color(gui::Painter::kBlue, 50),
-         gui::Painter::Color(gui::Painter::kGreen, 50),         
-         gui::Painter::Color(gui::Painter::kCyan, 50),
-         gui::Painter::Color(gui::Painter::kOrange, 50)};
+  // Create lighter versions of the colors_ with alpha 50
+  std::vector<gui::Painter::Color> light_colors;
+  light_colors.reserve(colors_.size());
+  for (const auto& color : colors_) {
+    light_colors.emplace_back(color.r, color.g, color.b, 50);
+  }
 
-  for (size_t pb_idx = 1; pb_idx < pbVec_.size(); ++pb_idx) {
+  for (size_t pb_idx = 0; pb_idx < pbVec_.size(); ++pb_idx) {
     const auto& pb = pbVec_[pb_idx];
-    gui::Painter::Color color = colors[pb_idx % colors.size()];
+    gui::Painter::Color color = light_colors[pb_idx % light_colors.size()];
     painter.setBrush(color);
 
-    for (auto& inst : pb->nonPlaceInsts()) {
-      painter.drawRect({inst->lx(), inst->ly(), inst->ux(), inst->uy()});
+    for (auto& pb_inst : pb->nonPlaceInsts()) {
+      painter.drawRect({pb_inst->lx(), pb_inst->ly(), pb_inst->ux(), pb_inst->uy()});
     }
   }
 
@@ -392,7 +390,10 @@ void Graphics::drawNesterov(gui::Painter& painter)
     const float densityPenalty = nbVec_[nb_index]->getDensityPenalty();
     const float density_magnitude = std::hypot(densityPenalty * densityGrad.x,
                                                densityPenalty * densityGrad.y);
-    const float max_magnitude = std::max(wl_magnitude, density_magnitude);
+    const float overall_x = wlGrad.x + densityPenalty * densityGrad.x;
+    const float overall_y = wlGrad.y + densityPenalty * densityGrad.y;
+    const float overall_magnitude = std::hypot(overall_x, overall_y);
+    const float max_magnitude = std::max({wl_magnitude, density_magnitude, overall_magnitude});
 
     auto scaleVector = [&](float vx, float vy) -> std::pair<float, float> {
       const float magnitude = std::hypot(vx, vy);
@@ -417,6 +418,14 @@ void Graphics::drawNesterov(gui::Painter& painter)
       auto [dx, dy] = scaleVector(scaled_dx, scaled_dy);
       painter.setPen(gui::Painter::kBlue,
                      true);  // Use blue for Density gradient
+      painter.drawLine(
+          cx, cy, cx + static_cast<int>(dx), cy + static_cast<int>(dy));
+    }
+
+    // Draw Overall gradient line
+    {
+      auto [dx, dy] = scaleVector(overall_x, overall_y);
+      painter.setPen(gui::Painter::kBlack, true);  // Use black for Overall gradient
       painter.drawLine(
           cx, cy, cx + static_cast<int>(dx), cy + static_cast<int>(dy));
     }
