@@ -1,8 +1,7 @@
 @Library('utils@or-v2.0.1') _
 
 def logHostname() {
-    def host = sh(returnStdout: true, script: 'hostname').trim()
-    sh label: "Running on ${host}", script: "true"
+    sh label: "Running on ${env.NODE_NAME}", script: "echo 'Node context established.'"
 }
 
 def baseTests(String image) {
