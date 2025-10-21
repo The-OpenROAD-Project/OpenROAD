@@ -25,10 +25,8 @@ class DbxWriter : public BaseWriter
 
   void writeFile(const std::string& filename, odb::dbDatabase* db) override;
 
- protected:
-  void writeYamlContent(YAML::Node& root, odb::dbDatabase* db) override;
-
  private:
+  void writeYamlContent(YAML::Node& root, odb::dbDatabase* db);
   void writeDesign(YAML::Node& design_node, odb::dbDatabase* db);
   void writeDesignExternal(YAML::Node& external_node, odb::dbDatabase* db);
   void writeChipletInsts(YAML::Node& instances_node, odb::dbDatabase* db);

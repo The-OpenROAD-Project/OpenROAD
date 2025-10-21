@@ -24,7 +24,8 @@ void DbxWriter::writeFile(const std::string& filename, odb::dbDatabase* db)
 
 void DbxWriter::writeYamlContent(YAML::Node& root, odb::dbDatabase* db)
 {
-  BaseWriter::writeYamlContent(root, db);
+  YAML::Node header_node = root["Header"];
+  writeHeader(header_node, db);
 
   YAML::Node design_node = root["Design"];
   writeDesign(design_node, db);
