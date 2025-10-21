@@ -762,9 +762,10 @@ bool RepairDesign::performGainBuffering(Net* net,
     dbNet* net_db = db_network_->staToDb(net);
     dbNet* new_net_db = db_network_->staToDb(new_net);
     new_net_db->setSigType(net_db->getSigType());
-    if (net_db->getNonDefaultRule()) {
-      new_net_db->setNonDefaultRule(net_db->getNonDefaultRule());
-    }
+    // TODO: Propagate NDR settings
+    // if (net_db->getNonDefaultRule()) {
+    //   new_net_db->setNonDefaultRule(net_db->getNonDefaultRule());
+    // }
 
     const Point drvr_loc = db_network_->location(drvr_pin);
 
@@ -2387,9 +2388,10 @@ bool RepairDesign::makeRepeater(
       dbNet* ip_net_db = load_db_net;
       dbNet* op_net_db = db_network_->staToDb(new_net);
       op_net_db->setSigType(ip_net_db->getSigType());
-      if (load_db_net->getNonDefaultRule()) {
-        op_net_db->setNonDefaultRule(load_db_net->getNonDefaultRule());
-      }
+      // TODO: Propagate NDR settings
+      // if (load_db_net->getNonDefaultRule()) {
+      //   op_net_db->setNonDefaultRule(load_db_net->getNonDefaultRule());
+      // }
       out_net = new_net;
 
       buffer_op_net = new_net;
