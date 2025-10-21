@@ -3,5 +3,5 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
-[ERROR PPL-0083] Both -region and -mirrored_pins constraints not allowed.
-PPL-0083
+[ERROR ODB-0144] Both -region and -mirrored_pins constraints not allowed.
+ODB-0144
