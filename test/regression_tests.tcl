@@ -4,6 +4,7 @@ record_flow_tests {
   gcd_nangate45
   gcd_sky130hd
   gcd_sky130hs
+  gcd_asap7
 
   ibex_sky130hd
   ibex_sky130hs
