@@ -195,9 +195,10 @@ void Logger::addWarningMetrics()
       if (message_counters_[i][j] > 0
           && message_levels_[i][j] == spdlog::level::warn) {
         warning_type_cnt++;
-        std::ostringstream metric_name;
-        metric_name << "flow__warnings__count:" << tool_names_[i] << "-" << j;
-        log_metric(metric_name.str(), std::to_string(message_counters_[i][j]));
+        log_metric(
+            // NOLINTNEXTLINE(misc-include-cleaner)
+            fmt::format("flow__warnings__count:{}-{}", tool_names_[i], j),
+            std::to_string(message_counters_[i][j]));
       }
     }
   }
