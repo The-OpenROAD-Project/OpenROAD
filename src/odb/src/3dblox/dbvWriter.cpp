@@ -3,13 +3,16 @@
 
 #include "dbvWriter.h"
 
+#include <yaml-cpp/yaml.h>
+
 #include <filesystem>
-#include <fstream>
 #include <set>
 #include <sstream>
 #include <string>
 
-#include "objects.h"
+#include "baseWriter.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {

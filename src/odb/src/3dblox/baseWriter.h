@@ -3,23 +3,15 @@
 
 #pragma once
 
+#include <yaml-cpp/node/node.h>
 #include <yaml-cpp/yaml.h>
 
-#include <map>
 #include <string>
-#include <vector>
 
 #include "objects.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
-#include "odb/dbSet.h"
 #include "odb/dbShape.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/defout.h"
-#include "odb/gdsout.h"
-#include "odb/lefout.h"
-
 namespace utl {
 class Logger;
 }
