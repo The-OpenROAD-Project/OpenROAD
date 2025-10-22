@@ -423,6 +423,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
     }
   }
   unbuffer_move_->commitMoves();
+  estimate_parasitics_->updateParasitics();
   level_drvr_vertices_valid_ = false;
   logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move_->numMoves());
 }
