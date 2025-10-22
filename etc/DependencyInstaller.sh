@@ -1105,6 +1105,9 @@ main() {
                     warn "Previous -local argument will be overwritten with -prefix."
                 fi
                 PREFIX="${1#*=}"
+                if [[ ! "${PREFIX}" = /* ]]; then
+                    PREFIX="$(pwd)/${PREFIX}"
+                fi
                 ;;
             -nocert)
                 warn "Security certificates for downloaded packages will not be checked."
