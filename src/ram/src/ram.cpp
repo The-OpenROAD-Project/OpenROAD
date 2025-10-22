@@ -572,6 +572,7 @@ void RamGen::generate(const int bytes_per_word,
   int max_x_coord = ram_grid.getRowWidth();
 
   block_->setDieArea(odb::Rect(0, 0, max_x_coord, max_y_coord));
+  block_->setCoreArea(block_->computeCoreArea());
 }
 
 }  // namespace ram
