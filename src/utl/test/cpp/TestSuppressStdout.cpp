@@ -21,10 +21,9 @@ TEST(Utl, SuppressStdout)
   // 1. Create a temporary directory managed by GTest
   auto temp_dir = testing::TempDir();
   std::string file_path = temp_dir + "/my_file.txt";
-  std::cerr << "Temporary file: " << file_path << "\n";
 
   // 3. Create the file and get the file descriptor (fd)
-  int fd = open(file_path.c_str(), O_WRONLY | O_CREAT);
+  int fd = open(file_path.c_str(), O_WRONLY | O_CREAT, 0600);
   ASSERT_NE(fd, -1);
 
   int saved_stdout = dup(STDOUT_FILENO);

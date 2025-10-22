@@ -1,5 +1,6 @@
 #include "utl/SuppressStdout.h"
 
+#include <cstdio>
 #include <fcntl.h>
 #include <unistd.h>
 
