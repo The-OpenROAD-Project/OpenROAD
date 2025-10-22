@@ -24,10 +24,6 @@ TEST(Utl, SuppressStdout)
   std::cerr << "Temporary file: " << file_path << "\n";
 
   // 3. Create the file and get the file descriptor (fd)
-  //    O_RDWR:   Open for reading and writing
-  //    O_CREAT:  Create the file if it doesn't exist
-  //    O_EXCL:   Ensure that this call creates the file
-  //    0600:     Permissions (read/write for owner only)
   int fd = open(file_path.c_str(), O_WRONLY | O_CREAT);
   ASSERT_NE(fd, -1);
 
