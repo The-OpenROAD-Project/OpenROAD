@@ -3,9 +3,13 @@
 
 #include "baseWriter.h"
 
+#include <cstddef>
 #include <fstream>
 #include <sstream>
+#include <string>
 
+#include "odb/defout.h"
+#include "odb/lefout.h"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
 
@@ -17,7 +21,7 @@ BaseWriter::BaseWriter(utl::Logger* logger) : logger_(logger)
 
 void BaseWriter::writeHeader(YAML::Node& header_node, odb::dbDatabase* db)
 {
-  header_node["version"] = "2.5"; // TODO: add version to DB
+  header_node["version"] = "2.5";  // TODO: add version to DB
   header_node["unit"] = "micron";
   header_node["precision"] = db->getDbuPerMicron();
 }
@@ -105,11 +109,11 @@ void BaseWriter::logError(const std::string& message)
 
 std::string BaseWriter::trim(const std::string& str)
 {
-  size_t first = str.find_first_not_of(' ');
+  std::size_t first = str.find_first_not_of(' ');
   if (first == std::string::npos) {
     return "";
   }
-  size_t last = str.find_last_not_of(' ');
+  std::size_t last = str.find_last_not_of(' ');
   return str.substr(first, (last - first + 1));
 }
 

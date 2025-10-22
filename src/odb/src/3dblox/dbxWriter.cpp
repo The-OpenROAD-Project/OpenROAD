@@ -4,9 +4,8 @@
 #include "dbxWriter.h"
 
 #include <fstream>
-#include <string>
 
-#include "objects.h"
+#include "baseWriter.h"
 #include "utl/Logger.h"
 
 namespace odb {

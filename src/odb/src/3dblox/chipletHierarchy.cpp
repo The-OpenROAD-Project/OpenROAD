@@ -4,8 +4,12 @@
 #include "chipletHierarchy.h"
 
 #include <algorithm>
+#include <map>
 #include <queue>
+#include <set>
+#include <vector>
 
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace odb {

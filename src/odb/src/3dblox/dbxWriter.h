@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "baseWriter.h"
-#include "objects.h"
+#include "odb/db.h"
 
 namespace utl {
 class Logger;
