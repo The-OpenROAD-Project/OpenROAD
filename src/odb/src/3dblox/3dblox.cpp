@@ -11,7 +11,9 @@
 #include <vector>
 
 #include "dbvParser.h"
+#include "dbvWriter.h"
 #include "dbxParser.h"
+#include "dbxWriter.h"
 #include "objects.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -102,6 +104,18 @@ void ThreeDBlox::readHeaderIncludes(const std::vector<std::string>& includes)
       readDbx(include);
     }
   }
+}
+
+void ThreeDBlox::writeDbv(const std::string& dbv_file)
+{
+  DbvWriter writer(logger_);
+  writer.writeHierarchicalDbv(dbv_file, db_);
+}
+
+void ThreeDBlox::writeDbx(const std::string& dbx_file)
+{
+  DbxWriter writer(logger_);
+  writer.writeFile(dbx_file, db_);
 }
 
 dbChip::ChipType getChipType(const std::string& type, utl::Logger* logger)
