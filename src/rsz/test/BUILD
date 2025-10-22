@@ -234,7 +234,6 @@ MANUAL_FOR_BAZEL_TESTS = [
     "repair_fanout3_hier",
     "repair_setup4_flat",
     "repair_setup4_hier",
-    "report_buffers_asap7",
     "report_dont_use",
     "report_dont_use_corners",
     "split_load_hier",
