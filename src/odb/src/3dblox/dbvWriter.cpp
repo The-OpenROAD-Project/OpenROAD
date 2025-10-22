@@ -124,25 +124,25 @@ void DbvWriter::writeRegions(YAML::Node& regions_node,
   }
 }
 
-std::string chip_region_side_to_string(odb::dbChipRegion::Side side)
-{
-  switch (side) {
-    case odb::dbChipRegion::Side::FRONT:
-      return "front";
-    case odb::dbChipRegion::Side::BACK:
-      return "back";
-    case odb::dbChipRegion::Side::INTERNAL:
-      return "internal";
-    case odb::dbChipRegion::Side::INTERNAL_EXT:
-      return "internal_ext";
-  }
-}
-
 void DbvWriter::writeRegion(YAML::Node& region_node,
                             odb::dbChipRegion* region,
                             odb::dbDatabase* db)
 {
-  region_node["side"] = chip_region_side_to_string(region->getSide());
+  auto side = region->getSide();
+  switch (side) {
+    case odb::dbChipRegion::Side::FRONT:
+      region_node["side"] = "front";
+      break;
+    case odb::dbChipRegion::Side::BACK:
+      region_node["side"] = "back";
+      break;
+    case odb::dbChipRegion::Side::INTERNAL:
+      region_node["side"] = "internal";
+      break;
+    case odb::dbChipRegion::Side::INTERNAL_EXT:
+      region_node["side"] = "internal_ext";
+      break;
+  }
   if (auto layer = region->getLayer(); layer != nullptr) {
     region_node["layer"] = layer->getName();
   }
