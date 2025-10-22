@@ -566,7 +566,7 @@ Not available yet
 
 #### SEE ALSO
 
-replace_hier_modules
+replace_hier_module
 
 #### EXAMPLES
 

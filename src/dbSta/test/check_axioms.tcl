@@ -5,7 +5,7 @@ source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog check_axioms.v
-link_design top
+link_design top -hier
 
 # Run the checks and capture output.
 # The 'catch' command is used because sta::check_axioms will exit with an
