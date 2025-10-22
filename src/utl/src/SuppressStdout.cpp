@@ -9,15 +9,6 @@
 
 namespace utl {
 
-#ifdef _WIN32
-SuppressStdout::SuppressStdout(utl::Logger* logger)
-{
-  (void) logger;
-}
-SuppressStdout::~SuppressStdout()
-{
-}
-#else
 SuppressStdout::SuppressStdout(utl::Logger* logger) : logger_(logger)
 {
   fflush(stdout);
@@ -61,6 +52,5 @@ SuppressStdout::~SuppressStdout()
     close(saved_fd_);
   }
 }
-#endif
 
 }  // namespace utl
