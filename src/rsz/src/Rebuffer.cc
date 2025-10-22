@@ -40,6 +40,7 @@
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace rsz {
 
@@ -63,33 +64,6 @@ using BnetType = BufferedNetType;
 using BnetSeq = BufferedNetSeq;
 using BnetPtr = BufferedNetPtr;
 using BnetMetrics = BufferedNet::Metrics;
-
-class ScopedTimer
-{
- public:
-  using Clock = std::chrono::steady_clock;
-
-  ScopedTimer(Logger* logger, double& accumulator)
-      : logger_(logger), accumulator_(accumulator)
-  {
-    if (logger_->debugCheck(RSZ, "rebuffer", 1)) {
-      start_ = Clock::now();
-    }
-  }
-
-  ~ScopedTimer()
-  {
-    if (logger_->debugCheck(RSZ, "rebuffer", 1)) {
-      accumulator_
-          += std::chrono::duration<double>{Clock::now() - start_}.count();
-    }
-  }
-
- private:
-  Logger* logger_;
-  double& accumulator_;
-  std::chrono::time_point<Clock> start_;
-};
 
 // Template magic to make it easier to write algorithms descending
 // over the buffer tree in the form of lambdas; it allows recursive
@@ -679,7 +653,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
               return opts1;
             }
 
-            ScopedTimer timer(logger_, long_wire_stepping_runtime_);
+            utl::DebugScopedTimer timer(long_wire_stepping_runtime_);
             int round = 0;
             while (location != node->location()) {
               debugPrint(logger_,
@@ -2112,7 +2086,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
 
     {
-      ScopedTimer timer(logger_, sta_runtime);
+      utl::DebugScopedTimer timer(sta_runtime);
       search_->findRequireds(drvr->level());
     }
 
@@ -2160,7 +2134,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     BnetPtr timing_tree = unbuffered_tree;
 
     {
-      ScopedTimer timer(logger_, bft_runtime);
+      utl::DebugScopedTimer timer(bft_runtime);
       for (int i = 0; i < 3; i++) {
         timing_tree = bufferForTiming(timing_tree);
         if (!timing_tree) {
@@ -2227,7 +2201,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
 
     BnetPtr area_opt_tree = timing_tree;
     {
-      ScopedTimer timer(logger_, ra_runtime);
+      utl::DebugScopedTimer timer(ra_runtime);
       for (int i = 0; i < 5 && area_opt_tree; i++) {
         area_opt_tree
             = recoverArea(area_opt_tree, target_slack, ((float) (1 + i)) / 5);
@@ -2317,7 +2291,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     estimate_parasitics_->updateParasitics();
 
     {
-      ScopedTimer timer(logger_, sta_runtime);
+      utl::DebugScopedTimer timer(sta_runtime);
       sta_->findDelays(max_level);
       search_->findArrivals(max_level);
     }
