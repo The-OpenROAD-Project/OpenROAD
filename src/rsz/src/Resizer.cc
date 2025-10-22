@@ -395,9 +395,6 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
   // timing information. So initBlock(), a light version of init(), is
   // sufficient.
   initBlock();
-  // Disable incremental timing.
-  graph_delay_calc_->delaysInvalid();
-  search_->arrivalsInvalid();
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
 
   if (insts.empty()) {
