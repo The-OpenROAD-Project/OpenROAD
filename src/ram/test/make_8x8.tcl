@@ -1,5 +1,7 @@
 source "helpers.tcl"
 
+set_thread_count [expr [cpu_count] / 4]
+
 read_liberty sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib
 
 read_lef sky130hd/sky130hd.tlef
@@ -37,7 +39,7 @@ filler_placement {sky130_fd_sc_hd__fill_1 sky130_fd_sc_hd__fill_2 \
 	sky130_fd_sc_hd__fill_4 sky130_fd_sc_hd__fill_8}
 
 global_route
-detailed_route
+detailed_route -verbose 0
 
 set lef_file [make_result_file make_8x8.lef]
 write_abstract_lef $lef_file
