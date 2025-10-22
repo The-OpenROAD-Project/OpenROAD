@@ -13,7 +13,7 @@ class SuppressStdout
   SuppressStdout(SuppressStdout const&) = delete;
   SuppressStdout(SuppressStdout&&) = delete;
   SuppressStdout& operator=(SuppressStdout const&) = delete;
-  SuppressStdout& operator=(SuppressStdout &&) = delete;
+  SuppressStdout& operator=(SuppressStdout&&) = delete;
 
  private:
   int saved_fd_ = -1;
