@@ -1,5 +1,5 @@
 create_power_domain top_domain \
-  -elements {.}  \
+    -elements {.}
 
 create_power_domain spm_inst_0_domain \
     -elements {spm_inst_0}
