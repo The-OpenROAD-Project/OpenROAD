@@ -1126,7 +1126,7 @@ void PlacerBase::initInstsForUnusableSites()
 
       for (int i = pairX.first; i < pairX.second; i++) {
         for (int j = pairY.first; j < pairY.second; j++) {
-          siteGrid[j * siteCountX + i] = Row;
+          siteGrid[(j * siteCountX) + i] = Row;
         }
       }
     }
@@ -1157,7 +1157,7 @@ void PlacerBase::initInstsForUnusableSites()
     for (int j = pairY.first; j < pairY.second; j++) {
       for (int i = pairX.first; i < pairX.second; i++) {
         if (cells == 0 || filled / (float) cells <= filler_density) {
-          siteGrid[j * siteCountX + i] = Blocked;
+          siteGrid[(j * siteCountX) + i] = Blocked;
           debugPrint(log_,
                      GPL,
                      "dummies",
@@ -1201,7 +1201,7 @@ void PlacerBase::initInstsForUnusableSites()
         inst->ly(), inst->uy(), die_.coreLy(), siteSizeY_, 0, siteCountY);
     for (int i = pairX.first; i < pairX.second; i++) {
       for (int j = pairY.first; j < pairY.second; j++) {
-        siteGrid[j * siteCountX + i] = FixedInst;
+        siteGrid[(j * siteCountX) + i] = FixedInst;
         debugPrint(log_,
                    GPL,
                    "dummies",
@@ -1220,17 +1220,17 @@ void PlacerBase::initInstsForUnusableSites()
   //
   for (int j = 0; j < siteCountY; j++) {
     for (int i = 0; i < siteCountX; i++) {
-      if (siteGrid[j * siteCountX + i] == Blocked) {
+      if (siteGrid[(j * siteCountX) + i] == Blocked) {
         int startX = i;
         // find end points
-        while (i < siteCountX && siteGrid[j * siteCountX + i] == Blocked) {
+        while (i < siteCountX && siteGrid[(j * siteCountX) + i] == Blocked) {
           i++;
         }
         int endX = i;
-        Instance dummy_gcell(die_.coreLx() + siteSizeX_ * startX,
-                             die_.coreLy() + siteSizeY_ * j,
-                             die_.coreLx() + siteSizeX_ * endX,
-                             die_.coreLy() + siteSizeY_ * (j + 1));
+        Instance dummy_gcell(die_.coreLx() + (siteSizeX_ * startX),
+                             die_.coreLy() + (siteSizeY_ * j),
+                             die_.coreLx() + (siteSizeX_ * endX),
+                             die_.coreLy() + (siteSizeY_ * (j + 1)));
         instStor_.push_back(dummy_gcell);
       }
     }

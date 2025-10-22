@@ -3,6 +3,8 @@
 
 #include "graphics.h"
 
+#include <spdlog/fmt/bundled/format.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -19,6 +21,7 @@
 #include "nesterovPlace.h"
 #include "odb/db.h"
 #include "placerBase.h"
+#include "point.h"
 #include "utl/Logger.h"
 
 namespace gpl {
@@ -391,8 +394,8 @@ void Graphics::drawNesterov(gui::Painter& painter)
     const float densityPenalty = nbVec_[nb_index]->getDensityPenalty();
     const float density_magnitude = std::hypot(densityPenalty * densityGrad.x,
                                                densityPenalty * densityGrad.y);
-    const float overall_x = wlGrad.x + densityPenalty * densityGrad.x;
-    const float overall_y = wlGrad.y + densityPenalty * densityGrad.y;
+    const float overall_x = wlGrad.x + (densityPenalty * densityGrad.x);
+    const float overall_y = wlGrad.y + (densityPenalty * densityGrad.y);
     const float overall_magnitude = std::hypot(overall_x, overall_y);
     const float max_magnitude
         = std::max({wl_magnitude, density_magnitude, overall_magnitude});

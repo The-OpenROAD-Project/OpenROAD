@@ -1981,8 +1981,8 @@ void NesterovBase::initFillerGCells()
 
     // place filler cells on random coordi and
     // set size as avgDx and avgDy
-    GCell filler_gcell(randX % region_dx + region_lx,
-                       randY % region_dy + region_ly,
+    GCell filler_gcell(((randX % region_dx) + region_lx),
+                       ((randY % region_dy) + region_ly),
                        fillerDx_,
                        fillerDy_);
 
