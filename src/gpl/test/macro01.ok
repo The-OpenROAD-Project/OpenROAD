@@ -110,7 +110,5 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.1260
 [INFO GPL-1009]     - For 50% usage of free space: 0.2016
 [INFO GPL-1014] Final placement area: 203792.66 (+0.00%)
-Differences found at line 972.
-    - _073670_ INV_X1 + PLACED ( 1487328 1552377 ) N ;
-    - _073670_ INV_X1 + PLACED ( 1496050 1553171 ) N ;
+No differences found.
 final hpwl: 10102233744
