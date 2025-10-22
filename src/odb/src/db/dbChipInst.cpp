@@ -162,7 +162,6 @@ dbTransform dbChipInst::getTransform() const
 
 Rect dbChipInst::getBBox() const
 {
-  _dbChipInst* _chipinst = (_dbChipInst*) this;
   Rect box = getMasterChip()->getBBox();
   getTransform().apply(box);
   return box;
