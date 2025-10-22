@@ -24,10 +24,10 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
 [INFO GPL-0004] CoreBBox: (  2.300  2.720 ) ( 375.360 375.360 ) um
 [INFO GPL-0032] Initializing region: Top-level
-[INFO GPL-0006] Number of instances:               182
+[INFO GPL-0006] Number of instances:               103
 [INFO GPL-0007] Movable instances:                   0
 [INFO GPL-0008] Fixed instances:                     0
-[INFO GPL-0009] Dummy instances:                   182
+[INFO GPL-0009] Dummy instances:                   103
 [INFO GPL-0010] Number of nets:                    666
 [INFO GPL-0011] Number of pins:                   2059
 [INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 377.475 377.475 ) um
@@ -35,7 +35,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0016] Core area:                  139017.078 um^2
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                139017.078 um^2
-[INFO GPL-0017] Fixed instances area:        22972.032 um^2
+[INFO GPL-0017] Fixed instances area:        68045.261 um^2
 [INFO GPL-0018] Movable instances area:          0.000 um^2
 [INFO GPL-0019] Utilization:                     0.000 %
 [INFO GPL-0020] Standard cells area:             0.000 um^2
