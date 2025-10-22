@@ -491,21 +491,23 @@ void FastRouteCore::updateSlacks(float percentage)
 
   std::vector<std::pair<int, float>> res_aware_list;
   // TODO: need to check this positive slack threshold
-  const double pos_threshold = 500e-12;
+  // const double pos_threshold = 500e-12;
 
-  // callback_handler_->triggerOnEstimateParasiticsRequired();
+  if (estimate_parasitics_) {
+    callback_handler_->triggerOnEstimateParasiticsRequired();
+  }
 
   for (const int net_id : net_ids_) {
     FrNet* net = nets_[net_id];
 
     const float slack = getNetSlack(net->getDbNet());
-    // const float slack = net->getSlack();
+    net->setSlack(slack);
     net->setIsResAware(false);
 
     // Skip positive slacks above threshold
-    if (slack < pos_threshold) {
-      res_aware_list.emplace_back(net_id, slack);
-    }
+    // if (slack < pos_threshold) {
+    res_aware_list.emplace_back(net_id, slack);
+    // }
   }
 
   auto compareSlack
@@ -529,7 +531,7 @@ void FastRouteCore::assignEdge(const int netID,
   int endLayer = 0;
 
   FrNet* net = nets_[netID];
-  int8_t net_cost = net->getEdgeCost();
+  const int8_t net_cost = net->getEdgeCost();
   auto& treeedges = sttrees_[netID].edges;
   auto& treenodes = sttrees_[netID].nodes;
   TreeEdge* treeedge = &(treeedges[edgeID]);

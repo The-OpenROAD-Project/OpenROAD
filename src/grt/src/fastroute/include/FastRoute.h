@@ -270,6 +270,7 @@ class FastRouteCore
       std::vector<std::pair<odb::Point, bool>>& overflow_pos);
 
   NetRouteMap getPlanarRoutes();
+  void getPlanarRoute(odb::dbNet* db_net, GRoute& route);
 
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
@@ -279,7 +280,7 @@ class FastRouteCore
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
-  void updateSlacks(float percentage = 0.5);
+  void updateSlacks(float percentage = 0.75);
   void preProcessTechLayers();
   odb::dbTechLayer* getTechLayer(int layer, bool is_via);
 
@@ -608,6 +609,7 @@ class FastRouteCore
   int x_range_;
   int y_range_;
 
+  bool estimate_parasitics_ = false;
   bool resistance_aware_ = false;
   bool enable_resistance_aware_ = false;
   int num_adjust_;

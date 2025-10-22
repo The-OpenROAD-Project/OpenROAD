@@ -697,8 +697,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
   const int endIND = tree_order_pv_.size() * 0.9;
 
-  updateSlacks();
-
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
 
