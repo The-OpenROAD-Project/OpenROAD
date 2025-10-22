@@ -824,7 +824,7 @@ void _dbModule::copyModuleInsts(dbModule* old_module,
                  old_inst->getMaster()->getName());
     } else {
       logger->error(utl::ODB,
-                    12,
+                    13,
                     "Module instance '{}' with master '{}' cannot be created",
                     new_inst_name,
                     old_inst->getMaster()->getName());
