@@ -21,8 +21,8 @@ global_connect
 set_voltage_domain -power VDD -ground VSS
 define_pdn_grid -name ram_grid -voltage_domains {CORE}
 add_pdn_stripe -grid ram_grid -layer met1 -followpins -width 0.48
-add_pdn_stripe -grid ram_grid -layer met2 -width 0.48 -pitch 45
-add_pdn_stripe -grid ram_grid -layer met3 -width 0.48 -pitch 20
+add_pdn_stripe -grid ram_grid -layer met2 -width 0.48 -pitch 40 -extend_to_boundary
+add_pdn_stripe -grid ram_grid -layer met3 -width 0.48 -pitch 20 -extend_to_boundary
 add_pdn_connect -layers {met1 met2}
 add_pdn_connect -layers {met2 met3}
 
