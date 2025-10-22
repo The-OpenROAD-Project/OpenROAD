@@ -951,8 +951,8 @@ void FastRouteCore::getPlanarRoute(odb::dbNet* db_net, GRoute& route)
     if (treeedge->len > 0) {
       int routeLen = treeedge->route.routelen;
       const std::vector<GPoint3D>& grids = treeedge->route.grids;
-      int lastX = tile_size_ * (grids[0].x + 0.5) + x_corner_;
-      int lastY = tile_size_ * (grids[0].y + 0.5) + y_corner_;
+      int lastX = (tile_size_ * (grids[0].x + 0.5)) + x_corner_;
+      int lastY = (tile_size_ * (grids[0].y + 0.5)) + y_corner_;
 
       // defines the layer used for vertical edges are still 2D
       int layer_h = 0;
@@ -968,12 +968,12 @@ void FastRouteCore::getPlanarRoute(odb::dbNet* db_net, GRoute& route)
         layer_h = nets_[netID]->getMinLayer();
         layer_v = nets_[netID]->getMinLayer() + 1;
       }
-      int second_x = tile_size_ * (grids[1].x + 0.5) + x_corner_;
+      int second_x = (tile_size_ * (grids[1].x + 0.5)) + x_corner_;
       int lastL = (lastX == second_x) ? layer_v : layer_h;
 
       for (int i = 1; i <= routeLen; i++) {
-        const int xreal = tile_size_ * (grids[i].x + 0.5) + x_corner_;
-        const int yreal = tile_size_ * (grids[i].y + 0.5) + y_corner_;
+        const int xreal = (tile_size_ * (grids[i].x + 0.5)) + x_corner_;
+        const int yreal = (tile_size_ * (grids[i].y + 0.5)) + y_corner_;
         GSegment segment;
         if (lastX == xreal) {
           // if change direction add a via to change the layer
