@@ -54,7 +54,7 @@ SuppressStdout::~SuppressStdout()
     logger_->error(UTL,
                    76,
                    "dup2 failed to restore stdout, all stdout is likely broken "
-                   "from this point foward.");
+                   "from this point forward.");
   } else {
     close(saved_fd_);
   }
