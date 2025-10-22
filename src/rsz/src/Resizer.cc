@@ -395,9 +395,6 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
   // timing information. So initBlock(), a light version of init(), is
   // sufficient.
   initBlock();
-  // Disable incremental timing.
-  graph_delay_calc_->delaysInvalid();
-  search_->arrivalsInvalid();
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
 
   if (insts.empty()) {
@@ -426,6 +423,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
     }
   }
   unbuffer_move_->commitMoves();
+  estimate_parasitics_->updateParasitics();
   level_drvr_vertices_valid_ = false;
   logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move_->numMoves());
 }
@@ -4354,6 +4352,7 @@ void Resizer::cloneClkInverter(Instance* inv)
 bool Resizer::repairSetup(double setup_margin,
                           double repair_tns_end_percent,
                           int max_passes,
+                          int max_iterations,
                           int max_repairs_per_pass,
                           bool match_cell_footprint,
                           bool verbose,
@@ -4379,6 +4378,7 @@ bool Resizer::repairSetup(double setup_margin,
   return repair_setup_->repairSetup(setup_margin,
                                     repair_tns_end_percent,
                                     max_passes,
+                                    max_iterations,
                                     max_repairs_per_pass,
                                     verbose,
                                     sequence,
@@ -4419,6 +4419,7 @@ bool Resizer::repairHold(
     // Max buffer count as percent of design instance count.
     float max_buffer_percent,
     int max_passes,
+    int max_iterations,
     bool match_cell_footprint,
     bool verbose)
 {
@@ -4445,6 +4446,7 @@ bool Resizer::repairHold(
                                   allow_setup_violations,
                                   max_buffer_percent,
                                   max_passes,
+                                  max_iterations,
                                   verbose);
 }
 

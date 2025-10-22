@@ -86,3 +86,15 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "TestMetrics",
+    srcs = [
+        "cpp/TestMetrics.cpp",
+    ],
+    deps = [
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

@@ -1904,6 +1904,14 @@ void GlobalRouter::addResourcesForPinAccess()
           const bool north_pin = pin.getEdge() == PinEdge::north;
           const int pin_y1 = north_pin ? pin_y : pin_y - 1;
           const int pin_y2 = north_pin ? pin_y + 1 : pin_y;
+
+          // Ensure we do not go out of bounds when the pin is at the edge of
+          // the grid. If the pin is on the south edge and at y=0, there is no
+          // room for adding resources.
+          if (pin_y1 < 0) {
+            continue;
+          }
+
           const int edge_cap = fastroute_->getEdgeCapacity(
               pin_x, pin_y1, pin_x, pin_y2, layer);
           fastroute_->addAdjustment(
@@ -1912,6 +1920,14 @@ void GlobalRouter::addResourcesForPinAccess()
           const bool east_pin = pin.getEdge() == PinEdge::east;
           const int pin_x1 = east_pin ? pin_x : pin_x - 1;
           const int pin_x2 = east_pin ? pin_x + 1 : pin_x;
+
+          // Ensure we do not go out of bounds when the pin is at the edge of
+          // the grid. If the pin is on the west edge and at x=0, there is no
+          // room for adding resources.
+          if (pin_x1 < 0) {
+            continue;
+          }
+
           const int edge_cap = fastroute_->getEdgeCapacity(
               pin_x1, pin_y, pin_x2, pin_y, layer);
           fastroute_->addAdjustment(

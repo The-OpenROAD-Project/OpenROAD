@@ -40,6 +40,7 @@
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace rsz {
 
@@ -63,16 +64,6 @@ using BnetType = BufferedNetType;
 using BnetSeq = BufferedNetSeq;
 using BnetPtr = BufferedNetPtr;
 using BnetMetrics = BufferedNet::Metrics;
-
-// from Rebuffer.cc
-void characterizeChoiceTree(dbNetwork* nwk,
-                            int level,
-                            const BufferedNetPtr& choice,
-                            int& buffer_count,
-                            int& load_count,
-                            int& wire_count,
-                            int& junction_count,
-                            std::set<odb::dbModule*>& load_modules);
 
 // Template magic to make it easier to write algorithms descending
 // over the buffer tree in the form of lambdas; it allows recursive
@@ -662,6 +653,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
               return opts1;
             }
 
+            utl::DebugScopedTimer timer(long_wire_stepping_runtime_);
             int round = 0;
             while (location != node->location()) {
               debugPrint(logger_,
@@ -1771,79 +1763,6 @@ std::vector<Instance*> Rebuffer::collectImportedTreeBufferInstances(
   return insts;
 }
 
-void characterizeChoiceTree(dbNetwork* nwk,
-                            int level,
-                            const BufferedNetPtr& choice,
-                            int& buffer_count,
-                            int& load_count,
-                            int& wire_count,
-                            int& junction_count,
-                            std::set<odb::dbModule*>& load_modules)
-{
-  switch (choice->type()) {
-    case BufferedNetType::buffer: {
-      buffer_count++;
-      characterizeChoiceTree(nwk,
-                             level + 1,
-                             choice->ref(),
-                             buffer_count,
-                             load_count,
-                             wire_count,
-                             junction_count,
-                             load_modules);
-      break;
-    }
-    case BufferedNetType::wire: {
-      wire_count++;
-      characterizeChoiceTree(nwk,
-                             level + 1,
-                             choice->ref(),
-                             buffer_count,
-                             load_count,
-                             wire_count,
-                             junction_count,
-                             load_modules);
-      break;
-    }
-    case BufferedNetType::junction: {
-      junction_count++;
-      characterizeChoiceTree(nwk,
-                             level + 1,
-                             choice->ref(),
-                             buffer_count,
-                             load_count,
-                             wire_count,
-                             junction_count,
-                             load_modules);
-      characterizeChoiceTree(nwk,
-                             level + 1,
-                             choice->ref2(),
-                             buffer_count,
-                             load_count,
-                             wire_count,
-                             junction_count,
-                             load_modules);
-      break;
-    }
-    case BufferedNetType::load: {
-      const Pin* load_pin = choice->loadPin();
-      odb::dbITerm* load_iterm = nullptr;
-      odb::dbBTerm* load_bterm = nullptr;
-      odb::dbModITerm* load_moditerm = nullptr;
-
-      nwk->staToDb(load_pin, load_iterm, load_bterm, load_moditerm);
-      if (load_iterm) {
-        dbInst* load_inst = load_iterm->getInst();
-        if (load_inst) {
-          load_modules.insert(load_inst->getModule());
-        }
-      }
-      load_count++;
-      break;
-    }
-  }
-}
-
 // Martin (2024-04-18): This is copied over from original RepairSetup
 // buffering mostly unchanged and is ripe for clean-up/rewrite later.
 int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
@@ -2060,33 +1979,6 @@ int Rebuffer::fanout(Vertex* vertex) const
   return fanout;
 }
 
-class ScopedTimer
-{
- public:
-  using Clock = std::chrono::steady_clock;
-
-  ScopedTimer(Logger* logger, double& accumulator)
-      : logger_(logger), accumulator_(accumulator)
-  {
-    if (logger_->debugCheck(RSZ, "rebuffer", 1)) {
-      start_ = Clock::now();
-    }
-  }
-
-  ~ScopedTimer()
-  {
-    if (logger_->debugCheck(RSZ, "rebuffer", 1)) {
-      accumulator_
-          += std::chrono::duration<double>{Clock::now() - start_}.count();
-    }
-  }
-
- private:
-  Logger* logger_;
-  double& accumulator_;
-  std::chrono::time_point<Clock> start_;
-};
-
 void Rebuffer::setPin(Pin* drvr_pin)
 {
   // set rebuffering globals
@@ -2118,6 +2010,7 @@ void Rebuffer::setPin(Pin* drvr_pin)
 void Rebuffer::fullyRebuffer(Pin* user_pin)
 {
   double sta_runtime = 0, bft_runtime = 0, ra_runtime = 0;
+  long_wire_stepping_runtime_ = 0;
 
   init();
   resizer_->ensureLevelDrvrVertices();
@@ -2193,7 +2086,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
 
     {
-      ScopedTimer timer(logger_, sta_runtime);
+      utl::DebugScopedTimer timer(sta_runtime);
       search_->findRequireds(drvr->level());
     }
 
@@ -2241,7 +2134,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     BnetPtr timing_tree = unbuffered_tree;
 
     {
-      ScopedTimer timer(logger_, bft_runtime);
+      utl::DebugScopedTimer timer(bft_runtime);
       for (int i = 0; i < 3; i++) {
         timing_tree = bufferForTiming(timing_tree);
         if (!timing_tree) {
@@ -2308,7 +2201,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
 
     BnetPtr area_opt_tree = timing_tree;
     {
-      ScopedTimer timer(logger_, ra_runtime);
+      utl::DebugScopedTimer timer(ra_runtime);
       for (int i = 0; i < 5 && area_opt_tree; i++) {
         area_opt_tree
             = recoverArea(area_opt_tree, target_slack, ((float) (1 + i)) / 5);
@@ -2398,7 +2291,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     estimate_parasitics_->updateParasitics();
 
     {
-      ScopedTimer timer(logger_, sta_runtime);
+      utl::DebugScopedTimer timer(sta_runtime);
       sta_->findDelays(max_level);
       search_->findArrivals(max_level);
     }
@@ -2416,6 +2309,12 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
   debugPrint(logger_, RSZ, "rebuffer", 1, "STA {:.2f}", sta_runtime);
   debugPrint(
       logger_, RSZ, "rebuffer", 1, "Buffer for timing {:.2f}", bft_runtime);
+  debugPrint(logger_,
+             RSZ,
+             "rebuffer",
+             1,
+             "  of which long wire stepping {:.2f}",
+             long_wire_stepping_runtime_);
   debugPrint(logger_, RSZ, "rebuffer", 1, "Recover area {:.2f}", ra_runtime);
 }
 

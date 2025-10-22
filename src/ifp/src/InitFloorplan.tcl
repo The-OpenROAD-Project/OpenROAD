@@ -111,7 +111,7 @@ proc make_rows_helper { key_array } {
   }
 
   # Get gap space
-  set gap -1
+  set gap [expr -(2 ** 31)]
   if { [info exists keys(-gap)] } {
     set gap [ord::microns_to_dbu $keys(-gap)]
   }
@@ -450,7 +450,7 @@ proc make_polygon_rows_helper { key_array } {
   }
 
   # Get gap space
-  set gap -1
+  set gap [expr -(2 ** 31)]
   if { [info exists keys(-gap)] } {
     set gap [ord::microns_to_dbu $keys(-gap)]
   }
