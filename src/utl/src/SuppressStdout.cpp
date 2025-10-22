@@ -1,8 +1,9 @@
 #include "utl/SuppressStdout.h"
 
-#include <cstdio>
 #include <fcntl.h>
 #include <unistd.h>
+
+#include <cstdio>
 
 #include "utl/Logger.h"
 
