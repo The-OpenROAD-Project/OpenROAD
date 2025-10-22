@@ -29,19 +29,19 @@ make_tracks met5 -x_offset 1.70 -x_pitch 3.40 -y_offset 1.70 -y_pitch 3.40
 set spm_inst_0_power_net "VDD_0"
 set gnd_net "GND"
 add_global_connection \
-   -net $spm_inst_0_power_net \
-   -inst_pattern {spm_inst_0.*} \
-   -pin_pattern {VPWR} \
-   -power
+    -net $spm_inst_0_power_net \
+    -inst_pattern {spm_inst_0.*} \
+    -pin_pattern {VPWR} \
+    -power
 add_global_connection \
-   -net $gnd_net \
-   -inst_pattern {spm_inst_0.*} \
-   -pin_pattern {VGND} \
-   -ground
+    -net $gnd_net \
+    -inst_pattern {spm_inst_0.*} \
+    -pin_pattern {VGND} \
+    -ground
 set_voltage_domain \
     -region spm_inst_0_domain \
     -power $spm_inst_0_power_net \
-    -ground $gnd_net 
+    -ground $gnd_net
 define_pdn_grid \
     -name spm_inst_0_grid \
     -pins met4 \
@@ -58,19 +58,19 @@ add_pdn_stripe \
     -spacing 2 \
     -pitch 40
 add_pdn_connect \
-    -grid spm_inst_0_grid\
+    -grid spm_inst_0_grid \
     -layers {met1 met4}
 set spm_inst_1_power_net VDD_1
 add_global_connection \
-   -net $spm_inst_1_power_net \
-   -inst_pattern {spm_inst_1.*} \
-   -pin_pattern {VPWR} \
-   -power
+    -net $spm_inst_1_power_net \
+    -inst_pattern {spm_inst_1.*} \
+    -pin_pattern {VPWR} \
+    -power
 add_global_connection \
-   -net $gnd_net \
-   -inst_pattern {spm_inst_1.*} \
-   -pin_pattern {VGND} \
-   -ground
+    -net $gnd_net \
+    -inst_pattern {spm_inst_1.*} \
+    -pin_pattern {VGND} \
+    -ground
 set_voltage_domain \
     -region spm_inst_1_domain \
     -power $spm_inst_1_power_net \
@@ -92,7 +92,7 @@ add_pdn_stripe \
     -offset 20 \
     -pitch 40
 add_pdn_connect \
-    -grid spm_inst_1_grid\
+    -grid spm_inst_1_grid \
     -layers {met1 met4}
 pdngen
 
