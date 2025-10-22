@@ -1130,6 +1130,36 @@ void PlacerBase::initInstsForUnusableSites()
         }
       }
     }
+
+    // Mark sites intersecting with any region as Blocked
+    for (auto* group : db_->getChip()->getBlock()->getGroups()) {
+      if (group->getRegion()) {
+        auto boundaries = group->getRegion()->getBoundaries();
+        for (auto boundary : boundaries) {
+          Rect rect = boundary->getBox();
+
+          std::pair<int, int> pairX = getMinMaxIdx(rect.xMin(),
+                                                   rect.xMax(),
+                                                   die_.coreLx(),
+                                                   siteSizeX_,
+                                                   0,
+                                                   siteCountX);
+
+          std::pair<int, int> pairY = getMinMaxIdx(rect.yMin(),
+                                                   rect.yMax(),
+                                                   die_.coreLy(),
+                                                   siteSizeY_,
+                                                   0,
+                                                   siteCountY);
+
+          for (int i = pairX.first; i < pairX.second; i++) {
+            for (int j = pairY.first; j < pairY.second; j++) {
+              siteGrid[(j * siteCountX) + i] = Blocked;
+            }
+          }
+        }
+      }
+    }
   }
 
   // Mark blockage areas as Blocked so that their sites will be blocked.

@@ -122,13 +122,23 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
     Nesterov
   };
 
-  // Colors for different regions
-  std::vector<gui::Painter::Color> colors_ = {gui::Painter::kDarkMagenta,
-                                              gui::Painter::kRed,
-                                              gui::Painter::kBlue,
-                                              gui::Painter::kGreen,
-                                              gui::Painter::kCyan,
-                                              gui::Painter::kOrange};
+  // These are used for coloring each instance based on its group
+  std::vector<gui::Painter::Color> instances_colors_ = {
+      gui::Painter::kDarkGreen,
+      gui::Painter::kDarkBlue,
+      gui::Painter::kBrown,
+      gui::Painter::kDarkYellow,
+  };
+
+  // These are used for bin forces, fillers, and dummies (lighter) for each
+  // region.
+  std::vector<gui::Painter::Color> region_colors_ = {
+      gui::Painter::kDarkMagenta,
+      gui::Painter::kYellow,
+      gui::Painter::kBlue,
+      gui::Painter::kCyan,
+
+  };
 
   void drawForce(gui::Painter& painter);
   void drawCells(const std::vector<GCell*>& cells, gui::Painter& painter);

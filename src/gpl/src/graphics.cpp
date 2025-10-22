@@ -220,7 +220,8 @@ void Graphics::drawForce(gui::Painter& painter)
       int cx = bin.cx();
       int cy = bin.cy();
 
-      gui::Painter::Color color = colors_[nb_idx % colors_.size()];
+      gui::Painter::Color color
+          = region_colors_[nb_idx % region_colors_.size()];
       painter.setPen(color, true);
       painter.drawLine(cx, cy, cx + dx, cy + dy);
 
@@ -276,11 +277,12 @@ void Graphics::drawSingleGCell(const GCell* gCell,
       break;
     default:
       if (gCell->isInstance()) {
-        color = gCell->isLocked() ? gui::Painter::kDarkCyan
-                                  : gui::Painter::kDarkGreen;
+        color = gCell->isLocked()
+                    ? gui::Painter::kTurquoise
+                    : instances_colors_[nb_index % instances_colors_.size()];
       } else if (gCell->isFiller()) {
         // Use different colors for each NesterovBase
-        color = colors_[nb_index % colors_.size()];
+        color = region_colors_[nb_index % region_colors_.size()];
       }
       color.a = 180;
       break;
@@ -331,10 +333,10 @@ void Graphics::drawNesterov(gui::Painter& painter)
     drawCells(nb->getGCells(), painter, nb_idx);
   }
 
-  // Create lighter versions of the colors_ with alpha 50
+  // Create lighter versions of the region_colors_ with alpha 50
   std::vector<gui::Painter::Color> light_colors;
-  light_colors.reserve(colors_.size());
-  for (const auto& color : colors_) {
+  light_colors.reserve(region_colors_.size());
+  for (const auto& color : region_colors_) {
     light_colors.emplace_back(color.r, color.g, color.b, 50);
   }
 
