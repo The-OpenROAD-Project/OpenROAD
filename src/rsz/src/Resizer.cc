@@ -395,9 +395,6 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
   // timing information. So initBlock(), a light version of init(), is
   // sufficient.
   initBlock();
-  // Disable incremental timing.
-  graph_delay_calc_->delaysInvalid();
-  search_->arrivalsInvalid();
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
 
   if (insts.empty()) {
@@ -426,6 +423,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
     }
   }
   unbuffer_move_->commitMoves();
+  estimate_parasitics_->updateParasitics();
   level_drvr_vertices_valid_ = false;
   logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move_->numMoves());
 }
