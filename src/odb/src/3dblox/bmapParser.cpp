@@ -3,6 +3,7 @@
 
 #include "bmapParser.h"
 
+#include <exception>
 #include <fstream>
 #include <sstream>
 #include <string>
