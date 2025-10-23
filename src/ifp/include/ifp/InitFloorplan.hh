@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstdint>
+#include <limits>
 #include <set>
 #include <string>
 #include <vector>
@@ -51,7 +53,7 @@ class InitFloorplan
                      const std::vector<odb::dbSite*>& additional_sites = {},
                      RowParity row_parity = RowParity::NONE,
                      const std::set<odb::dbSite*>& flipped_sites = {},
-                     int gap = -1);
+                     int gap = std::numeric_limits<std::int32_t>::min());
 
   // The base_site determines the single-height rows.  For hybrid rows it is
   // a site containing a row pattern.
@@ -61,7 +63,7 @@ class InitFloorplan
                      const std::vector<odb::dbSite*>& additional_sites = {},
                      RowParity row_parity = RowParity::NONE,
                      const std::set<odb::dbSite*>& flipped_sites = {},
-                     int gap = -1);
+                     int gap = std::numeric_limits<std::int32_t>::min());
 
   void insertTiecells(odb::dbMTerm* tie_term,
                       const std::string& prefix = "TIEOFF_");
@@ -92,7 +94,7 @@ class InitFloorplan
                            = {},
                            RowParity row_parity = RowParity::NONE,
                            const std::set<odb::dbSite*>& flipped_sites = {},
-                           int gap = -1);
+                           int gap = std::numeric_limits<std::int32_t>::min());
 
   // The base_site determines the single-height rows.  For hybrid rows it is
   // a site containing a row pattern.
@@ -101,7 +103,7 @@ class InitFloorplan
                 const std::vector<odb::dbSite*>& additional_sites = {},
                 RowParity row_parity = RowParity::NONE,
                 const std::set<odb::dbSite*>& flipped_sites = {},
-                int gap = -1);
+                int gap = std::numeric_limits<std::int32_t>::min());
 
   // Create rows for a polygon core area using true polygon-aware generation
   void makePolygonRows(const odb::Polygon& core_polygon,
@@ -109,7 +111,7 @@ class InitFloorplan
                        const std::vector<odb::dbSite*>& additional_sites = {},
                        RowParity row_parity = RowParity::NONE,
                        const std::set<odb::dbSite*>& flipped_sites = {},
-                       int gap = -1);
+                       int gap = std::numeric_limits<std::int32_t>::min());
 
   void makeTracks();
   void makeTracks(odb::dbTechLayer* layer,
@@ -178,6 +180,8 @@ class InitFloorplan
   // this is a set of sets of all constructed site ids.
   std::set<std::set<int>> constructed_patterns_;
   std::vector<std::vector<odb::dbSite*>> repeating_row_patterns_;
+
+  void checkGap(int gap);
 };
 
 }  // namespace ifp

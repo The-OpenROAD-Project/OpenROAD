@@ -6,6 +6,7 @@
 #include <any>
 #include <functional>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>

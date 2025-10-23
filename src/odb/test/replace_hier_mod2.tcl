@@ -18,12 +18,38 @@ link_design -hier gcd
 create_clock -name CLK -period 1 clk
 set_max_delay -to carry_out 1.0
 
+estimate_parasitics -placement
+
 report_checks -through _carry_out_and_/C -field input
 report_cell_usage _551_
 
 #set_debug_level ODB replace_design 1
-replace_hier_module _551_ LCU_16_KOGGE_STONE
 
+# Swap #1. BRENT_KUNG -> KOGGE_STONE
+replace_hier_module _551_ LCU_16_KOGGE_STONE
+sta::network_changed
+estimate_parasitics -placement
+report_checks -through _carry_out_and_/C -field input
+report_cell_usage _551_
+
+# Swap #2. KOGGE_STONE -> BRENT_KUNG (Rollback)
+replace_hier_module _551_ LCU_16_BRENT_KUNG
+sta::network_changed
+estimate_parasitics -placement
+report_checks -through _carry_out_and_/C -field input
+report_cell_usage _551_
+
+# Swap #3. BRENT_KUNG -> KOGGE_STONE (Redo)
+replace_hier_module _551_ LCU_16_KOGGE_STONE
+sta::network_changed
+estimate_parasitics -placement
+report_checks -through _carry_out_and_/C -field input
+report_cell_usage _551_
+
+# Swap #4. KOGGE_STONE -> BRENT_KUNG (Rollback again)
+replace_hier_module _551_ LCU_16_BRENT_KUNG
+sta::network_changed
+estimate_parasitics -placement
 report_checks -through _carry_out_and_/C -field input
 report_cell_usage _551_
 

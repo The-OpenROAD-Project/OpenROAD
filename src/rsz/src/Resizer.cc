@@ -18,6 +18,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -395,9 +396,6 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
   // timing information. So initBlock(), a light version of init(), is
   // sufficient.
   initBlock();
-  // Disable incremental timing.
-  graph_delay_calc_->delaysInvalid();
-  search_->arrivalsInvalid();
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
 
   if (insts.empty()) {
@@ -426,6 +424,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
     }
   }
   unbuffer_move_->commitMoves();
+  estimate_parasitics_->updateParasitics();
   level_drvr_vertices_valid_ = false;
   logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move_->numMoves());
 }
@@ -735,8 +734,27 @@ void Resizer::reportFastBufferSizes()
 {
   resizePreamble();
 
+  // Sort fast buffers by capacitance and then by name.
+  std::vector<LibertyCell*> buffers{buffer_fast_sizes_.begin(),
+                                    buffer_fast_sizes_.end()};
+  std::sort(buffers.begin(),
+            buffers.end(),
+            [=](const LibertyCell* a, const LibertyCell* b) {
+              LibertyPort* scratch;
+              LibertyPort* in_a;
+              LibertyPort* in_b;
+
+              a->bufferPorts(in_a, scratch);
+              b->bufferPorts(in_b, scratch);
+
+              return std::make_pair(in_a->capacitance(),
+                                    std::string_view(a->name()))
+                     < std::make_pair(in_b->capacitance(),
+                                      std::string_view(b->name()));
+            });
+
   logger_->report("\nFast Buffer Report:");
-  logger_->report("There are {} fast buffers", buffer_fast_sizes_.size());
+  logger_->report("There are {} fast buffers", buffers.size());
   logger_->report("{:->80}", "");
   logger_->report(
       "Cell                                        Area  Input  Intrinsic "
@@ -745,7 +763,7 @@ void Resizer::reportFastBufferSizes()
       "                                                   Cap    Delay    Res");
   logger_->report("{:->80}", "");
 
-  for (auto size : buffer_fast_sizes_) {
+  for (auto size : buffers) {
     LibertyPort *in, *out;
     size->bufferPorts(in, out);
     logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>7.1f}",
@@ -4354,6 +4372,7 @@ void Resizer::cloneClkInverter(Instance* inv)
 bool Resizer::repairSetup(double setup_margin,
                           double repair_tns_end_percent,
                           int max_passes,
+                          int max_iterations,
                           int max_repairs_per_pass,
                           bool match_cell_footprint,
                           bool verbose,
@@ -4379,6 +4398,7 @@ bool Resizer::repairSetup(double setup_margin,
   return repair_setup_->repairSetup(setup_margin,
                                     repair_tns_end_percent,
                                     max_passes,
+                                    max_iterations,
                                     max_repairs_per_pass,
                                     verbose,
                                     sequence,
@@ -4419,6 +4439,7 @@ bool Resizer::repairHold(
     // Max buffer count as percent of design instance count.
     float max_buffer_percent,
     int max_passes,
+    int max_iterations,
     bool match_cell_footprint,
     bool verbose)
 {
@@ -4445,6 +4466,7 @@ bool Resizer::repairHold(
                                   allow_setup_violations,
                                   max_buffer_percent,
                                   max_passes,
+                                  max_iterations,
                                   verbose);
 }
 
