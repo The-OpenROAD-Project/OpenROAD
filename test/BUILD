@@ -94,6 +94,7 @@ BIG_TESTS = [
     "gcd_sky130hd",
     "gcd_sky130hs",
     "gcd_asap7",
+    "aes_asap7",
     "ibex_sky130hd",
     "ibex_sky130hs",
     "jpeg_sky130hd",
