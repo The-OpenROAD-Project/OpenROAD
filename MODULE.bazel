@@ -109,7 +109,7 @@ bazel_dep(name = "googletest", version = "1.17.0", dev_dependency = True)
 # BCR, they should depend on their own version.
 bazel_dep(name = "glpk", version = "5.0.bcr.3", repo_name = "org_gnu_glpk")
 
-## Fix the compiler version and avoid any local compiler
+## Lock the compiler version and avoid any local compiler
 bazel_dep(name = "toolchains_llvm", version = "1.5.0")
 
 # Configure and register the toolchain.
