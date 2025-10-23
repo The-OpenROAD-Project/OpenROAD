@@ -72,8 +72,8 @@ There are 2 fast buffers
 Cell                                        Area  Input  Intrinsic Drive 
                                                    Cap    Delay    Res
 --------------------------------------------------------------------------------
-gf180mcu_fd_sc_mcu9t5v0__buf_12             107.3 4.1e-14 1.3e-10   920.5
 gf180mcu_fd_sc_mcu9t5v0__buf_8               73.4 2.8e-14 1.3e-10  1378.8
+gf180mcu_fd_sc_mcu9t5v0__buf_12             107.3 4.1e-14 1.3e-10   920.5
 --------------------------------------------------------------------------------
 [INFO RSZ-0165] Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing
 ********************************************************************************
@@ -151,6 +151,6 @@ There are 2 fast buffers
 Cell                                        Area  Input  Intrinsic Drive 
                                                    Cap    Delay    Res
 --------------------------------------------------------------------------------
-gf180mcu_fd_sc_mcu9t5v0__buf_12             107.3 4.1e-14 1.3e-10   920.5
 gf180mcu_fd_sc_mcu9t5v0__buf_8               73.4 2.8e-14 1.3e-10  1378.8
+gf180mcu_fd_sc_mcu9t5v0__buf_12             107.3 4.1e-14 1.3e-10   920.5
 --------------------------------------------------------------------------------
