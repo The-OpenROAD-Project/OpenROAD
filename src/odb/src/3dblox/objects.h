@@ -124,12 +124,12 @@ struct DbxData
 
 struct BumpMapEntry
 {
-  std::string bump_inst_name;
-  std::string bump_cell_type;
-  double x{0.0};
-  double y{0.0};
-  std::string port_name;
-  std::string net_name;
+  const std::string bump_inst_name;
+  const std::string bump_cell_type;
+  const double x{0.0};
+  const double y{0.0};
+  const std::string port_name;
+  const std::string net_name;
 
   BumpMapEntry() = default;
   BumpMapEntry(const std::string& inst_name,

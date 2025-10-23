@@ -10,8 +10,8 @@ namespace utl {
 class Logger;
 }
 namespace odb {
-class BumpMapData;
-class BumpMapEntry;
+struct BumpMapData;
+struct BumpMapEntry;
 
 class BmapParser
 {
