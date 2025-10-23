@@ -13,7 +13,9 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "rsz/Resizer.hh"
 #include "sta/TimingModel.hh"
+#include "utl/Logger.h"
 // Poor include definitions in ABC
 // clang-format off
 #include "misc/st/st.h"

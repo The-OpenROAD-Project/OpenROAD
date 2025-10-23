@@ -213,6 +213,29 @@ NetRouteMap& GlobalRouter::getRoutes()
   return routes_;
 }
 
+NetRouteMap GlobalRouter::getPartialRoutes()
+{
+  NetRouteMap net_routes;
+  // TODO: still need to fix this during incremental grt
+  if (is_incremental) {
+    for (const auto& [db_net, net] : db_net_map_) {
+      if (routes_[db_net].empty()) {
+        GRoute route;
+        net_routes.insert({db_net, route});
+        fastroute_->getPlanarRoute(db_net, net_routes[db_net]);
+      }
+    }
+  } else {
+    partial_routes_.clear();
+    if (routes_.empty()) {
+      partial_routes_ = fastroute_->getPlanarRoutes();
+      net_routes = partial_routes_;
+    }
+  }
+
+  return net_routes;
+}
+
 bool GlobalRouter::haveRoutes()
 {
   if (!designIsPlaced()) {
@@ -281,6 +304,8 @@ void GlobalRouter::globalRoute(bool save_guides,
                                bool end_incremental)
 {
   bool has_routable_nets = false;
+  is_incremental = (start_incremental || end_incremental);
+
   for (auto net : db_->getChip()->getBlock()->getNets()) {
     if (net->getITerms().size() + net->getBTerms().size() > 1) {
       has_routable_nets = true;
@@ -384,7 +409,7 @@ void GlobalRouter::suggestAdjustment()
   // Get min adjustment apply to layers
   int min_routing_layer, max_routing_layer;
   getMinMaxLayer(min_routing_layer, max_routing_layer);
-  float min_adjustment = 100;
+  float min_adjustment = 1.0;
   for (int l = min_routing_layer; l <= max_routing_layer; l++) {
     odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(l);
     if (tech_layer->getLayerAdjustment() != 0.0) {
@@ -934,8 +959,14 @@ bool GlobalRouter::findPinAccessPointPositions(
       access_points.insert(
           access_points.begin(), bpin_pas.begin(), bpin_pas.end());
     }
-  } else {
+  } else if (pin.isCorePin()) {
     access_points = pin.getITerm()->getPrefAccessPoints();
+  } else {
+    // For non-core cells, DRT does not assign preferred APs.
+    // Use all APs to ensure the guides covering at least one AP.
+    for (const auto& [pin, aps] : pin.getITerm()->getAccessPoints()) {
+      access_points.insert(access_points.end(), aps.begin(), aps.end());
+    }
   }
 
   if (access_points.empty()) {
@@ -1852,34 +1883,55 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
   }
 }
 
-// For macro pins in the east and north edges of the macros, the access for
-// them can be blocked by the macro obstructions. This function adds the
-// resources necessary to route these pins.
-// Only pins in the east and north edges are affected because FastRoute
-// routes from left to right, and bottom to top.
+// For macro pins in the east and north edges of the macros, and pins on west
+// and south edges that have their APs in GCells completely blocked by macro
+// obstructions, the access for them can be blocked by the macro obstructions.
+// This function adds the resources necessary to route these pins. Only pins in
+// the east and north edges are affected because FastRoute routes from left to
+// right, and bottom to top.
 void GlobalRouter::addResourcesForPinAccess()
 {
   odb::dbTech* tech = db_->getTech();
   for (const auto& [db_net, net] : db_net_map_) {
     for (const Pin& pin : net->getPins()) {
-      if (pin.isConnectedToPadOrMacro()
-          && (pin.getEdge() == PinEdge::east
-              || pin.getEdge() == PinEdge::north)) {
+      if (pin.isConnectedToPadOrMacro() && (pin.getEdge() != PinEdge::none)) {
         const odb::Point& pos = pin.getOnGridPosition();
         int pin_x = (int) ((pos.x() - grid_->getXMin()) / grid_->getTileSize());
         int pin_y = (int) ((pos.y() - grid_->getYMin()) / grid_->getTileSize());
         const int layer = pin.getConnectionLayer();
         odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
         if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+          const bool north_pin = pin.getEdge() == PinEdge::north;
+          const int pin_y1 = north_pin ? pin_y : pin_y - 1;
+          const int pin_y2 = north_pin ? pin_y + 1 : pin_y;
+
+          // Ensure we do not go out of bounds when the pin is at the edge of
+          // the grid. If the pin is on the south edge and at y=0, there is no
+          // room for adding resources.
+          if (pin_y1 < 0) {
+            continue;
+          }
+
           const int edge_cap = fastroute_->getEdgeCapacity(
-              pin_x, pin_y, pin_x, pin_y + 1, layer);
+              pin_x, pin_y1, pin_x, pin_y2, layer);
           fastroute_->addAdjustment(
-              pin_x, pin_y, pin_x, pin_y + 1, layer, edge_cap + 1, false);
+              pin_x, pin_y1, pin_x, pin_y2, layer, edge_cap + 1, false);
         } else {
+          const bool east_pin = pin.getEdge() == PinEdge::east;
+          const int pin_x1 = east_pin ? pin_x : pin_x - 1;
+          const int pin_x2 = east_pin ? pin_x + 1 : pin_x;
+
+          // Ensure we do not go out of bounds when the pin is at the edge of
+          // the grid. If the pin is on the west edge and at x=0, there is no
+          // room for adding resources.
+          if (pin_x1 < 0) {
+            continue;
+          }
+
           const int edge_cap = fastroute_->getEdgeCapacity(
-              pin_x, pin_y, pin_x + 1, pin_y, layer);
+              pin_x1, pin_y, pin_x2, pin_y, layer);
           fastroute_->addAdjustment(
-              pin_x, pin_y, pin_x + 1, pin_y, layer, edge_cap + 1, false);
+              pin_x1, pin_y, pin_x2, pin_y, layer, edge_cap + 1, false);
         }
       }
     }
@@ -4547,6 +4599,15 @@ std::vector<GSegment> GlobalRouter::createConnectionForPositions(
     connection.emplace_back(x1, y1, layer_hor, x2, y1, layer_hor);
     connection.emplace_back(x2, y1, conn_layer + layer_fix, x2, y1, conn_layer);
     connection.emplace_back(x2, y1, layer_ver, x2, y2, layer_ver);
+
+    // Add vias if the additional connections are not touching the existing
+    // routing.
+    if (layer1 < layer_hor) {
+      connection.emplace_back(x1, y1, layer1, x1, y1, layer_hor);
+    }
+    if (layer2 < layer_ver) {
+      connection.emplace_back(x2, y2, layer_ver, x2, y2, layer2);
+    }
   }
 
   odb::Point via_pos1 = pin_pos1;
@@ -5117,6 +5178,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
   callback_handler_->triggerOnPinAccessUpdateRequired();
   std::vector<Net*> dirty_nets;
+
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);
     fastroute_->clearNetsToRoute();

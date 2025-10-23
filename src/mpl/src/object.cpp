@@ -935,13 +935,17 @@ SoftMacro::SoftMacro(Cluster* cluster)
 }
 
 // Represent a blockage.
-SoftMacro::SoftMacro(float width, float height, const std::string& name)
+SoftMacro::SoftMacro(const Rect& blockage, const std::string& name)
 {
   name_ = name;
-  width_ = width;
-  height_ = height;
-  area_ = width * height;
+  x_ = blockage.xMin();
+  y_ = blockage.yMin();
+  width_ = blockage.getWidth();
+  height_ = blockage.getHeight();
+  area_ = width_ * height_;
   cluster_ = nullptr;
+  fixed_ = true;
+  is_blockage_ = true;
 }
 
 // Represent an IO cluster or fixed terminal.
@@ -1259,6 +1263,11 @@ void SoftMacro::resizeRandomly(
   width_ = min_width + distribution(generator) * (max_width - min_width);
   area_ = width_intervals_[idx].min * height_intervals_[idx].max;
   height_ = area_ / width_;
+}
+
+bool SoftMacro::isBlockage() const
+{
+  return is_blockage_;
 }
 
 // Align Flag support

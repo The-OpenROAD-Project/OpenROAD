@@ -25,10 +25,13 @@
 #include "frDesign.h"
 #include "frProfileTask.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "omp.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
+
+using odb::dbTechLayerDir;
 
 namespace drt::io {
 using Interval = boost::icl::interval<frCoord>;

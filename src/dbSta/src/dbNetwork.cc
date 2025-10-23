@@ -65,6 +65,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "sta/Liberty.hh"
+#include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
@@ -3210,17 +3211,18 @@ PortDirection* dbNetwork::dbToSta(const dbSigType& sig_type,
   if (sig_type == dbSigType::GROUND) {
     return PortDirection::ground();
   }
-  if (io_type == dbIoType::INPUT) {
-    return PortDirection::input();
-  }
-  if (io_type == dbIoType::OUTPUT) {
-    return PortDirection::output();
-  }
-  if (io_type == dbIoType::INOUT) {
-    return PortDirection::bidirect();
-  }
-  if (io_type == dbIoType::FEEDTHRU) {
-    return PortDirection::bidirect();
+  switch (io_type.getValue()) {
+    case dbIoType::INPUT:
+      return PortDirection::input();
+
+    case dbIoType::OUTPUT:
+      return PortDirection::output();
+
+    case dbIoType::INOUT:
+      return PortDirection::bidirect();
+
+    case dbIoType::FEEDTHRU:
+      return PortDirection::bidirect();
   }
   logger_->critical(ORD, 2008, "unknown master term type");
   return PortDirection::bidirect();
@@ -4129,8 +4131,15 @@ void dbNetwork::accumulateFlatLoadPinsOnNet(
 }
 
 // Use this API to check if flat & hier connectivities are ok
-void dbNetwork::checkAxioms() const
+void dbNetwork::checkAxioms(odb::dbObject* obj) const
 {
+  // Check with an object if provided
+  if (obj != nullptr) {
+    checkSanityNetConnectivity(obj);
+    return;
+  }
+
+  // Otherwise, check the whole design
   checkSanityModBTerms();
   checkSanityModITerms();
   checkSanityModInstTerms();
@@ -4457,8 +4466,81 @@ void dbNetwork::checkSanityTermConnectivity() const
   }
 }
 
-void dbNetwork::checkSanityNetConnectivity() const
+void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
 {
+  //
+  // Check for a specific object if provided
+  //
+  if (obj != nullptr) {
+    // Collect relevant nets from the provided object
+    std::set<odb::dbNet*> nets_to_check;
+    std::set<odb::dbModNet*> mod_nets_to_check;
+
+    auto const obj_type = obj->getObjectType();
+    if (obj_type == odb::dbNetObj) {
+      nets_to_check.insert(static_cast<odb::dbNet*>(obj));
+    } else if (obj_type == odb::dbModNetObj) {
+      mod_nets_to_check.insert(static_cast<odb::dbModNet*>(obj));
+    } else if (obj_type == odb::dbInstObj) {
+      auto inst = static_cast<odb::dbInst*>(obj);
+      for (auto iterm : inst->getITerms()) {
+        if (iterm->getNet() != nullptr) {
+          nets_to_check.insert(iterm->getNet());
+        }
+        if (iterm->getModNet() != nullptr) {
+          mod_nets_to_check.insert(iterm->getModNet());
+        }
+      }
+    } else if (obj_type == odb::dbModInstObj) {
+      auto mod_inst = static_cast<odb::dbModInst*>(obj);
+      for (auto mod_iterm : mod_inst->getModITerms()) {
+        if (mod_iterm->getModNet() != nullptr) {
+          mod_nets_to_check.insert(mod_iterm->getModNet());
+        }
+      }
+    } else if (obj_type == odb::dbITermObj) {
+      auto iterm = static_cast<odb::dbITerm*>(obj);
+      if (iterm->getNet() != nullptr) {
+        nets_to_check.insert(iterm->getNet());
+      }
+      if (iterm->getModNet() != nullptr) {
+        mod_nets_to_check.insert(iterm->getModNet());
+      }
+    } else if (obj_type == odb::dbBTermObj) {
+      auto bterm = static_cast<odb::dbBTerm*>(obj);
+      if (bterm->getNet() != nullptr) {
+        nets_to_check.insert(bterm->getNet());
+      }
+      if (bterm->getModNet() != nullptr) {
+        mod_nets_to_check.insert(bterm->getModNet());
+      }
+    } else if (obj_type == odb::dbModITermObj) {
+      auto mod_iterm = static_cast<odb::dbModITerm*>(obj);
+      if (mod_iterm->getModNet() != nullptr) {
+        mod_nets_to_check.insert(mod_iterm->getModNet());
+      }
+    } else if (obj_type == odb::dbModBTermObj) {
+      auto mod_bterm = static_cast<odb::dbModBTerm*>(obj);
+      if (mod_bterm->getModNet() != nullptr) {
+        mod_nets_to_check.insert(mod_bterm->getModNet());
+      }
+    }
+
+    // Now run checks on the collected nets.
+    for (odb::dbModNet* mod_net : mod_nets_to_check) {
+      findRelatedDbNet(mod_net);
+    }
+
+    for (odb::dbNet* net_db : nets_to_check) {
+      net_db->checkSanity();
+    }
+    return;
+  }
+
+  //
+  // Check for all nets in the design
+  //
+
   // Check for hier net and flat net connectivity
   dbSet<dbModNet> mod_nets = block()->getModNets();
   for (dbModNet* mod_net : mod_nets) {
@@ -4466,70 +4548,8 @@ void dbNetwork::checkSanityNetConnectivity() const
   }
 
   // Check for incomplete flat net connections
-  for (odb::dbNet* net_db : block_->getNets()) {
-    // Check for multiple drivers.
-    Net* net = dbToSta(net_db);
-    PinSeq loads;
-    PinSeq drvrs;
-    PinSet visited_drvrs(this);
-    FindNetDrvrLoads visitor(nullptr, visited_drvrs, loads, drvrs, this);
-    NetSet visited_nets(this);
-    visitConnectedPins(net, visitor, visited_nets);
-
-    if (drvrs.size() > 1) {
-      bool all_tristate = true;
-      for (const Pin* drvr : drvrs) {
-        LibertyPort* port = libertyPort(drvr);
-        if (!port || !port->direction()->isAnyTristate()) {
-          all_tristate = false;
-          break;
-        }
-      }
-
-      if (!all_tristate) {
-        std::string drivers_str;
-        for (const Pin* drvr : drvrs) {
-          drivers_str += " " + std::string(pathName(drvr));
-        }
-        logger_->error(
-            ORD,
-            2049,
-            "SanityCheck: Net '{}' has multiple non-tristate drivers:{}",
-            name(net),
-            drivers_str);
-      }
-    }
-    const uint iterm_count = net_db->getITerms().size();
-    const uint bterm_count = net_db->getBTerms().size();
-    if (iterm_count + bterm_count >= 2) {
-      continue;
-    }
-
-    // Skip power/ground net
-    if (net_db->getSigType().isSupply()) {
-      continue;  // OK: Unconnected power/ground net
-    }
-
-    // A net connected to 1 terminal
-    if (iterm_count == 1) {
-      odb::dbITerm* iterm = *(net_db->getITerms().begin());
-      if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-        continue;  // OK: Unconnected output pin
-      }
-    } else if (bterm_count == 1) {  // This is a top level port
-      odb::dbBTerm* bterm = *(net_db->getBTerms().begin());
-      if (bterm->getIoType() == odb::dbIoType::INPUT) {
-        continue;  // OK: Unconnected input port
-      }
-    }
-
-    logger_->warn(ORD,
-                  2039,
-                  "SanityCheck: Net '{}' has less than 2 connections (# of "
-                  "ITerms = {}, # of BTerms = {}).",
-                  net_db->getName(),
-                  iterm_count,
-                  bterm_count);
+  for (odb::dbNet* net_db : block()->getNets()) {
+    net_db->checkSanity();
   }
 }
 

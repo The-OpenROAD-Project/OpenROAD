@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
 #include "odb/geom.h"
 #include "rcx/dbUtil.h"
@@ -22,10 +23,13 @@
 
 #include "utl/Logger.h"
 
-namespace rcx {
-
-using namespace odb;
+using odb::dbBlock;
+using odb::dbTechLayerDir;
 using utl::RCX;
+
+using namespace odb;  // This must go
+
+namespace rcx {
 
 extRulesPat::extRulesPat(const char* pat,
                          bool over,
@@ -1303,7 +1307,7 @@ dbTechLayerRule* extRulesPat::GetRule(int routingLayer, int width)
     return nullptr;
   fprintf(stdout, " NewRule %s,layer=%d width=%d\n", rule_name, routingLayer,
 width); fflush(stdout);
-  // rule->getImpl()->getLogger()->info(utl::ODB,
+  // rule->getImpl()->getLogger()->info(utl::RCX,
   //                                    273,
   //                                    "Create ND RULE {} for layer/width
 {},{}",

@@ -118,7 +118,7 @@ Corner: slow
 [INFO GPL-0007] Movable instances:                  21
 [INFO GPL-0008] Fixed instances:                     0
 [INFO GPL-0009] Dummy instances:                     0
-[INFO GPL-0010] Number of nets:                     12
+[INFO GPL-0010] Number of nets:                     11
 [INFO GPL-0011] Number of pins:                     38
 [INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
 [INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
@@ -130,11 +130,11 @@ Corner: slow
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0132] Locked 19 instances
 [INFO GPL-0005] Execute conjugate gradient initial placement.
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000011 HPWL: 2643860
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000012 HPWL: 268167
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000009 HPWL: 268350
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000006 HPWL: 268346
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000002 HPWL: 268345
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000012 HPWL: 2643860
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000012 HPWL: 268169
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000005 HPWL: 268351
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000004 HPWL: 268347
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000004 HPWL: 268342
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      2.850 um^2
 [INFO GPL-0025] Ideal bin area:                  4.071 um^2
@@ -147,60 +147,33 @@ Corner: slow
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.2701 |  5.401150e+01 |   +0.00% |  5.23e-14 |      
-       10 |   0.2977 |  8.062250e+01 |  +49.27% |  7.71e-14 |      
-       20 |   0.2914 |  8.829800e+01 |   +9.52% |  1.14e-13 |      
-       30 |   0.2883 |  9.166050e+01 |   +3.81% |  1.67e-13 |      
-       40 |   0.2857 |  9.355050e+01 |   +2.06% |  2.46e-13 |      
-       50 |   0.2838 |  9.465850e+01 |   +1.18% |  3.63e-13 |      
-       60 |   0.2824 |  9.545950e+01 |   +0.85% |  5.35e-13 |      
-       70 |   0.2813 |  9.608750e+01 |   +0.66% |  7.88e-13 |      
-       80 |   0.2805 |  9.659000e+01 |   +0.52% |  1.16e-12 |      
-       90 |   0.2799 |  9.701650e+01 |   +0.44% |  1.71e-12 |      
-      100 |   0.2795 |  9.752900e+01 |   +0.53% |  2.52e-12 |      
-      110 |   0.2793 |  9.801200e+01 |   +0.50% |  3.71e-12 |      
-      120 |   0.2789 |  9.839150e+01 |   +0.39% |  5.47e-12 |      
-      130 |   0.2786 |  9.867600e+01 |   +0.29% |  8.05e-12 |      
-      140 |   0.2784 |  9.889350e+01 |   +0.22% |  1.19e-11 |      
-      150 |   0.2781 |  9.910200e+01 |   +0.21% |  1.75e-11 |      
-      160 |   0.2778 |  9.930850e+01 |   +0.21% |  2.57e-11 |      
-      170 |   0.2775 |  9.958450e+01 |   +0.28% |  3.79e-11 |      
-      180 |   0.2769 |  1.000050e+02 |   +0.42% |  5.59e-11 |      
-      190 |   0.2760 |  1.006960e+02 |   +0.69% |  8.23e-11 |      
-      200 |   0.2743 |  1.019270e+02 |   +1.22% |  1.21e-10 |      
-      210 |   0.2718 |  1.039930e+02 |   +2.03% |  1.79e-10 |      
-      220 |   0.2678 |  1.070110e+02 |   +2.90% |  2.63e-10 |      
-      230 |   0.2628 |  1.104235e+02 |   +3.19% |  3.88e-10 |      
-      240 |   0.2592 |  1.128180e+02 |   +2.17% |  5.71e-10 |      
-      250 |   0.2617 |  1.114695e+02 |   -1.20% |  8.41e-10 |      
-      260 |   0.2717 |  1.051790e+02 |   -5.64% |  1.24e-09 |      
-      270 |   0.2734 |  1.026230e+02 |   -2.43% |  1.83e-09 |      
-      280 |   0.2577 |  1.132505e+02 |  +10.36% |  2.69e-09 |      
-      290 |   0.2669 |  1.085540e+02 |   -4.15% |  3.96e-09 |      
-[WARNING GPL-1010] GPL reached the maximum number of iterations for nesterov 300. Placement may have failed to converge.
-[INFO GPL-1014] Final placement area: 59.85 (+0.00%)
-[INFO GPL-0133] Unlocked instances
-[INFO GPL-0007] Execute nesterov global placement.
-      310 |   0.4220 |  1.864000e+01 |  -82.83% |  7.56e-09 |      
-      320 |   0.4131 |  9.412500e+00 |  -49.50% |  1.01e-08 |      
-      330 |   0.4000 |  9.833500e+00 |   +4.47% |  1.34e-08 |      
-      340 |   0.3811 |  1.051100e+01 |   +6.89% |  1.79e-08 |      
-      350 |   0.3597 |  1.126450e+01 |   +7.17% |  2.38e-08 |      
-      360 |   0.3335 |  1.199550e+01 |   +6.49% |  3.17e-08 |      
-      370 |   0.3140 |  1.222900e+01 |   +1.95% |  4.23e-08 |      
-      380 |   0.2930 |  1.268550e+01 |   +3.73% |  5.63e-08 |      
-      390 |   0.2708 |  1.306900e+01 |   +3.02% |  7.50e-08 |      
-      400 |   0.2507 |  1.334550e+01 |   +2.12% |  9.99e-08 |      
-      410 |   0.2263 |  1.343900e+01 |   +0.70% |  1.33e-07 |      
-      420 |   0.2006 |  1.343200e+01 |   -0.05% |  1.77e-07 |      
-      430 |   0.1748 |  1.341200e+01 |   -0.15% |  2.36e-07 |      
-      440 |   0.1528 |  1.343400e+01 |   +0.16% |  3.15e-07 |      
-      450 |   0.1416 |  1.335350e+01 |   -0.60% |  4.19e-07 |      
-      460 |   0.1314 |  1.408750e+01 |   +5.50% |  5.59e-07 |      
-      470 |   0.1043 |  1.452400e+01 |   +3.10% |  7.44e-07 |      
-      472 |   0.0984 |  1.446750e+01 |          |  8.11e-07 |      
+        0 |   0.2459 |  5.035150e+01 |   +0.00% |  4.77e-14 |      
+       10 |   0.2523 |  7.565000e+01 |  +50.24% |  7.02e-14 |      
+       20 |   0.2440 |  8.584700e+01 |  +13.48% |  1.03e-13 |      
+       30 |   0.2383 |  8.885450e+01 |   +3.50% |  1.52e-13 |      
+       40 |   0.2350 |  9.048000e+01 |   +1.83% |  2.24e-13 |      
+       50 |   0.2327 |  9.153050e+01 |   +1.16% |  3.31e-13 |      
+       60 |   0.2311 |  9.225950e+01 |   +0.80% |  4.87e-13 |      
+       70 |   0.2299 |  9.280300e+01 |   +0.59% |  7.18e-13 |      
+       80 |   0.2289 |  9.322400e+01 |   +0.45% |  1.06e-12 |      
+       90 |   0.2282 |  9.355550e+01 |   +0.36% |  1.56e-12 |      
+      100 |   0.2276 |  9.382450e+01 |   +0.29% |  2.29e-12 |      
+      110 |   0.2270 |  9.405450e+01 |   +0.25% |  3.38e-12 |      
+      120 |   0.2266 |  9.424150e+01 |   +0.20% |  4.98e-12 |      
+      130 |   0.2262 |  9.440750e+01 |   +0.18% |  7.33e-12 |      
+      140 |   0.2259 |  9.455250e+01 |   +0.15% |  1.08e-11 |      
+      150 |   0.2256 |  9.469550e+01 |   +0.15% |  1.59e-11 |      
+      160 |   0.2252 |  9.484850e+01 |   +0.16% |  2.34e-11 |      
+      170 |   0.2248 |  9.503950e+01 |   +0.20% |  3.45e-11 |      
+      180 |   0.2241 |  9.533450e+01 |   +0.31% |  5.09e-11 |      
+      190 |   0.2230 |  9.583950e+01 |   +0.53% |  7.50e-11 |      
+      200 |   0.2210 |  9.677300e+01 |   +0.97% |  1.10e-10 |      
+      210 |   0.2175 |  9.842600e+01 |   +1.71% |  1.63e-10 |      
+      220 |   0.2115 |  1.011470e+02 |   +2.76% |  2.40e-10 |      
+      230 |   0.2028 |  1.050385e+02 |   +3.85% |  3.53e-10 |      
+      234 |   0.1989 |  1.068455e+02 |          |  4.28e-10 |      
 ---------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 472
+[INFO GPL-1001] Global placement finished at iteration 234
 [INFO GPL-1002] Placed Cell Area               59.8500
 [INFO GPL-1003] Available Free Area         47872.0200
 [INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
@@ -209,14 +182,17 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0016
 [INFO GPL-1009]     - For 50% usage of free space: 0.0025
 [INFO GPL-1014] Final placement area: 59.85 (+0.00%)
+[INFO GPL-0133] Unlocked instances
+[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-1014] Final placement area: 59.85 (+0.00%)
 Placement Analysis
 ---------------------------------
-total displacement         46.2 u
-average displacement        2.2 u
-max displacement            4.4 u
-original HPWL              14.5 u
-legalized HPWL             51.7 u
-delta HPWL                  257 %
+total displacement         28.6 u
+average displacement        1.4 u
+max displacement            5.4 u
+original HPWL             106.8 u
+legalized HPWL            113.8 u
+delta HPWL                    6 %
 
 Cell type report for bc1 (inv_chain_bc1)
 Cell type report:                       Count       Area
@@ -224,20 +200,20 @@ Cell type report:                       Count       Area
   Total                                     2       1.06
 Net u1z
  Pin capacitance: 5.265-6.142
- Wire capacitance: 0.000
- Total capacitance: 5.265-6.142
+ Wire capacitance: 0.000-0.071
+ Total capacitance: 5.265-6.213
  Number of drivers: 1
  Number of loads: 4
  Number of pins: 5
 
 Driver pins
- u1/Z output (BUF_X1) (2, 600)
+ u1/Z output (BUF_X1) (2, 601)
 
 Load pins
- bc1/u4/A input (INV_X1) 1.477-1.720 (1, 599)
- bc2/u2/A input (BUF_X1) 0.835-0.983 (0, 600)
- ic1/u4/A input (INV_X1) 1.477-1.720 (1, 601)
- ic2/u4/A input (INV_X1) 1.477-1.720 (0, 599)
+ bc1/u4/A input (INV_X1) 1.477-1.720 (6, 603)
+ bc2/u2/A input (BUF_X1) 0.835-0.983 (1, 597)
+ ic1/u4/A input (INV_X1) 1.477-1.720 (2, 605)
+ ic2/u4/A input (INV_X1) 1.477-1.720 (1, 597)
 
 Net u3z
  Pin capacitance: 1.030-1.158
@@ -248,10 +224,10 @@ Net u3z
  Number of pins: 2
 
 Driver pins
- bc1/u5/ZN output (INV_X1) (0, 601)
+ bc1/u5/ZN output (INV_X1) (1, 597)
 
 Load pins
- r2/D input (DFF_X1) 1.030-1.158 (2, 597)
+ r2/D input (DFF_X1) 1.030-1.158 (2, 600)
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -264,12 +240,12 @@ Corner: slow
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.357    0.357 ^ r1/Q (DFF_X1)
-   0.130    0.487 ^ u1/Z (BUF_X1)
-   0.031    0.518 v bc1/u4/ZN (INV_X1)
-   0.037    0.554 ^ bc1/u5/ZN (INV_X1)
-   0.000    0.554 ^ r2/D (DFF_X1)
-            0.554   data arrival time
+   0.358    0.358 ^ r1/Q (DFF_X1)
+   0.136    0.493 ^ u1/Z (BUF_X1)
+   0.034    0.528 v bc1/u4/ZN (INV_X1)
+   0.036    0.564 ^ bc1/u5/ZN (INV_X1)
+   0.000    0.564 ^ r2/D (DFF_X1)
+            0.564   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
@@ -279,9 +255,9 @@ Corner: slow
             0.227   data required time
 -----------------------------------------------------------
             0.227   data required time
-           -0.554   data arrival time
+           -0.564   data arrival time
 -----------------------------------------------------------
-           -0.327   slack (VIOLATED)
+           -0.336   slack (VIOLATED)
 
 
 ### swap bc1 back to buffer_chain ###
@@ -293,7 +269,7 @@ Corner: slow
 [INFO GPL-0007] Movable instances:                  21
 [INFO GPL-0008] Fixed instances:                     0
 [INFO GPL-0009] Dummy instances:                     0
-[INFO GPL-0010] Number of nets:                     12
+[INFO GPL-0010] Number of nets:                     11
 [INFO GPL-0011] Number of pins:                     38
 [INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
 [INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
@@ -305,11 +281,11 @@ Corner: slow
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0132] Locked 19 instances
 [INFO GPL-0005] Execute conjugate gradient initial placement.
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000011 HPWL: 2541460
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000007 HPWL: 164129
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 163848
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000002 HPWL: 163839
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000006 HPWL: 163837
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000010 HPWL: 2647220
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000006 HPWL: 260073
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000006 HPWL: 259480
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000005 HPWL: 259463
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000003 HPWL: 259462
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      2.875 um^2
 [INFO GPL-0025] Ideal bin area:                  4.108 um^2
@@ -322,8 +298,8 @@ Corner: slow
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.1569 |  2.075500e+01 |   +0.00% |  2.87e-14 |      
-        0 |   0.1569 |  2.075500e+01 |          |  2.98e-14 |      
+        0 |   0.1318 |  5.857550e+01 |   +0.00% |  5.13e-14 |      
+        0 |   0.1318 |  5.857550e+01 |          |  5.33e-14 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area               60.3820
@@ -339,12 +315,12 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1014] Final placement area: 60.38 (+0.00%)
 Placement Analysis
 ---------------------------------
-total displacement         46.5 u
-average displacement        2.2 u
-max displacement            3.7 u
-original HPWL              20.8 u
-legalized HPWL             53.4 u
-delta HPWL                  157 %
+total displacement         26.0 u
+average displacement        1.2 u
+max displacement            2.8 u
+original HPWL              58.6 u
+legalized HPWL             74.5 u
+delta HPWL                   27 %
 
 Cell type report for bc1 (buffer_chain)
 Cell type report:                       Count       Area
@@ -352,20 +328,20 @@ Cell type report:                       Count       Area
   Total                                     2       1.60
 Net u1z
  Pin capacitance: 4.624-5.406
- Wire capacitance: 0.000
- Total capacitance: 4.624-5.406
+ Wire capacitance: 1.658-1.753
+ Total capacitance: 6.282-7.159
  Number of drivers: 1
  Number of loads: 4
  Number of pins: 5
 
 Driver pins
- u1/Z output (BUF_X1) (1, 600)
+ u1/Z output (BUF_X1) (2, 601)
 
 Load pins
- bc1/u2/A input (BUF_X1) 0.835-0.983 (0, 601)
- bc2/u2/A input (BUF_X1) 0.835-0.983 (0, 599)
- ic1/u4/A input (INV_X1) 1.477-1.720 (0, 597)
- ic2/u4/A input (INV_X1) 1.477-1.720 (4, 600)
+ bc1/u2/A input (BUF_X1) 0.835-0.983 (1, 600)
+ bc2/u2/A input (BUF_X1) 0.835-0.983 (3, 597)
+ ic1/u4/A input (INV_X1) 1.477-1.720 (2, 604)
+ ic2/u4/A input (INV_X1) 1.477-1.720 (3, 597)
 
 Net u3z
  Pin capacitance: 1.030-1.158
@@ -376,10 +352,10 @@ Net u3z
  Number of pins: 2
 
 Driver pins
- bc1/u3/Z output (BUF_X1) (1, 597)
+ bc1/u3/Z output (BUF_X1) (1, 600)
 
 Load pins
- r2/D input (DFF_X1) 1.030-1.158 (2, 596)
+ r2/D input (DFF_X1) 1.030-1.158 (2, 600)
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -392,12 +368,12 @@ Corner: slow
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.265    0.265 v r1/Q (DFF_X1)
-   0.110    0.376 v u1/Z (BUF_X1)
-   0.087    0.463 v bc1/u2/Z (BUF_X1)
-   0.082    0.545 v bc1/u3/Z (BUF_X1)
-   0.000    0.545 v r2/D (DFF_X1)
-            0.545   data arrival time
+   0.266    0.266 v r1/Q (DFF_X1)
+   0.111    0.376 v u1/Z (BUF_X1)
+   0.086    0.462 v bc1/u2/Z (BUF_X1)
+   0.082    0.544 v bc1/u3/Z (BUF_X1)
+   0.000    0.544 v r2/D (DFF_X1)
+            0.544   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
@@ -407,9 +383,9 @@ Corner: slow
             0.143   data required time
 -----------------------------------------------------------
             0.143   data required time
-           -0.545   data arrival time
+           -0.544   data arrival time
 -----------------------------------------------------------
-           -0.402   slack (VIOLATED)
+           -0.401   slack (VIOLATED)
 
 
 ### swap bc1 back to inv_chain ###
@@ -421,7 +397,7 @@ Corner: slow
 [INFO GPL-0007] Movable instances:                  21
 [INFO GPL-0008] Fixed instances:                     0
 [INFO GPL-0009] Dummy instances:                     0
-[INFO GPL-0010] Number of nets:                     12
+[INFO GPL-0010] Number of nets:                     11
 [INFO GPL-0011] Number of pins:                     38
 [INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
 [INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
@@ -433,11 +409,11 @@ Corner: slow
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0132] Locked 19 instances
 [INFO GPL-0005] Execute conjugate gradient initial placement.
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000001 HPWL: 2539860
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000005 HPWL: 170724
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000005 HPWL: 170624
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000008 HPWL: 170630
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 170632
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000011 HPWL: 2603740
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000007 HPWL: 216125
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000003 HPWL: 216021
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000003 HPWL: 216019
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000003 HPWL: 216019
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      2.850 um^2
 [INFO GPL-0025] Ideal bin area:                  4.071 um^2
@@ -450,8 +426,8 @@ Corner: slow
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.1540 |  3.201900e+01 |   +0.00% |  3.63e-14 |      
-        0 |   0.1540 |  3.201900e+01 |          |  3.78e-14 |      
+        0 |   0.1090 |  5.213450e+01 |   +0.00% |  4.42e-14 |      
+        0 |   0.1090 |  5.213450e+01 |          |  4.60e-14 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area               59.8500
@@ -467,12 +443,12 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1014] Final placement area: 59.85 (+0.00%)
 Placement Analysis
 ---------------------------------
-total displacement         40.5 u
-average displacement        1.9 u
-max displacement            3.5 u
-original HPWL              32.0 u
-legalized HPWL             59.1 u
-delta HPWL                   85 %
+total displacement         19.6 u
+average displacement        0.9 u
+max displacement            2.5 u
+original HPWL              52.1 u
+legalized HPWL             66.1 u
+delta HPWL                   27 %
 
 Cell type report for bc1 (inv_chain_bc1_1)
 Cell type report:                       Count       Area
@@ -480,20 +456,20 @@ Cell type report:                       Count       Area
   Total                                     2       1.06
 Net u1z
  Pin capacitance: 5.265-6.142
- Wire capacitance: 0.000
- Total capacitance: 5.265-6.142
+ Wire capacitance: 0.000-0.086
+ Total capacitance: 5.265-6.228
  Number of drivers: 1
  Number of loads: 4
  Number of pins: 5
 
 Driver pins
- u1/Z output (BUF_X1) (0, 600)
+ u1/Z output (BUF_X1) (2, 603)
 
 Load pins
- bc1/u4/A input (INV_X1) 1.477-1.720 (2, 603)
- bc2/u2/A input (BUF_X1) 0.835-0.983 (0, 599)
- ic1/u4/A input (INV_X1) 1.477-1.720 (0, 597)
- ic2/u4/A input (INV_X1) 1.477-1.720 (0, 601)
+ bc1/u4/A input (INV_X1) 1.477-1.720 (1, 600)
+ bc2/u2/A input (BUF_X1) 0.835-0.983 (2, 597)
+ ic1/u4/A input (INV_X1) 1.477-1.720 (2, 604)
+ ic2/u4/A input (INV_X1) 1.477-1.720 (4, 599)
 
 Net u3z
  Pin capacitance: 1.030-1.158
@@ -504,10 +480,10 @@ Net u3z
  Number of pins: 2
 
 Driver pins
- bc1/u5/ZN output (INV_X1) (0, 601)
+ bc1/u5/ZN output (INV_X1) (1, 600)
 
 Load pins
- r2/D input (DFF_X1) 1.030-1.158 (1, 594)
+ r2/D input (DFF_X1) 1.030-1.158 (2, 600)
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -520,24 +496,24 @@ Corner: slow
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.359    0.359 ^ r1/Q (DFF_X1)
-   0.132    0.491 ^ u1/Z (BUF_X1)
-   0.031    0.522 v bc1/u4/ZN (INV_X1)
-   0.038    0.560 ^ bc1/u5/ZN (INV_X1)
-   0.000    0.560 ^ r2/D (DFF_X1)
-            0.560   data arrival time
+   0.360    0.360 ^ r1/Q (DFF_X1)
+   0.135    0.495 ^ u1/Z (BUF_X1)
+   0.029    0.524 v bc1/u4/ZN (INV_X1)
+   0.034    0.558 ^ bc1/u5/ZN (INV_X1)
+   0.000    0.558 ^ r2/D (DFF_X1)
+            0.558   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
    0.000    0.300   clock reconvergence pessimism
             0.300 ^ r2/CK (DFF_X1)
-  -0.073    0.227   library setup time
-            0.227   data required time
+  -0.072    0.228   library setup time
+            0.228   data required time
 -----------------------------------------------------------
-            0.227   data required time
-           -0.560   data arrival time
+            0.228   data required time
+           -0.558   data arrival time
 -----------------------------------------------------------
-           -0.334   slack (VIOLATED)
+           -0.330   slack (VIOLATED)
 
 
 Repair timing output passed/skipped equivalence test

@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <set>
@@ -88,6 +89,13 @@ InitFloorplan::InitFloorplan(dbBlock* block,
 {
 }
 
+void InitFloorplan::checkGap(const int gap)
+{
+  if (gap != std::numeric_limits<int32_t>::min() && gap <= 0) {
+    logger_->error(IFP, 36, "Gap must be positive ({})", gap);
+  }
+}
+
 void InitFloorplan::initFloorplan(
     double utilization,
     double aspect_ratio,
@@ -98,8 +106,11 @@ void InitFloorplan::initFloorplan(
     odb::dbSite* base_site,
     const std::vector<odb::dbSite*>& additional_sites,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites)
+    const std::set<odb::dbSite*>& flipped_sites,
+    const int gap)
 {
+  checkGap(gap);
+
   makeDieUtilization(utilization,
                      aspect_ratio,
                      core_space_bottom,
@@ -113,7 +124,8 @@ void InitFloorplan::initFloorplan(
                       base_site,
                       additional_sites,
                       row_parity,
-                      flipped_sites);
+                      flipped_sites,
+                      gap);
 }
 
 // The base_site determines the single-height rows.  For hybrid rows it is
@@ -124,10 +136,13 @@ void InitFloorplan::initFloorplan(
     odb::dbSite* base_site,
     const std::vector<odb::dbSite*>& additional_sites,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites)
+    const std::set<odb::dbSite*>& flipped_sites,
+    const int gap)
 {
+  checkGap(gap);
+
   makeDie(die);
-  makeRows(core, base_site, additional_sites, row_parity, flipped_sites);
+  makeRows(core, base_site, additional_sites, row_parity, flipped_sites, gap);
 }
 
 void InitFloorplan::makeDieUtilization(double utilization,
@@ -206,8 +221,11 @@ void InitFloorplan::makePolygonRows(
     odb::dbSite* base_site,
     const std::vector<odb::dbSite*>& additional_sites,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites)
+    const std::set<odb::dbSite*>& flipped_sites,
+    const int gap)
 {
+  checkGap(gap);
+
   auto points = core_polygon.getPoints();
 
   if (points.empty()) {
@@ -271,7 +289,7 @@ void InitFloorplan::makePolygonRows(
 
   // Use the new scanline-based approach
   makePolygonRowsScanline(
-      core_poly, base_site, sites_by_name, row_parity, flipped_sites);
+      core_poly, base_site, sites_by_name, row_parity, flipped_sites, gap);
 
   logger_->info(IFP,
                 997,
@@ -337,8 +355,11 @@ void InitFloorplan::makeRowsWithSpacing(
     odb::dbSite* base_site,
     const std::vector<odb::dbSite*>& additional_sites,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites)
+    const std::set<odb::dbSite*>& flipped_sites,
+    const int gap)
 {
+  checkGap(gap);
+
   odb::Rect block_die_area = block_->getDieArea();
   if (block_die_area.area() == 0) {
     logger_->error(IFP, 64, "Floorplan die area is 0. Cannot build rows.");
@@ -365,15 +386,19 @@ void InitFloorplan::makeRowsWithSpacing(
            base_site,
            additional_sites,
            row_parity,
-           flipped_sites);
+           flipped_sites,
+           gap);
 }
 
 void InitFloorplan::makeRows(const odb::Rect& core,
                              odb::dbSite* base_site,
                              const std::vector<odb::dbSite*>& additional_sites,
                              RowParity row_parity,
-                             const std::set<odb::dbSite*>& flipped_sites)
+                             const std::set<odb::dbSite*>& flipped_sites,
+                             const int gap)
 {
+  checkGap(gap);
+
   odb::Rect block_die_area = block_->getDieArea();
   if (block_die_area.area() == 0) {
     logger_->error(IFP, 63, "Floorplan die area is 0. Cannot build rows.");
@@ -444,7 +469,7 @@ void InitFloorplan::makeRows(const odb::Rect& core,
           base_site, sites_by_name, snapped_core, row_parity, flipped_sites);
     }
 
-    updateVoltageDomain(clx, cly, cux, cuy);
+    updateVoltageDomain(clx, cly, cux, cuy, gap);
   }
 
   std::vector<dbBox*> blockage_bboxes;
@@ -465,7 +490,8 @@ void InitFloorplan::makeRows(const odb::Rect& core,
 void InitFloorplan::updateVoltageDomain(const int core_lx,
                                         const int core_ly,
                                         const int core_ux,
-                                        const int core_uy)
+                                        const int core_uy,
+                                        const int gap)
 {
   // checks if a group is defined as a voltage domain, if so it creates a region
   for (dbGroup* group : block_->getGroups()) {
@@ -513,8 +539,10 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
           min_site_dx = site_dx;
         }
       }
-      // Space is 6 times the minimum site height
-      const int power_domain_y_space = 6 * min_site_dy;
+      // Default space is 6 times the minimum site height
+      const int power_domain_y_space
+          = (gap == std::numeric_limits<int32_t>::min()) ? 6 * min_site_dy
+                                                         : gap;
 
       row_itr = rows.begin();
       for (int row_processed = 0; row_processed < total_row_count;
@@ -709,6 +737,7 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
     }
     make_rows(site);
   }
+  block_->setCoreArea(block_->computeCoreArea());
 }
 
 int InitFloorplan::getOffset(dbSite* base_hybrid_site,
@@ -831,6 +860,7 @@ void InitFloorplan::makeHybridRows(dbSite* base_hybrid_site,
       make_rows(site);
     }
   }
+  block_->setCoreArea(block_->computeCoreArea());
 }
 
 dbSite* InitFloorplan::findSite(const char* site_name)
@@ -1079,7 +1109,8 @@ void InitFloorplan::makePolygonRowsScanline(
     odb::dbSite* base_site,
     const SitesByName& sites_by_name,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites)
+    const std::set<odb::dbSite*>& flipped_sites,
+    const int gap)
 {
   // Get the bounding box for the polygon
   odb::Rect core_bbox = core_polygon.getEnclosingRect();
@@ -1134,7 +1165,7 @@ void InitFloorplan::makePolygonRowsScanline(
           site, core_polygon, snapped_bbox, row_parity, flipped_sites);
     }
 
-    updateVoltageDomain(clx, cly, cux, cuy);
+    updateVoltageDomain(clx, cly, cux, cuy, gap);
   }
 
   // Handle blockages as usual
@@ -1292,6 +1323,8 @@ void InitFloorplan::makeUniformRowsPolygon(
 
     y += site_dy;
   }
+
+  block_->setCoreArea(block_->computeCoreArea());
 
   logger_->info(IFP,
                 1002,

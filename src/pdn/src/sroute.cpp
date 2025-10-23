@@ -17,6 +17,7 @@
 #include "odb/dbSet.h"
 #include "pdn/PdnGen.hh"
 #include "shape.h"
+#include "utl/Logger.h"
 #include "via.h"
 namespace pdn {
 

@@ -943,7 +943,7 @@ class dbBlock : public dbObject
   /// A hierarchy delimiter can only be set at the time
   /// a block is created.
   ///
-  char getHierarchyDelimiter();
+  char getHierarchyDelimiter() const;
 
   ///
   /// Set the bus name delimiters
@@ -1118,10 +1118,29 @@ class dbBlock : public dbObject
   Polygon getDieAreaPolygon();
 
   ///
-  /// Get the core area. This computes the bbox of the rows
-  /// and is O(#rows) in runtime.
+  /// Compute the core area based on rows
+  ///
+  odb::Polygon computeCoreArea();
+
+  ///
+  /// Set the core area.
+  ///
+  void setCoreArea(const Rect& new_area);
+
+  ///
+  /// Set the core area with polygon. Allows for non-rectangular floorplans
+  ///
+  void setCoreArea(const Polygon& new_area);
+
+  ///
+  /// Get the core area.
   ///
   Rect getCoreArea();
+
+  ///
+  /// Get the core area.
+  ///
+  Polygon getCoreAreaPolygon();
 
   ///
   /// Add region in the die area where IO pins cannot be placed
@@ -1286,6 +1305,8 @@ class dbBlock : public dbObject
                               const char* base_name = "inst",
                               const dbNameUniquifyType& uniquify
                               = dbNameUniquifyType::ALWAYS);
+
+  const char* getBaseName(const char* full_name) const;
 
   ///
   /// return the regions of this design
@@ -1826,7 +1847,7 @@ class dbNet : public dbObject
   ///
   /// Get the Regular Wiring of a net (TODO: per path)
   ///
-  dbWireType getWireType();
+  dbWireType getWireType() const;
 
   ///
   /// Set the Regular Wiring of a net (TODO: per path)
@@ -1836,7 +1857,7 @@ class dbNet : public dbObject
   ///
   /// Get the signal type of this block-net.
   ///
-  dbSigType getSigType();
+  dbSigType getSigType() const;
 
   ///
   /// Get the signal type of this block-net.
@@ -1945,7 +1966,7 @@ class dbNet : public dbObject
   ///
   /// Returns true if the don't-touch flag is set.
   ///
-  bool isDoNotTouch();
+  bool isDoNotTouch() const;
 
   ///
   /// Get the block this net belongs to.
@@ -2009,7 +2030,7 @@ class dbNet : public dbObject
   /// Returns true if this dbNet is marked as special. Special nets/iterms are
   /// declared in the SPECIAL NETS section of a DEF file.
   ///
-  bool isSpecial();
+  bool isSpecial() const;
 
   ///
   /// Mark this dbNet as special.
@@ -2482,6 +2503,16 @@ class dbNet : public dbObject
   /// related to this flat net.
   ///
   void renameWithModNetInHighestHier();
+
+  ///
+  /// Check issues such as multiple drivers, no driver, or dangling net
+  ///
+  void checkSanity() const;
+
+  ///
+  /// Dump dbNet info for debugging
+  ///
+  void dump() const;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -8361,6 +8392,12 @@ class dbModNet : public dbObject
   void disconnectAllTerms();
   void dump() const;
 
+  // Find the flat net (dbNet) associated with this hierarchical net (dbModNet).
+  // A dbModNet should be associated with a single dbNet.
+  // This function traverses the terminals connected to this dbModNet
+  // and returns the first dbNet it finds.
+  dbNet* findRelatedNet() const;
+
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);
   static dbSet<dbModNet>::iterator destroy(dbSet<dbModNet>::iterator& itr);
@@ -8389,15 +8426,15 @@ class dbModule : public dbObject
 
   dbBlock* getOwner();
 
-  dbSet<dbModInst> getChildren();
-  dbSet<dbModInst> getModInsts();
+  dbSet<dbModInst> getChildren() const;
+  dbSet<dbModInst> getModInsts() const;
   dbSet<dbModNet> getModNets();
   // Get the ports of a module (STA world uses ports, which contain members).
   dbSet<dbModBTerm> getPorts();
   // Get the leaf level connections on a module (flat connected view).
   dbSet<dbModBTerm> getModBTerms() const;
   dbModBTerm* getModBTerm(uint id);
-  dbSet<dbInst> getInsts();
+  dbSet<dbInst> getInsts() const;
 
   dbModInst* findModInst(const char* name);
   dbInst* findDbInst(const char* name);
@@ -8411,6 +8448,8 @@ class dbModule : public dbObject
   const dbModBTerm* getHeadDbModBTerm() const;
   bool canSwapWith(dbModule* new_module) const;
   bool isTop() const;
+  bool containsDbInst(dbInst* inst) const;
+  bool containsDbModInst(dbModInst* inst) const;
 
   static dbModule* create(dbBlock* block, const char* name);
 

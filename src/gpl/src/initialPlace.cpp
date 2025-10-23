@@ -87,7 +87,7 @@ void InitialPlace::doBicgstabPlace(int threads)
     }
 
     if (std::isnan(error.x) || std::isnan(error.y)) {
-      log_->warn(GPL,
+      log_->warn(utl::GPL,
                  154,
                  "Conjugate gradient initial placement solver failed at "
                  "iteration {}. ",
@@ -162,7 +162,7 @@ void InitialPlace::placeInstsCenter()
   }
 
   debugPrint(log_,
-             GPL,
+             utl::GPL,
              "init",
              1,
              "[InitialPlace] origin position counters: region center = {}, db "

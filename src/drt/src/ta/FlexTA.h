@@ -115,7 +115,7 @@ class FlexTAWorker
         logger_(logger),
         router_cfg_(router_cfg),
         save_updates_(save_updates),
-        dir_(dbTechLayerDir::NONE),
+        dir_(odb::dbTechLayerDir::NONE),
         taIter_(0),
         rq_(this),
         numAssigned_(0),
@@ -127,7 +127,7 @@ class FlexTAWorker
   // setters
   void setRouteBox(const odb::Rect& boxIn) { routeBox_ = boxIn; }
   void setExtBox(const odb::Rect& boxIn) { extBox_ = boxIn; }
-  void setDir(const dbTechLayerDir& in) { dir_ = in; }
+  void setDir(const odb::dbTechLayerDir& in) { dir_ = in; }
   void setTAIter(int in) { taIter_ = in; }
   void addIroute(std::unique_ptr<taPin> in, bool isExt = false)
   {
@@ -161,7 +161,7 @@ class FlexTAWorker
   frDesign* getDesign() const { return design_; }
   const odb::Rect& getRouteBox() const { return routeBox_; }
   const odb::Rect& getExtBox() const { return extBox_; }
-  dbTechLayerDir getDir() const { return dir_; }
+  odb::dbTechLayerDir getDir() const { return dir_; }
   int getTAIter() const { return taIter_; }
   bool isInitTA() const { return (taIter_ == 0); }
   frRegionQuery* getRegionQuery() const { return design_->getRegionQuery(); }
@@ -196,7 +196,7 @@ class FlexTAWorker
   bool save_updates_;
   odb::Rect routeBox_;
   odb::Rect extBox_;
-  dbTechLayerDir dir_;
+  odb::dbTechLayerDir dir_;
   int taIter_;
   FlexTAWorkerRegionQuery rq_;
 

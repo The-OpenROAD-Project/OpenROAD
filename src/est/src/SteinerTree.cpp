@@ -271,39 +271,6 @@ void SteinerTree::populateSides(const SteinerPt from,
   }
 }
 
-int SteinerTree::distance(const SteinerPt from, const SteinerPt to) const
-{
-  if (from == SteinerNull || to == SteinerNull) {
-    return -1;
-  }
-  if (from == to) {
-    return 0;
-  }
-  const odb::Point from_pt = location(from);
-  const odb::Point to_pt = location(to);
-  const SteinerPt left_from = left(from);
-  const SteinerPt right_from = right(from);
-  if (left_from == to || right_from == to) {
-    return abs(from_pt.x() - to_pt.x()) + abs(from_pt.y() - to_pt.y());
-  }
-  if (left_from == SteinerNull && right_from == SteinerNull) {
-    return -1;
-  }
-
-  const int find_left = distance(left_from, to);
-  if (find_left >= 0) {
-    return find_left + abs(from_pt.x() - to_pt.x())
-           + abs(from_pt.y() - to_pt.y());
-  }
-
-  const int find_right = distance(right_from, to);
-  if (find_right >= 0) {
-    return find_right + abs(from_pt.x() - to_pt.x())
-           + abs(from_pt.y() - to_pt.y());
-  }
-  return -1;
-}
-
 const Pin* SteinerTree::pin(const SteinerPt pt) const
 {
   validatePoint(pt);

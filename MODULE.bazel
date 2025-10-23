@@ -109,7 +109,7 @@ bazel_dep(name = "googletest", version = "1.17.0", dev_dependency = True)
 # BCR, they should depend on their own version.
 bazel_dep(name = "glpk", version = "5.0.bcr.3", repo_name = "org_gnu_glpk")
 
-## Fix the compiler version and avoid any local compiler
+## Lock the compiler version and avoid any local compiler
 bazel_dep(name = "toolchains_llvm", version = "1.5.0")
 
 # Configure and register the toolchain.
@@ -153,7 +153,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "2aa6a9dd3c0006c5358e363fcac9e209c4dccc47",
+    commit = "677ecf4bb7195903bb58beae171d254dac984e27",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -162,10 +162,10 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:v3.0-3911-g99312fa58",
+    image = "docker.io/openroad/orfs:v3.0-4072-g2a1832971",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "36d3ac23732803c9e47181e167a105c69d4d6927a96782c4a4a27ceca40d8ff8",
+    sha256 = "d5ac8b165ebab339eb98beb63a463eab5ed78364335fb1455c2e1d75eb757c3d",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
@@ -195,9 +195,9 @@ maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(
     name = "maven",
     artifacts = [
-        "org.chipsalliance:chisel_2.13:7.0.0",
-        "org.chipsalliance:chisel-plugin_2.13.16:7.0.0",
     ],
+    # Update by running: bazelisk run @maven//:pin
+    lock_file = "//bazel:maven_install.json",
     repositories = [
         "https://repo1.maven.org/maven2",
         "https://s01.oss.sonatype.org/content/repositories/releases",

@@ -365,27 +365,31 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   connect(this, &MainWindow::blockLoaded, drc_viewer_, &DRCWidget::setBlock);
   connect(
       this, &MainWindow::blockLoaded, clock_viewer_, &ClockWidget::setBlock);
-  connect(drc_viewer_, &DRCWidget::selectDRC, [this](const Selected& selected) {
-    setSelected(selected, false);
-    odb::Rect bbox;
-    selected.getBBox(bbox);
+  connect(drc_viewer_,
+          &DRCWidget::selectDRC,
+          [this](const Selected& selected, const bool open_inspector) {
+            if (open_inspector) {
+              setSelected(selected, false);
+            }
+            odb::Rect bbox;
+            selected.getBBox(bbox);
 
-    auto* block = getBlock();
-    int zoomout_dist = std::numeric_limits<int>::max();
-    if (block != nullptr) {
-      // 10 microns
-      zoomout_dist = 10 * block->getDbUnitsPerMicron();
-    }
-    // twice the largest dimension of bounding box
-    const int zoomout_box = 2 * std::max(bbox.dx(), bbox.dy());
-    // pick smallest
-    const int zoomout_margin = std::min(zoomout_dist, zoomout_box);
-    bbox.set_xlo(bbox.xMin() - zoomout_margin);
-    bbox.set_ylo(bbox.yMin() - zoomout_margin);
-    bbox.set_xhi(bbox.xMax() + zoomout_margin);
-    bbox.set_yhi(bbox.yMax() + zoomout_margin);
-    zoomTo(bbox);
-  });
+            auto* block = getBlock();
+            int zoomout_dist = std::numeric_limits<int>::max();
+            if (block != nullptr) {
+              // 10 microns
+              zoomout_dist = 10 * block->getDbUnitsPerMicron();
+            }
+            // twice the largest dimension of bounding box
+            const int zoomout_box = 2 * std::max(bbox.dx(), bbox.dy());
+            // pick smallest
+            const int zoomout_margin = std::min(zoomout_dist, zoomout_box);
+            bbox.set_xlo(bbox.xMin() - zoomout_margin);
+            bbox.set_ylo(bbox.yMin() - zoomout_margin);
+            bbox.set_xhi(bbox.xMax() + zoomout_margin);
+            bbox.set_yhi(bbox.yMax() + zoomout_margin);
+            zoomTo(bbox);
+          });
   connect(this, &MainWindow::selectionChanged, [this]() {
     if (!selected_.empty()) {
       drc_viewer_->updateSelection(*selected_.begin());
@@ -615,6 +619,10 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   gui->registerDescriptor<odb::dbBox*>(new DbBoxDescriptor(db_));
   gui->registerDescriptor<DbBoxDescriptor::BoxWithTransform>(
       new DbBoxDescriptor(db_));
+  gui->registerDescriptor<odb::dbMasterEdgeType*>(
+      new DbMasterEdgeTypeDescriptor(db_));
+  gui->registerDescriptor<odb::dbCellEdgeSpacing*>(
+      new DbCellEdgeSpacingDescriptor(db_));
 
   gui->registerDescriptor<sta::Corner*>(new CornerDescriptor(sta));
   gui->registerDescriptor<sta::LibertyLibrary*>(

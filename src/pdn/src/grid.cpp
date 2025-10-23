@@ -1789,8 +1789,8 @@ bool BumpGrid::isValid() const
   const auto nets = getNets(startsWithPower());
   const int net_count = nets.size();
   if (net_count > 1) {
-    getLogger()->warn(utl::PAD,
-                      232,
+    getLogger()->warn(utl::PDN,
+                      241,
                       "Bump grid for {} is connected to {} power nets",
                       getInstance()->getName(),
                       net_count);

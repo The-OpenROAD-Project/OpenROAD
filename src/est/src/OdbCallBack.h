@@ -6,18 +6,16 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "sta/Network.hh"
 
 namespace est {
 
 class EstimateParasitics;
 
-using odb::dbBlockCallBackObj;
-using odb::dbITerm;
-using odb::dbNet;
 using sta::dbNetwork;
 using sta::Network;
 
-class OdbCallBack : public dbBlockCallBackObj
+class OdbCallBack : public odb::dbBlockCallBackObj
 {
  public:
   OdbCallBack(EstimateParasitics* estimate_parasitics,
@@ -25,10 +23,10 @@ class OdbCallBack : public dbBlockCallBackObj
               dbNetwork* db_network);
 
   void inDbInstCreate(odb::dbInst* inst) override;
-  void inDbNetCreate(dbNet* net) override;
-  void inDbNetDestroy(dbNet* net) override;
-  void inDbITermPostConnect(dbITerm* iterm) override;
-  void inDbITermPostDisconnect(dbITerm* iterm, dbNet* net) override;
+  void inDbNetCreate(odb::dbNet* net) override;
+  void inDbNetDestroy(odb::dbNet* net) override;
+  void inDbITermPostConnect(odb::dbITerm* iterm) override;
+  void inDbITermPostDisconnect(odb::dbITerm* iterm, odb::dbNet* net) override;
   void inDbInstSwapMasterAfter(odb::dbInst* inst) override;
 
  private:

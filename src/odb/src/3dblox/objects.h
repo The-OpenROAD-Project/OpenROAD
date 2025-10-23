@@ -122,4 +122,35 @@ struct DbxData
   std::map<std::string, Connection> connections;
 };
 
+struct BumpMapEntry
+{
+  std::string bump_inst_name;
+  std::string bump_cell_type;
+  double x{0.0};
+  double y{0.0};
+  std::string port_name;
+  std::string net_name;
+
+  BumpMapEntry() = default;
+  BumpMapEntry(const std::string& inst_name,
+               const std::string& cell_type,
+               double x_coord,
+               double y_coord,
+               const std::string& port,
+               const std::string& net)
+      : bump_inst_name(inst_name),
+        bump_cell_type(cell_type),
+        x(x_coord),
+        y(y_coord),
+        port_name(port),
+        net_name(net)
+  {
+  }
+};
+
+struct BumpMapData
+{
+  std::vector<BumpMapEntry> entries;
+};
+
 }  // namespace odb

@@ -1095,6 +1095,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
           pins, nullptr, nullptr, sta::RiseFallBoth::riseFall()));
     }
   }
+
   sta::ExceptionTo* e_to = nullptr;
   if (!to.empty()) {
     sta::PinSet* pins = new sta::PinSet(getNetwork());

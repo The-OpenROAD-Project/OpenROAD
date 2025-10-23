@@ -250,6 +250,8 @@ class FastRouteCore
   std::string getSttInputFileName();
   const odb::dbNet* getDebugNet();
   bool hasSaveSttInput();
+
+  // NDR related functions
   void clearNDRnets();
   void computeCongestedNDRnets();
   void updateSoftNDRNetUsage(int net_id, int edge_cost);
@@ -268,6 +270,7 @@ class FastRouteCore
       std::vector<std::pair<odb::Point, bool>>& overflow_pos);
 
   NetRouteMap getPlanarRoutes();
+  void getPlanarRoute(odb::dbNet* db_net, GRoute& route);
 
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
@@ -277,6 +280,9 @@ class FastRouteCore
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
+  void updateSlacks(float percentage = 0.75);
+  void preProcessTechLayers();
+  odb::dbTechLayer* getTechLayer(int layer, bool is_via);
 
   // maze functions
   // Maze-routing in different orders
@@ -520,10 +526,12 @@ class FastRouteCore
                          int l,
                          bool horizontal,
                          int& best_cost,
-                         multi_array<int, 2>& layer_grid);
+                         multi_array<int, 2>& layer_grid,
+                         int net_cost);
   void assignEdge(int netID, int edgeID, bool processDIR);
   int getLayerResistance(int layer, int length, FrNet* net);
   int getViaResistance(int from_layer, int to_layer);
+  bool needResistanceAware(int net_id);
   void recoverEdge(int netID, int edgeID);
   void layerAssignmentV4();
   void netpinOrderInc();
@@ -597,10 +605,13 @@ class FastRouteCore
   int congestion_report_iter_step_;
   std::string congestion_file_name_;
   std::vector<odb::dbTechLayerDir> layer_directions_;
+  std::vector<odb::dbTechLayer*> db_layers_;
   int x_range_;
   int y_range_;
 
+  bool estimate_parasitics_ = false;
   bool resistance_aware_ = false;
+  bool enable_resistance_aware_ = false;
   int num_adjust_;
   int v_capacity_;
   int h_capacity_;

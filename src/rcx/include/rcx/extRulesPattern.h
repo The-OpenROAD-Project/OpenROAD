@@ -118,7 +118,7 @@ class extRulesPat
               int UR[2],
               odb::dbBlock* block,
               extMain* xt,
-              dbTech* tech);
+              odb::dbTech* tech);
   void PrintOrigin(FILE* fp, int ll[2], uint met, const char* msg);
   void UpdateOrigin_start(uint met);
   void UpdateOrigin_wires(int ll[2], int ur[2]);
@@ -176,45 +176,45 @@ class extRulesPat
   void WriteDB(uint jj, uint dir, uint met, odb::dbTechLayer* layer, FILE* fp);
   void WriteWire(FILE* fp, int ll[2], int ur[2], char* name);
 
-  dbBTerm* createBterm1(bool lo,
-                        dbNet* net,
-                        int ll[2],
-                        int ur[2],
-                        const char* postFix,
-                        odb::dbTechLayer* layer,
-                        uint width,
-                        bool horizontal,
-                        bool io);
-  dbNet* createNetSingleWire(const char* netName,
+  odb::dbBTerm* createBterm1(bool lo,
+                             odb::dbNet* net,
                              int ll[2],
                              int ur[2],
+                             const char* postFix,
+                             odb::dbTechLayer* layer,
                              uint width,
-                             bool vertical,
-                             uint met,
-                             odb::dbTechLayer* layer);
+                             bool horizontal,
+                             bool io);
+  odb::dbNet* createNetSingleWire(const char* netName,
+                                  int ll[2],
+                                  int ur[2],
+                                  uint width,
+                                  bool vertical,
+                                  uint met,
+                                  odb::dbTechLayer* layer);
   // dkf 12/19/2023
   uint setLayerInfoVia(odb::dbTechLayer* layer, uint met, bool start = false);
   uint CreatePatternVia(odb::dbTechVia* via,
                         uint widthIndex,
                         uint spaceIndex,
                         uint wcnt);
-  dbNet* createNetSingleWireAndVia(const char* netName,
-                                   int ll[2],
-                                   int ur[2],
-                                   uint width,
-                                   bool vertical,
-                                   odb::dbTechVia* via);
+  odb::dbNet* createNetSingleWireAndVia(const char* netName,
+                                        int ll[2],
+                                        int ur[2],
+                                        uint width,
+                                        bool vertical,
+                                        odb::dbTechVia* via);
   void WriteDBWireVia(uint jj, uint dir, odb::dbTechVia* via);
   // dkf 12/20/2023
-  dbBTerm* createBterm(bool lo,
-                       dbNet* net,
-                       int ll[2],
-                       int ur[2],
-                       const char* postFix,
-                       odb::dbTechLayer* layer,
-                       uint width,
-                       bool horizontal,
-                       bool io);
+  odb::dbBTerm* createBterm(bool lo,
+                            odb::dbNet* net,
+                            int ll[2],
+                            int ur[2],
+                            const char* postFix,
+                            odb::dbTechLayer* layer,
+                            uint width,
+                            bool horizontal,
+                            bool io);
   // dkf 12/26/2023
   uint GetViaCutCount(odb::dbTechVia* tvia);
   double GetViaArea(odb::dbTechVia* tvia);

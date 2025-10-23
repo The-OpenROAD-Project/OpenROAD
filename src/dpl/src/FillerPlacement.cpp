@@ -9,6 +9,7 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/network.h"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
@@ -23,7 +24,7 @@ using odb::dbPlacementStatus;
 
 using utl::format_as;
 
-static dbTechLayer* getImplant(dbMaster* master)
+static odb::dbTechLayer* getImplant(dbMaster* master)
 {
   if (!master) {
     return nullptr;
@@ -180,7 +181,7 @@ void Opendp::placeRowFillers(GridY row,
       k++;
     }
 
-    dbTechLayer* implant = nullptr;
+    odb::dbTechLayer* implant = nullptr;
     if (j > 0) {
       auto pixel = grid_->gridPixel(j - 1, row);
       if (pixel->cell && pixel->cell->getDbInst()) {
@@ -252,7 +253,7 @@ const char* Opendp::gridInstName(GridY row, GridX col)
 
 // Return list of masters to fill gap (in site width units).
 dbMasterSeq& Opendp::gapFillers(
-    dbTechLayer* implant,
+    odb::dbTechLayer* implant,
     GridX gap,
     const MasterByImplant& filler_masters_by_implant)
 {

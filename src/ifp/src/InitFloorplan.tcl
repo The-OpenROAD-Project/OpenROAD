@@ -9,13 +9,14 @@ sta::define_cmd_args "initialize_floorplan" {[-utilization util]\
 					       [-additional_sites site_names]\
 					       [-site site_name]\
 					       [-row_parity NONE|ODD|EVEN]\
-					       [-flip_sites site_names]}
+					       [-flip_sites site_names]\
+					       [-gap space]}
 
 proc initialize_floorplan { args } {
   sta::parse_key_args "initialize_floorplan" args \
     keys {-utilization -aspect_ratio -core_space \
     -die_area -core_area \
-    -site -additional_sites -row_parity -flip_sites} \
+    -site -additional_sites -row_parity -flip_sites -gap} \
     flags {}
 
   # Existing validation
@@ -68,11 +69,12 @@ sta::define_cmd_args "make_rows" {
 					       [-additional_sites site_names]\
 					       [-site site_name]\
 					       [-row_parity NONE|ODD|EVEN]\
-					       [-flip_sites site_names]}
+					       [-flip_sites site_names]\
+					       [-gap space]}
 proc make_rows { args } {
   sta::parse_key_args "make_rows" args \
     keys {-core_space \
-    -core_area -site -additional_sites -row_parity -flip_sites} \
+    -core_area -site -additional_sites -row_parity -flip_sites -gap} \
     flags {}
   make_rows_helper [array get keys]
 }
@@ -108,6 +110,12 @@ proc make_rows_helper { key_array } {
     }
   }
 
+  # Get gap space
+  set gap [expr -(2 ** 31)]
+  if { [info exists keys(-gap)] } {
+    set gap [ord::microns_to_dbu $keys(-gap)]
+  }
+
   if { [info exists keys(-core_area)] } {
     if { [info exists keys(-core_space)] } {
       utl::error IFP 60 "-core_space cannot be used with -core_area."
@@ -132,7 +140,8 @@ proc make_rows_helper { key_array } {
       $site \
       $additional_sites \
       $row_parity \
-      $flipped_sites
+      $flipped_sites \
+      $gap
     return
   }
 
@@ -165,7 +174,8 @@ proc make_rows_helper { key_array } {
       $site \
       $additional_sites \
       $row_parity \
-      $flipped_sites
+      $flipped_sites \
+      $gap
     return
   }
 
@@ -439,6 +449,12 @@ proc make_polygon_rows_helper { key_array } {
     }
   }
 
+  # Get gap space
+  set gap [expr -(2 ** 31)]
+  if { [info exists keys(-gap)] } {
+    set gap [ord::microns_to_dbu $keys(-gap)]
+  }
+
   # Handle core polygon - this is the key difference from rectangular rows
   if { [info exists keys(-core_area)] } {
     set core_vertices $keys(-core_area)
@@ -474,7 +490,8 @@ proc make_polygon_rows_helper { key_array } {
       $site \
       $additional_sites \
       $row_parity \
-      $flipped_sites
+      $flipped_sites \
+      $gap
     return
   }
 }

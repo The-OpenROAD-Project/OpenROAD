@@ -1112,17 +1112,21 @@ void RenderThread::drawBlock(QPainter* painter,
                          viewer_->pixels_per_dbu_,
                          block->getDbUnitsPerMicron());
 
-  // Draw die area, if set
   painter->setPen(QPen(Qt::gray, 0));
   painter->setBrush(QBrush());
-  odb::Polygon die_area = block->getDieAreaPolygon();
+
+  // Draw die area, if set
+  const odb::Polygon die_area = block->getDieAreaPolygon();
 
   if (die_area.getEnclosingRect().area() > 0) {
-    QPolygon die_area_qpoly;
-    for (const odb::Point& point : die_area.getPoints()) {
-      die_area_qpoly << QPoint(point.getX(), point.getY());
-    }
-    painter->drawPolygon(die_area_qpoly);
+    gui_painter.drawPolygon(die_area);
+  }
+
+  // Draw core area, if set
+  const odb::Polygon core_area = block->getCoreAreaPolygon();
+
+  if (core_area.getEnclosingRect().area() > 0) {
+    gui_painter.drawPolygon(core_area);
   }
 
   drawManufacturingGrid(painter, bounds);

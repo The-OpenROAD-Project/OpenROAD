@@ -757,7 +757,7 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
   bool found_drvr_grid_pt = false;
   Point drvr_grid_pt;
   bool is_local = true;
-  Point first_pin_loc = pin_grid_locs[0].pt;
+  Point first_pin_loc = pin_grid_locs[0].grid_pt;
   for (grt::PinGridLocation& pin_loc : pin_grid_locs) {
     Pin* pin = pin_loc.iterm ? db_network_->dbToSta(pin_loc.iterm)
                              : db_network_->dbToSta(pin_loc.bterm);

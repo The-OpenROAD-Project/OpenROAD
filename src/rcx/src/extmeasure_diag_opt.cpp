@@ -3,6 +3,7 @@
 
 #include <cstdio>
 
+#include "odb/array1.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
@@ -14,10 +15,10 @@
 // #define CHECK_SAME_NET
 // #define MIN_FOR_LOOPS
 
-namespace rcx {
-
+using odb::Ath__array1D;
 using utl::RCX;
-using namespace odb;
+
+namespace rcx {
 
 int extMeasureRC::ConnectWires(uint dir, BoundaryData& bounds)
 {

@@ -29,11 +29,6 @@ namespace dpl {
 
 using utl::Logger;
 
-using odb::dbDatabase;
-using odb::dbMaster;
-using odb::dbMasterType;
-using odb::dbTechLayer;
-
 class Node;
 class Group;
 class Master;
@@ -73,7 +68,7 @@ struct GridPt;
 struct DbuPt;
 struct DbuRect;
 
-using dbMasterSeq = std::vector<dbMaster*>;
+using dbMasterSeq = std::vector<odb::dbMaster*>;
 
 using IRDropByPoint = std::map<odb::Point, double>;
 struct GapInfo;
@@ -84,7 +79,7 @@ struct IRDrop;
 class Opendp
 {
  public:
-  Opendp(dbDatabase* db, Logger* logger);
+  Opendp(odb::dbDatabase* db, Logger* logger);
   ~Opendp();
 
   Opendp(const Opendp&) = delete;
@@ -101,7 +96,7 @@ class Opendp
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
-  void setPadding(dbMaster* master, int left, int right);
+  void setPadding(odb::dbMaster* master, int left, int right);
   void setPadding(odb::dbInst* inst, int left, int right);
   void setDebug(std::unique_ptr<dpl::DplObserver>& observer);
 
@@ -120,7 +115,7 @@ class Opendp
   void optimizeMirroring();
 
   // Place decap cells
-  void addDecapMaster(dbMaster* decap_master, double decap_cap);
+  void addDecapMaster(odb::dbMaster* decap_master, double decap_cap);
   void insertDecapCells(double target, IRDropByPoint& psm_ir_drops);
 
   // Get the instance adjacent to the left or right of a given instance
@@ -150,7 +145,7 @@ class Opendp
   // gap -> sequence of masters to fill the gap
   using GapFillers = std::vector<dbMasterSeq>;
 
-  using MasterByImplant = std::map<dbTechLayer*, dbMasterSeq>;
+  using MasterByImplant = std::map<odb::dbTechLayer*, dbMasterSeq>;
 
   using YCoordToGap = std::map<DbuY, std::vector<GapInfo*>>;
 
@@ -278,7 +273,7 @@ class Opendp
   dbMasterSeq filterFillerMasters(const dbMasterSeq& filler_masters) const;
   MasterByImplant splitByImplant(const dbMasterSeq& filler_masters);
   void setGridCells();
-  dbMasterSeq& gapFillers(dbTechLayer* implant,
+  dbMasterSeq& gapFillers(odb::dbTechLayer* implant,
                           GridX gap,
                           const MasterByImplant& filler_masters_by_implant);
   void placeRowFillers(GridY row,
@@ -292,7 +287,9 @@ class Opendp
   std::vector<int> findDecapCellIndices(const DbuX& gap_width,
                                         const double& current,
                                         const double& target);
-  void insertDecapInPos(dbMaster* master, const DbuX& pos_x, const DbuY& pos_y);
+  void insertDecapInPos(odb::dbMaster* master,
+                        const DbuX& pos_x,
+                        const DbuY& pos_y);
   void insertDecapInRow(const std::vector<GapInfo*>& gaps,
                         DbuY gap_y,
                         DbuX irdrop_x,
@@ -309,7 +306,7 @@ class Opendp
   void setGridLoc(Node* cell, GridX x, GridY y);
 
   Logger* logger_ = nullptr;
-  dbDatabase* db_ = nullptr;
+  odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   odb::Rect core_;
 
@@ -331,8 +328,8 @@ class Opendp
 
   // Filler placement.
   // gap (in sites) -> seq of masters by implant
-  std::map<dbTechLayer*, GapFillers> gap_fillers_;
-  std::map<dbMaster*, int> filler_count_;
+  std::map<odb::dbTechLayer*, GapFillers> gap_fillers_;
+  std::map<odb::dbMaster*, int> filler_count_;
   bool have_fillers_ = false;
 
   // Decap placement.

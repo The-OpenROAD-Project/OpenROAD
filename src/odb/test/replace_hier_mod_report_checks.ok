@@ -1,0 +1,92 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ r1/CK (DFF_X1)
+   0.26    0.26 v r1/Q (DFF_X1)
+   0.11    0.37 v u1/Z (BUF_X1)
+   0.08    0.45 v bc1/u2/Z (BUF_X1)
+   0.08    0.53 v bc1/u3/Z (BUF_X1)
+   0.00    0.53 v r2/D (DFF_X1)
+           0.53   data arrival time
+
+   0.30    0.30   clock clk (rise edge)
+   0.00    0.30   clock network delay (ideal)
+   0.00    0.30   clock reconvergence pessimism
+           0.30 ^ r2/CK (DFF_X1)
+  -0.16    0.14   library setup time
+           0.14   data required time
+---------------------------------------------------------
+           0.14   data required time
+          -0.53   data arrival time
+---------------------------------------------------------
+          -0.39   slack (VIOLATED)
+
+
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r4 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ r1/CK (DFF_X1)
+   0.26    0.26 v r1/Q (DFF_X1)
+   0.11    0.37 v u1/Z (BUF_X1)
+   0.09    0.46 v bc2/u2/Z (BUF_X1)
+   0.08    0.54 v bc2/u3/Z (BUF_X1)
+   0.00    0.54 v r4/D (DFF_X1)
+           0.54   data arrival time
+
+   0.30    0.30   clock clk (rise edge)
+   0.00    0.30   clock network delay (ideal)
+   0.00    0.30   clock reconvergence pessimism
+           0.30 ^ r4/CK (DFF_X1)
+  -0.16    0.14   library setup time
+           0.14   data required time
+---------------------------------------------------------
+           0.14   data required time
+          -0.54   data arrival time
+---------------------------------------------------------
+          -0.39   slack (VIOLATED)
+
+
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ r1/CK (DFF_X1)
+   0.26    0.26 v r1/Q (DFF_X1)
+   0.11    0.37 v u1/Z (BUF_X1)
+   0.08    0.45 v bc1/u2/Z (BUF_X1)
+   0.08    0.53 v bc1/u3/Z (BUF_X1)
+   0.00    0.53 v r2/D (DFF_X1)
+           0.53   data arrival time
+
+   0.30    0.30   clock clk (rise edge)
+   0.00    0.30   clock network delay (ideal)
+   0.00    0.30   clock reconvergence pessimism
+           0.30 ^ r2/CK (DFF_X1)
+  -0.16    0.14   library setup time
+           0.14   data required time
+---------------------------------------------------------
+           0.14   data required time
+          -0.53   data arrival time
+---------------------------------------------------------
+          -0.39   slack (VIOLATED)
+
+
