@@ -91,6 +91,13 @@ bazel_dep(name = "tcmalloc", version = "0.0.0-20250331-43fcf6e")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 bazel_dep(name = "yaml-cpp", version = "0.8.0")
 
+# fix missing stdint include https://github.com/stonier/yaml-cpp/pull/1
+git_override(
+    module_name = "yaml-cpp",
+    commit = "a83cd31548b19d50f3f983b069dceb4f4d50756d",
+    remote = "https://github.com/stonier/yaml-cpp.git",
+)
+
 # A from source build of QT that allows it to link into OpenROAD.
 # Building like any other bazel project. scripts in the docker folder
 # of this project generate stubs .ifso for things like X11 that will
