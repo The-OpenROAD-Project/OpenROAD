@@ -20,7 +20,7 @@ ChipletDef:
     regions:
       r1:
         side: front
-        bmap: Collateral/SoC/design/SoC_r1.bmap
+        bmap: example.bmap
         pmap: Collateral/SoC/design/SoC_r1.pmap
         layer: UBM
         coords:
@@ -31,5 +31,5 @@ ChipletDef:
     external:
       APR_tech_file: [NG45_PATH/*_tech.lef]
       liberty_file: [NG45_PATH/fake_macros.lib]
-      LEF_file: [NG45_PATH/fake_macros.lef]
+      LEF_file: [NG45_PATH/fake_macros.lef, NG45_PATH/fake_bumps.lef]
       DEF_file: ../fake_macros.def

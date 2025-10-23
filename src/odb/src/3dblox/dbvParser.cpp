@@ -207,10 +207,12 @@ void DbvParser::parseRegion(ChipletRegion& region,
 {
   if (region_node["bmap"]) {
     extractValue(region_node, "bmap", region.bmap);
+    region.bmap = resolvePath(region.bmap);
   }
 
   if (region_node["pmap"]) {
     extractValue(region_node, "pmap", region.pmap);
+    region.pmap = resolvePath(region.pmap);
   }
 
   if (region_node["side"]) {
