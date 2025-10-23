@@ -213,6 +213,29 @@ NetRouteMap& GlobalRouter::getRoutes()
   return routes_;
 }
 
+NetRouteMap GlobalRouter::getPartialRoutes()
+{
+  NetRouteMap net_routes;
+  // TODO: still need to fix this during incremental grt
+  if (is_incremental) {
+    for (const auto& [db_net, net] : db_net_map_) {
+      if (routes_[db_net].empty()) {
+        GRoute route;
+        net_routes.insert({db_net, route});
+        fastroute_->getPlanarRoute(db_net, net_routes[db_net]);
+      }
+    }
+  } else {
+    partial_routes_.clear();
+    if (routes_.empty()) {
+      partial_routes_ = fastroute_->getPlanarRoutes();
+      net_routes = partial_routes_;
+    }
+  }
+
+  return net_routes;
+}
+
 bool GlobalRouter::haveRoutes()
 {
   if (!designIsPlaced()) {
@@ -281,6 +304,8 @@ void GlobalRouter::globalRoute(bool save_guides,
                                bool end_incremental)
 {
   bool has_routable_nets = false;
+  is_incremental = (start_incremental || end_incremental);
+
   for (auto net : db_->getChip()->getBlock()->getNets()) {
     if (net->getITerms().size() + net->getBTerms().size() > 1) {
       has_routable_nets = true;

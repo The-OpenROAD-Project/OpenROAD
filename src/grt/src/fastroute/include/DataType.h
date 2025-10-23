@@ -111,6 +111,8 @@ struct FrNet  // A Net is a set of connected MazePoints
   void setIsCritical(bool is_critical) { is_critical_ = is_critical; }
   void setIsSoftNDR(bool is_soft) { is_soft_ndr_ = is_soft; }
   bool isSoftNDR() { return is_soft_ndr_; }
+  void setIsResAware(bool res_aware) { is_res_aware_ = res_aware; }
+  bool isResAware() { return is_res_aware_; }
 
  private:
   odb::dbNet* db_net_;
@@ -125,6 +127,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   int max_layer_;
   float slack_;
   bool is_soft_ndr_ = false;
+  bool is_res_aware_ = false;
   // Non-null when an NDR has been applied to the net.
   std::unique_ptr<std::vector<int8_t>> edge_cost_per_layer_;
 };
@@ -241,6 +244,7 @@ struct OrderNetPin
   int minX;
   float length_per_pin;  // net length over pin count
   int ndr_priority;      // NDR nets are assigned first
+  int res_aware;
   float slack;
 };
 
