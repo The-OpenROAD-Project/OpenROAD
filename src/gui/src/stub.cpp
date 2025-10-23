@@ -25,8 +25,6 @@ struct GifWriter
 
 namespace gui {
 
-Gui* Gui::singleton_ = nullptr;
-
 // Used by toString to convert dbu to microns
 DBUToString Descriptor::Property::convert_dbu
     = [](int value, bool) { return std::to_string(value); };
@@ -55,6 +53,7 @@ Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 
 Gui* gui::Gui::get()
 {
+  static Gui* singleton_ = new Gui();
   return singleton_;
 }
 
