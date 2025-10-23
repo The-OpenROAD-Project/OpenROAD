@@ -25,9 +25,3 @@ set_isolation spm_inst_0_isolation \
 # not in the book; part of openroad upf
 create_logic_port iso_control \
     -direction in
-
-# not in the book; part of openroad upf
-#use_interface_cell \
-#    -domain spm_inst_0_domain \
-#    -strategy spm_inst_0_isolation \
-#    -lib_cells sky130_fd_sc_hd__lpflow_inputiso0n_1
