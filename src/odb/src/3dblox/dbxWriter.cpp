@@ -3,9 +3,13 @@
 
 #include "dbxWriter.h"
 
-#include <fstream>
+#include <yaml-cpp/emitterstyle.h>
+#include <yaml-cpp/node/node.h>
+
+#include <string>
 
 #include "baseWriter.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -110,10 +114,11 @@ void DbxWriter::writeStackInstance(YAML::Node& stack_instance_node,
   auto offset_x = chiplet->getOffset().getX() / db->getDbuPerMicron();
   auto offset_y = chiplet->getOffset().getY() / db->getDbuPerMicron();
 
-  YAML::Emitter loc_out;
-  loc_out << YAML::Flow << YAML::BeginSeq << offset_x << offset_y
-          << YAML::EndSeq;
-  stack_instance_node["loc"] = YAML::Load(loc_out.c_str());
+  YAML::Node loc_out;
+  loc_out.SetStyle(YAML::EmitterStyle::Flow);
+  loc_out.push_back(offset_x);
+  loc_out.push_back(offset_y);
+  stack_instance_node["loc"] = loc_out;
 
   stack_instance_node["z"] = 0.0;        // TODO: Calculate proper z position
   stack_instance_node["orient"] = "R0";  // TODO: Get proper orientation

@@ -3,14 +3,17 @@
 
 #include "dbvWriter.h"
 
-#include <yaml-cpp/yaml.h>
+#include <yaml-cpp/emitterstyle.h>
+#include <yaml-cpp/node/node.h>
 
 #include <filesystem>
 #include <set>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "baseWriter.h"
+#include "chipletHierarchy.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"

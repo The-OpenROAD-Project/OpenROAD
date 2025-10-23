@@ -3,11 +3,9 @@
 
 #pragma once
 
-#include <yaml-cpp/yaml.h>
+#include <yaml-cpp/node/node.h>
 
-#include <map>
 #include <string>
-#include <vector>
 
 #include "baseWriter.h"
 #include "odb/db.h"

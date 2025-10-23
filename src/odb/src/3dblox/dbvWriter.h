@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <yaml-cpp/node/node.h>
+
 #include <string>
 #include <vector>
 

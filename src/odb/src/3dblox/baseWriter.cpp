@@ -3,11 +3,13 @@
 
 #include "baseWriter.h"
 
+#include <yaml-cpp/yaml.h>
+
 #include <cstddef>
 #include <fstream>
-#include <sstream>
 #include <string>
 
+#include "odb/db.h"
 #include "odb/defout.h"
 #include "odb/lefout.h"
 #include "utl/Logger.h"
