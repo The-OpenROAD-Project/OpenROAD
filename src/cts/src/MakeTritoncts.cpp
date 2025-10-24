@@ -3,6 +3,7 @@
 
 #include "cts/MakeTritoncts.h"
 
+#include "tcl.h"
 #include "utl/decode.h"
 
 extern "C" {

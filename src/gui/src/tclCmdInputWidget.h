@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <tcl.h>
-
 #include <QCompleter>
 #include <QMenu>
 #include <QPlainTextEdit>
@@ -22,6 +20,7 @@
 #include <vector>
 
 #include "cmdInputWidget.h"
+#include "tcl.h"
 #include "tclCmdHighlighter.h"
 
 #if (TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 7) && !defined(Tcl_Size)

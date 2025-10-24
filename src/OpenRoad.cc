@@ -3,8 +3,6 @@
 
 #include "ord/OpenRoad.hh"
 
-#include <tcl.h>
-
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -16,6 +14,7 @@
 #include <vector>
 
 #include "ord/Version.hh"
+#include "tcl.h"
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"

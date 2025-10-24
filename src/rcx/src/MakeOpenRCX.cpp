@@ -4,6 +4,7 @@
 #include "rcx/MakeOpenRCX.h"
 
 #include "rcx/ext.h"
+#include "tcl.h"
 #include "utl/decode.h"
 
 extern "C" {

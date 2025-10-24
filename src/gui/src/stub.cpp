@@ -4,8 +4,6 @@
 // This file is only used when we can't find Qt5 and are thus
 // disabling the GUI.  It is not included when Qt5 is found.
 
-#include <tcl.h>
-
 #include <any>
 #include <cstdio>
 #include <map>
@@ -17,6 +15,7 @@
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "tcl.h"
 
 // empty gif writer class
 struct GifWriter

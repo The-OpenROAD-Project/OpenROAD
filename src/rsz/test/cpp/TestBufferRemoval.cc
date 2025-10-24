@@ -30,7 +30,6 @@
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "stt/SteinerTreeBuilder.h"
-#include "tcl.h"
 #include "tst/nangate45_fixture.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"

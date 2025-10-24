@@ -3,10 +3,9 @@
 
 #include "gpl/MakeReplace.h"
 
-#include <tcl.h>
-
 #include "gpl/Replace.h"
 #include "graphicsImpl.h"
+#include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/decode.h"
 
