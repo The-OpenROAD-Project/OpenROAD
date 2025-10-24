@@ -519,7 +519,7 @@ std::vector<dbInst*> dbModule::getLeafInsts()
 dbModBTerm* dbModule::findModBTerm(const char* name)
 {
   std::string modbterm_name(name);
-  char hier_delimiter = getOwner()->getHierarchyDelimiter();
+  const char hier_delimiter = getOwner()->getHierarchyDelimiter();
   size_t last_idx = modbterm_name.find_last_of(hier_delimiter);
   if (last_idx != std::string::npos) {
     modbterm_name = modbterm_name.substr(last_idx + 1);
@@ -790,7 +790,7 @@ void _dbModule::copyModuleInsts(dbModule* old_module,
                                 ITMap& it_map)
 {
   dbBlock* block = new_module->getOwner();
-  char hier_delimiter = block->getHierarchyDelimiter();
+  const char hier_delimiter = block->getHierarchyDelimiter();
   utl::Logger* logger = old_module->getImpl()->getLogger();
 
   // Create a net name map (key: new net name, value: new dbNet*).
