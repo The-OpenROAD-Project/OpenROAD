@@ -98,10 +98,8 @@ proc run_equivalence_test { test lib remove_cells } {
     catch { exec eqy -d $run_dir $test_script > /dev/null }
     set count 0
     catch {
-      set count [ \
-        exec grep -c "Successfully proved designs equivalent" \
-        $run_dir/logfile.txt \
-      ]
+      set count [exec grep -c "Successfully proved designs equivalent" \
+        $run_dir/logfile.txt]
     }
     if { $count == 0 } {
       puts "Repair timing output failed equivalence test"

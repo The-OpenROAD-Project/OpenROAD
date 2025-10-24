@@ -55,9 +55,8 @@ set alus [list \
   "ALU_16_BRENT_KUNG" \
   "ALU_16_KOGGE_STONE" \
   "ALU_16_SKLANSKY" \
-  "ALU_16_HAN_CARLSON" \
-]
+  "ALU_16_HAN_CARLSON"]
 
-for {set i 0} {$i < [llength $alus] - 1} {incr i} {
-  do_swap [lindex $alus $i] [lindex $alus [expr {$i + 1}]]
+for { set i 0 } { $i < [llength $alus] - 1 } { incr i } {
+  do_swap [lindex $alus $i] [lindex $alus [expr { $i + 1 }]]
 }
