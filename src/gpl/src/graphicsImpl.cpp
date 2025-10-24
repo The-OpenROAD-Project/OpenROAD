@@ -84,35 +84,36 @@ void GraphicsImpl::debugForNesterovPlace(
     chart_->setYAxisFormats({"%.2e", "%.2f"});
     chart_->setYAxisMin({std::nullopt, 0});
 
-  // Useful for debugging multiple NesterovBase: Density penalty and PhiCoef
-  if (logger_->debugCheck(utl::GPL, "penaltyPlot", 1)) {
-    if (!nbVec_.empty()) {
-      std::vector<std::string> series_names;
-      series_names.reserve(nbVec_.size());
-      for (size_t i = 0; i < nbVec_.size(); ++i) {
-        std::string name;
-        if (nbVec_[i] && nbVec_[i]->getPb() && nbVec_[i]->getPb()->group()) {
-          name = fmt::format(
-              "nb[{}] {}", i, nbVec_[i]->getPb()->group()->getName());
-        } else {
-          name = fmt::format("nb[{}]", i);
+    // Useful for debugging multiple NesterovBase: Density penalty and PhiCoef
+    if (logger_->debugCheck(utl::GPL, "penaltyPlot", 1)) {
+      if (!nbVec_.empty()) {
+        std::vector<std::string> series_names;
+        series_names.reserve(nbVec_.size());
+        for (size_t i = 0; i < nbVec_.size(); ++i) {
+          std::string name;
+          if (nbVec_[i] && nbVec_[i]->getPb() && nbVec_[i]->getPb()->group()) {
+            name = fmt::format(
+                "nb[{}] {}", i, nbVec_[i]->getPb()->group()->getName());
+          } else {
+            name = fmt::format("nb[{}]", i);
+          }
+          series_names.push_back(name);
         }
-        series_names.push_back(name);
-      }
-      density_chart_
-          = gui::Gui::get()->addChart("GPL Density Penalty", "Iteration", series_names);
-      density_chart_->setXAxisFormat("%d");
-      std::vector<std::string> y_formats(nbVec_.size(), "%.3f");
-      density_chart_->setYAxisFormats(y_formats);
-      std::vector<std::optional<double>> y_mins(nbVec_.size(), 0.0);
-      density_chart_->setYAxisMin(y_mins);
+        density_chart_ = gui::Gui::get()->addChart(
+            "GPL Density Penalty", "Iteration", series_names);
+        density_chart_->setXAxisFormat("%d");
+        std::vector<std::string> y_formats(nbVec_.size(), "%.3f");
+        density_chart_->setYAxisFormats(y_formats);
+        std::vector<std::optional<double>> y_mins(nbVec_.size(), 0.0);
+        density_chart_->setYAxisMin(y_mins);
 
-      phi_chart_ = gui::Gui::get()->addChart("GPL PhiCoef", "Iteration", series_names);
-      phi_chart_->setXAxisFormat("%d");
-      phi_chart_->setYAxisFormats(y_formats);
-      phi_chart_->setYAxisMin(y_mins);
+        phi_chart_ = gui::Gui::get()->addChart(
+            "GPL PhiCoef", "Iteration", series_names);
+        phi_chart_->setXAxisFormat("%d");
+        phi_chart_->setYAxisFormats(y_formats);
+        phi_chart_->setYAxisMin(y_mins);
+      }
     }
-  }
 
     initHeatmap();
     if (inst) {
@@ -252,7 +253,7 @@ void GraphicsImpl::drawForce(gui::Painter& painter)
 
 void GraphicsImpl::drawCells(const std::vector<GCellHandle>& cells,
                              gui::Painter& painter,
-                            size_t nb_index)
+                             size_t nb_index)
 {
   for (const auto& handle : cells) {
     const GCell* gCell = handle;
@@ -268,8 +269,9 @@ void GraphicsImpl::drawCells(const std::vector<GCell*>& cells,
   }
 }
 
-
-void GraphicsImpl::drawSingleGCell(const GCell* gCell, gui::Painter& painter, size_t nb_index)
+void GraphicsImpl::drawSingleGCell(const GCell* gCell,
+                                   gui::Painter& painter,
+                                   size_t nb_index)
 {
   const int gcx = gCell->dCx();
   const int gcy = gCell->dCy();
