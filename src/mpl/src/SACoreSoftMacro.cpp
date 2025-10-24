@@ -454,8 +454,8 @@ void SACoreSoftMacro::calBoundaryPenalty()
       y_dist_from_root
           = std::min(global_ly, std::abs(root_->getHeight() - global_uy));
 
-      boundary_penalty_ += std::min(x_dist_from_root, y_dist_from_root)
-                           * soft_macro.getNumMacro();
+      boundary_penalty_
+          += (x_dist_from_root + y_dist_from_root) * soft_macro.getNumMacro();
     }
   }
   // normalization

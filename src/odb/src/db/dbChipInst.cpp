@@ -254,7 +254,11 @@ dbChipInst* dbChipInst::create(dbChip* parent_chip,
       bumpinst->region_next_ = regioninst->chip_bump_insts_;
       regioninst->chip_bump_insts_ = bumpinst->getOID();
     }
+    // reverse the chip_bump_insts_ list
+    ((dbChipRegionInst*) regioninst)->getChipBumpInsts().reverse();
   }
+  // reverse the chip_region_insts_ list
+  ((dbChipInst*) chipinst)->getRegions().reverse();
   return (dbChipInst*) chipinst;
 }
 

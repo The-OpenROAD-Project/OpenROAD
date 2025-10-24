@@ -11,6 +11,8 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "gpl/AbstractGraphics.h"
+#include "graphicsNone.h"
 #include "initialPlace.h"
 #include "mbff.h"
 #include "nesterovBase.h"
@@ -34,9 +36,15 @@ Replace::Replace(odb::dbDatabase* odb,
                  utl::Logger* logger)
     : db_(odb), sta_(sta), rs_(resizer), fr_(router), log_(logger)
 {
+  graphics_ = std::make_unique<GraphicsNone>();
 }
 
 Replace::~Replace() = default;
+
+void Replace::setGraphicsInterface(const AbstractGraphics& graphics)
+{
+  graphics_ = graphics.MakeNew(log_);
+}
 
 void Replace::reset()
 {
@@ -219,7 +227,7 @@ void Replace::doInitialPlace(int threads)
   ipVars.debug = gui_debug_initial_;
 
   std::unique_ptr<InitialPlace> ip(
-      new InitialPlace(ipVars, pbc_, pbVec_, log_));
+      new InitialPlace(ipVars, pbc_, pbVec_, graphics_->MakeNew(log_), log_));
   ip_ = std::move(ip);
   ip_->doBicgstabPlace(threads);
 }
@@ -230,7 +238,15 @@ void Replace::runMBFF(int max_sz,
                       int threads,
                       int num_paths)
 {
-  MBFF pntset(db_, sta_, log_, rs_, threads, 20, num_paths, gui_debug_);
+  MBFF pntset(db_,
+              sta_,
+              log_,
+              rs_,
+              threads,
+              20,
+              num_paths,
+              gui_debug_,
+              graphics_->MakeNew(log_));
   pntset.Run(max_sz, alpha, beta);
 }
 
@@ -333,10 +349,15 @@ bool Replace::initNesterovPlace(int threads)
       nb->setNpVars(&npVars);
     }
 
-    std::unique_ptr<NesterovPlace> np(
-        new NesterovPlace(npVars, pbc_, nbc_, pbVec_, nbVec_, rb_, tb_, log_));
-
-    np_ = std::move(np);
+    np_ = std::make_unique<NesterovPlace>(npVars,
+                                          pbc_,
+                                          nbc_,
+                                          pbVec_,
+                                          nbVec_,
+                                          rb_,
+                                          tb_,
+                                          graphics_->MakeNew(log_),
+                                          log_);
   }
   return true;
 }

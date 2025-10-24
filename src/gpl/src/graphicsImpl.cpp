@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "graphics.h"
+#include "graphicsImpl.h"
 
 #include <spdlog/fmt/bundled/format.h>
 
@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "gpl/AbstractGraphics.h"
 #include "gui/gui.h"
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
@@ -26,53 +27,65 @@
 
 namespace gpl {
 
-Graphics::Graphics(utl::Logger* logger)
+GraphicsImpl::GraphicsImpl(utl::Logger* logger)
     : HeatMapDataSource(logger, "gpl", "gpl"), logger_(logger), mode_(Mbff)
 {
   gui::Gui::get()->registerRenderer(this);
 }
 
-Graphics::Graphics(utl::Logger* logger,
-                   std::shared_ptr<PlacerBaseCommon> pbc,
-                   std::vector<std::shared_ptr<PlacerBase>>& pbVec)
-    : HeatMapDataSource(logger, "gpl", "gpl"),
-      pbc_(std::move(pbc)),
-      pbVec_(pbVec),
-      logger_(logger),
-      mode_(Initial)
+GraphicsImpl::~GraphicsImpl() = default;
+
+std::unique_ptr<AbstractGraphics> GraphicsImpl::MakeNew(
+    utl::Logger* logger) const
 {
-  gui::Gui::get()->registerRenderer(this);
+  return std::make_unique<GraphicsImpl>(logger);
 }
 
-Graphics::Graphics(utl::Logger* logger,
-                   NesterovPlace* np,
-                   std::shared_ptr<PlacerBaseCommon> pbc,
-                   std::shared_ptr<NesterovBaseCommon> nbc,
-                   std::vector<std::shared_ptr<PlacerBase>>& pbVec,
-                   std::vector<std::shared_ptr<NesterovBase>>& nbVec,
-                   bool draw_bins,
-                   odb::dbInst* db_inst)
-    : HeatMapDataSource(logger, "gpl", "gpl"),
-      pbc_(std::move(pbc)),
-      nbc_(std::move(nbc)),
-      pbVec_(pbVec),
-      nbVec_(nbVec),
-      np_(np),
-      draw_bins_(draw_bins),
-      logger_(logger),
-      mode_(Nesterov)
+void GraphicsImpl::debugForMbff()
 {
-  gui::Gui* gui = gui::Gui::get();
-  gui->registerRenderer(this);
+  setDebugOn(true);
+  mode_ = Mbff;
+}
 
-  // Setup the chart
-  chart_ = gui->addChart("GPL", "Iteration", {"HPWL (μm)", "Overflow"});
-  chart_->setXAxisFormat("%d");
-  chart_->setYAxisFormats({"%.2e", "%.2f"});
-  chart_->setYAxisMin({std::nullopt, 0});
+void GraphicsImpl::debugForInitialPlace(
+    std::shared_ptr<PlacerBaseCommon> pbc,
+    std::vector<std::shared_ptr<PlacerBase>>& pbVec)
+{
+  setDebugOn(true);
+  pbc_ = std::move(pbc);
+  pbVec_ = pbVec;
+  mode_ = Initial;
+}
+
+void GraphicsImpl::debugForNesterovPlace(
+    NesterovPlace* np,
+    std::shared_ptr<PlacerBaseCommon> pbc,
+    std::shared_ptr<NesterovBaseCommon> nbc,
+    std::vector<std::shared_ptr<PlacerBase>>& pbVec,
+    std::vector<std::shared_ptr<NesterovBase>>& nbVec,
+    bool draw_bins,
+    odb::dbInst* inst)
+{
+  setDebugOn(true);
+
+  pbc_ = std::move(pbc);
+  nbc_ = std::move(nbc);
+  pbVec_ = pbVec;
+  nbVec_ = nbVec;
+  np_ = np;
+  draw_bins_ = draw_bins;
+  mode_ = Nesterov;
+
+  if (enabled()) {
+    // Setup the chart
+    chart_ = gui::Gui::get()->addChart(
+        "GPL", "Iteration", {"HPWL (μm)", "Overflow"});
+    chart_->setXAxisFormat("%d");
+    chart_->setYAxisFormats({"%.2e", "%.2f"});
+    chart_->setYAxisMin({std::nullopt, 0});
 
   // Useful for debugging multiple NesterovBase: Density penalty and PhiCoef
-  if (logger->debugCheck(utl::GPL, "penaltyPlot", 1)) {
+  if (logger_->debugCheck(utl::GPL, "penaltyPlot", 1)) {
     if (!nbVec_.empty()) {
       std::vector<std::string> series_names;
       series_names.reserve(nbVec_.size());
@@ -87,34 +100,35 @@ Graphics::Graphics(utl::Logger* logger,
         series_names.push_back(name);
       }
       density_chart_
-          = gui->addChart("GPL Density Penalty", "Iteration", series_names);
+          = gui::Gui::get()->addChart("GPL Density Penalty", "Iteration", series_names);
       density_chart_->setXAxisFormat("%d");
       std::vector<std::string> y_formats(nbVec_.size(), "%.3f");
       density_chart_->setYAxisFormats(y_formats);
       std::vector<std::optional<double>> y_mins(nbVec_.size(), 0.0);
       density_chart_->setYAxisMin(y_mins);
 
-      phi_chart_ = gui->addChart("GPL PhiCoef", "Iteration", series_names);
+      phi_chart_ = gui::Gui::get()->addChart("GPL PhiCoef", "Iteration", series_names);
       phi_chart_->setXAxisFormat("%d");
       phi_chart_->setYAxisFormats(y_formats);
       phi_chart_->setYAxisMin(y_mins);
     }
   }
 
-  initHeatmap();
-  if (db_inst) {
-    for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
-      auto cell = nbc_->getGCellByIndex(idx);
-      if (cell->contains(db_inst)) {
-        selected_ = idx;
-        break;
+    initHeatmap();
+    if (inst) {
+      for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
+        auto cell = nbc_->getGCellByIndex(idx);
+        if (cell->contains(inst)) {
+          selected_ = idx;
+          break;
+        }
       }
     }
 
     for (const auto& nb : nbVec_) {
       for (size_t idx = 0; idx < nb->getGCells().size(); ++idx) {
         GCellHandle cell_handle = nb->getGCells()[idx];
-        if (cell_handle->contains(db_inst)) {
+        if (cell_handle->contains(inst)) {
           nb_selected_index_ = idx;
           break;
         }
@@ -123,7 +137,7 @@ Graphics::Graphics(utl::Logger* logger,
   }
 }
 
-void Graphics::initHeatmap()
+void GraphicsImpl::initHeatmap()
 {
   addMultipleChoiceSetting(
       "Type",
@@ -159,7 +173,7 @@ void Graphics::initHeatmap()
   registerHeatMap();
 }
 
-void Graphics::drawBounds(gui::Painter& painter)
+void GraphicsImpl::drawBounds(gui::Painter& painter)
 {
   // draw core bounds
   auto& die = pbc_->getDie();
@@ -170,7 +184,7 @@ void Graphics::drawBounds(gui::Painter& painter)
   painter.drawLine(die.coreLx(), die.coreUy(), die.coreLx(), die.coreLy());
 }
 
-void Graphics::drawInitial(gui::Painter& painter)
+void GraphicsImpl::drawInitial(gui::Painter& painter)
 {
   drawBounds(painter);
 
@@ -188,7 +202,7 @@ void Graphics::drawInitial(gui::Painter& painter)
   }
 }
 
-void Graphics::drawForce(gui::Painter& painter)
+void GraphicsImpl::drawForce(gui::Painter& painter)
 {
   for (size_t nb_idx = 0; nb_idx < nbVec_.size(); ++nb_idx) {
     const auto& nb = nbVec_[nb_idx];
@@ -236,9 +250,9 @@ void Graphics::drawForce(gui::Painter& painter)
   }
 }
 
-void Graphics::drawCells(const std::vector<GCellHandle>& cells,
-                         gui::Painter& painter,
-                         size_t nb_index)
+void GraphicsImpl::drawCells(const std::vector<GCellHandle>& cells,
+                             gui::Painter& painter,
+                            size_t nb_index)
 {
   for (const auto& handle : cells) {
     const GCell* gCell = handle;
@@ -246,17 +260,16 @@ void Graphics::drawCells(const std::vector<GCellHandle>& cells,
   }
 }
 
-void Graphics::drawCells(const std::vector<GCell*>& cells,
-                         gui::Painter& painter)
+void GraphicsImpl::drawCells(const std::vector<GCell*>& cells,
+                             gui::Painter& painter)
 {
   for (const auto& gCell : cells) {
     drawSingleGCell(gCell, painter);
   }
 }
 
-void Graphics::drawSingleGCell(const GCell* gCell,
-                               gui::Painter& painter,
-                               size_t nb_index)
+
+void GraphicsImpl::drawSingleGCell(const GCell* gCell, gui::Painter& painter, size_t nb_index)
 {
   const int gcx = gCell->dCx();
   const int gcy = gCell->dCy();
@@ -301,7 +314,7 @@ void Graphics::drawSingleGCell(const GCell* gCell,
   painter.drawRect({xl, yl, xh, yh});
 }
 
-void Graphics::drawNesterov(gui::Painter& painter)
+void GraphicsImpl::drawNesterov(gui::Painter& painter)
 {
   drawBounds(painter);
   if (draw_bins_) {
@@ -445,7 +458,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
   }
 }
 
-void Graphics::drawMBFF(gui::Painter& painter)
+void GraphicsImpl::drawMBFF(gui::Painter& painter)
 {
   painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
   for (const auto& [start, end] : mbff_edges_) {
@@ -458,7 +471,7 @@ void Graphics::drawMBFF(gui::Painter& painter)
   }
 }
 
-void Graphics::drawObjects(gui::Painter& painter)
+void GraphicsImpl::drawObjects(gui::Painter& painter)
 {
   switch (mode_) {
     case Mbff:
@@ -473,7 +486,7 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 }
 
-void Graphics::reportSelected()
+void GraphicsImpl::reportSelected()
 {
   if (selected_ == kInvalidIndex) {
     return;
@@ -520,7 +533,7 @@ void Graphics::reportSelected()
   }
 }
 
-void Graphics::addIter(const int iter, const double overflow)
+void GraphicsImpl::addIter(const int iter, const double overflow)
 {
   odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
   chart_->addPoint(iter, {block->dbuToMicrons(nbc_->getHpwl()), overflow});
@@ -550,24 +563,24 @@ void Graphics::addIter(const int iter, const double overflow)
   }
 }
 
-void Graphics::addTimingDrivenIter(const int iter)
+void GraphicsImpl::addTimingDrivenIter(const int iter)
 {
   chart_->addVerticalMarker(iter, gui::Painter::kTurquoise);
 }
 
-void Graphics::addRoutabilitySnapshot(int iter)
+void GraphicsImpl::addRoutabilitySnapshot(int iter)
 {
   chart_->addVerticalMarker(iter, gui::Painter::kYellow);
 }
 
-void Graphics::addRoutabilityIter(const int iter, const bool revert)
+void GraphicsImpl::addRoutabilityIter(const int iter, const bool revert)
 {
   gui::Painter::Color color
       = revert ? gui::Painter::kRed : gui::Painter::kGreen;
   chart_->addVerticalMarker(iter, color);
 }
 
-void Graphics::cellPlot(bool pause)
+void GraphicsImpl::cellPlotImpl(bool pause)
 {
   gui::Gui::get()->redraw();
   if (pause) {
@@ -576,7 +589,7 @@ void Graphics::cellPlot(bool pause)
   }
 }
 
-void Graphics::mbffMapping(const LineSegs& segs)
+void GraphicsImpl::mbffMapping(const LineSegs& segs)
 {
   mbff_edges_ = segs;
   gui::Gui::get()->redraw();
@@ -584,7 +597,7 @@ void Graphics::mbffMapping(const LineSegs& segs)
   mbff_edges_.clear();
 }
 
-void Graphics::mbffFlopClusters(const std::vector<odb::dbInst*>& ffs)
+void GraphicsImpl::mbffFlopClusters(const std::vector<odb::dbInst*>& ffs)
 {
   mbff_cluster_ = ffs;
   gui::Gui::get()->redraw();
@@ -592,8 +605,8 @@ void Graphics::mbffFlopClusters(const std::vector<odb::dbInst*>& ffs)
   mbff_cluster_.clear();
 }
 
-gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
-                                   const odb::Rect& region)
+gui::SelectionSet GraphicsImpl::select(odb::dbTechLayer* layer,
+                                       const odb::Rect& region)
 {
   selected_ = kInvalidIndex;
 
@@ -644,29 +657,29 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
   return gui::SelectionSet();
 }
 
-void Graphics::status(const std::string& message)
+void GraphicsImpl::status(const std::string_view message)
 {
-  gui::Gui::get()->status(message);
+  gui::Gui::get()->status(std::string(message));
 }
 
-double Graphics::getGridXSize() const
+double GraphicsImpl::getGridXSize() const
 {
   const BinGrid& grid = nbVec_[0]->getBinGrid();
   return grid.getBinSizeX() / (double) getBlock()->getDbUnitsPerMicron();
 }
 
-double Graphics::getGridYSize() const
+double GraphicsImpl::getGridYSize() const
 {
   const BinGrid& grid = nbVec_[0]->getBinGrid();
   return grid.getBinSizeY() / (double) getBlock()->getDbUnitsPerMicron();
 }
 
-odb::Rect Graphics::getBounds() const
+odb::Rect GraphicsImpl::getBounds() const
 {
   return getBlock()->getCoreArea();
 }
 
-bool Graphics::populateMap()
+bool GraphicsImpl::populateMap()
 {
   BinGrid& grid = nbVec_[0]->getBinGrid();
   odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
@@ -723,7 +736,7 @@ bool Graphics::populateMap()
   return true;
 }
 
-void Graphics::populateXYGrid()
+void GraphicsImpl::populateXYGrid()
 {
   BinGrid& grid = nbVec_[0]->getBinGrid();
   std::vector<Bin>& bin = grid.getBins();
@@ -750,28 +763,28 @@ void Graphics::populateXYGrid()
   setXYMapGrid(x_grid_set, y_grid_set);
 }
 
-void Graphics::combineMapData(bool base_has_value,
-                              double& base,
-                              const double new_data,
-                              const double data_area,
-                              const double intersection_area,
-                              const double rect_area)
+void GraphicsImpl::combineMapData(bool base_has_value,
+                                  double& base,
+                                  const double new_data,
+                                  const double data_area,
+                                  const double intersection_area,
+                                  const double rect_area)
 {
   base += new_data * intersection_area / rect_area;
 }
 
-/* static */
-bool Graphics::guiActive()
+bool GraphicsImpl::enabled()
 {
-  return gui::Gui::enabled();
+  return debug_on_ && gui::Gui::enabled();
 }
 
-void Graphics::addFrameLabel(gui::Gui* gui,
-                             const odb::Rect& bbox,
-                             const std::string& label,
-                             const std::string& label_name,
-                             int image_width_px)
+void GraphicsImpl::addFrameLabelImpl(const odb::Rect& bbox,
+                                     std::string_view label,
+                                     std::string_view label_name,
+                                     int image_width_px)
 {
+  gui::Gui* gui = gui::Gui::get();
+
   int label_x = bbox.xMin() + 300;
   int label_y = bbox.yMin() + 300;
 
@@ -780,20 +793,27 @@ void Graphics::addFrameLabel(gui::Gui* gui,
 
   int font_size = std::clamp(image_width_px / 50, 15, 24);
 
-  gui->addLabel(label_x, label_y, label, color, font_size, anchor, label_name);
+  gui->addLabel(label_x,
+                label_y,
+                std::string(label),
+                color,
+                font_size,
+                anchor,
+                std::string(label_name));
 }
 
-void Graphics::saveLabeledImage(const std::string& path,
-                                const std::string& label,
-                                bool select_buffers,
-                                const std::string& heatmap_control,
-                                int image_width_px)
+void GraphicsImpl::saveLabeledImageImpl(std::string_view path,
+                                        std::string_view label,
+                                        bool select_buffers,
+                                        std::string_view heatmap_control,
+                                        int image_width_px)
 {
-  gui::Gui* gui = getGuiObjectFromGraphics();
+  gui::Gui* gui = gui::Gui::get();
+
   odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
 
   if (!heatmap_control.empty()) {
-    gui->setDisplayControlsVisible(heatmap_control, true);
+    gui->setDisplayControlsVisible(std::string(heatmap_control), true);
   }
 
   if (select_buffers) {
@@ -803,15 +823,38 @@ void Graphics::saveLabeledImage(const std::string& path,
   static int label_id = 0;
   std::string label_name = fmt::format("auto_label_{}", label_id++);
 
-  addFrameLabel(gui, bbox, label, label_name, image_width_px);
-  gui->saveImage(path);
+  addFrameLabel(bbox, label, label_name, image_width_px);
+  gui->saveImage(std::string(path));
   gui->deleteLabel(label_name);
 
   if (!heatmap_control.empty()) {
-    gui->setDisplayControlsVisible(heatmap_control, false);
+    gui->setDisplayControlsVisible(std::string(heatmap_control), false);
   }
 
   gui->clearSelections();
+}
+
+void GraphicsImpl::gifStart(std::string_view path)
+{
+  gui::Gui::get()->gifStart(std::string(path));
+}
+
+void GraphicsImpl::gifAddFrameImpl(const odb::Rect& region,
+                                   int width_px,
+                                   double dbu_per_pixel,
+                                   std::optional<int> delay)
+{
+  gui::Gui::get()->gifAddFrame(region, width_px, dbu_per_pixel, delay);
+}
+
+void GraphicsImpl::deleteLabel(std::string_view label_name)
+{
+  gui::Gui::get()->deleteLabel(std::string(label_name));
+}
+
+void GraphicsImpl::gifEnd()
+{
+  gui::Gui::get()->gifEnd();
 }
 
 }  // namespace gpl
