@@ -2461,16 +2461,11 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
     FloatPoint densityPrecondi = getDensityPreconditioner(gCell);
 
     FloatPoint sumPrecondi(
-        wireLengthPreCondi.x + densityPenalty_ * densityPrecondi.x,
-        wireLengthPreCondi.y + densityPenalty_ * densityPrecondi.y);
+        wireLengthPreCondi.x + (densityPenalty_ * densityPrecondi.x),
+        wireLengthPreCondi.y + (densityPenalty_ * densityPrecondi.y));
 
-    if (sumPrecondi.x <= npVars_->minPreconditioner) {
-      sumPrecondi.x = npVars_->minPreconditioner;
-    }
-
-    if (sumPrecondi.y <= npVars_->minPreconditioner) {
-      sumPrecondi.y = npVars_->minPreconditioner;
-    }
+    sumPrecondi.x = std::max(sumPrecondi.x, npVars_->minPreconditioner);
+    sumPrecondi.y = std::max(sumPrecondi.y, npVars_->minPreconditioner);
 
     sumGrads[i].x /= sumPrecondi.x;
     sumGrads[i].y /= sumPrecondi.y;
@@ -2573,16 +2568,11 @@ void NesterovBase::updateSingleGradient(
   FloatPoint densityPrecondi = getDensityPreconditioner(gCell);
 
   FloatPoint sumPrecondi(
-      wireLengthPreCondi.x + densityPenalty_ * densityPrecondi.x,
-      wireLengthPreCondi.y + densityPenalty_ * densityPrecondi.y);
+      wireLengthPreCondi.x + (densityPenalty_ * densityPrecondi.x),
+      wireLengthPreCondi.y + (densityPenalty_ * densityPrecondi.y));
 
-  if (sumPrecondi.x <= npVars_->minPreconditioner) {
-    sumPrecondi.x = npVars_->minPreconditioner;
-  }
-
-  if (sumPrecondi.y <= npVars_->minPreconditioner) {
-    sumPrecondi.y = npVars_->minPreconditioner;
-  }
+  sumPrecondi.x = std::max(sumPrecondi.x, npVars_->minPreconditioner);
+  sumPrecondi.y = std::max(sumPrecondi.y, npVars_->minPreconditioner);
 
   sumGrads[gCellIndex].x /= sumPrecondi.x;
   sumGrads[gCellIndex].y /= sumPrecondi.y;
@@ -2597,11 +2587,11 @@ void NesterovBase::updateInitialPrevSLPCoordi()
 
     float prevCoordiX
         = curSLPCoordi_[i].x
-          - npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].x;
+          - (npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].x);
 
     float prevCoordiY
         = curSLPCoordi_[i].y
-          - npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].y;
+          - (npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].y);
 
     FloatPoint newCoordi(getDensityCoordiLayoutInsideX(curGCell, prevCoordiX),
                          getDensityCoordiLayoutInsideY(curGCell, prevCoordiY));
