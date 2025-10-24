@@ -790,6 +790,7 @@ void _dbModule::copyModuleInsts(dbModule* old_module,
                                 ITMap& it_map)
 {
   dbBlock* block = new_module->getOwner();
+  char hier_delimiter = block->getHierarchyDelimiter();
   utl::Logger* logger = old_module->getImpl()->getLogger();
 
   // Create a net name map (key: new net name, value: new dbNet*).
@@ -803,7 +804,7 @@ void _dbModule::copyModuleInsts(dbModule* old_module,
     std::string new_inst_name;
     if (new_mod_inst) {
       new_inst_name = new_mod_inst->getHierarchicalName();
-      new_inst_name += block->getHierarchyDelimiter();
+      new_inst_name += hier_delimiter;
     }
 
     new_inst_name += block->getBaseName(old_inst->getConstName());
@@ -851,45 +852,79 @@ void _dbModule::copyModuleInsts(dbModule* old_module,
                  old_iterm->getName(),
                  new_iterm->getName());
       dbNet* old_net = old_iterm->getNet();
-      if (old_net) {
-        // Create a local net only if it connects to iterms inside this module
-        std::string new_net_name;
-        if (new_mod_inst) {
-          new_net_name = new_mod_inst->getHierarchicalName();
-          new_net_name += block->getHierarchyDelimiter();
-        }
-        std::string old_net_name = old_net->getName();
-        new_net_name += block->getBaseName(old_net_name.c_str());
+      if (old_net == nullptr) {
+        continue;
+      }
 
-        auto it = new_net_name_map.find(new_net_name);
-        if (it != new_net_name_map.end()) {
-          // Connect to an existing local net
-          dbNet* new_net = (*it).second;
-          new_iterm->connect(new_net);
-          debugPrint(logger,
-                     utl::ODB,
-                     "replace_design",
-                     1,
-                     "  connected iterm '{}' to existing local net '{}'",
-                     new_iterm->getName(),
-                     new_net->getName());
-        } else {
-          // Create and connect to a new local net
-          assert(block->findNet(new_net_name.c_str()) == nullptr);
-          dbNet* new_net
-              = dbNet::create(new_module->getOwner(), new_net_name.c_str());
-          new_iterm->connect(new_net);
-          debugPrint(logger,
-                     utl::ODB,
-                     "replace_design",
-                     1,
-                     "  Connected iterm '{}' to new local net '{}'",
-                     new_iterm->getName(),
-                     new_net->getName());
+      //
+      // Create a local net only if it connects to iterms inside this module
+      //
+      std::string new_net_name;
+      if (new_mod_inst) {
+        new_net_name = new_mod_inst->getHierarchicalName();
+        new_net_name += hier_delimiter;
+      }
 
-          // Insert it to the map
-          new_net_name_map[new_net_name] = new_net;
-        }
+      // Check if the flat net is an internal net within old_module
+      // - If old_module is in a top level (uninstantiated module),
+      //   every net in the module is an internal net.
+      //   e.g., modinst_name = "<top>" because there is no modinst.
+      //         net_name = "_001_"     <-- Internal net.
+      //         There can be no external net crossing module boundary because
+      //         the module is not instantiated.
+      //
+      // - Otherwise, an internal net should have the hierarchy prefix
+      //   (= module instance hierarchical name).
+      //   e.g., modinst_name = "u0/alu0"
+      //         net_name = u0/alu0/_001_   <-- Internal net.
+      //         net_name = u0/_001_        <-- External net crossing module
+      //                                        boundary.
+      std::string old_net_name = old_net->getName();
+      std::string modinst_name = old_module->getHierarchicalName();
+      if (modinst_name != "<top>"
+          && old_net_name.compare(0, modinst_name.length(), modinst_name)
+                 != 0) {
+        // Skip external net crossing module boundary.
+        // It will be connected later.
+        debugPrint(logger,
+                   utl::ODB,
+                   "replace_design",
+                   3,
+                   "Skip: dbNet '{}'. Hierarchy_prefix='{}'\n",
+                   old_net_name,
+                   modinst_name);
+        continue;
+      }
+      new_net_name += block->getBaseName(old_net_name.c_str());
+
+      auto it = new_net_name_map.find(new_net_name);
+      if (it != new_net_name_map.end()) {
+        // Connect to an existing local net
+        dbNet* new_net = (*it).second;
+        new_iterm->connect(new_net);
+        debugPrint(logger,
+                   utl::ODB,
+                   "replace_design",
+                   1,
+                   "  connected iterm '{}' to existing local net '{}'",
+                   new_iterm->getName(),
+                   new_net->getName());
+      } else {
+        // Create and connect to a new local net
+        assert(block->findNet(new_net_name.c_str()) == nullptr);
+        dbNet* new_net
+            = dbNet::create(new_module->getOwner(), new_net_name.c_str());
+        new_iterm->connect(new_net);
+        debugPrint(logger,
+                   utl::ODB,
+                   "replace_design",
+                   1,
+                   "  Connected iterm '{}' to new local net '{}'",
+                   new_iterm->getName(),
+                   new_net->getName());
+
+        // Insert it to the map
+        new_net_name_map[new_net_name] = new_net;
       }
     }
   }
