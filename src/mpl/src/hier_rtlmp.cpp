@@ -2319,7 +2319,7 @@ SequencePair HierRTLMP::computeArraySequencePair(Cluster* cluster,
 
   for (int i = 1; i <= columns; ++i) {
     for (int j = 1; j <= rows; j++) {
-      const int macro_id = rows * i - j;
+      const int macro_id = (rows * i) - j;
       if (macro_id < number_of_macros) {
         sequence_pair.neg_sequence.push_back(macro_id);
       } else {
