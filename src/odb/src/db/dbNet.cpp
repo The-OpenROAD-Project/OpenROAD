@@ -2599,4 +2599,21 @@ void dbNet::renameWithModNetInHighestHier()
   }
 }
 
+bool dbNet::isInternalTo(dbModule* module) const
+{
+  // If it's connected to any top-level ports (BTerms), it's not internal.
+  if (!getBTerms().empty()) {
+    return false;
+  }
+
+  // Check all instance terminals (ITerms) it's connected to.
+  for (dbITerm* iterm : getITerms()) {
+    if (iterm->getInst()->getModule() != module) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 }  // namespace odb

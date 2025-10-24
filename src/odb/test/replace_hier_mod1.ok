@@ -109,6 +109,8 @@ Corner: slow
            -0.409   slack (VIOLATED)
 
 
+Equivalence check - pre
+Repair timing output passed/skipped equivalence test
 ### swap bc1 to inv_chain ###
 [INFO GPL-0006] Execute incremental mode global placement.
 [INFO GPL-0002] DBU: 2000
@@ -260,6 +262,8 @@ Corner: slow
            -0.336   slack (VIOLATED)
 
 
+Equivalence check - swap (buffer_chain -> inv_chain)
+Repair timing output passed/skipped equivalence test
 ### swap bc1 back to buffer_chain ###
 [INFO GPL-0006] Execute incremental mode global placement.
 [INFO GPL-0002] DBU: 2000
@@ -388,6 +392,8 @@ Corner: slow
            -0.401   slack (VIOLATED)
 
 
+Equivalence check - swap for rollback (inv_chain -> buffer_chain)
+Repair timing output passed/skipped equivalence test
 ### swap bc1 back to inv_chain ###
 [INFO GPL-0006] Execute incremental mode global placement.
 [INFO GPL-0002] DBU: 2000
@@ -516,4 +522,5 @@ Corner: slow
            -0.330   slack (VIOLATED)
 
 
+Equivalence check - redo swap (buffer_chain -> inv_chain)
 Repair timing output passed/skipped equivalence test
