@@ -44,7 +44,7 @@ delta HPWL                 4932 %
 
 worst slack max -0.68
 tns max -10.573
-[INFO RSZ-0100] Repair move sequence: SizeUpMove SizeDownMove BufferMove SplitLoadMove 
+[INFO RSZ-0100] Repair move sequence: SizeUpMove BufferMove SplitLoadMove 
 [INFO RSZ-0094] Found 26 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 26 out of 26 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst

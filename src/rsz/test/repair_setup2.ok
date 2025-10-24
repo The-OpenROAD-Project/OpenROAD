@@ -13,7 +13,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 2 capacitance violations.
 [INFO RSZ-0038] Inserted 2 buffers in 2 nets.
-[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SizeDownMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 2 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 2 out of 2 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
