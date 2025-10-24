@@ -134,10 +134,10 @@ void GCell::updateLocations()
     const double aspect_ratio = core_area.dx() / (double) core_area.dy();
     const double height = std::sqrt(inst_area / aspect_ratio);
     const double width = height * aspect_ratio;
-    bbox.init(center_x - width / 2,
-              center_y - height / 2,
-              center_x + width / 2,
-              center_y + height / 2);
+    bbox.init(center_x - (width / 2),
+              center_y - (height / 2),
+              center_x + (width / 2),
+              center_y + (height / 2));
   }
   // density coordi has the same center points.
   dLx_ = lx_ = bbox.xMin();
@@ -727,9 +727,7 @@ void BinGrid::initBins()
   if (idealBinArea != 0) {
     idealBinCnt = totalBinArea / idealBinArea;
   }
-  if (idealBinCnt < 4) {  // the smallest we allow is 2x2 bins
-    idealBinCnt = 4;
-  }
+  idealBinCnt = std::max(idealBinCnt, 4);
 
   dbBlock* block = pb_->db()->getChip()->getBlock();
   log_->info(
@@ -801,7 +799,7 @@ void BinGrid::initBins()
       const int bin_ly = ly_ + std::lround(idxY * binSizeY_);
       const int bin_ux = lx_ + std::lround((idxX + 1) * binSizeX_);
       const int bin_uy = ly_ + std::lround((idxY + 1) * binSizeY_);
-      const int bin_index = idxY * binCntX_ + idxX;
+      const int bin_index = (idxY * binCntX_) + idxX;
       bins_[bin_index]
           = Bin(idxX, idxY, bin_lx, bin_ly, bin_ux, bin_uy, targetDensity_);
       auto& bin = bins_[bin_index];
