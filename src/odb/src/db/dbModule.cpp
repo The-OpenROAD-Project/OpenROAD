@@ -866,12 +866,10 @@ void _dbModule::copyModuleInsts(dbModule* old_module,
       }
 
       // Check if the flat net is an internal net within old_module
-      // - If old_module is in a top level (uninstantiated module),
-      //   every net in the module is an internal net.
-      //   e.g., modinst_name = "<top>" because there is no modinst.
+      // - If old_module is uninstantiated module, every net in the module is
+      //   an internal net.
+      //   e.g., No module instance.
       //         net_name = "_001_"     <-- Internal net.
-      //         There can be no external net crossing module boundary because
-      //         the module is not instantiated.
       //
       // - Otherwise, an internal net should have the hierarchy prefix
       //   (= module instance hierarchical name).
@@ -880,20 +878,20 @@ void _dbModule::copyModuleInsts(dbModule* old_module,
       //         net_name = u0/_001_        <-- External net crossing module
       //                                        boundary.
       std::string old_net_name = old_net->getName();
-      std::string modinst_name = old_module->getHierarchicalName();
-      if (modinst_name != "<top>"
-          && old_net_name.compare(0, modinst_name.length(), modinst_name)
-                 != 0) {
-        // Skip external net crossing module boundary.
-        // It will be connected later.
-        debugPrint(logger,
-                   utl::ODB,
-                   "replace_design",
-                   3,
-                   "Skip: dbNet '{}'. Hierarchy_prefix='{}'\n",
-                   old_net_name,
-                   modinst_name);
-        continue;
+      if (old_module->getModInst() != nullptr) {
+        std::string modinst_name = old_module->getHierarchicalName();
+        if (old_net_name.compare(0, modinst_name.length(), modinst_name) != 0) {
+          // Skip external net crossing module boundary.
+          // It will be connected later.
+          debugPrint(logger,
+                     utl::ODB,
+                     "replace_design",
+                     3,
+                     "Skip: dbNet '{}'. Hierarchy_prefix='{}'\n",
+                     old_net_name,
+                     modinst_name);
+          continue;
+        }
       }
       new_net_name += block->getBaseName(old_net_name.c_str());
 
