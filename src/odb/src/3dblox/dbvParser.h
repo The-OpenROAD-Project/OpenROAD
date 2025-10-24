@@ -9,6 +9,7 @@
 
 #include "baseParser.h"
 #include "objects.h"
+#include "yaml-cpp/node/node.h"
 
 namespace odb {
 

@@ -13,6 +13,9 @@
 #include "objects.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
+#include "yaml-cpp/exceptions.h"
+#include "yaml-cpp/node/node.h"
+#include "yaml-cpp/node/parse.h"
 
 namespace odb {
 

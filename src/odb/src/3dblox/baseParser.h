@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include <yaml-cpp/yaml.h>
-
 #include <map>
 #include <string>
 #include <vector>
+
+#include "yaml-cpp/node/node.h"
 
 namespace utl {
 class Logger;
