@@ -3,10 +3,8 @@
 
 #pragma once
 
-#include <fstream>
 #include <map>
 #include <memory>
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -54,6 +52,8 @@ enum PortName
 
 class MBFF
 {
+  friend class MBFFTestPeer;
+
  public:
   MBFF(odb::dbDatabase* db,
        sta::dbSta* sta,

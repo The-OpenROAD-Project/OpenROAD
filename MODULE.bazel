@@ -112,6 +112,8 @@ git_override(
 
 bazel_dep(name = "googletest", version = "1.17.0", dev_dependency = True)
 
+bazel_dep(name = "abseil-cpp", version = "20240722.0", repo_name = "com_google_absl")
+
 # Dependencies needed by one of the rules_hdl repos. Once they are on
 # BCR, they should depend on their own version.
 bazel_dep(name = "glpk", version = "5.0.bcr.3", repo_name = "org_gnu_glpk")
