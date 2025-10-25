@@ -56,7 +56,8 @@ obj-x86_64-linux-gnu/
 
 user.bazelrc
 
-bazel-*
+# Limit ignore to these files, so we see and clean out other cruft that pollutes grep
+/bazel-*
 
 projectview.bazelproject
 .bsp/
