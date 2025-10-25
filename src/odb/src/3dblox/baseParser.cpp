@@ -12,6 +12,7 @@
 
 #include "objects.h"
 #include "utl/Logger.h"
+#include "yaml-cpp/yaml.h"
 namespace odb {
 
 BaseParser::BaseParser(utl::Logger* logger) : logger_(logger)
