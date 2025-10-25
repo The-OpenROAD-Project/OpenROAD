@@ -14,6 +14,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0032] Initializing region: Top-level
 [INFO GPL-0006] Number of instances:                36
 [INFO GPL-0007] Movable instances:                  36
 [INFO GPL-0008] Fixed instances:                     0
@@ -23,19 +24,21 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
 [INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                 47872.020 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
 [INFO GPL-0018] Movable instances area:        162.792 um^2
 [INFO GPL-0019] Utilization:                     0.340 %
 [INFO GPL-0020] Standard cells area:           162.792 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 2422200
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000001 HPWL: 35668
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 34304
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000006 HPWL: 34450
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000011 HPWL: 34124
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000002 HPWL: 33592
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000004 HPWL: 33512
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000006 HPWL: 34116
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 34042
 Placement Analysis
 ---------------------------------
-total displacement        252.9 u
+total displacement        253.5 u
 average displacement        7.0 u
 max displacement           12.5 u
 original HPWL               3.4 u

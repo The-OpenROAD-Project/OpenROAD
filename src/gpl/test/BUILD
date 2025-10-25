@@ -39,6 +39,7 @@ TESTS = [
     "simple08",
     "simple09",
     "simple10",
+    "region01",
 ]
 
 py_library(

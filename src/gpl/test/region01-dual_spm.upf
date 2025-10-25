@@ -1,0 +1,27 @@
+create_power_domain top_domain \
+  -elements {.}
+
+create_power_domain spm_inst_0_domain \
+  -elements {spm_inst_0}
+create_power_domain spm_inst_1_domain \
+  -elements {spm_inst_1}
+
+set_isolation spm_inst_1_isolation \
+  -domain spm_inst_1_domain \
+  -isolation_signal iso_control \
+  -applies_to outputs \
+  -location self \
+  -clamp_value 0
+
+# -isolation_signal not part of the book
+set_isolation spm_inst_0_isolation \
+  -domain spm_inst_0_domain \
+  -isolation_signal iso_control \
+  -applies_to outputs \
+  -location self \
+  -clamp_value 0
+
+
+# not in the book; part of openroad upf
+create_logic_port iso_control \
+  -direction in

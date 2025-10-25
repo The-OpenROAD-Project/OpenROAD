@@ -13,6 +13,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0032] Initializing region: Top-level
 [INFO GPL-0006] Number of instances:                 4
 [INFO GPL-0007] Movable instances:                   4
 [INFO GPL-0008] Fixed instances:                     0
@@ -22,24 +23,26 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
 [INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                 47872.020 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
 [INFO GPL-0018] Movable instances area:          6.916 um^2
 [INFO GPL-0019] Utilization:                     0.014 %
 [INFO GPL-0020] Standard cells area:             6.916 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000008 HPWL: 9630280
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000007 HPWL: 56761
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000007 HPWL: 55524
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 54667
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000003 HPWL: 54545
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000001 HPWL: 54549
 Placement Analysis
 ---------------------------------
-total displacement          7.4 u
-average displacement        1.9 u
-max displacement            2.7 u
-original HPWL               8.9 u
+total displacement          7.3 u
+average displacement        1.8 u
+max displacement            2.6 u
+original HPWL               9.0 u
 legalized HPWL             22.1 u
-delta HPWL                  148 %
+delta HPWL                  146 %
 
 worst slack max -0.04
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining

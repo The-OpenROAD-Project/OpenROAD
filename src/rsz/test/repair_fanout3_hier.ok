@@ -14,6 +14,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0032] Initializing region: Top-level
 [INFO GPL-0006] Number of instances:                71
 [INFO GPL-0007] Movable instances:                  71
 [INFO GPL-0008] Fixed instances:                     0
@@ -23,24 +24,26 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
 [INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                 47872.020 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
 [INFO GPL-0018] Movable instances area:        321.062 um^2
 [INFO GPL-0019] Utilization:                     0.671 %
 [INFO GPL-0020] Standard cells area:           321.062 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 3620250
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000008 HPWL: 37274
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 33620
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 32404
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 32134
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000008 HPWL: 34162
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 31856
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 31998
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 30972
 Placement Analysis
 ---------------------------------
-total displacement        775.8 u
-average displacement       10.9 u
-max displacement           17.7 u
-original HPWL               3.9 u
+total displacement        792.8 u
+average displacement       11.2 u
+max displacement           18.0 u
+original HPWL               3.7 u
 legalized HPWL            113.3 u
-delta HPWL                 2771 %
+delta HPWL                 2955 %
 
 max fanout
 
