@@ -725,6 +725,11 @@ void SimulatedAnnealingCore<T>::fastSA()
       cost = calNormCost();
 
       const bool is_valid = isValid();
+      if (!invalid_states_allowed_ && !is_valid) {
+        restoreState();
+        continue;
+      }
+
       const bool improved = cost < pre_cost || best_result_.empty();
       if ((!is_best_result_valid_ || is_valid) && improved) {
         updateBestResult(cost);

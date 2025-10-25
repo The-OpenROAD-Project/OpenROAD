@@ -171,6 +171,8 @@ class Cluster
 
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
+  void setAsMacroArray() { is_macro_array_ = true; }
+  bool isMacroArray() const { return is_macro_array_; }
   bool isEmpty() const;
   bool correspondsToLogicalModule() const;
 
@@ -247,6 +249,7 @@ class Cluster
   bool is_io_pad_cluster_{false};
   bool is_io_bundle_{false};
   bool is_array_of_interconnected_macros_ = false;
+  bool is_macro_array_{false};
   bool is_fixed_macro_{false};
 
   std::unique_ptr<SoftMacro> soft_macro_;

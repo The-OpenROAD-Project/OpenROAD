@@ -213,9 +213,8 @@ class HierRTLMP
   std::vector<BundledNet> computeBundledNets(
       const UniqueClusterVector& macro_clusters,
       const std::map<int, int>& cluster_to_macro);
-  void setArrayTilingSequencePair(Cluster* cluster,
-                                  int macros_to_place,
-                                  SequencePair& initial_seq_pair);
+  SequencePair computeArraySequencePair(Cluster* cluster,
+                                        bool& array_has_empty_space);
 
   // Orientation Improvement
   void generateTemporaryStdCellsPlacement(Cluster* cluster);
