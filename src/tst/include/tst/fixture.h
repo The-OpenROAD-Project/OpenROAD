@@ -12,7 +12,6 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/MinMax.hh"
-#include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
