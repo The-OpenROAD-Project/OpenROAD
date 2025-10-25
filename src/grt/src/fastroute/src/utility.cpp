@@ -84,6 +84,7 @@ void FastRouteCore::ConvertToFull3DType2()
         }
         tmp.push_back(grids[j]);
         newCNT++;
+
         // last grid -> node2 finished
         if (treeedges[edgeID].route.type == RouteType::MazeRoute) {
           treeedges[edgeID].route.grids.clear();
@@ -184,6 +185,7 @@ void FastRouteCore::fillVIA()
           int16_t bottom_layer = treenodes[node1_alias].botL;
           int16_t top_layer = treenodes[node1_alias].topL;
           int16_t edge_init_layer = grids[0].layer;
+
           if (node1_alias < num_terminals) {
             int16_t pin_botL, pin_topL;
             getViaStackRange(netID, node1_alias, pin_botL, pin_topL);
@@ -249,7 +251,7 @@ void FastRouteCore::fillVIA()
             for (int16_t l = top_layer - 1; l >= bottom_layer; l--) {
               tmp.push_back({tmp[newCNT - 1].x, tmp[newCNT - 1].y, l});
               newCNT++;
-              if (node1_alias >= num_terminals) {
+              if (node2_alias >= num_terminals) {
                 numVIAT2++;
               }
             }
@@ -476,6 +478,12 @@ int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
     total_via_resistance += resistance;
   }
 
+  // Clock RC should be set with set_wire_rc -clock
+  // sta::Corner* corner = sta_->cmdCorner();
+
+  // Get the clock layer resistance defined in setRC
+  // float default_res = dbuToMicrons(callback_handler_.onGetDefaultLayerResistance(corner));
+
   return std::ceil(total_via_resistance);
 }
 
@@ -508,6 +516,16 @@ void FastRouteCore::updateSlacks(float percentage)
     // if (slack < pos_threshold) {
     res_aware_list.emplace_back(net_id, slack);
     // }
+    // if(net->getDbNet()->getName()=="net415187"){
+    //   net->setIsResAware(true);
+    // }
+    // std::vector<std::string> nets = {"net414834", "net414827", "net361505", "net414821"};
+    // if(std::find(nets.begin(), nets.end(),net->getDbNet()->getName()) != nets.end()){
+    //   logger_->report("Net {} - Slack {}", net->getName(), net->getSlack());
+    //   net->setSlack(std::numeric_limits<float>::lowest());
+    //   net->setIsResAware(false);
+    // }
+    
   }
 
   auto compareSlack
@@ -979,6 +997,11 @@ void FastRouteCore::layerAssignmentV4()
   std::queue<int> edgeQueue;
   for (int i = 0; i < tree_order_pv_.size(); i++) {
     int netID = tree_order_pv_[i].treeIndex;
+    FrNet* net = nets_[netID];
+    std::vector<std::string> nets = {"net414834", "net414827", "net361505", "net414821"};
+    if(std::find(nets.begin(), nets.end(),net->getDbNet()->getName()) != nets.end()){
+      logger_->report(">>> {} is assigned here!", net->getName());
+    }
 
     auto& treeedges = sttrees_[netID].edges;
     auto& treenodes = sttrees_[netID].nodes;
