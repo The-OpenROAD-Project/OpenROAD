@@ -57,11 +57,8 @@ obj-x86_64-linux-gnu/
 
 user.bazelrc
 
-# Limit ignore to these files, so we see and clean out other cruft
-/bazel-bin
-/bazel-OpenROAD
-/bazel-out
-/bazel-testlogs
+# Limit ignore to these files, so we see and clean out other cruft that pollutes grep
+/bazel-*
 
 projectview.bazelproject
 .bsp/
