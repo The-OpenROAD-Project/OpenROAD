@@ -5,7 +5,6 @@ the design area is `-max_utilization util` percent of the core area. `util`
 is between 0 and 100.  The `resizer` stops and reports an error if the max
 utilization is exceeded.
 
-
 ## Commands
 
 ```{note}
@@ -79,7 +78,7 @@ The `buffer_ports -inputs` command adds a buffer between the input and its
 loads.  The `buffer_ports -outputs` adds a buffer between the port driver
 and the output port. Inserting buffers on input and output ports makes
 the block input capacitances and output drives independent of the block
-internals. It uses the buffer library cell defined by `-buffer_cell` if it is given. 
+internals. It uses the buffer library cell defined by `-buffer_cell` if it is given.
 
 ```tcl
 buffer_ports 
@@ -479,6 +478,7 @@ cell footprint and leakage are also reported.
 report_buffers
     [-filtered]
 ```
+
 #### Options
 
 | Switch Name | Description |
