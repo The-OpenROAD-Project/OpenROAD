@@ -106,6 +106,13 @@ class MakeWireParasitics
                // Return values.
                float& res,
                float& cap) const;
+  void layerRC(int wire_length_dbu,
+               int layer,
+               sta::Corner* corner,
+               odb::dbNet* net,
+               // Return values.
+               float& res,
+               float& cap) const;
   float getCutLayerRes(odb::dbTechLayer* cut_layer,
                        sta::Corner* corner,
                        int num_cuts = 1) const;

@@ -3,8 +3,6 @@
 
 #include "ord/Design.h"
 
-#include <tcl.h>
-
 #include <cmath>
 #include <cstdint>
 #include <istream>
@@ -20,6 +18,7 @@
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "ord/Tech.h"
+#include "tcl.h"
 #include "utl/Logger.h"
 
 namespace ord {

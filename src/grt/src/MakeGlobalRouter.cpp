@@ -9,6 +9,7 @@
 #include "grt/GlobalRouter.h"
 #include "heatMap.h"
 #include "heatMapRudy.h"
+#include "tcl.h"
 #include "utl/decode.h"
 
 extern "C" {

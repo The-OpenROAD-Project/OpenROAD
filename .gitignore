@@ -57,10 +57,7 @@ obj-x86_64-linux-gnu/
 
 user.bazelrc
 
-bazel-bin
-bazel-out
-bazel-testlogs
-bazel-OpenROAD
+bazel-*
 
 projectview.bazelproject
 .bsp/
