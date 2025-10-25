@@ -10,6 +10,7 @@
 #include "dr/FlexDR_graphics.h"
 #include "pa/FlexPA_graphics.h"
 #include "ta/FlexTA_graphics.h"
+#include "tcl.h"
 #include "triton_route/TritonRoute.h"
 #include "utl/decode.h"
 

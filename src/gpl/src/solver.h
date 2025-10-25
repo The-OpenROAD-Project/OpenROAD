@@ -7,7 +7,6 @@
 #include <Eigen/SparseCore>
 #include <memory>
 
-#include "graphics.h"
 #include "odb/db.h"
 #include "placerBase.h"
 #include "utl/Logger.h"

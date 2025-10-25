@@ -4601,12 +4601,16 @@ std::vector<GSegment> GlobalRouter::createConnectionForPositions(
     connection.emplace_back(x2, y1, layer_ver, x2, y2, layer_ver);
 
     // Add vias if the additional connections are not touching the existing
-    // routing.
+    // routing. The via stack can cross multiple routing layers.
     if (layer1 < layer_hor) {
-      connection.emplace_back(x1, y1, layer1, x1, y1, layer_hor);
+      for (int l = layer1; l < layer_hor; l++) {
+        connection.emplace_back(x1, y1, l, x1, y1, l + 1);
+      }
     }
     if (layer2 < layer_ver) {
-      connection.emplace_back(x2, y2, layer_ver, x2, y2, layer2);
+      for (int l = layer2; l < layer_ver; l++) {
+        connection.emplace_back(x2, y2, l, x2, y2, l + 1);
+      }
     }
   }
 

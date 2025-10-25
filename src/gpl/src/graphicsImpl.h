@@ -3,13 +3,13 @@
 
 #pragma once
 
-#include <cstddef>
 #include <limits>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "gpl/AbstractGraphics.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "odb/db.h"
@@ -31,46 +31,67 @@ class GCell;
 class GCellHandle;
 
 // This class draws debugging graphics on the layout
-class Graphics : public gui::Renderer, public gui::HeatMapDataSource
+class GraphicsImpl : public gpl::AbstractGraphics,
+                     public gui::Renderer,
+                     public gui::HeatMapDataSource
 {
  public:
   using LineSeg = std::pair<odb::Point, odb::Point>;
   using LineSegs = std::vector<LineSeg>;
 
-  // Debug mbff
-  Graphics(utl::Logger* logger);
+  GraphicsImpl(utl::Logger* logger);
+  ~GraphicsImpl() override;
 
-  // Debug InitialPlace
-  Graphics(utl::Logger* logger,
-           std::shared_ptr<PlacerBaseCommon> pbc,
-           std::vector<std::shared_ptr<PlacerBase>>& pbVec);
+  std::unique_ptr<AbstractGraphics> MakeNew(utl::Logger* logger) const override;
 
-  // Debug NesterovPlace
-  Graphics(utl::Logger* logger,
-           NesterovPlace* np,
-           std::shared_ptr<PlacerBaseCommon> pbc,
-           std::shared_ptr<NesterovBaseCommon> nbc,
-           std::vector<std::shared_ptr<PlacerBase>>& pbVec,
-           std::vector<std::shared_ptr<NesterovBase>>& nbVec,
-           bool draw_bins,
-           odb::dbInst* inst);
+  void debugForMbff() override;
+  void debugForInitialPlace(
+      std::shared_ptr<PlacerBaseCommon> pbc,
+      std::vector<std::shared_ptr<PlacerBase>>& pbVec) override;
+  void debugForNesterovPlace(NesterovPlace* np,
+                             std::shared_ptr<PlacerBaseCommon> pbc,
+                             std::shared_ptr<NesterovBaseCommon> nbc,
+                             std::vector<std::shared_ptr<PlacerBase>>& pbVec,
+                             std::vector<std::shared_ptr<NesterovBase>>& nbVec,
+                             bool draw_bins,
+                             odb::dbInst* inst) override;
 
-  // Draw the graphics; optionally pausing afterwards
-  void cellPlot(bool pause = false);
+  void addIter(int iter, double overflow) override;
+  void addTimingDrivenIter(int iter) override;
+  void addRoutabilitySnapshot(int iter) override;
+  void addRoutabilityIter(int iter, bool revert) override;
 
-  // Update the chart for the current iter
-  void addIter(int iter, double overflow);
-  void addTimingDrivenIter(int iter);
-  void addRoutabilitySnapshot(int iter);
-  void addRoutabilityIter(int iter, bool revert);
+  void mbffMapping(const LineSegs& segs) override;
+  void mbffFlopClusters(const std::vector<odb::dbInst*>& ffs) override;
 
-  // Draw the MBFF mapping
-  void mbffMapping(const LineSegs& segs);
-  void mbffFlopClusters(const std::vector<odb::dbInst*>& ffs);
+  void status(std::string_view message) override;
 
-  // Show a message in the status bar
-  void status(const std::string& message);
+  bool enabled() override;
 
+  void setDebugOn(bool set_on) override { debug_on_ = set_on; }
+
+  void gifStart(std::string_view path) override;
+  void deleteLabel(std::string_view label_name) override;
+  void gifEnd() override;
+
+ protected:
+  void cellPlotImpl(bool pause) override;
+
+  void addFrameLabelImpl(const odb::Rect& bbox,
+                         std::string_view label,
+                         std::string_view label_name,
+                         int image_width_px) override;
+  void saveLabeledImageImpl(std::string_view path,
+                            std::string_view label,
+                            bool select_buffers,
+                            std::string_view heatmap_control,
+                            int image_width_px) override;
+  void gifAddFrameImpl(const odb::Rect& region,
+                       int width_px,
+                       double dbu_per_pixel,
+                       std::optional<int> delay) override;
+
+ private:
   // From Renderer API
   void drawObjects(gui::Painter& painter) override;
   gui::SelectionSet select(odb::dbTechLayer* layer,
@@ -90,24 +111,6 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
                       double rect_area) override;
   void populateXYGrid() override;
 
-  // Is the GUI being displayed (true) or are we in batch mode (false)
-  static bool guiActive();
-
-  void addFrameLabel(gui::Gui* gui,
-                     const odb::Rect& bbox,
-                     const std::string& label,
-                     const std::string& label_name,
-                     int image_width_px = 500);
-
-  void saveLabeledImage(const std::string& path,
-                        const std::string& label,
-                        bool select_buffers,
-                        const std::string& heatmap_control = "",
-                        int image_width_px = 500);
-
-  gui::Gui* getGuiObjectFromGraphics() { return gui::Gui::get(); }
-
- private:
   enum HeatMapType
   {
     Density,
@@ -141,6 +144,7 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
   std::vector<odb::dbInst*> mbff_cluster_;
   Mode mode_;
   gui::Chart* chart_{nullptr};
+  bool debug_on_ = false;
 
   void initHeatmap();
   void drawNesterov(gui::Painter& painter);

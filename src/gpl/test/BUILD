@@ -152,3 +152,31 @@ cc_test(
         "@spdlog",
     ],
 )
+
+cc_test(
+    name = "mbff_test",
+    srcs = ["mbff_test.cpp"],
+    data = [
+        "library/test/test0.lef",
+        "library/test/test0.lib",
+    ],
+    deps = [
+        "//:openroad_lib",
+        "//bazel:runfiles",
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbReadVerilog",
+        "//src/dpl",
+        "//src/est",
+        "//src/gpl",
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/stt",
+        "//src/tst",
+        "//src/utl",
+        "@com_google_absl//absl/strings",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

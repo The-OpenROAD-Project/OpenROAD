@@ -12,7 +12,6 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/MinMax.hh"
-#include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
@@ -60,6 +59,7 @@ class Fixture : public ::testing::Test
 
   odb::dbDatabase* getDb() const { return db_.get(); }
   sta::dbSta* getSta() const { return sta_.get(); }
+  utl::Logger* getLogger() { return &logger_; }
 
   // In bazel this uses the runfiles mechanism to locate the file
   std::string getFilePath(const std::string& file_path) const;

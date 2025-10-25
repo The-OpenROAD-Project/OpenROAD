@@ -46,6 +46,8 @@ class EstimateParasitics;
 
 namespace rsz {
 
+using std::vector;
+
 using odb::dbMaster;
 
 using odb::dbMaster;
@@ -226,12 +228,29 @@ class BaseMove : public sta::dbStaState
                           const DcalcAnalysisPt* dcalc_ap);
   bool replaceCell(Instance* inst, const LibertyCell* replacement);
 
+  bool checkMaxCapViolation(const Pin* output_pin,
+                            LibertyPort* output_port,
+                            float output_cap);
+  bool checkMaxSlewViolation(const Pin* output_pin,
+                             LibertyPort* output_port,
+                             float output_slew_factor,
+                             float output_cap,
+                             const DcalcAnalysisPt* dcalc_ap);
+  float computeElmoreSlewFactor(const Pin* output_pin,
+                                LibertyPort* output_port,
+                                float output_load_cap);
+  ArcDelay getWorstIntrinsicDelay(const LibertyPort* input_port);
+  Slack getWorstInputSlack(Instance* inst);
+  Slack getWorstOutputSlack(Instance* inst);
+  vector<const LibertyPort*> getOutputPorts(const LibertyCell* cell);
+  vector<const Pin*> getOutputPins(const Instance* inst);
+  LibertyCellSeq getSwappableCells(LibertyCell* base);
+
+  static constexpr int size_down_max_fanout_ = 10;
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
   static constexpr int buffer_removal_max_fanout_ = 10;
   static constexpr float rebuffer_relaxation_factor_ = 0.03;
-
-  std::vector<const Pin*> getFanouts(const Instance* inst);
 };
 
 }  // namespace rsz
