@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <limits>
 #include <memory>
 #include <string>
