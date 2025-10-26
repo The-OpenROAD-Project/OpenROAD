@@ -4,6 +4,7 @@
 #include "tap/MakeTapcell.h"
 
 #include "tap/tapcell.h"
+#include "tcl.h"
 #include "utl/decode.h"
 
 extern "C" {

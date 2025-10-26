@@ -9,8 +9,6 @@
 
 #include "db_sta/dbSta.hh"
 
-#include <tcl.h>
-
 #include <algorithm>  // min
 #include <cctype>
 #include <cmath>
