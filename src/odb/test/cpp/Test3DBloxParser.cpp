@@ -111,5 +111,24 @@ TEST_F(DbvFixture, test_3dbx)
   EXPECT_EQ(connection->getThickness(), 0.0);
 }
 
+TEST_F(DbvFixture, test_bump_map_parser)
+{
+  auto region = db_->findChip("SoC")->findChipRegion("r1");
+  EXPECT_EQ(region->getChipBumps().size(), 2);
+  auto bump = *region->getChipBumps().begin();
+  EXPECT_EQ(bump->getInst()->getName(), "bump1");
+  EXPECT_EQ(bump->getInst()->getMaster()->getName(), "BUMP");
+  EXPECT_EQ(bump->getInst()->getOrigin().x(), 100.0 * db_->getDbuPerMicron());
+  EXPECT_EQ(bump->getInst()->getOrigin().y(), 200.0 * db_->getDbuPerMicron());
+  EXPECT_EQ(bump->getNet(), nullptr);
+  EXPECT_EQ(bump->getBTerm(), nullptr);
+  auto soc_inst = db_->getChip()->findChipInst("soc_inst");
+  auto region_inst = soc_inst->findChipRegionInst("r1");
+  EXPECT_EQ(region_inst->getChipBumpInsts().size(), 2);
+  auto bump_inst = *region_inst->getChipBumpInsts().begin();
+  EXPECT_EQ(bump_inst->getChipBump(), bump);
+  EXPECT_EQ(bump_inst->getChipRegionInst(), region_inst);
+}
+
 }  // namespace
 }  // namespace odb

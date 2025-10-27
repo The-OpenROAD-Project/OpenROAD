@@ -172,6 +172,8 @@ class Rebuffer : public sta::dbStaState
   static constexpr float elmore_skew_factor_ = 1.39;
   static constexpr float relaxation_factor_ = 0.01;
 
+  double long_wire_stepping_runtime_ = 0;
+
   friend class RepairSetup;
   friend class BufferMove;
 };

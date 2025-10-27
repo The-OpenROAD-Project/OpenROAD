@@ -38,9 +38,9 @@ TEST(Utl, WarningMetrics)
   // For simplicity, we'll just check for substrings.
   EXPECT_NE(content.find("\"flow__warnings__count\": 11"), std::string::npos);
   EXPECT_NE(content.find("\"flow__errors__count\": 0"), std::string::npos);
-  EXPECT_NE(content.find("\"flow__warnings__count:UTL-20\": 10"),
+  EXPECT_NE(content.find("\"flow__warnings__count:UTL-0020\": 10"),
             std::string::npos);
-  EXPECT_NE(content.find("\"flow__warnings__count:UTL-21\": 1"),
+  EXPECT_NE(content.find("\"flow__warnings__count:UTL-0021\": 1"),
             std::string::npos);
   EXPECT_NE(content.find("\"flow__warnings__type_count\": 2"),
             std::string::npos);

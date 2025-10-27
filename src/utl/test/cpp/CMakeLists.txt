@@ -31,3 +31,15 @@ gtest_discover_tests(TestMetrics
 add_dependencies(build_and_test
   TestMetrics
 )
+
+add_executable(TestSuppressStdout TestSuppressStdout.cpp)
+
+target_link_libraries(TestSuppressStdout ${TEST_LIBS})
+
+gtest_discover_tests(TestSuppressStdout
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+add_dependencies(build_and_test
+  TestSuppressStdout
+)

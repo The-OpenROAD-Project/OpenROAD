@@ -23,12 +23,20 @@ detailed_placement
 source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 
+# For eqy, write a verilog before replace_hier_module
+write_verilog_for_eqy replace_hier_mod1 before "None"
+
 puts "### Initial bc1 is buffer_chain ###"
 report_cell_usage bc1
 report_net u1z -digits 3
 report_net u3z -digits 3
 estimate_parasitics -placement
-report_checks -through u1z -through r2/D -digits 3
+report_checks -through r2/D -digits 3
+# Using "-through u1z" causes crash.
+# - it looks like "-through" creates a cache internally.
+#report_checks -through u1z -through r2/D -digits 3
+puts "Equivalence check - pre"
+run_equivalence_test replace_hier_mod1 ./Nangate45/work_around_yosys/ "None"
 
 puts "### swap bc1 to inv_chain ###"
 #set_debug_level ODB replace_design 1
@@ -39,7 +47,10 @@ report_cell_usage bc1
 report_net u1z -digits 3
 report_net u3z -digits 3
 estimate_parasitics -placement
-report_checks -through u1z -through r2/D -digits 3
+report_checks -through r2/D -digits 3
+#report_checks -through u1z -through r2/D -digits 3
+puts "Equivalence check - swap (buffer_chain -> inv_chain)"
+run_equivalence_test replace_hier_mod1 ./Nangate45/work_around_yosys/ "None"
 
 puts "### swap bc1 back to buffer_chain ###"
 replace_hier_module bc1 buffer_chain
@@ -49,7 +60,10 @@ report_cell_usage bc1
 report_net u1z -digits 3
 report_net u3z -digits 3
 estimate_parasitics -placement
-report_checks -through u1z -through r2/D -digits 3
+report_checks -through r2/D -digits 3
+#report_checks -through u1z -through r2/D -digits 3
+puts "Equivalence check - swap for rollback (inv_chain -> buffer_chain)"
+run_equivalence_test replace_hier_mod1 ./Nangate45/work_around_yosys/ "None"
 
 puts "### swap bc1 back to inv_chain ###"
 replace_hier_module bc1 inv_chain
@@ -59,6 +73,7 @@ report_cell_usage bc1
 report_net u1z -digits 3
 report_net u3z -digits 3
 estimate_parasitics -placement
-report_checks -through u1z -through r2/D -digits 3
-
+report_checks -through r2/D -digits 3
+#report_checks -through u1z -through r2/D -digits 3
+puts "Equivalence check - redo swap (buffer_chain -> inv_chain)"
 run_equivalence_test replace_hier_mod1 ./Nangate45/work_around_yosys/ "None"

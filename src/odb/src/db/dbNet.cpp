@@ -560,13 +560,13 @@ void dbNet::setWireType(dbWireType wire_type)
   }
 }
 
-dbWireType dbNet::getWireType()
+dbWireType dbNet::getWireType() const
 {
   _dbNet* net = (_dbNet*) this;
   return dbWireType(net->_flags._wire_type);
 }
 
-dbSigType dbNet::getSigType()
+dbSigType dbNet::getSigType() const
 {
   _dbNet* net = (_dbNet*) this;
   return dbSigType(net->_flags._sig_type);
@@ -1323,13 +1323,13 @@ void dbNet::setDoNotTouch(bool v)
   net->_flags._dont_touch = v;
 }
 
-bool dbNet::isDoNotTouch()
+bool dbNet::isDoNotTouch() const
 {
   _dbNet* net = (_dbNet*) this;
   return net->_flags._dont_touch == 1;
 }
 
-bool dbNet::isSpecial()
+bool dbNet::isSpecial() const
 {
   _dbNet* net = (_dbNet*) this;
   return net->_flags._special == 1;
@@ -2346,6 +2346,104 @@ void dbNet::setJumpers(bool has_jumpers)
   }
 }
 
+void dbNet::checkSanity() const
+{
+  _dbNet* net = (_dbNet*) this;
+  utl::Logger* logger = net->getImpl()->getLogger();
+  std::vector<std::string> drvr_info_list;
+
+  // Find BTerm drivers
+  for (dbBTerm* bterm : getBTerms()) {
+    if (bterm->getIoType() == dbIoType::INPUT
+        || bterm->getIoType() == dbIoType::INOUT) {
+      dbBlock* block = bterm->getBlock();
+      dbModule* parent_module = block->getTopModule();
+      drvr_info_list.push_back(
+          // NOLINTNEXTLINE(misc-include-cleaner)
+          fmt::format("\n  - bterm: '{}' (parent_module: '{}', block: '{}')",
+                      bterm->getName(),
+                      parent_module->getName(),
+                      block->getName()));
+    }
+  }
+
+  // Find ITerm drivers
+  for (dbITerm* iterm : getITerms()) {
+    if (iterm->getIoType() == dbIoType::OUTPUT
+        || iterm->getIoType() == dbIoType::INOUT) {
+      dbInst* inst = iterm->getInst();
+      dbMaster* master = inst->getMaster();
+      dbModule* parent_module = inst->getModule();
+      dbBlock* block = inst->getBlock();
+
+      std::string parent_module_name = "null";
+      if (parent_module) {
+        parent_module_name = parent_module->getName();
+      }
+
+      std::string master_name = "null";
+      if (master) {
+        master_name = master->getName();
+      }
+
+      std::string block_name = "null";
+      if (block) {
+        block_name = block->getName();
+      }
+
+      drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
+          "\n  - iterm: '{}' (block: '{}', parent_module: '{}', master: '{}')",
+          iterm->getName('/'),
+          block_name,
+          parent_module_name,
+          master_name));
+    }
+  }
+
+  size_t drvr_count = drvr_info_list.size();
+  if (drvr_count > 1) {
+    // Multiple drivers found.
+    logger->error(
+        utl::ODB,
+        49,
+        "SanityCheck: dbNet '{}' has multiple drivers: {}",
+        getName(),
+        fmt::join(drvr_info_list, ""));  // NOLINT(misc-include-cleaner)
+  }
+
+  const uint iterm_count = getITerms().size();
+  const uint bterm_count = getBTerms().size();
+
+  if (drvr_count == 0 && (iterm_count + bterm_count > 0)) {
+    logger->warn(
+        utl::ODB, 50, "SanityCheck: dbNet '{}' has no driver.", getName());
+  }
+
+  if (iterm_count + bterm_count < 2) {
+    // Skip power/ground net
+    if (getSigType().isSupply()) {
+      return;  // OK: Unconnected power/ground net
+    }
+
+    // A net connected to 1 terminal
+    if (iterm_count == 1
+        && (*(getITerms().begin()))->getIoType() == dbIoType::OUTPUT) {
+      return;  // OK: Unconnected output pin
+    }
+    if (bterm_count == 1
+        && (*(getBTerms().begin()))->getIoType() == dbIoType::INPUT) {
+      return;  // OK: Unconnected input port
+    }
+    logger->warn(utl::ODB,
+                 51,
+                 "SanityCheck: dbNet '{}' is dangling. It has less than 2 "
+                 "connections (# of ITerms = {}, # of BTerms = {}).",
+                 getName(),
+                 iterm_count,
+                 bterm_count);
+  }
+}
+
 dbModInst* dbNet::findMainParentModInst() const
 {
   dbBlock* block = getBlock();
@@ -2413,6 +2511,42 @@ bool dbNet::findRelatedModNets(std::set<dbModNet*>& modnet_set) const
   return !modnet_set.empty();
 }
 
+void dbNet::dump() const
+{
+  utl::Logger* logger = getImpl()->getLogger();
+  logger->report("--------------------------------------------------");
+  logger->report("dbNet: {} (id={})", getName(), getId());
+  logger->report(
+      "  Parent Block: {} (id={})", getBlock()->getName(), getBlock()->getId());
+  logger->report("  SigType: {}", getSigType().getString());
+  logger->report("  WireType: {}", getWireType().getString());
+  if (isSpecial()) {
+    logger->report("  Special: true");
+  }
+  if (isDoNotTouch()) {
+    logger->report("  DoNotTouch: true");
+  }
+
+  logger->report("  ITerms ({}):", getITerms().size());
+  for (dbITerm* term : getITerms()) {
+    logger->report("    - {} ({}, {}, id={})",
+                   term->getName(),
+                   term->getSigType().getString(),
+                   term->getIoType().getString(),
+                   term->getId());
+  }
+
+  logger->report("  BTerms ({}):", getBTerms().size());
+  for (dbBTerm* term : getBTerms()) {
+    logger->report("    - {} ({}, {}, id={})",
+                   term->getName(),
+                   term->getSigType().getString(),
+                   term->getIoType().getString(),
+                   term->getId());
+  }
+  logger->report("--------------------------------------------------");
+}
+
 void _dbNet::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
@@ -2463,6 +2597,23 @@ void dbNet::renameWithModNetInHighestHier()
   if (highest_mod_net) {
     rename(highest_mod_net->getHierarchicalName().c_str());
   }
+}
+
+bool dbNet::isInternalTo(dbModule* module) const
+{
+  // If it's connected to any top-level ports (BTerms), it's not internal.
+  if (!getBTerms().empty()) {
+    return false;
+  }
+
+  // Check all instance terminals (ITerms) it's connected to.
+  for (dbITerm* iterm : getITerms()) {
+    if (iterm->getInst()->getModule() != module) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 }  // namespace odb

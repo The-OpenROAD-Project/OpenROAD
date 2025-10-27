@@ -180,6 +180,7 @@ class GlobalRouter
                    bool end_incremental = false);
   void saveCongestion();
   NetRouteMap& getRoutes();
+  NetRouteMap getPartialRoutes();
   Net* getNet(odb::dbNet* db_net);
   int getTileSize() const;
   bool isNonLeafClock(odb::dbNet* db_net);
@@ -480,6 +481,7 @@ class GlobalRouter
   std::vector<RoutingTracks> routing_tracks_;
 
   // Flow variables
+  bool is_incremental;
   float adjustment_;
   int layer_for_guide_dimension_;
   int congestion_iterations_{50};

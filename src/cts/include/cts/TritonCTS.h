@@ -224,6 +224,7 @@ class TritonCTS
   std::set<odb::dbNet*> visitedClockNets_;
   std::map<odb::dbInst*, ClockInst*> inst2clkbuf_;
   std::map<ClockInst*, ClockSubNet*> driver2subnet_;
+  std::map<odb::dbNet*, TreeBuilder*> net2builder_;
 
   // db vars
   odb::dbDatabase* db_ = nullptr;

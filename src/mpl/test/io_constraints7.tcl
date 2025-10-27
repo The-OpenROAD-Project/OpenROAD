@@ -1,5 +1,5 @@
 # Test if the bundled nets inside annealing are correct for a block with
-# pins with different constraint regions and Macro -> IO connections.
+# pins with a constraint region and Macro -> IO connections.
 source "helpers.tcl"
 
 read_lef Nangate45/Nangate45.lef

@@ -22,6 +22,8 @@ class Connection;
 class DesignDef;
 class dbChipRegionInst;
 class dbChipInst;
+class BumpMapEntry;
+class dbChipRegion;
 
 class ThreeDBlox
 {
@@ -37,6 +39,7 @@ class ThreeDBlox
   dbChip* createDesignTopChiplet(const DesignDef& design);
   void createChipInst(const ChipletInst& chip_inst);
   void createConnection(const Connection& connection);
+  void createBump(const BumpMapEntry& entry, dbChipRegion* chip_region);
   dbChipRegionInst* resolvePath(const std::string& path,
                                 std::vector<dbChipInst*>& path_insts);
   void readHeaderIncludes(const std::vector<std::string>& includes);
