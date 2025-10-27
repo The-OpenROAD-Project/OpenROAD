@@ -33,7 +33,7 @@ using odb::dbWirePathShape;
 using odb::dbWireShapeType;
 using odb::dbWireType;
 using odb::Point;
-using utl::ODB;
+using utl::RCX;
 
 namespace rcx {
 
@@ -181,8 +181,8 @@ odb::dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
   if (nd_rule == nullptr) {
     return nullptr;
   }
-  logger_->info(utl::ODB,
-                273,
+  logger_->info(utl::RCX,
+                299,
                 "Create ND RULE {} for layer/width {},{}",
                 rule_name,
                 routingLayer,
@@ -279,9 +279,9 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
       || (routingLayer > _tech->getRoutingLayerCount())) {
     if (netName == nullptr) {
       logger_->warn(
-          ODB, 400, "Cannot create wire, because net name is nullptr\n");
+          RCX, 400, "Cannot create wire, because net name is nullptr\n");
     } else {
-      logger_->warn(ODB,
+      logger_->warn(RCX,
                     401,
                     "Cannot create wire, because routing layer ({}) is invalid",
                     routingLayer);
@@ -331,7 +331,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
   if (width < (int) minWidth) {
     std::string ln = layer->getName();
-    logger_->warn(ODB,
+    logger_->warn(RCX,
                   402,
                   "Cannot create net %s, because wire width ({}) is less than "
                   "minWidth ({}) on layer {}",
@@ -358,7 +358,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
     if ((blutrms.first == nullptr) || (blutrms.second == nullptr)) {
       odb::dbNet::destroy(net);
-      logger_->warn(ODB,
+      logger_->warn(RCX,
                     403,
                     "Cannot create net {}, because failed to create bterms",
                     netName);
@@ -514,10 +514,10 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
       || (routingLayer > _tech->getRoutingLayerCount())) {
     if (netName == nullptr) {
       logger_->warn(
-          ODB, 404, "Cannot create wire, because net name is nullptr");
+          RCX, 408, "Cannot create wire, because net name is nullptr");
     } else {
-      logger_->warn(ODB,
-                    405,
+      logger_->warn(RCX,
+                    414,
                     "Cannot create wire, because routing layer ({}) is invalid",
                     routingLayer);
     }
@@ -592,7 +592,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   odb::dbNet* net = odb::dbNet::create(_block, netName, skipExistsNet);
 
   if (net == nullptr) {
-    logger_->warn(ODB, 406, "Cannot create net {}, duplicate net", netName);
+    logger_->warn(RCX, 409, "Cannot create net {}, duplicate net", netName);
     return nullptr;
   }
 
@@ -606,8 +606,8 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
     if ((blutrms.first == nullptr) || (blutrms.second == nullptr)) {
       odb::dbNet::destroy(net);
-      logger_->warn(ODB,
-                    407,
+      logger_->warn(RCX,
+                    411,
                     "Cannot create net {}, because failed to create bterms",
                     netName);
       return nullptr;

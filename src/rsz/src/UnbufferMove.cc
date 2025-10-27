@@ -468,10 +468,6 @@ void UnbufferMove::removeBuffer(Instance* buffer)
       db_survivor->rename(new_net_name->c_str());
     }
   }
-
-  estimate_parasitics_->removeNetFromParasiticsInvalid(removed);
-  estimate_parasitics_->parasiticsInvalid(survivor);
-  estimate_parasitics_->updateParasitics();
 }
 
 }  // namespace rsz

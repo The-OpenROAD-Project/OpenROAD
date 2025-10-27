@@ -74,6 +74,21 @@ proc run_equivalence_test { test lib remove_cells } {
   # tclint-disable-next-line line-length
   puts $outfile "\[gate]\nread_verilog -sv  $after_netlist $lib_files\nprep -top $top_cell -flatten\nmemory_map\n\n"
 
+  # Recommendation from eqy team on how to speed up a design
+  puts $outfile "\[match *]\ngate-nomatch _*_.*"
+
+  # See issue OpenROAD#6545 "Equivalence check failure due to non-unique resizer nets"
+  puts $outfile "gate-nomatch net*"
+
+  # Forbid matching on buffer instances or cloned instances to make it less
+  # likely EQY will fail to prove equivalence because of its assuming structural
+  # similarity between gold and gate netlists. This doesn't remove coverage.
+  puts $outfile "gate-nomatch clone*"
+  puts $outfile "gate-nomatch place*"
+  puts $outfile "gate-nomatch rebuffer*"
+  puts $outfile "gate-nomatch wire*"
+  puts $outfile "gate-nomatch place*\n\n"
+
   # Equivalence check recipe
   puts $outfile "\[strategy basic]\nuse sat\ndepth 10\n\n"
   close $outfile
@@ -83,10 +98,8 @@ proc run_equivalence_test { test lib remove_cells } {
     catch { exec eqy -d $run_dir $test_script > /dev/null }
     set count 0
     catch {
-      set count [
-        exec grep -c "Successfully proved designs equivalent"
-        $run_dir/logfile.txt
-      ]
+      set count [exec grep -c "Successfully proved designs equivalent" \
+        $run_dir/logfile.txt]
     }
     if { $count == 0 } {
       puts "Repair timing output failed equivalence test"
