@@ -55,10 +55,7 @@ class GCell
   {
     kNone,
     kRoutability,
-    kNewInstance,
-    kUpsize,
-    kDownsize,
-    kResizeNoChange
+    kTimingDriven,
   };
 
   // instance cells
@@ -1000,7 +997,7 @@ class NesterovBase
   void setTargetDensity(float targetDensity);
   void checkConsistency() {
     auto block = pb_->db()->getChip()->getBlock();
-    const int64_t tolerance = 5000;
+    const int64_t tolerance = 10000;
     
     int64_t expected_white_space = pb_->getDie().coreArea() - pb_->nonPlaceInstsArea();
     if(std::abs(whiteSpaceArea_ - expected_white_space) > tolerance) {
@@ -1110,10 +1107,6 @@ class NesterovBase
   void updateNextIter(int iter);
   void setTrueReprintIterHeader() { reprint_iter_header_ = true; }
   float getPhiCoef(float scaledDiffHpwl) const;
-  float getStoredPhiCoef() const { return phiCoef_; }
-  float getStoredStepLength() const { return stepLength_; }
-  float getStoredCoordiDistance() const { return coordiDistance_; }
-  float getStoredGradDistance() const { return gradDistance_; }
 
   bool checkConvergence(int gpl_iter_count,
                         int routability_gpl_iter_count,
@@ -1123,7 +1116,6 @@ class NesterovBase
   bool checkDivergence();
   void saveSnapshot();
   bool revertToSnapshot();
-  void pauseGradients();
 
   void updateDensityCenterCur();
   void updateDensityCenterCurSLP();
@@ -1219,19 +1211,9 @@ class NesterovBase
 
   std::vector<RemovedFillerState> removed_fillers_;
 
-  // Density penalty parameters
   float sumPhi_ = 0;
-  float phiCoef_ = 0;
   float targetDensity_ = 0;
   float uniformTargetDensity_ = 0;
-
-  // StepLength parameters (also included in the np debugPrint)
-  float stepLength_ = 0;
-  float coordiDistance_ = 0;
-  float gradDistance_ = 0;
-  // numBackTrack (nesterovPlace.cpp)
-  // newWireLengthCoef (nesterovPlace.cpp)
-
 
   // Nesterov loop data for each region, using parallel vectors
   // SLP is Step Length Prediction.
@@ -1279,7 +1261,7 @@ class NesterovBase
   float densityGradSum_ = 0;
 
   // alpha
-  // float stepLength_ = 0;
+  float stepLength_ = 0;
 
   // opt_phi_cof
   float densityPenalty_ = 0;

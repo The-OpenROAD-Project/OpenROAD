@@ -1758,8 +1758,6 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
 
   // update binGrid info
   bg_.initBins();
-  log_->report("pb_->placeInstsArea():  {}", pb_->db()->getChip()->getBlock()->dbuAreaToMicrons(pb_->placeInstsArea()));
-  log_->report("getNesterovInstsArea(): {}", pb_->db()->getChip()->getBlock()->dbuAreaToMicrons(getNesterovInstsArea()));
 
   // initialize fft structrue based on bins
   std::unique_ptr<FFT> fft(new FFT(bg_.getBinCntX(),
@@ -2160,7 +2158,6 @@ void NesterovBase::updateAreas()
 {
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
-  log_->report("updateAreas() before stdInstsArea_: {}", pb_->db()->getChip()->getBlock()->dbuAreaToMicrons(stdInstsArea_));
   stdInstsArea_ = macroInstsArea_ = 0;
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
@@ -2175,8 +2172,6 @@ void NesterovBase::updateAreas()
                        * static_cast<int64_t>(gCell->dy());
     }
   }
-
-  log_->report("updateAreas() after stdInstsArea_: {}", pb_->db()->getChip()->getBlock()->dbuAreaToMicrons(stdInstsArea_));
 }
 
 void NesterovBase::updateDensityCoordiLayoutInside(GCell* gCell)
@@ -2388,12 +2383,19 @@ float NesterovBase::getStepLength(
     const std::vector<FloatPoint>& curSLPCoordi_,
     const std::vector<FloatPoint>& curSLPSumGrads_)
 {
-  coordiDistance_ = getDistance(prevSLPCoordi_, curSLPCoordi_);
-  gradDistance_ = getDistance(prevSLPSumGrads_, curSLPSumGrads_);
+  float coordiDistance = getDistance(prevSLPCoordi_, curSLPCoordi_);
+  float gradDistance = getDistance(prevSLPSumGrads_, curSLPSumGrads_);
 
-  debugPrint(log_, GPL, "getStepLength", 1, "CoordinateDis {:g}, GradientDist {:g}, StepLength: {:g}", coordiDistance_, gradDistance_, stepLength_);
+  debugPrint(log_,
+             GPL,
+             "getStepLength",
+             1,
+             "CoordinateDistance: {:g}",
+             coordiDistance);
+  debugPrint(
+      log_, GPL, "getStepLength", 1, "GradientDistance: {:g}", gradDistance);
 
-  return coordiDistance_ / gradDistance_;
+  return coordiDistance / gradDistance;
 }
 
 // to execute following function,
@@ -2531,8 +2533,6 @@ void NesterovBase::updateSingleCurGradient(size_t gCellIndex,
                        wlCoeffY);
 }
 
-
-//TODO check this values
 void NesterovBase::updateSingleGradient(
     size_t gCellIndex,
     std::vector<FloatPoint>& sumGrads,
@@ -2551,11 +2551,6 @@ void NesterovBase::updateSingleGradient(
       = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
   densityGrads[gCellIndex] = getDensityGradient(gCell);
 
-  // wireLengthGradSum_ += std::fabs(wireLengthGrads[gCellIndex].x);
-  // wireLengthGradSum_ += std::fabs(wireLengthGrads[gCellIndex].y);
-
-  // densityGradSum_ += std::fabs(densityGrads[gCellIndex].x);
-  // densityGradSum_ += std::fabs(densityGrads[gCellIndex].y);
 
   sumGrads[gCellIndex].x = wireLengthGrads[gCellIndex].x
                            + densityPenalty_ * densityGrads[gCellIndex].x;
@@ -2687,6 +2682,8 @@ void NesterovBase::updateNextIter(const int iter)
   sum_overflow_unscaled_ = getOverflowAreaUnscaled() / overflowDenominator;
 
   int64_t hpwl = nbc_->getHpwl();
+  float phiCoef = getPhiCoef(static_cast<float>(hpwl - prev_hpwl_)
+                             / npVars_->referenceHpwl);
 
   float hpwl_percent_change = 0.0;
   if (iter == 0 || (iter) % 10 == 0) {
@@ -2734,9 +2731,6 @@ void NesterovBase::updateNextIter(const int iter)
                  group_name);
   }
 
-  float phiCoef = getPhiCoef(static_cast<float>(hpwl - prev_hpwl_)
-                            / npVars_->referenceHpwl);
-  phiCoef_ = phiCoef;
   debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prev_hpwl_);
   debugPrint(log_, GPL, "updateNextIter", 1, "NewHPWL: {}", hpwl);
   debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
@@ -2989,7 +2983,7 @@ bool NesterovBase::checkDivergence()
     float hpwl_acceptance = 0.25f;
     if (overflow_change >= overflow_acceptance && hpwl_increase >= hpwl_acceptance) {
       isDiverged_ = true;
-      log_->warn(GPL, 324,"Divergence detected among reported values. Overflow change: {:g}, HPWL increase: {:g}%.", overflow_change, hpwl_increase * 100.0f);
+      log_->warn(GPL, 324,"Divergence detected between reported values. Overflow change: {:g}, HPWL increase: {:g}%.", overflow_change, hpwl_increase * 100.0f);
     }
   }
 
@@ -3014,27 +3008,6 @@ bool NesterovBase::revertToSnapshot()
   isDiverged_ = false;
 
   return true;
-}
-
-void NesterovBase::pauseGradients()
-{
-  log_->report("Nesterov progression paused. next and previous get current coordis.");
-  nextCoordi_ = curCoordi_;
-  prevSLPCoordi_ = curSLPCoordi_;
-  prevSLPSumGrads_ = curSLPSumGrads_;
-  // densityPenalty_ = snapshotDensityPenalty_;
-  // stepLength_ = snapshotStepLength_;
-
-  //new ones
-  nextSLPCoordi_ = curSLPCoordi_;
-  nextSLPSumGrads_ = curSLPSumGrads_;
-
-  //do we need this?
-  updateGCellDensityCenterLocation(curCoordi_);
-  updateDensityForceBin();
-
-  // do we need this?
-  isDiverged_ = false;
 }
 
 void NesterovBaseCommon::moveGCell(odb::dbInst* db_inst)
@@ -3089,18 +3062,12 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
   }
   // update gcell
   gcell->updateLocations();
+  gcell->setAreaChangeType(GCell::GCellChange::kTimingDriven);
 
   int64_t newCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
   int64_t area_change = newCellArea - prevCellArea;
   delta_area_ += area_change;
-  if (area_change > 0) {
-    gcell->setAreaChangeType(GCell::GCellChange::kUpsize);
-  } else if (area_change < 0) {
-    gcell->setAreaChangeType(GCell::GCellChange::kDownsize);
-  } else {
-    gcell->setAreaChangeType(GCell::GCellChange::kResizeNoChange);
-  }
 }
 
 void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
@@ -3233,7 +3200,6 @@ size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
                         * static_cast<int64_t>(gcell_ptr->dy());
   delta_area_ += area_change;
   new_gcells_count_++;
-  gcell_ptr->setAreaChangeType(GCell::GCellChange::kNewInstance);
   return gCellStor_.size() - 1;
 }
 
