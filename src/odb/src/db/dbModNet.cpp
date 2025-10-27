@@ -205,7 +205,7 @@ void dbModNet::rename(const char* new_name)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: mod_net {}, rename to {}",
+               "ECO: dbModNet({}), rename to '{}'",
                getId(),
                new_name);
     block->_journal->updateField(this, _dbModNet::NAME, obj->_name, new_name);
@@ -413,7 +413,7 @@ dbSet<dbITerm> dbModNet::getITerms() const
   return dbSet<dbITerm>(_mod_net, _block->_module_modnet_iterm_itr);
 }
 
-unsigned dbModNet::connectionCount()
+unsigned dbModNet::connectionCount() const
 {
   return (getITerms().size() + getBTerms().size() + getModITerms().size());
 }
@@ -488,6 +488,89 @@ dbNet* dbModNet::findRelatedNet() const
 
   // No related dbNet found
   return nullptr;
+}
+
+void dbModNet::checkSanity() const
+{
+  utl::Logger* logger = getImpl()->getLogger();
+  std::vector<std::string> drvr_info_list;
+
+  // Find BTerm drivers
+  for (dbBTerm* bterm : getBTerms()) {
+    if (bterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (bterm->getIoType() == dbIoType::INPUT
+        || bterm->getIoType() == dbIoType::INOUT) {
+      drvr_info_list.push_back(
+          // NOLINTNEXTLINE(misc-include-cleaner)
+          fmt::format("\n  - bterm: '{}'", bterm->getName()));
+    }
+  }
+
+  // Find ITerm drivers
+  for (dbITerm* iterm : getITerms()) {
+    if (iterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (iterm->getIoType() == dbIoType::OUTPUT
+        || iterm->getIoType() == dbIoType::INOUT) {
+      drvr_info_list.push_back(
+          // NOLINTNEXTLINE(misc-include-cleaner)
+          fmt::format("\n  - iterm: '{}'", iterm->getName('/')));
+    }
+  }
+
+  // Find ModBTerm drivers
+  for (dbModBTerm* modbterm : getModBTerms()) {
+    if (modbterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (modbterm->getIoType() == dbIoType::INPUT
+        || modbterm->getIoType() == dbIoType::INOUT) {
+      drvr_info_list.push_back(
+          // NOLINTNEXTLINE(misc-include-cleaner)
+          fmt::format("\n  - modbterm: '{}'", modbterm->getName()));
+    }
+  }
+
+  // Find ModITerm drivers
+  for (dbModITerm* moditerm : getModITerms()) {
+    if (dbModBTerm* child_bterm = moditerm->getChildModBTerm()) {
+      if (child_bterm->getSigType().isSupply()) {
+        continue;
+      }
+
+      if (child_bterm->getIoType() == dbIoType::OUTPUT
+          || child_bterm->getIoType() == dbIoType::INOUT) {
+        drvr_info_list.push_back(
+            // NOLINTNEXTLINE(misc-include-cleaner)
+            fmt::format("\n  - moditerm: '{}'", moditerm->getName()));
+      }
+    }
+  }
+
+  size_t drvr_count = drvr_info_list.size();
+  if (drvr_count > 1) {
+    // Multiple drivers found.
+    // jk: logger->error(utl::ODB,
+    logger->warn(utl::ODB,
+                 135,  // Reusing error code from dbNet
+                 "SanityCheck: dbModNet '{}' has multiple drivers: {}",
+                 getName(),
+                 fmt::join(drvr_info_list, ""));
+  }
+
+  const uint term_count = connectionCount();
+
+  // No driver
+  if (drvr_count == 0 && term_count > 0) {
+    logger->warn(
+        utl::ODB, 136, "SanityCheck: dbModNet '{}' has no driver.", getName());
+  }
 }
 
 // User Code End dbModNetPublicMethods

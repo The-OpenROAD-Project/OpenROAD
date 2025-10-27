@@ -90,3 +90,67 @@ Hierarchical pins
 [WARNING ORD-2043] SanityCheck: Module 'ALU_16_0_16_0_16_unused_CO\[14:0\]_X_BRENT_KUNG' is defined but never instantiated.
 [WARNING ORD-2043] SanityCheck: Module 'ALU_16_0_16_0_16_unused_CO\[14:0\]_X_KOGGE_STONE' is defined but never instantiated.
 [WARNING ORD-2043] SanityCheck: Module 'ALU_16_0_16_0_16_unused_CO\[14:0\]_X_SKLANSKY' is defined but never instantiated.
+[WARNING ODB-0136] SanityCheck: dbModNet 'resp_msg[15]' has no driver.
+[WARNING ODB-0135] SanityCheck: dbModNet 'Y[15]' has multiple drivers: 
+  - iterm: '_395_/_148_/Y'
+  - modbterm: 'Y[15]'
+[WARNING ODB-0136] SanityCheck: dbModNet 'resp_msg[14]' has no driver.
+[WARNING ODB-0135] SanityCheck: dbModNet 'Y[14]' has multiple drivers: 
+  - iterm: '_395_/_115_/Y'
+  - modbterm: 'Y[14]'
+[WARNING ODB-0136] SanityCheck: dbModNet 'resp_msg[13]' has no driver.
+[WARNING ODB-0135] SanityCheck: dbModNet 'Y[13]' has multiple drivers: 
+  - iterm: '_395_/_147_/Y'
+  - modbterm: 'Y[13]'
+[WARNING ODB-0136] SanityCheck: dbModNet 'resp_msg[12]' has no driver.
+[WARNING ODB-0135] SanityCheck: dbModNet 'Y[12]' has multiple drivers: 
+  - iterm: '_395_/_114_/Y'
+  - modbterm: 'Y[12]'
+[WARNING ODB-0136] SanityCheck: dbModNet 'resp_msg[11]' has no driver.
+[WARNING ODB-0135] SanityCheck: dbModNet 'Y[11]' has multiple drivers: 
+  - iterm: '_395_/_146_/Y'
+  - modbterm: 'Y[11]'
+[WARNING ODB-0136] SanityCheck: dbModNet 'resp_msg[10]' has no driver.
+[WARNING ODB-0135] SanityCheck: dbModNet 'Y[10]' has multiple drivers: 
+  - iterm: '_395_/_113_/Y'
+  - modbterm: 'Y[10]'
+[WARNING ODB-0136] SanityCheck: dbModNet 'resp_msg[9]' has no driver.
+[WARNING ODB-0135] SanityCheck: dbModNet 'Y[9]' has multiple drivers: 
+  - iterm: '_395_/_152_/Y'
+  - modbterm: 'Y[9]'
+[WARNING ODB-0136] SanityCheck: dbModNet 'resp_msg[8]' has no driver.
+[WARNING ODB-0135] SanityCheck: dbModNet 'Y[8]' has multiple drivers: 
+  - iterm: '_395_/_111_/Y'
+  - modbterm: 'Y[8]'
+[WARNING ODB-0136] SanityCheck: dbModNet 'resp_msg[7]' has no driver.
+[WARNING ODB-0135] SanityCheck: dbModNet 'Y[7]' has multiple drivers: 
+  - iterm: '_395_/_151_/Y'
+  - modbterm: 'Y[7]'
+[WARNING ODB-0136] SanityCheck: dbModNet 'resp_msg[6]' has no driver.
+[WARNING ODB-0135] SanityCheck: dbModNet 'Y[6]' has multiple drivers: 
+  - iterm: '_395_/_110_/Y'
+  - modbterm: 'Y[6]'
+[WARNING ODB-0136] SanityCheck: dbModNet 'resp_msg[5]' has no driver.
+[WARNING ODB-0135] SanityCheck: dbModNet 'Y[5]' has multiple drivers: 
+  - iterm: '_395_/_150_/Y'
+  - modbterm: 'Y[5]'
+[WARNING ODB-0136] SanityCheck: dbModNet 'resp_msg[4]' has no driver.
+[WARNING ODB-0135] SanityCheck: dbModNet 'Y[4]' has multiple drivers: 
+  - iterm: '_395_/_105_/Y'
+  - modbterm: 'Y[4]'
+[WARNING ODB-0136] SanityCheck: dbModNet 'resp_msg[3]' has no driver.
+[WARNING ODB-0135] SanityCheck: dbModNet 'Y[3]' has multiple drivers: 
+  - iterm: '_395_/_149_/Y'
+  - modbterm: 'Y[3]'
+[WARNING ODB-0136] SanityCheck: dbModNet 'resp_msg[2]' has no driver.
+[WARNING ODB-0135] SanityCheck: dbModNet 'Y[2]' has multiple drivers: 
+  - iterm: '_395_/_112_/Y'
+  - modbterm: 'Y[2]'
+[WARNING ODB-0136] SanityCheck: dbModNet 'resp_msg[1]' has no driver.
+[WARNING ODB-0135] SanityCheck: dbModNet 'Y[1]' has multiple drivers: 
+  - iterm: '_395_/_108_/Y'
+  - modbterm: 'Y[1]'
+[WARNING ODB-0136] SanityCheck: dbModNet 'resp_msg[0]' has no driver.
+[WARNING ODB-0135] SanityCheck: dbModNet 'Y[0]' has multiple drivers: 
+  - iterm: '_395_/_106_/Y'
+  - modbterm: 'Y[0]'

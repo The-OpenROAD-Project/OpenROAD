@@ -4543,12 +4543,15 @@ void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
   // Check for hier net and flat net connectivity
   dbSet<dbModNet> mod_nets = block()->getModNets();
   for (dbModNet* mod_net : mod_nets) {
+    mod_net->checkSanity();
     findRelatedDbNet(mod_net);
   }
 
   // Check for incomplete flat net connections
   for (odb::dbNet* net_db : block()->getNets()) {
     net_db->checkSanity();
+    std::set<dbModNet*> modnet_set;
+    net_db->findRelatedModNets(modnet_set);
   }
 }
 

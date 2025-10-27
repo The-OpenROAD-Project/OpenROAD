@@ -2348,8 +2348,7 @@ void dbNet::setJumpers(bool has_jumpers)
 
 void dbNet::checkSanity() const
 {
-  _dbNet* net = (_dbNet*) this;
-  utl::Logger* logger = net->getImpl()->getLogger();
+  utl::Logger* logger = getImpl()->getLogger();
   std::vector<std::string> drvr_info_list;
 
   // Find BTerm drivers

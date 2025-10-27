@@ -197,6 +197,9 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   // out_net is the db net
   sta_->connectPin(buffer, output, out_net);
 
+  odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
+  odb::dbModNet* buffer_op_modnet = buffer_op_pin_iterm->getModNet();
+
   const int split_index = fanout_slacks.size() / 2;
   for (int i = 0; i < split_index; i++) {
     pair<Vertex*, Slack> fanout_slack = fanout_slacks[i];
@@ -215,7 +218,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
       (void) (load);
 
       // stash the modnet,if any,  for the load
-      odb::dbModNet* db_mod_load_net = db_network_->hierNet(load_pin);
+      // odb::dbModNet* db_mod_load_net = db_network_->hierNet(load_pin);
 
       // This will kill both the flat (dbNet) and hier (modnet) connection
       load_iterm->disconnect();
@@ -229,20 +232,50 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
       Instance* load_parent = db_network_->getOwningInstanceParent(load_pin);
 
       if (load_parent != parent) {
-        odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
         odb::dbITerm* load_pin_iterm = db_network_->flatPin(load_pin);
         if (load_pin_iterm && buffer_op_pin_iterm) {
           db_network_->hierarchicalConnect(buffer_op_pin_iterm, load_pin_iterm);
+
+          // jk: new modnet connection
+          // printf("jk2: SplitLoadMove: after hierarchicalConnect %s %s\n",
+          //       buffer_op_pin_iterm->getName().c_str(),
+          //       load_pin_iterm->getName().c_str());
+          odb::dbModNet* buffer_op_modnet2 = buffer_op_pin_iterm->getModNet();
+          assert(buffer_op_modnet2);
+
+          dbNet* buffer_op_net = db_network_->staToDb(out_net);
+          for (dbITerm* iterm : buffer_op_net->getITerms()) {
+            // if (iterm->getModNet() != buffer_op_modnet2) {
+            //   printf("jk2: connect ITerm '%s' to the new modnet\n",
+            //          iterm->getName().c_str());
+            // }
+
+            // It disconnects the existing dbModNet if exists.
+            iterm->connect(buffer_op_modnet2);
+          }
+          for (odb::dbBTerm* bterm : buffer_op_net->getBTerms()) {
+            // if (bterm->getModNet() != buffer_op_modnet2) {
+            //   printf("jk2: connect BTerm '%s' to the new modnet\n",
+            //          bterm->getName().c_str());
+            // }
+            bterm->connect(buffer_op_modnet2);
+          }
+
+          buffer_op_modnet = buffer_op_modnet2;
         }
-      } else {
-        if (load_iterm && db_mod_load_net) {
-          // For hierarchical case, we simultaneously connect the
-          // hierarchical net and the modnet to make sure they
-          // get reassociated. (so all modnet pins refer to flat net).
-          load_iterm->disconnect();
-          db_network_->connectPin(load_pin, out_net, (Net*) db_mod_load_net);
-          //          iterm->connect(db_mod_load_net);
-        }
+      } else if (buffer_op_modnet != nullptr) {
+        load_iterm->connect(buffer_op_modnet);  // jk: fix
+
+        //  jk: buggy. it creates a modnet w/ multiple drivers.
+        // if (load_iterm && db_mod_load_net) {
+        //   // For hierarchical case, we simultaneously connect the
+        //   // hierarchical net and the modnet to make sure they
+        //   // get reassociated. (so all modnet pins refer to flat net).
+        //   load_iterm->disconnect();
+        //   db_network_->connectPin(load_pin, out_net, (Net*)
+        //   db_mod_load_net);
+        //   //          iterm->connect(db_mod_load_net);
+        // }
       }
     }
   }
