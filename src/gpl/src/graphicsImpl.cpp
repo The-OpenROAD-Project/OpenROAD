@@ -3,8 +3,6 @@
 
 #include "graphicsImpl.h"
 
-#include <spdlog/fmt/bundled/format.h>
-
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
