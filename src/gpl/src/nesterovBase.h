@@ -1003,7 +1003,7 @@ class NesterovBase
     
     int64_t expected_white_space = pb_->getDie().coreArea() - pb_->nonPlaceInstsArea();
     if(std::abs(whiteSpaceArea_ - expected_white_space) > tolerance) {
-      log_->warn(utl::GPL, 317, "Inconsistent white space area");
+      log_->warn(utl::GPL, 319, "Inconsistent white space area");
       log_->report("whiteSpaceArea_: {} (expected:{}) | coreArea: {}, nonPlaceInstsArea: {}", 
              block->dbuAreaToMicrons(whiteSpaceArea_), 
              block->dbuAreaToMicrons(expected_white_space), 
@@ -1013,7 +1013,7 @@ class NesterovBase
 
     int64_t expected_movable_area = whiteSpaceArea_ * targetDensity_;
     if(std::abs(movableArea_ - expected_movable_area) > tolerance) {
-      log_->warn(utl::GPL, 318, "Inconsistent movable area 1");
+      log_->warn(utl::GPL, 320, "Inconsistent movable area 1");
       log_->report("movableArea_: {} (expected:{}) | whiteSpaceArea_: {}, targetDensity_: {}", 
              block->dbuAreaToMicrons(movableArea_), 
              block->dbuAreaToMicrons(expected_movable_area), 
@@ -1023,7 +1023,7 @@ class NesterovBase
 
     int64_t expected_filler_area = movableArea_ - getNesterovInstsArea();
     if(std::abs(totalFillerArea_ - expected_filler_area) > tolerance) {
-      log_->warn(utl::GPL, 320,"Inconsistent filler area");
+      log_->warn(utl::GPL, 321,"Inconsistent filler area");
       log_->report("totalFillerArea_: {} (expected:{}) | movableArea_: {}, getNesterovInstsArea_: {}", 
              block->dbuAreaToMicrons(totalFillerArea_), 
              block->dbuAreaToMicrons(expected_filler_area), 
@@ -1034,7 +1034,7 @@ class NesterovBase
     float expected_density = movableArea_ * 1.0 / whiteSpaceArea_;
     float density_diff = std::abs(targetDensity_ - expected_density);
     if(density_diff > 1e-6) {
-      log_->warn(utl::GPL, 321,"Inconsistent target density");
+      log_->warn(utl::GPL, 322,"Inconsistent target density");
       log_->report("targetDensity_: {} (expected:{}) | movableArea_: {}, whiteSpaceArea_: {}", 
                    targetDensity_, 
                    expected_density, 
@@ -1114,7 +1114,6 @@ class NesterovBase
   bool checkConvergence(int gpl_iter_count,
                         int routability_gpl_iter_count,
                         RouteBase* rb);
-  std::shared_ptr<PlacerBase> getPb() const { return pb_; }
 
   bool checkDivergence();
   void saveSnapshot();
