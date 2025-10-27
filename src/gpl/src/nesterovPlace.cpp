@@ -24,7 +24,6 @@
 
 namespace gpl {
 using utl::GPL;
-bool pause = false;
 
 NesterovPlace::NesterovPlace() = default;
 
@@ -426,7 +425,7 @@ void NesterovPlace::runTimingDriven(int iter,
       db_cbk_->removeOwner();
     }
 
-    auto block = pbc_->db()->getChip()->getBlock();    
+    auto block = pbc_->db()->getChip()->getBlock();
     int nb_gcells_before_td = 0;
     int nb_gcells_after_td = 0;
     int nbc_total_gcells_before_td = nbc_->getGCells().size();
@@ -435,14 +434,8 @@ void NesterovPlace::runTimingDriven(int iter,
       nb_gcells_before_td += nb->getGCells().size();
     }
 
-    // if (!virtual_td_iter) {
-    //   for (auto& nesterov : nbVec_) {
-    //     // Pause current gradients
-    //     nesterov->pauseGradients();
-    //     pause = true;
-    //   }
-    // }
     bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
+    // TODO remove fillers for TD iterations
     // for (auto& nesterov : nbVec_) {
     //   nesterov->cutFillerCells(nbc_->getDeltaArea());
     // }
@@ -479,11 +472,6 @@ void NesterovPlace::runTimingDriven(int iter,
 
     if (!virtual_td_iter) {
       for (auto& nesterov : nbVec_) {
-
-        // Pause current gradients
-        // nesterov->pauseGradients();
-        // Define gradients for new instances
-        // TODO missing bingrid update?
         nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
         // updates order in routability:
         // 1. change areas
@@ -511,7 +499,6 @@ void NesterovPlace::runTimingDriven(int iter,
             "Timing-driven: repair_design delta area: {:.3f} um^2 ({:+.2f}%)",
             rsz_delta_area_microns,
             rsz_delta_area_percentage);
-        log_->report("getNesterovInstsArea(): {}", block->dbuAreaToMicrons(nesterov->getNesterovInstsArea()));
 
         float delta_gcells_percentage = 0.0f;
         if (nbc_total_gcells_before_td > 0) {
@@ -856,14 +843,6 @@ void NesterovPlace::doBackTracking(const float coeff)
     nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
     num_region_diverged_ = 0;
-    if (!pause) {
-      for (auto& nb : nbVec_) {
-        npUpdateNextGradient(nb);
-        num_region_diverged_ += nb->isDiverged();
-      }
-    } else {
-      pause = false;
-    }
 
     // NaN or inf is detected in WireLength/Density Coef
     if (num_region_diverged_ > 0) {
@@ -1044,9 +1023,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     const float coeff = (prevA - 1.0) / curA;
 
     doBackTracking(coeff);
-    // for(auto& nb : nbVec_) {
-    //     nb->writeGCellVectorsToCSV("gcells_vector.csv", nesterov_iter, 0, 1, 1);
-    // }
 
     // Adjust Phi dynamically for larger designs
     for (auto& nb : nbVec_) {

@@ -648,7 +648,6 @@ std::pair<bool, bool> RouteBase::routability(
              "Inflated area:",
              inflated_area_delta_microns,
              inflated_area_delta_percentage);
-  log_->report("getNesterovInstsArea(): {}", block->dbuAreaToMicrons(nbVec_[0]->getNesterovInstsArea()));
   log_->info(GPL,
              52,
              format_label_float,
