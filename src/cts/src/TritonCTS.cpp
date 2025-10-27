@@ -1089,8 +1089,8 @@ void TritonCTS::findLongEdges(stt::Tree& clkSteiner, odb::Point driverPt, std::m
   int dx = block_->getDieAreaPolygon().dx();
   int dy = block_->getDieAreaPolygon().dy();
 
-  int64_t threashold = std::max(dx, dy) / 3;
-  logger_->report("treashold (die side / 3) = {}", threashold);
+  int64_t threashold = std::max(dx, dy) / 4;
+  logger_->report("treashold (die side / 4) = {}", threashold);
   std::map<int, int> iterm2cluster;
   std::vector<std::vector<int>> clusters;
   odb::dbNet* icgNet = point2pin[driverPt][0]->getNet();
