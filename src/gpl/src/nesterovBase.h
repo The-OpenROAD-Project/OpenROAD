@@ -55,7 +55,10 @@ class GCell
   {
     kNone,
     kRoutability,
-    kTimingDriven,
+    kNewInstance,
+    kUpsize,
+    kDownsize,
+    kResizeNoChange
   };
 
   // instance cells
@@ -538,7 +541,7 @@ class Bin
   float getDensity() const;
 
   void setDensity(float density);
-  void setTargetDensity(float density);
+  void setBinTargetDensity(float density);
   void setElectroForce(float electroForceX, float electroForceY);
   void setElectroPhi(float phi);
 
@@ -673,7 +676,7 @@ class BinGrid
   void setLogger(utl::Logger* log);
   void setCorePoints(const Die* die);
   void setBinCnt(int binCntX, int binCntY);
-  void setTargetDensity(float density);
+  void setBinTargetDensity(float density);
   void updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
@@ -869,8 +872,10 @@ class NesterovBaseCommon
   // are implemented.
   int64_t getDeltaArea() { return delta_area_; }
   void resetDeltaArea() { delta_area_ = 0; }
-  int64_t getNewGcellsCount() { return new_gcells_count_; }
-  void resetNewGcellsCount() { new_gcells_count_ = 0; }
+  int getNewGcellsCount() { return new_gcells_count_; }
+  int getDeletedGcellsCount() { return deleted_gcells_count_; }
+  void resetNewGcellsCount() { new_gcells_count_ = 0;
+                                deleted_gcells_count_ = 0; }
 
  private:
   NesterovBaseVars nbVars_;
@@ -905,6 +910,7 @@ class NesterovBaseCommon
   int num_threads_;
   int64_t delta_area_;
   int new_gcells_count_;
+  int deleted_gcells_count_;
   nesterovDbCbk* db_cbk_{nullptr};
 };
 
@@ -958,6 +964,8 @@ class NesterovBase
   int64_t getMovableArea() const;
   int64_t getTotalFillerArea() const;
 
+  void setMovableArea(int64_t area) { movableArea_ = area; }
+
   // update
   // fillerArea, whiteSpaceArea, movableArea
   // and totalFillerArea after changing gCell's size
@@ -990,6 +998,51 @@ class NesterovBase
   float getTargetDensity() const;
 
   void setTargetDensity(float targetDensity);
+  void checkConsistency() {
+    auto block = pb_->db()->getChip()->getBlock();
+    const int64_t tolerance = 5000;
+    
+    int64_t expected_white_space = pb_->getDie().coreArea() - pb_->nonPlaceInstsArea();
+    if(std::abs(whiteSpaceArea_ - expected_white_space) > tolerance) {
+      log_->warn(utl::GPL, 317, "Inconsistent white space area");
+      log_->report("whiteSpaceArea_: {} (expected:{}) | coreArea: {}, nonPlaceInstsArea: {}", 
+             block->dbuAreaToMicrons(whiteSpaceArea_), 
+             block->dbuAreaToMicrons(expected_white_space), 
+             block->dbuAreaToMicrons(pb_->getDie().coreArea()), 
+             block->dbuAreaToMicrons(pb_->nonPlaceInstsArea()));
+    }
+
+    int64_t expected_movable_area = whiteSpaceArea_ * targetDensity_;
+    if(std::abs(movableArea_ - expected_movable_area) > tolerance) {
+      log_->warn(utl::GPL, 318, "Inconsistent movable area 1");
+      log_->report("movableArea_: {} (expected:{}) | whiteSpaceArea_: {}, targetDensity_: {}", 
+             block->dbuAreaToMicrons(movableArea_), 
+             block->dbuAreaToMicrons(expected_movable_area), 
+             block->dbuAreaToMicrons(whiteSpaceArea_), 
+             targetDensity_);
+    }
+
+    int64_t expected_filler_area = movableArea_ - getNesterovInstsArea();
+    if(std::abs(totalFillerArea_ - expected_filler_area) > tolerance) {
+      log_->warn(utl::GPL, 320,"Inconsistent filler area");
+      log_->report("totalFillerArea_: {} (expected:{}) | movableArea_: {}, getNesterovInstsArea_: {}", 
+             block->dbuAreaToMicrons(totalFillerArea_), 
+             block->dbuAreaToMicrons(expected_filler_area), 
+             block->dbuAreaToMicrons(movableArea_), 
+             block->dbuAreaToMicrons(getNesterovInstsArea()));
+    }
+
+    float expected_density = movableArea_ * 1.0 / whiteSpaceArea_;
+    float density_diff = std::abs(targetDensity_ - expected_density);
+    if(density_diff > 1e-6) {
+      log_->warn(utl::GPL, 321,"Inconsistent target density");
+      log_->report("targetDensity_: {} (expected:{}) | movableArea_: {}, whiteSpaceArea_: {}", 
+                   targetDensity_, 
+                   expected_density, 
+                   block->dbuAreaToMicrons(movableArea_), 
+                   block->dbuAreaToMicrons(whiteSpaceArea_));
+    }
+  }
 
   // RD can shrink the number of fillerCells.
   void cutFillerCells(int64_t targetFillerArea);
@@ -1028,9 +1081,9 @@ class NesterovBase
                        float wlCoeffX,
                        float wlCoeffY);
 
-  void updatePrevGradient(float wlCoeffX, float wlCoeffY);
-  void updateCurGradient(float wlCoeffX, float wlCoeffY);
-  void updateNextGradient(float wlCoeffX, float wlCoeffY);
+  void nbUpdatePrevGradient(float wlCoeffX, float wlCoeffY);
+  void nbUpdateCurGradient(float wlCoeffX, float wlCoeffY);
+  void nbUpdateNextGradient(float wlCoeffX, float wlCoeffY);
 
   // Used for updates based on callbacks
   void updateSingleGradient(size_t gCellIndex,
@@ -1057,13 +1110,20 @@ class NesterovBase
   void updateNextIter(int iter);
   void setTrueReprintIterHeader() { reprint_iter_header_ = true; }
   float getPhiCoef(float scaledDiffHpwl) const;
+  float getStoredPhiCoef() const { return phiCoef_; }
+  float getStoredStepLength() const { return stepLength_; }
+  float getStoredCoordiDistance() const { return coordiDistance_; }
+  float getStoredGradDistance() const { return gradDistance_; }
 
   bool checkConvergence(int gpl_iter_count,
                         int routability_gpl_iter_count,
                         RouteBase* rb);
+  std::shared_ptr<PlacerBase> getPb() const { return pb_; }
+
   bool checkDivergence();
   void saveSnapshot();
   bool revertToSnapshot();
+  void pauseGradients();
 
   void updateDensityCenterCur();
   void updateDensityCenterCurSLP();
@@ -1159,9 +1219,19 @@ class NesterovBase
 
   std::vector<RemovedFillerState> removed_fillers_;
 
+  // Density penalty parameters
   float sumPhi_ = 0;
+  float phiCoef_ = 0;
   float targetDensity_ = 0;
   float uniformTargetDensity_ = 0;
+
+  // StepLength parameters (also included in the np debugPrint)
+  float stepLength_ = 0;
+  float coordiDistance_ = 0;
+  float gradDistance_ = 0;
+  // numBackTrack (nesterovPlace.cpp)
+  // newWireLengthCoef (nesterovPlace.cpp)
+
 
   // Nesterov loop data for each region, using parallel vectors
   // SLP is Step Length Prediction.
@@ -1209,7 +1279,7 @@ class NesterovBase
   float densityGradSum_ = 0;
 
   // alpha
-  float stepLength_ = 0;
+  // float stepLength_ = 0;
 
   // opt_phi_cof
   float densityPenalty_ = 0;

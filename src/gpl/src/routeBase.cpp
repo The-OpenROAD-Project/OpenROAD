@@ -648,6 +648,7 @@ std::pair<bool, bool> RouteBase::routability(
              "Inflated area:",
              inflated_area_delta_microns,
              inflated_area_delta_percentage);
+  log_->report("getNesterovInstsArea(): {}", block->dbuAreaToMicrons(nbVec_[0]->getNesterovInstsArea()));
   log_->info(GPL,
              52,
              format_label_float,
@@ -723,6 +724,7 @@ std::pair<bool, bool> RouteBase::routability(
 
   // updateArea
   nbVec_[0]->updateAreas();
+  nbVec_[0]->checkConsistency();
 
   double new_total_gcells_area
       = nbVec_[0]->getNesterovInstsArea() + nbVec_[0]->getTotalFillerArea();

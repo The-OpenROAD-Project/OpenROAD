@@ -58,13 +58,14 @@ class NesterovPlace
 
   float getWireLengthCoefX() const { return wireLengthCoefX_; }
   float getWireLengthCoefY() const { return wireLengthCoefY_; }
+  NesterovPlaceVars& getNpVars() { return npVars_; }
 
   void setTargetOverflow(float overflow) { npVars_.targetOverflow = overflow; }
   void setMaxIters(int limit) { npVars_.maxNesterovIter = limit; }
 
-  void updatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
-  void updateCurGradient(const std::shared_ptr<NesterovBase>& nb);
-  void updateNextGradient(const std::shared_ptr<NesterovBase>& nb);
+  void npUpdatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
+  void npUpdateCurGradient(const std::shared_ptr<NesterovBase>& nb);
+  void npUpdateNextGradient(const std::shared_ptr<NesterovBase>& nb);
 
   void resizeGCell(odb::dbInst*);
   void moveGCell(odb::dbInst*);

@@ -573,7 +573,7 @@ void Bin::setDensity(float density)
   density_ = density;
 }
 
-void Bin::setTargetDensity(float density)
+void Bin::setBinTargetDensity(float density)
 {
   targetDensity_ = density;
 }
@@ -615,7 +615,7 @@ void BinGrid::setLogger(utl::Logger* log)
   log_ = log;
 }
 
-void BinGrid::setTargetDensity(float density)
+void BinGrid::setBinTargetDensity(float density)
 {
   targetDensity_ = density;
 }
@@ -1036,6 +1036,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   log_ = log;
   delta_area_ = 0;
   new_gcells_count_ = 0;
+  deleted_gcells_count_ = 0;
 
   // gCellStor init
   gCellStor_.reserve(pbc_->placeInsts().size());
@@ -1753,10 +1754,12 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   bg_.setPlacerBase(pb_);
   bg_.setLogger(log_);
   bg_.setCorePoints(&(pb_->getDie()));
-  bg_.setTargetDensity(targetDensity_);
+  bg_.setBinTargetDensity(targetDensity_);
 
   // update binGrid info
   bg_.initBins();
+  log_->report("pb_->placeInstsArea():  {}", pb_->db()->getChip()->getBlock()->dbuAreaToMicrons(pb_->placeInstsArea()));
+  log_->report("getNesterovInstsArea(): {}", pb_->db()->getChip()->getBlock()->dbuAreaToMicrons(getNesterovInstsArea()));
 
   // initialize fft structrue based on bins
   std::unique_ptr<FFT> fft(new FFT(bg_.getBinCntX(),
@@ -1768,6 +1771,8 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
 
   // update densitySize and densityScale in each gCell
   updateDensitySize();
+
+  checkConsistency();
 }
 
 // virtual filler GCells
@@ -1819,7 +1824,7 @@ void NesterovBase::initFillerGCells()
   fillerDy_ = static_cast<int>(dySum / (maxIdx - minIdx));
 
   int64_t coreArea = pb_->getDie().coreArea();
-  whiteSpaceArea_ = coreArea - static_cast<int64_t>(pb_->nonPlaceInstsArea());
+  whiteSpaceArea_ = coreArea - pb_->nonPlaceInstsArea();
 
   // if(pb_->group() == nullptr) {
   //   // nonPlaceInstsArea should not have density downscaling!!!
@@ -1852,6 +1857,10 @@ void NesterovBase::initFillerGCells()
   uniformTargetDensity_ = static_cast<float>(nesterovInstanceArea)
                           / static_cast<float>(whiteSpaceArea_);
   uniformTargetDensity_ = ceilf(uniformTargetDensity_ * 100) / 100;
+
+  log_->report("TargetDensity: {:.4f} (UniformTargetDensity: {:.4f})",
+            targetDensity_,
+            uniformTargetDensity_);
 
   if (totalFillerArea_ < 0) {
     log_->warn(GPL,
@@ -2000,11 +2009,11 @@ void NesterovBase::setTargetDensity(float density)
 {
   assert(omp_get_thread_num() == 0);
   targetDensity_ = density;
-  bg_.setTargetDensity(density);
+  bg_.setBinTargetDensity(density);
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto bin = getBins().begin(); bin < getBins().end(); ++bin) {
     // old-style loop for old OpenMP
-    bin->setTargetDensity(density);
+    bin->setBinTargetDensity(density);
   }
   // update nonPlaceArea's target denstiy
   bg_.updateBinsNonPlaceArea();
@@ -2151,6 +2160,7 @@ void NesterovBase::updateAreas()
 {
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
+  log_->report("updateAreas() before stdInstsArea_: {}", pb_->db()->getChip()->getBlock()->dbuAreaToMicrons(stdInstsArea_));
   stdInstsArea_ = macroInstsArea_ = 0;
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
@@ -2165,6 +2175,8 @@ void NesterovBase::updateAreas()
                        * static_cast<int64_t>(gCell->dy());
     }
   }
+
+  log_->report("updateAreas() after stdInstsArea_: {}", pb_->db()->getChip()->getBlock()->dbuAreaToMicrons(stdInstsArea_));
 }
 
 void NesterovBase::updateDensityCoordiLayoutInside(GCell* gCell)
@@ -2350,7 +2362,7 @@ float NesterovBase::initDensity2(float wlCoeffX, float wlCoeffY)
 {
   if (wireLengthGradSum_ == 0) {
     densityPenalty_ = npVars_->initDensityPenalty;
-    updatePrevGradient(wlCoeffX, wlCoeffY);
+    nbUpdatePrevGradient(wlCoeffX, wlCoeffY);
   }
 
   if (wireLengthGradSum_ != 0) {
@@ -2376,19 +2388,12 @@ float NesterovBase::getStepLength(
     const std::vector<FloatPoint>& curSLPCoordi_,
     const std::vector<FloatPoint>& curSLPSumGrads_)
 {
-  float coordiDistance = getDistance(prevSLPCoordi_, curSLPCoordi_);
-  float gradDistance = getDistance(prevSLPSumGrads_, curSLPSumGrads_);
+  coordiDistance_ = getDistance(prevSLPCoordi_, curSLPCoordi_);
+  gradDistance_ = getDistance(prevSLPSumGrads_, curSLPSumGrads_);
 
-  debugPrint(log_,
-             GPL,
-             "getStepLength",
-             1,
-             "CoordinateDistance: {:g}",
-             coordiDistance);
-  debugPrint(
-      log_, GPL, "getStepLength", 1, "GradientDistance: {:g}", gradDistance);
+  debugPrint(log_, GPL, "getStepLength", 1, "CoordinateDis {:g}, GradientDist {:g}, StepLength: {:g}", coordiDistance_, gradDistance_, stepLength_);
 
-  return coordiDistance / gradDistance;
+  return coordiDistance_ / gradDistance_;
 }
 
 // to execute following function,
@@ -2475,7 +2480,7 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   debugPrint(log_, GPL, "updateGrad", 1, "GradSum: {:g}", gradSum);
 }
 
-void NesterovBase::updatePrevGradient(float wlCoeffX, float wlCoeffY)
+void NesterovBase::nbUpdatePrevGradient(float wlCoeffX, float wlCoeffY)
 {
   updateGradients(prevSLPSumGrads_,
                   prevSLPWireLengthGrads_,
@@ -2484,7 +2489,7 @@ void NesterovBase::updatePrevGradient(float wlCoeffX, float wlCoeffY)
                   wlCoeffY);
 }
 
-void NesterovBase::updateCurGradient(float wlCoeffX, float wlCoeffY)
+void NesterovBase::nbUpdateCurGradient(float wlCoeffX, float wlCoeffY)
 {
   updateGradients(curSLPSumGrads_,
                   curSLPWireLengthGrads_,
@@ -2493,7 +2498,7 @@ void NesterovBase::updateCurGradient(float wlCoeffX, float wlCoeffY)
                   wlCoeffY);
 }
 
-void NesterovBase::updateNextGradient(float wlCoeffX, float wlCoeffY)
+void NesterovBase::nbUpdateNextGradient(float wlCoeffX, float wlCoeffY)
 {
   updateGradients(nextSLPSumGrads_,
                   nextSLPWireLengthGrads_,
@@ -2526,6 +2531,8 @@ void NesterovBase::updateSingleCurGradient(size_t gCellIndex,
                        wlCoeffY);
 }
 
+
+//TODO check this values
 void NesterovBase::updateSingleGradient(
     size_t gCellIndex,
     std::vector<FloatPoint>& sumGrads,
@@ -2544,11 +2551,11 @@ void NesterovBase::updateSingleGradient(
       = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
   densityGrads[gCellIndex] = getDensityGradient(gCell);
 
-  wireLengthGradSum_ += std::fabs(wireLengthGrads[gCellIndex].x);
-  wireLengthGradSum_ += std::fabs(wireLengthGrads[gCellIndex].y);
+  // wireLengthGradSum_ += std::fabs(wireLengthGrads[gCellIndex].x);
+  // wireLengthGradSum_ += std::fabs(wireLengthGrads[gCellIndex].y);
 
-  densityGradSum_ += std::fabs(densityGrads[gCellIndex].x);
-  densityGradSum_ += std::fabs(densityGrads[gCellIndex].y);
+  // densityGradSum_ += std::fabs(densityGrads[gCellIndex].x);
+  // densityGradSum_ += std::fabs(densityGrads[gCellIndex].y);
 
   sumGrads[gCellIndex].x = wireLengthGrads[gCellIndex].x
                            + densityPenalty_ * densityGrads[gCellIndex].x;
@@ -2680,8 +2687,6 @@ void NesterovBase::updateNextIter(const int iter)
   sum_overflow_unscaled_ = getOverflowAreaUnscaled() / overflowDenominator;
 
   int64_t hpwl = nbc_->getHpwl();
-  float phiCoef = getPhiCoef(static_cast<float>(hpwl - prev_hpwl_)
-                             / npVars_->referenceHpwl);
 
   float hpwl_percent_change = 0.0;
   if (iter == 0 || (iter) % 10 == 0) {
@@ -2729,6 +2734,9 @@ void NesterovBase::updateNextIter(const int iter)
                  group_name);
   }
 
+  float phiCoef = getPhiCoef(static_cast<float>(hpwl - prev_hpwl_)
+                            / npVars_->referenceHpwl);
+  phiCoef_ = phiCoef;
   debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prev_hpwl_);
   debugPrint(log_, GPL, "updateNextIter", 1, "NewHPWL: {}", hpwl);
   debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
@@ -2966,6 +2974,7 @@ bool NesterovBase::checkDivergence()
       && sum_overflow_unscaled_ - minSumOverflow_ >= 0.02f
       && hpwlWithMinSumOverflow_ * 1.2f < prev_hpwl_) {
     isDiverged_ = true;
+    log_->warn(GPL, 323,"Divergence detected between consecutive iterations");
   }
 
   // Check if both overflow and HPWL increase
@@ -2976,8 +2985,11 @@ bool NesterovBase::checkDivergence()
     float hpwl_increase = (static_cast<float>(prev_hpwl_ - prev_reported_hpwl_))
                           / static_cast<float>(prev_reported_hpwl_);
 
-    if (overflow_change >= 0.02f && hpwl_increase >= 0.05f) {
+    float overflow_acceptance = 0.05f;
+    float hpwl_acceptance = 0.25f;
+    if (overflow_change >= overflow_acceptance && hpwl_increase >= hpwl_acceptance) {
       isDiverged_ = true;
+      log_->warn(GPL, 324,"Divergence detected among reported values. Overflow change: {:g}, HPWL increase: {:g}%.", overflow_change, hpwl_increase * 100.0f);
     }
   }
 
@@ -3002,6 +3014,27 @@ bool NesterovBase::revertToSnapshot()
   isDiverged_ = false;
 
   return true;
+}
+
+void NesterovBase::pauseGradients()
+{
+  log_->report("Nesterov progression paused. next and previous get current coordis.");
+  nextCoordi_ = curCoordi_;
+  prevSLPCoordi_ = curSLPCoordi_;
+  prevSLPSumGrads_ = curSLPSumGrads_;
+  // densityPenalty_ = snapshotDensityPenalty_;
+  // stepLength_ = snapshotStepLength_;
+
+  //new ones
+  nextSLPCoordi_ = curSLPCoordi_;
+  nextSLPSumGrads_ = curSLPSumGrads_;
+
+  //do we need this?
+  updateGCellDensityCenterLocation(curCoordi_);
+  updateDensityForceBin();
+
+  // do we need this?
+  isDiverged_ = false;
 }
 
 void NesterovBaseCommon::moveGCell(odb::dbInst* db_inst)
@@ -3056,12 +3089,18 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
   }
   // update gcell
   gcell->updateLocations();
-  gcell->setAreaChangeType(GCell::GCellChange::kTimingDriven);
 
   int64_t newCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
   int64_t area_change = newCellArea - prevCellArea;
   delta_area_ += area_change;
+  if (area_change > 0) {
+    gcell->setAreaChangeType(GCell::GCellChange::kUpsize);
+  } else if (area_change < 0) {
+    gcell->setAreaChangeType(GCell::GCellChange::kDownsize);
+  } else {
+    gcell->setAreaChangeType(GCell::GCellChange::kResizeNoChange);
+  }
 }
 
 void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
@@ -3194,6 +3233,7 @@ size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
                         * static_cast<int64_t>(gcell_ptr->dy());
   delta_area_ += area_change;
   new_gcells_count_++;
+  gcell_ptr->setAreaChangeType(GCell::GCellChange::kNewInstance);
   return gCellStor_.size() - 1;
 }
 
@@ -3324,7 +3364,7 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
   int64_t area_change = static_cast<int64_t>(gCellStor_.back().dx())
                         * static_cast<int64_t>(gCellStor_.back().dy());
   delta_area_ -= area_change;
-  new_gcells_count_--;
+  deleted_gcells_count_++;
 
   gCellStor_.pop_back();
   minRcCellSize_.pop_back();
@@ -3354,11 +3394,18 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
   int64_t availableFillerArea = single_filler_area * fillerStor_.size();
   int64_t originalInflationArea = inflation_area;
 
-  if (totalFillerArea_ >= static_cast<int64_t>(initial_filler_area_ * 0.9)) {
+  // if (totalFillerArea_ >= static_cast<int64_t>(initial_filler_area_ * 0.9)) 
+  {
     for (int i = nb_gcells_.size() - 1;
          i >= 0 && removed_count < max_fllers_to_remove;
          --i) {
       if (nb_gcells_[i]->isFiller()) {
+        // log_->report("Examining gcell {}: isFiller={} storIndex={} index={}",
+        //       nb_gcells_[i]->getName(),
+        //       nb_gcells_[i]->isFiller(),
+        //       nb_gcells_[i].getStorageIndex(),
+        //       i);
+        // log_->report("Filler storage size: {}", fillerStor_.size());
         const GCell& removed = fillerStor_[nb_gcells_[i].getStorageIndex()];
         removed_fillers_.push_back(RemovedFillerState{
             .gcell = removed,
@@ -3444,10 +3491,8 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
                              + totalFillerArea_ + remainingInflationArea;
     setTargetDensity(static_cast<float>(totalGCellArea)
                      / static_cast<float>(getWhiteSpaceArea()));
-
-    float newTargetDensity = static_cast<float>(totalGCellArea)
-                             / static_cast<float>(getWhiteSpaceArea());
-    log_->info(GPL, 79, "New target density: {}", newTargetDensity);
+    movableArea_ = whiteSpaceArea_ * targetDensity_;
+    log_->info(GPL, 79, "New target density: {}", targetDensity_);
   }
 }
 
