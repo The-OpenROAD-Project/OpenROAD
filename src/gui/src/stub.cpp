@@ -12,6 +12,7 @@
 #include <typeinfo>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -52,8 +53,10 @@ Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 
 Gui* gui::Gui::get()
 {
-  static Gui* singleton_ = new Gui();
-  return singleton_;
+  CHECK(enabled())
+      << "Internal Error: gui::Gui::get() called when enabled() is false";
+
+  return nullptr;
 }
 
 bool gui::Gui::enabled()

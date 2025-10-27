@@ -210,8 +210,9 @@ static void resetConversions()
 
 Gui* Gui::get()
 {
-  static Gui* singleton_ = new Gui();
-  return singleton_;
+  static Gui* singleton = new Gui();
+
+  return singleton;
 }
 
 Gui::Gui()
