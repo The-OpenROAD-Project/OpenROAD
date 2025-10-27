@@ -2,29 +2,32 @@ Header:
   version: 2.5
   unit: micron
   precision: 100000
+  include:
+    - TopDesign.3dbv
 Design:
   name: TopDesign
-  external:
-    verilog_file: /path/to/top.v
 ChipletInst:
-  SoC_inst:
+  soc_inst_duplicate:
     reference: SoC
-    external:
-      verilog_file: /path/to/SoC.v
-      sdc_file: /path/to/SoC.sdc
-      def_file: /path/to/SoC.def
-  TopDesign_inst:
-    reference: TopDesign
-    external:
-      verilog_file: /path/to/TopDesign.v
-      sdc_file: /path/to/TopDesign.sdc
-      def_file: /path/to/TopDesign.def
+    is_master: true
+  soc_inst:
+    reference: SoC
+    is_master: true
 Stack:
-  SoC_inst:
-    loc: [0, 0]
+  soc_inst_duplicate:
+    loc: [100, 200]
+    z: 300
+    orient: MZ
+  soc_inst:
+    loc: [100, 200]
     z: 0
     orient: R0
-  TopDesign_inst:
-    loc: [0, 0]
-    z: 0
-    orient: R0
+Connection:
+  soc_to_virtual:
+    top: soc_inst_duplicate.regions.r1
+    bot: "~"
+    thicness: 0
+  soc_to_soc:
+    top: soc_inst_duplicate.regions.r1
+    bot: soc_inst.regions.r1
+    thicness: 2

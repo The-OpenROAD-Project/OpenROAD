@@ -7,8 +7,10 @@
 #include <yaml-cpp/node/node.h>
 
 #include <string>
+#include <vector>
 
 #include "baseWriter.h"
+#include "dbvWriter.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -20,6 +22,8 @@ DbxWriter::DbxWriter(utl::Logger* logger) : BaseWriter(logger)
 
 void DbxWriter::writeFile(const std::string& filename, odb::dbDatabase* db)
 {
+  DbvWriter dbvwriter(logger_);
+  dbvwriter.writeFile(std::string(db->getChip()->getName()) + ".3dbv", db);
   YAML::Node root;
   writeYamlContent(root, db);
   writeYamlToFile(filename, root);
@@ -29,6 +33,8 @@ void DbxWriter::writeYamlContent(YAML::Node& root, odb::dbDatabase* db)
 {
   YAML::Node header_node = root["Header"];
   writeHeader(header_node, db);
+  YAML::Node includes_node = header_node["include"];
+  includes_node.push_back(std::string(db->getChip()->getName()) + ".3dbv");
 
   YAML::Node design_node = root["Design"];
   writeDesign(design_node, db);
@@ -45,95 +51,104 @@ void DbxWriter::writeYamlContent(YAML::Node& root, odb::dbDatabase* db)
 
 void DbxWriter::writeDesign(YAML::Node& design_node, odb::dbDatabase* db)
 {
-  // TODO: Implement design writing
-  design_node["name"] = "TopDesign";
-
-  YAML::Node external_node = design_node["external"];
-  writeDesignExternal(external_node, db);
-}
-
-void DbxWriter::writeDesignExternal(YAML::Node& external_node,
-                                    odb::dbDatabase* db)
-{
-  // TODO: Implement design external writing
-  external_node["verilog_file"] = "/path/to/top.v";
+  design_node["name"] = db->getChip()->getName();
 }
 
 void DbxWriter::writeChipletInsts(YAML::Node& instances_node,
                                   odb::dbDatabase* db)
 {
-  // TODO: Implement chiplet instances writing
   for (auto chiplet : db->getChips()) {
-    YAML::Node instance_node
-        = instances_node[std::string(chiplet->getName()) + "_inst"];
-    writeChipletInst(instance_node, chiplet, db);
+    for (auto inst : chiplet->getChipInsts()) {
+      YAML::Node instance_node = instances_node[std::string(inst->getName())];
+      writeChipletInst(instance_node, inst, db);
+    }
   }
 }
 
 void DbxWriter::writeChipletInst(YAML::Node& instance_node,
-                                 odb::dbChip* chiplet,
+                                 odb::dbChipInst* inst,
                                  odb::dbDatabase* db)
 {
-  // TODO: Implement chiplet instance writing
-  instance_node["reference"] = chiplet->getName();
-
-  YAML::Node external_node = instance_node["external"];
-  writeChipletInstExternal(external_node, chiplet, db);
+  auto master_name = inst->getMasterChip()->getName();
+  instance_node["reference"] = master_name;
+  // TODO: Identify clone instances
+  instance_node["is_master"] = true;
 }
 
 void DbxWriter::writeChipletInstExternal(YAML::Node& external_node,
                                          odb::dbChip* chiplet,
                                          odb::dbDatabase* db)
 {
-  // TODO: Implement chiplet instance external writing
-  external_node["verilog_file"]
-      = "/path/to/" + std::string(chiplet->getName()) + ".v";
-  external_node["sdc_file"]
-      = "/path/to/" + std::string(chiplet->getName()) + ".sdc";
-  external_node["def_file"]
-      = "/path/to/" + std::string(chiplet->getName()) + ".def";
+  BaseWriter::writeDef(external_node, db, chiplet);
 }
 
 void DbxWriter::writeStack(YAML::Node& stack_node, odb::dbDatabase* db)
 {
-  // TODO: Implement stack writing
-  int z_offset = 0;
   for (auto chiplet : db->getChips()) {
-    YAML::Node stack_instance_node
-        = stack_node[std::string(chiplet->getName()) + "_inst"];
-    writeStackInstance(stack_instance_node, chiplet, db);
-    z_offset += chiplet->getThickness() / (double) db->getDbuPerMicron();
+    for (auto inst : chiplet->getChipInsts()) {
+      YAML::Node stack_instance_node = stack_node[std::string(inst->getName())];
+      writeStackInstance(stack_instance_node, inst, db);
+    }
   }
 }
 
 void DbxWriter::writeStackInstance(YAML::Node& stack_instance_node,
-                                   odb::dbChip* chiplet,
+                                   odb::dbChipInst* inst,
                                    odb::dbDatabase* db)
 {
-  // TODO: Implement stack instance writing
-  auto offset_x = chiplet->getOffset().getX() / db->getDbuPerMicron();
-  auto offset_y = chiplet->getOffset().getY() / db->getDbuPerMicron();
-
+  auto loc_x = inst->getLoc().x() / db->getDbuPerMicron();
+  auto loc_y = inst->getLoc().y() / db->getDbuPerMicron();
   YAML::Node loc_out;
   loc_out.SetStyle(YAML::EmitterStyle::Flow);
-  loc_out.push_back(offset_x);
-  loc_out.push_back(offset_y);
+  loc_out.push_back(loc_x);
+  loc_out.push_back(loc_y);
   stack_instance_node["loc"] = loc_out;
-
-  stack_instance_node["z"] = 0.0;        // TODO: Calculate proper z position
-  stack_instance_node["orient"] = "R0";  // TODO: Get proper orientation
+  stack_instance_node["z"] = inst->getLoc().z() / db->getDbuPerMicron();
+  stack_instance_node["orient"] = inst->getOrient().getString();
 }
 
 void DbxWriter::writeConnections(YAML::Node& connections_node,
                                  odb::dbDatabase* db)
 {
-  // TODO: Implement connections writing
+  for (auto chiplet : db->getChips()) {
+    for (auto conn : chiplet->getChipConns()) {
+      YAML::Node connection_node
+          = connections_node[std::string(conn->getName())];
+      writeConnection(connection_node, conn, db);
+    }
+  }
 }
 
 void DbxWriter::writeConnection(YAML::Node& connection_node,
+                                odb::dbChipConn* conn,
                                 odb::dbDatabase* db)
 {
-  // TODO: Implement connection writing
+  connection_node["top"]
+      = buildPath(conn->getTopRegionPath(), conn->getTopRegion());
+  connection_node["bot"]
+      = buildPath(conn->getBottomRegionPath(), conn->getBottomRegion());
+  connection_node["thicness"] = conn->getThickness() / db->getDbuPerMicron();
+}
+
+std::string DbxWriter::buildPath(const std::vector<dbChipInst*>& path_insts,
+                                 odb::dbChipRegionInst* region)
+{
+  if (region == nullptr) {
+    return "~";
+  }
+
+  std::string path = "";
+  for (auto inst : path_insts) {
+    if (!path.empty()) {
+      path += "/";
+    }
+    path += inst->getName();
+  }
+
+  if (!path.empty()) {
+    path += ".regions." + region->getChipRegion()->getName();
+  }
+  return path;
 }
 
 }  // namespace odb

@@ -161,7 +161,9 @@ void DbvWriter::writeExternal(YAML::Node& external_node,
                               odb::dbDatabase* db)
 {
   BaseWriter::writeLef(external_node, db, chiplet);
-  BaseWriter::writeDef(external_node, db, chiplet);
+  if (db->getChip()->getBlock() != nullptr) {
+    BaseWriter::writeDef(external_node, db, chiplet);
+  }
 }
 
 void DbvWriter::writeCoordinates(YAML::Node& coords_node,
