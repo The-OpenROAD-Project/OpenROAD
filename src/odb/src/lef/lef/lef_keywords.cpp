@@ -37,6 +37,7 @@
 #include "crypt.hpp"
 #include "lefiDebug.hpp"
 #include "lefiDefs.hpp"
+#include "lefiKRDefs.hpp"
 #include "lefrCallBacks.hpp"
 #include "lefrData.hpp"
 #include "lefrReader.hpp"

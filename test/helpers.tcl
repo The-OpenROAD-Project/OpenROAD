@@ -5,13 +5,26 @@ if { [info exists ::env(TEST_TMPDIR)] } {
 } else {
   set test_dir [file dirname [file normalize [info script]]]
 }
-set result_dir [file join $test_dir "results"]
 
-proc make_result_file { filename } {
+if { [info exists ::env(RESULTS_DIR)] } {
+  set result_dir $::env(RESULTS_DIR)
+} else {
+  set result_dir [file join $test_dir "results"]
+}
+
+proc make_result_dir { } {
   variable result_dir
   if { ![file exists $result_dir] } {
     file mkdir $result_dir
   }
+  return $result_dir
+}
+
+proc make_result_file { filename } {
+  variable result_dir
+
+  make_result_dir
+
   set root [file rootname $filename]
   set ext [file extension $filename]
   set filename "$root-tcl$ext"
@@ -61,6 +74,21 @@ proc run_equivalence_test { test lib remove_cells } {
   # tclint-disable-next-line line-length
   puts $outfile "\[gate]\nread_verilog -sv  $after_netlist $lib_files\nprep -top $top_cell -flatten\nmemory_map\n\n"
 
+  # Recommendation from eqy team on how to speed up a design
+  puts $outfile "\[match *]\ngate-nomatch _*_.*"
+
+  # See issue OpenROAD#6545 "Equivalence check failure due to non-unique resizer nets"
+  puts $outfile "gate-nomatch net*"
+
+  # Forbid matching on buffer instances or cloned instances to make it less
+  # likely EQY will fail to prove equivalence because of its assuming structural
+  # similarity between gold and gate netlists. This doesn't remove coverage.
+  puts $outfile "gate-nomatch clone*"
+  puts $outfile "gate-nomatch place*"
+  puts $outfile "gate-nomatch rebuffer*"
+  puts $outfile "gate-nomatch wire*"
+  puts $outfile "gate-nomatch place*\n\n"
+
   # Equivalence check recipe
   puts $outfile "\[strategy basic]\nuse sat\ndepth 10\n\n"
   close $outfile
@@ -70,10 +98,8 @@ proc run_equivalence_test { test lib remove_cells } {
     catch { exec eqy -d $run_dir $test_script > /dev/null }
     set count 0
     catch {
-      set count [
-        exec grep -c "Successfully proved designs equivalent"
-        $run_dir/logfile.txt
-      ]
+      set count [exec grep -c "Successfully proved designs equivalent" \
+        $run_dir/logfile.txt]
     }
     if { $count == 0 } {
       puts "Repair timing output failed equivalence test"

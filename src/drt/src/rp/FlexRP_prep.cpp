@@ -24,6 +24,8 @@
 #include "rp/FlexRP.h"
 #include "utl/Logger.h"
 
+using odb::dbTechLayerType;
+
 namespace drt {
 
 void FlexRP::prep()
@@ -1230,7 +1232,7 @@ void FlexRP::prep_via2viaForbiddenLen_minimumCut(
   }
 
   const bool isH
-      = (tech_->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL);
+      = (tech_->getLayer(lNum)->getDir() == odb::dbTechLayerDir::HORIZONTAL);
 
   bool isVia1Above = false;
   const frVia via1(viaDef1);

@@ -22,6 +22,8 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
+using odb::dbTechLayerType;
+
 namespace drt {
 
 using polygon_t = bg::model::polygon<point_t>;
@@ -1637,7 +1639,7 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin,
   gtl::rectangle_data<frCoord> bbox;
   gtl::extents(bbox, *pin->getPolygon());
   odb::Rect bbox2(gtl::xl(bbox), gtl::yl(bbox), gtl::xh(bbox), gtl::yh(bbox));
-  if (!drWorker_->getDrcBox().contains(bbox2)) {
+  if (!drcBox_.contains(bbox2)) {
     return;
   }
   for (auto& edges : pin->getPolygonEdges()) {

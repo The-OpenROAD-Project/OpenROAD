@@ -44,6 +44,10 @@ filegroup(
 )
 
 # From CMakeLists.txt or_integration_tests(TESTS
+PASSFAIL_TESTS = [
+    "commands_without_load",
+]
+
 COMPULSORY_TESTS = [
     "error1",
     "get_core_die_areas",
@@ -51,8 +55,12 @@ COMPULSORY_TESTS = [
     "upf_test",
     "upf_aes",
     "write_db",
-    # pass-fail
-    "commands_without_load",
+] + PASSFAIL_TESTS
+
+# TODO: Enable once difference between bazel and ctest is resolved.
+MANUAL_FOR_BAZEL_TESTS = [
+    "upf_test",
+    "upf_aes",
 ]
 
 # Bazel OpenROAD is not compiled with Python support yet
@@ -77,6 +85,8 @@ PYTHON_TESTS = [
 # the tests are available, but have to be invoked
 # explicitly giving CI control over when they are executed,
 # which can be useful because the tests are long running.
+#
+# TODO: Create golden ok files for these tests.
 BIG_TESTS = [
     "aes_sky130hd",
     "aes_sky130hs",
@@ -96,7 +106,9 @@ BIG_TESTS = [
     regression_test(
         name = test_name,
         size = "enormous" if test_name in BIG_TESTS else "medium",
-        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
+        tags = [] if test_name in COMPULSORY_TESTS and test_name not in MANUAL_FOR_BAZEL_TESTS else ["manual"],
     )
     for test_name in COMPULSORY_TESTS + PYTHON_TESTS + BIG_TESTS
 ]

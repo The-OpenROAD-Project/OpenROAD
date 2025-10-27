@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "bmapParser.h"
 #include "dbvParser.h"
 #include "dbxParser.h"
 #include "objects.h"
@@ -18,6 +19,7 @@
 #include "odb/defin.h"
 #include "odb/geom.h"
 #include "odb/lefin.h"
+#include "sta/Sta.hh"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -32,8 +34,8 @@ static std::map<std::string, std::string> dup_orient_map
        {"MZ_MX_R180", "MZ_MY"},
        {"MZ_MX_R270", "MZ_MY_R90"}};
 
-ThreeDBlox::ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db)
-    : logger_(logger), db_(db)
+ThreeDBlox::ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db, sta::Sta* sta)
+    : logger_(logger), db_(db), sta_(sta)
 {
 }
 
@@ -145,9 +147,9 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     odb::lefin lef_reader(db_, logger_, false);
     tech = db_->findTech(tech_name.c_str());
     if (tech == nullptr) {
-      auto lib = lef_reader.createTechAndLib(
+      lef_reader.createTechAndLib(
           tech_name.c_str(), tech_name.c_str(), tech_file.c_str());
-      tech = lib->getTech();
+      tech = db_->findTech(tech_name.c_str());
     }
   }
   // Read LEF files
@@ -157,7 +159,12 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     odb::lefin lef_reader(db_, logger_, false);
     lef_reader.createLib(tech, lib_name.c_str(), lef_file.c_str());
   }
-  // TODO: Read liberty files
+  if (sta_ != nullptr) {
+    for (const auto& liberty_file : chiplet.external.lib_files) {
+      sta_->readLiberty(
+          liberty_file.c_str(), sta_->cmdCorner(), sta::MinMaxAll::all(), true);
+    }
+  }
   // Check if chiplet already exists
   auto chip = db_->findChip(chiplet.name.c_str());
   if (chip != nullptr) {
@@ -200,6 +207,13 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 
   chip->setOffset(Point(chiplet.offset.x * db_->getDbuPerMicron(),
                         chiplet.offset.y * db_->getDbuPerMicron()));
+  if (chip->getChipType() != dbChip::ChipType::HIER
+      && chip->getBlock() == nullptr) {
+    // blackbox stage, create block
+    auto block = odb::dbBlock::create(chip, chiplet.name.c_str());
+    block->setDieArea(Rect(0, 0, chip->getWidth(), chip->getHeight()));
+    block->setCoreArea(Rect(0, 0, chip->getWidth(), chip->getHeight()));
+  }
   for (const auto& [_, region] : chiplet.regions) {
     createRegion(region, chip);
   }
@@ -238,7 +252,72 @@ void ThreeDBlox::createRegion(const ChipletRegion& region, dbChip* chip)
               box);
   }
   chip_region->setBox(box);
+  // Read bump map file
+  if (!region.bmap.empty()) {
+    BmapParser parser(logger_);
+    BumpMapData data = parser.parseFile(region.bmap);
+    for (const auto& entry : data.entries) {
+      createBump(entry, chip_region);
+    }
+  }
 }
+
+void ThreeDBlox::createBump(const BumpMapEntry& entry,
+                            dbChipRegion* chip_region)
+{
+  auto chip = chip_region->getChip();
+  auto block = chip->getBlock();
+  auto inst = block->findInst(entry.bump_inst_name.c_str());
+  if (inst == nullptr) {
+    // create inst
+    auto master = db_->findMaster(entry.bump_cell_type.c_str());
+    if (master == nullptr) {
+      logger_->error(utl::ODB,
+                     531,
+                     "3DBV Parser Error: Bump cell type {} not found",
+                     entry.bump_cell_type);
+    }
+    if (master->getLib()->getTech() != chip->getTech()) {
+      logger_->error(utl::ODB,
+                     532,
+                     "3DBV Parser Error: Bump cell type {} is not in the same "
+                     "tech as the chip region {}/{}",
+                     entry.bump_cell_type,
+                     chip->getName(),
+                     chip_region->getName());
+    }
+    inst = dbInst::create(block, master, entry.bump_inst_name.c_str());
+  }
+  auto bump = dbChipBump::create(chip_region, inst);
+  inst->setOrigin(entry.x * db_->getDbuPerMicron(),
+                  entry.y * db_->getDbuPerMicron());
+  inst->setPlacementStatus(dbPlacementStatus::FIRM);
+  if (entry.net_name != "-") {
+    auto net = block->findNet(entry.net_name.c_str());
+    if (net == nullptr) {
+      logger_->error(utl::ODB,
+                     534,
+                     "3DBV Parser Error: Bump net {} not found",
+                     entry.net_name);
+    }
+    bump->setNet(net);
+    inst->getITerms().begin()->connect(net);
+  }
+  if (entry.port_name != "-") {
+    auto bterm = block->findBTerm(entry.port_name.c_str());
+    if (bterm == nullptr) {
+      logger_->error(utl::ODB,
+                     533,
+                     "3DBV Parser Error: Bump port {} not found",
+                     entry.port_name);
+    }
+    bump->setBTerm(bterm);
+    if (bump->getNet()) {
+      bterm->connect(bump->getNet());
+    }
+  }
+}
+
 dbChip* ThreeDBlox::createDesignTopChiplet(const DesignDef& design)
 {
   dbChip* chip

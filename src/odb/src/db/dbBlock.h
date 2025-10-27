@@ -162,6 +162,7 @@ class _dbBlock : public _dbObject
   char* _corner_name_list;
   char* _name;
   Polygon _die_area;
+  Polygon _core_area;
   std::vector<Rect> _blocked_regions_for_pins;
   dbId<_dbChip> _chip;
   dbId<_dbBox> _bbox;

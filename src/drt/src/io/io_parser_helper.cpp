@@ -22,6 +22,8 @@
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
+using odb::dbTechLayerType;
+
 namespace drt {
 
 using Rectangle = boost::polygon::rectangle_data<int>;
@@ -139,9 +141,9 @@ void io::Parser::initDefaultVias()
       bool isLayer1EncHorz = layer1Box.dx() > layer1Box.dy();
       bool isLayer2EncHorz = layer2Box.dx() > layer2Box.dy();
       bool isLayer1Horz = (getTech()->getLayer(layer1Num)->getDir()
-                           == dbTechLayerDir::HORIZONTAL);
+                           == odb::dbTechLayerDir::HORIZONTAL);
       bool isLayer2Horz = (getTech()->getLayer(layer2Num)->getDir()
-                           == dbTechLayerDir::HORIZONTAL);
+                           == odb::dbTechLayerDir::HORIZONTAL);
       bool needViaGen = false;
       if ((!isLayer1Square && (isLayer1EncHorz != isLayer1Horz))
           || (!isLayer2Square && (isLayer2EncHorz != isLayer2Horz))) {
@@ -507,10 +509,10 @@ void io::Parser::getViaRawPriority(const frViaDef* viaDef,
   isNotLowerAlign
       = (isLayer1Horz
          && (getTech()->getLayer(viaDef->getLayer1Num())->getDir()
-             == dbTechLayerDir::VERTICAL))
+             == odb::dbTechLayerDir::VERTICAL))
         || (!isLayer1Horz
             && (getTech()->getLayer(viaDef->getLayer1Num())->getDir()
-                == dbTechLayerDir::HORIZONTAL));
+                == odb::dbTechLayerDir::HORIZONTAL));
 
   PolygonSet viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
@@ -527,10 +529,10 @@ void io::Parser::getViaRawPriority(const frViaDef* viaDef,
   isNotUpperAlign
       = (isLayer2Horz
          && (getTech()->getLayer(viaDef->getLayer2Num())->getDir()
-             == dbTechLayerDir::VERTICAL))
+             == odb::dbTechLayerDir::VERTICAL))
         || (!isLayer2Horz
             && (getTech()->getLayer(viaDef->getLayer2Num())->getDir()
-                == dbTechLayerDir::HORIZONTAL));
+                == odb::dbTechLayerDir::HORIZONTAL));
 
   frCoord layer1Area = area(viaLayerPS1);
   frCoord layer2Area = area(viaLayerPS2);
@@ -974,9 +976,9 @@ void io::Parser::initRPin_rpin()
 
         // MACRO does not go through PA
         if (prefAp == nullptr) {
-          dbMasterType masterType = inst->getMaster()->getMasterType();
+          odb::dbMasterType masterType = inst->getMaster()->getMasterType();
           if (masterType.isBlock() || masterType.isPad()
-              || masterType == dbMasterType::RING) {
+              || masterType == odb::dbMasterType::RING) {
             prefAp = (pin->getPinAccess(inst->getPinAccessIdx())
                           ->getAccessPoints())[0]
                          .get();

@@ -35,9 +35,31 @@
 #include <cstdio>
 #include <string_view>
 
+#include "defiAssertion.hpp"
+#include "defiBlockage.hpp"
+#include "defiComponent.hpp"
 #include "defiDefs.hpp"
+#include "defiFPC.hpp"
+#include "defiFill.hpp"
+#include "defiGroup.hpp"
+#include "defiIOTiming.hpp"
 #include "defiKRDefs.hpp"
+#include "defiMisc.hpp"
+#include "defiNet.hpp"
+#include "defiNonDefault.hpp"
+#include "defiPartition.hpp"
+#include "defiPath.hpp"
+#include "defiPinCap.hpp"
+#include "defiPinProp.hpp"
+#include "defiProp.hpp"
+#include "defiRegion.hpp"
+#include "defiRowTrack.hpp"
+#include "defiScanchain.hpp"
+#include "defiSite.hpp"
+#include "defiSlot.hpp"
+#include "defiTimingDisable.hpp"
 #include "defiUser.hpp"
+#include "defiVia.hpp"
 
 #define DEF_MSGS 4013
 #define CBMAX 150  // Number of callbacks.

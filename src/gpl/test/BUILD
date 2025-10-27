@@ -87,9 +87,15 @@ filegroup(
     ),
 )
 
+# TODO: Enable once difference between bazel and ctest is resolved.
+MANUAL_FOR_BAZEL_TESTS = [
+    "incremental02",
+]
+
 [regression_test(
     name = test_name,
     data = [":test_resources"],
+    tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]
 
 PY_TESTS = [
@@ -144,5 +150,33 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         "@spdlog",
+    ],
+)
+
+cc_test(
+    name = "mbff_test",
+    srcs = ["mbff_test.cpp"],
+    data = [
+        "library/test/test0.lef",
+        "library/test/test0.lib",
+    ],
+    deps = [
+        "//:openroad_lib",
+        "//bazel:runfiles",
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbReadVerilog",
+        "//src/dpl",
+        "//src/est",
+        "//src/gpl",
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/stt",
+        "//src/tst",
+        "//src/utl",
+        "@com_google_absl//absl/strings",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )

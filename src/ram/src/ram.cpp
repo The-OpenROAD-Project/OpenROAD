@@ -4,12 +4,16 @@
 #include "ram/ram.h"
 
 #include <array>
+#include <functional>
+#include <limits>
+#include <string>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "layout.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/isotropy.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
@@ -568,6 +572,7 @@ void RamGen::generate(const int bytes_per_word,
   int max_x_coord = ram_grid.getRowWidth();
 
   block_->setDieArea(odb::Rect(0, 0, max_x_coord, max_y_coord));
+  block_->setCoreArea(block_->computeCoreArea());
 }
 
 }  // namespace ram

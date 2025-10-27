@@ -1,5 +1,9 @@
 @Library('utils@or-v2.0.1') _
 
+def logHostname() {
+    sh label: "Running on ${env.NODE_NAME}", script: "echo 'Node context established.'"
+}
+
 def baseTests(String image) {
     Map base_tests = [failFast: false];
 
@@ -43,6 +47,7 @@ def baseTests(String image) {
     flow_tests.each { current_test ->
         base_tests["Flow Test - ${current_test}"] = {
             node {
+                logHostname()
                 withDockerContainer(args: '-u root', image: image) {
                     stage("Setup ${current_test}") {
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
@@ -78,6 +83,7 @@ def getParallelTests(String image) {
     def ret = [
         'Docs Tester': {
             node {
+                logHostname()
                 withDockerContainer(args: '-u root', image: image) {
                     stage('Setup Docs Test') {
                         echo "Setting up Docs Tester environment in ${image}";
@@ -101,6 +107,7 @@ def getParallelTests(String image) {
 
         'Build without GUI': {
             node {
+                logHostname()
                 withDockerContainer(args: '-u root', image: image) {
                     stage('Setup no-GUI Build') {
                         echo "Build without GUI";
@@ -118,6 +125,7 @@ def getParallelTests(String image) {
 
         'Build without Test': {
             node {
+                logHostname()
                 withDockerContainer(args: '-u root', image: image) {
                     stage('Setup no-test Build') {
                         echo "Build without Tests";
@@ -139,6 +147,7 @@ def getParallelTests(String image) {
 
         'Build on RHEL8': {
             node ('rhel8') {
+                logHostname()
                 stage('Setup RHEL8 Build') {
                     checkout scm;
                 }
@@ -172,6 +181,7 @@ def getParallelTests(String image) {
 
         'Unit Tests Ninja': {
             node {
+                logHostname()
                 withDockerContainer(args: '-u root', image: image) {
                     stage('Setup Ninja Tests') {
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
@@ -195,6 +205,7 @@ def getParallelTests(String image) {
 
         'Compile with C++20': {
             node {
+                logHostname()
                 withDockerContainer(args: '-u root', image: image) {
                     stage('Setup C++20 Compile') {
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
@@ -213,32 +224,38 @@ def getParallelTests(String image) {
 
 def bazelTest = {
     node {
+        logHostname()
         stage('Setup') {
             checkout scm;
             sh label: 'Setup Docker Image', script: 'docker build -f docker/Dockerfile.bazel -t openroad/bazel-ci .';
         }
-        withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: 'openroad/bazel-ci:latest') {
-            stage('bazelisk test ...') {
-                withCredentials([string(credentialsId: 'bazel-auth-token-b64', variable: 'BAZEL_AUTH_TOKEN_B64')]) {
-                    timeout(time: 120, unit: 'MINUTES') {
-                        def cmd = 'bazelisk test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic --remote_header="Authorization=Basic $BAZEL_AUTH_TOKEN_B64" --profile=build.profile'
-                        try {
+        try {
+            withDockerContainer(args: '-u root -v /var/run/docker.sock:/var/run/docker.sock', image: 'openroad/bazel-ci:latest') {
+                stage('bazelisk test ...') {
+                    withCredentials([string(credentialsId: 'bazel-auth-token-b64', variable: 'BAZEL_AUTH_TOKEN_B64')]) {
+                        timeout(time: 120, unit: 'MINUTES') {
+                            def cmd = 'bazelisk test --config=ci --show_timestamps --test_output=errors --curses=no --force_pic --remote_header="Authorization=Basic $BAZEL_AUTH_TOKEN_B64" --profile=build.profile'
                             try {
-                                sh label: 'Test, using cached results and building a minimum of dependencies', script: cmd + ' ...';
-                            } finally {
-                                sh label: 'Analyze build times', script: 'bazelisk analyze-profile build.profile';
-                            }
-                        } catch (e) {
-                            currentBuild.result = 'FAILURE';
-                            try {
-                                sh label: 'Test (keep_going)', script: cmd + ' --keep_going ...';
-                            } finally {
-                                sh label: 'Analyze build times', script: 'bazelisk analyze-profile build.profile';
+                                try {
+                                    sh label: 'Test, using cached results and building a minimum of dependencies', script: cmd + ' ...';
+                                } finally {
+                                    sh label: 'Analyze build times', script: 'bazelisk analyze-profile build.profile';
+                                }
+                            } catch (e) {
+                                try {
+                                    sh label: 'Test (keep_going)', script: cmd + ' --keep_going ...';
+                                } catch (e2) {
+                                    currentBuild.result = 'FAILURE';
+                                } finally {
+                                    sh label: 'Analyze build times', script: 'bazelisk analyze-profile build.profile';
+                                }
                             }
                         }
                     }
                 }
             }
+        } catch (IOException e) {
+            echo "Caught: ${e}";
         }
     }
 }
@@ -260,6 +277,7 @@ def dockerTests = {
         test_os.each { os ->
             build_docker_images["Test Installer - ${os.name}"] = {
                 node {
+                    logHostname()
                     checkout scm;
                     sh label: 'Build Docker image', script: "./etc/DockerHelper.sh create -target=builder -os=${os.image}";
                     sh label: 'Test Docker image', script: "./etc/DockerHelper.sh test -target=builder -os=${os.image} -smoke";

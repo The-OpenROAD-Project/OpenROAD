@@ -78,7 +78,7 @@ class ExtProgressTracker
   bool shouldPrintProgress(float currentPercent) const
   {
     return enabled_ && extractedWireCount_ > 0
-           && extractedWireCount_ % wire_extracted_progress_count == 0
+           && extractedWireCount_ % wire_extracted_progress_count_ == 0
            && (currentPercent - previousProgressPercent_ >= progressInterval_);
   }
 

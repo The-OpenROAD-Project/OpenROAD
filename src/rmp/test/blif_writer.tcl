@@ -15,6 +15,7 @@ rmp::blif_add_instance $blif "_i2_"
 rmp::blif_add_instance $blif "_i3_"
 
 
-rmp::blif_dump $blif "./results/blif_writer.blif"
+set result_blif [make_result_file "blif_writer.blif"]
+rmp::blif_dump $blif $result_blif
 
-diff_files "./results/blif_writer.blif" "blif_writer.blif.ok"
+diff_files $result_blif "blif_writer.blif.ok"

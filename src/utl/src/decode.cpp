@@ -27,11 +27,12 @@
 
 #include "utl/decode.h"
 
-#include <tcl.h>
-
+#include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+
+#include "tcl.h"
 
 namespace utl {
 

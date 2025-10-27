@@ -1,7 +1,10 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[WARNING ORD-2039] SanityCheck: Net 'out_unconnected' has less than 2 connections (# of ITerms = 0, # of BTerms = 1).
-[WARNING ORD-2039] SanityCheck: Net 'single_conn_wire' has less than 2 connections (# of ITerms = 0, # of BTerms = 0).
-[WARNING ORD-2039] SanityCheck: Net 'w2' has less than 2 connections (# of ITerms = 0, # of BTerms = 1).
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[WARNING ODB-0050] SanityCheck: dbNet 'out_unconnected' has no driver.
+[WARNING ODB-0051] SanityCheck: dbNet 'out_unconnected' is dangling. It has less than 2 connections (# of ITerms = 0, # of BTerms = 1).
+[WARNING ODB-0051] SanityCheck: dbNet 'single_conn_wire' is dangling. It has less than 2 connections (# of ITerms = 0, # of BTerms = 0).
+[WARNING ODB-0050] SanityCheck: dbNet 'w2' has no driver.
+[WARNING ODB-0051] SanityCheck: dbNet 'w2' is dangling. It has less than 2 connections (# of ITerms = 0, # of BTerms = 1).
 [WARNING ORD-2038] SanityCheck: Module 'i_empty' has no instances.
 [WARNING ORD-2038] SanityCheck: Module 'u1' has no instances.
 [WARNING ORD-2038] SanityCheck: Module 'u2' has no instances.

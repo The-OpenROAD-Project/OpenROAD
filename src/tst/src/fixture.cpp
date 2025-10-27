@@ -10,8 +10,10 @@
 #include <stdexcept>
 #include <string>
 
+#include "odb/db.h"
 #include "odb/lefin.h"
 #include "sta/MinMax.hh"
+#include "tcl.h"  // IWYU pragma: keep (clang-tidy, you're drunk)
 
 namespace tst {
 

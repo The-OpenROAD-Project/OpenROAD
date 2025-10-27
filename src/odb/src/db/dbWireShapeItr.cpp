@@ -6,6 +6,7 @@
 #include "dbTable.h"
 #include "dbWire.h"
 #include "dbWireOpcode.h"
+#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"

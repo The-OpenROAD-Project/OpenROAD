@@ -18,6 +18,7 @@
 #include "grt/GRoute.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -934,86 +935,92 @@ int FastRouteCore::getDbNetLayerEdgeCost(odb::dbNet* db_net, int layer)
   return nets_[net_id]->getLayerEdgeCost(layer - 1);
 }
 
+void FastRouteCore::getPlanarRoute(odb::dbNet* db_net, GRoute& route)
+{
+  int netID;
+  bool exists;
+  getNetId(db_net, netID, exists);
+
+  std::unordered_set<GSegment, GSegmentHash> net_segs;
+
+  const auto& treeedges = sttrees_[netID].edges;
+  const int num_edges = sttrees_[netID].num_edges();
+
+  for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+    const TreeEdge* treeedge = &(treeedges[edgeID]);
+    if (treeedge->len > 0) {
+      int routeLen = treeedge->route.routelen;
+      const std::vector<GPoint3D>& grids = treeedge->route.grids;
+      int lastX = (tile_size_ * (grids[0].x + 0.5)) + x_corner_;
+      int lastY = (tile_size_ * (grids[0].y + 0.5)) + y_corner_;
+
+      // defines the layer used for vertical edges are still 2D
+      int layer_h = 0;
+
+      // defines the layer used for horizontal edges are still 2D
+      int layer_v = 0;
+
+      if (layer_directions_[nets_[netID]->getMinLayer()]
+          == odb::dbTechLayerDir::VERTICAL) {
+        layer_h = nets_[netID]->getMinLayer() + 1;
+        layer_v = nets_[netID]->getMinLayer();
+      } else {
+        layer_h = nets_[netID]->getMinLayer();
+        layer_v = nets_[netID]->getMinLayer() + 1;
+      }
+      int second_x = (tile_size_ * (grids[1].x + 0.5)) + x_corner_;
+      int lastL = (lastX == second_x) ? layer_v : layer_h;
+
+      for (int i = 1; i <= routeLen; i++) {
+        const int xreal = (tile_size_ * (grids[i].x + 0.5)) + x_corner_;
+        const int yreal = (tile_size_ * (grids[i].y + 0.5)) + y_corner_;
+        GSegment segment;
+        if (lastX == xreal) {
+          // if change direction add a via to change the layer
+          if (lastL == layer_h) {
+            segment
+                = GSegment(lastX, lastY, lastL + 1, lastX, lastY, layer_v + 1);
+            if (net_segs.find(segment) == net_segs.end()) {
+              net_segs.insert(segment);
+              route.push_back(segment);
+            }
+          }
+          lastL = layer_v;
+          segment = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
+        } else {
+          // if change direction add a via to change the layer
+          if (lastL == layer_v) {
+            segment
+                = GSegment(lastX, lastY, lastL + 1, lastX, lastY, layer_h + 1);
+            if (net_segs.find(segment) == net_segs.end()) {
+              net_segs.insert(segment);
+              route.push_back(segment);
+            }
+          }
+          lastL = layer_h;
+          segment = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
+        }
+        lastX = xreal;
+        lastY = yreal;
+        if (net_segs.find(segment) == net_segs.end()) {
+          net_segs.insert(segment);
+          route.push_back(segment);
+        }
+      }
+    }
+  }
+}
+
 NetRouteMap FastRouteCore::getPlanarRoutes()
 {
   NetRouteMap routes;
 
   // Get routes before layer assignment
-
   for (const int& netID : net_ids_) {
     auto fr_net = nets_[netID];
     odb::dbNet* db_net = fr_net->getDbNet();
     GRoute& route = routes[db_net];
-    std::unordered_set<GSegment, GSegmentHash> net_segs;
-
-    const auto& treeedges = sttrees_[netID].edges;
-    const int num_edges = sttrees_[netID].num_edges();
-
-    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
-      const TreeEdge* treeedge = &(treeedges[edgeID]);
-      if (treeedge->len > 0) {
-        int routeLen = treeedge->route.routelen;
-        const std::vector<GPoint3D>& grids = treeedge->route.grids;
-        int lastX = tile_size_ * (grids[0].x + 0.5) + x_corner_;
-        int lastY = tile_size_ * (grids[0].y + 0.5) + y_corner_;
-
-        // defines the layer used for vertical edges are still 2D
-        int layer_h = 0;
-
-        // defines the layer used for horizontal edges are still 2D
-        int layer_v = 0;
-
-        if (layer_directions_[nets_[netID]->getMinLayer()]
-            == odb::dbTechLayerDir::VERTICAL) {
-          layer_h = nets_[netID]->getMinLayer() + 1;
-          layer_v = nets_[netID]->getMinLayer();
-        } else {
-          layer_h = nets_[netID]->getMinLayer();
-          layer_v = nets_[netID]->getMinLayer() + 1;
-        }
-        int second_x = tile_size_ * (grids[1].x + 0.5) + x_corner_;
-        int lastL = (lastX == second_x) ? layer_v : layer_h;
-
-        for (int i = 1; i <= routeLen; i++) {
-          const int xreal = tile_size_ * (grids[i].x + 0.5) + x_corner_;
-          const int yreal = tile_size_ * (grids[i].y + 0.5) + y_corner_;
-          GSegment segment;
-          if (lastX == xreal) {
-            // if change direction add a via to change the layer
-            if (lastL == layer_h) {
-              segment = GSegment(
-                  lastX, lastY, lastL + 1, lastX, lastY, layer_v + 1);
-              if (net_segs.find(segment) == net_segs.end()) {
-                net_segs.insert(segment);
-                route.push_back(segment);
-              }
-            }
-            lastL = layer_v;
-            segment
-                = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
-          } else {
-            // if change direction add a via to change the layer
-            if (lastL == layer_v) {
-              segment = GSegment(
-                  lastX, lastY, lastL + 1, lastX, lastY, layer_h + 1);
-              if (net_segs.find(segment) == net_segs.end()) {
-                net_segs.insert(segment);
-                route.push_back(segment);
-              }
-            }
-            lastL = layer_h;
-            segment
-                = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
-          }
-          lastX = xreal;
-          lastY = yreal;
-          if (net_segs.find(segment) == net_segs.end()) {
-            net_segs.insert(segment);
-            route.push_back(segment);
-          }
-        }
-      }
-    }
+    getPlanarRoute(db_net, route);
   }
 
   return routes;
@@ -1154,6 +1161,7 @@ NetRouteMap FastRouteCore::run()
   }
 
   graph2d_.clearUsed();
+  preProcessTechLayers();
 
   int tUsage;
   int cost_step;
@@ -1639,6 +1647,10 @@ NetRouteMap FastRouteCore::run()
     mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
   }
 
+  // Disable estimate parasitics for grt incremental steps with resistance-aware
+  // strategy to prevent issues during repair design and repair timing
+  estimate_parasitics_ = false;
+
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     getOverflow3D();
     logger_->report("After MazeRoute3D - 3Dcong: {}", total_overflow_);
@@ -1806,7 +1818,8 @@ void FastRouteCore::setCongestionReportIterStep(int congestion_report_iter_step)
 
 void FastRouteCore::setResistanceAware(bool resistance_aware)
 {
-  resistance_aware_ = resistance_aware;
+  enable_resistance_aware_ = resistance_aware;
+  estimate_parasitics_ = true;
 }
 
 void FastRouteCore::setCongestionReportFile(const char* congestion_file_name)

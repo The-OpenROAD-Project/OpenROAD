@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "gpl/AbstractGraphics.h"
 #include "odb/dbTypes.h"
 #include "placerBase.h"
 #include "solver.h"
@@ -38,8 +39,13 @@ void InitialPlaceVars::reset()
 InitialPlace::InitialPlace(InitialPlaceVars ipVars,
                            std::shared_ptr<PlacerBaseCommon> pbc,
                            std::vector<std::shared_ptr<PlacerBase>>& pbVec,
+                           std::unique_ptr<AbstractGraphics> graphics,
                            utl::Logger* log)
-    : ipVars_(ipVars), pbc_(std::move(pbc)), pbVec_(pbVec), log_(log)
+    : ipVars_(ipVars),
+      pbc_(std::move(pbc)),
+      pbVec_(pbVec),
+      graphics_(std::move(graphics)),
+      log_(log)
 {
 }
 
@@ -47,9 +53,9 @@ void InitialPlace::doBicgstabPlace(int threads)
 {
   ResidualError error;
 
-  std::unique_ptr<Graphics> graphics;
-  if (ipVars_.debug && Graphics::guiActive()) {
-    graphics = std::make_unique<Graphics>(log_, pbc_, pbVec_);
+  graphics_->setDebugOn(ipVars_.debug);
+  if (ipVars_.debug) {
+    graphics_->debugForInitialPlace(pbc_, pbVec_);
   }
 
   placeInstsCenter();
@@ -57,8 +63,8 @@ void InitialPlace::doBicgstabPlace(int threads)
   // set ExtId for idx reference // easy recovery
   setPlaceInstExtId();
 
-  if (graphics) {
-    graphics->getGuiObjectFromGraphics()->gifStart("initPlacement.gif");
+  if (graphics_ && graphics_->enabled()) {
+    graphics_->gifStart("initPlacement.gif");
   }
 
   for (size_t iter = 1; iter <= ipVars_.maxIter; iter++) {
@@ -75,19 +81,18 @@ void InitialPlace::doBicgstabPlace(int threads)
                            log_,
                            threads);
 
-    if (graphics) {
-      graphics->cellPlot(true);
+    if (graphics_ && graphics_->enabled()) {
+      graphics_->cellPlot(true);
 
-      gui::Gui* gui = graphics->getGuiObjectFromGraphics();
       odb::Rect region;
       odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
       int max_dim = std::max(bbox.dx(), bbox.dy());
       double dbu_per_pixel = static_cast<double>(max_dim) / 1000.0;
-      gui->gifAddFrame(region, 500, dbu_per_pixel, 20);
+      graphics_->gifAddFrame(region, 500, dbu_per_pixel, 20);
     }
 
     if (std::isnan(error.x) || std::isnan(error.y)) {
-      log_->warn(GPL,
+      log_->warn(utl::GPL,
                  154,
                  "Conjugate gradient initial placement solver failed at "
                  "iteration {}. ",
@@ -109,8 +114,8 @@ void InitialPlace::doBicgstabPlace(int threads)
     }
   }
 
-  if (graphics) {
-    graphics->getGuiObjectFromGraphics()->gifEnd();
+  if (graphics_ && graphics_->enabled()) {
+    graphics_->gifEnd();
   }
 }
 
@@ -162,7 +167,7 @@ void InitialPlace::placeInstsCenter()
   }
 
   debugPrint(log_,
-             GPL,
+             utl::GPL,
              "init",
              1,
              "[InitialPlace] origin position counters: region center = {}, db "

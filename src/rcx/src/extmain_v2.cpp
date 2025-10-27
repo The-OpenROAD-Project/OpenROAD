@@ -18,6 +18,7 @@
 #include "rcx/extModelGen.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
+#include "rcx/extViaModel.h"
 #include "rcx/ext_options.h"
 #include "utl/Logger.h"
 
