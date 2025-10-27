@@ -285,7 +285,8 @@ proc pin_access { args } {
   sta::parse_key_args "pin_access" args \
     keys {-db_process_node -bottom_routing_layer -top_routing_layer -verbose \
           -min_access_points -remote_host -remote_port -shared_volume -cloud_size \
-          -via_access_layer -via_in_pin_bottom_layer -via_in_pin_top_layer} \
+          -via_access_layer -via_in_pin_bottom_layer -via_in_pin_top_layer \
+          -pa_abutment_epsilon -pa_rtguide_mode} \
     flags {-distributed}
   sta::check_argc_eq0 "pin_access" $args
   if { [info exists keys(-db_process_node)] } {
@@ -351,9 +352,23 @@ proc pin_access { args } {
     }
     drt::detailed_route_distributed $rhost $rport $vol $cloudsz
   }
+
+  if { [info exists keys(-pa_abutment_epsilon)] } {
+    set pa_abutment_epsilon $keys(-pa_abutment_epsilon)
+  } else {
+    set pa_abutment_epsilon 0
+  }
+
+  if { [info exists keys(-pa_rtguide_mode)] } {
+    set pa_rtguide_mode $keys(-pa_rtguide_mode)
+  } else {
+    set pa_rtguide_mode 0
+  }
+
   drt::pin_access_cmd $db_process_node \
     $via_access_layer $verbose $min_access_points \
-    $via_in_pin_bottom_layer $via_in_pin_top_layer
+    $via_in_pin_bottom_layer $via_in_pin_top_layer \
+    $pa_abutment_epsilon $pa_rtguide_mode
 }
 
 sta::define_cmd_args "detailed_route_run_worker" {

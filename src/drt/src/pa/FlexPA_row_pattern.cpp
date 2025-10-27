@@ -9,6 +9,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <cmath>
 
 #include "db/infra/frTime.h"
 #include "db/obj/frAccess.h"
@@ -55,7 +56,7 @@ std::vector<std::vector<frInst*>> FlexPA::computeInstRows()
   int prev_x_end_coord = INT_MIN;
   for (auto inst : insts_set_) {
     odb::Point origin = inst->getBoundaryBBox().ll();
-    if (origin.y() != prev_y_coord || origin.x() > prev_x_end_coord) {
+    if (origin.y() != prev_y_coord || origin.x() - prev_x_end_coord > router_cfg_->PA_ABUTMENT_EPSILON) {
       if (!row_insts.empty()) {
         inst_rows.push_back(row_insts);
         row_insts.clear();
@@ -86,8 +87,7 @@ bool FlexPA::instancesAreAbuting(frInst* inst_1, frInst* inst_2) const
     right_inst = inst_1;
   }
 
-  if (left_inst->getBoundaryBBox().xMax()
-      != right_inst->getBoundaryBBox().xMin()) {
+  if (right_inst->getBoundaryBBox().xMin() - left_inst->getBoundaryBBox().xMax() > router_cfg_->PA_ABUTMENT_EPSILON ) {
     return false;
   }
 
@@ -463,7 +463,21 @@ int FlexPA::getEdgeCost(FlexDPNode* prev_node,
   if (!has_vio) {
     const int prev_node_cost = prev_node->getNodeCost();
     const int curr_node_cost = curr_node->getNodeCost();
+    
     edge_cost = (prev_node_cost + curr_node_cost) / 2;
+
+    // If non-zero epsilon and if two cells are not abutting, 
+    // then we wish to apply a large cost if two boundary APs are sharing a track and a weak one if they are one track apart.
+    if(router_cfg_->PA_ABUTMENT_EPSILON > 0 && prev_inst->getBBox().xMax() != curr_inst->getBBox().xMin()) {
+      const frAccessPoint* prev_boundary_ap = prev_pin_access_pattern->getBoundaryAP(false);
+      const frAccessPoint* curr_boundary_ap = prev_pin_access_pattern->getBoundaryAP(true);
+      
+      if(prev_boundary_ap->y() == curr_boundary_ap->y()) {
+        edge_cost = 1000;
+      } else if (std::abs(prev_boundary_ap->y() - curr_boundary_ap->y()) <= 36) {
+        edge_cost *= 2;
+      }
+    }
   } else {
     edge_cost = 1000;
   }

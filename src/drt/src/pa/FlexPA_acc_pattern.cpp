@@ -4,11 +4,13 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <exception>
 #include <iostream>
 #include <limits>
 #include <map>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -18,7 +20,9 @@
 #include "db/obj/frInst.h"
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frMPin.h"
+#include "db/obj/frNet.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frLayer.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"
 #include "dst/Distributed.h"
@@ -235,6 +239,8 @@ int FlexPA::genPatternsHelper(
   return num_valid_pattern;
 }
 
+#define LAYER_NUM(str) (design_->getTech()->getLayer(str)->getLayerNum())
+
 // init dp node array for valid access points
 void FlexPA::genPatternsInit(
     std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
@@ -274,10 +280,177 @@ void FlexPA::genPatternsInit(
     ap_idx = 0;
     auto size = pin->getPinAccess(pin_access_idx)->getAccessPoints().size();
     nodes[pin_idx] = std::vector<std::unique_ptr<FlexDPNode>>(size);
+
+    frNet* net = inst_term->getNet();
+
+    std::vector<odb::Point> ordering;
+
     for (auto& ap : pin->getPinAccess(pin_access_idx)->getAccessPoints()) {
+      ordering.push_back(ap->getPoint());
+    }
+
+    bool hasNet = false;
+    if (net) {
+      hasNet = true;
+
+      std::vector<std::pair<odb::Rect, int>> guide_boxes;
+      for (auto& guide : net->getGuides()) {
+        odb::Rect box = guide->getBBox();
+
+        int weight;
+
+        std::map<int, int> weights{{LAYER_NUM("M1"), 10},
+                                   {LAYER_NUM("M2"), 10},
+                                   {LAYER_NUM("M3"), 8},
+                                   {LAYER_NUM("M4"), 4},
+                                   {LAYER_NUM("M5"), 2}};
+
+        if (weights.find(guide->getBeginLayerNum()) != weights.end()) {
+          weight = weights[guide->getBeginLayerNum()];
+        } else {
+          weight = 0;
+        }
+
+        guide_boxes.emplace_back(box, weight);
+      }
+
+      std::sort(guide_boxes.begin(), guide_boxes.end(), [=](auto a, auto b) {
+        return odb::Point::manhattanDistance(a.first.center(),
+                                             inst_term->getBBox().center())
+               < odb::Point::manhattanDistance(b.first.center(),
+                                               inst_term->getBBox().center());
+      });
+
+      int xAvg = 0, yAvg = 0;
+
+      // Mode 1: Center of all RTGuides
+      if (router_cfg_->PA_RTGUIDE_MODE == 1) {
+        for (auto [bbox, weight] : guide_boxes) {
+          xAvg += bbox.center().x();
+          yAvg += bbox.center().y();
+        }
+
+        int sz = guide_boxes.size();
+        if (sz == 0) {
+          logger_->warn(DRT,
+                        138,
+                        "PA RTGuide Mode 1: No routeguide on {}",
+                        net->getName());
+          xAvg = inst_term->getBBox().center().x();
+          yAvg = inst_term->getBBox().center().y();
+        } else {
+          xAvg /= guide_boxes.size();
+          yAvg /= guide_boxes.size();
+        }
+      }
+      // Mode 2: Center of all RTGuides, weighted by layer.
+      else if (router_cfg_->PA_RTGUIDE_MODE == 2) {
+        int sumWeight = 0;
+        for (auto [bbox, weight] : guide_boxes) {
+          xAvg += bbox.center().x() * weight;
+          yAvg += bbox.center().y() * weight;
+          sumWeight += weight;
+        }
+
+        if (sumWeight == 0) {
+          xAvg = inst_term->getBBox().center().x();
+          yAvg = inst_term->getBBox().center().y();
+          logger_->warn(DRT,
+                        145,
+                        "PA RTGuide Mode 2: No routeguide or no in-range "
+                        "routeguide on {}",
+                        net->getName());
+        } else {
+          xAvg /= sumWeight;
+          yAvg /= sumWeight;
+        }
+        // Mode 3: Center of incident RTGuide
+      } else if (router_cfg_->PA_RTGUIDE_MODE == 3) {
+        if (guide_boxes.size() >= 1) {
+          auto box = guide_boxes[0].first;
+          xAvg = box.xCenter();
+          yAvg = box.yCenter();
+        } else {
+          logger_->warn(DRT,
+                        121,
+                        "PA RTGuide Mode 3: No routeguide on {}",
+                        net->getName());
+          xAvg = 0;
+          yAvg = 0;
+        }
+
+        // Mode 4: Center of incident non-via RTGuide
+      } else if (router_cfg_->PA_RTGUIDE_MODE == 4) {
+        if (guide_boxes.size() >= 1) {
+          odb::Rect firstNonVia = guide_boxes[0].first;
+          for (auto [bbox, weight] : guide_boxes) {
+            // An up-via is a square (1x1 gcell) guide segment that connects
+            // from pin layer to the layer abov. To estimate the first
+            // non-up-via segment, we sort segments (see above) and then search
+            // for the first non-square via is centered closest to the ITerm's
+            // bbox
+            if (bbox.dx() != bbox.dy()) {
+              firstNonVia = bbox;
+              break;
+            }
+          }
+
+          xAvg = firstNonVia.xCenter();
+          yAvg = firstNonVia.yCenter();
+        }
+
+        // Mode 5: Hybrid (Mode 4 + Mode 2) (WIP)
+      } else if (router_cfg_->PA_RTGUIDE_MODE == 5) {
+
+        }
+
+        else {
+          logger_->warn(DRT,
+                        137,
+                        "PA RTGuide Mode 4: No routeguide on {}",
+                        net->getName());
+          xAvg = inst_term->getBBox().center().x();
+          yAvg = inst_term->getBBox().center().y();
+        }
+      } else if (router_cfg_->PA_RTGUIDE_MODE != 0) {
+        logger_->warn(DRT,
+                      111,
+                      "PA RTGuide Usage Mode: {}",
+                      router_cfg_->PA_RTGUIDE_MODE);
+        throw std::out_of_range("Hacky: Invalid PA RTGuide Usage Mode.");
+      }
+
+      odb::Point guide_center(xAvg, yAvg);
+      odb::dbTransform xform = inst_term->getInst()->getTransform();
+
+      std::sort(ordering.begin(), ordering.end(), [=](auto a, auto b) {
+        xform.apply(a);
+        xform.apply(b);
+        return odb::Point::manhattanDistance(guide_center, a)
+               < odb::Point::manhattanDistance(guide_center, b);
+      });
+    }
+
+    for (auto& ap : pin->getPinAccess(pin_access_idx)->getAccessPoints()) {
+      // TODO: Guide-based costing here. Keep in mind ap cost maxes out at 20.
+      int ap_cost = ap->getCost();
+
+      if (hasNet && router_cfg_->PA_RTGUIDE_MODE != 0) {
+        auto position
+            = std::find(ordering.begin(), ordering.end(), ap->getPoint());
+        if (position == ordering.end()) {
+          throw std::out_of_range("Hacky: the AP ordering is invalid.");
+        }
+
+        // We will penalize each AP relative to other APs based on which is
+        // farthest from the routeguide center.
+        int rank = 2 * std::distance(ordering.begin(), position);
+        ap_cost += rank;
+      }
+
       nodes[pin_idx][ap_idx] = std::make_unique<FlexDPNode>();
       nodes[pin_idx][ap_idx]->setIdx({pin_idx, ap_idx});
-      nodes[pin_idx][ap_idx]->setNodeCost(ap->getCost());
+      nodes[pin_idx][ap_idx]->setNodeCost(ap_cost);
       ap_idx++;
     }
     pin_idx++;

@@ -97,6 +97,9 @@ struct RouterConfiguration
   std::string REPAIR_PDN_LAYER_NAME;
   frLayerNum REPAIR_PDN_LAYER_NUM = -1;
   frLayerNum GC_IGNORE_PDN_LAYER_NUM = -1;
+
+  int PA_ABUTMENT_EPSILON = 0;
+  int PA_RTGUIDE_MODE = 0;
 };
 
 constexpr int DIRBITSIZE = 3;

@@ -78,6 +78,8 @@ struct ParamStruct
   bool saveGuideUpdates = false;
   std::string repairPDNLayerName;
   int num_threads;
+  int pa_abutment_epsilon = 0;
+  int pa_rtguide_mode = 0;
 };
 
 class TritonRoute
