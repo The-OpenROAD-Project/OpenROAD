@@ -843,6 +843,10 @@ void NesterovPlace::doBackTracking(const float coeff)
     nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
     num_region_diverged_ = 0;
+    for (auto& nb : nbVec_) {
+      npUpdateNextGradient(nb);
+      num_region_diverged_ += nb->isDiverged();
+    }
 
     // NaN or inf is detected in WireLength/Density Coef
     if (num_region_diverged_ > 0) {
