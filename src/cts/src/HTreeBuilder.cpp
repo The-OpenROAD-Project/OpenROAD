@@ -1170,6 +1170,7 @@ void HTreeBuilder::legalize()
 
 void HTreeBuilder::run()
 {
+  options_->setSinkClusteringUseMaxCap(false);
   double clusterDiameter = (type_ == TreeType::MacroTree)
                                ? options_->getMacroMaxDiameter()
                                : options_->getMaxDiameter();
