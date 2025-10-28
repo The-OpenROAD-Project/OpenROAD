@@ -5,9 +5,10 @@
 
 #include "nesterovPlace.h"
 
+#include <spdlog/fmt/bundled/format.h>
+
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
