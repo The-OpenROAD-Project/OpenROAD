@@ -1863,8 +1863,8 @@ void NesterovBase::initFillerGCells()
   uniformTargetDensity_ = ceilf(uniformTargetDensity_ * 100) / 100;
 
   log_->report("TargetDensity: {:.4f} (UniformTargetDensity: {:.4f})",
-            targetDensity_,
-            uniformTargetDensity_);
+               targetDensity_,
+               uniformTargetDensity_);
 
   if (totalFillerArea_ < 0) {
     log_->warn(GPL,
@@ -2560,7 +2560,6 @@ void NesterovBase::updateSingleGradient(
       = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
   densityGrads[gCellIndex] = getDensityGradient(gCell);
 
-
   sumGrads[gCellIndex].x = wireLengthGrads[gCellIndex].x
                            + densityPenalty_ * densityGrads[gCellIndex].x;
   sumGrads[gCellIndex].y = wireLengthGrads[gCellIndex].y
@@ -2977,7 +2976,7 @@ bool NesterovBase::checkDivergence()
       && sum_overflow_unscaled_ - minSumOverflow_ >= 0.02f
       && hpwlWithMinSumOverflow_ * 1.2f < prev_hpwl_) {
     isDiverged_ = true;
-    log_->warn(GPL, 323,"Divergence detected between consecutive iterations");
+    log_->warn(GPL, 323, "Divergence detected between consecutive iterations");
   }
 
   // Check if both overflow and HPWL increase
@@ -2990,9 +2989,15 @@ bool NesterovBase::checkDivergence()
 
     float overflow_acceptance = 0.05f;
     float hpwl_acceptance = 0.25f;
-    if (overflow_change >= overflow_acceptance && hpwl_increase >= hpwl_acceptance) {
+    if (overflow_change >= overflow_acceptance
+        && hpwl_increase >= hpwl_acceptance) {
       isDiverged_ = true;
-      log_->warn(GPL, 324,"Divergence detected between reported values. Overflow change: {:g}, HPWL increase: {:g}%.", overflow_change, hpwl_increase * 100.0f);
+      log_->warn(GPL,
+                 324,
+                 "Divergence detected between reported values. Overflow "
+                 "change: {:g}, HPWL increase: {:g}%.",
+                 overflow_change,
+                 hpwl_increase * 100.0f);
     }
   }
 

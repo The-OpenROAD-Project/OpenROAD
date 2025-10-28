@@ -873,8 +873,11 @@ class NesterovBaseCommon
   void resetDeltaArea() { delta_area_ = 0; }
   int getNewGcellsCount() { return new_gcells_count_; }
   int getDeletedGcellsCount() { return deleted_gcells_count_; }
-  void resetNewGcellsCount() { new_gcells_count_ = 0;
-                                deleted_gcells_count_ = 0; }
+  void resetNewGcellsCount()
+  {
+    new_gcells_count_ = 0;
+    deleted_gcells_count_ = 0;
+  }
 
  private:
   NesterovBaseVars nbVars_;
@@ -997,49 +1000,59 @@ class NesterovBase
   float getTargetDensity() const;
 
   void setTargetDensity(float targetDensity);
-  void checkConsistency() {
+  void checkConsistency()
+  {
     auto block = pb_->db()->getChip()->getBlock();
     const int64_t tolerance = 10000;
-    
-    int64_t expected_white_space = pb_->getDie().coreArea() - pb_->nonPlaceInstsArea();
-    if(std::abs(whiteSpaceArea_ - expected_white_space) > tolerance) {
+
+    int64_t expected_white_space
+        = pb_->getDie().coreArea() - pb_->nonPlaceInstsArea();
+    if (std::abs(whiteSpaceArea_ - expected_white_space) > tolerance) {
       log_->warn(utl::GPL, 319, "Inconsistent white space area");
-      log_->report("whiteSpaceArea_: {} (expected:{}) | coreArea: {}, nonPlaceInstsArea: {}", 
-             block->dbuAreaToMicrons(whiteSpaceArea_), 
-             block->dbuAreaToMicrons(expected_white_space), 
-             block->dbuAreaToMicrons(pb_->getDie().coreArea()), 
-             block->dbuAreaToMicrons(pb_->nonPlaceInstsArea()));
+      log_->report(
+          "whiteSpaceArea_: {} (expected:{}) | coreArea: {}, "
+          "nonPlaceInstsArea: {}",
+          block->dbuAreaToMicrons(whiteSpaceArea_),
+          block->dbuAreaToMicrons(expected_white_space),
+          block->dbuAreaToMicrons(pb_->getDie().coreArea()),
+          block->dbuAreaToMicrons(pb_->nonPlaceInstsArea()));
     }
 
     int64_t expected_movable_area = whiteSpaceArea_ * targetDensity_;
-    if(std::abs(movableArea_ - expected_movable_area) > tolerance) {
+    if (std::abs(movableArea_ - expected_movable_area) > tolerance) {
       log_->warn(utl::GPL, 320, "Inconsistent movable area 1");
-      log_->report("movableArea_: {} (expected:{}) | whiteSpaceArea_: {}, targetDensity_: {}", 
-             block->dbuAreaToMicrons(movableArea_), 
-             block->dbuAreaToMicrons(expected_movable_area), 
-             block->dbuAreaToMicrons(whiteSpaceArea_), 
-             targetDensity_);
+      log_->report(
+          "movableArea_: {} (expected:{}) | whiteSpaceArea_: {}, "
+          "targetDensity_: {}",
+          block->dbuAreaToMicrons(movableArea_),
+          block->dbuAreaToMicrons(expected_movable_area),
+          block->dbuAreaToMicrons(whiteSpaceArea_),
+          targetDensity_);
     }
 
     int64_t expected_filler_area = movableArea_ - getNesterovInstsArea();
-    if(std::abs(totalFillerArea_ - expected_filler_area) > tolerance) {
-      log_->warn(utl::GPL, 321,"Inconsistent filler area");
-      log_->report("totalFillerArea_: {} (expected:{}) | movableArea_: {}, getNesterovInstsArea_: {}", 
-             block->dbuAreaToMicrons(totalFillerArea_), 
-             block->dbuAreaToMicrons(expected_filler_area), 
-             block->dbuAreaToMicrons(movableArea_), 
-             block->dbuAreaToMicrons(getNesterovInstsArea()));
+    if (std::abs(totalFillerArea_ - expected_filler_area) > tolerance) {
+      log_->warn(utl::GPL, 321, "Inconsistent filler area");
+      log_->report(
+          "totalFillerArea_: {} (expected:{}) | movableArea_: {}, "
+          "getNesterovInstsArea_: {}",
+          block->dbuAreaToMicrons(totalFillerArea_),
+          block->dbuAreaToMicrons(expected_filler_area),
+          block->dbuAreaToMicrons(movableArea_),
+          block->dbuAreaToMicrons(getNesterovInstsArea()));
     }
 
     float expected_density = movableArea_ * 1.0 / whiteSpaceArea_;
     float density_diff = std::abs(targetDensity_ - expected_density);
-    if(density_diff > 1e-6) {
-      log_->warn(utl::GPL, 322,"Inconsistent target density");
-      log_->report("targetDensity_: {} (expected:{}) | movableArea_: {}, whiteSpaceArea_: {}", 
-                   targetDensity_, 
-                   expected_density, 
-                   block->dbuAreaToMicrons(movableArea_), 
-                   block->dbuAreaToMicrons(whiteSpaceArea_));
+    if (density_diff > 1e-6) {
+      log_->warn(utl::GPL, 322, "Inconsistent target density");
+      log_->report(
+          "targetDensity_: {} (expected:{}) | movableArea_: {}, "
+          "whiteSpaceArea_: {}",
+          targetDensity_,
+          expected_density,
+          block->dbuAreaToMicrons(movableArea_),
+          block->dbuAreaToMicrons(whiteSpaceArea_));
     }
   }
 

@@ -73,7 +73,8 @@ NesterovPlace::~NesterovPlace()
   reset();
 }
 
-void NesterovPlace::npUpdatePrevGradient(const std::shared_ptr<NesterovBase>& nb)
+void NesterovPlace::npUpdatePrevGradient(
+    const std::shared_ptr<NesterovBase>& nb)
 {
   nb->nbUpdatePrevGradient(wireLengthCoefX_, wireLengthCoefY_);
   float wireLengthGradSum = nb->getWireLengthGradSum();
@@ -137,7 +138,8 @@ void NesterovPlace::npUpdateCurGradient(const std::shared_ptr<NesterovBase>& nb)
   checkInvalidValues(wireLengthGradSum, densityGradSum);
 }
 
-void NesterovPlace::npUpdateNextGradient(const std::shared_ptr<NesterovBase>& nb)
+void NesterovPlace::npUpdateNextGradient(
+    const std::shared_ptr<NesterovBase>& nb)
 {
   nb->nbUpdateNextGradient(wireLengthCoefX_, wireLengthCoefY_);
 
@@ -443,7 +445,8 @@ void NesterovPlace::runTimingDriven(int iter,
     nbVec_[0]->setTrueReprintIterHeader();
     ++timing_driven_count;
 
-    int nbc_total_gcells_delta = nbc_->getNewGcellsCount() - nbc_->getDeletedGcellsCount();
+    int nbc_total_gcells_delta
+        = nbc_->getNewGcellsCount() - nbc_->getDeletedGcellsCount();
     td_accumulated_delta_area += nbc_->getDeltaArea();
     for (auto& nb : nbVec_) {
       nb_gcells_after_td += nb->getGCells().size();
@@ -484,7 +487,7 @@ void NesterovPlace::runTimingDriven(int iter,
                                + nesterov->getNesterovInstsArea()
                                + nesterov->getTotalFillerArea())
             / static_cast<float>(nesterov->getWhiteSpaceArea()));
-              
+
         nesterov->setMovableArea(nesterov->getTargetDensity()
                                  * nesterov->getWhiteSpaceArea());
         float rsz_delta_area_microns
@@ -527,8 +530,8 @@ void NesterovPlace::runTimingDriven(int iter,
         nbc_->resetDeltaArea();
         nbc_->resetNewGcellsCount();
         nesterov->updateAreas();
-        nesterov->updateDensitySize();        
-        nesterov->checkConsistency();        
+        nesterov->updateDensitySize();
+        nesterov->checkConsistency();
       }
 
       // update snapshot after non-virtual TD
@@ -751,8 +754,9 @@ void NesterovPlace::runRoutability(int iter,
     }
 
     if (is_routability_need_ && isRevertInitNeeded) {
-      log_->info(
-          GPL, 87, "Routability end iteration: increase inflation and revert "
+      log_->info(GPL,
+                 87,
+                 "Routability end iteration: increase inflation and revert "
                  "back to snapshot.");
     }
 
@@ -896,14 +900,13 @@ void NesterovPlace::reportResults(int nesterov_iter,
 
   if (graphics_ && npVars_.debug_generate_images) {
     updateDb();
-    std::string label = fmt::format("Final Iter {} |R: ? |T: ?",
-                                    nesterov_iter);
+    std::string label = fmt::format("Final Iter {} |R: ? |T: ?", nesterov_iter);
 
-    graphics_->saveLabeledImage(fmt::format("{}/final_nesterov_{:05d}.png",
-                                            getReportsDir(),
-                                            nesterov_iter),
-                                label,
-                                /* select_buffers = */ false);
+    graphics_->saveLabeledImage(
+        fmt::format(
+            "{}/final_nesterov_{:05d}.png", getReportsDir(), nesterov_iter),
+        label,
+        /* select_buffers = */ false);
   }
 
   if (nesterov_iter >= npVars_.maxNesterovIter) {
@@ -1008,10 +1011,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     updateDb();
     std::string label = fmt::format("init_nesterov");
 
-    graphics_->saveLabeledImage(fmt::format("{}/init_nesterov.png",
-                                            getReportsDir()),
-                                label,
-                                /* select_buffers = */ false);
+    graphics_->saveLabeledImage(
+        fmt::format("{}/init_nesterov.png", getReportsDir()),
+        label,
+        /* select_buffers = */ false);
   }
 
   // Core Nesterov Loop
