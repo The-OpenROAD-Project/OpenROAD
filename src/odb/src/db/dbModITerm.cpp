@@ -154,6 +154,28 @@ dbModInst* dbModITerm::getParent() const
 }
 
 // User Code Begin dbModITermPublicMethods
+std::string dbModITerm::getHierarchicalName() const
+{
+  dbModInst* modinst = getParent();
+  if (modinst == nullptr) {
+    return getName();
+  }
+
+  dbModule* module = modinst->getParent();
+  if (module == nullptr) {
+    return getName();
+  }
+
+  dbBlock* block = module->getOwner();
+  if (module == block->getTopModule()) {
+    return getName();
+  }
+
+  return fmt::format("{}{}{}",  // NOLINT(misc-include-cleaner)
+                     modinst->getHierarchicalName(),
+                     block->getHierarchyDelimiter(),
+                     getName());
+}
 
 void dbModITerm::setModNet(dbModNet* modNet)
 {

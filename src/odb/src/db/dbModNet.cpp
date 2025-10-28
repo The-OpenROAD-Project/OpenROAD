@@ -413,9 +413,10 @@ dbSet<dbITerm> dbModNet::getITerms() const
   return dbSet<dbITerm>(_mod_net, _block->_module_modnet_iterm_itr);
 }
 
-unsigned dbModNet::connectionCount()
+unsigned dbModNet::connectionCount() const
 {
-  return (getITerms().size() + getBTerms().size() + getModITerms().size());
+  return (getITerms().size() + getBTerms().size() + getModITerms().size()
+          + getModBTerms().size());
 }
 
 dbNet* dbModNet::findRelatedNet() const
@@ -488,6 +489,144 @@ dbNet* dbModNet::findRelatedNet() const
 
   // No related dbNet found
   return nullptr;
+}
+
+void dbModNet::checkSanity() const
+{
+  utl::Logger* logger = getImpl()->getLogger();
+  std::vector<std::string> drvr_info_list;
+
+  // Find BTerm drivers
+  for (dbBTerm* bterm : getBTerms()) {
+    if (bterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (bterm->getIoType() == dbIoType::INPUT
+        || bterm->getIoType() == dbIoType::INOUT) {
+      dbBlock* block = bterm->getBlock();
+      dbModule* parent_module = block->getTopModule();
+      drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
+          "\n  - bterm: '{}' (block: '{}', parent_module: '{}')",
+          bterm->getName(),
+          (block) ? block->getConstName() : "null",
+          (parent_module) ? parent_module->getName() : "null"));
+    }
+  }
+
+  // Find ITerm drivers
+  for (dbITerm* iterm : getITerms()) {
+    if (iterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (iterm->getIoType() == dbIoType::OUTPUT
+        || iterm->getIoType() == dbIoType::INOUT) {
+      dbInst* inst = iterm->getInst();
+      dbMaster* master = inst->getMaster();
+      dbModule* parent_module = inst->getModule();
+      dbBlock* block = inst->getBlock();
+      drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
+          "\n  - iterm: '{}' (block: '{}', parent_module: '{}', master: '{}')",
+          iterm->getName(),
+          (block) ? block->getConstName() : "null",
+          (parent_module) ? parent_module->getName() : "null",
+          (master) ? master->getConstName() : "null"));
+    }
+  }
+
+  // Find ModBTerm drivers
+  for (dbModBTerm* modbterm : getModBTerms()) {
+    if (modbterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (modbterm->getIoType() == dbIoType::INPUT
+        || modbterm->getIoType() == dbIoType::INOUT) {
+      drvr_info_list.push_back(
+          // NOLINTNEXTLINE(misc-include-cleaner)
+          fmt::format("\n  - modbterm: '{}'", modbterm->getHierarchicalName()));
+    }
+  }
+
+  // Find ModITerm drivers
+  for (dbModITerm* moditerm : getModITerms()) {
+    if (dbModBTerm* child_bterm = moditerm->getChildModBTerm()) {
+      if (child_bterm->getSigType().isSupply()) {
+        continue;
+      }
+
+      if (child_bterm->getIoType() == dbIoType::OUTPUT
+          || child_bterm->getIoType() == dbIoType::INOUT) {
+        drvr_info_list.push_back(
+            // NOLINTNEXTLINE(misc-include-cleaner)
+            fmt::format("\n  - moditerm: '{}'",
+                        moditerm->getHierarchicalName()));
+      }
+    }
+  }
+
+  size_t drvr_count = drvr_info_list.size();
+  if (drvr_count > 1) {
+    // Multiple drivers found.
+    logger->warn(utl::ODB,
+                 481,  // Reusing error code from dbNet
+                 "SanityCheck: dbModNet '{}' has multiple drivers: {}",
+                 getHierarchicalName(),
+                 fmt::join(drvr_info_list, ""));
+  }
+
+  const uint term_count = connectionCount();
+
+  // No driver
+  if (drvr_count == 0 && term_count > 0) {
+    logger->warn(utl::ODB,
+                 482,
+                 "SanityCheck: dbModNet '{}' has no driver.",
+                 getHierarchicalName());
+  }
+
+  const uint iterm_count = getITerms().size();
+  const uint bterm_count = getBTerms().size();
+  const uint moditerm_count = getModITerms().size();
+  const uint modbterm_count = getModBTerms().size();
+
+  if (term_count < 2) {
+    // A net connected to 1 terminal
+    if (iterm_count == 1
+        && (*(getITerms().begin()))->getIoType() == dbIoType::OUTPUT) {
+      return;  // OK: Unconnected output pin
+    }
+    if (bterm_count == 1
+        && (*(getBTerms().begin()))->getIoType() == dbIoType::INPUT) {
+      return;  // OK: Unconnected input port
+    }
+    if (moditerm_count == 1) {
+      dbModITerm* moditerm = *(getModITerms().begin());
+      if (dbModBTerm* child_bterm = moditerm->getChildModBTerm()) {
+        if (child_bterm->getIoType() == dbIoType::OUTPUT) {
+          return;  // OK: Unconnected output pin on module instance
+        }
+      }
+    }
+    if (modbterm_count == 1) {
+      dbModBTerm* modbterm = *(getModBTerms().begin());
+      if (modbterm->getIoType() == dbIoType::INPUT) {
+        return;  // OK: Unconnected input port on module
+      }
+    }
+
+    logger->warn(utl::ODB,
+                 483,
+                 "SanityCheck: dbModNet '{}' is dangling. It has less than 2 "
+                 "connections (# of ITerms = {}, # of BTerms = {}, # of "
+                 "ModITerms = {}, # of ModBTerms = {}).",
+                 getHierarchicalName(),
+                 iterm_count,
+                 bterm_count,
+                 moditerm_count,
+                 modbterm_count);
+  }
 }
 
 // User Code End dbModNetPublicMethods

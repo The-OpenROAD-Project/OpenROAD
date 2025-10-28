@@ -2348,8 +2348,7 @@ void dbNet::setJumpers(bool has_jumpers)
 
 void dbNet::checkSanity() const
 {
-  _dbNet* net = (_dbNet*) this;
-  utl::Logger* logger = net->getImpl()->getLogger();
+  utl::Logger* logger = getImpl()->getLogger();
   std::vector<std::string> drvr_info_list;
 
   // Find BTerm drivers
@@ -2358,12 +2357,11 @@ void dbNet::checkSanity() const
         || bterm->getIoType() == dbIoType::INOUT) {
       dbBlock* block = bterm->getBlock();
       dbModule* parent_module = block->getTopModule();
-      drvr_info_list.push_back(
-          // NOLINTNEXTLINE(misc-include-cleaner)
-          fmt::format("\n  - bterm: '{}' (parent_module: '{}', block: '{}')",
-                      bterm->getName(),
-                      parent_module->getName(),
-                      block->getName()));
+      drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
+          "\n  - bterm: '{}' (block: '{}', parent_module: '{}')",
+          bterm->getName(),
+          (block) ? block->getConstName() : "null",
+          (parent_module) ? parent_module->getName() : "null"));
     }
   }
 
@@ -2375,28 +2373,12 @@ void dbNet::checkSanity() const
       dbMaster* master = inst->getMaster();
       dbModule* parent_module = inst->getModule();
       dbBlock* block = inst->getBlock();
-
-      std::string parent_module_name = "null";
-      if (parent_module) {
-        parent_module_name = parent_module->getName();
-      }
-
-      std::string master_name = "null";
-      if (master) {
-        master_name = master->getName();
-      }
-
-      std::string block_name = "null";
-      if (block) {
-        block_name = block->getName();
-      }
-
       drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
           "\n  - iterm: '{}' (block: '{}', parent_module: '{}', master: '{}')",
-          iterm->getName('/'),
-          block_name,
-          parent_module_name,
-          master_name));
+          iterm->getName(),
+          (block) ? block->getConstName() : "null",
+          (parent_module) ? parent_module->getName() : "null",
+          (master) ? master->getConstName() : "null"));
     }
   }
 
@@ -2414,6 +2396,7 @@ void dbNet::checkSanity() const
   const uint iterm_count = getITerms().size();
   const uint bterm_count = getBTerms().size();
 
+  // No driver
   if (drvr_count == 0 && (iterm_count + bterm_count > 0)) {
     logger->warn(
         utl::ODB, 50, "SanityCheck: dbNet '{}' has no driver.", getName());
@@ -2434,6 +2417,7 @@ void dbNet::checkSanity() const
         && (*(getBTerms().begin()))->getIoType() == dbIoType::INPUT) {
       return;  // OK: Unconnected input port
     }
+
     logger->warn(utl::ODB,
                  51,
                  "SanityCheck: dbNet '{}' is dangling. It has less than 2 "
