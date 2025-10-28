@@ -2,11 +2,13 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 #pragma once
 
+#include <cstddef>
 #include <string>
 #include <vector>
 
 #include "odb/db.h"
 #include "odb/odb.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -26,11 +28,11 @@ void findBTermDrivers(const NetType* net,
         || bterm->getIoType() == dbIoType::INOUT) {
       dbBlock* block = bterm->getBlock();
       dbModule* parent_module = block->getTopModule();
-      drvr_info_list.push_back(
-          fmt::format("\n  - bterm: '{}' (block: '{}', parent_module: '{}')",
-                      bterm->getName(),
-                      (block) ? block->getConstName() : "null",
-                      (parent_module) ? parent_module->getName() : "null"));
+      drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
+          "\n  - bterm: '{}' (block: '{}', parent_module: '{}')",
+          bterm->getName(),
+          (block) ? block->getConstName() : "null",
+          (parent_module) ? parent_module->getName() : "null"));
     }
   }
 }
@@ -51,7 +53,7 @@ void findITermDrivers(const NetType* net,
       dbMaster* master = inst->getMaster();
       dbModule* parent_module = inst->getModule();
       dbBlock* block = inst->getBlock();
-      drvr_info_list.push_back(fmt::format(
+      drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
           "\n  - iterm: '{}' (block: '{}', parent_module: '{}', master: '{}')",
           iterm->getName(),
           (block) ? block->getConstName() : "null",
@@ -72,8 +74,9 @@ inline void findModBTermDrivers(const dbModNet* net,
 
     if (modbterm->getIoType() == dbIoType::INPUT
         || modbterm->getIoType() == dbIoType::INOUT) {
-      drvr_info_list.push_back(
-          fmt::format("\n  - modbterm: '{}'", modbterm->getHierarchicalName()));
+      drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
+          "\n  - modbterm: '{}'",
+          modbterm->getHierarchicalName()));
     }
   }
 }
@@ -90,8 +93,9 @@ inline void findModITermDrivers(const dbModNet* net,
 
       if (child_bterm->getIoType() == dbIoType::OUTPUT
           || child_bterm->getIoType() == dbIoType::INOUT) {
-        drvr_info_list.push_back(fmt::format("\n  - moditerm: '{}'",
-                                             moditerm->getHierarchicalName()));
+        drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
+            "\n  - moditerm: '{}'",
+            moditerm->getHierarchicalName()));
       }
     }
   }
@@ -109,17 +113,19 @@ void checkNetSanity(const NetType* net,
   //
   if (drvr_count > 1) {
     if constexpr (std::is_same_v<NetType, dbNet>) {
-      logger->warn(utl::ODB,
-                   49,
-                   "SanityCheck: dbNet '{}' has multiple drivers: {}",
-                   net->getName(),
-                   fmt::join(drvr_info_list, ""));
+      logger->warn(
+          utl::ODB,
+          49,
+          "SanityCheck: dbNet '{}' has multiple drivers: {}",
+          net->getName(),
+          fmt::join(drvr_info_list, ""));  // NOLINT(misc-include-cleaner)
     } else {
-      logger->warn(utl::ODB,
-                   481,  // Reusing error code from dbNet
-                   "SanityCheck: dbModNet '{}' has multiple drivers: {}",
-                   net->getHierarchicalName(),
-                   fmt::join(drvr_info_list, ""));
+      logger->warn(
+          utl::ODB,
+          481,  // Reusing error code from dbNet
+          "SanityCheck: dbModNet '{}' has multiple drivers: {}",
+          net->getHierarchicalName(),
+          fmt::join(drvr_info_list, ""));  // NOLINT(misc-include-cleaner)
     }
   }
 
