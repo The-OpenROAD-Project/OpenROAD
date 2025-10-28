@@ -240,15 +240,26 @@ bool UnbufferMove::bufferBetweenPorts(Instance* buffer)
 //      still honored)
 bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
 {
+  static int i = 0;
+  i++;
   LibertyCell* lib_cell = network_->libertyCell(buffer);
   if (!lib_cell || !resizer_->isLogicStdCell(buffer) || !lib_cell->isBuffer()) {
     return false;
   }
+
   // Do not remove buffers connected to input/output ports
   // because verilog netlists use the net name for the port.
   if (bufferBetweenPorts(buffer)) {
+    debugPrint(logger_,
+               RSZ,
+               "dbg",
+               1,
+               "{} {}: blocked by bufferBetweenPorts true",
+               i,
+               network_->pathName(buffer));
     return false;
   }
+
   // Don't remove buffers connected to modnets on both input and output
   // These buffers occupy as special place in hierarchy and cannot
   // be removed without destroying the hierarchy.
@@ -259,6 +270,13 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
   if (db_network_->hierNet(buffer_ip_pin)
       && db_network_->hierNet(buffer_op_pin)) {
+    debugPrint(logger_,
+               RSZ,
+               "dbg",
+               1,
+               "{} {}: blocked by bufIpHier && bufOpHier",
+               i,
+               network_->pathName(buffer));
     return false;
   }
 
@@ -269,10 +287,17 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   //
   if (db_network_->hierNet(buffer_ip_pin)
       && !db_network_->hierNet(buffer_op_pin)) {
+    debugPrint(logger_,
+               RSZ,
+               "dbg",
+               1,
+               "{} {}: blocked by bufIpHier && !bufOpHier",
+               i,
+               network_->pathName(buffer));
     return false;
   }
 
-  // We only allow case when we can  get buffer driver
+  // We only allow case when we can get buffer driver
   // and wire in the hierarchical net. This is when there is
   // a dbModNet on the buffer output AND the buffer and the thing
   // driving the instance are in the same module.
@@ -288,6 +313,13 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
     dbInst* buffer_inst = db_network_->staToDb(buffer);
     odb::dbModule* buffer_owning_module = buffer_inst->getModule();
     if (driving_module != buffer_owning_module) {
+      debugPrint(logger_,
+                 RSZ,
+                 "dbg",
+                 1,
+                 "{} {}: blocked by drvrMod != bufMod",
+                 i,
+                 network_->pathName(buffer));
       return false;
     }
   }
@@ -335,6 +367,13 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   odb::dbNet* db_net_removed = nullptr;
   if (out_net_ports) {
     if (db_network_->hasPort(in_net)) {
+      debugPrint(logger_,
+                 RSZ,
+                 "dbg",
+                 1,
+                 "{} {}: blocked by hasPort(in_net)",
+                 i,
+                 network_->pathName(buffer));
       return false;
     }
     removed = in_net;
@@ -352,9 +391,27 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
       && (!removed || !sdc_->isConstrained(removed))
       && !sdc_->isConstrained(buffer)) {
-    return db_net_removed == nullptr
-           || (db_net_survivor && db_net_survivor->canMergeNet(db_net_removed));
+    bool ret
+        = db_net_removed == nullptr
+          || (db_net_survivor && db_net_survivor->canMergeNet(db_net_removed));
+    debugPrint(logger_,
+               RSZ,
+               "dbg",
+               1,
+               "{} {}: return {}",
+               i,
+               network_->pathName(buffer),
+               ret);
+    return ret;
   }
+
+  debugPrint(logger_,
+             RSZ,
+             "dbg",
+             1,
+             "{} {}: blocked in the end",
+             i,
+             network_->pathName(buffer));
   return false;
 }
 
