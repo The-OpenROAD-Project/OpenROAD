@@ -295,7 +295,7 @@ class LayoutViewer : public QWidget
 
   bool hasDesign() const;
   int getDbuPerMicron() const;
-  
+
   int fineViewableResolution() const;
   int nominalViewableResolution() const;
   int coarseViewableResolution() const;
