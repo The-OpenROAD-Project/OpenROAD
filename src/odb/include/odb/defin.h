@@ -51,7 +51,7 @@ class defin
   void readChip(std::vector<dbLib*>& search_libs,
                 const char* def_file,
                 dbChip* chip,
-                bool issue_callback=true);
+                bool issue_callback = true);
 };
 
 }  // namespace odb
