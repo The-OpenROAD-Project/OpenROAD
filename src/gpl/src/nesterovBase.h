@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <deque>
 #include <fstream>
 #include <memory>
@@ -21,6 +23,7 @@
 #include "placerBase.h"
 #include "point.h"
 #include "routeBase.h"
+#include "utl/Logger.h"
 namespace odb {
 class dbInst;
 class dbITerm;
