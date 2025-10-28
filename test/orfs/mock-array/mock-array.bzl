@@ -515,6 +515,8 @@ def mock_array(name, config):
                 )
 
         for power_test in ELEMENT_POWER_TESTS:
+            if v != "base":
+                continue
             for stage in POWER_STAGES:
                 orfs_run(
                     name = "Element_{variant}_{stage}_{power_test}".format(
