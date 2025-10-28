@@ -15,7 +15,6 @@
 #include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbUtil.h"
 #include "dbVector.h"
 #include "odb/db.h"
 // User Code Begin Includes
@@ -26,6 +25,7 @@
 #include "dbModuleModNetITermItr.h"
 #include "dbModuleModNetModBTermItr.h"
 #include "dbModuleModNetModITermItr.h"
+#include "dbUtil.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "utl/Logger.h"
 // User Code End Includes
