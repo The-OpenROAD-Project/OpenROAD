@@ -90,3 +90,4 @@ Hierarchical pins
 [WARNING ORD-2043] SanityCheck: Module 'ALU_16_0_16_0_16_unused_CO\[14:0\]_X_BRENT_KUNG' is defined but never instantiated.
 [WARNING ORD-2043] SanityCheck: Module 'ALU_16_0_16_0_16_unused_CO\[14:0\]_X_KOGGE_STONE' is defined but never instantiated.
 [WARNING ORD-2043] SanityCheck: Module 'ALU_16_0_16_0_16_unused_CO\[14:0\]_X_SKLANSKY' is defined but never instantiated.
+[WARNING ODB-0483] SanityCheck: dbModNet '_198_' is dangling. It has less than 2 connections (# of ITerms = 0, # of BTerms = 0, # of ModITerms = 0, # of ModBTerms = 0).
