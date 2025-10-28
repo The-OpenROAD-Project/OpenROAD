@@ -1648,6 +1648,7 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
   }
 
   // Only create a tab for the top block
+  emit chipLoaded(block->getChip());
   emit blockLoaded(block);
 }
 
