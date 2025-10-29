@@ -2530,7 +2530,8 @@ bool dbNet::isInternalTo(dbModule* module) const
 
 void dbNet::checkSanityModNetConsistency() const
 {
-  // Algorithm
+  utl::Logger* logger = getImpl()->getLogger();
+
   // 1. Find all related dbModNets with this dbNet.
   std::set<dbModNet*> related_modnets;
   findRelatedModNets(related_modnets);
@@ -2562,9 +2563,8 @@ void dbNet::checkSanityModNetConsistency() const
   }
 
   // 4. If found any inconsistency, report the difference.
-  utl::Logger* logger = getImpl()->getLogger();
 
-  // Compare ITerms
+  // 4.1. Compare ITerms
   std::vector<dbITerm*> iterms_in_flat_only;
   std::set_difference(flat_iterms.begin(),
                       flat_iterms.end(),
@@ -2583,7 +2583,7 @@ void dbNet::checkSanityModNetConsistency() const
     }
   }
 
-  // Compare BTerms
+  // 4.2. Compare BTerms
   std::vector<dbBTerm*> bterms_in_flat_only;
   std::set_difference(flat_bterms.begin(),
                       flat_bterms.end(),
