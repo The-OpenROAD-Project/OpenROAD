@@ -56,6 +56,10 @@ class GCell
     kNone,
     kRoutability,
     kTimingDriven,
+    kNewInstance,
+    kDownsize,
+    kUpsize,
+    kResizeNoChange
   };
 
   // instance cells
@@ -874,6 +878,8 @@ class NesterovBaseCommon
   int64_t getNewGcellsCount() { return new_gcells_count_; }
   void resetNewGcellsCount() { new_gcells_count_ = 0; }
 
+  NesterovBaseVars& getNbVars() { return nbVars_; }
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBaseCommon> pbc_;
@@ -1060,6 +1066,9 @@ class NesterovBase
   void setTrueReprintIterHeader() { reprint_iter_header_ = true; }
   float getPhiCoef(float scaledDiffHpwl) const;
   float getStoredPhiCoef() const { return phiCoef_; }
+  float getStoredStepLength() const { return stepLength_; }
+  float getStoredCoordiDistance() const { return coordiDistance_; }
+  float getStoredGradDistance() const { return gradDistance_; }
 
   bool checkConvergence(int gpl_iter_count,
                         int routability_gpl_iter_count,
@@ -1169,6 +1178,13 @@ class NesterovBase
   float targetDensity_ = 0;
   float uniformTargetDensity_ = 0;
 
+  // StepLength parameters (also included in the np debugPrint)
+  float stepLength_ = 0;
+  float coordiDistance_ = 0;
+  float gradDistance_ = 0;
+  // numBackTrack (nesterovPlace.cpp)
+  // newWireLengthCoef (nesterovPlace.cpp)
+
   // Nesterov loop data for each region, using parallel vectors
   // SLP is Step Length Prediction.
   //
@@ -1215,7 +1231,7 @@ class NesterovBase
   float densityGradSum_ = 0;
 
   // alpha
-  float stepLength_ = 0;
+  // float stepLength_ = 0;
 
   // opt_phi_cof
   float densityPenalty_ = 0;
