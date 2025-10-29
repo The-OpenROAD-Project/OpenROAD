@@ -666,7 +666,7 @@ void NesterovPlace::routabilitySnapshot(
 
     log_->info(GPL, 38, "Routability snapshot saved at iter = {}", iter + 1);
     odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
-    int64_t hpwl = nbc_->getHpwl();
+    const int64_t hpwl = nbc_->getHpwl();
     log_->report("{:9d} | {:8.4f} | {:13.6e} | {:8} | {:9} | {:>5}",
                  iter,
                  average_overflow_unscaled_,
