@@ -4,6 +4,7 @@
 #include "SplitLoadMove.hh"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <string>
 #include <utility>
@@ -28,6 +29,10 @@ using std::pair;
 using std::string;
 using std::vector;
 
+using odb::dbBTerm;
+using odb::dbITerm;
+using odb::dbModNet;
+using odb::dbNet;
 using odb::Point;
 
 using utl::RSZ;
@@ -124,7 +129,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
 
   // H-fix get both the mod net and db net (if present).
   dbNet* db_drvr_net;
-  odb::dbModNet* db_mod_drvr_net;
+  dbModNet* db_mod_drvr_net;
   db_network_->net(drvr_pin, db_drvr_net, db_mod_drvr_net);
 
   // H-Fix Use driver parent for hierarchy, not the top instance
@@ -197,8 +202,8 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   // out_net is the db net
   sta_->connectPin(buffer, output, out_net);
 
-  odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
-  odb::dbModNet* buffer_op_modnet = nullptr;  // dbModNet is not connected yet
+  dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
+  dbModNet* buffer_op_modnet = nullptr;  // dbModNet is not connected yet
 
   const int split_index = fanout_slacks.size() / 2;
   for (int i = 0; i < split_index; i++) {
@@ -206,19 +211,14 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
     Vertex* load_vertex = fanout_slack.first;
     Pin* load_pin = load_vertex->pin();
 
-    odb::dbITerm* load_iterm = nullptr;
+    dbITerm* load_iterm = nullptr;
     load_iterm = db_network_->flatPin(load_pin);
 
     // Leave ports connected to original net so verilog port names are
     // preserved.
     if (!network_->isTopLevelPort(load_pin)) {
-      LibertyPort* load_port = network_->libertyPort(load_pin);
-      Instance* load = network_->instance(load_pin);
-      (void) (load_port);
-      (void) (load);
-
-      // stash the modnet,if any,  for the load
-      // odb::dbModNet* db_mod_load_net = db_network_->hierNet(load_pin);
+      [[maybe_unused]] LibertyPort* load_port = network_->libertyPort(load_pin);
+      [[maybe_unused]] Instance* load = network_->instance(load_pin);
 
       // This will kill both the flat (dbNet) and hier (modnet) connection
       load_iterm->disconnect();
@@ -241,7 +241,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
         //       buffer_op_pin_iterm->getName().c_str(),
         //       load_pin_iterm->getName().c_str());
         buffer_op_modnet = buffer_op_pin_iterm->getModNet();
-        assert(buffer_op_modnet);
+        assert(buffer_op_modnet != nullptr);
         dbNet* buffer_op_net = db_network_->staToDb(out_net);
         for (dbITerm* iterm : buffer_op_net->getITerms()) {
           // if (iterm->getModNet() != buffer_op_modnet2) {
@@ -252,7 +252,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
           // It disconnects the existing dbModNet if exists.
           iterm->connect(buffer_op_modnet);
         }
-        for (odb::dbBTerm* bterm : buffer_op_net->getBTerms()) {
+        for (dbBTerm* bterm : buffer_op_net->getBTerms()) {
           // if (bterm->getModNet() != buffer_op_modnet2) {
           //   printf("jk2: connect BTerm '%s' to the new modnet\n",
           //          bterm->getName().c_str());
