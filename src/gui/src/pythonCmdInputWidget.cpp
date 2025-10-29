@@ -45,6 +45,7 @@
 #include <QCoreApplication>
 #include <cstddef>
 #include <functional>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <string>
@@ -55,141 +56,144 @@
 
 namespace gui {
 
-// https://stackoverflow.com/questions/4307187/how-to-catch-python-stdout-in-c-code/8335297#8335297
-namespace emb {
-
 using stdout_write_type = std::function<void(std::string)>;
 
-struct Stdout
+struct StreamCatcher
 {
-  PyObject_HEAD stdout_write_type write;
+  PyObject_HEAD;
+  stdout_write_type write;
+  std::string buffer;
+  bool is_stderr;  // distinguish stdout vs stderr
 };
 
-static PyObject* Stdout_write(PyObject* self, PyObject* args)
+// method implementation
+static PyObject* StreamCatcher_write(PyObject* self, PyObject* args)
 {
-  std::size_t written(0);
-  Stdout* selfimpl = reinterpret_cast<Stdout*>(self);
-  if (selfimpl->write) {
-    char* data;
-    if (!PyArg_ParseTuple(args, "s", &data)) {
-      return nullptr;
-    }
-
-    std::string str(data);
-    selfimpl->write(str);
-    written = str.size();
+  const char* text = nullptr;
+  if (!PyArg_ParseTuple(args, "s", &text)) {
+    Py_RETURN_NONE;
   }
-  return PyLong_FromSize_t(written);
+
+  if (text[0] == '\0') {
+    Py_RETURN_NONE;
+  }
+
+  auto* catcher = reinterpret_cast<StreamCatcher*>(self);
+  catcher->buffer += text;
+
+  if (catcher->buffer.back() == '\n') {
+    const size_t end = catcher->buffer.find_last_not_of("\r\n");
+    catcher->buffer.erase(end + 1);
+  } else {
+    Py_RETURN_NONE;
+  }
+
+  catcher->write(catcher->buffer);
+  catcher->buffer.clear();
+
+  Py_RETURN_NONE;
 }
 
-static PyObject* Stdout_flush(PyObject* self, PyObject* args)
+static PyMethodDef StreamCatcher_methods[]
+    = {{"write", (PyCFunction) StreamCatcher_write, METH_VARARGS, "Write text"},
+       {nullptr, nullptr, 0, nullptr}};
+
+static PyType_Slot StreamCatcher_slots[]
+    = {{Py_tp_methods, StreamCatcher_methods},
+       {Py_tp_doc, (void*) "C++ StreamCatcher for stdout/stderr"},
+       {0, nullptr}};
+
+static PyType_Spec StreamCatcher_spec = {"embed.StreamCatcher",
+                                         sizeof(StreamCatcher),
+                                         0,
+                                         Py_TPFLAGS_DEFAULT,
+                                         StreamCatcher_slots};
+
+// Keep global references so they can be restored
+static PyObject* original_stdout = nullptr;
+static PyObject* original_stderr = nullptr;
+static StreamCatcher* stdout_catcher = nullptr;
+static StreamCatcher* stderr_catcher = nullptr;
+
+static StreamCatcher* create_catcher(const bool is_stderr,
+                                     stdout_write_type write)
 {
-  // no-op
-  return Py_BuildValue("");
-}
-
-static PyMethodDef Stdout_methods[] = {
-    {"write", Stdout_write, METH_VARARGS, "sys.stdout.write"},
-    {"flush", Stdout_flush, METH_VARARGS, "sys.stdout.flush"},
-    {nullptr, nullptr, 0, nullptr}  // sentinel
-};
-
-static PyTypeObject StdoutType = {
-    PyVarObject_HEAD_INIT(0, 0) "emb.StdoutType", /* tp_name */
-    sizeof(Stdout),                               /* tp_basicsize */
-    0,                                            /* tp_itemsize */
-    nullptr,                                      /* tp_dealloc */
-    0,                                            /* tp_print */
-    nullptr,                                      /* tp_getattr */
-    nullptr,                                      /* tp_setattr */
-    nullptr,                                      /* tp_reserved */
-    nullptr,                                      /* tp_repr */
-    nullptr,                                      /* tp_as_number */
-    nullptr,                                      /* tp_as_sequence */
-    nullptr,                                      /* tp_as_mapping */
-    nullptr,                                      /* tp_hash  */
-    nullptr,                                      /* tp_call */
-    nullptr,                                      /* tp_str */
-    nullptr,                                      /* tp_getattro */
-    nullptr,                                      /* tp_setattro */
-    nullptr,                                      /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                           /* tp_flags */
-    "emb.Stdout objects",                         /* tp_doc */
-    nullptr,                                      /* tp_traverse */
-    nullptr,                                      /* tp_clear */
-    nullptr,                                      /* tp_richcompare */
-    0,                                            /* tp_weaklistoffset */
-    nullptr,                                      /* tp_iter */
-    nullptr,                                      /* tp_iternext */
-    Stdout_methods,                               /* tp_methods */
-    nullptr,                                      /* tp_members */
-    nullptr,                                      /* tp_getset */
-    nullptr,                                      /* tp_base */
-    nullptr,                                      /* tp_dict */
-    nullptr,                                      /* tp_descr_get */
-    nullptr,                                      /* tp_descr_set */
-    0,                                            /* tp_dictoffset */
-    nullptr,                                      /* tp_init */
-    nullptr,                                      /* tp_alloc */
-    nullptr,                                      /* tp_new */
-};
-
-static PyModuleDef embmodule = {
-    PyModuleDef_HEAD_INIT,
-    "emb",
-    nullptr,
-    -1,
-    nullptr,
-};
-
-// Internal state
-struct StreamPair
-{
-  PyObject* saved = nullptr;
-  PyObject* current = nullptr;
-};
-static std::map<std::string, StreamPair> streams;
-
-PyMODINIT_FUNC PyInit_emb(void)
-{
-  StdoutType.tp_new = PyType_GenericNew;
-  if (PyType_Ready(&StdoutType) < 0) {
+  PyObject* type = PyType_FromSpec(&StreamCatcher_spec);
+  if (!type) {
     return nullptr;
   }
 
-  PyObject* m = PyModule_Create(&embmodule);
-  if (m) {
-    Py_INCREF(&StdoutType);
-    PyModule_AddObject(m, "Stdout", reinterpret_cast<PyObject*>(&StdoutType));
+  PyObject* obj = PyObject_CallObject(type, nullptr);
+  Py_DECREF(type);
+  if (!obj) {
+    return nullptr;
   }
-  return m;
+
+  auto* catcher = reinterpret_cast<StreamCatcher*>(obj);
+  catcher->is_stderr = is_stderr;
+  catcher->write = std::move(write);
+  return catcher;
 }
 
-static void set_stream(const std::string& stream, stdout_write_type write)
+// Redirect sys.stdout and sys.stderr
+bool redirect_python_output(stdout_write_type stdout_write,
+                            stdout_write_type stderr_write)
 {
-  auto& stream_pair = streams[stream];
-  if (stream_pair.current == nullptr) {
-    stream_pair.saved = PySys_GetObject(stream.c_str());
-    stream_pair.current = StdoutType.tp_new(&StdoutType, nullptr, nullptr);
+  PyObject* sysmod = PyImport_ImportModule("sys");
+  if (!sysmod) {
+    return false;
   }
 
-  Stdout* impl = reinterpret_cast<Stdout*>(stream_pair.current);
-  impl->write = std::move(write);
-  PySys_SetObject(stream.c_str(), stream_pair.current);
+  // Save original streams
+  original_stdout = PyObject_GetAttrString(sysmod, "stdout");
+  original_stderr = PyObject_GetAttrString(sysmod, "stderr");
+
+  // Create new catchers
+  stdout_catcher = create_catcher(false, stdout_write);
+  stderr_catcher = create_catcher(true, stderr_write);
+
+  if (!stdout_catcher || !stderr_catcher) {
+    Py_DECREF(sysmod);
+    PyErr_Print();
+    return false;
+  }
+
+  // Replace Python's sys.stdout/stderr
+  PyObject_SetAttrString(
+      sysmod, "stdout", reinterpret_cast<PyObject*>(stdout_catcher));
+  PyObject_SetAttrString(
+      sysmod, "stderr", reinterpret_cast<PyObject*>(stderr_catcher));
+
+  Py_DECREF(sysmod);
+  return true;
 }
 
-static void reset_streams()
+// Restore original sys.stdout/stderr
+void restore_python_output()
 {
-  for (auto& [stream, stream_pair] : streams) {
-    if (stream_pair.saved != nullptr) {
-      PySys_SetObject(stream.c_str(), stream_pair.saved);
-    }
-    Py_XDECREF(stream_pair.current);
-    stream_pair.current = nullptr;
+  PyObject* sysmod = PyImport_ImportModule("sys");
+  if (!sysmod) {
+    return;
   }
-}
 
-}  // namespace emb
+  if (original_stdout) {
+    PyObject_SetAttrString(sysmod, "stdout", original_stdout);
+    Py_DECREF(original_stdout);
+    original_stdout = nullptr;
+  }
+  if (original_stderr) {
+    PyObject_SetAttrString(sysmod, "stderr", original_stderr);
+    Py_DECREF(original_stderr);
+    original_stderr = nullptr;
+  }
+
+  Py_XDECREF(stdout_catcher);
+  Py_XDECREF(stderr_catcher);
+  stdout_catcher = nullptr;
+  stderr_catcher = nullptr;
+
+  Py_DECREF(sysmod);
+}
 
 static PythonCmdInputWidget* widget = nullptr;
 
@@ -220,7 +224,6 @@ PythonCmdInputWidget::PythonCmdInputWidget(QWidget* parent)
 
 PythonCmdInputWidget::~PythonCmdInputWidget()
 {
-  emb::reset_streams();
   widget = nullptr;
 }
 
@@ -310,47 +313,30 @@ void PythonCmdInputWidget::exitHandler()
 
 void PythonCmdInputWidget::init()
 {
-  PyImport_AppendInittab("emb", emb::PyInit_emb);
   ord::pyAppInit(false);
 
-  PyImport_ImportModule("emb");
+  auto* openroad = ord::OpenRoad::openRoad();
+  if (openroad == nullptr) {
+    return;
+  }
+  auto* logger = openroad->getLogger();
+  if (logger == nullptr) {
+    return;
+  }
 
-  Py_AtExit(&exitHandler);
-
-  emb::stdout_write_type stdout_stream = [](std::string s) {
-    auto* openroad = ord::OpenRoad::openRoad();
-    if (openroad == nullptr) {
-      return;
-    }
-    auto* logger = openroad->getLogger();
-    if (logger == nullptr) {
-      return;
-    }
-    s.erase(s.find_last_not_of("\r\n") + 1);
-    s.erase(s.find_last_not_of('\n') + 1);
-    if (s.empty()) {
-      return;
-    }
-    logger->report("{}", s);
-  };
-  emb::set_stream("stdout", stdout_stream);
-  emb::stdout_write_type stderr_stream = [this](std::string s) {
-    auto* openroad = ord::OpenRoad::openRoad();
-    if (openroad == nullptr) {
-      return;
-    }
-    auto* logger = openroad->getLogger();
-    if (logger == nullptr) {
-      return;
-    }
-    s.erase(s.find_last_not_of("\r\n") + 1);
-    s.erase(s.find_last_not_of('\n') + 1);
-    if (s.empty()) {
-      return;
-    }
+  stdout_write_type stdout_write
+      = [logger](std::string s) { logger->report("{}", s); };
+  stdout_write_type stderr_write = [this](std::string s) {
     emit addResultToOutput(QString::fromStdString(s), false);
   };
-  emb::set_stream("stderr", stderr_stream);
+
+  if (!redirect_python_output(stdout_write, stderr_write)) {
+    std::cerr << "Failed to redirect Python output" << std::endl;
+    Py_Finalize();
+    return;
+  }
+
+  Py_AtExit(&exitHandler);
 }
 
 }  // namespace gui

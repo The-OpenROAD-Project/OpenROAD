@@ -60,15 +60,12 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   QWidget* container = new QWidget(this);
   container->setLayout(layout);
 
-  connect(output_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
-  connect(pauser_, SIGNAL(pressed()), this, SLOT(pauserClicked()));
-  connect(pause_timer_.get(), SIGNAL(timeout()), this, SLOT(unpause()));
-
-  connect(this,
-          SIGNAL(addToOutput(const QString&, const QColor&)),
+  connect(output_,
+          &QPlainTextEdit::textChanged,
           this,
-          SLOT(addTextToOutput(const QString&, const QColor&)),
-          Qt::QueuedConnection);
+          &ScriptWidget::outputChanged);
+  connect(pauser_, &QPushButton::pressed, this, &ScriptWidget::pauserClicked);
+  connect(pause_timer_.get(), &QTimer::timeout, this, &ScriptWidget::unpause);
 
   setWidget(container);
 }
@@ -94,42 +91,42 @@ void ScriptWidget::setupInterpreterWidget()
   input_->setWidgetFont(font());
 
   connect(input_,
-          &TclCmdInputWidget::textChanged,
+          &CmdInputWidget::textChanged,
           this,
           &ScriptWidget::outputChanged);
 
-  connect(input_, &TclCmdInputWidget::exiting, this, &ScriptWidget::exiting);
+  connect(input_, &CmdInputWidget::exiting, this, &ScriptWidget::exiting);
   connect(input_,
-          &TclCmdInputWidget::commandAboutToExecute,
+          &CmdInputWidget::commandAboutToExecute,
           this,
           &ScriptWidget::commandAboutToExecute);
   connect(input_,
-          &TclCmdInputWidget::commandAboutToExecute,
+          &CmdInputWidget::commandAboutToExecute,
           this,
           &ScriptWidget::setPauserToRunning);
   connect(input_,
-          &TclCmdInputWidget::addCommandToOutput,
+          &CmdInputWidget::addCommandToOutput,
           this,
           &ScriptWidget::addCommandToOutput);
   connect(input_,
-          &TclCmdInputWidget::addResultToOutput,
+          &CmdInputWidget::addResultToOutput,
           this,
           &ScriptWidget::addResultToOutput);
   connect(input_,
-          &TclCmdInputWidget::addTextToOutput,
+          &CmdInputWidget::addTextToOutput,
           this,
           &ScriptWidget::addTextToOutput,
           Qt::QueuedConnection);
   connect(input_,
-          &TclCmdInputWidget::commandFinishedExecuting,
+          &CmdInputWidget::commandFinishedExecuting,
           this,
           &ScriptWidget::resetPauser);
   connect(input_,
-          &TclCmdInputWidget::commandFinishedExecuting,
+          &CmdInputWidget::commandFinishedExecuting,
           this,
           &ScriptWidget::commandExecuted);
   connect(input_,
-          &TclCmdInputWidget::commandFinishedExecuting,
+          &CmdInputWidget::commandFinishedExecuting,
           this,
           &ScriptWidget::flushReportBufferToOutput);
   connect(output_,

@@ -46,24 +46,15 @@ class PythonCmdInputWidget : public CmdInputWidget
 
   void init();
 
- signals:
-  void exiting();
-
-  void commandAboutToExecute();
-  void commandFinishedExecuting(bool code);
-
-  void addResultToOutput(const QString& result, bool code);
-  void addCommandToOutput(const QString& cmd);
-
  public slots:
-  virtual void executeCommand(const QString& cmd,
-                              bool echo = true,
-                              bool silent = false) override;
+  void executeCommand(const QString& cmd,
+                      bool echo = true,
+                      bool silent = false) override;
 
  protected:
   void keyPressEvent(QKeyEvent* e) override;
 
-  virtual bool isCommandComplete(const std::string& cmd) const override;
+  bool isCommandComplete(const std::string& cmd) const override;
 
  private:
   static void exitHandler();
