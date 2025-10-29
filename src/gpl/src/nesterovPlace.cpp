@@ -5,8 +5,6 @@
 
 #include "nesterovPlace.h"
 
-#include <spdlog/fmt/bundled/format.h>
-
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -447,13 +445,13 @@ void NesterovPlace::runTimingDriven(int iter,
     nbVec_[0]->setTrueReprintIterHeader();
     ++timing_driven_count;
 
-    int nbc_total_gcells_delta
+    const int nbc_total_gcells_delta
         = nbc_->getNewGcellsCount() - nbc_->getDeletedGcellsCount();
     td_accumulated_delta_area += nbc_->getDeltaArea();
     for (auto& nb : nbVec_) {
       nb_gcells_after_td += nb->getGCells().size();
     }
-    int nb_total_gcells_delta = nb_gcells_after_td - nb_gcells_before_td;
+    const int nb_total_gcells_delta = nb_gcells_after_td - nb_gcells_before_td;
     if (nb_total_gcells_delta != nbc_total_gcells_delta) {
       log_->warn(GPL,
                  92,
@@ -666,11 +664,17 @@ void NesterovPlace::routabilitySnapshot(
       nb->saveSnapshot();
     }
 
-    log_->info(GPL, 38, "Routability snapshot saved at iter = {}", iter);
-    log_->report("   Iter: {}, overflow: {:.3f}, HPWL: {}",
-                 iter + 1,
+    log_->info(GPL, 38, "Routability snapshot saved at iter = {}", iter + 1);
+    odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
+    int64_t hpwl = nbc_->getHpwl();
+    double hpwl_percent_change = 0.0;
+    log_->report("{:9d} | {:8.4f} | {:13.6e} | {:8} | {:9} | {:>5}",
+                 iter,
                  average_overflow_unscaled_,
-                 nbc_->getHpwl());
+                 block->dbuToMicrons(hpwl),
+                 " ",
+                 " ",
+                 " ");
     if (graphics_ && graphics_->enabled()) {
       graphics_->addRoutabilitySnapshot(iter);
     }

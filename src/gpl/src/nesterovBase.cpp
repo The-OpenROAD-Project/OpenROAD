@@ -2032,10 +2032,10 @@ void NesterovBase::checkConsistency()
   if (!log_->debugCheck(GPL, "checkConsistency", 1)) {
     return;
   }
-  auto block = pb_->db()->getChip()->getBlock();
+  const auto block = pb_->db()->getChip()->getBlock();
   const int64_t tolerance = 10000;
 
-  int64_t expected_white_space
+  const int64_t expected_white_space
       = pb_->getDie().coreArea() - pb_->nonPlaceInstsArea();
   if (std::abs(whiteSpaceArea_ - expected_white_space) > tolerance) {
     log_->warn(utl::GPL, 319, "Inconsistent white space area");
@@ -2048,7 +2048,7 @@ void NesterovBase::checkConsistency()
         block->dbuAreaToMicrons(pb_->nonPlaceInstsArea()));
   }
 
-  int64_t expected_movable_area = whiteSpaceArea_ * targetDensity_;
+  const int64_t expected_movable_area = whiteSpaceArea_ * targetDensity_;
   if (std::abs(movableArea_ - expected_movable_area) > tolerance) {
     log_->warn(utl::GPL, 320, "Inconsistent movable area 1");
     log_->report(
@@ -2060,7 +2060,7 @@ void NesterovBase::checkConsistency()
         targetDensity_);
   }
 
-  int64_t expected_filler_area = movableArea_ - getNesterovInstsArea();
+  const int64_t expected_filler_area = movableArea_ - getNesterovInstsArea();
   if (std::abs(totalFillerArea_ - expected_filler_area) > tolerance) {
     log_->warn(utl::GPL, 321, "Inconsistent filler area");
     log_->report(
@@ -3042,8 +3042,8 @@ bool NesterovBase::checkDivergence()
     float hpwl_increase = (static_cast<float>(prev_hpwl_ - prev_reported_hpwl_))
                           / static_cast<float>(prev_reported_hpwl_);
 
-    float overflow_acceptance = 0.05f;
-    float hpwl_acceptance = 0.25f;
+    const float overflow_acceptance = 0.05f;
+    const float hpwl_acceptance = 0.25f;
     if (overflow_change >= overflow_acceptance
         && hpwl_increase >= hpwl_acceptance) {
       isDiverged_ = true;
