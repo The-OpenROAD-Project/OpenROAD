@@ -533,7 +533,7 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   }
 
   // jk: sanity check
-  if (logger_->debugCheck(RSZ, "dbg", 100)) {     \
+  if (logger_->debugCheck(RSZ, "dbg", 100)) {
     db_network_->checkAxioms();
   }
 }

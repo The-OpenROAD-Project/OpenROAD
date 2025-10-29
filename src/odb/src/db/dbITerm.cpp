@@ -486,8 +486,10 @@ void dbITerm::disconnect()
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: disconnect Iterm {}",
-               getId());
+               "ECO: disconnect Iterm {} ({}), pointer: {}",
+               getName(),
+               getId(),
+               static_cast<void*>(this));
 
     block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
@@ -496,6 +498,15 @@ void dbITerm::disconnect()
     block->_journal->pushParam(mod_net ? mod_net->getOID() : 0U);
     block->_journal->endAction();
   }
+
+  debugPrint(iterm->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             2,
+             "ECO: disconnect Iterm {} ({}), pointer: {}",
+             getName(),
+             getId(),
+             static_cast<void*>(this));
 
   for (auto callback : block->_callbacks) {
     callback->inDbITermPreDisconnect(this);
