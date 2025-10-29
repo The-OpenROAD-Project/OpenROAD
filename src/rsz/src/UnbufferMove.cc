@@ -268,34 +268,38 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   Pin* buffer_ip_pin;
   Pin* buffer_op_pin;
   getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-  if (db_network_->hierNet(buffer_ip_pin)
-      && db_network_->hierNet(buffer_op_pin)) {
-    debugPrint(logger_,
-               RSZ,
-               "dbg",
-               1,
-               "{} {}: blocked by bufIpHier && bufOpHier",
-               i,
-               network_->pathName(buffer));
-    return false;
-  }
+
+  // jk: remove target1
+  // if (db_network_->hierNet(buffer_ip_pin)
+  //    && db_network_->hierNet(buffer_op_pin)) {
+  //  debugPrint(logger_,
+  //             RSZ,
+  //             "dbg",
+  //             1,
+  //             "{} {}: blocked by bufIpHier && bufOpHier",
+  //             i,
+  //             network_->pathName(buffer));
+  //  return false;
+  //}
 
   //
   // Don't remove buffers with (1) an input pin connected to a hierarchical
   // net (1) an output pin not connected to a hierarchical net.
   // These are required to remain visible.
   //
-  if (db_network_->hierNet(buffer_ip_pin)
-      && !db_network_->hierNet(buffer_op_pin)) {
-    debugPrint(logger_,
-               RSZ,
-               "dbg",
-               1,
-               "{} {}: blocked by bufIpHier && !bufOpHier",
-               i,
-               network_->pathName(buffer));
-    return false;
-  }
+
+  // jk: remove target2
+  // if (db_network_->hierNet(buffer_ip_pin)
+  //    && !db_network_->hierNet(buffer_op_pin)) {
+  //  debugPrint(logger_,
+  //             RSZ,
+  //             "dbg",
+  //             1,
+  //             "{} {}: blocked by bufIpHier && !bufOpHier",
+  //             i,
+  //             network_->pathName(buffer));
+  //  return false;
+  //}
 
   // We only allow case when we can get buffer driver
   // and wire in the hierarchical net. This is when there is
@@ -312,16 +316,18 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
     // buffer is a dbInst.
     dbInst* buffer_inst = db_network_->staToDb(buffer);
     odb::dbModule* buffer_owning_module = buffer_inst->getModule();
-    if (driving_module != buffer_owning_module) {
-      debugPrint(logger_,
-                 RSZ,
-                 "dbg",
-                 1,
-                 "{} {}: blocked by drvrMod != bufMod",
-                 i,
-                 network_->pathName(buffer));
-      return false;
-    }
+
+    // jk: remove target3
+    // if (driving_module != buffer_owning_module) {
+    //  debugPrint(logger_,
+    //             RSZ,
+    //             "dbg",
+    //             1,
+    //             "{} {}: blocked by drvrMod != bufMod",
+    //             i,
+    //             network_->pathName(buffer));
+    //  return false;
+    //}
   }
 
   dbInst* db_inst = db_network_->staToDb(buffer);
@@ -524,6 +530,11 @@ void UnbufferMove::removeBuffer(Instance* buffer)
     if (new_net_name) {
       db_survivor->rename(new_net_name->c_str());
     }
+  }
+
+  // jk: sanity check
+  if (logger_->debugCheck(RSZ, "dbg", 100)) {     \
+    db_network_->checkAxioms();
   }
 }
 
