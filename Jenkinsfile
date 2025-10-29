@@ -1,4 +1,4 @@
-@Library('utils@main') _
+@Library('utils@push-latest') _
 node() {
     pipelineOR()
 }
