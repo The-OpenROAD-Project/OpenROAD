@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "cmdInputWidget.h"
 
 namespace gui {
@@ -47,9 +49,7 @@ class PythonCmdInputWidget : public CmdInputWidget
   void init();
 
  public slots:
-  void executeCommand(const QString& cmd,
-                      bool echo = true,
-                      bool silent = false) override;
+  void executeCommand(const QString& cmd, bool echo, bool silent) override;
 
  protected:
   void keyPressEvent(QKeyEvent* e) override;

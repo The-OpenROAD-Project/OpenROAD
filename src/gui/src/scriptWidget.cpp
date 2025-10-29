@@ -90,10 +90,8 @@ void ScriptWidget::setupInterpreterWidget()
 
   input_->setWidgetFont(font());
 
-  connect(input_,
-          &CmdInputWidget::textChanged,
-          this,
-          &ScriptWidget::outputChanged);
+  connect(
+      input_, &CmdInputWidget::textChanged, this, &ScriptWidget::outputChanged);
 
   connect(input_, &CmdInputWidget::exiting, this, &ScriptWidget::exiting);
   connect(input_,

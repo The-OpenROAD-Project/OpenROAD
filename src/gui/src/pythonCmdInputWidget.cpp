@@ -136,8 +136,8 @@ static StreamCatcher* create_catcher(const bool is_stderr,
 }
 
 // Redirect sys.stdout and sys.stderr
-bool redirect_python_output(stdout_write_type stdout_write,
-                            stdout_write_type stderr_write)
+static bool redirect_python_output(stdout_write_type stdout_write,
+                                   stdout_write_type stderr_write)
 {
   PyObject* sysmod = PyImport_ImportModule("sys");
   if (!sysmod) {
@@ -149,8 +149,8 @@ bool redirect_python_output(stdout_write_type stdout_write,
   original_stderr = PyObject_GetAttrString(sysmod, "stderr");
 
   // Create new catchers
-  stdout_catcher = create_catcher(false, stdout_write);
-  stderr_catcher = create_catcher(true, stderr_write);
+  stdout_catcher = create_catcher(false, std::move(stdout_write));
+  stderr_catcher = create_catcher(true, std::move(stderr_write));
 
   if (!stdout_catcher || !stderr_catcher) {
     Py_DECREF(sysmod);
@@ -168,8 +168,10 @@ bool redirect_python_output(stdout_write_type stdout_write,
   return true;
 }
 
+// TODO: Preserved for exiting the GUI back to text mode
+#if 0
 // Restore original sys.stdout/stderr
-void restore_python_output()
+static void restore_python_output()
 {
   PyObject* sysmod = PyImport_ImportModule("sys");
   if (!sysmod) {
@@ -194,6 +196,8 @@ void restore_python_output()
 
   Py_DECREF(sysmod);
 }
+
+#endif
 
 static PythonCmdInputWidget* widget = nullptr;
 
@@ -325,13 +329,13 @@ void PythonCmdInputWidget::init()
   }
 
   stdout_write_type stdout_write
-      = [logger](std::string s) { logger->report("{}", s); };
-  stdout_write_type stderr_write = [this](std::string s) {
+      = [logger](const std::string& s) { logger->report("{}", s); };
+  stdout_write_type stderr_write = [this](const std::string& s) {
     emit addResultToOutput(QString::fromStdString(s), false);
   };
 
   if (!redirect_python_output(stdout_write, stderr_write)) {
-    std::cerr << "Failed to redirect Python output" << std::endl;
+    std::cerr << "Failed to redirect Python output\n";
     Py_Finalize();
     return;
   }
