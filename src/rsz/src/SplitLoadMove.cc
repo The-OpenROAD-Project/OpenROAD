@@ -283,9 +283,6 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   // resizer_->parasiticsInvalid(net);
   estimate_parasitics_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
   estimate_parasitics_->parasiticsInvalid(out_net);
-
-  // jk:
-  db_network_->checkAxioms();
   return true;
 }
 
