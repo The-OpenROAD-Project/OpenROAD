@@ -2528,4 +2528,79 @@ bool dbNet::isInternalTo(dbModule* module) const
   return true;
 }
 
+void dbNet::checkSanityModNetConsistency() const
+{
+  // Algorithm
+  // 1. Find all related dbModNets with this dbNet.
+  std::set<dbModNet*> related_modnets;
+  findRelatedModNets(related_modnets);
+  if (related_modnets.empty()) {
+    return;
+  }
+
+  // 2. Find all ITerms and BTerms connected with this dbNet.
+  std::set<dbITerm*> flat_iterms;
+  for (dbITerm* iterm : getITerms()) {
+    flat_iterms.insert(iterm);
+  }
+
+  std::set<dbBTerm*> flat_bterms;
+  for (dbBTerm* bterm : getBTerms()) {
+    flat_bterms.insert(bterm);
+  }
+
+  // 3. Find all ITerms and BTerms connected with all the related dbModNets.
+  std::set<dbITerm*> hier_iterms;
+  std::set<dbBTerm*> hier_bterms;
+  for (dbModNet* modnet : related_modnets) {
+    for (dbITerm* iterm : modnet->getITerms()) {
+      hier_iterms.insert(iterm);
+    }
+    for (dbBTerm* bterm : modnet->getBTerms()) {
+      hier_bterms.insert(bterm);
+    }
+  }
+
+  // 4. If found any inconsistency, report the difference.
+  utl::Logger* logger = getImpl()->getLogger();
+
+  // Compare ITerms
+  std::vector<dbITerm*> iterms_in_flat_only;
+  std::set_difference(flat_iterms.begin(),
+                      flat_iterms.end(),
+                      hier_iterms.begin(),
+                      hier_iterms.end(),
+                      std::back_inserter(iterms_in_flat_only));
+
+  if (iterms_in_flat_only.empty() == false) {
+    logger->warn(utl::ODB,
+                 484,
+                 "SanityCheck: dbNet '{}' has ITerms not present in its "
+                 "related dbModNets.",
+                 getName());
+    for (dbITerm* iterm : iterms_in_flat_only) {
+      logger->warn(utl::ODB, 485, "  - ITerm: {}", iterm->getName());
+    }
+  }
+
+  // Compare BTerms
+  std::vector<dbBTerm*> bterms_in_flat_only;
+  std::set_difference(flat_bterms.begin(),
+                      flat_bterms.end(),
+                      hier_bterms.begin(),
+                      hier_bterms.end(),
+                      std::back_inserter(bterms_in_flat_only));
+
+  if (bterms_in_flat_only.empty() == false) {
+    logger->warn(utl::ODB,
+                 486,
+                 "SanityCheck: dbNet '{}' has BTerms not present in its "
+                 "related dbModNets.",
+                 getName());
+    for (dbBTerm* bterm : bterms_in_flat_only) {
+      logger->warn(utl::ODB, 487, "  - BTerm: {}", bterm->getName());
+    }
+  }
+}
+
 }  // namespace odb
