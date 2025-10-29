@@ -108,6 +108,12 @@ void checkNetSanity(const NetType* net,
   utl::Logger* logger = net->getImpl()->getLogger();
   const size_t drvr_count = drvr_info_list.size();
 
+  std::string net_name = net->getName();
+  if (net_name.find("VDD") != std::string::npos
+      || net_name.find("VSS") != std::string::npos) {
+    return;
+  }
+
   //
   // 1. Check multiple drivers
   //
