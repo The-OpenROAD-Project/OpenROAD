@@ -14,9 +14,9 @@ namespace odb {
 
 namespace dbUtil {
 
+// Find BTerm drivers
 template <typename NetType>
-void findBTermDrivers(const NetType* net,
-                      std::vector<std::string>& drvr_info_list)
+void findBTermDrivers(const NetType* net, std::vector<dbObject*>& drvr_vec)
 {
   // Find BTerm drivers
   for (dbBTerm* bterm : net->getBTerms()) {
@@ -26,22 +26,34 @@ void findBTermDrivers(const NetType* net,
 
     if (bterm->getIoType() == dbIoType::INPUT
         || bterm->getIoType() == dbIoType::INOUT) {
-      dbBlock* block = bterm->getBlock();
-      dbModule* parent_module = block->getTopModule();
-      drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
-          "\n  - bterm: '{}' (block: '{}', parent_module: '{}')",
-          bterm->getName(),
-          (block) ? block->getConstName() : "null",
-          (parent_module) ? parent_module->getName() : "null"));
+      drvr_vec.push_back(bterm);
     }
   }
 }
 
+// Find BTerm drivers and format them into strings.
 template <typename NetType>
-void findITermDrivers(const NetType* net,
+void findBTermDrivers(const NetType* net,
                       std::vector<std::string>& drvr_info_list)
 {
-  // Find ITerm drivers
+  std::vector<dbObject*> drivers;
+  findBTermDrivers(net, drivers);
+  for (dbObject* driver : drivers) {
+    dbBTerm* bterm = static_cast<dbBTerm*>(driver);
+    dbBlock* block = bterm->getBlock();
+    dbModule* parent_module = block->getTopModule();
+    drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
+        "\n  - bterm: '{}' (block: '{}', parent_module: '{}')",
+        bterm->getName(),
+        (block) ? block->getConstName() : "null",
+        (parent_module) ? parent_module->getName() : "null"));
+  }
+}
+
+// Find ITerm drivers
+template <typename NetType>
+void findITermDrivers(const NetType* net, std::vector<dbObject*>& drvr_vec)
+{
   for (dbITerm* iterm : net->getITerms()) {
     if (iterm->getSigType().isSupply()) {
       continue;
@@ -49,24 +61,37 @@ void findITermDrivers(const NetType* net,
 
     if (iterm->getIoType() == dbIoType::OUTPUT
         || iterm->getIoType() == dbIoType::INOUT) {
-      dbInst* inst = iterm->getInst();
-      dbMaster* master = inst->getMaster();
-      dbModule* parent_module = inst->getModule();
-      dbBlock* block = inst->getBlock();
-      drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
-          "\n  - iterm: '{}' (block: '{}', parent_module: '{}', master: '{}')",
-          iterm->getName(),
-          (block) ? block->getConstName() : "null",
-          (parent_module) ? parent_module->getName() : "null",
-          (master) ? master->getConstName() : "null"));
+      drvr_vec.push_back(iterm);
     }
   }
 }
 
-inline void findModBTermDrivers(const dbModNet* net,
-                                std::vector<std::string>& drvr_info_list)
+// Find ITerm drivers and format them into strings.
+template <typename NetType>
+void findITermDrivers(const NetType* net,
+                      std::vector<std::string>& drvr_info_list)
 {
-  // Find ModBTerm drivers
+  std::vector<dbObject*> drivers;
+  findITermDrivers(net, drivers);
+  for (dbObject* driver : drivers) {
+    dbITerm* iterm = static_cast<dbITerm*>(driver);
+    dbInst* inst = iterm->getInst();
+    dbMaster* master = inst->getMaster();
+    dbModule* parent_module = inst->getModule();
+    dbBlock* block = inst->getBlock();
+    drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
+        "\n  - iterm: '{}' (block: '{}', parent_module: '{}', master: '{}')",
+        iterm->getName(),
+        (block) ? block->getConstName() : "null",
+        (parent_module) ? parent_module->getName() : "null",
+        (master) ? master->getConstName() : "null"));
+  }
+}
+
+// Find ModBTerm drivers
+inline void findModBTermDrivers(const dbModNet* net,
+                                std::vector<dbObject*>& drvr_vec)
+{
   for (dbModBTerm* modbterm : net->getModBTerms()) {
     if (modbterm->getSigType().isSupply()) {
       continue;
@@ -74,17 +99,29 @@ inline void findModBTermDrivers(const dbModNet* net,
 
     if (modbterm->getIoType() == dbIoType::INPUT
         || modbterm->getIoType() == dbIoType::INOUT) {
-      drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
-          "\n  - modbterm: '{}'",
-          modbterm->getHierarchicalName()));
+      drvr_vec.push_back(modbterm);
     }
   }
 }
 
-inline void findModITermDrivers(const dbModNet* net,
+// Find ModBTerm drivers and format them into strings.
+inline void findModBTermDrivers(const dbModNet* net,
                                 std::vector<std::string>& drvr_info_list)
 {
-  // Find ModITerm drivers
+  std::vector<dbObject*> drivers;
+  findModBTermDrivers(net, drivers);
+  for (dbObject* driver : drivers) {
+    dbModBTerm* modbterm = static_cast<dbModBTerm*>(driver);
+    drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
+        "\n  - modbterm: '{}'",
+        modbterm->getHierarchicalName()));
+  }
+}
+
+// Find ModITerm drivers
+inline void findModITermDrivers(const dbModNet* net,
+                                std::vector<dbObject*>& drvr_vec)
+{
   for (dbModITerm* moditerm : net->getModITerms()) {
     if (dbModBTerm* child_bterm = moditerm->getChildModBTerm()) {
       if (child_bterm->getSigType().isSupply()) {
@@ -93,14 +130,27 @@ inline void findModITermDrivers(const dbModNet* net,
 
       if (child_bterm->getIoType() == dbIoType::OUTPUT
           || child_bterm->getIoType() == dbIoType::INOUT) {
-        drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
-            "\n  - moditerm: '{}'",
-            moditerm->getHierarchicalName()));
+        drvr_vec.push_back(moditerm);
       }
     }
   }
 }
 
+// Find ModITerm drivers and format them into strings.
+inline void findModITermDrivers(const dbModNet* net,
+                                std::vector<std::string>& drvr_info_list)
+{
+  std::vector<dbObject*> drivers;
+  findModITermDrivers(net, drivers);
+  for (dbObject* driver : drivers) {
+    dbModITerm* moditerm = static_cast<dbModITerm*>(driver);
+    drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
+        "\n  - moditerm: '{}'",
+        moditerm->getHierarchicalName()));
+  }
+}
+
+// Check sanity for dbNet or dbModNet
 template <typename NetType>
 void checkNetSanity(const NetType* net,
                     const std::vector<std::string>& drvr_info_list)

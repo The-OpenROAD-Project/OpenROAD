@@ -42,6 +42,15 @@ using odb::Point;
 class dbNetwork;
 class dbEditHierarchy;
 
+// This struct contains information about Pin (dbITerm, dbBTerm or dbModITerm)
+struct PinInfo
+{
+  const char* name = "NOT_ALLOC";  // Pin hierarchical name
+  int id = 0;                      // dbObject ID
+  const char* type_name = "NULL";  // dbObject type name
+  bool valid = false;              // false if it is a freed dbObject
+};
+
 // This class handles callbacks from the network to the listeners
 class dbNetworkObserver
 {
@@ -71,7 +80,7 @@ class dbNetwork : public ConcreteNetwork
   void clear() override;
   CellPortIterator* portIterator(const Cell* cell) const override;
 
-  // sanity checkers
+  // Sanity checkers
   void checkAxioms(odb::dbObject* obj = nullptr) const;
   void checkSanityModBTerms() const;
   void checkSanityModITerms() const;
@@ -83,6 +92,7 @@ class dbNetwork : public ConcreteNetwork
   void checkSanityInstNames() const;
   void checkSanityNetNames() const;
   void checkSanityModNetNamesInModule(odb::dbModule* module) const;
+  void checkSanityNetDrvrPinMapConsistency() const;
 
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);
@@ -278,7 +288,6 @@ class dbNetwork : public ConcreteNetwork
 
   ////////////////////////////////////////////////////////////////
   // Port functions
-
   Cell* cell(const Port* port) const override;
   void registerConcretePort(const Port*);
 
@@ -383,6 +392,11 @@ class dbNetwork : public ConcreteNetwork
   bool hasMembers(const Port* port) const override;
   Port* findMember(const Port* port, int index) const override;
   PortMemberIterator* memberIterator(const Port* port) const override;
+  PinInfo getPinInfo(const Pin* pin) const;
+
+  ////////////////////////////////////////////////////////////////
+  // Debug functions
+  void dumpNetDrvrPinMap() const;
 
   using Network::cell;
   using Network::direction;

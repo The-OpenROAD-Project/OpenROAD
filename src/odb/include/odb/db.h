@@ -1658,6 +1658,11 @@ class dbBTerm : public dbObject
   /// Return true if this BTerm is mirrored with another pin.
   ///
   bool isMirrored();
+
+  ///
+  /// Return true if this BTerm is allocated
+  ///
+  bool isValid() const;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3317,6 +3322,11 @@ class dbITerm : public dbObject
   /// Destroys all access points of each pin.
   ///
   void clearPrefAccessPoints();
+
+  ///
+  /// Return true if this ITerm and its instance are allocated
+  ///
+  bool isValid() const;
 
   ///
   /// Translate a database-id back to a pointer.
@@ -8374,6 +8384,12 @@ class dbModITerm : public dbObject
   dbModBTerm* getChildModBTerm() const;
   void connect(dbModNet* modnet);
   void disconnect();
+
+  ///
+  /// Return true if this dbModITerm and its dbModInst are allocated
+  ///
+  bool isValid() const;  
+
   static dbModITerm* create(dbModInst* parentInstance,
                             const char* name,
                             dbModBTerm* modbterm = nullptr);
