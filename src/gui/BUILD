@@ -30,7 +30,6 @@ cc_library(
     deps = [
         "//src/odb",
         "@boost.multi_array",
-        "@com_google_absl//absl/log:check",
         "@tk_tcl//:tcl",
     ],
 )

@@ -27,9 +27,7 @@ namespace gpl {
 GraphicsImpl::GraphicsImpl(utl::Logger* logger)
     : HeatMapDataSource(logger, "gpl", "gpl"), logger_(logger), mode_(Mbff)
 {
-  if (gui::Gui::enabled()) {
-    gui::Gui::get()->registerRenderer(this);
-  }
+  gui::Gui::get()->registerRenderer(this);
 }
 
 GraphicsImpl::~GraphicsImpl() = default;
