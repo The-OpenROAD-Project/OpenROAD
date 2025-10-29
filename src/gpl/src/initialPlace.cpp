@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "gpl/AbstractGraphics.h"
 #include "odb/dbTypes.h"
 #include "placerBase.h"
 #include "solver.h"
@@ -38,8 +39,13 @@ void InitialPlaceVars::reset()
 InitialPlace::InitialPlace(InitialPlaceVars ipVars,
                            std::shared_ptr<PlacerBaseCommon> pbc,
                            std::vector<std::shared_ptr<PlacerBase>>& pbVec,
+                           std::unique_ptr<AbstractGraphics> graphics,
                            utl::Logger* log)
-    : ipVars_(ipVars), pbc_(std::move(pbc)), pbVec_(pbVec), log_(log)
+    : ipVars_(ipVars),
+      pbc_(std::move(pbc)),
+      pbVec_(pbVec),
+      graphics_(std::move(graphics)),
+      log_(log)
 {
 }
 
@@ -47,9 +53,9 @@ void InitialPlace::doBicgstabPlace(int threads)
 {
   ResidualError error;
 
-  std::unique_ptr<Graphics> graphics;
-  if (ipVars_.debug && Graphics::guiActive()) {
-    graphics = std::make_unique<Graphics>(log_, pbc_, pbVec_);
+  graphics_->setDebugOn(ipVars_.debug);
+  if (ipVars_.debug) {
+    graphics_->debugForInitialPlace(pbc_, pbVec_);
   }
 
   placeInstsCenter();
@@ -57,8 +63,8 @@ void InitialPlace::doBicgstabPlace(int threads)
   // set ExtId for idx reference // easy recovery
   setPlaceInstExtId();
 
-  if (graphics) {
-    graphics->getGuiObjectFromGraphics()->gifStart("initPlacement.gif");
+  if (graphics_ && graphics_->enabled()) {
+    graphics_->gifStart("initPlacement.gif");
   }
 
   for (size_t iter = 1; iter <= ipVars_.maxIter; iter++) {
@@ -75,15 +81,14 @@ void InitialPlace::doBicgstabPlace(int threads)
                            log_,
                            threads);
 
-    if (graphics) {
-      graphics->cellPlot(true);
+    if (graphics_ && graphics_->enabled()) {
+      graphics_->cellPlot(true);
 
-      gui::Gui* gui = graphics->getGuiObjectFromGraphics();
       odb::Rect region;
       odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
       int max_dim = std::max(bbox.dx(), bbox.dy());
       double dbu_per_pixel = static_cast<double>(max_dim) / 1000.0;
-      gui->gifAddFrame(region, 500, dbu_per_pixel, 20);
+      graphics_->gifAddFrame(region, 500, dbu_per_pixel, 20);
     }
 
     if (std::isnan(error.x) || std::isnan(error.y)) {
@@ -109,8 +114,8 @@ void InitialPlace::doBicgstabPlace(int threads)
     }
   }
 
-  if (graphics) {
-    graphics->getGuiObjectFromGraphics()->gifEnd();
+  if (graphics_ && graphics_->enabled()) {
+    graphics_->gifEnd();
   }
 }
 
@@ -425,7 +430,40 @@ void InitialPlace::updateCoordi()
   for (auto& inst : pbc_->placeInsts()) {
     int idx = inst->getExtId();
     if (!inst->isLocked()) {
-      inst->dbSetCenterLocation(instLocVecX_(idx), instLocVecY_(idx));
+      int new_x = instLocVecX_(idx);
+      int new_y = instLocVecY_(idx);
+
+      // Constrain to core area
+      const auto& die = pbc_->getDie();
+      new_x = std::max(new_x, die.coreLx());
+      new_x = std::min(new_x, die.coreUx());
+      new_y = std::max(new_y, die.coreLy());
+      new_y = std::min(new_y, die.coreUy());
+
+      // If instance has a region constraint, use that instead
+      const auto db_inst = inst->dbInst();
+      const auto group = db_inst->getGroup();
+      if (group && group->getRegion()) {
+        auto region = group->getRegion();
+        int region_x_min = std::numeric_limits<int>::max();
+        int region_y_min = std::numeric_limits<int>::max();
+        int region_x_max = std::numeric_limits<int>::min();
+        int region_y_max = std::numeric_limits<int>::min();
+
+        for (auto boundary : region->getBoundaries()) {
+          region_x_min = std::min(region_x_min, boundary->xMin());
+          region_y_min = std::min(region_y_min, boundary->yMin());
+          region_x_max = std::max(region_x_max, boundary->xMax());
+          region_y_max = std::max(region_y_max, boundary->yMax());
+        }
+
+        new_x = std::max(new_x, region_x_min);
+        new_x = std::min(new_x, region_x_max);
+        new_y = std::max(new_y, region_y_min);
+        new_y = std::min(new_y, region_y_max);
+      }
+
+      inst->dbSetCenterLocation(new_x, new_y);
       inst->dbSetPlaced();
     }
   }

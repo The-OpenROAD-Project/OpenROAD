@@ -15,6 +15,8 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <string>
+
 #include "odb/dbBlockCallBackObj.h"
 // User Code End Includes
 namespace odb {

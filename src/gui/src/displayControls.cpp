@@ -2157,18 +2157,34 @@ void DisplayControls::blockLoaded(odb::dbBlock* block)
   addTech(block->getTech());
 }
 
-void DisplayControls::setCurrentBlock(odb::dbBlock* block)
+void DisplayControls::setCurrentChip(odb::dbChip* chip)
 {
-  if (!block) {
+  if (!chip) {
     return;
   }
-  auto tech = block->getTech();
-  addTech(tech);
 
-  std::set<odb::dbTech*> visible_techs{tech};
-  for (auto child : block->getChildren()) {
-    visible_techs.insert(child->getTech());
-  }
+  std::set<odb::dbTech*> visible_techs;
+
+  std::function<void(odb::dbChip*)> collect_techs = [&](odb::dbChip* chip) {
+    auto tech = chip->getTech();
+    if (tech) {
+      addTech(tech);
+      visible_techs.insert(tech);
+    }
+
+    odb::dbBlock* block = chip->getBlock();
+    if (block) {
+      for (auto child : block->getChildren()) {
+        visible_techs.insert(child->getTech());
+      }
+    }
+
+    for (auto* inst : chip->getChipInsts()) {
+      collect_techs(inst->getMasterChip());
+    }
+  };
+
+  collect_techs(chip);
 
   for (auto& [layer, row] : layer_controls_) {
     const bool visible

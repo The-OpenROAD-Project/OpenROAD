@@ -1,4 +1,3 @@
-#set_debug_level RSZ repair_setup 3
 source "helpers.tcl"
 if { ![info exists repair_args] } {
   set repair_args {}

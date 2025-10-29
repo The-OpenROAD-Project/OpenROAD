@@ -34,7 +34,6 @@ TESTS = [
     "gain_buffering1_hier",
     "gcd_resize",
     "liberty_dont_use",
-    "pin_swap1",
     "pinswap_flat",
     "pinswap_hier",
     "rebuffer1",
@@ -137,8 +136,6 @@ TESTS = [
     "repair_tie8",
     "repair_tie9",
     "repair_tie10_hier",
-    "repair_tie11_hier",
-    "repair_tie12_hier",
     "repair_wire1",
     "repair_wire10",
     "repair_wire11",
@@ -178,7 +175,6 @@ TESTS = [
     "resize5",
     "resize6",
     "resize_slack1",
-    "resize_slack2",
     "resize_slack3",
     "set_dont_touch1",
     "set_dont_use1",
@@ -226,6 +222,10 @@ BIG_TESTS = [
 
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
+    "repair_tie11_hier",
+    "repair_tie12_hier",
+    "resize_slack2",
+    "pin_swap1",
     "liberty_dont_use",
     "pinswap_flat",
     "pinswap_hier",
@@ -234,7 +234,6 @@ MANUAL_FOR_BAZEL_TESTS = [
     "repair_fanout3_hier",
     "repair_setup4_flat",
     "repair_setup4_hier",
-    "report_buffers_asap7",
     "report_dont_use",
     "report_dont_use_corners",
     "split_load_hier",
@@ -270,6 +269,5 @@ cc_test(
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@tk_tcl//:tcl",
     ],
 )

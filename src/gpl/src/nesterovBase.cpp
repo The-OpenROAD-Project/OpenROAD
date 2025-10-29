@@ -134,10 +134,10 @@ void GCell::updateLocations()
     const double aspect_ratio = core_area.dx() / (double) core_area.dy();
     const double height = std::sqrt(inst_area / aspect_ratio);
     const double width = height * aspect_ratio;
-    bbox.init(center_x - width / 2,
-              center_y - height / 2,
-              center_x + width / 2,
-              center_y + height / 2);
+    bbox.init(center_x - (width / 2),
+              center_y - (height / 2),
+              center_x + (width / 2),
+              center_y + (height / 2));
   }
   // density coordi has the same center points.
   dLx_ = lx_ = bbox.xMin();
@@ -592,17 +592,17 @@ void Bin::setElectroPhi(float phi)
 ////////////////////////////////////////////////
 // BinGrid
 
-BinGrid::BinGrid(Die* die)
+BinGrid::BinGrid(int lx, int ly, int ux, int uy)
 {
-  setCorePoints(die);
+  setRegionPoints(lx, ly, ux, uy);
 }
 
-void BinGrid::setCorePoints(const Die* die)
+void BinGrid::setRegionPoints(int lx, int ly, int ux, int uy)
 {
-  lx_ = die->coreLx();
-  ly_ = die->coreLy();
-  ux_ = die->coreUx();
-  uy_ = die->coreUy();
+  lx_ = lx;
+  ly_ = ly;
+  ux_ = ux;
+  uy_ = uy;
 }
 
 void BinGrid::setPlacerBase(std::shared_ptr<PlacerBase> pb)
@@ -727,9 +727,7 @@ void BinGrid::initBins()
   if (idealBinArea != 0) {
     idealBinCnt = totalBinArea / idealBinArea;
   }
-  if (idealBinCnt < 4) {  // the smallest we allow is 2x2 bins
-    idealBinCnt = 4;
-  }
+  idealBinCnt = std::max(idealBinCnt, 4);
 
   dbBlock* block = pb_->db()->getChip()->getBlock();
   log_->info(
@@ -801,7 +799,7 @@ void BinGrid::initBins()
       const int bin_ly = ly_ + std::lround(idxY * binSizeY_);
       const int bin_ux = lx_ + std::lround((idxX + 1) * binSizeX_);
       const int bin_uy = ly_ + std::lround((idxY + 1) * binSizeY_);
-      const int bin_index = idxY * binCntX_ + idxX;
+      const int bin_index = (idxY * binCntX_) + idxX;
       bins_[bin_index]
           = Bin(idxX, idxY, bin_lx, bin_ly, bin_ux, bin_uy, targetDensity_);
       auto& bin = bins_[bin_index];
@@ -1682,6 +1680,10 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   pb_ = std::move(pb);
   nbc_ = std::move(nbc);
   log_ = log;
+  log_->info(GPL,
+             33,
+             "Initializing Nesterov region: {}",
+             pb_->group() ? pb_->group()->getName() : "Top-level");
 
   // Set a fixed seed
   srand(42);
@@ -1752,7 +1754,11 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
 
   bg_.setPlacerBase(pb_);
   bg_.setLogger(log_);
-  bg_.setCorePoints(&(pb_->getDie()));
+  const odb::Rect& region_bbox = pb_->getRegionBBox();
+  bg_.setRegionPoints(region_bbox.xMin(),
+                      region_bbox.yMin(),
+                      region_bbox.xMax(),
+                      region_bbox.yMax());
   bg_.setTargetDensity(targetDensity_);
 
   // update binGrid info
@@ -1818,8 +1824,8 @@ void NesterovBase::initFillerGCells()
   fillerDx_ = static_cast<int>(dxSum / (maxIdx - minIdx));
   fillerDy_ = static_cast<int>(dySum / (maxIdx - minIdx));
 
-  int64_t coreArea = pb_->getDie().coreArea();
-  whiteSpaceArea_ = coreArea - static_cast<int64_t>(pb_->nonPlaceInstsArea());
+  int64_t region_area = pb_->getRegionArea();
+  whiteSpaceArea_ = region_area - pb_->nonPlaceInstsArea();
 
   // if(pb_->group() == nullptr) {
   //   // nonPlaceInstsArea should not have density downscaling!!!
@@ -1878,6 +1884,7 @@ void NesterovBase::initFillerGCells()
                fillerDx_,
                fillerDy_);
 
+    // TODO reference region area, not die here
     const double max_edge_fillers = 1024;
     const int max_filler_x = std::max(
         static_cast<int>(pb_->getDie().coreDx() / max_edge_fillers), fillerDx_);
@@ -1912,8 +1919,8 @@ void NesterovBase::initFillerGCells()
              GPL,
              "FillerInit",
              1,
-             "CoreArea {}",
-             block->dbuAreaToMicrons(coreArea));
+             "Region Area {}",
+             block->dbuAreaToMicrons(region_area));
   debugPrint(log_,
              GPL,
              "FillerInit",
@@ -1963,14 +1970,21 @@ void NesterovBase::initFillerGCells()
     auto randX = randVal();
     auto randY = randVal();
 
+    // Use group region bounding box
+    const odb::Rect& region_bbox = pb_->getRegionBBox();
+    int region_dx = region_bbox.dx();
+    int region_dy = region_bbox.dy();
+    int region_lx = region_bbox.xMin();
+    int region_ly = region_bbox.yMin();
+
     // place filler cells on random coordi and
     // set size as avgDx and avgDy
-    GCell myGCell(randX % pb_->getDie().coreDx() + pb_->getDie().coreLx(),
-                  randY % pb_->getDie().coreDy() + pb_->getDie().coreLy(),
-                  fillerDx_,
-                  fillerDy_);
+    GCell filler_gcell(((randX % region_dx) + region_lx),
+                       ((randY % region_dy) + region_ly),
+                       fillerDx_,
+                       fillerDy_);
 
-    fillerStor_.push_back(myGCell);
+    fillerStor_.push_back(filler_gcell);
   }
   // totalFillerArea_ = fillerStor_.size() * getFillerCellArea();
   initial_filler_area_ = totalFillerArea_;
@@ -2447,16 +2461,11 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
     FloatPoint densityPrecondi = getDensityPreconditioner(gCell);
 
     FloatPoint sumPrecondi(
-        wireLengthPreCondi.x + densityPenalty_ * densityPrecondi.x,
-        wireLengthPreCondi.y + densityPenalty_ * densityPrecondi.y);
+        wireLengthPreCondi.x + (densityPenalty_ * densityPrecondi.x),
+        wireLengthPreCondi.y + (densityPenalty_ * densityPrecondi.y));
 
-    if (sumPrecondi.x <= npVars_->minPreconditioner) {
-      sumPrecondi.x = npVars_->minPreconditioner;
-    }
-
-    if (sumPrecondi.y <= npVars_->minPreconditioner) {
-      sumPrecondi.y = npVars_->minPreconditioner;
-    }
+    sumPrecondi.x = std::max(sumPrecondi.x, npVars_->minPreconditioner);
+    sumPrecondi.y = std::max(sumPrecondi.y, npVars_->minPreconditioner);
 
     sumGrads[i].x /= sumPrecondi.x;
     sumGrads[i].y /= sumPrecondi.y;
@@ -2559,16 +2568,11 @@ void NesterovBase::updateSingleGradient(
   FloatPoint densityPrecondi = getDensityPreconditioner(gCell);
 
   FloatPoint sumPrecondi(
-      wireLengthPreCondi.x + densityPenalty_ * densityPrecondi.x,
-      wireLengthPreCondi.y + densityPenalty_ * densityPrecondi.y);
+      wireLengthPreCondi.x + (densityPenalty_ * densityPrecondi.x),
+      wireLengthPreCondi.y + (densityPenalty_ * densityPrecondi.y));
 
-  if (sumPrecondi.x <= npVars_->minPreconditioner) {
-    sumPrecondi.x = npVars_->minPreconditioner;
-  }
-
-  if (sumPrecondi.y <= npVars_->minPreconditioner) {
-    sumPrecondi.y = npVars_->minPreconditioner;
-  }
+  sumPrecondi.x = std::max(sumPrecondi.x, npVars_->minPreconditioner);
+  sumPrecondi.y = std::max(sumPrecondi.y, npVars_->minPreconditioner);
 
   sumGrads[gCellIndex].x /= sumPrecondi.x;
   sumGrads[gCellIndex].y /= sumPrecondi.y;
@@ -2583,11 +2587,11 @@ void NesterovBase::updateInitialPrevSLPCoordi()
 
     float prevCoordiX
         = curSLPCoordi_[i].x
-          - npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].x;
+          - (npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].x);
 
     float prevCoordiY
         = curSLPCoordi_[i].y
-          - npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].y;
+          - (npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].y);
 
     FloatPoint newCoordi(getDensityCoordiLayoutInsideX(curGCell, prevCoordiX),
                          getDensityCoordiLayoutInsideY(curGCell, prevCoordiY));
@@ -2626,10 +2630,10 @@ float NesterovBase::getPhiCoef(float scaledDiffHpwl) const
       log_, GPL, "getPhiCoef", 1, "InputScaleDiffHPWL: {:g}", scaledDiffHpwl);
 
   float retCoef = (scaledDiffHpwl < 0)
-                      ? npVars_->maxPhiCoef
-                      : npVars_->maxPhiCoef
-                            * pow(npVars_->maxPhiCoef, scaledDiffHpwl * -1.0);
-  retCoef = std::max(npVars_->minPhiCoef, retCoef);
+                      ? nbVars_.maxPhiCoef
+                      : nbVars_.maxPhiCoef
+                            * pow(nbVars_.maxPhiCoef, scaledDiffHpwl * -1.0);
+  retCoef = std::max(nbVars_.minPhiCoef, retCoef);
   return retCoef;
 }
 
@@ -2680,8 +2684,6 @@ void NesterovBase::updateNextIter(const int iter)
   sum_overflow_unscaled_ = getOverflowAreaUnscaled() / overflowDenominator;
 
   int64_t hpwl = nbc_->getHpwl();
-  float phiCoef = getPhiCoef(static_cast<float>(hpwl - prev_hpwl_)
-                             / npVars_->referenceHpwl);
 
   float hpwl_percent_change = 0.0;
   if (iter == 0 || (iter) % 10 == 0) {
@@ -2729,6 +2731,9 @@ void NesterovBase::updateNextIter(const int iter)
                  group_name);
   }
 
+  float phiCoef = getPhiCoef(static_cast<float>(hpwl - prev_hpwl_)
+                             / npVars_->referenceHpwl);
+  phiCoef_ = phiCoef;
   debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prev_hpwl_);
   debugPrint(log_, GPL, "updateNextIter", 1, "NewHPWL: {}", hpwl);
   debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
@@ -2742,8 +2747,8 @@ void NesterovBase::updateNextIter(const int iter)
   debugPrint(
       log_, GPL, "updateNextIter", 1, "Overflow: {:g}", sum_overflow_unscaled_);
 
-  prev_hpwl_ = hpwl;
   densityPenalty_ *= phiCoef;
+  prev_hpwl_ = hpwl;
 
   if (iter > 50 && minSumOverflow_ > sum_overflow_unscaled_) {
     minSumOverflow_ = sum_overflow_unscaled_;
@@ -2822,9 +2827,13 @@ void NesterovBase::nesterovAdjustPhi()
   // dynamic adjustment for
   // better convergence with
   // large designs
-  if (!isMaxPhiCoefChanged_ && sum_overflow_unscaled_ < 0.35f) {
-    isMaxPhiCoefChanged_ = true;
-    npVars_->maxPhiCoef *= 0.99;
+  if (!nbVars_.isMaxPhiCoefChanged && sum_overflow_unscaled_ < 0.35f) {
+    nbVars_.isMaxPhiCoefChanged = true;
+    nbVars_.maxPhiCoef *= 0.99;
+  }
+  // keep maxPhiCoef > 1.0, avoid decreasing densityPenalty
+  if (nbVars_.maxPhiCoef <= 1.0f) {
+    nbVars_.maxPhiCoef = 1.01f;
   }
 }
 
@@ -3354,42 +3363,40 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
   int64_t availableFillerArea = single_filler_area * fillerStor_.size();
   int64_t originalInflationArea = inflation_area;
 
-  if (totalFillerArea_ >= static_cast<int64_t>(initial_filler_area_ * 0.9)) {
-    for (int i = nb_gcells_.size() - 1;
-         i >= 0 && removed_count < max_fllers_to_remove;
-         --i) {
-      if (nb_gcells_[i]->isFiller()) {
-        const GCell& removed = fillerStor_[nb_gcells_[i].getStorageIndex()];
-        removed_fillers_.push_back(RemovedFillerState{
-            .gcell = removed,
-            .curSLPCoordi = curSLPCoordi_[i],
-            .curSLPWireLengthGrads = curSLPWireLengthGrads_[i],
-            .curSLPDensityGrads = curSLPDensityGrads_[i],
-            .curSLPSumGrads = curSLPSumGrads_[i],
+  for (int i = nb_gcells_.size() - 1;
+       i >= 0 && removed_count < max_fllers_to_remove;
+       --i) {
+    if (nb_gcells_[i]->isFiller()) {
+      const GCell& removed = fillerStor_[nb_gcells_[i].getStorageIndex()];
+      removed_fillers_.push_back(RemovedFillerState{
+          .gcell = removed,
+          .curSLPCoordi = curSLPCoordi_[i],
+          .curSLPWireLengthGrads = curSLPWireLengthGrads_[i],
+          .curSLPDensityGrads = curSLPDensityGrads_[i],
+          .curSLPSumGrads = curSLPSumGrads_[i],
 
-            .nextSLPCoordi = nextSLPCoordi_[i],
-            .nextSLPWireLengthGrads = nextSLPWireLengthGrads_[i],
-            .nextSLPDensityGrads = nextSLPDensityGrads_[i],
-            .nextSLPSumGrads = nextSLPSumGrads_[i],
+          .nextSLPCoordi = nextSLPCoordi_[i],
+          .nextSLPWireLengthGrads = nextSLPWireLengthGrads_[i],
+          .nextSLPDensityGrads = nextSLPDensityGrads_[i],
+          .nextSLPSumGrads = nextSLPSumGrads_[i],
 
-            .prevSLPCoordi = prevSLPCoordi_[i],
-            .prevSLPWireLengthGrads = prevSLPWireLengthGrads_[i],
-            .prevSLPDensityGrads = prevSLPDensityGrads_[i],
-            .prevSLPSumGrads = prevSLPSumGrads_[i],
+          .prevSLPCoordi = prevSLPCoordi_[i],
+          .prevSLPWireLengthGrads = prevSLPWireLengthGrads_[i],
+          .prevSLPDensityGrads = prevSLPDensityGrads_[i],
+          .prevSLPSumGrads = prevSLPSumGrads_[i],
 
-            .curCoordi = curCoordi_[i],
-            .nextCoordi = nextCoordi_[i],
-            .initCoordi = initCoordi_[i],
+          .curCoordi = curCoordi_[i],
+          .nextCoordi = nextCoordi_[i],
+          .initCoordi = initCoordi_[i],
 
-            .snapshotCoordi = snapshotCoordi_[i],
-            .snapshotSLPCoordi = snapshotSLPCoordi_[i],
-            .snapshotSLPSumGrads = snapshotSLPSumGrads_[i]});
+          .snapshotCoordi = snapshotCoordi_[i],
+          .snapshotSLPCoordi = snapshotSLPCoordi_[i],
+          .snapshotSLPSumGrads = snapshotSLPSumGrads_[i]});
 
-        destroyFillerGCell(i);
-        availableFillerArea -= single_filler_area;
-        inflation_area -= single_filler_area;
-        ++removed_count;
-      }
+      destroyFillerGCell(i);
+      availableFillerArea -= single_filler_area;
+      inflation_area -= single_filler_area;
+      ++removed_count;
     }
   }
 

@@ -25,6 +25,7 @@
 #include "dbModuleModNetITermItr.h"
 #include "dbModuleModNetModBTermItr.h"
 #include "dbModuleModNetModITermItr.h"
+#include "dbUtil.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "utl/Logger.h"
 // User Code End Includes
@@ -415,7 +416,8 @@ dbSet<dbITerm> dbModNet::getITerms() const
 
 unsigned dbModNet::connectionCount() const
 {
-  return (getITerms().size() + getBTerms().size() + getModITerms().size());
+  return (getITerms().size() + getBTerms().size() + getModITerms().size()
+          + getModBTerms().size());
 }
 
 dbNet* dbModNet::findRelatedNet() const
@@ -492,85 +494,13 @@ dbNet* dbModNet::findRelatedNet() const
 
 void dbModNet::checkSanity() const
 {
-  utl::Logger* logger = getImpl()->getLogger();
   std::vector<std::string> drvr_info_list;
+  dbUtil::findBTermDrivers(this, drvr_info_list);
+  dbUtil::findITermDrivers(this, drvr_info_list);
+  dbUtil::findModBTermDrivers(this, drvr_info_list);
+  dbUtil::findModITermDrivers(this, drvr_info_list);
 
-  // Find BTerm drivers
-  for (dbBTerm* bterm : getBTerms()) {
-    if (bterm->getSigType().isSupply()) {
-      continue;
-    }
-
-    if (bterm->getIoType() == dbIoType::INPUT
-        || bterm->getIoType() == dbIoType::INOUT) {
-      drvr_info_list.push_back(
-          // NOLINTNEXTLINE(misc-include-cleaner)
-          fmt::format("\n  - bterm: '{}'", bterm->getName()));
-    }
-  }
-
-  // Find ITerm drivers
-  for (dbITerm* iterm : getITerms()) {
-    if (iterm->getSigType().isSupply()) {
-      continue;
-    }
-
-    if (iterm->getIoType() == dbIoType::OUTPUT
-        || iterm->getIoType() == dbIoType::INOUT) {
-      drvr_info_list.push_back(
-          // NOLINTNEXTLINE(misc-include-cleaner)
-          fmt::format("\n  - iterm: '{}'", iterm->getName('/')));
-    }
-  }
-
-  // Find ModBTerm drivers
-  for (dbModBTerm* modbterm : getModBTerms()) {
-    if (modbterm->getSigType().isSupply()) {
-      continue;
-    }
-
-    if (modbterm->getIoType() == dbIoType::INPUT
-        || modbterm->getIoType() == dbIoType::INOUT) {
-      drvr_info_list.push_back(
-          // NOLINTNEXTLINE(misc-include-cleaner)
-          fmt::format("\n  - modbterm: '{}'", modbterm->getName()));
-    }
-  }
-
-  // Find ModITerm drivers
-  for (dbModITerm* moditerm : getModITerms()) {
-    if (dbModBTerm* child_bterm = moditerm->getChildModBTerm()) {
-      if (child_bterm->getSigType().isSupply()) {
-        continue;
-      }
-
-      if (child_bterm->getIoType() == dbIoType::OUTPUT
-          || child_bterm->getIoType() == dbIoType::INOUT) {
-        drvr_info_list.push_back(
-            // NOLINTNEXTLINE(misc-include-cleaner)
-            fmt::format("\n  - moditerm: '{}'", moditerm->getName()));
-      }
-    }
-  }
-
-  size_t drvr_count = drvr_info_list.size();
-  if (drvr_count > 1) {
-    // Multiple drivers found.
-    // jk: logger->error(utl::ODB,
-    logger->warn(utl::ODB,
-                 135,  // Reusing error code from dbNet
-                 "SanityCheck: dbModNet '{}' has multiple drivers: {}",
-                 getName(),
-                 fmt::join(drvr_info_list, ""));
-  }
-
-  const uint term_count = connectionCount();
-
-  // No driver
-  if (drvr_count == 0 && term_count > 0) {
-    logger->warn(
-        utl::ODB, 136, "SanityCheck: dbModNet '{}' has no driver.", getName());
-  }
+  dbUtil::checkNetSanity(this, drvr_info_list);
 }
 
 // User Code End dbModNetPublicMethods

@@ -13,6 +13,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
+#include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 
 namespace sta {

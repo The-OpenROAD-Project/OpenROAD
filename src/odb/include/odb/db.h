@@ -2505,6 +2505,13 @@ class dbNet : public dbObject
   void renameWithModNetInHighestHier();
 
   ///
+  /// Check if this net is internal to the given module.
+  /// A net is internal if all its iterms belong to instances within the module
+  /// and it has no bterms.
+  ///
+  bool isInternalTo(dbModule* module) const;
+
+  ///
   /// Check issues such as multiple drivers, no driver, or dangling net
   ///
   void checkSanity() const;

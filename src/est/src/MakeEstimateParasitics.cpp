@@ -10,6 +10,7 @@
 #include "est/EstimateParasitics.h"
 #include "gui/gui.h"
 #include "odb/db.h"
+#include "tcl.h"
 #include "utl/decode.h"
 
 extern "C" {

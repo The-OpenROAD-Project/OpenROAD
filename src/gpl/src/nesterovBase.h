@@ -667,11 +667,11 @@ class BinGrid
 {
  public:
   BinGrid() = default;
-  BinGrid(Die* die);
+  BinGrid(int lx, int ly, int ux, int uy);
 
   void setPlacerBase(std::shared_ptr<PlacerBase> pb);
   void setLogger(utl::Logger* log);
-  void setCorePoints(const Die* die);
+  void setRegionPoints(int lx, int ly, int ux, int uy);
   void setBinCnt(int binCntX, int binCntY);
   void setTargetDensity(float density);
   void updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells);
@@ -679,7 +679,7 @@ class BinGrid
 
   void initBins();
 
-  // lx, ly, ux, uy will hold coreArea
+  // lx, ly, ux, uy will hold region area
   int lx() const;
   int ly() const;
   int ux() const;
@@ -744,6 +744,10 @@ class NesterovBaseVars
   bool isSetBinCnt = false;
   bool useUniformTargetDensity = false;
 
+  float minPhiCoef = 0.95;  // pcof_min
+  float maxPhiCoef = 1.05;  // pcof_max
+  bool isMaxPhiCoefChanged = false;
+
   void reset();
 };
 
@@ -755,8 +759,6 @@ class NesterovPlaceVars
   float initDensityPenalty = 0.00008;       // INIT_LAMBDA
   float initWireLengthCoef = 0.25;          // base_wcof
   float targetOverflow = 0.1;               // overflow
-  float minPhiCoef = 0.95;                  // pcof_min
-  float maxPhiCoef = 1.05;                  // pcof_max
   float minPreconditioner = 1.0;            // MIN_PRE
   float initialPrevCoordiUpdateCoef = 100;  // z_ref_alpha
   float referenceHpwl = 446000000;          // refDeltaHpwl
@@ -1019,7 +1021,7 @@ class NesterovBase
   void setIter(int iter) { iter_ = iter; }
   void setMaxPhiCoefChanged(bool maxPhiCoefChanged)
   {
-    isMaxPhiCoefChanged_ = maxPhiCoefChanged;
+    nbVars_.isMaxPhiCoefChanged = maxPhiCoefChanged;
   }
 
   void updateGradients(std::vector<FloatPoint>& sumGrads,
@@ -1057,6 +1059,7 @@ class NesterovBase
   void updateNextIter(int iter);
   void setTrueReprintIterHeader() { reprint_iter_header_ = true; }
   float getPhiCoef(float scaledDiffHpwl) const;
+  float getStoredPhiCoef() const { return phiCoef_; }
 
   bool checkConvergence(int gpl_iter_count,
                         int routability_gpl_iter_count,
@@ -1105,6 +1108,8 @@ class NesterovBase
                               int start_iteration = 0,
                               int iteration_stride = 50,
                               int gcell_index_stride = 10) const;
+
+  std::shared_ptr<PlacerBase> getPb() const { return pb_; }
 
  private:
   NesterovBaseVars nbVars_;
@@ -1160,6 +1165,7 @@ class NesterovBase
   std::vector<RemovedFillerState> removed_fillers_;
 
   float sumPhi_ = 0;
+  float phiCoef_ = 0;
   float targetDensity_ = 0;
   float uniformTargetDensity_ = 0;
 
@@ -1229,8 +1235,6 @@ class NesterovBase
   bool isDiverged_ = false;
 
   NesterovPlaceVars* npVars_ = nullptr;
-
-  bool isMaxPhiCoefChanged_ = false;
 
   float minSumOverflow_ = 1e30;
   float hpwlWithMinSumOverflow_ = 1e30;
