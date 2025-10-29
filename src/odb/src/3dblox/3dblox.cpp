@@ -187,7 +187,11 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     for (odb::dbLib* lib : db_->getLibs()) {
       search_libs.push_back(lib);
     }
-    def_reader.readChip(search_libs, chiplet.external.def_file.c_str(), chip);
+    // No callbacks here as we are going to give one postRead3Dbx later
+    def_reader.readChip(search_libs,
+                        chiplet.external.def_file.c_str(),
+                        chip,
+                        /*issue_callback*/ false);
   }
   chip->setWidth(chiplet.design_width * db_->getDbuPerMicron());
   chip->setHeight(chiplet.design_height * db_->getDbuPerMicron());
