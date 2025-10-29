@@ -2513,6 +2513,8 @@ class dbNet : public dbObject
   /// Dump dbNet info for debugging
   ///
   void dump() const;
+
+  void checkSanityModNetConsistency() const;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -8284,6 +8286,7 @@ class dbModBTerm : public dbObject
   dbModule* getParent() const;
 
   // User Code Begin dbModBTerm
+  std::string getHierarchicalName() const;
   void setParentModITerm(dbModITerm* parent_pin);
   dbModITerm* getParentModITerm() const;
   void setModNet(dbModNet* modNet);
@@ -8359,6 +8362,7 @@ class dbModITerm : public dbObject
   dbModInst* getParent() const;
 
   // User Code Begin dbModITerm
+  std::string getHierarchicalName() const;
   void setModNet(dbModNet* modNet);
   dbModNet* getModNet() const;
   void setChildModBTerm(dbModBTerm* child_port);
