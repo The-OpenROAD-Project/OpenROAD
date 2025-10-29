@@ -40,6 +40,5 @@ cc_test(
         "@edu_berkeley_abc//:abc-lib",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@tk_tcl//:tcl",
     ],
 )

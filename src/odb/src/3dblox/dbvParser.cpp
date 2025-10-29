@@ -14,6 +14,7 @@
 #include "objects.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
+#include "yaml-cpp/yaml.h"
 
 namespace odb {
 

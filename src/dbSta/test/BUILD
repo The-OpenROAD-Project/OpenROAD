@@ -189,6 +189,5 @@ cc_test(
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@tk_tcl//:tcl",
     ],
 )

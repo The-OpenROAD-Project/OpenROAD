@@ -280,7 +280,7 @@ class FastRouteCore
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
-  void updateSlacks(float percentage = 0.75);
+  void updateSlacks(float percentage = 0.7);
   void preProcessTechLayers();
   odb::dbTechLayer* getTechLayer(int layer, bool is_via);
 
