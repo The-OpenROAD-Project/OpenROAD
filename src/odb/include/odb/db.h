@@ -1756,8 +1756,7 @@ class dbNet : public dbObject
 {
  public:
   ///
-  /// Get the net name.
-  /// - It is a hierarchical net name.
+  /// Get the hierarchical net name.
   ///
   std::string getName() const;
 

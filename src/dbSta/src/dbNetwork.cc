@@ -4551,8 +4551,6 @@ void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
   // Check for incomplete flat net connections
   for (odb::dbNet* net_db : block()->getNets()) {
     net_db->checkSanity();
-    std::set<dbModNet*> modnet_set;
-    net_db->findRelatedModNets(modnet_set);
   }
 }
 

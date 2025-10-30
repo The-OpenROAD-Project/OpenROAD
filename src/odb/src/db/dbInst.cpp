@@ -1337,7 +1337,7 @@ dbInst* dbInst::create(dbBlock* block_,
                inst->getId(),
                static_cast<void*>(inst),
                inst->getName(),
-               inst->getMaster()->getName());
+               master_->getName());
     dbLib* lib = master_->getLib();
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbInstObj);
