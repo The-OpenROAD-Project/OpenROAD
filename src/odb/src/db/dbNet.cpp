@@ -397,7 +397,7 @@ bool dbNet::rename(const char* name)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: net {}, rename to {}",
+               "ECO: dbNet({}), rename to '{}'",
                getId(),
                name);
     block->_journal->updateField(this, _dbNet::NAME, net->_name, name);
@@ -2119,7 +2119,8 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: create net, name {}",
+               "ECO: create dbNet({}) '{}'",
+               net->getId(),
                name_);
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbNetObj);
@@ -2197,8 +2198,9 @@ void dbNet::destroy(dbNet* net_)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: destroy net, id: {}",
-               net->getId());
+               "ECO: delete dbNet({}) '{}'",
+               net->getId(),
+               net_->getName());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(net_->getName());

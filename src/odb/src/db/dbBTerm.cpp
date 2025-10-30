@@ -619,7 +619,10 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: dbBTerm:create");
+               "ECO: create dbBTerm '{}' on dbNet({}) '{}'",
+               name,
+               net_->getId(),
+               net_->getName());
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbBTermObj);
     block->_journal->pushParam(net->getId());
@@ -680,7 +683,7 @@ void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: connect Bterm {} to modnet {}",
+               "ECO: connect dbBTerm({}) to dbModNet({})",
                bterm->getId(),
                mod_net->getId());
 
@@ -714,7 +717,7 @@ void _dbBTerm::connectNet(_dbNet* net, _dbBlock* block)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: connect Bterm {} to net {}",
+               "ECO: connect dbBTerm({}) to dbNet({})",
                bterm->getId(),
                net->getId());
     block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
@@ -778,7 +781,8 @@ void dbBTerm::destroy(dbBTerm* bterm_)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: dbBTerm:destroy");
+               "ECO: delete dbBTerm({})",
+               bterm_->getId());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbBTermObj);
     block->_journal->pushParam(bterm_->getId());
@@ -801,8 +805,9 @@ void _dbBTerm::disconnectNet(_dbBTerm* bterm, _dbBlock* block)
                  utl::ODB,
                  "DB_ECO",
                  1,
-                 "ECO: disconnect bterm {}",
-                 bterm->getId());
+                 "ECO: disconnect dbBTerm({}) from dbNet({})",
+                 bterm->getId(),
+                 net->getId());
       block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
       block->_journal->pushParam(dbBTermObj);
       block->_journal->pushParam(bterm->getId());
@@ -853,8 +858,9 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
                  utl::ODB,
                  "DB_ECO",
                  1,
-                 "ECO: disconnect bterm {}",
-                 bterm->getId());
+                 "ECO: disconnect dbBTerm({}) from dbModNet({})",
+                 bterm->getId(),
+                 mod_net->getId());
       block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
       block->_journal->pushParam(dbBTermObj);
       block->_journal->pushParam(bterm->getId());

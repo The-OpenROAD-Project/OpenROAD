@@ -369,12 +369,21 @@ bool dbInst::rename(const char* name)
     return false;
   }
 
+  // jk: test
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: dbInst({}), rename to '{}'",
+             getId(),
+             name);
+
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: inst {}, rename to {}",
+               "ECO: dbInst({}), rename to '{}'",
                getId(),
                name);
     block->_journal->updateField(this, _dbInst::NAME, inst->_name, name);
@@ -1123,8 +1132,15 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   }
 
   if (block->_journal) {
-    debugPrint(
-        getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: swapMaster");
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: swapMaster on dbInst({}) '{}' from '{}' to '{}'",
+               getId(),
+               getName(),
+               oldMasterName,
+               newMasterName);
     dbLib* old_lib = old_master_->getLib();
     dbLib* new_lib = new_master_->getLib();
     block->_journal->beginAction(dbJournal::SWAP_OBJECT);
@@ -1296,7 +1312,10 @@ dbInst* dbInst::create(dbBlock* block_,
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: dbInst:create");
+               "ECO: create dbInst({}) '{}' '{}'",
+               inst->getId(),
+               name_,
+               master_->getName());
     dbLib* lib = master_->getLib();
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbInstObj);
@@ -1503,7 +1522,9 @@ void dbInst::destroy(dbInst* inst_)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: dbInst:destroy");
+               "ECO: delete dbInst({}) '{}'",
+               inst_->getId(),
+               inst_->getName());
     auto master = inst_->getMaster();
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbInstObj);
