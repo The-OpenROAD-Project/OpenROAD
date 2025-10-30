@@ -369,15 +369,6 @@ bool dbInst::rename(const char* name)
     return false;
   }
 
-  // jk: test
-  debugPrint(getImpl()->getLogger(),
-             utl::ODB,
-             "DB_ECO",
-             1,
-             "ECO: dbInst({}), rename to '{}'",
-             getId(),
-             name);
-
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
                utl::ODB,

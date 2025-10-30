@@ -236,43 +236,19 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
         db_network_->hierarchicalConnect(buffer_op_pin_iterm, load_iterm);
 
         // New modnet connection is made. Connect to the existing loads.
-        // jk: new modnet connection
-        // printf("jk2: SplitLoadMove: after hierarchicalConnect %s %s\n",
-        //       buffer_op_pin_iterm->getName().c_str(),
-        //       load_pin_iterm->getName().c_str());
         buffer_op_modnet = buffer_op_pin_iterm->getModNet();
         assert(buffer_op_modnet != nullptr);
         dbNet* buffer_op_net = db_network_->staToDb(out_net);
         for (dbITerm* iterm : buffer_op_net->getITerms()) {
-          // if (iterm->getModNet() != buffer_op_modnet2) {
-          //   printf("jk2: connect ITerm '%s' to the new modnet\n",
-          //          iterm->getName().c_str());
-          // }
-
-          // It disconnects the existing dbModNet if exists.
+          // This API disconnects the existing dbModNet first if exists.
           iterm->connect(buffer_op_modnet);
         }
         for (dbBTerm* bterm : buffer_op_net->getBTerms()) {
-          // if (bterm->getModNet() != buffer_op_modnet2) {
-          //   printf("jk2: connect BTerm '%s' to the new modnet\n",
-          //          bterm->getName().c_str());
-          // }
           bterm->connect(buffer_op_modnet);
         }
       } else if (buffer_op_modnet != nullptr) {
         // Connect at the same hierarchy
-        load_iterm->connect(buffer_op_modnet);  // jk: fix
-
-        //  jk: buggy. it creates a modnet w/ multiple drivers.
-        // if (load_iterm && db_mod_load_net) {
-        //   // For hierarchical case, we simultaneously connect the
-        //   // hierarchical net and the modnet to make sure they
-        //   // get reassociated. (so all modnet pins refer to flat net).
-        //   load_iterm->disconnect();
-        //   db_network_->connectPin(load_pin, out_net, (Net*)
-        //   db_mod_load_net);
-        //   //          iterm->connect(db_mod_load_net);
-        // }
+        load_iterm->connect(buffer_op_modnet);
       }
     }
   }
