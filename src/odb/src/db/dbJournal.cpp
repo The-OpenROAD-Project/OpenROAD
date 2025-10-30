@@ -266,13 +266,15 @@ void dbJournal::redo_createObject()
       uint net_id;
       _log.pop(name);
       _log.pop(net_id);
+      dbNet* net = dbNet::create(_block, name.c_str());
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
                  2,
-                 "REDO ECO: create dbNet {}",
-                 name.c_str());
-      dbNet::create(_block, name.c_str());
+                 "REDO ECO: create dbNet({}, {:p}) '{}'",
+                 net->getId(),
+                 static_cast<void*>(net),
+                 name);
       break;
     }
 
@@ -283,14 +285,19 @@ void dbJournal::redo_createObject()
       _log.pop(name);
 
       dbNet* net = dbNet::getNet(_block, dbNet_id);
-      debugPrint(_logger,
-                 utl::ODB,
-                 "DB_ECO",
-                 2,
-                 "REDO ECO: create dbBTermObj {}, Net: {}",
-                 name,
-                 dbNet_id);
-      dbBTerm::create(net, name.c_str());
+      dbBTerm* bterm = dbBTerm::create(net, name.c_str());
+      debugPrint(
+          _logger,
+          utl::ODB,
+          "DB_ECO",
+          2,
+          "REDO ECO: create dbBTerm({}, {:p}) '{}' on dbNet({}, {:p}) '{}'",
+          bterm->getId(),
+          static_cast<void*>(bterm),
+          name,
+          net->getId(),
+          static_cast<void*>(net),
+          net->getName());
       break;
     }
 
@@ -305,15 +312,17 @@ void dbJournal::redo_createObject()
       _log.pop(inst_id);
       dbLib* lib = dbLib::getLib(_block->getDb(), lib_id);
       dbMaster* master = dbMaster::getMaster(lib, master_id);
+      dbInst* inst = dbInst::create(_block, master, name.c_str());
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
                  2,
-                 "REDO ECO: create dbInstObj {}, master: {}, lib: {}",
+                 "REDO ECO: create dbInst({}, {:p}) '{}' master '{}' lib '{}'",
+                 inst->getId(),
+                 static_cast<void*>(inst),
                  name,
-                 master_id,
-                 lib_id);
-      dbInst::create(_block, master, name.c_str());
+                 master->getName(),
+                 lib->getName());
       break;
     }
 
@@ -480,8 +489,10 @@ void dbJournal::redo_deleteObject()
                  utl::ODB,
                  "DB_ECO",
                  2,
-                 "REDO ECO: destroy dbNet, net_id {}",
-                 net_id);
+                 "REDO ECO: destroy dbNet({}, {:p}) '{}'",
+                 net_id,
+                 static_cast<void*>(net),
+                 name);
       dbNet::destroy(net);
       break;
     }
@@ -494,8 +505,10 @@ void dbJournal::redo_deleteObject()
                  utl::ODB,
                  "DB_ECO",
                  2,
-                 "REDO ECO: destroy dbBTerm, bterm_id {}",
-                 bterm_id);
+                 "REDO ECO: destroy dbBTerm({}, {:p}) '{}'",
+                 bterm_id,
+                 static_cast<void*>(bterm),
+                 bterm->getName());
       dbBTerm::destroy(bterm);
       break;
     }
@@ -525,8 +538,10 @@ void dbJournal::redo_deleteObject()
                  utl::ODB,
                  "DB_ECO",
                  2,
-                 "REDO ECO: destroy dbInst, inst_id {}",
-                 inst_id);
+                 "REDO ECO: destroy dbInst({}, {:p}) '{}'",
+                 inst_id,
+                 static_cast<void*>(inst),
+                 name);
       dbInst::destroy(inst);
       break;
     }
@@ -684,13 +699,18 @@ void dbJournal::redo_connectObject()
       _log.pop(net_id);
       if (net_id != 0) {
         dbNet* net = dbNet::getNet(_block, net_id);
-        debugPrint(_logger,
-                   utl::ODB,
-                   "DB_ECO",
-                   2,
-                   "REDO ECO: connect dbITermObj, iterm_id {}, net_id {}",
-                   iterm_id,
-                   net_id);
+        debugPrint(
+            _logger,
+            utl::ODB,
+            "DB_ECO",
+            2,
+            "REDO ECO: connect dbITerm({}, {:p}) '{}' to dbNet({}, {:p}) '{}'",
+            iterm_id,
+            static_cast<void*>(iterm),
+            iterm->getName(),
+            net_id,
+            static_cast<void*>(net),
+            net->getName());
         iterm->connect(net);
       }
       uint mod_net_id;
@@ -701,9 +721,14 @@ void dbJournal::redo_connectObject()
                    utl::ODB,
                    "DB_ECO",
                    2,
-                   "REDO ECO: connect dbITermObj, iterm_id {}, mod_net_id {}",
+                   "REDO ECO: connect dbITerm({}, {:p}) '{}' to dbModNet({}, "
+                   "{:p}) '{}'",
                    iterm_id,
-                   mod_net_id);
+                   static_cast<void*>(iterm),
+                   iterm->getName(),
+                   mod_net_id,
+                   static_cast<void*>(mod_net),
+                   mod_net->getName());
         iterm->connect(mod_net);
       }
       break;
@@ -716,13 +741,18 @@ void dbJournal::redo_connectObject()
       uint net_id;
       _log.pop(net_id);
       dbNet* net = dbNet::getNet(_block, net_id);
-      debugPrint(_logger,
-                 utl::ODB,
-                 "DB_ECO",
-                 2,
-                 "REDO ECO: connect dbBTermObj, bterm_id {}, net_id {}",
-                 bterm_id,
-                 net_id);
+      debugPrint(
+          _logger,
+          utl::ODB,
+          "DB_ECO",
+          2,
+          "REDO ECO: connect dbBTerm({}, {:p}) '{}' to dbNet({}, {:p}) '{}'",
+          bterm_id,
+          static_cast<void*>(bterm),
+          bterm->getName(),
+          net_id,
+          static_cast<void*>(net),
+          net->getName());
       bterm->connect(net);
       break;
     }
@@ -778,8 +808,10 @@ void dbJournal::redo_disconnectObject()
                  utl::ODB,
                  "DB_ECO",
                  2,
-                 "REDO ECO: disconnect dbITermObj, iterm_id {}",
-                 iterm_id);
+                 "REDO ECO: disconnect dbITerm({}, {:p}) '{}'",
+                 iterm_id,
+                 static_cast<void*>(iterm),
+                 iterm->getName());
       if (net_id != 0 && mnet_id != 0) {
         // note: this will disconnect the modnet and the dbNet
         iterm->disconnect();
@@ -861,18 +893,20 @@ void dbJournal::redo_swapObject()
       uint master_id;
       _log.pop(master_id);
       dbMaster* master = dbMaster::getMaster(lib, master_id);
-      debugPrint(_logger,
-                 utl::ODB,
-                 "DB_ECO",
-                 2,
-                 "ECO: swapMaster dbInst({}) '{}', prev lib/master: {}/{}, "
-                 "new lib/master: {}/{}",
-                 inst_id,
-                 inst->getName(),
-                 prev_lib_id,
-                 prev_master_id,
-                 lib_id,
-                 master_id);
+      debugPrint(
+          _logger,
+          utl::ODB,
+          "DB_ECO",
+          2,
+          "ECO: swapMaster dbInst({} {:p}) '{}', prev lib/master: {}/{}, "
+          "new lib/master: {}/{}",
+          inst_id,
+          static_cast<void*>(inst),
+          inst->getName(),
+          prev_lib_id,
+          prev_master_id,
+          lib_id,
+          master_id);
       inst->swapMaster(master);
       break;
     }
@@ -1765,8 +1799,9 @@ void dbJournal::undo_createObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: create dbInst({}) '{}'",
+                 "UNDO ECO: create dbInst({}, {:p}) '{}'",
                  inst_id,
+                 static_cast<void*>(inst),
                  name);
 
       dbInst::destroy(inst);
@@ -1779,6 +1814,14 @@ void dbJournal::undo_createObject()
       _log.pop(name);
       _log.pop(net_id);
       dbNet* net = dbNet::getNet(_block, net_id);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: create dbNet({}, {:p}) '{}'",
+                 net->getId(),
+                 static_cast<void*>(net),
+                 name);
       dbNet::destroy(net);
       break;
     }
@@ -1794,8 +1837,9 @@ void dbJournal::undo_createObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: create dbModule({}) '{}'",
+                 "UNDO ECO: create dbModule({} {:p}) '{}'",
                  obj_id,
+                 static_cast<void*>(mod),
                  mod->getName());
       dbModule::destroy(mod);
       break;
@@ -1818,8 +1862,9 @@ void dbJournal::undo_createObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: create dbModInst({}) '{}'",
+                 "UNDO ECO: create dbModInst({} {:p}) '{}'",
                  obj_id,
+                 static_cast<void*>(mod_inst),
                  mod_inst->getName());
       dbModInst::destroy(mod_inst);
       break;
@@ -1838,8 +1883,9 @@ void dbJournal::undo_createObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: create dbModNet({}) '{}'",
+                 "UNDO ECO: create dbModNet({} {:p}) '{}'",
                  mod_net_id,
+                 static_cast<void*>(mod_net),
                  mod_net->getName());
       dbModNet::destroy(mod_net);
       break;
@@ -1860,8 +1906,9 @@ void dbJournal::undo_createObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: create dbModBTerm({}) '{}'",
+                 "UNDO ECO: create dbModBTerm({} {:p}) '{}'",
                  modbterm_id,
+                 static_cast<void*>(modbterm),
                  modbterm->getName());
       dbModBTerm::destroy(modbterm);
       break;
@@ -1882,8 +1929,9 @@ void dbJournal::undo_createObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: create dbModITerm({}) '{}'",
+                 "UNDO ECO: create dbModITerm({} {:p}) '{}'",
                  moditerm_id,
+                 static_cast<void*>(moditerm),
                  moditerm->getName());
       dbModITerm::destroy(moditerm);
       break;
@@ -1971,9 +2019,10 @@ void dbJournal::undo_deleteObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: delete dbInst({}) '{}' dbMaster({})",
+                 "UNDO ECO: delete dbInst({} {:p}) '{}' dbMaster({})",
                  inst_id,
-                 name.c_str(),
+                 static_cast<void*>(inst),
+                 name,
                  master_id);
 
       break;
@@ -1995,9 +2044,10 @@ void dbJournal::undo_deleteObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: delete dbNet({}) '{}'",
+                 "UNDO ECO: delete dbNet({}, {:p}) '{}'",
                  net->getId(),
-                 name.c_str());
+                 static_cast<void*>(net),
+                 name);
       break;
     }
 
@@ -2011,8 +2061,9 @@ void dbJournal::undo_deleteObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: delete dbModule({}) '{}'",
+                 "UNDO ECO: delete dbModule({} {:p}) '{}'",
                  module->getId(),
+                 static_cast<void*>(module),
                  name.c_str());
       break;
     }
@@ -2040,8 +2091,9 @@ void dbJournal::undo_deleteObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: delete dbModInst({}) '{}'",
+                 "UNDO ECO: delete dbModInst({} {:p}) '{}'",
                  mod_inst->getId(),
+                 static_cast<void*>(mod_inst),
                  name.c_str());
       break;
     }
@@ -2060,8 +2112,9 @@ void dbJournal::undo_deleteObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: delete dbModNet({}) '{}'",
+                 "UNDO ECO: delete dbModNet({} {:p}) '{}'",
                  net->getId(),
+                 static_cast<void*>(net),
                  name.c_str());
       break;
     }
@@ -2080,8 +2133,9 @@ void dbJournal::undo_deleteObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: delete dbModBTerm({}) '{}'",
+                 "UNDO ECO: delete dbModBTerm({} {:p}) '{}'",
                  modbterm->getId(),
+                 static_cast<void*>(modbterm),
                  name.c_str());
       break;
     }
@@ -2106,8 +2160,9 @@ void dbJournal::undo_deleteObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: delete dbModiterm({}) '{}'",
+                 "UNDO ECO: delete dbModiterm({} {:p}) '{}'",
                  mod_iterm->getId(),
+                 static_cast<void*>(mod_iterm),
                  name.c_str());
       break;
     }
@@ -2138,8 +2193,9 @@ void dbJournal::undo_connectObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: connect dbModITerm({}) '{}'",
+                 "UNDO ECO: connect dbModITerm({} {:p}) '{}'",
                  moditerm_id,
+                 static_cast<void*>(moditerm),
                  moditerm->getName());
 
       moditerm->disconnect();
@@ -2157,8 +2213,9 @@ void dbJournal::undo_connectObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: connect dbModBTerm({}) '{}'",
+                 "UNDO ECO: connect dbModBTerm({} {:p}) '{}'",
                  modbterm_id,
+                 static_cast<void*>(modbterm),
                  modbterm->getName());
 
       modbterm->disconnect();
@@ -2223,15 +2280,17 @@ void dbJournal::undo_connectObject()
       _log.pop(net_id);   // the db net
       _log.pop(mnet_id);  // the modnet
 
-      debugPrint(_logger,
-                 utl::ODB,
-                 "DB_ECO",
-                 3,
-                 "UNDO ECO: connect dbBTerm({}) '{}' dbNet({}) dbModNet({})",
-                 bterm_id,
-                 bterm->getName(),
-                 net_id,
-                 mnet_id);
+      debugPrint(
+          _logger,
+          utl::ODB,
+          "DB_ECO",
+          3,
+          "UNDO ECO: connect dbBTerm({} {:p}) '{}' dbNet({}) dbModNet({})",
+          bterm_id,
+          static_cast<void*>(bterm),
+          bterm->getName(),
+          net_id,
+          mnet_id);
 
       bterm->disconnect();
       break;
@@ -2473,9 +2532,10 @@ void dbJournal::undo_updateNetField()
                  utl::ODB,
                  "DB_ECO",
                  2,
-                 "UNDO ECO: dbNet({}), updateName from '{}' to '{}'",
+                 "UNDO ECO: dbNet({} {:p}), updateName from '{}' to '{}'",
                  net_id,
-                 new_name.c_str(),
+                 static_cast<void*>(net),
+                 new_name,
                  prev_name.c_str());
       ((dbNet*) net)->rename(prev_name.c_str());
       break;
@@ -2508,9 +2568,10 @@ void dbJournal::undo_updateModNetField()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: dbModNet({}), updateName from '{}' to '{}'",
+                 "UNDO ECO: dbModNet({} {:p}), updateName from '{}' to '{}'",
                  modnet_id,
-                 new_name.c_str(),
+                 static_cast<void*>(modnet),
+                 new_name,
                  prev_name.c_str());
       ((dbModNet*) modnet)->rename(prev_name.c_str());
       break;
@@ -2568,9 +2629,10 @@ void dbJournal::undo_updateInstField()
                  utl::ODB,
                  "DB_ECO",
                  2,
-                 "UNDO ECO: dbInst({}), updateName from '{}' to '{}'",
+                 "UNDO ECO: dbInst({} {:p}), updateName from '{}' to '{}'",
                  inst_id,
-                 new_name.c_str(),
+                 static_cast<void*>(inst),
+                 new_name,
                  prev_name.c_str());
       ((dbInst*) inst)->rename(prev_name.c_str());
       break;

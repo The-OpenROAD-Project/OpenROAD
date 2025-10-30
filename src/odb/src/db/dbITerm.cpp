@@ -197,22 +197,26 @@ dbBlock* dbITerm::getBlock() const
 {
   return (dbBlock*) getImpl()->getOwner();
 }
+
 void dbITerm::setClocked(bool v)
 {
   _dbITerm* iterm = (_dbITerm*) this;
   iterm->_flags._clocked = v;
 }
+
 bool dbITerm::isClocked()
 {
   bool masterFlag = getMTerm()->getSigType() == dbSigType::CLOCK ? true : false;
   _dbITerm* iterm = (_dbITerm*) this;
   return iterm->_flags._clocked > 0 || masterFlag ? true : false;
 }
+
 void dbITerm::setMark(uint v)
 {
   _dbITerm* iterm = (_dbITerm*) this;
   iterm->_flags._mark = v;
 }
+
 bool dbITerm::isSetMark()
 {
   _dbITerm* iterm = (_dbITerm*) this;
@@ -345,15 +349,17 @@ void dbITerm::connect(dbNet* net_)
   }
 
   if (block->_journal) {
-    debugPrint(iterm->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: connect dbIterm({}) '{}' to dbNet({}) '{}'",
-               getId(),
-               getName(),
-               net_->getId(),
-               net_->getName());
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: connect dbITerm({}, {:p}) '{}' to dbNet({}, {:p}) '{}'",
+             getId(),
+             static_cast<void*>(this),
+             getName(),
+             net->getId(),
+             static_cast<void*>(net),
+             net_->getName());
     block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(getId());
@@ -426,11 +432,13 @@ void dbITerm::connect(dbModNet* mod_net)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: connect dbIterm({}) '{}' to dbModNet({}) '{}'",
+               "ECO: connect dbITerm({} {:p}) '{}' to dbModNet({} {:p}) '{}'",
                getId(),
+               static_cast<void*>(this),
                getName(),
                _mod_net->getId(),
-               ((dbModNet*) _mod_net)->getName());
+               static_cast<void*>(_mod_net),
+               ((dbModNet*) _mod_net)->getHierarchicalName());
     block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(getId());
@@ -473,8 +481,9 @@ void dbITerm::disconnect()
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
   _dbNet* net
       = iterm->_net == 0 ? nullptr : block->_net_tbl->getPtr(iterm->_net);
-  _dbModNet* mod_net
+  _dbModNet* mod_net_impl
       = iterm->_mnet == 0 ? nullptr : block->_modnet_tbl->getPtr(iterm->_mnet);
+  dbModNet* mod_net = (dbModNet*) mod_net_impl;
 
   if (net && net->_flags._dont_touch) {
     inst->getLogger()->error(
@@ -486,19 +495,27 @@ void dbITerm::disconnect()
   }
 
   if (block->_journal) {
-    debugPrint(iterm->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: disconnect dbIterm({}) '{}'",
-               getId(),
-               getName());
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "disconnect dbITerm({}, {:p}) '{}' from dbNet({}, {:p}) '{}' "
+             "corresponding to dbModNet({}, {:p}) '{}'",
+             getId(),
+             static_cast<void*>(this),
+             getName(),
+             (net)? net->getId() : 0,
+             static_cast<void*>(net),
+             (net)? net->_name : "NULL",
+             (mod_net_impl)? mod_net_impl->getId() : 0,
+             static_cast<void*>(mod_net),
+             (mod_net)? mod_net->getHierarchicalName() : "NULL");
 
     block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(getId());
     block->_journal->pushParam(net ? net->getOID() : 0U);
-    block->_journal->pushParam(mod_net ? mod_net->getOID() : 0U);
+    block->_journal->pushParam(mod_net_impl ? mod_net_impl->getOID() : 0U);
     block->_journal->endAction();
   }
 
@@ -531,11 +548,11 @@ void dbITerm::disconnect()
     }
   }
 
-  if (mod_net) {
-    if (mod_net->_iterms == id) {
-      mod_net->_iterms = iterm->_next_modnet_iterm;
-      if (mod_net->_iterms != 0) {
-        _dbITerm* t = block->_iterm_tbl->getPtr(mod_net->_iterms);
+  if (mod_net_impl) {
+    if (mod_net_impl->_iterms == id) {
+      mod_net_impl->_iterms = iterm->_next_modnet_iterm;
+      if (mod_net_impl->_iterms != 0) {
+        _dbITerm* t = block->_iterm_tbl->getPtr(mod_net_impl->_iterms);
         t->_prev_modnet_iterm = 0;
       }
     } else {
@@ -591,11 +608,13 @@ void dbITerm::disconnectDbNet()
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: disconnect dbIterm({}) '{}' from dbNet({}) '{}'",
+               "ECO: disconnect dbITerm({} {:p}) '{}' from dbNet({} {:p}) '{}'",
                getId(),
+               static_cast<void*>(this),
                getName(),
                net->getId(),
-               net->_name);
+               static_cast<void*>(net),
+               ((dbNet*) net)->getName());
     block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(getId());

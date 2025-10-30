@@ -1757,6 +1757,7 @@ class dbNet : public dbObject
  public:
   ///
   /// Get the net name.
+  /// - It is a hierarchical net name.
   ///
   std::string getName() const;
 
@@ -2536,12 +2537,17 @@ class dbInst : public dbObject
   ///
   /// Get the instance name.
   ///
-  std::string getName();
+  std::string getName() const;
+
+  ///
+  /// Get the hierarchical instance name.
+  ///
+  std::string getHierarchicalName() const;
 
   ///
   /// Need a version that does not do strdup every time
   ///
-  const char* getConstName();
+  const char* getConstName() const;
 
   ///
   /// Compare, like !strcmp
@@ -2830,7 +2836,7 @@ class dbInst : public dbObject
   ///
   /// Get the block of this instance.
   ///
-  dbBlock* getBlock();
+  dbBlock* getBlock() const;
 
   ///
   /// Get the Master of this instance.
