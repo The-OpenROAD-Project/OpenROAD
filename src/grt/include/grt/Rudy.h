@@ -39,7 +39,8 @@ class Rudy
    * \pre we need to call this function after `setGridConfig` and
    * `setWireWidth`.
    * */
-  void calculateRudy();
+  void calculateRudy(std::optional<std::set<odb::dbNet*>*> selection
+                     = std::nullopt);
 
   /**
    * Set the grid area and grid numbers.
@@ -65,6 +66,7 @@ class Rudy
   void makeGrid();
   void getResourceReductions();
   Tile& getEditableTile(int x, int y) { return grid_.at(x).at(y); }
+  void processNet(odb::dbNet* net);
   void processIntersectionSignalNet(odb::Rect net_rect);
 
   odb::dbBlock* block_;

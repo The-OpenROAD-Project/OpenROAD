@@ -639,6 +639,9 @@ class Gui
   // Add an instance to the selection set
   void addSelectedInst(const char* name);
 
+  // Return the selected set
+  SelectionSet& selection();
+
   // check if any object(inst/net) is present in sect/highlight set
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const;
 
