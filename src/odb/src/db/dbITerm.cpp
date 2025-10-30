@@ -349,17 +349,17 @@ void dbITerm::connect(dbNet* net_)
   }
 
   if (block->_journal) {
-  debugPrint(getImpl()->getLogger(),
-             utl::ODB,
-             "DB_ECO",
-             1,
-             "ECO: connect dbITerm({}, {:p}) '{}' to dbNet({}, {:p}) '{}'",
-             getId(),
-             static_cast<void*>(this),
-             getName(),
-             net->getId(),
-             static_cast<void*>(net),
-             net_->getName());
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: connect dbITerm({}, {:p}) '{}' to dbNet({}, {:p}) '{}'",
+               getId(),
+               static_cast<void*>(this),
+               getName(),
+               net->getId(),
+               static_cast<void*>(net),
+               net_->getName());
     block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(getId());
@@ -495,21 +495,21 @@ void dbITerm::disconnect()
   }
 
   if (block->_journal) {
-  debugPrint(getImpl()->getLogger(),
-             utl::ODB,
-             "DB_ECO",
-             1,
-             "disconnect dbITerm({}, {:p}) '{}' from dbNet({}, {:p}) '{}' "
-             "corresponding to dbModNet({}, {:p}) '{}'",
-             getId(),
-             static_cast<void*>(this),
-             getName(),
-             (net)? net->getId() : 0,
-             static_cast<void*>(net),
-             (net)? net->_name : "NULL",
-             (mod_net_impl)? mod_net_impl->getId() : 0,
-             static_cast<void*>(mod_net),
-             (mod_net)? mod_net->getHierarchicalName() : "NULL");
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "disconnect dbITerm({}, {:p}) '{}' from dbNet({}, {:p}) '{}' "
+               "corresponding to dbModNet({}, {:p}) '{}'",
+               getId(),
+               static_cast<void*>(this),
+               getName(),
+               (net) ? net->getId() : 0,
+               static_cast<void*>(net),
+               (net) ? net->_name : "NULL",
+               (mod_net_impl) ? mod_net_impl->getId() : 0,
+               static_cast<void*>(mod_net),
+               (mod_net) ? mod_net->getHierarchicalName() : "NULL");
 
     block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
