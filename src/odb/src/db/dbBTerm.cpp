@@ -623,7 +623,7 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
                name,
                net->getId(),
                static_cast<void*>(net),
-               net->_name);
+               name);
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbBTermObj);
     block->_journal->pushParam(net->getId());

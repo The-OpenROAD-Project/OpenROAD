@@ -1336,7 +1336,7 @@ dbInst* dbInst::create(dbBlock* block_,
                "ECO: create dbInst({}, {:p}) '{}' master '{}'",
                inst->getId(),
                static_cast<void*>(inst),
-               inst->getName(),
+               name_,
                master_->getName());
     dbLib* lib = master_->getLib();
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);

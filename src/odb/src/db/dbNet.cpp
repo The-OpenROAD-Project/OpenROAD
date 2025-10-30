@@ -2124,7 +2124,7 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
                "ECO: create dbNet({}, {:p}) '{}'",
                net->getId(),
                static_cast<void*>(net),
-               net->_name);
+               name_);
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(name_);

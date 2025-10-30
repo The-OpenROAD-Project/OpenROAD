@@ -986,7 +986,7 @@ void dbJournal::redo_updateBlockField()
           block_id,
           cornerCount,
           extDbCount,
-          name.c_str());
+          name);
       _block->setCornerCount(cornerCount, extDbCount, name.c_str());
       break;
     }
@@ -1002,7 +1002,7 @@ void dbJournal::redo_updateBlockField()
                  2,
                  "REDO ECO: dbBlock {}, writeDb, filename {}, allNode {}",
                  block_id,
-                 name.c_str(),
+                 name,
                  allNode);
       _block->writeDb((char*) name.c_str(), allNode);
       break;
@@ -1138,8 +1138,8 @@ void dbJournal::redo_updateNetField()
                  2,
                  "REDO ECO: dbNetObj {}, updateName from {} to {}",
                  net_id,
-                 prev_name.c_str(),
-                 new_name.c_str());
+                 prev_name,
+                 new_name);
       ((dbNet*) net)->rename(new_name.c_str());
       break;
     }
@@ -1170,8 +1170,8 @@ void dbJournal::redo_updateModNetField()
                  2,
                  "REDO ECO: dbModNetObj {}, updateName from {} to {}",
                  modnet_id,
-                 prev_name.c_str(),
-                 new_name.c_str());
+                 prev_name,
+                 new_name);
       ((dbModNet*) modnet)->rename(new_name.c_str());
       break;
     }
@@ -1249,8 +1249,8 @@ void dbJournal::redo_updateInstField()
                  2,
                  "REDO ECO: dbInstObj {}, updateName from {} to {}",
                  inst_id,
-                 prev_name.c_str(),
-                 new_name.c_str());
+                 prev_name,
+                 new_name);
       ((dbInst*) inst)->rename(new_name.c_str());
       break;
     }
@@ -1877,7 +1877,6 @@ void dbJournal::undo_createObject()
       _log.pop(name);
       _log.pop(mod_net_id);
       _log.pop(parent_id);
-      (void) name;
       dbModNet* mod_net = dbModNet::getModNet(_block, mod_net_id);
       debugPrint(_logger,
                  utl::ODB,
@@ -1886,7 +1885,7 @@ void dbJournal::undo_createObject()
                  "UNDO ECO: create dbModNet({} {:p}) '{}'",
                  mod_net_id,
                  static_cast<void*>(mod_net),
-                 mod_net->getName());
+                 name);
       dbModNet::destroy(mod_net);
       break;
     }
@@ -1898,7 +1897,6 @@ void dbJournal::undo_createObject()
       _log.pop(name);
       _log.pop(modbterm_id);
       _log.pop(parent_id);
-      (void) name;
       (void) parent_id;
       dbModBTerm* modbterm = dbModBTerm::getModBTerm(_block, modbterm_id);
 
@@ -1909,7 +1907,7 @@ void dbJournal::undo_createObject()
                  "UNDO ECO: create dbModBTerm({} {:p}) '{}'",
                  modbterm_id,
                  static_cast<void*>(modbterm),
-                 modbterm->getName());
+                 name);
       dbModBTerm::destroy(modbterm);
       break;
     }
@@ -2064,7 +2062,7 @@ void dbJournal::undo_deleteObject()
                  "UNDO ECO: delete dbModule({} {:p}) '{}'",
                  module->getId(),
                  static_cast<void*>(module),
-                 name.c_str());
+                 name);
       break;
     }
 
@@ -2094,7 +2092,7 @@ void dbJournal::undo_deleteObject()
                  "UNDO ECO: delete dbModInst({} {:p}) '{}'",
                  mod_inst->getId(),
                  static_cast<void*>(mod_inst),
-                 name.c_str());
+                 name);
       break;
     }
 
@@ -2115,7 +2113,7 @@ void dbJournal::undo_deleteObject()
                  "UNDO ECO: delete dbModNet({} {:p}) '{}'",
                  net->getId(),
                  static_cast<void*>(net),
-                 name.c_str());
+                 name);
       break;
     }
 
@@ -2136,7 +2134,7 @@ void dbJournal::undo_deleteObject()
                  "UNDO ECO: delete dbModBTerm({} {:p}) '{}'",
                  modbterm->getId(),
                  static_cast<void*>(modbterm),
-                 name.c_str());
+                 name);
       break;
     }
 
@@ -2163,7 +2161,7 @@ void dbJournal::undo_deleteObject()
                  "UNDO ECO: delete dbModiterm({} {:p}) '{}'",
                  mod_iterm->getId(),
                  static_cast<void*>(mod_iterm),
-                 name.c_str());
+                 name);
       break;
     }
 
@@ -2536,7 +2534,7 @@ void dbJournal::undo_updateNetField()
                  net_id,
                  static_cast<void*>(net),
                  new_name,
-                 prev_name.c_str());
+                 prev_name);
       ((dbNet*) net)->rename(prev_name.c_str());
       break;
     }
@@ -2572,7 +2570,7 @@ void dbJournal::undo_updateModNetField()
                  modnet_id,
                  static_cast<void*>(modnet),
                  new_name,
-                 prev_name.c_str());
+                 prev_name);
       ((dbModNet*) modnet)->rename(prev_name.c_str());
       break;
     }
@@ -2633,7 +2631,7 @@ void dbJournal::undo_updateInstField()
                  inst_id,
                  static_cast<void*>(inst),
                  new_name,
-                 prev_name.c_str());
+                 prev_name);
       ((dbInst*) inst)->rename(prev_name.c_str());
       break;
     }
