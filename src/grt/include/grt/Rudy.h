@@ -2,6 +2,8 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include <cassert>
+#include <optional>
+#include <set>
 #include <utility>
 // #define _CRTDBG_MAP_ALLOC
 

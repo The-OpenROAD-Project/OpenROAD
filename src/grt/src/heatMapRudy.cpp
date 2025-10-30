@@ -4,10 +4,13 @@
 #include "heatMapRudy.h"
 
 #include <algorithm>
+#include <any>
 #include <cmath>
+#include <set>
 #include <stdexcept>
 #include <vector>
 
+#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

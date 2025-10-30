@@ -5,6 +5,8 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <optional>
+#include <set>
 #include <utility>
 
 #include "grt/GRoute.h"
