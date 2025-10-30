@@ -2356,11 +2356,14 @@ void dbNet::setJumpers(bool has_jumpers)
 
 void dbNet::checkSanity() const
 {
+  // Check net itself
   std::vector<std::string> drvr_info_list;
   dbUtil::findBTermDrivers(this, drvr_info_list);
   dbUtil::findITermDrivers(this, drvr_info_list);
-
   dbUtil::checkNetSanity(this, drvr_info_list);
+
+  // Check the consistency with the related dbModNet
+  checkSanityModNetConsistency();
 }
 
 dbModInst* dbNet::findMainParentModInst() const
