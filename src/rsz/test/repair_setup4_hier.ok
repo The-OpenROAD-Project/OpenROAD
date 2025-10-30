@@ -14,6 +14,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0032] Initializing region: Top-level
 [INFO GPL-0006] Number of instances:                17
 [INFO GPL-0007] Movable instances:                  17
 [INFO GPL-0008] Fixed instances:                     0
@@ -23,35 +24,37 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
 [INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                 47872.020 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
 [INFO GPL-0018] Movable instances area:         58.254 um^2
 [INFO GPL-0019] Utilization:                     0.122 %
 [INFO GPL-0020] Standard cells area:            58.254 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000011 HPWL: 2447220
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000011 HPWL: 64696
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 60716
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000006 HPWL: 60839
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000011 HPWL: 60573
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000001 HPWL: 63028
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 59801
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000009 HPWL: 60266
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000011 HPWL: 60344
 Placement Analysis
 ---------------------------------
-total displacement         71.0 u
+total displacement         71.7 u
 average displacement        4.2 u
 max displacement            7.3 u
 original HPWL               5.5 u
-legalized HPWL             64.2 u
-delta HPWL                 1059 %
+legalized HPWL             69.7 u
+delta HPWL                 1157 %
 
 worst slack max -0.56
-tns max -2.580
+tns max -2.583
 [INFO RSZ-0100] Repair move sequence: SizeUpMove BufferMove SplitLoadMove 
 [INFO RSZ-0094] Found 11 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 11 out of 11 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.560 |       -2.6 |     11 | u1/r2/D
-    final |       0 |      15 |        4 |      0 |     0 |   +19.2% |   -0.465 |       -3.8 |     11 | u1/r2/D
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.563 |       -2.6 |     11 | u1/r2/D
+    final |       0 |      15 |        4 |      0 |     0 |   +19.2% |   -0.466 |       -3.8 |     11 | u1/r2/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0045] Inserted 4 buffers, 1 to split loads.
 [INFO RSZ-0051] Resized 15 instances: 15 up, 0 up match, 0 down, 0 VT
