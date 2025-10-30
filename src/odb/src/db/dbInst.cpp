@@ -1150,16 +1150,17 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   }
 
   if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: swapMaster on dbInst({} {:p}) '{}' from master '{}' to '{}'",
-               getId(),
-               static_cast<void*>(this),
-               getName(),
-               oldMasterName,
-               newMasterName);
+    debugPrint(
+        getImpl()->getLogger(),
+        utl::ODB,
+        "DB_ECO",
+        1,
+        "ECO: swapMaster on dbInst({} {:p}) '{}' from master '{}' to '{}'",
+        getId(),
+        static_cast<void*>(this),
+        getName(),
+        oldMasterName,
+        newMasterName);
     dbLib* old_lib = old_master_->getLib();
     dbLib* new_lib = new_master_->getLib();
     block->_journal->beginAction(dbJournal::SWAP_OBJECT);
