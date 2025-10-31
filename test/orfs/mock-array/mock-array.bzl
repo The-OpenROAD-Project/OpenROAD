@@ -219,6 +219,7 @@ MACROS = [
 ]
 
 POWER_TESTS = [
+    "openroad",
     "power",
     "power_instances",
 ]
@@ -457,7 +458,6 @@ def mock_array(name, config):
                         "ARRAY_COLS": str(config["cols"]),
                         "ARRAY_ROWS": str(config["rows"]),
                         "LOAD_POWER_TCL": "$(location :load_power.tcl)",
-                        "OPENROAD_EXE": "$(location //src/sta:opensta)",
                         "OUTPUT": "$(location :{variant}_{power_test}_{stage}.txt)".format(
                             variant = variant,
                             power_test = power_test,
@@ -466,10 +466,14 @@ def mock_array(name, config):
                         "POWER_STAGE_NAME": stage,
                         "POWER_STAGE_STEM": POWER_STAGE_STEM[stage],
                         "VCD_STIMULI": "$(location :vcd_{variant}_{stage})".format(variant = variant, stage = stage),
-                    },
+                    } | ({"openroad": {}}.get(
+                        "openroad",
+                        {
+                            "OPENROAD_EXE": "$(location //src/sta:opensta)",
+                        },
+                    )),
                     data = [
                                # FIXME this is a workaround to ensure that the OpenSTA runfiles are available
-                               ":opensta_runfiles",
                                ":vcd_{variant}_{stage}".format(variant = variant, stage = stage),
                                ":load_power.tcl",
                            ] + ["{macro}_{variant}_{stage}".format(
@@ -480,8 +484,9 @@ def mock_array(name, config):
                            (["{variant}_{macro}_parasitics".format(
                                variant = (name + "_base") if macro == "Element" else variant,
                                macro = macro,
-                           ) for macro in MACROS] if stage != "final" else []),
-                    script = ":{power_test}.tcl".format(power_test = power_test),
+                           ) for macro in MACROS] if stage != "final" else []) +
+                           (["//src/sta:opensta"] if power_test != "openroad" else []),
+                    script = ":{power_test}.tcl".format(power_test = power_test if power_test != "openroad" else "power"),
                     tags = ["manual"],
                     tools = ["//src/sta:opensta"],
                     visibility = ["//visibility:public"],
