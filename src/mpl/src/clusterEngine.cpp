@@ -1889,9 +1889,10 @@ std::vector<int> ClusteringEngine::findNeighbors(Cluster* target_cluster,
       continue;
     }
 
-    Cluster* other_cluster = tree_->maps.id_to_cluster.at(cluster_id);
+    const float connection_ratio
+        = connection_weight / target_cluster->allConnectionsWeight();
 
-    if (strongConnection(target_cluster, other_cluster, &connection_weight)) {
+    if (connection_ratio >= minimum_connection_ratio_) {
       neighbors.push_back(cluster_id);
     }
   }
@@ -1911,12 +1912,12 @@ bool ClusteringEngine::strongConnection(Cluster* a,
         a->getName());
   }
 
-  const float minimum_connection_ratio = 0.1;
-  const float total_weight
-      = a->allConnectionsWeight() + b->allConnectionsWeight();
-
+  // Attention that we need to subtract the weight of the connection that
+  // we're evaluating otherwise we'll be taking it into account twice.
+  float total_weight = a->allConnectionsWeight() + b->allConnectionsWeight();
   float connection_ratio = 0.0;
   if (connection_weight) {
+    total_weight -= *connection_weight;
     connection_ratio = *connection_weight / total_weight;
   } else {
     const ConnectionsMap& a_connections = a->getConnectionsMap();
@@ -1924,11 +1925,12 @@ bool ClusteringEngine::strongConnection(Cluster* a,
 
     if (itr != a_connections.end()) {
       const float conn_weight = itr->second;
+      total_weight -= conn_weight;
       connection_ratio = conn_weight / total_weight;
     }
   }
 
-  return connection_ratio >= minimum_connection_ratio;
+  return connection_ratio >= minimum_connection_ratio_;
 }
 
 Cluster* ClusteringEngine::findSingleWellFormedConnectedCluster(
