@@ -1,6 +1,6 @@
 source "helpers.tcl"
 
-set_thread_count {[expr [cpu_count] / 4]}
+set_thread_count [expr [cpu_count] / 4]
 
 read_liberty sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib
 
