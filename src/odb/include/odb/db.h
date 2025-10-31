@@ -7416,40 +7416,49 @@ class dbDatabase : public dbObject
   ///
 
   ///
-  /// Begin collecting netlist changes on specified block.
-  ///
-  /// NOTE: Eco changes can not be nested at this time.
+  /// Start collecting ECO changes on the specified block.
   ///
   static void beginEco(dbBlock* block);
 
   ///
-  /// Returns true of the pending eco is empty
+  /// Stop collecting ECO changes on the specified block.
   ///
-  static bool ecoEmpty(dbBlock* block);
+  static void endEco(dbBlock* block);
 
   ///
-  /// Read the eco changes from the specified stream to be applied to the
-  /// specified block.
-  ///
-  static void readEco(dbBlock* block, const char* filename);
-
-  ///
-  /// Write the eco netlist changes to the specified stream.
-  ///
-  static void writeEco(dbBlock* block, const char* filename);
-
-  ///
-  /// Commit any pending netlist changes.
+  /// Commit the last ECO changes on the specified block.
   ///
   static void commitEco(dbBlock* block);
 
   ///
-  /// Undo any pending netlist changes.  Only supports:
+  /// Undo the last ECO changes on the specified block.
+  /// Only supports:
   ///   create and destroy of dbInst and dbNet
   ///   dbInst::swapMaster
   ///   connect and disconnect of dbBTerm and dbITerm
   ///
   static void undoEco(dbBlock* block);
+
+  ///
+  /// Returns true if the current ECO is empty
+  ///
+  static bool ecoEmpty(dbBlock* block);
+
+  ///
+  /// Return true if the ECO history is empty.
+  ///
+  static bool ecoHistoryEmpty(dbBlock* block);
+
+  ///
+  /// Read the ECO changes from the specified stream to be applied to the
+  /// specified block.
+  ///
+  static void readEco(dbBlock* block, const char* filename);
+
+  ///
+  /// Write the ECO changes to the specified stream.
+  ///
+  static void writeEco(dbBlock* block, const char* filename);
 
   ///
   /// links to utl::Logger

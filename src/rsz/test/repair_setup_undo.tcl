@@ -26,7 +26,6 @@ puts "post repair_timing QoR"
 report_worst_slack -max
 report_tns -digits 3
 
-odb::dbDatabase_endEco $block
 odb::dbDatabase_undoEco $block
 estimate_parasitics -placement
 

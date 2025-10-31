@@ -708,61 +708,69 @@ void dbDatabase::beginEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   if (block->_journal) {
-    block->_journal_save.push_back(block->_journal);
+    block->_journal_history.push_back(block->_journal);
   }
   block->_journal = new dbJournal(block_);
   assert(block->_journal);
 }
 
-void dbDatabase::commitEco(dbBlock* block_)
+void dbDatabase::endEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   assert(block->_journal);
-  if (!block->_journal_save.empty()) {
-    dbJournal *next_journal = block->_journal_save.back();
-    block->_journal_save.pop_back();
-    next_journal->append(block->_journal);
-    delete block->_journal;
-    block->_journal = next_journal;
-  } else {
-    delete block->_journal;
-    block->_journal = nullptr;
+  block->_journal_history.push_back(block->_journal);
+  block->_journal = nullptr;
+}
+
+void dbDatabase::commitEco(dbBlock* block_)
+{
+  _dbBlock* block = (_dbBlock*) block_;
+  // Commit the current journal or the last journal in history
+  assert(block->_journal || !block->_journal_history.empty());
+  if (!block->_journal) {
+    block->_journal = block->_journal_history.back();
+    block->_journal_history.pop_back();
   }
+  if (!block->_journal_history.empty()) {
+    dbJournal* next_journal = block->_journal_history.back();
+    block->_journal_history.pop_back();
+    next_journal->append(block->_journal);
+    block->_journal_history.push_back(next_journal);
+  }
+  delete block->_journal;
+  block->_journal = nullptr;
 }
 
 void dbDatabase::undoEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  assert(block->_journal);
-
-  {
-    dbJournal* journal = block->_journal;
-    block->_journal = nullptr;
-    journal->undo();
-    delete journal;
+  assert(block->_journal || !block->_journal_history.empty());
+  if (!block->_journal) {
+    block->_journal = block->_journal_history.back();
+    block->_journal_history.pop_back();
   }
-
-  if (!block->_journal_save.empty()) {
-    block->_journal = block->_journal_save.back();
-    block->_journal_save.pop_back();
-  }
+  block->_journal->undo();
+  delete block->_journal;
+  block->_journal = nullptr;
 }
 
 bool dbDatabase::ecoEmpty(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-
   if (block->_journal) {
     return block->_journal->empty();
   }
-
   return false;
+}
+
+bool dbDatabase::ecoHistoryEmpty(dbBlock* block_)
+{
+  _dbBlock* block = (_dbBlock*) block_;
+  return block->_journal_history.empty();
 }
 
 void dbDatabase::readEco(dbBlock* block_, const char* filename)
 {
-  abort();
-#if 0
   _dbBlock* block = (_dbBlock*) block_;
 
   std::ifstream file;
@@ -775,18 +783,14 @@ void dbDatabase::readEco(dbBlock* block_, const char* filename)
   assert(eco);
   stream >> *eco;
 
-  {
-    delete block->_journal_pending;
-  }
-
-  block->_journal_pending = eco;
-#endif
+  delete block->_journal;
+  block->_journal = nullptr;
+  eco->redo();
+  block->_journal = eco;
 }
 
 void dbDatabase::writeEco(dbBlock* block_, const char* filename)
 {
-  abort();
-#if 0
   _dbBlock* block = (_dbBlock*) block_;
 
   std::ofstream file(filename, std::ios::binary);
@@ -800,11 +804,10 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
   file.exceptions(std::ifstream::failbit | std::ifstream::badbit
                   | std::ios::eofbit);
 
-  if (block->_journal_pending) {
+  if (block->_journal) {
     dbOStream stream(block->getDatabase(), file);
-    stream << *block->_journal_pending;
+    stream << *block->_journal;
   }
-#endif
 }
 
 void dbDatabase::setLogger(utl::Logger* logger)

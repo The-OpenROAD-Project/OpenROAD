@@ -242,7 +242,7 @@ void dbJournal::redo()
         break;
 
       case END_ACTION:
-        _logger->critical(utl::ODB, 399, "In undo saw unexpected END_ACTION.");
+        _logger->critical(utl::ODB, 399, "In redo saw unexpected END_ACTION.");
         break;
     }
 
@@ -251,7 +251,7 @@ void dbJournal::redo()
     _log.pop(end_action);
     _log.pop(action_idx);
     if (end_action != END_ACTION || action_idx != s) {
-      _logger->critical(utl::ODB, 419, "In undo, expected END_ACTION.");
+      _logger->critical(utl::ODB, 419, "In redo, expected END_ACTION.");
     }
   }
 }

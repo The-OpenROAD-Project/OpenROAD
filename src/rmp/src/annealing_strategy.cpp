@@ -336,8 +336,6 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
          name_generator,
          logger);
 
-  odb::dbDatabase::endEco(block);
-
   float worst_slack;
   sta::Vertex* worst_vertex;
   sta->worstSlack(corner_, sta::MinMax::max(), worst_slack, worst_vertex);
@@ -399,8 +397,6 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
            SEARCH_RESIZE_ITERS,
            name_generator,
            logger);
-
-    odb::dbDatabase::endEco(block);
 
     float worst_slack_new;
     sta->worstSlack(corner_, sta::MinMax::max(), worst_slack_new, worst_vertex);
