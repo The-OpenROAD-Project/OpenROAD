@@ -238,6 +238,10 @@ module counter (clk_i,
     .Q(counter_q[3]),
     .QN(_38_));
  assign count_valid_o = count_valid_q;
+ assign count_value_o[0] = counter_q[0];
+ assign count_value_o[1] = counter_q[1];
+ assign count_value_o[2] = counter_q[2];
+ assign count_value_o[3] = counter_q[3];
 endmodule
 module counter_U3 (clk_i,
     rst_n_i,
@@ -352,4 +356,8 @@ module counter_U3 (clk_i,
     .Q(counter_q[3]),
     .QN(_38_));
  assign count_valid_o = count_valid_q;
+ assign count_value_o[0] = counter_q[0];
+ assign count_value_o[1] = counter_q[1];
+ assign count_value_o[2] = counter_q[2];
+ assign count_value_o[3] = counter_q[3];
 endmodule
