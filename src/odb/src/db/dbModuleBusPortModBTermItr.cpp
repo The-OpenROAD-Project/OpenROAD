@@ -4,11 +4,14 @@
 // Generator Code Begin Cpp
 #include "dbModuleBusPortModBTermItr.h"
 
+#include <cmath>
+
 #include "dbBusPort.h"
 #include "dbModBTerm.h"
 #include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/dbObject.h"
 
 namespace odb {
 
