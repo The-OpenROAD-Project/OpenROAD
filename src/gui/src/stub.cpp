@@ -12,6 +12,7 @@
 #include <typeinfo>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -23,8 +24,6 @@ struct GifWriter
 };
 
 namespace gui {
-
-Gui* Gui::singleton_ = nullptr;
 
 // Used by toString to convert dbu to microns
 DBUToString Descriptor::Property::convert_dbu
@@ -54,7 +53,10 @@ Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 
 Gui* gui::Gui::get()
 {
-  return singleton_;
+  CHECK(enabled())
+      << "Internal Error: gui::Gui::get() called when enabled() is false";
+
+  return nullptr;
 }
 
 bool gui::Gui::enabled()

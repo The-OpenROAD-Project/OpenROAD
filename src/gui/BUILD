@@ -30,6 +30,7 @@ cc_library(
     deps = [
         "//src/odb",
         "@boost.multi_array",
+        "@com_google_absl//absl/log:check",
         "@tk_tcl//:tcl",
     ],
 )
@@ -86,6 +87,9 @@ QT_GUI_PLATFORMS = {
             "@boost.geometry",
             "@boost.multi_array",
             "@boost.stacktrace",
+            "@com_google_absl//absl/debugging:stacktrace",
+            "@com_google_absl//absl/debugging:symbolize",
+            "@com_google_absl//absl/strings:str_format",
             "@spdlog",
             "@tk_tcl//:tcl",
         ] + ([":uic_lib"] if platform == "headless" else []),
