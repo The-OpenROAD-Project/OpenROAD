@@ -133,6 +133,12 @@ void Gui::setSelected(const Selected& selection)
 {
 }
 
+const SelectionSet& Gui::selection()
+{
+  static SelectionSet dummy;
+  return dummy;
+}
+
 void Gui::registerDescriptor(const std::type_info& type,
                              const Descriptor* descriptor)
 {
