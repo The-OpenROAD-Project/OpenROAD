@@ -23,6 +23,9 @@ estimate_parasitics -placement
 report_checks -through _carry_out_and_/C -field input
 report_cell_usage _551_
 
+# For eqy, write a verilog before replace_hier_module
+write_verilog_for_eqy replace_hier_mod2 before "None"
+
 #set_debug_level ODB replace_design 1
 
 # Swap #1. BRENT_KUNG -> KOGGE_STONE
@@ -31,6 +34,7 @@ sta::network_changed
 estimate_parasitics -placement
 report_checks -through _carry_out_and_/C -field input
 report_cell_usage _551_
+# Skip EQY because BRENT_KUNG and KOGGE_STONE are not equivalent.
 
 # Swap #2. KOGGE_STONE -> BRENT_KUNG (Rollback)
 replace_hier_module _551_ LCU_16_BRENT_KUNG
@@ -38,6 +42,8 @@ sta::network_changed
 estimate_parasitics -placement
 report_checks -through _carry_out_and_/C -field input
 report_cell_usage _551_
+puts "Checking equivalence after swap #2 (Rollback)..."
+run_equivalence_test replace_hier_mod2 sky130hd/work_around_yosys "None"
 
 # Swap #3. BRENT_KUNG -> KOGGE_STONE (Redo)
 replace_hier_module _551_ LCU_16_KOGGE_STONE
@@ -52,5 +58,5 @@ sta::network_changed
 estimate_parasitics -placement
 report_checks -through _carry_out_and_/C -field input
 report_cell_usage _551_
-
-run_equivalence_test replace_hier_mod2 ./Nangate45/work_around_yosys/ "None"
+puts "Checking equivalence after swap #4 (Rollback again)..."
+run_equivalence_test replace_hier_mod2 sky130hd/work_around_yosys "None"

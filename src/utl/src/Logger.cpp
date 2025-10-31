@@ -197,7 +197,7 @@ void Logger::addWarningMetrics()
         warning_type_cnt++;
         log_metric(
             // NOLINTNEXTLINE(misc-include-cleaner)
-            fmt::format("flow__warnings__count:{}-{}", tool_names_[i], j),
+            fmt::format("flow__warnings__count:{}-{:04}", tool_names_[i], j),
             std::to_string(message_counters_[i][j]));
       }
     }

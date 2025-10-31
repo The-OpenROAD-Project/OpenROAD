@@ -50,7 +50,7 @@ Cell type report:                       Count       Area
   Multi-Input combinational cell           37     192.68
   Total                                    62     346.58
 [WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
-Startpoint: dpath.b_reg.out[3]$_DFFE_PP_
+Startpoint: dpath.b_reg.out[4]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by CLK)
 Endpoint: carry_out (output port)
 Path Group: path delay
@@ -58,71 +58,33 @@ Path Type: max
 
   Delay    Time   Description
 ---------------------------------------------------------
-   0.00    0.00 ^ dpath.b_reg.out[3]$_DFFE_PP_/CLK (sky130_fd_sc_hd__dfxtp_1)
-   0.32    0.32 v dpath.b_reg.out[3]$_DFFE_PP_/Q (sky130_fd_sc_hd__dfxtp_1)
-   0.00    0.32 v _329_/A (sky130_fd_sc_hd__xnor2_1)
-   0.58    0.89 ^ _329_/Y (sky130_fd_sc_hd__xnor2_1)
-   0.00    0.89 ^ _551_/_103_/B (sky130_fd_sc_hd__nand4_1)
-   0.19    1.08 v _551_/_103_/Y (sky130_fd_sc_hd__nand4_1)
-   0.00    1.08 v _551_/_104_/A2 (sky130_fd_sc_hd__o221ai_1)
-   0.25    1.34 ^ _551_/_104_/Y (sky130_fd_sc_hd__o221ai_1)
-   0.00    1.34 ^ _551_/_147_/A (sky130_fd_sc_hd__nand3_1)
-   0.09    1.43 v _551_/_147_/Y (sky130_fd_sc_hd__nand3_1)
-   0.00    1.43 v _551_/_148_/A (sky130_fd_sc_hd__nand2_1)
-   0.06    1.49 ^ _551_/_148_/Y (sky130_fd_sc_hd__nand2_1)
-   0.00    1.49 ^ _551_/_171_/A (sky130_fd_sc_hd__buf_4)
-   0.09    1.58 ^ _551_/_171_/X (sky130_fd_sc_hd__buf_4)
-   0.00    1.58 ^ _551_/_156_/B1 (sky130_fd_sc_hd__o41ai_1)
-   0.04    1.62 v _551_/_156_/Y (sky130_fd_sc_hd__o41ai_1)
-   0.00    1.62 v _551_/_168_/A (sky130_fd_sc_hd__buf_4)
-   0.13    1.75 v _551_/_168_/X (sky130_fd_sc_hd__buf_4)
-   0.00    1.75 v _551_/_087_/B1 (sky130_fd_sc_hd__a21oi_1)
-   0.12    1.87 ^ _551_/_087_/Y (sky130_fd_sc_hd__a21oi_1)
-   0.00    1.87 ^ _551_/_088_/A (sky130_fd_sc_hd__inv_1)
-   0.05    1.92 v _551_/_088_/Y (sky130_fd_sc_hd__inv_1)
-   0.00    1.92 v _551_/_166_/A (sky130_fd_sc_hd__buf_4)
-   0.11    2.03 v _551_/_166_/X (sky130_fd_sc_hd__buf_4)
-   0.00    2.03 v _551_/_139_/A (sky130_fd_sc_hd__nor2_1)
-   0.13    2.15 ^ _551_/_139_/Y (sky130_fd_sc_hd__nor2_1)
-   0.00    2.15 ^ _551_/_140_/B (sky130_fd_sc_hd__nand2_1)
-   0.06    2.21 v _551_/_140_/Y (sky130_fd_sc_hd__nand2_1)
-   0.00    2.21 v _551_/_141_/A1 (sky130_fd_sc_hd__o21ai_0)
-   0.14    2.36 ^ _551_/_141_/Y (sky130_fd_sc_hd__o21ai_0)
-   0.00    2.36 ^ _551_/_172_/A (sky130_fd_sc_hd__buf_4)
-   0.11    2.47 ^ _551_/_172_/X (sky130_fd_sc_hd__buf_4)
-   0.00    2.47 ^ _551_/_158_/B1 (sky130_fd_sc_hd__o41ai_1)
-   0.06    2.53 v _551_/_158_/Y (sky130_fd_sc_hd__o41ai_1)
-   0.00    2.53 v _551_/_167_/A (sky130_fd_sc_hd__buf_4)
-   0.12    2.64 v _551_/_167_/X (sky130_fd_sc_hd__buf_4)
-   0.00    2.64 v _551_/_097_/B1 (sky130_fd_sc_hd__o21ai_0)
-   0.11    2.75 ^ _551_/_097_/Y (sky130_fd_sc_hd__o21ai_0)
-   0.00    2.75 ^ _551_/_100_/B (sky130_fd_sc_hd__nor2_1)
-   0.07    2.82 v _551_/_100_/Y (sky130_fd_sc_hd__nor2_1)
-   0.00    2.82 v _551_/_101_/A (sky130_fd_sc_hd__inv_1)
-   0.05    2.87 ^ _551_/_101_/Y (sky130_fd_sc_hd__inv_1)
-   0.00    2.87 ^ _551_/_164_/A (sky130_fd_sc_hd__buf_4)
-   0.08    2.95 ^ _551_/_164_/X (sky130_fd_sc_hd__buf_4)
-   0.00    2.95 ^ _551_/_080_/B (sky130_fd_sc_hd__nand2_1)
-   0.07    3.02 v _551_/_080_/Y (sky130_fd_sc_hd__nand2_1)
-   0.00    3.02 v _551_/_095_/A1 (sky130_fd_sc_hd__a21oi_1)
-   0.14    3.16 ^ _551_/_095_/Y (sky130_fd_sc_hd__a21oi_1)
-   0.00    3.16 ^ _551_/_134_/A2 (sky130_fd_sc_hd__o21ai_0)
-   0.09    3.25 v _551_/_134_/Y (sky130_fd_sc_hd__o21ai_0)
-   0.00    3.25 v _551_/_173_/A (sky130_fd_sc_hd__buf_4)
-   0.13    3.37 v _551_/_173_/X (sky130_fd_sc_hd__buf_4)
-   0.00    3.37 v _carry_out_and_/C (sky130_fd_sc_hd__and4_1)
-   0.15    3.52 v _carry_out_and_/X (sky130_fd_sc_hd__and4_1)
-   0.00    3.52 v carry_out (out)
-           3.52   data arrival time
+   0.00    0.00 ^ dpath.b_reg.out[4]$_DFFE_PP_/CLK (sky130_fd_sc_hd__dfxtp_1)
+   0.32    0.32 v dpath.b_reg.out[4]$_DFFE_PP_/Q (sky130_fd_sc_hd__dfxtp_1)
+   0.00    0.32 v _330_/A (sky130_fd_sc_hd__xnor2_1)
+   0.58    0.89 ^ _330_/Y (sky130_fd_sc_hd__xnor2_1)
+   0.00    0.89 ^ _551_/_091_/A1 (sky130_fd_sc_hd__a21oi_1)
+   0.17    1.06 v _551_/_091_/Y (sky130_fd_sc_hd__a21oi_1)
+   0.00    1.06 v _551_/_092_/A2 (sky130_fd_sc_hd__o21ai_0)
+   0.23    1.29 ^ _551_/_092_/Y (sky130_fd_sc_hd__o21ai_0)
+   0.00    1.29 ^ _551_/_095_/B1 (sky130_fd_sc_hd__a21oi_1)
+   0.07    1.36 v _551_/_095_/Y (sky130_fd_sc_hd__a21oi_1)
+   0.00    1.36 v _551_/_134_/A2 (sky130_fd_sc_hd__o21ai_0)
+   0.14    1.50 ^ _551_/_134_/Y (sky130_fd_sc_hd__o21ai_0)
+   0.00    1.50 ^ _551_/_173_/A (sky130_fd_sc_hd__buf_4)
+   0.12    1.62 ^ _551_/_173_/X (sky130_fd_sc_hd__buf_4)
+   0.00    1.62 ^ _carry_out_and_/C (sky130_fd_sc_hd__and4_1)
+   0.14    1.76 ^ _carry_out_and_/X (sky130_fd_sc_hd__and4_1)
+   0.00    1.76 ^ carry_out (out)
+           1.76   data arrival time
 
    1.00    1.00   max_delay
    0.00    1.00   output external delay
            1.00   data required time
 ---------------------------------------------------------
            1.00   data required time
-          -3.52   data arrival time
+          -1.76   data arrival time
 ---------------------------------------------------------
-          -2.52   slack (VIOLATED)
+          -0.76   slack (VIOLATED)
 
 
 Cell type report for _551_ (LCU_16_KOGGE_STONE__551_)
@@ -179,8 +141,10 @@ Cell type report:                       Count       Area
   Inverter                                  9      33.78
   Multi-Input combinational cell           37     192.68
   Total                                    62     346.58
+Checking equivalence after swap #2 (Rollback)...
+Repair timing output passed/skipped equivalence test
 [WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
-Startpoint: dpath.b_reg.out[3]$_DFFE_PP_
+Startpoint: dpath.b_reg.out[4]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by CLK)
 Endpoint: carry_out (output port)
 Path Group: path delay
@@ -188,71 +152,33 @@ Path Type: max
 
   Delay    Time   Description
 ---------------------------------------------------------
-   0.00    0.00 ^ dpath.b_reg.out[3]$_DFFE_PP_/CLK (sky130_fd_sc_hd__dfxtp_1)
-   0.32    0.32 v dpath.b_reg.out[3]$_DFFE_PP_/Q (sky130_fd_sc_hd__dfxtp_1)
-   0.00    0.32 v _329_/A (sky130_fd_sc_hd__xnor2_1)
-   0.58    0.89 ^ _329_/Y (sky130_fd_sc_hd__xnor2_1)
-   0.00    0.89 ^ _551_/_103_/B (sky130_fd_sc_hd__nand4_1)
-   0.19    1.08 v _551_/_103_/Y (sky130_fd_sc_hd__nand4_1)
-   0.00    1.08 v _551_/_104_/A2 (sky130_fd_sc_hd__o221ai_1)
-   0.25    1.34 ^ _551_/_104_/Y (sky130_fd_sc_hd__o221ai_1)
-   0.00    1.34 ^ _551_/_147_/A (sky130_fd_sc_hd__nand3_1)
-   0.09    1.43 v _551_/_147_/Y (sky130_fd_sc_hd__nand3_1)
-   0.00    1.43 v _551_/_148_/A (sky130_fd_sc_hd__nand2_1)
-   0.06    1.49 ^ _551_/_148_/Y (sky130_fd_sc_hd__nand2_1)
-   0.00    1.49 ^ _551_/_171_/A (sky130_fd_sc_hd__buf_4)
-   0.09    1.58 ^ _551_/_171_/X (sky130_fd_sc_hd__buf_4)
-   0.00    1.58 ^ _551_/_156_/B1 (sky130_fd_sc_hd__o41ai_1)
-   0.04    1.62 v _551_/_156_/Y (sky130_fd_sc_hd__o41ai_1)
-   0.00    1.62 v _551_/_168_/A (sky130_fd_sc_hd__buf_4)
-   0.13    1.75 v _551_/_168_/X (sky130_fd_sc_hd__buf_4)
-   0.00    1.75 v _551_/_087_/B1 (sky130_fd_sc_hd__a21oi_1)
-   0.12    1.87 ^ _551_/_087_/Y (sky130_fd_sc_hd__a21oi_1)
-   0.00    1.87 ^ _551_/_088_/A (sky130_fd_sc_hd__inv_1)
-   0.05    1.92 v _551_/_088_/Y (sky130_fd_sc_hd__inv_1)
-   0.00    1.92 v _551_/_166_/A (sky130_fd_sc_hd__buf_4)
-   0.11    2.03 v _551_/_166_/X (sky130_fd_sc_hd__buf_4)
-   0.00    2.03 v _551_/_139_/A (sky130_fd_sc_hd__nor2_1)
-   0.13    2.15 ^ _551_/_139_/Y (sky130_fd_sc_hd__nor2_1)
-   0.00    2.15 ^ _551_/_140_/B (sky130_fd_sc_hd__nand2_1)
-   0.06    2.21 v _551_/_140_/Y (sky130_fd_sc_hd__nand2_1)
-   0.00    2.21 v _551_/_141_/A1 (sky130_fd_sc_hd__o21ai_0)
-   0.14    2.36 ^ _551_/_141_/Y (sky130_fd_sc_hd__o21ai_0)
-   0.00    2.36 ^ _551_/_172_/A (sky130_fd_sc_hd__buf_4)
-   0.11    2.47 ^ _551_/_172_/X (sky130_fd_sc_hd__buf_4)
-   0.00    2.47 ^ _551_/_158_/B1 (sky130_fd_sc_hd__o41ai_1)
-   0.06    2.53 v _551_/_158_/Y (sky130_fd_sc_hd__o41ai_1)
-   0.00    2.53 v _551_/_167_/A (sky130_fd_sc_hd__buf_4)
-   0.12    2.64 v _551_/_167_/X (sky130_fd_sc_hd__buf_4)
-   0.00    2.64 v _551_/_097_/B1 (sky130_fd_sc_hd__o21ai_0)
-   0.11    2.75 ^ _551_/_097_/Y (sky130_fd_sc_hd__o21ai_0)
-   0.00    2.75 ^ _551_/_100_/B (sky130_fd_sc_hd__nor2_1)
-   0.07    2.82 v _551_/_100_/Y (sky130_fd_sc_hd__nor2_1)
-   0.00    2.82 v _551_/_101_/A (sky130_fd_sc_hd__inv_1)
-   0.05    2.87 ^ _551_/_101_/Y (sky130_fd_sc_hd__inv_1)
-   0.00    2.87 ^ _551_/_164_/A (sky130_fd_sc_hd__buf_4)
-   0.08    2.95 ^ _551_/_164_/X (sky130_fd_sc_hd__buf_4)
-   0.00    2.95 ^ _551_/_080_/B (sky130_fd_sc_hd__nand2_1)
-   0.07    3.02 v _551_/_080_/Y (sky130_fd_sc_hd__nand2_1)
-   0.00    3.02 v _551_/_095_/A1 (sky130_fd_sc_hd__a21oi_1)
-   0.14    3.16 ^ _551_/_095_/Y (sky130_fd_sc_hd__a21oi_1)
-   0.00    3.16 ^ _551_/_134_/A2 (sky130_fd_sc_hd__o21ai_0)
-   0.09    3.25 v _551_/_134_/Y (sky130_fd_sc_hd__o21ai_0)
-   0.00    3.25 v _551_/_173_/A (sky130_fd_sc_hd__buf_4)
-   0.13    3.37 v _551_/_173_/X (sky130_fd_sc_hd__buf_4)
-   0.00    3.37 v _carry_out_and_/C (sky130_fd_sc_hd__and4_1)
-   0.15    3.52 v _carry_out_and_/X (sky130_fd_sc_hd__and4_1)
-   0.00    3.52 v carry_out (out)
-           3.52   data arrival time
+   0.00    0.00 ^ dpath.b_reg.out[4]$_DFFE_PP_/CLK (sky130_fd_sc_hd__dfxtp_1)
+   0.32    0.32 v dpath.b_reg.out[4]$_DFFE_PP_/Q (sky130_fd_sc_hd__dfxtp_1)
+   0.00    0.32 v _330_/A (sky130_fd_sc_hd__xnor2_1)
+   0.58    0.89 ^ _330_/Y (sky130_fd_sc_hd__xnor2_1)
+   0.00    0.89 ^ _551_/_091_/A1 (sky130_fd_sc_hd__a21oi_1)
+   0.17    1.06 v _551_/_091_/Y (sky130_fd_sc_hd__a21oi_1)
+   0.00    1.06 v _551_/_092_/A2 (sky130_fd_sc_hd__o21ai_0)
+   0.23    1.29 ^ _551_/_092_/Y (sky130_fd_sc_hd__o21ai_0)
+   0.00    1.29 ^ _551_/_095_/B1 (sky130_fd_sc_hd__a21oi_1)
+   0.07    1.36 v _551_/_095_/Y (sky130_fd_sc_hd__a21oi_1)
+   0.00    1.36 v _551_/_134_/A2 (sky130_fd_sc_hd__o21ai_0)
+   0.14    1.50 ^ _551_/_134_/Y (sky130_fd_sc_hd__o21ai_0)
+   0.00    1.50 ^ _551_/_173_/A (sky130_fd_sc_hd__buf_4)
+   0.12    1.62 ^ _551_/_173_/X (sky130_fd_sc_hd__buf_4)
+   0.00    1.62 ^ _carry_out_and_/C (sky130_fd_sc_hd__and4_1)
+   0.14    1.76 ^ _carry_out_and_/X (sky130_fd_sc_hd__and4_1)
+   0.00    1.76 ^ carry_out (out)
+           1.76   data arrival time
 
    1.00    1.00   max_delay
    0.00    1.00   output external delay
            1.00   data required time
 ---------------------------------------------------------
            1.00   data required time
-          -3.52   data arrival time
+          -1.76   data arrival time
 ---------------------------------------------------------
-          -2.52   slack (VIOLATED)
+          -0.76   slack (VIOLATED)
 
 
 Cell type report for _551_ (LCU_16_KOGGE_STONE__551__1)
@@ -309,4 +235,5 @@ Cell type report:                       Count       Area
   Inverter                                  9      33.78
   Multi-Input combinational cell           37     192.68
   Total                                    62     346.58
+Checking equivalence after swap #4 (Rollback again)...
 Repair timing output passed/skipped equivalence test

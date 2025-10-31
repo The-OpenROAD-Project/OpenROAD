@@ -723,6 +723,7 @@ std::pair<bool, bool> RouteBase::routability(
 
   // updateArea
   nbVec_[0]->updateAreas();
+  nbVec_[0]->checkConsistency();
 
   double new_total_gcells_area
       = nbVec_[0]->getNesterovInstsArea() + nbVec_[0]->getTotalFillerArea();

@@ -352,7 +352,6 @@ bool MBFF::IsClearPin(dbITerm* iterm)
 {
   dbInst* inst = iterm->getInst();
   const sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  const sta::LibertyCell* lib_cell = getLibertyCell(cell);
   const sta::Pin* pin = network_->dbToSta(iterm);
   if (pin == nullptr) {
     return false;
@@ -361,11 +360,41 @@ bool MBFF::IsClearPin(dbITerm* iterm)
   if (lib_port == nullptr) {
     return false;
   }
+
+  const sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  if (lib_cell == nullptr) {
+    return false;
+  }
+
+  // Check the lib cell if the port is a clear.
   for (const sta::Sequential* seq : lib_cell->sequentials()) {
     if (seq->clear() && seq->clear()->hasPort(lib_port)) {
       return true;
     }
   }
+
+  // If it exists, check the test lib cell if the port is a clear.
+  const sta::LibertyCell* test_cell = lib_cell->testCell();
+  if (test_cell == nullptr) {
+    return false;
+  }
+
+  // Find the equivalent lib_port on the test cell by name.
+  //
+  // TODO: NA - Make retrieving the port on the lib cell possible without doing
+  // a name match each time
+  const sta::LibertyPort* test_lib_port
+      = test_cell->findLibertyPort(lib_port->name());
+  if (test_lib_port == nullptr) {
+    return false;
+  }
+
+  for (const sta::Sequential* seq : test_cell->sequentials()) {
+    if (seq->clear() && seq->clear()->hasPort(test_lib_port)) {
+      return true;
+    }
+  }
+
   return false;
 }
 
@@ -385,7 +414,6 @@ bool MBFF::IsPresetPin(dbITerm* iterm)
 {
   dbInst* inst = iterm->getInst();
   const sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  const sta::LibertyCell* lib_cell = getLibertyCell(cell);
   const sta::Pin* pin = network_->dbToSta(iterm);
   if (pin == nullptr) {
     return false;
@@ -394,11 +422,41 @@ bool MBFF::IsPresetPin(dbITerm* iterm)
   if (lib_port == nullptr) {
     return false;
   }
+
+  const sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  if (lib_cell == nullptr) {
+    return false;
+  }
+
+  // Check the lib cell if the port is a preset.
   for (const sta::Sequential* seq : lib_cell->sequentials()) {
     if (seq->preset() && seq->preset()->hasPort(lib_port)) {
       return true;
     }
   }
+
+  // If it exists, check the test lib cell if the port is a preset.
+  const sta::LibertyCell* test_cell = lib_cell->testCell();
+  if (test_cell == nullptr) {
+    return false;
+  }
+
+  // Find the equivalent lib_port on the test cell by name.
+  //
+  // TODO: NA - Make retrieving the port on the lib cell possible without doing
+  // a name match each time
+  const sta::LibertyPort* test_lib_port
+      = test_cell->findLibertyPort(lib_port->name());
+  if (test_lib_port == nullptr) {
+    return false;
+  }
+
+  for (const sta::Sequential* seq : test_cell->sequentials()) {
+    if (seq->preset() && seq->preset()->hasPort(test_lib_port)) {
+      return true;
+    }
+  }
+
   return false;
 }
 

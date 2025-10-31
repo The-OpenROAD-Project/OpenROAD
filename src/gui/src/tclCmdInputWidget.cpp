@@ -21,6 +21,7 @@
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
 #include "spdlog/formatter.h"
+#include "tcl.h"
 
 namespace gui {
 
