@@ -27,7 +27,7 @@ class DbvFixture : public tst::Fixture
 TEST_F(DbvFixture, test_3dbv)
 {
   // Test that database precision was set correctly
-  EXPECT_EQ(db_->getDbuPerMicron(), 100000);
+  EXPECT_EQ(db_->getDbuPerMicron(), 2000);
 
   auto chips = db_->getChips();
   EXPECT_EQ(chips.size(), 2);
@@ -118,8 +118,11 @@ TEST_F(DbvFixture, test_bump_map_parser)
   auto bump = *region->getChipBumps().begin();
   EXPECT_EQ(bump->getInst()->getName(), "bump1");
   EXPECT_EQ(bump->getInst()->getMaster()->getName(), "BUMP");
-  EXPECT_EQ(bump->getInst()->getOrigin().x(), 100.0 * db_->getDbuPerMicron());
-  EXPECT_EQ(bump->getInst()->getOrigin().y(), 200.0 * db_->getDbuPerMicron());
+  const double bump_size2 = 29.0 / 2;
+  EXPECT_EQ(bump->getInst()->getOrigin().x(),
+            (100.0 - bump_size2) * db_->getDbuPerMicron());
+  EXPECT_EQ(bump->getInst()->getOrigin().y(),
+            (200.0 - bump_size2) * db_->getDbuPerMicron());
   EXPECT_EQ(bump->getNet(), nullptr);
   EXPECT_EQ(bump->getBTerm(), nullptr);
   auto soc_inst = db_->getChip()->findChipInst("soc_inst");

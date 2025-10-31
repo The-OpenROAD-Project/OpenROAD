@@ -73,9 +73,10 @@ NesterovPlace::~NesterovPlace()
   reset();
 }
 
-void NesterovPlace::updatePrevGradient(const std::shared_ptr<NesterovBase>& nb)
+void NesterovPlace::npUpdatePrevGradient(
+    const std::shared_ptr<NesterovBase>& nb)
 {
-  nb->updatePrevGradient(wireLengthCoefX_, wireLengthCoefY_);
+  nb->nbUpdatePrevGradient(wireLengthCoefX_, wireLengthCoefY_);
   float wireLengthGradSum = nb->getWireLengthGradSum();
   float densityGradSum = nb->getDensityGradSum();
 
@@ -98,16 +99,16 @@ void NesterovPlace::updatePrevGradient(const std::shared_ptr<NesterovBase>& nb)
 
     // recursive call again with smaller wirelength coef
     recursionCntWlCoef_++;
-    updatePrevGradient(nb);
+    npUpdatePrevGradient(nb);
     return;
   }
 
   checkInvalidValues(wireLengthGradSum, densityGradSum);
 }
 
-void NesterovPlace::updateCurGradient(const std::shared_ptr<NesterovBase>& nb)
+void NesterovPlace::npUpdateCurGradient(const std::shared_ptr<NesterovBase>& nb)
 {
-  nb->updateCurGradient(wireLengthCoefX_, wireLengthCoefY_);
+  nb->nbUpdateCurGradient(wireLengthCoefX_, wireLengthCoefY_);
   float wireLengthGradSum = nb->getWireLengthGradSum();
   float densityGradSum = nb->getDensityGradSum();
 
@@ -130,16 +131,17 @@ void NesterovPlace::updateCurGradient(const std::shared_ptr<NesterovBase>& nb)
 
     // recursive call again with smaller wirelength coef
     recursionCntWlCoef_++;
-    updateCurGradient(nb);
+    npUpdateCurGradient(nb);
     return;
   }
 
   checkInvalidValues(wireLengthGradSum, densityGradSum);
 }
 
-void NesterovPlace::updateNextGradient(const std::shared_ptr<NesterovBase>& nb)
+void NesterovPlace::npUpdateNextGradient(
+    const std::shared_ptr<NesterovBase>& nb)
 {
-  nb->updateNextGradient(wireLengthCoefX_, wireLengthCoefY_);
+  nb->nbUpdateNextGradient(wireLengthCoefX_, wireLengthCoefY_);
 
   float wireLengthGradSum = nb->getWireLengthGradSum();
   float densityGradSum = nb->getDensityGradSum();
@@ -163,7 +165,7 @@ void NesterovPlace::updateNextGradient(const std::shared_ptr<NesterovBase>& nb)
 
     // recursive call again with smaller wirelength coef
     recursionCntWlCoef_++;
-    updateNextGradient(nb);
+    npUpdateNextGradient(nb);
     return;
   }
   checkInvalidValues(wireLengthGradSum, densityGradSum);
@@ -198,7 +200,7 @@ void NesterovPlace::init()
 
   for (auto& nb : nbVec_) {
     // fill in curSLPSumGrads_, curSLPWireLengthGrads_, curSLPDensityGrads_
-    updateCurGradient(nb);
+    npUpdateCurGradient(nb);
 
     // approximately fill in
     // prevSLPCoordi_ to calculate lc vars
@@ -213,7 +215,7 @@ void NesterovPlace::init()
 
   for (auto& nb : nbVec_) {
     // update previSumGrads_, prevSLPWireLengthGrads_, prevSLPDensityGrads_
-    updatePrevGradient(nb);
+    npUpdatePrevGradient(nb);
   }
 
   for (auto& nb : nbVec_) {
@@ -426,29 +428,36 @@ void NesterovPlace::runTimingDriven(int iter,
     }
 
     auto block = pbc_->db()->getChip()->getBlock();
-    int nb_total_gcells_delta = 0;
     int nb_gcells_before_td = 0;
     int nb_gcells_after_td = 0;
-    int nbc_total_gcells_before_td = nbc_->getNewGcellsCount();
+    int nbc_total_gcells_before_td = nbc_->getGCells().size();
+
     for (auto& nb : nbVec_) {
       nb_gcells_before_td += nb->getGCells().size();
     }
 
     bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
+    // TODO remove fillers for TD iterations
+    // for (auto& nesterov : nbVec_) {
+    //   nesterov->cutFillerCells(nbc_->getDeltaArea());
+    // }
+
     nbVec_[0]->setTrueReprintIterHeader();
     ++timing_driven_count;
 
+    const int nbc_total_gcells_delta
+        = nbc_->getNewGcellsCount() - nbc_->getDeletedGcellsCount();
     td_accumulated_delta_area += nbc_->getDeltaArea();
     for (auto& nb : nbVec_) {
       nb_gcells_after_td += nb->getGCells().size();
     }
-    nb_total_gcells_delta = nb_gcells_after_td - nb_gcells_before_td;
-    if (nb_total_gcells_delta != nbc_->getNewGcellsCount()) {
+    const int nb_total_gcells_delta = nb_gcells_after_td - nb_gcells_before_td;
+    if (nb_total_gcells_delta != nbc_total_gcells_delta) {
       log_->warn(GPL,
                  92,
                  "Mismatch in #cells between central object and all regions. "
                  "NesterovBaseCommon: {}, Summing all regions: {}",
-                 nbc_->getNewGcellsCount(),
+                 nbc_total_gcells_delta,
                  nb_total_gcells_delta);
     }
 
@@ -479,6 +488,8 @@ void NesterovPlace::runTimingDriven(int iter,
                                + nesterov->getTotalFillerArea())
             / static_cast<float>(nesterov->getWhiteSpaceArea()));
 
+        nesterov->setMovableArea(nesterov->getTargetDensity()
+                                 * nesterov->getWhiteSpaceArea());
         float rsz_delta_area_microns
             = block->dbuAreaToMicrons(nbc_->getDeltaArea());
         float rsz_delta_area_percentage
@@ -492,19 +503,25 @@ void NesterovPlace::runTimingDriven(int iter,
             rsz_delta_area_microns,
             rsz_delta_area_percentage);
 
-        float new_gcells_percentage = 0.0f;
+        float delta_gcells_percentage = 0.0f;
         if (nbc_total_gcells_before_td > 0) {
-          new_gcells_percentage
-              = (nbc_->getNewGcellsCount()
+          delta_gcells_percentage
+              = ((nbc_total_gcells_delta)
                  / static_cast<float>(nbc_total_gcells_before_td))
                 * 100.0f;
         }
         log_->info(
             GPL,
             108,
-            "Timing-driven: repair_design, gpl cells created: {} ({:+.2f}%)",
+            "Timing-driven: repair_design, gpl delta gcells: {} ({:+.2f}%)",
+            (nbc_total_gcells_delta),
+            delta_gcells_percentage);
+        log_->info(
+            GPL,
+            109,
+            "Timing-driven: repair_design, gcells created: {}, deleted: {}",
             nbc_->getNewGcellsCount(),
-            new_gcells_percentage);
+            nbc_->getDeletedGcellsCount());
 
         log_->info(GPL,
                    110,
@@ -514,6 +531,7 @@ void NesterovPlace::runTimingDriven(int iter,
         nbc_->resetNewGcellsCount();
         nesterov->updateAreas();
         nesterov->updateDensitySize();
+        nesterov->checkConsistency();
       }
 
       // update snapshot after non-virtual TD
@@ -646,7 +664,16 @@ void NesterovPlace::routabilitySnapshot(
       nb->saveSnapshot();
     }
 
-    log_->info(GPL, 38, "Routability snapshot saved at iter = {}", iter);
+    log_->info(GPL, 38, "Routability snapshot saved at iter = {}", iter + 1);
+    odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
+    const int64_t hpwl = nbc_->getHpwl();
+    log_->report("{:9d} | {:8.4f} | {:13.6e} | {:8} | {:9} | {:>5}",
+                 iter,
+                 average_overflow_unscaled_,
+                 block->dbuToMicrons(hpwl),
+                 " ",
+                 " ",
+                 " ");
     if (graphics_ && graphics_->enabled()) {
       graphics_->addRoutabilitySnapshot(iter);
     }
@@ -732,13 +759,8 @@ void NesterovPlace::runRoutability(int iter,
     }
 
     if (is_routability_need_ && isRevertInitNeeded) {
-      log_->info(
-          GPL, 87, "Routability end iteration: reverting from divergence.");
-    }
-
-    if (is_routability_need_ && !isRevertInitNeeded) {
       log_->info(GPL,
-                 88,
+                 87,
                  "Routability end iteration: increase inflation and revert "
                  "back to snapshot.");
     }
@@ -831,7 +853,7 @@ void NesterovPlace::doBackTracking(const float coeff)
 
     num_region_diverged_ = 0;
     for (auto& nb : nbVec_) {
-      updateNextGradient(nb);
+      npUpdateNextGradient(nb);
       num_region_diverged_ += nb->isDiverged();
     }
 
@@ -880,6 +902,17 @@ void NesterovPlace::reportResults(int nesterov_iter,
                                   int64_t td_accumulated_delta_area)
 {
   auto block = pbc_->db()->getChip()->getBlock();
+
+  if (graphics_ && npVars_.debug_generate_images) {
+    updateDb();
+    std::string label = fmt::format("Final Iter {} |R: ? |T: ?", nesterov_iter);
+
+    graphics_->saveLabeledImage(
+        fmt::format(
+            "{}/final_nesterov_{:05d}.png", getReportsDir(), nesterov_iter),
+        label,
+        /* select_buffers = */ false);
+  }
 
   if (nesterov_iter >= npVars_.maxNesterovIter) {
     log_->warn(GPL,
@@ -979,6 +1012,15 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       = reports_dir + "/gpl_routability_driven";
 
   cleanReportsDirs(timing_driven_dir, routability_driven_dir);
+  if (graphics_ && npVars_.debug_generate_images) {
+    updateDb();
+    std::string label = fmt::format("init_nesterov");
+
+    graphics_->saveLabeledImage(
+        fmt::format("{}/init_nesterov.png", getReportsDir()),
+        label,
+        /* select_buffers = */ false);
+  }
 
   // Core Nesterov Loop
   int nesterov_iter = start_iter;

@@ -187,7 +187,11 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     for (odb::dbLib* lib : db_->getLibs()) {
       search_libs.push_back(lib);
     }
-    def_reader.readChip(search_libs, chiplet.external.def_file.c_str(), chip);
+    // No callbacks here as we are going to give one postRead3Dbx later
+    def_reader.readChip(search_libs,
+                        chiplet.external.def_file.c_str(),
+                        chip,
+                        /*issue_callback*/ false);
   }
   chip->setWidth(chiplet.design_width * db_->getDbuPerMicron());
   chip->setHeight(chiplet.design_height * db_->getDbuPerMicron());
@@ -289,8 +293,10 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
     inst = dbInst::create(block, master, entry.bump_inst_name.c_str());
   }
   auto bump = dbChipBump::create(chip_region, inst);
-  inst->setOrigin(entry.x * db_->getDbuPerMicron(),
-                  entry.y * db_->getDbuPerMicron());
+  Rect bbox;
+  inst->getMaster()->getPlacementBoundary(bbox);
+  inst->setOrigin((entry.x * db_->getDbuPerMicron()) - bbox.xCenter(),
+                  (entry.y * db_->getDbuPerMicron()) - bbox.yCenter());
   inst->setPlacementStatus(dbPlacementStatus::FIRM);
   if (entry.net_name != "-") {
     auto net = block->findNet(entry.net_name.c_str());

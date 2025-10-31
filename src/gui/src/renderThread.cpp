@@ -36,6 +36,7 @@ namespace gui {
 namespace bg = boost::geometry;
 
 using odb::dbBlock;
+using odb::dbChip;
 using odb::dbInst;
 using odb::dbMaster;
 using odb::dbOrientType;
@@ -213,7 +214,7 @@ void RenderThread::draw(QImage& image,
                          viewer_->options_,
                          viewer_->screenToDBU(draw_bounds),
                          viewer_->pixels_per_dbu_,
-                         viewer_->block_->getDbUnitsPerMicron());
+                         viewer_->getChip()->getDb()->getDbuPerMicron());
 
   if (!is_first_render_done_ && !restart_) {
     drawDesignLoadingMessage(gui_painter, dbu_bounds);
@@ -224,7 +225,7 @@ void RenderThread::draw(QImage& image,
     image.fill(background);
   }
 
-  drawBlock(&painter, viewer_->block_, dbu_bounds, 0);
+  drawChips(&painter, viewer_->getChip(), dbu_bounds, 0);
 
   // draw selected and over top level and fast painting events
   drawSelected(gui_painter, selected);
@@ -306,12 +307,12 @@ void RenderThread::drawTracks(dbTechLayer* layer,
     return;
   }
 
-  dbTrackGrid* grid = viewer_->block_->findTrackGrid(layer);
+  dbTrackGrid* grid = viewer_->getBlock()->findTrackGrid(layer);
   if (!grid) {
     return;
   }
 
-  Rect block_bounds = viewer_->block_->getDieArea();
+  Rect block_bounds = viewer_->getBlock()->getDieArea();
   if (!block_bounds.intersects(bounds)) {
     return;
   }
@@ -1094,29 +1095,60 @@ void RenderThread::drawLayer(QPainter* painter,
              layer_timer);
 }
 
-// Draw the region of the block.  Depth is not yet used but
-// is there for hierarchical design support.
-void RenderThread::drawBlock(QPainter* painter,
-                             dbBlock* block,
+void RenderThread::drawChips(QPainter* painter,
+                             dbChip* chip,
                              const Rect& bounds,
                              int depth)
+{
+  drawChip(painter, chip, bounds, depth);
+
+  const QTransform initial_xfm = painter->transform();
+  for (odb::dbChipInst* inst : chip->getChipInsts()) {
+    QTransform xfm = initial_xfm;
+    const dbTransform inst_xfm = inst->getTransform();
+    addInstTransform(xfm, inst_xfm);
+    painter->setTransform(xfm);
+
+    // Project bounds into inst
+    dbTransform inverse_xfm;
+    inst_xfm.invert(inverse_xfm);
+    Rect new_bounds = bounds;
+    inverse_xfm.apply(new_bounds);
+
+    drawChips(painter, inst->getMasterChip(), new_bounds, depth);
+  }
+  painter->setTransform(initial_xfm);
+}
+
+// Draw the region of the chip.  Depth is not yet used but
+// is there for hierarchical design support.
+void RenderThread::drawChip(QPainter* painter,
+                            dbChip* chip,
+                            const Rect& bounds,
+                            int depth)
 {
   utl::Timer timer;
 
   utl::Timer manufacturing_grid_timer;
   const int instance_limit = viewer_->instanceSizeLimit();
 
+  // Draw die area, if set
+  painter->setPen(QPen(Qt::gray, 0));
+  painter->setBrush(QBrush());
+
+  dbBlock* block = chip->getBlock();
+  if (!block) {
+    painter->drawRect(0, 0, chip->getWidth(), chip->getHeight());
+    return;
+  }
+
   GuiPainter gui_painter(painter,
                          viewer_->options_,
                          bounds,
                          viewer_->pixels_per_dbu_,
-                         block->getDbUnitsPerMicron());
+                         chip->getDb()->getDbuPerMicron());
 
-  painter->setPen(QPen(Qt::gray, 0));
-  painter->setBrush(QBrush());
-
-  // Draw die area, if set
-  const odb::Polygon die_area = block->getDieAreaPolygon();
+  odb::Polygon die_area = block->getDieAreaPolygon();
 
   if (die_area.getEnclosingRect().area() > 0) {
     gui_painter.drawPolygon(die_area);
@@ -1247,13 +1279,13 @@ void RenderThread::drawGCellGrid(QPainter* painter, const odb::Rect& bounds)
     return;
   }
 
-  odb::dbGCellGrid* grid = viewer_->block_->getGCellGrid();
+  odb::dbGCellGrid* grid = viewer_->getBlock()->getGCellGrid();
 
   if (grid == nullptr) {
     return;
   }
 
-  const auto die_area = viewer_->block_->getDieArea();
+  const auto die_area = viewer_->getBlock()->getDieArea();
 
   if (!bounds.intersects(die_area)) {
     return;
@@ -1297,7 +1329,7 @@ void RenderThread::drawManufacturingGrid(QPainter* painter,
     return;
   }
 
-  odb::dbTech* tech = viewer_->block_->getDb()->getTech();
+  odb::dbTech* tech = viewer_->getBlock()->getDb()->getTech();
   if (!tech->hasManufacturingGrid()) {
     return;
   }
@@ -1438,7 +1470,7 @@ void RenderThread::drawAccessPoints(Painter& painter,
       }
     }
   }
-  for (auto term : viewer_->block_->getBTerms()) {
+  for (auto term : viewer_->getBlock()->getBTerms()) {
     if (restart_) {
       break;
     }

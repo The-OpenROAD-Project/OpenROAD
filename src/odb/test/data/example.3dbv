@@ -4,7 +4,7 @@
 Header:
   version: 2.5
   unit: micron
-  precision: 100000
+  precision: 2000
 
 ChipletDef:
   SoC:

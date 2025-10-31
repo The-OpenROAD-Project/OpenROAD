@@ -66,10 +66,11 @@ void defin::useBlockName(const char* name)
 
 void defin::readChip(std::vector<dbLib*>& libs,
                      const char* def_file,
-                     dbChip* chip)
+                     dbChip* chip,
+                     const bool issue_callback)
 {
   std::lock_guard<std::mutex> lock(_def_mutex);
-  _reader->readChip(libs, def_file, chip);
+  _reader->readChip(libs, def_file, chip, issue_callback);
 }
 
 }  // namespace odb

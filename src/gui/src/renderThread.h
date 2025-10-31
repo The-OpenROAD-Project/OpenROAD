@@ -64,10 +64,14 @@ class RenderThread : public QThread
 
   void setupIOPins(odb::dbBlock* block, const odb::Rect& bounds);
 
-  void drawBlock(QPainter* painter,
-                 odb::dbBlock* block,
+  void drawChips(QPainter* painter,
+                 odb::dbChip* chip,
                  const odb::Rect& bounds,
                  int depth);
+  void drawChip(QPainter* painter,
+                odb::dbChip* chip,
+                const odb::Rect& bounds,
+                int depth);
   void drawLayer(QPainter* painter,
                  odb::dbBlock* block,
                  odb::dbTechLayer* layer,
