@@ -312,6 +312,8 @@ class ClusteringEngine
   // them to be considered connected when creating data flow.
   const int max_num_of_hops_ = 5;
 
+  const float minimum_connection_ratio_{0.10};
+
   int first_io_bundle_id_{-1};
   IOBundleSpans io_bundle_spans_;
 };
