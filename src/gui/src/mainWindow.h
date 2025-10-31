@@ -101,7 +101,7 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   void setTitle(const std::string& title);
 
   // Return the selected set
-  SelectionSet& selection();
+  const SelectionSet& selection();
 
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets

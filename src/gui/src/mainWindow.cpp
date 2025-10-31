@@ -530,7 +530,7 @@ void MainWindow::updateTitle()
   }
 }
 
-SelectionSet& MainWindow::selection()
+const SelectionSet& MainWindow::selection()
 {
   return selected_;
 }

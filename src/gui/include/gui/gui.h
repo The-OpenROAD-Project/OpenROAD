@@ -640,7 +640,7 @@ class Gui
   void addSelectedInst(const char* name);
 
   // Return the selected set
-  SelectionSet& selection();
+  const SelectionSet& selection();
 
   // check if any object(inst/net) is present in sect/highlight set
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const;

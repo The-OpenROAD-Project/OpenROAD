@@ -334,7 +334,7 @@ void Gui::addSelectedInst(const char* name)
   main_window->addSelected(makeSelected(inst));
 }
 
-SelectionSet& Gui::selection()
+const SelectionSet& Gui::selection()
 {
   return main_window->selection();
 }
