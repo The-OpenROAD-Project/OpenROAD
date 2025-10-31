@@ -334,6 +334,11 @@ void Gui::addSelectedInst(const char* name)
   main_window->addSelected(makeSelected(inst));
 }
 
+const SelectionSet& Gui::selection()
+{
+  return main_window->selection();
+}
+
 bool Gui::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const
 {
   return main_window->anyObjectInSet(selection_set, obj_type);
