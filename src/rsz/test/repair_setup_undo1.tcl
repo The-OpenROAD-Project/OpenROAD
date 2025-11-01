@@ -14,14 +14,15 @@ estimate_parasitics -placement
 puts "initial QoR"
 report_worst_slack -max
 report_tns -digits 3
-write_verilog_for_eqy repair_setup_undo before "None"
+write_verilog_for_eqy repair_setup_undo1 before "None"
 
 set db [ord::get_db]
 set chip [$db getChip]
 set block [$chip getBlock]
-odb::dbDatabase_beginEco $block
 
+odb::dbDatabase_beginEco $block
 repair_timing -setup
+
 puts "post repair_timing QoR"
 report_worst_slack -max
 report_tns -digits 3
@@ -33,4 +34,4 @@ puts "post undo repair_timing QoR"
 report_worst_slack -max
 report_tns -digits 3
 
-run_equivalence_test repair_setup_undo ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test repair_setup_undo1 ./Nangate45/work_around_yosys/ "None"
