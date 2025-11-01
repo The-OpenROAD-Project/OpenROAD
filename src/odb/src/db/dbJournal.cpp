@@ -2593,7 +2593,7 @@ void dbJournal::undo_updateCCSegField()
   }
 }
 
-void dbJournal::append(dbJournal *other)
+void dbJournal::append(dbJournal* other)
 {
   _log.append(other->_log);
 }

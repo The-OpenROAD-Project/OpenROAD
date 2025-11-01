@@ -117,7 +117,7 @@ class dbJournal
 
   bool empty() const { return _log.empty(); }
 
-  void append(dbJournal *other);
+  void append(dbJournal* other);
 
  private:
   friend class dbDatabase;

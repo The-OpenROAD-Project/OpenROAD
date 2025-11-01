@@ -49,7 +49,7 @@ class dbJournalLog
   void pop(char*& value);
   void pop(std::string& value);
 
-  void append(dbJournalLog &other);
+  void append(dbJournalLog& other);
 
  private:
   enum LogDataType
