@@ -221,6 +221,7 @@ MACROS = [
 POWER_TESTS = [
     "power",
     "power_instances",
+    "path_groups",
 ]
 
 def mock_array(name, config):
