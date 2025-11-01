@@ -59,6 +59,7 @@ report_cell_usage gcd_1/_552_
 report_checks -through gcd_1/_carry_out_and_/B -fields input_pins
 
 puts "### Undo module swap to get back Kogge-Stone ###"
+odb::dbDatabase_endEco $block
 odb::dbDatabase_undoEco $block
 report_cell_usage gcd_1/_552_
 report_checks -through gcd_1/_carry_out_and_/B -fields input_pins

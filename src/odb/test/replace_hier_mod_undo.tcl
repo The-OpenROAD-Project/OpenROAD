@@ -46,6 +46,7 @@ report_checks -through u1z -through r2/D
 
 puts "### swap bc1 back to buffer_chain ###"
 #replace_design bc1 buffer_chain
+odb::dbDatabase_endEco $block
 odb::dbDatabase_undoEco $block
 report_cell_usage bc1
 estimate_parasitics -placement
