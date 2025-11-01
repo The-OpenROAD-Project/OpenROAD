@@ -950,8 +950,6 @@ class Gui
   std::unique_ptr<GIF> gif_;
   static constexpr int kDefaultGifDelay = 250;
 
-  static Gui* singleton_;
-
   std::string main_window_title_ = "OpenROAD";
 };
 
