@@ -2087,13 +2087,16 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
       continue;  // this macro cluster has been merged
     }
 
+    Cluster* movable_macro_cluster = movable_macro_clusters[i];
+    movable_macro_cluster->setAsMacroArray();
+
     if (interconn_class[i] != -1) {
-      movable_macro_clusters[i]->setAsArrayOfInterconnectedMacros();
+      movable_macro_cluster->setAsArrayOfInterconnectedMacros();
     }
 
-    movable_macro_clusters[i]->setClusterType(HardMacroCluster);
-    setClusterMetrics(movable_macro_clusters[i]);
-    virtual_conn_clusters.push_back(movable_macro_clusters[i]->getId());
+    movable_macro_cluster->setClusterType(HardMacroCluster);
+    setClusterMetrics(movable_macro_cluster);
+    virtual_conn_clusters.push_back(movable_macro_cluster->getId());
   }
 
   // Deal with the fixed macros.

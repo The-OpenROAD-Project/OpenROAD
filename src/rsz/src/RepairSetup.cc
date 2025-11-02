@@ -127,10 +127,10 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
           }
           break;
         case MoveType::SIZE:
+          move_sequence.push_back(resizer_->size_up_move_.get());
           if (!skip_size_down) {
             move_sequence.push_back(resizer_->size_down_move_.get());
           }
-          move_sequence.push_back(resizer_->size_up_move_.get());
           break;
         case MoveType::SIZEUP:
           move_sequence.push_back(resizer_->size_up_move_.get());
@@ -170,9 +170,12 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     if (!skip_vt_swap && resizer_->lib_data_->sorted_vt_categories.size() > 1) {
       move_sequence.push_back(resizer_->vt_swap_speed_move_.get());
     }
-    // TODO: Add size_down_move to the sequence if we want to allow
     // Always  have sizing
     move_sequence.push_back(resizer_->size_up_move_.get());
+    // Disabled by default for now
+    if (!skip_size_down) {
+      // move_sequence.push_back(resizer_->size_down_move_.get());
+    }
     if (!skip_pin_swap) {
       move_sequence.push_back(resizer_->swap_pins_move_.get());
     }
@@ -189,6 +192,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 
   string repair_moves = "Repair move sequence: ";
   for (auto move : move_sequence) {
+    move->init();
     repair_moves += move->name() + string(" ");
   }
   logger_->info(RSZ, 100, repair_moves);
@@ -249,6 +253,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 
   // Ensure that max cap and max fanout violations don't get worse
   sta_->checkCapacitanceLimitPreamble();
+  sta_->checkSlewLimitPreamble();
   sta_->checkFanoutLimitPreamble();
 
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
@@ -450,6 +455,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       }
       pass++;
       if (max_iterations > 0 && opto_iteration >= max_iterations) {
+        resizer_->journalEnd();
         break;
       }
     }  // while pass <= max_passes
@@ -1029,6 +1035,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
       }
       pass++;
       if (max_iterations > 0 && opto_iteration >= max_iterations) {
+        resizer_->journalEnd();
         break;
       }
     }  // while pass <= max_last_gasp_passes_

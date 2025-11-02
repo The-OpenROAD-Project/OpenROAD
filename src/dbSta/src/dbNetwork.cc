@@ -4555,6 +4555,7 @@ void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
   // Check for hier net and flat net connectivity
   dbSet<dbModNet> mod_nets = block()->getModNets();
   for (dbModNet* mod_net : mod_nets) {
+    mod_net->checkSanity();
     findRelatedDbNet(mod_net);
   }
 
