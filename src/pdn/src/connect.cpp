@@ -18,6 +18,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "shape.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 

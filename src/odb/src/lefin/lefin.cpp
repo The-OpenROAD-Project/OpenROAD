@@ -1923,8 +1923,8 @@ void lefinReader::setDBUPerMicron(int dbu)
           "the database units per micron ({}) of the current database.",
           dbu,
           _db->getDbuPerMicron());
-      return;
-    } else if (_db->getDbuPerMicron() % dbu != 0) {
+    }
+    if (_db->getDbuPerMicron() % dbu != 0) {
       ++_errors;
       _logger->warn(utl::ODB,
                     402,
@@ -1933,10 +1933,8 @@ void lefinReader::setDBUPerMicron(int dbu)
                     "the current database.",
                     dbu,
                     _db->getDbuPerMicron());
-      return;
-    } else {
-      dbu = _db->getDbuPerMicron();
     }
+    dbu = _db->getDbuPerMicron();
   }
   _dist_factor = dbu;
   _dbu_per_micron = dbu;
@@ -2403,7 +2401,9 @@ dbTech* lefinReader::createTech(const char* name, const char* lef_file)
     _logger->error(
         utl::ODB, 288, "LEF data from {} is discarded due to errors", lef_file);
   }
-
+  if (_db->getDbuPerMicron() == 0) {
+    _db->setDbuPerMicron(_dbu_per_micron);
+  }
   _db->triggerPostReadLef(_tech, nullptr);
 
   return _tech;
@@ -2439,7 +2439,9 @@ dbLib* lefinReader::createLib(dbTech* tech,
     _logger->error(
         utl::ODB, 292, "LEF data from {} is discarded due to errors", lef_file);
   }
-
+  if (_db->getDbuPerMicron() == 0) {
+    _db->setDbuPerMicron(_dbu_per_micron);
+  }
   _db->triggerPostReadLef(_tech, _lib);
   return _lib;
 }
@@ -2483,7 +2485,9 @@ dbLib* lefinReader::createTechAndLib(const char* tech_name,
   if (rules.orderReversed()) {
     rules.reverse();
   }
-
+  if (_db->getDbuPerMicron() == 0) {
+    _db->setDbuPerMicron(_dbu_per_micron);
+  }
   _db->triggerPostReadLef(_tech, _lib);
 
   return _lib;
