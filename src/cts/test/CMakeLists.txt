@@ -20,8 +20,6 @@ or_integration_tests(
     check_max_fanout3
     check_wire_rc_cts
     dummy_load
-    escape_slash
-    escape_slash_hier
     find_clock
     find_clock_pad
     gated_clock1

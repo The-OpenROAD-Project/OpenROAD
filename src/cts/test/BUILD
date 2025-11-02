@@ -24,8 +24,6 @@ COMPULSORY_TESTS = [
     "check_max_fanout3",
     "check_wire_rc_cts",
     "dummy_load",
-    #"escape_slash", # different result compared to CMake
-    #"escape_slash_hier", # different result compared to CMake
     "find_clock",
     "find_clock_pad",
     "gated_clock1",
