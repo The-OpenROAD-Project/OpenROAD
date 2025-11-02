@@ -58,6 +58,7 @@ class RUDYDataSource : public gui::GlobalRoutingDataSource,
   grt::GlobalRouter* grouter_;
   odb::dbDatabase* db_;
   grt::Rudy* rudy_;
+  bool selection_only_;
 };
 
 }  // namespace grt

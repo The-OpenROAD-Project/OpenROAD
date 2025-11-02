@@ -139,9 +139,9 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
 
   // Hook up all the signals/slots
   connect(viewers_,
-          &LayoutTabs::setCurrentBlock,
+          &LayoutTabs::setCurrentChip,
           controls_,
-          &DisplayControls::setCurrentBlock);
+          &DisplayControls::setCurrentChip);
   connect(script_, &ScriptWidget::exiting, this, &MainWindow::exit);
   connect(script_,
           &ScriptWidget::commandExecuted,
@@ -151,7 +151,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &ScriptWidget::commandAboutToExecute,
           viewers_,
           &LayoutTabs::commandAboutToExecute);
-  connect(this, &MainWindow::blockLoaded, viewers_, &LayoutTabs::blockLoaded);
+  connect(this, &MainWindow::chipLoaded, viewers_, &LayoutTabs::chipLoaded);
   connect(this, &MainWindow::redraw, viewers_, &LayoutTabs::fullRepaint);
   connect(
       this, &MainWindow::blockLoaded, controls_, &DisplayControls::blockLoaded);
@@ -528,6 +528,11 @@ void MainWindow::updateTitle()
       setWindowTitle(QString::fromStdString(window_title_));
     }
   }
+}
+
+const SelectionSet& MainWindow::selection()
+{
+  return selected_;
 }
 
 void MainWindow::setBlock(odb::dbBlock* block)
@@ -1627,12 +1632,13 @@ void MainWindow::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 
 void MainWindow::postReadDef(odb::dbBlock* block)
 {
+  emit chipLoaded(block->getChip());
   emit blockLoaded(block);
 }
 
 void MainWindow::postRead3Dbx(odb::dbChip* chip)
 {
-  // TODO: we are not ready to display chiplets yet
+  emit chipLoaded(chip);
 }
 
 void MainWindow::postReadDb(odb::dbDatabase* db)
@@ -1646,10 +1652,9 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
     return;
   }
 
+  // Only create a tab for the top block
+  emit chipLoaded(block->getChip());
   emit blockLoaded(block);
-  for (auto child : block->getChildren()) {
-    emit blockLoaded(child);
-  }
 }
 
 void MainWindow::setLogger(utl::Logger* logger)

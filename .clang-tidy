@@ -60,9 +60,11 @@ Checks: >
   -misc-use-anonymous-namespace,
 
 CheckOptions:
-   - key:             google-runtime-int.TypeSuffix
-     value:           _t
-
+  - key:             google-runtime-int.TypeSuffix
+    value:           _t
+  - key:             misc-include-cleaner.IgnoreHeaders
+    value:           '.*/QtCore/.*;.*/QtGui/.*;.*/QtWidgets/.*;.*/spdlog/fmt/bundled/.*'
+  
 # All modules but sta
 # Exclude build as there is too much noise from swig generated code
 HeaderFilterRegex: "(?!build/.*)/(ant|cgt|cts|cut|dbSta|dft|dpl|drt|dst|est|exa|fin|gpl|grt|gui|ifp|mpl|odb|ord|pad|par|pdn|ppl|psm|rcx|ram|rmp|rsz|stt|tap|upf|utl)/.*"
