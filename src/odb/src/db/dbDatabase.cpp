@@ -749,9 +749,10 @@ void dbDatabase::undoEco(dbBlock* block_)
     block->_journal = block->_journal_history.back();
     block->_journal_history.pop_back();
   }
-  block->_journal->undo();
-  delete block->_journal;
+  dbJournal* journal = block->_journal;
   block->_journal = nullptr;
+  journal->undo();
+  delete block->_journal;
 }
 
 bool dbDatabase::ecoEmpty(dbBlock* block_)
