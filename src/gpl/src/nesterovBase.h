@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <deque>
 #include <fstream>
 #include <memory>
@@ -21,6 +23,7 @@
 #include "placerBase.h"
 #include "point.h"
 #include "routeBase.h"
+#include "utl/Logger.h"
 namespace odb {
 class dbInst;
 class dbITerm;
@@ -542,7 +545,7 @@ class Bin
   float getDensity() const;
 
   void setDensity(float density);
-  void setTargetDensity(float density);
+  void setBinTargetDensity(float density);
   void setElectroForce(float electroForceX, float electroForceY);
   void setElectroPhi(float phi);
 
@@ -677,7 +680,7 @@ class BinGrid
   void setLogger(utl::Logger* log);
   void setRegionPoints(int lx, int ly, int ux, int uy);
   void setBinCnt(int binCntX, int binCntY);
-  void setTargetDensity(float density);
+  void setBinTargetDensity(float density);
   void updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
@@ -875,8 +878,13 @@ class NesterovBaseCommon
   // are implemented.
   int64_t getDeltaArea() { return delta_area_; }
   void resetDeltaArea() { delta_area_ = 0; }
-  int64_t getNewGcellsCount() { return new_gcells_count_; }
-  void resetNewGcellsCount() { new_gcells_count_ = 0; }
+  int getNewGcellsCount() { return new_gcells_count_; }
+  int getDeletedGcellsCount() { return deleted_gcells_count_; }
+  void resetNewGcellsCount()
+  {
+    new_gcells_count_ = 0;
+    deleted_gcells_count_ = 0;
+  }
 
   NesterovBaseVars& getNbVars() { return nbVars_; }
 
@@ -913,6 +921,7 @@ class NesterovBaseCommon
   int num_threads_;
   int64_t delta_area_;
   int new_gcells_count_;
+  int deleted_gcells_count_;
   nesterovDbCbk* db_cbk_{nullptr};
 };
 
@@ -966,6 +975,8 @@ class NesterovBase
   int64_t getMovableArea() const;
   int64_t getTotalFillerArea() const;
 
+  void setMovableArea(int64_t area) { movableArea_ = area; }
+
   // update
   // fillerArea, whiteSpaceArea, movableArea
   // and totalFillerArea after changing gCell's size
@@ -998,6 +1009,7 @@ class NesterovBase
   float getTargetDensity() const;
 
   void setTargetDensity(float targetDensity);
+  void checkConsistency();
 
   // RD can shrink the number of fillerCells.
   void cutFillerCells(int64_t targetFillerArea);
@@ -1036,9 +1048,9 @@ class NesterovBase
                        float wlCoeffX,
                        float wlCoeffY);
 
-  void updatePrevGradient(float wlCoeffX, float wlCoeffY);
-  void updateCurGradient(float wlCoeffX, float wlCoeffY);
-  void updateNextGradient(float wlCoeffX, float wlCoeffY);
+  void nbUpdatePrevGradient(float wlCoeffX, float wlCoeffY);
+  void nbUpdateCurGradient(float wlCoeffX, float wlCoeffY);
+  void nbUpdateNextGradient(float wlCoeffX, float wlCoeffY);
 
   // Used for updates based on callbacks
   void updateSingleGradient(size_t gCellIndex,
@@ -1073,6 +1085,7 @@ class NesterovBase
   bool checkConvergence(int gpl_iter_count,
                         int routability_gpl_iter_count,
                         RouteBase* rb);
+
   bool checkDivergence();
   void saveSnapshot();
   bool revertToSnapshot();

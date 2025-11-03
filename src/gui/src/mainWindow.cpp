@@ -530,6 +530,11 @@ void MainWindow::updateTitle()
   }
 }
 
+const SelectionSet& MainWindow::selection()
+{
+  return selected_;
+}
+
 void MainWindow::setBlock(odb::dbBlock* block)
 {
   updateTitle();

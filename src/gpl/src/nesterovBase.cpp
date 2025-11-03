@@ -573,7 +573,7 @@ void Bin::setDensity(float density)
   density_ = density;
 }
 
-void Bin::setTargetDensity(float density)
+void Bin::setBinTargetDensity(float density)
 {
   targetDensity_ = density;
 }
@@ -615,7 +615,7 @@ void BinGrid::setLogger(utl::Logger* log)
   log_ = log;
 }
 
-void BinGrid::setTargetDensity(float density)
+void BinGrid::setBinTargetDensity(float density)
 {
   targetDensity_ = density;
 }
@@ -1034,6 +1034,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   log_ = log;
   delta_area_ = 0;
   new_gcells_count_ = 0;
+  deleted_gcells_count_ = 0;
 
   // gCellStor init
   gCellStor_.reserve(pbc_->placeInsts().size());
@@ -1759,7 +1760,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
                       region_bbox.yMin(),
                       region_bbox.xMax(),
                       region_bbox.yMax());
-  bg_.setTargetDensity(targetDensity_);
+  bg_.setBinTargetDensity(targetDensity_);
 
   // update binGrid info
   bg_.initBins();
@@ -1774,6 +1775,8 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
 
   // update densitySize and densityScale in each gCell
   updateDensitySize();
+
+  checkConsistency();
 }
 
 // virtual filler GCells
@@ -2014,14 +2017,73 @@ void NesterovBase::setTargetDensity(float density)
 {
   assert(omp_get_thread_num() == 0);
   targetDensity_ = density;
-  bg_.setTargetDensity(density);
+  bg_.setBinTargetDensity(density);
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto bin = getBins().begin(); bin < getBins().end(); ++bin) {
     // old-style loop for old OpenMP
-    bin->setTargetDensity(density);
+    bin->setBinTargetDensity(density);
   }
   // update nonPlaceArea's target denstiy
   bg_.updateBinsNonPlaceArea();
+}
+
+void NesterovBase::checkConsistency()
+{
+  if (!log_->debugCheck(GPL, "checkConsistency", 1)) {
+    return;
+  }
+  const auto block = pb_->db()->getChip()->getBlock();
+  const int64_t tolerance = 10000;
+
+  const int64_t expected_white_space
+      = pb_->getDie().coreArea() - pb_->nonPlaceInstsArea();
+  if (std::abs(whiteSpaceArea_ - expected_white_space) > tolerance) {
+    log_->warn(utl::GPL, 319, "Inconsistent white space area");
+    log_->report(
+        "whiteSpaceArea_: {} (expected:{}) | coreArea: {}, "
+        "nonPlaceInstsArea: {}",
+        block->dbuAreaToMicrons(whiteSpaceArea_),
+        block->dbuAreaToMicrons(expected_white_space),
+        block->dbuAreaToMicrons(pb_->getDie().coreArea()),
+        block->dbuAreaToMicrons(pb_->nonPlaceInstsArea()));
+  }
+
+  const int64_t expected_movable_area = whiteSpaceArea_ * targetDensity_;
+  if (std::abs(movableArea_ - expected_movable_area) > tolerance) {
+    log_->warn(utl::GPL, 320, "Inconsistent movable area 1");
+    log_->report(
+        "movableArea_: {} (expected:{}) | whiteSpaceArea_: {}, "
+        "targetDensity_: {}",
+        block->dbuAreaToMicrons(movableArea_),
+        block->dbuAreaToMicrons(expected_movable_area),
+        block->dbuAreaToMicrons(whiteSpaceArea_),
+        targetDensity_);
+  }
+
+  const int64_t expected_filler_area = movableArea_ - getNesterovInstsArea();
+  if (std::abs(totalFillerArea_ - expected_filler_area) > tolerance) {
+    log_->warn(utl::GPL, 321, "Inconsistent filler area");
+    log_->report(
+        "totalFillerArea_: {} (expected:{}) | movableArea_: {}, "
+        "getNesterovInstsArea_: {}",
+        block->dbuAreaToMicrons(totalFillerArea_),
+        block->dbuAreaToMicrons(expected_filler_area),
+        block->dbuAreaToMicrons(movableArea_),
+        block->dbuAreaToMicrons(getNesterovInstsArea()));
+  }
+
+  float expected_density = movableArea_ * 1.0 / whiteSpaceArea_;
+  float density_diff = std::abs(targetDensity_ - expected_density);
+  if (density_diff > 1e-6) {
+    log_->warn(utl::GPL, 322, "Inconsistent target density");
+    log_->report(
+        "targetDensity_: {} (expected:{}) | movableArea_: {}, "
+        "whiteSpaceArea_: {}",
+        targetDensity_,
+        expected_density,
+        block->dbuAreaToMicrons(movableArea_),
+        block->dbuAreaToMicrons(whiteSpaceArea_));
+  }
 }
 
 int NesterovBase::getBinCntX() const
@@ -2364,7 +2426,7 @@ float NesterovBase::initDensity2(float wlCoeffX, float wlCoeffY)
 {
   if (wireLengthGradSum_ == 0) {
     densityPenalty_ = npVars_->initDensityPenalty;
-    updatePrevGradient(wlCoeffX, wlCoeffY);
+    nbUpdatePrevGradient(wlCoeffX, wlCoeffY);
   }
 
   if (wireLengthGradSum_ != 0) {
@@ -2483,7 +2545,7 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   debugPrint(log_, GPL, "updateGrad", 1, "GradSum: {:g}", gradSum);
 }
 
-void NesterovBase::updatePrevGradient(float wlCoeffX, float wlCoeffY)
+void NesterovBase::nbUpdatePrevGradient(float wlCoeffX, float wlCoeffY)
 {
   updateGradients(prevSLPSumGrads_,
                   prevSLPWireLengthGrads_,
@@ -2492,7 +2554,7 @@ void NesterovBase::updatePrevGradient(float wlCoeffX, float wlCoeffY)
                   wlCoeffY);
 }
 
-void NesterovBase::updateCurGradient(float wlCoeffX, float wlCoeffY)
+void NesterovBase::nbUpdateCurGradient(float wlCoeffX, float wlCoeffY)
 {
   updateGradients(curSLPSumGrads_,
                   curSLPWireLengthGrads_,
@@ -2501,7 +2563,7 @@ void NesterovBase::updateCurGradient(float wlCoeffX, float wlCoeffY)
                   wlCoeffY);
 }
 
-void NesterovBase::updateNextGradient(float wlCoeffX, float wlCoeffY)
+void NesterovBase::nbUpdateNextGradient(float wlCoeffX, float wlCoeffY)
 {
   updateGradients(nextSLPSumGrads_,
                   nextSLPWireLengthGrads_,
@@ -2551,12 +2613,6 @@ void NesterovBase::updateSingleGradient(
   wireLengthGrads[gCellIndex]
       = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
   densityGrads[gCellIndex] = getDensityGradient(gCell);
-
-  wireLengthGradSum_ += std::fabs(wireLengthGrads[gCellIndex].x);
-  wireLengthGradSum_ += std::fabs(wireLengthGrads[gCellIndex].y);
-
-  densityGradSum_ += std::fabs(densityGrads[gCellIndex].x);
-  densityGradSum_ += std::fabs(densityGrads[gCellIndex].y);
 
   sumGrads[gCellIndex].x = wireLengthGrads[gCellIndex].x
                            + densityPenalty_ * densityGrads[gCellIndex].x;
@@ -2974,6 +3030,7 @@ bool NesterovBase::checkDivergence()
       && sum_overflow_unscaled_ - minSumOverflow_ >= 0.02f
       && hpwlWithMinSumOverflow_ * 1.2f < prev_hpwl_) {
     isDiverged_ = true;
+    log_->warn(GPL, 323, "Divergence detected between consecutive iterations");
   }
 
   // Check if both overflow and HPWL increase
@@ -2984,8 +3041,17 @@ bool NesterovBase::checkDivergence()
     float hpwl_increase = (static_cast<float>(prev_hpwl_ - prev_reported_hpwl_))
                           / static_cast<float>(prev_reported_hpwl_);
 
-    if (overflow_change >= 0.02f && hpwl_increase >= 0.05f) {
+    const float overflow_acceptance = 0.05f;
+    const float hpwl_acceptance = 0.25f;
+    if (overflow_change >= overflow_acceptance
+        && hpwl_increase >= hpwl_acceptance) {
       isDiverged_ = true;
+      log_->warn(GPL,
+                 324,
+                 "Divergence detected between reported values. Overflow "
+                 "change: {:g}, HPWL increase: {:g}%.",
+                 overflow_change,
+                 hpwl_increase * 100.0f);
     }
   }
 
@@ -3340,7 +3406,7 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
   int64_t area_change = static_cast<int64_t>(gCellStor_.back().dx())
                         * static_cast<int64_t>(gCellStor_.back().dy());
   delta_area_ -= area_change;
-  new_gcells_count_--;
+  deleted_gcells_count_++;
 
   gCellStor_.pop_back();
   minRcCellSize_.pop_back();
@@ -3458,10 +3524,8 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
                              + totalFillerArea_ + remainingInflationArea;
     setTargetDensity(static_cast<float>(totalGCellArea)
                      / static_cast<float>(getWhiteSpaceArea()));
-
-    float newTargetDensity = static_cast<float>(totalGCellArea)
-                             / static_cast<float>(getWhiteSpaceArea());
-    log_->info(GPL, 79, "New target density: {}", newTargetDensity);
+    movableArea_ = whiteSpaceArea_ * targetDensity_;
+    log_->info(GPL, 79, "New target density: {}", targetDensity_);
   }
 }
 
