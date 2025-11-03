@@ -489,13 +489,13 @@ void UnbufferMove::removeBuffer(Instance* buffer)
              lib_cell->name(),
              db_network_->name(out_net));
 
+  sta_->disconnectPin(in_pin);
+  sta_->disconnectPin(out_pin);
   odb::dbNet* db_survivor = db_network_->staToDb(survivor);
   odb::dbNet* db_removed = db_network_->staToDb(removed);
   if (db_removed) {
     db_survivor->mergeNet(db_removed);
   }
-  sta_->disconnectPin(in_pin);
-  sta_->disconnectPin(out_pin);
 
   // Hierarchical case supported:
   // moving an output hierarchical net to the input pin driver.
