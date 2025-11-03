@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "dbJournal.h"
 #include "dbJournalLog.h"
 
 #include <cstring>
 #include <string>
 
 #include "dbCommon.h"
+#include "dbJournal.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -268,7 +268,8 @@ void dbJournalLog::append(dbJournalLog& other)
     uint supposed_idx = action_indices.back();
     action_indices.pop_back();
     if (current_idx != supposed_idx) {
-      logger_->critical(utl::ODB, 438, "In append, didn't match the expected action index.");
+      logger_->critical(
+          utl::ODB, 438, "In append, didn't match the expected action index.");
     }
     uint next_idx = other.size();
     if (action_indices.size() > 0) {
@@ -285,8 +286,10 @@ void dbJournalLog::append(dbJournalLog& other)
     unsigned int action_idx;
     other.pop(end_action);
     other.pop(action_idx);
-    if (end_action != dbJournal::Action::END_ACTION || action_idx != current_idx) {
-      logger_->critical(utl::ODB, 459, "In append, didn't see an expected END_ACTION.");
+    if (end_action != dbJournal::Action::END_ACTION
+        || action_idx != current_idx) {
+      logger_->critical(
+          utl::ODB, 459, "In append, didn't see an expected END_ACTION.");
     }
     push(end_action);
     push(current_idx + shift_idx);

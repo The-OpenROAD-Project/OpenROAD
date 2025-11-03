@@ -251,7 +251,8 @@ void dbJournal::redo()
     _log.pop(end_action);
     _log.pop(action_idx);
     if (end_action != END_ACTION || action_idx != s) {
-      _logger->critical(utl::ODB, 419, "In redo, didn't see the expected END_ACTION.");
+      _logger->critical(
+          utl::ODB, 419, "In redo, didn't see the expected END_ACTION.");
     }
   }
 }
@@ -1704,12 +1705,8 @@ void dbJournal::undo()
   _log.moveBackOneInt();
 
   for (;;) {
-    debugPrint(_logger,
-               utl::ODB,
-               "DB_ECO",
-               4,
-               "UNDO ECO: Log index {}",
-               _log.idx());
+    debugPrint(
+        _logger, utl::ODB, "DB_ECO", 4, "UNDO ECO: Log index {}", _log.idx());
     uint action_idx;
     _log.pop(action_idx);
     debugPrint(_logger,
@@ -1720,7 +1717,6 @@ void dbJournal::undo()
                action_idx);
     _log.set(action_idx);
     _log.pop(_cur_action);
-
 
     switch (_cur_action) {
       case CREATE_OBJECT:
@@ -1758,11 +1754,7 @@ void dbJournal::undo()
     _log.set(action_idx);
     _log.moveBackOneInt();
   }
-  debugPrint(_logger,
-             utl::ODB,
-             "DB_ECO",
-             4,
-             "UNDO ECO: Finished undo >>>");
+  debugPrint(_logger, utl::ODB, "DB_ECO", 4, "UNDO ECO: Finished undo >>>");
 }
 
 void dbJournal::undo_createObject()
@@ -2405,7 +2397,8 @@ void dbJournal::undo_swapObject()
                      utl::ODB,
                      "DB_ECO",
                      3,
-                     "UNDO ECO: swap dbName (dbNet) between {} at id {} and {} at id {}",
+                     "UNDO ECO: swap dbName (dbNet) between {} at id {} and {} "
+                     "at id {}",
                      source_net->getName(),
                      source_net_id,
                      dest_net->getName(),
@@ -2415,11 +2408,12 @@ void dbJournal::undo_swapObject()
           break;
         }
         default: {
-          _logger->critical(utl::ODB,
-                            467,
-                            "No undo_swapObject support for type {} and subtype {}",
-                            dbObject::getTypeName(obj_type),
-                            dbObject::getTypeName(sub_obj_type));
+          _logger->critical(
+              utl::ODB,
+              467,
+              "No undo_swapObject support for type {} and subtype {}",
+              dbObject::getTypeName(obj_type),
+              dbObject::getTypeName(sub_obj_type));
         }
       }
       break;
@@ -2581,8 +2575,10 @@ void dbJournal::undo_updateModNetField()
     }
 
     default:
-      _logger->critical(
-          utl::ODB, 424, "No undo_updateModNetField support for field {}", field);
+      _logger->critical(utl::ODB,
+                        424,
+                        "No undo_updateModNetField support for field {}",
+                        field);
       break;
   }
 }
