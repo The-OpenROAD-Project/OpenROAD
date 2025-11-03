@@ -5,6 +5,7 @@
 
 #include <cstring>
 #include <string>
+#include <vector>
 
 #include "dbCommon.h"
 #include "dbJournal.h"
@@ -272,7 +273,7 @@ void dbJournalLog::append(dbJournalLog& other)
           utl::ODB, 438, "In append, didn't match the expected action index.");
     }
     uint next_idx = other.size();
-    if (action_indices.size() > 0) {
+    if (!action_indices.empty()) {
       next_idx = action_indices.back();
     }
     next_idx -= sizeof(uint) + 1;
