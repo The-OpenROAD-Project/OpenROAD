@@ -15,11 +15,11 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
-#include "utl/Logger.h"
 // User Code Begin Includes
 #include <string>
 
 #include "odb/dbBlockCallBackObj.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbModBTerm>;
