@@ -1430,7 +1430,7 @@ bool PadDirectConnectionStraps::refineShapes(
   }
 
   for (auto* refine_shape : refine) {
-    std::unique_ptr<Shape> shape(refine_shape->copy());
+    std::unique_ptr<Shape> shape = refine_shape->copy();
     removeShape(refine_shape);
 
     // remove shape from all_shapes and all_obstructions
