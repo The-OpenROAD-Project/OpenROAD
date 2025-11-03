@@ -200,7 +200,13 @@ void SACoreHardMacro::initialize()
   graphics_ = nullptr;
 
   for (int i = 0; i < num_perturb_per_step_; i++) {
+    saveState();
     perturb();
+    if (!invalid_states_allowed_ && !isValid()) {
+      restoreState();
+      continue;
+    }
+
     // store current penalties
     width_list.push_back(width_);
     height_list.push_back(height_);

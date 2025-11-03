@@ -5,6 +5,8 @@ or_integration_tests(
     check_axioms
     clock_pin
     constant1
+    escape_slash
+    escape_slash_hier
     find_clks1
     find_clks2
     get_ports1

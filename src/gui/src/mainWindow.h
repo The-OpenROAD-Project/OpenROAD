@@ -100,10 +100,17 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
 
   void setTitle(const std::string& title);
 
+  // Return the selected set
+  const SelectionSet& selection();
+
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
   // to update
   void blockLoaded(odb::dbBlock* block);
+
+  // Signaled when we get a postRead3Dbx callback to tell the sub-widgets
+  // to update
+  void chipLoaded(odb::dbChip* chip);
 
   // The user chose the exit action; notify the app
   void exit();
