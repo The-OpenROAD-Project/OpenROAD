@@ -61,7 +61,7 @@ std::string GridComponent::typeToString(Type type)
   return "Unknown";
 }
 
-ShapePtr GridComponent::addShape(Shape* shape)
+ShapePtr GridComponent::addShape(std::unique_ptr<Shape> shape)
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -69,12 +69,12 @@ ShapePtr GridComponent::addShape(Shape* shape)
              3,
              "Adding shape {}.",
              shape->getReportText());
-  auto shape_ptr = std::shared_ptr<Shape>(shape);
-  if (!shape_ptr->isValid()) {
+  if (!shape->isValid()) {
     // do not add invalid shapes
     return nullptr;
   }
 
+  auto shape_ptr = std::shared_ptr<Shape>(shape.release());
   shape_ptr->setGridComponent(this);
   const odb::Rect& shape_rect = shape_ptr->getRect();
 
@@ -209,7 +209,7 @@ void GridComponent::replaceShape(
   removeShape(shape);
 
   for (auto& new_shape : replacements) {
-    const auto& new_shape_ptr = addShape(new_shape.release());
+    const auto& new_shape_ptr = addShape(std::move(new_shape));
 
     if (new_shape_ptr == nullptr) {
       continue;

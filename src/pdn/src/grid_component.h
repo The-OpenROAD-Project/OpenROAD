@@ -102,7 +102,7 @@ class GridComponent
                          int width,
                          int spacing,
                          const odb::dbTechLayerDir& direction) const;
-  ShapePtr addShape(Shape* shape);
+  ShapePtr addShape(std::unique_ptr<Shape> shape);
 
   virtual bool areIntersectionsAllowed() const { return false; }
 

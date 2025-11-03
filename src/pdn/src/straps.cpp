@@ -337,8 +337,8 @@ void Straps::makeStraps(int x_start,
         }
       }
 
-      addShape(
-          new Shape(layer_, net, strap_rect, odb::dbWireShapeType::STRIPE));
+      addShape(std::make_unique<Shape>(
+          layer_, net, strap_rect, odb::dbWireShapeType::STRIPE));
     }
     strap_count++;
     if (number_of_straps_ != 0 && strap_count == number_of_straps_) {
@@ -462,15 +462,15 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
     const int ground_y_bot
         = (power_on_top ? bbox.yMin() : bbox.yMax()) - width / 2;
 
-    auto* power_strap = new FollowPinShape(
+    auto power_strap = std::make_unique<FollowPinShape>(
         layer, power, odb::Rect(x0, power_y_bot, x1, power_y_bot + width));
     power_strap->addRow(row);
-    addShape(power_strap);
+    addShape(std::move(power_strap));
 
-    auto* ground_strap = new FollowPinShape(
+    auto ground_strap = std::make_unique<FollowPinShape>(
         layer, ground, odb::Rect(x0, ground_y_bot, x1, ground_y_bot + width));
     ground_strap->addRow(row);
-    addShape(ground_strap);
+    addShape(std::move(ground_strap));
   }
 }
 
@@ -1072,14 +1072,17 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
         }
       }
 
-      auto* shape
-          = new Shape(layer, net, shape_rect, odb::dbWireShapeType::STRIPE);
+      auto shape = std::make_unique<Shape>(
+          layer, net, shape_rect, odb::dbWireShapeType::STRIPE);
       // use intersection of pin_rect to ensure max width limitation is
       // preserved
       shape->addITermConnection(pin_rect.intersect(shape_rect));
-      addShape(shape);
+      const auto added = addShape(std::move(shape));
+      if (added == nullptr) {
+        continue;
+      }
 
-      target_shapes_[shape] = closest_shape.get();
+      target_shapes_[added.get()] = closest_shape.get();
     }
   }
 }
@@ -1210,15 +1213,19 @@ void PadDirectConnectionStraps::makeShapesOverPads(
     return;
   }
 
-  auto* shape = new Shape(
+  auto shape = std::make_unique<Shape>(
       getLayer(), iterm_->getNet(), shape_rect, odb::dbWireShapeType::STRIPE);
 
   if (getDirection() != getLayer()->getDirection()) {
     shape->setAllowsNonPreferredDirectionChange();
   }
-  addShape(shape);
-  target_shapes_[shape] = closest_shape.get();
-  target_pin_shape_[shape] = org_pin_shape;
+  const auto added = addShape(std::move(shape));
+  if (added == nullptr) {
+    return;
+  }
+
+  target_shapes_[added.get()] = closest_shape.get();
+  target_pin_shape_[added.get()] = org_pin_shape;
 }
 
 bool PadDirectConnectionStraps::snapRectToClosestShape(
@@ -1495,7 +1502,7 @@ bool PadDirectConnectionStraps::refineShape(
       new_rect.set_xhi(check_loc + getWidth());
     }
 
-    std::unique_ptr<Shape> new_shape(shape->copy());
+    std::unique_ptr<Shape> new_shape = shape->copy();
     new_shape->setRect(new_rect);
 
     debugPrint(
@@ -1513,7 +1520,7 @@ bool PadDirectConnectionStraps::refineShape(
             new_shape.get(), all_shapes, all_obstructions, true)) {
       continue;
     }
-    const ShapePtr& added_shape = addShape(new_shape.release());
+    const ShapePtr& added_shape = addShape(std::move(new_shape));
     if (added_shape != nullptr) {
       added_shape->clearITermConnections();
       added_shape->addITermConnection(
