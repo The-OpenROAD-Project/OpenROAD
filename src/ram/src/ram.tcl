@@ -52,15 +52,16 @@ proc generate_ram_netlist { args } {
 sta::define_cmd_args "generate_ram" {-bytes_per_word bits
                                      -word_count words
 				     [-storage_cell name]
-                                     [-tristate_cell name]
-                                     [-inv_cell name]
-                                     [-read_ports count]
+				     [-tristate_cell name]
+				     [-inv_cell name]
+				     [-read_ports count]
 				     -power_net name
-			             -ground_net name
+				     -ground_net name
 				     -routing_layer config
 				     -ver_layer config
 				     -hor_layer config
 				     -filler_cells fillers}
+
 # user arguments for generate ram netlist arguments
 proc generate_ram { args } {
   sta::parse_key_args "generate_ram" args \
