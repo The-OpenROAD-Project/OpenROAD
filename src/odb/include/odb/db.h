@@ -8388,7 +8388,7 @@ class dbModITerm : public dbObject
   ///
   /// Return true if this dbModITerm and its dbModInst are allocated
   ///
-  bool isValid() const;  
+  bool isValid() const;
 
   static dbModITerm* create(dbModInst* parentInstance,
                             const char* name,
