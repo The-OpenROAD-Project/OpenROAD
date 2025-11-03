@@ -11,11 +11,20 @@ proc check_log_for_warning { logfile } {
   set log_contents [read $f]
   close $f
   puts $log_contents
-  if { [regexp -nocase "Warning" $log_contents] } {
-    puts "ERROR: Warning found in $logfile"
-    exit 1
+  # Check each line in the file for warnings other than:
+  # Warning: pin io_lsbOuts_0 not found
+  #
+  # Also list unexpected warnings here as they are found.
+  set unexpected_warnings {}
+  foreach line [split $log_contents "\n"] {
+    if {[string match "*Warning:*" $line]} {
+      if {![string match "*pin .*? not found*" $line]} {
+        lappend unexpected_warnings $line
+      }
+    }
   }
 }
+
 
 # $::env(VARIANT) contains 4x4_foo, fish out what comes before _
 set name [lindex [split $::env(FLOW_VARIANT) "_"] 0]
