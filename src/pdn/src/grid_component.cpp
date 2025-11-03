@@ -193,14 +193,23 @@ void GridComponent::removeShape(Shape* shape)
 }
 
 void GridComponent::replaceShape(Shape* shape,
-                                 const std::vector<Shape*>& replacements)
+                                 std::unique_ptr<Shape> replacement)
+{
+  std::vector<std::unique_ptr<Shape>> replacements;
+  replacements.push_back(std::move(replacement));
+  replaceShape(shape, replacements);
+}
+
+void GridComponent::replaceShape(
+    Shape* shape,
+    std::vector<std::unique_ptr<Shape>>& replacements)
 {
   auto vias = shape->getVias();
 
   removeShape(shape);
 
-  for (auto* new_shape : replacements) {
-    const auto& new_shape_ptr = addShape(new_shape);
+  for (auto& new_shape : replacements) {
+    const auto& new_shape_ptr = addShape(new_shape.release());
 
     if (new_shape_ptr == nullptr) {
       continue;
@@ -217,6 +226,8 @@ void GridComponent::replaceShape(Shape* shape,
       }
     }
   }
+
+  replacements.clear();
 }
 
 void GridComponent::getObstructions(
@@ -283,9 +294,9 @@ void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
       continue;
     }
     const auto& obs = obstructions.at(layer);
-    std::map<Shape*, std::vector<Shape*>> replacement_shapes;
+    std::map<Shape*, std::vector<std::unique_ptr<Shape>>> replacement_shapes;
     for (const auto& shape : shapes) {
-      std::vector<Shape*> replacements;
+      std::vector<std::unique_ptr<Shape>> replacements;
       if (!shape->cut(obs, getGrid(), replacements)) {
         continue;
       }
@@ -293,7 +304,7 @@ void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
       replacement_shapes[shape.get()] = std::move(replacements);
     }
 
-    for (const auto& [shape, replacement] : replacement_shapes) {
+    for (auto& [shape, replacement] : replacement_shapes) {
       replaceShape(shape, replacement);
     }
   }
