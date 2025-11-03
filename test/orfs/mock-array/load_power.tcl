@@ -17,11 +17,18 @@ proc check_log_for_warning { logfile } {
   # Also list unexpected warnings here as they are found.
   set unexpected_warnings {}
   foreach line [split $log_contents "\n"] {
-    if {[string match "*Warning:*" $line]} {
-      if {![string match "*pin .*? not found*" $line]} {
+    if { [string match "*Warning:*" $line] } {
+      if { ![string match "*pin * not found*" $line] } {
         lappend unexpected_warnings $line
       }
     }
+  }
+  if { [llength $unexpected_warnings] > 0 } {
+    puts "Error: Unexpected warnings found in log file $logfile:"
+    foreach warning $unexpected_warnings {
+      puts $warning
+    }
+    exit 1
   }
 }
 
