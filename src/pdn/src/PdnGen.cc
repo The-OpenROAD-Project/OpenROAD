@@ -748,18 +748,20 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
                                                net_shapes_vec.end());
   net_shapes_vec.clear();
 
-  // Remove existing non-fixed bpins
-  for (auto& [net, swire] : net_map) {
-    for (auto* bterm : net->getBTerms()) {
-      auto bpins = bterm->getBPins();
-      std::set<odb::dbBPin*> pins(bpins.begin(), bpins.end());
-      for (auto* bpin : pins) {
-        if (!bpin->getPlacementStatus().isFixed()) {
-          logger_->info(utl::PDN,
-                        242,
-                        "Removing non-fixed bpins {}",
-                        bpin->getBTerm()->getName());
-          odb::dbBPin::destroy(bpin);
+  if (add_pins) {
+    // Remove existing non-fixed bpins
+    for (auto& [net, swire] : net_map) {
+      for (auto* bterm : net->getBTerms()) {
+        auto bpins = bterm->getBPins();
+        std::set<odb::dbBPin*> pins(bpins.begin(), bpins.end());
+        for (auto* bpin : pins) {
+          if (!bpin->getPlacementStatus().isFixed()) {
+            logger_->info(utl::PDN,
+                          242,
+                          "Removing non-fixed bpins {}",
+                          bpin->getBTerm()->getName());
+            odb::dbBPin::destroy(bpin);
+          }
         }
       }
     }
