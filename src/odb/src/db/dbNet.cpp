@@ -40,6 +40,7 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
+#include "dbUtil.h"
 #include "dbWire.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -2359,100 +2360,11 @@ void dbNet::setJumpers(bool has_jumpers)
 
 void dbNet::checkSanity() const
 {
-  _dbNet* net = (_dbNet*) this;
-  utl::Logger* logger = net->getImpl()->getLogger();
   std::vector<std::string> drvr_info_list;
+  dbUtil::findBTermDrivers(this, drvr_info_list);
+  dbUtil::findITermDrivers(this, drvr_info_list);
 
-  // Find BTerm drivers
-  for (dbBTerm* bterm : getBTerms()) {
-    if (bterm->getIoType() == dbIoType::INPUT
-        || bterm->getIoType() == dbIoType::INOUT) {
-      dbBlock* block = bterm->getBlock();
-      dbModule* parent_module = block->getTopModule();
-      drvr_info_list.push_back(
-          // NOLINTNEXTLINE(misc-include-cleaner)
-          fmt::format("\n  - bterm: '{}' (parent_module: '{}', block: '{}')",
-                      bterm->getName(),
-                      parent_module->getName(),
-                      block->getName()));
-    }
-  }
-
-  // Find ITerm drivers
-  for (dbITerm* iterm : getITerms()) {
-    if (iterm->getIoType() == dbIoType::OUTPUT
-        || iterm->getIoType() == dbIoType::INOUT) {
-      dbInst* inst = iterm->getInst();
-      dbMaster* master = inst->getMaster();
-      dbModule* parent_module = inst->getModule();
-      dbBlock* block = inst->getBlock();
-
-      std::string parent_module_name = "null";
-      if (parent_module) {
-        parent_module_name = parent_module->getName();
-      }
-
-      std::string master_name = "null";
-      if (master) {
-        master_name = master->getName();
-      }
-
-      std::string block_name = "null";
-      if (block) {
-        block_name = block->getName();
-      }
-
-      drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
-          "\n  - iterm: '{}' (block: '{}', parent_module: '{}', master: '{}')",
-          iterm->getName('/'),
-          block_name,
-          parent_module_name,
-          master_name));
-    }
-  }
-
-  size_t drvr_count = drvr_info_list.size();
-  if (drvr_count > 1) {
-    // Multiple drivers found.
-    logger->error(
-        utl::ODB,
-        49,
-        "SanityCheck: dbNet '{}' has multiple drivers: {}",
-        getName(),
-        fmt::join(drvr_info_list, ""));  // NOLINT(misc-include-cleaner)
-  }
-
-  const uint iterm_count = getITerms().size();
-  const uint bterm_count = getBTerms().size();
-
-  if (drvr_count == 0 && (iterm_count + bterm_count > 0)) {
-    logger->warn(
-        utl::ODB, 50, "SanityCheck: dbNet '{}' has no driver.", getName());
-  }
-
-  if (iterm_count + bterm_count < 2) {
-    // Skip power/ground net
-    if (getSigType().isSupply()) {
-      return;  // OK: Unconnected power/ground net
-    }
-
-    // A net connected to 1 terminal
-    if (iterm_count == 1
-        && (*(getITerms().begin()))->getIoType() == dbIoType::OUTPUT) {
-      return;  // OK: Unconnected output pin
-    }
-    if (bterm_count == 1
-        && (*(getBTerms().begin()))->getIoType() == dbIoType::INPUT) {
-      return;  // OK: Unconnected input port
-    }
-    logger->warn(utl::ODB,
-                 51,
-                 "SanityCheck: dbNet '{}' is dangling. It has less than 2 "
-                 "connections (# of ITerms = {}, # of BTerms = {}).",
-                 getName(),
-                 iterm_count,
-                 bterm_count);
-  }
+  dbUtil::checkNetSanity(this, drvr_info_list);
 }
 
 dbModInst* dbNet::findMainParentModInst() const

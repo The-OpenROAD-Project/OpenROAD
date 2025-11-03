@@ -208,15 +208,11 @@ static void resetConversions()
       = [](const std::string& value, bool*) { return 0; };
 }
 
-Gui* Gui::singleton_ = nullptr;
-
 Gui* Gui::get()
 {
-  if (singleton_ == nullptr) {
-    singleton_ = new Gui();
-  }
+  static Gui* singleton = new Gui();
 
-  return singleton_;
+  return singleton;
 }
 
 Gui::Gui()
@@ -332,6 +328,11 @@ void Gui::addSelectedInst(const char* name)
   }
 
   main_window->addSelected(makeSelected(inst));
+}
+
+const SelectionSet& Gui::selection()
+{
+  return main_window->selection();
 }
 
 bool Gui::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const

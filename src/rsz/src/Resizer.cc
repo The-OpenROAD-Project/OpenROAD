@@ -3477,9 +3477,18 @@ void Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
 void Resizer::deleteTieCellAndNet(const Instance* tie_inst,
                                   LibertyPort* tie_port)
 {
-  // Delete inst output net.
+  // Get flat and hier nets.
   Pin* tie_pin = network_->findPin(tie_inst, tie_port);
-  dbNet* tie_flat_net = db_network_->flatNet(tie_pin);
+  odb::dbModNet* tie_hier_net;
+  dbNet* tie_flat_net;
+  db_network_->net(tie_pin, tie_flat_net, tie_hier_net);
+
+  // Delete hier net if it is dangling.
+  if (tie_hier_net && tie_hier_net->connectionCount() <= 1) {
+    odb::dbModNet::destroy(tie_hier_net);
+  }
+
+  // Delete inst output net.
   Net* tie_net = db_network_->dbToSta(tie_flat_net);
   sta_->deleteNet(tie_net);
   estimate_parasitics_->removeNetFromParasiticsInvalid(tie_net);

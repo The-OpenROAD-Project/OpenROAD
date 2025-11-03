@@ -8294,6 +8294,7 @@ class dbModBTerm : public dbObject
   dbModule* getParent() const;
 
   // User Code Begin dbModBTerm
+  std::string getHierarchicalName() const;
   void setParentModITerm(dbModITerm* parent_pin);
   dbModITerm* getParentModITerm() const;
   void setModNet(dbModNet* modNet);
@@ -8369,6 +8370,7 @@ class dbModITerm : public dbObject
   dbModInst* getParent() const;
 
   // User Code Begin dbModITerm
+  std::string getHierarchicalName() const;
   void setModNet(dbModNet* modNet);
   dbModNet* getModNet() const;
   void setChildModBTerm(dbModBTerm* child_port);
@@ -8394,7 +8396,7 @@ class dbModNet : public dbObject
   dbSet<dbModBTerm> getModBTerms() const;
   dbSet<dbITerm> getITerms() const;
   dbSet<dbBTerm> getBTerms() const;
-  unsigned connectionCount();
+  unsigned connectionCount() const;
   std::string getName() const;
   const char* getConstName() const;
   std::string getHierarchicalName() const;
@@ -8407,6 +8409,7 @@ class dbModNet : public dbObject
   // This function traverses the terminals connected to this dbModNet
   // and returns the first dbNet it finds.
   dbNet* findRelatedNet() const;
+  void checkSanity() const;
 
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);

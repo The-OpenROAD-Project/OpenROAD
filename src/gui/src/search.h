@@ -133,8 +133,8 @@ class Search : public QObject, public odb::dbBlockCallBackObj
 
   ~Search() override;
 
-  // Build the structure for the given block.
-  void setTopBlock(odb::dbBlock* block);
+  // Build the structure for the given chip.
+  void setTopChip(odb::dbChip* chip);
 
   // Find all box shapes in the given bounds on the given layer which
   // are at least min_size in either dimension.
@@ -248,7 +248,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
 
  signals:
   void modified();
-  void newBlock(odb::dbBlock* block);
+  void newChip(odb::dbChip* chip);
 
  private:
   struct BlockData;
@@ -276,7 +276,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   void announceModified(std::atomic_bool& flag);
   BlockData& getData(odb::dbBlock* block);
 
-  odb::dbBlock* top_block_{nullptr};
+  odb::dbChip* top_chip_{nullptr};
 
   struct BlockData
   {
