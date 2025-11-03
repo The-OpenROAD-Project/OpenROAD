@@ -6,7 +6,7 @@ foreach libFile $::env(LIB_FILES) {
   }
 }
 
-proc check_log_for_warning {logfile} {
+proc check_log_for_warning { logfile } {
   set f [open $logfile r]
   set log_contents [read $f]
   close $f
