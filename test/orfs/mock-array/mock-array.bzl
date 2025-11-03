@@ -467,13 +467,14 @@ def mock_array(name, config):
                         "POWER_STAGE_STEM": POWER_STAGE_STEM[stage],
                         "VCD_STIMULI": "$(location :vcd_{variant}_{stage})".format(variant = variant, stage = stage),
                     } | ({"openroad": {}}.get(
-                        "openroad",
+                        power_test,
                         {
                             "OPENROAD_EXE": "$(location //src/sta:opensta)",
                         },
                     )),
                     data = [
                                # FIXME this is a workaround to ensure that the OpenSTA runfiles are available
+                               ":opensta_runfiles",
                                ":vcd_{variant}_{stage}".format(variant = variant, stage = stage),
                                ":load_power.tcl",
                            ] + ["{macro}_{variant}_{stage}".format(
@@ -484,8 +485,7 @@ def mock_array(name, config):
                            (["{variant}_{macro}_parasitics".format(
                                variant = (name + "_base") if macro == "Element" else variant,
                                macro = macro,
-                           ) for macro in MACROS] if stage != "final" else []) +
-                           (["//src/sta:opensta"] if power_test != "openroad" else []),
+                           ) for macro in MACROS] if stage != "final" else []),
                     script = ":{power_test}.tcl".format(power_test = power_test if power_test != "openroad" else "power"),
                     tags = ["manual"],
                     tools = ["//src/sta:opensta"],
