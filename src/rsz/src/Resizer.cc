@@ -4629,7 +4629,7 @@ void Resizer::journalRestore()
   init();
 
   if (odb::dbDatabase::ecoEmpty(block_)) {
-    odb::dbDatabase::endEco(block_);
+    odb::dbDatabase::undoEco(block_);
     debugPrint(logger_,
                RSZ,
                "journal",
