@@ -326,7 +326,7 @@ module hier_block (delaynet_4_core_i,
     .Z(\clknet_4_0__leaf_h1/gclk5 ));
  CLKBUF_X3 \clkbuf_0_h1/gclk5  (.A(gclk5),
     .Z(\clknet_0_h1/gclk5 ));
- DFF_X1 ff0 (.CK(\clknet_4_12__leaf_h1/gclk5 ));
+ DFF_X1 \ff0/name  (.CK(\clknet_4_12__leaf_h1/gclk5 ));
  DFF_X1 ff1 (.CK(\clknet_4_4__leaf_h1/gclk5 ));
  DFF_X1 ff10 (.CK(\clknet_4_11__leaf_h1/gclk5 ));
  DFF_X1 ff100 (.CK(\clknet_4_0__leaf_h1/gclk5 ));
