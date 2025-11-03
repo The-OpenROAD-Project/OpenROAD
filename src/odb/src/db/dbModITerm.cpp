@@ -217,6 +217,13 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance,
   parent->_moditerm_hash[name] = dbId<_dbModITerm>(moditerm->getOID());
 
   if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: create dbModITerm {} at id {}",
+               name,
+               moditerm->getId());
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbModITermObj);
     block->_journal->pushParam(name);
@@ -269,6 +276,13 @@ void dbModITerm::connect(dbModNet* net)
   _modnet->_moditerms = getId();
 
   if (_block->_journal) {
+    debugPrint(_block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: connect dbModITerm {} at id {}",
+               getName(),
+               getId());
     _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     _block->_journal->pushParam(dbModITermObj);
     _block->_journal->pushParam(getId());
@@ -293,6 +307,13 @@ void dbModITerm::disconnect()
   _dbModNet* _modnet = _block->_modnet_tbl->getPtr(_moditerm->_mod_net);
 
   if (_block->_journal) {
+    debugPrint(_block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: disconnect dbModITerm {} at id {}",
+               getName(),
+               getId());
     _block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     _block->_journal->pushParam(dbModITermObj);
     _block->_journal->pushParam(_moditerm->getId());
@@ -338,6 +359,13 @@ void dbModITerm::destroy(dbModITerm* val)
   _dbModInst* mod_inst = block->_modinst_tbl->getPtr(_moditerm->_parent);
 
   if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: delete dbModITerm {} at id {}",
+               val->getName(),
+               val->getId());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModITermObj);
     block->_journal->pushParam(val->getName());

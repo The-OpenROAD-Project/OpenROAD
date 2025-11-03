@@ -420,6 +420,15 @@ void dbNet::swapNetNames(dbNet* source, bool ok_to_journal)
 
   // allow undo..
   if (block->_journal && ok_to_journal) {
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: swap dbName (dbNet) between {} at id {} and {} at id {}",
+               source->getName(),
+               source->getId(),
+               getName(),
+               getId());
     block->_journal->beginAction(dbJournal::SWAP_OBJECT);
     // a name
     block->_journal->pushParam(dbNameObj);
@@ -2117,8 +2126,9 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: create net, name {}",
-               name_);
+               "ECO: create dbNet {} at id {}",
+               name_,
+               net->getOID());
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(name_);
@@ -2195,8 +2205,9 @@ void dbNet::destroy(dbNet* net_)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: destroy net, id: {}",
-               net->getId());
+               "ECO: delete dbNet {} at id {}",
+               net_->getName(),
+               net->getOID());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(net_->getName());

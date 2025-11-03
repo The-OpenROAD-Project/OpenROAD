@@ -1123,8 +1123,13 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   }
 
   if (block->_journal) {
-    debugPrint(
-        getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: swapMaster");
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: swap dbInst {} at id {}",
+               getName(),
+               getId());
     dbLib* old_lib = old_master_->getLib();
     dbLib* new_lib = new_master_->getLib();
     block->_journal->beginAction(dbJournal::SWAP_OBJECT);
@@ -1296,7 +1301,9 @@ dbInst* dbInst::create(dbBlock* block_,
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: dbInst:create");
+               "ECO: create dbInst {} at id {}",
+               name_,
+               inst->getId());
     dbLib* lib = master_->getLib();
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbInstObj);
@@ -1503,7 +1510,9 @@ void dbInst::destroy(dbInst* inst_)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: dbInst:destroy");
+               "ECO: delete dbInst {} at id {}",
+               inst_->getName(),
+               inst_->getId());
     auto master = inst_->getMaster();
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbInstObj);

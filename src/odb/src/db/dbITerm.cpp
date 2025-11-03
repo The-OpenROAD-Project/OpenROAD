@@ -349,9 +349,9 @@ void dbITerm::connect(dbNet* net_)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: connect Iterm {} to net {}",
-               getId(),
-               net_->getId());
+               "ECO: connect dbITerm {} at id {}",
+               getName(),
+               getId());
     block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(getId());
@@ -424,9 +424,9 @@ void dbITerm::connect(dbModNet* mod_net)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: connect Iterm {} to modnet {}",
-               getId(),
-               _mod_net->getId());
+               "ECO: connect dbITerm {} at id {}",
+               getName(),
+               getId());
     block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(getId());
@@ -486,9 +486,9 @@ void dbITerm::disconnect()
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: disconnect Iterm {}",
+               "ECO: disconnect dbITerm {} at id {}",
+               getName(),
                getId());
-
     block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(getId());
@@ -586,9 +586,9 @@ void dbITerm::disconnectDbNet()
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: disconnect Iterm {} to net {}",
-               getId(),
-               net->getId());
+               "ECO: disconnect dbITerm {} at id {}",
+               getName(),
+               getId());
     block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(getId());
@@ -639,9 +639,9 @@ void dbITerm::disconnectDbModNet()
                  utl::ODB,
                  "DB_ECO",
                  1,
-                 "ECO: disconnect Iterm {} to modnet {}",
-                 getId(),
-                 iterm->_mnet);
+                 "ECO: disconnect dbITerm {} at id {}",
+                 getName(),
+                 getId());
       block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
       block->_journal->pushParam(dbITermObj);
       block->_journal->pushParam(getId());
