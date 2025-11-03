@@ -459,7 +459,7 @@ int FastRouteCore::getLayerResistance(const int layer,
     return BIG_INT;
   }
 
-  return std::ceil(10*final_resistance / default_resistance);
+  return std::ceil(final_resistance / default_resistance);
   // return std::ceil(final_resistance);
 }
 
@@ -488,7 +488,7 @@ int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
 
   float default_res = getTechLayer(0, true)->getResistance();
 
-  return std::ceil(10*total_via_resistance / default_res);
+  return std::ceil(total_via_resistance / default_res);
   // return std::ceil(total_via_resistance);
 }
 
@@ -525,7 +525,7 @@ void FastRouteCore::updateSlacks(float percentage)
         i++;
       }     
       
-      for(int layer=1; layer <= net->getMaxLayer(); layer++){
+      for(int layer=1; layer < net->getMaxLayer(); layer++){
         odb::dbTechLayer* db_layer = getTechLayer(layer, false);
 
         int width = db_layer->getWidth();
