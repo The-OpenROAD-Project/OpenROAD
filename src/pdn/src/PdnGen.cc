@@ -755,6 +755,10 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
       std::set<odb::dbBPin*> pins(bpins.begin(), bpins.end());
       for (auto* bpin : pins) {
         if (!bpin->getPlacementStatus().isFixed()) {
+          logger_->info(utl::PDN,
+                        242,
+                        "Removing non-fixed bpins {}",
+                        bpin->getBTerm()->getName());
           odb::dbBPin::destroy(bpin);
         }
       }
