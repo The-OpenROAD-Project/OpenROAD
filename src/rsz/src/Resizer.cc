@@ -4553,7 +4553,7 @@ void Resizer::journalEnd()
     estimate_parasitics_->updateParasitics();
     sta_->findRequireds();
   }
-  odb::dbDatabase::endEco(block_);
+  odb::dbDatabase::commitEco(block_);
 
   int move_count_ = 0;
   move_count_ += size_up_move_->numPendingMoves();
