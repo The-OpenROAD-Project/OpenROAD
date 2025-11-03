@@ -5,8 +5,8 @@
 
 #include <memory>
 #include <unordered_map>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "odb/db.h"
 
