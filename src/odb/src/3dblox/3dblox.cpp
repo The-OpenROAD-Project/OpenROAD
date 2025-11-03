@@ -13,6 +13,7 @@
 #include "bmapParser.h"
 #include "dbvParser.h"
 #include "dbxParser.h"
+#include "dbxWriter.h"
 #include "objects.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -81,6 +82,12 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   }
   calculateSize(db_->getChip());
   db_->triggerPostRead3Dbx(chip);
+}
+
+void ThreeDBlox::writeDbx(const std::string& dbx_file)
+{
+  DbxWriter writer(logger_);
+  writer.writeFile(dbx_file, db_);
 }
 
 void ThreeDBlox::calculateSize(dbChip* chip)
