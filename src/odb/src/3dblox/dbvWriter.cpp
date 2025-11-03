@@ -7,8 +7,6 @@
 #include <yaml-cpp/node/node.h>
 #include <yaml-cpp/yaml.h>
 
-#include <filesystem>
-#include <sstream>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -207,7 +205,7 @@ void DbvWriter::writeChipDependencies(YAML::Node& header_node,
   }
   if (!included.empty()) {
     YAML::Node includes_node = header_node["include"];
-    for (auto include : included) {
+    for (const auto& include : included) {
       includes_node.push_back(include);
     }
   }
@@ -245,7 +243,6 @@ void DbvWriter::writeChiplet(const std::string& base_filename,
   ChipletHierarchy hierarchy;
   hierarchy.buildHierarchy(all_chips);
 
-  std::string top_name;
   auto chiplet_node = hierarchy.findNodeForChip(top_chip);
 
   writeChipletToFile(base_filename, top_chip, db, chiplet_node);

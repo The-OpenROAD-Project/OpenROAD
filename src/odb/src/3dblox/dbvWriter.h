@@ -6,7 +6,6 @@
 #include <yaml-cpp/node/node.h>
 
 #include <string>
-#include <vector>
 
 #include "baseWriter.h"
 #include "chipletHierarchy.h"
