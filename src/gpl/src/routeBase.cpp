@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "gpl/Replace.h"
 #include "grt/GlobalRouter.h"
 #include "grt/Rudy.h"
 #include "nesterovBase.h"
@@ -277,13 +278,17 @@ void RouteBase::revertToMinCongestion()
   nbc_->revertGCellSizeToMinRc();
   for (int j = 0; j < nbVec_.size(); j++) {
     if (nbVec_[j]->group()) {
-      log_->info(GPL, 57, "Target density at minimum routing congestion: {:.4f} ({})",
-                minRcTargetDensity_[j],
-                nbVec_[j]->group() ? "" : nbVec_[j]->group()->getName());
+      log_->info(GPL,
+                 57,
+                 "Target density at minimum routing congestion: {:.4f} ({})",
+                 minRcTargetDensity_[j],
+                 nbVec_[j]->group() ? "" : nbVec_[j]->group()->getName());
     } else {
-      log_->info(GPL, 58, "Target density at minimum routing congestion: {:.4f}",
-                minRcTargetDensity_[j]);
-      }
+      log_->info(GPL,
+                 58,
+                 "Target density at minimum routing congestion: {:.4f}",
+                 minRcTargetDensity_[j]);
+    }
     nbVec_[j]->setTargetDensity(minRcTargetDensity_[j]);
     nbVec_[j]->restoreRemovedFillers();
     nbVec_[j]->updateDensitySize();
