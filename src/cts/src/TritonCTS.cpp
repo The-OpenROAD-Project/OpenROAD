@@ -1021,6 +1021,17 @@ void TritonCTS::populateTritonCTS()
   block_ = db_->getChip()->getBlock();
   options_->setDbUnits(block_->getDbUnitsPerMicron());
 
+  // get row height to define diamters
+  int row_height = 0, real_height = 0;
+  for (odb::dbRow* row_it : block_->getRows()) {
+    int height = row_it->getSite()->getHeight();
+    real_height = std::max(real_height, height);
+    height = block_->dbuToMicrons(height);
+    row_height = std::max(row_height, height);
+  }
+  printf("Real height: %d\n", real_height);
+  options_->setClusterDiameter(row_height);
+
   clearNumClocks();
 
   // Use dbSta to find all clock nets in the design.
