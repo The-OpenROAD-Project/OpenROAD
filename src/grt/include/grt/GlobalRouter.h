@@ -277,6 +277,8 @@ class GlobalRouter
                            bool verbose,
                            const char* file_name);
   void reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& out);
+  long getNetDetailedRouteWLInRect(odb::dbWire* wire, odb::Rect win);
+  long getNetViaCountInRect(odb::dbWire* wire, odb::Rect win);
   void createWLReportFile(const char* file_name, bool verbose);
   std::vector<PinGridLocation> getPinGridPositions(odb::dbNet* db_net);
 

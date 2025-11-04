@@ -43,6 +43,7 @@
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "odb/wOrder.h"
 #include "sta/Clock.hh"
@@ -4994,6 +4995,40 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire,
                       block_->dbuToMicrons(length));
     }
   }
+}
+
+long GlobalRouter::getNetDetailedRouteWLInRect(odb::dbWire* wire, odb::Rect win)
+{
+  long lengths = 0;
+  odb::dbWireShapeItr shapes;
+  odb::dbShape s;
+  long via_count = 0;
+  for (shapes.begin(wire); shapes.next(s);) {
+    if (!s.isVia()) {
+      if (s.getBox().intersects(win)) {
+        odb::Rect ibox = s.getBox().intersect(win);
+        lengths += ibox.dx() + ibox.dy();
+      }
+    }
+  }
+
+  return lengths;
+}
+
+long GlobalRouter::getNetViaCountInRect(odb::dbWire* wire, odb::Rect win)
+{
+  long lengths = 0;
+  odb::dbWireShapeItr shapes;
+  odb::dbShape s;
+  long via_count = 0;
+  for (shapes.begin(wire); shapes.next(s);) {
+    if (s.isVia()) {
+      if(s.getBox().intersects(win))
+        via_count++;
+    }
+  }
+
+  return via_count;
 }
 
 void GlobalRouter::createWLReportFile(const char* file_name, bool verbose)

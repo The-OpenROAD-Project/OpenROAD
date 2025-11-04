@@ -385,7 +385,7 @@ void FlexPA::genPatternsInit(
           odb::Rect firstNonVia = guide_boxes[0].first;
           for (auto [bbox, weight] : guide_boxes) {
             // An up-via is a square (1x1 gcell) guide segment that connects
-            // from pin layer to the layer abov. To estimate the first
+            // from pin layer to the layer above. To estimate the first
             // non-up-via segment, we sort segments (see above) and then search
             // for the first non-square via is centered closest to the ITerm's
             // bbox
@@ -397,20 +397,6 @@ void FlexPA::genPatternsInit(
 
           xAvg = firstNonVia.xCenter();
           yAvg = firstNonVia.yCenter();
-        }
-
-        // Mode 5: Hybrid (Mode 4 + Mode 2) (WIP)
-      } else if (router_cfg_->PA_RTGUIDE_MODE == 5) {
-
-        }
-
-        else {
-          logger_->warn(DRT,
-                        137,
-                        "PA RTGuide Mode 4: No routeguide on {}",
-                        net->getName());
-          xAvg = inst_term->getBBox().center().x();
-          yAvg = inst_term->getBBox().center().y();
         }
       } else if (router_cfg_->PA_RTGUIDE_MODE != 0) {
         logger_->warn(DRT,
