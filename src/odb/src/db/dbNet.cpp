@@ -2593,6 +2593,27 @@ void dbNet::checkSanityModNetConsistency() const
     }
   }
 
+  std::vector<dbITerm*> iterms_in_hier_only;
+  std::set_difference(hier_iterms.begin(),
+                      hier_iterms.end(),
+                      flat_iterms.begin(),
+                      flat_iterms.end(),
+                      std::back_inserter(iterms_in_hier_only));
+
+  if (iterms_in_hier_only.empty() == false) {
+    logger->warn(utl::ODB,
+                 488,
+                 "SanityCheck: dbNet '{}' is missing ITerms that are present "
+                 "in its related dbModNets.",
+                 getName());
+    for (dbITerm* iterm : iterms_in_hier_only) {
+      logger->warn(utl::ODB,
+                   489,
+                   "  - ITerm: {} (in hier, not in flat)",
+                   iterm->getName());
+    }
+  }
+
   // 4.2. Compare BTerms
   std::vector<dbBTerm*> bterms_in_flat_only;
   std::set_difference(flat_bterms.begin(),
@@ -2609,6 +2630,27 @@ void dbNet::checkSanityModNetConsistency() const
                  getName());
     for (dbBTerm* bterm : bterms_in_flat_only) {
       logger->warn(utl::ODB, 487, "  - BTerm: {}", bterm->getName());
+    }
+  }
+
+  std::vector<dbBTerm*> bterms_in_hier_only;
+  std::set_difference(hier_bterms.begin(),
+                      hier_bterms.end(),
+                      flat_bterms.begin(),
+                      flat_bterms.end(),
+                      std::back_inserter(bterms_in_hier_only));
+
+  if (bterms_in_hier_only.empty() == false) {
+    logger->warn(utl::ODB,
+                 490,
+                 "SanityCheck: dbNet '{}' is missing BTerms that are present "
+                 "in its related dbModNets.",
+                 getName());
+    for (dbBTerm* bterm : bterms_in_hier_only) {
+      logger->warn(utl::ODB,
+                   491,
+                   "  - BTerm: {} (in hier, not in flat)",
+                   bterm->getName());
     }
   }
 }
