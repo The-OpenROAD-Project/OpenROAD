@@ -1029,7 +1029,6 @@ void TritonCTS::populateTritonCTS()
     height = block_->dbuToMicrons(height);
     row_height = std::max(row_height, height);
   }
-  printf("Real height: %d\n", real_height);
   options_->setClusterDiameter(row_height);
 
   clearNumClocks();
