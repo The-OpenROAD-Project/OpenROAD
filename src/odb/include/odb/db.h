@@ -5698,13 +5698,6 @@ class dbTech : public dbObject
   std::string getName();
 
   ///
-  /// Set the Database distance units per micron.
-  ///
-  /// Legal values are 100, 200, 1000, 2000, 10000, 20000
-  ///
-  void setDbUnitsPerMicron(int value);
-
-  ///
   /// Get the Database units per micron.
   ///
   int getDbUnitsPerMicron();
@@ -5880,9 +5873,7 @@ class dbTech : public dbObject
   /// Create a new technology.
   /// Returns nullptr if a database technology already exists
   ///
-  static dbTech* create(dbDatabase* db,
-                        const char* name,
-                        int dbu_per_micron = 1000);
+  static dbTech* create(dbDatabase* db, const char* name);
 
   ///
   /// Translate a database-id back to a pointer.
