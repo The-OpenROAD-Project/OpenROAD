@@ -1395,9 +1395,10 @@ bool PadDirectConnectionStraps::strapViaIsObstructed(
           "Pad",
           recheck ? 4 : 3,
           "Direct connect shape {} with obstruction {} using pin {} on {}",
-          Shape::getRectText(expected_via, tech->getLefUnits()),
+          Shape::getRectText(expected_via, tech->getDbUnitsPerMicron()),
           tech_layer->getName(),
-          Shape::getRectText(target_pin_shape_.at(shape), tech->getLefUnits()),
+          Shape::getRectText(target_pin_shape_.at(shape),
+                             tech->getDbUnitsPerMicron()),
           shape->getNet()->getName());
       return true;
     }
@@ -1506,15 +1507,15 @@ bool PadDirectConnectionStraps::refineShape(
     std::unique_ptr<Shape> new_shape = shape->copy();
     new_shape->setRect(new_rect);
 
-    debugPrint(
-        getLogger(),
-        utl::PDN,
-        "Pad",
-        4,
-        "Checking new shape: {} on {}",
-        Shape::getRectText(new_shape->getRect(),
-                           new_shape->getLayer()->getTech()->getLefUnits()),
-        new_shape->getLayer()->getName());
+    debugPrint(getLogger(),
+               utl::PDN,
+               "Pad",
+               4,
+               "Checking new shape: {} on {}",
+               Shape::getRectText(
+                   new_shape->getRect(),
+                   new_shape->getLayer()->getTech()->getDbUnitsPerMicron()),
+               new_shape->getLayer()->getName());
 
     // check if legal
     if (strapViaIsObstructed(

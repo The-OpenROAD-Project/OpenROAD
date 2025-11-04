@@ -1862,18 +1862,13 @@ void lefinReader::units(LefParser::lefiUnits* unit)
   if (unit->hasDatabase()) {
     _lef_units = (int) unit->databaseNumber();
 
-    if (_override_lef_dbu == false) {
-      if (_create_tech) {
-        if (_lef_units
-            < 1000) {  // historically the database was always stored in nm
-          setDBUPerMicron(1000);
-        } else {
-          setDBUPerMicron(_lef_units);
-        }
-
-        _tech->setDbUnitsPerMicron(_dbu_per_micron);
-        _tech->setLefUnits(_lef_units);
+    if (_create_tech && !_override_lef_dbu) {
+      // historically the database was always stored in nm
+      setDBUPerMicron(std::max(_lef_units, 1000));
+      if (_db->getDbuPerMicron() == 0) {
+        _db->setDbuPerMicron(_dbu_per_micron);
       }
+      _tech->setLefUnits(_lef_units);
     }
 
     if (_lef_units > _dbu_per_micron) {
@@ -1889,33 +1884,61 @@ void lefinReader::units(LefParser::lefiUnits* unit)
   }
 }
 
-void lefinReader::setDBUPerMicron(int dbu)
+namespace {
+bool isValidDBUPerMicron(int dbu)
 {
   switch (dbu) {
-    case 100:
-    case 200:
-    case 400:
-    case 800:
     case 1000:
     case 2000:
     case 4000:
     case 8000:
     case 10000:
     case 20000:
-      _dist_factor = dbu;
-      _dbu_per_micron = dbu;
-      _area_factor = _dbu_per_micron * _dbu_per_micron;
-      break;
+      return true;
     default:
+      return false;
+  }
+}
+}  // namespace
+
+void lefinReader::setDBUPerMicron(int dbu)
+{
+  if (!isValidDBUPerMicron(dbu)) {
+    ++_errors;
+    _logger->warn(utl::ODB,
+                  400,
+                  "error: invalid dbu-per-micron value {}; valid units (1000, "
+                  "2000, 4000, 8000, 10000, 20000)",
+                  dbu);
+
+    return;
+  }
+  if (_db->getDbuPerMicron() != 0) {
+    if (dbu > _db->getDbuPerMicron()) {
+      ++_errors;
+      _logger->warn(
+          utl::ODB,
+          401,
+          "The LEF UNITS DATABASE MICRON convert factor ({}) is greater than "
+          "the database units per micron ({}) of the current database.",
+          dbu,
+          _db->getDbuPerMicron());
+    }
+    if (_db->getDbuPerMicron() % dbu != 0) {
       ++_errors;
       _logger->warn(utl::ODB,
-                    206,
-                    "error: invalid dbu-per-micron value {}; valid units (100, "
-                    "200, 400, 800"
-                    "1000, 2000, 4000, 8000, 10000, 20000)",
-                    _lef_units);
-      break;
+                    402,
+                    "The LEF UNITS DATABASE MICRON convert factor ({}) is "
+                    "not a multiplier of the database units per micron ({}) of "
+                    "the current database.",
+                    dbu,
+                    _db->getDbuPerMicron());
+    }
+    dbu = _db->getDbuPerMicron();
   }
+  _dist_factor = dbu;
+  _dbu_per_micron = dbu;
+  _area_factor = _dbu_per_micron * _dbu_per_micron;
 }
 
 void lefinReader::useMinSpacing(LefParser::lefiUseMinSpacing* spacing)
@@ -2370,7 +2393,7 @@ dbTech* lefinReader::createTech(const char* name, const char* lef_file)
   lefrSetRelaxMode();
   init();
 
-  _tech = dbTech::create(_db, name, _dbu_per_micron);
+  _tech = dbTech::create(_db, name);
   _create_tech = true;
 
   if (!readLef(lef_file) || _errors != 0) {
@@ -2378,7 +2401,9 @@ dbTech* lefinReader::createTech(const char* name, const char* lef_file)
     _logger->error(
         utl::ODB, 288, "LEF data from {} is discarded due to errors", lef_file);
   }
-
+  if (_db->getDbuPerMicron() == 0) {
+    _db->setDbuPerMicron(_dbu_per_micron);
+  }
   _db->triggerPostReadLef(_tech, nullptr);
 
   return _tech;
@@ -2414,7 +2439,9 @@ dbLib* lefinReader::createLib(dbTech* tech,
     _logger->error(
         utl::ODB, 292, "LEF data from {} is discarded due to errors", lef_file);
   }
-
+  if (_db->getDbuPerMicron() == 0) {
+    _db->setDbuPerMicron(_dbu_per_micron);
+  }
   _db->triggerPostReadLef(_tech, _lib);
   return _lib;
 }
@@ -2439,7 +2466,7 @@ dbLib* lefinReader::createTechAndLib(const char* tech_name,
     return nullptr;
   };
 
-  _tech = dbTech::create(_db, tech_name, _dbu_per_micron);
+  _tech = dbTech::create(_db, tech_name);
   _lib_name = lib_name;
   _create_lib = true;
   _create_tech = true;
@@ -2458,7 +2485,9 @@ dbLib* lefinReader::createTechAndLib(const char* tech_name,
   if (rules.orderReversed()) {
     rules.reverse();
   }
-
+  if (_db->getDbuPerMicron() == 0) {
+    _db->setDbuPerMicron(_dbu_per_micron);
+  }
   _db->triggerPostReadLef(_tech, _lib);
 
   return _lib;
