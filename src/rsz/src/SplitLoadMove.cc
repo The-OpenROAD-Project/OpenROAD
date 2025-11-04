@@ -217,9 +217,6 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
     // Leave ports connected to original net so verilog port names are
     // preserved.
     if (!network_->isTopLevelPort(load_pin)) {
-      [[maybe_unused]] LibertyPort* load_port = network_->libertyPort(load_pin);
-      [[maybe_unused]] Instance* load = network_->instance(load_pin);
-
       // This will kill both the flat (dbNet) and hier (modnet) connection
       load_iterm->disconnect();
 
