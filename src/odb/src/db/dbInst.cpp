@@ -346,30 +346,6 @@ std::string dbInst::getName() const
   return inst->_name;
 }
 
-std::string dbInst::getHierarchicalName() const
-{
-  _dbInst* inst = (_dbInst*) this;
-  if (inst->_module == 0) {
-    return inst->_name;
-  }
-
-  dbBlock* block = getBlock();
-  _dbBlock* block_impl = (_dbBlock*) block;
-  _dbModule* module = block_impl->_module_tbl->getPtr(inst->_module);
-  if (module->_mod_inst == 0) {  // top module
-    return inst->_name;
-  }
-
-  _dbModInst* mod_inst_impl
-      = block_impl->_modinst_tbl->getPtr(module->_mod_inst);
-  dbModInst* mod_inst = (dbModInst*) mod_inst_impl;
-  // A non-null mod_inst is expected for non-top modules.
-  // The hierarchical name is constructed by prepending the parent module
-  // instance's hierarchical name and the delimiter.
-  return mod_inst->getHierarchicalName() + block->getHierarchyDelimiter()
-         + inst->_name;
-}
-
 const char* dbInst::getConstName() const
 {
   _dbInst* inst = (_dbInst*) this;
@@ -1547,7 +1523,7 @@ void dbInst::destroy(dbInst* inst_)
                "ECO: delete dbInst({}, {:p}) '{}'",
                inst->getId(),
                static_cast<void*>(inst),
-               inst_->getHierarchicalName());
+               inst_->getName());
     auto master = inst_->getMaster();
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbInstObj);

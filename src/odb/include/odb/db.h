@@ -1756,12 +1756,12 @@ class dbNet : public dbObject
 {
  public:
   ///
-  /// Get the hierarchical net name.
+  /// Get the hierarchical net name (not a base name).
   ///
   std::string getName() const;
 
   ///
-  /// Get the net name.
+  /// Need a version that does not do strdup every time
   ///
   const char* getConstName() const;
 
@@ -2534,14 +2534,9 @@ class dbInst : public dbObject
 {
  public:
   ///
-  /// Get the instance name.
+  /// Get the hierarchical instance name (not a base name).
   ///
   std::string getName() const;
-
-  ///
-  /// Get the hierarchical instance name.
-  ///
-  std::string getHierarchicalName() const;
 
   ///
   /// Need a version that does not do strdup every time
