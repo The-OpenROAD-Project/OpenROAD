@@ -1185,7 +1185,7 @@ int ICeWall::placeInstance(odb::dbRow* row,
                2,
                "Shift required for {} to avoid {} ({} -> {})",
                inst->getName(),
-               check_inst->getName(),
+               check_inst ? check_inst->getName() : "blockage",
                index,
                next_index);
 
@@ -1193,12 +1193,17 @@ int ICeWall::placeInstance(odb::dbRow* row,
         row, next_index, inst, base_orient, allow_overlap, allow_shift);
   } else if (!allow_overlap && check_obs) {
     const auto& [check_inst, obs_rect] = *check_obs;
-    const odb::Rect check_rect = check_inst->getBBox()->getBox();
+    odb::Rect check_rect;
+    if (check_inst == nullptr) {
+      check_rect = obs_rect;
+    } else {
+      check_rect = check_inst->getBBox()->getBox();
+    }
     logger_->error(utl::PAD,
                    1,
                    "Unable to place {} ({}) at ({:.3f}um, {:.3f}um) - "
                    "({:.3f}um, {:.3f}um) as it "
-                   "overlaps with {} ({}) at ({:.3f}um, {:.3f}um) - "
+                   "overlaps with {} at ({:.3f}um, {:.3f}um) - "
                    "({:.3f}um, {:.3f}um)",
                    inst->getName(),
                    inst->getMaster()->getName(),
@@ -1206,8 +1211,10 @@ int ICeWall::placeInstance(odb::dbRow* row,
                    inst_rect.yMin() / dbus,
                    inst_rect.xMax() / dbus,
                    inst_rect.yMax() / dbus,
-                   check_inst->getName(),
-                   check_inst->getMaster()->getName(),
+                   check_inst ? fmt::format("{} ({})",
+                                            check_inst->getName(),
+                                            check_inst->getMaster()->getName())
+                              : "blockage",
                    check_rect.xMin() / dbus,
                    check_rect.yMin() / dbus,
                    check_rect.xMax() / dbus,
@@ -1957,6 +1964,13 @@ ICeWall::checkInstancePlacement(odb::dbInst* inst, odb::dbRow* row) const
   std::set<odb::dbInst*> covers;
   auto* block = getBlock();
   if (block) {
+    const odb::Rect inst_rect = inst->getBBox()->getBox();
+    for (odb::dbBlockage* blockage : block->getBlockages()) {
+      if (blockage->getBBox()->getBox().overlaps(inst_rect)) {
+        return std::make_pair(
+            nullptr, blockage->getBBox()->getBox().intersect(inst_rect));
+      }
+    }
     for (auto* check_inst : block->getInsts()) {
       if (check_inst == inst) {
         continue;
@@ -1967,6 +1981,10 @@ ICeWall::checkInstancePlacement(odb::dbInst* inst, odb::dbRow* row) const
       if (check_inst->getMaster()->isCover()) {
         covers.insert(check_inst);
         continue;
+      }
+      if (check_inst->getBBox()->getBox().overlaps(inst_rect)) {
+        return std::make_pair(
+            check_inst, check_inst->getBBox()->getBox().intersect(inst_rect));
       }
     }
   }
