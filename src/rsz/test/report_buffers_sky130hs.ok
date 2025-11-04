@@ -63,12 +63,12 @@ There are 6 fast buffers
 Cell                                        Area  Input  Intrinsic Drive 
                                                    Cap    Delay    Res
 --------------------------------------------------------------------------------
+sky130_fd_sc_hs__bufbuf_8                    24.0 2.3e-15 1.6e-10  1267.8
 sky130_fd_sc_hs__buf_1                        6.4 2.5e-15 4.6e-11  6567.8
-sky130_fd_sc_hs__buf_16                      35.2 1.6e-14 6.5e-11   532.1
 sky130_fd_sc_hs__buf_2                        8.0 2.7e-15 5.8e-11  4229.3
 sky130_fd_sc_hs__buf_4                       11.2 3.7e-15 6.0e-11  1981.3
 sky130_fd_sc_hs__buf_8                       19.2 8.6e-15 6.5e-11  1090.2
-sky130_fd_sc_hs__bufbuf_8                    24.0 2.3e-15 1.6e-10  1267.8
+sky130_fd_sc_hs__buf_16                      35.2 1.6e-14 6.5e-11   532.1
 --------------------------------------------------------------------------------
 [INFO RSZ-0165] Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing
 ********************************************************************************
@@ -135,10 +135,10 @@ There are 6 fast buffers
 Cell                                        Area  Input  Intrinsic Drive 
                                                    Cap    Delay    Res
 --------------------------------------------------------------------------------
+sky130_fd_sc_hs__bufbuf_8                    24.0 2.3e-15 1.6e-10  1267.8
 sky130_fd_sc_hs__buf_1                        6.4 2.5e-15 4.6e-11  6567.8
-sky130_fd_sc_hs__buf_16                      35.2 1.6e-14 6.5e-11   532.1
 sky130_fd_sc_hs__buf_2                        8.0 2.7e-15 5.8e-11  4229.3
 sky130_fd_sc_hs__buf_4                       11.2 3.7e-15 6.0e-11  1981.3
 sky130_fd_sc_hs__buf_8                       19.2 8.6e-15 6.5e-11  1090.2
-sky130_fd_sc_hs__bufbuf_8                    24.0 2.3e-15 1.6e-10  1267.8
+sky130_fd_sc_hs__buf_16                      35.2 1.6e-14 6.5e-11   532.1
 --------------------------------------------------------------------------------

@@ -6,6 +6,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "sta/Network.hh"
 
 namespace est {
 

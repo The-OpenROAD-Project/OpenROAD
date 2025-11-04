@@ -222,8 +222,8 @@ module hi_fanout_child_hi_fanout_inst2 (net_i_5,
     .CK(clk1));
  DFF_X1 load7 (.D(net_i),
     .CK(clk1));
- DFF_X1 load8 (.D(net_i_4),
+ DFF_X1 load8 (.D(net0),
     .CK(clk1));
- DFF_X1 load9 (.D(net0),
+ DFF_X1 load9 (.D(net_i_4),
     .CK(clk1));
 endmodule

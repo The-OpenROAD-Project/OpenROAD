@@ -14,19 +14,22 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
+#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/PortDirection.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
 #include "sta/Vector.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
-
 using std::max;
 using std::string;
 using std::vector;
@@ -402,8 +405,8 @@ Instance* BaseMove::makeBuffer(LibertyCell* cell,
 // Acceptance criteria are as follows:
 // For direct fanout paths (fanout paths of drvr_pin), accept buffer removal
 // if slack improves (may still be violating)
-// For side fanout paths (fanout paths of side_out_pin*), accept buffer removal
-// if slack doesn't become violating (no new violations)
+// For side fanout paths (fanout paths of side_out_pin*), accept buffer
+// removal if slack doesn't become violating (no new violations)
 //
 //               input_net                             output_net
 //  prev_drv_pin ------>  (drvr_input_pin   drvr_pin)  ------>
@@ -698,21 +701,198 @@ bool BaseMove::replaceCell(Instance* inst, const LibertyCell* replacement)
   }
   return false;
 }
-
-vector<const Pin*> BaseMove::getFanouts(const Instance* inst)
+Slack BaseMove::getWorstInputSlack(Instance* inst)
 {
-  vector<const Pin*> fanouts;
-
+  Slack worst_slack = INF;
   auto pin_iter
       = std::unique_ptr<InstancePinIterator>(network_->pinIterator(inst));
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
-    if (network_->direction(pin)->isOutput()) {
-      fanouts.push_back(pin);
+    if (network_->direction(pin)->isInput()) {
+      Vertex* vertex = graph_->pinDrvrVertex(pin);
+      if (vertex) {
+        worst_slack
+            = std::min(worst_slack, sta_->vertexSlack(vertex, resizer_->max_));
+      }
+    }
+  }
+  return worst_slack;
+}
+
+Slack BaseMove::getWorstOutputSlack(Instance* inst)
+{
+  Slack worst_slack = INF;
+
+  // Iterate through all pins of the instance to find output pins
+  auto pin_iter
+      = std::unique_ptr<InstancePinIterator>(network_->pinIterator(inst));
+  while (pin_iter->hasNext()) {
+    const Pin* inst_pin = pin_iter->next();
+    if (network_->direction(inst_pin)->isOutput()) {
+      Vertex* vertex = graph_->pinLoadVertex(inst_pin);
+      if (vertex) {
+        worst_slack
+            = std::min(worst_slack, sta_->vertexSlack(vertex, resizer_->max_));
+      }
+    }
+  }
+  return worst_slack;
+}
+
+ArcDelay BaseMove::getWorstIntrinsicDelay(const LibertyPort* input_port)
+{
+  const LibertyCell* cell = input_port->libertyCell();
+  vector<const LibertyPort*> output_ports = getOutputPorts(cell);
+
+  // Just return the worst of all the outputs, if there's more than one
+  ArcDelay worst_intrinsic_delay = -INF;
+  for (const LibertyPort* output_port : output_ports) {
+    if (output_port->direction()->isOutput()) {
+      worst_intrinsic_delay
+          = max(worst_intrinsic_delay, output_port->intrinsicDelay(nullptr));
+    }
+  }
+  return worst_intrinsic_delay;
+}
+
+vector<const LibertyPort*> BaseMove::getOutputPorts(const LibertyCell* cell)
+{
+  vector<const LibertyPort*> fanouts;
+
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    const LibertyPort* port = port_iter.next();
+    if (port->direction()->isOutput()) {
+      fanouts.push_back(port);
     }
   }
 
   return fanouts;
 }
 
+vector<const Pin*> BaseMove::getOutputPins(const Instance* inst)
+{
+  vector<const Pin*> outputs;
+
+  auto pin_iter
+      = std::unique_ptr<InstancePinIterator>(network_->pinIterator(inst));
+  while (pin_iter->hasNext()) {
+    const Pin* pin = pin_iter->next();
+    if (network_->direction(pin)->isOutput()) {
+      outputs.push_back(pin);
+    }
+  }
+
+  return outputs;
+}
+
+bool BaseMove::checkMaxCapViolation(const Pin* output_pin,
+                                    LibertyPort* output_port,
+                                    float output_cap)
+{
+  float max_cap;
+  bool cap_limit_exists;
+  // FIXME: Can we update to consider multiple corners?
+  output_port->capacitanceLimit(resizer_->max_, max_cap, cap_limit_exists);
+
+  debugPrint(logger_,
+             RSZ,
+             "opt_moves",
+             3,
+             " fanout pin {} cap {} output_cap {} ",
+             output_port->name(),
+             max_cap,
+             output_cap);
+
+  if (cap_limit_exists && max_cap > 0.0 && output_cap > max_cap) {
+    debugPrint(logger_,
+               RSZ,
+               "opt_moves",
+               2,
+               "  skip based on max cap {} gate={} cap={} max_cap={}",
+               network_->pathName(output_pin),
+               output_port->libertyCell()->name(),
+               output_cap,
+               max_cap);
+    return true;
+  }
+
+  return false;
+}
+
+bool BaseMove::checkMaxSlewViolation(const Pin* output_pin,
+                                     LibertyPort* output_port,
+                                     float output_slew_factor,
+                                     float output_cap,
+                                     const DcalcAnalysisPt* dcalc_ap)
+{
+  float output_res = output_port->driveResistance();
+  float output_slew = output_slew_factor * output_res * output_cap;
+  float max_slew;
+  bool slew_limit_exists;
+
+  sta_->findSlewLimit(output_port,
+                      dcalc_ap->corner(),
+                      resizer_->max_,
+                      max_slew,
+                      slew_limit_exists);
+
+  if (output_slew > max_slew) {
+    debugPrint(logger_,
+               RSZ,
+               "opt_moves",
+               2,
+               "  skip based on max slew {} gate={} slew={} max_slew={}",
+               network_->pathName(output_pin),
+               output_port->libertyCell()->name(),
+               output_slew,
+               max_slew);
+    return true;
+  }
+
+  return false;
+}
+
+float BaseMove::computeElmoreSlewFactor(const Pin* output_pin,
+                                        LibertyPort* output_port,
+                                        float output_load_cap)
+{
+  float elmore_slew_factor = 0.0;
+
+  // Get the vertex for the output pin
+  Vertex* output_vertex = graph_->pinDrvrVertex(output_pin);
+
+  // Get the output slew
+  const Slew output_slew = sta_->vertexSlew(output_vertex, resizer_->max_);
+
+  // Get the output resistance
+  float output_res = output_port->driveResistance();
+
+  // Can have gates without fanout (e.g. QN of flop) which have no load
+  if (output_res > 0.0 && output_load_cap > 0.0) {
+    elmore_slew_factor = output_slew / (output_res * output_load_cap);
+  }
+
+  return elmore_slew_factor;
+}
+
+////////////////////////////////////////////////////////////////
+
+LibertyCellSeq BaseMove::getSwappableCells(LibertyCell* base)
+{
+  LibertyCellSeq buffer_sizes;
+  if (base->isBuffer()) {
+    for (LibertyCell* buffer : resizer_->buffer_fast_sizes_) {
+      buffer_sizes.push_back(buffer);
+    }
+    if (resizer_->buffer_fast_sizes_.count(base) == 0) {
+      return LibertyCellSeq();
+    }
+    return buffer_sizes;
+  }
+  return resizer_->getSwappableCells(base);
+}
+
+////////////////////////////////////////////////////////////////
+// namespace rsz
 }  // namespace rsz

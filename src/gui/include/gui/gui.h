@@ -645,6 +645,9 @@ class Gui
   // Add an instance to the selection set
   void addSelectedInst(const char* name);
 
+  // Return the selected set
+  const SelectionSet& selection();
+
   // check if any object(inst/net) is present in sect/highlight set
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const;
 
@@ -953,8 +956,6 @@ class Gui
 
   std::unique_ptr<GIF> gif_;
   static constexpr int kDefaultGifDelay = 250;
-
-  static Gui* singleton_;
 
   std::string main_window_title_ = "OpenROAD";
 };

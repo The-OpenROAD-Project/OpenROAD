@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "odb/geom.h"
+
 namespace odb {
 class dbDatabase;
 
@@ -373,6 +375,8 @@ class PlacerBase
   const std::vector<Instance*>& nonPlaceInsts() const { return nonPlaceInsts_; }
 
   Die& getDie() { return die_; }
+  int64_t getRegionArea() const { return region_area_; }
+  const odb::Rect& getRegionBBox() const { return region_bbox_; }
 
   int getSiteSizeX() const { return siteSizeX_; }
   int getSiteSizeY() const { return siteSizeY_; }
@@ -395,6 +399,8 @@ class PlacerBase
   utl::Logger* log_ = nullptr;
 
   Die die_;
+  int64_t region_area_;
+  odb::Rect region_bbox_;
 
   std::vector<Instance> instStor_;
 

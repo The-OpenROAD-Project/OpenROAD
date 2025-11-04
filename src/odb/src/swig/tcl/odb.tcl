@@ -598,7 +598,7 @@ proc define_layer_range { layers } {
         [ord::db_layer_has_ver_tracks $db_layer])
     } {
       set layer_name [$db_layer getName]
-      utl::error GRT 57 "Missing track structure for layer $layer_name."
+      utl::error ODB 139 "Missing track structure for layer $layer_name."
     }
   }
 }
@@ -622,7 +622,7 @@ proc define_clock_layer_range { layers } {
     $block setMinLayerForClock $min_clock_layer
     $block setMaxLayerForClock $max_clock_layer
   } else {
-    utl::error GRT 56 "In argument -clock_layers, min routing layer is\
+    utl::error ODB 137 "In argument -clock_layers, min routing layer is\
       greater than max routing layer."
   }
 }
@@ -706,14 +706,14 @@ proc set_io_pin_constraint { args } {
 
   set tech [ord::get_db_tech]
   set block [ord::get_db_block]
-  set lef_units [$tech getLefUnits]
+  set lef_units [$tech getDbUnitsPerMicron]
 
   if { [info exists keys(-region)] && [info exists keys(-mirrored_pins)] } {
-    utl::error PPL 83 "Both -region and -mirrored_pins constraints not allowed."
+    utl::error ODB 144 "Both -region and -mirrored_pins constraints not allowed."
   }
 
   if { [info exists keys(-mirrored_pins)] && [info exists flags(-group)] } {
-    utl::error PPL 87 "Both -mirrored_pins and -group constraints not allowed."
+    utl::error ODB 146 "Both -mirrored_pins and -group constraints not allowed."
   }
 
   if { [info exists keys(-region)] } {
@@ -735,12 +735,12 @@ proc set_io_pin_constraint { args } {
         set begin [ppl::get_edge_extreme "-region" 1 $edge]
         set end [ppl::get_edge_extreme "-region" 0 $edge]
       } else {
-        utl::error PPL 212 "Invalid value for \'-region edge:interval\'. Set the interval as the\
+        utl::error ODB 261 "Invalid value for \'-region edge:interval\'. Set the interval as the\
                 wildcard \'*\' or as a range \'begin-end\' in microns."
       }
 
       if { [info exists keys(-direction)] && [info exists keys(-pin_names)] } {
-        utl::error PPL 16 "Both -direction and -pin_names constraints not allowed."
+        utl::error ODB 17 "Both -direction and -pin_names constraints not allowed."
       }
 
       if { [info exists keys(-direction)] } {
@@ -772,7 +772,7 @@ proc set_io_pin_constraint { args } {
         set urx [ord::microns_to_dbu $urx]
         set ury [ord::microns_to_dbu $ury]
       } else {
-        utl::error PPL 59 "Box at top layer must have 4 values (llx lly urx ury)."
+        utl::error ODB 145 "Box at top layer must have 4 values (llx lly urx ury)."
       }
 
       if { [info exists keys(-pin_names)] } {
@@ -780,7 +780,7 @@ proc set_io_pin_constraint { args } {
         odb::add_pins_to_top_layer $names $llx $lly $urx $ury
       }
     } else {
-      utl::warn PPL 73 "Constraint with region $region has an invalid edge."
+      utl::warn ODB 142 "Constraint with region $region has an invalid edge."
     }
   }
 
@@ -788,7 +788,7 @@ proc set_io_pin_constraint { args } {
     if { [info exists keys(-pin_names)] } {
       set group $keys(-pin_names)
     } else {
-      utl::error PPL 58 "The -pin_names argument is required when using -group flag."
+      utl::error ODB 140 "The -pin_names argument is required when using -group flag."
     }
 
     set pin_list [ppl::parse_pin_names "place_pins -group_pins" $group]
@@ -796,13 +796,13 @@ proc set_io_pin_constraint { args } {
       odb::add_pin_group $pin_list [info exists flags(-order)]
     }
   } elseif { [info exists flags(-order)] } {
-    utl::error PPL 95 "-order cannot be used without -group."
+    utl::error ODB 147 "-order cannot be used without -group."
   }
 
   if { [info exists keys(-mirrored_pins)] } {
     set mirrored_pins $keys(-mirrored_pins)
     if { [llength $mirrored_pins] % 2 != 0 } {
-      utl::error PPL 81 "List of pins must have an even number of pins."
+      utl::error ODB 143 "List of pins must have an even number of pins."
     }
 
     foreach {pin1 pin2} $mirrored_pins {
@@ -826,7 +826,7 @@ proc exclude_io_pin_region { args } {
   if { [llength $regions] != 0 } {
     set block [odb::get_block]
     set db_tech [ord::get_db_tech]
-    set lef_units [$db_tech getLefUnits]
+    set lef_units [$db_tech getDbUnitsPerMicron]
 
     foreach region $regions {
       if { [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] } {
@@ -859,7 +859,7 @@ proc exclude_io_pin_region { args } {
       }
     }
   } else {
-    utl::error PPL 10 "The -region keyword is required for exclude_io_pin_region command."
+    utl::error ODB 12 "The -region keyword is required for exclude_io_pin_region command."
   }
 }
 
@@ -991,17 +991,17 @@ proc define_pin_shape_pattern { args } {
     set layer [ppl::parse_layer_name $layer_name]
 
     if { $layer == 0 } {
-      utl::error PPL 52 "Routing layer not found for name $layer_name."
+      utl::error ODB 96 "Routing layer not found for name $layer_name."
     }
   } else {
-    utl::error PPL 53 "-layer is required."
+    utl::error ODB 150 "-layer is required."
   }
 
   if { [info exists keys(-x_step)] && [info exists keys(-y_step)] } {
     set x_step [ord::microns_to_dbu $keys(-x_step)]
     set y_step [ord::microns_to_dbu $keys(-y_step)]
   } else {
-    utl::error PPL 54 "-x_step and -y_step are required."
+    utl::error ODB 102 "-x_step and -y_step are required."
   }
 
   set block [ord::get_db_block]
@@ -1023,23 +1023,23 @@ proc define_pin_shape_pattern { args } {
       set urx [$die_area xMax]
       set ury [$die_area yMax]
     } else {
-      utl::error PPL 63 "-region is not a list of 4 values {llx lly urx ury}."
+      utl::error ODB 141 "-region is not a list of 4 values {llx lly urx ury}."
     }
     odb::Rect region $llx $lly $urx $ury
   } else {
-    utl::error PPL 55 "-region is required."
+    utl::error ODB 135 "-region is required."
   }
 
   if { [info exists keys(-size)] } {
     set size $keys(-size)
     if { [llength $size] != 2 } {
-      utl::error PPL 56 "-size is not a list of 2 values."
+      utl::error ODB 136 "-size is not a list of 2 values."
     }
     lassign $size width height
     set width [ord::microns_to_dbu $width]
     set height [ord::microns_to_dbu $height]
   } else {
-    utl::error PPL 57 "-size is required."
+    utl::error ODB 138 "-size is required."
   }
 
   if { [info exists keys(-pin_keepout)] } {

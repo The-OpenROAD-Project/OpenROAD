@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <deque>
 #include <fstream>
 #include <memory>
@@ -21,6 +23,7 @@
 #include "placerBase.h"
 #include "point.h"
 #include "routeBase.h"
+#include "utl/Logger.h"
 namespace odb {
 class dbInst;
 class dbITerm;
@@ -538,7 +541,7 @@ class Bin
   float getDensity() const;
 
   void setDensity(float density);
-  void setTargetDensity(float density);
+  void setBinTargetDensity(float density);
   void setElectroForce(float electroForceX, float electroForceY);
   void setElectroPhi(float phi);
 
@@ -667,19 +670,19 @@ class BinGrid
 {
  public:
   BinGrid() = default;
-  BinGrid(Die* die);
+  BinGrid(int lx, int ly, int ux, int uy);
 
   void setPlacerBase(std::shared_ptr<PlacerBase> pb);
   void setLogger(utl::Logger* log);
-  void setCorePoints(const Die* die);
+  void setRegionPoints(int lx, int ly, int ux, int uy);
   void setBinCnt(int binCntX, int binCntY);
-  void setTargetDensity(float density);
+  void setBinTargetDensity(float density);
   void updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
   void initBins();
 
-  // lx, ly, ux, uy will hold coreArea
+  // lx, ly, ux, uy will hold region area
   int lx() const;
   int ly() const;
   int ux() const;
@@ -744,6 +747,10 @@ class NesterovBaseVars
   bool isSetBinCnt = false;
   bool useUniformTargetDensity = false;
 
+  float minPhiCoef = 0.95;  // pcof_min
+  float maxPhiCoef = 1.05;  // pcof_max
+  bool isMaxPhiCoefChanged = false;
+
   void reset();
 };
 
@@ -755,8 +762,6 @@ class NesterovPlaceVars
   float initDensityPenalty = 0.00008;       // INIT_LAMBDA
   float initWireLengthCoef = 0.25;          // base_wcof
   float targetOverflow = 0.1;               // overflow
-  float minPhiCoef = 0.95;                  // pcof_min
-  float maxPhiCoef = 1.05;                  // pcof_max
   float minPreconditioner = 1.0;            // MIN_PRE
   float initialPrevCoordiUpdateCoef = 100;  // z_ref_alpha
   float referenceHpwl = 446000000;          // refDeltaHpwl
@@ -869,8 +874,13 @@ class NesterovBaseCommon
   // are implemented.
   int64_t getDeltaArea() { return delta_area_; }
   void resetDeltaArea() { delta_area_ = 0; }
-  int64_t getNewGcellsCount() { return new_gcells_count_; }
-  void resetNewGcellsCount() { new_gcells_count_ = 0; }
+  int getNewGcellsCount() { return new_gcells_count_; }
+  int getDeletedGcellsCount() { return deleted_gcells_count_; }
+  void resetNewGcellsCount()
+  {
+    new_gcells_count_ = 0;
+    deleted_gcells_count_ = 0;
+  }
 
  private:
   NesterovBaseVars nbVars_;
@@ -905,6 +915,7 @@ class NesterovBaseCommon
   int num_threads_;
   int64_t delta_area_;
   int new_gcells_count_;
+  int deleted_gcells_count_;
   nesterovDbCbk* db_cbk_{nullptr};
 };
 
@@ -958,6 +969,8 @@ class NesterovBase
   int64_t getMovableArea() const;
   int64_t getTotalFillerArea() const;
 
+  void setMovableArea(int64_t area) { movableArea_ = area; }
+
   // update
   // fillerArea, whiteSpaceArea, movableArea
   // and totalFillerArea after changing gCell's size
@@ -990,6 +1003,7 @@ class NesterovBase
   float getTargetDensity() const;
 
   void setTargetDensity(float targetDensity);
+  void checkConsistency();
 
   // RD can shrink the number of fillerCells.
   void cutFillerCells(int64_t targetFillerArea);
@@ -1019,7 +1033,7 @@ class NesterovBase
   void setIter(int iter) { iter_ = iter; }
   void setMaxPhiCoefChanged(bool maxPhiCoefChanged)
   {
-    isMaxPhiCoefChanged_ = maxPhiCoefChanged;
+    nbVars_.isMaxPhiCoefChanged = maxPhiCoefChanged;
   }
 
   void updateGradients(std::vector<FloatPoint>& sumGrads,
@@ -1028,9 +1042,9 @@ class NesterovBase
                        float wlCoeffX,
                        float wlCoeffY);
 
-  void updatePrevGradient(float wlCoeffX, float wlCoeffY);
-  void updateCurGradient(float wlCoeffX, float wlCoeffY);
-  void updateNextGradient(float wlCoeffX, float wlCoeffY);
+  void nbUpdatePrevGradient(float wlCoeffX, float wlCoeffY);
+  void nbUpdateCurGradient(float wlCoeffX, float wlCoeffY);
+  void nbUpdateNextGradient(float wlCoeffX, float wlCoeffY);
 
   // Used for updates based on callbacks
   void updateSingleGradient(size_t gCellIndex,
@@ -1057,10 +1071,12 @@ class NesterovBase
   void updateNextIter(int iter);
   void setTrueReprintIterHeader() { reprint_iter_header_ = true; }
   float getPhiCoef(float scaledDiffHpwl) const;
+  float getStoredPhiCoef() const { return phiCoef_; }
 
   bool checkConvergence(int gpl_iter_count,
                         int routability_gpl_iter_count,
                         RouteBase* rb);
+
   bool checkDivergence();
   void saveSnapshot();
   bool revertToSnapshot();
@@ -1105,6 +1121,8 @@ class NesterovBase
                               int start_iteration = 0,
                               int iteration_stride = 50,
                               int gcell_index_stride = 10) const;
+
+  std::shared_ptr<PlacerBase> getPb() const { return pb_; }
 
  private:
   NesterovBaseVars nbVars_;
@@ -1160,6 +1178,7 @@ class NesterovBase
   std::vector<RemovedFillerState> removed_fillers_;
 
   float sumPhi_ = 0;
+  float phiCoef_ = 0;
   float targetDensity_ = 0;
   float uniformTargetDensity_ = 0;
 
@@ -1229,8 +1248,6 @@ class NesterovBase
   bool isDiverged_ = false;
 
   NesterovPlaceVars* npVars_ = nullptr;
-
-  bool isMaxPhiCoefChanged_ = false;
 
   float minSumOverflow_ = 1e30;
   float hpwlWithMinSumOverflow_ = 1e30;

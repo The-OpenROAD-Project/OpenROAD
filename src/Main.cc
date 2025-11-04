@@ -4,7 +4,6 @@
 #include <libgen.h>
 #include <stdlib.h>  // NOLINT(modernize-deprecated-headers): for setenv()
 #include <strings.h>
-#include <tcl.h>
 
 #include <array>
 #include <climits>
@@ -19,6 +18,7 @@
 #include <system_error>
 
 #include "boost/stacktrace/stacktrace.hpp"
+#include "tcl.h"
 #ifdef ENABLE_READLINE
 // If you get an error on this include be sure you have
 //   the package tcl-tclreadline-devel installed

@@ -247,10 +247,6 @@ class EstimateParasitics : public dbStaState
   bool isPadPin(const Pin* pin) const;
   bool isPad(const Instance* inst) const;
   float pinCapacitance(const Pin* pin, const DcalcAnalysisPt* dcalc_ap) const;
-  float totalLoad(SteinerTree* tree) const;
-  float subtreeLoad(SteinerTree* tree,
-                    float cap_per_micron,
-                    SteinerPt pt) const;
   odb::dbTechLayer* getPinLayer(const Pin* pin);
   double computeAverageCutResistance(Corner* corner);
   void parasiticNodeConnectPins(Parasitic* parasitic,

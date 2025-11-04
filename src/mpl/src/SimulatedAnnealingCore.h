@@ -67,6 +67,7 @@ class SimulatedAnnealingCore
   void setFences(const std::map<int, Rect>& fences);
   void setGuides(const std::map<int, Rect>& guides);
   void setInitialSequencePair(const SequencePair& sequence_pair);
+  void disallowInvalidStates() { invalid_states_allowed_ = false; }
 
   virtual bool isValid() const;
   bool fitsIn(const Rect& outline) const;
@@ -220,6 +221,7 @@ class SimulatedAnnealingCore
   static constexpr float acc_tolerance_ = 0.001;
 
   bool has_initial_sequence_pair_ = false;
+  bool invalid_states_allowed_{true};
 };
 
 // SACore wrapper function

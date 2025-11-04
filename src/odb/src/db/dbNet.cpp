@@ -40,6 +40,7 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
+#include "dbUtil.h"
 #include "dbWire.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -560,13 +561,13 @@ void dbNet::setWireType(dbWireType wire_type)
   }
 }
 
-dbWireType dbNet::getWireType()
+dbWireType dbNet::getWireType() const
 {
   _dbNet* net = (_dbNet*) this;
   return dbWireType(net->_flags._wire_type);
 }
 
-dbSigType dbNet::getSigType()
+dbSigType dbNet::getSigType() const
 {
   _dbNet* net = (_dbNet*) this;
   return dbSigType(net->_flags._sig_type);
@@ -1323,13 +1324,13 @@ void dbNet::setDoNotTouch(bool v)
   net->_flags._dont_touch = v;
 }
 
-bool dbNet::isDoNotTouch()
+bool dbNet::isDoNotTouch() const
 {
   _dbNet* net = (_dbNet*) this;
   return net->_flags._dont_touch == 1;
 }
 
-bool dbNet::isSpecial()
+bool dbNet::isSpecial() const
 {
   _dbNet* net = (_dbNet*) this;
   return net->_flags._special == 1;
@@ -2346,6 +2347,15 @@ void dbNet::setJumpers(bool has_jumpers)
   }
 }
 
+void dbNet::checkSanity() const
+{
+  std::vector<std::string> drvr_info_list;
+  dbUtil::findBTermDrivers(this, drvr_info_list);
+  dbUtil::findITermDrivers(this, drvr_info_list);
+
+  dbUtil::checkNetSanity(this, drvr_info_list);
+}
+
 dbModInst* dbNet::findMainParentModInst() const
 {
   dbBlock* block = getBlock();
@@ -2413,6 +2423,42 @@ bool dbNet::findRelatedModNets(std::set<dbModNet*>& modnet_set) const
   return !modnet_set.empty();
 }
 
+void dbNet::dump() const
+{
+  utl::Logger* logger = getImpl()->getLogger();
+  logger->report("--------------------------------------------------");
+  logger->report("dbNet: {} (id={})", getName(), getId());
+  logger->report(
+      "  Parent Block: {} (id={})", getBlock()->getName(), getBlock()->getId());
+  logger->report("  SigType: {}", getSigType().getString());
+  logger->report("  WireType: {}", getWireType().getString());
+  if (isSpecial()) {
+    logger->report("  Special: true");
+  }
+  if (isDoNotTouch()) {
+    logger->report("  DoNotTouch: true");
+  }
+
+  logger->report("  ITerms ({}):", getITerms().size());
+  for (dbITerm* term : getITerms()) {
+    logger->report("    - {} ({}, {}, id={})",
+                   term->getName(),
+                   term->getSigType().getString(),
+                   term->getIoType().getString(),
+                   term->getId());
+  }
+
+  logger->report("  BTerms ({}):", getBTerms().size());
+  for (dbBTerm* term : getBTerms()) {
+    logger->report("    - {} ({}, {}, id={})",
+                   term->getName(),
+                   term->getSigType().getString(),
+                   term->getIoType().getString(),
+                   term->getId());
+  }
+  logger->report("--------------------------------------------------");
+}
+
 void _dbNet::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
@@ -2463,6 +2509,23 @@ void dbNet::renameWithModNetInHighestHier()
   if (highest_mod_net) {
     rename(highest_mod_net->getHierarchicalName().c_str());
   }
+}
+
+bool dbNet::isInternalTo(dbModule* module) const
+{
+  // If it's connected to any top-level ports (BTerms), it's not internal.
+  if (!getBTerms().empty()) {
+    return false;
+  }
+
+  // Check all instance terminals (ITerms) it's connected to.
+  for (dbITerm* iterm : getITerms()) {
+    if (iterm->getInst()->getModule() != module) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 }  // namespace odb

@@ -213,6 +213,29 @@ NetRouteMap& GlobalRouter::getRoutes()
   return routes_;
 }
 
+NetRouteMap GlobalRouter::getPartialRoutes()
+{
+  NetRouteMap net_routes;
+  // TODO: still need to fix this during incremental grt
+  if (is_incremental) {
+    for (const auto& [db_net, net] : db_net_map_) {
+      if (routes_[db_net].empty()) {
+        GRoute route;
+        net_routes.insert({db_net, route});
+        fastroute_->getPlanarRoute(db_net, net_routes[db_net]);
+      }
+    }
+  } else {
+    partial_routes_.clear();
+    if (routes_.empty()) {
+      partial_routes_ = fastroute_->getPlanarRoutes();
+      net_routes = partial_routes_;
+    }
+  }
+
+  return net_routes;
+}
+
 bool GlobalRouter::haveRoutes()
 {
   if (!designIsPlaced()) {
@@ -281,6 +304,8 @@ void GlobalRouter::globalRoute(bool save_guides,
                                bool end_incremental)
 {
   bool has_routable_nets = false;
+  is_incremental = (start_incremental || end_incremental);
+
   for (auto net : db_->getChip()->getBlock()->getNets()) {
     if (net->getITerms().size() + net->getBTerms().size() > 1) {
       has_routable_nets = true;
@@ -1879,6 +1904,14 @@ void GlobalRouter::addResourcesForPinAccess()
           const bool north_pin = pin.getEdge() == PinEdge::north;
           const int pin_y1 = north_pin ? pin_y : pin_y - 1;
           const int pin_y2 = north_pin ? pin_y + 1 : pin_y;
+
+          // Ensure we do not go out of bounds when the pin is at the edge of
+          // the grid. If the pin is on the south edge and at y=0, there is no
+          // room for adding resources.
+          if (pin_y1 < 0) {
+            continue;
+          }
+
           const int edge_cap = fastroute_->getEdgeCapacity(
               pin_x, pin_y1, pin_x, pin_y2, layer);
           fastroute_->addAdjustment(
@@ -1887,6 +1920,14 @@ void GlobalRouter::addResourcesForPinAccess()
           const bool east_pin = pin.getEdge() == PinEdge::east;
           const int pin_x1 = east_pin ? pin_x : pin_x - 1;
           const int pin_x2 = east_pin ? pin_x + 1 : pin_x;
+
+          // Ensure we do not go out of bounds when the pin is at the edge of
+          // the grid. If the pin is on the west edge and at x=0, there is no
+          // room for adding resources.
+          if (pin_x1 < 0) {
+            continue;
+          }
+
           const int edge_cap = fastroute_->getEdgeCapacity(
               pin_x1, pin_y, pin_x2, pin_y, layer);
           fastroute_->addAdjustment(
@@ -4560,12 +4601,16 @@ std::vector<GSegment> GlobalRouter::createConnectionForPositions(
     connection.emplace_back(x2, y1, layer_ver, x2, y2, layer_ver);
 
     // Add vias if the additional connections are not touching the existing
-    // routing.
+    // routing. The via stack can cross multiple routing layers.
     if (layer1 < layer_hor) {
-      connection.emplace_back(x1, y1, layer1, x1, y1, layer_hor);
+      for (int l = layer1; l < layer_hor; l++) {
+        connection.emplace_back(x1, y1, l, x1, y1, l + 1);
+      }
     }
     if (layer2 < layer_ver) {
-      connection.emplace_back(x2, y2, layer_ver, x2, y2, layer2);
+      for (int l = layer2; l < layer_ver; l++) {
+        connection.emplace_back(x2, y2, l, x2, y2, l + 1);
+      }
     }
   }
 
