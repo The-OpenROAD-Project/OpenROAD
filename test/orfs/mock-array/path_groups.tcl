@@ -10,7 +10,11 @@ if { [llength [find_timing_paths -from $from -to $to]] == 0 } {
   exit 1
 }
 puts "Checking if we can create a group_path from $from to $to"
-group_path -name test_group -from $from -to $to
+
+# There is no guarantee that the first node in the
+# tcl path structure is an exception start point, so use -through
+# to ensure we capture a valid path for our testing purposes.
+group_path -name test_group -through $from -to $to
 if { [llength [find_timing_paths -path_group test_group]] == 0 } {
   puts "Error: find_timing_paths -path_group test_group failed"
   exit 1
