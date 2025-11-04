@@ -120,7 +120,7 @@ void HTreeBuilder::preSinkClustering(
     }
   } else {  // neighther clustering size nor diameter is set
     // try diameters of 50, 100 and 200 um
-    for (unsigned clusterDiameter2 : clusterDiameters()) {
+    for (unsigned clusterDiameter2 : options_->getSinkClusteringDiameters()) {
       // try clustering sizes of 10, 20 and 30
       for (unsigned clusterSize2 : options_->getSinkClusteringSizes()) {
         // clang-format off
