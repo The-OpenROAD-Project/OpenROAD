@@ -160,6 +160,7 @@ class ICeWall
                       odb::dbInst* inst,
                       const std::map<odb::dbInst*, std::set<odb::dbITerm*>>&
                           iterm_connections) const;
+  odb::dbInst* checkInstancePlacement(odb::dbInst* inst, odb::dbRow* row) const;
 
   // Data members
   odb::dbDatabase* db_ = nullptr;

@@ -520,7 +520,6 @@ void ICeWall::placeCorner(odb::dbMaster* master, int ring_index)
 
     // Check for instances overlapping the corner site
     bool place_inst = true;
-    std::set<odb::dbInst*> covers;
     for (auto* check_inst : block->getInsts()) {
       if (check_inst == inst) {
         continue;
@@ -529,7 +528,6 @@ void ICeWall::placeCorner(odb::dbMaster* master, int ring_index)
         continue;
       }
       if (check_inst->getMaster()->isCover()) {
-        covers.insert(check_inst);
         continue;
       }
       const odb::Rect check_rect = check_inst->getBBox()->getBox();
@@ -556,58 +554,7 @@ void ICeWall::placeCorner(odb::dbMaster* master, int ring_index)
     inst->setLocation(row_bbox.xMin(), row_bbox.yMin());
     inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
-    // Check if inst overlaps with bumps
-    std::map<odb::dbTechLayer*, std::set<odb::Rect>> check_shapes;
-    if (!covers.empty()) {
-      // populate map as needed
-      const auto xform = inst->getTransform();
-      for (auto* obs : inst->getMaster()->getObstructions()) {
-        odb::Rect obs_rect = obs->getBox();
-        xform.apply(obs_rect);
-        check_shapes[obs->getTechLayer()].insert(obs_rect);
-      }
-      for (auto* iterm : inst->getITerms()) {
-        for (const auto& [layer, box] : iterm->getGeometries()) {
-          check_shapes[layer].insert(box);
-        }
-      }
-    }
-
-    bool remove = false;
-    for (auto* check_inst : covers) {
-      const auto xform = check_inst->getTransform();
-      for (auto* obs : check_inst->getMaster()->getObstructions()) {
-        odb::Rect obs_rect = obs->getBox();
-        xform.apply(obs_rect);
-        for (const auto& inst_rect : check_shapes[obs->getTechLayer()]) {
-          if (inst_rect.intersects(obs_rect)) {
-            remove = true;
-            break;
-          }
-        }
-      }
-      if (remove) {
-        break;
-      }
-      for (auto* iterm : check_inst->getITerms()) {
-        for (const auto& [layer, box] : iterm->getGeometries()) {
-          for (const auto& inst_rect : check_shapes[layer]) {
-            if (inst_rect.intersects(box)) {
-              remove = true;
-              break;
-            }
-          }
-        }
-        if (remove) {
-          break;
-        }
-      }
-      if (remove) {
-        break;
-      }
-    }
-
-    if (remove) {
+    if (checkInstancePlacement(inst, row) != nullptr) {
       if (create_inst) {
         logger_->warn(utl::PAD,
                       45,
@@ -1202,38 +1149,27 @@ int ICeWall::placeInstance(odb::dbRow* row,
                    row_bbox.yMax() / dbus);
   }
 
-  // check for overlaps with other instances
-  for (auto* check_inst : block->getInsts()) {
-    if (check_inst == inst) {
-      continue;
-    }
-    if (!check_inst->isFixed()) {
-      continue;
-    }
-    if (check_inst->getMaster()->isCover()) {
-      continue;
-    }
+  odb::dbInst* check_inst = checkInstancePlacement(inst, row);
+  if (!allow_overlap && check_inst != nullptr) {
     const odb::Rect check_rect = check_inst->getBBox()->getBox();
-    if (!allow_overlap && inst_rect.overlaps(check_rect)) {
-      logger_->error(utl::PAD,
-                     1,
-                     "Unable to place {} ({}) at ({:.3f}um, {:.3f}um) - "
-                     "({:.3f}um, {:.3f}um) as it "
-                     "overlaps with {} ({}) at ({:.3f}um, {:.3f}um) - "
-                     "({:.3f}um, {:.3f}um)",
-                     inst->getName(),
-                     inst->getMaster()->getName(),
-                     inst_rect.xMin() / dbus,
-                     inst_rect.yMin() / dbus,
-                     inst_rect.xMax() / dbus,
-                     inst_rect.yMax() / dbus,
-                     check_inst->getName(),
-                     check_inst->getMaster()->getName(),
-                     check_rect.xMin() / dbus,
-                     check_rect.yMin() / dbus,
-                     check_rect.xMax() / dbus,
-                     check_rect.yMax() / dbus);
-    }
+    logger_->error(utl::PAD,
+                   1,
+                   "Unable to place {} ({}) at ({:.3f}um, {:.3f}um) - "
+                   "({:.3f}um, {:.3f}um) as it "
+                   "overlaps with {} ({}) at ({:.3f}um, {:.3f}um) - "
+                   "({:.3f}um, {:.3f}um)",
+                   inst->getName(),
+                   inst->getMaster()->getName(),
+                   inst_rect.xMin() / dbus,
+                   inst_rect.yMin() / dbus,
+                   inst_rect.xMax() / dbus,
+                   inst_rect.yMax() / dbus,
+                   check_inst->getName(),
+                   check_inst->getMaster()->getName(),
+                   check_rect.xMin() / dbus,
+                   check_rect.yMin() / dbus,
+                   check_rect.xMax() / dbus,
+                   check_rect.yMax() / dbus);
   }
   inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
@@ -1971,6 +1907,74 @@ void ICeWall::routeRDLDebugNet(const char* net)
   if (router_ != nullptr) {
     router_->setRDLDebugNet(rdl_net_debug_);
   }
+}
+
+odb::dbInst* ICeWall::checkInstancePlacement(odb::dbInst* inst,
+                                             odb::dbRow* row) const
+{
+  std::set<odb::dbInst*> covers;
+  auto* block = getBlock();
+  if (block) {
+    for (auto* check_inst : block->getInsts()) {
+      if (check_inst == inst) {
+        continue;
+      }
+      if (!check_inst->isFixed()) {
+        continue;
+      }
+      if (check_inst->getMaster()->isCover()) {
+        covers.insert(check_inst);
+        continue;
+      }
+    }
+  }
+
+  // Check if inst overlaps with bumps
+  std::map<odb::dbTechLayer*, std::set<std::pair<odb::Rect, odb::dbNet*>>>
+      check_shapes;
+  if (!covers.empty()) {
+    // populate map as needed
+    const auto xform = inst->getTransform();
+    for (auto* obs : inst->getMaster()->getObstructions()) {
+      odb::Rect obs_rect = obs->getBox();
+      xform.apply(obs_rect);
+      check_shapes[obs->getTechLayer()].emplace(obs_rect, nullptr);
+    }
+    for (auto* iterm : inst->getITerms()) {
+      for (const auto& [layer, box] : iterm->getGeometries()) {
+        check_shapes[layer].emplace(box, iterm->getNet());
+      }
+    }
+  }
+
+  for (odb::dbInst* check_inst : covers) {
+    const auto xform = check_inst->getTransform();
+    for (auto* obs : check_inst->getMaster()->getObstructions()) {
+      odb::Rect obs_rect = obs->getBox();
+      xform.apply(obs_rect);
+      for (const auto& [inst_rect, check_net] :
+           check_shapes[obs->getTechLayer()]) {
+        if (inst_rect.intersects(obs_rect)) {
+          return check_inst;
+        }
+      }
+    }
+
+    for (auto* iterm : check_inst->getITerms()) {
+      for (const auto& [layer, box] : iterm->getGeometries()) {
+        for (const auto& [inst_rect, check_net] : check_shapes[layer]) {
+          const bool nets_match
+              = iterm->getNet() == check_net
+                && (check_net != nullptr || iterm->getNet() != nullptr);
+          if (!nets_match && inst_rect.intersects(box)) {
+            return check_inst;
+          }
+        }
+      }
+    }
+  }
+
+  return nullptr;
 }
 
 }  // namespace pad
