@@ -554,7 +554,7 @@ void ICeWall::placeCorner(odb::dbMaster* master, int ring_index)
     inst->setLocation(row_bbox.xMin(), row_bbox.yMin());
     inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
-    if (checkInstancePlacement(inst, row) != nullptr) {
+    if (checkInstancePlacement(inst, row)) {
       if (create_inst) {
         logger_->warn(utl::PAD,
                       45,
@@ -981,7 +981,9 @@ void ICeWall::placePadsBumpAligned(
       offset += placeInstance(row,
                               snapToRowSite(row, select_pos),
                               ginst,
-                              odb::dbOrientType::R0)
+                              odb::dbOrientType::R0,
+                              false,
+                              true)
                 * row->getSpacing();
 
       performPadFlip(row, ginst, iterm_connections);
@@ -1011,7 +1013,12 @@ void ICeWall::placePadsUniform(const std::vector<odb::dbInst*>& insts,
                inst->getName(),
                offset / dbus);
 
-    placeInstance(row, snapToRowSite(row, offset), inst, odb::dbOrientType::R0);
+    placeInstance(row,
+                  snapToRowSite(row, offset),
+                  inst,
+                  odb::dbOrientType::R0,
+                  false,
+                  true);
     offset += inst_widths.at(inst);
     offset += target_spacing;
   }
@@ -1071,7 +1078,8 @@ int ICeWall::placeInstance(odb::dbRow* row,
                            int index,
                            odb::dbInst* inst,
                            const odb::dbOrientType& base_orient,
-                           bool allow_overlap) const
+                           bool allow_overlap,
+                           bool allow_shift) const
 {
   const int origin_offset = index * row->getSpacing();
 
@@ -1149,8 +1157,42 @@ int ICeWall::placeInstance(odb::dbRow* row,
                    row_bbox.yMax() / dbus);
   }
 
-  odb::dbInst* check_inst = checkInstancePlacement(inst, row);
-  if (!allow_overlap && check_inst != nullptr) {
+  const auto check_obs = checkInstancePlacement(inst, row);
+  if (allow_shift && check_obs) {
+    const auto& [check_inst, check_rect] = *check_obs;
+
+    int obs_index = index;
+    switch (row_edge) {
+      case odb::Direction2D::North:
+        obs_index = snapToRowSite(row, check_rect.xMin());
+        break;
+      case odb::Direction2D::South:
+        obs_index = snapToRowSite(row, check_rect.xMin());
+        break;
+      case odb::Direction2D::West:
+        obs_index = snapToRowSite(row, check_rect.yMin());
+        break;
+      case odb::Direction2D::East:
+        obs_index = snapToRowSite(row, check_rect.yMin());
+        break;
+    }
+
+    int next_index = std::max(index + 1, obs_index);
+
+    debugPrint(logger_,
+               utl::PAD,
+               "Place",
+               2,
+               "Shift required for {} to avoid {} ({} -> {})",
+               inst->getName(),
+               check_inst->getName(),
+               index,
+               next_index);
+
+    return placeInstance(
+        row, next_index, inst, base_orient, allow_overlap, allow_shift);
+  } else if (!allow_overlap && check_obs) {
+    const auto& [check_inst, obs_rect] = *check_obs;
     const odb::Rect check_rect = check_inst->getBBox()->getBox();
     logger_->error(utl::PAD,
                    1,
@@ -1909,8 +1951,8 @@ void ICeWall::routeRDLDebugNet(const char* net)
   }
 }
 
-odb::dbInst* ICeWall::checkInstancePlacement(odb::dbInst* inst,
-                                             odb::dbRow* row) const
+std::optional<std::pair<odb::dbInst*, odb::Rect>>
+ICeWall::checkInstancePlacement(odb::dbInst* inst, odb::dbRow* row) const
 {
   std::set<odb::dbInst*> covers;
   auto* block = getBlock();
@@ -1938,11 +1980,23 @@ odb::dbInst* ICeWall::checkInstancePlacement(odb::dbInst* inst,
     for (auto* obs : inst->getMaster()->getObstructions()) {
       odb::Rect obs_rect = obs->getBox();
       xform.apply(obs_rect);
+      odb::dbTechLayer* layer = obs->getTechLayer();
+      if (layer != nullptr) {
+        odb::Rect bloat;
+        obs_rect.bloat(layer->getSpacing(), bloat);
+        obs_rect = bloat;
+      }
       check_shapes[obs->getTechLayer()].emplace(obs_rect, nullptr);
     }
     for (auto* iterm : inst->getITerms()) {
       for (const auto& [layer, box] : iterm->getGeometries()) {
-        check_shapes[layer].emplace(box, iterm->getNet());
+        odb::Rect term_rect = box;
+        if (layer != nullptr) {
+          odb::Rect bloat;
+          box.bloat(layer->getSpacing(), bloat);
+          term_rect = bloat;
+        }
+        check_shapes[layer].emplace(term_rect, iterm->getNet());
       }
     }
   }
@@ -1955,7 +2009,7 @@ odb::dbInst* ICeWall::checkInstancePlacement(odb::dbInst* inst,
       for (const auto& [inst_rect, check_net] :
            check_shapes[obs->getTechLayer()]) {
         if (inst_rect.intersects(obs_rect)) {
-          return check_inst;
+          return std::make_pair(check_inst, inst_rect.intersect(obs_rect));
         }
       }
     }
@@ -1967,14 +2021,14 @@ odb::dbInst* ICeWall::checkInstancePlacement(odb::dbInst* inst,
               = iterm->getNet() == check_net
                 && (check_net != nullptr || iterm->getNet() != nullptr);
           if (!nets_match && inst_rect.intersects(box)) {
-            return check_inst;
+            return std::make_pair(check_inst, inst_rect.intersect(box));
           }
         }
       }
     }
   }
 
-  return nullptr;
+  return {};
 }
 
 }  // namespace pad

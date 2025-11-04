@@ -110,7 +110,8 @@ class ICeWall
                     int index,
                     odb::dbInst* inst,
                     const odb::dbOrientType& base_orient,
-                    bool allow_overlap = false) const;
+                    bool allow_overlap = false,
+                    bool allow_shift = false) const;
 
   void makeBTerm(odb::dbNet* net,
                  odb::dbTechLayer* layer,
@@ -160,7 +161,9 @@ class ICeWall
                       odb::dbInst* inst,
                       const std::map<odb::dbInst*, std::set<odb::dbITerm*>>&
                           iterm_connections) const;
-  odb::dbInst* checkInstancePlacement(odb::dbInst* inst, odb::dbRow* row) const;
+  std::optional<std::pair<odb::dbInst*, odb::Rect>> checkInstancePlacement(
+      odb::dbInst* inst,
+      odb::dbRow* row) const;
 
   // Data members
   odb::dbDatabase* db_ = nullptr;
