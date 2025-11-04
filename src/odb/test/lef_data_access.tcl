@@ -13,7 +13,7 @@ check "case sensitive" {$tech getNamesCaseSensitive} ON
 check "num routing layers" {$tech getRoutingLayerCount} 9
 check "num vias" {$tech getViaCount} 14
 check "num layers" {$tech getLayerCount} 22
-check "units" {set units [$tech getLefUnits]} 2000
+check "units" {set units [$tech getDbUnitsPerMicron]} 2000
 
 # Via rules checks
 set via_rules [$tech getViaGenerateRules]

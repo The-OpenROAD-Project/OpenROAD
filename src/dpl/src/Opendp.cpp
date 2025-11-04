@@ -18,6 +18,7 @@
 #include "dpl/OptMirror.h"
 #include "graphics/DplObserver.h"
 #include "infrastructure/Coordinates.h"
+#include "infrastructure/DecapObjects.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"

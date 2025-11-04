@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <triton_route/TritonRoute.h>
-
 #include <cstdint>
 #include <deque>
 #include <list>
@@ -32,6 +30,7 @@
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
+#include "drt/TritonRoute.h"
 #include "dst/JobMessage.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
