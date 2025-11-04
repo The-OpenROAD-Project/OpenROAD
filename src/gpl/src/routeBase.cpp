@@ -738,12 +738,16 @@ std::pair<bool, bool> RouteBase::routability(
 
     // max density detection
     if (nbVec_[i]->getTargetDensity() > rbVars_.maxDensity) {
+      string group_text;
+      if (nbVec_[i]->group()) {
+        group_text = " in group " + string(nbVec_[i]->group()->getName());
+      }
       log_->info(GPL,
                  53,
-                 "Target density {:.4f} exceeds the maximum allowed {:.4f} in group {}.",
+                 "Target density {:.4f} exceeds the maximum allowed {:.4f}{}.",
                  nbVec_[i]->getTargetDensity(),
                  rbVars_.maxDensity,
-                 nbVec_[i]->group()->getName());
+                 group_text);
 
       revertToMinCongestion();
       return std::make_pair(false, true);
