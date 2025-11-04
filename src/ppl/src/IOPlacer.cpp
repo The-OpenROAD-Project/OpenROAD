@@ -2589,7 +2589,7 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
                         bool placed_status)
 {
   if (width == 0 && height == 0) {
-    const int database_unit = getTech()->getLefUnits();
+    const int database_unit = getTech()->getDbUnitsPerMicron();
     const double min_area
         = static_cast<double>(layer->getArea()) * database_unit * database_unit;
     if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
@@ -2833,7 +2833,7 @@ Interval IOPlacer::getIntervalFromPin(IOPin& io_pin,
 void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
                         const std::set<int>& ver_layer_idxs)
 {
-  int database_unit = getTech()->getLefUnits();
+  int database_unit = getTech()->getDbUnitsPerMicron();
 
   odb::Rect boundary = getBlock()->getDieArea();
 

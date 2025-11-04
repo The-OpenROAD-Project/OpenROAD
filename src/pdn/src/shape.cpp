@@ -573,10 +573,10 @@ bool Shape::isModifiable() const
 
 std::string Shape::getReportText() const
 {
-  std::string text
-      = fmt::format("{} on {}",
-                    getRectText(rect_, layer_->getTech()->getLefUnits()),
-                    layer_->getName());
+  std::string text = fmt::format(
+      "{} on {}",
+      getRectText(rect_, layer_->getTech()->getDbUnitsPerMicron()),
+      layer_->getName());
 
   if (net_ != nullptr) {
     text = net_->getName() + " " + text;

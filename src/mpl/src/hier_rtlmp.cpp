@@ -2151,14 +2151,21 @@ void HierRTLMP::placeMacros(Cluster* cluster)
                                    : minimum_perturbations_per_step;
 
   SequencePair initial_seq_pair;
-  if (cluster->isArrayOfInterconnectedMacros()) {
-    setArrayTilingSequencePair(
-        cluster, number_of_sequence_pair_macros, initial_seq_pair);
+  bool invalid_states_allowed = true;
+  if (cluster->isMacroArray()) {
+    bool array_has_empty_space = false;
+    initial_seq_pair = computeArraySequencePair(cluster, array_has_empty_space);
 
-    pos_swap_prob = 0.0f;
-    neg_swap_prob = 0.0f;
-    double_swap_prob = 0.0f;
-    exchange_swap_prob = 1.0f;
+    if (array_has_empty_space) {
+      invalid_states_allowed = false;
+    } else {
+      // We don't need to explore different shapes, so we just swap
+      // macros until we find the best wire length.
+      pos_swap_prob = 0.0f;
+      neg_swap_prob = 0.0f;
+      double_swap_prob = 0.0f;
+      exchange_swap_prob = 1.0f;
+    }
 
     // Large arrays need more steps to properly converge.
     if (large_macro_cluster) {
@@ -2208,6 +2215,9 @@ void HierRTLMP::placeMacros(Cluster* cluster)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setInitialSequencePair(initial_seq_pair);
+      if (!invalid_states_allowed) {
+        sa->disallowInvalidStates();
+      }
 
       sa_batch.push_back(std::move(sa));
 
@@ -2292,26 +2302,33 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 //
 // Obs: Doing this will still keep the IO clusters at the end
 // of the sequence pair, which is needed for the way SA handles it.
-void HierRTLMP::setArrayTilingSequencePair(Cluster* cluster,
-                                           const int macros_to_place,
-                                           SequencePair& initial_seq_pair)
+SequencePair HierRTLMP::computeArraySequencePair(Cluster* cluster,
+                                                 bool& array_has_empty_space)
 {
-  // Set positive sequence
-  for (int i = 0; i < macros_to_place; ++i) {
-    initial_seq_pair.pos_sequence.push_back(i);
+  SequencePair sequence_pair;
+  const std::vector<HardMacro*>& hard_macros = cluster->getHardMacros();
+  const int number_of_macros = static_cast<int>(hard_macros.size());
+
+  for (int id = 0; id < number_of_macros; ++id) {
+    sequence_pair.pos_sequence.push_back(id);
   }
 
-  // Set negative sequence
-  const int columns
-      = cluster->getWidth() / cluster->getHardMacros().front()->getWidth();
-  const int rows
-      = cluster->getHeight() / cluster->getHardMacros().front()->getHeight();
+  const HardMacro* hard_macro = hard_macros.front();
+  const int columns = std::round(cluster->getWidth() / hard_macro->getWidth());
+  const int rows = std::round(cluster->getHeight() / hard_macro->getHeight());
 
   for (int i = 1; i <= columns; ++i) {
     for (int j = 1; j <= rows; j++) {
-      initial_seq_pair.neg_sequence.push_back(rows * i - j);
+      const int macro_id = (rows * i) - j;
+      if (macro_id < number_of_macros) {
+        sequence_pair.neg_sequence.push_back(macro_id);
+      } else {
+        array_has_empty_space = true;
+      }
     }
   }
+
+  return sequence_pair;
 }
 
 void HierRTLMP::computeFencesAndGuides(

@@ -314,8 +314,13 @@ void SACoreSoftMacro::initialize()
   graphics_ = nullptr;
 
   for (int i = 0; i < num_perturb_per_step_; i++) {
+    saveState();
     perturb();
-    // store current penalties
+    if (!invalid_states_allowed_ && !isValid()) {
+      restoreState();
+      continue;
+    }
+
     width_list.push_back(width_);
     height_list.push_back(height_);
     area_penalty_list.push_back(width_ * height_ / outline_.getWidth()
