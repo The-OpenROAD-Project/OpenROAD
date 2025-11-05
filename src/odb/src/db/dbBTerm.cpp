@@ -230,13 +230,13 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbBTerm::getName()
+std::string dbBTerm::getName() const
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   return bterm->_name;
 }
 
-const char* dbBTerm::getConstName()
+const char* dbBTerm::getConstName() const
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   return bterm->_name;
@@ -283,7 +283,7 @@ void dbBTerm::setSigType(dbSigType type)
   }
 }
 
-dbSigType dbBTerm::getSigType()
+dbSigType dbBTerm::getSigType() const
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   return dbSigType(bterm->_flags._sig_type);
@@ -313,7 +313,7 @@ void dbBTerm::setIoType(dbIoType type)
   }
 }
 
-dbIoType dbBTerm::getIoType()
+dbIoType dbBTerm::getIoType() const
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   return dbIoType(bterm->_flags._io_type);
@@ -360,7 +360,7 @@ uint dbBTerm::getExtId()
   return bterm->_ext_id;
 }
 
-dbNet* dbBTerm::getNet()
+dbNet* dbBTerm::getNet() const
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   if (bterm->_net) {
@@ -371,7 +371,7 @@ dbNet* dbBTerm::getNet()
   return nullptr;
 }
 
-dbModNet* dbBTerm::getModNet()
+dbModNet* dbBTerm::getModNet() const
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   if (bterm->_mnet) {

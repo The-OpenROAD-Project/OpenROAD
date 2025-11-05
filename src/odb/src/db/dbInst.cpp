@@ -339,13 +339,13 @@ bool _dbInst::operator==(const _dbInst& rhs) const
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbInst::getName()
+std::string dbInst::getName() const
 {
   _dbInst* inst = (_dbInst*) this;
   return inst->_name;
 }
 
-const char* dbInst::getConstName()
+const char* dbInst::getConstName() const
 {
   _dbInst* inst = (_dbInst*) this;
   return inst->_name;
@@ -819,7 +819,7 @@ dbScanInst* dbInst::getScanInst() const
   return (dbScanInst*) scan_inst;
 }
 
-dbSet<dbITerm> dbInst::getITerms()
+dbSet<dbITerm> dbInst::getITerms() const
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();

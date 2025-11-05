@@ -243,7 +243,7 @@ void dbModBTerm::setSigType(const dbSigType& type)
   _dbmodbterm->_flags = cur_flags.uint_val;
 }
 
-dbSigType dbModBTerm::getSigType()
+dbSigType dbModBTerm::getSigType() const
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
   dbModBTermFlags cur_flags;
@@ -260,7 +260,7 @@ void dbModBTerm::setIoType(const dbIoType& type)
   _dbmodbterm->_flags = cur_flags.uint_val;
 }
 
-dbIoType dbModBTerm::getIoType()
+dbIoType dbModBTerm::getIoType() const
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
   dbModBTermFlags cur_flags;
