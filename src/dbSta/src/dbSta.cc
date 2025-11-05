@@ -41,6 +41,7 @@
 #include "sta/PatternMatch.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
+#include "sta/Sta.hh"
 #include "sta/StaMain.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
