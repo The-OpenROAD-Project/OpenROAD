@@ -1713,7 +1713,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     for (Instance* inst : gCell->insts()) {
       int lx = pb_inst->lx() + x_offset;
       int ly = pb_inst->ly() + y_offset;
-      float pin_weight = (pb_inst.getPins().size() == 2 ? 1 : (0.01 * pb_inst.getPins().size() / 2) );
+      float pin_weight = (pb_inst->getPins().size() == 2 ? 1 : (0.01 * pb_inst->getPins().size() / 2) );
       lx *= pin_weight;
       ly *= pin_weight;
       inst->setLocation(lx, ly);
