@@ -275,6 +275,13 @@ void dbModITerm::connect(dbModNet* net)
   if (_moditerm->_mod_net == _modnet->getId()) {
     return;
   }
+
+  // If the moditerm is already connected to a different modnet, disconnect it
+  // first.
+  if (_moditerm->_mod_net != 0) {
+    disconnect();
+  }
+
   for (auto callback : _block->_callbacks) {
     callback->inDbModITermPreConnect(this, net);
   }
