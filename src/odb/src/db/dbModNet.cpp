@@ -514,13 +514,12 @@ void dbModNet::checkSanity() const
 
 void dbModNet::mergeModNet(dbModNet* in_modnet)
 {
-  //_dbModNet* net = (_dbModNet*) this;
-  //_dbBlock* block = (_dbBlock*) net->getOwner();
+  _dbModNet* net = (_dbModNet*) this;
+  _dbBlock* block = (_dbBlock*) net->getOwner();
 
-  // TODO:
-  // for (auto callback : block->_callbacks) {
-  //   callback->inDbModNetPreMerge(this, in_modnet);
-  // }
+  for (auto callback : block->_callbacks) {
+    callback->inDbModNetPreMerge(this, in_modnet);
+  }
 
   // Create vectors for safe iteration, as connect() can invalidate iterators.
   auto iterms_set = in_modnet->getITerms();

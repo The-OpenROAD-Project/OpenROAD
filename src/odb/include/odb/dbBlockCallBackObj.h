@@ -80,6 +80,7 @@ class dbBlockCallBackObj
   // dbModNet Start
   virtual void inDbModNetCreate(dbModNet*) {}
   virtual void inDbModNetDestroy(dbModNet*) {}
+  virtual void inDbModNetPreMerge(dbModNet*, dbModNet*) {}
   // dbModNet End
 
   // dbITerm Start
