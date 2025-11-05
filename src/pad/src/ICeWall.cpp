@@ -983,8 +983,8 @@ void ICeWall::placePadsBumpAligned(
                               snapToRowSite(row, select_pos),
                               ginst,
                               odb::dbOrientType::R0,
-                              false,
-                              true)
+                              /* allow_overlap */ false,
+                              /* allow_shift */ true)
                 * row->getSpacing();
 
       performPadFlip(row, ginst, iterm_connections);
@@ -1018,8 +1018,8 @@ void ICeWall::placePadsUniform(const std::vector<odb::dbInst*>& insts,
                   snapToRowSite(row, offset),
                   inst,
                   odb::dbOrientType::R0,
-                  false,
-                  true);
+                  /* allow_overlap */ false,
+                  /* allow_shift */ true);
     offset += inst_widths.at(inst);
     offset += target_spacing;
   }
@@ -1165,14 +1165,10 @@ int ICeWall::placeInstance(odb::dbRow* row,
     int obs_index = index;
     switch (row_edge) {
       case odb::Direction2D::North:
-        obs_index = snapToRowSite(row, check_rect.xMin());
-        break;
       case odb::Direction2D::South:
         obs_index = snapToRowSite(row, check_rect.xMin());
         break;
       case odb::Direction2D::West:
-        obs_index = snapToRowSite(row, check_rect.yMin());
-        break;
       case odb::Direction2D::East:
         obs_index = snapToRowSite(row, check_rect.yMin());
         break;
