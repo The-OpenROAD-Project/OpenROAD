@@ -1995,7 +1995,7 @@ void dbJournal::undo_deleteObject()
       _log.pop(group_id);
       _log.pop(module_id);
       _log.pop(region_id);
-      inst->setLocation(x, y);
+      inst->setOrigin(x, y);
       if (group_id != 0) {
         auto group = dbGroup::getGroup(_block, group_id);
         group->addInst(inst);

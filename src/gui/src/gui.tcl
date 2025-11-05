@@ -100,10 +100,10 @@ proc save_image { args } {
     if { $tech == "NULL" } {
       utl::error GUI 17 "No technology loaded."
     }
-    set resolution [expr $keys(-resolution) * [$tech getLefUnits]]
+    set resolution [expr $keys(-resolution) * [$tech getDbUnitsPerMicron]]
     if { $resolution < 1 } {
       set resolution 1.0
-      set res_per_pixel [expr $resolution / [$tech getLefUnits]]
+      set res_per_pixel [expr $resolution / [$tech getDbUnitsPerMicron]]
       utl::warn GUI 31 "Resolution too high for design, defaulting to ${res_per_pixel}um per pixel"
     }
   }
@@ -156,10 +156,10 @@ proc save_animated_gif { args } {
     if { $tech == "NULL" } {
       utl::error GUI 52 "No technology loaded."
     }
-    set resolution [expr $keys(-resolution) * [$tech getLefUnits]]
+    set resolution [expr $keys(-resolution) * [$tech getDbUnitsPerMicron]]
     if { $resolution < 1 } {
       set resolution 1.0
-      set res_per_pixel [expr $resolution / [$tech getLefUnits]]
+      set res_per_pixel [expr $resolution / [$tech getDbUnitsPerMicron]]
       utl::warn GUI 55 "Resolution too high for design, defaulting to ${res_per_pixel}um per pixel"
     }
   }
