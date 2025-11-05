@@ -26,6 +26,7 @@ or_integration_tests(
     place_pad_outsideofrow
     place_pad_overblockage
     place_pad_with_bumps
+    place_pads_bumps_bump_overlap
     place_pad_wrong_master
     place_pads_bumps
     place_pads_too_many

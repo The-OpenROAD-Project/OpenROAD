@@ -33,6 +33,7 @@ COMPULSORY_TESTS = [
     "place_pad_with_bumps",
     "place_pad_wrong_master",
     "place_pads_bumps",
+    "place_pads_bumps_bump_overlap",
     "place_pads_too_many",
     "place_pads_uniform",
     "place_pads_uniform_slip",
