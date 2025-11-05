@@ -4140,6 +4140,7 @@ void dbNetwork::checkAxioms(odb::dbObject* obj) const
     return;
   }
 
+  // jk: tmp
   dumpNetDrvrPinMap();
   checkSanityNetDrvrPinMapConsistency();
 
@@ -4833,6 +4834,7 @@ PinInfo dbNetwork::getPinInfo(const Pin* pin) const
 void dbNetwork::dumpNetDrvrPinMap() const
 {
   const auto& net_drvr_pin_map = net_drvr_pin_map_;
+  logger_->report("--------------------------------------------------");
   logger_->report("Dumping net_drvr_pin_map_ cache (size: {})",
                   net_drvr_pin_map.size());
 
@@ -4860,6 +4862,7 @@ void dbNetwork::dumpNetDrvrPinMap() const
                       pin_info.id);
     }
   }
+  logger_->report("--------------------------------------------------");
 }
 
 }  // namespace sta

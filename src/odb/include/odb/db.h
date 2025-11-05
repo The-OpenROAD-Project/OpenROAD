@@ -869,7 +869,13 @@ class dbBlock : public dbObject
   /// Find a specific net of this block.
   /// Returns nullptr if the object was not found.
   ///
-  dbNet* findNet(const char* name);
+  dbNet* findNet(const char* name) const;
+
+  ///
+  /// Find a specific mod net of this block.
+  /// Returns nullptr if the object was not found.
+  ///
+  dbModNet* findModNet(const char* hierarchical_name) const;
 
   //
   // Utility to write db file
@@ -1415,12 +1421,12 @@ class dbBTerm : public dbObject
   ///
   /// Get the block-terminal name.
   ///
-  std::string getName();
+  std::string getName() const;
 
   ///
   /// Get the block-terminal name.
   ///
-  const char* getConstName();
+  const char* getConstName() const;
 
   ///
   /// Change the name of the bterm.
@@ -1442,7 +1448,7 @@ class dbBTerm : public dbObject
   ///
   /// Get the signal type of this block-terminal.
   ///
-  dbSigType getSigType();
+  dbSigType getSigType() const;
 
   ///
   /// Set the IO direction of this block-terminal.
@@ -1452,7 +1458,7 @@ class dbBTerm : public dbObject
   ///
   /// Get the IO direction of this block-terminal.
   ///
-  dbIoType getIoType();
+  dbIoType getIoType() const;
 
   ///
   /// Set spef mark of this block-terminal.
@@ -1497,11 +1503,11 @@ class dbBTerm : public dbObject
   ///
   /// Get the net of this block-terminal.
   ///
-  dbNet* getNet();
+  dbNet* getNet() const;
 
   ///
   /// Get the mod net of this block-terminal.
-  dbModNet* getModNet();
+  dbModNet* getModNet() const;
   ///
 
   /// Disconnect the block-terminal from its net.
@@ -2525,6 +2531,28 @@ class dbNet : public dbObject
   /// Dump dbNet info for debugging
   ///
   void dump() const;
+
+  ///
+  /// Dump dbNet connectivity for debugging
+  ///
+  void dumpConnectivity(int level = 1) const;
+
+ private:
+  static void dumpConnectivityRecursive(const dbObject* obj,
+                                        int max_level,
+                                        int level,
+                                        std::set<const dbObject*>& visited,
+                                        utl::Logger* logger);
+  static void dumpNetConnectivity(const dbNet* net,
+                                  int max_level,
+                                  int level,
+                                  std::set<const dbObject*>& visited,
+                                  utl::Logger* logger);
+  static void dumpModNetConnectivity(const dbModNet* modnet,
+                                     int max_level,
+                                     int level,
+                                     std::set<const dbObject*>& visited,
+                                     utl::Logger* logger);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2539,12 +2567,12 @@ class dbInst : public dbObject
   ///
   /// Get the instance name.
   ///
-  std::string getName();
+  std::string getName() const;
 
   ///
   /// Need a version that does not do strdup every time
   ///
-  const char* getConstName();
+  const char* getConstName() const;
 
   ///
   /// Compare, like !strcmp
@@ -2848,7 +2876,7 @@ class dbInst : public dbObject
   ///
   /// Get the instance-terminals of this instance.
   ///
-  dbSet<dbITerm> getITerms();
+  dbSet<dbITerm> getITerms() const;
 
   ///
   /// Get the first output terminal of this instance.
@@ -3111,9 +3139,9 @@ class dbITerm : public dbObject
   /// Returns nullptr if this instance-terminal has NOT been connected
   /// to a net.
   ///
-  dbNet* getNet();
+  dbNet* getNet() const;
 
-  dbModNet* getModNet();
+  dbModNet* getModNet() const;
 
   ///
   /// Get the master-terminal that this instance-terminal is representing.
@@ -3139,12 +3167,12 @@ class dbITerm : public dbObject
   ///
   /// Get the signal type of this instance-terminal.
   ///
-  dbSigType getSigType();
+  dbSigType getSigType() const;
 
   ///
   /// Get the IO direction of this instance-terminal.
   ///
-  dbIoType getIoType();
+  dbIoType getIoType() const;
 
   ///
   /// True is iterm is input of signal type; if io false INOUT is not considered
@@ -8307,9 +8335,9 @@ class dbModBTerm : public dbObject
   void setModNet(dbModNet* modNet);
   dbModNet* getModNet() const;
   void setSigType(const dbSigType& type);
-  dbSigType getSigType();
+  dbSigType getSigType() const;
   void setIoType(const dbIoType& type);
-  dbIoType getIoType();
+  dbIoType getIoType() const;
   void connect(dbModNet* net);
   void disconnect();
   bool isBusPort() const;
@@ -8423,6 +8451,11 @@ class dbModNet : public dbObject
   // and returns the first dbNet it finds.
   dbNet* findRelatedNet() const;
   void checkSanity() const;
+
+  ///
+  /// Merge the terminals of the in_modnet with this modnet
+  ///  
+  void mergeModNet(dbModNet* in_modnet);
 
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);
