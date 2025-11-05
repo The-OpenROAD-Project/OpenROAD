@@ -231,7 +231,7 @@ int Instance::dy() const
   return (uy_ - ly_);
 }
 
-int64_t Instance::area() const
+int64_t Instance::getArea() const
 {
   return static_cast<int64_t>(dx()) * dy();
 }
@@ -813,7 +813,7 @@ void PlacerBaseCommon::init()
     instStor_.push_back(temp_inst);
 
     if (temp_inst.dy() > siteSizeY_ * 6) {
-      macroInstsArea_ += temp_inst.area();
+      macroInstsArea_ += temp_inst.getArea();
     }
   }
 
@@ -1053,7 +1053,7 @@ void PlacerBase::init()
       }
     } else {
       placeInsts_.push_back(inst);
-      int64_t instArea = inst->area();
+      int64_t instArea = inst->getArea();
       placeInstsArea_ += instArea;
       // macro cells should be
       // macroInstsArea_
@@ -1078,7 +1078,7 @@ void PlacerBase::init()
     if (inst.isDummy()) {
       dummyInsts_.push_back(&inst);
       nonPlaceInsts_.push_back(&inst);
-      nonPlaceInstsArea_ += inst.area();
+      nonPlaceInstsArea_ += inst.getArea();
     }
     insts_.push_back(&inst);
   }

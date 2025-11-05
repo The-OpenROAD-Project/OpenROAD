@@ -92,7 +92,7 @@ class Instance
   int cy() const;
   int dx() const;
   int dy() const;
-  int64_t area() const;
+  int64_t getArea() const;
 
   void setExtId(int extId);
   int getExtId() const { return extId_; }

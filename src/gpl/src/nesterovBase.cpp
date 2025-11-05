@@ -125,7 +125,7 @@ void GCell::updateLocations()
     bbox.mergeInit();
     int64_t inst_area = 0;
     for (Instance* inst : insts_) {
-      inst_area += inst->area();
+      inst_area += inst->getArea();
       bbox.merge({inst->lx(), inst->ly(), inst->ux(), inst->uy()});
     }
     odb::Rect core_area = insts_[0]->dbInst()->getBlock()->getCoreArea();
@@ -1502,7 +1502,7 @@ void NesterovBaseCommon::revertGCellSizeToMinRc()
     int dx = rect.dx();
     int dy = rect.dy();
 
-    if (rect.area() > gCell->insts()[0]->area()) {
+    if (rect.area() > gCell->insts()[0]->getArea()) {
       gCell->setSize(dx, dy, GCell::GCellChange::kRoutability);
     } else {
       gCell->setSize(dx, dy, GCell::GCellChange::kNone);
@@ -1711,7 +1711,13 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     }
 
     for (Instance* inst : gCell->insts()) {
-      inst->setLocation(pb_inst->lx() + x_offset, pb_inst->ly() + y_offset);
+      int lx = pb_inst->lx() + x_offset;
+      int ly = pb_inst->ly() + y_offset;
+      float pin_weight = (pb_inst.getPins().size() == 2 ? 1 : (0.01 * pb_inst.getPins().size() / 2) );
+      lx *= pin_weight;
+      ly *= pin_weight;
+      inst->setLocation(lx, ly);
+      // inst->setLocation(pb_inst->lx() + x_offset, pb_inst->ly() + y_offset);
     }
     gCell->updateLocations();
     nb_gcells_.emplace_back(nbc_.get(), nbc_->getGCellIndex(gCell));
