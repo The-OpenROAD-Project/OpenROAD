@@ -299,3 +299,32 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "rsz_buffer_removal3",
+    srcs = [
+        "cpp/TestBufferRemoval3.cc"
+    ],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "cpp/TestBufferRemoval3.v",
+    ],    
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbReadVerilog",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/dpl",
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/tst",
+        "//src/utl",        
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

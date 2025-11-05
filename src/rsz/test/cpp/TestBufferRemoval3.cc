@@ -27,6 +27,7 @@
 #include "sta/Units.hh"
 #include "sta/VerilogWriter.hh"
 #include "stt/SteinerTreeBuilder.h"
+#include "tst/fixture.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 
@@ -50,9 +51,12 @@ class BufRemTest3 : public tst::Fixture
         ep_(&logger_, &callback_handler_, db_.get(), sta_.get(), &stt_, &grt_),
         resizer_(&logger_, db_.get(), sta_.get(), &stt_, &grt_, &dp_, &ep_)
   {
-    const std::string prefix("_main/src/rsz/test/");
-    readLiberty(prefix + "Nangate45/Nangate45_typ.lib");
-    lib_ = loadTechAndLib("ng45", "ng45", "_main/test/Nangate45/Nangate45.lef");
+    static const std::string prefix("_main/src/rsz/test/");
+
+    readLiberty(getFilePath(prefix + "Nangate45/Nangate45_typ.lib"));
+    lib_ = loadTechAndLib("Nangate45",
+                          "Nangate45",
+                          getFilePath(prefix + "Nangate45/Nangate45.lef"));
 
     db_->setLogger(&logger_);
     db_network_ = sta_->getDbNetwork();
@@ -60,7 +64,8 @@ class BufRemTest3 : public tst::Fixture
 
     ord::dbVerilogNetwork verilog_network(sta_.get());
     sta::VerilogReader verilog_reader(&verilog_network);
-    verilog_reader.read(getFilePath("cpp/TestBufferRemoval3.v").c_str());
+    verilog_reader.read(
+        getFilePath(prefix + "cpp/TestBufferRemoval3.v").c_str());
 
     ord::dbLinkDesign(
         "top", &verilog_network, db_.get(), &logger_, true /*hierarchy = */);
