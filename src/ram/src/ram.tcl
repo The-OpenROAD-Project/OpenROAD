@@ -51,41 +51,57 @@ proc generate_ram_netlist { args } {
 
 sta::define_cmd_args "generate_ram" {-bytes_per_word bits
                                      -word_count words
-				     [-storage_cell name]
-				     [-tristate_cell name]
-				     [-inv_cell name]
-				     [-read_ports count]
-				     -power_net name
-				     -ground_net name
-				     -routing_layer config
-				     -ver_layer config
-				     -hor_layer config
-				     -filler_cells fillers}
+                                     [-read_ports count]
+                                     [-storage_cell name]
+                                     [-tristate_cell name]
+                                     [-inv_cell name]
+                                     -power_pin name
+                                     -ground_pin name
+                                     -routing_layer config
+                                     -ver_layer config
+                                     -hor_layer config
+                                     -filler_cells fillers}
 
 # user arguments for generate ram netlist arguments
 proc generate_ram { args } {
   sta::parse_key_args "generate_ram" args \
     keys {-bytes_per_word -word_count -storage_cell -tristate_cell -inv_cell -read_ports
-      -power_net -ground_net -routing_layer -ver_layer -hor_layer -filler_cells} flags {}
+      -power_pin -ground_pin -routing_layer -ver_layer -hor_layer -filler_cells} flags {}
 
-  generate_ram_netlist \
+  set ram_netlist_args [list \
     -bytes_per_word $keys(-bytes_per_word) \
-    -word_count $keys(-word_count) \
-    -storage_cell $keys(-storage_cell) \
-    -read_ports $keys(-read_ports)
+    -word_count $keys(-word_count)]
+
+  if { [info exists keys(-read_ports)] } {
+    lappend ram_netlist_args -read_ports $keys(-read_ports)
+  }
+
+  if { [info exists keys(-storage_cell)] } {
+    lappend ram_netlist_args -storage_cell $keys(-storage_cell)
+  }
+
+  if { [info exists keys(-tristate_cell)] } {
+    lappend ram_netlist_args -tristate_cell $keys(-tristate_cell)
+  }
+
+  if { [info exists keys(-inv_cell)] } {
+    lappend ram_netlist_args -inv_cell $keys(-inv_cell)
+  }
+
+  generate_ram_netlist {*}$ram_netlist_args
 
   ord::design_created
 
-  if { [info exists keys(-power_net)] } {
-    set power_net $keys(-power_net)
+  if { [info exists keys(-power_pin)] } {
+    set power_net $keys(-power_pin)
   } else {
-    utl::error RAM 5 "The -power_net argument must be specified."
+    utl::error RAM 5 "The -power_pin argument must be specified."
   }
 
-  if { [info exists keys(-ground_net)] } {
-    set ground_net $keys(-ground_net)
+  if { [info exists keys(-ground_pin)] } {
+    set ground_net $keys(-ground_pin)
   } else {
-    utl::error RAM 6 "The -ground_net argument must be specified."
+    utl::error RAM 6 "The -ground_pin argument must be specified."
   }
 
   if { [info exists keys(-routing_layer)] } {
@@ -160,12 +176,4 @@ proc generate_ram { args } {
 
   global_route
   detailed_route
-
-  set lef_file [make_result_file make_8x8.lef]
-  write_abstract_lef $lef_file
-  diff_files make_8x8.lefok $lef_file
-
-  set def_file [make_result_file make_8x8.def]
-  write_def $def_file
-  diff_files make_8x8.defok $def_file
 }
