@@ -17,6 +17,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "shape.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 #include "via.h"
@@ -61,7 +62,7 @@ std::string GridComponent::typeToString(Type type)
   return "Unknown";
 }
 
-ShapePtr GridComponent::addShape(Shape* shape)
+ShapePtr GridComponent::addShape(std::unique_ptr<Shape> shape)
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -69,12 +70,12 @@ ShapePtr GridComponent::addShape(Shape* shape)
              3,
              "Adding shape {}.",
              shape->getReportText());
-  auto shape_ptr = std::shared_ptr<Shape>(shape);
-  if (!shape_ptr->isValid()) {
+  if (!shape->isValid()) {
     // do not add invalid shapes
     return nullptr;
   }
 
+  auto shape_ptr = std::shared_ptr<Shape>(shape.release());
   shape_ptr->setGridComponent(this);
   const odb::Rect& shape_rect = shape_ptr->getRect();
 
@@ -193,14 +194,23 @@ void GridComponent::removeShape(Shape* shape)
 }
 
 void GridComponent::replaceShape(Shape* shape,
-                                 const std::vector<Shape*>& replacements)
+                                 std::unique_ptr<Shape> replacement)
+{
+  std::vector<std::unique_ptr<Shape>> replacements;
+  replacements.push_back(std::move(replacement));
+  replaceShape(shape, replacements);
+}
+
+void GridComponent::replaceShape(
+    Shape* shape,
+    std::vector<std::unique_ptr<Shape>>& replacements)
 {
   auto vias = shape->getVias();
 
   removeShape(shape);
 
-  for (auto* new_shape : replacements) {
-    const auto& new_shape_ptr = addShape(new_shape);
+  for (auto& new_shape : replacements) {
+    const auto& new_shape_ptr = addShape(std::move(new_shape));
 
     if (new_shape_ptr == nullptr) {
       continue;
@@ -217,6 +227,8 @@ void GridComponent::replaceShape(Shape* shape,
       }
     }
   }
+
+  replacements.clear();
 }
 
 void GridComponent::getObstructions(
@@ -283,9 +295,9 @@ void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
       continue;
     }
     const auto& obs = obstructions.at(layer);
-    std::map<Shape*, std::vector<Shape*>> replacement_shapes;
+    std::map<Shape*, std::vector<std::unique_ptr<Shape>>> replacement_shapes;
     for (const auto& shape : shapes) {
-      std::vector<Shape*> replacements;
+      std::vector<std::unique_ptr<Shape>> replacements;
       if (!shape->cut(obs, getGrid(), replacements)) {
         continue;
       }
@@ -293,7 +305,7 @@ void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
       replacement_shapes[shape.get()] = std::move(replacements);
     }
 
-    for (const auto& [shape, replacement] : replacement_shapes) {
+    for (auto& [shape, replacement] : replacement_shapes) {
       replaceShape(shape, replacement);
     }
   }
