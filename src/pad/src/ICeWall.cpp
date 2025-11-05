@@ -11,6 +11,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <utility>
 #include <vector>
@@ -1191,7 +1192,8 @@ int ICeWall::placeInstance(odb::dbRow* row,
 
     return placeInstance(
         row, next_index, inst, base_orient, allow_overlap, allow_shift);
-  } else if (!allow_overlap && check_obs) {
+  }
+  if (!allow_overlap && check_obs) {
     const auto& [check_inst, obs_rect] = *check_obs;
     odb::Rect check_rect;
     if (check_inst == nullptr) {
