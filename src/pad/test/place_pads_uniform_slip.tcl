@@ -8,8 +8,8 @@ read_lef Nangate45_io/dummy_pads.lef
 read_def Nangate45_blackparrot/floorplan.def
 
 odb::dbBlockage_create [ord::get_db_block] \
-    [ord::microns_to_dbu 2700] [ord::microns_to_dbu 10] \
-    [ord::microns_to_dbu 2750] [ord::microns_to_dbu 20]
+  [ord::microns_to_dbu 2700] [ord::microns_to_dbu 10] \
+  [ord::microns_to_dbu 2750] [ord::microns_to_dbu 20]
 
 # Test place_pad
 make_io_sites -horizontal_site IOSITE -vertical_site IOSITE -corner_site IOSITE -offset 15
