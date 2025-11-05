@@ -3890,11 +3890,10 @@ void GlobalRouter::makeItermPins(Net* net,
     }
 
     if (!die_area.contains(inst->getBBox()->getBox())) {
-      logger_->error(
-          GRT,
-          280,
-          "Instance {} is completely outside the die area.",
-          inst->getName());
+      logger_->error(GRT,
+                     280,
+                     "Instance {} is completely outside the die area.",
+                     inst->getName());
     }
 
     const odb::dbTransform transform = inst->getTransform();
