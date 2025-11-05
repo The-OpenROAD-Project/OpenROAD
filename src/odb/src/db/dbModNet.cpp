@@ -222,22 +222,31 @@ void dbModNet::rename(const char* new_name)
 void dbModNet::disconnectAllTerms()
 {
   // Disconnect all terminals.
-  // - The loops are structured this way to handle the modification of the dbSet
-  // during iteration.
-  while (!getITerms().empty()) {
-    getITerms().begin()->disconnectDbModNet();
+  // Copy to a vector to avoid iterator invalidation issues.
+  dbSet<dbITerm> iterms_set = getITerms();
+  std::vector<dbITerm*> iterms(iterms_set.begin(), iterms_set.end());
+  for (dbITerm* iterm : iterms) {
+    iterm->disconnectDbModNet();
   }
 
-  while (!getBTerms().empty()) {
-    getBTerms().begin()->disconnectDbModNet();
+  dbSet<dbBTerm> bterms_set = getBTerms();
+  std::vector<dbBTerm*> bterms(bterms_set.begin(), bterms_set.end());
+  for (dbBTerm* bterm : bterms) {
+    bterm->disconnectDbModNet();
   }
 
-  while (!getModITerms().empty()) {
-    getModITerms().begin()->disconnect();
+  dbSet<dbModITerm> moditerms_set = getModITerms();
+  std::vector<dbModITerm*> moditerms(moditerms_set.begin(),
+                                     moditerms_set.end());
+  for (dbModITerm* moditerm : moditerms) {
+    moditerm->disconnect();
   }
 
-  while (!getModBTerms().empty()) {
-    getModBTerms().begin()->disconnect();
+  dbSet<dbModBTerm> modbterms_set = getModBTerms();
+  std::vector<dbModBTerm*> modbterms(modbterms_set.begin(),
+                                     modbterms_set.end());
+  for (dbModBTerm* modbterm : modbterms) {
+    modbterm->disconnect();
   }
 }
 
@@ -501,6 +510,44 @@ void dbModNet::checkSanity() const
   dbUtil::findModITermDrivers(this, drvr_info_list);
 
   dbUtil::checkNetSanity(this, drvr_info_list);
+}
+
+void dbModNet::mergeModNet(dbModNet* in_modnet)
+{
+  //_dbModNet* net = (_dbModNet*) this;
+  //_dbBlock* block = (_dbBlock*) net->getOwner();
+
+  // TODO:
+  // for (auto callback : block->_callbacks) {
+  //   callback->inDbModNetPreMerge(this, in_modnet);
+  // }
+
+  // Create vectors for safe iteration, as connect() can invalidate iterators.
+  auto iterms_set = in_modnet->getITerms();
+  std::vector<dbITerm*> iterms(iterms_set.begin(), iterms_set.end());
+  for (dbITerm* iterm : iterms) {
+    iterm->connect(this);
+  }
+
+  auto bterms_set = in_modnet->getBTerms();
+  std::vector<dbBTerm*> bterms(bterms_set.begin(), bterms_set.end());
+  for (dbBTerm* bterm : bterms) {
+    bterm->connect(this);
+  }
+
+  auto moditerms_set = in_modnet->getModITerms();
+  std::vector<dbModITerm*> moditerms(moditerms_set.begin(),
+                                     moditerms_set.end());
+  for (dbModITerm* moditerm : moditerms) {
+    moditerm->connect(this);
+  }
+
+  auto modbterms_set = in_modnet->getModBTerms();
+  std::vector<dbModBTerm*> modbterms(modbterms_set.begin(),
+                                     modbterms_set.end());
+  for (dbModBTerm* modbterm : modbterms) {
+    modbterm->connect(this);
+  }
 }
 
 // User Code End dbModNetPublicMethods
