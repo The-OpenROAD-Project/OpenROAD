@@ -718,14 +718,7 @@ void dbDatabase::beginEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   if (block->_journal) {
-    block->_journal_history.push_back(block->_journal);
-    debugPrint(block_->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               2,
-               "ECO: Ended ECO #{} (size {}) and pushed to ECO history",
-               block->_journal_history.size() - 1,
-               block->_journal->size());
+    endEco(block_);
   }
   block->_journal = new dbJournal(block_);
   assert(block->_journal);
@@ -734,56 +727,54 @@ void dbDatabase::beginEco(dbBlock* block_)
              "DB_ECO",
              2,
              "ECO: Started ECO #{}",
-             block->_journal_history.size());
+             block->_journal_stack.size());
 }
 
 void dbDatabase::endEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   assert(block->_journal);
-  block->_journal_history.push_back(block->_journal);
+  block->_journal_stack.push(block->_journal);
   block->_journal = nullptr;
   debugPrint(block_->getImpl()->getLogger(),
              utl::ODB,
              "DB_ECO",
              2,
-             "ECO: Ended ECO #{} (size {}) and pushed to ECO history",
-             block->_journal_history.size() - 1,
-             block->_journal_history.back()->size());
+             "ECO: Ended ECO #{} (size {}) and pushed to ECO stack",
+             block->_journal_stack.size() - 1,
+             block->_journal_stack.top()->size());
 }
 
 void dbDatabase::commitEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  // Commit the current journal or the last journal in history
-  assert(block->_journal || !block->_journal_history.empty());
+  // Commit the current ECO or the last ECO into stack
+  assert(block->_journal || !block->_journal_stack.empty());
   if (!block->_journal) {
-    block->_journal = block->_journal_history.back();
-    block->_journal_history.pop_back();
+    block->_journal = block->_journal_stack.top();
+    block->_journal_stack.pop();
   }
-  if (!block->_journal_history.empty()) {
-    dbJournal* next_journal = block->_journal_history.back();
-    block->_journal_history.pop_back();
-    int old_size = next_journal->size();
-    next_journal->append(block->_journal);
-    block->_journal_history.push_back(next_journal);
+  if (!block->_journal_stack.empty()) {
+    dbJournal* prev_journal = block->_journal_stack.top();
+    int old_size = prev_journal->size();
+    prev_journal->append(block->_journal);
     debugPrint(block_->getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
                2,
                "ECO: Merged ECO #{} (size {}) with ECO #{} (size {} -> {})",
-               block->_journal_history.size(),
+               block->_journal_stack.size(),
                block->_journal->size(),
-               block->_journal_history.size() - 1,
+               block->_journal_stack.size() - 1,
                old_size,
-               block->_journal_history.back()->size());
+               block->_journal_stack.top()->size());
   } else {
     debugPrint(block_->getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
                2,
-               "ECO: Committed ECO #{} (size {}) and removed from ECO history",
-               block->_journal_history.size(),
+               "ECO: Committed ECO #{} (size {}) and removed from ECO stack",
+               block->_journal_stack.size(),
                block->_journal->size());
   }
   delete block->_journal;
@@ -793,26 +784,18 @@ void dbDatabase::commitEco(dbBlock* block_)
 void dbDatabase::undoEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  assert(block->_journal || !block->_journal_history.empty());
+  assert(block->_journal || !block->_journal_stack.empty());
   if (!block->_journal) {
-    block->_journal = block->_journal_history.back();
-    block->_journal_history.pop_back();
-    debugPrint(block_->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               2,
-               "ECO: Undid ECO #{} (size {})",
-               block->_journal_history.size(),
-               block->_journal->size());
-  } else {
-    debugPrint(block_->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               2,
-               "ECO: Undid ECO #{} (size {})",
-               block->_journal_history.size(),
-               block->_journal->size());
+    block->_journal = block->_journal_stack.top();
+    block->_journal_stack.pop();
   }
+  debugPrint(block_->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             2,
+             "ECO: Undid ECO #{} (size {})",
+             block->_journal_stack.size(),
+             block->_journal->size());
   dbJournal* journal = block->_journal;
   block->_journal = nullptr;
   journal->undo();
@@ -828,10 +811,10 @@ bool dbDatabase::ecoEmpty(dbBlock* block_)
   return false;
 }
 
-bool dbDatabase::ecoHistoryEmpty(dbBlock* block_)
+bool dbDatabase::ecoStackEmpty(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return block->_journal_history.empty();
+  return block->_journal_stack.empty();
 }
 
 void dbDatabase::readEco(dbBlock* block_, const char* filename)
@@ -872,9 +855,9 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
   if (block->_journal) {
     dbOStream stream(block->getDatabase(), file);
     stream << *block->_journal;
-  } else if (!block->_journal_history.empty()) {
+  } else if (!block->_journal_stack.empty()) {
     dbOStream stream(block->getDatabase(), file);
-    stream << *block->_journal_history.back();
+    stream << *block->_journal_stack.top();
   }
 }
 

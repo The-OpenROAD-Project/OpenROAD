@@ -7423,10 +7423,6 @@ class dbDatabase : public dbObject
 
   ///
   /// Undo the last ECO changes on the specified block.
-  /// Only supports:
-  ///   create and destroy of dbInst and dbNet
-  ///   dbInst::swapMaster
-  ///   connect and disconnect of dbBTerm and dbITerm
   ///
   static void undoEco(dbBlock* block);
 
@@ -7436,18 +7432,19 @@ class dbDatabase : public dbObject
   static bool ecoEmpty(dbBlock* block);
 
   ///
-  /// Return true if the ECO history is empty.
+  /// Return true if the ECO stack is empty. The ECO stack holds
+  /// the nested uncommitted ECOs that can still be undone.
   ///
-  static bool ecoHistoryEmpty(dbBlock* block);
+  static bool ecoStackEmpty(dbBlock* block);
 
   ///
-  /// Read the ECO changes from the specified stream to be applied to the
+  /// Read the ECO changes from the specified file to be applied to the
   /// specified block.
   ///
   static void readEco(dbBlock* block, const char* filename);
 
   ///
-  /// Write the ECO changes to the specified stream.
+  /// Write the ECO changes to the specified file.
   ///
   static void writeEco(dbBlock* block, const char* filename);
 
