@@ -260,6 +260,34 @@ cc_test(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/est",
+        "//src/dpl",        
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "rsz_buffer_removal2",
+    srcs = [
+        "cpp/TestBufferRemoval2.cc",
+    ],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+    ],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/dpl",
         "//src/grt",
         "//src/odb",
         "//src/rsz",

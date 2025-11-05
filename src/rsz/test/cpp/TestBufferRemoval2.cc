@@ -1,13 +1,10 @@
-// SPDX-License-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include <algorithm>
 #include <cstdio>
 #include <fstream>
 #include <memory>
-#include <sstream>
 #include <string>
-#include <vector>
 
 #include "ant/AntennaChecker.hh"
 #include "db_sta/dbNetwork.hh"
@@ -62,11 +59,14 @@ class BufRemTest2 : public tst::Nangate45Fixture
     // Create top level ports
     makeBTerm(block_, "in1");
     makeBTerm(block_, "out1", {.io_type = odb::dbIoType::OUTPUT});
+    makeBTerm(block_, "out2", {.io_type = odb::dbIoType::OUTPUT});
 
     // Create top level nets
     odb::dbNet* net1 = odb::dbNet::create(block_, "net1");
     odb::dbNet* net2 = odb::dbNet::create(block_, "net2");
-    odb::dbNet* out2 = odb::dbNet::create(block_, "out2");
+    odb::dbNet* in1_net = block_->findNet("in1");
+    odb::dbNet* out1_net = block_->findNet("out1");
+    odb::dbNet* out2_net = block_->findNet("out2");
 
     // Create top level instances
     odb::dbMaster* buf_x1_master = db_->findMaster("BUF_X1");
@@ -76,15 +76,46 @@ class BufRemTest2 : public tst::Nangate45Fixture
     odb::dbInst* drvr = odb::dbInst::create(block_, buf_x1_master, "drvr");
     odb::dbInst* buf = odb::dbInst::create(block_, buf_x2_master, "buf");
     odb::dbInst* load = odb::dbInst::create(block_, buf_x4_master, "load");
-    odb::dbInst* mem_load0
-        = odb::dbInst::create(block_, buf_x1_master, "mem_load0");
-    // This instance represents the load that mem.B would have presented on
-    // net2.
-    odb::dbInst* mem_load1
-        = odb::dbInst::create(block_, buf_x1_master, "mem_load1");
 
-    // Connect top level
-    odb::dbNet* in1_net = block_->findNet("in1");
+    // Create MEM module
+    odb::dbModule* mem_module = odb::dbModule::create(block_, "MEM");
+    odb::dbModBTerm* mem_A0_port = odb::dbModBTerm::create(mem_module, "A0");
+    mem_A0_port->setIoType(odb::dbIoType::INPUT);
+    odb::dbModBTerm* mem_A1_port = odb::dbModBTerm::create(mem_module, "A1");
+    mem_A1_port->setIoType(odb::dbIoType::INPUT);
+    odb::dbModBTerm* mem_Z1_port = odb::dbModBTerm::create(mem_module, "Z1");
+    mem_Z1_port->setIoType(odb::dbIoType::OUTPUT);
+
+    // Create MEM instances
+    odb::dbInst* load0 = odb::dbInst::create(
+        block_, buf_x1_master, "load0", false, mem_module);
+    odb::dbInst* load1 = odb::dbInst::create(
+        block_, buf_x1_master, "load1", false, mem_module);
+
+    // Wire up inside MEM
+    odb::dbModNet* mem_modnet_A0 = odb::dbModNet::create(mem_module, "A0");
+    mem_A0_port->connect(mem_modnet_A0);
+    load0->findITerm("A")->connect(net1, mem_modnet_A0);
+
+    odb::dbModNet* mem_modnet_A1 = odb::dbModNet::create(mem_module, "A1");
+    mem_A1_port->connect(mem_modnet_A1);
+    load1->findITerm("A")->connect(net2, mem_modnet_A1);
+
+    odb::dbModNet* mem_modnet_Z1 = odb::dbModNet::create(mem_module, "Z1");
+    mem_Z1_port->connect(mem_modnet_Z1);
+    load1->findITerm("Z")->connect(out2_net, mem_modnet_Z1);
+
+    // Create instance of MEM
+    odb::dbModInst* mem_inst
+        = odb::dbModInst::create(block_->getTopModule(), mem_module, "mem");
+    odb::dbModITerm* mem_iterm_A0
+        = odb::dbModITerm::create(mem_inst, "A0", mem_A0_port);
+    odb::dbModITerm* mem_iterm_A1
+        = odb::dbModITerm::create(mem_inst, "A1", mem_A1_port);
+    odb::dbModITerm* mem_iterm_Z1
+        = odb::dbModITerm::create(mem_inst, "Z1", mem_Z1_port);
+
+    // Connect top level flat nets
     drvr->findITerm("A")->connect(in1_net);
     drvr->findITerm("Z")->connect(net1);
 
@@ -92,12 +123,23 @@ class BufRemTest2 : public tst::Nangate45Fixture
     buf->findITerm("Z")->connect(net2);
 
     load->findITerm("A")->connect(net1);
-    load->findITerm("Z")->connect(block_->findNet("out1"));
+    load->findITerm("Z")->connect(out1_net);
 
-    mem_load0->findITerm("A")->connect(net1);
+    // Hierarchical connections
+    odb::dbModule* top_module = block_->getTopModule();
+    odb::dbModNet* top_modnet_net1 = odb::dbModNet::create(top_module, "net1");
+    drvr->findITerm("Z")->connect(top_modnet_net1);
+    buf->findITerm("A")->connect(top_modnet_net1);
+    load->findITerm("A")->connect(top_modnet_net1);
+    mem_iterm_A0->connect(top_modnet_net1);
 
-    mem_load1->findITerm("A")->connect(net2);
-    mem_load1->findITerm("Z")->connect(out2);
+    odb::dbModNet* top_modnet_net2 = odb::dbModNet::create(top_module, "net2");
+    buf->findITerm("Z")->connect(top_modnet_net2);
+    mem_iterm_A1->connect(top_modnet_net2);
+
+    odb::dbModNet* top_modnet_out2 = odb::dbModNet::create(top_module, "out2");
+    mem_iterm_Z1->connect(top_modnet_out2);
+    block_->findBTerm("out2")->connect(top_modnet_out2);
 
     sta_->postReadDef(block_);
   }
@@ -119,26 +161,6 @@ TEST_F(BufRemTest2, RemoveBuf)
   resizer_.initBlock();
   db_->setLogger(&logger_);
 
-  auto sort_lines = [](const std::string& text) {
-    std::vector<std::string> lines;
-    std::istringstream iss(text);
-    std::string line;
-    while (std::getline(iss, line)) {
-      // Trim whitespace from the line
-      line.erase(0, line.find_first_not_of(" \t\r\n"));
-      line.erase(line.find_last_not_of(" \t\r\n") + 1);
-      if (!line.empty()) {
-        lines.push_back(line);
-      }
-    }
-    std::sort(lines.begin(), lines.end());
-    std::stringstream oss;
-    for (const auto& l : lines) {
-      oss << l << "\n";
-    }
-    return oss.str();
-  };
-
   // Write verilog and check the content before buffer removal
   const std::string before_vlog_path = "TestBufferRemoval2_before.v";
   sta::writeVerilog(before_vlog_path.c_str(), true, false, {}, sta_->network());
@@ -147,51 +169,70 @@ TEST_F(BufRemTest2, RemoveBuf)
   std::string content_before((std::istreambuf_iterator<char>(file_before)),
                              std::istreambuf_iterator<char>());
 
+  // Netlist before buffer removal:
+  //
+  // in1 ---- drvr(BUF_X1) --- net1 ----+---- buf(BUF_X2) ---- net2 ---- mem/A1
+  //                                    |
+  //                                    +------------------------------- mem/A0
+  //                                    |
+  //                                    +---- load(BUF_X4) ---- out1
+  //
+  // Inside mem (MEM module):
+  //   mem/A0 ---- load0(BUF_X1)
+  //   mem/A1 ---- load1(BUF_X1) ---- mem/Z1 ---- out2
+  //
   const std::string expected_before_vlog = R"(module top (in1,
+    out1,
+    out2);
+ input in1;
+ output out1;
+ output out2;
 
-        out1);
+ wire net2;
+ wire net1;
 
-    input in1;
+ BUF_X2 buf (.A(net1),
+    .Z(net2));
+ BUF_X1 drvr (.A(in1),
+    .Z(net1));
+ BUF_X4 load (.A(net1),
+    .Z(out1));
+ MEM mem (.Z1(out2),
+    .A1(net2),
+    .A0(net1));
+endmodule
+module MEM (Z1,
+    A1,
+    A0);
+ output Z1;
+ input A1;
+ input A0;
 
-    output out1;
 
-    wire net1;
+ BUF_X1 load0 (.A(A0));
+ BUF_X1 load1 (.A(A1),
+    .Z(Z1));
+endmodule
+)";
 
-    wire net2;
-
-    wire out2;
-
-    BUF_X2 buf (.A(net1),
-
-        .Z(net2));
-
-    BUF_X1 drvr (.A(in1),
-
-        .Z(net1));
-
-    BUF_X4 load (.A(net1),
-
-        .Z(out1));
-
-    BUF_X1 mem_load0 (.A(net1));
-
-    BUF_X1 mem_load1 (.A(net2),
-
-        .Z(out2));
-
-    endmodule
-
-    )";
-
-  EXPECT_EQ(sort_lines(content_before), sort_lines(expected_before_vlog));
+  EXPECT_EQ(content_before, expected_before_vlog);
 
   odb::dbInst* buf_inst = block_->findInst("buf");
   ASSERT_NE(buf_inst, nullptr);
   sta::Instance* sta_buf = db_network_->dbToSta(buf_inst);
 
+  // Pre sanity check
+  db_network_->checkAxioms();
+
+  //----------------------------------------------------
+  // Remove buffer
+  //----------------------------------------------------
   auto insts = std::make_unique<sta::InstanceSeq>();
   insts->emplace_back(sta_buf);
   resizer_.removeBuffers(*insts);
+
+  // Post sanity check
+  db_network_->checkAxioms();
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = "TestBufferRemoval2_after.v";
@@ -201,40 +242,49 @@ TEST_F(BufRemTest2, RemoveBuf)
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
                             std::istreambuf_iterator<char>());
 
+  // Netlist after buffer removal:
+  //
+  // in1 ---- drvr(BUF_X1) --- net1 ----+---- mem/A1
+  //                                    |
+  //                                    +---- mem/A0
+  //                                    |
+  //                                    +---- load(BUF_X4) ---- out1
+  //
+  // Inside mem (MEM module):
+  //   mem/A0 ---- load0(BUF_X1)
+  //   mem/A1 ---- load1(BUF_X1) ---- mem/Z1 ---- out2
   const std::string expected_after_vlog = R"(module top (in1,
+    out1,
+    out2);
+ input in1;
+ output out1;
+ output out2;
 
-        out1);
+ wire net1;
 
-    input in1;
+ BUF_X1 drvr (.A(in1),
+    .Z(net1));
+ BUF_X4 load (.A(net1),
+    .Z(out1));
+ MEM mem (.Z1(out2),
+    .A1(net1),
+    .A0(net1));
+endmodule
+module MEM (Z1,
+    A1,
+    A0);
+ output Z1;
+ input A1;
+ input A0;
 
-    output out1;
 
-    wire net1;
+ BUF_X1 load0 (.A(A0));
+ BUF_X1 load1 (.A(A1),
+    .Z(Z1));
+endmodule
+)";
 
-    wire out2;
-
-    BUF_X1 drvr (.A(in1),
-
-        .Z(net1));
-
-    BUF_X4 load (.A(net1),
-
-        .Z(out1));
-
-    BUF_X1 mem_load0 (.A(net1));
-
-    BUF_X1 mem_load1 (.A(net1),
-
-        .Z(out2));
-
-    endmodule
-
-    )";
-
-  EXPECT_EQ(sort_lines(content_after), sort_lines(expected_after_vlog));
-
-  std::remove(before_vlog_path.c_str());
-  std::remove(after_vlog_path.c_str());
+  EXPECT_EQ(content_after, expected_after_vlog);
 
   EXPECT_EQ(block_->findInst("buf"), nullptr);
   EXPECT_EQ(block_->findNet("net2"), nullptr);
@@ -242,13 +292,27 @@ TEST_F(BufRemTest2, RemoveBuf)
   odb::dbNet* net1 = block_->findNet("net1");
   ASSERT_NE(net1, nullptr);
 
-  odb::dbInst* mem_load1_inst = block_->findInst("mem_load1");
-  ASSERT_NE(mem_load1_inst, nullptr);
+  odb::dbModInst* mem_inst = block_->findModInst("mem");
+  ASSERT_NE(mem_inst, nullptr);
+  odb::dbModITerm* mem_A1_iterm = mem_inst->findModITerm("A1");
+  ASSERT_NE(mem_A1_iterm, nullptr);
 
-  odb::dbITerm* mem_load1_iterm = mem_load1_inst->findITerm("A");
-  ASSERT_NE(mem_load1_iterm, nullptr);
+  odb::dbModNet* mod_net = mem_A1_iterm->getModNet();
+  ASSERT_NE(mod_net, nullptr);
 
-  EXPECT_EQ(mem_load1_iterm->getNet(), net1);
+  bool found_drvr_Z = false;
+  for (odb::dbITerm* iterm : mod_net->getITerms()) {
+    if (iterm->getInst()->getName() == "drvr"
+        && iterm->getMTerm()->getName() == "Z") {
+      found_drvr_Z = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(found_drvr_Z);
+
+  // Clean up
+  std::remove(before_vlog_path.c_str());
+  std::remove(after_vlog_path.c_str());
 }
 
 }  // namespace rsz
