@@ -824,7 +824,18 @@ const char* dbNetwork::name(const Instance* instance) const
   }
 
   if (hierarchy_) {
-    size_t last_idx = name.find_last_of('/');
+    size_t last_idx = std::string::npos;
+    size_t pos = name.length();
+    while ((pos = name.rfind('/', pos)) != std::string::npos) {
+      if (pos > 0 && name[pos - 1] == '\\') {
+        // This is an escaped slash, so we should ignore it and continue
+        // searching.
+        pos--;
+      } else {
+        last_idx = pos;
+        break;
+      }
+    }
     if (last_idx != std::string::npos) {
       name = name.substr(last_idx + 1);
     }
