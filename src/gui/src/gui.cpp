@@ -208,15 +208,11 @@ static void resetConversions()
       = [](const std::string& value, bool*) { return 0; };
 }
 
-Gui* Gui::singleton_ = nullptr;
-
 Gui* Gui::get()
 {
-  if (singleton_ == nullptr) {
-    singleton_ = new Gui();
-  }
+  static Gui* singleton = new Gui();
 
-  return singleton_;
+  return singleton;
 }
 
 Gui::Gui()
@@ -783,7 +779,7 @@ void Gui::saveImage(const std::string& filename,
     if (tech == nullptr) {
       logger_->error(utl::GUI, 16, "No design loaded.");
     }
-    const double dbu_per_micron = tech->getLefUnits();
+    const double dbu_per_micron = tech->getDbUnitsPerMicron();
 
     std::string save_cmds;
     // build display control commands

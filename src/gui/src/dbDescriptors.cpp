@@ -1002,6 +1002,13 @@ bool DbNetDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
       has_box = true;
     }
   }
+  if (!has_box) {
+    // a wire bbox was not found, try using guides
+    for (odb::dbGuide* guide : net->getGuides()) {
+      bbox.merge(guide->getBox());
+      has_box = true;
+    }
+  }
 
   for (auto inst_term : net->getITerms()) {
     if (!inst_term->getInst()->getPlacementStatus().isPlaced()) {

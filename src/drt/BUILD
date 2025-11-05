@@ -194,7 +194,7 @@ cc_library(
         "src/ta/FlexTA_rq.cpp",
     ],
     hdrs = [
-        "include/triton_route/TritonRoute.h",
+        "include/drt/TritonRoute.h",
     ],
     copts = [
         "-Isrc/drt/src",
@@ -225,7 +225,7 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "include/triton_route/TritonRoute.h",
+        "include/drt/TritonRoute.h",
         "src/AbstractGraphicsFactory.h",
         "src/GraphicsFactory.cpp",
         "src/GraphicsFactory.h",
@@ -256,7 +256,7 @@ cc_library(
         ":tcl",
     ],
     hdrs = [
-        "include/triton_route/MakeTritonRoute.h",
+        "include/drt/MakeTritonRoute.h",
     ],
     copts = [
         "-Isrc/drt/src",
@@ -312,7 +312,7 @@ tcl_wrap_cc(
 python_wrap_cc(
     name = "swig-py",
     srcs = [
-        "include/triton_route/TritonRoute.h",
+        "include/drt/TritonRoute.h",
         "src/TritonRoute-py.i",
         "//:error_swig-py",
     ],

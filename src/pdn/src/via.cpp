@@ -1532,7 +1532,7 @@ bool ViaGenerator::checkMinCuts(odb::dbTechLayer* layer, int width) const
 
 bool ViaGenerator::checkMinEnclosure() const
 {
-  const double dbu = getTech()->getLefUnits();
+  const double dbu = getTech()->getDbUnitsPerMicron();
 
   std::vector<Enclosure> bottom_rules;
   std::vector<Enclosure> top_rules;

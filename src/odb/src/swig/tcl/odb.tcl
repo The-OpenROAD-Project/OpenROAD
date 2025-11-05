@@ -706,7 +706,7 @@ proc set_io_pin_constraint { args } {
 
   set tech [ord::get_db_tech]
   set block [ord::get_db_block]
-  set lef_units [$tech getLefUnits]
+  set lef_units [$tech getDbUnitsPerMicron]
 
   if { [info exists keys(-region)] && [info exists keys(-mirrored_pins)] } {
     utl::error ODB 144 "Both -region and -mirrored_pins constraints not allowed."
@@ -826,7 +826,7 @@ proc exclude_io_pin_region { args } {
   if { [llength $regions] != 0 } {
     set block [odb::get_block]
     set db_tech [ord::get_db_tech]
-    set lef_units [$db_tech getLefUnits]
+    set lef_units [$db_tech getDbUnitsPerMicron]
 
     foreach region $regions {
       if { [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] } {

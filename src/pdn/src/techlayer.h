@@ -25,7 +25,7 @@ class TechLayer
 
   odb::dbTechLayer* getLayer() const { return layer_; }
 
-  int getLefUnits() const { return layer_->getTech()->getLefUnits(); }
+  int getLefUnits() const { return layer_->getTech()->getDbUnitsPerMicron(); }
 
   int getMinWidth() const { return layer_->getMinWidth(); }
   int getMaxWidth() const { return layer_->getMaxWidth(); }

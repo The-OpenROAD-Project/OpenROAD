@@ -280,7 +280,17 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     stream >> *obj.chip_net_tbl_;
   }
   if (obj.isSchema(db_schema_dbu_per_micron)) {
-    stream >> obj.dbu_per_micron_;
+    if (obj.isLessThanSchema(db_schema_remove_dbu_per_micron)) {
+      // Should already have a value from dbTech, so only need to update this if
+      // its been set.
+      uint dbu_per_micron;
+      stream >> dbu_per_micron;
+      if (dbu_per_micron != 0) {
+        obj.dbu_per_micron_ = dbu_per_micron;
+      }
+    } else {
+      stream >> obj.dbu_per_micron_;
+    }
   }
   // Set the _tech on the block & libs now they are loaded
   if (!obj.isSchema(db_schema_block_tech)) {

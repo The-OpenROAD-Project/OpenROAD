@@ -113,19 +113,17 @@ void checkNetSanity(const NetType* net,
   //
   if (drvr_count > 1) {
     if constexpr (std::is_same_v<NetType, dbNet>) {
-      logger->warn(
-          utl::ODB,
-          49,
-          "SanityCheck: dbNet '{}' has multiple drivers: {}",
-          net->getName(),
-          fmt::join(drvr_info_list, ""));  // NOLINT(misc-include-cleaner)
+      logger->warn(utl::ODB,
+                   49,
+                   "SanityCheck: dbNet '{}' has multiple drivers: {}",
+                   net->getName(),
+                   drvr_info_list.size());  // NOLINT(misc-include-cleaner)
     } else {
-      logger->warn(
-          utl::ODB,
-          481,  // Reusing error code from dbNet
-          "SanityCheck: dbModNet '{}' has multiple drivers: {}",
-          net->getHierarchicalName(),
-          fmt::join(drvr_info_list, ""));  // NOLINT(misc-include-cleaner)
+      logger->warn(utl::ODB,
+                   481,  // Reusing error code from dbNet
+                   "SanityCheck: dbModNet '{}' has multiple drivers: {}",
+                   net->getHierarchicalName(),
+                   drvr_info_list.size());  // NOLINT(misc-include-cleaner)
     }
   }
 

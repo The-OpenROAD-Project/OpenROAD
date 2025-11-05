@@ -42,6 +42,7 @@ TEST_F(JournalFixture, test_undo_inst_destroy)
 {
   auto module = dbModule::create(block, "m");
   auto inst = dbInst::create(block, and2, "a", false, module);
+  inst->setOrigin(100, 200);
   // Ensure non-default values are restored
   inst->setPlacementStatus(dbPlacementStatus::PLACED);
   auto group = dbGroup::create(block, "g");
@@ -56,6 +57,7 @@ TEST_F(JournalFixture, test_undo_inst_destroy)
   EXPECT_EQ(inst->getGroup(), group);
   EXPECT_EQ(inst->getModule(), module);
   EXPECT_EQ(inst->getRegion(), region);
+  EXPECT_EQ(inst->getLocation(), Point(100, 200));
 }
 
 TEST_F(JournalFixture, test_undo_mod_inst_destroy)

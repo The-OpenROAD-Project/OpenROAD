@@ -48,7 +48,7 @@ proc set_global_routing_region_adjustment { args } {
     utl::error GRT 47 "Missing dbTech."
   }
   set tech [ord::get_db_tech]
-  set lef_units [$tech getLefUnits]
+  set lef_units [$tech getDbUnitsPerMicron]
 
   if { [info exists keys(-layer)] } {
     set layer $keys(-layer)

@@ -46,11 +46,6 @@ std::string escapeSpecial(const std::string& name)
     result.replace(pos, 1, "\\$");
     pos += 2;
   }
-  pos = 0;
-  while ((pos = result.find('/', pos)) != std::string::npos) {
-    result.replace(pos, 1, "\\/");
-    pos += 2;
-  }
   return result;
 }
 

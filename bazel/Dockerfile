@@ -29,3 +29,7 @@ RUN apt-get -y update \
       python3 \
       python3-yaml \
       time
+
+RUN groupadd -g 9000 user \
+    && useradd -u 9000 -g 9000 -m -s /bin/bash user
+USER user

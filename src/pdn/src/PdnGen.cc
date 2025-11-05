@@ -195,7 +195,7 @@ void PdnGen::trimShapes()
         const bool is_pin_layer
             = pin_layers.find(shape->getLayer()) != pin_layers.end();
 
-        Shape* new_shape = nullptr;
+        std::unique_ptr<Shape> new_shape = nullptr;
         const odb::Rect new_rect = shape->getMinimumRect();
         if (new_rect == shape->getRect()) {  // no change to shape
           continue;
@@ -221,7 +221,7 @@ void PdnGen::trimShapes()
           }
         } else {
           if (!is_pin_layer) {
-            component->replaceShape(shape.get(), {new_shape});
+            component->replaceShape(shape.get(), std::move(new_shape));
           }
         }
       }
