@@ -12,6 +12,8 @@ COMPULSORY_TESTS = [
     "check_axioms",
     "clock_pin",
     "constant1",
+    #"escape_slash", # different result compared to CMake
+    #"escape_slash_hier", # different result compared to CMake
     "find_clks1",
     "find_clks2",
     "get_ports1",
@@ -189,6 +191,5 @@ cc_test(
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@tk_tcl//:tcl",
     ],
 )

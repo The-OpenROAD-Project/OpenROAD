@@ -2505,6 +2505,13 @@ class dbNet : public dbObject
   void renameWithModNetInHighestHier();
 
   ///
+  /// Check if this net is internal to the given module.
+  /// A net is internal if all its iterms belong to instances within the module
+  /// and it has no bterms.
+  ///
+  bool isInternalTo(dbModule* module) const;
+
+  ///
   /// Check issues such as multiple drivers, no driver, or dangling net
   ///
   void checkSanity() const;
@@ -5698,13 +5705,6 @@ class dbTech : public dbObject
   std::string getName();
 
   ///
-  /// Set the Database distance units per micron.
-  ///
-  /// Legal values are 100, 200, 1000, 2000, 10000, 20000
-  ///
-  void setDbUnitsPerMicron(int value);
-
-  ///
   /// Get the Database units per micron.
   ///
   int getDbUnitsPerMicron();
@@ -5880,9 +5880,7 @@ class dbTech : public dbObject
   /// Create a new technology.
   /// Returns nullptr if a database technology already exists
   ///
-  static dbTech* create(dbDatabase* db,
-                        const char* name,
-                        int dbu_per_micron = 1000);
+  static dbTech* create(dbDatabase* db, const char* name);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -8291,6 +8289,7 @@ class dbModBTerm : public dbObject
   dbModule* getParent() const;
 
   // User Code Begin dbModBTerm
+  std::string getHierarchicalName() const;
   void setParentModITerm(dbModITerm* parent_pin);
   dbModITerm* getParentModITerm() const;
   void setModNet(dbModNet* modNet);
@@ -8366,6 +8365,7 @@ class dbModITerm : public dbObject
   dbModInst* getParent() const;
 
   // User Code Begin dbModITerm
+  std::string getHierarchicalName() const;
   void setModNet(dbModNet* modNet);
   dbModNet* getModNet() const;
   void setChildModBTerm(dbModBTerm* child_port);
@@ -8391,7 +8391,7 @@ class dbModNet : public dbObject
   dbSet<dbModBTerm> getModBTerms() const;
   dbSet<dbITerm> getITerms() const;
   dbSet<dbBTerm> getBTerms() const;
-  unsigned connectionCount();
+  unsigned connectionCount() const;
   std::string getName() const;
   const char* getConstName() const;
   std::string getHierarchicalName() const;
@@ -8404,6 +8404,7 @@ class dbModNet : public dbObject
   // This function traverses the terminals connected to this dbModNet
   // and returns the first dbNet it finds.
   dbNet* findRelatedNet() const;
+  void checkSanity() const;
 
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);

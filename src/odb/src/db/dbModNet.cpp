@@ -18,13 +18,18 @@
 #include "dbVector.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "dbModuleModNetBTermItr.h"
 #include "dbModuleModNetITermItr.h"
 #include "dbModuleModNetModBTermItr.h"
 #include "dbModuleModNetModITermItr.h"
+#include "dbUtil.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "utl/Logger.h"
 // User Code End Includes
@@ -413,9 +418,10 @@ dbSet<dbITerm> dbModNet::getITerms() const
   return dbSet<dbITerm>(_mod_net, _block->_module_modnet_iterm_itr);
 }
 
-unsigned dbModNet::connectionCount()
+unsigned dbModNet::connectionCount() const
 {
-  return (getITerms().size() + getBTerms().size() + getModITerms().size());
+  return (getITerms().size() + getBTerms().size() + getModITerms().size()
+          + getModBTerms().size());
 }
 
 dbNet* dbModNet::findRelatedNet() const
@@ -488,6 +494,17 @@ dbNet* dbModNet::findRelatedNet() const
 
   // No related dbNet found
   return nullptr;
+}
+
+void dbModNet::checkSanity() const
+{
+  std::vector<std::string> drvr_info_list;
+  dbUtil::findBTermDrivers(this, drvr_info_list);
+  dbUtil::findITermDrivers(this, drvr_info_list);
+  dbUtil::findModBTermDrivers(this, drvr_info_list);
+  dbUtil::findModITermDrivers(this, drvr_info_list);
+
+  dbUtil::checkNetSanity(this, drvr_info_list);
 }
 
 // User Code End dbModNetPublicMethods

@@ -28,6 +28,7 @@
 #include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
 #include "db/tech/frViaRuleGenerate.h"
+#include "drt/TritonRoute.h"
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "frRTree.h"
@@ -38,7 +39,6 @@
 #include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
 #include "odb/geom.h"
-#include "triton_route/TritonRoute.h"
 #include "utl/Logger.h"
 
 using odb::dbTechLayerType;

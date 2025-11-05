@@ -9,8 +9,6 @@
 
 #include "db_sta/dbSta.hh"
 
-#include <tcl.h>
-
 #include <algorithm>  // min
 #include <cctype>
 #include <cmath>
@@ -43,6 +41,7 @@
 #include "sta/PatternMatch.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
+#include "sta/Sta.hh"
 #include "sta/StaMain.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
@@ -286,7 +285,8 @@ void dbSta::postReadLef(dbTech* tech, dbLib* library)
 
 void dbSta::postReadDef(dbBlock* block)
 {
-  if (!block->getParent()) {
+  // If this is the top block of the main chip:
+  if (!block->getParent() && block->getChip() == block->getDb()->getChip()) {
     db_network_->readDefAfter(block);
     db_cbk_->addOwner(block);
     db_cbk_->setNetwork(db_network_);

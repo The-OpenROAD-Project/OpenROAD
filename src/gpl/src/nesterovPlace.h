@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "gpl/AbstractGraphics.h"
 #include "nesterovBase.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "point.h"
@@ -29,7 +30,6 @@ class PlacerBaseCommon;
 class Instance;
 class RouteBase;
 class TimingBase;
-class Graphics;
 
 class NesterovPlace
 {
@@ -42,6 +42,7 @@ class NesterovPlace
                 std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                 std::shared_ptr<RouteBase> rb,
                 std::shared_ptr<TimingBase> tb,
+                std::unique_ptr<AbstractGraphics> graphics,
                 utl::Logger* log);
   ~NesterovPlace();
 
@@ -58,13 +59,14 @@ class NesterovPlace
 
   float getWireLengthCoefX() const { return wireLengthCoefX_; }
   float getWireLengthCoefY() const { return wireLengthCoefY_; }
+  NesterovPlaceVars& getNpVars() { return npVars_; }
 
   void setTargetOverflow(float overflow) { npVars_.targetOverflow = overflow; }
   void setMaxIters(int limit) { npVars_.maxNesterovIter = limit; }
 
-  void updatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
-  void updateCurGradient(const std::shared_ptr<NesterovBase>& nb);
-  void updateNextGradient(const std::shared_ptr<NesterovBase>& nb);
+  void npUpdatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
+  void npUpdateCurGradient(const std::shared_ptr<NesterovBase>& nb);
+  void npUpdateNextGradient(const std::shared_ptr<NesterovBase>& nb);
 
   void resizeGCell(odb::dbInst*);
   void moveGCell(odb::dbInst*);
@@ -129,7 +131,7 @@ class NesterovPlace
   std::shared_ptr<RouteBase> rb_;
   std::shared_ptr<TimingBase> tb_;
   NesterovPlaceVars npVars_;
-  std::unique_ptr<Graphics> graphics_;
+  std::unique_ptr<AbstractGraphics> graphics_;
 
   float total_sum_overflow_ = 0;
   float total_sum_overflow_unscaled_ = 0;

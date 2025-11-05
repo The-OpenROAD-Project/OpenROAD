@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "triton_route/MakeTritonRoute.h"
+#include "drt/MakeTritonRoute.h"
 
 #include <memory>
 #include <utility>
 
 #include "GraphicsFactory.h"
 #include "dr/FlexDR_graphics.h"
+#include "drt/TritonRoute.h"
 #include "pa/FlexPA_graphics.h"
 #include "ta/FlexTA_graphics.h"
-#include "triton_route/TritonRoute.h"
+#include "tcl.h"
 #include "utl/decode.h"
 
 extern "C" {

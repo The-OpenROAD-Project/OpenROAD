@@ -4,8 +4,6 @@
 // This file is only used when we can't find Qt5 and are thus
 // disabling the GUI.  It is not included when Qt5 is found.
 
-#include <tcl.h>
-
 #include <any>
 #include <cstdio>
 #include <map>
@@ -17,6 +15,7 @@
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "tcl.h"
 
 // empty gif writer class
 struct GifWriter
@@ -24,8 +23,6 @@ struct GifWriter
 };
 
 namespace gui {
-
-Gui* Gui::singleton_ = nullptr;
 
 // Used by toString to convert dbu to microns
 DBUToString Descriptor::Property::convert_dbu
@@ -55,7 +52,7 @@ Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 
 Gui* gui::Gui::get()
 {
-  return singleton_;
+  return nullptr;
 }
 
 bool gui::Gui::enabled()
@@ -132,6 +129,12 @@ Selected Gui::makeSelected(const std::any& /* object */)
 
 void Gui::setSelected(const Selected& selection)
 {
+}
+
+const SelectionSet& Gui::selection()
+{
+  static SelectionSet dummy;
+  return dummy;
 }
 
 void Gui::registerDescriptor(const std::type_info& type,
