@@ -2528,4 +2528,239 @@ bool dbNet::isInternalTo(dbModule* module) const
   return true;
 }
 
+void dbNet::dumpConnectivity(int level) const
+{
+  utl::Logger* logger = getImpl()->getLogger();
+  logger->report("--------------------------------------------------");
+  logger->report("Connectivity for dbNet: {} (id={})", getName(), getId());
+
+  std::set<const dbObject*> visited;
+  dumpNetConnectivity(this, level, 1, visited, logger);
+
+  std::set<dbModNet*> modnets;
+  if (findRelatedModNets(modnets)) {
+    for (dbModNet* modnet : modnets) {
+      dumpModNetConnectivity(modnet, level, 1, visited, logger);
+    }
+  }
+
+  logger->report("--------------------------------------------------");
+}
+
+void dbNet::dumpConnectivityRecursive(const dbObject* obj,
+                                      int max_level,
+                                      int level,
+                                      std::set<const dbObject*>& visited,
+                                      utl::Logger* logger)
+{
+  if (level > max_level || obj == nullptr) {
+    return;
+  }
+
+  std::string details;
+  if (obj->getObjectType() == dbITermObj) {
+    auto iterm = static_cast<const dbITerm*>(obj);
+    details = fmt::format(" (master: {}, io: {})",
+                          iterm->getInst()->getMaster()->getName(),
+                          iterm->getIoType().getString());
+  } else if (obj->getObjectType() == dbBTermObj) {
+    auto bterm = static_cast<const dbBTerm*>(obj);
+    details = fmt::format(" (io: {})", bterm->getIoType().getString());
+  } else if (obj->getObjectType() == dbModITermObj) {
+    auto moditerm = static_cast<const dbModITerm*>(obj);
+    if (auto modbterm = moditerm->getChildModBTerm()) {
+      details = fmt::format(" (module: {}, io: {})",
+                            moditerm->getParent()->getMaster()->getName(),
+                            modbterm->getIoType().getString());
+    } else {
+      details = fmt::format(" (module: {})",
+                            moditerm->getParent()->getMaster()->getName());
+    }
+  } else if (obj->getObjectType() == dbModBTermObj) {
+    auto modbterm = static_cast<const dbModBTerm*>(obj);
+    details = fmt::format(" (io: {})", modbterm->getIoType().getString());
+  }
+
+  if (visited.count(obj)) {
+    logger->report("{:>{}}-> {} {} (id={}){}",
+                   "",
+                   level * 2,
+                   obj->getTypeName(),
+                   odb::dbUtil::getObjName(obj),
+                   obj->getId(),
+                   details,
+                   " [visited]");
+    return;
+  }
+
+  logger->report("{:>{}}- {} {} (id={}){}",
+                 "",
+                 level * 2,
+                 obj->getTypeName(),
+                 odb::dbUtil::getObjName(obj),
+                 obj->getId(),
+                 details);
+  visited.insert(obj);
+
+  switch (obj->getObjectType()) {
+    case dbNetObj:
+      dumpNetConnectivity(static_cast<const dbNet*>(obj),
+                          max_level,
+                          level + 1,
+                          visited,
+                          logger);
+      break;
+    case dbModNetObj:
+      dumpModNetConnectivity(static_cast<const odb::dbModNet*>(obj),
+                             max_level,
+                             level + 1,
+                             visited,
+                             logger);
+      break;
+    case dbITermObj: {
+      auto iterm = static_cast<const dbITerm*>(obj);
+      dumpConnectivityRecursive(
+          iterm->getNet(), max_level, level + 1, visited, logger);
+      dumpConnectivityRecursive(
+          iterm->getModNet(), max_level, level + 1, visited, logger);
+      dumpConnectivityRecursive(
+          iterm->getInst(), max_level, level + 1, visited, logger);
+      break;
+    }
+    case dbBTermObj: {
+      auto bterm = static_cast<const dbBTerm*>(obj);
+      dumpConnectivityRecursive(
+          bterm->getNet(), max_level, level + 1, visited, logger);
+      dumpConnectivityRecursive(
+          bterm->getModNet(), max_level, level + 1, visited, logger);
+      break;
+    }
+    case dbModITermObj: {
+      auto moditerm = static_cast<const dbModITerm*>(obj);
+      dumpConnectivityRecursive(
+          moditerm->getModNet(), max_level, level + 1, visited, logger);
+      dumpConnectivityRecursive(
+          moditerm->getParent(), max_level, level + 1, visited, logger);
+      break;
+    }
+    case dbModBTermObj: {
+      auto modbterm = static_cast<const dbModBTerm*>(obj);
+      dumpConnectivityRecursive(
+          modbterm->getModNet(), max_level, level + 1, visited, logger);
+      break;
+    }
+    case dbInstObj: {
+      auto inst = static_cast<const dbInst*>(obj);
+      for (auto iterm : inst->getITerms()) {
+        dumpConnectivityRecursive(iterm, max_level, level + 1, visited, logger);
+      }
+      break;
+    }
+    default:
+      // Not an object type we traverse from, do nothing.
+      break;
+  }
+}
+
+void dbNet::dumpNetConnectivity(const dbNet* net,
+                                int max_level,
+                                int level,
+                                std::set<const dbObject*>& visited,
+                                utl::Logger* logger)
+{
+  std::vector<const dbObject*> inputs;
+  std::vector<const dbObject*> outputs;
+  std::vector<const dbObject*> others;
+
+  for (auto term : net->getITerms()) {
+    if (term->getIoType() == dbIoType::INPUT) {
+      inputs.push_back(term);
+    } else if (term->getIoType() == dbIoType::OUTPUT) {
+      outputs.push_back(term);
+    } else {
+      others.push_back(term);
+    }
+  }
+  for (auto term : net->getBTerms()) {
+    if (term->getIoType() == dbIoType::INPUT) {
+      inputs.push_back(term);
+    } else if (term->getIoType() == dbIoType::OUTPUT) {
+      outputs.push_back(term);
+    } else {
+      others.push_back(term);
+    }
+  }
+
+  for (auto term : inputs) {
+    dumpConnectivityRecursive(term, max_level, level, visited, logger);
+  }
+  for (auto term : others) {
+    dumpConnectivityRecursive(term, max_level, level, visited, logger);
+  }
+  for (auto term : outputs) {
+    dumpConnectivityRecursive(term, max_level, level, visited, logger);
+  }
+}
+
+void dbNet::dumpModNetConnectivity(const dbModNet* modnet,
+                                   int max_level,
+                                   int level,
+                                   std::set<const dbObject*>& visited,
+                                   utl::Logger* logger)
+{
+  std::vector<const dbObject*> inputs;
+  std::vector<const dbObject*> outputs;
+  std::vector<const dbObject*> others;
+
+  auto classify_term = [&](const auto* term) {
+    dbIoType io_type;
+    if constexpr (std::is_same_v<std::decay_t<decltype(*term)>, dbITerm>
+                  || std::is_same_v<std::decay_t<decltype(*term)>, dbBTerm>) {
+      io_type = term->getIoType();
+    } else if constexpr (std::is_same_v<std::decay_t<decltype(*term)>,
+                                        dbModITerm>) {
+      if (auto bterm = term->getChildModBTerm()) {
+        io_type = bterm->getIoType();
+      } else {
+        others.push_back(term);
+        return;
+      }
+    } else if constexpr (std::is_same_v<std::decay_t<decltype(*term)>,
+                                        dbModBTerm>) {
+      io_type = term->getIoType();
+    }
+
+    if (io_type == dbIoType::INPUT) {
+      inputs.push_back(term);
+    } else if (io_type == dbIoType::OUTPUT) {
+      outputs.push_back(term);
+    } else {
+      others.push_back(term);
+    }
+  };
+
+  for (auto term : modnet->getITerms()) {
+    classify_term(term);
+  }
+  for (auto term : modnet->getBTerms()) {
+    classify_term(term);
+  }
+  for (auto term : modnet->getModITerms()) {
+    classify_term(term);
+  }
+  for (auto term : modnet->getModBTerms()) {
+    classify_term(term);
+  }
+
+  for (auto term : inputs) {
+    dumpConnectivityRecursive(term, max_level, level, visited, logger);
+  }
+  for (auto term : others) {
+    dumpConnectivityRecursive(term, max_level, level, visited, logger);
+  }
+  for (auto term : outputs) {
+    dumpConnectivityRecursive(term, max_level, level, visited, logger);
+  }
+}
+
 }  // namespace odb
