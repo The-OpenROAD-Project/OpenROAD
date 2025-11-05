@@ -18,7 +18,11 @@
 #include "dbVector.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "dbModuleModNetBTermItr.h"

@@ -16,6 +16,7 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cstdlib>
 #include <string>
 
 #include "odb/dbBlockCallBackObj.h"
