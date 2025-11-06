@@ -29,7 +29,7 @@ using std::string;
 
 template <class T>
 SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
-                                                  const Rect& outline,
+                                                  const odb::Rect& outline,
                                                   const std::vector<T>& macros,
                                                   const SACoreWeights& weights,
                                                   float pos_swap_prob,
@@ -74,11 +74,10 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::setDieArea(const Rect& die_area)
+void SimulatedAnnealingCore<T>::setDieArea(const odb::Rect& die_area)
 {
   die_area_ = die_area;
-  die_area_.moveHor(-outline_.xMin());
-  die_area_.moveVer(-outline_.yMin());
+  die_area_.moveDelta(-outline_.xMin(), -outline_.yMin());
 }
 
 template <class T>
@@ -124,13 +123,15 @@ void SimulatedAnnealingCore<T>::setNets(const std::vector<BundledNet>& nets)
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::setFences(const std::map<int, Rect>& fences)
+void SimulatedAnnealingCore<T>::setFences(
+    const std::map<int, odb::Rect>& fences)
 {
   fences_ = fences;
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::setGuides(const std::map<int, Rect>& guides)
+void SimulatedAnnealingCore<T>::setGuides(
+    const std::map<int, odb::Rect>& guides)
 {
   guides_ = guides;
 }
@@ -157,10 +158,9 @@ bool SimulatedAnnealingCore<T>::isValid() const
 }
 
 template <class T>
-bool SimulatedAnnealingCore<T>::fitsIn(const Rect& outline) const
+bool SimulatedAnnealingCore<T>::fitsIn(const odb::Rect& outline) const
 {
-  return (width_ <= std::ceil(outline.getWidth()))
-         && (height_ <= std::ceil(outline.getHeight()));
+  return (width_ <= outline.dx()) && (height_ <= outline.dy());
 }
 
 template <class T>
@@ -170,13 +170,13 @@ float SimulatedAnnealingCore<T>::getNormCost() const
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::getWidth() const
+int SimulatedAnnealingCore<T>::getWidth() const
 {
   return width_;
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::getHeight() const
+int SimulatedAnnealingCore<T>::getHeight() const
 {
   return height_;
 }
@@ -184,8 +184,7 @@ float SimulatedAnnealingCore<T>::getHeight() const
 template <class T>
 float SimulatedAnnealingCore<T>::getAreaPenalty() const
 {
-  const float outline_area = outline_.getWidth() * outline_.getHeight();
-  return (width_ * height_) / outline_area;
+  return (width_ * height_) / outline_.area();
 }
 
 template <class T>
@@ -246,12 +245,11 @@ std::vector<T> SimulatedAnnealingCore<T>::getMacros() const
 template <class T>
 void SimulatedAnnealingCore<T>::calOutlinePenalty()
 {
-  const float max_width = std::max(outline_.getWidth(), width_);
-  const float max_height = std::max(outline_.getHeight(), height_);
-  const float outline_area = outline_.getWidth() * outline_.getHeight();
-  outline_penalty_ = max_width * max_height - outline_area;
+  const float max_width = std::max(outline_.dx(), width_);
+  const float max_height = std::max(outline_.dy(), height_);
+  outline_penalty_ = max_width * max_height - outline_.area();
   // normalization
-  outline_penalty_ = outline_penalty_ / (outline_area);
+  outline_penalty_ = outline_penalty_ / outline_.area();
   if (graphics_) {
     graphics_->setOutlinePenalty({"Outline",
                                   core_weights_.outline,
@@ -296,8 +294,7 @@ void SimulatedAnnealingCore<T>::calWirelength()
   }
 
   // normalization
-  wirelength_ = wirelength_ / tot_net_weight
-                / (outline_.getHeight() + outline_.getWidth());
+  wirelength_ = wirelength_ / tot_net_weight / (outline_.dx() + outline_.dy());
 
   if (graphics_) {
     graphics_->setWirelengthPenalty({"Wire Length",
@@ -314,7 +311,7 @@ void SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
     const float net_weight)
 {
   // To generate maximum cost.
-  const float max_dist = die_area_.getPerimeter() / 2;
+  const float max_dist = die_area_.margin() / 2;
 
   if (isOutsideTheOutline(macro)) {
     wirelength_ += net_weight * max_dist;
@@ -349,8 +346,7 @@ void SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
 template <class T>
 bool SimulatedAnnealingCore<T>::isOutsideTheOutline(const T& macro) const
 {
-  return macro.getPinX() > outline_.getWidth()
-         || macro.getPinY() > outline_.getHeight();
+  return macro.getPinX() > outline_.dx() || macro.getPinY() > outline_.dy();
 }
 
 template <class T>
@@ -386,8 +382,8 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
     // calculate x and y direction independently
     float width = x_dist <= max_x_dist ? 0.0 : (x_dist - max_x_dist);
     float height = y_dist <= max_y_dist ? 0.0 : (y_dist - max_y_dist);
-    width = width / outline_.getWidth();
-    height = height / outline_.getHeight();
+    width = width / outline_.dx();
+    height = height / outline_.dy();
     fence_penalty_ += width * width + height * height;
   }
   // normalization
@@ -413,14 +409,17 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
     const float macro_x_max = macro_x_min + macros_[id].getWidth();
     const float macro_y_max = macro_y_min + macros_[id].getHeight();
 
-    const float overlap_width = std::min(guide.xMax(), macro_x_max)
-                                - std::max(guide.xMin(), macro_x_min);
-    const float overlap_height = std::min(guide.yMax(), macro_y_max)
-                                 - std::max(guide.yMin(), macro_y_min);
+    const float overlap_width
+        = std::min(guide.xMax(), block_->micronsToDbu(macro_x_max))
+          - std::max(guide.xMin(), block_->micronsToDbu(macro_x_min));
+    const float overlap_height
+        = std::min(guide.yMax(), block_->micronsToDbu(macro_y_max))
+          - std::max(guide.yMin(), block_->micronsToDbu(macro_y_min));
 
     // maximum overlap area
-    float penalty = std::min(macros_[id].getWidth(), guide.getWidth())
-                    * std::min(macros_[id].getHeight(), guide.getHeight());
+    float penalty
+        = std::min(block_->micronsToDbu(macros_[id].getWidth()), guide.dx())
+          * std::min(block_->micronsToDbu(macros_[id].getHeight()), guide.dy());
 
     // subtract overlap
     if (overlap_width > 0 && overlap_height > 0) {
@@ -775,8 +774,7 @@ void SimulatedAnnealingCore<T>::fastSA()
 template <class T>
 bool SimulatedAnnealingCore<T>::resultFitsInOutline() const
 {
-  return (width_ <= std::ceil(outline_.getWidth()))
-         && (height_ <= std::ceil(outline_.getHeight()));
+  return (width_ <= outline_.dx()) && (height_ <= outline_.dy());
 }
 
 template <class T>

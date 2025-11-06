@@ -21,7 +21,7 @@ using utl::MPL;
 // Class SACoreHardMacro
 // constructors
 SACoreHardMacro::SACoreHardMacro(PhysicalHierarchy* tree,
-                                 const Rect& outline,
+                                 const odb::Rect& outline,
                                  const std::vector<HardMacro>& macros,
                                  const SACoreWeights& core_weights,
                                  // probability of each action

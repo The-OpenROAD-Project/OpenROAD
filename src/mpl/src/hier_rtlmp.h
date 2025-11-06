@@ -35,7 +35,6 @@ namespace mpl {
 struct BundledNet;
 class Cluster;
 class HardMacro;
-struct Rect;
 class SoftMacro;
 class Snapper;
 class SACoreSoftMacro;
@@ -75,13 +74,11 @@ class HierRTLMP
 
   // Interfaces functions for setting options
   // Hierarchical Macro Placement Related Options
-  void setGlobalFence(float fence_lx,
-                      float fence_ly,
-                      float fence_ux,
-                      float fence_uy);
-  void setHaloWidth(float halo_width);
-  void setHaloHeight(float halo_height);
-  void setGuidanceRegions(const std::map<odb::dbInst*, Rect>& guidance_regions);
+  void setGlobalFence(int fence_lx, int fence_ly, int fence_ux, int fence_uy);
+  void setHaloWidth(int halo_width);
+  void setHaloHeight(int halo_height);
+  void setGuidanceRegions(
+      const std::map<odb::dbInst*, odb::Rect>& guidance_regions);
 
   // Clustering Related Options
   void setClusterSize(int max_num_macro,
@@ -176,13 +173,14 @@ class HierRTLMP
   void adjustMacroBlockageWeight();
   void placeChildren(Cluster* parent, bool ignore_std_cell_area = false);
 
-  std::vector<Rect> findBlockagesWithinOutline(const Rect& outline) const;
+  std::vector<odb::Rect> findBlockagesWithinOutline(
+      const odb::Rect& outline) const;
   void getBlockageRegionWithinOutline(
-      std::vector<Rect>& blockages_within_outline,
-      const Rect& blockage,
-      const Rect& outline) const;
-  void eliminateOverlaps(std::vector<Rect>& blockages) const;
-  void createSoftMacrosForBlockages(const std::vector<Rect>& blockages,
+      std::vector<odb::Rect>& blockages_within_outline,
+      const odb::Rect& blockage,
+      const odb::Rect& outline) const;
+  void eliminateOverlaps(std::vector<odb::Rect>& blockages) const;
+  void createSoftMacrosForBlockages(const std::vector<odb::Rect>& blockages,
                                     std::vector<SoftMacro>& macros);
   void createFixedTerminals(Cluster* parent,
                             std::map<std::string, int>& soft_macro_id_map,
@@ -195,17 +193,17 @@ class HierRTLMP
                                   float offset_x,
                                   float offset_y);
   void mergeNets(std::vector<BundledNet>& nets);
-  void considerFixedMacro(const Rect& outline,
+  void considerFixedMacro(const odb::Rect& outline,
                           std::vector<SoftMacro>& sa_macros,
                           Cluster* fixed_macro_cluster) const;
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
   void placeMacros(Cluster* cluster);
   void computeFencesAndGuides(const std::vector<HardMacro*>& hard_macros,
-                              const Rect& outline,
-                              std::map<int, Rect>& fences,
-                              std::map<int, Rect>& guides);
-  void createFixedTerminals(const Rect& outline,
+                              const odb::Rect& outline,
+                              std::map<int, odb::Rect>& fences,
+                              std::map<int, odb::Rect>& guides);
+  void createFixedTerminals(const odb::Rect& outline,
                             const UniqueClusterVector& macro_clusters,
                             std::map<int, int>& cluster_to_macro,
                             std::vector<HardMacro>& sa_macros);
@@ -227,7 +225,7 @@ class HierRTLMP
 
   template <typename Macro>
   void createFixedTerminal(Cluster* cluster,
-                           const Rect& outline,
+                           const odb::Rect& outline,
                            std::vector<Macro>& macros);
 
   odb::Rect getRect(Boundary boundary) const;
@@ -238,7 +236,7 @@ class HierRTLMP
   // For debugging
   template <typename SACore>
   void printPlacementResult(Cluster* parent,
-                            const Rect& outline,
+                            const odb::Rect& outline,
                             SACore* sa_core);
   void writeNetFile(const std::string& file_name_prefix,
                     std::vector<SoftMacro>& macros,
@@ -288,10 +286,10 @@ class HierRTLMP
                                             0.0f /* guidance */,
                                             0.0f /* fence */};
 
-  std::map<std::string, Rect> fences_;   // macro_name, fence
-  std::map<odb::dbInst*, Rect> guides_;  // Macro -> Guidance Region
-  std::vector<Rect> placement_blockages_;
-  std::vector<Rect> io_blockages_;
+  std::map<std::string, odb::Rect> fences_;   // macro_name, fence
+  std::map<odb::dbInst*, odb::Rect> guides_;  // Macro -> Guidance Region
+  std::vector<odb::Rect> placement_blockages_;
+  std::vector<odb::Rect> io_blockages_;
 
   PinAccessDepthLimits pin_access_depth_limits_;
 
@@ -324,12 +322,12 @@ class Pusher
   Pusher(utl::Logger* logger,
          Cluster* root,
          odb::dbBlock* block,
-         const std::vector<Rect>& io_blockages);
+         const std::vector<odb::Rect>& io_blockages);
 
   void pushMacrosToCoreBoundaries();
 
  private:
-  void setIOBlockages(const std::vector<Rect>& io_blockages);
+  void setIOBlockages(const std::vector<odb::Rect>& io_blockages);
   bool designHasSingleCentralizedMacroArray();
   void pushMacroClusterToCoreBoundaries(
       Cluster* macro_cluster,

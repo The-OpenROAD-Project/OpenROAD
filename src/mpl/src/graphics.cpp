@@ -173,12 +173,8 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
                                 std::vector<std::vector<odb::Rect>>& outlines,
                                 int level)
 {
-  Rect outline = parent->getBBox();
-  odb::Rect dbu_outline(block_->micronsToDbu(outline.xMin()),
-                        block_->micronsToDbu(outline.yMin()),
-                        block_->micronsToDbu(outline.xMax()),
-                        block_->micronsToDbu(outline.yMax()));
-  outlines[level].push_back(dbu_outline);
+  odb::Rect outline = parent->getBBox();
+  outlines[level].push_back(outline);
 
   for (auto& child : parent->getChildren()) {
     switch (child->getClusterType()) {
@@ -382,22 +378,17 @@ void Graphics::drawFences(gui::Painter& painter)
   }
 }
 
-void Graphics::drawOffsetRect(const Rect& rect,
+void Graphics::drawOffsetRect(const odb::Rect& rect,
                               const std::string& center_text,
                               gui::Painter& painter)
 {
-  const int lx = block_->micronsToDbu(rect.xMin());
-  const int ly = block_->micronsToDbu(rect.yMin());
-  const int ux = block_->micronsToDbu(rect.xMax());
-  const int uy = block_->micronsToDbu(rect.yMax());
-
-  odb::Rect rect_bbox(lx, ly, ux, uy);
-  rect_bbox.moveDelta(outline_.xMin(), outline_.yMin());
-  painter.drawRect(rect_bbox);
+  odb::Rect movable_rect = rect;
+  movable_rect.moveDelta(outline_.xMin(), outline_.yMin());
+  painter.drawRect(movable_rect);
 
   if (!center_text.empty()) {
-    painter.drawString(rect_bbox.xCenter(),
-                       rect_bbox.yCenter(),
+    painter.drawString(movable_rect.xCenter(),
+                       movable_rect.yCenter(),
                        gui::Painter::kCenter,
                        center_text);
   }
@@ -677,13 +668,13 @@ void Graphics::setSoftMacroBrush(gui::Painter& painter,
   }
 }
 
-void Graphics::setMacroBlockages(const std::vector<mpl::Rect>& macro_blockages)
+void Graphics::setMacroBlockages(const std::vector<odb::Rect>& macro_blockages)
 {
   macro_blockages_ = macro_blockages;
 }
 
 void Graphics::setPlacementBlockages(
-    const std::vector<mpl::Rect>& placement_blockages)
+    const std::vector<odb::Rect>& placement_blockages)
 {
   placement_blockages_ = placement_blockages;
 }
@@ -739,12 +730,12 @@ void Graphics::setCurrentCluster(Cluster* current_cluster)
   current_cluster_ = current_cluster;
 }
 
-void Graphics::setGuides(const std::map<int, Rect>& guides)
+void Graphics::setGuides(const std::map<int, odb::Rect>& guides)
 {
   guides_ = guides;
 }
 
-void Graphics::setFences(const std::map<int, Rect>& fences)
+void Graphics::setFences(const std::map<int, odb::Rect>& fences)
 {
   fences_ = fences;
 }

@@ -122,12 +122,12 @@ place_macro(odb::dbInst* inst,
 
 void
 add_guidance_region(odb::dbInst* macro,
-                    float x1,
-                    float y1,
-                    float x2,
-                    float y2)
+                    int x1,
+                    int y1,
+                    int x2,
+                    int y2)
 {
-  getMacroPlacer()->addGuidanceRegion(macro, Rect(x1, y1, x2, y2));
+  getMacroPlacer()->addGuidanceRegion(macro, odb::Rect(x1, y1, x2, y2));
 }
 
 

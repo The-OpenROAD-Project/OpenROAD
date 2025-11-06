@@ -17,7 +17,6 @@
 #include "shapes.h"
 
 namespace odb {
-class Rect;
 class dbInst;
 class dbModule;
 class dbDatabase;
@@ -32,7 +31,6 @@ class Logger;
 }
 
 namespace mpl {
-struct Rect;
 class HardMacro;
 class SoftMacro;
 class Cluster;
@@ -42,7 +40,7 @@ using IntervalList = std::vector<Interval>;
 using TilingList = std::vector<Tiling>;
 using TilingSet = std::set<Tiling>;
 using UniqueClusterVector = std::vector<std::unique_ptr<Cluster>>;
-using Point = std::pair<float, float>;
+using Point = std::pair<int, int>;
 
 // ****************************************************************************
 // This file includes the basic functions and basic classes for the HierRTLMP
@@ -100,9 +98,9 @@ class Metrics
   std::pair<float, float> getAreaStats() const;
   unsigned int getNumMacro() const;
   unsigned int getNumStdCell() const;
-  float getStdCellArea() const;
-  float getMacroArea() const;
-  float getArea() const;
+  int64_t getStdCellArea() const;
+  int64_t getMacroArea() const;
+  int64_t getArea() const;
   bool empty() const;
 
  private:
@@ -116,8 +114,8 @@ class Metrics
   // we need to know the sizes of clusters.
   // std_cell_area is the sum of areas of all std cells
   // macro_area is the sum of areas of all macros
-  float std_cell_area_ = 0.0;
-  float macro_area_ = 0.0;
+  int64_t std_cell_area_ = 0;
+  int64_t macro_area_ = 0;
 };
 
 class Cluster
@@ -181,19 +179,19 @@ class Cluster
   const Metrics& getMetrics() const;
   int getNumStdCell() const;
   int getNumMacro() const;
-  float getArea() const;
-  float getMacroArea() const;
-  float getStdCellArea() const;
+  int64_t getArea() const;
+  int64_t getMacroArea() const;
+  int64_t getStdCellArea() const;
 
   // Physical location support
-  float getWidth() const;
-  float getHeight() const;
-  float getX() const;
-  float getY() const;
-  void setX(float x);
-  void setY(float y);
-  std::pair<float, float> getLocation() const;
-  Rect getBBox() const;
+  int getWidth() const;
+  int getHeight() const;
+  int getX() const;
+  int getY() const;
+  void setX(int x);
+  void setY(int y);
+  std::pair<int, int> getLocation() const;
+  odb::Rect getBBox() const;
   Point getCenter() const;
 
   // Hierarchy Support
@@ -271,17 +269,17 @@ class HardMacro
  public:
   // Create a macro with specified size
   // Model fixed terminals
-  HardMacro(std::pair<float, float> location,
+  HardMacro(std::pair<int, int> location,
             const std::string& name,
-            float width,
-            float height,
+            int width,
+            int height,
             Cluster* cluster);
 
   // In this case, we model the pin position at the center of the macro
-  HardMacro(float width, float height, const std::string& name);
+  HardMacro(int width, int height, const std::string& name);
 
   // create a macro from dbInst
-  HardMacro(odb::dbInst* inst, float halo_width = 0.0, float halo_height = 0.0);
+  HardMacro(odb::dbInst* inst, int halo_width = 0, int halo_height = 0);
 
   // overload the comparison operators
   // based on area, width, height order
@@ -295,32 +293,32 @@ class HardMacro
 
   // Get Physical Information
   // Note that the default X and Y include halo_width
-  void setLocation(const std::pair<float, float>& location);
-  void setX(float x);
-  void setY(float y);
-  std::pair<float, float> getLocation() const;
-  float getX() const { return x_; }
-  float getY() const { return y_; }
+  void setLocation(const std::pair<int, int>& location);
+  void setX(int x);
+  void setY(int y);
+  std::pair<int, int> getLocation() const;
+  int getX() const { return x_; }
+  int getY() const { return y_; }
   // The position of pins relative to the lower left of the instance
-  float getPinX() const { return x_ + pin_x_; }
-  float getPinY() const { return y_ + pin_y_; }
+  int getPinX() const { return x_ + pin_x_; }
+  int getPinY() const { return y_ + pin_y_; }
   // The position of pins relative to the origin of the canvas;
-  float getAbsPinX() const { return pin_x_; }
-  float getAbsPinY() const { return pin_y_; }
+  int getAbsPinX() const { return pin_x_; }
+  int getAbsPinY() const { return pin_y_; }
   // width, height (include halo_width)
-  float getWidth() const { return width_; }
-  float getHeight() const { return height_; }
+  int getWidth() const { return width_; }
+  int getHeight() const { return height_; }
   bool isFixed() const { return fixed_; }
 
   // Note that the real X and Y does NOT include halo_width
-  void setRealLocation(const std::pair<float, float>& location);
-  void setRealX(float x);
-  void setRealY(float y);
-  std::pair<float, float> getRealLocation() const;
-  float getRealX() const;
-  float getRealY() const;
-  float getRealWidth() const;
-  float getRealHeight() const;
+  void setRealLocation(const std::pair<int, int>& location);
+  void setRealX(int x);
+  void setRealY(int y);
+  std::pair<int, int> getRealLocation() const;
+  int getRealX() const;
+  int getRealY() const;
+  int getRealWidth() const;
+  int getRealHeight() const;
 
   // Orientation support
   odb::dbOrientType getOrientation() const;
@@ -330,51 +328,23 @@ class HardMacro
   const std::string& getName() const;
   std::string getMasterName() const;
 
-  int getXDBU() const { return block_->micronsToDbu(getX()); }
-
-  int getYDBU() const { return block_->micronsToDbu(getY()); }
-
-  int getRealXDBU() const { return block_->micronsToDbu(getRealX()); }
-
-  int getRealYDBU() const { return block_->micronsToDbu(getRealY()); }
-
-  int getWidthDBU() const { return block_->micronsToDbu(getWidth()); }
-
-  int getHeightDBU() const { return block_->micronsToDbu(getHeight()); }
-
-  int getRealWidthDBU() const { return block_->micronsToDbu(getRealWidth()); }
-
-  int getRealHeightDBU() const { return block_->micronsToDbu(getRealHeight()); }
-
-  int getUXDBU() const { return getXDBU() + getWidthDBU(); }
-
-  int getUYDBU() const { return getYDBU() + getHeightDBU(); }
-
-  int getRealUXDBU() const { return getRealXDBU() + getRealWidthDBU(); }
-
-  int getRealUYDBU() const { return getRealYDBU() + getRealHeightDBU(); }
-
-  void setXDBU(int x) { setX(block_->dbuToMicrons(x)); }
-
-  void setYDBU(int y) { setY(block_->dbuToMicrons(y)); }
-
  private:
   // We define x_, y_ and orientation_ here
   // to avoid keep updating OpenDB during simulated annealing
   // Also enable the multi-threading
-  float x_ = 0.0;            // lower left corner
-  float y_ = 0.0;            // lower left corner
-  float halo_width_ = 0.0;   // halo width
-  float halo_height_ = 0.0;  // halo height
-  float width_ = 0.0;        // width_ = macro_width + 2 * halo_width
-  float height_ = 0.0;       // height_ = macro_height + 2 * halo_width
-  std::string name_;         // macro name
+  int x_ = 0;            // lower left corner
+  int y_ = 0;            // lower left corner
+  int halo_width_ = 0;   // halo width
+  int halo_height_ = 0;  // halo height
+  int width_ = 0;        // width_ = macro_width + 2 * halo_width
+  int height_ = 0;       // height_ = macro_height + 2 * halo_width
+  std::string name_;     // macro name
   odb::dbOrientType orientation_ = odb::dbOrientType::R0;
 
   // we assume all the pins locate at the center of all pins
   // related to the lower left corner
-  float pin_x_ = 0.0;
-  float pin_y_ = 0.0;
+  int pin_x_ = 0;
+  int pin_y_ = 0;
 
   bool fixed_{false};
 
@@ -402,11 +372,11 @@ class SoftMacro
 {
  public:
   SoftMacro(Cluster* cluster);
-  SoftMacro(const Rect& blockage, const std::string& name);
-  SoftMacro(const std::pair<float, float>& location,
+  SoftMacro(const odb::Rect& blockage, const std::string& name);
+  SoftMacro(const std::pair<int, int>& location,
             const std::string& name,
-            float width,
-            float height,
+            int width,
+            int height,
             Cluster* cluster);
   SoftMacro(utl::Logger* logger,
             const HardMacro* hard_macro,
@@ -414,35 +384,35 @@ class SoftMacro
 
   const std::string& getName() const;
 
-  void setX(float x);
-  void setY(float y);
-  void setLocation(const std::pair<float, float>& location);
-  void setWidth(float width);    // only for StdCellCluster and MixedCluster
-  void setHeight(float height);  // only for StdCellCluster and MixedCluster
-  void setArea(float area);      // only for StdCellCluster and MixedCluster
+  void setX(int x);
+  void setY(int y);
+  void setLocation(const std::pair<int, int>& location);
+  void setWidth(int width);    // only for StdCellCluster and MixedCluster
+  void setHeight(int height);  // only for StdCellCluster and MixedCluster
+  void setArea(int64_t area);  // only for StdCellCluster and MixedCluster
   void resizeRandomly(std::uniform_real_distribution<float>& distribution,
                       std::mt19937& generator);
   void setShapes(const TilingList& tilings, bool force = false);
-  void setShapes(const IntervalList& width_intervals, float area);
+  void setShapes(const IntervalList& width_intervals, int64_t area);
 
-  float getX() const { return x_; }
-  float getY() const { return y_; }
+  int getX() const { return x_; }
+  int getY() const { return y_; }
 
   // The position of pins relative to the lower left of the instance
-  float getPinX() const { return x_ + 0.5f * width_; }
-  float getPinY() const { return y_ + 0.5f * height_; }
+  int getPinX() const { return x_ + 0.5 * width_; }
+  int getPinY() const { return y_ + 0.5 * height_; }
 
-  std::pair<float, float> getLocation() const
+  std::pair<int, int> getLocation() const
   {
-    return std::pair<float, float>(x_, y_);
+    return std::pair<int, int>(x_, y_);
   }
 
   bool isFixed() const { return fixed_; }
 
-  float getWidth() const { return width_; }
-  float getHeight() const { return height_; }
-  float getArea() const;
-  Rect getBBox() const;
+  int getWidth() const { return width_; }
+  int getHeight() const { return height_; }
+  int64_t getArea() const;
+  odb::Rect getBBox() const;
   // Num Macros
   bool isMacroCluster() const;
   bool isStdCellCluster() const;
@@ -463,17 +433,17 @@ class SoftMacro
 
  private:
   int findIntervalIndex(const IntervalList& interval_list,
-                        float& value,
+                        int& value,
                         bool increasing_list);
 
   // We define x_, y_ and orientation_ here
   // Also enable the multi-threading
-  float x_ = 0.0;       // lower left corner
-  float y_ = 0.0;       // lower left corner
-  float width_ = 0.0;   // width_
-  float height_ = 0.0;  // height_
-  float area_ = 0.0;    // area of the standard cell cluster
-  std::string name_;    // macro name
+  int x_ = 0;         // lower left corner
+  int y_ = 0;         // lower left corner
+  int width_ = 0;     // width_
+  int height_ = 0;    // height_
+  int64_t area_ = 0;  // area of the standard cell cluster
+  std::string name_;  // macro name
 
   // The shape curve (discrete or piecewise) of a cluster is the
   // combination of its width/height intervals.

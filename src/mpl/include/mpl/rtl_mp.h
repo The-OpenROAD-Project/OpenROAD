@@ -80,7 +80,7 @@ class MacroPlacer
   std::vector<odb::dbInst*> findOverlappedMacros(odb::dbInst* macro);
 
   void setMacroPlacementFile(const std::string& file_name);
-  void addGuidanceRegion(odb::dbInst* macro, const Rect& region);
+  void addGuidanceRegion(odb::dbInst* macro, const odb::Rect& region);
 
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
@@ -94,7 +94,7 @@ class MacroPlacer
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
 
-  std::map<odb::dbInst*, Rect> guidance_regions_;
+  std::map<odb::dbInst*, odb::Rect> guidance_regions_;
 };
 
 }  // namespace mpl

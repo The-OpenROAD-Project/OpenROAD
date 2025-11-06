@@ -21,7 +21,6 @@ class Logger;
 
 namespace mpl {
 struct BundledNet;
-struct Rect;
 class Graphics;
 
 // Base class used for all annealing work within MPL.
@@ -41,7 +40,7 @@ class SimulatedAnnealingCore
 {
  public:
   SimulatedAnnealingCore(PhysicalHierarchy* tree,
-                         const Rect& outline,
+                         const odb::Rect& outline,
                          const std::vector<T>& macros,
                          const SACoreWeights& weights,
                          float pos_swap_prob,
@@ -64,17 +63,17 @@ class SimulatedAnnealingCore
     number_of_sequence_pair_macros_ = number_of_sequence_pair_macros;
   };
   void setNets(const std::vector<BundledNet>& nets);
-  void setFences(const std::map<int, Rect>& fences);
-  void setGuides(const std::map<int, Rect>& guides);
+  void setFences(const std::map<int, odb::Rect>& fences);
+  void setGuides(const std::map<int, odb::Rect>& guides);
   void setInitialSequencePair(const SequencePair& sequence_pair);
   void disallowInvalidStates() { invalid_states_allowed_ = false; }
 
   virtual bool isValid() const;
-  bool fitsIn(const Rect& outline) const;
+  bool fitsIn(const odb::Rect& outline) const;
   void writeCostFile(const std::string& file_name) const;
   float getNormCost() const;
-  float getWidth() const;
-  float getHeight() const;
+  int getWidth() const;
+  int getHeight() const;
   float getAreaPenalty() const;
   float getOutlinePenalty() const;
   float getNormOutlinePenalty() const;
@@ -108,7 +107,7 @@ class SimulatedAnnealingCore
   void setAvailableRegionsForUnconstrainedPins(
       const BoundaryRegionList& regions);
   void initSequencePair();
-  void setDieArea(const Rect& die_area);
+  void setDieArea(const odb::Rect& die_area);
   void updateBestResult(float cost);
   void useBestResult();
 
@@ -143,8 +142,8 @@ class SimulatedAnnealingCore
   void reportLocations() const;
   void report(const PenaltyData& penalty) const;
 
-  Rect outline_;
-  Rect die_area_;  // Offset to the current outline.
+  odb::Rect outline_;
+  odb::Rect die_area_;  // Offset to the current outline.
 
   BoundaryRegionList available_regions_for_unconstrained_pins_;
   ClusterToBoundaryRegionMap io_cluster_to_constraint_;
@@ -152,8 +151,8 @@ class SimulatedAnnealingCore
   int number_of_sequence_pair_macros_ = 0;
 
   std::vector<BundledNet> nets_;
-  std::map<int, Rect> fences_;  // Macro Id -> Fence
-  std::map<int, Rect> guides_;  // Macro Id -> Guide
+  std::map<int, odb::Rect> fences_;  // Macro Id -> Fence
+  std::map<int, odb::Rect> guides_;  // Macro Id -> Guide
 
   SACoreWeights core_weights_;
 
@@ -180,10 +179,10 @@ class SimulatedAnnealingCore
   int action_id_ = -1;         // the action_id of current step
 
   // metrics
-  float width_ = 0.0;
-  float height_ = 0.0;
-  float pre_width_ = 0.0;
-  float pre_height_ = 0.0;
+  int width_ = 0;
+  int height_ = 0;
+  int pre_width_ = 0;
+  int pre_height_ = 0;
 
   float outline_penalty_ = 0.0;
   float wirelength_ = 0.0;
@@ -216,9 +215,6 @@ class SimulatedAnnealingCore
 
   std::vector<float> cost_list_;  // store the cost in the list
   std::vector<float> T_list_;     // store the temperature
-  // we define accuracy to determine whether the floorplan is valid
-  // because the error introduced by the type conversion
-  static constexpr float acc_tolerance_ = 0.001;
 
   bool has_initial_sequence_pair_ = false;
   bool invalid_states_allowed_{true};

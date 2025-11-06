@@ -194,16 +194,12 @@ std::vector<odb::dbInst*> MacroPlacer::findOverlappedMacros(odb::dbInst* macro)
   return overlapped_macros;
 }
 
-void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, const Rect& region)
+void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, const odb::Rect& region)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   const odb::Rect& core = block->getCoreArea();
-  const odb::Rect dbu_region(block->micronsToDbu(region.xMin()),
-                             block->micronsToDbu(region.yMin()),
-                             block->micronsToDbu(region.xMax()),
-                             block->micronsToDbu(region.yMax()));
 
-  if (!core.contains(dbu_region)) {
+  if (!core.contains(region)) {
     logger_->error(MPL,
                    42,
                    "Specified guidance region ({}, {}) ({}, {}) for the macro "

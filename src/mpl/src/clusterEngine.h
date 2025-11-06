@@ -92,17 +92,17 @@ struct PhysicalHierarchy
   BoundaryRegionList available_regions_for_unconstrained_pins;
   ClusterToBoundaryRegionMap io_cluster_to_constraint;
 
-  float halo_width{0.0f};
-  float halo_height{0.0f};
-  float macro_with_halo_area{0.0f};
+  int halo_width{0};
+  int halo_height{0};
+  int64_t macro_with_halo_area{0};
 
   // The constraint set by the user.
-  Rect global_fence;
+  odb::Rect global_fence;
 
   // The actual area used by MPL - computed using the dimensions
   // of the core versus the global fence set by the user.
-  Rect floorplan_shape;
-  Rect die_area;
+  odb::Rect floorplan_shape;
+  odb::Rect die_area;
 
   bool has_io_clusters{true};
   bool has_only_macros{false};
