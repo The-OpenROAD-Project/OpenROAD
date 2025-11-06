@@ -346,9 +346,13 @@ void dbModBTerm::connect(dbModNet* net)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: connect modBterm {} to modnet {}",
+               "ECO: connect modBterm ({} {:p}) '{}' to modnet ({} {:p}) '{}'",
                getId(),
-               net->getId());
+               static_cast<void*>(this),
+               getHierarchicalName(),
+               net->getId(),
+               static_cast<void*>(net),
+               net->getHierarchicalName());
     _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     _block->_journal->pushParam(dbModBTermObj);
     _block->_journal->pushParam(getId());

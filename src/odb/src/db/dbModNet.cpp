@@ -210,8 +210,10 @@ void dbModNet::rename(const char* new_name)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: mod_net {}, rename to {}",
+               "ECO: dbModNet({} {:p}) '{}', rename to '{}'",
                getId(),
+               static_cast<void*>(this),
+               getHierarchicalName(),
                new_name);
     block->_journal->updateField(this, _dbModNet::NAME, obj->_name, new_name);
   }
