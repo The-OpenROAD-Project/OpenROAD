@@ -2069,12 +2069,15 @@ dbModNet* dbBlock::findModNet(const char* hierarchical_name) const
 
   // Traverse the hierarchy through module instances.
   // The last token is the net name, so iterate up to the second to last token.
-  for (std::string& name : tokens) {
-    dbModInst* mod_inst = current_module->findModInst(name.c_str());
+  for (size_t i = 0; i < tokens.size() - 1; i++) {
+    dbModInst* mod_inst = current_module->findModInst(tokens[i].c_str());
     if (mod_inst == nullptr) {
       return nullptr;  // Invalid path
     }
     current_module = mod_inst->getMaster();
+    if (current_module == nullptr) {
+      return nullptr;
+    }
   }
 
   // The last token is the ModNet name.

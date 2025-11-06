@@ -159,6 +159,9 @@ class BufRemTest3 : public tst::Fixture
 
 TEST_F(BufRemTest3, RemoveBuf)
 {
+  odb::dbModNet* modnet = block_->findModNet("mem/A0");
+  ASSERT_NE(modnet, nullptr);
+
   odb::dbInst* buf_inst = block_->findInst("buf");
   ASSERT_NE(buf_inst, nullptr);
   sta::Instance* sta_buf = db_network_->dbToSta(buf_inst);
