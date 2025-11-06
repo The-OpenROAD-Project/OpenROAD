@@ -666,7 +666,7 @@ std::pair<bool, bool> RouteBase::routability(
       int idxY = std::min((gCell->dCy() - tg_->ly()) / tg_->tileSizeY(),
                           tg_->tileCntY() - 1);
 
-      size_t index = idxY * tg_->tileCntX() + idxX;
+      size_t index = (idxY * tg_->tileCntX()) + idxX;
       if (index >= tg_->tiles().size()) {
         continue;
       }
