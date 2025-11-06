@@ -1042,9 +1042,22 @@ void ICeWall::placePadsUniform(const std::vector<odb::dbInst*>& insts,
   const bool gui_debug
       = logger_->debugCheck(utl::PAD, "Place", 1) && gui::Gui::get()->enabled();
 
-  const double dbus = getBlock()->getDbUnitsPerMicron();
-  const int target_spacing = (row_width - pads_width) / (insts.size() + 1);
+  const float initial_target_spacing
+      = static_cast<float>(row_width - pads_width) / (insts.size() + 1);
+  const int site_width
+      = std::min(row->getSite()->getWidth(), row->getSite()->getHeight());
+  const int target_spacing
+      = std::floor(initial_target_spacing / site_width) * site_width;
   int offset = row_start + target_spacing;
+
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+  debugPrint(logger_,
+             utl::PAD,
+             "Place",
+             1,
+             "Placing pads with uniform: spacing {:.4f} um",
+             target_spacing / dbus);
+
   for (auto* inst : insts) {
     debugPrint(logger_,
                utl::PAD,
