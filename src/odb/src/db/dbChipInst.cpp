@@ -167,6 +167,18 @@ Rect dbChipInst::getBBox() const
   return box;
 }
 
+Cuboid dbChipInst::getCuboid() const
+{
+  _dbChipInst* obj = (_dbChipInst*) this;
+  Rect box = getBBox();
+  return Cuboid(box.xMin(),
+                box.yMin(),
+                obj->loc_.z(),
+                box.xMax(),
+                box.yMax(),
+                obj->loc_.z() + getMasterChip()->getThickness());
+}
+
 dbSet<dbChipRegionInst> dbChipInst::getRegions() const
 {
   _dbChipInst* _chipinst = (_dbChipInst*) this;

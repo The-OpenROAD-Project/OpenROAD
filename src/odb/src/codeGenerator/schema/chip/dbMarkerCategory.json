@@ -21,6 +21,11 @@
       "name": "max_markers_",
       "type": "int",
       "default": "10000"
+    },
+    {
+      "name":"block_",
+      "type":"dbId<_dbBlock>",
+      "flags":["no-set", "no-get"]
     }
   ],
   "cpp_includes":["dbBlock.h"]

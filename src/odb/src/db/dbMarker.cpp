@@ -763,10 +763,16 @@ std::set<dbObject*> dbMarker::getSources() const
   _dbBlock* block = marker->getBlock();
 
   std::set<dbObject*> objs;
-  for (const auto& [db_type, id] : marker->sources_) {
-    dbObjectTable* table = block->getObjectTable(db_type);
-    if (table != nullptr && table->validObject(id)) {
-      objs.insert(table->getObject(id));
+  if (block) {
+    for (const auto& [db_type, id] : marker->sources_) {
+      dbObjectTable* table = block->getObjectTable(db_type);
+      if (table != nullptr && table->validObject(id)) {
+        objs.insert(table->getObject(id));
+      }
+    }
+  } else {
+    for (const auto& [db_type, id] : marker->sources_) {
+      // owned by chip
     }
   }
   return objs;
@@ -784,8 +790,10 @@ dbMarker* dbMarker::create(dbMarkerCategory* category)
   _dbMarker* marker = _category->marker_tbl_->create();
 
   _dbBlock* block = marker->getBlock();
-  for (auto cb : block->_callbacks) {
-    cb->inDbMarkerCreate((dbMarker*) marker);
+  if (block) {
+    for (auto cb : block->_callbacks) {
+      cb->inDbMarkerCreate((dbMarker*) marker);
+    }
   }
 
   return (dbMarker*) marker;
