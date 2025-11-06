@@ -491,18 +491,19 @@ void UnbufferMove::removeBuffer(Instance* buffer)
     removed_modnet = op_modnet;
   }
 
+  // jk: maybe, not needed.
   // If the input net is hierarchical, we need to find the driver pin.
   // Get the driver pin beforing removing the input net.
-  Pin* driver_pin = nullptr;
-  if (op_modnet) {
-    db_network_->getNetDriverParentModule(in_net, driver_pin, true);
-    if (driver_pin == nullptr) {
-      logger_->error(RSZ,
-                     165,
-                     "Cannot find driver pin for hierarchical net {}",
-                     op_modnet->getName());
-    }
-  }
+  // Pin* driver_pin = nullptr;
+  // if (op_modnet) {
+  //  db_network_->getNetDriverParentModule(in_net, driver_pin, true);
+  //  if (driver_pin == nullptr) {
+  //    logger_->error(RSZ,
+  //                   165,
+  //                   "Cannot find driver pin for hierarchical net {}",
+  //                   op_modnet->getName());
+  //  }
+  //}
 
   // Disconnect the buffer and handle the nets
   debugPrint(logger_,
@@ -521,16 +522,19 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   odb::dbNet* db_removed = db_network_->staToDb(removed);
   if (db_removed) {
     // Store dbModNet related to the flat net to be removed
-    std::set<odb::dbModNet*> removed_modnets;
-    db_removed->findRelatedModNets(removed_modnets);
-
-    // Merge flat net
-    db_survivor->mergeNet(db_removed);
+    // std::set<odb::dbModNet*> removed_modnets;
+    // db_removed->findRelatedModNets(removed_modnets);
 
     // Merge hier net
+    // - mergeModNet() should be done before mergeNet() because
+    //   mergeNet() can involve the hierarchical net traversal during the merge
+    //   operation.
     if (survivor_modnet != nullptr && removed_modnet != nullptr) {
       survivor_modnet->mergeModNet(removed_modnet);
     }
+
+    // Merge flat net
+    db_survivor->mergeNet(db_removed);
 
     // if (removed_modnets.empty() == false) {
     //   // Find the single modnet that should survive. This will be the one
