@@ -20,6 +20,7 @@
 #include "RDLRouter.h"
 #include "Utilities.h"
 #include "boost/icl/interval_set.hpp"
+#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -916,6 +917,9 @@ void ICeWall::placePadsBumpAligned(
 
   int offset = row_start;
 
+  const bool gui_debug
+      = logger_->debugCheck(utl::PAD, "Place", 1) && gui::Gui::get()->enabled();
+
   int max_travel = row_width - pads_width;
   // iterate over pads in order
   for (auto itr = insts.begin(); itr != insts.end();) {
@@ -988,6 +992,10 @@ void ICeWall::placePadsBumpAligned(
                 * row->getSpacing();
 
       performPadFlip(row, ginst, iterm_connections);
+
+      if (gui_debug) {
+        gui::Gui::get()->pause();
+      }
     }
 
     // more iterator to next unplaced pad
@@ -1002,6 +1010,9 @@ void ICeWall::placePadsUniform(const std::vector<odb::dbInst*>& insts,
                                int row_width,
                                int row_start) const
 {
+  const bool gui_debug
+      = logger_->debugCheck(utl::PAD, "Place", 1) && gui::Gui::get()->enabled();
+
   const double dbus = getBlock()->getDbUnitsPerMicron();
   const int target_spacing = (row_width - pads_width) / (insts.size() + 1);
   int offset = row_start + target_spacing;
@@ -1022,6 +1033,10 @@ void ICeWall::placePadsUniform(const std::vector<odb::dbInst*>& insts,
                   /* allow_shift */ true);
     offset += inst_widths.at(inst);
     offset += target_spacing;
+
+    if (gui_debug) {
+      gui::Gui::get()->pause();
+    }
   }
 }
 
