@@ -3888,14 +3888,6 @@ void GlobalRouter::makeItermPins(Net* net,
     if (!inst->isPlaced()) {
       logger_->error(GRT, 10, "Instance {} is not placed.", inst->getName());
     }
-
-    if (!die_area.contains(inst->getBBox()->getBox())) {
-      logger_->error(GRT,
-                     280,
-                     "Instance {} is completely outside the die area.",
-                     inst->getName());
-    }
-
     const odb::dbTransform transform = inst->getTransform();
 
     odb::Point pin_pos;
