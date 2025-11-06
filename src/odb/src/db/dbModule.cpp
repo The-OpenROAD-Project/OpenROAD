@@ -301,10 +301,10 @@ dbSet<dbModNet> dbModule::getModNets()
   return dbSet<dbModNet>(module, block->_module_modnet_itr);
 }
 
-dbModNet* dbModule::getModNet(const char* net_name)
+dbModNet* dbModule::getModNet(const char* net_name) const
 {
-  _dbModule* module = (_dbModule*) this;
-  _dbBlock* block = (_dbBlock*) module->getOwner();
+  const _dbModule* module = (const _dbModule*) this;
+  const _dbBlock* block = (const _dbBlock*) module->getOwner();
   auto it = module->_modnet_hash.find(net_name);
   if (it != module->_modnet_hash.end()) {
     uint db_id = (*it).second;
