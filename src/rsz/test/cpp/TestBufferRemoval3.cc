@@ -180,6 +180,52 @@ TEST_F(BufRemTest3, RemoveBuf)
   // Post sanity check
   sta_->updateTiming(true);
   db_network_->checkAxioms();
+
+  // Write verilog and check the content after buffer removal
+  const std::string after_vlog_path = "TestBufferRemoval3_after.v";
+  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file_after(after_vlog_path);
+  std::string content_after((std::istreambuf_iterator<char>(file_after)),
+                            std::istreambuf_iterator<char>());
+
+  const std::string expected_after_vlog = R"(module top (clk,
+    in1,
+    out1,
+    out2);
+ input clk;
+ input in1;
+ output out1;
+ output out2;
+
+ wire net1;
+
+ BUF_X1 drvr (.A(in1),
+    .Z(net1));
+ BUF_X4 load (.A(net1),
+    .Z(out1));
+ MEM mem (.Z1(out2),
+    .A1(net1),
+    .A0(net1));
+endmodule
+module MEM (Z1,
+    A1,
+    A0);
+ output Z1;
+ input A1;
+ input A0;
+
+
+ BUF_X1 load0 (.A(A0));
+ BUF_X1 load1 (.A(A1),
+    .Z(Z1));
+endmodule
+)";
+
+  EXPECT_EQ(content_after, expected_after_vlog);
+
+  // Clean up
+  std::remove(after_vlog_path.c_str());
 }
 
 }  // namespace rsz
