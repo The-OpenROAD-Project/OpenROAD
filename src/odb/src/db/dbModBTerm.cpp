@@ -353,9 +353,11 @@ void dbModBTerm::connect(dbModNet* net)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: connect dbModBTerm {} at id {}",
+               "ECO: connect dbModBTerm {} at id {} to dbNet {} at id {}",
                getName(),
-               getId());
+               getId(),
+               net->getName(),
+               net->getId());
     _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     _block->_journal->pushParam(dbModBTermObj);
     _block->_journal->pushParam(getId());
@@ -382,13 +384,16 @@ void dbModBTerm::disconnect()
   _dbModNet* mod_net = block->_modnet_tbl->getPtr(_modbterm->_modnet);
 
   if (block->_journal) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: disconnect dbModBTerm {} at id {}",
-               getName(),
-               getId());
+    debugPrint(
+        block->getImpl()->getLogger(),
+        utl::ODB,
+        "DB_ECO",
+        1,
+        "ECO: disconnect dbModBTerm {} at id {} from dbModNet {} at id {}",
+        getName(),
+        getId(),
+        mod_net->_name,
+        mod_net->getId());
     block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     block->_journal->pushParam(dbModBTermObj);
     block->_journal->pushParam(_modbterm->getId());

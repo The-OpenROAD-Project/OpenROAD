@@ -680,9 +680,11 @@ void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: connect dbBTerm {} at id {}",
+               "ECO: connect dbBTerm {} at id {} to dbModNet {} at id {}",
                _name,
-               getId());
+               getId(),
+               mod_net->_name,
+               mod_net->getId());
     block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     block->_journal->pushParam(dbBTermObj);
     block->_journal->pushParam(bterm->getId());
@@ -713,9 +715,11 @@ void _dbBTerm::connectNet(_dbNet* net, _dbBlock* block)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: connect dbBTerm {} at id {}",
+               "ECO: connect dbBTerm {} at id {} to dbNet {} at id {}",
                _name,
-               getId());
+               getId(),
+               net->_name,
+               net->getId());
     block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     block->_journal->pushParam(dbBTermObj);
     block->_journal->pushParam(bterm->getId());
@@ -800,9 +804,11 @@ void _dbBTerm::disconnectNet(_dbBTerm* bterm, _dbBlock* block)
                  utl::ODB,
                  "DB_ECO",
                  1,
-                 "ECO: disconnect dbBTerm {} at id {}",
+                 "ECO: disconnect dbBTerm {} at id {} from dbNet {} at id {}",
                  _name,
-                 getId());
+                 getId(),
+                 net->_name,
+                 net->getId());
       block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
       block->_journal->pushParam(dbBTermObj);
       block->_journal->pushParam(bterm->getId());
@@ -849,13 +855,16 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
     _dbModNet* mod_net = block->_modnet_tbl->getPtr(bterm->_mnet);
 
     if (block->_journal) {
-      debugPrint(block->getImpl()->getLogger(),
-                 utl::ODB,
-                 "DB_ECO",
-                 1,
-                 "ECO: disconnect dbBTerm {} at id {}",
-                 _name,
-                 getId());
+      debugPrint(
+          block->getImpl()->getLogger(),
+          utl::ODB,
+          "DB_ECO",
+          1,
+          "ECO: disconnect dbBTerm {} at id {} from dbModNet {} at id {}",
+          _name,
+          getId(),
+          mod_net->_name,
+          mod_net->getId());
       block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
       block->_journal->pushParam(dbBTermObj);
       block->_journal->pushParam(bterm->getId());
