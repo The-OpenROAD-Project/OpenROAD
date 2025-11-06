@@ -662,7 +662,6 @@ void dbChip::destroy(dbChip* chip_)
   dbProperty::destroyProperties(chip);
   db->chip_hash_.remove(chip);
   db->chip_tbl_->destroy(chip);
-  db->_chip = 0;
 }
 // User Code End dbChipPublicMethods
 }  // namespace odb

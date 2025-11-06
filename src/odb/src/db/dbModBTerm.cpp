@@ -16,6 +16,7 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cstdlib>
 #include <string>
 
 #include "odb/dbBlockCallBackObj.h"
@@ -353,11 +354,13 @@ void dbModBTerm::connect(dbModNet* net)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: connect dbModBTerm {} at id {} to dbNet {} at id {}",
-               getName(),
+               "ECO: connect modBterm ({} {:p}) '{}' to modnet ({} {:p}) '{}'",
                getId(),
-               net->getName(),
-               net->getId());
+               static_cast<void*>(this),
+               getHierarchicalName(),
+               net->getId(),
+               static_cast<void*>(net),
+               net->getHierarchicalName());
     _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     _block->_journal->pushParam(dbModBTermObj);
     _block->_journal->pushParam(getId());
