@@ -231,6 +231,15 @@ place_pads
 | `-mode` | Select the mode to use during pad placement, choices are `bump_aligned` and `uniform`. Default will select `bump_aligned` if possible, otherwise fallback to `uniform`. |
 | `pads` | Name of the instances in the order they should be placed (left to right for `IO_SOUTH` and `IO_NORTH` and bottom to top for `IO_WEST` and `IO_EAST`). |
 
+#### Modes
+
+In `uniform` mode, the pads will be evenly spread out across the row they are assigned to, as shown in the figure below.
+
+<img src="./doc/image/mode_uniform.png" width=450px>
+
+In `bump_aligned` mode, the pads will be clustered near their assigned bumps to minimize RDL routing distances, as shown below.
+
+<img src="./doc/image/mode_bump_aligned.png" width=450px>
 
 ### Placing Pads Manually
 
