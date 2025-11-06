@@ -36,6 +36,8 @@ namespace rsz {
 class BufRemTest3 : public tst::Fixture
 {
  protected:
+  void readVerilogAndSetup(const std::string& verilog_file);
+
   BufRemTest3()
       : stt_(db_.get(), &logger_),
         callback_handler_(&logger_),
@@ -61,87 +63,6 @@ class BufRemTest3 : public tst::Fixture
     db_->setLogger(&logger_);
     db_network_ = sta_->getDbNetwork();
     db_network_->setHierarchy();
-
-    ord::dbVerilogNetwork verilog_network(sta_.get());
-    sta::VerilogReader verilog_reader(&verilog_network);
-    verilog_reader.read(
-        getFilePath(prefix + "cpp/TestBufferRemoval3.v").c_str());
-
-    ord::dbLinkDesign(
-        "top", &verilog_network, db_.get(), &logger_, true /*hierarchy = */);
-
-    sta_->postReadDb(db_.get());
-
-    block_ = db_->getChip()->getBlock();
-    block_->setDefUnits(lib_->getTech()->getLefUnits());
-    block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
-    sta_->postReadDef(block_);
-
-    // Timing setup
-    sta::Cell* top_cell = db_network_->cell(db_network_->topInstance());
-    sta::Port* clk_port = db_network_->findPort(top_cell, "clk");
-    sta::Pin* clk_pin
-        = db_network_->findPin(db_network_->topInstance(), clk_port);
-
-    sta::PinSet* pinset = new sta::PinSet(db_network_);
-    pinset->insert(clk_pin);
-    sta::PinSet* clk_pins = new sta::PinSet;
-    clk_pins->insert(db_network_->dbToSta(block_->findBTerm("clk")));
-
-    // 0.5ns
-    double period = sta_->units()->timeUnit()->userToSta(0.5);
-    sta::FloatSeq* waveform = new sta::FloatSeq;
-    waveform->push_back(0);
-    waveform->push_back(period / 2.0);
-
-    sta_->makeClock("clk",
-                    pinset,
-                    /*add_to_pins=*/false,
-                    /*period=*/period,
-                    waveform,
-                    /*comment=*/nullptr);
-
-    sta::Sdc* sdc = sta_->sdc();
-    const sta::RiseFallBoth* rf = sta::RiseFallBoth::riseFall();
-    sta::Clock* clk = sdc->findClock("clk");
-    const sta::RiseFall* clk_rf = sta::RiseFall::rise();
-
-    sta_->setInputDelay(db_network_->dbToSta(block_->findBTerm("in1")),
-                        rf,
-                        clk,
-                        clk_rf,
-                        nullptr,
-                        false,
-                        false,
-                        sta::MinMaxAll::all(),
-                        true,
-                        0.0);
-    sta_->setOutputDelay(db_network_->dbToSta(block_->findBTerm("out1")),
-                         rf,
-                         clk,
-                         clk_rf,
-                         nullptr,
-                         false,
-                         false,
-                         sta::MinMaxAll::all(),
-                         true,
-                         0.0);
-    sta_->setOutputDelay(db_network_->dbToSta(block_->findBTerm("out2")),
-                         rf,
-                         clk,
-                         clk_rf,
-                         nullptr,
-                         false,
-                         false,
-                         sta::MinMaxAll::all(),
-                         true,
-                         0.0);
-
-    sta_->ensureGraph();
-    sta_->ensureLevelized();
-
-    resizer_.initBlock();
-    ep_.estimateWireParasitics();
   }
 
   odb::dbLib* lib_;
@@ -157,8 +78,99 @@ class BufRemTest3 : public tst::Fixture
   rsz::Resizer resizer_;
 };
 
+void BufRemTest3::readVerilogAndSetup(const std::string& verilog_file)
+{
+  static const std::string prefix("_main/src/rsz/test/");
+
+  ord::dbVerilogNetwork verilog_network(sta_.get());
+  sta::VerilogReader verilog_reader(&verilog_network);
+  verilog_reader.read(getFilePath(prefix + "cpp/" + verilog_file).c_str());
+
+  ord::dbLinkDesign(
+      "top", &verilog_network, db_.get(), &logger_, true /*hierarchy = */);
+
+  sta_->postReadDb(db_.get());
+
+  block_ = db_->getChip()->getBlock();
+  block_->setDefUnits(lib_->getTech()->getLefUnits());
+  block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
+  sta_->postReadDef(block_);
+
+  // Timing setup
+  sta::Cell* top_cell = db_network_->cell(db_network_->topInstance());
+  sta::Port* clk_port = db_network_->findPort(top_cell, "clk");
+  sta::Pin* clk_pin
+      = db_network_->findPin(db_network_->topInstance(), clk_port);
+
+  sta::PinSet* pinset = new sta::PinSet(db_network_);
+  pinset->insert(clk_pin);
+  sta::PinSet* clk_pins = new sta::PinSet;
+  clk_pins->insert(db_network_->dbToSta(block_->findBTerm("clk")));
+
+  // 0.5ns
+  double period = sta_->units()->timeUnit()->userToSta(0.5);
+  sta::FloatSeq* waveform = new sta::FloatSeq;
+  waveform->push_back(0);
+  waveform->push_back(period / 2.0);
+
+  sta_->makeClock("clk",
+                  pinset,
+                  /*add_to_pins=*/false,
+                  /*period=*/period,
+                  waveform,
+                  /*comment=*/nullptr);
+
+  sta::Sdc* sdc = sta_->sdc();
+  const sta::RiseFallBoth* rf = sta::RiseFallBoth::riseFall();
+  sta::Clock* clk = sdc->findClock("clk");
+  const sta::RiseFall* clk_rf = sta::RiseFall::rise();
+
+  for (odb::dbBTerm* term : block_->getBTerms()) {
+    sta::Pin* pin = db_network_->dbToSta(term);
+    if (pin == nullptr) {
+      continue;
+    }
+    if (sdc->isClock(pin)) {
+      continue;
+    }
+
+    odb::dbIoType io_type = term->getIoType();
+    if (io_type == odb::dbIoType::INPUT) {
+      sta_->setInputDelay(pin,
+                          rf,
+                          clk,
+                          clk_rf,
+                          nullptr,
+                          false,
+                          false,
+                          sta::MinMaxAll::all(),
+                          true,
+                          0.0);
+    } else if (io_type == odb::dbIoType::OUTPUT) {
+      sta_->setOutputDelay(pin,
+                           rf,
+                           clk,
+                           clk_rf,
+                           nullptr,
+                           false,
+                           false,
+                           sta::MinMaxAll::all(),
+                           true,
+                           0.0);
+    }
+  }
+
+  sta_->ensureGraph();
+  sta_->ensureLevelized();
+
+  resizer_.initBlock();
+  ep_.estimateWireParasitics();
+}
+
 TEST_F(BufRemTest3, RemoveBuf)
 {
+  readVerilogAndSetup("TestBufferRemoval3.v");
+
   odb::dbModNet* modnet = block_->findModNet("mem/A0");
   ASSERT_NE(modnet, nullptr);
 
@@ -226,6 +238,133 @@ endmodule
 
   // Clean up
   std::remove(after_vlog_path.c_str());
+}
+
+TEST_F(BufRemTest3, RemoveBuf1)
+{
+  readVerilogAndSetup("TestBufferRemoval3_1.v");
+
+  odb::dbInst* buf_inst = block_->findInst("buf");
+  ASSERT_NE(buf_inst, nullptr);
+  sta::Instance* sta_buf = db_network_->dbToSta(buf_inst);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  db_network_->checkAxioms();
+
+  //----------------------------------------------------
+  // Remove buffer
+  //----------------------------------------------------
+  auto insts = std::make_unique<sta::InstanceSeq>();
+  insts->emplace_back(sta_buf);
+  resizer_.removeBuffers(*insts);
+
+  // Post sanity check
+  sta_->updateTiming(true);
+  db_network_->checkAxioms();
+
+  // Write verilog and check the content after buffer removal
+  const std::string after_vlog_path = "TestBufferRemoval3_1_after.v";
+  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file_after(after_vlog_path);
+  std::string content_after((std::istreambuf_iterator<char>(file_after)),
+                            std::istreambuf_iterator<char>());
+
+  const std::string expected_after_vlog = R"(module top (clk,
+    in1,
+    out1,
+    out2);
+ input clk;
+ input in1;
+ output out1;
+ output out2;
+
+ wire net1;
+
+ BUF_X1 drvr (.A(in1),
+    .Z(net1));
+ BUF_X4 load (.A(net1),
+    .Z(out1));
+ SUBMOD sub_inst (.in(net1),
+    .out(out2));
+endmodule
+module SUBMOD (in,
+    out);
+ input in;
+ output out;
+
+ BUF_X1 load0 (.A(in),
+    .Z(out));
+endmodule
+)";
+
+  EXPECT_EQ(content_after, expected_after_vlog);
+
+  // Clean up
+  // std::remove(after_vlog_path.c_str());
+}
+
+TEST_F(BufRemTest3, RemoveBuf2)
+{
+  readVerilogAndSetup("TestBufferRemoval3_2.v");
+
+  odb::dbInst* buf_inst = block_->findInst("sub_inst/buf");
+  ASSERT_NE(buf_inst, nullptr);
+  sta::Instance* sta_buf = db_network_->dbToSta(buf_inst);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  db_network_->checkAxioms();
+
+  //----------------------------------------------------
+  // Remove buffer
+  //----------------------------------------------------
+  auto insts = std::make_unique<sta::InstanceSeq>();
+  insts->emplace_back(sta_buf);
+  resizer_.removeBuffers(*insts);
+
+  // Post sanity check
+  sta_->updateTiming(true);
+  db_network_->checkAxioms();
+
+  // Write verilog and check the content after buffer removal
+  const std::string after_vlog_path = "TestBufferRemoval3_2_after.v";
+  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file_after(after_vlog_path);
+  std::string content_after((std::istreambuf_iterator<char>(file_after)),
+                            std::istreambuf_iterator<char>());
+
+  const std::string expected_after_vlog = R"(module top (clk,
+    in1,
+    out1);
+ input clk;
+ input in1;
+ output out1;
+
+ wire sub_out;
+
+ BUF_X4 load (.A(sub_out),
+    .Z(out1));
+ SUBMOD sub_inst (.in(in1),
+    .out(sub_out));
+endmodule
+module SUBMOD (in,
+    out);
+ input in;
+ output out;
+
+
+ BUF_X1 load0 (.A(in),
+    .Z(out));
+endmodule
+)";
+
+  EXPECT_EQ(content_after, expected_after_vlog);
+
+  // Clean up
+  // std::remove(after_vlog_path.c_str());
 }
 
 }  // namespace rsz
