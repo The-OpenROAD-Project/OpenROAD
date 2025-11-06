@@ -2687,13 +2687,42 @@ void dbNetwork::disconnectPin(Pin* pin)
 
 void dbNetwork::disconnectPinBefore(const Pin* pin)
 {
-  Net* net = this->net(pin);
-  // Incrementally update drivers.
-  if (net && isDriver(pin)) {
-    PinSet* drvrs = net_drvr_pin_map_.findKey(net);
-    if (drvrs) {
-      drvrs->erase(pin);
+  // jk: no side-effect?
+  // Net* net = this->net(pin);
+  //// Incrementally update drivers.
+  // if (net && isDriver(pin)) {
+  //   PinSet* drvrs = net_drvr_pin_map_.findKey(net);
+  //   if (drvrs) {
+  //     drvrs->erase(pin);
+  //   }
+  // }
+
+  // No need to update net_drvr_pin_map_ cache.
+  if (isDriver(pin) == false) {
+    return;
+  }
+
+  // Get all the related dbNet & dbModNet with the pin.
+  // Incrementally update the net-drvr cache.
+  dbNet* db_net;
+  dbModNet* mod_net;
+  net(pin, db_net, mod_net);
+
+  if (db_net) {
+    // A dbNet can be associated with multiple dbModNets.
+    // We need to update the cache for all of them.
+    std::set<odb::dbModNet*> related_mod_nets;
+    db_net->findRelatedModNets(related_mod_nets);
+    for (dbModNet* related_mod_net : related_mod_nets) {
+      removeDriverFromCache(dbToSta(related_mod_net), pin);
     }
+
+    removeDriverFromCache(dbToSta(db_net), pin);
+    return;
+  }
+
+  if (mod_net) {
+    removeDriverFromCache(dbToSta(mod_net), pin);
   }
 }
 
@@ -4141,8 +4170,8 @@ void dbNetwork::checkAxioms(odb::dbObject* obj) const
   }
 
   // jk: tmp
-  dumpNetDrvrPinMap();
-  checkSanityNetDrvrPinMapConsistency();
+  // dumpNetDrvrPinMap();
+  // checkSanityNetDrvrPinMapConsistency();
 
   // Otherwise, check the whole design
   checkSanityModBTerms();
@@ -4744,6 +4773,17 @@ void dbNetwork::checkSanityNetDrvrPinMapConsistency() const
       odb::dbUtil::findITermDrivers(modnet, drivers);
       odb::dbUtil::findBTermDrivers(modnet, drivers);
       odb::dbUtil::findModITermDrivers(modnet, drivers);
+
+      // Also, find drivers from the related flat net
+      dbNet* related_dbnet = findRelatedDbNet(modnet);
+      if (related_dbnet) {
+        odb::dbUtil::findITermDrivers(related_dbnet, drivers);
+        odb::dbUtil::findBTermDrivers(related_dbnet, drivers);
+      }
+
+      // Remove duplicates
+      std::sort(drivers.begin(), drivers.end());
+      drivers.erase(std::unique(drivers.begin(), drivers.end()), drivers.end());
     }
 
     // Convert to PinSet
@@ -4796,7 +4836,7 @@ void dbNetwork::checkSanityNetDrvrPinMapConsistency() const
 
 PinInfo dbNetwork::getPinInfo(const Pin* pin) const
 {
-  PinInfo info{"NOT_ALLOC", 0, "NULL", false};
+  PinInfo info{"NOT_ALLOC", 0, "NULL", false, nullptr};
   dbITerm* iterm;
   dbBTerm* bterm;
   dbModITerm* moditerm;
@@ -4806,14 +4846,17 @@ PinInfo dbNetwork::getPinInfo(const Pin* pin) const
     info.id = iterm->getId();
     info.type_name = iterm->getTypeName();
     info.valid = iterm->isValid();
+    info.addr = static_cast<void*>(iterm);
   } else if (bterm) {
     info.id = bterm->getId();
     info.type_name = bterm->getTypeName();
     info.valid = bterm->isValid();
+    info.addr = static_cast<void*>(bterm);
   } else if (moditerm) {
     info.id = moditerm->getId();
     info.type_name = moditerm->getTypeName();
     info.valid = moditerm->isValid();
+    info.addr = static_cast<void*>(moditerm);
   }
 
   if (info.valid) {
@@ -4842,10 +4885,11 @@ void dbNetwork::dumpNetDrvrPinMap() const
     // Get the underlying dbObject for the net to report its type and ID.
     const dbObject* net_obj
         = reinterpret_cast<const dbObject*>(const_cast<Net*>(net));
-    logger_->report("Net: {} (type: {}, id: {})",
+    logger_->report("Net: {} {}({}, {:p})",
                     pathName(net),
                     net_obj->getTypeName(),
-                    net_obj->getId());
+                    net_obj->getId(),
+                    (void*) net_obj);
     if (pin_set == nullptr) {
       logger_->report("  Drivers: null pin set");
       continue;
@@ -4856,13 +4900,22 @@ void dbNetwork::dumpNetDrvrPinMap() const
     }
     for (const Pin* pin : *pin_set) {
       const PinInfo pin_info = getPinInfo(pin);
-      logger_->report("  - {} (type: {}, id: {})",
+      logger_->report("  - {} {}({}, {:p})",
                       pin_info.name,
                       pin_info.type_name,
-                      pin_info.id);
+                      pin_info.id,
+                      pin_info.addr);
     }
   }
   logger_->report("--------------------------------------------------");
+}
+
+void dbNetwork::removeDriverFromCache(const Net* net, const Pin* drvr)
+{
+  PinSet* drvrs = net_drvr_pin_map_.findKey(net);
+  if (drvrs) {
+    drvrs->erase(drvr);
+  }
 }
 
 }  // namespace sta

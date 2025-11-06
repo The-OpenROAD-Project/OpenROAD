@@ -49,6 +49,7 @@ struct PinInfo
   int id = 0;                      // dbObject ID
   const char* type_name = "NULL";  // dbObject type name
   bool valid = false;              // false if it is a freed dbObject
+  void* addr = nullptr;
 };
 
 // This class handles callbacks from the network to the listeners
@@ -393,6 +394,7 @@ class dbNetwork : public ConcreteNetwork
   Port* findMember(const Port* port, int index) const override;
   PortMemberIterator* memberIterator(const Port* port) const override;
   PinInfo getPinInfo(const Pin* pin) const;
+  void removeDriverFromCache(const Net* net, const Pin* drvr);
 
   ////////////////////////////////////////////////////////////////
   // Debug functions
