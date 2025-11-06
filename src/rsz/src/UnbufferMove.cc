@@ -516,43 +516,73 @@ void UnbufferMove::removeBuffer(Instance* buffer)
              lib_cell->name(),
              db_network_->name(out_net));
 
-  sta_->disconnectPin(in_pin);
-  sta_->disconnectPin(out_pin);
+  // Disconnect buffer input & output pins
+
+  // jk: is this ok?
+  // sta_->disconnectPin(in_pin);
+  // sta_->disconnectPin(out_pin);
+  dbITerm* in_iterm;
+  odb::dbBTerm* in_bterm;
+  odb::dbModITerm* in_moditerm;
+  db_network_->staToDb(in_pin, in_iterm, in_bterm, in_moditerm);
+  assert(in_iterm != nullptr);
+  in_iterm->disconnect();
+
+  dbITerm* out_iterm;
+  odb::dbBTerm* out_bterm;
+  odb::dbModITerm* out_moditerm;
+  db_network_->staToDb(out_pin, out_iterm, out_bterm, out_moditerm);
+  assert(out_iterm != nullptr);
+  out_iterm->disconnect();
+
   odb::dbNet* db_survivor = db_network_->staToDb(survivor);
   odb::dbNet* db_removed = db_network_->staToDb(removed);
-  if (db_removed) {
-    // Store dbModNet related to the flat net to be removed
-    // std::set<odb::dbModNet*> removed_modnets;
-    // db_removed->findRelatedModNets(removed_modnets);
 
-    // Merge hier net
-    // - mergeModNet() should be done before mergeNet() because
-    //   mergeNet() can involve the hierarchical net traversal during the merge
-    //   operation.
-    if (survivor_modnet != nullptr && removed_modnet != nullptr) {
-      survivor_modnet->mergeModNet(removed_modnet);
-    }
+  std::optional<std::string> new_net_name;
+  std::optional<std::string> new_modnet_name;
 
-    // Merge flat net
-    db_survivor->mergeNet(db_removed);
+  // Store dbModNet related to the flat net to be removed
+  // std::set<odb::dbModNet*> removed_modnets;
+  // db_removed->findRelatedModNets(removed_modnets);
 
-    // if (removed_modnets.empty() == false) {
-    //   // Find the single modnet that should survive. This will be the one
-    //   // connected to the surviving flat net.
-    //   odb::dbModNet* survivor_modnet =
-    //   db_survivor->findModNetInHighestHier(); if (survivor_modnet) {
-    //     for (odb::dbModNet* removed_modnet : removed_modnets) {
-    //       if (removed_modnet != survivor_modnet) {
-    //         // Transfer all connections from the removed modnet to the
-    //         survivor
-    //         // and then destroy the removed one.
-    //         removed_modnet->disconnectAllTerms();
-    //         odb::dbModNet::destroy(removed_modnet);
-    //       }
-    //     }
-    //   }
-    // }
+  // Merge hier net
+  // - mergeModNet() should be done before mergeNet() because
+  //   mergeNet() can involve the hierarchical net traversal during the merge
+  //   operation.
+  if (survivor_modnet != nullptr && removed_modnet != nullptr) {
+    survivor_modnet->mergeModNet(removed_modnet);
+  } else if (survivor_modnet != nullptr) {
+    survivor_modnet->mergeNet(db_removed);
+  } else if (removed_modnet != nullptr) {
+    // If there is a single modnet, it should survive.
+    survivor_modnet = removed_modnet;
+    removed_modnet = nullptr;
+    survivor_modnet->mergeNet(db_survivor);
+
+    // survivor_modnet should be renamed later.
+    new_modnet_name
+        = db_survivor->getBlock()->getBaseName(db_survivor->getName().c_str());
   }
+
+  // Merge flat net
+  db_survivor->mergeNet(db_removed);
+
+  // if (removed_modnets.empty() == false) {
+  //   // Find the single modnet that should survive. This will be the one
+  //   // connected to the surviving flat net.
+  //   odb::dbModNet* survivor_modnet =
+  //   db_survivor->findModNetInHighestHier(); if (survivor_modnet) {
+  //     for (odb::dbModNet* removed_modnet : removed_modnets) {
+  //       if (removed_modnet != survivor_modnet) {
+  //         // Transfer all connections from the removed modnet to the
+  //         survivor
+  //         // and then destroy the removed one.
+  //         removed_modnet->disconnectAllTerms();
+  //         odb::dbModNet::destroy(removed_modnet);
+  //       }
+  //     }
+  //   }
+  // }
 
   // Hierarchical case supported:
   // moving an output hierarchical net to the input pin driver.
@@ -573,31 +603,30 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   //  db_network_->connectPin(driver_pin, db_network_->dbToSta(op_modnet));
   //}
 
-  // Deletion
+  // Remove buffer
   sta_->deleteInstance(buffer);
-  if (removed) {
-    // If removed net name is higher in hierarchy, rename survivor with it.
-    std::optional<std::string> new_net_name;
-    std::optional<std::string> new_modnet_name;
-    if (db_survivor->isDeeperThan(db_removed)) {
-      new_net_name = db_removed->getName();
-      if (removed_modnet != nullptr) {
-        new_modnet_name = removed_modnet->getName();
-      }
-    }
 
-    sta_->deleteNet(removed);
-    if (removed_modnet) {
-      odb::dbModNet::destroy(
-          removed_modnet);  // jk: deleteNet() or destroy()? check
+  // If removed net name is higher in hierarchy, rename survivor with it.
+  if (db_survivor->isDeeperThan(db_removed)) {
+    new_net_name = db_removed->getName();
+    if (removed_modnet != nullptr) {
+      new_modnet_name = removed_modnet->getName();
     }
+  }
 
-    if (new_net_name) {
-      db_survivor->rename(new_net_name->c_str());
-    }
-    if (survivor_modnet != nullptr && new_modnet_name) {
-      survivor_modnet->rename(new_modnet_name->c_str());
-    }
+  // Remove flat & hier nets
+  sta_->deleteNet(removed);
+  if (removed_modnet) {
+    odb::dbModNet::destroy(
+        removed_modnet);  // jk: deleteNet() or destroy()? check
+  }
+
+  // Rename if needed
+  if (new_net_name) {
+    db_survivor->rename(new_net_name->c_str());
+  }
+  if (survivor_modnet != nullptr && new_modnet_name) {
+    survivor_modnet->rename(new_modnet_name->c_str());
   }
 
   // jk: sanity check
@@ -606,7 +635,7 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   }
   if (logger_->debugCheck(RSZ, "dbg", 100)) {
     db_survivor->dump();
-    db_survivor->dumpConnectivity(4);
+    db_survivor->dumpConnectivity(1);
     db_network_->checkAxioms();
   }
 }
