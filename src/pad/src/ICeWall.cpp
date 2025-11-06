@@ -679,7 +679,9 @@ int64_t ICeWall::computePadBumpDistance(odb::dbInst* inst,
   return std::numeric_limits<int64_t>::max();
 }
 
-void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
+void ICeWall::placePads(const std::vector<odb::dbInst*>& insts,
+                        odb::dbRow* row,
+                        const PlacementStrategy& mode)
 {
   auto* block = getBlock();
   if (block == nullptr) {
@@ -761,17 +763,34 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
     }
   }
 
-  if (!iterm_connections.empty()) {
-    placePadsBumpAligned(insts,
-                         row,
-                         inst_widths,
-                         total_width,
-                         row_width,
-                         row_start,
-                         iterm_connections);
-  } else {
-    placePadsUniform(
-        insts, row, inst_widths, total_width, row_width, row_start);
+  PlacementStrategy use_mode = mode;
+  if (use_mode == PlacementStrategy::DEFAULT) {
+    if (!iterm_connections.empty()) {
+      use_mode = PlacementStrategy::BUMP_ALIGNED;
+    }
+  }
+  if (use_mode == PlacementStrategy::BUMP_ALIGNED
+      && iterm_connections.empty()) {
+    logger_->warn(
+        utl::PAD, 9, "Unable to use bump_aligned mode, switching to uniform");
+    use_mode = PlacementStrategy::UNIFORM;
+  }
+
+  switch (use_mode) {
+    case PlacementStrategy::BUMP_ALIGNED:
+      placePadsBumpAligned(insts,
+                           row,
+                           inst_widths,
+                           total_width,
+                           row_width,
+                           row_start,
+                           iterm_connections);
+      break;
+    case PlacementStrategy::UNIFORM:
+    case PlacementStrategy::DEFAULT:
+      placePadsUniform(
+          insts, row, inst_widths, total_width, row_width, row_start);
+      break;
   }
 
   logger_->info(
