@@ -7,12 +7,11 @@ module top (clk,
 
  wire sub_out;
 
- SUBMOD sub_inst (.in(in1),
-    .out(sub_out));
  BUF_X4 load (.A(sub_out),
     .Z(out1));
+ SUBMOD sub_inst (.in(in1),
+    .out(sub_out));
 endmodule
-
 module SUBMOD (in,
     out);
  input in;

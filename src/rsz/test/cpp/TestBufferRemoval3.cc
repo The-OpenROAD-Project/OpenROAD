@@ -294,6 +294,7 @@ module SUBMOD (in,
  input in;
  output out;
 
+
  BUF_X1 load0 (.A(in),
     .Z(out));
 endmodule
@@ -302,7 +303,7 @@ endmodule
   EXPECT_EQ(content_after, expected_after_vlog);
 
   // Clean up
-  // std::remove(after_vlog_path.c_str());
+  std::remove(after_vlog_path.c_str());
 }
 
 TEST_F(BufRemTest3, RemoveBuf2)
@@ -364,7 +365,7 @@ endmodule
   EXPECT_EQ(content_after, expected_after_vlog);
 
   // Clean up
-  // std::remove(after_vlog_path.c_str());
+  std::remove(after_vlog_path.c_str());
 }
 
 }  // namespace rsz
