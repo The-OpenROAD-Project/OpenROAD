@@ -1947,7 +1947,9 @@ void dbNetwork::visitConnectedPins(const Net* net,
         visitor(above_pin);
         // traverse along rest of net
         Net* above_net = this->net(above_pin);
-        visitConnectedPins(above_net, visitor, visited_nets);
+        if (above_net) {
+          visitConnectedPins(above_net, visitor, visited_nets);
+        }
       }
     }
   } else if (db_net) {
