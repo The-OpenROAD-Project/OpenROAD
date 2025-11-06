@@ -329,6 +329,13 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* base_name)
   parent->_modnet_hash[base_name] = modnet->getOID();
 
   if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: create dbModNet {} at id {}",
+               base_name,
+               modnet->getId());
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbModNetObj);
     block->_journal->pushParam(base_name);
@@ -354,6 +361,13 @@ void dbModNet::destroy(dbModNet* mod_net)
 
   // journalling
   if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: delete dbModNet {} at id {}",
+               mod_net->getName(),
+               mod_net->getId());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModNetObj);
     block->_journal->pushParam(mod_net->getName());

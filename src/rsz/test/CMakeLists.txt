@@ -91,7 +91,8 @@ or_integration_tests(
     repair_setup8
     repair_setup9
     repair_setup9_hier
-    repair_setup_undo
+    repair_setup_undo1
+    repair_setup_undo2
     repair_slew1
     repair_slew2
     repair_slew3

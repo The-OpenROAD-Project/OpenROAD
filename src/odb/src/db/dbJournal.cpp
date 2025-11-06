@@ -242,7 +242,7 @@ void dbJournal::redo()
         break;
 
       case END_ACTION:
-        _logger->critical(utl::ODB, 399, "In undo saw unexpected END_ACTION.");
+        _logger->critical(utl::ODB, 399, "In redo saw unexpected END_ACTION.");
         break;
     }
 
@@ -251,7 +251,8 @@ void dbJournal::redo()
     _log.pop(end_action);
     _log.pop(action_idx);
     if (end_action != END_ACTION || action_idx != s) {
-      _logger->critical(utl::ODB, 419, "In undo, expected END_ACTION.");
+      _logger->critical(
+          utl::ODB, 419, "In redo, didn't see the expected END_ACTION.");
     }
   }
 }
@@ -1716,11 +1717,22 @@ dbObjectType dbJournal::popObjectType()
 }
 
 //
-// WORK-IN-PROGRESS undo does not yet work.
+// WORK-IN-PROGRESS undo is incomplete
 //
 void dbJournal::undo()
 {
+  debugPrint(_logger,
+             utl::ODB,
+             "DB_ECO",
+             4,
+             "UNDO ECO: Starting undo of size {} >>>",
+             _log.size());
   if (_log.empty()) {
+    debugPrint(_logger,
+               utl::ODB,
+               "DB_ECO",
+               4,
+               "UNDO ECO: Exited early since log is empty >>>");
     return;
   }
 
@@ -1728,8 +1740,16 @@ void dbJournal::undo()
   _log.moveBackOneInt();
 
   for (;;) {
+    debugPrint(
+        _logger, utl::ODB, "DB_ECO", 4, "UNDO ECO: Log index {}", _log.idx());
     uint action_idx;
     _log.pop(action_idx);
+    debugPrint(_logger,
+               utl::ODB,
+               "DB_ECO",
+               4,
+               "UNDO ECO: Undoing action at index {}",
+               action_idx);
     _log.set(action_idx);
     _log.pop(_cur_action);
 
@@ -1769,6 +1789,7 @@ void dbJournal::undo()
     _log.set(action_idx);
     _log.moveBackOneInt();
   }
+  debugPrint(_logger, utl::ODB, "DB_ECO", 4, "UNDO ECO: Finished undo >>>");
 }
 
 void dbJournal::undo_createObject()
@@ -1780,6 +1801,14 @@ void dbJournal::undo_createObject()
       uint guide_id;
       _log.pop(guide_id);
       dbGuide* guide = dbGuide::getGuide(_block, guide_id);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: create dbGuide at id {}, in layer {} box {}",
+                 guide_id,
+                 guide->getLayer()->getName(),
+                 guide->getBox());
       dbGuide::destroy(guide);
       break;
     }
@@ -1793,7 +1822,6 @@ void dbJournal::undo_createObject()
       _log.pop(master_id);
       _log.pop(name);
       _log.pop(inst_id);
-
       dbInst* inst = dbInst::getInst(_block, inst_id);
       debugPrint(_logger,
                  utl::ODB,
@@ -1803,7 +1831,6 @@ void dbJournal::undo_createObject()
                  inst_id,
                  static_cast<void*>(inst),
                  name);
-
       dbInst::destroy(inst);
       break;
     }
@@ -1899,7 +1926,6 @@ void dbJournal::undo_createObject()
       _log.pop(parent_id);
       (void) parent_id;
       dbModBTerm* modbterm = dbModBTerm::getModBTerm(_block, modbterm_id);
-
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
@@ -1971,10 +1997,19 @@ void dbJournal::undo_deleteObject()
       auto layer = dbTechLayer::getTechLayer(_block->getTech(), layer_id);
       auto via_layer
           = dbTechLayer::getTechLayer(_block->getTech(), via_layer_id);
-      dbGuide::create(
+      auto guide = dbGuide::create(
           net, layer, via_layer, {x_min, y_min, x_max, y_max}, is_congested);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: delete dbGuide at new id {}, in layer {} box {}",
+                 guide->getId(),
+                 layer->getName(),
+                 guide->getBox());
       break;
     }
+
     case dbInstObj: {
       uint lib_id;
       uint master_id;
@@ -2022,9 +2057,9 @@ void dbJournal::undo_deleteObject()
                  static_cast<void*>(inst),
                  name,
                  master_id);
-
       break;
     }
+
     case dbNetObj: {
       std::string name;
       uint net_id;
@@ -2126,14 +2161,14 @@ void dbJournal::undo_deleteObject()
       _log.pop(module_id);
       // get the parent module
       dbModule* parent_module = dbModule::getModule(_block, module_id);
-      auto modbterm = dbModBTerm::create(parent_module, name.c_str());
+      auto mod_bterm = dbModBTerm::create(parent_module, name.c_str());
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
                  3,
                  "UNDO ECO: delete dbModBTerm({} {:p}) '{}'",
-                 modbterm->getId(),
-                 static_cast<void*>(modbterm),
+                 mod_bterm->getId(),
+                 static_cast<void*>(mod_bterm),
                  name);
       break;
     }
@@ -2181,22 +2216,20 @@ void dbJournal::undo_connectObject()
 
   switch (obj_type) {
     case dbModITermObj: {
-      uint moditerm_id;
-      _log.pop(moditerm_id);
-      dbModITerm* moditerm = dbModITerm::getModITerm(_block, moditerm_id);
+      uint mod_iterm_id;
+      _log.pop(mod_iterm_id);
+      dbModITerm* mod_iterm = dbModITerm::getModITerm(_block, mod_iterm_id);
       uint net_id;
       _log.pop(net_id);
-
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
                  3,
                  "UNDO ECO: connect dbModITerm({} {:p}) '{}'",
-                 moditerm_id,
-                 static_cast<void*>(moditerm),
-                 moditerm->getName());
-
-      moditerm->disconnect();
+                 mod_iterm_id,
+                 static_cast<void*>(mod_iterm),
+                 mod_iterm->getName());
+      mod_iterm->disconnect();
       break;
     }
 
@@ -2206,7 +2239,6 @@ void dbJournal::undo_connectObject()
       dbModBTerm* modbterm = dbModBTerm::getModBTerm(_block, modbterm_id);
       uint net_id;
       _log.pop(net_id);
-
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
@@ -2215,7 +2247,6 @@ void dbJournal::undo_connectObject()
                  modbterm_id,
                  static_cast<void*>(modbterm),
                  modbterm->getName());
-
       modbterm->disconnect();
       break;
     }
@@ -2277,7 +2308,6 @@ void dbJournal::undo_connectObject()
       uint mnet_id;
       _log.pop(net_id);   // the db net
       _log.pop(mnet_id);  // the modnet
-
       debugPrint(
           _logger,
           utl::ODB,
@@ -2289,7 +2319,6 @@ void dbJournal::undo_connectObject()
           bterm->getName(),
           net_id,
           mnet_id);
-
       bterm->disconnect();
       break;
     }
@@ -2354,6 +2383,13 @@ void dbJournal::undo_disconnectObject()
       }
       uint mnet_id;
       _log.pop(mnet_id);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: disconnect dbBTerm {} at id {}",
+                 bterm->getName(),
+                 bterm_id);
       if (mnet_id != 0) {
         dbModNet* mnet = dbModNet::getModNet(_block, mnet_id);
         bterm->connect(mnet);
@@ -2362,26 +2398,40 @@ void dbJournal::undo_disconnectObject()
     }
 
     case dbModBTermObj: {
-      uint modbterm_id;
-      uint modnet_id;
-      _log.pop(modbterm_id);
-      _log.pop(modnet_id);
-      dbModBTerm* mod_bterm = dbModBTerm::getModBTerm(_block, modbterm_id);
-      if (modnet_id != 0U) {
-        dbModNet* mnet = dbModNet::getModNet(_block, modnet_id);
+      uint mod_bterm_id;
+      uint mod_net_id;
+      _log.pop(mod_bterm_id);
+      _log.pop(mod_net_id);
+      dbModBTerm* mod_bterm = dbModBTerm::getModBTerm(_block, mod_bterm_id);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: disconnect dbModBTerm {} at id {}",
+                 mod_bterm->getName(),
+                 mod_bterm_id);
+      if (mod_net_id != 0U) {
+        dbModNet* mnet = dbModNet::getModNet(_block, mod_net_id);
         mod_bterm->connect(mnet);
       }
       break;
     }
 
     case dbModITermObj: {
-      uint moditerm_id;
-      uint modnet_id;
-      _log.pop(moditerm_id);
-      _log.pop(modnet_id);
-      dbModITerm* mod_iterm = dbModITerm::getModITerm(_block, moditerm_id);
-      if (modnet_id != 0U) {
-        dbModNet* mnet = dbModNet::getModNet(_block, modnet_id);
+      uint mod_iterm_id;
+      uint mod_net_id;
+      _log.pop(mod_iterm_id);
+      _log.pop(mod_net_id);
+      dbModITerm* mod_iterm = dbModITerm::getModITerm(_block, mod_iterm_id);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: disconnect dbModITerm {} at id {}",
+                 mod_iterm->getName(),
+                 mod_iterm_id);
+      if (mod_net_id != 0U) {
+        dbModNet* mnet = dbModNet::getModNet(_block, mod_net_id);
         mod_iterm->connect(mnet);
       }
 
@@ -2417,15 +2467,27 @@ void dbJournal::undo_swapObject()
           //(we are move dest name back to source name).
           dbNet* source_net = dbNet::getNet(_block, dest_net_id);
           dbNet* dest_net = dbNet::getNet(_block, source_net_id);
+          debugPrint(_logger,
+                     utl::ODB,
+                     "DB_ECO",
+                     3,
+                     "UNDO ECO: swap dbName (dbNet) between {} at id {} and {} "
+                     "at id {}",
+                     source_net->getName(),
+                     source_net_id,
+                     dest_net->getName(),
+                     dest_net_id);
           // don't allow undo to be undone, turn off journaling doing swap
           source_net->swapNetNames(dest_net, false);
           break;
         }
         default: {
-          _logger->critical(utl::ODB,
-                            467,
-                            "No undo_swapObject Name support for type {}",
-                            dbObject::getTypeName(sub_obj_type));
+          _logger->critical(
+              utl::ODB,
+              467,
+              "No undo_swapObject support for type {} and subtype {}",
+              dbObject::getTypeName(obj_type),
+              dbObject::getTypeName(sub_obj_type));
         }
       }
       break;
@@ -2450,6 +2512,13 @@ void dbJournal::undo_swapObject()
       dbInst* inst = dbInst::getInst(_block, inst_id);
       dbLib* lib = dbLib::getLib(_block->getDb(), prev_lib_id);
       dbMaster* master = dbMaster::getMaster(lib, prev_master_id);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: swap dbInst {} at id {}",
+                 inst->getName(),
+                 inst_id);
       inst->swapMaster(master);
       break;
     }
@@ -2518,6 +2587,12 @@ void dbJournal::undo_updateNetField()
       _log.pop(*flags);
       uint new_flags;
       _log.pop(new_flags);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: dbNet {}, updateFlags",
+                 net_id);
       break;
     }
 
@@ -2529,7 +2604,7 @@ void dbJournal::undo_updateNetField()
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
-                 2,
+                 3,
                  "UNDO ECO: dbNet({} {:p}), updateName from '{}' to '{}'",
                  net_id,
                  static_cast<void*>(net),
@@ -2576,6 +2651,10 @@ void dbJournal::undo_updateModNetField()
     }
 
     default:
+      _logger->critical(utl::ODB,
+                        424,
+                        "No undo_updateModNetField support for field {}",
+                        field);
       break;
   }
 }
@@ -2595,6 +2674,12 @@ void dbJournal::undo_updateInstField()
       _log.pop(*flags);
       uint new_flags;
       _log.pop(new_flags);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: dbInst {}, updateFlags",
+                 inst_id);
 
       // Changing the orientation flag requires updating the cached bbox
       _dbInstFlags* a = (_dbInstFlags*) flags;
@@ -2614,6 +2699,12 @@ void dbJournal::undo_updateInstField()
       _log.pop(current_x);
       int current_y;
       _log.pop(current_y);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: dbInst {}, updateOrigin",
+                 inst_id);
       ((dbInst*) inst)->setOrigin(prev_x, prev_y);
       break;
     }
@@ -2626,7 +2717,7 @@ void dbJournal::undo_updateInstField()
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
-                 2,
+                 3,
                  "UNDO ECO: dbInst({} {:p}), updateName from '{}' to '{}'",
                  inst_id,
                  static_cast<void*>(inst),
@@ -2721,6 +2812,11 @@ void dbJournal::undo_updateCCSegField()
       break;
     }
   }
+}
+
+void dbJournal::append(dbJournal* other)
+{
+  _log.append(other->_log);
 }
 
 dbOStream& operator<<(dbOStream& stream, const dbJournal& journal)

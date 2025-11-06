@@ -20,6 +20,7 @@
 #include <string>
 
 #include "odb/dbBlockCallBackObj.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbModBTerm>;
@@ -299,6 +300,13 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   module->_modbterm_hash[name] = dbId<_dbModBTerm>(modbterm->getOID());
 
   if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: create dbModBTerm {} at id {}",
+               name,
+               modbterm->getId());
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbModBTermObj);
     block->_journal->pushParam(name);
@@ -379,6 +387,16 @@ void dbModBTerm::disconnect()
   _dbModNet* mod_net = block->_modnet_tbl->getPtr(_modbterm->_modnet);
 
   if (block->_journal) {
+    debugPrint(
+        block->getImpl()->getLogger(),
+        utl::ODB,
+        "DB_ECO",
+        1,
+        "ECO: disconnect dbModBTerm {} at id {} from dbModNet {} at id {}",
+        getName(),
+        getId(),
+        mod_net->_name,
+        mod_net->getId());
     block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     block->_journal->pushParam(dbModBTermObj);
     block->_journal->pushParam(_modbterm->getId());
@@ -450,6 +468,13 @@ void dbModBTerm::destroy(dbModBTerm* val)
   _dbModule* module = block->_module_tbl->getPtr(_modbterm->_parent);
 
   if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: delete dbModBTerm {} at id {}",
+               val->getName(),
+               val->getId());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModBTermObj);
     block->_journal->pushParam(val->getName());

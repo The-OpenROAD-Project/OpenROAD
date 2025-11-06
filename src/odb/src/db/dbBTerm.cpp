@@ -691,7 +691,6 @@ void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
                mod_net->getId(),
                static_cast<void*>(mod_net),
                ((dbModNet*) mod_net)->getHierarchicalName());
-
     block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     block->_journal->pushParam(dbBTermObj);
     block->_journal->pushParam(bterm->getId());

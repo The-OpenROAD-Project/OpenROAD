@@ -510,7 +510,6 @@ void dbITerm::disconnect()
                (mod_net_impl) ? mod_net_impl->getId() : 0,
                static_cast<void*>(mod_net),
                (mod_net) ? mod_net->getHierarchicalName() : "NULL");
-
     block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(getId());

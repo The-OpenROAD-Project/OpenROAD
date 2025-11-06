@@ -424,6 +424,15 @@ void dbNet::swapNetNames(dbNet* source, bool ok_to_journal)
 
   // allow undo..
   if (block->_journal && ok_to_journal) {
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: swap dbName (dbNet) between {} at id {} and {} at id {}",
+               source->getName(),
+               source->getId(),
+               getName(),
+               getId());
     block->_journal->beginAction(dbJournal::SWAP_OBJECT);
     // a name
     block->_journal->pushParam(dbNameObj);
