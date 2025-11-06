@@ -45,17 +45,18 @@ void ChipletHierarchy::buildHierarchy(const std::vector<dbChip*>& all_chips)
 {
   nodes_.clear();
 
-  for (odb::dbChip* chip : all_chips) {
-    ChipletNode* parent_node = addChip(chip);
+  for (odb::dbChip* parent : all_chips) {
+    ChipletNode* parent_node = addChip(parent);
     if (!parent_node) {
       continue;
     }
 
     // Iterate instances to find dependencies
-    for (dbChipInst* inst : chip->getChipInsts()) {
-      odb::dbChip* master = inst->getMasterChip();
-      if (master) {
-        addDependency(chip, master);
+    for (dbChipInst* inst : parent->getChipInsts()) {
+      // The instance master points to the child chiplets
+      odb::dbChip* child = inst->getMasterChip();
+      if (child) {
+        addDependency(parent, child);
       }
     }
   }
