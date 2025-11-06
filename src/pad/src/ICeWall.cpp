@@ -730,8 +730,18 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts,
       break;
   }
 
+  const double dbus = block->getDbUnitsPerMicron();
+  debugPrint(logger_,
+             utl::PAD,
+             "Place",
+             1,
+             "{}: Row width ({:.4f} um), total instance ({}) width {:.4f} um)",
+             row->getName(),
+             row_width / dbus,
+             inst_widths.size(),
+             total_width / dbus);
+
   if (total_width > row_width) {
-    const double dbus = block->getDbUnitsPerMicron();
     logger_->error(
         utl::PAD,
         40,
