@@ -3,7 +3,6 @@
 
 #include "dbBlock.h"
 
-#include <string.h>
 #include <unistd.h>
 
 #include <algorithm>
@@ -23,6 +22,7 @@
 #include <optional>
 #include <ostream>
 #include <set>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
