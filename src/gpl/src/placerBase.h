@@ -61,7 +61,7 @@ class Instance
 
   bool isPlaceInstance() const;
 
-  bool isPbLargeInstance() const;
+  bool isLargeInstance() const;
 
   // A placeable instance may be fixed during part of incremental placement.
   // It remains in the set of placeable objects though so as to simplify

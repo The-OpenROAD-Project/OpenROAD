@@ -246,7 +246,7 @@ void Instance::setExtId(int extId)
   extId_ = extId;
 }
 
-bool Instance::isPbLargeInstance() const
+bool Instance::isLargeInstance() const
 {
   return is_large_instance_;
 }

@@ -255,7 +255,7 @@ bool GCell::isLargeInstance() const
   if (!isInstance()) {
     return false;
   }
-  return insts_[0]->isPbLargeInstance();
+  return insts_[0]->isLargeInstance();
 }
 
 bool GCell::isStdInstance() const
@@ -263,7 +263,7 @@ bool GCell::isStdInstance() const
   if (!isInstance()) {
     return false;
   }
-  return !insts_[0]->isPbLargeInstance();
+  return !insts_[0]->isLargeInstance();
 }
 
 void GCell::print(utl::Logger* logger, bool print_only_name = true) const
@@ -3987,7 +3987,7 @@ static int64_t getOverlapAreaBiNormal(const Bin* bin,
     return 0;
   }
 
-  if (inst->isPbLargeInstance()) {
+  if (inst->isLargeInstance()) {
     const float meanX = (inst->cx() - inst->lx()) / (float) dbu_per_micron;
     const float meanY = (inst->cy() - inst->ly()) / (float) dbu_per_micron;
 
