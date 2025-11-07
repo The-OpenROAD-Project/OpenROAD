@@ -62,11 +62,18 @@ sta::define_cmd_args "generate_ram" {-bytes_per_word bits
                                      -hor_layer config
                                      -filler_cells fillers}
 
-# user arguments for generate ram netlist arguments
+# user arguments for generate ram arguments
 proc generate_ram { args } {
   sta::parse_key_args "generate_ram" args \
     keys {-bytes_per_word -word_count -storage_cell -tristate_cell -inv_cell -read_ports
       -power_pin -ground_pin -routing_layer -ver_layer -hor_layer -filler_cells} flags {}
+
+  sta::check_argc_eq0 "generate_ram" $args
+
+  # Check for valid design
+  if { [ord::get_db_block] != "NULL" } {
+    utl::error RAM 20 "A design is already loaded. Cannot generate RAM"
+  }
 
   set ram_netlist_args [list \
     -bytes_per_word $keys(-bytes_per_word) \
