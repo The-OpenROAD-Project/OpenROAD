@@ -1685,7 +1685,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   srand(42);
   // area update from pb
   stdInstsArea_ = pb_->stdInstsArea();
-  macroInstsArea_ = pb_->macroInstsArea();
+  large_insts_area_ = pb_->largeInstsArea();
 
   int dbu_per_micron = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
 
@@ -1838,7 +1838,7 @@ void NesterovBase::initFillerGCells()
 
   float tmp_targetDensity
       = static_cast<float>(stdInstsArea_)
-            / static_cast<float>(whiteSpaceArea_ - macroInstsArea_)
+            / static_cast<float>(whiteSpaceArea_ - large_insts_area_)
         + 0.01;
   // targetDensity initialize
   if (nbVars_.useUniformTargetDensity) {
@@ -2163,7 +2163,7 @@ int64_t NesterovBase::getNesterovInstsArea() const
 {
   return stdInstsArea_
          + static_cast<int64_t>(
-             std::round(pb_->macroInstsArea() * targetDensity_));
+             std::round(pb_->largeInstsArea() * targetDensity_));
 }
 
 float NesterovBase::getSumPhi() const
@@ -2224,15 +2224,15 @@ void NesterovBase::updateAreas()
 {
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
-  stdInstsArea_ = macroInstsArea_ = 0;
+  stdInstsArea_ = large_insts_area_ = 0;
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
     if (!gCell) {
       continue;
     }
     if (gCell->isLargeInstance()) {
-      macroInstsArea_ += static_cast<int64_t>(gCell->dx())
-                         * static_cast<int64_t>(gCell->dy());
+      large_insts_area_ += static_cast<int64_t>(gCell->dx())
+                           * static_cast<int64_t>(gCell->dy());
     } else if (gCell->isStdInstance()) {
       stdInstsArea_ += static_cast<int64_t>(gCell->dx())
                        * static_cast<int64_t>(gCell->dy());

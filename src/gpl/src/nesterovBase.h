@@ -553,7 +553,6 @@ class Bin
   void setInstPlacedArea(int64_t area);
 
   void addNonPlaceAreaBiNormal(int64_t area);
-  // void addInstPlacedArea(int64_t area);
   void addFillerArea(int64_t area);
 
   void addNonPlaceArea(int64_t area);
@@ -644,11 +643,6 @@ inline void Bin::addNonPlaceAreaBiNormal(int64_t area)
 {
   non_place_area_binormal_ += area;
 }
-
-// inline void Bin::addInstPlacedArea(int64_t area)
-// {
-//   instPlacedArea_ += area;
-// }
 
 inline void Bin::addNonPlaceArea(int64_t area)
 {
@@ -986,7 +980,7 @@ class NesterovBase
   // This is mainly used for NesterovLoop
   int64_t getNesterovInstsArea() const;
   int64_t getStdInstArea() const { return this->stdInstsArea_; }
-  int64_t getMacroInstArea() const { return this->macroInstsArea_; }
+  int64_t getLargeInstArea() const { return this->large_insts_area_; }
 
   // sum phi and target density
   // used in NesterovPlace
@@ -1144,7 +1138,7 @@ class NesterovBase
   int64_t initial_filler_area_ = 0;
 
   int64_t stdInstsArea_ = 0;
-  int64_t macroInstsArea_ = 0;
+  int64_t large_insts_area_ = 0;
 
   std::vector<GCell> fillerStor_;
   std::vector<GCellHandle> nb_gcells_;
