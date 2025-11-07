@@ -947,7 +947,7 @@ void ICeWall::placePadsBumpAligned(
   int offset = row_start;
 
   const bool gui_debug
-      = logger_->debugCheck(utl::PAD, "Place", 1) && gui::Gui::get()->enabled();
+      = logger_->debugCheck(utl::PAD, "Place", 1) && gui::Gui::enabled();
 
   int max_travel = row_width - pads_width;
   // iterate over pads in order
@@ -1040,7 +1040,7 @@ void ICeWall::placePadsUniform(const std::vector<odb::dbInst*>& insts,
                                int row_start) const
 {
   const bool gui_debug
-      = logger_->debugCheck(utl::PAD, "Place", 1) && gui::Gui::get()->enabled();
+      = logger_->debugCheck(utl::PAD, "Place", 1) && gui::Gui::enabled();
 
   const float initial_target_spacing
       = static_cast<float>(row_width - pads_width) / (insts.size() + 1);
