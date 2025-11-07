@@ -564,7 +564,7 @@ class Bin
   {
     return inst_placed_area_binormal_;
   }
-  int64_t getNonPlaceAre() const { return non_place_area_; }
+  int64_t getNonPlaceArea() const { return non_place_area_; }
   int64_t getInstPlacedArea() const { return inst_placed_area_; }
 
   int64_t getFillerArea() const { return filler_area_; }

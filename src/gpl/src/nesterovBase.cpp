@@ -938,7 +938,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
     const float overflowAreaUnscaled
         = std::max(0.0f,
                    static_cast<float>(bin.getInstPlacedArea())
-                       + static_cast<float>(bin.getNonPlaceAre())
+                       + static_cast<float>(bin.getNonPlaceArea())
                        - density_scaled_bin_area);
     sum_overflow_area_ += overflowAreaUnscaled;
 
@@ -952,7 +952,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
                    block->dbuAreaToMicrons(density_scaled_bin_area));
       log_->report("bin.getInstPlacedArea():{}, bin.getNonPlaceArea():{}",
                    block->dbuAreaToMicrons(bin.getInstPlacedArea()),
-                   block->dbuAreaToMicrons(bin.getNonPlaceAre()));
+                   block->dbuAreaToMicrons(bin.getNonPlaceArea()));
       log_->report(
           "bin.getInstPlacedAreaBiNormal():{}, "
           "bin.getNonPlaceAreaBiNormal():{}",
