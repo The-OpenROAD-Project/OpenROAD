@@ -517,29 +517,8 @@ void UnbufferMove::removeBuffer(Instance* buffer)
              db_network_->name(out_net));
 
   // Disconnect buffer input & output pins
-
-  // jk: is this ok?
-  // sta_->disconnectPin(in_pin);
-  // sta_->disconnectPin(out_pin);
-  dbITerm* in_iterm;
-  odb::dbBTerm* in_bterm;
-  odb::dbModITerm* in_moditerm;
-  db_network_->staToDb(in_pin, in_iterm, in_bterm, in_moditerm);
-  assert(in_iterm != nullptr);
-  in_iterm->disconnect();
-
-  dbITerm* out_iterm;
-  odb::dbBTerm* out_bterm;
-  odb::dbModITerm* out_moditerm;
-  db_network_->staToDb(out_pin, out_iterm, out_bterm, out_moditerm);
-  assert(out_iterm != nullptr);
-  out_iterm->disconnect();
-
-  odb::dbNet* db_survivor = db_network_->staToDb(survivor);
-  odb::dbNet* db_removed = db_network_->staToDb(removed);
-
-  std::optional<std::string> new_net_name;
-  std::optional<std::string> new_modnet_name;
+  sta_->disconnectPin(in_pin);
+  sta_->disconnectPin(out_pin);
 
   // Store dbModNet related to the flat net to be removed
   // std::set<odb::dbModNet*> removed_modnets;
@@ -549,6 +528,10 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   // - mergeModNet() should be done before mergeNet() because
   //   mergeNet() can involve the hierarchical net traversal during the merge
   //   operation.
+  std::optional<std::string> new_net_name;
+  std::optional<std::string> new_modnet_name;
+  odb::dbNet* db_survivor = db_network_->staToDb(survivor);
+  odb::dbNet* db_removed = db_network_->staToDb(removed);
   if (survivor_modnet != nullptr && removed_modnet != nullptr) {
     survivor_modnet->mergeModNet(removed_modnet);
   } else if (survivor_modnet != nullptr) {
