@@ -20,6 +20,7 @@
 #include "RDLRouter.h"
 #include "Utilities.h"
 #include "boost/icl/interval_set.hpp"
+#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -678,7 +679,9 @@ int64_t ICeWall::computePadBumpDistance(odb::dbInst* inst,
   return std::numeric_limits<int64_t>::max();
 }
 
-void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
+void ICeWall::placePads(const std::vector<odb::dbInst*>& insts,
+                        odb::dbRow* row,
+                        const PlacementStrategy& mode)
 {
   auto* block = getBlock();
   if (block == nullptr) {
@@ -727,8 +730,18 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
       break;
   }
 
+  const double dbus = block->getDbUnitsPerMicron();
+  debugPrint(logger_,
+             utl::PAD,
+             "Place",
+             1,
+             "{}: Row width ({:.4f} um), total instance ({}) width {:.4f} um)",
+             row->getName(),
+             row_width / dbus,
+             inst_widths.size(),
+             total_width / dbus);
+
   if (total_width > row_width) {
-    const double dbus = block->getDbUnitsPerMicron();
     logger_->error(
         utl::PAD,
         40,
@@ -760,17 +773,34 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
     }
   }
 
-  if (!iterm_connections.empty()) {
-    placePadsBumpAligned(insts,
-                         row,
-                         inst_widths,
-                         total_width,
-                         row_width,
-                         row_start,
-                         iterm_connections);
-  } else {
-    placePadsUniform(
-        insts, row, inst_widths, total_width, row_width, row_start);
+  PlacementStrategy use_mode = mode;
+  if (use_mode == PlacementStrategy::DEFAULT) {
+    if (!iterm_connections.empty()) {
+      use_mode = PlacementStrategy::BUMP_ALIGNED;
+    }
+  }
+  if (use_mode == PlacementStrategy::BUMP_ALIGNED
+      && iterm_connections.empty()) {
+    logger_->warn(
+        utl::PAD, 9, "Unable to use bump_aligned mode, switching to uniform");
+    use_mode = PlacementStrategy::UNIFORM;
+  }
+
+  switch (use_mode) {
+    case PlacementStrategy::BUMP_ALIGNED:
+      placePadsBumpAligned(insts,
+                           row,
+                           inst_widths,
+                           total_width,
+                           row_width,
+                           row_start,
+                           iterm_connections);
+      break;
+    case PlacementStrategy::UNIFORM:
+    case PlacementStrategy::DEFAULT:
+      placePadsUniform(
+          insts, row, inst_widths, total_width, row_width, row_start);
+      break;
   }
 
   logger_->info(
@@ -916,6 +946,9 @@ void ICeWall::placePadsBumpAligned(
 
   int offset = row_start;
 
+  const bool gui_debug
+      = logger_->debugCheck(utl::PAD, "Place", 1) && gui::Gui::enabled();
+
   int max_travel = row_width - pads_width;
   // iterate over pads in order
   for (auto itr = insts.begin(); itr != insts.end();) {
@@ -988,6 +1021,10 @@ void ICeWall::placePadsBumpAligned(
                 * row->getSpacing();
 
       performPadFlip(row, ginst, iterm_connections);
+
+      if (gui_debug) {
+        gui::Gui::get()->pause();
+      }
     }
 
     // more iterator to next unplaced pad
@@ -1002,9 +1039,25 @@ void ICeWall::placePadsUniform(const std::vector<odb::dbInst*>& insts,
                                int row_width,
                                int row_start) const
 {
-  const double dbus = getBlock()->getDbUnitsPerMicron();
-  const int target_spacing = (row_width - pads_width) / (insts.size() + 1);
+  const bool gui_debug
+      = logger_->debugCheck(utl::PAD, "Place", 1) && gui::Gui::enabled();
+
+  const float initial_target_spacing
+      = static_cast<float>(row_width - pads_width) / (insts.size() + 1);
+  const int site_width
+      = std::min(row->getSite()->getWidth(), row->getSite()->getHeight());
+  const int target_spacing
+      = std::floor(initial_target_spacing / site_width) * site_width;
   int offset = row_start + target_spacing;
+
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+  debugPrint(logger_,
+             utl::PAD,
+             "Place",
+             1,
+             "Placing pads with uniform: spacing {:.4f} um",
+             target_spacing / dbus);
+
   for (auto* inst : insts) {
     debugPrint(logger_,
                utl::PAD,
@@ -1022,6 +1075,10 @@ void ICeWall::placePadsUniform(const std::vector<odb::dbInst*>& insts,
                   /* allow_shift */ true);
     offset += inst_widths.at(inst);
     offset += target_spacing;
+
+    if (gui_debug) {
+      gui::Gui::get()->pause();
+    }
   }
 }
 
