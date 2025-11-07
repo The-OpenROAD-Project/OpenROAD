@@ -4171,10 +4171,6 @@ void dbNetwork::checkAxioms(odb::dbObject* obj) const
     return;
   }
 
-  // jk: tmp
-  // dumpNetDrvrPinMap();
-  // checkSanityNetDrvrPinMapConsistency();
-
   // Otherwise, check the whole design
   checkSanityModBTerms();
   checkSanityModITerms();
@@ -4185,6 +4181,10 @@ void dbNetwork::checkAxioms(odb::dbObject* obj) const
   checkSanityInstNames();
   checkSanityNetNames();
   checkSanityModuleInsts();
+
+  // jk: tmp
+  // dumpNetDrvrPinMap();
+  // checkSanityNetDrvrPinMapConsistency();
 }
 
 // Given a net that may be hierarchical, find the corresponding flat net.

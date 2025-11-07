@@ -2712,7 +2712,7 @@ void dbNet::dumpModNetConnectivity(const dbModNet* modnet,
   std::vector<const dbObject*> outputs;
   std::vector<const dbObject*> others;
 
-  auto classify_term = [&](const auto* term) {
+  auto classifyTerm = [&](const auto* term) {
     dbIoType io_type;
     if constexpr (std::is_same_v<std::decay_t<decltype(*term)>, dbITerm>
                   || std::is_same_v<std::decay_t<decltype(*term)>, dbBTerm>) {
@@ -2740,16 +2740,16 @@ void dbNet::dumpModNetConnectivity(const dbModNet* modnet,
   };
 
   for (auto term : modnet->getITerms()) {
-    classify_term(term);
+    classifyTerm(term);
   }
   for (auto term : modnet->getBTerms()) {
-    classify_term(term);
+    classifyTerm(term);
   }
   for (auto term : modnet->getModITerms()) {
-    classify_term(term);
+    classifyTerm(term);
   }
   for (auto term : modnet->getModBTerms()) {
-    classify_term(term);
+    classifyTerm(term);
   }
 
   for (auto term : inputs) {
