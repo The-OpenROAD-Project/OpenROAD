@@ -4,6 +4,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -56,7 +57,9 @@ class GridComponent
   void getShapes(Shape::ShapeTreeMap& shapes) const;
   void removeShapes(Shape::ShapeTreeMap& shapes) const;
   void removeShape(Shape* shape);
-  void replaceShape(Shape* shape, const std::vector<Shape*>& replacements);
+  void replaceShape(Shape* shape, std::unique_ptr<Shape> replacement);
+  void replaceShape(Shape* shape,
+                    std::vector<std::unique_ptr<Shape>>& replacements);
   void clearShapes() { shapes_.clear(); }
   int getShapeCount() const;
 
@@ -100,7 +103,7 @@ class GridComponent
                          int width,
                          int spacing,
                          const odb::dbTechLayerDir& direction) const;
-  ShapePtr addShape(Shape* shape);
+  ShapePtr addShape(std::unique_ptr<Shape> shape);
 
   virtual bool areIntersectionsAllowed() const { return false; }
 

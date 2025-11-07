@@ -24,6 +24,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "renderer.h"
+#include "shape.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 
@@ -337,8 +338,8 @@ void Straps::makeStraps(int x_start,
         }
       }
 
-      addShape(
-          new Shape(layer_, net, strap_rect, odb::dbWireShapeType::STRIPE));
+      addShape(std::make_unique<Shape>(
+          layer_, net, strap_rect, odb::dbWireShapeType::STRIPE));
     }
     strap_count++;
     if (number_of_straps_ != 0 && strap_count == number_of_straps_) {
@@ -462,15 +463,15 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
     const int ground_y_bot
         = (power_on_top ? bbox.yMin() : bbox.yMax()) - width / 2;
 
-    auto* power_strap = new FollowPinShape(
+    auto power_strap = std::make_unique<FollowPinShape>(
         layer, power, odb::Rect(x0, power_y_bot, x1, power_y_bot + width));
     power_strap->addRow(row);
-    addShape(power_strap);
+    addShape(std::move(power_strap));
 
-    auto* ground_strap = new FollowPinShape(
+    auto ground_strap = std::make_unique<FollowPinShape>(
         layer, ground, odb::Rect(x0, ground_y_bot, x1, ground_y_bot + width));
     ground_strap->addRow(row);
-    addShape(ground_strap);
+    addShape(std::move(ground_strap));
   }
 }
 
@@ -1072,14 +1073,17 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
         }
       }
 
-      auto* shape
-          = new Shape(layer, net, shape_rect, odb::dbWireShapeType::STRIPE);
+      auto shape = std::make_unique<Shape>(
+          layer, net, shape_rect, odb::dbWireShapeType::STRIPE);
       // use intersection of pin_rect to ensure max width limitation is
       // preserved
       shape->addITermConnection(pin_rect.intersect(shape_rect));
-      addShape(shape);
+      const auto added = addShape(std::move(shape));
+      if (added == nullptr) {
+        continue;
+      }
 
-      target_shapes_[shape] = closest_shape.get();
+      target_shapes_[added.get()] = closest_shape.get();
     }
   }
 }
@@ -1210,15 +1214,19 @@ void PadDirectConnectionStraps::makeShapesOverPads(
     return;
   }
 
-  auto* shape = new Shape(
+  auto shape = std::make_unique<Shape>(
       getLayer(), iterm_->getNet(), shape_rect, odb::dbWireShapeType::STRIPE);
 
   if (getDirection() != getLayer()->getDirection()) {
     shape->setAllowsNonPreferredDirectionChange();
   }
-  addShape(shape);
-  target_shapes_[shape] = closest_shape.get();
-  target_pin_shape_[shape] = org_pin_shape;
+  const auto added = addShape(std::move(shape));
+  if (added == nullptr) {
+    return;
+  }
+
+  target_shapes_[added.get()] = closest_shape.get();
+  target_pin_shape_[added.get()] = org_pin_shape;
 }
 
 bool PadDirectConnectionStraps::snapRectToClosestShape(
@@ -1387,9 +1395,10 @@ bool PadDirectConnectionStraps::strapViaIsObstructed(
           "Pad",
           recheck ? 4 : 3,
           "Direct connect shape {} with obstruction {} using pin {} on {}",
-          Shape::getRectText(expected_via, tech->getLefUnits()),
+          Shape::getRectText(expected_via, tech->getDbUnitsPerMicron()),
           tech_layer->getName(),
-          Shape::getRectText(target_pin_shape_.at(shape), tech->getLefUnits()),
+          Shape::getRectText(target_pin_shape_.at(shape),
+                             tech->getDbUnitsPerMicron()),
           shape->getNet()->getName());
       return true;
     }
@@ -1423,7 +1432,7 @@ bool PadDirectConnectionStraps::refineShapes(
   }
 
   for (auto* refine_shape : refine) {
-    std::unique_ptr<Shape> shape(refine_shape->copy());
+    std::unique_ptr<Shape> shape = refine_shape->copy();
     removeShape(refine_shape);
 
     // remove shape from all_shapes and all_obstructions
@@ -1495,25 +1504,25 @@ bool PadDirectConnectionStraps::refineShape(
       new_rect.set_xhi(check_loc + getWidth());
     }
 
-    std::unique_ptr<Shape> new_shape(shape->copy());
+    std::unique_ptr<Shape> new_shape = shape->copy();
     new_shape->setRect(new_rect);
 
-    debugPrint(
-        getLogger(),
-        utl::PDN,
-        "Pad",
-        4,
-        "Checking new shape: {} on {}",
-        Shape::getRectText(new_shape->getRect(),
-                           new_shape->getLayer()->getTech()->getLefUnits()),
-        new_shape->getLayer()->getName());
+    debugPrint(getLogger(),
+               utl::PDN,
+               "Pad",
+               4,
+               "Checking new shape: {} on {}",
+               Shape::getRectText(
+                   new_shape->getRect(),
+                   new_shape->getLayer()->getTech()->getDbUnitsPerMicron()),
+               new_shape->getLayer()->getName());
 
     // check if legal
     if (strapViaIsObstructed(
             new_shape.get(), all_shapes, all_obstructions, true)) {
       continue;
     }
-    const ShapePtr& added_shape = addShape(new_shape.release());
+    const ShapePtr& added_shape = addShape(std::move(new_shape));
     if (added_shape != nullptr) {
       added_shape->clearITermConnections();
       added_shape->addITermConnection(
