@@ -67,9 +67,9 @@ Instance::Instance(odb::dbInst* inst,
   dbBox* bbox = inst->getBBox();
 
   if (inst->getMaster()->getType().isBlock()) {
-    is_macro_ = true;
+    is_large_instance_ = true;
   } else if (bbox->getDY() > row_limit * pbc->siteSizeY()) {
-    is_macro_ = true;
+    is_large_instance_ = true;
     logger->warn(GPL,
                  134,
                  "Master {} is not marked as a BLOCK in LEF but is more "
@@ -246,9 +246,10 @@ void Instance::setExtId(int extId)
   extId_ = extId;
 }
 
-bool Instance::isMacro() const
+// ePlace macro definition
+bool Instance::isPbLargeInstance() const
 {
-  return is_macro_;
+  return is_large_instance_;
 }
 
 bool Instance::isLocked() const

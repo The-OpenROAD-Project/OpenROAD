@@ -61,7 +61,7 @@ class Instance
 
   bool isPlaceInstance() const;
 
-  bool isMacro() const;
+  bool isPbLargeInstance() const;
 
   // A placeable instance may be fixed during part of incremental placement.
   // It remains in the set of placeable objects though so as to simplify
@@ -109,7 +109,7 @@ class Instance
   int ux_ = 0;
   int uy_ = 0;
   int extId_ = INT_MIN;
-  bool is_macro_ = false;
+  bool is_large_instance_ = false;
   bool is_locked_ = false;
 };
 
