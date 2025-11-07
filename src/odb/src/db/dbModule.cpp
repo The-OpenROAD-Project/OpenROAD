@@ -372,6 +372,13 @@ dbModule* dbModule::create(dbBlock* block, const char* name)
   _block->_module_hash.insert(module);
 
   if (_block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: create dbModule {} at id {}",
+               module->_name,
+               module->getId());
     _block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     _block->_journal->pushParam(dbModuleObj);
     _block->_journal->pushParam(module->_name);
@@ -457,6 +464,13 @@ void dbModule::destroy(dbModule* module)
   // and properties deleted, so that on restore we have
   // dbModule to hang objects on.
   if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: delete dbModule {} at id {}",
+               module->getName(),
+               module->getId());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModuleObj);
     block->_journal->pushParam(module->getName());

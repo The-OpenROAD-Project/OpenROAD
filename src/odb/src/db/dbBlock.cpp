@@ -422,7 +422,6 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _searchDb = nullptr;
   _extmi = nullptr;
   _journal = nullptr;
-  _journal_pending = nullptr;
 }
 
 _dbBlock::~_dbBlock()
@@ -517,7 +516,6 @@ _dbBlock::~_dbBlock()
     (*_cbitr)->removeOwner();
   }
   delete _journal;
-  delete _journal_pending;
 }
 
 void dbBlock::clear()
@@ -560,11 +558,6 @@ void dbBlock::clear()
   if (block->_journal) {
     delete block->_journal;
     block->_journal = nullptr;
-  }
-
-  if (block->_journal_pending) {
-    delete block->_journal_pending;
-    block->_journal_pending = nullptr;
   }
 }
 

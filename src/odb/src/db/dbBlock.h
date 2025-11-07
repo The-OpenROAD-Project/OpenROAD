@@ -6,6 +6,7 @@
 #include <functional>
 #include <list>
 #include <map>
+#include <stack>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -301,7 +302,7 @@ class _dbBlock : public _dbObject
   void* _extmi;
 
   dbJournal* _journal;
-  dbJournal* _journal_pending;
+  std::stack<dbJournal*> _journal_stack;
 
   _dbBlock(_dbDatabase* db);
   ~_dbBlock();

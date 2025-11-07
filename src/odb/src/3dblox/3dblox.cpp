@@ -293,8 +293,10 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
     inst = dbInst::create(block, master, entry.bump_inst_name.c_str());
   }
   auto bump = dbChipBump::create(chip_region, inst);
-  inst->setOrigin(entry.x * db_->getDbuPerMicron(),
-                  entry.y * db_->getDbuPerMicron());
+  Rect bbox;
+  inst->getMaster()->getPlacementBoundary(bbox);
+  inst->setOrigin((entry.x * db_->getDbuPerMicron()) - bbox.xCenter(),
+                  (entry.y * db_->getDbuPerMicron()) - bbox.yCenter());
   inst->setPlacementStatus(dbPlacementStatus::FIRM);
   if (entry.net_name != "-") {
     auto net = block->findNet(entry.net_name.c_str());
