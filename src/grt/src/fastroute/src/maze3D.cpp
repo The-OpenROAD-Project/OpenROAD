@@ -695,6 +695,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     }
   }
 
+  updateSlacks();
+  netpinOrderInc();
+
   const int endIND = tree_order_pv_.size() * 0.9;
 
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {

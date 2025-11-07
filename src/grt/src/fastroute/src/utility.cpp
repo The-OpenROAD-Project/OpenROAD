@@ -435,11 +435,11 @@ int FastRouteCore::getLayerResistance(const int layer,
 
   odb::dbTechLayer* db_layer = getTechLayer(layer, false);
   odb::dbTechLayer* default_layer = getTechLayer(0, false);
-  // odb::dbTechLayer* default_layer = getTechLayer(db_->getChip()->getBlock()->getMinLayerForClock(), false);
-  // odb::dbTechLayer* default_layer = net->isClock() ?
-  //   getTechLayer(db_->getChip()->getBlock()->getMinLayerForClock(), false) :
-  //   getTechLayer(db_->getChip()->getBlock()->getMinRoutingLayer(), false);
-  
+  // odb::dbTechLayer* default_layer =
+  // getTechLayer(db_->getChip()->getBlock()->getMaxRoutingLayer()-1, false);
+  // odb::dbTechLayer* default_layer =
+  // getTechLayer(db_->getChip()->getBlock()->getMinLayerForClock()-1, false);
+
   int width = db_layer->getWidth();
   double resistance = db_layer->getResistance();
   double default_resistance = default_layer->getResistance();
@@ -487,6 +487,11 @@ int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
   }
 
   float default_res = getTechLayer(0, true)->getResistance();
+  // float default_res =
+  // getTechLayer(db_->getChip()->getBlock()->getMaxRoutingLayer()-2,
+  // true)->getResistance(); float default_res =
+  // getTechLayer(db_->getChip()->getBlock()->getMinLayerForClock()-2,
+  // true)->getResistance();
 
   return std::ceil(total_via_resistance / default_res);
   // return std::ceil(total_via_resistance);
@@ -512,20 +517,27 @@ void FastRouteCore::updateSlacks(float percentage)
 
   for (const int net_id : net_ids_) {
     FrNet* net = nets_[net_id];
-    
-    if(net->getDbNet()->getName()=="clk"){
-      logger_->report(">>> {} - Edges: {}", net->getName(), sttrees_[net_id].num_edges());
-      int i=0;
-      int length=tile_size_;
 
-      for(auto& edge : sttrees_[net_id].edges){
-        logger_->report("\tEdge{} - len: {} - routelen: {} - x/y{}/{}", i, edge.len, edge.route.routelen
-          ,edge.route.grids.begin()->x,edge.route.grids.begin()->y);
-        // length = edge.len * tile_size_;
+    if (net->getDbNet()->getName() == "clk") {
+      resistance_aware_ = true;
+      logger_->report(
+          ">>> {} - Edges: {}", net->getName(), sttrees_[net_id].num_edges());
+      int i = 0;
+      int length = tile_size_;
+
+      for (auto& edge : sttrees_[net_id].edges) {
+        logger_->report("\tEdge{} - len: {} - routelen: {} - x/y{}/{}",
+                        i,
+                        edge.len,
+                        edge.route.routelen,
+                        edge.route.grids.begin()->x,
+                        edge.route.grids.begin()->y);
         i++;
-      }     
-      
-      for(int layer=1; layer < net->getMaxLayer(); layer++){
+      }
+
+      for (int layer = db_->getChip()->getBlock()->getMinRoutingLayer() - 1;
+           layer <= net->getMaxLayer();
+           layer++) {
         odb::dbTechLayer* db_layer = getTechLayer(layer, false);
 
         int width = db_layer->getWidth();
@@ -541,10 +553,23 @@ void FastRouteCore::updateSlacks(float percentage)
         const float layer_width = dbuToMicrons(width);
         const float res_ohm_per_micron = resistance / layer_width;
         float final_resistance = res_ohm_per_micron * dbuToMicrons(length);
-        logger_->report("\tM{} - Final resistance: {} - Via Resistance: {}",layer+1, final_resistance, getTechLayer(layer, true)->getResistance());
+        float via_resistance = (layer == net->getMaxLayer())
+                                   ? 0
+                                   : getTechLayer(layer, true)->getResistance();
+        float via_ratio = (layer == net->getMaxLayer())
+                              ? 0
+                              : getViaResistance(layer, net->getMaxLayer());
+
+        logger_->report(
+            "\tM{} - Final resistance: {}/{} - Via Resistance: {}/{}",
+            layer + 1,
+            final_resistance,
+            getLayerResistance(layer, tile_size_, net),
+            via_resistance,
+            via_ratio);
       }
+      resistance_aware_ = false;
     }
-    
 
     const float slack = getNetSlack(net->getDbNet());
     net->setSlack(slack);
@@ -555,13 +580,9 @@ void FastRouteCore::updateSlacks(float percentage)
     res_aware_list.emplace_back(net_id, slack);
     // }
 
-    // std::vector<std::string> nets = {"net145078", "net130896", "_162349_", "net158583"};
-    // if(std::find(nets.begin(), nets.end(),net->getDbNet()->getName()) != nets.end()){
+    // if(net->getDbNet()->getName()=="clk"){
     //   logger_->report("Net {} - Slack {}", net->getName(), net->getSlack());
-    //   net->setSlack(-1);
-    //   net->setIsResAware(false);
     // }
-    
   }
 
   auto compareSlack
@@ -1149,6 +1170,7 @@ void FastRouteCore::layerAssignmentV4()
 void FastRouteCore::layerAssignment()
 {
   updateSlacks();
+  is_3d_step_ = true;
 
   for (const int& netID : net_ids_) {
     auto& treenodes = sttrees_[netID].nodes;
