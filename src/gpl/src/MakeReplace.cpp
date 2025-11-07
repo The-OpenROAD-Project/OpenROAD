@@ -5,6 +5,8 @@
 
 #include "gpl/Replace.h"
 #include "graphicsImpl.h"
+#include "graphicsNone.h"
+#include "gui/gui.h"
 #include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/decode.h"
@@ -25,7 +27,11 @@ void initReplace(Tcl_Interp* tcl_interp)
 
 void initReplaceGraphics(Replace* replace, utl::Logger* log)
 {
-  replace->setGraphicsInterface(gpl::GraphicsImpl(log));
+  if (gui::Gui::get() == nullptr) {
+    replace->setGraphicsInterface(gpl::GraphicsNone());
+  } else {
+    replace->setGraphicsInterface(gpl::GraphicsImpl(log));
+  }
 }
 
 }  // namespace gpl

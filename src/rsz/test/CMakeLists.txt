@@ -35,6 +35,7 @@ or_integration_tests(
     rebuffer1
     rebuffer1_hier
     recover_power_verbose
+    remove_buffers_hier1
     remove_buffers1
     remove_buffers2
     remove_buffers3
@@ -91,7 +92,8 @@ or_integration_tests(
     repair_setup8
     repair_setup9
     repair_setup9_hier
-    repair_setup_undo
+    repair_setup_undo1
+    repair_setup_undo2
     repair_slew1
     repair_slew2
     repair_slew3
