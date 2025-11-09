@@ -3,10 +3,24 @@
 
 #include "PadPlacer.h"
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <iterator>
+#include <limits>
+#include <map>
+#include <optional>
+#include <set>
+#include <utility>
+#include <vector>
+
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/isotropy.h"
+#include "utl/Logger.h"
 
 namespace pad {
 
@@ -522,7 +536,7 @@ void BumpAlignedPadPlacer::place()
       }
 
       // build positions with bump as the center
-      int target_offset = group_center - group_width / 2;
+      int target_offset = group_center - (group_width / 2);
       for (const auto& [ginst, giterm] : min_terms) {
         inst_pos[ginst] = target_offset;
         target_offset += getInstWidths().at(ginst);
@@ -582,11 +596,11 @@ int64_t BumpAlignedPadPlacer::computePadBumpDistance(odb::dbInst* inst,
     case odb::Direction2D::North:
     case odb::Direction2D::South:
       return odb::Point::squaredDistance(
-          odb::Point(center_pos + inst_width / 2, row_center.y()), center);
+          odb::Point(center_pos + (inst_width / 2), row_center.y()), center);
     case odb::Direction2D::West:
     case odb::Direction2D::East:
       return odb::Point::squaredDistance(
-          odb::Point(row_center.x(), center_pos + inst_width / 2), center);
+          odb::Point(row_center.x(), center_pos + (inst_width / 2)), center);
   }
 
   return std::numeric_limits<int64_t>::max();

@@ -5,10 +5,14 @@
 
 #include <cstdint>
 #include <map>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/isotropy.h"
 
 namespace odb {
 class dbBlock;

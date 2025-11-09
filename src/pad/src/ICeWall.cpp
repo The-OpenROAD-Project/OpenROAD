@@ -943,10 +943,11 @@ void ICeWall::placeFiller(
             "{}{}_{}_{}", kFillPrefix, row->getName(), fill_group, site_offset);
         auto* fill_inst = odb::dbInst::create(block, filler, name.c_str());
 
-        placer.place(fill_inst,
-                     row_start + site_width * (start_site_index + site_offset),
-                     odb::dbOrientType::R0,
-                     allow_overlap);
+        placer.place(
+            fill_inst,
+            row_start + (site_width * (start_site_index + site_offset)),
+            odb::dbOrientType::R0,
+            allow_overlap);
 
         site_offset += fill_width;
         sites -= fill_width;
