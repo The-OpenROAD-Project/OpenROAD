@@ -1,11 +1,15 @@
 #include "checker.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <map>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -89,8 +93,9 @@ void Checker::checkFloatingChips(odb::dbChip* chip,
   if (sets.size() > 1) {
     // Convert to vector and sort by size
     std::vector<std::vector<dbChipInst*>> insts_sets;
+    insts_sets.reserve(sets.size());
     for (auto& [root, chips] : sets) {
-      insts_sets.push_back(chips);
+      insts_sets.emplace_back(chips);
     }
 
     std::sort(
