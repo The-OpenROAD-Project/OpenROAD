@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2025-2025, The OpenROAD Authors
+
+include("openroad")
+swig_lib(NAME         web
+         NAMESPACE    web
+         I_FILE       src/web.i
+         SCRIPTS      src/web.tcl
+         SWIG_INCLUDES ${ODB_HOME}/src/swig/common
+                       ${ODB_HOME}/src/swig/tcl
+                       ${ODB_HOME}/include
+)
+
+# exa_lib is intended to be the functional code of this module with
+# without GUI dependencies.  C++ unit test will depend on exa_lib
+# to minimize pulling the many transitive dependencies of the GUI.
+target_sources(web
+  PRIVATE
+    src/color.cpp
+    src/web.cpp
+    src/MakeWeb.cpp
+)
+
+target_link_libraries(web
+  PUBLIC
+    odb
+  PRIVATE
+    lodepng
+    utl_lib
+)
+
+target_include_directories(web
+  PUBLIC
+    include
+  PRIVATE
+    src
+    ${TCL_LIBRARY}
+    ${OPENROAD_HOME}/third-party
+)
+
+messages(
+  TARGET web
+)
+
+################################################################
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          web_py
+           NAMESPACE     web
+           LANGUAGE      python
+           I_FILE        src/web-py.i
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/dpl
+                         ${ODB_HOME}/src/swig/common
+                         ${ODB_HOME}/src/swig/python
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/web_py.py
+  )
+
+  target_link_libraries(web_py
+    PUBLIC
+      web
+  )
+
+endif()
+
+if(ENABLE_TESTS)
+  add_subdirectory(test)
+endif()

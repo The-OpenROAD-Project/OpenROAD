@@ -128,6 +128,10 @@ namespace est {
 class EstimateParasitics;
 }
 
+namespace web {
+class WebServer;
+}
+
 namespace ord {
 
 class dbVerilogNetwork;
@@ -180,6 +184,10 @@ class OpenRoad
   est::EstimateParasitics* getEstimateParasitics()
   {
     return estimate_parasitics_;
+  }
+  web::WebServer* getWebServer()
+  {
+    return web_server_;
   }
 
   // Return the bounding box of the db rows.
@@ -284,6 +292,7 @@ class OpenRoad
   stt::SteinerTreeBuilder* stt_builder_ = nullptr;
   dft::Dft* dft_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
+  web::WebServer* web_server_ = nullptr;
   utl::CallBackHandler* callback_handler_ = nullptr;
 
   int threads_ = 1;
