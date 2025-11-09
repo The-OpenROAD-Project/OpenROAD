@@ -5,8 +5,10 @@
 
 #include <cstring>
 #include <string>
+#include <vector>
 
 #include "dbCommon.h"
+#include "dbJournal.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -234,6 +236,64 @@ void dbJournalLog::pop(std::string& value)
   int i;
   for (i = 0; i < len; ++i) {
     value.push_back(next());
+  }
+}
+
+void dbJournalLog::append(dbJournalLog& other)
+{
+  if (debug_ != other.debug_) {
+    logger_->error(utl::ODB, 429, "Journal debug mode mismatch.");
+  }
+  if (other.size() == 0) {
+    return;
+  }
+  // Scan from the end to find all action indices
+  std::vector<uint> action_indices;
+  other.moveToEnd();
+  other.moveBackOneInt();
+  for (;;) {
+    uint idx;
+    other.pop(idx);
+    action_indices.push_back(idx);
+    if (idx == 0) {
+      break;
+    }
+    other.set(idx);
+    other.moveBackOneInt();
+  }
+  // Now push data from the other log, while shifting action indices
+  int shift_idx = size();
+  other.begin();
+  while (!other.end()) {
+    uint current_idx = other.idx();
+    uint supposed_idx = action_indices.back();
+    action_indices.pop_back();
+    if (current_idx != supposed_idx) {
+      logger_->critical(
+          utl::ODB, 438, "In append, didn't match the expected action index.");
+    }
+    uint next_idx = other.size();
+    if (!action_indices.empty()) {
+      next_idx = action_indices.back();
+    }
+    next_idx -= sizeof(uint) + 1;
+    if (other.debug_) {
+      next_idx -= 2;
+    }
+    while (other.idx() < next_idx) {
+      data_.push_back(other.data_[other.idx_++]);
+    }
+    unsigned char end_action;
+    unsigned int action_idx;
+    other.pop(end_action);
+    other.pop(action_idx);
+    if (end_action != dbJournal::Action::END_ACTION
+        || action_idx != current_idx) {
+      logger_->critical(
+          utl::ODB, 459, "In append, didn't see an expected END_ACTION.");
+    }
+    push(end_action);
+    push(current_idx + shift_idx);
   }
 }
 

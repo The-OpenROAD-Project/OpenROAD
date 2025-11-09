@@ -622,11 +622,8 @@ Test the hierarchical journalling
 
 TEST_F(HierarchyFixture, test_hierarchy_journalling)
 {
-  // end the eco ready to undo
-  odb::dbDatabase::endEco(block);
   // undo the construction
   odb::dbDatabase::undoEco(block);
-  EXPECT_EQ(odb::dbDatabase::checkEco(block), 0);
   // sanity check nothing left.
   dbSet<dbModNet> parent_modnets = parent_mod->getModNets();
   EXPECT_EQ(parent_modnets.size(), 0);

@@ -48,10 +48,13 @@ namespace odb {
 inline constexpr uint db_schema_major = 0;  // Not used...
 inline constexpr uint db_schema_initial = 57;
 
-inline constexpr uint db_schema_minor = 122;  // Current revision number
+inline constexpr uint db_schema_minor = 123;  // Current revision number
 
 // Revision where dbMarkerCategory was moved from dbBlock to dbChip
-inline constexpr uint db_schema_chip_marker_categories = 122;
+inline constexpr uint db_schema_chip_marker_categories = 123;
+
+// Revision where dbTech::dbu_per_micron_ was removed
+inline constexpr uint db_schema_remove_dbu_per_micron = 122;
 
 // Revision where core area is stored as a polygon
 inline constexpr uint db_schema_core_area_is_polygon = 121;

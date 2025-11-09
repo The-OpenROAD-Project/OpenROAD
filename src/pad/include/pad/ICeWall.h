@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -24,6 +25,13 @@ namespace pad {
 
 class RDLRouter;
 class RDLGui;
+
+enum class PlacementStrategy
+{
+  DEFAULT,
+  BUMP_ALIGNED,
+  UNIFORM
+};
 
 class ICeWall
 {
@@ -66,7 +74,9 @@ class ICeWall
                 odb::dbRow* row,
                 int location,
                 bool mirror);
-  void placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row);
+  void placePads(const std::vector<odb::dbInst*>& insts,
+                 odb::dbRow* row,
+                 const PlacementStrategy& mode);
   void placeCorner(odb::dbMaster* master, int ring_index);
   void placeFiller(const std::vector<odb::dbMaster*>& masters,
                    odb::dbRow* row,
@@ -110,7 +120,8 @@ class ICeWall
                     int index,
                     odb::dbInst* inst,
                     const odb::dbOrientType& base_orient,
-                    bool allow_overlap = false) const;
+                    bool allow_overlap = false,
+                    bool allow_shift = false) const;
 
   void makeBTerm(odb::dbNet* net,
                  odb::dbTechLayer* layer,
@@ -160,6 +171,9 @@ class ICeWall
                       odb::dbInst* inst,
                       const std::map<odb::dbInst*, std::set<odb::dbITerm*>>&
                           iterm_connections) const;
+  std::optional<std::pair<odb::dbInst*, odb::Rect>> checkInstancePlacement(
+      odb::dbInst* inst,
+      odb::dbRow* row) const;
 
   // Data members
   odb::dbDatabase* db_ = nullptr;

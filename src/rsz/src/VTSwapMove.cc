@@ -4,6 +4,7 @@
 #include "VTSwapMove.hh"
 
 #include <cmath>
+#include <unordered_set>
 
 #include "BaseMove.hh"
 #include "odb/db.h"
