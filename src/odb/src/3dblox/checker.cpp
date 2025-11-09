@@ -5,7 +5,6 @@
 #include <map>
 #include <vector>
 
-#include "fmt/format.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -164,8 +163,9 @@ void Checker::checkOverlappingChips(odb::dbChip* chip,
       marker->addSource(inst2);
 
       // Add a comment describing the overlap
-      marker->setComment(fmt::format(
-          "Chips '{}' and '{}' overlap", inst1->getName(), inst2->getName()));
+      std::string comment = "Chips " + inst1->getName() + " and "
+                            + inst2->getName() + " overlap";
+      marker->setComment(comment);
     }
   }
 }
