@@ -1024,11 +1024,6 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
       && db->isLessThanSchema(db_schema_chip_marker_categories)) {
     _dbChip* chip = db->chip_tbl_->getPtr(block._chip);
     stream >> *chip->marker_categories_tbl_;
-    for (const auto& marker_category :
-         ((dbChip*) chip)->getMarkerCategories()) {
-      chip->marker_categories_map_[marker_category->getName()]
-          = marker_category->getId();
-    }
     dbHashTable<_dbMarkerCategory> tmp_hash;
     stream >> tmp_hash;
   }

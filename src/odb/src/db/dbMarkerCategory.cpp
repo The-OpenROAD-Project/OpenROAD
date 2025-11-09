@@ -40,9 +40,6 @@ bool _dbMarkerCategory::operator==(const _dbMarkerCategory& rhs) const
   if (max_markers_ != rhs.max_markers_) {
     return false;
   }
-  if (block_ != rhs.block_) {
-    return false;
-  }
   if (*marker_tbl_ != *rhs.marker_tbl_) {
     return false;
   }
@@ -84,7 +81,6 @@ dbIStream& operator>>(dbIStream& stream, _dbMarkerCategory& obj)
   stream >> obj.description_;
   stream >> obj.source_;
   stream >> obj.max_markers_;
-  stream >> obj.block_;
   stream >> *obj.marker_tbl_;
   stream >> *obj.categories_tbl_;
   stream >> obj.categories_hash_;
@@ -98,7 +94,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbMarkerCategory& obj)
   stream << obj.description_;
   stream << obj.source_;
   stream << obj.max_markers_;
-  stream << obj.block_;
   stream << *obj.marker_tbl_;
   stream << *obj.categories_tbl_;
   stream << obj.categories_hash_;
@@ -150,14 +145,11 @@ bool _dbMarkerCategory::isTopCategory() const
 
 _dbBlock* _dbMarkerCategory::getBlock() const
 {
-  if (!block_.isValid()) {
-    return nullptr;
-  }
   dbMarkerCategory* category = (dbMarkerCategory*) this;
   _dbMarkerCategory* top_category
       = (_dbMarkerCategory*) category->getTopCategory();
-  _dbChip* chip = (_dbChip*) top_category->getOwner();
-  return (_dbBlock*) chip->_block_tbl->getPtr(block_);
+  dbChip* chip = (dbChip*) top_category->getOwner();
+  return (_dbBlock*) chip->getBlock();
 }
 
 bool _dbMarkerCategory::hasMaxMarkerLimit() const
@@ -820,7 +812,6 @@ dbMarkerCategory* dbMarkerCategory::create(dbBlock* block, const char* name)
   if (category == nullptr) {
     return nullptr;
   }
-  ((_dbMarkerCategory*) category)->block_ = block->getImpl()->getId();
   for (auto cb : ((_dbBlock*) block)->_callbacks) {
     cb->inDbMarkerCategoryCreate(category);
   }
@@ -867,7 +858,6 @@ dbMarkerCategory* dbMarkerCategory::create(dbMarkerCategory* category,
   _dbMarkerCategory* _category = parent->categories_tbl_->create();
 
   _category->_name = safe_strdup(name);
-  _category->block_ = parent->block_;
 
   parent->categories_hash_.insert(_category);
 

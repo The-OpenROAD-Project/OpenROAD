@@ -245,6 +245,10 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
   for (const auto& chip_region : chip->getChipRegions()) {
     obj.chip_region_map_[chip_region->getName()] = chip_region->getId();
   }
+  for (const auto& marker_category : ((dbChip*) &obj)->getMarkerCategories()) {
+    obj.marker_categories_map_[marker_category->getName()]
+        = marker_category->getId();
+  }
   // User Code End >>
   return stream;
 }

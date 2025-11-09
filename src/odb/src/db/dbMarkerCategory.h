@@ -23,7 +23,6 @@ class dbOStream;
 class _dbDatabase;
 class _dbMarker;
 class _dbMarkerCategory;
-class _dbBlock;
 // User Code Begin Classes
 class _dbBlock;
 // User Code End Classes
@@ -60,7 +59,6 @@ class _dbMarkerCategory : public _dbObject
   std::string description_;
   std::string source_;
   int max_markers_;
-  dbId<_dbBlock> block_;
   dbTable<_dbMarker>* marker_tbl_;
   dbTable<_dbMarkerCategory>* categories_tbl_;
   dbHashTable<_dbMarkerCategory> categories_hash_;
