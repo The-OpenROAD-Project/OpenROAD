@@ -145,7 +145,7 @@ _dbMarkerCategory::~_dbMarkerCategory()
 
 bool _dbMarkerCategory::isTopCategory() const
 {
-  return getOwner()->getObjectType() == dbBlockObj;
+  return getOwner()->getObjectType() == dbChipObj;
 }
 
 _dbBlock* _dbMarkerCategory::getBlock() const
