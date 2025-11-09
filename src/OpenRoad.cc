@@ -155,9 +155,7 @@ OpenRoad::~OpenRoad()
   }
   sta::Sta::setSta(sta_);
   sta::deleteAllMemory();
-  if (temp) {  // reinit if this isn't the last instance
-    sta::initSta();
-  }
+  sta::initSta();
   sta::Sta::setSta(temp);
   odb::dbDatabase::destroy(db_);
   delete logger_;
