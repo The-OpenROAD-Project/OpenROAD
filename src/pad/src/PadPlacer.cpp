@@ -398,8 +398,9 @@ UniformPadPlacer::UniformPadPlacer(utl::Logger* logger,
                                    odb::dbBlock* block,
                                    const std::vector<odb::dbInst*>& insts,
                                    const odb::Direction2D::Value& edge,
-                                   odb::dbRow* row)
-    : PadPlacer(logger, block, insts, edge, row)
+                                   odb::dbRow* row,
+                                   std::optional<int> max_spacing)
+    : PadPlacer(logger, block, insts, edge, row), max_spacing_(max_spacing)
 {
 }
 
@@ -408,9 +409,14 @@ void UniformPadPlacer::place()
   const bool gui_debug
       = getLogger()->debugCheck(utl::PAD, "Place", 1) && gui::Gui::enabled();
 
-  const float initial_target_spacing
+  float initial_target_spacing
       = static_cast<float>(getRowWidth() - getTotalInstWidths())
         / (getInsts().size() + 1);
+  if (max_spacing_) {
+    if (*max_spacing_ < initial_target_spacing) {
+      initial_target_spacing = *max_spacing_;
+    }
+  }
   const int site_width = std::min(getRow()->getSite()->getWidth(),
                                   getRow()->getSite()->getHeight());
   const int target_spacing

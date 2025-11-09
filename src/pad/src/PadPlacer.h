@@ -120,10 +120,14 @@ class UniformPadPlacer : public PadPlacer
                    odb::dbBlock* block,
                    const std::vector<odb::dbInst*>& insts,
                    const odb::Direction2D::Value& edge,
-                   odb::dbRow* row);
+                   odb::dbRow* row,
+                   std::optional<int> max_spacing = {});
   ~UniformPadPlacer() override = default;
 
   void place() override;
+
+ private:
+  std::optional<int> max_spacing_;
 };
 
 class BumpAlignedPadPlacer : public PadPlacer
