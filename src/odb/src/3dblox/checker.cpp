@@ -1,5 +1,6 @@
 #include "checker.h"
 
+#include <cstddef>
 #include <functional>
 #include <map>
 #include <vector>

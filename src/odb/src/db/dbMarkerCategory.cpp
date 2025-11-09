@@ -22,6 +22,7 @@
 #include "dbChip.h"
 #include "dbHashTable.hpp"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbObject.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbMarkerCategory>;
@@ -775,6 +776,13 @@ dbMarkerCategory* dbMarkerCategory::create(dbChip* chip, const char* name)
 
   parent->marker_categories_map_[name] = _category->getImpl()->getId();
 
+  _dbBlock* block = (_dbBlock*) chip->getBlock();
+  if (block) {
+    for (auto cb : block->_callbacks) {
+      cb->inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
+    }
+  }
+
   return (dbMarkerCategory*) _category;
 }
 
@@ -807,43 +815,19 @@ dbMarkerCategory* dbMarkerCategory::createOrReplace(dbChip* chip,
 
 dbMarkerCategory* dbMarkerCategory::create(dbBlock* block, const char* name)
 {
-  dbChip* chip = block->getChip();
-  dbMarkerCategory* category = create(chip, name);
-  if (category == nullptr) {
-    return nullptr;
-  }
-  for (auto cb : ((_dbBlock*) block)->_callbacks) {
-    cb->inDbMarkerCategoryCreate(category);
-  }
-  return category;
+  return create(block->getChip(), name);
 }
 
 dbMarkerCategory* dbMarkerCategory::createOrGet(dbBlock* block,
                                                 const char* name)
 {
-  _dbChip* parent = (_dbChip*) block->getChip();
-
-  auto it = parent->marker_categories_map_.find(name);
-  if (it != parent->marker_categories_map_.end()) {
-    return (dbMarkerCategory*) parent->marker_categories_tbl_->getPtr(
-        it->second);
-  }
-
-  return create(block, name);
+  return createOrGet(block->getChip(), name);
 }
 
 dbMarkerCategory* dbMarkerCategory::createOrReplace(dbBlock* block,
                                                     const char* name)
 {
-  _dbChip* parent = (_dbChip*) block->getChip();
-
-  auto it = parent->marker_categories_map_.find(name);
-  if (it != parent->marker_categories_map_.end()) {
-    destroy(
-        (dbMarkerCategory*) parent->marker_categories_tbl_->getPtr(it->second));
-  }
-
-  return create(block, name);
+  return createOrReplace(block->getChip(), name);
 }
 
 dbMarkerCategory* dbMarkerCategory::create(dbMarkerCategory* category,
@@ -902,7 +886,7 @@ void dbMarkerCategory::destroy(dbMarkerCategory* category)
   if (_category->isTopCategory()) {
     _dbChip* _chip = (_dbChip*) _category->getOwner();
     if (_category->getBlock()) {
-      for (auto cb : ((_dbBlock*) _category->getBlock())->_callbacks) {
+      for (auto cb : _category->getBlock()->_callbacks) {
         cb->inDbMarkerCategoryDestroy(category);
       }
     }
@@ -913,8 +897,10 @@ void dbMarkerCategory::destroy(dbMarkerCategory* category)
     _dbMarkerCategory* parent = (_dbMarkerCategory*) _category->getOwner();
 
     _dbBlock* block = parent->getBlock();
-    for (auto cb : block->_callbacks) {
-      cb->inDbMarkerCategoryDestroy(category);
+    if (block) {
+      for (auto cb : block->_callbacks) {
+        cb->inDbMarkerCategoryDestroy(category);
+      }
     }
 
     parent->categories_hash_.remove(_category);

@@ -27,6 +27,8 @@
 #include "dbChipInstItr.h"
 #include "dbChipNet.h"
 #include "dbChipNetItr.h"
+#include "odb/dbObject.h"
+#include "odb/geom.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChip>;

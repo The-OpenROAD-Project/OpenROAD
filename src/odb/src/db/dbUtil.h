@@ -2,8 +2,6 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 #pragma once
 
-#include <fmt/ranges.h>
-
 #include <cstddef>
 #include <string>
 #include <vector>

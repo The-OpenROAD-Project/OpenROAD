@@ -23,6 +23,7 @@
 #include "dbVector.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include "dbCore.h"
 #include "odb/dbBlockCallBackObj.h"
 // User Code End Includes
 namespace odb {
@@ -769,10 +770,6 @@ std::set<dbObject*> dbMarker::getSources() const
       if (table != nullptr && table->validObject(id)) {
         objs.insert(table->getObject(id));
       }
-    }
-  } else {
-    for (const auto& [db_type, id] : marker->sources_) {
-      // owned by chip
     }
   }
   return objs;

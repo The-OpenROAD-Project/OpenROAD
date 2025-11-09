@@ -110,7 +110,7 @@ class Cuboid
  public:
   Cuboid() = default;
   Cuboid(const Cuboid& other) = default;
-  Cuboid(Point3D p1, Point3D p2);
+  Cuboid(const Point3D& p1, const Point3D& p2);
   Cuboid(int x1, int y1, int z1, int x2, int y2, int z2);
 
   Cuboid& operator=(const Cuboid& b) = default;
@@ -182,7 +182,7 @@ class Cuboid
   bool inside(const Cuboid& b) const;
 
   // Return the point inside cuboid that is closest to pt.
-  Point3D closestPtInside(Point3D pt) const;
+  Point3D closestPtInside(const Point3D& pt) const;
 
   // Compute the union of this cuboid and a point.
   void merge(const Point3D& p, Cuboid& result);
@@ -1209,7 +1209,7 @@ inline Cuboid::Cuboid(const int x1,
   init(x1, y1, z1, x2, y2, z2);
 }
 
-inline Cuboid::Cuboid(const Point3D p1, const Point3D p2)
+inline Cuboid::Cuboid(const Point3D& p1, const Point3D& p2)
     : Cuboid(p1.x(), p1.y(), p1.z(), p2.x(), p2.y(), p2.z())
 {
 }
@@ -1267,10 +1267,10 @@ inline bool Cuboid::operator==(const Cuboid& b) const
          == std::tie(b.xlo_, b.ylo_, b.zlo_, b.xhi_, b.yhi_, b.zhi_);
 }
 
-inline bool Cuboid::operator<(const Cuboid& rhs) const
+inline bool Cuboid::operator<(const Cuboid& b) const
 {
   return std::tie(xlo_, ylo_, zlo_, xhi_, yhi_, zhi_)
-         < std::tie(rhs.xlo_, rhs.ylo_, rhs.zlo_, rhs.xhi_, rhs.yhi_, rhs.zhi_);
+         < std::tie(b.xlo_, b.ylo_, b.zlo_, b.xhi_, b.yhi_, b.zhi_);
 }
 
 inline void Cuboid::moveTo(int x, int y, int z)
@@ -1359,7 +1359,7 @@ inline bool Cuboid::inside(const Cuboid& b) const
          && (xhi_ > b.xhi_) && (yhi_ > b.yhi_) && (zhi_ > b.zhi_);
 }
 
-inline Point3D Cuboid::closestPtInside(const Point3D pt) const
+inline Point3D Cuboid::closestPtInside(const Point3D& pt) const
 {
   return Point3D(std::min(std::max(pt.x(), xMin()), xMax()),
                  std::min(std::max(pt.y(), yMin()), yMax()),

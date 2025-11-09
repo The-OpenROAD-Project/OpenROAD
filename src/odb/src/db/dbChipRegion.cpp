@@ -18,6 +18,7 @@
 #include "dbChipInst.h"
 #include "dbChipRegionInst.h"
 #include "dbTech.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
