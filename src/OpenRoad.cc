@@ -78,6 +78,7 @@
 #include "rmp/Restructure.h"
 #include "rsz/MakeResizer.hh"
 #include "rsz/Resizer.hh"
+#include "sta/Sta.hh"
 #include "sta/VerilogReader.hh"
 #include "sta/VerilogWriter.hh"
 #include "stt/MakeSteinerTreeBuilder.h"
