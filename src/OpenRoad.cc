@@ -120,9 +120,6 @@ OpenRoad::OpenRoad()
 OpenRoad::~OpenRoad()
 {
   delete verilog_network_;
-  // Temporarily removed until a crash can be resolved
-  // deleteDbSta(sta_);
-  // sta::deleteAllMemory();
   delete ioPlacer_;
   delete resizer_;
   delete opendp_;
@@ -140,7 +137,6 @@ OpenRoad::~OpenRoad()
   delete finale_;
   delete ram_gen_;
   delete antenna_checker_;
-  odb::dbDatabase::destroy(db_);
   delete partitionMgr_;
   delete pdngen_;
   delete icewall_;
@@ -148,6 +144,21 @@ OpenRoad::~OpenRoad()
   delete stt_builder_;
   delete dft_;
   delete estimate_parasitics_;
+  // If the Python API creates and destructs multiple instances,
+  // not deleting the sta memory results in memory leaks. We also
+  // need to reinit the sta memory after deletion to make sure
+  // sta works for future instances as well.
+  sta::Sta* temp = nullptr;
+  if (sta_ != sta::Sta::sta()) {
+    temp = sta::Sta::sta();
+  }
+  sta::Sta::setSta(sta_);
+  sta::deleteAllMemory();
+  if (temp) {  // reinit if this isn't the last instance
+    sta::initSta();
+  }
+  sta::Sta::setSta(temp);
+  odb::dbDatabase::destroy(db_);
   delete logger_;
   delete verilog_reader_;
   delete callback_handler_;
