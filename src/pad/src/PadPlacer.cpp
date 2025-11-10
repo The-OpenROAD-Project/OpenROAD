@@ -413,9 +413,8 @@ void UniformPadPlacer::place()
       = static_cast<float>(getRowWidth() - getTotalInstWidths())
         / (getInsts().size() + 1);
   if (max_spacing_) {
-    if (*max_spacing_ < initial_target_spacing) {
-      initial_target_spacing = *max_spacing_;
-    }
+    initial_target_spacing
+        = std::min<float>(*max_spacing_, initial_target_spacing);
   }
   const int site_width = std::min(getRow()->getSite()->getWidth(),
                                   getRow()->getSite()->getHeight());
