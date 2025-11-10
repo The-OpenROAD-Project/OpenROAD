@@ -269,6 +269,60 @@ void FlexPA::prepPattern()
   prepPatternInstRows(inst_rows);
 }
 
+std::vector<frApAbsoluteEdge> FlexPA::prepCE()
+{
+  genAllAccessPoints();
+  revertAccessPoints();
+
+  const auto& unique = unique_insts_.getUniqueClasses();
+
+  // revert access points to origin
+  unique_inst_patterns_.reserve(unique.size());
+
+  int cnt = 0;
+
+  std::vector<frApAbsoluteEdge> edges;
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
+  ThreadException exception;
+#pragma omp parallel for schedule(dynamic)
+  for (auto& unique_class : unique) {
+    try {
+      // only do for core and block cells
+      // TODO the above comment says "block cells" but that's not what the code
+      // does?
+      if (unique_class->getInsts().empty()) {
+        continue;
+      }
+      auto candidate_inst = *unique_class->getInsts().begin();
+      if (!isStdCell(candidate_inst)) {
+        continue;
+      }
+
+
+      auto new_edges = buildInstAPGraph(candidate_inst);
+#pragma omp critical
+      {
+
+        edges.insert(edges.end(), new_edges.begin(), new_edges.end());
+        cnt += new_edges.size();
+        if (router_cfg_->VERBOSE > 0) {
+          if (cnt % (cnt > 1000 ? 1000 : 100) == 0) {
+            logger_->info(DRT, 88, "  Complete {} unique inst patterns.", cnt);
+          }
+        }
+      }
+    } catch (...) {
+      exception.capture();
+    }
+  }
+  exception.rethrow();
+  if (router_cfg_->VERBOSE > 0) {
+    logger_->info(DRT, 83, "  Complete {} unique inst patterns.", cnt);
+  }
+
+  return edges;
+}
+
 void FlexPA::setTargetInstances(const frCollection<odb::dbInst*>& insts)
 {
   target_insts_ = insts;
@@ -411,6 +465,11 @@ int FlexPA::main()
     t.print(logger_);
   }
   return 0;
+}
+ std::vector<frApAbsoluteEdge> FlexPA::conflictExtraction()
+{
+  init();
+  return prepCE();
 }
 
 template <class Archive>

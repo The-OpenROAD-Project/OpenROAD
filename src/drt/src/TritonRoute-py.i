@@ -13,5 +13,8 @@
 %ignore drt::TritonRoute::initGraphics;
 
 %include <std_string.i>
+%include <std_vector.i>
 %include "../../Exception-py.i"
 %include "triton_route/TritonRoute.h"
+
+%template(ApAbsEdges) std::vector<drt::trApAbsoluteEdge>;

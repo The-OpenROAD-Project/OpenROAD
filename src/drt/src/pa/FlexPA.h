@@ -69,6 +69,22 @@ struct frInstLocationComp
   }
 };
 
+struct frApAbsoluteReference
+{
+  std::string master_name;
+  int pinAccessIdx;
+  std::string mterm_name;
+  int ap_x;
+  int ap_y;
+};
+
+struct frApAbsoluteEdge
+{
+  frApAbsoluteReference prev;
+  frApAbsoluteReference cur;
+  int cost;
+};
+
 using frInstLocationSet = std::set<frInst*, frInstLocationComp>;
 
 class FlexPinAccessPattern;
@@ -108,6 +124,15 @@ class FlexPA
   void deleteInst(frInst* inst);
 
   int main();
+
+    // PAP-ML
+  std::vector<frApAbsoluteEdge> conflictExtraction();
+  int getEdgeCostCE(frInstTerm* itermA,
+                            int pinA_X,
+                            int pinA_Y,
+                            frInstTerm* itermB,
+                            int pinB_X,
+                            int pinB_Y);
 
  private:
   frDesign* design_;
@@ -725,6 +750,19 @@ class FlexPA
       std::set<std::pair<int, int>>& used_access_points,
       std::set<std::pair<int, int>>& viol_access_points,
       int max_access_point_size);
+
+  // PAP-ML
+  std::vector<frApAbsoluteEdge> buildInstAPGraph(frInst* unique_inst);
+  std::vector<frApAbsoluteEdge> buildInstAccessGraph(
+      frInst* unique_inst,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins);
+  std::vector<frApAbsoluteEdge> prepCE();
+  frAccessPoint* findAp(frInstTerm* iterm, int x, int y);
+  std::unique_ptr<frVia> buildVia(
+      frInstTerm* iterm,
+      int x,
+      int y,
+      std::vector<std::pair<frConnFig*, frBlockObject*>>& objs);
 
   /**
    * @brief Initializes the nodes' data structures that will be used to solve

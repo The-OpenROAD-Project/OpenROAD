@@ -142,6 +142,59 @@ int FlexPA::prepPatternInstHelper(frInst* unique_inst, const bool use_x)
   return genPatterns(unique_inst, pin_inst_term_pairs);
 }
 
+// the input inst must be unique instance
+std::vector<frApAbsoluteEdge> FlexPA::buildInstAPGraph(frInst* unique_inst)
+{
+  std::vector<std::pair<frCoord, std::pair<frMPin*, frInstTerm*>>> pins;
+  // TODO: add assert in case input inst is not unique inst
+  int pin_access_idx = unique_inst->getPinAccessIdx();
+  for (auto& inst_term : unique_inst->getInstTerms()) {
+    if (isSkipInstTerm(inst_term.get())) {
+      continue;
+    }
+    int n_aps = 0;
+    for (auto& pin : inst_term->getTerm()->getPins()) {
+      // container of access points
+      auto pin_access = pin->getPinAccess(pin_access_idx);
+      int sum_x_coord = 0;
+      int sum_y_coord = 0;
+      int cnt = 0;
+      // get avg x coord for sort
+      for (auto& access_point : pin_access->getAccessPoints()) {
+        sum_x_coord += access_point->getPoint().x();
+        sum_y_coord += access_point->getPoint().y();
+        cnt++;
+      }
+      n_aps += cnt;
+      if (cnt != 0) {
+        const double coord = (true ? sum_x_coord : sum_y_coord) / (double) cnt;
+        pins.push_back({(int) std::round(coord), {pin.get(), inst_term.get()}});
+      }
+    }
+    if (n_aps == 0 && !inst_term->getTerm()->getPins().empty()) {
+      logger_->error(DRT,
+                     137,
+                     "Term {} ({}) does not have any access point.",
+                     inst_term->getName(),
+                     unique_inst->getMaster()->getName());
+    }
+  }
+  std::sort(pins.begin(),
+            pins.end(),
+            [](const std::pair<frCoord, std::pair<frMPin*, frInstTerm*>>& lhs,
+               const std::pair<frCoord, std::pair<frMPin*, frInstTerm*>>& rhs) {
+              return lhs.first < rhs.first;
+            });
+
+  std::vector<std::pair<frMPin*, frInstTerm*>> pin_inst_term_pairs;
+  pin_inst_term_pairs.reserve(pins.size());
+  for (auto& [x, m] : pins) {
+    pin_inst_term_pairs.push_back(m);
+  }
+
+  return buildInstAccessGraph(unique_inst, pin_inst_term_pairs);
+}
+
 int FlexPA::genPatterns(
     frInst* unique_inst,
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins)
@@ -237,6 +290,100 @@ int FlexPA::genPatternsHelper(
     }
   }
   return num_valid_pattern;
+}
+
+std::vector<frApAbsoluteEdge> FlexPA::buildInstAccessGraph(
+    frInst* unique_inst,
+    const std::vector<std::pair<frMPin*, frInstTerm*>>& pins)
+{
+
+  if(pins.size() < 2) {
+    return {};
+  }
+  int max_access_point_size = 0;
+  int pin_access_idx = pins[0].second->getInst()->getPinAccessIdx();
+  for (auto& [pin, inst_term] : pins) {
+    max_access_point_size
+        = std::max(max_access_point_size,
+                   pin->getPinAccess(pin_access_idx)->getNumAccessPoints());
+  }
+
+  int num_node = (pins.size() + 2) * max_access_point_size;
+  int num_edge = num_node * max_access_point_size;
+  std::set<std::pair<int, int>> used_access_points;
+  std::set<std::pair<int, int>> viol_access_points;
+  std::set<std::vector<int>> inst_access_patterns;
+
+  std::vector<std::vector<std::unique_ptr<FlexDPNode>>> nodes(pins.size() + 2);
+  std::vector<int> vio_edge(num_edge, -1);
+
+  genPatternsInit(nodes,
+                  pins,
+                  inst_access_patterns,
+                  used_access_points,
+                  viol_access_points);
+
+  genPatternsReset(nodes, pins);
+  genPatternsPerform(unique_inst,
+                     nodes,
+                     pins,
+                     vio_edge,
+                     used_access_points,
+                     viol_access_points,
+                     max_access_point_size);
+
+  std::vector<frApAbsoluteEdge> edges;
+
+
+  for (int cur_pin = 1; cur_pin < pins.size(); cur_pin++) {
+    int prev_pin = cur_pin - 1;
+
+    for (int cur_ap = 0; cur_ap < nodes[cur_pin].size(); cur_ap++) {
+      frApAbsoluteReference cur_ref;
+      cur_ref.master_name = pins[cur_pin].second->getInst()->getMaster()->getName();
+      cur_ref.pinAccessIdx = pins[cur_pin].second->getInst()->getPinAccessIdx();
+      cur_ref.mterm_name = pins[cur_pin].first->getTerm()->getName();
+
+      const auto& [pin_1, inst_term_1] = pins[cur_pin];
+      const auto target_obj = inst_term_1->getInst();
+      const int pin_access_idx = target_obj->getPinAccessIdx();
+      const auto pa_1 = pin_1->getPinAccess(pin_access_idx);
+      const frAccessPoint* cur_ap_obj = pa_1->getAccessPoint(cur_ap);
+      cur_ref.ap_x = cur_ap_obj->x();
+      cur_ref.ap_y = cur_ap_obj->y();
+
+      for (int prev_ap = 0; prev_ap < nodes[prev_pin].size(); prev_ap++) {
+        frApAbsoluteReference prev_ref;
+        prev_ref.master_name = pins[prev_pin].second->getInst()->getMaster()->getName();
+        prev_ref.pinAccessIdx = pins[prev_pin].second->getInst()->getPinAccessIdx();
+        prev_ref.mterm_name = pins[prev_pin].first->getTerm()->getName();
+
+        const auto& [pin_2, inst_term_2] = pins[prev_pin];
+        const auto target_obj = inst_term_2->getInst();
+        const int pin_access_idx = target_obj->getPinAccessIdx();
+        const auto pa_2 = pin_2->getPinAccess(pin_access_idx);
+        const frAccessPoint* prev_ap_obj = pa_2->getAccessPoint(prev_ap);
+        prev_ref.ap_x = prev_ap_obj->x();
+        prev_ref.ap_y = prev_ap_obj->y();
+
+        frApAbsoluteEdge edge;
+        edge.cur = cur_ref;
+        edge.prev = prev_ref;
+        edge.cost = getEdgeCost(unique_inst,
+                                nodes[prev_pin][prev_ap].get(),
+                                nodes[cur_pin][cur_ap].get(),
+                                pins,
+                                vio_edge,
+                                used_access_points,
+                                viol_access_points,
+                                max_access_point_size);
+
+        edges.push_back(edge);
+      }
+    }
+  }
+
+  return edges;
 }
 
 #define LAYER_NUM(str) (design_->getTech()->getLayer(str)->getLayerNum())
@@ -467,19 +614,19 @@ bool FlexPA::genPatternsGC(
     const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
     const PatternType pattern_type,
     std::set<frBlockObject*>* owners)
-{
+    {
   if (objs.empty()) {
     if (router_cfg_->VERBOSE > 1) {
       logger_->warn(DRT, 89, "genPattern_gc objs empty.");
     }
     return true;
   }
-
+  
   FlexGCWorker design_rule_checker(getTech(), logger_, router_cfg_);
   design_rule_checker.setIgnoreMinArea();
   design_rule_checker.setIgnoreLongSideEOL();
   design_rule_checker.setIgnoreCornerSpacing();
-
+  
   frCoord llx = std::numeric_limits<frCoord>::max();
   frCoord lly = std::numeric_limits<frCoord>::max();
   frCoord urx = std::numeric_limits<frCoord>::min();

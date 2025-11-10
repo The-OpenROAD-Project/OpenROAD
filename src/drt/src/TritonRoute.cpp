@@ -4,6 +4,7 @@
 #include "triton_route/TritonRoute.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -23,6 +24,7 @@
 #include "boost/bind/bind.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "db/infra/frSegStyle.h"
+#include "db/obj/frInstTerm.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
@@ -1106,6 +1108,78 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   writer.updateDb(db_, router_cfg_.get(), true);
 }
 
+std::vector<trApAbsoluteEdge> TritonRoute::ECRunAllUniqueInsts()
+{
+  clearDesign();
+  router_cfg_->ENABLE_VIA_GEN = true;
+  initDesign();
+  pa_ = std::make_unique<FlexPA>(
+      getDesign(), logger_, dist_, router_cfg_.get());
+  pa_->setTargetInstances(std::vector<odb::dbInst*>());
+  auto edges = pa_->conflictExtraction();
+  std::vector<trApAbsoluteEdge> new_ed;
+  for (auto edge : edges) {
+    trApAbsoluteReference prev{edge.prev.master_name,
+                               edge.prev.pinAccessIdx,
+                               edge.prev.mterm_name,
+                               edge.prev.ap_x,
+                               edge.prev.ap_y};
+    trApAbsoluteReference cur{edge.cur.master_name,
+                               edge.cur.pinAccessIdx,
+                               edge.cur.mterm_name,
+                               edge.cur.ap_x,
+                               edge.cur.ap_y};
+    trApAbsoluteEdge e;
+    e.prev = prev;
+    e.cur = cur;
+    e.cost = edge.cost;
+
+    new_ed.push_back(e);
+  }
+
+  return new_ed;
+
+  // io::Writer writer(getDesign(), logger_);
+  // writer.updateDb(db_, router_cfg_.get(), true);
+}
+int TritonRoute::ECcheckPairConflict(odb::dbITerm* term_a,
+                                     int x_a,
+                                     int y_a,
+                                     odb::dbITerm* term_b,
+                                     int x_b,
+                                     int y_b)
+{
+  pa_ = std::make_unique<FlexPA>(
+      getDesign(), logger_, dist_, router_cfg_.get());
+  pa_->setTargetInstances(std::vector<odb::dbInst*>());
+
+  auto inst_a = getDesign()->getTopBlock()->findInst(term_a->getInst());
+  frInstTerm* fterm_a = nullptr;
+  for (auto& term : inst_a->getInstTerms()) {
+    if (term->getName() == term_a->getName()) {
+      fterm_a = term.get();
+    }
+  }
+
+  if(fterm_a == nullptr) {
+    return -2;
+  }
+  
+  auto inst_b = getDesign()->getTopBlock()->findInst(term_b->getInst());
+  frInstTerm* fterm_b = nullptr;
+  for (auto& term : inst_b->getInstTerms()) {
+    if (term->getName() == term_b->getName()) {
+      fterm_b = term.get();
+    }
+  }
+  
+  if(fterm_b == nullptr) {
+    return -3;
+  }
+
+  return pa_->getEdgeCostCE(fterm_a, x_a, y_a, fterm_b, x_b, y_b);
+}
+
 void TritonRoute::deleteInstancePAData(frInst* inst)
 {
   if (pa_) {
@@ -1301,7 +1375,7 @@ void TritonRoute::setParams(const ParamStruct& params)
   router_cfg_->SAVE_GUIDE_UPDATES = params.saveGuideUpdates;
   router_cfg_->REPAIR_PDN_LAYER_NAME = params.repairPDNLayerName;
   router_cfg_->MAX_THREADS = params.num_threads;
-  
+
   router_cfg_->PA_ABUTMENT_EPSILON = params.pa_abutment_epsilon;
   router_cfg_->PA_RTGUIDE_MODE = params.pa_rtguide_mode;
 }

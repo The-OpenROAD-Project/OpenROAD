@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "boost/asio/thread_pool.hpp"
+#include "odb/db.h"
 #include "odb/geom.h"
 
 namespace odb {
@@ -54,6 +55,22 @@ struct FlexDRViaData;
 class frMarker;
 struct RouterConfiguration;
 class AbstractGraphicsFactory;
+
+struct trApAbsoluteReference
+{
+  std::string master_name;
+  int pinAccessIdx;
+  std::string mterm_name;
+  int ap_x;
+  int ap_y;
+};
+
+struct trApAbsoluteEdge
+{
+  trApAbsoluteReference prev;
+  trApAbsoluteReference cur;
+  int cost;
+};
 
 struct ParamStruct
 {
@@ -105,6 +122,11 @@ class TritonRoute
   void endFR();
   void pinAccess(const std::vector<odb::dbInst*>& target_insts
                  = std::vector<odb::dbInst*>());
+  // PAP-ML
+   std::vector<drt::trApAbsoluteEdge> ECRunAllUniqueInsts();
+  int ECcheckPairConflict(odb::dbITerm* term_a, int x_a, int y_a, odb::dbITerm* term_b, int x_b, int y_b);
+
+
   void stepDR(int size,
               int offset,
               int mazeEndIter,
