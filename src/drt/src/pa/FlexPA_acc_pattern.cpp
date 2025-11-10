@@ -554,7 +554,7 @@ void FlexPA::genPatternsInit(
       }
 
       odb::Point guide_center(xAvg, yAvg);
-      odb::dbTransform xform = inst_term->getInst()->getTransform();
+      odb::dbTransform xform = inst_term->getInst()->getNoRotationTransform();
 
       std::sort(ordering.begin(), ordering.end(), [=](auto a, auto b) {
         xform.apply(a);
