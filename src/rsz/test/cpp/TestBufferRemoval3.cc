@@ -368,4 +368,77 @@ endmodule
   std::remove(after_vlog_path.c_str());
 }
 
+TEST_F(BufRemTest3, RemoveBuf3)
+{
+  readVerilogAndSetup("TestBufferRemoval3_3.v");
+
+  // Netlist before buffer removal:
+  // DFF_X1/Q -> buf0 -> mod_inst/buf1 -> buf2 -> out1
+
+  odb::dbInst* buf_inst = block_->findInst("mod_inst/buf1");
+  ASSERT_NE(buf_inst, nullptr);
+  sta::Instance* sta_buf = db_network_->dbToSta(buf_inst);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  db_network_->checkAxioms();
+
+  //----------------------------------------------------
+  // Remove buffer
+  //----------------------------------------------------
+  auto insts = std::make_unique<sta::InstanceSeq>();
+  insts->emplace_back(sta_buf);
+  resizer_.removeBuffers(*insts);
+
+  // Post sanity check
+  sta_->updateTiming(true);
+  db_network_->checkAxioms();
+
+  // Write verilog and check the content after buffer removal
+  const std::string after_vlog_path = "TestBufferRemoval3_3_after.v";
+  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file_after(after_vlog_path);
+  std::string content_after((std::istreambuf_iterator<char>(file_after)),
+                            std::istreambuf_iterator<char>());
+
+  // Netlist after buffer removal:
+  // DFF_X1/Q -> buf0 -> buf2 -> out1
+  const std::string expected_after_vlog = R"(module top (clk,
+    in1,
+    out1);
+ input clk;
+ input in1;
+ output out1;
+
+ wire buf1_out;
+ wire buf0_out;
+ wire dff_q;
+
+ BUF_X1 buf0 (.A(dff_q),
+    .Z(buf0_out));
+ BUF_X1 buf2 (.A(buf1_out),
+    .Z(out1));
+ DFF_X1 dff_inst (.D(in1),
+    .CK(clk),
+    .Q(dff_q));
+ MOD mod_inst (.in(buf0_out),
+    .out(buf1_out));
+endmodule
+module MOD (in,
+    out);
+ input in;
+ output out;
+
+
+ assign out = in;
+endmodule
+)";
+
+  EXPECT_EQ(content_after, expected_after_vlog);
+
+  // Clean up
+  std::remove(after_vlog_path.c_str());
+}
+
 }  // namespace rsz
