@@ -44,7 +44,7 @@ class PadPlacer
   utl::Logger* getLogger() const { return logger_; }
   odb::dbBlock* getBlock() const { return block_; }
   odb::dbRow* getRow() const { return row_; }
-  const odb::Direction2D::Value& getRowDirection() const { return edge_; }
+  const odb::Direction2D::Value& getRowEdge() const { return edge_; }
   const std::vector<odb::dbInst*>& getInsts() const { return insts_; }
 
   int getRowStart() const;

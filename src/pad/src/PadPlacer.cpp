@@ -45,7 +45,7 @@ void PadPlacer::populateInstWidths()
     master->getPlacementBoundary(inst_bbox);
     xform.apply(inst_bbox);
 
-    switch (getRowDirection()) {
+    switch (getRowEdge()) {
       case odb::Direction2D::North:
       case odb::Direction2D::South:
         inst_widths_[inst] = inst_bbox.dx();
@@ -63,7 +63,7 @@ int PadPlacer::getRowStart() const
   const odb::Rect row_bbox = getRow()->getBBox();
 
   int row_start = 0;
-  switch (getRowDirection()) {
+  switch (getRowEdge()) {
     case odb::Direction2D::North:
     case odb::Direction2D::South:
       row_start = row_bbox.xMin();
@@ -82,7 +82,7 @@ int PadPlacer::getRowEnd() const
   const odb::Rect row_bbox = getRow()->getBBox();
 
   int row_end = 0;
-  switch (getRowDirection()) {
+  switch (getRowEdge()) {
     case odb::Direction2D::North:
     case odb::Direction2D::South:
       row_end = row_bbox.xMax();
@@ -101,7 +101,7 @@ int PadPlacer::getRowWidth() const
   const odb::Rect row_bbox = getRow()->getBBox();
 
   int row_width = 0;
-  switch (getRowDirection()) {
+  switch (getRowEdge()) {
     case odb::Direction2D::North:
     case odb::Direction2D::South:
       row_width = row_bbox.dx();
@@ -518,7 +518,7 @@ void BumpAlignedPadPlacer::place()
     std::map<odb::dbInst*, int> inst_pos;
     if (!min_terms.empty()) {
       int group_center = 0;
-      switch (getRowDirection()) {
+      switch (getRowEdge()) {
         case odb::Direction2D::North:
         case odb::Direction2D::South:
           group_center = min_terms.at(inst)->getBBox().xCenter();
@@ -592,7 +592,7 @@ int64_t BumpAlignedPadPlacer::computePadBumpDistance(odb::dbInst* inst,
   const odb::Point row_center = getRow()->getBBox().center();
   const odb::Point center = bump->getBBox().center();
 
-  switch (getRowDirection()) {
+  switch (getRowEdge()) {
     case odb::Direction2D::North:
     case odb::Direction2D::South:
       return odb::Point::squaredDistance(
@@ -639,7 +639,7 @@ BumpAlignedPadPlacer::getBumpAlignmentGroup(
         // no longer the first pad in group, check if bumps are in same
         // column/row
         bool keep = true;
-        switch (getRowDirection()) {
+        switch (getRowEdge()) {
           case odb::Direction2D::North:
           case odb::Direction2D::South:
             keep = min_terms[inst]->getBBox().xCenter()
@@ -713,7 +713,7 @@ void BumpAlignedPadPlacer::performPadFlip(odb::dbInst* inst) const
 
       // try flipping pad
       inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-      switch (getRowDirection()) {
+      switch (getRowEdge()) {
         case odb::Direction2D::North:
         case odb::Direction2D::South:
           inst->setLocationOrient(start_orient.flipY());
