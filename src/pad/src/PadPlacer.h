@@ -44,7 +44,7 @@ class PadPlacer
   utl::Logger* getLogger() const { return logger_; }
   odb::dbBlock* getBlock() const { return block_; }
   odb::dbRow* getRow() const { return row_; }
-  const odb::Direction2D::Value& getRowDirection() const { return edge_; }
+  const odb::Direction2D::Value& getRowEdge() const { return edge_; }
   const std::vector<odb::dbInst*>& getInsts() const { return insts_; }
 
   int getRowStart() const;
@@ -120,10 +120,14 @@ class UniformPadPlacer : public PadPlacer
                    odb::dbBlock* block,
                    const std::vector<odb::dbInst*>& insts,
                    const odb::Direction2D::Value& edge,
-                   odb::dbRow* row);
+                   odb::dbRow* row,
+                   std::optional<int> max_spacing = {});
   ~UniformPadPlacer() override = default;
 
   void place() override;
+
+ private:
+  std::optional<int> max_spacing_;
 };
 
 class BumpAlignedPadPlacer : public PadPlacer
