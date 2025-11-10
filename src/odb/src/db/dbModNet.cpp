@@ -541,7 +541,8 @@ void dbModNet::mergeModNet(dbModNet* in_modnet)
     callback->inDbModNetPreMerge(this, in_modnet);
   }
 
-  // Create vectors for safe iteration, as connect() can invalidate iterators.
+  // 1. Connect all terminals of in_modnet to this modnet.
+  // - Create vectors for safe iteration, as connect() can invalidate iterators.
   auto iterms_set = in_modnet->getITerms();
   std::vector<dbITerm*> iterms(iterms_set.begin(), iterms_set.end());
   for (dbITerm* iterm : iterms) {
@@ -567,6 +568,13 @@ void dbModNet::mergeModNet(dbModNet* in_modnet)
   for (dbModBTerm* modbterm : modbterms) {
     modbterm->connect(this);
   }
+
+  // 2. Clear the terminals of in_modnet to avoid dangling pointers.
+  _dbModNet* _in_modnet = reinterpret_cast<_dbModNet*>(in_modnet);
+  _in_modnet->_iterms.clear();
+  _in_modnet->_bterms.clear();
+  _in_modnet->_moditerms.clear();
+  _in_modnet->_modbterms.clear();
 }
 
 void dbModNet::mergeNet(dbNet* in_net)

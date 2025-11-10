@@ -2280,6 +2280,8 @@ void dbNet::mergeNet(dbNet* in_net)
     callback->inDbNetPreMerge(this, in_net);
   }
 
+  // 1. Connect all terminals of in_net to this net.
+
   // in_net->getITerms() returns a terminal iterator, and iterm->connect() can
   // invalidate the iterator by disconnecting a dbITerm.
   // Calling iterm->connect() during iteration with the iterator is not safe.
@@ -2296,6 +2298,11 @@ void dbNet::mergeNet(dbNet* in_net)
   for (dbBTerm* bterm : bterms) {
     bterm->connect(this);
   }
+
+  // 2. Clear the terminals of in_net to avoid dangling pointers.
+  _dbNet* _in_net = reinterpret_cast<_dbNet*>(in_net);
+  _in_net->_iterms.clear();
+  _in_net->_bterms.clear();
 }
 
 void dbNet::markNets(std::vector<dbNet*>& nets, dbBlock* block, bool mk)
