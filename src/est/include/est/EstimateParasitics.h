@@ -19,6 +19,7 @@
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"

@@ -292,7 +292,7 @@ bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
     return !shape->belongsTo(this);
   };
 
-  std::map<Shape*, Shape*> replace_shapes;
+  std::map<Shape*, std::unique_ptr<Shape>> replace_shapes;
   for (const auto& via : vias_) {
     // ensure shapes belong to something
     const auto& lower_shape = via->getLowerShape();
@@ -313,28 +313,28 @@ bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
     }
 
     if (lower_belongs_to_grid && lower_shape->isModifiable()) {
-      auto* new_lower
+      auto new_lower
           = lower_shape->extendTo(upper_shape->getRect(),
                                   obstructions[lower_shape->getLayer()],
                                   obs_filter);
       if (new_lower != nullptr) {
-        replace_shapes[lower_shape.get()] = new_lower;
+        replace_shapes[lower_shape.get()] = std::move(new_lower);
       }
     }
     if (upper_belongs_to_grid && upper_shape->isModifiable()) {
-      auto* new_upper
+      auto new_upper
           = upper_shape->extendTo(lower_shape->getRect(),
                                   obstructions[upper_shape->getLayer()],
                                   obs_filter);
       if (new_upper != nullptr) {
-        replace_shapes[upper_shape.get()] = new_upper;
+        replace_shapes[upper_shape.get()] = std::move(new_upper);
       }
     }
   }
 
-  for (const auto& [old_shape, new_shape] : replace_shapes) {
+  for (auto& [old_shape, new_shape] : replace_shapes) {
     auto* component = old_shape->getGridComponent();
-    component->replaceShape(old_shape, {new_shape});
+    component->replaceShape(old_shape, std::move(new_shape));
   }
 
   debugPrint(getLogger(),

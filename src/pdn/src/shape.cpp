@@ -62,9 +62,9 @@ utl::Logger* Shape::getLogger() const
   return grid_component_->getLogger();
 }
 
-Shape* Shape::copy() const
+std::unique_ptr<Shape> Shape::copy() const
 {
-  auto* shape = new Shape(layer_, net_, rect_, type_);
+  auto shape = std::make_unique<Shape>(layer_, net_, rect_, type_);
   shape->shape_type_ = shape_type_;
   shape->obs_ = obs_;
   shape->iterm_connections_ = iterm_connections_;
@@ -204,7 +204,7 @@ odb::Rect Shape::getMinimumRect() const
 
 bool Shape::cut(const ObstructionTree& obstructions,
                 const Grid* ignore_grid,
-                std::vector<Shape*>& replacements) const
+                std::vector<std::unique_ptr<Shape>>& replacements) const
 {
   return cut(
       obstructions, replacements, [ignore_grid](const ShapePtr& other) -> bool {
@@ -217,7 +217,7 @@ bool Shape::cut(const ObstructionTree& obstructions,
 }
 
 bool Shape::cut(const ObstructionTree& obstructions,
-                std::vector<Shape*>& replacements,
+                std::vector<std::unique_ptr<Shape>>& replacements,
                 const std::function<bool(const ShapePtr&)>& obs_filter) const
 {
   using namespace boost::polygon::operators;
@@ -306,11 +306,11 @@ bool Shape::cut(const ObstructionTree& obstructions,
     }
 
     if (accept) {
-      auto* new_shape = copy();
+      auto new_shape = copy();
       new_shape->setRect(new_rect);
       new_shape->updateTermConnections();
 
-      replacements.push_back(new_shape);
+      replacements.push_back(std::move(new_shape));
     }
   }
   return true;
@@ -573,10 +573,10 @@ bool Shape::isModifiable() const
 
 std::string Shape::getReportText() const
 {
-  std::string text
-      = fmt::format("{} on {}",
-                    getRectText(rect_, layer_->getTech()->getLefUnits()),
-                    layer_->getName());
+  std::string text = fmt::format(
+      "{} on {}",
+      getRectText(rect_, layer_->getTech()->getDbUnitsPerMicron()),
+      layer_->getName());
 
   if (net_ != nullptr) {
     text = net_->getName() + " " + text;
@@ -593,12 +593,12 @@ std::string Shape::getRectText(const odb::Rect& rect, double dbu_to_micron)
                      rect.yMax() / dbu_to_micron);
 }
 
-Shape* Shape::extendTo(
+std::unique_ptr<Shape> Shape::extendTo(
     const odb::Rect& rect,
     const ObstructionTree& obstructions,
     const std::function<bool(const ShapePtr&)>& obs_filter) const
 {
-  std::unique_ptr<Shape> new_shape(copy());
+  std::unique_ptr<Shape> new_shape = copy();
 
   if (isHorizontal()) {
     new_shape->rect_.set_xlo(std::min(rect_.xMin(), rect.xMin()));
@@ -626,7 +626,7 @@ Shape* Shape::extendTo(
     return nullptr;
   }
 
-  return new_shape.release();
+  return new_shape;
 }
 
 Shape::ShapeTreeMap Shape::convertVectorToTree(ShapeVectorMap& vec)
@@ -672,9 +672,10 @@ FollowPinShape::FollowPinShape(odb::dbTechLayer* layer,
 {
 }
 
-Shape* FollowPinShape::copy() const
+std::unique_ptr<Shape> FollowPinShape::copy() const
 {
-  auto* shape = new FollowPinShape(getLayer(), getNet(), getRect());
+  auto shape
+      = std::make_unique<FollowPinShape>(getLayer(), getNet(), getRect());
   shape->generateObstruction();
   shape->rows_ = rows_;
   return shape;
@@ -741,9 +742,10 @@ odb::Rect FollowPinShape::getMinimumRect() const
   return min_shape;
 }
 
-bool FollowPinShape::cut(const ObstructionTree& obstructions,
-                         const Grid* ignore_grid,
-                         std::vector<Shape*>& replacements) const
+bool FollowPinShape::cut(
+    const ObstructionTree& obstructions,
+    const Grid* ignore_grid,
+    std::vector<std::unique_ptr<Shape>>& replacements) const
 {
   return Shape::cut(
       obstructions, replacements, [](const ShapePtr& other) -> bool {

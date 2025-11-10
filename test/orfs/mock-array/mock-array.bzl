@@ -222,6 +222,11 @@ POWER_TESTS = [
     "openroad",
     "power",
     "power_instances",
+    "path_groups",
+]
+
+ELEMENT_POWER_TESTS = [
+    "power_modules",
 ]
 
 def mock_array(name, config):
@@ -508,6 +513,65 @@ def mock_array(name, config):
                     ],
                     data = [
                         ":MockArray_{variant}_{stage}_{power_test}".format(
+                            variant = variant,
+                            power_test = power_test,
+                            stage = stage,
+                        ),
+                    ],
+                )
+
+        for power_test in ELEMENT_POWER_TESTS:
+            if v != "base":
+                continue
+            for stage in POWER_STAGES:
+                orfs_run(
+                    name = "Element_{variant}_{stage}_{power_test}".format(
+                        variant = variant,
+                        power_test = power_test,
+                        stage = stage,
+                    ),
+                    src = ":Element_{variant}_{stage}".format(variant = variant, stage = stage),
+                    outs = [
+                        "{variant}_{power_test}_{stage}.txt".format(
+                            variant = variant,
+                            power_test = power_test,
+                            stage = stage,
+                        ),
+                    ],
+                    arguments = {
+                        "OUTPUT": "$(location :{variant}_{power_test}_{stage}.txt)".format(
+                            variant = variant,
+                            power_test = power_test,
+                            stage = stage,
+                        ),
+                        "POWER_STAGE_NAME": stage,
+                        "POWER_STAGE_STEM": POWER_STAGE_STEM[stage],
+                        "VCD_STIMULI": "$(location :vcd_{variant}_{stage})".format(variant = variant, stage = stage),
+                    },
+                    data = [
+                        ":vcd_{variant}_{stage}".format(variant = variant, stage = stage),
+                    ],
+                    script = ":{power_test}.tcl".format(power_test = power_test),
+                    tags = ["manual"],
+                    visibility = ["//visibility:public"],
+                )
+
+                sh_test(
+                    name = "Element_{variant}_{power_test}_{stage}_test".format(
+                        variant = variant,
+                        power_test = power_test,
+                        stage = stage,
+                    ),
+                    srcs = ["ok.sh"],
+                    args = [
+                        "$(location :Element_{variant}_{stage}_{power_test})".format(
+                            variant = variant,
+                            stage = stage,
+                            power_test = power_test,
+                        ),
+                    ],
+                    data = [
+                        ":Element_{variant}_{stage}_{power_test}".format(
                             variant = variant,
                             power_test = power_test,
                             stage = stage,

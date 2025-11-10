@@ -60,7 +60,7 @@ std::string Node::describe(const std::string& prefix) const
 
 double Node::getDBUs() const
 {
-  return layer_->getTech()->getLefUnits();
+  return layer_->getTech()->getDbUnitsPerMicron();
 }
 
 void Node::print(utl::Logger* logger, const std::string& prefix) const
