@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <fstream>
+#include <iterator>
 #include <memory>
 #include <string>
 
@@ -17,19 +18,17 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
+#include "sta/Clock.hh"
 #include "sta/Graph.hh"
-#include "sta/Liberty.hh"
-#include "sta/PortDirection.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Sdc.hh"
-#include "sta/Search.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "sta/VerilogWriter.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "tst/fixture.h"
 #include "utl/CallBackHandler.h"
-#include "utl/Logger.h"
 
 namespace rsz {
 

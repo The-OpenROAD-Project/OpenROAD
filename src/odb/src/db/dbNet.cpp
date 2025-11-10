@@ -10,6 +10,7 @@
 #include <iterator>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "dbBTerm.h"
