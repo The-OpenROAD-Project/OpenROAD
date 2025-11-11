@@ -11,6 +11,7 @@
 namespace web {
 
 struct Color;
+class Search;
 
 // A simple web server
 
@@ -18,6 +19,7 @@ class WebServer
 {
  public:
   WebServer(odb::dbDatabase* db, utl::Logger* logger);
+  ~WebServer();
 
   void serve();
 
@@ -34,6 +36,7 @@ class WebServer
 
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;
+  std::unique_ptr<Search> search_;
   static constexpr int tile_size_in_pixel = 256;
 };
 

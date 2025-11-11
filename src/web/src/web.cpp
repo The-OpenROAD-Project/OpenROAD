@@ -11,14 +11,18 @@
 #include "lodepng.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "search.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace web {
 
 WebServer::WebServer(odb::dbDatabase* db, utl::Logger* logger)
-    : db_(db), logger_(logger)
+    : db_(db), logger_(logger), search_(std::make_unique<Search>())
 {
 }
+
+WebServer::~WebServer() = default;
 
 void WebServer::setPixel(std::vector<unsigned char>& image,
                          const int x,
@@ -50,6 +54,7 @@ std::vector<unsigned char> WebServer::generateTile(const std::string& layer,
                                                    const int x,
                                                    int y)
 {
+  utl::DebugScopedTimer timer(logger_, utl::WEB, "tile", 1, "generateTile {}");
   static_assert(sizeof(Color) == 4);
   std::vector<unsigned char> image_buffer(
       tile_size_in_pixel * tile_size_in_pixel * 4, 0);
@@ -70,7 +75,8 @@ std::vector<unsigned char> WebServer::generateTile(const std::string& layer,
     const double scale = tile_size_in_pixel / tile_dbu_size;
 
     odb::dbBlock* block = db_->getChip()->getBlock();
-    for (odb::dbInst* inst : block->getInsts()) {
+    for (odb::dbInst* inst : search_->searchInsts(
+             block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
       odb::Rect inst_bbox = inst->getBBox()->getBox();
       if (!dbu_tile.overlaps(inst_bbox)) {
         continue;
@@ -156,13 +162,15 @@ std::vector<unsigned char> WebServer::generateTile(const std::string& layer,
       }
     }
     // Draw tile border
-    for (int ix = 0; ix < 255; ++ix) {
-      setPixel(image_buffer, ix, 0, {255, 0, 0, 255});
-      setPixel(image_buffer, ix, 255, {255, 0, 0, 255});
-    }
-    for (int iy = 0; iy < 255; ++iy) {
-      setPixel(image_buffer, 0, iy, {255, 0, 0, 255});
-      setPixel(image_buffer, 255, iy, {255, 0, 0, 255});
+    if (false) {
+      for (int ix = 0; ix < 255; ++ix) {
+        setPixel(image_buffer, ix, 0, {255, 0, 0, 255});
+        setPixel(image_buffer, ix, 255, {255, 0, 0, 255});
+      }
+      for (int iy = 0; iy < 255; ++iy) {
+        setPixel(image_buffer, 0, iy, {255, 0, 0, 255});
+        setPixel(image_buffer, 255, iy, {255, 0, 0, 255});
+      }
     }
   }
 
@@ -179,10 +187,8 @@ std::vector<unsigned char> WebServer::generateTile(const std::string& layer,
 odb::Rect WebServer::getBounds() const
 {
   odb::Rect bounds;
-  if (odb::dbChip* chip = db_->getChip()) {
-    if (odb::dbBlock* block = chip->getBlock()) {
-      bounds = block->getBBox()->getBox();
-    }
+  if (odb::dbBlock* block = db_->getChip()->getBlock()) {
+    bounds = block->getBBox()->getBox();
   }
   return bounds;
 }
@@ -190,6 +196,13 @@ odb::Rect WebServer::getBounds() const
 void WebServer::serve()
 {
   logger_->info(utl::WEB, 1, "Start web server");
+
+  odb::dbChip* chip = db_->getChip();
+  if (!chip) {
+    logger_->error(utl::WEB, 2, "No chip to serve");
+  }
+
+  search_->setTopChip(chip);
 
   httplib::Server svr;
 

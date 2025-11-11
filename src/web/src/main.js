@@ -1,6 +1,5 @@
 const map = L.map('map', {
     crs: L.CRS.Simple,
-    minZoom: 0,
     center: [-128, 128],  // center of scaled design
     zoom: 1,
     zoomSnap: 0.1

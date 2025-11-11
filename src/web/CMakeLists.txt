@@ -17,6 +17,7 @@ swig_lib(NAME         web
 target_sources(web
   PRIVATE
     src/color.cpp
+    src/search.cpp
     src/web.cpp
     src/MakeWeb.cpp
 )
