@@ -21,6 +21,7 @@
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 2874
 [INFO GRT-0019] Found 0 clock nets.
+[INFO GRT-0280] Skipping net clk with 36 terminals.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 11
 
