@@ -18,6 +18,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "shape.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 
@@ -460,13 +461,14 @@ void Connect::makeVia(odb::dbSWire* wire,
         TechLayer::snapToManufacturingGrid(
             tech, intersection.yMax(), false, 2));
     if (intersection != new_intersection) {
-      debugPrint(grid_->getLogger(),
-                 utl::PDN,
-                 "Via",
-                 2,
-                 "intersection changed: {} -> {}",
-                 Shape::getRectText(intersection, tech->getLefUnits()),
-                 Shape::getRectText(new_intersection, tech->getLefUnits()));
+      debugPrint(
+          grid_->getLogger(),
+          utl::PDN,
+          "Via",
+          2,
+          "intersection changed: {} -> {}",
+          Shape::getRectText(intersection, tech->getDbUnitsPerMicron()),
+          Shape::getRectText(new_intersection, tech->getDbUnitsPerMicron()));
       intersection = new_intersection;
     }
   }
@@ -484,10 +486,10 @@ void Connect::makeVia(odb::dbSWire* wire,
         layer1_,
         true,
         fmt::format("({:.4f}, {:.4f}) is off manufacturing grid of {:.4f}",
-                    x / static_cast<double>(tech->getLefUnits()),
-                    y / static_cast<double>(tech->getLefUnits()),
+                    x / static_cast<double>(tech->getDbUnitsPerMicron()),
+                    y / static_cast<double>(tech->getDbUnitsPerMicron()),
                     tech->getManufacturingGrid()
-                        / static_cast<double>(tech->getLefUnits())));
+                        / static_cast<double>(tech->getDbUnitsPerMicron())));
     dummy_via.generate(
         wire->getBlock(), wire, type, 0, 0, ongrid_, grid_->getLogger());
     return;
@@ -526,8 +528,8 @@ void Connect::makeVia(odb::dbSWire* wire,
                  "Tapered via required between {} and {} at ({:.4f}, {:.4f}).",
                  getLowerLayer()->getName(),
                  getUpperLayer()->getName(),
-                 x / static_cast<double>(tech->getLefUnits()),
-                 y / static_cast<double>(tech->getLefUnits()));
+                 x / static_cast<double>(tech->getDbUnitsPerMicron()),
+                 y / static_cast<double>(tech->getDbUnitsPerMicron()));
 
       stack_rects = generateComplexStackedViaRects(lower_rect, upper_rect);
     } else {

@@ -5,8 +5,8 @@
 %{
 
 #include <cstring>
+#include "drt/TritonRoute.h"
 #include "ord/OpenRoad.hh"
-#include "triton_route/TritonRoute.h"
 #include "utl/Logger.h"
 %}
 
