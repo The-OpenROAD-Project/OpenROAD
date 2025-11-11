@@ -28,7 +28,6 @@ Promise.all([layersRequest, boundsRequest])
     .then(data => {
         // --- Load Layers ---
         const layerNames = data[0].layers;
-        const overlayLayers = {}; 
         layerNames.forEach(name => {
             const layer = L.tileLayer(`http://localhost:8080/tile/${name}/{z}/{x}/{y}.png`, {
                 attribution: name,

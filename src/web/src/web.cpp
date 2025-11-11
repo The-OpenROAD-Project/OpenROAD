@@ -170,8 +170,7 @@ std::vector<unsigned char> WebServer::generateTile(const std::string& layer,
   unsigned error = lodepng::encode(
       png_data, image_buffer, tile_size_in_pixel, tile_size_in_pixel);
   if (error) {
-    std::cerr << "PNG encoder error: " << lodepng_error_text(error)
-              << std::endl;
+    logger_->report("PNG encoder error: {}", lodepng_error_text(error));
   }
 
   return png_data;
