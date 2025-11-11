@@ -4802,8 +4802,22 @@ void dbNetwork::checkSanityNetDrvrPinMapConsistency() const
     // Convert to PinSet
     PinSet netlist_drivers(this);
     for (auto driver : drivers) {
-      Pin* pin = dbToSta(static_cast<odb::dbITerm*>(driver));
-      if (pin) {
+      Pin* pin = nullptr;
+      switch (driver->getObjectType()) {
+        case odb::dbITermObj:
+          pin = dbToSta(static_cast<odb::dbITerm*>(driver));
+          break;
+        case odb::dbBTermObj:
+          pin = dbToSta(static_cast<odb::dbBTerm*>(driver));
+          break;
+        case odb::dbModITermObj:
+          // Skip hierarchical pin.
+          break;
+        default:
+          // Should not be here
+          break;
+      }
+      if (pin != nullptr) {
         netlist_drivers.insert(pin);
       }
     }
@@ -4875,13 +4889,12 @@ PinInfo dbNetwork::getPinInfo(const Pin* pin) const
   if (info.valid) {
     info.name = pathName(pin);
   } else {
-    logger_->error(
-        ORD,
-        2014,
-        "Attempted to access invalid pin (type: {}, id: {}). Check if it is "
-        "deleted.",
-        info.type_name,
-        info.id);
+    logger_->error(ORD,
+                   2014,
+                   "Attempted to access invalid pin {}({}). Check if it is "
+                   "deleted.",
+                   info.type_name,
+                   info.id);
   }
 
   return info;
