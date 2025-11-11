@@ -48,7 +48,7 @@ odb::Rect toPixels(const double scale,
 std::vector<unsigned char> WebServer::generateTile(const std::string& layer,
                                                    const int z,
                                                    const int x,
-                                                   const int y)
+                                                   int y)
 {
   static_assert(sizeof(Color) == 4);
   std::vector<unsigned char> image_buffer(
@@ -60,6 +60,7 @@ std::vector<unsigned char> WebServer::generateTile(const std::string& layer,
   // 2. Determine our tile's bounding box in dbu coordinates.
   const double num_tiles_at_zoom = pow(2, z);
   if (x >= 0 && y >= 0 && x < num_tiles_at_zoom && y < num_tiles_at_zoom) {
+    y = num_tiles_at_zoom - 1 - y;  // flip
     const double tile_dbu_size = getBounds().maxDXDY() / num_tiles_at_zoom;
     const int dbu_x_min = x * tile_dbu_size;
     const int dbu_y_min = y * tile_dbu_size;
@@ -211,6 +212,7 @@ void WebServer::serve()
           });
 
   svr.Get("/bounds", [&](const httplib::Request& req, httplib::Response& res) {
+    logger_->report("request bounds");
     const odb::Rect bounds = getBounds();
     std::stringstream ss;
     // Returns bounds in Leaflet's [y, x] format: [[yMin, xMin], [yMax, xMax]]
