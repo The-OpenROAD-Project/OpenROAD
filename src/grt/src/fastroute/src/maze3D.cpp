@@ -257,11 +257,11 @@ void FastRouteCore::newUpdateNodeLayers(std::vector<TreeNode>& treenodes,
   treenodes[n1].heights[con] = lastL;
   treenodes[n1].eID[con] = edgeID;
   treenodes[n1].conCNT++;
-  if (treenodes[n1].topL < lastL) {
+  if (treenodes[n1].topL <= lastL) {
     treenodes[n1].topL = lastL;
     treenodes[n1].hID = edgeID;
   }
-  if (treenodes[n1].botL > lastL) {
+  if (treenodes[n1].botL >= lastL) {
     treenodes[n1].botL = lastL;
     treenodes[n1].lID = edgeID;
   }
