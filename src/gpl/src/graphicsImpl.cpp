@@ -84,7 +84,7 @@ void GraphicsImpl::debugForNesterovPlace(
     main_chart_->setYAxisMin({std::nullopt, 0});
 
     // Useful for debugging multiple NesterovBase: Density penalty and PhiCoef
-    if (logger_->debugCheck(utl::GPL, "penaltyPlot", 1)) {
+    if (logger_->debugCheck(utl::GPL, "debugPlot", 1)) {
       if (!nbVec_.empty()) {
         std::vector<std::string> region_names;
         region_names.reserve(nbVec_.size());
@@ -563,11 +563,10 @@ void GraphicsImpl::addIter(const int iter, const double overflow)
   main_chart_->addPoint(iter, {block->dbuToMicrons(nbc_->getHpwl()), overflow});
 
   // Add density penalties snapshot for each NesterovBase
-  if (logger_->debugCheck(utl::GPL, "penaltyPlot", 1)) {
+  if (logger_->debugCheck(utl::GPL, "debugPlot", 1)) {
     if (density_chart_) {
       std::vector<double> values;
       if (!nbVec_.empty() && nbVec_[0]) {
-        // values.push_back(std::log(static_cast<double>(nbVec_[0]->getDensityPenalty())));
         values.push_back((static_cast<double>(nbVec_[0]->getDensityPenalty())));
         values.push_back(static_cast<double>(nbVec_[0]->getStoredPhiCoef()));
       } else {
