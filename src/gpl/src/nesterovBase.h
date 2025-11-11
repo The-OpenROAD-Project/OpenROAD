@@ -1192,11 +1192,10 @@ class NesterovBase
   float uniformTargetDensity_ = 0;
 
   // StepLength parameters (also included in the np debugPrint)
+  // alpha
   float stepLength_ = 0;
   float coordiDistance_ = 0;
   float gradDistance_ = 0;
-  // numBackTrack (nesterovPlace.cpp)
-  // newWireLengthCoef (nesterovPlace.cpp)
 
   // Nesterov loop data for each region, using parallel vectors
   // SLP is Step Length Prediction.
@@ -1242,9 +1241,6 @@ class NesterovBase
 
   float wireLengthGradSum_ = 0;
   float densityGradSum_ = 0;
-
-  // alpha
-  // float stepLength_ = 0;
 
   // opt_phi_cof
   float densityPenalty_ = 0;
