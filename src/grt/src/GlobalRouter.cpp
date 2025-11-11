@@ -3745,7 +3745,8 @@ std::vector<Net*> GlobalRouter::findNets(bool init_clock_nets)
   std::vector<Net*> clk_nets;
   const int large_fanout_threshold = 1000;
   for (odb::dbNet* db_net : db_nets) {
-    const bool is_special = db_net->getSigType().isSupply() && db_net->isSpecial();
+    const bool is_special
+        = db_net->getSigType().isSupply() && db_net->isSpecial();
     if (!is_special && db_net->getTermCount() > skip_large_fanout_) {
       logger_->info(GRT,
                     280,

@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <fstream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <set>
