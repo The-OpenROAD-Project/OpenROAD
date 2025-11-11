@@ -25,15 +25,12 @@ class DbvWriter : public BaseWriter
 
   void writeFile(const std::string& filename, odb::dbDatabase* db) override;
 
-  void writeChiplet(const std::string& base_filename,
-                    odb::dbDatabase* db,
-                    odb::dbChip* top_chip);
+  void writeChiplet(const std::string& base_filename, odb::dbChip* top_chip);
 
  private:
   void writeYamlContent(YAML::Node& root, odb::dbDatabase* db);
   void writeChipletToFile(const std::string& filename,
                           odb::dbChip* chiplet,
-                          odb::dbDatabase* db,
                           ChipletNode* node);
   void writeChipletDefs(YAML::Node& chiplets_node, odb::dbDatabase* db);
   void writeChipletInternal(YAML::Node& chiplet_node,

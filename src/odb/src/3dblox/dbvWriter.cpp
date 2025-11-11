@@ -3,9 +3,12 @@
 
 #include "dbvWriter.h"
 
+#include <yaml-cpp/emitter.h>
 #include <yaml-cpp/emitterstyle.h>
+#include <yaml-cpp/node/convert.h>
+#include <yaml-cpp/node/detail/impl.h>
+#include <yaml-cpp/node/emit.h>
 #include <yaml-cpp/node/node.h>
-#include <yaml-cpp/yaml.h>
 
 #include <string>
 #include <unordered_set>
@@ -159,9 +162,11 @@ void DbvWriter::writeExternal(YAML::Node& external_node,
                               odb::dbChip* chiplet,
                               odb::dbDatabase* db)
 {
-  BaseWriter::writeLef(external_node, db, chiplet);
-  if (db->getChip()->getBlock() != nullptr) {
-    BaseWriter::writeDef(external_node, db, chiplet);
+  if (chiplet->getChipType() != odb::dbChip::ChipType::HIER) {
+    BaseWriter::writeLef(external_node, db, chiplet);
+    if (db->getChip()->getBlock() != nullptr) {
+      BaseWriter::writeDef(external_node, db, chiplet);
+    }
   }
 }
 
@@ -213,30 +218,28 @@ void DbvWriter::writeChipDependencies(YAML::Node& header_node,
 
 void DbvWriter::writeChipletToFile(const std::string& filename,
                                    odb::dbChip* chiplet,
-                                   odb::dbDatabase* db,
                                    ChipletNode* node)
 {
   YAML::Node root;
   YAML::Node header_node = root["Header"];
-  writeHeader(header_node, db);
+  writeHeader(header_node, chiplet->getDb());
 
   writeChipDependencies(header_node, node);
 
   YAML::Node chiplets_node = root["ChipletDef"];
   for (auto dependecy : node->children) {
     YAML::Node chiplet_node = chiplets_node[dependecy->chip->getName()];
-    writeChipletInternal(chiplet_node, dependecy->chip, db);
+    writeChipletInternal(chiplet_node, dependecy->chip, chiplet->getDb());
   }
 
   writeYamlToFile(filename, root);
 }
 
 void DbvWriter::writeChiplet(const std::string& base_filename,
-                             odb::dbDatabase* db,
                              odb::dbChip* top_chip)
 {
   std::vector<odb::dbChip*> all_chips;
-  for (auto chiplet : db->getChips()) {
+  for (auto chiplet : top_chip->getDb()->getChips()) {
     all_chips.push_back(chiplet);
   }
 
@@ -245,7 +248,7 @@ void DbvWriter::writeChiplet(const std::string& base_filename,
 
   auto chiplet_node = hierarchy.findNodeForChip(top_chip);
 
-  writeChipletToFile(base_filename, top_chip, db, chiplet_node);
+  writeChipletToFile(base_filename, top_chip, chiplet_node);
 }
 
 }  // namespace odb
