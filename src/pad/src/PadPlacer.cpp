@@ -146,11 +146,26 @@ int PadPlacer::snapToRowSite(int location) const
   return site_count;
 }
 
+int PadPlacer::convertRowIndexToPos(int index) const
+{
+  const odb::Point origin = row_->getOrigin();
+
+  int start;
+  if (row_->getDirection() == odb::dbRowDir::HORIZONTAL) {
+    start = origin.x();
+  } else {
+    start = origin.y();
+  }
+
+  return start + index * row_->getSpacing();
+}
+
 int PadPlacer::placeInstance(int index,
                              odb::dbInst* inst,
                              const odb::dbOrientType& base_orient,
                              bool allow_overlap,
-                             bool allow_shift) const
+                             bool allow_shift,
+                             bool check) const
 {
   const int origin_offset = index * row_->getSpacing();
 
@@ -184,107 +199,110 @@ int PadPlacer::placeInstance(int index,
   auto* block = getBlock();
   const double dbus = block->getDbUnitsPerMicron();
 
-  // Check if its in the row
-  bool outofrow = false;
-  switch (edge_) {
-    case odb::Direction2D::North:
-    case odb::Direction2D::South:
-      if (row_bbox.xMin() > inst_rect.xMin()
-          || row_bbox.xMax() < inst_rect.xMax()) {
-        if (!allow_overlap) {
-          outofrow = true;
-        }
-      }
-      break;
-    case odb::Direction2D::West:
-    case odb::Direction2D::East:
-      if (row_bbox.yMin() > inst_rect.yMin()
-          || row_bbox.yMax() < inst_rect.yMax()) {
-        if (!allow_overlap) {
-          outofrow = true;
-        }
-      }
-      break;
-  }
-  if (outofrow) {
-    logger_->error(utl::PAD,
-                   119,
-                   "Unable to place {} ({}) at ({:.3f}um, {:.3f}um) - "
-                   "({:.3f}um, {:.3f}um) as it is not inside the row {} "
-                   "({:.3f}um, {:.3f}um) - "
-                   "({:.3f}um, {:.3f}um)",
-                   inst->getName(),
-                   inst->getMaster()->getName(),
-                   inst_rect.xMin() / dbus,
-                   inst_rect.yMin() / dbus,
-                   inst_rect.xMax() / dbus,
-                   inst_rect.yMax() / dbus,
-                   row_->getName(),
-                   row_bbox.xMin() / dbus,
-                   row_bbox.yMin() / dbus,
-                   row_bbox.xMax() / dbus,
-                   row_bbox.yMax() / dbus);
-  }
-
-  const auto check_obs = checkInstancePlacement(inst);
-  if (allow_shift && check_obs) {
-    const auto& [check_inst, check_rect] = *check_obs;
-
-    int obs_index = index;
+  if (check) {
+    // Check if its in the row
+    bool outofrow = false;
     switch (edge_) {
       case odb::Direction2D::North:
       case odb::Direction2D::South:
-        obs_index = snapToRowSite(check_rect.xMin());
+        if (row_bbox.xMin() > inst_rect.xMin()
+            || row_bbox.xMax() < inst_rect.xMax()) {
+          if (!allow_overlap) {
+            outofrow = true;
+          }
+        }
         break;
       case odb::Direction2D::West:
       case odb::Direction2D::East:
-        obs_index = snapToRowSite(check_rect.yMin());
+        if (row_bbox.yMin() > inst_rect.yMin()
+            || row_bbox.yMax() < inst_rect.yMax()) {
+          if (!allow_overlap) {
+            outofrow = true;
+          }
+        }
         break;
     }
-
-    int next_index = std::max(index + 1, obs_index);
-
-    debugPrint(logger_,
-               utl::PAD,
-               "Place",
-               2,
-               "Shift required for {} to avoid {} ({} -> {})",
-               inst->getName(),
-               check_inst ? check_inst->getName() : "blockage",
-               index,
-               next_index);
-
-    return placeInstance(
-        next_index, inst, base_orient, allow_overlap, allow_shift);
-  }
-  if (!allow_overlap && check_obs) {
-    const auto& [check_inst, obs_rect] = *check_obs;
-    odb::Rect check_rect;
-    if (check_inst == nullptr) {
-      check_rect = obs_rect;
-    } else {
-      check_rect = check_inst->getBBox()->getBox();
+    if (outofrow) {
+      logger_->error(utl::PAD,
+                     119,
+                     "Unable to place {} ({}) at ({:.3f}um, {:.3f}um) - "
+                     "({:.3f}um, {:.3f}um) as it is not inside the row {} "
+                     "({:.3f}um, {:.3f}um) - "
+                     "({:.3f}um, {:.3f}um)",
+                     inst->getName(),
+                     inst->getMaster()->getName(),
+                     inst_rect.xMin() / dbus,
+                     inst_rect.yMin() / dbus,
+                     inst_rect.xMax() / dbus,
+                     inst_rect.yMax() / dbus,
+                     row_->getName(),
+                     row_bbox.xMin() / dbus,
+                     row_bbox.yMin() / dbus,
+                     row_bbox.xMax() / dbus,
+                     row_bbox.yMax() / dbus);
     }
-    logger_->error(utl::PAD,
-                   1,
-                   "Unable to place {} ({}) at ({:.3f}um, {:.3f}um) - "
-                   "({:.3f}um, {:.3f}um) as it "
-                   "overlaps with {} at ({:.3f}um, {:.3f}um) - "
-                   "({:.3f}um, {:.3f}um)",
-                   inst->getName(),
-                   inst->getMaster()->getName(),
-                   inst_rect.xMin() / dbus,
-                   inst_rect.yMin() / dbus,
-                   inst_rect.xMax() / dbus,
-                   inst_rect.yMax() / dbus,
-                   check_inst ? fmt::format("{} ({})",
-                                            check_inst->getName(),
-                                            check_inst->getMaster()->getName())
-                              : "blockage",
-                   check_rect.xMin() / dbus,
-                   check_rect.yMin() / dbus,
-                   check_rect.xMax() / dbus,
-                   check_rect.yMax() / dbus);
+
+    const auto check_obs = checkInstancePlacement(inst);
+    if (allow_shift && check_obs) {
+      const auto& [check_inst, check_rect] = *check_obs;
+
+      int obs_index = index;
+      switch (edge_) {
+        case odb::Direction2D::North:
+        case odb::Direction2D::South:
+          obs_index = snapToRowSite(check_rect.xMin());
+          break;
+        case odb::Direction2D::West:
+        case odb::Direction2D::East:
+          obs_index = snapToRowSite(check_rect.yMin());
+          break;
+      }
+
+      int next_index = std::max(index + 1, obs_index);
+
+      debugPrint(logger_,
+                 utl::PAD,
+                 "Place",
+                 2,
+                 "Shift required for {} to avoid {} ({} -> {})",
+                 inst->getName(),
+                 check_inst ? check_inst->getName() : "blockage",
+                 index,
+                 next_index);
+
+      return placeInstance(
+          next_index, inst, base_orient, allow_overlap, allow_shift);
+    }
+    if (!allow_overlap && check_obs) {
+      const auto& [check_inst, obs_rect] = *check_obs;
+      odb::Rect check_rect;
+      if (check_inst == nullptr) {
+        check_rect = obs_rect;
+      } else {
+        check_rect = check_inst->getBBox()->getBox();
+      }
+      logger_->error(utl::PAD,
+                     1,
+                     "Unable to place {} ({}) at ({:.3f}um, {:.3f}um) - "
+                     "({:.3f}um, {:.3f}um) as it "
+                     "overlaps with {} at ({:.3f}um, {:.3f}um) - "
+                     "({:.3f}um, {:.3f}um)",
+                     inst->getName(),
+                     inst->getMaster()->getName(),
+                     inst_rect.xMin() / dbus,
+                     inst_rect.yMin() / dbus,
+                     inst_rect.xMax() / dbus,
+                     inst_rect.yMax() / dbus,
+                     check_inst
+                         ? fmt::format("{} ({})",
+                                       check_inst->getName(),
+                                       check_inst->getMaster()->getName())
+                         : "blockage",
+                     check_rect.xMin() / dbus,
+                     check_rect.yMin() / dbus,
+                     check_rect.xMax() / dbus,
+                     check_rect.yMax() / dbus);
+    }
   }
   inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
@@ -847,6 +865,651 @@ void BumpAlignedPadPlacer::performPadFlip(odb::dbInst* inst) const
       inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
     }
   }
+}
+
+///////////////////////////////////////////
+
+PlacerPadPlacer::PlacerPadPlacer(utl::Logger* logger,
+                                 odb::dbBlock* block,
+                                 const std::vector<odb::dbInst*>& insts,
+                                 const odb::Direction2D::Value& edge,
+                                 odb::dbRow* row)
+    : PadPlacer(logger, block, insts, edge, row)
+{
+}
+
+void PlacerPadPlacer::placeInstances(
+    const std::map<odb::dbInst*, int>& positions,
+    bool center_ref) const
+{
+  for (const auto& [inst, pos] : positions) {
+    placeInstanceSimple(inst, pos, center_ref);
+  }
+}
+
+void PlacerPadPlacer::placeInstances(
+    const std::map<odb::dbInst*, std::unique_ptr<InstAnchors>>& positions) const
+{
+  for (const auto& [inst, anchor] : positions) {
+    placeInstanceSimple(inst, anchor->center, true);
+  }
+}
+
+void PlacerPadPlacer::placeInstanceSimple(odb::dbInst* inst,
+                                          int position,
+                                          bool center_ref) const
+{
+  placeInstance(
+      snapToRowSite(position - (center_ref ? getInstWidths().at(inst) / 2 : 0)),
+      inst,
+      odb::dbOrientType::R0,
+      /* allow_overlap */ false,
+      /* allow_shift */ false,
+      /* check */ false);
+  inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+}
+
+std::map<odb::dbInst*, int> PlacerPadPlacer::initialPoolMapping() const
+{
+  const auto insts = getInsts();
+
+  std::vector<float> position(insts.size());
+  for (int i = 0; i < insts.size(); i++) {
+    odb::dbInst* inst = insts[i];
+    if (ideal_positions_.find(inst) == ideal_positions_.end()) {
+      // This instance has no preference so shift down
+      if (i == 0) {
+        // Start at row beginning
+        position[i] = getRowStart(inst);
+      } else if (i + 1 == insts.size()) {
+        // End at row end
+        position[i] = getRowEnd(inst);
+      } else {
+        if (i == 1) {
+          // nothing to spread out
+          position[i] = position[i - 1];
+        } else {
+          // try to spread these out a little
+          position[i] = 0.5 * (position[i - 1] + position[i - 2]);
+        }
+      }
+    } else {
+      position[i] = ideal_positions_.at(inst);
+    }
+  }
+
+  std::map<odb::dbInst*, int> mapping;
+  for (int i = 0; i < insts.size(); i++) {
+    odb::dbInst* inst = insts[i];
+    mapping[inst] = position[i];
+  }
+  return mapping;
+}
+
+void PlacerPadPlacer::debugPause(const std::string& msg) const
+{
+  if (gui::Gui::enabled() && getLogger()->debugCheck(utl::PAD, "Pause", 1)) {
+    debugPrint(getLogger(), utl::PAD, "Pause", 1, msg);
+    gui::Gui::get()->pause();
+  }
+}
+
+void PlacerPadPlacer::place()
+{
+  if (gui::Gui::enabled() && getLogger()->debugCheck(utl::PAD, "Place", 1)) {
+    chart_ = gui::Gui::get()->addChart(
+        fmt::format("PAD ({})", getRow()->getName()),
+        "Iteration",
+        {"RDL Estimate (μm)", "Move (μm)"});
+    chart_->setXAxisFormat("%d");
+    chart_->setYAxisFormats({"%.2e", "%.1f"});
+  }
+
+  // Determine ideal positions
+  computeIdealPostions();
+  debugPause("Ideal pad positions");
+
+  // resolve ordering for pads
+  const auto pava_positions = poolAdjacentViolators(initialPoolMapping());
+  debugPause("Ordered ideal pad positions");
+
+  // Perform iterative spreading
+  const auto pad_positions = padSpreading(pava_positions);
+  placeInstances(pad_positions, false);
+  debugPause("Final placement");
+
+  // Fixed pad locations
+  for (const auto& [inst, pos] : pad_positions) {
+    placeInstance(
+        snapToRowSite(pos), inst, odb::dbOrientType::R0, false, false);
+    // TODO possibly build in pad flipping
+    addInstanceObstructions(inst);
+  }
+}
+
+int PlacerPadPlacer::getNearestLegalPosition(odb::dbInst* inst,
+                                             int target,
+                                             bool round_down,
+                                             bool round_up) const
+{
+  placeInstanceSimple(inst, target, true);
+  const auto ideal_obs = checkInstancePlacement(inst, false);
+  if (ideal_obs) {
+    const int half_width = getInstWidths().at(inst) / 2;
+    int start, end;
+    if (isRowHorizontal()) {
+      start = ideal_obs.value().second.xMin() - half_width;
+      end = ideal_obs.value().second.xMax() + half_width;
+    } else {
+      start = ideal_obs.value().second.yMin() - half_width;
+      end = ideal_obs.value().second.yMax() + half_width;
+    }
+    // Handle obs near row ends
+    if (start < getRowStart(inst)) {
+      return end;
+    }
+    if (end > getRowEnd(inst)) {
+      return start;
+    }
+    if (round_down) {
+      return start;
+    }
+    if (round_up) {
+      return end;
+    }
+    if ((target - start) < (end - target)) {
+      return start;
+    } else {
+      return end;
+    }
+  }
+  return target;
+}
+
+void PlacerPadPlacer::addChartData(int itr, int64_t rdl_length, int move) const
+{
+  if (chart_) {
+    const double dbus = getBlock()->getDbUnitsPerMicron();
+    chart_->addPoint(itr, {rdl_length / dbus, move / dbus});
+  }
+}
+
+void PlacerPadPlacer::computeIdealPostions()
+{
+  ideal_positions_.clear();
+
+  for (odb::dbInst* inst : getInsts()) {
+    if (iterm_connections_.find(inst) == iterm_connections_.end()) {
+      // no constraint
+      continue;
+    }
+
+    std::vector<int> ideal_pos;
+    for (odb::dbITerm* iterm : iterm_connections_.at(inst)) {
+      switch (getRowEdge()) {
+        case odb::Direction2D::North:
+        case odb::Direction2D::South:
+          ideal_pos.push_back(iterm->getBBox().xCenter());
+          break;
+        case odb::Direction2D::West:
+        case odb::Direction2D::East:
+          ideal_pos.push_back(iterm->getBBox().yCenter());
+          break;
+      }
+    }
+
+    if (!ideal_pos.empty()) {
+      float ideal = 0;
+      for (auto pos : ideal_pos) {
+        ideal += pos;
+      }
+      ideal_positions_[inst]
+          = getNearestLegalPosition(inst, std::round(ideal / ideal_pos.size()));
+    }
+  }
+
+  placeInstances(ideal_positions_, true);
+  addChartData(-2, estimateWirelengths(), 0);
+}
+
+std::map<odb::dbInst*, int> PlacerPadPlacer::poolAdjacentViolators(
+    const std::map<odb::dbInst*, int>& initial_positions) const
+{
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+  const auto insts = getInsts();
+  std::vector<float> weights(insts.size());
+  std::fill(weights.begin(), weights.end(), 1.0);
+
+  std::vector<float> position(insts.size());
+  for (int i = 0; i < insts.size(); i++) {
+    odb::dbInst* inst = insts[i];
+    position[i] = initial_positions.at(inst);
+  }
+
+  for (int k = 0; k < insts.size(); k++) {
+    bool updated = false;
+
+    debugPrint(getLogger(), utl::PAD, "PAVA", 1, "Itr {}: start", k);
+
+    // Run PAVA
+    for (int i = 1; i < insts.size(); i++) {
+      float current_pos = position[i];
+      float previous_pos = position[i - 1];
+
+      if (current_pos >= previous_pos) {
+        continue;
+      }
+
+      updated = true;
+      // Calculate new value
+      const float total_weight = weights[i] + weights[i - 1];
+      const float pooled_value
+          = (weights[i] * current_pos + weights[i - 1] * previous_pos)
+            / total_weight;
+
+      // Update positions
+      position[i] = pooled_value;
+      position[i - 1] = pooled_value;
+
+      debugPrint(getLogger(),
+                 utl::PAD,
+                 "PAVA",
+                 2,
+                 "Ordering swap: {} ({:.4f}um {:.0f}x) and {} ({:.4f}um "
+                 "{:.0f}x) to {:.4f}um",
+                 insts[i]->getName(),
+                 current_pos / dbus,
+                 weights[i],
+                 insts[i - 1]->getName(),
+                 previous_pos / dbus,
+                 weights[i - 1],
+                 pooled_value / dbus);
+
+      // Update weights
+      weights[i] += weights[i - 1];
+      weights[i - 1] += weights[i];
+    }
+
+    // Check for legal positions
+    for (int i = 0; i < insts.size(); i++) {
+      int pos = position[i];
+      odb::dbInst* inst = insts[i];
+      const int legal_pos = getNearestLegalPosition(inst, pos);
+      if (legal_pos != pos) {
+        debugPrint(getLogger(),
+                   utl::PAD,
+                   "PAVA",
+                   2,
+                   "Legal position swap: {} from {:.4f}um to {:.4f}um",
+                   inst->getName(),
+                   pos / dbus,
+                   legal_pos / dbus);
+        updated = true;
+        position[i] = legal_pos;
+      }
+    }
+
+    debugPrint(getLogger(),
+               utl::PAD,
+               "PAVA",
+               1,
+               "Itr {}: end: updated? {}",
+               k,
+               updated);
+
+    std::map<odb::dbInst*, int> positions;
+    for (int i = 0; i < insts.size(); i++) {
+      positions[insts[i]] = position[i];
+    }
+    placeInstances(positions, true);
+    debugPause(fmt::format("PAVA itr: {}", k));
+
+    if (!updated) {
+      break;
+    }
+  }
+
+  std::map<odb::dbInst*, int> positions;
+
+  for (int i = 0; i < insts.size(); i++) {
+    odb::dbInst* inst = insts[i];
+    positions[inst] = position[i];
+    debugPrint(getLogger(),
+               utl::PAD,
+               "PAVA",
+               2,
+               "{} / {}: position {:.3f}um, weight {:.0f}x",
+               i,
+               inst->getName(),
+               position[i] / dbus,
+               weights[i]);
+  }
+
+  placeInstances(positions, true);
+  addChartData(-1, estimateWirelengths(), 0);
+
+  return positions;
+}
+
+bool PlacerPadPlacer::padSpreading(
+    std::map<odb::dbInst*, std::unique_ptr<InstAnchors>>& positions,
+    const std::map<odb::dbInst*, int>& initial_positions,
+    int itr,
+    float spring,
+    float repel,
+    float damper) const
+{
+  bool has_violations = false;
+
+  const auto insts = getInsts();
+  const auto inst_widths = getInstWidths();
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+  const int site_width = getRow()->getSpacing();
+
+  int total_move = 0;
+  int net_move = 0;
+  debugPrint(getLogger(),
+             utl::PAD,
+             "Place",
+             1,
+             "Itr {} start: spring coeff {:.3f}, repel coeff {:.3f}, damper "
+             "coeff {:.3f}",
+             itr,
+             spring,
+             repel,
+             damper);
+
+  for (int i = 0; i < insts.size(); i++) {
+    odb::dbInst* prev = nullptr;
+    odb::dbInst* curr = insts[i];
+    odb::dbInst* next = nullptr;
+    if (i > 0) {
+      prev = insts[i - 1];
+    }
+    if (i < insts.size() - 1) {
+      next = insts[i + 1];
+    }
+
+    // Get positions
+    const int prev_pos
+        = prev == nullptr ? getRowStart(curr) : positions[prev]->center;
+    const int curr_pos = positions[curr]->center;
+    const int next_pos
+        = next == nullptr ? getRowEnd(curr) : positions[next]->center;
+
+    // Get target position
+    const int target_pos = initial_positions.at(curr);
+
+    // Calculate "forces"
+
+    // Spring force to target
+    const int spring_delta = target_pos - curr_pos;
+    const float spring_force = spring_delta * spring;
+
+    // Repulsive force from previous pad
+    float repel_prev_force = 0;
+    if (prev != nullptr) {
+      const int overlap = positions[curr]->overlap(positions[prev]);
+      if (overlap > 0) {
+        has_violations = true;
+        repel_prev_force = (overlap + site_width) * repel;
+      }
+    }
+
+    // Repulsive force from next pad
+    float repel_next_force = 0;
+    if (next != nullptr) {
+      const int overlap = positions[next]->overlap(positions[curr]);
+      if (overlap > 0) {
+        has_violations = true;
+        repel_next_force = -(overlap + site_width) * repel;
+      }
+    }
+    debugPrint(getLogger(),
+               utl::PAD,
+               "Place",
+               3,
+               "{} / {}: ({:.3f}um, {:.3f}um), ({:.3f}um, {:.3f}um), "
+               "({:.3f}um, {:.3f}um)",
+               itr,
+               curr->getName(),
+               (prev == nullptr ? prev_pos : positions[prev]->min) / dbus,
+               (prev == nullptr ? prev_pos : positions[prev]->max) / dbus,
+               positions[curr]->min / dbus,
+               positions[curr]->max / dbus,
+               (next == nullptr ? next_pos : positions[next]->min) / dbus,
+               (next == nullptr ? next_pos : positions[next]->max) / dbus);
+
+    // Total force
+    const float total_force
+        = spring_force + repel_prev_force + repel_next_force;
+
+    // Apply a damped movement
+    const float target_move = total_force * damper;
+    const float abs_target_move = std::abs(target_move);
+    int move_by = ((total_force < 0) ? -1 : 1)
+                  * std::ceil(abs_target_move / site_width) * site_width;
+
+    // jump logic
+    // if there is only a force pulling into blockage, jump if there is no
+    // opposing force
+    //    clamp to next or previous position or row start and end
+    // otherwise clamp to nearest legal position
+    const int check_move
+        = std::max(prev_pos, std::min(next_pos, curr_pos + move_by));
+    if (move_by != 0) {
+      const int tunnel_move
+          = getTunnelingPosition(curr, check_move, move_by > 0, itr);
+      move_by = tunnel_move - curr_pos;
+    }
+
+    // Record stats
+    net_move += move_by;
+    total_move += std::abs(move_by);
+
+    const int move_to = convertRowIndexToPos(snapToRowSite(
+                            curr_pos + move_by - positions[curr]->width / 2))
+                        + positions[curr]->width / 2;
+    positions[curr]->setLocation(std::max(prev_pos, std::min(next_pos, move_to))
+                                 - positions[curr]->width / 2);
+    debugPrint(getLogger(),
+               utl::PAD,
+               "Place",
+               3,
+               "{} / {}: {} -> {} (idx: {}) based on {:.6f} s, {:.6f} p, "
+               "{:.6f} n, {:.6f} t",
+               itr,
+               curr->getName(),
+               curr_pos,
+               positions[curr]->center,
+               snapToRowSite(positions[curr]->min),
+               spring_force,
+               repel_prev_force,
+               repel_next_force,
+               total_force);
+  }
+
+  placeInstances(positions);
+  addChartData(itr, estimateWirelengths(), total_move);
+  debugPrint(getLogger(),
+             utl::PAD,
+             "Place",
+             1,
+             "Itr {} end: continue {}, total move {:.3f}um, net move {:.3f}um",
+             itr,
+             has_violations,
+             total_move / dbus,
+             net_move / dbus);
+
+  if (itr % (getLogger()->debugCheck(utl::PAD, "Pause", 2) ? 500 : 100) == 0) {
+    debugPause(fmt::format("Iterative pad spreading: {}", itr));
+  }
+
+  return !has_violations;
+}
+
+std::map<odb::dbInst*, int> PlacerPadPlacer::padSpreading(
+    const std::map<odb::dbInst*, int>& initial_positions) const
+{
+  const auto insts = getInsts();
+  const auto inst_widths = getInstWidths();
+
+  // Snap all positions to row index
+  std::map<odb::dbInst*, std::unique_ptr<InstAnchors>> positions;
+  for (const auto& [inst, pos] : initial_positions) {
+    auto anchors = std::make_unique<InstAnchors>();
+    anchors->width = inst_widths.at(inst);
+    const int half_width = inst_widths.at(inst) / 2;
+    anchors->setLocation(convertRowIndexToPos(snapToRowSite(pos - half_width)));
+    positions[inst] = std::move(anchors);
+  }
+
+  for (int k = 0; k < kMaxIterations; k++) {
+    // Update coeff schedule
+    const float kRepel1
+        = kRepelStart
+          + (kRepelEnd - kRepelStart) * k / static_cast<float>(kMaxIterations);
+    const float kSpring1
+        = k > kSpringIterEnd
+              ? 0
+              : (k > kSpringIterInfluence
+                     ? kSpringStart
+                           * (kSpringItrRange - (k - kSpringIterInfluence))
+                           / static_cast<float>(kSpringItrRange)
+                     : kSpringStart);
+
+    if (padSpreading(
+            positions, initial_positions, k, kSpring1, kRepel1, kDamper)) {
+      break;
+    }
+  }
+
+  // convert to regular placement information
+  std::map<odb::dbInst*, int> real_positions;
+  for (const auto& [inst, anchor] : positions) {
+    real_positions[inst] = anchor->min;
+  }
+
+  return real_positions;
+}
+
+int64_t PlacerPadPlacer::estimateWirelengths() const
+{
+  int64_t length = 0;
+  for (odb::dbInst* inst : getInsts()) {
+    if (iterm_connections_.find(inst) == iterm_connections_.end()) {
+      continue;
+    }
+    std::vector<int64_t> lengths;
+    const odb::Point inst_center = inst->getBBox()->getBox().center();
+    for (odb::dbITerm* iterm : iterm_connections_.at(inst)) {
+      const odb::Point iterm_center = iterm->getBBox().center();
+      lengths.push_back(odb::Point::squaredDistance(inst_center, iterm_center));
+    }
+
+    if (lengths.empty()) {
+      continue;
+    }
+    length += std::sqrt(*std::min(lengths.begin(), lengths.end()));
+  }
+
+  if (getLogger()->debugCheck(utl::PAD, "RDLEstimate", 1)) {
+    const int routes = getNumberOfRoutes();
+    const double dbus = getBlock()->getDbUnitsPerMicron();
+    debugPrint(
+        getLogger(),
+        utl::PAD,
+        "RDLEstimate",
+        1,
+        "Estimated RDL routing length {:.4f}um with {} routes (avg: {:.4f}um)",
+        length / dbus,
+        routes,
+        routes > 0 ? (length / dbus) / routes : 0);
+  }
+
+  return length;
+}
+
+int PlacerPadPlacer::getNumberOfRoutes() const
+{
+  int count = 0;
+  for (odb::dbInst* inst : getInsts()) {
+    std::vector<int64_t> lengths;
+    const odb::Point inst_center = inst->getBBox()->getBox().center();
+    if (iterm_connections_.find(inst) != iterm_connections_.end()) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+int PlacerPadPlacer::getRowStart(odb::dbInst* inst) const
+{
+  return PadPlacer::getRowStart() + (getInstWidths().at(inst) / 2);
+}
+
+int PlacerPadPlacer::getRowEnd(odb::dbInst* inst) const
+{
+  return PadPlacer::getRowEnd() - (getInstWidths().at(inst) / 2);
+}
+
+int PlacerPadPlacer::getTunnelingPosition(odb::dbInst* inst,
+                                          int target,
+                                          bool move_up,
+                                          int itr) const
+{
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+  placeInstanceSimple(inst, target, true);
+  if (move_up) {
+    // pad is moving up in the row
+    int next = getNearestLegalPosition(inst, target, false, true);
+    if (next != target) {
+      debugPrint(
+          getLogger(),
+          utl::PAD,
+          "Place",
+          2,
+          "{} / {}: Tunneling past obstruction (up) {:.4f} um -> {:.4f} um",
+          itr,
+          inst->getName(),
+          target / dbus,
+          next / dbus);
+      return next;
+    }
+  }
+  // pad is moving down in the row
+  int next = getNearestLegalPosition(inst, target, true, false);
+  if (next != target) {
+    debugPrint(
+        getLogger(),
+        utl::PAD,
+        "Place",
+        2,
+        "{} / {}: Tunneling past obstruction (down) {:.4f} um -> {:.4f} um",
+        itr,
+        inst->getName(),
+        target / dbus,
+        next / dbus);
+    return next;
+  }
+
+  return target;
+}
+
+//////////////////////////
+
+int PlacerPadPlacer::InstAnchors::overlap(
+    const std::unique_ptr<InstAnchors>& other) const
+{
+  return overlap(other.get());
+}
+
+int PlacerPadPlacer::InstAnchors::overlap(InstAnchors* other) const
+{
+  if (other->max > min) {
+    return other->max - min;
+  }
+  return 0;
 }
 
 }  // namespace pad
