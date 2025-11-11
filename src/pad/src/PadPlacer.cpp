@@ -32,6 +32,7 @@ PadPlacer::PadPlacer(utl::Logger* logger,
     : logger_(logger), block_(block), insts_(insts), edge_(edge), row_(row)
 {
   populateInstWidths();
+  populateObstructions();
 }
 
 void PadPlacer::populateInstWidths()
@@ -301,89 +302,181 @@ int PadPlacer::placeInstance(int index,
   return next_pos;
 }
 
-std::optional<std::pair<odb::dbInst*, odb::Rect>>
-PadPlacer::checkInstancePlacement(odb::dbInst* inst) const
+PadPlacer::LayerTermObsTree PadPlacer::getInstanceObstructions(
+    odb::dbInst* inst,
+    bool bloat) const
 {
-  std::set<odb::dbInst*> covers;
-  auto* block = getBlock();
-  if (block) {
-    const odb::Rect inst_rect = inst->getBBox()->getBox();
-    for (odb::dbBlockage* blockage : block->getBlockages()) {
-      if (blockage->getBBox()->getBox().overlaps(inst_rect)) {
-        return std::make_pair(
-            nullptr, blockage->getBBox()->getBox().intersect(inst_rect));
-      }
+  std::map<odb::dbTechLayer*, std::vector<TermObsValue>> shapes;
+
+  // populate map as needed
+  const auto xform = inst->getTransform();
+  for (auto* obs : inst->getMaster()->getObstructions()) {
+    odb::Rect obs_rect = obs->getBox();
+    xform.apply(obs_rect);
+    odb::dbTechLayer* layer = obs->getTechLayer();
+    if (bloat && layer != nullptr) {
+      odb::Rect bloat_rect;
+      obs_rect.bloat(layer->getSpacing(), bloat_rect);
+      obs_rect = bloat_rect;
     }
-    for (auto* check_inst : block->getInsts()) {
-      if (check_inst == inst) {
-        continue;
+    shapes[obs->getTechLayer()].emplace_back(obs_rect, nullptr, inst);
+  }
+  for (auto* iterm : inst->getITerms()) {
+    for (const auto& [layer, box] : iterm->getGeometries()) {
+      odb::Rect term_rect = box;
+      if (bloat && layer != nullptr) {
+        odb::Rect bloat_rect;
+        box.bloat(layer->getSpacing(), bloat_rect);
+        term_rect = bloat_rect;
       }
-      if (!check_inst->isFixed()) {
-        continue;
-      }
-      if (check_inst->getMaster()->isCover()) {
-        covers.insert(check_inst);
-        continue;
-      }
-      if (check_inst->getBBox()->getBox().overlaps(inst_rect)) {
-        return std::make_pair(
-            check_inst, check_inst->getBBox()->getBox().intersect(inst_rect));
-      }
+      shapes[layer].emplace_back(term_rect, iterm->getNet(), inst);
     }
   }
 
-  // Check if inst overlaps with bumps
-  std::map<odb::dbTechLayer*, std::set<std::pair<odb::Rect, odb::dbNet*>>>
-      check_shapes;
-  if (!covers.empty()) {
-    // populate map as needed
-    const auto xform = inst->getTransform();
-    for (auto* obs : inst->getMaster()->getObstructions()) {
-      odb::Rect obs_rect = obs->getBox();
-      xform.apply(obs_rect);
-      odb::dbTechLayer* layer = obs->getTechLayer();
-      if (layer != nullptr) {
-        odb::Rect bloat;
-        obs_rect.bloat(layer->getSpacing(), bloat);
-        obs_rect = bloat;
-      }
-      check_shapes[obs->getTechLayer()].emplace(obs_rect, nullptr);
+  LayerTermObsTree rshapes;
+  for (const auto& [layer, layer_shapes] : shapes) {
+    if (layer == nullptr) {
+      continue;
     }
-    for (auto* iterm : inst->getITerms()) {
-      for (const auto& [layer, box] : iterm->getGeometries()) {
-        odb::Rect term_rect = box;
-        if (layer != nullptr) {
-          odb::Rect bloat;
-          box.bloat(layer->getSpacing(), bloat);
-          term_rect = bloat;
+    rshapes[layer] = TermObsTree(layer_shapes.begin(), layer_shapes.end());
+  }
+  return rshapes;
+}
+
+void PadPlacer::populateObstructions()
+{
+  blockage_obstructions_.clear();
+  instance_obstructions_.clear();
+  term_obstructions_.clear();
+
+  const odb::Rect row = row_->getBBox();
+
+  std::set<odb::dbInst*> covers;
+  auto* block = getBlock();
+  if (block) {
+    // Get placement blockages
+    for (odb::dbBlockage* blockage : block->getBlockages()) {
+      if (blockage->getBBox()->getBox().overlaps(row)) {
+        blockage_obstructions_.insert(blockage->getBBox()->getBox());
+      }
+    }
+    // Get obstructions that might interfere with RDL routing
+    for (odb::dbObstruction* obs : block->getObstructions()) {
+      if (obs->getBBox()->getBox().overlaps(row)) {
+        term_obstructions_[obs->getBBox()->getTechLayer()].insert(
+            {obs->getBBox()->getBox(), nullptr, nullptr});
+      }
+    }
+    for (auto* check_inst : block->getInsts()) {
+      if (!check_inst->isFixed()) {
+        continue;
+      }
+      if (check_inst->getBBox()->getBox().overlaps(row)) {
+        if (check_inst->getMaster()->isCover()) {
+          covers.insert(check_inst);
+          continue;
+        } else {
+          instance_obstructions_.insert(
+              {check_inst->getBBox()->getBox(), check_inst});
         }
-        check_shapes[layer].emplace(term_rect, iterm->getNet());
       }
     }
   }
 
   for (odb::dbInst* check_inst : covers) {
-    const auto xform = check_inst->getTransform();
-    for (auto* obs : check_inst->getMaster()->getObstructions()) {
-      odb::Rect obs_rect = obs->getBox();
-      xform.apply(obs_rect);
-      for (const auto& [inst_rect, check_net] :
-           check_shapes[obs->getTechLayer()]) {
-        if (inst_rect.intersects(obs_rect)) {
-          return std::make_pair(check_inst, inst_rect.intersect(obs_rect));
-        }
+    for (const auto& [layer, shapes] : getInstanceObstructions(check_inst)) {
+      term_obstructions_[layer].insert(shapes.begin(), shapes.end());
+    }
+  }
+}
+
+void PadPlacer::addInstanceObstructions(odb::dbInst* inst)
+{
+  instance_obstructions_.insert({inst->getBBox()->getBox(), inst});
+  if (inst->getMaster()->isCover()) {
+    for (const auto& [layer, shapes] : getInstanceObstructions(inst)) {
+      term_obstructions_[layer].insert(shapes.begin(), shapes.end());
+    }
+  }
+}
+
+std::optional<std::pair<odb::dbInst*, odb::Rect>>
+PadPlacer::checkInstancePlacement(odb::dbInst* inst,
+                                  bool return_intersect) const
+{
+  const odb::Rect inst_rect = inst->getBBox()->getBox();
+  for (auto itr = blockage_obstructions_.qbegin(
+           boost::geometry::index::intersects(inst_rect));
+       itr != blockage_obstructions_.qend();
+       itr++) {
+    if (itr->overlaps(inst_rect)) {
+      debugPrint(getLogger(),
+                 utl::PAD,
+                 "Check",
+                 2,
+                 "{} blocked by blockage: {}",
+                 inst->getName(),
+                 *itr);
+      return std::make_pair(
+          nullptr, return_intersect ? itr->intersect(inst_rect) : *itr);
+    }
+  }
+  for (auto itr = instance_obstructions_.qbegin(
+           boost::geometry::index::intersects(inst_rect));
+       itr != instance_obstructions_.qend();
+       itr++) {
+    const auto& [check_rect, check_inst] = *itr;
+    if (check_rect.overlaps(inst_rect)) {
+      if (check_inst == inst) {
+        continue;
       }
+      debugPrint(getLogger(),
+                 utl::PAD,
+                 "Check",
+                 2,
+                 "{} blocked by fixed instance: {}",
+                 inst->getName(),
+                 check_inst->getName());
+      return std::make_pair(
+          check_inst,
+          return_intersect ? check_rect.intersect(inst_rect) : check_rect);
+    }
+  }
+
+  for (const auto& [layer, term_shapes] : getInstanceObstructions(inst, true)) {
+    if (term_obstructions_.find(layer) == term_obstructions_.end()) {
+      continue;
     }
 
-    for (auto* iterm : check_inst->getITerms()) {
-      for (const auto& [layer, box] : iterm->getGeometries()) {
-        for (const auto& [inst_rect, check_net] : check_shapes[layer]) {
-          const bool nets_match
-              = iterm->getNet() == check_net
-                && (check_net != nullptr || iterm->getNet() != nullptr);
-          if (!nets_match && inst_rect.intersects(box)) {
-            return std::make_pair(check_inst, inst_rect.intersect(box));
-          }
+    const auto& obs_layer = term_obstructions_.at(layer);
+
+    for (const auto& [term_shape, term_net, term_inst] : term_shapes) {
+      for (auto itr
+           = obs_layer.qbegin(boost::geometry::index::intersects(term_shape));
+           itr != obs_layer.qend();
+           itr++) {
+        const auto& [check_rect, check_net, check_inst] = *itr;
+        if (check_inst == inst) {
+          continue;
+        }
+        const bool nets_match
+            = term_net == check_net
+              && (check_net != nullptr || term_net != nullptr);
+        if (!nets_match) {
+          debugPrint(
+              getLogger(),
+              utl::PAD,
+              "Check",
+              2,
+              "{} ({} / {}) blocked by terminal obstruction: {} / {}",
+              inst->getName(),
+              term_shape,
+              term_net == nullptr ? "unconnected" : term_net->getName(),
+              check_rect,
+              check_net == nullptr ? "unconnected" : check_net->getName());
+          return std::make_pair(
+              check_inst,
+              return_intersect ? check_rect.intersect(inst_rect) : check_rect);
         }
       }
     }
@@ -444,6 +537,7 @@ void UniformPadPlacer::place()
                   odb::dbOrientType::R0,
                   /* allow_overlap */ false,
                   /* allow_shift */ true);
+    addInstanceObstructions(inst);
     offset += getInstWidths().at(inst);
     offset += target_spacing;
 
@@ -480,9 +574,10 @@ SingleInstPadPlacer::SingleInstPadPlacer(utl::Logger* logger,
 void SingleInstPadPlacer::place(odb::dbInst* inst,
                                 int location,
                                 const odb::dbOrientType& base_orient,
-                                bool allow_overlap) const
+                                bool allow_overlap)
 {
   placeInstance(snapToRowSite(location), inst, base_orient, allow_overlap);
+  addInstanceObstructions(inst);
 }
 
 ///////////////////////////////////////////
@@ -578,6 +673,7 @@ void BumpAlignedPadPlacer::place()
                 * getRow()->getSpacing();
 
       performPadFlip(ginst);
+      addInstanceObstructions(ginst);
 
       if (gui_debug) {
         gui::Gui::get()->pause();

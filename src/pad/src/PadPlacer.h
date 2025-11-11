@@ -10,9 +10,11 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/index/rtree.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "odb/isotropy.h"
 
 namespace odb {
@@ -53,18 +55,36 @@ class PadPlacer
   int getTotalInstWidths() const;
 
  protected:
+  using InstObsValue = std::pair<odb::Rect, odb::dbInst*>;
+  using TermObsValue = std::tuple<odb::Rect, odb::dbNet*, odb::dbInst*>;
+  using BlockageObsTree
+      = boost::geometry::index::rtree<odb::Rect,
+                                      boost::geometry::index::quadratic<16>>;
+  using InstObsTree
+      = boost::geometry::index::rtree<InstObsValue,
+                                      boost::geometry::index::quadratic<16>>;
+  using TermObsTree
+      = boost::geometry::index::rtree<TermObsValue,
+                                      boost::geometry::index::quadratic<16>>;
+  using LayerTermObsTree = std::map<odb::dbTechLayer*, TermObsTree>;
+
   int placeInstance(int index,
                     odb::dbInst* inst,
                     const odb::dbOrientType& base_orient,
                     bool allow_overlap = false,
                     bool allow_shift = false) const;
+  void populateObstructions();
   std::optional<std::pair<odb::dbInst*, odb::Rect>> checkInstancePlacement(
-      odb::dbInst* inst) const;
+      odb::dbInst* inst,
+      bool return_intersect = true) const;
   int snapToRowSite(int location) const;
   const std::map<odb::dbInst*, int>& getInstWidths() const
   {
     return inst_widths_;
   }
+  LayerTermObsTree getInstanceObstructions(odb::dbInst* inst,
+                                           bool bloat = false) const;
+  void addInstanceObstructions(odb::dbInst* inst);
 
  private:
   void populateInstWidths();
@@ -77,6 +97,11 @@ class PadPlacer
 
   // Computed values
   std::map<odb::dbInst*, int> inst_widths_;
+
+  // Fixed obstructions
+  BlockageObsTree blockage_obstructions_;
+  InstObsTree instance_obstructions_;
+  LayerTermObsTree term_obstructions_;
 };
 
 class CheckerOnlyPadPlacer : public PadPlacer
@@ -110,7 +135,7 @@ class SingleInstPadPlacer : public PadPlacer
   void place(odb::dbInst* inst,
              int location,
              const odb::dbOrientType& base_orient,
-             bool allow_overlap = false) const;
+             bool allow_overlap = false);
 };
 
 class UniformPadPlacer : public PadPlacer
