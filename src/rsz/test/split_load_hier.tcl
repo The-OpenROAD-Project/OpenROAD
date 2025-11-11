@@ -35,3 +35,5 @@ repair_timing -setup -skip_last_gasp -skip_pin_swap -skip_gate_cloning \
 set verilog_file [make_result_file split_load_hier_out.v]
 write_verilog $verilog_file
 diff_files $verilog_file split_load_hier_out.vok
+
+sta::check_axioms

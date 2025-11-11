@@ -40,8 +40,8 @@ cc_library(
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//third-party/abc:abc-lib",
         "@boost.stacktrace",
-        "@edu_berkeley_abc//:abc-lib",
         "@tk_tcl//:tcl",
     ],
 )

@@ -1756,12 +1756,12 @@ class dbNet : public dbObject
 {
  public:
   ///
-  /// Get the net name.
+  /// Get the hierarchical net name (not a base name).
   ///
   std::string getName() const;
 
   ///
-  /// Get the net name.
+  /// Need a version that does not do strdup every time
   ///
   const char* getConstName() const;
 
@@ -2520,6 +2520,8 @@ class dbNet : public dbObject
   /// Dump dbNet info for debugging
   ///
   void dump() const;
+
+  void checkSanityModNetConsistency() const;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2532,14 +2534,14 @@ class dbInst : public dbObject
 {
  public:
   ///
-  /// Get the instance name.
+  /// Get the hierarchical instance name (not a base name).
   ///
-  std::string getName();
+  std::string getName() const;
 
   ///
   /// Need a version that does not do strdup every time
   ///
-  const char* getConstName();
+  const char* getConstName() const;
 
   ///
   /// Compare, like !strcmp
@@ -2828,7 +2830,7 @@ class dbInst : public dbObject
   ///
   /// Get the block of this instance.
   ///
-  dbBlock* getBlock();
+  dbBlock* getBlock() const;
 
   ///
   /// Get the Master of this instance.
@@ -7407,46 +7409,46 @@ class dbDatabase : public dbObject
   ///
 
   ///
-  /// Begin collecting netlist changes on specified block.
-  ///
-  /// NOTE: Eco changes can not be nested at this time.
+  /// Start collecting ECO changes on the specified block.
   ///
   static void beginEco(dbBlock* block);
 
   ///
-  /// End collecting netlist changes on specified block.
+  /// Stop collecting ECO changes on the specified block.
   ///
   static void endEco(dbBlock* block);
 
   ///
-  /// Returns true of the pending eco is empty
+  /// Commit the last ECO changes on the specified block.
+  ///
+  static void commitEco(dbBlock* block);
+
+  ///
+  /// Undo the last ECO changes on the specified block.
+  ///
+  static void undoEco(dbBlock* block);
+
+  ///
+  /// Returns true if the current ECO is empty
   ///
   static bool ecoEmpty(dbBlock* block);
 
   ///
-  /// Read the eco changes from the specified stream to be applied to the
+  /// Return true if the ECO stack is empty. The ECO stack holds
+  /// the nested uncommitted ECOs that can still be undone.
+  ///
+  static bool ecoStackEmpty(dbBlock* block);
+
+  ///
+  /// Read the ECO changes from the specified file to be applied to the
   /// specified block.
   ///
   static void readEco(dbBlock* block, const char* filename);
 
   ///
-  /// Write the eco netlist changes to the specified stream.
+  /// Write the ECO changes to the specified file.
   ///
   static void writeEco(dbBlock* block, const char* filename);
-  static int checkEco(dbBlock* block);
-
-  ///
-  /// Commit any pending netlist changes.
-  ///
-  static void commitEco(dbBlock* block);
-
-  ///
-  /// Undo any pending netlist changes.  Only supports:
-  ///   create and destroy of dbInst and dbNet
-  ///   dbInst::swapMaster
-  ///   connect and disconnect of dbBTerm and dbITerm
-  ///
-  static void undoEco(dbBlock* block);
 
   ///
   /// links to utl::Logger

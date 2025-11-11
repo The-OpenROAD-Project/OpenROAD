@@ -4,9 +4,12 @@
 #include "ram/ram.h"
 
 #include <array>
+#include <cmath>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
