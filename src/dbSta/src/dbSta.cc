@@ -155,6 +155,7 @@ class dbStaCbk : public dbBlockCallBackObj
   void inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master) override;
   void inDbInstSwapMasterAfter(dbInst* inst) override;
   void inDbNetDestroy(dbNet* net) override;
+  void inDbModNetDestroy(dbModNet* modnet) override;
   void inDbITermPostConnect(dbITerm* iterm) override;
   void inDbITermPreDisconnect(dbITerm* iterm) override;
   void inDbITermDestroy(dbITerm* iterm) override;
@@ -990,6 +991,14 @@ void dbStaCbk::inDbNetDestroy(dbNet* db_net)
 {
   Net* net = network_->dbToSta(db_net);
   sta_->deleteNetBefore(net);
+  network_->deleteNetBefore(net);
+}
+
+void dbStaCbk::inDbModNetDestroy(dbModNet* modnet)
+{
+  Net* net = network_->dbToSta(modnet);
+  // jk: is this necessary?
+  // sta_->deleteNetBefore(net);
   network_->deleteNetBefore(net);
 }
 
