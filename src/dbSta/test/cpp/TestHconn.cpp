@@ -945,7 +945,6 @@ TEST_F(TestHconn, ConnectionMade)
   // Journalling test.
   // Undo everything and check initial state preserved
   //
-  odb::dbDatabase::endEco(block_);
   odb::dbDatabase::undoEco(block_);
 
   size_t restored_db_net_count = block_->getNets().size();

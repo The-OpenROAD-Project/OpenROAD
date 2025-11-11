@@ -23,7 +23,6 @@ class JournalFixture : public SimpleDbFixture
   {
     dbDatabase::beginEco(block);
     func();
-    dbDatabase::endEco(block);
     dbDatabase::undoEco(block);
   }
   dbLib* lib;
