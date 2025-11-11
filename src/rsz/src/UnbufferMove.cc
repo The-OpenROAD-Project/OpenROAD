@@ -424,8 +424,31 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
 
 void UnbufferMove::removeBuffer(Instance* buffer)
 {
-  if (logger_->debugCheck(RSZ, "dbg", 101)) {
-    sta::writeVerilog("before_rm.v", true, false, {}, db_network_);
+  static int i = 0;
+  constexpr int start_dbg = 90000000;
+  i++;
+  printf("jk: remove_buffer# = %d\n", i);
+
+  // if (i >= start_dbg || logger_->debugCheck(RSZ, "dbg", 101)) {
+  //   db_network_->checkAxioms();
+  // }
+
+  // jk: dbg
+  // std::string buf_name(network_->pathName(buffer));
+  // if (buf_name.find("wire4033") != std::string::npos) {
+  //  sta::writeVerilog("before_rm_dbg.v", true, false, {}, db_network_);
+  //}
+
+  // if (i >= start_dbg) {
+  //   sta::writeVerilog(
+  //       fmt::format("before_rm{}.v", i).c_str(), true, false, {},
+  //       db_network_);
+  // }
+
+  // jk: dbg
+  if (logger_->debugCheck(RSZ, "dbg", 100)) {
+    sta::writeVerilog(
+        fmt::format("before_rm{}.v", i).c_str(), true, false, {}, db_network_);
   }
 
   LibertyCell* lib_cell = network_->libertyCell(buffer);
@@ -613,10 +636,11 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   }
 
   // jk: sanity check
-  if (logger_->debugCheck(RSZ, "dbg", 101)) {
-    sta::writeVerilog("after_rm.v", true, false, {}, db_network_);
+  if (i >= start_dbg || logger_->debugCheck(RSZ, "dbg", 100)) {
+    sta::writeVerilog(
+        fmt::format("after_rm{}.v", i).c_str(), true, false, {}, db_network_);
   }
-  if (logger_->debugCheck(RSZ, "dbg", 100)) {
+  if (i >= start_dbg || logger_->debugCheck(RSZ, "dbg", 101)) {
     db_survivor->dump();
     db_survivor->dumpConnectivity(1);
     db_network_->checkAxioms();
