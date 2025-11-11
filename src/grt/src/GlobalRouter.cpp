@@ -3744,7 +3744,7 @@ std::vector<Net*> GlobalRouter::findNets(bool init_clock_nets)
   }
   std::vector<Net*> clk_nets;
   for (odb::dbNet* db_net : db_nets) {
-    if (skip_large_fanout_ > 0 && db_net->getTermCount() > skip_large_fanout_) {
+    if (db_net->getTermCount() > skip_large_fanout_) {
       continue;
     }
     Net* net = addNet(db_net);
