@@ -1011,7 +1011,7 @@ void FastRouteCore::getPlanarRoute(odb::dbNet* db_net, GRoute& route)
   }
 }
 
-void FastRouteCore::getPartial3DRoute(odb::dbNet* db_net, GRoute& route)
+void FastRouteCore::get3DRoute(odb::dbNet* db_net, GRoute& route)
 {
   int netID;
   bool exists;
@@ -1158,7 +1158,7 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
       auto fr_net = nets_[netID];
       odb::dbNet* db_net = fr_net->getDbNet();
       GRoute& route = routes[db_net];
-      getPartial3DRoute(db_net, route);
+      get3DRoute(db_net, route);
     }
   }
 

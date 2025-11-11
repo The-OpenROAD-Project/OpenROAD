@@ -271,7 +271,7 @@ class FastRouteCore
 
   NetRouteMap getPlanarRoutes();
   void getPlanarRoute(odb::dbNet* db_net, GRoute& route);
-  void getPartial3DRoute(odb::dbNet* db_net, GRoute& route);
+  void get3DRoute(odb::dbNet* db_net, GRoute& route);
 
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
