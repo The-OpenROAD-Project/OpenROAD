@@ -42,6 +42,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/Network.hh"
 #include "sta/Path.hh"
 #include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
@@ -88,7 +89,7 @@ void TritonCTS::runTritonCts()
   setupCharacterization();
   findClockRoots();
   populateTritonCTS();
-  if (builders_.empty()) {
+  /*if (builders_.empty()) {
     logger_->warn(CTS, 82, "No valid clock nets in the design.");
   } else {
     checkCharacterization();
@@ -99,7 +100,7 @@ void TritonCTS::runTritonCts()
       repairClockNets();
     }
     balanceMacroRegisterLatencies();
-  }
+  }*/
 
   // reset
   techChar_.reset();
@@ -314,10 +315,8 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
   for (odb::dbITerm* iterm : iterms) {
     if (iterm != driver && iterm->isInputSignal()) {
       if (!isSink(iterm)) {
-        logger_->report("Got to input pin from {}", iterm->getInst()->getName());
         odb::dbITerm* outputPin = getSingleOutput(iterm->getInst(), iterm);
         if (outputPin && outputPin->getNet()) {
-          logger_->report("Got to output pin from {}", outputPin->getInst()->getName());
           odb::dbNet* outputNet = outputPin->getNet();
           if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()
               && !openSta_->sdc()->isLeafPinClock(
@@ -1020,7 +1019,6 @@ std::string TritonCTS::selectBestMaxCapBuffer(
 
 void TritonCTS::cloneClockGaters(odb::dbNet* clkNet) 
 {
-  //logger_->report("Test net : {}", clkNet->getName());
   odb::dbITerm* driver = clkNet->getFirstOutput();
   std::vector<int> xs;
   std::vector<int> ys;
@@ -1055,21 +1053,18 @@ void TritonCTS::cloneClockGaters(odb::dbNet* clkNet)
       cloneClockGaters(outputNet);
     }
   }
-  int drvr_idx = -1;
+  int driverID = -1;
   int drvrX, drvrY;
-  if(driver && !isSink(driver)) {
-    //logger_->report("found non sink driver pin: {}", driver->getInst()->getName());
+  if(driver && !isSink(driver) && !driver->getInst()->isFixed()) {
     driver->getAvgXY(&drvrX, &drvrY);
-    drvr_idx = xs.size();
+    driverID = xs.size();
     xs.push_back(drvrX);
     ys.push_back(drvrY);
     point2pin[{drvrX, drvrY}].push_back(driver);
   } else {
     return;
   }
-  stt::Tree ftree = options_->getSttBuilder()->makeSteinerTree(clkNet, xs, ys, drvr_idx);
-  //logger_->report("degree: {}, wl: {}", ftree.deg, ftree.length);
-  //ftree.printTree(logger_);
+  stt::Tree ftree = options_->getSttBuilder()->makeSteinerTree(clkNet, xs, ys, driverID);
   for (stt::Branch branchPt : ftree.branch) {
     odb::Point pt = {branchPt.x, branchPt.y};
     const std::vector<odb::dbITerm*> sinks = point2pin[pt];
@@ -1077,67 +1072,58 @@ void TritonCTS::cloneClockGaters(odb::dbNet* clkNet)
     for (odb::dbITerm* sink : sinks) {
       sinkNames += sink->getName() + ", ";
     }
-    //logger_->report("sinks {} at ({}, {}), next to {}", sinkNames, branchPt.x, branchPt.y, branchPt.n);
   }
-  findLongEdges(ftree, {drvrX, drvrY}, point2pin);
+  findLongEdges(ftree, driverID, {drvrX, drvrY}, point2pin);
 }
 
-void TritonCTS::findLongEdges(stt::Tree& clkSteiner, odb::Point driverPt, std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin)
+void TritonCTS::findLongEdges(stt::Tree& clkSteiner, int driverID, odb::Point driverPt, std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin)
 {
-  int i = 0;
-  int driverID = -1;
   int dx = block_->getDieAreaPolygon().dx();
   int dy = block_->getDieAreaPolygon().dy();
 
   int64_t threashold = std::max(dx, dy) / 5;
+  //TODO : Make it a debug print
   logger_->report("treashold (die side / 5) = {}", threashold);
   std::map<int, int> iterm2cluster;
   std::vector<std::vector<int>> clusters;
   odb::dbNet* icgNet = point2pin[driverPt][0]->getNet();
   odb::dbITerm* icgTerm = icgNet->getFirstOutput();
-  odb::dbITerm* icgInTerm = getFirstInput(icgTerm->getInst());
   std::string icgName = icgTerm->getInst()->getName();
   int driverNId = -1;
   
-  for (stt::Branch branch : clkSteiner.branch) {
-    stt::Branch* neighbor = &clkSteiner.branch[branch.n];
+  for (int b = 0; b < clkSteiner.branchCount(); b++) {
+    const stt::Branch branch = clkSteiner.branch[b];
+    const stt::Branch* neighbor = &clkSteiner.branch[branch.n];
     odb::Point branchPt = {branch.x, branch.y};
-    if(branchPt == driverPt) {
-      driverID = i;
-    }
     
     odb::Point neighborPt = {neighbor->x, neighbor->y};
     int64_t dist = odb::Point::manhattanDistance(branchPt, neighborPt);
-    //logger_->report("{} at ({}, {}), next to {}, distance = {}", i, branch.x, branch.y, branch.n, dist);
-    int clusterFrom = iterm2cluster.find(i) == iterm2cluster.end() ? -1 : iterm2cluster[i];
+    int clusterFrom = iterm2cluster.find(b) == iterm2cluster.end() ? -1 : iterm2cluster[b];
     int clusterTo = iterm2cluster.find(branch.n) == iterm2cluster.end() ? -1 : iterm2cluster[branch.n];
 
-    if (i == branch.n) {
-      i++;
+    if (b == branch.n) {
       continue;
     }
     if (branchPt == driverPt) {
       driverNId = branch.n;
     } else if (neighborPt == driverPt){
-      driverNId = i;
+      driverNId = b;
     }
     if(dist >= threashold) {
       if(clusterFrom == -1) {
         int newClusterID = clusters.size();
-        iterm2cluster[i] = newClusterID;
-        clusters.push_back({i});
+        iterm2cluster[b] = newClusterID;
+        clusters.push_back({b});
       }
       if(clusterTo == -1) {
         int newClusterID = clusters.size();
         iterm2cluster[branch.n] = newClusterID;
         clusters.push_back({branch.n});
       }
-      i++;
       continue;
     }
 
     if(clusterFrom != -1 && clusterTo != -1) {
-      // TODO: merge clsuters
       int mantainedCLuster = (clusters[clusterFrom].size() >= clusters[clusterTo].size()) ? clusterFrom : clusterTo;
       int removedCLuster = (clusters[clusterFrom].size() < clusters[clusterTo].size()) ? clusterFrom : clusterTo;
 
@@ -1151,15 +1137,14 @@ void TritonCTS::findLongEdges(stt::Tree& clkSteiner, odb::Point driverPt, std::m
       iterm2cluster[branch.n] = clusterFrom;
       clusters[clusterFrom].push_back(branch.n);
     } else if(clusterTo != -1) {
-      iterm2cluster[i] = clusterTo;
-      clusters[clusterTo].push_back(i);
+      iterm2cluster[b] = clusterTo;
+      clusters[clusterTo].push_back(b);
     } else {
       int newClusterID = clusters.size();
-      iterm2cluster[i] = newClusterID;
+      iterm2cluster[b] = newClusterID;
       iterm2cluster[branch.n] = newClusterID;
-      clusters.push_back({i, branch.n});
+      clusters.push_back({b, branch.n});
     }
-    i++;
   }
 
   int driverClusterID = iterm2cluster[driverID];
@@ -1169,7 +1154,21 @@ void TritonCTS::findLongEdges(stt::Tree& clkSteiner, odb::Point driverPt, std::m
     clusters[driverClusterID].clear();
     driverClusterID = newDriverCluster;
   }
+
   int count = 0;
+  // hierarchy fix, make the clone net in the right scope
+  sta::Pin* driver = nullptr;
+  odb::dbModule* module = network_->getNetDriverParentModule(
+      network_->dbToSta(icgNet), driver);
+  if (module == nullptr) {
+    // if none put in top level
+    module = block_->getTopModule();
+  }
+  sta::Instance* scope
+      = (module == nullptr || (module == block_->getTopModule()))
+            ? network_->topInstance()
+            : (sta::Instance*) (module->getModInst());
+
   for(int n = 0; n < clusters.size(); n++) {
     const std::vector<int>& cluster = clusters[n];
     if(cluster.empty()) {
@@ -1177,29 +1176,18 @@ void TritonCTS::findLongEdges(stt::Tree& clkSteiner, odb::Point driverPt, std::m
     }
     odb::dbInst* clone = nullptr;
     odb::dbNet* cloneNet = nullptr;
+    bool disconectNets = true;
     odb::Rect sinksBbox = odb::Rect();
     sinksBbox.mergeInit();
     if(driverClusterID == n) {
       cloneNet = icgNet;
       clone = icgTerm->getInst();
+      disconectNets = false;
     } else {
-      odb::dbBlock* block = db_->getChip()->getBlock();
       // creat a new input net
       std::string newNetName
-          = "clonenet_" + std::to_string(delayBufIndex_) + "_" + icgNet->getName();
+          = "clonenet_" + std::to_string(++count) + "_" + icgNet->getName();
 
-      // hierarchy fix, make the net in the right scope
-      sta::Pin* driver = nullptr;
-      odb::dbModule* module = network_->getNetDriverParentModule(
-          network_->dbToSta(icgNet), driver);
-      if (module == nullptr) {
-        // if none put in top level
-        module = block->getTopModule();
-      }
-      sta::Instance* scope
-          = (module == nullptr || (module == block->getTopModule()))
-                ? network_->topInstance()
-                : (sta::Instance*) (module->getModInst());
       cloneNet = network_->staToDb(network_->makeNet(
           newNetName.c_str(), scope, odb::dbNameUniquifyType::IF_NEEDED));
 
@@ -1209,24 +1197,37 @@ void TritonCTS::findLongEdges(stt::Tree& clkSteiner, odb::Point driverPt, std::m
 
       // create a new delay buffer
       std::string newBufName
-          = "clone_" + std::to_string(++count) + "_" + icgName;
+          = "clone_" + std::to_string(count) + "_" + icgName;
       odb::dbMaster* master = icgTerm->getInst()->getMaster();
 
       // fix: make buffer in same hierarchical module as driver
 
       clone
-          = odb::dbInst::create(block, master, newBufName.c_str(), false, module);
+          = odb::dbInst::create(block_, master, newBufName.c_str(), false, module);
 
       clone->setSourceType(odb::dbSourceType::TIMING);
-      clone->getFirstOutput()->connect(cloneNet);
-      odb::dbITerm* clonInTerm = getFirstInput(clone);
-      clonInTerm->connect(icgInTerm->getNet());
 
+      // Connect clone isnt to same inputs as parent and new output net
+      //TODO : Make it a debug print logger_->report("Creating clone {} from {}", newBufName, icgName);
+      for(odb::dbITerm* iterm : clone->getITerms()) {
+        if(iterm->isInputSignal()) {
+          odb::dbITerm* parentITerm = icgTerm->getInst()->findITerm(iterm->getMTerm()->getName().c_str());
+          odb::dbNet* parentNet = parentITerm->getNet();
+          odb::dbModNet* parentModNet = network_->hierNet(network_->dbToSta(parentITerm));
+          if(parentNet) {
+            iterm->connect(parentNet);
+            if(parentModNet) {
+              iterm->connect(parentModNet);
+            }
+          }
+        } else if (iterm->isOutputSignal()){
+          iterm->connect(cloneNet);
+        }
+      }
       
     }
-    //logger_->report("Cluster {} :", n);
+
     for(int branch : cluster) {
-      //logger_->report("  {}", branch);
       odb::Point branchPt = {clkSteiner.branch[branch].x, clkSteiner.branch[branch].y};
       for(auto sink : point2pin[branchPt]) {
         if(!sink->isInputSignal()) {
@@ -1235,8 +1236,15 @@ void TritonCTS::findLongEdges(stt::Tree& clkSteiner, odb::Point driverPt, std::m
         int sinkX, sinkY;
         sink->getAvgXY(&sinkX, &sinkY);
         sinksBbox.merge({sinkX, sinkY});
-        sink->disconnect();
-        sink->connect(cloneNet);
+        if(disconectNets) {
+          sink->disconnect();
+          sink->connect(cloneNet);
+          sta::Pin* sinkPin = network_->dbToSta(sink);
+          sta::Instance* sinkParentInst = network_->getOwningInstanceParent(sinkPin);
+          if(sinkParentInst != scope) {
+            network_->hierarchicalConnect(clone->getFirstOutput(), sink, cloneNet->getName().c_str());
+          }
+        }
       }
     }
     clone->setLocation(sinksBbox.xCenter(), sinksBbox.yCenter());
