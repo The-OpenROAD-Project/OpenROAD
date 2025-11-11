@@ -182,5 +182,5 @@ proc generate_ram { args } {
   filler_placement $filler_cells
 
   global_route
-  detailed_route
+  detailed_route -verbose 0
 }
