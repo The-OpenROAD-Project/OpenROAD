@@ -499,7 +499,7 @@ class GlobalRouter
   int total_diodes_count_;
   bool is_congested_{false};
   bool use_cugr_{false};
-  int skip_large_fanout_{-1};
+  int skip_large_fanout_{0};
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;
