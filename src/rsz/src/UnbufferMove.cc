@@ -534,9 +534,11 @@ void UnbufferMove::removeBuffer(Instance* buffer)
              db_network_->name(out_net));
 
   // jk: suspect2. Use the old behavior in flat flow
+  std::optional<std::string> new_net_name;
+  std::optional<std::string> new_modnet_name;
+  odb::dbNet* db_survivor = db_network_->staToDb(survivor);
+  odb::dbNet* db_removed = db_network_->staToDb(removed);
   if (db_network_->hasHierarchy() == false) {
-    odb::dbNet* db_survivor = db_network_->staToDb(survivor);
-    odb::dbNet* db_removed = db_network_->staToDb(removed);
     if (db_removed) {
       db_survivor->mergeNet(db_removed);
     }
@@ -555,10 +557,6 @@ void UnbufferMove::removeBuffer(Instance* buffer)
     // - mergeModNet() should be done before mergeNet() because
     //   mergeNet() can involve the hierarchical net traversal during the merge
     //   operation.
-    std::optional<std::string> new_net_name;
-    std::optional<std::string> new_modnet_name;
-    odb::dbNet* db_survivor = db_network_->staToDb(survivor);
-    odb::dbNet* db_removed = db_network_->staToDb(removed);
     if (survivor_modnet != nullptr && removed_modnet != nullptr) {
       survivor_modnet->mergeModNet(removed_modnet);
     } else if (survivor_modnet != nullptr) {
