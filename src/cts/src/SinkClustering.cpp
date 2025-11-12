@@ -28,10 +28,10 @@ SinkClustering::SinkClustering(const CtsOptions* options,
       techChar_(techChar),
       maxInternalDiameter_(10),
       capPerUnit_(0.0),
-      use_max_diameter_((HTree_->getTreeType() == TreeType::MacroTree)
+      use_max_diameter_((HTree->getTreeType() == TreeType::MacroTree)
                             ? options->isMacroMaxDiameterSet()
                             : options->isMaxDiameterSet()),
-      use_max_size_((HTree_->getTreeType() == TreeType::MacroTree)
+      use_max_size_((HTree->getTreeType() == TreeType::MacroTree)
                         ? options->isMacroSinkClusteringSizeSet()
                         : options->isSinkClusteringSizeSet()),
       useMaxCapLimit_((HTree->getTreeType() == TreeType::MacroTree)
