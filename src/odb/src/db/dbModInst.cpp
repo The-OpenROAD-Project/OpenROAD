@@ -567,7 +567,10 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
     // Copy module ports from new_module to new_module_copy.
     // - This allows dbModITerms to be connected to dbModBTerms when they are
     //   created later.
-    _dbModule::copyModulePorts(new_module, new_module_copy, mod_bt_map);
+    _dbModule::copyModulePorts(  // NOLINT
+        new_module,
+        new_module_copy,
+        mod_bt_map);
     debugRDPrint1("Created uniquified module {} in block {}",
                   new_module_copy->getName(),
                   new_module_copy->getOwner()->getName());
