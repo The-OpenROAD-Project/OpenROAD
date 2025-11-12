@@ -241,12 +241,15 @@ MANUAL_FOR_BAZEL_TESTS = [
     "split_load_hier",
 ]
 
-[regression_test(
-    name = test_name,
-    size = "large" if test_name in BIG_TESTS else "medium",
-    data = [":test_resources"] + extra_deps.get(test_name, []),
-    tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
-) for test_name in TESTS]
+[
+    regression_test(
+        name = test_name,
+        size = "large" if test_name in BIG_TESTS else "medium",
+        data = [":test_resources"] + extra_deps.get(test_name, []),
+        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
+    )
+    for test_name in TESTS
+]
 
 cc_test(
     name = "rsz_buffer_removal",
@@ -261,8 +264,8 @@ cc_test(
         "//src/ant",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
+        "//src/dpl",
         "//src/est",
-        "//src/dpl",        
         "//src/grt",
         "//src/odb",
         "//src/rsz",
@@ -288,8 +291,8 @@ cc_test(
         "//src/ant",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/est",
         "//src/dpl",
+        "//src/est",
         "//src/grt",
         "//src/odb",
         "//src/rsz",
@@ -304,28 +307,26 @@ cc_test(
 
 cc_test(
     name = "rsz_buffer_removal3",
-    srcs = [
-        "cpp/TestBufferRemoval3.cc"
-    ],
+    srcs = ["cpp/TestBufferRemoval3.cc"],
     data = [
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestBufferRemoval3.v",
-    ],    
+    ],
     deps = [
         "//src/ant",
         "//src/dbSta",
-        "//src/dbSta:dbReadVerilog",
         "//src/dbSta:dbNetwork",
-        "//src/est",
+        "//src/dbSta:dbReadVerilog",
         "//src/dpl",
+        "//src/est",
         "//src/grt",
         "//src/odb",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/tst",
-        "//src/utl",        
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
