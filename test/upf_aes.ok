@@ -212,6 +212,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       360 |   0.3854 |  2.005888e+06 |   +5.45% |  3.47e-08 |  (PD_AES_1)
       360 |   0.4274 |  2.005888e+06 |   +5.45% |  2.94e-08 |  (PD_AES_2)
 [INFO GPL-0040] Routability iteration: 1
+[WARNING GRT-0281] Net clk has a large fanout of 1591 terminals.
 [INFO GPL-0041] Total routing overflow: 346.4367
 [INFO GPL-0042] Number of overflowed tiles: 2456 (11.84%)
 [INFO GPL-0043] Average top 0.5% routing congestion: 1.4111

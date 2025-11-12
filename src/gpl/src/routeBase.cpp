@@ -630,7 +630,7 @@ std::pair<bool, bool> RouteBase::routability(
       }
       if (!gCellHandle.isNesterovBaseCommon()) {
         log_->error(GPL,
-                    155,
+                    159,
                     "Gcell {} from group {} is a Std instance, but is not "
                     "from NesterovBaseCommon. This shouldn't happen.",
                     gCellHandle->getName(),
