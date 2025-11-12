@@ -207,8 +207,8 @@ Cell type report:                       Count       Area
   Total                                     2       1.06
 Net u1z
  Pin capacitance: 5.265-6.142
- Wire capacitance: 0.000-0.030
- Total capacitance: 5.265-6.172
+ Wire capacitance: 0.000
+ Total capacitance: 5.265-6.142
  Number of drivers: 1
  Number of loads: 4
  Number of pins: 5
@@ -341,8 +341,8 @@ Cell type report:                       Count       Area
   Total                                     2       1.60
 Net u1z
  Pin capacitance: 4.624-5.406
- Wire capacitance: 1.656-1.751
- Total capacitance: 6.280-7.157
+ Wire capacitance: 0.000
+ Total capacitance: 4.624-5.406
  Number of drivers: 1
  Number of loads: 4
  Number of pins: 5
@@ -475,8 +475,8 @@ Cell type report:                       Count       Area
   Total                                     2       1.06
 Net u1z
  Pin capacitance: 5.265-6.142
- Wire capacitance: 0.000-0.004
- Total capacitance: 5.265-6.146
+ Wire capacitance: 0.000
+ Total capacitance: 5.265-6.142
  Number of drivers: 1
  Number of loads: 4
  Number of pins: 5
