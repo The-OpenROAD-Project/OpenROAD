@@ -92,50 +92,45 @@ void HTreeBuilder::preSinkClustering(
                  bestDiameter);
   } else if (!clusterSizeSet && maxDiameterSet) {
     // only diameter is set, try clustering sizes of 10, 20 and 30
-    for (unsigned clusterSize2 : options_->getSinkClusteringSizes()) {
-      // clang-format off
+    unsigned clusterSize2 = options_->getSinkClusteringSizes().back();
+    // clang-format off
       debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
                  clusterSize2, maxDiameter, wireSegmentUnit_);
-      // clang-format on
-      matching.run(clusterSize2,
-                   maxDiameter,
-                   wireSegmentUnit_,
-                   bestClusterSize,
-                   bestDiameter);
-    }
+    // clang-format on
+    matching.run(clusterSize2,
+                 maxDiameter,
+                 wireSegmentUnit_,
+                 bestClusterSize,
+                 bestDiameter);
   } else if (clusterSizeSet && !maxDiameterSet) {
     // only clustering size is set, try diameters of 50, 100 and 200 um
-    for (unsigned clusterDiameter2 : options_->getSinkClusteringDiameters()) {
-      // clang-format off
+    unsigned clusterDiameter2 = options_->getSinkClusteringDiameters().back();
+    // clang-format off
       debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
                  clusterSize, clusterDiameter2, wireSegmentUnit_);
-      // clang-format on
-      float maxDiameter2 = clusterDiameter2 * (float) options_->getDbUnits()
-                           / wireSegmentUnit_;
-      matching.run(clusterSize,
-                   maxDiameter2,
-                   wireSegmentUnit_,
-                   bestClusterSize,
-                   bestDiameter);
-    }
+    // clang-format on
+    float maxDiameter2
+        = clusterDiameter2 * (float) options_->getDbUnits() / wireSegmentUnit_;
+    matching.run(clusterSize,
+                 maxDiameter2,
+                 wireSegmentUnit_,
+                 bestClusterSize,
+                 bestDiameter);
   } else {  // neighther clustering size nor diameter is set
     // try diameters of 50, 100 and 200 um
-    for (unsigned clusterDiameter2 : options_->getSinkClusteringDiameters()) {
-      // try clustering sizes of 10, 20 and 30
-      for (unsigned clusterSize2 : options_->getSinkClusteringSizes()) {
-        // clang-format off
+    unsigned clusterDiameter2 = options_->getSinkClusteringDiameters().back();
+    unsigned clusterSize2 = options_->getSinkClusteringSizes().back();
+    // clang-format off
         debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
                    clusterSize2, clusterDiameter2, wireSegmentUnit_);
-        // clang-format on
-        float maxDiameter2 = clusterDiameter2 * (float) options_->getDbUnits()
-                             / wireSegmentUnit_;
-        matching.run(clusterSize2,
-                     maxDiameter2,
-                     wireSegmentUnit_,
-                     bestClusterSize,
-                     bestDiameter);
-      }
-    }
+    // clang-format on
+    float maxDiameter2
+        = clusterDiameter2 * (float) options_->getDbUnits() / wireSegmentUnit_;
+    matching.run(clusterSize2,
+                 maxDiameter2,
+                 wireSegmentUnit_,
+                 bestClusterSize,
+                 bestDiameter);
   }
 
   if (clusterSizeSet || maxDiameterSet) {
