@@ -17,6 +17,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/VerilogWriter.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "tst/nangate45_fixture.h"
