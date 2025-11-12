@@ -538,43 +538,43 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   std::optional<std::string> new_modnet_name;
   odb::dbNet* db_survivor = db_network_->staToDb(survivor);
   odb::dbNet* db_removed = db_network_->staToDb(removed);
-  if (db_network_->hasHierarchy() == false) {
-    if (db_removed) {
-      db_survivor->mergeNet(db_removed);
-    }
-    sta_->disconnectPin(in_pin);
-    sta_->disconnectPin(out_pin);
-  } else {
-    // Disconnect buffer input & output pins
-    sta_->disconnectPin(in_pin);
-    sta_->disconnectPin(out_pin);
+  // if (db_network_->hasHierarchy() == false) {
+  //   if (db_removed) {
+  //     db_survivor->mergeNet(db_removed);
+  //   }
+  //   sta_->disconnectPin(in_pin);
+  //   sta_->disconnectPin(out_pin);
+  // } else {
+  //  Disconnect buffer input & output pins
+  sta_->disconnectPin(in_pin);
+  sta_->disconnectPin(out_pin);
 
-    // Store dbModNet related to the flat net to be removed
-    // std::set<odb::dbModNet*> removed_modnets;
-    // db_removed->findRelatedModNets(removed_modnets);
+  // Store dbModNet related to the flat net to be removed
+  // std::set<odb::dbModNet*> removed_modnets;
+  // db_removed->findRelatedModNets(removed_modnets);
 
-    // Merge hier net
-    // - mergeModNet() should be done before mergeNet() because
-    //   mergeNet() can involve the hierarchical net traversal during the merge
-    //   operation.
-    if (survivor_modnet != nullptr && removed_modnet != nullptr) {
-      survivor_modnet->mergeModNet(removed_modnet);
-    } else if (survivor_modnet != nullptr) {
-      survivor_modnet->mergeNet(db_removed);
-    } else if (removed_modnet != nullptr) {
-      // If there is a single modnet, it should survive.
-      survivor_modnet = removed_modnet;
-      removed_modnet = nullptr;
-      survivor_modnet->mergeNet(db_survivor);
+  // Merge hier net
+  // - mergeModNet() should be done before mergeNet() because
+  //   mergeNet() can involve the hierarchical net traversal during the merge
+  //   operation.
+  if (survivor_modnet != nullptr && removed_modnet != nullptr) {
+    survivor_modnet->mergeModNet(removed_modnet);
+  } else if (survivor_modnet != nullptr) {
+    survivor_modnet->mergeNet(db_removed);
+  } else if (removed_modnet != nullptr) {
+    // If there is a single modnet, it should survive.
+    survivor_modnet = removed_modnet;
+    removed_modnet = nullptr;
+    survivor_modnet->mergeNet(db_survivor);
 
-      // survivor_modnet should be renamed later.
-      new_modnet_name = db_survivor->getBlock()->getBaseName(
-          db_survivor->getName().c_str());
-    }
-
-    // Merge flat net
-    db_survivor->mergeNet(db_removed);
+    // survivor_modnet should be renamed later.
+    new_modnet_name
+        = db_survivor->getBlock()->getBaseName(db_survivor->getName().c_str());
   }
+
+  // Merge flat net
+  db_survivor->mergeNet(db_removed);
+  //}
 
   // if (removed_modnets.empty() == false) {
   //   // Find the single modnet that should survive. This will be the one
