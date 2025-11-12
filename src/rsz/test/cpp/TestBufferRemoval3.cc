@@ -186,10 +186,6 @@ TEST_F(BufRemTest3, RemoveBuf4)
   //----------------------------------------------------
   // Remove buffer
   //----------------------------------------------------
-  // logger_.setDebugLevel(utl::RSZ, "dbg", 101);
-  // logger_.setDebugLevel(utl::RSZ, "remove_buffer", 10);
-  // logger_.setDebugLevel(utl::ODB, "DB_ECO", 10);
-
   auto insts = std::make_unique<sta::InstanceSeq>();
   resizer_.removeBuffers(*insts);
 
@@ -204,8 +200,6 @@ TEST_F(BufRemTest3, RemoveBuf4)
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
                             std::istreambuf_iterator<char>());
-
-  // jk: Bug. assign is omitted in the output verilog.
 
   // Netlist after buffer removal:
   // DFF_X1/Q -> out1, out2, out3, out4, out5, out6
@@ -226,21 +220,25 @@ TEST_F(BufRemTest3, RemoveBuf4)
  output out5;
  output out6;
 
+ wire buf_mod2_out;
+ wire drvr_out;
 
- BUF_X1 load_top2 (.A(out1),
+ BUF_X1 load_top2 (.A(drvr_out),
     .Z(out2));
- BUF_X1 load_top3 (.A(out1),
+ BUF_X1 load_top3 (.A(drvr_out),
     .Z(out3));
  MOD1 mod1_inst (.clk_in(clk),
     .d_in(in1),
-    .q_out(out1));
- MOD2 mod2_inst (.in(out1),
-    .out(out4));
- MOD3 mod3_inst (.in1(out1),
-    .in2(out1),
-    .in3(out4),
+    .q_out(drvr_out));
+ MOD2 mod2_inst (.in(drvr_out),
+    .out(buf_mod2_out));
+ MOD3 mod3_inst (.in1(drvr_out),
+    .in2(drvr_out),
+    .in3(buf_mod2_out),
     .out1(out5),
     .out2(out6));
+ assign out1 = drvr_out;
+ assign out4 = buf_mod2_out;
 endmodule
 module MOD1 (clk_in,
     d_in,
@@ -260,6 +258,7 @@ module MOD2 (in,
  output out;
 
 
+ assign out = in;
 endmodule
 module MOD3 (in1,
     in2,
@@ -273,6 +272,8 @@ module MOD3 (in1,
  output out2;
 
 
+ assign out2 = in2;
+ assign out1 = in1;
 endmodule
 )";
 

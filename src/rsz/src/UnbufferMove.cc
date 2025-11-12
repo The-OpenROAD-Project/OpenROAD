@@ -495,23 +495,17 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   Net* out_net = db_network_->dbToSta(out_db_net);
 
   bool out_net_ports = db_network_->hasPort(out_net);
-  Net* survivor;
-  Net* removed;
-  odb::dbModNet* survivor_modnet;
-  odb::dbModNet* removed_modnet;
-  if (out_net_ports) {
-    survivor = out_net;
-    removed = in_net;
-    survivor_modnet = op_modnet;
-    removed_modnet = ip_modnet;
-  } else {
-    // default or out_net_ports
-    // Default to in_net surviving so drivers (cached in dbNetwork)
-    // do not change.
-    survivor = in_net;
-    removed = out_net;
-    survivor_modnet = ip_modnet;
-    removed_modnet = op_modnet;
+  Net* survivor = in_net;
+  Net* removed = out_net;
+  odb::dbModNet* survivor_modnet = ip_modnet;
+  odb::dbModNet* removed_modnet = op_modnet;
+
+  if (db_network_->hasHierarchy() == false) {
+    if (out_net_ports) {
+      // jk: This is to avoid affecting the flat flow.
+      survivor = out_net;
+      removed = in_net;
+    }
   }
 
   // jk: maybe, not needed.
