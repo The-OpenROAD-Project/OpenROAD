@@ -427,7 +427,7 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   static int i = 0;
   constexpr int start_dbg = 90000000;
   i++;
-  printf("jk: remove_buffer# = %d\n", i);
+  // printf("jk: remove_buffer# = %d\n", i);
 
   // if (i >= start_dbg || logger_->debugCheck(RSZ, "dbg", 101)) {
   //   db_network_->checkAxioms();
