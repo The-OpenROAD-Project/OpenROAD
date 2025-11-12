@@ -153,6 +153,14 @@ _dbBlock* _dbMarkerCategory::getBlock() const
   return (_dbBlock*) chip->getBlock();
 }
 
+_dbChip* _dbMarkerCategory::getChip() const
+{
+  dbMarkerCategory* category = (dbMarkerCategory*) this;
+  _dbMarkerCategory* top_category
+      = (_dbMarkerCategory*) category->getTopCategory();
+  return (_dbChip*) top_category->getOwner();
+}
+
 bool _dbMarkerCategory::hasMaxMarkerLimit() const
 {
   return max_markers_ > 0;

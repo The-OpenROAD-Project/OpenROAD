@@ -23,6 +23,7 @@
 #include "dbVector.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include "dbChip.h"
 #include "dbCore.h"
 #include "odb/dbBlockCallBackObj.h"
 // User Code End Includes
@@ -201,6 +202,13 @@ _dbBlock* _dbMarker::getBlock() const
   dbMarker* marker = (dbMarker*) this;
   _dbMarkerCategory* category = (_dbMarkerCategory*) marker->getCategory();
   return category->getBlock();
+}
+
+_dbChip* _dbMarker::getChip() const
+{
+  dbMarker* marker = (dbMarker*) this;
+  _dbMarkerCategory* category = (_dbMarkerCategory*) marker->getCategory();
+  return category->getChip();
 }
 
 void _dbMarker::writeTR(std::ofstream& report) const
@@ -622,6 +630,9 @@ std::string dbMarker::getName() const
       case dbObstructionObj:
         sources += "obstruction";
         break;
+      case dbChipInstObj:
+        sources += static_cast<dbChipInst*>(src)->getName();
+        break;
       default:
         obj->getLogger()->error(
             utl::ODB, 290, "Unsupported object type: {}", src->getTypeName());
@@ -762,11 +773,19 @@ std::set<dbObject*> dbMarker::getSources() const
 {
   _dbMarker* marker = (_dbMarker*) this;
   _dbBlock* block = marker->getBlock();
+  _dbChip* chip = marker->getChip();
 
   std::set<dbObject*> objs;
   if (block) {
     for (const auto& [db_type, id] : marker->sources_) {
       dbObjectTable* table = block->getObjectTable(db_type);
+      if (table != nullptr && table->validObject(id)) {
+        objs.insert(table->getObject(id));
+      }
+    }
+  } else {
+    for (const auto& [db_type, id] : marker->sources_) {
+      dbObjectTable* table = chip->getObjectTable(db_type);
       if (table != nullptr && table->validObject(id)) {
         objs.insert(table->getObject(id));
       }
