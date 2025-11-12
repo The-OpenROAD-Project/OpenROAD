@@ -1555,11 +1555,12 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
     return dir;
   }
   if (moditerm) {
-    // get the direction off the modbterm
+    // get the direction of the modbterm
     std::string pin_name = moditerm->getName();
     dbModInst* mod_inst = moditerm->getParent();
     dbModule* module = mod_inst->getMaster();
     dbModBTerm* modbterm_local = module->findModBTerm(pin_name.c_str());
+    assert(modbterm_local != nullptr);
     PortDirection* dir
         = dbToSta(modbterm_local->getSigType(), modbterm_local->getIoType());
     return dir;

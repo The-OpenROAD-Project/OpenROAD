@@ -558,10 +558,15 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
     }
   }
 
-  // 2. Create a uniquified copy of new_module
+  // 2. Create a uniquified copy of new_module and its ports
+  _dbModule::modBTMap mod_bt_map;
   dbModule* new_module_copy = dbModule::makeUniqueDbModule(
       new_module->getName(), this->getName(), getMaster()->getOwner());
   if (new_module_copy) {
+    // Copy module ports from new_module to new_module_copy.
+    // - This allows dbModITerms to be connected to dbModBTerms when they are
+    //   created later.
+    _dbModule::copyModulePorts(new_module, new_module_copy, mod_bt_map);
     debugRDPrint1("Created uniquified module {} in block {}",
                   new_module_copy->getName(),
                   new_module_copy->getOwner()->getName());
@@ -654,7 +659,11 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
 
   // 7. Create mod iterms and connect to old mod nets
   for (const auto& [name, old_mod_net] : name_mod_net_map) {
-    dbModITerm* new_mod_iterm = dbModITerm::create(new_mod_inst, name.c_str());
+    // Find the corresponding ModBTerm in the new master module
+    dbModBTerm* new_mod_bterm = new_module_copy->findModBTerm(name.c_str());
+    assert(new_mod_bterm != nullptr);
+    dbModITerm* new_mod_iterm
+        = dbModITerm::create(new_mod_inst, name.c_str(), new_mod_bterm);
     if (new_mod_iterm && old_mod_net) {
       new_mod_iterm->connect(old_mod_net);
     }
@@ -678,7 +687,11 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   // 11. Deep copy contents of new_module to new_module_copy
   // - This will create internal nets and instances under new_module_copy
   // - But nets crossing the module boundary are not connected yet.
-  _dbModule::copy(new_module, new_module_copy, new_mod_inst);  // NOLINT
+  _dbModule::copy(  // NOLINT
+      new_module,
+      new_module_copy,
+      new_mod_inst,
+      mod_bt_map);
   if (logger->debugCheck(utl::ODB, "replace_design", 2)) {
     for (dbInst* inst : new_module_copy->getInsts()) {
       logger->report("new_module_copy {} instance {} has the following iterms:",
