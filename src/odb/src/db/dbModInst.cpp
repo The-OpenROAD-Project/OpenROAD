@@ -250,8 +250,6 @@ void dbModInst::destroy(dbModInst* modinst)
 
   _dbModule* _master = (_dbModule*) modinst->getMaster();
 
-  _master->_mod_inst = dbId<_dbModInst>();  // clear
-
   // Note that we only destroy the module instance, not the module
   // itself
 
@@ -268,6 +266,9 @@ void dbModInst::destroy(dbModInst* modinst)
   for (auto cb : _block->_callbacks) {
     cb->inDbModInstDestroy(modinst);
   }
+
+  // This must be called after callbacks because they need _mod_inst
+  _master->_mod_inst = dbId<_dbModInst>();  // clear
 
   // unlink from parent start
   uint id = _modinst->getOID();
