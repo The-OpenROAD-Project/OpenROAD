@@ -27,11 +27,11 @@ set_output_delay 0 -clock $clk_name [all_outputs]
 
 # make sure sta works before/after removal
 set report_checks_cmd [list report_checks \
-    -from {riscv.dp.pcreg.q[31]$_DFF_PP0_/CLK} \
-    -through _10996_/Y \
-    -through _14612_/Y \
-    -through dmem/_156_/Y \
-    -to {riscv.dp.rf.rf[13][17]$_DFFE_PP_/D}]
+  -from {riscv.dp.pcreg.q[31]$_DFF_PP0_/CLK} \
+  -through _10996_/Y \
+  -through _14612_/Y \
+  -through dmem/_156_/Y \
+  -to {riscv.dp.rf.rf[13][17]$_DFFE_PP_/D}]
 
 estimate_parasitics -placement
 {*}$report_checks_cmd
