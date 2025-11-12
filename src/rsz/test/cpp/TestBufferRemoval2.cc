@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <fstream>
+#include <iterator>
 #include <memory>
 #include <string>
 
@@ -14,6 +15,7 @@
 #include "grt/GlobalRouter.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/Liberty.hh"
@@ -22,7 +24,6 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "tst/nangate45_fixture.h"
 #include "utl/CallBackHandler.h"
-#include "utl/Logger.h"
 
 namespace rsz {
 

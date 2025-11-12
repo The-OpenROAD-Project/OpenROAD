@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/odb.h"
 #include "utl/Logger.h"
 
