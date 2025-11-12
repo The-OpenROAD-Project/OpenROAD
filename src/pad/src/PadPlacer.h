@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/index/parameters.hpp"
 #include "boost/geometry/index/rtree.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"

@@ -11,14 +11,17 @@
 #include <map>
 #include <optional>
 #include <set>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/index/predicates.hpp"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "odb/isotropy.h"
 #include "utl/Logger.h"
 
@@ -375,10 +378,9 @@ void PadPlacer::populateObstructions()
         if (check_inst->getMaster()->isCover()) {
           covers.insert(check_inst);
           continue;
-        } else {
-          instance_obstructions_.insert(
-              {check_inst->getBBox()->getBox(), check_inst});
         }
+        instance_obstructions_.insert(
+            {check_inst->getBBox()->getBox(), check_inst});
       }
     }
   }
