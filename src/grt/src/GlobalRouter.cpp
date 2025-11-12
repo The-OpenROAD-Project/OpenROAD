@@ -3743,7 +3743,28 @@ std::vector<Net*> GlobalRouter::findNets(bool init_clock_nets)
     db_nets = nets_to_route_;
   }
   std::vector<Net*> clk_nets;
+  const int large_fanout_threshold = 1000;
   for (odb::dbNet* db_net : db_nets) {
+    const bool is_special
+        = db_net->getSigType().isSupply() && db_net->isSpecial();
+    if (!is_special && db_net->getTermCount() > skip_large_fanout_) {
+      logger_->info(GRT,
+                    280,
+                    "Skipping net {} with {} terminals.",
+                    db_net->getConstName(),
+                    db_net->getTermCount(),
+                    skip_large_fanout_);
+      continue;
+    }
+
+    if (!is_special && db_net->getTermCount() > large_fanout_threshold) {
+      logger_->warn(GRT,
+                    281,
+                    "Net {} has a large fanout of {} terminals.",
+                    db_net->getConstName(),
+                    db_net->getTermCount());
+    }
+
     Net* net = addNet(db_net);
     // add clock nets not connected to a leaf first
     if (net) {
