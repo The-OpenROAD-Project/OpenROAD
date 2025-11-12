@@ -23,7 +23,8 @@ make_tracks
 place_pins \
   -hor_layers met3 \
   -ver_layers met2
-global_placement -skip_initial_place -density uniform -routability_driven -routability_target_rc_metric 1.00
+global_placement -skip_initial_place -density uniform \
+  -routability_driven -routability_target_rc_metric 1.00
 
 detailed_placement
 improve_placement
