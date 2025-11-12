@@ -494,19 +494,20 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   Net* in_net = db_network_->dbToSta(in_db_net);
   Net* out_net = db_network_->dbToSta(out_db_net);
 
-  bool out_net_ports = db_network_->hasPort(out_net);
   Net* survivor = in_net;
   Net* removed = out_net;
   odb::dbModNet* survivor_modnet = ip_modnet;
   odb::dbModNet* removed_modnet = op_modnet;
 
-  if (db_network_->hasHierarchy() == false) {
-    if (out_net_ports) {
-      // jk: This is to avoid affecting the flat flow.
-      survivor = out_net;
-      removed = in_net;
-    }
-  }
+  // jk: QoR impact in flat flow?
+  // bool out_net_ports = db_network_->hasPort(out_net);
+  // if (db_network_->hasHierarchy() == false) {
+  //  if (out_net_ports) {
+  //    // jk: This is to avoid affecting the flat flow.
+  //    survivor = out_net;
+  //    removed = in_net;
+  //  }
+  //}
 
   // jk: maybe, not needed.
   // If the input net is hierarchical, we need to find the driver pin.
