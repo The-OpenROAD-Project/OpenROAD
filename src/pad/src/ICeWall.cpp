@@ -632,7 +632,7 @@ void ICeWall::placePad(odb::dbMaster* master,
     }
   }
 
-  const SingleInstPadPlacer placer(logger_, getBlock(), getRowEdge(row), row);
+  SingleInstPadPlacer placer(logger_, getBlock(), getRowEdge(row), row);
   placer.place(inst, location, orient.getOrient());
 }
 
@@ -814,7 +814,7 @@ void ICeWall::placeFiller(
     use_height = true;
   }
 
-  const SingleInstPadPlacer placer(logger_, block, getRowEdge(row), row);
+  SingleInstPadPlacer placer(logger_, block, getRowEdge(row), row);
 
   const odb::dbTransform row_xform(row->getOrient());
 
