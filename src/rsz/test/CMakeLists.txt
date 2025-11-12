@@ -35,6 +35,7 @@ or_integration_tests(
     rebuffer1
     rebuffer1_hier
     recover_power_verbose
+    remove_buffers_hier1
     remove_buffers1
     remove_buffers2
     remove_buffers3

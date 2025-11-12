@@ -1007,35 +1007,15 @@ void AntennaChecker::buildLayerMaps(odb::dbNet* db_net,
         upper_index = findNodesWithIntersection(
             node_by_layer_map[layer_it.first->getUpperLayer()], via_it);
 
-        if (upper_index.size() <= 2) {
-          // connect upper -> via
-          for (int& up_index : upper_index) {
-            node_by_layer_map[layer_it.first->getUpperLayer()][up_index]
-                ->low_adj.push_back(via_index);
-          }
-        } else if (upper_index.size() > 2) {
-          std::string log_error = fmt::format(
-              "ERROR: net {} has via on {} conect with multiple wires on layer "
-              "{} \n",
-              db_net->getConstName(),
-              layer_it.first->getName(),
-              layer_it.first->getUpperLayer()->getName());
-          logger_->report("{}", log_error);
+        // connect upper -> via
+        for (int& up_index : upper_index) {
+          node_by_layer_map[layer_it.first->getUpperLayer()][up_index]
+              ->low_adj.push_back(via_index);
         }
-        if (lower_index.size() == 1) {
-          // connect via -> lower
-          for (int& low_index : lower_index) {
-            node_by_layer_map[layer_it.first][via_index]->low_adj.push_back(
-                low_index);
-          }
-        } else if (lower_index.size() > 2) {
-          std::string log_error = fmt::format(
-              "ERROR: net {} has via on {} conect with multiple wires on layer "
-              "{} \n",
-              db_net->getConstName(),
-              layer_it.first->getName(),
-              layer_it.first->getLowerLayer()->getName());
-          logger_->report("{}", log_error);
+        // connect via -> lower
+        for (int& low_index : lower_index) {
+          node_by_layer_map[layer_it.first][via_index]->low_adj.push_back(
+              low_index);
         }
         via_index++;
       }

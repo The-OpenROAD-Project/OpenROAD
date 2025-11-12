@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <fstream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <set>
@@ -154,6 +155,10 @@ class GlobalRouter
   void setResistanceAware(bool resistance_aware);
   void setMacroExtension(int macro_extension);
   void setUseCUGR(bool use_cugr) { use_cugr_ = use_cugr; };
+  void setSkipLargeFanoutNets(int skip_large_fanout)
+  {
+    skip_large_fanout_ = skip_large_fanout;
+  };
 
   // flow functions
   void readGuides(const char* file_name);
@@ -495,6 +500,7 @@ class GlobalRouter
   int total_diodes_count_;
   bool is_congested_{false};
   bool use_cugr_{false};
+  int skip_large_fanout_{std::numeric_limits<int>::max()};
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;

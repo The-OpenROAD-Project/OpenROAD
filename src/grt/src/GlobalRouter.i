@@ -147,6 +147,12 @@ set_use_cugr(bool use_cugr)
 }
 
 void
+set_skip_large_fanout(int skip_large_fanout)
+{
+  getGlobalRouter()->setSkipLargeFanoutNets(skip_large_fanout);
+}
+
+void
 global_route(bool start_incremental, bool end_incremental)
 {
   getGlobalRouter()->globalRoute(true, start_incremental, end_incremental);

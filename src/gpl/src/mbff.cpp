@@ -2483,6 +2483,7 @@ void MBFF::ReadPaths()
                                                    20,
                                                    num_paths_,
                                                    true,
+                                                   true,
                                                    -sta::INF,
                                                    sta::INF,
                                                    true,

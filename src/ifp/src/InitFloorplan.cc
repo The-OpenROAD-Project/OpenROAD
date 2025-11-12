@@ -186,6 +186,8 @@ void InitFloorplan::makeDie(const odb::Rect& die)
                 snapToMfgGrid(die.xMax()),
                 snapToMfgGrid(die.yMax()));
   block_->setDieArea(die_area);
+
+  resetTracks();
 }
 
 void InitFloorplan::makePolygonDie(const odb::Polygon& polygon)
@@ -214,6 +216,8 @@ void InitFloorplan::makePolygonDie(const odb::Polygon& polygon)
 
   // Set the die area using the polygon
   block_->setDieArea(polygon);
+
+  resetTracks();
 }
 
 void InitFloorplan::makePolygonRows(
@@ -973,6 +977,16 @@ void InitFloorplan::makeTracks()
         makeTracks(
             layer, layer->getOffsetX(), x_pitch, layer->getOffsetY(), y_pitch);
       }
+    }
+  }
+}
+
+void InitFloorplan::resetTracks() const
+{
+  for (auto layer : block_->getDataBase()->getTech()->getLayers()) {
+    auto grid = block_->findTrackGrid(layer);
+    if (grid) {
+      odb::dbTrackGrid::destroy(grid);
     }
   }
 }

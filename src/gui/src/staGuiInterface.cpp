@@ -969,6 +969,7 @@ void STAGuiInterface::updatePathGroups()
   search->makePathGroups(1,         /* group count */
                          1,         /* endpoint count*/
                          false,     /* unique pins */
+                         false,     /* unique edges */
                          -sta::INF, /* min slack */
                          sta::INF,  /* max slack*/
                          nullptr,   /* group names */
@@ -1135,7 +1136,8 @@ TimingPathList STAGuiInterface::getTimingPaths(
           // group_count, endpoint_count, unique_pins
           max_path_count_,
           one_path_per_endpoint_ ? 1 : max_path_count_,
-          true,
+          true,  // unique pins
+          true,  // unique edges
           -sta::INF,
           sta::INF,  // slack_min, slack_max,
           true,      // sort_by_slack

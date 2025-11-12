@@ -146,6 +146,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-congestion_report_iter_step steps] \
                                   [-grid_origin origin] \
                                   [-critical_nets_percentage percent] \
+                                  [-skip_large_fanout_nets fanout] \
                                   [-allow_congestion] \
                                   [-verbose] \
                                   [-start_incremental] \
@@ -157,7 +158,8 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -congestion_iterations -congestion_report_file \
-          -grid_origin -critical_nets_percentage -congestion_report_iter_step
+          -grid_origin -critical_nets_percentage -congestion_report_iter_step\
+          -skip_large_fanout_nets
          } \
     flags {-allow_congestion -resistance_aware -verbose -start_incremental -end_incremental \
           -use_cugr}
@@ -213,6 +215,12 @@ proc global_route { args } {
   }
 
   grt::set_use_cugr [info exists flags(-use_cugr)]
+
+  if { [info exists keys(-skip_large_fanout_nets)] } {
+    set fanout $keys(-skip_large_fanout_nets)
+    sta::check_positive_integer "-skip_large_fanout_nets" $fanout
+    grt::set_skip_large_fanout $fanout
+  }
 
   set allow_congestion [info exists flags(-allow_congestion)]
   grt::set_allow_congestion $allow_congestion

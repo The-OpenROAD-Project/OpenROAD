@@ -208,6 +208,13 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
                        bool verbose,
                        const char* file_name,
                        const char* stage_name);
+  void countInstancesByType(odb::dbModule* module,
+                            InstTypeMap& inst_type_stats,
+                            std::vector<dbInst*>& insts);
+  void countPhysicalOnlyInstancesByType(InstTypeMap& inst_type_stats,
+                                        std::vector<dbInst*>& insts);
+  void addInstanceByTypeInstance(odb::dbInst* inst,
+                                 InstTypeMap& inst_type_stats);
 
   void reportTimingHistogram(int num_bins, const MinMax* min_max) const;
 
@@ -229,14 +236,6 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   void replaceCell(Instance* inst,
                    Cell* to_cell,
                    LibertyCell* to_lib_cell) override;
-
-  void countInstancesByType(odb::dbModule* module,
-                            InstTypeMap& inst_type_stats,
-                            std::vector<dbInst*>& insts);
-  void countPhysicalOnlyInstancesByType(InstTypeMap& inst_type_stats,
-                                        std::vector<dbInst*>& insts);
-  void addInstanceByTypeInstance(odb::dbInst* inst,
-                                 InstTypeMap& inst_type_stats);
 
   dbDatabase* db_ = nullptr;
   Logger* logger_ = nullptr;

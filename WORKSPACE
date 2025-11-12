@@ -25,7 +25,6 @@ http_archive(
 # This essentially reads as a TODO list of what needs to be upstreamed to BCR
 load("@rules_hdl//dependency_support/com_github_quantamhd_lemon:com_github_quantamhd_lemon.bzl", "com_github_quantamhd_lemon")
 load("@rules_hdl//dependency_support/com_github_westes_flex:com_github_westes_flex.bzl", "com_github_westes_flex")
-load("@rules_hdl//dependency_support/edu_berkeley_abc:edu_berkeley_abc.bzl", "edu_berkeley_abc")
 load("@rules_hdl//dependency_support/net_invisible_island_ncurses:net_invisible_island_ncurses.bzl", "net_invisible_island_ncurses")
 load("@rules_hdl//dependency_support/net_zlib:net_zlib.bzl", "net_zlib")
 load("@rules_hdl//dependency_support/org_gnu_bison:org_gnu_bison.bzl", "org_gnu_bison")
@@ -36,8 +35,6 @@ load("@rules_hdl//dependency_support/tk_tcl:tk_tcl.bzl", "tk_tcl")
 
 # Direct dependencies needed in Openroad
 com_github_quantamhd_lemon()
-
-edu_berkeley_abc()
 
 tk_tcl()
 

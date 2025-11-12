@@ -93,7 +93,7 @@ void InitialPlace::doBicgstabPlace(int threads)
 
     if (std::isnan(error.x) || std::isnan(error.y)) {
       log_->warn(utl::GPL,
-                 154,
+                 325,
                  "Conjugate gradient initial placement solver failed at "
                  "iteration {}. ",
                  iter);

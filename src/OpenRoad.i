@@ -417,6 +417,9 @@ set_debug_level(const char* tool_name,
   if (id == utl::UKN) {
     logger->error(utl::ORD, 15, "Unknown tool name {}", tool_name);
   }
+  if (id == utl::STA) {
+    getSta()->setDebugLevel(group, level);
+  }
   logger->setDebugLevel(id, group, level);
 }
 

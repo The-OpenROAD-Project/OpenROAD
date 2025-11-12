@@ -429,7 +429,8 @@ class LayoutViewer : public QWidget
   RenderThread viewer_thread_;
   QPixmap draw_pixmap_;
   QRect draw_pixmap_bounds_;
-  QTimer* loading_timer_;
+  QTimer loading_timer_;
+  QTimer repaint_timer_;
   std::string loading_indicator_;
 
   static constexpr qreal kZoomScaleFactor = 1.2;

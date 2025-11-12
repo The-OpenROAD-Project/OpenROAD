@@ -104,7 +104,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/upf:ui",
     "//src/utl",
     "//src/utl:ui",
-    "@edu_berkeley_abc//:abc-lib",
+    "//third-party/abc:abc-lib",
     ":ord",
 ] + select(
     {

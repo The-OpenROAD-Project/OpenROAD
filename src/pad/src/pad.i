@@ -26,6 +26,20 @@ utl::Logger* getLogger();
 %include "exception.i"
 %include "../../Exception.i"
 
+%typemap(in) pad::PlacementStrategy {
+  char *str = Tcl_GetStringFromObj($input, 0);
+  if (strcasecmp(str, "bump_aligned") == 0) {
+    $1 = pad::PlacementStrategy::BUMP_ALIGNED;
+  } else if (strcasecmp(str, "uniform") == 0) {
+    $1 = pad::PlacementStrategy::UNIFORM;
+  } else if (strcasecmp(str, "linear") == 0) {
+    $1 = pad::PlacementStrategy::LINEAR;
+  } else if (strcasecmp(str, "default") == 0) {
+    $1 = pad::PlacementStrategy::DEFAULT;
+  } else {
+    $1 = pad::PlacementStrategy::DEFAULT;
+  }
+}
 
 %inline %{
 
@@ -77,9 +91,9 @@ void place_pad(odb::dbMaster* master, const char* name, odb::dbRow* row, int loc
   ord::getICeWall()->placePad(master, name, row, location, mirror);
 }
 
-void place_pads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
+void place_pads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row, pad::PlacementStrategy mode)
 {
-  ord::getICeWall()->placePads(insts, row);
+  ord::getICeWall()->placePads(insts, row, mode);
 }
 
 void place_corner(odb::dbMaster* master, int ring_index)

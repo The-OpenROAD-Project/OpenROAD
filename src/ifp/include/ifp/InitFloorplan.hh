@@ -126,6 +126,7 @@ class InitFloorplan
                             int y_offset,
                             int y_pitch,
                             int first_last_pitch);
+  void resetTracks() const;
 
   odb::dbSite* findSite(const char* site_name);
 
