@@ -1660,6 +1660,7 @@ NetRouteMap FastRouteCore::run()
   const int finallength = getOverflow3D();
   const int numVia = threeDVIA();
   checkRoute3D();
+  ensurePinCoverage();
 
   logger_->metric("global_route__vias", numVia);
   if (verbose_) {

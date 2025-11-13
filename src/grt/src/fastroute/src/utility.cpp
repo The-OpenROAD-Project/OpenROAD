@@ -312,7 +312,6 @@ void FastRouteCore::fillVIA()
         }
       }
     }
-    ensurePinCoverage(netID);
   }
 
   if (verbose_) {
@@ -322,60 +321,62 @@ void FastRouteCore::fillVIA()
   }
 }
 
-void FastRouteCore::ensurePinCoverage(const int net_id)
+void FastRouteCore::ensurePinCoverage()
 {
-  auto& treeedges = sttrees_[net_id].edges;
-  const auto& treenodes = sttrees_[net_id].nodes;
-  const int num_edges = sttrees_[net_id].num_edges();
-  const int num_terminals = sttrees_[net_id].num_terminals;
+  for (const int& net_id : net_ids_) {
+    auto& treeedges = sttrees_[net_id].edges;
+    const auto& treenodes = sttrees_[net_id].nodes;
+    const int num_edges = sttrees_[net_id].num_edges();
+    const int num_terminals = sttrees_[net_id].num_terminals;
 
-  std::map<odb::Point, std::pair<int16_t, int16_t>> pin_pos_to_layer_range;
-  for (int i = 0; i < num_terminals; i++) {
-    odb::Point pin_pos(treenodes[i].x, treenodes[i].y);
-    pin_pos_to_layer_range[pin_pos] = {num_layers_, -1};
-  }
+    std::map<odb::Point, std::pair<int16_t, int16_t>> pin_pos_to_layer_range;
+    for (int i = 0; i < num_terminals; i++) {
+      odb::Point pin_pos(treenodes[i].x, treenodes[i].y);
+      pin_pos_to_layer_range[pin_pos] = {num_layers_, -1};
+    }
 
-  for (int edgeID = 0; edgeID < num_edges; edgeID++) {
-    const TreeEdge* treeedge = &(treeedges[edgeID]);
-    if (treeedge->len > 0 || treeedge->route.routelen > 0) {
-      int routeLen = treeedge->route.routelen;
-      const std::vector<GPoint3D>& grids = treeedge->route.grids;
-      for (int i = 0; i <= routeLen; i++) {
-        odb::Point node_pos(grids[i].x, grids[i].y);
-        if (pin_pos_to_layer_range.find(node_pos)
-            != pin_pos_to_layer_range.end()) {
-          pin_pos_to_layer_range[node_pos].first = std::min(
-              pin_pos_to_layer_range[node_pos].first, grids[i].layer);
-          pin_pos_to_layer_range[node_pos].second = std::max(
-              pin_pos_to_layer_range[node_pos].second, grids[i].layer);
+    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+      const TreeEdge* treeedge = &(treeedges[edgeID]);
+      if (treeedge->len > 0 || treeedge->route.routelen > 0) {
+        int routeLen = treeedge->route.routelen;
+        const std::vector<GPoint3D>& grids = treeedge->route.grids;
+        for (int i = 0; i <= routeLen; i++) {
+          odb::Point node_pos(grids[i].x, grids[i].y);
+          if (pin_pos_to_layer_range.find(node_pos)
+              != pin_pos_to_layer_range.end()) {
+            pin_pos_to_layer_range[node_pos].first = std::min(
+                pin_pos_to_layer_range[node_pos].first, grids[i].layer);
+            pin_pos_to_layer_range[node_pos].second = std::max(
+                pin_pos_to_layer_range[node_pos].second, grids[i].layer);
+          }
         }
       }
     }
-  }
 
-  for (int pin_idx = 0; pin_idx < num_terminals; pin_idx++) {
-    const TreeNode& pin_node = treenodes[pin_idx];
-    odb::Point pin_pos(pin_node.x, pin_node.y);
-    auto [min_layer, max_layer] = pin_pos_to_layer_range[pin_pos];
-    if (pin_node.botL < min_layer || pin_node.botL > max_layer) {
-      Route via_route;
-      via_route.type = RouteType::MazeRoute;
-      if (pin_node.botL < min_layer) {
-        via_route.routelen = min_layer - pin_node.botL;
-        for (int16_t l = pin_node.botL; l <= min_layer; l++) {
-          via_route.grids.push_back({pin_node.x, pin_node.y, l});
+    for (int pin_idx = 0; pin_idx < num_terminals; pin_idx++) {
+      const TreeNode& pin_node = treenodes[pin_idx];
+      odb::Point pin_pos(pin_node.x, pin_node.y);
+      auto [min_layer, max_layer] = pin_pos_to_layer_range[pin_pos];
+      if (pin_node.botL < min_layer || pin_node.botL > max_layer) {
+        Route via_route;
+        via_route.type = RouteType::MazeRoute;
+        if (pin_node.botL < min_layer) {
+          via_route.routelen = min_layer - pin_node.botL;
+          for (int16_t l = pin_node.botL; l <= min_layer; l++) {
+            via_route.grids.push_back({pin_node.x, pin_node.y, l});
+          }
+        } else {
+          via_route.routelen = pin_node.botL - max_layer;
+          for (int16_t l = max_layer; l <= pin_node.botL; l++) {
+            via_route.grids.push_back({pin_node.x, pin_node.y, l});
+          }
         }
-      } else {
-        via_route.routelen = pin_node.botL - max_layer;
-        for (int16_t l = max_layer; l <= pin_node.botL; l++) {
-          via_route.grids.push_back({pin_node.x, pin_node.y, l});
-        }
+
+        TreeEdge new_edge;
+        new_edge.assigned = true;
+        new_edge.route = via_route;
+        treeedges.emplace_back(new_edge);
       }
-
-      TreeEdge new_edge;
-      new_edge.assigned = true;
-      new_edge.route = via_route;
-      treeedges.emplace_back(new_edge);
     }
   }
 }
