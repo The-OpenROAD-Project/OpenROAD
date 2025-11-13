@@ -1,4 +1,4 @@
-# Test for placing pads using place_pads with uniform spacing
+# Test for placing pads using place_pads with placer algorithm with obstructions
 source "helpers.tcl"
 
 # Init chip
@@ -6,6 +6,24 @@ read_lef Nangate45/Nangate45.lef
 read_lef Nangate45_io/dummy_pads.lef
 
 read_def Nangate45_blackparrot/floorplan.def
+
+# Make Pad obstructions
+# South
+odb::dbObstruction_create [ord::get_db_block] [[ord::get_db_tech] findLayer metal10] \
+  [ord::microns_to_dbu 1400] [ord::microns_to_dbu 25] \
+  [ord::microns_to_dbu 1600] [ord::microns_to_dbu 130]
+# East
+odb::dbObstruction_create [ord::get_db_block] [[ord::get_db_tech] findLayer metal10] \
+  [ord::microns_to_dbu 2900] [ord::microns_to_dbu 1050] \
+  [ord::microns_to_dbu 2970] [ord::microns_to_dbu 1250]
+# East (non obstructive)
+odb::dbObstruction_create [ord::get_db_block] [[ord::get_db_tech] findLayer metal10] \
+  [ord::microns_to_dbu 2850] [ord::microns_to_dbu 1700] \
+  [ord::microns_to_dbu 2900] [ord::microns_to_dbu 2100]
+# West / North Placement obs
+odb::dbBlockage_create [ord::get_db_block] \
+  [ord::microns_to_dbu 90] [ord::microns_to_dbu 2700] \
+  [ord::microns_to_dbu 210] [ord::microns_to_dbu 2900]
 
 # Test place_pad
 make_io_sites -horizontal_site IOSITE -vertical_site IOSITE -corner_site IOSITE -offset 15
@@ -25,6 +43,16 @@ remove_io_bump BUMP_8_11
 remove_io_bump BUMP_9_8
 remove_io_bump BUMP_10_8
 remove_io_bump BUMP_11_8
+
+# Move bump into row
+set inst [[ord::get_db_block] findInst BUMP_3_16]
+$inst setPlacementStatus PLACED
+$inst setLocation [ord::microns_to_dbu 690] [ord::microns_to_dbu 2900]
+$inst setPlacementStatus FIRM
+set inst [[ord::get_db_block] findInst BUMP_4_16]
+$inst setPlacementStatus PLACED
+$inst setLocation [ord::microns_to_dbu 860] [ord::microns_to_dbu 2900]
+$inst setPlacementStatus FIRM
 
 ######## Assign Bumps ########
 assign_io_bump -net p_ddr_dm_1_o -terminal u_ddr_dm_1_o/PAD BUMP_0_0
@@ -212,7 +240,7 @@ assign_io_bump -net p_ddr_dq_9_io -terminal u_ddr_dq_9_io/PAD BUMP_1_4
 assign_io_bump -net p_ddr_dq_8_io -terminal u_ddr_dq_8_io/PAD BUMP_0_4
 
 # Place pads
-place_pads -mode linear -row IO_EAST u_ddr_dq_23_io u_ddr_dq_22_io u_ddr_dq_21_io \
+place_pads -mode placer -row IO_EAST u_ddr_dq_23_io u_ddr_dq_22_io u_ddr_dq_21_io \
   u_vdd_4 u_vss_4 u_ddr_dq_20_io u_vzz_9 u_v18_9 u_ddr_dq_19_io \
   u_ddr_dq_18_io u_ddr_dq_17_io u_ddr_dq_16_io u_vzz_10 u_v18_10 \
   u_ddr_dq_31_io u_ddr_dq_30_io u_ddr_dq_29_io u_ddr_dq_28_io u_vzz_11 \
@@ -224,7 +252,7 @@ place_pads -mode linear -row IO_EAST u_ddr_dq_23_io u_ddr_dq_22_io u_ddr_dq_21_i
   u_v18_15 u_ci_clk_i u_ci_4_i u_ci_3_i u_ci_2_i u_vzz_16 u_v18_16 \
   u_ci_1_i u_vdd_7 u_vss_7 u_ci_0_i u_ci2_8_o u_ci2_7_o
 
-place_pads -mode bump_aligned -row IO_WEST u_vss_15 u_vdd_15 u_ddr_dq_8_io u_ddr_dq_9_io \
+place_pads -mode placer -row IO_WEST u_vss_15 u_vdd_15 u_ddr_dq_8_io u_ddr_dq_9_io \
   u_ddr_dq_10_io u_ddr_dq_11_io u_ddr_dq_12_io u_v18_32 u_vzz_32 \
   u_ddr_dq_13_io u_ddr_dq_14_io u_ddr_dq_15_io u_ddr_dqs_p_0_io \
   u_v18_31 u_vzz_31 u_ddr_dqs_n_0_io u_ddr_dm_0_o u_vss_14 u_vdd_14 \
@@ -249,7 +277,7 @@ place_pads -mode placer -row IO_SOUTH u_ddr_dm_1_o u_ddr_dqs_n_1_io u_vzz_0 \
   u_vss_3 u_ddr_ck_p_o u_ddr_dqs_n_2_io u_ddr_dqs_p_2_io u_ddr_dm_2_o \
   u_vzz_8 u_v18_8
 
-place_pads -mode bump_aligned -row IO_NORTH u_v18_25 u_vzz_25 u_co_0_i u_co_1_i u_co_2_i \
+place_pads -mode placer -row IO_NORTH u_v18_25 u_vzz_25 u_co_0_i u_co_1_i u_co_2_i \
   u_vss_11 u_vdd_11 u_co_3_i u_v18_24 u_vzz_24 u_co_4_i u_co_clk_i \
   u_co_tkn_o u_co_v_i u_v18_23 u_vzz_23 u_co_5_i u_co_6_i u_co_7_i \
   u_co_8_i u_v18_22 u_vzz_22 u_vss_10 u_vdd_10 u_clk_A_i u_clk_B_i \
@@ -261,6 +289,6 @@ place_pads -mode bump_aligned -row IO_NORTH u_v18_25 u_vzz_25 u_co_0_i u_co_1_i 
   u_vzz_17
 
 
-set def_file [make_result_file "place_pads_bumps_strategy.def"]
+set def_file [make_result_file "place_pads_bumps_strategy_placer_blockages.def"]
 write_def $def_file
-diff_files $def_file "place_pads_bumps_strategy.defok"
+diff_files $def_file "place_pads_bumps_strategy_placer_blockages.defok"
