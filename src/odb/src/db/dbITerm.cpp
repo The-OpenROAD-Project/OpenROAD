@@ -694,6 +694,9 @@ void dbITerm::disconnectDbModNet()
         prev->_next_modnet_iterm = iterm->_next_modnet_iterm;
       }
     }
+
+    iterm->_next_modnet_iterm = 0;
+    iterm->_prev_modnet_iterm = 0;
     iterm->_mnet = 0;
   }
 }

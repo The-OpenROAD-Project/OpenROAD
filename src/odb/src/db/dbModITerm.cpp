@@ -361,7 +361,6 @@ void dbModITerm::disconnect()
     _block->_journal->endAction();
   }
 
-  _moditerm->_mod_net = 0;
   _dbModITerm* next_moditerm
       = (_moditerm->_next_net_moditerm != 0)
             ? _block->_moditerm_tbl->getPtr(_moditerm->_next_net_moditerm)
@@ -378,6 +377,9 @@ void dbModITerm::disconnect()
   if (next_moditerm) {
     next_moditerm->_prev_net_moditerm = _moditerm->_prev_net_moditerm;
   }
+
+  _moditerm->_next_net_moditerm = 0;
+  _moditerm->_prev_net_moditerm = 0;
   _moditerm->_mod_net = 0;
 
   for (auto callback : _block->_callbacks) {

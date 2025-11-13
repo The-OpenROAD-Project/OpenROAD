@@ -907,6 +907,9 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
         prev->_next_modnet_bterm = bterm->_next_modnet_bterm;
       }
     }
+
+    _next_modnet_bterm = 0;
+    _prev_modnet_bterm = 0;
     _mnet = 0;
   }
 }
