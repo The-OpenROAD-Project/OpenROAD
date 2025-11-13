@@ -9,6 +9,7 @@
 #include <iterator>
 #include <limits>
 #include <map>
+#include <memory>
 #include <optional>
 #include <set>
 #include <tuple>
@@ -157,7 +158,7 @@ int PadPlacer::convertRowIndexToPos(int index) const
     start = origin.y();
   }
 
-  return start + index * row_->getSpacing();
+  return start + (index * row_->getSpacing());
 }
 
 int PadPlacer::placeInstance(int index,
@@ -1019,9 +1020,8 @@ int PlacerPadPlacer::getNearestLegalPosition(odb::dbInst* inst,
     }
     if ((target - start) < (end - target)) {
       return start;
-    } else {
-      return end;
     }
+    return end;
   }
   return target;
 }
@@ -1308,10 +1308,10 @@ bool PlacerPadPlacer::padSpreading(
     total_move += std::abs(move_by);
 
     const int move_to = convertRowIndexToPos(snapToRowSite(
-                            curr_pos + move_by - positions[curr]->width / 2))
-                        + positions[curr]->width / 2;
+                            curr_pos + move_by - (positions[curr]->width / 2)))
+                        + (positions[curr]->width / 2);
     positions[curr]->setLocation(std::max(prev_pos, std::min(next_pos, move_to))
-                                 - positions[curr]->width / 2);
+                                 - (positions[curr]->width / 2));
     debugPrint(getLogger(),
                utl::PAD,
                "Place",
@@ -1366,17 +1366,15 @@ std::map<odb::dbInst*, int> PlacerPadPlacer::padSpreading(
 
   for (int k = 0; k < kMaxIterations; k++) {
     // Update coeff schedule
-    const float kRepel1
-        = kRepelStart
-          + (kRepelEnd - kRepelStart) * k / static_cast<float>(kMaxIterations);
-    const float kSpring1
-        = k > kSpringIterEnd
-              ? 0
-              : (k > kSpringIterInfluence
-                     ? kSpringStart
-                           * (kSpringItrRange - (k - kSpringIterInfluence))
-                           / static_cast<float>(kSpringItrRange)
-                     : kSpringStart);
+    const float kRepel1 = kRepelStart
+                          + ((kRepelEnd - kRepelStart) * k
+                             / static_cast<float>(kMaxIterations));
+    const float kString2
+        = k > kSpringIterInfluence
+              ? kSpringStart * (kSpringItrRange - (k - kSpringIterInfluence))
+                    / static_cast<float>(kSpringItrRange)
+              : kSpringStart;
+    const float kSpring1 = k > kSpringIterEnd ? 0 : kString2;
 
     if (padSpreading(
             positions, initial_positions, k, kSpring1, kRepel1, kDamper)) {
@@ -1434,8 +1432,6 @@ int PlacerPadPlacer::getNumberOfRoutes() const
 {
   int count = 0;
   for (odb::dbInst* inst : getInsts()) {
-    std::vector<int64_t> lengths;
-    const odb::Point inst_center = inst->getBBox()->getBox().center();
     if (iterm_connections_.find(inst) != iterm_connections_.end()) {
       count += 1;
     }
