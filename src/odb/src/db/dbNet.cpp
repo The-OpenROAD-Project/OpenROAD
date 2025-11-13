@@ -2299,11 +2299,6 @@ void dbNet::mergeNet(dbNet* in_net)
   for (dbBTerm* bterm : bterms) {
     bterm->connect(this);
   }
-
-  // 2. Clear the terminals of in_net to avoid dangling pointers.
-  _dbNet* _in_net = reinterpret_cast<_dbNet*>(in_net);
-  _in_net->_iterms.clear();
-  _in_net->_bterms.clear();
 }
 
 void dbNet::markNets(std::vector<dbNet*>& nets, dbBlock* block, bool mk)
