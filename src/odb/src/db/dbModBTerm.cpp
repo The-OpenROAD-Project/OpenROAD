@@ -332,6 +332,13 @@ void dbModBTerm::connect(dbModNet* net)
   if (_modbterm->_modnet == net->getId()) {
     return;
   }
+
+  // If the modbterm is already connected to a different modnet, disconnect it
+  // first.
+  if (_modbterm->_modnet != 0) {
+    disconnect();
+  }
+
   for (auto callback : _block->_callbacks) {
     callback->inDbModBTermPreConnect(this, net);
   }

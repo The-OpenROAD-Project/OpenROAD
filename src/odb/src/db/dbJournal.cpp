@@ -2291,10 +2291,10 @@ void dbJournal::undo_connectObject()
       // disconnecting the dbNet then in the journalling for
       // the caller we set the mnet_id to zero.
       //
+      assert(net_id != 0 || mnet_id != 0);
       if (net_id != 0) {
         iterm->disconnectDbNet();
-      }
-      if (mnet_id != 0) {
+      } else if (mnet_id != 0) {
         iterm->disconnectDbModNet();
       }
       break;
@@ -2319,7 +2319,12 @@ void dbJournal::undo_connectObject()
           bterm->getName(),
           net_id,
           mnet_id);
-      bterm->disconnect();
+      assert(net_id != 0 || mnet_id != 0);
+      if (net_id != 0) {
+        bterm->disconnectDbNet();
+      } else if (mnet_id != 0) {
+        bterm->disconnectDbModNet();
+      }
       break;
     }
 

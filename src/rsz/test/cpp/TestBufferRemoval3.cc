@@ -36,6 +36,7 @@ class BufRemTest3 : public tst::Fixture
 {
  protected:
   void readVerilogAndSetup(const std::string& verilog_file);
+  void dumpVerilogAndOdb(const std::string& name) const;
 
   BufRemTest3()
       : stt_(db_.get(), &logger_),
@@ -62,6 +63,11 @@ class BufRemTest3 : public tst::Fixture
     db_->setLogger(&logger_);
     db_network_ = sta_->getDbNetwork();
     db_network_->setHierarchy();
+
+    if (debug_) {
+      logger_.setDebugLevel(utl::ODB, "DB_ECO", 3);
+      logger_.setDebugLevel(utl::RSZ, "remove_buffer", 3);
+    }
   }
 
   odb::dbLib* lib_;
@@ -75,6 +81,7 @@ class BufRemTest3 : public tst::Fixture
   grt::GlobalRouter grt_;
   est::EstimateParasitics ep_;
   rsz::Resizer resizer_;
+  bool debug_ = false;  // Set to true to generate debug output
 };
 
 void BufRemTest3::readVerilogAndSetup(const std::string& verilog_file)
@@ -166,18 +173,32 @@ void BufRemTest3::readVerilogAndSetup(const std::string& verilog_file)
   ep_.estimateWireParasitics();
 }
 
-TEST_F(BufRemTest3, RemoveBuf4)
+void BufRemTest3::dumpVerilogAndOdb(const std::string& name) const
 {
-  readVerilogAndSetup("TestBufferRemoval3_4.v");
+  // Write verilog
+  std::string vlog_file = name + ".v";
+  sta::writeVerilog(vlog_file.c_str(), true, false, {}, sta_->network());
+
+  // Dump ODB content
+  std::ofstream orig_odb_file(name + "_odb.txt");
+  block_->debugPrintContent(orig_odb_file);
+  orig_odb_file.close();
+}
+
+TEST_F(BufRemTest3, RemoveBufferCase6)
+{
+  std::string test_name = "TestBufferRemoval3_6";
+  readVerilogAndSetup(test_name + ".v");
 
   // Netlist before buffer removal:
-  // DFF_X1/Q -> buf_top1 -> load_top1 -> out1
-  // DFF_X1/Q -> buf_top1 -> load_top2 -> out2
-  // DFF_X1/Q -> buf_top1 -> mod3_inst/load_mod3_1 -> out5
-  // DFF_X1/Q -> buf_top2 -> load_top3 -> out3
-  // DFF_X1/Q -> buf_top2 -> mod3_inst/load_mod3_2 -> out6
-  // DFF_X1/Q -> mod2_inst/buf_mod2 -> load_top4 -> out4
-  // DFF_X1/Q -> mod2_inst/buf_mod2 -> mod3_inst/load_mod3_3
+  // in -> mod_inst/mod_in -> mod_inst/buf0 -> mod_inst/mod_out -> out
+
+  // Dump pre ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_pre_eco");
+  }
+
+  odb::dbDatabase::beginEco(block_);
 
   // Pre sanity check
   sta_->updateTiming(true);
@@ -194,7 +215,153 @@ TEST_F(BufRemTest3, RemoveBuf4)
   db_network_->checkAxioms();
 
   // Write verilog and check the content after buffer removal
-  const std::string after_vlog_path = "TestBufferRemoval3_4_after.v";
+  const std::string after_vlog_path = test_name + "_after.v";
+  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file_after(after_vlog_path);
+  std::string content_after((std::istreambuf_iterator<char>(file_after)),
+                            std::istreambuf_iterator<char>());
+
+  // Netlist after buffer removal:
+  // in -> mod_inst/mod_in -> assign -> mod_inst/mod_out -> out
+  const std::string expected_after_vlog = R"(module top (clk,
+    in,
+    out);
+ input clk;
+ input in;
+ output out;
+
+
+ MOD mod_inst (.mod_in(in),
+    .mod_out(out));
+endmodule
+module MOD (mod_in,
+    mod_out);
+ input mod_in;
+ output mod_out;
+
+
+ assign mod_out = mod_in;
+endmodule
+)";
+
+  EXPECT_EQ(content_after, expected_after_vlog);
+
+  odb::dbDatabase::undoEco(block_);
+
+  // Dump undo ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_undo_eco");
+  }
+
+  // Clean up
+  std::remove(after_vlog_path.c_str());
+}
+
+TEST_F(BufRemTest3, RemoveBufferCase5)
+{
+  std::string test_name = "TestBufferRemoval3_5";
+  readVerilogAndSetup(test_name + ".v");
+
+  // Netlist before buffer removal:
+  // in -> buf0 -> out
+
+  // Dump pre ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_pre_eco");
+  }
+
+  odb::dbDatabase::beginEco(block_);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  db_network_->checkAxioms();
+
+  //----------------------------------------------------
+  // Remove buffer
+  //----------------------------------------------------
+  auto insts = std::make_unique<sta::InstanceSeq>();
+  resizer_.removeBuffers(*insts);
+
+  // removeBuffers will do nothing since buf0 is connecting two ports.
+
+  // Post sanity check
+  sta_->updateTiming(true);
+  db_network_->checkAxioms();
+
+  // Write verilog and check the content after buffer removal
+  const std::string after_vlog_path = test_name + "_after.v";
+  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file_after(after_vlog_path);
+  std::string content_after((std::istreambuf_iterator<char>(file_after)),
+                            std::istreambuf_iterator<char>());
+
+  // Netlist after buffer removal:
+  // in -> out
+  const std::string expected_after_vlog = R"(module top (clk,
+    in,
+    out);
+ input clk;
+ input in;
+ output out;
+
+
+ BUF_X1 buf0 (.A(in),
+    .Z(out));
+endmodule
+)";
+
+  EXPECT_EQ(content_after, expected_after_vlog);
+
+  odb::dbDatabase::undoEco(block_);
+
+  // Dump undo ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_undo_eco");
+  }
+
+  // Clean up
+  std::remove(after_vlog_path.c_str());
+}
+
+TEST_F(BufRemTest3, RemoveBufferCase4)
+{
+  std::string test_name = "TestBufferRemoval3_4";
+  readVerilogAndSetup(test_name + ".v");
+
+  // Netlist before buffer removal:
+  // DFF_X1/Q -> buf_top1 -> load_top1 -> out1
+  // DFF_X1/Q -> buf_top1 -> load_top2 -> out2
+  // DFF_X1/Q -> buf_top1 -> mod3_inst/load_mod3_1 -> out5
+  // DFF_X1/Q -> buf_top2 -> load_top3 -> out3
+  // DFF_X1/Q -> buf_top2 -> mod3_inst/load_mod3_2 -> out6
+  // DFF_X1/Q -> mod2_inst/buf_mod2 -> load_top4 -> out4
+  // DFF_X1/Q -> mod2_inst/buf_mod2 -> mod3_inst/load_mod3_3
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  db_network_->checkAxioms();
+
+  // Dump pre ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_pre_eco");
+  }
+
+  odb::dbDatabase::beginEco(block_);
+
+  //----------------------------------------------------
+  // Remove buffer
+  //----------------------------------------------------
+  auto insts = std::make_unique<sta::InstanceSeq>();
+  resizer_.removeBuffers(*insts);
+
+  // Post sanity check
+  sta_->updateTiming(true);
+  db_network_->checkAxioms();
+
+  // Write verilog and check the content after buffer removal
+  const std::string after_vlog_path = test_name + "_after.v";
   sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
@@ -275,13 +442,21 @@ endmodule
 
   EXPECT_EQ(content_after, expected_after_vlog);
 
+  odb::dbDatabase::undoEco(block_);
+
+  // Dump undo ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_undo_eco");
+  }
+
   // Clean up
   std::remove(after_vlog_path.c_str());
 }
 
-TEST_F(BufRemTest3, RemoveBuf3)
+TEST_F(BufRemTest3, RemoveBufferCase3)
 {
-  readVerilogAndSetup("TestBufferRemoval3_3.v");
+  std::string test_name = "TestBufferRemoval3_3";
+  readVerilogAndSetup(test_name + ".v");
 
   // Netlist before buffer removal:
   // DFF_X1/Q -> buf0 -> mod_inst/buf1 -> buf2 -> out1
@@ -289,6 +464,13 @@ TEST_F(BufRemTest3, RemoveBuf3)
   odb::dbInst* buf_inst = block_->findInst("mod_inst/buf1");
   ASSERT_NE(buf_inst, nullptr);
   sta::Instance* sta_buf = db_network_->dbToSta(buf_inst);
+
+  // Dump pre ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_pre_eco");
+  }
+
+  odb::dbDatabase::beginEco(block_);
 
   // Pre sanity check
   sta_->updateTiming(true);
@@ -306,7 +488,7 @@ TEST_F(BufRemTest3, RemoveBuf3)
   db_network_->checkAxioms();
 
   // Write verilog and check the content after buffer removal
-  const std::string after_vlog_path = "TestBufferRemoval3_3_after.v";
+  const std::string after_vlog_path = test_name + "_after.v";
   sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
@@ -348,17 +530,32 @@ endmodule
 
   EXPECT_EQ(content_after, expected_after_vlog);
 
+  odb::dbDatabase::undoEco(block_);
+
+  // Dump undo ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_undo_eco");
+  }
+
   // Clean up
   std::remove(after_vlog_path.c_str());
 }
 
-TEST_F(BufRemTest3, RemoveBuf2)
+TEST_F(BufRemTest3, RemoveBufferCase2)
 {
-  readVerilogAndSetup("TestBufferRemoval3_2.v");
+  std::string test_name = "TestBufferRemoval3_2";
+  readVerilogAndSetup(test_name + ".v");
 
   odb::dbInst* buf_inst = block_->findInst("sub_inst/buf");
   ASSERT_NE(buf_inst, nullptr);
   sta::Instance* sta_buf = db_network_->dbToSta(buf_inst);
+
+  // Dump pre ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_pre_eco");
+  }
+
+  odb::dbDatabase::beginEco(block_);
 
   // Pre sanity check
   sta_->updateTiming(true);
@@ -376,7 +573,7 @@ TEST_F(BufRemTest3, RemoveBuf2)
   db_network_->checkAxioms();
 
   // Write verilog and check the content after buffer removal
-  const std::string after_vlog_path = "TestBufferRemoval3_2_after.v";
+  const std::string after_vlog_path = test_name + "_after.v";
   sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
@@ -410,17 +607,32 @@ endmodule
 
   EXPECT_EQ(content_after, expected_after_vlog);
 
+  odb::dbDatabase::undoEco(block_);
+
+  // Dump undo ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_undo_eco");
+  }
+
   // Clean up
   std::remove(after_vlog_path.c_str());
 }
 
-TEST_F(BufRemTest3, RemoveBuf1)
+TEST_F(BufRemTest3, RemoveBufferCase1)
 {
-  readVerilogAndSetup("TestBufferRemoval3_1.v");
+  std::string test_name = "TestBufferRemoval3_1";
+  readVerilogAndSetup(test_name + ".v");
 
   odb::dbInst* buf_inst = block_->findInst("buf");
   ASSERT_NE(buf_inst, nullptr);
   sta::Instance* sta_buf = db_network_->dbToSta(buf_inst);
+
+  // Dump pre ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_pre_eco");
+  }
+
+  odb::dbDatabase::beginEco(block_);
 
   // Pre sanity check
   sta_->updateTiming(true);
@@ -438,7 +650,7 @@ TEST_F(BufRemTest3, RemoveBuf1)
   db_network_->checkAxioms();
 
   // Write verilog and check the content after buffer removal
-  const std::string after_vlog_path = "TestBufferRemoval3_1_after.v";
+  const std::string after_vlog_path = test_name + "_after.v";
   sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
@@ -476,13 +688,21 @@ endmodule
 
   EXPECT_EQ(content_after, expected_after_vlog);
 
+  odb::dbDatabase::undoEco(block_);
+
+  // Dump undo ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_undo_eco");
+  }
+
   // Clean up
   std::remove(after_vlog_path.c_str());
 }
 
-TEST_F(BufRemTest3, RemoveBuf)
+TEST_F(BufRemTest3, RemoveBufferCase0)
 {
-  readVerilogAndSetup("TestBufferRemoval3.v");
+  std::string test_name = "TestBufferRemoval3_0";
+  readVerilogAndSetup(test_name + ".v");
 
   odb::dbModNet* modnet = block_->findModNet("mem/A0");
   ASSERT_NE(modnet, nullptr);
@@ -490,6 +710,13 @@ TEST_F(BufRemTest3, RemoveBuf)
   odb::dbInst* buf_inst = block_->findInst("buf");
   ASSERT_NE(buf_inst, nullptr);
   sta::Instance* sta_buf = db_network_->dbToSta(buf_inst);
+
+  // Dump pre ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_pre_eco");
+  }
+
+  odb::dbDatabase::beginEco(block_);
 
   // Pre sanity check
   sta_->updateTiming(true);
@@ -507,7 +734,7 @@ TEST_F(BufRemTest3, RemoveBuf)
   db_network_->checkAxioms();
 
   // Write verilog and check the content after buffer removal
-  const std::string after_vlog_path = "TestBufferRemoval3_after.v";
+  const std::string after_vlog_path = test_name + "_after.v";
   sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
@@ -548,6 +775,13 @@ endmodule
 )";
 
   EXPECT_EQ(content_after, expected_after_vlog);
+
+  odb::dbDatabase::undoEco(block_);
+
+  // Dump undo ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_undo_eco");
+  }
 
   // Clean up
   std::remove(after_vlog_path.c_str());
