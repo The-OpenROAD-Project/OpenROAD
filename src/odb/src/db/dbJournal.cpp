@@ -3,6 +3,7 @@
 
 #include "dbJournal.h"
 
+#include <cassert>
 #include <cstdio>
 
 #include "dbBTerm.h"

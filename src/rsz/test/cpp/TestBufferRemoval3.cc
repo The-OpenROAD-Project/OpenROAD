@@ -29,6 +29,7 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "tst/fixture.h"
 #include "utl/CallBackHandler.h"
+#include "utl/Logger.h"
 
 namespace rsz {
 
