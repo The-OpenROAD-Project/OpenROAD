@@ -485,8 +485,8 @@ void UnbufferMove::removeBuffer(Instance* buffer)
 
   // jk: suspect1. Remove the unused buffer
   if (out_db_net == nullptr) {
-    // dbInst* dbinst_buffer = db_network_->staToDb(buffer);
-    // dbInst::destroy(dbinst_buffer);
+    dbInst* dbinst_buffer = db_network_->staToDb(buffer);
+    dbInst::destroy(dbinst_buffer);
     return;
   }
 
@@ -494,20 +494,20 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   Net* in_net = db_network_->dbToSta(in_db_net);
   Net* out_net = db_network_->dbToSta(out_db_net);
 
+  // Decide survivor net when two nets are merged
   Net* survivor = in_net;
   Net* removed = out_net;
   odb::dbModNet* survivor_modnet = ip_modnet;
   odb::dbModNet* removed_modnet = op_modnet;
-
-  // jk: QoR impact in flat flow?
-  // bool out_net_ports = db_network_->hasPort(out_net);
   // if (db_network_->hasHierarchy() == false) {
-  //  if (out_net_ports) {
-  //    // jk: This is to avoid affecting the flat flow.
-  //    survivor = out_net;
-  //    removed = in_net;
-  //  }
-  //}
+  bool in_net_has_port = db_network_->hasPort(in_net);
+  bool out_net_has_port = db_network_->hasPort(out_net);
+  if (in_net_has_port == false && out_net_has_port == true) {
+    survivor = out_net;
+    removed = in_net;
+    survivor_modnet = op_modnet;
+    removed_modnet = ip_modnet;
+  }
 
   // jk: maybe, not needed.
   // If the input net is hierarchical, we need to find the driver pin.

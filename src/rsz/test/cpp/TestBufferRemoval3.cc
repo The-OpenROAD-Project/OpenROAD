@@ -220,25 +220,21 @@ TEST_F(BufRemTest3, RemoveBuf4)
  output out5;
  output out6;
 
- wire buf_mod2_out;
- wire drvr_out;
 
- BUF_X1 load_top2 (.A(drvr_out),
+ BUF_X1 load_top2 (.A(out1),
     .Z(out2));
- BUF_X1 load_top3 (.A(drvr_out),
+ BUF_X1 load_top3 (.A(out1),
     .Z(out3));
  MOD1 mod1_inst (.clk_in(clk),
     .d_in(in1),
-    .q_out(drvr_out));
- MOD2 mod2_inst (.in(drvr_out),
-    .out(buf_mod2_out));
- MOD3 mod3_inst (.in1(drvr_out),
-    .in2(drvr_out),
-    .in3(buf_mod2_out),
+    .q_out(out1));
+ MOD2 mod2_inst (.in(out1),
+    .out(out4));
+ MOD3 mod3_inst (.in1(out1),
+    .in2(out1),
+    .in3(out4),
     .out1(out5),
     .out2(out6));
- assign out1 = drvr_out;
- assign out4 = buf_mod2_out;
 endmodule
 module MOD1 (clk_in,
     d_in,

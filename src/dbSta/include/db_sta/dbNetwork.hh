@@ -42,7 +42,8 @@ using odb::Point;
 class dbNetwork;
 class dbEditHierarchy;
 
-// This struct contains information about Pin (dbITerm, dbBTerm or dbModITerm)
+// This struct contains common information about Pins
+// (dbITerm, dbBTerm or dbModITerm) for debugging purposes.
 struct PinInfo
 {
   const char* name = "NOT_ALLOC";  // Pin hierarchical name
@@ -393,11 +394,11 @@ class dbNetwork : public ConcreteNetwork
   bool hasMembers(const Port* port) const override;
   Port* findMember(const Port* port, int index) const override;
   PortMemberIterator* memberIterator(const Port* port) const override;
-  PinInfo getPinInfo(const Pin* pin) const;
   void removeDriverFromCache(const Net* net, const Pin* drvr);
 
   ////////////////////////////////////////////////////////////////
   // Debug functions
+  PinInfo getPinInfo(const Pin* pin) const;
   void dumpNetDrvrPinMap() const;
 
   using Network::cell;
