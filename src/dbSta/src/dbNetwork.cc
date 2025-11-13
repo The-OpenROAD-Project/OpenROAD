@@ -2701,19 +2701,8 @@ void dbNetwork::disconnectPin(Pin* pin)
 
 void dbNetwork::disconnectPinBefore(const Pin* pin)
 {
-  // jk: no side-effect?
-  // Net* net = this->net(pin);
-  //// Incrementally update drivers.
-  // if (net && isDriver(pin)) {
-  //   PinSet* drvrs = net_drvr_pin_map_.findKey(net);
-  //   if (drvrs) {
-  //     drvrs->erase(pin);
-  //   }
-  // }
-
-  // No need to update net_drvr_pin_map_ cache.
   if (isDriver(pin) == false) {
-    return;
+    return;  // No need to update net_drvr_pin_map_ cache.
   }
 
   // Get all the related dbNet & dbModNet with the pin.
@@ -4193,10 +4182,6 @@ void dbNetwork::checkAxioms(odb::dbObject* obj) const
   checkSanityInstNames();
   checkSanityNetNames();
   checkSanityModuleInsts();
-
-  // jk: tmp
-  // dumpNetDrvrPinMap();
-  // checkSanityNetDrvrPinMapConsistency();
 }
 
 // Given a net that may be hierarchical, find the corresponding flat net.

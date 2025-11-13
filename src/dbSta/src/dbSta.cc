@@ -997,8 +997,6 @@ void dbStaCbk::inDbNetDestroy(dbNet* db_net)
 void dbStaCbk::inDbModNetDestroy(dbModNet* modnet)
 {
   Net* net = network_->dbToSta(modnet);
-  // jk: is this necessary?
-  // sta_->deleteNetBefore(net);
   network_->deleteNetBefore(net);
 }
 
