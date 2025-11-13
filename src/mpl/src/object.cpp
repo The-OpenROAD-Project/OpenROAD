@@ -685,8 +685,8 @@ HardMacro::HardMacro(odb::dbInst* inst, int halo_width, int halo_height)
 // When we compare, we also consider the effect of halo_width
 bool HardMacro::operator<(const HardMacro& macro) const
 {
-  if (width_ * height_ != macro.width_ * macro.height_) {
-    return width_ * height_ < macro.width_ * macro.height_;
+  if (getArea() != macro.getArea()) {
+    return getArea() < macro.getArea();
   }
   if (width_ != macro.width_) {
     return width_ < macro.width_;
@@ -725,7 +725,7 @@ bool HardMacro::isClusterOfUnconstrainedIOPins() const
 // Note that the default X and Y include halo_width
 void HardMacro::setLocation(const std::pair<int, int>& location)
 {
-  if (width_ * height_ == 0) {
+  if (getArea() == 0) {
     return;
   }
   x_ = location.first;
@@ -734,7 +734,7 @@ void HardMacro::setLocation(const std::pair<int, int>& location)
 
 void HardMacro::setX(int x)
 {
-  if (width_ * height_ <= 0) {
+  if (getArea() == 0) {
     return;
   }
   x_ = x;
@@ -742,7 +742,7 @@ void HardMacro::setX(int x)
 
 void HardMacro::setY(int y)
 {
-  if (width_ * height_ <= 0) {
+  if (getArea() == 0) {
     return;
   }
   y_ = y;
@@ -756,7 +756,7 @@ std::pair<int, int> HardMacro::getLocation() const
 // Note that the real X and Y does NOT include halo_width
 void HardMacro::setRealLocation(const std::pair<int, int>& location)
 {
-  if (width_ * height_ <= 0) {
+  if (getArea() == 0) {
     return;
   }
 
@@ -766,7 +766,7 @@ void HardMacro::setRealLocation(const std::pair<int, int>& location)
 
 void HardMacro::setRealX(int x)
 {
-  if (width_ * height_ <= 0) {
+  if (getArea() == 0) {
     return;
   }
 
@@ -775,7 +775,7 @@ void HardMacro::setRealX(int x)
 
 void HardMacro::setRealY(int y)
 {
-  if (width_ * height_ <= 0) {
+  if (getArea() == 0) {
     return;
   }
 
@@ -877,7 +877,7 @@ SoftMacro::SoftMacro(const std::pair<int, int>& location,
   // just points, their area should be zero, because we use the area
   // to check whether or not a SoftMacro if a fixed terminal or cluster
   // of unplaced IOs inside SA. Ideally we should check the fixed flag.
-  area_ = 0.0f;
+  area_ = 0;
 
   cluster_ = cluster;
   fixed_ = true;
@@ -983,15 +983,16 @@ void SoftMacro::setWidth(int width)
   if (width <= width_intervals_.front().min) {
     width_ = width_intervals_.front().min;
     height_ = height_intervals_.front().max;
-    area_ = width_ * height_;
+    area_ = width_ * static_cast<int64_t>(height_);
   } else if (width >= width_intervals_.back().max) {
     width_ = width_intervals_.back().max;
     height_ = height_intervals_.back().min;
-    area_ = width_ * height_;
+    area_ = width_ * static_cast<int64_t>(height_);
   } else {
     width_ = width;
     int idx = findIntervalIndex(width_intervals_, width_, true);
-    area_ = width_intervals_[idx].max * height_intervals_[idx].min;
+    area_ = width_intervals_[idx].max
+            * static_cast<int64_t>(height_intervals_[idx].min);
     height_ = area_ / width_;
   }
 }
@@ -1010,15 +1011,16 @@ void SoftMacro::setHeight(int height)
   if (height >= height_intervals_.front().max) {
     height_ = height_intervals_.front().max;
     width_ = width_intervals_.front().min;
-    area_ = width_ * height_;
+    area_ = width_ * static_cast<int64_t>(height_);
   } else if (height <= height_intervals_.back().min) {
     height_ = height_intervals_.back().min;
     width_ = width_intervals_.back().max;
-    area_ = width_ * height_;
+    area_ = width_ * static_cast<int64_t>(height_);
   } else {
     height_ = height;
     int idx = findIntervalIndex(height_intervals_, height_, false);
-    area_ = width_intervals_[idx].max * height_intervals_[idx].min;
+    area_ = width_intervals_[idx].max
+            * static_cast<int64_t>(height_intervals_[idx].min);
     width_ = area_ / height_;
   }
 }

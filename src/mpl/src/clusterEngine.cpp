@@ -281,7 +281,6 @@ void ClusteringEngine::reportDesignData()
   float floorplan_util
       = design_metrics_->getStdCellArea()
         / (tree_->floorplan_shape.area() - design_metrics_->getMacroArea());
-  logger_->report("antes 3");
   logger_->report(
       "\tNumber of std cell instances: {}\n"
       "\tArea of std cell instances: {}\n"

@@ -74,6 +74,7 @@ class SimulatedAnnealingCore
   float getNormCost() const;
   int getWidth() const;
   int getHeight() const;
+  int64_t getArea() const;
   float getAreaPenalty() const;
   float getOutlinePenalty() const;
   float getNormOutlinePenalty() const;

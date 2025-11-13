@@ -183,9 +183,16 @@ int SimulatedAnnealingCore<T>::getHeight() const
 }
 
 template <class T>
+int64_t SimulatedAnnealingCore<T>::getArea() const
+{
+  return width_ * static_cast<int64_t>(height_);
+}
+
+template <class T>
 float SimulatedAnnealingCore<T>::getAreaPenalty() const
 {
-  return (width_ * height_) / outline_.area();
+  return block_->dbuAreaToMicrons(getArea())
+         / block_->dbuAreaToMicrons(outline_.area());
 }
 
 template <class T>
