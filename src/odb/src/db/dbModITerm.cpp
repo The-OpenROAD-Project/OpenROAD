@@ -419,6 +419,14 @@ void dbModITerm::destroy(dbModITerm* val)
     callback->inDbModITermDestroy(val);
   }
 
+  // Clear the parent moditerm from the child modbterm
+  if (_moditerm->_child_modbterm != 0) {
+    if (_dbModBTerm* child_modbterm
+        = block->_modbterm_tbl->getPtr(_moditerm->_child_modbterm)) {
+      child_modbterm->_parent_moditerm = 0;
+    }
+  }
+
   // snip out the mod iterm, from doubly linked list
   uint prev = _moditerm->_prev_entry;
   uint next = _moditerm->_next_entry;

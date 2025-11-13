@@ -312,6 +312,10 @@ cc_test(
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestBufferRemoval3.v",
+        "cpp/TestBufferRemoval3_1.v",
+        "cpp/TestBufferRemoval3_2.v",
+        "cpp/TestBufferRemoval3_3.v",
+        "cpp/TestBufferRemoval3_4.v",
     ],
     deps = [
         "//src/ant",

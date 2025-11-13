@@ -495,14 +495,14 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   Net* out_net = db_network_->dbToSta(out_db_net);
 
   // Decide survivor net when two nets are merged
-  Net* survivor = in_net;
+  Net* survivor = in_net;  // buffer input net is the default survivor
   Net* removed = out_net;
   odb::dbModNet* survivor_modnet = ip_modnet;
   odb::dbModNet* removed_modnet = op_modnet;
-  // if (db_network_->hasHierarchy() == false) {
   bool in_net_has_port = db_network_->hasPort(in_net);
   bool out_net_has_port = db_network_->hasPort(out_net);
   if (in_net_has_port == false && out_net_has_port == true) {
+    // output net has port, so it should survive
     survivor = out_net;
     removed = in_net;
     survivor_modnet = op_modnet;

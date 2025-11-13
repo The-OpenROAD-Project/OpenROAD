@@ -8336,6 +8336,12 @@ class dbModBTerm : public dbObject
   bool isBusPort() const;
   void setBusPort(dbBusPort*);
   dbBusPort* getBusPort() const;
+
+  ///
+  /// Return true if this dbModBTerm is allocated
+  ///
+  bool isValid() const;
+
   static dbModBTerm* create(dbModule* parentModule, const char* name);
   static void destroy(dbModBTerm*);
   static dbSet<dbModBTerm>::iterator destroy(dbSet<dbModBTerm>::iterator& itr);
