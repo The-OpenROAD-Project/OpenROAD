@@ -251,6 +251,8 @@ In `placer` mode, the pads will be placed according to the following algorithm:
 3. Perform iterative pad spreading to push pads apart and avoid any obstuctions that may exist.
 4. Fix the placement of the pads.
 
+<img src="./doc/image/mode_placer.png" width=450px>
+
 ### Placing Pads Manually
 
 To place a pad into the pad ring.
