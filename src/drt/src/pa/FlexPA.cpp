@@ -151,6 +151,10 @@ void FlexPA::updateDirtyInsts()
   }
   std::vector<UniqueClass*> dirty_unique_classes_vec(
       dirty_unique_classes.begin(), dirty_unique_classes.end());
+  for (auto& unique_class : dirty_unique_classes_vec) {
+    unique_inst_patterns_[unique_class]
+        = std::vector<std::unique_ptr<FlexPinAccessPattern>>();
+  }
 #pragma omp parallel for schedule(dynamic)
   for (auto& unique_class : dirty_unique_classes_vec) {
     initSkipInstTerm(unique_class);
