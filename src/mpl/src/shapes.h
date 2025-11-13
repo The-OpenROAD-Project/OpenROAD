@@ -23,8 +23,8 @@ class Tiling
 
   int width() const { return width_; }
   int height() const { return height_; }
-  int64_t area() const { return width_ * height_; }
-  float aspectRatio() const { return height_ / width_; }
+  int64_t area() const { return width_ * static_cast<int64_t>(height_); }
+  float aspectRatio() const { return height_ / static_cast<float>(width_); }
 
   bool operator==(const Tiling& tiling) const;
   bool operator<(const Tiling& tiling) const;

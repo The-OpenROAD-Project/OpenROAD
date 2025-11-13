@@ -177,7 +177,7 @@ class ClusteringEngine
   void setDieArea();
   void setFloorplanShape();
   void searchForFixedInstsInsideFloorplanShape();
-  float computeMacroWithHaloArea(
+  int64_t computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
   std::vector<odb::dbInst*> getIOPads() const;
   void reportDesignData();

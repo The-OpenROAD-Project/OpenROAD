@@ -653,13 +653,13 @@ HardMacro::HardMacro(odb::dbInst* inst, int halo_width, int halo_height)
   halo_height_ = halo_height;
 
   odb::dbMaster* master = inst->getMaster();
-  width_ = block_->dbuToMicrons(master->getWidth()) + 2 * halo_width;
-  height_ = block_->dbuToMicrons(master->getHeight()) + 2 * halo_height;
+  width_ = master->getWidth() + 2 * halo_width;
+  height_ = master->getHeight() + 2 * halo_height;
 
   if (inst_->isFixed()) {
     const odb::Rect& box = inst->getBBox()->getBox();
-    x_ = block_->dbuToMicrons(box.xMin()) - halo_width_;
-    y_ = block_->dbuToMicrons(box.yMin()) - halo_height_;
+    x_ = box.xMin() - halo_width_;
+    y_ = box.yMin() - halo_height_;
     fixed_ = true;
   }
 
@@ -676,10 +676,8 @@ HardMacro::HardMacro(odb::dbInst* inst, int halo_width, int halo_height)
       }
     }
   }
-  pin_x_
-      = block_->dbuToMicrons((bbox.xMin() + bbox.xMax()) / 2.0) + halo_width_;
-  pin_y_
-      = block_->dbuToMicrons((bbox.yMin() + bbox.yMax()) / 2.0) + halo_height_;
+  pin_x_ = ((bbox.xMin() + bbox.xMax()) / 2.0) + halo_width_;
+  pin_y_ = ((bbox.yMin() + bbox.yMax()) / 2.0) + halo_height_;
 }
 
 // overload the comparison operators
@@ -727,7 +725,7 @@ bool HardMacro::isClusterOfUnconstrainedIOPins() const
 // Note that the default X and Y include halo_width
 void HardMacro::setLocation(const std::pair<int, int>& location)
 {
-  if (width_ * height_ <= 0.0) {
+  if (width_ * height_ == 0) {
     return;
   }
   x_ = location.first;
@@ -807,6 +805,11 @@ int HardMacro::getRealWidth() const
 int HardMacro::getRealHeight() const
 {
   return height_ - 2 * halo_height_;
+}
+
+int64_t HardMacro::getRealArea() const
+{
+  return getRealWidth() * static_cast<int64_t>(getRealHeight());
 }
 
 // Orientation support
@@ -905,7 +908,7 @@ SoftMacro::SoftMacro(utl::Logger* logger,
 
   width_ = hard_macro->getWidth();
   height_ = hard_macro->getHeight();
-  area_ = width_ * height_;
+  area_ = width_ * static_cast<int64_t>(height_);
 
   cluster_ = hard_macro->getCluster();
   fixed_ = true;

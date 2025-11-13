@@ -124,17 +124,15 @@ void ClusteringEngine::setDieArea()
   tree_->die_area = block_->getDieArea();
 }
 
-float ClusteringEngine::computeMacroWithHaloArea(
+int64_t ClusteringEngine::computeMacroWithHaloArea(
     const std::vector<odb::dbInst*>& unfixed_macros)
 {
-  float macro_with_halo_area = 0.0f;
+  int64_t macro_with_halo_area = 0;
   for (odb::dbInst* unfixed_macro : unfixed_macros) {
     odb::dbMaster* master = unfixed_macro->getMaster();
-    const float width
-        = block_->dbuToMicrons(master->getWidth()) + 2 * tree_->halo_width;
-    const float height
-        = block_->dbuToMicrons(master->getHeight()) + 2 * tree_->halo_height;
-    macro_with_halo_area += width * height;
+    const int width = master->getWidth() + 2 * tree_->halo_width;
+    const int height = master->getHeight() + 2 * tree_->halo_height;
+    macro_with_halo_area += (width * static_cast<int64_t>(height));
   }
   return macro_with_halo_area;
 }
@@ -203,8 +201,8 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
       auto macro = std::make_unique<HardMacro>(
           inst, tree_->halo_width, tree_->halo_height);
 
-      const int macro_dbu_width = block_->micronsToDbu(macro->getWidth());
-      const int macro_dbu_height = block_->micronsToDbu(macro->getHeight());
+      const int macro_dbu_width = macro->getWidth();
+      const int macro_dbu_height = macro->getHeight();
 
       if (macro_dbu_width > core.dx() || macro_dbu_height > core.dy()) {
         logger_->error(
@@ -283,6 +281,7 @@ void ClusteringEngine::reportDesignData()
   float floorplan_util
       = design_metrics_->getStdCellArea()
         / (tree_->floorplan_shape.area() - design_metrics_->getMacroArea());
+  logger_->report("antes 3");
   logger_->report(
       "\tNumber of std cell instances: {}\n"
       "\tArea of std cell instances: {}\n"
@@ -537,9 +536,7 @@ void ClusteringEngine::createIOBundle(Boundary boundary, const int bundle_index)
     }
   }
 
-  cluster->setAsIOBundle({block_->dbuToMicrons(x), block_->dbuToMicrons(y)},
-                         block_->dbuToMicrons(width),
-                         block_->dbuToMicrons(height));
+  cluster->setAsIOBundle({x, y}, width, height);
   tree_->root->addChild(std::move(cluster));
 }
 
@@ -608,10 +605,9 @@ void ClusteringEngine::createClusterOfUnplacedIOs(odb::dbBTerm* bterm)
   }
 
   cluster->setAsClusterOfUnplacedIOPins(
-      {block_->dbuToMicrons(constraint_shape.xMin()),
-       block_->dbuToMicrons(constraint_shape.yMin())},
-      block_->dbuToMicrons(constraint_shape.dx()),
-      block_->dbuToMicrons(constraint_shape.dy()),
+      {constraint_shape.xMin(), constraint_shape.yMin()},
+      constraint_shape.dx(),
+      constraint_shape.dy(),
       is_cluster_of_unconstrained_io_pins);
 
   tree_->maps.bterm_to_cluster_id[bterm] = id_;
@@ -634,10 +630,8 @@ void ClusteringEngine::createIOPadCluster(odb::dbInst* pad)
 
   const odb::Rect& pad_bbox = pad->getBBox()->getBox();
 
-  cluster->setAsIOPadCluster({block_->dbuToMicrons(pad_bbox.xMin()),
-                              block_->dbuToMicrons(pad_bbox.yMin())},
-                             block_->dbuToMicrons(pad_bbox.dx()),
-                             block_->dbuToMicrons(pad_bbox.dy()));
+  cluster->setAsIOPadCluster(
+      {pad_bbox.xMin(), pad_bbox.yMin()}, pad_bbox.dx(), pad_bbox.dy());
   tree_->root->addChild(std::move(cluster));
 }
 
@@ -2496,10 +2490,10 @@ std::string ClusteringEngine::generateMacroAndCoreDimensionsTable(
   table += fmt::format("\n          |   Macro + Halos   |   Core   ");
   table += fmt::format("\n-----------------------------------------");
   table += fmt::format("\n   Width  | {:>17.2f} | {:>8.2f}",
-                       hard_macro->getWidth(),
+                       block_->dbuToMicrons(hard_macro->getWidth()),
                        block_->dbuToMicrons(core.dx()));
   table += fmt::format("\n  Height  | {:>17.2f} | {:>8.2f}\n",
-                       hard_macro->getHeight(),
+                       block_->dbuToMicrons(hard_macro->getHeight()),
                        block_->dbuToMicrons(core.dy()));
 
   return table;

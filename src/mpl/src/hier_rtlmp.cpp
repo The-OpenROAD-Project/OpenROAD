@@ -109,14 +109,14 @@ void HierRTLMP::setGlobalFence(int fence_lx,
   tree_->global_fence = odb::Rect(fence_lx, fence_ly, fence_ux, fence_uy);
 }
 
-void HierRTLMP::setHaloWidth(int halo_width)
+void HierRTLMP::setHaloWidth(float halo_width)
 {
-  tree_->halo_width = halo_width;
+  tree_->halo_width = block_->micronsToDbu(halo_width);
 }
 
-void HierRTLMP::setHaloHeight(int halo_height)
+void HierRTLMP::setHaloHeight(float halo_height)
 {
-  tree_->halo_height = halo_height;
+  tree_->halo_height = block_->micronsToDbu(halo_height);
 }
 
 void HierRTLMP::setGuidanceRegions(
@@ -1035,7 +1035,7 @@ void HierRTLMP::createBlockagesForAvailableRegions()
         odb::Point::squaredDistance(region.line.pt0(), region.line.pt1()));
   }
 
-  const float depth = computePinAccessBaseDepth(block_->dbuToMicrons(io_span));
+  const float depth = computePinAccessBaseDepth(io_span);
 
   for (const BoundaryRegion region :
        tree_->available_regions_for_unconstrained_pins) {
@@ -1221,16 +1221,16 @@ std::vector<Cluster*> HierRTLMP::getClustersOfUnplacedIOPins() const
 // 1) Amount of std cell area in the design.
 // 2) Extension of IO span.
 // 3) Macro dominance quadratic factor.
-float HierRTLMP::computePinAccessBaseDepth(const double io_span) const
+int HierRTLMP::computePinAccessBaseDepth(const int io_span) const
 {
-  float std_cell_area = 0.0;
+  int64_t std_cell_area = 0;
   for (auto& cluster : tree_->root->getChildren()) {
     if (cluster->getClusterType() == StdCellCluster) {
       std_cell_area += cluster->getArea();
     }
   }
 
-  if (std_cell_area == 0.0) {
+  if (std_cell_area == 0) {
     for (auto& cluster : tree_->root->getChildren()) {
       if (cluster->getClusterType() == MixedCluster) {
         std_cell_area += cluster->getArea();
@@ -1240,9 +1240,10 @@ float HierRTLMP::computePinAccessBaseDepth(const double io_span) const
 
   const float macro_dominance_factor
       = tree_->macro_with_halo_area
-        / (tree_->root->getWidth() * tree_->root->getHeight());
-  const float base_depth
-      = (std_cell_area / io_span) * std::pow((1 - macro_dominance_factor), 2);
+        / static_cast<float>(tree_->root->getWidth()
+                             * tree_->root->getHeight());
+  const float base_depth = (std_cell_area / static_cast<float>(io_span))
+                           * std::pow((1 - macro_dominance_factor), 2);
 
   debugPrint(logger_,
              MPL,
@@ -2409,10 +2410,8 @@ void HierRTLMP::setTemporaryStdCellLocation(Cluster* cluster,
     return;
   }
 
-  const int soft_macro_center_x_dbu
-      = block_->micronsToDbu(soft_macro->getPinX());
-  const int soft_macro_center_y_dbu
-      = block_->micronsToDbu(soft_macro->getPinY());
+  const int soft_macro_center_x_dbu = soft_macro->getPinX();
+  const int soft_macro_center_y_dbu = soft_macro->getPinY();
 
   // Std cells are placed in the center of the cluster they belong to
   std_cell->setLocation(
@@ -2459,7 +2458,7 @@ void HierRTLMP::generateTemporaryStdCellsPlacement(Cluster* cluster)
 
 float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
 {
-  float wirelength = 0.0f;
+  int64_t wirelength = 0;
 
   for (odb::dbITerm* macro_pin : macro->getITerms()) {
     if (macro_pin->getSigType() != odb::dbSigType::SIGNAL) {
@@ -2506,7 +2505,7 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
         }
       }
 
-      wirelength += block_->dbuToMicrons(net_box.dx() + net_box.dy());
+      wirelength += (net_box.dx() + net_box.dy());
     }
   }
 
@@ -2582,8 +2581,8 @@ void HierRTLMP::updateMacroOnDb(const HardMacro* hard_macro)
     return;
   }
 
-  const int x = block_->micronsToDbu(hard_macro->getRealX());
-  const int y = block_->micronsToDbu(hard_macro->getRealY());
+  const int x = hard_macro->getRealX();
+  const int y = hard_macro->getRealY();
 
   // Orientation must be set before location so we don't end up flipping
   // and misplacing the macro.
@@ -2941,11 +2940,7 @@ std::map<Boundary, int> Pusher::getDistanceToCloseBoundaries(
 {
   std::map<Boundary, int> boundaries_distance;
 
-  const odb::Rect cluster_box(
-      block_->micronsToDbu(macro_cluster->getX()),
-      block_->micronsToDbu(macro_cluster->getY()),
-      block_->micronsToDbu(macro_cluster->getX() + macro_cluster->getWidth()),
-      block_->micronsToDbu(macro_cluster->getY() + macro_cluster->getHeight()));
+  const odb::Rect cluster_box = macro_cluster->getBBox();
 
   HardMacro* hard_macro = macro_cluster->getHardMacros().front();
 
@@ -3015,12 +3010,7 @@ void Pusher::pushMacroClusterToCoreBoundaries(
                macro_cluster->getName(),
                toString(boundary));
 
-    odb::Rect cluster_box(
-        block_->micronsToDbu(macro_cluster->getX()),
-        block_->micronsToDbu(macro_cluster->getY()),
-        block_->micronsToDbu(macro_cluster->getX() + macro_cluster->getWidth()),
-        block_->micronsToDbu(macro_cluster->getY()
-                             + macro_cluster->getHeight()));
+    odb::Rect cluster_box = macro_cluster->getBBox();
 
     moveMacroClusterBox(cluster_box, boundary, distance);
 

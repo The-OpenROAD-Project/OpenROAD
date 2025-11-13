@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -87,8 +88,8 @@ void SimulatedAnnealingCore<T>::setAvailableRegionsForUnconstrainedPins(
   available_regions_for_unconstrained_pins_ = regions;
 
   for (BoundaryRegion& region : available_regions_for_unconstrained_pins_) {
-    region.line.addX(-block_->micronsToDbu(outline_.xMin()));
-    region.line.addY(-block_->micronsToDbu(outline_.yMin()));
+    region.line.addX(-outline_.xMin());
+    region.line.addY(-outline_.yMin());
   }
 }
 
@@ -290,7 +291,9 @@ void SimulatedAnnealingCore<T>::calWirelength()
     const float y1 = source.getPinY();
     const float x2 = target.getPinX();
     const float y2 = target.getPinY();
-    wirelength_ += net.weight * (std::abs(x2 - x1) + std::abs(y2 - y1));
+    wirelength_
+        += net.weight
+           * block_->dbuToMicrons((std::abs(x2 - x1) + std::abs(y2 - y1)));
   }
 
   // normalization
@@ -311,15 +314,14 @@ void SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
     const float net_weight)
 {
   // To generate maximum cost.
-  const float max_dist = die_area_.margin() / 2;
+  const int max_dist = die_area_.margin() / 2;
 
   if (isOutsideTheOutline(macro)) {
-    wirelength_ += net_weight * max_dist;
+    wirelength_ += net_weight * block_->dbuToMicrons(max_dist);
     return;
   }
 
-  const odb::Point macro_location(block_->micronsToDbu(macro.getPinX()),
-                                  block_->micronsToDbu(macro.getPinY()));
+  const odb::Point macro_location(macro.getPinX(), macro.getPinY());
   double smallest_distance;
   if (unplaced_ios.getCluster()->isClusterOfUnconstrainedIOPins()) {
     if (available_regions_for_unconstrained_pins_.empty()) {
@@ -359,10 +361,10 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
   }
 
   for (const auto& [id, bbox] : fences_) {
-    const float lx = macros_[id].getX();
-    const float ly = macros_[id].getY();
-    const float ux = lx + macros_[id].getWidth();
-    const float uy = ly + macros_[id].getHeight();
+    const int lx = macros_[id].getX();
+    const int ly = macros_[id].getY();
+    const int ux = lx + macros_[id].getWidth();
+    const int uy = ly + macros_[id].getHeight();
     // check if the macro is valid
     if (macros_[id].getWidth() * macros_[id].getHeight() <= 1e-4) {
       continue;
@@ -373,17 +375,21 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
       continue;
     }
     // check how much the macro is far from no fence violation
-    const float max_x_dist = ((bbox.xMax() - bbox.xMin()) - (ux - lx)) / 2.0;
-    const float max_y_dist = ((bbox.yMax() - bbox.yMin()) - (uy - ly)) / 2.0;
-    const float x_dist
-        = std::abs((bbox.xMin() + bbox.xMax()) / 2.0 - (lx + ux) / 2.0);
-    const float y_dist
-        = std::abs((bbox.yMin() + bbox.yMax()) / 2.0 - (ly + uy) / 2.0);
+    const int max_x_dist = ((bbox.xMax() - bbox.xMin()) - (ux - lx)) / 2;
+    const int max_y_dist = ((bbox.yMax() - bbox.yMin()) - (uy - ly)) / 2.0;
+    const int x_dist
+        = std::abs((bbox.xMin() + bbox.xMax()) / 2.0 - (lx + ux) / 2);
+    const int y_dist
+        = std::abs((bbox.yMin() + bbox.yMax()) / 2.0 - (ly + uy) / 2);
     // calculate x and y direction independently
-    float width = x_dist <= max_x_dist ? 0.0 : (x_dist - max_x_dist);
-    float height = y_dist <= max_y_dist ? 0.0 : (y_dist - max_y_dist);
-    width = width / outline_.dx();
-    height = height / outline_.dy();
+    float width = x_dist <= max_x_dist
+                      ? 0.0
+                      : block_->dbuToMicrons((x_dist - max_x_dist));
+    float height = y_dist <= max_y_dist
+                       ? 0.0
+                       : block_->dbuToMicrons((y_dist - max_y_dist));
+    width = width / block_->dbuToMicrons(outline_.dx());
+    height = height / block_->dbuToMicrons(outline_.dy());
     fence_penalty_ += width * width + height * height;
   }
   // normalization
@@ -404,29 +410,26 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
   }
 
   for (const auto& [id, guide] : guides_) {
-    const float macro_x_min = macros_[id].getX();
-    const float macro_y_min = macros_[id].getY();
-    const float macro_x_max = macro_x_min + macros_[id].getWidth();
-    const float macro_y_max = macro_y_min + macros_[id].getHeight();
+    const int macro_x_min = macros_[id].getX();
+    const int macro_y_min = macros_[id].getY();
+    const int macro_x_max = macro_x_min + macros_[id].getWidth();
+    const int macro_y_max = macro_y_min + macros_[id].getHeight();
 
-    const float overlap_width
-        = std::min(guide.xMax(), block_->micronsToDbu(macro_x_max))
-          - std::max(guide.xMin(), block_->micronsToDbu(macro_x_min));
-    const float overlap_height
-        = std::min(guide.yMax(), block_->micronsToDbu(macro_y_max))
-          - std::max(guide.yMin(), block_->micronsToDbu(macro_y_min));
+    const int overlap_width = std::min(guide.xMax(), macro_x_max)
+                              - std::max(guide.xMin(), macro_x_min);
+    const int overlap_height = std::min(guide.yMax(), macro_y_max)
+                               - std::max(guide.yMin(), macro_y_min);
 
     // maximum overlap area
-    float penalty
-        = std::min(block_->micronsToDbu(macros_[id].getWidth()), guide.dx())
-          * std::min(block_->micronsToDbu(macros_[id].getHeight()), guide.dy());
+    int64_t penalty = std::min(macros_[id].getWidth(), guide.dx())
+                      * std::min(macros_[id].getHeight(), guide.dy());
 
     // subtract overlap
     if (overlap_width > 0 && overlap_height > 0) {
-      penalty -= (overlap_width * overlap_height);
+      penalty -= (overlap_width * static_cast<int64_t>(overlap_height));
     }
 
-    guidance_penalty_ += penalty;
+    guidance_penalty_ += block_->dbuAreaToMicrons(penalty);
   }
 
   guidance_penalty_ = guidance_penalty_ / guides_.size();
@@ -443,6 +446,7 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
 template <class T>
 void SimulatedAnnealingCore<T>::packFloorplan()
 {
+  // logger_->report("POS SEQ {} NEG SEQ {}", pos_seq_, neg_seq_);
   // Each index corresponds to a macro id whose pair is:
   // <Position in Positive Sequence , Position in Negative Sequence>
   std::vector<std::pair<int, int>> sequence_pair_pos(pos_seq_.size());
@@ -453,17 +457,18 @@ void SimulatedAnnealingCore<T>::packFloorplan()
     sequence_pair_pos[neg_seq_[i]].second = i;
   }
 
-  std::vector<float> accumulated_length(pos_seq_.size(), 0.0);
+  std::vector<int> accumulated_length(pos_seq_.size(), 0);
   for (int i = 0; i < pos_seq_.size(); i++) {
     const int macro_id = pos_seq_[i];
     const int neg_seq_pos = sequence_pair_pos[macro_id].second;
+
     T& macro = macros_[macro_id];
 
     if (!macro.isFixed()) {
       macro.setX(accumulated_length[neg_seq_pos]);
     }
 
-    const float current_length = macro.getX() + macro.getWidth();
+    const int current_length = macro.getX() + macro.getWidth();
 
     for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
       if (current_length > accumulated_length[j]) {
@@ -488,7 +493,7 @@ void SimulatedAnnealingCore<T>::packFloorplan()
 
     // This is actually the accumulated height, but we use the same vector
     // to avoid more allocation.
-    accumulated_length[i] = 0.0;
+    accumulated_length[i] = 0;
   }
 
   for (int i = 0; i < pos_seq_.size(); i++) {
@@ -500,7 +505,7 @@ void SimulatedAnnealingCore<T>::packFloorplan()
       macro.setY(accumulated_length[neg_seq_pos]);
     }
 
-    const float current_height = macro.getY() + macro.getHeight();
+    const int current_height = macro.getY() + macro.getHeight();
 
     for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
       if (current_height > accumulated_length[j]) {

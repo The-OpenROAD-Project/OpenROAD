@@ -75,8 +75,8 @@ class HierRTLMP
   // Interfaces functions for setting options
   // Hierarchical Macro Placement Related Options
   void setGlobalFence(int fence_lx, int fence_ly, int fence_ux, int fence_uy);
-  void setHaloWidth(int halo_width);
-  void setHaloHeight(int halo_height);
+  void setHaloWidth(float halo_width);
+  void setHaloHeight(float halo_height);
   void setGuidanceRegions(
       const std::map<odb::dbInst*, odb::Rect>& guidance_regions);
 
@@ -156,7 +156,7 @@ class HierRTLMP
   std::vector<Cluster*> getClustersOfUnplacedIOPins() const;
   std::vector<Cluster*> getIOBundles() const;
   void createPinAccessBlockage(const BoundaryRegion& region, float depth);
-  float computePinAccessBaseDepth(double io_span) const;
+  int computePinAccessBaseDepth(int io_span) const;
   void createBlockagesForIOBundles();
   void createBlockagesForAvailableRegions();
   void createBlockagesForConstraintRegions();

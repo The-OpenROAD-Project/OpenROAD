@@ -189,7 +189,7 @@ inline odb::Point computeNearestPointInRegion(const BoundaryRegion& region,
 
 // The distance in DBU from the source to the nearest point of the nearest
 // region.
-inline double computeDistToNearestRegion(
+inline int64_t computeDistToNearestRegion(
     const odb::Point& source,
     const std::vector<BoundaryRegion>& regions,
     odb::Point* nearest_point)
@@ -210,7 +210,7 @@ inline double computeDistToNearestRegion(
     }
   }
 
-  return std::sqrt(smallest_distance);
+  return static_cast<int64_t>(std::sqrt(smallest_distance));
 }
 
 }  // namespace mpl
