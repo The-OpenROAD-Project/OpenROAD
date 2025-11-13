@@ -311,11 +311,13 @@ cc_test(
     data = [
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
-        "cpp/TestBufferRemoval3.v",
+        "cpp/TestBufferRemoval3_0.v",
         "cpp/TestBufferRemoval3_1.v",
         "cpp/TestBufferRemoval3_2.v",
         "cpp/TestBufferRemoval3_3.v",
         "cpp/TestBufferRemoval3_4.v",
+        "cpp/TestBufferRemoval3_5.v",
+        "cpp/TestBufferRemoval3_6.v",
     ],
     deps = [
         "//src/ant",
