@@ -155,7 +155,8 @@ dbGuide* dbGuide::create(dbNet* net,
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: create guide, layer {} box {}",
+               "ECO: create dbGuide at id {}, in layer {} box {}",
+               guide->getOID(),
                layer->getName(),
                box);
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
@@ -192,8 +193,10 @@ void dbGuide::destroy(dbGuide* guide)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: destroy guide, id: {}",
-               guide->getId());
+               "ECO: delete dbGuide at id {}, in layer {} box {}",
+               guide->getId(),
+               guide->getLayer()->getName(),
+               guide->getBox());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbGuideObj);
     block->_journal->pushParam(net->getOID());

@@ -4,14 +4,19 @@
 #pragma once
 
 #include <array>
+#include <memory>
 #include <string>
+#include <vector>
 
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "sta/Corner.hh"
+#include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 

@@ -18,13 +18,18 @@
 #include "dbVector.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "dbModuleModNetBTermItr.h"
 #include "dbModuleModNetITermItr.h"
 #include "dbModuleModNetModBTermItr.h"
 #include "dbModuleModNetModITermItr.h"
+#include "dbUtil.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "utl/Logger.h"
 // User Code End Includes
@@ -205,8 +210,10 @@ void dbModNet::rename(const char* new_name)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: mod_net {}, rename to {}",
+               "ECO: dbModNet({} {:p}) '{}', rename to '{}'",
                getId(),
+               static_cast<void*>(this),
+               getHierarchicalName(),
                new_name);
     block->_journal->updateField(this, _dbModNet::NAME, obj->_name, new_name);
   }
@@ -322,6 +329,13 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* base_name)
   parent->_modnet_hash[base_name] = modnet->getOID();
 
   if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: create dbModNet {} at id {}",
+               base_name,
+               modnet->getId());
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbModNetObj);
     block->_journal->pushParam(base_name);
@@ -347,6 +361,13 @@ void dbModNet::destroy(dbModNet* mod_net)
 
   // journalling
   if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: delete dbModNet {} at id {}",
+               mod_net->getName(),
+               mod_net->getId());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModNetObj);
     block->_journal->pushParam(mod_net->getName());
@@ -413,9 +434,10 @@ dbSet<dbITerm> dbModNet::getITerms() const
   return dbSet<dbITerm>(_mod_net, _block->_module_modnet_iterm_itr);
 }
 
-unsigned dbModNet::connectionCount()
+unsigned dbModNet::connectionCount() const
 {
-  return (getITerms().size() + getBTerms().size() + getModITerms().size());
+  return (getITerms().size() + getBTerms().size() + getModITerms().size()
+          + getModBTerms().size());
 }
 
 dbNet* dbModNet::findRelatedNet() const
@@ -488,6 +510,17 @@ dbNet* dbModNet::findRelatedNet() const
 
   // No related dbNet found
   return nullptr;
+}
+
+void dbModNet::checkSanity() const
+{
+  std::vector<std::string> drvr_info_list;
+  dbUtil::findBTermDrivers(this, drvr_info_list);
+  dbUtil::findITermDrivers(this, drvr_info_list);
+  dbUtil::findModBTermDrivers(this, drvr_info_list);
+  dbUtil::findModITermDrivers(this, drvr_info_list);
+
+  dbUtil::checkNetSanity(this, drvr_info_list);
 }
 
 // User Code End dbModNetPublicMethods

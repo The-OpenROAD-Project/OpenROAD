@@ -7,7 +7,7 @@ read_lef Nangate45/Nangate45_stdcell.lef
 read_lef Nangate45/fakeram45_64x7.lef
 read_def boundary_macros.def
 
-set def_file [make_result_file boundary_macros_separate.def]
+set def_file [make_result_file boundary_macros_separate2.def]
 
 cut_rows -endcap_master TAPCELL_X1
 

@@ -3,17 +3,11 @@
 
 #include "DesignCallBack.h"
 
+#include "drt/TritonRoute.h"
 #include "frDesign.h"
 #include "odb/db.h"
-#include "triton_route/TritonRoute.h"
 
 namespace drt {
-
-static inline int defdist(odb::dbBlock* block, int x)
-{
-  return x * (double) block->getDefUnits()
-         / (double) block->getDbUnitsPerMicron();
-}
 
 void DesignCallBack::inDbPreMoveInst(odb::dbInst* db_inst)
 {
@@ -43,9 +37,6 @@ void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
   }
   int x, y;
   db_inst->getLocation(x, y);
-  auto block = db_inst->getBlock();
-  x = defdist(block, x);
-  y = defdist(block, y);
   inst->setOrigin({x, y});
   inst->setOrient(db_inst->getOrient());
   router_->addInstancePAData(inst);

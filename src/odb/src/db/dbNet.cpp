@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iterator>
 #include <set>
 #include <string>
 #include <vector>
@@ -40,6 +41,7 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
+#include "dbUtil.h"
 #include "dbWire.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -395,8 +397,10 @@ bool dbNet::rename(const char* name)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: net {}, rename to {}",
+               "ECO: dbNet({} {:p}) '{}', rename to '{}'",
                getId(),
+               static_cast<void*>(this),
+               getName(),
                name);
     block->_journal->updateField(this, _dbNet::NAME, net->_name, name);
   }
@@ -420,6 +424,15 @@ void dbNet::swapNetNames(dbNet* source, bool ok_to_journal)
 
   // allow undo..
   if (block->_journal && ok_to_journal) {
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: swap dbName (dbNet) between {} at id {} and {} at id {}",
+               source->getName(),
+               source->getId(),
+               getName(),
+               getId());
     block->_journal->beginAction(dbJournal::SWAP_OBJECT);
     // a name
     block->_journal->pushParam(dbNameObj);
@@ -2117,7 +2130,9 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: create net, name {}",
+               "ECO: create dbNet({}, {:p}) '{}'",
+               net->getId(),
+               static_cast<void*>(net),
                name_);
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbNetObj);
@@ -2195,8 +2210,10 @@ void dbNet::destroy(dbNet* net_)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: destroy net, id: {}",
-               net->getId());
+               "ECO: delete dbNet({}, {:p}) '{}'",
+               net->getId(),
+               static_cast<void*>(net),
+               net->_name);
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(net_->getName());
@@ -2348,100 +2365,14 @@ void dbNet::setJumpers(bool has_jumpers)
 
 void dbNet::checkSanity() const
 {
-  _dbNet* net = (_dbNet*) this;
-  utl::Logger* logger = net->getImpl()->getLogger();
+  // Check net itself
   std::vector<std::string> drvr_info_list;
+  dbUtil::findBTermDrivers(this, drvr_info_list);
+  dbUtil::findITermDrivers(this, drvr_info_list);
+  dbUtil::checkNetSanity(this, drvr_info_list);
 
-  // Find BTerm drivers
-  for (dbBTerm* bterm : getBTerms()) {
-    if (bterm->getIoType() == dbIoType::INPUT
-        || bterm->getIoType() == dbIoType::INOUT) {
-      dbBlock* block = bterm->getBlock();
-      dbModule* parent_module = block->getTopModule();
-      drvr_info_list.push_back(
-          // NOLINTNEXTLINE(misc-include-cleaner)
-          fmt::format("\n  - bterm: '{}' (parent_module: '{}', block: '{}')",
-                      bterm->getName(),
-                      parent_module->getName(),
-                      block->getName()));
-    }
-  }
-
-  // Find ITerm drivers
-  for (dbITerm* iterm : getITerms()) {
-    if (iterm->getIoType() == dbIoType::OUTPUT
-        || iterm->getIoType() == dbIoType::INOUT) {
-      dbInst* inst = iterm->getInst();
-      dbMaster* master = inst->getMaster();
-      dbModule* parent_module = inst->getModule();
-      dbBlock* block = inst->getBlock();
-
-      std::string parent_module_name = "null";
-      if (parent_module) {
-        parent_module_name = parent_module->getName();
-      }
-
-      std::string master_name = "null";
-      if (master) {
-        master_name = master->getName();
-      }
-
-      std::string block_name = "null";
-      if (block) {
-        block_name = block->getName();
-      }
-
-      drvr_info_list.push_back(fmt::format(  // NOLINT(misc-include-cleaner)
-          "\n  - iterm: '{}' (block: '{}', parent_module: '{}', master: '{}')",
-          iterm->getName('/'),
-          block_name,
-          parent_module_name,
-          master_name));
-    }
-  }
-
-  size_t drvr_count = drvr_info_list.size();
-  if (drvr_count > 1) {
-    // Multiple drivers found.
-    logger->error(
-        utl::ODB,
-        49,
-        "SanityCheck: dbNet '{}' has multiple drivers: {}",
-        getName(),
-        fmt::join(drvr_info_list, ""));  // NOLINT(misc-include-cleaner)
-  }
-
-  const uint iterm_count = getITerms().size();
-  const uint bterm_count = getBTerms().size();
-
-  if (drvr_count == 0 && (iterm_count + bterm_count > 0)) {
-    logger->warn(
-        utl::ODB, 50, "SanityCheck: dbNet '{}' has no driver.", getName());
-  }
-
-  if (iterm_count + bterm_count < 2) {
-    // Skip power/ground net
-    if (getSigType().isSupply()) {
-      return;  // OK: Unconnected power/ground net
-    }
-
-    // A net connected to 1 terminal
-    if (iterm_count == 1
-        && (*(getITerms().begin()))->getIoType() == dbIoType::OUTPUT) {
-      return;  // OK: Unconnected output pin
-    }
-    if (bterm_count == 1
-        && (*(getBTerms().begin()))->getIoType() == dbIoType::INPUT) {
-      return;  // OK: Unconnected input port
-    }
-    logger->warn(utl::ODB,
-                 51,
-                 "SanityCheck: dbNet '{}' is dangling. It has less than 2 "
-                 "connections (# of ITerms = {}, # of BTerms = {}).",
-                 getName(),
-                 iterm_count,
-                 bterm_count);
-  }
+  // Check the consistency with the related dbModNet
+  checkSanityModNetConsistency();
 }
 
 dbModInst* dbNet::findMainParentModInst() const
@@ -2614,6 +2545,123 @@ bool dbNet::isInternalTo(dbModule* module) const
   }
 
   return true;
+}
+
+void dbNet::checkSanityModNetConsistency() const
+{
+  utl::Logger* logger = getImpl()->getLogger();
+
+  // 1. Find all related dbModNets with this dbNet.
+  std::set<dbModNet*> related_modnets;
+  findRelatedModNets(related_modnets);
+  if (related_modnets.empty()) {
+    return;
+  }
+
+  // 2. Find all ITerms and BTerms connected with this dbNet.
+  std::set<dbITerm*> flat_iterms;
+  for (dbITerm* iterm : getITerms()) {
+    flat_iterms.insert(iterm);
+  }
+
+  std::set<dbBTerm*> flat_bterms;
+  for (dbBTerm* bterm : getBTerms()) {
+    flat_bterms.insert(bterm);
+  }
+
+  // 3. Find all ITerms and BTerms connected with all the related dbModNets.
+  std::set<dbITerm*> hier_iterms;
+  std::set<dbBTerm*> hier_bterms;
+  for (dbModNet* modnet : related_modnets) {
+    for (dbITerm* iterm : modnet->getITerms()) {
+      hier_iterms.insert(iterm);
+    }
+    for (dbBTerm* bterm : modnet->getBTerms()) {
+      hier_bterms.insert(bterm);
+    }
+  }
+
+  // 4. If found any inconsistency, report the difference.
+
+  // 4.1. Compare ITerms
+  std::vector<dbITerm*> iterms_in_flat_only;
+  std::set_difference(flat_iterms.begin(),
+                      flat_iterms.end(),
+                      hier_iterms.begin(),
+                      hier_iterms.end(),
+                      std::back_inserter(iterms_in_flat_only));
+
+  if (iterms_in_flat_only.empty() == false) {
+    logger->warn(utl::ODB,
+                 484,
+                 "SanityCheck: dbNet '{}' has ITerms not present in its "
+                 "related dbModNets.",
+                 getName());
+    for (dbITerm* iterm : iterms_in_flat_only) {
+      logger->warn(utl::ODB, 485, "  - ITerm: {}", iterm->getName());
+    }
+  }
+
+  std::vector<dbITerm*> iterms_in_hier_only;
+  std::set_difference(hier_iterms.begin(),
+                      hier_iterms.end(),
+                      flat_iterms.begin(),
+                      flat_iterms.end(),
+                      std::back_inserter(iterms_in_hier_only));
+
+  if (iterms_in_hier_only.empty() == false) {
+    logger->warn(utl::ODB,
+                 488,
+                 "SanityCheck: dbNet '{}' is missing ITerms that are present "
+                 "in its related dbModNets.",
+                 getName());
+    for (dbITerm* iterm : iterms_in_hier_only) {
+      logger->warn(utl::ODB,
+                   489,
+                   "  - ITerm: {} (in hier, not in flat)",
+                   iterm->getName());
+    }
+  }
+
+  // 4.2. Compare BTerms
+  std::vector<dbBTerm*> bterms_in_flat_only;
+  std::set_difference(flat_bterms.begin(),
+                      flat_bterms.end(),
+                      hier_bterms.begin(),
+                      hier_bterms.end(),
+                      std::back_inserter(bterms_in_flat_only));
+
+  if (bterms_in_flat_only.empty() == false) {
+    logger->warn(utl::ODB,
+                 486,
+                 "SanityCheck: dbNet '{}' has BTerms not present in its "
+                 "related dbModNets.",
+                 getName());
+    for (dbBTerm* bterm : bterms_in_flat_only) {
+      logger->warn(utl::ODB, 487, "  - BTerm: {}", bterm->getName());
+    }
+  }
+
+  std::vector<dbBTerm*> bterms_in_hier_only;
+  std::set_difference(hier_bterms.begin(),
+                      hier_bterms.end(),
+                      flat_bterms.begin(),
+                      flat_bterms.end(),
+                      std::back_inserter(bterms_in_hier_only));
+
+  if (bterms_in_hier_only.empty() == false) {
+    logger->warn(utl::ODB,
+                 490,
+                 "SanityCheck: dbNet '{}' is missing BTerms that are present "
+                 "in its related dbModNets.",
+                 getName());
+    for (dbBTerm* bterm : bterms_in_hier_only) {
+      logger->warn(utl::ODB,
+                   491,
+                   "  - BTerm: {} (in hier, not in flat)",
+                   bterm->getName());
+    }
+  }
 }
 
 }  // namespace odb

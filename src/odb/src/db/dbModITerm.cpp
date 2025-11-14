@@ -15,7 +15,13 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+
 #include "odb/dbBlockCallBackObj.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbModITerm>;
@@ -154,6 +160,28 @@ dbModInst* dbModITerm::getParent() const
 }
 
 // User Code Begin dbModITermPublicMethods
+std::string dbModITerm::getHierarchicalName() const
+{
+  dbModInst* modinst = getParent();
+  if (modinst == nullptr) {
+    return getName();
+  }
+
+  dbModule* module = modinst->getParent();
+  if (module == nullptr) {
+    return getName();
+  }
+
+  dbBlock* block = module->getOwner();
+  if (module == block->getTopModule()) {
+    return getName();
+  }
+
+  return fmt::format("{}{}{}",  // NOLINT(misc-include-cleaner)
+                     modinst->getHierarchicalName(),
+                     block->getHierarchyDelimiter(),
+                     getName());
+}
 
 void dbModITerm::setModNet(dbModNet* modNet)
 {
@@ -217,6 +245,13 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance,
   parent->_moditerm_hash[name] = dbId<_dbModITerm>(moditerm->getOID());
 
   if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: create dbModITerm {} at id {}",
+               name,
+               moditerm->getId());
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbModITermObj);
     block->_journal->pushParam(name);
@@ -269,6 +304,15 @@ void dbModITerm::connect(dbModNet* net)
   _modnet->_moditerms = getId();
 
   if (_block->_journal) {
+    debugPrint(_block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: connect dbModITerm {} at id {} to dbModNet {} at id {}",
+               getName(),
+               getId(),
+               _modnet->_name,
+               _modnet->getId());
     _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     _block->_journal->pushParam(dbModITermObj);
     _block->_journal->pushParam(getId());
@@ -293,6 +337,16 @@ void dbModITerm::disconnect()
   _dbModNet* _modnet = _block->_modnet_tbl->getPtr(_moditerm->_mod_net);
 
   if (_block->_journal) {
+    debugPrint(
+        _block->getImpl()->getLogger(),
+        utl::ODB,
+        "DB_ECO",
+        1,
+        "ECO: disconnect dbModITerm {} at id {} from dbModNet {} at id {}",
+        getName(),
+        getId(),
+        _modnet->_name,
+        _modnet->getId());
     _block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     _block->_journal->pushParam(dbModITermObj);
     _block->_journal->pushParam(_moditerm->getId());
@@ -338,6 +392,13 @@ void dbModITerm::destroy(dbModITerm* val)
   _dbModInst* mod_inst = block->_modinst_tbl->getPtr(_moditerm->_parent);
 
   if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: delete dbModITerm {} at id {}",
+               val->getName(),
+               val->getId());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModITermObj);
     block->_journal->pushParam(val->getName());

@@ -12,6 +12,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -77,17 +78,17 @@ void GraphicsImpl::debugForNesterovPlace(
 
   if (enabled()) {
     // Setup the chart
-    chart_ = gui::Gui::get()->addChart(
-        "GPL", "Iteration", {"HPWL (μm)", "Overflow"});
-    chart_->setXAxisFormat("%d");
-    chart_->setYAxisFormats({"%.2e", "%.2f"});
-    chart_->setYAxisMin({std::nullopt, 0});
+    gui::Gui* gui = gui::Gui::get();
+    main_chart_ = gui->addChart("GPL", "Iteration", {"HPWL (μm)", "Overflow"});
+    main_chart_->setXAxisFormat("%d");
+    main_chart_->setYAxisFormats({"%.2e", "%.2f"});
+    main_chart_->setYAxisMin({std::nullopt, 0});
 
-    // Useful for debugging multiple NesterovBase: Density penalty and PhiCoef
-    if (logger_->debugCheck(utl::GPL, "penaltyPlot", 1)) {
+    // Useful for debugging : Density penalty and PhiCoef
+    if (logger_->debugCheck(utl::GPL, "debugPlot", 1)) {
       if (!nbVec_.empty()) {
-        std::vector<std::string> series_names;
-        series_names.reserve(nbVec_.size());
+        std::vector<std::string> region_names;
+        region_names.reserve(nbVec_.size());
         for (size_t i = 0; i < nbVec_.size(); ++i) {
           std::string name;
           if (nbVec_[i] && nbVec_[i]->getPb() && nbVec_[i]->getPb()->group()) {
@@ -96,24 +97,23 @@ void GraphicsImpl::debugForNesterovPlace(
           } else {
             name = fmt::format("nb[{}]", i);
           }
-          series_names.push_back(name);
+          region_names.push_back(name);
         }
-        density_chart_ = gui::Gui::get()->addChart(
-            "GPL Density Penalty", "Iteration", series_names);
+        density_chart_ = gui->addChart(
+            "GPL Density Penalty", "Iteration", {"DensityPenalty", "phiCoef"});
         density_chart_->setXAxisFormat("%d");
-        std::vector<std::string> y_formats(nbVec_.size(), "%.3f");
-        density_chart_->setYAxisFormats(y_formats);
-        std::vector<std::optional<double>> y_mins(nbVec_.size(), 0.0);
-        density_chart_->setYAxisMin(y_mins);
+        density_chart_->setYAxisFormats({"%.2e", "%.2f"});
+        density_chart_->setYAxisMin({0.0, nbc_->getNbVars().minPhiCoef});
 
-        phi_chart_ = gui::Gui::get()->addChart(
-            "GPL PhiCoef", "Iteration", series_names);
-        phi_chart_->setXAxisFormat("%d");
-        phi_chart_->setYAxisFormats(y_formats);
-        phi_chart_->setYAxisMin(y_mins);
+        stepLength_chart_ = gui->addChart(
+            "GPL StepLength",
+            "Iteration",
+            {"StepLength", "CoordiDistance", "GradDistance", "Std area"});
+        stepLength_chart_->setXAxisFormat("%d");
+        stepLength_chart_->setYAxisFormats({"%.2e", "%.2f", "%.2f"});
+        stepLength_chart_->setYAxisMin({0.0, 0.0, 0.0});
       }
     }
-
     initHeatmap();
     if (inst) {
       for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
@@ -284,10 +284,19 @@ void GraphicsImpl::drawSingleGCell(const GCell* gCell,
   // Highlight modified instances (overrides base color, unless selected)
   switch (gCell->changeType()) {
     case GCell::GCellChange::kRoutability:
-      color = {255, 255, 255, 100};  // White
+      color = gui::Painter::kWhite;
       break;
-    case GCell::GCellChange::kTimingDriven:
-      color = {180, 150, 255, 100};  // Light purple
+    case GCell::GCellChange::kNewInstance:
+      color = gui::Painter::kDarkRed;
+      break;
+    case GCell::GCellChange::kDownsize:
+      color = gui::Painter::kDarkBlue;
+      break;
+    case GCell::GCellChange::kUpsize:
+      color = gui::Painter::kOrange;
+      break;
+    case GCell::GCellChange::kResizeNoChange:
+      color = gui::Painter::kDarkYellow;
       break;
     default:
       if (gCell->isInstance()) {
@@ -537,48 +546,57 @@ void GraphicsImpl::reportSelected()
 void GraphicsImpl::addIter(const int iter, const double overflow)
 {
   odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
-  chart_->addPoint(iter, {block->dbuToMicrons(nbc_->getHpwl()), overflow});
+  main_chart_->addPoint(iter, {block->dbuToMicrons(nbc_->getHpwl()), overflow});
 
-  // Add density penalties snapshot for each NesterovBase
-  if (logger_->debugCheck(utl::GPL, "penaltyPlot", 1)) {
+  if (logger_->debugCheck(utl::GPL, "debugPlot", 1)) {
     if (density_chart_) {
-      std::vector<double> penalties;
-      penalties.reserve(nbVec_.size());
-      for (const auto& nb : nbVec_) {
-        double penalty
-            = nb ? static_cast<double>(nb->getDensityPenalty()) : 0.0;
-        penalties.push_back(penalty);
+      std::vector<double> values;
+      if (!nbVec_.empty() && nbVec_[0]) {
+        values.push_back((static_cast<double>(nbVec_[0]->getDensityPenalty())));
+        values.push_back(static_cast<double>(nbVec_[0]->getStoredPhiCoef()));
+      } else {
+        values.push_back(0.0);
+        values.push_back(0.0);
       }
-      density_chart_->addPoint(iter, penalties);
+      density_chart_->addPoint(iter, values);
     }
 
-    if (phi_chart_) {
-      std::vector<double> coefs;
-      coefs.reserve(nbVec_.size());
-      for (const auto& nb : nbVec_) {
-        double coef = nb ? static_cast<double>(nb->getStoredPhiCoef()) : 0.0;
-        coefs.push_back(coef);
+    if (stepLength_chart_) {
+      std::vector<double> values;
+      if (!nbVec_.empty() && nbVec_[0]) {
+        values.push_back(static_cast<double>(nbVec_[0]->getStoredStepLength()));
+        values.push_back(
+            static_cast<double>(nbVec_[0]->getStoredCoordiDistance()));
+        values.push_back(
+            static_cast<double>(nbVec_[0]->getStoredGradDistance()));
+        values.push_back(
+            static_cast<double>(nbVec_[0]->getNesterovInstsArea()));
+      } else {
+        values.push_back(0.0);
+        values.push_back(0.0);
+        values.push_back(0.0);
+        values.push_back(0.0);
       }
-      phi_chart_->addPoint(iter, coefs);
+      stepLength_chart_->addPoint(iter, values);
     }
   }
 }
 
 void GraphicsImpl::addTimingDrivenIter(const int iter)
 {
-  chart_->addVerticalMarker(iter, gui::Painter::kTurquoise);
+  main_chart_->addVerticalMarker(iter, gui::Painter::kTurquoise);
 }
 
 void GraphicsImpl::addRoutabilitySnapshot(int iter)
 {
-  chart_->addVerticalMarker(iter, gui::Painter::kYellow);
+  main_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
 }
 
 void GraphicsImpl::addRoutabilityIter(const int iter, const bool revert)
 {
   gui::Painter::Color color
       = revert ? gui::Painter::kRed : gui::Painter::kGreen;
-  chart_->addVerticalMarker(iter, color);
+  main_chart_->addVerticalMarker(iter, color);
 }
 
 void GraphicsImpl::cellPlotImpl(bool pause)

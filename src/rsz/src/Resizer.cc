@@ -3477,9 +3477,18 @@ void Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
 void Resizer::deleteTieCellAndNet(const Instance* tie_inst,
                                   LibertyPort* tie_port)
 {
-  // Delete inst output net.
+  // Get flat and hier nets.
   Pin* tie_pin = network_->findPin(tie_inst, tie_port);
-  dbNet* tie_flat_net = db_network_->flatNet(tie_pin);
+  odb::dbModNet* tie_hier_net;
+  dbNet* tie_flat_net;
+  db_network_->net(tie_pin, tie_flat_net, tie_hier_net);
+
+  // Delete hier net if it is dangling.
+  if (tie_hier_net && tie_hier_net->connectionCount() <= 1) {
+    odb::dbModNet::destroy(tie_hier_net);
+  }
+
+  // Delete inst output net.
   Net* tie_net = db_network_->dbToSta(tie_flat_net);
   sta_->deleteNet(tie_net);
   estimate_parasitics_->removeNetFromParasiticsInvalid(tie_net);
@@ -4553,7 +4562,7 @@ void Resizer::journalEnd()
     estimate_parasitics_->updateParasitics();
     sta_->findRequireds();
   }
-  odb::dbDatabase::endEco(block_);
+  odb::dbDatabase::commitEco(block_);
 
   int move_count_ = 0;
   move_count_ += size_up_move_->numPendingMoves();
@@ -4629,7 +4638,7 @@ void Resizer::journalRestore()
   init();
 
   if (odb::dbDatabase::ecoEmpty(block_)) {
-    odb::dbDatabase::endEco(block_);
+    odb::dbDatabase::undoEco(block_);
     debugPrint(logger_,
                RSZ,
                "journal",
@@ -4639,7 +4648,6 @@ void Resizer::journalRestore()
   }
 
   // Odb callbacks invalidate parasitics
-  odb::dbDatabase::endEco(block_);
   odb::dbDatabase::undoEco(block_);
 
   estimate_parasitics_->updateParasitics();
