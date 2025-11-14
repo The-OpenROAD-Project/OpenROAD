@@ -39,7 +39,7 @@ using odb::dbSet;
 using odb::dbSigType;
 using odb::Point;
 
-class dbNetwork; 
+class dbNetwork;
 class dbEditHierarchy;
 
 // This class handles callbacks from the network to the listeners
