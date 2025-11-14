@@ -399,12 +399,22 @@ void UnbufferMove::removeBuffer(Instance* buffer)
              db_network_->name(out_net));
 
   // Disconnect buffer input/output pins
-  std::optional<std::string> new_net_name;
-  std::optional<std::string> new_modnet_name;
   odb::dbNet* db_survivor = db_network_->staToDb(survivor);
   odb::dbNet* db_removed = db_network_->staToDb(removed);
   sta_->disconnectPin(in_pin);
   sta_->disconnectPin(out_pin);
+
+  // If removed net name is higher in hierarchy, rename survivor with it.
+  // This must be done before mergeNet because db_removed is destroyed inside
+  // mergeNet.
+  std::optional<std::string> new_net_name;
+  std::optional<std::string> new_modnet_name;
+  if (db_survivor->isDeeperThan(db_removed)) {
+    new_net_name = db_removed->getName();
+    if (removed_modnet != nullptr) {
+      new_modnet_name = removed_modnet->getName();
+    }
+  }
 
   // Merge hier net
   // - mergeModNet() should be done before mergeNet() because
@@ -434,20 +444,6 @@ void UnbufferMove::removeBuffer(Instance* buffer)
 
   // Remove buffer
   sta_->deleteInstance(buffer);
-
-  // If removed net name is higher in hierarchy, rename survivor with it.
-  if (db_survivor->isDeeperThan(db_removed)) {
-    new_net_name = db_removed->getName();
-    if (removed_modnet != nullptr) {
-      new_modnet_name = removed_modnet->getName();
-    }
-  }
-
-  // Remove flat & hier nets
-  sta_->deleteNet(removed);
-  if (removed_modnet) {
-    odb::dbModNet::destroy(removed_modnet);
-  }
 
   // Rename if needed
   if (new_net_name) {

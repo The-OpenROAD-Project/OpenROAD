@@ -2299,6 +2299,9 @@ void dbNet::mergeNet(dbNet* in_net)
   for (dbBTerm* bterm : bterms) {
     bterm->connect(this);
   }
+
+  // 2. Destroy in_net
+  destroy(in_net);
 }
 
 void dbNet::markNets(std::vector<dbNet*>& nets, dbBlock* block, bool mk)

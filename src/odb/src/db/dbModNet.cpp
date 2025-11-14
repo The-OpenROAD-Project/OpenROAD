@@ -560,6 +560,9 @@ void dbModNet::mergeModNet(dbModNet* in_modnet)
   for (dbModBTerm* modbterm : modbterms) {
     modbterm->connect(this);
   }
+
+  // 2. Destroy in_modnet
+  destroy(in_modnet);
 }
 
 void dbModNet::connectTermsOf(dbNet* in_net)
