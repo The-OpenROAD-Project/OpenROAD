@@ -277,18 +277,14 @@ void RouteBase::revertToMinCongestion()
   // revert
   nbc_->revertGCellSizeToMinRc();
   for (int j = 0; j < nbVec_.size(); j++) {
-    if (nbVec_[j]->getGroup()) {
-      log_->info(GPL,
-                 57,
-                 "Target density at minimum routing congestion: {:.4f} ({})",
-                 minRcTargetDensity_[j],
-                 nbVec_[j]->getGroup() ? "" : nbVec_[j]->getGroup()->getName());
-    } else {
-      log_->info(GPL,
-                 58,
-                 "Target density at minimum routing congestion: {:.4f}",
-                 minRcTargetDensity_[j]);
-    }
+    log_->info(GPL,
+               57,
+               "Target density at minimum routing congestion: {:.4f}{}",
+               minRcTargetDensity_[j],
+               nbVec_[j]->getGroup()
+                   ? " (" + std::string(nbVec_[j]->getGroup()->getName()) + ")"
+                   : "");
+
     nbVec_[j]->setTargetDensity(minRcTargetDensity_[j]);
     nbVec_[j]->restoreRemovedFillers();
     nbVec_[j]->updateDensitySize();
@@ -720,16 +716,14 @@ std::pair<bool, bool> RouteBase::routability(
 
     // max density detection
     if (nbVec_[i]->getTargetDensity() > rbVars_.maxDensity) {
-      string group_text;
-      if (nbVec_[i]->getGroup()) {
-        group_text = " in group " + string(nbVec_[i]->getGroup()->getName());
-      }
       log_->info(GPL,
                  53,
                  "Target density {:.4f} exceeds the maximum allowed {:.4f}{}.",
                  nbVec_[i]->getTargetDensity(),
                  rbVars_.maxDensity,
-                 group_text);
+                 nbVec_[i]->getGroup()
+                     ? " in group " + string(nbVec_[i]->getGroup()->getName())
+                     : "");
 
       revertToMinCongestion();
       return std::make_pair(false, true);
