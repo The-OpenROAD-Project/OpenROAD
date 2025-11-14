@@ -2532,29 +2532,18 @@ class dbNet : public dbObject
   ///
   void dump() const;
 
+  ///
+  /// Check consistency between the terminals connected to this dbNet and
+  /// the terminals connected to all related dbModNets. This ensures that
+  /// the flat and hierarchical representations of the net's connectivity
+  /// are consistent
+  //
   void checkSanityModNetConsistency() const;
 
   ///
   /// Dump dbNet connectivity for debugging
   ///
   void dumpConnectivity(int level = 1) const;
-
- private:
-  static void dumpConnectivityRecursive(const dbObject* obj,
-                                        int max_level,
-                                        int level,
-                                        std::set<const dbObject*>& visited,
-                                        utl::Logger* logger);
-  static void dumpNetConnectivity(const dbNet* net,
-                                  int max_level,
-                                  int level,
-                                  std::set<const dbObject*>& visited,
-                                  utl::Logger* logger);
-  static void dumpModNetConnectivity(const dbModNet* modnet,
-                                     int max_level,
-                                     int level,
-                                     std::set<const dbObject*>& visited,
-                                     utl::Logger* logger);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

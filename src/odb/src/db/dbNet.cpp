@@ -2674,23 +2674,23 @@ void dbNet::dumpConnectivity(int level) const
   logger->report("Connectivity for dbNet: {} (id={})", getName(), getId());
 
   std::set<const dbObject*> visited;
-  dumpNetConnectivity(this, level, 1, visited, logger);
+  _dbNet::dumpNetConnectivity(this, level, 1, visited, logger);
 
   std::set<dbModNet*> modnets;
   if (findRelatedModNets(modnets)) {
     for (dbModNet* modnet : modnets) {
-      dumpModNetConnectivity(modnet, level, 1, visited, logger);
+      _dbNet::dumpModNetConnectivity(modnet, level, 1, visited, logger);
     }
   }
 
   logger->report("--------------------------------------------------");
 }
 
-void dbNet::dumpConnectivityRecursive(const dbObject* obj,
-                                      int max_level,
-                                      int level,
-                                      std::set<const dbObject*>& visited,
-                                      utl::Logger* logger)
+void _dbNet::dumpConnectivityRecursive(const dbObject* obj,
+                                       int max_level,
+                                       int level,
+                                       std::set<const dbObject*>& visited,
+                                       utl::Logger* logger)
 {
   if (level > max_level || obj == nullptr) {
     return;
@@ -2758,40 +2758,41 @@ void dbNet::dumpConnectivityRecursive(const dbObject* obj,
       break;
     case dbITermObj: {
       auto iterm = static_cast<const dbITerm*>(obj);
-      dumpConnectivityRecursive(
+      _dbNet::dumpConnectivityRecursive(
           iterm->getNet(), max_level, level + 1, visited, logger);
-      dumpConnectivityRecursive(
+      _dbNet::dumpConnectivityRecursive(
           iterm->getModNet(), max_level, level + 1, visited, logger);
-      dumpConnectivityRecursive(
+      _dbNet::dumpConnectivityRecursive(
           iterm->getInst(), max_level, level + 1, visited, logger);
       break;
     }
     case dbBTermObj: {
       auto bterm = static_cast<const dbBTerm*>(obj);
-      dumpConnectivityRecursive(
+      _dbNet::dumpConnectivityRecursive(
           bterm->getNet(), max_level, level + 1, visited, logger);
-      dumpConnectivityRecursive(
+      _dbNet::dumpConnectivityRecursive(
           bterm->getModNet(), max_level, level + 1, visited, logger);
       break;
     }
     case dbModITermObj: {
       auto moditerm = static_cast<const dbModITerm*>(obj);
-      dumpConnectivityRecursive(
+      _dbNet::dumpConnectivityRecursive(
           moditerm->getModNet(), max_level, level + 1, visited, logger);
-      dumpConnectivityRecursive(
+      _dbNet::dumpConnectivityRecursive(
           moditerm->getParent(), max_level, level + 1, visited, logger);
       break;
     }
     case dbModBTermObj: {
       auto modbterm = static_cast<const dbModBTerm*>(obj);
-      dumpConnectivityRecursive(
+      _dbNet::dumpConnectivityRecursive(
           modbterm->getModNet(), max_level, level + 1, visited, logger);
       break;
     }
     case dbInstObj: {
       auto inst = static_cast<const dbInst*>(obj);
       for (auto iterm : inst->getITerms()) {
-        dumpConnectivityRecursive(iterm, max_level, level + 1, visited, logger);
+        _dbNet::dumpConnectivityRecursive(
+            iterm, max_level, level + 1, visited, logger);
       }
       break;
     }
@@ -2801,11 +2802,11 @@ void dbNet::dumpConnectivityRecursive(const dbObject* obj,
   }
 }
 
-void dbNet::dumpNetConnectivity(const dbNet* net,
-                                int max_level,
-                                int level,
-                                std::set<const dbObject*>& visited,
-                                utl::Logger* logger)
+void _dbNet::dumpNetConnectivity(const dbNet* net,
+                                 int max_level,
+                                 int level,
+                                 std::set<const dbObject*>& visited,
+                                 utl::Logger* logger)
 {
   std::vector<const dbObject*> inputs;
   std::vector<const dbObject*> outputs;
@@ -2831,21 +2832,21 @@ void dbNet::dumpNetConnectivity(const dbNet* net,
   }
 
   for (auto term : inputs) {
-    dumpConnectivityRecursive(term, max_level, level, visited, logger);
+    _dbNet::dumpConnectivityRecursive(term, max_level, level, visited, logger);
   }
   for (auto term : others) {
-    dumpConnectivityRecursive(term, max_level, level, visited, logger);
+    _dbNet::dumpConnectivityRecursive(term, max_level, level, visited, logger);
   }
   for (auto term : outputs) {
-    dumpConnectivityRecursive(term, max_level, level, visited, logger);
+    _dbNet::dumpConnectivityRecursive(term, max_level, level, visited, logger);
   }
 }
 
-void dbNet::dumpModNetConnectivity(const dbModNet* modnet,
-                                   int max_level,
-                                   int level,
-                                   std::set<const dbObject*>& visited,
-                                   utl::Logger* logger)
+void _dbNet::dumpModNetConnectivity(const dbModNet* modnet,
+                                    int max_level,
+                                    int level,
+                                    std::set<const dbObject*>& visited,
+                                    utl::Logger* logger)
 {
   std::vector<const dbObject*> inputs;
   std::vector<const dbObject*> outputs;
@@ -2892,13 +2893,13 @@ void dbNet::dumpModNetConnectivity(const dbModNet* modnet,
   }
 
   for (auto term : inputs) {
-    dumpConnectivityRecursive(term, max_level, level, visited, logger);
+    _dbNet::dumpConnectivityRecursive(term, max_level, level, visited, logger);
   }
   for (auto term : others) {
-    dumpConnectivityRecursive(term, max_level, level, visited, logger);
+    _dbNet::dumpConnectivityRecursive(term, max_level, level, visited, logger);
   }
   for (auto term : outputs) {
-    dumpConnectivityRecursive(term, max_level, level, visited, logger);
+    _dbNet::dumpConnectivityRecursive(term, max_level, level, visited, logger);
   }
 }
 
