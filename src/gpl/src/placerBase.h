@@ -100,6 +100,8 @@ class Instance
   void addPin(Pin* pin);
   const std::vector<Pin*>& getPins() const { return pins_; }
   void snapOutward(const odb::Point& origin, int step_x, int step_y);
+  void extendSizeByPinCount(int pin_count, utl::Logger* logger);
+  void extendSizeByScale(double scale, utl::Logger* logger);
 
  private:
   odb::dbInst* inst_ = nullptr;

@@ -66,6 +66,25 @@ GCell::GCell(const std::vector<Instance*>& insts)
 {
   insts_ = insts;
   updateLocations();
+  // if (!insts_.empty()) {
+  //   odb::dbInst* db_inst = insts_[0]->dbInst();
+  //   odb::dbBox* bbox = db_inst->getBBox();
+  //   if (bbox) {
+  //     int orig_dx = bbox->getDX();
+  //     int orig_dy = bbox->getDY();
+  //     int ext_dx = ux_ - lx_;
+  //     int ext_dy = uy_ - ly_;
+  //     int pin_count = db_inst->getITerms().size();
+  //     utl::Logger logger;
+  //     logger.report("NB Instance {} original size: ({}, {}), extended size: ({}, {}), pin count: {}",
+  //                      db_inst->getName(),
+  //                      orig_dx,
+  //                      orig_dy,
+  //                      ext_dx,
+  //                      ext_dy,
+  //                      pin_count);
+  //   }
+  // }
 }
 
 GCell::GCell(const int cx, const int cy, const int dx, const int dy)
@@ -1056,6 +1075,149 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     }
   }
 
+  int64_t total_original_area = 0;
+  int64_t total_extended_area = 0;
+  int64_t total_area_diff = 0;
+  int increased_instance_count = 0;
+  int64_t increased_area = 0;
+  int decreased_instance_count = 0;
+  int64_t decreased_area = 0;
+  int unchanged_instance_count = 0;
+  int total_instance_count = 0;
+  static std::unordered_map<std::string, struct MasterStats> master_stats_map;
+  struct MasterStats {
+    int instance_count = 0;
+    int pin_count = 0;
+    double total_original_area = 0;
+    double total_extended_area = 0;
+    float original_area_per_pin = 0.0;
+    float extended_area_per_pin = 0.0;
+    float area_diff = 0.0;
+  };
+  odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
+
+  for (const GCell& gcell : gCellStor_) {
+    if (!gcell.isInstance()) {
+      continue;
+    }
+    odb::dbInst* db_inst = gcell.insts()[0]->dbInst();
+    odb::dbBox* bbox = db_inst->getBBox();
+    if (!bbox) {
+      continue;
+    }
+    ++total_instance_count;
+    int orig_dx = bbox->getDX();
+    int orig_dy = bbox->getDY();
+    int64_t orig_area = static_cast<int64_t>(orig_dx) * static_cast<int64_t>(orig_dy);
+
+    int ext_dx = gcell.ux() - gcell.lx();
+    int ext_dy = gcell.uy() - gcell.ly();
+    int64_t ext_area = static_cast<int64_t>(ext_dx) * static_cast<int64_t>(ext_dy);
+
+    total_original_area += orig_area;
+    total_extended_area += ext_area;
+    int64_t area_diff = ext_area - orig_area;
+    total_area_diff += area_diff;
+
+    if (area_diff > 0) {
+      ++increased_instance_count;
+      increased_area += area_diff;
+    } else if (area_diff < 0) {
+      ++decreased_instance_count;
+      decreased_area += -area_diff;
+    } else {
+      ++unchanged_instance_count;
+    }
+
+    // Collect per-master statistics
+    odb::dbMaster* master = db_inst->getMaster();
+    std::string master_name = master->getName();
+    auto& stats = master_stats_map[master_name];
+    stats.instance_count += 1;
+    if (stats.pin_count == 0) {
+      stats.pin_count = db_inst->getITerms().size();
+    }
+    stats.total_original_area = block->dbuAreaToMicrons(orig_area);
+    stats.total_extended_area = block->dbuAreaToMicrons(ext_area);
+
+    // Save area per pin
+    int pin_count = db_inst->getITerms().size();
+    if (pin_count > 0) {
+      stats.original_area_per_pin = block->dbuAreaToMicrons(orig_area) / pin_count;
+      stats.extended_area_per_pin = block->dbuAreaToMicrons(ext_area) / pin_count;
+    }
+    // Populate area_diff as the percentage difference between extended and original area
+    if (orig_area != 0) {
+      stats.area_diff = 100.0f * (static_cast<float>(ext_area - orig_area) / static_cast<float>(orig_area));
+    } else {
+      stats.area_diff = 0.0f;
+    }
+  }
+
+  // Log per-master statistics
+  log_->report("NB Per-master statistics:");
+  for (const auto& entry : master_stats_map) {
+    const std::string& master_name = entry.first;
+    const MasterStats& stats = entry.second;
+    log_->report(
+      "  Master: {} | Instances: {} | Pins: {} | Total original area: {} um^2 | Total extended area: {} um^2 | Area diff: {:.2f}% | Original area/pin: {:.4f} um^2 | Extended area/pin: {:.4f} um^2",
+      master_name,
+      stats.instance_count,
+      stats.pin_count,
+      stats.total_original_area,
+      stats.total_extended_area,
+      stats.area_diff,
+      stats.original_area_per_pin,
+      stats.extended_area_per_pin);
+  }
+
+  // Write per-master statistics to CSV
+  const std::string csv_filename = "inflation_stats.csv";
+  bool file_exists = std::ifstream(csv_filename).good();
+  std::ofstream csv_file(csv_filename, std::ios::out);
+  if (!csv_file.is_open()) {
+    log_->warn(GPL, 111, "Could not open CSV file for per-master stats: {}", csv_filename);
+  } else {
+    if (!file_exists) {
+      csv_file << "master_name,instance_count,pin_count,total_original_area_um2,total_extended_area_um2,area_diff_percent,original_area_per_pin_um2,extended_area_per_pin_um2\n";
+    }
+    for (const auto& entry : master_stats_map) {
+      const std::string& master_name = entry.first;
+      const MasterStats& stats = entry.second;
+      csv_file << master_name << ","
+         << stats.instance_count << ","
+         << stats.pin_count << ","
+         << stats.total_original_area << ","
+         << stats.total_extended_area << ","
+         << stats.area_diff << ","
+         << stats.original_area_per_pin << ","
+         << stats.extended_area_per_pin << "\n";
+    }
+    csv_file.close();
+  }
+
+  log_->report("NB Total original area: {} um^2", block->dbuAreaToMicrons(total_original_area));
+  log_->report("NB Total extended area: {} um^2", block->dbuAreaToMicrons(total_extended_area));
+  log_->report("NB Total area difference (extended - original): {} um^2", block->dbuAreaToMicrons(total_area_diff));
+  log_->report("NB Total area increased: {} um^2 ({} instances)", block->dbuAreaToMicrons(increased_area), increased_instance_count);
+  log_->report("NB Total area decreased: {} um^2 ({} instances)", block->dbuAreaToMicrons(decreased_area), decreased_instance_count);
+  log_->report("NB Total area modified (sum of increases and decreases): {} um^2", block->dbuAreaToMicrons(increased_area + decreased_area));
+  if (total_original_area != 0) {
+    double rel_diff = static_cast<double>(total_area_diff) / static_cast<double>(total_original_area);
+    log_->report("NB Relative area difference: {:.2f}%%", rel_diff * 100.0);
+  }
+  log_->report("NB Number of instances with increased area: {}", increased_instance_count);
+  log_->report("NB Number of instances with decreased area: {}", decreased_instance_count);
+  log_->report("NB Number of instances with unchanged area: {}", unchanged_instance_count);
+  if (total_instance_count != 0) {
+    double percent_increased = static_cast<double>(increased_instance_count) / static_cast<double>(total_instance_count) * 100.0;
+    double percent_decreased = static_cast<double>(decreased_instance_count) / static_cast<double>(total_instance_count) * 100.0;
+    double percent_unchanged = static_cast<double>(unchanged_instance_count) / static_cast<double>(total_instance_count) * 100.0;
+    log_->report("NB Percentage of instances with increased area: {:.2f}%%", percent_increased);
+    log_->report("NB Percentage of instances with decreased area: {:.2f}%%", percent_decreased);
+    log_->report("NB Percentage of instances with unchanged area: {:.2f}%%", percent_unchanged);
+  }
+
   // TODO:
   // at this moment, GNet and GPin is equal to
   // Net and Pin
@@ -1711,13 +1873,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     }
 
     for (Instance* inst : gCell->insts()) {
-      int lx = pb_inst->lx() + x_offset;
-      int ly = pb_inst->ly() + y_offset;
-      float pin_weight = (pb_inst->getPins().size() == 2 ? 1 : (0.01 * pb_inst->getPins().size() / 2) );
-      lx *= pin_weight;
-      ly *= pin_weight;
-      inst->setLocation(lx, ly);
-      // inst->setLocation(pb_inst->lx() + x_offset, pb_inst->ly() + y_offset);
+      inst->setLocation(pb_inst->lx() + x_offset, pb_inst->ly() + y_offset);
     }
     gCell->updateLocations();
     nb_gcells_.emplace_back(nbc_.get(), nbc_->getGCellIndex(gCell));
@@ -3100,6 +3256,7 @@ void NesterovBaseCommon::moveGCell(odb::dbInst* db_inst)
 
   GCell* gcell = getGCellByIndex(it->second);
   odb::dbBox* bbox = db_inst->getBBox();
+  //TODO extend by pin size here too! or use pb_inst size
   gcell->setAllLocations(
       bbox->xMin(), bbox->yMin(), bbox->xMax(), bbox->yMax());
 }
@@ -3261,9 +3418,9 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
 size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
 {
   debugPrint(log_, GPL, "callbacks", 2, "NBC createCbkGCell");
-  Instance gpl_inst(db_inst, pbc_.get(), log_);
+  Instance pb_inst(db_inst, pbc_.get(), log_);
 
-  pb_insts_stor_.push_back(gpl_inst);
+  pb_insts_stor_.push_back(pb_inst);
   GCell gcell(&pb_insts_stor_.back());
   gCellStor_.push_back(gcell);
   minRcCellSize_.emplace_back(gcell.lx(), gcell.ly(), gcell.ux(), gcell.uy());
