@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <map>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -453,6 +454,7 @@ void ThreeDBlox::readBMap(const std::string& bmap_file, bool create_bpins)
   BmapParser parser(logger_);
   BumpMapData data = parser.parseFile(bmap_file);
   std::vector<odb::dbInst*> bumps;
+  bumps.reserve(data.entries.size());
   for (const auto& entry : data.entries) {
     bumps.push_back(createBump(entry, block));
   }
