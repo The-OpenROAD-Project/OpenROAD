@@ -3610,7 +3610,9 @@ void NesterovBase::restoreRemovedFillers()
   size_t num_fill_before = fillerStor_.size();
   int64_t area_before = totalFillerArea_;
 
-  for (const auto& filler : removed_fillers_) {
+  while (!removed_fillers_.empty()) {
+    const auto& filler = removed_fillers_.back();
+
     fillerStor_.push_back(filler.gcell);
     size_t new_index = fillerStor_.size() - 1;
     nb_gcells_.emplace_back(this, new_index);
@@ -3644,6 +3646,7 @@ void NesterovBase::restoreRemovedFillers()
     snapshotSLPSumGrads_[idx] = filler.snapshotSLPSumGrads;
 
     totalFillerArea_ += getFillerCellArea();
+    removed_fillers_.pop_back();
   }
 
   size_t num_fill_after = fillerStor_.size();
