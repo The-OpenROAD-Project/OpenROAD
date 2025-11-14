@@ -277,12 +277,12 @@ void RouteBase::revertToMinCongestion()
   // revert
   nbc_->revertGCellSizeToMinRc();
   for (int j = 0; j < nbVec_.size(); j++) {
-    if (nbVec_[j]->group()) {
+    if (nbVec_[j]->getGroup()) {
       log_->info(GPL,
                  57,
                  "Target density at minimum routing congestion: {:.4f} ({})",
                  minRcTargetDensity_[j],
-                 nbVec_[j]->group() ? "" : nbVec_[j]->group()->getName());
+                 nbVec_[j]->getGroup() ? "" : nbVec_[j]->getGroup()->getName());
     } else {
       log_->info(GPL,
                  58,
@@ -634,7 +634,7 @@ std::pair<bool, bool> RouteBase::routability(
                     "Gcell {} from group {} is a Std instance, but is not "
                     "from NesterovBaseCommon. This shouldn't happen.",
                     gCellHandle->getName(),
-                    nbVec_[i]->group()->getName());
+                    nbVec_[i]->getGroup()->getName());
       }
       auto gCell = nbc_->getGCellByIndex(gCellHandle.getStorageIndex());
 
@@ -721,8 +721,8 @@ std::pair<bool, bool> RouteBase::routability(
     // max density detection
     if (nbVec_[i]->getTargetDensity() > rbVars_.maxDensity) {
       string group_text;
-      if (nbVec_[i]->group()) {
-        group_text = " in group " + string(nbVec_[i]->group()->getName());
+      if (nbVec_[i]->getGroup()) {
+        group_text = " in group " + string(nbVec_[i]->getGroup()->getName());
       }
       log_->info(GPL,
                  53,
