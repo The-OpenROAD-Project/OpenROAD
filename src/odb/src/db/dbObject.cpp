@@ -3,8 +3,6 @@
 
 #include "odb/dbObject.h"
 
-#include <spdlog/fmt/fmt.h>
-
 #include <cstdint>
 #include <cstring>
 #include <string>
