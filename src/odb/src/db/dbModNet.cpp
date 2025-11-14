@@ -229,31 +229,22 @@ void dbModNet::rename(const char* new_name)
 void dbModNet::disconnectAllTerms()
 {
   // Disconnect all terminals.
-  // Copy to a vector to avoid iterator invalidation issues.
-  dbSet<dbITerm> iterms_set = getITerms();
-  std::vector<dbITerm*> iterms(iterms_set.begin(), iterms_set.end());
-  for (dbITerm* iterm : iterms) {
-    iterm->disconnectDbModNet();
+  // - The loops are structured this way to handle the modification of the dbSet
+  // during iteration.
+  while (!getITerms().empty()) {
+    getITerms().begin()->disconnectDbModNet();
   }
 
-  dbSet<dbBTerm> bterms_set = getBTerms();
-  std::vector<dbBTerm*> bterms(bterms_set.begin(), bterms_set.end());
-  for (dbBTerm* bterm : bterms) {
-    bterm->disconnectDbModNet();
+  while (!getBTerms().empty()) {
+    getBTerms().begin()->disconnectDbModNet();
   }
 
-  dbSet<dbModITerm> moditerms_set = getModITerms();
-  std::vector<dbModITerm*> moditerms(moditerms_set.begin(),
-                                     moditerms_set.end());
-  for (dbModITerm* moditerm : moditerms) {
-    moditerm->disconnect();
+  while (!getModITerms().empty()) {
+    getModITerms().begin()->disconnect();
   }
 
-  dbSet<dbModBTerm> modbterms_set = getModBTerms();
-  std::vector<dbModBTerm*> modbterms(modbterms_set.begin(),
-                                     modbterms_set.end());
-  for (dbModBTerm* modbterm : modbterms) {
-    modbterm->disconnect();
+  while (!getModBTerms().empty()) {
+    getModBTerms().begin()->disconnect();
   }
 }
 
