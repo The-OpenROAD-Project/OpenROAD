@@ -1870,7 +1870,17 @@ void MainWindow::showGlobalConnect()
 
 void MainWindow::openDesign()
 {
-  const QString filefilter = "OpenDB (*.odb *.ODB)";
+  const std::vector<QString> exts{".odb", ".odb.gz", ".db", ".db.gz"};
+
+  QString filefilter = "OpenDB (";
+  for (const auto& ext : exts) {
+    if (filefilter.length() != 8) {
+      filefilter += " ";
+    }
+    filefilter += "*" + ext;
+    filefilter += " *" + ext.toUpper();
+  }
+  filefilter += ")";
   const QString file = QFileDialog::getOpenFileName(
       this, "Open Design", QString(), filefilter);
 
@@ -1879,15 +1889,21 @@ void MainWindow::openDesign()
   }
 
   try {
-    if (file.endsWith(".odb", Qt::CaseInsensitive)) {
-      open_->setEnabled(false);
-      ord::OpenRoad::openRoad()->readDb(file.toStdString().c_str());
-      logger_->warn(utl::GUI,
-                    77,
-                    "Timing data is not stored in {} and must be loaded "
-                    "separately, if needed.",
-                    file.toStdString());
-    } else {
+    bool found = false;
+    for (const auto& ext : exts) {
+      if (file.endsWith(ext, Qt::CaseInsensitive)) {
+        open_->setEnabled(false);
+        ord::OpenRoad::openRoad()->readDb(file.toStdString().c_str());
+        logger_->warn(utl::GUI,
+                      77,
+                      "Timing data is not stored in {} and must be loaded "
+                      "separately, if needed.",
+                      file.toStdString());
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
       logger_->error(utl::GUI, 76, "Unknown filetype: {}", file.toStdString());
     }
   } catch (const std::exception&) {
@@ -1898,7 +1914,17 @@ void MainWindow::openDesign()
 
 void MainWindow::saveDesign()
 {
-  const QString filefilter = "OpenDB (*.odb *.ODB)";
+  const std::vector<QString> exts{".odb", ".odb.gz", ".db", ".db.gz"};
+
+  QString filefilter = "OpenDB (";
+  for (const auto& ext : exts) {
+    if (filefilter.length() != 8) {
+      filefilter += " ";
+    }
+    filefilter += "*" + ext;
+    filefilter += " *" + ext.toUpper();
+  }
+  filefilter += ")";
   const QString file = QFileDialog::getSaveFileName(
       this, "Save Design", QString(), filefilter);
 
