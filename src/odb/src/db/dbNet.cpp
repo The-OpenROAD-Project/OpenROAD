@@ -2725,7 +2725,7 @@ void _dbNet::dumpConnectivityRecursive(const dbObject* obj,
                    "",
                    level * 2,
                    obj->getTypeName(),
-                   odb::dbUtil::getObjName(obj),
+                   obj->getName(),
                    obj->getId(),
                    details,
                    " [visited]");
@@ -2736,7 +2736,7 @@ void _dbNet::dumpConnectivityRecursive(const dbObject* obj,
                  "",
                  level * 2,
                  obj->getTypeName(),
-                 odb::dbUtil::getObjName(obj),
+                 obj->getName(),
                  obj->getId(),
                  details);
   visited.insert(obj);

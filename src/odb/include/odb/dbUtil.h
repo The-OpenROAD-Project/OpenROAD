@@ -15,34 +15,6 @@ namespace odb {
 
 namespace dbUtil {
 
-// Get dbObject name
-inline std::string getObjName(const odb::dbObject* obj)
-{
-  if (obj == nullptr) {
-    return "null";
-  }
-  switch (obj->getObjectType()) {
-    case dbNetObj:
-      return static_cast<const dbNet*>(obj)->getName();
-    case dbModNetObj:
-      return static_cast<const dbModNet*>(obj)->getName();
-    case dbITermObj:
-      return static_cast<const dbITerm*>(obj)->getName();
-    case dbBTermObj:
-      return static_cast<const dbBTerm*>(obj)->getName();
-    case dbModITermObj:
-      return static_cast<const dbModITerm*>(obj)->getName();
-    case dbModBTermObj:
-      return static_cast<const dbModBTerm*>(obj)->getName();
-    case dbInstObj:
-      return static_cast<const dbInst*>(obj)->getName();
-    case dbModInstObj:
-      return static_cast<const dbModInst*>(obj)->getName();
-    default:
-      return "<invalid_dbObject_type>";
-  }
-}
-
 // Find BTerm drivers
 template <typename NetType>
 void findBTermDrivers(const NetType* net, std::vector<dbObject*>& drvr_vec)
