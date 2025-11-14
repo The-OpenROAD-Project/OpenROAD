@@ -2614,19 +2614,18 @@ float NesterovBase::getStepLength(
     const std::vector<FloatPoint>& curSLPCoordi_,
     const std::vector<FloatPoint>& curSLPSumGrads_)
 {
-  float coordiDistance = getDistance(prevSLPCoordi_, curSLPCoordi_);
-  float gradDistance = getDistance(prevSLPSumGrads_, curSLPSumGrads_);
-
+  coordiDistance_ = getDistance(prevSLPCoordi_, curSLPCoordi_);
+  gradDistance_ = getDistance(prevSLPSumGrads_, curSLPSumGrads_);
   debugPrint(log_,
              GPL,
              "getStepLength",
              1,
-             "CoordinateDistance: {:g}",
-             coordiDistance);
-  debugPrint(
-      log_, GPL, "getStepLength", 1, "GradientDistance: {:g}", gradDistance);
+             "CoordinateDis {:g}, GradientDist {:g}, StepLength: {:g}",
+             coordiDistance_,
+             gradDistance_,
+             stepLength_);
 
-  return coordiDistance / gradDistance;
+  return coordiDistance_ / gradDistance_;
 }
 
 // to execute following function,
@@ -3300,6 +3299,13 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
   int64_t area_change = newCellArea - prevCellArea;
   delta_area_ += area_change;
+  if (area_change > 0) {
+    gcell->setAreaChangeType(GCell::GCellChange::kUpsize);
+  } else if (area_change < 0) {
+    gcell->setAreaChangeType(GCell::GCellChange::kDownsize);
+  } else {
+    gcell->setAreaChangeType(GCell::GCellChange::kResizeNoChange);
+  }
 }
 
 void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
@@ -3432,6 +3438,7 @@ size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
                         * static_cast<int64_t>(gcell_ptr->dy());
   delta_area_ += area_change;
   new_gcells_count_++;
+  gcell_ptr->setAreaChangeType(GCell::GCellChange::kNewInstance);
   return gCellStor_.size() - 1;
 }
 

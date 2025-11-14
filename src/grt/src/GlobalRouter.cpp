@@ -3743,7 +3743,28 @@ std::vector<Net*> GlobalRouter::findNets(bool init_clock_nets)
     db_nets = nets_to_route_;
   }
   std::vector<Net*> clk_nets;
+  const int large_fanout_threshold = 1000;
   for (odb::dbNet* db_net : db_nets) {
+    const bool is_special
+        = db_net->getSigType().isSupply() && db_net->isSpecial();
+    if (!is_special && db_net->getTermCount() > skip_large_fanout_) {
+      logger_->info(GRT,
+                    280,
+                    "Skipping net {} with {} terminals.",
+                    db_net->getConstName(),
+                    db_net->getTermCount(),
+                    skip_large_fanout_);
+      continue;
+    }
+
+    if (!is_special && db_net->getTermCount() > large_fanout_threshold) {
+      logger_->warn(GRT,
+                    281,
+                    "Net {} has a large fanout of {} terminals.",
+                    db_net->getConstName(),
+                    db_net->getTermCount());
+    }
+
     Net* net = addNet(db_net);
     // add clock nets not connected to a leaf first
     if (net) {
@@ -3888,14 +3909,6 @@ void GlobalRouter::makeItermPins(Net* net,
     if (!inst->isPlaced()) {
       logger_->error(GRT, 10, "Instance {} is not placed.", inst->getName());
     }
-
-    if (!die_area.contains(inst->getBBox()->getBox())) {
-      logger_->error(GRT,
-                     280,
-                     "Instance {} is completely outside the die area.",
-                     inst->getName());
-    }
-
     const odb::dbTransform transform = inst->getTransform();
 
     odb::Point pin_pos;
@@ -5190,6 +5203,12 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
   callback_handler_->triggerOnPinAccessUpdateRequired();
   std::vector<Net*> dirty_nets;
+
+  if (!initialized_) {
+    int min_layer, max_layer;
+    getMinMaxLayer(min_layer, max_layer);
+    initFastRoute(min_layer, max_layer);
+  }
 
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);

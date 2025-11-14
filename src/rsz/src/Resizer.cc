@@ -4562,7 +4562,7 @@ void Resizer::journalEnd()
     estimate_parasitics_->updateParasitics();
     sta_->findRequireds();
   }
-  odb::dbDatabase::endEco(block_);
+  odb::dbDatabase::commitEco(block_);
 
   int move_count_ = 0;
   move_count_ += size_up_move_->numPendingMoves();
@@ -4638,7 +4638,7 @@ void Resizer::journalRestore()
   init();
 
   if (odb::dbDatabase::ecoEmpty(block_)) {
-    odb::dbDatabase::endEco(block_);
+    odb::dbDatabase::undoEco(block_);
     debugPrint(logger_,
                RSZ,
                "journal",
@@ -4648,7 +4648,6 @@ void Resizer::journalRestore()
   }
 
   // Odb callbacks invalidate parasitics
-  odb::dbDatabase::endEco(block_);
   odb::dbDatabase::undoEco(block_);
 
   estimate_parasitics_->updateParasitics();
