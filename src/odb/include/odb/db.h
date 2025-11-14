@@ -1666,9 +1666,9 @@ class dbBTerm : public dbObject
   bool isMirrored();
 
   ///
-  /// Return true if this BTerm is allocated
+  /// Return true if the BTerm is allocated
   ///
-  bool isValid() const;
+  static bool isValid(const dbBTerm* bterm, const dbBlock* block);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3343,9 +3343,9 @@ class dbITerm : public dbObject
   void clearPrefAccessPoints();
 
   ///
-  /// Return true if this ITerm and its instance are allocated
+  /// Return true if the ITerm is allocated
   ///
-  bool isValid() const;
+  static bool isValid(const dbITerm* iterm, const dbBlock* block);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -8327,9 +8327,9 @@ class dbModBTerm : public dbObject
   dbBusPort* getBusPort() const;
 
   ///
-  /// Return true if this dbModBTerm is allocated
+  /// Return true if the dbModBTerm is allocated
   ///
-  bool isValid() const;
+  static bool isValid(const dbModBTerm* modbterm, const dbBlock* block);
 
   static dbModBTerm* create(dbModule* parentModule, const char* name);
   static void destroy(dbModBTerm*);
@@ -8402,9 +8402,9 @@ class dbModITerm : public dbObject
   void disconnect();
 
   ///
-  /// Return true if this dbModITerm and its dbModInst are allocated
+  /// Return true if the dbModITerm is allocated
   ///
-  bool isValid() const;
+  static bool isValid(const dbModITerm* moditerm, const dbBlock* block);
 
   static dbModITerm* create(dbModInst* parentInstance,
                             const char* name,

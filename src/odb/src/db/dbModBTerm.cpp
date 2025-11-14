@@ -524,12 +524,13 @@ dbSet<dbModBTerm>::iterator dbModBTerm::destroy(
   return next;
 }
 
-bool dbModBTerm::isValid() const
+bool dbModBTerm::isValid(const dbModBTerm* modbterm, const dbBlock* block)
 {
-  const _dbModBTerm* modbterm = (const _dbModBTerm*) this;
-  const _dbBlock* block = (const _dbBlock*) modbterm->getOwner();
-  return block->_modbterm_tbl->validId(modbterm->getOID())
-         && block->_module_tbl->validId(modbterm->_parent);
+  if (modbterm == nullptr || block == nullptr) {
+    return false;
+  }
+  const _dbBlock* block_impl = (const _dbBlock*) block;
+  return block_impl->_modbterm_tbl->validId(modbterm->getId());
 }
 
 // User Code End dbModBTermPublicMethods
