@@ -1202,7 +1202,6 @@ bool PlacerPadPlacer::padSpreading(
   bool has_violations = false;
 
   const auto& insts = getInsts();
-  const auto& inst_widths = getInstWidths();
   const double dbus = getBlock()->getDbUnitsPerMicron();
   const int site_width = getRow()->getSpacing();
 
@@ -1351,7 +1350,6 @@ bool PlacerPadPlacer::padSpreading(
 std::map<odb::dbInst*, int> PlacerPadPlacer::padSpreading(
     const std::map<odb::dbInst*, int>& initial_positions) const
 {
-  const auto& insts = getInsts();
   const auto& inst_widths = getInstWidths();
 
   // Snap all positions to row index
