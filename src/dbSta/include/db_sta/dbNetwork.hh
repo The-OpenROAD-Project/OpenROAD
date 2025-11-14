@@ -39,19 +39,8 @@ using odb::dbSet;
 using odb::dbSigType;
 using odb::Point;
 
-class dbNetwork;
+class dbNetwork; 
 class dbEditHierarchy;
-
-// This struct contains common information about Pins
-// (dbITerm, dbBTerm or dbModITerm) for debugging purposes.
-struct PinInfo
-{
-  const char* name = "NOT_ALLOC";  // Pin hierarchical name
-  int id = 0;                      // dbObject ID
-  const char* type_name = "NULL";  // dbObject type name
-  bool valid = false;              // false if it is a freed dbObject
-  void* addr = nullptr;
-};
 
 // This class handles callbacks from the network to the listeners
 class dbNetworkObserver
@@ -105,6 +94,7 @@ class dbNetwork : public ConcreteNetwork
   void removeObserver(dbNetworkObserver* observer);
 
   dbBlock* block() const { return block_; }
+  utl::Logger* getLogger() const { return logger_; }
   void makeLibrary(dbLib* lib);
   void makeCell(Library* library, dbMaster* master);
   void makeVerilogCell(Library* library, dbModInst*);
@@ -396,11 +386,6 @@ class dbNetwork : public ConcreteNetwork
   PortMemberIterator* memberIterator(const Port* port) const override;
   void removeDriverFromCache(const Net* net, const Pin* drvr);
 
-  ////////////////////////////////////////////////////////////////
-  // Debug functions
-  PinInfo getPinInfo(const Pin* pin) const;
-  void dumpNetDrvrPinMap() const;
-
   using Network::cell;
   using Network::direction;
   using Network::findCellsMatching;
@@ -427,6 +412,10 @@ class dbNetwork : public ConcreteNetwork
                           NetSet& visited_nets) const override;
   bool portMsbFirst(const char* port_name, const char* cell_name);
   ObjectId getDbNwkObjectId(const dbObject* object) const;
+
+  ////////////////////////////////////////////////////////////////
+  // Debug functions
+  void dumpNetDrvrPinMap() const;
 
   dbDatabase* db_ = nullptr;
   Logger* logger_ = nullptr;

@@ -108,6 +108,8 @@ using odb::dbPlacementStatus;
 using odb::dbSet;
 using odb::dbSigType;
 
+namespace {
+
 // TODO: move to StringUtil
 char* tmpStringCopy(const char* str)
 {
@@ -115,6 +117,58 @@ char* tmpStringCopy(const char* str)
   strcpy(tmp, str);
   return tmp;
 }
+
+// This struct contains common information about Pins
+// (dbITerm, dbBTerm or dbModITerm) for debugging purposes.
+struct PinInfo
+{
+  const char* name = "NOT_ALLOC";  // Pin hierarchical name
+  int id = 0;                      // dbObject ID
+  const char* type_name = "NULL";  // dbObject type name
+  bool valid = false;              // false if it is a freed dbObject
+  void* addr = nullptr;
+};
+
+PinInfo getPinInfo(const dbNetwork* network, const Pin* pin)
+{
+  PinInfo info{"NOT_ALLOC", 0, "NULL", false, nullptr};
+  dbITerm* iterm;
+  dbBTerm* bterm;
+  dbModITerm* moditerm;
+  network->staToDb(pin, iterm, bterm, moditerm);
+
+  if (iterm) {
+    info.id = iterm->getId();
+    info.type_name = iterm->getTypeName();
+    info.valid = iterm->isValid();
+    info.addr = static_cast<void*>(iterm);
+  } else if (bterm) {
+    info.id = bterm->getId();
+    info.type_name = bterm->getTypeName();
+    info.valid = bterm->isValid();
+    info.addr = static_cast<void*>(bterm);
+  } else if (moditerm) {
+    info.id = moditerm->getId();
+    info.type_name = moditerm->getTypeName();
+    info.valid = moditerm->isValid();
+    info.addr = static_cast<void*>(moditerm);
+  }
+
+  if (info.valid) {
+    info.name = network->pathName(pin);
+  } else {
+    network->getLogger()->error(
+        ORD,
+        2014,
+        "Attempted to access invalid pin {}({}). Check if it is "
+        "deleted.",
+        info.type_name,
+        info.id);
+  }
+
+  return info;
+}
+}  // namespace
 
 //
 // Handling of object ids (Hierachy Mode)
@@ -4827,7 +4881,7 @@ void dbNetwork::checkSanityNetDrvrPinMapConsistency() const
       logger_->warn(ORD, 2006, "Inconsistency found for net {}", pathName(net));
       logger_->report("  Netlist drivers:");
       for (const Pin* pin : netlist_drivers) {
-        const PinInfo pin_info = getPinInfo(pin);
+        const PinInfo pin_info = getPinInfo(this, pin);
         logger_->report("    - {} (type: {}, id: {})",
                         pin_info.name,
                         pin_info.type_name,
@@ -4836,7 +4890,7 @@ void dbNetwork::checkSanityNetDrvrPinMapConsistency() const
       logger_->report("  Cached drivers:");
       if (cached_drivers_ptr) {
         for (const Pin* pin : *cached_drivers_ptr) {
-          const PinInfo pin_info = getPinInfo(pin);
+          const PinInfo pin_info = getPinInfo(this, pin);
           logger_->report("    - {} (type: {}, id: {})",
                           pin_info.name,
                           pin_info.type_name,
@@ -4845,45 +4899,6 @@ void dbNetwork::checkSanityNetDrvrPinMapConsistency() const
       }
     }
   }
-}
-
-PinInfo dbNetwork::getPinInfo(const Pin* pin) const
-{
-  PinInfo info{"NOT_ALLOC", 0, "NULL", false, nullptr};
-  dbITerm* iterm;
-  dbBTerm* bterm;
-  dbModITerm* moditerm;
-  staToDb(pin, iterm, bterm, moditerm);
-
-  if (iterm) {
-    info.id = iterm->getId();
-    info.type_name = iterm->getTypeName();
-    info.valid = iterm->isValid();
-    info.addr = static_cast<void*>(iterm);
-  } else if (bterm) {
-    info.id = bterm->getId();
-    info.type_name = bterm->getTypeName();
-    info.valid = bterm->isValid();
-    info.addr = static_cast<void*>(bterm);
-  } else if (moditerm) {
-    info.id = moditerm->getId();
-    info.type_name = moditerm->getTypeName();
-    info.valid = moditerm->isValid();
-    info.addr = static_cast<void*>(moditerm);
-  }
-
-  if (info.valid) {
-    info.name = pathName(pin);
-  } else {
-    logger_->error(ORD,
-                   2014,
-                   "Attempted to access invalid pin {}({}). Check if it is "
-                   "deleted.",
-                   info.type_name,
-                   info.id);
-  }
-
-  return info;
 }
 
 void dbNetwork::dumpNetDrvrPinMap() const
@@ -4911,7 +4926,7 @@ void dbNetwork::dumpNetDrvrPinMap() const
       continue;
     }
     for (const Pin* pin : *pin_set) {
-      const PinInfo pin_info = getPinInfo(pin);
+      const PinInfo pin_info = getPinInfo(this, pin);
       logger_->report("  - {} {}({}, {:p})",
                       pin_info.name,
                       pin_info.type_name,
