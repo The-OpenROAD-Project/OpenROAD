@@ -99,6 +99,9 @@ static bool HasNonInputOutputPorts(sta::LibertyCell* cell)
     if (port->direction()->isInput()) {
       continue;
     }
+    if (port->isPwrGnd()) {
+      continue;
+    }
 
     return true;
   }
