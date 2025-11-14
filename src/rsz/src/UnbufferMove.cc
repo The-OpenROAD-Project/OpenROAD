@@ -411,14 +411,18 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   //   mergeNet() can involve the hierarchical net traversal during the merge
   //   operation.
   if (survivor_modnet != nullptr && removed_modnet != nullptr) {
+    // Merge two hier nets
     survivor_modnet->mergeModNet(removed_modnet);
   } else if (survivor_modnet != nullptr) {
-    survivor_modnet->mergeNet(db_removed);
+    // If there is a single modnet, copy terminals of the flat net to be removed
+    survivor_modnet->connectTermsOf(db_removed);
   } else if (removed_modnet != nullptr) {
     // If there is a single modnet, it should survive.
     survivor_modnet = removed_modnet;
     removed_modnet = nullptr;
-    survivor_modnet->mergeNet(db_survivor);
+
+    // Copy terminals of the survivor flat net
+    survivor_modnet->connectTermsOf(db_survivor);
 
     // survivor_modnet should be renamed later.
     new_modnet_name

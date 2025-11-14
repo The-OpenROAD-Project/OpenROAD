@@ -8446,9 +8446,9 @@ class dbModNet : public dbObject
   void mergeModNet(dbModNet* in_modnet);
 
   ///
-  /// Merge the terminals of the in_net with this modnet
+  /// Connect the terminals of the in_net with this modnet
   ///
-  void mergeNet(dbNet* in_net);
+  void connectTermsOf(dbNet* in_net);
 
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);

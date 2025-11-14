@@ -562,26 +562,34 @@ void dbModNet::mergeModNet(dbModNet* in_modnet)
   }
 }
 
-void dbModNet::mergeNet(dbNet* in_net)
+void dbModNet::connectTermsOf(dbNet* in_net)
 {
   _dbModNet* net = (_dbModNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
   for (auto callback : block->_callbacks) {
-    callback->inDbModNetPreMerge(this, in_net);
+    callback->inDbModNetPreConnectTermsOf(this, in_net);
   }
 
   // Create vectors for safe iteration, as connect() can invalidate iterators.
   auto iterms_set = in_net->getITerms();
   std::vector<dbITerm*> iterms(iterms_set.begin(), iterms_set.end());
+  dbModule* modnet_parent = getParent();
   for (dbITerm* iterm : iterms) {
-    iterm->connect(this);
+    // Only connect terminals that are in the same module as the modnet
+    if (iterm->getInst()->getModule() == modnet_parent) {
+      iterm->connect(this);
+    }
   }
 
   auto bterms_set = in_net->getBTerms();
   std::vector<dbBTerm*> bterms(bterms_set.begin(), bterms_set.end());
   for (dbBTerm* bterm : bterms) {
-    bterm->connect(this);
+    // Only connect terminals that are in the same module as the modnet
+    // BTerms are considered to be in the top module of the block.
+    if (bterm->getBlock()->getTopModule() == modnet_parent) {
+      bterm->connect(this);
+    }
   }
 }
 
