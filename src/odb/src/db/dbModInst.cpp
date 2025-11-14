@@ -268,7 +268,7 @@ void dbModInst::destroy(dbModInst* modinst)
   }
 
   // This must be called after callbacks because they need _mod_inst
-  _master->_mod_inst = dbId<_dbModInst>();  // clear
+  _master->_mod_inst.clear();
 
   // unlink from parent start
   uint id = _modinst->getOID();
