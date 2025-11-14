@@ -602,6 +602,30 @@ std::pair<bool, bool> RouteBase::routability(
                curRc,
                minRc_,
                min_RC_violated_cnt_);
+
+    // rc not improvement detection -- (not improved the RC values 3 times in a
+    // row)
+    if (min_RC_violated_cnt_ >= max_routability_no_improvement_) {
+      log_->info(GPL,
+                 54,
+                 "No improvement in routing congestion for {} consecutive "
+                 "iterations (limit is {}).",
+                 min_RC_violated_cnt_,
+                 max_routability_no_improvement_);
+
+      revertToMinCongestion();
+      return std::make_pair(false, true);
+    }
+  }
+
+  if (routability_driven_revert_count >= max_routability_revert_) {
+    log_->info(GPL,
+               91,
+               "Routability mode reached the maximum allowed reverts {}",
+               routability_driven_revert_count);
+
+    revertToMinCongestion();
+    return std::make_pair(false, true);
   }
 
   // set inflated ratio
@@ -734,29 +758,6 @@ std::pair<bool, bool> RouteBase::routability(
       revertToMinCongestion();
       return std::make_pair(false, true);
     }
-  }
-
-  if (routability_driven_revert_count >= max_routability_revert_) {
-    log_->info(GPL,
-               91,
-               "Routability mode reached the maximum allowed reverts {}",
-               routability_driven_revert_count);
-
-    revertToMinCongestion();
-    return std::make_pair(false, true);
-  }
-  // rc not improvement detection -- (not improved the RC values 3 times in a
-  // row)
-  if (min_RC_violated_cnt_ >= max_routability_no_improvement_) {
-    log_->info(GPL,
-               54,
-               "No improvement in routing congestion for {} consecutive "
-               "iterations (limit is {}).",
-               min_RC_violated_cnt_,
-               max_routability_no_improvement_);
-
-    revertToMinCongestion();
-    return std::make_pair(false, true);
   }
 
   // updateArea
