@@ -1043,13 +1043,4 @@ bool dbBTerm::isMirrored()
   return bterm->_is_mirrored;
 }
 
-bool dbBTerm::isValid(const dbBTerm* bterm, const dbBlock* block)
-{
-  if (bterm == nullptr || block == nullptr) {
-    return false;
-  }
-  const _dbBlock* block_impl = (const _dbBlock*) block;
-  return block_impl->_bterm_tbl->validId(bterm->getId());
-}
-
 }  // namespace odb

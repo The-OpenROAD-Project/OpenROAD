@@ -524,15 +524,6 @@ dbSet<dbModBTerm>::iterator dbModBTerm::destroy(
   return next;
 }
 
-bool dbModBTerm::isValid(const dbModBTerm* modbterm, const dbBlock* block)
-{
-  if (modbterm == nullptr || block == nullptr) {
-    return false;
-  }
-  const _dbBlock* block_impl = (const _dbBlock*) block;
-  return block_impl->_modbterm_tbl->validId(modbterm->getId());
-}
-
 // User Code End dbModBTermPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

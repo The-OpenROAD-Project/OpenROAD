@@ -140,17 +140,17 @@ PinInfo getPinInfo(const dbNetwork* network, const Pin* pin)
   if (iterm) {
     info.id = iterm->getId();
     info.type_name = iterm->getTypeName();
-    info.valid = dbITerm::isValid(iterm, network->block());
+    info.valid = iterm->isValid();
     info.addr = static_cast<void*>(iterm);
   } else if (bterm) {
     info.id = bterm->getId();
     info.type_name = bterm->getTypeName();
-    info.valid = dbBTerm::isValid(bterm, network->block());
+    info.valid = bterm->isValid();
     info.addr = static_cast<void*>(bterm);
   } else if (moditerm) {
     info.id = moditerm->getId();
     info.type_name = moditerm->getTypeName();
-    info.valid = dbModITerm::isValid(moditerm, network->block());
+    info.valid = moditerm->isValid();
     info.addr = static_cast<void*>(moditerm);
   }
 

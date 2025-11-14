@@ -900,15 +900,6 @@ std::vector<std::pair<dbTechLayer*, Rect>> dbITerm::getGeometries() const
   return geometries;
 }
 
-bool dbITerm::isValid(const dbITerm* iterm, const dbBlock* block)
-{
-  if (iterm == nullptr || block == nullptr) {
-    return false;
-  }
-  const _dbBlock* block_impl = (const _dbBlock*) block;
-  return block_impl->_iterm_tbl->validId(iterm->getId());
-}
-
 void _dbITerm::collectMemInfo(MemInfo& info)
 {
   info.cnt++;

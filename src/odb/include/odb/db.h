@@ -1664,11 +1664,6 @@ class dbBTerm : public dbObject
   /// Return true if this BTerm is mirrored with another pin.
   ///
   bool isMirrored();
-
-  ///
-  /// Return true if the BTerm is allocated
-  ///
-  static bool isValid(const dbBTerm* bterm, const dbBlock* block);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3341,11 +3336,6 @@ class dbITerm : public dbObject
   /// Destroys all access points of each pin.
   ///
   void clearPrefAccessPoints();
-
-  ///
-  /// Return true if the ITerm is allocated
-  ///
-  static bool isValid(const dbITerm* iterm, const dbBlock* block);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -8326,11 +8316,6 @@ class dbModBTerm : public dbObject
   void setBusPort(dbBusPort*);
   dbBusPort* getBusPort() const;
 
-  ///
-  /// Return true if the dbModBTerm is allocated
-  ///
-  static bool isValid(const dbModBTerm* modbterm, const dbBlock* block);
-
   static dbModBTerm* create(dbModule* parentModule, const char* name);
   static void destroy(dbModBTerm*);
   static dbSet<dbModBTerm>::iterator destroy(dbSet<dbModBTerm>::iterator& itr);
@@ -8400,11 +8385,6 @@ class dbModITerm : public dbObject
   dbModBTerm* getChildModBTerm() const;
   void connect(dbModNet* modnet);
   void disconnect();
-
-  ///
-  /// Return true if the dbModITerm is allocated
-  ///
-  static bool isValid(const dbModITerm* moditerm, const dbBlock* block);
 
   static dbModITerm* create(dbModInst* parentInstance,
                             const char* name,

@@ -166,6 +166,7 @@ class dbObject
   uint getId() const;
   const char* getTypeName() const;
   std::string getName() const;
+  bool isValid() const;
 
   static const char* getTypeName(dbObjectType type);
   static dbObjectType getType(const char* name, utl::Logger* logger);

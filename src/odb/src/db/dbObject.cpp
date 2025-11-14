@@ -3,6 +3,8 @@
 
 #include "odb/dbObject.h"
 
+#include <spdlog/fmt/fmt.h>
+
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -452,8 +454,13 @@ std::string dbObject::getName() const
     case dbModInstObj:
       return static_cast<const dbModInst*>(this)->getName();
     default:
-      return "<no_name>";
+      return fmt::format("<{}:{}>", getTypeName(), getId());
   }
+}
+
+bool dbObject::isValid() const
+{
+  return getImpl()->isValid();
 }
 
 dbIStream& operator>>(dbIStream& stream, dbObjectType& type)
