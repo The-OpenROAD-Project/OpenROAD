@@ -418,44 +418,51 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   }
 
   // jk: behavior change point3
-  if (db_network_->hasHierarchy() == false) {
-    if (db_removed) {
-      db_survivor->mergeNet(db_removed);
-    }
-    sta_->disconnectPin(in_pin);
-    sta_->disconnectPin(out_pin);
-  } else {
-    // Disconnect buffer input/output pins
-    sta_->disconnectPin(in_pin);
-    sta_->disconnectPin(out_pin);
+  // if (db_network_->hasHierarchy() == false) {
+  //  if (db_removed) {
+  //    db_survivor->mergeNet(db_removed);
+  //  }
+  //  sta_->disconnectPin(in_pin);
+  //  sta_->disconnectPin(out_pin);
+  //} else {
 
-    // Merge hier net
-    // - mergeModNet() should be done before mergeNet() because
-    //   mergeNet() can involve the hierarchical net traversal during the merge
-    //   operation.
-    if (survivor_modnet != nullptr && removed_modnet != nullptr) {
-      // Merge two hier nets
-      survivor_modnet->mergeModNet(removed_modnet);
-    } else if (survivor_modnet != nullptr) {
-      // If there is a single modnet, copy terminals of the flat net to be
-      // removed
-      survivor_modnet->connectTermsOf(db_removed);
-    } else if (removed_modnet != nullptr) {
-      // If there is a single modnet, it should survive.
-      survivor_modnet = removed_modnet;
-      removed_modnet = nullptr;
+  // jk: behavior change point4
+  // Disconnect buffer input/output pins
+  // sta_->disconnectPin(in_pin);
+  // sta_->disconnectPin(out_pin);
 
-      // Copy terminals of the survivor flat net
-      survivor_modnet->connectTermsOf(db_survivor);
+  // Merge hier net
+  // - mergeModNet() should be done before mergeNet() because
+  //   mergeNet() can involve the hierarchical net traversal during the merge
+  //   operation.
+  if (survivor_modnet != nullptr && removed_modnet != nullptr) {
+    // Merge two hier nets
+    survivor_modnet->mergeModNet(removed_modnet);
+  } else if (survivor_modnet != nullptr) {
+    // If there is a single modnet, copy terminals of the flat net to be
+    // removed
+    survivor_modnet->connectTermsOf(db_removed);
+  } else if (removed_modnet != nullptr) {
+    // If there is a single modnet, it should survive.
+    survivor_modnet = removed_modnet;
+    removed_modnet = nullptr;
 
-      // survivor_modnet should be renamed later.
-      new_modnet_name = db_survivor->getBlock()->getBaseName(
-          db_survivor->getName().c_str());
-    }
+    // Copy terminals of the survivor flat net
+    survivor_modnet->connectTermsOf(db_survivor);
 
-    // Merge flat net
-    db_survivor->mergeNet(db_removed);
+    // survivor_modnet should be renamed later.
+    new_modnet_name
+        = db_survivor->getBlock()->getBaseName(db_survivor->getName().c_str());
   }
+
+  // Merge flat net
+  db_survivor->mergeNet(db_removed);
+
+  // jk: behavior change point4
+  // Disconnect buffer input/output pins
+  sta_->disconnectPin(in_pin);
+  sta_->disconnectPin(out_pin);
+  //}
 
   // Remove buffer
   sta_->deleteInstance(buffer);
