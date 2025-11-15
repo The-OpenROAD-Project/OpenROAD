@@ -32,6 +32,8 @@ class ThreeDBlox
   ~ThreeDBlox() = default;
   void readDbv(const std::string& dbv_file);
   void readDbx(const std::string& dbx_file);
+  void writeDbv(const std::string& dbv_file);
+  void writeDbx(const std::string& dbx_file);
 
  private:
   void createChiplet(const ChipletDef& chiplet);

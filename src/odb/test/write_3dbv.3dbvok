@@ -1,0 +1,23 @@
+Header:
+  version: 2.5
+  unit: micron
+  precision: 100000
+ChipletDef:
+  SoC:
+    type: die
+    design_area: [955, 1082]
+    thickness: 300
+    shrink: 1
+    tsv: false
+    external:
+      APR_tech_file: [Nangate45_tech.lef]
+      LEF_file: [fake_macros_1.lef]
+      DEF_file: SoC.def
+    regions:
+      r1:
+        side: front
+        coords:
+          - [0, 0]
+          - [955, 0]
+          - [955, 1082]
+          - [0, 1082]
