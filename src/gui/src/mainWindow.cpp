@@ -1914,7 +1914,7 @@ void MainWindow::openDesign()
 
 void MainWindow::saveDesign()
 {
-  const std::vector<QString> exts{".odb", ".odb.gz", ".db", ".db.gz"};
+  const std::vector<QString> exts{".odb", ".odb.gz"};
 
   QString filefilter = "OpenDB (";
   for (const auto& ext : exts) {
