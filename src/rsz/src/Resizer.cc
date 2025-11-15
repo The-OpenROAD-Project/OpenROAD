@@ -4910,9 +4910,7 @@ void Resizer::checkLoadSlews(const Pin* drvr_pin,
                   = corner1->findDcalcAnalysisPt(max_);
               const Vertex* vertex = graph_->pinLoadVertex(pin);
               Slew slew2 = sta_->graph()->slew(vertex, rf, dcalc_ap->index());
-              if (slew2 > slew1) {
-                slew1 = slew2;
-              }
+              slew1 = std::max(slew1, slew2);
             }
           }
         }

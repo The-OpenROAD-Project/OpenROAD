@@ -328,10 +328,10 @@ void RepairDesign::repairDesign(
              "annotated slew to non-violating value on {} load vertices",
              annotations_to_clean_up.size());
 
+  int print_iteration = 0;
   {
     // Fix violations from outputs to inputs
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
-    int print_iteration = 0;
     if (resizer_->level_drvr_vertices_.size()
         > size_t(5) * max_print_interval_) {
       print_interval_ = max_print_interval_;
