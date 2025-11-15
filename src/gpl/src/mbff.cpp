@@ -598,7 +598,7 @@ bool MBFF::IsValidTray(dbInst* tray)
                 == tray->getITerms().size();
 }
 
-PortName MBFF::PortType(const sta::LibertyPort* lib_port, dbInst* inst)
+MBFF::PortName MBFF::PortType(const sta::LibertyPort* lib_port, dbInst* inst)
 {
   dbMTerm* mterm = network_->staToDb(lib_port);
 
