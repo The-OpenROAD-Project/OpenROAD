@@ -172,6 +172,7 @@ class _dbObject : public dbObject
   dbObjectType getType() const;
   uint getOID() const;
   utl::Logger* getLogger() const;
+  bool isValid() const { return _oid & DB_ALLOC_BIT; };
 
  private:
   uint _oid;

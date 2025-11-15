@@ -144,7 +144,7 @@ dbInst* dbITerm::getInst() const
   return (dbInst*) inst;
 }
 
-dbNet* dbITerm::getNet()
+dbNet* dbITerm::getNet() const
 {
   _dbITerm* iterm = (_dbITerm*) this;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
@@ -388,7 +388,7 @@ void dbITerm::connect(dbNet* net_)
   }
 }
 
-dbModNet* dbITerm::getModNet()
+dbModNet* dbITerm::getModNet() const
 {
   _dbITerm* iterm = (_dbITerm*) this;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
@@ -694,16 +694,19 @@ void dbITerm::disconnectDbModNet()
         prev->_next_modnet_iterm = iterm->_next_modnet_iterm;
       }
     }
+
+    iterm->_next_modnet_iterm = 0;
+    iterm->_prev_modnet_iterm = 0;
     iterm->_mnet = 0;
   }
 }
 
-dbSigType dbITerm::getSigType()
+dbSigType dbITerm::getSigType() const
 {
   _dbMTerm* mterm = (_dbMTerm*) getMTerm();
   return dbSigType(mterm->_flags._sig_type);
 }
-dbIoType dbITerm::getIoType()
+dbIoType dbITerm::getIoType() const
 {
   _dbMTerm* mterm = (_dbMTerm*) getMTerm();
   return dbIoType(mterm->_flags._io_type);

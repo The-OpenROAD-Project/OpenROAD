@@ -702,7 +702,7 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone226/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      450 |       0 |      15 |        4 |     14 |     2 |    +5.6% |   -0.155 |      -19.9 |    150 | load149/D
+      450 |       0 |      15 |        4 |     14 |     2 |    +5.6% |   -0.155 |      -19.9 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone227/ZN
       450 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
@@ -711,7 +711,7 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone228/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone231/ZN
-      460 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
+      460 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone231/ZN
       460 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
@@ -720,7 +720,7 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone233/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone236/ZN
-      470 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
+      470 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone236/ZN
       470 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
@@ -729,7 +729,7 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone238/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone241/ZN
-      480 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
+      480 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone241/ZN
       480 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
@@ -738,7 +738,7 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone243/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone246/ZN
-      490 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
+      490 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone246/ZN
       490 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
@@ -747,7 +747,7 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone248/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone251/ZN
-      500 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
+      500 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone251/ZN
       500 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
@@ -757,7 +757,7 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone253/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      510 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
+      510 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone257/ZN
       510 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
@@ -767,7 +767,7 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone258/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      520 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
+      520 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone262/ZN
       520 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
@@ -777,7 +777,7 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone263/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      530 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
+      530 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone267/ZN
       530 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
@@ -787,7 +787,7 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone268/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      540 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load149/D
+      540 |       0 |      14 |        4 |     14 |     2 |    +5.4% |   -0.151 |      -19.4 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone272/ZN
       540 |       0 |      10 |        2 |     11 |     2 |    +3.9% |   -0.136 |      -19.0 |    150 | load114/D
@@ -942,7 +942,7 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone3/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      650 |       0 |      13 |        4 |     14 |     2 |    +5.3% |   -0.148 |      -19.0 |    150 | load149/D
+      650 |       0 |      13 |        4 |     14 |     2 |    +5.3% |   -0.148 |      -18.9 |    150 | load149/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone328/ZN
       650 |       0 |      12 |        4 |     12 |     2 |    +4.7% |   -0.136 |      -17.3 |    150 | load149/D
@@ -1101,7 +1101,7 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-      740 |       0 |      15 |        6 |     17 |     2 |    +6.5% |   -0.132 |      -17.4 |    150 | load149/D
+      740 |       0 |      15 |        6 |     17 |     2 |    +6.5% |   -0.132 |      -17.4 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone371/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
@@ -1109,7 +1109,7 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone373/ZN
-      745 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load149/D
+      745 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone371/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
@@ -1117,8 +1117,8 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone374/ZN
-      749 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load149/D
-      750 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load149/D
+      749 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load131/D
+      750 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone371/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
@@ -1126,7 +1126,7 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone375/ZN
-      753 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load149/D
+      753 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone371/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
@@ -1134,100 +1134,100 @@ worst slack max -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone376/ZN
-      757 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load149/D
+      757 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone371/ZN
-      760 |       0 |      18 |        6 |     18 |     2 |    +7.2% |   -0.140 |      -17.7 |    150 | load149/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
-[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone371/ZN
-      760 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load149/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
-[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone371/ZN
+      760 |       0 |      18 |        6 |     18 |     2 |    +7.2% |   -0.140 |      -17.7 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone371/ZN
-      763 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load149/D
+      760 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone371/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone371/ZN
-      766 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load149/D
+      763 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone371/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone371/ZN
-      769 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load149/D
-      770 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load149/D
+      766 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone371/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone371/ZN
-      772 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load149/D
+      769 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load131/D
+      770 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load131/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone371/ZN
+[WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone371/ZN
+      772 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone382/ZN
-      775 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load149/D
+      775 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone383/ZN
-      778 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load149/D
+      778 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
-      780 |       0 |      17 |        6 |     18 |     2 |    +7.1% |   -0.136 |      -17.3 |    150 | load149/D
+      780 |       0 |      17 |        6 |     18 |     2 |    +7.1% |   -0.136 |      -17.2 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone384/ZN
-      781 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load149/D
+      781 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone385/ZN
-      784 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load149/D
+      784 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/clone386/ZN
-      787 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load149/D
+      787 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.132 |      -16.7 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
-      789 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.136 |      -17.3 |    150 | load149/D
-      790 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.136 |      -17.3 |    150 | load149/D
+      789 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.136 |      -17.3 |    150 | load131/D
+      790 |       0 |      17 |        6 |     17 |     2 |    +6.9% |   -0.136 |      -17.3 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
-      791 |       0 |      17 |        6 |     18 |     2 |    +7.1% |   -0.136 |      -17.3 |    150 | load149/D
+      791 |       0 |      17 |        6 |     18 |     2 |    +7.1% |   -0.136 |      -17.2 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
-      792 |       0 |      17 |        6 |     18 |     2 |    +7.1% |   -0.136 |      -17.3 |    150 | load149/D
+      792 |       0 |      17 |        6 |     18 |     2 |    +7.1% |   -0.136 |      -17.2 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
-      793 |       0 |      17 |        6 |     18 |     2 |    +7.1% |   -0.136 |      -17.3 |    150 | load149/D
+      793 |       0 |      17 |        6 |     18 |     2 |    +7.1% |   -0.136 |      -17.2 |    150 | load131/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver split372/Z
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
-      794 |       0 |      17 |        6 |     18 |     2 |    +7.1% |   -0.136 |      -17.3 |    150 | load149/D
+      794 |       0 |      17 |        6 |     18 |     2 |    +7.1% |   -0.136 |      -17.2 |    150 | load131/D
      796* |       0 |      18 |        6 |     18 |     2 |    +7.2% |   -0.123 |      -16.9 |    150 | load149/D
      797* |       0 |      18 |        6 |     18 |     2 |    +7.2% |   -0.123 |      -16.9 |    150 | load149/D
      798* |       0 |      18 |        6 |     18 |     2 |    +7.2% |   -0.123 |      -16.9 |    150 | load149/D

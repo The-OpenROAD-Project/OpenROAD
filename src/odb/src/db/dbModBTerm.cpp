@@ -245,7 +245,7 @@ void dbModBTerm::setSigType(const dbSigType& type)
   _dbmodbterm->_flags = cur_flags.uint_val;
 }
 
-dbSigType dbModBTerm::getSigType()
+dbSigType dbModBTerm::getSigType() const
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
   dbModBTermFlags cur_flags;
@@ -262,7 +262,7 @@ void dbModBTerm::setIoType(const dbIoType& type)
   _dbmodbterm->_flags = cur_flags.uint_val;
 }
 
-dbIoType dbModBTerm::getIoType()
+dbIoType dbModBTerm::getIoType() const
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
   dbModBTermFlags cur_flags;
@@ -332,6 +332,13 @@ void dbModBTerm::connect(dbModNet* net)
   if (_modbterm->_modnet == net->getId()) {
     return;
   }
+
+  // If the modbterm is already connected to a different modnet, disconnect it
+  // first.
+  if (_modbterm->_modnet != 0) {
+    disconnect();
+  }
+
   for (auto callback : _block->_callbacks) {
     callback->inDbModBTermPreConnect(this, net);
   }

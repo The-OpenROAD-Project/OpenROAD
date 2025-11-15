@@ -286,6 +286,13 @@ void dbModITerm::connect(dbModNet* net)
   if (_moditerm->_mod_net == _modnet->getId()) {
     return;
   }
+
+  // If the moditerm is already connected to a different modnet, disconnect it
+  // first.
+  if (_moditerm->_mod_net != 0) {
+    disconnect();
+  }
+
   for (auto callback : _block->_callbacks) {
     callback->inDbModITermPreConnect(this, net);
   }
@@ -354,7 +361,6 @@ void dbModITerm::disconnect()
     _block->_journal->endAction();
   }
 
-  _moditerm->_mod_net = 0;
   _dbModITerm* next_moditerm
       = (_moditerm->_next_net_moditerm != 0)
             ? _block->_moditerm_tbl->getPtr(_moditerm->_next_net_moditerm)
@@ -371,6 +377,9 @@ void dbModITerm::disconnect()
   if (next_moditerm) {
     next_moditerm->_prev_net_moditerm = _moditerm->_prev_net_moditerm;
   }
+
+  _moditerm->_next_net_moditerm = 0;
+  _moditerm->_prev_net_moditerm = 0;
   _moditerm->_mod_net = 0;
 
   for (auto callback : _block->_callbacks) {
@@ -410,6 +419,14 @@ void dbModITerm::destroy(dbModITerm* val)
 
   for (auto callback : block->_callbacks) {
     callback->inDbModITermDestroy(val);
+  }
+
+  // Clear the parent moditerm from the child modbterm
+  if (_moditerm->_child_modbterm != 0) {
+    if (_dbModBTerm* child_modbterm
+        = block->_modbterm_tbl->getPtr(_moditerm->_child_modbterm)) {
+      child_modbterm->_parent_moditerm = 0;
+    }
   }
 
   // snip out the mod iterm, from doubly linked list

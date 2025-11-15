@@ -3,9 +3,12 @@
 
 #pragma once
 
+#include <set>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
+#include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "odb/odb.h"
 
@@ -25,6 +28,8 @@ class _dbGuide;
 class _dbNetTrack;
 class dbIStream;
 class dbOStream;
+class dbNet;
+class dbModNet;
 
 struct _dbNetFlags
 {
@@ -108,6 +113,22 @@ class _dbNet : public _dbObject
   bool operator!=(const _dbNet& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbNet& rhs) const;
   void collectMemInfo(MemInfo& info);
+
+  static void dumpConnectivityRecursive(const dbObject* obj,
+                                        int max_level,
+                                        int level,
+                                        std::set<const dbObject*>& visited,
+                                        utl::Logger* logger);
+  static void dumpNetConnectivity(const dbNet* net,
+                                  int max_level,
+                                  int level,
+                                  std::set<const dbObject*>& visited,
+                                  utl::Logger* logger);
+  static void dumpModNetConnectivity(const dbModNet* modnet,
+                                     int max_level,
+                                     int level,
+                                     std::set<const dbObject*>& visited,
+                                     utl::Logger* logger);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbNet& net);
