@@ -224,6 +224,7 @@ cc_test(
     ],
     deps = [
         "//src/odb",
+        "//src/odb/test/cpp/helper",
         "//src/tst",
         "//src/tst:nangate45_fixture",
         "//src/utl",
