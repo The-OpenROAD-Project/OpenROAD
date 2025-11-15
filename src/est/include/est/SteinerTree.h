@@ -55,8 +55,6 @@ class PinLoc
 using LocPinMap = std::unordered_map<odb::Point, PinSeq, PointHash, PointEqual>;
 using SteinerPt = int;
 
-class SteinerTree;
-
 // Wrapper for stt::Tree
 //
 // Flute
