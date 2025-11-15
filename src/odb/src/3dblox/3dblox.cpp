@@ -486,10 +486,10 @@ void ThreeDBlox::readBMap(const std::string& bmap_file, bool create_bpins)
             }
             if (max_layer == nullptr
                 || max_layer->getRoutingLevel() <= layer->getRoutingLevel()) {
-              max_layer = layer;
               if (max_layer->getRoutingLevel() < layer->getRoutingLevel()) {
                 top_shapes.clear();
               }
+              max_layer = layer;
               top_shapes.insert(geom->getBox());
             }
           }
@@ -522,7 +522,7 @@ void ThreeDBlox::readBMap(const std::string& bmap_file, bool create_bpins)
         continue;
       }
 
-      BPinInfo& pin_info = masterbpin->second;
+      const BPinInfo& pin_info = masterbpin->second;
 
       const dbTransform xform = inst->getTransform();
       for (dbITerm* iterm : inst->getITerms()) {
