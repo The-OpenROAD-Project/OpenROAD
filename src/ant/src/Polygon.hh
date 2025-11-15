@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "AntennaCheckerImpl.hh"
 #include "PinType.hh"
 #include "ant/AntennaChecker.hh"
 #include "boost/functional/hash.hpp"
