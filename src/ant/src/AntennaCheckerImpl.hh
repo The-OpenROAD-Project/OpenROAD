@@ -3,10 +3,14 @@
 
 #pragma once
 
+#include <fstream>
 #include <map>
+#include <memory>
 #include <mutex>
-#include <queue>
 #include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "ant/AntennaChecker.hh"
 #include "odb/db.h"

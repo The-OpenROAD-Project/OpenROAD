@@ -10,13 +10,13 @@
 #include <map>
 #include <memory>
 #include <mutex>
-#include <queue>
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "AntennaCheckerImpl.hh"
 #include "Polygon.hh"
 #include "WireBuilder.hh"
 #include "boost/pending/disjoint_sets.hpp"
@@ -88,7 +88,8 @@ void AntennaChecker::setReportFileName(const char* file_name)
   impl_->setReportFileName(file_name);
 }
 
-void AntennaChecker::makeNetWiresFromGuides(const std::vector<odb::dbNet*>& nets)
+void AntennaChecker::makeNetWiresFromGuides(
+    const std::vector<odb::dbNet*>& nets)
 {
   impl_->makeNetWiresFromGuides(nets);
 }

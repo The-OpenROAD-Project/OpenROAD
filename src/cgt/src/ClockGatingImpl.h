@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <cstddef>
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -12,6 +11,7 @@
 
 #include "NetworkBuilder.h"
 #include "RandomBits.h"
+#include "cgt/ClockGating.h"
 #include "db_sta/dbSta.hh"
 #include "utl/deleter.h"
 #include "utl/unique_name.h"

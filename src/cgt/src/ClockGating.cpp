@@ -65,7 +65,7 @@ extern void Abc_FrameSetLibGen(void* pLib);
 namespace cgt {
 
 ClockGating::ClockGating(utl::Logger* logger, sta::dbSta* open_sta)
-  : impl_(std::make_unique<Impl>(logger, open_sta))
+    : impl_(std::make_unique<Impl>(logger, open_sta))
 {
 }
 
@@ -679,12 +679,13 @@ static std::vector<sta::Net*> except(
   return result;
 }
 
-void ClockGating::Impl::searchClockGates(sta::Instance* const instance,
-                                   std::vector<sta::Net*>& good_gate_conds,
-                                   const std::vector<sta::Net*>::iterator begin,
-                                   const std::vector<sta::Net*>::iterator end,
-                                   abc::Abc_Ntk_t& abc_network,
-                                   const bool clk_enable)
+void ClockGating::Impl::searchClockGates(
+    sta::Instance* const instance,
+    std::vector<sta::Net*>& good_gate_conds,
+    const std::vector<sta::Net*>::iterator begin,
+    const std::vector<sta::Net*>::iterator end,
+    abc::Abc_Ntk_t& abc_network,
+    const bool clk_enable)
 {
   int half_len = (end - begin) / 2;
   if (half_len == 0) {
@@ -1105,7 +1106,7 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::Impl::makeTestNetwork(
 }
 
 bool ClockGating::Impl::simulationTest(abc::Abc_Ntk_t* const abc_network,
-                                 const std::string& combined_gate_name)
+                                       const std::string& combined_gate_name)
 {
   DebugScopedTimer timer(
       sim_time_, logger_, CGT, "clock_gating", 3, "Simulation time: {}");
@@ -1144,7 +1145,7 @@ bool ClockGating::Impl::simulationTest(abc::Abc_Ntk_t* const abc_network,
 }
 
 bool ClockGating::Impl::satTest(abc::Abc_Ntk_t* const abc_network,
-                          const std::string& combined_gate_name)
+                                const std::string& combined_gate_name)
 {
   DebugScopedTimer timer(
       sat_time_, logger_, CGT, "clock_gating", 3, "SAT time: {}");
@@ -1215,9 +1216,10 @@ bool ClockGating::Impl::isCorrectClockGate(
   return true;
 }
 
-void ClockGating::Impl::insertClockGate(const std::vector<sta::Instance*>& instances,
-                                  const std::vector<sta::Net*>& gate_cond_nets,
-                                  const bool clk_enable)
+void ClockGating::Impl::insertClockGate(
+    const std::vector<sta::Instance*>& instances,
+    const std::vector<sta::Net*>& gate_cond_nets,
+    const bool clk_enable)
 {
   auto network = sta_->getDbNetwork();
 
@@ -1387,7 +1389,8 @@ void ClockGating::Impl::dump(const char* const name)
   dump_counter_++;
 }
 
-void ClockGating::Impl::dumpAbc(const char* const name, abc::Abc_Ntk_t* const network)
+void ClockGating::Impl::dumpAbc(const char* const name,
+                                abc::Abc_Ntk_t* const network)
 {
   if (!dump_dir_) {
     return;
@@ -1429,7 +1432,8 @@ std::filesystem::path ClockGating::Impl::getAbcGraphvizDumpPath(
          / (std::to_string(dump_counter_) + "_abc_" + name + ".dot");
 }
 
-std::filesystem::path ClockGating::Impl::getAbcVerilogDumpPath(const char* const name)
+std::filesystem::path ClockGating::Impl::getAbcVerilogDumpPath(
+    const char* const name)
 {
   return getDumpDir() / (std::to_string(dump_counter_) + "_abc_" + name + ".v");
 }

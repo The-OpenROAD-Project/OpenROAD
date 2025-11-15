@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "odb/db.h"
 
 namespace utl {
