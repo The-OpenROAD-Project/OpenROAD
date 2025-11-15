@@ -5,6 +5,7 @@
 #include "dbChipBump.h"
 
 #include "dbChip.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbInst.h"
 #include "dbTable.h"

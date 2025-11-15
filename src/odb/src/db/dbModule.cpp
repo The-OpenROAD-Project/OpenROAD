@@ -6,6 +6,7 @@
 
 #include "dbBlock.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbInst.h"
@@ -16,6 +17,8 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 // User Code Begin Includes
 #include <cassert>
 #include <cstddef>

@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbChip.h"
 
+#include <cstdlib>
 #include <string>
 #include <unordered_map>
 
@@ -11,6 +12,8 @@
 #include "dbBlockItr.h"
 #include "dbChipConn.h"
 #include "dbChipRegion.h"
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbNameCache.h"
 #include "dbProperty.h"
@@ -19,7 +22,10 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbSet.h"
+#include "odb/dbStream.h"
+#include "odb/geom.h"
 // User Code Begin Includes
 #include "dbChipConnItr.h"
 #include "dbChipInst.h"

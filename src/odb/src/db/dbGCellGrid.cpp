@@ -6,14 +6,20 @@
 
 #include <cstdint>
 #include <cstring>
+#include <iterator>
 #include <map>
+#include <utility>
+#include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
+#include "odb/dbMatrix.h"
+#include "odb/dbTypes.h"
 // User Code Begin Includes
 #include <algorithm>
 
