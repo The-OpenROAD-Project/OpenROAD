@@ -1,3 +1,16 @@
+source $::env(SCRIPTS_DIR)/util.tcl
+
+if { [string match "*openroad" $::env(OPENROAD_EXE)] } {
+  puts "Reading LEF files for OpenROAD"
+  log_cmd read_lef $::env(TECH_LEF)
+  log_cmd read_lef $::env(SC_LEF)
+  if { [env_var_exists_and_non_empty ADDITIONAL_LEFS] } {
+    foreach lef $::env(ADDITIONAL_LEFS) {
+      log_cmd read_lef $lef
+    }
+  }
+}
+
 source $::env(LOAD_POWER_TCL)
 
 # OpenSTA reports reg2reg paths inside macros,
