@@ -363,8 +363,8 @@ void UnbufferMove::removeBuffer(Instance* buffer)
 
   // Remove the unused buffer
   if (out_db_net == nullptr) {
-    dbInst* dbinst_buffer = db_network_->staToDb(buffer);
-    dbInst::destroy(dbinst_buffer);
+    // dbInst* dbinst_buffer = db_network_->staToDb(buffer);
+    // dbInst::destroy(dbinst_buffer);
     return;
   }
 
