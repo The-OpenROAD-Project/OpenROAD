@@ -174,12 +174,12 @@ void NesterovPlace::npUpdateNextGradient(
 void NesterovPlace::init()
 {
   // foreach nesterovbase call init
-  total_sum_overflow_ = 0;
+  total_sum_overflow_binormal_ = 0;
   float totalBaseWireLengthCoeff = 0;
   for (auto& nb : nbVec_) {
     nb->setNpVars(&npVars_);
     nb->initDensity1();
-    total_sum_overflow_ += nb->getSumOverflow();
+    total_sum_overflow_binormal_ += nb->getSumOverflowBiNormal();
     totalBaseWireLengthCoeff += nb->getBaseWireLengthCoef();
   }
 
@@ -192,9 +192,9 @@ void NesterovPlace::init()
   auto& hpwl_gauge = hpwl_gauge_family.Add({});
   hpwl_gauge_ = &hpwl_gauge;
 
-  average_overflow_ = total_sum_overflow_ / nbVec_.size();
+  average_overflow_binormal_ = total_sum_overflow_binormal_ / nbVec_.size();
   baseWireLengthCoef_ = totalBaseWireLengthCoeff / nbVec_.size();
-  updateWireLengthCoef(average_overflow_);
+  updateWireLengthCoef(average_overflow_binormal_);
 
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
@@ -287,7 +287,7 @@ void NesterovPlace::updateIterGraphics(
 
   int debug_start_iter = npVars_.debug_start_iter;
   if (debug_start_iter == 0 || iter + 1 >= debug_start_iter) {
-    graphics_->addIter(iter, average_overflow_unscaled_);
+    graphics_->addIter(iter, average_overflow_);
     bool update
         = (iter == 0 || (iter + 1) % npVars_.debug_update_iterations == 0);
     if (update) {
@@ -322,7 +322,7 @@ void NesterovPlace::updateIterGraphics(
 
   // Save image once if routability not needed and below routability overflow
   if (npVars_.routability_driven_mode && !is_routability_need_
-      && average_overflow_unscaled_ <= npVars_.routability_end_overflow
+      && average_overflow_ <= npVars_.routability_end_overflow
       && !final_routability_image_saved) {
     if (npVars_.debug_generate_images) {
       const std::string label = fmt::format("Iter {} |R: {} |T: {}",
@@ -378,7 +378,7 @@ void NesterovPlace::runTimingDriven(int iter,
   // if virtual, do reweight on timing-critical nets,
   // otherwise keep all modifications by rsz.
   if (npVars_.timingDrivenMode
-      && tb_->isTimingNetWeightOverflow(average_overflow_unscaled_)
+      && tb_->isTimingNetWeightOverflow(average_overflow_)
       && (!is_routability_gpl_iter || !npVars_.routability_driven_mode)) {
     // update db's instance location from current density coordinates
     updateDb();
@@ -403,7 +403,7 @@ void NesterovPlace::runTimingDriven(int iter,
     //
     // See timingBase.cpp in detail
     bool virtual_td_iter
-        = (average_overflow_unscaled_ > npVars_.keepResizeBelowOverflow);
+        = (average_overflow_ > npVars_.keepResizeBelowOverflow);
 
     log_->info(GPL,
                100,
@@ -417,7 +417,7 @@ void NesterovPlace::runTimingDriven(int iter,
                "   Iter: {}, overflow: {:.3f}, keep resizer changes at: {}, "
                "HPWL: {}",
                iter + 1,
-               average_overflow_unscaled_,
+               average_overflow_,
                npVars_.keepResizeBelowOverflow,
                nbc_->getHpwl());
 
@@ -536,10 +536,9 @@ void NesterovPlace::runTimingDriven(int iter,
 
       // update snapshot after non-virtual TD
       int64_t hpwl = nbc_->getHpwl();
-      if (average_overflow_unscaled_ <= 0.25) {
+      if (average_overflow_ <= 0.25) {
         min_hpwl_ = hpwl;
-        diverge_snapshot_average_overflow_unscaled_
-            = average_overflow_unscaled_;
+        diverge_snapshot_average_overflow_ = average_overflow_;
         diverge_snapshot_iter_ = iter + 1;
         is_min_hpwl_ = true;
       }
@@ -620,7 +619,7 @@ bool NesterovPlace::isDiverged(float& diverge_snapshot_WlCoefX,
                  999,
                  "Revert to iter: {:4d} overflow: {:.3f} HPWL: {}",
                  diverge_snapshot_iter_,
-                 diverge_snapshot_average_overflow_unscaled_,
+                 diverge_snapshot_average_overflow_,
                  min_hpwl_);
       wireLengthCoefX_ = diverge_snapshot_WlCoefX;
       wireLengthCoefY_ = diverge_snapshot_WlCoefY;
@@ -654,7 +653,7 @@ void NesterovPlace::routabilitySnapshot(
     float& route_snapshotA)
 {
   if (!is_routability_snapshot_saved && npVars_.routability_driven_mode
-      && routability_save_snapshot_ >= average_overflow_unscaled_) {
+      && routability_save_snapshot_ >= average_overflow_) {
     route_snapshot_WlCoefX = wireLengthCoefX_;
     route_snapshot_WlCoefY = wireLengthCoefY_;
     route_snapshotA = curA;
@@ -669,7 +668,7 @@ void NesterovPlace::routabilitySnapshot(
     const int64_t hpwl = nbc_->getHpwl();
     log_->report("{:9d} | {:8.4f} | {:13.6e} | {:8} | {:9} | {:>5}",
                  iter,
-                 average_overflow_unscaled_,
+                 average_overflow_,
                  block->dbuToMicrons(hpwl),
                  " ",
                  " ",
@@ -705,7 +704,7 @@ void NesterovPlace::runRoutability(int iter,
 {
   // check routability using RUDY or GR
   if (npVars_.routability_driven_mode && is_routability_need_
-      && average_overflow_unscaled_ <= npVars_.routability_end_overflow) {
+      && average_overflow_ <= npVars_.routability_end_overflow) {
     nbVec_[0]->setTrueReprintIterHeader();
     ++routability_driven_revert_count;
 
@@ -1056,7 +1055,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     bool is_routability_gpl_iter
         = is_routability_snapshot_saved
-          && average_overflow_unscaled_ > npVars_.routability_end_overflow;
+          && average_overflow_ > npVars_.routability_end_overflow;
     if (is_routability_gpl_iter) {
       ++routability_gpl_iter_count_;
       ++npVars_.maxNesterovIter;
@@ -1154,28 +1153,28 @@ void NesterovPlace::updateWireLengthCoef(float overflow)
 
 void NesterovPlace::updateNextIter(int iter)
 {
+  total_sum_overflow_binormal_ = 0;
   total_sum_overflow_ = 0;
-  total_sum_overflow_unscaled_ = 0;
 
   for (auto& nb : nbVec_) {
     nb->updateNextIter(iter);
+    total_sum_overflow_binormal_ += nb->getSumOverflowBiNormal();
     total_sum_overflow_ += nb->getSumOverflow();
-    total_sum_overflow_unscaled_ += nb->getSumOverflowUnscaled();
   }
 
+  average_overflow_binormal_ = total_sum_overflow_binormal_ / nbVec_.size();
   average_overflow_ = total_sum_overflow_ / nbVec_.size();
-  average_overflow_unscaled_ = total_sum_overflow_unscaled_ / nbVec_.size();
 
   // For coefficient, using average regions' overflow
-  updateWireLengthCoef(average_overflow_);
+  updateWireLengthCoef(average_overflow_binormal_);
 
   // Update divergence snapshot
   if (!npVars_.disableRevertIfDiverge) {
     int64_t hpwl = nbc_->getHpwl();
     hpwl_gauge_->Set(hpwl);
-    if (hpwl < min_hpwl_ && average_overflow_unscaled_ <= 0.25) {
+    if (hpwl < min_hpwl_ && average_overflow_ <= 0.25) {
       min_hpwl_ = hpwl;
-      diverge_snapshot_average_overflow_unscaled_ = average_overflow_unscaled_;
+      diverge_snapshot_average_overflow_ = average_overflow_;
       diverge_snapshot_iter_ = iter + 1;
       is_min_hpwl_ = true;
     } else {

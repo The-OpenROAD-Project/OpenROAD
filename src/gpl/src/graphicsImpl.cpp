@@ -712,11 +712,10 @@ bool GraphicsImpl::populateMap()
       const float scaledBinArea
           = static_cast<float>(binArea * bin.getTargetDensity());
 
-      double value
-          = std::max(0.0f,
-                     static_cast<float>(bin.getInstPlacedAreaUnscaled())
-                         + static_cast<float>(bin.getNonPlaceAreaUnscaled())
-                         - scaledBinArea);
+      double value = std::max(0.0f,
+                              static_cast<float>(bin.getInstPlacedArea())
+                                  + static_cast<float>(bin.getNonPlaceArea())
+                                  - scaledBinArea);
       value = block->dbuAreaToMicrons(value);
 
       min_value = std::min(min_value, value);
@@ -735,11 +734,10 @@ bool GraphicsImpl::populateMap()
       const float scaledBinArea
           = static_cast<float>(binArea * bin.getTargetDensity());
 
-      double raw_value
-          = std::max(0.0f,
-                     static_cast<float>(bin.getInstPlacedAreaUnscaled())
-                         + static_cast<float>(bin.getNonPlaceAreaUnscaled())
-                         - scaledBinArea);
+      double raw_value = std::max(
+          0.0f,
+          static_cast<float>(bin.getInstPlacedArea())
+              + static_cast<float>(bin.getNonPlaceArea()) - scaledBinArea);
       raw_value = block->dbuAreaToMicrons(raw_value);
 
       if (heatmap_type_ == OverflowMinMax && max_value > min_value) {
