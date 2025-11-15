@@ -9,6 +9,7 @@ add_library(3dblox
   dbvParser.cpp
   dbxParser.cpp
   3dblox.cpp
+  checker.cpp
 )
 
 target_link_libraries(3dblox

@@ -9,7 +9,6 @@
 #include "odb/db.h"
 #include "odb/odb.h"
 #include "utl/Logger.h"
-
 namespace odb {
 
 namespace dbUtil {

@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "bmapParser.h"
+#include "checker.h"
 #include "dbvParser.h"
 #include "dbxParser.h"
 #include "objects.h"
@@ -81,6 +82,13 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   }
   calculateSize(db_->getChip());
   db_->triggerPostRead3Dbx(chip);
+  check();
+}
+
+void ThreeDBlox::check()
+{
+  Checker checker(logger_);
+  checker.check(db_->getChip());
 }
 
 void ThreeDBlox::calculateSize(dbChip* chip)

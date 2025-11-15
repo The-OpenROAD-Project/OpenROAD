@@ -4438,9 +4438,11 @@ Descriptor::Properties DbMarkerCategoryDescriptor::getDBProperties(
 
   odb::dbObject* parent = category->getParent();
   if (parent != top) {
-    if (parent->getObjectType() == odb::dbObjectType::dbBlockObj) {
+    if (parent->getObjectType() == odb::dbObjectType::dbChipObj) {
+      // TODO: fix this
       props.push_back(
-          {"Parent", gui->makeSelected(static_cast<odb::dbBlock*>(parent))});
+          {"Parent",
+           gui->makeSelected(static_cast<odb::dbChip*>(parent)->getBlock())});
     } else {
       props.push_back(
           {"Parent",
