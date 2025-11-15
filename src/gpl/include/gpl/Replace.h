@@ -7,8 +7,6 @@
 #include <string>
 #include <vector>
 
-#include "AbstractGraphics.h"
-
 namespace odb {
 class dbDatabase;
 class dbInst;
@@ -32,6 +30,7 @@ class Logger;
 
 namespace gpl {
 
+class AbstractGraphics;
 class PlacerBaseCommon;
 class PlacerBase;
 class NesterovBaseCommon;

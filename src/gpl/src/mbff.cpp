@@ -19,9 +19,9 @@
 #include <utility>
 #include <vector>
 
+#include "AbstractGraphics.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "gpl/AbstractGraphics.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
