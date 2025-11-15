@@ -4897,30 +4897,29 @@ void Resizer::checkLoadSlews(const Pin* drvr_pin,
           pin, nullptr, max_, false, corner1, tr1, slew1, limit1, slack1);
       if (!corner1) {
         // Fixup for nangate45: see comment in maxInputSlew
-        if (!corner1) {
-          LibertyPort* port = network_->libertyPort(pin);
-          if (port) {
-            bool exists;
-            port->libertyLibrary()->defaultMaxSlew(limit1, exists);
-            if (exists) {
-              slew1 = 0.0;
-              corner1 = tgt_slew_corner_;
-              for (const RiseFall* rf : RiseFall::range()) {
-                const DcalcAnalysisPt* dcalc_ap
-                    = corner1->findDcalcAnalysisPt(max_);
-                const Vertex* vertex = graph_->pinLoadVertex(pin);
-                Slew slew2 = sta_->graph()->slew(vertex, rf, dcalc_ap->index());
-                if (slew2 > slew1) {
-                  slew1 = slew2;
-                }
+        LibertyPort* port = network_->libertyPort(pin);
+        if (port) {
+          bool exists;
+          port->libertyLibrary()->defaultMaxSlew(limit1, exists);
+          if (exists) {
+            slew1 = 0.0;
+            corner1 = tgt_slew_corner_;
+            limit = limit1;
+            for (const RiseFall* rf : RiseFall::range()) {
+              const DcalcAnalysisPt* dcalc_ap
+                  = corner1->findDcalcAnalysisPt(max_);
+              const Vertex* vertex = graph_->pinLoadVertex(pin);
+              Slew slew2 = sta_->graph()->slew(vertex, rf, dcalc_ap->index());
+              if (slew2 > slew1) {
+                slew1 = slew2;
               }
             }
           }
         }
-      }
-      if (corner1) {
+      } else {
         limit1 *= (1.0 - slew_margin / 100.0);
-        limit = min(limit, limit1);
+        limit1 = min(limit, limit1);
+        limit = limit1;
         slack1 = limit1 - slew1;
         if (slack1 < slack) {
           slew = slew1;
