@@ -370,10 +370,10 @@ read_3dbx_cmd(const char *filename)
 }
 
 void
-read_3dblox_bmap_cmd(const char *filename, bool create_bpins)
+read_3dblox_bmap_cmd(const char *filename)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->read3DBloxBMap(filename, create_bpins);
+  ord->read3DBloxBMap(filename);
 }
 
 void

@@ -142,6 +142,8 @@ TEST_F(SimpleDbFixture, test_bump_map_reader)
 
   // Create BUMP master
   dbLib* lib = db_->findLib("lib1");
+  dbTechLayer* bot_layer
+      = dbTechLayer::create(lib->getTech(), "BOT", dbTechLayerType::ROUTING);
   dbTechLayer* layer
       = dbTechLayer::create(lib->getTech(), "TOP", dbTechLayerType::ROUTING);
   dbMaster* master = dbMaster::create(lib, "BUMP");
@@ -151,6 +153,8 @@ TEST_F(SimpleDbFixture, test_bump_map_reader)
   master->setType(dbMasterType::COVER_BUMP);
   dbMTerm* term
       = dbMTerm::create(master, "PAD", dbIoType::INOUT, dbSigType::SIGNAL);
+  dbMPin* bot_pin = dbMPin::create(term);
+  dbBox::create(bot_pin, bot_layer, -1000, -1000, 1000, 1000);
   dbMPin* pin = dbMPin::create(term);
   dbBox::create(pin, layer, -2000, -2000, 2000, 2000);
   master->setFrozen();
@@ -165,7 +169,7 @@ TEST_F(SimpleDbFixture, test_bump_map_reader)
 
   ThreeDBlox parser(&logger_, db_.get());
   std::string path = getFilePath(prefix + "data/example1.bmap");
-  parser.readBMap(path, false);
+  parser.readBMap(path);
 
   // Check bumps were created
   EXPECT_EQ(block->getInsts().size(), 2);
@@ -175,13 +179,6 @@ TEST_F(SimpleDbFixture, test_bump_map_reader)
   dbInst* inst2 = block->findInst("bump2");
   EXPECT_EQ(inst2->getBBox()->getBox().xCenter(), 150 * 1000);
   EXPECT_EQ(inst2->getBBox()->getBox().yCenter(), 200 * 1000);
-
-  // Check that no BPins where added
-  EXPECT_EQ(SIG1->getBPins().size(), 0);
-  EXPECT_EQ(SIG2->getBPins().size(), 0);
-
-  // Read bmap again to add bpins
-  parser.readBMap(path, true);
 
   // Check that BPins where added
   EXPECT_EQ(SIG1->getBPins().size(), 1);

@@ -34,7 +34,7 @@ class ThreeDBlox
   ~ThreeDBlox() = default;
   void readDbv(const std::string& dbv_file);
   void readDbx(const std::string& dbx_file);
-  void readBMap(const std::string& bmap_file, bool create_bpins);
+  void readBMap(const std::string& bmap_file);
 
  private:
   void createChiplet(const ChipletDef& chiplet);

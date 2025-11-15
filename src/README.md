@@ -340,14 +340,13 @@ report_logic_depth_histogram [-num_bins num_bins] [-exclude_buffers] [-exclude_i
 The `read_3dblox_bmap` command will read the bump map and place the bumps into the current design.
 
 ```tcl
-read_3dblox_bmap [-create_pins] filename
+read_3dblox_bmap filename
 ```
 
 ##### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-create_pins` | If specified, block pins will be created over each bump. |
 | `filename` | Path to the bump map. |
 
 ## TCL functions

@@ -447,7 +447,7 @@ void ThreeDBlox::createConnection(const Connection& connection)
   conn->setThickness(connection.thickness * db_->getDbuPerMicron());
 }
 
-void ThreeDBlox::readBMap(const std::string& bmap_file, bool create_bpins)
+void ThreeDBlox::readBMap(const std::string& bmap_file)
 {
   dbBlock* block = db_->getChip()->getBlock();
 
@@ -459,90 +459,90 @@ void ThreeDBlox::readBMap(const std::string& bmap_file, bool create_bpins)
     bumps.push_back(createBump(entry, block));
   }
 
-  if (create_bpins) {
-    struct BPinInfo
-    {
-      dbTechLayer* layer = nullptr;
-      odb::Rect rect;
-    };
+  struct BPinInfo
+  {
+    dbTechLayer* layer = nullptr;
+    odb::Rect rect;
+  };
 
-    // Populate where the bpins should be made
-    std::map<odb::dbMaster*, BPinInfo> bpininfo;
-    for (dbInst* inst : bumps) {
-      dbMaster* master = inst->getMaster();
-      if (bpininfo.find(master) != bpininfo.end()) {
-        continue;
-      }
+  // Populate where the bpins should be made
+  std::map<odb::dbMaster*, BPinInfo> bpininfo;
+  for (dbInst* inst : bumps) {
+    dbMaster* master = inst->getMaster();
+    if (bpininfo.find(master) != bpininfo.end()) {
+      continue;
+    }
 
-      odb::dbTechLayer* max_layer = nullptr;
-      std::set<odb::Rect> top_shapes;
+    odb::dbTechLayer* max_layer = nullptr;
+    std::set<odb::Rect> top_shapes;
 
-      for (dbMTerm* mterm : master->getMTerms()) {
-        for (dbMPin* mpin : mterm->getMPins()) {
-          for (dbBox* geom : mpin->getGeometry()) {
-            auto* layer = geom->getTechLayer();
-            if (layer == nullptr) {
-              continue;
+    for (dbMTerm* mterm : master->getMTerms()) {
+      for (dbMPin* mpin : mterm->getMPins()) {
+        for (dbBox* geom : mpin->getGeometry()) {
+          auto* layer = geom->getTechLayer();
+          if (layer == nullptr) {
+            continue;
+          }
+          if (max_layer == nullptr) {
+            max_layer = layer;
+            top_shapes.insert(geom->getBox());
+          } else if (max_layer->getRoutingLevel() <= layer->getRoutingLevel()) {
+            if (max_layer->getRoutingLevel() < layer->getRoutingLevel()) {
+              top_shapes.clear();
             }
-            if (max_layer == nullptr
-                || max_layer->getRoutingLevel() <= layer->getRoutingLevel()) {
-              if (max_layer->getRoutingLevel() < layer->getRoutingLevel()) {
-                top_shapes.clear();
-              }
-              max_layer = layer;
-              top_shapes.insert(geom->getBox());
-            }
+            max_layer = layer;
+            top_shapes.insert(geom->getBox());
           }
         }
-      }
-
-      if (max_layer != nullptr) {
-        odb::Rect master_box;
-        master->getPlacementBoundary(master_box);
-        const odb::Point center = master_box.center();
-        const odb::Rect* top_shape_ptr = nullptr;
-        for (const odb::Rect& shape : top_shapes) {
-          if (shape.intersects(center)) {
-            top_shape_ptr = &shape;
-          }
-        }
-
-        if (top_shape_ptr == nullptr) {
-          top_shape_ptr = &(*top_shapes.begin());
-        }
-
-        bpininfo.emplace(master, BPinInfo{max_layer, *top_shape_ptr});
       }
     }
 
-    // create bpins
-    for (dbInst* inst : bumps) {
-      auto masterbpin = bpininfo.find(inst->getMaster());
-      if (masterbpin == bpininfo.end()) {
+    if (max_layer != nullptr) {
+      odb::Rect master_box;
+      master->getPlacementBoundary(master_box);
+      const odb::Point center = master_box.center();
+      const odb::Rect* top_shape_ptr = nullptr;
+      for (const odb::Rect& shape : top_shapes) {
+        if (shape.intersects(center)) {
+          top_shape_ptr = &shape;
+        }
+      }
+
+      if (top_shape_ptr == nullptr) {
+        top_shape_ptr = &(*top_shapes.begin());
+      }
+
+      bpininfo.emplace(master, BPinInfo{max_layer, *top_shape_ptr});
+    }
+  }
+
+  // create bpins
+  for (dbInst* inst : bumps) {
+    auto masterbpin = bpininfo.find(inst->getMaster());
+    if (masterbpin == bpininfo.end()) {
+      continue;
+    }
+
+    const BPinInfo& pin_info = masterbpin->second;
+
+    const dbTransform xform = inst->getTransform();
+    for (dbITerm* iterm : inst->getITerms()) {
+      dbNet* net = iterm->getNet();
+      if (net == nullptr) {
         continue;
       }
-
-      const BPinInfo& pin_info = masterbpin->second;
-
-      const dbTransform xform = inst->getTransform();
-      for (dbITerm* iterm : inst->getITerms()) {
-        dbNet* net = iterm->getNet();
-        if (net == nullptr) {
-          continue;
-        }
-        dbBTerm* bterm = net->get1stBTerm();
-        dbBPin* pin = dbBPin::create(bterm);
-        Rect shape = pin_info.rect;
-        xform.apply(shape);
-        dbBox::create(pin,
-                      pin_info.layer,
-                      shape.xMin(),
-                      shape.yMin(),
-                      shape.xMax(),
-                      shape.yMax());
-        pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
-        break;
-      }
+      dbBTerm* bterm = net->get1stBTerm();
+      dbBPin* pin = dbBPin::create(bterm);
+      Rect shape = pin_info.rect;
+      xform.apply(shape);
+      dbBox::create(pin,
+                    pin_info.layer,
+                    shape.xMin(),
+                    shape.yMin(),
+                    shape.xMax(),
+                    shape.yMax());
+      pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+      break;
     }
   }
 }

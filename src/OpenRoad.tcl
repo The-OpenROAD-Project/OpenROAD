@@ -197,10 +197,10 @@ proc read_3dbx { args } {
   ord::read_3dbx_cmd $filename
 }
 
-sta::define_cmd_args "read_3dblox_bmap" {[-create_pins] filename}
+sta::define_cmd_args "read_3dblox_bmap" {filename}
 
 proc read_3dblox_bmap { args } {
-  sta::parse_key_args "read_3dblox_bmap" args keys {} flags {-create_pins}
+  sta::parse_key_args "read_3dblox_bmap" args keys {} flags {}
   sta::check_argc_eq1 "read_3dblox_bmap" $args
   set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
@@ -209,7 +209,7 @@ proc read_3dblox_bmap { args } {
   if { ![file readable $filename] } {
     utl::error "ORD" 75 "$filename is not readable."
   }
-  ord::read_3dblox_bmap_cmd $filename [info exists flags(-create_pins)]
+  ord::read_3dblox_bmap_cmd $filename
 }
 
 sta::define_cmd_args "write_db" {filename}
