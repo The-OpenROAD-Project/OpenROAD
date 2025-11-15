@@ -363,6 +363,7 @@ void UnbufferMove::removeBuffer(Instance* buffer)
 
   // Remove the unused buffer
   if (out_db_net == nullptr) {
+    // jk: behavior change point1
     // dbInst* dbinst_buffer = db_network_->staToDb(buffer);
     // dbInst::destroy(dbinst_buffer);
     return;
@@ -377,9 +378,11 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   Net* removed = out_net;
   odb::dbModNet* survivor_modnet = ip_modnet;
   odb::dbModNet* removed_modnet = op_modnet;
-  bool in_net_has_port = db_network_->hasPort(in_net);
   bool out_net_has_port = db_network_->hasPort(out_net);
-  if (in_net_has_port == false && out_net_has_port == true) {
+  // jk: behavior change point1
+  // bool in_net_has_port = db_network_->hasPort(in_net);
+  // if (in_net_has_port == false && out_net_has_port == true) {
+  if (out_net_has_port == true) {
     // output net has port, so it should survive
     survivor = out_net;
     removed = in_net;
