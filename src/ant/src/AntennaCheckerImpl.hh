@@ -184,7 +184,6 @@ class AntennaChecker::Impl
                 bool report,
                 ViolationReport& net_report);
 
-  std::unique_ptr<ant::WireBuilder> wire_builder_;
   odb::dbDatabase* db_{nullptr};
   odb::dbBlock* block_{nullptr};
   utl::Logger* logger_{nullptr};

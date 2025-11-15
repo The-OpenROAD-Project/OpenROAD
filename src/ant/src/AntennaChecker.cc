@@ -1181,8 +1181,8 @@ int AntennaChecker::Impl::checkAntennas(odb::dbNet* net,
   }
 
   if (use_grt_routes) {
-    wire_builder_ = std::make_unique<ant::WireBuilder>(db_, logger_);
-    wire_builder_->makeNetWiresFromGuides();
+    WireBuilder wire_builder(db_, logger_);
+    wire_builder.makeNetWiresFromGuides();
   }
 
   int net_violation_count = 0;
@@ -1284,8 +1284,8 @@ void AntennaChecker::Impl::makeNetWiresFromGuides(
   if (block_ == nullptr) {
     block_ = db_->getChip()->getBlock();
   }
-  wire_builder_ = std::make_unique<ant::WireBuilder>(db_, logger_);
-  wire_builder_->makeNetWiresFromGuides(nets);
+  WireBuilder wire_builder(db_, logger_);
+  wire_builder.makeNetWiresFromGuides(nets);
 }
 
 }  // namespace ant
