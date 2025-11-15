@@ -379,15 +379,16 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   odb::dbModNet* survivor_modnet = ip_modnet;
   odb::dbModNet* removed_modnet = op_modnet;
   bool out_net_has_port = db_network_->hasPort(out_net);
-  // jk: behavior change point1
+  // jk: behavior change point2
   // bool in_net_has_port = db_network_->hasPort(in_net);
   // if (in_net_has_port == false && out_net_has_port == true) {
   if (out_net_has_port == true) {
     // output net has port, so it should survive
     survivor = out_net;
     removed = in_net;
-    survivor_modnet = op_modnet;
-    removed_modnet = ip_modnet;
+    // jk: behavior change point2
+    // survivor_modnet = op_modnet;
+    // removed_modnet = ip_modnet;
   }
 
   // Disconnect the buffer and handle the nets
