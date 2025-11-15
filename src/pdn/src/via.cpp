@@ -407,7 +407,7 @@ DbVia::ViaLayerShape DbTechVia::generate(
   odb::Point new_via_center;
   ViaLayerShape via_shapes;
 
-  auto add_via = [&via_shapes, this](odb::dbSBox* via,
+  auto add_via = [this, &via_shapes](odb::dbSBox* via,
                                      const odb::Point& center) {
     ViaLayerShape new_via_shapes = getLayerShapes(via);
 
@@ -2941,7 +2941,7 @@ void Via::writeToDb(odb::dbSWire* wire,
   }
 
   auto check_shapes
-      = [this, obstructions](
+      = [this, &obstructions](
             const ShapePtr& shape,
             const std::set<DbVia::ViaLayerShape::RectBoxPair>& via_shapes)
       -> std::set<odb::dbSBox*> {
