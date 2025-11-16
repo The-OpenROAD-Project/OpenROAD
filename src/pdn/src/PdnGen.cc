@@ -156,8 +156,7 @@ void PdnGen::cleanupVias()
 
 void PdnGen::updateVias()
 {
-  debugPrint(
-        logger_, utl::PDN, "Make", 2, "Update vias - start");
+  debugPrint(logger_, utl::PDN, "Make", 2, "Update vias - start");
 
   const auto grids = getGrids();
 
@@ -177,8 +176,7 @@ void PdnGen::updateVias()
     }
   }
 
-  debugPrint(
-    logger_, utl::PDN, "Make", 2, "Update vias - end");
+  debugPrint(logger_, utl::PDN, "Make", 2, "Update vias - end");
 }
 
 void PdnGen::trimShapes()

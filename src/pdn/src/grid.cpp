@@ -785,7 +785,8 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
 void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
                     const Shape::ObstructionTreeMap& obstructions)
 {
-  debugPrint(getLogger(), utl::PDN, "Make", 1, "Making vias in \"{}\" - start", name_);
+  debugPrint(
+      getLogger(), utl::PDN, "Make", 1, "Making vias in \"{}\" - start", name_);
   Shape::ShapeTreeMap search_shapes = getShapes();
 
   odb::Rect search_area = getDomainBoundary();
@@ -908,7 +909,8 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
     via->getLowerShape()->addVia(via);
     via->getUpperShape()->addVia(via);
   }
-  debugPrint(getLogger(), utl::PDN, "Make", 1, "Making vias in \"{}\" - end", name_);
+  debugPrint(
+      getLogger(), utl::PDN, "Make", 1, "Making vias in \"{}\" - end", name_);
 }
 
 void Grid::getVias(std::vector<ViaPtr>& vias) const
