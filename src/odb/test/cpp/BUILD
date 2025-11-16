@@ -232,6 +232,7 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
 cc_test(
     name = "Test3DBloxChecker",
     srcs = [
