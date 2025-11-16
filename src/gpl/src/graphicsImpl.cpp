@@ -16,7 +16,7 @@
 #include <utility>
 #include <vector>
 
-#include "gpl/AbstractGraphics.h"
+#include "AbstractGraphics.h"
 #include "gui/gui.h"
 #include "nesterovBase.h"
 #include "nesterovPlace.h"

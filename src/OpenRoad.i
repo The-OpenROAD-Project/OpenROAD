@@ -370,6 +370,13 @@ read_3dbx_cmd(const char *filename)
 }
 
 void
+read_3dblox_bmap_cmd(const char *filename)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->read3DBloxBMap(filename);
+}
+
+void
 read_db_cmd(const char *filename, bool hierarchy)
 {
   OpenRoad *ord = getOpenRoad();
