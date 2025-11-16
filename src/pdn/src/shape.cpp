@@ -596,6 +596,7 @@ std::string Shape::getRectText(const odb::Rect& rect, double dbu_to_micron)
 std::unique_ptr<Shape> Shape::extendTo(
     const odb::Rect& rect,
     const ObstructionTree& obstructions,
+    Shape* orig_shape,
     const std::function<bool(const ShapePtr&)>& obs_filter) const
 {
   std::unique_ptr<Shape> new_shape = copy();
@@ -616,9 +617,9 @@ std::unique_ptr<Shape> Shape::extendTo(
   }
 
   if (obstructions.qbegin(bgi::intersects(new_shape->getRect())
-                          && bgi::satisfies([this](const auto& other) {
+                          && bgi::satisfies([&orig_shape](const auto& other) {
                                // ignore violations that results from itself
-                               return other.get() != this;
+                               return other.get() != orig_shape;
                              })
                           && bgi::satisfies(obs_filter))
       != obstructions.qend()) {
