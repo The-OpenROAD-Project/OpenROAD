@@ -32,6 +32,10 @@ utl::Logger* getLogger();
     $1 = pad::PlacementStrategy::BUMP_ALIGNED;
   } else if (strcasecmp(str, "uniform") == 0) {
     $1 = pad::PlacementStrategy::UNIFORM;
+  } else if (strcasecmp(str, "linear") == 0) {
+    $1 = pad::PlacementStrategy::LINEAR;
+  } else if (strcasecmp(str, "placer") == 0) {
+    $1 = pad::PlacementStrategy::PLACER;
   } else if (strcasecmp(str, "default") == 0) {
     $1 = pad::PlacementStrategy::DEFAULT;
   } else {

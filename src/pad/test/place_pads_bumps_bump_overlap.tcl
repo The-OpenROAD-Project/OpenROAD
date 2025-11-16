@@ -31,6 +31,11 @@ $inst setPlacementStatus PLACED
 $inst setLocation [ord::microns_to_dbu 860] [ord::microns_to_dbu 2900]
 $inst setPlacementStatus FIRM
 
+# Make metal10 obstructions
+odb::dbObstruction_create [ord::get_db_block] [[ord::get_db_tech] findLayer metal10] \
+  [ord::microns_to_dbu 1475] [ord::microns_to_dbu 25] \
+  [ord::microns_to_dbu 1550] [ord::microns_to_dbu 130]
+
 ######## Assign Bumps ########
 assign_io_bump -net p_ddr_dm_1_o -terminal u_ddr_dm_1_o/PAD BUMP_0_0
 assign_io_bump -net p_ddr_dqs_n_1_io -terminal u_ddr_dqs_n_1_io/PAD BUMP_1_1

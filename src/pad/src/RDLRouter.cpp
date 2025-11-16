@@ -765,7 +765,15 @@ void RDLRouter::populateTerminalAccessPoints(RouteTarget& target) const
 
         for (const auto& edge : getVertexEdges(itr->second)) {
           const odb::Point& pt0 = vertex_point_map_.at(edge.m_source);
+          if (pt0 == line.pt0() || pt0 == line.pt1()) {
+            // lines will connect, so keep
+            continue;
+          }
           const odb::Point& pt1 = vertex_point_map_.at(edge.m_target);
+          if (pt1 == line.pt0() || pt1 == line.pt1()) {
+            // lines will connect, so keep
+            continue;
+          }
           const odb::Line edge_line(pt0, pt1);
 
           if (boost::geometry::intersects(line.getPoints(),

@@ -212,7 +212,7 @@ assign_io_bump -net p_ddr_dq_9_io -terminal u_ddr_dq_9_io/PAD BUMP_1_4
 assign_io_bump -net p_ddr_dq_8_io -terminal u_ddr_dq_8_io/PAD BUMP_0_4
 
 # Place pads
-place_pads -mode uniform -row IO_EAST u_ddr_dq_23_io u_ddr_dq_22_io u_ddr_dq_21_io \
+place_pads -mode linear -row IO_EAST u_ddr_dq_23_io u_ddr_dq_22_io u_ddr_dq_21_io \
   u_vdd_4 u_vss_4 u_ddr_dq_20_io u_vzz_9 u_v18_9 u_ddr_dq_19_io \
   u_ddr_dq_18_io u_ddr_dq_17_io u_ddr_dq_16_io u_vzz_10 u_v18_10 \
   u_ddr_dq_31_io u_ddr_dq_30_io u_ddr_dq_29_io u_ddr_dq_28_io u_vzz_11 \
@@ -236,7 +236,7 @@ place_pads -mode bump_aligned -row IO_WEST u_vss_15 u_vdd_15 u_ddr_dq_8_io u_ddr
   u_co2_v_o u_v18_26 u_vzz_26 u_vss_12 u_vdd_12 u_co2_5_o u_co2_6_o \
   u_co2_7_o u_co2_8_o
 
-place_pads -mode uniform -row IO_SOUTH u_ddr_dm_1_o u_ddr_dqs_n_1_io u_vzz_0 \
+place_pads -mode placer -row IO_SOUTH u_ddr_dm_1_o u_ddr_dqs_n_1_io u_vzz_0 \
   u_ddr_dqs_p_1_io u_vss_0 u_ddr_ba_2_o u_ddr_ba_1_o u_ddr_ba_0_o \
   u_vzz_1 u_v18_1 u_ddr_addr_15_o u_ddr_addr_14_o u_ddr_addr_13_o \
   u_ddr_addr_12_o u_vzz_2 u_v18_2 u_ddr_addr_11_o u_ddr_addr_10_o \
