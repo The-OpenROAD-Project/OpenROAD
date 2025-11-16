@@ -753,7 +753,6 @@ void serializeGlobals(Archive& ar, RouterConfiguration* router_cfg)
   (ar) & router_cfg->CMAP_FILE;
   (ar) & router_cfg->OR_SEED;
   (ar) & router_cfg->OR_K;
-  (ar) & router_cfg->MAX_THREADS;
   (ar) & router_cfg->BATCHSIZE;
   (ar) & router_cfg->BATCHSIZETA;
   (ar) & router_cfg->MTSAFEDIST;
@@ -796,6 +795,14 @@ void serializeGlobals(Archive& ar, RouterConfiguration* router_cfg)
   (ar) & router_cfg->SHAPEBLOATWIDTH;
   (ar) & router_cfg->HISTCOST;
   (ar) & router_cfg->CONGCOST;
+  if (is_loading(ar)) {
+    int num_threads = 1;
+    (ar) & num_threads;
+    omp_set_num_threads(num_threads);
+  } else {
+    int num_threads = omp_get_num_threads();
+    (ar) & num_threads;
+  }
 }
 
 }  // namespace drt

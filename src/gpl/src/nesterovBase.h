@@ -682,7 +682,6 @@ class BinGrid
   void setBinCnt(int binCntX, int binCntY);
   void setBinTargetDensity(float density);
   void updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells);
-  void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
   void initBins();
 
@@ -732,7 +731,6 @@ class BinGrid
   int64_t sumOverflowArea_ = 0;
   int64_t sumOverflowAreaUnscaled_ = 0;
   bool isSetBinCnt_ = false;
-  int num_threads_ = 1;
 };
 
 inline std::vector<Bin>& BinGrid::getBins()
@@ -800,7 +798,6 @@ class NesterovBaseCommon
   NesterovBaseCommon(NesterovBaseVars nbVars,
                      std::shared_ptr<PlacerBaseCommon> pb,
                      utl::Logger* log,
-                     int num_threads,
                      const Clusters& clusters);
 
   const std::vector<GCell*>& getGCells() const { return nbc_gcells_; }
@@ -846,9 +843,6 @@ class NesterovBaseCommon
   int64_t getHpwl();
 
   void updateDbGCells();
-
-  // Number of threads of execution
-  size_t getNumThreads() { return num_threads_; }
 
   GCell* getGCellByIndex(size_t i);
 
@@ -918,7 +912,6 @@ class NesterovBaseCommon
   std::deque<Net> pb_nets_stor_;
   std::deque<Pin> pb_pins_stor_;
 
-  int num_threads_;
   int64_t delta_area_;
   int new_gcells_count_;
   int deleted_gcells_count_;

@@ -70,7 +70,6 @@ void detailed_route_cmd(const char* outputMazeFile,
                         int drcReportIterStep)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
   std::optional<int> drcReportIterStepOpt;
   if (drcReportIterStep > 0) {
     drcReportIterStepOpt = drcReportIterStep;
@@ -94,8 +93,7 @@ void detailed_route_cmd(const char* outputMazeFile,
                     singleStepDR,
                     minAccessPoints,
                     saveGuideUpdates,
-                    repairPDNLayerName,
-                    num_threads});
+                    repairPDNLayerName});
   router->main();
   router->setDistributed(false);
 }
@@ -115,7 +113,6 @@ void pin_access_cmd(const char* dbProcessNode,
   params.minAccessPoints = minAccessPoints;
   params.viaInPinBottomLayer = viaInPinBottomLayer;
   params.viaInPinTopLayer = viaInPinTopLayer;
-  params.num_threads = ord::OpenRoad::openRoad()->getThreadCount();
   router->setParams(params);
   router->pinAccess();
   router->setDistributed(false);
@@ -183,8 +180,7 @@ run_worker_cmd(const char* dump_dir, const char* worker_dir, const char* drc_rpt
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->updateGlobals(fmt::format("{}/init_router_cfg.bin", dump_dir).c_str());
   router->resetDb(fmt::format("{}/design.odb", dump_dir).c_str());
-  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
-  router->updateDesign(fmt::format("{}/{}/updates.bin", dump_dir, worker_dir).c_str(), num_threads);
+  router->updateDesign(fmt::format("{}/{}/updates.bin", dump_dir, worker_dir).c_str());
   router->updateGlobals(fmt::format("{}/{}/worker_router_cfg.bin", dump_dir, worker_dir).c_str());
   
   router->debugSingleWorker(fmt::format("{}/{}", dump_dir, worker_dir), drc_rpt);
@@ -208,8 +204,7 @@ void detailed_route_step_drt(int size,
 void fix_max_spacing_cmd()
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
-  router->fixMaxSpacing(num_threads);
+  router->fixMaxSpacing();
 }
 void step_end()
 {
@@ -220,8 +215,7 @@ void step_end()
 void check_drc_cmd(const char* drc_file, int x1, int y1, int x2, int y2, const char* marker_name)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
-  router->checkDRC(drc_file, x1, y1, x2, y2, marker_name, num_threads);
+  router->checkDRC(drc_file, x1, y1, x2, y2, marker_name);
 }
 
 std::vector<int>

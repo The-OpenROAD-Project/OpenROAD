@@ -746,9 +746,10 @@ void FlexDRGraphics::startIter(int iter, RouterConfiguration* router_cfg)
 {
   current_iter_ = iter;
   if (iter >= settings_->iter) {
-    if (router_cfg->MAX_THREADS > 1) {
-      logger_->info(DRT, 207, "Setting MAX_THREADS=1 for use with the DR GUI.");
-      router_cfg->MAX_THREADS = 1;
+    if (omp_get_num_threads() > 1) {
+      logger_->info(
+          DRT, 207, "Setting single threaded for use with the DR GUI.");
+      omp_set_num_threads(1);
     }
 
     status("Start iter: " + std::to_string(iter));

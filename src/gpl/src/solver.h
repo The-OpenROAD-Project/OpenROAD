@@ -36,6 +36,5 @@ ResidualError cpuSparseSolve(int maxSolverIter,
                              SMatrix& placeInstForceMatrixY,
                              Eigen::VectorXf& fixedInstForceVecY,
                              Eigen::VectorXf& instLocVecY,
-                             utl::Logger* logger,
-                             int threads);
+                             utl::Logger* logger);
 }  // namespace gpl

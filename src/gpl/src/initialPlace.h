@@ -44,7 +44,7 @@ class InitialPlace
                std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                std::unique_ptr<AbstractGraphics> graphics,
                utl::Logger* logger);
-  void doBicgstabPlace(int threads);
+  void doBicgstabPlace();
 
  private:
   InitialPlaceVars ipVars_;

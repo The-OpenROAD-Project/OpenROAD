@@ -158,11 +158,11 @@ def global_placement(
 
     if len(design.getBlock().getRows()) > 0:  # db_has_rows
         if incremental:
-            gpl.doIncrementalPlace(1)
+            gpl.doIncrementalPlace()
         else:
-            gpl.doInitialPlace(1)
+            gpl.doInitialPlace()
             if not skip_nesterov_place:
-                gpl.doNesterovPlace(1)
+                gpl.doNesterovPlace()
         gpl.reset()
     else:
         utl.error(

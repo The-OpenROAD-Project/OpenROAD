@@ -18,6 +18,7 @@
 #include "frBaseTypes.h"
 #include "frRegionQuery.h"
 #include "global.h"
+#include "omp.h"
 #include "utl/Logger.h"
 
 namespace drt {
@@ -86,7 +87,7 @@ class frDesign
   void addUpdate(const drUpdate& update)
   {
     if (updates_.empty()) {
-      updates_.resize(static_cast<size_t>(router_cfg_->MAX_THREADS) * 2);
+      updates_.resize(omp_get_num_threads() * 2);
     }
     auto num_batches = updates_.size();
     updates_[updates_sz_++ % num_batches].push_back(update);
