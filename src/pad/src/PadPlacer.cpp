@@ -912,7 +912,7 @@ void PlacerPadPlacer::placeInstanceSimple(odb::dbInst* inst,
 
 std::map<odb::dbInst*, int> PlacerPadPlacer::initialPoolMapping() const
 {
-  const auto insts = getInsts();
+  const auto& insts = getInsts();
 
   std::vector<float> position(insts.size());
   for (int i = 0; i < insts.size(); i++) {
@@ -1076,7 +1076,7 @@ std::map<odb::dbInst*, int> PlacerPadPlacer::poolAdjacentViolators(
     const std::map<odb::dbInst*, int>& initial_positions) const
 {
   const double dbus = getBlock()->getDbUnitsPerMicron();
-  const auto insts = getInsts();
+  const auto& insts = getInsts();
   std::vector<float> weights(insts.size());
   std::fill(weights.begin(), weights.end(), 1.0);
 
@@ -1201,8 +1201,7 @@ bool PlacerPadPlacer::padSpreading(
 {
   bool has_violations = false;
 
-  const auto insts = getInsts();
-  const auto inst_widths = getInstWidths();
+  const auto& insts = getInsts();
   const double dbus = getBlock()->getDbUnitsPerMicron();
   const int site_width = getRow()->getSpacing();
 
@@ -1351,8 +1350,7 @@ bool PlacerPadPlacer::padSpreading(
 std::map<odb::dbInst*, int> PlacerPadPlacer::padSpreading(
     const std::map<odb::dbInst*, int>& initial_positions) const
 {
-  const auto insts = getInsts();
-  const auto inst_widths = getInstWidths();
+  const auto& inst_widths = getInstWidths();
 
   // Snap all positions to row index
   std::map<odb::dbInst*, std::unique_ptr<InstAnchors>> positions;

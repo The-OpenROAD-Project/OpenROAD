@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#include "gpl/AbstractGraphics.h"
+#include "AbstractGraphics.h"
 #include "nesterovBase.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "point.h"
