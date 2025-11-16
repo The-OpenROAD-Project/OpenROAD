@@ -329,10 +329,10 @@ int Connect::getMaxEnclosureFromCutLayer(odb::dbTechLayer* layer,
       if (box->getTechLayer() == layer) {
         use = true;
         cnt_vias += 1;
-        max_via_size = std::max(max_via_size, static_cast<int>(rect.maxDXDY()));
+        max_via_size = std::max(max_via_size, rect.maxDXDY());
       }
 
-      max_size = std::max(max_size, static_cast<int>(rect.maxDXDY()));
+      max_size = std::max(max_size, rect.maxDXDY());
     }
 
     if (use && cnt_vias == 1) {
