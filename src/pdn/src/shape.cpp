@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
+#include "boost/geometry/index/predicates.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "grid.h"
 #include "grid_component.h"
