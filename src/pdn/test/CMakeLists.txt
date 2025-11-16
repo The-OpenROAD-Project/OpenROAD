@@ -49,6 +49,7 @@ or_integration_tests(
     core_grid_with_M7_pins
     core_grid_with_dual_rings
     core_grid_with_fixed_pins
+    core_grid_with_m2_straps
     core_grid_with_rings
     core_grid_with_rings_connect
     core_grid_with_rings_different_offset
