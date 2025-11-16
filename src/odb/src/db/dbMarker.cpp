@@ -26,6 +26,7 @@
 #include "dbChip.h"
 #include "dbCore.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbObject.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbMarker>;

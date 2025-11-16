@@ -1,9 +1,9 @@
-#include <iostream>
 #include <string>
 
 #include "gtest/gtest.h"
 #include "odb/3dblox.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/geom.h"
 #include "tst/fixture.h"
 
@@ -132,7 +132,7 @@ TEST_F(CheckerFixture, test_floating_chips)
     auto sources = marker->getSources();
     EXPECT_EQ(sources.size(), 1);
     // Verify the floating chip is inst3
-    if (sources.size() > 0) {
+    if (!sources.empty()) {
       auto src = *sources.begin();
       EXPECT_EQ(src->getObjectType(), dbObjectType::dbChipInstObj);
       auto chip_inst = static_cast<dbChipInst*>(src);
