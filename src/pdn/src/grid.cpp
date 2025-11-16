@@ -1673,10 +1673,13 @@ void InstanceGrid::report() const
 bool InstanceGrid::isValid() const
 {
   if (getNets(startsWithPower()).empty()) {
-    getLogger()->warn(utl::PDN,
-                      231,
-                      "{} is not connected to any power/ground nets.",
-                      inst_->getName());
+    if (!inst_->getITerms().empty()) {
+      // only warn when instance has something that could be connected to
+      getLogger()->warn(utl::PDN,
+                        231,
+                        "{} is not connected to any power/ground nets.",
+                        inst_->getName());
+    }
     return false;
   }
   return true;
