@@ -21,6 +21,7 @@
 #include "gui/gui.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "omp.h"
 
 namespace drt {
 

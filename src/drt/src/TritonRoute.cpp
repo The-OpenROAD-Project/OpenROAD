@@ -1047,7 +1047,7 @@ int TritonRoute::main()
   prep();
   ta();
   if (distributed_) {
-    asio::post(*dist_pool_, [this] { sendDesignUpdates(""); });
+    asio::post(dist_pool_.value(), [this] { sendDesignUpdates(""); });
   }
   dr();
   if (!router_cfg_->SINGLE_STEP_DR) {

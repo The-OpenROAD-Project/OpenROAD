@@ -14,6 +14,7 @@
 #include "frBaseTypes.h"
 #include "global.h"
 #include "gui/gui.h"
+#include "omp.h"
 #include "pa/FlexPA.h"
 #include "utl/Logger.h"
 
