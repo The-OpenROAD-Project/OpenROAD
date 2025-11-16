@@ -109,6 +109,8 @@ void FlexPA::addInst(frInst* inst)
     unique_insts_.initUniqueInstPinAccess(unique_class);
     initSkipInstTerm(unique_class);
     genInstAccessPoints(inst);
+    unique_inst_patterns_[unique_class]
+        = std::vector<std::unique_ptr<FlexPinAccessPattern>>();
     prepPatternInst(inst);
   }
   inst->setPinAccessIdx(unique_class->getPinAccessIdx());
