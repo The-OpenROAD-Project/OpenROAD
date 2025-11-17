@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbVector.h"
