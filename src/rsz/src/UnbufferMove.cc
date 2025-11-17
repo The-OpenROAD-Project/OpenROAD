@@ -363,7 +363,6 @@ void UnbufferMove::removeBuffer(Instance* buffer)
 
   // Remove the unused buffer
   if (out_db_net == nullptr) {
-    // jk: behavior change point1
     dbInst* dbinst_buffer = db_network_->staToDb(buffer);
     dbInst::destroy(dbinst_buffer);
     return;
@@ -378,15 +377,11 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   Net* removed = out_net;
   odb::dbModNet* survivor_modnet = ip_modnet;
   odb::dbModNet* removed_modnet = op_modnet;
-  bool out_net_has_port = db_network_->hasPort(out_net);
-  // jk: behavior change point2
   bool in_net_has_port = db_network_->hasPort(in_net);
+  bool out_net_has_port = db_network_->hasPort(out_net);
   if (in_net_has_port == false && out_net_has_port == true) {
-    // if (out_net_has_port == true) {
-    //  output net has port, so it should survive
     survivor = out_net;
     removed = in_net;
-    // jk: behavior change point2
     survivor_modnet = op_modnet;
     removed_modnet = ip_modnet;
   }
@@ -417,19 +412,9 @@ void UnbufferMove::removeBuffer(Instance* buffer)
     }
   }
 
-  // jk: behavior change point3
-  // if (db_network_->hasHierarchy() == false) {
-  //  if (db_removed) {
-  //    db_survivor->mergeNet(db_removed);
-  //  }
-  //  sta_->disconnectPin(in_pin);
-  //  sta_->disconnectPin(out_pin);
-  //} else {
-
-  // jk: behavior change point4
   // Disconnect buffer input/output pins
-  // sta_->disconnectPin(in_pin);
-  // sta_->disconnectPin(out_pin);
+  sta_->disconnectPin(in_pin);
+  sta_->disconnectPin(out_pin);
 
   // Merge hier net
   // - mergeModNet() should be done before mergeNet() because
@@ -457,12 +442,6 @@ void UnbufferMove::removeBuffer(Instance* buffer)
 
   // Merge flat net
   db_survivor->mergeNet(db_removed);
-
-  // jk: behavior change point4
-  // Disconnect buffer input/output pins
-  sta_->disconnectPin(in_pin);
-  sta_->disconnectPin(out_pin);
-  //}
 
   // Remove buffer
   sta_->deleteInstance(buffer);
