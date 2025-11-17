@@ -80,7 +80,11 @@ class MacroPlacer
   std::vector<odb::dbInst*> findOverlappedMacros(odb::dbInst* macro);
 
   void setMacroPlacementFile(const std::string& file_name);
-  void addGuidanceRegion(odb::dbInst* macro, const odb::Rect& region);
+  void addGuidanceRegion(odb::dbInst* macro,
+                         float x1,
+                         float y1,
+                         float x2,
+                         float y2);
 
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);

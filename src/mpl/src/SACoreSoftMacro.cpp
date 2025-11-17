@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <cmath>
 #include <iterator>
-#include <map>
 #include <set>
 #include <utility>
 #include <vector>
@@ -438,9 +437,9 @@ void SACoreSoftMacro::calBoundaryPenalty()
     return;
   }
 
-  float global_lx = 0.0f, global_ly = 0.0f;
-  float global_ux = 0.0f, global_uy = 0.0f;
-  float x_dist_from_root = 0.0f, y_dist_from_root = 0.0f;
+  int64_t global_lx = 0, global_ly = 0;
+  int64_t global_ux = 0, global_uy = 0;
+  float x_dist_from_root = 0, y_dist_from_root = 0;
 
   for (const auto& macro_id : pos_seq_) {
     const SoftMacro& soft_macro = macros_[macro_id];
@@ -454,10 +453,10 @@ void SACoreSoftMacro::calBoundaryPenalty()
       global_ux = global_lx + soft_macro.getWidth();
       global_uy = global_ly + soft_macro.getHeight();
 
-      x_dist_from_root
-          = std::min(global_lx, std::abs(root_->getWidth() - global_ux));
-      y_dist_from_root
-          = std::min(global_ly, std::abs(root_->getHeight() - global_uy));
+      x_dist_from_root = block_->dbuToMicrons(
+          std::min(global_lx, std::abs(root_->getWidth() - global_ux)));
+      y_dist_from_root = block_->dbuToMicrons(
+          std::min(global_ly, std::abs(root_->getHeight() - global_uy)));
 
       boundary_penalty_
           += (x_dist_from_root + y_dist_from_root) * soft_macro.getNumMacro();
@@ -507,7 +506,8 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
         }
 
         Cluster* cluster = soft_macro.getCluster();
-        float macro_dominance = cluster->getMacroArea() / cluster->getArea();
+        float macro_dominance
+            = cluster->getMacroArea() / static_cast<float>(cluster->getArea());
 
         macro_blockage_penalty_ += overlap_shape.width()
                                    * overlap_shape.height()
@@ -549,7 +549,7 @@ void SACoreSoftMacro::calFixedMacrosPenalty()
         continue;
       }
 
-      fixed_macros_penalty_ += overlap_shape.width() * overlap_shape.height();
+      fixed_macros_penalty_ += block_->dbuAreaToMicrons(overlap_shape.area());
     }
   }
 
@@ -623,7 +623,8 @@ void SACoreSoftMacro::attemptMacroClusterAlignment()
 
 float SACoreSoftMacro::calSingleNotchPenalty(float width, float height)
 {
-  return std::sqrt((width * height) / outline_.area());
+  return std::sqrt((width * height)
+                   / block_->dbuAreaToMicrons(outline_.area()));
 }
 
 // If there is no HardMacroCluster, we do not consider the notch penalty
@@ -637,21 +638,22 @@ void SACoreSoftMacro::calNotchPenalty()
   notch_penalty_ = 0.0;
   notch_h_th_ = outline_.dy() / 10;
   notch_v_th_ = outline_.dx() / 10;
-  float width = 0;
-  float height = 0;
+  int width = 0;
+  int height = 0;
 
   // If the floorplan is not valid
   // We think the entire floorplan is a "huge" notch
   if (!isValid()) {
     width = std::max(width_, outline_.dx());
     height = std::max(height_, outline_.dy());
-    notch_penalty_ = calSingleNotchPenalty(width, height);
+    notch_penalty_ = calSingleNotchPenalty(block_->dbuToMicrons(width),
+                                           block_->dbuToMicrons(height));
     return;
   }
 
   // Create grids based on location of MixedCluster and HardMacroCluster
-  std::set<float> x_point;
-  std::set<float> y_point;
+  std::set<int> x_point;
+  std::set<int> y_point;
   for (auto& macro : macros_) {
     if (!macro.isMacroCluster() && !macro.isMixedCluster()) {
       continue;
@@ -661,13 +663,13 @@ void SACoreSoftMacro::calNotchPenalty()
     y_point.insert(macro.getY());
     y_point.insert(macro.getY() + macro.getHeight());
   }
-  x_point.insert(0.0);
-  y_point.insert(0.0);
+  x_point.insert(0);
+  y_point.insert(0);
   x_point.insert(outline_.dx());
   y_point.insert(outline_.dy());
 
-  std::vector<float> x_coords(x_point.begin(), x_point.end());
-  std::vector<float> y_coords(y_point.begin(), y_point.end());
+  std::vector<int> x_coords(x_point.begin(), x_point.end());
+  std::vector<int> y_coords(y_point.begin(), y_point.end());
   int num_x = x_coords.size() - 1;
   int num_y = y_coords.size() - 1;
 
@@ -714,7 +716,8 @@ void SACoreSoftMacro::calNotchPenalty()
         height = y_coords[row + 1] - y_coords[row];
 
         if (width <= notch_h_th_ || height <= notch_v_th_) {
-          notch_penalty_ += calSingleNotchPenalty(width, height);
+          notch_penalty_ += calSingleNotchPenalty(block_->dbuToMicrons(width),
+                                                  block_->dbuToMicrons(height));
         }
       }
     }
@@ -842,10 +845,10 @@ void SACoreSoftMacro::fillDeadSpace()
 
   // adjust the location of MixedCluster
   // Step1 : Divide the entire floorplan into grids
-  std::set<float> x_point;
-  std::set<float> y_point;
+  std::set<int> x_point;
+  std::set<int> y_point;
   for (auto& macro_id : pos_seq_) {
-    if (macros_[macro_id].getArea() <= 0.0) {
+    if (macros_[macro_id].getArea() == 0) {
       continue;
     }
     x_point.insert(macros_[macro_id].getX());
@@ -858,8 +861,8 @@ void SACoreSoftMacro::fillDeadSpace()
   x_point.insert(outline_.dx());
   y_point.insert(outline_.dy());
   // create grid
-  std::vector<float> x_grid(x_point.begin(), x_point.end());
-  std::vector<float> y_grid(y_point.begin(), y_point.end());
+  std::vector<int> x_grid(x_point.begin(), x_point.end());
+  std::vector<int> y_grid(y_point.begin(), y_point.end());
   // create grid in a row-based manner
   std::vector<std::vector<int>> grids;  // store the macro id
   const int num_x = x_grid.size() - 1;
@@ -991,8 +994,8 @@ void SACoreSoftMacro::fillDeadSpace()
   }
 }
 
-int SACoreSoftMacro::getSegmentIndex(float segment,
-                                     const std::vector<float>& coords)
+int SACoreSoftMacro::getSegmentIndex(int segment,
+                                     const std::vector<int>& coords)
 {
   int index = std::distance(
       coords.begin(), std::lower_bound(coords.begin(), coords.end(), segment));

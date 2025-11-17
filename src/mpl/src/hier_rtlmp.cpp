@@ -636,8 +636,8 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   TilingSet tilings_set;
 
   if (hard_macros.size() == 1) {
-    float width = hard_macros[0]->getWidth();
-    float height = hard_macros[0]->getHeight();
+    int width = hard_macros[0]->getWidth();
+    int height = hard_macros[0]->getHeight();
 
     TilingList tilings;
     tilings.emplace_back(width, height);
@@ -947,11 +947,11 @@ void HierRTLMP::computePinAccessDepthLimits()
     logger_->report("\n  Pin Access Depth (μm)  |  Min  |  Max");
     logger_->report("-----------------------------------------");
     logger_->report("             Horizontal  | {:>5.2f} | {:>6.2f}",
-                    pin_access_depth_limits_.x.min,
-                    pin_access_depth_limits_.x.max);
+                    block_->dbuToMicrons(pin_access_depth_limits_.x.min),
+                    block_->dbuToMicrons(pin_access_depth_limits_.x.max));
     logger_->report("               Vertical  | {:>5.2f} | {:>6.2f}\n",
-                    pin_access_depth_limits_.y.min,
-                    pin_access_depth_limits_.y.max);
+                    block_->dbuToMicrons(pin_access_depth_limits_.y.min),
+                    block_->dbuToMicrons(pin_access_depth_limits_.y.max));
   }
 }
 
@@ -962,7 +962,7 @@ void HierRTLMP::createBlockagesForIOBundles()
     return;
   }
 
-  float io_bundles_span = 0.0f;
+  int io_bundles_span = 0;
   for (Cluster* io_bundle : io_bundles) {
     // The shape of an IO bundle is just a line.
     io_bundles_span += io_bundle->getBBox().margin() / 2;
@@ -975,13 +975,13 @@ void HierRTLMP::createBlockagesForIOBundles()
     }
   }
 
-  const float base_depth = computePinAccessBaseDepth(io_bundles_span);
+  const int base_depth = computePinAccessBaseDepth(io_bundles_span);
 
   for (Cluster* io_bundle : io_bundles) {
     const float number_of_ios
         = static_cast<float>(clustering_engine_->getNumberOfIOs(io_bundle));
     const float io_density_factor = number_of_ios / total_fixed_ios;
-    const float depth = base_depth * io_density_factor;
+    const int depth = base_depth * io_density_factor;
     const odb::Rect rect = io_bundle->getBBox();
     const odb::Line line = rectToLine(block_, rect, logger_);
     const BoundaryRegion region(line, getBoundary(block_, rect));
@@ -1028,14 +1028,14 @@ void HierRTLMP::createBlockagesForAvailableRegions()
     return;
   }
 
-  double io_span = 0.0;
+  int io_span = 0;
   for (const BoundaryRegion& region :
        tree_->available_regions_for_unconstrained_pins) {
     io_span += std::sqrt(
         odb::Point::squaredDistance(region.line.pt0(), region.line.pt1()));
   }
 
-  const float depth = computePinAccessBaseDepth(io_span);
+  const int depth = computePinAccessBaseDepth(io_span);
 
   for (const BoundaryRegion region :
        tree_->available_regions_for_unconstrained_pins) {
@@ -1049,7 +1049,7 @@ void HierRTLMP::createBlockagesForConstraintRegions()
     return;
   }
 
-  float io_span = 0.0f;
+  int io_span = 0;
   std::vector<Cluster*> clusters_of_unplaced_ios
       = getClustersOfUnplacedIOPins();
 
@@ -1064,7 +1064,7 @@ void HierRTLMP::createBlockagesForConstraintRegions()
     io_span += region.margin() / 2;
   }
 
-  const float base_depth = computePinAccessBaseDepth(io_span);
+  const int base_depth = computePinAccessBaseDepth(io_span);
   int total_ios = 0;
   for (odb::dbBTerm* bterm : block_->getBTerms()) {
     if (!bterm->getFirstPinPlacementStatus().isFixed()) {
@@ -1077,11 +1077,12 @@ void HierRTLMP::createBlockagesForConstraintRegions()
       continue;
     }
 
-    const float cluster_number_of_ios = static_cast<float>(
-        clustering_engine_->getNumberOfIOs(cluster_of_unplaced_ios));
+    const int cluster_number_of_ios
+        = clustering_engine_->getNumberOfIOs(cluster_of_unplaced_ios);
 
-    const float io_density_factor = cluster_number_of_ios / total_ios;
-    const float depth = base_depth * io_density_factor;
+    const float io_density_factor
+        = cluster_number_of_ios / static_cast<float>(total_ios);
+    const int depth = base_depth * io_density_factor;
 
     const odb::Rect region_rect = cluster_of_unplaced_ios->getBBox();
     const odb::Line region_line = rectToLine(block_, region_rect, logger_);
@@ -1158,9 +1159,9 @@ std::vector<odb::Rect> HierRTLMP::computeAvailableRegions(
 }
 
 void HierRTLMP::createPinAccessBlockage(const BoundaryRegion& region,
-                                        const float depth)
+                                        const int depth)
 {
-  float blockage_depth = depth;
+  int blockage_depth = depth;
 
   const Interval& limits = isVertical(region.boundary)
                                ? pin_access_depth_limits_.x
@@ -1177,11 +1178,11 @@ void HierRTLMP::createPinAccessBlockage(const BoundaryRegion& region,
              "coarse_shaping",
              1,
              "Creating pin access blockage in {} -> Region line = ({}) ({}) , "
-             "Depth = {}",
+             "Depth = {} um",
              toString(region.boundary),
              region.line.pt0(),
              region.line.pt1(),
-             blockage_depth);
+             block_->dbuToMicrons(blockage_depth));
 
   odb::Rect blockage = lineToRect(region.line);
   switch (region.boundary) {
@@ -1238,19 +1239,20 @@ int HierRTLMP::computePinAccessBaseDepth(const int io_span) const
     }
   }
 
+  int64_t root_area = (tree_->root->getWidth()
+                       * static_cast<int64_t>(tree_->root->getHeight()));
   const float macro_dominance_factor
-      = tree_->macro_with_halo_area
-        / static_cast<float>(tree_->root->getWidth()
-                             * tree_->root->getHeight());
-  const float base_depth = (std_cell_area / static_cast<float>(io_span))
-                           * std::pow((1 - macro_dominance_factor), 2);
+      = tree_->macro_with_halo_area / static_cast<float>(root_area);
+
+  const int base_depth = std_cell_area / static_cast<float>(io_span)
+                         * std::pow((1 - macro_dominance_factor), 2);
 
   debugPrint(logger_,
              MPL,
              "coarse_shaping",
              1,
              "Base pin access depth: {} μm",
-             base_depth);
+             block_->dbuToMicrons(base_depth));
 
   return base_depth;
 }
@@ -1871,13 +1873,16 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
                                float target_util,
                                float target_dead_space)
 {
-  const float outline_width = parent->getWidth();
-  const float outline_height = parent->getHeight();
-  float pin_access_area = 0.0;
-  float std_cell_cluster_area = 0.0;
-  float std_cell_mixed_cluster_area = 0.0;
-  float macro_cluster_area = 0.0;
-  float macro_mixed_cluster_area = 0.0;
+  const int outline_width = parent->getWidth();
+  const int outline_height = parent->getHeight();
+  const int64_t outline_area
+      = outline_width * static_cast<int64_t>(outline_height);
+
+  int64_t pin_access_area = 0;
+  int64_t std_cell_cluster_area = 0;
+  int64_t std_cell_mixed_cluster_area = 0;
+  int64_t macro_cluster_area = 0;
+  int64_t macro_mixed_cluster_area = 0;
   // add the macro area for blockages, pin access and so on
   for (auto& macro : macros) {
     if (macro.getCluster() == nullptr) {
@@ -1900,8 +1905,8 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
     } else if (cluster->getClusterType() == HardMacroCluster) {
       TilingList valid_tilings;
       for (auto& tiling : cluster->getTilings()) {
-        if (tiling.width() < outline_width * (1 + conversion_tolerance_)
-            && tiling.height() < outline_height * (1 + conversion_tolerance_)) {
+        if (tiling.width() < outline_width
+            && tiling.height() < outline_height) {
           valid_tilings.push_back(tiling);
         }
       }
@@ -1921,8 +1926,8 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
       std_cell_mixed_cluster_area += cluster->getStdCellArea();
       TilingList valid_tilings;
       for (auto& tiling : cluster->getTilings()) {
-        if (tiling.width() < outline_width * (1 + conversion_tolerance_)
-            && tiling.height() < outline_height * (1 + conversion_tolerance_)) {
+        if (tiling.width() < outline_width
+            && tiling.height() < outline_height) {
           valid_tilings.push_back(tiling);
         }
       }
@@ -1944,33 +1949,37 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
   // check how much available space to inflate for mixed cluster
   const float min_target_util
       = std_cell_mixed_cluster_area
-        / (outline_width * outline_height - pin_access_area - macro_cluster_area
-           - macro_mixed_cluster_area);
+        / static_cast<float>(outline_area - pin_access_area - macro_cluster_area
+                             - macro_mixed_cluster_area);
+
   if (target_util <= min_target_util) {
     target_util = min_target_util;  // target utilization for standard cells in
                                     // mixed cluster
   }
   // calculate the std_cell_util
-  const float avail_space
-      = outline_width * outline_height
+  const int64_t avail_space
+      = outline_area
         - (pin_access_area + macro_cluster_area + macro_mixed_cluster_area
            + std_cell_mixed_cluster_area / target_util);
   const float std_cell_util
       = std_cell_cluster_area / (avail_space * (1 - target_dead_space));
+
   // shape clusters
-  if ((std_cell_cluster_area > 0.0 && avail_space < 0.0)
-      || (std_cell_mixed_cluster_area > 0.0 && min_target_util <= 0.0)) {
+  if ((std_cell_cluster_area > 0 && avail_space < 0)
+      || (std_cell_mixed_cluster_area > 0 && min_target_util <= 0.0)) {
     debugPrint(logger_,
                MPL,
                "fine_shaping",
                1,
-               "No valid solution for children of {} "
-               "std_cell_area = {} avail_space = {} pa area = {} "
+               "No valid solution for children of {} area {} "
+               "std_cell_area = {} avail_space = {} pa area = {} macro area {} "
                "std_cell_mixed_area = {} min_target_util = {}",
                parent->getName(),
+               outline_area,
                std_cell_cluster_area,
                avail_space,
                pin_access_area,
+               macro_cluster_area,
                std_cell_mixed_cluster_area,
                min_target_util);
 
@@ -1983,18 +1992,24 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
       continue;
     }
     if (cluster->getClusterType() == StdCellCluster) {
-      float area = cluster->getArea();
-      float width = std::sqrt(area);
-      float height = width;
+      int64_t area = cluster->getArea();
+      int width = std::sqrt(area);
+      int height = width;
+
       const float dust_threshold
           = 1.0 / macros.size();  // check if the cluster is the dust cluster
       const int dust_std_cell = 100;
-      if ((width / outline_width <= dust_threshold
-           && height / outline_height <= dust_threshold)
+
+      const float width_check
+          = block_->dbuToMicrons(width) / block_->dbuToMicrons(outline_width);
+      const float height_check
+          = block_->dbuToMicrons(height) / block_->dbuToMicrons(outline_height);
+
+      if ((width_check <= dust_threshold && height_check <= dust_threshold)
           || cluster->getNumStdCell() <= dust_std_cell) {
-        width = 1e-3;
-        height = 1e-3;
-        area = width * height;
+        width = block_->micronsToDbu(1e-3);
+        height = block_->micronsToDbu(1e-3);
+        area = width * static_cast<int64_t>(height);
       } else {
         area = cluster->getArea() / std_cell_util;
         width = std::sqrt(area / min_ar_);

@@ -99,7 +99,7 @@ class SimulatedAnnealingCore
     SequencePair sequence_pair;
     // [Only for SoftMacro] The same sequence pair can represent different
     // floorplan arrangements depending on the macros' shapes.
-    std::map<int, float> macro_id_to_width;
+    std::map<int, int> macro_id_to_width;
   };
 
   void fastSA();

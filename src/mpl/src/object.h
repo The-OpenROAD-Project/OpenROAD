@@ -90,12 +90,12 @@ class Metrics
   Metrics() = default;
   Metrics(unsigned int num_std_cell,
           unsigned int num_macro,
-          float std_cell_area,
-          float macro_area);
+          int64_t std_cell_area,
+          int64_t macro_area);
 
   void addMetrics(const Metrics& metrics);
   std::pair<unsigned int, unsigned int> getCountStats() const;
-  std::pair<float, float> getAreaStats() const;
+  std::pair<int64_t, int64_t> getAreaStats() const;
   unsigned int getNumMacro() const;
   unsigned int getNumStdCell() const;
   int64_t getStdCellArea() const;
@@ -421,8 +421,8 @@ class SoftMacro
   bool isMixedCluster() const;
   bool isClusterOfUnplacedIOPins() const;
   bool isClusterOfUnconstrainedIOPins() const;
-  void setLocationF(float x, float y);
-  void setShapeF(float width, float height);
+  void setLocationF(int x, int y);
+  void setShapeF(int width, int height);
   int getNumMacro() const;
   bool isBlockage() const;
   // Align Flag support

@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <cmath>
 #include <iterator>
-#include <map>
 #include <memory>
 #include <random>
 #include <string>
@@ -26,8 +25,8 @@ using utl::MPL;
 // Metrics Class
 Metrics::Metrics(unsigned int num_std_cell,
                  unsigned int num_macro,
-                 float std_cell_area,
-                 float macro_area)
+                 int64_t std_cell_area,
+                 int64_t macro_area)
 {
   num_std_cell_ = num_std_cell;
   num_macro_ = num_macro;
@@ -48,9 +47,9 @@ std::pair<unsigned int, unsigned int> Metrics::getCountStats() const
   return std::pair<unsigned int, unsigned int>(num_std_cell_, num_macro_);
 }
 
-std::pair<float, float> Metrics::getAreaStats() const
+std::pair<int64_t, int64_t> Metrics::getAreaStats() const
 {
-  return std::pair<float, float>(std_cell_area_, macro_area_);
+  return std::pair<int64_t, int64_t>(std_cell_area_, macro_area_);
 }
 
 unsigned int Metrics::getNumMacro() const
@@ -1031,7 +1030,8 @@ void SoftMacro::setArea(int64_t area)
       || width_intervals_.empty() || cluster_ == nullptr
       || cluster_->getClusterType() == HardMacroCluster
       || cluster_->isIOCluster()
-      || area <= width_intervals_.front().min * height_intervals_.front().max) {
+      || area <= (width_intervals_.front().min
+                  * static_cast<int64_t>(height_intervals_.front().max))) {
     return;
   }
 
@@ -1077,7 +1077,7 @@ void SoftMacro::setShapes(const TilingList& tilings, bool force)
 
   width_ = tilings.front().width();
   height_ = tilings.front().height();
-  area_ = width_ * height_;
+  area_ = width_ * static_cast<int64_t>(height_);
 }
 
 // Method to set the shape curve for the following cluster types:
@@ -1175,7 +1175,8 @@ void SoftMacro::resizeRandomly(
   const float min_width = width_intervals_[idx].min;
   const float max_width = width_intervals_[idx].max;
   width_ = min_width + distribution(generator) * (max_width - min_width);
-  area_ = width_intervals_[idx].min * height_intervals_[idx].max;
+  area_ = width_intervals_[idx].min
+          * static_cast<int64_t>(height_intervals_[idx].max);
   height_ = area_ / width_;
 }
 
@@ -1213,7 +1214,7 @@ float SoftMacro::getMacroUtil() const
   }
 
   if (cluster_->getClusterType() == MixedCluster) {
-    return cluster_->getMacroArea() / area_;
+    return cluster_->getMacroArea() / static_cast<float>(area_);
   }
 
   return 0.0;
@@ -1250,13 +1251,13 @@ bool SoftMacro::isClusterOfUnconstrainedIOPins() const
   return cluster_->isClusterOfUnconstrainedIOPins();
 }
 
-void SoftMacro::setLocationF(float x, float y)
+void SoftMacro::setLocationF(int x, int y)
 {
   x_ = x;
   y_ = y;
 }
 
-void SoftMacro::setShapeF(float width, float height)
+void SoftMacro::setShapeF(int width, int height)
 {
   if (fixed_) {
     return;
@@ -1264,7 +1265,7 @@ void SoftMacro::setShapeF(float width, float height)
 
   width_ = width;
   height_ = height;
-  area_ = width * height;
+  area_ = width * static_cast<int64_t>(height);
 }
 
 void Cluster::reportConnections() const

@@ -383,11 +383,11 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
     }
     // check how much the macro is far from no fence violation
     const int max_x_dist = ((bbox.xMax() - bbox.xMin()) - (ux - lx)) / 2;
-    const int max_y_dist = ((bbox.yMax() - bbox.yMin()) - (uy - ly)) / 2.0;
+    const int max_y_dist = ((bbox.yMax() - bbox.yMin()) - (uy - ly)) / 2;
     const int x_dist
-        = std::abs((bbox.xMin() + bbox.xMax()) / 2.0 - (lx + ux) / 2);
+        = std::abs((bbox.xMin() + bbox.xMax()) / 2 - (lx + ux) / 2);
     const int y_dist
-        = std::abs((bbox.yMin() + bbox.yMax()) / 2.0 - (ly + uy) / 2);
+        = std::abs((bbox.yMin() + bbox.yMax()) / 2 - (ly + uy) / 2);
     // calculate x and y direction independently
     float width = x_dist <= max_x_dist
                       ? 0.0
@@ -428,8 +428,9 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
                                - std::max(guide.yMin(), macro_y_min);
 
     // maximum overlap area
-    int64_t penalty = std::min(macros_[id].getWidth(), guide.dx())
-                      * std::min(macros_[id].getHeight(), guide.dy());
+    int64_t penalty
+        = std::min(macros_[id].getWidth(), guide.dx())
+          * static_cast<int64_t>(std::min(macros_[id].getHeight(), guide.dy()));
 
     // subtract overlap
     if (overlap_width > 0 && overlap_height > 0) {
@@ -453,7 +454,6 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
 template <class T>
 void SimulatedAnnealingCore<T>::packFloorplan()
 {
-  // logger_->report("POS SEQ {} NEG SEQ {}", pos_seq_, neg_seq_);
   // Each index corresponds to a macro id whose pair is:
   // <Position in Positive Sequence , Position in Negative Sequence>
   std::vector<std::pair<int, int>> sequence_pair_pos(pos_seq_.size());
@@ -814,11 +814,11 @@ void SimulatedAnnealingCore<T>::useBestResult()
   if constexpr (std::is_same_v<T, SoftMacro>) {
     for (const int macro_id : pos_seq_) {
       SoftMacro& macro = macros_[macro_id];
-      const float valid_result_width
+      const int valid_result_width
           = best_result_.macro_id_to_width.at(macro_id);
 
       if (macro.isMacroCluster()) {
-        const float valid_result_height = macro.getArea() / valid_result_width;
+        const int valid_result_height = macro.getArea() / valid_result_width;
         macro.setShapeF(valid_result_width, valid_result_height);
       } else {
         macro.setWidth(valid_result_width);

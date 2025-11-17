@@ -181,9 +181,9 @@ void ClusteringEngine::searchForFixedInstsInsideFloorplanShape()
 Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
 {
   unsigned int num_std_cell = 0;
-  float std_cell_area = 0.0;
+  int64_t std_cell_area = 0;
   unsigned int num_macro = 0;
-  float macro_area = 0.0;
+  int64_t macro_area = 0;
 
   const odb::Rect& core = block_->getCoreArea();
 
@@ -192,7 +192,7 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
       continue;
     }
 
-    float inst_area = computeMicronArea(inst);
+    int64_t inst_area = computeArea(inst);
 
     if (inst->isBlock()) {  // a macro
       num_macro += 1;
@@ -264,45 +264,47 @@ void ClusteringEngine::reportDesignData()
 {
   const odb::Rect& die = block_->getDieArea();
   logger_->report(
-      "Die Area: ({}, {}) ({}, {}),  Floorplan Area: ({}, "
-      "{}) ({}, {})",
-      die.xMin(),
-      die.yMin(),
-      die.xMax(),
-      die.yMax(),
-      tree_->floorplan_shape.xMin(),
-      tree_->floorplan_shape.yMin(),
-      tree_->floorplan_shape.xMax(),
-      tree_->floorplan_shape.yMax());
+      "Die Area: ({:.2f}, {:.2f}) ({:.2f}, {:.2f}),  Floorplan Area: ({:.2f}, "
+      "{:.2f}) ({:.2f}, {:.2f})",
+      block_->dbuToMicrons(die.xMin()),
+      block_->dbuToMicrons(die.yMin()),
+      block_->dbuToMicrons(die.xMax()),
+      block_->dbuToMicrons(die.yMax()),
+      block_->dbuToMicrons(tree_->floorplan_shape.xMin()),
+      block_->dbuToMicrons(tree_->floorplan_shape.yMin()),
+      block_->dbuToMicrons(tree_->floorplan_shape.xMax()),
+      block_->dbuToMicrons(tree_->floorplan_shape.yMax()));
 
   float util
       = (design_metrics_->getStdCellArea() + design_metrics_->getMacroArea())
-        / tree_->floorplan_shape.area();
+        / static_cast<float>(tree_->floorplan_shape.area());
   float floorplan_util
       = design_metrics_->getStdCellArea()
-        / (tree_->floorplan_shape.area() - design_metrics_->getMacroArea());
+        / static_cast<float>(
+            (tree_->floorplan_shape.area() - design_metrics_->getMacroArea()));
   logger_->report(
       "\tNumber of std cell instances: {}\n"
-      "\tArea of std cell instances: {}\n"
+      "\tArea of std cell instances: {:.2f}\n"
       "\tNumber of macros: {}\n"
-      "\tArea of macros: {}\n"
-      "\tHalo width: {}\n"
-      "\tHalo height: {}\n"
-      "\tArea of macros with halos: {}\n"
-      "\tArea of std cell instances + Area of macros: {}\n"
-      "\tFloorplan area: {}\n"
+      "\tArea of macros: {:.2f}\n"
+      "\tHalo width: {:.2f}\n"
+      "\tHalo height: {:.2f}\n"
+      "\tArea of macros with halos: {:.2f}\n"
+      "\tArea of std cell instances + Area of macros: {:.2f}\n"
+      "\tFloorplan area: {:.2f}\n"
       "\tDesign Utilization: {:.2f}\n"
       "\tFloorplan Utilization: {:.2f}\n"
       "\tManufacturing Grid: {}\n",
       design_metrics_->getNumStdCell(),
-      design_metrics_->getStdCellArea(),
+      block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()),
       design_metrics_->getNumMacro(),
-      design_metrics_->getMacroArea(),
-      tree_->halo_width,
-      tree_->halo_height,
-      tree_->macro_with_halo_area,
-      design_metrics_->getStdCellArea() + design_metrics_->getMacroArea(),
-      tree_->floorplan_shape.area(),
+      block_->dbuAreaToMicrons(design_metrics_->getMacroArea()),
+      block_->dbuToMicrons(tree_->halo_width),
+      block_->dbuToMicrons(tree_->halo_height),
+      block_->dbuAreaToMicrons(tree_->macro_with_halo_area),
+      block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()
+                               + design_metrics_->getMacroArea()),
+      block_->dbuAreaToMicrons(tree_->floorplan_shape.area()),
       util,
       floorplan_util,
       block_->getTech()->getManufacturingGrid());
@@ -1196,14 +1198,14 @@ void ClusteringEngine::updateInstancesAssociation(odb::dbModule* module,
 
 void ClusteringEngine::setClusterMetrics(Cluster* cluster)
 {
-  float std_cell_area = 0.0f;
+  int64_t std_cell_area = 0;
   for (odb::dbInst* std_cell : cluster->getLeafStdCells()) {
-    std_cell_area += computeMicronArea(std_cell);
+    std_cell_area += computeArea(std_cell);
   }
 
-  float macro_area = 0.0f;
+  int64_t macro_area = 0.0f;
   for (odb::dbInst* macro : cluster->getLeafMacros()) {
-    macro_area += computeMicronArea(macro);
+    macro_area += computeArea(macro);
   }
 
   const unsigned int num_std_cell = cluster->getLeafStdCells().size();
@@ -1225,14 +1227,12 @@ void ClusteringEngine::setClusterMetrics(Cluster* cluster)
              metrics.getNumStdCell());
 }
 
-float ClusteringEngine::computeMicronArea(odb::dbInst* inst)
+int64_t ClusteringEngine::computeArea(odb::dbInst* inst)
 {
-  const float width = static_cast<float>(
-      block_->dbuToMicrons(inst->getBBox()->getBox().dx()));
-  const float height = static_cast<float>(
-      block_->dbuToMicrons(inst->getBBox()->getBox().dy()));
+  const int width = inst->getBBox()->getBox().dx();
+  const int height = inst->getBBox()->getBox().dy();
 
-  return width * height;
+  return width * static_cast<int64_t>(height);
 }
 
 // Post-order DFS for clustering
@@ -1532,12 +1532,12 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
   std::map<odb::dbInst*, int> inst_vertex_id_map;
   for (auto& macro : parent->getLeafMacros()) {
     inst_vertex_id_map[macro] = vertex_id++;
-    vertex_weight.push_back(computeMicronArea(macro));
+    vertex_weight.push_back(block_->dbuAreaToMicrons(computeArea(macro)));
     insts.push_back(macro);
   }
   for (auto& std_cell : parent->getLeafStdCells()) {
     inst_vertex_id_map[std_cell] = vertex_id++;
-    vertex_weight.push_back(computeMicronArea(std_cell));
+    vertex_weight.push_back(block_->dbuAreaToMicrons(computeArea(std_cell)));
     insts.push_back(std_cell);
   }
 

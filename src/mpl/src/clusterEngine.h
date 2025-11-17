@@ -279,7 +279,7 @@ class ClusteringEngine
   float computeConnWeight(int hops);
 
   void printPhysicalHierarchyTree(Cluster* parent, int level);
-  float computeMicronArea(odb::dbInst* inst);
+  int64_t computeArea(odb::dbInst* inst);
 
   bool isValidNet(odb::dbNet* net);
 

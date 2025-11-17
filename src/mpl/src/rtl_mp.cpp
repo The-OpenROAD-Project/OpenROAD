@@ -88,7 +88,6 @@ bool MacroPlacer::place(const int num_threads,
 
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
 
-  logger_->report("teste");
   hier_rtlmp_->run();
 
   return true;
@@ -195,10 +194,18 @@ std::vector<odb::dbInst*> MacroPlacer::findOverlappedMacros(odb::dbInst* macro)
   return overlapped_macros;
 }
 
-void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, const odb::Rect& region)
+void MacroPlacer::addGuidanceRegion(odb::dbInst* macro,
+                                    const float x1,
+                                    const float y1,
+                                    const float x2,
+                                    const float y2)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   const odb::Rect& core = block->getCoreArea();
+  odb::Rect region = odb::Rect(block->micronsToDbu(x1),
+                               block->micronsToDbu(y1),
+                               block->micronsToDbu(x2),
+                               block->micronsToDbu(y2));
 
   if (!core.contains(region)) {
     logger_->error(MPL,
