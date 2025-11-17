@@ -48,6 +48,8 @@ static bool isCoreAreaOverlap(Die& die, Instance& inst);
 
 static int64_t getOverlapWithCoreArea(Die& die, Instance& inst);
 
+bool extend_instance_by_average = false;
+
 ////////////////////////////////////////////////////////
 // Instance
 
@@ -78,14 +80,16 @@ Instance::Instance(odb::dbInst* db_inst,
                  row_limit);
   }
 
-  int pin_count = 0;
-  for (odb::dbITerm* iterm : db_inst->getITerms()) {
-    odb::dbSigType sig_type = iterm->getSigType();
-    if (sig_type != odb::dbSigType::POWER && sig_type != odb::dbSigType::GROUND) {
-      ++pin_count;
+  if (!extend_instance_by_average) {
+    int pin_count = 0;
+    for (odb::dbITerm* iterm : db_inst->getITerms()) {
+      odb::dbSigType sig_type = iterm->getSigType();
+      if (sig_type != odb::dbSigType::POWER && sig_type != odb::dbSigType::GROUND) {
+        ++pin_count;
+      }
     }
+    this->extendSizeByPinCount(pin_count, logger);
   }
-  this->extendSizeByPinCount(pin_count, logger);
 }
 
 // for dummy instances
@@ -903,44 +907,56 @@ void PlacerBaseCommon::init()
     }
   }
 
-  // int total_signal_pins = 0;
-  // int64_t total_area = 0;
+  if(extend_instance_by_average) {
+    log_->report("Extending instances by average pin density.");
+    int total_signal_pins = 0;
+    int64_t total_area = 0;
 
-  // // First, count total signal pins and total area for movable instances
-  // for (auto& inst : instStor_) {
-  //   if (!inst.isFixed() && inst.isInstance()) {
-  //     int pin_count = 0;
-  //     for (odb::dbITerm* iterm : inst.dbInst()->getITerms()) {
-  //       odb::dbSigType sig_type = iterm->getSigType();
-  //       if (sig_type != odb::dbSigType::POWER && sig_type != odb::dbSigType::GROUND) {
-  //         ++pin_count;
-  //       }
-  //     }
-  //     total_signal_pins += pin_count;
-  //     total_area += inst.getArea();
-  //   }
-  // }
+    // First, count total signal pins and total area for movable instances
+    for (auto& inst : instStor_) {
+      if (!inst.isFixed() && inst.isInstance()) {
+        int pin_count = 0;
+        for (odb::dbITerm* iterm : inst.dbInst()->getITerms()) {
+          odb::dbSigType sig_type = iterm->getSigType();
+          if (sig_type != odb::dbSigType::POWER && sig_type != odb::dbSigType::GROUND) {
+            ++pin_count;
+          }
+        }
+        total_signal_pins += pin_count;
+        total_area += inst.getArea();
+      }
+    }
 
-  // // Compute average pin density (pins per area unit)
-  // double avg_density = (total_area > 0) ? static_cast<double>(total_signal_pins) / total_area : 0.0;
+    // Compute average pin density (pins per area unit)
+    double avg_density = (total_area > 0) ? static_cast<double>(total_signal_pins) / total_area : 0.0;
+    log_->report("Average pin density: {:.6f} pins per DBU^2", avg_density);
+    double avg_density_micron = block->dbuToMicrons(avg_density);
+    double avg_area_per_pin_dbu = (total_signal_pins > 0) ? static_cast<double>(total_area) / total_signal_pins : 0.0;
+    double avg_area_per_pin_micron = block->dbuAreaToMicrons(avg_area_per_pin_dbu);
 
-  // // Now, adjust each movable instance to match the average density
-  // for (auto& inst : instStor_) {
-  //   if (!inst.isFixed() && inst.isInstance()) {
-  //     int pin_count = 0;
-  //     for (odb::dbITerm* iterm : inst.dbInst()->getITerms()) {
-  //       odb::dbSigType sig_type = iterm->getSigType();
-  //       if (sig_type != odb::dbSigType::POWER && sig_type != odb::dbSigType::GROUND) {
-  //         ++pin_count;
-  //       }
-  //     }
-  //     if (pin_count > 0 && avg_density > 0.0) {
-  //       double target_area = static_cast<double>(pin_count) / avg_density;
-  //       double scale = std::sqrt(target_area / static_cast<double>(inst.getArea()));
-  //       inst.extendSizeByScale(scale, log_);
-  //     }
-  //   }
-  // }
+    log_->report("Average pin density: {:.6f} pins per micron^2", avg_density_micron);
+    log_->report("Average area per pin: {:.2f} DBU^2 ({:.6f} micron^2)", avg_area_per_pin_dbu, avg_area_per_pin_micron);
+
+    // Now, adjust each movable instance to match the average density
+    for (auto& inst : instStor_) {
+      if (!inst.isFixed() && inst.isInstance()) {
+        int pin_count = 0;
+        for (odb::dbITerm* iterm : inst.dbInst()->getITerms()) {
+          odb::dbSigType sig_type = iterm->getSigType();
+          if (sig_type != odb::dbSigType::POWER && sig_type != odb::dbSigType::GROUND) {
+            ++pin_count;
+          }
+        }
+        if (pin_count > 0 && avg_density > 0.0) {
+          double target_area = static_cast<double>(pin_count) / avg_density;
+          double scale = std::sqrt(target_area / static_cast<double>(inst.getArea()));
+          inst.extendSizeByScale(scale, log_);
+        }
+      }
+    }
+  } else {
+    log_->report("Instance sizes not extended by average pin density.");
+  }
 
   for (auto& pb_inst : instStor_) {
     instMap_[pb_inst.dbInst()] = &pb_inst;
