@@ -48,7 +48,7 @@ static bool isCoreAreaOverlap(Die& die, Instance& inst);
 
 static int64_t getOverlapWithCoreArea(Die& die, Instance& inst);
 
-bool extend_instance_by_average = false;
+bool extend_instance_by_average = true;
 
 ////////////////////////////////////////////////////////
 // Instance
@@ -949,8 +949,13 @@ void PlacerBaseCommon::init()
         }
         if (pin_count > 0 && avg_density > 0.0) {
           double target_area = static_cast<double>(pin_count) / avg_density;
-          double scale = std::sqrt(target_area / static_cast<double>(inst.getArea()));
-          inst.extendSizeByScale(scale, log_);
+            double scale = std::sqrt(target_area / static_cast<double>(inst.getArea()));
+            // Cap the scale to be within [0.8, 1.2]
+            if (scale > 1.2)
+            scale = 1.2;
+            else if (scale < 0.8)
+            scale = 0.8;
+            inst.extendSizeByScale(scale, log_);
         }
       }
     }
