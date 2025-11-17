@@ -1084,8 +1084,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   int64_t decreased_area = 0;
   int unchanged_instance_count = 0;
   int total_instance_count = 0;
-  static std::unordered_map<std::string, struct MasterStats> master_stats_map;
-  struct MasterStats {
+    struct MasterStats {
     int instance_count = 0;
     int pin_count = 0;
     double total_original_area = 0;
@@ -1094,6 +1093,8 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     float extended_area_per_pin = 0.0;
     float area_diff = 0.0;
   };
+  static std::unordered_map<std::string, struct MasterStats> master_stats_map;
+
   odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
 
   for (const GCell& gcell : gCellStor_) {
