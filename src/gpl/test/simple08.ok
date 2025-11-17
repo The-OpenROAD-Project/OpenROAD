@@ -8,6 +8,7 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO ODB-0131]     Created 32 components and 116 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 114 connections.
 [INFO ODB-0133]     Created 2 nets and 2 connections.
+[INFO GPL-0157] Setting target overflow to 0.2
 [INFO GPL-0005] Execute conjugate gradient initial placement.
 [INFO GPL-0002] DBU: 1000
 [INFO GPL-0003] SiteSize: (  0.460  2.720 ) um

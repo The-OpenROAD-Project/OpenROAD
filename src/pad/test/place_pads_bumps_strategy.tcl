@@ -236,7 +236,7 @@ place_pads -mode bump_aligned -row IO_WEST u_vss_15 u_vdd_15 u_ddr_dq_8_io u_ddr
   u_co2_v_o u_v18_26 u_vzz_26 u_vss_12 u_vdd_12 u_co2_5_o u_co2_6_o \
   u_co2_7_o u_co2_8_o
 
-place_pads -mode uniform -row IO_SOUTH u_ddr_dm_1_o u_ddr_dqs_n_1_io u_vzz_0 \
+place_pads -mode placer -row IO_SOUTH u_ddr_dm_1_o u_ddr_dqs_n_1_io u_vzz_0 \
   u_ddr_dqs_p_1_io u_vss_0 u_ddr_ba_2_o u_ddr_ba_1_o u_ddr_ba_0_o \
   u_vzz_1 u_v18_1 u_ddr_addr_15_o u_ddr_addr_14_o u_ddr_addr_13_o \
   u_ddr_addr_12_o u_vzz_2 u_v18_2 u_ddr_addr_11_o u_ddr_addr_10_o \

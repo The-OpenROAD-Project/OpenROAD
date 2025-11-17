@@ -681,25 +681,25 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore()
   // remove all pins that do not face the core
   std::function<bool(odb::dbBox*)> remove_func;
   if (is_north) {
-    remove_func = [inst_rect, transform](odb::dbBox* box) {
+    remove_func = [&inst_rect, &transform](odb::dbBox* box) {
       odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
       return inst_rect.yMin() < box_rect.yMin();
     };
   } else if (is_south) {
-    remove_func = [inst_rect, transform](odb::dbBox* box) {
+    remove_func = [&inst_rect, &transform](odb::dbBox* box) {
       odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
       return inst_rect.yMax() > box_rect.yMax();
     };
   } else if (is_west) {
-    remove_func = [inst_rect, transform](odb::dbBox* box) {
+    remove_func = [&inst_rect, &transform](odb::dbBox* box) {
       odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
       return inst_rect.xMax() > box_rect.xMax();
     };
   } else {
-    remove_func = [inst_rect, transform](odb::dbBox* box) {
+    remove_func = [&inst_rect, &transform](odb::dbBox* box) {
       odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
       return inst_rect.xMin() < box_rect.xMin();
@@ -767,7 +767,7 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFormingRing()
 
   // remove pins that do not form a complete ring
   auto* master = iterm_->getInst()->getMaster();
-  auto remove_filter = [master](odb::dbBox* box) {
+  auto remove_filter = [&master](odb::dbBox* box) {
     const odb::Rect rect = box->getBox();
     const bool matches_x
         = rect.dx() == master->getWidth() || rect.dx() == master->getHeight();
@@ -1437,8 +1437,9 @@ bool PadDirectConnectionStraps::refineShapes(
 
     // remove shape from all_shapes and all_obstructions
     auto* layer = shape->getLayer();
-    auto find_shape
-        = [&](const ShapePtr& other) { return other.get() == refine_shape; };
+    auto find_shape = [&refine_shape](const ShapePtr& other) {
+      return other.get() == refine_shape;
+    };
     // remove from all_shapes
     auto& layer_shapes = all_shapes[layer];
     auto find_all_shapes_itr = layer_shapes.qbegin(bgi::satisfies(find_shape));
@@ -1706,7 +1707,7 @@ void RepairChannelStraps::determineParameters(
     area_width = available_area_.dx();
   }
 
-  auto check = [&]() -> bool {
+  auto check = [this, &area_width, &obstructions]() -> bool {
     const int group_width = getStrapGroupWidth();
     if (group_width > area_width) {
       debugPrint(

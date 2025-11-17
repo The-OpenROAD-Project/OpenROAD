@@ -313,18 +313,30 @@ bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
     }
 
     if (lower_belongs_to_grid && lower_shape->isModifiable()) {
+      Shape* extend_test = lower_shape.get();
+      auto find_replace = replace_shapes.find(extend_test);
+      if (find_replace != replace_shapes.end()) {
+        extend_test = find_replace->second.get();
+      }
       auto new_lower
-          = lower_shape->extendTo(upper_shape->getRect(),
-                                  obstructions[lower_shape->getLayer()],
+          = extend_test->extendTo(upper_shape->getRect(),
+                                  obstructions[extend_test->getLayer()],
+                                  lower_shape.get(),
                                   obs_filter);
       if (new_lower != nullptr) {
         replace_shapes[lower_shape.get()] = std::move(new_lower);
       }
     }
     if (upper_belongs_to_grid && upper_shape->isModifiable()) {
+      Shape* extend_test = upper_shape.get();
+      auto find_replace = replace_shapes.find(extend_test);
+      if (find_replace != replace_shapes.end()) {
+        extend_test = find_replace->second.get();
+      }
       auto new_upper
-          = upper_shape->extendTo(lower_shape->getRect(),
-                                  obstructions[upper_shape->getLayer()],
+          = extend_test->extendTo(lower_shape->getRect(),
+                                  obstructions[extend_test->getLayer()],
+                                  upper_shape.get(),
                                   obs_filter);
       if (new_upper != nullptr) {
         replace_shapes[upper_shape.get()] = std::move(new_upper);
@@ -773,7 +785,8 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
 void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
                     const Shape::ObstructionTreeMap& obstructions)
 {
-  debugPrint(getLogger(), utl::PDN, "Make", 1, "Making vias in \"{}\"", name_);
+  debugPrint(
+      getLogger(), utl::PDN, "Make", 1, "Making vias in \"{}\" - start", name_);
   Shape::ShapeTreeMap search_shapes = getShapes();
 
   odb::Rect search_area = getDomainBoundary();
@@ -896,6 +909,8 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
     via->getLowerShape()->addVia(via);
     via->getUpperShape()->addVia(via);
   }
+  debugPrint(
+      getLogger(), utl::PDN, "Make", 1, "Making vias in \"{}\" - end", name_);
 }
 
 void Grid::getVias(std::vector<ViaPtr>& vias) const
