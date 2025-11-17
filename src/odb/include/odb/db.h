@@ -3728,11 +3728,13 @@ class dbTrackGrid : public dbObject
   /// Get the "X" track coordinates for a this tech-layer.
   ///
   void getGridX(std::vector<int>& x_grid);
+  const std::vector<int>& getGridX();
 
   ///
   /// Get the "Y" track coordinates for a this tech-layer.
   ///
   void getGridY(std::vector<int>& y_grid);
+  const std::vector<int>& getGridY();
 
   ///
   /// Get the block this grid belongs too.

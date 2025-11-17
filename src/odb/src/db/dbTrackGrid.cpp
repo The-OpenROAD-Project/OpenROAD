@@ -83,72 +83,92 @@ dbTechLayer* dbTrackGrid::getTechLayer()
   return (dbTechLayer*) tech->_layer_tbl->getPtr(grid->_layer);
 }
 
-void dbTrackGrid::getGridX(std::vector<int>& x_grid)
+const std::vector<int>& dbTrackGrid::getGridX()
 {
-  x_grid.clear();
-
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
 
-  uint i;
+  if (grid->grid_x_.empty()) {
+    uint i;
 
-  for (i = 0; i < grid->_x_origin.size(); ++i) {
-    int j;
+    for (i = 0; i < grid->_x_origin.size(); ++i) {
+      int j;
 
-    int x = grid->_x_origin[i];
-    int count = grid->_x_count[i];
-    int step = grid->_x_step[i];
+      int x = grid->_x_origin[i];
+      int count = grid->_x_count[i];
+      int step = grid->_x_step[i];
 
-    for (j = 0; j < count; ++j) {
-      x_grid.push_back(x);
-      x += step;
+      for (j = 0; j < count; ++j) {
+        grid->grid_x_.push_back(x);
+        x += step;
+      }
     }
+
+    // empty grid
+    if (grid->grid_x_.begin() == grid->grid_x_.end()) {
+      return grid->grid_x_;
+    }
+
+    // sort coords in asscending order
+    std::sort(grid->grid_x_.begin(), grid->grid_x_.end());
+
+    // remove any duplicates
+    auto new_end = std::unique(grid->grid_x_.begin(), grid->grid_x_.end());
+    grid->grid_x_.erase(new_end, grid->grid_x_.end());
   }
 
-  // empty grid
-  if (x_grid.begin() == x_grid.end()) {
-    return;
+  return grid->grid_x_;
+}
+
+void dbTrackGrid::getGridX(std::vector<int>& x_grid)
+{
+  const std::vector<int>& grid = getGridX();
+  x_grid.clear();
+  x_grid.reserve(grid.size());
+  x_grid.insert(x_grid.end(), grid.begin(), grid.end());
+}
+
+const std::vector<int>& dbTrackGrid::getGridY()
+{
+  _dbTrackGrid* grid = (_dbTrackGrid*) this;
+
+  if (grid->grid_y_.empty()) {
+    uint i;
+
+    for (i = 0; i < grid->_y_origin.size(); ++i) {
+      int j;
+
+      int y = grid->_y_origin[i];
+      int count = grid->_y_count[i];
+      int step = grid->_y_step[i];
+
+      for (j = 0; j < count; ++j) {
+        grid->grid_y_.push_back(y);
+        y += step;
+      }
+    }
+
+    // empty grid
+    if (grid->grid_y_.begin() == grid->grid_y_.end()) {
+      return grid->grid_y_;
+    }
+
+    // sort coords in asscending order
+    std::sort(grid->grid_y_.begin(), grid->grid_y_.end());
+
+    // remove any duplicates
+    auto new_end = std::unique(grid->grid_y_.begin(), grid->grid_y_.end());
+    grid->grid_y_.erase(new_end, grid->grid_y_.end());
   }
 
-  // sort coords in asscending order
-  std::sort(x_grid.begin(), x_grid.end());
-
-  // remove any duplicates
-  auto new_end = std::unique(x_grid.begin(), x_grid.end());
-  x_grid.erase(new_end, x_grid.end());
+  return grid->grid_y_;
 }
 
 void dbTrackGrid::getGridY(std::vector<int>& y_grid)
 {
+  const std::vector<int>& grid = getGridY();
   y_grid.clear();
-
-  _dbTrackGrid* grid = (_dbTrackGrid*) this;
-
-  uint i;
-
-  for (i = 0; i < grid->_y_origin.size(); ++i) {
-    int j;
-
-    int y = grid->_y_origin[i];
-    int count = grid->_y_count[i];
-    int step = grid->_y_step[i];
-
-    for (j = 0; j < count; ++j) {
-      y_grid.push_back(y);
-      y += step;
-    }
-  }
-
-  // empty grid
-  if (y_grid.begin() == y_grid.end()) {
-    return;
-  }
-
-  // sort coords in asscending order
-  std::sort(y_grid.begin(), y_grid.end());
-
-  // remove any duplicates
-  auto new_end = std::unique(y_grid.begin(), y_grid.end());
-  y_grid.erase(new_end, y_grid.end());
+  y_grid.reserve(grid.size());
+  y_grid.insert(y_grid.end(), grid.begin(), grid.end());
 }
 
 dbBlock* dbTrackGrid::getBlock()
@@ -168,6 +188,8 @@ void dbTrackGrid::addGridPatternX(int origin_x,
   grid->_x_step.push_back(step);
   grid->_first_mask.push_back(first_mask);
   grid->_samemask.push_back(samemask);
+
+  grid->grid_x_.clear();
 }
 
 void dbTrackGrid::addGridPatternY(int origin_y,
@@ -182,6 +204,8 @@ void dbTrackGrid::addGridPatternY(int origin_y,
   grid->_y_step.push_back(step);
   grid->_first_mask.push_back(first_mask);
   grid->_samemask.push_back(samemask);
+
+  grid->grid_y_.clear();
 }
 
 int dbTrackGrid::getNumGridPatternsX()
