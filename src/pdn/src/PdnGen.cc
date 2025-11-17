@@ -71,8 +71,15 @@ void PdnGen::buildGrids(bool trim)
     insts_in_grids.insert(insts_in_grid.begin(), insts_in_grid.end());
   }
 
+  std::set<odb::dbNet*> grid_nets;
+  for (auto* grid : grids) {
+    const auto nets = grid->getNets();
+    grid_nets.insert(nets.begin(), nets.end());
+  }
+
   ShapeVectorMap block_obs_vec;
-  Grid::makeInitialObstructions(block, block_obs_vec, insts_in_grids, logger_);
+  Grid::makeInitialObstructions(
+      block, block_obs_vec, insts_in_grids, grid_nets, logger_);
   for (auto* grid : grids) {
     grid->getGridLevelObstructions(block_obs_vec);
   }

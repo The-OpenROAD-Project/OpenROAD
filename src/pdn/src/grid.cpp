@@ -1087,6 +1087,7 @@ void Grid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
 void Grid::makeInitialObstructions(odb::dbBlock* block,
                                    ShapeVectorMap& obs,
                                    const std::set<odb::dbInst*>& skip_insts,
+                                   const std::set<odb::dbNet*>& skip_nets,
                                    utl::Logger* logger)
 {
   debugPrint(logger, utl::PDN, "Make", 2, "Get initial obstructions - begin");
@@ -1157,6 +1158,11 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
 
   // fixed pins obs
   for (auto* bterm : block->getBTerms()) {
+    if (skip_nets.find(bterm->getNet()) != skip_nets.end()) {
+      // these shapes will be collected as existing to the grid.
+      continue;
+    }
+
     for (auto* bpin : bterm->getBPins()) {
       if (!bpin->getPlacementStatus().isFixed()) {
         continue;
