@@ -89,7 +89,7 @@ void TritonCTS::runTritonCts()
   setupCharacterization();
   findClockRoots();
   populateTritonCTS();
-  /*if (builders_.empty()) {
+  if (builders_.empty()) {
     logger_->warn(CTS, 82, "No valid clock nets in the design.");
   } else {
     checkCharacterization();
@@ -100,7 +100,7 @@ void TritonCTS::runTritonCts()
       repairClockNets();
     }
     balanceMacroRegisterLatencies();
-  }*/
+  }
 
   // reset
   techChar_.reset();
