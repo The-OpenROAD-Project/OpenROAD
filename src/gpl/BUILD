@@ -44,9 +44,9 @@ cc_library(
         ":tcl",
     ],
     hdrs = [
-        "include/gpl/AbstractGraphics.h",
         "include/gpl/MakeReplace.h",
         "include/gpl/Replace.h",
+        "src/AbstractGraphics.h",
         "src/graphicsNone.h",
         "src/mbff.h",
     ],

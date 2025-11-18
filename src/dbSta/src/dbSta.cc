@@ -155,9 +155,13 @@ class dbStaCbk : public dbBlockCallBackObj
   void inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master) override;
   void inDbInstSwapMasterAfter(dbInst* inst) override;
   void inDbNetDestroy(dbNet* net) override;
+  void inDbModNetDestroy(dbModNet* modnet) override;
   void inDbITermPostConnect(dbITerm* iterm) override;
   void inDbITermPreDisconnect(dbITerm* iterm) override;
   void inDbITermDestroy(dbITerm* iterm) override;
+  void inDbModITermPostConnect(dbModITerm* moditerm) override;
+  void inDbModITermPreDisconnect(dbModITerm* moditerm) override;
+  void inDbModITermDestroy(dbModITerm* moditerm) override;
   void inDbBTermPostConnect(dbBTerm* bterm) override;
   void inDbBTermPreDisconnect(dbBTerm* bterm) override;
   void inDbBTermCreate(dbBTerm*) override;
@@ -990,6 +994,12 @@ void dbStaCbk::inDbNetDestroy(dbNet* db_net)
   network_->deleteNetBefore(net);
 }
 
+void dbStaCbk::inDbModNetDestroy(dbModNet* modnet)
+{
+  Net* net = network_->dbToSta(modnet);
+  network_->deleteNetBefore(net);
+}
+
 void dbStaCbk::inDbITermPostConnect(dbITerm* iterm)
 {
   Pin* pin = network_->dbToSta(iterm);
@@ -1007,6 +1017,25 @@ void dbStaCbk::inDbITermPreDisconnect(dbITerm* iterm)
 void dbStaCbk::inDbITermDestroy(dbITerm* iterm)
 {
   sta_->deletePinBefore(network_->dbToSta(iterm));
+}
+
+void dbStaCbk::inDbModITermPostConnect(dbModITerm* moditerm)
+{
+  Pin* pin = network_->dbToSta(moditerm);
+  network_->connectPinAfter(pin);
+  sta_->connectPinAfter(pin);
+}
+
+void dbStaCbk::inDbModITermPreDisconnect(dbModITerm* moditerm)
+{
+  Pin* pin = network_->dbToSta(moditerm);
+  sta_->disconnectPinBefore(pin);
+  network_->disconnectPinBefore(pin);
+}
+
+void dbStaCbk::inDbModITermDestroy(dbModITerm* moditerm)
+{
+  sta_->deletePinBefore(network_->dbToSta(moditerm));
 }
 
 void dbStaCbk::inDbBTermPostConnect(dbBTerm* bterm)

@@ -35,20 +35,6 @@ struct Point;
 struct Tray;
 struct Flop;
 class AbstractGraphics;
-enum PortName
-{
-  d,
-  si,
-  se,
-  preset,
-  clear,
-  q,
-  qn,
-  vss,
-  vdd,
-  func,
-  ifunc
-};
 
 class MBFF
 {
@@ -69,6 +55,21 @@ class MBFF
   void Run(int mx_sz, float alpha, float beta);
 
  private:
+  enum PortName
+  {
+    d,
+    si,
+    se,
+    preset,
+    clear,
+    q,
+    qn,
+    vss,
+    vdd,
+    func,
+    ifunc
+  };
+
   // get the respective q/qn pins for a d pin
   struct FlopOutputs
   {

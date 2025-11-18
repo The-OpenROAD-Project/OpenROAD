@@ -497,6 +497,12 @@ void OpenRoad::read3Dbx(const std::string& filename)
   parser.readDbx(filename);
 }
 
+void OpenRoad::read3DBloxBMap(const std::string& filename)
+{
+  odb::ThreeDBlox parser(logger_, db_);
+  parser.readBMap(filename);
+}
+
 void OpenRoad::readDb(const char* filename, bool hierarchy)
 {
   try {

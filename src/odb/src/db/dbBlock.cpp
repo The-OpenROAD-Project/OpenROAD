@@ -3,7 +3,6 @@
 
 #include "dbBlock.h"
 
-#include <string.h>
 #include <unistd.h>
 
 #include <algorithm>
@@ -23,6 +22,7 @@
 #include <optional>
 #include <ostream>
 #include <set>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -2030,10 +2030,51 @@ dbSet<dbCapNode> dbBlock::getCapNodes()
   return dbSet<dbCapNode>(block, block->_cap_node_tbl);
 }
 
-dbNet* dbBlock::findNet(const char* name)
+dbNet* dbBlock::findNet(const char* name) const
 {
   _dbBlock* block = (_dbBlock*) this;
   return (dbNet*) block->_net_hash.find(name);
+}
+
+dbModNet* dbBlock::findModNet(const char* hierarchical_name) const
+{
+  if (hierarchical_name == nullptr || hierarchical_name[0] == '\0') {
+    return nullptr;
+  }
+
+  std::string path(hierarchical_name);
+  std::stringstream ss(path);
+  std::string token;
+  std::vector<std::string> tokens;
+  const char delimiter = getHierarchyDelimiter();
+
+  while (std::getline(ss, token, delimiter)) {
+    if (token.empty() == false) {
+      tokens.push_back(token);
+    }
+  }
+
+  if (tokens.empty()) {
+    return nullptr;
+  }
+
+  dbModule* current_module = getTopModule();
+
+  // Traverse the hierarchy through module instances.
+  // The last token is the net name, so iterate up to the second to last token.
+  for (size_t i = 0; i < tokens.size() - 1; i++) {
+    dbModInst* mod_inst = current_module->findModInst(tokens[i].c_str());
+    if (mod_inst == nullptr) {
+      return nullptr;  // Invalid path
+    }
+    current_module = mod_inst->getMaster();
+    if (current_module == nullptr) {
+      return nullptr;
+    }
+  }
+
+  // The last token is the ModNet name.
+  return current_module->getModNet(tokens.back().c_str());
 }
 
 dbVia* dbBlock::findVia(const char* name)

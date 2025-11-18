@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-#include "gpl/AbstractGraphics.h"
+#include "AbstractGraphics.h"
 #include "odb/dbTypes.h"
 #include "placerBase.h"
 #include "solver.h"
