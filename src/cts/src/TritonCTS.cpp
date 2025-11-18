@@ -539,7 +539,8 @@ void TritonCTS::writeDataToDb()
       }
       logger_->info(CTS, 102, " Path depth {} - {}", minDepth, maxDepth);
       if (options_->dummyLoadEnabled()) {
-        logger_->info(CTS, 207, " Dummy loads inserted {}", builder->getNDummies());
+        logger_->info(
+            CTS, 207, " Dummy loads inserted {}", builder->getNDummies());
       }
     }
   }
@@ -2124,7 +2125,7 @@ sta::LibertyCell* findBestDummyCell(
 }
 
 int TritonCTS::writeDummyLoadsToDb(Clock& clockNet,
-                                    std::unordered_set<odb::dbInst*>& dummies)
+                                   std::unordered_set<odb::dbInst*>& dummies)
 {
   // Traverse clock tree and compute ideal output caps for clock
   // buffers in the same level
