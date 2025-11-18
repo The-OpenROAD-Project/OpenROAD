@@ -26,6 +26,7 @@ COMPULSORY_TESTS = [
     "network_edit1",
     "power1",
     "read_liberty1",
+    "read_vcd",
     "read_verilog1",
     "read_verilog2",
     "read_verilog3",
@@ -160,6 +161,11 @@ filegroup(
             "write_verilog6": [
                 "write_verilog5.def",
             ],
+            "read_vcd": glob([
+                "asap7/*",
+                "MockArray.*",
+                "Element.*",
+            ]),
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
@@ -187,6 +193,33 @@ cc_test(
         "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/sta:opensta_lib",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "dbsta_unittest",
+    srcs = ["cpp/TestDbSta.cc"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "cpp/TestDbSta_0.v",
+    ],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbReadVerilog",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",
