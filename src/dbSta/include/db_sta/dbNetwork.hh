@@ -177,10 +177,10 @@ class dbNetwork : public ConcreteNetwork
                                      bool hier = false);
   Instance* getOwningInstanceParent(Pin* pin);
 
-  bool isConnected(Pin* source_pin, Pin* dest_pin);
   using Network::isConnected;
   bool isConnected(const Net* net, const Pin* pin) const override;
   bool isConnected(const Net* net1, const Net* net2) const override;
+  bool isConnected(const Pin* source_pin, const Pin* dest_pin) const;
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
                            const char* connection_name = "net");

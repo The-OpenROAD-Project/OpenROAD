@@ -3778,7 +3778,7 @@ class DbNetConnectedToBTerm : public PinVisitor
   dbBTerm* bterm_{nullptr};
 };
 
-bool dbNetwork::isConnected(Pin* source_pin, Pin* dest_pin)
+bool dbNetwork::isConnected(const Pin* source_pin, const Pin* dest_pin) const
 {
   PinConnections visitor;
   network_->visitConnectedPins(source_pin, visitor);
@@ -3792,38 +3792,32 @@ bool dbNetwork::isConnected(const Net* net, const Pin* pin) const
   staToDb(net, dbnet, modnet);
 
   // Compare flat nets
+  dbNet* pin_dbnet = findFlatDbNet(pin);
+
   if (dbnet != nullptr) {
-    if (dbnet == findFlatDbNet(pin)) {
-      return true;
-    }
-
-    // Compare flat nets related to the hier net
-    dbModNet* term_modnet = hierNet(pin);
-    if (term_modnet != nullptr && dbnet == term_modnet->findRelatedNet()) {
-      return true;
-    }
-
-    return false;
+    return dbnet->isConnected(pin_dbnet);
   }
 
   // Compare hier nets
   if (modnet != nullptr) {
-    dbModNet* term_modnet = hierNet(pin);
-    if (term_modnet == nullptr) {
-      return false;
-    }
+    return modnet->isConnected(pin_dbnet);
 
-    // Compare hier nets directly
-    if (modnet == term_modnet) {
-      return true;
-    }
-
-    // Compare flat nets related to the hier nets
-    dbNet* related_dbnet = findRelatedDbNet(modnet);
-    if (related_dbnet != nullptr
-        && related_dbnet == findRelatedDbNet(term_modnet)) {
-      return true;
-    }
+    //    dbModNet* term_modnet = hierNet(pin);
+    //    if (term_modnet == nullptr) {
+    //      return false;
+    //    }
+    //
+    //    // Compare hier nets directly
+    //    if (modnet == term_modnet) {
+    //      return true;
+    //    }
+    //
+    //    // Compare flat nets related to the hier nets
+    //    dbNet* related_dbnet = findRelatedDbNet(modnet);
+    //    if (related_dbnet != nullptr
+    //        && related_dbnet == findRelatedDbNet(term_modnet)) {
+    //      return true;
+    //    }
   }
 
   return false;
@@ -4361,14 +4355,13 @@ Net* dbNetwork::findFlatNet(const Pin* pin) const
 // This function handles both internal instance pins and top-level port pins.
 dbNet* dbNetwork::findFlatDbNet(const Pin* pin) const
 {
-  dbNet* db_net = nullptr;
+  Net* sta_net = nullptr;
   if (isTopLevelPort(pin)) {
-    Net* net = this->net(term(pin));
-    db_net = flatNet(net);
+    sta_net = net(term(pin));
   } else {
-    db_net = flatNet(pin);
+    sta_net = net(pin);
   }
-  return db_net;
+  return findFlatDbNet(sta_net);
 }
 
 dbModInst* dbNetwork::getModInst(Instance* inst) const

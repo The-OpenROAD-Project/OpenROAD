@@ -2049,6 +2049,16 @@ class dbNet : public dbObject
   void clearSpecial();
 
   ///
+  /// Returns true if this dbNet is connected to other dbNet.
+  ///
+  bool isConnected(const dbNet* other) const;
+
+  ///
+  /// Returns true if this dbNet is connected to other dbModNet.
+  ///
+  bool isConnected(const dbModNet* other) const;
+
+  ///
   /// Returns true if this dbNet has its pins connected by abutment
   ///
   bool isConnectedByAbutment();
@@ -8431,6 +8441,16 @@ class dbModNet : public dbObject
   /// Connect the terminals of the in_net with this modnet
   ///
   void connectTermsOf(dbNet* in_net);
+
+  ///
+  /// Returns true if this dbModNet is connected to other dbNet.
+  ///
+  bool isConnected(const dbNet* other) const;
+
+  ///
+  /// Returns true if this dbModNet is connected to other dbModNet.
+  ///
+  bool isConnected(const dbModNet* other) const;
 
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);
