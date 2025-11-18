@@ -1,4 +1,5 @@
 #include <print>
+#include <random>
 #include <string_view>
 #include <vector>
 
@@ -45,13 +46,16 @@ int main(int argc, char** argv)
   top->trace(vcd, 99);  // Trace all levels of hierarchy
   vcd->open(args.front().data());
 
+  std::mt19937_64 rng(42); // Seed can be any value
+  std::uniform_int_distribution<QData> dist(0, 0xffffffffffffffffUL);
+
   int tick = 0;
   for (auto input : inputs) {
     for (int i = 0; i < 5; i++) {
       if (Verilated::gotFinish()) {
         goto done;
       }
-      *input = tick ^ ((tick / 2) % 2 ? 0 : 0xffffffffffffffffUL);
+      *input = dist(rng); // Use PRNG instead of 0/0xffff pattern
       if (tick == 9) {
         top->reset = 0;
       }
