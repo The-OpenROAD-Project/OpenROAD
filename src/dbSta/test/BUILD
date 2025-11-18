@@ -4,7 +4,7 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
-package(features = ["layering_check"])
+package(features=["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
@@ -12,8 +12,8 @@ COMPULSORY_TESTS = [
     "check_axioms",
     "clock_pin",
     "constant1",
-    #"escape_slash", # different result compared to CMake
-    #"escape_slash_hier", # different result compared to CMake
+    # "escape_slash", # different result compared to CMake
+    # "escape_slash_hier", # different result compared to CMake
     "find_clks1",
     "find_clks2",
     "get_ports1",
@@ -72,11 +72,11 @@ COMPULSORY_TESTS = [
 ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
-    name = "regression_resources",
+    name="regression_resources",
     # Dependencies could be specified more narrowly per test case,
     # but at least it is not a glob of everything and there are
     # per test glob patterns below.
-    srcs = [
+    srcs=[
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45.pdn.tcl",
         "Nangate45/Nangate45.rc",
@@ -149,23 +149,27 @@ filegroup(
 
 [
     filegroup(
-        name = test_name + "_resources",
-        srcs = [":regression_resources"] + glob(
+        name=test_name + "_resources",
+        srcs=[":regression_resources"]
+        + glob(
             [
                 test_name + ".*",
             ],
-        ) + {
+        )
+        + {
             "report_cell_usage_file": [
                 "report_cell_usage.def",
             ],
             "write_verilog6": [
                 "write_verilog5.def",
             ],
-            "read_vcd": glob([
-                "asap7/*",
-                "MockArray.*",
-                "Element.*",
-            ]),
+            "read_vcd": glob(
+                [
+                    "asap7/*",
+                    "MockArray.*",
+                    "Element.*",
+                ]
+            ),
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
@@ -173,22 +177,22 @@ filegroup(
 
 [
     regression_test(
-        name = test_name,
-        data = [":" + test_name + "_resources"],
-        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
-        visibility = ["//visibility:public"],
+        name=test_name,
+        data=[":" + test_name + "_resources"],
+        tags=[] if test_name in COMPULSORY_TESTS else ["manual"],
+        visibility=["//visibility:public"],
     )
     for test_name in ALL_TESTS
 ]
 
 cc_test(
-    name = "dbsta_hconn_unittest",
-    srcs = ["cpp/TestHconn.cpp"],
-    data = [
+    name="dbsta_hconn_unittest",
+    srcs=["cpp/TestHconn.cpp"],
+    data=[
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
     ],
-    deps = [
+    deps=[
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/odb",
@@ -201,14 +205,14 @@ cc_test(
 )
 
 cc_test(
-    name = "dbsta_unittest",
-    srcs = ["cpp/TestDbSta.cc"],
-    data = [
+    name="dbsta_unittest",
+    srcs=["cpp/TestDbSta.cc"],
+    data=[
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestDbSta_0.v",
     ],
-    deps = [
+    deps=[
         "//src/ant",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
