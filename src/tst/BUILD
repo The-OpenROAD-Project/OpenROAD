@@ -58,12 +58,12 @@ cc_library(
     name = "integrated_fixture",
     srcs = ["src/IntegratedFixture.cpp"],
     hdrs = ["include/tst/IntegratedFixture.h"],
-    includes = ["."],
-    visibility = ["//visibility:public"],
     data = [
         "//test:nangate45_data",
         "//test:sky130hd_data",
-    ],    
+    ],
+    includes = ["."],
+    visibility = ["//visibility:public"],
     deps = [
         ":tst",
         "//src/ant",
@@ -81,6 +81,6 @@ cc_library(
         "@bazel_tools//tools/cpp/runfiles",
         "@googletest//:gtest",
         "@spdlog",
-        "@tk_tcl//:tcl",        
+        "@tk_tcl//:tcl",
     ],
 )

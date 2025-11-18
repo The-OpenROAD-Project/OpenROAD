@@ -4,15 +4,22 @@
 #include "tst/IntegratedFixture.h"
 
 #include <fstream>
+#include <string>
 
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/Clock.hh"
 #include "sta/Graph.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Sdc.hh"
+#include "sta/SdcClass.hh"
+#include "sta/Transition.hh"
+#include "sta/Units.hh"
+#include "sta/VerilogReader.hh"
 #include "sta/VerilogWriter.hh"
-#include "utl/Logger.h"
 
 namespace tst {
 
