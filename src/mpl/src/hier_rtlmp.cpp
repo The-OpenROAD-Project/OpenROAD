@@ -1261,7 +1261,6 @@ void HierRTLMP::setPlacementBlockages()
 {
   for (odb::dbBlockage* blockage : block_->getBlockages()) {
     odb::Rect bbox = blockage->getBBox()->getBox();
-
     placement_blockages_.push_back(bbox);
   }
 }
@@ -1755,10 +1754,16 @@ void HierRTLMP::getBlockageRegionWithinOutline(
     const odb::Rect& blockage,
     const odb::Rect& outline) const
 {
-  const odb::Rect b = blockage.intersect(outline);
+  const int b_lx = std::max(outline.xMin(), blockage.xMin());
+  const int b_ly = std::max(outline.yMin(), blockage.yMin());
+  const int b_ux = std::min(outline.xMax(), blockage.xMax());
+  const int b_uy = std::min(outline.yMax(), blockage.yMax());
 
-  if (b.dx() > 0 && b.dy() > 0) {
-    blockages_within_outline.push_back(b);
+  if ((b_ux - b_lx > 0) && (b_uy - b_ly > 0)) {
+    blockages_within_outline.emplace_back(b_lx - outline.xMin(),
+                                          b_ly - outline.yMin(),
+                                          b_ux - outline.xMin(),
+                                          b_uy - outline.yMin());
   }
 }
 
