@@ -7,9 +7,10 @@
 
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "sta/NetworkClass.hh"
 #include "tst/IntegratedFixture.h"
 
-namespace rsz {
+namespace sta {
 
 class TestDbSta : public tst::IntegratedFixture
 {
@@ -60,4 +61,4 @@ TEST_F(TestDbSta, TestIsConnected)
   ASSERT_TRUE(bool_return);
 }
 
-}  // namespace rsz
+}  // namespace sta
