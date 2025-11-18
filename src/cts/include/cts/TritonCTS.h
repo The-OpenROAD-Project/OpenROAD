@@ -189,7 +189,7 @@ class TritonCTS
                                odb::dbInst* inst,
                                odb::dbMTerm* mterm);
   int writeDummyLoadsToDb(Clock& clockNet,
-                           std::unordered_set<odb::dbInst*>& dummies);
+                          std::unordered_set<odb::dbInst*>& dummies);
   bool computeIdealOutputCaps(Clock& clockNet);
   void findCandidateDummyCells(std::vector<sta::LibertyCell*>& dummyCandidates);
   odb::dbInst* insertDummyCell(
