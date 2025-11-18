@@ -7,7 +7,6 @@
 
 #include "gtest/gtest.h"
 #include "odb/db.h"
-#include "rsz/Resizer.hh"
 #include "tst/IntegratedFixture.h"
 
 namespace rsz {
