@@ -3791,33 +3791,12 @@ bool dbNetwork::isConnected(const Net* net, const Pin* pin) const
   dbModNet* modnet;
   staToDb(net, dbnet, modnet);
 
-  // Compare flat nets
   dbNet* pin_dbnet = findFlatDbNet(pin);
-
   if (dbnet != nullptr) {
     return dbnet->isConnected(pin_dbnet);
   }
-
-  // Compare hier nets
   if (modnet != nullptr) {
     return modnet->isConnected(pin_dbnet);
-
-    //    dbModNet* term_modnet = hierNet(pin);
-    //    if (term_modnet == nullptr) {
-    //      return false;
-    //    }
-    //
-    //    // Compare hier nets directly
-    //    if (modnet == term_modnet) {
-    //      return true;
-    //    }
-    //
-    //    // Compare flat nets related to the hier nets
-    //    dbNet* related_dbnet = findRelatedDbNet(modnet);
-    //    if (related_dbnet != nullptr
-    //        && related_dbnet == findRelatedDbNet(term_modnet)) {
-    //      return true;
-    //    }
   }
 
   return false;
@@ -3831,7 +3810,6 @@ bool dbNetwork::isConnected(const Net* net1, const Net* net2) const
 
   dbNet* flat_net1 = findFlatDbNet(net1);
   dbNet* flat_net2 = findFlatDbNet(net2);
-
   if (flat_net1 != nullptr && flat_net1 == flat_net2) {
     return true;
   }
