@@ -3212,6 +3212,9 @@ Instance* dbNetwork::dbToSta(dbModInst* inst) const
 
 Pin* dbNetwork::dbToSta(dbModITerm* mod_iterm) const
 {
+  if (mod_iterm == nullptr) {
+    return nullptr;
+  }
   char* unaligned_pointer = reinterpret_cast<char*>(mod_iterm);
   return reinterpret_cast<Pin*>(
       unaligned_pointer
@@ -3260,6 +3263,9 @@ const Net* dbNetwork::dbToSta(const dbModNet* net) const
 
 Pin* dbNetwork::dbToSta(dbBTerm* bterm) const
 {
+  if (bterm == nullptr) {
+    return nullptr;
+  }
   char* unaligned_pointer = reinterpret_cast<char*>(bterm);
   return reinterpret_cast<Pin*>(
       unaligned_pointer
@@ -3268,6 +3274,9 @@ Pin* dbNetwork::dbToSta(dbBTerm* bterm) const
 
 Pin* dbNetwork::dbToSta(dbITerm* iterm) const
 {
+  if (iterm == nullptr) {
+    return nullptr;
+  }
   char* unaligned_pointer = reinterpret_cast<char*>(iterm);
   return reinterpret_cast<Pin*>(
       unaligned_pointer
