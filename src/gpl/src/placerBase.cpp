@@ -947,7 +947,7 @@ void PlacerBaseCommon::init()
             ++pin_count;
           }
         }
-        if (pin_count > 0 && avg_density > 0.0) {
+        if (pin_count > 2 && avg_density > 0.0) {
           double target_area = static_cast<double>(pin_count) / avg_density;
             double scale = std::sqrt(target_area / static_cast<double>(inst.getArea()));
             // Cap the scale to be within [0.8, 1.2]

@@ -1179,9 +1179,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   if (!csv_file.is_open()) {
     log_->warn(GPL, 111, "Could not open CSV file for per-master stats: {}", csv_filename);
   } else {
-    if (!file_exists) {
-      csv_file << "master_name,instance_count,pin_count,total_original_area_um2,total_extended_area_um2,area_diff_percent,original_area_per_pin_um2,extended_area_per_pin_um2\n";
-    }
+    csv_file << "master_name,instance_count,pin_count,total_original_area_um2,total_extended_area_um2,area_diff_percent,original_area_per_pin_um2,extended_area_per_pin_um2\n";
     for (const auto& entry : master_stats_map) {
       const std::string& master_name = entry.first;
       const MasterStats& stats = entry.second;
