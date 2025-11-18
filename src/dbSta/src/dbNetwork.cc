@@ -64,6 +64,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
+#include "odb/dbUtil.h"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
@@ -107,6 +108,8 @@ using odb::dbPlacementStatus;
 using odb::dbSet;
 using odb::dbSigType;
 
+namespace {
+
 // TODO: move to StringUtil
 char* tmpStringCopy(const char* str)
 {
@@ -114,6 +117,58 @@ char* tmpStringCopy(const char* str)
   strcpy(tmp, str);
   return tmp;
 }
+
+// This struct contains common information about Pins
+// (dbITerm, dbBTerm or dbModITerm) for debugging purposes.
+struct PinInfo
+{
+  const char* name = "NOT_ALLOC";  // Pin hierarchical name
+  int id = 0;                      // dbObject ID
+  const char* type_name = "NULL";  // dbObject type name
+  bool valid = false;              // false if it is a freed dbObject
+  void* addr = nullptr;
+};
+
+PinInfo getPinInfo(const dbNetwork* network, const Pin* pin)
+{
+  PinInfo info{"NOT_ALLOC", 0, "NULL", false, nullptr};
+  dbITerm* iterm;
+  dbBTerm* bterm;
+  dbModITerm* moditerm;
+  network->staToDb(pin, iterm, bterm, moditerm);
+
+  if (iterm) {
+    info.id = iterm->getId();
+    info.type_name = iterm->getTypeName();
+    info.valid = iterm->isValid();
+    info.addr = static_cast<void*>(iterm);
+  } else if (bterm) {
+    info.id = bterm->getId();
+    info.type_name = bterm->getTypeName();
+    info.valid = bterm->isValid();
+    info.addr = static_cast<void*>(bterm);
+  } else if (moditerm) {
+    info.id = moditerm->getId();
+    info.type_name = moditerm->getTypeName();
+    info.valid = moditerm->isValid();
+    info.addr = static_cast<void*>(moditerm);
+  }
+
+  if (info.valid) {
+    info.name = network->pathName(pin);
+  } else {
+    network->getLogger()->error(
+        ORD,
+        2014,
+        "Attempted to access invalid pin {}({}). Check if it is "
+        "deleted.",
+        info.type_name,
+        info.id);
+  }
+
+  return info;
+}
+}  // namespace
 
 //
 // Handling of object ids (Hierachy Mode)
@@ -1554,11 +1609,12 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
     return dir;
   }
   if (moditerm) {
-    // get the direction off the modbterm
+    // get the direction of the modbterm
     std::string pin_name = moditerm->getName();
     dbModInst* mod_inst = moditerm->getParent();
     dbModule* module = mod_inst->getMaster();
     dbModBTerm* modbterm_local = module->findModBTerm(pin_name.c_str());
+    assert(modbterm_local != nullptr);
     PortDirection* dir
         = dbToSta(modbterm_local->getSigType(), modbterm_local->getIoType());
     return dir;
@@ -1957,7 +2013,9 @@ void dbNetwork::visitConnectedPins(const Net* net,
         visitor(above_pin);
         // traverse along rest of net
         Net* above_net = this->net(above_pin);
-        visitConnectedPins(above_net, visitor, visited_nets);
+        if (above_net) {
+          visitConnectedPins(above_net, visitor, visited_nets);
+        }
       }
     }
   } else if (db_net) {
@@ -2697,13 +2755,31 @@ void dbNetwork::disconnectPin(Pin* pin)
 
 void dbNetwork::disconnectPinBefore(const Pin* pin)
 {
-  Net* net = this->net(pin);
-  // Incrementally update drivers.
-  if (net && isDriver(pin)) {
-    PinSet* drvrs = net_drvr_pin_map_.findKey(net);
-    if (drvrs) {
-      drvrs->erase(pin);
+  if (isDriver(pin) == false) {
+    return;  // No need to update net_drvr_pin_map_ cache.
+  }
+
+  // Get all the related dbNet & dbModNet with the pin.
+  // Incrementally update the net-drvr cache.
+  dbNet* db_net;
+  dbModNet* mod_net;
+  net(pin, db_net, mod_net);
+
+  if (db_net) {
+    // A dbNet can be associated with multiple dbModNets.
+    // We need to update the cache for all of them.
+    std::set<odb::dbModNet*> related_mod_nets;
+    db_net->findRelatedModNets(related_mod_nets);
+    for (dbModNet* related_mod_net : related_mod_nets) {
+      removeDriverFromCache(dbToSta(related_mod_net), pin);
     }
+
+    removeDriverFromCache(dbToSta(db_net), pin);
+    return;
+  }
+
+  if (mod_net) {
+    removeDriverFromCache(dbToSta(mod_net), pin);
   }
 }
 
@@ -3136,6 +3212,9 @@ Instance* dbNetwork::dbToSta(dbModInst* inst) const
 
 Pin* dbNetwork::dbToSta(dbModITerm* mod_iterm) const
 {
+  if (mod_iterm == nullptr) {
+    return nullptr;
+  }
   char* unaligned_pointer = reinterpret_cast<char*>(mod_iterm);
   return reinterpret_cast<Pin*>(
       unaligned_pointer
@@ -3184,6 +3263,9 @@ const Net* dbNetwork::dbToSta(const dbModNet* net) const
 
 Pin* dbNetwork::dbToSta(dbBTerm* bterm) const
 {
+  if (bterm == nullptr) {
+    return nullptr;
+  }
   char* unaligned_pointer = reinterpret_cast<char*>(bterm);
   return reinterpret_cast<Pin*>(
       unaligned_pointer
@@ -3192,6 +3274,9 @@ Pin* dbNetwork::dbToSta(dbBTerm* bterm) const
 
 Pin* dbNetwork::dbToSta(dbITerm* iterm) const
 {
+  if (iterm == nullptr) {
+    return nullptr;
+  }
   char* unaligned_pointer = reinterpret_cast<char*>(iterm);
   return reinterpret_cast<Pin*>(
       unaligned_pointer
@@ -4717,6 +4802,155 @@ void dbNetwork::checkSanityModNetNamesInModule(odb::dbModule* module) const
           module->getName());
     }
     mod_net_map[mod_net_name] = mod_net;
+  }
+}
+
+void dbNetwork::checkSanityNetDrvrPinMapConsistency() const
+{
+  if (block_ == nullptr) {
+    logger_->error(ORD, 2000, "No block found.");
+    return;
+  }
+
+  // For each cache element
+  for (const auto& [net, cached_drivers_ptr] : net_drvr_pin_map_) {
+    dbNet* dbnet = nullptr;
+    dbModNet* modnet = nullptr;
+    staToDb(net, dbnet, modnet);
+
+    if (dbnet == nullptr && modnet == nullptr) {
+      logger_->warn(ORD,
+                    2009,
+                    "Found net {} in cache that is not in the netlist.",
+                    pathName(net));
+      continue;
+    }
+
+    // Find drivers from the netlist for the current net
+    std::vector<odb::dbObject*> drivers;
+    if (dbnet) {
+      odb::dbUtil::findITermDrivers(dbnet, drivers);
+      odb::dbUtil::findBTermDrivers(dbnet, drivers);
+    } else if (modnet) {
+      odb::dbUtil::findITermDrivers(modnet, drivers);
+      odb::dbUtil::findBTermDrivers(modnet, drivers);
+      odb::dbUtil::findModITermDrivers(modnet, drivers);
+
+      // Also, find drivers from the related flat net
+      dbNet* related_dbnet = findRelatedDbNet(modnet);
+      if (related_dbnet) {
+        odb::dbUtil::findITermDrivers(related_dbnet, drivers);
+        odb::dbUtil::findBTermDrivers(related_dbnet, drivers);
+      }
+
+      // Remove duplicates
+      std::sort(drivers.begin(), drivers.end());
+      drivers.erase(std::unique(drivers.begin(), drivers.end()), drivers.end());
+    }
+
+    // Convert to PinSet
+    PinSet netlist_drivers(this);
+    for (auto driver : drivers) {
+      Pin* pin = nullptr;
+      switch (driver->getObjectType()) {
+        case odb::dbITermObj:
+          pin = dbToSta(static_cast<odb::dbITerm*>(driver));
+          break;
+        case odb::dbBTermObj:
+          pin = dbToSta(static_cast<odb::dbBTerm*>(driver));
+          break;
+        case odb::dbModITermObj:
+          // Skip hierarchical pin.
+          break;
+        default:
+          // Should not be here
+          break;
+      }
+      if (pin != nullptr) {
+        netlist_drivers.insert(pin);
+      }
+    }
+
+    // Compare netlist drivers with cached drivers
+    bool consistent = true;
+    if (cached_drivers_ptr == nullptr
+        || netlist_drivers.size() != cached_drivers_ptr->size()) {
+      consistent = false;
+    } else {
+      for (const Pin* pin : netlist_drivers) {
+        if (cached_drivers_ptr->find(pin) == cached_drivers_ptr->end()) {
+          consistent = false;
+          break;
+        }
+      }
+    }
+
+    // Report inconsistent point details
+    if (consistent == false) {
+      logger_->warn(ORD, 2006, "Inconsistency found for net {}", pathName(net));
+      logger_->report("  Netlist drivers:");
+      for (const Pin* pin : netlist_drivers) {
+        const PinInfo pin_info = getPinInfo(this, pin);
+        logger_->report("    - {} (type: {}, id: {})",
+                        pin_info.name,
+                        pin_info.type_name,
+                        pin_info.id);
+      }
+      logger_->report("  Cached drivers:");
+      if (cached_drivers_ptr) {
+        for (const Pin* pin : *cached_drivers_ptr) {
+          const PinInfo pin_info = getPinInfo(this, pin);
+          logger_->report("    - {} (type: {}, id: {})",
+                          pin_info.name,
+                          pin_info.type_name,
+                          pin_info.id);
+        }
+      }
+    }
+  }
+}
+
+void dbNetwork::dumpNetDrvrPinMap() const
+{
+  const auto& net_drvr_pin_map = net_drvr_pin_map_;
+  logger_->report("--------------------------------------------------");
+  logger_->report("Dumping net_drvr_pin_map_ cache (size: {})",
+                  net_drvr_pin_map.size());
+
+  for (auto const& [net, pin_set] : net_drvr_pin_map) {
+    // Get the underlying dbObject for the net to report its type and ID.
+    const dbObject* net_obj
+        = reinterpret_cast<const dbObject*>(const_cast<Net*>(net));
+    logger_->report("Net: {} {}({}, {:p})",
+                    pathName(net),
+                    net_obj->getTypeName(),
+                    net_obj->getId(),
+                    (void*) net_obj);
+    if (pin_set == nullptr) {
+      logger_->report("  Drivers: null pin set");
+      continue;
+    }
+    if (pin_set->empty()) {
+      logger_->report("  Drivers: empty pin set");
+      continue;
+    }
+    for (const Pin* pin : *pin_set) {
+      const PinInfo pin_info = getPinInfo(this, pin);
+      logger_->report("  - {} {}({}, {:p})",
+                      pin_info.name,
+                      pin_info.type_name,
+                      pin_info.id,
+                      pin_info.addr);
+    }
+  }
+  logger_->report("--------------------------------------------------");
+}
+
+void dbNetwork::removeDriverFromCache(const Net* net, const Pin* drvr)
+{
+  PinSet* drvrs = net_drvr_pin_map_.findKey(net);
+  if (drvrs) {
+    drvrs->erase(drvr);
   }
 }
 

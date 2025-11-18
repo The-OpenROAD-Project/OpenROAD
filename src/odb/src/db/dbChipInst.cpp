@@ -16,6 +16,7 @@
 #include "dbChipBumpInst.h"
 #include "dbChipRegionInst.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChipInst>;
@@ -165,6 +166,18 @@ Rect dbChipInst::getBBox() const
   Rect box = getMasterChip()->getBBox();
   getTransform().apply(box);
   return box;
+}
+
+Cuboid dbChipInst::getCuboid() const
+{
+  _dbChipInst* obj = (_dbChipInst*) this;
+  Rect box = getBBox();
+  return Cuboid(box.xMin(),
+                box.yMin(),
+                obj->loc_.z(),
+                box.xMax(),
+                box.yMax(),
+                obj->loc_.z() + getMasterChip()->getThickness());
 }
 
 dbSet<dbChipRegionInst> dbChipInst::getRegions() const

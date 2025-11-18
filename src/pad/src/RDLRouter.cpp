@@ -1206,18 +1206,13 @@ void RDLRouter::makeGraph()
 
   graph_weight_ = boost::get(boost::edge_weight, graph_);
 
-  std::vector<int> x_grid;
-  std::vector<int> y_grid;
-
   odb::dbTrackGrid* tracks = block_->findTrackGrid(layer_);
-  tracks->getGridX(x_grid);
-  tracks->getGridY(y_grid);
 
   // filter grid points based on spacing requirements
   const int pitch = width_ + spacing_ - 1;
   const int start = width_ / 2 + 1;
   x_grid_.clear();
-  for (const auto& x : x_grid) {
+  for (const auto& x : tracks->getGridX()) {
     bool add = false;
     if (x_grid_.empty()) {
       if (x >= start) {
@@ -1234,7 +1229,7 @@ void RDLRouter::makeGraph()
     }
   }
   y_grid_.clear();
-  for (const auto& y : y_grid) {
+  for (const auto& y : tracks->getGridY()) {
     bool add = false;
     if (y_grid_.empty()) {
       if (y >= start) {

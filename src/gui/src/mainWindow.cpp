@@ -1895,7 +1895,7 @@ void MainWindow::openDesign()
         open_->setEnabled(false);
         ord::OpenRoad::openRoad()->readDb(file.toStdString().c_str());
         logger_->warn(utl::GUI,
-                      77,
+                      109,
                       "Timing data is not stored in {} and must be loaded "
                       "separately, if needed.",
                       file.toStdString());
@@ -1904,7 +1904,7 @@ void MainWindow::openDesign()
       }
     }
     if (!found) {
-      logger_->error(utl::GUI, 76, "Unknown filetype: {}", file.toStdString());
+      logger_->error(utl::GUI, 108, "Unknown filetype: {}", file.toStdString());
     }
   } catch (const std::exception&) {
     // restore option

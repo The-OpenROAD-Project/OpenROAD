@@ -2,6 +2,7 @@
 #include <string>
 
 #include "gtest/gtest.h"
+#include "helper.h"
 #include "odb/3dblox.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -131,6 +132,73 @@ TEST_F(DbvFixture, test_bump_map_parser)
   auto bump_inst = *region_inst->getChipBumpInsts().begin();
   EXPECT_EQ(bump_inst->getChipBump(), bump);
   EXPECT_EQ(bump_inst->getChipRegionInst(), region_inst);
+}
+
+TEST_F(SimpleDbFixture, test_bump_map_reader)
+{
+  createSimpleDB();
+
+  db_->setDbuPerMicron(1000);
+
+  // Create BUMP master
+  dbLib* lib = db_->findLib("lib1");
+  dbTechLayer* bot_layer
+      = dbTechLayer::create(lib->getTech(), "BOT", dbTechLayerType::ROUTING);
+  dbTechLayer* layer
+      = dbTechLayer::create(lib->getTech(), "TOP", dbTechLayerType::ROUTING);
+  dbMaster* master = dbMaster::create(lib, "BUMP");
+  master->setWidth(10000);
+  master->setHeight(10000);
+  master->setOrigin(5000, 5000);
+  master->setType(dbMasterType::COVER_BUMP);
+  dbMTerm* term
+      = dbMTerm::create(master, "PAD", dbIoType::INOUT, dbSigType::SIGNAL);
+  dbMPin* bot_pin = dbMPin::create(term);
+  dbBox::create(bot_pin, bot_layer, -1000, -1000, 1000, 1000);
+  dbMPin* pin = dbMPin::create(term);
+  dbBox::create(pin, layer, -2000, -2000, 2000, 2000);
+  master->setFrozen();
+
+  // Create BTerms
+  dbBlock* block = db_->getChip()->getBlock();
+  dbBTerm* SIG1 = dbBTerm::create(dbNet::create(block, "SIG1"), "SIG1");
+  dbBTerm* SIG2 = dbBTerm::create(dbNet::create(block, "SIG2"), "SIG2");
+  block->setDieArea(Rect(0, 0, 500, 500));
+
+  EXPECT_EQ(block->getInsts().size(), 0);
+
+  ThreeDBlox parser(&logger_, db_.get());
+  std::string path = getFilePath(prefix + "data/example1.bmap");
+  parser.readBMap(path);
+
+  // Check bumps were created
+  EXPECT_EQ(block->getInsts().size(), 2);
+  dbInst* inst1 = block->findInst("bump1");
+  EXPECT_EQ(inst1->getBBox()->getBox().xCenter(), 100 * 1000);
+  EXPECT_EQ(inst1->getBBox()->getBox().yCenter(), 200 * 1000);
+  dbInst* inst2 = block->findInst("bump2");
+  EXPECT_EQ(inst2->getBBox()->getBox().xCenter(), 150 * 1000);
+  EXPECT_EQ(inst2->getBBox()->getBox().yCenter(), 200 * 1000);
+
+  // Check that BPins where added
+  EXPECT_EQ(SIG1->getBPins().size(), 1);
+  EXPECT_EQ(SIG2->getBPins().size(), 1);
+  EXPECT_EQ(SIG1->getBPins().begin()->getBoxes().size(), 1);
+  EXPECT_EQ(SIG2->getBPins().begin()->getBoxes().size(), 1);
+
+  // Check bPin shape and layer
+  dbBox* sig1_box = *SIG1->getBPins().begin()->getBoxes().begin();
+  dbBox* sig2_box = *SIG2->getBPins().begin()->getBoxes().begin();
+  EXPECT_EQ(sig1_box->getTechLayer(), layer);
+  EXPECT_EQ(sig1_box->getBox().xMin(), 98000);
+  EXPECT_EQ(sig1_box->getBox().yMin(), 198000);
+  EXPECT_EQ(sig1_box->getBox().xMax(), 102000);
+  EXPECT_EQ(sig1_box->getBox().yMax(), 202000);
+  EXPECT_EQ(sig2_box->getTechLayer(), layer);
+  EXPECT_EQ(sig2_box->getBox().xMin(), 148000);
+  EXPECT_EQ(sig2_box->getBox().yMin(), 198000);
+  EXPECT_EQ(sig2_box->getBox().xMax(), 152000);
+  EXPECT_EQ(sig2_box->getBox().yMax(), 202000);
 }
 
 }  // namespace
