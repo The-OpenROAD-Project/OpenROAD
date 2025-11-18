@@ -1132,6 +1132,12 @@ bool dbNetwork::isLeaf(const Instance* instance) const
 Instance* dbNetwork::findInstance(const char* path_name) const
 {
   if (hierarchy_) {  // are we in hierarchical mode ?
+    // find a hierarchical module instance first
+    dbModInst* mod_inst = block()->findModInst(path_name);
+    if (mod_inst) {
+      return dbToSta(mod_inst);
+    }
+
     std::string path_name_str = path_name;
     // search for the last token in the string, which is the leaf instance name
     size_t last_idx = path_name_str.find_last_of('/');
@@ -1215,7 +1221,9 @@ Pin* dbNetwork::findPin(const Instance* instance, const char* port_name) const
     dbModBTerm* mbterm = module->findModBTerm(port_name);
     if (mbterm) {
       dbModITerm* moditerm = mbterm->getParentModITerm();
-      return dbToSta(moditerm);
+      if (moditerm) {
+        return dbToSta(moditerm);
+      }
     }
   }
   return nullptr;
@@ -3212,6 +3220,9 @@ Instance* dbNetwork::dbToSta(dbModInst* inst) const
 
 Pin* dbNetwork::dbToSta(dbModITerm* mod_iterm) const
 {
+  if (mod_iterm == nullptr) {
+    return nullptr;
+  }
   char* unaligned_pointer = reinterpret_cast<char*>(mod_iterm);
   return reinterpret_cast<Pin*>(
       unaligned_pointer
@@ -3260,6 +3271,9 @@ const Net* dbNetwork::dbToSta(const dbModNet* net) const
 
 Pin* dbNetwork::dbToSta(dbBTerm* bterm) const
 {
+  if (bterm == nullptr) {
+    return nullptr;
+  }
   char* unaligned_pointer = reinterpret_cast<char*>(bterm);
   return reinterpret_cast<Pin*>(
       unaligned_pointer
@@ -3268,6 +3282,9 @@ Pin* dbNetwork::dbToSta(dbBTerm* bterm) const
 
 Pin* dbNetwork::dbToSta(dbITerm* iterm) const
 {
+  if (iterm == nullptr) {
+    return nullptr;
+  }
   char* unaligned_pointer = reinterpret_cast<char*>(iterm);
   return reinterpret_cast<Pin*>(
       unaligned_pointer
@@ -3736,13 +3753,6 @@ bool PinConnections::connected(const Pin* pin) const
   return pins_.find(pin) != pins_.end();
 }
 
-bool dbNetwork::connected(Pin* source_pin, Pin* dest_pin)
-{
-  PinConnections visitor;
-  network_->visitConnectedPins(source_pin, visitor);
-  return visitor.connected(dest_pin);
-}
-
 void dbNetwork::removeUnusedPortsAndPinsOnModuleInstances()
 {
   for (dbModInst* mi : block()->getModInsts()) {
@@ -3767,6 +3777,73 @@ class DbNetConnectedToBTerm : public PinVisitor
   dbNetwork* db_network_;
   dbBTerm* bterm_{nullptr};
 };
+
+bool dbNetwork::isConnected(Pin* source_pin, Pin* dest_pin)
+{
+  PinConnections visitor;
+  network_->visitConnectedPins(source_pin, visitor);
+  return visitor.connected(dest_pin);
+}
+
+bool dbNetwork::isConnected(const Net* net, const Pin* pin) const
+{
+  dbNet* dbnet;
+  dbModNet* modnet;
+  staToDb(net, dbnet, modnet);
+
+  // Compare flat nets
+  if (dbnet != nullptr) {
+    if (dbnet == findFlatDbNet(pin)) {
+      return true;
+    }
+
+    // Compare flat nets related to the hier net
+    dbModNet* term_modnet = hierNet(pin);
+    if (term_modnet != nullptr && dbnet == term_modnet->findRelatedNet()) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // Compare hier nets
+  if (modnet != nullptr) {
+    dbModNet* term_modnet = hierNet(pin);
+    if (term_modnet == nullptr) {
+      return false;
+    }
+
+    // Compare hier nets directly
+    if (modnet == term_modnet) {
+      return true;
+    }
+
+    // Compare flat nets related to the hier nets
+    dbNet* related_dbnet = findRelatedDbNet(modnet);
+    if (related_dbnet != nullptr
+        && related_dbnet == findRelatedDbNet(term_modnet)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool dbNetwork::isConnected(const Net* net1, const Net* net2) const
+{
+  if (net1 == net2) {
+    return true;
+  }
+
+  dbNet* flat_net1 = findFlatDbNet(net1);
+  dbNet* flat_net2 = findFlatDbNet(net2);
+
+  if (flat_net1 != nullptr && flat_net1 == flat_net2) {
+    return true;
+  }
+
+  return false;
+}
 
 void DbNetConnectedToBTerm::operator()(const Pin* pin)
 {
