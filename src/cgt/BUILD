@@ -16,16 +16,17 @@ cc_library(
     name = "cgt",
     srcs = [
         "src/ClockGating.cpp",
+        "src/ClockGatingImpl.h",
         "src/MakeClockGating.cpp",
         "src/NetworkBuilder.cpp",
+        "src/NetworkBuilder.h",
+        "src/RandomBits.h",
         ":swig",
         ":tcl",
     ],
     hdrs = [
         "include/cgt/ClockGating.h",
         "include/cgt/MakeClockGating.h",
-        "include/cgt/NetworkBuilder.h",
-        "include/cgt/RandomBits.h",
     ],
     defines = [
         "ABC_NAMESPACE=abc",

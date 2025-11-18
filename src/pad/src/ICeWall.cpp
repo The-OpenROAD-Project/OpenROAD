@@ -746,6 +746,13 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts,
       placer = std::move(bump_placer);
       break;
     }
+    case PlacementStrategy::PLACER: {
+      auto bump_placer = std::make_unique<PlacerPadPlacer>(
+          logger_, block, insts, row_dir, row);
+      bump_placer->setConnections(iterm_connections);
+      placer = std::move(bump_placer);
+      break;
+    }
     case PlacementStrategy::LINEAR:
       placer = std::make_unique<UniformPadPlacer>(
           logger_, block, insts, row_dir, row, 0);

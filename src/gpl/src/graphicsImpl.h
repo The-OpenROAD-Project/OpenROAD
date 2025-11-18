@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-#include "gpl/AbstractGraphics.h"
+#include "AbstractGraphics.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "odb/db.h"

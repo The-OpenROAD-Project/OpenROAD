@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "gpl/AbstractGraphics.h"
+#include "AbstractGraphics.h"
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "placerBase.h"

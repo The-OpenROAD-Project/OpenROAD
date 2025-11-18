@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <string>
 #include <unordered_map>
 
 #include "dbCore.h"
@@ -429,6 +430,35 @@ bool compare_by_id(const dbObject* lhs, const dbObject* rhs)
   const auto lhs_owner = lhs->getImpl()->getOwner();
   const auto rhs_owner = rhs->getImpl()->getOwner();
   return compare_by_id(lhs_owner, rhs_owner);
+}
+
+std::string dbObject::getName() const
+{
+  switch (getObjectType()) {
+    case dbNetObj:
+      return static_cast<const dbNet*>(this)->getName();
+    case dbModNetObj:
+      return static_cast<const dbModNet*>(this)->getName();
+    case dbITermObj:
+      return static_cast<const dbITerm*>(this)->getName();
+    case dbBTermObj:
+      return static_cast<const dbBTerm*>(this)->getName();
+    case dbModITermObj:
+      return static_cast<const dbModITerm*>(this)->getName();
+    case dbModBTermObj:
+      return static_cast<const dbModBTerm*>(this)->getName();
+    case dbInstObj:
+      return static_cast<const dbInst*>(this)->getName();
+    case dbModInstObj:
+      return static_cast<const dbModInst*>(this)->getName();
+    default:
+      return fmt::format("<{}:{}>", getTypeName(), getId());
+  }
+}
+
+bool dbObject::isValid() const
+{
+  return getImpl()->isValid();
 }
 
 dbIStream& operator>>(dbIStream& stream, dbObjectType& type)

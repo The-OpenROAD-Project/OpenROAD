@@ -244,11 +244,13 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   if (!lib_cell || !resizer_->isLogicStdCell(buffer) || !lib_cell->isBuffer()) {
     return false;
   }
+
   // Do not remove buffers connected to input/output ports
   // because verilog netlists use the net name for the port.
   if (bufferBetweenPorts(buffer)) {
     return false;
   }
+
   // Don't remove buffers connected to modnets on both input and output
   // These buffers occupy as special place in hierarchy and cannot
   // be removed without destroying the hierarchy.
@@ -257,40 +259,6 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   Pin* buffer_ip_pin;
   Pin* buffer_op_pin;
   getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-  if (db_network_->hierNet(buffer_ip_pin)
-      && db_network_->hierNet(buffer_op_pin)) {
-    return false;
-  }
-
-  //
-  // Don't remove buffers with (1) an input pin connected to a hierarchical
-  // net (1) an output pin not connected to a hierarchical net.
-  // These are required to remain visible.
-  //
-  if (db_network_->hierNet(buffer_ip_pin)
-      && !db_network_->hierNet(buffer_op_pin)) {
-    return false;
-  }
-
-  // We only allow case when we can  get buffer driver
-  // and wire in the hierarchical net. This is when there is
-  // a dbModNet on the buffer output AND the buffer and the thing
-  // driving the instance are in the same module.
-
-  odb::dbModNet* op_hierarchical_net = db_network_->hierNet(buffer_op_pin);
-  if (op_hierarchical_net) {
-    Pin* ignore_driver_pin = nullptr;
-    dbNet* buffer_ip_flat_net = db_network_->flatNet(buffer_ip_pin);
-    odb::dbModule* driving_module = db_network_->getNetDriverParentModule(
-        db_network_->dbToSta(buffer_ip_flat_net), ignore_driver_pin, true);
-    (void) ignore_driver_pin;
-    // buffer is a dbInst.
-    dbInst* buffer_inst = db_network_->staToDb(buffer);
-    odb::dbModule* buffer_owning_module = buffer_inst->getModule();
-    if (driving_module != buffer_owning_module) {
-      return false;
-    }
-  }
 
   dbInst* db_inst = db_network_->staToDb(buffer);
   if (db_inst->isDoNotTouch()) {
@@ -355,6 +323,7 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
     return db_net_removed == nullptr
            || (db_net_survivor && db_net_survivor->canMergeNet(db_net_removed));
   }
+
   return false;
 }
 
@@ -379,40 +348,42 @@ void UnbufferMove::removeBuffer(Instance* buffer)
 
   // Hierarchical net handling
   odb::dbModNet* op_modnet = db_network_->hierNet(out_pin);
+  odb::dbModNet* ip_modnet = db_network_->hierNet(in_pin);
 
   odb::dbNet* in_db_net = db_network_->flatNet(in_pin);
   odb::dbNet* out_db_net = db_network_->flatNet(out_pin);
-  if (in_db_net == nullptr || out_db_net == nullptr) {
+
+  // Handle undriven buffer
+  if (in_db_net == nullptr) {
+    logger_->error(RSZ,
+                   168,
+                   "Cannot remove undriven buffer {}.",
+                   network_->pathName(buffer));
+  }
+
+  // Remove the unused buffer
+  if (out_db_net == nullptr) {
+    dbInst* dbinst_buffer = db_network_->staToDb(buffer);
+    dbInst::destroy(dbinst_buffer);
     return;
   }
+
   // in_net and out_net are flat nets.
   Net* in_net = db_network_->dbToSta(in_db_net);
   Net* out_net = db_network_->dbToSta(out_db_net);
 
-  bool out_net_ports = db_network_->hasPort(out_net);
-  Net *survivor, *removed;
-  if (out_net_ports) {
+  // Decide survivor net when two nets are merged
+  Net* survivor = in_net;  // buffer input net is the default survivor
+  Net* removed = out_net;
+  odb::dbModNet* survivor_modnet = ip_modnet;
+  odb::dbModNet* removed_modnet = op_modnet;
+  bool in_net_has_port = db_network_->hasPort(in_net);
+  bool out_net_has_port = db_network_->hasPort(out_net);
+  if (in_net_has_port == false && out_net_has_port == true) {
     survivor = out_net;
     removed = in_net;
-  } else {
-    // default or out_net_ports
-    // Default to in_net surviving so drivers (cached in dbNetwork)
-    // do not change.
-    survivor = in_net;
-    removed = out_net;
-  }
-
-  // If the input net is hierarchical, we need to find the driver pin.
-  // Get the driver pin beforing removing the input net.
-  Pin* driver_pin = nullptr;
-  if (op_modnet) {
-    db_network_->getNetDriverParentModule(in_net, driver_pin, true);
-    if (driver_pin == nullptr) {
-      logger_->error(RSZ,
-                     165,
-                     "Cannot find driver pin for hierarchical net {}",
-                     op_modnet->getName());
-    }
+    survivor_modnet = op_modnet;
+    removed_modnet = ip_modnet;
   }
 
   // Disconnect the buffer and handle the nets
@@ -428,45 +399,59 @@ void UnbufferMove::removeBuffer(Instance* buffer)
 
   odb::dbNet* db_survivor = db_network_->staToDb(survivor);
   odb::dbNet* db_removed = db_network_->staToDb(removed);
-  if (db_removed) {
-    db_survivor->mergeNet(db_removed);
+
+  // If removed net name is higher in hierarchy, rename survivor with it.
+  // This must be done before mergeNet because db_removed is destroyed inside
+  // mergeNet.
+  std::optional<std::string> new_net_name;
+  std::optional<std::string> new_modnet_name;
+  if (db_survivor->isDeeperThan(db_removed)) {
+    new_net_name = db_removed->getName();
+    if (removed_modnet != nullptr) {
+      new_modnet_name = removed_modnet->getName();
+    }
   }
+
+  // Disconnect buffer input/output pins
   sta_->disconnectPin(in_pin);
   sta_->disconnectPin(out_pin);
 
-  // Hierarchical case supported:
-  // moving an output hierarchical net to the input pin driver.
-  // During canBufferRemove check (see above) we require that the
-  // input pin driver is in the same module scope as the output hierarchical
-  // driver
-  //
-  if (op_modnet) {
-    debugPrint(logger_,
-               RSZ,
-               "remove_buffer",
-               1,
-               "Handling hierarchical net ({}). Connect driver pin ({}) to the "
-               "load modNet ({}).",
-               op_modnet->getName(),
-               db_network_->name(driver_pin),
-               db_network_->name(in_net));
-    db_network_->connectPin(driver_pin, db_network_->dbToSta(op_modnet));
+  // Merge hier net
+  // - mergeModNet() should be done before mergeNet() because
+  //   mergeNet() can involve the hierarchical net traversal during the merge
+  //   operation.
+  if (survivor_modnet != nullptr && removed_modnet != nullptr) {
+    // Merge two hier nets
+    survivor_modnet->mergeModNet(removed_modnet);
+  } else if (survivor_modnet != nullptr) {
+    // If there is a single modnet, copy terminals of the flat net to be
+    // removed
+    survivor_modnet->connectTermsOf(db_removed);
+  } else if (removed_modnet != nullptr) {
+    // If there is a single modnet, it should survive.
+    survivor_modnet = removed_modnet;
+    removed_modnet = nullptr;
+
+    // Copy terminals of the survivor flat net
+    survivor_modnet->connectTermsOf(db_survivor);
+
+    // survivor_modnet should be renamed later.
+    new_modnet_name
+        = db_survivor->getBlock()->getBaseName(db_survivor->getName().c_str());
   }
 
-  // Deletion
+  // Merge flat net
+  db_survivor->mergeNet(db_removed);
+
+  // Remove buffer
   sta_->deleteInstance(buffer);
-  if (removed) {
-    // If removed net name is higher in hierarchy, rename survivor with it.
-    std::optional<std::string> new_net_name;
-    if (db_survivor->isDeeperThan(db_removed)) {
-      new_net_name = db_removed->getName();
-    }
 
-    sta_->deleteNet(removed);
-
-    if (new_net_name) {
-      db_survivor->rename(new_net_name->c_str());
-    }
+  // Rename if needed
+  if (new_net_name) {
+    db_survivor->rename(new_net_name->c_str());
+  }
+  if (survivor_modnet != nullptr && new_modnet_name) {
+    survivor_modnet->rename(new_modnet_name->c_str());
   }
 }
 
