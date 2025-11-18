@@ -125,7 +125,7 @@ POWER_STAGE_STEM = {
 # each number is a unit
 # current unit is configured as 2.16 which is on the routing grid for M5
 
-MOCK_ARRAY_SCALE = 45
+MOCK_ARRAY_SCALE = 60
 
 # Routing pitches for relevant metal layers.
 #  For x, this is M5; for y, this is M4.

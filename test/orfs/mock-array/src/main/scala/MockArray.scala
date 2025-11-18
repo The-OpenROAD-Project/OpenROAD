@@ -78,7 +78,7 @@ class Multiplier extends RawModule {
   // reduce output bit-width until we slight negative slack
   // and also until we run in a few minutes for fast local
   // smoke-testing
-  io.o := mod.io.o(3, 0)
+  io.o := mod.io.o(7, 0)
 }
 
 class MockArray(width: Int, height: Int, singleElementWidth: Int)
