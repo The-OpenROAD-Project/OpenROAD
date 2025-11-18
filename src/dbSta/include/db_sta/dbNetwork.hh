@@ -9,6 +9,7 @@
 #include "odb/db.h"
 #include "sta/ConcreteNetwork.hh"
 #include "sta/GraphClass.hh"
+#include "sta/Network.hh"
 
 namespace utl {
 class Logger;
