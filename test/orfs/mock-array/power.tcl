@@ -66,8 +66,8 @@ if { [llength $no_vcd_activity] > 0 } {
 }
 
 set ces {}
-for { set x 0 } { $x < 8 } { incr x } {
-  for { set y 0 } { $y < 8 } { incr y } {
+for { set x 0 } { $x < $::env(ARRAY_COLS) } { incr x } {
+  for { set y 0 } { $y < $::env(ARRAY_ROWS) } { incr y } {
     lappend ces ces_${x}_${y}
   }
 }
