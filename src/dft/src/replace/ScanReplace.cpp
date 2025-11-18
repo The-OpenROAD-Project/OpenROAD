@@ -264,7 +264,6 @@ RollbackCandidate::getPortMapping() const
 
 void ScanReplace::collectScanCellAvailable()
 {
-
   const sta::dbNetwork* db_network = sta_->getDbNetwork();
 
   std::vector<sta::LibertyCell*> non_scan_cells;
