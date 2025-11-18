@@ -165,9 +165,9 @@ filegroup(
             ],
             "read_vcd": glob(
                 [
-                    "asap7/*",
-                    "MockArray.*",
                     "Element.*",
+                    "MockArray.*",
+                    "asap7/*",
                 ]
             ),
         }.get(test_name, []),
