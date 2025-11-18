@@ -48,7 +48,7 @@ static bool isCoreAreaOverlap(Die& die, Instance& inst);
 
 static int64_t getOverlapWithCoreArea(Die& die, Instance& inst);
 
-bool extend_instance_by_average = false;
+bool extend_instance_by_average = true;
 
 ////////////////////////////////////////////////////////
 // Instance
