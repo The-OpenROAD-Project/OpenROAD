@@ -53,3 +53,34 @@ cc_library(
         "@tk_tcl//:tcl",
     ],
 )
+
+cc_library(
+    name = "integrated_fixture",
+    srcs = ["src/IntegratedFixture.cpp"],
+    hdrs = ["include/tst/IntegratedFixture.h"],
+    includes = ["."],
+    visibility = ["//visibility:public"],
+    data = [
+        "//test:nangate45_data",
+        "//test:sky130hd_data",
+    ],    
+    deps = [
+        ":tst",
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dbSta:dbReadVerilog",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/utl",
+        "@bazel_tools//tools/cpp/runfiles",
+        "@googletest//:gtest",
+        "@spdlog",
+        "@tk_tcl//:tcl",        
+    ],
+)
