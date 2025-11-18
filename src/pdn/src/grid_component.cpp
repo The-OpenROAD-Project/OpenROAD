@@ -180,6 +180,12 @@ ShapePtr GridComponent::addShape(std::unique_ptr<Shape> shape)
 
 void GridComponent::removeShape(Shape* shape)
 {
+  debugPrint(getLogger(),
+             utl::PDN,
+             "Shape",
+             3,
+             "Removing shape {}.",
+             shape->getReportText());
   for (const auto& via : shape->getVias()) {
     via->removeShape(shape);
   }
