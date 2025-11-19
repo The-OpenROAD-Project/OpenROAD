@@ -32,6 +32,7 @@ class IntegratedFixture : public tst::Fixture
  protected:
   void readVerilogAndSetup(const std::string& verilog_file);
   void dumpVerilogAndOdb(const std::string& name) const;
+  void removeFile(const std::string& path);
 
  protected:
   odb::dbLib* lib_;

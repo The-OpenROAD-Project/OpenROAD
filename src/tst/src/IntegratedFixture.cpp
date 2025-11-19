@@ -89,11 +89,15 @@ void IntegratedFixture::readVerilogAndSetup(const std::string& verilog_file)
   sta::Pin* clk_pin
       = db_network_->findPin(db_network_->topInstance(), clk_port);
 
+  // STA frees the 'clk_pins' after use.
+  // coverity[RESOURCE_LEAK: FALSE_POSITIVE]
   sta::PinSet* clk_pins = new sta::PinSet(db_network_);
   clk_pins->insert(clk_pin);
 
   // Clock period = 0.5ns
   double period = sta_->units()->timeUnit()->userToSta(0.5);
+  // STA takes the ownership of 'waveform'.
+  // coverity[RESOURCE_LEAK: FALSE_POSITIVE]
   sta::FloatSeq* waveform = new sta::FloatSeq;
   waveform->push_back(0);
   waveform->push_back(period / 2.0);
@@ -162,6 +166,13 @@ void IntegratedFixture::dumpVerilogAndOdb(const std::string& name) const
   std::ofstream orig_odb_file(name + "_odb.txt");
   block_->debugPrintContent(orig_odb_file);
   orig_odb_file.close();
+}
+
+void IntegratedFixture::removeFile(const std::string& path)
+{
+  if (std::remove(path.c_str()) != 0) {
+    logger_.warn(utl::RSZ, 0, "Could not remove '{}'.", path);
+  }
 }
 
 }  // namespace tst

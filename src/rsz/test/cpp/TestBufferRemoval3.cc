@@ -100,7 +100,7 @@ endmodule
   }
 
   // Clean up
-  std::remove(after_vlog_path.c_str());
+  removeFile(after_vlog_path);
 }
 
 TEST_F(BufRemTest3, RemoveBufferCase5)
@@ -167,7 +167,7 @@ endmodule
   }
 
   // Clean up
-  std::remove(after_vlog_path.c_str());
+  removeFile(after_vlog_path);
 }
 
 TEST_F(BufRemTest3, RemoveBufferCase4)
@@ -295,7 +295,7 @@ endmodule
   }
 
   // Clean up
-  std::remove(after_vlog_path.c_str());
+  removeFile(after_vlog_path);
 }
 
 TEST_F(BufRemTest3, RemoveBufferCase3)
@@ -383,7 +383,7 @@ endmodule
   }
 
   // Clean up
-  std::remove(after_vlog_path.c_str());
+  removeFile(after_vlog_path);
 }
 
 TEST_F(BufRemTest3, RemoveBufferCase2)
@@ -460,7 +460,7 @@ endmodule
   }
 
   // Clean up
-  std::remove(after_vlog_path.c_str());
+  removeFile(after_vlog_path);
 }
 
 TEST_F(BufRemTest3, RemoveBufferCase1)
@@ -541,7 +541,7 @@ endmodule
   }
 
   // Clean up
-  std::remove(after_vlog_path.c_str());
+  removeFile(after_vlog_path);
 }
 
 TEST_F(BufRemTest3, RemoveBufferCase0)
@@ -629,7 +629,7 @@ endmodule
   }
 
   // Clean up
-  std::remove(after_vlog_path.c_str());
+  removeFile(after_vlog_path);
 }
 
 }  // namespace rsz
