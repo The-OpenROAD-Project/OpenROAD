@@ -236,3 +236,13 @@ http_archive(
         "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.0/openmp-20.1.0.src.tar.xz",
     ],
 )
+
+new_git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
+
+new_git_repository(
+    name = "asap7sc7p5t_28",
+    build_file = "//third-party:asap7sc7p5t_28.BUILD.bazel",
+    commit = "174ab33ad60e48268d04c2b1556c01bbb420f4e7",
+    remote = "https://github.com/nekronos/asap7sc7p5t_28.git",
+    sparse_checkout_patterns = ["/Verilog/*"],
+)
