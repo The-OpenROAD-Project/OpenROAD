@@ -1073,8 +1073,8 @@
     },
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
-        "bzlTransitiveDigest": "W2FcgOTim8eocKPV5zKBqUWCMCrRjVK8KK28G/2fPTE=",
-        "usagesDigest": "yXWf8BJ1ejka5jEfE0kVxxej1M4J89BMU0ZlrjvSjXU=",
+        "bzlTransitiveDigest": "hUDTFZFC1MZ0pAKoHsqexR2vwS2q99PcATMoQ7d8KyQ=",
+        "usagesDigest": "wxeuwLW97f1zjTRCLYeC6qjXJZrNC70p4PKXz/9LXKE=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
