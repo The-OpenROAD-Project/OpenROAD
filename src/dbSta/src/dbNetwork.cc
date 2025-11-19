@@ -1221,9 +1221,7 @@ Pin* dbNetwork::findPin(const Instance* instance, const char* port_name) const
     dbModBTerm* mbterm = module->findModBTerm(port_name);
     if (mbterm) {
       dbModITerm* moditerm = mbterm->getParentModITerm();
-      if (moditerm) {
-        return dbToSta(moditerm);
-      }
+      return dbToSta(moditerm);
     }
   }
   return nullptr;
