@@ -3,6 +3,7 @@
 
 #include "tst/IntegratedFixture.h"
 
+#include <cstdio>
 #include <fstream>
 #include <string>
 
@@ -20,6 +21,7 @@
 #include "sta/Units.hh"
 #include "sta/VerilogReader.hh"
 #include "sta/VerilogWriter.hh"
+#include "utl/Logger.h"
 
 namespace tst {
 
