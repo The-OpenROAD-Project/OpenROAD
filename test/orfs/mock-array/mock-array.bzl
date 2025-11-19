@@ -498,7 +498,7 @@ def mock_array(name, config):
                 )
 
                 sh_test(
-                    name = "MockArray_{variant}_{power_test}_{stage}_test".format(
+                    name = "MockArray_{variant}_{stage}_{power_test}_test".format(
                         variant = variant,
                         power_test = power_test,
                         stage = stage,

@@ -7111,6 +7111,8 @@ class dbChip : public dbObject
 
   dbSet<dbChipRegion> getChipRegions() const;
 
+  dbSet<dbMarkerCategory> getMarkerCategories() const;
+
   // User Code Begin dbChip
 
   ChipType getChipType() const;
@@ -7133,6 +7135,10 @@ class dbChip : public dbObject
   dbTech* getTech() const;
 
   Rect getBBox() const;
+
+  Cuboid getCuboid() const;
+
+  dbMarkerCategory* findMarkerCategory(const char* name) const;
 
   ///
   /// Create a new chip.
@@ -7245,6 +7251,8 @@ class dbChipInst : public dbObject
 
   Rect getBBox() const;
 
+  Cuboid getCuboid() const;
+
   dbSet<dbChipRegionInst> getRegions() const;
 
   dbChipRegionInst* findChipRegionInst(dbChipRegion* chip_region) const;
@@ -7300,6 +7308,8 @@ class dbChipRegion : public dbObject
   dbSet<dbChipBump> getChipBumps() const;
 
   // User Code Begin dbChipRegion
+  Cuboid getCuboid() const;
+
   dbChip* getChip() const;
 
   Side getSide() const;
@@ -7318,6 +7328,7 @@ class dbChipRegionInst : public dbObject
 {
  public:
   // User Code Begin dbChipRegionInst
+  Cuboid getCuboid() const;
 
   dbChipInst* getChipInst() const;
 
@@ -8206,6 +8217,9 @@ class dbMarkerCategory : public dbObject
   static dbMarkerCategory* create(dbBlock* block, const char* name);
   static dbMarkerCategory* createOrReplace(dbBlock* block, const char* name);
   static dbMarkerCategory* createOrGet(dbBlock* block, const char* name);
+  static dbMarkerCategory* create(dbChip* chip, const char* name);
+  static dbMarkerCategory* createOrReplace(dbChip* chip, const char* name);
+  static dbMarkerCategory* createOrGet(dbChip* chip, const char* name);
   static dbMarkerCategory* create(dbMarkerCategory* category, const char* name);
   static dbMarkerCategory* createOrGet(dbMarkerCategory* category,
                                        const char* name);
