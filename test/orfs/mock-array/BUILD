@@ -99,3 +99,23 @@ orfs_run(
     script = ":write_pin_placement.tcl",
     tags = ["manual"],
 )
+
+[
+    orfs_run(
+        name = "{}_floorplan_verilog".format(module),
+        src = ":{}_base_floorplan".format(module),
+        outs = [
+            "{}_floorplan.v".format(module),
+        ],
+        arguments = {
+            "OUTPUT": "$(location :{}_floorplan.v)".format(module),
+        },
+        script = ":write_verilog.tcl",
+        tags = ["manual"],
+    )
+    for module in [
+        "MockArray_4x4",
+        "Element_4x4",
+    ]
+]
+
