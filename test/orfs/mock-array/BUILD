@@ -1,3 +1,4 @@
+load("@bazel-orfs//:eqy.bzl", "eqy_test")
 load("@bazel-orfs//:openroad.bzl", "orfs_run")
 load("@bazel-orfs//toolchains/scala:chisel.bzl", "chisel_binary")
 load(":mock-array.bzl", "config", "element", "mock_array", "verilog")
@@ -119,3 +120,27 @@ orfs_run(
     ]
 ]
 
+ASAP7_DEPS = [
+    "@asap7sc7p5t_28//:Verilog/asap7sc7p5t_AO_RVT_TT_201020.v",
+    "@asap7sc7p5t_28//:Verilog/asap7sc7p5t_INVBUF_RVT_TT_201020.v",
+    "@asap7sc7p5t_28//:Verilog/asap7sc7p5t_OA_RVT_TT_201020.v",
+    "@asap7sc7p5t_28//:Verilog/asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
+    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/dff.v",
+    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/empty.v",
+]
+
+eqy_test(
+    name = "MockArray_4x4_eqy_test",
+    depth = 1,
+    gate_verilog_files = [
+        ":MockArray_4x4_floorplan.v",
+        ":Element_4x4_floorplan.v",
+        "src/main/resources/multiplier.v",
+    ] + ASAP7_DEPS,
+    gold_verilog_files = [
+        ":4x4_array.sv",
+        "src/main/resources/multiplier.v",
+    ] + ASAP7_DEPS,
+    module_top = "MockArray",
+    tags = ["manual"],
+)
