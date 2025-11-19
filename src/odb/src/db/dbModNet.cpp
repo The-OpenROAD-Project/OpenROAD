@@ -596,6 +596,22 @@ void dbModNet::connectTermsOf(dbNet* in_net)
   }
 }
 
+bool dbModNet::isConnected(const dbNet* other) const
+{
+  dbNet* net = findRelatedNet();
+  return (net == other);
+}
+
+bool dbModNet::isConnected(const dbModNet* other) const
+{
+  if (other == nullptr) {
+    return false;
+  }
+  dbNet* net = findRelatedNet();
+  dbNet* other_net = other->findRelatedNet();
+  return (net == other_net);
+}
+
 // User Code End dbModNetPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

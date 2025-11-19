@@ -39,7 +39,11 @@ set name [lindex [split $::env(FLOW_VARIANT) "_"] 0]
 log_cmd read_verilog $::env(RESULTS_DIR)/$::env(POWER_STAGE_STEM).v
 log_cmd read_verilog $::env(RESULTS_DIR)/../../Element/${name}_base/$::env(POWER_STAGE_STEM).v
 log_cmd read_verilog $::env(PLATFORM_DIR)/verilog/stdcell/empty.v
-log_cmd link_design MockArray
+if { [string match "*openroad" $::env(OPENROAD_EXE)] } {
+  log_cmd link_design -hier MockArray
+} else {
+  log_cmd link_design MockArray
+}
 
 log_cmd read_sdc $::env(RESULTS_DIR)/$::env(POWER_STAGE_STEM).sdc
 log_cmd read_spef $::env(RESULTS_DIR)/$::env(POWER_STAGE_STEM).spef > log.txt
