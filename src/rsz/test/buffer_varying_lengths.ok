@@ -16,10 +16,10 @@ tns max -40.818
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.355 |      -40.8 |    200 | p3-200
-    final |      71 |    1575 |        0 |      0 |     0 |  +465.4% |   -0.302 |      -31.0 |    200 | p3-200
+    final |      71 |    1500 |        0 |      0 |     0 |  +465.4% |   -0.302 |      -31.0 |    200 | p3-200
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 71 buffers.
-[INFO RSZ-0051] Resized 1575 instances: 1500 up, 75 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 1500 instances: 1500 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [INFO RSZ-0033] No hold violations found.
 worst slack max -0.302
