@@ -1,9 +1,6 @@
-#include <algorithm>
 #include <fstream>
 #include <iterator>
-#include <sstream>
 #include <string>
-#include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
