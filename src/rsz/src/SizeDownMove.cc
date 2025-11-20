@@ -103,8 +103,8 @@ bool SizeDownMove::doMove(const Path* drvr_path,
   // Sort fanouts by slack margin, so we can try the most margin first.
   sort(fanout_slacks.begin(),
        fanout_slacks.end(),
-       [=](const pair<Vertex*, Slack>& pair1,
-           const pair<Vertex*, Slack>& pair2) {
+       [this](const pair<Vertex*, Slack>& pair1,
+              const pair<Vertex*, Slack>& pair2) {
          return (pair1.second > pair2.second
                  || (pair1.second == pair2.second
                      && network_->pathNameLess(pair1.first->pin(),
@@ -203,7 +203,7 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
     // Sort from the smallest input capacitance to the smallest
     // breaking tie by the intrinsic delay
     sort(&swappable_cells,
-         [=](const LibertyCell* cell1, const LibertyCell* cell2) {
+         [=, this](const LibertyCell* cell1, const LibertyCell* cell2) {
            LibertyPort* port1
                = cell1->findLibertyPort(load_port_name)->cornerPort(lib_ap);
            const LibertyPort* port2
