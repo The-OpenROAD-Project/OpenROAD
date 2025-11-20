@@ -2557,8 +2557,9 @@ class dbNet : public dbObject
   void dumpConnectivity(int level = 1) const;
 
   ///
-  /// Inserts a buffer on the net driving the specified iterm/bterm.
-  /// Returns the newly created buffer instance.
+  /// Load-pin buffering.
+  /// - Inserts a buffer on the driving net of the load pin (iterm/bterm).
+  /// - Returns the newly created buffer instance.
   ///
   dbInst* insertBufferBeforeLoad(
       dbObject* load_input_term,
@@ -2568,8 +2569,28 @@ class dbNet : public dbObject
       const dbNameUniquifyType& uniquify
       = dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
 
+  ///
+  /// Driver-pin buffering.
+  /// - Inserts a buffer on the net driven by the driver pin (iterm/bterm).
+  /// - Returns the newly created buffer instance.
+  ///
   dbInst* insertBufferAfterDriver(
       dbObject* drvr_output_term,
+      const dbMaster* buffer_master,
+      const Point* loc = nullptr,
+      const char* base_name = nullptr,
+      const dbNameUniquifyType& uniquify
+      = dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+
+  ///
+  /// Partial-loads buffering.
+  /// - Inserts a buffer on the net driving the specified load pins.
+  /// - Returns the newly created buffer instance.
+  /// - Note that the new buffer drives the specified load pins only.
+  /// - It does not drive other unspecified loads driven by the same net.
+  ///
+  dbInst* insertBufferBeforeLoads(
+      std::set<dbObject*>& load_input_terms,
       const dbMaster* buffer_master,
       const Point* loc = nullptr,
       const char* base_name = nullptr,
