@@ -468,6 +468,388 @@ endmodule
   removeFile(verilog_file_4);
 }
 
+TEST_F(TestInsertBuffer, BeforeLoads_Case1)
+{
+  // Netlist:
+  //   drvr (BUF)  --> n1 --> buf0 (BUF) --> n2 --> load (BUF)
+  //
+  // Load pins for insertion = {buf0/A}
+  // Expected result after insertion:
+  //   drvr (BUF) --> n1 --> buf_new --> net --> buf0 --> n2 --> load (BUF)
+
+  // Create masters
+  dbMaster* buf_master = db_->findMaster("BUF_X1");
+  ASSERT_TRUE(buf_master);
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Create instances
+  dbInst* drvr_inst = dbInst::create(block_, buf_master, "drvr");
+  ASSERT_TRUE(drvr_inst);
+  dbInst* buf0_inst = dbInst::create(block_, buf_master, "buf0");
+  ASSERT_TRUE(buf0_inst);
+  dbInst* load_inst = dbInst::create(block_, buf_master, "load");
+  ASSERT_TRUE(load_inst);
+
+  // Create nets and connect
+  dbNet* n1 = dbNet::create(block_, "n1");
+  ASSERT_TRUE(n1);
+  dbNet* n2 = dbNet::create(block_, "n2");
+  ASSERT_TRUE(n2);
+
+  drvr_inst->findITerm("Z")->connect(n1);
+  buf0_inst->findITerm("A")->connect(n1);
+  buf0_inst->findITerm("Z")->connect(n2);
+  load_inst->findITerm("A")->connect(n2);
+
+  // Find load pin for buffer insertion
+  dbITerm* buf0_a = buf0_inst->findITerm("A");
+  std::set<dbObject*> loads;
+  loads.insert(buf0_a);
+
+  // Insert buffer
+  dbInst* new_buf = n1->insertBufferBeforeLoads(loads, buffer_master);
+  ASSERT_TRUE(new_buf);
+
+  // Write verilog
+  const std::string verilog_file = "results/BeforeLoads_Case1.v";
+  sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
+}
+
+TEST_F(TestInsertBuffer, BeforeLoads_Case2)
+{
+  // Netlist:
+  //   in (Port) --> n1 --> buf0 (BUF) --> n2 --> out (Port)
+  //
+  // Insert buffer 1: Load pins = {buf0/A}
+  // Insert buffer 2: Load pins = {out (Port)}
+  //
+  // Expected result after buffer 1 (before buf0/A):
+  //   in (Port) --> [buf1] --> buf0 -->  out (Port)
+  //
+  // Expected result after buffer 2 (before out Port):
+  //   in (Port) --> [buf1] --> buf0 --> [buf2] --> out (Port)
+
+  // Create masters
+  dbMaster* buf_master = db_->findMaster("BUF_X1");
+  ASSERT_TRUE(buf_master);
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Create instances
+  dbInst* buf0_inst = dbInst::create(block_, buf_master, "buf0");
+  ASSERT_TRUE(buf0_inst);
+
+  // Create nets and ports
+  dbNet* n1 = dbNet::create(block_, "n1");
+  ASSERT_TRUE(n1);
+  dbNet* n2 = dbNet::create(block_, "n2");
+  ASSERT_TRUE(n2);
+  dbBTerm* in_port = dbBTerm::create(n1, "in");
+  ASSERT_TRUE(in_port);
+  in_port->setIoType(dbIoType::INPUT);
+  dbBTerm* out_port = dbBTerm::create(n2, "out");
+  ASSERT_TRUE(out_port);
+  out_port->setIoType(dbIoType::OUTPUT);
+
+  // Connect
+  buf0_inst->findITerm("A")->connect(n1);
+  buf0_inst->findITerm("Z")->connect(n2);
+
+  // Insert buffer 1
+  dbITerm* buf0_a = buf0_inst->findITerm("A");
+  std::set<dbObject*> loads1;
+  loads1.insert(buf0_a);
+  dbInst* new_buf1 = n1->insertBufferBeforeLoads(loads1, buffer_master);
+  ASSERT_TRUE(new_buf1);
+
+  // Insert buffer 2
+  std::set<dbObject*> loads2;
+  loads2.insert(out_port);
+  dbInst* new_buf2 = n2->insertBufferBeforeLoads(loads2, buffer_master);
+  ASSERT_TRUE(new_buf2);
+
+  // Write verilog
+  const std::string verilog_file = "results/BeforeLoads_Case2.v";
+  sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
+}
+
+TEST_F(TestInsertBuffer, BeforeLoads_Case3)
+{
+  // Netlist:
+  //   in (Port) --> n1 --> mod0/buf0 (BUF) --> n2 --> out (Port)
+  //   where mod0 is an instance of submodule MOD0
+  //
+  // Insert buffer 1: Load pins = {mod0/buf0/A}
+  // Insert buffer 2: Load pins = {out (Port)}
+  //
+  // Expected result after buffer 1 (before mod0/buf0/A):
+  //   in --> n1 --> [new_buf1] --> mod0/buf0 --> out
+  //
+  // Expected result after buffer 2 (before out Port):
+  //   in --> n1 --> [new_buf1] --> mod0/buf0 --> [new_buf2] --> out
+
+  // Create masters
+  dbMaster* buf_master = db_->findMaster("BUF_X1");
+  ASSERT_TRUE(buf_master);
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Create submodule MOD0
+  dbModule* mod0_module = dbModule::create(block_, "MOD0");
+  ASSERT_TRUE(mod0_module);
+  dbInst* buf0_inst
+      = dbInst::create(block_, buf_master, "buf0", false, mod0_module);
+  ASSERT_TRUE(buf0_inst);
+  dbModBTerm* mod0_in = dbModBTerm::create(mod0_module, "in");
+  mod0_in->setIoType(dbIoType::INPUT);
+  dbModBTerm* mod0_out = dbModBTerm::create(mod0_module, "out");
+  mod0_out->setIoType(dbIoType::OUTPUT);
+
+  // Connect inside MOD0
+  dbModNet* mod_n1 = dbModNet::create(mod0_module, "n1");
+  mod0_in->connect(mod_n1);
+  buf0_inst->findITerm("A")->connect(mod_n1);
+
+  dbModNet* mod_n2 = dbModNet::create(mod0_module, "n2");
+  buf0_inst->findITerm("Z")->connect(mod_n2);
+  mod0_out->connect(mod_n2);
+
+  // Create top-level logic
+  dbModInst* mod0_inst
+      = dbModInst::create(block_->getTopModule(), mod0_module, "mod0");
+  ASSERT_TRUE(mod0_inst);
+
+  dbNet* n1 = dbNet::create(block_, "n1");
+  ASSERT_TRUE(n1);
+  dbBTerm* in_port = dbBTerm::create(n1, "in");
+  ASSERT_TRUE(in_port);
+  in_port->setIoType(dbIoType::INPUT);
+
+  dbNet* n2 = dbNet::create(block_, "n2");
+  ASSERT_TRUE(n2);
+  dbBTerm* out_port = dbBTerm::create(n2, "out");
+  ASSERT_TRUE(out_port);
+  out_port->setIoType(dbIoType::OUTPUT);
+
+  // Make hierarchical connections
+  dbModNet* top_n1 = dbModNet::create(block_->getTopModule(), "n1");
+  in_port->connect(top_n1);
+  dbModITerm* mod0_in_iterm = dbModITerm::create(mod0_inst, "in", mod0_in);
+  mod0_in_iterm->connect(top_n1);
+
+  dbModNet* top_n2 = dbModNet::create(block_->getTopModule(), "n2");
+  out_port->connect(top_n2);
+  dbModITerm* mod0_out_iterm = dbModITerm::create(mod0_inst, "out", mod0_out);
+  mod0_out_iterm->connect(top_n2);
+
+  // Physical connection for flat nets
+  mod0_module->findDbInst("buf0")->findITerm("A")->connect(n1);
+  mod0_module->findDbInst("buf0")->findITerm("Z")->connect(n2);
+
+  // Insert buffer 1
+  dbITerm* buf0_a = mod0_module->findDbInst("buf0")->findITerm("A");
+  ASSERT_TRUE(buf0_a);
+  std::set<dbObject*> loads1;
+  loads1.insert(buf0_a);
+  dbInst* new_buf1 = buf0_a->getNet()->insertBufferBeforeLoads(
+      loads1, buffer_master, nullptr, "new_buf1");
+  ASSERT_TRUE(new_buf1);
+
+  // Insert buffer 2
+  std::set<dbObject*> loads2;
+  loads2.insert(out_port);
+  dbInst* new_buf2 = out_port->getNet()->insertBufferBeforeLoads(
+      loads2, buffer_master, nullptr, "new_buf2");
+  ASSERT_TRUE(new_buf2);
+
+  // Write verilog
+  const std::string verilog_file = "results/BeforeLoads_Case3.v";
+  sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
+}
+
+TEST_F(TestInsertBuffer, BeforeLoads_Case4)
+{
+  // Netlist:
+  //   drvr0 (BUF) --> n1 --+--> load0 (BUF)
+  //                        +--> load1 (BUF)
+  //                        +--> load2 (BUF)
+  //
+  //   No hierarchical modules in this netlist.
+  //
+  // Insert buffer 1: Load pins = {load0/A, load1/A}
+  // Insert buffer 2: Load pins = {new0/A, load2/A}
+  //
+  // Expected result after buffer 1:
+  //   drvr0 --> n1 --+--> load2
+  //                  |
+  //                  +--> [new0] --(net_A)--+--> load0
+  //                                         +--> load1
+  //
+  // Expected result after buffer 2 (Buffers both load2 and new0):
+  //   drvr0 --> n1 --> [new1] --(net_B)--+--> load2
+  //                                      |                    +--> load0
+  //                                      +--> new0 --(net_A)--+
+  //                                                           +--> load1
+
+  // Create masters
+  dbMaster* buf_master = db_->findMaster("BUF_X1");
+  ASSERT_TRUE(buf_master);
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Create instances
+  dbInst* drvr0 = dbInst::create(block_, buf_master, "drvr0");
+  ASSERT_TRUE(drvr0);
+  dbInst* load0 = dbInst::create(block_, buf_master, "load0");
+  ASSERT_TRUE(load0);
+  dbInst* load1 = dbInst::create(block_, buf_master, "load1");
+  ASSERT_TRUE(load1);
+  dbInst* load2 = dbInst::create(block_, buf_master, "load2");
+  ASSERT_TRUE(load2);
+
+  // Create net and connect
+  dbNet* n1 = dbNet::create(block_, "n1");
+  ASSERT_TRUE(n1);
+  drvr0->findITerm("Z")->connect(n1);
+  load0->findITerm("A")->connect(n1);
+  load1->findITerm("A")->connect(n1);
+  load2->findITerm("A")->connect(n1);
+
+  // Insert buffer 1
+  dbITerm* load0_a = load0->findITerm("A");
+  dbITerm* load1_a = load1->findITerm("A");
+  std::set<dbObject*> loads1;
+  loads1.insert(load0_a);
+  loads1.insert(load1_a);
+  dbInst* new0
+      = n1->insertBufferBeforeLoads(loads1, buffer_master, nullptr, "new0");
+  ASSERT_TRUE(new0);
+
+  // Insert buffer 2
+  dbITerm* new0_a = new0->findITerm("A");
+  dbITerm* load2_a = load2->findITerm("A");
+  std::set<dbObject*> loads2;
+  loads2.insert(new0_a);
+  loads2.insert(load2_a);
+  dbInst* new1
+      = n1->insertBufferBeforeLoads(loads2, buffer_master, nullptr, "new1");
+  ASSERT_TRUE(new1);
+
+  // Write verilog
+  const std::string verilog_file = "results/BeforeLoads_Case4.v";
+  sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
+}
+
+TEST_F(TestInsertBuffer, BeforeLoads_Case5)
+{
+  // Netlist:
+  //   Top module contains four submodules: MOD0, MOD1, MOD2, MOD3.
+  //   There are four cells (drvr0, load0, load1, load2) in total.
+  //   drvr0 drives load0, load1, and load2, with each cell located
+  //   inside a different MOD* submodule (mod0/drvr0, mod1/load0,
+  //   mod2/load1, mod3/load2).
+  //
+  //   Hierarchy:
+  //     top
+  //     +-- mod0 (MOD0) --> drvr0 (BUF)
+  //     +-- mod1 (MOD1) --> load0 (BUF)
+  //     +-- mod2 (MOD2) --> load1 (BUF)
+  //     +-- mod3 (MOD3) --> load2 (BUF)
+  //
+  //   Connections:
+  //     mod0/drvr0/Z --> n1
+  //     n1 --> mod1/load0/A
+  //     n1 --> mod2/load1/A
+  //     n1 --> mod3/load2/A
+  //
+  // Insert buffer 1: Load pins = {mod1/load0/A, mod2/load1/A}
+  // Insert buffer 2: Load pins = {new0/A, mod3/load2/A}
+
+  // Create masters
+  dbMaster* buf_master = db_->findMaster("BUF_X1");
+  ASSERT_TRUE(buf_master);
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Create submodules and instances within them
+  dbModule* mod0 = dbModule::create(block_, "MOD0");
+  dbInst::create(block_, buf_master, "drvr0", false, mod0);
+  dbModBTerm::create(mod0, "Z")->setIoType(dbIoType::OUTPUT);
+  mod0->findModBTerm("Z")->connect(dbModNet::create(mod0, "Z_net"));
+  mod0->findDbInst("drvr0")->findITerm("Z")->connect(mod0->getModNet("Z_net"));
+
+  dbModule* mod1 = dbModule::create(block_, "MOD1");
+  dbInst::create(block_, buf_master, "load0", false, mod1);
+  dbModBTerm::create(mod1, "A")->setIoType(dbIoType::INPUT);
+  mod1->findModBTerm("A")->connect(dbModNet::create(mod1, "A_net"));
+  mod1->findDbInst("load0")->findITerm("A")->connect(mod1->getModNet("A_net"));
+
+  dbModule* mod2 = dbModule::create(block_, "MOD2");
+  dbInst::create(block_, buf_master, "load1", false, mod2);
+  dbModBTerm::create(mod2, "A")->setIoType(dbIoType::INPUT);
+  mod2->findModBTerm("A")->connect(dbModNet::create(mod2, "A_net"));
+  mod2->findDbInst("load1")->findITerm("A")->connect(mod2->getModNet("A_net"));
+
+  dbModule* mod3 = dbModule::create(block_, "MOD3");
+  dbInst::create(block_, buf_master, "load2", false, mod3);
+  dbModBTerm::create(mod3, "A")->setIoType(dbIoType::INPUT);
+  mod3->findModBTerm("A")->connect(dbModNet::create(mod3, "A_net"));
+  mod3->findDbInst("load2")->findITerm("A")->connect(mod3->getModNet("A_net"));
+
+  // Create top-level module instances
+  dbModInst* mi0 = dbModInst::create(block_->getTopModule(), mod0, "mod0");
+  dbModInst* mi1 = dbModInst::create(block_->getTopModule(), mod1, "mod1");
+  dbModInst* mi2 = dbModInst::create(block_->getTopModule(), mod2, "mod2");
+  dbModInst* mi3 = dbModInst::create(block_->getTopModule(), mod3, "mod3");
+
+  // Connect them hierarchically
+  dbNet* n1 = dbNet::create(block_, "n1");
+  ASSERT_TRUE(n1);
+
+  dbModNet* top_n1 = dbModNet::create(block_->getTopModule(), "n1");
+  dbModITerm::create(mi0, "Z", mod0->findModBTerm("Z"))->connect(top_n1);
+  dbModITerm::create(mi1, "A", mod1->findModBTerm("A"))->connect(top_n1);
+  dbModITerm::create(mi2, "A", mod2->findModBTerm("A"))->connect(top_n1);
+  dbModITerm::create(mi3, "A", mod3->findModBTerm("A"))->connect(top_n1);
+
+  // Physical connections
+  mod0->findDbInst("drvr0")->findITerm("Z")->connect(n1);
+  mod1->findDbInst("load0")->findITerm("A")->connect(n1);
+  mod2->findDbInst("load1")->findITerm("A")->connect(n1);
+  mod3->findDbInst("load2")->findITerm("A")->connect(n1);
+
+  // Insert buffer 1
+  dbITerm* load0_a = mod1->findDbInst("load0")->findITerm("A");
+  ASSERT_TRUE(load0_a);
+  dbITerm* load1_a = mod2->findDbInst("load1")->findITerm("A");
+  ASSERT_TRUE(load1_a);
+
+  std::set<dbObject*> loads1;
+  loads1.insert(load0_a);
+  loads1.insert(load1_a);
+  dbInst* new0
+      = n1->insertBufferBeforeLoads(loads1, buffer_master, nullptr, "new0");
+  ASSERT_TRUE(new0);
+
+  // Insert buffer 2
+  dbITerm* new0_a = new0->findITerm("A");
+  ASSERT_TRUE(new0_a);
+  dbITerm* load2_a = mod3->findDbInst("load2")->findITerm("A");
+  ASSERT_TRUE(load2_a);
+
+  std::set<dbObject*> loads2;
+  loads2.insert(new0_a);
+  loads2.insert(load2_a);
+  dbInst* new1
+      = n1->insertBufferBeforeLoads(loads2, buffer_master, nullptr, "new1");
+  ASSERT_TRUE(new1);
+
+  // Write verilog
+  const std::string verilog_file = "results/BeforeLoads_Case5.v";
+  sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
+}
+
 TEST_F(TestInsertBuffer, AfterDriver_Case1)
 {
   int num_warning = 0;
