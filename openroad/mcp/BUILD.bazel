@@ -5,6 +5,7 @@ py_binary(
     name = "server",
     srcs = ["server.py"],
     deps = [
+        "//openroad:openroadpy",
         requirement("fastmcp"),
     ],
 )
