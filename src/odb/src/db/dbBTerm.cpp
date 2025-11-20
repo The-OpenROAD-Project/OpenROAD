@@ -382,6 +382,12 @@ dbModNet* dbBTerm::getModNet() const
   return nullptr;
 }
 
+void dbBTerm::connect(dbNet* db_net, dbModNet* modnet)
+{
+  connect(db_net);
+  connect(modnet);
+}
+
 void dbBTerm::connect(dbModNet* mod_net)
 {
   dbModule* parent_module = mod_net->getParent();

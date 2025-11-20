@@ -1521,6 +1521,7 @@ class dbBTerm : public dbObject
 
   /// Connect the block-terminal to net.
   ///
+  void connect(dbNet* db_net, dbModNet* modnet);
   void connect(dbNet* net);
   void connect(dbModNet* mod_net);
 

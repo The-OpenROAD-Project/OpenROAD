@@ -35,6 +35,92 @@ class TestInsertBuffer : public tst::Fixture
   dbBlock* block_ = nullptr;
 };
 
+/*
+ * insertBufferBeforeLoad() Case1
+ *
+ * This test case constructs a hierarchical netlist. The top-level module
+ * contains a constant driver (drvr_inst), two buffer loads (load0_inst,
+ * load2_inst), a top-level output port (load_output), and a hierarchical
+ * instance (mi0).
+ *
+ * The single top-level net "net" connects the driver to all these loads.
+ * The connection to mi0 propagates down through the hierarchy (mi0 -> mi1)
+ * to eventually drive another buffer load (load1_inst) inside the MOD1 module.
+ *
+ * [Pre ECO]
+ *
+ *                      +-----------+
+ *                      | LOGIC0_X1 |
+ *                      | drvr_inst |-----.
+ *                      +-----------+     |
+ *                            .Z          | (net "net")
+ *      +-------------------+-------------+------------------+
+ *      |                   |             |                  |
+ *      | .A                | .A          |                  |
+ * +----v------+       +----v------+      |             +----v-------+
+ * |  BUF_X1   |       |  BUF_X1   |      |             | Top Output |
+ * | load0_inst|       | load2_inst|      |             | load_output|
+ * +-----------+       +-----------+      |             +------------+
+ *                                        | .A
+ *                           +------------v----------------------+
+ *                           | MOD0 mi0   |                      |
+ *                           |            | .A                   |
+ *                           |   +--------v------------------+   |
+ *                           |   | MOD1   |                  |   |
+ *                           |   | mi1    | .A               |   |
+ *                           |   |    +---v---------------+  |   |
+ *                           |   |    |  BUF_X1           |  |   |
+ *                           |   |    | mi0/mi1/load1_inst|  |   |
+ *                           |   |    +-------------------+  |   |
+ *
+ * The test then proceeds to insert buffers one by one before each load:
+ * 1. Before `load0_inst` (in the top module).
+ * 2. Before `load1_inst` (inside the `mi0/mi1` hierarchy).
+ * 3. Before `load2_inst` (in the top module).
+ * 4. Before the top-level port `load_output`.
+ *
+ * After each insertion, it verifies the correctness of the resulting netlist
+ * by writing it out to a Verilog file and comparing it against an expected
+ * output.
+ *
+ *
+ *
+ *                      +-----------+
+ *                      | LOGIC0_X1 |
+ *                      | drvr_inst |------.
+ *                      +-----------+      |
+ *                            .Z           | (net "net")
+ *      +---------------------+------------+-----------------+
+ * (NEW)| .A           (NEW)  | .A         | .A       (NEW)  | .A
+ * +----v------+         +----v------+     |            +----v------+
+ * |  BUF_X4   |         |  BUF_X4   |     |            |  BUF_X4   |
+ * |    buf    |         |   buf_1   |     |            |   buf_2   |
+ * +-----------+         +-----------+     |            +-----------+
+ *      | .Z                  | .Z         |                 | .Z
+ *      | (net_load)          |            |                 | (load_output)
+ *      |                     |(net_load_1)|                 |
+ * +----v------+         +----v------+     |          +----v-------+
+ * |  BUF_X1   |         |  BUF_X1   |     |          | Top Output |
+ * | load0_inst|         | load2_inst|     |          | load_output|
+ * +-----------+         +-----------+     |          +------------+
+ *                                         |
+ *                                         | .A
+ *                            +------------v----------------------+
+ *                            | MOD0 mi0   |                      |
+ *                            |            | .A                   |
+ *                            |   +--------v------------------+   |
+ *                            |   | MOD1   |                  |   |
+ *                            |   | mi1    | .A   (NEW)       |   |
+ *                            |   |    +---v---------------+  |   |
+ *                            |   |    |  BUF_X4           |  |   |
+ *                            |   |    | mi0/mi1/buf       |  |   |
+ *                            |   |    +----------+--------+  |   |
+ *                            |   |        |                  |   |
+ *                            |   |    +---v---------------+  |   |
+ *                            |   |    |  BUF_X1           |  |   |
+ *                            |   |    | mi0/mi1/load1_inst|  |   |
+ *                            |   |    +-------------------+  |   |
+ */
 TEST_F(TestInsertBuffer, BeforeLoad_Case1)
 {
   auto sort_lines = [](const std::string& s) {
@@ -95,22 +181,25 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   dbNet* net = dbNet::create(block_, "net");
   ASSERT_TRUE(net);
 
+  dbModNet* top_mod_net = dbModNet::create(block_->getTopModule(), "net");
+  ASSERT_TRUE(top_mod_net);
+
   dbITerm* drvr_z = drvr_inst->findITerm("Z");
   ASSERT_TRUE(drvr_z);
-  drvr_z->connect(net);
+  drvr_z->connect(net, top_mod_net);
 
   dbITerm* load0_a = load0_inst->findITerm("A");
   ASSERT_TRUE(load0_a);
-  load0_a->connect(net);
+  load0_a->connect(net, top_mod_net);
 
   dbITerm* load2_a = load2_inst->findITerm("A");
   ASSERT_TRUE(load2_a);
-  load2_a->connect(net);
+  load2_a->connect(net, top_mod_net);
 
   dbBTerm* load_output_bterm = dbBTerm::create(net, "load_output");
   ASSERT_TRUE(load_output_bterm);
   load_output_bterm->setIoType(dbIoType::OUTPUT);
-  load_output_bterm->connect(net);
+  load_output_bterm->connect(net, top_mod_net);
 
   // Hierarchical connections
   // Inside MOD1
@@ -128,12 +217,6 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   mi1->findModITerm("A")->connect(mod0_net_a);
   mod0->findModBTerm("A")->connect(mod0_net_a);
 
-  // Connect top-level net to hierarchical instance through a modnet
-  dbModNet* top_mod_net = dbModNet::create(block_->getTopModule(), "net");
-  ASSERT_TRUE(top_mod_net);
-  drvr_z->connect(top_mod_net);
-  load0_a->connect(top_mod_net);
-  load2_a->connect(top_mod_net);
   // Create ModITerm for mi0
   dbModITerm::create(mi0, "A", mod0->findModBTerm("A"));
   mi0->findModITerm("A")->connect(top_mod_net);
@@ -172,7 +255,9 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   buffer_master = db_->findMaster("BUF_X4");
   ASSERT_TRUE(buffer_master);
 
+  //-----------------------------------------------------------------
   // Insert buffer #1
+  //-----------------------------------------------------------------
   dbInst* new_buffer1 = net->insertBufferBeforeLoad(load0_a, buffer_master);
   ASSERT_TRUE(new_buffer1);
   num_warning = db_network_->checkAxioms();
@@ -215,7 +300,9 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
 
   EXPECT_EQ(sort_lines(content_1), sort_lines(expected_verilog_1));
 
+  //-----------------------------------------------------------------
   // Insert buffer #2
+  //-----------------------------------------------------------------
   dbInst* new_buffer2 = net->insertBufferBeforeLoad(load1_a, buffer_master);
   ASSERT_TRUE(new_buffer2);
   num_warning = db_network_->checkAxioms();
@@ -260,7 +347,9 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
         "endmodule\n";
   EXPECT_EQ(sort_lines(content_2), sort_lines(expected_verilog_2));
 
+  //-----------------------------------------------------------------
   // Insert buffer #3
+  //-----------------------------------------------------------------
   dbInst* new_buffer3 = net->insertBufferBeforeLoad(load2_a, buffer_master);
   ASSERT_TRUE(new_buffer3);
   num_warning = db_network_->checkAxioms();
@@ -309,7 +398,9 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
 
   EXPECT_EQ(sort_lines(content_3), sort_lines(expected_verilog_3));
 
+  //-----------------------------------------------------------------
   // Insert buffer #4
+  //-----------------------------------------------------------------
   dbInst* new_buffer4
       = net->insertBufferBeforeLoad(load_output_bterm, buffer_master);
   ASSERT_TRUE(new_buffer4);
@@ -470,6 +561,7 @@ TEST_F(TestInsertBuffer, AfterDriver_Case1)
   drvr_z->connect(top_mod_net);
   load0_a->connect(top_mod_net);
   load2_a->connect(top_mod_net);
+
   // Create ModITerm for mi0
   dbModITerm::create(mi0, "A", mod0->findModBTerm("A"));
   mi0->findModITerm("A")->connect(top_mod_net);
@@ -508,7 +600,9 @@ TEST_F(TestInsertBuffer, AfterDriver_Case1)
   buffer_master = db_->findMaster("BUF_X4");
   ASSERT_TRUE(buffer_master);
 
+  //-----------------------------------------------------------------
   // Insert buffer
+  //-----------------------------------------------------------------
   dbInst* new_buffer = net->insertBufferAfterDriver(drvr_z, buffer_master);
   ASSERT_TRUE(new_buffer);
   num_warning = db_network_->checkAxioms();
@@ -680,7 +774,9 @@ TEST_F(TestInsertBuffer, AfterDriver_Case2)
 
   EXPECT_EQ(sort_lines(content_0), sort_lines(expected_verilog_0));
 
+  //-----------------------------------------------------------------
   // Insert buffer
+  //-----------------------------------------------------------------
   dbInst* new_buffer = net->insertBufferAfterDriver(drvr_bterm, buffer_master);
   ASSERT_TRUE(new_buffer);
   num_warning = db_network_->checkAxioms();
