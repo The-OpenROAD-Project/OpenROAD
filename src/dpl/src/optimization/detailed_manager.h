@@ -244,6 +244,7 @@ class DetailedMgr
   void setMoveLimit(unsigned int newMoveLimit) { moveLimit_ = newMoveLimit; }
 
   // Journal operations
+  Journal& getJournal() { return journal_; }
   const Journal& getJournal() const { return journal_; }
   void eraseFromGrid(Node* node);
   void paintInGrid(Node* node);
