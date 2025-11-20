@@ -73,7 +73,7 @@ class dbNetwork : public ConcreteNetwork
   CellPortIterator* portIterator(const Cell* cell) const override;
 
   // Sanity checkers
-  void checkAxioms(odb::dbObject* obj = nullptr) const;
+  int checkAxioms(odb::dbObject* obj = nullptr) const;
   void checkSanityModBTerms() const;
   void checkSanityModITerms() const;
   void checkSanityModuleInsts() const;

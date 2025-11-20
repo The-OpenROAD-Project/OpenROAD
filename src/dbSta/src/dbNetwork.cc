@@ -4265,24 +4265,26 @@ void dbNetwork::accumulateFlatLoadPinsOnNet(
 }
 
 // Use this API to check if flat & hier connectivities are ok
-void dbNetwork::checkAxioms(odb::dbObject* obj) const
+int dbNetwork::checkAxioms(odb::dbObject* obj) const
 {
+  int pre_warn_cnt = logger_->getWarningCount();
+
   // Check with an object if provided
   if (obj != nullptr) {
     checkSanityNetConnectivity(obj);
-    return;
+  } else {
+    // Otherwise, check the whole design
+    checkSanityModBTerms();
+    checkSanityModITerms();
+    checkSanityModInstTerms();
+    checkSanityUnusedModules();
+    checkSanityTermConnectivity();
+    checkSanityNetConnectivity();
+    checkSanityInstNames();
+    checkSanityNetNames();
+    checkSanityModuleInsts();
   }
-
-  // Otherwise, check the whole design
-  checkSanityModBTerms();
-  checkSanityModITerms();
-  checkSanityModInstTerms();
-  checkSanityUnusedModules();
-  checkSanityTermConnectivity();
-  checkSanityNetConnectivity();
-  checkSanityInstNames();
-  checkSanityNetNames();
-  checkSanityModuleInsts();
+  return logger_->getWarningCount() - pre_warn_cnt;
 }
 
 // Given a net that may be hierarchical, find the corresponding flat net.
@@ -4370,11 +4372,12 @@ bool dbNetwork::hasPort(const Net* net) const
   return false;
 }
 
-int dbNetwork::checkSanityModBTerms() const
+void dbNetwork::checkSanityModBTerms() const
 {
   if (block_ == nullptr) {
-    return 0;
+    return;
   }
+
   for (odb::dbModule* module : block_->getModules()) {
     std::set<std::string> bterm_names;
     for (odb::dbModBTerm* bterm : module->getModBTerms()) {
@@ -4390,15 +4393,14 @@ int dbNetwork::checkSanityModBTerms() const
       bterm_names.insert(bterm_name);
     }
   }
-  return 0;
 }
 
-int sta::dbNetwork::checkSanityModITerms() const
+void sta::dbNetwork::checkSanityModITerms() const
 {
   if (block_ == nullptr) {
-    return 0;
+    return;
   }
-  int warning_count = 0;
+
   for (odb::dbModInst* mod_inst : block_->getModInsts()) {
     std::set<std::string> iterm_names;
     for (odb::dbModITerm* iterm : mod_inst->getModITerms()) {
@@ -4414,12 +4416,10 @@ int sta::dbNetwork::checkSanityModITerms() const
       iterm_names.insert(iterm_name);
     }
   }
-  return warning_count;
 }
 
-int dbNetwork::checkSanityModuleInsts() const
+void dbNetwork::checkSanityModuleInsts() const
 {
-  int warning_count = 0;
   int inst_count = 0;
   for (odb::dbModule* module : block_->getModules()) {
     if (module->getModInsts().empty() && module->getInsts().empty()) {
@@ -4427,7 +4427,6 @@ int dbNetwork::checkSanityModuleInsts() const
                     2038,
                     "SanityCheck: Module '{}' has no instances.",
                     module->getHierarchicalName());
-      warning_count++;
     }
     inst_count += module->getInsts().size();
   }
@@ -4442,7 +4441,6 @@ int dbNetwork::checkSanityModuleInsts() const
                    block_->getInsts().size(),
                    inst_count);
   }
-  return warning_count;
 }
 
 static std::vector<std::string> getNameSetDifferences(
@@ -4458,9 +4456,8 @@ static std::vector<std::string> getNameSetDifferences(
   return differences;
 }
 
-int dbNetwork::checkSanityModInstTerms() const
+void dbNetwork::checkSanityModInstTerms() const
 {
-  int warning_count = 0;
   for (odb::dbModInst* mod_inst : block_->getModInsts()) {
     // Compare ModITerms in the instance and ModBTerms in the master.
     // - Note that ModBTerms may have bus port sentinels which are not in
@@ -4509,7 +4506,6 @@ int dbNetwork::checkSanityModInstTerms() const
             "master '{}'.",
             mod_inst->getHierarchicalName(),
             master->getName());
-        warning_count++;
 
         if (!iterms_only.empty()) {
           std::string s;
@@ -4531,14 +4527,12 @@ int dbNetwork::checkSanityModInstTerms() const
       }
     }
   }
-  return warning_count;
 }
 
-int dbNetwork::checkSanityUnusedModules() const
+void dbNetwork::checkSanityUnusedModules() const
 {
-  int warning_count = 0;
   if (block_ == nullptr) {
-    return 0;
+    return;
   }
 
   // 1. Collect all modules from the top block and its children.
@@ -4573,15 +4567,12 @@ int dbNetwork::checkSanityUnusedModules() const
           2043,
           "SanityCheck: Module '{}' is defined but never instantiated.",
           module->getName());
-      warning_count++;
     }
   }
-  return warning_count;
 }
 
-int dbNetwork::checkSanityTermConnectivity() const
+void dbNetwork::checkSanityTermConnectivity() const
 {
-  int warning_count = 0;
   for (odb::dbBTerm* bterm : block_->getBTerms()) {
     if (bterm->getIoType() != dbIoType::INPUT && bterm->getNet() == nullptr) {
       logger_->error(
@@ -4609,7 +4600,6 @@ int dbNetwork::checkSanityTermConnectivity() const
       }
     }
   }
-  return warning_count;
 }
 
 void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
@@ -4698,13 +4688,12 @@ void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
   for (odb::dbNet* net_db : block()->getNets()) {
     net_db->checkSanity();
   }
-  return warning_count;
 }
 
-int dbNetwork::checkSanityInstNames() const
+void dbNetwork::checkSanityInstNames() const
 {
   if (block_ == nullptr) {
-    return 0;
+    return;
   }
 
   // Check for duplicate instance names
@@ -4734,14 +4723,12 @@ int dbNetwork::checkSanityInstNames() const
     }
     inst_names.insert(mod_inst_name);
   }
-  return 0;
 }
 
-int dbNetwork::checkSanityNetNames() const
+void dbNetwork::checkSanityNetNames() const
 {
-  int warning_count = 0;
   if (block_ == nullptr) {
-    return 0;
+    return;
   }
 
   // Check for duplicate flat net names
@@ -4760,7 +4747,7 @@ int dbNetwork::checkSanityNetNames() const
 
   // Check for duplicate module net names within each module
   for (odb::dbModule* module : block_->getModules()) {
-    warning_count += checkSanityModNetNamesInModule(module);
+    checkSanityModNetNamesInModule(module);
   }
 
   // Check for name mismatch between flat net and hierchical net
@@ -4794,12 +4781,10 @@ int dbNetwork::checkSanityNetNames() const
       }
     }
   }
-  return warning_count;
 }
 
-int dbNetwork::checkSanityModNetNamesInModule(odb::dbModule* module) const
+void dbNetwork::checkSanityModNetNamesInModule(odb::dbModule* module) const
 {
-  int warning_count = 0;
   // If duplicate ModNet name found, log details of both existing and new nets
   std::map<std::string, odb::dbModNet*> mod_net_map;
   for (odb::dbModNet* mod_net : module->getModNets()) {
@@ -4857,155 +4842,6 @@ int dbNetwork::checkSanityModNetNamesInModule(odb::dbModule* module) const
           module->getName());
     }
     mod_net_map[mod_net_name] = mod_net;
-  }
-}
-
-void dbNetwork::checkSanityNetDrvrPinMapConsistency() const
-{
-  if (block_ == nullptr) {
-    logger_->error(ORD, 2000, "No block found.");
-    return;
-  }
-
-  // For each cache element
-  for (const auto& [net, cached_drivers_ptr] : net_drvr_pin_map_) {
-    dbNet* dbnet = nullptr;
-    dbModNet* modnet = nullptr;
-    staToDb(net, dbnet, modnet);
-
-    if (dbnet == nullptr && modnet == nullptr) {
-      logger_->warn(ORD,
-                    2009,
-                    "Found net {} in cache that is not in the netlist.",
-                    pathName(net));
-      continue;
-    }
-
-    // Find drivers from the netlist for the current net
-    std::vector<odb::dbObject*> drivers;
-    if (dbnet) {
-      odb::dbUtil::findITermDrivers(dbnet, drivers);
-      odb::dbUtil::findBTermDrivers(dbnet, drivers);
-    } else if (modnet) {
-      odb::dbUtil::findITermDrivers(modnet, drivers);
-      odb::dbUtil::findBTermDrivers(modnet, drivers);
-      odb::dbUtil::findModITermDrivers(modnet, drivers);
-
-      // Also, find drivers from the related flat net
-      dbNet* related_dbnet = findRelatedDbNet(modnet);
-      if (related_dbnet) {
-        odb::dbUtil::findITermDrivers(related_dbnet, drivers);
-        odb::dbUtil::findBTermDrivers(related_dbnet, drivers);
-      }
-
-      // Remove duplicates
-      std::sort(drivers.begin(), drivers.end());
-      drivers.erase(std::unique(drivers.begin(), drivers.end()), drivers.end());
-    }
-
-    // Convert to PinSet
-    PinSet netlist_drivers(this);
-    for (auto driver : drivers) {
-      Pin* pin = nullptr;
-      switch (driver->getObjectType()) {
-        case odb::dbITermObj:
-          pin = dbToSta(static_cast<odb::dbITerm*>(driver));
-          break;
-        case odb::dbBTermObj:
-          pin = dbToSta(static_cast<odb::dbBTerm*>(driver));
-          break;
-        case odb::dbModITermObj:
-          // Skip hierarchical pin.
-          break;
-        default:
-          // Should not be here
-          break;
-      }
-      if (pin != nullptr) {
-        netlist_drivers.insert(pin);
-      }
-    }
-
-    // Compare netlist drivers with cached drivers
-    bool consistent = true;
-    if (cached_drivers_ptr == nullptr
-        || netlist_drivers.size() != cached_drivers_ptr->size()) {
-      consistent = false;
-    } else {
-      for (const Pin* pin : netlist_drivers) {
-        if (cached_drivers_ptr->find(pin) == cached_drivers_ptr->end()) {
-          consistent = false;
-          break;
-        }
-      }
-    }
-
-    // Report inconsistent point details
-    if (consistent == false) {
-      logger_->warn(ORD, 2006, "Inconsistency found for net {}", pathName(net));
-      logger_->report("  Netlist drivers:");
-      for (const Pin* pin : netlist_drivers) {
-        const PinInfo pin_info = getPinInfo(this, pin);
-        logger_->report("    - {} (type: {}, id: {})",
-                        pin_info.name,
-                        pin_info.type_name,
-                        pin_info.id);
-      }
-      logger_->report("  Cached drivers:");
-      if (cached_drivers_ptr) {
-        for (const Pin* pin : *cached_drivers_ptr) {
-          const PinInfo pin_info = getPinInfo(this, pin);
-          logger_->report("    - {} (type: {}, id: {})",
-                          pin_info.name,
-                          pin_info.type_name,
-                          pin_info.id);
-        }
-      }
-    }
-  }
-}
-
-void dbNetwork::dumpNetDrvrPinMap() const
-{
-  const auto& net_drvr_pin_map = net_drvr_pin_map_;
-  logger_->report("--------------------------------------------------");
-  logger_->report("Dumping net_drvr_pin_map_ cache (size: {})",
-                  net_drvr_pin_map.size());
-
-  for (auto const& [net, pin_set] : net_drvr_pin_map) {
-    // Get the underlying dbObject for the net to report its type and ID.
-    const dbObject* net_obj
-        = reinterpret_cast<const dbObject*>(const_cast<Net*>(net));
-    logger_->report("Net: {} {}({}, {:p})",
-                    pathName(net),
-                    net_obj->getTypeName(),
-                    net_obj->getId(),
-                    (void*) net_obj);
-    if (pin_set == nullptr) {
-      logger_->report("  Drivers: null pin set");
-      continue;
-    }
-    if (pin_set->empty()) {
-      logger_->report("  Drivers: empty pin set");
-      continue;
-    }
-    for (const Pin* pin : *pin_set) {
-      const PinInfo pin_info = getPinInfo(this, pin);
-      logger_->report("  - {} {}({}, {:p})",
-                      pin_info.name,
-                      pin_info.type_name,
-                      pin_info.id,
-                      pin_info.addr);
-    }
-  }
-  logger_->report("--------------------------------------------------");
-}
-
-void dbNetwork::removeDriverFromCache(const Net* net, const Pin* drvr)
-{
-  PinSet* drvrs = net_drvr_pin_map_.findKey(net);
-  if (drvrs) {
-    drvrs->erase(drvr);
   }
 }
 
