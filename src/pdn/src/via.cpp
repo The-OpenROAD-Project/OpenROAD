@@ -3071,6 +3071,7 @@ void Via::writeToDb(odb::dbSWire* wire,
     int x = 0;
     int y = 0;
     int ripup_count = 0;
+    int via_ripup_count = 0;
     for (auto* shape : ripup_shapes) {
       int via_x, via_y;
       if (shape->getBlockVia() != nullptr || shape->getTechVia() != nullptr) {
@@ -3078,6 +3079,24 @@ void Via::writeToDb(odb::dbSWire* wire,
         x += via_x;
         y += via_y;
         ripup_count++;
+
+        if (odb::dbVia* via = shape->getBlockVia()) {
+          for (auto* box : via->getBoxes()) {
+            if (box->getTechLayer() != nullptr
+                && box->getTechLayer()->getType()
+                       == odb::dbTechLayerType::CUT) {
+              via_ripup_count++;
+            }
+          }
+        } else if (odb::dbTechVia* via = shape->getTechVia()) {
+          for (auto* box : via->getBoxes()) {
+            if (box->getTechLayer() != nullptr
+                && box->getTechLayer()->getType()
+                       == odb::dbTechLayerType::CUT) {
+              via_ripup_count++;
+            }
+          }
+        }
       }
 
       odb::dbSBox::destroy(shape);
@@ -3091,7 +3110,7 @@ void Via::writeToDb(odb::dbSWire* wire,
         utl::PDN,
         195,
         "Removing {} via(s) between {} and {} at ({:.4f} um, {:.4f} um) for {}",
-        ripup_count,
+        via_ripup_count,
         lower_->getLayer()->getName(),
         upper_->getLayer()->getName(),
         tech_layer.dbuToMicron(x / ripup_count),
