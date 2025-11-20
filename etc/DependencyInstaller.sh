@@ -891,7 +891,7 @@ _install_rhel_packages() {
 # openSUSE
 # ------------------------------------------------------------------------------
 _install_opensuse_packages() {
-    log "Install ubuntu base packages using zypper (-base or -all)"
+    log "Install openSUSE base packages using zypper (-base or -all)"
     _execute "Refreshing repositories..." zypper refresh
     _execute "Updating packages..." zypper -n update
     _execute "Installing development pattern..." zypper -n install -t pattern devel_basis
