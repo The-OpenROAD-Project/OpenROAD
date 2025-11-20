@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <cstdint>
 
+#include "dpl/Opendp.h"
+#include "infrastructure/Coordinates.h"
 #include "infrastructure/network.h"
 #include "odb/geom.h"
 

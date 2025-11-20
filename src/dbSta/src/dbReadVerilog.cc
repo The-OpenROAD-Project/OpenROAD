@@ -6,6 +6,7 @@
 #include <odb/dbSet.h>
 
 #include <cstddef>
+#include <cstring>
 #include <fstream>
 #include <map>
 #include <memory>
@@ -368,9 +369,12 @@ void Verilog2db::makeDbModule(
   if (parent == nullptr) {
     module = block_->getTopModule();
   } else {
+    const char* name = network_->name(cell);
     // This uniquifies the cell
-    module = dbModule::makeUniqueDbModule(
-        network_->name(cell), network_->name(inst), block_);
+    module = dbModule::makeUniqueDbModule(name, network_->name(inst), block_);
+    if (strcmp(name, module->getName()) != 0) {
+      odb::dbStringProperty::create(module, "original_name", name);
+    }
 
     registerHierModule(module);
 
@@ -434,6 +438,7 @@ void Verilog2db::makeModBTerms(Cell* cell, dbModule* module)
   std::unique_ptr<CellPortIterator> cp_iter{network_->portIterator(cell)};
   while (cp_iter->hasNext()) {
     Port* port = cp_iter->next();
+    const dbIoType io_type = staToDb(network_->direction(port));
     if (network_->isBus(port)) {
       // make the bus port as part of the port set for the cell.
       const char* port_name = network_->name(port);
@@ -443,7 +448,6 @@ void Verilog2db::makeModBTerms(Cell* cell, dbModule* module)
                                     network_->fromIndex(port),
                                     network_->toIndex(port));
       bmodterm->setBusPort(dbbusport);
-      const dbIoType io_type = staToDb(network_->direction(port));
       bmodterm->setIoType(io_type);
 
       //
@@ -471,12 +475,11 @@ void Verilog2db::makeModBTerms(Cell* cell, dbModule* module)
           dbbusport->setLast(modbterm);
         }
         dbIoType io_type = staToDb(network_->direction(port));
-        bmodterm->setIoType(io_type);
+        modbterm->setIoType(io_type);
       }
     } else {
       const std::string port_name = network_->name(port);
       dbModBTerm* bmodterm = dbModBTerm::create(module, port_name.c_str());
-      const dbIoType io_type = staToDb(network_->direction(port));
       bmodterm->setIoType(io_type);
       debugPrint(logger_,
                  utl::ODB,

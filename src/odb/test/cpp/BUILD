@@ -11,14 +11,11 @@ cc_test(
     name = "TestAbstractLef",
     srcs = [
         "TestAbstractLef.cc",
-        "sky130_test_fixture.h",
-    ],
-    data = [
-        "//src/odb/test/data/sky130hd:lef-test-data",
     ],
     deps = [
         "//src/odb",
         "//src/tst",
+        "//src/tst:sky130_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -203,7 +200,6 @@ cc_test(
     name = "TestPolygonalFloorplan",
     srcs = [
         "TestPolygonalFloorplan.cc",
-        "nangate45_test_fixture.h",
     ],
     data = [
         "//src/odb/test:regression_resources",
@@ -211,6 +207,7 @@ cc_test(
     deps = [
         "//src/odb",
         "//src/tst",
+        "//src/tst:nangate45_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -221,7 +218,25 @@ cc_test(
     name = "Test3DBloxParser",
     srcs = [
         "Test3DBloxParser.cpp",
-        "nangate45_test_fixture.h",
+    ],
+    data = [
+        "//src/odb/test:regression_resources",
+    ],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "Test3DBloxChecker",
+    srcs = [
+        "Test3DBloxChecker.cpp",
     ],
     data = [
         "//src/odb/test:regression_resources",
@@ -229,6 +244,7 @@ cc_test(
     deps = [
         "//src/odb",
         "//src/tst",
+        "//src/tst:nangate45_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

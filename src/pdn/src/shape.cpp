@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
+#include "boost/geometry/index/predicates.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "grid.h"
 #include "grid_component.h"
@@ -62,9 +63,9 @@ utl::Logger* Shape::getLogger() const
   return grid_component_->getLogger();
 }
 
-Shape* Shape::copy() const
+std::unique_ptr<Shape> Shape::copy() const
 {
-  auto* shape = new Shape(layer_, net_, rect_, type_);
+  auto shape = std::make_unique<Shape>(layer_, net_, rect_, type_);
   shape->shape_type_ = shape_type_;
   shape->obs_ = obs_;
   shape->iterm_connections_ = iterm_connections_;
@@ -204,7 +205,7 @@ odb::Rect Shape::getMinimumRect() const
 
 bool Shape::cut(const ObstructionTree& obstructions,
                 const Grid* ignore_grid,
-                std::vector<Shape*>& replacements) const
+                std::vector<std::unique_ptr<Shape>>& replacements) const
 {
   return cut(
       obstructions, replacements, [ignore_grid](const ShapePtr& other) -> bool {
@@ -217,7 +218,7 @@ bool Shape::cut(const ObstructionTree& obstructions,
 }
 
 bool Shape::cut(const ObstructionTree& obstructions,
-                std::vector<Shape*>& replacements,
+                std::vector<std::unique_ptr<Shape>>& replacements,
                 const std::function<bool(const ShapePtr&)>& obs_filter) const
 {
   using namespace boost::polygon::operators;
@@ -241,9 +242,25 @@ bool Shape::cut(const ObstructionTree& obstructions,
        it != obstructions.qend();
        it++) {
     const auto& other_shape = *it;
+
+    if (other_shape->net_ != nullptr && net_ == other_shape->net_) {
+      // obstruction is of the same net, so see if the violation is completely
+      // inside the new strap and therefore is okay
+      if (is_horizontal) {
+        if (rect_.yMin() <= other_shape->rect_.yMin()
+            && rect_.yMax() >= other_shape->rect_.yMax()) {
+          continue;
+        }
+      } else {
+        if (rect_.xMin() <= other_shape->rect_.xMin()
+            && rect_.xMax() >= other_shape->rect_.xMax()) {
+          continue;
+        }
+      }
+    }
+
     odb::Rect vio_rect
         = other_shape->getRectWithLargestObstructionHalo(obs_halo);
-
     // ensure the violation overlap fully with the shape to make cut correctly
     if (is_horizontal) {
       vio_rect.set_ylo(std::min(obs_.yMin(), vio_rect.yMin()));
@@ -306,11 +323,11 @@ bool Shape::cut(const ObstructionTree& obstructions,
     }
 
     if (accept) {
-      auto* new_shape = copy();
+      auto new_shape = copy();
       new_shape->setRect(new_rect);
       new_shape->updateTermConnections();
 
-      replacements.push_back(new_shape);
+      replacements.push_back(std::move(new_shape));
     }
   }
   return true;
@@ -450,6 +467,33 @@ odb::dbBox* Shape::addBPinToDb(const odb::Rect& rect) const
 
 void Shape::populateMapFromDb(odb::dbNet* net, ShapeVectorMap& map)
 {
+  // collect fixed bterms
+  for (auto* bterm : net->getBTerms()) {
+    for (auto* bpin : bterm->getBPins()) {
+      if (!bpin->getPlacementStatus().isFixed()) {
+        continue;
+      }
+      for (auto* box : bpin->getBoxes()) {
+        auto* layer = box->getTechLayer();
+        if (layer == nullptr) {
+          continue;
+        }
+        if (layer->getRoutingLevel() == 0) {
+          continue;
+        }
+
+        odb::Rect rect = box->getBox();
+
+        ShapePtr shape = std::make_shared<Shape>(
+            layer, net, rect, odb::dbWireShapeType::NONE);
+        shape->setShapeType(Shape::FIXED);
+        shape->generateObstruction();
+        map[layer].push_back(std::move(shape));
+      }
+    }
+  }
+
+  // collect existing routing
   for (auto* swire : net->getSWires()) {
     for (auto* box : swire->getWires()) {
       auto* layer = box->getTechLayer();
@@ -573,10 +617,10 @@ bool Shape::isModifiable() const
 
 std::string Shape::getReportText() const
 {
-  std::string text
-      = fmt::format("{} on {}",
-                    getRectText(rect_, layer_->getTech()->getLefUnits()),
-                    layer_->getName());
+  std::string text = fmt::format(
+      "{} on {}",
+      getRectText(rect_, layer_->getTech()->getDbUnitsPerMicron()),
+      layer_->getName());
 
   if (net_ != nullptr) {
     text = net_->getName() + " " + text;
@@ -593,12 +637,13 @@ std::string Shape::getRectText(const odb::Rect& rect, double dbu_to_micron)
                      rect.yMax() / dbu_to_micron);
 }
 
-Shape* Shape::extendTo(
+std::unique_ptr<Shape> Shape::extendTo(
     const odb::Rect& rect,
     const ObstructionTree& obstructions,
+    Shape* orig_shape,
     const std::function<bool(const ShapePtr&)>& obs_filter) const
 {
-  std::unique_ptr<Shape> new_shape(copy());
+  std::unique_ptr<Shape> new_shape = copy();
 
   if (isHorizontal()) {
     new_shape->rect_.set_xlo(std::min(rect_.xMin(), rect.xMin()));
@@ -616,9 +661,9 @@ Shape* Shape::extendTo(
   }
 
   if (obstructions.qbegin(bgi::intersects(new_shape->getRect())
-                          && bgi::satisfies([this](const auto& other) {
+                          && bgi::satisfies([&orig_shape](const auto& other) {
                                // ignore violations that results from itself
-                               return other.get() != this;
+                               return other.get() != orig_shape;
                              })
                           && bgi::satisfies(obs_filter))
       != obstructions.qend()) {
@@ -626,7 +671,7 @@ Shape* Shape::extendTo(
     return nullptr;
   }
 
-  return new_shape.release();
+  return new_shape;
 }
 
 Shape::ShapeTreeMap Shape::convertVectorToTree(ShapeVectorMap& vec)
@@ -672,9 +717,10 @@ FollowPinShape::FollowPinShape(odb::dbTechLayer* layer,
 {
 }
 
-Shape* FollowPinShape::copy() const
+std::unique_ptr<Shape> FollowPinShape::copy() const
 {
-  auto* shape = new FollowPinShape(getLayer(), getNet(), getRect());
+  auto shape
+      = std::make_unique<FollowPinShape>(getLayer(), getNet(), getRect());
   shape->generateObstruction();
   shape->rows_ = rows_;
   return shape;
@@ -741,9 +787,10 @@ odb::Rect FollowPinShape::getMinimumRect() const
   return min_shape;
 }
 
-bool FollowPinShape::cut(const ObstructionTree& obstructions,
-                         const Grid* ignore_grid,
-                         std::vector<Shape*>& replacements) const
+bool FollowPinShape::cut(
+    const ObstructionTree& obstructions,
+    const Grid* ignore_grid,
+    std::vector<std::unique_ptr<Shape>>& replacements) const
 {
   return Shape::cut(
       obstructions, replacements, [](const ShapePtr& other) -> bool {

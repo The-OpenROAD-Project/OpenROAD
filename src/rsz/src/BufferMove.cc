@@ -8,6 +8,7 @@
 #include <string>
 
 #include "BaseMove.hh"
+#include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"

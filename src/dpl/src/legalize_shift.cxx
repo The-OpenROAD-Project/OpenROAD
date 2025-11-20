@@ -16,6 +16,8 @@
 #include <utility>
 #include <vector>
 
+#include "dpl/Opendp.h"
+#include "infrastructure/Coordinates.h"
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
 #include "optimization/detailed_manager.h"

@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -83,7 +84,8 @@ void Opendp::prepareDecapAndGaps()
   // Sort decaps cells in descending order
   std::sort(decap_masters_.begin(),
             decap_masters_.end(),
-            [](const DecapCell* decap1, const DecapCell* decap2) {
+            [](const std::unique_ptr<DecapCell>& decap1,
+               const std::unique_ptr<DecapCell>& decap2) {
               return decap1->capacitance > decap2->capacitance;
             });
 
@@ -92,11 +94,11 @@ void Opendp::prepareDecapAndGaps()
   int gaps_count = 0;
   // Sort each gap vector for X position
   for (auto& it : gaps_) {
-    std::sort(it.second.begin(),
-              it.second.end(),
-              [](const GapInfo* gap1, const GapInfo* gap2) {
-                return gap1->x < gap2->x;
-              });
+    std::sort(
+        it.second.begin(),
+        it.second.end(),
+        [](const std::unique_ptr<GapInfo>& gap1,
+           const std::unique_ptr<GapInfo>& gap2) { return gap1->x < gap2->x; });
     gaps_count += it.second.size();
   }
 
@@ -166,7 +168,7 @@ void Opendp::insertDecapCells(const double target, IRDropByPoint& psm_ir_drops)
                 total_cap);
 }
 
-void Opendp::insertDecapInRow(const std::vector<GapInfo*>& gaps,
+void Opendp::insertDecapInRow(const std::vector<std::unique_ptr<GapInfo>>& gaps,
                               const DbuY gap_y,
                               const DbuX irdrop_x,
                               const DbuY irdrop_y,
@@ -174,11 +176,12 @@ void Opendp::insertDecapInRow(const std::vector<GapInfo*>& gaps,
                               const double& target)
 {
   // Find gap in same row and x near the ir drop
-  auto find_gap = std::lower_bound(
-      gaps.begin(),
-      gaps.end(),
-      irdrop_x,
-      [](const GapInfo* elem, const DbuX& value) { return elem->x < value; });
+  auto find_gap
+      = std::lower_bound(gaps.begin(),
+                         gaps.end(),
+                         irdrop_x,
+                         [](const std::unique_ptr<GapInfo>& elem,
+                            const DbuX& value) { return elem->x < value; });
   // if this row has free gap with x <= xpoint <= x + width
   if (find_gap != gaps.end()
       && ((*find_gap)->x + (*find_gap)->width) >= irdrop_x
@@ -205,13 +208,13 @@ void Opendp::insertDecapInPos(dbMaster* master,
 {
   // insert decap inst
   std::string inst_name = "DECAP_" + to_string(decap_count_);
-  dbInst* inst = dbInst::create(block_,
-                                master,
-                                inst_name.c_str(),
-                                /* physical_only */ true);
+  odb::dbInst* inst = odb::dbInst::create(block_,
+                                          master,
+                                          inst_name.c_str(),
+                                          /* physical_only */ true);
   const GridX grid_x = grid_->gridX(pos_x - core_.xMin());
   const GridY grid_y = grid_->gridSnapDownY(pos_y - core_.yMin());
-  const dbOrientType orient
+  const odb::dbOrientType orient
       = grid_->getSiteOrientation(grid_x, grid_y, master->getSite()).value();
   inst->setOrient(orient);
   inst->setLocation(pos_x.v, pos_y.v);

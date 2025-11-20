@@ -17,7 +17,7 @@ namespace gui {
 
 Search::~Search()
 {
-  if (top_block_ != nullptr) {
+  if (top_chip_ != nullptr) {
     removeOwner();  // unregister as a callback object
   }
 }
@@ -123,7 +123,12 @@ void Search::inDbObstructionDestroy(odb::dbObstruction* obs)
 
 void Search::inDbBlockSetDieArea(odb::dbBlock* block)
 {
-  setTopBlock(block);
+  setTopChip(block->getChip());
+}
+
+void Search::inDbBlockSetCoreArea(odb::dbBlock* block)
+{
+  emit modified();
 }
 
 void Search::inDbRegionAddBox(odb::dbRegion*, odb::dbBox*)
@@ -151,12 +156,13 @@ void Search::inDbWirePostModify(odb::dbWire* wire)
   clearShapes();
 }
 
-void Search::setTopBlock(odb::dbBlock* block)
+void Search::setTopChip(odb::dbChip* chip)
 {
-  if (top_block_ != block) {
+  odb::dbBlock* block = chip->getBlock();
+  if (top_chip_ != chip) {
     clear();
 
-    if (top_block_ != nullptr) {
+    if (top_chip_ != nullptr) {
       removeOwner();
     }
 
@@ -171,9 +177,9 @@ void Search::setTopBlock(odb::dbBlock* block)
     }
   }
 
-  top_block_ = block;
+  top_chip_ = chip;
 
-  emit newBlock(block);
+  emit newChip(chip);
 }
 
 void Search::announceModified(std::atomic_bool& flag)
@@ -228,7 +234,8 @@ void Search::clearRows()
 
 Search::BlockData& Search::getData(odb::dbBlock* block)
 {
-  return block == top_block_ ? top_block_data_ : child_block_data_[block];
+  return block->getChip() == top_chip_ ? top_block_data_
+                                       : child_block_data_[block];
 }
 
 void Search::updateShapes(odb::dbBlock* block)

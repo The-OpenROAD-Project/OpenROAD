@@ -18,6 +18,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "shape.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 
@@ -320,15 +321,23 @@ int Connect::getMaxEnclosureFromCutLayer(odb::dbTechLayer* layer,
   for (auto* rule : tech_vias_) {
     bool use = false;
     int max_size = 0;
+    int max_via_size = 0;
+    int cnt_vias = 0;
     for (auto* box : rule->getBoxes()) {
-      use |= box->getTechLayer() == layer;
-
       odb::Rect rect = box->getBox();
-      max_size = std::max(max_size, static_cast<int>(rect.maxDXDY()));
+
+      if (box->getTechLayer() == layer) {
+        use = true;
+        cnt_vias += 1;
+        max_via_size = std::max(max_via_size, rect.maxDXDY());
+      }
+
+      max_size = std::max(max_size, rect.maxDXDY());
     }
 
-    if (use) {
-      max_enclosure = std::max(max_enclosure, (max_size - min_width) / 2);
+    if (use && cnt_vias == 1) {
+      max_enclosure
+          = std::max(max_enclosure, (max_size - max_via_size - min_width) / 2);
     }
   }
 
@@ -460,13 +469,14 @@ void Connect::makeVia(odb::dbSWire* wire,
         TechLayer::snapToManufacturingGrid(
             tech, intersection.yMax(), false, 2));
     if (intersection != new_intersection) {
-      debugPrint(grid_->getLogger(),
-                 utl::PDN,
-                 "Via",
-                 2,
-                 "intersection changed: {} -> {}",
-                 Shape::getRectText(intersection, tech->getLefUnits()),
-                 Shape::getRectText(new_intersection, tech->getLefUnits()));
+      debugPrint(
+          grid_->getLogger(),
+          utl::PDN,
+          "Via",
+          2,
+          "intersection changed: {} -> {}",
+          Shape::getRectText(intersection, tech->getDbUnitsPerMicron()),
+          Shape::getRectText(new_intersection, tech->getDbUnitsPerMicron()));
       intersection = new_intersection;
     }
   }
@@ -484,10 +494,10 @@ void Connect::makeVia(odb::dbSWire* wire,
         layer1_,
         true,
         fmt::format("({:.4f}, {:.4f}) is off manufacturing grid of {:.4f}",
-                    x / static_cast<double>(tech->getLefUnits()),
-                    y / static_cast<double>(tech->getLefUnits()),
+                    x / static_cast<double>(tech->getDbUnitsPerMicron()),
+                    y / static_cast<double>(tech->getDbUnitsPerMicron()),
                     tech->getManufacturingGrid()
-                        / static_cast<double>(tech->getLefUnits())));
+                        / static_cast<double>(tech->getDbUnitsPerMicron())));
     dummy_via.generate(
         wire->getBlock(), wire, type, 0, 0, ongrid_, grid_->getLogger());
     return;
@@ -526,8 +536,8 @@ void Connect::makeVia(odb::dbSWire* wire,
                  "Tapered via required between {} and {} at ({:.4f}, {:.4f}).",
                  getLowerLayer()->getName(),
                  getUpperLayer()->getName(),
-                 x / static_cast<double>(tech->getLefUnits()),
-                 y / static_cast<double>(tech->getLefUnits()));
+                 x / static_cast<double>(tech->getDbUnitsPerMicron()),
+                 y / static_cast<double>(tech->getDbUnitsPerMicron()));
 
       stack_rects = generateComplexStackedViaRects(lower_rect, upper_rect);
     } else {

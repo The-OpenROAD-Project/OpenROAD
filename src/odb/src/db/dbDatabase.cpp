@@ -280,7 +280,17 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     stream >> *obj.chip_net_tbl_;
   }
   if (obj.isSchema(db_schema_dbu_per_micron)) {
-    stream >> obj.dbu_per_micron_;
+    if (obj.isLessThanSchema(db_schema_remove_dbu_per_micron)) {
+      // Should already have a value from dbTech, so only need to update this if
+      // its been set.
+      uint dbu_per_micron;
+      stream >> dbu_per_micron;
+      if (dbu_per_micron != 0) {
+        obj.dbu_per_micron_ = dbu_per_micron;
+      }
+    } else {
+      stream >> obj.dbu_per_micron_;
+    }
   }
   // Set the _tech on the block & libs now they are loaded
   if (!obj.isSchema(db_schema_block_tech)) {
@@ -707,47 +717,104 @@ void dbDatabase::write(std::ostream& file)
 void dbDatabase::beginEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-
-  {
-    delete block->_journal;
+  if (block->_journal) {
+    endEco(block_);
   }
-
   block->_journal = new dbJournal(block_);
   assert(block->_journal);
+  debugPrint(block_->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             2,
+             "ECO: Started ECO #{}",
+             block->_journal_stack.size());
 }
 
 void dbDatabase::endEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  dbJournal* eco = block->_journal;
+  assert(block->_journal);
+  block->_journal_stack.push(block->_journal);
   block->_journal = nullptr;
+  debugPrint(block_->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             2,
+             "ECO: Ended ECO #{} (size {}) and pushed to ECO stack",
+             block->_journal_stack.size() - 1,
+             block->_journal_stack.top()->size());
+}
 
-  {
-    delete block->_journal_pending;
+void dbDatabase::commitEco(dbBlock* block_)
+{
+  _dbBlock* block = (_dbBlock*) block_;
+  // Commit the current ECO or the last ECO into stack
+  assert(block->_journal || !block->_journal_stack.empty());
+  if (!block->_journal) {
+    block->_journal = block->_journal_stack.top();
+    block->_journal_stack.pop();
   }
+  if (!block->_journal_stack.empty()) {
+    dbJournal* prev_journal = block->_journal_stack.top();
+    int old_size = prev_journal->size();
+    prev_journal->append(block->_journal);
+    debugPrint(block_->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               2,
+               "ECO: Merged ECO #{} (size {}) with ECO #{} (size {} -> {})",
+               block->_journal_stack.size(),
+               block->_journal->size(),
+               block->_journal_stack.size() - 1,
+               old_size,
+               block->_journal_stack.top()->size());
+  } else {
+    debugPrint(block_->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               2,
+               "ECO: Committed ECO #{} (size {}) and removed from ECO stack",
+               block->_journal_stack.size(),
+               block->_journal->size());
+  }
+  delete block->_journal;
+  block->_journal = nullptr;
+}
 
-  block->_journal_pending = eco;
+void dbDatabase::undoEco(dbBlock* block_)
+{
+  _dbBlock* block = (_dbBlock*) block_;
+  assert(block->_journal || !block->_journal_stack.empty());
+  if (!block->_journal) {
+    block->_journal = block->_journal_stack.top();
+    block->_journal_stack.pop();
+  }
+  debugPrint(block_->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             2,
+             "ECO: Undid ECO #{} (size {})",
+             block->_journal_stack.size(),
+             block->_journal->size());
+  dbJournal* journal = block->_journal;
+  block->_journal = nullptr;
+  journal->undo();
+  delete block->_journal;
 }
 
 bool dbDatabase::ecoEmpty(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-
   if (block->_journal) {
     return block->_journal->empty();
   }
-
   return false;
 }
 
-int dbDatabase::checkEco(dbBlock* block_)
+bool dbDatabase::ecoStackEmpty(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-
-  if (block->_journal) {
-    return block->_journal->size();
-  }
-  return 0;
+  return block->_journal_stack.empty();
 }
 
 void dbDatabase::readEco(dbBlock* block_, const char* filename)
@@ -764,11 +831,10 @@ void dbDatabase::readEco(dbBlock* block_, const char* filename)
   assert(eco);
   stream >> *eco;
 
-  {
-    delete block->_journal_pending;
-  }
-
-  block->_journal_pending = eco;
+  delete block->_journal;
+  block->_journal = nullptr;
+  eco->redo();
+  block->_journal = eco;
 }
 
 void dbDatabase::writeEco(dbBlock* block_, const char* filename)
@@ -786,33 +852,12 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
   file.exceptions(std::ifstream::failbit | std::ifstream::badbit
                   | std::ios::eofbit);
 
-  if (block->_journal_pending) {
+  if (block->_journal) {
     dbOStream stream(block->getDatabase(), file);
-    stream << *block->_journal_pending;
-  }
-}
-
-void dbDatabase::commitEco(dbBlock* block_)
-{
-  _dbBlock* block = (_dbBlock*) block_;
-
-  // TODO: Need a check to ensure the commit is not applied to the block of
-  // which this eco was generated from.
-  if (block->_journal_pending) {
-    block->_journal_pending->redo();
-    delete block->_journal_pending;
-    block->_journal_pending = nullptr;
-  }
-}
-
-void dbDatabase::undoEco(dbBlock* block_)
-{
-  _dbBlock* block = (_dbBlock*) block_;
-
-  if (block->_journal_pending) {
-    block->_journal_pending->undo();
-    delete block->_journal_pending;
-    block->_journal_pending = nullptr;
+    stream << *block->_journal;
+  } else if (!block->_journal_stack.empty()) {
+    dbOStream stream(block->getDatabase(), file);
+    stream << *block->_journal_stack.top();
   }
 }
 
@@ -913,6 +958,8 @@ void dbDatabase::triggerPostReadLef(dbTech* tech, dbLib* library)
 
 void dbDatabase::triggerPostReadDef(dbBlock* block, const bool floorplan)
 {
+  block->setCoreArea(block->computeCoreArea());
+
   _dbDatabase* db = (_dbDatabase*) this;
   for (dbDatabaseObserver* observer : db->observers_) {
     if (floorplan) {

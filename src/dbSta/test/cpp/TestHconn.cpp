@@ -1,8 +1,5 @@
-// Copyright 2023 Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include <unistd.h>
 
@@ -30,7 +27,6 @@
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
-#include "tcl.h"
 #include "tst/fixture.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
@@ -949,7 +945,6 @@ TEST_F(TestHconn, ConnectionMade)
   // Journalling test.
   // Undo everything and check initial state preserved
   //
-  odb::dbDatabase::endEco(block_);
   odb::dbDatabase::undoEco(block_);
 
   size_t restored_db_net_count = block_->getNets().size();

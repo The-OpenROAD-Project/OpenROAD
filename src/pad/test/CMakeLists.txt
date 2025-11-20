@@ -17,16 +17,23 @@ or_integration_tests(
     non_top_layer
     place_bondpad
     place_bondpad_stagger
+    place_corners_avoid_bumps
+    place_corners_avoid_overlap
     place_io_terminals_empty_call
     place_pad
     place_pad_hv
     place_pad_no_master
     place_pad_outsideofrow
+    place_pad_overblockage
     place_pad_with_bumps
+    place_pads_bumps_bump_overlap
+    place_pads_bumps_strategy_placer_blockages
+    place_pads_bumps_strategy
     place_pad_wrong_master
     place_pads_bumps
     place_pads_too_many
     place_pads_uniform
+    place_pads_uniform_slip
     rdl_route
     rdl_route_45
     rdl_route_45_cost

@@ -223,7 +223,8 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
       // group_count, endpoint_count, unique_pins
       group_count,     // number of paths in total
       endpoint_count,  // number of paths for each endpoint
-      true,
+      true,            // unique pins
+      true,            // unique edges
       -sta::INF,
       sta::INF,  // slack_min, slack_max,
       true,      // sort_by_slack
@@ -733,11 +734,7 @@ void PartitionMgr::writeFile(
 
   // map<string, MasterInfo> --> cellName / cellCount, isMacro
   for (const auto& [name, info] : onlyUseMasters) {
-    if (!info.isMacro) {
-      outFile << "STD_CELL " << name << '\n';
-    } else {
-      outFile << "MACRO_CELL " << name << '\n';
-    }
+    outFile << "ONLY_USE " << name << '\n';
   }
   outFile << '\n';
 

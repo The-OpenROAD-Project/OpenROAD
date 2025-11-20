@@ -17,6 +17,7 @@
 #include "db/tech/frViaRuleGenerate.h"
 #include "frBaseTypes.h"
 #include "global.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -243,9 +244,9 @@ class frTechObject
     logger->report("Reporting layer properties.");
     for (auto& layer : layers_) {
       auto type = layer->getType();
-      if (type == dbTechLayerType::CUT) {
+      if (type == odb::dbTechLayerType::CUT) {
         logger->report("Cut layer {}.", layer->getName());
-      } else if (type == dbTechLayerType::ROUTING) {
+      } else if (type == odb::dbTechLayerType::ROUTING) {
         logger->report("Routing layer {}.", layer->getName());
       }
       layer->printAllConstraints(logger);
@@ -256,7 +257,7 @@ class frTechObject
   {
     logger->info(DRT, 167, "List of default vias:");
     for (auto& layer : layers_) {
-      if (layer->getType() == dbTechLayerType::CUT
+      if (layer->getType() == odb::dbTechLayerType::CUT
           && layer->getLayerNum() >= router_cfg->BOTTOM_ROUTING_LAYER) {
         logger->report("  Layer {}", layer->getName());
         if (layer->getDefaultViaDef() != nullptr) {
@@ -279,12 +280,12 @@ class frTechObject
 
   bool isHorizontalLayer(frLayerNum l)
   {
-    return getLayer(l)->getDir() == dbTechLayerDir::HORIZONTAL;
+    return getLayer(l)->getDir() == odb::dbTechLayerDir::HORIZONTAL;
   }
 
   bool isVerticalLayer(frLayerNum l)
   {
-    return getLayer(l)->getDir() == dbTechLayerDir::VERTICAL;
+    return getLayer(l)->getDir() == odb::dbTechLayerDir::VERTICAL;
   }
 
  private:

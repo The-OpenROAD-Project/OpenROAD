@@ -43,15 +43,6 @@ namespace utl {
 class Logger;
 }
 
-namespace odb {
-class dbBlock;
-class dbDatabase;
-class dbInst;
-class dbMaster;
-class dbTransform;
-class dbTechLayer;
-}  // namespace odb
-
 namespace gui {
 
 class GuiPainter;
@@ -138,7 +129,8 @@ class LayoutViewer : public QWidget
                const std::function<bool()>& show_db_view,
                QWidget* parent = nullptr);
 
-  odb::dbBlock* getBlock() const { return block_; }
+  odb::dbBlock* getBlock() const { return chip_->getBlock(); }
+  odb::dbChip* getChip() const { return chip_; }
   void setLogger(utl::Logger* logger);
   qreal getPixelsPerDBU() { return pixels_per_dbu_; }
   void setScroller(LayoutScroll* scroller);
@@ -213,8 +205,8 @@ class LayoutViewer : public QWidget
   // zoom to the specified rect
   void zoomTo(const odb::Rect& rect_dbu);
 
-  // indicates a block has been loaded
-  void blockLoaded(odb::dbBlock* block);
+  // indicates a chip has been loaded
+  void chipLoaded(odb::dbChip* chip);
 
   // fit the whole design in the window
   void fit();
@@ -269,7 +261,7 @@ class LayoutViewer : public QWidget
   void executionPaused();
 
  private slots:
-  void setBlock(odb::dbBlock* block);
+  void setChip(odb::dbChip* chip);
   void updatePixmap(const QImage& image, const QRect& bounds);
   void handleLoadingIndication();
 
@@ -302,6 +294,7 @@ class LayoutViewer : public QWidget
   odb::Rect getPaddedRect(const odb::Rect& rect, double factor = 0.05);
 
   bool hasDesign() const;
+  int getDbuPerMicron() const;
 
   int fineViewableResolution() const;
   int nominalViewableResolution() const;
@@ -350,7 +343,7 @@ class LayoutViewer : public QWidget
 
   void populateModuleColors();
 
-  odb::dbBlock* block_;
+  odb::dbChip* chip_;
   Options* options_;
   ScriptWidget* output_widget_;
   const SelectionSet& selected_;
@@ -436,7 +429,8 @@ class LayoutViewer : public QWidget
   RenderThread viewer_thread_;
   QPixmap draw_pixmap_;
   QRect draw_pixmap_bounds_;
-  QTimer* loading_timer_;
+  QTimer loading_timer_;
+  QTimer repaint_timer_;
   std::string loading_indicator_;
 
   static constexpr qreal kZoomScaleFactor = 1.2;

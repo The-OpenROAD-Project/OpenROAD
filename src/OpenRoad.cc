@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "ord/Version.hh"
+#include "tcl.h"
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -33,6 +34,8 @@
 #include "dft/MakeDft.hh"
 #include "dpl/MakeOpendp.h"
 #include "dpl/Opendp.h"
+#include "drt/MakeTritonRoute.h"
+#include "drt/TritonRoute.h"
 #include "dst/Distributed.h"
 #include "dst/MakeDistributed.h"
 #include "est/EstimateParasitics.h"
@@ -80,8 +83,6 @@
 #include "stt/MakeSteinerTreeBuilder.h"
 #include "tap/MakeTapcell.h"
 #include "tap/tapcell.h"
-#include "triton_route/MakeTritonRoute.h"
-#include "triton_route/TritonRoute.h"
 #include "upf/MakeUpf.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
@@ -267,6 +268,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   rsz::initResizer(tcl_interp);
   ppl::initIoplacer(tcl_interp);
   gpl::initReplace(tcl_interp);
+  gpl::initReplaceGraphics(replace_, logger_);
   dpl::initOpendp(tcl_interp);
   fin::initFinale(tcl_interp);
   ram::initRamGen(tcl_interp);
@@ -485,14 +487,20 @@ void OpenRoad::writeCdl(const char* out_filename,
 
 void OpenRoad::read3Dbv(const std::string& filename)
 {
-  odb::ThreeDBlox parser(logger_, db_);
+  odb::ThreeDBlox parser(logger_, db_, sta_);
   parser.readDbv(filename);
 }
 
 void OpenRoad::read3Dbx(const std::string& filename)
 {
-  odb::ThreeDBlox parser(logger_, db_);
+  odb::ThreeDBlox parser(logger_, db_, sta_);
   parser.readDbx(filename);
+}
+
+void OpenRoad::read3DBloxBMap(const std::string& filename)
+{
+  odb::ThreeDBlox parser(logger_, db_);
+  parser.readBMap(filename);
 }
 
 void OpenRoad::readDb(const char* filename, bool hierarchy)

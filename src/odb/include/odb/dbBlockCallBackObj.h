@@ -80,6 +80,8 @@ class dbBlockCallBackObj
   // dbModNet Start
   virtual void inDbModNetCreate(dbModNet*) {}
   virtual void inDbModNetDestroy(dbModNet*) {}
+  virtual void inDbModNetPreMerge(dbModNet*, dbModNet*) {}
+  virtual void inDbModNetPreConnectTermsOf(dbModNet*, dbNet*) {}
   // dbModNet End
 
   // dbITerm Start
@@ -192,6 +194,7 @@ class dbBlockCallBackObj
   virtual void inDbBlockStreamOutAfter(dbBlock*) {}
   virtual void inDbBlockReadNetsBefore(dbBlock*) {}
   virtual void inDbBlockSetDieArea(dbBlock*) {}
+  virtual void inDbBlockSetCoreArea(dbBlock*) {}
 
   // allow ECO client initialization - payam
   virtual dbBlockCallBackObj& operator()() { return *this; }

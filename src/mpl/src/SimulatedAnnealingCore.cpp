@@ -725,8 +725,13 @@ void SimulatedAnnealingCore<T>::fastSA()
       cost = calNormCost();
 
       const bool is_valid = isValid();
-      const bool improved = cost < pre_cost || best_result_.empty();
-      if ((!is_best_result_valid_ || is_valid) && improved) {
+      if (!invalid_states_allowed_ && !is_valid) {
+        restoreState();
+        continue;
+      }
+
+      const bool found_new_best_result = cost < best_result_.cost;
+      if ((!is_best_result_valid_ || is_valid) && found_new_best_result) {
         updateBestResult(cost);
         is_best_result_valid_ = is_valid;
       }
@@ -761,9 +766,8 @@ void SimulatedAnnealingCore<T>::fastSA()
   calPenalty();
   cost = calNormCost();
 
-  const bool is_valid = isValid();
-  const bool improved = cost < best_result_.cost || best_result_.empty();
-  if ((is_best_result_valid_ && !is_valid) || !improved) {
+  const bool found_new_best_result = cost < best_result_.cost;
+  if ((is_best_result_valid_ && !isValid()) || !found_new_best_result) {
     useBestResult();
   }
 }

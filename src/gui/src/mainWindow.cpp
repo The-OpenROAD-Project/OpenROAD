@@ -7,6 +7,7 @@
 #include <QDesktopServices>
 #include <QDialog>
 #include <QPushButton>
+#include <QSize>
 #include <QWidget>
 #include <algorithm>
 #include <any>
@@ -138,9 +139,9 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
 
   // Hook up all the signals/slots
   connect(viewers_,
-          &LayoutTabs::setCurrentBlock,
+          &LayoutTabs::setCurrentChip,
           controls_,
-          &DisplayControls::setCurrentBlock);
+          &DisplayControls::setCurrentChip);
   connect(script_, &ScriptWidget::exiting, this, &MainWindow::exit);
   connect(script_,
           &ScriptWidget::commandExecuted,
@@ -150,7 +151,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &ScriptWidget::commandAboutToExecute,
           viewers_,
           &LayoutTabs::commandAboutToExecute);
-  connect(this, &MainWindow::blockLoaded, viewers_, &LayoutTabs::blockLoaded);
+  connect(this, &MainWindow::chipLoaded, viewers_, &LayoutTabs::chipLoaded);
   connect(this, &MainWindow::redraw, viewers_, &LayoutTabs::fullRepaint);
   connect(
       this, &MainWindow::blockLoaded, controls_, &DisplayControls::blockLoaded);
@@ -364,27 +365,31 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   connect(this, &MainWindow::blockLoaded, drc_viewer_, &DRCWidget::setBlock);
   connect(
       this, &MainWindow::blockLoaded, clock_viewer_, &ClockWidget::setBlock);
-  connect(drc_viewer_, &DRCWidget::selectDRC, [this](const Selected& selected) {
-    setSelected(selected, false);
-    odb::Rect bbox;
-    selected.getBBox(bbox);
+  connect(drc_viewer_,
+          &DRCWidget::selectDRC,
+          [this](const Selected& selected, const bool open_inspector) {
+            if (open_inspector) {
+              setSelected(selected, false);
+            }
+            odb::Rect bbox;
+            selected.getBBox(bbox);
 
-    auto* block = getBlock();
-    int zoomout_dist = std::numeric_limits<int>::max();
-    if (block != nullptr) {
-      // 10 microns
-      zoomout_dist = 10 * block->getDbUnitsPerMicron();
-    }
-    // twice the largest dimension of bounding box
-    const int zoomout_box = 2 * std::max(bbox.dx(), bbox.dy());
-    // pick smallest
-    const int zoomout_margin = std::min(zoomout_dist, zoomout_box);
-    bbox.set_xlo(bbox.xMin() - zoomout_margin);
-    bbox.set_ylo(bbox.yMin() - zoomout_margin);
-    bbox.set_xhi(bbox.xMax() + zoomout_margin);
-    bbox.set_yhi(bbox.yMax() + zoomout_margin);
-    zoomTo(bbox);
-  });
+            auto* block = getBlock();
+            int zoomout_dist = std::numeric_limits<int>::max();
+            if (block != nullptr) {
+              // 10 microns
+              zoomout_dist = 10 * block->getDbUnitsPerMicron();
+            }
+            // twice the largest dimension of bounding box
+            const int zoomout_box = 2 * std::max(bbox.dx(), bbox.dy());
+            // pick smallest
+            const int zoomout_margin = std::min(zoomout_dist, zoomout_box);
+            bbox.set_xlo(bbox.xMin() - zoomout_margin);
+            bbox.set_ylo(bbox.yMin() - zoomout_margin);
+            bbox.set_xhi(bbox.xMax() + zoomout_margin);
+            bbox.set_yhi(bbox.yMax() + zoomout_margin);
+            zoomTo(bbox);
+          });
   connect(this, &MainWindow::selectionChanged, [this]() {
     if (!selected_.empty()) {
       drc_viewer_->updateSelection(*selected_.begin());
@@ -525,6 +530,11 @@ void MainWindow::updateTitle()
   }
 }
 
+const SelectionSet& MainWindow::selection()
+{
+  return selected_;
+}
+
 void MainWindow::setBlock(odb::dbBlock* block)
 {
   updateTitle();
@@ -614,14 +624,16 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   gui->registerDescriptor<odb::dbBox*>(new DbBoxDescriptor(db_));
   gui->registerDescriptor<DbBoxDescriptor::BoxWithTransform>(
       new DbBoxDescriptor(db_));
+  gui->registerDescriptor<odb::dbMasterEdgeType*>(
+      new DbMasterEdgeTypeDescriptor(db_));
+  gui->registerDescriptor<odb::dbCellEdgeSpacing*>(
+      new DbCellEdgeSpacingDescriptor(db_));
 
   gui->registerDescriptor<sta::Corner*>(new CornerDescriptor(sta));
   gui->registerDescriptor<sta::LibertyLibrary*>(
       new LibertyLibraryDescriptor(sta));
   gui->registerDescriptor<sta::LibertyCell*>(new LibertyCellDescriptor(sta));
   gui->registerDescriptor<sta::LibertyPort*>(new LibertyPortDescriptor(sta));
-  gui->registerDescriptor<sta::LibertyPgPort*>(
-      new LibertyPgPortDescriptor(sta));
   gui->registerDescriptor<sta::Instance*>(new StaInstanceDescriptor(sta));
   gui->registerDescriptor<sta::Clock*>(new ClockDescriptor(sta));
 
@@ -1618,12 +1630,13 @@ void MainWindow::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 
 void MainWindow::postReadDef(odb::dbBlock* block)
 {
+  emit chipLoaded(block->getChip());
   emit blockLoaded(block);
 }
 
 void MainWindow::postRead3Dbx(odb::dbChip* chip)
 {
-  // TODO: we are not ready to display chiplets yet
+  emit chipLoaded(chip);
 }
 
 void MainWindow::postReadDb(odb::dbDatabase* db)
@@ -1637,10 +1650,9 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
     return;
   }
 
+  // Only create a tab for the top block
+  emit chipLoaded(block->getChip());
   emit blockLoaded(block);
-  for (auto child : block->getChildren()) {
-    emit blockLoaded(child);
-  }
 }
 
 void MainWindow::setLogger(utl::Logger* logger)
@@ -1856,7 +1868,17 @@ void MainWindow::showGlobalConnect()
 
 void MainWindow::openDesign()
 {
-  const QString filefilter = "OpenDB (*.odb *.ODB)";
+  const std::vector<QString> exts{".odb", ".odb.gz", ".db", ".db.gz"};
+
+  QString filefilter = "OpenDB (";
+  for (const auto& ext : exts) {
+    if (filefilter.length() != 8) {
+      filefilter += " ";
+    }
+    filefilter += "*" + ext;
+    filefilter += " *" + ext.toUpper();
+  }
+  filefilter += ")";
   const QString file = QFileDialog::getOpenFileName(
       this, "Open Design", QString(), filefilter);
 
@@ -1865,16 +1887,22 @@ void MainWindow::openDesign()
   }
 
   try {
-    if (file.endsWith(".odb", Qt::CaseInsensitive)) {
-      open_->setEnabled(false);
-      ord::OpenRoad::openRoad()->readDb(file.toStdString().c_str());
-      logger_->warn(utl::GUI,
-                    77,
-                    "Timing data is not stored in {} and must be loaded "
-                    "separately, if needed.",
-                    file.toStdString());
-    } else {
-      logger_->error(utl::GUI, 76, "Unknown filetype: {}", file.toStdString());
+    bool found = false;
+    for (const auto& ext : exts) {
+      if (file.endsWith(ext, Qt::CaseInsensitive)) {
+        open_->setEnabled(false);
+        ord::OpenRoad::openRoad()->readDb(file.toStdString().c_str());
+        logger_->warn(utl::GUI,
+                      109,
+                      "Timing data is not stored in {} and must be loaded "
+                      "separately, if needed.",
+                      file.toStdString());
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      logger_->error(utl::GUI, 108, "Unknown filetype: {}", file.toStdString());
     }
   } catch (const std::exception&) {
     // restore option
@@ -1884,7 +1912,17 @@ void MainWindow::openDesign()
 
 void MainWindow::saveDesign()
 {
-  const QString filefilter = "OpenDB (*.odb *.ODB)";
+  const std::vector<QString> exts{".odb", ".odb.gz"};
+
+  QString filefilter = "OpenDB (";
+  for (const auto& ext : exts) {
+    if (filefilter.length() != 8) {
+      filefilter += " ";
+    }
+    filefilter += "*" + ext;
+    filefilter += " *" + ext.toUpper();
+  }
+  filefilter += ")";
   const QString file = QFileDialog::getSaveFileName(
       this, "Save Design", QString(), filefilter);
 

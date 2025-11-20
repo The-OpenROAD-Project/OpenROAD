@@ -869,7 +869,13 @@ class dbBlock : public dbObject
   /// Find a specific net of this block.
   /// Returns nullptr if the object was not found.
   ///
-  dbNet* findNet(const char* name);
+  dbNet* findNet(const char* name) const;
+
+  ///
+  /// Find a specific mod net of this block.
+  /// Returns nullptr if the object was not found.
+  ///
+  dbModNet* findModNet(const char* hierarchical_name) const;
 
   //
   // Utility to write db file
@@ -1118,10 +1124,29 @@ class dbBlock : public dbObject
   Polygon getDieAreaPolygon();
 
   ///
-  /// Get the core area. This computes the bbox of the rows
-  /// and is O(#rows) in runtime.
+  /// Compute the core area based on rows
+  ///
+  odb::Polygon computeCoreArea();
+
+  ///
+  /// Set the core area.
+  ///
+  void setCoreArea(const Rect& new_area);
+
+  ///
+  /// Set the core area with polygon. Allows for non-rectangular floorplans
+  ///
+  void setCoreArea(const Polygon& new_area);
+
+  ///
+  /// Get the core area.
   ///
   Rect getCoreArea();
+
+  ///
+  /// Get the core area.
+  ///
+  Polygon getCoreAreaPolygon();
 
   ///
   /// Add region in the die area where IO pins cannot be placed
@@ -1287,7 +1312,7 @@ class dbBlock : public dbObject
                               const dbNameUniquifyType& uniquify
                               = dbNameUniquifyType::ALWAYS);
 
-  const char* getBaseName(const char* name) const;
+  const char* getBaseName(const char* full_name) const;
 
   ///
   /// return the regions of this design
@@ -1396,12 +1421,12 @@ class dbBTerm : public dbObject
   ///
   /// Get the block-terminal name.
   ///
-  std::string getName();
+  std::string getName() const;
 
   ///
   /// Get the block-terminal name.
   ///
-  const char* getConstName();
+  const char* getConstName() const;
 
   ///
   /// Change the name of the bterm.
@@ -1423,7 +1448,7 @@ class dbBTerm : public dbObject
   ///
   /// Get the signal type of this block-terminal.
   ///
-  dbSigType getSigType();
+  dbSigType getSigType() const;
 
   ///
   /// Set the IO direction of this block-terminal.
@@ -1433,7 +1458,7 @@ class dbBTerm : public dbObject
   ///
   /// Get the IO direction of this block-terminal.
   ///
-  dbIoType getIoType();
+  dbIoType getIoType() const;
 
   ///
   /// Set spef mark of this block-terminal.
@@ -1478,11 +1503,11 @@ class dbBTerm : public dbObject
   ///
   /// Get the net of this block-terminal.
   ///
-  dbNet* getNet();
+  dbNet* getNet() const;
 
   ///
   /// Get the mod net of this block-terminal.
-  dbModNet* getModNet();
+  dbModNet* getModNet() const;
   ///
 
   /// Disconnect the block-terminal from its net.
@@ -1737,12 +1762,12 @@ class dbNet : public dbObject
 {
  public:
   ///
-  /// Get the net name.
+  /// Get the hierarchical net name (not a base name).
   ///
   std::string getName() const;
 
   ///
-  /// Get the net name.
+  /// Need a version that does not do strdup every time
   ///
   const char* getConstName() const;
 
@@ -1828,7 +1853,7 @@ class dbNet : public dbObject
   ///
   /// Get the Regular Wiring of a net (TODO: per path)
   ///
-  dbWireType getWireType();
+  dbWireType getWireType() const;
 
   ///
   /// Set the Regular Wiring of a net (TODO: per path)
@@ -1838,7 +1863,7 @@ class dbNet : public dbObject
   ///
   /// Get the signal type of this block-net.
   ///
-  dbSigType getSigType();
+  dbSigType getSigType() const;
 
   ///
   /// Get the signal type of this block-net.
@@ -1947,7 +1972,7 @@ class dbNet : public dbObject
   ///
   /// Returns true if the don't-touch flag is set.
   ///
-  bool isDoNotTouch();
+  bool isDoNotTouch() const;
 
   ///
   /// Get the block this net belongs to.
@@ -2011,7 +2036,7 @@ class dbNet : public dbObject
   /// Returns true if this dbNet is marked as special. Special nets/iterms are
   /// declared in the SPECIAL NETS section of a DEF file.
   ///
-  bool isSpecial();
+  bool isSpecial() const;
 
   ///
   /// Mark this dbNet as special.
@@ -2022,6 +2047,16 @@ class dbNet : public dbObject
   /// Unmark this dbNet as special.
   ///
   void clearSpecial();
+
+  ///
+  /// Returns true if this dbNet is connected to other dbNet.
+  ///
+  bool isConnected(const dbNet* other) const;
+
+  ///
+  /// Returns true if this dbNet is connected to other dbModNet.
+  ///
+  bool isConnected(const dbModNet* other) const;
 
   ///
   /// Returns true if this dbNet has its pins connected by abutment
@@ -2491,6 +2526,36 @@ class dbNet : public dbObject
   void renameWithModNetInHighestHier();
 
   ///
+  /// Check if this net is internal to the given module.
+  /// A net is internal if all its iterms belong to instances within the module
+  /// and it has no bterms.
+  ///
+  bool isInternalTo(dbModule* module) const;
+
+  ///
+  /// Check issues such as multiple drivers, no driver, or dangling net
+  ///
+  void checkSanity() const;
+
+  ///
+  /// Dump dbNet info for debugging
+  ///
+  void dump() const;
+
+  ///
+  /// Check consistency between the terminals connected to this dbNet and
+  /// the terminals connected to all related dbModNets. This ensures that
+  /// the flat and hierarchical representations of the net's connectivity
+  /// are consistent
+  //
+  void checkSanityModNetConsistency() const;
+
+  ///
+  /// Dump dbNet connectivity for debugging
+  ///
+  void dumpConnectivity(int level = 1) const;
+
+  ///
   /// Inserts a buffer on the net driving the specified iterm/bterm.
   /// Returns the newly created buffer instance.
   ///
@@ -2529,14 +2594,14 @@ class dbInst : public dbObject
 {
  public:
   ///
-  /// Get the instance name.
+  /// Get the hierarchical instance name (not a base name).
   ///
-  std::string getName();
+  std::string getName() const;
 
   ///
   /// Need a version that does not do strdup every time
   ///
-  const char* getConstName();
+  const char* getConstName() const;
 
   ///
   /// Compare, like !strcmp
@@ -2825,7 +2890,7 @@ class dbInst : public dbObject
   ///
   /// Get the block of this instance.
   ///
-  dbBlock* getBlock();
+  dbBlock* getBlock() const;
 
   ///
   /// Get the Master of this instance.
@@ -2840,7 +2905,7 @@ class dbInst : public dbObject
   ///
   /// Get the instance-terminals of this instance.
   ///
-  dbSet<dbITerm> getITerms();
+  dbSet<dbITerm> getITerms() const;
 
   ///
   /// Get the first output terminal of this instance.
@@ -3112,9 +3177,9 @@ class dbITerm : public dbObject
   /// Returns nullptr if this instance-terminal has NOT been connected
   /// to a net.
   ///
-  dbNet* getNet();
+  dbNet* getNet() const;
 
-  dbModNet* getModNet();
+  dbModNet* getModNet() const;
 
   ///
   /// Get the master-terminal that this instance-terminal is representing.
@@ -3140,12 +3205,12 @@ class dbITerm : public dbObject
   ///
   /// Get the signal type of this instance-terminal.
   ///
-  dbSigType getSigType();
+  dbSigType getSigType() const;
 
   ///
   /// Get the IO direction of this instance-terminal.
   ///
-  dbIoType getIoType();
+  dbIoType getIoType() const;
 
   ///
   /// True is iterm is input of signal type; if io false INOUT is not considered
@@ -3732,11 +3797,13 @@ class dbTrackGrid : public dbObject
   /// Get the "X" track coordinates for a this tech-layer.
   ///
   void getGridX(std::vector<int>& x_grid);
+  const std::vector<int>& getGridX();
 
   ///
   /// Get the "Y" track coordinates for a this tech-layer.
   ///
   void getGridY(std::vector<int>& y_grid);
+  const std::vector<int>& getGridY();
 
   ///
   /// Get the block this grid belongs too.
@@ -5704,13 +5771,6 @@ class dbTech : public dbObject
   std::string getName();
 
   ///
-  /// Set the Database distance units per micron.
-  ///
-  /// Legal values are 100, 200, 1000, 2000, 10000, 20000
-  ///
-  void setDbUnitsPerMicron(int value);
-
-  ///
   /// Get the Database units per micron.
   ///
   int getDbUnitsPerMicron();
@@ -5886,9 +5946,7 @@ class dbTech : public dbObject
   /// Create a new technology.
   /// Returns nullptr if a database technology already exists
   ///
-  static dbTech* create(dbDatabase* db,
-                        const char* name,
-                        int dbu_per_micron = 1000);
+  static dbTech* create(dbDatabase* db, const char* name);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -7095,6 +7153,8 @@ class dbChip : public dbObject
 
   dbSet<dbChipRegion> getChipRegions() const;
 
+  dbSet<dbMarkerCategory> getMarkerCategories() const;
+
   // User Code Begin dbChip
 
   ChipType getChipType() const;
@@ -7115,6 +7175,12 @@ class dbChip : public dbObject
   dbChipRegion* findChipRegion(const std::string& name) const;
 
   dbTech* getTech() const;
+
+  Rect getBBox() const;
+
+  Cuboid getCuboid() const;
+
+  dbMarkerCategory* findMarkerCategory(const char* name) const;
 
   ///
   /// Create a new chip.
@@ -7225,6 +7291,10 @@ class dbChipInst : public dbObject
 
   dbTransform getTransform() const;
 
+  Rect getBBox() const;
+
+  Cuboid getCuboid() const;
+
   dbSet<dbChipRegionInst> getRegions() const;
 
   dbChipRegionInst* findChipRegionInst(dbChipRegion* chip_region) const;
@@ -7280,6 +7350,8 @@ class dbChipRegion : public dbObject
   dbSet<dbChipBump> getChipBumps() const;
 
   // User Code Begin dbChipRegion
+  Cuboid getCuboid() const;
+
   dbChip* getChip() const;
 
   Side getSide() const;
@@ -7298,6 +7370,7 @@ class dbChipRegionInst : public dbObject
 {
  public:
   // User Code Begin dbChipRegionInst
+  Cuboid getCuboid() const;
 
   dbChipInst* getChipInst() const;
 
@@ -7418,46 +7491,46 @@ class dbDatabase : public dbObject
   ///
 
   ///
-  /// Begin collecting netlist changes on specified block.
-  ///
-  /// NOTE: Eco changes can not be nested at this time.
+  /// Start collecting ECO changes on the specified block.
   ///
   static void beginEco(dbBlock* block);
 
   ///
-  /// End collecting netlist changes on specified block.
+  /// Stop collecting ECO changes on the specified block.
   ///
   static void endEco(dbBlock* block);
 
   ///
-  /// Returns true of the pending eco is empty
+  /// Commit the last ECO changes on the specified block.
+  ///
+  static void commitEco(dbBlock* block);
+
+  ///
+  /// Undo the last ECO changes on the specified block.
+  ///
+  static void undoEco(dbBlock* block);
+
+  ///
+  /// Returns true if the current ECO is empty
   ///
   static bool ecoEmpty(dbBlock* block);
 
   ///
-  /// Read the eco changes from the specified stream to be applied to the
+  /// Return true if the ECO stack is empty. The ECO stack holds
+  /// the nested uncommitted ECOs that can still be undone.
+  ///
+  static bool ecoStackEmpty(dbBlock* block);
+
+  ///
+  /// Read the ECO changes from the specified file to be applied to the
   /// specified block.
   ///
   static void readEco(dbBlock* block, const char* filename);
 
   ///
-  /// Write the eco netlist changes to the specified stream.
+  /// Write the ECO changes to the specified file.
   ///
   static void writeEco(dbBlock* block, const char* filename);
-  static int checkEco(dbBlock* block);
-
-  ///
-  /// Commit any pending netlist changes.
-  ///
-  static void commitEco(dbBlock* block);
-
-  ///
-  /// Undo any pending netlist changes.  Only supports:
-  ///   create and destroy of dbInst and dbNet
-  ///   dbInst::swapMaster
-  ///   connect and disconnect of dbBTerm and dbITerm
-  ///
-  static void undoEco(dbBlock* block);
 
   ///
   /// links to utl::Logger
@@ -8186,6 +8259,9 @@ class dbMarkerCategory : public dbObject
   static dbMarkerCategory* create(dbBlock* block, const char* name);
   static dbMarkerCategory* createOrReplace(dbBlock* block, const char* name);
   static dbMarkerCategory* createOrGet(dbBlock* block, const char* name);
+  static dbMarkerCategory* create(dbChip* chip, const char* name);
+  static dbMarkerCategory* createOrReplace(dbChip* chip, const char* name);
+  static dbMarkerCategory* createOrGet(dbChip* chip, const char* name);
   static dbMarkerCategory* create(dbMarkerCategory* category, const char* name);
   static dbMarkerCategory* createOrGet(dbMarkerCategory* category,
                                        const char* name);
@@ -8293,19 +8369,21 @@ class dbModBTerm : public dbObject
   dbModule* getParent() const;
 
   // User Code Begin dbModBTerm
+  std::string getHierarchicalName() const;
   void setParentModITerm(dbModITerm* parent_pin);
   dbModITerm* getParentModITerm() const;
   void setModNet(dbModNet* modNet);
   dbModNet* getModNet() const;
   void setSigType(const dbSigType& type);
-  dbSigType getSigType();
+  dbSigType getSigType() const;
   void setIoType(const dbIoType& type);
-  dbIoType getIoType();
+  dbIoType getIoType() const;
   void connect(dbModNet* net);
   void disconnect();
   bool isBusPort() const;
   void setBusPort(dbBusPort*);
   dbBusPort* getBusPort() const;
+
   static dbModBTerm* create(dbModule* parentModule, const char* name);
   static void destroy(dbModBTerm*);
   static dbSet<dbModBTerm>::iterator destroy(dbSet<dbModBTerm>::iterator& itr);
@@ -8368,12 +8446,14 @@ class dbModITerm : public dbObject
   dbModInst* getParent() const;
 
   // User Code Begin dbModITerm
+  std::string getHierarchicalName() const;
   void setModNet(dbModNet* modNet);
   dbModNet* getModNet() const;
   void setChildModBTerm(dbModBTerm* child_port);
   dbModBTerm* getChildModBTerm() const;
   void connect(dbModNet* modnet);
   void disconnect();
+
   static dbModITerm* create(dbModInst* parentInstance,
                             const char* name,
                             dbModBTerm* modbterm = nullptr);
@@ -8393,13 +8473,40 @@ class dbModNet : public dbObject
   dbSet<dbModBTerm> getModBTerms() const;
   dbSet<dbITerm> getITerms() const;
   dbSet<dbBTerm> getBTerms() const;
-  unsigned connectionCount();
+  unsigned connectionCount() const;
   std::string getName() const;
   const char* getConstName() const;
   std::string getHierarchicalName() const;
   void rename(const char* new_name);
   void disconnectAllTerms();
   void dump() const;
+
+  // Find the flat net (dbNet) associated with this hierarchical net (dbModNet).
+  // A dbModNet should be associated with a single dbNet.
+  // This function traverses the terminals connected to this dbModNet
+  // and returns the first dbNet it finds.
+  dbNet* findRelatedNet() const;
+  void checkSanity() const;
+
+  ///
+  /// Merge the terminals of the in_modnet with this modnet
+  ///
+  void mergeModNet(dbModNet* in_modnet);
+
+  ///
+  /// Connect the terminals of the in_net with this modnet
+  ///
+  void connectTermsOf(dbNet* in_net);
+
+  ///
+  /// Returns true if this dbModNet is connected to other dbNet.
+  ///
+  bool isConnected(const dbNet* other) const;
+
+  ///
+  /// Returns true if this dbModNet is connected to other dbModNet.
+  ///
+  bool isConnected(const dbModNet* other) const;
 
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);
@@ -8421,7 +8528,7 @@ class dbModule : public dbObject
   std::string getHierarchicalName() const;
 
   // Get a mod net by name
-  dbModNet* getModNet(const char* net_name);
+  dbModNet* getModNet(const char* net_name) const;
 
   // Adding an inst to a new module will remove it from its previous
   // module.
@@ -8429,15 +8536,15 @@ class dbModule : public dbObject
 
   dbBlock* getOwner();
 
-  dbSet<dbModInst> getChildren();
-  dbSet<dbModInst> getModInsts();
+  dbSet<dbModInst> getChildren() const;
+  dbSet<dbModInst> getModInsts() const;
   dbSet<dbModNet> getModNets();
   // Get the ports of a module (STA world uses ports, which contain members).
   dbSet<dbModBTerm> getPorts();
   // Get the leaf level connections on a module (flat connected view).
   dbSet<dbModBTerm> getModBTerms() const;
   dbModBTerm* getModBTerm(uint id);
-  dbSet<dbInst> getInsts();
+  dbSet<dbInst> getInsts() const;
 
   dbModInst* findModInst(const char* name);
   dbInst* findDbInst(const char* name);
@@ -8451,6 +8558,8 @@ class dbModule : public dbObject
   const dbModBTerm* getHeadDbModBTerm() const;
   bool canSwapWith(dbModule* new_module) const;
   bool isTop() const;
+  bool containsDbInst(dbInst* inst) const;
+  bool containsDbModInst(dbModInst* inst) const;
 
   static dbModule* create(dbBlock* block, const char* name);
 

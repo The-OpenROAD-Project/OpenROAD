@@ -14,6 +14,7 @@
 
 #include "rsz/OdbCallBack.hh"
 
+#include "db_sta/dbNetwork.hh"
 #include "est/EstimateParasitics.h"
 #include "rsz/Resizer.hh"
 #include "sta/Liberty.hh"

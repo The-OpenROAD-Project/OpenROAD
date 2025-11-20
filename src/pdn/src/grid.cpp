@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
@@ -291,7 +292,7 @@ bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
     return !shape->belongsTo(this);
   };
 
-  std::map<Shape*, Shape*> replace_shapes;
+  std::map<Shape*, std::unique_ptr<Shape>> replace_shapes;
   for (const auto& via : vias_) {
     // ensure shapes belong to something
     const auto& lower_shape = via->getLowerShape();
@@ -312,28 +313,40 @@ bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
     }
 
     if (lower_belongs_to_grid && lower_shape->isModifiable()) {
-      auto* new_lower
-          = lower_shape->extendTo(upper_shape->getRect(),
-                                  obstructions[lower_shape->getLayer()],
+      Shape* extend_test = lower_shape.get();
+      auto find_replace = replace_shapes.find(extend_test);
+      if (find_replace != replace_shapes.end()) {
+        extend_test = find_replace->second.get();
+      }
+      auto new_lower
+          = extend_test->extendTo(upper_shape->getRect(),
+                                  obstructions[extend_test->getLayer()],
+                                  lower_shape.get(),
                                   obs_filter);
       if (new_lower != nullptr) {
-        replace_shapes[lower_shape.get()] = new_lower;
+        replace_shapes[lower_shape.get()] = std::move(new_lower);
       }
     }
     if (upper_belongs_to_grid && upper_shape->isModifiable()) {
-      auto* new_upper
-          = upper_shape->extendTo(lower_shape->getRect(),
-                                  obstructions[upper_shape->getLayer()],
+      Shape* extend_test = upper_shape.get();
+      auto find_replace = replace_shapes.find(extend_test);
+      if (find_replace != replace_shapes.end()) {
+        extend_test = find_replace->second.get();
+      }
+      auto new_upper
+          = extend_test->extendTo(lower_shape->getRect(),
+                                  obstructions[extend_test->getLayer()],
+                                  upper_shape.get(),
                                   obs_filter);
       if (new_upper != nullptr) {
-        replace_shapes[upper_shape.get()] = new_upper;
+        replace_shapes[upper_shape.get()] = std::move(new_upper);
       }
     }
   }
 
-  for (const auto& [old_shape, new_shape] : replace_shapes) {
+  for (auto& [old_shape, new_shape] : replace_shapes) {
     auto* component = old_shape->getGridComponent();
-    component->replaceShape(old_shape, {new_shape});
+    component->replaceShape(old_shape, std::move(new_shape));
   }
 
   debugPrint(getLogger(),
@@ -772,7 +785,8 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
 void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
                     const Shape::ObstructionTreeMap& obstructions)
 {
-  debugPrint(getLogger(), utl::PDN, "Make", 1, "Making vias in \"{}\"", name_);
+  debugPrint(
+      getLogger(), utl::PDN, "Make", 1, "Making vias in \"{}\" - start", name_);
   Shape::ShapeTreeMap search_shapes = getShapes();
 
   odb::Rect search_area = getDomainBoundary();
@@ -895,6 +909,8 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
     via->getLowerShape()->addVia(via);
     via->getUpperShape()->addVia(via);
   }
+  debugPrint(
+      getLogger(), utl::PDN, "Make", 1, "Making vias in \"{}\" - end", name_);
 }
 
 void Grid::getVias(std::vector<ViaPtr>& vias) const
@@ -1071,6 +1087,7 @@ void Grid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
 void Grid::makeInitialObstructions(odb::dbBlock* block,
                                    ShapeVectorMap& obs,
                                    const std::set<odb::dbInst*>& skip_insts,
+                                   const std::set<odb::dbNet*>& skip_nets,
                                    utl::Logger* logger)
 {
   debugPrint(logger, utl::PDN, "Make", 2, "Get initial obstructions - begin");
@@ -1141,6 +1158,11 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
 
   // fixed pins obs
   for (auto* bterm : block->getBTerms()) {
+    if (skip_nets.find(bterm->getNet()) != skip_nets.end()) {
+      // these shapes will be collected as existing to the grid.
+      continue;
+    }
+
     for (auto* bpin : bterm->getBPins()) {
       if (!bpin->getPlacementStatus().isFixed()) {
         continue;
@@ -1657,10 +1679,13 @@ void InstanceGrid::report() const
 bool InstanceGrid::isValid() const
 {
   if (getNets(startsWithPower()).empty()) {
-    getLogger()->warn(utl::PDN,
-                      231,
-                      "{} is not connected to any power/ground nets.",
-                      inst_->getName());
+    if (!inst_->getITerms().empty()) {
+      // only warn when instance has something that could be connected to
+      getLogger()->warn(utl::PDN,
+                        231,
+                        "{} is not connected to any power/ground nets.",
+                        inst_->getName());
+    }
     return false;
   }
   return true;
@@ -1697,6 +1722,8 @@ void InstanceGrid::checkSetup() const
 
     if (top != nullptr) {
       const int top_idx = top->getNumber();
+      std::map<odb::Rect, int64_t> overlap_area;
+      std::set<odb::dbTechLayer*> layers;
       for (auto* master_obs : inst_->getMaster()->getObstructions()) {
         auto* obs_layer = master_obs->getTechLayer();
         if (obs_layer == nullptr) {
@@ -1707,17 +1734,62 @@ void InstanceGrid::checkSetup() const
         }
         if (obs_layer->getNumber() > top_idx) {
           for (const auto& pin : boxes) {
-            if (pin.intersects(master_obs->getBox())) {
-              getLogger()->error(
-                  utl::PDN,
-                  6,
-                  "Pins on {} are blocked by obstructions on {} for {}",
-                  top->getName(),
-                  obs_layer->getName(),
-                  inst_->getName());
+            const odb::Rect mobs = master_obs->getBox();
+
+            if (mobs.intersects(pin)) {
+              // Determine level of obstruction
+              const odb::Rect overlap = mobs.intersect(pin);
+              overlap_area[pin] += overlap.area();
+              layers.insert(obs_layer);
             }
           }
         }
+      }
+
+      if (!overlap_area.empty()) {
+        int64_t total_pin_area = 0;
+        int64_t total_overlap = 0;
+        std::string layer_txt;
+        for (const auto* layer : layers) {
+          if (!layer_txt.empty()) {
+            layer_txt += ", ";
+          }
+          layer_txt += layer->getName();
+        }
+        for (const auto& [pin, overlap] : overlap_area) {
+          const int64_t pinarea = pin.area();
+          total_overlap += overlap;
+          total_pin_area += pinarea;
+
+          if (overlap >= pinarea) {
+            // pin completely obstructed
+            getLogger()->error(
+                utl::PDN,
+                6,
+                "{} on {} is blocked by obstructions on {} for {}",
+                iterm->getMTerm()->getName(),
+                top->getName(),
+                layer_txt,
+                inst_->getName());
+          }
+        }
+
+        if (total_pin_area == 0) {
+          // should not occur, implies all blocked pins have 0 area
+          continue;
+        }
+
+        const float pct
+            = 100 * static_cast<float>(total_overlap) / total_pin_area;
+        getLogger()->warn(utl::PDN,
+                          7,
+                          "{} on {} is partially blocked ({:.1f}%) by "
+                          "obstructions on {} for {}",
+                          iterm->getMTerm()->getName(),
+                          top->getName(),
+                          pct,
+                          layer_txt,
+                          inst_->getName());
       }
     }
   }
@@ -1741,8 +1813,8 @@ bool BumpGrid::isValid() const
   const auto nets = getNets(startsWithPower());
   const int net_count = nets.size();
   if (net_count > 1) {
-    getLogger()->warn(utl::PAD,
-                      232,
+    getLogger()->warn(utl::PDN,
+                      241,
                       "Bump grid for {} is connected to {} power nets",
                       getInstance()->getName(),
                       net_count);

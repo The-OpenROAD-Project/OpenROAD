@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include <tcl.h>
-
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "tcl.h"
 #include "utl/Logger.h"
 
 namespace gui {

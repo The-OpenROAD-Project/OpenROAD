@@ -171,6 +171,8 @@ class Cluster
 
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
+  void setAsMacroArray() { is_macro_array_ = true; }
+  bool isMacroArray() const { return is_macro_array_; }
   bool isEmpty() const;
   bool correspondsToLogicalModule() const;
 
@@ -247,6 +249,7 @@ class Cluster
   bool is_io_pad_cluster_{false};
   bool is_io_bundle_{false};
   bool is_array_of_interconnected_macros_ = false;
+  bool is_macro_array_{false};
   bool is_fixed_macro_{false};
 
   std::unique_ptr<SoftMacro> soft_macro_;
@@ -402,7 +405,7 @@ class SoftMacro
 {
  public:
   SoftMacro(Cluster* cluster);
-  SoftMacro(float width, float height, const std::string& name);
+  SoftMacro(const Rect& blockage, const std::string& name);
   SoftMacro(const std::pair<float, float>& location,
             const std::string& name,
             float width,
@@ -452,6 +455,7 @@ class SoftMacro
   void setLocationF(float x, float y);
   void setShapeF(float width, float height);
   int getNumMacro() const;
+  bool isBlockage() const;
   // Align Flag support
   void setAlignFlag(bool flag);
   bool getAlignFlag() const;
@@ -482,6 +486,7 @@ class SoftMacro
   // Interfaces with hard macro
   Cluster* cluster_ = nullptr;
   bool fixed_ = false;  // if the macro is fixed
+  bool is_blockage_ = false;
 
   // Alignment support
   // if the cluster has been aligned related to other macro_cluster or

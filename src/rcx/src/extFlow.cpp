@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "gseq.h"
+#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
@@ -17,8 +18,7 @@
 #include "rcx/grids.h"
 #include "utl/Logger.h"
 
-namespace rcx {
-
+using odb::Ath__array1D;
 using odb::dbInst;
 using odb::dbNet;
 using odb::dbRSeg;
@@ -37,6 +37,8 @@ using odb::MAX_INT;
 using odb::MIN_INT;
 using odb::Rect;
 using utl::RCX;
+
+namespace rcx {
 
 uint extMain::getBucketNum(int base, int max, uint step, int xy)
 {
@@ -1026,7 +1028,7 @@ void extMain::fill_gs4(const int dir,
     Ath__array1D<uint> instGsTable(num_insts);
 
     for (dbInst* inst : _block->getInsts()) {
-      dbBox* R = inst->getBBox();
+      odb::dbBox* R = inst->getBBox();
 
       int R_ll[2] = {R->xMin(), R->yMin()};
       int R_ur[2] = {R->xMax(), R->yMax()};

@@ -17,8 +17,10 @@
 #include "boost/format.hpp"
 #include "boost/tokenizer.hpp"
 #include "detailed_orient.h"
+#include "infrastructure/Coordinates.h"
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
+#include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "util/journal.h"
@@ -2986,7 +2988,7 @@ void DetailedMgr::paintInGrid(Node* node)
 {
   const auto grid_x = grid_->gridX(node);
   const auto grid_y = grid_->gridSnapDownY(node);
-  dbSite* site = node->getDbInst()->getMaster()->getSite();
+  odb::dbSite* site = node->getDbInst()->getMaster()->getSite();
   const auto orientation
       = grid_->getSiteOrientation(grid_x, grid_y, site).value();
   grid_->paintPixel(node, grid_x, grid_y);

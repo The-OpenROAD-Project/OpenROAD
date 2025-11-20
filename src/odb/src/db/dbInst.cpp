@@ -29,6 +29,7 @@
 #include "dbLib.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
+#include "dbModInst.h"
 #include "dbModule.h"
 #include "dbNet.h"
 #include "dbNullIterator.h"
@@ -339,13 +340,13 @@ bool _dbInst::operator==(const _dbInst& rhs) const
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbInst::getName()
+std::string dbInst::getName() const
 {
   _dbInst* inst = (_dbInst*) this;
   return inst->_name;
 }
 
-const char* dbInst::getConstName()
+const char* dbInst::getConstName() const
 {
   _dbInst* inst = (_dbInst*) this;
   return inst->_name;
@@ -374,8 +375,10 @@ bool dbInst::rename(const char* name)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: inst {}, rename to {}",
+               "ECO: dbInst({} {:p}) '{}', rename to '{}'",
                getId(),
+               static_cast<void*>(this),
+               getName(),
                name);
     block->_journal->updateField(this, _dbInst::NAME, inst->_name, name);
   }
@@ -768,7 +771,7 @@ bool dbInst::isDoNotTouch()
   return inst->_flags._dont_touch == 1;
 }
 
-dbBlock* dbInst::getBlock()
+dbBlock* dbInst::getBlock() const
 {
   return (dbBlock*) getImpl()->getOwner();
 }
@@ -819,7 +822,7 @@ dbScanInst* dbInst::getScanInst() const
   return (dbScanInst*) scan_inst;
 }
 
-dbSet<dbITerm> dbInst::getITerms()
+dbSet<dbITerm> dbInst::getITerms() const
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
@@ -1124,7 +1127,16 @@ bool dbInst::swapMaster(dbMaster* new_master_)
 
   if (block->_journal) {
     debugPrint(
-        getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: swapMaster");
+        getImpl()->getLogger(),
+        utl::ODB,
+        "DB_ECO",
+        1,
+        "ECO: swapMaster on dbInst({} {:p}) '{}' from master '{}' to '{}'",
+        getId(),
+        static_cast<void*>(this),
+        getName(),
+        oldMasterName,
+        newMasterName);
     dbLib* old_lib = old_master_->getLib();
     dbLib* new_lib = new_master_->getLib();
     block->_journal->beginAction(dbJournal::SWAP_OBJECT);
@@ -1289,14 +1301,19 @@ dbInst* dbInst::create(dbBlock* block_,
         = (_dbInstHdr*) dbInstHdr::create((dbBlock*) block, (dbMaster*) master);
   }
 
-  _dbInst* inst = block->_inst_tbl->create();
+  _dbInst* inst_impl = block->_inst_tbl->create();
+  dbInst* inst = reinterpret_cast<dbInst*>(inst_impl);
 
   if (block->_journal) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: dbInst:create");
+               "ECO: create dbInst({}, {:p}) '{}' master '{}'",
+               inst->getId(),
+               static_cast<void*>(inst),
+               name_,
+               master_->getName());
     dbLib* lib = master_->getLib();
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbInstObj);
@@ -1305,65 +1322,65 @@ dbInst* dbInst::create(dbBlock* block_,
     block->_journal->pushParam(name_);
     // need to add dbModNet
     // dbModule (scope)
-    block->_journal->pushParam(inst->getOID());
+    block->_journal->pushParam(inst_impl->getOID());
     block->_journal->endAction();
   }
 
-  inst->_name = safe_strdup(name_);
-  inst->_inst_hdr = inst_hdr->getOID();
-  block->_inst_hash.insert(inst);
+  inst_impl->_name = safe_strdup(name_);
+  inst_impl->_inst_hdr = inst_hdr->getOID();
+  block->_inst_hash.insert(inst_impl);
   inst_hdr->_inst_cnt++;
 
   // create the iterms
   uint mterm_cnt = inst_hdr->_mterms.size();
-  inst->_iterms.resize(mterm_cnt);
+  inst_impl->_iterms.resize(mterm_cnt);
 
   for (int i = 0; i < mterm_cnt; ++i) {
     _dbITerm* iterm = block->_iterm_tbl->create();
-    inst->_iterms[i] = iterm->getOID();
+    inst_impl->_iterms[i] = iterm->getOID();
     iterm->_flags._mterm_idx = i;
-    iterm->_inst = inst->getOID();
+    iterm->_inst = inst_impl->getOID();
   }
 
   _dbBox* box = block->_box_tbl->create();
   box->_shape._rect.init(0, 0, master->_width, master->_height);
   box->_flags._owner_type = dbBoxOwner::INST;
-  box->_owner = inst->getOID();
-  inst->_bbox = box->getOID();
+  box->_owner = inst_impl->getOID();
+  inst_impl->_bbox = box->getOID();
 
   block->add_rect(box->_shape._rect);
 
-  inst->_flags._physical_only = physical_only;
+  inst_impl->_flags._physical_only = physical_only;
 
   // Add the new instance to the parent module.
   bool parent_is_top = parent_module == nullptr || parent_module->isTop();
   if (physical_only == false || parent_is_top) {
     if (parent_module) {
-      parent_module->addInst((dbInst*) inst);
+      parent_module->addInst((dbInst*) inst_impl);
     } else {
-      block_->getTopModule()->addInst((dbInst*) inst);
+      block_->getTopModule()->addInst((dbInst*) inst_impl);
     }
   }
 
   if (region) {
-    region->addInst((dbInst*) inst);
+    region->addInst((dbInst*) inst_impl);
     for (dbBlockCallBackObj* cb : block->_callbacks) {
-      cb->inDbInstCreate((dbInst*) inst, region);
+      cb->inDbInstCreate((dbInst*) inst_impl, region);
     }
   } else {
     for (dbBlockCallBackObj* cb : block->_callbacks) {
-      cb->inDbInstCreate((dbInst*) inst);
+      cb->inDbInstCreate((dbInst*) inst_impl);
     }
   }
 
   for (int i = 0; i < mterm_cnt; ++i) {
-    _dbITerm* iterm = block->_iterm_tbl->getPtr(inst->_iterms[i]);
+    _dbITerm* iterm = block->_iterm_tbl->getPtr(inst_impl->_iterms[i]);
     for (dbBlockCallBackObj* cb : block->_callbacks) {
       cb->inDbITermCreate((dbITerm*) iterm);
     }
   }
 
-  return (dbInst*) inst;
+  return (dbInst*) inst_impl;
 }
 
 dbInst* dbInst::create(dbBlock* top_block,
@@ -1516,7 +1533,10 @@ void dbInst::destroy(dbInst* inst_)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: dbInst:destroy");
+               "ECO: delete dbInst({}, {:p}) '{}'",
+               inst->getId(),
+               static_cast<void*>(inst),
+               inst_->getName());
     auto master = inst_->getMaster();
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbInstObj);

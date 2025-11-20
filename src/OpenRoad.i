@@ -370,6 +370,13 @@ read_3dbx_cmd(const char *filename)
 }
 
 void
+read_3dblox_bmap_cmd(const char *filename)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->read3DBloxBMap(filename);
+}
+
+void
 read_db_cmd(const char *filename, bool hierarchy)
 {
   OpenRoad *ord = getOpenRoad();
@@ -416,6 +423,9 @@ set_debug_level(const char* tool_name,
   auto id = utl::Logger::findToolId(tool_name);
   if (id == utl::UKN) {
     logger->error(utl::ORD, 15, "Unknown tool name {}", tool_name);
+  }
+  if (id == utl::STA) {
+    getSta()->setDebugLevel(group, level);
   }
   logger->setDebugLevel(id, group, level);
 }

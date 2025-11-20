@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <cstdio>
 #include <vector>
 
 #include "aig/gia/gia.h"
@@ -32,6 +33,7 @@
 #include "sta/Search.hh"
 #include "utils.h"
 #include "utl/Logger.h"
+#include "utl/SuppressStdout.h"
 #include "utl/deleter.h"
 #include "utl/unique_name.h"
 
@@ -74,34 +76,6 @@ extern void Abc_NtkRedirectCiCo(Abc_Ntk_t* pNtk);
 }  // namespace abc
 namespace rmp {
 using utl::RMP;
-
-class SuppressStdout
-{
-#ifndef _WIN32
- public:
-  SuppressStdout()
-  {
-    // This is a hack to suppress excessive logs from ABC
-    // Redirects stdout to /dev/null, preserves original stdout
-    fflush(stdout);
-    saved_stdout_fd = dup(1);
-    int dev_null_fd = open("/dev/null", O_WRONLY);
-    dup2(dev_null_fd, 1);
-    close(dev_null_fd);
-  }
-
-  ~SuppressStdout()
-  {
-    // Restore stdout
-    fflush(stdout);
-    dup2(saved_stdout_fd, 1);
-    close(saved_stdout_fd);
-  }
-
- private:
-  int saved_stdout_fd;
-#endif
-};
 
 static void replaceGia(abc::Gia_Man_t*& gia, abc::Gia_Man_t* new_gia)
 {
@@ -220,7 +194,7 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
            // &false
            debugPrint(
                logger, RMP, "annealing", 1, "Starting false path elimination");
-           SuppressStdout nostdout;
+           utl::SuppressStdout nostdout(logger);
            replaceGia(gia, Gia_ManCheckFalse(gia, 0, 0, false, false));
          },
 
@@ -479,7 +453,7 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
                  worst_slack_new);
     }
 
-    ops = new_ops;
+    ops = std::move(new_ops);
     worst_slack = worst_slack_new;
 
     if (worst_slack > best_worst_slack) {
@@ -633,7 +607,7 @@ void AnnealingStrategy::RunGia(
     }
 
     {
-      SuppressStdout nostdout;
+      utl::SuppressStdout nostdout(logger);
       current_network = WrapUnique(abc::Abc_NtkMap(current_network.get(),
                                                    nullptr,
                                                    /*DelayTarget=*/1.0,
@@ -657,7 +631,7 @@ void AnnealingStrategy::RunGia(
 
     if (resize_iters > 0) {
       // All the magic numbers are defaults from abc/src/base/abci/abc.c
-      SuppressStdout nostdout;
+      utl::SuppressStdout nostdout(logger);
       abc::SC_SizePars pars = {};
       pars.nIters = resize_iters;
       pars.nIterNoChange = 50;

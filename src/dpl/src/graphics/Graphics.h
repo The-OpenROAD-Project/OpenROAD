@@ -12,20 +12,18 @@
 
 namespace dpl {
 
-using odb::dbBlock;
-using odb::dbInst;
-using odb::Point;
-
 class Opendp;
 class Node;
 
 class Graphics : public gui::Renderer, public DplObserver
 {
  public:
-  Graphics(Opendp* dp, float min_displacement, const dbInst* debug_instance);
+  Graphics(Opendp* dp,
+           float min_displacement,
+           const odb::dbInst* debug_instance);
   ~Graphics() override = default;
-  void startPlacement(dbBlock* block) override;
-  void placeInstance(dbInst* instance) override;
+  void startPlacement(odb::dbBlock* block) override;
+  void placeInstance(odb::dbInst* instance) override;
   void binSearch(const Node* cell,
                  GridX xl,
                  GridY yl,
@@ -40,8 +38,8 @@ class Graphics : public gui::Renderer, public DplObserver
 
  private:
   Opendp* dp_;
-  const dbInst* debug_instance_;
-  dbBlock* block_ = nullptr;
+  const odb::dbInst* debug_instance_;
+  odb::dbBlock* block_ = nullptr;
   float min_displacement_;  // in row height
   std::vector<odb::Rect> searched_;
 };

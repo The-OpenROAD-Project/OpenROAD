@@ -407,7 +407,7 @@ DbVia::ViaLayerShape DbTechVia::generate(
   odb::Point new_via_center;
   ViaLayerShape via_shapes;
 
-  auto add_via = [&via_shapes, this](odb::dbSBox* via,
+  auto add_via = [this, &via_shapes](odb::dbSBox* via,
                                      const odb::Point& center) {
     ViaLayerShape new_via_shapes = getLayerShapes(via);
 
@@ -1532,7 +1532,7 @@ bool ViaGenerator::checkMinCuts(odb::dbTechLayer* layer, int width) const
 
 bool ViaGenerator::checkMinEnclosure() const
 {
-  const double dbu = getTech()->getLefUnits();
+  const double dbu = getTech()->getDbUnitsPerMicron();
 
   std::vector<Enclosure> bottom_rules;
   std::vector<Enclosure> top_rules;
@@ -1777,21 +1777,44 @@ bool ViaGenerator::updateCutSpacing(int rows, int cols)
 
   bool changed = false;
   const odb::Rect cut = getCut();
-  for (auto* rule : layer->getV54SpacingRules()) {
-    uint numcuts;
-    uint within;
-    uint spacing;
-    bool except_same_pgnet;
-    if (!rule->getAdjacentCuts(numcuts, within, spacing, except_same_pgnet)) {
+  for (auto* rule : layer->getTechLayerCutSpacingRules()) {
+    if (rule->getType()
+        != odb::dbTechLayerCutSpacingRule::CutSpacingType::ADJACENTCUTS) {
       continue;
     }
-    if (except_same_pgnet) {
+
+    if (!rule->isCutClassToAll() && rule->getCutClass() != cutclass_) {
       continue;
     }
-    if (numcuts <= adj_cuts) {
-      cut_pitch_x_ = cut.dx() + spacing;
-      cut_pitch_y_ = cut.dy() + spacing;
-      changed = true;
+
+    if (rule->getNumCuts() <= adj_cuts) {
+      if (max_dim == rows) {
+        cut_pitch_y_ = cut.dy() + rule->getCutSpacing();
+        changed = true;
+      } else {
+        cut_pitch_x_ = cut.dx() + rule->getCutSpacing();
+        changed = true;
+      }
+    }
+  }
+
+  if (!changed) {
+    for (auto* rule : layer->getV54SpacingRules()) {
+      uint numcuts;
+      uint within;
+      uint spacing;
+      bool except_same_pgnet;
+      if (!rule->getAdjacentCuts(numcuts, within, spacing, except_same_pgnet)) {
+        continue;
+      }
+      if (except_same_pgnet) {
+        continue;
+      }
+      if (numcuts <= adj_cuts) {
+        cut_pitch_x_ = cut.dx() + spacing;
+        cut_pitch_y_ = cut.dy() + spacing;
+        changed = true;
+      }
     }
   }
 
@@ -2918,7 +2941,7 @@ void Via::writeToDb(odb::dbSWire* wire,
   }
 
   auto check_shapes
-      = [this, obstructions](
+      = [this, &obstructions](
             const ShapePtr& shape,
             const std::set<DbVia::ViaLayerShape::RectBoxPair>& via_shapes)
       -> std::set<odb::dbSBox*> {

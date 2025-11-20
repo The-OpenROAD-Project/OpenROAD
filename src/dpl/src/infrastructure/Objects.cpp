@@ -8,6 +8,9 @@
 #include <string>
 #include <vector>
 
+#include "dpl/Opendp.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace dpl {
@@ -73,11 +76,11 @@ void Master::setTopPowerType(const int top_pwr)
 {
   top_pwr_ = top_pwr;
 }
-void Master::setDbMaster(dbMaster* db_master)
+void Master::setDbMaster(odb::dbMaster* db_master)
 {
   db_master_ = db_master;
 }
-dbMaster* Master::getDbMaster() const
+odb::dbMaster* Master::getDbMaster() const
 {
   return db_master_;
 }
@@ -130,21 +133,21 @@ DbuY Node::getCenterY() const
 {
   return bottom_ + height_ / DbuY{2};
 }
-dbInst* Node::getDbInst() const
+odb::dbInst* Node::getDbInst() const
 {
   if (type_ != CELL) {
     return nullptr;
   }
-  return static_cast<dbInst*>(db_owner_);
+  return static_cast<odb::dbInst*>(db_owner_);
 }
-dbBTerm* Node::getBTerm() const
+odb::dbBTerm* Node::getBTerm() const
 {
   if (type_ != TERMINAL) {
     return nullptr;
   }
-  return static_cast<dbBTerm*>(db_owner_);
+  return static_cast<odb::dbBTerm*>(db_owner_);
 }
-dbOrientType Node::getOrient() const
+odb::dbOrientType Node::getOrient() const
 {
   return orient_;
 }
@@ -160,7 +163,7 @@ bool Node::isHold() const
 {
   return hold_;
 }
-dbSite* Node::getSite() const
+odb::dbSite* Node::getSite() const
 {
   if (!getDbInst() || !getDbInst()->getMaster()) {
     return nullptr;
@@ -179,17 +182,17 @@ DbuX Node::siteWidth() const
 }
 bool Node::isHybrid() const
 {
-  dbSite* site = getSite();
+  odb::dbSite* site = getSite();
   return site ? site->isHybrid() : false;
 }
 bool Node::isHybridParent() const
 {
-  dbSite* site = getSite();
+  odb::dbSite* site = getSite();
   return site ? site->hasRowPattern() : false;
 }
 int64_t Node::area() const
 {
-  dbMaster* master = getDbInst()->getMaster();
+  odb::dbMaster* master = getDbInst()->getMaster();
   return int64_t(master->getWidth()) * master->getHeight();
 }
 std::string Node::name() const
@@ -235,7 +238,7 @@ bool Node::isStdCell() const
 bool Node::isBlock() const
 {
   return getDbInst()
-         && getDbInst()->getMaster()->getType() == dbMasterType::BLOCK;
+         && getDbInst()->getMaster()->getType() == odb::dbMasterType::BLOCK;
 }
 Group* Node::getGroup() const
 {
@@ -282,11 +285,11 @@ void Node::setFixed(bool in)
 {
   fixed_ = in;
 }
-void Node::setDbInst(dbInst* inst)
+void Node::setDbInst(odb::dbInst* inst)
 {
   db_owner_ = inst;
 }
-void Node::setBTerm(dbBTerm* term)
+void Node::setBTerm(odb::dbBTerm* term)
 {
   db_owner_ = term;
 }
@@ -298,7 +301,7 @@ void Node::setBottom(DbuY y)
 {
   bottom_ = y;
 }
-void Node::setOrient(const dbOrientType& in)
+void Node::setOrient(const odb::dbOrientType& in)
 {
   orient_ = in;
 }
@@ -362,8 +365,10 @@ void Node::addUsedLayer(int layer)
 {
   used_layers_ |= 1 << layer;
 }
-bool Node::adjustCurrOrient(const dbOrientType& newOri)
+bool Node::adjustCurrOrient(const odb::dbOrientType& newOri)
 {
+  using odb::dbOrientType;
+
   // Change the orientation of the cell, but leave the lower-left corner
   // alone.  This means changing the locations of pins and possibly
   // changing the edge types as well as the height and width.

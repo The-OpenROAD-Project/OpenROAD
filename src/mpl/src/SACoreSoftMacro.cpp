@@ -314,8 +314,13 @@ void SACoreSoftMacro::initialize()
   graphics_ = nullptr;
 
   for (int i = 0; i < num_perturb_per_step_; i++) {
+    saveState();
     perturb();
-    // store current penalties
+    if (!invalid_states_allowed_ && !isValid()) {
+      restoreState();
+      continue;
+    }
+
     width_list.push_back(width_);
     height_list.push_back(height_);
     area_penalty_list.push_back(width_ * height_ / outline_.getWidth()
@@ -454,8 +459,8 @@ void SACoreSoftMacro::calBoundaryPenalty()
       y_dist_from_root
           = std::min(global_ly, std::abs(root_->getHeight() - global_uy));
 
-      boundary_penalty_ += std::min(x_dist_from_root, y_dist_from_root)
-                           * soft_macro.getNumMacro();
+      boundary_penalty_
+          += (x_dist_from_root + y_dist_from_root) * soft_macro.getNumMacro();
     }
   }
   // normalization

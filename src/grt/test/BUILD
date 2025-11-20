@@ -78,6 +78,7 @@ TESTS = [
     "set_nets_to_route1",
     "silence",
     "single_row",
+    "skip_large_fanout1",
     "soft_ndr_4w_6s",
     "top_level_term1",
     "top_level_term2",
@@ -109,7 +110,16 @@ filegroup(
     ),
 )
 
+# TODO: Enable once difference between bazel and ctest is resolved.
+MANUAL_FOR_BAZEL_TESTS = [
+    "cugr_adjustment1",
+    "cugr_adjustment2",
+    "cugr_adjustment3",
+    "gcd_cugr",
+]
+
 [regression_test(
     name = test_name,
     data = [":test_resources"],
+    tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]

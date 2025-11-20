@@ -26,6 +26,7 @@
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -38,6 +39,7 @@
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "sta/Vector.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 
@@ -55,7 +57,7 @@ using odb::dbModInst;
 
 EstimateParasitics::EstimateParasitics(Logger* logger,
                                        utl::CallBackHandler* callback_handler,
-                                       dbDatabase* db,
+                                       odb::dbDatabase* db,
                                        dbSta* sta,
                                        SteinerTreeBuilder* stt_builder,
                                        GlobalRouter* global_router)
@@ -91,7 +93,7 @@ void EstimateParasitics::initSteinerRenderer(
 
 ////////////////////////////////////////////////////////////////
 
-void EstimateParasitics::setLayerRC(dbTechLayer* layer,
+void EstimateParasitics::setLayerRC(odb::dbTechLayer* layer,
                                     const Corner* corner,
                                     double res,
                                     double cap)
@@ -111,7 +113,7 @@ void EstimateParasitics::setLayerRC(dbTechLayer* layer,
   layer_cap_[layer->getNumber()][corner->index()] = cap;
 }
 
-void EstimateParasitics::layerRC(dbTechLayer* layer,
+void EstimateParasitics::layerRC(odb::dbTechLayer* layer,
                                  const Corner* corner,
                                  // Return values.
                                  double& res,
@@ -321,7 +323,7 @@ double EstimateParasitics::wireClkVCapacitance(const Corner* corner) const
 
 ////////////////////////////////////////////////////////////////
 
-void EstimateParasitics::setDbCbkOwner(dbBlock* block)
+void EstimateParasitics::setDbCbkOwner(odb::dbBlock* block)
 {
   db_cbk_->addOwner(block);
 }
@@ -617,6 +619,18 @@ void EstimateParasitics::makeWireParasitic(Net* net,
   double wire_cap = wire_length * wireSignalCapacitance(corner);
   double wire_res = wire_length * wireSignalResistance(corner);
   parasitics->incrCap(n1, wire_cap / 2.0);
+
+  // Reduce resistance if the net has NDR with increased width
+  odb::dbTechNonDefaultRule* ndr
+      = db_network_->staToDb(net)->getNonDefaultRule();
+  if (ndr) {
+    std::vector<odb::dbTechLayerRule*> layer_rules;
+    ndr->getLayerRules(layer_rules);
+    float ndr_ratio = (float) layer_rules.at(0)->getWidth()
+                      / layer_rules.at(0)->getLayer()->getWidth();
+    wire_res /= ndr_ratio;
+  }
+
   parasitics->makeResistor(parasitic, 1, wire_res, n1, n2);
   parasitics->incrCap(n2, wire_cap / 2.0);
 }
@@ -680,7 +694,7 @@ void EstimateParasitics::estimateWireParasiticSteiner(const Pin* drvr_pin,
       int branch_count = tree->branchCount();
       size_t resistor_id = 1;
       for (int i = 0; i < branch_count; i++) {
-        Point pt1, pt2;
+        odb::Point pt1, pt2;
         SteinerPt steiner_pt1, steiner_pt2;
         int wire_length_dbu;
         tree->branch(i, pt1, steiner_pt1, pt2, steiner_pt2, wire_length_dbu);
@@ -718,6 +732,18 @@ void EstimateParasitics::estimateWireParasiticSteiner(const Pin* drvr_pin,
           double length = dbuToMeters(wire_length_dbu);
           double cap = length * wire_cap;
           double res = length * wire_res;
+
+          // Reduce resistance if the net has NDR with increased width
+          odb::dbTechNonDefaultRule* ndr
+              = db_network_->staToDb(net)->getNonDefaultRule();
+          if (ndr) {
+            std::vector<odb::dbTechLayerRule*> layer_rules;
+            ndr->getLayerRules(layer_rules);
+            float ratio = (float) layer_rules.at(0)->getWidth()
+                          / layer_rules.at(0)->getLayer()->getWidth();
+            res /= ratio;
+          }
+
           // Make pi model for the wire.
           debugPrint(logger_,
                      EST,
@@ -772,72 +798,6 @@ float EstimateParasitics::pinCapacitance(const Pin* pin,
     return corner_port->capacitance();
   }
   return 0.0;
-}
-
-float EstimateParasitics::totalLoad(SteinerTree* tree) const
-{
-  if (!tree) {
-    return 0;
-  }
-
-  SteinerPt top_pt = tree->top();
-  SteinerPt drvr_pt = tree->drvrPt();
-
-  if (top_pt == SteinerNull) {
-    return 0;
-  }
-
-  auto top_loc = tree->location(top_pt);
-  auto drvr_loc = tree->location(drvr_pt);
-  int length = tree->distance(drvr_pt, top_pt);
-  double dx
-      = dbuToMeters(std::abs(top_loc.x() - drvr_loc.x())) / dbuToMeters(length);
-  double dy
-      = dbuToMeters(std::abs(top_loc.y() - drvr_loc.y())) / dbuToMeters(length);
-
-  float load = 0.0, max_load = 0.0;
-
-  debugPrint(logger_, EST, "estimate_parasitics", 1, "Steiner totalLoad ");
-  // For now we will just look at the worst corner for totalLoad
-  for (Corner* corner : *sta_->corners()) {
-    double wire_cap = dx * wireSignalHCapacitance(corner)
-                      + dy * wireSignalVCapacitance(corner);
-    float top_length = dbuToMeters(tree->distance(drvr_pt, top_pt));
-    float subtree_load = subtreeLoad(tree, wire_cap, top_pt);
-    load = top_length * wire_cap + subtree_load;
-    max_load = std::max(max_load, load);
-  }
-  return max_load;
-}
-
-float EstimateParasitics::subtreeLoad(SteinerTree* tree,
-                                      float cap_per_micron,
-                                      SteinerPt pt) const
-{
-  if (pt == SteinerNull) {
-    return 0;
-  }
-  SteinerPt left_pt = tree->left(pt);
-  SteinerPt right_pt = tree->right(pt);
-
-  if ((left_pt == SteinerNull) && (right_pt == SteinerNull)) {
-    return (this->pinCapacitance(tree->pin(pt), tgt_slew_dcalc_ap_));
-  }
-
-  float left_cap = 0;
-  float right_cap = 0;
-
-  if (left_pt != SteinerNull) {
-    const float left_length = dbuToMeters(tree->distance(pt, left_pt));
-    left_cap = subtreeLoad(tree, cap_per_micron, left_pt)
-               + (left_length * cap_per_micron);
-  }
-  if (right_pt != SteinerNull) {
-    const float right_length = dbuToMeters(tree->distance(pt, right_pt));
-    right_cap = subtreeLoad(tree, cap_per_micron, right_pt)
-                + (right_length * cap_per_micron);
-  }
-  return left_cap + right_cap;
 }
 
 odb::dbTechLayer* EstimateParasitics::getPinLayer(const Pin* pin)
@@ -1040,7 +1000,7 @@ bool EstimateParasitics::isPad(const Instance* inst) const
 
 void EstimateParasitics::parasiticsInvalid(const Net* net)
 {
-  dbNet* db_net = db_network_->flatNet(net);
+  odb::dbNet* db_net = db_network_->flatNet(net);
   if (haveEstimatedParasitics()) {
     debugPrint(logger_,
                EST,
@@ -1052,7 +1012,7 @@ void EstimateParasitics::parasiticsInvalid(const Net* net)
   }
 }
 
-void EstimateParasitics::parasiticsInvalid(const dbNet* net)
+void EstimateParasitics::parasiticsInvalid(const odb::dbNet* net)
 {
   parasiticsInvalid(db_network_->dbToSta(net));
 }
@@ -1098,7 +1058,7 @@ static void connectedPins(const Net* net,
     // hit moditerms/modbterms).
     //
     if (iterm || bterm) {
-      Point loc = db_network->location(pin);
+      odb::Point loc = db_network->location(pin);
       pins.push_back({pin, loc});
     }
   }
@@ -1106,8 +1066,8 @@ static void connectedPins(const Net* net,
 }
 
 SteinerTree* EstimateParasitics::makeSteinerTree(
-    Point drvr_location,
-    const std::vector<Point>& sink_locations)
+    odb::Point drvr_location,
+    const std::vector<odb::Point>& sink_locations)
 {
   SteinerTree* tree = new SteinerTree(drvr_location, logger_);
   sta::Vector<PinLoc>& pinlocs = tree->pinlocs();

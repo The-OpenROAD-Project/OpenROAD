@@ -30,6 +30,7 @@ class Logger;
 
 namespace gpl {
 
+class AbstractGraphics;
 class PlacerBaseCommon;
 class PlacerBase;
 class NesterovBaseCommon;
@@ -46,12 +47,20 @@ using Clusters = std::vector<Cluster>;
 class Replace
 {
  public:
+  // Create a replace object with no graphics.
   Replace(odb::dbDatabase* odb,
           sta::dbSta* sta,
           rsz::Resizer* resizer,
           grt::GlobalRouter* router,
           utl::Logger* logger);
+
   ~Replace();
+
+  // Use the following class as a template for graphics interface.
+  //
+  // Note: no ownership is transfered as the object will create a new
+  // graphics object of the same class.
+  void setGraphicsInterface(const gpl::AbstractGraphics& graphics);
 
   void reset();
 
@@ -130,6 +139,8 @@ class Replace
   grt::GlobalRouter* fr_ = nullptr;
   utl::Logger* log_ = nullptr;
 
+  std::unique_ptr<AbstractGraphics> graphics_;
+
   std::shared_ptr<PlacerBaseCommon> pbc_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
   std::vector<std::shared_ptr<PlacerBase>> pbVec_;
@@ -162,8 +173,8 @@ class Replace
   float routabilityCheckOverflow_ = 0.3;
   float routabilityMaxDensity_ = 0.99;
   float routabilityTargetRcMetric_ = 1.01;
-  float routabilityInflationRatioCoef_ = 3;
-  float routabilityMaxInflationRatio_ = 6;
+  float routabilityInflationRatioCoef_ = 2;
+  float routabilityMaxInflationRatio_ = 3;
   int routabilityMaxInflationIter_ = 4;
 
   // routability RC metric coefficients
@@ -200,10 +211,4 @@ class Replace
   std::string gui_debug_images_path_ = "REPORTS_DIR";
 };
 
-inline constexpr const char* format_label_int = "{:27} {:10}";
-inline constexpr const char* format_label_float = "{:27} {:10.4f}";
-inline constexpr const char* format_label_um2 = "{:27} {:10.3f} um^2";
-inline constexpr const char* format_label_percent = "{:27} {:10.2f} %";
-inline constexpr const char* format_label_um2_with_delta
-    = "{:27} {:10.3f} um^2 ({:+.2f}%)";
 }  // namespace gpl

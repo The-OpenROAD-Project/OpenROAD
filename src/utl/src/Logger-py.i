@@ -50,6 +50,7 @@ using namespace utl;
 %apply unsigned long { ToolId };
 
 %include "../../Exception-py.i"
+%include "stdint.i"
 
 %ignore utl::Logger::progress;
 %ignore utl::Logger::swapProgress;

@@ -9,7 +9,9 @@
 namespace utl {
 class Logger;
 }
-
+namespace sta {
+class Sta;
+}
 namespace odb {
 class dbDatabase;
 class ChipletDef;
@@ -20,14 +22,20 @@ class Connection;
 class DesignDef;
 class dbChipRegionInst;
 class dbChipInst;
+class BumpMapEntry;
+class dbChipRegion;
+class dbBlock;
+class dbInst;
 
 class ThreeDBlox
 {
  public:
-  ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db);
+  ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db, sta::Sta* sta = nullptr);
   ~ThreeDBlox() = default;
   void readDbv(const std::string& dbv_file);
   void readDbx(const std::string& dbx_file);
+  void readBMap(const std::string& bmap_file);
+  void check();
 
  private:
   void createChiplet(const ChipletDef& chiplet);
@@ -35,11 +43,15 @@ class ThreeDBlox
   dbChip* createDesignTopChiplet(const DesignDef& design);
   void createChipInst(const ChipletInst& chip_inst);
   void createConnection(const Connection& connection);
+  void createBump(const BumpMapEntry& entry, dbChipRegion* chip_region);
+  dbInst* createBump(const BumpMapEntry& entry, dbBlock* block);
   dbChipRegionInst* resolvePath(const std::string& path,
                                 std::vector<dbChipInst*>& path_insts);
   void readHeaderIncludes(const std::vector<std::string>& includes);
+  void calculateSize(dbChip* chip);
 
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
+  sta::Sta* sta_ = nullptr;
 };
 }  // namespace odb

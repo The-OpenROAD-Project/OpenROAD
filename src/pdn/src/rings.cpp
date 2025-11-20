@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -249,10 +250,11 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
       int y_start = core.yMin() - width;
       int y_end = core.yMin();
       for (auto net : nets) {
-        addShape(new Shape(layer,
-                           net,
-                           odb::Rect(x_start, y_start, x_end, y_end),
-                           odb::dbWireShapeType::RING));
+        addShape(
+            std::make_unique<Shape>(layer,
+                                    net,
+                                    odb::Rect(x_start, y_start, x_end, y_end),
+                                    odb::dbWireShapeType::RING));
         if (!extend_to_boundary_) {
           x_start -= other_pitch;
           x_end += other_pitch;
@@ -268,10 +270,11 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
       y_start = core.yMax();
       y_end = y_start + width;
       for (auto net : nets) {
-        addShape(new Shape(layer,
-                           net,
-                           odb::Rect(x_start, y_start, x_end, y_end),
-                           odb::dbWireShapeType::RING));
+        addShape(
+            std::make_unique<Shape>(layer,
+                                    net,
+                                    odb::Rect(x_start, y_start, x_end, y_end),
+                                    odb::dbWireShapeType::RING));
         if (!extend_to_boundary_) {
           x_start -= other_pitch;
           x_end += other_pitch;
@@ -290,10 +293,11 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
         y_end = boundary.yMax();
       }
       for (auto net : nets) {
-        addShape(new Shape(layer,
-                           net,
-                           odb::Rect(x_start, y_start, x_end, y_end),
-                           odb::dbWireShapeType::RING));
+        addShape(
+            std::make_unique<Shape>(layer,
+                                    net,
+                                    odb::Rect(x_start, y_start, x_end, y_end),
+                                    odb::dbWireShapeType::RING));
         x_start -= pitch;
         x_end -= pitch;
         if (!extend_to_boundary_) {
@@ -309,10 +313,11 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
         y_end = core.yMax() + other_width;
       }
       for (auto net : nets) {
-        addShape(new Shape(layer,
-                           net,
-                           odb::Rect(x_start, y_start, x_end, y_end),
-                           odb::dbWireShapeType::RING));
+        addShape(
+            std::make_unique<Shape>(layer,
+                                    net,
+                                    odb::Rect(x_start, y_start, x_end, y_end),
+                                    odb::dbWireShapeType::RING));
         x_start += pitch;
         x_end += pitch;
         if (!extend_to_boundary_) {

@@ -8,6 +8,7 @@
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0032] Initializing region: Top-level
 [INFO GPL-0006] Number of instances:               294
 [INFO GPL-0007] Movable instances:                 294
 [INFO GPL-0008] Fixed instances:                     0
@@ -17,6 +18,8 @@
 [INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 30.970 30.800 ) um
 [INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
 [INFO GPL-0016] Core area:                     953.876 um^2
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                   953.876 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
 [INFO GPL-0018] Movable instances area:        569.772 um^2
 [INFO GPL-0019] Utilization:                    59.732 %
@@ -27,6 +30,7 @@
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000002 HPWL: 5034377
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000007 HPWL: 5036666
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 5036282
+[INFO GPL-0033] Initializing Nesterov region: Top-level
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      1.938 um^2
 [INFO GPL-0025] Ideal bin area:                  2.769 um^2
@@ -61,7 +65,8 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       190 |   0.6798 |  2.191922e+03 |   +1.30% |  8.46e-10 |      
       200 |   0.6576 |  2.228829e+03 |   +1.68% |  1.38e-09 |      
       210 |   0.6213 |  2.261743e+03 |   +1.48% |  2.24e-09 |      
-[INFO GPL-0038] Routability snapshot saved at iter = 216
+[INFO GPL-0038] Routability snapshot saved at iter = 217
+      216 |   0.5977 |  2.282169e+03 |          |           |      
       220 |   0.5823 |  2.300463e+03 |   +1.71% |  3.66e-09 |      
       230 |   0.5418 |  2.340447e+03 |   +1.74% |  5.96e-09 |      
       240 |   0.4880 |  2.354778e+03 |   +0.61% |  9.70e-09 |      

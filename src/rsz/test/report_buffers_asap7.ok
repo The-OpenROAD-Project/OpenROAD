@@ -122,10 +122,10 @@ There are 4 fast buffers
 Cell                                        Area  Input  Intrinsic Drive 
                                                    Cap    Delay    Res
 --------------------------------------------------------------------------------
-BUFx10_ASAP7_75t_L                            0.2 1.3e-15 1.3e-11   848.3
-BUFx24_ASAP7_75t_L                            0.4 2.4e-15 1.6e-11   507.0
 BUFx3_ASAP7_75t_L                             0.1 6.5e-16 1.0e-11  2546.9
 BUFx8_ASAP7_75t_L                             0.2 8.8e-16 1.6e-11  1029.8
+BUFx10_ASAP7_75t_L                            0.2 1.3e-15 1.3e-11   848.3
+BUFx24_ASAP7_75t_L                            0.4 2.4e-15 1.6e-11   507.0
 --------------------------------------------------------------------------------
 [INFO RSZ-0165] Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing
 ********************************************************************************
@@ -261,10 +261,10 @@ There are 4 fast buffers
 Cell                                        Area  Input  Intrinsic Drive 
                                                    Cap    Delay    Res
 --------------------------------------------------------------------------------
-BUFx10_ASAP7_75t_L                            0.2 1.3e-15 1.3e-11   848.3
-BUFx24_ASAP7_75t_L                            0.4 2.4e-15 1.6e-11   507.0
 BUFx3_ASAP7_75t_L                             0.1 6.5e-16 1.0e-11  2546.9
 BUFx8_ASAP7_75t_L                             0.2 8.8e-16 1.6e-11  1029.8
+BUFx10_ASAP7_75t_L                            0.2 1.3e-15 1.3e-11   848.3
+BUFx24_ASAP7_75t_L                            0.4 2.4e-15 1.6e-11   507.0
 --------------------------------------------------------------------------------
 The following 3 cells are equivalent to BUFx2_ASAP7_75t_R:
 =============================================================================

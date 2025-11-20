@@ -22,16 +22,23 @@ COMPULSORY_TESTS = [
     "non_top_layer",
     "place_bondpad",
     "place_bondpad_stagger",
+    "place_corners_avoid_bumps",
+    "place_corners_avoid_overlap",
     "place_io_terminals_empty_call",
     "place_pad",
     "place_pad_hv",
     "place_pad_no_master",
     "place_pad_outsideofrow",
+    "place_pad_overblockage",
     "place_pad_with_bumps",
     "place_pad_wrong_master",
     "place_pads_bumps",
+    "place_pads_bumps_bump_overlap",
+    "place_pads_bumps_strategy_placer_blockages",
+    "place_pads_bumps_strategy",
     "place_pads_too_many",
     "place_pads_uniform",
+    "place_pads_uniform_slip",
     "rdl_route",
     "rdl_route_45",
     "rdl_route_45_cost",
@@ -56,6 +63,11 @@ COMPULSORY_TESTS = [
 MANUAL_TESTS = [
     "pad_man_tcl_check",
     "pad_readme_msgs_check",
+]
+
+# TODO: Enable once difference between bazel and ctest is resolved.
+MANUAL_FOR_BAZEL_TESTS = [
+    "rdl_route_single_target",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -202,7 +214,8 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        tags = ["manual"] if test_name in MANUAL_TESTS or
+                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

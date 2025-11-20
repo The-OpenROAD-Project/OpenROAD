@@ -14,17 +14,18 @@ package(
 cc_library(
     name = "gpl",
     srcs = [
+        "src/AbstractGraphics.cpp",
         "src/MakeReplace.cpp",
         "src/fft.cpp",
         "src/fft.h",
         "src/fftsg.cpp",
         "src/fftsg2d.cpp",
-        "src/graphics.cpp",
-        "src/graphics.h",
+        "src/graphicsImpl.cpp",
+        "src/graphicsImpl.h",
+        "src/graphicsNone.cpp",
         "src/initialPlace.cpp",
         "src/initialPlace.h",
         "src/mbff.cpp",
-        "src/mbff.h",
         "src/nesterovBase.cpp",
         "src/nesterovBase.h",
         "src/nesterovPlace.cpp",
@@ -45,6 +46,9 @@ cc_library(
     hdrs = [
         "include/gpl/MakeReplace.h",
         "include/gpl/Replace.h",
+        "src/AbstractGraphics.h",
+        "src/graphicsNone.h",
+        "src/mbff.h",
     ],
     copts = [
         "-fopenmp",

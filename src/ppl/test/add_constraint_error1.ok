@@ -3,5 +3,5 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
-[ERROR PPL-0081] List of pins must have an even number of pins.
-PPL-0081
+[ERROR ODB-0143] List of pins must have an even number of pins.
+ODB-0143

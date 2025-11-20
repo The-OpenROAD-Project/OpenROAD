@@ -5,7 +5,6 @@ the design area is `-max_utilization util` percent of the core area. `util`
 is between 0 and 100.  The `resizer` stops and reports an error if the max
 utilization is exceeded.
 
-
 ## Commands
 
 ```{note}
@@ -79,7 +78,7 @@ The `buffer_ports -inputs` command adds a buffer between the input and its
 loads.  The `buffer_ports -outputs` adds a buffer between the port driver
 and the output port. Inserting buffers on input and output ports makes
 the block input capacitances and output drives independent of the block
-internals. It uses the buffer library cell defined by `-buffer_cell` if it is given. 
+internals. It uses the buffer library cell defined by `-buffer_cell` if it is given.
 
 ```tcl
 buffer_ports 
@@ -231,6 +230,7 @@ repair_timing
     [-skip_crit_vt_swap]
     [-repair_tns tns_end_percent]
     [-max_passes passes]
+    [-max_iterations iterations]
     [-max_repairs_per_pass max_repairs_per_pass]
     [-max_utilization util]
     [-max_buffer_percent buffer_percent]
@@ -260,6 +260,7 @@ repair_timing
 | `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero, only the worst endpoint is repaired. When `tns_end_percent` is 100 (default), all violating endpoints are repaired. |
 | `-max_repairs_per_pass` | Maximum repairs per pass, default is 1. On the worst paths, the maximum number of repairs is attempted. It gradually decreases until the final violations which only get 1 repair per pass. |
 | `-max_utilization` | Defines the percentage of core area used. |
+| `-max_iterations` | Defines the maximum number of iterations executed when repairing setup and hold violations. The default is `-1`, which disables the limit of iterations. |
 | `-max_buffer_percent` | Specify a maximum number of buffers to insert to repair hold violations as a percentage of the number of instances in the design. The default value is `20`, and the allowed values are integers `[0, 100]`. |
 | `-match_cell_footprint` | Obey the Liberty cell footprint when swapping gates. |
 | `-verbose` | Enable verbose logging of the repair progress. |
@@ -477,6 +478,7 @@ cell footprint and leakage are also reported.
 report_buffers
     [-filtered]
 ```
+
 #### Options
 
 | Switch Name | Description |
@@ -564,7 +566,7 @@ Not available yet
 
 #### SEE ALSO
 
-replace_hier_modules
+replace_hier_module
 
 #### EXAMPLES
 

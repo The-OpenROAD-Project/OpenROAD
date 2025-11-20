@@ -22,6 +22,6 @@ rmp::blif_add_instance $blif "_i8_"
 
 rmp::blif_read $blif "./blif_reader_sequential.blif"
 
-write_def "./results/blif_reader_sequential.def"
-diff_files "./results/blif_reader_sequential.def" \
-  "blif_reader_sequential.def.ok"
+set result_def [make_result_file "blif_reader_sequential.def"]
+write_def "$result_def"
+diff_files "$result_def" "blif_reader_sequential.def.ok"

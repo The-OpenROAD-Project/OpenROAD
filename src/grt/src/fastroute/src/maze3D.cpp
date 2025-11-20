@@ -682,28 +682,6 @@ float FastRouteCore::getMazeRouteCost3D(const int net_id,
   const float wire_resistance
       = getLayerResistance(from_layer, length * tile_size_, net);
 
-  // Check congestion
-  bool congested = false;
-  if (from_x == to_x) {  // vertical
-    int min_y = std::min(from_y, to_y);
-    if (v_edges_3D_[from_layer][min_y][from_x].usage
-            + net->getLayerEdgeCost(from_layer)
-        > v_edges_3D_[from_layer][min_y][from_x].cap) {
-      congested = true;
-    }
-  } else {  // horizontal
-    int min_x = std::min(from_x, to_x);
-    if (h_edges_3D_[from_layer][from_y][min_x].usage
-            + net->getLayerEdgeCost(from_layer)
-        > h_edges_3D_[from_layer][from_y][min_x].cap) {
-      congested = true;
-    }
-  }
-
-  if (congested) {
-    base_cost = BIG_INT;  // Heavy penalty for congestion
-  }
-
   return base_cost + wire_resistance;
 }
 
@@ -724,6 +702,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
     FrNet* net = nets_[netID];
     int8_t edge_cost = 0;
+
+    // Enable resistance aware routing only if the net needs it
+    if (enable_resistance_aware_) {
+      resistance_aware_ = net->isResAware();
+    }
 
     int enlarge = expand;
     const int num_terminals = sttrees_[netID].num_terminals;

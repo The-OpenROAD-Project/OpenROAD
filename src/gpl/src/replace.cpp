@@ -9,8 +9,10 @@
 #include <string>
 #include <utility>
 
+#include "AbstractGraphics.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "graphicsNone.h"
 #include "initialPlace.h"
 #include "mbff.h"
 #include "nesterovBase.h"
@@ -34,9 +36,15 @@ Replace::Replace(odb::dbDatabase* odb,
                  utl::Logger* logger)
     : db_(odb), sta_(sta), rs_(resizer), fr_(router), log_(logger)
 {
+  graphics_ = std::make_unique<GraphicsNone>();
 }
 
 Replace::~Replace() = default;
+
+void Replace::setGraphicsInterface(const AbstractGraphics& graphics)
+{
+  graphics_ = graphics.MakeNew(log_);
+}
 
 void Replace::reset()
 {
@@ -73,8 +81,8 @@ void Replace::reset()
   routabilityCheckOverflow_ = 0.3;
   routabilityMaxDensity_ = 0.99;
   routabilityTargetRcMetric_ = 1.01;
-  routabilityInflationRatioCoef_ = 3;
-  routabilityMaxInflationRatio_ = 6;
+  routabilityInflationRatioCoef_ = 2;
+  routabilityMaxInflationRatio_ = 3;
   routabilityRcK1_ = routabilityRcK2_ = 1.0;
   routabilityRcK3_ = routabilityRcK4_ = 0.0;
   routabilityMaxInflationIter_ = 4;
@@ -125,31 +133,36 @@ void Replace::doIncrementalPlace(int threads)
   }
 
   // Lock down already placed objects
-  int locked_cnt = 0;
+  int placed_cnt = 0;
   int unplaced_cnt = 0;
   auto block = db_->getChip()->getBlock();
   for (auto inst : block->getInsts()) {
     auto status = inst->getPlacementStatus();
     if (status == odb::dbPlacementStatus::PLACED) {
       pbc_->dbToPb(inst)->lock();
-      ++locked_cnt;
+      ++placed_cnt;
     } else if (!status.isPlaced()) {
       ++unplaced_cnt;
     }
   }
 
+  log_->info(GPL, 154, "Identified {} placed instances", placed_cnt);
+  log_->info(GPL, 155, "Identified {} not placed instances", unplaced_cnt);
+
   if (unplaced_cnt == 0) {
     // Everything was already placed so we do the old incremental mode
     // which just skips initial placement and runs nesterov.
+    log_->info(GPL,
+               156,
+               "Identified all instances as placed. Unlocking all instances "
+               "and running nesterov from scratch.");
     for (auto& pb : pbVec_) {
       pb->unlockAll();
     }
-    // pbc_->unlockAll();
+
     doNesterovPlace(threads);
     return;
   }
-
-  log_->info(GPL, 132, "Locked {} instances", locked_cnt);
 
   // Roughly place the unplaced objects (allow more overflow).
   // Limit iterations to prevent objects drifting too far or
@@ -166,7 +179,7 @@ void Replace::doIncrementalPlace(int threads)
   setNesterovPlaceMaxIter(previous_max_iter);
 
   // Finish the overflow resolution from the rough placement
-  log_->info(GPL, 133, "Unlocked instances");
+  log_->info(GPL, 133, "Unlocking all instances");
   for (auto& pb : pbVec_) {
     pb->unlockAll();
   }
@@ -197,6 +210,10 @@ void Replace::doInitialPlace(int threads)
     }
 
     if (pbVec_.front()->placeInsts().empty()) {
+      log_->warn(
+          GPL,
+          123,
+          "No placeable instances in the top-level region. Removing it.");
       pbVec_.erase(pbVec_.begin());
     }
 
@@ -215,7 +232,7 @@ void Replace::doInitialPlace(int threads)
   ipVars.debug = gui_debug_initial_;
 
   std::unique_ptr<InitialPlace> ip(
-      new InitialPlace(ipVars, pbc_, pbVec_, log_));
+      new InitialPlace(ipVars, pbc_, pbVec_, graphics_->MakeNew(log_), log_));
   ip_ = std::move(ip);
   ip_->doBicgstabPlace(threads);
 }
@@ -226,7 +243,15 @@ void Replace::runMBFF(int max_sz,
                       int threads,
                       int num_paths)
 {
-  MBFF pntset(db_, sta_, log_, rs_, threads, 20, num_paths, gui_debug_);
+  MBFF pntset(db_,
+              sta_,
+              log_,
+              rs_,
+              threads,
+              20,
+              num_paths,
+              gui_debug_,
+              graphics_->MakeNew(log_));
   pntset.Run(max_sz, alpha, beta);
 }
 
@@ -267,6 +292,8 @@ bool Replace::initNesterovPlace(int threads)
       nbVars.isSetBinCnt = true;
       nbVars.binCntX = binGridCntX_;
       nbVars.binCntY = binGridCntY_;
+      nbVars.minPhiCoef = minPhiCoef_;
+      nbVars.maxPhiCoef = maxPhiCoef_;
     }
 
     nbVars.useUniformTargetDensity = uniformTargetDensityMode_;
@@ -304,8 +331,6 @@ bool Replace::initNesterovPlace(int threads)
   if (!np_) {
     NesterovPlaceVars npVars;
 
-    npVars.minPhiCoef = minPhiCoef_;
-    npVars.maxPhiCoef = maxPhiCoef_;
     npVars.referenceHpwl = referenceHpwl_;
     npVars.routability_end_overflow = routabilityCheckOverflow_;
     npVars.keepResizeBelowOverflow = keepResizeBelowOverflow_;
@@ -329,10 +354,15 @@ bool Replace::initNesterovPlace(int threads)
       nb->setNpVars(&npVars);
     }
 
-    std::unique_ptr<NesterovPlace> np(
-        new NesterovPlace(npVars, pbc_, nbc_, pbVec_, nbVec_, rb_, tb_, log_));
-
-    np_ = std::move(np);
+    np_ = std::make_unique<NesterovPlace>(npVars,
+                                          pbc_,
+                                          nbc_,
+                                          pbVec_,
+                                          nbVec_,
+                                          rb_,
+                                          tb_,
+                                          graphics_->MakeNew(log_),
+                                          log_);
   }
   return true;
 }
@@ -397,6 +427,7 @@ void Replace::setInitialPlaceNetWeightScale(float scale)
 
 void Replace::setNesterovPlaceMaxIter(int iter)
 {
+  log_->info(GPL, 158, "Setting nesterov max iterations to {}", iter);
   nesterovPlaceMaxIter_ = iter;
   if (np_) {
     np_->setMaxIters(iter);
@@ -411,6 +442,7 @@ void Replace::setBinGridCnt(int binGridCntX, int binGridCntY)
 
 void Replace::setTargetOverflow(float overflow)
 {
+  log_->info(GPL, 157, "Setting target overflow to {}", overflow);
   overflow_ = overflow;
   if (np_) {
     np_->setTargetOverflow(overflow);

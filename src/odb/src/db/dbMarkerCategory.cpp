@@ -19,8 +19,10 @@
 #include <sstream>
 
 #include "boost/regex.hpp"
+#include "dbChip.h"
 #include "dbHashTable.hpp"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbObject.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbMarkerCategory>;
@@ -139,7 +141,7 @@ _dbMarkerCategory::~_dbMarkerCategory()
 
 bool _dbMarkerCategory::isTopCategory() const
 {
-  return getOwner()->getObjectType() == dbBlockObj;
+  return getOwner()->getObjectType() == dbChipObj;
 }
 
 _dbBlock* _dbMarkerCategory::getBlock() const
@@ -147,7 +149,16 @@ _dbBlock* _dbMarkerCategory::getBlock() const
   dbMarkerCategory* category = (dbMarkerCategory*) this;
   _dbMarkerCategory* top_category
       = (_dbMarkerCategory*) category->getTopCategory();
-  return (_dbBlock*) top_category->getOwner();
+  dbChip* chip = (dbChip*) top_category->getOwner();
+  return (_dbBlock*) chip->getBlock();
+}
+
+_dbChip* _dbMarkerCategory::getChip() const
+{
+  dbMarkerCategory* category = (dbMarkerCategory*) this;
+  _dbMarkerCategory* top_category
+      = (_dbMarkerCategory*) category->getTopCategory();
+  return (_dbChip*) top_category->getOwner();
 }
 
 bool _dbMarkerCategory::hasMaxMarkerLimit() const
@@ -251,7 +262,7 @@ void _dbMarkerCategory::writeJSON(
   } catch (const boost::property_tree::json_parser_error& e1) {
     _dbMarkerCategory* _top_category
         = (_dbMarkerCategory*) (*ordered_categories.begin())->getTopCategory();
-    _dbBlock* block = (_dbBlock*) _top_category->getOwner();
+    _dbBlock* block = _top_category->getBlock();
     utl::Logger* logger = block->getLogger();
 
     logger->error(utl::ODB, 268, "Unable to write markers: {}", e1.what());
@@ -382,18 +393,19 @@ bool dbMarkerCategory::rename(const char* name)
   _dbMarkerCategory* _category = (_dbMarkerCategory*) this;
 
   if (_category->isTopCategory()) {
-    _dbBlock* block = (_dbBlock*) _category->getOwner();
+    _dbChip* chip = (_dbChip*) _category->getOwner();
 
-    if (block->_marker_category_hash.hasMember(name)) {
+    if (chip->marker_categories_map_.find(name)
+        != chip->marker_categories_map_.end()) {
       return false;
     }
 
-    block->_marker_category_hash.remove(_category);
+    chip->marker_categories_map_.erase(name);
 
     free((void*) _category->_name);
     _category->_name = safe_strdup(name);
 
-    block->_marker_category_hash.insert(_category);
+    chip->marker_categories_map_[name] = _category->getImpl()->getId();
   } else {
     _dbMarkerCategory* parent = (_dbMarkerCategory*) _category->getOwner();
 
@@ -757,49 +769,73 @@ std::set<dbMarker*> dbMarkerCategory::getAllMarkers() const
   return markers;
 }
 
-dbMarkerCategory* dbMarkerCategory::create(dbBlock* block, const char* name)
+dbMarkerCategory* dbMarkerCategory::create(dbChip* chip, const char* name)
 {
-  _dbBlock* parent = (_dbBlock*) block;
+  _dbChip* parent = (_dbChip*) chip;
 
-  if (parent->_marker_category_hash.hasMember(name)) {
+  if (parent->marker_categories_map_.find(name)
+      != parent->marker_categories_map_.end()) {
     return nullptr;
   }
 
-  _dbMarkerCategory* _category = parent->_marker_categories_tbl->create();
+  _dbMarkerCategory* _category = parent->marker_categories_tbl_->create();
 
   _category->_name = safe_strdup(name);
 
-  parent->_marker_category_hash.insert(_category);
+  parent->marker_categories_map_[name] = _category->getImpl()->getId();
 
-  for (auto cb : parent->_callbacks) {
-    cb->inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
+  _dbBlock* block = (_dbBlock*) chip->getBlock();
+  if (block) {
+    for (auto cb : block->_callbacks) {
+      cb->inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
+    }
   }
 
   return (dbMarkerCategory*) _category;
 }
 
+dbMarkerCategory* dbMarkerCategory::createOrGet(dbChip* chip, const char* name)
+{
+  _dbChip* parent = (_dbChip*) chip;
+
+  auto it = parent->marker_categories_map_.find(name);
+  if (it != parent->marker_categories_map_.end()) {
+    return (dbMarkerCategory*) parent->marker_categories_tbl_->getPtr(
+        it->second);
+  }
+
+  return create(chip, name);
+}
+
+dbMarkerCategory* dbMarkerCategory::createOrReplace(dbChip* chip,
+                                                    const char* name)
+{
+  _dbChip* parent = (_dbChip*) chip;
+
+  auto it = parent->marker_categories_map_.find(name);
+  if (it != parent->marker_categories_map_.end()) {
+    destroy(
+        (dbMarkerCategory*) parent->marker_categories_tbl_->getPtr(it->second));
+  }
+
+  return create(chip, name);
+}
+
+dbMarkerCategory* dbMarkerCategory::create(dbBlock* block, const char* name)
+{
+  return create(block->getChip(), name);
+}
+
 dbMarkerCategory* dbMarkerCategory::createOrGet(dbBlock* block,
                                                 const char* name)
 {
-  _dbBlock* parent = (_dbBlock*) block;
-
-  if (parent->_marker_category_hash.hasMember(name)) {
-    return (dbMarkerCategory*) parent->_marker_category_hash.find(name);
-  }
-
-  return create(block, name);
+  return createOrGet(block->getChip(), name);
 }
 
 dbMarkerCategory* dbMarkerCategory::createOrReplace(dbBlock* block,
                                                     const char* name)
 {
-  _dbBlock* parent = (_dbBlock*) block;
-
-  if (parent->_marker_category_hash.hasMember(name)) {
-    destroy((dbMarkerCategory*) parent->_marker_category_hash.find(name));
-  }
-
-  return create(block, name);
+  return createOrReplace(block->getChip(), name);
 }
 
 dbMarkerCategory* dbMarkerCategory::create(dbMarkerCategory* category,
@@ -818,8 +854,10 @@ dbMarkerCategory* dbMarkerCategory::create(dbMarkerCategory* category,
   parent->categories_hash_.insert(_category);
 
   _dbBlock* block = parent->getBlock();
-  for (auto cb : block->_callbacks) {
-    cb->inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
+  if (block) {
+    for (auto cb : block->_callbacks) {
+      cb->inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
+    }
   }
 
   return (dbMarkerCategory*) _category;
@@ -854,20 +892,23 @@ void dbMarkerCategory::destroy(dbMarkerCategory* category)
   _dbMarkerCategory* _category = (_dbMarkerCategory*) category;
 
   if (_category->isTopCategory()) {
-    _dbBlock* block = (_dbBlock*) _category->getOwner();
-
-    for (auto cb : block->_callbacks) {
-      cb->inDbMarkerCategoryDestroy(category);
+    _dbChip* _chip = (_dbChip*) _category->getOwner();
+    if (_category->getBlock()) {
+      for (auto cb : _category->getBlock()->_callbacks) {
+        cb->inDbMarkerCategoryDestroy(category);
+      }
     }
 
-    block->_marker_category_hash.remove(_category);
-    block->_marker_categories_tbl->destroy(_category);
+    _chip->marker_categories_map_.erase(_category->_name);
+    _chip->marker_categories_tbl_->destroy(_category);
   } else {
     _dbMarkerCategory* parent = (_dbMarkerCategory*) _category->getOwner();
 
     _dbBlock* block = parent->getBlock();
-    for (auto cb : block->_callbacks) {
-      cb->inDbMarkerCategoryDestroy(category);
+    if (block) {
+      for (auto cb : block->_callbacks) {
+        cb->inDbMarkerCategoryDestroy(category);
+      }
     }
 
     parent->categories_hash_.remove(_category);

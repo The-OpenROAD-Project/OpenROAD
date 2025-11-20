@@ -15,6 +15,23 @@
 #include <vector>
 
 #include "boost/algorithm/string/replace.hpp"
+#include "defiBlockage.hpp"
+#include "defiComponent.hpp"
+#include "defiDefs.hpp"
+#include "defiFill.hpp"
+#include "defiGroup.hpp"
+#include "defiMisc.hpp"
+#include "defiNet.hpp"
+#include "defiNonDefault.hpp"
+#include "defiPath.hpp"
+#include "defiPinCap.hpp"
+#include "defiPinProp.hpp"
+#include "defiProp.hpp"
+#include "defiRegion.hpp"
+#include "defiRowTrack.hpp"
+#include "defiScanchain.hpp"
+#include "defiSite.hpp"
+#include "defiVia.hpp"
 #include "definBase.h"
 #include "definBlockage.h"
 #include "definComponent.h"
@@ -32,6 +49,7 @@
 #include "definSNet.h"
 #include "definTracks.h"
 #include "definVia.h"
+#include "defrReader.hpp"
 #include "defzlib.hpp"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -1808,7 +1826,8 @@ void definReader::setLibs(std::vector<dbLib*>& lib_names)
 
 void definReader::readChip(std::vector<dbLib*>& libs,
                            const char* file,
-                           dbChip* chip)
+                           dbChip* chip,
+                           const bool issue_callback)
 {
   init();
   setLibs(libs);
@@ -1877,7 +1896,9 @@ void definReader::readChip(std::vector<dbLib*>& libs,
 
   _logger->info(utl::ODB, 134, "Finished DEF file: {}", file);
 
-  _db->triggerPostReadDef(_block, _mode == defin::FLOORPLAN);
+  if (issue_callback) {
+    _db->triggerPostReadDef(_block, _mode == defin::FLOORPLAN);
+  }
 }
 
 static inline bool hasSuffix(const std::string& str, const std::string& suffix)

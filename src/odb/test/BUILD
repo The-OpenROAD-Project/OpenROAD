@@ -189,17 +189,23 @@ COMPULSORY_TESTS = [
     "replace_hier_mod3",
     "replace_hier_mod4",
     "replace_hier_mod5",
+    "replace_hier_mod6",
+    "replace_hier_mod_report_checks",
     "rounding",
     "row_settings",
     "sky130hd_multi_patterned",
     "smash_vias",
     "transform",
     "wire_encoder",
+    "write_cdl",
     "write_def58",
     "write_def58_gzip",
     "write_lef_and_def",
     "write_lef_polygon",
     "write_macro_placement",
+]
+
+PASSFAIL_TESTS = [
     # pass-fail
     "test_block",
     "test_bterm",
@@ -218,7 +224,14 @@ MANUAL_TESTS = [
     "odb_readme_msgs_check",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+# TODO: Enable once difference between bazel and ctest is resolved.
+MANUAL_FOR_BAZEL_TESTS = [
+    "dump_netlists",
+    "dump_netlists_withfill",
+    "replace_hier_mod1",
+]
+
+ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -239,6 +252,7 @@ filegroup(
         "Nangate45/Nangate45_stdcell.lef",
         "Nangate45/Nangate45_tech.lef",
         "Nangate45/Nangate45_typ.lib",
+        "Nangate45/fake_bumps.lef",
         "Nangate45/fake_macros.lef",
         "Nangate45/fake_macros.lib",
         "Nangate45/fakeram45.cfg",
@@ -264,6 +278,8 @@ filegroup(
         "data/design58.def",
         "data/example.3dbv",
         "data/example.3dbx",
+        "data/example.bmap",
+        "data/example1.bmap",
         "data/floorplan_initialize.def",
         "data/floorplan_initialize.v",
         "data/floorplan_initialize2.def",
@@ -293,6 +309,8 @@ filegroup(
         "gcd_adder5.v",
         "helper.tcl",
         "helpers.tcl",
+        "replace_hier_mod1.v",
+        "replace_hier_mod6.v",
         "replace_hier_mod_undo.tcl",
         "replace_hier_mod_undo2.tcl",
         "sky130hd/sky130_fd_sc_hd__ff_n40C_1v95.lib",
@@ -344,6 +362,9 @@ filegroup(
             "replace_hier_mod4": [
                 "gcd_abstract_lef.lefok",
             ],
+            "write_cdl": [
+                "write_cdl_escaped.cdl",
+            ],
         }.get(
             test_name,
             [],
@@ -355,8 +376,11 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
-        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        tags = ["manual"] if test_name in MANUAL_TESTS or
+                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

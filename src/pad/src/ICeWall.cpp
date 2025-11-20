@@ -11,14 +11,17 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <utility>
 #include <vector>
 
+#include "PadPlacer.h"
 #include "RDLGui.h"
 #include "RDLRouter.h"
 #include "Utilities.h"
 #include "boost/icl/interval_set.hpp"
+#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -515,15 +518,63 @@ void ICeWall::placeCorner(odb::dbMaster* master, int ring_index)
 
     const std::string corner_name = fmt::format("{}_INST", row->getName());
     odb::dbInst* inst = block->findInst(corner_name.c_str());
-    if (inst == nullptr) {
-      inst = odb::dbInst::create(block, master, corner_name.c_str());
-    }
 
     const odb::Rect row_bbox = row->getBBox();
+
+    // Check for instances overlapping the corner site
+    bool place_inst = true;
+    for (auto* check_inst : block->getInsts()) {
+      if (check_inst == inst) {
+        continue;
+      }
+      if (!check_inst->isFixed()) {
+        continue;
+      }
+      if (check_inst->getMaster()->isCover()) {
+        continue;
+      }
+      const odb::Rect check_rect = check_inst->getBBox()->getBox();
+      if (row_bbox.overlaps(check_rect)) {
+        place_inst = false;
+        break;
+      }
+    }
+    if (!place_inst) {
+      logger_->warn(
+          utl::PAD,
+          44,
+          "Skipping corner cell placement in {} due to overlapping instances",
+          row->getName());
+      continue;
+    }
+
+    const bool create_inst = inst == nullptr;
+    if (create_inst) {
+      inst = odb::dbInst::create(block, master, corner_name.c_str());
+    }
 
     inst->setOrient(row->getOrient());
     inst->setLocation(row_bbox.xMin(), row_bbox.yMin());
     inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+
+    const CheckerOnlyPadPlacer checker(logger_, block, row);
+    if (!checker.check(inst)) {
+      if (create_inst) {
+        logger_->warn(utl::PAD,
+                      45,
+                      "Skipping corner cell generation for {} due to "
+                      "overlapping bump cell",
+                      inst->getName());
+        odb::dbInst::destroy(inst);
+      } else {
+        logger_->warn(utl::PAD,
+                      46,
+                      "Skipping corner cell placement for {} due to "
+                      "overlapping bump cell",
+                      inst->getName());
+        inst->setPlacementStatus(odb::dbPlacementStatus::UNPLACED);
+      }
+    }
   }
 }
 
@@ -581,56 +632,13 @@ void ICeWall::placePad(odb::dbMaster* master,
     }
   }
 
-  placeInstance(row, snapToRowSite(row, location), inst, orient.getOrient());
+  SingleInstPadPlacer placer(logger_, getBlock(), getRowEdge(row), row);
+  placer.place(inst, location, orient.getOrient());
 }
 
-int64_t ICeWall::estimateWirelengths(
-    odb::dbInst* inst,
-    const std::set<odb::dbITerm*>& iterms) const
-{
-  std::map<odb::dbITerm*, odb::dbITerm*> terms;
-  for (auto* iterm : iterms) {
-    for (auto* net_iterm : iterm->getNet()->getITerms()) {
-      if (net_iterm->getInst() == inst) {
-        terms[net_iterm] = iterm;
-      }
-    }
-  }
-
-  int64_t dist = 0;
-
-  for (const auto& [term0, term1] : terms) {
-    dist += odb::Point::manhattanDistance(term0->getBBox().center(),
-                                          term1->getBBox().center());
-  }
-
-  return dist;
-}
-
-int64_t ICeWall::computePadBumpDistance(odb::dbInst* inst,
-                                        int inst_width,
-                                        odb::dbITerm* bump,
-                                        odb::dbRow* row,
-                                        int center_pos) const
-{
-  const odb::Point row_center = row->getBBox().center();
-  const odb::Point center = bump->getBBox().center();
-
-  switch (getRowEdge(row)) {
-    case odb::Direction2D::North:
-    case odb::Direction2D::South:
-      return odb::Point::squaredDistance(
-          odb::Point(center_pos + inst_width / 2, row_center.y()), center);
-    case odb::Direction2D::West:
-    case odb::Direction2D::East:
-      return odb::Point::squaredDistance(
-          odb::Point(row_center.x(), center_pos + inst_width / 2), center);
-  }
-
-  return std::numeric_limits<int64_t>::max();
-}
-
-void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
+void ICeWall::placePads(const std::vector<odb::dbInst*>& insts,
+                        odb::dbRow* row,
+                        const PlacementStrategy& mode)
 {
   auto* block = getBlock();
   if (block == nullptr) {
@@ -643,7 +651,6 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
 
   // Check total width
   int total_width = 0;
-  std::map<odb::dbInst*, int> inst_widths;
   for (auto* inst : insts) {
     auto* master = inst->getMaster();
     odb::Rect inst_bbox;
@@ -654,33 +661,38 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
       case odb::Direction2D::North:
       case odb::Direction2D::South:
         total_width += inst_bbox.dx();
-        inst_widths[inst] = inst_bbox.dx();
         break;
       case odb::Direction2D::West:
       case odb::Direction2D::East:
         total_width += inst_bbox.dy();
-        inst_widths[inst] = inst_bbox.dy();
         break;
     }
   }
 
   int row_width = 0;
-  int row_start = 0;
   switch (row_dir) {
     case odb::Direction2D::North:
     case odb::Direction2D::South:
       row_width = row_bbox.dx();
-      row_start = row_bbox.xMin();
       break;
     case odb::Direction2D::West:
     case odb::Direction2D::East:
       row_width = row_bbox.dy();
-      row_start = row_bbox.yMin();
       break;
   }
 
+  const double dbus = block->getDbUnitsPerMicron();
+  debugPrint(logger_,
+             utl::PAD,
+             "Place",
+             1,
+             "{}: Row width ({:.4f} um), total instance ({}) width {:.4f} um)",
+             row->getName(),
+             row_width / dbus,
+             insts.size(),
+             total_width / dbus);
+
   if (total_width > row_width) {
-    const double dbus = block->getDbUnitsPerMicron();
     logger_->error(
         utl::PAD,
         40,
@@ -712,281 +724,50 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
     }
   }
 
-  if (!iterm_connections.empty()) {
-    placePadsBumpAligned(insts,
-                         row,
-                         inst_widths,
-                         total_width,
-                         row_width,
-                         row_start,
-                         iterm_connections);
-  } else {
-    placePadsUniform(
-        insts, row, inst_widths, total_width, row_width, row_start);
+  PlacementStrategy use_mode = mode;
+  if (use_mode == PlacementStrategy::DEFAULT) {
+    if (!iterm_connections.empty()) {
+      use_mode = PlacementStrategy::BUMP_ALIGNED;
+    }
   }
+  if (use_mode == PlacementStrategy::BUMP_ALIGNED
+      && iterm_connections.empty()) {
+    logger_->warn(
+        utl::PAD, 9, "Unable to use bump_aligned mode, switching to uniform");
+    use_mode = PlacementStrategy::UNIFORM;
+  }
+
+  std::unique_ptr<PadPlacer> placer;
+  switch (use_mode) {
+    case PlacementStrategy::BUMP_ALIGNED: {
+      auto bump_placer = std::make_unique<BumpAlignedPadPlacer>(
+          logger_, block, insts, row_dir, row);
+      bump_placer->setConnections(iterm_connections);
+      placer = std::move(bump_placer);
+      break;
+    }
+    case PlacementStrategy::PLACER: {
+      auto bump_placer = std::make_unique<PlacerPadPlacer>(
+          logger_, block, insts, row_dir, row);
+      bump_placer->setConnections(iterm_connections);
+      placer = std::move(bump_placer);
+      break;
+    }
+    case PlacementStrategy::LINEAR:
+      placer = std::make_unique<UniformPadPlacer>(
+          logger_, block, insts, row_dir, row, 0);
+      break;
+    case PlacementStrategy::UNIFORM:
+    case PlacementStrategy::DEFAULT:
+      placer = std::make_unique<UniformPadPlacer>(
+          logger_, block, insts, row_dir, row);
+      break;
+  }
+
+  placer->place();
 
   logger_->info(
       utl::PAD, 41, "Placed {} pads in {}.", insts.size(), row->getName());
-}
-
-std::map<odb::dbInst*, odb::dbITerm*> ICeWall::getBumpAlignmentGroup(
-    odb::dbRow* row,
-    int offset,
-    const std::map<odb::dbInst*, int>& inst_widths,
-    const std::map<odb::dbInst*, std::set<odb::dbITerm*>>& iterm_connections,
-    const std::vector<odb::dbInst*>::const_iterator& itr,
-    const std::vector<odb::dbInst*>::const_iterator& inst_end) const
-{
-  const odb::Direction2D::Value row_dir = getRowEdge(row);
-  odb::dbInst* inst = *itr;
-
-  // build map of bump aligned pads (ie. pads connected to bumps in the same row
-  // or column)
-  std::map<odb::dbInst*, odb::dbITerm*> min_terms;
-  auto sitr = itr;
-  for (; sitr != inst_end; sitr++) {
-    odb::dbInst* check_inst = *sitr;
-
-    auto find_assignment = iterm_connections.find(check_inst);
-    if (find_assignment != iterm_connections.end()) {
-      odb::dbITerm* min_dist = *find_assignment->second.begin();
-
-      // find closest bump to the current offset in the row
-      for (auto* iterm : find_assignment->second) {
-        if (computePadBumpDistance(
-                check_inst, inst_widths.at(check_inst), min_dist, row, offset)
-            > computePadBumpDistance(
-                check_inst, inst_widths.at(check_inst), iterm, row, offset)) {
-          min_dist = iterm;
-        }
-      }
-
-      if (sitr != itr) {
-        // no longer the first pad in group, check if bumps are in same
-        // column/row
-        bool keep = true;
-        switch (row_dir) {
-          case odb::Direction2D::North:
-          case odb::Direction2D::South:
-            keep = min_terms[inst]->getBBox().xCenter()
-                   == min_dist->getBBox().xCenter();
-            break;
-          case odb::Direction2D::West:
-          case odb::Direction2D::East:
-            keep = min_terms[inst]->getBBox().yCenter()
-                   == min_dist->getBBox().yCenter();
-            break;
-        }
-
-        if (!keep) {
-          break;
-        }
-      }
-
-      min_terms[check_inst] = min_dist;
-    } else {
-      break;
-    }
-  }
-
-  if (logger_->debugCheck(utl::PAD, "Place", 1)) {
-    logger_->debug(utl::PAD, "Place", "Pad group size {}", min_terms.size());
-    for (const auto& [dinst, diterm] : min_terms) {
-      logger_->debug(
-          utl::PAD, "Place", " {} -> {}", dinst->getName(), diterm->getName());
-    }
-  }
-
-  return min_terms;
-}
-
-void ICeWall::performPadFlip(
-    odb::dbRow* row,
-    odb::dbInst* inst,
-    const std::map<odb::dbInst*, std::set<odb::dbITerm*>>& iterm_connections)
-    const
-{
-  const double dbus = getBlock()->getDbUnitsPerMicron();
-
-  // check if flipping improves wirelength
-  auto find_assignment = iterm_connections.find(inst);
-  if (find_assignment != iterm_connections.end()) {
-    const auto& pins = find_assignment->second;
-    if (pins.size() > 1) {
-      // only need to check if pad has more than one connection
-      const int64_t start_wirelength = estimateWirelengths(inst, pins);
-      const auto start_orient = inst->getOrient();
-
-      // try flipping pad
-      inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-      switch (getRowEdge(row)) {
-        case odb::Direction2D::North:
-        case odb::Direction2D::South:
-          inst->setLocationOrient(start_orient.flipY());
-          break;
-        case odb::Direction2D::West:
-        case odb::Direction2D::East:
-          inst->setLocationOrient(start_orient.flipX());
-          break;
-      }
-
-      // get new wirelength
-      const int64_t flipped_wirelength = estimateWirelengths(inst, pins);
-      const bool undo = flipped_wirelength > start_wirelength;
-
-      if (undo) {
-        // since new wirelength was longer, restore the original orientation
-        inst->setLocationOrient(start_orient);
-      }
-      debugPrint(logger_,
-                 utl::PAD,
-                 "Place",
-                 1,
-                 "Flip check for {}: non flipped wirelength {:.4f}um: "
-                 "flipped wirelength {:.4f}um: {}",
-                 inst->getName(),
-                 start_wirelength / dbus,
-                 flipped_wirelength / dbus,
-                 undo ? "undo" : "keep");
-      inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
-    }
-  }
-}
-
-void ICeWall::placePadsBumpAligned(
-    const std::vector<odb::dbInst*>& insts,
-    odb::dbRow* row,
-    const std::map<odb::dbInst*, int>& inst_widths,
-    int pads_width,
-    int row_width,
-    int row_start,
-    const std::map<odb::dbInst*, std::set<odb::dbITerm*>>& iterm_connections)
-    const
-{
-  const double dbus = getBlock()->getDbUnitsPerMicron();
-  const odb::Direction2D::Value row_dir = getRowEdge(row);
-
-  int offset = row_start;
-
-  int max_travel = row_width - pads_width;
-  // iterate over pads in order
-  for (auto itr = insts.begin(); itr != insts.end();) {
-    // get bump aligned pad group
-    const std::map<odb::dbInst*, odb::dbITerm*> min_terms
-        = getBumpAlignmentGroup(
-            row, offset, inst_widths, iterm_connections, itr, insts.end());
-
-    // build position map
-    // for pads connected to bumps, this will ensure they are centered by the
-    // bump if pad is not connected to a bump, place in the next available
-    // position
-    odb::dbInst* inst = *itr;
-    std::map<odb::dbInst*, int> inst_pos;
-    if (!min_terms.empty()) {
-      int group_center = 0;
-      switch (row_dir) {
-        case odb::Direction2D::North:
-        case odb::Direction2D::South:
-          group_center = min_terms.at(inst)->getBBox().xCenter();
-          break;
-        case odb::Direction2D::West:
-        case odb::Direction2D::East:
-          group_center = min_terms.at(inst)->getBBox().yCenter();
-          break;
-      }
-
-      // group width
-      int group_width = 0;
-      for (const auto& [ginst, giterm] : min_terms) {
-        group_width += inst_widths.at(ginst);
-      }
-
-      // build positions with bump as the center
-      int target_offset = group_center - group_width / 2;
-      for (const auto& [ginst, giterm] : min_terms) {
-        inst_pos[ginst] = target_offset;
-        target_offset += inst_widths.at(ginst);
-      }
-    } else {
-      // request next availble position
-      inst_pos[inst] = 0;
-    }
-
-    // place pads
-    for (const auto& [ginst, pos] : inst_pos) {
-      // compute next available position
-      const int select_pos
-          = offset + std::min(max_travel, std::max(pos - offset, 0));
-
-      // adjust max travel to remove the slack used by this pad
-      max_travel -= select_pos - offset;
-
-      debugPrint(logger_,
-                 utl::PAD,
-                 "Place",
-                 1,
-                 "Placing {} at {:.4f}um with a remaining spare gap {:.4f}um",
-                 inst->getName(),
-                 select_pos / dbus,
-                 max_travel / dbus);
-
-      offset = row_start;
-      offset += placeInstance(row,
-                              snapToRowSite(row, select_pos),
-                              ginst,
-                              odb::dbOrientType::R0)
-                * row->getSpacing();
-
-      performPadFlip(row, ginst, iterm_connections);
-    }
-
-    // more iterator to next unplaced pad
-    std::advance(itr, inst_pos.size());
-  }
-}
-
-void ICeWall::placePadsUniform(const std::vector<odb::dbInst*>& insts,
-                               odb::dbRow* row,
-                               const std::map<odb::dbInst*, int>& inst_widths,
-                               int pads_width,
-                               int row_width,
-                               int row_start) const
-{
-  const double dbus = getBlock()->getDbUnitsPerMicron();
-  const int target_spacing = (row_width - pads_width) / (insts.size() + 1);
-  int offset = row_start + target_spacing;
-  for (auto* inst : insts) {
-    debugPrint(logger_,
-               utl::PAD,
-               "Place",
-               1,
-               "Placing {} at {:.4f}um",
-               inst->getName(),
-               offset / dbus);
-
-    placeInstance(row, snapToRowSite(row, offset), inst, odb::dbOrientType::R0);
-    offset += inst_widths.at(inst);
-    offset += target_spacing;
-  }
-}
-
-int ICeWall::snapToRowSite(odb::dbRow* row, int location) const
-{
-  const odb::Point origin = row->getOrigin();
-
-  const double spacing = row->getSpacing();
-  int relative_location;
-  if (row->getDirection() == odb::dbRowDir::HORIZONTAL) {
-    relative_location = location - origin.x();
-  } else {
-    relative_location = location - origin.y();
-  }
-
-  int site_count = std::round(relative_location / spacing);
-  site_count = std::max(0, site_count);
-  site_count = std::min(site_count, row->getSiteCount());
-
-  return site_count;
 }
 
 odb::dbRow* ICeWall::findRow(const std::string& name) const
@@ -1020,139 +801,6 @@ odb::Direction2D::Value ICeWall::getRowEdge(odb::dbRow* row) const
   logger_->error(utl::PAD, 29, "{} is not a recognized IO row.", row_name);
 }
 
-int ICeWall::placeInstance(odb::dbRow* row,
-                           int index,
-                           odb::dbInst* inst,
-                           const odb::dbOrientType& base_orient,
-                           bool allow_overlap) const
-{
-  const int origin_offset = index * row->getSpacing();
-
-  const odb::Rect row_bbox = row->getBBox();
-
-  odb::dbTransform xform(base_orient);
-  xform.concat(row->getOrient());
-  inst->setOrient(xform.getOrient());
-  const odb::Rect inst_bbox = inst->getBBox()->getBox();
-
-  const auto row_edge = getRowEdge(row);
-
-  odb::Point index_pt;
-  switch (row_edge) {
-    case odb::Direction2D::North:
-      index_pt = odb::Point(row_bbox.xMin() + origin_offset,
-                            row_bbox.yMax() - inst_bbox.dy());
-      break;
-    case odb::Direction2D::South:
-      index_pt = odb::Point(row_bbox.xMin() + origin_offset, row_bbox.yMin());
-      break;
-    case odb::Direction2D::West:
-      index_pt = odb::Point(row_bbox.xMin(), row_bbox.yMin() + origin_offset);
-      break;
-    case odb::Direction2D::East:
-      index_pt = odb::Point(row_bbox.xMax() - inst_bbox.dx(),
-                            row_bbox.yMin() + origin_offset);
-      break;
-  }
-
-  inst->setLocation(index_pt.x(), index_pt.y());
-  const odb::Rect inst_rect = inst->getBBox()->getBox();
-  auto* block = getBlock();
-  const double dbus = block->getDbUnitsPerMicron();
-
-  // Check if its in the row
-  bool outofrow = false;
-  switch (row_edge) {
-    case odb::Direction2D::North:
-    case odb::Direction2D::South:
-      if (row_bbox.xMin() > inst_rect.xMin()
-          || row_bbox.xMax() < inst_rect.xMax()) {
-        if (!allow_overlap) {
-          outofrow = true;
-        }
-      }
-      break;
-    case odb::Direction2D::West:
-    case odb::Direction2D::East:
-      if (row_bbox.yMin() > inst_rect.yMin()
-          || row_bbox.yMax() < inst_rect.yMax()) {
-        if (!allow_overlap) {
-          outofrow = true;
-        }
-      }
-      break;
-  }
-  if (outofrow) {
-    logger_->error(utl::PAD,
-                   119,
-                   "Unable to place {} ({}) at ({:.3f}um, {:.3f}um) - "
-                   "({:.3f}um, {:.3f}um) as it is not inside the row {} "
-                   "({:.3f}um, {:.3f}um) - "
-                   "({:.3f}um, {:.3f}um)",
-                   inst->getName(),
-                   inst->getMaster()->getName(),
-                   inst_rect.xMin() / dbus,
-                   inst_rect.yMin() / dbus,
-                   inst_rect.xMax() / dbus,
-                   inst_rect.yMax() / dbus,
-                   row->getName(),
-                   row_bbox.xMin() / dbus,
-                   row_bbox.yMin() / dbus,
-                   row_bbox.xMax() / dbus,
-                   row_bbox.yMax() / dbus);
-  }
-
-  // check for overlaps with other instances
-  for (auto* check_inst : block->getInsts()) {
-    if (check_inst == inst) {
-      continue;
-    }
-    if (!check_inst->isFixed()) {
-      continue;
-    }
-    if (check_inst->getMaster()->isCover()) {
-      continue;
-    }
-    const odb::Rect check_rect = check_inst->getBBox()->getBox();
-    if (!allow_overlap && inst_rect.overlaps(check_rect)) {
-      logger_->error(utl::PAD,
-                     1,
-                     "Unable to place {} ({}) at ({:.3f}um, {:.3f}um) - "
-                     "({:.3f}um, {:.3f}um) as it "
-                     "overlaps with {} ({}) at ({:.3f}um, {:.3f}um) - "
-                     "({:.3f}um, {:.3f}um)",
-                     inst->getName(),
-                     inst->getMaster()->getName(),
-                     inst_rect.xMin() / dbus,
-                     inst_rect.yMin() / dbus,
-                     inst_rect.xMax() / dbus,
-                     inst_rect.yMax() / dbus,
-                     check_inst->getName(),
-                     check_inst->getMaster()->getName(),
-                     check_rect.xMin() / dbus,
-                     check_rect.yMin() / dbus,
-                     check_rect.xMax() / dbus,
-                     check_rect.yMax() / dbus);
-    }
-  }
-  inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
-
-  int next_pos = index;
-  switch (row_edge) {
-    case odb::Direction2D::North:
-    case odb::Direction2D::South:
-      next_pos += static_cast<int>(
-          std::ceil(static_cast<double>(inst_bbox.dx()) / row->getSpacing()));
-      break;
-    case odb::Direction2D::West:
-    case odb::Direction2D::East:
-      next_pos += static_cast<int>(
-          std::ceil(static_cast<double>(inst_bbox.dy()) / row->getSpacing()));
-      break;
-  }
-  return next_pos;
-}
-
 void ICeWall::placeFiller(
     const std::vector<odb::dbMaster*>& masters,
     odb::dbRow* row,
@@ -1172,6 +820,8 @@ void ICeWall::placeFiller(
       || getRowEdge(row) == odb::Direction2D::East) {
     use_height = true;
   }
+
+  SingleInstPadPlacer placer(logger_, block, getRowEdge(row), row);
 
   const odb::dbTransform row_xform(row->getOrient());
 
@@ -1238,6 +888,7 @@ void ICeWall::placeFiller(
 
   row_interval -= placed_io;
 
+  const int row_start = placer.getRowStart();
   const int site_width
       = std::min(row->getSite()->getWidth(), row->getSite()->getHeight());
   int fill_group = 0;
@@ -1254,7 +905,7 @@ void ICeWall::placeFiller(
                      it->upper() / dbus);
     }
     int sites = width / site_width;
-    const int start_site_index = snapToRowSite(row, start);
+    const int start_site_index = placer.snapToRowSite(start);
 
     debugPrint(logger_,
                utl::PAD,
@@ -1303,11 +954,11 @@ void ICeWall::placeFiller(
             "{}{}_{}_{}", kFillPrefix, row->getName(), fill_group, site_offset);
         auto* fill_inst = odb::dbInst::create(block, filler, name.c_str());
 
-        placeInstance(row,
-                      start_site_index + site_offset,
-                      fill_inst,
-                      odb::dbOrientType::R0,
-                      allow_overlap);
+        placer.place(
+            fill_inst,
+            row_start + (site_width * (start_site_index + site_offset)),
+            odb::dbOrientType::R0,
+            allow_overlap);
 
         site_offset += fill_width;
         sites -= fill_width;

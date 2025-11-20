@@ -35,6 +35,10 @@
 #include <unistd.h>
 #endif /* not WIN32 */
 #include "defiAlias.hpp"
+#include "defiComponent.hpp"
+#include "defiDefs.hpp"
+#include "defiKRDefs.hpp"
+#include "defiNet.hpp"
 #include "defrReader.hpp"
 
 char defaultName[64];

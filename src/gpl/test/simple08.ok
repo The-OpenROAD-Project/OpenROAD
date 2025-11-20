@@ -8,10 +8,12 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO ODB-0131]     Created 32 components and 116 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 114 connections.
 [INFO ODB-0133]     Created 2 nets and 2 connections.
+[INFO GPL-0157] Setting target overflow to 0.2
 [INFO GPL-0005] Execute conjugate gradient initial placement.
 [INFO GPL-0002] DBU: 1000
 [INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
 [INFO GPL-0004] CoreBBox: (  5.520 10.880 ) ( 28.520 43.520 ) um
+[INFO GPL-0032] Initializing region: Top-level
 [INFO GPL-0006] Number of instances:                32
 [INFO GPL-0007] Movable instances:                   1
 [INFO GPL-0008] Fixed instances:                    31
@@ -21,6 +23,8 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 34.165 54.885 ) um
 [INFO GPL-0013] Core BBox: (  5.520 10.880 ) ( 28.520 43.520 ) um
 [INFO GPL-0016] Core area:                     750.720 um^2
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                   750.720 um^2
 [INFO GPL-0017] Fixed instances area:           98.845 um^2
 [INFO GPL-0018] Movable instances area:          3.754 um^2
 [INFO GPL-0019] Utilization:                     0.576 %
@@ -31,6 +35,7 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 92385
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000008 HPWL: 92385
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 92385
+[INFO GPL-0033] Initializing Nesterov region: Top-level
 [INFO GPL-0023] Placement target density:       0.7500
 [INFO GPL-0024] Movable insts average area:      3.754 um^2
 [INFO GPL-0025] Ideal bin area:                  5.005 um^2

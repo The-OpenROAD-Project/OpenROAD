@@ -9,6 +9,12 @@ A set of ORFS integration tests that runs in a few minutes suitable for inclusio
 1. Run `bazelisk run //test/orfs/gcd:gcd_update` to update RULES_JSON file for a design. This will build and run OpenROAD to generate a new RULES_JSON file and update the RULES_JSON source file.
 2. Create commit for RULES_JSON file
 
+## Updating all RULES_JSON files
+
+Oneliner that runs tests, which builds all prerequisites in parallel, then update all the rules:
+
+    bazelisk test test/orfs/... && bazelisk query test/orfs/... | grep _update\$ | xargs -n1 bazelisk run
+
 ## Updating ORFS and bazel-orfs
 
 `bazelisk run @bazel-orfs//:bump`, will find the latest bazel-orfs and ORFS docker image and update MODULE.bazel and MODULE.bazel.lock.

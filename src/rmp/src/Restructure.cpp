@@ -29,6 +29,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
@@ -647,7 +648,8 @@ bool Restructure::readAbcLog(std::string abc_file_name,
     logger_->error(RMP, 2, "cannot open file {}", abc_file_name);
     return false;
   }
-  logger_->report("Reading ABC log {}.", abc_file_name);
+  debugPrint(
+      logger_, utl::RMP, "remap", 1, "Reading ABC log {}.", abc_file_name);
   std::string buf;
   const char delimiter = ' ';
   bool status = true;
