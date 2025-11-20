@@ -499,7 +499,7 @@ struct BundledNet
     this->weight = weight;
   }
 
-  bool operator==(const BundledNet& net)
+  bool operator==(const BundledNet& net) const
   {
     return (terminals.first == net.terminals.first)
            && (terminals.second == net.terminals.second);

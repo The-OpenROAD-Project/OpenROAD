@@ -637,7 +637,7 @@ LibertyCell* BaseMove::upsizeCell(LibertyPort* in_port,
     const char* in_port_name = in_port->name();
     const char* drvr_port_name = drvr_port->name();
     sort(swappable_cells,
-         [=](const LibertyCell* cell1, const LibertyCell* cell2) {
+         [=, this](const LibertyCell* cell1, const LibertyCell* cell2) {
            LibertyPort* port1
                = cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
            LibertyPort* port2

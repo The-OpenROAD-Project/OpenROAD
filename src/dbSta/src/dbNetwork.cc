@@ -2313,7 +2313,7 @@ void dbNetwork::makeTopCell()
   for (dbBTerm* bterm : block_->getBTerms()) {
     makeTopPort(bterm);
   }
-  groupBusPorts(top_cell_, [=](const char* port_name) {
+  groupBusPorts(top_cell_, [=, this](const char* port_name) {
     return portMsbFirst(port_name, design_name);
   });
 
