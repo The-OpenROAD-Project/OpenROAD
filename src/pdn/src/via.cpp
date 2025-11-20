@@ -3025,6 +3025,48 @@ void Via::writeToDb(odb::dbSWire* wire,
   ripup_shapes.insert(ripup_vias_middle.begin(), ripup_vias_middle.end());
 
   if (!ripup_shapes.empty()) {
+    // Check if via stack continuity will be broken
+
+    // Collect remaining shapes
+    std::set<odb::dbTechLayer*> layers;
+    for (const auto& viashapes : {shapes.bottom, shapes.middle, shapes.top}) {
+      for (const auto& [rect, box] : viashapes) {
+        if (ripup_shapes.find(box) == ripup_shapes.end()) {
+          if (box->isVia()) {
+            if (auto* via = box->getBlockVia()) {
+              for (auto* viabox : via->getBoxes()) {
+                layers.insert(viabox->getTechLayer());
+              }
+            } else if (auto* via = box->getTechVia()) {
+              for (auto* viabox : via->getBoxes()) {
+                layers.insert(viabox->getTechLayer());
+              }
+            }
+          } else {
+            layers.insert(box->getTechLayer());
+          }
+        }
+      }
+    }
+
+    bool broken = false;
+    for (auto* layer : connect_->getAllLayers()) {
+      if (layers.find(layer) == layers.end()) {
+        // stack is broken
+        broken = true;
+      }
+    }
+
+    if (broken) {
+      for (const auto& viashapes : {shapes.bottom, shapes.middle, shapes.top}) {
+        for (const auto& [rect, box] : viashapes) {
+          ripup_shapes.insert(box);
+        }
+      }
+    }
+  }
+
+  if (!ripup_shapes.empty()) {
     const TechLayer tech_layer(lower_->getLayer());
     int x = 0;
     int y = 0;
