@@ -1078,10 +1078,10 @@ void TritonCTS::findLongEdges(
   int dx = block_->getDieAreaPolygon().dx();
   int dy = block_->getDieAreaPolygon().dy();
 
-  int64_t threashold = std::max(dx, dy) / 5;
+  int64_t threshold = std::max(dx, dy) / 5;
   // TODO : Make it a debug print
   debugPrint(
-      logger_, CTS, "clock gate cloning", 1, "Treashold = {}", threashold);
+      logger_, CTS, "clock gate cloning", 1, "Threshold = {}", threshold);
   std::map<int, int> iterm2cluster;
   std::vector<std::vector<int>> clusters;
   odb::dbNet* icgNet = point2pin[driverPt][0]->getNet();
@@ -1110,7 +1110,7 @@ void TritonCTS::findLongEdges(
     } else if (neighborPt == driverPt) {
       driverNId = b;
     }
-    if (dist >= threashold) {
+    if (dist >= threshold) {
       if (clusterFrom == -1) {
         int newClusterID = clusters.size();
         iterm2cluster[b] = newClusterID;
