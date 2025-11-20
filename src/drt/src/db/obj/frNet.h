@@ -4,6 +4,7 @@
 #pragma once
 
 #include <algorithm>
+#include <atomic>
 #include <list>
 #include <memory>
 #include <utility>
@@ -253,7 +254,7 @@ class frNet : public frBlockObject
   std::vector<std::unique_ptr<frGuide>> guides_;
   std::vector<frRect> orig_guides_;
   odb::dbSigType type_{odb::dbSigType::SIGNAL};
-  bool modified_{false};
+  std::atomic<bool> modified_{false};
   bool isFakeNet_{false};  // indicate floating PG nets
   frNonDefaultRule* ndr_{nullptr};
   int absPriorityLvl_{0};  // absolute priority level: will be checked in net
