@@ -2,6 +2,8 @@ from fastmcp import FastMCP
 import openroad.odb as odb
 from openroad import Tech, Design
 import os
+import sys
+import tempfile
 from typing import Literal
 
 # Create an MCP server
@@ -20,7 +22,32 @@ tech = Tech()
 design = Design(tech)
 
 def eval_tcl(command):
-  return design.evalTclString(command)
+  # Create a temporary file to capture stdout
+  with tempfile.TemporaryFile(mode='w+') as tmp:
+      # Flush stdout to ensure order
+      sys.stdout.flush()
+      
+      # Save original stdout
+      original_stdout_fd = os.dup(1)
+      
+      try:
+          # Redirect stdout to the temporary file
+          os.dup2(tmp.fileno(), 1)
+          
+          # Run the command
+          tcl_result = design.evalTclString(command)
+      finally:
+          # Restore stdout
+          os.dup2(original_stdout_fd, 1)
+          os.close(original_stdout_fd)
+          
+      # Read the captured output
+      tmp.seek(0)
+      stdout_output = tmp.read()
+      
+  if stdout_output:
+      return stdout_output
+  return tcl_result
 
 @mcp.tool
 def source(filename: str) -> str:
@@ -210,6 +237,21 @@ def get_cells(
     """
 
     return eval_tcl(tcl_command)
+
+@mcp.tool
+def reset() -> str:
+  """
+  Resets OpenROAD dropping the database.
+  WARNING: You will need to start from the begining loading all the libraries and designs again.
+  Use this command if you need to change something and OpenROAD does not allow you to do it after loading a design like re-defining corners.
+  """
+  tcl_command """
+  set db [::ord::get_db]
+  $db clear
+  dbDatabase_destroy $db
+  set db [dbDatabase_create]
+  """
+  return eval_tcl(tcl_command)
 
 
 # Timing tools
