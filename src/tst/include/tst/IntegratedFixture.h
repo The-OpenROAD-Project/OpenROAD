@@ -36,7 +36,7 @@ class IntegratedFixture : public tst::Fixture
 
  protected:
   odb::dbLib* lib_;
-  odb::dbBlock* block_;
+  odb::dbBlock* block_{nullptr};
   sta::dbNetwork* db_network_;
 
   stt::SteinerTreeBuilder stt_;
