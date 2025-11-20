@@ -446,11 +446,11 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   EXPECT_EQ(sort_lines(content_4), sort_lines(expected_verilog_4));
 
   // Clean up
-  std::filesystem::remove(verilog_file_0);
-  std::filesystem::remove(verilog_file_1);
-  std::filesystem::remove(verilog_file_2);
-  std::filesystem::remove(verilog_file_3);
-  std::filesystem::remove(verilog_file_4);
+  removeFile(verilog_file_0);
+  removeFile(verilog_file_1);
+  removeFile(verilog_file_2);
+  removeFile(verilog_file_3);
+  removeFile(verilog_file_4);
 }
 
 TEST_F(TestInsertBuffer, AfterDriver_Case1)
@@ -640,8 +640,8 @@ TEST_F(TestInsertBuffer, AfterDriver_Case1)
   EXPECT_EQ(sort_lines(content_1), sort_lines(expected_verilog_1));
 
   // Clean up
-  std::filesystem::remove(verilog_file_0);
-  std::filesystem::remove(verilog_file_1);
+  removeFile(verilog_file_0);
+  removeFile(verilog_file_1);
 }
 
 TEST_F(TestInsertBuffer, AfterDriver_Case2)
@@ -812,8 +812,8 @@ TEST_F(TestInsertBuffer, AfterDriver_Case2)
   EXPECT_EQ(sort_lines(content_1), sort_lines(expected_verilog_1));
 
   // Clean up
-  std::filesystem::remove(verilog_file_0);
-  std::filesystem::remove(verilog_file_1);
+  removeFile(verilog_file_0);
+  removeFile(verilog_file_1);
 }
 
 }  // namespace odb
