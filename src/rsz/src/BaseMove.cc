@@ -637,7 +637,7 @@ LibertyCell* BaseMove::upsizeCell(LibertyPort* in_port,
     const char* in_port_name = in_port->name();
     const char* drvr_port_name = drvr_port->name();
     sort(swappable_cells,
-         [=](const LibertyCell* cell1, const LibertyCell* cell2) {
+         [=, this](const LibertyCell* cell1, const LibertyCell* cell2) {
            LibertyPort* port1
                = cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
            LibertyPort* port2
@@ -762,7 +762,7 @@ vector<const LibertyPort*> BaseMove::getOutputPorts(const LibertyCell* cell)
   sta::LibertyCellPortIterator port_iter(cell);
   while (port_iter.hasNext()) {
     const LibertyPort* port = port_iter.next();
-    if (port->direction()->isOutput()) {
+    if (!port->isPwrGnd() && port->direction()->isOutput()) {
       fanouts.push_back(port);
     }
   }

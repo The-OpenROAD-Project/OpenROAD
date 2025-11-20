@@ -29,8 +29,9 @@
 #include "dbModuleModNetITermItr.h"
 #include "dbModuleModNetModBTermItr.h"
 #include "dbModuleModNetModITermItr.h"
-#include "dbUtil.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbSet.h"
+#include "odb/dbUtil.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -521,6 +522,94 @@ void dbModNet::checkSanity() const
   dbUtil::findModITermDrivers(this, drvr_info_list);
 
   dbUtil::checkNetSanity(this, drvr_info_list);
+}
+
+void dbModNet::mergeModNet(dbModNet* in_modnet)
+{
+  _dbModNet* net = (_dbModNet*) this;
+  _dbBlock* block = (_dbBlock*) net->getOwner();
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbModNetPreMerge(this, in_modnet);
+  }
+
+  // 1. Connect all terminals of in_modnet to this modnet.
+  // - Create vectors for safe iteration, as connect() can invalidate iterators.
+  auto iterms_set = in_modnet->getITerms();
+  std::vector<dbITerm*> iterms(iterms_set.begin(), iterms_set.end());
+  for (dbITerm* iterm : iterms) {
+    iterm->connect(this);
+  }
+
+  auto bterms_set = in_modnet->getBTerms();
+  std::vector<dbBTerm*> bterms(bterms_set.begin(), bterms_set.end());
+  for (dbBTerm* bterm : bterms) {
+    bterm->connect(this);
+  }
+
+  auto moditerms_set = in_modnet->getModITerms();
+  std::vector<dbModITerm*> moditerms(moditerms_set.begin(),
+                                     moditerms_set.end());
+  for (dbModITerm* moditerm : moditerms) {
+    moditerm->connect(this);
+  }
+
+  auto modbterms_set = in_modnet->getModBTerms();
+  std::vector<dbModBTerm*> modbterms(modbterms_set.begin(),
+                                     modbterms_set.end());
+  for (dbModBTerm* modbterm : modbterms) {
+    modbterm->connect(this);
+  }
+
+  // 2. Destroy in_modnet
+  destroy(in_modnet);
+}
+
+void dbModNet::connectTermsOf(dbNet* in_net)
+{
+  _dbModNet* net = (_dbModNet*) this;
+  _dbBlock* block = (_dbBlock*) net->getOwner();
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbModNetPreConnectTermsOf(this, in_net);
+  }
+
+  // Create vectors for safe iteration, as connect() can invalidate iterators.
+  auto iterms_set = in_net->getITerms();
+  std::vector<dbITerm*> iterms(iterms_set.begin(), iterms_set.end());
+  dbModule* modnet_parent = getParent();
+  for (dbITerm* iterm : iterms) {
+    // Only connect terminals that are in the same module as the modnet
+    if (iterm->getInst()->getModule() == modnet_parent) {
+      iterm->connect(this);
+    }
+  }
+
+  auto bterms_set = in_net->getBTerms();
+  std::vector<dbBTerm*> bterms(bterms_set.begin(), bterms_set.end());
+  for (dbBTerm* bterm : bterms) {
+    // Only connect terminals that are in the same module as the modnet
+    // BTerms are considered to be in the top module of the block.
+    if (bterm->getBlock()->getTopModule() == modnet_parent) {
+      bterm->connect(this);
+    }
+  }
+}
+
+bool dbModNet::isConnected(const dbNet* other) const
+{
+  dbNet* net = findRelatedNet();
+  return (net == other);
+}
+
+bool dbModNet::isConnected(const dbModNet* other) const
+{
+  if (other == nullptr) {
+    return false;
+  }
+  dbNet* net = findRelatedNet();
+  dbNet* other_net = other->findRelatedNet();
+  return (net == other_net);
 }
 
 // User Code End dbModNetPublicMethods

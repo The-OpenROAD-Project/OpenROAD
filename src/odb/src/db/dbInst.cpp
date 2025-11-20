@@ -812,7 +812,7 @@ dbScanInst* dbInst::getScanInst() const
   return (dbScanInst*) scan_inst;
 }
 
-dbSet<dbITerm> dbInst::getITerms()
+dbSet<dbITerm> dbInst::getITerms() const
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
