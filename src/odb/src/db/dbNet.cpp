@@ -314,8 +314,8 @@ dbModule* findLCA(dbModule* m1, dbModule* m2)
 
 Point computeCentroid(const std::set<dbObject*>& pins)
 {
-  long long sum_x = 0;
-  long long sum_y = 0;
+  uint64_t sum_x = 0;
+  uint64_t sum_y = 0;
   int count = 0;
 
   for (dbObject* term_obj : pins) {
@@ -3399,6 +3399,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
   if (load_pins.empty() || buffer_master == nullptr) {
     return nullptr;
   }
+
   dbBlock* block = getBlock();
   if (block == nullptr) {
     return nullptr;
@@ -3510,12 +3511,42 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
   dbNet* new_flat_net
       = dbNet::create(block, new_net_name.c_str(), uniquify, target_module);
 
-  // Create MOD net for logical connection in the target module
-  dbModNet* new_mod_net = dbModNet::create(target_module, new_net_name.c_str());
-
   // Propagate NDR if exists
   if (dbTechNonDefaultRule* rule = getNonDefaultRule()) {
     new_flat_net->setNonDefaultRule(rule);
+  }
+
+  // Check if we need a dbModNet (Logical Net)
+  // dbModNet is required only if:
+  // 1. Any load is a BTerm and buffer hierarchy is not top.
+  // 2. Any load is an ITerm in a different hierarchy (Requires Port Punching,
+  // resulting in dbModITerm connection).
+  bool needs_mod_net = false;
+  for (dbObject* load_obj : load_pins) {
+    if (load_obj->getObjectType() == dbBTermObj
+        && target_module != block->getTopModule()) {
+      // A BTerm load requires a ModNet if the buffer is not at the top
+      // level.
+      needs_mod_net = true;
+      break;
+    }
+
+    if (load_obj->getObjectType() == dbITermObj) {
+      dbITerm* load = static_cast<dbITerm*>(load_obj);
+      // If load module is different from buffer module, hierarchy crossing
+      // occurs.
+      if (load->getInst()->getModule() != target_module) {
+        needs_mod_net = true;
+        break;
+      }
+    }
+  }
+
+  dbModNet* new_mod_net = nullptr;
+  if (needs_mod_net) {
+    // Create MOD net for logical connection in the target module only when
+    // necessary
+    new_mod_net = dbModNet::create(target_module, new_net_name.c_str());
   }
 
   // 4. Rewire Connections
@@ -3538,7 +3569,9 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
 
   // 4.2 Connect Buffer Output to the New Net (Flat & Hier)
   buf_output_iterm->connect(new_flat_net);
-  buf_output_iterm->connect(new_mod_net);
+  if (new_mod_net) {
+    buf_output_iterm->connect(new_mod_net);
+  }
 
   // 4.3 Move Target Loads to the New Net
   for (dbObject* load_obj : load_pins) {
@@ -3547,19 +3580,29 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
       load->disconnect();
       load->connect(new_flat_net);
 
+      // 4.4 Port Punching (Hierarchical Connection)
+      // If the load is in a deeper hierarchy than the buffer (target_module),
+      // we create hierarchical pins/nets to maintain logical consistency.
       dbModITerm* top_mod_iterm = nullptr;
       createHierarchicalConnection(load, target_module, top_mod_iterm);
 
-      if (top_mod_iterm) {
-        top_mod_iterm->connect(new_mod_net);
-      } else {
-        load->connect(new_mod_net);
+      if (new_mod_net) {
+        if (top_mod_iterm) {
+          // Connect the top-most hierarchical pin to the buffer's output ModNet
+          top_mod_iterm->connect(new_mod_net);
+        } else {
+          // Load is in the same module as buffer, connect to ModNet if it
+          // exists
+          load->connect(new_mod_net);
+        }
       }
     } else {  // It has to be a BTerm due to previous check.
       dbBTerm* load = static_cast<dbBTerm*>(load_obj);
       load->disconnect();
       load->connect(new_flat_net);
-      load->connect(new_mod_net);
+      if (new_mod_net) {
+        load->connect(new_mod_net);
+      }
     }
   }
 
