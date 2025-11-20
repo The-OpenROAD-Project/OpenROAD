@@ -1078,7 +1078,7 @@ void TritonCTS::findLongEdges(
   int dx = block_->getDieAreaPolygon().dx();
   int dy = block_->getDieAreaPolygon().dy();
 
-  int64_t threshold = std::max(dx, dy) / 5;
+  int threshold = std::max(dx, dy) / 5;
   // TODO : Make it a debug print
   debugPrint(
       logger_, CTS, "clock gate cloning", 1, "Threshold = {}", threshold);
