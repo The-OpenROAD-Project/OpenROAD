@@ -864,7 +864,7 @@ vector<const LibertyPort*> BaseMove::getOutputPorts(const LibertyCell* cell)
   sta::LibertyCellPortIterator port_iter(cell);
   while (port_iter.hasNext()) {
     const LibertyPort* port = port_iter.next();
-    if (port->direction()->isOutput()) {
+    if (!port->isPwrGnd() && port->direction()->isOutput()) {
       fanouts.push_back(port);
     }
   }

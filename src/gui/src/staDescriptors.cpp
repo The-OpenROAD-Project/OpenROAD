@@ -301,9 +301,14 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
 
   std::array<SelectionSet, 8> ports;
   sta::LibertyCellPortIterator port_iter(cell);
+  SelectionSet pg_ports;
   while (port_iter.hasNext()) {
     auto port = port_iter.next();
-    ports[port->direction()->index()].insert(gui->makeSelected(port));
+    if (port->isPwrGnd()) {
+      pg_ports.insert(gui->makeSelected(port));
+    } else {
+      ports[port->direction()->index()].insert(gui->makeSelected(port));
+    }
   }
   for (auto dir : {sta::PortDirection::input(),
                    sta::PortDirection::output(),
@@ -321,11 +326,6 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
     }
   }
 
-  SelectionSet pg_ports;
-  sta::LibertyCellPgPortIterator pg_port_iter(cell);
-  while (pg_port_iter.hasNext()) {
-    pg_ports.insert(gui->makeSelected(pg_port_iter.next()));
-  }
   props.push_back({"PG Ports", pg_ports});
 
   SelectionSet insts;
@@ -476,9 +476,12 @@ Descriptor::Properties LibertyPortDescriptor::getProperties(
   std::any ground_pin;
   const char* power_pin_name = port->relatedPowerPin();
   const char* ground_pin_name = port->relatedGroundPin();
-  sta::LibertyCellPgPortIterator pg_port_iter(port->libertyCell());
+  sta::LibertyCellPortIterator pg_port_iter(port->libertyCell());
   while (pg_port_iter.hasNext()) {
     auto* pg_port = pg_port_iter.next();
+    if (!pg_port->isPwrGnd()) {
+      continue;
+    }
     if (power_pin_name != nullptr
         && strcmp(pg_port->name(), power_pin_name) == 0) {
       power_pin = gui->makeSelected(pg_port);
@@ -540,132 +543,6 @@ void LibertyPortDescriptor::visitAllObjects(
 }
 
 //////////////////////////////////////////////////
-
-static const char* typeNameStr(sta::LibertyPgPort::PgType type)
-{
-  switch (type) {
-    case sta::LibertyPgPort::unknown:
-      return "unknown";
-    case sta::LibertyPgPort::primary_power:
-      return "primary_power";
-    case sta::LibertyPgPort::primary_ground:
-      return "primary_ground";
-    case sta::LibertyPgPort::backup_power:
-      return "backup_power";
-    case sta::LibertyPgPort::backup_ground:
-      return "backup_ground";
-    case sta::LibertyPgPort::internal_power:
-      return "internal_power";
-    case sta::LibertyPgPort::internal_ground:
-      return "internal_ground";
-    case sta::LibertyPgPort::nwell:
-      return "nwell";
-    case sta::LibertyPgPort::pwell:
-      return "pwell";
-    case sta::LibertyPgPort::deepnwell:
-      return "deepnwell";
-    case sta::LibertyPgPort::deeppwell:
-      return "deeppwell";
-  }
-  return "<unexpected>";
-}
-
-LibertyPgPortDescriptor::LibertyPgPortDescriptor(sta::dbSta* sta) : sta_(sta)
-{
-}
-
-std::string LibertyPgPortDescriptor::getName(const std::any& object) const
-{
-  return std::any_cast<sta::LibertyPgPort*>(object)->name();
-}
-
-std::string LibertyPgPortDescriptor::getTypeName() const
-{
-  return "Liberty PG port";
-}
-
-bool LibertyPgPortDescriptor::getBBox(const std::any& object,
-                                      odb::Rect& bbox) const
-{
-  return false;
-}
-
-void LibertyPgPortDescriptor::highlight(const std::any& object,
-                                        Painter& painter) const
-{
-  odb::dbMTerm* mterm = getMTerm(object);
-
-  if (mterm != nullptr) {
-    auto* mterm_desc = Gui::get()->getDescriptor<odb::dbMTerm*>();
-    mterm_desc->highlight(mterm, painter);
-  }
-}
-
-Descriptor::Properties LibertyPgPortDescriptor::getProperties(
-    const std::any& object) const
-{
-  auto port = std::any_cast<sta::LibertyPgPort*>(object);
-
-  auto gui = Gui::get();
-
-  Properties props;
-  props.push_back({"Cell", gui->makeSelected(port->cell())});
-  props.push_back({"Type", typeNameStr(port->pgType())});
-  props.push_back({"Voltage name", port->voltageName()});
-
-  odb::dbMTerm* mterm = getMTerm(object);
-  if (mterm != nullptr) {
-    props.push_back({"Terminal", gui->makeSelected(mterm)});
-  }
-
-  return props;
-}
-
-Selected LibertyPgPortDescriptor::makeSelected(const std::any& object) const
-{
-  if (auto port = std::any_cast<sta::LibertyPgPort*>(&object)) {
-    return Selected(*port, this);
-  }
-  return Selected();
-}
-
-bool LibertyPgPortDescriptor::lessThan(const std::any& l,
-                                       const std::any& r) const
-{
-  auto l_port = std::any_cast<sta::LibertyPgPort*>(l);
-  auto r_port = std::any_cast<sta::LibertyPgPort*>(r);
-  return strcmp(l_port->name(), r_port->name()) < 0;
-}
-
-void LibertyPgPortDescriptor::visitAllObjects(
-    const std::function<void(const Selected&)>& func) const
-{
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  std::unique_ptr<sta::LibertyLibraryIterator> lib_iter{
-      network->libertyLibraryIterator()};
-
-  while (lib_iter->hasNext()) {
-    sta::LibertyLibrary* library = lib_iter->next();
-    sta::LibertyCellIterator cell_iter(library);
-    while (cell_iter.hasNext()) {
-      sta::LibertyCell* cell = cell_iter.next();
-      sta::LibertyCellPgPortIterator port_iter(cell);
-      while (port_iter.hasNext()) {
-        sta::LibertyPgPort* port = port_iter.next();
-        func({port, this});
-      }
-    }
-  }
-}
-
-odb::dbMTerm* LibertyPgPortDescriptor::getMTerm(const std::any& object) const
-{
-  auto port = std::any_cast<sta::LibertyPgPort*>(object);
-  odb::dbMaster* master = sta_->getDbNetwork()->staToDb(port->cell());
-  odb::dbMTerm* mterm = master->findMTerm(port->name());
-
-  return mterm;
-}
 
 CornerDescriptor::CornerDescriptor(sta::dbSta* sta) : sta_(sta)
 {

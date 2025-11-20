@@ -589,7 +589,7 @@ bool RepairDesign::getLargestSizeCin(const Pin* drvr_pin, float& cin)
       int nports = 0;
       while (port_iter.hasNext()) {
         const LibertyPort* port = port_iter.next();
-        if (port->direction() == PortDirection::input()) {
+        if (!port->isPwrGnd() && port->direction() == PortDirection::input()) {
           size_cin += port->capacitance();
           nports++;
         }
@@ -618,7 +618,7 @@ bool RepairDesign::getCin(const Pin* drvr_pin, float& cin)
     int nports = 0;
     while (port_iter.hasNext()) {
       const LibertyPort* port = port_iter.next();
-      if (port->direction() == PortDirection::input()) {
+      if (!port->isPwrGnd() && port->direction() == PortDirection::input()) {
         cin += port->capacitance();
         nports++;
       }
