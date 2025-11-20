@@ -281,7 +281,7 @@ class FastRouteCore
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
-  void updateSlacks(float percentage = 0.8);
+  void updateSlacks(float percentage = 1);
   void preProcessTechLayers();
   odb::dbTechLayer* getTechLayer(int layer, bool is_via);
 
@@ -610,10 +610,11 @@ class FastRouteCore
   int x_range_;
   int y_range_;
 
-  bool estimate_parasitics_ = false;
+  bool en_estimate_parasitics_ = false;
   bool resistance_aware_ = false;
   bool enable_resistance_aware_ = false;
   bool is_3d_step_ = false;
+  bool is_second_stage_ = false;
   int num_adjust_;
   int v_capacity_;
   int h_capacity_;

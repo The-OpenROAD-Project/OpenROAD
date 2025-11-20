@@ -106,12 +106,14 @@ static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
   // Sorting by ndr_priority, resistance aware, slack, length_per_pin, minX, and
   // treeIndex
   return std::tie(a.ndr_priority,
+                  a.clock,
                   a.res_aware,
                   a.slack,
                   a.length_per_pin,
                   a.minX,
                   a.treeIndex)
          < std::tie(b.ndr_priority,
+                    b.clock,
                     b.res_aware,
                     b.slack,
                     b.length_per_pin,
@@ -146,10 +148,17 @@ void FastRouteCore::netpinOrderInc()
                       ? nets_[netID]->getSlack()
                       : 0;
 
-    int res_aware = nets_[netID]->isResAware() ? 0 : 1;
+    const int res_aware = (is_second_stage_) ? nets_[netID]->isResAware()
+                                             : !nets_[netID]->isResAware();
+    const int is_clock = nets_[netID]->isClock() ? 0 : 1;
 
-    tree_order_pv_.push_back(
-        {netID, xmin, length_per_pin, ndr_priority, res_aware, slack});
+    tree_order_pv_.push_back({netID,
+                              xmin,
+                              length_per_pin,
+                              ndr_priority,
+                              res_aware,
+                              slack,
+                              is_clock});
   }
 
   std::stable_sort(
@@ -508,15 +517,18 @@ void FastRouteCore::updateSlacks(float percentage)
   }
 
   std::vector<std::pair<int, float>> res_aware_list;
-  // TODO: need to check this positive slack threshold
-  // const double pos_threshold = 500e-12;
+  float max_slack = -1;
 
-  if (estimate_parasitics_) {
+  if (en_estimate_parasitics_) {
     callback_handler_->triggerOnEstimateParasiticsRequired();
   }
 
   for (const int net_id : net_ids_) {
     FrNet* net = nets_[net_id];
+
+    const float slack = getNetSlack(net->getDbNet());
+    net->setSlack(slack);
+    net->setIsResAware(false);
 
     if (net->getDbNet()->getName() == "clk") {
       resistance_aware_ = true;
@@ -569,22 +581,20 @@ void FastRouteCore::updateSlacks(float percentage)
             via_ratio);
       }
       resistance_aware_ = false;
+      logger_->report("xx Net {} - Slack: {}", net->getName(), slack);
     }
 
-    const float slack = getNetSlack(net->getDbNet());
-    net->setSlack(slack);
-    net->setIsResAware(false);
-
     // Skip positive slacks above threshold
-    // if (slack < pos_threshold) {
-    res_aware_list.emplace_back(net_id, slack);
-    // }
+    // TODO: need to check this positive slack threshold
+    const float pos_threshold = 100e-12;
 
-    // if(net->getDbNet()->getName()=="clk"){
-    //   logger_->report("Net {} - Slack {}", net->getName(), net->getSlack());
-    // }
+    if (!is_3d_step_ || (is_3d_step_ && slack < pos_threshold)) {
+      res_aware_list.emplace_back(net_id, slack);
+    }
+    max_slack = (slack > max_slack) ? slack : max_slack;
   }
 
+  // Sort by worst slack and ID
   auto compareSlack
       = [](const std::pair<int, float> a, const std::pair<int, float> b) {
           return std::tie(a.second, a.first) < std::tie(b.second, b.first);
@@ -1169,6 +1179,7 @@ void FastRouteCore::layerAssignmentV4()
 
 void FastRouteCore::layerAssignment()
 {
+  is_second_stage_ = false;
   updateSlacks();
   is_3d_step_ = true;
 

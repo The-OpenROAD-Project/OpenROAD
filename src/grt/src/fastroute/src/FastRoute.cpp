@@ -1341,7 +1341,7 @@ NetRouteMap FastRouteCore::run()
   float logistic_coef = 0;
   int slope;
   int max_adj;
-  int long_edge_len = 20;
+  int long_edge_len = 100;
   const int short_edge_len = 12;
   const int soft_ndr_overflow_th = 10000;
 
@@ -1788,7 +1788,7 @@ NetRouteMap FastRouteCore::run()
 
   // Disable estimate parasitics for grt incremental steps with resistance-aware
   // strategy to prevent issues during repair design and repair timing
-  estimate_parasitics_ = false;
+  en_estimate_parasitics_ = false;
 
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     getOverflow3D();
@@ -1958,7 +1958,7 @@ void FastRouteCore::setCongestionReportIterStep(int congestion_report_iter_step)
 void FastRouteCore::setResistanceAware(bool resistance_aware)
 {
   enable_resistance_aware_ = resistance_aware;
-  estimate_parasitics_ = true;
+  en_estimate_parasitics_ = true;
 }
 
 void FastRouteCore::setCongestionReportFile(const char* congestion_file_name)
