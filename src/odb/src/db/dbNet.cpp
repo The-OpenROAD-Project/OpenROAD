@@ -256,22 +256,34 @@ void rewireBuffer(bool insertBefore,
   }
 }
 
-// jk: TODO: move to the right place
+// Helper to generate unique name for port punching
+std::string makeUniqueHierName(dbModule* module,
+                               const std::string& base_name,
+                               const char* suffix)
+{
+  std::string name = base_name + "_" + suffix;
+  int id = 0;
+  std::string unique_name = name;
+  // Ensure uniqueness against both ModNets and ModBTerms
+  while (module->getModNet(unique_name.c_str())
+         || module->findModBTerm(unique_name.c_str())) {
+    unique_name = name + "_" + std::to_string(id++);
+  }
+  return unique_name;
+}
+
+// Helper: Calculate module depth
 int getModuleDepth(dbModule* mod)
 {
   int depth = 0;
-  // Traverse up the module hierarchy. The top module has no dbModInst.
-  while (mod) {
+  while (mod != nullptr) {
+    mod = mod->getModInst() ? mod->getModInst()->getParent() : nullptr;
     depth++;
-    dbModInst* mod_inst = mod->getModInst();
-    if (!mod_inst) {  // Top module
-      break;
-    }
-    mod = mod_inst->getParent();
   }
   return depth;
 }
 
+// Helper: Find LCA (Lowest Common Ancestor)
 dbModule* findLCA(dbModule* m1, dbModule* m2)
 {
   if (m1 == nullptr) {
@@ -285,37 +297,32 @@ dbModule* findLCA(dbModule* m1, dbModule* m2)
   int d2 = getModuleDepth(m2);
 
   while (d1 > d2) {
-    // Traverse m1 up to the same level as m2
-    dbModInst* mod_inst = m1->getModInst();
-    if (mod_inst) {
-      m1 = mod_inst->getParent();
-    }
+    m1 = m1->getModInst() ? m1->getModInst()->getParent() : nullptr;
     d1--;
   }
   while (d2 > d1) {
-    // Traverse m2 up to the same level as m1
-    dbModInst* mod_inst = m2->getModInst();
-    if (mod_inst) {
-      m2 = mod_inst->getParent();
-    }
+    m2 = m2->getModInst() ? m2->getModInst()->getParent() : nullptr;
     d2--;
   }
 
-  // Traverse both up until they are the same module (the LCA)
-  while (m1 != m2 && m1 && m2) {
-    m1 = m1 ? m1->getModInst()->getParent() : nullptr;
-    m2 = m2 ? m2->getModInst()->getParent() : nullptr;
+  while (m1 != m2 && m1 != nullptr && m2 != nullptr) {
+    m1 = m1->getModInst() ? m1->getModInst()->getParent() : nullptr;
+    m2 = m2->getModInst() ? m2->getModInst()->getParent() : nullptr;
   }
   return m1;
 }
 
-Point computeCentroid(const std::set<dbITerm*>& pins)
+Point computeCentroid(const std::set<dbObject*>& pins)
 {
   long long sum_x = 0;
   long long sum_y = 0;
-  size_t count = 0;
+  int count = 0;
 
-  for (dbITerm* term : pins) {
+  for (dbObject* term_obj : pins) {
+    if (term_obj->getObjectType() != dbITermObj) {
+      continue;
+    }
+    dbITerm* term = static_cast<dbITerm*>(term_obj);
     int x = 0, y = 0;
     if (term->getAvgXY(&x, &y)) {
       sum_x += x;
@@ -336,6 +343,72 @@ Point computeCentroid(const std::set<dbITerm*>& pins)
 
   return Point(static_cast<int>(sum_x / count),
                static_cast<int>(sum_y / count));
+}
+
+// jk: TODO: move
+// Create hierarchical pins/nets bottom-up from leaf to target_module.
+// This corresponds to "Port Punching".
+//
+// load_pin: The leaf pin deep in hierarchy.
+// target_module: The module where the buffer is placed (top of the connection
+// chain). top_mod_iterm: Output parameter, returns the top-most ModITerm
+// connected to target_module.
+void createHierarchicalConnection(dbITerm* load_pin,
+                                  dbModule* target_module,
+                                  dbModITerm*& top_mod_iterm)
+{
+  dbModule* current_module = load_pin->getInst()->getModule();
+  if (current_module == target_module) {
+    top_mod_iterm = nullptr;  // Already in same module, no hierarchy needed
+    return;
+  }
+
+  dbObject* child_obj = (dbObject*) load_pin;
+
+  // We are connecting FROM the buffer (in target_module) TO the load (deep
+  // down). So from the perspective of the hierarchical modules, these are INPUT
+  // ports.
+  const char* suffix = "i";
+
+  while (current_module != target_module && current_module != nullptr) {
+    dbModInst* parent_mod_inst = current_module->getModInst();
+    if (parent_mod_inst == nullptr) {
+      // Should not happen if current_module != target_module and target_module
+      // is parent
+      break;
+    }
+
+    // Name generation
+    std::string base_name
+        = load_pin->getNet()->getName();  // Use original net name as base
+    std::string unique_name
+        = makeUniqueHierName(current_module, base_name, suffix);
+
+    // 1. Create Port (ModBTerm) on current module
+    dbModBTerm* mod_bterm
+        = dbModBTerm::create(current_module, unique_name.c_str());
+    mod_bterm->setIoType(dbIoType::INPUT);
+
+    // 2. Create Net (ModNet) inside current module
+    dbModNet* mod_net = dbModNet::create(current_module, unique_name.c_str());
+    mod_bterm->connect(mod_net);
+
+    // 3. Connect lower level object (either leaf ITerm or previous ModITerm)
+    if (child_obj->getObjectType() == dbITermObj) {
+      ((dbITerm*) child_obj)->connect(mod_net);
+    } else if (child_obj->getObjectType() == dbModITermObj) {
+      ((dbModITerm*) child_obj)->connect(mod_net);
+    }
+
+    // 4. Create Pin (ModITerm) on the instance of current module in the parent
+    dbModITerm* mod_iterm
+        = dbModITerm::create(parent_mod_inst, unique_name.c_str(), mod_bterm);
+
+    // Prepare for next iteration (moving up)
+    child_obj = (dbObject*) mod_iterm;
+    current_module = parent_mod_inst->getParent();
+    top_mod_iterm = mod_iterm;
+  }
 }
 
 }  // anonymous namespace
@@ -3317,19 +3390,15 @@ dbInst* dbNet::insertBufferCommon(dbObject* term_obj,
   return buffer_inst;
 }
 
-// -----------------------------------------------------------------------------
-// Partial-load buffering Implementation
-// -----------------------------------------------------------------------------
-dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_input_terms,
+dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
                                        const dbMaster* buffer_master,
                                        const Point* loc,
                                        const char* base_name,
                                        const dbNameUniquifyType& uniquify)
 {
-  if (load_input_terms.empty() || buffer_master == nullptr) {
+  if (load_pins.empty() || buffer_master == nullptr) {
     return nullptr;
   }
-
   dbBlock* block = getBlock();
   if (block == nullptr) {
     return nullptr;
@@ -3340,75 +3409,80 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_input_terms,
   dbModule* target_module = nullptr;
   bool first = true;
 
-  for (dbObject* load_obj : load_input_terms) {
+  for (dbObject* load_obj : load_pins) {
+    dbModule* curr_mod = nullptr;
     if (load_obj->getObjectType() == dbITermObj) {
       dbITerm* load = static_cast<dbITerm*>(load_obj);
 
       // Check connectivity
       if (load->getNet() != this) {
-        getImpl()->getLogger()->error(
-            utl::ODB,
-            999,
-            "insertBufferBeforeLoads: Load pin {} is not connected to net {}",
-            load->getName(),
-            getName());
-        return nullptr;
-      }
-
-      // Check dont_touch on the instance or the load pin's net
-      if (checkDontTouch(this, nullptr, load)) {
-        getImpl()->getLogger()->warn(
-            utl::ODB,
-            1017,
-            "insertBufferBeforeLoads: Load pin {} or net is dont_touch.",
-            load->getName());
-        return nullptr;
-      }
-
-      dbModule* curr_mod = load->getInst()->getModule();
-      if (first) {
-        target_module = curr_mod;
-        first = false;
-      } else {
-        target_module = findLCA(target_module, curr_mod);
-      }
-    } else if (load_obj->getObjectType() == dbBTermObj) {
-      dbBTerm* load = static_cast<dbBTerm*>(load_obj);
-      if (load->getNet() != this) {
         getImpl()->getLogger()->error(utl::ODB,
-                                      1018,
-                                      "Load pin {} is not connected to net {}",
+                                      1020,
+                                      "insertBufferBeforeLoads: Load pin {} is "
+                                      "not connected to net {}",
                                       load->getName(),
                                       getName());
         return nullptr;
       }
 
-      // BTerm is at the top level, so LCA is not affected unless it's the first
-      // term.
-      if (first) {
-        target_module = nullptr;  // Top module
-        first = false;
+      // Check dont_touch on the instance or the load pin's net
+      if (checkDontTouch(this, nullptr, load)) {
+        getImpl()->getLogger()->warn(utl::ODB,
+                                     1017,
+                                     "insertBufferBeforeLoads: Load pin {} or "
+                                     "net is dont_touch.",
+                                     load->getName());
+        return nullptr;
       }
+      curr_mod = load->getInst()->getModule();
+    } else if (load_obj->getObjectType() == dbBTermObj) {
+      dbBTerm* load = static_cast<dbBTerm*>(load_obj);
+
+      // Check connectivity
+      if (load->getNet() != this) {
+        getImpl()->getLogger()->error(utl::ODB,
+                                      999,
+                                      "insertBufferBeforeLoads: Load pin {} is "
+                                      "not connected to net {}",
+                                      load->getName(),
+                                      getName());
+        return nullptr;
+      }
+
+      // Check dont_touch on the net
+      if (checkDontTouch(this, nullptr, nullptr)) {
+        getImpl()->getLogger()->warn(utl::ODB,
+                                     1021,
+                                     "insertBufferBeforeLoads: Load pin {} or "
+                                     "net is dont_touch.",
+                                     load->getName());
+        return nullptr;
+      }
+      curr_mod = block->getTopModule();
     } else {
       getImpl()->getLogger()->error(
           utl::ODB,
           1019,
-          "insertBufferBeforeLoads: Load pin {} is not an ITerm or BTerm.",
-          load_obj->getName());
+          "insertBufferBeforeLoads: Load object is not an ITerm or BTerm.");
       return nullptr;
+    }
+
+    if (first) {
+      target_module = curr_mod;
+      first = false;
+    } else {
+      target_module = findLCA(target_module, curr_mod);
     }
   }
 
   if (target_module == nullptr) {
-    // Fallback to top module if something went wrong
+    // Fallback to top module if something went wrong or loads are in top
     target_module = block->getTopModule();
   }
 
   // 2. Create the Buffer Instance in the Target Hierarchy
   dbITerm* buf_input_iterm = nullptr;
   dbITerm* buf_output_iterm = nullptr;
-
-  // Use the helper to verify master and create instance
   dbInst* buffer_inst = checkAndCreateBuffer(block,
                                              buffer_master,
                                              base_name,
@@ -3416,11 +3490,10 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_input_terms,
                                              target_module,  // Place in LCA
                                              buf_input_iterm,
                                              buf_output_iterm);
-
   if (buffer_inst == nullptr) {
     getImpl()->getLogger()->error(
         utl::ODB,
-        1020,
+        1018,
         "insertBufferBeforeLoads: Failed to create buffer instance.");
     return nullptr;
   }
@@ -3428,19 +3501,21 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_input_terms,
   // 3. Create the New Net (Buffer Output Net)
   //    The new net resides in the same hierarchy as the buffer.
   std::string new_net_name = std::string(getName()) + "_buffered";
-
-  // Make name unique
   new_net_name = block->makeNewNetName(
       target_module ? target_module->getModInst() : nullptr,
       new_net_name.c_str(),
       uniquify);
 
-  dbNet* new_net
+  // Create FLAT net for physical connection
+  dbNet* new_flat_net
       = dbNet::create(block, new_net_name.c_str(), uniquify, target_module);
+
+  // Create MOD net for logical connection in the target module
+  dbModNet* new_mod_net = dbModNet::create(target_module, new_net_name.c_str());
 
   // Propagate NDR if exists
   if (dbTechNonDefaultRule* rule = getNonDefaultRule()) {
-    new_net->setNonDefaultRule(rule);
+    new_flat_net->setNonDefaultRule(rule);
   }
 
   // 4. Rewire Connections
@@ -3451,30 +3526,40 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_input_terms,
 
   // 4.1 Connect Buffer Input to the Original Net
   //     Note: We only handle flat connectivity for the buffer input here.
-  //     If the buffer is inside a sub-module, dbLink/verification ensures
-  //     consistency, but usually the buffer input connects to the net that was
-  //     already there.
+  //     If the buffer is inside a sub-module, we assume the original net
+  //     already traverses there (since we picked LCA).
   buf_input_iterm->connect(this);
 
-  // 4.2 Connect Buffer Output to the New Net
-  buf_output_iterm->connect(new_net);
+  // Also connect to ModNet if it exists in this module
+  if (dbModNet* orig_mod_net = target_module->getModNet(
+          getBlock()->getBaseName(this->getConstName()))) {
+    buf_input_iterm->connect(orig_mod_net);
+  }
+
+  // 4.2 Connect Buffer Output to the New Net (Flat & Hier)
+  buf_output_iterm->connect(new_flat_net);
+  buf_output_iterm->connect(new_mod_net);
 
   // 4.3 Move Target Loads to the New Net
-  for (dbObject* load_obj : load_input_terms) {
+  for (dbObject* load_obj : load_pins) {
     if (load_obj->getObjectType() == dbITermObj) {
       dbITerm* load = static_cast<dbITerm*>(load_obj);
       load->disconnect();
-      // Note: If the load is in a deeper hierarchy than the buffer
-      // (target_module), strictly speaking, we should punch ports (create
-      // dbModBTerm/dbModITerm) to maintain logical hierarchy consistency.
-      // However, simple flat connectivity (load->connect(new_net)) is valid
-      // for physical routing in OpenDB. The logical hierarchy update requires
-      // a more complex ECO flow (hierarchicalConnect) not fully exposed here.
-      load->connect(new_net);
-    } else if (load_obj->getObjectType() == dbBTermObj) {
+      load->connect(new_flat_net);
+
+      dbModITerm* top_mod_iterm = nullptr;
+      createHierarchicalConnection(load, target_module, top_mod_iterm);
+
+      if (top_mod_iterm) {
+        top_mod_iterm->connect(new_mod_net);
+      } else {
+        load->connect(new_mod_net);
+      }
+    } else {  // It has to be a BTerm due to previous check.
       dbBTerm* load = static_cast<dbBTerm*>(load_obj);
       load->disconnect();
-      load->connect(new_net);
+      load->connect(new_flat_net);
+      load->connect(new_mod_net);
     }
   }
 
@@ -3483,20 +3568,9 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_input_terms,
   if (loc) {
     placement_loc = *loc;
   } else {
-    // Calculate centroid of all load pins if loc is not provided
-    std::set<dbITerm*> iterm_loads;
-    // BTerms are not considered for centroid calculation as they don't have a
-    // single location.
-    for (dbObject* load_obj : load_input_terms) {
-      if (load_obj->getObjectType() == dbITermObj) {
-        iterm_loads.insert(static_cast<dbITerm*>(load_obj));
-      }
-    }
-    placement_loc = computeCentroid(iterm_loads);
+    placement_loc = computeCentroid(load_pins);
   }
-
   placeNewBuffer(buffer_inst, &placement_loc, nullptr, nullptr);
-
   return buffer_inst;
 }
 
