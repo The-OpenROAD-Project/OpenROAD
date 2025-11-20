@@ -47,8 +47,10 @@ or_integration_tests(
     core_grid_via_snap
     core_grid_with_M6_min_area
     core_grid_with_M7_pins
+    core_grid_with_bterms
     core_grid_with_dual_rings
     core_grid_with_fixed_pins
+    core_grid_with_m2_straps
     core_grid_with_rings
     core_grid_with_rings_connect
     core_grid_with_rings_different_offset

@@ -31,6 +31,7 @@ class _dbTechLayer;
 class Line;
 class Rect;
 class Polygon;
+class _dbChip;
 // User Code End Classes
 
 struct dbMarkerFlags
@@ -63,6 +64,7 @@ class _dbMarker : public _dbObject
   void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   _dbBlock* getBlock() const;
+  _dbChip* getChip() const;
 
   void populatePTree(_dbMarkerCategory::PropertyTree& tree) const;
   void fromPTree(const _dbMarkerCategory::PropertyTree& tree);

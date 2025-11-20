@@ -9,6 +9,7 @@
 #include "odb/db.h"
 #include "sta/ConcreteNetwork.hh"
 #include "sta/GraphClass.hh"
+#include "sta/Network.hh"
 
 namespace utl {
 class Logger;
@@ -71,7 +72,7 @@ class dbNetwork : public ConcreteNetwork
   void clear() override;
   CellPortIterator* portIterator(const Cell* cell) const override;
 
-  // sanity checkers
+  // Sanity checkers
   void checkAxioms(odb::dbObject* obj = nullptr) const;
   void checkSanityModBTerms() const;
   void checkSanityModITerms() const;
@@ -83,6 +84,7 @@ class dbNetwork : public ConcreteNetwork
   void checkSanityInstNames() const;
   void checkSanityNetNames() const;
   void checkSanityModNetNamesInModule(odb::dbModule* module) const;
+  void checkSanityNetDrvrPinMapConsistency() const;
 
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);
@@ -93,6 +95,7 @@ class dbNetwork : public ConcreteNetwork
   void removeObserver(dbNetworkObserver* observer);
 
   dbBlock* block() const { return block_; }
+  utl::Logger* getLogger() const { return logger_; }
   void makeLibrary(dbLib* lib);
   void makeCell(Library* library, dbMaster* master);
   void makeVerilogCell(Library* library, dbModInst*);
@@ -175,7 +178,10 @@ class dbNetwork : public ConcreteNetwork
                                      bool hier = false);
   Instance* getOwningInstanceParent(Pin* pin);
 
-  bool connected(Pin* source_pin, Pin* dest_pin);
+  using Network::isConnected;
+  bool isConnected(const Net* net, const Pin* pin) const override;
+  bool isConnected(const Net* net1, const Net* net2) const override;
+  bool isConnected(const Pin* source_pin, const Pin* dest_pin) const;
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
                            const char* connection_name = "net");
@@ -278,7 +284,6 @@ class dbNetwork : public ConcreteNetwork
 
   ////////////////////////////////////////////////////////////////
   // Port functions
-
   Cell* cell(const Port* port) const override;
   void registerConcretePort(const Port*);
 
@@ -383,6 +388,7 @@ class dbNetwork : public ConcreteNetwork
   bool hasMembers(const Port* port) const override;
   Port* findMember(const Port* port, int index) const override;
   PortMemberIterator* memberIterator(const Port* port) const override;
+  void removeDriverFromCache(const Net* net, const Pin* drvr);
 
   using Network::cell;
   using Network::direction;
@@ -410,6 +416,10 @@ class dbNetwork : public ConcreteNetwork
                           NetSet& visited_nets) const override;
   bool portMsbFirst(const char* port_name, const char* cell_name);
   ObjectId getDbNwkObjectId(const dbObject* object) const;
+
+  ////////////////////////////////////////////////////////////////
+  // Debug functions
+  void dumpNetDrvrPinMap() const;
 
   dbDatabase* db_ = nullptr;
   Logger* logger_ = nullptr;
