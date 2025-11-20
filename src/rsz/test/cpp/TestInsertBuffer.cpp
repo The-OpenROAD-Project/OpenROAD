@@ -117,21 +117,6 @@ class TestInsertBuffer : public tst::IntegratedFixture
  */
 TEST_F(TestInsertBuffer, BeforeLoad_Case1)
 {
-  auto sort_lines = [](const std::string& s) {
-    std::vector<std::string> lines;
-    std::string line;
-    std::istringstream iss(s);
-    while (std::getline(iss, line)) {
-      lines.push_back(line);
-    }
-    std::sort(lines.begin(), lines.end());
-    std::ostringstream oss;
-    for (const auto& l : lines) {
-      oss << l << "\n";
-    }
-    return oss.str();
-  };
-
   int num_warning = 0;
   dbMaster* buffer_master = db_->findMaster("BUF_X4");
   ASSERT_TRUE(buffer_master);
@@ -225,26 +210,32 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   std::string content_0((std::istreambuf_iterator<char>(file_0)),
                         std::istreambuf_iterator<char>());
 
-  const std::string expected_verilog_0
-      = "module top (load_output);\n"
-        " output load_output;\n\n"
-        " wire net;\n\n"
-        " LOGIC0_X1 drvr_inst (.Z(net));\n"
-        " BUF_X1 load0_inst (.A(net));\n"
-        " BUF_X1 load2_inst (.A(net));\n"
-        " MOD0 mi0 (.A(net));\n"
-        " assign load_output = net;\n"
-        "endmodule\n"
-        "module MOD0 (A);\n"
-        " input A;\n\n\n"
-        " MOD1 mi1 (.A(A));\n"
-        "endmodule\n"
-        "module MOD1 (A);\n"
-        " input A;\n\n\n"
-        " BUF_X1 load1_inst (.A(A));\n"
-        "endmodule\n";
+  const std::string expected_verilog_0 = R"(module top (load_output);
+ output load_output;
 
-  EXPECT_EQ(sort_lines(content_0), sort_lines(expected_verilog_0));
+ wire net;
+
+ LOGIC0_X1 drvr_inst (.Z(net));
+ BUF_X1 load0_inst (.A(net));
+ BUF_X1 load2_inst (.A(net));
+ MOD0 mi0 (.A(net));
+ assign load_output = net;
+endmodule
+module MOD0 (A);
+ input A;
+
+
+ MOD1 mi1 (.A(A));
+endmodule
+module MOD1 (A);
+ input A;
+
+
+ BUF_X1 load1_inst (.A(A));
+endmodule
+)";
+
+  EXPECT_EQ(content_0, expected_verilog_0);
 
   buffer_master = db_->findMaster("BUF_X4");
   ASSERT_TRUE(buffer_master);
@@ -270,29 +261,35 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   std::string content_1((std::istreambuf_iterator<char>(file_1)),
                         std::istreambuf_iterator<char>());
 
-  const std::string expected_verilog_1
-      = "module top (load_output);\n"
-        " output load_output;\n\n"
-        " wire net_load;\n"
-        " wire net;\n\n"
-        " assign load_output = net;\n"
-        " BUF_X4 buf (.A(net),\n"
-        "    .Z(net_load));\n"
-        " LOGIC0_X1 drvr_inst (.Z(net));\n"
-        " BUF_X1 load0_inst (.A(net_load));\n"
-        " BUF_X1 load2_inst (.A(net));\n"
-        " MOD0 mi0 (.A(net));\n"
-        "endmodule\n"
-        "module MOD0 (A);\n"
-        " input A;\n\n\n"
-        " MOD1 mi1 (.A(A));\n"
-        "endmodule\n"
-        "module MOD1 (A);\n"
-        " input A;\n\n\n"
-        " BUF_X1 load1_inst (.A(A));\n"
-        "endmodule\n";
+  const std::string expected_verilog_1 = R"(module top (load_output);
+ output load_output;
 
-  EXPECT_EQ(sort_lines(content_1), sort_lines(expected_verilog_1));
+ wire net;
+ wire net_load;
+
+ BUF_X4 buf (.A(net),
+    .Z(net_load));
+ LOGIC0_X1 drvr_inst (.Z(net));
+ BUF_X1 load0_inst (.A(net_load));
+ BUF_X1 load2_inst (.A(net));
+ MOD0 mi0 (.A(net));
+ assign load_output = net;
+endmodule
+module MOD0 (A);
+ input A;
+
+
+ MOD1 mi1 (.A(A));
+endmodule
+module MOD1 (A);
+ input A;
+
+
+ BUF_X1 load1_inst (.A(A));
+endmodule
+)";
+
+  EXPECT_EQ(content_1, expected_verilog_1);
 
   //-----------------------------------------------------------------
   // Insert buffer #2
@@ -315,31 +312,37 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   std::string content_2((std::istreambuf_iterator<char>(file_2)),
                         std::istreambuf_iterator<char>());
 
-  const std::string expected_verilog_2
-      = "module top (load_output);\n"
-        " output load_output;\n\n"
-        " wire net_load;\n"
-        " wire net;\n\n"
-        " assign load_output = net;\n"
-        " BUF_X4 buf (.A(net),\n"
-        "    .Z(net_load));\n"
-        " LOGIC0_X1 drvr_inst (.Z(net));\n"
-        " BUF_X1 load0_inst (.A(net_load));\n"
-        " BUF_X1 load2_inst (.A(net));\n"
-        " MOD0 mi0 (.A(net));\n"
-        "endmodule\n"
-        "module MOD0 (A);\n"
-        " input A;\n\n\n"
-        " MOD1 mi1 (.A(A));\n"
-        "endmodule\n"
-        "module MOD1 (A);\n"
-        " input A;\n\n"
-        " wire net_load;\n\n"
-        " BUF_X4 buf (.A(A),\n"
-        "    .Z(net_load));\n"
-        " BUF_X1 load1_inst (.A(net_load));\n"
-        "endmodule\n";
-  EXPECT_EQ(sort_lines(content_2), sort_lines(expected_verilog_2));
+  const std::string expected_verilog_2 = R"(module top (load_output);
+ output load_output;
+
+ wire net;
+ wire net_load;
+
+ BUF_X4 buf (.A(net),
+    .Z(net_load));
+ LOGIC0_X1 drvr_inst (.Z(net));
+ BUF_X1 load0_inst (.A(net_load));
+ BUF_X1 load2_inst (.A(net));
+ MOD0 mi0 (.A(net));
+ assign load_output = net;
+endmodule
+module MOD0 (A);
+ input A;
+
+
+ MOD1 mi1 (.A(A));
+endmodule
+module MOD1 (A);
+ input A;
+
+ wire net_load;
+
+ BUF_X4 buf (.A(A),
+    .Z(net_load));
+ BUF_X1 load1_inst (.A(net_load));
+endmodule
+)";
+  EXPECT_EQ(content_2, expected_verilog_2);
 
   //-----------------------------------------------------------------
   // Insert buffer #3
@@ -362,35 +365,41 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   std::string content_3((std::istreambuf_iterator<char>(file_3)),
                         std::istreambuf_iterator<char>());
 
-  const std::string expected_verilog_3
-      = "module top (load_output);\n"
-        " output load_output;\n\n"
-        " wire net_load_1;\n"
-        " wire net_load;\n"
-        " wire net;\n\n"
-        " assign load_output = net;\n"
-        " BUF_X4 buf_1 (.A(net),\n"
-        "    .Z(net_load_1));\n"
-        " BUF_X4 buf (.A(net),\n"
-        "    .Z(net_load));\n"
-        " LOGIC0_X1 drvr_inst (.Z(net));\n"
-        " BUF_X1 load0_inst (.A(net_load));\n"
-        " BUF_X1 load2_inst (.A(net_load_1));\n"
-        " MOD0 mi0 (.A(net));\n"
-        "endmodule\n"
-        "module MOD0 (A);\n"
-        " input A;\n\n\n"
-        " MOD1 mi1 (.A(A));\n"
-        "endmodule\n"
-        "module MOD1 (A);\n"
-        " input A;\n\n"
-        " wire net_load;\n\n"
-        " BUF_X4 buf (.A(A),\n"
-        "    .Z(net_load));\n"
-        " BUF_X1 load1_inst (.A(net_load));\n"
-        "endmodule\n";
+  const std::string expected_verilog_3 = R"(module top (load_output);
+ output load_output;
 
-  EXPECT_EQ(sort_lines(content_3), sort_lines(expected_verilog_3));
+ wire net;
+ wire net_load;
+ wire net_load_1;
+
+ BUF_X4 buf (.A(net),
+    .Z(net_load));
+ BUF_X4 buf_1 (.A(net),
+    .Z(net_load_1));
+ LOGIC0_X1 drvr_inst (.Z(net));
+ BUF_X1 load0_inst (.A(net_load));
+ BUF_X1 load2_inst (.A(net_load_1));
+ MOD0 mi0 (.A(net));
+ assign load_output = net;
+endmodule
+module MOD0 (A);
+ input A;
+
+
+ MOD1 mi1 (.A(A));
+endmodule
+module MOD1 (A);
+ input A;
+
+ wire net_load;
+
+ BUF_X4 buf (.A(A),
+    .Z(net_load));
+ BUF_X1 load1_inst (.A(net_load));
+endmodule
+)";
+
+  EXPECT_EQ(content_3, expected_verilog_3);
 
   //-----------------------------------------------------------------
   // Insert buffer #4
@@ -414,36 +423,42 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   std::string content_4((std::istreambuf_iterator<char>(file_4)),
                         std::istreambuf_iterator<char>());
 
-  const std::string expected_verilog_4
-      = "module top (load_output);\n"
-        " output load_output;\n\n"
-        " wire net_load_1;\n"
-        " wire net_load;\n"
-        " wire net;\n\n"
-        " BUF_X4 buf_2 (.A(net),\n"
-        "    .Z(load_output));\n"
-        " BUF_X4 buf_1 (.A(net),\n"
-        "    .Z(net_load_1));\n"
-        " BUF_X4 buf (.A(net),\n"
-        "    .Z(net_load));\n"
-        " LOGIC0_X1 drvr_inst (.Z(net));\n"
-        " BUF_X1 load0_inst (.A(net_load));\n"
-        " BUF_X1 load2_inst (.A(net_load_1));\n"
-        " MOD0 mi0 (.A(net));\n"
-        "endmodule\n"
-        "module MOD0 (A);\n"
-        " input A;\n\n\n"
-        " MOD1 mi1 (.A(A));\n"
-        "endmodule\n"
-        "module MOD1 (A);\n"
-        " input A;\n\n"
-        " wire net_load;\n\n"
-        " BUF_X4 buf (.A(A),\n"
-        "    .Z(net_load));\n"
-        " BUF_X1 load1_inst (.A(net_load));\n"
-        "endmodule\n";
+  const std::string expected_verilog_4 = R"(module top (load_output);
+ output load_output;
 
-  EXPECT_EQ(sort_lines(content_4), sort_lines(expected_verilog_4));
+ wire net;
+ wire net_load;
+ wire net_load_1;
+
+ BUF_X4 buf (.A(net),
+    .Z(net_load));
+ BUF_X4 buf_1 (.A(net),
+    .Z(net_load_1));
+ BUF_X4 buf_2 (.A(net),
+    .Z(load_output));
+ LOGIC0_X1 drvr_inst (.Z(net));
+ BUF_X1 load0_inst (.A(net_load));
+ BUF_X1 load2_inst (.A(net_load_1));
+ MOD0 mi0 (.A(net));
+endmodule
+module MOD0 (A);
+ input A;
+
+
+ MOD1 mi1 (.A(A));
+endmodule
+module MOD1 (A);
+ input A;
+
+ wire net_load;
+
+ BUF_X4 buf (.A(A),
+    .Z(net_load));
+ BUF_X1 load1_inst (.A(net_load));
+endmodule
+)";
+
+  EXPECT_EQ(content_4, expected_verilog_4);
 
   // Clean up
   removeFile(verilog_file_0);
@@ -455,21 +470,6 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
 
 TEST_F(TestInsertBuffer, AfterDriver_Case1)
 {
-  auto sort_lines = [](const std::string& s) {
-    std::vector<std::string> lines;
-    std::string line;
-    std::istringstream iss(s);
-    while (std::getline(iss, line)) {
-      lines.push_back(line);
-    }
-    std::sort(lines.begin(), lines.end());
-    std::ostringstream oss;
-    for (const auto& l : lines) {
-      oss << l << "\n";
-    }
-    return oss.str();
-  };
-
   int num_warning = 0;
   dbMaster* buffer_master = db_->findMaster("BUF_X4");
   ASSERT_TRUE(buffer_master);
@@ -570,26 +570,32 @@ TEST_F(TestInsertBuffer, AfterDriver_Case1)
   std::string content_0((std::istreambuf_iterator<char>(file_0)),
                         std::istreambuf_iterator<char>());
 
-  const std::string expected_verilog_0
-      = "module top (in);\n"
-        " input in;\n\n"
-        " wire net;\n\n"
-        " BUF_X1 drvr_inst (.A(in),\n"
-        "    .Z(net));\n"
-        " BUF_X1 load0_inst (.A(net));\n"
-        " BUF_X1 load2_inst (.A(net));\n"
-        " MOD0 mi0 (.A(net));\n"
-        "endmodule\n"
-        "module MOD0 (A);\n"
-        " input A;\n\n\n"
-        " MOD1 mi1 (.A(A));\n"
-        "endmodule\n"
-        "module MOD1 (A);\n"
-        " input A;\n\n\n"
-        " BUF_X1 load1_inst (.A(A));\n"
-        "endmodule\n";
+  const std::string expected_verilog_0 = R"(module top (in);
+ input in;
 
-  EXPECT_EQ(sort_lines(content_0), sort_lines(expected_verilog_0));
+ wire net;
+
+ BUF_X1 drvr_inst (.A(in),
+    .Z(net));
+ BUF_X1 load0_inst (.A(net));
+ BUF_X1 load2_inst (.A(net));
+ MOD0 mi0 (.A(net));
+endmodule
+module MOD0 (A);
+ input A;
+
+
+ MOD1 mi1 (.A(A));
+endmodule
+module MOD1 (A);
+ input A;
+
+
+ BUF_X1 load1_inst (.A(A));
+endmodule
+)";
+
+  EXPECT_EQ(content_0, expected_verilog_0);
 
   buffer_master = db_->findMaster("BUF_X4");
   ASSERT_TRUE(buffer_master);
@@ -615,29 +621,35 @@ TEST_F(TestInsertBuffer, AfterDriver_Case1)
   std::string content_1((std::istreambuf_iterator<char>(file_1)),
                         std::istreambuf_iterator<char>());
 
-  const std::string expected_verilog_1
-      = "module top (in);\n"
-        " input in;\n\n"
-        " wire net_drvr;\n"
-        " wire net;\n\n"
-        " BUF_X4 buf (.A(net_drvr),\n"
-        "    .Z(net));\n"
-        " BUF_X1 drvr_inst (.A(in),\n"
-        "    .Z(net_drvr));\n"
-        " BUF_X1 load0_inst (.A(net));\n"
-        " BUF_X1 load2_inst (.A(net));\n"
-        " MOD0 mi0 (.A(net));\n"
-        "endmodule\n"
-        "module MOD0 (A);\n"
-        " input A;\n\n\n"
-        " MOD1 mi1 (.A(A));\n"
-        "endmodule\n"
-        "module MOD1 (A);\n"
-        " input A;\n\n\n"
-        " BUF_X1 load1_inst (.A(A));\n"
-        "endmodule\n";
+  const std::string expected_verilog_1 = R"(module top (in);
+ input in;
 
-  EXPECT_EQ(sort_lines(content_1), sort_lines(expected_verilog_1));
+ wire net;
+ wire net_drvr;
+
+ BUF_X4 buf (.A(net_drvr),
+    .Z(net));
+ BUF_X1 drvr_inst (.A(in),
+    .Z(net_drvr));
+ BUF_X1 load0_inst (.A(net));
+ BUF_X1 load2_inst (.A(net));
+ MOD0 mi0 (.A(net));
+endmodule
+module MOD0 (A);
+ input A;
+
+
+ MOD1 mi1 (.A(A));
+endmodule
+module MOD1 (A);
+ input A;
+
+
+ BUF_X1 load1_inst (.A(A));
+endmodule
+)";
+
+  EXPECT_EQ(content_1, expected_verilog_1);
 
   // Clean up
   removeFile(verilog_file_0);
@@ -646,21 +658,6 @@ TEST_F(TestInsertBuffer, AfterDriver_Case1)
 
 TEST_F(TestInsertBuffer, AfterDriver_Case2)
 {
-  auto sort_lines = [](const std::string& s) {
-    std::vector<std::string> lines;
-    std::string line;
-    std::istringstream iss(s);
-    while (std::getline(iss, line)) {
-      lines.push_back(line);
-    }
-    std::sort(lines.begin(), lines.end());
-    std::ostringstream oss;
-    for (const auto& l : lines) {
-      oss << l << "\n";
-    }
-    return oss.str();
-  };
-
   int num_warning = 0;
   dbMaster* buffer_master = db_->findMaster("BUF_X4");
   ASSERT_TRUE(buffer_master);
@@ -750,23 +747,29 @@ TEST_F(TestInsertBuffer, AfterDriver_Case2)
   std::string content_0((std::istreambuf_iterator<char>(file_0)),
                         std::istreambuf_iterator<char>());
 
-  const std::string expected_verilog_0
-      = "module top (X);\n"
-        " input X;\n\n\n"
-        " BUF_X1 load0_inst (.A(X));\n"
-        " BUF_X1 load2_inst (.A(X));\n"
-        " MOD0 mi0 (.A(X));\n"
-        "endmodule\n"
-        "module MOD0 (A);\n"
-        " input A;\n\n\n"
-        " MOD1 mi1 (.A(A));\n"
-        "endmodule\n"
-        "module MOD1 (A);\n"
-        " input A;\n\n\n"
-        " BUF_X1 load1_inst (.A(A));\n"
-        "endmodule\n";
+  const std::string expected_verilog_0 = R"(module top (X);
+ input X;
 
-  EXPECT_EQ(sort_lines(content_0), sort_lines(expected_verilog_0));
+
+ BUF_X1 load0_inst (.A(X));
+ BUF_X1 load2_inst (.A(X));
+ MOD0 mi0 (.A(X));
+endmodule
+module MOD0 (A);
+ input A;
+
+
+ MOD1 mi1 (.A(A));
+endmodule
+module MOD1 (A);
+ input A;
+
+
+ BUF_X1 load1_inst (.A(A));
+endmodule
+)";
+
+  EXPECT_EQ(content_0, expected_verilog_0);
 
   //-----------------------------------------------------------------
   // Insert buffer
@@ -790,26 +793,32 @@ TEST_F(TestInsertBuffer, AfterDriver_Case2)
   std::string content_1((std::istreambuf_iterator<char>(file_1)),
                         std::istreambuf_iterator<char>());
 
-  const std::string expected_verilog_1
-      = "module top (X);\n"
-        " input X;\n\n"
-        " wire net;\n\n"
-        " BUF_X4 buf (.A(X),\n"
-        "    .Z(net));\n"
-        " BUF_X1 load0_inst (.A(net));\n"
-        " BUF_X1 load2_inst (.A(net));\n"
-        " MOD0 mi0 (.A(net));\n"
-        "endmodule\n"
-        "module MOD0 (A);\n"
-        " input A;\n\n\n"
-        " MOD1 mi1 (.A(A));\n"
-        "endmodule\n"
-        "module MOD1 (A);\n"
-        " input A;\n\n\n"
-        " BUF_X1 load1_inst (.A(A));\n"
-        "endmodule\n";
+  const std::string expected_verilog_1 = R"(module top (X);
+ input X;
 
-  EXPECT_EQ(sort_lines(content_1), sort_lines(expected_verilog_1));
+ wire net;
+
+ BUF_X4 buf (.A(X),
+    .Z(net));
+ BUF_X1 load0_inst (.A(net));
+ BUF_X1 load2_inst (.A(net));
+ MOD0 mi0 (.A(net));
+endmodule
+module MOD0 (A);
+ input A;
+
+
+ MOD1 mi1 (.A(A));
+endmodule
+module MOD1 (A);
+ input A;
+
+
+ BUF_X1 load1_inst (.A(A));
+endmodule
+)";
+
+  EXPECT_EQ(content_1, expected_verilog_1);
 
   // Clean up
   removeFile(verilog_file_0);
