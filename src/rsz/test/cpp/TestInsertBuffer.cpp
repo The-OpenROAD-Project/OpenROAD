@@ -7,32 +7,27 @@
 #include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "sta/VerilogWriter.hh"
-#include "tst/fixture.h"
+#include "tst/IntegratedFixture.h"
 
 namespace odb {
 
-class TestInsertBuffer : public tst::Fixture
+class TestInsertBuffer : public tst::IntegratedFixture
 {
+ public:
+  TestInsertBuffer()
+      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::Nangate45,
+                               "_main/src/rsz/test/")
+  {
+  }
+
  protected:
   void SetUp() override
   {
-    library_ = readLiberty(
-        "tools/OpenROAD/src/dbSta/test/Nangate45/Nangate45_typ.lib");
-    loadTechAndLib("tech",
-                   "Nangate45.lef",
-                   "tools/OpenROAD/src/dbSta/test/Nangate45/Nangate45.lef");
-
-    dbChip* chip = dbChip::create(db_.get(), db_->getTech());
-    block_ = dbBlock::create(chip, "top");
-    // Turn on hierarchy
-    db_network_ = sta_->getDbNetwork();
-    db_network_->setHierarchy();
+    // IntegratedFixture handles library loading and basic setup.
+    odb::dbChip* chip = odb::dbChip::create(db_.get(), db_->getTech());
+    block_ = odb::dbBlock::create(chip, "top");
     sta_->postReadDef(block_);
   }
-
-  sta::LibertyLibrary* library_;
-  sta::dbNetwork* db_network_ = nullptr;
-  dbBlock* block_ = nullptr;
 };
 
 /*
@@ -83,8 +78,7 @@ class TestInsertBuffer : public tst::Fixture
  * by writing it out to a Verilog file and comparing it against an expected
  * output.
  *
- *
- *
+ * [Post ECO]
  *                      +-----------+
  *                      | LOGIC0_X1 |
  *                      | drvr_inst |------.
