@@ -104,7 +104,7 @@ puts "Total power from VCD: $total_power_vcd"
 puts "Total power from user activity: $total_power_user_activity"
 
 if { $total_power_vcd == $total_power_user_activity } {
-  puts "Error: settting user power activity had no effect, expected some loss in accuracy"
+  puts "Error: setting user power activity had no effect, expected some loss in accuracy"
   exit 1
 }
 

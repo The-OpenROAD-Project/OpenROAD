@@ -2237,7 +2237,7 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
                      mterm->getSigType().getString());
           mterm->setSigType(dbSigType::CLOCK);
         }
-      } else if (!dir->isPowerGround() && !lib_cell->findPgPort(port_name)) {
+      } else if (!dir->isPowerGround() && !lib_cell->findPort(port_name)) {
         logger_->warn(ORD,
                       2001,
                       "LEF macro {} pin {} missing from liberty cell.",
@@ -2313,7 +2313,7 @@ void dbNetwork::makeTopCell()
   for (dbBTerm* bterm : block_->getBTerms()) {
     makeTopPort(bterm);
   }
-  groupBusPorts(top_cell_, [=](const char* port_name) {
+  groupBusPorts(top_cell_, [=, this](const char* port_name) {
     return portMsbFirst(port_name, design_name);
   });
 
@@ -2397,7 +2397,7 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
                 cport->setLibertyPort(lport);
                 lport->setExtPort(cport->extPort());
               } else if (!cport->direction()->isPowerGround()
-                         && !lcell->findPgPort(port_name)) {
+                         && !lcell->findPort(port_name)) {
                 logger_->warn(ORD,
                               2002,
                               "Liberty cell {} pin {} missing from LEF macro.",

@@ -1538,7 +1538,9 @@ std::vector<sta::LibertyPort*> Resizer::libraryPins(LibertyCell* cell) const
   sta::LibertyCellPortIterator itr(cell);
   while (itr.hasNext()) {
     auto port = itr.next();
-    pins.emplace_back(port);
+    if (!port->isPwrGnd()) {
+      pins.emplace_back(port);
+    }
   }
   return pins;
 }

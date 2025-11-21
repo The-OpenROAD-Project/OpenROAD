@@ -753,7 +753,7 @@ MBFF::DataToOutputsMap MBFF::GetPinMapping(dbInst* tray)
     if (port->isBus() || port->isBundle()) {
       continue;
     }
-    if (port->isClock()) {
+    if (port->isPwrGnd() || port->isClock()) {
       continue;
     }
     if (port->direction()->isInput()) {
