@@ -213,29 +213,24 @@ const std::vector<Tile*>& TileGrid::tiles() const
 /////////////////////////////////////////////
 // RouteBaseVars
 
-RouteBaseVars::RouteBaseVars()
+RouteBaseVars::RouteBaseVars(const PlaceOptions& options)
+    : useRudy(options.routabilityUseRudy),
+      targetRC(options.routabilityTargetRcMetric),
+      inflationRatioCoef(options.routabilityInflationRatioCoef),
+      maxInflationRatio(options.routabilityMaxInflationRatio),
+      maxDensity(options.routabilityMaxDensity),
+      ignoreEdgeRatio(0.8),
+      minInflationRatio(1.01),
+      rcK1(options.routabilityRcK1),
+      rcK2(options.routabilityRcK2),
+      rcK3(options.routabilityRcK3),
+      rcK4(options.routabilityRcK4),
+      maxInflationIter(options.routabilityMaxInflationIter)
 {
-  reset();
-}
-
-void RouteBaseVars::reset()
-{
-  inflationRatioCoef = 2;
-  maxInflationRatio = 3;
-  maxDensity = 0.90;
-  targetRC = 1.01;
-  ignoreEdgeRatio = 0.8;
-  minInflationRatio = 1.01;
-  rcK1 = rcK2 = 1.0;
-  rcK3 = rcK4 = 0.0;
-  maxInflationIter = 4;
-  useRudy = true;
 }
 
 /////////////////////////////////////////////
 // RouteBase
-
-RouteBase::RouteBase() = default;
 
 RouteBase::RouteBase(RouteBaseVars rbVars,
                      odb::dbDatabase* db,
@@ -243,8 +238,8 @@ RouteBase::RouteBase(RouteBaseVars rbVars,
                      std::shared_ptr<NesterovBaseCommon> nbc,
                      std::vector<std::shared_ptr<NesterovBase>> nbVec,
                      utl::Logger* log)
+    : rbVars_(rbVars)
 {
-  rbVars_ = rbVars;
   db_ = db;
   grouter_ = grouter;
   nbc_ = std::move(nbc);
