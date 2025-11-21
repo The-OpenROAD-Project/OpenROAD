@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc ord.a CMakeFiles/ord.dir/CMakeFiles/ord.dir/OpenRoadTCL_wrap.cxx.o "CMakeFiles/ord.dir/ord-tclInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib ord.a

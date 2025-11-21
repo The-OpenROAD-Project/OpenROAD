@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc ram.a CMakeFiles/ram.dir/CMakeFiles/ram.dir/ramTCL_wrap.cxx.o "CMakeFiles/ram.dir/ram-tclInitVar.cc.o" CMakeFiles/ram.dir/src/ram.cpp.o CMakeFiles/ram.dir/src/layout.cpp.o CMakeFiles/ram.dir/src/MakeRam.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib ram.a

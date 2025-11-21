@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _ppl_py.a "CMakeFiles/ppl_py.dir/CMakeFiles/ppl_py.dir/IOPlacer-pyPYTHON_wrap.cxx.o" "CMakeFiles/ppl_py.dir/ppl_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _ppl_py.a

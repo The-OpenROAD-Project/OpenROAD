@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _fin_py.a "CMakeFiles/fin_py.dir/CMakeFiles/fin_py.dir/finale-pyPYTHON_wrap.cxx.o" "CMakeFiles/fin_py.dir/fin_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _fin_py.a

@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _dft_py.a "CMakeFiles/dft_py.dir/CMakeFiles/dft_py.dir/DftGen-pyPYTHON_wrap.cxx.o" "CMakeFiles/dft_py.dir/dft_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _dft_py.a

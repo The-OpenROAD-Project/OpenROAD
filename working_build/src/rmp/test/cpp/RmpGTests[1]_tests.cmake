@@ -1,0 +1,5 @@
+add_test([=[AbcTest.InsertingMappedLogicAfterOptimizationCutDoesNotThrow]=]  /home/memzfs_projects/MLBuf_extension/OR_latest/build/src/rmp/test/cpp/RmpGTests [==[--gtest_filter=AbcTest.InsertingMappedLogicAfterOptimizationCutDoesNotThrow]==] --gtest_also_run_disabled_tests)
+set_tests_properties([=[AbcTest.InsertingMappedLogicAfterOptimizationCutDoesNotThrow]=]  PROPERTIES WORKING_DIRECTORY /home/memzfs_projects/MLBuf_extension/OR_latest/src/rmp/test/cpp/.. SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
+add_test([=[AbcTest.ResynthesisStrategyDoesNotThrow]=]  /home/memzfs_projects/MLBuf_extension/OR_latest/build/src/rmp/test/cpp/RmpGTests [==[--gtest_filter=AbcTest.ResynthesisStrategyDoesNotThrow]==] --gtest_also_run_disabled_tests)
+set_tests_properties([=[AbcTest.ResynthesisStrategyDoesNotThrow]=]  PROPERTIES WORKING_DIRECTORY /home/memzfs_projects/MLBuf_extension/OR_latest/src/rmp/test/cpp/.. SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
+set(  RmpGTests_TESTS AbcTest.InsertingMappedLogicAfterOptimizationCutDoesNotThrow AbcTest.ResynthesisStrategyDoesNotThrow)

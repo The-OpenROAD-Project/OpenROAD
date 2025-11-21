@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _par_py.a "CMakeFiles/par_py.dir/CMakeFiles/par_py.dir/partitionmgr-pyPYTHON_wrap.cxx.o" "CMakeFiles/par_py.dir/par_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _par_py.a

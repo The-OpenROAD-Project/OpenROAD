@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc cts.a CMakeFiles/cts.dir/CMakeFiles/cts.dir/TritonCTSTCL_wrap.cxx.o "CMakeFiles/cts.dir/cts-tclInitVar.cc.o" CMakeFiles/cts.dir/MakeTritoncts.cpp.o CMakeFiles/cts.dir/CtsGraphics.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib cts.a

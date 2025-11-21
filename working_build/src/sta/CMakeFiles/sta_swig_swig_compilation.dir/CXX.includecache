@@ -1,0 +1,42 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/StaApp.i
+tcl/Exception.i
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/tcl/Exception.i
+tcl/StaTclTypes.i
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/tcl/StaTclTypes.i
+dcalc/DelayCalc.i
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/dcalc/DelayCalc.i
+graph/Graph.i
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/graph/Graph.i
+liberty/Liberty.i
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/liberty/Liberty.i
+network/Network.i
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/network/Network.i
+network/NetworkEdit.i
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/network/NetworkEdit.i
+parasitics/Parasitics.i
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/parasitics/Parasitics.i
+power/Power.i
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/power/Power.i
+sdc/Sdc.i
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/sdc/Sdc.i
+sdf/Sdf.i
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/sdf/Sdf.i
+search/Search.i
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/search/Search.i
+search/Property.i
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/search/Property.i
+util/Util.i
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/util/Util.i
+spice/WriteSpice.i
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/spice/WriteSpice.i
+verilog/Verilog.i
+/home/memzfs_projects/MLBuf_extension/OR_latest/src/sta/app/verilog/Verilog.i
+

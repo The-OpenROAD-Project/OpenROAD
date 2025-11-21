@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libdbSta_lib.a CMakeFiles/dbSta_lib.dir/dbSta.cc.o CMakeFiles/dbSta_lib.dir/dbNetwork.cc.o CMakeFiles/dbSta_lib.dir/dbSdcNetwork.cc.o CMakeFiles/dbSta_lib.dir/dbEditHierarchy.cc.o CMakeFiles/dbSta_lib.dir/dbReadVerilog.cc.o CMakeFiles/dbSta_lib.dir/SpefWriter.cc.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libdbSta_lib.a

@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _ram_py.a "CMakeFiles/ram_py.dir/CMakeFiles/ram_py.dir/ram-pyPYTHON_wrap.cxx.o" "CMakeFiles/ram_py.dir/ram_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _ram_py.a

@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc rsz.a CMakeFiles/rsz.dir/CMakeFiles/rsz.dir/ResizerTCL_wrap.cxx.o "CMakeFiles/rsz.dir/rsz-tclInitVar.cc.o" CMakeFiles/rsz.dir/Graphics.cc.o CMakeFiles/rsz.dir/MakeResizer.cc.o
+/home/tool/binutils/binutils-2.27/bin/ranlib rsz.a

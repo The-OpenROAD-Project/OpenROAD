@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc ant.a CMakeFiles/ant.dir/CMakeFiles/ant.dir/AntennaCheckerTCL_wrap.cxx.o "CMakeFiles/ant.dir/ant-tclInitVar.cc.o" CMakeFiles/ant.dir/MakeAntennaChecker.cc.o
+/home/tool/binutils/binutils-2.27/bin/ranlib ant.a

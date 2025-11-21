@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libodb_test_helper.a CMakeFiles/odb_test_helper.dir/helper.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libodb_test_helper.a

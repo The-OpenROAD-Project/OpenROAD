@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libdft_base_scan_cell_lib.a CMakeFiles/dft_base_scan_cell_lib.dir/ScanCell.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libdft_base_scan_cell_lib.a

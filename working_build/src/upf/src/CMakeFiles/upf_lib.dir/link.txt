@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libupf_lib.a CMakeFiles/upf_lib.dir/upf.cpp.o CMakeFiles/upf_lib.dir/writer.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libupf_lib.a

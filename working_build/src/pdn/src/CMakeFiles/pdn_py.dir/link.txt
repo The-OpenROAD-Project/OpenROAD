@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _pdn_py.a "CMakeFiles/pdn_py.dir/CMakeFiles/pdn_py.dir/PdnGen-pyPYTHON_wrap.cxx.o" "CMakeFiles/pdn_py.dir/pdn_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _pdn_py.a

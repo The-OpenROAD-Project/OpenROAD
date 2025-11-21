@@ -1,0 +1,5 @@
+if(EXISTS "/home/memzfs_projects/MLBuf_extension/OR_latest/build/src/utl/test/cpp/TestCFileUtils[1]_tests.cmake")
+  include("/home/memzfs_projects/MLBuf_extension/OR_latest/build/src/utl/test/cpp/TestCFileUtils[1]_tests.cmake")
+else()
+  add_test(TestCFileUtils_NOT_BUILT TestCFileUtils_NOT_BUILT)
+endif()

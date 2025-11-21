@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc cgt.a CMakeFiles/cgt.dir/CMakeFiles/cgt.dir/cgtTCL_wrap.cxx.o "CMakeFiles/cgt.dir/cgt-tclInitVar.cc.o" CMakeFiles/cgt.dir/ClockGating.cpp.o CMakeFiles/cgt.dir/MakeClockGating.cpp.o CMakeFiles/cgt.dir/NetworkBuilder.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib cgt.a

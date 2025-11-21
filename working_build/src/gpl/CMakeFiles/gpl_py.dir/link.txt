@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _gpl_py.a "CMakeFiles/gpl_py.dir/CMakeFiles/gpl_py.dir/replace-pyPYTHON_wrap.cxx.o" "CMakeFiles/gpl_py.dir/gpl_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _gpl_py.a

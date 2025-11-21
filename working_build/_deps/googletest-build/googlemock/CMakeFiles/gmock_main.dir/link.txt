@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc ../../../lib/libgmock_main.a CMakeFiles/gmock_main.dir/src/gmock_main.cc.o
+/home/tool/binutils/binutils-2.27/bin/ranlib ../../../lib/libgmock_main.a

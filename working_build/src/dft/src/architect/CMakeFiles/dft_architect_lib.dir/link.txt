@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libdft_architect_lib.a CMakeFiles/dft_architect_lib.dir/Opt.cpp.o CMakeFiles/dft_architect_lib.dir/ScanArchitect.cpp.o CMakeFiles/dft_architect_lib.dir/ScanArchitectHeuristic.cpp.o CMakeFiles/dft_architect_lib.dir/ScanChain.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libdft_architect_lib.a

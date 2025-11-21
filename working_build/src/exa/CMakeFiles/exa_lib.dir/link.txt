@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libexa_lib.a CMakeFiles/exa_lib.dir/src/example.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libexa_lib.a

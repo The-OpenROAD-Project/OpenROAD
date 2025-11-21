@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libdft_cells_lib.a CMakeFiles/dft_cells_lib.dir/OneBitScanCell.cpp.o CMakeFiles/dft_cells_lib.dir/ScanCellFactory.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libdft_cells_lib.a

@@ -233,8 +233,12 @@ _dbTech::_dbTech(_dbDatabase* db)
   _layer_rule_tbl = new dbTable<_dbTechLayerRule, 4>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbTechLayerRuleObj);
 
-  _box_tbl = new dbTable<_dbBox>(
+  _box_tbl = new dbTable<_dbBox>( 
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbBoxObj);
+  constexpr unsigned int kPageSize = 1024;
+// Cast existing tables to the page-sized instantiations expected by dbBoxItr.
+  auto* box_tbl_typed  = reinterpret_cast<dbTable<_dbBox, kPageSize>*>(_box_tbl);
+  dbTable<_dbPolygon, kPageSize>* pbox_tbl_typed = nullptr;
 
   _samenet_rule_tbl = new dbTable<_dbTechSameNetRule, 16>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbTechSameNetRuleObj);
@@ -273,7 +277,7 @@ _dbTech::_dbTech(_dbDatabase* db)
 
   _layer_itr = new dbTechLayerItr(_layer_tbl);
 
-  _box_itr = new dbBoxItr(_box_tbl, (dbTable<_dbPolygon>*) nullptr, false);
+  _box_itr = new dbBoxItr<kPageSize>(box_tbl_typed, pbox_tbl_typed,/*include_polygons=*/false);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
 }

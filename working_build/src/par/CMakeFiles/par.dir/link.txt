@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc par.a CMakeFiles/par.dir/CMakeFiles/par.dir/partitionmgrTCL_wrap.cxx.o "CMakeFiles/par.dir/par-tclInitVar.cc.o" CMakeFiles/par.dir/src/MakePartitionMgr.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib par.a

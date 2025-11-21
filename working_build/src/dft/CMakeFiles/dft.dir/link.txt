@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc dft.a CMakeFiles/dft.dir/CMakeFiles/dft.dir/dftTCL_wrap.cxx.o "CMakeFiles/dft.dir/dft-tclInitVar.cc.o" CMakeFiles/dft.dir/src/Dft.cpp.o CMakeFiles/dft.dir/src/MakeDft.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib dft.a

@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc ppl.a CMakeFiles/ppl.dir/CMakeFiles/ppl.dir/IOPlacerTCL_wrap.cxx.o "CMakeFiles/ppl.dir/ppl-tclInitVar.cc.o" CMakeFiles/ppl.dir/src/Core.cpp.o CMakeFiles/ppl.dir/src/HungarianMatching.cpp.o CMakeFiles/ppl.dir/src/IOPlacer.cpp.o CMakeFiles/ppl.dir/src/IOPlacerRenderer.cpp.o CMakeFiles/ppl.dir/src/MakeIoplacer.cpp.o CMakeFiles/ppl.dir/src/Netlist.cpp.o CMakeFiles/ppl.dir/src/SimulatedAnnealing.cpp.o CMakeFiles/ppl.dir/src/Slots.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib ppl.a

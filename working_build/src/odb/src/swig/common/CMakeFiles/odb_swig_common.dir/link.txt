@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libodb_swig_common.a CMakeFiles/odb_swig_common.dir/swig_common.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libodb_swig_common.a

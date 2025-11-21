@@ -1,0 +1,1 @@
+/home/tool/gcc/gcc-9.3.0/bin/x86_64-pc-linux-gnu-g++ -O3 -DNDEBUG CMakeFiles/gia_test.dir/gia_test.cc.o -o gia_test  ../../../../lib/libgtest.a ../../../../lib/libgtest_main.a ../../libabc.a ../../../../lib/libgtest.a -lpthread -lm -ldl -lrt 

@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _grt_py.a "CMakeFiles/grt_py.dir/CMakeFiles/grt_py.dir/GlobalRouter-pyPYTHON_wrap.cxx.o" "CMakeFiles/grt_py.dir/grt_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _grt_py.a

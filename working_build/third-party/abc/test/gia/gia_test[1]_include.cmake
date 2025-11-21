@@ -1,0 +1,5 @@
+if(EXISTS "/home/memzfs_projects/MLBuf_extension/OR_latest/build/third-party/abc/test/gia/gia_test[1]_tests.cmake")
+  include("/home/memzfs_projects/MLBuf_extension/OR_latest/build/third-party/abc/test/gia/gia_test[1]_tests.cmake")
+else()
+  add_test(gia_test_NOT_BUILT gia_test_NOT_BUILT)
+endif()

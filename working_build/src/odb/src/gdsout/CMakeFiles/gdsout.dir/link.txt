@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libgdsout.a CMakeFiles/gdsout.dir/gdsout.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libgdsout.a

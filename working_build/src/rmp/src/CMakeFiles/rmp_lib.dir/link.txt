@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc librmp_lib.a CMakeFiles/rmp_lib.dir/Restructure.cpp.o CMakeFiles/rmp_lib.dir/annealing_strategy.cpp.o CMakeFiles/rmp_lib.dir/delay_optimization_strategy.cpp.o CMakeFiles/rmp_lib.dir/utils.cpp.o CMakeFiles/rmp_lib.dir/zero_slack_strategy.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib librmp_lib.a

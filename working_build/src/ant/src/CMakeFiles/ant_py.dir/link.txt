@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _ant_py.a "CMakeFiles/ant_py.dir/CMakeFiles/ant_py.dir/AntennaChecker-pyPYTHON_wrap.cxx.o" "CMakeFiles/ant_py.dir/ant_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _ant_py.a

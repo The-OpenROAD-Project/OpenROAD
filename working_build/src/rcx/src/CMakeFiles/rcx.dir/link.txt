@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc rcx.a CMakeFiles/rcx.dir/CMakeFiles/rcx.dir/extTCL_wrap.cxx.o "CMakeFiles/rcx.dir/rcx-tclInitVar.cc.o" CMakeFiles/rcx.dir/MakeOpenRCX.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib rcx.a

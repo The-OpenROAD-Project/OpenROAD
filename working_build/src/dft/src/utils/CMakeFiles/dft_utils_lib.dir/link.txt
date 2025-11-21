@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libdft_utils_lib.a CMakeFiles/dft_utils_lib.dir/Utils.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libdft_utils_lib.a

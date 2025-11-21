@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libCUGR.a CMakeFiles/CUGR.dir/src/CUGR.cpp.o CMakeFiles/CUGR.dir/src/Design.cpp.o CMakeFiles/CUGR.dir/src/GeoTypes.cpp.o CMakeFiles/CUGR.dir/src/GRNet.cpp.o CMakeFiles/CUGR.dir/src/GRTree.cpp.o CMakeFiles/CUGR.dir/src/GridGraph.cpp.o CMakeFiles/CUGR.dir/src/Layers.cpp.o CMakeFiles/CUGR.dir/src/Netlist.cpp.o CMakeFiles/CUGR.dir/src/MazeRoute.cpp.o CMakeFiles/CUGR.dir/src/PatternRoute.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libCUGR.a

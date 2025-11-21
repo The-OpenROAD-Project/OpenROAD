@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libtst.a CMakeFiles/tst.dir/src/fixture.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libtst.a

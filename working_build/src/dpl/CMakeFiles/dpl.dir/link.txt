@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc dpl.a CMakeFiles/dpl.dir/CMakeFiles/dpl.dir/OpendpTCL_wrap.cxx.o "CMakeFiles/dpl.dir/dpl-tclInitVar.cc.o" CMakeFiles/dpl.dir/src/MakeOpendp.cpp.o CMakeFiles/dpl.dir/src/graphics/Graphics.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib dpl.a

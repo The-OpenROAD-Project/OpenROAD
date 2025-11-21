@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _drt_py.a "CMakeFiles/drt_py.dir/CMakeFiles/drt_py.dir/TritonRoute-pyPYTHON_wrap.cxx.o" "CMakeFiles/drt_py.dir/drt_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _drt_py.a

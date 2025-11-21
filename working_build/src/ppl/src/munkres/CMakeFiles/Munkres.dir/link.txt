@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libMunkres.a CMakeFiles/Munkres.dir/src/Hungarian.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libMunkres.a

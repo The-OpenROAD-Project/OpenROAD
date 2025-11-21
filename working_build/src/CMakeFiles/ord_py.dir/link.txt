@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _ord_py.a "CMakeFiles/ord_py.dir/CMakeFiles/ord_py.dir/OpenRoad-pyPYTHON_wrap.cxx.o" "CMakeFiles/ord_py.dir/ord_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _ord_py.a

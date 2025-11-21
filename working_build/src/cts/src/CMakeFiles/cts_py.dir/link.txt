@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _cts_py.a "CMakeFiles/cts_py.dir/CMakeFiles/cts_py.dir/TritonCTS-pyPYTHON_wrap.cxx.o" "CMakeFiles/cts_py.dir/cts_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _cts_py.a

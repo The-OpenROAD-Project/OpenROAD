@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc sta_swig.a CMakeFiles/sta_swig.dir/CMakeFiles/sta_swig.dir/StaAppTCL_wrap.cxx.o
+/home/tool/binutils/binutils-2.27/bin/ranlib sta_swig.a

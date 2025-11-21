@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _exa_py.a "CMakeFiles/exa_py.dir/CMakeFiles/exa_py.dir/example-pyPYTHON_wrap.cxx.o" "CMakeFiles/exa_py.dir/exa_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _exa_py.a

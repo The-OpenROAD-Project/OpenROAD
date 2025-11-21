@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc stt.a CMakeFiles/stt.dir/CMakeFiles/stt.dir/SteinerTreeBuilderTCL_wrap.cxx.o "CMakeFiles/stt.dir/stt-tclInitVar.cc.o" CMakeFiles/stt.dir/src/MakeSteinerTreeBuilder.cpp.o CMakeFiles/stt.dir/src/LinesRenderer.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib stt.a

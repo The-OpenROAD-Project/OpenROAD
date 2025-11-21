@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libest_lib.a CMakeFiles/est_lib.dir/EstimateParasitics.cpp.o CMakeFiles/est_lib.dir/EstimateParasiticsCallBack.cpp.o CMakeFiles/est_lib.dir/MakeWireParasitics.cpp.o CMakeFiles/est_lib.dir/OdbCallBack.cpp.o CMakeFiles/est_lib.dir/SteinerTree.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libest_lib.a

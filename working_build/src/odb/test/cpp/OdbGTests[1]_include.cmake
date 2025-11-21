@@ -1,0 +1,5 @@
+if(EXISTS "/home/memzfs_projects/MLBuf_extension/OR_latest/build/src/odb/test/cpp/OdbGTests[1]_tests.cmake")
+  include("/home/memzfs_projects/MLBuf_extension/OR_latest/build/src/odb/test/cpp/OdbGTests[1]_tests.cmake")
+else()
+  add_test(OdbGTests_NOT_BUILT OdbGTests_NOT_BUILT)
+endif()

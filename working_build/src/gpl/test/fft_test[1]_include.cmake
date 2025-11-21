@@ -1,0 +1,5 @@
+if(EXISTS "/home/memzfs_projects/MLBuf_extension/OR_latest/build/src/gpl/test/fft_test[1]_tests.cmake")
+  include("/home/memzfs_projects/MLBuf_extension/OR_latest/build/src/gpl/test/fft_test[1]_tests.cmake")
+else()
+  add_test(fft_test_NOT_BUILT fft_test_NOT_BUILT)
+endif()

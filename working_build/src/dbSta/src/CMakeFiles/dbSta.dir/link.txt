@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc dbSta.a CMakeFiles/dbSta.dir/CMakeFiles/dbSta.dir/dbStaTCL_wrap.cxx.o "CMakeFiles/dbSta.dir/dbSta-tclInitVar.cc.o" CMakeFiles/dbSta.dir/MakeDbSta.cc.o
+/home/tool/binutils/binutils-2.27/bin/ranlib dbSta.a

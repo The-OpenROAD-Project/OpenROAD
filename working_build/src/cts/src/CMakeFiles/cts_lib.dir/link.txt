@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libcts_lib.a CMakeFiles/cts_lib.dir/Clock.cpp.o CMakeFiles/cts_lib.dir/TreeBuilder.cpp.o CMakeFiles/cts_lib.dir/HTreeBuilder.cpp.o CMakeFiles/cts_lib.dir/SinkClustering.cpp.o CMakeFiles/cts_lib.dir/TechChar.cpp.o CMakeFiles/cts_lib.dir/TritonCTS.cpp.o CMakeFiles/cts_lib.dir/Clustering.cpp.o CMakeFiles/cts_lib.dir/LatencyBalancer.cpp.o CMakeFiles/cts_lib.dir/CtsOptions.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libcts_lib.a

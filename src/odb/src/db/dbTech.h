@@ -13,6 +13,7 @@
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "odb/odb.h"
+#include "odb/dbIterator.h" //CShah: added for dbIterator
 
 namespace odb {
 
@@ -93,7 +94,7 @@ class _dbTech : public _dbObject
 
   // NON-PERSISTANT-NON-STREAMED-MEMBERS
   dbTechLayerItr* _layer_itr;
-  dbBoxItr<128>* _box_itr;
+  dbIterator* _box_itr; //CShah: template dbBoxItr
   dbPropertyItr* _prop_itr;
 
   double _getLefVersion() const;

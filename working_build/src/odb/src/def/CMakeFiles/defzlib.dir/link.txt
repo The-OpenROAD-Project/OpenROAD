@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libdefzlib.a CMakeFiles/defzlib.dir/defzlib/defzlib.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libdefzlib.a

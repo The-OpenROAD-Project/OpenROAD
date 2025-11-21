@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _psm_py.a "CMakeFiles/psm_py.dir/CMakeFiles/psm_py.dir/pdnsim-pyPYTHON_wrap.cxx.o" "CMakeFiles/psm_py.dir/psm_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _psm_py.a

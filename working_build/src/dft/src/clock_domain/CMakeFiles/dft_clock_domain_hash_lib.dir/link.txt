@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libdft_clock_domain_hash_lib.a CMakeFiles/dft_clock_domain_hash_lib.dir/ClockDomainHash.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libdft_clock_domain_hash_lib.a

@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libdft_config_lib.a CMakeFiles/dft_config_lib.dir/DftConfig.cpp.o CMakeFiles/dft_config_lib.dir/ScanArchitectConfig.cpp.o CMakeFiles/dft_config_lib.dir/ScanStitchConfig.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libdft_config_lib.a

@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc upf.a CMakeFiles/upf.dir/CMakeFiles/upf.dir/upfTCL_wrap.cxx.o "CMakeFiles/upf.dir/upf-tclInitVar.cc.o" CMakeFiles/upf.dir/MakeUpf.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib upf.a

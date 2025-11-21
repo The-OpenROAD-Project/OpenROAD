@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _ifp_py.a "CMakeFiles/ifp_py.dir/CMakeFiles/ifp_py.dir/InitFloorplan-pyPYTHON_wrap.cxx.o" "CMakeFiles/ifp_py.dir/ifp_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _ifp_py.a

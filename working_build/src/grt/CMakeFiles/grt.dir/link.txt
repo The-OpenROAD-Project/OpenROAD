@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc grt.a CMakeFiles/grt.dir/CMakeFiles/grt.dir/GlobalRouterTCL_wrap.cxx.o "CMakeFiles/grt.dir/grt-tclInitVar.cc.o" CMakeFiles/grt.dir/src/MakeGlobalRouter.cpp.o CMakeFiles/grt.dir/src/heatMap.cpp.o CMakeFiles/grt.dir/src/heatMapRudy.cpp.o CMakeFiles/grt.dir/src/GrouteRenderer.cpp.o CMakeFiles/grt.dir/src/fastroute/src/FastRouteRenderer.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib grt.a

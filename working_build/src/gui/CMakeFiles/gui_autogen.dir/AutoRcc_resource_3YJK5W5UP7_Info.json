@@ -1,0 +1,38 @@
+{
+	"BUILD_DIR" : "/home/memzfs_projects/MLBuf_extension/OR_latest/build/src/gui/gui_autogen",
+	"CMAKE_BINARY_DIR" : "/home/memzfs_projects/MLBuf_extension/OR_latest/build",
+	"CMAKE_CURRENT_BINARY_DIR" : "/home/memzfs_projects/MLBuf_extension/OR_latest/build/src/gui",
+	"CMAKE_CURRENT_SOURCE_DIR" : "/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui",
+	"CMAKE_SOURCE_DIR" : "/home/memzfs_projects/MLBuf_extension/OR_latest",
+	"INCLUDE_DIR" : "/home/memzfs_projects/MLBuf_extension/OR_latest/build/src/gui/gui_autogen/include",
+	"INPUTS" : 
+	[
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/icon.png",
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/google_icons/round_zoom_in_black_36dp.png",
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/google_icons/baseline_touch_app_black_36dp.png",
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/google_icons/baseline_palette_black_36dp.png",
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/google_icons/sharp_play_arrow_black_36dp.png",
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/google_icons/round_undo_black_36dp.png",
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/google_icons/round_add_black_36dp.png",
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/google_icons/round_minusloupe_black_36dp.png",
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/google_icons/round_loupe_black_36dp.png",
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/google_icons/round_unfold_less_black_36dp.png",
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/google_icons/baseline_visibility_black_36dp.png",
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/google_icons/baseline_flashlight_off_black_36dp.png",
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/google_icons/round_cancel_black_36dp.png",
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/google_icons/round_remove_black_36dp.png",
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/google_icons/round_delete_black_36dp.png",
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/google_icons/round_unfold_more_black_36dp.png",
+		"/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/google_icons/baseline_flashlight_on_black_36dp.png"
+	],
+	"LOCK_FILE" : "/home/memzfs_projects/MLBuf_extension/OR_latest/build/src/gui/CMakeFiles/gui_autogen.dir/AutoRcc_resource_3YJK5W5UP7_Lock.lock",
+	"MULTI_CONFIG" : false,
+	"OPTIONS" : [ "-name", "resource" ],
+	"OUTPUT_CHECKSUM" : "3YJK5W5UP7",
+	"OUTPUT_NAME" : "qrc_resource.cpp",
+	"RCC_EXECUTABLE" : "/usr/lib64/qt5/bin/rcc",
+	"RCC_LIST_OPTIONS" : [ "--list" ],
+	"SETTINGS_FILE" : "/home/memzfs_projects/MLBuf_extension/OR_latest/build/src/gui/CMakeFiles/gui_autogen.dir/AutoRcc_resource_3YJK5W5UP7_Used.txt",
+	"SOURCE" : "/home/memzfs_projects/MLBuf_extension/OR_latest/src/gui/resources/resource.qrc",
+	"VERBOSITY" : 0
+}

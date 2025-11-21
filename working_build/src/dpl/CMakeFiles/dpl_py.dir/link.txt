@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _dpl_py.a "CMakeFiles/dpl_py.dir/CMakeFiles/dpl_py.dir/Opendp-pyPYTHON_wrap.cxx.o" "CMakeFiles/dpl_py.dir/dpl_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _dpl_py.a

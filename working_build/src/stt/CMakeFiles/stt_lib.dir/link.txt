@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libstt_lib.a CMakeFiles/stt_lib.dir/src/SteinerTreeBuilder.cpp.o CMakeFiles/stt_lib.dir/src/flt/flute.cpp.o CMakeFiles/stt_lib.dir/POWV9.cpp.o CMakeFiles/stt_lib.dir/POST9.cpp.o CMakeFiles/stt_lib.dir/src/pdr/src/pd.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libstt_lib.a

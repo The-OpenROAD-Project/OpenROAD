@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libant_lib.a CMakeFiles/ant_lib.dir/AntennaChecker.cc.o CMakeFiles/ant_lib.dir/Polygon.cc.o CMakeFiles/ant_lib.dir/WireBuilder.cc.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libant_lib.a

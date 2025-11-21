@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc liblefzlib.a CMakeFiles/lefzlib.dir/lefzlib/lefzlib.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib liblefzlib.a

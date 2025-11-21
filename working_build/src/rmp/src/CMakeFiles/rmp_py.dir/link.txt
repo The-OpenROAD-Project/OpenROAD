@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _rmp_py.a "CMakeFiles/rmp_py.dir/CMakeFiles/rmp_py.dir/rmp-pyPYTHON_wrap.cxx.o" "CMakeFiles/rmp_py.dir/rmp_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _rmp_py.a

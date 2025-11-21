@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libdft_replace_lib.a CMakeFiles/dft_replace_lib.dir/ScanReplace.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libdft_replace_lib.a

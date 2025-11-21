@@ -142,6 +142,7 @@ using sta::BufferUse;
 using sta::CLOCK;
 using sta::LeakagePower;
 using sta::LeakagePowerSeq;
+using BufferedTreePtr = std::shared_ptr<BufferedTree>;
 
 Resizer::Resizer(Logger* logger,
                  dbDatabase* db,
@@ -2662,16 +2663,22 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
   estimate_parasitics_->estimateWireParasitics();
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
+  //bool store_buffered_trees_flag_;
+  logger_->report("[INFO] Virtual Buffering Starts ....");
+  bool store_buffered_trees_flag_ = true;
+  logger_->report("[INFO] store_buffered_trees_flag = {}", store_buffered_trees_flag_);
   repair_design_->repairDesign(max_wire_length_,
                                0.0,
                                0.0,
                                0.0,
                                false,
+                               false,
                                repaired_net_count,
                                slew_violations,
                                cap_violations,
                                fanout_violations,
-                               length_violations);
+                               length_violations,
+                               store_buffered_trees_flag_);
   repair_design_->reportViolationCounters(false,
                                           slew_violations,
                                           cap_violations,
@@ -2680,6 +2687,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
                                           repaired_net_count);
   fullyRebuffer(nullptr);
   ensureLevelDrvrVertices();
+  logger_->report("[INFO] Virtual Buffering Ends ....");
 
   findResizeSlacks1();
   if (run_journal_restore) {
@@ -4127,7 +4135,7 @@ void Resizer::cellWireDelay(LibertyPort* drvr_port,
   for (Corner* corner : *corners) {
     const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
     estimate_parasitics_->makeWireParasitic(
-        net, drvr_pin, load_pin, wire_length, corner, parasitics);
+        net, drvr_pin, load_pin, wire_length, const_cast<sta::Corner*>(corner), parasitics);
 
     for (TimingArcSet* arc_set : drvr_cell->timingArcSets()) {
       if (arc_set->to() == drvr_port) {
@@ -4166,6 +4174,28 @@ void Resizer::cellWireDelay(LibertyPort* drvr_port,
 }
 
 ////////////////////////////////////////////////////////////////
+
+void Resizer::makeWireParasitic(Net* net,
+                                Pin* drvr_pin,
+                                Pin* load_pin,
+                                double wire_length,  // meters
+                                const Corner* corner,
+                                Parasitics* parasitics)
+{
+  const ParasiticAnalysisPt* parasitics_ap
+      = corner->findParasiticAnalysisPt(max_);
+  Parasitic* parasitic
+      = parasitics->makeParasiticNetwork(net, false, parasitics_ap);
+  ParasiticNode* n1
+      = parasitics->ensureParasiticNode(parasitic, drvr_pin, network_);
+  ParasiticNode* n2
+      = parasitics->ensureParasiticNode(parasitic, load_pin, network_);
+  double wire_cap = wire_length * estimate_parasitics_->wireSignalCapacitance(corner);
+  double wire_res = wire_length * estimate_parasitics_->wireSignalResistance(corner);
+  parasitics->incrCap(n1, wire_cap / 2.0);
+  parasitics->makeResistor(parasitic, 1, wire_res, n1, n2);
+  parasitics->incrCap(n2, wire_cap / 2.0);
+}
 
 double Resizer::designArea()
 {

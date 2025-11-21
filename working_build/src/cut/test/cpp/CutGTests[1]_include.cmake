@@ -1,0 +1,5 @@
+if(EXISTS "/home/memzfs_projects/MLBuf_extension/OR_latest/build/src/cut/test/cpp/CutGTests[1]_tests.cmake")
+  include("/home/memzfs_projects/MLBuf_extension/OR_latest/build/src/cut/test/cpp/CutGTests[1]_tests.cmake")
+else()
+  add_test(CutGTests_NOT_BUILT CutGTests_NOT_BUILT)
+endif()

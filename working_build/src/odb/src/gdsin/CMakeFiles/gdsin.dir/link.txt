@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libgdsin.a CMakeFiles/gdsin.dir/gdsin.cpp.o CMakeFiles/gdsin.dir/gdsUtil.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libgdsin.a

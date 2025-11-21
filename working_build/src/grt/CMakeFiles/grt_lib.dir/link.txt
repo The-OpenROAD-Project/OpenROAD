@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libgrt_lib.a CMakeFiles/grt_lib.dir/src/Grid.cpp.o CMakeFiles/grt_lib.dir/src/Net.cpp.o CMakeFiles/grt_lib.dir/src/Pin.cpp.o CMakeFiles/grt_lib.dir/src/RepairAntennas.cpp.o CMakeFiles/grt_lib.dir/src/Rudy.cpp.o CMakeFiles/grt_lib.dir/src/GlobalRouter.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libgrt_lib.a

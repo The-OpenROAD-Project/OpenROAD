@@ -1,0 +1,7 @@
+add_test([=[HTreeBuilderTest.Instantiates]=]  /home/memzfs_projects/MLBuf_extension/OR_latest/build/src/cts/test/cts_unittest [==[--gtest_filter=HTreeBuilderTest.Instantiates]==] --gtest_also_run_disabled_tests)
+set_tests_properties([=[HTreeBuilderTest.Instantiates]=]  PROPERTIES WORKING_DIRECTORY /home/memzfs_projects/MLBuf_extension/OR_latest/src/cts/test SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
+add_test([=[Cluster.BranchingPointIsDisabledIfNoBranchesAreProvided]=]  /home/memzfs_projects/MLBuf_extension/OR_latest/build/src/cts/test/cts_unittest [==[--gtest_filter=Cluster.BranchingPointIsDisabledIfNoBranchesAreProvided]==] --gtest_also_run_disabled_tests)
+set_tests_properties([=[Cluster.BranchingPointIsDisabledIfNoBranchesAreProvided]=]  PROPERTIES WORKING_DIRECTORY /home/memzfs_projects/MLBuf_extension/OR_latest/src/cts/test SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
+add_test([=[SinkClusteringTest.ZeroHeightRegion]=]  /home/memzfs_projects/MLBuf_extension/OR_latest/build/src/cts/test/cts_unittest [==[--gtest_filter=SinkClusteringTest.ZeroHeightRegion]==] --gtest_also_run_disabled_tests)
+set_tests_properties([=[SinkClusteringTest.ZeroHeightRegion]=]  PROPERTIES WORKING_DIRECTORY /home/memzfs_projects/MLBuf_extension/OR_latest/src/cts/test SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
+set(  cts_unittest_TESTS HTreeBuilderTest.Instantiates Cluster.BranchingPointIsDisabledIfNoBranchesAreProvided SinkClusteringTest.ZeroHeightRegion)

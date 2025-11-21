@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc dst.a CMakeFiles/dst.dir/CMakeFiles/dst.dir/DistributedTCL_wrap.cxx.o "CMakeFiles/dst.dir/dst-tclInitVar.cc.o" CMakeFiles/dst.dir/src/MakeDistributed.cc.o
+/home/tool/binutils/binutils-2.27/bin/ranlib dst.a

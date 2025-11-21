@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=OpenROAD
+Exec=openroad -gui
+Icon=/usr/local/share/openroad/gui/icon.png
+Categories=Development;Electronics

@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _rcx_py.a "CMakeFiles/rcx_py.dir/CMakeFiles/rcx_py.dir/ext-pyPYTHON_wrap.cxx.o" "CMakeFiles/rcx_py.dir/rcx_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _rcx_py.a

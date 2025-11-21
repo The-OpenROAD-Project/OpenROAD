@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libFastRoute4.1.a CMakeFiles/FastRoute4.1.dir/src/FastRoute.cpp.o CMakeFiles/FastRoute4.1.dir/src/RSMT.cpp.o CMakeFiles/FastRoute4.1.dir/src/RipUp.cpp.o CMakeFiles/FastRoute4.1.dir/src/maze.cpp.o CMakeFiles/FastRoute4.1.dir/src/maze3D.cpp.o CMakeFiles/FastRoute4.1.dir/src/route.cpp.o CMakeFiles/FastRoute4.1.dir/src/utility.cpp.o CMakeFiles/FastRoute4.1.dir/src/graph2d.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libFastRoute4.1.a

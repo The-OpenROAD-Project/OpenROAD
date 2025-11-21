@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libdft_stitch_lib.a CMakeFiles/dft_stitch_lib.dir/ScanStitch.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libdft_stitch_lib.a

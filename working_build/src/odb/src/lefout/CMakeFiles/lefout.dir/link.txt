@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc liblefout.a CMakeFiles/lefout.dir/lefout.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib liblefout.a

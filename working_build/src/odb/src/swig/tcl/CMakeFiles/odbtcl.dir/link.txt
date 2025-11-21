@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc odbtcl.a CMakeFiles/odbtcl.dir/CMakeFiles/odbtcl.dir/odbTCL_wrap.cxx.o "CMakeFiles/odbtcl.dir/odbtcl-tclInitVar.cc.o" CMakeFiles/odbtcl.dir/MakeOdb.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib odbtcl.a

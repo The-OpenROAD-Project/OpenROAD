@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _utl_py.a "CMakeFiles/utl_py.dir/CMakeFiles/utl_py.dir/Logger-pyPYTHON_wrap.cxx.o" "CMakeFiles/utl_py.dir/utl_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _utl_py.a

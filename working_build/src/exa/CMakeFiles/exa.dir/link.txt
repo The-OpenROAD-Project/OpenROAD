@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc exa.a CMakeFiles/exa.dir/CMakeFiles/exa.dir/exampleTCL_wrap.cxx.o "CMakeFiles/exa.dir/exa-tclInitVar.cc.o" CMakeFiles/exa.dir/src/MakeExample.cpp.o CMakeFiles/exa.dir/src/graphics.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib exa.a

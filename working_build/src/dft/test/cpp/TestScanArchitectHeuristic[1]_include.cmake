@@ -1,0 +1,5 @@
+if(EXISTS "/home/memzfs_projects/MLBuf_extension/OR_latest/build/src/dft/test/cpp/TestScanArchitectHeuristic[1]_tests.cmake")
+  include("/home/memzfs_projects/MLBuf_extension/OR_latest/build/src/dft/test/cpp/TestScanArchitectHeuristic[1]_tests.cmake")
+else()
+  add_test(TestScanArchitectHeuristic_NOT_BUILT TestScanArchitectHeuristic_NOT_BUILT)
+endif()

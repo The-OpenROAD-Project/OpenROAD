@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc libzutil.a CMakeFiles/zutil.dir/poly_decomp.cpp.o CMakeFiles/zutil.dir/util.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib libzutil.a

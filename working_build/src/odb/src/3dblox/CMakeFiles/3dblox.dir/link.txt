@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc lib3dblox.a CMakeFiles/3dblox.dir/baseParser.cpp.o CMakeFiles/3dblox.dir/dbvParser.cpp.o CMakeFiles/3dblox.dir/dbxParser.cpp.o CMakeFiles/3dblox.dir/3dblox.cpp.o
+/home/tool/binutils/binutils-2.27/bin/ranlib lib3dblox.a

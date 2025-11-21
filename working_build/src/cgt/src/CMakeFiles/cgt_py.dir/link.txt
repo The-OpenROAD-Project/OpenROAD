@@ -1,0 +1,2 @@
+/home/tool/binutils/binutils-2.27/bin/ar qc _cgt_py.a "CMakeFiles/cgt_py.dir/CMakeFiles/cgt_py.dir/cgt-pyPYTHON_wrap.cxx.o" "CMakeFiles/cgt_py.dir/cgt_py-pythonInitVar.cc.o"
+/home/tool/binutils/binutils-2.27/bin/ranlib _cgt_py.a
