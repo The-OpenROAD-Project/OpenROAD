@@ -14,7 +14,7 @@ mcp = FastMCP(
       OpenROAD's unified application implementing an RTL-to-GDS Flow. Documentation at https://openroad.readthedocs.io/en/latest/
       This MCP server expose several tools that you can use to interact with the current instance.
       You don't need to write tcl files, you can direclty use run_tcl to send commands to openroad.
-      Check with the command "pwd" to know in what path you are running OpenROAD. Use "cd" to change directories to be able to read files correctly.
+      At the begining, check what is the current path OpenROAD is running in with "pwd" and change it if needed with "cd".
     """
 )
 
@@ -245,7 +245,7 @@ def reset() -> str:
   WARNING: You will need to start from the begining loading all the libraries and designs again.
   Use this command if you need to change something and OpenROAD does not allow you to do it after loading a design like re-defining corners.
   """
-  tcl_command """
+  tcl_command = """
   set db [::ord::get_db]
   $db clear
   dbDatabase_destroy $db
