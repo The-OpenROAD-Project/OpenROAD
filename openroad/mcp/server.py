@@ -8,153 +8,173 @@ from typing import Literal
 
 # Create an MCP server
 mcp = FastMCP(
-    name = "OpenROAD",
-    instructions = """
+    name="OpenROAD",
+    instructions="""
       This server provides an instance of OpenROAD.
       OpenROAD's unified application implementing an RTL-to-GDS Flow. Documentation at https://openroad.readthedocs.io/en/latest/
       This MCP server expose several tools that you can use to interact with the current instance.
       You don't need to write tcl files, you can direclty use run_tcl to send commands to openroad.
       At the begining, check what is the current path OpenROAD is running in with "pwd" and change it if needed with "cd".
-    """
+    """,
 )
 
 tech = Tech()
 design = Design(tech)
 
+
 def eval_tcl(command):
-  # Create a temporary file to capture stdout
-  with tempfile.TemporaryFile(mode='w+') as tmp:
-      # Flush stdout to ensure order
-      sys.stdout.flush()
-      
-      # Save original stdout
-      original_stdout_fd = os.dup(1)
-      
-      try:
-          # Redirect stdout to the temporary file
-          os.dup2(tmp.fileno(), 1)
-          
-          # Run the command
-          tcl_result = design.evalTclString(command)
-      finally:
-          # Restore stdout
-          os.dup2(original_stdout_fd, 1)
-          os.close(original_stdout_fd)
-          
-      # Read the captured output
-      tmp.seek(0)
-      stdout_output = tmp.read()
-      
-  if stdout_output:
-      return stdout_output
-  return tcl_result
+    # Create a temporary file to capture stdout
+    with tempfile.TemporaryFile(mode="w+") as tmp:
+        # Flush stdout to ensure order
+        sys.stdout.flush()
+
+        # Save original stdout
+        original_stdout_fd = os.dup(1)
+
+        try:
+            # Redirect stdout to the temporary file
+            os.dup2(tmp.fileno(), 1)
+
+            # Run the command
+            tcl_result = design.evalTclString(command)
+        finally:
+            # Restore stdout
+            os.dup2(original_stdout_fd, 1)
+            os.close(original_stdout_fd)
+
+        # Read the captured output
+        tmp.seek(0)
+        stdout_output = tmp.read()
+
+    if stdout_output:
+        return stdout_output
+    return tcl_result
+
 
 @mcp.tool
 def source(filename: str) -> str:
-  """Sources a tcl file and runs it into OpenROAD
+    """Sources a tcl file and runs it into OpenROAD
 
-  Args:
-    filename: The absolute path to the tcl file to source and run
 
-  Returns
-    The status of the command.
-  """
+    Args:
+      filename: The absolute path to the tcl file to source and run
 
-  return eval_tcl("source %s" %filename)
+
+    Returns
+      The status of the command.
+    """
+
+    return eval_tcl("source %s" % filename)
+
 
 @mcp.tool
 def cd(path: str) -> str:
-  """Changes the current folder where OpenROAD is running
+    """Changes the current folder where OpenROAD is running
 
-  Args:
-    path: The new path were OpenROAD will run from
 
-  Returns
-    The status of the command.
-  """
+    Args:
+      path: The new path were OpenROAD will run from
 
-  return eval_tcl("cd %s" %path)
+
+    Returns
+      The status of the command.
+    """
+
+    return eval_tcl("cd %s" % path)
+
 
 @mcp.tool
 def pwd() -> str:
-  """Returns the current path where OpenROAD is running
+    """Returns the current path where OpenROAD is running
 
-  Returns
-    The path where OpenROAD is running
-  """
 
-  return eval_tcl("pwd")
+    Returns
+      The path where OpenROAD is running
+    """
+
+    return eval_tcl("pwd")
 
 
 @mcp.tool
 def run_tcl(command: str) -> str:
-  """Runs any tcl command available on OpenROAD
+    """Runs any tcl command available on OpenROAD
 
-  Args:
-    command: A tcl command to run on this OpenROAD instance
 
-  Returns:
-    The text response of the command.
-  """
-  return eval_tcl(command)
+    Args:
+      command: A tcl command to run on this OpenROAD instance
+
+
+    Returns:
+      The text response of the command.
+    """
+    return eval_tcl(command)
+
 
 @mcp.tool
 def read_lef(filename: str, tech: bool, library: bool) -> str:
-  """Reads Library Exchange Format (.lef) files or tech files or library (.lib) files
+    """Reads Library Exchange Format (.lef) files or tech files or library (.lib) files
 
-  Args:
-    filename: The absolute path to the file to read.
-    tech: boolean if we are reading a tech file
-    library: boolean if we are reading a library file
 
-  Returns
-    The status of the command.
+    Args:
+      filename: The absolute path to the file to read.
+      tech: boolean if we are reading a tech file
+      library: boolean if we are reading a library file
 
-  """
 
-  if tech:
-    return eval_tcl("read_lef -tech %s" %filename)
-  if library:
-    return eval_tcl("read_lef -library %s" %filename)
-  return eval_tcl("read_lef %s" %filename)
+    Returns
+      The status of the command.
+
+
+    """
+
+    if tech:
+        return eval_tcl("read_lef -tech %s" % filename)
+    if library:
+        return eval_tcl("read_lef -library %s" % filename)
+    return eval_tcl("read_lef %s" % filename)
 
 
 @mcp.tool
 def read_def(filename: str) -> str:
-  """Read Design Exchange Format (.def) files.
+    """Read Design Exchange Format (.def) files.
 
-  Args:
-    filename: The absolute path to the file to read.
 
-  Returns
-    The status of the command.
-  """
+    Args:
+      filename: The absolute path to the file to read.
 
-  return eval_tcl("read_def %s" %filename)
+
+    Returns
+      The status of the command.
+    """
+
+    return eval_tcl("read_def %s" % filename)
 
 
 @mcp.tool
 def read_verilog(filename: str) -> str:
-  """Read Verilog (.v) input file.
+    """Read Verilog (.v) input file.
 
-  Args:
-    filename: The absolute path to the verilog file to read.
 
-  Returns
-    The status of the command.
-  """
+    Args:
+      filename: The absolute path to the verilog file to read.
 
-  return eval_tcl("read_verilog %s" %filename)
+
+    Returns
+      The status of the command.
+    """
+
+    return eval_tcl("read_verilog %s" % filename)
+
 
 @mcp.tool()
 def get_property(
     object_name: str,
     object_type: Literal["cell", "net", "pin", "port", "lib_cell"],
-    property_name: str
+    property_name: str,
 ) -> str:
     """
     Queries a specific property of a design object in the OpenROAD database.
-    
+
     Use this to inspect specific details of the design, such as the area of a cell,
     the capacitance of a net, or the reference name of an instance.
 
@@ -171,27 +191,23 @@ def get_property(
                        - For nets: "capacitance", "weight"
                        - For pins: "direction", "arrival_window"
     """
-    
+
     selector_map = {
         "cell": "get_cells",
         "net": "get_nets",
         "pin": "get_pins",
         "port": "get_ports",
-        "lib_cell": "get_lib_cells"
+        "lib_cell": "get_lib_cells",
     }
-    
+
     selector_cmd = selector_map.get(object_type)
-    
+
     tcl_command = f"get_property [{selector_cmd} {{{object_name}}}] {property_name}"
     return eval_tcl(tcl_command)
 
 
 @mcp.tool()
-def get_cells(
-    pattern: str = "*",
-    hierarchical: bool = False,
-    limit: int = 20
-) -> str:
+def get_cells(pattern: str = "*", hierarchical: bool = False, limit: int = 20) -> str:
     """
     Searches for cell instances in the design matching a specific name pattern.
     Returns a list of instance names (e.g., "u_core/u_alu/u_adder").
@@ -238,53 +254,56 @@ def get_cells(
 
     return eval_tcl(tcl_command)
 
+
 @mcp.tool
 def reset() -> str:
-  """
-  Resets OpenROAD dropping the database.
-  WARNING: You will need to start from the begining loading all the libraries and designs again.
-  Use this command if you need to change something and OpenROAD does not allow you to do it after loading a design like re-defining corners.
-  """
-  tcl_command = """
+    """
+    Resets OpenROAD dropping the database.
+    WARNING: You will need to start from the begining loading all the libraries and designs again.
+    Use this command if you need to change something and OpenROAD does not allow you to do it after loading a design like re-defining corners.
+    """
+    tcl_command = """
   set db [::ord::get_db]
   $db clear
   dbDatabase_destroy $db
   set db [dbDatabase_create]
   """
-  return eval_tcl(tcl_command)
+    return eval_tcl(tcl_command)
 
 
 # Timing tools
 @mcp.tool
 def report_wns() -> str:
-  """
-  Calculates and reports the Worst Negative Slack (WNS) for the currently
-  loaded Verilog design in OpenROAD.
+    """
+    Calculates and reports the Worst Negative Slack (WNS) for the currently
+    loaded Verilog design in OpenROAD.
 
-  WNS is the critical metric for timing closure; a negative value indicates
-  that the design does not meet frequency constraints.
-  """
-  return eval_tcl("report_wns")
+    WNS is the critical metric for timing closure; a negative value indicates
+    that the design does not meet frequency constraints.
+    """
+    return eval_tcl("report_wns")
+
 
 @mcp.tool()
 def report_tns(digits: int = 2) -> str:
-  """
-  Calculates and reports the Total Negative Slack (TNS) for the currently
-  loaded Verilog design in OpenROAD.
+    """
+    Calculates and reports the Total Negative Slack (TNS) for the currently
+    loaded Verilog design in OpenROAD.
 
-  TNS is the sum of all negative slack across all failing endpoints in the
-  design. While WNS (Worst Negative Slack) indicates the speed limit, TNS
-  indicates the *magnitude* of the failing paths. A large TNS value suggests
-  many paths are failing and the design may need significant architectural
-  changes or different optimization strategies.
-  """
-  return eval_tcl("report_tns")
+    TNS is the sum of all negative slack across all failing endpoints in the
+    design. While WNS (Worst Negative Slack) indicates the speed limit, TNS
+    indicates the *magnitude* of the failing paths. A large TNS value suggests
+    many paths are failing and the design may need significant architectural
+    changes or different optimization strategies.
+    """
+    return eval_tcl("report_tns")
+
 
 @mcp.tool()
 def report_checks(
     path_delay: Literal["min", "max", "min_max"] = "max",
     group_count: int = 1,
-    detailed: bool = False
+    detailed: bool = False,
 ) -> str:
     """
     Performs detailed timing path analysis (report_checks) on the current design.

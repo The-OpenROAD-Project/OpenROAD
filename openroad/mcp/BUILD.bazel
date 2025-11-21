@@ -1,5 +1,5 @@
-load("@openroad_rules_python//python:defs.bzl", "py_binary")
 load("@openroad-pip//:requirements.bzl", "requirement")
+load("@openroad_rules_python//python:defs.bzl", "py_binary")
 
 py_binary(
     name = "server",
