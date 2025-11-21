@@ -173,6 +173,22 @@ void RamGen::makeCellByte(Grid& ram_grid,
   ram_grid.addCell(std::move(sel_cell), (byte_number * 9) + 8);
 }
 
+std::unique_ptr<Layout> RamGen::generateTapColumn(const int word_count,
+        const int tapcell_col)
+{
+  auto tapcell_layout = std::make_unique<Layout>(odb::vertical);
+  for (int i = 0; i < word_count; ++i) {
+    auto tapcell_cell = std::make_unique<Cell>();
+    makeCellInst(tapcell_cell.get(),
+                 "tapcell",
+                 fmt::format("cell{}_{}", tapcell_col, i),
+                 tapcell_,
+                 {});
+    tapcell_layout->addCell(std::move(tapcell_cell));
+  }
+  return tapcell_layout;
+}
+
 std::unique_ptr<Cell> RamGen::makeDecoder(
     const std::string& prefix,
     const int num_word,
@@ -389,7 +405,6 @@ void RamGen::generate(const int bytes_per_word,
   clock_gate_cell_ = nullptr;
   buffer_cell_ = nullptr;
   findMasters();
-  max_tap_dist *= 10;
 
   auto chip = db_->getChip();
   if (!chip) {
@@ -551,35 +566,22 @@ void RamGen::generate(const int bytes_per_word,
   ram_grid.gridInit();
 
   if (tapcell_) {
+    // max tap distance specified is greater than the length of ram 
     if (ram_grid.getRowWidth() <= max_tap_dist) {
-      auto tapcell_layout = std::make_unique<Layout>(odb::vertical);
-      for (int i = 0; i < word_count; ++i) {
-        auto tapcell_cell = std::make_unique<Cell>();
-        makeCellInst(tapcell_cell.get(),
-                     "tapcell",
-                     fmt::format("cell_{}", i),
-                     tapcell_,
-                     {});
-        tapcell_layout->addCell(std::move(tapcell_cell));
-      }
+      auto tapcell_layout = generateTapColumn(word_count, 0);
       ram_grid.insertLayout(std::move(tapcell_layout), 0); 
     } else {
       int nearest_tap = 0;
+      int tapcell_count = 0;
+      // iterates through each of the columns 
       for (int col = 0; col < ram_grid.numLayouts(); ++col) {
-        if (nearest_tap >= max_tap_dist) {
-          auto tapcell_layout = std::make_unique<Layout>(odb::vertical);
-          for (int i = 0; i < word_count; ++i) {
-            auto tapcell_cell = std::make_unique<Cell>();
-            makeCellInst(tapcell_cell.get(),
-                         "tapcell",
-                         fmt::format("cell{}_{}", col, i),
-                         tapcell_,
-                         {});
-            tapcell_layout->addCell(std::move(tapcell_cell));
-          }
+        if (nearest_tap >= max_tap_dist) { 
+          //if the nearest_tap is too far, generate tap column
+          auto tapcell_layout = generateTapColumn(word_count, tapcell_count);
           ram_grid.insertLayout(std::move(tapcell_layout), col);
-          ++col;
+          ++col; // col adjustment after insertion
           nearest_tap = 0;
+          ++tapcell_count;
         } 
         nearest_tap += ram_grid.getLayoutWidth(col);
       }

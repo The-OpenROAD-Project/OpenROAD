@@ -52,10 +52,13 @@ proc generate_ram_netlist { args } {
   if { [info exists keys(-tapcell)] } {
     if { [info exists keys(-max_tap_dist)] } {
       set max_tap_dist $keys(-max_tap_dist)
+      set max_tap_dist [expr $max_tap_dist * 1000]
     } else {
       utl::error RAM 21 "The -max_tap_dist argument must be specified with tapcell."
     }
     set tapcell $keys(-tapcell)
+  } else {
+    utl::info RAM 22 "No tapcell is specified. The generated layout may not pass Design Rule Checks."
   }
 
   ram::generate_ram_netlist_cmd $bytes_per_word $word_count $storage_cell \

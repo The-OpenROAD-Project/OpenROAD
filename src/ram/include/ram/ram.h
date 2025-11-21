@@ -86,6 +86,9 @@ class RamGen
 
   odb::dbBTerm* makeBTerm(const std::string& name, odb::dbIoType io_type);
 
+  std::unique_ptr<Layout> generateTapColumn(int word_count, 
+          int tapcell_col);
+
   std::unique_ptr<Cell> makeDecoder(const std::string& prefix,
                                     int num_word,
                                     int read_ports,
