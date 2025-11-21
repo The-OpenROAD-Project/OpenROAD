@@ -583,97 +583,6 @@ const ConnectionsMap& Cluster::getConnectionsMap() const
   return connections_map_;
 }
 
-// The connection signature is based on connection topology
-// if the number of connnections between two clusters is larger than the
-// net_threshold we think the two clusters are connected, otherwise they are
-// disconnected.
-bool Cluster::isSameConnSignature(const Cluster& cluster, float net_threshold)
-{
-  std::vector<int> neighbors;          // neighbors of current cluster
-  std::vector<int> cluster_neighbors;  // neighbors of the input cluster
-  for (auto& [cluster_id, weight] : connections_map_) {
-    if ((cluster_id != id_) && (cluster_id != cluster.id_)
-        && (weight >= net_threshold)) {
-      neighbors.push_back(cluster_id);
-    }
-  }
-
-  if (neighbors.empty()) {
-    return false;
-  }
-
-  for (auto& [cluster_id, weight] : cluster.connections_map_) {
-    if ((cluster_id != id_) && (cluster_id != cluster.id_)
-        && (weight >= net_threshold)) {
-      cluster_neighbors.push_back(cluster_id);
-    }
-  }
-
-  if (neighbors.size() != cluster_neighbors.size()) {
-    return false;
-  }
-  std::sort(neighbors.begin(), neighbors.end());
-  std::sort(cluster_neighbors.begin(), cluster_neighbors.end());
-  for (int i = 0; i < neighbors.size(); i++) {
-    if (neighbors[i] != cluster_neighbors[i]) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-// Directly connected macros should be grouped in an array of macros.
-// The number of connections must be greater than the threshold in order for
-// the macros to be considered part of the same array.
-bool Cluster::hasMacroConnectionWith(const Cluster& cluster,
-                                     float net_threshold)
-{
-  if (id_ != cluster.getId()) {
-    for (const auto& [cluster_id, num_of_conn] : connections_map_) {
-      if (cluster_id == cluster.getId() && num_of_conn > net_threshold) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-// Get closely-connected cluster if such cluster exists
-// For example, if a small cluster A is closely connected to a
-// well-formed cluster B, (there are also other well-formed clusters
-// C, D), A is only connected to B and A has no connection with C, D
-// Candidate clusters always need to be merged.
-// A non candidate cluster is a well-formed cluster.
-int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
-                             float net_threshold)
-{
-  int closely_cluster = -1;
-  int num_closely_clusters = 0;
-  for (auto& [cluster_id, num_nets] : connections_map_) {
-    debugPrint(logger_,
-               MPL,
-               "multilevel_autoclustering",
-               2,
-               "cluster_id: {}, nets: {}",
-               cluster_id,
-               num_nets);
-    if (num_nets > net_threshold
-        && std::find(
-               candidate_clusters.begin(), candidate_clusters.end(), cluster_id)
-               == candidate_clusters.end()) {
-      num_closely_clusters++;
-      closely_cluster = cluster_id;
-    }
-  }
-
-  if (num_closely_clusters == 1) {
-    return closely_cluster;
-  }
-  return -1;
-}
-
 // Macro Placement Support
 void Cluster::setSoftMacro(std::unique_ptr<SoftMacro> soft_macro)
 {
@@ -1362,6 +1271,15 @@ void Cluster::reportConnections() const
     logger_->report(" {:>12d} | {:>19.2f}", cluster_id, connections_weight);
   }
   logger_->report("");
+}
+
+float Cluster::allConnectionsWeight() const
+{
+  float all_weight = 0;
+  for (const auto& [cluster_id, connection_weight] : connections_map_) {
+    all_weight += connection_weight;
+  }
+  return all_weight;
 }
 
 }  // namespace mpl
