@@ -6,6 +6,7 @@
 
 #include "dbBlock.h"
 #include "dbCore.h"
+#include "odb/dbObject.h"
 #include "odb/odb.h"
 
 namespace odb {
