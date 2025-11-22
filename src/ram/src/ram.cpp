@@ -571,11 +571,14 @@ void RamGen::generate(const int bytes_per_word,
       auto tapcell_layout = generateTapColumn(word_count, 0);
       ram_grid.insertLayout(std::move(tapcell_layout), 0); 
     } else {
-      int nearest_tap = 0;
+      // needed this calculation so first cells have right distance
+      int nearest_tap = (max_tap_dist / ram_grid.getWidth()) * ram_grid.getLayoutWidth(0);
       int tapcell_count = 0;
+      // x distance between transistor and tapcell means 2x distance between tapcells
+      max_tap_dist *= 2; 
       // iterates through each of the columns 
       for (int col = 0; col < ram_grid.numLayouts(); ++col) {
-        if (nearest_tap >= max_tap_dist) { 
+        if (nearest_tap + ram_grid.getLayoutWidth(col) >= max_tap_dist) { 
           //if the nearest_tap is too far, generate tap column
           auto tapcell_layout = generateTapColumn(word_count, tapcell_count);
           ram_grid.insertLayout(std::move(tapcell_layout), col);
@@ -585,7 +588,13 @@ void RamGen::generate(const int bytes_per_word,
         } 
         nearest_tap += ram_grid.getLayoutWidth(col);
       }
+      // check for last column in the grid
+      if (nearest_tap >= max_tap_dist / 2) {
+        auto tapcell_layout = generateTapColumn(word_count, tapcell_count);
+        ram_grid.addLayout(std::move(tapcell_layout));
+      }
     } 
+
   }  
 
   ram_grid.gridInit();
