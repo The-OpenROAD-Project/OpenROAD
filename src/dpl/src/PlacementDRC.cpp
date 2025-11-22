@@ -315,8 +315,10 @@ bool PlacementDRC::checkPadding(const Node* cell,
       if (hasPaddingConflict(cell, pixel->cell)) {
         return false;
       }
-      if (hasPaddingConflict(cell, pixel->padding_reserved_by)) {
-        return false;
+      for (const auto& reserved_cell : pixel->padding_reserved_by) {
+        if (hasPaddingConflict(cell, reserved_cell)) {
+          return false;
+        }
       }
     }
   }

@@ -245,6 +245,7 @@ class DetailedMgr
 
   // Journal operations
   const Journal& getJournal() const { return journal_; }
+  Journal& getJournal() { return journal_; }
   void eraseFromGrid(Node* node);
   void paintInGrid(Node* node);
   struct compareNodesX
