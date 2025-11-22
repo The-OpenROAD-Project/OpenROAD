@@ -105,7 +105,7 @@ class AntennaChecker::Impl
   Impl(odb::dbDatabase* db, utl::Logger* logger);
 
   // net nullptr -> check all nets
-  int checkAntennas(odb::dbNet* net, int num_threads, bool verbose);
+  int checkAntennas(odb::dbNet* net, bool verbose);
   int antennaViolationCount() const;
   Violations getAntennaViolations(odb::dbNet* net,
                                   odb::dbMTerm* diode_mterm,

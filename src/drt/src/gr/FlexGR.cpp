@@ -246,7 +246,6 @@ void FlexGR::searchRepairMacro(int iter,
     uworkers.push_back(std::move(worker));
   }
 
-  // omp_set_num_threads(1);
   // currently this is not mt-safe
   for (auto& worker : uworkers) {
     worker->initBoundary();
@@ -374,9 +373,6 @@ void FlexGR::searchRepair(int iter,
       xIdx++;
     }
 
-    omp_set_num_threads(std::min(8, router_cfg_->MAX_THREADS));
-    // omp_set_num_threads(1);
-
     // parallel execution
     for (auto& workerBatch : workers) {
       for (auto& workersInBatch : workerBatch) {
@@ -387,7 +383,8 @@ void FlexGR::searchRepair(int iter,
         }
         // multi thread
         ThreadException exception;
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(dynamic) \
+    num_threads(std::min(8, omp_get_num_threads()))
         for (int i = 0; i < (int) workersInBatch.size(); i++) {  // NOLINT
           try {
             workersInBatch[i]->main_mt();

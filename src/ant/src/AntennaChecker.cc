@@ -64,11 +64,9 @@ AntennaChecker::AntennaChecker(odb::dbDatabase* db, utl::Logger* logger)
 
 AntennaChecker::~AntennaChecker() = default;
 
-int AntennaChecker::checkAntennas(odb::dbNet* net,
-                                  int num_threads,
-                                  bool verbose)
+int AntennaChecker::checkAntennas(odb::dbNet* net, bool verbose)
 {
-  return impl_->checkAntennas(net, num_threads, verbose);
+  return impl_->checkAntennas(net, verbose);
 }
 
 int AntennaChecker::antennaViolationCount() const
@@ -1153,9 +1151,7 @@ bool AntennaChecker::Impl::haveGuides()
   return true;
 }
 
-int AntennaChecker::Impl::checkAntennas(odb::dbNet* net,
-                                        const int num_threads,
-                                        bool verbose)
+int AntennaChecker::Impl::checkAntennas(odb::dbNet* net, bool verbose)
 {
   {
     std::lock_guard<std::mutex> lock(map_mutex_);
@@ -1210,7 +1206,6 @@ int AntennaChecker::Impl::checkAntennas(odb::dbNet* net,
         nets_.push_back(net);
       }
     }
-    omp_set_num_threads(num_threads);
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < nets_.size(); i++) {
       odb::dbNet* net = nets_[i];

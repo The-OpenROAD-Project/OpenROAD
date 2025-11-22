@@ -219,7 +219,6 @@ void FlexPA::prepPattern()
 
   int cnt = 0;
 
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
   ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
   for (auto& unique_class : unique) {

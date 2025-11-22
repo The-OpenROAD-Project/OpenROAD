@@ -2003,7 +2003,6 @@ void GuideProcessor::processGuides()
     net->setOrigGuides(rects);
     net_to_gr_pins[net];
   }
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
   utl::ThreadException exception;
 #pragma omp parallel for
   for (int i = 0; i < nets_to_guides.size(); i++) {

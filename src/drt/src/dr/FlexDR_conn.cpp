@@ -1199,7 +1199,6 @@ void FlexDRConnectivityChecker::check(int iter)
   }
 
   const int numLayers = getTech()->getLayers().size();
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
   for (auto& batch : batches) {
     ProfileTask profile("batch");
     // prefix a = all batch

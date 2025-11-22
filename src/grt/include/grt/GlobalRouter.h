@@ -198,8 +198,7 @@ class GlobalRouter
   odb::Point getPositionOnGrid(const odb::Point& real_position);
   int repairAntennas(odb::dbMTerm* diode_mterm,
                      int iterations,
-                     float ratio_margin,
-                     int num_threads = 1);
+                     float ratio_margin);
   void updateResources(const int& init_x,
                        const int& init_y,
                        const int& final_x,

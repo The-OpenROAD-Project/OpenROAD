@@ -33,7 +33,6 @@ struct RouterConfiguration
   int OR_SEED = -1;
   double OR_K = 0;
 
-  int MAX_THREADS = 1;
   int BATCHSIZE = 1024;
   int BATCHSIZETA = 8;
   int MTSAFEDIST = 2000;

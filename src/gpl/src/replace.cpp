@@ -107,7 +107,7 @@ void Replace::addPlacementCluster(const Cluster& cluster)
   clusters_.emplace_back(cluster);
 }
 
-void Replace::doIncrementalPlace(int threads)
+void Replace::doIncrementalPlace()
 {
   log_->info(GPL, 6, "Execute incremental mode global placement.");
   if (pbc_ == nullptr) {
@@ -160,7 +160,7 @@ void Replace::doIncrementalPlace(int threads)
       pb->unlockAll();
     }
 
-    doNesterovPlace(threads);
+    doNesterovPlace();
     return;
   }
 
@@ -170,12 +170,12 @@ void Replace::doIncrementalPlace(int threads)
   constexpr float rough_oveflow = 0.2f;
   float previous_overflow = overflow_;
   setTargetOverflow(std::max(rough_oveflow, overflow_));
-  doInitialPlace(threads);
+  doInitialPlace();
 
   int previous_max_iter = nesterovPlaceMaxIter_;
-  initNesterovPlace(threads);
+  initNesterovPlace();
   setNesterovPlaceMaxIter(300);
-  int iter = doNesterovPlace(threads);
+  int iter = doNesterovPlace();
   setNesterovPlaceMaxIter(previous_max_iter);
 
   // Finish the overflow resolution from the rough placement
@@ -186,11 +186,11 @@ void Replace::doIncrementalPlace(int threads)
 
   setTargetOverflow(previous_overflow);
   if (previous_overflow < rough_oveflow) {
-    doNesterovPlace(threads, iter + 1);
+    doNesterovPlace(iter + 1);
   }
 }
 
-void Replace::doInitialPlace(int threads)
+void Replace::doInitialPlace()
 {
   log_->info(GPL, 5, "Execute conjugate gradient initial placement.");
   if (pbc_ == nullptr) {
@@ -234,20 +234,15 @@ void Replace::doInitialPlace(int threads)
   std::unique_ptr<InitialPlace> ip(
       new InitialPlace(ipVars, pbc_, pbVec_, graphics_->MakeNew(log_), log_));
   ip_ = std::move(ip);
-  ip_->doBicgstabPlace(threads);
+  ip_->doBicgstabPlace();
 }
 
-void Replace::runMBFF(int max_sz,
-                      float alpha,
-                      float beta,
-                      int threads,
-                      int num_paths)
+void Replace::runMBFF(int max_sz, float alpha, float beta, int num_paths)
 {
   MBFF pntset(db_,
               sta_,
               log_,
               rs_,
-              threads,
               20,
               num_paths,
               gui_debug_,
@@ -255,7 +250,7 @@ void Replace::runMBFF(int max_sz,
   pntset.Run(max_sz, alpha, beta);
 }
 
-bool Replace::initNesterovPlace(int threads)
+bool Replace::initNesterovPlace()
 {
   if (!pbc_) {
     PlacerBaseVars pbVars;
@@ -298,8 +293,7 @@ bool Replace::initNesterovPlace(int threads)
 
     nbVars.useUniformTargetDensity = uniformTargetDensityMode_;
 
-    nbc_ = std::make_shared<NesterovBaseCommon>(
-        nbVars, pbc_, log_, threads, clusters_);
+    nbc_ = std::make_shared<NesterovBaseCommon>(nbVars, pbc_, log_, clusters_);
 
     for (const auto& pb : pbVec_) {
       nbVec_.push_back(std::make_shared<NesterovBase>(nbVars, pb, nbc_, log_));
@@ -367,9 +361,9 @@ bool Replace::initNesterovPlace(int threads)
   return true;
 }
 
-int Replace::doNesterovPlace(int threads, int start_iter)
+int Replace::doNesterovPlace(int start_iter)
 {
-  if (!initNesterovPlace(threads)) {
+  if (!initNesterovPlace()) {
     return 0;
   }
 
@@ -459,7 +453,7 @@ void Replace::setUniformTargetDensityMode(bool mode)
   uniformTargetDensityMode_ = mode;
 }
 
-float Replace::getUniformTargetDensity(int threads)
+float Replace::getUniformTargetDensity()
 {
   log_->info(GPL, 22, "Initialize gpl and calculate uniform density.");
   log_->redirectStringBegin();
@@ -467,7 +461,7 @@ float Replace::getUniformTargetDensity(int threads)
   setSkipIoMode(true);  // in case bterms are not placed
 
   float density = 1.0f;
-  if (initNesterovPlace(threads)) {
+  if (initNesterovPlace()) {
     density = nbVec_[0]->getUniformTargetDensity();
   }
 

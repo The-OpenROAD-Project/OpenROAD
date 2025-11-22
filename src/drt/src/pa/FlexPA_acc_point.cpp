@@ -1486,7 +1486,6 @@ void FlexPA::genAllAccessPoints()
   ProfileTask profile("PA:point");
   int pin_count = 0;
 
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
   ThreadException exception;
 
   const auto& unique = unique_insts_.getUniqueClasses();
@@ -1521,7 +1520,6 @@ void FlexPA::genAllAccessPoints()
 
   // PA for IO terms
   if (target_insts_.empty()) {
-    omp_set_num_threads(router_cfg_->MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
     for (unsigned i = 0;  // NOLINT
          i < getDesign()->getTopBlock()->getTerms().size();

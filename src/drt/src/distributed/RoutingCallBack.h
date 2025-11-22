@@ -44,7 +44,6 @@ class RoutingCallBack : public dst::JobCallBack
       : router_(router),
         dist_(dist),
         logger_(logger),
-        init_(true),
         pa_(router->getDesign(),
             logger,
             nullptr,
@@ -58,10 +57,6 @@ class RoutingCallBack : public dst::JobCallBack
     }
     RoutingJobDescription* desc
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
-    if (init_) {
-      init_ = false;
-      omp_set_num_threads(router_->getRouterConfiguration()->MAX_THREADS);
-    }
     auto workers = desc->getWorkers();
     int size = workers.size();
     std::vector<std::pair<int, std::string>> results;
@@ -116,8 +111,7 @@ class RoutingCallBack : public dst::JobCallBack
       frTime t;
       logger_->report("Design Update");
       if (desc->isDesignUpdate()) {
-        router_->updateDesign(desc->getUpdates(),
-                              router_->getRouterConfiguration()->MAX_THREADS);
+        router_->updateDesign(desc->getUpdates());
       } else {
         router_->resetDb(desc->getDesignPath().c_str());
       }
@@ -167,7 +161,6 @@ class RoutingCallBack : public dst::JobCallBack
         break;
       case PinAccessJobDescription::INST_ROWS: {
         auto instRows = deserializeInstRows(desc->getPath());
-        omp_set_num_threads(router_->getRouterConfiguration()->MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < instRows.size(); i++) {  // NOLINT
           pa_.genInstRowPattern(instRows.at(i));
@@ -241,7 +234,6 @@ class RoutingCallBack : public dst::JobCallBack
   utl::Logger* logger_;
   std::string design_path_;
   std::string router_cfg_path_;
-  bool init_;
   FlexDRViaData via_data_;
   FlexPA pa_;
 };

@@ -279,6 +279,7 @@ cc_library(
         "@boost.polygon",
         "@boost.serialization",
         "@boost.stacktrace",
+        "@openmp",
         "@tk_tcl//:tcl",
     ],
 )

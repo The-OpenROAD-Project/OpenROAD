@@ -64,12 +64,12 @@ class Replace
 
   void reset();
 
-  void doIncrementalPlace(int threads);
-  void doInitialPlace(int threads);
-  void runMBFF(int max_sz, float alpha, float beta, int threads, int num_paths);
+  void doIncrementalPlace();
+  void doInitialPlace();
+  void runMBFF(int max_sz, float alpha, float beta, int num_paths);
 
   void addPlacementCluster(const Cluster& cluster);
-  int doNesterovPlace(int threads, int start_iter = 0);
+  int doNesterovPlace(int start_iter = 0);
 
   // Initial Place param settings
   void setInitialPlaceMaxIter(int iter);
@@ -92,7 +92,7 @@ class Replace
   void setMaxPhiCoef(float maxPhiCoef);
 
   // Query for uniform density value
-  float getUniformTargetDensity(int threads);
+  float getUniformTargetDensity();
 
   // HPWL: half-parameter wire length.
   void setReferenceHpwl(float refHpwl);
@@ -131,7 +131,7 @@ class Replace
                 std::string images_path);
 
  private:
-  bool initNesterovPlace(int threads);
+  bool initNesterovPlace();
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;

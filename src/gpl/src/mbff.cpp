@@ -2062,7 +2062,7 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
   std::vector<std::vector<std::pair<int, int>>> all_mappings(num_pointsets);
   std::vector<std::vector<Tray>> all_final_trays(num_pointsets);
 
-#pragma omp parallel for num_threads(num_threads_)
+#pragma omp parallel for
   for (int t = 0; t < num_pointsets; t++) {
     std::vector<std::vector<Tray>> cur_trays;
     RunMultistart(cur_trays, pointsets[t], all_start_trays[t], array_mask);
@@ -2232,7 +2232,6 @@ void MBFF::SetTrayNames()
 void MBFF::Run(const int mx_sz, const float alpha, const float beta)
 {
   std::srand(1);
-  omp_set_num_threads(num_threads_);
 
   ReadFFs();
   ReadPaths();
@@ -2533,7 +2532,6 @@ MBFF::MBFF(odb::dbDatabase* db,
            sta::dbSta* sta,
            utl::Logger* log,
            rsz::Resizer* resizer,
-           const int threads,
            const int multistart,
            const int num_paths,
            const bool debug_graphics,
@@ -2546,7 +2544,6 @@ MBFF::MBFF(odb::dbDatabase* db,
       graphics_(std::move(graphics)),
       log_(log),
       resizer_(resizer),
-      num_threads_(threads),
       multistart_(multistart),
       num_paths_(num_paths),
       multiplier_(block_->getDbUnitsPerMicron()),

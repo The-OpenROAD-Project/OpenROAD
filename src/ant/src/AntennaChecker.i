@@ -38,8 +38,7 @@ check_antennas(const char *net_name, bool verbose)
       logger->error(utl::ANT, 12, "Net {} not found.", net_name);
     }
   }
-  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
-  return getAntennaChecker()->checkAntennas(net, num_threads, verbose);
+  return getAntennaChecker()->checkAntennas(net, verbose);
 }
 
 int

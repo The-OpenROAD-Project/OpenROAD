@@ -14,6 +14,7 @@
 #include "frBaseTypes.h"
 #include "global.h"
 #include "gui/gui.h"
+#include "omp.h"
 #include "pa/FlexPA.h"
 #include "utl/Logger.h"
 
@@ -47,9 +48,9 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
     }
   }
 
-  if (router_cfg->MAX_THREADS > 1) {
-    logger_->info(DRT, 115, "Setting MAX_THREADS=1 for use with the PA GUI.");
-    router_cfg->MAX_THREADS = 1;
+  if (omp_get_num_threads() > 1) {
+    logger_->info(DRT, 115, "Setting single threaded for use with the PA GUI.");
+    omp_set_num_threads(1);
   }
 
   if (!settings_->pinName.empty()) {

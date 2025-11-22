@@ -13,6 +13,7 @@
 #include <thread>
 #include <vector>
 
+#include "omp.h"
 #include "ord/Version.hh"
 #include "tcl.h"
 #ifdef ENABLE_PYTHON3
@@ -631,6 +632,17 @@ void OpenRoad::setThreadCount(int threads, bool print_info)
 
   // place limits on tools with threads
   sta_->setThreadCount(threads_);
+
+  // Just to verify that OMP support is compiled in correctly.
+  omp_set_num_threads(2);
+#pragma omp parallel
+  {
+    if (omp_get_num_threads() != 2) {
+      logger_->error(ORD, 103, "OMP threading is not working.");
+    }
+  }
+
+  omp_set_num_threads(threads);
 }
 
 void OpenRoad::setThreadCount(const char* threads, bool print_info)

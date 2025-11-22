@@ -49,7 +49,7 @@ InitialPlace::InitialPlace(InitialPlaceVars ipVars,
 {
 }
 
-void InitialPlace::doBicgstabPlace(int threads)
+void InitialPlace::doBicgstabPlace()
 {
   ResidualError error;
 
@@ -78,8 +78,7 @@ void InitialPlace::doBicgstabPlace(int threads)
                            placeInstForceMatrixY_,
                            fixedInstForceVecY_,
                            instLocVecY_,
-                           log_,
-                           threads);
+                           log_);
 
     if (graphics_ && graphics_->enabled()) {
       graphics_->cellPlot(true);
