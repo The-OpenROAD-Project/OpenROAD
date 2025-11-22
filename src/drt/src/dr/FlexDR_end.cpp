@@ -26,7 +26,9 @@ void FlexDRWorker::endGetModNets(frOrderedIdSet<frNet*>& modNets)
 {
   for (auto& net : nets_) {
     if (net->isModified()) {
-      modNets.insert(net->getFrNet());
+      auto fr_net = net->getFrNet();
+      fr_net->setModified(true);
+      modNets.insert(fr_net);
     }
   }
   // change modified flag to true if another subnet get routed
