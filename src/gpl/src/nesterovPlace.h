@@ -133,14 +133,14 @@ class NesterovPlace
   NesterovPlaceVars npVars_;
   std::unique_ptr<AbstractGraphics> graphics_;
 
+  float total_sum_overflow_binormal_ = 0;
   float total_sum_overflow_ = 0;
-  float total_sum_overflow_unscaled_ = 0;
   // The average here is between regions (NB objects)
+  float average_overflow_binormal_ = 0;
   float average_overflow_ = 0;
-  float average_overflow_unscaled_ = 0;
 
   // Snapshot saving for revert if diverge
-  float diverge_snapshot_average_overflow_unscaled_ = 0;
+  float diverge_snapshot_average_overflow_ = 0;
   int64_t min_hpwl_ = INT64_MAX;
   int diverge_snapshot_iter_ = 0;
   bool is_min_hpwl_ = false;
