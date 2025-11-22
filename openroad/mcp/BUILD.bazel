@@ -1,0 +1,11 @@
+load("@openroad-pip//:requirements.bzl", "requirement")
+load("@openroad_rules_python//python:defs.bzl", "py_binary")
+
+py_binary(
+    name = "server",
+    srcs = ["server.py"],
+    deps = [
+        "//openroad:openroadpy",
+        requirement("fastmcp"),
+    ],
+)
