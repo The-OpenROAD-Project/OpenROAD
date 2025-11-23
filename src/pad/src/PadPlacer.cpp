@@ -980,9 +980,12 @@ void PlacerPadPlacer::place()
   debugPause("Final placement");
 
   // Fixed pad locations
-  for (const auto& [inst, pos] : pad_positions) {
-    placeInstance(
-        snapToRowSite(pos), inst, odb::dbOrientType::R0, false, false);
+  for (auto* inst : getInsts()) {
+    placeInstance(snapToRowSite(pad_positions.at(inst)),
+                  inst,
+                  odb::dbOrientType::R0,
+                  false,
+                  false);
     // TODO possibly build in pad flipping
     addInstanceObstructions(inst);
   }
@@ -1162,6 +1165,7 @@ std::map<odb::dbInst*, int> PlacerPadPlacer::poolAdjacentViolators(
       positions[insts[i]] = position[i];
     }
     placeInstances(positions, true);
+    debugCheckPlacement();
     debugPause(fmt::format("PAVA itr: {}", k));
 
     if (!updated) {
@@ -1311,21 +1315,22 @@ bool PlacerPadPlacer::padSpreading(
                         + (positions[curr]->width / 2);
     positions[curr]->setLocation(std::max(prev_pos, std::min(next_pos, move_to))
                                  - (positions[curr]->width / 2));
-    debugPrint(getLogger(),
-               utl::PAD,
-               "Place",
-               3,
-               "{} / {}: {} -> {} (idx: {}) based on {:.6f} s, {:.6f} p, "
-               "{:.6f} n, {:.6f} t",
-               itr,
-               curr->getName(),
-               curr_pos,
-               positions[curr]->center,
-               snapToRowSite(positions[curr]->min),
-               spring_force,
-               repel_prev_force,
-               repel_next_force,
-               total_force);
+    debugPrint(
+        getLogger(),
+        utl::PAD,
+        "Place",
+        3,
+        "{} / {}: {:.4f}um -> {:.4f}um (idx: {}) based on {:.6f} s, {:.6f} p, "
+        "{:.6f} n, {:.6f} t",
+        itr,
+        curr->getName(),
+        curr_pos / dbus,
+        positions[curr]->center / dbus,
+        snapToRowSite(positions[curr]->min),
+        spring_force,
+        repel_prev_force,
+        repel_next_force,
+        total_force);
   }
 
   placeInstances(positions);
@@ -1339,8 +1344,9 @@ bool PlacerPadPlacer::padSpreading(
              has_violations,
              total_move / dbus,
              net_move / dbus);
+  debugCheckPlacement();
 
-  if (itr % (getLogger()->debugCheck(utl::PAD, "Pause", 2) ? 500 : 100) == 0) {
+  if (itr % (getLogger()->debugCheck(utl::PAD, "Pause", 2) ? 100 : 500) == 0) {
     debugPause(fmt::format("Iterative pad spreading: {}", itr));
   }
 
@@ -1488,6 +1494,31 @@ int PlacerPadPlacer::getTunnelingPosition(odb::dbInst* inst,
   }
 
   return target;
+}
+
+void PlacerPadPlacer::debugCheckPlacement() const
+{
+  if (!getLogger()->debugCheck(utl::PAD, "Check", 1)) {
+    return;
+  }
+
+  bool pause = false;
+  for (auto* inst : getInsts()) {
+    if (checkInstancePlacement(inst)) {
+      debugPrint(getLogger(),
+                 utl::PAD,
+                 "Check",
+                 1,
+                 "Invalid placement for {}",
+                 inst->getName());
+      pause = true;
+    }
+  }
+
+  if (pause && gui::Gui::enabled()) {
+    getLogger()->report("Pausing GUI due to invalid positions of pads");
+    gui::Gui::get()->pause();
+  }
 }
 
 //////////////////////////

@@ -275,6 +275,7 @@ class PlacerPadPlacer : public PadPlacer
                            int target,
                            bool move_up,
                            int itr) const;
+  void debugCheckPlacement() const;
 
   std::map<odb::dbInst*, std::set<odb::dbITerm*>> iterm_connections_;
   std::map<odb::dbInst*, int> ideal_positions_;
