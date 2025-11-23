@@ -19,9 +19,9 @@
 #include <utility>
 #include <vector>
 
+#include "AbstractGraphics.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "gpl/AbstractGraphics.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -598,7 +598,7 @@ bool MBFF::IsValidTray(dbInst* tray)
                 == tray->getITerms().size();
 }
 
-PortName MBFF::PortType(const sta::LibertyPort* lib_port, dbInst* inst)
+MBFF::PortName MBFF::PortType(const sta::LibertyPort* lib_port, dbInst* inst)
 {
   dbMTerm* mterm = network_->staToDb(lib_port);
 
@@ -753,7 +753,7 @@ MBFF::DataToOutputsMap MBFF::GetPinMapping(dbInst* tray)
     if (port->isBus() || port->isBundle()) {
       continue;
     }
-    if (port->isClock()) {
+    if (port->isPwrGnd() || port->isClock()) {
       continue;
     }
     if (port->direction()->isInput()) {

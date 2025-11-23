@@ -222,7 +222,7 @@ void SwapPinsMove::equivCellPins(const LibertyCell* cell,
       ++outputs;
     } else if (direction->isInput()) {
       ++inputs;
-    } else if (direction->isPower() || direction->isGround()) {
+    } else if (port->isPwrGnd()) {
       // skip
     } else {
       ports.clear();

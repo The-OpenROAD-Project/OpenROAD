@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "ClockGatingImpl.h"
 #include "base/abc/abc.h"
 #include "base/io/ioAbc.h"
 #include "base/main/abcapis.h"
@@ -63,14 +64,42 @@ extern void Abc_FrameSetLibGen(void* pLib);
 
 namespace cgt {
 
-ClockGating::ClockGating(utl::Logger* const logger, sta::dbSta* const sta)
+ClockGating::ClockGating(utl::Logger* logger, sta::dbSta* open_sta)
+    : impl_(std::make_unique<Impl>(logger, open_sta))
+{
+}
+
+ClockGating::~ClockGating() = default;
+
+void ClockGating::run()
+{
+  impl_->run();
+}
+
+void ClockGating::setMinInstances(int min_instances)
+{
+  impl_->setMinInstances(min_instances);
+}
+
+void ClockGating::setMaxCover(int max_cover)
+{
+  impl_->setMaxCover(max_cover);
+}
+
+void ClockGating::setDumpDir(const char* dir)
+{
+}
+
+//////////////////////////////////////////////////
+
+ClockGating::Impl::Impl(utl::Logger* const logger, sta::dbSta* const sta)
     : logger_(logger),
       sta_(sta),
       abc_factory_(std::make_unique<cut::AbcLibraryFactory>(logger_))
 {
 }
 
-ClockGating::~ClockGating() = default;
+ClockGating::Impl::~Impl() = default;
 
 // Dumps the given network as GraphViz.
 static void dumpGraphviz(sta::dbNetwork* const network,
@@ -204,7 +233,7 @@ static sta::Pin* getClockPin(sta::dbNetwork* const network,
   return nullptr;
 }
 
-void ClockGating::setDumpDir(const char* const dir)
+void ClockGating::Impl::setDumpDir(const char* const dir)
 {
   if (*dir == '\0') {
     return;
@@ -343,7 +372,7 @@ static std::string combinedInstanceNames(
   return result;
 }
 
-void ClockGating::run()
+void ClockGating::Impl::run()
 {
   debugPrint(logger_,
              CGT,
@@ -387,7 +416,7 @@ void ClockGating::run()
       if (!cell) {
         continue;
       }
-      size_t num_regs
+      int num_regs
           = std::count_if(cell->sequentials().begin(),
                           cell->sequentials().end(),
                           [](const auto* seq) { return seq->isRegister(); });
@@ -403,13 +432,13 @@ void ClockGating::run()
     delete inst_iter;
   }
 
-  using AcceptedIndex = size_t;
+  using AcceptedIndex = int;
   std::unordered_map<sta::Net*, std::vector<AcceptedIndex>> net_to_accepted;
   std::vector<
       std::tuple<std::vector<sta::Net*>, std::vector<sta::Instance*>, bool>>
       accepted_gates;
 
-  for (size_t i = 0; i < instances.size(); i++) {
+  for (int i = 0; i < instances.size(); i++) {
     auto instance = instances[i];
     if (i % 100 == 0) {
       logger_->info(CGT, 3, "Clock gating instance {}/{}", i, instances.size());
@@ -650,14 +679,15 @@ static std::vector<sta::Net*> except(
   return result;
 }
 
-void ClockGating::searchClockGates(sta::Instance* const instance,
-                                   std::vector<sta::Net*>& good_gate_conds,
-                                   const std::vector<sta::Net*>::iterator begin,
-                                   const std::vector<sta::Net*>::iterator end,
-                                   abc::Abc_Ntk_t& abc_network,
-                                   const bool clk_enable)
+void ClockGating::Impl::searchClockGates(
+    sta::Instance* const instance,
+    std::vector<sta::Net*>& good_gate_conds,
+    const std::vector<sta::Net*>::iterator begin,
+    const std::vector<sta::Net*>::iterator end,
+    abc::Abc_Ntk_t& abc_network,
+    const bool clk_enable)
 {
-  size_t half_len = (end - begin) / 2;
+  int half_len = (end - begin) / 2;
   if (half_len == 0) {
     return;
   }
@@ -915,7 +945,7 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
   return obj_stack.back();
 }
 
-utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::makeTestNetwork(
+utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::Impl::makeTestNetwork(
     sta::Instance* const instance,
     const std::vector<sta::Net*>& gate_cond_nets,
     abc::Abc_Ntk_t& abc_network_ref,
@@ -1075,8 +1105,8 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::makeTestNetwork(
   }
 }
 
-bool ClockGating::simulationTest(abc::Abc_Ntk_t* const abc_network,
-                                 const std::string& combined_gate_name)
+bool ClockGating::Impl::simulationTest(abc::Abc_Ntk_t* const abc_network,
+                                       const std::string& combined_gate_name)
 {
   DebugScopedTimer timer(
       sim_time_, logger_, CGT, "clock_gating", 3, "Simulation time: {}");
@@ -1114,8 +1144,8 @@ bool ClockGating::simulationTest(abc::Abc_Ntk_t* const abc_network,
   return true;
 }
 
-bool ClockGating::satTest(abc::Abc_Ntk_t* const abc_network,
-                          const std::string& combined_gate_name)
+bool ClockGating::Impl::satTest(abc::Abc_Ntk_t* const abc_network,
+                                const std::string& combined_gate_name)
 {
   DebugScopedTimer timer(
       sat_time_, logger_, CGT, "clock_gating", 3, "SAT time: {}");
@@ -1145,7 +1175,7 @@ bool ClockGating::satTest(abc::Abc_Ntk_t* const abc_network,
   return true;
 }
 
-bool ClockGating::isCorrectClockGate(
+bool ClockGating::Impl::isCorrectClockGate(
     sta::Instance* const instance,
     const std::vector<sta::Net*>& gate_cond_nets,
     abc::Abc_Ntk_t& abc_network_ref,
@@ -1186,9 +1216,10 @@ bool ClockGating::isCorrectClockGate(
   return true;
 }
 
-void ClockGating::insertClockGate(const std::vector<sta::Instance*>& instances,
-                                  const std::vector<sta::Net*>& gate_cond_nets,
-                                  const bool clk_enable)
+void ClockGating::Impl::insertClockGate(
+    const std::vector<sta::Instance*>& instances,
+    const std::vector<sta::Net*>& gate_cond_nets,
+    const bool clk_enable)
 {
   auto network = sta_->getDbNetwork();
 
@@ -1206,7 +1237,7 @@ void ClockGating::insertClockGate(const std::vector<sta::Instance*>& instances,
   std::vector<sta::Instance*> new_instances;
 
   auto gate_cond_net = gate_cond_nets[0];
-  for (size_t i = 1; i < gate_cond_nets.size(); i++) {
+  for (int i = 1; i < gate_cond_nets.size(); i++) {
     auto inst_name = unique_name_cond_.GetUniqueName("clk_gate_cond_");
     auto inst_builder = clk_enable ? network_builder_.makeOr(inst_name)
                                    : network_builder_.makeAnd(inst_name);
@@ -1227,7 +1258,7 @@ void ClockGating::insertClockGate(const std::vector<sta::Instance*>& instances,
   assert(clk_pin);
   auto clk_net = network->net(clk_pin);
   auto clocks = network->clkNetwork()->clocks(clk_pin);
-  for (size_t i = 1; i < instances.size(); i++) {
+  for (int i = 1; i < instances.size(); i++) {
     auto clk_pin = getClockPin(network, instances[i]);
     assert(clk_pin);
     if (*sta_->clkNetwork()->clocks(clk_pin) != *clocks) {
@@ -1274,7 +1305,7 @@ void ClockGating::insertClockGate(const std::vector<sta::Instance*>& instances,
   }
 }
 
-UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::exportToAbc(
+UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::Impl::exportToAbc(
     sta::Instance* const instance,
     const std::vector<sta::Net*>& nets)
 {
@@ -1346,7 +1377,7 @@ UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::exportToAbc(
   return abc_network;
 }
 
-void ClockGating::dump(const char* const name)
+void ClockGating::Impl::dump(const char* const name)
 {
   if (!dump_dir_) {
     return;
@@ -1358,7 +1389,8 @@ void ClockGating::dump(const char* const name)
   dump_counter_++;
 }
 
-void ClockGating::dumpAbc(const char* const name, abc::Abc_Ntk_t* const network)
+void ClockGating::Impl::dumpAbc(const char* const name,
+                                abc::Abc_Ntk_t* const network)
 {
   if (!dump_dir_) {
     return;
@@ -1386,26 +1418,27 @@ void ClockGating::dumpAbc(const char* const name, abc::Abc_Ntk_t* const network)
   dump_counter_++;
 }
 
-std::filesystem::path ClockGating::getNetworkGraphvizDumpPath(
+std::filesystem::path ClockGating::Impl::getNetworkGraphvizDumpPath(
     const char* const name)
 {
   return getDumpDir()
          / (std::to_string(dump_counter_) + "_openroad_" + name + ".dot");
 }
 
-std::filesystem::path ClockGating::getAbcGraphvizDumpPath(
+std::filesystem::path ClockGating::Impl::getAbcGraphvizDumpPath(
     const char* const name)
 {
   return getDumpDir()
          / (std::to_string(dump_counter_) + "_abc_" + name + ".dot");
 }
 
-std::filesystem::path ClockGating::getAbcVerilogDumpPath(const char* const name)
+std::filesystem::path ClockGating::Impl::getAbcVerilogDumpPath(
+    const char* const name)
 {
   return getDumpDir() / (std::to_string(dump_counter_) + "_abc_" + name + ".v");
 }
 
-std::filesystem::path ClockGating::getDumpDir()
+std::filesystem::path ClockGating::Impl::getDumpDir()
 {
   if (dump_dir_) {
     return *dump_dir_;

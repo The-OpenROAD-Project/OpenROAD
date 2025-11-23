@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025, The OpenROAD Authors
 
-#include "cgt/NetworkBuilder.h"
+#include "NetworkBuilder.h"
 
 #include <cassert>
 

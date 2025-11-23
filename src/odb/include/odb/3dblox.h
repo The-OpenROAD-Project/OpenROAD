@@ -24,6 +24,8 @@ class dbChipRegionInst;
 class dbChipInst;
 class BumpMapEntry;
 class dbChipRegion;
+class dbBlock;
+class dbInst;
 
 class ThreeDBlox
 {
@@ -32,6 +34,8 @@ class ThreeDBlox
   ~ThreeDBlox() = default;
   void readDbv(const std::string& dbv_file);
   void readDbx(const std::string& dbx_file);
+  void readBMap(const std::string& bmap_file);
+  void check();
 
  private:
   void createChiplet(const ChipletDef& chiplet);
@@ -40,6 +44,7 @@ class ThreeDBlox
   void createChipInst(const ChipletInst& chip_inst);
   void createConnection(const Connection& connection);
   void createBump(const BumpMapEntry& entry, dbChipRegion* chip_region);
+  dbInst* createBump(const BumpMapEntry& entry, dbBlock* block);
   dbChipRegionInst* resolvePath(const std::string& path,
                                 std::vector<dbChipInst*>& path_insts);
   void readHeaderIncludes(const std::vector<std::string>& includes);

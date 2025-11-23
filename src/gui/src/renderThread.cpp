@@ -325,7 +325,6 @@ void RenderThread::drawTracks(dbTechLayer* layer,
   painter->setBrush(Qt::NoBrush);
 
   bool is_horizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
-  std::vector<int> grids;
   if ((!is_horizontal && viewer_->options_->arePrefTracksVisible())
       || (is_horizontal && viewer_->options_->areNonPrefTracksVisible())) {
     bool show_grid = true;
@@ -336,8 +335,7 @@ void RenderThread::drawTracks(dbTechLayer* layer,
     }
 
     if (show_grid) {
-      grid->getGridX(grids);
-      for (int x : grids) {
+      for (int x : grid->getGridX()) {
         if (restart_) {
           break;
         }
@@ -362,8 +360,7 @@ void RenderThread::drawTracks(dbTechLayer* layer,
     }
 
     if (show_grid) {
-      grid->getGridY(grids);
-      for (int y : grids) {
+      for (int y : grid->getGridY()) {
         if (restart_) {
           break;
         }
