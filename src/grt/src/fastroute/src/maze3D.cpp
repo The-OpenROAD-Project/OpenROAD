@@ -726,7 +726,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       }
 
       if (enable_resistance_aware_) {
-        if (treeedge->len > 100) {
+        if (treeedge->len > 50) {
           resistance_aware_ = true;
           // logger_->report("Net: {} - Length: {}", net->getName(),
           // treeedge->len);
