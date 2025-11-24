@@ -469,7 +469,7 @@ odb::Rect Cluster::getBBox() const
 
 Point Cluster::getCenter() const
 {
-  return {getX() + getWidth() / 2.0, getY() + getHeight() / 2.0};
+  return {getX() + getWidth() / 2, getY() + getHeight() / 2};
 }
 
 // Hierarchy Support
@@ -1172,8 +1172,8 @@ void SoftMacro::resizeRandomly(
       0, width_intervals_.size() - 1);
   const int idx = index_distribution(generator);
 
-  const float min_width = width_intervals_[idx].min;
-  const float max_width = width_intervals_[idx].max;
+  const int min_width = width_intervals_[idx].min;
+  const int max_width = width_intervals_[idx].max;
   width_ = min_width + distribution(generator) * (max_width - min_width);
   area_ = width_intervals_[idx].min
           * static_cast<int64_t>(height_intervals_[idx].max);

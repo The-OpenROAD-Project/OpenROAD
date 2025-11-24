@@ -305,10 +305,6 @@ class HierRTLMP
   float exchange_swap_prob_ = 0.2;
   float resize_prob_ = 0.4;
 
-  // since we convert from the database unit to the micrometer
-  // during calculation, we may loss some accuracy.
-  const float conversion_tolerance_ = 0.01;
-
   bool skip_macro_placement_ = false;
   bool keep_clustering_data_{false};
 

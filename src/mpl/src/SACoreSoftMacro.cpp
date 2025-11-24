@@ -305,8 +305,8 @@ void SACoreSoftMacro::initialize()
   std::vector<float> notch_penalty_list;
   std::vector<float> area_penalty_list;
   std::vector<float> fixed_macros_penalty_list;
-  std::vector<float> width_list;
-  std::vector<float> height_list;
+  std::vector<int> width_list;
+  std::vector<int> height_list;
 
   // We don't want to stop in the normalization factor setup
   MplObserver* save_graphics = graphics_;
@@ -322,8 +322,9 @@ void SACoreSoftMacro::initialize()
 
     width_list.push_back(width_);
     height_list.push_back(height_);
-    area_penalty_list.push_back(block_->dbuAreaToMicrons(getArea())
-                                / block_->dbuAreaToMicrons(outline_.area()));
+    area_penalty_list.push_back(
+        block_->dbuAreaToMicrons(width_ * static_cast<int64_t>(height_))
+        / block_->dbuAreaToMicrons(outline_.area()));
     outline_penalty_list.push_back(outline_penalty_);
     wirelength_list.push_back(wirelength_);
     guidance_penalty_list.push_back(guidance_penalty_);
@@ -398,6 +399,7 @@ void SACoreSoftMacro::initialize()
     fixed_macros_penalty_ = fixed_macros_penalty_list[i];
     cost_list.push_back(calNormCost());
   }
+
   float delta_cost = 0.0;
   for (int i = 1; i < cost_list.size(); i++) {
     delta_cost += std::abs(cost_list[i] - cost_list[i - 1]);
@@ -749,10 +751,10 @@ void SACoreSoftMacro::resizeOneCluster()
     return;
   }
 
-  const float lx = src_macro.getX();
-  const float ly = src_macro.getY();
-  const float ux = lx + src_macro.getWidth();
-  const float uy = ly + src_macro.getHeight();
+  const int lx = src_macro.getX();
+  const int ly = src_macro.getY();
+  const int ux = lx + src_macro.getWidth();
+  const int uy = ly + src_macro.getHeight();
   // if the macro is outside of the outline, we randomly resize the macro
   if (ux >= outline_.dx() || uy >= outline_.dy()) {
     src_macro.resizeRandomly(distribution_, generator_);
@@ -767,34 +769,33 @@ void SACoreSoftMacro::resizeOneCluster()
   const float option = distribution_(generator_);
   if (option <= 0.25) {
     // Change the width of soft block to Rb = e.x2 - b.x1
-    float e_x2 = outline_.dx();
+    int e_x2 = outline_.dx();
     for (const int macro_id : pos_seq_) {
       SoftMacro& macro = macros_[macro_id];
-      const float cur_x2 = macro.getX() + macro.getWidth();
+      const int cur_x2 = macro.getX() + macro.getWidth();
       if (cur_x2 > ux && cur_x2 < e_x2) {
         e_x2 = cur_x2;
       }
     }
     src_macro.setWidth(e_x2 - lx);
   } else if (option <= 0.5) {
-    float d_x2 = lx;
+    int d_x2 = lx;
     for (const int macro_id : pos_seq_) {
       SoftMacro& macro = macros_[macro_id];
-      const float cur_x2 = macro.getX() + macro.getWidth();
+      const int cur_x2 = macro.getX() + macro.getWidth();
       if (cur_x2 < ux && cur_x2 > d_x2) {
         d_x2 = cur_x2;
       }
     }
-    if (d_x2 <= lx) {
-      return;
+    if (d_x2 > lx) {
+      src_macro.setWidth(d_x2 - lx);
     }
-    src_macro.setWidth(d_x2 - lx);
   } else if (option <= 0.75) {
     // change the height of soft block to Tb = a.y2 - b.y1
-    float a_y2 = outline_.dy();
+    int a_y2 = outline_.dy();
     for (const int macro_id : pos_seq_) {
       SoftMacro& macro = macros_[macro_id];
-      const float cur_y2 = macro.getY() + macro.getHeight();
+      const int cur_y2 = macro.getY() + macro.getHeight();
       if (cur_y2 > uy && cur_y2 < a_y2) {
         a_y2 = cur_y2;
       }
@@ -802,18 +803,17 @@ void SACoreSoftMacro::resizeOneCluster()
     src_macro.setHeight(a_y2 - ly);
   } else {
     // Change the height of soft block to Bb = c.y2 - b.y1
-    float c_y2 = ly;
+    int c_y2 = ly;
     for (const int macro_id : pos_seq_) {
       SoftMacro& macro = macros_[macro_id];
-      const float cur_y2 = macro.getY() + macro.getHeight();
+      const int cur_y2 = macro.getY() + macro.getHeight();
       if (cur_y2 < uy && cur_y2 > c_y2) {
         c_y2 = cur_y2;
       }
     }
-    if (c_y2 <= ly) {
-      return;
+    if (c_y2 > ly) {
+      src_macro.setHeight(c_y2 - ly);
     }
-    src_macro.setHeight(c_y2 - ly);
   }
 }
 

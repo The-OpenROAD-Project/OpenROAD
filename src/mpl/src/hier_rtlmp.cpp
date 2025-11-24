@@ -543,7 +543,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
       sa_batch.push_back(std::move(sa));
     }
     if (sa_batch.size() == 1) {
-      runSA<SACoreSoftMacro>(sa_batch[0].get());
+      runSA<SACoreSoftMacro>(sa_batch.front().get());
     } else {
       // multi threads
       std::vector<std::thread> threads;
@@ -2810,10 +2810,10 @@ void HierRTLMP::printPlacementResult(Cluster* parent,
 {
   logger_->report("Id: {}", parent->getId());
   logger_->report("Outline: ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
-                  outline.xMin(),
-                  outline.yMin(),
-                  outline.xMax(),
-                  outline.yMax());
+                  block_->dbuToMicrons(outline.xMin()),
+                  block_->dbuToMicrons(outline.yMin()),
+                  block_->dbuToMicrons(outline.xMax()),
+                  block_->dbuToMicrons(outline.yMax()));
   sa_core->printResults();
 }
 

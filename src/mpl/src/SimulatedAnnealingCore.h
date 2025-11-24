@@ -185,7 +185,7 @@ class SimulatedAnnealingCore
   int pre_width_ = 0;
   int pre_height_ = 0;
 
-  float wirelength_ = 0;
+  float wirelength_ = 0.0;
   float outline_penalty_ = 0.0;
   float guidance_penalty_ = 0.0;
   float fence_penalty_ = 0.0;

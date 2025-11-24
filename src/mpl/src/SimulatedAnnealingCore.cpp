@@ -329,7 +329,7 @@ void SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
   }
 
   const odb::Point macro_location(macro.getPinX(), macro.getPinY());
-  double smallest_distance;
+  int64_t smallest_distance;
   if (unplaced_ios.getCluster()->isClusterOfUnconstrainedIOPins()) {
     if (available_regions_for_unconstrained_pins_.empty()) {
       logger_->critical(
