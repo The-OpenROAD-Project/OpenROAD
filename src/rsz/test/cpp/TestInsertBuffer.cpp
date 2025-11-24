@@ -515,6 +515,8 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case1)
   // Write verilog
   const std::string verilog_file = "results/BeforeLoads_Case1.v";
   sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
+
+  // jk: TODO: check output verilog
 }
 
 // Netlist:
@@ -954,12 +956,6 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case6)
   dbInst* new_buf = target_net->insertBufferBeforeLoads(
       targets, buffer_master, nullptr, "new_buf");
   ASSERT_TRUE(new_buf);
-
-  // jk: dbg. Write verilog
-  {
-    const std::string verilog_file = "results/BeforeLoads_Case6.v";
-    sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
-  }
 
   //----------------------------------------------------
   // Verify Results
