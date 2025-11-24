@@ -30,91 +30,91 @@ class TestInsertBuffer : public tst::IntegratedFixture
   }
 };
 
-/*
- * insertBufferBeforeLoad() Case1
- *
- * This test case constructs a hierarchical netlist. The top-level module
- * contains a constant driver (drvr_inst), two buffer loads (load0_inst,
- * load2_inst), a top-level output port (load_output), and a hierarchical
- * instance (mi0).
- *
- * The single top-level net "net" connects the driver to all these loads.
- * The connection to mi0 propagates down through the hierarchy (mi0 -> mi1)
- * to eventually drive another buffer load (load1_inst) inside the MOD1 module.
- *
- * [Pre ECO]
- *
- *                      +-----------+
- *                      | LOGIC0_X1 |
- *                      | drvr_inst |-----.
- *                      +-----------+     |
- *                            .Z          | (net "net")
- *      +-------------------+-------------+------------------+
- *      |                   |             |                  |
- *      | .A                | .A          |                  |
- * +----v------+       +----v------+      |             +----v-------+
- * |  BUF_X1   |       |  BUF_X1   |      |             | Top Output |
- * | load0_inst|       | load2_inst|      |             | load_output|
- * +-----------+       +-----------+      |             +------------+
- *                                        | .A
- *                           +------------v----------------------+
- *                           | MOD0 mi0   |                      |
- *                           |            | .A                   |
- *                           |   +--------v------------------+   |
- *                           |   | MOD1   |                  |   |
- *                           |   | mi1    | .A               |   |
- *                           |   |    +---v---------------+  |   |
- *                           |   |    |  BUF_X1           |  |   |
- *                           |   |    | mi0/mi1/load1_inst|  |   |
- *                           |   |    +-------------------+  |   |
- *
- * The test then proceeds to insert buffers one by one before each load:
- * 1. Before `load0_inst` (in the top module).
- * 2. Before `load1_inst` (inside the `mi0/mi1` hierarchy).
- * 3. Before `load2_inst` (in the top module).
- * 4. Before the top-level port `load_output`.
- *
- * After each insertion, it verifies the correctness of the resulting netlist
- * by writing it out to a Verilog file and comparing it against an expected
- * output.
- *
- * [Post ECO]
- *                      +-----------+
- *                      | LOGIC0_X1 |
- *                      | drvr_inst |------.
- *                      +-----------+      |
- *                            .Z           | (net "net")
- *      +---------------------+------------+-----------------+
- * (NEW)| .A           (NEW)  | .A         | .A       (NEW)  | .A
- * +----v------+         +----v------+     |            +----v------+
- * |  BUF_X4   |         |  BUF_X4   |     |            |  BUF_X4   |
- * |    buf    |         |   buf_1   |     |            |   buf_2   |
- * +-----------+         +-----------+     |            +-----------+
- *      | .Z                  | .Z         |                 | .Z
- *      | (net_load)          |            |                 | (load_output)
- *      |                     |(net_load_1)|                 |
- * +----v------+         +----v------+     |          +----v-------+
- * |  BUF_X1   |         |  BUF_X1   |     |          | Top Output |
- * | load0_inst|         | load2_inst|     |          | load_output|
- * +-----------+         +-----------+     |          +------------+
- *                                         |
- *                                         | .A
- *                            +------------v----------------------+
- *                            | MOD0 mi0   |                      |
- *                            |            | .A                   |
- *                            |   +--------v------------------+   |
- *                            |   | MOD1   |                  |   |
- *                            |   | mi1    | .A   (NEW)       |   |
- *                            |   |    +---v---------------+  |   |
- *                            |   |    |  BUF_X4           |  |   |
- *                            |   |    | mi0/mi1/buf       |  |   |
- *                            |   |    +----------+--------+  |   |
- *                            |   |        |                  |   |
- *                            |   |    +---v---------------+  |   |
- *                            |   |    |  BUF_X1           |  |   |
- *                            |   |    | mi0/mi1/load1_inst|  |   |
- *                            |   |    +-------------------+  |   |
- */
+//
+// insertBufferBeforeLoad() Case1
+//
+// This test case constructs a hierarchical netlist. The top-level module
+// contains a constant driver (drvr_inst), two buffer loads (load0_inst,
+// load2_inst), a top-level output port (load_output), and a hierarchical
+// instance (mi0).
+//
+// The single top-level net "net" connects the driver to all these loads.
+// The connection to mi0 propagates down through the hierarchy (mi0 -> mi1)
+// to eventually drive another buffer load (load1_inst) inside the MOD1 module.
+//
+// [Pre ECO]
+//
+//                      +-----------+
+//                      | LOGIC0_X1 |
+//                      | drvr_inst |-----.
+//                      +-----------+     |
+//                            .Z          | (net "net")
+//      +-------------------+-------------+------------------+
+//      |                   |             |                  |
+//      | .A                | .A          |                  |
+// +----v------+       +----v------+      |             +----v-------+
+// |  BUF_X1   |       |  BUF_X1   |      |             | Top Output |
+// | load0_inst|       | load2_inst|      |             | load_output|
+// +-----------+       +-----------+      |             +------------+
+//                                        | .A
+//                           +------------v----------------------+
+//                           | MOD0 mi0   |                      |
+//                           |            | .A                   |
+//                           |   +--------v------------------+   |
+//                           |   | MOD1   |                  |   |
+//                           |   | mi1    | .A               |   |
+//                           |   |    +---v---------------+  |   |
+//                           |   |    |  BUF_X1           |  |   |
+//                           |   |    | mi0/mi1/load1_inst|  |   |
+//                           |   |    +-------------------+  |   |
+//
+// The test then proceeds to insert buffers one by one before each load:
+// 1. Before `load0_inst` (in the top module).
+// 2. Before `load1_inst` (inside the `mi0/mi1` hierarchy).
+// 3. Before `load2_inst` (in the top module).
+// 4. Before the top-level port `load_output`.
+//
+// After each insertion, it verifies the correctness of the resulting netlist
+// by writing it out to a Verilog file and comparing it against an expected
+// output.
+//
+// [Post ECO]
+//                      +-----------+
+//                      | LOGIC0_X1 |
+//                      | drvr_inst |------.
+//                      +-----------+      |
+//                            .Z           | (net "net")
+//      +---------------------+------------+-----------------+
+// (NEW)| .A           (NEW)  | .A         | .A       (NEW)  | .A
+// +----v------+         +----v------+     |            +----v------+
+// |  BUF_X4   |         |  BUF_X4   |     |            |  BUF_X4   |
+// |    buf    |         |   buf_1   |     |            |   buf_2   |
+// +-----------+         +-----------+     |            +-----------+
+//      | .Z                  | .Z         |                 | .Z
+//      | (net_load)          |            |                 | (load_output)
+//      |                     |(net_load_1)|                 |
+// +----v------+         +----v------+     |          +----v-------+
+// |  BUF_X1   |         |  BUF_X1   |     |          | Top Output |
+// | load0_inst|         | load2_inst|     |          | load_output|
+// +-----------+         +-----------+     |          +------------+
+//                                         |
+//                                         | .A
+//                            +------------v----------------------+
+//                            | MOD0 mi0   |                      |
+//                            |            | .A                   |
+//                            |   +--------v------------------+   |
+//                            |   | MOD1   |                  |   |
+//                            |   | mi1    | .A   (NEW)       |   |
+//                            |   |    +---v---------------+  |   |
+//                            |   |    |  BUF_X4           |  |   |
+//                            |   |    | mi0/mi1/buf       |  |   |
+//                            |   |    +----------+--------+  |   |
+//                            |   |        |                  |   |
+//                            |   |    +---v---------------+  |   |
+//                            |   |    |  BUF_X1           |  |   |
+//                            |   |    | mi0/mi1/load1_inst|  |   |
+//                            |   |    +-------------------+  |   |
+//
 TEST_F(TestInsertBuffer, BeforeLoad_Case1)
 {
   int num_warning = 0;
@@ -468,15 +468,14 @@ endmodule
   removeFile(verilog_file_4);
 }
 
+// Netlist:
+//   drvr (BUF)  --> n1 --> buf0 (BUF) --> n2 --> load (BUF)
+//
+// Load pins for insertion = {buf0/A}
+// Expected result after insertion:
+//   drvr (BUF) --> n1 --> buf_new --> net --> buf0 --> n2 --> load (BUF)
 TEST_F(TestInsertBuffer, BeforeLoads_Case1)
 {
-  // Netlist:
-  //   drvr (BUF)  --> n1 --> buf0 (BUF) --> n2 --> load (BUF)
-  //
-  // Load pins for insertion = {buf0/A}
-  // Expected result after insertion:
-  //   drvr (BUF) --> n1 --> buf_new --> net --> buf0 --> n2 --> load (BUF)
-
   // Create masters
   dbMaster* buf_master = db_->findMaster("BUF_X1");
   ASSERT_TRUE(buf_master);
@@ -516,20 +515,19 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case1)
   sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
 }
 
+// Netlist:
+//   in (Port) --> n1 --> buf0 (BUF) --> n2 --> out (Port)
+//
+// Insert buffer 1: Load pins = {buf0/A}
+// Insert buffer 2: Load pins = {out (Port)}
+//
+// Expected result after buffer 1 (before buf0/A):
+//   in (Port) --> [buf1] --> buf0 -->  out (Port)
+//
+// Expected result after buffer 2 (before out Port):
+//   in (Port) --> [buf1] --> buf0 --> [buf2] --> out (Port)
 TEST_F(TestInsertBuffer, BeforeLoads_Case2)
 {
-  // Netlist:
-  //   in (Port) --> n1 --> buf0 (BUF) --> n2 --> out (Port)
-  //
-  // Insert buffer 1: Load pins = {buf0/A}
-  // Insert buffer 2: Load pins = {out (Port)}
-  //
-  // Expected result after buffer 1 (before buf0/A):
-  //   in (Port) --> [buf1] --> buf0 -->  out (Port)
-  //
-  // Expected result after buffer 2 (before out Port):
-  //   in (Port) --> [buf1] --> buf0 --> [buf2] --> out (Port)
-
   // Create masters
   dbMaster* buf_master = db_->findMaster("BUF_X1");
   ASSERT_TRUE(buf_master);
@@ -574,21 +572,20 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case2)
   sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
 }
 
+// Netlist:
+//   in (Port) --> n1 --> mod0/buf0 (BUF) --> n2 --> out (Port)
+//   where mod0 is an instance of submodule MOD0
+//
+// Insert buffer 1: Load pins = {mod0/buf0/A}
+// Insert buffer 2: Load pins = {out (Port)}
+//
+// Expected result after buffer 1 (before mod0/buf0/A):
+//   in --> n1 --> [new_buf1] --> mod0/buf0 --> out
+//
+// Expected result after buffer 2 (before out Port):
+//   in --> n1 --> [new_buf1] --> mod0/buf0 --> [new_buf2] --> out
 TEST_F(TestInsertBuffer, BeforeLoads_Case3)
 {
-  // Netlist:
-  //   in (Port) --> n1 --> mod0/buf0 (BUF) --> n2 --> out (Port)
-  //   where mod0 is an instance of submodule MOD0
-  //
-  // Insert buffer 1: Load pins = {mod0/buf0/A}
-  // Insert buffer 2: Load pins = {out (Port)}
-  //
-  // Expected result after buffer 1 (before mod0/buf0/A):
-  //   in --> n1 --> [new_buf1] --> mod0/buf0 --> out
-  //
-  // Expected result after buffer 2 (before out Port):
-  //   in --> n1 --> [new_buf1] --> mod0/buf0 --> [new_buf2] --> out
-
   // Create masters
   dbMaster* buf_master = db_->findMaster("BUF_X1");
   ASSERT_TRUE(buf_master);
@@ -668,30 +665,29 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case3)
   sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
 }
 
+// Netlist:
+//   drvr0 (BUF) --> n1 --+--> load0 (BUF)
+//                        +--> load1 (BUF)
+//                        +--> load2 (BUF)
+//
+//   No hierarchical modules in this netlist.
+//
+// Insert buffer 1: Load pins = {load0/A, load1/A}
+// Insert buffer 2: Load pins = {new0/A, load2/A}
+//
+// Expected result after buffer 1:
+//   drvr0 --> n1 --+--> load2
+//                  |
+//                  +--> [new0] --(net_A)--+--> load0
+//                                         +--> load1
+//
+// Expected result after buffer 2 (Buffers both load2 and new0):
+//   drvr0 --> n1 --> [new1] --(net_B)--+--> load2
+//                                      |                    +--> load0
+//                                      +--> new0 --(net_A)--+
+//                                                           +--> load1
 TEST_F(TestInsertBuffer, BeforeLoads_Case4)
 {
-  // Netlist:
-  //   drvr0 (BUF) --> n1 --+--> load0 (BUF)
-  //                        +--> load1 (BUF)
-  //                        +--> load2 (BUF)
-  //
-  //   No hierarchical modules in this netlist.
-  //
-  // Insert buffer 1: Load pins = {load0/A, load1/A}
-  // Insert buffer 2: Load pins = {new0/A, load2/A}
-  //
-  // Expected result after buffer 1:
-  //   drvr0 --> n1 --+--> load2
-  //                  |
-  //                  +--> [new0] --(net_A)--+--> load0
-  //                                         +--> load1
-  //
-  // Expected result after buffer 2 (Buffers both load2 and new0):
-  //   drvr0 --> n1 --> [new1] --(net_B)--+--> load2
-  //                                      |                    +--> load0
-  //                                      +--> new0 --(net_A)--+
-  //                                                           +--> load1
-
   // Create masters
   dbMaster* buf_master = db_->findMaster("BUF_X1");
   ASSERT_TRUE(buf_master);
@@ -741,31 +737,30 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case4)
   sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
 }
 
+// Netlist:
+//   Top module contains four submodules: MOD0, MOD1, MOD2, MOD3.
+//   There are four cells (drvr0, load0, load1, load2) in total.
+//   drvr0 drives load0, load1, and load2, with each cell located
+//   inside a different MOD* submodule (mod0/drvr0, mod1/load0,
+//   mod2/load1, mod3/load2).
+//
+//   Hierarchy:
+//     top
+//     +-- mod0 (MOD0) --> drvr0 (BUF)
+//     +-- mod1 (MOD1) --> load0 (BUF)
+//     +-- mod2 (MOD2) --> load1 (BUF)
+//     +-- mod3 (MOD3) --> load2 (BUF)
+//
+//   Connections:
+//     mod0/drvr0/Z --> n1
+//     n1 --> mod1/load0/A
+//     n1 --> mod2/load1/A
+//     n1 --> mod3/load2/A
+//
+// Insert buffer 1: Load pins = {mod1/load0/A, mod2/load1/A}
+// Insert buffer 2: Load pins = {new0/A, mod3/load2/A}
 TEST_F(TestInsertBuffer, BeforeLoads_Case5)
 {
-  // Netlist:
-  //   Top module contains four submodules: MOD0, MOD1, MOD2, MOD3.
-  //   There are four cells (drvr0, load0, load1, load2) in total.
-  //   drvr0 drives load0, load1, and load2, with each cell located
-  //   inside a different MOD* submodule (mod0/drvr0, mod1/load0,
-  //   mod2/load1, mod3/load2).
-  //
-  //   Hierarchy:
-  //     top
-  //     +-- mod0 (MOD0) --> drvr0 (BUF)
-  //     +-- mod1 (MOD1) --> load0 (BUF)
-  //     +-- mod2 (MOD2) --> load1 (BUF)
-  //     +-- mod3 (MOD3) --> load2 (BUF)
-  //
-  //   Connections:
-  //     mod0/drvr0/Z --> n1
-  //     n1 --> mod1/load0/A
-  //     n1 --> mod2/load1/A
-  //     n1 --> mod3/load2/A
-  //
-  // Insert buffer 1: Load pins = {mod1/load0/A, mod2/load1/A}
-  // Insert buffer 2: Load pins = {new0/A, mod3/load2/A}
-
   // Create masters
   dbMaster* buf_master = db_->findMaster("BUF_X1");
   ASSERT_TRUE(buf_master);
@@ -847,6 +842,195 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case5)
 
   // Write verilog
   const std::string verilog_file = "results/BeforeLoads_Case5.v";
+  sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
+}
+
+// Netlist Structure (Reflecting the user provided tree):
+//
+// [Top Module]
+//  |
+//  +-- load0 (BUF)
+//  |
+//  +-- u_h2 (ModH2)
+//  |    |
+//  |    +-- u_h0 (ModH0) -> drvr (BUF) [Driver]
+//  |    |
+//  |    +-- u_h1 (ModH1) -> load5 (BUF) [TARGET]
+//  |
+//  +-- u_h3 (ModH3)
+//  |    |
+//  |    +-- load1 (BUF)
+//  |    +-- load2 (BUF) [TARGET]
+//  |
+//  +-- u_h4 (ModH4)
+//       |
+//       +-- load4 (BUF)
+//       +-- u_h5 (ModH5) -> load3 (BUF) [TARGET]
+//
+// Operation:
+//   Insert buffer for targets: { load5, load2, load3 }
+//   LCA: Top Module
+//
+// Expected Result:
+//   1. New buffer 'new_buf' placed in Top.
+//   2. Logical connections (Port Punching):
+//      - To load5: Top -> u_h2 -> u_h1 (New Ports created)
+//      - To load2: Top -> u_h3 (New Port created)
+//      - To load3: Top -> u_h4 -> u_h5 (New Ports created)
+//   3. Non-targets (load0, load1, load4) remain on original net.
+TEST_F(TestInsertBuffer, BeforeLoads_Case6)
+{
+  std::string test_name = "TestInsertBuffer_BeforeLoads6";
+  readVerilogAndSetup(test_name + ".v");
+
+  // Get ODB objects
+  dbInst* drvr = block_->findInst("u_h2/u_h0/drvr");
+  ASSERT_NE(drvr, nullptr);
+  dbInst* load0 = block_->findInst("load0");
+  ASSERT_NE(load0, nullptr);
+  dbInst* load1 = block_->findInst("u_h3/load1");
+  ASSERT_NE(load1, nullptr);
+  dbInst* load2 = block_->findInst("u_h3/load2");
+  ASSERT_NE(load2, nullptr);
+  dbInst* load3 = block_->findInst("u_h4/u_h5/load3");
+  ASSERT_NE(load3, nullptr);
+  dbInst* load4 = block_->findInst("u_h4/load4");
+  ASSERT_NE(load4, nullptr);
+  dbInst* load5 = block_->findInst("u_h2/u_h1/load5");
+  ASSERT_NE(load5, nullptr);
+  dbITerm* load5_a = load5->findITerm("A");
+  ASSERT_NE(load5_a, nullptr);
+  dbITerm* load2_a = load2->findITerm("A");
+  ASSERT_NE(load2_a, nullptr);
+  dbITerm* load3_a = load3->findITerm("A");
+  ASSERT_NE(load3_a, nullptr);
+  dbNet* target_net = load5_a->getNet();
+  ASSERT_NE(target_net, nullptr);
+  dbMaster* buffer_master = db_->findMaster("BUF_X1");
+  ASSERT_NE(buffer_master, nullptr);
+  dbModInst* u_h0 = block_->findModInst("u_h2/u_h0");
+  ASSERT_NE(u_h0, nullptr);
+  dbModInst* u_h1 = block_->findModInst("u_h2/u_h1");
+  ASSERT_NE(u_h1, nullptr);
+  dbModInst* u_h2 = block_->findModInst("u_h2");
+  ASSERT_NE(u_h2, nullptr);
+  dbModInst* u_h3 = block_->findModInst("u_h3");
+  ASSERT_NE(u_h3, nullptr);
+  dbModInst* u_h4 = block_->findModInst("u_h4");
+  ASSERT_NE(u_h4, nullptr);
+  dbModInst* u_h5 = block_->findModInst("u_h4/u_h5");
+  ASSERT_NE(u_h5, nullptr);
+  dbModule* mod_h0 = block_->findModule("ModH0");
+  ASSERT_NE(mod_h0, nullptr);
+  dbModule* mod_h1 = block_->findModule("ModH1");
+  ASSERT_NE(mod_h1, nullptr);
+  dbModule* mod_h2 = block_->findModule("ModH2");
+  ASSERT_NE(mod_h2, nullptr);
+  dbModule* mod_h3 = block_->findModule("ModH3");
+  ASSERT_NE(mod_h3, nullptr);
+  dbModule* mod_h4 = block_->findModule("ModH4");
+  ASSERT_NE(mod_h4, nullptr);
+  dbModule* mod_h5 = block_->findModule("ModH5");
+  ASSERT_NE(mod_h5, nullptr);
+  dbModNet* modnet_h4_in = block_->findModNet("u_h4/in");
+  ASSERT_NE(modnet_h4_in, nullptr);
+
+  // odb::dbDatabase::beginEco(block_);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  db_network_->checkAxioms();
+
+  //----------------------------------------------------
+  // Insert buffer
+  // - Targets: load5 (in H2/H1), load2 (in H3), load3 (in H4/H5)
+  //----------------------------------------------------
+  std::set<dbObject*> targets;
+  targets.insert(load5_a);
+  targets.insert(load2_a);
+  targets.insert(load3_a);
+  dbInst* new_buf = target_net->insertBufferBeforeLoads(
+      targets, buffer_master, nullptr, "new_buf");
+  ASSERT_TRUE(new_buf);
+
+  // jk: dbg. Write verilog
+  {
+    const std::string verilog_file = "results/BeforeLoads_Case6.v";
+    sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
+  }
+
+  //----------------------------------------------------
+  // Verify Results
+  //----------------------------------------------------
+
+  // Buffer Location: Top Module (LCA)
+  EXPECT_EQ(new_buf->getModule(), block_->getTopModule());
+
+  // Net Separation
+  dbNet* buf_out_net = new_buf->findITerm("Z")->getNet();
+  ASSERT_TRUE(buf_out_net);
+  EXPECT_NE(buf_out_net, target_net);
+
+  // Target Loads moved to new net
+  EXPECT_EQ(load5->findITerm("A")->getNet(), buf_out_net);
+  EXPECT_EQ(load2->findITerm("A")->getNet(), buf_out_net);
+  EXPECT_EQ(load3->findITerm("A")->getNet(), buf_out_net);
+
+  // Non-Target Loads remain on old net
+  EXPECT_EQ(load0->findITerm("A")->getNet(), target_net);
+  EXPECT_EQ(load1->findITerm("A")->getNet(), target_net);
+  EXPECT_EQ(load4->findITerm("A")->getNet(), target_net);
+
+  // Port Punching Verification (Logical)
+  dbModNet* top_out_mod_net
+      = block_->getTopModule()->getModNet(buf_out_net->getConstName());
+  ASSERT_NE(top_out_mod_net, nullptr);
+  ASSERT_TRUE(top_out_mod_net);
+
+  // Check if new ports were punched into H2, H3, H4
+  bool punched_h2 = false;
+  bool punched_h3 = false;
+  bool punched_h4 = false;
+
+  for (dbModITerm* iterm : top_out_mod_net->getModITerms()) {
+    if (iterm->getParent() == u_h2) {
+      punched_h2 = true;
+    }
+    if (iterm->getParent() == u_h3) {
+      punched_h3 = true;
+    }
+    if (iterm->getParent() == u_h4) {
+      punched_h4 = true;
+    }
+  }
+
+  EXPECT_TRUE(punched_h2);  // Top -> H2 -> H1 -> load5
+  EXPECT_TRUE(punched_h3);  // Top -> H3 -> load2
+  EXPECT_TRUE(punched_h4);  // Top -> H4 -> H5 -> load3
+
+  // Deeper check for H4 -> H5 punching
+  // We need to find the net inside H4 that connects to the new port
+  // This is tricky without knowing exact name, but we can search H4's nets
+  bool punched_h5_in_h4 = false;
+  for (dbModNet* net : mod_h4->getModNets()) {
+    // If this net connects to u_h5 AND to the boundary (ModBTerm), it's likely
+    // the punched net
+    bool connects_boundary = !net->getModBTerms().empty();
+    bool connects_h5 = false;
+    for (dbModITerm* iterm : net->getModITerms()) {
+      if (iterm->getParent() == u_h5) {
+        connects_h5 = true;
+      }
+    }
+    if (connects_boundary && connects_h5 && net != modnet_h4_in) {
+      punched_h5_in_h4 = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(punched_h5_in_h4);
+
+  // Write verilog
+  const std::string verilog_file = "results/BeforeLoads_Case6.v";
   sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
 }
 
