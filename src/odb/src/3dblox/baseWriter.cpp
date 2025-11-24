@@ -3,12 +3,7 @@
 
 #include "baseWriter.h"
 
-#include <yaml-cpp/emitter.h>
-#include <yaml-cpp/emitterstyle.h>
-#include <yaml-cpp/node/convert.h>
-#include <yaml-cpp/node/detail/impl.h>
-#include <yaml-cpp/node/emit.h>
-#include <yaml-cpp/node/node.h>
+#include <yaml-cpp/yaml.h>
 
 #include <cstddef>
 #include <fstream>
