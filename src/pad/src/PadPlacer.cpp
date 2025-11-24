@@ -1347,13 +1347,15 @@ bool PlacerPadPlacer::padSpreading(
         total_force);
   }
 
-  // Push instances causing tunneling to fail
+  // Push instances causing tunneling to fail, these are instances that are too
+  // far from the instance that needs to tunnel/jump over the obstruction and
+  // therefore needs to push instances under the obstruction over to make room.
   for (const auto& [inst_idx, ideal_pos] : failed_tunnel_positions) {
     const int delta_pos = ideal_pos - positions[insts[inst_idx]]->center;
     const int push = ((delta_pos < 0) ? -1 : 1)
                      * std::ceil((damper * std::abs(delta_pos)) / site_width)
                      * site_width;
-    std::vector<odb::dbInst*> push_insts;
+    std::vector<odb::dbInst*> push_insts;  // instances to push
     int last_idx = inst_idx;
     int bound_pos;
     if (delta_pos > 0) {
@@ -1398,6 +1400,7 @@ bool PlacerPadPlacer::padSpreading(
       } else {
         desired_pos = std::min(bound_pos, curr_pos + push);
       }
+      // new position
       const int move_to = convertRowIndexToPos(snapToRowSite(
                               desired_pos - (positions[inst]->width / 2)))
                           + (positions[inst]->width / 2);
@@ -1611,6 +1614,7 @@ std::pair<int, int> PlacerPadPlacer::getTunnelingPosition(odb::dbInst* inst,
       if (checkInstancePlacement(inst)) {
         const int next = getNearestLegalPosition(inst, target, true, false);
         if (next >= low_bound) {
+          // inst is obstructed, so move to the nearest edge of the obstruction
           debugPrint(getLogger(),
                      utl::PAD,
                      "Place",
