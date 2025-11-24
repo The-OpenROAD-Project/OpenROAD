@@ -4,6 +4,7 @@
 #include "dbNet.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -3558,11 +3559,8 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
 
   // 3. Create the New Net (Buffer Output Net)
   //    The new net resides in the same hierarchy as the buffer.
-  std::string new_net_name = std::string(getName()) + "_buffered";
-  new_net_name = block->makeNewNetName(
-      target_module ? target_module->getModInst() : nullptr,
-      new_net_name.c_str(),
-      uniquify);
+  std::string new_net_name = block->makeNewNetName(
+      target_module ? target_module->getModInst() : nullptr);
 
   // Create FLAT net for physical connection
   dbNet* new_flat_net
