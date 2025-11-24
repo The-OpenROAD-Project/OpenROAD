@@ -3546,7 +3546,8 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
   if (needs_mod_net) {
     // Create MOD net for logical connection in the target module only when
     // necessary
-    new_mod_net = dbModNet::create(target_module, new_net_name.c_str());
+    const char* base_name = block->getBaseName(new_flat_net->getConstName());
+    new_mod_net = dbModNet::create(target_module, base_name);
   }
 
   // 4. Rewire Connections
