@@ -1,11 +1,13 @@
 #include <fstream>
 #include <iterator>
+#include <set>
 #include <string>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "sta/VerilogWriter.hh"
 #include "tst/IntegratedFixture.h"
 
