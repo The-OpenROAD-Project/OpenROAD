@@ -356,7 +356,8 @@ Point computeCentroid(const std::set<dbObject*>& pins)
 // connected to target_module.
 void createHierarchicalConnection(dbITerm* load_pin,
                                   dbModule* target_module,
-                                  dbModITerm*& top_mod_iterm)
+                                  dbModITerm*& top_mod_iterm,
+                                  const std::set<dbObject*>& load_pins)
 {
   dbModule* current_module = load_pin->getInst()->getModule();
   if (current_module == target_module) {
@@ -388,13 +389,36 @@ void createHierarchicalConnection(dbITerm* load_pin,
     }
 
     bool reused_path = false;
+    
     if (existing_mod_net) {
-      // Check if this net is connected to a boundary port (ModBTerm)
-      // which means it's part of an existing hierarchical path.
-      for (dbModBTerm* bterm : existing_mod_net->getModBTerms()) {
-        if (bterm->getModInst() == nullptr) {  // Port of current_module
-          dbModITerm* parent_iterm = bterm->getParentModITerm();
-          if (parent_iterm && parent_iterm->getParent() == parent_mod_inst) {
+      // Check if we can safely reuse this net.
+      // We can reuse ONLY if all connected ITerms are in load_pins
+      // AND all connected ModITerms are the child_obj (the path we are tracing).
+      bool safe_to_reuse = true;
+      
+      for (dbITerm* iterm : existing_mod_net->getITerms()) {
+        if (load_pins.find(iterm) == load_pins.end()) {
+          safe_to_reuse = false;
+          break;
+        }
+      }
+      
+      if (safe_to_reuse) {
+        for (dbModITerm* miterm : existing_mod_net->getModITerms()) {
+           if (miterm != child_obj) {
+             safe_to_reuse = false;
+             break;
+           }
+        }
+      }
+
+      if (safe_to_reuse) {
+        // Check if this net is connected to a boundary port (ModBTerm)
+        for (dbModBTerm* bterm : existing_mod_net->getModBTerms()) {
+          dbModITerm* parent_iterm
+              = parent_mod_inst->findModITerm(bterm->getName());
+
+          if (parent_iterm) {
             // Found a reusable path. Move up the hierarchy.
             child_obj = static_cast<dbObject*>(parent_iterm);
             current_module = parent_mod_inst->getParent();
@@ -3610,14 +3634,21 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
   for (dbObject* load_obj : load_pins) {
     if (load_obj->getObjectType() == dbITermObj) {
       dbITerm* load = static_cast<dbITerm*>(load_obj);
-      load->disconnect();
-      load->connect(new_flat_net);
-
       // 4.4 Port Punching (Hierarchical Connection)
       // If the load is in a deeper hierarchy than the buffer (target_module),
       // we create hierarchical pins/nets to maintain logical consistency.
+      // We do this BEFORE disconnect to allow reusing existing hierarchical
+      // ports/nets.
       dbModITerm* top_mod_iterm = nullptr;
-      createHierarchicalConnection(load, target_module, top_mod_iterm);
+      createHierarchicalConnection(load, target_module, top_mod_iterm, load_pins);
+
+      dbModNet* saved_mod_net = load->getModNet();
+
+      load->disconnect();
+      load->connect(new_flat_net);
+      if (saved_mod_net) {
+        load->connect(saved_mod_net);
+      }
 
       if (new_mod_net) {
         if (top_mod_iterm) {
