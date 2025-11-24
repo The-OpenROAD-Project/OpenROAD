@@ -378,6 +378,37 @@ void createHierarchicalConnection(dbITerm* load_pin,
       break;
     }
 
+    // Check if there's an existing hierarchical connection to reuse.
+    dbModNet* existing_mod_net = nullptr;
+    if (child_obj->getObjectType() == dbITermObj) {
+      existing_mod_net = (static_cast<dbITerm*>(child_obj))->getModNet();
+    } else if (child_obj->getObjectType() == dbModITermObj) {
+      existing_mod_net = (static_cast<dbModITerm*>(child_obj))->getModNet();
+    }
+
+    bool reused_path = false;
+    if (existing_mod_net) {
+      // Check if this net is connected to a boundary port (ModBTerm)
+      // which means it's part of an existing hierarchical path.
+      for (dbModBTerm* bterm : existing_mod_net->getModBTerms()) {
+        if (bterm->getModInst() == nullptr) {  // Port of current_module
+          dbModITerm* parent_iterm = bterm->getParentModITerm();
+          if (parent_iterm && parent_iterm->getParent() == parent_mod_inst) {
+            // Found a reusable path. Move up the hierarchy.
+            child_obj = static_cast<dbObject*>(parent_iterm);
+            current_module = parent_mod_inst->getParent();
+            top_mod_iterm = parent_iterm;
+            reused_path = true;
+            break;  // Exit the for loop since we found a path
+          }
+        }
+      }
+    }
+
+    if (reused_path) {
+      continue;  // Continue to the next level up
+    }
+
     // Name generation
     std::string base_name
         = load_pin->getNet()->getName();  // Use original net name as base
@@ -395,9 +426,9 @@ void createHierarchicalConnection(dbITerm* load_pin,
 
     // 3. Connect lower level object (either leaf ITerm or previous ModITerm)
     if (child_obj->getObjectType() == dbITermObj) {
-      ((dbITerm*) child_obj)->connect(mod_net);
+      (static_cast<dbITerm*>(child_obj))->connect(mod_net);
     } else if (child_obj->getObjectType() == dbModITermObj) {
-      ((dbModITerm*) child_obj)->connect(mod_net);
+      (static_cast<dbModITerm*>(child_obj))->connect(mod_net);
     }
 
     // 4. Create Pin (ModITerm) on the instance of current module in the parent
@@ -405,7 +436,7 @@ void createHierarchicalConnection(dbITerm* load_pin,
         = dbModITerm::create(parent_mod_inst, unique_name.c_str(), mod_bterm);
 
     // Prepare for next iteration (moving up)
-    child_obj = (dbObject*) mod_iterm;
+    child_obj = static_cast<dbObject*>(mod_iterm);
     current_module = parent_mod_inst->getParent();
     top_mod_iterm = mod_iterm;
   }
