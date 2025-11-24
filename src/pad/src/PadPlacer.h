@@ -271,14 +271,15 @@ class PlacerPadPlacer : public PadPlacer
                               bool round_up = false) const;
   int getRowStart(odb::dbInst* inst) const;
   int getRowEnd(odb::dbInst* inst) const;
-  int getTunnelingPosition(odb::dbInst* inst,
-                           int target,
-                           bool move_up,
-                           int low_bound,
-                           int curr_pos,
-                           int high_bound,
-                           int itr) const;
+  std::pair<int, int> getTunnelingPosition(odb::dbInst* inst,
+                                           int target,
+                                           bool move_up,
+                                           int low_bound,
+                                           int curr_pos,
+                                           int high_bound,
+                                           int itr) const;
   void debugCheckPlacement() const;
+  std::string instNameList(const std::vector<odb::dbInst*>& insts) const;
 
   std::map<odb::dbInst*, std::set<odb::dbITerm*>> iterm_connections_;
   std::map<odb::dbInst*, int> ideal_positions_;
