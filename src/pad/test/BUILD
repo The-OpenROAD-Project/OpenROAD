@@ -34,6 +34,8 @@ COMPULSORY_TESTS = [
     "place_pad_wrong_master",
     "place_pads_bumps",
     "place_pads_bumps_bump_overlap",
+    "place_pads_bumps_strategy_placer_blockages",
+    "place_pads_bumps_strategy",
     "place_pads_too_many",
     "place_pads_uniform",
     "place_pads_uniform_slip",

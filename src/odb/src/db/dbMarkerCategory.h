@@ -25,6 +25,7 @@ class _dbMarker;
 class _dbMarkerCategory;
 // User Code Begin Classes
 class _dbBlock;
+class _dbChip;
 // User Code End Classes
 
 class _dbMarkerCategory : public _dbObject
@@ -48,6 +49,7 @@ class _dbMarkerCategory : public _dbObject
   bool hasMaxMarkerLimit() const;
 
   _dbBlock* getBlock() const;
+  _dbChip* getChip() const;
   void populatePTree(PropertyTree& tree) const;
   void fromPTree(const PropertyTree& tree);
   static void writeJSON(std::ofstream& report,

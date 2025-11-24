@@ -61,15 +61,15 @@ Path Type: max
            0.00    0.00    0.00 v u1/A (BUF_X1)
    1.79    0.01    0.02    0.02 v u1/Z (BUF_X1)
            0.01    0.00    0.02 v u2/A (BUF_X2)
-  50.36    0.02    0.04    0.07 v u2/Z (BUF_X2)
-           0.06    0.05    0.11 v wire2/A (CLKBUF_X3)
-  45.66    0.03    0.08    0.19 v wire2/Z (CLKBUF_X3)
-           0.06    0.04    0.23 v wire1/A (CLKBUF_X3)
-  58.08    0.03    0.08    0.32 v wire1/Z (CLKBUF_X3)
-           0.09    0.07    0.38 v u3/A (BUF_X1)
-   0.24    0.01    0.05    0.43 v u3/Z (BUF_X1)
-           0.01    0.00    0.43 v out1 (out)
-                           0.43   data arrival time
+  50.36    0.04    0.07    0.10 v u2/Z (BUF_X2)
+           0.00    0.00    0.10 v wire2/A (CLKBUF_X3)
+  45.66    0.00    0.00    0.10 v wire2/Z (CLKBUF_X3)
+           0.00    0.00    0.10 v wire1/A (CLKBUF_X3)
+  58.08    0.00    0.00    0.10 v wire1/Z (CLKBUF_X3)
+           0.20    0.00    0.10 v u3/A (BUF_X1)
+   0.24    0.01    0.07    0.17 v u3/Z (BUF_X1)
+           0.01    0.00    0.17 v out1 (out)
+                           0.17   data arrival time
 -----------------------------------------------------------------------
 (Path is unconstrained)
 

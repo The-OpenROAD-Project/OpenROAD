@@ -12,6 +12,7 @@ add_library(3dblox
   dbvWriter.cpp
   chipletHierarchy.cpp
   3dblox.cpp
+  checker.cpp
 )
 
 target_link_libraries(3dblox

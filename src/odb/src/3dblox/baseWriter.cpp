@@ -57,7 +57,7 @@ void BaseWriter::writeLef(YAML::Node& external_node,
     if (num_libs > 1) {
       logger_->info(
           utl::ODB,
-          539,
+          541,
           "More than one lib exists, multiple files will be written.");
     }
     int cnt = 0;
@@ -111,7 +111,7 @@ void BaseWriter::writeDef(YAML::Node& external_node,
 void BaseWriter::logError(const std::string& message)
 {
   if (logger_ != nullptr) {
-    logger_->error(utl::ODB, 538, "Writer Error: {}", message);
+    logger_->error(utl::ODB, 540, "Writer Error: {}", message);
   }
 }
 
