@@ -616,6 +616,11 @@ void PadDirectConnectionStraps::initialize(ConnectionType type)
       break;
   }
 
+  std::sort(pins_.begin(), pins_.end(), [](odb::dbBox* l, odb::dbBox* r) {
+    return std::make_tuple(l->xMin(), l->xMax(), l->yMin(), l->yMax())
+           < std::make_tuple(r->xMin(), r->xMax(), r->yMin(), r->yMax());
+  });
+
   debugPrint(getLogger(),
              utl::PDN,
              "Pad",
