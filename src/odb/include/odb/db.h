@@ -8405,6 +8405,15 @@ class dbModBTerm : public dbObject
   void setBusPort(dbBusPort*);
   dbBusPort* getBusPort() const;
 
+  ///
+  /// Returns the module instance that contains this module boundary terminal.
+  /// - It can be connected to a dbModITerm of a dbModInst that instantiates
+  ///   this module. This function returns that dbModInst.
+  /// - Returns nullptr if there is no instantiated module or dbModBTerm is not
+  ///   connected to a dbModITerm.
+  ///
+  dbModInst* getModInst() const;
+
   static dbModBTerm* create(dbModule* parentModule, const char* name);
   static void destroy(dbModBTerm*);
   static dbSet<dbModBTerm>::iterator destroy(dbSet<dbModBTerm>::iterator& itr);

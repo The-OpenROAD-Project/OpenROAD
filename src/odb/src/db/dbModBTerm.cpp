@@ -190,6 +190,14 @@ std::string dbModBTerm::getHierarchicalName() const
                      getName());
 }
 
+dbModInst* dbModBTerm::getModInst() const
+{
+  if (dbModITerm* parent_iterm = getParentModITerm()) {
+    return parent_iterm->getParent();
+  }
+  return nullptr;
+}
+
 void dbModBTerm::setModNet(dbModNet* modNet)
 {
   _dbModBTerm* obj = (_dbModBTerm*) this;
