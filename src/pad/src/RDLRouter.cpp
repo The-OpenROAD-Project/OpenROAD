@@ -370,8 +370,17 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   auto route_compare
       = [](const std::shared_ptr<RDLRoute>& lhs,
            const std::shared_ptr<RDLRoute>& rhs) { return lhs->compare(rhs); };
-  std::priority_queue route_queue(
-      routes_.begin(), routes_.end(), route_compare);
+  std::priority_queue<RDLRoutePtr,
+                      std::vector<RDLRoutePtr>,
+                      decltype(route_compare)>
+      route_queue;
+  for (const auto& route : routes_) {
+    if (route->isRouted()) {
+      continue;
+    }
+    // Only add routes that need to routed
+    route_queue.push(route);
+  }
 
   logger_->info(utl::PAD, 5, "Routing {} nets", nets.size());
 
