@@ -1036,6 +1036,162 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case6)
   sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
 }
 
+// Netlist Structure:
+//
+// [Top Module]
+//  |
+//  +-- u_h0 (ModH0) -> drvr (LOGIC0_X1) [Driver]
+//  |
+//  +-- load0 (BUF_X1)
+//  +-- load1 (BUF_X1)
+//  +-- load4 (BUF_X1) [TARGET]
+//  |
+//  +-- u_h1 (ModH1) -> load2 (BUF_X1) [TARGET]
+//  |
+//  +-- u_h2 (ModH2)
+//       |
+//       +-- u_h3 (ModH3) -> load3 (BUF_X1) [TARGET]
+//
+// Operation:
+//   Insert buffer for targets: { load4, load2, load3 }
+//   LCA: Top Module
+//
+// Expected Result:
+//   1. New buffer 'new_buf' placed in Top.
+//   2. Logical connections (Port Punching):
+//      - To load4: Top -> load4 (Direct connection)
+//      - To load2: Top -> u_h1 (New Port created)
+//      - To load3: Top -> u_h2 -> u_h3 (New Ports created)
+//   3. Non-targets (load0, load1) remain on original net.
+TEST_F(TestInsertBuffer, BeforeLoads_Case7)
+{
+  std::string test_name = "TestInsertBuffer_BeforeLoads7";
+  readVerilogAndSetup(test_name + ".v");
+
+  // Get ODB objects
+  dbInst* drvr = block_->findInst("u_h0/drvr");
+  ASSERT_NE(drvr, nullptr);
+  dbInst* load0 = block_->findInst("load0");
+  ASSERT_NE(load0, nullptr);
+  dbInst* load1 = block_->findInst("load1");
+  ASSERT_NE(load1, nullptr);
+  dbInst* load4 = block_->findInst("load4");
+  ASSERT_NE(load4, nullptr);
+  dbInst* load2 = block_->findInst("u_h1/load2");
+  ASSERT_NE(load2, nullptr);
+  dbInst* load3 = block_->findInst("u_h2/u_h3/load3");
+  ASSERT_NE(load3, nullptr);
+
+  dbITerm* load4_a = load4->findITerm("A");
+  ASSERT_NE(load4_a, nullptr);
+  dbITerm* load2_a = load2->findITerm("A");
+  ASSERT_NE(load2_a, nullptr);
+  dbITerm* load3_a = load3->findITerm("A");
+  ASSERT_NE(load3_a, nullptr);
+
+  dbNet* target_net = load4_a->getNet();
+  ASSERT_NE(target_net, nullptr);
+
+  dbMaster* buffer_master = db_->findMaster("BUF_X1");
+  ASSERT_NE(buffer_master, nullptr);
+
+  dbModInst* u_h1 = block_->findModInst("u_h1");
+  ASSERT_NE(u_h1, nullptr);
+  dbModInst* u_h2 = block_->findModInst("u_h2");
+  ASSERT_NE(u_h2, nullptr);
+  dbModInst* u_h3 = block_->findModInst("u_h2/u_h3");
+  ASSERT_NE(u_h3, nullptr);
+
+  dbModule* mod_h2 = block_->findModule("ModH2");
+  ASSERT_NE(mod_h2, nullptr);
+  dbModNet* modnet_h2_in = block_->findModNet("u_h2/in");
+  ASSERT_NE(modnet_h2_in, nullptr);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  db_network_->checkAxioms();
+
+  //----------------------------------------------------
+  // Insert buffer
+  // - Targets: load4 (Top), load2 (H1), load3 (H2/H3)
+  //----------------------------------------------------
+  std::set<dbObject*> targets;
+  targets.insert(load4_a);
+  targets.insert(load2_a);
+  targets.insert(load3_a);
+  dbInst* new_buf = target_net->insertBufferBeforeLoads(
+      targets, buffer_master, nullptr, "new_buf");
+  ASSERT_TRUE(new_buf);
+
+  // Write verilog
+  {
+    const std::string verilog_file = "results/BeforeLoads_Case7.v";
+    sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
+  }
+
+  //----------------------------------------------------
+  // Verify Results
+  //----------------------------------------------------
+
+  // Buffer Location: Top Module (LCA)
+  EXPECT_EQ(new_buf->getModule(), block_->getTopModule());
+
+  // Net Separation
+  dbNet* buf_out_net = new_buf->findITerm("Z")->getNet();
+  ASSERT_TRUE(buf_out_net);
+  EXPECT_NE(buf_out_net, target_net);
+
+  // Target Loads moved to new net
+  EXPECT_EQ(load4->findITerm("A")->getNet(), buf_out_net);
+  EXPECT_EQ(load2->findITerm("A")->getNet(), buf_out_net);
+  EXPECT_EQ(load3->findITerm("A")->getNet(), buf_out_net);
+
+  // Non-Target Loads remain on old net
+  EXPECT_EQ(load0->findITerm("A")->getNet(), target_net);
+  EXPECT_EQ(load1->findITerm("A")->getNet(), target_net);
+
+  // Port Punching Verification (Logical)
+  dbModNet* top_out_mod_net
+      = block_->getTopModule()->getModNet(buf_out_net->getConstName());
+  ASSERT_NE(top_out_mod_net, nullptr);
+  ASSERT_TRUE(top_out_mod_net);
+
+  // Check if new ports were punched into H1, H2
+  bool punched_h1 = false;
+  bool punched_h2 = false;
+
+  for (dbModITerm* iterm : top_out_mod_net->getModITerms()) {
+    if (iterm->getParent() == u_h1) {
+      punched_h1 = true;
+    }
+    if (iterm->getParent() == u_h2) {
+      punched_h2 = true;
+    }
+  }
+
+  EXPECT_TRUE(punched_h1);  // Top -> H1 -> load2
+  EXPECT_TRUE(punched_h2);  // Top -> H2 -> H3 -> load3
+
+  // Deeper check for H2 -> H3 punching
+  bool punched_h3_in_h2 = false;
+  for (dbModNet* net : mod_h2->getModNets()) {
+    // If this net connects to u_h3 AND to the boundary (ModBTerm), it's likely
+    // the punched net
+    bool connects_boundary = !net->getModBTerms().empty();
+    bool connects_h3 = false;
+    for (dbModITerm* iterm : net->getModITerms()) {
+      if (iterm->getParent() == u_h3) {
+        connects_h3 = true;
+      }
+    }
+    if (connects_boundary && connects_h3 && net != modnet_h2_in) {
+      punched_h3_in_h2 = true;
+      break;
+    }
+  }
+  EXPECT_FALSE(punched_h3_in_h2);
+}
+
 TEST_F(TestInsertBuffer, AfterDriver_Case1)
 {
   int num_warning = 0;
