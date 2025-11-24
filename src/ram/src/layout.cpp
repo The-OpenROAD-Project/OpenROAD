@@ -174,7 +174,7 @@ bool Grid::insertLayout(std::unique_ptr<Layout> layout, int index)
 {
   if (index == layouts_.size()) {
     layouts_.push_back(std::move(layout));
-  } else if (index < layouts_.size()){
+  } else if (index < layouts_.size()) {
     layouts_.insert(layouts_.begin() + index, std::move(layout));
   } else if (index > layouts_.size()) {
     return false;
