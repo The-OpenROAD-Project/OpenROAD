@@ -87,67 +87,70 @@ void IntegratedFixture::readVerilogAndSetup(const std::string& verilog_file)
 
   // Timing setup
   sta::Cell* top_cell = db_network_->cell(db_network_->topInstance());
+  ASSERT_NE(top_cell, nullptr);
   sta::Port* clk_port = db_network_->findPort(top_cell, "clk");
-  sta::Pin* clk_pin
-      = db_network_->findPin(db_network_->topInstance(), clk_port);
+  if (clk_port != nullptr) {
+    sta::Pin* clk_pin
+        = db_network_->findPin(db_network_->topInstance(), clk_port);
 
-  // STA frees the 'clk_pins' after use.
-  // coverity[RESOURCE_LEAK: FALSE_POSITIVE]
-  sta::PinSet* clk_pins = new sta::PinSet(db_network_);
-  clk_pins->insert(clk_pin);
+    // STA frees the 'clk_pins' after use.
+    // coverity[RESOURCE_LEAK: FALSE_POSITIVE]
+    sta::PinSet* clk_pins = new sta::PinSet(db_network_);
+    clk_pins->insert(clk_pin);
 
-  // Clock period = 0.5ns
-  double period = sta_->units()->timeUnit()->userToSta(0.5);
-  // STA takes the ownership of 'waveform'.
-  // coverity[RESOURCE_LEAK: FALSE_POSITIVE]
-  sta::FloatSeq* waveform = new sta::FloatSeq;
-  waveform->push_back(0);
-  waveform->push_back(period / 2.0);
+    // Clock period = 0.5ns
+    double period = sta_->units()->timeUnit()->userToSta(0.5);
+    // STA takes the ownership of 'waveform'.
+    // coverity[RESOURCE_LEAK: FALSE_POSITIVE]
+    sta::FloatSeq* waveform = new sta::FloatSeq;
+    waveform->push_back(0);
+    waveform->push_back(period / 2.0);
 
-  sta_->makeClock("clk",
-                  clk_pins,
-                  /*add_to_pins=*/false,
-                  /*period=*/period,
-                  waveform,
-                  /*comment=*/nullptr);
+    sta_->makeClock("clk",
+                    clk_pins,
+                    /*add_to_pins=*/false,
+                    /*period=*/period,
+                    waveform,
+                    /*comment=*/nullptr);
 
-  sta::Sdc* sdc = sta_->sdc();
-  const sta::RiseFallBoth* rf = sta::RiseFallBoth::riseFall();
-  sta::Clock* clk = sdc->findClock("clk");
-  const sta::RiseFall* clk_rf = sta::RiseFall::rise();
+    sta::Sdc* sdc = sta_->sdc();
+    const sta::RiseFallBoth* rf = sta::RiseFallBoth::riseFall();
+    sta::Clock* clk = sdc->findClock("clk");
+    const sta::RiseFall* clk_rf = sta::RiseFall::rise();
 
-  for (odb::dbBTerm* term : block_->getBTerms()) {
-    sta::Pin* pin = db_network_->dbToSta(term);
-    if (pin == nullptr) {
-      continue;
-    }
-    if (sdc->isClock(pin)) {
-      continue;
-    }
+    for (odb::dbBTerm* term : block_->getBTerms()) {
+      sta::Pin* pin = db_network_->dbToSta(term);
+      if (pin == nullptr) {
+        continue;
+      }
+      if (sdc->isClock(pin)) {
+        continue;
+      }
 
-    odb::dbIoType io_type = term->getIoType();
-    if (io_type == odb::dbIoType::INPUT) {
-      sta_->setInputDelay(pin,
-                          rf,
-                          clk,
-                          clk_rf,
-                          nullptr,
-                          false,
-                          false,
-                          sta::MinMaxAll::all(),
-                          true,
-                          0.0);
-    } else if (io_type == odb::dbIoType::OUTPUT) {
-      sta_->setOutputDelay(pin,
-                           rf,
-                           clk,
-                           clk_rf,
-                           nullptr,
-                           false,
-                           false,
-                           sta::MinMaxAll::all(),
-                           true,
-                           0.0);
+      odb::dbIoType io_type = term->getIoType();
+      if (io_type == odb::dbIoType::INPUT) {
+        sta_->setInputDelay(pin,
+                            rf,
+                            clk,
+                            clk_rf,
+                            nullptr,
+                            false,
+                            false,
+                            sta::MinMaxAll::all(),
+                            true,
+                            0.0);
+      } else if (io_type == odb::dbIoType::OUTPUT) {
+        sta_->setOutputDelay(pin,
+                             rf,
+                             clk,
+                             clk_rf,
+                             nullptr,
+                             false,
+                             false,
+                             sta::MinMaxAll::all(),
+                             true,
+                             0.0);
+      }
     }
   }
 
