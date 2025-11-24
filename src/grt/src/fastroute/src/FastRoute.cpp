@@ -1341,7 +1341,7 @@ NetRouteMap FastRouteCore::run()
   float logistic_coef = 0;
   int slope;
   int max_adj;
-  int long_edge_len = 100;
+  int long_edge_len = 200;
   const int short_edge_len = 12;
   const int soft_ndr_overflow_th = 10000;
 
