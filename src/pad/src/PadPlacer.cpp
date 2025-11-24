@@ -951,6 +951,15 @@ void PlacerPadPlacer::debugPause(const std::string& msg) const
 {
   if (gui::Gui::enabled() && getLogger()->debugCheck(utl::PAD, "Pause", 1)) {
     debugPrint(getLogger(), utl::PAD, "Pause", 1, msg);
+    auto* gui = gui::Gui::get();
+    gui->clearHighlights();
+    for (const auto& [inst, iterms] : iterm_connections_) {
+      for (auto* iterm : iterms) {
+        if (iterm->getNet() != nullptr) {
+          gui->addNetToHighlightSet(iterm->getNet()->getConstName());
+        }
+      }
+    }
     gui::Gui::get()->pause();
   }
 }
