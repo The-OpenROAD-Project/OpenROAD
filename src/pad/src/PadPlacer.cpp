@@ -1301,8 +1301,8 @@ bool PlacerPadPlacer::padSpreading(
     const int check_move
         = std::max(prev_pos, std::min(next_pos, curr_pos + move_by));
     if (move_by != 0) {
-      const int tunnel_move
-          = getTunnelingPosition(curr, check_move, move_by > 0, itr);
+      const int tunnel_move = getTunnelingPosition(
+          curr, check_move, move_by > 0, prev_pos, curr_pos, next_pos, itr);
       move_by = tunnel_move - curr_pos;
     }
 
@@ -1456,6 +1456,9 @@ int PlacerPadPlacer::getRowEnd(odb::dbInst* inst) const
 int PlacerPadPlacer::getTunnelingPosition(odb::dbInst* inst,
                                           int target,
                                           bool move_up,
+                                          int low_bound,
+                                          int curr_pos,
+                                          int high_bound,
                                           int itr) const
 {
   const double dbus = getBlock()->getDbUnitsPerMicron();
@@ -1464,32 +1467,121 @@ int PlacerPadPlacer::getTunnelingPosition(odb::dbInst* inst,
     // pad is moving up in the row
     int next = getNearestLegalPosition(inst, target, false, true);
     if (next != target) {
-      debugPrint(
-          getLogger(),
-          utl::PAD,
-          "Place",
-          2,
-          "{} / {}: Tunneling past obstruction (up) {:.4f} um -> {:.4f} um",
-          itr,
-          inst->getName(),
-          target / dbus,
-          next / dbus);
+      if (next > high_bound) {
+        // check if high_bound is safe to pin to
+        placeInstanceSimple(inst, high_bound, true);
+        if (checkInstancePlacement(inst)) {
+          next = getNearestLegalPosition(inst, target, true, false);
+          if (next <= high_bound) {
+            debugPrint(getLogger(),
+                       utl::PAD,
+                       "Place",
+                       2,
+                       "{} / {}: Tunneling past obstruction (up) {:.4f} um -> "
+                       "{:.4f} um, blocked by lower bound {:.4f}um, pinning to "
+                       "blockage ({:.4f}um , {:.4f}um , {:.4f}um)",
+                       itr,
+                       inst->getName(),
+                       target / dbus,
+                       next / dbus,
+                       high_bound / dbus,
+                       low_bound / dbus,
+                       curr_pos / dbus,
+                       high_bound / dbus);
+            return next;
+          }
+          debugPrint(getLogger(),
+                     utl::PAD,
+                     "Place",
+                     2,
+                     "{} / {}: Tunneling past obstruction (up) {:.4f} um -> "
+                     "{:.4f} um, blocked by lower bound {:.4f}um ({:.4f}um , "
+                     "{:.4f}um , {:.4f}um)",
+                     itr,
+                     inst->getName(),
+                     target / dbus,
+                     next / dbus,
+                     high_bound / dbus,
+                     low_bound / dbus,
+                     curr_pos / dbus,
+                     high_bound / dbus);
+          return curr_pos;
+        }
+      }
+      debugPrint(getLogger(),
+                 utl::PAD,
+                 "Place",
+                 2,
+                 "{} / {}: Tunneling past obstruction (up) {:.4f} um -> {:.4f} "
+                 "um ({:.4f}um , {:.4f}um , {:.4f}um)",
+                 itr,
+                 inst->getName(),
+                 target / dbus,
+                 next / dbus,
+                 low_bound / dbus,
+                 curr_pos / dbus,
+                 high_bound / dbus);
       return next;
     }
   }
   // pad is moving down in the row
   int next = getNearestLegalPosition(inst, target, true, false);
   if (next != target) {
-    debugPrint(
-        getLogger(),
-        utl::PAD,
-        "Place",
-        2,
-        "{} / {}: Tunneling past obstruction (down) {:.4f} um -> {:.4f} um",
-        itr,
-        inst->getName(),
-        target / dbus,
-        next / dbus);
+    if (next < low_bound) {
+      // check if low_bound is safe to pin to
+      placeInstanceSimple(inst, low_bound, true);
+      if (checkInstancePlacement(inst)) {
+        next = getNearestLegalPosition(inst, target, true, false);
+        if (next >= low_bound) {
+          debugPrint(getLogger(),
+                     utl::PAD,
+                     "Place",
+                     2,
+                     "{} / {}: Tunneling past obstruction (down) {:.4f} um -> "
+                     "{:.4f} um, blocked by lower bound, pinning to blockage "
+                     "{:.4f}um ({:.4f}um , {:.4f}um , {:.4f}um)",
+                     itr,
+                     inst->getName(),
+                     target / dbus,
+                     next / dbus,
+                     high_bound / dbus,
+                     low_bound / dbus,
+                     curr_pos / dbus,
+                     high_bound / dbus);
+          return next;
+        }
+        next = curr_pos;
+        debugPrint(getLogger(),
+                   utl::PAD,
+                   "Place",
+                   2,
+                   "{} / {}: Tunneling past obstruction (down) {:.4f} um -> "
+                   "{:.4f} um, blocked by lower bound {:.4f}um ({:.4f}um , "
+                   "{:.4f}um , {:.4f}um)",
+                   itr,
+                   inst->getName(),
+                   target / dbus,
+                   next / dbus,
+                   low_bound / dbus,
+                   low_bound / dbus,
+                   curr_pos / dbus,
+                   high_bound / dbus);
+        return next;
+      }
+    }
+    debugPrint(getLogger(),
+               utl::PAD,
+               "Place",
+               2,
+               "{} / {}: Tunneling past obstruction (down) {:.4f} um -> {:.4f} "
+               "um ({:.4f}um , {:.4f}um , {:.4f}um)",
+               itr,
+               inst->getName(),
+               target / dbus,
+               next / dbus,
+               low_bound / dbus,
+               curr_pos / dbus,
+               high_bound / dbus);
     return next;
   }
 

@@ -274,6 +274,9 @@ class PlacerPadPlacer : public PadPlacer
   int getTunnelingPosition(odb::dbInst* inst,
                            int target,
                            bool move_up,
+                           int low_bound,
+                           int curr_pos,
+                           int high_bound,
                            int itr) const;
   void debugCheckPlacement() const;
 
