@@ -2589,12 +2589,13 @@ class dbNet : public dbObject
   /// - Note that the new buffer drives the specified load pins only.
   /// - It does not drive other unspecified loads driven by the same net.
   ///
-  dbInst* insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
-                                  const dbMaster* buffer_master,
-                                  const Point* loc = nullptr,
-                                  const char* base_name = nullptr,
-                                  const dbNameUniquifyType& uniquify
-                                  = dbNameUniquifyType::ALWAYS);
+  dbInst* insertBufferBeforeLoads(
+      std::set<dbObject*>& load_pins,
+      const dbMaster* buffer_master,
+      const Point* loc = nullptr,
+      const char* base_name = nullptr,
+      const dbNameUniquifyType& uniquify
+      = dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
 
  private:
   dbInst* insertBufferCommon(dbObject* term_obj,
