@@ -20,7 +20,7 @@ generate_ram \
   -filler_cells {sky130_fd_sc_hd__fill_1 sky130_fd_sc_hd__fill_2 \
     sky130_fd_sc_hd__fill_4 sky130_fd_sc_hd__fill_8} \
   -tapcell sky130_fd_sc_hd__tap_1 \
-  -max_tap_dist 15 
+  -max_tap_dist 15
 
 set lef_file [make_result_file make_8x8.lef]
 write_abstract_lef $lef_file

@@ -174,7 +174,7 @@ void RamGen::makeCellByte(Grid& ram_grid,
 }
 
 std::unique_ptr<Layout> RamGen::generateTapColumn(const int word_count,
-        const int tapcell_col)
+                                                  const int tapcell_col)
 {
   auto tapcell_layout = std::make_unique<Layout>(odb::vertical);
   for (int i = 0; i < word_count; ++i) {
@@ -566,26 +566,28 @@ void RamGen::generate(const int bytes_per_word,
   ram_grid.gridInit();
 
   if (tapcell_) {
-    // max tap distance specified is greater than the length of ram 
+    // max tap distance specified is greater than the length of ram
     if (ram_grid.getRowWidth() <= max_tap_dist) {
       auto tapcell_layout = generateTapColumn(word_count, 0);
-      ram_grid.insertLayout(std::move(tapcell_layout), 0); 
+      ram_grid.insertLayout(std::move(tapcell_layout), 0);
     } else {
       // needed this calculation so first cells have right distance
-      int nearest_tap = (max_tap_dist / ram_grid.getWidth()) * ram_grid.getLayoutWidth(0);
+      int nearest_tap
+          = (max_tap_dist / ram_grid.getWidth()) * ram_grid.getLayoutWidth(0);
       int tapcell_count = 0;
-      // x distance between transistor and tapcell means 2x distance between tapcells
-      max_tap_dist *= 2; 
-      // iterates through each of the columns 
+      // x distance between transistor and tapcell means 2x distance between
+      // tapcells
+      max_tap_dist *= 2;
+      // iterates through each of the columns
       for (int col = 0; col < ram_grid.numLayouts(); ++col) {
-        if (nearest_tap + ram_grid.getLayoutWidth(col) >= max_tap_dist) { 
-          //if the nearest_tap is too far, generate tap column
+        if (nearest_tap + ram_grid.getLayoutWidth(col) >= max_tap_dist) {
+          // if the nearest_tap is too far, generate tap column
           auto tapcell_layout = generateTapColumn(word_count, tapcell_count);
           ram_grid.insertLayout(std::move(tapcell_layout), col);
-          ++col; // col adjustment after insertion
+          ++col;  // col adjustment after insertion
           nearest_tap = 0;
           ++tapcell_count;
-        } 
+        }
         nearest_tap += ram_grid.getLayoutWidth(col);
       }
       // check for last column in the grid
@@ -593,12 +595,11 @@ void RamGen::generate(const int bytes_per_word,
         auto tapcell_layout = generateTapColumn(word_count, tapcell_count);
         ram_grid.addLayout(std::move(tapcell_layout));
       }
-    } 
-
-  }  
+    }
+  }
 
   ram_grid.gridInit();
-  
+
   auto db_libs = db_->getLibs().begin();
   auto db_sites = *(db_libs->getSites().begin());
   auto sites_width = db_sites->getWidth();
