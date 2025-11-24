@@ -389,26 +389,27 @@ void createHierarchicalConnection(dbITerm* load_pin,
     }
 
     bool reused_path = false;
-    
+
     if (existing_mod_net) {
       // Check if we can safely reuse this net.
       // We can reuse ONLY if all connected ITerms are in load_pins
-      // AND all connected ModITerms are the child_obj (the path we are tracing).
+      // AND all connected ModITerms are the child_obj (the path we are
+      // tracing).
       bool safe_to_reuse = true;
-      
+
       for (dbITerm* iterm : existing_mod_net->getITerms()) {
         if (load_pins.find(iterm) == load_pins.end()) {
           safe_to_reuse = false;
           break;
         }
       }
-      
+
       if (safe_to_reuse) {
         for (dbModITerm* miterm : existing_mod_net->getModITerms()) {
-           if (miterm != child_obj) {
-             safe_to_reuse = false;
-             break;
-           }
+          if (miterm != child_obj) {
+            safe_to_reuse = false;
+            break;
+          }
         }
       }
 
@@ -3640,13 +3641,19 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
       // We do this BEFORE disconnect to allow reusing existing hierarchical
       // ports/nets.
       dbModITerm* top_mod_iterm = nullptr;
-      createHierarchicalConnection(load, target_module, top_mod_iterm, load_pins);
+      createHierarchicalConnection(
+          load, target_module, top_mod_iterm, load_pins);
 
       dbModNet* saved_mod_net = load->getModNet();
 
       load->disconnect();
       load->connect(new_flat_net);
-      if (saved_mod_net) {
+
+      // Only restore the logical connection if the load is in a deeper
+      // hierarchy. If the load is in the target_module, it is moving to the new
+      // net, so connecting to the old saved_mod_net would be incorrect
+      // (creating a mismatch).
+      if (saved_mod_net && load->getInst()->getModule() != target_module) {
         load->connect(saved_mod_net);
       }
 
@@ -3661,6 +3668,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
         }
       }
     } else {  // It has to be a BTerm due to previous check.
+      assert(load_obj->getObjectType() == dbBTermObj);
       dbBTerm* load = static_cast<dbBTerm*>(load_obj);
       load->disconnect();
       load->connect(new_flat_net);
