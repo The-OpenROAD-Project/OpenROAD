@@ -1341,7 +1341,7 @@ NetRouteMap FastRouteCore::run()
   float logistic_coef = 0;
   int slope;
   int max_adj;
-  int long_edge_len = BIG_INT;
+  int long_edge_len = 40;
   const int short_edge_len = 12;
   const int soft_ndr_overflow_th = 10000;
 
@@ -1782,6 +1782,11 @@ NetRouteMap FastRouteCore::run()
   via_cost_ = 1;
 
   if (past_cong == 0) {
+    // Increase ripup threshold if res-aware is enabled
+    if (enable_resistance_aware_) {
+      long_edge_len = BIG_INT;
+    }
+
     mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
     mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
   }

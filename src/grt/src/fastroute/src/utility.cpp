@@ -267,7 +267,7 @@ void FastRouteCore::fillVIA()
             for (int16_t l = top_layer - 1; l >= bottom_layer; l--) {
               tmp.push_back({tmp[newCNT - 1].x, tmp[newCNT - 1].y, l});
               newCNT++;
-              if (node2_alias >= num_terminals) {
+              if (node1_alias >= num_terminals) {
                 numVIAT2++;
               }
             }
