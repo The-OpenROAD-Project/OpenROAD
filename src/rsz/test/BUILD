@@ -322,6 +322,9 @@ cc_test(
         "cpp/TestBufferRemoval3_4.v",
         "cpp/TestBufferRemoval3_5.v",
         "cpp/TestBufferRemoval3_6.v",
+        "cpp/TestBufferRemoval3_7.v",
+        "cpp/TestBufferRemoval3_8.v",
+        "cpp/TestBufferRemoval3_9.v",
     ],
     deps = [
         "//src/dbSta",
