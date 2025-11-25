@@ -2894,7 +2894,6 @@ SPECIALNETS 141 ;
       NEW metal10 8000 + SHAPE IOWIRE ( 1094590 530540 ) ( 1094590 730540 )
       NEW metal10 8000 + SHAPE IOWIRE ( 1090590 726540 ) ( 1109000 726540 )
       NEW metal10 8000 + SHAPE IOWIRE ( 1105000 722540 ) ( 1105000 795000 )
-      + ROUTED
       + ROUTED metal10 8000 + SHAPE IOWIRE ( 175000 4706540 ) ( 175000 4740000 )
       NEW metal10 8000 + SHAPE IOWIRE ( 171000 4710540 ) ( 202590 4710540 )
       NEW metal10 8000 + SHAPE IOWIRE ( 198590 4690540 ) ( 198590 4714540 )
@@ -3728,8 +3727,7 @@ SPECIALNETS 141 ;
     - p_co2_6_o ( PIN p_co2_6_o ) ( BUMP_0_15 PAD ) ( u_co2_6_o PAD ) + USE SIGNAL
       + ROUTED metal10 10000 + SHAPE IOWIRE ( 175000 5289000 ) ( 175000 5310000 ) ;
     - p_co2_7_o ( PIN p_co2_7_o ) ( BUMP_1_15 PAD ) ( u_co2_7_o PAD ) + USE SIGNAL ;
-    - p_co2_8_o ( PIN p_co2_8_o ) ( BUMP_0_16 PAD ) ( u_co2_8_o PAD ) + USE SIGNAL
-      + ROUTED ;
+    - p_co2_8_o ( PIN p_co2_8_o ) ( BUMP_0_16 PAD ) ( u_co2_8_o PAD ) + USE SIGNAL ;
     - p_co2_clk_o ( PIN p_co2_clk_o ) ( BUMP_3_12 PAD ) ( u_co2_clk_o PAD ) + USE SIGNAL ;
     - p_co2_tkn_i ( PIN p_co2_tkn_i ) ( BUMP_2_13 PAD ) ( u_co2_tkn_i PAD ) + USE SIGNAL ;
     - p_co2_v_o ( PIN p_co2_v_o ) ( BUMP_0_13 PAD ) ( u_co2_v_o PAD ) + USE SIGNAL ;

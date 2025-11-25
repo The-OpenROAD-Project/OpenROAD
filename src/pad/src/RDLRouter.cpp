@@ -1603,7 +1603,12 @@ void RDLRouter::writeToDb(odb::dbNet* net,
 {
   Utilities::makeSpecial(net);
 
-  auto* swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
+  if (source == nullptr && target == nullptr && stubs.empty()) {
+    // Nothing to create a wire for, so return
+    return;
+  }
+
+  odb::dbSWire* swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
   for (const odb::Rect& stub : stubs) {
     odb::dbSBox::create(swire,
                         layer_,
