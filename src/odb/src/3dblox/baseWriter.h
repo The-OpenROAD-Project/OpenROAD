@@ -37,7 +37,7 @@ class BaseWriter
   // Member variables
   utl::Logger* logger_ = nullptr;
   std::string current_dir_path_;
-  uint dbu_per_micron_ = 0;
+  unsigned int dbu_per_micron_ = 0;
 };
 
 }  // namespace odb
