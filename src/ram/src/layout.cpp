@@ -34,10 +34,8 @@ void Cell::addInst(dbInst* inst)
 
 void Cell::cellInit()
 {
-  if (width_ > 0 || height_ > 0) {
-    width_ = 0;
-    height_ = 0;
-  }
+  width_ = 0;
+  height_ = 0;
   for (auto& inst : insts_) {
     Rect inst_box = inst->getBBox()->getBox();
     width_ += inst_box.dx();
