@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
+#include <omp.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -144,13 +146,20 @@ void FastRouteCore::netpinOrderInc()
       ndr_priority = 0;  // Higher priority for NDR nets
     }
 
+    // Prioritize nets with worst slack first
     float slack = (enable_resistance_aware_ && nets_[netID]->getSlack() < 0)
                       ? nets_[netID]->getSlack()
                       : 0;
 
-    const int res_aware = (is_second_stage_) ? nets_[netID]->isResAware()
+    // After layer assignment, give priority to non-res_aware nets first to
+    // release resources on lower resistance layers
+    const int res_aware = (is_3d_step_) ? nets_[netID]->isResAware()
                                              : !nets_[netID]->isResAware();
-    const int is_clock = nets_[netID]->isClock() ? 0 : 1;
+
+    // Prioritize clock nets when using resistance-aware strategy to
+    // better balance clock skew
+    const int is_clock
+        = (enable_resistance_aware_) ? !nets_[netID]->isClock() : 0;
 
     tree_order_pv_.push_back({netID,
                               xmin,
@@ -444,10 +453,6 @@ int FastRouteCore::getLayerResistance(const int layer,
 
   odb::dbTechLayer* db_layer = getTechLayer(layer, false);
   odb::dbTechLayer* default_layer = getTechLayer(0, false);
-  // odb::dbTechLayer* default_layer =
-  // getTechLayer(db_->getChip()->getBlock()->getMaxRoutingLayer()-1, false);
-  // odb::dbTechLayer* default_layer =
-  // getTechLayer(db_->getChip()->getBlock()->getMinLayerForClock()-1, false);
 
   int width = db_layer->getWidth();
   double resistance = db_layer->getResistance();
@@ -469,7 +474,6 @@ int FastRouteCore::getLayerResistance(const int layer,
   }
 
   return std::ceil(final_resistance / default_resistance);
-  // return std::ceil(final_resistance);
 }
 
 // Get via resistance cost going from layer A to layer B
@@ -496,14 +500,8 @@ int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
   }
 
   float default_res = getTechLayer(0, true)->getResistance();
-  // float default_res =
-  // getTechLayer(db_->getChip()->getBlock()->getMaxRoutingLayer()-2,
-  // true)->getResistance(); float default_res =
-  // getTechLayer(db_->getChip()->getBlock()->getMinLayerForClock()-2,
-  // true)->getResistance();
 
   return std::ceil(total_via_resistance / default_res);
-  // return std::ceil(total_via_resistance);
 }
 
 // Update and sort the nets by the worst slack. Finally pick a percentage of the
@@ -517,7 +515,6 @@ void FastRouteCore::updateSlacks(float percentage)
   }
 
   std::vector<std::pair<int, float>> res_aware_list;
-  float max_slack = -1;
 
   if (en_estimate_parasitics_) {
     callback_handler_->triggerOnEstimateParasiticsRequired();
@@ -530,68 +527,11 @@ void FastRouteCore::updateSlacks(float percentage)
     net->setSlack(slack);
     net->setIsResAware(false);
 
-    if (net->getDbNet()->getName() == "clk") {
-      resistance_aware_ = true;
-      logger_->report(
-          ">>> {} - Edges: {}", net->getName(), sttrees_[net_id].num_edges());
-      int i = 0;
-      int length = tile_size_;
-
-      for (auto& edge : sttrees_[net_id].edges) {
-        logger_->report("\tEdge{} - len: {} - routelen: {} - x/y{}/{}",
-                        i,
-                        edge.len,
-                        edge.route.routelen,
-                        edge.route.grids.begin()->x,
-                        edge.route.grids.begin()->y);
-        i++;
-      }
-
-      for (int layer = db_->getChip()->getBlock()->getMinRoutingLayer() - 1;
-           layer <= net->getMaxLayer();
-           layer++) {
-        odb::dbTechLayer* db_layer = getTechLayer(layer, false);
-
-        int width = db_layer->getWidth();
-        double resistance = db_layer->getResistance();
-
-        // If net has NDR, get the correct width value
-        odb::dbTechNonDefaultRule* ndr = net->getDbNet()->getNonDefaultRule();
-        if (ndr != nullptr) {
-          odb::dbTechLayerRule* layerRule = ndr->getLayerRule(db_layer);
-          width = layerRule->getWidth();
-        }
-
-        const float layer_width = dbuToMicrons(width);
-        const float res_ohm_per_micron = resistance / layer_width;
-        float final_resistance = res_ohm_per_micron * dbuToMicrons(length);
-        float via_resistance = (layer == net->getMaxLayer())
-                                   ? 0
-                                   : getTechLayer(layer, true)->getResistance();
-        float via_ratio = (layer == net->getMaxLayer())
-                              ? 0
-                              : getViaResistance(layer, net->getMaxLayer());
-
-        logger_->report(
-            "\tM{} - Final resistance: {}/{} - Via Resistance: {}/{}",
-            layer + 1,
-            final_resistance,
-            getLayerResistance(layer, tile_size_, net),
-            via_resistance,
-            via_ratio);
-      }
-      resistance_aware_ = false;
-      logger_->report("xx Net {} - Slack: {}", net->getName(), slack);
-    }
-
     // Skip positive slacks above threshold
     // TODO: need to check this positive slack threshold
-    const float pos_threshold = 100e-12;
+    // const float pos_threshold = 100e-12;
 
-    if (!is_3d_step_ || (is_3d_step_ && slack < pos_threshold)) {
-      res_aware_list.emplace_back(net_id, slack);
-    }
-    max_slack = (slack > max_slack) ? slack : max_slack;
+    res_aware_list.emplace_back(net_id, slack);
   }
 
   // Sort by worst slack and ID
@@ -1179,7 +1119,6 @@ void FastRouteCore::layerAssignmentV4()
 
 void FastRouteCore::layerAssignment()
 {
-  is_second_stage_ = false;
   updateSlacks();
   is_3d_step_ = true;
 

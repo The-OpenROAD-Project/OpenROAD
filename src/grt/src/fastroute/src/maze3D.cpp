@@ -695,8 +695,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     }
   }
 
-  is_second_stage_ = true;
-  updateSlacks();
+  updateSlacks(.8);
   netpinOrderInc();
 
   const int endIND = tree_order_pv_.size() * 0.9;
@@ -728,8 +727,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       if (enable_resistance_aware_) {
         if (treeedge->len > 100) {
           resistance_aware_ = true;
-          // logger_->report("Net: {} - Length: {}", net->getName(),
-          // treeedge->len);
         } else {
           resistance_aware_ = net->isResAware();
         }
