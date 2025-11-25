@@ -152,7 +152,7 @@ void FastRouteCore::netpinOrderInc()
     // After layer assignment, give priority to non-res_aware nets first to
     // release resources on lower resistance layers
     const int res_aware = (is_3d_step_) ? nets_[netID]->isResAware()
-                                             : !nets_[netID]->isResAware();
+                                        : !nets_[netID]->isResAware();
 
     // Prioritize clock nets when using resistance-aware strategy to
     // better balance clock skew
