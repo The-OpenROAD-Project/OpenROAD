@@ -4,13 +4,18 @@
 #include "RDLRoute.h"
 
 #include <algorithm>
+#include <array>
 #include <map>
 #include <memory>
+#include <set>
 #include <tuple>
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "boost/polygon/polygon.hpp"
+#include "boost/polygon/polygon_90_set_data.hpp"
+#include "boost/polygon/polygon_90_with_holes_data.hpp"
+#include "boost/polygon/rectangle_concept.hpp"
+#include "boost/polygon/rectangle_data.hpp"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
@@ -230,7 +235,9 @@ bool RDLRoute::contains(const odb::Point& pt) const
 
 void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
 {
-  using namespace boost::polygon::operators;
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator-=;
+
   using Rectangle = boost::polygon::rectangle_data<int>;
   using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
   using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
@@ -280,7 +287,7 @@ void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
   for (const auto& [iterm, polys] : iterms_geoms) {
     Polygon90Set check = polys;
     check.interact(source_iterms);
-    if (check.size() > 0) {
+    if (!check.empty()) {
       // There is nothing to do
       locked_ = true;
       routed_ = true;
@@ -297,7 +304,7 @@ void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
     Polygon90Set check = polys;
     check.bloat(min_dist, min_dist, min_dist, min_dist);
     check.interact(source_iterms);
-    if (check.size() > 0) {
+    if (!check.empty()) {
       Polygon90Set source_bloat = source_iterms;
       source_bloat.bloat(min_dist, min_dist, min_dist, min_dist);
       check += source_bloat;

@@ -1621,12 +1621,12 @@ void RDLRouter::writeToDb(odb::dbNet* net,
       shape.bloat(width_ / 2, shape);
       odb::dbSBox::Direction dir;
       if (s.x() == t.x()) {
-        shape.set_ylo(shape.yMin() + width_ / 2);
-        shape.set_yhi(shape.yMax() - width_ / 2);
+        shape.set_ylo(shape.yMin() + (width_ / 2));
+        shape.set_yhi(shape.yMax() - (width_ / 2));
         dir = odb::dbSBox::VERTICAL;
       } else if (s.y() == t.y()) {
-        shape.set_xlo(shape.xMin() + width_ / 2);
-        shape.set_xhi(shape.xMax() - width_ / 2);
+        shape.set_xlo(shape.xMin() + (width_ / 2));
+        shape.set_xhi(shape.xMax() - (width_ / 2));
         dir = odb::dbSBox::HORIZONTAL;
       } else {
         dir = odb::dbSBox::OCTILINEAR;

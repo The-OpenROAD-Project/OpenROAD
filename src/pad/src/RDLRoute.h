@@ -5,6 +5,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <vector>
 
 #include "RDLRouter.h"
