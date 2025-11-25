@@ -1,0 +1,45 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
+
+#include "bmapWriter.h"
+
+#include <fstream>
+#include <iostream>
+#include <string>
+
+#include "odb/db.h"
+#include "utl/Logger.h"
+
+namespace odb {
+
+BmapWriter::BmapWriter(utl::Logger* logger) : logger_(logger)
+{
+}
+
+void BmapWriter::writeFile(const std::string& filename,
+                           odb::dbChipRegion* region)
+{
+  const auto u = region->getDb()->getDbuPerMicron();
+  const std::string& complete_name = filename + region->getName() + ".bmap";
+  std::ofstream bmap_file(complete_name);
+  if (bmap_file.is_open()) {
+    for (auto bump : region->getChipBumps()) {
+      const auto inst_name = bump->getInst()->getName();
+      const auto cell_type = bump->getInst()->getMaster()->getName();
+      auto point = bump->getInst()->getOrigin();
+      bmap_file << inst_name + " " + cell_type + " "
+                       + std::to_string(point.getX() / u) + " "
+                       + std::to_string(point.getY() / u) + " - -\n";
+    }
+    bmap_file.close();
+  } else {
+    logError("Unable to open file");
+  }
+}
+
+void BmapWriter::logError(const std::string& message)
+{
+  logger_->error(utl::ODB, 562, "Write Error: {}", message);
+}
+
+}  // namespace odb
