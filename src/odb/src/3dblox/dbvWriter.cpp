@@ -12,9 +12,7 @@
 #include "baseWriter.h"
 #include "odb/db.h"
 #include "odb/defout.h"
-#include "odb/lefout.h"
 #include "utl/Logger.h"
-#include "utl/ScopedTemporaryFile.h"
 namespace odb {
 
 DbvWriter::DbvWriter(utl::Logger* logger, odb::dbDatabase* db)
