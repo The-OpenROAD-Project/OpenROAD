@@ -1053,17 +1053,21 @@ void TritonCTS::cloneClockGaters(odb::dbNet* clkNet)
       cloneClockGaters(outputNet);
     }
   }
-  int driverID = -1;
-  int drvrX, drvrY;
-  if (driver && !isSink(driver) && !driver->getInst()->isFixed()) {
-    driver->getAvgXY(&drvrX, &drvrY);
-    driverID = xs.size();
-    xs.push_back(drvrX);
-    ys.push_back(drvrY);
-    point2pin[{drvrX, drvrY}].push_back(driver);
-  } else {
+  if (!driver) {
     return;
   }
+
+  if (isSink(driver) || driver->getInst()->isFixed()
+      || driver->getInst()->isPad()) {
+    return;
+  }
+
+  int drvrX, drvrY;
+  driver->getAvgXY(&drvrX, &drvrY);
+  int driverID = xs.size();
+  xs.push_back(drvrX);
+  ys.push_back(drvrY);
+  point2pin[{drvrX, drvrY}].push_back(driver);
   stt::Tree ftree
       = options_->getSttBuilder()->makeSteinerTree(clkNet, xs, ys, driverID);
   findLongEdges(ftree, driverID, {drvrX, drvrY}, point2pin);
@@ -1095,7 +1099,7 @@ void TritonCTS::findLongEdges(
     odb::Point branchPt = {branch.x, branch.y};
 
     odb::Point neighborPt = {neighbor->x, neighbor->y};
-    int64_t dist = odb::Point::manhattanDistance(branchPt, neighborPt);
+    int dist = odb::Point::manhattanDistance(branchPt, neighborPt);
     int clusterFrom
         = iterm2cluster.find(b) == iterm2cluster.end() ? -1 : iterm2cluster[b];
     int clusterTo = iterm2cluster.find(branch.n) == iterm2cluster.end()
