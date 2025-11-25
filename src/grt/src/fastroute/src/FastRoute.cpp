@@ -1104,13 +1104,13 @@ void FastRouteCore::get3DRoute(odb::dbNet* db_net, GRoute& route)
         }
       }
 
-      int lastX = tile_size_ * (filled_grids[0].x + 0.5) + x_corner_;
-      int lastY = tile_size_ * (filled_grids[0].y + 0.5) + y_corner_;
+      int lastX = (tile_size_ * (filled_grids[0].x + 0.5)) + x_corner_;
+      int lastY = (tile_size_ * (filled_grids[0].y + 0.5)) + y_corner_;
       int lastL = filled_grids[0].layer;
 
-      for (size_t i = 1; i < filled_grids.size(); i++) {
-        const int xreal = tile_size_ * (filled_grids[i].x + 0.5) + x_corner_;
-        const int yreal = tile_size_ * (filled_grids[i].y + 0.5) + y_corner_;
+      for (int i = 1; i < filled_grids.size(); i++) {
+        const int xreal = (tile_size_ * (filled_grids[i].x + 0.5)) + x_corner_;
+        const int yreal = (tile_size_ * (filled_grids[i].y + 0.5)) + y_corner_;
         const int currentL = filled_grids[i].layer;
 
         // Prevent adding segments that are effectively zero-length vias on the
