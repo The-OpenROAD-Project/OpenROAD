@@ -175,8 +175,9 @@ class RDLRouter
 
   void writeToDb(odb::dbNet* net,
                  const std::vector<odb::Point>& route,
-                 const RouteTarget& source,
-                 const RouteTarget& target);
+                 const RouteTarget* source,
+                 const RouteTarget* target,
+                 const std::set<odb::Rect>& stubs);
   std::vector<std::pair<odb::Point, odb::Point>> simplifyRoute(
       const std::vector<odb::Point>& route) const;
   odb::Rect correctEndPoint(const odb::Rect& route,
