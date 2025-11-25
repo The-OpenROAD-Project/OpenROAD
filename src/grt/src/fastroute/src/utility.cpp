@@ -84,6 +84,7 @@ void FastRouteCore::ConvertToFull3DType2()
         }
         tmp.push_back(grids[j]);
         newCNT++;
+
         // last grid -> node2 finished
         if (treeedges[edgeID].route.type == RouteType::MazeRoute) {
           treeedges[edgeID].route.grids.clear();
@@ -105,12 +106,14 @@ static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
   // Sorting by ndr_priority, resistance aware, slack, length_per_pin, minX, and
   // treeIndex
   return std::tie(a.ndr_priority,
+                  a.clock,
                   a.res_aware,
                   a.slack,
                   a.length_per_pin,
                   a.minX,
                   a.treeIndex)
          < std::tie(b.ndr_priority,
+                    b.clock,
                     b.res_aware,
                     b.slack,
                     b.length_per_pin,
@@ -141,14 +144,28 @@ void FastRouteCore::netpinOrderInc()
       ndr_priority = 0;  // Higher priority for NDR nets
     }
 
+    // Prioritize nets with worst slack first
     float slack = (enable_resistance_aware_ && nets_[netID]->getSlack() < 0)
                       ? nets_[netID]->getSlack()
                       : 0;
 
-    int res_aware = nets_[netID]->isResAware() ? 0 : 1;
+    // After layer assignment, give priority to non-res_aware nets first to
+    // release resources on lower resistance layers
+    const int res_aware = (is_3d_step_) ? nets_[netID]->isResAware()
+                                        : !nets_[netID]->isResAware();
 
-    tree_order_pv_.push_back(
-        {netID, xmin, length_per_pin, ndr_priority, res_aware, slack});
+    // Prioritize clock nets when using resistance-aware strategy to
+    // better balance clock skew
+    const int is_clock
+        = (enable_resistance_aware_) ? !nets_[netID]->isClock() : 0;
+
+    tree_order_pv_.push_back({netID,
+                              xmin,
+                              length_per_pin,
+                              ndr_priority,
+                              res_aware,
+                              slack,
+                              is_clock});
   }
 
   std::stable_sort(
@@ -184,6 +201,7 @@ void FastRouteCore::fillVIA()
           int16_t bottom_layer = treenodes[node1_alias].botL;
           int16_t top_layer = treenodes[node1_alias].topL;
           int16_t edge_init_layer = grids[0].layer;
+
           if (node1_alias < num_terminals) {
             int16_t pin_botL, pin_topL;
             getViaStackRange(netID, node1_alias, pin_botL, pin_topL);
@@ -432,8 +450,11 @@ int FastRouteCore::getLayerResistance(const int layer,
   }
 
   odb::dbTechLayer* db_layer = getTechLayer(layer, false);
-  int width = db_layer->getMinWidth();
+  odb::dbTechLayer* default_layer = getTechLayer(0, false);
+
+  int width = db_layer->getWidth();
   double resistance = db_layer->getResistance();
+  double default_resistance = default_layer->getResistance();
 
   // If net has NDR, get the correct width value
   odb::dbTechNonDefaultRule* ndr = net->getDbNet()->getNonDefaultRule();
@@ -444,13 +465,13 @@ int FastRouteCore::getLayerResistance(const int layer,
 
   const float layer_width = dbuToMicrons(width);
   const float res_ohm_per_micron = resistance / layer_width;
-  int final_resistance = ceil(res_ohm_per_micron * dbuToMicrons(length));
+  float final_resistance = res_ohm_per_micron * dbuToMicrons(length);
 
   if (layer < net->getMinLayer() || layer > net->getMaxLayer()) {
     return BIG_INT;
   }
 
-  return final_resistance;
+  return std::ceil(final_resistance / default_resistance);
 }
 
 // Get via resistance cost going from layer A to layer B
@@ -476,7 +497,9 @@ int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
     total_via_resistance += resistance;
   }
 
-  return std::ceil(total_via_resistance);
+  float default_res = getTechLayer(0, true)->getResistance();
+
+  return std::ceil(total_via_resistance / default_res);
 }
 
 // Update and sort the nets by the worst slack. Finally pick a percentage of the
@@ -490,10 +513,8 @@ void FastRouteCore::updateSlacks(float percentage)
   }
 
   std::vector<std::pair<int, float>> res_aware_list;
-  // TODO: need to check this positive slack threshold
-  // const double pos_threshold = 500e-12;
 
-  if (estimate_parasitics_) {
+  if (en_estimate_parasitics_) {
     callback_handler_->triggerOnEstimateParasiticsRequired();
   }
 
@@ -505,11 +526,13 @@ void FastRouteCore::updateSlacks(float percentage)
     net->setIsResAware(false);
 
     // Skip positive slacks above threshold
-    // if (slack < pos_threshold) {
+    // TODO: need to check this positive slack threshold
+    // const float pos_threshold = 100e-12;
+
     res_aware_list.emplace_back(net_id, slack);
-    // }
   }
 
+  // Sort by worst slack and ID
   auto compareSlack
       = [](const std::pair<int, float> a, const std::pair<int, float> b) {
           return std::tie(a.second, a.first) < std::tie(b.second, b.first);
@@ -1095,6 +1118,7 @@ void FastRouteCore::layerAssignmentV4()
 void FastRouteCore::layerAssignment()
 {
   updateSlacks();
+  is_3d_step_ = true;
 
   for (const int& netID : net_ids_) {
     auto& treenodes = sttrees_[netID].nodes;
