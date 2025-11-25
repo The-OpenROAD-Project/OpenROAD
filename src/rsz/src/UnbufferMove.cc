@@ -355,10 +355,12 @@ void UnbufferMove::removeBuffer(Instance* buffer)
 
   // Handle undriven buffer
   if (in_db_net == nullptr) {
-    logger_->error(RSZ,
-                   168,
-                   "Cannot remove undriven buffer {}.",
-                   network_->pathName(buffer));
+    logger_->warn(
+        RSZ,
+        168,
+        "The input pin of buffer '{}' is undriven. Do not remove the buffer.",
+        network_->pathName(buffer));
+    return;
   }
 
   // Remove the unused buffer
