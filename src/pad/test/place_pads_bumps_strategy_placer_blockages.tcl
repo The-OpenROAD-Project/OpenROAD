@@ -53,6 +53,22 @@ set inst [[ord::get_db_block] findInst BUMP_4_16]
 $inst setPlacementStatus PLACED
 $inst setLocation [ord::microns_to_dbu 860] [ord::microns_to_dbu 2900]
 $inst setPlacementStatus FIRM
+set inst [[ord::get_db_block] findInst BUMP_5_16]
+$inst setPlacementStatus PLACED
+$inst setLocation [ord::microns_to_dbu 1010] [ord::microns_to_dbu 2900]
+$inst setPlacementStatus FIRM
+set inst [[ord::get_db_block] findInst BUMP_6_16]
+$inst setPlacementStatus PLACED
+$inst setLocation [ord::microns_to_dbu 1160] [ord::microns_to_dbu 2900]
+$inst setPlacementStatus FIRM
+set inst [[ord::get_db_block] findInst BUMP_7_16]
+$inst setPlacementStatus PLACED
+$inst setLocation [ord::microns_to_dbu 1310] [ord::microns_to_dbu 2900]
+$inst setPlacementStatus FIRM
+set inst [[ord::get_db_block] findInst BUMP_8_16]
+$inst setPlacementStatus PLACED
+$inst setLocation [ord::microns_to_dbu 1460] [ord::microns_to_dbu 2900]
+$inst setPlacementStatus FIRM
 
 ######## Assign Bumps ########
 assign_io_bump -net p_ddr_dm_1_o -terminal u_ddr_dm_1_o/PAD BUMP_0_0
