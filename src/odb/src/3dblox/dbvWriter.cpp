@@ -8,12 +8,10 @@
 #include <filesystem>
 #include <string>
 #include <unordered_set>
-#include <vector>
 
 #include "baseWriter.h"
 #include "odb/db.h"
 #include "odb/defout.h"
-#include "odb/geom.h"
 #include "odb/lefout.h"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
