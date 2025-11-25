@@ -80,11 +80,12 @@ void TimingBase::addTimingNetWeightOverflow(int overflow)
             std::greater<int>());
 }
 
-void TimingBase::setTimingNetWeightOverflows(std::vector<int>& overflows)
+void TimingBase::setTimingNetWeightOverflows(const std::vector<int>& overflows)
 {
   // sort by decreasing order
-  std::sort(overflows.begin(), overflows.end(), std::greater<int>());
-  for (auto& overflow : overflows) {
+  auto sorted = overflows;
+  std::ranges::sort(sorted, std::greater<int>());
+  for (auto& overflow : sorted) {
     addTimingNetWeightOverflow(overflow);
   }
   initTimingOverflowChk();

@@ -493,20 +493,10 @@ microns_to_dbu(double microns)
 
 // Common check for placement tools.
 bool
-db_has_rows()
+db_has_core_rows()
 {
   dbDatabase *db = OpenRoad::openRoad()->getDb();
-  if (!db->getChip() || !db->getChip()->getBlock()) {
-    return false;
-  }
-
-  for (odb::dbRow* row : db->getChip()->getBlock()->getRows()) {
-    if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
-      return true;
-    }
-  }
-
-  return false;
+  return dbHasCoreRows(db);
 }
 
 bool
