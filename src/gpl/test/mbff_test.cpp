@@ -84,7 +84,6 @@ class MBFFTestFixture : public tst::Fixture
                                  getSta(),
                                  logger_,
                                  resizer_.get(),
-                                 /*threads=*/1,
                                  /*multistart=*/20,
                                  /*num_paths=*/0,
                                  /*debug_graphics=*/false,

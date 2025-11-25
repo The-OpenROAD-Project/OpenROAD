@@ -45,7 +45,6 @@ class MBFF
        sta::dbSta* sta,
        utl::Logger* log,
        rsz::Resizer* resizer,
-       int threads,
        int multistart,
        int num_paths,
        bool debug_graphics,
@@ -239,7 +238,6 @@ class MBFF
   std::unique_ptr<AbstractGraphics> graphics_;
   utl::Logger* log_;
   rsz::Resizer* resizer_;
-  int num_threads_;
   int multistart_;
   int num_paths_;
   float multiplier_;

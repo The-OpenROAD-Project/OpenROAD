@@ -15,7 +15,7 @@ class FlexPA;
 class PACallBack : public utl::CallBack
 {
  public:
-  PACallBack(TritonRoute* router) : router_(router) {}
+  PACallBack(TritonRoute* router) /* : router_(router) */ {}
 
   ~PACallBack() override = default;
 
@@ -25,7 +25,7 @@ class PACallBack : public utl::CallBack
   }
 
  private:
-  TritonRoute* router_;
+  // TritonRoute* router_;
 };
 
 }  // namespace drt

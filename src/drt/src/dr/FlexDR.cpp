@@ -740,7 +740,7 @@ void FlexDR::processWorkersBatchDistributed(
     serializeViaData(via_data_, serializedViaData);
     router_->sendGlobalsUpdates(router_cfg_path_, serializedViaData);
   } else {
-    router_->sendDesignUpdates(router_cfg_path_, router_cfg_->MAX_THREADS);
+    router_->sendDesignUpdates(router_cfg_path_);
   }
 
   ProfileTask task("DIST: PROCESS_BATCH");
@@ -1155,7 +1155,6 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
     }
   }
   bool changed = false;
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
   for (auto& batch : workers_batches) {
     processWorkersBatch(batch, iter_prog);
     std::map<int, FlexDRWorker*>
@@ -1225,7 +1224,6 @@ void FlexDR::optimizationFlow(const SearchRepairArgs& args,
     xIdx++;
   }
 
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
   int version = 0;
   increaseClipsize_ = false;
   numWorkUnits_ = 0;
@@ -1565,7 +1563,6 @@ void FlexDR::reportGuideCoverage()
   std::vector<uint64_t> totalCoveredAreaByLayerNum(numLayers, 0);
   std::map<frNet*, std::vector<float>> netsCoverage;
   const auto& nets = getDesign()->getTopBlock()->getNets();
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < nets.size(); i++) {  // NOLINT
     const auto& net = nets.at(i);
@@ -1744,7 +1741,6 @@ void FlexDR::fixMaxSpacing()
     }
   }
   // create drWorkers for the final regions
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
   for (size_t i = 0; i < merged_regions.size(); i++) {
     auto route_box = merged_regions.at(i);
@@ -1788,7 +1784,6 @@ std::vector<frVia*> FlexDR::getLonelyVias(frLayer* layer,
   std::vector<std::atomic_bool> visited(via_positions.size());
   std::fill(visited.begin(), visited.end(), false);
   std::set<int> isolated_via_nodes;
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < via_positions.size(); i++) {
     if (visited[i].load()) {

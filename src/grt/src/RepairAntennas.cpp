@@ -55,8 +55,7 @@ bool RepairAntennas::checkAntennaViolations(
     const std::vector<odb::dbNet*>& nets_to_repair,
     int max_routing_layer,
     odb::dbMTerm* diode_mterm,
-    float ratio_margin,
-    const int num_threads)
+    float ratio_margin)
 {
   // Save nets repaired in last iteration
   std::unordered_set<std::string> last_nets;
@@ -76,7 +75,6 @@ bool RepairAntennas::checkAntennaViolations(
 
   arc_->makeNetWiresFromGuides(nets_to_repair);
   arc_->initAntennaRules();
-  omp_set_num_threads(num_threads);
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < nets_to_repair.size(); i++) {
     odb::dbNet* db_net = nets_to_repair[i];

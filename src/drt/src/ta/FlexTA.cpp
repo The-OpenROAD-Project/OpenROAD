@@ -157,13 +157,13 @@ int FlexTA::initTA_helper(int iter,
     }
   }
 
-  omp_set_num_threads(std::min(8, router_cfg_->MAX_THREADS));
   // parallel execution
   // multi thread
   for (auto& workerBatch : workers) {
     ProfileTask profile("TA:batch");
     utl::ThreadException exception;
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(dynamic) \
+    num_threads((std::min(8, omp_get_num_threads())))
     for (int i = 0; i < (int) workerBatch.size(); i++) {
       try {
         workerBatch[i]->main_mt();

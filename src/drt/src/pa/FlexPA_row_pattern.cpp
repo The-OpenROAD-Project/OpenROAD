@@ -201,7 +201,6 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
       logger_->error(utl::DRT, 332, "Error sending UPDATE_PA Job to cloud");
     }
   } else {
-    omp_set_num_threads(router_cfg_->MAX_THREADS);
     // choose access pattern of a row of insts
 #pragma omp parallel for schedule(dynamic)
     for (auto& inst_row : inst_rows) {  // NOLINT

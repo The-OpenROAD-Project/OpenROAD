@@ -380,10 +380,8 @@ static void deserializeUpdates(frDesign* design,
   file.close();
 }
 
-void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs,
-                               int num_threads)
+void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
 {
-  omp_set_num_threads(num_threads);
   std::vector<std::vector<drUpdate>> updates(updatesStrs.size());
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < updatesStrs.size(); i++) {
@@ -392,9 +390,8 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs,
   applyUpdates(updates);
 }
 
-void TritonRoute::updateDesign(const std::string& path, int num_threads)
+void TritonRoute::updateDesign(const std::string& path)
 {
-  omp_set_num_threads(num_threads);
   std::vector<std::vector<drUpdate>> updates;
   deserializeUpdates(design_.get(), path, updates);
   applyUpdates(updates);
@@ -918,8 +915,7 @@ void TritonRoute::sendGlobalsUpdates(const std::string& router_cfg_path,
   }
 }
 
-void TritonRoute::sendDesignUpdates(const std::string& router_cfg_path,
-                                    int num_threads)
+void TritonRoute::sendDesignUpdates(const std::string& router_cfg_path)
 {
   if (!distributed_) {
     return;
@@ -934,7 +930,6 @@ void TritonRoute::sendDesignUpdates(const std::string& router_cfg_path,
     serializeTask = std::make_unique<ProfileTask>("DIST: SERIALIZE_UPDATES");
   }
   const auto& designUpdates = design_->getUpdates();
-  omp_set_num_threads(num_threads);
   std::vector<std::string> updates(designUpdates.size());
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < designUpdates.size(); i++) {
@@ -970,15 +965,6 @@ void TritonRoute::sendDesignUpdates(const std::string& router_cfg_path,
 
 int TritonRoute::main()
 {
-  // Just to verify that OMP support is compiled in correctly.
-  omp_set_num_threads(2);
-#pragma omp parallel
-  {
-    if (omp_get_num_threads() != 2) {
-      logger_->error(DRT, 623, "OMP threading is not working.");
-    }
-  }
-
   if (router_cfg_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     router_cfg_->USENONPREFTRACKS = false;
   }
@@ -1061,8 +1047,7 @@ int TritonRoute::main()
   prep();
   ta();
   if (distributed_) {
-    asio::post(*dist_pool_,
-               [this] { sendDesignUpdates("", router_cfg_->MAX_THREADS); });
+    asio::post(dist_pool_.value(), [this] { sendDesignUpdates(""); });
   }
   dr();
   if (!router_cfg_->SINGLE_STEP_DR) {
@@ -1120,12 +1105,11 @@ void TritonRoute::addInstancePAData(frInst* inst)
   }
 }
 
-void TritonRoute::fixMaxSpacing(int num_threads)
+void TritonRoute::fixMaxSpacing()
 {
   initDesign();
   initGuide();
   prep();
-  router_cfg_->MAX_THREADS = num_threads;
   dr_ = std::make_unique<FlexDR>(
       this, getDesign(), logger_, db_, router_cfg_.get());
   dr_->init();
@@ -1173,7 +1157,6 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
     }
   }
   std::map<MarkerId, frMarker*> mapMarkers;
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
   for (auto& workers : workersBatches) {
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < workers.size(); i++) {  // NOLINT
@@ -1206,12 +1189,10 @@ void TritonRoute::checkDRC(const char* filename,
                            int y1,
                            int x2,
                            int y2,
-                           const std::string& marker_name,
-                           int num_threads)
+                           const std::string& marker_name)
 {
   router_cfg_->GC_IGNORE_PDN_LAYER_NUM = -1;
   router_cfg_->REPAIR_PDN_LAYER_NUM = -1;
-  router_cfg_->MAX_THREADS = num_threads;
   initDesign();
   auto gcellGrid = db_->getChip()->getBlock()->getGCellGrid();
   if (gcellGrid != nullptr && gcellGrid->getNumGridPatternsX() == 1
@@ -1300,7 +1281,6 @@ void TritonRoute::setParams(const ParamStruct& params)
   }
   router_cfg_->SAVE_GUIDE_UPDATES = params.saveGuideUpdates;
   router_cfg_->REPAIR_PDN_LAYER_NAME = params.repairPDNLayerName;
-  router_cfg_->MAX_THREADS = params.num_threads;
 }
 
 void TritonRoute::addWorkerResults(
