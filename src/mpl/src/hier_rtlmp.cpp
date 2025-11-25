@@ -101,12 +101,15 @@ void HierRTLMP::setMacroBlockageWeight(float weight)
   cluster_placement_weights_.macro_blockage = weight;
 }
 
-void HierRTLMP::setGlobalFence(int fence_lx,
-                               int fence_ly,
-                               int fence_ux,
-                               int fence_uy)
+void HierRTLMP::setGlobalFence(float fence_lx,
+                               float fence_ly,
+                               float fence_ux,
+                               float fence_uy)
 {
-  tree_->global_fence = odb::Rect(fence_lx, fence_ly, fence_ux, fence_uy);
+  tree_->global_fence = odb::Rect(block_->micronsToDbu(fence_lx),
+                                  block_->micronsToDbu(fence_ly),
+                                  block_->micronsToDbu(fence_ux),
+                                  block_->micronsToDbu(fence_uy));
 }
 
 void HierRTLMP::setHaloWidth(float halo_width)

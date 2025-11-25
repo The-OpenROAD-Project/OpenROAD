@@ -74,7 +74,10 @@ class HierRTLMP
 
   // Interfaces functions for setting options
   // Hierarchical Macro Placement Related Options
-  void setGlobalFence(int fence_lx, int fence_ly, int fence_ux, int fence_uy);
+  void setGlobalFence(float fence_lx,
+                      float fence_ly,
+                      float fence_ux,
+                      float fence_uy);
   void setHaloWidth(float halo_width);
   void setHaloHeight(float halo_height);
   void setGuidanceRegions(
