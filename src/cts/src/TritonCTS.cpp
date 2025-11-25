@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cctype>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <ctime>
 #include <fstream>
@@ -1099,7 +1100,7 @@ void TritonCTS::findLongEdges(
     odb::Point branchPt = {branch.x, branch.y};
 
     odb::Point neighborPt = {neighbor->x, neighbor->y};
-    int dist = odb::Point::manhattanDistance(branchPt, neighborPt);
+    int64_t dist = odb::Point::manhattanDistance(branchPt, neighborPt);
     int clusterFrom
         = iterm2cluster.find(b) == iterm2cluster.end() ? -1 : iterm2cluster[b];
     int clusterTo = iterm2cluster.find(branch.n) == iterm2cluster.end()
