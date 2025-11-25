@@ -632,7 +632,7 @@ void ICeWall::placePad(odb::dbMaster* master,
     }
   }
 
-  const SingleInstPadPlacer placer(logger_, getBlock(), getRowEdge(row), row);
+  SingleInstPadPlacer placer(logger_, getBlock(), getRowEdge(row), row);
   placer.place(inst, location, orient.getOrient());
 }
 
@@ -686,7 +686,7 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts,
              utl::PAD,
              "Place",
              1,
-             "{}: Row width ({:.4f} um), total instance ({}) width {:.4f} um)",
+             "{}: Row width ({:.4f} um), total instance ({}) width ({:.4f} um)",
              row->getName(),
              row_width / dbus,
              insts.size(),
@@ -741,6 +741,13 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts,
   switch (use_mode) {
     case PlacementStrategy::BUMP_ALIGNED: {
       auto bump_placer = std::make_unique<BumpAlignedPadPlacer>(
+          logger_, block, insts, row_dir, row);
+      bump_placer->setConnections(iterm_connections);
+      placer = std::move(bump_placer);
+      break;
+    }
+    case PlacementStrategy::PLACER: {
+      auto bump_placer = std::make_unique<PlacerPadPlacer>(
           logger_, block, insts, row_dir, row);
       bump_placer->setConnections(iterm_connections);
       placer = std::move(bump_placer);
@@ -814,7 +821,7 @@ void ICeWall::placeFiller(
     use_height = true;
   }
 
-  const SingleInstPadPlacer placer(logger_, block, getRowEdge(row), row);
+  SingleInstPadPlacer placer(logger_, block, getRowEdge(row), row);
 
   const odb::dbTransform row_xform(row->getOrient());
 

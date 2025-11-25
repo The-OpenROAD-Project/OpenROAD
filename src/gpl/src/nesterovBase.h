@@ -59,6 +59,10 @@ class GCell
     kNone,
     kRoutability,
     kTimingDriven,
+    kNewInstance,
+    kDownsize,
+    kUpsize,
+    kResizeNoChange
   };
 
   // instance cells
@@ -882,6 +886,8 @@ class NesterovBaseCommon
     deleted_gcells_count_ = 0;
   }
 
+  NesterovBaseVars& getNbVars() { return nbVars_; }
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBaseCommon> pbc_;
@@ -1072,6 +1078,9 @@ class NesterovBase
   void setTrueReprintIterHeader() { reprint_iter_header_ = true; }
   float getPhiCoef(float scaledDiffHpwl) const;
   float getStoredPhiCoef() const { return phiCoef_; }
+  float getStoredStepLength() const { return stepLength_; }
+  float getStoredCoordiDistance() const { return coordiDistance_; }
+  float getStoredGradDistance() const { return gradDistance_; }
 
   bool checkConvergence(int gpl_iter_count,
                         int routability_gpl_iter_count,
@@ -1182,6 +1191,12 @@ class NesterovBase
   float targetDensity_ = 0;
   float uniformTargetDensity_ = 0;
 
+  // StepLength parameters (also included in the np debugPrint)
+  // alpha
+  float stepLength_ = 0;
+  float coordiDistance_ = 0;
+  float gradDistance_ = 0;
+
   // Nesterov loop data for each region, using parallel vectors
   // SLP is Step Length Prediction.
   //
@@ -1226,9 +1241,6 @@ class NesterovBase
 
   float wireLengthGradSum_ = 0;
   float densityGradSum_ = 0;
-
-  // alpha
-  float stepLength_ = 0;
 
   // opt_phi_cof
   float densityPenalty_ = 0;
@@ -1337,5 +1349,12 @@ inline bool isValidSigType(const odb::dbSigType& db_type)
   return (db_type == odb::dbSigType::SIGNAL
           || db_type == odb::dbSigType::CLOCK);
 }
+
+inline constexpr const char* format_label_int = "{:27} {:10}";
+inline constexpr const char* format_label_float = "{:27} {:10.4f}";
+inline constexpr const char* format_label_um2 = "{:27} {:10.3f} um^2";
+inline constexpr const char* format_label_percent = "{:27} {:10.2f} %";
+inline constexpr const char* format_label_um2_with_delta
+    = "{:27} {:10.3f} um^2 ({:+.2f}%)";
 
 }  // namespace gpl

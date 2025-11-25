@@ -227,6 +227,9 @@ class BaseMove : public sta::dbStaState
                           float prev_drive,
                           const DcalcAnalysisPt* dcalc_ap);
   bool replaceCell(Instance* inst, const LibertyCell* replacement);
+  bool checkMaxCapViolation(Instance* inst, const LibertyCell* replacement);
+  float getInputPinCapacitance(Pin* pin, const LibertyCell* cell);
+  bool checkMaxCapOK(const Pin* drvr_pin, float cap_delta);
 
   bool checkMaxCapViolation(const Pin* output_pin,
                             LibertyPort* output_port,

@@ -228,7 +228,7 @@ place_pads
 | Switch Name | Description |
 | ----- | ----- |
 | `-row` | Name of the row to place the pad into, examples include: `IO_NORTH`, `IO_SOUTH`, `IO_WEST`, `IO_EAST`, `IO_NORTH_0`, `IO_NORTH_1`. |
-| `-mode` | Select the mode to use during pad placement, choices are `bump_aligned`, `linear`, and `uniform`. Default will select `bump_aligned` if possible, otherwise fallback to `uniform`. |
+| `-mode` | Select the mode to use during pad placement, choices are `bump_aligned`, `linear`, `placer`, and `uniform`. Default will select `bump_aligned` if possible, otherwise fallback to `uniform`. |
 | `pads` | Name of the instances in the order they should be placed (left to right for `IO_SOUTH` and `IO_NORTH` and bottom to top for `IO_WEST` and `IO_EAST`). |
 
 #### Modes
@@ -244,6 +244,14 @@ In `bump_aligned` mode, the pads will be clustered near their assigned bumps to 
 In `linear` mode, the pads will be place starting from the bottom or left of the row next to eachother.
 
 <img src="./doc/image/mode_linear.png" width=450px>
+
+In `placer` mode, the pads will be placed according to the following algorithm:
+1. Find the ideal position of each pad to minimize RDL routing.
+2. Find the best anchor point for each pad taking into account the ordering of the pads and the ideal positions.
+3. Perform iterative pad spreading to push pads apart and avoid any obstuctions that may exist.
+4. Fix the placement of the pads.
+
+<img src="./doc/image/mode_placer.png" width=450px>
 
 ### Placing Pads Manually
 

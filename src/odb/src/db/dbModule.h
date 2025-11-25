@@ -56,7 +56,8 @@ class _dbModule : public _dbObject
 
   static void copy(dbModule* old_module,
                    dbModule* new_module,
-                   dbModInst* new_mod_inst);
+                   dbModInst* new_mod_inst,
+                   modBTMap& mod_bt_map);
 
   static void copyModulePorts(dbModule* old_module,
                               dbModule* new_module,

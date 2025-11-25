@@ -12,7 +12,7 @@ test --test_timeout=300,1800,1800,9600
 # match, but bazel 8 will be strict. So start now.
 common --incompatible_disallow_empty_glob
 
-build --cxxopt "-std=c++17"        --host_cxxopt "-std=c++17"
+build --cxxopt "-std=c++20"        --host_cxxopt "-std=c++20"
 build --cxxopt "-xc++"             --host_cxxopt "-xc++"
 build --cxxopt "-DBAZEL_BUILD"     --host_cxxopt "-DBAZEL_BUILD"
 

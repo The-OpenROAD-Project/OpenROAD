@@ -59,6 +59,11 @@ _coverity() {
     tar czvf openroad.tgz cov-int
     commitSha="$(git rev-parse HEAD)"
 
+    if [ -n "${SKIP_COVERITY_UPLOAD+x}" ]; then
+        echo "SKIP_COVERITY_UPLOAD is set. Skipping Coverity upload."
+        exit 0
+    fi
+
     # Step 1: Initialize a build. Fetch a cloud upload url.
     curl -X POST \
         -d version="version=${commitSha}" \

@@ -301,10 +301,10 @@ dbSet<dbModNet> dbModule::getModNets()
   return dbSet<dbModNet>(module, block->_module_modnet_itr);
 }
 
-dbModNet* dbModule::getModNet(const char* net_name)
+dbModNet* dbModule::getModNet(const char* net_name) const
 {
-  _dbModule* module = (_dbModule*) this;
-  _dbBlock* block = (_dbBlock*) module->getOwner();
+  const _dbModule* module = (const _dbModule*) this;
+  const _dbBlock* block = (const _dbBlock*) module->getOwner();
   auto it = module->_modnet_hash.find(net_name);
   if (it != module->_modnet_hash.end()) {
     uint db_id = (*it).second;
@@ -655,18 +655,17 @@ bool dbModule::isTop() const
 }
 
 // Do a "deep" copy of old_module based on its instance context into new_module.
-// All ports, instances, mod nets and parent/child IO will be copied.
-// Connections that span multiple modules needs to be done outside this API.
-// new_mod_inst is needed to create module instances for instance name
-// uniquification.
+// - NOTE: _dbModule::copyModulePorts needs to be called before this function
+//   to populate mod_bt_map.
+// - All instances, mod nets and parent/child IO will be copied.
+// - Connections that span multiple modules needs to be done outside this API.
+// - new_mod_inst is needed to create module instances for instance name
+//   uniquification.
 void _dbModule::copy(dbModule* old_module,
                      dbModule* new_module,
-                     dbModInst* new_mod_inst)
+                     dbModInst* new_mod_inst,
+                     modBTMap& mod_bt_map)
 {
-  // Copy module ports including bus members
-  modBTMap mod_bt_map;  // map old mbterm to new mbterm
-  copyModulePorts(old_module, new_module, mod_bt_map);
-
   // Copy module instances and create iterm map
   ITMap it_map;  // map old iterm to new iterm
   copyModuleInsts(old_module, new_module, new_mod_inst, it_map);
