@@ -10,22 +10,19 @@
 #include <string>
 
 #include "odb/db.h"
-#include "odb/defout.h"
-#include "odb/lefout.h"
 #include "utl/Logger.h"
-#include "utl/ScopedTemporaryFile.h"
-
 namespace odb {
 
-BaseWriter::BaseWriter(utl::Logger* logger) : logger_(logger)
+BaseWriter::BaseWriter(utl::Logger* logger, odb::dbDatabase* db)
+    : logger_(logger), dbu_per_micron_(db->getDbuPerMicron())
 {
 }
 
-void BaseWriter::writeHeader(YAML::Node& header_node, odb::dbDatabase* db)
+void BaseWriter::writeHeader(YAML::Node& header_node)
 {
   header_node["version"] = "3";
   header_node["unit"] = "micron";
-  header_node["precision"] = db->getDbuPerMicron();
+  header_node["precision"] = dbu_per_micron_;
 }
 
 void BaseWriter::writeYamlToFile(const std::string& filename,
@@ -42,65 +39,26 @@ void BaseWriter::writeYamlToFile(const std::string& filename,
   out << root;
 }
 
-void BaseWriter::writeLef(YAML::Node& external_node,
-                          odb::dbDatabase* db,
-                          odb::dbChip* chiplet)
+void BaseWriter::writeCoordinate(YAML::Node& coord_node,
+                                 const odb::Point& point)
 {
-  auto libs = db->getLibs();
-  int num_libs = libs.size();
-  if (num_libs > 0) {
-    if (num_libs > 1) {
-      logger_->info(
-          utl::ODB,
-          541,
-          "More than one lib exists, multiple files will be written.");
-    }
-    int cnt = 0;
-    for (auto lib : libs) {
-      std::string name(std::string(lib->getName()) + ".lef");
-      if (cnt > 0) {
-        auto pos = name.rfind('.');
-        if (pos != std::string::npos) {
-          name.insert(pos, "_" + std::to_string(cnt));
-        } else {
-          name += "_" + std::to_string(cnt);
-        }
-        utl::OutStreamHandler stream_handler(name.c_str());
-        odb::lefout lef_writer(logger_, stream_handler.getStream());
-        lef_writer.writeLib(lib);
-      } else {
-        utl::OutStreamHandler stream_handler(name.c_str());
-        odb::lefout lef_writer(logger_, stream_handler.getStream());
-        lef_writer.writeTechAndLib(lib);
-      }
-      YAML::Node list_node;
-      list_node.SetStyle(YAML::EmitterStyle::Flow);
-      list_node.push_back(name.c_str());
-      if ((name.find("_tech") != std::string::npos) || (libs.size() == 1)) {
-        external_node["APR_tech_file"] = list_node;
-      } else {
-        external_node["LEF_file"] = list_node;
-      }
-      ++cnt;
-    }
-  } else if (db->getTech()) {
-    utl::OutStreamHandler stream_handler(
-        (std::string(chiplet->getName()) + ".lef").c_str());
-    odb::lefout lef_writer(logger_, stream_handler.getStream());
-    lef_writer.writeTech(db->getTech());
-    external_node["APR_tech_file"] = (std::string(chiplet->getName()) + ".lef");
-  }
+  coord_node.SetStyle(YAML::EmitterStyle::Flow);
+  coord_node.push_back(dbuToMicron(point.x()));
+  coord_node.push_back(dbuToMicron(point.y()));
 }
 
-void BaseWriter::writeDef(YAML::Node& external_node,
-                          odb::dbDatabase* db,
-                          odb::dbChip* chiplet)
+void BaseWriter::writeCoordinates(YAML::Node& coords_node,
+                                  const odb::Rect& rect)
 {
-  odb::DefOut def_writer(logger_);
-  auto block = chiplet->getBlock();
-  def_writer.writeBlock(block,
-                        (std::string(chiplet->getName()) + ".def").c_str());
-  external_node["DEF_file"] = std::string(chiplet->getName()) + ".def";
+  YAML::Node c0, c1, c2, c3;
+  writeCoordinate(c0, rect.ll());
+  writeCoordinate(c1, rect.lr());
+  writeCoordinate(c2, rect.ur());
+  writeCoordinate(c3, rect.ul());
+  coords_node.push_back(c0);
+  coords_node.push_back(c1);
+  coords_node.push_back(c2);
+  coords_node.push_back(c3);
 }
 
 void BaseWriter::logError(const std::string& message)
@@ -120,4 +78,11 @@ std::string BaseWriter::trim(const std::string& str)
   return str.substr(first, (last - first + 1));
 }
 
+template <typename IntType>
+std::string BaseWriter::dbuToMicron(IntType dbu) const
+{
+  return fmt::format("{:.11g}", dbu / static_cast<double>(dbu_per_micron_));
+}
+
+template std::string BaseWriter::dbuToMicron<int>(int dbu) const;
 }  // namespace odb

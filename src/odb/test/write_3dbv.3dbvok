@@ -10,11 +10,9 @@ ChipletDef:
     shrink: 1
     tsv: false
     offset: [0, 0]
-    seal_ring_width: [-1, -1, -1, -1]
-    scribe_line_remaining_width: [-1, -1, -1, -1]
     external:
       APR_tech_file: [Nangate45_tech.lef]
-      LEF_file: [fake_bumps_2.lef]
+      LEF_file: [fake_bumps_lib.lef, fake_macros_lib.lef]
       DEF_file: SoC.def
     regions:
       r1:

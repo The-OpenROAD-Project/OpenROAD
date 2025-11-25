@@ -3,52 +3,41 @@
 
 #pragma once
 
-#include <yaml-cpp/node/node.h>
-
 #include <string>
+#include <unordered_set>
 
 #include "baseWriter.h"
-#include "chipletHierarchy.h"
-#include "odb/db.h"
-#include "odb/geom.h"
 
 namespace utl {
 class Logger;
 }
+namespace YAML {
+class Node;
+}
 
 namespace odb {
+class dbDatabase;
+class dbChip;
+class dbChipRegion;
 
 class DbvWriter : public BaseWriter
 {
  public:
-  DbvWriter(utl::Logger* logger);
-
-  void writeFile(const std::string& filename, odb::dbDatabase* db) override;
+  DbvWriter(utl::Logger* logger, odb::dbDatabase* db);
 
   void writeChiplet(const std::string& base_filename, odb::dbChip* top_chip);
 
  private:
-  void writeYamlContent(YAML::Node& root, odb::dbDatabase* db);
-  void writeChipletToFile(const std::string& filename,
-                          odb::dbChip* chiplet,
-                          ChipletNode* node);
-  void writeChipletDefs(YAML::Node& chiplets_node, odb::dbDatabase* db);
-  void writeChipletInternal(YAML::Node& chiplet_node,
-                            odb::dbChip* chiplet,
-                            odb::dbDatabase* db);
-  void writeRegions(YAML::Node& regions_node,
-                    odb::dbChip* chiplet,
-                    odb::dbDatabase* db);
-  void writeRegion(YAML::Node& region_node,
-                   odb::dbChipRegion* region,
-                   odb::dbDatabase* db);
-  void writeExternal(YAML::Node& external_node,
-                     odb::dbChip* chiplet,
-                     odb::dbDatabase* db);
-  void writeCoordinates(YAML::Node& coords_node,
-                        const odb::Rect& rect,
-                        odb::dbDatabase* db);
-  void writeChipDependencies(YAML::Node& header_node, const ChipletNode* node);
+  void writeHeaderIncludes(YAML::Node& header_node,
+                           const std::unordered_set<odb::dbChip*>& chips);
+  void writeChipletDefs(YAML::Node& chiplets_node,
+                        const std::unordered_set<odb::dbChip*>& chips);
+  void writeChipletInternal(YAML::Node& chiplet_node, odb::dbChip* chiplet);
+  void writeRegions(YAML::Node& regions_node, odb::dbChip* chiplet);
+  void writeRegion(YAML::Node& region_node, odb::dbChipRegion* region);
+  void writeExternal(YAML::Node& external_node, odb::dbChip* chiplet);
+  void writeLef(YAML::Node& external_node, odb::dbChip* chiplet);
+  void writeDef(YAML::Node& external_node, odb::dbChip* chiplet);
 };
 
 }  // namespace odb

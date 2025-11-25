@@ -3,7 +3,7 @@ source "helpers.tcl"
 set db [ord::get_db]
 set tech [odb::dbTech_create $db "tech"]
 
-read_3dbv "data/example.3dbv"
+read_3dbx "data/example.3dbx"
 set out_3dbv [make_result_file "write_3dbv.3dbv"]
 set 3dbv_write_result [write_3dbv $out_3dbv]
 

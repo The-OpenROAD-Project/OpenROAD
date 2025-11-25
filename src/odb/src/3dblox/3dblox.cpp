@@ -96,8 +96,8 @@ void ThreeDBlox::check()
 
 void ThreeDBlox::writeDbv(const std::string& dbv_file)
 {
-  DbvWriter writer(logger_);
-  writer.writeFile(dbv_file, db_);
+  DbvWriter writer(logger_, db_);
+  writer.writeChiplet(dbv_file, db_->getChip());
 }
 
 void ThreeDBlox::calculateSize(dbChip* chip)

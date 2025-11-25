@@ -5,6 +5,6 @@
 [INFO ODB-0128] Design: fake_macros
 [INFO ODB-0131]     Created 10 components and 32 component-terminals.
 [INFO ODB-0133]     Created 12 nets and 24 connections.
-[INFO ODB-0539] More than one lib exists, multiple files will be written.
+[INFO ODB-0541] More than one lib exists, multiple files will be written.
 No differences found.
 pass
