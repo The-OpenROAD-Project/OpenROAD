@@ -505,7 +505,7 @@ void OpenRoad::read3DBloxBMap(const std::string& filename)
 void OpenRoad::write3Dbv(const std::string& filename)
 {
   odb::ThreeDBlox writer(logger_, db_, sta_);
-  writer.writeDbv(filename);
+  writer.writeDbv(filename, db_->getChip());
 }
 void OpenRoad::readDb(const char* filename, bool hierarchy)
 {

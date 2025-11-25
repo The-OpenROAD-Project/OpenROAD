@@ -200,10 +200,6 @@ void DbvWriter::writeLef(YAML::Node& external_node, odb::dbChip* chiplet)
   if (chiplet->getTech()) {
     auto tech = chiplet->getTech();
     std::string tech_file = tech->getName() + ".lef";
-    std::string tech_file_path = current_dir_path_ + tech_file;
-    utl::OutStreamHandler stream_handler(tech_file_path.c_str());
-    odb::lefout lef_writer(logger_, stream_handler.getStream());
-    lef_writer.writeTech(tech);
     YAML::Node list_node;
     list_node.SetStyle(YAML::EmitterStyle::Flow);
     list_node.push_back(tech_file);
@@ -226,10 +222,6 @@ void DbvWriter::writeLef(YAML::Node& external_node, odb::dbChip* chiplet)
     external_node["LEF_file"] = list_node;
     for (auto lib : libs) {
       std::string lef_file = std::string(lib->getName()) + "_lib.lef";
-      std::string lef_file_path = current_dir_path_ + lef_file;
-      utl::OutStreamHandler stream_handler(lef_file_path.c_str());
-      odb::lefout lef_writer(logger_, stream_handler.getStream());
-      lef_writer.writeLib(lib);
       external_node["LEF_file"].push_back(lef_file);
     }
   }
