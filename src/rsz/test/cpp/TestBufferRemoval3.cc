@@ -7,8 +7,10 @@
 #include <memory>
 #include <string>
 
+#include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "sta/NetworkClass.hh"
 #include "sta/VerilogWriter.hh"
 #include "tst/IntegratedFixture.h"
 #include "utl/Logger.h"
