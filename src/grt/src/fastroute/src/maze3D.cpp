@@ -724,6 +724,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         continue;
       }
 
+      // Force resistance-aware if edge length > 100
       if (enable_resistance_aware_) {
         if (treeedge->len > 100) {
           resistance_aware_ = true;
