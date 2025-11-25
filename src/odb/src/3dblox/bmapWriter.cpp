@@ -4,7 +4,6 @@
 #include "bmapWriter.h"
 
 #include <fstream>
-#include <iostream>
 #include <string>
 
 #include "odb/db.h"
@@ -24,12 +23,18 @@ void BmapWriter::writeFile(const std::string& filename,
   std::ofstream bmap_file(complete_name);
   if (bmap_file.is_open()) {
     for (auto bump : region->getChipBumps()) {
+      std::string line;
       const auto inst_name = bump->getInst()->getName();
       const auto cell_type = bump->getInst()->getMaster()->getName();
       auto point = bump->getInst()->getOrigin();
-      bmap_file << inst_name + " " + cell_type + " "
-                       + std::to_string(point.getX() / u) + " "
-                       + std::to_string(point.getY() / u) + " - -\n";
+      line.append(inst_name);
+      line.append(" ");
+      line.append(cell_type);
+      line.append(" ");
+      line.append(std::to_string(point.getX() / u));
+      line.append(std::to_string(point.getY() / u));
+      line.append(" - -\n");
+      bmap_file << line;
     }
     bmap_file.close();
   } else {
