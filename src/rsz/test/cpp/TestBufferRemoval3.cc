@@ -7,8 +7,10 @@
 #include <memory>
 #include <string>
 
+#include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "sta/NetworkClass.hh"
 #include "sta/VerilogWriter.hh"
 #include "tst/IntegratedFixture.h"
 #include "utl/Logger.h"
@@ -29,6 +31,212 @@ class BufRemTest3 : public tst::IntegratedFixture
 
   bool debug_ = false;  // Set to true to generate debug output
 };
+
+TEST_F(BufRemTest3, RemoveBufferCase9)
+{
+  std::string test_name = "TestBufferRemoval3_9";
+  readVerilogAndSetup(test_name + ".v");
+
+  // Netlist before buffer removal:
+  //  (undriven input) -> buf1 -> out
+
+  // Dump pre ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_pre_eco");
+  }
+
+  odb::dbDatabase::beginEco(block_);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  // Do not call checkAxioms() because there is an undriven buffer.
+
+  //----------------------------------------------------
+  // Remove buffer
+  //----------------------------------------------------
+  auto insts = std::make_unique<sta::InstanceSeq>();
+  odb::dbInst* buf_inst = block_->findInst("buf1");
+  ASSERT_NE(buf_inst, nullptr);
+  sta::Instance* sta_buf = db_network_->dbToSta(buf_inst);
+  insts->emplace_back(sta_buf);
+  resizer_.removeBuffers(*insts);
+
+  // Post sanity check
+  sta_->updateTiming(true);
+  // Do not call checkAxioms() because there is an undriven buffer.
+
+  // Write verilog and check the content after buffer removal
+  const std::string after_vlog_path = test_name + "_after.v";
+  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file_after(after_vlog_path);
+  std::string content_after((std::istreambuf_iterator<char>(file_after)),
+                            std::istreambuf_iterator<char>());
+
+  // Netlist after buffer removal:
+  // in -> mod_inst/mod_in -> assign -> mod_inst/mod_out -> out
+  const std::string expected_after_vlog = R"(module top (clk,
+    in,
+    out);
+ input clk;
+ input in;
+ output out;
+
+
+endmodule
+)";
+
+  EXPECT_EQ(content_after, expected_after_vlog);
+
+  odb::dbDatabase::undoEco(block_);
+
+  // Dump undo ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_undo_eco");
+  }
+
+  // Clean up
+  removeFile(after_vlog_path);
+}
+
+TEST_F(BufRemTest3, RemoveBufferCase8)
+{
+  std::string test_name = "TestBufferRemoval3_8";
+  readVerilogAndSetup(test_name + ".v");
+
+  // Netlist before buffer removal:
+  //  (undriven input) -> buf1 -> out
+
+  // Dump pre ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_pre_eco");
+  }
+
+  odb::dbDatabase::beginEco(block_);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  // Do not call checkAxioms() because there is an undriven buffer.
+
+  //----------------------------------------------------
+  // Remove buffer
+  //----------------------------------------------------
+  auto insts = std::make_unique<sta::InstanceSeq>();
+  odb::dbInst* buf_inst = block_->findInst("buf1");
+  ASSERT_NE(buf_inst, nullptr);
+  sta::Instance* sta_buf = db_network_->dbToSta(buf_inst);
+  insts->emplace_back(sta_buf);
+  resizer_.removeBuffers(*insts);
+
+  // Post sanity check
+  sta_->updateTiming(true);
+  // Do not call checkAxioms() because there is an undriven buffer.
+
+  // Write verilog and check the content after buffer removal
+  const std::string after_vlog_path = test_name + "_after.v";
+  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file_after(after_vlog_path);
+  std::string content_after((std::istreambuf_iterator<char>(file_after)),
+                            std::istreambuf_iterator<char>());
+
+  // Netlist after buffer removal:
+  // in -> mod_inst/mod_in -> assign -> mod_inst/mod_out -> out
+  const std::string expected_after_vlog = R"(module top (clk,
+    in,
+    out);
+ input clk;
+ input in;
+ output out;
+
+
+ BUF_X1 buf1 (.Z(out));
+endmodule
+)";
+
+  EXPECT_EQ(content_after, expected_after_vlog);
+
+  odb::dbDatabase::undoEco(block_);
+
+  // Dump undo ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_undo_eco");
+  }
+
+  // Clean up
+  removeFile(after_vlog_path);
+}
+
+TEST_F(BufRemTest3, RemoveBufferCase7)
+{
+  std::string test_name = "TestBufferRemoval3_7";
+  readVerilogAndSetup(test_name + ".v");
+
+  // Netlist before buffer removal:
+  //  (undriven input) -> buf1 -> buf2 -> out
+
+  // Dump pre ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_pre_eco");
+  }
+
+  odb::dbDatabase::beginEco(block_);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  // Do not call checkAxioms() because there is an undriven buffer.
+
+  //----------------------------------------------------
+  // Remove buffer
+  //----------------------------------------------------
+  auto insts = std::make_unique<sta::InstanceSeq>();
+  odb::dbInst* buf_inst = block_->findInst("buf1");
+  ASSERT_NE(buf_inst, nullptr);
+  sta::Instance* sta_buf = db_network_->dbToSta(buf_inst);
+  insts->emplace_back(sta_buf);
+  resizer_.removeBuffers(*insts);
+
+  // Post sanity check
+  sta_->updateTiming(true);
+  // Do not call checkAxioms() because there is an undriven buffer.
+
+  // Write verilog and check the content after buffer removal
+  const std::string after_vlog_path = test_name + "_after.v";
+  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file_after(after_vlog_path);
+  std::string content_after((std::istreambuf_iterator<char>(file_after)),
+                            std::istreambuf_iterator<char>());
+
+  // Netlist after buffer removal:
+  // in -> mod_inst/mod_in -> assign -> mod_inst/mod_out -> out
+  const std::string expected_after_vlog = R"(module top (clk,
+    in,
+    out);
+ input clk;
+ input in;
+ output out;
+
+ wire n1;
+
+ BUF_X1 buf1 (.Z(n1));
+ BUF_X1 buf2 (.A(n1),
+    .Z(out));
+endmodule
+)";
+
+  EXPECT_EQ(content_after, expected_after_vlog);
+
+  odb::dbDatabase::undoEco(block_);
+
+  // Dump undo ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_undo_eco");
+  }
+
+  // Clean up
+  removeFile(after_vlog_path);
+}
 
 TEST_F(BufRemTest3, RemoveBufferCase6)
 {
