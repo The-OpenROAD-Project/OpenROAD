@@ -51,15 +51,6 @@ py_library(
     ],
 )
 
-py_library(
-    name = "gpl_aux",
-    srcs = ["gpl_aux.py"],
-    imports = ["."],
-    deps = [
-        "//openroad:openroadpy",
-    ],
-)
-
 filegroup(
     name = "asap7pdk",
     srcs = glob([
@@ -118,7 +109,6 @@ PY_TESTS = [
     "simple03",
     "simple04",
     "simple05",
-    "simple06",
     "simple07",
     "simple08",
     "simple09",
@@ -133,7 +123,6 @@ PY_TESTS = [
             ":test_resources",
         ],
         deps = [
-            ":gpl_aux",
             ":helpers",
             "//openroad:openroadpy",
         ],

@@ -1391,6 +1391,20 @@ void dbNet::clearSpecial()
   }
 }
 
+bool dbNet::isConnected(const dbNet* other) const
+{
+  return (this == other);
+}
+
+bool dbNet::isConnected(const dbModNet* other) const
+{
+  if (other == nullptr) {
+    return false;
+  }
+  dbNet* net = other->findRelatedNet();
+  return isConnected(net);
+}
+
 bool dbNet::isConnectedByAbutment()
 {
   if (getITermCount() > 2 || getBTermCount() > 0) {

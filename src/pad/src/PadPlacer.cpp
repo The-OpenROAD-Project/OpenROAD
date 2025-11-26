@@ -951,6 +951,15 @@ void PlacerPadPlacer::debugPause(const std::string& msg) const
 {
   if (gui::Gui::enabled() && getLogger()->debugCheck(utl::PAD, "Pause", 1)) {
     debugPrint(getLogger(), utl::PAD, "Pause", 1, msg);
+    auto* gui = gui::Gui::get();
+    gui->clearHighlights();
+    for (const auto& [inst, iterms] : iterm_connections_) {
+      for (auto* iterm : iterms) {
+        if (iterm->getNet() != nullptr) {
+          gui->addNetToHighlightSet(iterm->getNet()->getConstName());
+        }
+      }
+    }
     gui::Gui::get()->pause();
   }
 }
@@ -980,9 +989,12 @@ void PlacerPadPlacer::place()
   debugPause("Final placement");
 
   // Fixed pad locations
-  for (const auto& [inst, pos] : pad_positions) {
-    placeInstance(
-        snapToRowSite(pos), inst, odb::dbOrientType::R0, false, false);
+  for (auto* inst : getInsts()) {
+    placeInstance(snapToRowSite(pad_positions.at(inst)),
+                  inst,
+                  odb::dbOrientType::R0,
+                  false,
+                  false);
     // TODO possibly build in pad flipping
     addInstanceObstructions(inst);
   }
@@ -1162,6 +1174,7 @@ std::map<odb::dbInst*, int> PlacerPadPlacer::poolAdjacentViolators(
       positions[insts[i]] = position[i];
     }
     placeInstances(positions, true);
+    debugCheckPlacement();
     debugPause(fmt::format("PAVA itr: {}", k));
 
     if (!updated) {
@@ -1204,6 +1217,8 @@ bool PlacerPadPlacer::padSpreading(
   const auto& insts = getInsts();
   const double dbus = getBlock()->getDbUnitsPerMicron();
   const int site_width = getRow()->getSpacing();
+
+  std::map<int, int> failed_tunnel_positions;
 
   int total_move = 0;
   int net_move = 0;
@@ -1297,9 +1312,12 @@ bool PlacerPadPlacer::padSpreading(
     const int check_move
         = std::max(prev_pos, std::min(next_pos, curr_pos + move_by));
     if (move_by != 0) {
-      const int tunnel_move
-          = getTunnelingPosition(curr, check_move, move_by > 0, itr);
+      const auto& [tunnel_move, tunnel_ideal] = getTunnelingPosition(
+          curr, check_move, move_by > 0, prev_pos, curr_pos, next_pos, itr);
       move_by = tunnel_move - curr_pos;
+      if (tunnel_move != tunnel_ideal) {
+        failed_tunnel_positions.emplace(i, tunnel_ideal);
+      }
     }
 
     // Record stats
@@ -1311,21 +1329,89 @@ bool PlacerPadPlacer::padSpreading(
                         + (positions[curr]->width / 2);
     positions[curr]->setLocation(std::max(prev_pos, std::min(next_pos, move_to))
                                  - (positions[curr]->width / 2));
+    debugPrint(
+        getLogger(),
+        utl::PAD,
+        "Place",
+        3,
+        "{} / {}: {:.4f}um -> {:.4f}um (idx: {}) based on {:.6f} s, {:.6f} p, "
+        "{:.6f} n, {:.6f} t",
+        itr,
+        curr->getName(),
+        curr_pos / dbus,
+        positions[curr]->center / dbus,
+        snapToRowSite(positions[curr]->min),
+        spring_force,
+        repel_prev_force,
+        repel_next_force,
+        total_force);
+  }
+
+  // Push instances causing tunneling to fail, these are instances that are too
+  // far from the instance that needs to tunnel/jump over the obstruction and
+  // therefore needs to push instances under the obstruction over to make room.
+  for (const auto& [inst_idx, ideal_pos] : failed_tunnel_positions) {
+    const int delta_pos = ideal_pos - positions[insts[inst_idx]]->center;
+    const int push = ((delta_pos < 0) ? -1 : 1)
+                     * std::ceil((damper * std::abs(delta_pos)) / site_width)
+                     * site_width;
+    std::vector<odb::dbInst*> push_insts;  // instances to push
+    int last_idx = inst_idx;
+    int bound_pos;
+    if (delta_pos > 0) {
+      for (int j = inst_idx + 1; j < insts.size(); j++) {
+        if (positions[insts[j]]->center <= ideal_pos) {
+          push_insts.push_back(insts[j]);
+          last_idx = j;
+        }
+      }
+      bound_pos = last_idx == insts.size()
+                      ? getRowEnd(insts[last_idx])
+                      : positions[insts[last_idx + 1]]->center;
+    } else {
+      for (int j = inst_idx - 1; j >= 0; j--) {
+        if (positions[insts[j]]->center >= ideal_pos) {
+          push_insts.push_back(insts[j]);
+          last_idx = j;
+        }
+      }
+      bound_pos = last_idx == 0 ? getRowStart(insts[last_idx])
+                                : positions[insts[last_idx - 1]]->center;
+    }
     debugPrint(getLogger(),
                utl::PAD,
                "Place",
-               3,
-               "{} / {}: {} -> {} (idx: {}) based on {:.6f} s, {:.6f} p, "
-               "{:.6f} n, {:.6f} t",
+               2,
+               "{} / {}: Unable to tunnel to {:.4f}um, stuck at {:.4f}um, push "
+               "boundary at {:.4f}um, desired push {:.4f}um applies to: {}",
                itr,
-               curr->getName(),
-               curr_pos,
-               positions[curr]->center,
-               snapToRowSite(positions[curr]->min),
-               spring_force,
-               repel_prev_force,
-               repel_next_force,
-               total_force);
+               insts[inst_idx]->getName(),
+               ideal_pos / dbus,
+               positions[insts[inst_idx]]->center / dbus,
+               bound_pos / dbus,
+               push / dbus,
+               instNameList(push_insts));
+    // push instances
+    for (odb::dbInst* inst : push_insts) {
+      const int curr_pos = positions[inst]->center;
+      int desired_pos;
+      if (push < 0) {
+        desired_pos = std::max(bound_pos, curr_pos + push);
+      } else {
+        desired_pos = std::min(bound_pos, curr_pos + push);
+      }
+      // new position
+      const int move_to = convertRowIndexToPos(snapToRowSite(
+                              desired_pos - (positions[inst]->width / 2)))
+                          + (positions[inst]->width / 2);
+      positions[inst]->setLocation(move_to - (positions[inst]->width / 2));
+
+      // Record stats
+      const int delta_move = move_to - curr_pos;
+      net_move += delta_move;
+      total_move += std::abs(delta_move);
+    }
+    has_violations = true;
   }
 
   placeInstances(positions);
@@ -1339,8 +1425,9 @@ bool PlacerPadPlacer::padSpreading(
              has_violations,
              total_move / dbus,
              net_move / dbus);
+  debugCheckPlacement();
 
-  if (itr % (getLogger()->debugCheck(utl::PAD, "Pause", 2) ? 500 : 100) == 0) {
+  if (itr % (getLogger()->debugCheck(utl::PAD, "Pause", 2) ? 100 : 500) == 0) {
     debugPause(fmt::format("Iterative pad spreading: {}", itr));
   }
 
@@ -1447,47 +1534,177 @@ int PlacerPadPlacer::getRowEnd(odb::dbInst* inst) const
   return PadPlacer::getRowEnd() - (getInstWidths().at(inst) / 2);
 }
 
-int PlacerPadPlacer::getTunnelingPosition(odb::dbInst* inst,
-                                          int target,
-                                          bool move_up,
-                                          int itr) const
+std::pair<int, int> PlacerPadPlacer::getTunnelingPosition(odb::dbInst* inst,
+                                                          int target,
+                                                          bool move_up,
+                                                          int low_bound,
+                                                          int curr_pos,
+                                                          int high_bound,
+                                                          int itr) const
 {
   const double dbus = getBlock()->getDbUnitsPerMicron();
   placeInstanceSimple(inst, target, true);
+  const int ideal = getNearestLegalPosition(inst, target, !move_up, move_up);
   if (move_up) {
     // pad is moving up in the row
-    int next = getNearestLegalPosition(inst, target, false, true);
-    if (next != target) {
-      debugPrint(
-          getLogger(),
-          utl::PAD,
-          "Place",
-          2,
-          "{} / {}: Tunneling past obstruction (up) {:.4f} um -> {:.4f} um",
-          itr,
-          inst->getName(),
-          target / dbus,
-          next / dbus);
-      return next;
+    if (ideal != target) {
+      if (ideal > high_bound) {
+        // check if high_bound is safe to pin to
+        placeInstanceSimple(inst, high_bound, true);
+        if (checkInstancePlacement(inst)) {
+          // inst is obstructed, so move to the nearest edge of the obstruction
+          const int next = getNearestLegalPosition(inst, target, true, false);
+          if (next <= high_bound) {
+            debugPrint(getLogger(),
+                       utl::PAD,
+                       "Place",
+                       2,
+                       "{} / {}: Tunneling past obstruction (up) {:.4f} um -> "
+                       "{:.4f} um, blocked by lower bound {:.4f}um, pinning to "
+                       "blockage ({:.4f}um , {:.4f}um , {:.4f}um)",
+                       itr,
+                       inst->getName(),
+                       target / dbus,
+                       next / dbus,
+                       high_bound / dbus,
+                       low_bound / dbus,
+                       curr_pos / dbus,
+                       high_bound / dbus);
+            return {next, ideal};
+          }
+          debugPrint(getLogger(),
+                     utl::PAD,
+                     "Place",
+                     2,
+                     "{} / {}: Tunneling past obstruction (up) {:.4f} um -> "
+                     "{:.4f} um, blocked by lower bound {:.4f}um ({:.4f}um , "
+                     "{:.4f}um , {:.4f}um)",
+                     itr,
+                     inst->getName(),
+                     target / dbus,
+                     curr_pos / dbus,
+                     high_bound / dbus,
+                     low_bound / dbus,
+                     curr_pos / dbus,
+                     high_bound / dbus);
+          return {curr_pos, ideal};  // stay in the same position
+        }
+      }
+      debugPrint(getLogger(),
+                 utl::PAD,
+                 "Place",
+                 2,
+                 "{} / {}: Tunneling past obstruction (up) {:.4f} um -> {:.4f} "
+                 "um ({:.4f}um , {:.4f}um , {:.4f}um)",
+                 itr,
+                 inst->getName(),
+                 target / dbus,
+                 ideal / dbus,
+                 low_bound / dbus,
+                 curr_pos / dbus,
+                 high_bound / dbus);
+      return {ideal, ideal};
     }
   }
   // pad is moving down in the row
-  int next = getNearestLegalPosition(inst, target, true, false);
-  if (next != target) {
-    debugPrint(
-        getLogger(),
-        utl::PAD,
-        "Place",
-        2,
-        "{} / {}: Tunneling past obstruction (down) {:.4f} um -> {:.4f} um",
-        itr,
-        inst->getName(),
-        target / dbus,
-        next / dbus);
-    return next;
+  if (ideal != target) {
+    if (ideal < low_bound) {
+      // check if low_bound is safe to pin to
+      placeInstanceSimple(inst, low_bound, true);
+      if (checkInstancePlacement(inst)) {
+        const int next = getNearestLegalPosition(inst, target, true, false);
+        if (next >= low_bound) {
+          // inst is obstructed, so move to the nearest edge of the obstruction
+          debugPrint(getLogger(),
+                     utl::PAD,
+                     "Place",
+                     2,
+                     "{} / {}: Tunneling past obstruction (down) {:.4f} um -> "
+                     "{:.4f} um, blocked by lower bound, pinning to blockage "
+                     "{:.4f}um ({:.4f}um , {:.4f}um , {:.4f}um)",
+                     itr,
+                     inst->getName(),
+                     target / dbus,
+                     next / dbus,
+                     high_bound / dbus,
+                     low_bound / dbus,
+                     curr_pos / dbus,
+                     high_bound / dbus);
+          return {next, ideal};
+        }
+        debugPrint(getLogger(),
+                   utl::PAD,
+                   "Place",
+                   2,
+                   "{} / {}: Tunneling past obstruction (down) {:.4f} um -> "
+                   "{:.4f} um, blocked by lower bound {:.4f}um ({:.4f}um , "
+                   "{:.4f}um , {:.4f}um)",
+                   itr,
+                   inst->getName(),
+                   target / dbus,
+                   curr_pos / dbus,
+                   low_bound / dbus,
+                   low_bound / dbus,
+                   curr_pos / dbus,
+                   high_bound / dbus);
+        return {curr_pos, ideal};
+      }
+    }
+    debugPrint(getLogger(),
+               utl::PAD,
+               "Place",
+               2,
+               "{} / {}: Tunneling past obstruction (down) {:.4f} um -> {:.4f} "
+               "um ({:.4f}um , {:.4f}um , {:.4f}um)",
+               itr,
+               inst->getName(),
+               target / dbus,
+               ideal / dbus,
+               low_bound / dbus,
+               curr_pos / dbus,
+               high_bound / dbus);
+    return {ideal, ideal};
   }
 
-  return target;
+  return {target, target};
+}
+
+void PlacerPadPlacer::debugCheckPlacement() const
+{
+  if (!getLogger()->debugCheck(utl::PAD, "Check", 1)) {
+    return;
+  }
+
+  bool pause = false;
+  for (auto* inst : getInsts()) {
+    if (checkInstancePlacement(inst)) {
+      debugPrint(getLogger(),
+                 utl::PAD,
+                 "Check",
+                 1,
+                 "Invalid placement for {}",
+                 inst->getName());
+      pause = true;
+    }
+  }
+
+  if (pause && gui::Gui::enabled()) {
+    getLogger()->report("Pausing GUI due to invalid positions of pads");
+    gui::Gui::get()->pause();
+  }
+}
+
+std::string PlacerPadPlacer::instNameList(
+    const std::vector<odb::dbInst*>& insts) const
+{
+  std::string inst_string;
+  for (auto* inst : insts) {
+    if (!inst_string.empty()) {
+      inst_string += ", ";
+    }
+    inst_string += inst->getName();
+  }
+  return inst_string;
 }
 
 //////////////////////////

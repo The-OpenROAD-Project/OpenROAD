@@ -210,9 +210,9 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   connect(this, &MainWindow::rulersChanged, viewers_, &LayoutTabs::fullRepaint);
   connect(this, &MainWindow::labelsChanged, viewers_, &LayoutTabs::fullRepaint);
 
-  connect(controls_, &DisplayControls::selected, [=](const Selected& selected) {
-    setSelected(selected);
-  });
+  connect(controls_,
+          &DisplayControls::selected,
+          [this](const Selected& selected) { setSelected(selected); });
 
   connect(inspector_,
           &Inspector::selected,
@@ -250,12 +250,12 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &Inspector::loadActions);
   connect(inspector_,
           &Inspector::removeHighlight,
-          [=](const QList<const Selected*>& selected) {
+          [this](const QList<const Selected*>& selected) {
             removeFromHighlighted(selected);
           });
   connect(inspector_,
           &Inspector::addHighlight,
-          [=](const SelectionSet& selected) { addHighlighted(selected); });
+          [this](const SelectionSet& selected) { addHighlighted(selected); });
   connect(
       inspector_, &Inspector::setCommand, script_, &ScriptWidget::setCommand);
   connect(script_,
@@ -269,14 +269,14 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
 
   connect(hierarchy_widget_,
           &BrowserWidget::select,
-          [=](const SelectionSet& selected) { setSelected(selected); });
+          [this](const SelectionSet& selected) { setSelected(selected); });
   connect(hierarchy_widget_,
           &BrowserWidget::removeSelect,
           this,
           &MainWindow::removeSelected);
   connect(hierarchy_widget_,
           &BrowserWidget::highlight,
-          [=](const SelectionSet& selected) { addHighlighted(selected); });
+          [this](const SelectionSet& selected) { addHighlighted(selected); });
   connect(hierarchy_widget_,
           &BrowserWidget::removeHighlight,
           this,
@@ -337,13 +337,13 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
 
   connect(selection_browser_,
           &SelectHighlightWindow::clearHighlightedItems,
-          [=](const QList<const Selected*>& selected) {
+          [this](const QList<const Selected*>& selected) {
             removeFromHighlighted(selected);
           });
 
   connect(selection_browser_,
           &SelectHighlightWindow::highlightSelectedItemsSig,
-          [=](const QList<const Selected*>& items) {
+          [this](const QList<const Selected*>& items) {
             updateHighlightedSet(items);
           });
 
@@ -634,8 +634,6 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
       new LibertyLibraryDescriptor(sta));
   gui->registerDescriptor<sta::LibertyCell*>(new LibertyCellDescriptor(sta));
   gui->registerDescriptor<sta::LibertyPort*>(new LibertyPortDescriptor(sta));
-  gui->registerDescriptor<sta::LibertyPgPort*>(
-      new LibertyPgPortDescriptor(sta));
   gui->registerDescriptor<sta::Instance*>(new StaInstanceDescriptor(sta));
   gui->registerDescriptor<sta::Clock*>(new ClockDescriptor(sta));
 

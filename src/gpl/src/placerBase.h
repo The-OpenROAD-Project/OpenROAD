@@ -42,6 +42,7 @@ class Pin;
 class Net;
 class GCell;
 class PlacerBaseCommon;
+struct PlaceOptions;
 
 class Instance
 {
@@ -267,22 +268,19 @@ class Die
   int coreUy_ = 0;
 };
 
-class PlacerBaseVars
+struct PlacerBaseVars
 {
- public:
-  int padLeft;
-  int padRight;
-  bool skipIoMode;
+  PlacerBaseVars(const PlaceOptions& options);
 
-  PlacerBaseVars();
-  void reset();
+  const int padLeft;
+  const int padRight;
+  const bool skipIoMode;
 };
 
 // Class includes everything from PlacerBase that is not region specific
 class PlacerBaseCommon
 {
  public:
-  PlacerBaseCommon();
   // temp padLeft/Right before OpenDB supporting...
   PlacerBaseCommon(odb::dbDatabase* db,
                    PlacerBaseVars pbVars,

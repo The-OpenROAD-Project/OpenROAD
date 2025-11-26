@@ -1132,6 +1132,12 @@ bool dbNetwork::isLeaf(const Instance* instance) const
 Instance* dbNetwork::findInstance(const char* path_name) const
 {
   if (hierarchy_) {  // are we in hierarchical mode ?
+    // find a hierarchical module instance first
+    dbModInst* mod_inst = block()->findModInst(path_name);
+    if (mod_inst) {
+      return dbToSta(mod_inst);
+    }
+
     std::string path_name_str = path_name;
     // search for the last token in the string, which is the leaf instance name
     size_t last_idx = path_name_str.find_last_of('/');
@@ -2231,7 +2237,7 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
                      mterm->getSigType().getString());
           mterm->setSigType(dbSigType::CLOCK);
         }
-      } else if (!dir->isPowerGround() && !lib_cell->findPgPort(port_name)) {
+      } else if (!dir->isPowerGround() && !lib_cell->findPort(port_name)) {
         logger_->warn(ORD,
                       2001,
                       "LEF macro {} pin {} missing from liberty cell.",
@@ -2307,7 +2313,7 @@ void dbNetwork::makeTopCell()
   for (dbBTerm* bterm : block_->getBTerms()) {
     makeTopPort(bterm);
   }
-  groupBusPorts(top_cell_, [=](const char* port_name) {
+  groupBusPorts(top_cell_, [=, this](const char* port_name) {
     return portMsbFirst(port_name, design_name);
   });
 
@@ -2391,7 +2397,7 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
                 cport->setLibertyPort(lport);
                 lport->setExtPort(cport->extPort());
               } else if (!cport->direction()->isPowerGround()
-                         && !lcell->findPgPort(port_name)) {
+                         && !lcell->findPort(port_name)) {
                 logger_->warn(ORD,
                               2002,
                               "Liberty cell {} pin {} missing from LEF macro.",
@@ -3745,13 +3751,6 @@ bool PinConnections::connected(const Pin* pin) const
   return pins_.find(pin) != pins_.end();
 }
 
-bool dbNetwork::connected(Pin* source_pin, Pin* dest_pin)
-{
-  PinConnections visitor;
-  network_->visitConnectedPins(source_pin, visitor);
-  return visitor.connected(dest_pin);
-}
-
 void dbNetwork::removeUnusedPortsAndPinsOnModuleInstances()
 {
   for (dbModInst* mi : block()->getModInsts()) {
@@ -3776,6 +3775,45 @@ class DbNetConnectedToBTerm : public PinVisitor
   dbNetwork* db_network_;
   dbBTerm* bterm_{nullptr};
 };
+
+bool dbNetwork::isConnected(const Pin* source_pin, const Pin* dest_pin) const
+{
+  PinConnections visitor;
+  network_->visitConnectedPins(source_pin, visitor);
+  return visitor.connected(dest_pin);
+}
+
+bool dbNetwork::isConnected(const Net* net, const Pin* pin) const
+{
+  dbNet* dbnet;
+  dbModNet* modnet;
+  staToDb(net, dbnet, modnet);
+
+  dbNet* pin_dbnet = findFlatDbNet(pin);
+  if (dbnet != nullptr) {
+    return dbnet->isConnected(pin_dbnet);
+  }
+  if (modnet != nullptr) {
+    return modnet->isConnected(pin_dbnet);
+  }
+
+  return false;
+}
+
+bool dbNetwork::isConnected(const Net* net1, const Net* net2) const
+{
+  if (net1 == net2) {
+    return true;
+  }
+
+  dbNet* flat_net1 = findFlatDbNet(net1);
+  dbNet* flat_net2 = findFlatDbNet(net2);
+  if (flat_net1 != nullptr && flat_net1 == flat_net2) {
+    return true;
+  }
+
+  return false;
+}
 
 void DbNetConnectedToBTerm::operator()(const Pin* pin)
 {
@@ -4293,14 +4331,13 @@ Net* dbNetwork::findFlatNet(const Pin* pin) const
 // This function handles both internal instance pins and top-level port pins.
 dbNet* dbNetwork::findFlatDbNet(const Pin* pin) const
 {
-  dbNet* db_net = nullptr;
+  Net* sta_net = nullptr;
   if (isTopLevelPort(pin)) {
-    Net* net = this->net(term(pin));
-    db_net = flatNet(net);
+    sta_net = net(term(pin));
   } else {
-    db_net = flatNet(pin);
+    sta_net = net(pin);
   }
-  return db_net;
+  return findFlatDbNet(sta_net);
 }
 
 dbModInst* dbNetwork::getModInst(Instance* inst) const

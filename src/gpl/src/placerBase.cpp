@@ -718,30 +718,23 @@ int64_t Die::coreArea() const
   return static_cast<int64_t>(coreDx()) * static_cast<int64_t>(coreDy());
 }
 
-PlacerBaseVars::PlacerBaseVars()
+PlacerBaseVars::PlacerBaseVars(const PlaceOptions& options)
+    : padLeft(options.padLeft),
+      padRight(options.padRight),
+      skipIoMode(options.skipIoMode)
 {
-  reset();
-}
-
-void PlacerBaseVars::reset()
-{
-  padLeft = padRight = 0;
-  skipIoMode = false;
 }
 
 ////////////////////////////////////////////////////////
 // PlacerBaseCommon
 
-PlacerBaseCommon::PlacerBaseCommon() = default;
-
 PlacerBaseCommon::PlacerBaseCommon(odb::dbDatabase* db,
                                    PlacerBaseVars pbVars,
                                    utl::Logger* log)
-    : PlacerBaseCommon()
+    : pbVars_(pbVars)
 {
   db_ = db;
   log_ = log;
-  pbVars_ = pbVars;
   init();
 }
 
@@ -983,7 +976,6 @@ void PlacerBaseCommon::init()
 void PlacerBaseCommon::reset()
 {
   db_ = nullptr;
-  pbVars_.reset();
 
   instStor_.clear();
   pinStor_.clear();

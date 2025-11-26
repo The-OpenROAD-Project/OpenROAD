@@ -344,9 +344,6 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   dft_ptr->initialize();
   _dft = dft_ptr->getId();
 
-  _marker_categories_tbl = new dbTable<_dbMarkerCategory>(
-      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbMarkerCategoryObj);
-
   _net_hash.setTable(_net_tbl);
   _inst_hash.setTable(_inst_tbl);
   _module_hash.setTable(_module_tbl);
@@ -359,7 +356,6 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _group_hash.setTable(_group_tbl);
   _inst_hdr_hash.setTable(_inst_hdr_tbl);
   _bterm_hash.setTable(_bterm_tbl);
-  _marker_category_hash.setTable(_marker_categories_tbl);
 
   _net_bterm_itr = new dbNetBTermItr(_bterm_tbl);
 
@@ -509,7 +505,6 @@ _dbBlock::~_dbBlock()
   delete _bpin_itr;
   delete _prop_itr;
   delete _dft_tbl;
-  delete _marker_categories_tbl;
 
   while (!_callbacks.empty()) {
     auto _cbitr = _callbacks.begin();
@@ -705,9 +700,6 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
     case dbDftObj:
       return _dft_tbl;
 
-    case dbMarkerCategoryObj:
-      return _marker_categories_tbl;
-
     default:
       break;
   }
@@ -852,8 +844,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._extControl;
   stream << block._dft;
   stream << *block._dft_tbl;
-  stream << *block._marker_categories_tbl;
-  stream << block._marker_category_hash;
   stream << block._min_routing_layer;
   stream << block._max_routing_layer;
   stream << block._min_layer_for_clock;
@@ -1030,9 +1020,12 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     stream >> block._dft;
     stream >> *block._dft_tbl;
   }
-  if (db->isSchema(db_schema_dbmarkergroup)) {
-    stream >> *block._marker_categories_tbl;
-    stream >> block._marker_category_hash;
+  if (db->isSchema(db_schema_dbmarkergroup)
+      && db->isLessThanSchema(db_schema_chip_marker_categories)) {
+    _dbChip* chip = db->chip_tbl_->getPtr(block._chip);
+    stream >> *chip->marker_categories_tbl_;
+    dbHashTable<_dbMarkerCategory> tmp_hash;
+    stream >> tmp_hash;
   }
   if (db->isSchema(db_schema_dbblock_layers_ranges)) {
     stream >> block._min_routing_layer;
@@ -1464,10 +1457,6 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   }
 
   if (*_dft_tbl != *rhs._dft_tbl) {
-    return false;
-  }
-
-  if (*_marker_categories_tbl != *rhs._marker_categories_tbl) {
     return false;
   }
 
@@ -3511,14 +3500,12 @@ dbTech* dbBlock::getTech()
 
 dbSet<dbMarkerCategory> dbBlock::getMarkerCategories()
 {
-  _dbBlock* block = (_dbBlock*) this;
-  return dbSet<dbMarkerCategory>(block, block->_marker_categories_tbl);
+  return getChip()->getMarkerCategories();
 }
 
 dbMarkerCategory* dbBlock::findMarkerCategory(const char* name)
 {
-  _dbBlock* block = (_dbBlock*) this;
-  return (dbMarkerCategory*) block->_marker_category_hash.find(name);
+  return getChip()->findMarkerCategory(name);
 }
 
 void dbBlock::writeMarkerCategories(const std::string& file)
@@ -3706,7 +3693,6 @@ void _dbBlock::collectMemInfo(MemInfo& info)
   info.children_["logicport_hash"].add(_logicport_hash);
   info.children_["powerswitch_hash"].add(_powerswitch_hash);
   info.children_["isolation_hash"].add(_isolation_hash);
-  info.children_["marker_category_hash"].add(_marker_category_hash);
   info.children_["levelshifter_hash"].add(_levelshifter_hash);
   info.children_["group_hash"].add(_group_hash);
   info.children_["inst_hdr_hash"].add(_inst_hdr_hash);
@@ -3750,7 +3736,6 @@ void _dbBlock::collectMemInfo(MemInfo& info)
   _guide_tbl->collectMemInfo(info.children_["guide"]);
   _net_tracks_tbl->collectMemInfo(info.children_["net_tracks"]);
   _dft_tbl->collectMemInfo(info.children_["dft"]);
-  _marker_categories_tbl->collectMemInfo(info.children_["marker_categories"]);
   _modbterm_tbl->collectMemInfo(info.children_["modbterm"]);
   _moditerm_tbl->collectMemInfo(info.children_["moditerm"]);
   _modnet_tbl->collectMemInfo(info.children_["modnet"]);

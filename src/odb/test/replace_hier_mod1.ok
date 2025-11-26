@@ -138,7 +138,6 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0154] Identified 19 placed instances
 [INFO GPL-0155] Identified 2 not placed instances
-[INFO GPL-0157] Setting target overflow to 0.2
 [INFO GPL-0005] Execute conjugate gradient initial placement.
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000006 HPWL: 2671580
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000006 HPWL: 280697
@@ -154,7 +153,6 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0028] Bin count (X, Y):          16 ,    256
 [INFO GPL-0029] Bin size (W * H):       2.494 *  4.687 um
 [INFO GPL-0030] Number of bins:                   4096
-[INFO GPL-0158] Setting nesterov max iterations to 300
 [INFO GPL-0007] Execute nesterov global placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
@@ -192,9 +190,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0016
 [INFO GPL-1009]     - For 50% usage of free space: 0.0025
 [INFO GPL-1014] Final placement area: 59.85 (+0.00%)
-[INFO GPL-0158] Setting nesterov max iterations to 5000
 [INFO GPL-0133] Unlocking all instances
-[INFO GPL-0157] Setting target overflow to 0.1
 [INFO GPL-0007] Execute nesterov global placement.
 [INFO GPL-1014] Final placement area: 59.85 (+0.00%)
 Placement Analysis
@@ -298,7 +294,6 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0154] Identified 19 placed instances
 [INFO GPL-0155] Identified 2 not placed instances
-[INFO GPL-0157] Setting target overflow to 0.2
 [INFO GPL-0005] Execute conjugate gradient initial placement.
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000006 HPWL: 2635900
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000008 HPWL: 255081
@@ -314,7 +309,6 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0028] Bin count (X, Y):          16 ,    256
 [INFO GPL-0029] Bin size (W * H):       2.494 *  4.687 um
 [INFO GPL-0030] Number of bins:                   4096
-[INFO GPL-0158] Setting nesterov max iterations to 300
 [INFO GPL-0007] Execute nesterov global placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
@@ -331,9 +325,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0016
 [INFO GPL-1009]     - For 50% usage of free space: 0.0025
 [INFO GPL-1014] Final placement area: 60.38 (+0.00%)
-[INFO GPL-0158] Setting nesterov max iterations to 5000
 [INFO GPL-0133] Unlocking all instances
-[INFO GPL-0157] Setting target overflow to 0.1
 [INFO GPL-0007] Execute nesterov global placement.
 [INFO GPL-1014] Final placement area: 60.38 (+0.00%)
 Placement Analysis
@@ -437,7 +429,6 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0154] Identified 19 placed instances
 [INFO GPL-0155] Identified 2 not placed instances
-[INFO GPL-0157] Setting target overflow to 0.2
 [INFO GPL-0005] Execute conjugate gradient initial placement.
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000004 HPWL: 2635880
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000012 HPWL: 239523
@@ -453,7 +444,6 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0028] Bin count (X, Y):          16 ,    256
 [INFO GPL-0029] Bin size (W * H):       2.494 *  4.687 um
 [INFO GPL-0030] Number of bins:                   4096
-[INFO GPL-0158] Setting nesterov max iterations to 300
 [INFO GPL-0007] Execute nesterov global placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
@@ -470,9 +460,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0016
 [INFO GPL-1009]     - For 50% usage of free space: 0.0025
 [INFO GPL-1014] Final placement area: 59.85 (+0.00%)
-[INFO GPL-0158] Setting nesterov max iterations to 5000
 [INFO GPL-0133] Unlocking all instances
-[INFO GPL-0157] Setting target overflow to 0.1
 [INFO GPL-0007] Execute nesterov global placement.
 [INFO GPL-1014] Final placement area: 59.85 (+0.00%)
 Placement Analysis

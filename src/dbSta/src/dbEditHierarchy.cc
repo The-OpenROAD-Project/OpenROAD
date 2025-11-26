@@ -293,8 +293,8 @@ void dbEditHierarchy::hierarchicalConnect(dbITerm* source_pin,
     source_pin->connect(source_db_net);
     dlogHierConnConnectSrcToFlatNet(source_pin, connection_name);
   }
-  if (!db_network_->connected(db_network_->dbToSta(source_pin),
-                              db_network_->dbToSta(dest_pin))) {
+  if (!db_network_->isConnected(db_network_->dbToSta(source_pin),
+                                db_network_->dbToSta(dest_pin))) {
     dest_pin->connect(source_db_net);
     dlogHierConnConnectDstToFlatNet(dest_pin, source_db_net);
   }

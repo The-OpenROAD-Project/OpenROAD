@@ -7,183 +7,235 @@
 #include <memory>
 #include <string>
 
-#include "ant/AntennaChecker.hh"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
-#include "dpl/Opendp.h"
-#include "est/EstimateParasitics.h"
-#include "grt/GlobalRouter.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "rsz/Resizer.hh"
-#include "sta/Clock.hh"
-#include "sta/Graph.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/Sdc.hh"
-#include "sta/SdcClass.hh"
-#include "sta/Sta.hh"
-#include "sta/Units.hh"
 #include "sta/VerilogWriter.hh"
-#include "stt/SteinerTreeBuilder.h"
-#include "tst/fixture.h"
-#include "utl/CallBackHandler.h"
+#include "tst/IntegratedFixture.h"
 #include "utl/Logger.h"
 
 namespace rsz {
-
-class BufRemTest3 : public tst::Fixture
+class BufRemTest3 : public tst::IntegratedFixture
 {
  protected:
-  void readVerilogAndSetup(const std::string& verilog_file);
-  void dumpVerilogAndOdb(const std::string& name) const;
-
   BufRemTest3()
-      : stt_(db_.get(), &logger_),
-        callback_handler_(&logger_),
-        dp_(db_.get(), &logger_),
-        ant_(db_.get(), &logger_),
-        grt_(&logger_,
-             &callback_handler_,
-             &stt_,
-             db_.get(),
-             sta_.get(),
-             &ant_,
-             &dp_),
-        ep_(&logger_, &callback_handler_, db_.get(), sta_.get(), &stt_, &grt_),
-        resizer_(&logger_, db_.get(), sta_.get(), &stt_, &grt_, &dp_, &ep_)
+      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::Nangate45,
+                               "_main/src/rsz/test/")
   {
-    static const std::string prefix("_main/src/rsz/test/");
-
-    readLiberty(getFilePath(prefix + "Nangate45/Nangate45_typ.lib"));
-    lib_ = loadTechAndLib("Nangate45",
-                          "Nangate45",
-                          getFilePath(prefix + "Nangate45/Nangate45.lef"));
-
-    db_->setLogger(&logger_);
-    db_network_ = sta_->getDbNetwork();
-    db_network_->setHierarchy();
-
     if (debug_) {
       logger_.setDebugLevel(utl::ODB, "DB_ECO", 3);
       logger_.setDebugLevel(utl::RSZ, "remove_buffer", 3);
     }
   }
 
-  odb::dbLib* lib_;
-  odb::dbBlock* block_;
-  sta::dbNetwork* db_network_;
-
-  stt::SteinerTreeBuilder stt_;
-  utl::CallBackHandler callback_handler_;
-  dpl::Opendp dp_;
-  ant::AntennaChecker ant_;
-  grt::GlobalRouter grt_;
-  est::EstimateParasitics ep_;
-  rsz::Resizer resizer_;
   bool debug_ = false;  // Set to true to generate debug output
 };
 
-void BufRemTest3::readVerilogAndSetup(const std::string& verilog_file)
+TEST_F(BufRemTest3, RemoveBufferCase9)
 {
-  static const std::string prefix("_main/src/rsz/test/");
+  std::string test_name = "TestBufferRemoval3_9";
+  readVerilogAndSetup(test_name + ".v");
 
-  ord::dbVerilogNetwork verilog_network(sta_.get());
-  sta::VerilogReader verilog_reader(&verilog_network);
-  verilog_reader.read(getFilePath(prefix + "cpp/" + verilog_file).c_str());
+  // Netlist before buffer removal:
+  //  (undriven input) -> buf1 -> out
 
-  ord::dbLinkDesign(
-      "top", &verilog_network, db_.get(), &logger_, true /*hierarchy = */);
-
-  sta_->postReadDb(db_.get());
-
-  block_ = db_->getChip()->getBlock();
-  block_->setDefUnits(lib_->getTech()->getLefUnits());
-  block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
-  sta_->postReadDef(block_);
-
-  // Timing setup
-  sta::Cell* top_cell = db_network_->cell(db_network_->topInstance());
-  sta::Port* clk_port = db_network_->findPort(top_cell, "clk");
-  sta::Pin* clk_pin
-      = db_network_->findPin(db_network_->topInstance(), clk_port);
-
-  sta::PinSet* pinset = new sta::PinSet(db_network_);
-  pinset->insert(clk_pin);
-  sta::PinSet* clk_pins = new sta::PinSet;
-  clk_pins->insert(db_network_->dbToSta(block_->findBTerm("clk")));
-
-  // 0.5ns
-  double period = sta_->units()->timeUnit()->userToSta(0.5);
-  sta::FloatSeq* waveform = new sta::FloatSeq;
-  waveform->push_back(0);
-  waveform->push_back(period / 2.0);
-
-  sta_->makeClock("clk",
-                  pinset,
-                  /*add_to_pins=*/false,
-                  /*period=*/period,
-                  waveform,
-                  /*comment=*/nullptr);
-
-  sta::Sdc* sdc = sta_->sdc();
-  const sta::RiseFallBoth* rf = sta::RiseFallBoth::riseFall();
-  sta::Clock* clk = sdc->findClock("clk");
-  const sta::RiseFall* clk_rf = sta::RiseFall::rise();
-
-  for (odb::dbBTerm* term : block_->getBTerms()) {
-    sta::Pin* pin = db_network_->dbToSta(term);
-    if (pin == nullptr) {
-      continue;
-    }
-    if (sdc->isClock(pin)) {
-      continue;
-    }
-
-    odb::dbIoType io_type = term->getIoType();
-    if (io_type == odb::dbIoType::INPUT) {
-      sta_->setInputDelay(pin,
-                          rf,
-                          clk,
-                          clk_rf,
-                          nullptr,
-                          false,
-                          false,
-                          sta::MinMaxAll::all(),
-                          true,
-                          0.0);
-    } else if (io_type == odb::dbIoType::OUTPUT) {
-      sta_->setOutputDelay(pin,
-                           rf,
-                           clk,
-                           clk_rf,
-                           nullptr,
-                           false,
-                           false,
-                           sta::MinMaxAll::all(),
-                           true,
-                           0.0);
-    }
+  // Dump pre ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_pre_eco");
   }
 
-  sta_->ensureGraph();
-  sta_->ensureLevelized();
+  odb::dbDatabase::beginEco(block_);
 
-  resizer_.initBlock();
-  ep_.estimateWireParasitics();
+  // Pre sanity check
+  sta_->updateTiming(true);
+  // Do not call checkAxioms() because there is an undriven buffer.
+
+  //----------------------------------------------------
+  // Remove buffer
+  //----------------------------------------------------
+  auto insts = std::make_unique<sta::InstanceSeq>();
+  odb::dbInst* buf_inst = block_->findInst("buf1");
+  ASSERT_NE(buf_inst, nullptr);
+  sta::Instance* sta_buf = db_network_->dbToSta(buf_inst);
+  insts->emplace_back(sta_buf);
+  resizer_.removeBuffers(*insts);
+
+  // Post sanity check
+  sta_->updateTiming(true);
+  // Do not call checkAxioms() because there is an undriven buffer.
+
+  // Write verilog and check the content after buffer removal
+  const std::string after_vlog_path = test_name + "_after.v";
+  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file_after(after_vlog_path);
+  std::string content_after((std::istreambuf_iterator<char>(file_after)),
+                            std::istreambuf_iterator<char>());
+
+  // Netlist after buffer removal:
+  // in -> mod_inst/mod_in -> assign -> mod_inst/mod_out -> out
+  const std::string expected_after_vlog = R"(module top (clk,
+    in,
+    out);
+ input clk;
+ input in;
+ output out;
+
+
+endmodule
+)";
+
+  EXPECT_EQ(content_after, expected_after_vlog);
+
+  odb::dbDatabase::undoEco(block_);
+
+  // Dump undo ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_undo_eco");
+  }
+
+  // Clean up
+  removeFile(after_vlog_path);
 }
 
-void BufRemTest3::dumpVerilogAndOdb(const std::string& name) const
+TEST_F(BufRemTest3, RemoveBufferCase8)
 {
-  // Write verilog
-  std::string vlog_file = name + ".v";
-  sta::writeVerilog(vlog_file.c_str(), true, false, {}, sta_->network());
+  std::string test_name = "TestBufferRemoval3_8";
+  readVerilogAndSetup(test_name + ".v");
 
-  // Dump ODB content
-  std::ofstream orig_odb_file(name + "_odb.txt");
-  block_->debugPrintContent(orig_odb_file);
-  orig_odb_file.close();
+  // Netlist before buffer removal:
+  //  (undriven input) -> buf1 -> out
+
+  // Dump pre ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_pre_eco");
+  }
+
+  odb::dbDatabase::beginEco(block_);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  // Do not call checkAxioms() because there is an undriven buffer.
+
+  //----------------------------------------------------
+  // Remove buffer
+  //----------------------------------------------------
+  auto insts = std::make_unique<sta::InstanceSeq>();
+  odb::dbInst* buf_inst = block_->findInst("buf1");
+  ASSERT_NE(buf_inst, nullptr);
+  sta::Instance* sta_buf = db_network_->dbToSta(buf_inst);
+  insts->emplace_back(sta_buf);
+  resizer_.removeBuffers(*insts);
+
+  // Post sanity check
+  sta_->updateTiming(true);
+  // Do not call checkAxioms() because there is an undriven buffer.
+
+  // Write verilog and check the content after buffer removal
+  const std::string after_vlog_path = test_name + "_after.v";
+  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file_after(after_vlog_path);
+  std::string content_after((std::istreambuf_iterator<char>(file_after)),
+                            std::istreambuf_iterator<char>());
+
+  // Netlist after buffer removal:
+  // in -> mod_inst/mod_in -> assign -> mod_inst/mod_out -> out
+  const std::string expected_after_vlog = R"(module top (clk,
+    in,
+    out);
+ input clk;
+ input in;
+ output out;
+
+
+ BUF_X1 buf1 (.Z(out));
+endmodule
+)";
+
+  EXPECT_EQ(content_after, expected_after_vlog);
+
+  odb::dbDatabase::undoEco(block_);
+
+  // Dump undo ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_undo_eco");
+  }
+
+  // Clean up
+  removeFile(after_vlog_path);
+}
+
+TEST_F(BufRemTest3, RemoveBufferCase7)
+{
+  std::string test_name = "TestBufferRemoval3_7";
+  readVerilogAndSetup(test_name + ".v");
+
+  // Netlist before buffer removal:
+  //  (undriven input) -> buf1 -> buf2 -> out
+
+  // Dump pre ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_pre_eco");
+  }
+
+  odb::dbDatabase::beginEco(block_);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  // Do not call checkAxioms() because there is an undriven buffer.
+
+  //----------------------------------------------------
+  // Remove buffer
+  //----------------------------------------------------
+  auto insts = std::make_unique<sta::InstanceSeq>();
+  odb::dbInst* buf_inst = block_->findInst("buf1");
+  ASSERT_NE(buf_inst, nullptr);
+  sta::Instance* sta_buf = db_network_->dbToSta(buf_inst);
+  insts->emplace_back(sta_buf);
+  resizer_.removeBuffers(*insts);
+
+  // Post sanity check
+  sta_->updateTiming(true);
+  // Do not call checkAxioms() because there is an undriven buffer.
+
+  // Write verilog and check the content after buffer removal
+  const std::string after_vlog_path = test_name + "_after.v";
+  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file_after(after_vlog_path);
+  std::string content_after((std::istreambuf_iterator<char>(file_after)),
+                            std::istreambuf_iterator<char>());
+
+  // Netlist after buffer removal:
+  // in -> mod_inst/mod_in -> assign -> mod_inst/mod_out -> out
+  const std::string expected_after_vlog = R"(module top (clk,
+    in,
+    out);
+ input clk;
+ input in;
+ output out;
+
+ wire n1;
+
+ BUF_X1 buf1 (.Z(n1));
+ BUF_X1 buf2 (.A(n1),
+    .Z(out));
+endmodule
+)";
+
+  EXPECT_EQ(content_after, expected_after_vlog);
+
+  odb::dbDatabase::undoEco(block_);
+
+  // Dump undo ECO state
+  if (debug_) {
+    dumpVerilogAndOdb(test_name + "_undo_eco");
+  }
+
+  // Clean up
+  removeFile(after_vlog_path);
 }
 
 TEST_F(BufRemTest3, RemoveBufferCase6)
@@ -256,7 +308,7 @@ endmodule
   }
 
   // Clean up
-  std::remove(after_vlog_path.c_str());
+  removeFile(after_vlog_path);
 }
 
 TEST_F(BufRemTest3, RemoveBufferCase5)
@@ -323,7 +375,7 @@ endmodule
   }
 
   // Clean up
-  std::remove(after_vlog_path.c_str());
+  removeFile(after_vlog_path);
 }
 
 TEST_F(BufRemTest3, RemoveBufferCase4)
@@ -451,7 +503,7 @@ endmodule
   }
 
   // Clean up
-  std::remove(after_vlog_path.c_str());
+  removeFile(after_vlog_path);
 }
 
 TEST_F(BufRemTest3, RemoveBufferCase3)
@@ -539,7 +591,7 @@ endmodule
   }
 
   // Clean up
-  std::remove(after_vlog_path.c_str());
+  removeFile(after_vlog_path);
 }
 
 TEST_F(BufRemTest3, RemoveBufferCase2)
@@ -616,7 +668,7 @@ endmodule
   }
 
   // Clean up
-  std::remove(after_vlog_path.c_str());
+  removeFile(after_vlog_path);
 }
 
 TEST_F(BufRemTest3, RemoveBufferCase1)
@@ -697,7 +749,7 @@ endmodule
   }
 
   // Clean up
-  std::remove(after_vlog_path.c_str());
+  removeFile(after_vlog_path);
 }
 
 TEST_F(BufRemTest3, RemoveBufferCase0)
@@ -785,7 +837,7 @@ endmodule
   }
 
   // Clean up
-  std::remove(after_vlog_path.c_str());
+  removeFile(after_vlog_path);
 }
 
 }  // namespace rsz
