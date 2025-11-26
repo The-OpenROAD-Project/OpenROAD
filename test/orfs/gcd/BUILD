@@ -27,38 +27,53 @@ orfs_flow(
     verilog_files = ["gcd.v"],
 )
 
-orfs_run(
-    name = "gcd_floorplan_verilog",
-    src = ":gcd_floorplan",
+STAGES = [
+    "source",
+    "source",
+    "synth",
+    "floorplan",
+    "place",
+    "cts",
+    "grt",
+    "route",
+]
+
+[orfs_run(
+    name = "gcd_{stage}_verilog".format(stage = stage),
+    src = ":gcd_{stage}".format(stage = stage),
     outs = [
-        "gcd_floorplan.v",
+        "gcd_{stage}.v".format(stage = stage),
     ],
     arguments = {
-        "OUTPUT": "$(location :gcd_floorplan.v)",
+        "OUTPUT": "$(location :gcd_{stage}.v)".format(stage = stage),
     },
     script = "//test/orfs/mock-array:write_verilog.tcl",
     tags = ["manual"],
-)
+) for stage in STAGES[2:]]
 
 filegroup(
-    name = "gcd_synth_files",
+    name = "gcd_source_files",
     srcs = [
-        ":gcd_synth",
+        "gcd.v",
     ],
-    output_group = "1_synth.v",
 )
 
-eqy_test(
-    name = "eqy_test",
+[filegroup(
+    name = "gcd_{stage}_files".format(stage = stage),
+    srcs = [
+        ":gcd_{stage}_verilog".format(stage = stage),
+    ],
+) for stage in STAGES[2:]]
+
+[eqy_test(
+    name = "eqy_{stage}_test".format(stage = STAGES[i + 1]),
     depth = 1,
     gate_verilog_files = [
-        ":gcd_floorplan.v",
-        "//test/orfs/mock-array:asap7_files",
-    ],
+        ":gcd_{stage}_files".format(stage = STAGES[i + 1]),
+    ] + ([] if STAGES[i + 1] == "source" else ["//test/orfs/mock-array:asap7_files"]),
     gold_verilog_files = [
-        ":gcd_synth_files",
-        "//test/orfs/mock-array:asap7_files",
-    ],
+        ":gcd_{stage}_files".format(stage = STAGES[i]),
+    ] + ([] if STAGES[i] == "source" else ["//test/orfs/mock-array:asap7_files"]),
     module_top = "gcd",
     tags = ["manual"],
-)
+) for i in range(len(STAGES) - 1)]
