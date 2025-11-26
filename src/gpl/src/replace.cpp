@@ -364,7 +364,7 @@ void Replace::setDebug(const int pause_iterations,
   gui_debug_inst_ = inst;
   gui_debug_start_iter_ = start_iter;
   gui_debug_generate_images_ = generate_images;
-  gui_debug_images_path_ = std::move(images_path);
+  gui_debug_images_path_ = images_path;
 }
 
 void PlaceOptions::validate(utl::Logger* logger)
