@@ -7,6 +7,8 @@ package(
     features = ["-layering_check"],  # TODO: enable
 )
 
+exports_files(["write_verilog.tcl"])
+
 chisel_binary(
     name = "generate_verilog",
     srcs = glob(["src/main/scala/**/*.scala"]),
@@ -120,14 +122,18 @@ orfs_run(
     ]
 ]
 
-ASAP7_DEPS = [
-    "asap7/asap7sc7p5t_AO_RVT_TT_201020.v",
-    "asap7/asap7sc7p5t_INVBUF_RVT_TT_201020.v",
-    "asap7/asap7sc7p5t_OA_RVT_TT_201020.v",
-    "asap7/asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
-    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/dff.v",
-    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/empty.v",
-]
+filegroup(
+    name = "asap7_files",
+    srcs = [
+        "asap7/asap7sc7p5t_AO_RVT_TT_201020.v",
+        "asap7/asap7sc7p5t_INVBUF_RVT_TT_201020.v",
+        "asap7/asap7sc7p5t_OA_RVT_TT_201020.v",
+        "asap7/asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
+        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/dff.v",
+        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/empty.v",
+    ],
+    visibility = ["//visibility:public"],
+)
 
 eqy_test(
     name = "MockArray_4x4_eqy_test",
@@ -136,11 +142,13 @@ eqy_test(
         ":MockArray_4x4_floorplan.v",
         ":Element_4x4_floorplan.v",
         "src/main/resources/multiplier.v",
-    ] + ASAP7_DEPS,
+        ":asap7_files",
+    ],
     gold_verilog_files = [
         ":4x4_array.sv",
         "src/main/resources/multiplier.v",
-    ] + ASAP7_DEPS,
+        ":asap7_files",
+    ],
     module_top = "MockArray",
     tags = ["manual"],
 )
