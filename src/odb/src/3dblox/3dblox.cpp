@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "bmapParser.h"
+#include "bmapWriter.h"
 #include "checker.h"
 #include "dbvParser.h"
 #include "dbvWriter.h"
@@ -121,6 +122,16 @@ std::unordered_set<odb::dbLib*> getUsedLibs(odb::dbChip* chip)
   }
   return libs;
 }
+std::unordered_set<odb::dbChipRegion*> getChipletRegions(odb::dbChip* chip)
+{
+  std::unordered_set<odb::dbChipRegion*> regions;
+  for (const auto chipinst : chip->getChipInsts()) {
+    for (const auto region : chipinst->getMasterChip()->getChipRegions()) {
+      regions.insert(region);
+    }
+  }
+  return regions;
+}
 std::string getResultsDirectoryPath(const std::string& file_path)
 {
   std::string current_dir_path;
@@ -169,6 +180,13 @@ void ThreeDBlox::writeDbv(const std::string& dbv_file, odb::dbChip* chip)
     odb::lefout lef_writer(logger_, stream_handler.getStream());
     lef_writer.writeLib(lib);
   }
+  // write bmaps
+  for (auto region : getChipletRegions(chip)) {
+    std::string bmap_file_path = current_dir_path
+                                 + std::string(region->getChip()->getName())
+                                 + "_" + region->getName() + ".bmap";
+    writeBMap(bmap_file_path, region);
+  }
 
   DbvWriter writer(logger_, db_);
   writer.writeChiplet(dbv_file, chip);
@@ -182,6 +200,13 @@ void ThreeDBlox::writeDbx(const std::string& dbx_file, odb::dbChip* chip)
   // TODO: implement
   std::string current_dir_path = getResultsDirectoryPath(dbx_file);
   writeDbv(current_dir_path + chip->getName() + ".3dbv", chip);
+}
+
+void ThreeDBlox::writeBMap(const std::string& bmap_file,
+                           odb::dbChipRegion* region)
+{
+  BmapWriter writer(logger_);
+  writer.writeFile(bmap_file, region);
 }
 
 void ThreeDBlox::calculateSize(dbChip* chip)

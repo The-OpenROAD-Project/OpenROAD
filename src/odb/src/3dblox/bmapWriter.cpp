@@ -19,8 +19,7 @@ void BmapWriter::writeFile(const std::string& filename,
                            odb::dbChipRegion* region)
 {
   const auto u = region->getDb()->getDbuPerMicron();
-  const std::string& complete_name = filename + region->getName() + ".bmap";
-  std::ofstream bmap_file(complete_name);
+  std::ofstream bmap_file(filename);
   if (bmap_file.is_open()) {
     for (auto bump : region->getChipBumps()) {
       std::string line;
