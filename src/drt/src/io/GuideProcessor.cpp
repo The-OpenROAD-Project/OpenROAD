@@ -24,6 +24,7 @@
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
+#include "global.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

@@ -106,8 +106,8 @@ class GuideProcessor
    */
   void connectGuidesWithBestPinLoc(Point3D& guide_pt,
                                    const odb::Point& best_pin_loc_coords,
-                                   const frCoord gcell_half_size_horz,
-                                   const frCoord gcell_half_size_vert,
+                                   frCoord gcell_half_size_horz,
+                                   frCoord gcell_half_size_vert,
                                    frNet* net,
                                    std::vector<frRect>& guides);
   /**
