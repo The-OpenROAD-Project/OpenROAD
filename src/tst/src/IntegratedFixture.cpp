@@ -3,10 +3,11 @@
 
 #include "tst/IntegratedFixture.h"
 
+#include <gtest/gtest.h>
+
 #include <cstdio>
 #include <fstream>
 #include <string>
-#include <gtest/gtest.h>
 
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
@@ -178,6 +179,25 @@ void IntegratedFixture::removeFile(const std::string& path)
 {
   if (std::remove(path.c_str()) != 0) {
     logger_.warn(utl::RSZ, 0, "Could not remove '{}'.", path);
+  }
+}
+
+void IntegratedFixture::writeAndCompareVerilogOutput(
+    const std::string& test_name,
+    const std::string& expected_verilog,
+    bool remove_file)
+{
+  const std::string verilog_file = test_name + "_post.v";
+  sta::writeVerilog(verilog_file.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file(verilog_file);
+  std::string content((std::istreambuf_iterator<char>(file)),
+                      std::istreambuf_iterator<char>());
+
+  EXPECT_EQ(content, expected_verilog);
+
+  if (remove_file) {
+    removeFile(verilog_file);
   }
 }
 

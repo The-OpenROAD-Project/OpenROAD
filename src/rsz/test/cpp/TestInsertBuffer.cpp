@@ -478,6 +478,11 @@ endmodule
 //   drvr (BUF) --> n1 --> buf_new --> net --> buf0 --> n2 --> load (BUF)
 TEST_F(TestInsertBuffer, BeforeLoads_Case1)
 {
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
   // Create masters
   dbMaster* buf_master = db_->findMaster("BUF_X1");
   ASSERT_TRUE(buf_master);
@@ -512,11 +517,22 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case1)
   dbInst* new_buf = n1->insertBufferBeforeLoads(loads, buffer_master);
   ASSERT_TRUE(new_buf);
 
-  // Write verilog
-  const std::string verilog_file = "results/BeforeLoads_Case1.v";
-  sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
+  // Write verilog and check the content
+  writeAndCompareVerilogOutput(test_name,
+                               R"(module top ();
 
-  // jk: TODO: check output verilog
+ wire n1;
+ wire n2;
+ wire net1;
+
+ BUF_X4 buf (.A(n1),
+    .Z(net1));
+ BUF_X1 buf0 (.A(net1),
+    .Z(n2));
+ BUF_X1 drvr (.Z(n1));
+ BUF_X1 load (.A(n2));
+endmodule
+)");
 }
 
 // Netlist:
@@ -532,6 +548,11 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case1)
 //   in (Port) --> [buf1] --> buf0 --> [buf2] --> out (Port)
 TEST_F(TestInsertBuffer, BeforeLoads_Case2)
 {
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
   // Create masters
   dbMaster* buf_master = db_->findMaster("BUF_X1");
   ASSERT_TRUE(buf_master);
@@ -571,9 +592,27 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case2)
   dbInst* new_buf2 = n2->insertBufferBeforeLoads(loads2, buffer_master);
   ASSERT_TRUE(new_buf2);
 
-  // Write verilog
-  const std::string verilog_file = "results/BeforeLoads_Case2.v";
-  sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
+  // Write verilog and check the content
+  writeAndCompareVerilogOutput(test_name,
+                               R"(module top (in,
+    out);
+ input in;
+ output out;
+
+ wire n1;
+ wire n2;
+ wire net1;
+ wire net2;
+
+ BUF_X4 buf (.A(n1),
+    .Z(net1));
+ BUF_X1 buf0 (.A(net1),
+    .Z(n2));
+ BUF_X4 buf_1 (.A(n2),
+    .Z(net2));
+ assign out = net2;
+endmodule
+)");
 }
 
 // Netlist:
@@ -590,6 +629,11 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case2)
 //   in --> n1 --> [new_buf1] --> mod0/buf0 --> [new_buf2] --> out
 TEST_F(TestInsertBuffer, BeforeLoads_Case3)
 {
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
   // Create masters
   dbMaster* buf_master = db_->findMaster("BUF_X1");
   ASSERT_TRUE(buf_master);
@@ -664,9 +708,39 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case3)
       loads2, buffer_master, nullptr, "new_buf2");
   ASSERT_TRUE(new_buf2);
 
-  // Write verilog
-  const std::string verilog_file = "results/BeforeLoads_Case3.v";
-  sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
+  // Write verilog and check the content
+  writeAndCompareVerilogOutput(test_name,
+                               R"(module top (in,
+    out);
+ input in;
+ output out;
+
+ wire n2;
+ wire n1;
+ wire net2;
+
+ MOD0 mod0 (.out(n2),
+    .in(n1));
+ BUF_X4 new_buf2 (.A(n2),
+    .Z(net2));
+ assign out = net2;
+endmodule
+module MOD0 (out,
+    in);
+ output out;
+ input in;
+
+ wire n2;
+ wire n1;
+ wire \mod0/net1 ;
+
+ BUF_X1 buf0 (.A(\mod0/net1 ),
+    .Z(n2));
+ BUF_X4 new_buf1 (.A(n1),
+    .Z(\mod0/net1 ));
+ assign out = n2;
+endmodule
+)");
 }
 
 // Netlist:
@@ -692,6 +766,11 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case3)
 //                                                           +--> load1
 TEST_F(TestInsertBuffer, BeforeLoads_Case4)
 {
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
   // Create masters
   dbMaster* buf_master = db_->findMaster("BUF_X1");
   ASSERT_TRUE(buf_master);
@@ -736,9 +815,24 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case4)
       = n1->insertBufferBeforeLoads(loads2, buffer_master, nullptr, "new1");
   ASSERT_TRUE(new1);
 
-  // Write verilog
-  const std::string verilog_file = "results/BeforeLoads_Case4.v";
-  sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
+  // Write verilog and check the content
+  writeAndCompareVerilogOutput(test_name,
+                               R"(module top ();
+
+ wire n1;
+ wire net1;
+ wire net2;
+
+ BUF_X1 drvr0 (.Z(n1));
+ BUF_X1 load0 (.A(net1));
+ BUF_X1 load1 (.A(net1));
+ BUF_X1 load2 (.A(net2));
+ BUF_X4 new0 (.A(net2),
+    .Z(net1));
+ BUF_X4 new1 (.A(n1),
+    .Z(net2));
+endmodule
+)");
 }
 
 // Netlist:
@@ -765,6 +859,11 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case4)
 // Insert buffer 2: Load pins = {new0/A, mod3/load2/A}
 TEST_F(TestInsertBuffer, BeforeLoads_Case5)
 {
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
   // Create masters
   dbMaster* buf_master = db_->findMaster("BUF_X1");
   ASSERT_TRUE(buf_master);
@@ -844,9 +943,53 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case5)
       = n1->insertBufferBeforeLoads(loads2, buffer_master, nullptr, "new1");
   ASSERT_TRUE(new1);
 
-  // Write verilog
-  const std::string verilog_file = "results/BeforeLoads_Case5.v";
-  sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
+  // Write verilog and check the content
+  writeAndCompareVerilogOutput(test_name,
+                               R"(module top ();
+
+ wire net2;
+ wire net1;
+ wire n1;
+
+ MOD0 mod0 (.Z(n1));
+ MOD1 mod1 (.A(net1));
+ MOD2 mod2 (.A(net1));
+ MOD3 mod3 (.A(net2));
+ BUF_X4 new0 (.A(net2),
+    .Z(net1));
+ BUF_X4 new1 (.A(n1),
+    .Z(net2));
+endmodule
+module MOD0 (Z);
+ output Z;
+
+ wire Z_net;
+
+ BUF_X1 drvr0 (.Z(Z_net));
+ assign Z = Z_net;
+endmodule
+module MOD1 (A);
+ input A;
+
+ wire A_net;
+
+ BUF_X1 load0 (.A(A_net));
+endmodule
+module MOD2 (A);
+ input A;
+
+ wire A_net;
+
+ BUF_X1 load1 (.A(A_net));
+endmodule
+module MOD3 (A);
+ input A;
+
+ wire A_net;
+
+ BUF_X1 load2 (.A(A_net));
+endmodule
+)");
 }
 
 // Netlist Structure (Reflecting the user provided tree):
@@ -884,7 +1027,11 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case5)
 //   3. Non-targets (load0, load1, load4) remain on original net.
 TEST_F(TestInsertBuffer, BeforeLoads_Case6)
 {
-  std::string test_name = "TestInsertBuffer_BeforeLoads6";
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
   readVerilogAndSetup(test_name + ".v");
 
   // Get ODB objects
@@ -1027,9 +1174,71 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case6)
   }
   EXPECT_TRUE(punched_h5_in_h4);
 
-  // Write verilog
-  const std::string verilog_file = "results/BeforeLoads_Case6.v";
-  sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
+  // Write verilog and check the content
+  writeAndCompareVerilogOutput(test_name,
+                               R"(module top ();
+
+ wire net1;
+ wire n1;
+
+ BUF_X1 load0 (.A(n1));
+ BUF_X1 new_buf (.A(n1),
+    .Z(net1));
+ ModH2 u_h2 (.n1_i(net1),
+    .out(n1));
+ ModH3 u_h3 (.n1_i(net1),
+    .in(n1));
+ ModH4 u_h4 (.n1_i(net1),
+    .in(n1));
+endmodule
+module ModH0 (out);
+ output out;
+
+
+ LOGIC0_X1 drvr (.Z(out));
+endmodule
+module ModH1 (in);
+ input in;
+
+
+ BUF_X1 load5 (.A(in));
+endmodule
+module ModH2 (n1_i,
+    out);
+ input n1_i;
+ output out;
+
+ wire n_internal;
+
+ ModH0 u_h0 (.out(n_internal));
+ ModH1 u_h1 (.in(n1_i));
+ assign out = n_internal;
+endmodule
+module ModH3 (n1_i,
+    in);
+ input n1_i;
+ input in;
+
+
+ BUF_X1 load1 (.A(in));
+ BUF_X1 load2 (.A(n1_i));
+endmodule
+module ModH4 (n1_i,
+    in);
+ input n1_i;
+ input in;
+
+
+ BUF_X1 load4 (.A(in));
+ ModH5 u_h5 (.in(n1_i));
+endmodule
+module ModH5 (in);
+ input in;
+
+
+ BUF_X1 load3 (.A(in));
+endmodule
+)");
 }
 
 // Netlist Structure:
@@ -1061,7 +1270,11 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case6)
 //   3. Non-targets (load0, load1) remain on original net.
 TEST_F(TestInsertBuffer, BeforeLoads_Case7)
 {
-  std::string test_name = "TestInsertBuffer_BeforeLoads7";
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
   readVerilogAndSetup(test_name + ".v");
 
   // Get ODB objects
@@ -1118,12 +1331,6 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case7)
   dbInst* new_buf = target_net->insertBufferBeforeLoads(
       targets, buffer_master, nullptr, "new_buf");
   ASSERT_TRUE(new_buf);
-
-  // Write verilog
-  {
-    const std::string verilog_file = "results/BeforeLoads_Case7.v";
-    sta::writeVerilog(verilog_file.c_str(), false, false, {}, sta_->network());
-  }
 
   //----------------------------------------------------
   // Verify Results
@@ -1186,6 +1393,469 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case7)
     }
   }
   EXPECT_FALSE(punched_h3_in_h2);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutput(test_name,
+                               R"(module top ();
+
+ wire net1;
+ wire n1;
+
+ BUF_X1 load0 (.A(n1));
+ BUF_X1 load1 (.A(n1));
+ BUF_X1 load4 (.A(net1));
+ BUF_X1 new_buf (.A(n1),
+    .Z(net1));
+ ModH0 u_h0 (.out(n1));
+ ModH1 u_h1 (.in(net1));
+ ModH2 u_h2 (.in(net1));
+endmodule
+module ModH0 (out);
+ output out;
+
+
+ LOGIC0_X1 drvr (.Z(out));
+endmodule
+module ModH1 (in);
+ input in;
+
+
+ BUF_X1 load2 (.A(in));
+endmodule
+module ModH2 (in);
+ input in;
+
+
+ ModH3 u_h3 (.in(in));
+endmodule
+module ModH3 (in);
+ input in;
+
+
+ BUF_X1 load3 (.A(in));
+endmodule
+)");
+}
+
+//
+// Case 8: Insert buffer on a net connected to an Input dbBTerm.
+// Net: in_port -> load1
+// Target: load1
+// Result: in_port -> buffer -> load1
+//
+TEST_F(TestInsertBuffer, BeforeLoads_Case8)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  // Masters
+  dbMaster* buf_master = db_->findMaster("BUF_X1");
+  ASSERT_TRUE(buf_master);
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Instance
+  dbInst* load1 = dbInst::create(block_, buf_master, "load1");
+  ASSERT_TRUE(load1);
+
+  // Net + Port
+  dbNet* n1 = dbNet::create(block_, "n1");
+  dbBTerm* in_port = dbBTerm::create(n1, "in");
+  in_port->setIoType(dbIoType::INPUT);
+
+  // Connect
+  dbITerm* load1_a = load1->findITerm("A");
+  load1_a->connect(n1);
+
+  // Insert Buffer
+  std::set<dbObject*> targets;
+  targets.insert(load1_a);
+  dbInst* new_buf
+      = n1->insertBufferBeforeLoads(targets, buffer_master, nullptr, "new_buf");
+  ASSERT_TRUE(new_buf);
+
+  // Verify
+  // buffer input should be connected to original net (driven by input port)
+  EXPECT_EQ(new_buf->findITerm("A")->getNet(), n1);
+  // buffer output should drive a new net
+  dbNet* out_net = new_buf->findITerm("Z")->getNet();
+  ASSERT_TRUE(out_net);
+  EXPECT_NE(out_net, n1);
+  // load1 should be on new net
+  EXPECT_EQ(load1_a->getNet(), out_net);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutput(test_name,
+                               R"(module top (in);
+ input in;
+
+ wire n1;
+ wire net1;
+
+ BUF_X1 load1 (.A(net1));
+ BUF_X4 new_buf (.A(n1),
+    .Z(net1));
+endmodule
+)");
+}
+
+//
+// Case 9: Insert buffer on a net connected to an Output dbBTerm.
+// Net: driver -> out_port
+// Target: out_port
+// Result: driver -> buffer -> out_port
+//
+TEST_F(TestInsertBuffer, BeforeLoads_Case9)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  // Masters
+  dbMaster* buf_master = db_->findMaster("BUF_X1");
+  ASSERT_TRUE(buf_master);
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Instance
+  dbInst* drvr = dbInst::create(block_, buf_master, "drvr");
+  ASSERT_TRUE(drvr);
+
+  // Net + Port
+  dbNet* n1 = dbNet::create(block_, "n1");
+  dbBTerm* out_port = dbBTerm::create(n1, "out");
+  out_port->setIoType(dbIoType::OUTPUT);
+
+  // Connect
+  dbITerm* drvr_z = drvr->findITerm("Z");
+  drvr_z->connect(n1);
+
+  // Insert Buffer
+  std::set<dbObject*> targets;
+  targets.insert(out_port);
+  dbInst* new_buf
+      = n1->insertBufferBeforeLoads(targets, buffer_master, nullptr, "new_buf");
+  ASSERT_TRUE(new_buf);
+
+  // Verify
+  // buffer input connected to n1 (driven by drvr)
+  EXPECT_EQ(new_buf->findITerm("A")->getNet(), n1);
+  // buffer output connected to a new net?
+  // No, typically insertBufferBeforeLoads splits the net.
+  // If target is BTerm, the BTerm moves to new net.
+  dbNet* out_net = new_buf->findITerm("Z")->getNet();
+  ASSERT_TRUE(out_net);
+  EXPECT_NE(out_net, n1);
+  EXPECT_EQ(out_port->getNet(), out_net);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutput(test_name,
+                               R"(module top (out);
+ output out;
+
+ wire n1;
+ wire net1;
+
+ BUF_X1 drvr (.Z(n1));
+ BUF_X4 new_buf (.A(n1),
+    .Z(net1));
+ assign out = net1;
+endmodule
+)");
+}
+
+//
+// Case 10: Insert buffer on a feedthrough net connecting Input dbBTerm to
+// Output dbBTerm.
+// Netist: in_port -> out_port
+// Target: out_port
+// Result: in_port -> new_buf -> out_port
+//
+TEST_F(TestInsertBuffer, BeforeLoads_Case10)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  // Masters
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Net + Ports
+  dbNet* n1 = dbNet::create(block_, "n1");
+  dbBTerm* in_port = dbBTerm::create(n1, "in");
+  in_port->setIoType(dbIoType::INPUT);
+  dbBTerm* out_port = dbBTerm::create(n1, "out");
+  out_port->setIoType(dbIoType::OUTPUT);
+
+  // Insert Buffer
+  std::set<dbObject*> targets;
+  targets.insert(out_port);
+  dbInst* new_buf
+      = n1->insertBufferBeforeLoads(targets, buffer_master, nullptr, "new_buf");
+  ASSERT_TRUE(new_buf);
+
+  // Verify
+  // buffer input connected to n1 (driven by in_port)
+  EXPECT_EQ(new_buf->findITerm("A")->getNet(), n1);
+  // buffer output connected to new net
+  dbNet* out_net = new_buf->findITerm("Z")->getNet();
+  ASSERT_TRUE(out_net);
+  EXPECT_NE(out_net, n1);
+  EXPECT_EQ(out_port->getNet(), out_net);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutput(test_name,
+                               R"(module top (in,
+    out);
+ input in;
+ output out;
+
+ wire n1;
+ wire net1;
+
+ BUF_X4 new_buf (.A(n1),
+    .Z(net1));
+ assign out = net1;
+endmodule
+)");
+}
+
+//
+// Case 11: Insert on a net having both dbBTerm (Input) and dbITerm.
+// Net: in (port) -> load1, load2
+// Target: load1
+// Result: in -> load2
+//         in-> new_buf -> Load1
+//
+TEST_F(TestInsertBuffer, BeforeLoads_Case11)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  // Masters
+  dbMaster* buf_master = db_->findMaster("BUF_X1");
+  ASSERT_TRUE(buf_master);
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Instances
+  dbInst* load1 = dbInst::create(block_, buf_master, "load1");
+  dbInst* load2 = dbInst::create(block_, buf_master, "load2");
+
+  // Net + Port
+  dbNet* n1 = dbNet::create(block_, "n1");
+  dbBTerm* in_port = dbBTerm::create(n1, "in");
+  in_port->setIoType(dbIoType::INPUT);
+
+  // Connect
+  dbITerm* load1_a = load1->findITerm("A");
+  dbITerm* load2_a = load2->findITerm("A");
+  load1_a->connect(n1);
+  load2_a->connect(n1);
+
+  // Insert Buffer for load1 only
+  std::set<dbObject*> targets;
+  targets.insert(load1_a);
+  dbInst* new_buf
+      = n1->insertBufferBeforeLoads(targets, buffer_master, nullptr, "new_buf");
+  ASSERT_TRUE(new_buf);
+
+  // Verify
+  // n1 should still connect in_port and load2
+  EXPECT_EQ(in_port->getNet(), n1);
+  EXPECT_EQ(load2_a->getNet(), n1);
+  // buffer input on n1
+  EXPECT_EQ(new_buf->findITerm("A")->getNet(), n1);
+  // buffer output on new net
+  dbNet* out_net = new_buf->findITerm("Z")->getNet();
+  EXPECT_NE(out_net, n1);
+  // load1 on new net
+  EXPECT_EQ(load1_a->getNet(), out_net);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutput(test_name,
+                               R"(module top (in);
+ input in;
+
+ wire n1;
+ wire net1;
+
+ BUF_X1 load1 (.A(net1));
+ BUF_X1 load2 (.A(n1));
+ BUF_X4 new_buf (.A(n1),
+    .Z(net1));
+endmodule
+)");
+}
+
+//
+// Case 12: Insert on a net having dbBTerm (Output), dbITerm (Load).
+// Net: driver -> load1, out_port
+// Target: load1, out_port
+// Result: driver -> buffer -> load1, out_port
+//
+TEST_F(TestInsertBuffer, BeforeLoads_Case12)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  // Masters
+  dbMaster* buf_master = db_->findMaster("BUF_X1");
+  ASSERT_TRUE(buf_master);
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Instances
+  dbInst* drvr = dbInst::create(block_, buf_master, "drvr");
+  dbInst* load1 = dbInst::create(block_, buf_master, "load1");
+
+  // Net + Port
+  dbNet* n1 = dbNet::create(block_, "n1");
+  dbBTerm* out_port = dbBTerm::create(n1, "out");
+  out_port->setIoType(dbIoType::OUTPUT);
+
+  // Connect
+  drvr->findITerm("Z")->connect(n1);
+  dbITerm* load1_a = load1->findITerm("A");
+  load1_a->connect(n1);
+
+  // Insert Buffer for both
+  std::set<dbObject*> targets;
+  targets.insert(load1_a);
+  targets.insert(out_port);
+  dbInst* new_buf
+      = n1->insertBufferBeforeLoads(targets, buffer_master, nullptr, "new_buf");
+  ASSERT_TRUE(new_buf);
+
+  // Verify
+  // buffer input on n1 (driven by drvr)
+  EXPECT_EQ(new_buf->findITerm("A")->getNet(), n1);
+  // new net drives targets
+  dbNet* out_net = new_buf->findITerm("Z")->getNet();
+  EXPECT_NE(out_net, n1);
+  EXPECT_EQ(load1_a->getNet(), out_net);
+  EXPECT_EQ(out_port->getNet(), out_net);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutput(test_name,
+                               R"(module top (out);
+ output out;
+
+ wire n1;
+ wire net1;
+
+ BUF_X1 drvr (.Z(n1));
+ BUF_X1 load1 (.A(net1));
+ BUF_X4 new_buf (.A(n1),
+    .Z(net1));
+ assign out = net1;
+endmodule
+)");
+}
+
+//
+// Case 13: Mixed Hierarchy (dbBTerm, dbITerm, dbModITerm implicitly via
+// hierarchy) We use a simpler hierarchy construction than Case 6/7.
+// Structure:
+//   Top:
+//     - drvr -> n1
+//     - load1 (on n1)
+//     - SubModule u1 (on n1 via port A) -> load2
+//     - out_port (on n1)
+// Targets: load1, load2, out_port.
+//
+TEST_F(TestInsertBuffer, BeforeLoads_Case13)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+  readVerilogAndSetup(test_name + ".v");
+
+  // Find objects
+  dbInst* load1 = block_->findInst("load1");
+  ASSERT_NE(load1, nullptr);
+  dbInst* load2 = block_->findInst("u1/load2");
+  ASSERT_NE(load2, nullptr);
+  dbModInst* u1 = block_->findModInst("u1");
+  ASSERT_NE(u1, nullptr);
+  dbBTerm* out_port = block_->findBTerm("out");
+  ASSERT_NE(out_port, nullptr);
+  dbITerm* load1_a = load1->findITerm("A");
+  ASSERT_NE(load1_a, nullptr);
+  dbITerm* load2_a = load2->findITerm("A");
+  ASSERT_NE(load2_a, nullptr);
+  dbNet* n1 = load1_a->getNet();
+  ASSERT_NE(n1, nullptr);
+
+  // Targets
+  std::set<dbObject*> targets;
+  targets.insert(load1_a);   // Leaf on top
+  targets.insert(out_port);  // Output Port
+  targets.insert(load2_a);   // Hierarchical Leaf
+
+  // Master
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Insert Buffer
+  dbInst* new_buf
+      = n1->insertBufferBeforeLoads(targets, buffer_master, nullptr, "new_buf");
+  ASSERT_TRUE(new_buf);
+
+  // Verify
+  dbNet* out_net = new_buf->findITerm("Z")->getNet();
+  EXPECT_NE(out_net, n1);
+
+  EXPECT_EQ(load1_a->getNet(), out_net);
+  EXPECT_EQ(out_port->getNet(), out_net);
+  EXPECT_EQ(load2_a->getNet(), out_net);
+
+  // Verify port reuse for load2
+  // - MOD1/A should be reused.
+  dbModNet* top_out_mod_net
+      = block_->getTopModule()->getModNet(out_net->getConstName());
+  ASSERT_TRUE(top_out_mod_net);
+
+  bool port_reuse = false;
+  for (dbModITerm* iterm : top_out_mod_net->getModITerms()) {
+    if (iterm->getParent() == u1 && std::string(iterm->getName()) == "A") {
+      port_reuse = true;
+    }
+  }
+  EXPECT_TRUE(port_reuse);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutput(test_name,
+                               R"(module top (out);
+ output out;
+
+ wire net1;
+ wire n1;
+
+ BUF_X1 drvr (.Z(n1));
+ BUF_X1 load1 (.A(net1));
+ BUF_X4 new_buf (.A(n1),
+    .Z(net1));
+ MOD1 u1 (.A(net1));
+ assign out = net1;
+endmodule
+module MOD1 (A);
+ input A;
+
+
+ BUF_X1 load2 (.A(A));
+endmodule
+)");
 }
 
 TEST_F(TestInsertBuffer, AfterDriver_Case1)

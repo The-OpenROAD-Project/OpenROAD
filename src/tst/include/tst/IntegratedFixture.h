@@ -33,6 +33,10 @@ class IntegratedFixture : public tst::Fixture
   void readVerilogAndSetup(const std::string& verilog_file);
   void dumpVerilogAndOdb(const std::string& name) const;
   void removeFile(const std::string& path);
+  // 'remove_file=false' will keep the output verilog for debug
+  void writeAndCompareVerilogOutput(const std::string& test_name,
+                                    const std::string& expected_verilog_content,
+                                    bool remove_file = true);
 
  protected:
   odb::dbLib* lib_;
