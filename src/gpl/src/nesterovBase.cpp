@@ -1070,6 +1070,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     }
   }
 
+  // Instance extension from pin density done in placerBase construction
   if (log_->debugCheck(GPL, "extendPinDensity", 1)) {
     reportInstanceExtensionByPinDensity();
   }

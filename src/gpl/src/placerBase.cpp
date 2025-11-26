@@ -877,8 +877,7 @@ void PlacerBaseCommon::init()
         double target_area = static_cast<double>(pin_count) / avg_density;
         double scale
             = std::sqrt(target_area / static_cast<double>(inst.getArea()));
-        // Cap the scaling, extreme changes result in too much routability
-        // inflation
+        // Cap scaling, avoid later excessive routability inflation
         if (scale > 1.2) {
           scale = 1.2;
         } else if (scale < 0.8) {
