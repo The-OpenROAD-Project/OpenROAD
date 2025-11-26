@@ -3,8 +3,6 @@
 
 #include "dbxWriter.h"
 
-#include <yaml-cpp/emitterstyle.h>
-#include <yaml-cpp/node/node.h>
 #include <yaml-cpp/yaml.h>
 
 #include <string>
