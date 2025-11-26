@@ -583,6 +583,7 @@ void SACoreSoftMacro::attemptMacroClusterAlignment()
       adjust_v_th_ = std::min(adjust_v_th_, macros_[macro_id].getHeight());
     }
   }
+
   const int ratio = 10;
   adjust_h_th_ = std::min(adjust_h_th_, outline_.dy() / ratio);
   adjust_v_th_ = std::min(adjust_v_th_, outline_.dx() / ratio);
@@ -590,20 +591,20 @@ void SACoreSoftMacro::attemptMacroClusterAlignment()
   // Align macro clusters to boundaries
   for (auto& macro_id : pos_seq_) {
     if (macros_[macro_id].isMacroCluster()) {
-      const float lx = macros_[macro_id].getX();
-      const float ly = macros_[macro_id].getY();
-      const float ux = lx + macros_[macro_id].getWidth();
-      const float uy = ly + macros_[macro_id].getHeight();
+      const int lx = macros_[macro_id].getX();
+      const int ly = macros_[macro_id].getY();
+      const int ux = lx + macros_[macro_id].getWidth();
+      const int uy = ly + macros_[macro_id].getHeight();
       // align to left / right boundaries
-      if (lx <= adjust_h_th_) {
-        macros_[macro_id].setX(0.0);
-      } else if (outline_.dx() - ux <= adjust_h_th_) {
+      if (lx < adjust_h_th_) {
+        macros_[macro_id].setX(0);
+      } else if (outline_.dx() - ux < adjust_h_th_) {
         macros_[macro_id].setX(outline_.dx() - macros_[macro_id].getWidth());
       }
       // align to top / bottom boundaries
-      if (ly <= adjust_v_th_) {
-        macros_[macro_id].setY(0.0);
-      } else if (outline_.dy() - uy <= adjust_v_th_) {
+      if (ly < adjust_v_th_) {
+        macros_[macro_id].setY(0);
+      } else if (outline_.dy() - uy < adjust_v_th_) {
         macros_[macro_id].setY(outline_.dy() - macros_[macro_id].getHeight());
       }
     }
