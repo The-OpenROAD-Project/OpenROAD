@@ -4,6 +4,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace utl {
@@ -26,6 +27,8 @@ class BumpMapEntry;
 class dbChipRegion;
 class dbBlock;
 class dbInst;
+class dbTech;
+class dbLib;
 
 class ThreeDBlox
 {
@@ -36,6 +39,8 @@ class ThreeDBlox
   void readDbx(const std::string& dbx_file);
   void readBMap(const std::string& bmap_file);
   void check();
+  void writeDbv(const std::string& dbv_file, odb::dbChip* chip);
+  void writeDbx(const std::string& dbx_file, odb::dbChip* chip);
 
  private:
   void createChiplet(const ChipletDef& chiplet);
@@ -53,5 +58,7 @@ class ThreeDBlox
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   sta::Sta* sta_ = nullptr;
+  std::unordered_set<odb::dbTech*> written_techs_;
+  std::unordered_set<odb::dbLib*> written_libs_;
 };
 }  // namespace odb
