@@ -2297,6 +2297,14 @@ bool DetailedMgr::tryMove1(Node* ndi,
     if (!alignPos(ndi, xj, lx, rx)) {
       return false;
     }
+    // Check if the site orientation is available at the new position
+    odb::dbSite* site = ndi->getDbInst()->getMaster()->getSite();
+    const auto grid_x = grid_->gridX(xj);
+    const auto grid_y = grid_->gridSnapDownY(yj);
+    if (!grid_->getSiteOrientation(grid_x, grid_y, site).has_value()) {
+      return false;
+    }
+
     // Build the move list.
     if (!addToMoveList(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
       return false;
@@ -2319,6 +2327,14 @@ bool DetailedMgr::tryMove1(Node* ndi,
     const DbuX rx
         = segments_[sj]->getMaxX() - arch_->getCellSpacing(ndi, nullptr);
     if (!alignPos(ndi, xj, lx, rx)) {
+      return false;
+    }
+
+    // Check if the site orientation is available at the new position
+    odb::dbSite* site = ndi->getDbInst()->getMaster()->getSite();
+    const auto grid_x = grid_->gridX(xj);
+    const auto grid_y = grid_->gridSnapDownY(yj);
+    if (!grid_->getSiteOrientation(grid_x, grid_y, site).has_value()) {
       return false;
     }
 
@@ -2351,6 +2367,14 @@ bool DetailedMgr::tryMove1(Node* ndi,
       return false;
     }
 
+    // Check if the site orientation is available at the new position
+    odb::dbSite* site = ndi->getDbInst()->getMaster()->getSite();
+    const auto grid_x = grid_->gridX(xj);
+    const auto grid_y = grid_->gridSnapDownY(yj);
+    if (!grid_->getSiteOrientation(grid_x, grid_y, site).has_value()) {
+      return false;
+    }
+
     // Build the move list.
     if (!addToMoveList(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
       return false;
@@ -2376,6 +2400,14 @@ bool DetailedMgr::tryMove1(Node* ndi,
   const DbuX lx = ndl->getRight() + arch_->getCellSpacing(ndl, ndi);
   const DbuX rx = ndr->getLeft() - arch_->getCellSpacing(ndi, ndr);
   if (!alignPos(ndi, xj, lx, rx)) {
+    return false;
+  }
+
+  // Check if the site orientation is available at the new position
+  odb::dbSite* site = ndi->getDbInst()->getMaster()->getSite();
+  const auto grid_x = grid_->gridX(xj);
+  const auto grid_y = grid_->gridSnapDownY(yj);
+  if (!grid_->getSiteOrientation(grid_x, grid_y, site).has_value()) {
     return false;
   }
 
@@ -2468,6 +2500,14 @@ bool DetailedMgr::tryMove2(Node* ndi,
     if (!alignPos(ndi, xj, lx, rx)) {
       return false;
     }
+    // Check if the site orientation is available at the new position
+    odb::dbSite* site = ndi->getDbInst()->getMaster()->getSite();
+    const auto grid_x = grid_->gridX(xj);
+    const auto grid_y = grid_->gridSnapDownY(yj);
+    if (!grid_->getSiteOrientation(grid_x, grid_y, site).has_value()) {
+      return false;
+    }
+
     if (!addToMoveList(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
       return false;
     }
@@ -2486,6 +2526,14 @@ bool DetailedMgr::tryMove2(Node* ndi,
     if (!alignPos(ndi, xj, lx, rx)) {
       return false;
     }
+    // Check if the site orientation is available at the new position
+    odb::dbSite* site = ndi->getDbInst()->getMaster()->getSite();
+    const auto grid_x = grid_->gridX(xj);
+    const auto grid_y = grid_->gridSnapDownY(yj);
+    if (!grid_->getSiteOrientation(grid_x, grid_y, site).has_value()) {
+      return false;
+    }
+
     if (!addToMoveList(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
       return false;
     }
@@ -2647,6 +2695,16 @@ bool DetailedMgr::tryMove3(Node* ndi,
       old_segs.push_back(seg->getSegId());
     }
 
+    // Check if the site orientation is available at the new position
+    const DbuX new_x = xj;
+    const DbuY new_y = arch_->getRow(rb)->getBottom();
+    odb::dbSite* site = ndi->getDbInst()->getMaster()->getSite();
+    const auto grid_x = grid_->gridX(new_x);
+    const auto grid_y = grid_->gridSnapDownY(new_y);
+    if (!grid_->getSiteOrientation(grid_x, grid_y, site).has_value()) {
+      return false;
+    }
+
     if (!addToMoveList(ndi,
                        ndi->getLeft(),
                        ndi->getBottom(),
@@ -2774,6 +2832,24 @@ bool DetailedMgr::trySwap1(Node* ndi,
     const DbuX x2 = ndj->getLeft();
     const DbuY y2 = ndj->getBottom();
     // Build move list.
+    // Check if the site orientation is available at the new positions
+    {
+      odb::dbSite* site = ndi->getDbInst()->getMaster()->getSite();
+      const auto grid_x = grid_->gridX(xj);
+      const auto grid_y = grid_->gridSnapDownY(y2);
+      if (!grid_->getSiteOrientation(grid_x, grid_y, site).has_value()) {
+        return false;
+      }
+    }
+    {
+      odb::dbSite* site = ndj->getDbInst()->getMaster()->getSite();
+      const auto grid_x = grid_->gridX(xi);
+      const auto grid_y = grid_->gridSnapDownY(y1);
+      if (!grid_->getSiteOrientation(grid_x, grid_y, site).has_value()) {
+        return false;
+      }
+    }
+
     if (!addToMoveList(ndi, x1, y1, si, xj, y2, sj)) {
       return false;
     }
@@ -2873,6 +2949,24 @@ bool DetailedMgr::trySwap1(Node* ndi,
   const DbuX x2 = ndj->getLeft();
   const DbuY y2 = ndj->getBottom();
   // Build move list.
+  // Check if the site orientation is available at the new positions
+  {
+    odb::dbSite* site = ndi->getDbInst()->getMaster()->getSite();
+    const auto grid_x = grid_->gridX(xj);
+    const auto grid_y = grid_->gridSnapDownY(y2);
+    if (!grid_->getSiteOrientation(grid_x, grid_y, site).has_value()) {
+      return false;
+    }
+  }
+  {
+    odb::dbSite* site = ndj->getDbInst()->getMaster()->getSite();
+    const auto grid_x = grid_->gridX(xi);
+    const auto grid_y = grid_->gridSnapDownY(y1);
+    if (!grid_->getSiteOrientation(grid_x, grid_y, site).has_value()) {
+      return false;
+    }
+  }
+
   if (!addToMoveList(ndi, x1, y1, si, xj, y2, sj)) {
     return false;
   }
@@ -2989,6 +3083,7 @@ void DetailedMgr::paintInGrid(Node* node)
   const auto grid_x = grid_->gridX(node);
   const auto grid_y = grid_->gridSnapDownY(node);
   odb::dbSite* site = node->getDbInst()->getMaster()->getSite();
+
   const auto orientation
       = grid_->getSiteOrientation(grid_x, grid_y, site).value();
   grid_->paintPixel(node, grid_x, grid_y);
