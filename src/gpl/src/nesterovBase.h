@@ -803,6 +803,7 @@ class NesterovBaseCommon
                      int num_threads,
                      const Clusters& clusters);
 
+  void reportInstanceExtensionByPinDensity() const;
   const std::vector<GCell*>& getGCells() const { return nbc_gcells_; }
   const std::vector<GNet*>& getGNets() const { return gNets_; }
   const std::vector<GPin*>& getGPins() const { return gPins_; }
