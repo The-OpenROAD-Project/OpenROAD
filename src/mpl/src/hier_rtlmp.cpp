@@ -105,11 +105,16 @@ void HierRTLMP::setGlobalFence(float fence_lx,
                                float fence_ly,
                                float fence_ux,
                                float fence_uy)
-{
+{  
+  int fence_ux_dbu = fence_ux >= 100000000.0 ? block_->getCoreArea().xMax()
+                                             : block_->micronsToDbu(fence_ux);
+  int fence_uy_dbu = fence_uy >= 100000000.0 ? block_->getCoreArea().yMax()
+                                             : block_->micronsToDbu(fence_uy);
+
   tree_->global_fence = odb::Rect(block_->micronsToDbu(fence_lx),
                                   block_->micronsToDbu(fence_ly),
-                                  block_->micronsToDbu(fence_ux),
-                                  block_->micronsToDbu(fence_uy));
+                                  fence_ux_dbu,
+                                  fence_uy_dbu);
 }
 
 void HierRTLMP::setHaloWidth(float halo_width)
