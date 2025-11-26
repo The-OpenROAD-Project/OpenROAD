@@ -16,36 +16,22 @@
 
 namespace odb {
 
-DbxWriter::DbxWriter(utl::Logger* logger) : BaseWriter(logger)
+DbxWriter::DbxWriter(utl::Logger* logger, odb::dbDatabase* db)
+    : BaseWriter(logger, db)
 {
 }
 
-void DbxWriter::writeFile(const std::string& filename, odb::dbDatabase* db)
-{
-  // TODO: Connect the following
-  // DbvWriter dbvwriter(logger_);
-  // dbvwriter.writeChiplet(
-  //     std::string(db->getChip()->getName()) + ".3dbv", db, db->getChip());
-  YAML::Node root;
-  writeYamlContent(root, db->getChip());
-  writeYamlToFile(filename, root);
-}
-
-void DbxWriter::writeChiplet(odb::dbChip* chiplet)
+void DbxWriter::writeChiplet(const std::string& filename, odb::dbChip* chiplet)
 {
   YAML::Node root;
-  // TODO: Connect the following
-  // DbvWriter dbvwriter(logger_);
-  // dbvwriter.writeChiplet(
-  //     std::string(chiplet->getName()) + ".3dbv", chiplet->getDb(), chiplet);
   writeYamlContent(root, chiplet);
-  writeYamlToFile(std::string(chiplet->getName()), root);
+  writeYamlToFile(filename, root);
 }
 
 void DbxWriter::writeYamlContent(YAML::Node& root, odb::dbChip* chiplet)
 {
   YAML::Node header_node = root["Header"];
-  writeHeader(header_node, chiplet->getDb());
+  writeHeader(header_node);
   YAML::Node includes_node = header_node["include"];
   includes_node.push_back(std::string(chiplet->getName()) + ".3dbv");
 

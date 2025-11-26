@@ -3,27 +3,31 @@
 
 #pragma once
 
-#include <yaml-cpp/node/node.h>
-
 #include <string>
 #include <vector>
 
 #include "baseWriter.h"
-#include "odb/db.h"
 
 namespace utl {
 class Logger;
 }
+namespace YAML {
+class Node;
+}
 
 namespace odb {
+class dbDatabase;
+class dbChip;
+class dbChipInst;
+class dbChipConn;
+class dbChipRegionInst;
 
 class DbxWriter : public BaseWriter
 {
  public:
-  DbxWriter(utl::Logger* logger);
+  DbxWriter(utl::Logger* logger, odb::dbDatabase* db);
 
-  void writeFile(const std::string& filename, odb::dbDatabase* db) override;
-  void writeChiplet(odb::dbChip* chiplet);
+  void writeChiplet(const std::string& filename, odb::dbChip* chiplet);
 
  private:
   void writeYamlContent(YAML::Node& root, odb::dbChip* chiplet);

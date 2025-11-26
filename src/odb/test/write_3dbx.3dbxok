@@ -1,0 +1,31 @@
+Header:
+  version: 3
+  unit: micron
+  precision: 2000
+  include:
+    - TopDesign.3dbv
+Design:
+  name: TopDesign
+ChipletInst:
+  soc_inst_duplicate:
+    reference: SoC
+  soc_inst:
+    reference: SoC
+Stack:
+  soc_inst_duplicate:
+    loc: [100, 200]
+    z: 300
+    orient: MZ
+  soc_inst:
+    loc: [100, 200]
+    z: 0
+    orient: R0
+Connection:
+  soc_to_virtual:
+    top: soc_inst_duplicate.regions.r1
+    bot: "~"
+    thicness: 0
+  soc_to_soc:
+    top: soc_inst_duplicate.regions.r1
+    bot: soc_inst.regions.r1
+    thicness: 2

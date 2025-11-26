@@ -180,15 +180,14 @@ void ThreeDBlox::writeDbx(const std::string& dbx_file, odb::dbChip* chip)
   if (chip == nullptr) {
     return;
   }
-  // TODO: implement
+  ///////////Results Directory Path ///////////
   std::string current_dir_path = getResultsDirectoryPath(dbx_file);
-  writeDbv(current_dir_path + chip->getName() + ".3dbv", chip);
-}
+  ////////////////////////////////////////////
 
-void ThreeDBlox::writeDbx(const std::string& dbx_file)
-{
-  DbxWriter writer(logger_);
-  writer.writeFile(dbx_file, db_);
+  writeDbv(current_dir_path + chip->getName() + ".3dbv", chip);
+
+  DbxWriter writer(logger_, db_);
+  writer.writeChiplet(dbx_file, chip);
 }
 
 void ThreeDBlox::calculateSize(dbChip* chip)
