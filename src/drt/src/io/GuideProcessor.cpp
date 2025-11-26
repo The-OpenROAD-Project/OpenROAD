@@ -207,7 +207,8 @@ Point3D findBestPinLocation(frDesign* design,
  */
 int findClosestGuide(const Point3D& best_pin_loc_coords,
                      const std::vector<frRect>& guides,
-                     const frCoord layer_change_penalty)
+                     const frCoord layer_change_penalty,
+                     const RouterConfiguration* router_cfg)
 {
   int closest_guide_idx = 0;
   int dist = 0;
@@ -217,6 +218,9 @@ int findClosestGuide(const Point3D& best_pin_loc_coords,
     dist = odb::manhattanDistance(guide.getBBox(), best_pin_loc_coords);
     dist += abs(guide.getLayerNum() - best_pin_loc_coords.z())
             * layer_change_penalty;
+    if (guide.getLayerNum() < router_cfg->BOTTOM_ROUTING_LAYER) {
+      dist += 1e9;
+    }
     if (dist < min_dist) {
       min_dist = dist;
       closest_guide_idx = guide_idx;
@@ -349,41 +353,6 @@ void fillGuidesUpToZ(const Point3D& best_pin_loc_coords,
                         best_pin_loc_coords.x() + gcell_half_size_horz,
                         best_pin_loc_coords.y() + gcell_half_size_vert,
                         curr_z,
-                        net);
-  }
-}
-/**
- * @brief Connects the guides with the best pin shape location (on the 2D
- * plane only)
- *
- * The function creates a patch guide that connects the closest guide to
- * best_pin_loc_coords (without consideration to different layers)
- *
- * @param guide_pt The center of the gcell on the guide that is closest to
- * best_pin_loc_coords
- * @param best_pin_loc_coords The gcell center point of the chosen pin shape
- * @param gcell_half_size_horz Half the horizontal size of the gcell
- * @param gcell_half_size_vert Half the vertical size of the gcell
- */
-void connectGuidesWithBestPinLoc(const Point3D& guide_pt,
-                                 const odb::Point& best_pin_loc_coords,
-                                 const frCoord gcell_half_size_horz,
-                                 const frCoord gcell_half_size_vert,
-                                 frNet* net,
-                                 std::vector<frRect>& guides)
-{
-  if (guide_pt.x() != best_pin_loc_coords.x()
-      || guide_pt.y() != best_pin_loc_coords.y()) {
-    const odb::Point pl = {std::min(best_pin_loc_coords.x(), guide_pt.x()),
-                           std::min(best_pin_loc_coords.y(), guide_pt.y())};
-    const odb::Point ph = {std::max(best_pin_loc_coords.x(), guide_pt.x()),
-                           std::max(best_pin_loc_coords.y(), guide_pt.y())};
-
-    guides.emplace_back(pl.x() - gcell_half_size_horz,
-                        pl.y() - gcell_half_size_vert,
-                        ph.x() + gcell_half_size_horz,
-                        ph.y() + gcell_half_size_vert,
-                        guide_pt.z(),
                         net);
   }
 }
@@ -949,6 +918,43 @@ void GuideProcessor::buildGCellPatterns()
   }
 }
 
+void GuideProcessor::connectGuidesWithBestPinLoc(
+    Point3D& guide_pt,
+    const odb::Point& best_pin_loc_coords,
+    const frCoord gcell_half_size_horz,
+    const frCoord gcell_half_size_vert,
+    frNet* net,
+    std::vector<frRect>& guides)
+{
+  if (guide_pt.x() != best_pin_loc_coords.x()
+      || guide_pt.y() != best_pin_loc_coords.y()) {
+    const odb::Point pl = {std::min(best_pin_loc_coords.x(), guide_pt.x()),
+                           std::min(best_pin_loc_coords.y(), guide_pt.y())};
+    const odb::Point ph = {std::max(best_pin_loc_coords.x(), guide_pt.x()),
+                           std::max(best_pin_loc_coords.y(), guide_pt.y())};
+    bool is_horizontal = pl.x() != ph.x();
+    bool is_vertical = pl.y() != ph.y();
+    frLayerNum layer_num = guide_pt.z();
+    if (is_horizontal ^ is_vertical) {
+      if ((is_vertical && design_->isHorizontalLayer(layer_num))
+          || (is_horizontal && design_->isVerticalLayer(layer_num))) {
+        if (layer_num + 2 <= router_cfg_->TOP_ROUTING_LAYER) {
+          layer_num += 2;
+        } else {
+          layer_num -= 2;
+        }
+      }
+    }
+    guide_pt.setZ(layer_num);
+    guides.emplace_back(pl.x() - gcell_half_size_horz,
+                        pl.y() - gcell_half_size_vert,
+                        ph.x() + gcell_half_size_horz,
+                        ph.y() + gcell_half_size_vert,
+                        layer_num,
+                        net);
+  }
+}
+
 void GuideProcessor::patchGuides_helper(frNet* net,
                                         std::vector<frRect>& guides,
                                         const Point3D& best_pin_loc_idx,
@@ -1012,7 +1018,7 @@ void GuideProcessor::patchGuides(frNet* net,
   // get the guide that is closest to the gCell
   // TODO: test passing layer_change_penalty = gcell size
   const int closest_guide_idx
-      = findClosestGuide(best_pin_loc_coords, guides, 1);
+      = findClosestGuide(best_pin_loc_coords, guides, 1, router_cfg_);
 
   patchGuides_helper(
       net, guides, best_pin_loc_idx, best_pin_loc_coords, closest_guide_idx);
