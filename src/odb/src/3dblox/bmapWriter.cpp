@@ -32,8 +32,21 @@ void BmapWriter::writeFile(const std::string& filename,
       line.append(cell_type);
       line.append(" ");
       line.append(std::to_string(point.getX() / u));
+      line.append(" ");
       line.append(std::to_string(point.getY() / u));
-      line.append(" - -\n");
+      line.append(" ");
+      if (bump->getBTerm() != nullptr) {
+        line.append(bump->getBTerm()->getName());
+      } else {
+        line.append("-");
+      }
+      line.append(" ");
+      if (bump->getNet() != nullptr) {
+        line.append(bump->getNet()->getName());
+      } else {
+        line.append("-");
+      }
+      line.append("\n");
       bmap_file << line;
     }
     bmap_file.close();
