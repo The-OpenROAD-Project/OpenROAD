@@ -12,6 +12,10 @@ namespace odb {
 class dbDatabase;
 }  // namespace odb
 
+namespace sta {
+class dbSta;
+}  // namespace sta
+
 namespace stt {
 class SteinerTreeBuilder;
 }  // namespace stt
@@ -58,7 +62,8 @@ class CUGR
  public:
   CUGR(odb::dbDatabase* db,
        utl::Logger* log,
-       stt::SteinerTreeBuilder* stt_builder);
+       stt::SteinerTreeBuilder* stt_builder,
+       sta::dbSta* sta);
   ~CUGR();
   void init(int min_routing_layer, int max_routing_layer);
   void route();
@@ -83,6 +88,7 @@ class CUGR
   odb::dbDatabase* db_;
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
+  sta::dbSta* sta_;
 
   Constants constants_;
 

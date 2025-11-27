@@ -101,7 +101,7 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
 {
   fastroute_
       = new FastRouteCore(db_, logger_, callback_handler_, stt_builder_, sta_);
-  cugr_ = new CUGR(db_, logger_, stt_builder_);
+  cugr_ = new CUGR(db_, logger_, stt_builder_, sta_);
 }
 
 void GlobalRouter::initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
