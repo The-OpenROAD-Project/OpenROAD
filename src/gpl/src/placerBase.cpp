@@ -880,8 +880,8 @@ void PlacerBaseCommon::init()
         // Cap scaling, avoid later excessive routability inflation
         if (scale > 1.2) {
           scale = 1.2;
-        } else if (scale < 0.8) {
-          scale = 0.8;
+        } else if (scale < 0.95) {
+          scale = 0.95;
         }
         inst.extendSizeByScale(scale, log_);
       }
