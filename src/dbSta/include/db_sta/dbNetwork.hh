@@ -146,6 +146,12 @@ class dbNetwork : public ConcreteNetwork
   Pin* dbToSta(dbBTerm* bterm) const;
   Term* dbToStaTerm(dbBTerm* bterm) const;
   Pin* dbToSta(dbITerm* iterm) const;
+
+  ///
+  /// Convert dbObject* to Pin* if it's a terminal type (dbITerm or dbBTerm or
+  /// dbModITerm)
+  ///
+  Pin* dbToSta(dbObject* term_obj) const;
   Instance* dbToSta(dbInst* inst) const;
   Net* dbToSta(dbNet* net) const;
   const Net* dbToSta(const dbNet* net) const;

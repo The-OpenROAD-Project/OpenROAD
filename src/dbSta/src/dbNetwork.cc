@@ -3307,6 +3307,26 @@ Pin* dbNetwork::dbToSta(dbITerm* iterm) const
       + static_cast<std::uintptr_t>(PinPointerTags::kDbIterm));
 }
 
+Pin* dbNetwork::dbToSta(dbObject* term_obj) const
+{
+  if (term_obj == nullptr) {
+    return nullptr;
+  }
+
+  dbObjectType type = term_obj->getObjectType();
+  if (type == odb::dbITermObj) {
+    return dbToSta(static_cast<dbITerm*>(term_obj));
+  }
+  if (type == odb::dbBTermObj) {
+    return dbToSta(static_cast<dbBTerm*>(term_obj));
+  }
+  if (type == odb::dbModITermObj) {
+    return dbToSta(static_cast<dbModITerm*>(term_obj));
+  }
+
+  return nullptr;
+}
+
 Term* dbNetwork::dbToStaTerm(dbBTerm* bterm) const
 {
   return reinterpret_cast<Term*>(bterm);
