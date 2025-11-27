@@ -659,6 +659,15 @@ class Resizer : public dbStaState, public dbNetworkObserver
                        const char* name,
                        Instance* parent,
                        const Point& loc);
+  odb::dbInst* insertBufferAfterDriver(Net* net,
+                                       LibertyCell* buffer_cell,
+                                       const Point& loc,
+                                       const char* name_suffix);
+  odb::dbInst* insertBufferBeforeLoads(Net* net,
+                                       const std::set<odb::dbObject*>& loads,
+                                       LibertyCell* buffer_cell,
+                                       const Point& loc,
+                                       const char* name_suffix);
   void setLocation(dbInst* db_inst, const Point& pt);
   LibertyCell* findTargetCell(LibertyCell* cell,
                               float load_cap,

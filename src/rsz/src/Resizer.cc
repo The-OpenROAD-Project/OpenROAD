@@ -4773,6 +4773,114 @@ Instance* Resizer::makeBuffer(LibertyCell* cell,
   return inst;
 }
 
+odb::dbInst* Resizer::insertBufferAfterDriver(Net* net,
+                                              LibertyCell* buffer_cell,
+                                              const Point& loc,
+                                              const char* name_suffix)
+{
+  // Find the driver of the current net
+  const sta::Pin* drvr_pin = nullptr;
+  sta::PinSet* drivers = network_->drivers(net);
+  if (drivers && !drivers->empty()) {
+    drvr_pin = *drivers->begin();
+  }
+
+  // jk: change error code
+  if (!drvr_pin) {
+    logger_->error(
+        RSZ, 3000, "No driver found for net {}", network_->pathName(net));
+    return nullptr;
+  }
+
+  odb::dbObject* drvr_obj = db_network_->staToDb(drvr_pin);
+  if (!drvr_obj || drvr_obj->getObjectType() != odb::dbObjectType::dbITermObj
+      || drvr_obj->getObjectType() != odb::dbObjectType::dbBTermObj) {
+    logger_->error(RSZ,
+                   3001,
+                   "Driver pin {} is not an ITerm or BTerm",
+                   network_->pathName(drvr_pin));
+    return nullptr;
+  }
+
+  odb::dbMaster* buffer_master
+      = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
+
+  odb::dbNet* db_net = db_network_->staToDb(net);
+  Point buffer_loc = loc;
+
+  odb::dbInst* buffer_inst
+      = db_net->insertBufferAfterDriver(drvr_obj,
+                                        buffer_master,
+                                        &buffer_loc,
+                                        name_suffix,
+                                        odb::dbNameUniquifyType::IF_NEEDED);
+
+  if (!buffer_inst) {
+    logger_->error(RSZ,
+                   3002,
+                   "Failed to insert buffer after driver for net {}",
+                   network_->pathName(net));
+    return nullptr;
+  }
+
+  return buffer_inst;
+}
+
+odb::dbInst* Resizer::insertBufferBeforeLoads(
+    Net* net,
+    const std::set<odb::dbObject*>& loads,
+    LibertyCell* buffer_cell,
+    const Point& loc,
+    const char* name_suffix)
+{
+  if (loads.empty()) {
+    logger_->warn(RSZ, 3003, "insertBufferBeforeLoads: no loads specified");
+    return nullptr;
+  }
+
+  odb::dbMaster* buffer_master
+      = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
+
+  if (!buffer_master) {
+    logger_->error(RSZ,
+                   3004,
+                   "Cannot find dbMaster for buffer cell {}",
+                   buffer_cell->name());
+    return nullptr;
+  }
+
+  odb::dbNet* db_net = db_network_->staToDb(net);
+  if (!db_net) {
+    logger_->error(RSZ,
+                   3005,
+                   "Cannot convert STA net {} to dbNet",
+                   network_->pathName(net));
+    return nullptr;
+  }
+
+  Point buffer_loc = loc;
+
+  // Make a non-const copy for dbNet API
+  std::set<odb::dbObject*> loads_copy = loads;
+
+  odb::dbInst* buffer_inst
+      = db_net->insertBufferBeforeLoads(loads_copy,
+                                        buffer_master,
+                                        &buffer_loc,
+                                        name_suffix,
+                                        odb::dbNameUniquifyType::IF_NEEDED);
+
+  if (!buffer_inst) {
+    logger_->error(RSZ,
+                   3006,
+                   "Failed to insert buffer before loads for net {}",
+                   network_->pathName(net));
+    return nullptr;
+  }
+
+  return buffer_inst;
+}
+
 // If underscore is true, an underscore will be used to concat unique instance
 // index. This is added to cover the existing usage.
 Instance* Resizer::makeInstance(LibertyCell* cell,

@@ -1765,170 +1765,129 @@ std::vector<Instance*> Rebuffer::collectImportedTreeBufferInstances(
 
 // Martin (2024-04-18): This is copied over from original RepairSetup
 // buffering mostly unchanged and is ripe for clean-up/rewrite later.
-int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
-                               Net* net,  // output of buffer.
-                               int level,
-                               Instance* parent_in,
-                               odb::dbITerm* mod_net_drvr,
-                               odb::dbModNet* mod_net_in,
-                               const char* instance_base_name)
+// Jaehyun (2025-11-27): Re-implemented using insertBufferBeforeLoads to
+// simplify hierarchy handling and avoid direct use of hierarchicalConnect.
+int Rebuffer::exportBufferTree(
+    const BufferedNetPtr& choice,
+    Net* net,  // Original Driver Net (flat)
+    int level,
+    Instance* parent_in,
+    odb::dbITerm* mod_net_drvr,  // jk: Unused in new impl
+    odb::dbModNet* mod_net_in,   // jk: Unused in new impl
+    const char* instance_base_name)
 {
-  // HFix, pass in the parent
-  Instance* parent = parent_in;
-  switch (choice->type()) {
-    case BufferedNetType::buffer: {
-      // HFix: make net in hierarchy
-      Net* net2 = db_network_->makeNet(parent);
+  // Recursive lambda to traverse the Bnet tree Bottom-Up.
+  // It returns the set of dbObjects (ITerms or BTerms) that the current node
+  // drives.
+  std::function<void(const BufferedNetPtr&, std::set<odb::dbObject*>&, int&)>
+      insertBuffers;
 
-      LibertyCell* buffer_cell = choice->bufferCell();
-      Instance* buffer = resizer_->makeBuffer(
-          buffer_cell, instance_base_name, parent, choice->location());
-
-      resizer_->level_drvr_vertices_valid_ = false;
-      LibertyPort *input, *output;
-      buffer_cell->bufferPorts(input, output);
-      debugPrint(logger_,
-                 RSZ,
-                 "rebuffer",
-                 3,
-                 "{:{}s}insert {} -> {} ({}) -> {}",
-                 "",
-                 level,
-                 sdc_network_->pathName(net),
-                 sdc_network_->pathName(buffer),
-                 buffer_cell->name(),
-                 sdc_network_->pathName(net2));
-
-      odb::dbNet* db_ip_net = nullptr;
-      odb::dbModNet* db_ip_modnet = nullptr;
-      db_network_->staToDb(net, db_ip_net, db_ip_modnet);
-
-      //      sta_->connectPin(buffer, input, net);  //rebuffer
-      sta_->connectPin(
-          buffer, input, db_network_->dbToSta(db_ip_net));  // rebuffer
-      sta_->connectPin(buffer, output, net2);
-
-      Pin* buffer_ip_pin = nullptr;
-      Pin* buffer_op_pin = nullptr;
-
-      resizer_->getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-      odb::dbITerm* buffer_op_iterm = nullptr;
-      odb::dbBTerm* buffer_op_bterm = nullptr;
-      odb::dbModITerm* buffer_op_moditerm = nullptr;
-      db_network_->staToDb(
-          buffer_op_pin, buffer_op_iterm, buffer_op_bterm, buffer_op_moditerm);
-
-      // we never expect to see mod_net_in
-      assert(!(mod_net_drvr && mod_net_in));
-
-      int buffer_count = exportBufferTree(choice->ref(),
-                                          net2,
-                                          level + 1,
-                                          parent,
-                                          buffer_op_iterm,
-                                          mod_net_in,
-                                          instance_base_name);
-      return buffer_count + 1;
+  insertBuffers = [&](const BufferedNetPtr& node,
+                      std::set<odb::dbObject*>& current_loads,
+                      int& count) {
+    if (!node) {
+      return;
     }
 
-    case BufferedNetType::wire:
-      debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}wire", "", level);
-      return exportBufferTree(choice->ref(),
-                              net,
-                              level + 1,
-                              parent,
-                              mod_net_drvr,
-                              mod_net_in,
-                              instance_base_name);
-
-    case BufferedNetType::junction: {
-      debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}junction", "", level);
-      return exportBufferTree(choice->ref(),
-                              net,
-                              level + 1,
-                              parent,
-                              mod_net_drvr,
-                              mod_net_in,
-                              instance_base_name)
-             + exportBufferTree(choice->ref2(),
-                                net,
-                                level + 1,
-                                parent,
-                                mod_net_drvr,
-                                mod_net_in,
-                                instance_base_name);
-    }
-
-    case BufferedNetType::load: {
-      const Pin* load_pin = choice->loadPin();
-
-      if (resizer_->dontTouch(load_pin)) {
-        debugPrint(logger_,
-                   RSZ,
-                   "rebuffer",
-                   3,
-                   "{:{}s}connect load: skipped on {} due to dont touch",
-                   "",
-                   level,
-                   sdc_network_->pathName(load_pin));
-        return 0;
+    switch (node->type()) {
+      case BufferedNetType::wire: {
+        insertBuffers(node->ref(), current_loads, count);
+        break;
       }
 
-      Pin* mod_net_drvr_pin = db_network_->dbToSta(mod_net_drvr);
-      dbNet* db_load_net = db_network_->flatNet(load_pin);
-      odb::dbNet* db_net = db_network_->flatNet(mod_net_drvr_pin);
-      if ((Net*) db_load_net != net) {
-        odb::dbITerm* load_iterm = nullptr;
-        odb::dbBTerm* load_bterm = nullptr;
-        odb::dbModITerm* load_moditerm = nullptr;
-        db_network_->staToDb(load_pin, load_iterm, load_bterm, load_moditerm);
+      case BufferedNetType::junction: {
+        insertBuffers(node->ref(), current_loads, count);
+        insertBuffers(node->ref2(), current_loads, count);
+        break;
+      }
 
-        Instance* load_parent_inst = nullptr;
-        if (load_iterm) {
-          dbInst* load_inst = load_iterm->getInst();
-          if (load_inst) {
-            auto top_module = db_network_->block()->getTopModule();
-            if (load_inst->getModule() == top_module) {
-              load_parent_inst = db_network_->topInstance();
-            } else {
-              load_parent_inst
-                  = (Instance*) (load_inst->getModule()->getModInst());
-            }
+      case BufferedNetType::load: {
+        const Pin* load_pin = node->loadPin();
+
+        // Skip DontTouch pins
+        if (resizer_->dontTouch(load_pin)) {
+          debugPrint(logger_,
+                     RSZ,
+                     "rebuffer",
+                     3,
+                     "exportBufferTree: skipped load {} due to dont touch",
+                     sdc_network_->pathName(load_pin));
+          return;
+        }
+
+        // Collect physical terminal
+        odb::dbObject* load_term = db_network_->staToDb(load_pin);
+        if (load_term) {
+          odb::dbObjectType type = load_term->getObjectType();
+          if (type == odb::dbITermObj || type == odb::dbBTermObj) {
+            current_loads.insert(load_term);
+          }
+        }
+        break;
+      }
+
+      case BufferedNetType::buffer: {
+        // 1. Collect loads from children first (Bottom-Up)
+        std::set<odb::dbObject*> child_loads;
+        insertBuffers(node->ref(), child_loads, count);
+
+        if (child_loads.empty()) {
+          return;
+        }
+
+        // 2. Insert Buffer
+        // Note: We always pass 'net' (the original driver net) because
+        // as we build bottom-up, the 'input' of the subtree we just processed
+        // is attached to the original driver net until this buffer intercepts
+        // it.
+        LibertyCell* buffer_cell = node->bufferCell();
+
+        odb::dbInst* buf_inst
+            = resizer_->insertBufferBeforeLoads(net,
+                                                child_loads,
+                                                buffer_cell,
+                                                node->location(),
+                                                instance_base_name);
+
+        if (buf_inst) {
+          count++;
+          resizer_->level_drvr_vertices_valid_ = false;
+
+          LibertyPort *input, *output;
+          buffer_cell->bufferPorts(input, output);
+
+          // 3. The input of this new buffer becomes the load for the parent
+          // node
+          odb::dbITerm* input_term = buf_inst->findITerm(input->name());
+          if (input_term) {
+            current_loads.insert(input_term);
           }
 
           debugPrint(logger_,
                      RSZ,
                      "rebuffer",
                      3,
-                     "{:{}s}connect load {} to {} modnet {}",
-                     "",
-                     level,
-                     sdc_network_->pathName(load_pin),
-                     sdc_network_->pathName((Net*) db_load_net),
-                     (mod_net_in ? mod_net_in->getName() : " none "));
-
-          // disconnect removes everything.
-          sta_->disconnectPin(const_cast<Pin*>(load_pin));
-
-          if (load_parent_inst && parent_in
-              && db_network_->hasHierarchicalElements()
-              && load_parent_inst != parent_in) {
-            // make the flat connection
-            db_network_->connectPin(const_cast<Pin*>(load_pin), net);
-            db_network_->hierarchicalConnect(mod_net_drvr, load_iterm);
-          } else if (mod_net_in) {  // input hierarchical net
-            db_network_->connectPin(
-                const_cast<Pin*>(load_pin), (Net*) db_net, (Net*) mod_net_in);
-          } else {  // flat case
-            load_iterm->connect(db_net);
-          }
-          // sta_->connectPin(load_inst, load_port, net);
+                     "insert {} ({}) -> {} loads",
+                     buf_inst->getName(),
+                     buffer_cell->name(),
+                     child_loads.size());
+        } else {
+          // If insertion failed, pass the child loads up so connectivity isn't
+          // lost
+          current_loads.insert(child_loads.begin(), child_loads.end());
         }
-        return 0;
+        break;
       }
     }
-  }
-  return 0;
+  };
+
+  int inserted_count = 0;
+  std::set<odb::dbObject*> top_loads;
+
+  // Start the bottom-up traversal
+  insertBuffers(choice, top_loads, inserted_count);
+
+  return inserted_count;
 }
 
 void Rebuffer::printProgress(int iteration,
