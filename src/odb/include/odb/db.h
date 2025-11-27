@@ -2560,6 +2560,7 @@ class dbNet : public dbObject
   /// Load-pin buffering.
   /// - Inserts a buffer on the driving net of the load pin (iterm/bterm).
   /// - Returns the newly created buffer instance.
+  /// - If loc is null, the buffer is inserted at the load pin.
   ///
   dbInst* insertBufferBeforeLoad(
       dbObject* load_input_term,
@@ -2573,6 +2574,7 @@ class dbNet : public dbObject
   /// Driver-pin buffering.
   /// - Inserts a buffer on the net driven by the driver pin (iterm/bterm).
   /// - Returns the newly created buffer instance.
+  /// - If loc is null, the buffer is inserted at the driver pin.
   ///
   dbInst* insertBufferAfterDriver(
       dbObject* drvr_output_term,
@@ -2586,8 +2588,13 @@ class dbNet : public dbObject
   /// Partial-loads buffering.
   /// - Inserts a buffer on the net driving the specified load pins.
   /// - Returns the newly created buffer instance.
+  /// - If loc is null, the buffer is inserted at the center of the load pins.
   /// - Note that the new buffer drives the specified load pins only.
-  /// - It does not drive other unspecified loads driven by the same net.
+  ///   It does not drive other unspecified loads driven by the same net.
+  /// - loads_on_same_db_net: Flag indicating if loads are on the same dbNet.
+  ///   If false, the loads can be on different dbNets. This should be carefully
+  ///   used because it may break the function of the design if the loads
+  ///   contain an irrelevant load.
   ///
   dbInst* insertBufferBeforeLoads(
       std::set<dbObject*>& load_pins,
@@ -2595,7 +2602,8 @@ class dbNet : public dbObject
       const Point* loc = nullptr,
       const char* base_name = nullptr,
       const dbNameUniquifyType& uniquify
-      = dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+      = dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
+      bool loads_on_same_db_net = true);
 
  private:
   dbInst* insertBufferCommon(dbObject* term_obj,

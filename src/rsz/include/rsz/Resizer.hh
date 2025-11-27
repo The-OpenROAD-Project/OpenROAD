@@ -659,15 +659,26 @@ class Resizer : public dbStaState, public dbNetworkObserver
                        const char* name,
                        Instance* parent,
                        const Point& loc);
+
+  ///
+  /// Wrapper for dbNet::insertBufferBeforeLoad().
+  /// - This accepts STA objects instead of db objects.
+  ///
   odb::dbInst* insertBufferAfterDriver(Net* net,
                                        LibertyCell* buffer_cell,
                                        const Point& loc,
                                        const char* name_suffix);
+
+  ///
+  /// Wrapper for dbNet::insertBufferBeforeLoads().
+  /// - This accepts STA objects instead of db objects.
+  ///
   odb::dbInst* insertBufferBeforeLoads(Net* net,
                                        const std::set<odb::dbObject*>& loads,
                                        LibertyCell* buffer_cell,
                                        const Point& loc,
-                                       const char* name_suffix);
+                                       const char* name_suffix,
+                                       bool loads_on_same_db_net = true);
   void setLocation(dbInst* db_inst, const Point& pt);
   LibertyCell* findTargetCell(LibertyCell* cell,
                               float load_cap,

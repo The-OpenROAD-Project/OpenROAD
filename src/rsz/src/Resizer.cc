@@ -4831,7 +4831,8 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
     const std::set<odb::dbObject*>& loads,
     LibertyCell* buffer_cell,
     const Point& loc,
-    const char* name_suffix)
+    const char* name_suffix,
+    bool loads_on_same_db_net)
 {
   if (loads.empty()) {
     logger_->warn(RSZ, 3003, "insertBufferBeforeLoads: no loads specified");
@@ -4868,7 +4869,8 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
                                         buffer_master,
                                         &buffer_loc,
                                         name_suffix,
-                                        odb::dbNameUniquifyType::IF_NEEDED);
+                                        odb::dbNameUniquifyType::IF_NEEDED,
+                                        loads_on_same_db_net);
 
   if (!buffer_inst) {
     logger_->error(RSZ,

@@ -3452,7 +3452,8 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
                                        const dbMaster* buffer_master,
                                        const Point* loc,
                                        const char* base_name,
-                                       const dbNameUniquifyType& uniquify)
+                                       const dbNameUniquifyType& uniquify,
+                                       bool loads_on_same_db_net)
 {
   if (load_pins.empty() || buffer_master == nullptr) {
     return nullptr;
@@ -3474,7 +3475,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
       dbITerm* load = static_cast<dbITerm*>(load_obj);
 
       // Check connectivity
-      if (load->getNet() != this) {
+      if (loads_on_same_db_net && load->getNet() != this) {
         getImpl()->getLogger()->error(utl::ODB,
                                       1020,
                                       "insertBufferBeforeLoads: Load pin {} is "
@@ -3498,7 +3499,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
       dbBTerm* load = static_cast<dbBTerm*>(load_obj);
 
       // Check connectivity
-      if (load->getNet() != this) {
+      if (loads_on_same_db_net && load->getNet() != this) {
         getImpl()->getLogger()->error(utl::ODB,
                                       999,
                                       "insertBufferBeforeLoads: Load pin {} is "

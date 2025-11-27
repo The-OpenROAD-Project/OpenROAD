@@ -1776,9 +1776,31 @@ int Rebuffer::exportBufferTree(
     odb::dbModNet* mod_net_in,   // jk: Unused in new impl
     const char* instance_base_name)
 {
-  // Recursive lambda to traverse the Bnet tree Bottom-Up.
-  // It returns the set of dbObjects (ITerms or BTerms) that the current node
-  // drives.
+  // Algorithm: Bottom-Up Buffer Tree Insertion
+  //
+  // This recursive lambda traverses the BufferedNet tree in a bottom-up manner
+  // to insert buffers while handling hierarchical connections properly.
+  //
+  // The algorithm works as follows:
+  // 1. For leaf nodes (load), collect the physical terminal (dbITerm/dbBTerm)
+  //    and return it as a load to the parent.
+  // 2. For wire/junction nodes, recursively process children and propagate
+  //    their loads upward.
+  // 3. For buffer nodes:
+  //    a) First, recursively collect all loads from the subtree (child_loads)
+  //    b) Insert a buffer that drives those child_loads using
+  //       insertBufferBeforeLoads()
+  //    c) Return the buffer's input terminal as a load to the parent,
+  //       effectively "intercepting" the connection
+  //
+  // The key insight is that we build from leaves to root, so when we insert
+  // a buffer, all its downstream loads are already identified. The buffer's
+  // input then becomes a load for the next level up, creating a chain of
+  // buffers and hierarchical connections as specified by the BufferedNet tree.
+  //
+  // Return: A set of dbObjects (dbITerm, dbBTerm, or dbModITerm) representing
+  //         the terminals that this subtree drives (i.e., the "loads" seen
+  //         from the parent's perspective).
   std::function<void(const BufferedNetPtr&, std::set<odb::dbObject*>&, int&)>
       insertBuffers;
 
@@ -1817,12 +1839,8 @@ int Rebuffer::exportBufferTree(
 
         // Collect physical terminal
         odb::dbObject* load_term = db_network_->staToDb(load_pin);
-        if (load_term) {
-          odb::dbObjectType type = load_term->getObjectType();
-          if (type == odb::dbITermObj || type == odb::dbBTermObj) {
-            current_loads.insert(load_term);
-          }
-        }
+        assert(load_term != nullptr);
+        current_loads.insert(load_term);
         break;
       }
 
@@ -1842,12 +1860,15 @@ int Rebuffer::exportBufferTree(
         // it.
         LibertyCell* buffer_cell = node->bufferCell();
 
+        // In this rebuffer logic, target loads can be on different dbNets.
+        // So we pass 'false' to 'loads_on_same_db_net' argument.
         odb::dbInst* buf_inst
             = resizer_->insertBufferBeforeLoads(net,
                                                 child_loads,
                                                 buffer_cell,
                                                 node->location(),
-                                                instance_base_name);
+                                                instance_base_name,
+                                                false /*loads_on_same_db_net*/);
 
         if (buf_inst) {
           count++;
@@ -1871,6 +1892,21 @@ int Rebuffer::exportBufferTree(
                      buf_inst->getName(),
                      buffer_cell->name(),
                      child_loads.size());
+
+          // Print each load pin's full hierarchical name
+          if (logger_->debugCheck(RSZ, "rebuffer", 3)) {
+            for (odb::dbObject* load_obj : child_loads) {
+              const Pin* load_pin = db_network_->dbToSta(load_obj);
+              if (load_pin) {
+                debugPrint(logger_,
+                           RSZ,
+                           "rebuffer",
+                           3,
+                           "  load pin: {}",
+                           sdc_network_->pathName(load_pin));
+              }
+            }
+          }
         } else {
           // If insertion failed, pass the child loads up so connectivity isn't
           // lost
@@ -2255,6 +2291,8 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
       search_->findArrivals(max_level);
     }
 
+    debugPrint(logger_, RSZ, "rebuffer", 2, "-------------------------------");
+
     if (debug) {
       logger_->setDebugLevel(RSZ, "rebuffer", 0);
     }
@@ -2425,6 +2463,8 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
     if (inserted_count > 0) {
       resizer_->level_drvr_vertices_valid_ = false;
     }
+
+    debugPrint(logger_, RSZ, "rebuffer", 2, "-------------------------------");
 
     return inserted_count;
   }
