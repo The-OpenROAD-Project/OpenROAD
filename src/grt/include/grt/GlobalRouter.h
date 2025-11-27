@@ -486,7 +486,7 @@ class GlobalRouter
   std::vector<RoutingTracks> routing_tracks_;
 
   // Flow variables
-  bool is_incremental;
+  bool is_incremental_;
   float adjustment_;
   int layer_for_guide_dimension_;
   int congestion_iterations_{50};

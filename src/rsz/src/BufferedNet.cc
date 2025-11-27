@@ -80,6 +80,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   type_ = BufferedNetType::load;
   location_ = location;
   load_pin_ = load_pin;
+  corner_ = corner;
 
   LibertyPort* load_port = resizer->network()->libertyPort(load_pin);
   if (load_port) {
@@ -105,6 +106,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   layer_ = null_layer;
   ref_ = ref;
   ref2_ = ref2;
+  corner_ = ref->corner();
 
   cap_ = ref->cap() + ref2->cap();
   fanout_ = ref->fanout() + ref2->fanout();
@@ -130,6 +132,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   location_ = location;
   layer_ = layer;
   ref_ = ref;
+  corner_ = corner;
 
   double wire_res, wire_cap;
   wireRC(corner, resizer, estimate_parasitics, wire_res, wire_cap);
@@ -158,6 +161,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   buffer_cell_ = buffer_cell;
   layer_ = null_layer;
   ref_ = ref;
+  corner_ = corner;
 
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);

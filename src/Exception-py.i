@@ -31,7 +31,7 @@
   // This catches std::runtime_error (utl::error) and sta::Exception.
   catch (std::exception &excp) {
     #ifdef BAZEL
-    Logger* logger = Logger::defaultLogger();
+    utl::Logger* logger = utl::Logger::defaultLogger();
     if (logger->debugCheck(utl::ORD, "trace", 1)) {
       std::stringstream trace;
       trace << boost::stacktrace::stacktrace();
@@ -56,7 +56,7 @@
   }
   catch (...) {
     #ifdef BAZEL
-    Logger* logger = Logger::defaultLogger();
+    utl::Logger* logger = utl::Logger::defaultLogger();
     if (logger->debugCheck(utl::ORD, "trace", 1)) {
       std::stringstream trace;
       trace << boost::stacktrace::stacktrace();

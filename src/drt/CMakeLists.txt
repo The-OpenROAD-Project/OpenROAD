@@ -111,7 +111,7 @@ target_link_libraries(drt_lib
   PUBLIC
     stt_lib
     utl_lib
-    dst
+    dst_lib
     Threads::Threads
     OpenMP::OpenMP_CXX
     ${Boost_LIBRARIES}

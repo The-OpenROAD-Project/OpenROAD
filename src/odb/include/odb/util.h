@@ -221,6 +221,8 @@ void set_bterm_top_layer_grid(dbBlock* block,
                               int height,
                               int keepout);
 
+bool dbHasCoreRows(dbDatabase* db);
+
 class WireLengthEvaluator
 {
  public:

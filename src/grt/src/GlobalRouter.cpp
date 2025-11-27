@@ -217,7 +217,7 @@ NetRouteMap GlobalRouter::getPartialRoutes()
 {
   NetRouteMap net_routes;
   // TODO: still need to fix this during incremental grt
-  if (is_incremental) {
+  if (is_incremental_) {
     for (const auto& [db_net, net] : db_net_map_) {
       if (routes_[db_net].empty()) {
         GRoute route;
@@ -304,7 +304,7 @@ void GlobalRouter::globalRoute(bool save_guides,
                                bool end_incremental)
 {
   bool has_routable_nets = false;
-  is_incremental = (start_incremental || end_incremental);
+  is_incremental_ = (start_incremental || end_incremental);
 
   for (auto net : db_->getChip()->getBlock()->getNets()) {
     if (net->getITerms().size() + net->getBTerms().size() > 1) {

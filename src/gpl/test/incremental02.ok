@@ -27,7 +27,6 @@
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0154] Identified 16461 placed instances
 [INFO GPL-0155] Identified 4636 not placed instances
-[INFO GPL-0157] Setting target overflow to 0.2
 [INFO GPL-0005] Execute conjugate gradient initial placement.
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00069966 HPWL: 2618966940
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00074756 HPWL: 1353170173
@@ -58,7 +57,6 @@
 [INFO GPL-0028] Bin count (X, Y):         256 ,    256
 [INFO GPL-0029] Bin size (W * H):       3.905 *  3.505 um
 [INFO GPL-0030] Number of bins:                  65536
-[INFO GPL-0158] Setting nesterov max iterations to 300
 [INFO GPL-0007] Execute nesterov global placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
@@ -95,9 +93,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       290 |   0.2826 |  6.492887e+05 |   +0.53% |  5.87e-09 |      
 [WARNING GPL-1010] GPL reached the maximum number of iterations for nesterov 300. Placement may have failed to converge.
 [INFO GPL-1014] Final placement area: 44590.38 (+0.00%)
-[INFO GPL-0158] Setting nesterov max iterations to 5000
 [INFO GPL-0133] Unlocking all instances
-[INFO GPL-0157] Setting target overflow to 0.1
 [INFO GPL-0007] Execute nesterov global placement.
       310 |   0.4877 |  5.749228e+05 |  -11.45% |  1.12e-08 |      
       320 |   0.4422 |  5.772637e+05 |   +0.41% |  1.49e-08 |      

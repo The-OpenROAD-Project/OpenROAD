@@ -41,6 +41,7 @@ or_integration_tests(
     rdl_route_45_with_2port_bump
     rdl_route_45_with_oct_bump
     rdl_route_assignments
+    rdl_route_assignments_overlapping_iterms
     rdl_route_bump_to_bump_only
     rdl_route_bump_via
     rdl_route_failed
