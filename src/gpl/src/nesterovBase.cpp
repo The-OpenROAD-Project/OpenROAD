@@ -1005,16 +1005,31 @@ std::pair<int, int> BinGrid::getMinMaxIdxY(const Instance* inst) const
 
 ////////////////////////////////////////////////
 // NesterovBaseVars
-void NesterovBaseVars::reset()
+NesterovBaseVars::NesterovBaseVars(const PlaceOptions& options)
+    : isSetBinCnt(options.binGridCntX != 0 && options.binGridCntY != 0),
+      useUniformTargetDensity(options.uniformTargetDensityMode),
+      targetDensity(options.density),
+      binCntX(isSetBinCnt ? options.binGridCntX : 0),
+      binCntY(isSetBinCnt ? options.binGridCntY : 0),
+      minPhiCoef(options.minPhiCoef),
+      maxPhiCoef(options.maxPhiCoef)
 {
-  *this = NesterovBaseVars();
 }
 
 ////////////////////////////////////////////////
 // NesterovPlaceVars
-void NesterovPlaceVars::reset()
+NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options)
+    : maxNesterovIter(options.nesterovPlaceMaxIter),
+      initDensityPenalty(options.initDensityPenaltyFactor),
+      initWireLengthCoef(options.initWireLengthCoef),
+      targetOverflow(options.overflow),
+      referenceHpwl(options.referenceHpwl),
+      routability_end_overflow(options.routabilityCheckOverflow),
+      keepResizeBelowOverflow(options.keepResizeBelowOverflow),
+      timingDrivenMode(options.timingDrivenMode),
+      routability_driven_mode(options.routabilityDrivenMode),
+      disableRevertIfDiverge(options.disableRevertIfDiverge)
 {
-  *this = NesterovPlaceVars();
 }
 
 ////////////////////////////////////////////////
@@ -1026,10 +1041,9 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
                                        utl::Logger* log,
                                        int num_threads,
                                        const Clusters& clusters)
-    : num_threads_{num_threads}
+    : nbVars_(nbVars), num_threads_{num_threads}
 {
   assert(omp_get_thread_num() == 0);
-  nbVars_ = nbVars;
   pbc_ = std::move(pbc);
   log_ = log;
   delta_area_ = 0;
@@ -1676,8 +1690,8 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
                            std::shared_ptr<PlacerBase> pb,
                            std::shared_ptr<NesterovBaseCommon> nbc,
                            utl::Logger* log)
+    : nbVars_(nbVars)
 {
-  nbVars_ = nbVars;
   pb_ = std::move(pb);
   nbc_ = std::move(nbc);
   log_ = log;
@@ -2452,19 +2466,18 @@ float NesterovBase::getStepLength(
     const std::vector<FloatPoint>& curSLPCoordi_,
     const std::vector<FloatPoint>& curSLPSumGrads_)
 {
-  float coordiDistance = getDistance(prevSLPCoordi_, curSLPCoordi_);
-  float gradDistance = getDistance(prevSLPSumGrads_, curSLPSumGrads_);
-
+  coordiDistance_ = getDistance(prevSLPCoordi_, curSLPCoordi_);
+  gradDistance_ = getDistance(prevSLPSumGrads_, curSLPSumGrads_);
   debugPrint(log_,
              GPL,
              "getStepLength",
              1,
-             "CoordinateDistance: {:g}",
-             coordiDistance);
-  debugPrint(
-      log_, GPL, "getStepLength", 1, "GradientDistance: {:g}", gradDistance);
+             "CoordinateDis {:g}, GradientDist {:g}, StepLength: {:g}",
+             coordiDistance_,
+             gradDistance_,
+             stepLength_);
 
-  return coordiDistance / gradDistance;
+  return coordiDistance_ / gradDistance_;
 }
 
 // to execute following function,
@@ -3137,6 +3150,13 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
   int64_t area_change = newCellArea - prevCellArea;
   delta_area_ += area_change;
+  if (area_change > 0) {
+    gcell->setAreaChangeType(GCell::GCellChange::kUpsize);
+  } else if (area_change < 0) {
+    gcell->setAreaChangeType(GCell::GCellChange::kDownsize);
+  } else {
+    gcell->setAreaChangeType(GCell::GCellChange::kResizeNoChange);
+  }
 }
 
 void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
@@ -3269,6 +3289,7 @@ size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
                         * static_cast<int64_t>(gcell_ptr->dy());
   delta_area_ += area_change;
   new_gcells_count_++;
+  gcell_ptr->setAreaChangeType(GCell::GCellChange::kNewInstance);
   return gCellStor_.size() - 1;
 }
 

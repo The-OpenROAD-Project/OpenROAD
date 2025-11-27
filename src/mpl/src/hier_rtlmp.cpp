@@ -30,6 +30,7 @@
 #include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "odb/util.h"
 #include "par/PartitionMgr.h"
@@ -155,11 +156,6 @@ void HierRTLMP::setClusterSizeRatioPerLevel(float coarsening_ratio)
 void HierRTLMP::setLargeNetThreshold(int large_net_threshold)
 {
   tree_->large_net_threshold = large_net_threshold;
-}
-
-void HierRTLMP::setSignatureNetThreshold(int signature_net_threshold)
-{
-  tree_->min_net_count_for_connection = signature_net_threshold;
 }
 
 void HierRTLMP::setTargetUtil(float target_util)
@@ -2169,7 +2165,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
     // Large arrays need more steps to properly converge.
     if (large_macro_cluster) {
-      perturbations_per_step *= 2;
+      perturbations_per_step = num_perturb_per_step_;
     }
   }
 

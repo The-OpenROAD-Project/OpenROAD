@@ -1,3 +1,16 @@
+source $::env(SCRIPTS_DIR)/util.tcl
+
+if { [string match "*openroad" $::env(OPENROAD_EXE)] } {
+  puts "Reading LEF files for OpenROAD"
+  log_cmd read_lef $::env(TECH_LEF)
+  log_cmd read_lef $::env(SC_LEF)
+  if { [env_var_exists_and_non_empty ADDITIONAL_LEFS] } {
+    foreach lef $::env(ADDITIONAL_LEFS) {
+      log_cmd read_lef $lef
+    }
+  }
+}
+
 source $::env(LOAD_POWER_TCL)
 
 # OpenSTA reports reg2reg paths inside macros,
@@ -66,8 +79,8 @@ if { [llength $no_vcd_activity] > 0 } {
 }
 
 set ces {}
-for { set x 0 } { $x < 8 } { incr x } {
-  for { set y 0 } { $y < 8 } { incr y } {
+for { set x 0 } { $x < $::env(ARRAY_COLS) } { incr x } {
+  for { set y 0 } { $y < $::env(ARRAY_ROWS) } { incr y } {
     lappend ces ces_${x}_${y}
   }
 }
@@ -91,7 +104,7 @@ puts "Total power from VCD: $total_power_vcd"
 puts "Total power from user activity: $total_power_user_activity"
 
 if { $total_power_vcd == $total_power_user_activity } {
-  puts "Error: settting user power activity had no effect, expected some loss in accuracy"
+  puts "Error: setting user power activity had no effect, expected some loss in accuracy"
   exit 1
 }
 

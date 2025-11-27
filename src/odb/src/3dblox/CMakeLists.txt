@@ -8,7 +8,10 @@ add_library(3dblox
   bmapParser.cpp
   dbvParser.cpp
   dbxParser.cpp
+  baseWriter.cpp
+  dbvWriter.cpp
   3dblox.cpp
+  checker.cpp
 )
 
 target_link_libraries(3dblox

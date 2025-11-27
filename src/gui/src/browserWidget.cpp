@@ -109,6 +109,7 @@ BrowserWidget::BrowserWidget(
       display_controls_(controls),
       display_controls_warning_(
           new QPushButton("Module view is not enabled", this)),
+      include_physical_cells_(new QCheckBox("Include physical", this)),
       modulesettings_(modulesettings),
       view_(new QTreeView(this)),
       model_(new QStandardItemModel(this)),
@@ -119,13 +120,19 @@ BrowserWidget::BrowserWidget(
 {
   setObjectName("hierarchy_viewer");  // for settings
 
+  QHBoxLayout* setting_layout = new QHBoxLayout;
+  setting_layout->addWidget(display_controls_warning_);
+  setting_layout->addStretch();
+  setting_layout->addWidget(include_physical_cells_);
+
   QWidget* widget = new QWidget(this);
   QVBoxLayout* layout = new QVBoxLayout;
   widget->setLayout(layout);
-  layout->addWidget(display_controls_warning_);
+  layout->addLayout(setting_layout);
   layout->addWidget(view_);
 
   display_controls_warning_->setStyleSheet("color: red;");
+  include_physical_cells_->setCheckState(Qt::Checked);
 
   model_->setHorizontalHeaderLabels({"Instance",
                                      "Module",
@@ -185,6 +192,11 @@ BrowserWidget::BrowserWidget(
           &QPushButton::pressed,
           this,
           &BrowserWidget::enableModuleView);
+
+  connect(include_physical_cells_,
+          &QCheckBox::stateChanged,
+          this,
+          &BrowserWidget::markModelModified);
 }
 
 void BrowserWidget::displayControlsUpdated()
@@ -270,6 +282,9 @@ void BrowserWidget::readSettings(QSettings* settings)
   settings->beginGroup(objectName());
   view_->header()->restoreState(
       settings->value("headers", view_->header()->saveState()).toByteArray());
+  include_physical_cells_->setCheckState(
+      settings->value("include_physical_cells").toBool() ? Qt::Checked
+                                                         : Qt::Unchecked);
   settings->endGroup();
 }
 
@@ -277,6 +292,8 @@ void BrowserWidget::writeSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
   settings->setValue("headers", view_->header()->saveState());
+  settings->setValue("include_physical_cells",
+                     include_physical_cells_->isChecked());
   settings->endGroup();
 }
 
@@ -423,6 +440,41 @@ BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module,
 
   std::vector<odb::dbInst*> insts;
   for (auto* inst : module->getInsts()) {
+    if (!include_physical_cells_->isChecked()) {
+      switch (sta_->getInstanceType(inst)) {
+        case sta::dbSta::InstType::ENDCAP:
+        case sta::dbSta::InstType::FILL:
+        case sta::dbSta::InstType::TAPCELL:
+        case sta::dbSta::InstType::STD_PHYSICAL:
+        case sta::dbSta::InstType::BUMP:
+        case sta::dbSta::InstType::COVER:
+        case sta::dbSta::InstType::ANTENNA:
+          continue;
+        case sta::dbSta::InstType::BLOCK:
+        case sta::dbSta::InstType::PAD:
+        case sta::dbSta::InstType::PAD_INPUT:
+        case sta::dbSta::InstType::PAD_OUTPUT:
+        case sta::dbSta::InstType::PAD_INOUT:
+        case sta::dbSta::InstType::PAD_POWER:
+        case sta::dbSta::InstType::PAD_SPACER:
+        case sta::dbSta::InstType::PAD_AREAIO:
+        case sta::dbSta::InstType::TIE:
+        case sta::dbSta::InstType::LEF_OTHER:
+        case sta::dbSta::InstType::STD_CELL:
+        case sta::dbSta::InstType::STD_INV:
+        case sta::dbSta::InstType::STD_BUF:
+        case sta::dbSta::InstType::STD_BUF_CLK_TREE:
+        case sta::dbSta::InstType::STD_INV_CLK_TREE:
+        case sta::dbSta::InstType::STD_BUF_TIMING_REPAIR:
+        case sta::dbSta::InstType::STD_INV_TIMING_REPAIR:
+        case sta::dbSta::InstType::STD_CLOCK_GATE:
+        case sta::dbSta::InstType::STD_LEVEL_SHIFT:
+        case sta::dbSta::InstType::STD_SEQUENTIAL:
+        case sta::dbSta::InstType::STD_COMBINATIONAL:
+        case sta::dbSta::InstType::STD_OTHER:
+          break;
+      }
+    }
     insts.push_back(inst);
   }
   stats += addInstanceItems(insts, "Leaf instances", parent);

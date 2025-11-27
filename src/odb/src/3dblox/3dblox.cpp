@@ -6,22 +6,29 @@
 #include <cstddef>
 #include <filesystem>
 #include <map>
+#include <set>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "bmapParser.h"
+#include "checker.h"
 #include "dbvParser.h"
+#include "dbvWriter.h"
 #include "dbxParser.h"
 #include "objects.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/defin.h"
+#include "odb/defout.h"
 #include "odb/geom.h"
 #include "odb/lefin.h"
+#include "odb/lefout.h"
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
-
+#include "utl/ScopedTemporaryFile.h"
 namespace odb {
 
 static std::map<std::string, std::string> dup_orient_map
@@ -81,6 +88,100 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   }
   calculateSize(db_->getChip());
   db_->triggerPostRead3Dbx(chip);
+  check();
+}
+
+void ThreeDBlox::check()
+{
+  Checker checker(logger_);
+  checker.check(db_->getChip());
+}
+
+namespace {
+std::unordered_set<odb::dbTech*> getUsedTechs(odb::dbChip* chip)
+{
+  std::unordered_set<odb::dbTech*> techs;
+  for (auto inst : chip->getChipInsts()) {
+    if (inst->getMasterChip()->getTech() != nullptr) {
+      techs.insert(inst->getMasterChip()->getTech());
+    }
+  }
+  return techs;
+}
+std::unordered_set<odb::dbLib*> getUsedLibs(odb::dbChip* chip)
+{
+  std::unordered_set<odb::dbLib*> libs;
+  for (auto inst : chip->getChipInsts()) {
+    auto master_chip = inst->getMasterChip();
+    if (master_chip->getBlock() != nullptr) {
+      for (auto inst : master_chip->getBlock()->getInsts()) {
+        libs.insert(inst->getMaster()->getLib());
+      }
+    }
+  }
+  return libs;
+}
+std::string getResultsDirectoryPath(const std::string& file_path)
+{
+  std::string current_dir_path;
+  auto path = std::filesystem::path(file_path);
+  if (path.has_parent_path()) {
+    current_dir_path = path.parent_path().string() + "/";
+  }
+  return current_dir_path;
+}
+}  // namespace
+void ThreeDBlox::writeDbv(const std::string& dbv_file, odb::dbChip* chip)
+{
+  if (chip == nullptr) {
+    return;
+  }
+  ///////////Results Directory Path ///////////
+  std::string current_dir_path = getResultsDirectoryPath(dbv_file);
+  ////////////////////////////////////////////
+
+  for (auto inst : chip->getChipInsts()) {
+    auto master_chip = inst->getMasterChip();
+    if (master_chip->getChipType() == odb::dbChip::ChipType::HIER) {
+      writeDbx(current_dir_path + master_chip->getName() + ".3dbx",
+               master_chip);
+    }
+  }
+  // write used techs
+  for (auto tech : getUsedTechs(chip)) {
+    if (written_techs_.find(tech) != written_techs_.end()) {
+      continue;
+    }
+    written_techs_.insert(tech);
+    std::string tech_file_path = current_dir_path + tech->getName() + ".lef";
+    utl::OutStreamHandler stream_handler(tech_file_path.c_str());
+    odb::lefout lef_writer(logger_, stream_handler.getStream());
+    lef_writer.writeTech(tech);
+  }
+  // write used libs
+  for (auto lib : getUsedLibs(chip)) {
+    if (written_libs_.find(lib) != written_libs_.end()) {
+      continue;
+    }
+    written_libs_.insert(lib);
+    std::string lib_file_path = current_dir_path + lib->getName() + "_lib.lef";
+    utl::OutStreamHandler stream_handler(lib_file_path.c_str());
+    odb::lefout lef_writer(logger_, stream_handler.getStream());
+    lef_writer.writeLib(lib);
+  }
+
+  DbvWriter writer(logger_, db_);
+  writer.writeChiplet(dbv_file, chip);
+}
+
+void ThreeDBlox::writeDbx(const std::string& dbx_file, odb::dbChip* chip)
+{
+  if (chip == nullptr) {
+    return;
+  }
+  // TODO: implement
+  std::string current_dir_path = getResultsDirectoryPath(dbx_file);
+  writeDbv(current_dir_path + chip->getName() + ".3dbv", chip);
 }
 
 void ThreeDBlox::calculateSize(dbChip* chip)
@@ -125,11 +226,13 @@ dbChip::ChipType getChipType(const std::string& type, utl::Logger* logger)
   logger->error(
       utl::ODB, 527, "3DBV Parser Error: Invalid chip type: {}", type);
 }
+
 std::string getFileName(const std::string& tech_file_path)
 {
   std::filesystem::path tech_file_path_fs(tech_file_path);
   return tech_file_path_fs.stem().string();
 }
+
 void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 {
   dbTech* tech = nullptr;
@@ -222,6 +325,7 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     createRegion(region, chip);
   }
 }
+
 dbChipRegion::Side getChipRegionSide(const std::string& side,
                                      utl::Logger* logger)
 {
@@ -331,6 +435,7 @@ dbChip* ThreeDBlox::createDesignTopChiplet(const DesignDef& design)
   db_->setTopChip(chip);
   return chip;
 }
+
 void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
 {
   auto chip = db_->findChip(chip_inst.reference.c_str());
@@ -444,4 +549,141 @@ void ThreeDBlox::createConnection(const Connection& connection)
                                       bottom_region);
   conn->setThickness(connection.thickness * db_->getDbuPerMicron());
 }
+
+void ThreeDBlox::readBMap(const std::string& bmap_file)
+{
+  dbBlock* block = db_->getChip()->getBlock();
+
+  BmapParser parser(logger_);
+  BumpMapData data = parser.parseFile(bmap_file);
+  std::vector<odb::dbInst*> bumps;
+  bumps.reserve(data.entries.size());
+  for (const auto& entry : data.entries) {
+    bumps.push_back(createBump(entry, block));
+  }
+
+  struct BPinInfo
+  {
+    dbTechLayer* layer = nullptr;
+    odb::Rect rect;
+  };
+
+  // Populate where the bpins should be made
+  std::map<odb::dbMaster*, BPinInfo> bpininfo;
+  for (dbInst* inst : bumps) {
+    dbMaster* master = inst->getMaster();
+    if (bpininfo.find(master) != bpininfo.end()) {
+      continue;
+    }
+
+    odb::dbTechLayer* max_layer = nullptr;
+    std::set<odb::Rect> top_shapes;
+
+    for (dbMTerm* mterm : master->getMTerms()) {
+      for (dbMPin* mpin : mterm->getMPins()) {
+        for (dbBox* geom : mpin->getGeometry()) {
+          auto* layer = geom->getTechLayer();
+          if (layer == nullptr) {
+            continue;
+          }
+          if (max_layer == nullptr) {
+            max_layer = layer;
+            top_shapes.insert(geom->getBox());
+          } else if (max_layer->getRoutingLevel() <= layer->getRoutingLevel()) {
+            if (max_layer->getRoutingLevel() < layer->getRoutingLevel()) {
+              top_shapes.clear();
+            }
+            max_layer = layer;
+            top_shapes.insert(geom->getBox());
+          }
+        }
+      }
+    }
+
+    if (max_layer != nullptr) {
+      odb::Rect master_box;
+      master->getPlacementBoundary(master_box);
+      const odb::Point center = master_box.center();
+      const odb::Rect* top_shape_ptr = nullptr;
+      for (const odb::Rect& shape : top_shapes) {
+        if (shape.intersects(center)) {
+          top_shape_ptr = &shape;
+        }
+      }
+
+      if (top_shape_ptr == nullptr) {
+        top_shape_ptr = &(*top_shapes.begin());
+      }
+
+      bpininfo.emplace(master, BPinInfo{max_layer, *top_shape_ptr});
+    }
+  }
+
+  // create bpins
+  for (dbInst* inst : bumps) {
+    auto masterbpin = bpininfo.find(inst->getMaster());
+    if (masterbpin == bpininfo.end()) {
+      continue;
+    }
+
+    const BPinInfo& pin_info = masterbpin->second;
+
+    const dbTransform xform = inst->getTransform();
+    for (dbITerm* iterm : inst->getITerms()) {
+      dbNet* net = iterm->getNet();
+      if (net == nullptr) {
+        continue;
+      }
+      dbBTerm* bterm = net->get1stBTerm();
+      dbBPin* pin = dbBPin::create(bterm);
+      Rect shape = pin_info.rect;
+      xform.apply(shape);
+      dbBox::create(pin,
+                    pin_info.layer,
+                    shape.xMin(),
+                    shape.yMin(),
+                    shape.xMax(),
+                    shape.yMax());
+      pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+      break;
+    }
+  }
+}
+
+dbInst* ThreeDBlox::createBump(const BumpMapEntry& entry, dbBlock* block)
+{
+  const int dbus = db_->getDbuPerMicron();
+  dbInst* inst = block->findInst(entry.bump_inst_name.c_str());
+  if (inst == nullptr) {
+    // create inst
+    dbMaster* master = db_->findMaster(entry.bump_cell_type.c_str());
+    if (master == nullptr) {
+      logger_->error(utl::ODB,
+                     538,
+                     "3DBV Parser Error: Bump cell type {} not found",
+                     entry.bump_cell_type);
+    }
+    inst = dbInst::create(block, master, entry.bump_inst_name.c_str());
+  }
+  inst->setOrigin(entry.x * dbus, entry.y * dbus);
+  inst->setPlacementStatus(dbPlacementStatus::FIRM);
+
+  // Net entry doesn't make sense
+  if (entry.net_name != "-") {
+    dbNet* net = block->findNet(entry.net_name.c_str());
+    if (net == nullptr) {
+      logger_->error(utl::ODB,
+                     539,
+                     "3DBV Parser Error: Bump net {} not found",
+                     entry.net_name);
+    }
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      iterm->connect(net);
+    }
+  }
+  // Port already on the net, so skip
+
+  return inst;
+}
+
 }  // namespace odb

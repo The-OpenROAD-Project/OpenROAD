@@ -3,7 +3,6 @@
 
 from openroad import Design, Tech
 import helpers
-import gpl_aux
 
 bazel_working_dir = "/_main/src/gpl/test/"
 helpers.if_bazel_change_working_dir_to(bazel_working_dir)
@@ -26,9 +25,12 @@ design.evalTclString("read_sdc convergence01.sdc")
 
 design.evalTclString("source asap7/setRC.tcl")
 
-gpl_aux.global_placement(
-    design, density=0.5, timing_driven=True, pad_left=2, pad_right=2
-)
+options = helpers.PlaceOptions()
+options.padLeft = 2
+options.padRight = 2
+options.density = 0.5
+options.timingDrivenMode = True
+design.getReplace().doPlace(1, options)
 
 def_file = helpers.make_result_file("convergence01.def")
 design.writeDef(def_file)

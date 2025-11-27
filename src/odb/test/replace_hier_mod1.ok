@@ -136,7 +136,8 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0019] Utilization:                     0.125 %
 [INFO GPL-0020] Standard cells area:            59.850 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0132] Locked 19 instances
+[INFO GPL-0154] Identified 19 placed instances
+[INFO GPL-0155] Identified 2 not placed instances
 [INFO GPL-0005] Execute conjugate gradient initial placement.
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000006 HPWL: 2671580
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000006 HPWL: 280697
@@ -189,7 +190,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0016
 [INFO GPL-1009]     - For 50% usage of free space: 0.0025
 [INFO GPL-1014] Final placement area: 59.85 (+0.00%)
-[INFO GPL-0133] Unlocked instances
+[INFO GPL-0133] Unlocking all instances
 [INFO GPL-0007] Execute nesterov global placement.
 [INFO GPL-1014] Final placement area: 59.85 (+0.00%)
 Placement Analysis
@@ -207,8 +208,8 @@ Cell type report:                       Count       Area
   Total                                     2       1.06
 Net u1z
  Pin capacitance: 5.265-6.142
- Wire capacitance: 0.000-0.030
- Total capacitance: 5.265-6.172
+ Wire capacitance: 0.000
+ Total capacitance: 5.265-6.142
  Number of drivers: 1
  Number of loads: 4
  Number of pins: 5
@@ -291,7 +292,8 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0019] Utilization:                     0.126 %
 [INFO GPL-0020] Standard cells area:            60.382 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0132] Locked 19 instances
+[INFO GPL-0154] Identified 19 placed instances
+[INFO GPL-0155] Identified 2 not placed instances
 [INFO GPL-0005] Execute conjugate gradient initial placement.
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000006 HPWL: 2635900
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000008 HPWL: 255081
@@ -323,7 +325,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0016
 [INFO GPL-1009]     - For 50% usage of free space: 0.0025
 [INFO GPL-1014] Final placement area: 60.38 (+0.00%)
-[INFO GPL-0133] Unlocked instances
+[INFO GPL-0133] Unlocking all instances
 [INFO GPL-0007] Execute nesterov global placement.
 [INFO GPL-1014] Final placement area: 60.38 (+0.00%)
 Placement Analysis
@@ -341,8 +343,8 @@ Cell type report:                       Count       Area
   Total                                     2       1.60
 Net u1z
  Pin capacitance: 4.624-5.406
- Wire capacitance: 1.656-1.751
- Total capacitance: 6.280-7.157
+ Wire capacitance: 0.000
+ Total capacitance: 4.624-5.406
  Number of drivers: 1
  Number of loads: 4
  Number of pins: 5
@@ -425,7 +427,8 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0019] Utilization:                     0.125 %
 [INFO GPL-0020] Standard cells area:            59.850 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0132] Locked 19 instances
+[INFO GPL-0154] Identified 19 placed instances
+[INFO GPL-0155] Identified 2 not placed instances
 [INFO GPL-0005] Execute conjugate gradient initial placement.
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000004 HPWL: 2635880
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000012 HPWL: 239523
@@ -457,7 +460,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0016
 [INFO GPL-1009]     - For 50% usage of free space: 0.0025
 [INFO GPL-1014] Final placement area: 59.85 (+0.00%)
-[INFO GPL-0133] Unlocked instances
+[INFO GPL-0133] Unlocking all instances
 [INFO GPL-0007] Execute nesterov global placement.
 [INFO GPL-1014] Final placement area: 59.85 (+0.00%)
 Placement Analysis
@@ -475,8 +478,8 @@ Cell type report:                       Count       Area
   Total                                     2       1.06
 Net u1z
  Pin capacitance: 5.265-6.142
- Wire capacitance: 0.000-0.004
- Total capacitance: 5.265-6.146
+ Wire capacitance: 0.000
+ Total capacitance: 5.265-6.142
  Number of drivers: 1
  Number of loads: 4
  Number of pins: 5

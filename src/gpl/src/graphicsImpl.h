@@ -6,11 +6,13 @@
 #include <cstddef>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
-#include "gpl/AbstractGraphics.h"
+#include "AbstractGraphics.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "odb/db.h"
@@ -167,9 +169,10 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   LineSegs mbff_edges_;
   std::vector<odb::dbInst*> mbff_cluster_;
   Mode mode_;
-  gui::Chart* chart_{nullptr};
+  gui::Chart* main_chart_{nullptr};
   gui::Chart* density_chart_{nullptr};
   gui::Chart* phi_chart_{nullptr};
+  gui::Chart* stepLength_chart_{nullptr};
   bool debug_on_ = false;
 
   void initHeatmap();

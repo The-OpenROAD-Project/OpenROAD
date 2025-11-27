@@ -26,6 +26,7 @@
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -525,7 +526,13 @@ void EstimateParasitics::estimateGlobalRouteParasitics(odb::dbNet* net,
   initBlock();
   MakeWireParasitics builder(
       logger_, this, sta_, db_->getTech(), block_, global_router_);
-  builder.estimateParasitics(net, route);
+
+  // Check if we are estimating parasitics after layer assignment
+  if (route.at(0).is3DRoute()) {
+    builder.estimateParasitics(net, route, nullptr);
+  } else {
+    builder.estimateParasitics(net, route);
+  }
 }
 
 void EstimateParasitics::clearParasitics()
