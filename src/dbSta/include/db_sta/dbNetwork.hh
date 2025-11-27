@@ -119,6 +119,7 @@ class dbNetwork : public ConcreteNetwork
                dbITerm*& iterm,
                dbBTerm*& bterm,
                dbModITerm*& moditerm) const;
+  dbObject* staToDb(const Pin* pin) const;
 
   dbNet* staToDb(const Net* net) const;
   void staToDb(const Net* net, dbNet*& dnet, dbModNet*& modnet) const;

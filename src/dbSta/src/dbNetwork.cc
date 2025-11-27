@@ -3056,6 +3056,24 @@ void dbNetwork::staToDb(const Pin* pin,
   }
 }
 
+dbObject* dbNetwork::staToDb(const Pin* pin) const
+{
+  dbITerm* iterm;
+  dbBTerm* bterm;
+  dbModITerm* moditerm;
+  staToDb(pin, iterm, bterm, moditerm);
+  if (iterm) {
+    return iterm;
+  }
+  if (bterm) {
+    return bterm;
+  }
+  if (moditerm) {
+    return moditerm;
+  }
+  return nullptr;
+}
+
 dbBTerm* dbNetwork::staToDb(const Term* term) const
 {
   dbBTerm* bterm = reinterpret_cast<dbBTerm*>(const_cast<Term*>(term));
