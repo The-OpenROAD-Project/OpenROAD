@@ -36,6 +36,7 @@ STAGES = [
     "cts",
     "grt",
     "route",
+    "final",
 ]
 
 [orfs_run(
