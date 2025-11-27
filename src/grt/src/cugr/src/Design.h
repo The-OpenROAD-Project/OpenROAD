@@ -14,6 +14,11 @@ class dbBlock;
 class dbTech;
 }  // namespace odb
 
+namespace sta {
+class dbNetwork;
+class dbSta;
+}  // namespace sta
+
 namespace utl {
 class Logger;
 }  // namespace utl
@@ -27,6 +32,7 @@ class Design
  public:
   Design(odb::dbDatabase* db,
          utl::Logger* logger,
+         sta::dbSta* sta,
          const Constants& constants,
          int min_routing_layer,
          int max_routing_layer);
@@ -69,6 +75,8 @@ class Design
   void readDesignObstructions();
   void computeGrid();
   void setUnitCosts();
+  bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
+  bool isNonLeafClock(odb::dbNet* db_net);
 
   // debug functions
   void printNets() const;
@@ -83,6 +91,7 @@ class Design
   odb::dbBlock* block_;
   odb::dbTech* tech_;
   utl::Logger* logger_;
+  sta::dbSta* sta_;
 
   // For detailed routing
   CostT unit_length_wire_cost_;
