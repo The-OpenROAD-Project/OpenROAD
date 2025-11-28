@@ -138,10 +138,9 @@ ViaRepair::LayerViaTree ViaRepair::collectVias()
 
         auto* tech_via = wire->getTechVia();
         if (tech_via != nullptr) {
-          int x, y;
-          wire->getViaXY(x, y);
+          const odb::Point pt = wire->getViaXY();
           for (const auto& obs : TechViaGenerator::getViaObstructionRects(
-                   logger_, tech_via, x, y)) {
+                   logger_, tech_via, pt)) {
             vias[cut_layer].insert({obs, wire});
           }
         } else {

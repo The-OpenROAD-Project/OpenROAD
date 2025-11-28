@@ -98,8 +98,8 @@ bool _dbBox::operator==(const _dbBox& rhs) const
 
 int _dbBox::equal(const _dbBox& rhs) const
 {
-  Type lhs_type = getType();
-  Type rhs_type = rhs.getType();
+  const Type lhs_type = getType();
+  const Type rhs_type = rhs.getType();
 
   if (lhs_type != rhs_type) {
     return false;
@@ -157,8 +157,8 @@ int _dbBox::equal(const _dbBox& rhs) const
 
 bool _dbBox::operator<(const _dbBox& rhs) const
 {
-  Type lhs_type = getType();
-  Type rhs_type = rhs.getType();
+  const Type lhs_type = getType();
+  const Type rhs_type = rhs.getType();
 
   if (lhs_type < rhs_type) {
     return true;
@@ -233,6 +233,19 @@ bool _dbBox::operator<(const _dbBox& rhs) const
     return false;
   }
   return false;
+}
+
+_dbBox::Type _dbBox::getType() const
+{
+  if (_flags._is_tech_via) {
+    return TECH_VIA;
+  }
+
+  if (_flags._is_block_via) {
+    return BLOCK_VIA;
+  }
+
+  return BOX;
 }
 
 _dbTechLayer* _dbBox::getTechLayer() const
@@ -355,27 +368,23 @@ _dbVia* _dbBox::getBlockVia() const
   return nullptr;
 }
 
-void _dbBox::getViaXY(int& x, int& y) const
+Point _dbBox::getViaXY() const
 {
   switch (getType()) {
     case BLOCK_VIA: {
       dbVia* v = (dbVia*) getBlockVia();
       dbBox* b = v->getBBox();
-      int xmin = b->xMin();
-      int ymin = b->yMin();
-      x = _shape._rect.xMin() - xmin;
-      y = _shape._rect.yMin() - ymin;
-      break;
+      const int xmin = b->xMin();
+      const int ymin = b->yMin();
+      return {_shape._rect.xMin() - xmin, _shape._rect.yMin() - ymin};
     }
 
     case TECH_VIA: {
       dbTechVia* v = (dbTechVia*) getTechVia();
       dbBox* b = v->getBBox();
-      int xmin = b->xMin();
-      int ymin = b->yMin();
-      x = _shape._rect.xMin() - xmin;
-      y = _shape._rect.yMin() - ymin;
-      break;
+      const int xmin = b->xMin();
+      const int ymin = b->yMin();
+      return {_shape._rect.xMin() - xmin, _shape._rect.yMin() - ymin};
     }
 
     default:
@@ -383,7 +392,7 @@ void _dbBox::getViaXY(int& x, int& y) const
   }
 }
 
-void _dbBox::checkMask(uint mask)
+void _dbBox::checkMask(const int mask) const
 {
   if (mask >= 4) {
     getImpl()->getLogger()->error(
@@ -397,77 +406,75 @@ void _dbBox::checkMask(uint mask)
 //
 ////////////////////////////////////////////////////////////////////
 
-int dbBox::xMin()
+int dbBox::xMin() const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
   if (box->_flags._octilinear) {
     return box->_shape._oct.xMin();
   }
   return box->_shape._rect.xMin();
 }
 
-int dbBox::yMin()
+int dbBox::yMin() const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
   if (box->_flags._octilinear) {
     return box->_shape._oct.yMin();
   }
   return box->_shape._rect.yMin();
 }
 
-int dbBox::xMax()
+int dbBox::xMax() const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
   if (box->_flags._octilinear) {
     return box->_shape._oct.xMax();
   }
   return box->_shape._rect.xMax();
 }
 
-int dbBox::yMax()
+int dbBox::yMax() const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
   if (box->_flags._octilinear) {
     return box->_shape._oct.yMax();
   }
   return box->_shape._rect.yMax();
 }
 
-bool dbBox::isVia()
+bool dbBox::isVia() const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
   return box->_flags._via_id != 0;
 }
 
-dbTechVia* dbBox::getTechVia()
+dbTechVia* dbBox::getTechVia() const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
   return (dbTechVia*) box->getTechVia();
 }
 
-dbVia* dbBox::getBlockVia()
+dbVia* dbBox::getBlockVia() const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
   return (dbVia*) box->getBlockVia();
 }
 
-Rect dbBox::getBox()
+Rect dbBox::getBox() const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
   if (box->isOct()) {
-    Oct oct = box->_shape._oct;
+    const Oct oct = box->_shape._oct;
     return Rect(oct.xMin(), oct.yMin(), oct.xMax(), oct.yMax());
   }
   return box->_shape._rect;
 }
 
-void dbBox::getViaBoxes(std::vector<dbShape>& shapes)
+void dbBox::getViaBoxes(std::vector<dbShape>& shapes) const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
 
-  int x = 0;
-  int y = 0;
-  box->getViaXY(x, y);
+  const Point pt = box->getViaXY();
 
   dbSet<dbBox> boxes;
 
@@ -484,23 +491,22 @@ void dbBox::getViaBoxes(std::vector<dbShape>& shapes)
 
   for (itr = boxes.begin(); itr != boxes.end(); ++itr) {
     dbBox* b = *itr;
-    int xmin = b->xMin() + x;
-    int ymin = b->yMin() + y;
-    int xmax = b->xMax() + x;
-    int ymax = b->yMax() + y;
-    Rect r(xmin, ymin, xmax, ymax);
-    dbShape shape(b->getTechLayer(), r);
+    const int xmin = b->xMin() + pt.getX();
+    const int ymin = b->yMin() + pt.getY();
+    const int xmax = b->xMax() + pt.getX();
+    const int ymax = b->yMax() + pt.getY();
+    const Rect r(xmin, ymin, xmax, ymax);
+    const dbShape shape(b->getTechLayer(), r);
     shapes.push_back(shape);
   }
 }
 
-void dbBox::getViaLayerBoxes(dbTechLayer* layer, std::vector<dbShape>& shapes)
+void dbBox::getViaLayerBoxes(dbTechLayer* layer,
+                             std::vector<dbShape>& shapes) const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
 
-  int x = 0;
-  int y = 0;
-  box->getViaXY(x, y);
+  const Point pt = box->getViaXY();
 
   dbSet<dbBox> boxes;
 
@@ -517,10 +523,10 @@ void dbBox::getViaLayerBoxes(dbTechLayer* layer, std::vector<dbShape>& shapes)
   for (dbBox* b : boxes) {
     dbTechLayer* box_layer = b->getTechLayer();
     if (box_layer == layer) {
-      int xmin = b->xMin() + x;
-      int ymin = b->yMin() + y;
-      int xmax = b->xMax() + x;
-      int ymax = b->yMax() + y;
+      const int xmin = b->xMin() + pt.getX();
+      const int ymin = b->yMin() + pt.getY();
+      const int xmax = b->xMax() + pt.getX();
+      const int ymax = b->yMax() + pt.getY();
       Rect r(xmin, ymin, xmax, ymax);
       dbShape shape(box_layer, r);
       shapes.push_back(shape);
@@ -528,30 +534,30 @@ void dbBox::getViaLayerBoxes(dbTechLayer* layer, std::vector<dbShape>& shapes)
   }
 }
 
-int dbBox::getDir()
+int dbBox::getDir() const
 {
   Rect rect = getBox();
   return rect.getDir();
 }
 
-uint dbBox::getDX()
+uint dbBox::getDX() const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
   if (box->_flags._octilinear) {
     return box->_shape._oct.dx();
   }
   return box->_shape._rect.dx();
 }
 
-uint dbBox::getDY()
+uint dbBox::getDY() const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
   if (box->_flags._octilinear) {
     return box->_shape._oct.dy();
   }
   return box->_shape._rect.dy();
 }
-uint dbBox::getWidth(uint dir)
+uint dbBox::getWidth(const uint dir) const
 {
   if (dir == 1) {  // horizontal
     return getDY();
@@ -561,17 +567,17 @@ uint dbBox::getWidth(uint dir)
 
 int dbBox::getDesignRuleWidth() const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
   return box->design_rule_width_;
 }
 
-void dbBox::setDesignRuleWidth(int width)
+void dbBox::setDesignRuleWidth(const int width)
 {
   _dbBox* box = (_dbBox*) this;
   box->design_rule_width_ = width;
 }
 
-uint dbBox::getLength(uint dir)
+uint dbBox::getLength(const uint dir) const
 {
   if (dir == 1) {  // horizontal
     return getDX();
@@ -579,24 +585,15 @@ uint dbBox::getLength(uint dir)
   return getDY();
 }
 
-void dbBox::getViaXY(int& x, int& y)
+Point dbBox::getViaXY() const
 {
-  _dbBox* box = (_dbBox*) this;
-  ZASSERT(box->_flags._is_tech_via || box->_flags._is_block_via);
-  box->getViaXY(x, y);
+  const _dbBox* box = (const _dbBox*) this;
+  return box->getViaXY();
 }
 
-Point dbBox::getViaXY()
+dbObject* dbBox::getBoxOwner() const
 {
-  int x;
-  int y;
-  getViaXY(x, y);
-  return {x, y};
-}
-
-dbObject* dbBox::getBoxOwner()
-{
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
 
   dbObject* owner = getImpl()->getOwner();
 
@@ -671,25 +668,25 @@ dbObject* dbBox::getBoxOwner()
   return nullptr;
 }
 
-dbBoxOwner dbBox::getOwnerType()
+dbBoxOwner dbBox::getOwnerType() const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
   return dbBoxOwner(box->_flags._owner_type);
 }
 
-dbTechLayer* dbBox::getTechLayer()
+dbTechLayer* dbBox::getTechLayer() const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
   return (dbTechLayer*) box->getTechLayer();
 }
 
-uint dbBox::getLayerMask()
+uint dbBox::getLayerMask() const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
   return box->_flags._layer_mask;
 }
 
-void dbBox::setLayerMask(uint mask)
+void dbBox::setLayerMask(const uint mask)
 {
   _dbBox* box = (_dbBox*) this;
   box->checkMask(mask);
@@ -1049,21 +1046,108 @@ dbBox* dbBox::getBox(dbMaster* master_, uint dbid_)
   return (dbBox*) master->_box_tbl->getPtr(dbid_);
 }
 
-bool dbBox::isVisited()
+bool dbBox::isVisited() const
 {
-  _dbBox* box = (_dbBox*) this;
+  const _dbBox* box = (const _dbBox*) this;
   return box->_flags._visited == 1;
 }
-void dbBox::setVisited(bool value)
+void dbBox::setVisited(const bool value)
 {
   _dbBox* box = (_dbBox*) this;
   box->_flags._visited = (value == true) ? 1 : 0;
 }
 
-void _dbBox::collectMemInfo(MemInfo& info)
+void _dbBox::collectMemInfo(MemInfo& info) const
 {
   info.cnt++;
   info.size += sizeof(*this);
+}
+
+_dbBox::_dbBox(_dbDatabase*)
+{
+  _flags._owner_type = dbBoxOwner::UNKNOWN;
+  _flags._is_tech_via = 0;
+  _flags._is_block_via = 0;
+  _flags._layer_id = 0;
+  _flags._layer_mask = 0;
+  _flags._via_id = 0;
+  _flags._visited = 0;
+  _flags._octilinear = false;
+  _owner = 0;
+  design_rule_width_ = -1;
+}
+
+_dbBox::_dbBox(_dbDatabase*, const _dbBox& b)
+    : _flags(b._flags),
+      _owner(b._owner),
+      _next_box(b._next_box),
+      design_rule_width_(b.design_rule_width_)
+{
+  if (b.isOct()) {
+    new (&_shape._oct) Oct();
+    _shape._oct = b._shape._oct;
+  } else {
+    new (&_shape._rect) Rect();
+    _shape._rect = b._shape._rect;
+  }
+}
+
+dbOStream& operator<<(dbOStream& stream, const _dbBox& box)
+{
+  uint* bit_field = (uint*) &box._flags;
+  stream << *bit_field;
+  if (box.isOct()) {
+    stream << box._shape._oct;
+  } else {
+    stream << box._shape._rect;
+  }
+  stream << box._owner;
+  stream << box._next_box;
+  stream << box.design_rule_width_;
+  return stream;
+}
+
+dbIStream& operator>>(dbIStream& stream, _dbBox& box)
+{
+  if (box.getDatabase()->isSchema(db_schema_dbbox_mask)) {
+    uint* bit_field = (uint*) &box._flags;
+    stream >> *bit_field;
+  } else if (box.getDatabase()->isSchema(db_schema_box_layer_bits)) {
+    _dbBoxFlagsWithoutMask old;
+    uint* bit_field = (uint*) &old;
+    stream >> *bit_field;
+    box._flags._owner_type = old._owner_type;
+    box._flags._visited = old._visited;
+    box._flags._octilinear = old._octilinear;
+    box._flags._is_tech_via = old._is_tech_via;
+    box._flags._is_block_via = old._is_block_via;
+    box._flags._layer_id = old._layer_id;
+    box._flags._via_id = old._via_id;
+    box._flags._layer_mask = 0;
+  } else {
+    _dbBoxFlagsBackwardCompatability old;
+    uint* bit_field = (uint*) &old;
+    stream >> *bit_field;
+    box._flags._owner_type = old._owner_type;
+    box._flags._visited = old._visited;
+    box._flags._octilinear = old._octilinear;
+    box._flags._is_tech_via = old._is_tech_via;
+    box._flags._is_block_via = old._is_block_via;
+    box._flags._layer_id = old._layer_id;
+    box._flags._via_id = old._via_id;
+    box._flags._layer_mask = 0;
+  }
+
+  if (box.isOct()) {
+    new (&box._shape._oct) Oct();
+    stream >> box._shape._oct;
+  } else {
+    stream >> box._shape._rect;
+  }
+  stream >> box._owner;
+  stream >> box._next_box;
+  stream >> box.design_rule_width_;
+  return stream;
 }
 
 }  // namespace odb
