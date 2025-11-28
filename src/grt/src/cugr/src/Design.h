@@ -9,8 +9,10 @@
 #include "geo.h"
 
 namespace odb {
-class dbDatabase;
 class dbBlock;
+class dbDatabase;
+class dbITerm;
+class dbNet;
 class dbTech;
 }  // namespace odb
 

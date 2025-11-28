@@ -136,7 +136,8 @@ void Design::readNetlist()
       pin_count++;
     }
 
-    LayerRange layer_range = {min_routing_layer_, max_routing_layer_};
+    LayerRange layer_range
+        = {.min_layer = min_routing_layer_, .max_layer = max_routing_layer_};
     if (isNonLeafClock(db_net)) {
       layer_range.min_layer = block_->getMinLayerForClock() - 1;
       layer_range.max_layer = block_->getMaxLayerForClock() - 1;
