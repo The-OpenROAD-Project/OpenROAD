@@ -100,9 +100,9 @@ cc_library(
     ],
     deps = [
         ":groute",
+        "//:ord",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//:ord",
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/stt",
