@@ -334,9 +334,9 @@ void GlobalConnectDialog::runRule(odb::dbGlobalConnect* gc, bool force)
   QApplication::processEvents();
   int connections = 0;
   if (gc == nullptr) {
-    connections = block_->globalConnect(force);
+    connections = block_->globalConnect(force, true);
   } else {
-    connections = block_->globalConnect(gc, force);
+    connections = block_->globalConnect(gc, force, true);
   }
   QApplication::restoreOverrideCursor();
   emit connectionsMade(connections);

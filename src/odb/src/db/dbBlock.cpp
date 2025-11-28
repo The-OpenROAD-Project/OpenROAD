@@ -3347,18 +3347,18 @@ void dbBlock::destroyNetWires()
   }
 }
 
-int dbBlock::globalConnect(bool force)
+int dbBlock::globalConnect(bool force, bool verbose)
 {
   dbSet<dbGlobalConnect> gcs = getGlobalConnects();
   const std::vector<dbGlobalConnect*> connects(gcs.begin(), gcs.end());
   _dbBlock* dbblock = (_dbBlock*) this;
-  return dbblock->globalConnect(connects, force);
+  return dbblock->globalConnect(connects, force, verbose);
 }
 
-int dbBlock::globalConnect(dbGlobalConnect* gc, bool force)
+int dbBlock::globalConnect(dbGlobalConnect* gc, bool force, bool verbose)
 {
   _dbBlock* dbblock = (_dbBlock*) this;
-  return dbblock->globalConnect({gc}, force);
+  return dbblock->globalConnect({gc}, force, verbose);
 }
 
 void dbBlock::clearGlobalConnect()
@@ -3419,13 +3419,14 @@ int dbBlock::addGlobalConnect(dbRegion* region,
       = odb::dbGlobalConnect::create(net, region, instPattern, pinPattern);
 
   if (gc != nullptr && do_connect) {
-    return globalConnect(gc, false);
+    return globalConnect(gc, false, false);
   }
   return 0;
 }
 
 int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects,
-                            bool force)
+                            bool force,
+                            bool verbose)
 {
   _dbBlock* dbblock = (_dbBlock*) this;
   utl::Logger* logger = dbblock->getImpl()->getLogger();
@@ -3440,6 +3441,7 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects,
   std::vector<_dbGlobalConnect*> region_rules;
 
   std::set<dbITerm*> connected_iterms;
+  std::set<dbITerm*> skipped_iterms;
   // only search for instances once
   std::map<std::string, std::vector<dbInst*>> inst_map;
   std::set<dbInst*> donottouchinsts;
@@ -3473,9 +3475,8 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects,
 
     inst_map[inst_pattern] = insts;
 
-    _dbGlobalConnect* connect_rule = (_dbGlobalConnect*) connect;
     for (dbInst* inst : remove_insts) {
-      if (connect_rule->needsModification(inst)) {
+      if (gc->needsModification(inst)) {
         donottouchinsts.insert(inst);
       }
     }
@@ -3492,14 +3493,25 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects,
   }
 
   for (_dbGlobalConnect* connect : non_region_rules) {
-    const auto connections
+    const auto& [connections, skipped]
         = connect->connect(inst_map[connect->inst_pattern_], force);
     connected_iterms.insert(connections.begin(), connections.end());
+    skipped_iterms.insert(skipped.begin(), skipped.end());
   }
   for (_dbGlobalConnect* connect : region_rules) {
-    const auto connections
+    const auto& [connections, skipped]
         = connect->connect(inst_map[connect->inst_pattern_], force);
     connected_iterms.insert(connections.begin(), connections.end());
+    skipped_iterms.insert(skipped.begin(), skipped.end());
+  }
+
+  if (verbose) {
+    logger->info(utl::ODB,
+                 403,
+                 "{} connections made, {} conflicts skipped{}",
+                 connected_iterms.size(),
+                 skipped_iterms.size(),
+                 skipped_iterms.empty() ? "." : ", use -force to connect.");
   }
 
   return connected_iterms.size();

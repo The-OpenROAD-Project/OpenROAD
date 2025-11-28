@@ -747,8 +747,8 @@ class dbBlock : public dbObject
   /// and helper functions for global connections
   /// on this block.
   ///
-  int globalConnect(bool force);
-  int globalConnect(dbGlobalConnect* gc, bool force);
+  int globalConnect(bool force, bool verbose);
+  int globalConnect(dbGlobalConnect* gc, bool force, bool verbose);
   int addGlobalConnect(dbRegion* region,
                        const char* instPattern,
                        const char* pinPattern,
