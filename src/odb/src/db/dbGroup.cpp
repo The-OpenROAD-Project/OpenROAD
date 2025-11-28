@@ -5,10 +5,13 @@
 #include "dbGroup.h"
 
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 
 #include "dbBlock.h"
 #include "dbBox.h"
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbGroupInstItr.h"
 #include "dbGroupItr.h"
@@ -19,7 +22,10 @@
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "dbVector.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 // User Code Begin Includes
 #include "dbGroupGroundNetItr.h"
 #include "dbGroupPowerNetItr.h"

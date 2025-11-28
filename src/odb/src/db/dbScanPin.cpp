@@ -4,9 +4,11 @@
 // Generator Code Begin Cpp
 #include "dbScanPin.h"
 
+#include <type_traits>
 #include <variant>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbTable.h"

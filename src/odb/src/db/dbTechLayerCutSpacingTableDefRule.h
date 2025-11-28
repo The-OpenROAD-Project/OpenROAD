@@ -7,6 +7,7 @@
 #include <map>
 #include <string>
 #include <tuple>
+#include <utility>
 
 #include "dbCore.h"
 #include "dbVector.h"

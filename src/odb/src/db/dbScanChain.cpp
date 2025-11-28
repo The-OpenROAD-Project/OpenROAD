@@ -5,8 +5,11 @@
 #include "dbScanChain.h"
 
 #include <string>
+#include <string_view>
+#include <variant>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbScanInst.h"
@@ -15,6 +18,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbSet.h"
 namespace odb {
 template class dbTable<_dbScanChain>;

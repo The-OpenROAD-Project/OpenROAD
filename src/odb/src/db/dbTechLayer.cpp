@@ -4,11 +4,17 @@
 // Generator Code Begin Cpp
 #include "dbTechLayer.h"
 
+#include <algorithm>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
+#include <iterator>
+#include <string>
 #include <utility>
 #include <vector>
 
+#include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -32,8 +38,11 @@
 #include "dbTechLayerTwoWiresForbiddenSpcRule.h"
 #include "dbTechLayerWidthTableRule.h"
 #include "dbTechLayerWrongDirSpacingRule.h"
+#include "dbVector.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 // User Code Begin Includes
 #include "dbHashTable.hpp"
 #include "dbTech.h"

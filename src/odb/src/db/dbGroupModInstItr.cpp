@@ -8,6 +8,7 @@
 #include "dbModInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/dbObject.h"
 
 namespace odb {
 

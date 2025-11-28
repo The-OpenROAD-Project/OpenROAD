@@ -4,6 +4,8 @@
 // Generator Code Begin Cpp
 #include "dbScanList.h"
 
+#include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbScanChain.h"
@@ -12,6 +14,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 namespace odb {
 template class dbTable<_dbScanList>;
 
