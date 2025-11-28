@@ -19,6 +19,7 @@
 #include "distributed/frArchive.h"
 #include "dst/Distributed.h"
 #include "dst/JobMessage.h"
+#include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "odb/dbTransform.h"

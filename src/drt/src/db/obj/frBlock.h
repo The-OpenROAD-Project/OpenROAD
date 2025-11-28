@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -297,7 +298,7 @@ class frBlock : public frBlockObject
     std::vector<odb::Point> sol;
     for (auto& x : x_indices) {
       for (auto& y : y_indices) {
-        sol.push_back(odb::Point(x, y));
+        sol.emplace_back(x, y);
       }
     }
     return sol;
