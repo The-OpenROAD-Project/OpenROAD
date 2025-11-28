@@ -3,44 +3,51 @@
 
 #pragma once
 
-#include <functional>
 #include <optional>
 #include <random>
+#include <string>
+#include <vector>
 
 #include "cut/abc_library_factory.h"
-#include "db_sta/dbSta.hh"
 #include "gia.h"
 #include "resynthesis_strategy.h"
-#include "sta/Corner.hh"
+#include "sta/Delay.hh"
+#include "utl/unique_name.h"
+
+namespace rsz {
+class Resizer;
+}  // namespace rsz
+
+namespace sta {
+class dbSta;
+class Corner;
+class Vertex;
+}  // namespace sta
+
+namespace utl {
+class Logger;
+}  // namespace utl
 
 namespace rmp {
 
-using Solution = std::vector<GiaOp>;
 struct SolutionSlack final
 {
-  Solution solution;
-  std::optional<float> worst_slack = std::nullopt;
-  std::string toString() const
-  {
-    std::ostringstream resStream;
-    resStream << '['
-              << (solution.size() > 0 ? std::to_string(solution[0].id) : "");
-    for (int i = 1; i < solution.size(); i++) {
-      resStream << ", " << std::to_string(solution[i].id);
-    }
-    resStream << "], worst slack: ";
-    if (worst_slack) {
-      resStream << *worst_slack;
-    } else {
-      resStream << "not computed";
-    }
-    return resStream.str();
-  }
-  bool operator<(const SolutionSlack& other) const
-  {
-    // Highest slack first
-    return worst_slack > other.worst_slack;
-  }
+  using Type = std::vector<GiaOp>;
+  Type solution_;
+  std::optional<sta::Slack> worst_slack_ = std::nullopt;
+
+  std::string toString() const;
+  bool operator<(const SolutionSlack& other) const;
+  Type RandomNeighbor(const Type& all_ops,
+                      utl::Logger* logger,
+                      std::mt19937& random) const;
+
+  sta::Vertex* Evaluate(const std::vector<sta::Vertex*>& candidate_vertices,
+                        cut::AbcLibrary& abc_library,
+                        sta::Corner* corner,
+                        sta::dbSta* sta,
+                        utl::UniqueName& name_generator,
+                        utl::Logger* logger);
 };
 
 // TODO docs
@@ -77,21 +84,6 @@ class SlackTuningStrategy : public ResynthesisStrategy
       rsz::Resizer* resizer,
       utl::Logger* logger)
       = 0;
-
-  sta::Vertex* EvaluateSlack(
-      SolutionSlack& sol_slack,
-      const std::vector<sta::Vertex*>& candidate_vertices,
-      cut::AbcLibrary& abc_library,
-      sta::Corner* corner,
-      sta::dbSta* sta,
-      utl::UniqueName& name_generator,
-      utl::Logger* logger);
-
-  Solution RandomNeighbor(Solution sol,
-                          const std::vector<GiaOp>& all_ops,
-                          utl::Logger* logger);
-
-  float GetWorstSlack(sta::dbSta* sta, sta::Corner* corner);
 
  protected:
   sta::Corner* corner_;

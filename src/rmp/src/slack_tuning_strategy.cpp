@@ -3,7 +3,24 @@
 
 #include "slack_tuning_strategy.h"
 
+#include <cstddef>
+#include <cstdlib>
+#include <random>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "cut/abc_library_factory.h"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
+#include "gia.h"
+#include "odb/db.h"
+#include "sta/Delay.hh"
+#include "sta/MinMax.hh"
 #include "utils.h"
+#include "utl/Logger.h"
+#include "utl/unique_name.h"
 
 namespace rmp {
 
@@ -13,8 +30,88 @@ constexpr size_t FINAL_RESIZE_ITERS = 1000;
 
 using utl::RMP;
 
-sta::Vertex* SlackTuningStrategy::EvaluateSlack(
-    SolutionSlack& sol_slack,
+std::string SolutionSlack::toString() const
+{
+  if (solution_.empty()) {
+    return "[]";
+  }
+
+  std::ostringstream resStream;
+  resStream << '[';
+  if (!solution_.empty()) {
+    resStream << std::to_string(solution_.front().id);
+    for (int i = 1; i < solution_.size(); i++) {
+      resStream << ", " << std::to_string(solution_[i].id);
+    }
+  }
+  resStream << "], worst slack: ";
+
+  if (worst_slack_) {
+    resStream << *worst_slack_;
+  } else {
+    resStream << "not computed";
+  }
+  return resStream.str();
+}
+
+bool SolutionSlack::operator<(const SolutionSlack& other) const
+{
+  // Highest slack first
+  return worst_slack_ > other.worst_slack_;
+}
+
+SolutionSlack::Type SolutionSlack::RandomNeighbor(
+    const SolutionSlack::Type& all_ops,
+    utl::Logger* logger,
+    std::mt19937& random) const
+{
+  SolutionSlack::Type sol = solution_;
+  enum Move
+  {
+    ADD,
+    REMOVE,
+    SWAP,
+    COUNT
+  };
+  Move move = ADD;
+  if (sol.size() > 1) {
+    move = Move(random() % (COUNT));
+  }
+  switch (move) {
+    case ADD: {
+      debugPrint(logger, RMP, "annealing", 2, "Adding a new GIA operation");
+      size_t i = random() % (sol.size() + 1);
+      size_t j = random() % all_ops.size();
+      sol.insert(sol.begin() + i, all_ops[j]);
+    } break;
+    case REMOVE: {
+      debugPrint(logger, RMP, "annealing", 2, "Removing a GIA operation");
+      size_t i = random() % sol.size();
+      sol.erase(sol.begin() + i);
+    } break;
+    case SWAP: {
+      debugPrint(
+          logger, RMP, "annealing", 2, "Swapping adjacent GIA operations");
+      size_t i = random() % (sol.size() - 1);
+      std::swap(sol[i], sol[i + 1]);
+    } break;
+    case COUNT:
+      // unreachable
+      std::abort();
+  }
+  return sol;
+}
+
+static std::pair<sta::Slack, sta::Vertex*> GetWorstSlack(sta::dbSta* sta,
+                                                         sta::Corner* corner)
+{
+  sta::Slack worst_slack;
+  sta::Vertex* worst_vertex = nullptr;
+  sta->worstSlack(corner, sta::MinMax::max(), worst_slack, worst_vertex);
+  return {worst_slack, worst_vertex};
+}
+
+sta::Vertex* SolutionSlack::Evaluate(
     const std::vector<sta::Vertex*>& candidate_vertices,
     cut::AbcLibrary& abc_library,
     sta::Corner* corner,
@@ -28,69 +125,18 @@ sta::Vertex* SlackTuningStrategy::EvaluateSlack(
   RunGia(sta,
          candidate_vertices,
          abc_library,
-         sol_slack.solution,
+         solution_,
          SEARCH_RESIZE_ITERS,
          name_generator,
          logger);
 
   odb::dbDatabase::endEco(block);
 
-  sta::Vertex* worst_vertex;
-  float worst_slack;
-  sta->worstSlack(corner, sta::MinMax::max(), worst_slack, worst_vertex);
-  sol_slack.worst_slack = worst_slack;
+  auto [worst_slack, worst_vertex] = GetWorstSlack(sta, corner);
+  worst_slack_ = worst_slack;
 
   odb::dbDatabase::undoEco(block);
   return worst_vertex;
-}
-
-float SlackTuningStrategy::GetWorstSlack(sta::dbSta* sta, sta::Corner* corner)
-{
-  float worst_slack;
-  sta::Vertex* worst_vertex_placeholder;
-  sta->worstSlack(
-      corner, sta::MinMax::max(), worst_slack, worst_vertex_placeholder);
-  return worst_slack;
-}
-
-Solution SlackTuningStrategy::RandomNeighbor(Solution sol,
-                                             const std::vector<GiaOp>& all_ops,
-                                             utl::Logger* logger)
-{
-  enum Move
-  {
-    ADD,
-    REMOVE,
-    SWAP,
-    COUNT
-  };
-  Move move = ADD;
-  if (sol.size() > 1) {
-    move = Move(random_() % (COUNT));
-  }
-  switch (move) {
-    case ADD: {
-      debugPrint(logger, RMP, "annealing", 2, "Adding a new GIA operation");
-      size_t i = random_() % (sol.size() + 1);
-      size_t j = random_() % all_ops.size();
-      sol.insert(sol.begin() + i, all_ops[j]);
-    } break;
-    case REMOVE: {
-      debugPrint(logger, RMP, "annealing", 2, "Removing a GIA operation");
-      size_t i = random_() % sol.size();
-      sol.erase(sol.begin() + i);
-    } break;
-    case SWAP: {
-      debugPrint(
-          logger, RMP, "annealing", 2, "Swapping adjacent GIA operations");
-      size_t i = random_() % (sol.size() - 1);
-      std::swap(sol[i], sol[i + 1]);
-    } break;
-    case COUNT:
-      // unreachable
-      std::abort();
-  }
-  return sol;
 }
 
 void SlackTuningStrategy::OptimizeDesign(sta::dbSta* sta,
@@ -110,6 +156,11 @@ void SlackTuningStrategy::OptimizeDesign(sta::dbSta* sta,
                  "All endpoints have slack above threshold, nothing to do.");
     return;
   }
+
+  logger->info(RMP,
+               59,
+               "Resynthesis: starting tuning algorithm, Worst slack is {}",
+               GetWorstSlack(sta, corner_).first);
 
   cut::AbcLibraryFactory factory(logger);
   factory.AddDbSta(sta);
@@ -138,8 +189,10 @@ void SlackTuningStrategy::OptimizeDesign(sta::dbSta* sta,
          FINAL_RESIZE_ITERS,
          name_generator,
          logger);
-  logger->info(
-      RMP, 68, "Resynthesis: Worst slack is {}", GetWorstSlack(sta, corner_));
+  logger->info(RMP,
+               68,
+               "Resynthesis: Worst slack is {}",
+               GetWorstSlack(sta, corner_).first);
 }
 
 }  // namespace rmp

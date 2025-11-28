@@ -168,9 +168,9 @@ sta::define_cmd_args "resynth_genetic" {
 
 proc resynth_genetic { args } {
   sta::parse_key_args "resynth_genetic" args \
-      keys {-corner -iters -seed -pop_size -mut_prob -cross_prob \
-                -tourn_size -tourn_prob -initial_ops -slack_threshold} \
-      flags {}
+    keys {-corner -iters -seed -pop_size -mut_prob -cross_prob \
+              -tourn_size -tourn_prob -initial_ops -slack_threshold} \
+    flags {}
 
   set corner [sta::parse_corner keys]
   if { [info exists keys(-slack_threshold)] } {
