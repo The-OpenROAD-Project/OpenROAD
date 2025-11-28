@@ -87,8 +87,8 @@ wns max -30.92
 tns max -191.30
 -- After --
 
+[INFO RMP-0059] Resynthesis: starting tuning algorithm, Worst slack is -3.0917047e-11
 Derived GENLIB library "asap7sc7p5t_AO_RVT_SS_nldm_211120" with 169 gates.
-[INFO RMP-0062] Resynthesis: starting genetic algorithm, Worst slack is -3.0917047e-11
 [INFO RMP-0065] Resynthesis: Iteration 0 of genetic algorithm
 [INFO RMP-0065] Resynthesis: Iteration 1 of genetic algorithm
 [INFO RMP-0065] Resynthesis: Iteration 2 of genetic algorithm
@@ -136,15 +136,15 @@ Corner: slow
    0.00    0.00   clock network delay (ideal)
  200.00  200.00 v input external delay
    0.00  200.00 v ld (in)
-  38.82  238.82 v cut_279498/Y (OR3x1_ASAP7_75t_R)
-  31.84  270.67 ^ cut_279500/Y (NAND2xp33_ASAP7_75t_R)
-  70.29  340.95 v cut_279501/Y (NOR2x1_ASAP7_75t_R)
+  38.82  238.82 v cut_271716/Y (OR3x1_ASAP7_75t_R)
+  31.84  270.67 ^ cut_271718/Y (NAND2xp33_ASAP7_75t_R)
+  70.29  340.95 v cut_271719/Y (NOR2x1_ASAP7_75t_R)
   93.87  434.83 ^ _13443_/Y (INVx1_ASAP7_75t_R)
  127.76  562.58 ^ _23153_/SN (HAxp5_ASAP7_75t_R)
-  48.27  610.85 v cut_279612/Y (INVx1_ASAP7_75t_R)
-  73.35  684.20 ^ cut_279769/Y (NAND2xp33_ASAP7_75t_R)
-  47.65  731.86 v cut_279782/Y (NAND2xp33_ASAP7_75t_R)
-  32.26  764.11 ^ cut_280201/Y (INVx1_ASAP7_75t_R)
+  48.27  610.85 v cut_271830/Y (INVx1_ASAP7_75t_R)
+  73.35  684.20 ^ cut_271987/Y (NAND2xp33_ASAP7_75t_R)
+  47.65  731.86 v cut_272000/Y (NAND2xp33_ASAP7_75t_R)
+  32.26  764.11 ^ cut_272419/Y (INVx1_ASAP7_75t_R)
   16.51  780.62 v _13793_/Y (AOI21x1_ASAP7_75t_R)
   52.01  832.63 v _13794_/Y (AO32x1_ASAP7_75t_R)
   47.89  880.52 v _13798_/Y (OA211x2_ASAP7_75t_R)

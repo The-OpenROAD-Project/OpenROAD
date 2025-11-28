@@ -4,11 +4,21 @@
 #pragma once
 
 #include <cstddef>
+#include <functional>
+#include <vector>
 
+#include "aig/gia/gia.h"
 #include "cut/abc_library_factory.h"
-#include "db_sta/dbSta.hh"
-#include "utl/Logger.h"
 #include "utl/unique_name.h"
+
+namespace sta {
+class dbSta;
+class Vertex;
+}  // namespace sta
+
+namespace utl {
+class Logger;
+}  // namespace utl
 
 namespace rmp {
 

@@ -89,15 +89,21 @@ class Restructure
     annealing_revert_after_ = revert_after;
   }
   void setAnnealingInitialOps(unsigned ops) { annealing_init_ops_ = ops; }
-  void setGeneticSeed(std::mt19937::result_type seed)
-  {
-    genetic_seed_ = seed;
-  }
+  void setGeneticSeed(std::mt19937::result_type seed) { genetic_seed_ = seed; }
   void setGeneticPopSize(unsigned pop_size) { genetic_pop_size_ = pop_size; }
   void setGeneticMutProb(float mut_prob) { genetic_mut_prob_ = mut_prob; }
-  void setGeneticCrossProb(float cross_prob) { genetic_cross_prob_ = cross_prob; }
-  void setGeneticTournSize(unsigned tourn_size) { genetic_tourn_size_ = tourn_size; }
-  void setGeneticTournProb(float tourn_prob) { genetic_tourn_prob_ = tourn_prob; }
+  void setGeneticCrossProb(float cross_prob)
+  {
+    genetic_cross_prob_ = cross_prob;
+  }
+  void setGeneticTournSize(unsigned tourn_size)
+  {
+    genetic_tourn_size_ = tourn_size;
+  }
+  void setGeneticTournProb(float tourn_prob)
+  {
+    genetic_tourn_prob_ = tourn_prob;
+  }
   void setGeneticIters(unsigned iters) { genetic_iters_ = iters; }
   void setGeneticInitialOps(unsigned ops) { genetic_init_ops_ = ops; }
   void setSlackThreshold(sta::Slack thresh) { slack_threshold_ = thresh; }
