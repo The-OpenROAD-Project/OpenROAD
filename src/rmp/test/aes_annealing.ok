@@ -87,14 +87,15 @@ wns max -30.92
 tns max -191.30
 -- After --
 
+[INFO RMP-0059] Resynthesis: starting tuning algorithm, Worst slack is 3.7464665e-10
 Derived GENLIB library "asap7sc7p5t_AO_RVT_SS_nldm_211120" with 169 gates.
 [INFO RMP-0052] Resynthesis: starting simulated annealing
 [INFO RMP-0053] Initial temperature: 9.711085e-10, worst slack: 3.217278e-10
 [INFO RMP-0054] Iteration: 10, temperature: 6.7977596e-10, best worst slack: 3.3161102e-10
 [INFO RMP-0054] Iteration: 20, temperature: 3.5607314e-10, best worst slack: 3.6308723e-10
 [INFO RMP-0054] Iteration: 30, temperature: 3.2370287e-11, best worst slack: 3.6308723e-10
-[INFO RMP-0055] Resynthesis: End of simulated annealing, applying operations
-[INFO RMP-0056] Resynthesis: Applying ABC operations
+[INFO RMP-0067] Resynthesis: End of slack tuning, applying ABC operations
+[INFO RMP-0068] Resynthesis: Worst slack is 3.6308723e-10
 [-96.474,  -4.095): *** (15)
 [ -4.095,  88.283): *** (13)
 [ 88.283, 180.661): ************************* (124)
