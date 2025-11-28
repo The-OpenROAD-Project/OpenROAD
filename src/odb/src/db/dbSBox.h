@@ -30,52 +30,19 @@ struct _dbSBoxFlags
 class _dbSBox : public _dbBox
 {
  public:
-  // PERSISTANT-MEMBERS
-  _dbSBoxFlags _sflags;
-
   _dbSBox(_dbDatabase*, const _dbSBox& b);
   _dbSBox(_dbDatabase*);
-  ~_dbSBox();
 
   bool operator==(const _dbSBox& rhs) const;
   bool operator!=(const _dbSBox& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbSBox& rhs) const;
   int equal(const _dbSBox& rhs) const;
+
+  // PERSISTANT-MEMBERS
+  _dbSBoxFlags _sflags;
 };
 
-inline _dbSBox::_dbSBox(_dbDatabase* db, const _dbSBox& b)
-    : _dbBox(db, b), _sflags(b._sflags)
-{
-}
-
-inline _dbSBox::_dbSBox(_dbDatabase* db) : _dbBox(db)
-{
-  _sflags._wire_type = dbWireShapeType::COREWIRE;
-  _sflags._direction = 0;
-  _sflags._via_bottom_mask = 0;
-  _sflags._via_cut_mask = 0;
-  _sflags._via_top_mask = 0;
-  _sflags._spare_bits = 0;
-}
-
-inline _dbSBox::~_dbSBox()
-{
-}
-
-inline dbOStream& operator<<(dbOStream& stream, const _dbSBox& box)
-{
-  stream << (_dbBox&) box;
-  uint* bit_field = (uint*) &box._sflags;
-  stream << *bit_field;
-  return stream;
-}
-
-inline dbIStream& operator>>(dbIStream& stream, _dbSBox& box)
-{
-  stream >> (_dbBox&) box;
-  uint* bit_field = (uint*) &box._sflags;
-  stream >> *bit_field;
-  return stream;
-}
+dbOStream& operator<<(dbOStream& stream, const _dbSBox& box);
+dbIStream& operator>>(dbIStream& stream, _dbSBox& box);
 
 }  // namespace odb

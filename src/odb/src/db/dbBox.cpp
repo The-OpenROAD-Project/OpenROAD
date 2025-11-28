@@ -390,6 +390,7 @@ Point _dbBox::getViaXY() const
     default:
       break;
   }
+  return {};
 }
 
 void _dbBox::checkMask(const int mask) const

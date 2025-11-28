@@ -428,37 +428,37 @@ class dbSBox : public dbBox
   ///
   /// Get the shape type of this wire.
   ///
-  dbWireShapeType getWireShapeType();
+  dbWireShapeType getWireShapeType() const;
 
   ///
   /// Return the specified direction of this segment
   ///
-  Direction getDirection();
+  Direction getDirection() const;
 
   ///
   /// Get the swire of this shape
   ///
-  dbSWire* getSWire();
+  dbSWire* getSWire() const;
 
   ///
   /// Get Oct Wire Shape
   ///
-  Oct getOct();
+  Oct getOct() const;
 
   ///
   /// Get via mask for bottom layer of via
   ///
-  uint getViaBottomLayerMask();
+  uint getViaBottomLayerMask() const;
 
   ///
   /// Get via mask for cut layer of via
   ///
-  uint getViaCutLayerMask();
+  uint getViaCutLayerMask() const;
 
   ///
   /// Get via mask for top layer of via
   ///
-  uint getViaTopLayerMask();
+  uint getViaTopLayerMask() const;
 
   ///
   /// Set via masks
@@ -468,7 +468,7 @@ class dbSBox : public dbBox
   ///
   /// Has via mask
   ///
-  bool hasViaLayerMasks();
+  bool hasViaLayerMasks() const;
 
   ///
   /// Create a set of new sboxes from a via array
