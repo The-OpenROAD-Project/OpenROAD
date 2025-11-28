@@ -172,13 +172,12 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
 
   // Insert buffer
   dbMaster* buffer_master = db_network_->staToDb(buffer_cell);
-  dbInst* buffer_inst
-      = db_drvr_net->insertBufferBeforeLoads(load_pins,
-                                             buffer_master,
-                                             &drvr_loc,
-                                             "split",
-                                             odb::dbNameUniquifyType::IF_NEEDED,
-                                             true);
+  dbInst* buffer_inst = db_drvr_net->insertBufferBeforeLoads(
+      load_pins,
+      buffer_master,
+      &drvr_loc,
+      "split",
+      odb::dbNameUniquifyType::IF_NEEDED);
 
   if (buffer_inst) {
     Instance* buffer = db_network_->dbToSta(buffer_inst);
