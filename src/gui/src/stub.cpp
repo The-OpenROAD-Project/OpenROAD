@@ -267,4 +267,12 @@ void Gui::setDisplayControlsVisible(const std::string& name, bool value)
 {
 }
 
+void Gui::clearHighlights(int highlight_group)
+{
+}
+
+void Gui::addNetToHighlightSet(const char* name, int highlight_group)
+{
+}
+
 }  // namespace gui

@@ -26,6 +26,7 @@ class NesterovBaseCommon;
 class NesterovBase;
 class GNet;
 class Die;
+struct PlaceOptions;
 
 // for GGrid
 class Tile
@@ -120,30 +121,27 @@ class TileGrid
   int numRoutingLayers_ = 0;
 };
 
-class RouteBaseVars
+struct RouteBaseVars
 {
- public:
-  bool useRudy;
-  float targetRC;
-  float inflationRatioCoef;
-  float maxInflationRatio;
-  float maxDensity;
-  float ignoreEdgeRatio;
-  float minInflationRatio;
+  RouteBaseVars(const PlaceOptions& options);
+
+  const bool useRudy;
+  const float targetRC;
+  const float inflationRatioCoef;
+  const float maxInflationRatio;
+  const float maxDensity;
+  const float ignoreEdgeRatio;
+  const float minInflationRatio;
 
   // targetRC metric coefficients.
-  float rcK1, rcK2, rcK3, rcK4;
+  const float rcK1, rcK2, rcK3, rcK4;
 
-  int maxInflationIter;
-
-  RouteBaseVars();
-  void reset();
+  const int maxInflationIter;
 };
 
 class RouteBase
 {
  public:
-  RouteBase();
   RouteBase(RouteBaseVars rbVars,
             odb::dbDatabase* db,
             grt::GlobalRouter* grouter,

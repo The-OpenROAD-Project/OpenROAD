@@ -4,6 +4,13 @@ import utl
 import re
 from openroad import Design
 
+if os.environ.get("BAZEL_TEST") == "1":
+    from openroad import PlaceOptions
+else:
+    import gpl
+
+    PlaceOptions = gpl.PlaceOptions
+
 
 def get_runfiles_path_to(path):
     # If we're not in bazel mode assume Ctest deals

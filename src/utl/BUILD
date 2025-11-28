@@ -50,6 +50,7 @@ cc_library(
         "include/utl/exception.h",
         "include/utl/histogram.h",
         "include/utl/mem_stats.h",
+        "include/utl/options.h",
         "include/utl/prometheus/atomic_floating.h",
         "include/utl/prometheus/benchmark.h",
         "include/utl/prometheus/builder.h",
