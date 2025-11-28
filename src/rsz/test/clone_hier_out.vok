@@ -331,17 +331,17 @@ module hi_fanout (clk1,
  wire net335;
  wire net372;
 
- BUF_X8 split372 (.A(clk_to_nand0),
+ BUF_X8 split371 (.A(clk_to_nand0),
     .Z(net372));
- BUF_X8 split335 (.A(clk_to_nand1),
+ BUF_X8 split334 (.A(clk_to_nand1),
     .Z(net335));
- BUF_X8 split300 (.A(clk_to_nand0),
+ BUF_X8 split299 (.A(clk_to_nand0),
     .Z(net300));
- BUF_X4 split299 (.A(clk_to_nand1),
+ BUF_X4 split298 (.A(clk_to_nand1),
     .Z(net299));
- BUF_X8 split174 (.A(clk_to_nand0),
+ BUF_X8 split173 (.A(clk_to_nand0),
     .Z(net174));
- BUF_X8 split172 (.A(clk_to_nand1),
+ BUF_X8 split171 (.A(clk_to_nand1),
     .Z(net172));
  DFF_X2 drvr_1 (.D(data),
     .CK(clk1),
@@ -871,49 +871,49 @@ module submodule (net_o_17,
  wire net335;
  wire net372;
 
- NAND2_X2 clone388 (.A1(ip1),
+ NAND2_X2 clone387 (.A1(ip1),
     .A2(net372),
     .ZN(net_o_17));
- NAND2_X2 clone371 (.A1(ip1),
+ NAND2_X2 clone370 (.A1(ip1),
     .A2(net372),
     .ZN(net_o_16));
- NAND2_X2 clone366 (.A1(net335),
+ NAND2_X2 clone365 (.A1(net335),
     .A2(net372),
     .ZN(net_o_15));
- NAND2_X4 clone334 (.A1(net335),
+ NAND2_X4 clone333 (.A1(net335),
     .A2(net372),
     .ZN(net_o_14));
- NAND2_X2 clone333 (.A1(net335),
+ NAND2_X2 clone332 (.A1(net335),
     .A2(net300),
     .ZN(net_o_13));
- NAND2_X4 clone331 (.A1(net335),
+ NAND2_X4 clone330 (.A1(net335),
     .A2(net300),
     .ZN(net_o_11));
- NAND2_X2 clone298 (.A1(ip1),
+ NAND2_X2 clone297 (.A1(ip1),
     .A2(ip0),
     .ZN(net_o_12));
- NAND2_X2 clone207 (.A1(net300),
+ NAND2_X2 clone206 (.A1(net300),
     .A2(net299),
     .ZN(net_o_10));
- NAND2_X2 clone205 (.A1(ip0),
+ NAND2_X2 clone204 (.A1(ip0),
     .A2(net299),
     .ZN(net_o_9));
- NAND2_X2 clone173 (.A1(net174),
+ NAND2_X2 clone172 (.A1(net174),
     .A2(net172),
     .ZN(net_o_8));
- NAND2_X2 clone171 (.A1(net300),
+ NAND2_X2 clone170 (.A1(net300),
     .A2(net299),
     .ZN(net_o_7));
- NAND2_X4 clone170 (.A1(net174),
+ NAND2_X4 clone169 (.A1(net174),
     .A2(net172),
     .ZN(net_o_6));
- NAND2_X2 clone124 (.A1(net174),
+ NAND2_X2 clone123 (.A1(net174),
     .A2(net172),
     .ZN(net_o_5));
- NAND2_X4 clone122 (.A1(net174),
+ NAND2_X4 clone121 (.A1(net174),
     .A2(net172),
     .ZN(net_o_3));
- NAND2_X2 clone119 (.A1(ip0),
+ NAND2_X2 clone118 (.A1(ip0),
     .A2(ip1),
     .ZN(net_o_4));
  NAND2_X4 clone3 (.A1(net335),

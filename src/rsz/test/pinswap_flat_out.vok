@@ -34,6 +34,6 @@ module td1 (a1,
     .ZN(net1));
  BUF_X8 wire1 (.A(net2),
     .Z(y1));
- BUF_X4 rebuffer1 (.A(net1),
+ BUF_X4 rebuffer (.A(net1),
     .Z(net2));
 endmodule

@@ -49,12 +49,12 @@ module reg1 (clk,
     .Z(u4z));
  BUF_X1 u5 (.A(u4z),
     .Z(u5z));
- BUF_X4 rebuffer1 (.A(net4),
+ BUF_X4 rebuffer (.A(net4),
     .Z(net1));
- BUF_X4 split2 (.A(net1),
+ BUF_X4 split1 (.A(net1),
     .Z(net2));
- BUF_X4 rebuffer3 (.A(net1),
+ BUF_X4 rebuffer2 (.A(net1),
     .Z(net3));
- BUF_X2 rebuffer4 (.A(r1q),
+ BUF_X2 rebuffer3 (.A(r1q),
     .Z(net4));
 endmodule
