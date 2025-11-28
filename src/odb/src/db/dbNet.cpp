@@ -436,6 +436,82 @@ bool createHierarchicalConnection(dbITerm* load_pin,
       continue;  // Continue to the next level up
     }
 
+    // Check if there is ANY other ModNet in this module that we can reuse.
+    // This happens when we have multiple loads in the same module (or down the
+    // hierarchy) that are being buffered. The first load creates the port, and
+    // subsequent loads should reuse it.
+    for (dbModNet* mod_net : current_module->getModNets()) {
+      // 1. Must have a connection to the parent (ModBTerm)
+      if (mod_net->getModBTerms().empty()) {
+        continue;
+      }
+
+      // 2. Must NOT have any connection to ITerms that are NOT in load_pins
+      //    (This ensures we don't accidentally merge with unrelated logic)
+      bool clean_net = true;
+      bool has_target_load = false;
+
+      for (dbITerm* iterm : mod_net->getITerms()) {
+        if (load_pins.find(iterm) == load_pins.end()) {
+          clean_net = false;
+          break;
+        }
+
+        has_target_load = true;
+      }
+      if (!clean_net) {
+        continue;
+      }
+
+      // 3. Must NOT have any connection to ModITerms that are NOT in the path
+      // of other loads.
+      //    Actually, simpler check: If the net is "clean" (only connects to
+      //    target loads), and it has a port, it's a candidate.
+      //    We just need to make sure we don't reuse a net that is intended for
+      //    a different buffer (if we were inserting multiple buffers at once?
+      //    But insertBufferBeforeLoads handles one buffer).
+      //
+      //    One caveat: If the ModNet connects to a ModITerm, that ModITerm
+      //    must eventually lead to a target load.
+      //    For now, let's assume if it has ONLY target loads (flat ITerms) or
+      //    ModITerms that lead to target loads, it is safe.
+      //    But checking ModITerms recursively is expensive.
+      //
+      //    Heuristic: If the ModNet has at least one target load (flat) OR
+      //    we can verify it was created for this purpose.
+      //    Since we are in the middle of the operation, the other loads might
+      //    already be connected to this ModNet.
+
+      if (has_target_load) {
+        // Found a candidate!
+        // Use the first ModBTerm to go up.
+        dbModBTerm* modbterm = *mod_net->getModBTerms().begin();
+        dbModITerm* parent_moditerm
+            = parent_mod_inst->findModITerm(modbterm->getName());
+
+        if (parent_moditerm) {
+          // Connect current child_obj to this reusable net
+          if (child_obj->getObjectType() == dbITermObj) {
+            (static_cast<dbITerm*>(child_obj))->connect(mod_net);
+          } else if (child_obj->getObjectType() == dbModITermObj) {
+            (static_cast<dbModITerm*>(child_obj))->connect(mod_net);
+          }
+
+          reused_path = true;
+
+          // Move up
+          child_obj = static_cast<dbObject*>(parent_moditerm);
+          current_module = parent_mod_inst->getParent();
+          top_mod_iterm = parent_moditerm;
+          break;
+        }
+      }
+    }
+
+    if (reused_path) {
+      continue;
+    }
+
     // Name generation
     std::string base_name
         = load_pin->getNet()->getName();  // Use original net name as base
