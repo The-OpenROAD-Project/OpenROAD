@@ -3,10 +3,13 @@
 
 #include "genetic_strategy.h"
 
-#include <fcntl.h>
-
 #include <algorithm>
+#include <cstddef>
+#include <iterator>
+#include <random>
+#include <ranges>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "boost/container_hash/hash.hpp"
@@ -15,10 +18,7 @@
 #include "db_sta/dbSta.hh"
 #include "gia.h"
 #include "rsz/Resizer.hh"
-#include "sta/Graph.hh"
-#include "sta/MinMax.hh"
-#include "sta/Search.hh"
-#include "utils.h"
+#include "slack_tuning_strategy.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 #include "utl/unique_name.h"
@@ -31,7 +31,7 @@ static void removeDuplicates(std::vector<SolutionSlack>& population,
 {
   struct HashVector final
   {
-    size_t operator()(const Solution& sol) const
+    size_t operator()(const SolutionSlack::Type& sol) const
     {
       size_t res = 0;
       for (const auto& item : sol) {
@@ -43,20 +43,19 @@ static void removeDuplicates(std::vector<SolutionSlack>& population,
     }
   };
 
-  std::unordered_set<Solution, HashVector> taken;
+  std::unordered_set<SolutionSlack::Type, HashVector> taken;
   population.erase(
-      std::remove_if(
-          population.begin(),
-          population.end(),
+      std::ranges::begin(std::ranges::remove_if(
+          population,
           [&taken, logger](const SolutionSlack& s) {
-            if (!taken.insert(s.solution).second) {
+            if (!taken.insert(s.solution_).second) {
               debugPrint(
                   logger, RMP, "genetic", 2, "Removing: " + s.toString());
               return true;
             }
             debugPrint(logger, RMP, "genetic", 2, "Keeping: " + s.toString());
             return false;
-          }),
+          })),
       population.end());
 }
 
@@ -77,25 +76,15 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
              "Generating and evaluating the initial population");
   std::vector<SolutionSlack> population(pop_size_);
   for (auto& ind : population) {
-    ind.solution.reserve(initial_ops_);
+    ind.solution_.reserve(initial_ops_);
     for (size_t i = 0; i < initial_ops_; i++) {
-      ind.solution.push_back(all_ops[random_() % all_ops.size()]);
+      ind.solution_.push_back(all_ops[random_() % all_ops.size()]);
     }
   }
 
-  logger->info(RMP,
-               62,
-               "Resynthesis: starting genetic algorithm, Worst slack is {}",
-               GetWorstSlack(sta, corner_));
-
   for (auto& candidate : population) {
-    EvaluateSlack(candidate,
-                  candidate_vertices,
-                  abc_library,
-                  corner_,
-                  sta,
-                  name_generator,
-                  logger);
+    candidate.Evaluate(
+        candidate_vertices, abc_library, corner_, sta, name_generator, logger);
 
     debugPrint(logger, RMP, "genetic", 1, candidate.toString());
   }
@@ -111,15 +100,15 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
       if (rand1 == rand2) {
         continue;
       }
-      Solution& parent1_sol = population[rand1].solution;
-      Solution& parent2_sol = population[rand2].solution;
-      Solution child_sol(parent1_sol.begin(),
-                         parent1_sol.begin() + parent1_sol.size() / 2);
+      SolutionSlack::Type& parent1_sol = population[rand1].solution_;
+      SolutionSlack::Type& parent2_sol = population[rand2].solution_;
+      SolutionSlack::Type child_sol(
+          parent1_sol.begin(), parent1_sol.begin() + parent1_sol.size() / 2);
       child_sol.insert(child_sol.end(),
                        parent2_sol.begin() + parent2_sol.size() / 2,
                        parent2_sol.end());
       SolutionSlack child_sol_slack;
-      child_sol_slack.solution = std::move(child_sol);
+      child_sol_slack.solution_ = std::move(child_sol);
       population.emplace_back(child_sol_slack);
     }
     // Mutations
@@ -127,26 +116,25 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
     for (unsigned j = 0; j < mut_size; j++) {
       SolutionSlack sol_slack;
       auto rand = random_() % generation_size;
-      sol_slack.solution
-          = RandomNeighbor(population[rand].solution, all_ops, logger);
+      sol_slack.solution_
+          = population[rand].RandomNeighbor(all_ops, logger, random_);
       population.emplace_back(sol_slack);
     }
     removeDuplicates(population, logger);
     // Evaluation
     for (auto& sol_slack : population) {
-      if (sol_slack.worst_slack) {
+      if (sol_slack.worst_slack_) {
         continue;
       }
-      EvaluateSlack(sol_slack,
-                    candidate_vertices,
-                    abc_library,
-                    corner_,
-                    sta,
-                    name_generator,
-                    logger);
+      sol_slack.Evaluate(candidate_vertices,
+                         abc_library,
+                         corner_,
+                         sta,
+                         name_generator,
+                         logger);
     }
     // Selection
-    std::sort(population.begin(), population.end());
+    std::ranges::sort(population, std::less{});
     std::vector<SolutionSlack> newPopulation;
     newPopulation.reserve(pop_size_);
     for (int j = 0; j < pop_size_; j++) {
@@ -154,8 +142,8 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
       std::generate_n(tournament.begin(), tourn_size_, [&]() {
         return random_() % population.size();
       });
-      std::sort(tournament.begin(), tournament.end());
-      tournament.erase(std::unique(tournament.begin(), tournament.end()),
+      std::ranges::sort(tournament);
+      tournament.erase(std::ranges::begin(std::ranges::unique(tournament)),
                        tournament.end());
       std::bernoulli_distribution bern_dist{tourn_prob_};
       for (const auto& candidateId : tournament) {
@@ -173,11 +161,11 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
     }
   }
 
-  auto best_it = std::min_element(population.begin(), population.end());
+  auto best_it = std::ranges::min_element(population, std::less{});
   logger->info(RMP,
                66,
                "Resynthesis: Best result is of individual {}",
                std::distance(population.begin(), best_it));
-  return best_it->solution;
+  return best_it->solution_;
 }
 }  // namespace rmp

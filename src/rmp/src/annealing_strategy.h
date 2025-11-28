@@ -5,14 +5,27 @@
 
 #include <optional>
 #include <random>
+#include <vector>
 
-#include "db_sta/dbSta.hh"
-#include "rsz/Resizer.hh"
+#include "cut/abc_library_factory.h"
+#include "gia.h"
 #include "slack_tuning_strategy.h"
-#include "sta/Corner.hh"
 #include "sta/Delay.hh"
-#include "utl/Logger.h"
 #include "utl/unique_name.h"
+
+namespace rsz {
+class Resizer;
+}  // namespace rsz
+
+namespace sta {
+class dbSta;
+class Corner;
+class Vertex;
+}  // namespace sta
+
+namespace utl {
+class Logger;
+}  // namespace utl
 
 namespace rmp {
 
@@ -27,10 +40,10 @@ class AnnealingStrategy final : public SlackTuningStrategy
                              std::optional<unsigned> revert_after,
                              unsigned initial_ops)
       : SlackTuningStrategy(corner,
-                             slack_threshold,
-                             seed,
-                             iterations,
-                             initial_ops),
+                            slack_threshold,
+                            seed,
+                            iterations,
+                            initial_ops),
         temperature_(temperature),
         revert_after_(revert_after)
   {
