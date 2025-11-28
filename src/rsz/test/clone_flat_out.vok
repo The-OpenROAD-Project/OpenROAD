@@ -785,24 +785,24 @@ module hi_fanout (clk1,
  NAND2_X4 clone3 (.A1(clk_to_nand1),
     .A2(clk_to_nand0),
     .ZN(net3));
- NAND2_X2 clone119 (.A1(clk_to_nand0),
+ NAND2_X2 clone118 (.A1(clk_to_nand0),
     .A2(clk_to_nand1),
     .ZN(net119));
- NAND2_X2 clone122 (.A1(clk_to_nand0),
+ NAND2_X2 clone121 (.A1(clk_to_nand0),
     .A2(net284),
     .ZN(net122));
- NAND2_X2 clone124 (.A1(clk_to_nand0),
+ NAND2_X2 clone123 (.A1(clk_to_nand0),
     .A2(net284),
     .ZN(net124));
- NAND2_X2 clone279 (.A1(clk_to_nand0),
+ NAND2_X2 clone244 (.A1(clk_to_nand0),
     .A2(clk_to_nand1),
     .ZN(net279));
- NAND2_X2 clone283 (.A1(clk_to_nand0),
+ NAND2_X2 clone247 (.A1(clk_to_nand0),
     .A2(clk_to_nand1),
     .ZN(net283));
- BUF_X8 split284 (.A(clk_to_nand1),
+ BUF_X8 split (.A(clk_to_nand1),
     .Z(net284));
- NAND2_X2 clone286 (.A1(clk_to_nand0),
+ NAND2_X2 clone249 (.A1(clk_to_nand0),
     .A2(net284),
     .ZN(net286));
 endmodule

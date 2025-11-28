@@ -54,32 +54,9 @@ tns max -10.580
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.684 |      -10.6 |     26 | u1/r21/D
-/usr/include/c++/13/bits/stl_vector.h:1128: std::vector<_Tp, _Alloc>::reference std::vector<_Tp, _Alloc>::operator[](size_type) [with _Tp = std::vector<float>; _Alloc = std::allocator<std::vector<float> >; reference = std::vector<float>&; size_type = long unsigned int]: Assertion '__n < this->size()' failed.
-Signal 6 received
-Stack trace:
- 0# 0x00005A3FD48B06E3 in /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/build/bin/openroad
- 1# 0x0000772053445330 in /lib/x86_64-linux-gnu/libc.so.6
- 2# pthread_kill in /lib/x86_64-linux-gnu/libc.so.6
- 3# gsignal in /lib/x86_64-linux-gnu/libc.so.6
- 4# abort in /lib/x86_64-linux-gnu/libc.so.6
- 5# 0x00007720538DF90D in /lib/x86_64-linux-gnu/libstdc++.so.6
- 6# sta::GraphDelayCalc::loadSlews(std::map<sta::Pin const*, unsigned long, sta::PinIdLess, std::allocator<std::pair<sta::Pin const* const, unsigned long> > >&) in /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/build/bin/openroad
- 7# sta::GraphDelayCalc::findVertexDelay(sta::Vertex*, sta::ArcDelayCalc*, bool) in /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/build/bin/openroad
- 8# sta::BfsIterator::visit(int, sta::VertexVisitor*) in /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/build/bin/openroad
- 9# sta::GraphDelayCalc::findDelays(int) in /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/build/bin/openroad
-10# sta::Sta::searchPreamble() in /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/build/bin/openroad
-11# sta::Sta::findRequireds() in /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/build/bin/openroad
-12# rsz::RepairSetup::repairSetup(float, double, int, int, int, bool, std::vector<rsz::MoveType, std::allocator<rsz::MoveType> > const&, bool, bool, bool, bool, bool, bool, bool, bool) in /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/build/bin/openroad
-13# rsz::Resizer::repairSetup(double, double, int, int, int, bool, bool, std::vector<rsz::MoveType, std::allocator<rsz::MoveType> > const&, bool, bool, bool, bool, bool, bool, bool, bool) in /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/build/bin/openroad
-14# 0x00005A3FD49BBA50 in /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/build/bin/openroad
-15# TclNRRunCallbacks in /lib/x86_64-linux-gnu/libtcl8.6.so
-16# 0x00007720586016BC in /lib/x86_64-linux-gnu/libtcl8.6.so
-17# Tcl_EvalEx in /lib/x86_64-linux-gnu/libtcl8.6.so
-18# Tcl_Eval in /lib/x86_64-linux-gnu/libtcl8.6.so
-19# sta::sourceTclFile(char const*, bool, bool, Tcl_Interp*) in /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/build/bin/openroad
-20# 0x00005A3FD48AFD3B in /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/build/bin/openroad
-21# Tcl_MainEx in /lib/x86_64-linux-gnu/libtcl8.6.so
-22# main in /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/build/bin/openroad
-23# 0x000077205342A1CA in /lib/x86_64-linux-gnu/libc.so.6
-24# __libc_start_main in /lib/x86_64-linux-gnu/libc.so.6
-25# _start in /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/build/bin/openroad
+    final |       0 |      16 |        3 |      0 |     0 |   +13.5% |   -0.509 |      -10.9 |     26 | u1/r21/D
+--------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0045] Inserted 3 buffers, 1 to split loads.
+[INFO RSZ-0051] Resized 16 instances: 16 up, 0 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+No differences found.

@@ -2360,21 +2360,18 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case15)
  BUF_X1 load1 (.A(net1));
  BUF_X1 new_buf (.A(n1),
     .Z(net1));
- MOD1 u1 (.n1_i_0(net1),
-    .n1_i(net1),
+ MOD1 u1 (.n1_i(net1),
     .A(n1));
  assign out = n1;
 endmodule
-module MOD1 (n1_i_0,
-    n1_i,
+module MOD1 (n1_i,
     A);
- input n1_i_0;
  input n1_i;
  input A;
 
 
  BUF_X1 load2 (.A(n1_i));
- BUF_X1 load3 (.A(n1_i_0));
+ BUF_X1 load3 (.A(n1_i));
  BUF_X1 non_target (.A(A));
 endmodule
 )");
