@@ -263,8 +263,14 @@ add_global_connection -net VSS -pin_pattern {^VSSE$}
 The `global_connect` command is used to connect power and ground pins on design instances to the appropriate supplies.
 
 ```
-global_connect
+global_connect [-force]
 ```
+
+##### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-force` | If specified, global connections will overwrite existing connections |
 
 #### Clear global connection rules
 
