@@ -2223,17 +2223,18 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     //  remove any loads behind a buffer in the buffer tree
     //  we will wire those in during construction.
 
-    if (db_modnet) {
-      std::unordered_set<const Pin*> buffer_tree_flat_load_pins;
-      accumulateBufferTreeFlatLoadPins(
-          false, db_network_, area_opt_tree, buffer_tree_flat_load_pins);
-      for (auto p : buffer_tree_flat_load_pins) {
-        odb::dbModNet* mod_net = db_network_->hierNet(p);
-        if (mod_net == db_modnet) {
-          db_network_->disconnectPin(const_cast<Pin*>(p), (Net*) db_modnet);
-        }
-      }
-    }
+    // jk: ok?
+    // if (db_modnet) {
+    //  std::unordered_set<const Pin*> buffer_tree_flat_load_pins;
+    //  accumulateBufferTreeFlatLoadPins(
+    //      false, db_network_, area_opt_tree, buffer_tree_flat_load_pins);
+    //  for (auto p : buffer_tree_flat_load_pins) {
+    //    odb::dbModNet* mod_net = db_network_->hierNet(p);
+    //    if (mod_net == db_modnet) {
+    //      db_network_->disconnectPin(const_cast<Pin*>(p), (Net*) db_modnet);
+    //    }
+    //  }
+    //}
 
     inserted_count_ += exportBufferTree(area_opt_tree,
                                         db_network_->dbToSta(db_net),
@@ -2243,18 +2244,19 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
                                         nullptr,
                                         "place");
 
+    // jk: remove this
     // Hierarchy support
     // This is to make sure than any surviving hierarchical connections
     // at this level of hierarchy are associated with the flat net
     // at this level. Recall we killed any loads in the buffer tree
     // from the modnet. The reassociateHierFlatNet will restore
     // any flat/hier net association on the driver side of the buffer tree.
-    if (db_modnet) {
-      const Pin* pin = db_network_->dbToSta(drvr_op_iterm);
-      dbNet* driver_flat_net = db_network_->flatNet(pin);
-      odb::dbModNet* driver_hier_net = db_network_->hierNet(pin);
-      db_network_->reassociateFromDbNetView(driver_flat_net, driver_hier_net);
-    }
+    // if (db_modnet) {
+    //  const Pin* pin = db_network_->dbToSta(drvr_op_iterm);
+    //  dbNet* driver_flat_net = db_network_->flatNet(pin);
+    //  odb::dbModNet* driver_hier_net = db_network_->hierNet(pin);
+    //  db_network_->reassociateFromDbNetView(driver_flat_net, driver_hier_net);
+    //}
 
     for (auto* inst : insts) {
       resizer_->unbuffer_move_->removeBuffer(inst);
@@ -2427,17 +2429,18 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
     //  remove any loads behind a buffer in the buffer tree
     //  we will wire those in during construction.
 
-    if (db_modnet) {
-      std::unordered_set<const Pin*> buffer_tree_flat_load_pins;
-      accumulateBufferTreeFlatLoadPins(
-          false, db_network_, bnet, buffer_tree_flat_load_pins);
-      for (auto p : buffer_tree_flat_load_pins) {
-        odb::dbModNet* mod_net = db_network_->hierNet(p);
-        if (mod_net == db_modnet) {
-          db_network_->disconnectPin(const_cast<Pin*>(p), (Net*) db_modnet);
-        }
-      }
-    }
+    // jk: ok?
+    // if (db_modnet) {
+    //  std::unordered_set<const Pin*> buffer_tree_flat_load_pins;
+    //  accumulateBufferTreeFlatLoadPins(
+    //      false, db_network_, bnet, buffer_tree_flat_load_pins);
+    //  for (auto p : buffer_tree_flat_load_pins) {
+    //    odb::dbModNet* mod_net = db_network_->hierNet(p);
+    //    if (mod_net == db_modnet) {
+    //      db_network_->disconnectPin(const_cast<Pin*>(p), (Net*) db_modnet);
+    //    }
+    //  }
+    //}
 
     const int inserted_count = exportBufferTree(bnet,
                                                 db_network_->dbToSta(db_net),
@@ -2447,18 +2450,19 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
                                                 nullptr,
                                                 "rebuffer");
 
+    // jk: remove this
     // Hierarchy support
     // This is to make sure than any surviving hierarchical connections
     // at this level of hierarchy are associated with the flat net
     // at this level. Recall we killed any loads in the buffer tree
     // from the modnet. The reassociateHierFlatNet will restore
     // any flat/hier net association on the driver side of the buffer tree.
-    if (db_modnet) {
-      const Pin* pin = db_network_->dbToSta(drvr_op_iterm);
-      dbNet* driver_flat_net = db_network_->flatNet(pin);
-      odb::dbModNet* driver_hier_net = db_network_->hierNet(pin);
-      db_network_->reassociateFromDbNetView(driver_flat_net, driver_hier_net);
-    }
+    // if (db_modnet) {
+    //  const Pin* pin = db_network_->dbToSta(drvr_op_iterm);
+    //  dbNet* driver_flat_net = db_network_->flatNet(pin);
+    //  odb::dbModNet* driver_hier_net = db_network_->hierNet(pin);
+    //  db_network_->reassociateFromDbNetView(driver_flat_net, driver_hier_net);
+    //}
 
     if (inserted_count > 0) {
       resizer_->level_drvr_vertices_valid_ = false;
