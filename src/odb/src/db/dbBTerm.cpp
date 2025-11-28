@@ -390,6 +390,10 @@ void dbBTerm::connect(dbNet* db_net, dbModNet* modnet)
 
 void dbBTerm::connect(dbModNet* mod_net)
 {
+  if (mod_net == nullptr) {
+    return;
+  }
+
   dbModule* parent_module = mod_net->getParent();
   _dbBlock* block = (_dbBlock*) (parent_module->getOwner());
   _dbModNet* _mod_net = (_dbModNet*) mod_net;
@@ -405,6 +409,10 @@ void dbBTerm::connect(dbModNet* mod_net)
 
 void dbBTerm::connect(dbNet* net_)
 {
+  if (net_ == nullptr) {
+    return;
+  }
+
   _dbBTerm* bterm = (_dbBTerm*) this;
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();

@@ -2265,4 +2265,119 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case14)
   EXPECT_EQ(load2_inst->findITerm("A")->getNet(), buf_out_net);
 }
 
+TEST_F(TestInsertBuffer, BeforeLoads_Case15)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  readVerilogAndSetup(test_name + ".v");
+
+  // Get ODB objects
+  dbInst* drvr = block_->findInst("drvr");
+  ASSERT_NE(drvr, nullptr);
+  dbInst* load1 = block_->findInst("load1");
+  ASSERT_NE(load1, nullptr);
+  dbInst* u1_load2 = block_->findInst("u1/load2");
+  ASSERT_NE(u1_load2, nullptr);
+  dbInst* u1_load3 = block_->findInst("u1/load3");
+  ASSERT_NE(u1_load3, nullptr);
+  dbInst* u1_non_target = block_->findInst("u1/non_target");
+  ASSERT_NE(u1_non_target, nullptr);
+  dbITerm* load1_a = load1->findITerm("A");
+  ASSERT_NE(load1_a, nullptr);
+  dbITerm* u1_load2_a = u1_load2->findITerm("A");
+  ASSERT_NE(u1_load2_a, nullptr);
+  dbITerm* u1_load3_a = u1_load3->findITerm("A");
+  ASSERT_NE(u1_load3_a, nullptr);
+  dbITerm* u1_non_target_a = u1_non_target->findITerm("A");
+  ASSERT_NE(u1_non_target_a, nullptr);
+  dbNet* target_net = load1_a->getNet();
+  ASSERT_NE(target_net, nullptr);
+  dbMaster* buffer_master = db_->findMaster("BUF_X1");
+  ASSERT_NE(buffer_master, nullptr);
+  dbModInst* u1 = block_->findModInst("u1");
+  ASSERT_NE(u1, nullptr);
+  dbModule* mod1 = block_->findModule("MOD1");
+  ASSERT_NE(mod1, nullptr);
+  dbModNet* modnet_a = block_->findModNet("u1/A");
+  ASSERT_NE(modnet_a, nullptr);
+
+  // odb::dbDatabase::beginEco(block_);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  db_network_->checkAxioms();
+
+  //----------------------------------------------------
+  // Insert buffer
+  // - Targets: load5 (in H2/H1), load2 (in H3), load3 (in H4/H5)
+  //----------------------------------------------------
+  std::set<dbObject*> targets;
+  targets.insert(load1_a);
+  targets.insert(u1_load2_a);
+  targets.insert(u1_load3_a);
+  dbInst* new_buf = target_net->insertBufferBeforeLoads(
+      targets, buffer_master, nullptr, "new_buf");
+  ASSERT_TRUE(new_buf);
+
+  //----------------------------------------------------
+  // Verify Results
+  //----------------------------------------------------
+
+  // Post sanity check
+  db_network_->checkAxioms();
+
+  // Buffer Location: Top Module (LCA)
+  EXPECT_EQ(new_buf->getModule(), block_->getTopModule());
+
+  // Net Separation
+  dbNet* buf_out_net = new_buf->findITerm("Z")->getNet();
+  ASSERT_TRUE(buf_out_net);
+  EXPECT_NE(buf_out_net, target_net);
+
+  // Target Loads moved to new net
+  EXPECT_EQ(load1_a->getNet(), buf_out_net);
+  EXPECT_EQ(u1_load2_a->getNet(), buf_out_net);
+  EXPECT_EQ(u1_load3_a->getNet(), buf_out_net);
+
+  // Non-Target Loads remain on old net
+  EXPECT_EQ(u1_non_target_a->getNet(), target_net);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutput(test_name,
+                               R"(module top (in,
+    out);
+ input in;
+ output out;
+
+ wire net1;
+ wire n1;
+
+ BUF_X1 drvr (.A(in),
+    .Z(n1));
+ BUF_X1 load1 (.A(net1));
+ BUF_X1 new_buf (.A(n1),
+    .Z(net1));
+ MOD1 u1 (.n1_i_0(net1),
+    .n1_i(net1),
+    .A(n1));
+ assign out = n1;
+endmodule
+module MOD1 (n1_i_0,
+    n1_i,
+    A);
+ input n1_i_0;
+ input n1_i;
+ input A;
+
+
+ BUF_X1 load2 (.A(n1_i));
+ BUF_X1 load3 (.A(n1_i_0));
+ BUF_X1 non_target (.A(A));
+endmodule
+)");
+}
+
 }  // namespace odb
