@@ -32,6 +32,363 @@ class TestInsertBuffer : public tst::IntegratedFixture
   }
 };
 
+TEST_F(TestInsertBuffer, AfterDriver_Case1)
+{
+  int num_warning = 0;
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Create masters
+  dbMaster* buf_master = db_->findMaster("BUF_X1");
+  ASSERT_TRUE(buf_master);
+
+  dbModule* mod1 = dbModule::create(block_, "MOD1");
+  ASSERT_TRUE(mod1);
+  dbModBTerm::create(mod1, "A");
+
+  dbModule* mod0 = dbModule::create(block_, "MOD0");
+  ASSERT_TRUE(mod0);
+  dbModBTerm::create(mod0, "A");
+
+  // Create instances
+  dbInst* drvr_inst = dbInst::create(block_, buf_master, "drvr_inst");
+  ASSERT_TRUE(drvr_inst);
+
+  dbInst* load0_inst = dbInst::create(block_, buf_master, "load0_inst");
+  ASSERT_TRUE(load0_inst);
+
+  dbInst* load2_inst = dbInst::create(block_, buf_master, "load2_inst");
+  ASSERT_TRUE(load2_inst);
+
+  dbModInst* mi1 = dbModInst::create(mod0, mod1, "mi1");
+  ASSERT_TRUE(mi1);
+
+  dbModInst* mi0 = dbModInst::create(block_->getTopModule(), mod0, "mi0");
+  ASSERT_TRUE(mi0);
+
+  dbInst* load1_inst
+      = dbInst::create(block_, buf_master, "load1_inst", false, mod1);
+  ASSERT_TRUE(load1_inst);
+
+  // Create nets and connect pins
+  dbNet* net = dbNet::create(block_, "net");
+  ASSERT_TRUE(net);
+
+  dbNet* in_net = dbNet::create(block_, "in");
+  ASSERT_TRUE(in_net);
+  dbBTerm* in_bterm = dbBTerm::create(in_net, "in");
+  ASSERT_TRUE(in_bterm);
+  in_bterm->setIoType(dbIoType::INPUT);
+  in_bterm->connect(in_net);
+
+  dbITerm* drvr_a = drvr_inst->findITerm("A");
+  ASSERT_TRUE(drvr_a);
+  drvr_a->connect(in_net);
+
+  dbITerm* drvr_z = drvr_inst->findITerm("Z");
+  ASSERT_TRUE(drvr_z);
+  drvr_z->connect(net);
+
+  dbITerm* load0_a = load0_inst->findITerm("A");
+  ASSERT_TRUE(load0_a);
+  load0_a->connect(net);
+
+  dbITerm* load2_a = load2_inst->findITerm("A");
+  ASSERT_TRUE(load2_a);
+  load2_a->connect(net);
+
+  // Hierarchical connections
+  // Inside MOD1
+  dbModNet* mod1_net_a = dbModNet::create(mod1, "A");
+  ASSERT_TRUE(mod1_net_a);
+  dbITerm* load1_a = load1_inst->findITerm("A");
+  ASSERT_TRUE(load1_a);
+  mod1->findModBTerm("A")->connect(mod1_net_a);
+  load1_a->connect(net, mod1_net_a);
+
+  // Inside MOD0
+  dbModNet* mod0_net_a = dbModNet::create(mod0, "A");
+  ASSERT_TRUE(mod0_net_a);
+  dbModITerm::create(mi1, "A", mod1->findModBTerm("A"));
+  mi1->findModITerm("A")->connect(mod0_net_a);
+  mod0->findModBTerm("A")->connect(mod0_net_a);
+
+  // Connect top-level net to hierarchical instance through a modnet
+  dbModNet* top_mod_net = dbModNet::create(block_->getTopModule(), "net");
+  ASSERT_TRUE(top_mod_net);
+  drvr_z->connect(top_mod_net);
+  load0_a->connect(top_mod_net);
+  load2_a->connect(top_mod_net);
+
+  // Create ModITerm for mi0
+  dbModITerm::create(mi0, "A", mod0->findModBTerm("A"));
+  mi0->findModITerm("A")->connect(top_mod_net);
+  num_warning = db_network_->checkAxioms();
+  EXPECT_EQ(num_warning, 0);
+
+  // Write verilog and check the content
+  const std::string verilog_file_0 = "test_insert_buffer_after_drvr_pre.v";
+  sta::writeVerilog(verilog_file_0.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file_0(verilog_file_0);
+  std::string content_0((std::istreambuf_iterator<char>(file_0)),
+                        std::istreambuf_iterator<char>());
+
+  const std::string expected_verilog_0 = R"(module top (in);
+ input in;
+
+ wire net;
+
+ BUF_X1 drvr_inst (.A(in),
+    .Z(net));
+ BUF_X1 load0_inst (.A(net));
+ BUF_X1 load2_inst (.A(net));
+ MOD0 mi0 (.A(net));
+endmodule
+module MOD0 (A);
+ input A;
+
+
+ MOD1 mi1 (.A(A));
+endmodule
+module MOD1 (A);
+ input A;
+
+
+ BUF_X1 load1_inst (.A(A));
+endmodule
+)";
+
+  EXPECT_EQ(content_0, expected_verilog_0);
+
+  buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  //-----------------------------------------------------------------
+  // Insert buffer
+  //-----------------------------------------------------------------
+  dbInst* new_buffer = net->insertBufferAfterDriver(drvr_z, buffer_master);
+  ASSERT_TRUE(new_buffer);
+  num_warning = db_network_->checkAxioms();
+  EXPECT_EQ(num_warning, 0);
+
+  // Verify connections
+  EXPECT_EQ(drvr_z->getNet()->getName(), std::string("net_drvr"));
+  EXPECT_EQ(new_buffer->findITerm("A")->getNet(), drvr_z->getNet());
+  EXPECT_EQ(new_buffer->findITerm("Z")->getNet(), net);
+
+  // Write verilog and check the content
+  const std::string verilog_file_1 = "test_insert_buffer_after_drvr.v";
+  sta::writeVerilog(verilog_file_1.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file_1(verilog_file_1);
+  std::string content_1((std::istreambuf_iterator<char>(file_1)),
+                        std::istreambuf_iterator<char>());
+
+  const std::string expected_verilog_1 = R"(module top (in);
+ input in;
+
+ wire net;
+ wire net_drvr;
+
+ BUF_X4 buf (.A(net_drvr),
+    .Z(net));
+ BUF_X1 drvr_inst (.A(in),
+    .Z(net_drvr));
+ BUF_X1 load0_inst (.A(net));
+ BUF_X1 load2_inst (.A(net));
+ MOD0 mi0 (.A(net));
+endmodule
+module MOD0 (A);
+ input A;
+
+
+ MOD1 mi1 (.A(A));
+endmodule
+module MOD1 (A);
+ input A;
+
+
+ BUF_X1 load1_inst (.A(A));
+endmodule
+)";
+
+  EXPECT_EQ(content_1, expected_verilog_1);
+
+  // Clean up
+  removeFile(verilog_file_0);
+  removeFile(verilog_file_1);
+}
+
+TEST_F(TestInsertBuffer, AfterDriver_Case2)
+{
+  int num_warning = 0;
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Create masters
+  dbMaster* buf_master = db_->findMaster("BUF_X1");
+  ASSERT_TRUE(buf_master);
+
+  dbModule* mod1 = dbModule::create(block_, "MOD1");
+  ASSERT_TRUE(mod1);
+  dbModBTerm::create(mod1, "A");
+
+  dbModule* mod0 = dbModule::create(block_, "MOD0");
+  ASSERT_TRUE(mod0);
+  dbModBTerm::create(mod0, "A");
+
+  // Create instances
+  dbInst* load0_inst = dbInst::create(block_, buf_master, "load0_inst");
+  ASSERT_TRUE(load0_inst);
+
+  dbInst* load2_inst = dbInst::create(block_, buf_master, "load2_inst");
+  ASSERT_TRUE(load2_inst);
+
+  dbModInst* mi1 = dbModInst::create(mod0, mod1, "mi1");
+  ASSERT_TRUE(mi1);
+
+  dbModInst* mi0 = dbModInst::create(block_->getTopModule(), mod0, "mi0");
+  ASSERT_TRUE(mi0);
+
+  dbInst* load1_inst
+      = dbInst::create(block_, buf_master, "load1_inst", false, mod1);
+  ASSERT_TRUE(load1_inst);
+
+  // Create nets and connect pins
+  dbNet* net = dbNet::create(block_, "X");
+  ASSERT_TRUE(net);
+
+  dbBTerm* drvr_bterm = dbBTerm::create(net, "X");
+  ASSERT_TRUE(drvr_bterm);
+  drvr_bterm->setIoType(dbIoType::INPUT);
+  drvr_bterm->connect(net);
+
+  dbITerm* load0_a = load0_inst->findITerm("A");
+  ASSERT_TRUE(load0_a);
+  load0_a->connect(net);
+
+  dbITerm* load2_a = load2_inst->findITerm("A");
+  ASSERT_TRUE(load2_a);
+  load2_a->connect(net);
+
+  // Hierarchical connections
+  // Inside MOD1
+  dbModNet* mod1_net_a = dbModNet::create(mod1, "A");
+  ASSERT_TRUE(mod1_net_a);
+  dbITerm* load1_a = load1_inst->findITerm("A");
+  ASSERT_TRUE(load1_a);
+  mod1->findModBTerm("A")->connect(mod1_net_a);
+  load1_a->connect(net, mod1_net_a);
+
+  // Inside MOD0
+  dbModNet* mod0_net_a = dbModNet::create(mod0, "A");
+  ASSERT_TRUE(mod0_net_a);
+  dbModITerm::create(mi1, "A", mod1->findModBTerm("A"));
+  mi1->findModITerm("A")->connect(mod0_net_a);
+  mod0->findModBTerm("A")->connect(mod0_net_a);
+
+  // Connect top-level net to hierarchical instance through a modnet
+  dbModNet* top_mod_net = dbModNet::create(block_->getTopModule(), "X");
+  ASSERT_TRUE(top_mod_net);
+  drvr_bterm->connect(top_mod_net);
+  load0_a->connect(top_mod_net);
+  load2_a->connect(top_mod_net);
+  // Create ModITerm for mi0
+  dbModITerm::create(mi0, "A", mod0->findModBTerm("A"));
+  mi0->findModITerm("A")->connect(top_mod_net);
+  num_warning = db_network_->checkAxioms();
+  EXPECT_EQ(num_warning, 0);
+
+  buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Write verilog and check the content
+  const std::string verilog_file_0 = "test_insert_buffer_after_drvr_port_pre.v";
+  sta::writeVerilog(verilog_file_0.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file_0(verilog_file_0);
+  std::string content_0((std::istreambuf_iterator<char>(file_0)),
+                        std::istreambuf_iterator<char>());
+
+  const std::string expected_verilog_0 = R"(module top (X);
+ input X;
+
+
+ BUF_X1 load0_inst (.A(X));
+ BUF_X1 load2_inst (.A(X));
+ MOD0 mi0 (.A(X));
+endmodule
+module MOD0 (A);
+ input A;
+
+
+ MOD1 mi1 (.A(A));
+endmodule
+module MOD1 (A);
+ input A;
+
+
+ BUF_X1 load1_inst (.A(A));
+endmodule
+)";
+
+  EXPECT_EQ(content_0, expected_verilog_0);
+
+  //-----------------------------------------------------------------
+  // Insert buffer
+  //-----------------------------------------------------------------
+  dbInst* new_buffer = net->insertBufferAfterDriver(drvr_bterm, buffer_master);
+  ASSERT_TRUE(new_buffer);
+  num_warning = db_network_->checkAxioms();
+  EXPECT_EQ(num_warning, 0);
+
+  // Verify connections
+  EXPECT_EQ(drvr_bterm->getNet()->getName(), std::string("X"));
+  EXPECT_EQ(new_buffer->findITerm("A")->getNet(), drvr_bterm->getNet());
+  EXPECT_EQ(new_buffer->findITerm("Z")->getNet()->getName(),
+            std::string("net"));
+
+  // Write verilog and check the content
+  const std::string verilog_file_1 = "test_insert_buffer_after_drvr_port.v";
+  sta::writeVerilog(verilog_file_1.c_str(), true, false, {}, sta_->network());
+
+  std::ifstream file_1(verilog_file_1);
+  std::string content_1((std::istreambuf_iterator<char>(file_1)),
+                        std::istreambuf_iterator<char>());
+
+  const std::string expected_verilog_1 = R"(module top (X);
+ input X;
+
+ wire net;
+
+ BUF_X4 buf (.A(X),
+    .Z(net));
+ BUF_X1 load0_inst (.A(net));
+ BUF_X1 load2_inst (.A(net));
+ MOD0 mi0 (.A(net));
+endmodule
+module MOD0 (A);
+ input A;
+
+
+ MOD1 mi1 (.A(A));
+endmodule
+module MOD1 (A);
+ input A;
+
+
+ BUF_X1 load1_inst (.A(A));
+endmodule
+)";
+
+  EXPECT_EQ(content_1, expected_verilog_1);
+
+  // Clean up
+  removeFile(verilog_file_0);
+  removeFile(verilog_file_1);
+}
+
 //
 // insertBufferBeforeLoad() Case1
 //
@@ -1858,361 +2215,54 @@ endmodule
 )");
 }
 
-TEST_F(TestInsertBuffer, AfterDriver_Case1)
+// Case 14: Insert Buffer for partial loads on different nets
+TEST_F(TestInsertBuffer, BeforeLoads_Case14)
 {
-  int num_warning = 0;
-  dbMaster* buffer_master = db_->findMaster("BUF_X4");
-  ASSERT_TRUE(buffer_master);
-
-  // Create masters
+  // 1. Setup
   dbMaster* buf_master = db_->findMaster("BUF_X1");
-  ASSERT_TRUE(buf_master);
-
-  dbModule* mod1 = dbModule::create(block_, "MOD1");
-  ASSERT_TRUE(mod1);
-  dbModBTerm::create(mod1, "A");
-
-  dbModule* mod0 = dbModule::create(block_, "MOD0");
-  ASSERT_TRUE(mod0);
-  dbModBTerm::create(mod0, "A");
+  dbMaster* load_master = db_->findMaster("BUF_X1");
+  dbMaster* drvr_master = db_->findMaster("LOGIC0_X1");
 
   // Create instances
-  dbInst* drvr_inst = dbInst::create(block_, buf_master, "drvr_inst");
-  ASSERT_TRUE(drvr_inst);
-
-  dbInst* load0_inst = dbInst::create(block_, buf_master, "load0_inst");
-  ASSERT_TRUE(load0_inst);
-
-  dbInst* load2_inst = dbInst::create(block_, buf_master, "load2_inst");
-  ASSERT_TRUE(load2_inst);
-
-  dbModInst* mi1 = dbModInst::create(mod0, mod1, "mi1");
-  ASSERT_TRUE(mi1);
-
-  dbModInst* mi0 = dbModInst::create(block_->getTopModule(), mod0, "mi0");
-  ASSERT_TRUE(mi0);
-
-  dbInst* load1_inst
-      = dbInst::create(block_, buf_master, "load1_inst", false, mod1);
-  ASSERT_TRUE(load1_inst);
-
-  // Create nets and connect pins
-  dbNet* net = dbNet::create(block_, "net");
-  ASSERT_TRUE(net);
-
-  dbNet* in_net = dbNet::create(block_, "in");
-  ASSERT_TRUE(in_net);
-  dbBTerm* in_bterm = dbBTerm::create(in_net, "in");
-  ASSERT_TRUE(in_bterm);
-  in_bterm->setIoType(dbIoType::INPUT);
-  in_bterm->connect(in_net);
-
-  dbITerm* drvr_a = drvr_inst->findITerm("A");
-  ASSERT_TRUE(drvr_a);
-  drvr_a->connect(in_net);
-
-  dbITerm* drvr_z = drvr_inst->findITerm("Z");
-  ASSERT_TRUE(drvr_z);
-  drvr_z->connect(net);
-
-  dbITerm* load0_a = load0_inst->findITerm("A");
-  ASSERT_TRUE(load0_a);
-  load0_a->connect(net);
-
-  dbITerm* load2_a = load2_inst->findITerm("A");
-  ASSERT_TRUE(load2_a);
-  load2_a->connect(net);
-
-  // Hierarchical connections
-  // Inside MOD1
-  dbModNet* mod1_net_a = dbModNet::create(mod1, "A");
-  ASSERT_TRUE(mod1_net_a);
-  dbITerm* load1_a = load1_inst->findITerm("A");
-  ASSERT_TRUE(load1_a);
-  mod1->findModBTerm("A")->connect(mod1_net_a);
-  load1_a->connect(net, mod1_net_a);
-
-  // Inside MOD0
-  dbModNet* mod0_net_a = dbModNet::create(mod0, "A");
-  ASSERT_TRUE(mod0_net_a);
-  dbModITerm::create(mi1, "A", mod1->findModBTerm("A"));
-  mi1->findModITerm("A")->connect(mod0_net_a);
-  mod0->findModBTerm("A")->connect(mod0_net_a);
-
-  // Connect top-level net to hierarchical instance through a modnet
-  dbModNet* top_mod_net = dbModNet::create(block_->getTopModule(), "net");
-  ASSERT_TRUE(top_mod_net);
-  drvr_z->connect(top_mod_net);
-  load0_a->connect(top_mod_net);
-  load2_a->connect(top_mod_net);
-
-  // Create ModITerm for mi0
-  dbModITerm::create(mi0, "A", mod0->findModBTerm("A"));
-  mi0->findModITerm("A")->connect(top_mod_net);
-  num_warning = db_network_->checkAxioms();
-  EXPECT_EQ(num_warning, 0);
-
-  // Write verilog and check the content
-  const std::string verilog_file_0 = "test_insert_buffer_after_drvr_pre.v";
-  sta::writeVerilog(verilog_file_0.c_str(), true, false, {}, sta_->network());
-
-  std::ifstream file_0(verilog_file_0);
-  std::string content_0((std::istreambuf_iterator<char>(file_0)),
-                        std::istreambuf_iterator<char>());
-
-  const std::string expected_verilog_0 = R"(module top (in);
- input in;
-
- wire net;
-
- BUF_X1 drvr_inst (.A(in),
-    .Z(net));
- BUF_X1 load0_inst (.A(net));
- BUF_X1 load2_inst (.A(net));
- MOD0 mi0 (.A(net));
-endmodule
-module MOD0 (A);
- input A;
-
-
- MOD1 mi1 (.A(A));
-endmodule
-module MOD1 (A);
- input A;
-
-
- BUF_X1 load1_inst (.A(A));
-endmodule
-)";
-
-  EXPECT_EQ(content_0, expected_verilog_0);
-
-  buffer_master = db_->findMaster("BUF_X4");
-  ASSERT_TRUE(buffer_master);
-
-  //-----------------------------------------------------------------
-  // Insert buffer
-  //-----------------------------------------------------------------
-  dbInst* new_buffer = net->insertBufferAfterDriver(drvr_z, buffer_master);
-  ASSERT_TRUE(new_buffer);
-  num_warning = db_network_->checkAxioms();
-  EXPECT_EQ(num_warning, 0);
-
-  // Verify connections
-  EXPECT_EQ(drvr_z->getNet()->getName(), std::string("net_drvr"));
-  EXPECT_EQ(new_buffer->findITerm("A")->getNet(), drvr_z->getNet());
-  EXPECT_EQ(new_buffer->findITerm("Z")->getNet(), net);
-
-  // Write verilog and check the content
-  const std::string verilog_file_1 = "test_insert_buffer_after_drvr.v";
-  sta::writeVerilog(verilog_file_1.c_str(), true, false, {}, sta_->network());
-
-  std::ifstream file_1(verilog_file_1);
-  std::string content_1((std::istreambuf_iterator<char>(file_1)),
-                        std::istreambuf_iterator<char>());
-
-  const std::string expected_verilog_1 = R"(module top (in);
- input in;
-
- wire net;
- wire net_drvr;
-
- BUF_X4 buf (.A(net_drvr),
-    .Z(net));
- BUF_X1 drvr_inst (.A(in),
-    .Z(net_drvr));
- BUF_X1 load0_inst (.A(net));
- BUF_X1 load2_inst (.A(net));
- MOD0 mi0 (.A(net));
-endmodule
-module MOD0 (A);
- input A;
-
-
- MOD1 mi1 (.A(A));
-endmodule
-module MOD1 (A);
- input A;
-
-
- BUF_X1 load1_inst (.A(A));
-endmodule
-)";
-
-  EXPECT_EQ(content_1, expected_verilog_1);
-
-  // Clean up
-  removeFile(verilog_file_0);
-  removeFile(verilog_file_1);
-}
-
-TEST_F(TestInsertBuffer, AfterDriver_Case2)
-{
-  int num_warning = 0;
-  dbMaster* buffer_master = db_->findMaster("BUF_X4");
-  ASSERT_TRUE(buffer_master);
-
-  // Create masters
-  dbMaster* buf_master = db_->findMaster("BUF_X1");
-  ASSERT_TRUE(buf_master);
-
-  dbModule* mod1 = dbModule::create(block_, "MOD1");
-  ASSERT_TRUE(mod1);
-  dbModBTerm::create(mod1, "A");
-
-  dbModule* mod0 = dbModule::create(block_, "MOD0");
-  ASSERT_TRUE(mod0);
-  dbModBTerm::create(mod0, "A");
-
-  // Create instances
-  dbInst* load0_inst = dbInst::create(block_, buf_master, "load0_inst");
-  ASSERT_TRUE(load0_inst);
-
-  dbInst* load2_inst = dbInst::create(block_, buf_master, "load2_inst");
-  ASSERT_TRUE(load2_inst);
-
-  dbModInst* mi1 = dbModInst::create(mod0, mod1, "mi1");
-  ASSERT_TRUE(mi1);
-
-  dbModInst* mi0 = dbModInst::create(block_->getTopModule(), mod0, "mi0");
-  ASSERT_TRUE(mi0);
-
-  dbInst* load1_inst
-      = dbInst::create(block_, buf_master, "load1_inst", false, mod1);
-  ASSERT_TRUE(load1_inst);
-
-  // Create nets and connect pins
-  dbNet* net = dbNet::create(block_, "X");
-  ASSERT_TRUE(net);
-
-  dbBTerm* drvr_bterm = dbBTerm::create(net, "X");
-  ASSERT_TRUE(drvr_bterm);
-  drvr_bterm->setIoType(dbIoType::INPUT);
-  drvr_bterm->connect(net);
-
-  dbITerm* load0_a = load0_inst->findITerm("A");
-  ASSERT_TRUE(load0_a);
-  load0_a->connect(net);
-
-  dbITerm* load2_a = load2_inst->findITerm("A");
-  ASSERT_TRUE(load2_a);
-  load2_a->connect(net);
-
-  // Hierarchical connections
-  // Inside MOD1
-  dbModNet* mod1_net_a = dbModNet::create(mod1, "A");
-  ASSERT_TRUE(mod1_net_a);
-  dbITerm* load1_a = load1_inst->findITerm("A");
-  ASSERT_TRUE(load1_a);
-  mod1->findModBTerm("A")->connect(mod1_net_a);
-  load1_a->connect(net, mod1_net_a);
-
-  // Inside MOD0
-  dbModNet* mod0_net_a = dbModNet::create(mod0, "A");
-  ASSERT_TRUE(mod0_net_a);
-  dbModITerm::create(mi1, "A", mod1->findModBTerm("A"));
-  mi1->findModITerm("A")->connect(mod0_net_a);
-  mod0->findModBTerm("A")->connect(mod0_net_a);
-
-  // Connect top-level net to hierarchical instance through a modnet
-  dbModNet* top_mod_net = dbModNet::create(block_->getTopModule(), "X");
-  ASSERT_TRUE(top_mod_net);
-  drvr_bterm->connect(top_mod_net);
-  load0_a->connect(top_mod_net);
-  load2_a->connect(top_mod_net);
-  // Create ModITerm for mi0
-  dbModITerm::create(mi0, "A", mod0->findModBTerm("A"));
-  mi0->findModITerm("A")->connect(top_mod_net);
-  num_warning = db_network_->checkAxioms();
-  EXPECT_EQ(num_warning, 0);
-
-  buffer_master = db_->findMaster("BUF_X4");
-  ASSERT_TRUE(buffer_master);
-
-  // Write verilog and check the content
-  const std::string verilog_file_0 = "test_insert_buffer_after_drvr_port_pre.v";
-  sta::writeVerilog(verilog_file_0.c_str(), true, false, {}, sta_->network());
-
-  std::ifstream file_0(verilog_file_0);
-  std::string content_0((std::istreambuf_iterator<char>(file_0)),
-                        std::istreambuf_iterator<char>());
-
-  const std::string expected_verilog_0 = R"(module top (X);
- input X;
-
-
- BUF_X1 load0_inst (.A(X));
- BUF_X1 load2_inst (.A(X));
- MOD0 mi0 (.A(X));
-endmodule
-module MOD0 (A);
- input A;
-
-
- MOD1 mi1 (.A(A));
-endmodule
-module MOD1 (A);
- input A;
-
-
- BUF_X1 load1_inst (.A(A));
-endmodule
-)";
-
-  EXPECT_EQ(content_0, expected_verilog_0);
-
-  //-----------------------------------------------------------------
-  // Insert buffer
-  //-----------------------------------------------------------------
-  dbInst* new_buffer = net->insertBufferAfterDriver(drvr_bterm, buffer_master);
-  ASSERT_TRUE(new_buffer);
-  num_warning = db_network_->checkAxioms();
-  EXPECT_EQ(num_warning, 0);
-
-  // Verify connections
-  EXPECT_EQ(drvr_bterm->getNet()->getName(), std::string("X"));
-  EXPECT_EQ(new_buffer->findITerm("A")->getNet(), drvr_bterm->getNet());
-  EXPECT_EQ(new_buffer->findITerm("Z")->getNet()->getName(),
-            std::string("net"));
-
-  // Write verilog and check the content
-  const std::string verilog_file_1 = "test_insert_buffer_after_drvr_port.v";
-  sta::writeVerilog(verilog_file_1.c_str(), true, false, {}, sta_->network());
-
-  std::ifstream file_1(verilog_file_1);
-  std::string content_1((std::istreambuf_iterator<char>(file_1)),
-                        std::istreambuf_iterator<char>());
-
-  const std::string expected_verilog_1 = R"(module top (X);
- input X;
-
- wire net;
-
- BUF_X4 buf (.A(X),
-    .Z(net));
- BUF_X1 load0_inst (.A(net));
- BUF_X1 load2_inst (.A(net));
- MOD0 mi0 (.A(net));
-endmodule
-module MOD0 (A);
- input A;
-
-
- MOD1 mi1 (.A(A));
-endmodule
-module MOD1 (A);
- input A;
-
-
- BUF_X1 load1_inst (.A(A));
-endmodule
-)";
-
-  EXPECT_EQ(content_1, expected_verilog_1);
-
-  // Clean up
-  removeFile(verilog_file_0);
-  removeFile(verilog_file_1);
+  dbInst* drvr_inst = dbInst::create(block_, drvr_master, "drvr_inst");
+  dbInst* load1_inst = dbInst::create(block_, load_master, "load1_inst");
+  dbInst* load2_inst = dbInst::create(block_, load_master, "load2_inst");
+
+  // Create nets
+  dbNet* drvr_net = dbNet::create(block_, "drvr_net");
+  dbNet* other_net = dbNet::create(block_, "other_net");
+
+  // Connect
+  drvr_inst->findITerm("Z")->connect(drvr_net);
+  load1_inst->findITerm("A")->connect(drvr_net);
+
+  // Connect load2 to other_net
+  load2_inst->findITerm("A")->connect(other_net);
+
+  // 2. Insert Buffer
+  std::set<dbObject*> loads;
+  loads.insert(load1_inst->findITerm("A"));
+  loads.insert(load2_inst->findITerm("A"));
+
+  // Call with loads_on_same_db_net = false
+  dbInst* buf_inst = drvr_net->insertBufferBeforeLoads(
+      loads, buf_master, nullptr, "buf", dbNameUniquifyType::IF_NEEDED, false);
+
+  // 3. Verify
+  ASSERT_NE(buf_inst, nullptr);
+
+  // Buffer input should be connected to drvr_net
+  EXPECT_EQ(buf_inst->findITerm("A")->getNet(), drvr_net);
+
+  // Buffer output should drive a new net
+  dbNet* buf_out_net = buf_inst->findITerm("Z")->getNet();
+  ASSERT_NE(buf_out_net, nullptr);
+  EXPECT_NE(buf_out_net, drvr_net);
+  EXPECT_NE(buf_out_net, other_net);
+
+  // Both loads should be connected to buf_out_net
+  EXPECT_EQ(load1_inst->findITerm("A")->getNet(), buf_out_net);
+  EXPECT_EQ(load2_inst->findITerm("A")->getNet(), buf_out_net);
 }
 
 }  // namespace odb
