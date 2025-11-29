@@ -2562,13 +2562,12 @@ class dbNet : public dbObject
   /// - Returns the newly created buffer instance.
   /// - If loc is null, the buffer is inserted at the load pin.
   ///
-  dbInst* insertBufferBeforeLoad(
-      dbObject* load_input_term,
-      const dbMaster* buffer_master,
-      const Point* loc = nullptr,
-      const char* base_name = nullptr,
-      const dbNameUniquifyType& uniquify
-      = dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  dbInst* insertBufferBeforeLoad(dbObject* load_input_term,
+                                 const dbMaster* buffer_master,
+                                 const Point* loc = nullptr,
+                                 const char* base_name = nullptr,
+                                 const dbNameUniquifyType& uniquify
+                                 = dbNameUniquifyType::ALWAYS);
 
   ///
   /// Driver-pin buffering.
@@ -2576,13 +2575,12 @@ class dbNet : public dbObject
   /// - Returns the newly created buffer instance.
   /// - If loc is null, the buffer is inserted at the driver pin.
   ///
-  dbInst* insertBufferAfterDriver(
-      dbObject* drvr_output_term,
-      const dbMaster* buffer_master,
-      const Point* loc = nullptr,
-      const char* base_name = nullptr,
-      const dbNameUniquifyType& uniquify
-      = dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  dbInst* insertBufferAfterDriver(dbObject* drvr_output_term,
+                                  const dbMaster* buffer_master,
+                                  const Point* loc = nullptr,
+                                  const char* base_name = nullptr,
+                                  const dbNameUniquifyType& uniquify
+                                  = dbNameUniquifyType::ALWAYS);
 
   ///
   /// Partial-loads buffering.
@@ -2596,14 +2594,13 @@ class dbNet : public dbObject
   ///   used because it may break the function of the design if the loads
   ///   contain an irrelevant load.
   ///
-  dbInst* insertBufferBeforeLoads(
-      std::set<dbObject*>& load_pins,
-      const dbMaster* buffer_master,
-      const Point* loc = nullptr,
-      const char* base_name = nullptr,
-      const dbNameUniquifyType& uniquify
-      = dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
-      bool loads_on_same_db_net = true);
+  dbInst* insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
+                                  const dbMaster* buffer_master,
+                                  const Point* loc = nullptr,
+                                  const char* base_name = nullptr,
+                                  const dbNameUniquifyType& uniquify
+                                  = dbNameUniquifyType::ALWAYS,
+                                  bool loads_on_same_db_net = true);
 
  private:
   dbInst* insertBufferCommon(dbObject* term_obj,

@@ -890,12 +890,12 @@ NETS 361 ;
     - dpath.b_reg.out_reg\[7\].qi ( _322_ A ) ( _331_ B1 ) ( _514_ B ) ( _531_ A ) ( _561_ Q ) + USE SIGNAL ;
     - dpath.b_reg.out_reg\[8\].qi ( _293_ B1 ) ( _342_ A ) ( _423_ B1 ) ( _424_ A2 ) ( _432_ A ) ( _512_ B ) ( _560_ Q ) + USE SIGNAL ;
     - dpath.b_reg.out_reg\[9\].qi ( _290_ A ) ( _426_ A ) ( _486_ A1 ) ( _510_ B ) ( _559_ Q ) + USE SIGNAL ;
-    - net6162 ( _318_ A ) ( _447_ A ) ( _490_ A2 ) ( _518_ B ) ( place31 Z ) + USE SIGNAL ;
-    - net6364 ( _365_ A ) ( _370_ B1 ) ( _382_ A ) ( _393_ A ) ( _411_ A ) ( _420_ A ) ( _429_ A )
+    - net31 ( _318_ A ) ( _447_ A ) ( _490_ A2 ) ( _518_ B ) ( place31 Z ) + USE SIGNAL ;
+    - net32 ( _365_ A ) ( _370_ B1 ) ( _382_ A ) ( _393_ A ) ( _411_ A ) ( _420_ A ) ( _429_ A )
       ( _434_ A ) ( _436_ B1 ) ( _442_ A ) ( _444_ B1 ) ( _450_ A ) ( _533_ A ) ( _535_ B1 ) ( place32 Z ) + USE SIGNAL ;
-    - net6566 ( _309_ A ) ( _473_ A2 ) ( _478_ B ) ( _527_ A ) ( place33 Z ) + USE SIGNAL ;
-    - net6768 ( _306_ A ) ( _471_ B ) ( _525_ A ) ( place34 Z ) + USE SIGNAL ;
-    - net6970 ( _317_ A2 ) ( _328_ A ) ( _453_ B ) ( _519_ A ) ( place35 Z ) + USE SIGNAL ;
+    - net33 ( _309_ A ) ( _473_ A2 ) ( _478_ B ) ( _527_ A ) ( place33 Z ) + USE SIGNAL ;
+    - net34 ( _306_ A ) ( _471_ B ) ( _525_ A ) ( place34 Z ) + USE SIGNAL ;
+    - net35 ( _317_ A2 ) ( _328_ A ) ( _453_ B ) ( _519_ A ) ( place35 Z ) + USE SIGNAL ;
     - req_msg\[0\] ( PIN req_msg[0] ) ( _527_ B ) + USE SIGNAL ;
     - req_msg\[10\] ( PIN req_msg[10] ) ( _507_ B ) + USE SIGNAL ;
     - req_msg\[11\] ( PIN req_msg[11] ) ( _505_ B ) + USE SIGNAL ;

@@ -183,7 +183,7 @@ void IntegratedFixture::removeFile(const std::string& path)
   }
 }
 
-void IntegratedFixture::writeAndCompareVerilogOutput(
+void IntegratedFixture::writeAndCompareVerilogOutputString(
     const std::string& test_name,
     const std::string& expected_verilog,
     bool remove_file)
@@ -196,6 +196,35 @@ void IntegratedFixture::writeAndCompareVerilogOutput(
                       std::istreambuf_iterator<char>());
 
   EXPECT_EQ(content, expected_verilog);
+
+  if (remove_file) {
+    removeFile(verilog_file);
+  }
+}
+
+void IntegratedFixture::writeAndCompareVerilogOutputFile(
+    const std::string& test_name,
+    const std::string& golden_verilog_file,
+    bool remove_file)
+{
+  const std::string golden_file
+      = getFilePath(test_root_path_ + "cpp/" + golden_verilog_file);
+  const std::string verilog_file = test_name + "_out.v";
+  sta::writeVerilog(verilog_file.c_str(), true, false, {}, sta_->network());
+
+  // Read new verilog content
+  std::ifstream if_out(verilog_file);
+  std::string content((std::istreambuf_iterator<char>(if_out)),
+                      std::istreambuf_iterator<char>());
+
+  // Read golden verilog content
+  std::ifstream if_golden(golden_file);
+  std::string golden_content((std::istreambuf_iterator<char>(if_golden)),
+                             std::istreambuf_iterator<char>());
+
+  std::cout << "Compare " << verilog_file << " and " << golden_file
+            << std::endl;
+  EXPECT_EQ(content, golden_content);
 
   if (remove_file) {
     removeFile(verilog_file);

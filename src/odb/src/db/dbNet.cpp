@@ -186,14 +186,14 @@ void placeNewBuffer(dbInst* buffer_inst,
 }
 
 dbNet* createBufferNet(dbNet* net,
-                       dbBTerm* term,
+                       dbBTerm* bterm,
                        const char* suffix,
                        dbModNet* mod_net,
                        dbModule* parent_mod,
                        const dbNameUniquifyType& uniquify)
 {
   dbBlock* block = net->getBlock();
-  if (term == nullptr) {
+  if (bterm == nullptr) {
     // If not connecting to a BTerm, just append the suffix.
     const std::string new_net_name_str = std::string(net->getName()) + suffix;
     return dbNet::create(block, new_net_name_str.c_str(), uniquify, parent_mod);
@@ -201,7 +201,7 @@ dbNet* createBufferNet(dbNet* net,
 
   // If the connected term is a port, the new net should take the name of the
   // port to maintain connectivity.
-  const char* port_name = term->getConstName();
+  const char* port_name = bterm->getConstName();
 
   // If the original net name is the same as the port name, it should be
   // renamed to avoid conflict.
@@ -219,7 +219,8 @@ dbNet* createBufferNet(dbNet* net,
   // The new net takes the name of the port.
   // The uniquify parameter is not strictly needed here if we assume port names
   // are unique, but we pass it for safety.
-  return dbNet::create(block, port_name, uniquify, parent_mod);
+  return dbNet::create(
+      block, port_name, dbNameUniquifyType::IF_NEEDED, parent_mod);
 }
 
 void rewireBuffer(bool insertBefore,
@@ -3640,17 +3641,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
 
   // 3. Create the New Net (Buffer Output Net)
   //    The new net resides in the same hierarchy as the buffer.
-  std::string new_net_name = block->makeNewNetName(
-      target_module ? target_module->getModInst() : nullptr);
-
-  // Create FLAT net for physical connection
-  dbNet* new_flat_net
-      = dbNet::create(block, new_net_name.c_str(), uniquify, target_module);
-
-  // Propagate NDR if exists
-  if (dbTechNonDefaultRule* rule = getNonDefaultRule()) {
-    new_flat_net->setNonDefaultRule(rule);
-  }
+  dbNet* new_flat_net = dbNet::create(block, "net", uniquify, target_module);
 
   // Check if we need a dbModNet (Logical Net)
   // dbModNet is required only if:
@@ -3716,7 +3707,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
   for (dbObject* load_obj : load_pins) {
     if (load_obj->getObjectType() == dbITermObj) {
       dbITerm* load = static_cast<dbITerm*>(load_obj);
-      // 4.4. Port Punching (Hierarchical Connection)
+      // 4.3.1. Port Punching (Hierarchical Connection)
       // - If the load is in a deeper hierarchy than the buffer (target_module),
       //   we create hierarchical pins/nets to maintain logical consistency.
       // - We do this BEFORE disconnect to allow reusing existing hierarchical
@@ -3725,39 +3716,17 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
       bool hier_connected = createHierarchicalConnection(
           load, target_module, top_mod_iterm, load_pins);
 
-      // 4.5. Disconnect the load from the original net
+      // 4.3.2. Disconnect the load from the original net
       // - Disconnect both flat and hier nets if not hier_connected (in the same
       //   module)
       if (!hier_connected) {
         load->disconnect();
       }
 
-      // 4.6. Connect to the new flat net
+      // 4.3.3. Connect load to the new flat net
       load->connect(new_flat_net);
 
-      // Only restore the logical connection if the load is in a deeper
-      // hierarchy. If the load is in the target_module, it is moving to the new
-      // net, so connecting to the old saved_mod_net would be incorrect
-      // (creating a mismatch).
-      // jk: problematic part
-      // if (saved_mod_net && load->getInst()->getModule() != target_module) {
-      //  printf("DEBUG_ROOT_CAUSE: Reconnecting logical net for load %s\n",
-      //         load->getName().c_str());
-      //  printf("  saved_mod_net: %s (id: %d)\n",
-      //         saved_mod_net->getName().c_str(),
-      //         saved_mod_net->getId());
-      //  printf("  current physical net: %s (id: %d)\n",
-      //         load->getNet()->getName().c_str(),
-      //         load->getNet()->getId());
-
-      //  load->connect(saved_mod_net);
-
-      //  printf("  after connect, mod net: %s\n",
-      //         load->getModNet() ? load->getModNet()->getName().c_str()
-      //                           : "nullptr");
-      //}
-
-      // 4.7. Connect to the new flat net
+      // 4.3.4. Connect load to the new ModNet
       if (new_mod_net) {
         if (top_mod_iterm) {
           // Connect the top-most hierarchical pin to the buffer's output ModNet
@@ -3784,6 +3753,12 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
     placement_loc = computeCentroid(load_pins);
   }
   placeNewBuffer(buffer_inst, &placement_loc, nullptr, nullptr);
+
+  // 6. Propagate NDR if exists
+  if (dbTechNonDefaultRule* rule = getNonDefaultRule()) {
+    new_flat_net->setNonDefaultRule(rule);
+  }
+
   return buffer_inst;
 }
 

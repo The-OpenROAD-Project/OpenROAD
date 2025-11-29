@@ -4813,7 +4813,7 @@ odb::dbInst* Resizer::insertBufferAfterDriver(Net* net,
                                         buffer_master,
                                         &buffer_loc,
                                         name_suffix,
-                                        odb::dbNameUniquifyType::IF_NEEDED);
+                                        odb::dbNameUniquifyType::ALWAYS);
 
   if (!buffer_inst) {
     logger_->error(RSZ,
