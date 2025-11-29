@@ -360,9 +360,10 @@ bool createHierarchicalConnection(dbITerm* load_pin,
                                   dbModITerm*& top_mod_iterm,
                                   const std::set<dbObject*>& load_pins)
 {
+  dbBlock* block = load_pin->getBlock();
   dbModule* current_module = load_pin->getInst()->getModule();
   if (current_module == target_module
-      || current_module->getDb()->hasHierarchy() == false) {
+      || block->getDb()->hasHierarchy() == false) {
     top_mod_iterm = nullptr;  // Already in same module, no hierarchy needed
     return false;
   }
@@ -515,7 +516,7 @@ bool createHierarchicalConnection(dbITerm* load_pin,
 
     // Name generation
     std::string base_name
-        = load_pin->getNet()->getName();  // Use original net name as base
+        = block->getBaseName(load_pin->getNet()->getConstName());
     std::string unique_name
         = makeUniqueHierName(current_module, base_name, suffix);
 
