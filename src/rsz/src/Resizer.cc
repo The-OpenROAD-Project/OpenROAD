@@ -4883,8 +4883,6 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
   return buffer_inst;
 }
 
-// If underscore is true, an underscore will be used to concat unique instance
-// index. This is added to cover the existing usage.
 Instance* Resizer::makeInstance(LibertyCell* cell,
                                 const char* name,
                                 Instance* parent,
