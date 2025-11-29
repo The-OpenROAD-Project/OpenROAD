@@ -78,7 +78,7 @@ bool _dbBlockage::operator<(const _dbBlockage& rhs) const
       _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
       _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
       _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
-      int r = strcmp(lhs_inst->_name, rhs_inst->_name);
+      int r = strcmp(lhs_inst->name_, rhs_inst->name_);
 
       if (r < 0) {
         return true;

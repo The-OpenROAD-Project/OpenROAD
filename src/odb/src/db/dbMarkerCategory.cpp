@@ -29,7 +29,7 @@ template class dbTable<_dbMarkerCategory>;
 
 bool _dbMarkerCategory::operator==(const _dbMarkerCategory& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
   if (description_ != rhs.description_) {
@@ -64,7 +64,7 @@ bool _dbMarkerCategory::operator<(const _dbMarkerCategory& rhs) const
 
 _dbMarkerCategory::_dbMarkerCategory(_dbDatabase* db)
 {
-  _name = nullptr;
+  name_ = nullptr;
   max_markers_ = 10000;
   marker_tbl_ = new dbTable<_dbMarker>(
       db, this, (GetObjTbl_t) &_dbMarkerCategory::getObjectTable, dbMarkerObj);
@@ -78,7 +78,7 @@ _dbMarkerCategory::_dbMarkerCategory(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbMarkerCategory& obj)
 {
-  stream >> obj._name;
+  stream >> obj.name_;
   stream >> obj.description_;
   stream >> obj.source_;
   stream >> obj.max_markers_;
@@ -91,7 +91,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMarkerCategory& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbMarkerCategory& obj)
 {
-  stream << obj._name;
+  stream << obj.name_;
   stream << obj.description_;
   stream << obj.source_;
   stream << obj.max_markers_;
@@ -130,9 +130,6 @@ void _dbMarkerCategory::collectMemInfo(MemInfo& info)
 
 _dbMarkerCategory::~_dbMarkerCategory()
 {
-  if (_name) {
-    free((void*) _name);
-  }
   delete marker_tbl_;
   delete categories_tbl_;
 }
@@ -295,7 +292,7 @@ void _dbMarkerCategory::writeTR(std::ofstream& report) const
 const char* dbMarkerCategory::getName() const
 {
   _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 void dbMarkerCategory::setDescription(const std::string& description)
@@ -402,8 +399,8 @@ bool dbMarkerCategory::rename(const char* name)
 
     chip->marker_categories_map_.erase(name);
 
-    free((void*) _category->_name);
-    _category->_name = safe_strdup(name);
+    free((void*) _category->name_);
+    _category->name_ = safe_strdup(name);
 
     chip->marker_categories_map_[name] = _category->getImpl()->getId();
   } else {
@@ -415,8 +412,8 @@ bool dbMarkerCategory::rename(const char* name)
 
     parent->categories_hash_.remove(_category);
 
-    free((void*) _category->_name);
-    _category->_name = safe_strdup(name);
+    free((void*) _category->name_);
+    _category->name_ = safe_strdup(name);
 
     parent->categories_hash_.insert(_category);
   }
@@ -780,7 +777,7 @@ dbMarkerCategory* dbMarkerCategory::create(dbChip* chip, const char* name)
 
   _dbMarkerCategory* _category = parent->marker_categories_tbl_->create();
 
-  _category->_name = safe_strdup(name);
+  _category->name_ = safe_strdup(name);
 
   parent->marker_categories_map_[name] = _category->getImpl()->getId();
 
@@ -849,7 +846,7 @@ dbMarkerCategory* dbMarkerCategory::create(dbMarkerCategory* category,
 
   _dbMarkerCategory* _category = parent->categories_tbl_->create();
 
-  _category->_name = safe_strdup(name);
+  _category->name_ = safe_strdup(name);
 
   parent->categories_hash_.insert(_category);
 
@@ -899,7 +896,7 @@ void dbMarkerCategory::destroy(dbMarkerCategory* category)
       }
     }
 
-    _chip->marker_categories_map_.erase(_category->_name);
+    _chip->marker_categories_map_.erase(_category->name_);
     _chip->marker_categories_tbl_->destroy(_category);
   } else {
     _dbMarkerCategory* parent = (_dbMarkerCategory*) _category->getOwner();

@@ -1048,7 +1048,7 @@ void dbWire::append(dbWire* src_, bool singleSegmentWire)
       if (opcode == WOP_VIA) {
         uint vid = dst->_data[i];
         _dbVia* src_via = src_block->_via_tbl->getPtr(vid);
-        dbVia* dst_via = ((dbBlock*) dst_block)->findVia(src_via->_name);
+        dbVia* dst_via = ((dbBlock*) dst_block)->findVia(src_via->name_);
 
         // duplicate src-via in dst-block if needed
         if (dst_via == nullptr) {

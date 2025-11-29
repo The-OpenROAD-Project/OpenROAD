@@ -49,7 +49,7 @@ class _dbBTerm : public _dbObject
   // PERSISTANT-MEMBERS
   _dbBTermFlags flags_;
   uint _ext_id;
-  char* _name;
+  char* name_;
   dbId<_dbBTerm> next_entry_;
   dbId<_dbNet> _net;
   dbId<_dbModNet> _mnet;

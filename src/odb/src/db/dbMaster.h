@@ -52,7 +52,7 @@ class _dbMaster : public _dbObject
   uint _width;
   uint _mterm_cnt;
   uint _id;
-  char* _name;
+  char* name_;
   dbId<_dbMaster> next_entry_;
   dbId<_dbMaster> _leq;
   dbId<_dbMaster> _eeq;

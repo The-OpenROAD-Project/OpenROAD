@@ -81,7 +81,7 @@ bool _dbTech::operator==(const _dbTech& rhs) const
     return false;
   }
 
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
 
@@ -297,7 +297,7 @@ _dbTech::~_dbTech()
 dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
 {
   dbOStreamScope scope(stream, "dbTech");
-  stream << tech._name;
+  stream << tech.name_;
   stream << tech._via_cnt;
   stream << tech._layer_cnt;
   stream << tech._rlayer_cnt;
@@ -336,9 +336,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
 {
   _dbDatabase* db = tech.getImpl()->getDatabase();
   if (db->isSchema(db_schema_block_tech)) {
-    stream >> tech._name;
+    stream >> tech.name_;
   } else {
-    tech._name = "";
+    tech.name_ = "";
   }
   stream >> tech._via_cnt;
   stream >> tech._layer_cnt;
@@ -387,7 +387,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
 std::string dbTech::getName()
 {
   auto tech = (_dbTech*) this;
-  return tech->_name;
+  return tech->name_;
 }
 
 double _dbTech::_getLefVersion() const
@@ -827,7 +827,7 @@ dbTech* dbTech::create(dbDatabase* db_, const char* name)
   _dbDatabase* db = (_dbDatabase*) db_;
 
   _dbTech* tech = db->_tech_tbl->create();
-  tech->_name = name;
+  tech->name_ = name;
   return (dbTech*) tech;
 }
 
@@ -850,7 +850,7 @@ void _dbTech::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["samenet_rules"].add(_samenet_rules);
   info.children_["samenet_matrix"].add(_samenet_matrix);
   info.children_["via_hash"].add(_via_hash);

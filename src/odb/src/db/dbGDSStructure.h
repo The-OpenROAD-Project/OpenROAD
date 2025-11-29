@@ -35,7 +35,7 @@ class _dbGDSStructure : public _dbObject
   dbObjectTable* getObjectTable(dbObjectType type);
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
+  char* name_;
   dbId<_dbGDSStructure> next_entry_;
   dbTable<_dbGDSBoundary>* boundaries_;
   dbTable<_dbGDSBox>* boxes_;

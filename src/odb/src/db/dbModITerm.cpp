@@ -28,7 +28,7 @@ template class dbTable<_dbModITerm>;
 
 bool _dbModITerm::operator==(const _dbModITerm& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
   if (_parent != rhs._parent) {
@@ -65,13 +65,13 @@ _dbModITerm::_dbModITerm(_dbDatabase* db)
 {
   // For pointer tagging the bottom log_2(8) bits.
   static_assert(alignof(_dbModITerm) % 8 == 0);
-  _name = nullptr;
+  name_ = nullptr;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
 {
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._name;
+    stream >> obj.name_;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._parent;
@@ -99,8 +99,8 @@ dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
     dbDatabase* db = reinterpret_cast<dbDatabase*>(obj.getDatabase());
     _dbBlock* block = reinterpret_cast<_dbBlock*>(db->getChip()->getBlock());
     _dbModInst* mod_inst = block->_modinst_tbl->getPtr(obj._parent);
-    if (obj._name) {
-      mod_inst->_moditerm_hash[obj._name] = dbId<_dbModITerm>(obj.getId());
+    if (obj.name_) {
+      mod_inst->_moditerm_hash[obj.name_] = dbId<_dbModITerm>(obj.getId());
     }
   }
   // User Code End >>
@@ -109,7 +109,7 @@ dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbModITerm& obj)
 {
-  stream << obj._name;
+  stream << obj.name_;
   stream << obj._parent;
   stream << obj._child_modbterm;
   stream << obj._mod_net;
@@ -126,15 +126,12 @@ void _dbModITerm::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   // User Code End collectMemInfo
 }
 
 _dbModITerm::~_dbModITerm()
 {
-  if (_name) {
-    free((void*) _name);
-  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -146,7 +143,7 @@ _dbModITerm::~_dbModITerm()
 const char* dbModITerm::getName() const
 {
   _dbModITerm* obj = (_dbModITerm*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 dbModInst* dbModITerm::getParent() const
@@ -233,7 +230,7 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance,
   moditerm->_next_net_moditerm = 0;
   moditerm->_prev_net_moditerm = 0;
 
-  moditerm->_name = safe_strdup(name);
+  moditerm->name_ = safe_strdup(name);
   moditerm->_parent = parent->getOID();
   moditerm->next_entry_ = parent->_moditerms;
   moditerm->_prev_entry = 0;
@@ -318,7 +315,7 @@ void dbModITerm::connect(dbModNet* net)
                "ECO: connect dbModITerm {} at id {} to dbModNet {} at id {}",
                getName(),
                getId(),
-               _modnet->_name,
+               _modnet->name_,
                _modnet->getId());
     _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     _block->_journal->pushParam(dbModITermObj);
@@ -352,7 +349,7 @@ void dbModITerm::disconnect()
         "ECO: disconnect dbModITerm {} at id {} from dbModNet {} at id {}",
         getName(),
         getId(),
-        _modnet->_name,
+        _modnet->name_,
         _modnet->getId());
     _block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     _block->_journal->pushParam(dbModITermObj);

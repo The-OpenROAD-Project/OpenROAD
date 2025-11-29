@@ -2,7 +2,7 @@
     "name":"dbModInst",
     "fields":[
 	{
-	    "name":"_name",
+	    "name":"name_",
 	    "type":"char *",
 	    "flags":["no-set"]
 	},

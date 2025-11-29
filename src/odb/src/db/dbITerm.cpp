@@ -92,7 +92,7 @@ bool _dbITerm::operator<(const _dbITerm& rhs) const
 
   _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
   _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
-  int r = strcmp(lhs_inst->_name, rhs_inst->_name);
+  int r = strcmp(lhs_inst->name_, rhs_inst->name_);
 
   if (r < 0) {
     return true;
@@ -104,7 +104,7 @@ bool _dbITerm::operator<(const _dbITerm& rhs) const
 
   _dbMTerm* lhs_mterm = getMTerm();
   _dbMTerm* rhs_mterm = rhs.getMTerm();
-  return strcmp(lhs_mterm->_name, rhs_mterm->_name) < 0;
+  return strcmp(lhs_mterm->name_, rhs_mterm->name_) < 0;
 }
 
 _dbMTerm* _dbITerm::getMTerm() const
@@ -317,14 +317,14 @@ void dbITerm::connect(dbNet* net_)
         utl::ODB,
         369,
         "Attempt to connect iterm of dont_touch instance {}",
-        inst->_name);
+        inst->name_);
   }
 
   if (net->flags_._dont_touch) {
     inst->getLogger()->error(utl::ODB,
                              373,
                              "Attempt to connect iterm to dont_touch net {}",
-                             net->_name);
+                             net->name_);
   }
 
   if (net_->getBlock() != getInst()->getBlock()) {
@@ -424,7 +424,7 @@ void dbITerm::connect(dbModNet* mod_net)
         utl::ODB,
         397,
         "Attempt to connect iterm of dont_touch instance {}",
-        inst->_name);
+        inst->name_);
   }
 
   if (block->_journal) {
@@ -475,7 +475,7 @@ void dbITerm::disconnect()
         370,
         "Attempt to disconnect term {} of dont_touch instance {}",
         getMTerm()->getName(),
-        inst->_name);
+        inst->name_);
   }
 
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
@@ -491,7 +491,7 @@ void dbITerm::disconnect()
         372,
         "Attempt to disconnect iterm {} of dont_touch net {}",
         getName(),
-        net->_name);
+        net->name_);
   }
 
   if (block->_journal) {
@@ -506,7 +506,7 @@ void dbITerm::disconnect()
                getName(),
                (net) ? net->getId() : 0,
                static_cast<void*>(net),
-               (net) ? net->_name : "NULL",
+               (net) ? net->name_ : "NULL",
                (mod_net_impl) ? mod_net_impl->getId() : 0,
                static_cast<void*>(mod_net),
                (mod_net) ? mod_net->getHierarchicalName() : "NULL");
@@ -585,7 +585,7 @@ void dbITerm::disconnectDbNet()
         1104,
         "Attempt to disconnect term {} of dont_touch instance {}",
         getMTerm()->getName(),
-        inst->_name);
+        inst->name_);
   }
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
   _dbNet* net = block->_net_tbl->getPtr(iterm->_net);
@@ -596,7 +596,7 @@ void dbITerm::disconnectDbNet()
         1105,
         "Attempt to disconnect iterm {} of dont_touch net {}",
         getName(),
-        net->_name);
+        net->name_);
   }
 
   for (auto callback : block->_callbacks) {
@@ -668,7 +668,7 @@ void dbITerm::disconnectDbModNet()
                  getId(),
                  getName(),
                  iterm->_mnet,
-                 mod_net->_name);
+                 mod_net->name_);
       block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
       block->_journal->pushParam(dbITermObj);
       block->_journal->pushParam(getId());

@@ -4,7 +4,7 @@
     "assert_alignment_is_multiple_of": 8,
     "fields":[
         {
-            "name":"_name",
+            "name":"name_",
             "type":"char *",
             "flags":["no-set"],
             "default":"nullptr",

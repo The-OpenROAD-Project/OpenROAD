@@ -3,7 +3,7 @@
     "needs_non_default_destructor" : "true",
     "fields":[
 	{
-	    "name":"_name",
+	    "name":"name_",
 	    "type":"char *",
 	    "flags":["no-set"]
 	},

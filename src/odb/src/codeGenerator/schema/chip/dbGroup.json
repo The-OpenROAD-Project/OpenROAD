@@ -3,7 +3,7 @@
   "type":"dbObject",
   "fields":[
     {
-      "name":"_name",
+      "name":"name_",
       "type":"char *",
       "default": "nullptr",
       "flags":["no-set"]

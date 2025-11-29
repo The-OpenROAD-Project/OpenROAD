@@ -32,7 +32,7 @@ class _dbRow : public _dbObject
  public:
   // PERSISTANT-MEMBERS
   dbRowFlags flags_;
-  char* _name;
+  char* name_;
   dbId<_dbLib> _lib;
   dbId<_dbSite> _site;
   int _x;
@@ -52,7 +52,7 @@ class _dbRow : public _dbObject
 
 inline _dbRow::_dbRow(_dbDatabase*, const _dbRow& r)
     : flags_(r.flags_),
-      _name(nullptr),
+      name_(nullptr),
       _lib(r._lib),
       _site(r._site),
       _x(r._x),
@@ -60,8 +60,8 @@ inline _dbRow::_dbRow(_dbDatabase*, const _dbRow& r)
       _site_cnt(r._site_cnt),
       _spacing(r._spacing)
 {
-  if (r._name) {
-    _name = safe_strdup(r._name);
+  if (r.name_) {
+    name_ = safe_strdup(r.name_);
   }
 }
 
@@ -70,7 +70,7 @@ inline _dbRow::_dbRow(_dbDatabase*)
   flags_._orient = dbOrientType::R0;
   flags_._dir = dbRowDir::HORIZONTAL;
   flags_._spare_bits = 0;
-  _name = nullptr;
+  name_ = nullptr;
   _x = 0;
   _y = 0;
   _site_cnt = 0;
@@ -79,8 +79,8 @@ inline _dbRow::_dbRow(_dbDatabase*)
 
 inline _dbRow::~_dbRow()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
@@ -88,7 +88,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbRow& row)
 {
   uint* bit_field = (uint*) &row.flags_;
   stream << *bit_field;
-  stream << row._name;
+  stream << row.name_;
   stream << row._lib;
   stream << row._site;
   stream << row._x;
@@ -102,7 +102,7 @@ inline dbIStream& operator>>(dbIStream& stream, _dbRow& row)
 {
   uint* bit_field = (uint*) &row.flags_;
   stream >> *bit_field;
-  stream >> row._name;
+  stream >> row.name_;
   stream >> row._lib;
   stream >> row._site;
   stream >> row._x;

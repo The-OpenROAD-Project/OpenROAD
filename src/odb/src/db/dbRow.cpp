@@ -35,11 +35,11 @@ bool _dbRow::operator==(const _dbRow& rhs) const
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
@@ -72,7 +72,7 @@ bool _dbRow::operator==(const _dbRow& rhs) const
 
 bool _dbRow::operator<(const _dbRow& rhs) const
 {
-  int r = strcmp(_name, rhs._name);
+  int r = strcmp(name_, rhs.name_);
 
   if (r < 0) {
     return true;
@@ -150,13 +150,13 @@ bool _dbRow::operator<(const _dbRow& rhs) const
 std::string dbRow::getName()
 {
   _dbRow* row = (_dbRow*) this;
-  return row->_name;
+  return row->name_;
 }
 
 const char* dbRow::getConstName()
 {
   _dbRow* row = (_dbRow*) this;
-  return row->_name;
+  return row->name_;
 }
 
 dbSite* dbRow::getSite()
@@ -247,7 +247,7 @@ dbRow* dbRow::create(dbBlock* block_,
   _dbSite* site = (_dbSite*) site_;
   _dbLib* lib = (_dbLib*) site->getOwner();
   _dbRow* row = block->_row_tbl->create();
-  row->_name = safe_strdup(name);
+  row->name_ = safe_strdup(name);
   row->_lib = lib->getOID();
   row->_site = site->getOID();
   row->flags_._orient = orient;
@@ -292,7 +292,7 @@ void _dbRow::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
 }
 
 }  // namespace odb

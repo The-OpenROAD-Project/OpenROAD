@@ -88,11 +88,11 @@ bool _dbMaster::operator==(const _dbMaster& rhs) const
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
@@ -178,7 +178,7 @@ _dbMaster::_dbMaster(_dbDatabase* db)
   _width = 0;
   _mterm_cnt = 0;
   _id = 0;
-  _name = nullptr;
+  name_ = nullptr;
 
   _mterm_tbl = new dbTable<_dbMTerm, 4>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbMTermObj);
@@ -226,8 +226,8 @@ _dbMaster::~_dbMaster()
   delete _pbox_box_itr;
   delete _mpin_itr;
 
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
@@ -241,7 +241,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
   stream << master._width;
   stream << master._mterm_cnt;
   stream << master._id;
-  stream << master._name;
+  stream << master.name_;
   stream << master.next_entry_;
   stream << master._leq;
   stream << master._eeq;
@@ -270,7 +270,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
   stream >> master._width;
   stream >> master._mterm_cnt;
   stream >> master._id;
-  stream >> master._name;
+  stream >> master.name_;
   stream >> master.next_entry_;
   stream >> master._leq;
   stream >> master._eeq;
@@ -335,13 +335,13 @@ dbObjectTable* _dbMaster::getObjectTable(dbObjectType type)
 std::string dbMaster::getName() const
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_name;
+  return master->name_;
 }
 
 const char* dbMaster::getConstName()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_name;
+  return master->name_;
 }
 
 Point dbMaster::getOrigin()
@@ -678,7 +678,7 @@ dbMaster* dbMaster::create(dbLib* lib_, const char* name_)
   _dbLib* lib = (_dbLib*) lib_;
   _dbDatabase* db = lib->getDatabase();
   _dbMaster* master = lib->_master_tbl->create();
-  master->_name = safe_strdup(name_);
+  master->name_ = safe_strdup(name_);
   master->_id = db->_master_id++;
   lib->_master_hash.insert(master);
   return (dbMaster*) master;
@@ -818,7 +818,7 @@ void _dbMaster::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["mterm_hash"].add(_mterm_hash);
   _mterm_tbl->collectMemInfo(info.children_["mterm"]);
   _mpin_tbl->collectMemInfo(info.children_["mpin"]);

@@ -63,7 +63,7 @@ bool _dbSWire::operator<(const _dbSWire& rhs) const
     _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
     _dbNet* lhs_net = lhs_blk->_net_tbl->getPtr(_net);
     _dbNet* rhs_net = rhs_blk->_net_tbl->getPtr(rhs._net);
-    int r = strcmp(lhs_net->_name, rhs_net->_name);
+    int r = strcmp(lhs_net->name_, rhs_net->name_);
 
     if (r < 0) {
       return true;

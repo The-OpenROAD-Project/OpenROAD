@@ -49,11 +49,11 @@ bool _dbMTerm::operator==(const _dbMTerm& rhs) const
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
@@ -108,8 +108,8 @@ bool _dbMTerm::operator==(const _dbMTerm& rhs) const
 
 _dbMTerm::~_dbMTerm()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 
   for (auto elem : _par_met_area) {
@@ -138,7 +138,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMTerm& mterm)
   uint* bit_field = (uint*) &mterm.flags_;
   stream << *bit_field;
   stream << mterm._order_id;
-  stream << mterm._name;
+  stream << mterm.name_;
   stream << mterm.next_entry_;
   stream << mterm._next_mterm;
   stream << mterm._pins;
@@ -157,7 +157,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMTerm& mterm)
   uint* bit_field = (uint*) &mterm.flags_;
   stream >> *bit_field;
   stream >> mterm._order_id;
-  stream >> mterm._name;
+  stream >> mterm.name_;
   stream >> mterm.next_entry_;
   stream >> mterm._next_mterm;
   stream >> mterm._pins;
@@ -180,7 +180,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMTerm& mterm)
 std::string dbMTerm::getName()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  return mterm->_name;
+  return mterm->name_;
 }
 
 char* dbMTerm::getName(dbInst* inst, char* ttname)
@@ -222,7 +222,7 @@ char* dbMTerm::getName(dbBlock* block, dbMaster* master, char* ttname)
 const char* dbMTerm::getConstName()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  return mterm->_name;
+  return mterm->name_;
 }
 
 dbSigType dbMTerm::getSigType()
@@ -454,7 +454,7 @@ dbMTerm* dbMTerm::create(dbMaster* master,
   }
 
   _dbMTerm* impl = master_impl->_mterm_tbl->create();
-  impl->_name = strdup(name);
+  impl->name_ = strdup(name);
   impl->flags_._io_type = io_type.getValue();
   impl->flags_._shape_type = shape_type;
   master_impl->_mterm_hash.insert(impl);
@@ -485,7 +485,7 @@ void _dbMTerm::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
 
   // These fields have unusal pointer ownship semantics relative to
   // the rest of odb (not a table but a vector of owning pointers).

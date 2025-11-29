@@ -25,29 +25,29 @@ template class dbTable<_dbName>;
 // _dbName
 /////////////////
 _dbName::_dbName(_dbDatabase*, const _dbName& n)
-    : _name(nullptr), next_entry_(n.next_entry_), _ref_cnt(n._ref_cnt)
+    : name_(nullptr), next_entry_(n.next_entry_), _ref_cnt(n._ref_cnt)
 {
-  if (n._name) {
-    _name = safe_strdup(n._name);
+  if (n.name_) {
+    name_ = safe_strdup(n.name_);
   }
 }
 
 _dbName::_dbName(_dbDatabase*)
 {
-  _name = nullptr;
+  name_ = nullptr;
   _ref_cnt = 0;
 }
 
 _dbName::~_dbName()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
 bool _dbName::operator==(const _dbName& rhs) const
 {
-  if (strcmp(_name, rhs._name) != 0) {
+  if (strcmp(name_, rhs.name_) != 0) {
     return false;
   }
 
@@ -64,7 +64,7 @@ bool _dbName::operator==(const _dbName& rhs) const
 
 bool _dbName::operator<(const _dbName& rhs) const
 {
-  return strcmp(_name, rhs._name) < 0;
+  return strcmp(name_, rhs.name_) < 0;
 }
 
 void _dbName::collectMemInfo(MemInfo& info)
@@ -72,12 +72,12 @@ void _dbName::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbName& name)
 {
-  stream << name._name;
+  stream << name.name_;
   stream << name.next_entry_;
   stream << name._ref_cnt;
   return stream;
@@ -85,7 +85,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbName& name)
 
 dbIStream& operator>>(dbIStream& stream, _dbName& name)
 {
-  stream >> name._name;
+  stream >> name.name_;
   stream >> name.next_entry_;
   stream >> name._ref_cnt;
   return stream;
@@ -139,7 +139,7 @@ uint _dbNameCache::addName(const char* name)
 
   if (n == nullptr) {
     n = _name_tbl->create();
-    n->_name = safe_strdup(name);
+    n->name_ = safe_strdup(name);
     _name_hash.insert(n);
   }
 
@@ -161,7 +161,7 @@ void _dbNameCache::removeName(uint id)
 const char* _dbNameCache::getName(uint id)
 {
   _dbName* n = _name_tbl->getPtr(id);
-  return n->_name;
+  return n->name_;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbNameCache& cache)

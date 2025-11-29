@@ -28,7 +28,7 @@ bool _dbTechLayerCutClassRule::operator==(
   if (flags_.cuts_valid_ != rhs.flags_.cuts_valid_) {
     return false;
   }
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
   if (width_ != rhs.width_) {
@@ -56,7 +56,7 @@ bool _dbTechLayerCutClassRule::operator<(
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
 {
   flags_ = {};
-  _name = nullptr;
+  name_ = nullptr;
   width_ = 0;
   length_ = 0;
   num_cuts_ = 0;
@@ -68,7 +68,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
   stream >> flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
-  stream >> obj._name;
+  stream >> obj.name_;
   stream >> obj.width_;
   stream >> obj.length_;
   stream >> obj.num_cuts_;
@@ -82,7 +82,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj)
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
   stream << flags_bit_field;
-  stream << obj._name;
+  stream << obj.name_;
   stream << obj.width_;
   stream << obj.length_;
   stream << obj.num_cuts_;
@@ -96,15 +96,8 @@ void _dbTechLayerCutClassRule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   // User Code End collectMemInfo
-}
-
-_dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
-{
-  if (_name) {
-    free((void*) _name);
-  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -116,7 +109,7 @@ _dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
 const char* dbTechLayerCutClassRule::getName() const
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 void dbTechLayerCutClassRule::setWidth(int width)
@@ -195,7 +188,7 @@ dbTechLayerCutClassRule* dbTechLayerCutClassRule::create(dbTechLayer* _layer,
   }
   _dbTechLayer* layer = (_dbTechLayer*) _layer;
   _dbTechLayerCutClassRule* newrule = layer->cut_class_rules_tbl_->create();
-  newrule->_name = safe_strdup(name);
+  newrule->name_ = safe_strdup(name);
   layer->cut_class_rules_hash_.insert(newrule);
   return ((dbTechLayerCutClassRule*) newrule);
 }

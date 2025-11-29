@@ -34,7 +34,7 @@ class _dbTechViaGenerateRule : public _dbObject
  public:
   // PERSISTANT-MEMBERS
   _dbTechViaGenerateRuleFlags flags_;
-  char* _name;
+  char* name_;
   dbVector<uint> _layer_rules;
 
   _dbTechViaGenerateRule(_dbDatabase*, const _dbTechViaGenerateRule& v);
@@ -48,7 +48,7 @@ class _dbTechViaGenerateRule : public _dbObject
   }
   bool operator<(const _dbTechViaGenerateRule& rhs) const
   {
-    return strcmp(_name, rhs._name) < 0;
+    return strcmp(name_, rhs.name_) < 0;
   }
 
   void collectMemInfo(MemInfo& info);

@@ -26,14 +26,12 @@ class _dbModInst : public _dbObject
  public:
   _dbModInst(_dbDatabase*);
 
-  ~_dbModInst();
-
   bool operator==(const _dbModInst& rhs) const;
   bool operator!=(const _dbModInst& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbModInst& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
+  char* name_;
   dbId<_dbModInst> next_entry_;
   dbId<_dbModule> _parent;
   dbId<_dbModInst> _module_next;

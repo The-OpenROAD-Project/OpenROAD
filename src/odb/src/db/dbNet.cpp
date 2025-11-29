@@ -60,7 +60,7 @@ template class dbTable<_dbNet>;
 
 _dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
     : flags_(n.flags_),
-      _name(nullptr),
+      name_(nullptr),
       next_entry_(n.next_entry_),
       _iterms(n._iterms),
       _bterms(n._bterms),
@@ -79,8 +79,8 @@ _dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
       _ccAdjustOrder(n._ccAdjustOrder)
 
 {
-  if (n._name) {
-    _name = safe_strdup(n._name);
+  if (n.name_) {
+    name_ = safe_strdup(n.name_);
   }
   _drivingIterm = -1;
 }
@@ -110,7 +110,7 @@ _dbNet::_dbNet(_dbDatabase* db)
   flags_._rc_disconnected = 0;
   flags_._block_rule = 0;
   flags_._has_jumpers = 0;
-  _name = nullptr;
+  name_ = nullptr;
   _gndc_calibration_factor = 1.0;
   _cc_calibration_factor = 1.0;
   _weight = 1;
@@ -122,8 +122,8 @@ _dbNet::_dbNet(_dbDatabase* db)
 
 _dbNet::~_dbNet()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
@@ -131,7 +131,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbNet& net)
 {
   uint* bit_field = (uint*) &net.flags_;
   stream << *bit_field;
-  stream << net._name;
+  stream << net.name_;
   stream << net._gndc_calibration_factor;
   stream << net._cc_calibration_factor;
   stream << net.next_entry_;
@@ -157,7 +157,7 @@ dbIStream& operator>>(dbIStream& stream, _dbNet& net)
 {
   uint* bit_field = (uint*) &net.flags_;
   stream >> *bit_field;
-  stream >> net._name;
+  stream >> net.name_;
   stream >> net._gndc_calibration_factor;
   stream >> net._cc_calibration_factor;
   stream >> net.next_entry_;
@@ -185,7 +185,7 @@ dbIStream& operator>>(dbIStream& stream, _dbNet& net)
 
 bool _dbNet::operator<(const _dbNet& rhs) const
 {
-  return strcmp(_name, rhs._name) < 0;
+  return strcmp(name_, rhs.name_) < 0;
 }
 
 bool _dbNet::operator==(const _dbNet& rhs) const
@@ -270,11 +270,11 @@ bool _dbNet::operator==(const _dbNet& rhs) const
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
@@ -361,13 +361,13 @@ bool _dbNet::operator==(const _dbNet& rhs) const
 std::string dbNet::getName() const
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_name;
+  return net->name_;
 }
 
 const char* dbNet::getConstName() const
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_name;
+  return net->name_;
 }
 
 void dbNet::printNetName(FILE* fp, bool idFlag, bool newLine)
@@ -377,7 +377,7 @@ void dbNet::printNetName(FILE* fp, bool idFlag, bool newLine)
   }
 
   _dbNet* net = (_dbNet*) this;
-  fprintf(fp, " %s", net->_name);
+  fprintf(fp, " %s", net->name_);
 
   if (newLine) {
     fprintf(fp, "\n");
@@ -403,12 +403,12 @@ bool dbNet::rename(const char* name)
                static_cast<void*>(this),
                getName(),
                name);
-    block->_journal->updateField(this, _dbNet::NAME, net->_name, name);
+    block->_journal->updateField(this, _dbNet::NAME, net->name_, name);
   }
 
   block->_net_hash.remove(net);
-  free((void*) net->_name);
-  net->_name = safe_strdup(name);
+  free((void*) net->name_);
+  net->name_ = safe_strdup(name);
   block->_net_hash.insert(net);
 
   return true;
@@ -420,8 +420,8 @@ void dbNet::swapNetNames(dbNet* source, bool ok_to_journal)
   _dbNet* source_net = (_dbNet*) source;
   _dbBlock* block = (_dbBlock*) source_net->getOwner();
 
-  char* dest_name_ptr = dest_net->_name;
-  char* source_name_ptr = source_net->_name;
+  char* dest_name_ptr = dest_net->name_;
+  char* source_name_ptr = source_net->name_;
 
   // allow undo..
   if (block->_journal && ok_to_journal) {
@@ -450,8 +450,8 @@ void dbNet::swapNetNames(dbNet* source, bool ok_to_journal)
   block->_net_hash.remove(source_net);
 
   // swap names without copy, just swap the pointers
-  dest_net->_name = source_name_ptr;
-  source_net->_name = dest_name_ptr;
+  dest_net->name_ = source_name_ptr;
+  source_net->name_ = dest_name_ptr;
 
   block->_net_hash.insert(dest_net);
   block->_net_hash.insert(source_net);
@@ -2156,7 +2156,7 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
     block->_journal->endAction();
   }
 
-  net->_name = safe_strdup(name_);
+  net->name_ = safe_strdup(name_);
   block->_net_hash.insert(net);
 
   for (auto cb : block->_callbacks) {
@@ -2174,7 +2174,7 @@ void dbNet::destroy(dbNet* net_)
 
   if (net->flags_._dont_touch) {
     net->getLogger()->error(
-        utl::ODB, 364, "Attempt to destroy dont_touch net {}", net->_name);
+        utl::ODB, 364, "Attempt to destroy dont_touch net {}", net->name_);
   }
 
   dbSet<dbITerm> iterms = net_->getITerms();
@@ -2228,7 +2228,7 @@ void dbNet::destroy(dbNet* net_)
                "ECO: delete dbNet({}, {:p}) '{}'",
                net->getId(),
                static_cast<void*>(net),
-               net->_name);
+               net->name_);
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(net_->getName());
@@ -2503,7 +2503,7 @@ void _dbNet::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["groups"].add(_groups);
 }
 

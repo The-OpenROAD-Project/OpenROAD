@@ -112,7 +112,7 @@ int _dbBox::equal(const _dbBox& rhs) const
       _dbVia* lhs_via = getBlockVia();
       _dbVia* rhs_via = rhs.getBlockVia();
 
-      if (strcmp(lhs_via->_name, rhs_via->_name) != 0) {
+      if (strcmp(lhs_via->name_, rhs_via->name_) != 0) {
         return false;
       }
       break;
@@ -122,7 +122,7 @@ int _dbBox::equal(const _dbBox& rhs) const
       _dbTechVia* lhs_via = getTechVia();
       _dbTechVia* rhs_via = rhs.getTechVia();
 
-      if (strcmp(lhs_via->_name, rhs_via->_name) != 0) {
+      if (strcmp(lhs_via->name_, rhs_via->name_) != 0) {
         return false;
       }
       break;
@@ -132,7 +132,7 @@ int _dbBox::equal(const _dbBox& rhs) const
       _dbTechLayer* lhs_lay = getTechLayer();
       _dbTechLayer* rhs_lay = rhs.getTechLayer();
 
-      if (strcmp(lhs_lay->_name, rhs_lay->_name) != 0) {
+      if (strcmp(lhs_lay->name_, rhs_lay->name_) != 0) {
         return false;
       }
       break;
@@ -174,7 +174,7 @@ bool _dbBox::operator<(const _dbBox& rhs) const
     case kBlockVia: {
       _dbVia* lhs_via = getBlockVia();
       _dbVia* rhs_via = rhs.getBlockVia();
-      int r = strcmp(lhs_via->_name, rhs_via->_name);
+      int r = strcmp(lhs_via->name_, rhs_via->name_);
 
       if (r < 0) {
         return true;
@@ -189,7 +189,7 @@ bool _dbBox::operator<(const _dbBox& rhs) const
     case kTechVia: {
       _dbTechVia* lhs_via = getTechVia();
       _dbTechVia* rhs_via = rhs.getTechVia();
-      int r = strcmp(lhs_via->_name, rhs_via->_name);
+      int r = strcmp(lhs_via->name_, rhs_via->name_);
 
       if (r < 0) {
         return true;
@@ -205,7 +205,7 @@ bool _dbBox::operator<(const _dbBox& rhs) const
       if ((flags_.layer_id != 0) && (rhs.flags_.layer_id != 0)) {
         _dbTechLayer* lhs_lay = getTechLayer();
         _dbTechLayer* rhs_lay = rhs.getTechLayer();
-        int r = strcmp(lhs_lay->_name, rhs_lay->_name);
+        int r = strcmp(lhs_lay->name_, rhs_lay->name_);
 
         if (r < 0) {
           return true;

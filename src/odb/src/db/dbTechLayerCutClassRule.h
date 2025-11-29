@@ -25,8 +25,6 @@ class _dbTechLayerCutClassRule : public _dbObject
  public:
   _dbTechLayerCutClassRule(_dbDatabase*);
 
-  ~_dbTechLayerCutClassRule();
-
   bool operator==(const _dbTechLayerCutClassRule& rhs) const;
   bool operator!=(const _dbTechLayerCutClassRule& rhs) const
   {
@@ -36,7 +34,7 @@ class _dbTechLayerCutClassRule : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   dbTechLayerCutClassRuleFlags flags_;
-  char* _name;
+  char* name_;
   int width_;
   int length_;
   int num_cuts_;

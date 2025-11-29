@@ -23,7 +23,7 @@ class _dbName : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  char* _name;
+  char* name_;
   dbId<_dbName> next_entry_;
   uint _ref_cnt;
 

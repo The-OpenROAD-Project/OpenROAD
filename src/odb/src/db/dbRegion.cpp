@@ -35,25 +35,25 @@ _dbRegion::_dbRegion(_dbDatabase*)
   flags_._type = dbRegionType::INCLUSIVE;
   flags_._invalid = false;
   flags_._spare_bits = false;
-  _name = nullptr;
+  name_ = nullptr;
 }
 
 _dbRegion::_dbRegion(_dbDatabase*, const _dbRegion& r)
     : flags_(r.flags_),
-      _name(nullptr),
+      name_(nullptr),
       _insts(r._insts),
       _boxes(r._boxes),
       groups_(r.groups_)
 {
-  if (r._name) {
-    _name = strdup(r._name);
+  if (r.name_) {
+    name_ = strdup(r.name_);
   }
 }
 
 _dbRegion::~_dbRegion()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
@@ -67,11 +67,11 @@ bool _dbRegion::operator==(const _dbRegion& rhs) const
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
@@ -118,7 +118,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbRegion& r)
 {
   uint* bit_field = (uint*) &r.flags_;
   stream << *bit_field;
-  stream << r._name;
+  stream << r.name_;
   stream << r._insts;
   stream << r._boxes;
   stream << r.groups_;
@@ -129,7 +129,7 @@ dbIStream& operator>>(dbIStream& stream, _dbRegion& r)
 {
   uint* bit_field = (uint*) &r.flags_;
   stream >> *bit_field;
-  stream >> r._name;
+  stream >> r.name_;
   stream >> r._insts;
   stream >> r._boxes;
   stream >> r.groups_;
@@ -140,7 +140,7 @@ dbIStream& operator>>(dbIStream& stream, _dbRegion& r)
 std::string dbRegion::getName()
 {
   _dbRegion* region = (_dbRegion*) this;
-  return region->_name;
+  return region->name_;
 }
 
 dbRegionType dbRegion::getRegionType()
@@ -310,7 +310,7 @@ dbRegion* dbRegion::create(dbBlock* block_, const char* name)
   }
 
   _dbRegion* region = block->_region_tbl->create();
-  region->_name = safe_strdup(name);
+  region->name_ = safe_strdup(name);
   for (auto callback : block->_callbacks) {
     callback->inDbRegionCreate((dbRegion*) region);
   }
@@ -378,7 +378,7 @@ void _dbRegion::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
 }
 
 }  // namespace odb

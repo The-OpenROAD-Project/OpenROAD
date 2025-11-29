@@ -19,7 +19,7 @@
   ],
   "fields": [
     {
-      "name": "_name",
+      "name": "name_",
       "type": "char *",
       "schema": "db_schema_chip_extended",
       "default": "nullptr",

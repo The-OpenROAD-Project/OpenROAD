@@ -39,7 +39,7 @@ template class dbTable<_dbModNet>;
 
 bool _dbModNet::operator==(const _dbModNet& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
   if (_parent != rhs._parent) {
@@ -74,13 +74,13 @@ bool _dbModNet::operator<(const _dbModNet& rhs) const
 
 _dbModNet::_dbModNet(_dbDatabase* db)
 {
-  _name = nullptr;
+  name_ = nullptr;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
 {
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._name;
+    stream >> obj.name_;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._parent;
@@ -108,8 +108,8 @@ dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
     dbDatabase* db = (dbDatabase*) (obj.getDatabase());
     _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
     _dbModule* module = block->_module_tbl->getPtr(obj._parent);
-    if (obj._name) {
-      module->_modnet_hash[obj._name] = dbId<_dbModNet>(obj.getId());
+    if (obj.name_) {
+      module->_modnet_hash[obj.name_] = dbId<_dbModNet>(obj.getId());
     }
   }
   // User Code End >>
@@ -118,7 +118,7 @@ dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbModNet& obj)
 {
-  stream << obj._name;
+  stream << obj.name_;
   stream << obj._parent;
   stream << obj.next_entry_;
   stream << obj._prev_entry;
@@ -135,15 +135,8 @@ void _dbModNet::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   // User Code End collectMemInfo
-}
-
-_dbModNet::~_dbModNet()
-{
-  if (_name) {
-    free((void*) _name);
-  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -167,13 +160,13 @@ dbModule* dbModNet::getParent() const
 std::string dbModNet::getName() const
 {
   _dbModNet* obj = (_dbModNet*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 const char* dbModNet::getConstName() const
 {
   _dbModNet* obj = (_dbModNet*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 std::string dbModNet::getHierarchicalName() const
@@ -200,7 +193,7 @@ std::string dbModNet::getHierarchicalName() const
 void dbModNet::rename(const char* new_name)
 {
   _dbModNet* obj = (_dbModNet*) this;
-  if (strcmp(obj->_name, new_name) == 0) {
+  if (strcmp(obj->name_, new_name) == 0) {
     return;
   }
 
@@ -216,13 +209,13 @@ void dbModNet::rename(const char* new_name)
                static_cast<void*>(this),
                getHierarchicalName(),
                new_name);
-    block->_journal->updateField(this, _dbModNet::NAME, obj->_name, new_name);
+    block->_journal->updateField(this, _dbModNet::NAME, obj->name_, new_name);
   }
 
   _dbModule* parent = block->_module_tbl->getPtr(obj->_parent);
-  parent->_modnet_hash.erase(obj->_name);
-  free((void*) (obj->_name));
-  obj->_name = safe_strdup(new_name);
+  parent->_modnet_hash.erase(obj->name_);
+  free((void*) (obj->name_));
+  obj->name_ = safe_strdup(new_name);
   parent->_modnet_hash[new_name] = obj->getOID();
 }
 
@@ -318,7 +311,7 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* base_name)
   _dbBlock* block = (_dbBlock*) parent->getOwner();
   _dbModNet* modnet = block->_modnet_tbl->create();
   // defaults
-  modnet->_name = strdup(base_name);
+  modnet->name_ = strdup(base_name);
   modnet->_parent = parent->getOID();  // dbmodule
   modnet->next_entry_ = parent->_modnets;
   modnet->_prev_entry = 0;

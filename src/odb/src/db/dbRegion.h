@@ -30,7 +30,7 @@ class _dbRegion : public _dbObject
  public:
   // PERSISTANT-MEMBERS
   _dbRegionFlags flags_;
-  char* _name;
+  char* name_;
   dbId<_dbInst> _insts;
   dbId<_dbBox> _boxes;
   dbId<_dbGroup> groups_;

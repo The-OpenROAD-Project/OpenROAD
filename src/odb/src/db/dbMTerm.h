@@ -34,7 +34,7 @@ class _dbMTerm : public _dbObject
   // PERSISTANT-MEMBERS
   _dbMTermFlags flags_;
   uint _order_id;
-  char* _name;
+  char* name_;
   dbId<_dbMTerm> next_entry_;
   dbId<_dbMTerm> _next_mterm;
   dbId<_dbMPin> _pins;
@@ -68,7 +68,7 @@ inline _dbMTerm::_dbMTerm(_dbDatabase*)
   flags_._mark = 0;
   flags_._spare_bits = 0;
   _order_id = 0;
-  _name = nullptr;
+  name_ = nullptr;
   _par_met_area.clear();
   _par_met_sidearea.clear();
   _par_cut_area.clear();

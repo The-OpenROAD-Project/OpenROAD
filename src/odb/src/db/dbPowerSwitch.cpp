@@ -23,7 +23,7 @@ template class dbTable<_dbPowerSwitch>;
 
 bool _dbPowerSwitch::operator==(const _dbPowerSwitch& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
   if (next_entry_ != rhs.next_entry_) {
@@ -49,7 +49,7 @@ bool _dbPowerSwitch::operator<(const _dbPowerSwitch& rhs) const
 
 _dbPowerSwitch::_dbPowerSwitch(_dbDatabase* db)
 {
-  _name = nullptr;
+  name_ = nullptr;
 }
 
 dbIStream& operator>>(dbIStream& stream, dbPowerSwitch::UPFIOSupplyPort& obj)
@@ -80,7 +80,7 @@ dbIStream& operator>>(dbIStream& stream, dbPowerSwitch::UPFOnState& obj)
 }
 dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
 {
-  stream >> obj._name;
+  stream >> obj.name_;
   stream >> obj.next_entry_;
   // User Code Begin >>
   if (obj.getDatabase()->isSchema(db_schema_update_db_power_switch)) {
@@ -156,7 +156,7 @@ dbOStream& operator<<(dbOStream& stream, const dbPowerSwitch::UPFOnState& obj)
 }
 dbOStream& operator<<(dbOStream& stream, const _dbPowerSwitch& obj)
 {
-  stream << obj._name;
+  stream << obj.name_;
   stream << obj.next_entry_;
   // User Code Begin <<
   stream << obj._in_supply_port;
@@ -178,20 +178,13 @@ void _dbPowerSwitch::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["in_supply_port"].add(_in_supply_port);
   info.children_["control_port"].add(_control_port);
   info.children_["acknowledge_port"].add(_acknowledge_port);
   info.children_["on_state"].add(_on_state);
   info.children_["port_map"].add(_port_map);
   // User Code End collectMemInfo
-}
-
-_dbPowerSwitch::~_dbPowerSwitch()
-{
-  if (_name) {
-    free((void*) _name);
-  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -203,7 +196,7 @@ _dbPowerSwitch::~_dbPowerSwitch()
 const char* dbPowerSwitch::getName() const
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 void dbPowerSwitch::setPowerDomain(dbPowerDomain* power_domain)
@@ -231,7 +224,7 @@ dbPowerSwitch* dbPowerSwitch::create(dbBlock* block, const char* name)
     return nullptr;
   }
   _dbPowerSwitch* ps = _block->_powerswitch_tbl->create();
-  ps->_name = safe_strdup(name);
+  ps->name_ = safe_strdup(name);
 
   _block->_powerswitch_hash.insert(ps);
   return (dbPowerSwitch*) ps;

@@ -266,11 +266,11 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
@@ -490,7 +490,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
   _v55sp_length_idx.clear();
   _v55sp_width_idx.clear();
   _v55sp_spacing.clear();
-  _name = nullptr;
+  name_ = nullptr;
   _alias = nullptr;
 
   _spacing_rules_tbl = new dbTable<_dbTechLayerSpacingRule>(
@@ -588,7 +588,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> obj._pt._width;
   stream >> obj._pt._length;
   stream >> obj._pt._from_width;
-  stream >> obj._name;
+  stream >> obj.name_;
   stream >> obj._alias;
   stream >> obj._lower;
   stream >> obj._upper;
@@ -674,7 +674,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << obj._pt._width;
   stream << obj._pt._length;
   stream << obj._pt._from_width;
-  stream << obj._name;
+  stream << obj.name_;
   stream << obj._alias;
   stream << obj._lower;
   stream << obj._upper;
@@ -819,7 +819,7 @@ void _dbTechLayer::collectMemInfo(MemInfo& info)
   // User Code Begin collectMemInfo
   info.children_["orth_spacing"].add(orth_spacing_tbl_);
   info.children_["cut_class_rules_hash"].add(cut_class_rules_hash_);
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["alias"].add(_alias);
   _spacing_rules_tbl->collectMemInfo(info.children_["spacing_rules_tbl"]);
   _min_cut_rules_tbl->collectMemInfo(info.children_["min_cut_rules_tbl"]);
@@ -857,8 +857,8 @@ _dbTechLayer::~_dbTechLayer()
   delete wrongdir_spacing_rules_tbl_;
   delete two_wires_forbidden_spc_rules_tbl_;
   // User Code Begin Destructor
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 
   {
@@ -1229,13 +1229,13 @@ std::string dbTechLayer::getLef58TypeString() const
 std::string dbTechLayer::getName() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  return layer->_name;
+  return layer->name_;
 }
 
 const char* dbTechLayer::getConstName() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  return layer->_name;
+  return layer->name_;
 }
 
 bool dbTechLayer::hasAlias()
@@ -2227,7 +2227,7 @@ dbTechLayer* dbTechLayer::create(dbTech* tech_,
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechLayer* layer = tech->_layer_tbl->create();
-  layer->_name = safe_strdup(name_);
+  layer->name_ = safe_strdup(name_);
   layer->_number = tech->_layer_cnt++;
   layer->flags_.type_ = type.getValue();
 

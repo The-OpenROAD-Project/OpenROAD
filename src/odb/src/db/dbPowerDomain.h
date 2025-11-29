@@ -26,14 +26,12 @@ class _dbPowerDomain : public _dbObject
  public:
   _dbPowerDomain(_dbDatabase*);
 
-  ~_dbPowerDomain();
-
   bool operator==(const _dbPowerDomain& rhs) const;
   bool operator!=(const _dbPowerDomain& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbPowerDomain& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
+  char* name_;
   dbId<_dbPowerDomain> next_entry_;
   dbVector<std::string> _elements;
   dbVector<dbId<_dbPowerSwitch>> _power_switch;

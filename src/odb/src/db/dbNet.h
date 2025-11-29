@@ -74,7 +74,7 @@ class _dbNet : public _dbObject
 
   // PERSISTANT-MEMBERS
   _dbNetFlags flags_;
-  char* _name;
+  char* name_;
   union
   {
     float _gndc_calibration_factor;

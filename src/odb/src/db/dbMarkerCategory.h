@@ -57,7 +57,7 @@ class _dbMarkerCategory : public _dbObject
   void writeTR(std::ofstream& report) const;
   // User Code End Methods
 
-  char* _name;
+  char* name_;
   std::string description_;
   std::string source_;
   int max_markers_;

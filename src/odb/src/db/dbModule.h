@@ -78,7 +78,7 @@ class _dbModule : public _dbObject
   static bool copyToChildBlock(dbModule* module);
   // User Code End Methods
 
-  char* _name;
+  char* name_;
   dbId<_dbModule> next_entry_;
   dbId<_dbInst> _insts;
   dbId<_dbModInst> _mod_inst;

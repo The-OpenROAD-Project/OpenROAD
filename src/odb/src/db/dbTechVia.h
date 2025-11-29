@@ -33,7 +33,7 @@ class _dbTechVia : public _dbObject
   // PERSISTANT-MEMBERS
   _dbTechViaFlags flags_;
   double _resistance;
-  char* _name;
+  char* name_;
   char* _pattern;
   dbId<_dbBox> _bbox;  // Caching the bbox speeds up defin imports.
   dbId<_dbBox> _boxes;

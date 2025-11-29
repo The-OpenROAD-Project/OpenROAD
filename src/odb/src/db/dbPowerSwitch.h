@@ -28,14 +28,12 @@ class _dbPowerSwitch : public _dbObject
  public:
   _dbPowerSwitch(_dbDatabase*);
 
-  ~_dbPowerSwitch();
-
   bool operator==(const _dbPowerSwitch& rhs) const;
   bool operator!=(const _dbPowerSwitch& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbPowerSwitch& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
+  char* name_;
   dbId<_dbPowerSwitch> next_entry_;
   dbVector<dbPowerSwitch::UPFIOSupplyPort> _in_supply_port;
   dbPowerSwitch::UPFIOSupplyPort _out_supply_port;

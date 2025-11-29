@@ -41,7 +41,7 @@ class _dbChip : public _dbObject
   dbObjectTable* getObjectTable(dbObjectType type);
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
+  char* name_;
   uint type_;
   Point offset_;
   int width_;

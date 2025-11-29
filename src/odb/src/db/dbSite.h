@@ -43,7 +43,7 @@ class _dbSite : public _dbObject
  public:
   // PERSISTANT-MEMBERS
   dbSiteFlags flags_;
-  char* _name;
+  char* name_;
   int _height;
   int _width;
   dbId<_dbSite> next_entry_;

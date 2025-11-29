@@ -68,11 +68,11 @@ bool _dbSite::operator==(const _dbSite& rhs) const
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
@@ -102,19 +102,19 @@ bool _dbSite::operator==(const _dbSite& rhs) const
 ////////////////////////////////////////////////////////////////////
 _dbSite::_dbSite(_dbDatabase*, const _dbSite& s)
     : flags_(s.flags_),
-      _name(nullptr),
+      name_(nullptr),
       _height(s._height),
       _width(s._width),
       next_entry_(s.next_entry_)
 {
-  if (s._name) {
-    _name = safe_strdup(s._name);
+  if (s.name_) {
+    name_ = safe_strdup(s.name_);
   }
 }
 
 _dbSite::_dbSite(_dbDatabase*)
 {
-  _name = nullptr;
+  name_ = nullptr;
   _height = 0;
   _width = 0;
   flags_._x_symmetry = 0;
@@ -127,8 +127,8 @@ _dbSite::_dbSite(_dbDatabase*)
 
 _dbSite::~_dbSite()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
@@ -141,13 +141,13 @@ _dbSite::~_dbSite()
 std::string dbSite::getName() const
 {
   _dbSite* site = (_dbSite*) this;
-  return site->_name;
+  return site->name_;
 }
 
 const char* dbSite::getConstName()
 {
   _dbSite* site = (_dbSite*) this;
-  return site->_name;
+  return site->name_;
 }
 
 int dbSite::getWidth()
@@ -277,7 +277,7 @@ dbSite* dbSite::create(dbLib* lib_, const char* name_)
 
   _dbLib* lib = (_dbLib*) lib_;
   _dbSite* site = lib->_site_tbl->create();
-  site->_name = safe_strdup(name_);
+  site->name_ = safe_strdup(name_);
   lib->_site_hash.insert(site);
   return (dbSite*) site;
 }
@@ -293,7 +293,7 @@ void _dbSite::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["row_pattern"].add(_row_pattern);
 }
 
@@ -301,7 +301,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbSite& site)
 {
   uint* bit_field = (uint*) &site.flags_;
   stream << *bit_field;
-  stream << site._name;
+  stream << site.name_;
   stream << site._height;
   stream << site._width;
   stream << site.next_entry_;
@@ -313,7 +313,7 @@ dbIStream& operator>>(dbIStream& stream, _dbSite& site)
 {
   uint* bit_field = (uint*) &site.flags_;
   stream >> *bit_field;
-  stream >> site._name;
+  stream >> site.name_;
   stream >> site._height;
   stream >> site._width;
   stream >> site.next_entry_;

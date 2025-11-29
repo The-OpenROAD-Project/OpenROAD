@@ -45,11 +45,11 @@ bool _dbTechVia::operator==(const _dbTechVia& rhs) const
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
@@ -105,7 +105,7 @@ bool _dbTechVia::operator==(const _dbTechVia& rhs) const
 _dbTechVia::_dbTechVia(_dbDatabase*, const _dbTechVia& v)
     : flags_(v.flags_),
       _resistance(v._resistance),
-      _name(nullptr),
+      name_(nullptr),
       _pattern(nullptr),
       _bbox(v._bbox),
       _boxes(v._boxes),
@@ -116,8 +116,8 @@ _dbTechVia::_dbTechVia(_dbDatabase*, const _dbTechVia& v)
       _via_params(v._via_params),
       next_entry_(v.next_entry_)
 {
-  if (v._name) {
-    _name = safe_strdup(v._name);
+  if (v.name_) {
+    name_ = safe_strdup(v.name_);
   }
 
   if (v._pattern) {
@@ -132,14 +132,14 @@ _dbTechVia::_dbTechVia(_dbDatabase*)
   flags_._has_params = 0;
   flags_._spare_bits = 0;
   _resistance = 0.0;
-  _name = nullptr;
+  name_ = nullptr;
   _pattern = nullptr;
 }
 
 _dbTechVia::~_dbTechVia()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 
   if (_pattern) {
@@ -152,7 +152,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechVia& via)
   uint* bit_field = (uint*) &via.flags_;
   stream << *bit_field;
   stream << via._resistance;
-  stream << via._name;
+  stream << via.name_;
   stream << via._bbox;
   stream << via._boxes;
   stream << via._top;
@@ -170,7 +170,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechVia& via)
   uint* bit_field = (uint*) &via.flags_;
   stream >> *bit_field;
   stream >> via._resistance;
-  stream >> via._name;
+  stream >> via.name_;
   stream >> via._bbox;
   stream >> via._boxes;
   stream >> via._top;
@@ -193,13 +193,13 @@ dbIStream& operator>>(dbIStream& stream, _dbTechVia& via)
 std::string dbTechVia::getName()
 {
   _dbTechVia* via = (_dbTechVia*) this;
-  return via->_name;
+  return via->name_;
 }
 
 const char* dbTechVia::getConstName()
 {
   _dbTechVia* via = (_dbTechVia*) this;
-  return via->_name;
+  return via->name_;
 }
 
 bool dbTechVia::isDefault()
@@ -394,7 +394,7 @@ dbTechVia* dbTechVia::create(dbTech* tech_, const char* name_)
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechVia* via = tech->_via_tbl->create();
-  via->_name = safe_strdup(name_);
+  via->name_ = safe_strdup(name_);
   tech->_via_hash.insert(via);
   tech->_via_cnt++;
   return (dbTechVia*) via;
@@ -415,7 +415,7 @@ dbTechVia* dbTechVia::clone(dbTechNonDefaultRule* rule_,
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechVia* via = tech->_via_tbl->create();
-  via->_name = safe_strdup(new_name);
+  via->name_ = safe_strdup(new_name);
 
   via->flags_ = _invia->flags_;
   via->_resistance = _invia->_resistance;
@@ -447,7 +447,7 @@ dbTechVia* dbTechVia::create(dbTechNonDefaultRule* rule_, const char* name_)
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechVia* via = tech->_via_tbl->create();
-  via->_name = safe_strdup(name_);
+  via->name_ = safe_strdup(name_);
   tech->_via_cnt++;
   via->_non_default_rule = rule->getOID();
   tech->_via_hash.insert(via);
@@ -539,7 +539,7 @@ void _dbTechVia::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["pattern"].add(_pattern);
 }
 

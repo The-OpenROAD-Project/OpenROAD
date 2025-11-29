@@ -19,7 +19,7 @@ class dbOStream;
 ///
 /// Each object must have the following "named" fields:
 ///
-///     char *        _name
+///     char *        name_
 ///     dbId<T>       next_entry_
 ///
 //////////////////////////////////////////////////////////

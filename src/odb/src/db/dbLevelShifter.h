@@ -22,14 +22,12 @@ class _dbLevelShifter : public _dbObject
  public:
   _dbLevelShifter(_dbDatabase*);
 
-  ~_dbLevelShifter();
-
   bool operator==(const _dbLevelShifter& rhs) const;
   bool operator!=(const _dbLevelShifter& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbLevelShifter& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
+  char* name_;
   dbId<_dbLevelShifter> next_entry_;
   dbId<_dbPowerDomain> _domain;
   dbVector<std::string> _elements;

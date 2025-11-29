@@ -29,7 +29,7 @@ class _dbModBTerm : public _dbObject
   bool operator<(const _dbModBTerm& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
+  char* name_;
   uint flags_;
   dbId<_dbModITerm> _parent_moditerm;
   dbId<_dbModule> _parent;

@@ -51,7 +51,7 @@ class _dbInst : public _dbObject
   };
 
   _dbInstFlags flags_;
-  char* _name;
+  char* name_;
   int _x;
   int _y;
   int _weight;

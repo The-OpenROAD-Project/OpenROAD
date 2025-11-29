@@ -54,7 +54,7 @@ class sortMTerm
  public:
   bool operator()(_dbMTerm* m1, _dbMTerm* m2)
   {
-    return strcmp(m1->_name, m2->_name) < 0;
+    return strcmp(m1->name_, m2->name_) < 0;
   }
 };
 
@@ -101,7 +101,7 @@ _dbInst::_dbInst(_dbDatabase*)
   flags_._source = dbSourceType::NONE;
   // flags_._spare_bits = 0;
   flags_._level = 0;
-  _name = nullptr;
+  name_ = nullptr;
   _x = 0;
   _y = 0;
   _weight = 0;
@@ -110,7 +110,7 @@ _dbInst::_dbInst(_dbDatabase*)
 
 _dbInst::_dbInst(_dbDatabase*, const _dbInst& i)
     : flags_(i.flags_),
-      _name(nullptr),
+      name_(nullptr),
       _x(i._x),
       _y(i._y),
       _weight(i._weight),
@@ -130,15 +130,15 @@ _dbInst::_dbInst(_dbDatabase*, const _dbInst& i)
       _halo(i._halo),
       pin_access_idx_(i.pin_access_idx_)
 {
-  if (i._name) {
-    _name = safe_strdup(i._name);
+  if (i.name_) {
+    name_ = safe_strdup(i.name_);
   }
 }
 
 _dbInst::~_dbInst()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
@@ -146,7 +146,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbInst& inst)
 {
   uint* bit_field = (uint*) &inst.flags_;
   stream << *bit_field;
-  stream << inst._name;
+  stream << inst.name_;
   stream << inst._x;
   stream << inst._y;
   stream << inst._weight;
@@ -172,7 +172,7 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
 {
   uint* bit_field = (uint*) &inst.flags_;
   stream >> *bit_field;
-  stream >> inst._name;
+  stream >> inst.name_;
   stream >> inst._x;
   stream >> inst._y;
   stream >> inst._weight;
@@ -205,8 +205,8 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
     } else {
       module = block->_module_tbl->getPtr(inst._module);
     }
-    if (inst._name) {
-      module->_dbinst_hash[inst._name] = dbId<_dbInst>(inst.getId());
+    if (inst.name_) {
+      module->_dbinst_hash[inst.name_] = dbId<_dbInst>(inst.getId());
     }
   }
   return stream;
@@ -214,7 +214,7 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
 
 bool _dbInst::operator<(const _dbInst& rhs) const
 {
-  return strcmp(_name, rhs._name) < 0;
+  return strcmp(name_, rhs.name_) < 0;
 }
 
 bool _dbInst::operator==(const _dbInst& rhs) const
@@ -251,11 +251,11 @@ bool _dbInst::operator==(const _dbInst& rhs) const
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
@@ -343,19 +343,19 @@ bool _dbInst::operator==(const _dbInst& rhs) const
 std::string dbInst::getName() const
 {
   _dbInst* inst = (_dbInst*) this;
-  return inst->_name;
+  return inst->name_;
 }
 
 const char* dbInst::getConstName() const
 {
   _dbInst* inst = (_dbInst*) this;
-  return inst->_name;
+  return inst->name_;
 }
 
 bool dbInst::isNamed(const char* name)
 {
   _dbInst* inst = (_dbInst*) this;
-  if (!strcmp(inst->_name, name)) {
+  if (!strcmp(inst->name_, name)) {
     return true;
   }
   return false;
@@ -380,12 +380,12 @@ bool dbInst::rename(const char* name)
                static_cast<void*>(this),
                getName(),
                name);
-    block->_journal->updateField(this, _dbInst::NAME, inst->_name, name);
+    block->_journal->updateField(this, _dbInst::NAME, inst->name_, name);
   }
 
   block->_inst_hash.remove(inst);
-  free((void*) inst->_name);
-  inst->_name = safe_strdup(name);
+  free((void*) inst->name_);
+  inst->name_ = safe_strdup(name);
   block->_inst_hash.insert(inst);
 
   return true;
@@ -1112,7 +1112,7 @@ bool dbInst::swapMaster(dbMaster* new_master_)
         utl::ODB,
         368,
         "Attempt to change master of dont_touch instance {}",
-        inst->_name);
+        inst->name_);
   }
 
   if (inst->_hierarchy) {
@@ -1188,7 +1188,7 @@ bool dbInst::swapMaster(dbMaster* new_master_)
     _dbMTerm* t1 = *i1;
     _dbMTerm* t2 = *i2;
 
-    if (strcmp(t1->_name, t2->_name) != 0) {
+    if (strcmp(t1->name_, t2->name_) != 0) {
       break;
     }
 
@@ -1326,7 +1326,7 @@ dbInst* dbInst::create(dbBlock* block_,
     block->_journal->endAction();
   }
 
-  inst_impl->_name = safe_strdup(name_);
+  inst_impl->name_ = safe_strdup(name_);
   inst_impl->_inst_hdr = inst_hdr->getOID();
   block->_inst_hash.insert(inst_impl);
   inst_hdr->_inst_cnt++;
@@ -1462,7 +1462,7 @@ void dbInst::destroy(dbInst* inst_)
     inst->getLogger()->error(utl::ODB,
                              362,
                              "Attempt to destroy dont_touch instance {}",
-                             inst->_name);
+                             inst->name_);
   }
 
   dbScanInst* scan_inst = inst_->getScanInst();
@@ -1471,7 +1471,7 @@ void dbInst::destroy(dbInst* inst_)
         utl::ODB,
         505,
         "Attempt to destroy instance {} with an associated scan inst.",
-        inst->_name);
+        inst->name_);
   }
 
   uint i;
@@ -1627,7 +1627,7 @@ void _dbInst::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["iterms"].add(_iterms);
 }
 

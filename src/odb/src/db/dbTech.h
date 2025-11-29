@@ -59,7 +59,7 @@ class _dbTech : public _dbObject
 
  public:
   // PERSISTANT-MEMBERS
-  std::string _name;
+  std::string name_;
   int _via_cnt;
   int _layer_cnt;
   int _rlayer_cnt;

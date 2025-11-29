@@ -37,7 +37,7 @@ class _dbVia : public _dbObject
  public:
   // PERSISTANT-MEMBERS
   _dbViaFlags flags_;  // 5.6 DEF
-  char* _name;
+  char* name_;
   char* _pattern;
   dbId<_dbBox> _bbox;  // Caching the bbox speeds up defin imports.
   dbId<_dbBox> _boxes;
@@ -56,7 +56,7 @@ class _dbVia : public _dbObject
   bool operator!=(const _dbVia& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbVia& rhs) const
   {
-    return strcmp(_name, rhs._name) < 0;
+    return strcmp(name_, rhs.name_) < 0;
   }
 
   _dbTech* getTech();

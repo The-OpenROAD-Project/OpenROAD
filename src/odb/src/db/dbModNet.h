@@ -24,14 +24,12 @@ class _dbModNet : public _dbObject
  public:
   _dbModNet(_dbDatabase*);
 
-  ~_dbModNet();
-
   bool operator==(const _dbModNet& rhs) const;
   bool operator!=(const _dbModNet& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbModNet& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
+  char* name_;
   dbId<_dbModule> _parent;
   dbId<_dbModNet> next_entry_;
   dbId<_dbModNet> _prev_entry;

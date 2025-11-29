@@ -609,7 +609,7 @@ dbTech* dbDatabase::findTech(const char* name)
 {
   for (auto tech : getTechs()) {
     auto tech_impl = (_dbTech*) tech;
-    if (tech_impl->_name == name) {
+    if (tech_impl->name_ == name) {
       return tech;
     }
   }
