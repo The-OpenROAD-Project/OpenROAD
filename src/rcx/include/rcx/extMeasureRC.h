@@ -52,21 +52,6 @@ struct CouplingState
       one_count_table++;
     }
   }
-
-  // Print statistics
-  void printStats(FILE* fp, uint dir) const
-  {
-    if (fp) {
-      fprintf(fp,
-              "\nDir=%d  wireCnt=%d  NotOrderedCnt=%d  oneEmptyTable=%d  "
-              "oneCntTable=%d\n",
-              dir,
-              wire_count,
-              not_ordered_count,
-              empty_table_count,
-              one_count_table);
-    }
-  }
 };
 struct CouplingConfig
 {
