@@ -79,16 +79,16 @@ check "swire num wires" {llength [set wires [$swire getWires]]} 219
 set wire [lindex $wires 0]
 check "wire layer name" {[$wire getTechLayer] getName} metal1
 check "wire isVia" {$wire isVia} 0
-check "wire width" {$wire getWidth} 340
-check "wire length" {$wire getLength} 159980
+check "wire width" {$wire getDY} 340
+check "wire length" {$wire getDX} 159980
 check "wire shape" {$wire getWireShapeType} FOLLOWPIN
 check "wire direction" {[$wire getDir] value} [$odb::horizontal value]
 
 set wire [lindex $wires 30]
 check "wire layer name" {[$wire getTechLayer] getName} metal4
 check "wire isVia" {$wire isVia} 0
-check "wire width" {$wire getWidth} [expr 179200 - 22400]
-check "wire length" {$wire getLength} 960
+check "wire width" {$wire getDY} [expr 179200 - 22400]
+check "wire length" {$wire getDX} 960
 check "wire shape" {$wire getWireShapeType} STRIPE
 check "wire direction" {[$wire getDir] value} [$odb::vertical value]
 

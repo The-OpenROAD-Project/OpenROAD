@@ -264,8 +264,6 @@ class dbBox : public dbObject
   /// Get the height (yMax-yMin) of the box.
   ///
   uint getDY() const;
-  uint getWidth(uint dir = 1) const;
-  uint getLength(uint dir = 1) const;
 
   ///
   /// Set temporary flag visited

@@ -560,13 +560,6 @@ uint dbBox::getDY() const
   }
   return box->shape_.rect.dy();
 }
-uint dbBox::getWidth(const uint dir) const
-{
-  if (dir == 1) {  // horizontal
-    return getDY();
-  }
-  return getDX();
-}
 
 int dbBox::getDesignRuleWidth() const
 {
@@ -578,14 +571,6 @@ void dbBox::setDesignRuleWidth(const int width)
 {
   _dbBox* box = (_dbBox*) this;
   box->design_rule_width_ = width;
-}
-
-uint dbBox::getLength(const uint dir) const
-{
-  if (dir == 1) {  // horizontal
-    return getDX();
-  }
-  return getDY();
 }
 
 Point dbBox::getViaXY() const
