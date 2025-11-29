@@ -651,13 +651,13 @@ void dbMaster::getPlacementBoundary(Rect& r)
 void dbMaster::transform(dbTransform& t)
 {
   for (dbBox* box : getObstructions()) {
-    t.apply(((_dbBox*) box)->_shape._rect);
+    t.apply(((_dbBox*) box)->shape_.rect);
   }
 
   for (dbMTerm* mterm : getMTerms()) {
     for (dbMPin* mpin : mterm->getMPins()) {
       for (dbBox* box : mpin->getGeometry()) {
-        t.apply(((_dbBox*) box)->_shape._rect);
+        t.apply(((_dbBox*) box)->shape_.rect);
       }
     }
   }

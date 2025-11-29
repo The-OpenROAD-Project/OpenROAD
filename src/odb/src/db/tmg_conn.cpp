@@ -13,6 +13,7 @@
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
+#include "odb/isotropy.h"
 #include "tmg_conn_g.h"
 #include "utl/Logger.h"
 
@@ -258,7 +259,7 @@ void tmg_conn::loadSWire(dbNet* net)
           shape.setVia(via, rect);
         }
       } else {
-        if (rect.getDir() == 1) {
+        if (rect.getDir() == horizontal) {
           y1 = rect.yCenter();
           y2 = y1;
           x1 = rect.xMin() + (rect.yMax() - y1);

@@ -82,7 +82,7 @@ check "wire isVia" {$wire isVia} 0
 check "wire width" {$wire getWidth} 340
 check "wire length" {$wire getLength} 159980
 check "wire shape" {$wire getWireShapeType} FOLLOWPIN
-check "wire direction" {$wire getDir} 1 ;# 1 = HORIZONTAL
+check "wire direction" {[$wire getDir] value} [$odb::horizontal value]
 
 set wire [lindex $wires 30]
 check "wire layer name" {[$wire getTechLayer] getName} metal4
@@ -90,7 +90,7 @@ check "wire isVia" {$wire isVia} 0
 check "wire width" {$wire getWidth} [expr 179200 - 22400]
 check "wire length" {$wire getLength} 960
 check "wire shape" {$wire getWireShapeType} STRIPE
-check "wire direction" {$wire getDir} 0 ;# 0 = VERTICAL
+check "wire direction" {[$wire getDir] value} [$odb::vertical value]
 
 set wire [lindex $wires 34]
 check "wire isVia" {$wire isVia} 1
@@ -100,7 +100,7 @@ check "wire block via" {[$wire getBlockVia] getName} via2_960x340
 check "wire via xy" {$wire getViaXY} "24140 22400"
 check "wire num via boxes" {llength [$wire getViaBoxes 0]} 5 ;# 3 cut shapes + upper and lower metal
 # A via doesnt really have a direction, so any vaue is okay here I think
-check "wire direction" {$wire getDir} 1
+check "wire direction" {[$wire getDir] value} [$odb::horizontal value]
 
 set via [lindex $vias 0]
 

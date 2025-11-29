@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
+#include <climits>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -564,9 +565,9 @@ void _dbBlock::initialize(_dbChip* chip,
   _name = safe_strdup(name);
 
   _dbBox* box = _box_tbl->create();
-  box->_flags._owner_type = dbBoxOwner::BLOCK;
-  box->_owner = getOID();
-  box->_shape._rect.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
+  box->flags_.owner_type = dbBoxOwner::BLOCK;
+  box->owner_ = getOID();
+  box->shape_.rect.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
   _bbox = box->getOID();
   _chip = chip->getOID();
   _hier_delimiter = delimiter;
@@ -1108,7 +1109,7 @@ void _dbBlock::add_rect(const Rect& rect)
   _dbBox* box = _box_tbl->getPtr(_bbox);
 
   if (_flags._valid_bbox) {
-    box->_shape._rect.merge(rect);
+    box->shape_.rect.merge(rect);
   }
 }
 void _dbBlock::add_oct(const Oct& oct)
@@ -1116,7 +1117,7 @@ void _dbBlock::add_oct(const Oct& oct)
   _dbBox* box = _box_tbl->getPtr(_bbox);
 
   if (_flags._valid_bbox) {
-    box->_shape._rect.merge(oct);
+    box->shape_.rect.merge(oct);
   }
 }
 
@@ -1125,7 +1126,7 @@ void _dbBlock::remove_rect(const Rect& rect)
   _dbBox* box = _box_tbl->getPtr(_bbox);
 
   if (_flags._valid_bbox) {
-    _flags._valid_bbox = box->_shape._rect.inside(rect);
+    _flags._valid_bbox = box->shape_.rect.inside(rect);
   }
 }
 
@@ -1496,12 +1497,12 @@ dbBox* dbBlock::getBBox()
 void _dbBlock::ComputeBBox()
 {
   _dbBox* bbox = _box_tbl->getPtr(_bbox);
-  bbox->_shape._rect.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
+  bbox->shape_.rect.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
 
   for (dbInst* inst : dbSet<dbInst>(this, _inst_tbl)) {
     if (inst->isPlaced()) {
       _dbBox* box = (_dbBox*) inst->getBBox();
-      bbox->_shape._rect.merge(box->_shape._rect);
+      bbox->shape_.rect.merge(box->shape_.rect);
     }
   }
 
@@ -1510,7 +1511,7 @@ void _dbBlock::ComputeBBox()
       if (bp->getPlacementStatus().isPlaced()) {
         for (dbBox* box : bp->getBoxes()) {
           Rect r = box->getBox();
-          bbox->_shape._rect.merge(r);
+          bbox->shape_.rect.merge(r);
         }
       }
     }
@@ -1518,23 +1519,23 @@ void _dbBlock::ComputeBBox()
 
   for (dbObstruction* obs : dbSet<dbObstruction>(this, _obstruction_tbl)) {
     _dbBox* box = (_dbBox*) obs->getBBox();
-    bbox->_shape._rect.merge(box->_shape._rect);
+    bbox->shape_.rect.merge(box->shape_.rect);
   }
 
   for (dbSBox* box : dbSet<dbSBox>(this, _sbox_tbl)) {
     Rect rect = box->getBox();
-    bbox->_shape._rect.merge(rect);
+    bbox->shape_.rect.merge(rect);
   }
 
   for (dbWire* wire : dbSet<dbWire>(this, _wire_tbl)) {
     const auto opt_bbox = wire->getBBox();
     if (opt_bbox) {
-      bbox->_shape._rect.merge(opt_bbox.value());
+      bbox->shape_.rect.merge(opt_bbox.value());
     }
   }
 
-  if (bbox->_shape._rect.xMin() == INT_MAX) {  // empty block
-    bbox->_shape._rect.reset(0, 0, 0, 0);
+  if (bbox->shape_.rect.xMin() == INT_MAX) {  // empty block
+    bbox->shape_.rect.reset(0, 0, 0, 0);
   }
 
   _flags._valid_bbox = 1;

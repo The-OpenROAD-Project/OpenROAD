@@ -17,8 +17,6 @@ dbITermShapeItr::dbITermShapeItr(bool expand_vias)
   _iterm = nullptr;
   _mpin = nullptr;
   _via = nullptr;
-  _via_x = 0;
-  _via_y = 0;
   _expand_vias = expand_vias;
 }
 
@@ -87,7 +85,7 @@ next_state:
           return true;
         }
 
-        box->getViaXY(_via_x, _via_y);
+        _via_pt = box->getViaXY();
         _via = box->getTechVia();
         assert(_via);
         _via_boxes = _via->getBoxes();
@@ -118,13 +116,9 @@ next_state:
 void dbITermShapeItr::getViaBox(dbBox* box, dbShape& shape)
 {
   Rect b = box->getBox();
-  int xmin = b.xMin() + _via_x;
-  int ymin = b.yMin() + _via_y;
-  int xmax = b.xMax() + _via_x;
-  int ymax = b.yMax() + _via_y;
-  Rect r(xmin, ymin, xmax, ymax);
-  _transform.apply(r);
-  shape.setViaBox(_via, box->getTechLayer(), r);
+  b.moveDelta(_via_pt.getX(), _via_pt.getY());
+  _transform.apply(b);
+  shape.setViaBox(_via, box->getTechLayer(), b);
 }
 
 }  // namespace odb

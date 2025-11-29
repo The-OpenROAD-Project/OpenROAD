@@ -209,14 +209,14 @@ dbBlockage* dbBlockage::create(dbBlock* block_,
   }
 
   _dbBox* box = block->_box_tbl->create();
-  box->_shape._rect.init(x1, y1, x2, y2);
-  box->_flags._owner_type = dbBoxOwner::BLOCKAGE;
-  box->_owner = bkg->getOID();
+  box->shape_.rect.init(x1, y1, x2, y2);
+  box->flags_.owner_type = dbBoxOwner::BLOCKAGE;
+  box->owner_ = bkg->getOID();
   bkg->_bbox = box->getOID();
 
   // Update bounding box of block
   _dbBox* bbox = (_dbBox*) block->_box_tbl->getPtr(block->_bbox);
-  bbox->_shape._rect.merge(box->_shape._rect);
+  bbox->shape_.rect.merge(box->shape_.rect);
   for (auto callback : block->_callbacks) {
     callback->inDbBlockageCreate((dbBlockage*) bkg);
   }

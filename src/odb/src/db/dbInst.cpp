@@ -77,13 +77,13 @@ void _dbInst::setInstBBox(_dbInst* inst)
 {
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   _dbBox* box = block->_box_tbl->getPtr(inst->_bbox);
-  block->remove_rect(box->_shape._rect);
+  block->remove_rect(box->shape_.rect);
 
   dbMaster* master = ((dbInst*) inst)->getMaster();
-  master->getPlacementBoundary(box->_shape._rect);
+  master->getPlacementBoundary(box->shape_.rect);
   dbTransform transform(inst->_flags._orient, Point(inst->_x, inst->_y));
-  transform.apply(box->_shape._rect);
-  block->add_rect(box->_shape._rect);
+  transform.apply(box->shape_.rect);
+  block->add_rect(box->shape_.rect);
 }
 
 _dbInst::_dbInst(_dbDatabase*)
@@ -466,8 +466,8 @@ void dbInst::getLocation(int& x, int& y) const
   const _dbInst* inst = (const _dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   _dbBox* bbox = block->_box_tbl->getPtr(inst->_bbox);
-  x = bbox->_shape._rect.xMin();
-  y = bbox->_shape._rect.yMin();
+  x = bbox->shape_.rect.xMin();
+  y = bbox->shape_.rect.yMin();
 }
 
 Point dbInst::getLocation() const
@@ -1343,12 +1343,12 @@ dbInst* dbInst::create(dbBlock* block_,
   }
 
   _dbBox* box = block->_box_tbl->create();
-  box->_shape._rect.init(0, 0, master->_width, master->_height);
-  box->_flags._owner_type = dbBoxOwner::INST;
-  box->_owner = inst_impl->getOID();
+  box->shape_.rect.init(0, 0, master->_width, master->_height);
+  box->flags_.owner_type = dbBoxOwner::INST;
+  box->owner_ = inst_impl->getOID();
   inst_impl->_bbox = box->getOID();
 
-  block->add_rect(box->_shape._rect);
+  block->add_rect(box->shape_.rect);
 
   inst_impl->_flags._physical_only = physical_only;
 
@@ -1574,7 +1574,7 @@ void dbInst::destroy(dbInst* inst_)
   }
 
   _dbBox* box = block->_box_tbl->getPtr(inst->_bbox);
-  block->remove_rect(box->_shape._rect);
+  block->remove_rect(box->shape_.rect);
   block->_inst_hash.remove(inst);
   dbProperty::destroyProperties(inst);
   block->_inst_tbl->destroy(inst);

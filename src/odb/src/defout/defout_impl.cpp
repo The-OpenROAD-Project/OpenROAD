@@ -1687,8 +1687,7 @@ void DefOut::Impl::writeSWire(dbSWire* wire)
       dbTechLayer* l = v->getBottomLayer();
       const std::string ln = l->getName();
 
-      int x, y;
-      box->getViaXY(x, y);
+      const Point pt = box->getViaXY();
 
       if (box->hasViaLayerMasks()) {
         vn = fmt::format("MASK {}{}{} {}",
@@ -1699,11 +1698,11 @@ void DefOut::Impl::writeSWire(dbSWire* wire)
       }
 
       if (type.getValue() == dbWireShapeType::NONE) {
-        *_out << " " << ln << " 0 ( " << defdist(x) << " " << defdist(y)
-              << " ) " << vn;
+        *_out << " " << ln << " 0 ( " << defdist(pt.getX()) << " "
+              << defdist(pt.getY()) << " ) " << vn;
       } else {
         *_out << " " << ln << " 0 + SHAPE " << type.getString() << " ( "
-              << defdist(x) << " " << defdist(y) << " ) " << vn;
+              << defdist(pt.getX()) << " " << defdist(pt.getY()) << " ) " << vn;
       }
     } else if (box->getBlockVia()) {
       dbWireShapeType type = box->getWireShapeType();
@@ -1712,8 +1711,7 @@ void DefOut::Impl::writeSWire(dbSWire* wire)
       dbTechLayer* l = v->getBottomLayer();
       const std::string ln = l->getName();
 
-      int x, y;
-      box->getViaXY(x, y);
+      const Point pt = box->getViaXY();
 
       if (box->hasViaLayerMasks()) {
         vn = fmt::format("MASK {}{}{} {}",
@@ -1724,11 +1722,11 @@ void DefOut::Impl::writeSWire(dbSWire* wire)
       }
 
       if (type.getValue() == dbWireShapeType::NONE) {
-        *_out << " " << ln << " 0 ( " << defdist(x) << " " << defdist(y)
-              << " ) " << vn;
+        *_out << " " << ln << " 0 ( " << defdist(pt.getX()) << " "
+              << defdist(pt.getY()) << " ) " << vn;
       } else {
         *_out << " " << ln << " 0 + SHAPE " << type.getString() << " ( "
-              << defdist(x) << " " << defdist(y) << " ) " << vn;
+              << defdist(pt.getX()) << " " << defdist(pt.getY()) << " ) " << vn;
       }
     }
   }
