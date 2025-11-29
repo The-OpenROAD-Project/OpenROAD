@@ -18,6 +18,9 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
+// User Code Begin Includes
+#include "dbCommon.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbGDSStructure>;
 

@@ -27,6 +27,7 @@
 #include "dbChipInstItr.h"
 #include "dbChipNet.h"
 #include "dbChipNetItr.h"
+#include "dbCommon.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
 // User Code End Includes

@@ -21,6 +21,7 @@
 #include "dbTechSameNetRule.h"
 #include "dbTechVia.h"
 #include "odb/db.h"
+#include "odb/odb.h"
 
 namespace odb {
 

@@ -23,6 +23,7 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include "dbCommon.h"
 #include "dbGroup.h"
 #include "dbModBTerm.h"
 #include "dbModNet.h"

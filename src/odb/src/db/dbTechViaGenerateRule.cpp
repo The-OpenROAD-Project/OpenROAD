@@ -17,6 +17,7 @@
 #include "dbTechVia.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "odb/odb.h"
 
 namespace odb {
 

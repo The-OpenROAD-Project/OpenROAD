@@ -25,6 +25,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/lefout.h"
+#include "odb/odb.h"
 #include "spdlog/fmt/ostr.h"
 
 namespace odb {

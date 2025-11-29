@@ -37,6 +37,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "odb/isotropy.h"
+#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {

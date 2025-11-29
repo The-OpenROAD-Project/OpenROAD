@@ -35,6 +35,8 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
+#include <cstdlib>
+
 #include "dbHashTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayerAntennaRule.h"

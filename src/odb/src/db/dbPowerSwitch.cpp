@@ -18,6 +18,9 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "utl/Logger.h"
+// User Code Begin Includes
+#include "dbCommon.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbPowerSwitch>;
 

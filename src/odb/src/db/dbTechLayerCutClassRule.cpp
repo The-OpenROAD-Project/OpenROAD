@@ -14,6 +14,7 @@
 #include "dbTechLayer.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include "dbCommon.h"
 #include "dbHashTable.hpp"
 // User Code End Includes
 namespace odb {

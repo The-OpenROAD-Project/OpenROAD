@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <string>
 
+#include "dbCommon.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "utl/Logger.h"
 // User Code End Includes

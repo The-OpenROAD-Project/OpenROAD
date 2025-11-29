@@ -25,6 +25,7 @@
 #include "odb/dbSet.h"
 #include "odb/dbViaParams.h"
 #include "odb/geom.h"
+#include "odb/odb.h"
 
 namespace odb {
 

@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 
+#include "dbCommon.h"
 #include "dbModuleModNetBTermItr.h"
 #include "dbModuleModNetITermItr.h"
 #include "dbModuleModNetModBTermItr.h"
@@ -311,7 +312,7 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* base_name)
   _dbBlock* block = (_dbBlock*) parent->getOwner();
   _dbModNet* modnet = block->_modnet_tbl->create();
   // defaults
-  modnet->name_ = strdup(base_name);
+  modnet->name_ = safe_strdup(base_name);
   modnet->_parent = parent->getOID();  // dbmodule
   modnet->next_entry_ = parent->_modnets;
   modnet->_prev_entry = 0;

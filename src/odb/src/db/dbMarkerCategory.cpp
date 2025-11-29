@@ -14,12 +14,14 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
+#include <cstdlib>
 #include <fstream>
 #include <regex>
 #include <sstream>
 
 #include "boost/regex.hpp"
 #include "dbChip.h"
+#include "dbCommon.h"
 #include "dbHashTable.hpp"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"

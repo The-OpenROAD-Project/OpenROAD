@@ -14,6 +14,7 @@
 #include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/lefout.h"
+#include "odb/odb.h"
 #include "spdlog/fmt/ostr.h"
 
 namespace odb {

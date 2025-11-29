@@ -21,6 +21,7 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include "dbCommon.h"
 #include "dbGroupGroundNetItr.h"
 #include "dbGroupPowerNetItr.h"
 #include "dbRegion.h"

@@ -22,7 +22,9 @@
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/odb.h"
 #include "utl/Logger.h"
+
 namespace odb {
 
 template class dbTable<_dbWire>;

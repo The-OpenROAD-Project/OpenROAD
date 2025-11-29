@@ -33,6 +33,7 @@
 #include "odb/dbSet.h"
 #include "odb/dbStream.h"
 #include "odb/dbTypes.h"
+#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {

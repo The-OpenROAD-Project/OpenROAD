@@ -13,6 +13,7 @@
 #include "dbTechLayer.h"
 #include "odb/db.h"
 #include "odb/lefout.h"
+#include "odb/odb.h"
 
 namespace odb {
 

@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "dbCommon.h"
 #include "dbGroup.h"
 #include "dbLevelShifter.h"
 // User Code End Includes

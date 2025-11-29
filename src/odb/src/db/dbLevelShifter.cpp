@@ -15,6 +15,9 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+// User Code Begin Includes
+#include "dbCommon.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbLevelShifter>;
 

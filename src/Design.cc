@@ -3,6 +3,7 @@
 
 #include "ord/Design.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <istream>

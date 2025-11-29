@@ -18,6 +18,7 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
 #include "odb/geom.h"
+#include "odb/odb.h"
 
 namespace odb {
 
