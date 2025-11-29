@@ -87,7 +87,7 @@ class Orientation2D
   Orientation2D& operator=(const Orientation2D& other) = default;
 
   constexpr operator Value() const { return static_cast<Value>(value_); }
-  Value value() const { return static_cast<Value>(value_); } // for swig
+  Value value() const { return static_cast<Value>(value_); }  // for swig
 
   // [Horizontal -> Vertical] [Vertical -> Horizontal]
   Orientation2D turn_90() const { return Value(value_ ^ 1); }
