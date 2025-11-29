@@ -251,9 +251,9 @@ void dbBPin::destroy(dbBPin* bpin_)
   dbId<_dbBox> nextBox = bpin->_boxes;
   while (nextBox) {
     _dbBox* b = block->_box_tbl->getPtr(nextBox);
-    nextBox = b->_next_box;
+    nextBox = b->next_box_;
     dbProperty::destroyProperties(b);
-    block->remove_rect(b->_shape._rect);
+    block->remove_rect(b->shape_.rect);
     block->_box_tbl->destroy(b);
   }
 
@@ -294,7 +294,7 @@ void _dbBPin::removeBox(_dbBox* box)
   dbId<_dbBox> boxid = box->getOID();
   if (boxid == _boxes) {
     // at head of list, need to move head
-    _boxes = box->_next_box;
+    _boxes = box->next_box_;
   } else {
     // in the middle of the list, need to iterate and relink
     dbId<_dbBox> id = _boxes;
@@ -303,10 +303,10 @@ void _dbBPin::removeBox(_dbBox* box)
     }
     while (id != 0) {
       _dbBox* nbox = block->_box_tbl->getPtr(id);
-      dbId<_dbBox> nid = nbox->_next_box;
+      dbId<_dbBox> nid = nbox->next_box_;
 
       if (nid == boxid) {
-        nbox->_next_box = box->_next_box;
+        nbox->next_box_ = box->next_box_;
         break;
       }
 

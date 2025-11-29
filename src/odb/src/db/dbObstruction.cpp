@@ -368,14 +368,14 @@ dbObstruction* dbObstruction::create(dbBlock* block_,
   }
 
   _dbBox* box = block->_box_tbl->create();
-  box->_shape._rect.init(x1, y1, x2, y2);
-  box->_flags._owner_type = dbBoxOwner::OBSTRUCTION;
-  box->_owner = obs->getOID();
-  box->_flags._layer_id = layer->getOID();
+  box->shape_.rect.init(x1, y1, x2, y2);
+  box->flags_.owner_type = dbBoxOwner::OBSTRUCTION;
+  box->owner_ = obs->getOID();
+  box->flags_.layer_id = layer->getOID();
   obs->_bbox = box->getOID();
 
   // Update bounding box of block
-  block->add_rect(box->_shape._rect);
+  block->add_rect(box->shape_.rect);
   for (auto callback : block->_callbacks) {
     callback->inDbObstructionCreate((dbObstruction*) obs);
   }

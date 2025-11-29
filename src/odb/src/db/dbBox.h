@@ -22,37 +22,37 @@ class dbOStream;
 
 struct _dbBoxFlagsBackwardCompatability
 {
-  dbBoxOwner::Value _owner_type : 4;
-  uint _visited : 1;
-  uint _mark : 1;
-  uint _octilinear : 1;
-  uint _is_tech_via : 1;
-  uint _is_block_via : 1;
-  uint _layer_id : 8;
-  uint _via_id : 15;
+  dbBoxOwner::Value owner_type : 4;
+  uint visited : 1;
+  uint mark : 1;
+  uint octilinear : 1;
+  uint is_tech_via : 1;
+  uint is_block_via : 1;
+  uint layer_id : 8;
+  uint via_id : 15;
 };
 
 struct _dbBoxFlagsWithoutMask
 {
-  dbBoxOwner::Value _owner_type : 4;
-  uint _visited : 1;
-  uint _octilinear : 1;
-  uint _is_tech_via : 1;
-  uint _is_block_via : 1;
-  uint _layer_id : 9;
-  uint _via_id : 15;
+  dbBoxOwner::Value owner_type : 4;
+  uint visited : 1;
+  uint octilinear : 1;
+  uint is_tech_via : 1;
+  uint is_block_via : 1;
+  uint layer_id : 9;
+  uint via_id : 15;
 };
 
 struct _dbBoxFlags
 {
-  dbBoxOwner::Value _owner_type : 4;
-  uint _visited : 1;
-  uint _octilinear : 1;
-  uint _is_tech_via : 1;
-  uint _is_block_via : 1;
-  uint _layer_id : 9;
-  uint _via_id : 13;
-  uint _layer_mask : 2;
+  dbBoxOwner::Value owner_type : 4;
+  uint visited : 1;
+  uint octilinear : 1;
+  uint is_tech_via : 1;
+  uint is_block_via : 1;
+  uint layer_id : 9;
+  uint via_id : 13;
+  uint layer_mask : 2;
 };
 
 static_assert(sizeof(_dbBoxFlagsBackwardCompatability) == 4,
@@ -66,14 +66,14 @@ class _dbBox : public _dbObject
  public:
   enum Type
   {
-    BLOCK_VIA,
-    TECH_VIA,
-    BOX
+    kBlockVia,
+    kTechVia,
+    kBox
   };
   union dbBoxShape
   {
-    Rect _rect;
-    Oct _oct;
+    Rect rect;
+    Oct oct;
   };
 
   _dbBox(_dbDatabase*);
@@ -95,10 +95,10 @@ class _dbBox : public _dbObject
   void checkMask(int mask) const;
 
   // PERSISTANT-MEMBERS
-  _dbBoxFlags _flags;
-  dbBoxShape _shape = {Rect()};
-  uint _owner;
-  dbId<_dbBox> _next_box;
+  _dbBoxFlags flags_;
+  dbBoxShape shape_ = {Rect()};
+  uint owner_;
+  dbId<_dbBox> next_box_;
   int design_rule_width_;
 };
 

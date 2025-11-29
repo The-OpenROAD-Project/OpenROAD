@@ -150,7 +150,7 @@ dbSWire* dbSBox::getSWire() const
 Oct dbSBox::getOct() const
 {
   const _dbSBox* box = (const _dbSBox*) this;
-  return box->_shape._oct;
+  return box->shape_.oct;
 }
 
 uint dbSBox::getViaBottomLayerMask() const
@@ -233,19 +233,19 @@ dbSBox* dbSBox::create(dbSWire* wire_,
       break;
   }
 
-  box->_flags._layer_id = layer_->getImpl()->getOID();
-  box->_flags._owner_type = dbBoxOwner::SWIRE;
+  box->flags_.layer_id = layer_->getImpl()->getOID();
+  box->flags_.owner_type = dbBoxOwner::SWIRE;
   if (dir == OCTILINEAR) {
     const Point p1(x1, y1);
     const Point p2(x2, y2);
-    new (&box->_shape._oct) Oct();
-    box->_shape._oct.init(p1, p2, width);
-    box->_flags._octilinear = true;
-    block->add_oct(box->_shape._oct);
+    new (&box->shape_.oct) Oct();
+    box->shape_.oct.init(p1, p2, width);
+    box->flags_.octilinear = true;
+    block->add_oct(box->shape_.oct);
   } else {
-    box->_shape._rect.init(x1, y1, x2, y2);
-    box->_flags._octilinear = false;
-    block->add_rect(box->_shape._rect);
+    box->shape_.rect.init(x1, y1, x2, y2);
+    box->flags_.octilinear = false;
+    block->add_rect(box->shape_.rect);
   }
 
   box->_sflags._wire_type = type.getValue();
@@ -271,21 +271,21 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   }
 
   _dbBox* vbbox = block->_box_tbl->getPtr(via->_bbox);
-  const int xmin = vbbox->_shape._rect.xMin() + x;
-  const int ymin = vbbox->_shape._rect.yMin() + y;
-  const int xmax = vbbox->_shape._rect.xMax() + x;
-  const int ymax = vbbox->_shape._rect.yMax() + y;
+  const int xmin = vbbox->shape_.rect.xMin() + x;
+  const int ymin = vbbox->shape_.rect.yMin() + y;
+  const int xmax = vbbox->shape_.rect.xMax() + x;
+  const int ymax = vbbox->shape_.rect.yMax() + y;
   _dbSBox* box = block->_sbox_tbl->create();
-  box->_flags._owner_type = dbBoxOwner::SWIRE;
-  box->_shape._rect.init(xmin, ymin, xmax, ymax);
-  box->_flags._is_block_via = 1;
-  box->_flags._via_id = via->getOID();
-  box->_flags._octilinear = false;
+  box->flags_.owner_type = dbBoxOwner::SWIRE;
+  box->shape_.rect.init(xmin, ymin, xmax, ymax);
+  box->flags_.is_block_via = 1;
+  box->flags_.via_id = via->getOID();
+  box->flags_.octilinear = false;
   box->_sflags._wire_type = type.getValue();
 
   wire->addSBox(box);
 
-  block->add_rect(box->_shape._rect);
+  block->add_rect(box->shape_.rect);
   return (dbSBox*) box;
 }
 
@@ -305,21 +305,21 @@ dbSBox* dbSBox::create(dbSWire* wire_,
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   _dbBox* vbbox = tech->_box_tbl->getPtr(via->_bbox);
-  const int xmin = vbbox->_shape._rect.xMin() + x;
-  const int ymin = vbbox->_shape._rect.yMin() + y;
-  const int xmax = vbbox->_shape._rect.xMax() + x;
-  const int ymax = vbbox->_shape._rect.yMax() + y;
+  const int xmin = vbbox->shape_.rect.xMin() + x;
+  const int ymin = vbbox->shape_.rect.yMin() + y;
+  const int xmax = vbbox->shape_.rect.xMax() + x;
+  const int ymax = vbbox->shape_.rect.yMax() + y;
   _dbSBox* box = block->_sbox_tbl->create();
-  box->_flags._owner_type = dbBoxOwner::SWIRE;
-  box->_shape._rect.init(xmin, ymin, xmax, ymax);
-  box->_flags._is_tech_via = 1;
-  box->_flags._via_id = via->getOID();
-  box->_flags._octilinear = false;
+  box->flags_.owner_type = dbBoxOwner::SWIRE;
+  box->shape_.rect.init(xmin, ymin, xmax, ymax);
+  box->flags_.is_tech_via = 1;
+  box->flags_.via_id = via->getOID();
+  box->flags_.octilinear = false;
   box->_sflags._wire_type = type.getValue();
 
   wire->addSBox(box);
 
-  block->add_rect(box->_shape._rect);
+  block->add_rect(box->shape_.rect);
   return (dbSBox*) box;
 }
 
@@ -337,7 +337,7 @@ void dbSBox::destroy(dbSBox* box_)
 
   wire->removeSBox(box);
 
-  block->remove_rect(box->_shape._rect);
+  block->remove_rect(box->shape_.rect);
   dbProperty::destroyProperties(box);
   block->_sbox_tbl->destroy(box);
 }

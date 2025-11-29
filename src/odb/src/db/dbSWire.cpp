@@ -82,8 +82,8 @@ bool _dbSWire::operator<(const _dbSWire& rhs) const
 
 void _dbSWire::addSBox(_dbSBox* box)
 {
-  box->_owner = getOID();
-  box->_next_box = (uint) _wires;
+  box->owner_ = getOID();
+  box->next_box_ = (uint) _wires;
   _wires = box->getOID();
   _dbBlock* block = (_dbBlock*) getOwner();
   for (auto callback : block->_callbacks) {
@@ -97,7 +97,7 @@ void _dbSWire::removeSBox(_dbSBox* box)
   uint boxid = box->getOID();
   if (boxid == _wires) {
     // at head of list, need to move head
-    _wires = (uint) box->_next_box;
+    _wires = (uint) box->next_box_;
   } else {
     // in the middle of the list, need to iterate and relink
     dbId<_dbSBox> id = _wires;
@@ -106,10 +106,10 @@ void _dbSWire::removeSBox(_dbSBox* box)
     }
     while (id != 0) {
       _dbSBox* nbox = block->_sbox_tbl->getPtr(id);
-      uint nid = nbox->_next_box;
+      uint nid = nbox->next_box_;
 
       if (nid == boxid) {
-        nbox->_next_box = box->_next_box;
+        nbox->next_box_ = box->next_box_;
         break;
       }
 
@@ -192,7 +192,7 @@ static void destroySBoxes(_dbSWire* wire)
   }
   while (id != 0) {
     _dbSBox* box = block->_sbox_tbl->getPtr(id);
-    uint nid = box->_next_box;
+    uint nid = box->next_box_;
     dbProperty::destroyProperties(box);
     block->_sbox_tbl->destroy(box);
     id = nid;

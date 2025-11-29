@@ -46,8 +46,8 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
 
       while (id != 0) {
         _dbBox* b = _box_tbl->getPtr(id);
-        uint n = b->_next_box;
-        b->_next_box = list;
+        uint n = b->next_box_;
+        b->next_box_ = list;
         list = id;
         id = n;
       }
@@ -66,8 +66,8 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
 
       while (id != 0) {
         _dbBox* b = _box_tbl->getPtr(id);
-        uint n = b->_next_box;
-        b->_next_box = list;
+        uint n = b->next_box_;
+        b->next_box_ = list;
         list = id;
         id = n;
       }
@@ -83,8 +83,8 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
 
       while (id != 0) {
         _dbBox* b = _box_tbl->getPtr(id);
-        uint n = b->_next_box;
-        b->_next_box = list;
+        uint n = b->next_box_;
+        b->next_box_ = list;
         list = id;
         id = n;
       }
@@ -100,8 +100,8 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
 
       while (id != 0) {
         _dbBox* b = _box_tbl->getPtr(id);
-        uint n = b->_next_box;
-        b->_next_box = list;
+        uint n = b->next_box_;
+        b->next_box_ = list;
         list = id;
         id = n;
       }
@@ -117,8 +117,8 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
 
       while (id != 0) {
         _dbBox* b = _box_tbl->getPtr(id);
-        uint n = b->_next_box;
-        b->_next_box = list;
+        uint n = b->next_box_;
+        b->next_box_ = list;
         list = id;
         id = n;
       }
@@ -134,8 +134,8 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
 
       while (id != 0) {
         _dbBox* b = _box_tbl->getPtr(id);
-        uint n = b->_next_box;
-        b->_next_box = list;
+        uint n = b->next_box_;
+        b->next_box_ = list;
         list = id;
         id = n;
       }
@@ -151,8 +151,8 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
 
       while (id != 0) {
         _dbBox* b = _box_tbl->getPtr(id);
-        uint n = b->_next_box;
-        b->_next_box = list;
+        uint n = b->next_box_;
+        b->next_box_ = list;
         list = id;
         id = n;
       }
@@ -267,14 +267,14 @@ uint dbBoxItr<page_size>::next(uint id, ...)
 {
   _dbBox* box = _box_tbl->getPtr(id);
 
-  if (!include_polygons_ || box->_next_box != 0) {
+  if (!include_polygons_ || box->next_box_ != 0) {
     // return next box if available or when not considering polygons
-    return box->_next_box;
+    return box->next_box_;
   }
 
-  if (box->_flags._owner_type == dbBoxOwner::PBOX) {
+  if (box->flags_.owner_type == dbBoxOwner::PBOX) {
     // if owner is dbPolygon need to check for next dbPolygon
-    dbId<_dbPolygon> pid = box->_owner;
+    dbId<_dbPolygon> pid = box->owner_;
     _dbPolygon* box_pbox = _pbox_tbl->getPtr(pid);
 
     _dbPolygon* pbox = box_pbox;
