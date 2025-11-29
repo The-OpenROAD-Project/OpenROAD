@@ -453,7 +453,7 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   EXPECT_EQ(num_warning, 0);
 
   // Verify connections
-  EXPECT_EQ(load0_a->getNet()->getName(), std::string("net_load"));
+  EXPECT_EQ(load0_a->getNet()->getName(), std::string("net_load1"));
   EXPECT_EQ(new_buffer1->findITerm("A")->getNet(), net);
   EXPECT_EQ(new_buffer1->findITerm("Z")->getNet(), load0_a->getNet());
 
@@ -469,7 +469,7 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   EXPECT_EQ(num_warning, 0);
 
   // Verify connections for buffer #2
-  EXPECT_EQ(load1_a->getNet()->getName(), std::string("mi0/mi1/net_load"));
+  EXPECT_EQ(load1_a->getNet()->getName(), std::string("mi0/mi1/net_load2"));
   EXPECT_EQ(new_buffer2->findITerm("A")->getNet(), net);
   EXPECT_EQ(new_buffer2->findITerm("Z")->getNet(), load1_a->getNet());
 
@@ -485,7 +485,7 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   EXPECT_EQ(num_warning, 0);
 
   // Verify connections for buffer #3
-  EXPECT_EQ(load2_a->getNet()->getName(), std::string("net_load_1"));
+  EXPECT_EQ(load2_a->getNet()->getName(), std::string("net_load3"));
   EXPECT_EQ(new_buffer3->findITerm("A")->getNet(), net);
   EXPECT_EQ(new_buffer3->findITerm("Z")->getNet(), load2_a->getNet());
 
@@ -1593,6 +1593,11 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case13)
 // Case 14: Insert Buffer for partial loads on different nets
 TEST_F(TestInsertBuffer, BeforeLoads_Case14)
 {
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
   // 1. Setup
   dbMaster* buf_master = db_->findMaster("BUF_X1");
   dbMaster* load_master = db_->findMaster("BUF_X1");
@@ -1613,6 +1618,9 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case14)
 
   // Connect load2 to other_net
   load2_inst->findITerm("A")->connect(other_net);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_pre.v");
 
   // 2. Insert Buffer
   std::set<dbObject*> loads;
@@ -1638,6 +1646,9 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case14)
   // Both loads should be connected to buf_out_net
   EXPECT_EQ(load1_inst->findITerm("A")->getNet(), buf_out_net);
   EXPECT_EQ(load2_inst->findITerm("A")->getNet(), buf_out_net);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 TEST_F(TestInsertBuffer, BeforeLoads_Case15)
@@ -1687,7 +1698,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case15)
 
   //----------------------------------------------------
   // Insert buffer
-  // - Targets: load5 (in H2/H1), load2 (in H3), load3 (in H4/H5)
+  // - Targets: load1, u1/load2, u1/load3
   //----------------------------------------------------
   std::set<dbObject*> targets;
   targets.insert(load1_a);
@@ -1721,7 +1732,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case15)
   EXPECT_EQ(u1_non_target_a->getNet(), target_net);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 }  // namespace odb
