@@ -4252,6 +4252,18 @@ dbModNet* dbNetwork::findModNetForPin(const Pin* drvr_pin)
   return mdfp_visitor.modnet();
 }
 
+void dbNetwork::setHierarchy()
+{
+  hierarchy_ = true;
+  db_->setHierarchy(true);
+}
+
+void dbNetwork::disableHierarchy()
+{
+  hierarchy_ = false;
+  db_->setHierarchy(false);
+}
+
 bool dbNetwork::hasHierarchicalElements() const
 {
   if (block()->getModNets().size() != 0) {

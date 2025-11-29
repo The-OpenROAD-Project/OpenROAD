@@ -373,8 +373,8 @@ class dbNetwork : public ConcreteNetwork
 
   // hierarchy handler, set in openroad tested in network child traverserser
 
-  void setHierarchy() { hierarchy_ = true; }
-  void disableHierarchy() { hierarchy_ = false; }
+  void setHierarchy();
+  void disableHierarchy();
   bool hasHierarchy() const { return hierarchy_; }
   bool hasHierarchicalElements() const;
   void reassociateHierFlatNet(dbModNet* mod_net,
