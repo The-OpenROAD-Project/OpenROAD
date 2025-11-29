@@ -259,7 +259,7 @@ TEST_F(TestInsertBuffer, AfterDriver_Case2)
             std::string("net1"));
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 //
@@ -440,32 +440,7 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   EXPECT_EQ(num_warning, 0);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top (load_output);
- output load_output;
-
- wire net;
-
- LOGIC0_X1 drvr_inst (.Z(net));
- BUF_X1 load0_inst (.A(net));
- BUF_X1 load2_inst (.A(net));
- MOD0 mi0 (.A(net));
- assign load_output = net;
-endmodule
-module MOD0 (A);
- input A;
-
-
- MOD1 mi1 (.A(A));
-endmodule
-module MOD1 (A);
- input A;
-
-
- BUF_X1 load1_inst (.A(A));
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_pre.v");
 
   //-----------------------------------------------------------------
   // Insert buffer #1
@@ -483,35 +458,7 @@ endmodule
   EXPECT_EQ(new_buffer1->findITerm("Z")->getNet(), load0_a->getNet());
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top (load_output);
- output load_output;
-
- wire net;
- wire net_load;
-
- BUF_X4 buf (.A(net),
-    .Z(net_load));
- LOGIC0_X1 drvr_inst (.Z(net));
- BUF_X1 load0_inst (.A(net_load));
- BUF_X1 load2_inst (.A(net));
- MOD0 mi0 (.A(net));
- assign load_output = net;
-endmodule
-module MOD0 (A);
- input A;
-
-
- MOD1 mi1 (.A(A));
-endmodule
-module MOD1 (A);
- input A;
-
-
- BUF_X1 load1_inst (.A(A));
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_step1.v");
 
   //-----------------------------------------------------------------
   // Insert buffer #2
@@ -527,38 +474,7 @@ endmodule
   EXPECT_EQ(new_buffer2->findITerm("Z")->getNet(), load1_a->getNet());
 
   // Write verilog and check the content after inserting buffer #2
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top (load_output);
- output load_output;
-
- wire net;
- wire net_load;
-
- BUF_X4 buf (.A(net),
-    .Z(net_load));
- LOGIC0_X1 drvr_inst (.Z(net));
- BUF_X1 load0_inst (.A(net_load));
- BUF_X1 load2_inst (.A(net));
- MOD0 mi0 (.A(net));
- assign load_output = net;
-endmodule
-module MOD0 (A);
- input A;
-
-
- MOD1 mi1 (.A(A));
-endmodule
-module MOD1 (A);
- input A;
-
- wire net_load;
-
- BUF_X4 buf (.A(A),
-    .Z(net_load));
- BUF_X1 load1_inst (.A(net_load));
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_step2.v");
 
   //-----------------------------------------------------------------
   // Insert buffer #3
@@ -574,41 +490,7 @@ endmodule
   EXPECT_EQ(new_buffer3->findITerm("Z")->getNet(), load2_a->getNet());
 
   // Write verilog and check the content after inserting buffer #3
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top (load_output);
- output load_output;
-
- wire net;
- wire net_load;
- wire net_load_1;
-
- BUF_X4 buf (.A(net),
-    .Z(net_load));
- BUF_X4 buf_1 (.A(net),
-    .Z(net_load_1));
- LOGIC0_X1 drvr_inst (.Z(net));
- BUF_X1 load0_inst (.A(net_load));
- BUF_X1 load2_inst (.A(net_load_1));
- MOD0 mi0 (.A(net));
- assign load_output = net;
-endmodule
-module MOD0 (A);
- input A;
-
-
- MOD1 mi1 (.A(A));
-endmodule
-module MOD1 (A);
- input A;
-
- wire net_load;
-
- BUF_X4 buf (.A(A),
-    .Z(net_load));
- BUF_X1 load1_inst (.A(net_load));
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_step3.v");
 
   //-----------------------------------------------------------------
   // Insert buffer #4
@@ -625,42 +507,7 @@ endmodule
   EXPECT_EQ(new_buffer4->findITerm("Z")->getNet(), load_output_bterm->getNet());
 
   // Write verilog and check the content after inserting buffer #4
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top (load_output);
- output load_output;
-
- wire net;
- wire net_load;
- wire net_load_1;
-
- BUF_X4 buf (.A(net),
-    .Z(net_load));
- BUF_X4 buf_1 (.A(net),
-    .Z(net_load_1));
- BUF_X4 buf_2 (.A(net),
-    .Z(load_output));
- LOGIC0_X1 drvr_inst (.Z(net));
- BUF_X1 load0_inst (.A(net_load));
- BUF_X1 load2_inst (.A(net_load_1));
- MOD0 mi0 (.A(net));
-endmodule
-module MOD0 (A);
- input A;
-
-
- MOD1 mi1 (.A(A));
-endmodule
-module MOD1 (A);
- input A;
-
- wire net_load;
-
- BUF_X4 buf (.A(A),
-    .Z(net_load));
- BUF_X1 load1_inst (.A(net_load));
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 // Netlist:
@@ -711,22 +558,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case1)
   ASSERT_TRUE(new_buf);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top ();
-
- wire n1;
- wire n2;
- wire net;
-
- BUF_X4 buf (.A(n1),
-    .Z(net));
- BUF_X1 buf0 (.A(net),
-    .Z(n2));
- BUF_X1 drvr (.Z(n1));
- BUF_X1 load (.A(n2));
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 // Netlist:
@@ -787,27 +619,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case2)
   ASSERT_TRUE(new_buf2);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top (in,
-    out);
- input in;
- output out;
-
- wire n1;
- wire n2;
- wire net1;
- wire net2;
-
- BUF_X4 buf (.A(n1),
-    .Z(net1));
- BUF_X1 buf0 (.A(net1),
-    .Z(n2));
- BUF_X4 buf_1 (.A(n2),
-    .Z(net2));
- assign out = net2;
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 // Netlist:
@@ -904,39 +716,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case3)
   ASSERT_TRUE(new_buf2);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top (in,
-    out);
- input in;
- output out;
-
- wire n2;
- wire n1;
- wire net2;
-
- MOD0 mod0 (.out(n2),
-    .in(n1));
- BUF_X4 new_buf2 (.A(n2),
-    .Z(net2));
- assign out = net2;
-endmodule
-module MOD0 (out,
-    in);
- output out;
- input in;
-
- wire n2;
- wire n1;
- wire \mod0/net1 ;
-
- BUF_X1 buf0 (.A(\mod0/net1 ),
-    .Z(n2));
- BUF_X4 new_buf1 (.A(n1),
-    .Z(\mod0/net1 ));
- assign out = n2;
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 // Netlist:
@@ -1012,24 +792,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case4)
   ASSERT_TRUE(new1);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top ();
-
- wire n1;
- wire net1;
- wire net2;
-
- BUF_X1 drvr0 (.Z(n1));
- BUF_X1 load0 (.A(net1));
- BUF_X1 load1 (.A(net1));
- BUF_X1 load2 (.A(net2));
- BUF_X4 new0 (.A(net2),
-    .Z(net1));
- BUF_X4 new1 (.A(n1),
-    .Z(net2));
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 // Netlist:
@@ -1141,53 +904,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case5)
   ASSERT_TRUE(new1);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top ();
-
- wire net2;
- wire net1;
- wire n1;
-
- MOD0 mod0 (.Z(n1));
- MOD1 mod1 (.A(net1));
- MOD2 mod2 (.A(net1));
- MOD3 mod3 (.A(net2));
- BUF_X4 new0 (.A(net2),
-    .Z(net1));
- BUF_X4 new1 (.A(n1),
-    .Z(net2));
-endmodule
-module MOD0 (Z);
- output Z;
-
- wire Z_net;
-
- BUF_X1 drvr0 (.Z(Z_net));
- assign Z = Z_net;
-endmodule
-module MOD1 (A);
- input A;
-
- wire A_net;
-
- BUF_X1 load0 (.A(A_net));
-endmodule
-module MOD2 (A);
- input A;
-
- wire A_net;
-
- BUF_X1 load1 (.A(A_net));
-endmodule
-module MOD3 (A);
- input A;
-
- wire A_net;
-
- BUF_X1 load2 (.A(A_net));
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 // Netlist Structure (Reflecting the user provided tree):
@@ -1373,71 +1090,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case6)
   EXPECT_TRUE(punched_h5_in_h4);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top ();
-
- wire net1;
- wire n1;
-
- BUF_X1 load0 (.A(n1));
- BUF_X1 new_buf (.A(n1),
-    .Z(net1));
- ModH2 u_h2 (.n1_i(net1),
-    .out(n1));
- ModH3 u_h3 (.n1_i(net1),
-    .in(n1));
- ModH4 u_h4 (.n1_i(net1),
-    .in(n1));
-endmodule
-module ModH0 (out);
- output out;
-
-
- LOGIC0_X1 drvr (.Z(out));
-endmodule
-module ModH1 (in);
- input in;
-
-
- BUF_X1 load5 (.A(in));
-endmodule
-module ModH2 (n1_i,
-    out);
- input n1_i;
- output out;
-
- wire n_internal;
-
- ModH0 u_h0 (.out(n_internal));
- ModH1 u_h1 (.in(n1_i));
- assign out = n_internal;
-endmodule
-module ModH3 (n1_i,
-    in);
- input n1_i;
- input in;
-
-
- BUF_X1 load1 (.A(in));
- BUF_X1 load2 (.A(n1_i));
-endmodule
-module ModH4 (n1_i,
-    in);
- input n1_i;
- input in;
-
-
- BUF_X1 load4 (.A(in));
- ModH5 u_h5 (.in(n1_i));
-endmodule
-module ModH5 (in);
- input in;
-
-
- BUF_X1 load3 (.A(in));
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 // Netlist Structure:
@@ -1594,47 +1247,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case7)
   EXPECT_FALSE(punched_h3_in_h2);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top ();
-
- wire net1;
- wire n1;
-
- BUF_X1 load0 (.A(n1));
- BUF_X1 load1 (.A(n1));
- BUF_X1 load4 (.A(net1));
- BUF_X1 new_buf (.A(n1),
-    .Z(net1));
- ModH0 u_h0 (.out(n1));
- ModH1 u_h1 (.in(net1));
- ModH2 u_h2 (.in(net1));
-endmodule
-module ModH0 (out);
- output out;
-
-
- LOGIC0_X1 drvr (.Z(out));
-endmodule
-module ModH1 (in);
- input in;
-
-
- BUF_X1 load2 (.A(in));
-endmodule
-module ModH2 (in);
- input in;
-
-
- ModH3 u_h3 (.in(in));
-endmodule
-module ModH3 (in);
- input in;
-
-
- BUF_X1 load3 (.A(in));
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 //
@@ -1687,19 +1300,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case8)
   EXPECT_EQ(load1_a->getNet(), out_net);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top (in);
- input in;
-
- wire n1;
- wire net1;
-
- BUF_X1 load1 (.A(net1));
- BUF_X4 new_buf (.A(n1),
-    .Z(net1));
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 //
@@ -1753,20 +1354,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case9)
   EXPECT_EQ(out_port->getNet(), out_net);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top (out);
- output out;
-
- wire n1;
- wire net1;
-
- BUF_X1 drvr (.Z(n1));
- BUF_X4 new_buf (.A(n1),
-    .Z(net1));
- assign out = net1;
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 //
@@ -1811,21 +1399,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case10)
   EXPECT_EQ(out_port->getNet(), out_net);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top (in,
-    out);
- input in;
- output out;
-
- wire n1;
- wire net1;
-
- BUF_X4 new_buf (.A(n1),
-    .Z(net1));
- assign out = net1;
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 //
@@ -1883,20 +1457,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case11)
   EXPECT_EQ(load1_a->getNet(), out_net);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top (in);
- input in;
-
- wire n1;
- wire net1;
-
- BUF_X1 load1 (.A(net1));
- BUF_X1 load2 (.A(n1));
- BUF_X4 new_buf (.A(n1),
-    .Z(net1));
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 //
@@ -1950,21 +1511,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case12)
   EXPECT_EQ(out_port->getNet(), out_net);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top (out);
- output out;
-
- wire n1;
- wire net1;
-
- BUF_X1 drvr (.Z(n1));
- BUF_X1 load1 (.A(net1));
- BUF_X4 new_buf (.A(n1),
-    .Z(net1));
- assign out = net1;
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 //
@@ -2040,28 +1587,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case13)
   EXPECT_TRUE(port_reuse);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top (out);
- output out;
-
- wire net1;
- wire n1;
-
- BUF_X1 drvr (.Z(n1));
- BUF_X1 load1 (.A(net1));
- BUF_X4 new_buf (.A(n1),
-    .Z(net1));
- MOD1 u1 (.A(net1));
- assign out = net1;
-endmodule
-module MOD1 (A);
- input A;
-
-
- BUF_X1 load2 (.A(A));
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 // Case 14: Insert Buffer for partial loads on different nets
@@ -2195,36 +1721,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case15)
   EXPECT_EQ(u1_non_target_a->getNet(), target_net);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputString(test_name,
-                                     R"(module top (in,
-    out);
- input in;
- output out;
-
- wire net1;
- wire n1;
-
- BUF_X1 drvr (.A(in),
-    .Z(n1));
- BUF_X1 load1 (.A(net1));
- BUF_X1 new_buf (.A(n1),
-    .Z(net1));
- MOD1 u1 (.n1_i(net1),
-    .A(n1));
- assign out = n1;
-endmodule
-module MOD1 (n1_i,
-    A);
- input n1_i;
- input A;
-
-
- BUF_X1 load2 (.A(n1_i));
- BUF_X1 load3 (.A(n1_i));
- BUF_X1 non_target (.A(A));
-endmodule
-)",
-                                     false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
 }
 
 }  // namespace odb
