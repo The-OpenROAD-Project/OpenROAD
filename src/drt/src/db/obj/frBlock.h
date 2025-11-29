@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -270,6 +271,39 @@ class frBlock : public frBlockObject
     }
     return odb::Point(idxX, idxY);
   }
+
+  std::vector<odb::Point> getGCellIndices(const odb::Point& pt) const
+  {
+    const auto& gp = getGCellPatterns();
+    const auto& xgp = gp[0];
+    const auto& ygp = gp[1];
+    frCoord coord_x = pt.x() - xgp.getStartCoord();
+    frCoord coord_y = pt.y() - ygp.getStartCoord();
+    const frCoord max_coord_x = xgp.getSpacing() * (frCoord) xgp.getCount();
+    const frCoord max_coord_y = ygp.getSpacing() * (frCoord) ygp.getCount();
+    coord_x = std::clamp(coord_x, 0, max_coord_x - 1);
+    coord_y = std::clamp(coord_y, 0, max_coord_y - 1);
+
+    const frCoord base_idxX = coord_x / (frCoord) xgp.getSpacing();
+    const frCoord base_idxY = coord_y / (frCoord) ygp.getSpacing();
+    std::set<frCoord> x_indices{base_idxX};
+    std::set<frCoord> y_indices{base_idxY};
+    // TODO: handle case where gcell size is 1 unit
+    if (coord_x % xgp.getSpacing() == 0 && base_idxX != 0) {
+      x_indices.insert(base_idxX - 1);
+    }
+    if (coord_y % ygp.getSpacing() == 0 && base_idxY != 0) {
+      y_indices.insert(base_idxY - 1);
+    }
+    std::vector<odb::Point> sol;
+    for (auto& x : x_indices) {
+      for (auto& y : y_indices) {
+        sol.emplace_back(x, y);
+      }
+    }
+    return sol;
+  }
+
   bool isValidGCellIdx(const odb::Point& pt) const
   {
     const auto& gp = getGCellPatterns();
@@ -319,7 +353,20 @@ class frBlock : public frBlockObject
     name2inst_.erase(inst->getName());
     inst->setToBeDeleted(true);
   }
-  void removeDeletedInsts()
+
+  void removeNet(frNet* net)
+  {
+    name2net_.erase(net->getName());
+    for (auto term : net->getInstTerms()) {
+      term->addToNet(nullptr);
+    }
+    for (auto term : net->getBTerms()) {
+      term->addToNet(nullptr);
+    }
+    net->setToBeDeleted(true);
+  }
+
+  void removeDeletedObjects()
   {
     insts_.erase(std::remove_if(insts_.begin(),
                                 insts_.end(),
@@ -327,9 +374,19 @@ class frBlock : public frBlockObject
                                   return inst->isToBeDeleted();
                                 }),
                  insts_.end());
+    nets_.erase(std::remove_if(nets_.begin(),
+                               nets_.end(),
+                               [](const std::unique_ptr<frNet>& net) {
+                                 return net->toBeDeleted();
+                               }),
+                nets_.end());
     int id = 0;
     for (const auto& inst : insts_) {
       inst->setId(id++);
+    }
+    id = 0;
+    for (const auto& net : nets_) {
+      net->setId(id++);
     }
   }
   void addNet(std::unique_ptr<frNet> in)

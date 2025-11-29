@@ -514,6 +514,7 @@ class FastRouteCore
   void printEdge(int netID, int edgeID);
   void ConvertToFull3DType2();
   void fillVIA();
+  void ensurePinCoverage();
   void getViaStackRange(int netID,
                         int nodeID,
                         int16_t& bot_pin_l,

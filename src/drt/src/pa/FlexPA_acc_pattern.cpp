@@ -50,17 +50,35 @@ void FlexPA::buildInstsSet()
         && target_frinsts.find(inst.get()) == target_frinsts.end()) {
       continue;
     }
-    if (!unique_insts_.hasUnique(inst.get())) {
-      continue;
-    }
-    if (!isStdCell(inst.get())) {
-      continue;
-    }
-    if (isSkipInst(inst.get())) {
-      continue;
-    }
-    insts_set_.insert(inst.get());
+    addToInstsSet(inst.get());
   }
+}
+
+void FlexPA::removeFromInstsSet(frInst* inst)
+{
+  // find then erase
+  auto it = insts_set_.find(inst);
+  bool found = it != insts_set_.end() && (*it) == inst;
+  if (found) {
+    insts_set_.erase(it);
+  }
+}
+
+void FlexPA::addToInstsSet(frInst* inst)
+{
+  if (insts_set_.find(inst) != insts_set_.end()) {
+    return;
+  }
+  if (!unique_insts_.hasUnique(inst)) {
+    return;
+  }
+  if (!isStdCell(inst)) {
+    return;
+  }
+  if (isSkipInst(inst)) {
+    return;
+  }
+  insts_set_.insert(inst);
 }
 
 void FlexPA::prepPatternInst(frInst* unique_inst)

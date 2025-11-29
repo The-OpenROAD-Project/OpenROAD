@@ -129,6 +129,10 @@ class frInst : public frRef
   odb::Rect getBoundaryBBox() const;
 
   frInstTerm* getInstTerm(int index);
+  bool hasPinAccessUpdate() const { return has_pin_access_update_; }
+  void setHasPinAccessUpdate(bool in) { has_pin_access_update_ = in; }
+  odb::dbTransform getLatestPATransform() const { return latest_pa_xform_; }
+  void setLatestPATransform() { latest_pa_xform_ = xform_; }
 
  private:
   frString name_;
@@ -137,8 +141,10 @@ class frInst : public frRef
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
   odb::dbInst* db_inst_;
   odb::dbTransform xform_;
+  odb::dbTransform latest_pa_xform_;
   int pinAccessIdx_{-1};
   bool toBeDeleted_{false};
+  bool has_pin_access_update_{true};
 };
 
 }  // namespace drt

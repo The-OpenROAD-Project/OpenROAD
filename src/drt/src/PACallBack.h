@@ -4,9 +4,9 @@
 #pragma once
 
 #include "drt/TritonRoute.h"
+#include "frDesign.h"
 #include "utl/CallBack.h"
 #include "utl/Logger.h"
-
 namespace drt {
 
 class frDesign;
@@ -21,7 +21,11 @@ class PACallBack : public utl::CallBack
 
   void onPinAccessUpdateRequired() override
   {
-    // TODO: Implement
+    auto design = router_->getDesign();
+    if (design == nullptr || design->getTopBlock() == nullptr) {
+      return;
+    }
+    router_->updateDirtyPAData();
   }
 
  private:

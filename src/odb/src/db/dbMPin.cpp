@@ -150,6 +150,20 @@ std::vector<std::vector<odb::dbAccessPoint*>> dbMPin::getPinAccess() const
   return result;
 }
 
+void dbMPin::clearPinAccess(const int pin_access_idx)
+{
+  _dbMPin* pin = (_dbMPin*) this;
+  _dbBlock* block = (_dbBlock*) getDb()->getChip()->getBlock();
+  if (pin->aps_.size() <= pin_access_idx) {
+    return;
+  }
+  const auto aps = pin->aps_[pin_access_idx];
+  for (const auto& ap : aps) {
+    odb::dbAccessPoint::destroy(
+        (odb::dbAccessPoint*) block->ap_tbl_->getPtr(ap));
+  }
+}
+
 dbMPin* dbMPin::create(dbMTerm* mterm_)
 {
   _dbMTerm* mterm = (_dbMTerm*) mterm_;

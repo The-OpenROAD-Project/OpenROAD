@@ -5505,6 +5505,11 @@ class dbMaster : public dbObject
   int getMasterId();
 
   ///
+  /// Clear the access points of all pins.
+  ///
+  void clearPinAccess(int pin_access_idx);
+
+  ///
   /// Create a new master.
   /// Returns nullptr if a master with this name already exists
   ///
@@ -5698,6 +5703,8 @@ class dbMPin : public dbObject
   Rect getBBox();
 
   std::vector<std::vector<odb::dbAccessPoint*>> getPinAccess() const;
+
+  void clearPinAccess(int pin_access_idx);
 
   ///
   /// Create a new physical pin.

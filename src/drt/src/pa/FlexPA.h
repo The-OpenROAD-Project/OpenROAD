@@ -65,7 +65,10 @@ struct frInstLocationComp
     if (lp.getY() != rp.getY()) {
       return lp.getY() < rp.getY();
     }
-    return lp.getX() < rp.getX();
+    if (lp.getX() != rp.getX()) {
+      return lp.getX() < rp.getX();
+    }
+    return lhs < rhs;
   }
 };
 
@@ -104,8 +107,12 @@ class FlexPA
                       const std::string& shared_vol,
                       int cloud_sz);
 
-  void addInst(frInst* inst);
   void deleteInst(frInst* inst);
+  void addDirtyInst(frInst* inst);
+  void removeDirtyInst(frInst* inst);
+  void updateDirtyInsts();
+  void removeFromInstsSet(frInst* inst);
+  void addToInstsSet(frInst* inst);
 
   int main();
 
@@ -140,7 +147,7 @@ class FlexPA
       layer_num_to_via_defs_;
   frCollection<odb::dbInst*> target_insts_;
   frInstLocationSet insts_set_;
-
+  frOrderedIdSet<frInst*> dirty_insts_;  // set of dirty instances
   std::string remote_host_;
   uint16_t remote_port_ = -1;
   std::string shared_vol_;
@@ -167,6 +174,7 @@ class FlexPA
   void initViaRawPriority();
   void initAllSkipInstTerm();
   void initSkipInstTerm(UniqueClass* unique_class);
+  bool updateSkipInstTerm(frInst* inst);
   // prep
   void prep();
 
@@ -686,11 +694,18 @@ class FlexPA
       frInstTerm* inst_term);
 
   /**
-   * @brief Adjusts the coordinates for all access points
+   * @brief Adjusts the coordinates for all access points of an instance
    *
    * @details access points are created with their coordinates relative to the
    * chip. They have to have their coordinates altered to be relative to their
    * instances, including rotation.
+   */
+  void revertAccessPoints(frInst* inst);
+
+  /**
+   * @brief Adjusts the coordinates for all access points of all instances
+   *
+   * @details call revertAccessPoints for all instances.
    */
   void revertAccessPoints();
 
