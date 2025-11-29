@@ -18,13 +18,13 @@ class dbOStream;
 
 struct _dbSBoxFlags
 {
-  dbWireShapeType::Value _wire_type : 6;
-  uint _direction : 2;  // 0 = undefiend, 1 = horizontal, 2 = vertical, 3 =
-                        // octilinear
-  uint _via_bottom_mask : 2;
-  uint _via_cut_mask : 2;
-  uint _via_top_mask : 2;
-  uint _spare_bits : 18;
+  dbWireShapeType::Value wire_type : 6;
+  uint direction : 2;  // 0 = undefiend, 1 = horizontal, 2 = vertical, 3 =
+                       // octilinear
+  uint via_bottom_mask : 2;
+  uint via_cut_mask : 2;
+  uint via_top_mask : 2;
+  uint spare_bits : 18;
 };
 
 class _dbSBox : public _dbBox
@@ -39,7 +39,7 @@ class _dbSBox : public _dbBox
   int equal(const _dbSBox& rhs) const;
 
   // PERSISTANT-MEMBERS
-  _dbSBoxFlags _sflags;
+  _dbSBoxFlags sflags_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbSBox& box);

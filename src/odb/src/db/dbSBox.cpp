@@ -27,23 +27,23 @@ template class dbTable<_dbSBox>;
 
 bool _dbSBox::operator==(const _dbSBox& rhs) const
 {
-  if (_sflags._wire_type != rhs._sflags._wire_type) {
+  if (sflags_.wire_type != rhs.sflags_.wire_type) {
     return false;
   }
 
-  if (_sflags._direction != rhs._sflags._direction) {
+  if (sflags_.direction != rhs.sflags_.direction) {
     return false;
   }
 
-  if (_sflags._via_bottom_mask != rhs._sflags._via_bottom_mask) {
+  if (sflags_.via_bottom_mask != rhs.sflags_.via_bottom_mask) {
     return false;
   }
 
-  if (_sflags._via_cut_mask != rhs._sflags._via_cut_mask) {
+  if (sflags_.via_cut_mask != rhs.sflags_.via_cut_mask) {
     return false;
   }
 
-  if (_sflags._via_top_mask != rhs._sflags._via_top_mask) {
+  if (sflags_.via_top_mask != rhs.sflags_.via_top_mask) {
     return false;
   }
 
@@ -56,23 +56,23 @@ bool _dbSBox::operator==(const _dbSBox& rhs) const
 
 int _dbSBox::equal(const _dbSBox& rhs) const
 {
-  if (_sflags._wire_type != rhs._sflags._wire_type) {
+  if (sflags_.wire_type != rhs.sflags_.wire_type) {
     return false;
   }
 
-  if (_sflags._direction != rhs._sflags._direction) {
+  if (sflags_.direction != rhs.sflags_.direction) {
     return false;
   }
 
-  if (_sflags._via_bottom_mask != rhs._sflags._via_bottom_mask) {
+  if (sflags_.via_bottom_mask != rhs.sflags_.via_bottom_mask) {
     return false;
   }
 
-  if (_sflags._via_cut_mask != rhs._sflags._via_cut_mask) {
+  if (sflags_.via_cut_mask != rhs.sflags_.via_cut_mask) {
     return false;
   }
 
-  if (_sflags._via_top_mask != rhs._sflags._via_top_mask) {
+  if (sflags_.via_top_mask != rhs.sflags_.via_top_mask) {
     return false;
   }
 
@@ -81,43 +81,43 @@ int _dbSBox::equal(const _dbSBox& rhs) const
 
 bool _dbSBox::operator<(const _dbSBox& rhs) const
 {
-  if (_sflags._wire_type < rhs._sflags._wire_type) {
+  if (sflags_.wire_type < rhs.sflags_.wire_type) {
     return true;
   }
 
-  if (_sflags._direction < rhs._sflags._direction) {
+  if (sflags_.direction < rhs.sflags_.direction) {
     return true;
   }
 
-  if (_sflags._via_bottom_mask < rhs._sflags._via_bottom_mask) {
+  if (sflags_.via_bottom_mask < rhs.sflags_.via_bottom_mask) {
     return true;
   }
 
-  if (_sflags._via_cut_mask < rhs._sflags._via_cut_mask) {
+  if (sflags_.via_cut_mask < rhs.sflags_.via_cut_mask) {
     return true;
   }
 
-  if (_sflags._via_top_mask < rhs._sflags._via_top_mask) {
+  if (sflags_.via_top_mask < rhs.sflags_.via_top_mask) {
     return true;
   }
 
-  if (_sflags._wire_type > rhs._sflags._wire_type) {
+  if (sflags_.wire_type > rhs.sflags_.wire_type) {
     return false;
   }
 
-  if (_sflags._direction > rhs._sflags._direction) {
+  if (sflags_.direction > rhs.sflags_.direction) {
     return false;
   }
 
-  if (_sflags._via_bottom_mask > rhs._sflags._via_bottom_mask) {
+  if (sflags_.via_bottom_mask > rhs.sflags_.via_bottom_mask) {
     return false;
   }
 
-  if (_sflags._via_cut_mask > rhs._sflags._via_cut_mask) {
+  if (sflags_.via_cut_mask > rhs.sflags_.via_cut_mask) {
     return false;
   }
 
-  if (_sflags._via_top_mask > rhs._sflags._via_top_mask) {
+  if (sflags_.via_top_mask > rhs.sflags_.via_top_mask) {
     return false;
   }
 
@@ -133,13 +133,13 @@ bool _dbSBox::operator<(const _dbSBox& rhs) const
 dbWireShapeType dbSBox::getWireShapeType() const
 {
   const _dbSBox* box = (const _dbSBox*) this;
-  return dbWireShapeType(box->_sflags._wire_type);
+  return dbWireShapeType(box->sflags_.wire_type);
 }
 
 dbSBox::Direction dbSBox::getDirection() const
 {
   const _dbSBox* box = (const _dbSBox*) this;
-  return (dbSBox::Direction) box->_sflags._direction;
+  return (dbSBox::Direction) box->sflags_.direction;
 }
 
 dbSWire* dbSBox::getSWire() const
@@ -156,26 +156,26 @@ Oct dbSBox::getOct() const
 uint dbSBox::getViaBottomLayerMask() const
 {
   const _dbSBox* box = (const _dbSBox*) this;
-  return box->_sflags._via_bottom_mask;
+  return box->sflags_.via_bottom_mask;
 }
 
 uint dbSBox::getViaCutLayerMask() const
 {
   const _dbSBox* box = (const _dbSBox*) this;
-  return box->_sflags._via_cut_mask;
+  return box->sflags_.via_cut_mask;
 }
 
 uint dbSBox::getViaTopLayerMask() const
 {
   const _dbSBox* box = (const _dbSBox*) this;
-  return box->_sflags._via_top_mask;
+  return box->sflags_.via_top_mask;
 }
 
 bool dbSBox::hasViaLayerMasks() const
 {
   const _dbSBox* box = (const _dbSBox*) this;
-  return box->_sflags._via_bottom_mask != 0 || box->_sflags._via_cut_mask != 0
-         || box->_sflags._via_top_mask != 0;
+  return box->sflags_.via_bottom_mask != 0 || box->sflags_.via_cut_mask != 0
+         || box->sflags_.via_top_mask != 0;
 }
 
 void dbSBox::setViaLayerMask(const uint bottom, const uint cut, const uint top)
@@ -185,9 +185,9 @@ void dbSBox::setViaLayerMask(const uint bottom, const uint cut, const uint top)
   box->checkMask(cut);
   box->checkMask(top);
 
-  box->_sflags._via_bottom_mask = bottom;
-  box->_sflags._via_cut_mask = cut;
-  box->_sflags._via_top_mask = top;
+  box->sflags_.via_bottom_mask = bottom;
+  box->sflags_.via_cut_mask = cut;
+  box->sflags_.via_top_mask = top;
 }
 
 dbSBox* dbSBox::create(dbSWire* wire_,
@@ -248,8 +248,8 @@ dbSBox* dbSBox::create(dbSWire* wire_,
     block->add_rect(box->shape_.rect);
   }
 
-  box->_sflags._wire_type = type.getValue();
-  box->_sflags._direction = dir;
+  box->sflags_.wire_type = type.getValue();
+  box->sflags_.direction = dir;
 
   wire->addSBox(box);
 
@@ -281,7 +281,7 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   box->flags_.is_block_via = 1;
   box->flags_.via_id = via->getOID();
   box->flags_.octilinear = false;
-  box->_sflags._wire_type = type.getValue();
+  box->sflags_.wire_type = type.getValue();
 
   wire->addSBox(box);
 
@@ -315,7 +315,7 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   box->flags_.is_tech_via = 1;
   box->flags_.via_id = via->getOID();
   box->flags_.octilinear = false;
-  box->_sflags._wire_type = type.getValue();
+  box->sflags_.wire_type = type.getValue();
 
   wire->addSBox(box);
 
@@ -407,24 +407,24 @@ std::vector<dbSBox*> dbSBox::smashVia()
 }
 
 _dbSBox::_dbSBox(_dbDatabase* db, const _dbSBox& b)
-    : _dbBox(db, b), _sflags(b._sflags)
+    : _dbBox(db, b), sflags_(b.sflags_)
 {
 }
 
 _dbSBox::_dbSBox(_dbDatabase* db) : _dbBox(db)
 {
-  _sflags._wire_type = dbWireShapeType::COREWIRE;
-  _sflags._direction = 0;
-  _sflags._via_bottom_mask = 0;
-  _sflags._via_cut_mask = 0;
-  _sflags._via_top_mask = 0;
-  _sflags._spare_bits = 0;
+  sflags_.wire_type = dbWireShapeType::COREWIRE;
+  sflags_.direction = 0;
+  sflags_.via_bottom_mask = 0;
+  sflags_.via_cut_mask = 0;
+  sflags_.via_top_mask = 0;
+  sflags_.spare_bits = 0;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbSBox& box)
 {
   stream << (_dbBox&) box;
-  uint* bit_field = (uint*) &box._sflags;
+  uint* bit_field = (uint*) &box.sflags_;
   stream << *bit_field;
   return stream;
 }
@@ -432,7 +432,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbSBox& box)
 dbIStream& operator>>(dbIStream& stream, _dbSBox& box)
 {
   stream >> (_dbBox&) box;
-  uint* bit_field = (uint*) &box._sflags;
+  uint* bit_field = (uint*) &box.sflags_;
   stream >> *bit_field;
   return stream;
 }
