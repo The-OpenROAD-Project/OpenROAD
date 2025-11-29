@@ -717,8 +717,8 @@ dbBox* dbBox::create(dbBPin* bpin_,
   dbBox* dbbox = (dbBox*) box;
   dbbox->setLayerMask(mask);
 
-  box->next_box_ = bpin->_boxes;
-  bpin->_boxes = box->getOID();
+  box->next_box_ = bpin->boxes_;
+  bpin->boxes_ = box->getOID();
 
   block->add_rect(box->shape_.rect);
   return (dbBox*) box;

@@ -1672,7 +1672,7 @@ class dbBPin : public dbObject
   ///
   /// Get the placement status of this block-terminal.
   ///
-  dbPlacementStatus getPlacementStatus();
+  dbPlacementStatus getPlacementStatus() const;
 
   ///
   /// Set the placement status of this block-terminal.
@@ -1697,7 +1697,7 @@ class dbBPin : public dbObject
   ///
   /// Returns true if this bpin has an effective-width rule.
   ///
-  bool hasEffectiveWidth();
+  bool hasEffectiveWidth() const;
 
   ///
   /// Set the effective width rule.
@@ -1707,12 +1707,12 @@ class dbBPin : public dbObject
   ///
   /// Return the effective width rule.
   ///
-  int getEffectiveWidth();
+  int getEffectiveWidth() const;
 
   ///
   /// Returns true if this bpin has an min-spacing rule.
   ///
-  bool hasMinSpacing();
+  bool hasMinSpacing() const;
 
   ///
   /// Set the min spacing rule.
@@ -1722,7 +1722,7 @@ class dbBPin : public dbObject
   ///
   /// Return the min spacing rule.
   ///
-  int getMinSpacing();
+  int getMinSpacing() const;
 
   std::vector<dbAccessPoint*> getAccessPoints() const;
 
