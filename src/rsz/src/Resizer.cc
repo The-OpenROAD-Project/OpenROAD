@@ -4869,7 +4869,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
                                         buffer_master,
                                         &buffer_loc,
                                         name_suffix,
-                                        odb::dbNameUniquifyType::IF_NEEDED,
+                                        odb::dbNameUniquifyType::ALWAYS,
                                         loads_on_same_db_net);
 
   if (!buffer_inst) {
