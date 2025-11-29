@@ -27,9 +27,12 @@
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "frRTree.h"
 #include "global.h"
 #include "odb/db.h"
+#include "pa/FlexPA_cgraph.h"
 #include "pa/FlexPA_unique.h"
+
 namespace gtl = boost::polygon;
 
 namespace odb {
@@ -125,14 +128,17 @@ class FlexPA
 
   int main();
 
-    // PAP-ML
+  // PAP-ML
   std::vector<frApAbsoluteEdge> conflictExtraction();
   int getEdgeCostCE(frInstTerm* itermA,
-                            int pinA_X,
-                            int pinA_Y,
-                            frInstTerm* itermB,
-                            int pinB_X,
-                            int pinB_Y);
+                    int pinA_X,
+                    int pinA_Y,
+                    frInstTerm* itermB,
+                    int pinB_X,
+                    int pinB_Y);
+  void genConflictGraphs(const std::vector<std::string>& paths,
+                         const std::vector<odb::Rect>& windows,
+                         bool window_level_parallelism);
 
  private:
   frDesign* design_;
@@ -763,10 +769,37 @@ class FlexPA
       int x,
       int y,
       std::vector<std::pair<frConnFig*, frBlockObject*>>& objs);
+  std::unique_ptr<frVia> buildVia(
+      frInstTerm* iterm,
+      frAccessPoint* ap,
+      std::vector<std::pair<frConnFig*, frBlockObject*>>& objs);
+  odb::Rect getViaBBox(frInstTerm* iterm, frAccessPoint* ap);
+  bool checkAPVio(frInstTerm* itermA,
+                  frAccessPoint* ap_A,
+                  frInstTerm* itermB,
+                  frAccessPoint* ap_B);
+  std::unordered_map<UniqueClass*, std::vector<cgIntraCellEdge>>
+  genCGraphUniqueIntraCell();
+  std::vector<cgCellEdge> genCGraphInflateIntraCell(
+      std::vector<frInst*>& insts,
+      std::unordered_map<UniqueClass*, std::vector<cgIntraCellEdge>>& uniques);
+  std::vector<cgCellEdge> genCGraphInterCell(std::vector<frInst*>& insts,
+                                             bool window_level_parallelism);
+  cgConflictGraph genConflictGraphForWindow(
+      std::string path,
+      odb::Rect window,
+      RTree<frInst*> insts,
+      std::unordered_map<UniqueClass*, std::vector<cgIntraCellEdge>>& intras,
+      bool window_level_parallelism);
+  std::vector<cgConflictGraph> genConflictGraphsHelper(
+      std::vector<std::string> paths,
+      std::vector<odb::Rect> windows,
+      bool window_level_parallelism);
+  void writeConflictGraphHelper(cgConflictGraph cgraph);
 
   /**
-   * @brief Initializes the nodes' data structures that will be used to solve
-   * the DP problem
+   * @brief Initializes the nodes' data structures that will be used to
+   * solve the DP problem
    */
   void genPatternsInit(
       std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,

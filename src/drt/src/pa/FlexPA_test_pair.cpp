@@ -33,6 +33,34 @@
 
 using namespace drt;
 
+std::unique_ptr<frVia> FlexPA::buildVia(
+    frInstTerm* iterm,
+    int x,
+    int y,
+    std::vector<std::pair<frConnFig*, frBlockObject*>>& objs)
+{
+  odb::dbTransform xform = iterm->getInst()->getNoRotationTransform();
+  const frAccessPoint* ap_1 = findAp(iterm, x, y);
+
+  if (ap_1->hasAccess(frDirEnum::U)) {
+    odb::Point pt1(ap_1->getPoint());
+    xform.apply(pt1);
+    std::unique_ptr<frVia> via1
+        = std::make_unique<frVia>(ap_1->getViaDef(), pt1);
+    via1->setOrigin(pt1);
+    if (iterm->hasNet()) {
+      objs.emplace_back(via1.get(), iterm->getNet());
+    } else {
+      objs.emplace_back(via1.get(), iterm);
+    }
+
+    return via1;
+  }
+
+  return nullptr;
+}
+
+
 frAccessPoint* FlexPA::findAp(frInstTerm* iterm, int x, int y)
 {
   auto mterm = iterm->getTerm();
@@ -52,32 +80,6 @@ frAccessPoint* FlexPA::findAp(frInstTerm* iterm, int x, int y)
   }
 
   return ap;
-}
-
-std::unique_ptr<frVia> FlexPA::buildVia(frInstTerm* iterm,
-              int x,
-              int y,
-              std::vector<std::pair<frConnFig*, frBlockObject*>>& objs)
-{
-  odb::dbTransform xform = iterm->getInst()->getNoRotationTransform();
-  const frAccessPoint* ap_1 = findAp(iterm, x, y);
-
-  
-  if (ap_1->hasAccess(frDirEnum::U)) {
-    odb::Point pt1(ap_1->getPoint());
-    xform.apply(pt1);
-    std::unique_ptr<frVia> via1 = std::make_unique<frVia>(ap_1->getViaDef(), pt1);
-    via1->setOrigin(pt1);
-    if (iterm->hasNet()) {
-      objs.emplace_back(via1.get(), iterm->getNet());
-    } else {
-      objs.emplace_back(via1.get(), iterm);
-    }
-
-    return via1;
-  }
-  
-  return nullptr;
 }
 
 int FlexPA::getEdgeCostCE(frInstTerm* itermA,

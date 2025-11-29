@@ -88,6 +88,7 @@ add_library(drt_lib
   src/pa/FlexPA_acc_pattern.cpp
   src/pa/FlexPA_row_pattern.cpp
   src/pa/FlexPA_test_pair.cpp
+  src/pa/FlexPA_cgraph.cpp
   src/pa/FlexPA_unique.cpp
   src/rp/FlexRP_init.cpp
   src/rp/FlexRP.cpp

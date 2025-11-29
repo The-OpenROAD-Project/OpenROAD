@@ -123,9 +123,17 @@ class TritonRoute
   void pinAccess(const std::vector<odb::dbInst*>& target_insts
                  = std::vector<odb::dbInst*>());
   // PAP-ML
-   std::vector<drt::trApAbsoluteEdge> ECRunAllUniqueInsts();
-  int ECcheckPairConflict(odb::dbITerm* term_a, int x_a, int y_a, odb::dbITerm* term_b, int x_b, int y_b);
-
+  std::vector<drt::trApAbsoluteEdge> ECRunAllUniqueInsts();
+  int ECcheckPairConflict(odb::dbITerm* term_a,
+                          int x_a,
+                          int y_a,
+                          odb::dbITerm* term_b,
+                          int x_b,
+                          int y_b);
+  void buildConflictGraphs(const std::vector<std::string>& paths,
+                           const std::vector<odb::Rect>& windows,
+                           int num_threads,
+                           bool window_level_parallelism);
 
   void stepDR(int size,
               int offset,

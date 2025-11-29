@@ -51,6 +51,10 @@ namespace exa {
 class Example;
 }
 
+namespace cgv {
+class CGV;
+}
+
 namespace mpl {
 class MacroPlacer;
 }
@@ -165,6 +169,7 @@ class Design
   dft::Dft* getDft();
   dpl::Opendp* getOpendp();
   exa::Example* getExample();
+  cgv::CGV* getCGV();
   drt::TritonRoute* getTritonRoute();
   fin::Finale* getFinale();
   gpl::Replace* getReplace();

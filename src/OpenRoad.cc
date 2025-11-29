@@ -39,6 +39,8 @@
 #include "est/MakeEstimateParasitics.h"
 #include "exa/MakeExample.h"
 #include "exa/example.h"
+#include "cgv/MakeCGV.h"
+#include "cgv/cgv.h"
 #include "fin/Finale.h"
 #include "fin/MakeFinale.h"
 #include "gpl/MakeReplace.h"
@@ -132,6 +134,7 @@ OpenRoad::~OpenRoad()
   delete tapcell_;
   delete macro_placer_;
   delete example_;
+  delete cgv_;
   delete extractor_;
   delete detailed_router_;
   delete replace_;
@@ -250,6 +253,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   icewall_ = new pad::ICeWall(db_, logger_);
   dft_ = new dft::Dft(db_, sta_, logger_);
   example_ = new exa::Example(db_, logger_);
+  cgv_ = new cgv::CGV(db_, logger_);
 
   // Init components.
   Ord_Init(tcl_interp);
@@ -275,6 +279,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   tap::initTapcell(tcl_interp);
   mpl::initMacroPlacer(tcl_interp);
   exa::initExample(tcl_interp);
+  cgv::initCGV(tcl_interp);
   rcx::initOpenRCX(tcl_interp);
   pad::initICeWall(tcl_interp);
   rmp::initRestructure(tcl_interp);

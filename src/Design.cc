@@ -258,6 +258,11 @@ exa::Example* Design::getExample()
   return getOpenRoad()->getExample();
 }
 
+cgv::CGV* Design::getCGV()
+{
+  return getOpenRoad()->getCGV();
+}
+
 mpl::MacroPlacer* Design::getMacroPlacer()
 {
   return getOpenRoad()->getMacroPlacer();

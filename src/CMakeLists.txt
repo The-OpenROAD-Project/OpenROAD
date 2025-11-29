@@ -262,6 +262,7 @@ add_subdirectory(stt)
 add_subdirectory(gpl)
 add_subdirectory(dpl)
 add_subdirectory(exa)
+add_subdirectory(cgraphview)
 add_subdirectory(fin)
 add_subdirectory(ram)
 add_subdirectory(ppl)
@@ -326,6 +327,7 @@ target_link_libraries(openroad
   gpl
   dpl
   exa
+  cgv
   fin
   ram
   rsz

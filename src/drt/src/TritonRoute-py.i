@@ -14,7 +14,11 @@
 
 %include <std_string.i>
 %include <std_vector.i>
+
+%template(ApAbsEdges) std::vector<drt::trApAbsoluteEdge>;
+%template(StrVec) std::vector<std::string>;
+%template(RectVec) std::vector<odb::Rect>;
+
 %include "../../Exception-py.i"
 %include "triton_route/TritonRoute.h"
 
-%template(ApAbsEdges) std::vector<drt::trApAbsoluteEdge>;

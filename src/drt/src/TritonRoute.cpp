@@ -1125,10 +1125,10 @@ std::vector<trApAbsoluteEdge> TritonRoute::ECRunAllUniqueInsts()
                                edge.prev.ap_x,
                                edge.prev.ap_y};
     trApAbsoluteReference cur{edge.cur.master_name,
-                               edge.cur.pinAccessIdx,
-                               edge.cur.mterm_name,
-                               edge.cur.ap_x,
-                               edge.cur.ap_y};
+                              edge.cur.pinAccessIdx,
+                              edge.cur.mterm_name,
+                              edge.cur.ap_x,
+                              edge.cur.ap_y};
     trApAbsoluteEdge e;
     e.prev = prev;
     e.cur = cur;
@@ -1142,6 +1142,7 @@ std::vector<trApAbsoluteEdge> TritonRoute::ECRunAllUniqueInsts()
   // io::Writer writer(getDesign(), logger_);
   // writer.updateDb(db_, router_cfg_.get(), true);
 }
+
 int TritonRoute::ECcheckPairConflict(odb::dbITerm* term_a,
                                      int x_a,
                                      int y_a,
@@ -1161,10 +1162,10 @@ int TritonRoute::ECcheckPairConflict(odb::dbITerm* term_a,
     }
   }
 
-  if(fterm_a == nullptr) {
+  if (fterm_a == nullptr) {
     return -2;
   }
-  
+
   auto inst_b = getDesign()->getTopBlock()->findInst(term_b->getInst());
   frInstTerm* fterm_b = nullptr;
   for (auto& term : inst_b->getInstTerms()) {
@@ -1172,12 +1173,24 @@ int TritonRoute::ECcheckPairConflict(odb::dbITerm* term_a,
       fterm_b = term.get();
     }
   }
-  
-  if(fterm_b == nullptr) {
+
+  if (fterm_b == nullptr) {
     return -3;
   }
 
   return pa_->getEdgeCostCE(fterm_a, x_a, y_a, fterm_b, x_b, y_b);
+}
+
+void TritonRoute::buildConflictGraphs(const std::vector<std::string>& paths,
+                                      const std::vector<odb::Rect>& windows,
+                                    int num_threads, bool window_level_parallelism)
+{
+  router_cfg_->MAX_THREADS = num_threads;
+  TritonRoute::ECRunAllUniqueInsts();
+  pa_ = std::make_unique<FlexPA>(
+      getDesign(), logger_, dist_, router_cfg_.get());
+  pa_->setTargetInstances(std::vector<odb::dbInst*>());
+  pa_->genConflictGraphs(paths, windows, window_level_parallelism);
 }
 
 void TritonRoute::deleteInstancePAData(frInst* inst)
