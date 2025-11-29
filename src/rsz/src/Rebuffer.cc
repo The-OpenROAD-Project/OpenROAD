@@ -2069,7 +2069,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     Pin* drvr_pin = filtered_pins[iter];
 
     odb::dbNet* db_net = nullptr;
-    odb::dbModNet* db_modnet = nullptr;
+    odb::dbModNet* db_modnet = nullptr;  // jk: rm
     if (network_->isTopLevelPort(drvr_pin)) {
       db_net = db_network_->flatNet(network_->term(drvr_pin));
       db_modnet = nullptr;
@@ -2343,7 +2343,7 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
 
   Net* const net = network_->net(drvr_pin);
   odb::dbNet* const db_net = db_network_->flatNet(drvr_pin);
-  odb::dbModNet* const db_modnet = db_network_->hierNet(drvr_pin);
+  odb::dbModNet* const db_modnet = db_network_->hierNet(drvr_pin);  // jk: rm
 
   drvr_port_ = network_->libertyPort(drvr_pin);
   if (net && drvr_port_ &&
