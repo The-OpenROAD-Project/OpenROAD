@@ -385,13 +385,13 @@ void dbTable<T, page_size>::destroy(T* t)
 }
 
 template <class T, uint page_size>
-bool dbTable<T, page_size>::reversible()
+bool dbTable<T, page_size>::reversible() const
 {
   return false;
 }
 
 template <class T, uint page_size>
-bool dbTable<T, page_size>::orderReversed()
+bool dbTable<T, page_size>::orderReversed() const
 {
   return false;
 }
@@ -402,31 +402,31 @@ void dbTable<T, page_size>::reverse(dbObject* /* unused: parent */)
 }
 
 template <class T, uint page_size>
-uint dbTable<T, page_size>::sequential()
+uint dbTable<T, page_size>::sequential() const
 {
   return _top_idx;
 }
 
 template <class T, uint page_size>
-uint dbTable<T, page_size>::size(dbObject* /* unused: parent */)
+uint dbTable<T, page_size>::size(dbObject* /* unused: parent */) const
 {
   return size();
 }
 
 template <class T, uint page_size>
-uint dbTable<T, page_size>::begin(dbObject* /* unused: parent */)
+uint dbTable<T, page_size>::begin(dbObject* /* unused: parent */) const
 {
   return _bottom_idx;
 }
 
 template <class T, uint page_size>
-uint dbTable<T, page_size>::end(dbObject* /* unused: parent */)
+uint dbTable<T, page_size>::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
 template <class T, uint page_size>
-uint dbTable<T, page_size>::next(uint id, ...)
+uint dbTable<T, page_size>::next(uint id, ...) const
 {
   ZASSERT(id != 0);
   ++id;

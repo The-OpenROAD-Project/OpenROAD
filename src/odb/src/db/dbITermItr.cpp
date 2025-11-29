@@ -21,12 +21,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////
 
-bool dbNetITermItr::reversible()
+bool dbNetITermItr::reversible() const
 {
   return true;
 }
 
-bool dbNetITermItr::orderReversed()
+bool dbNetITermItr::orderReversed() const
 {
   return true;
 }
@@ -58,12 +58,12 @@ void dbNetITermItr::reverse(dbObject* parent)
   net->_iterms = list;
 }
 
-uint dbNetITermItr::sequential()
+uint dbNetITermItr::sequential() const
 {
   return 0;
 }
 
-uint dbNetITermItr::size(dbObject* parent)
+uint dbNetITermItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -76,18 +76,18 @@ uint dbNetITermItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbNetITermItr::begin(dbObject* parent)
+uint dbNetITermItr::begin(dbObject* parent) const
 {
   _dbNet* net = (_dbNet*) parent;
   return (uint) net->_iterms;
 }
 
-uint dbNetITermItr::end(dbObject* /* unused: parent */)
+uint dbNetITermItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbNetITermItr::next(uint id, ...)
+uint dbNetITermItr::next(uint id, ...) const
 {
   _dbITerm* iterm = _iterm_tbl->getPtr(id);
   return iterm->_next_net_iterm;
@@ -104,12 +104,12 @@ dbObject* dbNetITermItr::getObject(uint id, ...)
 //
 ////////////////////////////////////////////////
 
-bool dbInstITermItr::reversible()
+bool dbInstITermItr::reversible() const
 {
   return false;
 }
 
-bool dbInstITermItr::orderReversed()
+bool dbInstITermItr::orderReversed() const
 {
   return false;
 }
@@ -118,12 +118,12 @@ void dbInstITermItr::reverse(dbObject* /* unused: parent */)
 {
 }
 
-uint dbInstITermItr::sequential()
+uint dbInstITermItr::sequential() const
 {
   return 0;
 }
 
-uint dbInstITermItr::size(dbObject* parent)
+uint dbInstITermItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -136,7 +136,7 @@ uint dbInstITermItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbInstITermItr::begin(dbObject* parent)
+uint dbInstITermItr::begin(dbObject* parent) const
 {
   _dbInst* inst = (_dbInst*) parent;
 
@@ -147,12 +147,12 @@ uint dbInstITermItr::begin(dbObject* parent)
   return inst->_iterms[0];
 }
 
-uint dbInstITermItr::end(dbObject* /* unused: parent */)
+uint dbInstITermItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbInstITermItr::next(uint id, ...)
+uint dbInstITermItr::next(uint id, ...) const
 {
   _dbITerm* iterm = _iterm_tbl->getPtr(id);
   _dbBlock* block = (_dbBlock*) iterm->getOwner();

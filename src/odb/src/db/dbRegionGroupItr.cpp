@@ -19,12 +19,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbRegionGroupItr::reversible()
+bool dbRegionGroupItr::reversible() const
 {
   return true;
 }
 
-bool dbRegionGroupItr::orderReversed()
+bool dbRegionGroupItr::orderReversed() const
 {
   return true;
 }
@@ -47,12 +47,12 @@ void dbRegionGroupItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbRegionGroupItr::sequential()
+uint dbRegionGroupItr::sequential() const
 {
   return 0;
 }
 
-uint dbRegionGroupItr::size(dbObject* parent)
+uint dbRegionGroupItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -66,7 +66,7 @@ uint dbRegionGroupItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbRegionGroupItr::begin(dbObject* parent)
+uint dbRegionGroupItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbRegion* _parent = (_dbRegion*) parent;
@@ -74,12 +74,12 @@ uint dbRegionGroupItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbRegionGroupItr::end(dbObject* /* unused: parent */)
+uint dbRegionGroupItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbRegionGroupItr::next(uint id, ...)
+uint dbRegionGroupItr::next(uint id, ...) const
 {
   // User Code Begin next
   _dbGroup* _child = _group_tbl->getPtr(id);

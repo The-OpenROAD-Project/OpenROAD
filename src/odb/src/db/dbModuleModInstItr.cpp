@@ -17,12 +17,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbModuleModInstItr::reversible()
+bool dbModuleModInstItr::reversible() const
 {
   return true;
 }
 
-bool dbModuleModInstItr::orderReversed()
+bool dbModuleModInstItr::orderReversed() const
 {
   return true;
 }
@@ -45,12 +45,12 @@ void dbModuleModInstItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbModuleModInstItr::sequential()
+uint dbModuleModInstItr::sequential() const
 {
   return 0;
 }
 
-uint dbModuleModInstItr::size(dbObject* parent)
+uint dbModuleModInstItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -64,7 +64,7 @@ uint dbModuleModInstItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbModuleModInstItr::begin(dbObject* parent)
+uint dbModuleModInstItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbModule* module = (_dbModule*) parent;
@@ -72,12 +72,12 @@ uint dbModuleModInstItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbModuleModInstItr::end(dbObject* /* unused: parent */)
+uint dbModuleModInstItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbModuleModInstItr::next(uint id, ...)
+uint dbModuleModInstItr::next(uint id, ...) const
 {
   // User Code Begin next
   _dbModInst* modinst = _modinst_tbl->getPtr(id);

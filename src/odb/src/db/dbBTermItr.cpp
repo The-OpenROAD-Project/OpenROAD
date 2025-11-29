@@ -21,12 +21,12 @@ namespace odb {
 //
 // BTerms are ordered by io-type and cannot be reversed.
 //
-bool dbNetBTermItr::reversible()
+bool dbNetBTermItr::reversible() const
 {
   return true;
 }
 
-bool dbNetBTermItr::orderReversed()
+bool dbNetBTermItr::orderReversed() const
 {
   return true;
 }
@@ -58,12 +58,12 @@ void dbNetBTermItr::reverse(dbObject* parent)
   net->_bterms = list;
 }
 
-uint dbNetBTermItr::sequential()
+uint dbNetBTermItr::sequential() const
 {
   return 0;
 }
 
-uint dbNetBTermItr::size(dbObject* parent)
+uint dbNetBTermItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -76,18 +76,18 @@ uint dbNetBTermItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbNetBTermItr::begin(dbObject* parent)
+uint dbNetBTermItr::begin(dbObject* parent) const
 {
   _dbNet* net = (_dbNet*) parent;
   return net->_bterms;
 }
 
-uint dbNetBTermItr::end(dbObject* /* unused: parent */)
+uint dbNetBTermItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbNetBTermItr::next(uint id, ...)
+uint dbNetBTermItr::next(uint id, ...) const
 {
   _dbBTerm* bterm = _bterm_tbl->getPtr(id);
   return bterm->_next_bterm;

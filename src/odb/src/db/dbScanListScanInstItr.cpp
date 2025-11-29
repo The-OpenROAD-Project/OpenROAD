@@ -17,12 +17,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbScanListScanInstItr::reversible()
+bool dbScanListScanInstItr::reversible() const
 {
   return true;
 }
 
-bool dbScanListScanInstItr::orderReversed()
+bool dbScanListScanInstItr::orderReversed() const
 {
   return true;
 }
@@ -47,12 +47,12 @@ void dbScanListScanInstItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbScanListScanInstItr::sequential()
+uint dbScanListScanInstItr::sequential() const
 {
   return 0;
 }
 
-uint dbScanListScanInstItr::size(dbObject* parent)
+uint dbScanListScanInstItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -66,7 +66,7 @@ uint dbScanListScanInstItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbScanListScanInstItr::begin(dbObject* parent)
+uint dbScanListScanInstItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbScanList* scan_list = (_dbScanList*) parent;
@@ -74,12 +74,12 @@ uint dbScanListScanInstItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbScanListScanInstItr::end(dbObject* /* unused: parent */)
+uint dbScanListScanInstItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbScanListScanInstItr::next(uint id, ...)
+uint dbScanListScanInstItr::next(uint id, ...) const
 {
   // User Code Begin next
   _dbScanInst* scan_inst = _scan_inst_tbl->getPtr(id);

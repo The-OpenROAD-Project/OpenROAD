@@ -14,12 +14,12 @@
 
 namespace odb {
 
-bool dbGroupPowerNetItr::reversible()
+bool dbGroupPowerNetItr::reversible() const
 {
   return true;
 }
 
-bool dbGroupPowerNetItr::orderReversed()
+bool dbGroupPowerNetItr::orderReversed() const
 {
   return false;
 }
@@ -30,29 +30,29 @@ void dbGroupPowerNetItr::reverse(dbObject* parent)
   std::reverse(group->_power_nets.begin(), group->_power_nets.end());
 }
 
-uint dbGroupPowerNetItr::sequential()
+uint dbGroupPowerNetItr::sequential() const
 {
   return 0;
 }
 
-uint dbGroupPowerNetItr::size(dbObject* parent)
+uint dbGroupPowerNetItr::size(dbObject* parent) const
 {
   _dbGroup* group = (_dbGroup*) parent;
   return group->_power_nets.size();
 }
 
-uint dbGroupPowerNetItr::begin(dbObject*)
+uint dbGroupPowerNetItr::begin(dbObject*) const
 {
   return 0;
 }
 
-uint dbGroupPowerNetItr::end(dbObject* parent)
+uint dbGroupPowerNetItr::end(dbObject* parent) const
 {
   _dbGroup* group = (_dbGroup*) parent;
   return group->_power_nets.size();
 }
 
-uint dbGroupPowerNetItr::next(uint id, ...)
+uint dbGroupPowerNetItr::next(uint id, ...) const
 {
   return ++id;
 }

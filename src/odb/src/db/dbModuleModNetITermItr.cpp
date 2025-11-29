@@ -18,12 +18,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbModuleModNetITermItr::reversible()
+bool dbModuleModNetITermItr::reversible() const
 {
   return true;
 }
 
-bool dbModuleModNetITermItr::orderReversed()
+bool dbModuleModNetITermItr::orderReversed() const
 {
   return true;
 }
@@ -32,12 +32,12 @@ void dbModuleModNetITermItr::reverse(dbObject* parent)
 {
 }
 
-uint dbModuleModNetITermItr::sequential()
+uint dbModuleModNetITermItr::sequential() const
 {
   return 0;
 }
 
-uint dbModuleModNetITermItr::size(dbObject* parent)
+uint dbModuleModNetITermItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -51,7 +51,7 @@ uint dbModuleModNetITermItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbModuleModNetITermItr::begin(dbObject* parent)
+uint dbModuleModNetITermItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbModNet* mod_net = (_dbModNet*) parent;
@@ -59,12 +59,12 @@ uint dbModuleModNetITermItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbModuleModNetITermItr::end(dbObject* /* unused: parent */)
+uint dbModuleModNetITermItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbModuleModNetITermItr::next(uint id, ...)
+uint dbModuleModNetITermItr::next(uint id, ...) const
 {
   // User Code Begin next
   _dbITerm* _iterm = _iterm_tbl->getPtr(id);

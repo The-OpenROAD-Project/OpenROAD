@@ -19,12 +19,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbGuideItr::reversible()
+bool dbGuideItr::reversible() const
 {
   return true;
 }
 
-bool dbGuideItr::orderReversed()
+bool dbGuideItr::orderReversed() const
 {
   return true;
 }
@@ -47,12 +47,12 @@ void dbGuideItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbGuideItr::sequential()
+uint dbGuideItr::sequential() const
 {
   return 0;
 }
 
-uint dbGuideItr::size(dbObject* parent)
+uint dbGuideItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -65,7 +65,7 @@ uint dbGuideItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbGuideItr::begin(dbObject* parent)
+uint dbGuideItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbNet* _parent = (_dbNet*) parent;
@@ -73,12 +73,12 @@ uint dbGuideItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbGuideItr::end(dbObject* /* unused: parent */)
+uint dbGuideItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbGuideItr::next(uint id, ...)
+uint dbGuideItr::next(uint id, ...) const
 {
   // User Code Begin next
   _dbGuide* _guide = _guide_tbl->getPtr(id);
