@@ -25,16 +25,16 @@ template class dbTable<_dbBPin>;
 
 _dbBPin::_dbBPin(_dbDatabase*)
 {
-  _flags._status = dbPlacementStatus::NONE;
-  _flags._has_min_spacing = 0;
-  _flags._has_effective_width = 0;
-  _flags._spare_bits = 0;
+  flags_._status = dbPlacementStatus::NONE;
+  flags_._has_min_spacing = 0;
+  flags_._has_effective_width = 0;
+  flags_._spare_bits = 0;
   _min_spacing = 0;
   _effective_width = 0;
 }
 
 _dbBPin::_dbBPin(_dbDatabase*, const _dbBPin& p)
-    : _flags(p._flags),
+    : flags_(p.flags_),
       _bterm(p._bterm),
       _boxes(p._boxes),
       _next_bpin(p._next_bpin),
@@ -46,15 +46,15 @@ _dbBPin::_dbBPin(_dbDatabase*, const _dbBPin& p)
 
 bool _dbBPin::operator==(const _dbBPin& rhs) const
 {
-  if (_flags._status != rhs._flags._status) {
+  if (flags_._status != rhs.flags_._status) {
     return false;
   }
 
-  if (_flags._has_min_spacing != rhs._flags._has_min_spacing) {
+  if (flags_._has_min_spacing != rhs.flags_._has_min_spacing) {
     return false;
   }
 
-  if (_flags._has_effective_width != rhs._flags._has_effective_width) {
+  if (flags_._has_effective_width != rhs.flags_._has_effective_width) {
     return false;
   }
 
@@ -87,7 +87,7 @@ bool _dbBPin::operator==(const _dbBPin& rhs) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbBPin& bpin)
 {
-  uint* bit_field = (uint*) &bpin._flags;
+  uint* bit_field = (uint*) &bpin.flags_;
   stream << *bit_field;
   stream << bpin._bterm;
   stream << bpin._boxes;
@@ -101,7 +101,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBPin& bpin)
 
 dbIStream& operator>>(dbIStream& stream, _dbBPin& bpin)
 {
-  uint* bit_field = (uint*) &bpin._flags;
+  uint* bit_field = (uint*) &bpin.flags_;
   stream >> *bit_field;
   stream >> bpin._bterm;
   stream >> bpin._boxes;
@@ -148,27 +148,27 @@ Rect dbBPin::getBBox()
 dbPlacementStatus dbBPin::getPlacementStatus()
 {
   _dbBPin* bpin = (_dbBPin*) this;
-  return dbPlacementStatus(bpin->_flags._status);
+  return dbPlacementStatus(bpin->flags_._status);
 }
 
 void dbBPin::setPlacementStatus(dbPlacementStatus status)
 {
   _dbBPin* bpin = (_dbBPin*) this;
-  bpin->_flags._status = status.getValue();
+  bpin->flags_._status = status.getValue();
   _dbBlock* block = (_dbBlock*) bpin->getOwner();
-  block->_flags._valid_bbox = 0;
+  block->flags_._valid_bbox = 0;
 }
 
 bool dbBPin::hasEffectiveWidth()
 {
   _dbBPin* bpin = (_dbBPin*) this;
-  return bpin->_flags._has_effective_width == 1U;
+  return bpin->flags_._has_effective_width == 1U;
 }
 
 void dbBPin::setEffectiveWidth(int w)
 {
   _dbBPin* bpin = (_dbBPin*) this;
-  bpin->_flags._has_effective_width = 1U;
+  bpin->flags_._has_effective_width = 1U;
   bpin->_effective_width = w;
 }
 
@@ -181,13 +181,13 @@ int dbBPin::getEffectiveWidth()
 bool dbBPin::hasMinSpacing()
 {
   _dbBPin* bpin = (_dbBPin*) this;
-  return bpin->_flags._has_min_spacing == 1U;
+  return bpin->flags_._has_min_spacing == 1U;
 }
 
 void dbBPin::setMinSpacing(int w)
 {
   _dbBPin* bpin = (_dbBPin*) this;
-  bpin->_flags._has_min_spacing = 1U;
+  bpin->flags_._has_min_spacing = 1U;
   bpin->_min_spacing = w;
 }
 

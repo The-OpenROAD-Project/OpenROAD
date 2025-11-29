@@ -25,7 +25,7 @@ template class dbTable<_dbSWire>;
 
 bool _dbSWire::operator==(const _dbSWire& rhs) const
 {
-  if (_flags._wire_type != rhs._flags._wire_type) {
+  if (flags_._wire_type != rhs.flags_._wire_type) {
     return false;
   }
 
@@ -50,11 +50,11 @@ bool _dbSWire::operator==(const _dbSWire& rhs) const
 
 bool _dbSWire::operator<(const _dbSWire& rhs) const
 {
-  if (_flags._wire_type < rhs._flags._wire_type) {
+  if (flags_._wire_type < rhs.flags_._wire_type) {
     return true;
   }
 
-  if (_flags._wire_type > rhs._flags._wire_type) {
+  if (flags_._wire_type > rhs.flags_._wire_type) {
     return false;
   }
 
@@ -138,7 +138,7 @@ dbNet* dbSWire::getNet()
 dbWireType dbSWire::getWireType()
 {
   _dbSWire* wire = (_dbSWire*) this;
-  return wire->_flags._wire_type;
+  return wire->flags_._wire_type;
 }
 
 dbNet* dbSWire::getShield()
@@ -167,7 +167,7 @@ dbSWire* dbSWire::create(dbNet* net_, dbWireType type, dbNet* shield_)
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
   _dbSWire* wire = block->_swire_tbl->create();
-  wire->_flags._wire_type = type.getValue();
+  wire->flags_._wire_type = type.getValue();
   wire->_net = net->getOID();
   wire->_next_swire = net->_swires;
   net->_swires = wire->getOID();

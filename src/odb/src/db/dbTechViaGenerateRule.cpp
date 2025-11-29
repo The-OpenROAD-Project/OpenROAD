@@ -30,7 +30,7 @@ template class dbTable<_dbTechViaGenerateRule>;
 
 bool _dbTechViaGenerateRule::operator==(const _dbTechViaGenerateRule& rhs) const
 {
-  if (_flags._default != rhs._flags._default) {
+  if (flags_._default != rhs.flags_._default) {
     return false;
   }
 
@@ -51,7 +51,7 @@ bool _dbTechViaGenerateRule::operator==(const _dbTechViaGenerateRule& rhs) const
 
 _dbTechViaGenerateRule::_dbTechViaGenerateRule(_dbDatabase*,
                                                const _dbTechViaGenerateRule& v)
-    : _flags(v._flags), _name(nullptr), _layer_rules(v._layer_rules)
+    : flags_(v.flags_), _name(nullptr), _layer_rules(v._layer_rules)
 {
   if (v._name) {
     _name = safe_strdup(v._name);
@@ -61,8 +61,8 @@ _dbTechViaGenerateRule::_dbTechViaGenerateRule(_dbDatabase*,
 _dbTechViaGenerateRule::_dbTechViaGenerateRule(_dbDatabase*)
 {
   _name = nullptr;
-  _flags._default = 0;
-  _flags._spare_bits = 0;
+  flags_._default = 0;
+  flags_._spare_bits = 0;
 }
 
 _dbTechViaGenerateRule::~_dbTechViaGenerateRule()
@@ -74,7 +74,7 @@ _dbTechViaGenerateRule::~_dbTechViaGenerateRule()
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechViaGenerateRule& v)
 {
-  uint* bit_field = (uint*) &v._flags;
+  uint* bit_field = (uint*) &v.flags_;
   stream << *bit_field;
   stream << v._name;
   stream << v._layer_rules;
@@ -83,7 +83,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechViaGenerateRule& v)
 
 dbIStream& operator>>(dbIStream& stream, _dbTechViaGenerateRule& v)
 {
-  uint* bit_field = (uint*) &v._flags;
+  uint* bit_field = (uint*) &v.flags_;
   stream >> *bit_field;
   stream >> v._name;
   stream >> v._layer_rules;
@@ -105,7 +105,7 @@ std::string dbTechViaGenerateRule::getName()
 bool dbTechViaGenerateRule::isDefault()
 {
   _dbTechViaGenerateRule* rule = (_dbTechViaGenerateRule*) this;
-  return rule->_flags._default == 1;
+  return rule->flags_._default == 1;
 }
 
 uint dbTechViaGenerateRule::getViaLayerRuleCount()
@@ -138,7 +138,7 @@ dbTechViaGenerateRule* dbTechViaGenerateRule::create(dbTech* tech_,
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechViaGenerateRule* rule = tech->_via_generate_rule_tbl->create();
   rule->_name = safe_strdup(name);
-  rule->_flags._default = is_default;
+  rule->flags_._default = is_default;
   return (dbTechViaGenerateRule*) rule;
 }
 

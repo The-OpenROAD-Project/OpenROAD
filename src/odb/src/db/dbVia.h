@@ -36,7 +36,7 @@ class _dbVia : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  _dbViaFlags _flags;  // 5.6 DEF
+  _dbViaFlags flags_;  // 5.6 DEF
   char* _name;
   char* _pattern;
   dbId<_dbBox> _bbox;  // Caching the bbox speeds up defin imports.

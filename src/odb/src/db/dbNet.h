@@ -73,7 +73,7 @@ class _dbNet : public _dbObject
   };
 
   // PERSISTANT-MEMBERS
-  _dbNetFlags _flags;
+  _dbNetFlags flags_;
   char* _name;
   union
   {

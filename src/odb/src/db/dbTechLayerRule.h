@@ -28,7 +28,7 @@ class _dbTechLayerRule : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  _dbTechLayerRuleFlags _flags;
+  _dbTechLayerRuleFlags flags_;
   uint _width;
   uint _spacing;
   double _resistance;

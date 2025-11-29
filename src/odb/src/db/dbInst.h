@@ -50,7 +50,7 @@ class _dbInst : public _dbObject
     NAME
   };
 
-  _dbInstFlags _flags;
+  _dbInstFlags flags_;
   char* _name;
   int _x;
   int _y;

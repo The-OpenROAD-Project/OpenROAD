@@ -41,39 +41,39 @@ template class dbTable<_dbTech>;
 
 bool _dbTech::operator==(const _dbTech& rhs) const
 {
-  if (_flags._namecase != rhs._flags._namecase) {
+  if (flags_._namecase != rhs.flags_._namecase) {
     return false;
   }
 
-  if (_flags._haswireext != rhs._flags._haswireext) {
+  if (flags_._haswireext != rhs.flags_._haswireext) {
     return false;
   }
 
-  if (_flags._nowireext != rhs._flags._nowireext) {
+  if (flags_._nowireext != rhs.flags_._nowireext) {
     return false;
   }
 
-  if (_flags._hasclmeas != rhs._flags._hasclmeas) {
+  if (flags_._hasclmeas != rhs.flags_._hasclmeas) {
     return false;
   }
 
-  if (_flags._clmeas != rhs._flags._clmeas) {
+  if (flags_._clmeas != rhs.flags_._clmeas) {
     return false;
   }
 
-  if (_flags._hasminspobs != rhs._flags._hasminspobs) {
+  if (flags_._hasminspobs != rhs.flags_._hasminspobs) {
     return false;
   }
 
-  if (_flags._minspobs != rhs._flags._minspobs) {
+  if (flags_._minspobs != rhs.flags_._minspobs) {
     return false;
   }
 
-  if (_flags._hasminsppin != rhs._flags._hasminsppin) {
+  if (flags_._hasminsppin != rhs.flags_._hasminsppin) {
     return false;
   }
 
-  if (_flags._minsppin != rhs._flags._minsppin) {
+  if (flags_._minsppin != rhs.flags_._minsppin) {
     return false;
   }
 
@@ -201,16 +201,16 @@ _dbTech::_dbTech(_dbDatabase* db)
   _lef_units = 0;
   _mfgrid = 0;
 
-  _flags._namecase = dbOnOffType::ON;
-  _flags._haswireext = dbOnOffType::OFF;
-  _flags._nowireext = dbOnOffType::OFF;
-  _flags._hasclmeas = dbOnOffType::OFF;
-  _flags._clmeas = dbClMeasureType::EUCLIDEAN;
-  _flags._hasminspobs = dbOnOffType::OFF;
-  _flags._minspobs = dbOnOffType::ON;
-  _flags._hasminsppin = dbOnOffType::OFF;
-  _flags._minsppin = dbOnOffType::OFF;
-  _flags._spare_bits = 0;
+  flags_._namecase = dbOnOffType::ON;
+  flags_._haswireext = dbOnOffType::OFF;
+  flags_._nowireext = dbOnOffType::OFF;
+  flags_._hasclmeas = dbOnOffType::OFF;
+  flags_._clmeas = dbClMeasureType::EUCLIDEAN;
+  flags_._hasminspobs = dbOnOffType::OFF;
+  flags_._minspobs = dbOnOffType::ON;
+  flags_._hasminsppin = dbOnOffType::OFF;
+  flags_._minsppin = dbOnOffType::OFF;
+  flags_._spare_bits = 0;
   _version = 5.4;
 
   _layer_tbl = new dbTable<_dbTechLayer>(
@@ -304,7 +304,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
   stream << tech._lef_units;
   stream << tech._mfgrid;
 
-  uint* bit_field = (uint*) &tech._flags;
+  uint* bit_field = (uint*) &tech.flags_;
   stream << *bit_field;
 
   stream << tech._getLefVersion();
@@ -351,7 +351,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
   }
   stream >> tech._mfgrid;
 
-  uint* bit_field = (uint*) &tech._flags;
+  uint* bit_field = (uint*) &tech.flags_;
   stream >> *bit_field;
 
   double lef_version;
@@ -549,95 +549,95 @@ void dbTech::setLefVersion(double inver)
 bool dbTech::hasNoWireExtAtPin() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (tech->_flags._haswireext == dbOnOffType::ON);
+  return (tech->flags_._haswireext == dbOnOffType::ON);
 }
 
 dbOnOffType dbTech::getNoWireExtAtPin() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (hasNoWireExtAtPin() ? dbOnOffType(tech->_flags._nowireext)
+  return (hasNoWireExtAtPin() ? dbOnOffType(tech->flags_._nowireext)
                               : dbOnOffType(dbOnOffType::OFF));
 }
 
 void dbTech::setNoWireExtAtPin(dbOnOffType intyp)
 {
   _dbTech* tech = (_dbTech*) this;
-  tech->_flags._haswireext = dbOnOffType::ON;
-  tech->_flags._nowireext = intyp.getValue();
+  tech->flags_._haswireext = dbOnOffType::ON;
+  tech->flags_._nowireext = intyp.getValue();
 }
 
 dbOnOffType dbTech::getNamesCaseSensitive() const
 {
   _dbTech* tech = (_dbTech*) this;
 
-  return dbOnOffType((bool) tech->_flags._namecase);
-  // return dbOnOffType(tech->_flags._namecase);
+  return dbOnOffType((bool) tech->flags_._namecase);
+  // return dbOnOffType(tech->flags_._namecase);
 }
 
 void dbTech::setNamesCaseSensitive(dbOnOffType intyp)
 {
   _dbTech* tech = (_dbTech*) this;
-  tech->_flags._namecase = intyp.getValue();
+  tech->flags_._namecase = intyp.getValue();
 }
 
 bool dbTech::hasClearanceMeasure() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (tech->_flags._hasclmeas == dbOnOffType::ON);
+  return (tech->flags_._hasclmeas == dbOnOffType::ON);
 }
 
 dbClMeasureType dbTech::getClearanceMeasure() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (hasClearanceMeasure() ? dbClMeasureType(tech->_flags._clmeas)
+  return (hasClearanceMeasure() ? dbClMeasureType(tech->flags_._clmeas)
                                 : dbClMeasureType(dbClMeasureType::EUCLIDEAN));
 }
 
 void dbTech::setClearanceMeasure(dbClMeasureType inmeas)
 {
   _dbTech* tech = (_dbTech*) this;
-  tech->_flags._hasclmeas = dbOnOffType::ON;
-  tech->_flags._clmeas = inmeas.getValue();
+  tech->flags_._hasclmeas = dbOnOffType::ON;
+  tech->flags_._clmeas = inmeas.getValue();
 }
 
 bool dbTech::hasUseMinSpacingObs() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (tech->_flags._hasminspobs == dbOnOffType::ON);
+  return (tech->flags_._hasminspobs == dbOnOffType::ON);
 }
 
 dbOnOffType dbTech::getUseMinSpacingObs() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (hasUseMinSpacingObs() ? dbOnOffType(tech->_flags._minspobs)
+  return (hasUseMinSpacingObs() ? dbOnOffType(tech->flags_._minspobs)
                                 : dbOnOffType(dbOnOffType::ON));
 }
 
 void dbTech::setUseMinSpacingObs(dbOnOffType intyp)
 {
   _dbTech* tech = (_dbTech*) this;
-  tech->_flags._hasminspobs = dbOnOffType::ON;
-  tech->_flags._minspobs = intyp.getValue();
+  tech->flags_._hasminspobs = dbOnOffType::ON;
+  tech->flags_._minspobs = intyp.getValue();
 }
 
 bool dbTech::hasUseMinSpacingPin() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (tech->_flags._hasminsppin == dbOnOffType::ON);
+  return (tech->flags_._hasminsppin == dbOnOffType::ON);
 }
 
 dbOnOffType dbTech::getUseMinSpacingPin() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (hasUseMinSpacingPin() ? dbOnOffType(tech->_flags._minsppin)
+  return (hasUseMinSpacingPin() ? dbOnOffType(tech->flags_._minsppin)
                                 : dbOnOffType(dbOnOffType::ON));
 }
 
 void dbTech::setUseMinSpacingPin(dbOnOffType intyp)
 {
   _dbTech* tech = (_dbTech*) this;
-  tech->_flags._hasminsppin = dbOnOffType::ON;
-  tech->_flags._minsppin = intyp.getValue();
+  tech->flags_._hasminsppin = dbOnOffType::ON;
+  tech->flags_._minsppin = intyp.getValue();
 }
 
 bool dbTech::hasManufacturingGrid() const

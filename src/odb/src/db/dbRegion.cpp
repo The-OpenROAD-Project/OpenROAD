@@ -32,14 +32,14 @@ template class dbTable<_dbRegion>;
 
 _dbRegion::_dbRegion(_dbDatabase*)
 {
-  _flags._type = dbRegionType::INCLUSIVE;
-  _flags._invalid = false;
-  _flags._spare_bits = false;
+  flags_._type = dbRegionType::INCLUSIVE;
+  flags_._invalid = false;
+  flags_._spare_bits = false;
   _name = nullptr;
 }
 
 _dbRegion::_dbRegion(_dbDatabase*, const _dbRegion& r)
-    : _flags(r._flags),
+    : flags_(r.flags_),
       _name(nullptr),
       _insts(r._insts),
       _boxes(r._boxes),
@@ -59,11 +59,11 @@ _dbRegion::~_dbRegion()
 
 bool _dbRegion::operator==(const _dbRegion& rhs) const
 {
-  if (_flags._type != rhs._flags._type) {
+  if (flags_._type != rhs.flags_._type) {
     return false;
   }
 
-  if (_flags._invalid != rhs._flags._invalid) {
+  if (flags_._invalid != rhs.flags_._invalid) {
     return false;
   }
 
@@ -88,19 +88,19 @@ bool _dbRegion::operator==(const _dbRegion& rhs) const
 
 bool _dbRegion::operator<(const _dbRegion& rhs) const
 {
-  if (_flags._type < rhs._flags._type) {
+  if (flags_._type < rhs.flags_._type) {
     return false;
   }
 
-  if (_flags._type > rhs._flags._type) {
+  if (flags_._type > rhs.flags_._type) {
     return true;
   }
 
-  if (_flags._invalid < rhs._flags._invalid) {
+  if (flags_._invalid < rhs.flags_._invalid) {
     return false;
   }
 
-  if (_flags._invalid > rhs._flags._invalid) {
+  if (flags_._invalid > rhs.flags_._invalid) {
     return true;
   }
 
@@ -116,7 +116,7 @@ bool _dbRegion::operator<(const _dbRegion& rhs) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbRegion& r)
 {
-  uint* bit_field = (uint*) &r._flags;
+  uint* bit_field = (uint*) &r.flags_;
   stream << *bit_field;
   stream << r._name;
   stream << r._insts;
@@ -127,7 +127,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbRegion& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbRegion& r)
 {
-  uint* bit_field = (uint*) &r._flags;
+  uint* bit_field = (uint*) &r.flags_;
   stream >> *bit_field;
   stream >> r._name;
   stream >> r._insts;
@@ -146,26 +146,26 @@ std::string dbRegion::getName()
 dbRegionType dbRegion::getRegionType()
 {
   _dbRegion* region = (_dbRegion*) this;
-  dbRegionType t(region->_flags._type);
+  dbRegionType t(region->flags_._type);
   return t;
 }
 
 void dbRegion::setInvalid(bool v)
 {
   _dbRegion* region = (_dbRegion*) this;
-  region->_flags._invalid = v;
+  region->flags_._invalid = v;
 }
 
 bool dbRegion::isInvalid()
 {
   _dbRegion* region = (_dbRegion*) this;
-  return region->_flags._invalid == 1;
+  return region->flags_._invalid == 1;
 }
 
 void dbRegion::setRegionType(dbRegionType type)
 {
   _dbRegion* region = (_dbRegion*) this;
-  region->_flags._type = type;
+  region->flags_._type = type;
 }
 
 dbSet<dbInst> dbRegion::getRegionInsts()

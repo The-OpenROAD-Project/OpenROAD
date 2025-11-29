@@ -30,7 +30,7 @@ class _dbModBTerm : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   char* _name;
-  uint _flags;
+  uint flags_;
   dbId<_dbModITerm> _parent_moditerm;
   dbId<_dbModule> _parent;
   dbId<_dbModNet> _modnet;

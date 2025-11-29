@@ -27,11 +27,11 @@ template class dbTable<_dbRow>;
 
 bool _dbRow::operator==(const _dbRow& rhs) const
 {
-  if (_flags._orient != rhs._flags._orient) {
+  if (flags_._orient != rhs.flags_._orient) {
     return false;
   }
 
-  if (_flags._dir != rhs._flags._dir) {
+  if (flags_._dir != rhs.flags_._dir) {
     return false;
   }
 
@@ -122,19 +122,19 @@ bool _dbRow::operator<(const _dbRow& rhs) const
     return false;
   }
 
-  if (_flags._orient < rhs._flags._orient) {
+  if (flags_._orient < rhs.flags_._orient) {
     return true;
   }
 
-  if (_flags._orient > rhs._flags._orient) {
+  if (flags_._orient > rhs.flags_._orient) {
     return false;
   }
 
-  if (_flags._dir < rhs._flags._dir) {
+  if (flags_._dir < rhs.flags_._dir) {
     return true;
   }
 
-  if (_flags._dir > rhs._flags._dir) {
+  if (flags_._dir > rhs.flags_._dir) {
     return false;
   }
 
@@ -177,14 +177,14 @@ Point dbRow::getOrigin()
 dbOrientType dbRow::getOrient()
 {
   _dbRow* row = (_dbRow*) this;
-  dbOrientType t(row->_flags._orient);
+  dbOrientType t(row->flags_._orient);
   return t;
 }
 
 dbRowDir dbRow::getDirection()
 {
   _dbRow* row = (_dbRow*) this;
-  dbRowDir d(row->_flags._dir);
+  dbRowDir d(row->flags_._dir);
   return d;
 }
 
@@ -218,7 +218,7 @@ Rect dbRow::getBBox()
   int dy = (int) r.dy();
   Point origin = getOrigin();
 
-  if (row->_flags._dir == dbRowDir::HORIZONTAL) {
+  if (row->flags_._dir == dbRowDir::HORIZONTAL) {
     int xMax = origin.x() + (row->_site_cnt - 1) * row->_spacing + dx;
     int yMax = origin.y() + dy;
     return Rect(origin.x(), origin.y(), xMax, yMax);
@@ -250,8 +250,8 @@ dbRow* dbRow::create(dbBlock* block_,
   row->_name = safe_strdup(name);
   row->_lib = lib->getOID();
   row->_site = site->getOID();
-  row->_flags._orient = orient;
-  row->_flags._dir = direction;
+  row->flags_._orient = orient;
+  row->flags_._dir = direction;
   row->_x = origin_x;
   row->_y = origin_y;
   row->_site_cnt = num_sites;

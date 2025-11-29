@@ -33,15 +33,15 @@ template class dbTable<_dbMTerm>;
 
 bool _dbMTerm::operator==(const _dbMTerm& rhs) const
 {
-  if (_flags._io_type != rhs._flags._io_type) {
+  if (flags_._io_type != rhs.flags_._io_type) {
     return false;
   }
 
-  if (_flags._sig_type != rhs._flags._sig_type) {
+  if (flags_._sig_type != rhs.flags_._sig_type) {
     return false;
   }
 
-  if (_flags._shape_type != rhs._flags._shape_type) {
+  if (flags_._shape_type != rhs.flags_._shape_type) {
     return false;
   }
 
@@ -135,7 +135,7 @@ _dbMTerm::~_dbMTerm()
 
 dbOStream& operator<<(dbOStream& stream, const _dbMTerm& mterm)
 {
-  uint* bit_field = (uint*) &mterm._flags;
+  uint* bit_field = (uint*) &mterm.flags_;
   stream << *bit_field;
   stream << mterm._order_id;
   stream << mterm._name;
@@ -154,7 +154,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMTerm& mterm)
 
 dbIStream& operator>>(dbIStream& stream, _dbMTerm& mterm)
 {
-  uint* bit_field = (uint*) &mterm._flags;
+  uint* bit_field = (uint*) &mterm.flags_;
   stream >> *bit_field;
   stream >> mterm._order_id;
   stream >> mterm._name;
@@ -228,30 +228,30 @@ const char* dbMTerm::getConstName()
 dbSigType dbMTerm::getSigType()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  return dbSigType(mterm->_flags._sig_type);
+  return dbSigType(mterm->flags_._sig_type);
 }
 
 dbIoType dbMTerm::getIoType()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  return dbIoType(mterm->_flags._io_type);
+  return dbIoType(mterm->flags_._io_type);
 }
 
 dbMTermShapeType dbMTerm::getShape()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  return dbMTermShapeType(mterm->_flags._shape_type);
+  return dbMTermShapeType(mterm->flags_._shape_type);
 }
 
 void dbMTerm::setMark(uint v)
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  mterm->_flags._mark = v;
+  mterm->flags_._mark = v;
 }
 bool dbMTerm::isSetMark()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  return mterm->_flags._mark > 0 ? true : false;
+  return mterm->flags_._mark > 0 ? true : false;
 }
 
 dbMaster* dbMTerm::getMaster()
@@ -449,14 +449,14 @@ dbMTerm* dbMTerm::create(dbMaster* master,
 {
   _dbMaster* master_impl = (_dbMaster*) master;
 
-  if (master_impl->_flags._frozen || master_impl->_mterm_hash.hasMember(name)) {
+  if (master_impl->flags_._frozen || master_impl->_mterm_hash.hasMember(name)) {
     return nullptr;
   }
 
   _dbMTerm* impl = master_impl->_mterm_tbl->create();
   impl->_name = strdup(name);
-  impl->_flags._io_type = io_type.getValue();
-  impl->_flags._shape_type = shape_type;
+  impl->flags_._io_type = io_type.getValue();
+  impl->flags_._shape_type = shape_type;
   master_impl->_mterm_hash.insert(impl);
   master_impl->_mterm_cnt++;
 
@@ -468,7 +468,7 @@ dbMTerm* dbMTerm::create(dbMaster* master,
 void dbMTerm::setSigType(dbSigType type)
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  mterm->_flags._sig_type = type.getValue();
+  mterm->flags_._sig_type = type.getValue();
   if (type == dbSigType::CLOCK) {
     getMaster()->setSequential(true);
   }

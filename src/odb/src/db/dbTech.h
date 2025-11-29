@@ -65,7 +65,7 @@ class _dbTech : public _dbObject
   int _rlayer_cnt;
   int _lef_units;
   int _mfgrid;
-  _dbTechFlags _flags;
+  _dbTechFlags flags_;
   dbId<_dbTechLayer> _bottom;
   dbId<_dbTechLayer> _top;
   dbId<_dbTechNonDefaultRule> _non_default_rules;

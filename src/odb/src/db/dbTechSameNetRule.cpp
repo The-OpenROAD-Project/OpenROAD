@@ -20,7 +20,7 @@ template class dbTable<_dbTechSameNetRule>;
 
 bool _dbTechSameNetRule::operator==(const _dbTechSameNetRule& rhs) const
 {
-  if (_flags._stack != rhs._flags._stack) {
+  if (flags_._stack != rhs.flags_._stack) {
     return false;
   }
 
@@ -76,16 +76,16 @@ void dbTechSameNetRule::setAllowStackedVias(bool value)
   _dbTechSameNetRule* rule = (_dbTechSameNetRule*) this;
 
   if (value) {
-    rule->_flags._stack = 1;
+    rule->flags_._stack = 1;
   } else {
-    rule->_flags._stack = 0;
+    rule->flags_._stack = 0;
   }
 }
 
 bool dbTechSameNetRule::getAllowStackedVias()
 {
   _dbTechSameNetRule* rule = (_dbTechSameNetRule*) this;
-  return rule->_flags._stack == 1;
+  return rule->flags_._stack == 1;
 }
 
 dbTechSameNetRule* dbTechSameNetRule::create(dbTechLayer* layer1_,

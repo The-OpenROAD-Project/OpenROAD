@@ -136,7 +136,7 @@ dbInstHdr* dbInstHdr::create(dbBlock* block_, dbMaster* master_)
   _dbMaster* master = (_dbMaster*) master_;
   _dbLib* lib = (_dbLib*) master->getOwner();
 
-  if (!master->_flags._frozen) {
+  if (!master->flags_._frozen) {
     return nullptr;
   }
 

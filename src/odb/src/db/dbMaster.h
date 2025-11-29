@@ -45,7 +45,7 @@ class _dbMaster : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  dbMasterFlags _flags;
+  dbMasterFlags flags_;
   int _x;
   int _y;
   uint _height;

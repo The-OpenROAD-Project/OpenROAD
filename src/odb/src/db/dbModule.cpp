@@ -203,7 +203,7 @@ void dbModule::addInst(dbInst* inst)
   _dbInst* _inst = (_dbInst*) inst;
   _dbBlock* block = (_dbBlock*) module->getOwner();
 
-  if (isTop() == false && _inst->_flags._physical_only) {
+  if (isTop() == false && _inst->flags_._physical_only) {
     _inst->getLogger()->error(
         utl::ODB,
         297,
@@ -216,7 +216,7 @@ void dbModule::addInst(dbInst* inst)
     return;  // already in this module
   }
 
-  if (_inst->_flags._dont_touch) {
+  if (_inst->flags_._dont_touch) {
     _inst->getLogger()->error(
         utl::ODB,
         367,
@@ -254,7 +254,7 @@ void _dbModule::removeInst(dbInst* inst)
     return;
   }
 
-  if (_inst->_flags._dont_touch) {
+  if (_inst->flags_._dont_touch) {
     _inst->getLogger()->error(
         utl::ODB,
         371,

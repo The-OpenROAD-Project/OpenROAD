@@ -30,7 +30,7 @@ class _dbBPin : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  _dbBPinFlags _flags;
+  _dbBPinFlags flags_;
   dbId<_dbBTerm> _bterm;
   dbId<_dbBox> _boxes;
   dbId<_dbBPin> _next_bpin;

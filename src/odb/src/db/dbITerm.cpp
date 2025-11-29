@@ -42,19 +42,19 @@ template class dbTable<_dbITerm>;
 
 bool _dbITerm::operator==(const _dbITerm& rhs) const
 {
-  if (_flags._mterm_idx != rhs._flags._mterm_idx) {
+  if (flags_._mterm_idx != rhs.flags_._mterm_idx) {
     return false;
   }
 
-  if (_flags._spef != rhs._flags._spef) {
+  if (flags_._spef != rhs.flags_._spef) {
     return false;
   }
 
-  if (_flags._special != rhs._flags._special) {
+  if (flags_._special != rhs.flags_._special) {
     return false;
   }
 
-  if (_flags._connected != rhs._flags._connected) {
+  if (flags_._connected != rhs.flags_._connected) {
     return false;
   }
 
@@ -115,7 +115,7 @@ _dbMTerm* _dbITerm::getMTerm() const
   _dbDatabase* db = getDatabase();
   _dbLib* lib = db->_lib_tbl->getPtr(inst_hdr->_lib);
   _dbMaster* master = lib->_master_tbl->getPtr(inst_hdr->_master);
-  dbId<_dbMTerm> mterm = inst_hdr->_mterms[_flags._mterm_idx];
+  dbId<_dbMTerm> mterm = inst_hdr->_mterms[flags_._mterm_idx];
   return master->_mterm_tbl->getPtr(mterm);
 }
 
@@ -166,7 +166,7 @@ dbMTerm* dbITerm::getMTerm() const
   _dbDatabase* db = iterm->getDatabase();
   _dbLib* lib = db->_lib_tbl->getPtr(inst_hdr->_lib);
   _dbMaster* master = lib->_master_tbl->getPtr(inst_hdr->_master);
-  dbId<_dbMTerm> mterm = inst_hdr->_mterms[iterm->_flags._mterm_idx];
+  dbId<_dbMTerm> mterm = inst_hdr->_mterms[iterm->flags_._mterm_idx];
   return (dbMTerm*) master->_mterm_tbl->getPtr(mterm);
 }
 
@@ -184,7 +184,7 @@ dbBTerm* dbITerm::getBTerm()
 
   _dbChip* chip = (_dbChip*) block->getOwner();
   _dbBlock* child = chip->_block_tbl->getPtr(hier->_child_block);
-  dbId<_dbBTerm> bterm = hier->_child_bterms[iterm->_flags._mterm_idx];
+  dbId<_dbBTerm> bterm = hier->_child_bterms[iterm->flags_._mterm_idx];
   return (dbBTerm*) child->_bterm_tbl->getPtr(bterm);
 }
 
@@ -201,56 +201,56 @@ dbBlock* dbITerm::getBlock() const
 void dbITerm::setClocked(bool v)
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  iterm->_flags._clocked = v;
+  iterm->flags_._clocked = v;
 }
 
 bool dbITerm::isClocked()
 {
   bool masterFlag = getMTerm()->getSigType() == dbSigType::CLOCK ? true : false;
   _dbITerm* iterm = (_dbITerm*) this;
-  return iterm->_flags._clocked > 0 || masterFlag ? true : false;
+  return iterm->flags_._clocked > 0 || masterFlag ? true : false;
 }
 
 void dbITerm::setMark(uint v)
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  iterm->_flags._mark = v;
+  iterm->flags_._mark = v;
 }
 
 bool dbITerm::isSetMark()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  return iterm->_flags._mark > 0 ? true : false;
+  return iterm->flags_._mark > 0 ? true : false;
 }
 
 bool dbITerm::isSpecial()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  return iterm->_flags._special == 1;
+  return iterm->flags_._special == 1;
 }
 
 void dbITerm::setSpecial()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  iterm->_flags._special = 1;
+  iterm->flags_._special = 1;
 }
 
 void dbITerm::clearSpecial()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  iterm->_flags._special = 0;
+  iterm->flags_._special = 0;
 }
 
 void dbITerm::setSpef(uint v)
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  iterm->_flags._spef = v;
+  iterm->flags_._spef = v;
 }
 
 bool dbITerm::isSpef()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  return (iterm->_flags._spef > 0) ? true : false;
+  return (iterm->flags_._spef > 0) ? true : false;
 }
 
 void dbITerm::setExtId(uint v)
@@ -268,19 +268,19 @@ uint dbITerm::getExtId()
 bool dbITerm::isConnected()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  return iterm->_flags._connected == 1;
+  return iterm->flags_._connected == 1;
 }
 
 void dbITerm::setConnected()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  iterm->_flags._connected = 1;
+  iterm->flags_._connected = 1;
 }
 
 void dbITerm::clearConnected()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  iterm->_flags._connected = 0;
+  iterm->flags_._connected = 0;
 }
 
 /*
@@ -312,7 +312,7 @@ void dbITerm::connect(dbNet* net_)
     return;
   }
 
-  if (inst->_flags._dont_touch) {
+  if (inst->flags_._dont_touch) {
     inst->getLogger()->error(
         utl::ODB,
         369,
@@ -320,7 +320,7 @@ void dbITerm::connect(dbNet* net_)
         inst->_name);
   }
 
-  if (net->_flags._dont_touch) {
+  if (net->flags_._dont_touch) {
     inst->getLogger()->error(utl::ODB,
                              373,
                              "Attempt to connect iterm to dont_touch net {}",
@@ -419,7 +419,7 @@ void dbITerm::connect(dbModNet* mod_net)
 
   iterm->_mnet = _mod_net->getId();
 
-  if (inst->_flags._dont_touch) {
+  if (inst->flags_._dont_touch) {
     inst->getLogger()->error(
         utl::ODB,
         397,
@@ -469,7 +469,7 @@ void dbITerm::disconnect()
   }
 
   _dbInst* inst = iterm->getInst();
-  if (inst->_flags._dont_touch) {
+  if (inst->flags_._dont_touch) {
     inst->getLogger()->error(
         utl::ODB,
         370,
@@ -485,7 +485,7 @@ void dbITerm::disconnect()
       = iterm->_mnet == 0 ? nullptr : block->_modnet_tbl->getPtr(iterm->_mnet);
   dbModNet* mod_net = (dbModNet*) mod_net_impl;
 
-  if (net && net->_flags._dont_touch) {
+  if (net && net->flags_._dont_touch) {
     inst->getLogger()->error(
         utl::ODB,
         372,
@@ -579,7 +579,7 @@ void dbITerm::disconnectDbNet()
   }
 
   _dbInst* inst = iterm->getInst();
-  if (inst->_flags._dont_touch) {
+  if (inst->flags_._dont_touch) {
     inst->getLogger()->error(
         utl::ODB,
         1104,
@@ -590,7 +590,7 @@ void dbITerm::disconnectDbNet()
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
   _dbNet* net = block->_net_tbl->getPtr(iterm->_net);
 
-  if (net->_flags._dont_touch) {
+  if (net->flags_._dont_touch) {
     inst->getLogger()->error(
         utl::ODB,
         1105,
@@ -704,18 +704,18 @@ void dbITerm::disconnectDbModNet()
 dbSigType dbITerm::getSigType() const
 {
   _dbMTerm* mterm = (_dbMTerm*) getMTerm();
-  return dbSigType(mterm->_flags._sig_type);
+  return dbSigType(mterm->flags_._sig_type);
 }
 dbIoType dbITerm::getIoType() const
 {
   _dbMTerm* mterm = (_dbMTerm*) getMTerm();
-  return dbIoType(mterm->_flags._io_type);
+  return dbIoType(mterm->flags_._io_type);
 }
 bool dbITerm::isOutputSignal(bool io)
 {
   _dbMTerm* mterm = (_dbMTerm*) getMTerm();
-  dbSigType sType = dbSigType(mterm->_flags._sig_type);
-  dbIoType ioType = dbIoType(mterm->_flags._io_type);
+  dbSigType sType = dbSigType(mterm->flags_._sig_type);
+  dbIoType ioType = dbIoType(mterm->flags_._io_type);
 
   if ((sType == dbSigType::GROUND) || (sType == dbSigType::POWER)) {
     return false;
@@ -734,8 +734,8 @@ bool dbITerm::isOutputSignal(bool io)
 bool dbITerm::isInputSignal(bool io)
 {
   _dbMTerm* mterm = (_dbMTerm*) getMTerm();
-  dbSigType sType = dbSigType(mterm->_flags._sig_type);
-  dbIoType ioType = dbIoType(mterm->_flags._io_type);
+  dbSigType sType = dbSigType(mterm->flags_._sig_type);
+  dbIoType ioType = dbIoType(mterm->flags_._io_type);
 
   if ((sType == dbSigType::GROUND) || (sType == dbSigType::POWER)) {
     return false;

@@ -44,23 +44,23 @@ template class dbTable<_dbMaster>;
 
 bool _dbMaster::operator==(const _dbMaster& rhs) const
 {
-  if (_flags._frozen != rhs._flags._frozen) {
+  if (flags_._frozen != rhs.flags_._frozen) {
     return false;
   }
 
-  if (_flags._x_symmetry != rhs._flags._x_symmetry) {
+  if (flags_._x_symmetry != rhs.flags_._x_symmetry) {
     return false;
   }
 
-  if (_flags._y_symmetry != rhs._flags._y_symmetry) {
+  if (flags_._y_symmetry != rhs.flags_._y_symmetry) {
     return false;
   }
 
-  if (_flags._R90_symmetry != rhs._flags._R90_symmetry) {
+  if (flags_._R90_symmetry != rhs.flags_._R90_symmetry) {
     return false;
   }
 
-  if (_flags._type != rhs._flags._type) {
+  if (flags_._type != rhs.flags_._type) {
     return false;
   }
 
@@ -162,15 +162,15 @@ bool _dbMaster::operator==(const _dbMaster& rhs) const
 ////////////////////////////////////////////////////////////////////
 _dbMaster::_dbMaster(_dbDatabase* db)
 {
-  _flags._x_symmetry = 0;
-  _flags._y_symmetry = 0;
-  _flags._R90_symmetry = 0;
-  _flags._type = dbMasterType::CORE;
-  _flags._frozen = 0;
-  _flags._mark = 0;
-  _flags._special_power = 0;
-  _flags._sequential = 0;
-  _flags._spare_bits_19 = 0;
+  flags_._x_symmetry = 0;
+  flags_._y_symmetry = 0;
+  flags_._R90_symmetry = 0;
+  flags_._type = dbMasterType::CORE;
+  flags_._frozen = 0;
+  flags_._mark = 0;
+  flags_._special_power = 0;
+  flags_._sequential = 0;
+  flags_._spare_bits_19 = 0;
 
   _x = 0;
   _y = 0;
@@ -233,7 +233,7 @@ _dbMaster::~_dbMaster()
 
 dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
 {
-  uint* bit_field = (uint*) &master._flags;
+  uint* bit_field = (uint*) &master.flags_;
   stream << *bit_field;
   stream << master._x;
   stream << master._y;
@@ -262,7 +262,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
 dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
 {
   _dbDatabase* db = master.getImpl()->getDatabase();
-  uint* bit_field = (uint*) &master._flags;
+  uint* bit_field = (uint*) &master.flags_;
   stream >> *bit_field;
   stream >> master._x;
   stream >> master._y;
@@ -401,13 +401,13 @@ int64_t dbMaster::getArea() const
 dbMasterType dbMaster::getType() const
 {
   _dbMaster* master = (_dbMaster*) this;
-  return dbMasterType(master->_flags._type);
+  return dbMasterType(master->flags_._type);
 }
 
 void dbMaster::setType(dbMasterType type)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_flags._type = type.getValue();
+  master->flags_._type = type.getValue();
 }
 
 dbMaster* dbMaster::getLEQ()
@@ -521,7 +521,7 @@ dbSet<dbPolygon> dbMaster::getPolygonObstructions()
 bool dbMaster::isFrozen()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_flags._frozen != 0;
+  return master->flags_._frozen != 0;
 }
 
 int dbMaster::getMTermCount()
@@ -554,48 +554,48 @@ dbSite* dbMaster::getSite()
 void dbMaster::setSymmetryX()
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_flags._x_symmetry = 1;
+  master->flags_._x_symmetry = 1;
 }
 
 bool dbMaster::getSymmetryX()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_flags._x_symmetry != 0;
+  return master->flags_._x_symmetry != 0;
 }
 
 void dbMaster::setSymmetryY()
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_flags._y_symmetry = 1;
+  master->flags_._y_symmetry = 1;
 }
 
 bool dbMaster::getSymmetryY()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_flags._y_symmetry != 0;
+  return master->flags_._y_symmetry != 0;
 }
 
 void dbMaster::setSymmetryR90()
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_flags._R90_symmetry = 1;
+  master->flags_._R90_symmetry = 1;
 }
 
 bool dbMaster::getSymmetryR90()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_flags._R90_symmetry != 0;
+  return master->flags_._R90_symmetry != 0;
 }
 
 void dbMaster::setFrozen()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  if (master->_flags._frozen == 1) {
+  if (master->flags_._frozen == 1) {
     return;
   }
 
-  master->_flags._frozen = 1;
+  master->flags_._frozen = 1;
 
   // set the order id on the mterm.
   // this id is used to index mterms on a inst-hdr
@@ -608,36 +608,36 @@ void dbMaster::setFrozen()
 void dbMaster::setSequential(bool v)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_flags._sequential = v;
+  master->flags_._sequential = v;
 }
 
 bool dbMaster::isSequential()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_flags._sequential;
+  return master->flags_._sequential;
 }
 void dbMaster::setMark(uint mark)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_flags._mark = mark;
+  master->flags_._mark = mark;
 }
 
 uint dbMaster::isMarked()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_flags._mark;
+  return master->flags_._mark;
 }
 
 void dbMaster::setSpecialPower(bool value)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_flags._special_power = (value == true) ? 1 : 0;
+  master->flags_._special_power = (value == true) ? 1 : 0;
 }
 
 bool dbMaster::isSpecialPower()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_flags._special_power == 1;
+  return master->flags_._special_power == 1;
 }
 
 void dbMaster::getPlacementBoundary(Rect& r)
@@ -715,7 +715,7 @@ bool dbMaster::isFiller()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  switch (master->_flags._type) {
+  switch (master->flags_._type) {
     case dbMasterType::CORE_SPACER:
       return true;
     case dbMasterType::CORE:

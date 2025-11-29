@@ -50,7 +50,7 @@ bool _dbTechViaRule::operator==(const _dbTechViaRule& rhs) const
 }
 
 _dbTechViaRule::_dbTechViaRule(_dbDatabase*, const _dbTechViaRule& v)
-    : _flags(v._flags),
+    : flags_(v.flags_),
       _name(nullptr),
       _layer_rules(v._layer_rules),
       _vias(v._vias)
@@ -63,7 +63,7 @@ _dbTechViaRule::_dbTechViaRule(_dbDatabase*, const _dbTechViaRule& v)
 _dbTechViaRule::_dbTechViaRule(_dbDatabase*)
 {
   _name = nullptr;
-  _flags._spare_bits = 0;
+  flags_._spare_bits = 0;
 }
 
 _dbTechViaRule::~_dbTechViaRule()
@@ -75,7 +75,7 @@ _dbTechViaRule::~_dbTechViaRule()
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechViaRule& v)
 {
-  uint* bit_field = (uint*) &v._flags;
+  uint* bit_field = (uint*) &v.flags_;
   stream << *bit_field;
   stream << v._name;
   stream << v._layer_rules;
@@ -85,7 +85,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechViaRule& v)
 
 dbIStream& operator>>(dbIStream& stream, _dbTechViaRule& v)
 {
-  uint* bit_field = (uint*) &v._flags;
+  uint* bit_field = (uint*) &v.flags_;
   stream >> *bit_field;
   stream >> v._name;
   stream >> v._layer_rules;

@@ -32,7 +32,7 @@ class _dbMTerm : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  _dbMTermFlags _flags;
+  _dbMTermFlags flags_;
   uint _order_id;
   char* _name;
   dbId<_dbMTerm> _next_entry;
@@ -62,11 +62,11 @@ class _dbMTerm : public _dbObject
 
 inline _dbMTerm::_dbMTerm(_dbDatabase*)
 {
-  _flags._io_type = dbIoType::INPUT;
-  _flags._sig_type = dbSigType::SIGNAL;
-  _flags._shape_type = dbMTermShapeType::NONE;
-  _flags._mark = 0;
-  _flags._spare_bits = 0;
+  flags_._io_type = dbIoType::INPUT;
+  flags_._sig_type = dbSigType::SIGNAL;
+  flags_._shape_type = dbMTermShapeType::NONE;
+  flags_._mark = 0;
+  flags_._spare_bits = 0;
   _order_id = 0;
   _name = nullptr;
   _par_met_area.clear();

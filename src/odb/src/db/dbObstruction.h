@@ -30,7 +30,7 @@ struct _dbObstructionFlags
 class _dbObstruction : public _dbObject
 {
  public:
-  _dbObstructionFlags _flags;
+  _dbObstructionFlags flags_;
   dbId<_dbInst> _inst;
   dbId<_dbBox> _bbox;
   int _min_spacing;

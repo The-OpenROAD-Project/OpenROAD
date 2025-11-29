@@ -30,7 +30,7 @@ bool _dbModBTerm::operator==(const _dbModBTerm& rhs) const
   if (_name != rhs._name) {
     return false;
   }
-  if (_flags != rhs._flags) {
+  if (flags_ != rhs.flags_) {
     return false;
   }
   if (_parent_moditerm != rhs._parent_moditerm) {
@@ -69,7 +69,7 @@ bool _dbModBTerm::operator<(const _dbModBTerm& rhs) const
 _dbModBTerm::_dbModBTerm(_dbDatabase* db)
 {
   _name = nullptr;
-  _flags = 0;
+  flags_ = 0;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
@@ -78,7 +78,7 @@ dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
     stream >> obj._name;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._flags;
+    stream >> obj.flags_;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._parent_moditerm;
@@ -120,7 +120,7 @@ dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbModBTerm& obj)
 {
   stream << obj._name;
-  stream << obj._flags;
+  stream << obj.flags_;
   stream << obj._parent_moditerm;
   stream << obj._parent;
   stream << obj._modnet;
@@ -240,16 +240,16 @@ void dbModBTerm::setSigType(const dbSigType& type)
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
   dbModBTermFlags cur_flags;
-  cur_flags.uint_val = _dbmodbterm->_flags;
+  cur_flags.uint_val = _dbmodbterm->flags_;
   cur_flags.flags._sigtype = type.getValue();
-  _dbmodbterm->_flags = cur_flags.uint_val;
+  _dbmodbterm->flags_ = cur_flags.uint_val;
 }
 
 dbSigType dbModBTerm::getSigType() const
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
   dbModBTermFlags cur_flags;
-  cur_flags.uint_val = _dbmodbterm->_flags;
+  cur_flags.uint_val = _dbmodbterm->flags_;
   return dbSigType(cur_flags.flags._sigtype);
 }
 
@@ -257,16 +257,16 @@ void dbModBTerm::setIoType(const dbIoType& type)
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
   dbModBTermFlags cur_flags;
-  cur_flags.uint_val = _dbmodbterm->_flags;
+  cur_flags.uint_val = _dbmodbterm->flags_;
   cur_flags.flags._iotype = type.getValue();
-  _dbmodbterm->_flags = cur_flags.uint_val;
+  _dbmodbterm->flags_ = cur_flags.uint_val;
 }
 
 dbIoType dbModBTerm::getIoType() const
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
   dbModBTermFlags cur_flags;
-  cur_flags.uint_val = _dbmodbterm->_flags;
+  cur_flags.uint_val = _dbmodbterm->flags_;
   return dbIoType(cur_flags.flags._iotype);
 }
 
@@ -281,7 +281,7 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
 
   _dbModBTerm* modbterm = block->_modbterm_tbl->create();
   // defaults
-  modbterm->_flags = 0U;
+  modbterm->flags_ = 0U;
   ((dbModBTerm*) modbterm)->setIoType(dbIoType::INPUT);
   ((dbModBTerm*) modbterm)->setSigType(dbSigType::SIGNAL);
   modbterm->_modnet = 0;

@@ -29,7 +29,7 @@ class _dbTechViaRule : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  _dbTechViaRuleFlags _flags;
+  _dbTechViaRuleFlags flags_;
   char* _name;
   dbVector<uint> _layer_rules;
   dbVector<uint> _vias;

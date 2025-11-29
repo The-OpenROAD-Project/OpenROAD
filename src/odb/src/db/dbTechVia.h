@@ -31,7 +31,7 @@ class _dbTechVia : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  _dbTechViaFlags _flags;
+  _dbTechViaFlags flags_;
   double _resistance;
   char* _name;
   char* _pattern;

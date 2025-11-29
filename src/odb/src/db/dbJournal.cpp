@@ -1028,7 +1028,7 @@ void dbJournal::redo_updateNetField()
     case _dbNet::FLAGS: {
       uint prev_flags;
       _log.pop(prev_flags);
-      uint* flags = (uint*) &net->_flags;
+      uint* flags = (uint*) &net->flags_;
       _log.pop(*flags);
       debugPrint(_logger,
                  utl::ODB,
@@ -1049,7 +1049,7 @@ void dbJournal::redo_updateNetField()
       bool cur_block_rule;
       _log.pop(prev_block_rule);
       _log.pop(cur_block_rule);
-      net->_flags._block_rule = cur_block_rule;
+      net->flags_._block_rule = cur_block_rule;
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
@@ -1196,7 +1196,7 @@ void dbJournal::redo_updateInstField()
     case _dbInst::FLAGS: {
       uint prev_flags;
       _log.pop(prev_flags);
-      uint* flags = (uint*) &inst->_flags;
+      uint* flags = (uint*) &inst->flags_;
       _log.pop(*flags);
 
       // Changing the orientation flag requires updating the cached bbox
@@ -1275,7 +1275,7 @@ void dbJournal::redo_updateBTermField()
     case _dbBTerm::FLAGS: {
       uint prev_flags;
       _log.pop(prev_flags);
-      uint* flags = (uint*) &bterm->_flags;
+      uint* flags = (uint*) &bterm->flags_;
       _log.pop(*flags);
       debugPrint(_logger,
                  utl::ODB,
@@ -1302,7 +1302,7 @@ void dbJournal::redo_updateITermField()
     case _dbITerm::FLAGS: {
       uint prev_flags;
       _log.pop(prev_flags);
-      uint* flags = (uint*) &iterm->_flags;
+      uint* flags = (uint*) &iterm->flags_;
       _log.pop(*flags);
       debugPrint(_logger,
                  utl::ODB,
@@ -1330,7 +1330,7 @@ void dbJournal::redo_updateRSegField()
     case _dbRSeg::FLAGS: {
       uint prev_flags;
       _log.pop(prev_flags);
-      uint* flags = (uint*) &rseg->_flags;
+      uint* flags = (uint*) &rseg->flags_;
       _log.pop(*flags);
       debugPrint(_logger,
                  utl::ODB,
@@ -1482,7 +1482,7 @@ void dbJournal::redo_updateCapNodeField()
     case _dbCapNode::FLAGS: {
       uint prev_flags;
       _log.pop(prev_flags);
-      uint* flags = (uint*) &node->_flags;
+      uint* flags = (uint*) &node->flags_;
       _log.pop(*flags);
       debugPrint(_logger,
                  utl::ODB,
@@ -1589,7 +1589,7 @@ void dbJournal::redo_updateCCSegField()
     case _dbCCSeg::FLAGS: {
       uint prev_flags;
       _log.pop(prev_flags);
-      uint* flags = (uint*) &seg->_flags;
+      uint* flags = (uint*) &seg->flags_;
       _log.pop(*flags);
       debugPrint(_logger,
                  utl::ODB,
@@ -2029,7 +2029,7 @@ void dbJournal::undo_deleteObject()
       dbMaster* master = dbMaster::getMaster(lib, master_id);
       auto inst = dbInst::create(_block, master, name.c_str());
       _dbInst* impl = (_dbInst*) inst;
-      uint* flags = (uint*) &impl->_flags;
+      uint* flags = (uint*) &impl->flags_;
       _log.pop(*flags);
       _log.pop(x);
       _log.pop(y);
@@ -2069,7 +2069,7 @@ void dbJournal::undo_deleteObject()
       _log.pop(net_id);
       auto net = dbNet::create(_block, name.c_str());
       _dbNet* impl = (_dbNet*) net;
-      uint* flags = (uint*) &impl->_flags;
+      uint* flags = (uint*) &impl->flags_;
       _log.pop(*flags);
       _log.pop(ndr_id);
       _dbNet* net_impl = (_dbNet*) net;
@@ -2589,7 +2589,7 @@ void dbJournal::undo_updateNetField()
 
   switch ((_dbNet::Field) field) {
     case _dbNet::FLAGS: {
-      uint* flags = (uint*) &net->_flags;
+      uint* flags = (uint*) &net->flags_;
       _log.pop(*flags);
       uint new_flags;
       _log.pop(new_flags);
@@ -2676,7 +2676,7 @@ void dbJournal::undo_updateInstField()
 
   switch ((_dbInst::Field) field) {
     case _dbInst::FLAGS: {
-      uint* flags = (uint*) &inst->_flags;
+      uint* flags = (uint*) &inst->flags_;
       _log.pop(*flags);
       uint new_flags;
       _log.pop(new_flags);

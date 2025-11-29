@@ -31,7 +31,7 @@ class _dbBusPort : public _dbObject
   bool operator<(const _dbBusPort& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  uint _flags;
+  uint flags_;
   int _from;
   int _to;
   dbId<_dbModBTerm> _port;

@@ -34,7 +34,7 @@ class _dbTechNonDefaultRule : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  _dbTechNonDefaultRuleFlags _flags;
+  _dbTechNonDefaultRuleFlags flags_;
   char* _name;
   dbVector<dbId<_dbTechLayerRule>> _layer_rules;
   dbVector<dbId<_dbTechVia>> _vias;

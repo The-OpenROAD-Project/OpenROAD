@@ -33,7 +33,7 @@ class _dbTechViaGenerateRule : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  _dbTechViaGenerateRuleFlags _flags;
+  _dbTechViaGenerateRuleFlags flags_;
   char* _name;
   dbVector<uint> _layer_rules;
 
