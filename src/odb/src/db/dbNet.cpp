@@ -361,7 +361,8 @@ bool createHierarchicalConnection(dbITerm* load_pin,
                                   const std::set<dbObject*>& load_pins)
 {
   dbModule* current_module = load_pin->getInst()->getModule();
-  if (current_module == target_module) {
+  if (current_module == target_module
+      || current_module->getDb()->hasHierarchy() == false) {
     top_mod_iterm = nullptr;  // Already in same module, no hierarchy needed
     return false;
   }
@@ -3656,22 +3657,24 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
   //   2. Any load is an ITerm in a different hierarchy (Requires Port Punching,
   //      resulting in dbModITerm connection).
   bool needs_mod_net = false;
-  for (dbObject* load_obj : load_pins) {
-    if (load_obj->getObjectType() == dbBTermObj
-        && target_module != block->getTopModule()) {
-      // A BTerm load requires a ModNet if the buffer is not at the top
-      // level.
-      needs_mod_net = true;
-      break;
-    }
-
-    if (load_obj->getObjectType() == dbITermObj) {
-      dbITerm* load = static_cast<dbITerm*>(load_obj);
-      // If load module is different from buffer module, hierarchy crossing
-      // occurs.
-      if (load->getInst()->getModule() != target_module) {
+  if (getDb()->hasHierarchy()) {
+    for (dbObject* load_obj : load_pins) {
+      if (load_obj->getObjectType() == dbBTermObj
+          && target_module != block->getTopModule()) {
+        // A BTerm load requires a ModNet if the buffer is not at the top
+        // level.
         needs_mod_net = true;
         break;
+      }
+
+      if (load_obj->getObjectType() == dbITermObj) {
+        dbITerm* load = static_cast<dbITerm*>(load_obj);
+        // If load module is different from buffer module, hierarchy crossing
+        // occurs.
+        if (load->getInst()->getModule() != target_module) {
+          needs_mod_net = true;
+          break;
+        }
       }
     }
   }
