@@ -24,13 +24,13 @@ END RAM8x8_via3_4_480_480_1_1_400_400
 MACRO RAM8x8
   FOREIGN RAM8x8 0 0 ;
   CLASS BLOCK ;
-  SIZE 120.52 BY 24.48 ;
+  SIZE 122.82 BY 24.48 ;
   PIN clk
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
       LAYER met3 ;
-        RECT  119.72 1.55 120.52 1.85 ;
+        RECT  122.02 1.55 122.82 1.85 ;
     END
   END clk
   PIN we[0]
@@ -38,7 +38,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met3 ;
-        RECT  119.72 2.91 120.52 3.21 ;
+        RECT  122.02 2.91 122.82 3.21 ;
     END
   END we[0]
   PIN addr[0]
@@ -46,7 +46,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met3 ;
-        RECT  119.72 4.27 120.52 4.57 ;
+        RECT  122.02 4.27 122.82 4.57 ;
     END
   END addr[0]
   PIN addr[1]
@@ -54,7 +54,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met3 ;
-        RECT  119.72 6.99 120.52 7.29 ;
+        RECT  122.02 6.99 122.82 7.29 ;
     END
   END addr[1]
   PIN addr[2]
@@ -62,7 +62,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met3 ;
-        RECT  119.72 5.63 120.52 5.93 ;
+        RECT  122.02 5.63 122.82 5.93 ;
     END
   END addr[2]
   PIN D[0]
@@ -78,7 +78,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  13.04 23.995 13.18 24.48 ;
+        RECT  13.96 23.995 14.1 24.48 ;
     END
   END D[1]
   PIN D[2]
@@ -86,7 +86,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  25.92 23.995 26.06 24.48 ;
+        RECT  26.84 23.995 26.98 24.48 ;
     END
   END D[2]
   PIN D[3]
@@ -94,7 +94,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  38.8 23.995 38.94 24.48 ;
+        RECT  40.64 23.995 40.78 24.48 ;
     END
   END D[3]
   PIN D[4]
@@ -102,7 +102,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  51.68 23.995 51.82 24.48 ;
+        RECT  52.6 23.995 52.74 24.48 ;
     END
   END D[4]
   PIN D[5]
@@ -110,7 +110,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  64.56 23.995 64.7 24.48 ;
+        RECT  66.4 23.995 66.54 24.48 ;
     END
   END D[5]
   PIN D[6]
@@ -118,7 +118,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  77.44 23.995 77.58 24.48 ;
+        RECT  79.28 23.995 79.42 24.48 ;
     END
   END D[6]
   PIN D[7]
@@ -126,7 +126,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  90.32 23.995 90.46 24.48 ;
+        RECT  92.16 23.995 92.3 24.48 ;
     END
   END D[7]
   PIN Q0[0]
@@ -142,7 +142,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  21.32 23.995 21.46 24.48 ;
+        RECT  22.24 23.995 22.38 24.48 ;
     END
   END Q0[1]
   PIN Q0[2]
@@ -150,7 +150,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  34.2 23.995 34.34 24.48 ;
+        RECT  35.12 23.995 35.26 24.48 ;
     END
   END Q0[2]
   PIN Q0[3]
@@ -158,7 +158,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  47.08 23.995 47.22 24.48 ;
+        RECT  48 23.995 48.14 24.48 ;
     END
   END Q0[3]
   PIN Q0[4]
@@ -174,7 +174,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  72.84 23.995 72.98 24.48 ;
+        RECT  74.68 23.995 74.82 24.48 ;
     END
   END Q0[5]
   PIN Q0[6]
@@ -182,7 +182,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  85.72 23.995 85.86 24.48 ;
+        RECT  87.56 23.995 87.7 24.48 ;
     END
   END Q0[6]
   PIN Q0[7]
@@ -190,7 +190,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  98.6 23.995 98.74 24.48 ;
+        RECT  100.44 23.995 100.58 24.48 ;
     END
   END Q0[7]
   PIN Q1[0]
@@ -206,7 +206,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  25 23.995 25.14 24.48 ;
+        RECT  25.92 23.995 26.06 24.48 ;
     END
   END Q1[1]
   PIN Q1[2]
@@ -214,7 +214,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  37.88 23.995 38.02 24.48 ;
+        RECT  38.8 23.995 38.94 24.48 ;
     END
   END Q1[2]
   PIN Q1[3]
@@ -222,7 +222,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  50.76 23.995 50.9 24.48 ;
+        RECT  51.68 23.995 51.82 24.48 ;
     END
   END Q1[3]
   PIN Q1[4]
@@ -230,7 +230,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  63.64 23.995 63.78 24.48 ;
+        RECT  64.56 23.995 64.7 24.48 ;
     END
   END Q1[4]
   PIN Q1[5]
@@ -238,7 +238,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  76.52 23.995 76.66 24.48 ;
+        RECT  78.36 23.995 78.5 24.48 ;
     END
   END Q1[5]
   PIN Q1[6]
@@ -246,7 +246,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  89.4 23.995 89.54 24.48 ;
+        RECT  91.24 23.995 91.38 24.48 ;
     END
   END Q1[6]
   PIN Q1[7]
@@ -254,7 +254,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  102.28 23.995 102.42 24.48 ;
+        RECT  104.12 23.995 104.26 24.48 ;
     END
   END Q1[7]
   PIN VSS
@@ -262,7 +262,7 @@ MACRO RAM8x8
     USE GROUND ;
     PORT
       LAYER met3 ;
-        RECT  120.22 19.76 120.52 20.24 ;
+        RECT  122.52 19.76 122.82 20.24 ;
         RECT  0 19.76 0.3 20.24 ;
       LAYER met2 ;
         RECT  119.76 24.34 120.24 24.48 ;
@@ -272,15 +272,15 @@ MACRO RAM8x8
         RECT  39.76 24.34 40.24 24.48 ;
         RECT  39.76 0 40.24 0.14 ;
       LAYER met1 ;
-        RECT  120.38 21.52 120.52 22 ;
+        RECT  122.68 21.52 122.82 22 ;
         RECT  0 21.52 0.14 22 ;
-        RECT  120.38 16.08 120.52 16.56 ;
+        RECT  122.68 16.08 122.82 16.56 ;
         RECT  0 16.08 0.14 16.56 ;
-        RECT  120.38 10.64 120.52 11.12 ;
+        RECT  122.68 10.64 122.82 11.12 ;
         RECT  0 10.64 0.14 11.12 ;
-        RECT  120.38 5.2 120.52 5.68 ;
+        RECT  122.68 5.2 122.82 5.68 ;
         RECT  0 5.2 0.14 5.68 ;
-        RECT  120.38 -0.24 120.52 0.24 ;
+        RECT  122.68 -0.24 122.82 0.24 ;
         RECT  0 -0.24 0.14 0.24 ;
     END
   END VSS
@@ -289,7 +289,7 @@ MACRO RAM8x8
     USE POWER ;
     PORT
       LAYER met3 ;
-        RECT  120.22 9.76 120.52 10.24 ;
+        RECT  122.52 9.76 122.82 10.24 ;
         RECT  0 9.76 0.3 10.24 ;
       LAYER met2 ;
         RECT  99.76 24.34 100.24 24.48 ;
@@ -299,47 +299,49 @@ MACRO RAM8x8
         RECT  19.76 24.34 20.24 24.48 ;
         RECT  19.76 0 20.24 0.14 ;
       LAYER met1 ;
-        RECT  120.38 24.24 120.52 24.72 ;
+        RECT  122.68 24.24 122.82 24.72 ;
         RECT  0 24.24 0.14 24.72 ;
-        RECT  120.38 18.8 120.52 19.28 ;
+        RECT  122.68 18.8 122.82 19.28 ;
         RECT  0 18.8 0.14 19.28 ;
-        RECT  120.38 13.36 120.52 13.84 ;
+        RECT  122.68 13.36 122.82 13.84 ;
         RECT  0 13.36 0.14 13.84 ;
-        RECT  120.38 7.92 120.52 8.4 ;
+        RECT  122.68 7.92 122.82 8.4 ;
         RECT  0 7.92 0.14 8.4 ;
-        RECT  120.38 2.48 120.52 2.96 ;
+        RECT  122.68 2.48 122.82 2.96 ;
         RECT  0 2.48 0.14 2.96 ;
     END
   END VDD
   OBS
     LAYER li1 ;
-     RECT  0 -0.085 120.52 24.565 ;
+     RECT  0 -0.085 122.82 24.565 ;
     LAYER met1 ;
-     RECT  0 -0.24 120.52 24.72 ;
+     RECT  0 -0.24 122.82 24.72 ;
     LAYER met2 ;
      RECT  19.76 0 20.24 0.44 ;
-     RECT  59.76 0 60.24 0.44 ;
-     RECT  99.76 0 100.24 0.44 ;
-     RECT  79.76 -0.24 80.24 0.78 ;
-     RECT  39.76 -0.24 40.24 0.95 ;
-     RECT  51.68 0.44 60.24 0.95 ;
-     RECT  77.9 0.78 80.24 0.95 ;
-     RECT  99.76 0.44 101.04 0.95 ;
-     RECT  119.76 -0.24 120.24 0.95 ;
-     RECT  13.04 0.44 20.24 1.12 ;
-     RECT  32.36 0.95 60.24 1.12 ;
-     RECT  77.44 0.95 80.24 1.12 ;
-     RECT  90.32 0.95 101.04 1.12 ;
-     RECT  112.4 0.95 120.24 1.12 ;
-     RECT  13.04 1.12 66.08 1.63 ;
-     RECT  77.44 1.12 120.24 1.63 ;
-     RECT  13.04 1.63 120.24 1.8 ;
+     RECT  39.76 -0.24 40.24 0.44 ;
+     RECT  79.76 -0.24 80.24 0.44 ;
+     RECT  13.5 0.44 26.52 0.95 ;
+     RECT  39.26 0.44 40.24 0.95 ;
+     RECT  59.76 0 60.24 0.95 ;
+     RECT  13.5 0.95 46.3 1.12 ;
+     RECT  59.04 0.95 60.24 1.12 ;
+     RECT  78.82 0.44 80.24 1.12 ;
+     RECT  99.76 0 100.24 1.12 ;
+     RECT  119.76 -0.24 120.24 1.12 ;
      RECT  1.54 1.12 1.68 2.14 ;
-     RECT  12.12 1.8 120.24 2.14 ;
-     RECT  1.54 2.14 120.24 20.3 ;
-     RECT  1.54 20.3 105.64 20.64 ;
-     RECT  1.54 20.64 102.42 22.34 ;
-     RECT  2 22.34 102.42 24.14 ;
+     RECT  13.5 1.12 67.46 2.14 ;
+     RECT  78.82 1.12 80.8 2.14 ;
+     RECT  91.7 1.12 100.24 2.14 ;
+     RECT  109.64 1.12 121.74 2.14 ;
+     RECT  1.54 2.14 121.74 5.03 ;
+     RECT  0.16 5.03 121.74 6.7 ;
+     RECT  1.54 6.7 121.74 13.02 ;
+     RECT  1.54 13.02 122.2 16.9 ;
+     RECT  1.54 16.9 121.74 17.92 ;
+     RECT  1.54 17.92 121.28 20.3 ;
+     RECT  1.54 20.3 109.78 20.64 ;
+     RECT  1.54 20.64 104.26 22.34 ;
+     RECT  2 22.34 104.26 24.14 ;
      RECT  39.76 24.14 40.24 24.48 ;
      RECT  79.76 24.14 80.24 24.48 ;
      RECT  119.76 20.3 120.24 24.48 ;
@@ -347,15 +349,15 @@ MACRO RAM8x8
      RECT  59.76 24.14 60.24 24.72 ;
      RECT  99.76 24.14 100.24 24.72 ;
     LAYER met3 ;
-     RECT  0 9.76 6.52 20.24 ;
-     RECT  6.52 9.76 10.2 20.89 ;
-     RECT  10.2 5.63 18.94 20.89 ;
-     RECT  18.94 0.87 32.58 20.89 ;
-     RECT  32.58 0.87 45.46 20.24 ;
-     RECT  45.46 1.55 77.36 20.24 ;
-     RECT  77.36 0.87 112.62 20.24 ;
-     RECT  112.62 1.55 120.06 20.24 ;
-     RECT  120.06 9.76 120.52 20.24 ;
+     RECT  0 9.76 0.08 20.24 ;
+     RECT  0.08 4.95 25.38 20.24 ;
+     RECT  25.38 3.59 32.74 20.24 ;
+     RECT  32.74 0.87 59.26 20.24 ;
+     RECT  59.26 1.55 79.04 20.24 ;
+     RECT  79.04 6.31 94.22 20.24 ;
+     RECT  94.22 9.76 109.56 20.24 ;
+     RECT  109.56 1.55 122.42 20.24 ;
+     RECT  122.42 9.76 122.82 20.24 ;
   END
 END RAM8x8
 END LIBRARY
