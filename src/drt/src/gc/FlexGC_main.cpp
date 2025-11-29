@@ -21,6 +21,7 @@
 #include "gc/FlexGC_impl.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/isotropy.h"
 
 using odb::dbTechLayerType;
 

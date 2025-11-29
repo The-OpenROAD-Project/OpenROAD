@@ -3,6 +3,7 @@
 
 #include "dbSBox.h"
 
+#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -20,6 +21,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/odb.h"
 
 namespace odb {
 

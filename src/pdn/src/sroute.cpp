@@ -15,6 +15,7 @@
 #include "grid.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "odb/isotropy.h"
 #include "pdn/PdnGen.hh"
 #include "shape.h"
 #include "utl/Logger.h"
@@ -184,14 +185,15 @@ void SRoute::createSrouteWires(
           stripe_metal_layer = wire->getTechLayer();
           const odb::Orientation2D direction = wire->getDir();
           if (first) {
-            if ((direction == odb::horizontal) && (stripe_metal_layer == metal_layer)
+            if ((direction == odb::horizontal)
+                && (stripe_metal_layer == metal_layer)
                 && (wire->getDY() != Hdy)) {
               first = false;
               pdn_wire = wire;
             }
           } else {
-            if ((direction == odb::horizontal) && (stripe_metal_layer == metal_layer)
-                && (wire->getDY() != Hdy)
+            if ((direction == odb::horizontal)
+                && (stripe_metal_layer == metal_layer) && (wire->getDY() != Hdy)
                 && (std::abs(wire->yMin() - avg_iterm_y)
                     < std::abs(pdn_wire->yMin() - avg_iterm_y))) {
               pdn_wire = wire;
@@ -211,7 +213,8 @@ void SRoute::createSrouteWires(
               right_pdn_wire = wire;
             }
           } else {
-            if ((direction == odb::vertical) && (wire->xMax() < pdn_wire->xMax())
+            if ((direction == odb::vertical)
+                && (wire->xMax() < pdn_wire->xMax())
                 && (wire->xMax() > avg_iterm_x)) {
               right_pdn_wire = wire;
             }
@@ -231,7 +234,8 @@ void SRoute::createSrouteWires(
               left_pdn_wire = wire;
             }
           } else {
-            if ((direction == odb::vertical) && (wire->xMin() > pdn_wire->xMin())
+            if ((direction == odb::vertical)
+                && (wire->xMin() > pdn_wire->xMin())
                 && (wire->xMin() < avg_iterm_x)) {
               left_pdn_wire = wire;
             }
