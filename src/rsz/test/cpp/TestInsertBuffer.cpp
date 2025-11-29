@@ -1731,6 +1731,76 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case15)
   // Non-Target Loads remain on old net
   EXPECT_EQ(u1_non_target_a->getNet(), target_net);
 
+  //----------------------------------------------------
+  // Verify Concrete Port Registration
+  //----------------------------------------------------
+
+  // Check existing instance ports are concrete
+  for (dbITerm* iterm : drvr->getITerms()) {
+    sta::Pin* pin = db_network_->dbToSta(iterm);
+    ASSERT_NE(pin, nullptr);
+    sta::Port* port = db_network_->port(pin);
+    ASSERT_NE(port, nullptr);
+    EXPECT_TRUE(db_network_->isConcretePort(port))
+        << "Port of existing instance drvr should be concrete: "
+        << db_network_->name(port);
+  }
+
+  for (dbITerm* iterm : load1->getITerms()) {
+    sta::Pin* pin = db_network_->dbToSta(iterm);
+    ASSERT_NE(pin, nullptr);
+    sta::Port* port = db_network_->port(pin);
+    ASSERT_NE(port, nullptr);
+    EXPECT_TRUE(db_network_->isConcretePort(port))
+        << "Port of existing instance load1 should be concrete: "
+        << db_network_->name(port);
+  }
+
+  for (dbITerm* iterm : u1_load2->getITerms()) {
+    sta::Pin* pin = db_network_->dbToSta(iterm);
+    ASSERT_NE(pin, nullptr);
+    sta::Port* port = db_network_->port(pin);
+    ASSERT_NE(port, nullptr);
+    EXPECT_TRUE(db_network_->isConcretePort(port))
+        << "Port of existing instance u1/load2 should be concrete: "
+        << db_network_->name(port);
+  }
+
+  for (dbITerm* iterm : u1_load3->getITerms()) {
+    sta::Pin* pin = db_network_->dbToSta(iterm);
+    ASSERT_NE(pin, nullptr);
+    sta::Port* port = db_network_->port(pin);
+    ASSERT_NE(port, nullptr);
+    EXPECT_TRUE(db_network_->isConcretePort(port))
+        << "Port of existing instance u1/load3 should be concrete: "
+        << db_network_->name(port);
+  }
+
+  for (dbITerm* iterm : u1_non_target->getITerms()) {
+    sta::Pin* pin = db_network_->dbToSta(iterm);
+    ASSERT_NE(pin, nullptr);
+    sta::Port* port = db_network_->port(pin);
+    ASSERT_NE(port, nullptr);
+    EXPECT_TRUE(db_network_->isConcretePort(port))
+        << "Port of existing instance u1/non_target should be concrete: "
+        << db_network_->name(port);
+  }
+
+  // Check newly inserted buffer ports are concrete
+  // - All dbMTerm of dbMaster objects are registered as concrete ports
+  //   when a library is loaded.
+  // - insertBuffer*() don't have to perform any operation regarding
+  //   concrete_port registration.
+  for (dbITerm* iterm : new_buf->getITerms()) {
+    sta::Pin* pin = db_network_->dbToSta(iterm);
+    ASSERT_NE(pin, nullptr);
+    sta::Port* port = db_network_->port(pin);
+    ASSERT_NE(port, nullptr);
+    EXPECT_TRUE(db_network_->isConcretePort(port))
+        << "Port of newly inserted buffer should be concrete: "
+        << db_network_->name(port);
+  }
+
   // Write verilog and check the content
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
