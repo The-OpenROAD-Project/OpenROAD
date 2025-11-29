@@ -40,11 +40,11 @@ _dbInst* _dbBlockage::getInst()
 
 bool _dbBlockage::operator==(const _dbBlockage& rhs) const
 {
-  if (_flags._pushed_down != rhs._flags._pushed_down) {
+  if (flags_._pushed_down != rhs.flags_._pushed_down) {
     return false;
   }
 
-  if (_flags._soft != rhs._flags._soft) {
+  if (flags_._soft != rhs.flags_._soft) {
     return false;
   }
 
@@ -78,7 +78,7 @@ bool _dbBlockage::operator<(const _dbBlockage& rhs) const
       _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
       _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
       _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
-      int r = strcmp(lhs_inst->_name, rhs_inst->_name);
+      int r = strcmp(lhs_inst->name_, rhs_inst->name_);
 
       if (r < 0) {
         return true;
@@ -93,19 +93,19 @@ bool _dbBlockage::operator<(const _dbBlockage& rhs) const
       return true;
     }
 
-    if (_flags._pushed_down < rhs._flags._pushed_down) {
+    if (flags_._pushed_down < rhs.flags_._pushed_down) {
       return true;
     }
 
-    if (_flags._pushed_down > rhs._flags._pushed_down) {
+    if (flags_._pushed_down > rhs.flags_._pushed_down) {
       return false;
     }
 
-    if (_flags._soft < rhs._flags._soft) {
+    if (flags_._soft < rhs.flags_._soft) {
       return true;
     }
 
-    if (_flags._soft > rhs._flags._soft) {
+    if (flags_._soft > rhs.flags_._soft) {
       return false;
     }
 
@@ -142,25 +142,25 @@ dbInst* dbBlockage::getInstance()
 void dbBlockage::setPushedDown()
 {
   _dbBlockage* bkg = (_dbBlockage*) this;
-  bkg->_flags._pushed_down = 1;
+  bkg->flags_._pushed_down = 1;
 }
 
 bool dbBlockage::isPushedDown()
 {
   _dbBlockage* bkg = (_dbBlockage*) this;
-  return bkg->_flags._pushed_down == 1;
+  return bkg->flags_._pushed_down == 1;
 }
 
 void dbBlockage::setSoft()
 {
   _dbBlockage* bkg = (_dbBlockage*) this;
-  bkg->_flags._soft = 1;
+  bkg->flags_._soft = 1;
 }
 
 bool dbBlockage::isSoft()
 {
   _dbBlockage* bkg = (_dbBlockage*) this;
-  return bkg->_flags._soft == 1;
+  return bkg->flags_._soft == 1;
 }
 
 void dbBlockage::setMaxDensity(float max_density)
@@ -183,13 +183,13 @@ dbBlock* dbBlockage::getBlock()
 bool dbBlockage::isSystemReserved()
 {
   _dbBlockage* bkg = (_dbBlockage*) this;
-  return bkg->_flags._is_system_reserved;
+  return bkg->flags_._is_system_reserved;
 }
 
 void dbBlockage::setIsSystemReserved(bool is_system_reserved)
 {
   _dbBlockage* bkg = (_dbBlockage*) this;
-  bkg->_flags._is_system_reserved = is_system_reserved;
+  bkg->flags_._is_system_reserved = is_system_reserved;
 }
 
 dbBlockage* dbBlockage::create(dbBlock* block_,

@@ -170,8 +170,8 @@ template class dbHashTable<_dbMarkerCategory>;
 
 _dbBlock::_dbBlock(_dbDatabase* db)
 {
-  _flags._valid_bbox = 0;
-  _flags._spare_bits = 0;
+  flags_._valid_bbox = 0;
+  flags_._spare_bits = 0;
   _def_units = 100;
   _dbu_per_micron = 1000;
   _hier_delimiter = '/';
@@ -1108,7 +1108,7 @@ void _dbBlock::add_rect(const Rect& rect)
 {
   _dbBox* box = _box_tbl->getPtr(_bbox);
 
-  if (_flags._valid_bbox) {
+  if (flags_._valid_bbox) {
     box->shape_.rect.merge(rect);
   }
 }
@@ -1116,7 +1116,7 @@ void _dbBlock::add_oct(const Oct& oct)
 {
   _dbBox* box = _box_tbl->getPtr(_bbox);
 
-  if (_flags._valid_bbox) {
+  if (flags_._valid_bbox) {
     box->shape_.rect.merge(oct);
   }
 }
@@ -1125,14 +1125,14 @@ void _dbBlock::remove_rect(const Rect& rect)
 {
   _dbBox* box = _box_tbl->getPtr(_bbox);
 
-  if (_flags._valid_bbox) {
-    _flags._valid_bbox = box->shape_.rect.inside(rect);
+  if (flags_._valid_bbox) {
+    flags_._valid_bbox = box->shape_.rect.inside(rect);
   }
 }
 
 bool _dbBlock::operator==(const _dbBlock& rhs) const
 {
-  if (_flags._valid_bbox != rhs._flags._valid_bbox) {
+  if (flags_._valid_bbox != rhs.flags_._valid_bbox) {
     return false;
   }
 
@@ -1486,7 +1486,7 @@ dbBox* dbBlock::getBBox()
 {
   _dbBlock* block = (_dbBlock*) this;
 
-  if (block->_flags._valid_bbox == 0) {
+  if (block->flags_._valid_bbox == 0) {
     block->ComputeBBox();
   }
 
@@ -1538,7 +1538,7 @@ void _dbBlock::ComputeBBox()
     bbox->shape_.rect.reset(0, 0, 0, 0);
   }
 
-  _flags._valid_bbox = 1;
+  flags_._valid_bbox = 1;
 }
 
 dbDatabase* dbBlock::getDataBase()
@@ -3021,7 +3021,7 @@ void dbBlock::getWireUpdatedNets(std::vector<dbNet*>& result)
     tot++;
     _dbNet* n = (_dbNet*) net;
 
-    if (n->_flags._wire_altered != 1) {
+    if (n->flags_._wire_altered != 1) {
       continue;
     }
     upd++;

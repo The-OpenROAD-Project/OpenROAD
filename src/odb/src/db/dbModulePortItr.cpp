@@ -76,7 +76,7 @@ uint dbModulePortItr::next(uint id, ...)
     }
   }
   if (modbterm) {
-    return modbterm->_next_entry;
+    return modbterm->next_entry_;
   }
   return 0;
   // User Code End next

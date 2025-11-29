@@ -31,7 +31,7 @@ class _dbLib : public _dbObject
   char _left_bus_delimiter;
   char _right_bus_delimiter;
   char _spare;
-  char* _name;
+  char* name_;
   dbHashTable<_dbMaster> _master_hash;
   dbHashTable<_dbSite> _site_hash;
   dbId<_dbTech> _tech;

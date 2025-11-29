@@ -158,7 +158,7 @@ uint dbInstITermItr::next(uint id, ...)
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
   _dbInst* inst = block->_inst_tbl->getPtr(iterm->_inst);
   uint cnt = inst->_iterms.size();
-  uint idx = iterm->_flags._mterm_idx + 1;
+  uint idx = iterm->flags_._mterm_idx + 1;
 
   if (idx == cnt) {
     return 0;

@@ -22,14 +22,16 @@
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/odb.h"
 #include "utl/Logger.h"
+
 namespace odb {
 
 template class dbTable<_dbWire>;
 
 bool _dbWire::operator==(const _dbWire& rhs) const
 {
-  if (_flags._is_global != rhs._flags._is_global) {
+  if (flags_._is_global != rhs.flags_._is_global) {
     return false;
   }
 
@@ -50,7 +52,7 @@ bool _dbWire::operator==(const _dbWire& rhs) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbWire& wire)
 {
-  uint* bit_field = (uint*) &wire._flags;
+  uint* bit_field = (uint*) &wire.flags_;
   stream << *bit_field;
   stream << wire._data;
   stream << wire._opcodes;
@@ -60,7 +62,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbWire& wire)
 
 dbIStream& operator>>(dbIStream& stream, _dbWire& wire)
 {
-  uint* bit_field = (uint*) &wire._flags;
+  uint* bit_field = (uint*) &wire.flags_;
   stream >> *bit_field;
   stream >> wire._data;
   stream >> wire._opcodes;
@@ -98,7 +100,7 @@ dbNet* dbWire::getNet()
 bool dbWire::isGlobalWire()
 {
   _dbWire* wire = (_dbWire*) this;
-  return wire->_flags._is_global == 1;
+  return wire->flags_._is_global == 1;
 }
 
 void dbWire::addOneSeg(unsigned char op,
@@ -1048,7 +1050,7 @@ void dbWire::append(dbWire* src_, bool singleSegmentWire)
       if (opcode == WOP_VIA) {
         uint vid = dst->_data[i];
         _dbVia* src_via = src_block->_via_tbl->getPtr(vid);
-        dbVia* dst_via = ((dbBlock*) dst_block)->findVia(src_via->_name);
+        dbVia* dst_via = ((dbBlock*) dst_block)->findVia(src_via->name_);
 
         // duplicate src-via in dst-block if needed
         if (dst_via == nullptr) {
@@ -1081,7 +1083,7 @@ void dbWire::attach(dbNet* net_)
   _dbWire* wire = (_dbWire*) this;
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) getBlock();
-  assert(wire->_flags._is_global == 0);
+  assert(wire->flags_._is_global == 0);
   if (wire->_net == net->getOID() && net->_wire == wire->getOID()) {
     return;
   }
@@ -1110,7 +1112,7 @@ void dbWire::detach()
 {
   _dbWire* wire = (_dbWire*) this;
   _dbBlock* block = (_dbBlock*) getBlock();
-  assert(wire->_flags._is_global == 0);
+  assert(wire->flags_._is_global == 0);
   if (wire->_net == 0) {
     return;
   }
@@ -1146,13 +1148,13 @@ dbWire* dbWire::create(dbNet* net_, bool global_wire)
 
   if (global_wire) {
     net->_global_wire = wire->getOID();
-    wire->_flags._is_global = 1;
+    wire->flags_._is_global = 1;
   } else {
     net->_wire = wire->getOID();
   }
 
-  net->_flags._wire_ordered = 0;
-  net->_flags._disconnected = 0;
+  net->flags_._wire_ordered = 0;
+  net->flags_._disconnected = 0;
   for (auto callback : block->_callbacks) {
     callback->inDbWireCreate((dbWire*) wire);
   }
@@ -1189,12 +1191,12 @@ void dbWire::destroy(dbWire* wire_)
     block->remove_rect(opt_bbox.value());
   }
   if (net) {
-    if (wire->_flags._is_global) {
+    if (wire->flags_._is_global) {
       net->_global_wire = 0;
     } else {
       net->_wire = 0;
-      net->_flags._wire_ordered = 0;
-      net->_flags._wire_altered = 1;
+      net->flags_._wire_ordered = 0;
+      net->flags_._wire_altered = 1;
     }
   } else {
     wire_->getImpl()->getLogger()->warn(utl::ODB, 62, "This wire has no net");

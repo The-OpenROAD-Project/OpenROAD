@@ -39,8 +39,8 @@ void dbBPinItr::reverse(dbObject* parent)
 
   while (id != 0) {
     _dbBPin* bpin = _bpin_tbl->getPtr(id);
-    uint n = bpin->_next_bpin;
-    bpin->_next_bpin = list;
+    uint n = bpin->next_bpin_;
+    bpin->next_bpin_ = list;
     list = id;
     id = n;
   }
@@ -80,7 +80,7 @@ uint dbBPinItr::end(dbObject* /* unused: parent */)
 uint dbBPinItr::next(uint id, ...)
 {
   _dbBPin* bpin = _bpin_tbl->getPtr(id);
-  return bpin->_next_bpin;
+  return bpin->next_bpin_;
 }
 
 dbObject* dbBPinItr::getObject(uint id, ...)

@@ -68,7 +68,7 @@ uint dbModuleModInstModITermItr::next(uint id, ...)
 {
   // User Code Begin next
   _dbModITerm* moditerm = _moditerm_tbl->getPtr(id);
-  return moditerm->_next_entry;
+  return moditerm->next_entry_;
   // User Code End next
 }
 

@@ -23,7 +23,7 @@
         "flags": ["private", "no-cmp"]
       },
     {
-      "name": "_name",
+      "name": "name_",
       "type": "uint",
       "flags": ["private", "no-destruct"]
     },

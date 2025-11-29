@@ -34,7 +34,7 @@ inline _dbFreeObject* dbTable<T, page_size>::getFreeObj(dbId<T> id)
 
   assert(((uint) id != 0) && (page < _page_cnt));
   T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
-  assert((p->_oid & DB_ALLOC_BIT) == 0);
+  assert((p->oid_ & DB_ALLOC_BIT) == 0);
   return (_dbFreeObject*) p;
 }
 
@@ -46,7 +46,7 @@ inline T* dbTable<T, page_size>::getPtr(dbId<T> id) const
 
   assert(((uint) id != 0) && (page < _page_cnt));
   T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
-  assert(p->_oid & DB_ALLOC_BIT);
+  assert(p->oid_ & DB_ALLOC_BIT);
   return p;
 }
 
@@ -58,7 +58,7 @@ inline bool dbTable<T, page_size>::validId(dbId<T> id) const
 
   if (((uint) id != 0) && (page < _page_cnt)) {
     T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
-    return (p->_oid & DB_ALLOC_BIT) == DB_ALLOC_BIT;
+    return (p->oid_ & DB_ALLOC_BIT) == DB_ALLOC_BIT;
   }
 
   return false;
@@ -99,7 +99,7 @@ void dbTable<T, page_size>::clear()
     const T* e = &t[pageSize()];
 
     for (; t < e; t++) {
-      if (t->_oid & DB_ALLOC_BIT) {
+      if (t->oid_ & DB_ALLOC_BIT) {
         t->~T();
       }
     }
@@ -191,7 +191,7 @@ void dbTable<T, page_size>::newPage()
 
     for (; t >= b; --t) {
       _dbFreeObject* o = (_dbFreeObject*) t;
-      o->_oid = (uint) ((char*) t - (char*) b);
+      o->oid_ = (uint) ((char*) t - (char*) b);
 
       if (t != b) {  // don't link zero-object
         pushQ(_free_list, o);
@@ -203,7 +203,7 @@ void dbTable<T, page_size>::newPage()
 
     for (; t >= b; --t) {
       _dbFreeObject* o = (_dbFreeObject*) t;
-      o->_oid = (uint) ((char*) t - (char*) b);
+      o->oid_ = (uint) ((char*) t - (char*) b);
       pushQ(_free_list, o);
     }
   }
@@ -219,10 +219,10 @@ T* dbTable<T, page_size>::create()
   }
 
   _dbFreeObject* o = popQ(_free_list);
-  const uint oid = o->_oid;
+  const uint oid = o->oid_;
   new (o) T(_db);
   T* t = (T*) o;
-  t->_oid = oid | DB_ALLOC_BIT;
+  t->oid_ = oid | DB_ALLOC_BIT;
 
   dbTablePage* page = (dbTablePage*) t->getObjectPage();
   page->_alloccnt++;
@@ -262,7 +262,7 @@ inline void dbTable<T, page_size>::findBottom()
     T* s = &b[offset + 1];
     T* e = &b[pageSize()];
     for (; s < e; s++) {
-      if (s->_oid & DB_ALLOC_BIT) {
+      if (s->oid_ & DB_ALLOC_BIT) {
         offset = s - b;
         _bottom_idx = (page_id << page_shift) + offset;
         return;
@@ -287,7 +287,7 @@ inline void dbTable<T, page_size>::findBottom()
   T* e = &s[pageSize()];
 
   for (; s < e; s++) {
-    if (s->_oid & DB_ALLOC_BIT) {
+    if (s->oid_ & DB_ALLOC_BIT) {
       const uint offset = s - b;
       _bottom_idx = (page_id << page_shift) + offset;
       return;
@@ -317,7 +317,7 @@ inline void dbTable<T, page_size>::findTop()
     T* s = &b[offset - 1];
 
     for (; s >= b; s--) {
-      if (s->_oid & DB_ALLOC_BIT) {
+      if (s->oid_ & DB_ALLOC_BIT) {
         offset = s - b;
         _top_idx = (page_id << page_shift) + offset;
         return;
@@ -341,7 +341,7 @@ inline void dbTable<T, page_size>::findTop()
   T* s = &b[page_mask];
 
   for (; s >= b; s--) {
-    if (s->_oid & DB_ALLOC_BIT) {
+    if (s->oid_ & DB_ALLOC_BIT) {
       const uint offset = s - b;
       _top_idx = (page_id << page_shift) + offset;
       return;
@@ -359,15 +359,15 @@ void dbTable<T, page_size>::destroy(T* t)
 
   ZASSERT(t->getOID() != 0);
   ZASSERT(t->getTable() == this);
-  ZASSERT(t->_oid & DB_ALLOC_BIT);
+  ZASSERT(t->oid_ & DB_ALLOC_BIT);
 
   dbTablePage* page = (dbTablePage*) t->getObjectPage();
   _dbFreeObject* o = (_dbFreeObject*) t;
 
   page->_alloccnt--;
-  const uint oid = t->_oid;
+  const uint oid = t->oid_;
   t->~T();  // call destructor
-  o->_oid = oid & ~DB_ALLOC_BIT;
+  o->oid_ = oid & ~DB_ALLOC_BIT;
 
   const uint offset = t - (T*) page->_objects;
   const uint id = page->_page_addr + offset;
@@ -444,7 +444,7 @@ next_obj:
   T* e = (T*) &(page->_objects[pageSize() * sizeof(T)]);
 
   for (; p < e; ++p) {
-    if (p->_oid & DB_ALLOC_BIT) {
+    if (p->oid_ & DB_ALLOC_BIT) {
       offset = p - (T*) page->_objects;
       const uint n = (page_id << page_shift) + offset;
       ZASSERT(n <= _top_idx);
@@ -479,7 +479,7 @@ void dbTable<T, page_size>::writePage(dbOStream& stream,
   const T* e = &t[pageSize()];
 
   for (; t < e; t++) {
-    if (t->_oid & DB_ALLOC_BIT) {
+    if (t->oid_ & DB_ALLOC_BIT) {
       const char allocated = 1;
       stream << allocated;
       stream << *t;
@@ -505,20 +505,19 @@ void dbTable<T, page_size>::readPage(dbIStream& stream, dbTablePage* page)
     stream >> allocated;
 
     if (!allocated) {
-      t->_oid = (uint) ((char*) t - page->_objects);
+      t->oid_ = (uint) ((char*) t - page->_objects);
       _dbFreeObject* o = (_dbFreeObject*) t;
       stream >> o->_next;
       stream >> o->_prev;
     } else {
       new (t) T(_db);
       uint oid = uint((char*) t - page->_objects) | DB_ALLOC_BIT;
-      t->_oid = oid;  // Set the oid so the stream code can call the dbObject
+      t->oid_ = oid;  // Set the oid so the stream code can call the dbObject
                       // methods.
       page->_alloccnt++;
       stream >> *t;
-      assert(
-          t->_oid
-          == oid);  // Check that the streaming code did not overwrite the oid
+      // Check that the streaming code did not overwrite the oid
+      assert(t->oid_ == oid);
     }
   }
 }

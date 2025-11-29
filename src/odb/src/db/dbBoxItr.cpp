@@ -129,7 +129,7 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
 
     case dbBPinObj: {
       _dbBPin* bpin = (_dbBPin*) parent;
-      uint id = bpin->_boxes;
+      uint id = bpin->boxes_;
       uint list = 0;
 
       while (id != 0) {
@@ -140,7 +140,7 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
         id = n;
       }
 
-      bpin->_boxes = list;
+      bpin->boxes_ = list;
       break;
     }
 
@@ -241,7 +241,7 @@ uint dbBoxItr<page_size>::begin(dbObject* parent)
 
     case dbBPinObj: {
       _dbBPin* pin = (_dbBPin*) parent;
-      return pin->_boxes;
+      return pin->boxes_;
     }
 
     case dbPolygonObj: {

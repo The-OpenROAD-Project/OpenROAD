@@ -142,7 +142,7 @@ class _dbTechLayer : public _dbObject
     uint _length;
     uint _from_width;
   } _pt;
-  char* _name;
+  char* name_;
   char* _alias;
   dbId<_dbTechLayer> _upper;
   dbId<_dbTechLayer> _lower;

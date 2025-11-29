@@ -36,7 +36,7 @@ bool _dbProperty::operator==(const _dbProperty& rhs) const
   if (flags_._owner_type != rhs.flags_._owner_type) {
     return false;
   }
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
   if (_next != rhs._next) {
@@ -60,7 +60,7 @@ bool _dbProperty::operator==(const _dbProperty& rhs) const
 bool _dbProperty::operator<(const _dbProperty& rhs) const
 {
   // User Code Begin <
-  if (_name >= rhs._name) {
+  if (name_ >= rhs.name_) {
     return false;
   }
   // User Code End <
@@ -73,7 +73,7 @@ _dbProperty::_dbProperty(_dbDatabase* db)
   _owner = 0;
   // User Code Begin Constructor
   flags_._type = DB_STRING_PROP;
-  _name = 0;
+  name_ = 0;
   // User Code End Constructor
 }
 
@@ -83,7 +83,7 @@ dbIStream& operator>>(dbIStream& stream, _dbProperty& obj)
   stream >> flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
-  stream >> obj._name;
+  stream >> obj.name_;
   stream >> obj._next;
   stream >> obj._owner;
   // User Code Begin >>
@@ -129,7 +129,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbProperty& obj)
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
   stream << flags_bit_field;
-  stream << obj._name;
+  stream << obj.name_;
   stream << obj._next;
   stream << obj._owner;
   // User Code Begin <<
@@ -171,7 +171,7 @@ void _dbProperty::collectMemInfo(MemInfo& info)
 // User Code Begin PrivateMethods
 _dbProperty::_dbProperty(_dbDatabase*, const _dbProperty& n)
     : flags_(n.flags_),
-      _name(n._name),
+      name_(n.name_),
       _next(n._next),
       _owner(n._owner),
       _value(n._value)
@@ -308,7 +308,7 @@ _dbProperty* _dbProperty::createProperty(dbObject* object_,
   // Get name-id, increment reference count
   _dbNameCache* cache = getNameCache(object);
   uint name_id = cache->addName(name);
-  prop->_name = name_id;
+  prop->name_ = name_id;
 
   // Link property into owner's prop-list
   dbObjectTable* table = object->getTable();
@@ -338,7 +338,7 @@ std::string dbProperty::getName()
 {
   _dbProperty* prop = (_dbProperty*) this;
   _dbNameCache* cache = _dbProperty::getNameCache(this);
-  const char* name = cache->getName(prop->_name);
+  const char* name = cache->getName(prop->name_);
   return name;
 }
 
@@ -363,7 +363,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name)
   for (dbProperty* p : getProperties(object)) {
     _dbProperty* p_impl = (_dbProperty*) p;
 
-    if (p_impl->_name == name_id) {
+    if (p_impl->name_ == name_id) {
       return p;
     }
   }
@@ -384,7 +384,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name, Type type)
   for (dbProperty* p : getProperties(object)) {
     _dbProperty* p_impl = (_dbProperty*) p;
 
-    if ((p_impl->_name == name_id)
+    if ((p_impl->name_ == name_id)
         && (p_impl->flags_._type == (_PropTypeEnum) type)) {
       return p;
     }
@@ -430,7 +430,7 @@ void dbProperty::destroy(dbProperty* prop_)
 
   // Remove reference to name
   _dbNameCache* cache = _dbProperty::getNameCache(prop);
-  cache->removeName(prop->_name);
+  cache->removeName(prop->name_);
 
   // destroy hier. props.
   dbProperty::destroyProperties(prop);
@@ -453,7 +453,7 @@ void dbProperty::destroyProperties(dbObject* obj)
   dbTable<_dbProperty>* propTable = _dbProperty::getPropTable(obj);
   while (cur) {
     _dbProperty* p = propTable->getPtr(cur);
-    cache->removeName(p->_name);
+    cache->removeName(p->name_);
     cur = p->_next;
     dbProperty::destroyProperties(p);
     propTable->destroy(p);

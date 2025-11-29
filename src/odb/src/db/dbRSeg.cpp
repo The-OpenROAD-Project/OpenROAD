@@ -29,11 +29,11 @@ template class dbTable<_dbRSeg>;
 
 bool _dbRSeg::operator==(const _dbRSeg& rhs) const
 {
-  if (_flags._path_dir != rhs._flags._path_dir) {
+  if (flags_._path_dir != rhs.flags_._path_dir) {
     return false;
   }
 
-  if (_flags._allocated_cap != rhs._flags._allocated_cap) {
+  if (flags_._allocated_cap != rhs.flags_._allocated_cap) {
     return false;
   }
 
@@ -101,24 +101,24 @@ void dbRSeg::addAllRes(double* res)
 bool dbRSeg::updatedCap()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  return (seg->_flags._update_cap == 1 ? true : false);
+  return (seg->flags_._update_cap == 1 ? true : false);
 }
 bool dbRSeg::allocatedCap()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  return (seg->_flags._allocated_cap == 1 ? true : false);
+  return (seg->flags_._allocated_cap == 1 ? true : false);
 }
 
 bool dbRSeg::pathLowToHigh()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  return (seg->_flags._path_dir == 0 ? true : false);
+  return (seg->flags_._path_dir == 0 ? true : false);
 }
 
 void dbRSeg::addRSegCapacitance(dbRSeg* other)
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  if (!seg->_flags._allocated_cap) {
+  if (!seg->flags_._allocated_cap) {
     getTargetCapNode()->addCapnCapacitance(other->getTargetCapNode());
     return;
   }
@@ -263,13 +263,13 @@ void dbRSeg::setCapacitance(double cap, int corner)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
 
-  if (!seg->_flags._allocated_cap) {
+  if (!seg->flags_._allocated_cap) {
     fprintf(stdout, "WARNING: cap value storage is not allocated\n");
     return;
   }
-  seg->_flags._update_cap = 1;
+  seg->flags_._update_cap = 1;
   if (cap == 0.0) {
-    seg->_flags._update_cap = 0;
+    seg->flags_._update_cap = 0;
   }
 
   ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
@@ -303,7 +303,7 @@ void dbRSeg::adjustSourceCapacitance(float factor, uint corner)
   _dbRSeg* seg = (_dbRSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
 
-  if (seg->_flags._allocated_cap != 0) {
+  if (seg->flags_._allocated_cap != 0) {
     return;
   }
   dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_source);
@@ -316,7 +316,7 @@ void dbRSeg::adjustCapacitance(float factor, uint corner)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
 
-  if (seg->_flags._allocated_cap == 0) {
+  if (seg->flags_._allocated_cap == 0) {
     _dbBlock* block = (_dbBlock*) seg->getOwner();
     dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
     node->adjustCapacitance(factor, corner);
@@ -363,7 +363,7 @@ double dbRSeg::getCapacitance(int corner)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
 
-  if (seg->_flags._allocated_cap == 0) {
+  if (seg->flags_._allocated_cap == 0) {
     _dbBlock* block = (_dbBlock*) seg->getOwner();
     dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
     return node->getCapacitance(corner);
@@ -378,7 +378,7 @@ void dbRSeg::getGndCap(double* gndcap, double* totalcap)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
   double gcap;
-  if (seg->_flags._allocated_cap == 0) {
+  if (seg->flags_._allocated_cap == 0) {
     dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
     node->getGndCap(gndcap, totalcap);
   } else {
@@ -400,7 +400,7 @@ void dbRSeg::addGndCap(double* gndcap, double* totalcap)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
   double gcap;
-  if (seg->_flags._allocated_cap == 0) {
+  if (seg->flags_._allocated_cap == 0) {
     dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
     node->addGndCap(gndcap, totalcap);
   } else {
@@ -422,7 +422,7 @@ double dbRSeg::getSourceCapacitance(int corner)
 
   _dbRSeg* seg = (_dbRSeg*) this;
 
-  if (seg->_flags._allocated_cap == 0) {
+  if (seg->flags_._allocated_cap == 0) {
     _dbBlock* block = (_dbBlock*) seg->getOwner();
     dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_source);
     return node->getCapacitance(corner);
@@ -528,7 +528,7 @@ void dbRSeg::getCapTable(double* cap)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
 
-  if (seg->_flags._allocated_cap == 0) {
+  if (seg->flags_._allocated_cap == 0) {
     _dbBlock* block = (_dbBlock*) seg->getOwner();
     dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
     node->getCapTable(cap);
@@ -720,8 +720,8 @@ dbRSeg* dbRSeg::create(dbNet* net_,
   seg->_xcoord = x;
   seg->_ycoord = y;
 
-  seg->_flags._path_dir = path_dir;
-  // seg->_flags._cnt = block->_num_corners;
+  seg->flags_._path_dir = path_dir;
+  // seg->flags_._cnt = block->_num_corners;
 
   if (valueMem) {
     for (uint ii = 0; ii < cornerCnt; ii++) {
@@ -734,13 +734,13 @@ dbRSeg* dbRSeg::create(dbNet* net_,
 
   // seg->_resIdx= block->_r_val_tbl->size();
   // int i;
-  // for( i = 0; i < seg->_flags._cnt; ++i )
+  // for( i = 0; i < seg->flags_._cnt; ++i )
   //{
   // block->_r_val_tbl->push_back(0.0);
   //}
 
   if (allocate_cap) {
-    seg->_flags._allocated_cap = 1;
+    seg->flags_._allocated_cap = 1;
 
     if (valueMem) {
       for (uint ii = 0; ii < cornerCnt; ii++) {
@@ -752,18 +752,18 @@ dbRSeg* dbRSeg::create(dbNet* net_,
     }
 
     // seg->_capIdx= block->_c_val_tbl->size();
-    // for( i = 0; i < seg->_flags._cnt; ++i )
+    // for( i = 0; i < seg->flags_._cnt; ++i )
     //{
     // block->_c_val_tbl->push_back(0.0);
     //}
   }
 
   /* OPT-MEM
-  //    seg->_res = (float *) safe_malloc(sizeof(float)*seg->_flags._cnt);
+  //    seg->_res = (float *) safe_malloc(sizeof(float)*seg->flags_._cnt);
   //
   //    int i;
   //
-  //    for( i = 0; i < seg->_flags._cnt; ++i )
+  //    for( i = 0; i < seg->flags_._cnt; ++i )
   //    {
   //        seg->_res[i] = 0.0;
   //    }
@@ -771,12 +771,12 @@ dbRSeg* dbRSeg::create(dbNet* net_,
   //    seg->_cap= nullptr;
   //    if (allocate_cap)
   //    {
-  //        seg->_flags._allocated_cap= 1;
+  //        seg->flags_._allocated_cap= 1;
   //        seg->_cap =
-  //             (float *) safe_malloc( sizeof(float) * seg->_flags._cnt );
+  //             (float *) safe_malloc( sizeof(float) * seg->flags_._cnt );
   //
   //        int i;
-  //        for( i = 0; i < seg->_flags._cnt; ++i )
+  //        for( i = 0; i < seg->flags_._cnt; ++i )
   //        {
   //            seg->_cap[i] = 0.0;
   //        }

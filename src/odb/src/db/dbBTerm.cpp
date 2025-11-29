@@ -37,6 +37,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "odb/isotropy.h"
+#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -47,26 +48,26 @@ _dbBTerm::_dbBTerm(_dbDatabase*)
 {
   // For pointer tagging the bottom 3 bits.
   static_assert(alignof(_dbBTerm) % 8 == 0);
-  _flags._io_type = dbIoType::INPUT;
-  _flags._sig_type = dbSigType::SIGNAL;
-  _flags._orient = 0;
-  _flags._status = 0;
-  _flags._spef = 0;
-  _flags._special = 0;
-  _flags._mark = 0;
-  _flags._spare_bits = 0;
+  flags_._io_type = dbIoType::INPUT;
+  flags_._sig_type = dbSigType::SIGNAL;
+  flags_._orient = 0;
+  flags_._status = 0;
+  flags_._spef = 0;
+  flags_._special = 0;
+  flags_._mark = 0;
+  flags_._spare_bits = 0;
   _ext_id = 0;
-  _name = nullptr;
+  name_ = nullptr;
   _sta_vertex_id = 0;
   _constraint_region.mergeInit();
   _is_mirrored = false;
 }
 
 _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
-    : _flags(b._flags),
+    : flags_(b.flags_),
       _ext_id(b._ext_id),
-      _name(nullptr),
-      _next_entry(b._next_entry),
+      name_(nullptr),
+      next_entry_(b.next_entry_),
       _net(b._net),
       _next_bterm(b._next_bterm),
       _prev_bterm(b._prev_bterm),
@@ -78,38 +79,38 @@ _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
       _sta_vertex_id(0),
       _constraint_region(b._constraint_region)
 {
-  if (b._name) {
-    _name = safe_strdup(b._name);
+  if (b.name_) {
+    name_ = safe_strdup(b.name_);
   }
 }
 
 _dbBTerm::~_dbBTerm()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
 bool _dbBTerm::operator<(const _dbBTerm& rhs) const
 {
-  return strcmp(_name, rhs._name) < 0;
+  return strcmp(name_, rhs.name_) < 0;
 }
 
 bool _dbBTerm::operator==(const _dbBTerm& rhs) const
 {
-  if (_flags._io_type != rhs._flags._io_type) {
+  if (flags_._io_type != rhs.flags_._io_type) {
     return false;
   }
 
-  if (_flags._sig_type != rhs._flags._sig_type) {
+  if (flags_._sig_type != rhs.flags_._sig_type) {
     return false;
   }
 
-  if (_flags._spef != rhs._flags._spef) {
+  if (flags_._spef != rhs.flags_._spef) {
     return false;
   }
 
-  if (_flags._special != rhs._flags._special) {
+  if (flags_._special != rhs.flags_._special) {
     return false;
   }
 
@@ -117,15 +118,15 @@ bool _dbBTerm::operator==(const _dbBTerm& rhs) const
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -166,11 +167,11 @@ bool _dbBTerm::operator==(const _dbBTerm& rhs) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
 {
-  uint* bit_field = (uint*) &bterm._flags;
+  uint* bit_field = (uint*) &bterm.flags_;
   stream << *bit_field;
   stream << bterm._ext_id;
-  stream << bterm._name;
-  stream << bterm._next_entry;
+  stream << bterm.name_;
+  stream << bterm.next_entry_;
   stream << bterm._net;
   stream << bterm._next_bterm;
   stream << bterm._prev_bterm;
@@ -193,11 +194,11 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
 {
   dbBlock* block = (dbBlock*) (bterm.getOwner());
   _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
-  uint* bit_field = (uint*) &bterm._flags;
+  uint* bit_field = (uint*) &bterm.flags_;
   stream >> *bit_field;
   stream >> bterm._ext_id;
-  stream >> bterm._name;
-  stream >> bterm._next_entry;
+  stream >> bterm.name_;
+  stream >> bterm.next_entry_;
   stream >> bterm._net;
   stream >> bterm._next_bterm;
   stream >> bterm._prev_bterm;
@@ -233,13 +234,13 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
 std::string dbBTerm::getName() const
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  return bterm->_name;
+  return bterm->name_;
 }
 
 const char* dbBTerm::getConstName() const
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  return bterm->_name;
+  return bterm->name_;
 }
 
 bool dbBTerm::rename(const char* name)
@@ -252,8 +253,8 @@ bool dbBTerm::rename(const char* name)
   }
 
   block->_bterm_hash.remove(bterm);
-  free((void*) bterm->_name);
-  bterm->_name = safe_strdup(name);
+  free((void*) bterm->name_);
+  bterm->name_ = safe_strdup(name);
   block->_bterm_hash.insert(bterm);
 
   return true;
@@ -265,7 +266,7 @@ void dbBTerm::setSigType(dbSigType type)
   _dbBlock* block = (_dbBlock*) getBlock();
   uint prev_flags = flagsToUInt(bterm);
 
-  bterm->_flags._sig_type = type.getValue();
+  bterm->flags_._sig_type = type.getValue();
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -286,7 +287,7 @@ void dbBTerm::setSigType(dbSigType type)
 dbSigType dbBTerm::getSigType() const
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  return dbSigType(bterm->_flags._sig_type);
+  return dbSigType(bterm->flags_._sig_type);
 }
 
 void dbBTerm::setIoType(dbIoType type)
@@ -295,7 +296,7 @@ void dbBTerm::setIoType(dbIoType type)
   _dbBlock* block = (_dbBlock*) getBlock();
   uint prev_flags = flagsToUInt(bterm);
 
-  bterm->_flags._io_type = type.getValue();
+  bterm->flags_._io_type = type.getValue();
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -316,38 +317,38 @@ void dbBTerm::setIoType(dbIoType type)
 dbIoType dbBTerm::getIoType() const
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  return dbIoType(bterm->_flags._io_type);
+  return dbIoType(bterm->flags_._io_type);
 }
 
 void dbBTerm::setSpefMark(uint v)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  bterm->_flags._spef = v;
+  bterm->flags_._spef = v;
 }
 bool dbBTerm::isSetSpefMark()
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  return bterm->_flags._spef > 0 ? true : false;
+  return bterm->flags_._spef > 0 ? true : false;
 }
 bool dbBTerm::isSpecial() const
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  return bterm->_flags._special > 0 ? true : false;
+  return bterm->flags_._special > 0 ? true : false;
 }
 void dbBTerm::setSpecial()
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  bterm->_flags._special = 1;
+  bterm->flags_._special = 1;
 }
 void dbBTerm::setMark(uint v)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  bterm->_flags._mark = v;
+  bterm->flags_._mark = v;
 }
 bool dbBTerm::isSetMark()
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  return bterm->_flags._mark > 0 ? true : false;
+  return bterm->flags_._mark > 0 ? true : false;
 }
 void dbBTerm::setExtId(uint v)
 {
@@ -408,11 +409,11 @@ void dbBTerm::connect(dbNet* net_)
     return;
   }
 
-  if (net->_flags._dont_touch) {
+  if (net->flags_._dont_touch) {
     net->getLogger()->error(utl::ODB,
                             377,
                             "Attempt to connect bterm to dont_touch net {}",
-                            net->_name);
+                            net->name_);
   }
 
   if (bterm->_net) {
@@ -428,12 +429,12 @@ void dbBTerm::disconnect()
     _dbBlock* block = (_dbBlock*) bterm->getOwner();
 
     _dbNet* net = block->_net_tbl->getPtr(bterm->_net);
-    if (net->_flags._dont_touch) {
+    if (net->flags_._dont_touch) {
       net->getLogger()->error(
           utl::ODB,
           375,
           "Attempt to disconnect bterm of dont_touch net {}",
-          net->_name);
+          net->name_);
     }
     bterm->disconnectNet(bterm, block);
     if (bterm->_mnet) {
@@ -456,12 +457,12 @@ void dbBTerm::disconnectDbNet()
     _dbBlock* block = (_dbBlock*) bterm->getOwner();
 
     _dbNet* net = block->_net_tbl->getPtr(bterm->_net);
-    if (net->_flags._dont_touch) {
+    if (net->flags_._dont_touch) {
       net->getLogger()->error(
           utl::ODB,
           1106,
           "Attempt to disconnect bterm of dont_touch net {}",
-          net->_name);
+          net->name_);
     }
     bterm->disconnectNet(bterm, block);
   }
@@ -607,11 +608,11 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
     return nullptr;
   }
 
-  if (net->_flags._dont_touch) {
+  if (net->flags_._dont_touch) {
     net->getLogger()->error(utl::ODB,
                             376,
                             "Attempt to create bterm on dont_touch net {}",
-                            net->_name);
+                            net->name_);
   }
 
   if (block->_journal) {
@@ -632,7 +633,7 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
   }
 
   _dbBTerm* bterm = block->_bterm_tbl->create();
-  bterm->_name = safe_strdup(name);
+  bterm->name_ = safe_strdup(name);
   block->_bterm_hash.insert(bterm);
 
   // If there is a parentInst then we need to update the dbMaster's
@@ -645,9 +646,9 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
     _dbInstHdr* inst_hdr = parent_block->_inst_hdr_hash.find(master_impl->_id);
     ZASSERT(inst_hdr->_inst_cnt == 1);
 
-    master_impl->_flags._frozen = 0;  // allow the mterm creation
+    master_impl->flags_._frozen = 0;  // allow the mterm creation
     auto mterm = (_dbMTerm*) dbMTerm::create(master, name, dbIoType::INOUT);
-    master_impl->_flags._frozen = 1;
+    master_impl->flags_._frozen = 1;
     mterm->_order_id = inst_hdr->_mterms.size();
     inst_hdr->_mterms.push_back(mterm->getOID());
 
@@ -657,7 +658,7 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
 
     _dbITerm* iterm = parent_block->_iterm_tbl->create();
     inst_impl->_iterms.push_back(iterm->getOID());
-    iterm->_flags._mterm_idx = mterm->_order_id;
+    iterm->flags_._mterm_idx = mterm->_order_id;
     iterm->_inst = inst_impl->getOID();
 
     bterm->_parent_block = parent_block->getOID();
@@ -687,7 +688,7 @@ void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
                "ECO: connect dbBTerm({} {:p}) '{}' to dbModNet({} {:p}) '{}'",
                bterm->getId(),
                static_cast<void*>(bterm),
-               bterm->_name,
+               bterm->name_,
                mod_net->getId(),
                static_cast<void*>(mod_net),
                ((dbModNet*) mod_net)->getHierarchicalName());
@@ -724,7 +725,7 @@ void _dbBTerm::connectNet(_dbNet* net, _dbBlock* block)
                "ECO: connect dbBTerm({} {:p}) '{}' to dbNet({} {:p}) '{}'",
                bterm->getId(),
                static_cast<void*>(bterm),
-               bterm->_name,
+               bterm->name_,
                net->getId(),
                static_cast<void*>(net),
                ((dbNet*) net)->getName());
@@ -762,11 +763,11 @@ void dbBTerm::destroy(dbBTerm* bterm_)
 
   if (bterm->_net) {
     _dbNet* net = block->_net_tbl->getPtr(bterm->_net);
-    if (net->_flags._dont_touch) {
+    if (net->flags_._dont_touch) {
       net->getLogger()->error(utl::ODB,
                               374,
                               "Attempt to destroy bterm on dont_touch net {}",
-                              net->_name);
+                              net->name_);
     }
   }
 
@@ -792,7 +793,7 @@ void dbBTerm::destroy(dbBTerm* bterm_)
                "ECO: delete dbBTerm({}, {:p}) '{}'",
                bterm->getId(),
                static_cast<void*>(bterm),
-               bterm->_name);
+               bterm->name_);
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbBTermObj);
     block->_journal->pushParam(bterm_->getId());
@@ -819,10 +820,10 @@ void _dbBTerm::disconnectNet(_dbBTerm* bterm, _dbBlock* block)
           "ECO: disconnect dbBTerm({} {:p}) '{}' from dbNet({} {:p}) '{}'",
           bterm->getId(),
           static_cast<void*>(bterm),
-          bterm->_name,
+          bterm->name_,
           net->getId(),
           static_cast<void*>(net),
-          net->_name);
+          net->name_);
       block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
       block->_journal->pushParam(dbBTermObj);
       block->_journal->pushParam(bterm->getId());
@@ -877,7 +878,7 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
           "ECO: disconnect dbBTerm({} {:p}) '{}' from dbModNet({} {:p}) '{}'",
           bterm->getId(),
           static_cast<void*>(bterm),
-          bterm->_name,
+          bterm->name_,
           mod_net->getId(),
           static_cast<void*>(mod_net),
           ((dbModNet*) mod_net)->getHierarchicalName());
@@ -936,7 +937,7 @@ void _dbBTerm::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
 }
 
 dbSet<dbBTerm>::iterator dbBTerm::destroy(dbSet<dbBTerm>::iterator& itr)
