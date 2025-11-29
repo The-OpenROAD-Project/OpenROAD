@@ -7436,6 +7436,9 @@ class dbDatabase : public dbObject
 
   // User Code Begin dbDatabase
 
+  void setHierarchy(bool value);
+  bool hasHierarchy() const;
+
   void setTopChip(dbChip* chip);
   ///
   /// Return the libs contained in the database. A database can contain
