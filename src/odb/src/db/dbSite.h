@@ -46,7 +46,7 @@ class _dbSite : public _dbObject
   char* _name;
   int _height;
   int _width;
-  dbId<_dbSite> _next_entry;
+  dbId<_dbSite> next_entry_;
   dbVector<OrientedSiteInternal> _row_pattern;
 
   _dbSite(_dbDatabase*, const _dbSite& s);

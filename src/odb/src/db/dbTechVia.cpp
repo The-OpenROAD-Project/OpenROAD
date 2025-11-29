@@ -89,7 +89,7 @@ bool _dbTechVia::operator==(const _dbTechVia& rhs) const
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -114,7 +114,7 @@ _dbTechVia::_dbTechVia(_dbDatabase*, const _dbTechVia& v)
       _non_default_rule(v._non_default_rule),
       _generate_rule(v._generate_rule),
       _via_params(v._via_params),
-      _next_entry(v._next_entry)
+      next_entry_(v.next_entry_)
 {
   if (v._name) {
     _name = safe_strdup(v._name);
@@ -161,7 +161,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechVia& via)
   stream << via._generate_rule;
   stream << via._via_params;
   stream << via._pattern;
-  stream << via._next_entry;
+  stream << via.next_entry_;
   return stream;
 }
 
@@ -179,7 +179,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechVia& via)
   stream >> via._generate_rule;
   stream >> via._via_params;
   stream >> via._pattern;
-  stream >> via._next_entry;
+  stream >> via.next_entry_;
 
   return stream;
 }

@@ -107,7 +107,7 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   if (*marker_categories_tbl_ != *rhs.marker_categories_tbl_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -241,7 +241,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
   stream >> *obj._prop_tbl;
   stream >> *obj._name_cache;
   if (obj.getDatabase()->isSchema(db_schema_chip_hash_table)) {
-    stream >> obj._next_entry;
+    stream >> obj.next_entry_;
   }
   auto chip = (dbChip*) &obj;
   for (const auto& chip_region : chip->getChipRegions()) {
@@ -285,7 +285,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
   stream << *obj._block_tbl;
   stream << NamedTable("prop_tbl", obj._prop_tbl);
   stream << *obj._name_cache;
-  stream << obj._next_entry;
+  stream << obj.next_entry_;
   // User Code End <<
   return stream;
 }

@@ -31,7 +31,7 @@ bool _dbPowerDomain::operator==(const _dbPowerDomain& rhs) const
   if (_name != rhs._name) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (_group != rhs._group) {
@@ -71,7 +71,7 @@ _dbPowerDomain::_dbPowerDomain(_dbDatabase* db)
 dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
 {
   stream >> obj._name;
-  stream >> obj._next_entry;
+  stream >> obj.next_entry_;
   stream >> obj._elements;
   stream >> obj._power_switch;
   stream >> obj._isolation;
@@ -94,7 +94,7 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj)
 {
   stream << obj._name;
-  stream << obj._next_entry;
+  stream << obj.next_entry_;
   stream << obj._elements;
   stream << obj._power_switch;
   stream << obj._isolation;

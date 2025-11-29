@@ -34,7 +34,7 @@ class _dbPowerDomain : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   char* _name;
-  dbId<_dbPowerDomain> _next_entry;
+  dbId<_dbPowerDomain> next_entry_;
   dbVector<std::string> _elements;
   dbVector<dbId<_dbPowerSwitch>> _power_switch;
   dbVector<dbId<_dbIsolation>> _isolation;

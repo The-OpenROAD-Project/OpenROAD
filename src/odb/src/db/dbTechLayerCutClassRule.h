@@ -40,7 +40,7 @@ class _dbTechLayerCutClassRule : public _dbObject
   int width_;
   int length_;
   int num_cuts_;
-  dbId<_dbTechLayerCutClassRule> _next_entry;
+  dbId<_dbTechLayerCutClassRule> next_entry_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj);

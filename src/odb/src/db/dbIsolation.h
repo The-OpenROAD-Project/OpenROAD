@@ -30,7 +30,7 @@ class _dbIsolation : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   char* _name;
-  dbId<_dbIsolation> _next_entry;
+  dbId<_dbIsolation> next_entry_;
   std::string _applies_to;
   std::string _clamp_value;
   std::string _isolation_signal;

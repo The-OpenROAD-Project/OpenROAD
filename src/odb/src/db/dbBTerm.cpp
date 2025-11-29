@@ -66,7 +66,7 @@ _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
     : flags_(b.flags_),
       _ext_id(b._ext_id),
       _name(nullptr),
-      _next_entry(b._next_entry),
+      next_entry_(b.next_entry_),
       _net(b._net),
       _next_bterm(b._next_bterm),
       _prev_bterm(b._prev_bterm),
@@ -125,7 +125,7 @@ bool _dbBTerm::operator==(const _dbBTerm& rhs) const
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -170,7 +170,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   stream << *bit_field;
   stream << bterm._ext_id;
   stream << bterm._name;
-  stream << bterm._next_entry;
+  stream << bterm.next_entry_;
   stream << bterm._net;
   stream << bterm._next_bterm;
   stream << bterm._prev_bterm;
@@ -197,7 +197,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   stream >> *bit_field;
   stream >> bterm._ext_id;
   stream >> bterm._name;
-  stream >> bterm._next_entry;
+  stream >> bterm.next_entry_;
   stream >> bterm._net;
   stream >> bterm._next_bterm;
   stream >> bterm._prev_bterm;

@@ -23,7 +23,7 @@ bool _dbLevelShifter::operator==(const _dbLevelShifter& rhs) const
   if (_name != rhs._name) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (_domain != rhs._domain) {
@@ -104,7 +104,7 @@ _dbLevelShifter::_dbLevelShifter(_dbDatabase* db)
 dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj)
 {
   stream >> obj._name;
-  stream >> obj._next_entry;
+  stream >> obj.next_entry_;
   stream >> obj._domain;
   stream >> obj._elements;
   stream >> obj._exclude_elements;
@@ -137,7 +137,7 @@ dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbLevelShifter& obj)
 {
   stream << obj._name;
-  stream << obj._next_entry;
+  stream << obj.next_entry_;
   stream << obj._domain;
   stream << obj._elements;
   stream << obj._exclude_elements;

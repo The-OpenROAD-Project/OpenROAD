@@ -30,7 +30,7 @@ class _dbLevelShifter : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   char* _name;
-  dbId<_dbLevelShifter> _next_entry;
+  dbId<_dbLevelShifter> next_entry_;
   dbId<_dbPowerDomain> _domain;
   dbVector<std::string> _elements;
   dbVector<std::string> _exclude_elements;

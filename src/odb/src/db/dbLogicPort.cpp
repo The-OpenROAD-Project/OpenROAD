@@ -24,7 +24,7 @@ bool _dbLogicPort::operator==(const _dbLogicPort& rhs) const
   if (_name != rhs._name) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (direction != rhs.direction) {
@@ -47,7 +47,7 @@ _dbLogicPort::_dbLogicPort(_dbDatabase* db)
 dbIStream& operator>>(dbIStream& stream, _dbLogicPort& obj)
 {
   stream >> obj._name;
-  stream >> obj._next_entry;
+  stream >> obj.next_entry_;
   stream >> obj.direction;
   return stream;
 }
@@ -55,7 +55,7 @@ dbIStream& operator>>(dbIStream& stream, _dbLogicPort& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbLogicPort& obj)
 {
   stream << obj._name;
-  stream << obj._next_entry;
+  stream << obj.next_entry_;
   stream << obj.direction;
   return stream;
 }

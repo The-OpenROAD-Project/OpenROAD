@@ -26,7 +26,7 @@ bool _dbPowerSwitch::operator==(const _dbPowerSwitch& rhs) const
   if (_name != rhs._name) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (_lib_cell != rhs._lib_cell) {
@@ -81,7 +81,7 @@ dbIStream& operator>>(dbIStream& stream, dbPowerSwitch::UPFOnState& obj)
 dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
 {
   stream >> obj._name;
-  stream >> obj._next_entry;
+  stream >> obj.next_entry_;
   // User Code Begin >>
   if (obj.getDatabase()->isSchema(db_schema_update_db_power_switch)) {
     stream >> obj._in_supply_port;
@@ -157,7 +157,7 @@ dbOStream& operator<<(dbOStream& stream, const dbPowerSwitch::UPFOnState& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbPowerSwitch& obj)
 {
   stream << obj._name;
-  stream << obj._next_entry;
+  stream << obj.next_entry_;
   // User Code Begin <<
   stream << obj._in_supply_port;
   stream << obj._out_supply_port;

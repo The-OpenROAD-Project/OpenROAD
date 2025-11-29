@@ -35,7 +35,7 @@ class _dbMTerm : public _dbObject
   _dbMTermFlags flags_;
   uint _order_id;
   char* _name;
-  dbId<_dbMTerm> _next_entry;
+  dbId<_dbMTerm> next_entry_;
   dbId<_dbMTerm> _next_mterm;
   dbId<_dbMPin> _pins;
   dbId<_dbTarget> _targets;

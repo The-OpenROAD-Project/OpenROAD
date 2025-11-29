@@ -23,7 +23,7 @@ bool _dbIsolation::operator==(const _dbIsolation& rhs) const
   if (_name != rhs._name) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (_applies_to != rhs._applies_to) {
@@ -61,7 +61,7 @@ _dbIsolation::_dbIsolation(_dbDatabase* db)
 dbIStream& operator>>(dbIStream& stream, _dbIsolation& obj)
 {
   stream >> obj._name;
-  stream >> obj._next_entry;
+  stream >> obj.next_entry_;
   stream >> obj._applies_to;
   stream >> obj._clamp_value;
   stream >> obj._isolation_signal;
@@ -75,7 +75,7 @@ dbIStream& operator>>(dbIStream& stream, _dbIsolation& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbIsolation& obj)
 {
   stream << obj._name;
-  stream << obj._next_entry;
+  stream << obj.next_entry_;
   stream << obj._applies_to;
   stream << obj._clamp_value;
   stream << obj._isolation_signal;

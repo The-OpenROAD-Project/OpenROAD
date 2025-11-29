@@ -64,7 +64,7 @@ class _dbMarkerCategory : public _dbObject
   dbTable<_dbMarker>* marker_tbl_;
   dbTable<_dbMarkerCategory>* categories_tbl_;
   dbHashTable<_dbMarkerCategory> categories_hash_;
-  dbId<_dbMarkerCategory> _next_entry;
+  dbId<_dbMarkerCategory> next_entry_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbMarkerCategory& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbMarkerCategory& obj);

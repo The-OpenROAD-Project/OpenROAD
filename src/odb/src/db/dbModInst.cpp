@@ -39,7 +39,7 @@ bool _dbModInst::operator==(const _dbModInst& rhs) const
   if (_name != rhs._name) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (_parent != rhs._parent) {
@@ -90,7 +90,7 @@ _dbModInst::_dbModInst(_dbDatabase* db)
 dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
 {
   stream >> obj._name;
-  stream >> obj._next_entry;
+  stream >> obj.next_entry_;
   stream >> obj._parent;
   stream >> obj._module_next;
   stream >> obj._master;
@@ -116,7 +116,7 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj)
 {
   stream << obj._name;
-  stream << obj._next_entry;
+  stream << obj.next_entry_;
   stream << obj._parent;
   stream << obj._module_next;
   stream << obj._master;

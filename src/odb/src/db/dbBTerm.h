@@ -50,7 +50,7 @@ class _dbBTerm : public _dbObject
   _dbBTermFlags flags_;
   uint _ext_id;
   char* _name;
-  dbId<_dbBTerm> _next_entry;
+  dbId<_dbBTerm> next_entry_;
   dbId<_dbNet> _net;
   dbId<_dbModNet> _mnet;
   dbId<_dbBTerm> _next_bterm;

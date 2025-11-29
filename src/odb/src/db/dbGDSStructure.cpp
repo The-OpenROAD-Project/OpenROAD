@@ -26,7 +26,7 @@ bool _dbGDSStructure::operator==(const _dbGDSStructure& rhs) const
   if (_name != rhs._name) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (*boundaries_ != *rhs.boundaries_) {
@@ -79,7 +79,7 @@ _dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
 {
   stream >> obj._name;
-  stream >> obj._next_entry;
+  stream >> obj.next_entry_;
   stream >> *obj.boundaries_;
   stream >> *obj.boxes_;
   stream >> *obj.paths_;
@@ -92,7 +92,7 @@ dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj)
 {
   stream << obj._name;
-  stream << obj._next_entry;
+  stream << obj.next_entry_;
   stream << *obj.boundaries_;
   stream << *obj.boxes_;
   stream << *obj.paths_;

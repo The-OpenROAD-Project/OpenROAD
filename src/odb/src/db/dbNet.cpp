@@ -61,7 +61,7 @@ template class dbTable<_dbNet>;
 _dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
     : flags_(n.flags_),
       _name(nullptr),
-      _next_entry(n._next_entry),
+      next_entry_(n.next_entry_),
       _iterms(n._iterms),
       _bterms(n._bterms),
       _wire(n._wire),
@@ -134,7 +134,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbNet& net)
   stream << net._name;
   stream << net._gndc_calibration_factor;
   stream << net._cc_calibration_factor;
-  stream << net._next_entry;
+  stream << net.next_entry_;
   stream << net._iterms;
   stream << net._bterms;
   stream << net._wire;
@@ -160,7 +160,7 @@ dbIStream& operator>>(dbIStream& stream, _dbNet& net)
   stream >> net._name;
   stream >> net._gndc_calibration_factor;
   stream >> net._cc_calibration_factor;
-  stream >> net._next_entry;
+  stream >> net.next_entry_;
   stream >> net._iterms;
   stream >> net._bterms;
   stream >> net._wire;
@@ -285,7 +285,7 @@ bool _dbNet::operator==(const _dbNet& rhs) const
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 

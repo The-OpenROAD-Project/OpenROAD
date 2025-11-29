@@ -36,7 +36,7 @@ class _dbPowerSwitch : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   char* _name;
-  dbId<_dbPowerSwitch> _next_entry;
+  dbId<_dbPowerSwitch> next_entry_;
   dbVector<dbPowerSwitch::UPFIOSupplyPort> _in_supply_port;
   dbPowerSwitch::UPFIOSupplyPort _out_supply_port;
   dbVector<dbPowerSwitch::UPFControlPort> _control_port;

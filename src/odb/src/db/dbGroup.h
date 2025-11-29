@@ -41,7 +41,7 @@ class _dbGroup : public _dbObject
 
   dbGroupFlags flags_;
   char* _name;
-  dbId<_dbGroup> _next_entry;
+  dbId<_dbGroup> next_entry_;
   dbId<_dbGroup> _group_next;
   dbId<_dbGroup> _parent_group;
   dbId<_dbInst> _insts;

@@ -25,7 +25,7 @@ template class dbTable<_dbName>;
 // _dbName
 /////////////////
 _dbName::_dbName(_dbDatabase*, const _dbName& n)
-    : _name(nullptr), _next_entry(n._next_entry), _ref_cnt(n._ref_cnt)
+    : _name(nullptr), next_entry_(n.next_entry_), _ref_cnt(n._ref_cnt)
 {
   if (n._name) {
     _name = safe_strdup(n._name);
@@ -51,7 +51,7 @@ bool _dbName::operator==(const _dbName& rhs) const
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -78,7 +78,7 @@ void _dbName::collectMemInfo(MemInfo& info)
 dbOStream& operator<<(dbOStream& stream, const _dbName& name)
 {
   stream << name._name;
-  stream << name._next_entry;
+  stream << name.next_entry_;
   stream << name._ref_cnt;
   return stream;
 }
@@ -86,7 +86,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbName& name)
 dbIStream& operator>>(dbIStream& stream, _dbName& name)
 {
   stream >> name._name;
-  stream >> name._next_entry;
+  stream >> name.next_entry_;
   stream >> name._ref_cnt;
   return stream;
 }

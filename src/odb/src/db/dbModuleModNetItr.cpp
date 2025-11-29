@@ -67,7 +67,7 @@ uint dbModuleModNetItr::next(uint id, ...)
 {
   // User Code Begin next
   _dbModNet* modnet = _modnet_tbl->getPtr(id);
-  return modnet->_next_entry;
+  return modnet->next_entry_;
   // User Code End next
 }
 

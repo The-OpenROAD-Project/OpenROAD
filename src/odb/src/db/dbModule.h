@@ -79,7 +79,7 @@ class _dbModule : public _dbObject
   // User Code End Methods
 
   char* _name;
-  dbId<_dbModule> _next_entry;
+  dbId<_dbModule> next_entry_;
   dbId<_dbInst> _insts;
   dbId<_dbModInst> _mod_inst;
   dbId<_dbModInst> _modinsts;

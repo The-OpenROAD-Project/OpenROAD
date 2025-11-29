@@ -55,7 +55,7 @@ class _dbInst : public _dbObject
   int _x;
   int _y;
   int _weight;
-  dbId<_dbInst> _next_entry;
+  dbId<_dbInst> next_entry_;
   dbId<_dbInstHdr> _inst_hdr;
   dbId<_dbBox> _bbox;
   dbId<_dbRegion> _region;

@@ -34,7 +34,7 @@ class _dbModInst : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   char* _name;
-  dbId<_dbModInst> _next_entry;
+  dbId<_dbModInst> next_entry_;
   dbId<_dbModule> _parent;
   dbId<_dbModInst> _module_next;
   dbId<_dbModule> _master;

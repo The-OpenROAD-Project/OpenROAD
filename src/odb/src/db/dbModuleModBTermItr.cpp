@@ -36,8 +36,8 @@ void dbModuleModBTermItr::reverse(dbObject* parent)
   uint list = 0;
   while (id != 0) {
     _dbModBTerm* modbterm = _modbterm_tbl->getPtr(id);
-    uint n = modbterm->_next_entry;
-    modbterm->_next_entry = list;
+    uint n = modbterm->next_entry_;
+    modbterm->next_entry_ = list;
     modbterm->_prev_entry = n;
     list = id;
     id = n;
@@ -82,7 +82,7 @@ uint dbModuleModBTermItr::next(uint id, ...)
 {
   // User Code Begin next
   _dbModBTerm* modbterm = _modbterm_tbl->getPtr(id);
-  return modbterm->_next_entry;
+  return modbterm->next_entry_;
   // User Code End next
 }
 

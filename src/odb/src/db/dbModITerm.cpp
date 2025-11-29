@@ -46,7 +46,7 @@ bool _dbModITerm::operator==(const _dbModITerm& rhs) const
   if (_prev_net_moditerm != rhs._prev_net_moditerm) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (_prev_entry != rhs._prev_entry) {
@@ -89,7 +89,7 @@ dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
     stream >> obj._prev_net_moditerm;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._next_entry;
+    stream >> obj.next_entry_;
   }
   if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
     stream >> obj._prev_entry;
@@ -115,7 +115,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbModITerm& obj)
   stream << obj._mod_net;
   stream << obj._next_net_moditerm;
   stream << obj._prev_net_moditerm;
-  stream << obj._next_entry;
+  stream << obj.next_entry_;
   stream << obj._prev_entry;
   return stream;
 }
@@ -235,7 +235,7 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance,
 
   moditerm->_name = safe_strdup(name);
   moditerm->_parent = parent->getOID();
-  moditerm->_next_entry = parent->_moditerms;
+  moditerm->next_entry_ = parent->_moditerms;
   moditerm->_prev_entry = 0;
   if (parent->_moditerms != 0) {
     _dbModITerm* new_next = block->_moditerm_tbl->getPtr(parent->_moditerms);
@@ -431,13 +431,13 @@ void dbModITerm::destroy(dbModITerm* val)
 
   // snip out the mod iterm, from doubly linked list
   uint prev = _moditerm->_prev_entry;
-  uint next = _moditerm->_next_entry;
+  uint next = _moditerm->next_entry_;
   if (prev == 0) {
     // head of list
     mod_inst->_moditerms = next;
   } else {
     _dbModITerm* prev_moditerm = block->_moditerm_tbl->getPtr(prev);
-    prev_moditerm->_next_entry = next;
+    prev_moditerm->next_entry_ = next;
   }
 
   if (next != 0) {
@@ -445,7 +445,7 @@ void dbModITerm::destroy(dbModITerm* val)
     next_moditerm->_prev_entry = prev;
   }
   _moditerm->_prev_entry = 0;
-  _moditerm->_next_entry = 0;
+  _moditerm->next_entry_ = 0;
   mod_inst->_moditerm_hash.erase(val->getName());
   block->_moditerm_tbl->destroy(_moditerm);
 }

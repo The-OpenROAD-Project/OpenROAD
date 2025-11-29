@@ -96,7 +96,7 @@ bool _dbMaster::operator==(const _dbMaster& rhs) const
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -242,7 +242,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
   stream << master._mterm_cnt;
   stream << master._id;
   stream << master._name;
-  stream << master._next_entry;
+  stream << master.next_entry_;
   stream << master._leq;
   stream << master._eeq;
   stream << master._obstructions;
@@ -271,7 +271,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
   stream >> master._mterm_cnt;
   stream >> master._id;
   stream >> master._name;
-  stream >> master._next_entry;
+  stream >> master.next_entry_;
   stream >> master._leq;
   stream >> master._eeq;
   stream >> master._obstructions;

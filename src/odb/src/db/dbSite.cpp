@@ -84,7 +84,7 @@ bool _dbSite::operator==(const _dbSite& rhs) const
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -105,7 +105,7 @@ _dbSite::_dbSite(_dbDatabase*, const _dbSite& s)
       _name(nullptr),
       _height(s._height),
       _width(s._width),
-      _next_entry(s._next_entry)
+      next_entry_(s.next_entry_)
 {
   if (s._name) {
     _name = safe_strdup(s._name);
@@ -304,7 +304,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbSite& site)
   stream << site._name;
   stream << site._height;
   stream << site._width;
-  stream << site._next_entry;
+  stream << site.next_entry_;
   stream << site._row_pattern;
   return stream;
 }
@@ -316,7 +316,7 @@ dbIStream& operator>>(dbIStream& stream, _dbSite& site)
   stream >> site._name;
   stream >> site._height;
   stream >> site._width;
-  stream >> site._next_entry;
+  stream >> site.next_entry_;
   _dbDatabase* db = site.getImpl()->getDatabase();
   if (db->isSchema(db_schema_site_row_pattern)) {
     stream >> site._row_pattern;

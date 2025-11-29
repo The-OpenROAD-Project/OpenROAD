@@ -57,7 +57,7 @@ bool _dbMTerm::operator==(const _dbMTerm& rhs) const
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -139,7 +139,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMTerm& mterm)
   stream << *bit_field;
   stream << mterm._order_id;
   stream << mterm._name;
-  stream << mterm._next_entry;
+  stream << mterm.next_entry_;
   stream << mterm._next_mterm;
   stream << mterm._pins;
   stream << mterm._targets;
@@ -158,7 +158,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMTerm& mterm)
   stream >> *bit_field;
   stream >> mterm._order_id;
   stream >> mterm._name;
-  stream >> mterm._next_entry;
+  stream >> mterm.next_entry_;
   stream >> mterm._next_mterm;
   stream >> mterm._pins;
   stream >> mterm._targets;

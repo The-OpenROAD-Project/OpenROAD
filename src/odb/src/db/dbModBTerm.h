@@ -37,7 +37,7 @@ class _dbModBTerm : public _dbObject
   dbId<_dbModBTerm> _next_net_modbterm;
   dbId<_dbModBTerm> _prev_net_modbterm;
   dbId<_dbBusPort> _busPort;
-  dbId<_dbModBTerm> _next_entry;
+  dbId<_dbModBTerm> next_entry_;
   dbId<_dbModBTerm> _prev_entry;
 
   // User Code Begin Fields

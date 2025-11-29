@@ -36,7 +36,7 @@ bool _dbGroup::operator==(const _dbGroup& rhs) const
   if (_name != rhs._name) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (_group_next != rhs._group_next) {
@@ -102,7 +102,7 @@ dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj._name;
-  stream >> obj._next_entry;
+  stream >> obj.next_entry_;
   stream >> obj._group_next;
   stream >> obj._parent_group;
   stream >> obj._insts;
@@ -123,7 +123,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj)
   std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
   stream << flags_bit_field;
   stream << obj._name;
-  stream << obj._next_entry;
+  stream << obj.next_entry_;
   stream << obj._group_next;
   stream << obj._parent_group;
   stream << obj._insts;

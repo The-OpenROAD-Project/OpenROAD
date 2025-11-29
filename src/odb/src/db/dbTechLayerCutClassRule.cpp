@@ -40,7 +40,7 @@ bool _dbTechLayerCutClassRule::operator==(
   if (num_cuts_ != rhs.num_cuts_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -72,7 +72,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
   stream >> obj.width_;
   stream >> obj.length_;
   stream >> obj.num_cuts_;
-  stream >> obj._next_entry;
+  stream >> obj.next_entry_;
   return stream;
 }
 
@@ -86,7 +86,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj)
   stream << obj.width_;
   stream << obj.length_;
   stream << obj.num_cuts_;
-  stream << obj._next_entry;
+  stream << obj.next_entry_;
   return stream;
 }
 

@@ -114,7 +114,7 @@ _dbInst::_dbInst(_dbDatabase*, const _dbInst& i)
       _x(i._x),
       _y(i._y),
       _weight(i._weight),
-      _next_entry(i._next_entry),
+      next_entry_(i.next_entry_),
       _inst_hdr(i._inst_hdr),
       _bbox(i._bbox),
       _region(i._region),
@@ -150,7 +150,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbInst& inst)
   stream << inst._x;
   stream << inst._y;
   stream << inst._weight;
-  stream << inst._next_entry;
+  stream << inst.next_entry_;
   stream << inst._inst_hdr;
   stream << inst._bbox;
   stream << inst._region;
@@ -176,7 +176,7 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
   stream >> inst._x;
   stream >> inst._y;
   stream >> inst._weight;
-  stream >> inst._next_entry;
+  stream >> inst.next_entry_;
   stream >> inst._inst_hdr;
   stream >> inst._bbox;
   stream >> inst._region;
@@ -271,7 +271,7 @@ bool _dbInst::operator==(const _dbInst& rhs) const
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 

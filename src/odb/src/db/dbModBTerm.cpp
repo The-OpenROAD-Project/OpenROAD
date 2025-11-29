@@ -51,7 +51,7 @@ bool _dbModBTerm::operator==(const _dbModBTerm& rhs) const
   if (_busPort != rhs._busPort) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (_prev_entry != rhs._prev_entry) {
@@ -99,7 +99,7 @@ dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
     stream >> obj._busPort;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._next_entry;
+    stream >> obj.next_entry_;
   }
   if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
     stream >> obj._prev_entry;
@@ -127,7 +127,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbModBTerm& obj)
   stream << obj._next_net_modbterm;
   stream << obj._prev_net_modbterm;
   stream << obj._busPort;
-  stream << obj._next_entry;
+  stream << obj.next_entry_;
   stream << obj._prev_entry;
   return stream;
 }
@@ -290,7 +290,7 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   modbterm->_busPort = 0;
   modbterm->_name = safe_strdup(name);
   modbterm->_parent = module->getOID();
-  modbterm->_next_entry = module->_modbterms;
+  modbterm->next_entry_ = module->_modbterms;
   modbterm->_prev_entry = 0;
   if (module->_modbterms != 0) {
     _dbModBTerm* new_next = block->_modbterm_tbl->getPtr(module->_modbterms);
@@ -495,13 +495,13 @@ void dbModBTerm::destroy(dbModBTerm* val)
   }
 
   uint prev = _modbterm->_prev_entry;
-  uint next = _modbterm->_next_entry;
+  uint next = _modbterm->next_entry_;
   if (prev == 0) {
     // head of list
     module->_modbterms = next;
   } else {
     _dbModBTerm* prev_modbterm = block->_modbterm_tbl->getPtr(prev);
-    prev_modbterm->_next_entry = next;
+    prev_modbterm->next_entry_ = next;
   }
 
   if (next != 0) {
@@ -509,7 +509,7 @@ void dbModBTerm::destroy(dbModBTerm* val)
     next_modbterm->_prev_entry = prev;
   }
   _modbterm->_prev_entry = 0;
-  _modbterm->_next_entry = 0;
+  _modbterm->next_entry_ = 0;
 
   module->_modbterm_hash.erase(val->getName());
   block->_modbterm_tbl->destroy(_modbterm);

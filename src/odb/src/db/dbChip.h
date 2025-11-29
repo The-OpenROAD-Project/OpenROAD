@@ -74,7 +74,7 @@ class _dbChip : public _dbObject
   dbTable<_dbProperty>* _prop_tbl;
   dbTable<_dbChipRegion>* chip_region_tbl_;
   dbTable<_dbMarkerCategory>* marker_categories_tbl_;
-  dbId<_dbChip> _next_entry;
+  dbId<_dbChip> next_entry_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChip& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbChip& obj);

@@ -50,7 +50,7 @@ bool _dbMarkerCategory::operator==(const _dbMarkerCategory& rhs) const
   if (categories_hash_ != rhs.categories_hash_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -85,7 +85,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMarkerCategory& obj)
   stream >> *obj.marker_tbl_;
   stream >> *obj.categories_tbl_;
   stream >> obj.categories_hash_;
-  stream >> obj._next_entry;
+  stream >> obj.next_entry_;
   return stream;
 }
 
@@ -98,7 +98,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMarkerCategory& obj)
   stream << *obj.marker_tbl_;
   stream << *obj.categories_tbl_;
   stream << obj.categories_hash_;
-  stream << obj._next_entry;
+  stream << obj.next_entry_;
   return stream;
 }
 

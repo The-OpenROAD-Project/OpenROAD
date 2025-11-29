@@ -45,7 +45,7 @@ bool _dbModNet::operator==(const _dbModNet& rhs) const
   if (_parent != rhs._parent) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (_prev_entry != rhs._prev_entry) {
@@ -86,7 +86,7 @@ dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
     stream >> obj._parent;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._next_entry;
+    stream >> obj.next_entry_;
   }
   if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
     stream >> obj._prev_entry;
@@ -120,7 +120,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbModNet& obj)
 {
   stream << obj._name;
   stream << obj._parent;
-  stream << obj._next_entry;
+  stream << obj.next_entry_;
   stream << obj._prev_entry;
   stream << obj._moditerms;
   stream << obj._modbterms;
@@ -320,7 +320,7 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* base_name)
   // defaults
   modnet->_name = strdup(base_name);
   modnet->_parent = parent->getOID();  // dbmodule
-  modnet->_next_entry = parent->_modnets;
+  modnet->next_entry_ = parent->_modnets;
   modnet->_prev_entry = 0;
   if (parent->_modnets != 0) {
     _dbModNet* new_next = block->_modnet_tbl->getPtr(parent->_modnets);
@@ -382,19 +382,19 @@ void dbModNet::destroy(dbModNet* mod_net)
   }
 
   uint prev = _modnet->_prev_entry;
-  uint next = _modnet->_next_entry;
+  uint next = _modnet->next_entry_;
   if (prev == 0) {
     module->_modnets = next;
   } else {
     _dbModNet* prev_modnet = block->_modnet_tbl->getPtr(prev);
-    prev_modnet->_next_entry = next;
+    prev_modnet->next_entry_ = next;
   }
   if (next != 0) {
     _dbModNet* next_modnet = block->_modnet_tbl->getPtr(next);
     next_modnet->_prev_entry = prev;
   }
   _modnet->_prev_entry = 0;
-  _modnet->_next_entry = 0;
+  _modnet->next_entry_ = 0;
   module->_modnet_hash.erase(mod_net->getName());
   block->_modnet_tbl->destroy(_modnet);
 }
