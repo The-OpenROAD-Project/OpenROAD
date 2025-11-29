@@ -7,7 +7,7 @@
 #include <cassert>
 #include <cctype>
 #include <cmath>
-#include <cstdio>
+#include <cstdint>
 #include <cstring>
 #include <ctime>
 #include <fstream>
@@ -43,6 +43,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/Network.hh"
 #include "sta/Path.hh"
 #include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
@@ -50,6 +51,7 @@
 #include "sta/PatternMatch.hh"
 #include "sta/Sdc.hh"
 #include "sta/Vector.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
 namespace cts {
@@ -1016,6 +1018,294 @@ std::string TritonCTS::selectBestMaxCapBuffer(
 
 // db functions
 
+void TritonCTS::cloneClockGaters(odb::dbNet* clkNet)
+{
+  odb::dbITerm* driver = clkNet->getFirstOutput();
+  std::vector<int> xs;
+  std::vector<int> ys;
+  std::map<odb::Point, std::vector<odb::dbITerm*>> point2pin;
+  odb::dbSet<odb::dbITerm> iterms = clkNet->getITerms();
+  for (odb::dbITerm* iterm : iterms) {
+    if (iterm != driver && iterm->isInputSignal()) {
+      int TestX, TestY;
+      iterm->getAvgXY(&TestX, &TestY);
+      xs.push_back(TestX);
+      ys.push_back(TestY);
+      point2pin[{TestX, TestY}].push_back(iterm);
+      if (isSink(iterm)) {
+        continue;
+      }
+      odb::dbITerm* outputPin = getSingleOutput(iterm->getInst(), iterm);
+      if (!outputPin || !outputPin->getNet()) {
+        continue;
+      }
+      odb::dbInst* icg = iterm->getInst();
+      odb::dbNet* outputNet = outputPin->getNet();
+      sta::Cell* masterCell = network_->dbToSta(icg->getMaster());
+      sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
+
+      if (!libertyCell) {
+        continue;
+      }
+      // Clock tree buffers or inverters
+      if (libertyCell->isInverter() || libertyCell->isBuffer()) {
+        continue;
+      }
+      cloneClockGaters(outputNet);
+    }
+  }
+  if (!driver) {
+    return;
+  }
+
+  if (isSink(driver) || driver->getInst()->isFixed()
+      || driver->getInst()->isPad()) {
+    return;
+  }
+
+  int drvrX, drvrY;
+  driver->getAvgXY(&drvrX, &drvrY);
+  int driverID = xs.size();
+  xs.push_back(drvrX);
+  ys.push_back(drvrY);
+  point2pin[{drvrX, drvrY}].push_back(driver);
+  stt::Tree ftree
+      = options_->getSttBuilder()->makeSteinerTree(clkNet, xs, ys, driverID);
+  findLongEdges(ftree, driverID, {drvrX, drvrY}, point2pin);
+}
+
+void TritonCTS::findLongEdges(
+    stt::Tree& clkSteiner,
+    int driverID,
+    odb::Point driverPt,
+    std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin)
+{
+  int dx = block_->getDieAreaPolygon().dx();
+  int dy = block_->getDieAreaPolygon().dy();
+
+  int threshold = std::max(dx, dy) / 5;
+  // TODO : Make it a debug print
+  debugPrint(
+      logger_, CTS, "clock gate cloning", 1, "Threshold = {}", threshold);
+  std::map<int, int> iterm2cluster;
+  std::vector<std::vector<int>> clusters;
+  odb::dbNet* icgNet = point2pin[driverPt][0]->getNet();
+  odb::dbITerm* icgTerm = icgNet->getFirstOutput();
+  std::string icgName = icgTerm->getInst()->getName();
+  int driverNId = -1;
+
+  for (int b = 0; b < clkSteiner.branchCount(); b++) {
+    const stt::Branch branch = clkSteiner.branch[b];
+    const stt::Branch* neighbor = &clkSteiner.branch[branch.n];
+    odb::Point branchPt = {branch.x, branch.y};
+
+    odb::Point neighborPt = {neighbor->x, neighbor->y};
+    int64_t dist = odb::Point::manhattanDistance(branchPt, neighborPt);
+    int clusterFrom
+        = iterm2cluster.find(b) == iterm2cluster.end() ? -1 : iterm2cluster[b];
+    int clusterTo = iterm2cluster.find(branch.n) == iterm2cluster.end()
+                        ? -1
+                        : iterm2cluster[branch.n];
+
+    if (b == branch.n) {
+      continue;
+    }
+    if (branchPt == driverPt) {
+      driverNId = branch.n;
+    } else if (neighborPt == driverPt) {
+      driverNId = b;
+    }
+    if (dist >= threshold) {
+      if (clusterFrom == -1) {
+        int newClusterID = clusters.size();
+        iterm2cluster[b] = newClusterID;
+        clusters.push_back({b});
+      }
+      if (clusterTo == -1) {
+        int newClusterID = clusters.size();
+        iterm2cluster[branch.n] = newClusterID;
+        clusters.push_back({branch.n});
+      }
+      continue;
+    }
+
+    if (clusterFrom != -1 && clusterTo != -1) {
+      int mantainedCLuster
+          = (clusters[clusterFrom].size() >= clusters[clusterTo].size())
+                ? clusterFrom
+                : clusterTo;
+      int removedCLuster
+          = (clusters[clusterFrom].size() < clusters[clusterTo].size())
+                ? clusterFrom
+                : clusterTo;
+
+      clusters[mantainedCLuster].insert(clusters[mantainedCLuster].end(),
+                                        clusters[removedCLuster].begin(),
+                                        clusters[removedCLuster].end());
+      for (int point : clusters[removedCLuster]) {
+        iterm2cluster[point] = mantainedCLuster;
+      }
+      clusters[removedCLuster].clear();
+
+    } else if (clusterFrom != -1) {
+      iterm2cluster[branch.n] = clusterFrom;
+      clusters[clusterFrom].push_back(branch.n);
+    } else if (clusterTo != -1) {
+      iterm2cluster[b] = clusterTo;
+      clusters[clusterTo].push_back(b);
+    } else {
+      int newClusterID = clusters.size();
+      iterm2cluster[b] = newClusterID;
+      iterm2cluster[branch.n] = newClusterID;
+      clusters.push_back({b, branch.n});
+    }
+  }
+
+  int driverClusterID = iterm2cluster[driverID];
+  if (clusters[driverClusterID].size() == 1) {
+    int newDriverCluster = iterm2cluster[driverNId];
+    clusters[newDriverCluster].push_back(driverID);
+    clusters[driverClusterID].clear();
+    driverClusterID = newDriverCluster;
+  }
+
+  int count = 0;
+  // hierarchy fix, make the clone net in the right scope
+  sta::Pin* driver = nullptr;
+  odb::dbModule* module
+      = network_->getNetDriverParentModule(network_->dbToSta(icgNet), driver);
+  if (module == nullptr) {
+    // if none put in top level
+    module = block_->getTopModule();
+  }
+  sta::Instance* scope
+      = (module == nullptr || (module == block_->getTopModule()))
+            ? network_->topInstance()
+            : (sta::Instance*) (module->getModInst());
+
+  debugPrint(logger_,
+             CTS,
+             "clock gate cloning",
+             1,
+             "Found {} clusters",
+             clusters.size());
+  for (int n = 0; n < clusters.size(); n++) {
+    const std::vector<int>& cluster = clusters[n];
+    if (cluster.empty()) {
+      continue;
+    }
+    odb::dbInst* clone = nullptr;
+    odb::dbNet* cloneNet = nullptr;
+    bool disconectNets = true;
+    odb::Rect sinksBbox = odb::Rect();
+    sinksBbox.mergeInit();
+    if (driverClusterID == n) {
+      cloneNet = icgNet;
+      clone = icgTerm->getInst();
+      disconectNets = false;
+      debugPrint(logger_,
+                 CTS,
+                 "clock gate cloning",
+                 1,
+                 "Original cell {}",
+                 clone->getName());
+      debugPrint(logger_,
+                 CTS,
+                 "clock gate cloning",
+                 2,
+                 " Original net {}",
+                 cloneNet->getName());
+    } else {
+      // creat a new input net
+      std::string newNetName
+          = "clonenet_" + std::to_string(++count) + "_" + icgNet->getName();
+
+      cloneNet = network_->staToDb(network_->makeNet(
+          newNetName.c_str(), scope, odb::dbNameUniquifyType::IF_NEEDED));
+
+      cloneNet->setSigType(odb::dbSigType::CLOCK);
+
+      staClockNets_.insert(cloneNet);
+
+      // create a new delay buffer
+      std::string newBufName = "clone_" + std::to_string(count) + "_" + icgName;
+      odb::dbMaster* master = icgTerm->getInst()->getMaster();
+
+      // fix: make buffer in same hierarchical module as driver
+
+      clone = odb::dbInst::create(
+          block_, master, newBufName.c_str(), false, module);
+
+      clone->setSourceType(odb::dbSourceType::TIMING);
+
+      // Connect clone isnt to same inputs as parent and new output net
+      debugPrint(logger_,
+                 CTS,
+                 "clock gate cloning",
+                 1,
+                 "Creating clone {} from {}",
+                 newBufName,
+                 icgName);
+      debugPrint(logger_,
+                 CTS,
+                 "clock gate cloning",
+                 2,
+                 " New clone net {}",
+                 cloneNet->getName());
+      for (odb::dbITerm* iterm : clone->getITerms()) {
+        if (iterm->isInputSignal()) {
+          odb::dbITerm* parentITerm = icgTerm->getInst()->findITerm(
+              iterm->getMTerm()->getName().c_str());
+          odb::dbNet* parentNet = parentITerm->getNet();
+          odb::dbModNet* parentModNet
+              = network_->hierNet(network_->dbToSta(parentITerm));
+          if (parentNet) {
+            iterm->connect(parentNet);
+            if (parentModNet) {
+              iterm->connect(parentModNet);
+            }
+          }
+        } else if (iterm->isOutputSignal()) {
+          iterm->connect(cloneNet);
+        }
+      }
+    }
+
+    for (int branch : cluster) {
+      odb::Point branchPt
+          = {clkSteiner.branch[branch].x, clkSteiner.branch[branch].y};
+      for (auto sink : point2pin[branchPt]) {
+        if (!sink->isInputSignal()) {
+          continue;
+        }
+        debugPrint(logger_,
+                   CTS,
+                   "clock gate cloning",
+                   2,
+                   "  Connects sink {}",
+                   sink->getName());
+        int sinkX, sinkY;
+        sink->getAvgXY(&sinkX, &sinkY);
+        sinksBbox.merge({sinkX, sinkY});
+        if (disconectNets) {
+          sink->disconnect();
+          sink->connect(cloneNet);
+          sta::Pin* sinkPin = network_->dbToSta(sink);
+          sta::Instance* sinkParentInst
+              = network_->getOwningInstanceParent(sinkPin);
+          if (sinkParentInst != scope) {
+            network_->hierarchicalConnect(
+                clone->getFirstOutput(), sink, cloneNet->getName().c_str());
+          }
+        }
+      }
+    }
+    clone->setLocation(sinksBbox.xCenter(), sinksBbox.yCenter());
+    clone->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  }
+  debugPrint(logger_, CTS, "clock gate cloning", 1, "Created {} clones", count);
+}
+
 void TritonCTS::populateTritonCTS()
 {
   block_ = db_->getChip()->getBlock();
@@ -1030,15 +1320,16 @@ void TritonCTS::populateTritonCTS()
   // the set.
   std::vector<odb::dbNet*> inputClkNets = options_->getClockNetsObjs();
 
+  std::set<odb::dbNet*> allClkNets;
   if (!inputClkNets.empty()) {
     std::set<odb::dbNet*> clockNets;
     for (odb::dbNet* net : inputClkNets) {
       // Since a set is unique, only the nets not found by dbSta are added.
       clockNets.insert(net);
     }
+    allClkNets.insert(clockNets.begin(), clockNets.end());
     clockNetsInfo.emplace_back(clockNets, "");
   } else {
-    std::set<odb::dbNet*> allClkNets;
     staClockNets_ = openSta_->findClkNets();
     sta::Sdc* sdc = openSta_->sdc();
     for (auto clk : *sdc->clocks()) {
@@ -1055,13 +1346,13 @@ void TritonCTS::populateTritonCTS()
       allClkNets.insert(clkNets.begin(), clkNets.end());
     }
   }
-
   // Iterate over all the nets found by the user-input and dbSta
   for (const auto& clockInfo : clockNetsInfo) {
     std::set<odb::dbNet*> clockNets = clockInfo.first;
     std::string clkName = clockInfo.second;
     for (odb::dbNet* net : clockNets) {
       if (net != nullptr) {
+        cloneClockGaters(net);
         if (clkName.empty()) {
           logger_->info(CTS, 95, "Net \"{}\" found.", net->getName());
         } else {
