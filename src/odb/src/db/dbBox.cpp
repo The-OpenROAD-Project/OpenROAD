@@ -535,7 +535,7 @@ void dbBox::getViaLayerBoxes(dbTechLayer* layer,
   }
 }
 
-int dbBox::getDir() const
+Orientation2D dbBox::getDir() const
 {
   Rect rect = getBox();
   return rect.getDir();

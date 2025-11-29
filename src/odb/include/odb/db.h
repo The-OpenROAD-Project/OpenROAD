@@ -247,9 +247,9 @@ class dbBox : public dbObject
   void getViaLayerBoxes(dbTechLayer* layer, std::vector<dbShape>& shapes) const;
 
   ///
-  /// Get the width (xMax-xMin) of the box.
+  /// Get the orientation of the box.
   ///
-  int getDir() const;
+  Orientation2D getDir() const;
 
   ///
   /// Get the width (xMax-xMin) of the box.

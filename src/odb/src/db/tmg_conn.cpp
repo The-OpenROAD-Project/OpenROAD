@@ -258,7 +258,7 @@ void tmg_conn::loadSWire(dbNet* net)
           shape.setVia(via, rect);
         }
       } else {
-        if (rect.getDir() == 1) {
+        if (rect.getDir() == horizontal) {
           y1 = rect.yCenter();
           y2 = y1;
           x1 = rect.xMin() + (rect.yMax() - y1);
