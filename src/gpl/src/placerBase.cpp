@@ -67,9 +67,9 @@ Instance::Instance(odb::dbInst* inst,
   dbBox* bbox = inst->getBBox();
 
   if (inst->getMaster()->getType().isBlock()) {
-    is_macro_ = true;
+    is_large_instance_ = true;
   } else if (bbox->getDY() > row_limit * pbc->siteSizeY()) {
-    is_macro_ = true;
+    is_large_instance_ = true;
     logger->warn(GPL,
                  134,
                  "Master {} is not marked as a BLOCK in LEF but is more "
@@ -246,9 +246,9 @@ void Instance::setExtId(int extId)
   extId_ = extId;
 }
 
-bool Instance::isMacro() const
+bool Instance::isLargeInstance() const
 {
-  return is_macro_;
+  return is_large_instance_;
 }
 
 bool Instance::isLocked() const
@@ -806,7 +806,7 @@ void PlacerBaseCommon::init()
     instStor_.push_back(temp_inst);
 
     if (temp_inst.dy() > siteSizeY_ * 6) {
-      macroInstsArea_ += temp_inst.area();
+      large_insts_area_ += temp_inst.area();
     }
   }
 
@@ -1047,10 +1047,9 @@ void PlacerBase::init()
       placeInsts_.push_back(inst);
       int64_t instArea = inst->area();
       placeInstsArea_ += instArea;
-      // macro cells should be
-      // macroInstsArea_
+      // ePlace macros are defined as taller than 6 rows
       if (inst->dy() > siteSizeY_ * 6) {
-        macroInstsArea_ += instArea;
+        large_insts_area_ += instArea;
       }
       // smaller or equal height cells should be
       // stdInstArea_
@@ -1349,7 +1348,7 @@ void PlacerBase::printInfo() const
              21,
              format_label_um2,
              "Large instances area:",
-             block->dbuAreaToMicrons(macroInstsArea_));
+             block->dbuAreaToMicrons(large_insts_area_));
 
   if (util >= 100.1) {
     log_->error(GPL, 301, "Utilization {:.3f} % exceeds 100%.", util);
@@ -1363,9 +1362,9 @@ void PlacerBase::unlockAll()
   }
 }
 
-int64_t PlacerBase::macroInstsArea() const
+int64_t PlacerBase::largeInstsArea() const
 {
-  return macroInstsArea_;
+  return large_insts_area_;
 }
 
 // https://stackoverflow.com/questions/33333363/built-in-mod-vs-custom-mod-function-improve-the-performance-of-modulus-op
