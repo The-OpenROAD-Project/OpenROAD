@@ -57,6 +57,7 @@ or_integration_tests(
     wire_encoder
     write_cdl
     write_3dbv
+    write_3dbx
     write_def58
     write_def58_gzip
     write_lef_and_def

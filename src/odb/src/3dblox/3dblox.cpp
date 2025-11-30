@@ -17,6 +17,7 @@
 #include "dbvParser.h"
 #include "dbvWriter.h"
 #include "dbxParser.h"
+#include "dbxWriter.h"
 #include "objects.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -179,9 +180,14 @@ void ThreeDBlox::writeDbx(const std::string& dbx_file, odb::dbChip* chip)
   if (chip == nullptr) {
     return;
   }
-  // TODO: implement
+  ///////////Results Directory Path ///////////
   std::string current_dir_path = getResultsDirectoryPath(dbx_file);
+  ////////////////////////////////////////////
+
   writeDbv(current_dir_path + chip->getName() + ".3dbv", chip);
+
+  DbxWriter writer(logger_, db_);
+  writer.writeChiplet(dbx_file, chip);
 }
 
 void ThreeDBlox::calculateSize(dbChip* chip)

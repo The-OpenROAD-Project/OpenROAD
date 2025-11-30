@@ -1,0 +1,10 @@
+[INFO ODB-0227] LEF file: data/../Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: data/../Nangate45/fake_macros.lef, created 10 library cells
+[INFO ODB-0227] LEF file: data/../Nangate45/fake_bumps.lef, created 1 library cells
+[WARNING STA-1171] data/../Nangate45/fake_macros.lib line 32, default_max_transition is 0.0.
+[INFO ODB-0128] Design: fake_macros
+[INFO ODB-0131]     Created 10 components and 32 component-terminals.
+[INFO ODB-0133]     Created 12 nets and 24 connections.
+[INFO ODB-0541] More than one lib exists, multiple files will be written.
+No differences found.
+pass
