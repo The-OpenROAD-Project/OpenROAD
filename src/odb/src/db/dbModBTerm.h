@@ -29,15 +29,15 @@ class _dbModBTerm : public _dbObject
   bool operator<(const _dbModBTerm& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
-  uint _flags;
+  char* name_;
+  uint flags_;
   dbId<_dbModITerm> _parent_moditerm;
   dbId<_dbModule> _parent;
   dbId<_dbModNet> _modnet;
   dbId<_dbModBTerm> _next_net_modbterm;
   dbId<_dbModBTerm> _prev_net_modbterm;
   dbId<_dbBusPort> _busPort;
-  dbId<_dbModBTerm> _next_entry;
+  dbId<_dbModBTerm> next_entry_;
   dbId<_dbModBTerm> _prev_entry;
 
   // User Code Begin Fields

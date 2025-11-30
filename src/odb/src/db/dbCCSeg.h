@@ -39,7 +39,7 @@ class _dbCCSeg : public _dbObject
   };
 
   // PERSISTANT-MEMBERS
-  _dbCCSegFlags _flags;
+  _dbCCSegFlags flags_;
   dbId<_dbCapNode> _cap_node[2];
   dbId<_dbCCSeg> _next[2];
 
@@ -64,13 +64,13 @@ class _dbCCSeg : public _dbObject
 
 inline _dbCCSeg::_dbCCSeg(_dbDatabase*)
 {
-  _flags._inFileCnt = 0;
-  _flags._spef_mark_1 = 0;
-  _flags._mark = 0;
-  _flags._spare_bits = 0;
+  flags_._inFileCnt = 0;
+  flags_._spef_mark_1 = 0;
+  flags_._mark = 0;
+  flags_._spare_bits = 0;
 }
 
-inline _dbCCSeg::_dbCCSeg(_dbDatabase*, const _dbCCSeg& s) : _flags(s._flags)
+inline _dbCCSeg::_dbCCSeg(_dbDatabase*, const _dbCCSeg& s) : flags_(s.flags_)
 {
   _cap_node[0] = s._cap_node[0];
   _cap_node[1] = s._cap_node[1];
@@ -84,7 +84,7 @@ inline _dbCCSeg::~_dbCCSeg()
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbCCSeg& seg)
 {
-  uint* bit_field = (uint*) &seg._flags;
+  uint* bit_field = (uint*) &seg.flags_;
   stream << *bit_field;
   stream << seg._cap_node[0];
   stream << seg._cap_node[1];
@@ -95,7 +95,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbCCSeg& seg)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbCCSeg& seg)
 {
-  uint* bit_field = (uint*) &seg._flags;
+  uint* bit_field = (uint*) &seg.flags_;
   stream >> *bit_field;
   stream >> seg._cap_node[0];
   stream >> seg._cap_node[1];

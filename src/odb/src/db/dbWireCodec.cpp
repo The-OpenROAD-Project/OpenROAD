@@ -597,7 +597,7 @@ void dbWireEncoder::end()
   _wire->_opcodes = _opcodes;
 
   // Should we calculate the bbox???
-  ((_dbBlock*) _block)->_flags._valid_bbox = 0;
+  ((_dbBlock*) _block)->flags_._valid_bbox = 0;
   _point_cnt = 0;
 
   for (auto callback : ((_dbBlock*) _block)->_callbacks) {

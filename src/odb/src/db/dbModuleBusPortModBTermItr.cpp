@@ -72,7 +72,7 @@ uint dbModuleBusPortModBTermItr::next(uint id, ...)
   // User Code Begin next
   _dbModBTerm* lmodbterm = _modbterm_tbl->getPtr(id);
   _ix++;
-  uint ret = lmodbterm->_next_entry;
+  uint ret = lmodbterm->next_entry_;
   _iter = _modbterm_tbl->getPtr(ret);
   return ret;
   // User Code End next

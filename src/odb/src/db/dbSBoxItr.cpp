@@ -31,8 +31,8 @@ void dbSBoxItr::reverse(dbObject* parent)
 
       while (id != 0) {
         _dbSBox* b = _box_tbl->getPtr(id);
-        uint n = b->_next_box;
-        b->_next_box = list;
+        uint n = b->next_box_;
+        b->next_box_ = list;
         list = id;
         id = n;
       }
@@ -87,7 +87,7 @@ uint dbSBoxItr::end(dbObject* /* unused: parent */)
 uint dbSBoxItr::next(uint id, ...)
 {
   _dbSBox* box = _box_tbl->getPtr(id);
-  return box->_next_box;
+  return box->next_box_;
 }
 
 dbObject* dbSBoxItr::getObject(uint id, ...)

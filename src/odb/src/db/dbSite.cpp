@@ -48,31 +48,31 @@ dbIStream& operator>>(dbIStream& stream, OrientedSiteInternal& s)
 
 bool _dbSite::operator==(const _dbSite& rhs) const
 {
-  if (_flags._x_symmetry != rhs._flags._x_symmetry) {
+  if (flags_._x_symmetry != rhs.flags_._x_symmetry) {
     return false;
   }
 
-  if (_flags._y_symmetry != rhs._flags._y_symmetry) {
+  if (flags_._y_symmetry != rhs.flags_._y_symmetry) {
     return false;
   }
 
-  if (_flags._R90_symmetry != rhs._flags._R90_symmetry) {
+  if (flags_._R90_symmetry != rhs.flags_._R90_symmetry) {
     return false;
   }
 
-  if (_flags._class != rhs._flags._class) {
+  if (flags_._class != rhs.flags_._class) {
     return false;
   }
 
-  if (_flags._is_hybrid != rhs._flags._is_hybrid) {
+  if (flags_._is_hybrid != rhs.flags_._is_hybrid) {
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
@@ -84,7 +84,7 @@ bool _dbSite::operator==(const _dbSite& rhs) const
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -101,34 +101,34 @@ bool _dbSite::operator==(const _dbSite& rhs) const
 //
 ////////////////////////////////////////////////////////////////////
 _dbSite::_dbSite(_dbDatabase*, const _dbSite& s)
-    : _flags(s._flags),
-      _name(nullptr),
+    : flags_(s.flags_),
+      name_(nullptr),
       _height(s._height),
       _width(s._width),
-      _next_entry(s._next_entry)
+      next_entry_(s.next_entry_)
 {
-  if (s._name) {
-    _name = safe_strdup(s._name);
+  if (s.name_) {
+    name_ = safe_strdup(s.name_);
   }
 }
 
 _dbSite::_dbSite(_dbDatabase*)
 {
-  _name = nullptr;
+  name_ = nullptr;
   _height = 0;
   _width = 0;
-  _flags._x_symmetry = 0;
-  _flags._y_symmetry = 0;
-  _flags._R90_symmetry = 0;
-  _flags._class = dbSiteClass::CORE;
-  _flags._is_hybrid = 0;
-  _flags._spare_bits = 0;
+  flags_._x_symmetry = 0;
+  flags_._y_symmetry = 0;
+  flags_._R90_symmetry = 0;
+  flags_._class = dbSiteClass::CORE;
+  flags_._is_hybrid = 0;
+  flags_._spare_bits = 0;
 }
 
 _dbSite::~_dbSite()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
@@ -141,13 +141,13 @@ _dbSite::~_dbSite()
 std::string dbSite::getName() const
 {
   _dbSite* site = (_dbSite*) this;
-  return site->_name;
+  return site->name_;
 }
 
 const char* dbSite::getConstName()
 {
   _dbSite* site = (_dbSite*) this;
-  return site->_name;
+  return site->name_;
 }
 
 int dbSite::getWidth()
@@ -177,55 +177,55 @@ void dbSite::setHeight(int h)
 void dbSite::setSymmetryX()
 {
   _dbSite* site = (_dbSite*) this;
-  site->_flags._x_symmetry = 1;
+  site->flags_._x_symmetry = 1;
 }
 
 bool dbSite::getSymmetryX()
 {
   _dbSite* site = (_dbSite*) this;
-  return site->_flags._x_symmetry != 0;
+  return site->flags_._x_symmetry != 0;
 }
 
 void dbSite::setSymmetryY()
 {
   _dbSite* site = (_dbSite*) this;
-  site->_flags._y_symmetry = 1;
+  site->flags_._y_symmetry = 1;
 }
 
 bool dbSite::getSymmetryY()
 {
   _dbSite* site = (_dbSite*) this;
-  return site->_flags._y_symmetry != 0;
+  return site->flags_._y_symmetry != 0;
 }
 
 void dbSite::setSymmetryR90()
 {
   _dbSite* site = (_dbSite*) this;
-  site->_flags._R90_symmetry = 1;
+  site->flags_._R90_symmetry = 1;
 }
 
 bool dbSite::getSymmetryR90()
 {
   _dbSite* site = (_dbSite*) this;
-  return site->_flags._R90_symmetry != 0;
+  return site->flags_._R90_symmetry != 0;
 }
 
 dbSiteClass dbSite::getClass()
 {
   _dbSite* site = (_dbSite*) this;
-  return dbSiteClass(site->_flags._class);
+  return dbSiteClass(site->flags_._class);
 }
 
 void dbSite::setClass(dbSiteClass type)
 {
   _dbSite* site = (_dbSite*) this;
-  site->_flags._class = type.getValue();
+  site->flags_._class = type.getValue();
 }
 
 void dbSite::setRowPattern(const RowPattern& row_pattern)
 {
   _dbSite* site = (_dbSite*) this;
-  site->_flags._is_hybrid = true;
+  site->flags_._is_hybrid = true;
   site->_row_pattern.reserve(row_pattern.size());
   for (auto& row : row_pattern) {
     auto child_site = (_dbSite*) row.site;
@@ -244,7 +244,7 @@ bool dbSite::hasRowPattern() const
 bool dbSite::isHybrid() const
 {
   _dbSite* site = (_dbSite*) this;
-  return site->_flags._is_hybrid != 0;
+  return site->flags_._is_hybrid != 0;
 }
 
 dbSite::RowPattern dbSite::getRowPattern()
@@ -277,7 +277,7 @@ dbSite* dbSite::create(dbLib* lib_, const char* name_)
 
   _dbLib* lib = (_dbLib*) lib_;
   _dbSite* site = lib->_site_tbl->create();
-  site->_name = safe_strdup(name_);
+  site->name_ = safe_strdup(name_);
   lib->_site_hash.insert(site);
   return (dbSite*) site;
 }
@@ -293,30 +293,30 @@ void _dbSite::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["row_pattern"].add(_row_pattern);
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbSite& site)
 {
-  uint* bit_field = (uint*) &site._flags;
+  uint* bit_field = (uint*) &site.flags_;
   stream << *bit_field;
-  stream << site._name;
+  stream << site.name_;
   stream << site._height;
   stream << site._width;
-  stream << site._next_entry;
+  stream << site.next_entry_;
   stream << site._row_pattern;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbSite& site)
 {
-  uint* bit_field = (uint*) &site._flags;
+  uint* bit_field = (uint*) &site.flags_;
   stream >> *bit_field;
-  stream >> site._name;
+  stream >> site.name_;
   stream >> site._height;
   stream >> site._width;
-  stream >> site._next_entry;
+  stream >> site.next_entry_;
   _dbDatabase* db = site.getImpl()->getDatabase();
   if (db->isSchema(db_schema_site_row_pattern)) {
     stream >> site._row_pattern;

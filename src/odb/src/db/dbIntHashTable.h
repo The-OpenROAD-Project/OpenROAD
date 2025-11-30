@@ -20,7 +20,7 @@ class dbOStream;
 /// Each object must have the following "named" fields:
 ///
 ///     uint          _id
-///     dbId<T>       _next_entry
+///     dbId<T>       next_entry_
 ///
 //////////////////////////////////////////////////////////
 template <class T>

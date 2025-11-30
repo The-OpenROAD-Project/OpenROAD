@@ -27,6 +27,7 @@
 #include "dbChipInstItr.h"
 #include "dbChipNet.h"
 #include "dbChipNetItr.h"
+#include "dbCommon.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
 // User Code End Includes
@@ -35,7 +36,7 @@ template class dbTable<_dbChip>;
 
 bool _dbChip::operator==(const _dbChip& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
   if (type_ != rhs.type_) {
@@ -107,7 +108,7 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   if (*marker_categories_tbl_ != *rhs.marker_categories_tbl_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -133,7 +134,7 @@ bool _dbChip::operator<(const _dbChip& rhs) const
 
 _dbChip::_dbChip(_dbDatabase* db)
 {
-  _name = nullptr;
+  name_ = nullptr;
   type_ = 0;
   offset_ = {};
   width_ = 0;
@@ -170,7 +171,7 @@ _dbChip::_dbChip(_dbDatabase* db)
 dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
 {
   if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
-    stream >> obj._name;
+    stream >> obj.name_;
   }
   if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
     stream >> obj.type_;
@@ -241,7 +242,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
   stream >> *obj._prop_tbl;
   stream >> *obj._name_cache;
   if (obj.getDatabase()->isSchema(db_schema_chip_hash_table)) {
-    stream >> obj._next_entry;
+    stream >> obj.next_entry_;
   }
   auto chip = (dbChip*) &obj;
   for (const auto& chip_region : chip->getChipRegions()) {
@@ -258,7 +259,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
 {
   dbOStreamScope scope(stream, "dbChip");
-  stream << obj._name;
+  stream << obj.name_;
   stream << obj.type_;
   stream << obj.offset_;
   stream << obj.width_;
@@ -285,7 +286,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
   stream << *obj._block_tbl;
   stream << NamedTable("prop_tbl", obj._prop_tbl);
   stream << *obj._name_cache;
-  stream << obj._next_entry;
+  stream << obj.next_entry_;
   // User Code End <<
   return stream;
 }
@@ -328,9 +329,6 @@ void _dbChip::collectMemInfo(MemInfo& info)
 
 _dbChip::~_dbChip()
 {
-  if (_name) {
-    free((void*) _name);
-  }
   delete _prop_tbl;
   delete chip_region_tbl_;
   delete marker_categories_tbl_;
@@ -351,7 +349,7 @@ _dbChip::~_dbChip()
 const char* dbChip::getName() const
 {
   _dbChip* obj = (_dbChip*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 void dbChip::setOffset(Point offset)
@@ -661,7 +659,7 @@ dbChip* dbChip::create(dbDatabase* db_,
     db->getLogger()->error(utl::ODB, 385, "Chip {} already exists", name);
   }
   _dbChip* chip = db->chip_tbl_->create();
-  chip->_name = safe_strdup(name.c_str());
+  chip->name_ = safe_strdup(name.c_str());
   chip->type_ = (uint) type;
   if (db->_chip == 0) {
     db->_chip = chip->getOID();

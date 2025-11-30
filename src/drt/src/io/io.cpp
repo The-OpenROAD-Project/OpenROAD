@@ -962,9 +962,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
               == getTech()->name2via_.end()) {
             logger_->error(DRT, 109, "Unsupported via in db.");
           } else {
-            int x, y;
-            box->getViaXY(x, y);
-            odb::Point p(x, y);
+            const odb::Point p = box->getViaXY();
             auto viaDef = getTech()->name2via_[viaName];
             auto tmpP = std::make_unique<frVia>(viaDef);
             tmpP->setOrigin(p);
@@ -2675,11 +2673,10 @@ void io::Parser::setMasters(odb::dbDatabase* db)
                               master->getName(),
                               _term->getName());
               }
-              int x, y;
-              box->getViaXY(x, y);
+              const odb::Point pt = box->getViaXY();
               auto viaDef = getTech()->name2via_[box->getTechVia()->getName()];
               auto tmpP = std::make_unique<frVia>(viaDef);
-              tmpP->setOrigin({x, y});
+              tmpP->setOrigin(pt);
               // layer1 rect
               addPinFig(
                   tmpP->getLayer1BBox(), viaDef->getLayer1Num(), pinIn.get());

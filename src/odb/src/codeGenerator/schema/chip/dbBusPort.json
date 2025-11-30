@@ -3,7 +3,7 @@
     "needs_non_default_destructor" : "true",
     "fields": [
         {
-            "name":"_flags",
+            "name":"flags_",
             "type":"uint",
             "flags":["private"],
             "default":"0",
