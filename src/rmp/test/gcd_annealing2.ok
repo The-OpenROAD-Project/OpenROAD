@@ -164,3 +164,4 @@ Corner: slow
 
 wns max -36.20
 tns max -777.64
+Repair timing output passed/skipped equivalence test
