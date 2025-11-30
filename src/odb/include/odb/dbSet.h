@@ -27,7 +27,7 @@ class dbSetIterator
   using reference = T*&;
   using iterator_category = std::input_iterator_tag;
 
-  dbSetIterator();
+  dbSetIterator() = default;
   dbSetIterator(const dbSetIterator& it) = default;
 
   bool operator==(const dbSetIterator<T>& it) const;
@@ -41,8 +41,8 @@ class dbSetIterator
  private:
   dbSetIterator(dbIterator* itr, uint id);
 
-  dbIterator* itr_;
-  uint cur_;
+  dbIterator* itr_{nullptr};
+  uint cur_{0};
 
   friend class dbSet<T>;
 };
@@ -75,11 +75,7 @@ class dbSet
  public:
   using iterator = dbSetIterator<T>;
 
-  dbSet()
-  {
-    itr_ = nullptr;
-    parent_ = nullptr;
-  }
+  dbSet() = default;
 
   dbSet(dbObject* parent, dbIterator* itr)
   {
@@ -87,26 +83,22 @@ class dbSet
     itr_ = itr;
   }
 
-  dbSet(const dbSet<T>& c)
-  {
-    itr_ = c.itr_;
-    parent_ = c.parent_;
-  }
+  dbSet(const dbSet<T>& c) = default;
 
   ///
   /// Returns the number of items in this set.
   ///
-  uint size() { return itr_->size(parent_); }
+  uint size() const { return itr_->size(parent_); }
 
   ///
   /// Return a begin() iterator.
   ///
-  iterator begin() { return iterator(itr_, itr_->begin(parent_)); }
+  iterator begin() const { return iterator(itr_, itr_->begin(parent_)); }
 
   ///
   /// Return an end() iterator.
   ///
-  iterator end() { return iterator(itr_, itr_->end(parent_)); }
+  iterator end() const { return iterator(itr_, itr_->end(parent_)); }
 
   ///
   /// If this set is sequential, this function will return the database
@@ -117,18 +109,18 @@ class dbSet
   ///
   /// If this set is non-sequential then it returns 0.
   ///
-  uint sequential() { return itr_->sequential(); }
+  uint sequential() const { return itr_->sequential(); }
 
   ///
   /// Returns true if this set is reversible.
   ///
-  bool reversible() { return itr_->reversible(); }
+  bool reversible() const { return itr_->reversible(); }
 
   ///
   /// Returns true if the is iterated in the reverse order that
   /// it was created.
   ///
-  bool orderReversed() { return itr_->orderReversed(); }
+  bool orderReversed() const { return itr_->orderReversed(); }
 
   ///
   /// Reverse the order of this set.
@@ -138,19 +130,12 @@ class dbSet
   ///
   /// Returns true if set is empty
   ///
-  bool empty() { return begin() == end(); }
+  bool empty() const { return begin() == end(); }
 
  private:
-  dbIterator* itr_;
-  dbObject* parent_;
+  dbIterator* itr_{nullptr};
+  dbObject* parent_{nullptr};
 };
-
-template <class T>
-inline dbSetIterator<T>::dbSetIterator()
-{
-  itr_ = nullptr;
-  cur_ = 0;
-}
 
 template <class T>
 inline dbSetIterator<T>::dbSetIterator(dbIterator* itr, uint id)
