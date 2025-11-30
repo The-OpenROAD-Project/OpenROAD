@@ -1377,7 +1377,6 @@ int dbTechLayer::getSpacing(int w, int l)
 void dbTechLayer::getMaxWideDRCRange(int& owidth, int& olength)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  dbSet<dbTechLayerSpacingRule> v54rules;
 
   owidth = getWidth();
   olength = owidth;
@@ -1404,7 +1403,6 @@ void dbTechLayer::getMaxWideDRCRange(int& owidth, int& olength)
 void dbTechLayer::getMinWideDRCRange(int& owidth, int& olength)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  dbSet<dbTechLayerSpacingRule> v54rules;
 
   owidth = getWidth();
   olength = owidth;

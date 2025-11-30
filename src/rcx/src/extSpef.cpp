@@ -622,8 +622,6 @@ uint extSpef::getMappedCapNode(const uint nodeId)
 
 void extSpef::computeCaps(dbSet<dbRSeg>& rcSet, double* totCap)
 {
-  dbSet<dbRSeg>::iterator rc_itr;
-
   double cap[ADS_MAX_CORNER];
   for (dbRSeg* rc : rcSet) {
     rc->getCapTable(cap);
