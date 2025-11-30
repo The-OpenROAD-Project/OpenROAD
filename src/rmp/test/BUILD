@@ -27,19 +27,14 @@ COMPULSORY_TESTS = [
     "aes_annealing",
     "gcd_annealing1",
     "gcd_annealing2",
+    "aes_genetic",
+    "gcd_genetic",
 ]
 
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "rmp_man_tcl_check",
     "rmp_readme_msgs_check",
-]
-
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "aes_annealing",
-    "gcd_annealing1",
-    "gcd_annealing2",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -132,8 +127,7 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS or
-                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
+        tags = ["manual"] if test_name in MANUAL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

@@ -121,8 +121,8 @@ Derived GENLIB library "asap7sc7p5t_AO_RVT_SS_nldm_211120" with 169 gates.
 [INFO RMP-0057] Reverting to the best found solution
 [INFO RMP-0057] Reverting to the best found solution
 [INFO RMP-0054] Iteration: 100, temperature: 4.710931e-12, best worst slack: 1.4056589e-10
-[INFO RMP-0055] Resynthesis: End of simulated annealing, applying operations
-[INFO RMP-0056] Resynthesis: Applying ABC operations
+[INFO RMP-0067] Resynthesis: End of slack tuning, applying ABC operations
+[INFO RMP-0068] Resynthesis: Worst slack is 1.4056589e-10
 [-98.726, -62.245): ************************************************** (35)
 [-62.245, -25.764): ********** (7)
 [-25.764,  10.717): **** (3)
@@ -183,3 +183,4 @@ Corner: slow
 
 wns max -98.73
 tns max -3434.68
+Repair timing output passed/skipped equivalence test

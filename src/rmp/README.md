@@ -96,6 +96,11 @@ resynth_annealing
 | `-revert_after` | After the given number of iterations that worsen slack, revert to best found solution. |
 | `-initial_ops` | Size of the initial random solution (number of commands in the script for ABC). |
 
+### Resynth with genetic slack tuning
+
+TODO
+
+
 ## Example scripts
 
 Example scripts on running `rmp` for a sample design of `gcd` as follows:

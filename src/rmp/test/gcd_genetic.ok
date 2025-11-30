@@ -96,38 +96,44 @@ tns max -15641.01
 -- After --
 
 Derived GENLIB library "asap7sc7p5t_AO_RVT_SS_nldm_211120" with 169 gates.
-[INFO RMP-0052] Resynthesis: starting simulated annealing
-[INFO RMP-0053] Initial temperature: 1e-10, worst slack: -1.0941836e-10
-[INFO RMP-0054] Iteration: 10, temperature: 9.1000006e-11, best worst slack: -4.645495e-11
-[INFO RMP-0054] Iteration: 20, temperature: 8.1e-11, best worst slack: 3.401074e-11
-[INFO RMP-0054] Iteration: 30, temperature: 7.1e-11, best worst slack: 1.0621096e-10
-[INFO RMP-0054] Iteration: 40, temperature: 6.1000004e-11, best worst slack: 1.0704734e-10
-[INFO RMP-0054] Iteration: 50, temperature: 5.1e-11, best worst slack: 1.0704734e-10
-[INFO RMP-0054] Iteration: 60, temperature: 4.1e-11, best worst slack: 1.3240287e-10
-[INFO RMP-0054] Iteration: 70, temperature: 3.1e-11, best worst slack: 1.3467072e-10
-[INFO RMP-0054] Iteration: 80, temperature: 2.1e-11, best worst slack: 1.6515597e-10
-[INFO RMP-0054] Iteration: 90, temperature: 1.1e-11, best worst slack: 1.6515597e-10
-[INFO RMP-0054] Iteration: 100, temperature: 1e-12, best worst slack: 1.6515597e-10
+[INFO RMP-0062] Resynthesis: starting genetic algorithm, Worst slack is -4.3088177e-10
+[INFO RMP-0065] Resynthesis: Iteration 0 of genetic algorithm
+[INFO RMP-0065] Resynthesis: Iteration 1 of genetic algorithm
+[INFO RMP-0065] Resynthesis: Iteration 2 of genetic algorithm
+[INFO RMP-0065] Resynthesis: Iteration 3 of genetic algorithm
+[INFO RMP-0065] Resynthesis: Iteration 4 of genetic algorithm
+[INFO RMP-0065] Resynthesis: Iteration 5 of genetic algorithm
+[INFO RMP-0065] Resynthesis: Iteration 6 of genetic algorithm
+[INFO RMP-0065] Resynthesis: Iteration 7 of genetic algorithm
+[INFO RMP-0065] Resynthesis: Iteration 8 of genetic algorithm
+[INFO RMP-0065] Resynthesis: Iteration 9 of genetic algorithm
+[INFO RMP-0065] Resynthesis: Iteration 10 of genetic algorithm
+[INFO RMP-0065] Resynthesis: Iteration 11 of genetic algorithm
+[INFO RMP-0065] Resynthesis: Iteration 12 of genetic algorithm
+[INFO RMP-0065] Resynthesis: Iteration 13 of genetic algorithm
+[INFO RMP-0065] Resynthesis: Iteration 14 of genetic algorithm
+[INFO RMP-0066] Resynthesis: Best result is of individual 0
 [INFO RMP-0067] Resynthesis: End of slack tuning, applying ABC operations
-[INFO RMP-0068] Resynthesis: Worst slack is 1.6515597e-10
-[-36.203,  -6.653): ************************************************** (39)
-[ -6.653,  22.897): **** (3)
-[ 22.897,  52.448): * (1)
-[ 52.448,  81.998): **** (3)
-[ 81.998, 111.549): * (1)
-[111.549, 141.099): **** (3)
-[141.099, 170.649): * (1)
-[170.649, 200.200): * (1)
-[200.200, 229.750):  (0)
-[229.750, 259.301]: * (1)
+[INFO RMP-0068] Resynthesis: Worst slack is -4.698958e-11
+[-46.990, -16.147): ************************************************** (32)
+[-16.147,  14.696): ************* (8)
+[ 14.696,  45.539): ****** (4)
+[ 45.539,  76.381): *** (2)
+[ 76.381, 107.224): ** (1)
+[107.224, 138.067):  (0)
+[138.067, 168.909): ****** (4)
+[168.909, 199.752): ** (1)
+[199.752, 230.595):  (0)
+[230.595, 261.438]: ** (1)
 Cell type report:                       Count       Area
-  Inverter                                 52       2.84
+  Inverter                                 64       3.32
   Sequential cell                          35      10.21
-  Multi-Input combinational cell          423      29.96
-  Total                                   510      43.01
-Startpoint: dpath/a_lt_b$in0[8]$_DFFE_PP_
+  Multi-Input combinational cell          413      29.13
+  Total                                   512      42.66
+Startpoint: dpath/a_lt_b$in0[5]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: resp_msg[9] (output port clocked by core_clock)
+Endpoint: ctrl/state/out[1]$_DFF_P_
+          (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
 Corner: slow
@@ -136,32 +142,37 @@ Corner: slow
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ dpath/a_lt_b$in0[8]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
-  72.75   72.75 ^ dpath/a_lt_b$in0[8]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_R)
-  18.04   90.80 v cut_72268/Y (INVx1_ASAP7_75t_R)
- 112.12  202.92 v _429_/SN (HAxp5_ASAP7_75t_R)
-  53.71  256.62 v cut_71866/Y (OR2x2_ASAP7_75t_R)
-  23.42  280.04 ^ cut_72132/Y (NOR2xp33_ASAP7_75t_R)
-  19.48  299.52 v cut_72133/Y (INVx1_ASAP7_75t_R)
-  35.29  334.81 v cut_72134/Y (OR2x2_ASAP7_75t_R)
-  29.68  364.50 ^ cut_72136/Y (NOR2xp33_ASAP7_75t_R)
-  37.11  401.61 v cut_72137/Y (NOR2xp33_ASAP7_75t_R)
-  34.60  436.20 v cut_72138/Y (XOR2xp5_ASAP7_75t_R)
-   0.00  436.20 v resp_msg[9] (out)
-         436.20   data arrival time
+   0.00    0.00 ^ dpath/a_lt_b$in0[5]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
+  70.50   70.50 ^ dpath/a_lt_b$in0[5]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_R)
+  19.50   90.01 v cut_228958/Y (INVx1_ASAP7_75t_R)
+  95.56  185.57 v _432_/SN (HAxp5_ASAP7_75t_R)
+  39.25  224.82 ^ cut_228872/Y (NAND2x2_ASAP7_75t_R)
+  17.97  242.79 v cut_228874/Y (NAND2x1p5_ASAP7_75t_R)
+  31.84  274.62 v cut_228875/Y (AND2x2_ASAP7_75t_R)
+  19.74  294.36 ^ cut_228878/Y (NOR2xp33_ASAP7_75t_R)
+  28.98  323.34 v cut_228891/Y (NAND2xp5_ASAP7_75t_R)
+  31.19  354.53 ^ cut_228892/Y (NAND2x1_ASAP7_75t_R)
+  22.82  377.35 v cut_228893/Y (NAND2x1p5_ASAP7_75t_R)
+  56.46  433.81 ^ cut_228894/Y (NAND2x2_ASAP7_75t_R)
+  46.16  479.97 ^ cut_228895/Y (AND2x4_ASAP7_75t_R)
+  11.60  491.57 v cut_228897/Y (NAND2xp5_ASAP7_75t_R)
+  25.61  517.18 ^ cut_228903/Y (NAND2xp33_ASAP7_75t_R)
+   0.00  517.18 ^ ctrl/state/out[1]$_DFF_P_/D (DFFHQNx1_ASAP7_75t_R)
+         517.18   data arrival time
 
  500.00  500.00   clock core_clock (rise edge)
    0.00  500.00   clock network delay (ideal)
    0.00  500.00   clock reconvergence pessimism
--100.00  400.00   output external delay
-         400.00   data required time
+         500.00 ^ ctrl/state/out[1]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
+ -29.81  470.19   library setup time
+         470.19   data required time
 ---------------------------------------------------------
-         400.00   data required time
-        -436.20   data arrival time
+         470.19   data required time
+        -517.18   data arrival time
 ---------------------------------------------------------
-         -36.20   slack (VIOLATED)
+         -46.99   slack (VIOLATED)
 
 
-wns max -36.20
-tns max -777.64
+wns max -46.99
+tns max -1040.30
 Repair timing output passed/skipped equivalence test
