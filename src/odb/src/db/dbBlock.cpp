@@ -119,7 +119,6 @@
 #include "dbTrackGrid.h"
 #include "dbVia.h"
 #include "dbWire.h"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbExtControl.h"
@@ -2762,7 +2761,7 @@ void dbBlock::setCornerCount(int cornersStoredCnt,
                              int extDbCnt,
                              const char* name_list)
 {
-  ZASSERT((cornersStoredCnt > 0) && (cornersStoredCnt <= 256));
+  assert((cornersStoredCnt > 0) && (cornersStoredCnt <= 256));
   _dbBlock* block = (_dbBlock*) this;
 
   // TODO: Should this change be logged in the journal?
@@ -2871,7 +2870,7 @@ void dbBlock::getExtCornerName(int corner, char* cName)
   if (block->_num_ext_corners == 0) {
     return;
   }
-  ZASSERT((corner >= 0) && (corner < block->_num_ext_corners));
+  assert((corner >= 0) && (corner < block->_num_ext_corners));
 
   if (block->_corner_name_list == nullptr) {
     return;

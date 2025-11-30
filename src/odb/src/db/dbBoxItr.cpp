@@ -3,6 +3,8 @@
 
 #include "dbBoxItr.h"
 
+#include <cassert>
+
 #include "dbBPin.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
@@ -16,7 +18,6 @@
 #include "dbTable.hpp"
 #include "dbTechVia.h"
 #include "dbVia.h"
-#include "odb/ZException.h"
 #include "odb/dbId.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
@@ -24,13 +25,13 @@
 namespace odb {
 
 template <uint page_size>
-bool dbBoxItr<page_size>::reversible()
+bool dbBoxItr<page_size>::reversible() const
 {
   return true;
 }
 
 template <uint page_size>
-bool dbBoxItr<page_size>::orderReversed()
+bool dbBoxItr<page_size>::orderReversed() const
 {
   return true;
 }
@@ -167,13 +168,13 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
 }
 
 template <uint page_size>
-uint dbBoxItr<page_size>::sequential()
+uint dbBoxItr<page_size>::sequential() const
 {
   return 0;
 }
 
 template <uint page_size>
-uint dbBoxItr<page_size>::size(dbObject* parent)
+uint dbBoxItr<page_size>::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -187,7 +188,7 @@ uint dbBoxItr<page_size>::size(dbObject* parent)
 }
 
 template <uint page_size>
-uint dbBoxItr<page_size>::begin(dbObject* parent)
+uint dbBoxItr<page_size>::begin(dbObject* parent) const
 {
   switch (parent->getImpl()->getType()) {
     case dbRegionObj: {
@@ -257,13 +258,13 @@ uint dbBoxItr<page_size>::begin(dbObject* parent)
 }
 
 template <uint page_size>
-uint dbBoxItr<page_size>::end(dbObject* /* unused: parent */)
+uint dbBoxItr<page_size>::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
 template <uint page_size>
-uint dbBoxItr<page_size>::next(uint id, ...)
+uint dbBoxItr<page_size>::next(uint id, ...) const
 {
   _dbBox* box = _box_tbl->getPtr(id);
 
@@ -305,7 +306,7 @@ uint dbBoxItr<page_size>::next(uint id, ...)
     }
 
     // this should not be possible unless new types with polygons are added
-    ZASSERT(0);
+    assert(0);
   }
 
   return 0;

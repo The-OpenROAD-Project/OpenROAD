@@ -4,6 +4,7 @@
 #include "dbTrackGrid.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <vector>
 
@@ -15,7 +16,6 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
@@ -227,7 +227,7 @@ void dbTrackGrid::getGridPatternX(int i,
                                   int& step)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
-  ZASSERT(i < (int) grid->_x_origin.size());
+  assert(i < (int) grid->_x_origin.size());
   origin_x = grid->_x_origin[i];
   line_count = grid->_x_count[i];
   step = grid->_x_step[i];
@@ -241,7 +241,7 @@ void dbTrackGrid::getGridPatternX(int i,
                                   bool& samemask)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
-  ZASSERT(i < (int) grid->_x_origin.size());
+  assert(i < (int) grid->_x_origin.size());
   origin_x = grid->_x_origin[i];
   line_count = grid->_x_count[i];
   step = grid->_x_step[i];
@@ -255,7 +255,7 @@ void dbTrackGrid::getGridPatternY(int i,
                                   int& step)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
-  ZASSERT(i < (int) grid->_y_origin.size());
+  assert(i < (int) grid->_y_origin.size());
   origin_y = grid->_y_origin[i];
   line_count = grid->_y_count[i];
   step = grid->_y_step[i];
@@ -269,7 +269,7 @@ void dbTrackGrid::getGridPatternY(int i,
                                   bool& samemask)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
-  ZASSERT(i < (int) grid->_y_origin.size());
+  assert(i < (int) grid->_y_origin.size());
   origin_y = grid->_y_origin[i];
   line_count = grid->_y_count[i];
   step = grid->_y_step[i];

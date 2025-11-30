@@ -12,7 +12,6 @@
 #include "dbArrayTable.h"
 #include "dbCommon.h"
 #include "dbCore.h"
-#include "odb/ZException.h"
 #include "odb/dbId.h"
 #include "odb/dbObject.h"
 #include "odb/dbStream.h"
@@ -271,9 +270,9 @@ void dbArrayTable<T>::destroy(T* t)
 {
   --_alloc_cnt;
 
-  ZASSERT(t->getOID() != 0);
-  ZASSERT(t->getTable() == this);
-  ZASSERT(t->oid_ & DB_ALLOC_BIT);
+  assert(t->getOID() != 0);
+  assert(t->getTable() == this);
+  assert(t->oid_ & DB_ALLOC_BIT);
 
   dbArrayTablePage* page = (dbArrayTablePage*) t->getObjectPage();
   _dbFreeObject* o = (_dbFreeObject*) t;

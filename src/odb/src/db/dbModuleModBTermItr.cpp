@@ -9,6 +9,7 @@
 #include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -18,12 +19,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbModuleModBTermItr::reversible()
+bool dbModuleModBTermItr::reversible() const
 {
   return true;
 }
 
-bool dbModuleModBTermItr::orderReversed()
+bool dbModuleModBTermItr::orderReversed() const
 {
   return true;
 }
@@ -46,12 +47,12 @@ void dbModuleModBTermItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbModuleModBTermItr::sequential()
+uint dbModuleModBTermItr::sequential() const
 {
   return 0;
 }
 
-uint dbModuleModBTermItr::size(dbObject* parent)
+uint dbModuleModBTermItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -65,7 +66,7 @@ uint dbModuleModBTermItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbModuleModBTermItr::begin(dbObject* parent)
+uint dbModuleModBTermItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbModule* _module = (_dbModule*) parent;
@@ -73,12 +74,12 @@ uint dbModuleModBTermItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbModuleModBTermItr::end(dbObject* /* unused: parent */)
+uint dbModuleModBTermItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbModuleModBTermItr::next(uint id, ...)
+uint dbModuleModBTermItr::next(uint id, ...) const
 {
   // User Code Begin next
   _dbModBTerm* modbterm = _modbterm_tbl->getPtr(id);

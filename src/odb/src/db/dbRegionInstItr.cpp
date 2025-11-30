@@ -18,12 +18,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////
 
-bool dbRegionInstItr::reversible()
+bool dbRegionInstItr::reversible() const
 {
   return true;
 }
 
-bool dbRegionInstItr::orderReversed()
+bool dbRegionInstItr::orderReversed() const
 {
   return true;
 }
@@ -55,12 +55,12 @@ void dbRegionInstItr::reverse(dbObject* parent)
   region->_insts = list;
 }
 
-uint dbRegionInstItr::sequential()
+uint dbRegionInstItr::sequential() const
 {
   return 0;
 }
 
-uint dbRegionInstItr::size(dbObject* parent)
+uint dbRegionInstItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -73,18 +73,18 @@ uint dbRegionInstItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbRegionInstItr::begin(dbObject* parent)
+uint dbRegionInstItr::begin(dbObject* parent) const
 {
   _dbRegion* region = (_dbRegion*) parent;
   return (uint) region->_insts;
 }
 
-uint dbRegionInstItr::end(dbObject* /* unused: parent */)
+uint dbRegionInstItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbRegionInstItr::next(uint id, ...)
+uint dbRegionInstItr::next(uint id, ...) const
 {
   _dbInst* inst = _inst_tbl->getPtr(id);
   return inst->_region_next;

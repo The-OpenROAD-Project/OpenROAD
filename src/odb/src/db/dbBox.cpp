@@ -3,6 +3,7 @@
 
 #include "dbBox.h"
 
+#include <cassert>
 #include <cstring>
 #include <stdexcept>
 #include <vector>
@@ -29,7 +30,6 @@
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbVia.h"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
@@ -289,7 +289,7 @@ _dbTechLayer* _dbBox::getTechLayer() const
     }
   }
 
-  ZASSERT(0);
+  assert(0);
   return nullptr;
 }
 
@@ -652,7 +652,7 @@ dbObject* dbBox::getBoxOwner() const
     }
   }
 
-  ZASSERT(0);
+  assert(0);
   return nullptr;
 }
 

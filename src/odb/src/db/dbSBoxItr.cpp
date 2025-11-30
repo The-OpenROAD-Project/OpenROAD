@@ -11,12 +11,12 @@
 
 namespace odb {
 
-bool dbSBoxItr::reversible()
+bool dbSBoxItr::reversible() const
 {
   return true;
 }
 
-bool dbSBoxItr::orderReversed()
+bool dbSBoxItr::orderReversed() const
 {
   return true;
 }
@@ -46,12 +46,12 @@ void dbSBoxItr::reverse(dbObject* parent)
   }
 }
 
-uint dbSBoxItr::sequential()
+uint dbSBoxItr::sequential() const
 {
   return 0;
 }
 
-uint dbSBoxItr::size(dbObject* parent)
+uint dbSBoxItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -64,7 +64,7 @@ uint dbSBoxItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbSBoxItr::begin(dbObject* parent)
+uint dbSBoxItr::begin(dbObject* parent) const
 {
   switch (parent->getImpl()->getType()) {
     case dbSWireObj: {
@@ -79,12 +79,12 @@ uint dbSBoxItr::begin(dbObject* parent)
   return 0;
 }
 
-uint dbSBoxItr::end(dbObject* /* unused: parent */)
+uint dbSBoxItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbSBoxItr::next(uint id, ...)
+uint dbSBoxItr::next(uint id, ...) const
 {
   _dbSBox* box = _box_tbl->getPtr(id);
   return box->next_box_;

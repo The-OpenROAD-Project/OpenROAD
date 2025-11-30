@@ -8,13 +8,13 @@
 #include <cstring>
 #include <vector>
 
-#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "odb/util.h"
+#include "rcx/array1.h"
 #include "rcx/box.h"
 #include "rcx/extRCap.h"
 #include "rcx/rcx.h"
+#include "rcx/util.h"
 
 namespace rcx {
 
@@ -78,8 +78,8 @@ class Wire
 
   void reset();
   void set(uint dir, const int* ll, const int* ur);
-  void search(int xy1, int xy2, uint& cnt, odb::Ath__array1D<uint>* idTable);
-  void search1(int xy1, int xy2, uint& cnt, odb::Ath__array1D<uint>* idTable);
+  void search(int xy1, int xy2, uint& cnt, Ath__array1D<uint>* idTable);
+  void search1(int xy1, int xy2, uint& cnt, Ath__array1D<uint>* idTable);
 
   void setNext(Wire* w) { _next = w; };
   Wire* getNext() const { return _next; };
@@ -100,9 +100,9 @@ class Wire
 
   // Extraction
   int wireOverlap(Wire* w, int* len1, int* len2, int* len3);
-  Wire* getPoolWire(odb::AthPool<Wire>* wirePool);
-  Wire* makeWire(odb::AthPool<Wire>* wirePool, int xy1, uint len);
-  Wire* makeCoupleWire(odb::AthPool<Wire>* wirePool,
+  Wire* getPoolWire(AthPool<Wire>* wirePool);
+  Wire* makeWire(AthPool<Wire>* wirePool, int xy1, uint len);
+  Wire* makeCoupleWire(AthPool<Wire>* wirePool,
                        int targetHighTracks,
                        Wire* w2,
                        int xy1,
@@ -165,7 +165,7 @@ class Track
            uint markerLen,
            uint markerCnt,
            int base);
-  void freeWires(odb::AthPool<Wire>* pool);
+  void freeWires(AthPool<Wire>* pool);
   bool place(Wire* w, int markIndex1, int markIndex2);
   bool place(Wire* w, int markIndex1);
   uint setExtrusionMarker(int markerCnt, int start, uint markerLen);
@@ -180,17 +180,17 @@ class Track
               int xy2,
               uint markIndex1,
               uint markIndex2,
-              odb::Ath__array1D<uint>* idtable);
+              Ath__array1D<uint>* idtable);
   uint search1(int xy1,
                int xy2,
                uint markIndex1,
                uint markIndex2,
-               odb::Ath__array1D<uint>* idTable);
+               Ath__array1D<uint>* idTable);
 
   bool checkAndplace(Wire* w, int markIndex1);
   bool checkMarker(int markIndex);
   bool checkAndplacerOnMarker(Wire* w, int markIndex);
-  uint getAllWires(odb::Ath__array1D<Wire*>* boxTable, uint markerCnt);
+  uint getAllWires(Ath__array1D<Wire*>* boxTable, uint markerCnt);
   void resetExtFlag(uint markerCnt);
   void linkWire(Wire*& w1, Wire*& w2);
 
@@ -215,16 +215,16 @@ class Track
   bool place2(Wire* w, int mark1, int mark2);
   void insertWire(Wire* w, int mark1, int mark2);
   uint initTargetTracks(uint srcTrack, uint trackDist, bool tohi);
-  void findNeighborWire(Wire*, odb::Ath__array1D<Wire*>*, bool);
+  void findNeighborWire(Wire*, Ath__array1D<Wire*>*, bool);
   void getTrackWires(std::vector<Wire*>& ctxwire);
-  void buildDgContext(odb::Ath__array1D<SEQ*>* dgContext,
+  void buildDgContext(Ath__array1D<SEQ*>* dgContext,
                       std::vector<Wire*>& allWire);
-  int getBandWires(odb::Ath__array1D<Wire*>* bandWire);
+  int getBandWires(Ath__array1D<Wire*>* bandWire);
   uint couplingCaps(Grid* ccGrid,
                     uint srcTrack,
                     uint trackDist,
                     uint ccThreshold,
-                    odb::Ath__array1D<uint>* ccIdTable,
+                    Ath__array1D<uint>* ccIdTable,
                     uint met,
                     CoupleAndCompute coupleAndCompute,
                     void* compPtr,
@@ -232,10 +232,10 @@ class Track
 
   uint findOverlap(Wire* origWire,
                    uint ccThreshold,
-                   odb::Ath__array1D<Wire*>* wTable,
-                   odb::Ath__array1D<Wire*>* nwTable,
+                   Ath__array1D<Wire*>* wTable,
+                   Ath__array1D<Wire*>* nwTable,
                    Grid* ccGrid,
-                   odb::Ath__array1D<Wire*>* ccTable,
+                   Ath__array1D<Wire*>* ccTable,
                    uint met,
                    CoupleAndCompute coupleAndCompute,
                    void* compPtr);
@@ -250,9 +250,9 @@ class Track
                       int base,
                       int width,
                       uint firstContextTrack,
-                      odb::Ath__array1D<int>* context);
+                      Ath__array1D<int>* context);
 
-  void dealloc(odb::AthPool<Wire>* pool);
+  void dealloc(AthPool<Wire>* pool);
   Wire* getMarker(int index) const { return _marker[index]; }
   void setMarker(int index, Wire* wire) { _marker[index] = wire; }
 
@@ -301,8 +301,8 @@ class Grid
   uint placeWire_v2(SearchBox* bb);
 
   Grid(GridTable* gt,
-       odb::AthPool<Track>* trackPool,
-       odb::AthPool<Wire>* wirePool,
+       AthPool<Track>* trackPool,
+       AthPool<Wire>* wirePool,
        uint level,
        uint markerCnt);
   ~Grid();
@@ -344,10 +344,8 @@ class Grid
   uint getBucketNum(int xy);
   uint getTrackNum(int* ll, uint d, uint* marker);
   Wire* getWirePtr(uint wireId);
-  void getBoxIds(odb::Ath__array1D<uint>* wireIdTable,
-                 odb::Ath__array1D<uint>* idtable);
-  void getWireIds(odb::Ath__array1D<uint>* wireIdTable,
-                  odb::Ath__array1D<uint>* idtable);
+  void getBoxIds(Ath__array1D<uint>* wireIdTable, Ath__array1D<uint>* idtable);
+  void getWireIds(Ath__array1D<uint>* wireIdTable, Ath__array1D<uint>* idtable);
 
   int findEmptyTrack(int ll[2], int ur[2]);
   uint getFirstTrack(uint divider);
@@ -376,7 +374,7 @@ class Grid
   Track* getTrackPtr(uint ii, uint markerCnt);
   bool isOrdered(bool ascending, uint* cnt);
   uint search(SearchBox* bb,
-              odb::Ath__array1D<uint>* idtable,
+              Ath__array1D<uint>* idtable,
               bool wireIdFlag = false);
 
   uint placeWire(uint initTrack,
@@ -386,14 +384,14 @@ class Grid
                  int sortedOrder,
                  int* height);
 
-  void getBoxes(odb::Ath__array1D<uint>* table);
-  uint getBoxes(uint ii, odb::Ath__array1D<uint>* table);
+  void getBoxes(Ath__array1D<uint>* table);
+  uint getBoxes(uint ii, Ath__array1D<uint>* table);
 
   uint getDir();
   uint getLevel();
   Wire* getWire_Linear(uint id);
 
-  void getBuses(odb::Ath__array1D<Box*>* boxtable, uint width);
+  void getBuses(Ath__array1D<Box*>* boxtable, uint width);
 
   uint removeMarkedNetWires();
   void setSearchDomain(int domainAdjust);
@@ -405,15 +403,15 @@ class Grid
   int getBandWires(int hiXY,
                    uint couplingDist,
                    uint& wireCnt,
-                   odb::Ath__array1D<Wire*>* bandWire,
+                   Ath__array1D<Wire*>* bandWire,
                    int* limitArray);
-  odb::AthPool<Wire>* getWirePoolPtr();
+  AthPool<Wire>* getWirePoolPtr();
   uint placeWire(Wire* w);
   uint defaultWireType();
   void setDefaultWireType(uint v);
   uint search(SearchBox* bb,
               const uint* gxy,
-              odb::Ath__array1D<uint>* idtable,
+              Ath__array1D<uint>* idtable,
               Grid* g);
   void adjustOverlapMakerEnd();
   void initContextGrids();
@@ -463,8 +461,8 @@ class Grid
   uint _searchLowMarker;
   uint _searchHiMarker;
 
-  odb::AthPool<Track>* _trackPoolPtr;
-  odb::AthPool<Wire>* _wirePoolPtr;
+  AthPool<Track>* _trackPoolPtr;
+  AthPool<Wire>* _wirePoolPtr;
 
   uint _wireType;
 
@@ -493,9 +491,9 @@ class GridTable
                         uint ccUp,
                         bool allNet,
                         uint contextDepth,
-                        odb::Ath__array1D<int>** contextArray,
+                        Ath__array1D<int>** contextArray,
                         uint* contextLength,
-                        odb::Ath__array1D<SEQ*>*** dgContextArray,
+                        Ath__array1D<SEQ*>*** dgContextArray,
                         uint* dgContextDepth,
                         uint* dgContextPlanes,
                         uint* dgContextTracks,
@@ -506,7 +504,7 @@ class GridTable
                         int* dgContextLowTrack,
                         int* dgContextHiTrack,
                         int** dgContextTrackBase,
-                        odb::AthPool<SEQ>* seqPool);
+                        AthPool<SEQ>* seqPool);
 
   // -------------------------------------------------------------
   GridTable(odb::Rect* bb,
@@ -533,13 +531,13 @@ class GridTable
   Wire* addBox(odb::dbBox* bb, uint wtype, uint id);
   bool addBox(uint row, uint col, odb::dbBox* bb);
 
-  uint getBoxes(Box* bb, odb::Ath__array1D<Box*>* table);
+  uint getBoxes(Box* bb, Ath__array1D<Box*>* table);
   uint search(SearchBox* bb,
               uint row,
               uint col,
-              odb::Ath__array1D<uint>* idTable,
+              Ath__array1D<uint>* idTable,
               bool wireIdFlag);
-  uint search(SearchBox* bb, odb::Ath__array1D<uint>* idTable);
+  uint search(SearchBox* bb, Ath__array1D<uint>* idTable);
   uint search(Box* bb);
 
   uint addBox(int x1,
@@ -556,7 +554,7 @@ class GridTable
               int y2,
               uint row,
               uint col,
-              odb::Ath__array1D<uint>* idTable,
+              Ath__array1D<uint>* idTable,
               bool wireIdFlag);
   void getCoords(SearchBox* bb, uint wireId);
   void setMaxArea(int x1, int y1, int x2, int y2);
@@ -566,7 +564,7 @@ class GridTable
 
   void setDefaultWireType(uint v);
   void buildDgContext(int base, uint level, uint dir);
-  odb::Ath__array1D<SEQ*>* renewDgContext(uint gridn, uint trackn);
+  Ath__array1D<SEQ*>* renewDgContext(uint gridn, uint trackn);
   void getBox(uint wid,
               int* x1,
               int* y1,
@@ -580,7 +578,7 @@ class GridTable
               uint* gxy,
               uint row,
               uint col,
-              odb::Ath__array1D<uint>* idtable,
+              Ath__array1D<uint>* idtable,
               Grid* g);
   uint getOverlapAdjust() { return _overlapAdjust; };
   uint getOverlapTouchCheck() { return _overlapTouchCheck; };
@@ -589,9 +587,9 @@ class GridTable
   void setCCFlag(uint ccflag) { _ccFlag = ccflag; };
   uint getCcFlag() { return _ccFlag; };
   uint contextDepth() { return _ccContextDepth; };
-  odb::Ath__array1D<int>** contextArray() { return _ccContextArray; };
-  odb::AthPool<SEQ>* seqPool() { return _seqPool; };
-  odb::Ath__array1D<SEQ*>*** dgContextArray() { return _dgContextArray; };
+  Ath__array1D<int>** contextArray() { return _ccContextArray; };
+  AthPool<SEQ>* seqPool() { return _seqPool; };
+  Ath__array1D<SEQ*>*** dgContextArray() { return _dgContextArray; };
   int** dgContextTrackBase() { return _dgContextTrackBase; };
   uint* dgContextBaseTrack() { return _dgContextBaseTrack; };
   int* dgContextLowTrack() { return _dgContextLowTrack; };
@@ -617,8 +615,8 @@ class GridTable
                      uint ccUp,
                      bool allNet,
                      uint contextDepth,
-                     odb::Ath__array1D<int>** contextArray,
-                     odb::Ath__array1D<SEQ*>*** dgContextArray,
+                     Ath__array1D<int>** contextArray,
+                     Ath__array1D<SEQ*>*** dgContextArray,
                      uint* dgContextDepth,
                      uint* dgContextPlanes,
                      uint* dgContextTracks,
@@ -629,7 +627,7 @@ class GridTable
                      int* dgContextLowTrack,
                      int* dgContextHiTrack,
                      int** dgContextTrackBase,
-                     odb::AthPool<SEQ>* seqPool);
+                     AthPool<SEQ>* seqPool);
 
   bool usingDbSdb() { return _useDbSdb; }
   void reverseTargetTrack();
@@ -681,8 +679,8 @@ class GridTable
   uint _colCnt;
   uint _rowSize;
   uint _colSize;
-  odb::AthPool<Track>* _trackPool;
-  odb::AthPool<Wire>* _wirePool;
+  AthPool<Track>* _trackPool;
+  AthPool<Wire>* _wirePool;
   uint _overlapAdjust{Z_noAdjust};
   uint _powerMultiTrackWire{0};
   uint _signalMultiTrackWire{0};
@@ -703,10 +701,10 @@ class GridTable
   // _v2
   uint* _ccContextLength;
 
-  odb::Ath__array1D<int>** _ccContextArray{nullptr};
+  Ath__array1D<int>** _ccContextArray{nullptr};
 
-  odb::AthPool<SEQ>* _seqPool;
-  odb::Ath__array1D<SEQ*>*** _dgContextArray;  // array
+  AthPool<SEQ>* _seqPool;
+  Ath__array1D<SEQ*>*** _dgContextArray;  // array
 
   uint* _dgContextDepth;      // not array
   uint* _dgContextPlanes;     // not array
@@ -723,7 +721,7 @@ class GridTable
 
   uint _wireCnt;
 
-  odb::Ath__array1D<Wire*>* _bandWire{nullptr};
+  Ath__array1D<Wire*>* _bandWire{nullptr};
 
   bool _ttttGetDgOverlap{false};
 };
