@@ -642,7 +642,7 @@ void dbTechLayerSpacingRule::setCutLayer4Spacing(dbTechLayer* cutly)
   assert((_lsp->flags_._rule == _dbTechLayerSpacingRule::DEFAULT)
          || (_lsp->flags_._rule == _dbTechLayerSpacingRule::CUT_LAYER_BELOW));
 
-  dbTechLayer* tmply = (dbTechLayer*) _lsp->getOwner();
+  [[maybe_unused]] dbTechLayer* tmply = (dbTechLayer*) _lsp->getOwner();
   assert(cutly->getNumber() < tmply->getNumber());
   _dbTechLayer* ct_ly = (_dbTechLayer*) cutly;
 

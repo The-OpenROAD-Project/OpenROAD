@@ -938,7 +938,8 @@ dbCapNode* dbCapNode::create(dbNet* net_, uint node, bool foreign)
       }
     } else {
       block->_maxCapNodeId = seg->getOID();
-      uint capIdx = block->_c_val_tbl->getIdx(cornerCnt, (float) 0.0);
+      [[maybe_unused]] uint capIdx
+          = block->_c_val_tbl->getIdx(cornerCnt, (float) 0.0);
       assert((seg->getOID() - 1) * cornerCnt + 1 == capIdx);
     }
   }

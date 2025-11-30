@@ -728,7 +728,8 @@ dbRSeg* dbRSeg::create(dbNet* net_,
       (*block->_r_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = 0.0;
     }
   } else {
-    uint resIdx = block->_r_val_tbl->getIdx(cornerCnt, (float) 0.0);
+    [[maybe_unused]] uint resIdx
+        = block->_r_val_tbl->getIdx(cornerCnt, (float) 0.0);
     assert((seg->getOID() - 1) * cornerCnt + 1 == resIdx);
   }
 
@@ -747,7 +748,8 @@ dbRSeg* dbRSeg::create(dbNet* net_,
         (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = 0.0;
       }
     } else {
-      const uint capIdx = block->_c_val_tbl->getIdx(cornerCnt, (float) 0.0);
+      [[maybe_unused]] const uint capIdx
+          = block->_c_val_tbl->getIdx(cornerCnt, (float) 0.0);
       assert((seg->getOID() - 1) * cornerCnt + 1 == capIdx);
     }
 

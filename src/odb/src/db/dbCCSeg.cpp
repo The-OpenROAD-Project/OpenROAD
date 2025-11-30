@@ -542,7 +542,8 @@ dbCCSeg* dbCCSeg::create(dbCapNode* src_, dbCapNode* tgt_, bool mergeParallel)
     }
   } else {
     block->_maxCCSegId = seg->getOID();
-    uint ccCapIdx = block->_cc_val_tbl->getIdx(cornerCnt, (float) 0.0);
+    [[maybe_unused]] uint ccCapIdx
+        = block->_cc_val_tbl->getIdx(cornerCnt, (float) 0.0);
     assert((seg->getOID() - 1) * cornerCnt + 1 == ccCapIdx);
   }
 
