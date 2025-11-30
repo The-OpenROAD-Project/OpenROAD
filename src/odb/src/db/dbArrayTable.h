@@ -3,11 +3,11 @@
 
 #pragma once
 
+#include <cassert>
 #include <vector>
 
 #include "dbCore.h"
 #include "dbVector.h"
-#include "odb/ZException.h"
 #include "odb/dbId.h"
 #include "odb/dbObject.h"
 #include "odb/odb.h"
@@ -90,9 +90,9 @@ class dbArrayTable : public dbObjectTable
   {
     uint page = id >> _page_shift;
     uint offset = id & _page_mask;
-    ZASSERT((id != 0) && (page < _page_cnt));
+    assert((id != 0) && (page < _page_cnt));
     T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
-    ZASSERT(p->_oid & DB_ALLOC_BIT);
+    assert(p->_oid & DB_ALLOC_BIT);
     return p;
   }
 
@@ -118,9 +118,9 @@ class dbArrayTable : public dbObjectTable
   {
     uint page = id >> _page_shift;
     uint offset = id & _page_mask;
-    ZASSERT((id != 0) && (page < _page_cnt));
+    assert((id != 0) && (page < _page_cnt));
     T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
-    ZASSERT((p->_oid & DB_ALLOC_BIT) == 0);
+    assert((p->_oid & DB_ALLOC_BIT) == 0);
     return p;
   }
 

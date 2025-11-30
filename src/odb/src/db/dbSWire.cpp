@@ -3,6 +3,7 @@
 
 #include "dbSWire.h"
 
+#include <cassert>
 #include <cstring>
 
 #include "dbBlock.h"
@@ -12,7 +13,6 @@
 #include "dbSBoxItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
@@ -228,7 +228,7 @@ void dbSWire::destroy(dbSWire* wire_)
     }
     prev = w;
   }
-  ZASSERT(id != 0);
+  assert(id != 0);
   // destroy the wire
   dbProperty::destroyProperties(wire);
   block->_swire_tbl->destroy(wire);

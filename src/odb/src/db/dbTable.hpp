@@ -13,7 +13,6 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "odb/ZException.h"
 #include "odb/dbId.h"
 #include "odb/dbObject.h"
 #include "odb/dbStream.h"
@@ -270,7 +269,7 @@ inline void dbTable<T, page_size>::findBottom()
     }
 
     // if s == e, then something is corrupted...
-    ZASSERT(ADS_DB_TABLE_BOTTOM_SEARCH_FAILED);
+    assert(ADS_DB_TABLE_BOTTOM_SEARCH_FAILED);
   }
 
   for (++page_id;; ++page_id) {
@@ -295,7 +294,7 @@ inline void dbTable<T, page_size>::findBottom()
   }
 
   // if s == e, then something is corrupted...
-  ZASSERT(ADS_DB_TABLE_BOTTOM_SEARCH_FAILED);
+  assert(ADS_DB_TABLE_BOTTOM_SEARCH_FAILED);
 }
 
 // find the new top_idx...
@@ -325,7 +324,7 @@ inline void dbTable<T, page_size>::findTop()
     }
 
     // if s < e, then something is corrupted...
-    ZASSERT(ADS_DB_TABLE_TOP_SEARCH_FAILED);
+    assert(ADS_DB_TABLE_TOP_SEARCH_FAILED);
   }
 
   for (--page_id;; --page_id) {
@@ -349,7 +348,7 @@ inline void dbTable<T, page_size>::findTop()
   }
 
   // if s < e, then something is corrupted...
-  ZASSERT(ADS_DB_TABLE_TOP_SEARCH_FAILED);
+  assert(ADS_DB_TABLE_TOP_SEARCH_FAILED);
 }
 
 template <class T, uint page_size>
@@ -357,9 +356,9 @@ void dbTable<T, page_size>::destroy(T* t)
 {
   --_alloc_cnt;
 
-  ZASSERT(t->getOID() != 0);
-  ZASSERT(t->getTable() == this);
-  ZASSERT(t->oid_ & DB_ALLOC_BIT);
+  assert(t->getOID() != 0);
+  assert(t->getTable() == this);
+  assert(t->oid_ & DB_ALLOC_BIT);
 
   dbTablePage* page = (dbTablePage*) t->getObjectPage();
   _dbFreeObject* o = (_dbFreeObject*) t;
@@ -428,7 +427,7 @@ uint dbTable<T, page_size>::end(dbObject* /* unused: parent */) const
 template <class T, uint page_size>
 uint dbTable<T, page_size>::next(uint id, ...) const
 {
-  ZASSERT(id != 0);
+  assert(id != 0);
   ++id;
 
   if (id > _top_idx) {
@@ -447,7 +446,7 @@ next_obj:
     if (p->oid_ & DB_ALLOC_BIT) {
       offset = p - (T*) page->_objects;
       const uint n = (page_id << page_shift) + offset;
-      ZASSERT(n <= _top_idx);
+      assert(n <= _top_idx);
       return n;
     }
   }

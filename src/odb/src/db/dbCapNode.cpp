@@ -3,6 +3,7 @@
 
 #include "dbCapNode.h"
 
+#include <cassert>
 #include <vector>
 
 #include "dbBlock.h"
@@ -15,7 +16,6 @@
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -170,8 +170,8 @@ void dbCapNode::adjustCapacitance(float factor, uint corner)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
 
-  ZASSERT(seg->flags_._foreign > 0);
-  ZASSERT(corner < cornerCnt);
+  assert(seg->flags_._foreign > 0);
+  assert(corner < cornerCnt);
   float& value
       = (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
   float prev_value = value;
@@ -214,7 +214,7 @@ double dbCapNode::getCapacitance(uint corner)
   uint cornerCnt = block->_corners_per_block;
 
   if (seg->flags_._foreign > 0) {
-    ZASSERT(corner < cornerCnt);
+    assert(corner < cornerCnt);
     return (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
   }
   return 0.0;
@@ -333,7 +333,7 @@ void dbCapNode::setCapacitance(double cap, int corner)
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  assert((corner >= 0) && ((uint) corner < cornerCnt));
   float& value
       = (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
   float prev_value = value;
@@ -365,7 +365,7 @@ void dbCapNode::addCapacitance(double cap, int corner)
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  assert((corner >= 0) && ((uint) corner < cornerCnt));
   float& value
       = (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
   float prev_value = value;
@@ -939,7 +939,7 @@ dbCapNode* dbCapNode::create(dbNet* net_, uint node, bool foreign)
     } else {
       block->_maxCapNodeId = seg->getOID();
       uint capIdx = block->_c_val_tbl->getIdx(cornerCnt, (float) 0.0);
-      ZASSERT((seg->getOID() - 1) * cornerCnt + 1 == capIdx);
+      assert((seg->getOID() - 1) * cornerCnt + 1 == capIdx);
     }
   }
   seg->_net = net->getOID();

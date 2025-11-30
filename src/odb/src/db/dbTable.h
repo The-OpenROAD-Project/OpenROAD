@@ -8,7 +8,6 @@
 #include "boost/integer/static_log2.hpp"
 #include "dbCore.h"
 #include "dbVector.h"
-#include "odb/ZException.h"
 #include "odb/dbId.h"
 #include "odb/dbIterator.h"
 #include "odb/dbObject.h"

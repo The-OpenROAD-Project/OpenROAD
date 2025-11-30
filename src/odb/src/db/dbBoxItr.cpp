@@ -3,6 +3,8 @@
 
 #include "dbBoxItr.h"
 
+#include <cassert>
+
 #include "dbBPin.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
@@ -16,7 +18,6 @@
 #include "dbTable.hpp"
 #include "dbTechVia.h"
 #include "dbVia.h"
-#include "odb/ZException.h"
 #include "odb/dbId.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
@@ -305,7 +306,7 @@ uint dbBoxItr<page_size>::next(uint id, ...) const
     }
 
     // this should not be possible unless new types with polygons are added
-    ZASSERT(0);
+    assert(0);
   }
 
   return 0;

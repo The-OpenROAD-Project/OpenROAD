@@ -383,7 +383,7 @@ void dbGCellGrid::getGridPatternX(int i,
                                   int& step)
 {
   _dbGCellGrid* grid = (_dbGCellGrid*) this;
-  ZASSERT(i < (int) grid->x_origin_.size());
+  assert(i < (int) grid->x_origin_.size());
   origin_x = grid->x_origin_[i];
   line_count = grid->x_count_[i];
   step = grid->x_step_[i];
@@ -395,7 +395,7 @@ void dbGCellGrid::getGridPatternY(int i,
                                   int& step)
 {
   _dbGCellGrid* grid = (_dbGCellGrid*) this;
-  ZASSERT(i < (int) grid->y_origin_.size());
+  assert(i < (int) grid->y_origin_.size());
   origin_y = grid->y_origin_[i];
   line_count = grid->y_count_[i];
   step = grid->y_step_[i];

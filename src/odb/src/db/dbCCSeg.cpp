@@ -3,6 +3,7 @@
 
 #include "dbCCSeg.h"
 
+#include <cassert>
 #include <cstdio>
 
 #include "dbBlock.h"
@@ -13,7 +14,6 @@
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -107,7 +107,7 @@ double dbCCSeg::getCapacitance(int corner)
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  assert((corner >= 0) && ((uint) corner < cornerCnt));
   return (*block->_cc_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
 }
 
@@ -171,7 +171,7 @@ void dbCCSeg::setCapacitance(double cap, int corner)
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  assert((corner >= 0) && ((uint) corner < cornerCnt));
 
   float& value
       = (*block->_cc_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
@@ -203,7 +203,7 @@ void dbCCSeg::addCapacitance(double cap, int corner)
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  assert((corner >= 0) && ((uint) corner < cornerCnt));
 
   float& value
       = (*block->_cc_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
@@ -543,7 +543,7 @@ dbCCSeg* dbCCSeg::create(dbCapNode* src_, dbCapNode* tgt_, bool mergeParallel)
   } else {
     block->_maxCCSegId = seg->getOID();
     uint ccCapIdx = block->_cc_val_tbl->getIdx(cornerCnt, (float) 0.0);
-    ZASSERT((seg->getOID() - 1) * cornerCnt + 1 == ccCapIdx);
+    assert((seg->getOID() - 1) * cornerCnt + 1 == ccCapIdx);
   }
 
   seg->_cap_node[0] = src->getOID();

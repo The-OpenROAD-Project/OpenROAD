@@ -7,7 +7,6 @@
 #include <cmath>
 #include <vector>
 
-#include "odb/ZException.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
 #include "odb/dbTransform.h"

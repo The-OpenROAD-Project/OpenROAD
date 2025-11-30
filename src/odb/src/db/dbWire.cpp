@@ -16,7 +16,6 @@
 #include "dbTechLayerRule.h"
 #include "dbVia.h"
 #include "dbWireOpcode.h"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbShape.h"
@@ -177,7 +176,7 @@ std::optional<Rect> dbWire::getBBox()
 void dbWire::getShape(int shape_id, dbShape& shape)
 {
   _dbWire* wire = (_dbWire*) this;
-  ZASSERT((0 <= shape_id) && (shape_id < (int) wire->length()));
+  assert((0 <= shape_id) && (shape_id < (int) wire->length()));
   unsigned char opcode = wire->_opcodes[shape_id];
 
   switch (opcode & WOP_OPCODE_MASK) {
@@ -240,14 +239,14 @@ void dbWire::getShape(int shape_id, dbShape& shape)
     }
 
     default:
-      ZASSERT(DB_WIRE_SHAPE_INVALID_SHAPE_ID);
+      assert(DB_WIRE_SHAPE_INVALID_SHAPE_ID);
   }
 }
 
 Point dbWire::getCoord(int jid)
 {
   _dbWire* wire = (_dbWire*) this;
-  ZASSERT((0 <= jid) && (jid < (int) wire->length()));
+  assert((0 <= jid) && (jid < (int) wire->length()));
   dbBlock* block = (dbBlock*) wire->getOwner();
   dbTech* tech = getDb()->getTech();
   WirePoint pnt;
@@ -260,19 +259,19 @@ bool dbWire::getProperty(int jid, int& prpty)
 {
   _dbWire* wire = (_dbWire*) this;
   int wlen = (int) wire->length();
-  ZASSERT(0 <= jid && jid < wlen);
+  assert(0 <= jid && jid < wlen);
   unsigned char op = wire->_opcodes[jid] & WOP_OPCODE_MASK;
   if (op == WOP_COLINEAR || op == WOP_RECT) {
     prpty = 0;
     return true;
   }
-  ZASSERT(op == WOP_X || op == WOP_Y);
-  ZASSERT(jid + 1 < wlen);
+  assert(op == WOP_X || op == WOP_Y);
+  assert(jid + 1 < wlen);
   if ((wire->_opcodes[jid + 1] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
     prpty = wire->_data[jid + 1];
     return true;
   }
-  ZASSERT(jid + 2 < wlen);
+  assert(jid + 2 < wlen);
   if ((wire->_opcodes[jid + 2] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
     prpty = wire->_data[jid + 2];
     return true;
@@ -284,18 +283,18 @@ bool dbWire::setProperty(int jid, int prpty)
 {
   _dbWire* wire = (_dbWire*) this;
   int wlen = (int) wire->length();
-  ZASSERT(0 <= jid && jid < wlen);
+  assert(0 <= jid && jid < wlen);
   if ((wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_COLINEAR) {
     return true;
   }
-  ZASSERT((wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_X
-          || (wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_Y);
-  ZASSERT(jid + 1 < wlen);
+  assert((wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_X
+         || (wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_Y);
+  assert(jid + 1 < wlen);
   if ((wire->_opcodes[jid + 1] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
     wire->_data[jid + 1] = prpty;
     return true;
   }
-  ZASSERT(jid + 2 < wlen);
+  assert(jid + 2 < wlen);
   if ((wire->_opcodes[jid + 2] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
     wire->_data[jid + 2] = prpty;
     return true;
@@ -306,14 +305,14 @@ bool dbWire::setProperty(int jid, int prpty)
 int dbWire::getData(int idx)
 {
   _dbWire* wire = (_dbWire*) this;
-  ZASSERT((0 <= idx) && (idx < (int) wire->length()));
+  assert((0 <= idx) && (idx < (int) wire->length()));
   return (wire->_data[idx]);
 }
 
 unsigned char dbWire::getOpcode(int idx)
 {
   _dbWire* wire = (_dbWire*) this;
-  ZASSERT((0 <= idx) && (idx < (int) wire->length()));
+  assert((0 <= idx) && (idx < (int) wire->length()));
   return (wire->_opcodes[idx]);
 }
 
@@ -441,7 +440,7 @@ void dbWire::getSegment(int shape_id, dbShape& shape)
   bool ignore_ext = false;
 
 decode_loop: {
-  ZASSERT(idx >= 0);
+  assert(idx >= 0);
   opcode = wire->_opcodes[idx];
 
   switch (opcode & WOP_OPCODE_MASK) {
@@ -544,7 +543,7 @@ state_machine_update: {
 }
 
   while ((layer == nullptr) || (found_width == false)) {
-    ZASSERT(idx >= 0);
+    assert(idx >= 0);
     opcode = wire->_opcodes[idx];
 
     switch (opcode & WOP_OPCODE_MASK) {
@@ -679,7 +678,7 @@ void dbWire::getSegment(int shape_id, dbTechLayer* layer, dbShape& shape)
   bool ignore_ext = false;
 
 decode_loop: {
-  ZASSERT(idx >= 0);
+  assert(idx >= 0);
   opcode = wire->_opcodes[idx];
 
   switch (opcode & WOP_OPCODE_MASK) {
@@ -754,7 +753,7 @@ state_machine_update: {
 }
 
   while (found_width == false) {
-    ZASSERT(idx >= 0);
+    assert(idx >= 0);
     opcode = wire->_opcodes[idx];
 
     switch (opcode & WOP_OPCODE_MASK) {
@@ -909,7 +908,7 @@ inline bool createTechVia(_dbWire* wire, int idx, dbShape& shape)
 bool dbWire::getPrevVia(int idx, dbShape& shape)
 {
   _dbWire* wire = (_dbWire*) this;
-  ZASSERT((0 < idx) && (idx < (int) wire->length()));
+  assert((0 < idx) && (idx < (int) wire->length()));
 
   unsigned char opcode;
   opcode = getPrevOpcode(wire, idx);
@@ -956,7 +955,7 @@ bool dbWire::getPrevVia(int idx, dbShape& shape)
 bool dbWire::getNextVia(int idx, dbShape& shape)
 {
   _dbWire* wire = (_dbWire*) this;
-  ZASSERT((0 < idx) && (idx < (int) wire->length()));
+  assert((0 < idx) && (idx < (int) wire->length()));
   ++idx;
 
 nextOpCode:

@@ -11,7 +11,6 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/lefout.h"
 #include "odb/odb.h"
@@ -644,7 +643,7 @@ void dbTechLayerSpacingRule::setCutLayer4Spacing(dbTechLayer* cutly)
          || (_lsp->flags_._rule == _dbTechLayerSpacingRule::CUT_LAYER_BELOW));
 
   dbTechLayer* tmply = (dbTechLayer*) _lsp->getOwner();
-  ZASSERT(cutly->getNumber() < tmply->getNumber());
+  assert(cutly->getNumber() < tmply->getNumber());
   _dbTechLayer* ct_ly = (_dbTechLayer*) cutly;
 
   _lsp->flags_._rule = _dbTechLayerSpacingRule::CUT_LAYER_BELOW;

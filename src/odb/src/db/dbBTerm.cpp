@@ -3,6 +3,7 @@
 
 #include "dbBTerm.h"
 
+#include <cassert>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -29,7 +30,6 @@
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
@@ -644,7 +644,7 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
     dbMaster* master = inst->getMaster();
     _dbMaster* master_impl = (_dbMaster*) master;
     _dbInstHdr* inst_hdr = parent_block->_inst_hdr_hash.find(master_impl->_id);
-    ZASSERT(inst_hdr->_inst_cnt == 1);
+    assert(inst_hdr->_inst_cnt == 1);
 
     master_impl->flags_._frozen = 0;  // allow the mterm creation
     auto mterm = (_dbMTerm*) dbMTerm::create(master, name, dbIoType::INOUT);

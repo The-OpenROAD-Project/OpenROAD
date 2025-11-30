@@ -4,6 +4,7 @@
 #include "dbRSeg.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cstdio>
 #include <vector>
 
@@ -16,7 +17,6 @@
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -72,7 +72,7 @@ double dbRSeg::getResistance(int corner)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
 
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  assert((corner >= 0) && ((uint) corner < cornerCnt));
   return (*block->_r_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
 }
 
@@ -188,7 +188,7 @@ void dbRSeg::setResistance(double res, int corner)
   _dbRSeg* seg = (_dbRSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  assert((corner >= 0) && ((uint) corner < cornerCnt));
 
   float& value
       = (*block->_r_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
@@ -220,7 +220,7 @@ void dbRSeg::adjustResistance(float factor, int corner)
   _dbRSeg* seg = (_dbRSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  assert((corner >= 0) && ((uint) corner < cornerCnt));
 
   float& value
       = (*block->_r_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
@@ -272,7 +272,7 @@ void dbRSeg::setCapacitance(double cap, int corner)
     seg->flags_._update_cap = 0;
   }
 
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  assert((corner >= 0) && ((uint) corner < cornerCnt));
   float& value
       = (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
   float prev_value = value;
@@ -368,7 +368,7 @@ double dbRSeg::getCapacitance(int corner)
     dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
     return node->getCapacitance(corner);
   }
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  assert((corner >= 0) && ((uint) corner < cornerCnt));
   return (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
 }
 
@@ -729,7 +729,7 @@ dbRSeg* dbRSeg::create(dbNet* net_,
     }
   } else {
     uint resIdx = block->_r_val_tbl->getIdx(cornerCnt, (float) 0.0);
-    ZASSERT((seg->getOID() - 1) * cornerCnt + 1 == resIdx);
+    assert((seg->getOID() - 1) * cornerCnt + 1 == resIdx);
   }
 
   // seg->_resIdx= block->_r_val_tbl->size();
@@ -748,7 +748,7 @@ dbRSeg* dbRSeg::create(dbNet* net_,
       }
     } else {
       const uint capIdx = block->_c_val_tbl->getIdx(cornerCnt, (float) 0.0);
-      ZASSERT((seg->getOID() - 1) * cornerCnt + 1 == capIdx);
+      assert((seg->getOID() - 1) * cornerCnt + 1 == capIdx);
     }
 
     // seg->_capIdx= block->_c_val_tbl->size();
