@@ -2618,22 +2618,6 @@ void extMeasure::printMets(FILE* fp)
   }
 }
 
-void extMeasure::printStats(FILE* fp)
-{
-  fprintf(fp,
-          "<==> w= %g[%g %g]  s= %g[%g]  th= %g[%g]  h= %g[%g]  r= %g",
-          _w_m,
-          _topWidth,
-          _botWidth,
-          _s_m,
-          _seff,
-          _t,
-          _teff,
-          _h,
-          _heff,
-          _r);
-}
-
 FILE* extRCModel::openFile(const char* topDir,
                            const char* name,
                            const char* suffix,
@@ -2782,16 +2766,6 @@ FILE* extRCModel::mkPatternFile()
   fprintf(fp, "PATTERN %s\n\n", _wireDirName);
   if (strcmp("TYP/Under3/M6uM7/W0.42_W0.42/S0.84_S0.84", _wireDirName) == 0) {
     fprintf(stdout, "%s\n", _wireDirName);
-  }
-
-  return fp;
-}
-
-FILE* extRCModel::openSolverFile()
-{
-  FILE* fp = openFile(_wireDirName, _wireFileName, ".out", "r");
-  if (fp != nullptr) {
-    _parser->setInputFP(fp);
   }
 
   return fp;

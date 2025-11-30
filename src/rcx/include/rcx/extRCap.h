@@ -763,7 +763,6 @@ class extRCModel
                  const char* name,
                  const char* suffix,
                  const char* permissions);
-  FILE* openSolverFile();
   void mkNet_prefix(extMeasure* m, const char* wiresNameSuffix);
   void mkFileNames(extMeasure* m, char* wiresNameSuffix);
   void writeWires2(FILE* fp, extMeasure* measure, uint wireCnt);
@@ -1367,7 +1366,6 @@ class extMeasure
                        double s2 = 0.0);
   void setEffParams(double wTop, double wBot, double teff);
   void addCap();
-  void printStats(FILE* fp);
   void printMets(FILE* fp);
 
   ext2dBox* addNew2dBox(odb::dbNet* net, int* ll, int* ur, uint m, bool cntx);
@@ -2698,7 +2696,6 @@ class extMain
   uint _ccUp = 0;
   uint _couplingFlag = 0;
   bool _rotatedGs = false;
-  // uint _ccContextDepth = 0;
   int _ccMinX;
   int _ccMinY;
   int _ccMaxX;
@@ -2789,95 +2786,14 @@ class extMain
 
   int _noVariationIndex;
 
-  bool _ignoreWarning_1st;
-  bool _keepExtModel;
-
   friend class extMeasure;
 
-  FILE* _blkInfoVDD = nullptr;
-  FILE* _viaInfoVDD = nullptr;
-  FILE* _blkInfoGND = nullptr;
-  FILE* _viaInfoGND = nullptr;
-
-  FILE* _stdCirVDD = nullptr;
-  FILE* _globCirVDD = nullptr;
-  FILE* _globGeomVDD = nullptr;
-  FILE* _stdCirGND = nullptr;
-  FILE* _globCirGND = nullptr;
-
-  FILE* _stdCirHeadVDD = nullptr;
-  FILE* _globCirHeadVDD = nullptr;
-  FILE* _globGeomGND = nullptr;
-  FILE* _stdCirHeadGND = nullptr;
-  FILE* _globCirHeadGND = nullptr;
-  FILE* _blkInfo = nullptr;
-  FILE* _viaInfo = nullptr;
-  FILE* _globCir = nullptr;
-  FILE* _globGeom = nullptr;
-  FILE* _stdCir = nullptr;
-  FILE* _globCirHead = nullptr;
-  FILE* _stdCirHead = nullptr;
-  FILE* _viaStackGlobCir = nullptr;
-  FILE* _viaStackGlobVDD = nullptr;
-  FILE* _viaStackGlobGND = nullptr;
-
-  Ath__array1D<int>* _junct2viaMap = nullptr;
-  bool _dbgPowerFlow;
-  dbCreateNetUtil* _netUtil = nullptr;
-
-  std::vector<odb::dbBox*> _viaUp_VDDtable;
-  std::vector<odb::dbBox*> _viaUp_GNDtable;
-  std::vector<odb::dbBox*> _viaM1_GNDtable;
-  std::vector<odb::dbBox*> _viaM1_VDDtable;
-  std::vector<odb::dbBox*>* _viaM1Table = nullptr;
-  std::vector<odb::dbBox*>* _viaUpTable = nullptr;
-
-  uint _stackedViaResCnt;
-  uint _totViaResCnt;
-  Ath__array1D<int>* _via2JunctionMap = nullptr;
-  std::map<odb::dbBox*, odb::dbNet*> _via_map;
-  std::map<uint, odb::dbNet*> _via_id_map;
-  std::map<uint, float> _capNode_map;
-  std::vector<odb::dbInst*> _powerMacroTable;
-  std::vector<odb::dbBox*> _viaUpperTable[2];
-  Ath__array1D<char*>** _supplyViaMap[2]{nullptr, nullptr};
-  Ath__array1D<odb::dbBox*>** _supplyViaTable[2]{nullptr, nullptr};
-  char* _power_source_file = nullptr;
-  std::vector<char*> _powerSourceTable[2];
-  FILE* _coordsFP = nullptr;
-  FILE* _coordsGND = nullptr;
-  FILE* _coordsVDD = nullptr;
-  std::vector<uint> _vddItermIdTable;
-  std::vector<uint> _gndItermIdTable;
-  FILE* _subCktNodeFP[2][2]{{nullptr, nullptr}, {nullptr, nullptr}};
-  uint _subCktNodeCnt[2][2];
-  bool _nodeCoords;
-  int _prevX;
-  int _prevY;
-  char _node_blk_dir[1024];
-  char _node_blk_prefix[1024];
-  char _node_inst_prefix[1024];
-  Ath__array1D<odb::dbITerm*>* _junct2iterm = nullptr;
-  std::map<uint, odb::dbSBox*> _sbox_id_map;
-
-  uint _powerWireCnt;
-  uint _mergedPowerWireCnt;
-  uint _overlapPowerWireCnt;
-  uint _viaOverlapPowerCnt;
-  uint _multiViaCnt;
-
-  std::vector<odb::Rect*> _multiViaTable[20];
-  std::vector<odb::dbBox*> _multiViaBoxTable[20];
-
-  // v2 uint _debug_net_id = 0;
   float _previous_percent_extracted = 0;
 
   double _minCapTable[64][64];
   double _maxCapTable[64][64];
   double _minResTable[64][64];
   double _maxResTable[64][64];
-  uint _rcLayerCnt;
-  uint _rcCornerCnt;
 
  public:
   bool _lef_res;
