@@ -10,8 +10,8 @@
 #include <cstring>
 #include <filesystem>
 
-#include "odb/array1.h"
 #include "odb/odb.h"
+#include "rcx/array1.h"
 #include "utl/Logger.h"
 
 namespace rcx {
@@ -224,7 +224,7 @@ double Ath__parser::getDouble(int ii)
   return atof(get(ii));
 }
 
-void Ath__parser::getDoubleArray(odb::Ath__array1D<double>* A,
+void Ath__parser::getDoubleArray(Ath__array1D<double>* A,
                                  int start,
                                  double mult)
 {
@@ -239,8 +239,8 @@ void Ath__parser::getDoubleArray(odb::Ath__array1D<double>* A,
   }
 }
 
-odb::Ath__array1D<double>* Ath__parser::readDoubleArray(const char* keyword,
-                                                        int start1)
+Ath__array1D<double>* Ath__parser::readDoubleArray(const char* keyword,
+                                                   int start1)
 {
   if ((keyword != nullptr) && (strcmp(keyword, get(0)) != 0)) {
     return nullptr;
@@ -250,7 +250,7 @@ odb::Ath__array1D<double>* Ath__parser::readDoubleArray(const char* keyword,
     return nullptr;
   }
 
-  auto* A = new odb::Ath__array1D<double>(getWordCnt());
+  auto* A = new Ath__array1D<double>(getWordCnt());
   int start = 0;
   if (keyword != nullptr) {
     start = start1;

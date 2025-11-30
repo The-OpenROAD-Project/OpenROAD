@@ -65,6 +65,7 @@ cc_library(
         "src/process_ext.cpp",
     ],
     hdrs = [
+        "include/rcx/array1.h",
         "include/rcx/box.h",
         "include/rcx/dbUtil.h",
         "include/rcx/ext.h",

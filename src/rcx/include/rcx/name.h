@@ -34,7 +34,7 @@ class NameTable
   uint getDataId(int poolId);
 
   AthHash<int>* _hashTable;
-  odb::AthPool<NameBucket>* _bucketPool;
+  AthPool<NameBucket>* _bucketPool;
 };
 
 class NameBucket
@@ -54,7 +54,7 @@ class NameTable
 {
  private:
   AthHash<int>* _hashTable;
-  odb::AthPool<NameBucket>* _bucketPool;
+  AthPool<NameBucket>* _bucketPool;
   // int *nameMap; // TODO
 
   void allocName(char* name, uint nameId, bool hash = false);
