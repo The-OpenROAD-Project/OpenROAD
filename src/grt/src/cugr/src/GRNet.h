@@ -39,6 +39,7 @@ class GRNet
     routing_tree_ = std::move(tree);
   }
   void clearRoutingTree() { routing_tree_ = nullptr; }
+  bool isInsideLayerRange(int layer_index) const;
 
  private:
   int index_;
@@ -46,6 +47,7 @@ class GRNet
   std::vector<std::vector<GRPoint>> pin_access_points_;
   BoxT bounding_box_;
   std::shared_ptr<GRTreeNode> routing_tree_;
+  LayerRange layer_range_;
 };
 
 }  // namespace grt

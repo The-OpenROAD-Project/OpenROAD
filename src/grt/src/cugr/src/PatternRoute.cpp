@@ -546,8 +546,11 @@ void PatternRoute::calculateRoutingCosts(
         if (grid_graph_->getLayerDirection(layerIndex) != direction) {
           continue;
         }
-        CostT cost = path->getCosts()[layerIndex]
-                     + grid_graph_->getWireCost(layerIndex, *node, *path);
+        CostT cost
+            = net_->isInsideLayerRange(layerIndex)
+                  ? path->getCosts()[layerIndex]
+                        + grid_graph_->getWireCost(layerIndex, *node, *path)
+                  : std::numeric_limits<CostT>::max();
         if (cost < costs[layerIndex].first) {
           costs[layerIndex] = std::make_pair(cost, pathIndex);
         }
