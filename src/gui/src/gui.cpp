@@ -10,6 +10,7 @@
 #include <QWidget>
 #include <algorithm>
 #include <any>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -30,6 +31,9 @@
 #include <string>
 #include <vector>
 
+#include "absl/debugging/stacktrace.h"
+#include "absl/debugging/symbolize.h"
+#include "absl/strings/str_format.h"
 #include "boost/algorithm/string/predicate.hpp"
 #include "chartsWidget.h"
 #include "clockWidget.h"
@@ -56,6 +60,32 @@
 
 extern int cmd_argc;
 extern char** cmd_argv;
+
+namespace {
+
+std::string GetSymbolizedStackTraceAsString(int max_depth,
+                                            int skip_count,
+                                            bool demangle)
+{
+  std::string result;
+  int skip_count_including_self = skip_count + 1;
+  std::vector<void*> stack_trace;
+  stack_trace.resize(max_depth);
+  stack_trace.resize(absl::GetStackTrace(
+      stack_trace.data(), max_depth, skip_count_including_self));
+  std::array<char, 256> symbol_name_buffer;
+  for (void* pc : stack_trace) {
+    if (absl::Symbolize(
+            pc, symbol_name_buffer.data(), symbol_name_buffer.size())) {
+      result += absl::StrFormat("%08p: %s\n", pc, symbol_name_buffer.data());
+    } else {
+      result += absl::StrFormat("%08p: [unknown]\n", pc);
+    }
+  }
+  return result;
+}
+
+}  // namespace
 
 namespace gui {
 
@@ -210,6 +240,14 @@ static void resetConversions()
 
 Gui* Gui::get()
 {
+  if (!enabled()) {
+    ord::OpenRoad::openRoad()->getLogger()->warn(
+        utl::GUI,
+        150,
+        "Internal Error: gui::Gui::Get() called when enabled() is false\n{}",
+        GetSymbolizedStackTraceAsString(10, 0, true));
+  }
+
   static Gui* singleton = new Gui();
 
   return singleton;
