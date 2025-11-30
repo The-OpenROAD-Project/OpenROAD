@@ -12,6 +12,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/dbObject.h"
+#include "odb/odb.h"
 
 namespace odb {
 

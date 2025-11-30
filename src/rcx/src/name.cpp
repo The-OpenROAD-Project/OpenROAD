@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "odb/util.h"
+#include "rcx/util.h"
 
 namespace rcx {
 

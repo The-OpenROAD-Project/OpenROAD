@@ -13,13 +13,13 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
-#include "odb/util.h"
 #include "parse.h"
 #include "rcx/array1.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "rcx/extViaModel.h"
 #include "rcx/extprocess.h"
+#include "rcx/util.h"
 #include "utl/Logger.h"
 
 using odb::dbBTerm;

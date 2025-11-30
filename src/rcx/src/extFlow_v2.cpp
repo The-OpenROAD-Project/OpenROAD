@@ -13,13 +13,14 @@
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/geom.h"
-#include "odb/util.h"
 #include "parse.h"
 #include "rcx/array1.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
+#include "rcx/extSegment.h"
 #include "rcx/grids.h"
+#include "rcx/util.h"
 #include "utl/Logger.h"
 
 using odb::dbCapNode;

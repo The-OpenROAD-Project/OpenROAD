@@ -16,6 +16,7 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include <algorithm>
+#include <cassert>
 
 #include "dbBlock.h"
 #include "dbTech.h"

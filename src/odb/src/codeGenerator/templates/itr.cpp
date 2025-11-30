@@ -6,6 +6,7 @@
 #include "{{itr.parentObject}}.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/odb.h"
 {% for include in itr.includes %}
   #include "{{include}}"
 {% endfor %}

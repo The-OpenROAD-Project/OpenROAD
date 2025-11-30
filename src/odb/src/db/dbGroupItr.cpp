@@ -7,6 +7,7 @@
 #include "dbGroup.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/odb.h"
 // User Code Begin Includes
 #include "dbModule.h"
 // User Code End Includes

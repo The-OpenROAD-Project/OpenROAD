@@ -16,7 +16,6 @@
 #include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
 #include "odb/geom.h"
-#include "rcx/array1.h"
 #include "utl/Logger.h"
 
 using odb::dbBPin;

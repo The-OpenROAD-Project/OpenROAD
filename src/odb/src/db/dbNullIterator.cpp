@@ -3,6 +3,8 @@
 
 #include "dbNullIterator.h"
 
+#include "odb/odb.h"
+
 namespace odb {
 
 dbNullIterator dbNullIterator::null_iterator;

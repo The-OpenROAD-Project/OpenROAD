@@ -13,12 +13,12 @@
 #include <string>
 #include <vector>
 
-#include "odb/util.h"
 #include "parse.h"
 #include "rcx/array1.h"
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
 #include "rcx/grids.h"
+#include "rcx/util.h"
 #include "utl/Logger.h"
 
 // #define SKIP_SOLVER

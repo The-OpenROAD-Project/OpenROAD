@@ -10,11 +10,11 @@
 
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "odb/util.h"
 #include "rcx/array1.h"
 #include "rcx/box.h"
 #include "rcx/extRCap.h"
 #include "rcx/rcx.h"
+#include "rcx/util.h"
 
 namespace rcx {
 

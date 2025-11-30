@@ -7,6 +7,7 @@
 #include <iterator>
 
 #include "odb/dbIterator.h"
+#include "odb/odb.h"
 
 namespace odb {
 

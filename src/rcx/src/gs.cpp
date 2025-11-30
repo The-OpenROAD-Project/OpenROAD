@@ -7,8 +7,8 @@
 #include <cstring>
 
 #include "gseq.h"
-#include "odb/util.h"
 #include "rcx/array1.h"
+#include "rcx/util.h"
 
 namespace rcx {
 

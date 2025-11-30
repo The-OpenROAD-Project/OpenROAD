@@ -11,6 +11,7 @@
 #include "dbNet.h"
 #include "dbTable.h"
 #include "odb/dbObject.h"
+#include "odb/odb.h"
 
 namespace odb {
 

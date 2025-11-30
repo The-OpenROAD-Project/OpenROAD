@@ -7,6 +7,7 @@
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "odb/dbObject.h"
+#include "odb/odb.h"
 
 namespace odb {
 

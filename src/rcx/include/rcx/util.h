@@ -5,6 +5,7 @@
 
 #include <string.h>
 
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -20,9 +21,7 @@ class AthArray
  public:
   AthArray(int alloc_size = 128)
   {
-    if (alloc_size < 2) {
-      alloc_size = 2;
-    }
+    alloc_size = std::max(alloc_size, 2);
     m_alloc_size_ = alloc_size;
     m_num_mallocated_first_level_ = alloc_size;
     m_ptr_ = (T**) malloc(sizeof(T*) * m_num_mallocated_first_level_);

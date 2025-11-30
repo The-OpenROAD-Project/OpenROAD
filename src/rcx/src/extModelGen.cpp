@@ -14,8 +14,9 @@
 #include <vector>
 
 #include "odb/dbSet.h"
-#include "odb/util.h"
 #include "parse.h"
+#include "rcx/extRCap.h"
+#include "rcx/util.h"
 
 namespace rcx {
 

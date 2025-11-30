@@ -83,7 +83,6 @@ cc_library(
         "include/rcx/ext_options.h",
         "include/rcx/extprocess.h",
         "include/rcx/grids.h",
-        "include/rcx/name.h",
         "include/rcx/rcx.h",
         "include/rcx/util.h",
     ],
