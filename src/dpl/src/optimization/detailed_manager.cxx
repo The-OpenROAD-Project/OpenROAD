@@ -2657,9 +2657,6 @@ bool DetailedMgr::tryMove3(Node* ndi,
       old_segs.push_back(seg->getSegId());
     }
 
-    // Check if the site orientation is available at the new position
-    const DbuX new_x = xj;
-    const DbuY new_y = arch_->getRow(rb)->getBottom();
     if (!addToMoveList(ndi,
                        ndi->getLeft(),
                        ndi->getBottom(),
