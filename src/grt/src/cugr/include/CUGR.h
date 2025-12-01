@@ -65,7 +65,7 @@ class CUGR
        stt::SteinerTreeBuilder* stt_builder,
        sta::dbSta* sta);
   ~CUGR();
-  void init(int min_routing_layer, int max_routing_layer);
+  void init(int min_routing_layer, int max_routing_layer, std::set<odb::dbNet*> clock_nets);
   void route();
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();

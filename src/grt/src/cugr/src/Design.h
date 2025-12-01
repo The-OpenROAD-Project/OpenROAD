@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <set>
 
 #include "CUGR.h"
 #include "GeoTypes.h"
@@ -37,7 +38,8 @@ class Design
          sta::dbSta* sta,
          const Constants& constants,
          int min_routing_layer,
-         int max_routing_layer);
+         int max_routing_layer,
+         std::set<odb::dbNet*> clock_nets);
   int getLibDBU() const { return lib_dbu_; }
 
   CostT getUnitLengthWireCost() const { return unit_length_wire_cost_; }
@@ -77,8 +79,6 @@ class Design
   void readDesignObstructions();
   void computeGrid();
   void setUnitCosts();
-  bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
-  bool isNonLeafClock(odb::dbNet* db_net);
 
   // debug functions
   void printNets() const;
@@ -107,6 +107,7 @@ class Design
   const Constants constants_;
   const int min_routing_layer_;
   const int max_routing_layer_;
+  std::set<odb::dbNet*> clock_nets_;
 };
 
 }  // namespace grt

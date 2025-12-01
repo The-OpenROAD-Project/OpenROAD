@@ -22,14 +22,16 @@ Design::Design(odb::dbDatabase* db,
                sta::dbSta* sta,
                const Constants& constants,
                const int min_routing_layer,
-               const int max_routing_layer)
+               const int max_routing_layer,
+               std::set<odb::dbNet*> clock_nets)
     : block_(db->getChip()->getBlock()),
       tech_(db->getTech()),
       logger_(logger),
       sta_(sta),
       constants_(constants),
       min_routing_layer_(min_routing_layer),
-      max_routing_layer_(max_routing_layer)
+      max_routing_layer_(max_routing_layer),
+      clock_nets_(clock_nets)
 {
   read();
   setUnitCosts();
@@ -138,7 +140,7 @@ void Design::readNetlist()
 
     LayerRange layer_range
         = {.min_layer = min_routing_layer_, .max_layer = max_routing_layer_};
-    if (isNonLeafClock(db_net)) {
+    if (clock_nets_.find(db_net) != clock_nets_.end()) {
       layer_range.min_layer = block_->getMinLayerForClock() - 1;
       layer_range.max_layer = block_->getMaxLayerForClock() - 1;
     }
@@ -300,34 +302,6 @@ void Design::setUnitCosts()
     unit_length_short_costs_[layerIndex]
         = unit_area_short_cost * layers_[layerIndex].getWidth();
   }
-}
-
-bool Design::isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network)
-{
-  const sta::Pin* pin = network->dbToSta(iterm);
-  sta::LibertyPort* lib_port = network->libertyPort(pin);
-  bool connected_to_pad = false;
-  if (lib_port != nullptr) {
-    sta::LibertyCell* lib_cell = lib_port->libertyCell();
-    connected_to_pad = lib_cell != nullptr && lib_cell->isPad();
-  }
-
-  return lib_port && (lib_port->isRegClk() || connected_to_pad);
-}
-
-bool Design::isNonLeafClock(odb::dbNet* db_net)
-{
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  if (db_net->getSigType() != odb::dbSigType::CLOCK) {
-    return false;
-  }
-
-  for (odb::dbITerm* iterm : db_net->getITerms()) {
-    if (isClkTerm(iterm, network)) {
-      return false;
-    }
-  }
-  return true;
 }
 
 void Design::getAllObstacles(std::vector<std::vector<BoxT>>& all_obstacles,
