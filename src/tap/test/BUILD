@@ -141,7 +141,6 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
-            "overlap_cover": ["sky130hs_data/cover.lef"],
             "allow_one_site_gaps": ["disallow_one_site_gaps.def"],
             "boundary_macros": [],
             "disallow_one_site_gaps2": [
@@ -150,6 +149,7 @@ filegroup(
             ],
             "gcd_sky130_separate": ["gcd_sky130.defok"],
             "multiple_calls": ["gcd_ripup.def"],
+            "overlap_cover": ["sky130hs_data/cover.lef"],
         }.get(
             test_name,
             ["boundary_macros.def"],
