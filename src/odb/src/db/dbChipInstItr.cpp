@@ -8,6 +8,7 @@
 #include "dbChipInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -17,12 +18,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbChipInstItr::reversible()
+bool dbChipInstItr::reversible() const
 {
   return true;
 }
 
-bool dbChipInstItr::orderReversed()
+bool dbChipInstItr::orderReversed() const
 {
   return true;
 }
@@ -45,12 +46,12 @@ void dbChipInstItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbChipInstItr::sequential()
+uint dbChipInstItr::sequential() const
 {
   return 0;
 }
 
-uint dbChipInstItr::size(dbObject* parent)
+uint dbChipInstItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -63,7 +64,7 @@ uint dbChipInstItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbChipInstItr::begin(dbObject* parent)
+uint dbChipInstItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbChip* chip = (_dbChip*) parent;
@@ -71,12 +72,12 @@ uint dbChipInstItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbChipInstItr::end(dbObject* /* unused: parent */)
+uint dbChipInstItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbChipInstItr::next(uint id, ...)
+uint dbChipInstItr::next(uint id, ...) const
 {
   // User Code Begin next
   _dbChipInst* chipinst = _chip_inst_tbl->getPtr(id);

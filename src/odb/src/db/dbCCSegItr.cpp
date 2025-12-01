@@ -20,12 +20,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbCCSegItr::reversible()
+bool dbCCSegItr::reversible() const
 {
   return true;
 }
 
-bool dbCCSegItr::orderReversed()
+bool dbCCSegItr::orderReversed() const
 {
   return true;
 }
@@ -48,12 +48,12 @@ void dbCCSegItr::reverse(dbObject* parent)
   node->_cc_segs = list;
 }
 
-uint dbCCSegItr::sequential()
+uint dbCCSegItr::sequential() const
 {
   return 0;
 }
 
-uint dbCCSegItr::size(dbObject* parent)
+uint dbCCSegItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -66,18 +66,18 @@ uint dbCCSegItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbCCSegItr::begin(dbObject* parent)
+uint dbCCSegItr::begin(dbObject* parent) const
 {
   _dbCapNode* node = (_dbCapNode*) parent;
   return node->_cc_segs;
 }
 
-uint dbCCSegItr::end(dbObject* /* unused: parent */)
+uint dbCCSegItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbCCSegItr::next(uint id, ...)
+uint dbCCSegItr::next(uint id, ...) const
 {
   va_list ap;
   va_start(ap, id);

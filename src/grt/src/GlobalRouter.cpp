@@ -1408,7 +1408,7 @@ std::vector<LayerId> GlobalRouter::findTransitionLayers()
     int via_width = 0;
     for (const auto box : default_vias[tech_layer]->getBoxes()) {
       if (box->getTechLayer() == tech_layer) {
-        via_width = vertical ? box->getWidth() : box->getLength();
+        via_width = vertical ? box->getDY() : box->getDX();
         break;
       }
     }
@@ -3487,8 +3487,8 @@ void getViaDims(std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias,
   if (default_vias.find(tech_layer) != default_vias.end()) {
     for (auto box : default_vias[tech_layer]->getBoxes()) {
       if (box->getTechLayer() == tech_layer) {
-        width_up = std::min(box->getWidth(), box->getLength());
-        prl_up = std::max(box->getWidth(), box->getLength());
+        width_up = std::min(box->getDX(), box->getDY());
+        prl_up = std::max(box->getDX(), box->getDY());
         break;
       }
     }
@@ -3496,8 +3496,8 @@ void getViaDims(std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias,
   if (default_vias.find(bottom_layer) != default_vias.end()) {
     for (auto box : default_vias[bottom_layer]->getBoxes()) {
       if (box->getTechLayer() == tech_layer) {
-        width_down = std::min(box->getWidth(), box->getLength());
-        prl_down = std::max(box->getWidth(), box->getLength());
+        width_down = std::min(box->getDX(), box->getDY());
+        prl_down = std::max(box->getDX(), box->getDY());
         break;
       }
     }

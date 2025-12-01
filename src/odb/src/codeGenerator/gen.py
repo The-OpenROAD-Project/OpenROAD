@@ -89,7 +89,7 @@ def make_parent_hash_field(parent, relation, parent_field):
 
 def make_child_next_field(child, relation):
     """Adds a next entry field to the child of a hashed relationsip"""
-    inChildNextEntry = {"name": "_next_entry"}
+    inChildNextEntry = {"name": "next_entry_"}
     inChildNextEntry["type"] = "dbId<_" + relation["child"] + ">"
     inChildNextEntry["flags"] = ["private"]
     inChildNextEntry["flags"].extend(relation.get("flags", []))

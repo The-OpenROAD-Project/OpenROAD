@@ -40,10 +40,10 @@ template class dbTable<_dbModule>;
 
 bool _dbModule::operator==(const _dbModule& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (_insts != rhs._insts) {
@@ -68,7 +68,7 @@ bool _dbModule::operator==(const _dbModule& rhs) const
 bool _dbModule::operator<(const _dbModule& rhs) const
 {
   // User Code Begin <
-  if (strcmp(_name, rhs._name) >= 0) {
+  if (strcmp(name_, rhs.name_) >= 0) {
     return false;
   }
   // User Code End <
@@ -78,7 +78,7 @@ bool _dbModule::operator<(const _dbModule& rhs) const
 _dbModule::_dbModule(_dbDatabase* db)
 {
   // User Code Begin Constructor
-  _name = nullptr;
+  name_ = nullptr;
   _insts = 0;
   _modinsts = 0;
   _mod_inst = 0;
@@ -87,8 +87,8 @@ _dbModule::_dbModule(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
 {
-  stream >> obj._name;
-  stream >> obj._next_entry;
+  stream >> obj.name_;
+  stream >> obj.next_entry_;
   stream >> obj._insts;
   stream >> obj._mod_inst;
   stream >> obj._modinsts;
@@ -103,8 +103,8 @@ dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbModule& obj)
 {
-  stream << obj._name;
-  stream << obj._next_entry;
+  stream << obj.name_;
+  stream << obj.next_entry_;
   stream << obj._insts;
   stream << obj._mod_inst;
   stream << obj._modinsts;
@@ -119,7 +119,7 @@ void _dbModule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["_dbinst_hash"].add(_dbinst_hash);
   info.children_["_modinst_hash"].add(_modinst_hash);
   info.children_["_modbterm_hash"].add(_modbterm_hash);
@@ -129,9 +129,6 @@ void _dbModule::collectMemInfo(MemInfo& info)
 
 _dbModule::~_dbModule()
 {
-  if (_name) {
-    free((void*) _name);
-  }
   // User Code Begin Destructor
   delete _port_iter;
   // User Code End Destructor
@@ -146,7 +143,7 @@ _dbModule::~_dbModule()
 const char* dbModule::getName() const
 {
   _dbModule* obj = (_dbModule*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 void dbModule::setModInst(dbModInst* mod_inst)
@@ -203,7 +200,7 @@ void dbModule::addInst(dbInst* inst)
   _dbInst* _inst = (_dbInst*) inst;
   _dbBlock* block = (_dbBlock*) module->getOwner();
 
-  if (isTop() == false && _inst->_flags._physical_only) {
+  if (isTop() == false && _inst->flags_._physical_only) {
     _inst->getLogger()->error(
         utl::ODB,
         297,
@@ -216,12 +213,12 @@ void dbModule::addInst(dbInst* inst)
     return;  // already in this module
   }
 
-  if (_inst->_flags._dont_touch) {
+  if (_inst->flags_._dont_touch) {
     _inst->getLogger()->error(
         utl::ODB,
         367,
         "Attempt to change the module of dont_touch instance {}",
-        _inst->_name);
+        _inst->name_);
   }
 
   if (_inst->_module != 0) {
@@ -254,12 +251,12 @@ void _dbModule::removeInst(dbInst* inst)
     return;
   }
 
-  if (_inst->_flags._dont_touch) {
+  if (_inst->flags_._dont_touch) {
     _inst->getLogger()->error(
         utl::ODB,
         371,
         "Attempt to remove dont_touch instance {} from parent module",
-        _inst->_name);
+        _inst->name_);
   }
 
   _dbBlock* block = (_dbBlock*) getOwner();
@@ -368,7 +365,7 @@ dbModule* dbModule::create(dbBlock* block, const char* name)
     return nullptr;
   }
   _dbModule* module = _block->_module_tbl->create();
-  module->_name = safe_strdup(name);
+  module->name_ = safe_strdup(name);
   _block->_module_hash.insert(module);
 
   if (_block->_journal) {
@@ -377,11 +374,11 @@ dbModule* dbModule::create(dbBlock* block, const char* name)
                "DB_ECO",
                1,
                "ECO: create dbModule {} at id {}",
-               module->_name,
+               module->name_,
                module->getId());
     _block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     _block->_journal->pushParam(dbModuleObj);
-    _block->_journal->pushParam(module->_name);
+    _block->_journal->pushParam(module->name_);
     _block->_journal->pushParam(module->getId());
     _block->_journal->endAction();
   }

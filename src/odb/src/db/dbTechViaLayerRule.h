@@ -37,7 +37,7 @@ class _dbTechViaLayerRule : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  _dbTechViaLayerRuleFlags _flags;
+  _dbTechViaLayerRuleFlags flags_;
   int _overhang1;
   int _overhang2;
   int _min_width;

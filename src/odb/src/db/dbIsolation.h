@@ -22,15 +22,13 @@ class _dbIsolation : public _dbObject
  public:
   _dbIsolation(_dbDatabase*);
 
-  ~_dbIsolation();
-
   bool operator==(const _dbIsolation& rhs) const;
   bool operator!=(const _dbIsolation& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbIsolation& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
-  dbId<_dbIsolation> _next_entry;
+  char* name_;
+  dbId<_dbIsolation> next_entry_;
   std::string _applies_to;
   std::string _clamp_value;
   std::string _isolation_signal;

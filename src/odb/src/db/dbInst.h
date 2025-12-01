@@ -50,12 +50,12 @@ class _dbInst : public _dbObject
     NAME
   };
 
-  _dbInstFlags _flags;
-  char* _name;
+  _dbInstFlags flags_;
+  char* name_;
   int _x;
   int _y;
   int _weight;
-  dbId<_dbInst> _next_entry;
+  dbId<_dbInst> next_entry_;
   dbId<_dbInstHdr> _inst_hdr;
   dbId<_dbBox> _bbox;
   dbId<_dbRegion> _region;

@@ -29,7 +29,7 @@ bool _dbInstHdr::operator==(const _dbInstHdr& rhs) const
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -68,7 +68,7 @@ _dbInstHdr::_dbInstHdr(_dbDatabase*)
 _dbInstHdr::_dbInstHdr(_dbDatabase*, const _dbInstHdr& i)
     : _mterm_cnt(i._mterm_cnt),
       _id(i._id),
-      _next_entry(i._next_entry),
+      next_entry_(i.next_entry_),
       _lib(i._lib),
       _master(i._master),
       _mterms(i._mterms),
@@ -84,7 +84,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbInstHdr& inst_hdr)
 {
   stream << inst_hdr._mterm_cnt;
   stream << inst_hdr._id;
-  stream << inst_hdr._next_entry;
+  stream << inst_hdr.next_entry_;
   stream << inst_hdr._lib;
   stream << inst_hdr._master;
   stream << inst_hdr._mterms;
@@ -96,7 +96,7 @@ dbIStream& operator>>(dbIStream& stream, _dbInstHdr& inst_hdr)
 {
   stream >> inst_hdr._mterm_cnt;
   stream >> inst_hdr._id;
-  stream >> inst_hdr._next_entry;
+  stream >> inst_hdr.next_entry_;
   stream >> inst_hdr._lib;
   stream >> inst_hdr._master;
   stream >> inst_hdr._mterms;
@@ -136,7 +136,7 @@ dbInstHdr* dbInstHdr::create(dbBlock* block_, dbMaster* master_)
   _dbMaster* master = (_dbMaster*) master_;
   _dbLib* lib = (_dbLib*) master->getOwner();
 
-  if (!master->_flags._frozen) {
+  if (!master->flags_._frozen) {
     return nullptr;
   }
 

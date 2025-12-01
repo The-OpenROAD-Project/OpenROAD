@@ -52,6 +52,7 @@
 #include "odb/dbTypes.h"
 #include "odb/dbUtil.h"
 #include "odb/geom.h"
+#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -59,9 +60,9 @@ namespace odb {
 template class dbTable<_dbNet>;
 
 _dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
-    : _flags(n._flags),
-      _name(nullptr),
-      _next_entry(n._next_entry),
+    : flags_(n.flags_),
+      name_(nullptr),
+      next_entry_(n.next_entry_),
       _iterms(n._iterms),
       _bterms(n._bterms),
       _wire(n._wire),
@@ -79,38 +80,38 @@ _dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
       _ccAdjustOrder(n._ccAdjustOrder)
 
 {
-  if (n._name) {
-    _name = safe_strdup(n._name);
+  if (n.name_) {
+    name_ = safe_strdup(n.name_);
   }
   _drivingIterm = -1;
 }
 
 _dbNet::_dbNet(_dbDatabase* db)
 {
-  _flags._sig_type = dbSigType::SIGNAL;
-  _flags._wire_type = dbWireType::ROUTED;
-  _flags._special = 0;
-  _flags._wild_connect = 0;
-  _flags._wire_ordered = 0;
-  _flags._unused2 = 0;
-  _flags._disconnected = 0;
-  _flags._spef = 0;
-  _flags._select = 0;
-  _flags._mark = 0;
-  _flags._mark_1 = 0;
-  _flags._wire_altered = 0;
-  _flags._extracted = 0;
-  _flags._rc_graph = 0;
-  _flags._unused = 0;
-  _flags._set_io = 0;
-  _flags._io = 0;
-  _flags._dont_touch = 0;
-  _flags._fixed_bump = 0;
-  _flags._source = dbSourceType::NONE;
-  _flags._rc_disconnected = 0;
-  _flags._block_rule = 0;
-  _flags._has_jumpers = 0;
-  _name = nullptr;
+  flags_._sig_type = dbSigType::SIGNAL;
+  flags_._wire_type = dbWireType::ROUTED;
+  flags_._special = 0;
+  flags_._wild_connect = 0;
+  flags_._wire_ordered = 0;
+  flags_._unused2 = 0;
+  flags_._disconnected = 0;
+  flags_._spef = 0;
+  flags_._select = 0;
+  flags_._mark = 0;
+  flags_._mark_1 = 0;
+  flags_._wire_altered = 0;
+  flags_._extracted = 0;
+  flags_._rc_graph = 0;
+  flags_._unused = 0;
+  flags_._set_io = 0;
+  flags_._io = 0;
+  flags_._dont_touch = 0;
+  flags_._fixed_bump = 0;
+  flags_._source = dbSourceType::NONE;
+  flags_._rc_disconnected = 0;
+  flags_._block_rule = 0;
+  flags_._has_jumpers = 0;
+  name_ = nullptr;
   _gndc_calibration_factor = 1.0;
   _cc_calibration_factor = 1.0;
   _weight = 1;
@@ -122,19 +123,19 @@ _dbNet::_dbNet(_dbDatabase* db)
 
 _dbNet::~_dbNet()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbNet& net)
 {
-  uint* bit_field = (uint*) &net._flags;
+  uint* bit_field = (uint*) &net.flags_;
   stream << *bit_field;
-  stream << net._name;
+  stream << net.name_;
   stream << net._gndc_calibration_factor;
   stream << net._cc_calibration_factor;
-  stream << net._next_entry;
+  stream << net.next_entry_;
   stream << net._iterms;
   stream << net._bterms;
   stream << net._wire;
@@ -155,12 +156,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbNet& net)
 
 dbIStream& operator>>(dbIStream& stream, _dbNet& net)
 {
-  uint* bit_field = (uint*) &net._flags;
+  uint* bit_field = (uint*) &net.flags_;
   stream >> *bit_field;
-  stream >> net._name;
+  stream >> net.name_;
   stream >> net._gndc_calibration_factor;
   stream >> net._cc_calibration_factor;
-  stream >> net._next_entry;
+  stream >> net.next_entry_;
   stream >> net._iterms;
   stream >> net._bterms;
   stream >> net._wire;
@@ -185,96 +186,96 @@ dbIStream& operator>>(dbIStream& stream, _dbNet& net)
 
 bool _dbNet::operator<(const _dbNet& rhs) const
 {
-  return strcmp(_name, rhs._name) < 0;
+  return strcmp(name_, rhs.name_) < 0;
 }
 
 bool _dbNet::operator==(const _dbNet& rhs) const
 {
-  if (_flags._sig_type != rhs._flags._sig_type) {
+  if (flags_._sig_type != rhs.flags_._sig_type) {
     return false;
   }
 
-  if (_flags._wire_type != rhs._flags._wire_type) {
+  if (flags_._wire_type != rhs.flags_._wire_type) {
     return false;
   }
 
-  if (_flags._special != rhs._flags._special) {
+  if (flags_._special != rhs.flags_._special) {
     return false;
   }
 
-  if (_flags._wild_connect != rhs._flags._wild_connect) {
+  if (flags_._wild_connect != rhs.flags_._wild_connect) {
     return false;
   }
 
-  if (_flags._wire_ordered != rhs._flags._wire_ordered) {
+  if (flags_._wire_ordered != rhs.flags_._wire_ordered) {
     return false;
   }
 
-  if (_flags._disconnected != rhs._flags._disconnected) {
+  if (flags_._disconnected != rhs.flags_._disconnected) {
     return false;
   }
 
-  if (_flags._spef != rhs._flags._spef) {
+  if (flags_._spef != rhs.flags_._spef) {
     return false;
   }
 
-  if (_flags._select != rhs._flags._select) {
+  if (flags_._select != rhs.flags_._select) {
     return false;
   }
 
-  if (_flags._mark != rhs._flags._mark) {
+  if (flags_._mark != rhs.flags_._mark) {
     return false;
   }
 
-  if (_flags._mark_1 != rhs._flags._mark_1) {
+  if (flags_._mark_1 != rhs.flags_._mark_1) {
     return false;
   }
 
-  if (_flags._wire_altered != rhs._flags._wire_altered) {
+  if (flags_._wire_altered != rhs.flags_._wire_altered) {
     return false;
   }
 
-  if (_flags._extracted != rhs._flags._extracted) {
+  if (flags_._extracted != rhs.flags_._extracted) {
     return false;
   }
 
-  if (_flags._rc_graph != rhs._flags._rc_graph) {
+  if (flags_._rc_graph != rhs.flags_._rc_graph) {
     return false;
   }
 
-  if (_flags._set_io != rhs._flags._set_io) {
+  if (flags_._set_io != rhs.flags_._set_io) {
     return false;
   }
 
-  if (_flags._io != rhs._flags._io) {
+  if (flags_._io != rhs.flags_._io) {
     return false;
   }
 
-  if (_flags._dont_touch != rhs._flags._dont_touch) {
+  if (flags_._dont_touch != rhs.flags_._dont_touch) {
     return false;
   }
 
-  if (_flags._fixed_bump != rhs._flags._fixed_bump) {
+  if (flags_._fixed_bump != rhs.flags_._fixed_bump) {
     return false;
   }
 
-  if (_flags._source != rhs._flags._source) {
+  if (flags_._source != rhs.flags_._source) {
     return false;
   }
 
-  if (_flags._rc_disconnected != rhs._flags._rc_disconnected) {
+  if (flags_._rc_disconnected != rhs.flags_._rc_disconnected) {
     return false;
   }
 
-  if (_flags._block_rule != rhs._flags._block_rule) {
+  if (flags_._block_rule != rhs.flags_._block_rule) {
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
@@ -285,7 +286,7 @@ bool _dbNet::operator==(const _dbNet& rhs) const
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -361,13 +362,13 @@ bool _dbNet::operator==(const _dbNet& rhs) const
 std::string dbNet::getName() const
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_name;
+  return net->name_;
 }
 
 const char* dbNet::getConstName() const
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_name;
+  return net->name_;
 }
 
 void dbNet::printNetName(FILE* fp, bool idFlag, bool newLine)
@@ -377,7 +378,7 @@ void dbNet::printNetName(FILE* fp, bool idFlag, bool newLine)
   }
 
   _dbNet* net = (_dbNet*) this;
-  fprintf(fp, " %s", net->_name);
+  fprintf(fp, " %s", net->name_);
 
   if (newLine) {
     fprintf(fp, "\n");
@@ -403,12 +404,12 @@ bool dbNet::rename(const char* name)
                static_cast<void*>(this),
                getName(),
                name);
-    block->_journal->updateField(this, _dbNet::NAME, net->_name, name);
+    block->_journal->updateField(this, _dbNet::NAME, net->name_, name);
   }
 
   block->_net_hash.remove(net);
-  free((void*) net->_name);
-  net->_name = safe_strdup(name);
+  free((void*) net->name_);
+  net->name_ = safe_strdup(name);
   block->_net_hash.insert(net);
 
   return true;
@@ -420,8 +421,8 @@ void dbNet::swapNetNames(dbNet* source, bool ok_to_journal)
   _dbNet* source_net = (_dbNet*) source;
   _dbBlock* block = (_dbBlock*) source_net->getOwner();
 
-  char* dest_name_ptr = dest_net->_name;
-  char* source_name_ptr = source_net->_name;
+  char* dest_name_ptr = dest_net->name_;
+  char* source_name_ptr = source_net->name_;
 
   // allow undo..
   if (block->_journal && ok_to_journal) {
@@ -450,8 +451,8 @@ void dbNet::swapNetNames(dbNet* source, bool ok_to_journal)
   block->_net_hash.remove(source_net);
 
   // swap names without copy, just swap the pointers
-  dest_net->_name = source_name_ptr;
-  source_net->_name = dest_name_ptr;
+  dest_net->name_ = source_name_ptr;
+  source_net->name_ = dest_name_ptr;
 
   block->_net_hash.insert(dest_net);
   block->_net_hash.insert(source_net);
@@ -460,13 +461,13 @@ void dbNet::swapNetNames(dbNet* source, bool ok_to_journal)
 bool dbNet::isRCDisconnected()
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_flags._rc_disconnected == 1;
+  return net->flags_._rc_disconnected == 1;
 }
 
 void dbNet::setRCDisconnected(bool value)
 {
   _dbNet* net = (_dbNet*) this;
-  net->_flags._rc_disconnected = value;
+  net->flags_._rc_disconnected = value;
 }
 
 int dbNet::getWeight()
@@ -484,14 +485,14 @@ void dbNet::setWeight(int weight)
 dbSourceType dbNet::getSourceType()
 {
   _dbNet* net = (_dbNet*) this;
-  dbSourceType t(net->_flags._source);
+  dbSourceType t(net->flags_._source);
   return t;
 }
 
 void dbNet::setSourceType(dbSourceType type)
 {
   _dbNet* net = (_dbNet*) this;
-  net->_flags._source = type;
+  net->flags_._source = type;
 }
 
 int dbNet::getXTalkClass()
@@ -545,13 +546,13 @@ int dbNet::getDrivingITerm() const
 bool dbNet::hasFixedBump()
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_flags._fixed_bump == 1;
+  return net->flags_._fixed_bump == 1;
 }
 
 void dbNet::setFixedBump(bool value)
 {
   _dbNet* net = (_dbNet*) this;
-  net->_flags._fixed_bump = value;
+  net->flags_._fixed_bump = value;
 }
 
 void dbNet::setWireType(dbWireType wire_type)
@@ -559,7 +560,7 @@ void dbNet::setWireType(dbWireType wire_type)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  net->_flags._wire_type = wire_type.getValue();
+  net->flags_._wire_type = wire_type.getValue();
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -577,13 +578,13 @@ void dbNet::setWireType(dbWireType wire_type)
 dbWireType dbNet::getWireType() const
 {
   _dbNet* net = (_dbNet*) this;
-  return dbWireType(net->_flags._wire_type);
+  return dbWireType(net->flags_._wire_type);
 }
 
 dbSigType dbNet::getSigType() const
 {
   _dbNet* net = (_dbNet*) this;
-  return dbSigType(net->_flags._sig_type);
+  return dbSigType(net->flags_._sig_type);
 }
 
 void dbNet::setSigType(dbSigType sig_type)
@@ -591,7 +592,7 @@ void dbNet::setSigType(dbSigType sig_type)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  net->_flags._sig_type = sig_type.getValue();
+  net->flags_._sig_type = sig_type.getValue();
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -870,7 +871,7 @@ void dbNet::adjustNetRes(float factor)
 bool dbNet::isSpef()
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_flags._spef == 1;
+  return net->flags_._spef == 1;
 }
 
 void dbNet::setSpef(bool value)
@@ -878,7 +879,7 @@ void dbNet::setSpef(bool value)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  net->_flags._spef = (value == true) ? 1 : 0;
+  net->flags_._spef = (value == true) ? 1 : 0;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -896,7 +897,7 @@ void dbNet::setSpef(bool value)
 bool dbNet::isSelect()
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_flags._select == 1;
+  return net->flags_._select == 1;
 }
 
 void dbNet::setSelect(bool value)
@@ -904,7 +905,7 @@ void dbNet::setSelect(bool value)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  net->_flags._select = (value == true) ? 1 : 0;
+  net->flags_._select = (value == true) ? 1 : 0;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -956,7 +957,7 @@ bool dbNet::isEnclosed(Rect* bbox)  // assuming no intersection
 bool dbNet::isMarked()
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_flags._mark == 1;
+  return net->flags_._mark == 1;
 }
 
 void dbNet::setMark(bool value)
@@ -964,7 +965,7 @@ void dbNet::setMark(bool value)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  net->_flags._mark = (value == true) ? 1 : 0;
+  net->flags_._mark = (value == true) ? 1 : 0;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -982,7 +983,7 @@ void dbNet::setMark(bool value)
 bool dbNet::isMark_1ed()
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_flags._mark_1 == 1;
+  return net->flags_._mark_1 == 1;
 }
 
 void dbNet::setMark_1(bool value)
@@ -990,7 +991,7 @@ void dbNet::setMark_1(bool value)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  net->_flags._mark_1 = (value == true) ? 1 : 0;
+  net->flags_._mark_1 = (value == true) ? 1 : 0;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -1008,7 +1009,7 @@ void dbNet::setMark_1(bool value)
 bool dbNet::isWireOrdered()
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_flags._wire_ordered == 1;
+  return net->flags_._wire_ordered == 1;
 }
 
 void dbNet::setWireOrdered(bool value)
@@ -1018,7 +1019,7 @@ void dbNet::setWireOrdered(bool value)
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
 
-  net->_flags._wire_ordered = (value == true) ? 1 : 0;
+  net->flags_._wire_ordered = (value == true) ? 1 : 0;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -1036,7 +1037,7 @@ void dbNet::setWireOrdered(bool value)
 bool dbNet::isDisconnected()
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_flags._disconnected == 1;
+  return net->flags_._disconnected == 1;
 }
 
 void dbNet::setDisconnected(bool value)
@@ -1046,7 +1047,7 @@ void dbNet::setDisconnected(bool value)
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
 
-  net->_flags._disconnected = (value == true) ? 1 : 0;
+  net->flags_._disconnected = (value == true) ? 1 : 0;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -1068,9 +1069,9 @@ void dbNet::setWireAltered(bool value)
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
 
-  net->_flags._wire_altered = (value == true) ? 1 : 0;
+  net->flags_._wire_altered = (value == true) ? 1 : 0;
   if (value) {
-    net->_flags._wire_ordered = 0;
+    net->flags_._wire_ordered = 0;
   }
 
   if (block->_journal) {
@@ -1089,7 +1090,7 @@ void dbNet::setWireAltered(bool value)
 bool dbNet::isWireAltered()
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_flags._wire_altered == 1;
+  return net->flags_._wire_altered == 1;
 }
 
 void dbNet::setExtracted(bool value)
@@ -1099,7 +1100,7 @@ void dbNet::setExtracted(bool value)
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
 
-  net->_flags._extracted = (value == true) ? 1 : 0;
+  net->flags_._extracted = (value == true) ? 1 : 0;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -1117,7 +1118,7 @@ void dbNet::setExtracted(bool value)
 bool dbNet::isExtracted()
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_flags._extracted == 1;
+  return net->flags_._extracted == 1;
 }
 
 void dbNet::setRCgraph(bool value)
@@ -1127,7 +1128,7 @@ void dbNet::setRCgraph(bool value)
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
 
-  net->_flags._rc_graph = (value == true) ? 1 : 0;
+  net->flags_._rc_graph = (value == true) ? 1 : 0;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -1145,7 +1146,7 @@ void dbNet::setRCgraph(bool value)
 bool dbNet::isRCgraph()
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_flags._rc_graph == 1;
+  return net->flags_._rc_graph == 1;
 }
 
 dbBlock* dbNet::getBlock() const
@@ -1286,12 +1287,12 @@ bool dbNet::setIOflag()
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
   const uint prev_flags = flagsToUInt(net);
-  net->_flags._set_io = 1;
-  net->_flags._io = 0;
+  net->flags_._set_io = 1;
+  net->flags_._io = 0;
   const uint n = getBTerms().size();
 
   if (n > 0) {
-    net->_flags._io = 1;
+    net->flags_._io = 1;
 
     if (block->_journal) {
       debugPrint(getImpl()->getLogger(),
@@ -1325,8 +1326,8 @@ bool dbNet::isIO()
 {
   _dbNet* net = (_dbNet*) this;
 
-  if (net->_flags._set_io > 0) {
-    return net->_flags._io == 1;
+  if (net->flags_._set_io > 0) {
+    return net->flags_._io == 1;
   }
   return setIOflag();
 }
@@ -1334,19 +1335,19 @@ bool dbNet::isIO()
 void dbNet::setDoNotTouch(bool v)
 {
   _dbNet* net = (_dbNet*) this;
-  net->_flags._dont_touch = v;
+  net->flags_._dont_touch = v;
 }
 
 bool dbNet::isDoNotTouch() const
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_flags._dont_touch == 1;
+  return net->flags_._dont_touch == 1;
 }
 
 bool dbNet::isSpecial() const
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_flags._special == 1;
+  return net->flags_._special == 1;
 }
 
 void dbNet::setSpecial()
@@ -1356,7 +1357,7 @@ void dbNet::setSpecial()
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
 
-  net->_flags._special = 1;
+  net->flags_._special = 1;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -1377,7 +1378,7 @@ void dbNet::clearSpecial()
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
 
-  net->_flags._special = 0;
+  net->flags_._special = 0;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -1453,7 +1454,7 @@ bool dbNet::isConnectedByAbutment()
 bool dbNet::isWildConnected()
 {
   _dbNet* net = (_dbNet*) this;
-  return net->_flags._wild_connect == 1;
+  return net->flags_._wild_connect == 1;
 }
 
 void dbNet::setWildConnected()
@@ -1464,7 +1465,7 @@ void dbNet::setWildConnected()
   uint prev_flags = flagsToUInt(net);
   // uint prev_flags = flagsToUInt(net);
 
-  net->_flags._wild_connect = 1;
+  net->flags_._wild_connect = 1;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -1486,7 +1487,7 @@ void dbNet::clearWildConnected()
   uint prev_flags = flagsToUInt(net);
   // uint prev_flags = flagsToUInt(net);
 
-  net->_flags._wild_connect = 0;
+  net->flags_._wild_connect = 0;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -1938,14 +1939,14 @@ void dbNet::setNonDefaultRule(dbTechNonDefaultRule* rule)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_rule = net->_non_default_rule;
-  bool prev_block_rule = net->_flags._block_rule;
+  bool prev_block_rule = net->flags_._block_rule;
 
   if (rule == nullptr) {
     net->_non_default_rule = 0U;
-    net->_flags._block_rule = 0;
+    net->flags_._block_rule = 0;
   } else {
     net->_non_default_rule = rule->getImpl()->getOID();
-    net->_flags._block_rule = rule->isBlockRule();
+    net->flags_._block_rule = rule->isBlockRule();
   }
 
   if (block->_journal) {
@@ -1965,7 +1966,7 @@ void dbNet::setNonDefaultRule(dbTechNonDefaultRule* rule)
     block->_journal->pushParam(prev_rule);
     block->_journal->pushParam((uint) net->_non_default_rule);
     block->_journal->pushParam(prev_block_rule);
-    block->_journal->pushParam((bool) net->_flags._block_rule);
+    block->_journal->pushParam((bool) net->flags_._block_rule);
     block->_journal->endAction();
   }
 }
@@ -1980,7 +1981,7 @@ dbTechNonDefaultRule* dbNet::getNonDefaultRule()
 
   dbDatabase* db = (dbDatabase*) net->getDatabase();
 
-  if (net->_flags._block_rule) {
+  if (net->flags_._block_rule) {
     _dbBlock* block = (_dbBlock*) net->getOwner();
     return (dbTechNonDefaultRule*) block->_non_default_rule_tbl->getPtr(
         net->_non_default_rule);
@@ -2156,7 +2157,7 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
     block->_journal->endAction();
   }
 
-  net->_name = safe_strdup(name_);
+  net->name_ = safe_strdup(name_);
   block->_net_hash.insert(net);
 
   for (auto cb : block->_callbacks) {
@@ -2172,9 +2173,9 @@ void dbNet::destroy(dbNet* net_)
   _dbBlock* block = (_dbBlock*) net->getOwner();
   dbBlock* dbblock = (dbBlock*) block;
 
-  if (net->_flags._dont_touch) {
+  if (net->flags_._dont_touch) {
     net->getLogger()->error(
-        utl::ODB, 364, "Attempt to destroy dont_touch net {}", net->_name);
+        utl::ODB, 364, "Attempt to destroy dont_touch net {}", net->name_);
   }
 
   dbSet<dbITerm> iterms = net_->getITerms();
@@ -2228,12 +2229,12 @@ void dbNet::destroy(dbNet* net_)
                "ECO: delete dbNet({}, {:p}) '{}'",
                net->getId(),
                static_cast<void*>(net),
-               net->_name);
+               net->name_);
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(net_->getName());
     block->_journal->pushParam(net->getOID());
-    uint* flags = (uint*) &net->_flags;
+    uint* flags = (uint*) &net->flags_;
     block->_journal->pushParam(*flags);
     block->_journal->pushParam(net->_non_default_rule);
     block->_journal->endAction();
@@ -2369,7 +2370,7 @@ bool dbNet::hasJumpers()
   _dbNet* net = (_dbNet*) this;
   _dbDatabase* db = net->getImpl()->getDatabase();
   if (db->isSchema(db_schema_has_jumpers)) {
-    has_jumpers = net->_flags._has_jumpers == 1;
+    has_jumpers = net->flags_._has_jumpers == 1;
   }
   return has_jumpers;
 }
@@ -2379,7 +2380,7 @@ void dbNet::setJumpers(bool has_jumpers)
   _dbNet* net = (_dbNet*) this;
   _dbDatabase* db = net->getImpl()->getDatabase();
   if (db->isSchema(db_schema_has_jumpers)) {
-    net->_flags._has_jumpers = has_jumpers ? 1 : 0;
+    net->flags_._has_jumpers = has_jumpers ? 1 : 0;
   }
 }
 
@@ -2503,7 +2504,7 @@ void _dbNet::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["groups"].add(_groups);
 }
 

@@ -36,7 +36,7 @@ class _dbInstHdr : public _dbObject
  public:
   int _mterm_cnt;
   uint _id;
-  dbId<_dbInstHdr> _next_entry;
+  dbId<_dbInstHdr> next_entry_;
   dbId<_dbLib> _lib;
   dbId<_dbMaster> _master;
   dbVector<dbId<_dbMTerm>> _mterms;

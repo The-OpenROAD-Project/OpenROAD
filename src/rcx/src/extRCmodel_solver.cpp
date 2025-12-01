@@ -13,17 +13,16 @@
 #include <string>
 #include <vector>
 
-#include "odb/array1.h"
-#include "odb/util.h"
 #include "parse.h"
+#include "rcx/array1.h"
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
 #include "rcx/grids.h"
+#include "rcx/util.h"
 #include "utl/Logger.h"
 
 // #define SKIP_SOLVER
 
-using odb::Ath__array1D;
 using utl::RCX;
 
 namespace rcx {
@@ -181,7 +180,7 @@ uint extRCModel::readRCvalues(const char* corner,
 
   uint corner_index = 0;
   extMetRCTable* met_rc = getMetRCTable(corner_index);
-  odb::AthPool<extDistRC>* rcPool = met_rc->getRCPool();
+  AthPool<extDistRC>* rcPool = met_rc->getRCPool();
 
   extMeasure m(nullptr);
   m._diagModel = 1;
