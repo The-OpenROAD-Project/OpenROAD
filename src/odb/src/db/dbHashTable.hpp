@@ -61,8 +61,8 @@ void dbHashTable<T, page_size>::growTable()
 
     while (cur != 0) {
       T* entry = _obj_tbl->getPtr(cur);
-      dbId<T> next = entry->_next_entry;
-      entry->_next_entry = entries;
+      dbId<T> next = entry->next_entry_;
+      entry->next_entry_ = entries;
       entries = entry->getOID();
       cur = next;
     }
@@ -82,10 +82,10 @@ void dbHashTable<T, page_size>::growTable()
 
   while (cur != 0) {
     T* entry = _obj_tbl->getPtr(cur);
-    dbId<T> next = entry->_next_entry;
-    uint hid = hash_string(entry->_name) & sz;
+    dbId<T> next = entry->next_entry_;
+    uint hid = hash_string(entry->name_) & sz;
     dbId<T>& e = _hash_tbl[hid];
-    entry->_next_entry = e;
+    entry->next_entry_ = e;
     e = entry->getOID();
     cur = next;
   }
@@ -103,8 +103,8 @@ void dbHashTable<T, page_size>::shrinkTable()
 
     while (cur != 0) {
       T* entry = _obj_tbl->getPtr(cur);
-      dbId<T> next = entry->_next_entry;
-      entry->_next_entry = entries;
+      dbId<T> next = entry->next_entry_;
+      entry->next_entry_ = entries;
       entries = entry->getOID();
       cur = next;
     }
@@ -128,10 +128,10 @@ void dbHashTable<T, page_size>::shrinkTable()
 
   while (cur != 0) {
     T* entry = _obj_tbl->getPtr(cur);
-    dbId<T> next = entry->_next_entry;
-    uint hid = hash_string(entry->_name) & sz;
+    dbId<T> next = entry->next_entry_;
+    uint hid = hash_string(entry->name_) & sz;
     dbId<T>& e = _hash_tbl[hid];
-    entry->_next_entry = e;
+    entry->next_entry_ = e;
     e = entry->getOID();
     cur = next;
   }
@@ -156,9 +156,9 @@ void dbHashTable<T, page_size>::insert(T* object)
     }
   }
 
-  uint hid = hash_string(object->_name) & (sz - 1);
+  uint hid = hash_string(object->name_) & (sz - 1);
   dbId<T>& e = _hash_tbl[hid];
-  object->_next_entry = e;
+  object->next_entry_ = e;
   e = object->getOID();
 }
 
@@ -177,11 +177,11 @@ T* dbHashTable<T, page_size>::find(const char* name)
   while (cur != 0) {
     T* entry = _obj_tbl->getPtr(cur);
 
-    if (strcmp(entry->_name, name) == 0) {
+    if (strcmp(entry->name_, name) == 0) {
       return entry;
     }
 
-    cur = entry->_next_entry;
+    cur = entry->next_entry_;
   }
 
   return nullptr;
@@ -202,11 +202,11 @@ int dbHashTable<T, page_size>::hasMember(const char* name)
   while (cur != 0) {
     T* entry = _obj_tbl->getPtr(cur);
 
-    if (strcmp(entry->_name, name) == 0) {
+    if (strcmp(entry->name_, name) == 0) {
       return true;
     }
 
-    cur = entry->_next_entry;
+    cur = entry->next_entry_;
   }
 
   return false;
@@ -216,7 +216,7 @@ template <class T, uint page_size>
 void dbHashTable<T, page_size>::remove(T* object)
 {
   uint sz = _hash_tbl.size();
-  uint hid = hash_string(object->_name) & (sz - 1);
+  uint hid = hash_string(object->name_) & (sz - 1);
   dbId<T> cur = _hash_tbl[hid];
   dbId<T> prev;
 
@@ -225,10 +225,10 @@ void dbHashTable<T, page_size>::remove(T* object)
 
     if (entry == object) {
       if (prev == 0) {
-        _hash_tbl[hid] = entry->_next_entry;
+        _hash_tbl[hid] = entry->next_entry_;
       } else {
         T* p = _obj_tbl->getPtr(prev);
-        p->_next_entry = entry->_next_entry;
+        p->next_entry_ = entry->next_entry_;
       }
 
       --_num_entries;
@@ -243,7 +243,7 @@ void dbHashTable<T, page_size>::remove(T* object)
     }
 
     prev = cur;
-    cur = entry->_next_entry;
+    cur = entry->next_entry_;
   }
 }
 

@@ -58,11 +58,11 @@ bool _dbLib::operator==(const _dbLib& rhs) const
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
@@ -110,7 +110,7 @@ _dbLib::_dbLib(_dbDatabase* db)
   _left_bus_delimiter = 0;
   _right_bus_delimiter = 0;
   _spare = 0;
-  _name = nullptr;
+  name_ = nullptr;
 
   _master_tbl = new dbTable<_dbMaster>(
       db, this, (GetObjTbl_t) &_dbLib::getObjectTable, dbMasterObj);
@@ -138,21 +138,21 @@ _dbLib::~_dbLib()
   delete _name_cache;
   delete _prop_itr;
 
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbLib& lib)
 {
-  dbOStreamScope scope(stream, fmt::format("dbLib({})", lib._name));
+  dbOStreamScope scope(stream, fmt::format("dbLib({})", lib.name_));
   stream << lib._lef_units;
   stream << lib._dbu_per_micron;
   stream << lib._hier_delimiter;
   stream << lib._left_bus_delimiter;
   stream << lib._right_bus_delimiter;
   stream << lib._spare;
-  stream << lib._name;
+  stream << lib.name_;
   stream << lib._master_hash;
   stream << lib._site_hash;
   stream << lib._tech;
@@ -171,7 +171,7 @@ dbIStream& operator>>(dbIStream& stream, _dbLib& lib)
   stream >> lib._left_bus_delimiter;
   stream >> lib._right_bus_delimiter;
   stream >> lib._spare;
-  stream >> lib._name;
+  stream >> lib.name_;
   stream >> lib._master_hash;
   stream >> lib._site_hash;
   // In the older schema we can't set the tech here, we handle this later in
@@ -212,13 +212,13 @@ dbObjectTable* _dbLib::getObjectTable(dbObjectType type)
 std::string dbLib::getName()
 {
   _dbLib* lib = (_dbLib*) this;
-  return lib->_name;
+  return lib->name_;
 }
 
 const char* dbLib::getConstName()
 {
   _dbLib* lib = (_dbLib*) this;
-  return lib->_name;
+  return lib->name_;
 }
 
 dbTech* dbLib::getTech()
@@ -309,7 +309,7 @@ dbLib* dbLib::create(dbDatabase* db_,
   }
   _dbDatabase* db = (_dbDatabase*) db_;
   _dbLib* lib = db->_lib_tbl->create();
-  lib->_name = safe_strdup(name);
+  lib->name_ = safe_strdup(name);
   lib->_hier_delimiter = hier_delimiter;
   lib->_dbu_per_micron = tech->getDbUnitsPerMicron();
   lib->_tech = tech->getId();
@@ -335,7 +335,7 @@ void _dbLib::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["master_hash"].add(_master_hash);
   info.children_["site_hash"].add(_site_hash);
   _master_tbl->collectMemInfo(info.children_["master"]);

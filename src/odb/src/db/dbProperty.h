@@ -59,7 +59,7 @@ class _dbProperty : public _dbObject
   // User Code End Methods
 
   dbPropertyFlags flags_;
-  uint _name;
+  uint name_;
   dbId<_dbProperty> _next;
   uint _owner;
   std::variant<std::string, bool, int, double> _value;

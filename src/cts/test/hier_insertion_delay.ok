@@ -114,7 +114,7 @@ delta HPWL                    6 %
 [INFO CTS-0100]  Leaf buffers 28
 [INFO CTS-0101]  Average sink wire length 31.00 um
 [INFO CTS-0102]  Path depth 2 - 3
-[INFO CTS-0207]  Leaf load cells 2
+[INFO CTS-0207]  Dummy loads inserted 2
 [INFO CTS-0033] Balancing latency for clock core
 [INFO CTS-0036]  inserted 2 delay buffers
 [INFO CTS-0037] Total number of delay buffers: 2

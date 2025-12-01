@@ -3,7 +3,8 @@
 
 #pragma once
 
-#include "odb/ZException.h"
+#include <cassert>
+
 #include "odb/dbStream.h"
 #include "odb/odb.h"
 
@@ -59,14 +60,14 @@ class dbPagedVector
 
   T& operator[](unsigned int id)
   {
-    ZASSERT(id < _next_idx);
+    assert(id < _next_idx);
     unsigned int page = (id & ~(page_size - 1)) >> page_shift;
     unsigned int offset = id & (page_size - 1);
     return _pages[page][offset];
   }
   const T& operator[](unsigned int id) const
   {
-    ZASSERT(id < _next_idx);
+    assert(id < _next_idx);
     unsigned int page = (id & ~(page_size - 1)) >> page_shift;
     unsigned int offset = id & (page_size - 1);
     return _pages[page][offset];
@@ -103,7 +104,7 @@ unsigned int dbPagedVector<T, P, S>::getIdx(uint chunkSize, const T& ival)
   }
   for (uint dd = 0; dd < chunkSize; dd++) {
     uint id = idx + dd;
-    ZASSERT(id < _next_idx);
+    assert(id < _next_idx);
     unsigned int page = (id & ~(P - 1)) >> S;
     unsigned int offset = id & (P - 1);
     _pages[page][offset] = ival;

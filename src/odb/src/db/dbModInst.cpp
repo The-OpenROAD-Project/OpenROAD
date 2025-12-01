@@ -23,6 +23,7 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include "dbCommon.h"
 #include "dbGroup.h"
 #include "dbModBTerm.h"
 #include "dbModNet.h"
@@ -36,10 +37,10 @@ template class dbTable<_dbModInst>;
 
 bool _dbModInst::operator==(const _dbModInst& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (_parent != rhs._parent) {
@@ -67,7 +68,7 @@ bool _dbModInst::operator==(const _dbModInst& rhs) const
 bool _dbModInst::operator<(const _dbModInst& rhs) const
 {
   // User Code Begin <
-  if (strcmp(_name, rhs._name) >= 0) {
+  if (strcmp(name_, rhs.name_) >= 0) {
     return false;
   }
   // User Code End <
@@ -77,7 +78,7 @@ bool _dbModInst::operator<(const _dbModInst& rhs) const
 _dbModInst::_dbModInst(_dbDatabase* db)
 {
   // User Code Begin Constructor
-  _name = nullptr;
+  name_ = nullptr;
   _parent = 0;
   _module_next = 0;
   _moditerms = 0;
@@ -89,8 +90,8 @@ _dbModInst::_dbModInst(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
 {
-  stream >> obj._name;
-  stream >> obj._next_entry;
+  stream >> obj.name_;
+  stream >> obj.next_entry_;
   stream >> obj._parent;
   stream >> obj._module_next;
   stream >> obj._master;
@@ -105,8 +106,8 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   if (db_->isSchema(db_schema_db_remove_hash)) {
     _dbBlock* block = (_dbBlock*) (((dbDatabase*) db_)->getChip()->getBlock());
     _dbModule* module = block->_module_tbl->getPtr(obj._parent);
-    if (obj._name) {
-      module->_modinst_hash[obj._name] = obj.getId();
+    if (obj.name_) {
+      module->_modinst_hash[obj.name_] = obj.getId();
     }
   }
   // User Code End >>
@@ -115,8 +116,8 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj)
 {
-  stream << obj._name;
-  stream << obj._next_entry;
+  stream << obj.name_;
+  stream << obj.next_entry_;
   stream << obj._parent;
   stream << obj._module_next;
   stream << obj._master;
@@ -134,16 +135,9 @@ void _dbModInst::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["moditerm_hash"].add(_moditerm_hash);
   // User Code End collectMemInfo
-}
-
-_dbModInst::~_dbModInst()
-{
-  if (_name) {
-    free((void*) _name);
-  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -155,7 +149,7 @@ _dbModInst::~_dbModInst()
 const char* dbModInst::getName() const
 {
   _dbModInst* obj = (_dbModInst*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 dbModule* dbModInst::getParent() const
@@ -226,14 +220,14 @@ dbModInst* dbModInst::create(dbModule* parentModule,
     block->_journal->endAction();
   }
 
-  modinst->_name = safe_strdup(name);
+  modinst->name_ = safe_strdup(name);
   modinst->_master = master->getOID();
   modinst->_parent = module->getOID();
   // push to head of list in block
   modinst->_module_next = module->_modinsts;
   module->_modinsts = modinst->getOID();
   master->_mod_inst = modinst->getOID();
-  module->_modinst_hash[modinst->_name] = modinst->getOID();
+  module->_modinst_hash[modinst->name_] = modinst->getOID();
 
   for (dbBlockCallBackObj* cb : block->_callbacks) {
     cb->inDbModInstCreate((dbModInst*) modinst);

@@ -2844,8 +2844,7 @@ void TechViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom,
 std::set<odb::Rect> TechViaGenerator::getViaObstructionRects(
     utl::Logger* logger,
     odb::dbTechVia* via,
-    int x,
-    int y)
+    const odb::Point& pt)
 {
   const TechViaGenerator generator(logger, via, {}, {}, {}, {});
 
@@ -2854,7 +2853,7 @@ std::set<odb::Rect> TechViaGenerator::getViaObstructionRects(
 
   std::set<odb::Rect> obs;
 
-  const odb::dbTransform xform(odb::Point(x, y));
+  const odb::dbTransform xform(pt);
   for (auto* box : via->getBoxes()) {
     auto* layer = box->getTechLayer();
     if (layer->getType() != odb::dbTechLayerType::CUT) {
@@ -3073,11 +3072,10 @@ void Via::writeToDb(odb::dbSWire* wire,
     int ripup_count = 0;
     int via_ripup_count = 0;
     for (auto* shape : ripup_shapes) {
-      int via_x, via_y;
       if (shape->getBlockVia() != nullptr || shape->getTechVia() != nullptr) {
-        shape->getViaXY(via_x, via_y);
-        x += via_x;
-        y += via_y;
+        const odb::Point pt = shape->getViaXY();
+        x += pt.getX();
+        y += pt.getY();
         ripup_count++;
 
         if (odb::dbVia* via = shape->getBlockVia()) {

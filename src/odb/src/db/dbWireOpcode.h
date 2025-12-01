@@ -3,7 +3,8 @@
 
 #pragma once
 
-#include "odb/ZException.h"
+#include <cassert>
+
 #include "odb/db.h"
 #include "odb/odb.h"
 
@@ -100,7 +101,7 @@ inline void getPrevPoint(dbTech* tech,
   pnt._layer = nullptr;
 
 prevOpCode:
-  ZASSERT(idx >= 0);
+  assert(idx >= 0);
   opcode = opcodes[idx];
 
   switch (opcode & WOP_OPCODE_MASK) {

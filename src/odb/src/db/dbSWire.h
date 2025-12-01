@@ -24,7 +24,7 @@ struct _dbSWireFlags
 class _dbSWire : public _dbObject
 {
  public:
-  _dbSWireFlags _flags;
+  _dbSWireFlags flags_;
   dbId<_dbNet> _net;
   dbId<_dbNet> _shield;
   dbId<_dbSBox> _wires;
@@ -32,12 +32,12 @@ class _dbSWire : public _dbObject
 
   _dbSWire(_dbDatabase*)
   {
-    _flags._wire_type = dbWireType::NONE;
-    _flags._spare_bits = 0;
+    flags_._wire_type = dbWireType::NONE;
+    flags_._spare_bits = 0;
   }
 
   _dbSWire(_dbDatabase*, const _dbSWire& s)
-      : _flags(s._flags),
+      : flags_(s.flags_),
         _net(s._net),
         _shield(s._shield),
         _wires(s._wires),
@@ -59,7 +59,7 @@ class _dbSWire : public _dbObject
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbSWire& wire)
 {
-  uint* bit_field = (uint*) &wire._flags;
+  uint* bit_field = (uint*) &wire.flags_;
   stream << *bit_field;
   stream << wire._net;
   stream << wire._shield;
@@ -71,7 +71,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbSWire& wire)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbSWire& wire)
 {
-  uint* bit_field = (uint*) &wire._flags;
+  uint* bit_field = (uint*) &wire.flags_;
   stream >> *bit_field;
   stream >> wire._net;
   stream >> wire._shield;

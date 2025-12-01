@@ -7,6 +7,7 @@
 #include "dbNetTrack.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/odb.h"
 // User Code Begin Includes
 #include "dbNet.h"
 // User Code End Includes
@@ -19,12 +20,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbNetTrackItr::reversible()
+bool dbNetTrackItr::reversible() const
 {
   return true;
 }
 
-bool dbNetTrackItr::orderReversed()
+bool dbNetTrackItr::orderReversed() const
 {
   return true;
 }
@@ -47,12 +48,12 @@ void dbNetTrackItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbNetTrackItr::sequential()
+uint dbNetTrackItr::sequential() const
 {
   return 0;
 }
 
-uint dbNetTrackItr::size(dbObject* parent)
+uint dbNetTrackItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -65,7 +66,7 @@ uint dbNetTrackItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbNetTrackItr::begin(dbObject* parent)
+uint dbNetTrackItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbNet* _parent = (_dbNet*) parent;
@@ -73,12 +74,12 @@ uint dbNetTrackItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbNetTrackItr::end(dbObject* /* unused: parent */)
+uint dbNetTrackItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbNetTrackItr::next(uint id, ...)
+uint dbNetTrackItr::next(uint id, ...) const
 {
   // User Code Begin next
   _dbNetTrack* _track = _net_tracks_tbl->getPtr(id);

@@ -8,6 +8,7 @@
 #include "dbChipRegionInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -17,12 +18,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbChipBumpInstItr::reversible()
+bool dbChipBumpInstItr::reversible() const
 {
   return true;
 }
 
-bool dbChipBumpInstItr::orderReversed()
+bool dbChipBumpInstItr::orderReversed() const
 {
   return true;
 }
@@ -45,12 +46,12 @@ void dbChipBumpInstItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbChipBumpInstItr::sequential()
+uint dbChipBumpInstItr::sequential() const
 {
   return 0;
 }
 
-uint dbChipBumpInstItr::size(dbObject* parent)
+uint dbChipBumpInstItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -64,7 +65,7 @@ uint dbChipBumpInstItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbChipBumpInstItr::begin(dbObject* parent)
+uint dbChipBumpInstItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbChipRegionInst* chip_region_inst = (_dbChipRegionInst*) parent;
@@ -72,12 +73,12 @@ uint dbChipBumpInstItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbChipBumpInstItr::end(dbObject* /* unused: parent */)
+uint dbChipBumpInstItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbChipBumpInstItr::next(uint id, ...)
+uint dbChipBumpInstItr::next(uint id, ...) const
 {
   // User Code Begin next
   _dbChipBumpInst* chip_bump_inst = _chip_bump_inst_tbl->getPtr(id);

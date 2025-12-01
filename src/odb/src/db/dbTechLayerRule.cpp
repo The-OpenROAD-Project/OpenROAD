@@ -14,13 +14,14 @@
 #include "dbTechLayer.h"
 #include "dbTechNonDefaultRule.h"
 #include "odb/db.h"
+#include "odb/odb.h"
 
 namespace odb {
 
 template class dbTable<_dbTechLayerRule>;
 
 _dbTechLayerRule::_dbTechLayerRule(_dbDatabase*, const _dbTechLayerRule& r)
-    : _flags(r._flags),
+    : flags_(r.flags_),
       _width(r._width),
       _spacing(r._spacing),
       _resistance(r._resistance),
@@ -34,7 +35,7 @@ _dbTechLayerRule::_dbTechLayerRule(_dbDatabase*, const _dbTechLayerRule& r)
 
 _dbTechLayerRule::_dbTechLayerRule(_dbDatabase*)
 {
-  _flags._spare_bits = 0;
+  flags_._spare_bits = 0;
   _width = 0;
   _spacing = 0;
   _resistance = 0.0;
@@ -49,7 +50,7 @@ _dbTechLayerRule::~_dbTechLayerRule()
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerRule& rule)
 {
-  uint* bit_field = (uint*) &rule._flags;
+  uint* bit_field = (uint*) &rule.flags_;
   stream << *bit_field;
   stream << rule._width;
   stream << rule._spacing;
@@ -64,7 +65,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerRule& rule)
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerRule& rule)
 {
-  uint* bit_field = (uint*) &rule._flags;
+  uint* bit_field = (uint*) &rule.flags_;
   stream >> *bit_field;
   stream >> rule._width;
   stream >> rule._spacing;
@@ -116,7 +117,7 @@ bool _dbTechLayerRule::operator==(const _dbTechLayerRule& rhs) const
 
 _dbTech* _dbTechLayerRule::getTech()
 {
-  if (_flags._block_rule == 0) {
+  if (flags_._block_rule == 0) {
     return (_dbTech*) getOwner();
   }
 
@@ -125,7 +126,7 @@ _dbTech* _dbTechLayerRule::getTech()
 
 _dbBlock* _dbTechLayerRule::getBlock()
 {
-  assert(_flags._block_rule == 1);
+  assert(flags_._block_rule == 1);
   return (_dbBlock*) getOwner();
 }
 
@@ -163,7 +164,7 @@ dbTechNonDefaultRule* dbTechLayerRule::getNonDefaultRule()
 bool dbTechLayerRule::isBlockRule()
 {
   _dbTechLayerRule* rule = (_dbTechLayerRule*) this;
-  return rule->_flags._block_rule == 1;
+  return rule->flags_._block_rule == 1;
 }
 
 int dbTechLayerRule::getWidth()
@@ -252,12 +253,12 @@ dbTechLayerRule* dbTechLayerRule::create(dbTechNonDefaultRule* rule_,
     _dbTechLayerRule* layer_rule = tbl->create();
     layer_rule->_non_default_rule = rule->getOID();
     layer_rule->_layer = layer->getOID();
-    layer_rule->_flags._block_rule = rule->_flags._block_rule;
+    layer_rule->flags_._block_rule = rule->flags_._block_rule;
     rule->_layer_rules[layer->_number] = layer_rule->getOID();
     return (dbTechLayerRule*) layer_rule;
   };
 
-  if (rule->_flags._block_rule) {
+  if (rule->flags_._block_rule) {
     _dbBlock* block = rule->getBlock();
     return make_layer(block->_layer_rule_tbl);
   }

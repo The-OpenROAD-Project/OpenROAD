@@ -7,6 +7,7 @@
 #include "dbGroup.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/odb.h"
 // User Code Begin Includes
 #include "dbModule.h"
 // User Code End Includes
@@ -19,12 +20,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbGroupItr::reversible()
+bool dbGroupItr::reversible() const
 {
   return true;
 }
 
-bool dbGroupItr::orderReversed()
+bool dbGroupItr::orderReversed() const
 {
   return true;
 }
@@ -47,12 +48,12 @@ void dbGroupItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbGroupItr::sequential()
+uint dbGroupItr::sequential() const
 {
   return 0;
 }
 
-uint dbGroupItr::size(dbObject* parent)
+uint dbGroupItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -65,7 +66,7 @@ uint dbGroupItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbGroupItr::begin(dbObject* parent)
+uint dbGroupItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbGroup* _parent = (_dbGroup*) parent;
@@ -73,12 +74,12 @@ uint dbGroupItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbGroupItr::end(dbObject* /* unused: parent */)
+uint dbGroupItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbGroupItr::next(uint id, ...)
+uint dbGroupItr::next(uint id, ...) const
 {
   // User Code Begin next
   _dbGroup* _child = _group_tbl->getPtr(id);

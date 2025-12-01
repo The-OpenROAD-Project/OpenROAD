@@ -149,7 +149,7 @@ void Grid::markBlocked(odb::dbBlock* block)
           if (routing_level <= 1 || routing_level > 3) {  // considering M2, M3
             return;
           }
-          if (wire_rect.getDir() == 1) {  // horizontal
+          if (wire_rect.getDir() == odb::horizontal) {
             return;
           }
           wire_rect.moveDelta(-core.xMin(), -core.yMin());

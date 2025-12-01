@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "odb/ZException.h"
 #include "odb/dbStream.h"
 #include "odb/odb.h"
 

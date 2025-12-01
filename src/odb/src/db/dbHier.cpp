@@ -106,7 +106,7 @@ _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
   // create "up-hier" mapping to iterms
   for (dbBTerm* bterm : bterms) {
     _dbBTerm* bterm_impl = (_dbBTerm*) bterm;
-    _dbMTerm* mterm = master->_mterm_hash.find(bterm_impl->_name);
+    _dbMTerm* mterm = master->_mterm_hash.find(bterm_impl->name_);
     bterm_impl->_parent_block = parent->getOID();
     bterm_impl->_parent_iterm = inst->_iterms[mterm->_order_id];
   }
