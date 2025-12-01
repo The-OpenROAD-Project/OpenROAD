@@ -15,15 +15,18 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+// User Code Begin Includes
+#include "dbCommon.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbLevelShifter>;
 
 bool _dbLevelShifter::operator==(const _dbLevelShifter& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (_domain != rhs._domain) {
@@ -94,7 +97,7 @@ bool _dbLevelShifter::operator<(const _dbLevelShifter& rhs) const
 
 _dbLevelShifter::_dbLevelShifter(_dbDatabase* db)
 {
-  _name = nullptr;
+  name_ = nullptr;
   _use_functional_equivalence = false;
   _threshold = 0;
   _no_shift = false;
@@ -103,8 +106,8 @@ _dbLevelShifter::_dbLevelShifter(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj)
 {
-  stream >> obj._name;
-  stream >> obj._next_entry;
+  stream >> obj.name_;
+  stream >> obj.next_entry_;
   stream >> obj._domain;
   stream >> obj._elements;
   stream >> obj._exclude_elements;
@@ -136,8 +139,8 @@ dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbLevelShifter& obj)
 {
-  stream << obj._name;
-  stream << obj._next_entry;
+  stream << obj.name_;
+  stream << obj.next_entry_;
   stream << obj._domain;
   stream << obj._elements;
   stream << obj._exclude_elements;
@@ -171,7 +174,7 @@ void _dbLevelShifter::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["_elements"].add(_elements);
   info.children_["_exclude_elements"].add(_exclude_elements);
   info.children_["_source"].add(_source);
@@ -192,13 +195,6 @@ void _dbLevelShifter::collectMemInfo(MemInfo& info)
   // User Code End collectMemInfo
 }
 
-_dbLevelShifter::~_dbLevelShifter()
-{
-  if (_name) {
-    free((void*) _name);
-  }
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbLevelShifter - Methods
@@ -208,7 +204,7 @@ _dbLevelShifter::~_dbLevelShifter()
 const char* dbLevelShifter::getName() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 dbPowerDomain* dbLevelShifter::getDomain() const
@@ -473,7 +469,7 @@ dbLevelShifter* dbLevelShifter::create(dbBlock* block,
   }
 
   _dbLevelShifter* shifter = _block->_levelshifter_tbl->create();
-  shifter->_name = safe_strdup(name);
+  shifter->name_ = safe_strdup(name);
 
   shifter->_domain = domain->getImpl()->getOID();
 
@@ -489,7 +485,7 @@ void dbLevelShifter::destroy(dbLevelShifter* shifter)
   _dbLevelShifter* _shifter = (_dbLevelShifter*) shifter;
   _dbBlock* block = (_dbBlock*) _shifter->getOwner();
 
-  if (block->_levelshifter_hash.hasMember(_shifter->_name)) {
+  if (block->_levelshifter_hash.hasMember(_shifter->name_)) {
     block->_levelshifter_hash.remove(_shifter);
   }
 

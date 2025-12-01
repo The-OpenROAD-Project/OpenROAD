@@ -15,15 +15,18 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+// User Code Begin Includes
+#include "dbCommon.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbIsolation>;
 
 bool _dbIsolation::operator==(const _dbIsolation& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (_applies_to != rhs._applies_to) {
@@ -55,13 +58,13 @@ bool _dbIsolation::operator<(const _dbIsolation& rhs) const
 
 _dbIsolation::_dbIsolation(_dbDatabase* db)
 {
-  _name = nullptr;
+  name_ = nullptr;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbIsolation& obj)
 {
-  stream >> obj._name;
-  stream >> obj._next_entry;
+  stream >> obj.name_;
+  stream >> obj.next_entry_;
   stream >> obj._applies_to;
   stream >> obj._clamp_value;
   stream >> obj._isolation_signal;
@@ -74,8 +77,8 @@ dbIStream& operator>>(dbIStream& stream, _dbIsolation& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbIsolation& obj)
 {
-  stream << obj._name;
-  stream << obj._next_entry;
+  stream << obj.name_;
+  stream << obj.next_entry_;
   stream << obj._applies_to;
   stream << obj._clamp_value;
   stream << obj._isolation_signal;
@@ -92,7 +95,7 @@ void _dbIsolation::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["applies_to"].add(_applies_to);
   info.children_["clamp_value"].add(_clamp_value);
   info.children_["isolation_signal"].add(_isolation_signal);
@@ -100,13 +103,6 @@ void _dbIsolation::collectMemInfo(MemInfo& info)
   info.children_["location"].add(_location);
   info.children_["isolation_cells"].add(_isolation_cells);
   // User Code End collectMemInfo
-}
-
-_dbIsolation::~_dbIsolation()
-{
-  if (_name) {
-    free((void*) _name);
-  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -118,7 +114,7 @@ _dbIsolation::~_dbIsolation()
 const char* dbIsolation::getName() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 std::string dbIsolation::getAppliesTo() const
@@ -176,7 +172,7 @@ dbIsolation* dbIsolation::create(dbBlock* block, const char* name)
     return nullptr;
   }
   _dbIsolation* iso = _block->_isolation_tbl->create();
-  iso->_name = safe_strdup(name);
+  iso->name_ = safe_strdup(name);
 
   _block->_isolation_hash.insert(iso);
   return (dbIsolation*) iso;

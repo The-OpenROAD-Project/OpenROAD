@@ -3,6 +3,7 @@
 
 #include "dbCCSeg.h"
 
+#include <cassert>
 #include <cstdio>
 
 #include "dbBlock.h"
@@ -13,7 +14,6 @@
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -25,15 +25,15 @@ template class dbTable<_dbCCSeg>;
 
 bool _dbCCSeg::operator==(const _dbCCSeg& rhs) const
 {
-  if (_flags._spef_mark_1 != rhs._flags._spef_mark_1) {
+  if (flags_._spef_mark_1 != rhs.flags_._spef_mark_1) {
     return false;
   }
 
-  if (_flags._mark != rhs._flags._mark) {
+  if (flags_._mark != rhs.flags_._mark) {
     return false;
   }
 
-  if (_flags._inFileCnt != rhs._flags._inFileCnt) {
+  if (flags_._inFileCnt != rhs.flags_._inFileCnt) {
     return false;
   }
 
@@ -107,7 +107,7 @@ double dbCCSeg::getCapacitance(int corner)
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  assert((corner >= 0) && ((uint) corner < cornerCnt));
   return (*block->_cc_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
 }
 
@@ -171,7 +171,7 @@ void dbCCSeg::setCapacitance(double cap, int corner)
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  assert((corner >= 0) && ((uint) corner < cornerCnt));
 
   float& value
       = (*block->_cc_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
@@ -203,7 +203,7 @@ void dbCCSeg::addCapacitance(double cap, int corner)
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  assert((corner >= 0) && ((uint) corner < cornerCnt));
 
   float& value
       = (*block->_cc_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
@@ -323,25 +323,25 @@ dbNet* dbCCSeg::getTargetNet()
 uint dbCCSeg::getInfileCnt()
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
-  return (seg->_flags._inFileCnt);
+  return (seg->flags_._inFileCnt);
 }
 
 void dbCCSeg::incrInfileCnt()
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
-  seg->_flags._inFileCnt++;
+  seg->flags_._inFileCnt++;
 }
 
 bool dbCCSeg::isMarked()
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
-  return seg->_flags._mark == 1;
+  return seg->flags_._mark == 1;
 }
 
 void dbCCSeg::setMark(bool value)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
-  seg->_flags._mark = (value == true) ? 1 : 0;
+  seg->flags_._mark = (value == true) ? 1 : 0;
 }
 
 void dbCCSeg::printCapnCC(uint capn)
@@ -532,7 +532,7 @@ dbCCSeg* dbCCSeg::create(dbCapNode* src_, dbCapNode* tgt_, bool mergeParallel)
   }
 
   seg = block->_cc_seg_tbl->create();
-  // seg->_flags._cnt = block->_num_corners;
+  // seg->flags_._cnt = block->_num_corners;
 
   // set corner values
   uint cornerCnt = block->_corners_per_block;
@@ -542,8 +542,9 @@ dbCCSeg* dbCCSeg::create(dbCapNode* src_, dbCapNode* tgt_, bool mergeParallel)
     }
   } else {
     block->_maxCCSegId = seg->getOID();
-    uint ccCapIdx = block->_cc_val_tbl->getIdx(cornerCnt, (float) 0.0);
-    ZASSERT((seg->getOID() - 1) * cornerCnt + 1 == ccCapIdx);
+    [[maybe_unused]] uint ccCapIdx
+        = block->_cc_val_tbl->getIdx(cornerCnt, (float) 0.0);
+    assert((seg->getOID() - 1) * cornerCnt + 1 == ccCapIdx);
   }
 
   seg->_cap_node[0] = src->getOID();

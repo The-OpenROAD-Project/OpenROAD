@@ -88,13 +88,12 @@ void lefout::writeBoxes(dbBlock* block,
         via_name = block->getName() + "_" + box->getBlockVia()->getName();
       }
 
-      int x, y;
-      box->getViaXY(x, y);
+      const Point pt = box->getViaXY();
       fmt::print(_out,
                  "{}VIA {:.11g} {:.11g} {} ;\n",
                  indent,
-                 lefdist(x),
-                 lefdist(y),
+                 lefdist(pt.getX()),
+                 lefdist(pt.getY()),
                  via_name.c_str());
       cur_layer = nullptr;
     } else {

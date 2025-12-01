@@ -11,12 +11,12 @@
 
 namespace odb {
 
-bool dbPolygonItr::reversible()
+bool dbPolygonItr::reversible() const
 {
   return true;
 }
 
-bool dbPolygonItr::orderReversed()
+bool dbPolygonItr::orderReversed() const
 {
   return true;
 }
@@ -63,12 +63,12 @@ void dbPolygonItr::reverse(dbObject* parent)
   }
 }
 
-uint dbPolygonItr::sequential()
+uint dbPolygonItr::sequential() const
 {
   return 0;
 }
 
-uint dbPolygonItr::size(dbObject* parent)
+uint dbPolygonItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -81,7 +81,7 @@ uint dbPolygonItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbPolygonItr::begin(dbObject* parent)
+uint dbPolygonItr::begin(dbObject* parent) const
 {
   switch (parent->getImpl()->getType()) {
     case dbMasterObj: {
@@ -101,12 +101,12 @@ uint dbPolygonItr::begin(dbObject* parent)
   return 0;
 }
 
-uint dbPolygonItr::end(dbObject* /* unused: parent */)
+uint dbPolygonItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbPolygonItr::next(uint id, ...)
+uint dbPolygonItr::next(uint id, ...) const
 {
   _dbPolygon* box = pbox_tbl_->getPtr(id);
   return box->next_pbox_;

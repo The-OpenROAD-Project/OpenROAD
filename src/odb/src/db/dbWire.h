@@ -24,19 +24,19 @@ struct _dbWireFlags
 class _dbWire : public _dbObject
 {
  public:
-  _dbWireFlags _flags;
+  _dbWireFlags flags_;
   dbVector<int> _data;
   dbVector<unsigned char> _opcodes;
   dbId<_dbNet> _net;
 
   _dbWire(_dbDatabase*)
   {
-    _flags._is_global = 0;
-    _flags._spare_bits = 0;
+    flags_._is_global = 0;
+    flags_._spare_bits = 0;
   }
 
   _dbWire(_dbDatabase*, const _dbWire& w)
-      : _flags(w._flags), _data(w._data), _opcodes(w._opcodes), _net(w._net)
+      : flags_(w.flags_), _data(w._data), _opcodes(w._opcodes), _net(w._net)
   {
   }
 

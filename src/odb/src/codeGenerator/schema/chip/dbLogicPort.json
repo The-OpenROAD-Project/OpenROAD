@@ -3,13 +3,13 @@
   "type":"dbObject",
   "fields":[
     {
-      "name":"_name",
+      "name":"name_",
       "type":"char *",
       "default": "nullptr",
       "flags":["no-set"]
     },
     {
-      "name":"_next_entry",
+      "name":"next_entry_",
       "type":"dbId<_dbLogicPort>",
       "flags":["no-set","no-get"]
     },

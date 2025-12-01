@@ -49,7 +49,7 @@ class _dbTechLayerSpacingRule : public _dbObject
   };
 
   // PERSISTENT-MEMBERS
-  _Flword _flags;
+  _Flword flags_;
   uint _spacing;
   uint _length_or_influence;
   uint _r1min;
@@ -75,7 +75,7 @@ class _dbTechLayerSpacingRule : public _dbObject
 inline _dbTechLayerSpacingRule::_dbTechLayerSpacingRule(
     _dbDatabase*,
     const _dbTechLayerSpacingRule& r)
-    : _flags(r._flags),
+    : flags_(r.flags_),
       _spacing(r._spacing),
       _length_or_influence(r._length_or_influence),
       _r1min(r._r1min),
@@ -90,15 +90,15 @@ inline _dbTechLayerSpacingRule::_dbTechLayerSpacingRule(
 
 inline _dbTechLayerSpacingRule::_dbTechLayerSpacingRule(_dbDatabase*)
 {
-  _flags._rule = DEFAULT;
-  _flags._except_same_pgnet = false;
-  _flags._cut_stacking = false;
-  _flags._cut_center_to_center = false;
-  _flags._cut_same_net = false;
-  _flags._cut_parallel_overlap = false;
-  _flags._notch_length = false;
-  _flags._end_of_notch_width = false;
-  _flags._spare_bits = 0;
+  flags_._rule = DEFAULT;
+  flags_._except_same_pgnet = false;
+  flags_._cut_stacking = false;
+  flags_._cut_center_to_center = false;
+  flags_._cut_same_net = false;
+  flags_._cut_parallel_overlap = false;
+  flags_._notch_length = false;
+  flags_._end_of_notch_width = false;
+  flags_._spare_bits = 0;
   _spacing = 0;
   _length_or_influence = 0;
   _r1min = 0;

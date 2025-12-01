@@ -25,6 +25,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/lefout.h"
+#include "odb/odb.h"
 #include "spdlog/fmt/ostr.h"
 
 namespace odb {
@@ -33,15 +34,15 @@ template class dbTable<_dbMTerm>;
 
 bool _dbMTerm::operator==(const _dbMTerm& rhs) const
 {
-  if (_flags._io_type != rhs._flags._io_type) {
+  if (flags_._io_type != rhs.flags_._io_type) {
     return false;
   }
 
-  if (_flags._sig_type != rhs._flags._sig_type) {
+  if (flags_._sig_type != rhs.flags_._sig_type) {
     return false;
   }
 
-  if (_flags._shape_type != rhs._flags._shape_type) {
+  if (flags_._shape_type != rhs.flags_._shape_type) {
     return false;
   }
 
@@ -49,15 +50,15 @@ bool _dbMTerm::operator==(const _dbMTerm& rhs) const
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -108,8 +109,8 @@ bool _dbMTerm::operator==(const _dbMTerm& rhs) const
 
 _dbMTerm::~_dbMTerm()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 
   for (auto elem : _par_met_area) {
@@ -135,11 +136,11 @@ _dbMTerm::~_dbMTerm()
 
 dbOStream& operator<<(dbOStream& stream, const _dbMTerm& mterm)
 {
-  uint* bit_field = (uint*) &mterm._flags;
+  uint* bit_field = (uint*) &mterm.flags_;
   stream << *bit_field;
   stream << mterm._order_id;
-  stream << mterm._name;
-  stream << mterm._next_entry;
+  stream << mterm.name_;
+  stream << mterm.next_entry_;
   stream << mterm._next_mterm;
   stream << mterm._pins;
   stream << mterm._targets;
@@ -154,11 +155,11 @@ dbOStream& operator<<(dbOStream& stream, const _dbMTerm& mterm)
 
 dbIStream& operator>>(dbIStream& stream, _dbMTerm& mterm)
 {
-  uint* bit_field = (uint*) &mterm._flags;
+  uint* bit_field = (uint*) &mterm.flags_;
   stream >> *bit_field;
   stream >> mterm._order_id;
-  stream >> mterm._name;
-  stream >> mterm._next_entry;
+  stream >> mterm.name_;
+  stream >> mterm.next_entry_;
   stream >> mterm._next_mterm;
   stream >> mterm._pins;
   stream >> mterm._targets;
@@ -180,7 +181,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMTerm& mterm)
 std::string dbMTerm::getName()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  return mterm->_name;
+  return mterm->name_;
 }
 
 char* dbMTerm::getName(dbInst* inst, char* ttname)
@@ -222,36 +223,36 @@ char* dbMTerm::getName(dbBlock* block, dbMaster* master, char* ttname)
 const char* dbMTerm::getConstName()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  return mterm->_name;
+  return mterm->name_;
 }
 
 dbSigType dbMTerm::getSigType()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  return dbSigType(mterm->_flags._sig_type);
+  return dbSigType(mterm->flags_._sig_type);
 }
 
 dbIoType dbMTerm::getIoType()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  return dbIoType(mterm->_flags._io_type);
+  return dbIoType(mterm->flags_._io_type);
 }
 
 dbMTermShapeType dbMTerm::getShape()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  return dbMTermShapeType(mterm->_flags._shape_type);
+  return dbMTermShapeType(mterm->flags_._shape_type);
 }
 
 void dbMTerm::setMark(uint v)
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  mterm->_flags._mark = v;
+  mterm->flags_._mark = v;
 }
 bool dbMTerm::isSetMark()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  return mterm->_flags._mark > 0 ? true : false;
+  return mterm->flags_._mark > 0 ? true : false;
 }
 
 dbMaster* dbMTerm::getMaster()
@@ -449,14 +450,14 @@ dbMTerm* dbMTerm::create(dbMaster* master,
 {
   _dbMaster* master_impl = (_dbMaster*) master;
 
-  if (master_impl->_flags._frozen || master_impl->_mterm_hash.hasMember(name)) {
+  if (master_impl->flags_._frozen || master_impl->_mterm_hash.hasMember(name)) {
     return nullptr;
   }
 
   _dbMTerm* impl = master_impl->_mterm_tbl->create();
-  impl->_name = strdup(name);
-  impl->_flags._io_type = io_type.getValue();
-  impl->_flags._shape_type = shape_type;
+  impl->name_ = strdup(name);
+  impl->flags_._io_type = io_type.getValue();
+  impl->flags_._shape_type = shape_type;
   master_impl->_mterm_hash.insert(impl);
   master_impl->_mterm_cnt++;
 
@@ -468,7 +469,7 @@ dbMTerm* dbMTerm::create(dbMaster* master,
 void dbMTerm::setSigType(dbSigType type)
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  mterm->_flags._sig_type = type.getValue();
+  mterm->flags_._sig_type = type.getValue();
   if (type == dbSigType::CLOCK) {
     getMaster()->setSequential(true);
   }
@@ -485,7 +486,7 @@ void _dbMTerm::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
 
   // These fields have unusal pointer ownship semantics relative to
   // the rest of odb (not a table but a vector of owning pointers).

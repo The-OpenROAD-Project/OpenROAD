@@ -21,6 +21,7 @@
 #include "dbTechSameNetRule.h"
 #include "dbTechVia.h"
 #include "odb/db.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -28,8 +29,8 @@ template class dbTable<_dbTechNonDefaultRule>;
 
 _dbTechNonDefaultRule::_dbTechNonDefaultRule(_dbDatabase*,
                                              const _dbTechNonDefaultRule& r)
-    : _flags(r._flags),
-      _name(nullptr),
+    : flags_(r.flags_),
+      name_(nullptr),
       _layer_rules(r._layer_rules),
       _vias(r._vias),
       _samenet_rules(r._samenet_rules),
@@ -39,31 +40,31 @@ _dbTechNonDefaultRule::_dbTechNonDefaultRule(_dbDatabase*,
       _cut_layers(r._cut_layers),
       _min_cuts(r._min_cuts)
 {
-  if (r._name) {
-    _name = safe_strdup(r._name);
+  if (r.name_) {
+    name_ = safe_strdup(r.name_);
   }
 }
 
 _dbTechNonDefaultRule::_dbTechNonDefaultRule(_dbDatabase*)
 {
-  _flags._spare_bits = 0;
-  _flags._hard_spacing = 0;
-  _flags._block_rule = 0;
-  _name = nullptr;
+  flags_._spare_bits = 0;
+  flags_._hard_spacing = 0;
+  flags_._block_rule = 0;
+  name_ = nullptr;
 }
 
 _dbTechNonDefaultRule::~_dbTechNonDefaultRule()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechNonDefaultRule& rule)
 {
-  uint* bit_field = (uint*) &rule._flags;
+  uint* bit_field = (uint*) &rule.flags_;
   stream << *bit_field;
-  stream << rule._name;
+  stream << rule.name_;
   stream << rule._layer_rules;
   stream << rule._vias;
   stream << rule._samenet_rules;
@@ -77,9 +78,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechNonDefaultRule& rule)
 
 dbIStream& operator>>(dbIStream& stream, _dbTechNonDefaultRule& rule)
 {
-  uint* bit_field = (uint*) &rule._flags;
+  uint* bit_field = (uint*) &rule.flags_;
   stream >> *bit_field;
-  stream >> rule._name;
+  stream >> rule.name_;
   stream >> rule._layer_rules;
   stream >> rule._vias;
   stream >> rule._samenet_rules;
@@ -94,19 +95,19 @@ dbIStream& operator>>(dbIStream& stream, _dbTechNonDefaultRule& rule)
 
 bool _dbTechNonDefaultRule::operator==(const _dbTechNonDefaultRule& rhs) const
 {
-  if (_flags._hard_spacing != rhs._flags._hard_spacing) {
+  if (flags_._hard_spacing != rhs.flags_._hard_spacing) {
     return false;
   }
 
-  if (_flags._block_rule != rhs._flags._block_rule) {
+  if (flags_._block_rule != rhs.flags_._block_rule) {
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
@@ -147,7 +148,7 @@ bool _dbTechNonDefaultRule::operator==(const _dbTechNonDefaultRule& rhs) const
 
 _dbTech* _dbTechNonDefaultRule::getTech()
 {
-  if (_flags._block_rule == 0) {
+  if (flags_._block_rule == 0) {
     return (_dbTech*) getOwner();
   }
 
@@ -156,7 +157,7 @@ _dbTech* _dbTechNonDefaultRule::getTech()
 
 _dbBlock* _dbTechNonDefaultRule::getBlock()
 {
-  assert(_flags._block_rule == 1);
+  assert(flags_._block_rule == 1);
   return (_dbBlock*) getOwner();
 }
 
@@ -165,7 +166,7 @@ void _dbTechNonDefaultRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["_layer_rules"].add(_layer_rules);
   info.children_["_vias"].add(_vias);
   info.children_["_samenet_rules"].add(_samenet_rules);
@@ -178,7 +179,7 @@ void _dbTechNonDefaultRule::collectMemInfo(MemInfo& info)
 
 bool _dbTechNonDefaultRule::operator<(const _dbTechNonDefaultRule& rhs) const
 {
-  return strcmp(_name, rhs._name) < 0;
+  return strcmp(name_, rhs.name_) < 0;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -190,19 +191,19 @@ bool _dbTechNonDefaultRule::operator<(const _dbTechNonDefaultRule& rhs) const
 std::string dbTechNonDefaultRule::getName()
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
-  return rule->_name;
+  return rule->name_;
 }
 
 const char* dbTechNonDefaultRule::getConstName()
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
-  return rule->_name;
+  return rule->name_;
 }
 
 bool dbTechNonDefaultRule::isBlockRule()
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
-  return rule->_flags._block_rule == 1;
+  return rule->flags_._block_rule == 1;
 }
 
 dbTechLayerRule* dbTechNonDefaultRule::getLayerRule(dbTechLayer* layer_)
@@ -215,7 +216,7 @@ dbTechLayerRule* dbTechNonDefaultRule::getLayerRule(dbTechLayer* layer_)
     return nullptr;
   }
 
-  if (rule->_flags._block_rule == 0) {
+  if (rule->flags_._block_rule == 0) {
     return (dbTechLayerRule*) rule->getTech()->_layer_rule_tbl->getPtr(id);
   }
   return (dbTechLayerRule*) rule->getBlock()->_layer_rule_tbl->getPtr(id);
@@ -236,7 +237,7 @@ void dbTechNonDefaultRule::getLayerRules(
     }
   };
 
-  if (rule->_flags._block_rule == 0) {
+  if (rule->flags_._block_rule == 0) {
     add_rules(rule->getTech()->_layer_rule_tbl);
   } else {
     add_rules(rule->getBlock()->_layer_rule_tbl);
@@ -249,7 +250,7 @@ void dbTechNonDefaultRule::getVias(std::vector<dbTechVia*>& vias)
 
   vias.clear();
 
-  if (rule->_flags._block_rule == 1) {  // not supported on block rules
+  if (rule->flags_._block_rule == 1) {  // not supported on block rules
     return;
   }
 
@@ -265,7 +266,7 @@ dbTechSameNetRule* dbTechNonDefaultRule::findSameNetRule(dbTechLayer* l1_,
 {
   _dbTechNonDefaultRule* ndrule = (_dbTechNonDefaultRule*) this;
 
-  if (ndrule->_flags._block_rule == 1) {  // not supported on block rules
+  if (ndrule->flags_._block_rule == 1) {  // not supported on block rules
     return nullptr;
   }
 
@@ -289,7 +290,7 @@ void dbTechNonDefaultRule::getSameNetRules(
 
   rules.clear();
 
-  if (ndrule->_flags._block_rule == 1) {  // not supported on block rules
+  if (ndrule->flags_._block_rule == 1) {  // not supported on block rules
     return;
   }
 
@@ -303,13 +304,13 @@ void dbTechNonDefaultRule::getSameNetRules(
 bool dbTechNonDefaultRule::getHardSpacing()
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
-  return rule->_flags._hard_spacing == 1;
+  return rule->flags_._hard_spacing == 1;
 }
 
 void dbTechNonDefaultRule::setHardSpacing(bool value)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
-  rule->_flags._hard_spacing = value;
+  rule->flags_._hard_spacing = value;
 }
 
 void dbTechNonDefaultRule::addUseVia(dbTechVia* via)
@@ -394,7 +395,7 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbTech* tech_,
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechNonDefaultRule* rule = tech->_non_default_rule_tbl->create();
-  rule->_name = safe_strdup(name_);
+  rule->name_ = safe_strdup(name_);
   rule->_layer_rules.resize(tech->_layer_cnt);
 
   int i;
@@ -416,8 +417,8 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbBlock* block_,
   _dbTech* tech = (_dbTech*) block->getDb()->getTech();
   _dbTechNonDefaultRule* rule = block->_non_default_rule_tbl->create();
 
-  rule->_name = safe_strdup(name_);
-  rule->_flags._block_rule = 1;
+  rule->name_ = safe_strdup(name_);
+  rule->flags_._block_rule = 1;
   rule->_layer_rules.resize(tech->_layer_cnt);
 
   int i;

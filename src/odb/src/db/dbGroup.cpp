@@ -21,6 +21,7 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include "dbCommon.h"
 #include "dbGroupGroundNetItr.h"
 #include "dbGroupPowerNetItr.h"
 #include "dbRegion.h"
@@ -33,10 +34,10 @@ bool _dbGroup::operator==(const _dbGroup& rhs) const
   if (flags_._type != rhs.flags_._type) {
     return false;
   }
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (_group_next != rhs._group_next) {
@@ -79,7 +80,7 @@ bool _dbGroup::operator==(const _dbGroup& rhs) const
 bool _dbGroup::operator<(const _dbGroup& rhs) const
 {
   // User Code Begin <
-  if (strcmp(_name, rhs._name) >= 0) {
+  if (strcmp(name_, rhs.name_) >= 0) {
     return false;
   }
   if (flags_._type >= rhs.flags_._type) {
@@ -92,7 +93,7 @@ bool _dbGroup::operator<(const _dbGroup& rhs) const
 _dbGroup::_dbGroup(_dbDatabase* db)
 {
   flags_ = {};
-  _name = nullptr;
+  name_ = nullptr;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
@@ -101,8 +102,8 @@ dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
   stream >> flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
-  stream >> obj._name;
-  stream >> obj._next_entry;
+  stream >> obj.name_;
+  stream >> obj.next_entry_;
   stream >> obj._group_next;
   stream >> obj._parent_group;
   stream >> obj._insts;
@@ -122,8 +123,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj)
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
   stream << flags_bit_field;
-  stream << obj._name;
-  stream << obj._next_entry;
+  stream << obj.name_;
+  stream << obj.next_entry_;
   stream << obj._group_next;
   stream << obj._parent_group;
   stream << obj._insts;
@@ -143,17 +144,10 @@ void _dbGroup::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["power_nets"].add(_power_nets);
   info.children_["ground_nets"].add(_ground_nets);
   // User Code End collectMemInfo
-}
-
-_dbGroup::~_dbGroup()
-{
-  if (_name) {
-    free((void*) _name);
-  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -165,7 +159,7 @@ _dbGroup::~_dbGroup()
 const char* dbGroup::getName() const
 {
   _dbGroup* obj = (_dbGroup*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 dbGroup* dbGroup::getParentGroup() const
@@ -449,7 +443,7 @@ dbGroup* dbGroup::create(dbBlock* block, const char* name)
     return nullptr;
   }
   _dbGroup* _group = _block->_group_tbl->create();
-  _group->_name = safe_strdup(name);
+  _group->name_ = safe_strdup(name);
   _group->flags_._type = dbGroupType::PHYSICAL_CLUSTER;
   _block->_group_hash.insert(_group);
   return (dbGroup*) _group;
@@ -463,7 +457,7 @@ dbGroup* dbGroup::create(dbGroup* parent, const char* name)
     return nullptr;
   }
   _dbGroup* _group = _block->_group_tbl->create();
-  _group->_name = safe_strdup(name);
+  _group->name_ = safe_strdup(name);
   _group->flags_._type = dbGroupType::PHYSICAL_CLUSTER;
   _block->_group_hash.insert(_group);
   parent->addGroup((dbGroup*) _group);
@@ -478,7 +472,7 @@ dbGroup* dbGroup::create(dbRegion* region, const char* name)
     return nullptr;
   }
   _dbGroup* _group = _block->_group_tbl->create();
-  _group->_name = safe_strdup(name);
+  _group->name_ = safe_strdup(name);
   _group->flags_._type = dbGroupType::PHYSICAL_CLUSTER;
   _block->_group_hash.insert(_group);
   region->addGroup((dbGroup*) _group);

@@ -9,7 +9,6 @@
 #include "dbTable.h"
 #include "dbWire.h"
 #include "dbWireOpcode.h"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
@@ -334,7 +333,7 @@ nextOpCode:
       return false;
 
     default:
-      ZASSERT(DB_WIRE_PATH_ITR_INVALID_OPCODE);
+      assert(DB_WIRE_PATH_ITR_INVALID_OPCODE);
       _opcode = _decoder.next();
       goto nextOpCode;
   }

@@ -16,20 +16,21 @@
 #include "dbTechLayerRule.h"
 #include "dbVia.h"
 #include "dbWireOpcode.h"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/odb.h"
 #include "utl/Logger.h"
+
 namespace odb {
 
 template class dbTable<_dbWire>;
 
 bool _dbWire::operator==(const _dbWire& rhs) const
 {
-  if (_flags._is_global != rhs._flags._is_global) {
+  if (flags_._is_global != rhs.flags_._is_global) {
     return false;
   }
 
@@ -50,7 +51,7 @@ bool _dbWire::operator==(const _dbWire& rhs) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbWire& wire)
 {
-  uint* bit_field = (uint*) &wire._flags;
+  uint* bit_field = (uint*) &wire.flags_;
   stream << *bit_field;
   stream << wire._data;
   stream << wire._opcodes;
@@ -60,7 +61,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbWire& wire)
 
 dbIStream& operator>>(dbIStream& stream, _dbWire& wire)
 {
-  uint* bit_field = (uint*) &wire._flags;
+  uint* bit_field = (uint*) &wire.flags_;
   stream >> *bit_field;
   stream >> wire._data;
   stream >> wire._opcodes;
@@ -98,7 +99,7 @@ dbNet* dbWire::getNet()
 bool dbWire::isGlobalWire()
 {
   _dbWire* wire = (_dbWire*) this;
-  return wire->_flags._is_global == 1;
+  return wire->flags_._is_global == 1;
 }
 
 void dbWire::addOneSeg(unsigned char op,
@@ -175,7 +176,7 @@ std::optional<Rect> dbWire::getBBox()
 void dbWire::getShape(int shape_id, dbShape& shape)
 {
   _dbWire* wire = (_dbWire*) this;
-  ZASSERT((0 <= shape_id) && (shape_id < (int) wire->length()));
+  assert((0 <= shape_id) && (shape_id < (int) wire->length()));
   unsigned char opcode = wire->_opcodes[shape_id];
 
   switch (opcode & WOP_OPCODE_MASK) {
@@ -238,14 +239,14 @@ void dbWire::getShape(int shape_id, dbShape& shape)
     }
 
     default:
-      ZASSERT(DB_WIRE_SHAPE_INVALID_SHAPE_ID);
+      assert(DB_WIRE_SHAPE_INVALID_SHAPE_ID);
   }
 }
 
 Point dbWire::getCoord(int jid)
 {
   _dbWire* wire = (_dbWire*) this;
-  ZASSERT((0 <= jid) && (jid < (int) wire->length()));
+  assert((0 <= jid) && (jid < (int) wire->length()));
   dbBlock* block = (dbBlock*) wire->getOwner();
   dbTech* tech = getDb()->getTech();
   WirePoint pnt;
@@ -257,20 +258,20 @@ Point dbWire::getCoord(int jid)
 bool dbWire::getProperty(int jid, int& prpty)
 {
   _dbWire* wire = (_dbWire*) this;
-  int wlen = (int) wire->length();
-  ZASSERT(0 <= jid && jid < wlen);
+  [[maybe_unused]] const int wlen = (int) wire->length();
+  assert(0 <= jid && jid < wlen);
   unsigned char op = wire->_opcodes[jid] & WOP_OPCODE_MASK;
   if (op == WOP_COLINEAR || op == WOP_RECT) {
     prpty = 0;
     return true;
   }
-  ZASSERT(op == WOP_X || op == WOP_Y);
-  ZASSERT(jid + 1 < wlen);
+  assert(op == WOP_X || op == WOP_Y);
+  assert(jid + 1 < wlen);
   if ((wire->_opcodes[jid + 1] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
     prpty = wire->_data[jid + 1];
     return true;
   }
-  ZASSERT(jid + 2 < wlen);
+  assert(jid + 2 < wlen);
   if ((wire->_opcodes[jid + 2] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
     prpty = wire->_data[jid + 2];
     return true;
@@ -281,19 +282,19 @@ bool dbWire::getProperty(int jid, int& prpty)
 bool dbWire::setProperty(int jid, int prpty)
 {
   _dbWire* wire = (_dbWire*) this;
-  int wlen = (int) wire->length();
-  ZASSERT(0 <= jid && jid < wlen);
+  [[maybe_unused]] const int wlen = (int) wire->length();
+  assert(0 <= jid && jid < wlen);
   if ((wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_COLINEAR) {
     return true;
   }
-  ZASSERT((wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_X
-          || (wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_Y);
-  ZASSERT(jid + 1 < wlen);
+  assert((wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_X
+         || (wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_Y);
+  assert(jid + 1 < wlen);
   if ((wire->_opcodes[jid + 1] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
     wire->_data[jid + 1] = prpty;
     return true;
   }
-  ZASSERT(jid + 2 < wlen);
+  assert(jid + 2 < wlen);
   if ((wire->_opcodes[jid + 2] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
     wire->_data[jid + 2] = prpty;
     return true;
@@ -304,14 +305,14 @@ bool dbWire::setProperty(int jid, int prpty)
 int dbWire::getData(int idx)
 {
   _dbWire* wire = (_dbWire*) this;
-  ZASSERT((0 <= idx) && (idx < (int) wire->length()));
+  assert((0 <= idx) && (idx < (int) wire->length()));
   return (wire->_data[idx]);
 }
 
 unsigned char dbWire::getOpcode(int idx)
 {
   _dbWire* wire = (_dbWire*) this;
-  ZASSERT((0 <= idx) && (idx < (int) wire->length()));
+  assert((0 <= idx) && (idx < (int) wire->length()));
   return (wire->_opcodes[idx]);
 }
 
@@ -439,7 +440,7 @@ void dbWire::getSegment(int shape_id, dbShape& shape)
   bool ignore_ext = false;
 
 decode_loop: {
-  ZASSERT(idx >= 0);
+  assert(idx >= 0);
   opcode = wire->_opcodes[idx];
 
   switch (opcode & WOP_OPCODE_MASK) {
@@ -542,7 +543,7 @@ state_machine_update: {
 }
 
   while ((layer == nullptr) || (found_width == false)) {
-    ZASSERT(idx >= 0);
+    assert(idx >= 0);
     opcode = wire->_opcodes[idx];
 
     switch (opcode & WOP_OPCODE_MASK) {
@@ -677,7 +678,7 @@ void dbWire::getSegment(int shape_id, dbTechLayer* layer, dbShape& shape)
   bool ignore_ext = false;
 
 decode_loop: {
-  ZASSERT(idx >= 0);
+  assert(idx >= 0);
   opcode = wire->_opcodes[idx];
 
   switch (opcode & WOP_OPCODE_MASK) {
@@ -752,7 +753,7 @@ state_machine_update: {
 }
 
   while (found_width == false) {
-    ZASSERT(idx >= 0);
+    assert(idx >= 0);
     opcode = wire->_opcodes[idx];
 
     switch (opcode & WOP_OPCODE_MASK) {
@@ -907,7 +908,7 @@ inline bool createTechVia(_dbWire* wire, int idx, dbShape& shape)
 bool dbWire::getPrevVia(int idx, dbShape& shape)
 {
   _dbWire* wire = (_dbWire*) this;
-  ZASSERT((0 < idx) && (idx < (int) wire->length()));
+  assert((0 < idx) && (idx < (int) wire->length()));
 
   unsigned char opcode;
   opcode = getPrevOpcode(wire, idx);
@@ -954,7 +955,7 @@ bool dbWire::getPrevVia(int idx, dbShape& shape)
 bool dbWire::getNextVia(int idx, dbShape& shape)
 {
   _dbWire* wire = (_dbWire*) this;
-  ZASSERT((0 < idx) && (idx < (int) wire->length()));
+  assert((0 < idx) && (idx < (int) wire->length()));
   ++idx;
 
 nextOpCode:
@@ -1048,7 +1049,7 @@ void dbWire::append(dbWire* src_, bool singleSegmentWire)
       if (opcode == WOP_VIA) {
         uint vid = dst->_data[i];
         _dbVia* src_via = src_block->_via_tbl->getPtr(vid);
-        dbVia* dst_via = ((dbBlock*) dst_block)->findVia(src_via->_name);
+        dbVia* dst_via = ((dbBlock*) dst_block)->findVia(src_via->name_);
 
         // duplicate src-via in dst-block if needed
         if (dst_via == nullptr) {
@@ -1081,7 +1082,7 @@ void dbWire::attach(dbNet* net_)
   _dbWire* wire = (_dbWire*) this;
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) getBlock();
-  assert(wire->_flags._is_global == 0);
+  assert(wire->flags_._is_global == 0);
   if (wire->_net == net->getOID() && net->_wire == wire->getOID()) {
     return;
   }
@@ -1110,7 +1111,7 @@ void dbWire::detach()
 {
   _dbWire* wire = (_dbWire*) this;
   _dbBlock* block = (_dbBlock*) getBlock();
-  assert(wire->_flags._is_global == 0);
+  assert(wire->flags_._is_global == 0);
   if (wire->_net == 0) {
     return;
   }
@@ -1146,13 +1147,13 @@ dbWire* dbWire::create(dbNet* net_, bool global_wire)
 
   if (global_wire) {
     net->_global_wire = wire->getOID();
-    wire->_flags._is_global = 1;
+    wire->flags_._is_global = 1;
   } else {
     net->_wire = wire->getOID();
   }
 
-  net->_flags._wire_ordered = 0;
-  net->_flags._disconnected = 0;
+  net->flags_._wire_ordered = 0;
+  net->flags_._disconnected = 0;
   for (auto callback : block->_callbacks) {
     callback->inDbWireCreate((dbWire*) wire);
   }
@@ -1189,12 +1190,12 @@ void dbWire::destroy(dbWire* wire_)
     block->remove_rect(opt_bbox.value());
   }
   if (net) {
-    if (wire->_flags._is_global) {
+    if (wire->flags_._is_global) {
       net->_global_wire = 0;
     } else {
       net->_wire = 0;
-      net->_flags._wire_ordered = 0;
-      net->_flags._wire_altered = 1;
+      net->flags_._wire_ordered = 0;
+      net->flags_._wire_altered = 1;
     }
   } else {
     wire_->getImpl()->getLogger()->warn(utl::ODB, 62, "This wire has no net");

@@ -3,10 +3,10 @@
 
 #pragma once
 
+#include <cassert>
 #include <map>
 #include <vector>
 
-#include "odb/ZException.h"
 #include "odb/dbMap.h"
 #include "odb/dbSet.h"
 
@@ -48,12 +48,12 @@ inline const D& dbMap<T, D>::operator[](T* object) const
 {
   if (_map) {
     typename std::map<T*, D>::const_iterator itr = _map->find(object);
-    ZASSERT(itr != _map->end());
+    assert(itr != _map->end());
     return (*itr).second;
   }
 
   uint idx = object->getId();
-  ZASSERT(idx && (idx < _vector->size()));
+  assert(idx && (idx < _vector->size()));
   return (*_vector)[idx];
 }
 
@@ -65,7 +65,7 @@ inline D& dbMap<T, D>::operator[](T* object)
   }
 
   uint idx = object->getId();
-  ZASSERT(idx && (idx < _vector->size()));
+  assert(idx && (idx < _vector->size()));
   return (*_vector)[idx];
 }
 
