@@ -40,10 +40,17 @@ CUGR::CUGR(odb::dbDatabase* db,
 
 CUGR::~CUGR() = default;
 
-void CUGR::init(const int min_routing_layer, const int max_routing_layer, std::set<odb::dbNet*> clock_nets)
+void CUGR::init(const int min_routing_layer,
+                const int max_routing_layer,
+                std::set<odb::dbNet*> clock_nets)
 {
-  design_ = std::make_unique<Design>(
-      db_, logger_, sta_, constants_, min_routing_layer, max_routing_layer, clock_nets);
+  design_ = std::make_unique<Design>(db_,
+                                     logger_,
+                                     sta_,
+                                     constants_,
+                                     min_routing_layer,
+                                     max_routing_layer,
+                                     clock_nets);
   grid_graph_ = std::make_unique<GridGraph>(design_.get(), constants_, logger_);
   // Instantiate the global routing netlist
   const std::vector<CUGRNet>& baseNets = design_->getAllNets();
