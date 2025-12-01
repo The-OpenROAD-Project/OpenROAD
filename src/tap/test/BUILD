@@ -34,6 +34,7 @@ COMPULSORY_TESTS = [
     "jpeg_gf180",
     "multiple_calls",
     "no_endcap",
+    "overlap_cover",
     "region1",
     "symmetry",
 ]
@@ -140,6 +141,7 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "overlap_cover": ["sky130hs_data/cover.lef"],
             "allow_one_site_gaps": ["disallow_one_site_gaps.def"],
             "boundary_macros": [],
             "disallow_one_site_gaps2": [
