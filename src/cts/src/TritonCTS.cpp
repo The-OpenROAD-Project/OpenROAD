@@ -1080,10 +1080,8 @@ void TritonCTS::findLongEdges(
     odb::Point driverPt,
     std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin)
 {
-  int dx = block_->getDieAreaPolygon().dx();
-  int dy = block_->getDieAreaPolygon().dy();
-
-  int threshold = std::max(dx, dy) / 5;
+  double maxWlMicrons = resizer_->findMaxWireLength(/* don't issue error */false) * 1e+6;
+  int threshold = block_->micronsToDbu(maxWlMicrons);
   // TODO : Make it a debug print
   debugPrint(
       logger_, CTS, "clock gate cloning", 1, "Threshold = {}", threshold);
