@@ -3,6 +3,7 @@
 
 #include "dbCapNode.h"
 
+#include <cassert>
 #include <vector>
 
 #include "dbBlock.h"
@@ -15,7 +16,6 @@
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -30,35 +30,35 @@ template class dbTable<_dbCapNode>;
 
 bool _dbCapNode::operator==(const _dbCapNode& rhs) const
 {
-  if (_flags._name != rhs._flags._name) {
+  if (flags_._name != rhs.flags_._name) {
     return false;
   }
 
-  if (_flags._internal != rhs._flags._internal) {
+  if (flags_._internal != rhs.flags_._internal) {
     return false;
   }
 
-  if (_flags._iterm != rhs._flags._iterm) {
+  if (flags_._iterm != rhs.flags_._iterm) {
     return false;
   }
 
-  if (_flags._bterm != rhs._flags._bterm) {
+  if (flags_._bterm != rhs.flags_._bterm) {
     return false;
   }
 
-  if (_flags._branch != rhs._flags._branch) {
+  if (flags_._branch != rhs.flags_._branch) {
     return false;
   }
 
-  if (_flags._foreign != rhs._flags._foreign) {
+  if (flags_._foreign != rhs.flags_._foreign) {
     return false;
   }
 
-  if (_flags._childrenCnt != rhs._flags._childrenCnt) {
+  if (flags_._childrenCnt != rhs.flags_._childrenCnt) {
     return false;
   }
 
-  if (_flags._select != rhs._flags._select) {
+  if (flags_._select != rhs.flags_._select) {
     return false;
   }
 
@@ -170,8 +170,8 @@ void dbCapNode::adjustCapacitance(float factor, uint corner)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
 
-  ZASSERT(seg->_flags._foreign > 0);
-  ZASSERT(corner < cornerCnt);
+  assert(seg->flags_._foreign > 0);
+  assert(corner < cornerCnt);
   float& value
       = (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
   float prev_value = value;
@@ -213,8 +213,8 @@ double dbCapNode::getCapacitance(uint corner)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
 
-  if (seg->_flags._foreign > 0) {
-    ZASSERT(corner < cornerCnt);
+  if (seg->flags_._foreign > 0) {
+    assert(corner < cornerCnt);
     return (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
   }
   return 0.0;
@@ -223,7 +223,7 @@ double dbCapNode::getCapacitance(uint corner)
 void dbCapNode::getGndCap(double* gndcap, double* totalcap)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  if (seg->_flags._foreign == 0) {
+  if (seg->flags_._foreign == 0) {
     return;
   }
   _dbBlock* block = (_dbBlock*) seg->getOwner();
@@ -243,7 +243,7 @@ void dbCapNode::getGndCap(double* gndcap, double* totalcap)
 void dbCapNode::addGndCap(double* gndcap, double* totalcap)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  if (seg->_flags._foreign == 0) {
+  if (seg->flags_._foreign == 0) {
     return;
   }
   _dbBlock* block = (_dbBlock*) seg->getOwner();
@@ -333,7 +333,7 @@ void dbCapNode::setCapacitance(double cap, int corner)
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  assert((corner >= 0) && ((uint) corner < cornerCnt));
   float& value
       = (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
   float prev_value = value;
@@ -365,7 +365,7 @@ void dbCapNode::addCapacitance(double cap, int corner)
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  assert((corner >= 0) && ((uint) corner < cornerCnt));
   float& value
       = (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
   float prev_value = value;
@@ -395,28 +395,28 @@ void dbCapNode::addCapacitance(double cap, int corner)
 bool dbCapNode::isSelect()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  return seg->_flags._select > 0 ? true : false;
+  return seg->flags_._select > 0 ? true : false;
 }
 bool dbCapNode::isForeign()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  return seg->_flags._foreign > 0 ? true : false;
+  return seg->flags_._foreign > 0 ? true : false;
 }
 bool dbCapNode::isInternal()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  return seg->_flags._internal > 0 ? true : false;
+  return seg->flags_._internal > 0 ? true : false;
 }
 bool dbCapNode::isTreeNode()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  uint flags = seg->_flags._branch + seg->_flags._iterm + seg->_flags._bterm;
+  uint flags = seg->flags_._branch + seg->flags_._iterm + seg->flags_._bterm;
   return flags > 0 ? true : false;
 }
 bool dbCapNode::isBranch()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  return seg->_flags._branch > 0 ? true : false;
+  return seg->flags_._branch > 0 ? true : false;
 }
 bool dbCapNode::isDangling()
 {
@@ -427,7 +427,7 @@ dbITerm* dbCapNode::getITerm(dbBlock* mblock)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   dbBlock* block = mblock ? mblock : (dbBlock*) seg->getOwner();
-  if (!seg->_flags._iterm) {
+  if (!seg->flags_._iterm) {
     return nullptr;
   }
   return dbITerm::getITerm(block, seg->_node_num);
@@ -436,7 +436,7 @@ dbBTerm* dbCapNode::getBTerm(dbBlock* mblock)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   dbBlock* block = mblock ? mblock : (dbBlock*) seg->getOwner();
-  if (!seg->_flags._bterm) {
+  if (!seg->flags_._bterm) {
     return nullptr;
   }
   return dbBTerm::getBTerm(block, seg->_node_num);
@@ -446,7 +446,7 @@ bool dbCapNode::isSourceTerm(dbBlock* mblock)
   _dbCapNode* seg = (_dbCapNode*) this;
   dbBlock* block = mblock ? mblock : (dbBlock*) seg->getOwner();
   dbIoType iotype;
-  if (seg->_flags._iterm) {
+  if (seg->flags_._iterm) {
     dbITerm* iterm = dbITerm::getITerm(block, seg->_node_num);
     iotype = iterm->getIoType();
     if (iterm->getIoType() == dbIoType::OUTPUT) {
@@ -454,7 +454,7 @@ bool dbCapNode::isSourceTerm(dbBlock* mblock)
     }
     return false;
   }
-  if (seg->_flags._bterm) {
+  if (seg->flags_._bterm) {
     dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
     iotype = bterm->getIoType();
     if (bterm->getIoType() == dbIoType::INPUT) {
@@ -468,14 +468,14 @@ bool dbCapNode::isInoutTerm(dbBlock* mblock)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   dbBlock* block = mblock ? mblock : (dbBlock*) seg->getOwner();
-  if (seg->_flags._iterm) {
+  if (seg->flags_._iterm) {
     dbITerm* iterm = dbITerm::getITerm(block, seg->_node_num);
     if (iterm->getIoType() == dbIoType::INOUT) {
       return true;
     }
     return false;
   }
-  if (seg->_flags._bterm) {
+  if (seg->flags_._bterm) {
     dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
     if (bterm->getIoType() == dbIoType::INOUT) {
       return true;
@@ -487,17 +487,17 @@ bool dbCapNode::isInoutTerm(dbBlock* mblock)
 bool dbCapNode::isITerm()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  return seg->_flags._iterm > 0 ? true : false;
+  return seg->flags_._iterm > 0 ? true : false;
 }
 bool dbCapNode::isName()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  return seg->_flags._name > 0 ? true : false;
+  return seg->flags_._name > 0 ? true : false;
 }
 bool dbCapNode::isBTerm()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  return seg->_flags._bterm > 0 ? true : false;
+  return seg->flags_._bterm > 0 ? true : false;
 }
 
 void dbCapNode::resetBTermFlag()
@@ -505,7 +505,7 @@ void dbCapNode::resetBTermFlag()
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint prev_flags = flagsToUInt(seg);
-  seg->_flags._bterm = 0;
+  seg->flags_._bterm = 0;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -523,7 +523,7 @@ void dbCapNode::resetITermFlag()
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint prev_flags = flagsToUInt(seg);
-  seg->_flags._iterm = 0;
+  seg->flags_._iterm = 0;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -541,7 +541,7 @@ void dbCapNode::resetNameFlag()
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint prev_flags = flagsToUInt(seg);
-  seg->_flags._name = 0;
+  seg->flags_._name = 0;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -559,7 +559,7 @@ void dbCapNode::resetInternalFlag()
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint prev_flags = flagsToUInt(seg);
-  seg->_flags._internal = 0;
+  seg->flags_._internal = 0;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -577,7 +577,7 @@ void dbCapNode::resetBranchFlag()
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint prev_flags = flagsToUInt(seg);
-  seg->_flags._branch = 0;
+  seg->flags_._branch = 0;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -595,7 +595,7 @@ void dbCapNode::resetForeignFlag()
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint prev_flags = flagsToUInt(seg);
-  seg->_flags._foreign = 0;
+  seg->flags_._foreign = 0;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -613,7 +613,7 @@ void dbCapNode::setBTermFlag()
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint prev_flags = flagsToUInt(seg);
-  seg->_flags._bterm = 1;
+  seg->flags_._bterm = 1;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -631,7 +631,7 @@ void dbCapNode::setITermFlag()
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint prev_flags = flagsToUInt(seg);
-  seg->_flags._iterm = 1;
+  seg->flags_._iterm = 1;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -649,7 +649,7 @@ uint dbCapNode::incrChildrenCnt()
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint prev_flags = flagsToUInt(seg);
-  seg->_flags._childrenCnt++;
+  seg->flags_._childrenCnt++;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -661,24 +661,24 @@ uint dbCapNode::incrChildrenCnt()
     block->_journal->updateField(
         this, _dbCapNode::FLAGS, prev_flags, flagsToUInt(seg));
   }
-  return seg->_flags._childrenCnt;
+  return seg->flags_._childrenCnt;
 }
 uint dbCapNode::getChildrenCnt()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  return seg->_flags._childrenCnt;
+  return seg->flags_._childrenCnt;
 }
 void dbCapNode::setChildrenCnt(uint cnt)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  seg->_flags._childrenCnt = cnt;
+  seg->flags_._childrenCnt = cnt;
 }
 void dbCapNode::setBranchFlag()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint prev_flags = flagsToUInt(seg);
-  seg->_flags._branch = 1;
+  seg->flags_._branch = 1;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -696,7 +696,7 @@ void dbCapNode::setNameFlag()
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint prev_flags = flagsToUInt(seg);
-  seg->_flags._name = 1;
+  seg->flags_._name = 1;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -714,7 +714,7 @@ void dbCapNode::setInternalFlag()
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint prev_flags = flagsToUInt(seg);
-  seg->_flags._internal = 1;
+  seg->flags_._internal = 1;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -732,7 +732,7 @@ void dbCapNode::setForeignFlag()
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint prev_flags = flagsToUInt(seg);
-  seg->_flags._foreign = 1;
+  seg->flags_._foreign = 1;
 
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
@@ -750,7 +750,7 @@ void dbCapNode::setSelect(bool val)
   _dbCapNode* seg = (_dbCapNode*) this;
   //_dbBlock * block = (_dbBlock *) getOwner();
   // uint prev_flags = flagsToUInt(seg);
-  seg->_flags._select = val ? 1 : 0;
+  seg->flags_._select = val ? 1 : 0;
 }
 void dbCapNode::setNode(uint node)
 {
@@ -781,10 +781,10 @@ uint dbCapNode::getShapeId()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   dbBlock* block = (dbBlock*) seg->getOwner();
-  if (seg->_flags._internal > 0) {
+  if (seg->flags_._internal > 0) {
     return seg->_node_num;
   }
-  if (seg->_flags._iterm > 0) {
+  if (seg->flags_._iterm > 0) {
     dbITerm* iterm = dbITerm::getITerm(block, seg->_node_num);
     if (!iterm->getNet() || !iterm->getNet()->getWire()) {
       return 0;
@@ -802,14 +802,14 @@ void dbCapNode::setSortIndex(uint idx)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   //_dbBlock * block = (_dbBlock *) getOwner();
-  seg->_flags._sort_index = idx;
+  seg->flags_._sort_index = idx;
 }
 
 uint dbCapNode::getSortIndex()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   //_dbBlock * block = (_dbBlock *) getOwner();
-  return seg->_flags._sort_index;
+  return seg->flags_._sort_index;
 }
 
 // void
@@ -830,11 +830,11 @@ bool dbCapNode::getTermCoords(int& x, int& y, dbBlock* mblock)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   dbBlock* block = mblock ? mblock : (dbBlock*) seg->getOwner();
-  if (seg->_flags._iterm > 0) {
+  if (seg->flags_._iterm > 0) {
     dbITerm* iterm = dbITerm::getITerm(block, seg->_node_num);
     return (iterm->getAvgXY(&x, &y));
   }
-  if (seg->_flags._bterm > 0) {
+  if (seg->flags_._bterm > 0) {
     dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
     return (bterm->getFirstPinLocation(x, y));
   }
@@ -926,20 +926,21 @@ dbCapNode* dbCapNode::create(dbNet* net_, uint node, bool foreign)
   }
 
   seg->_node_num = node;
-  // seg->_flags._cnt = block->_num_corners;
-  seg->_flags._select = 0;
-  seg->_flags._sort_index = 0;
+  // seg->flags_._cnt = block->_num_corners;
+  seg->flags_._select = 0;
+  seg->flags_._sort_index = 0;
 
   if (foreign) {
-    seg->_flags._foreign = 1;
+    seg->flags_._foreign = 1;
     if (block->_maxCapNodeId >= seg->getOID()) {
       for (uint ii = 0; ii < cornerCnt; ii++) {
         (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = 0.0;
       }
     } else {
       block->_maxCapNodeId = seg->getOID();
-      uint capIdx = block->_c_val_tbl->getIdx(cornerCnt, (float) 0.0);
-      ZASSERT((seg->getOID() - 1) * cornerCnt + 1 == capIdx);
+      [[maybe_unused]] uint capIdx
+          = block->_c_val_tbl->getIdx(cornerCnt, (float) 0.0);
+      assert((seg->getOID() - 1) * cornerCnt + 1 == capIdx);
     }
   }
   seg->_net = net->getOID();

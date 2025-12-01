@@ -25,6 +25,7 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -32,46 +33,46 @@ template class dbTable<_dbRegion>;
 
 _dbRegion::_dbRegion(_dbDatabase*)
 {
-  _flags._type = dbRegionType::INCLUSIVE;
-  _flags._invalid = false;
-  _flags._spare_bits = false;
-  _name = nullptr;
+  flags_._type = dbRegionType::INCLUSIVE;
+  flags_._invalid = false;
+  flags_._spare_bits = false;
+  name_ = nullptr;
 }
 
 _dbRegion::_dbRegion(_dbDatabase*, const _dbRegion& r)
-    : _flags(r._flags),
-      _name(nullptr),
+    : flags_(r.flags_),
+      name_(nullptr),
       _insts(r._insts),
       _boxes(r._boxes),
       groups_(r.groups_)
 {
-  if (r._name) {
-    _name = strdup(r._name);
+  if (r.name_) {
+    name_ = strdup(r.name_);
   }
 }
 
 _dbRegion::~_dbRegion()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
 bool _dbRegion::operator==(const _dbRegion& rhs) const
 {
-  if (_flags._type != rhs._flags._type) {
+  if (flags_._type != rhs.flags_._type) {
     return false;
   }
 
-  if (_flags._invalid != rhs._flags._invalid) {
+  if (flags_._invalid != rhs.flags_._invalid) {
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
@@ -88,19 +89,19 @@ bool _dbRegion::operator==(const _dbRegion& rhs) const
 
 bool _dbRegion::operator<(const _dbRegion& rhs) const
 {
-  if (_flags._type < rhs._flags._type) {
+  if (flags_._type < rhs.flags_._type) {
     return false;
   }
 
-  if (_flags._type > rhs._flags._type) {
+  if (flags_._type > rhs.flags_._type) {
     return true;
   }
 
-  if (_flags._invalid < rhs._flags._invalid) {
+  if (flags_._invalid < rhs.flags_._invalid) {
     return false;
   }
 
-  if (_flags._invalid > rhs._flags._invalid) {
+  if (flags_._invalid > rhs.flags_._invalid) {
     return true;
   }
 
@@ -116,9 +117,9 @@ bool _dbRegion::operator<(const _dbRegion& rhs) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbRegion& r)
 {
-  uint* bit_field = (uint*) &r._flags;
+  uint* bit_field = (uint*) &r.flags_;
   stream << *bit_field;
-  stream << r._name;
+  stream << r.name_;
   stream << r._insts;
   stream << r._boxes;
   stream << r.groups_;
@@ -127,9 +128,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbRegion& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbRegion& r)
 {
-  uint* bit_field = (uint*) &r._flags;
+  uint* bit_field = (uint*) &r.flags_;
   stream >> *bit_field;
-  stream >> r._name;
+  stream >> r.name_;
   stream >> r._insts;
   stream >> r._boxes;
   stream >> r.groups_;
@@ -140,32 +141,32 @@ dbIStream& operator>>(dbIStream& stream, _dbRegion& r)
 std::string dbRegion::getName()
 {
   _dbRegion* region = (_dbRegion*) this;
-  return region->_name;
+  return region->name_;
 }
 
 dbRegionType dbRegion::getRegionType()
 {
   _dbRegion* region = (_dbRegion*) this;
-  dbRegionType t(region->_flags._type);
+  dbRegionType t(region->flags_._type);
   return t;
 }
 
 void dbRegion::setInvalid(bool v)
 {
   _dbRegion* region = (_dbRegion*) this;
-  region->_flags._invalid = v;
+  region->flags_._invalid = v;
 }
 
 bool dbRegion::isInvalid()
 {
   _dbRegion* region = (_dbRegion*) this;
-  return region->_flags._invalid == 1;
+  return region->flags_._invalid == 1;
 }
 
 void dbRegion::setRegionType(dbRegionType type)
 {
   _dbRegion* region = (_dbRegion*) this;
-  region->_flags._type = type;
+  region->flags_._type = type;
 }
 
 dbSet<dbInst> dbRegion::getRegionInsts()
@@ -310,7 +311,7 @@ dbRegion* dbRegion::create(dbBlock* block_, const char* name)
   }
 
   _dbRegion* region = block->_region_tbl->create();
-  region->_name = safe_strdup(name);
+  region->name_ = safe_strdup(name);
   for (auto callback : block->_callbacks) {
     callback->inDbRegionCreate((dbRegion*) region);
   }
@@ -378,7 +379,7 @@ void _dbRegion::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
 }
 
 }  // namespace odb

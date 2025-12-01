@@ -1647,6 +1647,8 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
   }
   auto block = chip->getBlock();
   if (block == nullptr) {
+    // It is a top chip
+    emit chipLoaded(chip);
     return;
   }
 

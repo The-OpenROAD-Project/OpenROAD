@@ -1005,16 +1005,31 @@ std::pair<int, int> BinGrid::getMinMaxIdxY(const Instance* inst) const
 
 ////////////////////////////////////////////////
 // NesterovBaseVars
-void NesterovBaseVars::reset()
+NesterovBaseVars::NesterovBaseVars(const PlaceOptions& options)
+    : isSetBinCnt(options.binGridCntX != 0 && options.binGridCntY != 0),
+      useUniformTargetDensity(options.uniformTargetDensityMode),
+      targetDensity(options.density),
+      binCntX(isSetBinCnt ? options.binGridCntX : 0),
+      binCntY(isSetBinCnt ? options.binGridCntY : 0),
+      minPhiCoef(options.minPhiCoef),
+      maxPhiCoef(options.maxPhiCoef)
 {
-  *this = NesterovBaseVars();
 }
 
 ////////////////////////////////////////////////
 // NesterovPlaceVars
-void NesterovPlaceVars::reset()
+NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options)
+    : maxNesterovIter(options.nesterovPlaceMaxIter),
+      initDensityPenalty(options.initDensityPenaltyFactor),
+      initWireLengthCoef(options.initWireLengthCoef),
+      targetOverflow(options.overflow),
+      referenceHpwl(options.referenceHpwl),
+      routability_end_overflow(options.routabilityCheckOverflow),
+      keepResizeBelowOverflow(options.keepResizeBelowOverflow),
+      timingDrivenMode(options.timingDrivenMode),
+      routability_driven_mode(options.routabilityDrivenMode),
+      disableRevertIfDiverge(options.disableRevertIfDiverge)
 {
-  *this = NesterovPlaceVars();
 }
 
 ////////////////////////////////////////////////
@@ -1026,10 +1041,9 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
                                        utl::Logger* log,
                                        int num_threads,
                                        const Clusters& clusters)
-    : num_threads_{num_threads}
+    : nbVars_(nbVars), num_threads_{num_threads}
 {
   assert(omp_get_thread_num() == 0);
-  nbVars_ = nbVars;
   pbc_ = std::move(pbc);
   log_ = log;
   delta_area_ = 0;
@@ -1676,8 +1690,8 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
                            std::shared_ptr<PlacerBase> pb,
                            std::shared_ptr<NesterovBaseCommon> nbc,
                            utl::Logger* log)
+    : nbVars_(nbVars)
 {
-  nbVars_ = nbVars;
   pb_ = std::move(pb);
   nbc_ = std::move(nbc);
   log_ = log;

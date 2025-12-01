@@ -21,7 +21,7 @@ template class dbTable<_dbBusPort>;
 
 bool _dbBusPort::operator==(const _dbBusPort& rhs) const
 {
-  if (_flags != rhs._flags) {
+  if (flags_ != rhs.flags_) {
     return false;
   }
   if (_from != rhs._from) {
@@ -53,7 +53,7 @@ bool _dbBusPort::operator<(const _dbBusPort& rhs) const
 
 _dbBusPort::_dbBusPort(_dbDatabase* db)
 {
-  _flags = 0;
+  flags_ = 0;
   _from = 0;
   _to = 0;
 }
@@ -61,7 +61,7 @@ _dbBusPort::_dbBusPort(_dbDatabase* db)
 dbIStream& operator>>(dbIStream& stream, _dbBusPort& obj)
 {
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._flags;
+    stream >> obj.flags_;
   }
   if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
     stream >> obj._from;
@@ -86,7 +86,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBusPort& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbBusPort& obj)
 {
-  stream << obj._flags;
+  stream << obj.flags_;
   stream << obj._from;
   stream << obj._to;
   stream << obj._port;
@@ -204,12 +204,12 @@ dbModBTerm* dbBusPort::getBusIndexedElement(int index)
     // TODO. Future pull request: support for making vector of objects unclean.
     // if we cannot count on the order, skip to the dbModBterm
     //
-    // the _flags are set to non zero if we cannot
+    // the flags_ are set to non zero if we cannot
     // count on the order of the modbterms (eg
     // if some have been deleted or added in non-linear way).
     //
     /* This leads to wrong bus member access outside bus port
-    if (obj->_flags == 0U) {
+    if (obj->flags_ == 0U) {
       _dbBlock* block_ = (_dbBlock*) obj->getOwner();
       _dbBusPort* obj = (_dbBusPort*) this;
       return (dbModBTerm*) (block_->_modbterm_tbl->getPtr(obj->getId() + offset
@@ -258,7 +258,7 @@ dbBusPort* dbBusPort::create(dbModule* parentModule,
   busport->_port = port->getId();
   busport->_from = from_ix;
   busport->_to = to_ix;
-  busport->_flags = 0U;
+  busport->flags_ = 0U;
   busport->_parent = module->getOID();
   return (dbBusPort*) busport;
 }

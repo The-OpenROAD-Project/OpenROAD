@@ -33,7 +33,7 @@ class _dbTechMinCutRule : public _dbObject
     uint _cuts_length : 1;
     uint _spare_bits : 28;
   };
-  _Flword _flags;
+  _Flword flags_;
   uint _num_cuts;
   uint _width;
   int _cut_distance;
@@ -54,7 +54,7 @@ class _dbTechMinCutRule : public _dbObject
 
 inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */,
                                             const _dbTechMinCutRule& r)
-    : _flags(r._flags),
+    : flags_(r.flags_),
       _num_cuts(r._num_cuts),
       _width(r._width),
       _cut_distance(r._cut_distance),
@@ -65,9 +65,9 @@ inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */,
 
 inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */)
 {
-  _flags._rule = _dbTechMinCutRule::NONE;
-  _flags._cuts_length = 0;
-  _flags._spare_bits = 0;
+  flags_._rule = _dbTechMinCutRule::NONE;
+  flags_._cuts_length = 0;
+  flags_._spare_bits = 0;
   _num_cuts = 0;
   _width = 0;
   _cut_distance = -1;
@@ -91,7 +91,7 @@ class _dbTechMinEncRule : public _dbObject
   {
     uint _has_width : 1;
     uint _spare_bits : 31;
-  } _flags;
+  } flags_;
 
   uint _area;
   uint _width;
@@ -109,14 +109,14 @@ class _dbTechMinEncRule : public _dbObject
 
 inline _dbTechMinEncRule::_dbTechMinEncRule(_dbDatabase* /* unused: db */,
                                             const _dbTechMinEncRule& r)
-    : _flags(r._flags), _area(r._area), _width(r._width)
+    : flags_(r.flags_), _area(r._area), _width(r._width)
 {
 }
 
 inline _dbTechMinEncRule::_dbTechMinEncRule(_dbDatabase* /* unused: db */)
 {
-  _flags._has_width = 0;
-  _flags._spare_bits = 0;
+  flags_._has_width = 0;
+  flags_._spare_bits = 0;
   _area = 0;
   _width = 0;
 }

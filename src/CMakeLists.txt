@@ -312,7 +312,7 @@ set_target_properties(openroad PROPERTIES
   # Export symbols for stack trace printing
   ENABLE_EXPORTS ON
 )
-target_compile_features(openroad PUBLIC cxx_std_17)
+target_compile_features(openroad PUBLIC cxx_std_20)
 
 target_include_directories(openroad
   PUBLIC

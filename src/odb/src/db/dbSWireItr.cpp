@@ -21,12 +21,12 @@ namespace odb {
 //
 // BTerms are ordered by io-type and cannot be reversed.
 //
-bool dbSWireItr::reversible()
+bool dbSWireItr::reversible() const
 {
   return true;
 }
 
-bool dbSWireItr::orderReversed()
+bool dbSWireItr::orderReversed() const
 {
   return true;
 }
@@ -48,12 +48,12 @@ void dbSWireItr::reverse(dbObject* parent)
   net->_swires = list;
 }
 
-uint dbSWireItr::sequential()
+uint dbSWireItr::sequential() const
 {
   return 0;
 }
 
-uint dbSWireItr::size(dbObject* parent)
+uint dbSWireItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -66,18 +66,18 @@ uint dbSWireItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbSWireItr::begin(dbObject* parent)
+uint dbSWireItr::begin(dbObject* parent) const
 {
   _dbNet* net = (_dbNet*) parent;
   return net->_swires;
 }
 
-uint dbSWireItr::end(dbObject* /* unused: parent */)
+uint dbSWireItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbSWireItr::next(uint id, ...)
+uint dbSWireItr::next(uint id, ...) const
 {
   _dbSWire* swire = _swire_tbl->getPtr(id);
   return swire->_next_swire;

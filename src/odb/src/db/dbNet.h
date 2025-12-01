@@ -73,8 +73,8 @@ class _dbNet : public _dbObject
   };
 
   // PERSISTANT-MEMBERS
-  _dbNetFlags _flags;
-  char* _name;
+  _dbNetFlags flags_;
+  char* name_;
   union
   {
     float _gndc_calibration_factor;
@@ -86,7 +86,7 @@ class _dbNet : public _dbObject
     float _dbCC;
     float _CcMatchRatio;
   };
-  dbId<_dbNet> _next_entry;
+  dbId<_dbNet> next_entry_;
   dbId<_dbITerm> _iterms;
   dbId<_dbBTerm> _bterms;
   dbId<_dbWire> _wire;

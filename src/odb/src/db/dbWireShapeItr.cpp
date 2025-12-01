@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <cassert>
+
 #include "dbBlock.h"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbWire.h"
 #include "dbWireOpcode.h"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
@@ -35,14 +36,14 @@ dbWireShapeItr::~dbWireShapeItr()
 
 inline unsigned char dbWireShapeItr::nextOp(int& value)
 {
-  ZASSERT(_idx < (int) _wire->length());
+  assert(_idx < (int) _wire->length());
   value = _wire->_data[_idx];
   return _wire->_opcodes[_idx++];
 }
 
 inline unsigned char dbWireShapeItr::peekOp()
 {
-  ZASSERT(_idx < (int) _wire->length());
+  assert(_idx < (int) _wire->length());
   return _wire->_opcodes[_idx];
 }
 
@@ -167,7 +168,7 @@ nextOpCode:
     }
 
     case WOP_Y: {
-      ZASSERT(_point_cnt != 0);
+      assert(_point_cnt != 0);
       _point_cnt++;
       int cur_y = operand;
       int cur_x = _prev_x;
@@ -331,7 +332,7 @@ nextOpCode:
       goto nextOpCode;
 
     default:
-      ZASSERT(DB_WIRE_DECODE_INVALID_OPCODE);
+      assert(DB_WIRE_DECODE_INVALID_OPCODE);
       goto nextOpCode;
   }
 

@@ -3,7 +3,6 @@
 
 #include <cassert>
 
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"

@@ -167,15 +167,15 @@ Resizer::Resizer(Logger* logger,
 
   db_network_->addObserver(this);
 
+  size_up_move_ = std::make_unique<SizeUpMove>(this);
+  size_up_match_move_ = std::make_unique<SizeUpMatchMove>(this);
+  size_down_move_ = std::make_unique<SizeDownMove>(this);
   buffer_move_ = std::make_unique<BufferMove>(this);
   clone_move_ = std::make_unique<CloneMove>(this);
-  size_down_move_ = std::make_unique<SizeDownMove>(this);
-  size_up_move_ = std::make_unique<SizeUpMove>(this);
-  split_load_move_ = std::make_unique<SplitLoadMove>(this);
   swap_pins_move_ = std::make_unique<SwapPinsMove>(this);
-  unbuffer_move_ = std::make_unique<UnbufferMove>(this);
   vt_swap_speed_move_ = std::make_unique<VTSwapSpeedMove>(this);
-  size_up_match_move_ = std::make_unique<SizeUpMatchMove>(this);
+  unbuffer_move_ = std::make_unique<UnbufferMove>(this);
+  split_load_move_ = std::make_unique<SplitLoadMove>(this);
 
   recover_power_ = std::make_unique<RecoverPower>(this);
   repair_design_ = std::make_unique<RepairDesign>(this);
@@ -4548,13 +4548,15 @@ void Resizer::journalBegin()
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
   odb::dbDatabase::beginEco(block_);
 
-  buffer_move_->undoMoves();
-  size_down_move_->undoMoves();
   size_up_move_->undoMoves();
+  size_up_match_move_->undoMoves();
+  size_down_move_->undoMoves();
+  buffer_move_->undoMoves();
   clone_move_->undoMoves();
-  split_load_move_->undoMoves();
   swap_pins_move_->undoMoves();
+  vt_swap_speed_move_->undoMoves();
   unbuffer_move_->undoMoves();
+  split_load_move_->undoMoves();
 }
 
 void Resizer::journalEnd()
@@ -4568,45 +4570,48 @@ void Resizer::journalEnd()
 
   int move_count_ = 0;
   move_count_ += size_up_move_->numPendingMoves();
+  move_count_ += size_up_match_move_->numPendingMoves();
   move_count_ += size_down_move_->numPendingMoves();
   move_count_ += buffer_move_->numPendingMoves();
   move_count_ += clone_move_->numPendingMoves();
   move_count_ += swap_pins_move_->numPendingMoves();
+  move_count_ += vt_swap_speed_move_->numPendingMoves();
   move_count_ += unbuffer_move_->numPendingMoves();
 
-  debugPrint(
-      logger_,
-      RSZ,
-      "opt_moves",
-      2,
-      "COMMIT {} moves: up {} down {} buffer {} clone {} swap {} unbuf {}",
-      move_count_,
-      size_up_move_->numPendingMoves(),
-      size_down_move_->numPendingMoves(),
-      buffer_move_->numPendingMoves(),
-      clone_move_->numPendingMoves(),
-      swap_pins_move_->numPendingMoves(),
-      unbuffer_move_->numPendingMoves());
+  debugPrint(logger_,
+             RSZ,
+             "opt_moves",
+             2,
+             "COMMIT {} moves: up {} up_match {} down {} buffer {} clone {} "
+             "swap {} vt_swap {} unbuf {}",
+             move_count_,
+             size_up_move_->numPendingMoves(),
+             size_up_match_move_->numPendingMoves(),
+             size_down_move_->numPendingMoves(),
+             buffer_move_->numPendingMoves(),
+             clone_move_->numPendingMoves(),
+             swap_pins_move_->numPendingMoves(),
+             vt_swap_speed_move_->numPendingMoves(),
+             unbuffer_move_->numPendingMoves());
 
   accepted_move_count_ += move_count_;
 
-  buffer_move_->commitMoves();
   size_up_move_->commitMoves();
-  size_down_move_->commitMoves();
-  clone_move_->commitMoves();
-  split_load_move_->commitMoves();
-  swap_pins_move_->commitMoves();
-  unbuffer_move_->commitMoves();
   size_up_match_move_->commitMoves();
+  size_down_move_->commitMoves();
+  buffer_move_->commitMoves();
+  clone_move_->commitMoves();
+  swap_pins_move_->commitMoves();
   vt_swap_speed_move_->commitMoves();
+  unbuffer_move_->commitMoves();
+  split_load_move_->commitMoves();
 
   debugPrint(logger_,
              RSZ,
              "opt_moves",
              1,
-             "TOTAL {} moves (acc {} rej {}):  up {} up_match {} down {} "
-             "buffer {} clone "
-             "{} swap {} unbuf {} vt_swap {}",
+             "TOTAL {} moves (acc {} rej {}): up {} up_match {} down {} buffer "
+             "{} clone {} swap {} vt_swap {} unbuf {}",
              accepted_move_count_ + rejected_move_count_,
              accepted_move_count_,
              rejected_move_count_,
@@ -4616,8 +4621,8 @@ void Resizer::journalEnd()
              buffer_move_->numCommittedMoves(),
              clone_move_->numCommittedMoves(),
              swap_pins_move_->numCommittedMoves(),
-             unbuffer_move_->numCommittedMoves(),
-             vt_swap_speed_move_->numCommittedMoves());
+             vt_swap_speed_move_->numCommittedMoves(),
+             unbuffer_move_->numCommittedMoves());
 }
 
 void Resizer::journalMakeBuffer(Instance* buffer)
@@ -4656,63 +4661,75 @@ void Resizer::journalRestore()
   sta_->findRequireds();
 
   // Update transform counts
-  debugPrint(
-      logger_,
-      RSZ,
-      "journal",
-      1,
-      "Undid {} sizing {} buffering {} cloning {} swaps {} buf removal",
-      size_up_move_->numPendingMoves() + size_down_move_->numPendingMoves(),
-      buffer_move_->numPendingMoves(),
-      clone_move_->numPendingMoves(),
-      swap_pins_move_->numPendingMoves(),
-      unbuffer_move_->numPendingMoves());
+  debugPrint(logger_,
+             RSZ,
+             "journal",
+             1,
+             "Undid {} up {} up_match {} down {} buffer {} clone {} swap {} "
+             "vt_swap {} unbuf",
+             size_up_move_->numPendingMoves(),
+             size_up_match_move_->numPendingMoves(),
+             size_down_move_->numPendingMoves(),
+             buffer_move_->numPendingMoves(),
+             clone_move_->numPendingMoves(),
+             swap_pins_move_->numPendingMoves(),
+             vt_swap_speed_move_->numPendingMoves(),
+             unbuffer_move_->numPendingMoves());
 
   int move_count_ = 0;
-  move_count_ += size_down_move_->numPendingMoves();
   move_count_ += size_up_move_->numPendingMoves();
+  move_count_ += size_up_match_move_->numPendingMoves();
+  move_count_ += size_down_move_->numPendingMoves();
   move_count_ += buffer_move_->numPendingMoves();
   move_count_ += clone_move_->numPendingMoves();
   move_count_ += swap_pins_move_->numPendingMoves();
+  move_count_ += vt_swap_speed_move_->numPendingMoves();
   move_count_ += unbuffer_move_->numPendingMoves();
 
   debugPrint(logger_,
              RSZ,
              "opt_moves",
              2,
-             "UNDO {} moves: up {} down {} buffer {} clone {} swap {} unbuf {}",
+             "UNDO {} moves: up {} up_match {} down {} buffer {} clone {} swap "
+             "{} vt_swap {} unbuf {}",
              move_count_,
              size_up_move_->numPendingMoves(),
+             size_up_match_move_->numPendingMoves(),
              size_down_move_->numPendingMoves(),
              buffer_move_->numPendingMoves(),
              clone_move_->numPendingMoves(),
              swap_pins_move_->numPendingMoves(),
+             vt_swap_speed_move_->numPendingMoves(),
              unbuffer_move_->numPendingMoves());
 
   rejected_move_count_ += move_count_;
 
-  size_down_move_->undoMoves();
   size_up_move_->undoMoves();
+  size_up_match_move_->undoMoves();
+  size_down_move_->undoMoves();
   buffer_move_->undoMoves();
   clone_move_->undoMoves();
-  split_load_move_->undoMoves();
   swap_pins_move_->undoMoves();
+  vt_swap_speed_move_->undoMoves();
   unbuffer_move_->undoMoves();
+  split_load_move_->undoMoves();
 
   debugPrint(logger_,
              RSZ,
              "opt_moves",
              1,
-             "TOTAL {} moves (acc {} rej {}):  up {} down {} buffer {} clone "
-             "{} swap {} unbuf {}",
+             "TOTAL {} moves (acc {} rej {}): up {} up_match {} down {} buffer "
+             "{} clone {} swap {} vt_swap {} unbuf {}",
              accepted_move_count_ + rejected_move_count_,
              accepted_move_count_,
              rejected_move_count_,
              size_up_move_->numCommittedMoves(),
+             size_up_match_move_->numCommittedMoves(),
              size_down_move_->numCommittedMoves(),
              buffer_move_->numCommittedMoves(),
              clone_move_->numCommittedMoves(),
              swap_pins_move_->numCommittedMoves(),
+             vt_swap_speed_move_->numCommittedMoves(),
              unbuffer_move_->numCommittedMoves());
 
   debugPrint(logger_, RSZ, "journal", 1, "journal restore ends <<<");
@@ -4899,30 +4916,27 @@ void Resizer::checkLoadSlews(const Pin* drvr_pin,
           pin, nullptr, max_, false, corner1, tr1, slew1, limit1, slack1);
       if (!corner1) {
         // Fixup for nangate45: see comment in maxInputSlew
-        if (!corner1) {
-          LibertyPort* port = network_->libertyPort(pin);
-          if (port) {
-            bool exists;
-            port->libertyLibrary()->defaultMaxSlew(limit1, exists);
-            if (exists) {
-              slew1 = 0.0;
-              corner1 = tgt_slew_corner_;
-              for (const RiseFall* rf : RiseFall::range()) {
-                const DcalcAnalysisPt* dcalc_ap
-                    = corner1->findDcalcAnalysisPt(max_);
-                const Vertex* vertex = graph_->pinLoadVertex(pin);
-                Slew slew2 = sta_->graph()->slew(vertex, rf, dcalc_ap->index());
-                if (slew2 > slew1) {
-                  slew1 = slew2;
-                }
-              }
+        LibertyPort* port = network_->libertyPort(pin);
+        if (port) {
+          bool exists;
+          port->libertyLibrary()->defaultMaxSlew(limit1, exists);
+          if (exists) {
+            slew1 = 0.0;
+            corner1 = tgt_slew_corner_;
+            limit = limit1;
+            for (const RiseFall* rf : RiseFall::range()) {
+              const DcalcAnalysisPt* dcalc_ap
+                  = corner1->findDcalcAnalysisPt(max_);
+              const Vertex* vertex = graph_->pinLoadVertex(pin);
+              Slew slew2 = sta_->graph()->slew(vertex, rf, dcalc_ap->index());
+              slew1 = std::max(slew1, slew2);
             }
           }
         }
-      }
-      if (corner1) {
+      } else {
         limit1 *= (1.0 - slew_margin / 100.0);
-        limit = min(limit, limit1);
+        limit1 = min(limit, limit1);
+        limit = limit1;
         slack1 = limit1 - slew1;
         if (slack1 < slack) {
           slew = slew1;

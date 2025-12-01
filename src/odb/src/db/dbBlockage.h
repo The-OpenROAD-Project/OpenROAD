@@ -29,7 +29,7 @@ struct _dbBlockageFlags
 class _dbBlockage : public _dbObject
 {
  public:
-  _dbBlockageFlags _flags;
+  _dbBlockageFlags flags_;
   dbId<_dbInst> _inst;
   dbId<_dbBox> _bbox;
   float _max_density;
@@ -49,15 +49,15 @@ class _dbBlockage : public _dbObject
 
 inline _dbBlockage::_dbBlockage(_dbDatabase*)
 {
-  _flags._pushed_down = 0;
-  _flags._spare_bits = 0;
-  _flags._soft = 0;
-  _flags._is_system_reserved = 0;
+  flags_._pushed_down = 0;
+  flags_._spare_bits = 0;
+  flags_._soft = 0;
+  flags_._is_system_reserved = 0;
   _max_density = 0.0;
 }
 
 inline _dbBlockage::_dbBlockage(_dbDatabase*, const _dbBlockage& b)
-    : _flags(b._flags),
+    : flags_(b.flags_),
       _inst(b._inst),
       _bbox(b._bbox),
       _max_density(b._max_density)
@@ -70,7 +70,7 @@ inline _dbBlockage::~_dbBlockage()
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbBlockage& blockage)
 {
-  uint* bit_field = (uint*) &blockage._flags;
+  uint* bit_field = (uint*) &blockage.flags_;
   stream << *bit_field;
   stream << blockage._inst;
   stream << blockage._bbox;
@@ -80,7 +80,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbBlockage& blockage)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbBlockage& blockage)
 {
-  uint* bit_field = (uint*) &blockage._flags;
+  uint* bit_field = (uint*) &blockage.flags_;
   stream >> *bit_field;
   stream >> blockage._inst;
   stream >> blockage._bbox;

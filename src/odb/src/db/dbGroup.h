@@ -32,16 +32,14 @@ class _dbGroup : public _dbObject
  public:
   _dbGroup(_dbDatabase*);
 
-  ~_dbGroup();
-
   bool operator==(const _dbGroup& rhs) const;
   bool operator!=(const _dbGroup& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbGroup& rhs) const;
   void collectMemInfo(MemInfo& info);
 
   dbGroupFlags flags_;
-  char* _name;
-  dbId<_dbGroup> _next_entry;
+  char* name_;
+  dbId<_dbGroup> next_entry_;
   dbId<_dbGroup> _group_next;
   dbId<_dbGroup> _parent_group;
   dbId<_dbInst> _insts;

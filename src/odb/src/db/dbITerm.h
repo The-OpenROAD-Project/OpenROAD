@@ -46,7 +46,7 @@ class _dbITerm : public _dbObject
     FLAGS
   };
 
-  dbITermFlags _flags;
+  dbITermFlags flags_;
   uint _ext_id;
   dbId<_dbNet> _net;
   dbId<_dbModNet> _mnet;
@@ -74,19 +74,19 @@ inline _dbITerm::_dbITerm(_dbDatabase*)
 {
   // For pointer tagging the bottom 3 bits.
   static_assert(alignof(_dbITerm) % 8 == 0);
-  _flags._mterm_idx = 0;
-  _flags._spare_bits = 0;
-  _flags._clocked = 0;
-  _flags._mark = 0;
-  _flags._spef = 0;
-  _flags._special = 0;
-  _flags._connected = 0;
+  flags_._mterm_idx = 0;
+  flags_._spare_bits = 0;
+  flags_._clocked = 0;
+  flags_._mark = 0;
+  flags_._spef = 0;
+  flags_._special = 0;
+  flags_._connected = 0;
   _ext_id = 0;
   _sta_vertex_id = 0;
 }
 
 inline _dbITerm::_dbITerm(_dbDatabase*, const _dbITerm& i)
-    : _flags(i._flags),
+    : flags_(i.flags_),
       _ext_id(i._ext_id),
       _net(i._net),
       _inst(i._inst),
@@ -100,7 +100,7 @@ inline _dbITerm::_dbITerm(_dbDatabase*, const _dbITerm& i)
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbITerm& iterm)
 {
-  uint* bit_field = (uint*) &iterm._flags;
+  uint* bit_field = (uint*) &iterm.flags_;
   stream << *bit_field;
   stream << iterm._ext_id;
   stream << iterm._net;
@@ -118,7 +118,7 @@ inline dbIStream& operator>>(dbIStream& stream, _dbITerm& iterm)
 {
   dbBlock* block = (dbBlock*) (iterm.getOwner());
   _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
-  uint* bit_field = (uint*) &iterm._flags;
+  uint* bit_field = (uint*) &iterm.flags_;
   stream >> *bit_field;
   stream >> iterm._ext_id;
   stream >> iterm._net;

@@ -28,13 +28,13 @@ class _dbModITerm : public _dbObject
   bool operator<(const _dbModITerm& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
+  char* name_;
   dbId<_dbModInst> _parent;
   dbId<_dbModBTerm> _child_modbterm;
   dbId<_dbModNet> _mod_net;
   dbId<_dbModITerm> _next_net_moditerm;
   dbId<_dbModITerm> _prev_net_moditerm;
-  dbId<_dbModITerm> _next_entry;
+  dbId<_dbModITerm> next_entry_;
   dbId<_dbModITerm> _prev_entry;
 };
 dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj);

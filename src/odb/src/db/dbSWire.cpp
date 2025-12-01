@@ -3,6 +3,7 @@
 
 #include "dbSWire.h"
 
+#include <cassert>
 #include <cstring>
 
 #include "dbBlock.h"
@@ -12,11 +13,11 @@
 #include "dbSBoxItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -24,7 +25,7 @@ template class dbTable<_dbSWire>;
 
 bool _dbSWire::operator==(const _dbSWire& rhs) const
 {
-  if (_flags._wire_type != rhs._flags._wire_type) {
+  if (flags_._wire_type != rhs.flags_._wire_type) {
     return false;
   }
 
@@ -49,11 +50,11 @@ bool _dbSWire::operator==(const _dbSWire& rhs) const
 
 bool _dbSWire::operator<(const _dbSWire& rhs) const
 {
-  if (_flags._wire_type < rhs._flags._wire_type) {
+  if (flags_._wire_type < rhs.flags_._wire_type) {
     return true;
   }
 
-  if (_flags._wire_type > rhs._flags._wire_type) {
+  if (flags_._wire_type > rhs.flags_._wire_type) {
     return false;
   }
 
@@ -62,7 +63,7 @@ bool _dbSWire::operator<(const _dbSWire& rhs) const
     _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
     _dbNet* lhs_net = lhs_blk->_net_tbl->getPtr(_net);
     _dbNet* rhs_net = rhs_blk->_net_tbl->getPtr(rhs._net);
-    int r = strcmp(lhs_net->_name, rhs_net->_name);
+    int r = strcmp(lhs_net->name_, rhs_net->name_);
 
     if (r < 0) {
       return true;
@@ -82,8 +83,8 @@ bool _dbSWire::operator<(const _dbSWire& rhs) const
 
 void _dbSWire::addSBox(_dbSBox* box)
 {
-  box->_owner = getOID();
-  box->_next_box = (uint) _wires;
+  box->owner_ = getOID();
+  box->next_box_ = (uint) _wires;
   _wires = box->getOID();
   _dbBlock* block = (_dbBlock*) getOwner();
   for (auto callback : block->_callbacks) {
@@ -97,7 +98,7 @@ void _dbSWire::removeSBox(_dbSBox* box)
   uint boxid = box->getOID();
   if (boxid == _wires) {
     // at head of list, need to move head
-    _wires = (uint) box->_next_box;
+    _wires = (uint) box->next_box_;
   } else {
     // in the middle of the list, need to iterate and relink
     dbId<_dbSBox> id = _wires;
@@ -106,10 +107,10 @@ void _dbSWire::removeSBox(_dbSBox* box)
     }
     while (id != 0) {
       _dbSBox* nbox = block->_sbox_tbl->getPtr(id);
-      uint nid = nbox->_next_box;
+      uint nid = nbox->next_box_;
 
       if (nid == boxid) {
-        nbox->_next_box = box->_next_box;
+        nbox->next_box_ = box->next_box_;
         break;
       }
 
@@ -137,7 +138,7 @@ dbNet* dbSWire::getNet()
 dbWireType dbSWire::getWireType()
 {
   _dbSWire* wire = (_dbSWire*) this;
-  return wire->_flags._wire_type;
+  return wire->flags_._wire_type;
 }
 
 dbNet* dbSWire::getShield()
@@ -166,7 +167,7 @@ dbSWire* dbSWire::create(dbNet* net_, dbWireType type, dbNet* shield_)
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
   _dbSWire* wire = block->_swire_tbl->create();
-  wire->_flags._wire_type = type.getValue();
+  wire->flags_._wire_type = type.getValue();
   wire->_net = net->getOID();
   wire->_next_swire = net->_swires;
   net->_swires = wire->getOID();
@@ -192,7 +193,7 @@ static void destroySBoxes(_dbSWire* wire)
   }
   while (id != 0) {
     _dbSBox* box = block->_sbox_tbl->getPtr(id);
-    uint nid = box->_next_box;
+    uint nid = box->next_box_;
     dbProperty::destroyProperties(box);
     block->_sbox_tbl->destroy(box);
     id = nid;
@@ -227,7 +228,7 @@ void dbSWire::destroy(dbSWire* wire_)
     }
     prev = w;
   }
-  ZASSERT(id != 0);
+  assert(id != 0);
   // destroy the wire
   dbProperty::destroyProperties(wire);
   block->_swire_tbl->destroy(wire);

@@ -377,6 +377,13 @@ read_3dblox_bmap_cmd(const char *filename)
 }
 
 void
+write_3dbv_cmd(const char *filename)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->write3Dbv(filename);
+}
+
+void
 read_db_cmd(const char *filename, bool hierarchy)
 {
   OpenRoad *ord = getOpenRoad();
@@ -493,20 +500,10 @@ microns_to_dbu(double microns)
 
 // Common check for placement tools.
 bool
-db_has_rows()
+db_has_core_rows()
 {
   dbDatabase *db = OpenRoad::openRoad()->getDb();
-  if (!db->getChip() || !db->getChip()->getBlock()) {
-    return false;
-  }
-
-  for (odb::dbRow* row : db->getChip()->getBlock()->getRows()) {
-    if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
-      return true;
-    }
-  }
-
-  return false;
+  return dbHasCoreRows(db);
 }
 
 bool

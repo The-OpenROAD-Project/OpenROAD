@@ -195,8 +195,7 @@ bool UnbufferMove::doMove(const Path* drvr_path,
                  1,
                  "ACCEPT unbuffer {}",
                  network_->pathName(drvr));
-      removeBuffer(drvr);
-      return true;
+      return removeBuffer(drvr);
     }
     debugPrint(logger_,
                RSZ,
@@ -213,8 +212,7 @@ bool UnbufferMove::removeBufferIfPossible(Instance* buffer,
                                           bool honorDontTouchFixed)
 {
   if (canRemoveBuffer(buffer, honorDontTouchFixed)) {
-    removeBuffer(buffer);
-    return true;
+    return removeBuffer(buffer);
   }
   return false;
 }
@@ -327,7 +325,7 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   return false;
 }
 
-void UnbufferMove::removeBuffer(Instance* buffer)
+bool UnbufferMove::removeBuffer(Instance* buffer)
 {
   LibertyCell* lib_cell = network_->libertyCell(buffer);
   debugPrint(logger_,
@@ -338,34 +336,32 @@ void UnbufferMove::removeBuffer(Instance* buffer)
              network_->pathName(buffer),
              lib_cell->name());
 
-  addMove(buffer);
-
   LibertyPort *in_port, *out_port;
   lib_cell->bufferPorts(in_port, out_port);
 
   Pin* in_pin = db_network_->findPin(buffer, in_port);
   Pin* out_pin = db_network_->findPin(buffer, out_port);
 
-  // Hierarchical net handling
-  odb::dbModNet* op_modnet = db_network_->hierNet(out_pin);
-  odb::dbModNet* ip_modnet = db_network_->hierNet(in_pin);
-
   odb::dbNet* in_db_net = db_network_->flatNet(in_pin);
   odb::dbNet* out_db_net = db_network_->flatNet(out_pin);
 
   // Handle undriven buffer
   if (in_db_net == nullptr) {
-    logger_->error(RSZ,
-                   168,
-                   "Cannot remove undriven buffer {}.",
-                   network_->pathName(buffer));
+    logger_->warn(
+        RSZ,
+        168,
+        "The input pin of buffer '{}' is undriven. Do not remove the buffer.",
+        network_->pathName(buffer));
+    return false;
   }
+
+  addMove(buffer);
 
   // Remove the unused buffer
   if (out_db_net == nullptr) {
     dbInst* dbinst_buffer = db_network_->staToDb(buffer);
     dbInst::destroy(dbinst_buffer);
-    return;
+    return true;
   }
 
   // in_net and out_net are flat nets.
@@ -375,6 +371,8 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   // Decide survivor net when two nets are merged
   Net* survivor = in_net;  // buffer input net is the default survivor
   Net* removed = out_net;
+  odb::dbModNet* op_modnet = db_network_->hierNet(out_pin);
+  odb::dbModNet* ip_modnet = db_network_->hierNet(in_pin);
   odb::dbModNet* survivor_modnet = ip_modnet;
   odb::dbModNet* removed_modnet = op_modnet;
   bool in_net_has_port = db_network_->hasPort(in_net);
@@ -453,6 +451,8 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   if (survivor_modnet != nullptr && new_modnet_name) {
     survivor_modnet->rename(new_modnet_name->c_str());
   }
+
+  return true;
 }
 
 }  // namespace rsz

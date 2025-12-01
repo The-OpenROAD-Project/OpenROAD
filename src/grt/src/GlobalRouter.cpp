@@ -217,7 +217,7 @@ NetRouteMap GlobalRouter::getPartialRoutes()
 {
   NetRouteMap net_routes;
   // TODO: still need to fix this during incremental grt
-  if (is_incremental) {
+  if (is_incremental_) {
     for (const auto& [db_net, net] : db_net_map_) {
       if (routes_[db_net].empty()) {
         GRoute route;
@@ -304,7 +304,7 @@ void GlobalRouter::globalRoute(bool save_guides,
                                bool end_incremental)
 {
   bool has_routable_nets = false;
-  is_incremental = (start_incremental || end_incremental);
+  is_incremental_ = (start_incremental || end_incremental);
 
   for (auto net : db_->getChip()->getBlock()->getNets()) {
     if (net->getITerms().size() + net->getBTerms().size() > 1) {
@@ -1408,7 +1408,7 @@ std::vector<LayerId> GlobalRouter::findTransitionLayers()
     int via_width = 0;
     for (const auto box : default_vias[tech_layer]->getBoxes()) {
       if (box->getTechLayer() == tech_layer) {
-        via_width = vertical ? box->getWidth() : box->getLength();
+        via_width = vertical ? box->getDY() : box->getDX();
         break;
       }
     }
@@ -3487,8 +3487,8 @@ void getViaDims(std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias,
   if (default_vias.find(tech_layer) != default_vias.end()) {
     for (auto box : default_vias[tech_layer]->getBoxes()) {
       if (box->getTechLayer() == tech_layer) {
-        width_up = std::min(box->getWidth(), box->getLength());
-        prl_up = std::max(box->getWidth(), box->getLength());
+        width_up = std::min(box->getDX(), box->getDY());
+        prl_up = std::max(box->getDX(), box->getDY());
         break;
       }
     }
@@ -3496,8 +3496,8 @@ void getViaDims(std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias,
   if (default_vias.find(bottom_layer) != default_vias.end()) {
     for (auto box : default_vias[bottom_layer]->getBoxes()) {
       if (box->getTechLayer() == tech_layer) {
-        width_down = std::min(box->getWidth(), box->getLength());
-        prl_down = std::max(box->getWidth(), box->getLength());
+        width_down = std::min(box->getDX(), box->getDY());
+        prl_down = std::max(box->getDX(), box->getDY());
         break;
       }
     }
