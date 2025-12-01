@@ -41,7 +41,7 @@ class _dbRSeg : public _dbObject
   };
 
   // PERSISTANT-MEMBERS
-  _dbRSegFlags _flags;
+  _dbRSegFlags flags_;
   uint _source;  // rc-network node-id
   uint _target;  // rc-network node-id
   int _xcoord;
@@ -64,7 +64,7 @@ class _dbRSeg : public _dbObject
 };
 
 inline _dbRSeg::_dbRSeg(_dbDatabase*, const _dbRSeg& s)
-    : _flags(s._flags),
+    : flags_(s.flags_),
       _source(s._source),
       _target(s._target),
       _xcoord(s._xcoord),
@@ -75,10 +75,10 @@ inline _dbRSeg::_dbRSeg(_dbDatabase*, const _dbRSeg& s)
 
 inline _dbRSeg::_dbRSeg(_dbDatabase*)
 {
-  _flags._spare_bits_29 = 0;
-  _flags._update_cap = 0;
-  _flags._path_dir = 0;
-  _flags._allocated_cap = 0;
+  flags_._spare_bits_29 = 0;
+  flags_._update_cap = 0;
+  flags_._path_dir = 0;
+  flags_._allocated_cap = 0;
 
   _source = 0;
   _target = 0;
@@ -92,14 +92,14 @@ inline _dbRSeg::~_dbRSeg()
   if ( _res )
       free( (void *) _res );
 
-  if (( _cap ) && (_flags._allocated_cap>0))
+  if (( _cap ) && (flags_._allocated_cap>0))
       free( (void *) _cap );
   */
 }
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbRSeg& seg)
 {
-  uint* bit_field = (uint*) &seg._flags;
+  uint* bit_field = (uint*) &seg.flags_;
   stream << *bit_field;
   stream << seg._source;
   stream << seg._target;
@@ -111,7 +111,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbRSeg& seg)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbRSeg& seg)
 {
-  uint* bit_field = (uint*) &seg._flags;
+  uint* bit_field = (uint*) &seg.flags_;
   stream >> *bit_field;
   stream >> seg._source;
   stream >> seg._target;

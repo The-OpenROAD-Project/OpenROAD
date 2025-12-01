@@ -59,13 +59,13 @@ class _dbTech : public _dbObject
 
  public:
   // PERSISTANT-MEMBERS
-  std::string _name;
+  std::string name_;
   int _via_cnt;
   int _layer_cnt;
   int _rlayer_cnt;
   int _lef_units;
   int _mfgrid;
-  _dbTechFlags _flags;
+  _dbTechFlags flags_;
   dbId<_dbTechLayer> _bottom;
   dbId<_dbTechLayer> _top;
   dbId<_dbTechNonDefaultRule> _non_default_rules;

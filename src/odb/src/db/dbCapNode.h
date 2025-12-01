@@ -44,7 +44,7 @@ class _dbCapNode : public _dbObject
   };
 
   // PERSISTANT-MEMBERS
-  _dbCapNodeFlags _flags;
+  _dbCapNodeFlags flags_;
   uint _node_num;  // rc-network node-id
   dbId<_dbNet> _net;
   dbId<_dbCapNode> _next;
@@ -68,21 +68,21 @@ class _dbCapNode : public _dbObject
 
 inline _dbCapNode::_dbCapNode(_dbDatabase*)
 {
-  _flags._internal = 0;
-  _flags._iterm = 0;
-  _flags._bterm = 0;
-  _flags._branch = 0;
-  _flags._foreign = 0;
-  _flags._childrenCnt = 0;
-  _flags._select = 0;
-  _flags._name = 0;
-  _flags._sort_index = 0;
+  flags_._internal = 0;
+  flags_._iterm = 0;
+  flags_._bterm = 0;
+  flags_._branch = 0;
+  flags_._foreign = 0;
+  flags_._childrenCnt = 0;
+  flags_._select = 0;
+  flags_._name = 0;
+  flags_._sort_index = 0;
   _net = 0;
   _node_num = 0;
 }
 
 inline _dbCapNode::_dbCapNode(_dbDatabase*, const _dbCapNode& n)
-    : _flags(n._flags), _node_num(n._node_num), _net(n._net), _next(n._next)
+    : flags_(n.flags_), _node_num(n._node_num), _net(n._net), _next(n._next)
 {
 }
 
@@ -92,7 +92,7 @@ inline _dbCapNode::~_dbCapNode()
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbCapNode& seg)
 {
-  uint* bit_field = (uint*) &seg._flags;
+  uint* bit_field = (uint*) &seg.flags_;
   stream << *bit_field;
 
   stream << seg._node_num;
@@ -104,7 +104,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbCapNode& seg)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbCapNode& seg)
 {
-  uint* bit_field = (uint*) &seg._flags;
+  uint* bit_field = (uint*) &seg.flags_;
   stream >> *bit_field;
   stream >> seg._node_num;
   stream >> seg._net;

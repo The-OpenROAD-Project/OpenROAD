@@ -7,7 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-namespace odb {
+namespace rcx {
 
 template <class T>
 class Ath__array1D
@@ -159,4 +159,4 @@ class Ath__array1D
   int iter_cnt_;
 };
 
-}  // namespace odb
+}  // namespace rcx

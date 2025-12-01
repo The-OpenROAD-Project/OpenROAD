@@ -8,12 +8,10 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/isotropy.h"
-#include "odb/util.h"
-
-using odb::Ath__array1D;
+#include "rcx/array1.h"
+#include "rcx/util.h"
 
 namespace rcx {
 
@@ -514,7 +512,7 @@ void Track::set(Grid* g,
   _lowest = 0;
   _base = base;
 }
-void Track::freeWires(odb::AthPool<Wire>* pool)
+void Track::freeWires(AthPool<Wire>* pool)
 {
   for (uint ii = 0; ii < _markerCnt; ii++) {
     Wire* w = _marker[ii];
@@ -526,7 +524,7 @@ void Track::freeWires(odb::AthPool<Wire>* pool)
     }
   }
 }
-void Track::dealloc(odb::AthPool<Wire>* pool)
+void Track::dealloc(AthPool<Wire>* pool)
 {
   freeWires(pool);
   delete[] _marker;
@@ -1254,8 +1252,8 @@ void Grid::setBoundaries(uint dir, const odb::Rect& rect)
   }
 }
 Grid::Grid(GridTable* gt,
-           odb::AthPool<Track>* trackPool,
-           odb::AthPool<Wire>* wirePool,
+           AthPool<Track>* trackPool,
+           AthPool<Wire>* wirePool,
            uint level,
            uint markerCnt)
 {
@@ -1528,7 +1526,7 @@ void Wire::setXY(int xy1, uint len)
   _xy = xy1;  // offset from track start??
   _len = len;
 }
-Wire* Wire::makeCoupleWire(odb::AthPool<Wire>* wirePool,
+Wire* Wire::makeCoupleWire(AthPool<Wire>* wirePool,
                            int targetHighTracks,
                            Wire* w2,
                            int xy1,
@@ -1565,7 +1563,7 @@ Wire* Wire::makeCoupleWire(odb::AthPool<Wire>* wirePool,
   }
   return w;
 }
-Wire* Wire::getPoolWire(odb::AthPool<Wire>* wirePool)
+Wire* Wire::getPoolWire(AthPool<Wire>* wirePool)
 {
   int n;
   int getRecycleFlag = 0;
@@ -1575,7 +1573,7 @@ Wire* Wire::getPoolWire(odb::AthPool<Wire>* wirePool)
   }
   return w;
 }
-Wire* Wire::makeWire(odb::AthPool<Wire>* wirePool, int xy1, uint len)
+Wire* Wire::makeWire(AthPool<Wire>* wirePool, int xy1, uint len)
 {
   Wire* w = getPoolWire(wirePool);
 
@@ -1872,7 +1870,7 @@ uint Grid::search(SearchBox* bb,
 {
   Ath__array1D<uint> wireIdTable(1024);
 
-  odb::AthPool<Wire>* wirePool = _wirePoolPtr;
+  AthPool<Wire>* wirePool = _wirePoolPtr;
   if (g != nullptr) {
     wirePool = g->getWirePoolPtr();
   }
@@ -2325,8 +2323,8 @@ GridTable::GridTable(odb::Rect* bb,
                      const int* Y1)
 {
   const int memChunk = 1024;
-  _trackPool = new odb::AthPool<Track>(memChunk);
-  _wirePool = new odb::AthPool<Wire>(memChunk * 1000);
+  _trackPool = new AthPool<Track>(memChunk);
+  _wirePool = new AthPool<Wire>(memChunk * 1000);
 
   _wirePool->alloc();  // so all wire ids>0
 
@@ -2470,7 +2468,7 @@ uint GridTable::setExtrusionMarker(uint startRow, uint startCol)
   }
   return cnt;
 }
-odb::AthPool<Wire>* Grid::getWirePoolPtr()
+AthPool<Wire>* Grid::getWirePoolPtr()
 {
   return _wirePoolPtr;
 }
@@ -2621,7 +2619,7 @@ void GridTable::setExtControl(odb::dbBlock* block,
                               int* dgContextLowTrack,
                               int* dgContextHiTrack,
                               int** dgContextTrackBase,
-                              odb::AthPool<SEQ>* seqPool)
+                              AthPool<SEQ>* seqPool)
 {
   _block = block;
   _useDbSdb = useDbSdb;
@@ -2672,7 +2670,7 @@ void GridTable::setExtControl_v2(odb::dbBlock* block,
                                  int* dgContextLowTrack,
                                  int* dgContextHiTrack,
                                  int** dgContextTrackBase,
-                                 odb::AthPool<SEQ>* seqPool)
+                                 AthPool<SEQ>* seqPool)
 {
   _block = block;
   _useDbSdb = useDbSdb;

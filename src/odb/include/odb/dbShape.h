@@ -7,7 +7,6 @@
 #include <cmath>
 #include <vector>
 
-#include "odb/ZException.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
 #include "odb/dbTransform.h"
@@ -364,8 +363,7 @@ class dbInstShapeItr
   dbTechVia* _via;
   dbSet<dbBox> _via_boxes;
   dbSet<dbBox>::iterator _via_box_itr;
-  int _via_x;
-  int _via_y;
+  Point _via_pt;
   bool _expand_vias;
   int _prev_state;
 
@@ -399,8 +397,7 @@ class dbITermShapeItr
   dbTechVia* _via;
   dbSet<dbBox> _via_boxes;
   dbSet<dbBox>::iterator _via_box_itr;
-  int _via_x;
-  int _via_y;
+  Point _via_pt;
   bool _expand_vias;
 
   void getShape(dbBox* box, dbShape& shape);

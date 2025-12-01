@@ -45,15 +45,15 @@ class _dbMaster : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  dbMasterFlags _flags;
+  dbMasterFlags flags_;
   int _x;
   int _y;
   uint _height;
   uint _width;
   uint _mterm_cnt;
   uint _id;
-  char* _name;
-  dbId<_dbMaster> _next_entry;
+  char* name_;
+  dbId<_dbMaster> next_entry_;
   dbId<_dbMaster> _leq;
   dbId<_dbMaster> _eeq;
   dbId<_dbBox> _obstructions;

@@ -8,6 +8,7 @@
 #include "dbChipNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -17,12 +18,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbChipNetItr::reversible()
+bool dbChipNetItr::reversible() const
 {
   return true;
 }
 
-bool dbChipNetItr::orderReversed()
+bool dbChipNetItr::orderReversed() const
 {
   return true;
 }
@@ -45,12 +46,12 @@ void dbChipNetItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbChipNetItr::sequential()
+uint dbChipNetItr::sequential() const
 {
   return 0;
 }
 
-uint dbChipNetItr::size(dbObject* parent)
+uint dbChipNetItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -63,7 +64,7 @@ uint dbChipNetItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbChipNetItr::begin(dbObject* parent)
+uint dbChipNetItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbChip* chip = (_dbChip*) parent;
@@ -71,12 +72,12 @@ uint dbChipNetItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbChipNetItr::end(dbObject* /* unused: parent */)
+uint dbChipNetItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbChipNetItr::next(uint id, ...)
+uint dbChipNetItr::next(uint id, ...) const
 {
   // User Code Begin next
   _dbChipNet* chipnet = _chip_net_tbl->getPtr(id);

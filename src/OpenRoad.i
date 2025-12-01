@@ -377,6 +377,13 @@ read_3dblox_bmap_cmd(const char *filename)
 }
 
 void
+write_3dbv_cmd(const char *filename)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->write3Dbv(filename);
+}
+
+void
 read_db_cmd(const char *filename, bool hierarchy)
 {
   OpenRoad *ord = getOpenRoad();

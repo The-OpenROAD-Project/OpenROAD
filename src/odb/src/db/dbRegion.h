@@ -29,8 +29,8 @@ class _dbRegion : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  _dbRegionFlags _flags;
-  char* _name;
+  _dbRegionFlags flags_;
+  char* name_;
   dbId<_dbInst> _insts;
   dbId<_dbBox> _boxes;
   dbId<_dbGroup> groups_;
