@@ -374,13 +374,18 @@ bool createHierarchicalConnection(dbITerm* load_pin,
   // We are connecting FROM the buffer (in target_module) TO the load (deep
   // down). So from the perspective of the hierarchical modules, these are INPUT
   // ports.
-  const char* suffix = "i";
-
   while (current_module != target_module && current_module != nullptr) {
     dbModInst* parent_mod_inst = current_module->getModInst();
-    if (parent_mod_inst == nullptr) {
-      // Should not happen if current_module != target_module and target_module
-      // is parent
+    if (parent_mod_inst == nullptr) {  // current_module is top module
+      // This should not happen if the hierarchy is structured correctly,
+      // as it implies we've hit the top module before reaching the target.
+      block->getImpl()->getLogger()->error(
+          utl::ODB,
+          1022,
+          "Cannot create hierarchical connection: '{}' is not a descendant of "
+          "'{}'.",
+          load_pin->getInst()->getName(),
+          target_module->getName());
       break;
     }
 
@@ -419,18 +424,18 @@ bool createHierarchicalConnection(dbITerm* load_pin,
 
       if (safe_to_reuse) {
         // Check if this net is connected to a boundary port (ModBTerm)
-        for (dbModBTerm* bterm : existing_mod_net->getModBTerms()) {
-          dbModITerm* parent_iterm
-              = parent_mod_inst->findModITerm(bterm->getName());
-
-          if (parent_iterm) {
-            // Found a reusable path. Move up the hierarchy.
-            child_obj = static_cast<dbObject*>(parent_iterm);
-            current_module = parent_mod_inst->getParent();
-            top_mod_iterm = parent_iterm;
-            reused_path = true;
-            break;  // Exit the for loop since we found a path
+        for (dbModBTerm* modbterm : existing_mod_net->getModBTerms()) {
+          dbModITerm* parent_iterm = modbterm->getParentModITerm();
+          if (!parent_iterm) {
+            continue;
           }
+
+          // Found a reusable path. Move up the hierarchy.
+          child_obj = static_cast<dbObject*>(parent_iterm);
+          current_module = parent_mod_inst->getParent();
+          top_mod_iterm = parent_iterm;
+          reused_path = true;
+          break;  // Exit the for loop since we found a path
         }
       }
     }
@@ -440,82 +445,147 @@ bool createHierarchicalConnection(dbITerm* load_pin,
     }
 
     // Check if there is ANY other ModNet in this module that we can reuse.
-    // This happens when we have multiple loads in the same module (or down the
-    // hierarchy) that are being buffered. The first load creates the port, and
-    // subsequent loads should reuse it.
-    for (dbModNet* mod_net : current_module->getModNets()) {
-      // 1. Must have a connection to the parent (ModBTerm)
-      if (mod_net->getModBTerms().empty()) {
+    // This happens when we have multiple loads in the same module (or down
+    // the hierarchy) that are being buffered. The first load creates the
+    // port, and subsequent loads should reuse it.
+    //
+    // Optimization: Instead of iterating all ModNets in current_module,
+    // we iterate load_pins and trace up to find if any of them is connected
+    // to a ModNet in current_module.
+    for (dbObject* other_load_obj : load_pins) {
+      if (other_load_obj == load_pin) {
+        continue;
+      }
+      if (other_load_obj->getObjectType() != dbITermObj) {
         continue;
       }
 
-      // 2. Must NOT have any connection to ITerms that are NOT in load_pins
-      //    (This ensures we don't accidentally merge with unrelated logic)
-      bool clean_net = true;
-      bool has_target_load = false;
+      // Trace up from other_load_obj to see if it has a net in current_module
+      dbObject* trace_obj = other_load_obj;
+      dbModule* trace_module = nullptr;
 
-      for (dbITerm* iterm : mod_net->getITerms()) {
-        if (load_pins.find(iterm) == load_pins.end()) {
-          clean_net = false;
+      if (trace_obj->getObjectType() == dbITermObj) {
+        trace_module = static_cast<dbITerm*>(trace_obj)->getInst()->getModule();
+      }
+
+      while (trace_module != current_module && trace_module != nullptr) {
+        // Find the ModNet in trace_module connected to trace_obj
+        dbModNet* net = nullptr;
+        if (trace_obj->getObjectType() == dbITermObj) {
+          net = static_cast<dbITerm*>(trace_obj)->getModNet();
+        } else {
+          net = static_cast<dbModITerm*>(trace_obj)->getModNet();
+        }
+
+        if (!net) {
+          trace_obj = nullptr;
+          break;
+        }  // Broken path
+
+        // Find ModBTerm to go up
+        dbModBTerm* bterm = nullptr;
+        for (auto* bt : net->getModBTerms()) {
+          if (bt->getIoType() == dbIoType::INPUT) {  // Assuming Input for load
+            bterm = bt;
+            break;
+          }
+        }
+        if (!bterm) {
+          trace_obj = nullptr;
           break;
         }
 
-        has_target_load = true;
+        dbModITerm* parent_pin = bterm->getParentModITerm();
+        if (!parent_pin) {
+          trace_obj = nullptr;
+          break;
+        }
+
+        trace_obj = parent_pin;
+        trace_module
+            = parent_pin->getParent()->getParent();  // ModITerm -> ModInst ->
+                                                     // Module
       }
-      if (!clean_net) {
-        continue;
-      }
 
-      // 3. Must NOT have any connection to ModITerms that are NOT in the path
-      // of other loads.
-      //    Actually, simpler check: If the net is "clean" (only connects to
-      //    target loads), and it has a port, it's a candidate.
-      //    We just need to make sure we don't reuse a net that is intended for
-      //    a different buffer (if we were inserting multiple buffers at once?
-      //    But insertBufferBeforeLoads handles one buffer).
-      //
-      //    One caveat: If the ModNet connects to a ModITerm, that ModITerm
-      //    must eventually lead to a target load.
-      //    For now, let's assume if it has ONLY target loads (flat ITerms) or
-      //    ModITerms that lead to target loads, it is safe.
-      //    But checking ModITerms recursively is expensive.
-      //
-      //    Heuristic: If the ModNet has at least one target load (flat) OR
-      //    we can verify it was created for this purpose.
-      //    Since we are in the middle of the operation, the other loads might
-      //    already be connected to this ModNet.
+      if (trace_module == current_module && trace_obj != nullptr) {
+        // trace_obj is now the object in current_module (ModITerm) that leads
+        // to other_load_obj OR if other_load_obj was already in
+        // current_module, trace_obj is other_load_obj.
 
-      if (has_target_load) {
-        // Found a candidate!
-        // Use the first ModBTerm to go up.
-        dbModBTerm* modbterm = *mod_net->getModBTerms().begin();
-        dbModITerm* parent_moditerm
-            = parent_mod_inst->findModITerm(modbterm->getName());
+        // Check the net connected to trace_obj in current_module
+        dbModNet* mod_net = nullptr;
+        if (trace_obj->getObjectType() == dbITermObj) {
+          mod_net = static_cast<dbITerm*>(trace_obj)->getModNet();
+        } else {
+          mod_net = static_cast<dbModITerm*>(trace_obj)->getModNet();
+        }
 
-        if (parent_moditerm) {
-          // Connect current child_obj to this reusable net
-          if (child_obj->getObjectType() == dbITermObj) {
-            (static_cast<dbITerm*>(child_obj))->connect(mod_net);
-          } else if (child_obj->getObjectType() == dbModITermObj) {
-            (static_cast<dbModITerm*>(child_obj))->connect(mod_net);
+        if (!mod_net) {
+          continue;
+        }
+
+        // Verify candidate_net
+        // 1. Must have a connection to the parent (ModBTerm)
+        if (mod_net->getModBTerms().empty()) {
+          continue;
+        }
+
+        // 2. Must NOT have any connection to ITerms that are NOT in load_pins
+        //    (This ensures we don't accidentally merge with unrelated logic)
+        bool clean_net = true;
+        bool has_target_load = false;
+
+        for (dbITerm* iterm : mod_net->getITerms()) {
+          if (load_pins.find(iterm) == load_pins.end()) {
+            clean_net = false;
+            break;
+          }
+          has_target_load = true;
+        }
+        if (!clean_net) {
+          continue;
+        }
+
+        if (has_target_load) {
+          // Found a candidate!
+          // Use the first ModBTerm to go up.
+          dbModBTerm* modbterm = nullptr;
+          for (dbModBTerm* bterm : mod_net->getModBTerms()) {
+            if (bterm->getIoType() == dbIoType::INPUT) {
+              modbterm = bterm;
+              break;
+            }
           }
 
-          reused_path = true;
+          if (modbterm) {
+            dbModITerm* parent_moditerm = modbterm->getParentModITerm();
 
-          // Move up
-          child_obj = static_cast<dbObject*>(parent_moditerm);
-          current_module = parent_mod_inst->getParent();
-          top_mod_iterm = parent_moditerm;
-          break;
+            if (parent_moditerm) {
+              // Connect current child_obj to this reusable net
+              if (child_obj->getObjectType() == dbITermObj) {
+                (static_cast<dbITerm*>(child_obj))->connect(mod_net);
+              } else if (child_obj->getObjectType() == dbModITermObj) {
+                (static_cast<dbModITerm*>(child_obj))->connect(mod_net);
+              }
+
+              reused_path = true;
+
+              // Move up
+              child_obj = static_cast<dbObject*>(parent_moditerm);
+              current_module = parent_mod_inst->getParent();
+              top_mod_iterm = parent_moditerm;
+              break;
+            }
+          }
         }
       }
     }
-
     if (reused_path) {
       continue;
     }
 
     // Name generation
+    const char* suffix = "i";
     std::string base_name
         = block->getBaseName(load_pin->getNet()->getConstName());
     std::string unique_name
@@ -537,7 +607,8 @@ bool createHierarchicalConnection(dbITerm* load_pin,
       (static_cast<dbModITerm*>(child_obj))->connect(mod_net);
     }
 
-    // 4. Create Pin (ModITerm) on the instance of current module in the parent
+    // 4. Create Pin (ModITerm) on the instance of current module in the
+    // parent
     dbModITerm* mod_iterm
         = dbModITerm::create(parent_mod_inst, unique_name.c_str(), mod_bterm);
 
