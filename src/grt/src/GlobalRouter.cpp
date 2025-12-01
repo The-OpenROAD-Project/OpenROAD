@@ -3770,6 +3770,7 @@ std::vector<Net*> GlobalRouter::findNets(bool init_clock_nets)
     if (net) {
       bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
       if (is_non_leaf_clock) {
+        net->setIsClockNet(true);
         clk_nets.push_back(net);
       }
     }
