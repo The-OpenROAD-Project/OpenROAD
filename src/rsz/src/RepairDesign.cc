@@ -191,7 +191,7 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
 
       bool repaired_net = false;
       if (max_fanout <= 0) {
-        max_fanout = std::numeric_limits<int>::max();
+        max_fanout = 1e9;
       }
 
       if (performGainBuffering(net, drvr_pin, max_fanout)) {
