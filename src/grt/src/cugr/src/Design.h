@@ -39,7 +39,7 @@ class Design
          const Constants& constants,
          int min_routing_layer,
          int max_routing_layer,
-         std::set<odb::dbNet*> clock_nets);
+         const std::set<odb::dbNet*>& clock_nets);
   int getLibDBU() const { return lib_dbu_; }
 
   CostT getUnitLengthWireCost() const { return unit_length_wire_cost_; }

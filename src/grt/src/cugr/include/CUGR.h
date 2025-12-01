@@ -2,6 +2,7 @@
 
 #include <csignal>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -10,6 +11,7 @@
 
 namespace odb {
 class dbDatabase;
+class dbNet;
 }  // namespace odb
 
 namespace sta {
@@ -67,7 +69,7 @@ class CUGR
   ~CUGR();
   void init(int min_routing_layer,
             int max_routing_layer,
-            std::set<odb::dbNet*> clock_nets);
+            const std::set<odb::dbNet*>& clock_nets);
   void route();
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();

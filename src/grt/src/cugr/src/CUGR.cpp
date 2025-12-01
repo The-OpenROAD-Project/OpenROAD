@@ -8,6 +8,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <utility>
 #include <vector>
@@ -42,7 +43,7 @@ CUGR::~CUGR() = default;
 
 void CUGR::init(const int min_routing_layer,
                 const int max_routing_layer,
-                std::set<odb::dbNet*> clock_nets)
+                const std::set<odb::dbNet*>& clock_nets)
 {
   design_ = std::make_unique<Design>(db_,
                                      logger_,

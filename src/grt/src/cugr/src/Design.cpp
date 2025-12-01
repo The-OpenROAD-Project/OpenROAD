@@ -1,6 +1,7 @@
 #include "Design.h"
 
 #include <iostream>
+#include <set>
 #include <vector>
 
 #include "CUGR.h"
@@ -12,7 +13,6 @@
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -23,7 +23,7 @@ Design::Design(odb::dbDatabase* db,
                const Constants& constants,
                const int min_routing_layer,
                const int max_routing_layer,
-               std::set<odb::dbNet*> clock_nets)
+               const std::set<odb::dbNet*>& clock_nets)
     : block_(db->getChip()->getBlock()),
       tech_(db->getTech()),
       logger_(logger),
