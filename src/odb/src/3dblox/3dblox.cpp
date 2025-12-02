@@ -88,7 +88,6 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   }
   calculateSize(db_->getChip());
   db_->triggerPostRead3Dbx(chip);
-  check();
 }
 
 void ThreeDBlox::check()
