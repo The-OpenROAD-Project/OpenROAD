@@ -1,5 +1,6 @@
 load("@bazel-orfs//:eqy.bzl", "eqy_test")
 load("@bazel-orfs//:openroad.bzl", "orfs_flow", "orfs_run")
+load("//test/orfs/mock-array:mock-array.bzl", "ASAP7_REMOVE_CELLS")
 
 package(features = ["layering_check"])
 
@@ -15,6 +16,8 @@ orfs_flow(
         "CORE_AREA": "1.08 1.08 15.12 15.12",
         "DIE_AREA": "0 0 16.2 16.2",
         "PLACE_DENSITY": "0.35",
+        # eqy struggles with pin swapping
+        "SKIP_PIN_SWAP": "0",
     },
     sources = {
         "RULES_JSON": [":rules-base.json"],
@@ -50,6 +53,7 @@ STAGES = [
         "gcd_{stage}.v".format(stage = stage),
     ],
     arguments = {
+        "ASAP7_REMOVE_CELLS": " ".join(ASAP7_REMOVE_CELLS),
         "OUTPUT": "$(location :gcd_{stage}.v)".format(stage = stage),
     },
     script = "//test/orfs/mock-array:write_verilog.tcl",
