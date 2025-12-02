@@ -1,5 +1,6 @@
 load("@bazel-orfs//:eqy.bzl", "eqy_test")
 load("@bazel-orfs//:openroad.bzl", "orfs_flow", "orfs_run")
+load("//test/orfs/mock-array:mock-array.bzl", "ASAP7_REMOVE_CELLS")
 
 package(features = ["layering_check"])
 
@@ -50,6 +51,7 @@ STAGES = [
         "gcd_{stage}.v".format(stage = stage),
     ],
     arguments = {
+        "ASAP7_REMOVE_CELLS": " ".join(ASAP7_REMOVE_CELLS),
         "OUTPUT": "$(location :gcd_{stage}.v)".format(stage = stage),
     },
     script = "//test/orfs/mock-array:write_verilog.tcl",

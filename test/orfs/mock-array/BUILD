@@ -1,7 +1,7 @@
 load("@bazel-orfs//:eqy.bzl", "eqy_test")
 load("@bazel-orfs//:openroad.bzl", "orfs_run")
 load("@bazel-orfs//toolchains/scala:chisel.bzl", "chisel_binary")
-load(":mock-array.bzl", "config", "element", "mock_array", "verilog")
+load(":mock-array.bzl", "ASAP7_REMOVE_CELLS", "config", "element", "mock_array", "verilog")
 
 package(
     features = ["-layering_check"],  # TODO: enable
@@ -111,6 +111,7 @@ orfs_run(
             "{}_floorplan.v".format(module),
         ],
         arguments = {
+            "ASAP7_REMOVE_CELLS": " ".join(ASAP7_REMOVE_CELLS),
             "OUTPUT": "$(location :{}_floorplan.v)".format(module),
         },
         script = ":write_verilog.tcl",
@@ -129,7 +130,6 @@ filegroup(
         "asap7/asap7sc7p5t_INVBUF_RVT_TT_201020.v",
         "asap7/asap7sc7p5t_OA_RVT_TT_201020.v",
         "asap7/asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
-        "asap7/empty.v",
         "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/dff.v",
     ],
     visibility = ["//visibility:public"],
