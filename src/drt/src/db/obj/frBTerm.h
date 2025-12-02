@@ -26,6 +26,8 @@ class frBTerm : public frTerm
   bool hasNet() const override { return (net_); }
   frNet* getNet() const override { return net_; }
   const std::vector<std::unique_ptr<frBPin>>& getPins() const { return pins_; }
+  bool hasPinAccessUpdate() const { return has_pin_access_update_; }
+  void setHasPinAccessUpdate(bool in) { has_pin_access_update_ = in; }
   // setters
   void addToNet(frNet* in) { net_ = in; }
   void addPin(std::unique_ptr<frBPin> in)
@@ -89,6 +91,7 @@ class frBTerm : public frTerm
   std::vector<std::unique_ptr<frBPin>> pins_;  // set later
   frNet* net_{nullptr};
   bool isAboveTopLayer_{false};
+  bool has_pin_access_update_{true};
 };
 
 }  // namespace drt
