@@ -414,7 +414,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   ////////////////////////////////////////////////////////////////
   dbNetwork* getDbNetwork() { return db_network_; }
-  dbBlock* getDbBlock() { return block_; };
+  dbBlock* getDbBlock() { return block_; }
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   void makeEquivCells();
@@ -439,6 +439,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   static MoveType parseMove(const std::string& s);
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
   void fullyRebuffer(Pin* pin);
+
+  bool hasFanout(Vertex* drvr);
+  bool hasFanout(Pin* drvr);
 
   est::EstimateParasitics* getEstimateParasitics()
   {
@@ -620,7 +623,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void getPins(Instance* inst, PinVector& pins) const;
   void SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from);
   Point tieLocation(const Pin* load, int separation);
-  bool hasFanout(Vertex* drvr);
   InstanceSeq findClkInverters();
   void cloneClkInverter(Instance* inv);
 

@@ -1613,10 +1613,21 @@ float Resizer::maxLoad(Cell* cell)
 
 ////////////////////////////////////////////////////////////////
 
+// jk: move to different location?
 bool Resizer::hasFanout(Vertex* drvr)
 {
   VertexOutEdgeIterator edge_iter(drvr, graph_);
   return edge_iter.hasNext();
+}
+
+bool Resizer::hasFanout(Pin* drvr)
+{
+  if (network_->isDriver(drvr) == false) {
+    return false;
+  }
+
+  Vertex* vertex = graph_->pinDrvrVertex(drvr);
+  return hasFanout(vertex);
 }
 
 static float targetLoadDist(float load_cap, float target_load)
