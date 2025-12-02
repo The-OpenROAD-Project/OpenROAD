@@ -103,6 +103,9 @@ class PDNSim : public odb::dbBlockCallBackObj
   void inDbNetDestroy(odb::dbNet*) override;
   void inDbBTermPostConnect(odb::dbBTerm*) override;
   void inDbBTermPostDisConnect(odb::dbBTerm*, odb::dbNet*) override;
+  void inDbBPinCreate(odb::dbBPin*) override;
+  void inDbBPinAddBox(odb::dbBox*) override;
+  void inDbBPinRemoveBox(odb::dbBox*) override;
   void inDbBPinDestroy(odb::dbBPin*) override;
   void inDbSWireAddSBox(odb::dbSBox*) override;
   void inDbSWireRemoveSBox(odb::dbSBox*) override;

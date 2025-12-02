@@ -577,6 +577,7 @@ std::vector<int> GlobalRouter::routeLayerLengths(odb::dbNet* db_net)
   if (!db_net->getSigType().isSupply()) {
     GRoute& route = routes[db_net];
     std::set<RoutePt> route_pts;
+    // Compute wirelengths from route segments
     for (GSegment& segment : route) {
       if (segment.isVia()) {
         auto& s = segment;
@@ -597,18 +598,11 @@ std::vector<int> GlobalRouter::routeLayerLengths(odb::dbNet* db_net)
     }
 
     Net* net = getNet(db_net);
+    // Compute wirelength from pin position on grid to real pin location
     for (Pin& pin : net->getPins()) {
       int layer = pin.getConnectionLayer() + 1;
       odb::Point grid_pt = pin.getOnGridPosition();
       odb::Point pt = pin.getPosition();
-
-      std::map<int, std::vector<PointPair>> ap_positions;
-      bool has_access_points = findPinAccessPointPositions(pin, ap_positions);
-      if (has_access_points) {
-        auto ap_position = ap_positions[0].front();
-        pt = ap_position.first;
-        grid_pt = ap_position.second;
-      }
 
       RoutePt grid_route(grid_pt.getX(), grid_pt.getY(), layer);
       auto pt_itr = route_pts.find(grid_route);
