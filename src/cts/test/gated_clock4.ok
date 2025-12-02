@@ -27,23 +27,23 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                999570.012 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
-[INFO GPL-0018] Movable instances area:       1274.406 um^2
+[INFO GPL-0018] Movable instances area:       1274.067 um^2
 [INFO GPL-0019] Utilization:                     0.127 %
-[INFO GPL-0020] Standard cells area:          1274.406 um^2
+[INFO GPL-0020] Standard cells area:          1274.067 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000010 HPWL: 3046720
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000009 HPWL: 74872
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 61495
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000011 HPWL: 61497
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000011 HPWL: 61495
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000009 HPWL: 74682
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 61445
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000011 HPWL: 61447
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000011 HPWL: 61445
 Placement Analysis
 ---------------------------------
-total displacement       6730.6 u
+total displacement       6730.7 u
 average displacement       23.8 u
 max displacement           35.5 u
-original HPWL               0.8 u
+original HPWL               0.9 u
 legalized HPWL            388.7 u
-delta HPWL                49070 %
+delta HPWL                44019 %
 
 [INFO CTS-0050] Root buffer is CLKBUF_X3.
 [INFO CTS-0051] Sink buffer is CLKBUF_X3.
