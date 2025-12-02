@@ -100,6 +100,14 @@ class Rebuffer : public sta::dbStaState
   std::vector<Instance*> collectImportedTreeBufferInstances(
       Pin* drvr_pin,
       const BufferedNetPtr& imported_tree);
+  // jk: remove this
+  int exportBufferTreeOld(const BufferedNetPtr& choice,
+                          Net* net,  // output of buffer.
+                          int level,
+                          Instance* parent_in,
+                          odb::dbITerm* mod_net_drvr,
+                          odb::dbModNet* mod_net_in,
+                          const char* instance_base_name);
   int exportBufferTree(const BufferedNetPtr& choice,
                        Net* net,  // output of buffer.
                        int level,
