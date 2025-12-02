@@ -438,6 +438,8 @@ class GlobalRouter
   void computeCapacities(int max_layer);
   void findTrackPitches(int max_layer);
   std::vector<Net*> findNets(bool init_clock_nets);
+  void findClockNets(const std::vector<Net*>& nets,
+                     std::set<odb::dbNet*>& clock_nets);
   void computeObstructionsAdjustments();
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);

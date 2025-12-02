@@ -18,12 +18,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbRSegItr::reversible()
+bool dbRSegItr::reversible() const
 {
   return true;
 }
 
-bool dbRSegItr::orderReversed()
+bool dbRSegItr::orderReversed() const
 {
   return true;
 }
@@ -45,12 +45,12 @@ void dbRSegItr::reverse(dbObject* parent)
   net->_r_segs = list;
 }
 
-uint dbRSegItr::sequential()
+uint dbRSegItr::sequential() const
 {
   return 0;
 }
 
-uint dbRSegItr::size(dbObject* parent)
+uint dbRSegItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -63,7 +63,7 @@ uint dbRSegItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbRSegItr::begin(dbObject* parent)
+uint dbRSegItr::begin(dbObject* parent) const
 {
   _dbNet* net = (_dbNet*) parent;
   if (net->_r_segs == 0) {
@@ -73,12 +73,12 @@ uint dbRSegItr::begin(dbObject* parent)
   return seg->_next;
 }
 
-uint dbRSegItr::end(dbObject* /* unused: parent */)
+uint dbRSegItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbRSegItr::next(uint id, ...)
+uint dbRSegItr::next(uint id, ...) const
 {
   _dbRSeg* seg = _seg_tbl->getPtr(id);
   return seg->_next;

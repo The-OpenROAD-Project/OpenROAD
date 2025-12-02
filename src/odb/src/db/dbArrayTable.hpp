@@ -12,7 +12,6 @@
 #include "dbArrayTable.h"
 #include "dbCommon.h"
 #include "dbCore.h"
-#include "odb/ZException.h"
 #include "odb/dbId.h"
 #include "odb/dbObject.h"
 #include "odb/dbStream.h"
@@ -196,7 +195,7 @@ void dbArrayTable<T>::newPage()
 
     for (; t >= b; --t) {
       _dbFreeObject* o = (_dbFreeObject*) t;
-      o->_oid = (uint) ((char*) t - (char*) b);
+      o->oid_ = (uint) ((char*) t - (char*) b);
 
       if (t != b) {  // don't link zero-object
         pushQ(_free_list, o);
@@ -208,7 +207,7 @@ void dbArrayTable<T>::newPage()
 
     for (; t >= b; --t) {
       _dbFreeObject* o = (_dbFreeObject*) t;
-      o->_oid = (uint) ((char*) t - (char*) b);
+      o->oid_ = (uint) ((char*) t - (char*) b);
       pushQ(_free_list, o);
     }
   }
@@ -224,10 +223,10 @@ T* dbArrayTable<T>::create()
   }
 
   _dbFreeObject* o = popQ(_free_list);
-  const uint oid = o->_oid;
+  const uint oid = o->oid_;
   new (o) T(_db);
   T* t = (T*) o;
-  t->_oid = oid | DB_ALLOC_BIT;
+  t->oid_ = oid | DB_ALLOC_BIT;
 
   dbArrayTablePage* page = (dbArrayTablePage*) t->getObjectPage();
   page->_alloccnt++;
@@ -271,17 +270,17 @@ void dbArrayTable<T>::destroy(T* t)
 {
   --_alloc_cnt;
 
-  ZASSERT(t->getOID() != 0);
-  ZASSERT(t->getTable() == this);
-  ZASSERT(t->_oid & DB_ALLOC_BIT);
+  assert(t->getOID() != 0);
+  assert(t->getTable() == this);
+  assert(t->oid_ & DB_ALLOC_BIT);
 
   dbArrayTablePage* page = (dbArrayTablePage*) t->getObjectPage();
   _dbFreeObject* o = (_dbFreeObject*) t;
 
   page->_alloccnt--;
-  const uint oid = t->_oid;
+  const uint oid = t->oid_;
   t->~T();  // call destructor
-  o->_oid = oid & ~DB_ALLOC_BIT;
+  o->oid_ = oid & ~DB_ALLOC_BIT;
 
   // Add to freelist
   pushQ(_free_list, o);
@@ -295,7 +294,7 @@ void dbArrayTable<T>::writePage(dbOStream& stream,
   const T* e = &t[page_size()];
 
   for (; t < e; t++) {
-    if (t->_oid & DB_ALLOC_BIT) {
+    if (t->oid_ & DB_ALLOC_BIT) {
       char allocated = 1;
       stream << allocated;
       stream << *t;
@@ -321,15 +320,15 @@ void dbArrayTable<T>::readPage(dbIStream& stream, dbArrayTablePage* page)
     stream >> allocated;
 
     if (!allocated) {
-      t->_oid = (uint) ((char*) t - page->_objects);
+      t->oid_ = (uint) ((char*) t - page->_objects);
       _dbFreeObject* o = (_dbFreeObject*) t;
       stream >> o->_next;
       stream >> o->_prev;
     } else {
       new (t) T(_db);
       stream >> *t;
-      t->_oid = (uint) ((char*) t - page->_objects);
-      t->_oid |= DB_ALLOC_BIT;
+      t->oid_ = (uint) ((char*) t - page->_objects);
+      t->oid_ |= DB_ALLOC_BIT;
       page->_alloccnt++;
     }
   }
@@ -371,9 +370,9 @@ void dbArrayTable<T>::copy_page(uint page_id, dbArrayTablePage* page)
   T* o = (T*) p->_objects;
 
   for (; t < e; t++, o++) {
-    if (t->_oid & DB_ALLOC_BIT) {
+    if (t->oid_ & DB_ALLOC_BIT) {
       new (o) T(_db, *t);
-      o->_oid = t->_oid;
+      o->oid_ = t->oid_;
     } else {
       *((_dbFreeObject*) o) = *((_dbFreeObject*) t);
     }

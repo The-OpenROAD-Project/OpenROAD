@@ -16,6 +16,7 @@ orfs_flow(
         "CORE_AREA": "1.08 1.08 15.12 15.12",
         "DIE_AREA": "0 0 16.2 16.2",
         "PLACE_DENSITY": "0.35",
+        "OPENROAD_HIERARCHICAL": "1",
     },
     sources = {
         "RULES_JSON": [":rules-base.json"],

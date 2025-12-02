@@ -17,6 +17,7 @@
 #include "dbTechVia.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -30,11 +31,11 @@ template class dbTable<_dbTechViaRule>;
 
 bool _dbTechViaRule::operator==(const _dbTechViaRule& rhs) const
 {
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
@@ -50,34 +51,34 @@ bool _dbTechViaRule::operator==(const _dbTechViaRule& rhs) const
 }
 
 _dbTechViaRule::_dbTechViaRule(_dbDatabase*, const _dbTechViaRule& v)
-    : _flags(v._flags),
-      _name(nullptr),
+    : flags_(v.flags_),
+      name_(nullptr),
       _layer_rules(v._layer_rules),
       _vias(v._vias)
 {
-  if (v._name) {
-    _name = safe_strdup(v._name);
+  if (v.name_) {
+    name_ = safe_strdup(v.name_);
   }
 }
 
 _dbTechViaRule::_dbTechViaRule(_dbDatabase*)
 {
-  _name = nullptr;
-  _flags._spare_bits = 0;
+  name_ = nullptr;
+  flags_._spare_bits = 0;
 }
 
 _dbTechViaRule::~_dbTechViaRule()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechViaRule& v)
 {
-  uint* bit_field = (uint*) &v._flags;
+  uint* bit_field = (uint*) &v.flags_;
   stream << *bit_field;
-  stream << v._name;
+  stream << v.name_;
   stream << v._layer_rules;
   stream << v._vias;
   return stream;
@@ -85,9 +86,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechViaRule& v)
 
 dbIStream& operator>>(dbIStream& stream, _dbTechViaRule& v)
 {
-  uint* bit_field = (uint*) &v._flags;
+  uint* bit_field = (uint*) &v.flags_;
   stream >> *bit_field;
-  stream >> v._name;
+  stream >> v.name_;
   stream >> v._layer_rules;
   stream >> v._vias;
   return stream;
@@ -102,7 +103,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechViaRule& v)
 std::string dbTechViaRule::getName()
 {
   _dbTechViaRule* via = (_dbTechViaRule*) this;
-  return via->_name;
+  return via->name_;
 }
 
 void dbTechViaRule::addVia(dbTechVia* via)
@@ -157,7 +158,7 @@ dbTechViaRule* dbTechViaRule::create(dbTech* tech_, const char* name)
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechViaRule* rule = tech->_via_rule_tbl->create();
-  rule->_name = safe_strdup(name);
+  rule->name_ = safe_strdup(name);
   return (dbTechViaRule*) rule;
 }
 
@@ -172,7 +173,7 @@ void _dbTechViaRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["layer_rules"].add(_layer_rules);
   info.children_["vias"].add(_vias);
 }

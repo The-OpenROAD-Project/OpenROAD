@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "dbCommon.h"
 #include "dbGroup.h"
 #include "dbLevelShifter.h"
 // User Code End Includes
@@ -28,10 +29,10 @@ template class dbTable<_dbPowerDomain>;
 
 bool _dbPowerDomain::operator==(const _dbPowerDomain& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (_group != rhs._group) {
@@ -60,7 +61,7 @@ bool _dbPowerDomain::operator<(const _dbPowerDomain& rhs) const
 
 _dbPowerDomain::_dbPowerDomain(_dbDatabase* db)
 {
-  _name = nullptr;
+  name_ = nullptr;
   _top = false;
   _voltage = 0;
   // User Code Begin Constructor
@@ -70,8 +71,8 @@ _dbPowerDomain::_dbPowerDomain(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
 {
-  stream >> obj._name;
-  stream >> obj._next_entry;
+  stream >> obj.name_;
+  stream >> obj.next_entry_;
   stream >> obj._elements;
   stream >> obj._power_switch;
   stream >> obj._isolation;
@@ -93,8 +94,8 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj)
 {
-  stream << obj._name;
-  stream << obj._next_entry;
+  stream << obj.name_;
+  stream << obj.next_entry_;
   stream << obj._elements;
   stream << obj._power_switch;
   stream << obj._isolation;
@@ -115,19 +116,12 @@ void _dbPowerDomain::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   info.children_["elements"].add(_elements);
   info.children_["power_switch"].add(_power_switch);
   info.children_["isolation"].add(_isolation);
   info.children_["levelshifters"].add(_levelshifters);
   // User Code End collectMemInfo
-}
-
-_dbPowerDomain::~_dbPowerDomain()
-{
-  if (_name) {
-    free((void*) _name);
-  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -139,7 +133,7 @@ _dbPowerDomain::~_dbPowerDomain()
 const char* dbPowerDomain::getName() const
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 dbGroup* dbPowerDomain::getGroup() const
@@ -203,7 +197,7 @@ dbPowerDomain* dbPowerDomain::create(dbBlock* block, const char* name)
     return nullptr;
   }
   _dbPowerDomain* pd = _block->_powerdomain_tbl->create();
-  pd->_name = safe_strdup(name);
+  pd->name_ = safe_strdup(name);
 
   _block->_powerdomain_hash.insert(pd);
   return (dbPowerDomain*) pd;

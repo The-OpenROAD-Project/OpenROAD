@@ -3,6 +3,7 @@
 
 #include "ord/Design.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <istream>
@@ -224,7 +225,7 @@ std::uint64_t Design::getNetRoutedLength(odb::dbNet* net)
     for (odb::dbSWire* swire : net->getSWires()) {
       for (odb::dbSBox* wire : swire->getWires()) {
         if (wire != nullptr && !(wire->isVia())) {
-          route_length += wire->getLength();
+          route_length += std::max(wire->getDX(), wire->getDY());
         }
       }
     }

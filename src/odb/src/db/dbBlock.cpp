@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
+#include <climits>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -118,7 +119,6 @@
 #include "dbTrackGrid.h"
 #include "dbVia.h"
 #include "dbWire.h"
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbExtControl.h"
@@ -169,8 +169,8 @@ template class dbHashTable<_dbMarkerCategory>;
 
 _dbBlock::_dbBlock(_dbDatabase* db)
 {
-  _flags._valid_bbox = 0;
-  _flags._spare_bits = 0;
+  flags_._valid_bbox = 0;
+  flags_._spare_bits = 0;
   _def_units = 100;
   _dbu_per_micron = 1000;
   _hier_delimiter = '/';
@@ -564,9 +564,9 @@ void _dbBlock::initialize(_dbChip* chip,
   _name = safe_strdup(name);
 
   _dbBox* box = _box_tbl->create();
-  box->_flags._owner_type = dbBoxOwner::BLOCK;
-  box->_owner = getOID();
-  box->_shape._rect.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
+  box->flags_.owner_type = dbBoxOwner::BLOCK;
+  box->owner_ = getOID();
+  box->shape_.rect.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
   _bbox = box->getOID();
   _chip = chip->getOID();
   _hier_delimiter = delimiter;
@@ -1107,16 +1107,16 @@ void _dbBlock::add_rect(const Rect& rect)
 {
   _dbBox* box = _box_tbl->getPtr(_bbox);
 
-  if (_flags._valid_bbox) {
-    box->_shape._rect.merge(rect);
+  if (flags_._valid_bbox) {
+    box->shape_.rect.merge(rect);
   }
 }
 void _dbBlock::add_oct(const Oct& oct)
 {
   _dbBox* box = _box_tbl->getPtr(_bbox);
 
-  if (_flags._valid_bbox) {
-    box->_shape._rect.merge(oct);
+  if (flags_._valid_bbox) {
+    box->shape_.rect.merge(oct);
   }
 }
 
@@ -1124,14 +1124,14 @@ void _dbBlock::remove_rect(const Rect& rect)
 {
   _dbBox* box = _box_tbl->getPtr(_bbox);
 
-  if (_flags._valid_bbox) {
-    _flags._valid_bbox = box->_shape._rect.inside(rect);
+  if (flags_._valid_bbox) {
+    flags_._valid_bbox = box->shape_.rect.inside(rect);
   }
 }
 
 bool _dbBlock::operator==(const _dbBlock& rhs) const
 {
-  if (_flags._valid_bbox != rhs._flags._valid_bbox) {
+  if (flags_._valid_bbox != rhs.flags_._valid_bbox) {
     return false;
   }
 
@@ -1485,7 +1485,7 @@ dbBox* dbBlock::getBBox()
 {
   _dbBlock* block = (_dbBlock*) this;
 
-  if (block->_flags._valid_bbox == 0) {
+  if (block->flags_._valid_bbox == 0) {
     block->ComputeBBox();
   }
 
@@ -1496,12 +1496,12 @@ dbBox* dbBlock::getBBox()
 void _dbBlock::ComputeBBox()
 {
   _dbBox* bbox = _box_tbl->getPtr(_bbox);
-  bbox->_shape._rect.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
+  bbox->shape_.rect.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
 
   for (dbInst* inst : dbSet<dbInst>(this, _inst_tbl)) {
     if (inst->isPlaced()) {
       _dbBox* box = (_dbBox*) inst->getBBox();
-      bbox->_shape._rect.merge(box->_shape._rect);
+      bbox->shape_.rect.merge(box->shape_.rect);
     }
   }
 
@@ -1510,7 +1510,7 @@ void _dbBlock::ComputeBBox()
       if (bp->getPlacementStatus().isPlaced()) {
         for (dbBox* box : bp->getBoxes()) {
           Rect r = box->getBox();
-          bbox->_shape._rect.merge(r);
+          bbox->shape_.rect.merge(r);
         }
       }
     }
@@ -1518,26 +1518,26 @@ void _dbBlock::ComputeBBox()
 
   for (dbObstruction* obs : dbSet<dbObstruction>(this, _obstruction_tbl)) {
     _dbBox* box = (_dbBox*) obs->getBBox();
-    bbox->_shape._rect.merge(box->_shape._rect);
+    bbox->shape_.rect.merge(box->shape_.rect);
   }
 
   for (dbSBox* box : dbSet<dbSBox>(this, _sbox_tbl)) {
     Rect rect = box->getBox();
-    bbox->_shape._rect.merge(rect);
+    bbox->shape_.rect.merge(rect);
   }
 
   for (dbWire* wire : dbSet<dbWire>(this, _wire_tbl)) {
     const auto opt_bbox = wire->getBBox();
     if (opt_bbox) {
-      bbox->_shape._rect.merge(opt_bbox.value());
+      bbox->shape_.rect.merge(opt_bbox.value());
     }
   }
 
-  if (bbox->_shape._rect.xMin() == INT_MAX) {  // empty block
-    bbox->_shape._rect.reset(0, 0, 0, 0);
+  if (bbox->shape_.rect.xMin() == INT_MAX) {  // empty block
+    bbox->shape_.rect.reset(0, 0, 0, 0);
   }
 
-  _flags._valid_bbox = 1;
+  flags_._valid_bbox = 1;
 }
 
 dbDatabase* dbBlock::getDataBase()
@@ -2761,7 +2761,7 @@ void dbBlock::setCornerCount(int cornersStoredCnt,
                              int extDbCnt,
                              const char* name_list)
 {
-  ZASSERT((cornersStoredCnt > 0) && (cornersStoredCnt <= 256));
+  assert((cornersStoredCnt > 0) && (cornersStoredCnt <= 256));
   _dbBlock* block = (_dbBlock*) this;
 
   // TODO: Should this change be logged in the journal?
@@ -2870,7 +2870,7 @@ void dbBlock::getExtCornerName(int corner, char* cName)
   if (block->_num_ext_corners == 0) {
     return;
   }
-  ZASSERT((corner >= 0) && (corner < block->_num_ext_corners));
+  assert((corner >= 0) && (corner < block->_num_ext_corners));
 
   if (block->_corner_name_list == nullptr) {
     return;
@@ -3020,7 +3020,7 @@ void dbBlock::getWireUpdatedNets(std::vector<dbNet*>& result)
     tot++;
     _dbNet* n = (_dbNet*) net;
 
-    if (n->_flags._wire_altered != 1) {
+    if (n->flags_._wire_altered != 1) {
       continue;
     }
     upd++;
