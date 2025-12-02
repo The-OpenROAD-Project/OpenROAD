@@ -232,6 +232,21 @@ void PDNSim::inDbBTermPostDisConnect(odb::dbBTerm*, odb::dbNet*)
   clearSolvers();
 }
 
+void PDNSim::inDbBPinCreate(odb::dbBPin*)
+{
+  clearSolvers();
+}
+
+void PDNSim::inDbBPinAddBox(odb::dbBox*)
+{
+  clearSolvers();
+}
+
+void PDNSim::inDbBPinRemoveBox(odb::dbBox*)
+{
+  clearSolvers();
+}
+
 void PDNSim::inDbBPinDestroy(odb::dbBPin*)
 {
   clearSolvers();
