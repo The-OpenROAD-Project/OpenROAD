@@ -350,10 +350,8 @@ void dbRegion::destroy(dbRegion* region_)
   dbSet<dbGroup>::iterator gitr;
 
   for (gitr = groups.begin(); gitr != groups.end(); gitr = groups.begin()) {
-    _dbGroup* _group = (_dbGroup*) *gitr;
-    _group->region_ = 0;
-    _group->region_next_ = 0;
-    _group->region_prev_ = 0;
+    dbGroup* group = *gitr;
+    region_->removeGroup(group);
   }
 
   dbProperty::destroyProperties(region);
