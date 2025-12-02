@@ -193,7 +193,7 @@ class CallBack : public dbBlockCallBackObj
   void inDbBPinRemoveBox(dbBox* box) override
   {
     if (!_pause) {
-      events.push_back("Destroy bpin box");
+      events.emplace_back("Destroy bpin box");
     }
   }
 
