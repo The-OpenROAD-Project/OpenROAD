@@ -101,7 +101,7 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
 {
   fastroute_
       = new FastRouteCore(db_, logger_, callback_handler_, stt_builder_, sta_);
-  cugr_ = new CUGR(db_, logger_, stt_builder_);
+  cugr_ = new CUGR(db_, logger_, stt_builder_, sta_);
 }
 
 void GlobalRouter::initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
@@ -350,7 +350,9 @@ void GlobalRouter::globalRoute(bool save_guides,
         if (use_cugr_) {
           int min_layer, max_layer;
           getMinMaxLayer(min_layer, max_layer);
-          cugr_->init(min_layer, max_layer);
+          std::set<odb::dbNet*> clock_nets;
+          findClockNets(nets, clock_nets);
+          cugr_->init(min_layer, max_layer, clock_nets);
           cugr_->route();
           routes_ = cugr_->getRoutes();
         } else {
@@ -3770,6 +3772,7 @@ std::vector<Net*> GlobalRouter::findNets(bool init_clock_nets)
     if (net) {
       bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
       if (is_non_leaf_clock) {
+        net->setIsClockNet(true);
         clk_nets.push_back(net);
       }
     }
@@ -3792,6 +3795,16 @@ std::vector<Net*> GlobalRouter::findNets(bool init_clock_nets)
   nets.insert(nets.end(), non_clk_nets.begin(), non_clk_nets.end());
 
   return nets;
+}
+
+void GlobalRouter::findClockNets(const std::vector<Net*>& nets,
+                                 std::set<odb::dbNet*>& clock_nets)
+{
+  for (Net* net : nets) {
+    if (net->isClockNet()) {
+      clock_nets.insert(net->getDbNet());
+    }
+  }
 }
 
 Net* GlobalRouter::addNet(odb::dbNet* db_net)
