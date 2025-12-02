@@ -721,6 +721,11 @@ dbBox* dbBox::create(dbBPin* bpin_,
   bpin->boxes_ = box->getOID();
 
   block->add_rect(box->shape_.rect);
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbBPinAddBox((dbBox*) box);
+  }
+
   return (dbBox*) box;
 }
 

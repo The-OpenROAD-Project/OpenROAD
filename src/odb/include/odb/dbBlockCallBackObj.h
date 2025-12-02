@@ -125,6 +125,8 @@ class dbBlockCallBackObj
 
   // dbBPin Start
   virtual void inDbBPinCreate(dbBPin*) {}
+  virtual void inDbBPinAddBox(dbBox*) {}
+  virtual void inDbBPinRemoveBox(dbBox*) {}
   virtual void inDbBPinDestroy(dbBPin*) {}
   // dbBPin End
 
