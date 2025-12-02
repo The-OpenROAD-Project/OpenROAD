@@ -1858,4 +1858,243 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case16)
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
+TEST_F(TestInsertBuffer, BeforeLoads_Case17)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  // Get ODB objects
+  dbInst* drvr = block_->findInst("drvr");
+  ASSERT_NE(drvr, nullptr);
+  dbInst* buf = block_->findInst("buf");
+  ASSERT_NE(buf, nullptr);
+  dbInst* load0 = block_->findInst("load0");
+  ASSERT_NE(load0, nullptr);
+  dbInst* h0_load1 = block_->findInst("h0/load1");
+  ASSERT_NE(h0_load1, nullptr);
+  dbInst* non_target0 = block_->findInst("non_target0");
+  ASSERT_NE(non_target0, nullptr);
+
+  dbITerm* drvr_z = drvr->findITerm("Z");
+  ASSERT_NE(drvr_z, nullptr);
+  dbITerm* buf_z = buf->findITerm("Z");
+  ASSERT_NE(buf_z, nullptr);
+  dbITerm* load0_a = load0->findITerm("A");
+  ASSERT_NE(load0_a, nullptr);
+  dbITerm* h0_load1_a = h0_load1->findITerm("A");
+  ASSERT_NE(h0_load1_a, nullptr);
+  dbITerm* non_target0_a = non_target0->findITerm("A");
+  ASSERT_NE(non_target0_a, nullptr);
+
+  dbNet* target_net = load0_a->getNet();
+  ASSERT_NE(target_net, nullptr);
+
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(buffer_master, nullptr);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  db_network_->checkAxioms();
+
+  //----------------------------------------------------
+  // Insert buffer
+  // - Targets: load0, h0/load1
+  // - Note that the two loads are on different dbNets.
+  //----------------------------------------------------
+  std::set<dbObject*> targets;
+  targets.insert(load0_a);
+  targets.insert(h0_load1_a);
+
+  dbInst* new_buf
+      = target_net->insertBufferBeforeLoads(targets,
+                                            buffer_master,
+                                            nullptr,
+                                            "new_buf",
+                                            odb::dbNameUniquifyType::ALWAYS,
+                                            false);
+  ASSERT_TRUE(new_buf);
+
+  //----------------------------------------------------
+  // Verify Results
+  //----------------------------------------------------
+
+  // buf/Z should have NO fanout load
+  sta::Pin* buf_out_pin = db_network_->dbToSta(buf_z);
+  ASSERT_FALSE(resizer_.hasFanout(buf_out_pin));
+
+  // Post sanity check
+  db_network_->checkAxioms();
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
+TEST_F(TestInsertBuffer, BeforeLoads_Case18)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  // Get ODB objects
+  dbInst* drvr = block_->findInst("drvr");
+  ASSERT_NE(drvr, nullptr);
+  dbInst* buf = block_->findInst("buf");
+  ASSERT_NE(buf, nullptr);
+  dbInst* load0 = block_->findInst("load0");
+  ASSERT_NE(load0, nullptr);
+  dbInst* h0_load1 = block_->findInst("h0/load1");
+  ASSERT_NE(h0_load1, nullptr);
+  dbInst* non_target0 = block_->findInst("non_target0");
+  ASSERT_NE(non_target0, nullptr);
+
+  dbITerm* drvr_z = drvr->findITerm("Z");
+  ASSERT_NE(drvr_z, nullptr);
+  dbITerm* buf_z = buf->findITerm("Z");
+  ASSERT_NE(buf_z, nullptr);
+  dbITerm* load0_a = load0->findITerm("A");
+  ASSERT_NE(load0_a, nullptr);
+  dbITerm* h0_load1_a = h0_load1->findITerm("A");
+  ASSERT_NE(h0_load1_a, nullptr);
+  dbITerm* non_target0_a = non_target0->findITerm("A");
+  ASSERT_NE(non_target0_a, nullptr);
+
+  dbNet* target_net = load0_a->getNet();
+  ASSERT_NE(target_net, nullptr);
+
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(buffer_master, nullptr);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  db_network_->checkAxioms();
+
+  //----------------------------------------------------
+  // Insert buffer
+  // - Targets: load0, h0/load1
+  // - Note that the two loads are on different dbNets.
+  //----------------------------------------------------
+  std::set<dbObject*> targets;
+  targets.insert(load0_a);
+  targets.insert(h0_load1_a);
+
+  dbInst* new_buf
+      = target_net->insertBufferBeforeLoads(targets,
+                                            buffer_master,
+                                            nullptr,
+                                            "new_buf",
+                                            odb::dbNameUniquifyType::ALWAYS,
+                                            false);
+  ASSERT_TRUE(new_buf);
+
+  //----------------------------------------------------
+  // Verify Results
+  //----------------------------------------------------
+
+  // buf/Z should have fanout load
+  sta::Pin* buf_out_pin = db_network_->dbToSta(buf_z);
+  ASSERT_TRUE(resizer_.hasFanout(buf_out_pin));
+
+  // Post sanity check
+  db_network_->checkAxioms();
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
+// A submodule has a fakeram hard-macro
+TEST_F(TestInsertBuffer, BeforeLoads_Case19)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  loadLibaryLef(lib_->getTech(),
+                "Nangate45_fakeram",
+                getFilePath("_main/test/Nangate45/fakeram45_64x7.lef"));
+  readLiberty(getFilePath("_main/test/Nangate45/fakeram45_64x7.lib"));
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  // Get ODB objects
+  dbInst* drvr = block_->findInst("drvr");
+  ASSERT_NE(drvr, nullptr);
+  dbInst* buf = block_->findInst("buf");
+  ASSERT_NE(buf, nullptr);
+  dbInst* load0 = block_->findInst("load0");
+  ASSERT_NE(load0, nullptr);
+  dbInst* non_target0 = block_->findInst("non_target0");
+  ASSERT_NE(non_target0, nullptr);
+  dbInst* h0_mem = block_->findInst("h0/mem");
+  ASSERT_NE(h0_mem, nullptr);
+
+  dbITerm* drvr_z = drvr->findITerm("Z");
+  ASSERT_NE(drvr_z, nullptr);
+  dbITerm* buf_z = buf->findITerm("Z");
+  ASSERT_NE(buf_z, nullptr);
+  dbITerm* load0_a = load0->findITerm("A");
+  ASSERT_NE(load0_a, nullptr);
+  dbITerm* non_target0_a = non_target0->findITerm("A");
+  ASSERT_NE(non_target0_a, nullptr);
+  dbITerm* h0_mem_w_mask_in0 = h0_mem->findITerm("w_mask_in[0]");
+  ASSERT_NE(h0_mem_w_mask_in0, nullptr);
+  dbITerm* h0_mem_w_mask_in1 = h0_mem->findITerm("w_mask_in[1]");
+  ASSERT_NE(h0_mem_w_mask_in1, nullptr);
+  dbITerm* h0_mem_w_mask_in2 = h0_mem->findITerm("w_mask_in[2]");
+  ASSERT_NE(h0_mem_w_mask_in2, nullptr);
+
+  dbNet* target_net = load0_a->getNet();
+  ASSERT_NE(target_net, nullptr);
+
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(buffer_master, nullptr);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  db_network_->checkAxioms();
+
+  // buf/Z should have fanout load
+  sta::Pin* buf_out_pin = db_network_->dbToSta(buf_z);
+  ASSERT_TRUE(resizer_.hasFanout(buf_out_pin));
+
+  //----------------------------------------------------
+  // Insert buffer
+  // - Targets: load0, h0/mem/w_mask_in[2:0]
+  // - Note that the two loads are on different dbNets.
+  //----------------------------------------------------
+  std::set<dbObject*> targets;
+  targets.insert(load0_a);
+  targets.insert(h0_mem_w_mask_in0);
+  targets.insert(h0_mem_w_mask_in1);
+  targets.insert(h0_mem_w_mask_in2);
+
+  dbInst* new_buf
+      = target_net->insertBufferBeforeLoads(targets,
+                                            buffer_master,
+                                            nullptr,
+                                            "new_buf",
+                                            odb::dbNameUniquifyType::ALWAYS,
+                                            false);
+  ASSERT_TRUE(new_buf);
+
+  //----------------------------------------------------
+  // Verify Results
+  //----------------------------------------------------
+
+  // buf/Z should have NO fanout load
+  ASSERT_FALSE(resizer_.hasFanout(buf_out_pin));
+
+  // Post sanity check
+  db_network_->checkAxioms();
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
 }  // namespace odb
