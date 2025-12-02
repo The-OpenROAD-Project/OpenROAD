@@ -28,9 +28,9 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                1830715.802 um^2
 [INFO GPL-0017] Fixed instances area:       337133.338 um^2
-[INFO GPL-0018] Movable instances area:     126782.845 um^2
-[INFO GPL-0019] Utilization:                     8.489 %
-[INFO GPL-0020] Standard cells area:        126782.845 um^2
+[INFO GPL-0018] Movable instances area:     143938.422 um^2
+[INFO GPL-0019] Utilization:                     9.637 %
+[INFO GPL-0020] Standard cells area:        143938.422 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0032] Initializing region: PD_AES_1
 [INFO GPL-0006] Number of instances:             16862
@@ -45,9 +45,9 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0014] Region name: PD_AES_1.
 [INFO GPL-0015] Region area:                150144.000 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
-[INFO GPL-0018] Movable instances area:     121017.315 um^2
-[INFO GPL-0019] Utilization:                    80.601 %
-[INFO GPL-0020] Standard cells area:        121017.315 um^2
+[INFO GPL-0018] Movable instances area:     137986.283 um^2
+[INFO GPL-0019] Utilization:                    91.903 %
+[INFO GPL-0020] Standard cells area:        137986.283 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0032] Initializing region: PD_AES_2
 [INFO GPL-0006] Number of instances:             16862
@@ -62,33 +62,37 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0014] Region name: PD_AES_2.
 [INFO GPL-0015] Region area:                150144.000 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
-[INFO GPL-0018] Movable instances area:     121017.315 um^2
-[INFO GPL-0019] Utilization:                    80.601 %
-[INFO GPL-0020] Standard cells area:        121017.315 um^2
+[INFO GPL-0018] Movable instances area:     137986.283 um^2
+[INFO GPL-0019] Utilization:                    91.903 %
+[INFO GPL-0020] Standard cells area:        137986.283 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0033] Initializing Nesterov region: Top-level
 [INFO GPL-0023] Placement target density:       0.8200
-[INFO GPL-0024] Movable insts average area:      7.179 um^2
-[INFO GPL-0025] Ideal bin area:                  8.755 um^2
-[INFO GPL-0026] Ideal bin count:                209117
+[INFO GPL-0024] Movable insts average area:      8.150 um^2
+[INFO GPL-0025] Ideal bin area:                  9.939 um^2
+[INFO GPL-0026] Ideal bin count:                184193
 [INFO GPL-0027] Total bin area:             1830715.802 um^2
 [INFO GPL-0028] Bin count (X, Y):         256 ,    256
 [INFO GPL-0029] Bin size (W * H):       5.290 *  5.281 um
 [INFO GPL-0030] Number of bins:                  65536
 [INFO GPL-0033] Initializing Nesterov region: PD_AES_1
-[INFO GPL-0023] Placement target density:       0.8200
-[INFO GPL-0024] Movable insts average area:      7.177 um^2
-[INFO GPL-0025] Ideal bin area:                  8.752 um^2
-[INFO GPL-0026] Ideal bin count:                 17154
+[WARNING GPL-0302] Target density 0.8200 is too low for the available free area.
+Automatically adjusting to uniform density 0.9200.
+[INFO GPL-0023] Placement target density:       0.9200
+[INFO GPL-0024] Movable insts average area:      8.183 um^2
+[INFO GPL-0025] Ideal bin area:                  8.895 um^2
+[INFO GPL-0026] Ideal bin count:                 16879
 [INFO GPL-0027] Total bin area:             150144.000 um^2
 [INFO GPL-0028] Bin count (X, Y):         128 ,     64
 [INFO GPL-0029] Bin size (W * H):       4.312 *  4.250 um
 [INFO GPL-0030] Number of bins:                   8192
 [INFO GPL-0033] Initializing Nesterov region: PD_AES_2
-[INFO GPL-0023] Placement target density:       0.8200
-[INFO GPL-0024] Movable insts average area:      7.177 um^2
-[INFO GPL-0025] Ideal bin area:                  8.752 um^2
-[INFO GPL-0026] Ideal bin count:                 17154
+[WARNING GPL-0302] Target density 0.8200 is too low for the available free area.
+Automatically adjusting to uniform density 0.9200.
+[INFO GPL-0023] Placement target density:       0.9200
+[INFO GPL-0024] Movable insts average area:      8.183 um^2
+[INFO GPL-0025] Ideal bin area:                  8.895 um^2
+[INFO GPL-0026] Ideal bin count:                 16879
 [INFO GPL-0027] Total bin area:             150144.000 um^2
 [INFO GPL-0028] Bin count (X, Y):         128 ,     64
 [INFO GPL-0029] Bin size (W * H):       4.312 *  4.250 um
@@ -97,169 +101,169 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.9856 |  9.028119e+05 |   +0.00% |  2.05e-15 |      
-        0 |   0.9951 |  9.028119e+05 |   +0.00% |  3.17e-15 |  (PD_AES_1)
-        0 |   0.9929 |  9.028119e+05 |   +0.00% |  2.00e-15 |  (PD_AES_2)
-       10 |   0.9593 |  1.053637e+06 |  +16.71% |  3.24e-15 |      
-       10 |   0.9495 |  1.053637e+06 |  +16.71% |  5.00e-15 |  (PD_AES_1)
-       10 |   0.9389 |  1.053637e+06 |  +16.71% |  3.16e-15 |  (PD_AES_2)
-       20 |   0.9400 |  1.075248e+06 |   +2.05% |  5.24e-15 |      
-       20 |   0.9359 |  1.075248e+06 |   +2.05% |  8.10e-15 |  (PD_AES_1)
-       20 |   0.9226 |  1.075248e+06 |   +2.05% |  5.12e-15 |  (PD_AES_2)
-       30 |   0.9539 |  1.026594e+06 |   -4.52% |  8.54e-15 |      
-       30 |   0.9400 |  1.026594e+06 |   -4.52% |  1.32e-14 |  (PD_AES_1)
-       30 |   0.9296 |  1.026594e+06 |   -4.52% |  8.33e-15 |  (PD_AES_2)
-       40 |   0.9601 |  9.761755e+05 |   -4.91% |  1.39e-14 |      
-       40 |   0.9429 |  9.761755e+05 |   -4.91% |  2.15e-14 |  (PD_AES_1)
-       40 |   0.9310 |  9.761755e+05 |   -4.91% |  1.36e-14 |  (PD_AES_2)
-       50 |   0.9580 |  9.574975e+05 |   -1.91% |  2.27e-14 |      
-       50 |   0.9432 |  9.574975e+05 |   -1.91% |  3.50e-14 |  (PD_AES_1)
-       50 |   0.9326 |  9.574975e+05 |   -1.91% |  2.21e-14 |  (PD_AES_2)
-       60 |   0.9584 |  9.292142e+05 |   -2.95% |  3.69e-14 |      
-       60 |   0.9460 |  9.292142e+05 |   -2.95% |  5.70e-14 |  (PD_AES_1)
-       60 |   0.9383 |  9.292142e+05 |   -2.95% |  3.60e-14 |  (PD_AES_2)
-       70 |   0.9597 |  8.911153e+05 |   -4.10% |  6.01e-14 |      
-       70 |   0.9515 |  8.911153e+05 |   -4.10% |  9.28e-14 |  (PD_AES_1)
-       70 |   0.9436 |  8.911153e+05 |   -4.10% |  5.86e-14 |  (PD_AES_2)
-       80 |   0.9586 |  8.541879e+05 |   -4.14% |  9.79e-14 |      
-       80 |   0.9545 |  8.541879e+05 |   -4.14% |  1.51e-13 |  (PD_AES_1)
-       80 |   0.9484 |  8.541879e+05 |   -4.14% |  9.55e-14 |  (PD_AES_2)
-       90 |   0.9537 |  8.177751e+05 |   -4.26% |  1.59e-13 |      
-       90 |   0.9600 |  8.177751e+05 |   -4.26% |  2.46e-13 |  (PD_AES_1)
-       90 |   0.9564 |  8.177751e+05 |   -4.26% |  1.56e-13 |  (PD_AES_2)
-      100 |   0.9439 |  7.831030e+05 |   -4.24% |  2.60e-13 |      
-      100 |   0.9658 |  7.831030e+05 |   -4.24% |  4.01e-13 |  (PD_AES_1)
-      100 |   0.9632 |  7.831030e+05 |   -4.24% |  2.53e-13 |  (PD_AES_2)
-      110 |   0.9344 |  7.525082e+05 |   -3.91% |  4.23e-13 |      
-      110 |   0.9722 |  7.525082e+05 |   -3.91% |  6.53e-13 |  (PD_AES_1)
-      110 |   0.9715 |  7.525082e+05 |   -3.91% |  4.13e-13 |  (PD_AES_2)
-      120 |   0.9290 |  7.311908e+05 |   -2.83% |  6.89e-13 |      
-      120 |   0.9762 |  7.311908e+05 |   -2.83% |  1.06e-12 |  (PD_AES_1)
-      120 |   0.9772 |  7.311908e+05 |   -2.83% |  6.72e-13 |  (PD_AES_2)
-      130 |   0.9255 |  7.191651e+05 |   -1.64% |  1.12e-12 |      
-      130 |   0.9775 |  7.191651e+05 |   -1.64% |  1.73e-12 |  (PD_AES_1)
-      130 |   0.9801 |  7.191651e+05 |   -1.64% |  1.10e-12 |  (PD_AES_2)
-      140 |   0.9264 |  7.190111e+05 |   -0.02% |  1.83e-12 |      
-      140 |   0.9726 |  7.190111e+05 |   -0.02% |  2.82e-12 |  (PD_AES_1)
-      140 |   0.9776 |  7.190111e+05 |   -0.02% |  1.78e-12 |  (PD_AES_2)
-      150 |   0.9256 |  7.311724e+05 |   +1.69% |  2.97e-12 |      
-      150 |   0.9618 |  7.311724e+05 |   +1.69% |  4.59e-12 |  (PD_AES_1)
-      150 |   0.9708 |  7.311724e+05 |   +1.69% |  2.90e-12 |  (PD_AES_2)
-      160 |   0.9196 |  7.600252e+05 |   +3.95% |  4.83e-12 |      
-      160 |   0.9434 |  7.600252e+05 |   +3.95% |  7.46e-12 |  (PD_AES_1)
-      160 |   0.9585 |  7.600252e+05 |   +3.95% |  4.71e-12 |  (PD_AES_2)
-      170 |   0.9113 |  8.019270e+05 |   +5.51% |  7.84e-12 |      
-      170 |   0.9191 |  8.019270e+05 |   +5.51% |  1.21e-11 |  (PD_AES_1)
-      170 |   0.9395 |  8.019270e+05 |   +5.51% |  7.64e-12 |  (PD_AES_2)
-      180 |   0.8996 |  8.535121e+05 |   +6.43% |  1.27e-11 |      
-      180 |   0.8912 |  8.535121e+05 |   +6.43% |  1.96e-11 |  (PD_AES_1)
-      180 |   0.9150 |  8.535121e+05 |   +6.43% |  1.24e-11 |  (PD_AES_2)
-      190 |   0.8861 |  9.117507e+05 |   +6.82% |  2.05e-11 |      
-      190 |   0.8617 |  9.117507e+05 |   +6.82% |  3.17e-11 |  (PD_AES_1)
-      190 |   0.8893 |  9.117507e+05 |   +6.82% |  2.00e-11 |  (PD_AES_2)
-      200 |   0.8739 |  9.713003e+05 |   +6.53% |  3.32e-11 |      
-      200 |   0.8362 |  9.713003e+05 |   +6.53% |  5.13e-11 |  (PD_AES_1)
-      200 |   0.8666 |  9.713003e+05 |   +6.53% |  3.24e-11 |  (PD_AES_2)
-      210 |   0.8619 |  1.033638e+06 |   +6.42% |  5.38e-11 |      
-      210 |   0.8142 |  1.033638e+06 |   +6.42% |  8.31e-11 |  (PD_AES_1)
-      210 |   0.8428 |  1.033638e+06 |   +6.42% |  5.25e-11 |  (PD_AES_2)
-      220 |   0.8413 |  1.098323e+06 |   +6.26% |  8.70e-11 |      
-      220 |   0.7930 |  1.098323e+06 |   +6.26% |  1.34e-10 |  (PD_AES_1)
-      220 |   0.8189 |  1.098323e+06 |   +6.26% |  8.48e-11 |  (PD_AES_2)
-      230 |   0.8248 |  1.167666e+06 |   +6.31% |  1.41e-10 |      
-      230 |   0.7733 |  1.167666e+06 |   +6.31% |  2.17e-10 |  (PD_AES_1)
-      230 |   0.7952 |  1.167666e+06 |   +6.31% |  1.37e-10 |  (PD_AES_2)
-      240 |   0.7911 |  1.310791e+06 |  +12.26% |  2.26e-10 |      
-      240 |   0.7520 |  1.310791e+06 |  +12.26% |  3.48e-10 |  (PD_AES_1)
-      240 |   0.7751 |  1.310791e+06 |  +12.26% |  2.20e-10 |  (PD_AES_2)
-      250 |   0.7860 |  1.293945e+06 |   -1.29% |  3.67e-10 |      
-      250 |   0.7259 |  1.293945e+06 |   -1.29% |  5.66e-10 |  (PD_AES_1)
-      250 |   0.7552 |  1.293945e+06 |   -1.29% |  3.58e-10 |  (PD_AES_2)
-      260 |   0.7489 |  1.405840e+06 |   +8.65% |  5.90e-10 |      
-      260 |   0.6999 |  1.405840e+06 |   +8.65% |  9.12e-10 |  (PD_AES_1)
-      260 |   0.7313 |  1.405840e+06 |   +8.65% |  5.76e-10 |  (PD_AES_2)
-      270 |   0.7271 |  1.363768e+06 |   -2.99% |  9.61e-10 |      
-      270 |   0.6681 |  1.363768e+06 |   -2.99% |  1.48e-09 |  (PD_AES_1)
-      270 |   0.7074 |  1.363768e+06 |   -2.99% |  9.37e-10 |  (PD_AES_2)
-      280 |   0.6988 |  1.407516e+06 |   +3.21% |  1.55e-09 |      
-      280 |   0.6369 |  1.407516e+06 |   +3.21% |  2.40e-09 |  (PD_AES_1)
-      280 |   0.6824 |  1.407516e+06 |   +3.21% |  1.52e-09 |  (PD_AES_2)
-      290 |   0.6541 |  1.413184e+06 |   +0.40% |  2.52e-09 |      
-      290 |   0.5927 |  1.413184e+06 |   +0.40% |  3.90e-09 |  (PD_AES_1)
-      290 |   0.6539 |  1.413184e+06 |   +0.40% |  2.46e-09 |  (PD_AES_2)
-      300 |   0.6288 |  1.431809e+06 |   +1.32% |  4.10e-09 |      
-      300 |   0.5594 |  1.431809e+06 |   +1.32% |  6.33e-09 |  (PD_AES_1)
-      300 |   0.6131 |  1.431809e+06 |   +1.32% |  4.00e-09 |  (PD_AES_2)
-      310 |   0.6016 |  1.456526e+06 |   +1.73% |  6.65e-09 |      
-      310 |   0.5121 |  1.456526e+06 |   +1.73% |  1.03e-08 |  (PD_AES_1)
-      310 |   0.5794 |  1.456526e+06 |   +1.73% |  6.49e-09 |  (PD_AES_2)
-      320 |   0.5652 |  1.497451e+06 |   +2.81% |  1.08e-08 |      
-      320 |   0.4644 |  1.497451e+06 |   +2.81% |  1.67e-08 |  (PD_AES_1)
-      320 |   0.5376 |  1.497451e+06 |   +2.81% |  1.05e-08 |  (PD_AES_2)
-      330 |   0.5037 |  1.536665e+06 |   +2.62% |  1.75e-08 |      
-      330 |   0.4192 |  1.536665e+06 |   +2.62% |  2.70e-08 |  (PD_AES_1)
-      330 |   0.4983 |  1.536665e+06 |   +2.62% |  1.71e-08 |  (PD_AES_2)
-      340 |   0.4616 |  1.584268e+06 |   +3.10% |  2.84e-08 |      
-      340 |   0.3615 |  1.584268e+06 |   +3.10% |  4.38e-08 |  (PD_AES_1)
-      340 |   0.4475 |  1.584268e+06 |   +3.10% |  2.77e-08 |  (PD_AES_2)
-      350 |   0.3981 |  1.628917e+06 |   +2.82% |  4.60e-08 |      
-      350 |   0.3061 |  1.628917e+06 |   +2.82% |  6.62e-08 |  (PD_AES_1)
-      350 |   0.3825 |  1.628917e+06 |   +2.82% |  4.49e-08 |  (PD_AES_2)
-      360 |   0.3216 |  1.683377e+06 |   +3.34% |  7.30e-08 |      
-      360 |   0.2537 |  1.683377e+06 |   +3.34% |  9.71e-08 |  (PD_AES_1)
-      360 |   0.3117 |  1.683377e+06 |   +3.34% |  6.98e-08 |  (PD_AES_2)
-      370 |   0.2627 |  1.724548e+06 |   +2.45% |  1.07e-07 |      
-      370 |   0.2087 |  1.724548e+06 |   +2.45% |  1.43e-07 |  (PD_AES_1)
-      370 |   0.2593 |  1.724548e+06 |   +2.45% |  1.02e-07 |  (PD_AES_2)
-      380 |   0.2114 |  1.758923e+06 |   +1.99% |  1.57e-07 |      
-      380 |   0.1716 |  1.758923e+06 |   +1.99% |  2.09e-07 |  (PD_AES_1)
-      380 |   0.2123 |  1.758923e+06 |   +1.99% |  1.50e-07 |  (PD_AES_2)
-      390 |   0.1699 |  1.785133e+06 |   +1.49% |  2.31e-07 |      
-      390 |   0.1437 |  1.785133e+06 |   +1.49% |  3.08e-07 |  (PD_AES_1)
-      390 |   0.1749 |  1.785133e+06 |   +1.49% |  2.21e-07 |  (PD_AES_2)
-      400 |   0.1354 |  1.803875e+06 |   +1.05% |  3.40e-07 |      
-      400 |   0.1195 |  1.803875e+06 |   +1.05% |  4.52e-07 |  (PD_AES_1)
-      400 |   0.1476 |  1.803875e+06 |   +1.05% |  3.25e-07 |  (PD_AES_2)
-      410 |   0.1092 |  1.817245e+06 |   +0.74% |  5.00e-07 |      
-      410 |   0.1006 |  1.817245e+06 |   +0.74% |  6.66e-07 |  (PD_AES_1)
-      410 |   0.1230 |  1.817245e+06 |   +0.74% |  4.79e-07 |  (PD_AES_2)
-      411 |   0.0988 |  1.818194e+06 |          |  7.19e-07 | PD_AES_1
+        0 |   0.9875 |  9.028074e+05 |   +0.00% |  1.86e-15 |      
+        0 |   0.9953 |  9.028074e+05 |   +0.00% |  2.72e-15 |  (PD_AES_1)
+        0 |   0.9932 |  9.028074e+05 |   +0.00% |  1.72e-15 |  (PD_AES_2)
+       10 |   0.9635 |  1.056086e+06 |  +16.98% |  2.93e-15 |      
+       10 |   0.9507 |  1.056086e+06 |  +16.98% |  4.30e-15 |  (PD_AES_1)
+       10 |   0.9414 |  1.056086e+06 |  +16.98% |  2.72e-15 |  (PD_AES_2)
+       20 |   0.9453 |  1.077889e+06 |   +2.06% |  4.74e-15 |      
+       20 |   0.9382 |  1.077889e+06 |   +2.06% |  6.97e-15 |  (PD_AES_1)
+       20 |   0.9264 |  1.077889e+06 |   +2.06% |  4.40e-15 |  (PD_AES_2)
+       30 |   0.9579 |  1.028646e+06 |   -4.57% |  7.72e-15 |      
+       30 |   0.9417 |  1.028646e+06 |   -4.57% |  1.13e-14 |  (PD_AES_1)
+       30 |   0.9322 |  1.028646e+06 |   -4.57% |  7.16e-15 |  (PD_AES_2)
+       40 |   0.9629 |  9.781210e+05 |   -4.91% |  1.26e-14 |      
+       40 |   0.9438 |  9.781210e+05 |   -4.91% |  1.85e-14 |  (PD_AES_1)
+       40 |   0.9336 |  9.781210e+05 |   -4.91% |  1.17e-14 |  (PD_AES_2)
+       50 |   0.9613 |  9.593011e+05 |   -1.92% |  2.05e-14 |      
+       50 |   0.9446 |  9.593011e+05 |   -1.92% |  3.01e-14 |  (PD_AES_1)
+       50 |   0.9346 |  9.593011e+05 |   -1.92% |  1.90e-14 |  (PD_AES_2)
+       60 |   0.9618 |  9.308520e+05 |   -2.97% |  3.34e-14 |      
+       60 |   0.9472 |  9.308520e+05 |   -2.97% |  4.90e-14 |  (PD_AES_1)
+       60 |   0.9403 |  9.308520e+05 |   -2.97% |  3.10e-14 |  (PD_AES_2)
+       70 |   0.9632 |  8.921580e+05 |   -4.16% |  5.44e-14 |      
+       70 |   0.9526 |  8.921580e+05 |   -4.16% |  7.98e-14 |  (PD_AES_1)
+       70 |   0.9455 |  8.921580e+05 |   -4.16% |  5.04e-14 |  (PD_AES_2)
+       80 |   0.9631 |  8.549791e+05 |   -4.17% |  8.86e-14 |      
+       80 |   0.9553 |  8.549791e+05 |   -4.17% |  1.30e-13 |  (PD_AES_1)
+       80 |   0.9500 |  8.549791e+05 |   -4.17% |  8.21e-14 |  (PD_AES_2)
+       90 |   0.9587 |  8.186539e+05 |   -4.25% |  1.44e-13 |      
+       90 |   0.9606 |  8.186539e+05 |   -4.25% |  2.12e-13 |  (PD_AES_1)
+       90 |   0.9574 |  8.186539e+05 |   -4.25% |  1.34e-13 |  (PD_AES_2)
+      100 |   0.9498 |  7.837648e+05 |   -4.26% |  2.35e-13 |      
+      100 |   0.9664 |  7.837648e+05 |   -4.26% |  3.45e-13 |  (PD_AES_1)
+      100 |   0.9637 |  7.837648e+05 |   -4.26% |  2.18e-13 |  (PD_AES_2)
+      110 |   0.9411 |  7.532176e+05 |   -3.90% |  3.83e-13 |      
+      110 |   0.9726 |  7.532176e+05 |   -3.90% |  5.62e-13 |  (PD_AES_1)
+      110 |   0.9718 |  7.532176e+05 |   -3.90% |  3.55e-13 |  (PD_AES_2)
+      120 |   0.9358 |  7.321857e+05 |   -2.79% |  6.23e-13 |      
+      120 |   0.9764 |  7.321857e+05 |   -2.79% |  9.15e-13 |  (PD_AES_1)
+      120 |   0.9775 |  7.321857e+05 |   -2.79% |  5.78e-13 |  (PD_AES_2)
+      130 |   0.9327 |  7.200833e+05 |   -1.65% |  1.02e-12 |      
+      130 |   0.9773 |  7.200833e+05 |   -1.65% |  1.49e-12 |  (PD_AES_1)
+      130 |   0.9804 |  7.200833e+05 |   -1.65% |  9.42e-13 |  (PD_AES_2)
+      140 |   0.9333 |  7.197287e+05 |   -0.05% |  1.65e-12 |      
+      140 |   0.9727 |  7.197287e+05 |   -0.05% |  2.43e-12 |  (PD_AES_1)
+      140 |   0.9781 |  7.197287e+05 |   -0.05% |  1.53e-12 |  (PD_AES_2)
+      150 |   0.9307 |  7.328567e+05 |   +1.82% |  2.69e-12 |      
+      150 |   0.9621 |  7.328567e+05 |   +1.82% |  3.95e-12 |  (PD_AES_1)
+      150 |   0.9714 |  7.328567e+05 |   +1.82% |  2.50e-12 |  (PD_AES_2)
+      160 |   0.9244 |  7.619697e+05 |   +3.97% |  4.37e-12 |      
+      160 |   0.9443 |  7.619697e+05 |   +3.97% |  6.42e-12 |  (PD_AES_1)
+      160 |   0.9593 |  7.619697e+05 |   +3.97% |  4.05e-12 |  (PD_AES_2)
+      170 |   0.9149 |  8.044652e+05 |   +5.58% |  7.09e-12 |      
+      170 |   0.9206 |  8.044652e+05 |   +5.58% |  1.04e-11 |  (PD_AES_1)
+      170 |   0.9404 |  8.044652e+05 |   +5.58% |  6.57e-12 |  (PD_AES_2)
+      180 |   0.9020 |  8.567644e+05 |   +6.50% |  1.15e-11 |      
+      180 |   0.8956 |  8.567644e+05 |   +6.50% |  1.69e-11 |  (PD_AES_1)
+      180 |   0.9168 |  8.567644e+05 |   +6.50% |  1.06e-11 |  (PD_AES_2)
+      190 |   0.8923 |  9.163621e+05 |   +6.96% |  1.86e-11 |      
+      190 |   0.8680 |  9.163621e+05 |   +6.96% |  2.73e-11 |  (PD_AES_1)
+      190 |   0.8926 |  9.163621e+05 |   +6.96% |  1.72e-11 |  (PD_AES_2)
+      200 |   0.8839 |  9.767159e+05 |   +6.59% |  3.01e-11 |      
+      200 |   0.8444 |  9.767159e+05 |   +6.59% |  4.41e-11 |  (PD_AES_1)
+      200 |   0.8697 |  9.767159e+05 |   +6.59% |  2.79e-11 |  (PD_AES_2)
+      210 |   0.8753 |  1.029455e+06 |   +5.40% |  4.87e-11 |      
+      210 |   0.8239 |  1.029455e+06 |   +5.40% |  7.15e-11 |  (PD_AES_1)
+      210 |   0.8474 |  1.029455e+06 |   +5.40% |  4.51e-11 |  (PD_AES_2)
+      220 |   0.8598 |  1.075498e+06 |   +4.47% |  7.89e-11 |      
+      220 |   0.8054 |  1.075498e+06 |   +4.47% |  1.16e-10 |  (PD_AES_1)
+      220 |   0.8276 |  1.075498e+06 |   +4.47% |  7.32e-11 |  (PD_AES_2)
+      230 |   0.8409 |  1.164202e+06 |   +8.25% |  1.27e-10 |      
+      230 |   0.7876 |  1.164202e+06 |   +8.25% |  1.87e-10 |  (PD_AES_1)
+      230 |   0.8079 |  1.164202e+06 |   +8.25% |  1.18e-10 |  (PD_AES_2)
+      240 |   0.8066 |  1.288266e+06 |  +10.66% |  2.04e-10 |      
+      240 |   0.7691 |  1.288266e+06 |  +10.66% |  3.00e-10 |  (PD_AES_1)
+      240 |   0.7926 |  1.288266e+06 |  +10.66% |  1.90e-10 |  (PD_AES_2)
+      250 |   0.7986 |  1.300541e+06 |   +0.95% |  3.32e-10 |      
+      250 |   0.7418 |  1.300541e+06 |   +0.95% |  4.88e-10 |  (PD_AES_1)
+      250 |   0.7703 |  1.300541e+06 |   +0.95% |  3.08e-10 |  (PD_AES_2)
+      260 |   0.7704 |  1.392982e+06 |   +7.11% |  5.35e-10 |      
+      260 |   0.7187 |  1.392982e+06 |   +7.11% |  7.86e-10 |  (PD_AES_1)
+      260 |   0.7482 |  1.392982e+06 |   +7.11% |  4.96e-10 |  (PD_AES_2)
+      270 |   0.7475 |  1.398884e+06 |   +0.42% |  8.69e-10 |      
+      270 |   0.6855 |  1.398884e+06 |   +0.42% |  1.28e-09 |  (PD_AES_1)
+      270 |   0.7250 |  1.398884e+06 |   +0.42% |  8.06e-10 |  (PD_AES_2)
+      280 |   0.7270 |  1.420232e+06 |   +1.53% |  1.41e-09 |      
+      280 |   0.6493 |  1.420232e+06 |   +1.53% |  2.07e-09 |  (PD_AES_1)
+      280 |   0.6958 |  1.420232e+06 |   +1.53% |  1.31e-09 |  (PD_AES_2)
+      290 |   0.6841 |  1.447842e+06 |   +1.94% |  2.29e-09 |      
+      290 |   0.6091 |  1.447842e+06 |   +1.94% |  3.36e-09 |  (PD_AES_1)
+      290 |   0.6682 |  1.447842e+06 |   +1.94% |  2.12e-09 |  (PD_AES_2)
+      300 |   0.6552 |  1.478374e+06 |   +2.11% |  3.71e-09 |      
+      300 |   0.5730 |  1.478374e+06 |   +2.11% |  5.45e-09 |  (PD_AES_1)
+      300 |   0.6312 |  1.478374e+06 |   +2.11% |  3.44e-09 |  (PD_AES_2)
+      310 |   0.6221 |  1.515445e+06 |   +2.51% |  6.01e-09 |      
+      310 |   0.5272 |  1.515445e+06 |   +2.51% |  8.83e-09 |  (PD_AES_1)
+      310 |   0.5985 |  1.515445e+06 |   +2.51% |  5.58e-09 |  (PD_AES_2)
+      320 |   0.5747 |  1.556262e+06 |   +2.69% |  9.75e-09 |      
+      320 |   0.4837 |  1.556262e+06 |   +2.69% |  1.43e-08 |  (PD_AES_1)
+      320 |   0.5603 |  1.556262e+06 |   +2.69% |  9.05e-09 |  (PD_AES_2)
+      330 |   0.5342 |  1.607196e+06 |   +3.27% |  1.58e-08 |      
+      330 |   0.4308 |  1.607196e+06 |   +3.27% |  2.32e-08 |  (PD_AES_1)
+      330 |   0.5136 |  1.607196e+06 |   +3.27% |  1.47e-08 |  (PD_AES_2)
+      340 |   0.4696 |  1.664991e+06 |   +3.60% |  2.56e-08 |      
+      340 |   0.3740 |  1.664991e+06 |   +3.60% |  3.76e-08 |  (PD_AES_1)
+      340 |   0.4669 |  1.664991e+06 |   +3.60% |  2.37e-08 |  (PD_AES_2)
+      350 |   0.4022 |  1.723870e+06 |   +3.54% |  4.14e-08 |      
+      350 |   0.3128 |  1.723870e+06 |   +3.54% |  5.78e-08 |  (PD_AES_1)
+      350 |   0.4015 |  1.723870e+06 |   +3.54% |  3.84e-08 |  (PD_AES_2)
+      360 |   0.3178 |  1.785412e+06 |   +3.57% |  6.50e-08 |      
+      360 |   0.2602 |  1.785412e+06 |   +3.57% |  8.48e-08 |  (PD_AES_1)
+      360 |   0.3198 |  1.785412e+06 |   +3.57% |  6.09e-08 |  (PD_AES_2)
+      370 |   0.2562 |  1.823777e+06 |   +2.15% |  9.54e-08 |      
+      370 |   0.2147 |  1.823777e+06 |   +2.15% |  1.24e-07 |  (PD_AES_1)
+      370 |   0.2645 |  1.823777e+06 |   +2.15% |  8.94e-08 |  (PD_AES_2)
+      380 |   0.2091 |  1.853267e+06 |   +1.62% |  1.40e-07 |      
+      380 |   0.1772 |  1.853267e+06 |   +1.62% |  1.83e-07 |  (PD_AES_1)
+      380 |   0.2157 |  1.853267e+06 |   +1.62% |  1.31e-07 |  (PD_AES_2)
+      390 |   0.1703 |  1.874076e+06 |   +1.12% |  2.06e-07 |      
+      390 |   0.1493 |  1.874076e+06 |   +1.12% |  2.69e-07 |  (PD_AES_1)
+      390 |   0.1791 |  1.874076e+06 |   +1.12% |  1.93e-07 |  (PD_AES_2)
+      400 |   0.1392 |  1.889275e+06 |   +0.81% |  3.03e-07 |      
+      400 |   0.1243 |  1.889275e+06 |   +0.81% |  3.95e-07 |  (PD_AES_1)
+      400 |   0.1493 |  1.889275e+06 |   +0.81% |  2.84e-07 |  (PD_AES_2)
+      410 |   0.1139 |  1.900286e+06 |   +0.58% |  4.46e-07 |      
+      410 |   0.1049 |  1.900286e+06 |   +0.58% |  5.82e-07 |  (PD_AES_1)
+      410 |   0.1252 |  1.900286e+06 |   +0.58% |  4.18e-07 |  (PD_AES_2)
+      413 |   0.0991 |  1.902969e+06 |          |  6.79e-07 | PD_AES_1
 ---------------------------------------------------------------
-[INFO GPL-1016] Region 'PD_AES_1' placement finished at iteration 411
-[INFO GPL-1002] Placed Cell Area            121017.3152
+[INFO GPL-1016] Region 'PD_AES_1' placement finished at iteration 413
+[INFO GPL-1002] Placed Cell Area            137986.2832
 [INFO GPL-1003] Available Free Area         150144.0000
-[INFO GPL-1004] Minimum Feasible Density        0.8100 (cell_area / free_area)
+[INFO GPL-1004] Minimum Feasible Density        0.9200 (cell_area / free_area)
 [INFO GPL-1006]   Suggested Target Densities:
-[INFO GPL-1007]     - For 90% usage of free space: 0.8956
-[INFO GPL-1008]     - For 80% usage of free space: 1.0075
-      415 |   0.0994 |  1.821588e+06 |          |  6.31e-07 |      
+[INFO GPL-1007]     - For 90% usage of free space: 1.0211
+[INFO GPL-1008]     - For 80% usage of free space: 1.1488
+      417 |   0.0988 |  1.905026e+06 |          |  6.08e-07 |      
 ---------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 415
-[INFO GPL-1002] Placed Cell Area            126782.8448
+[INFO GPL-1001] Global placement finished at iteration 417
+[INFO GPL-1002] Placed Cell Area            143938.4219
 [INFO GPL-1003] Available Free Area         1493582.4640
-[INFO GPL-1004] Minimum Feasible Density        0.0900 (cell_area / free_area)
+[INFO GPL-1004] Minimum Feasible Density        0.1000 (cell_area / free_area)
 [INFO GPL-1006]   Suggested Target Densities:
-[INFO GPL-1007]     - For 90% usage of free space: 0.0943
-[INFO GPL-1008]     - For 80% usage of free space: 0.1061
-[INFO GPL-1009]     - For 50% usage of free space: 0.1698
-      420 |   0.1011 |  1.823432e+06 |   +0.34% |  7.05e-07 |  (PD_AES_2)
-      421 |   0.0989 |  1.823790e+06 |          |  7.61e-07 | PD_AES_2
+[INFO GPL-1007]     - For 90% usage of free space: 0.1071
+[INFO GPL-1008]     - For 80% usage of free space: 0.1205
+[INFO GPL-1009]     - For 50% usage of free space: 0.1927
+      420 |   0.1037 |  1.906097e+06 |   +0.31% |  6.16e-07 |  (PD_AES_2)
+      422 |   0.0996 |  1.906743e+06 |          |  6.92e-07 | PD_AES_2
 ---------------------------------------------------------------
-[INFO GPL-1016] Region 'PD_AES_2' placement finished at iteration 421
-[INFO GPL-1002] Placed Cell Area            121017.3152
+[INFO GPL-1016] Region 'PD_AES_2' placement finished at iteration 422
+[INFO GPL-1002] Placed Cell Area            137986.2832
 [INFO GPL-1003] Available Free Area         150144.0000
-[INFO GPL-1004] Minimum Feasible Density        0.8100 (cell_area / free_area)
+[INFO GPL-1004] Minimum Feasible Density        0.9200 (cell_area / free_area)
 [INFO GPL-1006]   Suggested Target Densities:
-[INFO GPL-1007]     - For 90% usage of free space: 0.8956
-[INFO GPL-1008]     - For 80% usage of free space: 1.0075
-[INFO GPL-1014] Final placement area: 368817.48 (+0.00%)
+[INFO GPL-1007]     - For 90% usage of free space: 1.0211
+[INFO GPL-1008]     - For 80% usage of free space: 1.1488
+[INFO GPL-1014] Final placement area: 419910.99 (+0.00%)
 Placement Analysis
 ---------------------------------
-total displacement     120362.1 u
-average displacement        2.3 u
-max displacement           24.2 u
-original HPWL         1824487.2 u
-legalized HPWL        1915616.1 u
+total displacement     123063.9 u
+average displacement        2.4 u
+max displacement           93.1 u
+original HPWL         1907436.6 u
+legalized HPWL        2004139.2 u
 delta HPWL                    5 %
 
 Detailed placement improvement.
@@ -277,32 +281,32 @@ Detailed placement improvement.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
 [INFO DPL-0303] Running algorithm for independent set matching.
 [INFO DPL-0300] Set matching objective is wirelength.
-[INFO DPL-0301] Pass   1 of matching; objective is 1.915784e+09.
-[INFO DPL-0302] End of matching; objective is 1.911470e+09, improvement is 0.23 percent.
+[INFO DPL-0301] Pass   1 of matching; objective is 2.004273e+09.
+[INFO DPL-0302] End of matching; objective is 1.998582e+09, improvement is 0.28 percent.
 [INFO DPL-0303] Running algorithm for global swaps.
-[INFO DPL-0306] Pass   1 of global swaps; hpwl is 1.891021e+09.
-[INFO DPL-0306] Pass   2 of global swaps; hpwl is 1.886322e+09.
-[INFO DPL-0307] End of global swaps; objective is 1.886322e+09, improvement is 1.32 percent.
+[INFO DPL-0306] Pass   1 of global swaps; hpwl is 1.969614e+09.
+[INFO DPL-0306] Pass   2 of global swaps; hpwl is 1.961495e+09.
+[INFO DPL-0307] End of global swaps; objective is 1.961495e+09, improvement is 1.86 percent.
 [INFO DPL-0303] Running algorithm for vertical swaps.
-[INFO DPL-0308] Pass   1 of vertical swaps; hpwl is 1.881404e+09.
-[INFO DPL-0309] End of vertical swaps; objective is 1.881404e+09, improvement is 0.26 percent.
+[INFO DPL-0308] Pass   1 of vertical swaps; hpwl is 1.954266e+09.
+[INFO DPL-0309] End of vertical swaps; objective is 1.954266e+09, improvement is 0.37 percent.
 [INFO DPL-0303] Running algorithm for reordering.
-[INFO DPL-0304] Pass   1 of reordering; objective is 1.869628e+09.
-[INFO DPL-0305] End of reordering; objective is 1.869628e+09, improvement is 0.63 percent.
+[INFO DPL-0304] Pass   1 of reordering; objective is 1.939193e+09.
+[INFO DPL-0305] End of reordering; objective is 1.939193e+09, improvement is 0.77 percent.
 [INFO DPL-0303] Running algorithm for random improvement.
 [INFO DPL-0324] Random improver is using random generator.
 [INFO DPL-0325] Random improver is using hpwl objective.
 [INFO DPL-0326] Random improver cost string is (a).
 [INFO DPL-0332] End of pass, Generator random called 1027700 times.
-[INFO DPL-0335] Generator random, Cumulative attempts 1027700, swaps 724432, moves 248048 since last reset.
-[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 1.866026e+09, Scratch cost 1.854838e+09, Incremental cost 1.854838e+09, Mismatch? N
-[INFO DPL-0338] End of pass, Total cost is 1.854838e+09.
-[INFO DPL-0327] Pass   1 of random improver; improvement in cost is 0.60 percent.
-[INFO DPL-0328] End of random improver; improvement is 0.599579 percent.
+[INFO DPL-0335] Generator random, Cumulative attempts 1027700, swaps 700503, moves 278427 since last reset.
+[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 1.935633e+09, Scratch cost 1.917561e+09, Incremental cost 1.917561e+09, Mismatch? N
+[INFO DPL-0338] End of pass, Total cost is 1.917561e+09.
+[INFO DPL-0327] Pass   1 of random improver; improvement in cost is 0.93 percent.
+[INFO DPL-0328] End of random improver; improvement is 0.933635 percent.
 [INFO DPL-0380] Cell flipping.
 [INFO DPL-0382] Changed 0 cell orientations for row compatibility.
-[INFO DPL-0383] Performed 15968 cell flips.
-[INFO DPL-0384] End of flipping; objective is 1.836235e+09, improvement is 1.20 percent.
+[INFO DPL-0383] Performed 15865 cell flips.
+[INFO DPL-0384] End of flipping; objective is 1.898160e+09, improvement is 1.20 percent.
 [INFO DPL-0313] Found 0 cells in wrong regions.
 [INFO DPL-0315] Found 0 row alignment problems.
 [INFO DPL-0314] Found 0 site alignment problems.
@@ -310,8 +314,8 @@ Detailed placement improvement.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
 Detailed Improvement Results
 ------------------------------------------
-Original HPWL          1915616.1 u ( 1035291.4,   880324.7)
-Final HPWL             1835992.2 u (  986082.2,   849909.9)
-Delta HPWL                  -4.2 % (      -4.8,       -3.5)
+Original HPWL          2004139.2 u ( 1086369.2,   917770.0)
+Final HPWL             1897910.3 u ( 1024122.8,   873787.5)
+Delta HPWL                  -5.3 % (      -5.7,       -4.8)
 
 No differences found.
