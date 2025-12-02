@@ -58,7 +58,7 @@ proc generate_ram_netlist { args } {
     }
     set tapcell $keys(-tapcell)
   } else {
-    utl::info RAM 22 "No tapcell is specified.
+    utl::warn RAM 22 "No tapcell is specified.
         The generated layout may not pass Design Rule Checks."
   }
 

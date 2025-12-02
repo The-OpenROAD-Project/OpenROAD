@@ -177,7 +177,7 @@ std::unique_ptr<Layout> RamGen::generateTapColumn(const int word_count,
                                                   const int tapcell_col)
 {
   auto tapcell_layout = std::make_unique<Layout>(odb::vertical);
-  for (int i = 0; i < word_count; ++i) {
+  for (int i = 0; i <= word_count; ++i) {
     auto tapcell_cell = std::make_unique<Cell>();
     makeCellInst(tapcell_cell.get(),
                  "tapcell",
@@ -575,9 +575,6 @@ void RamGen::generate(const int bytes_per_word,
       int nearest_tap
           = (max_tap_dist / ram_grid.getWidth()) * ram_grid.getLayoutWidth(0);
       int tapcell_count = 0;
-      // x distance between transistor and tapcell means 2x distance between
-      // tapcells
-      max_tap_dist *= 2;
       // iterates through each of the columns
       for (int col = 0; col < ram_grid.numLayouts(); ++col) {
         if (nearest_tap + ram_grid.getLayoutWidth(col) >= max_tap_dist) {
@@ -591,7 +588,7 @@ void RamGen::generate(const int bytes_per_word,
         nearest_tap += ram_grid.getLayoutWidth(col);
       }
       // check for last column in the grid
-      if (nearest_tap >= max_tap_dist / 2) {
+      if (nearest_tap >= max_tap_dist) {
         auto tapcell_layout = generateTapColumn(word_count, tapcell_count);
         ram_grid.addLayout(std::move(tapcell_layout));
       }
