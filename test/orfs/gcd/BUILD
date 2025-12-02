@@ -29,7 +29,11 @@ orfs_flow(
 
 STAGES = [
     "source",
+    # _source tests original source to source transition,
+    # which checks that the eqy setup works.
     "source",
+    # _synth tests synthesis output, and so on
+    # for the next stages.
     "synth",
     "floorplan",
     "place",
