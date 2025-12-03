@@ -291,8 +291,8 @@ with it. To assure that, use dbNetwork::connectPin
 
 void dbITerm::connect(dbNet* db_net, dbModNet* db_mod_net)
 {
-  connect(db_net);
   connect(db_mod_net);
+  connect(db_net);
 }
 
 void dbITerm::connect(dbNet* net_)
