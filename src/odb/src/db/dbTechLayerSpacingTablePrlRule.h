@@ -25,7 +25,7 @@ struct dbTechLayerSpacingTablePrlRuleFlags
   bool wrong_direction_ : 1;
   bool same_mask_ : 1;
   bool exceept_eol_ : 1;
-  uint spare_bits_ : 29;
+  uint spare_bits : 29;
 };
 
 class _dbTechLayerSpacingTablePrlRule : public _dbObject

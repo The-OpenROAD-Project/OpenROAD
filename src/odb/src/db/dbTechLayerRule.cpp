@@ -153,7 +153,7 @@ dbTechNonDefaultRule* dbTechLayerRule::getNonDefaultRule()
 
   if (isBlockRule()) {
     _dbBlock* block = rule->getBlock();
-    return (dbTechNonDefaultRule*) block->_non_default_rule_tbl->getPtr(
+    return (dbTechNonDefaultRule*) block->non_default_rule_tbl_->getPtr(
         rule->_non_default_rule);
   }
   _dbTech* tech = rule->getTech();
@@ -260,7 +260,7 @@ dbTechLayerRule* dbTechLayerRule::create(dbTechNonDefaultRule* rule_,
 
   if (rule->flags_._block_rule) {
     _dbBlock* block = rule->getBlock();
-    return make_layer(block->_layer_rule_tbl);
+    return make_layer(block->layer_rule_tbl_);
   }
   _dbTech* tech = rule->getTech();
   return make_layer(tech->_layer_rule_tbl);
@@ -275,7 +275,7 @@ dbTechLayerRule* dbTechLayerRule::getTechLayerRule(dbTech* tech_, uint dbid_)
 dbTechLayerRule* dbTechLayerRule::getTechLayerRule(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbTechLayerRule*) block->_layer_rule_tbl->getPtr(dbid_);
+  return (dbTechLayerRule*) block->layer_rule_tbl_->getPtr(dbid_);
 }
 
 void _dbTechLayerRule::collectMemInfo(MemInfo& info)

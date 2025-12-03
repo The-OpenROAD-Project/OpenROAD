@@ -105,7 +105,7 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   }
   if (db_->isSchema(db_schema_db_remove_hash)) {
     _dbBlock* block = (_dbBlock*) (((dbDatabase*) db_)->getChip()->getBlock());
-    _dbModule* module = block->_module_tbl->getPtr(obj._parent);
+    _dbModule* module = block->module_tbl_->getPtr(obj._parent);
     if (obj.name_) {
       module->_modinst_hash[obj.name_] = obj.getId();
     }
@@ -159,7 +159,7 @@ dbModule* dbModInst::getParent() const
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModule*) par->_module_tbl->getPtr(obj->_parent);
+  return (dbModule*) par->module_tbl_->getPtr(obj->_parent);
 }
 
 dbModule* dbModInst::getMaster() const
@@ -169,7 +169,7 @@ dbModule* dbModInst::getMaster() const
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModule*) par->_module_tbl->getPtr(obj->_master);
+  return (dbModule*) par->module_tbl_->getPtr(obj->_master);
 }
 
 dbGroup* dbModInst::getGroup() const
@@ -179,7 +179,7 @@ dbGroup* dbModInst::getGroup() const
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbGroup*) par->_group_tbl->getPtr(obj->_group);
+  return (dbGroup*) par->group_tbl_->getPtr(obj->_group);
 }
 
 // User Code Begin dbModInstPublicMethods
@@ -201,9 +201,9 @@ dbModInst* dbModInst::create(dbModule* parentModule,
     return nullptr;
   }
 
-  _dbModInst* modinst = block->_modinst_tbl->create();
+  _dbModInst* modinst = block->modinst_tbl_->create();
 
-  if (block->_journal) {
+  if (block->journal_) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -211,13 +211,13 @@ dbModInst* dbModInst::create(dbModule* parentModule,
                "ECO: create dbModInst {} at id {}",
                name,
                modinst->getId());
-    block->_journal->beginAction(dbJournal::kCreateObject);
-    block->_journal->pushParam(dbModInstObj);
-    block->_journal->pushParam(name);
-    block->_journal->pushParam(modinst->getId());
-    block->_journal->pushParam(module->getId());
-    block->_journal->pushParam(master->getId());
-    block->_journal->endAction();
+    block->journal_->beginAction(dbJournal::kCreateObject);
+    block->journal_->pushParam(dbModInstObj);
+    block->journal_->pushParam(name);
+    block->journal_->pushParam(modinst->getId());
+    block->journal_->pushParam(module->getId());
+    block->journal_->pushParam(master->getId());
+    block->journal_->endAction();
   }
 
   modinst->name_ = safe_strdup(name);
@@ -229,7 +229,7 @@ dbModInst* dbModInst::create(dbModule* parentModule,
   master->_mod_inst = modinst->getOID();
   module->_modinst_hash[modinst->name_] = modinst->getOID();
 
-  for (dbBlockCallBackObj* cb : block->_callbacks) {
+  for (dbBlockCallBackObj* cb : block->callbacks_) {
     cb->inDbModInstCreate((dbModInst*) modinst);
   }
 
@@ -257,7 +257,7 @@ void dbModInst::destroy(dbModInst* modinst)
     moditerm_itr = dbModITerm::destroy(moditerm_itr);
   }
 
-  for (auto cb : _block->_callbacks) {
+  for (auto cb : _block->callbacks_) {
     cb->inDbModInstDestroy(modinst);
   }
 
@@ -269,7 +269,7 @@ void dbModInst::destroy(dbModInst* modinst)
   _dbModInst* prev = nullptr;
   uint cur = _module->_modinsts;
   while (cur) {
-    _dbModInst* c = _block->_modinst_tbl->getPtr(cur);
+    _dbModInst* c = _block->modinst_tbl_->getPtr(cur);
     if (cur == id) {
       if (prev == nullptr) {
         _module->_modinsts = _modinst->_module_next;
@@ -285,7 +285,7 @@ void dbModInst::destroy(dbModInst* modinst)
   dbProperty::destroyProperties(_modinst);
 
   // Assure that dbModInst obj is restored first by being journalled last.
-  if (_block->_journal) {
+  if (_block->journal_) {
     debugPrint(_block->getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -293,14 +293,14 @@ void dbModInst::destroy(dbModInst* modinst)
                "ECO: delete dbModInst {} at id {}",
                modinst->getName(),
                modinst->getId());
-    _block->_journal->beginAction(dbJournal::kDeleteObject);
-    _block->_journal->pushParam(dbModInstObj);
-    _block->_journal->pushParam(modinst->getName());
-    _block->_journal->pushParam(modinst->getId());
-    _block->_journal->pushParam(_module->getId());
-    _block->_journal->pushParam(_master->getId());
-    _block->_journal->pushParam(_modinst->_group);
-    _block->_journal->endAction();
+    _block->journal_->beginAction(dbJournal::kDeleteObject);
+    _block->journal_->pushParam(dbModInstObj);
+    _block->journal_->pushParam(modinst->getName());
+    _block->journal_->pushParam(modinst->getId());
+    _block->journal_->pushParam(_module->getId());
+    _block->journal_->pushParam(_master->getId());
+    _block->journal_->pushParam(_modinst->_group);
+    _block->journal_->endAction();
   }
 
   // unlink from parent end
@@ -310,7 +310,7 @@ void dbModInst::destroy(dbModInst* modinst)
 
   _dbModule* _parent = (_dbModule*) (modinst->getParent());
   _parent->_modinst_hash.erase(modinst->getName());
-  _block->_modinst_tbl->destroy(_modinst);
+  _block->modinst_tbl_->destroy(_modinst);
 }
 
 dbSet<dbModInst>::iterator dbModInst::destroy(dbSet<dbModInst>::iterator& itr)
@@ -325,13 +325,13 @@ dbSet<dbModITerm> dbModInst::getModITerms()
 {
   _dbModInst* _mod_inst = (_dbModInst*) this;
   _dbBlock* _block = (_dbBlock*) _mod_inst->getOwner();
-  return dbSet<dbModITerm>(_mod_inst, _block->_module_modinstmoditerm_itr);
+  return dbSet<dbModITerm>(_mod_inst, _block->module_modinstmoditerm_itr_);
 }
 
 dbModInst* dbModInst::getModInst(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbModInst*) block->_modinst_tbl->getPtr(dbid_);
+  return (dbModInst*) block->modinst_tbl_->getPtr(dbid_);
 }
 
 std::string dbModInst::getHierarchicalName() const
@@ -356,7 +356,7 @@ dbModITerm* dbModInst::findModITerm(const char* name)
   auto it = obj->_moditerm_hash.find(name);
   if (it != obj->_moditerm_hash.end()) {
     auto db_id = (*it).second;
-    return (dbModITerm*) par->_moditerm_tbl->getPtr(db_id);
+    return (dbModITerm*) par->moditerm_tbl_->getPtr(db_id);
   }
   return nullptr;
 }

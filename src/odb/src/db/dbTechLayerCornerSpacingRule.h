@@ -30,7 +30,7 @@ struct dbTechLayerCornerSpacingRuleFlags
   bool except_same_net_ : 1;
   bool except_same_metal_ : 1;
   bool corner_to_corner_ : 1;
-  uint spare_bits_ : 19;
+  uint spare_bits : 19;
 };
 
 class _dbTechLayerCornerSpacingRule : public _dbObject

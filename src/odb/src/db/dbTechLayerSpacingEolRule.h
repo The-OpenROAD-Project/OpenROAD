@@ -58,7 +58,7 @@ struct dbTechLayerSpacingEolRuleFlags
   bool min_adjacent_length_valid_ : 1;
   bool two_min_adj_length_valid_ : 1;
   bool to_notch_length_valid_ : 1;
-  uint spare_bits_ : 23;
+  uint spare_bits : 23;
 };
 
 class _dbTechLayerSpacingEolRule : public _dbObject

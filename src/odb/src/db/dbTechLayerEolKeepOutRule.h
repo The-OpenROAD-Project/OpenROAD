@@ -19,7 +19,7 @@ struct dbTechLayerEolKeepOutRuleFlags
   bool class_valid_ : 1;
   bool corner_only_ : 1;
   bool except_within_ : 1;
-  uint spare_bits_ : 29;
+  uint spare_bits : 29;
 };
 
 class _dbTechLayerEolKeepOutRule : public _dbObject

@@ -183,17 +183,17 @@ next_object:
   switch (object->getObjectType()) {
     case dbDatabaseObj: {
       _dbDatabase* db = (_dbDatabase*) object;
-      return db->_prop_itr;
+      return db->prop_itr_;
     }
 
     case dbChipObj: {
       _dbChip* chip = (_dbChip*) object;
-      return chip->_prop_itr;
+      return chip->prop_itr_;
     }
 
     case dbBlockObj: {
       _dbBlock* blk = (_dbBlock*) object;
-      return blk->_prop_itr;
+      return blk->prop_itr_;
     }
 
     case dbLibObj: {
@@ -221,17 +221,17 @@ next_object:
   switch (object->getObjectType()) {
     case dbDatabaseObj: {
       _dbDatabase* db = (_dbDatabase*) object;
-      return db->_name_cache;
+      return db->name_cache_;
     }
 
     case dbChipObj: {
       _dbChip* chip = (_dbChip*) object;
-      return chip->_name_cache;
+      return chip->name_cache_;
     }
 
     case dbBlockObj: {
       _dbBlock* blk = (_dbBlock*) object;
-      return blk->_name_cache;
+      return blk->name_cache_;
     }
 
     case dbLibObj: {
@@ -264,12 +264,12 @@ next_object:
 
     case dbChipObj: {
       _dbChip* chip = (_dbChip*) object;
-      return chip->_prop_tbl;
+      return chip->prop_tbl_;
     }
 
     case dbBlockObj: {
       _dbBlock* blk = (_dbBlock*) object;
-      return blk->_prop_tbl;
+      return blk->prop_tbl_;
     }
 
     case dbLibObj: {

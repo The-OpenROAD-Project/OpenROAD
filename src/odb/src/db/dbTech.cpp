@@ -827,7 +827,7 @@ dbTech* dbTech::create(dbDatabase* db_, const char* name)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
 
-  _dbTech* tech = db->_tech_tbl->create();
+  _dbTech* tech = db->tech_tbl_->create();
   tech->name_ = name;
   return (dbTech*) tech;
 }
@@ -835,7 +835,7 @@ dbTech* dbTech::create(dbDatabase* db_, const char* name)
 dbTech* dbTech::getTech(dbDatabase* db_, uint dbid_)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
-  return (dbTech*) db->_tech_tbl->getPtr(dbid_);
+  return (dbTech*) db->tech_tbl_->getPtr(dbid_);
 }
 
 void dbTech::destroy(dbTech* tech_)
@@ -843,7 +843,7 @@ void dbTech::destroy(dbTech* tech_)
   _dbTech* tech = (_dbTech*) tech_;
   _dbDatabase* db = tech->getDatabase();
   dbProperty::destroyProperties(tech);
-  db->_tech_tbl->destroy(tech);
+  db->tech_tbl_->destroy(tech);
 }
 
 void _dbTech::collectMemInfo(MemInfo& info)

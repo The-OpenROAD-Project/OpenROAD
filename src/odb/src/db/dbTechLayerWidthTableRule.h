@@ -17,7 +17,7 @@ struct dbTechLayerWidthTableRuleFlags
 {
   bool wrong_direction_ : 1;
   bool orthogonal_ : 1;
-  uint spare_bits_ : 30;
+  uint spare_bits : 30;
 };
 
 class _dbTechLayerWidthTableRule : public _dbObject

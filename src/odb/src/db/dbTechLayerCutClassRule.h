@@ -17,7 +17,7 @@ struct dbTechLayerCutClassRuleFlags
 {
   bool length_valid_ : 1;
   bool cuts_valid_ : 1;
-  uint spare_bits_ : 30;
+  uint spare_bits : 30;
 };
 
 class _dbTechLayerCutClassRule : public _dbObject

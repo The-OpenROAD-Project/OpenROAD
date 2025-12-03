@@ -126,8 +126,8 @@ bool _dbObstruction::operator<(const _dbObstruction& rhs) const
 {
   _dbBlock* lhs_block = (_dbBlock*) getOwner();
   _dbBlock* rhs_block = (_dbBlock*) rhs.getOwner();
-  _dbBox* lhs_box = lhs_block->_box_tbl->getPtr(_bbox);
-  _dbBox* rhs_box = rhs_block->_box_tbl->getPtr(rhs._bbox);
+  _dbBox* lhs_box = lhs_block->box_tbl_->getPtr(_bbox);
+  _dbBox* rhs_box = rhs_block->box_tbl_->getPtr(rhs._bbox);
 
   if (*lhs_box < *rhs_box) {
     return true;
@@ -137,8 +137,8 @@ bool _dbObstruction::operator<(const _dbObstruction& rhs) const
     if (_inst && rhs._inst) {
       _dbBlock* lhs_blk = (_dbBlock*) getOwner();
       _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-      _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
-      _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
+      _dbInst* lhs_inst = lhs_blk->inst_tbl_->getPtr(_inst);
+      _dbInst* rhs_inst = rhs_blk->inst_tbl_->getPtr(rhs._inst);
       int r = strcmp(lhs_inst->name_, rhs_inst->name_);
 
       if (r < 0) {
@@ -232,7 +232,7 @@ dbBox* dbObstruction::getBBox()
 {
   _dbObstruction* obs = (_dbObstruction*) this;
   _dbBlock* block = (_dbBlock*) obs->getOwner();
-  return (dbBox*) block->_box_tbl->getPtr(obs->_bbox);
+  return (dbBox*) block->box_tbl_->getPtr(obs->_bbox);
 }
 
 dbInst* dbObstruction::getInstance()
@@ -244,7 +244,7 @@ dbInst* dbObstruction::getInstance()
   }
 
   _dbBlock* block = (_dbBlock*) obs->getOwner();
-  return (dbInst*) block->_inst_tbl->getPtr(obs->_inst);
+  return (dbInst*) block->inst_tbl_->getPtr(obs->_inst);
 }
 
 void dbObstruction::setSlotObstruction()
@@ -362,13 +362,13 @@ dbObstruction* dbObstruction::create(dbBlock* block_,
   _dbTechLayer* layer = (_dbTechLayer*) layer_;
   _dbInst* inst = (_dbInst*) inst_;
 
-  _dbObstruction* obs = block->_obstruction_tbl->create();
+  _dbObstruction* obs = block->obstruction_tbl_->create();
 
   if (inst) {
     obs->_inst = inst->getOID();
   }
 
-  _dbBox* box = block->_box_tbl->create();
+  _dbBox* box = block->box_tbl_->create();
   box->shape_.rect.init(x1, y1, x2, y2);
   box->flags_.owner_type = dbBoxOwner::OBSTRUCTION;
   box->owner_ = obs->getOID();
@@ -377,7 +377,7 @@ dbObstruction* dbObstruction::create(dbBlock* block_,
 
   // Update bounding box of block
   block->add_rect(box->shape_.rect);
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbObstructionCreate((dbObstruction*) obs);
   }
   return (dbObstruction*) obs;
@@ -396,11 +396,11 @@ void dbObstruction::destroy(dbObstruction* obstruction)
         "You cannot delete a system created obstruction (isSystemReserved).");
   }
 
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbObstructionDestroy(obstruction);
   }
   dbProperty::destroyProperties(obs);
-  block->_obstruction_tbl->destroy(obs);
+  block->obstruction_tbl_->destroy(obs);
 }
 
 dbSet<dbObstruction>::iterator dbObstruction::destroy(
@@ -415,7 +415,7 @@ dbSet<dbObstruction>::iterator dbObstruction::destroy(
 dbObstruction* dbObstruction::getObstruction(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbObstruction*) block->_obstruction_tbl->getPtr(dbid_);
+  return (dbObstruction*) block->obstruction_tbl_->getPtr(dbid_);
 }
 
 void _dbObstruction::collectMemInfo(MemInfo& info)

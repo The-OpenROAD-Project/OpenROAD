@@ -214,7 +214,7 @@ dbPowerDomain* dbLevelShifter::getDomain() const
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_domain);
+  return (dbPowerDomain*) par->powerdomain_tbl_->getPtr(obj->_domain);
 }
 
 void dbLevelShifter::setSource(const std::string& source)
@@ -460,7 +460,7 @@ dbLevelShifter* dbLevelShifter::create(dbBlock* block,
                                        dbPowerDomain* domain)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_levelshifter_hash.hasMember(name)) {
+  if (_block->levelshifter_hash_.hasMember(name)) {
     return nullptr;
   }
 
@@ -468,12 +468,12 @@ dbLevelShifter* dbLevelShifter::create(dbBlock* block,
     return nullptr;
   }
 
-  _dbLevelShifter* shifter = _block->_levelshifter_tbl->create();
+  _dbLevelShifter* shifter = _block->levelshifter_tbl_->create();
   shifter->name_ = safe_strdup(name);
 
   shifter->_domain = domain->getImpl()->getOID();
 
-  _block->_levelshifter_hash.insert(shifter);
+  _block->levelshifter_hash_.insert(shifter);
 
   domain->addLevelShifter((dbLevelShifter*) shifter);
 
@@ -485,11 +485,11 @@ void dbLevelShifter::destroy(dbLevelShifter* shifter)
   _dbLevelShifter* _shifter = (_dbLevelShifter*) shifter;
   _dbBlock* block = (_dbBlock*) _shifter->getOwner();
 
-  if (block->_levelshifter_hash.hasMember(_shifter->name_)) {
-    block->_levelshifter_hash.remove(_shifter);
+  if (block->levelshifter_hash_.hasMember(_shifter->name_)) {
+    block->levelshifter_hash_.remove(_shifter);
   }
 
-  block->_levelshifter_tbl->destroy(_shifter);
+  block->levelshifter_tbl_->destroy(_shifter);
 }
 
 void dbLevelShifter::addElement(const std::string& element)

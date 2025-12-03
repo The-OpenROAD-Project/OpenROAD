@@ -36,7 +36,7 @@ void dbChipConnItr::reverse(dbObject* parent)
   uint list = 0;
 
   while (id != 0) {
-    _dbChipConn* chipconn = _chip_conn_tbl->getPtr(id);
+    _dbChipConn* chipconn = chip_conn_tbl_->getPtr(id);
     uint n = chipconn->chip_conn_next_;
     chipconn->chip_conn_next_ = list;
     list = id;
@@ -80,14 +80,14 @@ uint dbChipConnItr::end(dbObject* /* unused: parent */) const
 uint dbChipConnItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbChipConn* chipconn = _chip_conn_tbl->getPtr(id);
+  _dbChipConn* chipconn = chip_conn_tbl_->getPtr(id);
   return chipconn->chip_conn_next_;
   // User Code End next
 }
 
 dbObject* dbChipConnItr::getObject(uint id, ...)
 {
-  return _chip_conn_tbl->getPtr(id);
+  return chip_conn_tbl_->getPtr(id);
 }
 }  // namespace odb
 // Generator Code End Cpp

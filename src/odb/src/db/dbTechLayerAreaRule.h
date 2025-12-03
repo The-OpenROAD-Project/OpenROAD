@@ -20,7 +20,7 @@ struct dbTechLayerAreaRuleFlags
 {
   bool except_rectangle_ : 1;
   uint overlap_ : 2;
-  uint spare_bits_ : 29;
+  uint spare_bits : 29;
 };
 
 class _dbTechLayerAreaRule : public _dbObject

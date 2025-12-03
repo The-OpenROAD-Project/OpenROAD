@@ -35,9 +35,9 @@ void dbCapNodeItr::reverse(dbObject* parent)
   uint list = 0;
 
   while (id != 0) {
-    _dbCapNode* seg = _seg_tbl->getPtr(id);
-    uint n = seg->_next;
-    seg->_next = list;
+    _dbCapNode* seg = seg_tbl_->getPtr(id);
+    uint n = seg->next_;
+    seg->next_ = list;
     list = id;
     id = n;
   }
@@ -76,13 +76,13 @@ uint dbCapNodeItr::end(dbObject* /* unused: parent */) const
 
 uint dbCapNodeItr::next(uint id, ...) const
 {
-  _dbCapNode* seg = _seg_tbl->getPtr(id);
-  return seg->_next;
+  _dbCapNode* seg = seg_tbl_->getPtr(id);
+  return seg->next_;
 }
 
 dbObject* dbCapNodeItr::getObject(uint id, ...)
 {
-  return _seg_tbl->getPtr(id);
+  return seg_tbl_->getPtr(id);
 }
 
 }  // namespace odb

@@ -39,7 +39,7 @@ struct dbMarkerFlags
   bool visited_ : 1;
   bool visible_ : 1;
   bool waived_ : 1;
-  uint spare_bits_ : 29;
+  uint spare_bits : 29;
 };
 
 class _dbMarker : public _dbObject

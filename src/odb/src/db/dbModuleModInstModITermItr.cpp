@@ -68,14 +68,14 @@ uint dbModuleModInstModITermItr::end(dbObject* /* unused: parent */) const
 uint dbModuleModInstModITermItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbModITerm* moditerm = _moditerm_tbl->getPtr(id);
+  _dbModITerm* moditerm = moditerm_tbl_->getPtr(id);
   return moditerm->next_entry_;
   // User Code End next
 }
 
 dbObject* dbModuleModInstModITermItr::getObject(uint id, ...)
 {
-  return _moditerm_tbl->getPtr(id);
+  return moditerm_tbl_->getPtr(id);
 }
 }  // namespace odb
    // Generator Code End Cpp

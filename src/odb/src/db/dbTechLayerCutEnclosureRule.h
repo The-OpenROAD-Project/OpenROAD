@@ -40,7 +40,7 @@ struct dbTechLayerCutEnclosureRuleFlags
   bool second_par_within_valid_ : 1;
   bool below_enclosure_valid_ : 1;
   bool concave_corners_valid_ : 1;
-  uint spare_bits_ : 7;
+  uint spare_bits : 7;
 };
 
 class _dbTechLayerCutEnclosureRule : public _dbObject

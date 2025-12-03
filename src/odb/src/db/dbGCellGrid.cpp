@@ -41,10 +41,10 @@ dbIStream& operator>>(dbIStream& stream, OldGCellData& obj)
 
 bool _dbGCellGrid::operator==(const _dbGCellGrid& rhs) const
 {
-  if (flags_.x_grid_valid_ != rhs.flags_.x_grid_valid_) {
+  if (flags_.x_grid_valid != rhs.flags_.x_grid_valid) {
     return false;
   }
-  if (flags_.y_grid_valid_ != rhs.flags_.y_grid_valid_) {
+  if (flags_.y_grid_valid != rhs.flags_.y_grid_valid) {
     return false;
   }
 
@@ -268,7 +268,7 @@ dbTechLayer* _dbGCellGrid::getLayer(const dbId<_dbTechLayer>& lid) const
 void dbGCellGrid::getGridX(std::vector<int>& x_grid)
 {
   _dbGCellGrid* grid = (_dbGCellGrid*) this;
-  if (grid->flags_.x_grid_valid_) {
+  if (grid->flags_.x_grid_valid) {
     x_grid = grid->x_grid_;
     return;
   }
@@ -286,7 +286,7 @@ void dbGCellGrid::getGridX(std::vector<int>& x_grid)
       x += step;
     }
   }
-  grid->flags_.x_grid_valid_ = true;
+  grid->flags_.x_grid_valid = true;
   // empty grid
   if (grid->x_grid_.begin() == grid->x_grid_.end()) {
     x_grid = grid->x_grid_;
@@ -305,7 +305,7 @@ void dbGCellGrid::getGridX(std::vector<int>& x_grid)
 void dbGCellGrid::getGridY(std::vector<int>& y_grid)
 {
   _dbGCellGrid* grid = (_dbGCellGrid*) this;
-  if (grid->flags_.y_grid_valid_) {
+  if (grid->flags_.y_grid_valid) {
     y_grid = grid->y_grid_;
     return;
   }
@@ -325,7 +325,7 @@ void dbGCellGrid::getGridY(std::vector<int>& y_grid)
       y += step;
     }
   }
-  grid->flags_.y_grid_valid_ = true;
+  grid->flags_.y_grid_valid = true;
   // empty grid
   if (grid->y_grid_.begin() == grid->y_grid_.end()) {
     y_grid = grid->y_grid_;
@@ -352,7 +352,7 @@ void dbGCellGrid::addGridPatternX(int origin_x, int line_count, int step)
   grid->x_origin_.push_back(origin_x);
   grid->x_count_.push_back(line_count);
   grid->x_step_.push_back(step);
-  grid->flags_.x_grid_valid_ = false;
+  grid->flags_.x_grid_valid = false;
   resetCongestionMap();
 }
 
@@ -362,7 +362,7 @@ void dbGCellGrid::addGridPatternY(int origin_y, int line_count, int step)
   grid->y_origin_.push_back(origin_y);
   grid->y_count_.push_back(line_count);
   grid->y_step_.push_back(step);
-  grid->flags_.y_grid_valid_ = false;
+  grid->flags_.y_grid_valid = false;
   resetCongestionMap();
 }
 
@@ -406,19 +406,19 @@ dbGCellGrid* dbGCellGrid::create(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
 
-  if (block->_gcell_grid != 0) {
+  if (block->gcell_grid_ != 0) {
     return nullptr;
   }
 
-  _dbGCellGrid* grid = block->_gcell_grid_tbl->create();
-  block->_gcell_grid = grid->getOID();
+  _dbGCellGrid* grid = block->gcell_grid_tbl_->create();
+  block->gcell_grid_ = grid->getOID();
   return (dbGCellGrid*) grid;
 }
 
 dbGCellGrid* dbGCellGrid::getGCellGrid(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbGCellGrid*) block->_gcell_grid_tbl->getPtr(dbid_);
+  return (dbGCellGrid*) block->gcell_grid_tbl_->getPtr(dbid_);
 }
 
 uint dbGCellGrid::getXIdx(int x)
@@ -495,8 +495,8 @@ void dbGCellGrid::resetGrid()
   _grid->x_grid_.clear();
   _grid->y_grid_.clear();
   _grid->congestion_map_.clear();
-  _grid->flags_.x_grid_valid_ = true;
-  _grid->flags_.y_grid_valid_ = true;
+  _grid->flags_.x_grid_valid = true;
+  _grid->flags_.y_grid_valid = true;
 }
 
 dbMatrix<dbGCellGrid::GCellData> dbGCellGrid::getLayerCongestionMap(

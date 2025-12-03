@@ -808,7 +808,7 @@ dbMarker* dbMarker::create(dbMarkerCategory* category)
 
   _dbBlock* block = marker->getBlock();
   if (block) {
-    for (auto cb : block->_callbacks) {
+    for (auto cb : block->callbacks_) {
       cb->inDbMarkerCreate((dbMarker*) marker);
     }
   }
@@ -821,7 +821,7 @@ void dbMarker::destroy(dbMarker* marker)
   _dbMarker* _marker = (_dbMarker*) marker;
 
   _dbBlock* block = _marker->getBlock();
-  for (auto cb : block->_callbacks) {
+  for (auto cb : block->callbacks_) {
     cb->inDbMarkerDestroy(marker);
   }
 

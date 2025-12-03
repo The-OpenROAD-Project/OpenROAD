@@ -93,7 +93,7 @@ class _dbTechMinEncRule : public _dbObject
     uint _spare_bits : 31;
   };
 
-  Flags  flags_;
+  Flags flags_;
   uint _area;
   uint _width;
 

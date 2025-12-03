@@ -219,7 +219,7 @@ dbTechLayerRule* dbTechNonDefaultRule::getLayerRule(dbTechLayer* layer_)
   if (rule->flags_._block_rule == 0) {
     return (dbTechLayerRule*) rule->getTech()->_layer_rule_tbl->getPtr(id);
   }
-  return (dbTechLayerRule*) rule->getBlock()->_layer_rule_tbl->getPtr(id);
+  return (dbTechLayerRule*) rule->getBlock()->layer_rule_tbl_->getPtr(id);
 }
 
 void dbTechNonDefaultRule::getLayerRules(
@@ -240,7 +240,7 @@ void dbTechNonDefaultRule::getLayerRules(
   if (rule->flags_._block_rule == 0) {
     add_rules(rule->getTech()->_layer_rule_tbl);
   } else {
-    add_rules(rule->getBlock()->_layer_rule_tbl);
+    add_rules(rule->getBlock()->layer_rule_tbl_);
   }
 }
 
@@ -415,7 +415,7 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbBlock* block_,
 
   _dbBlock* block = (_dbBlock*) block_;
   _dbTech* tech = (_dbTech*) block->getDb()->getTech();
-  _dbTechNonDefaultRule* rule = block->_non_default_rule_tbl->create();
+  _dbTechNonDefaultRule* rule = block->non_default_rule_tbl_->create();
 
   rule->name_ = safe_strdup(name_);
   rule->flags_._block_rule = 1;
@@ -441,7 +441,7 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::getTechNonDefaultRule(
     uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbTechNonDefaultRule*) block->_non_default_rule_tbl->getPtr(dbid_);
+  return (dbTechNonDefaultRule*) block->non_default_rule_tbl_->getPtr(dbid_);
 }
 
 }  // namespace odb

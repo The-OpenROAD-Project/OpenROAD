@@ -36,7 +36,7 @@ void dbModuleModBTermItr::reverse(dbObject* parent)
   uint id = module->_modbterms;
   uint list = 0;
   while (id != 0) {
-    _dbModBTerm* modbterm = _modbterm_tbl->getPtr(id);
+    _dbModBTerm* modbterm = modbterm_tbl_->getPtr(id);
     uint n = modbterm->next_entry_;
     modbterm->next_entry_ = list;
     modbterm->_prev_entry = n;
@@ -82,14 +82,14 @@ uint dbModuleModBTermItr::end(dbObject* /* unused: parent */) const
 uint dbModuleModBTermItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbModBTerm* modbterm = _modbterm_tbl->getPtr(id);
+  _dbModBTerm* modbterm = modbterm_tbl_->getPtr(id);
   return modbterm->next_entry_;
   // User Code End next
 }
 
 dbObject* dbModuleModBTermItr::getObject(uint id, ...)
 {
-  return _modbterm_tbl->getPtr(id);
+  return modbterm_tbl_->getPtr(id);
 }
 }  // namespace odb
    // Generator Code End Cpp

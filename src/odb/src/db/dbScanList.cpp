@@ -75,7 +75,7 @@ dbSet<dbScanInst> dbScanList::getScanInsts() const
   _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
   _dbDft* dft = (_dbDft*) scan_chain->getOwner();
   _dbBlock* block = (_dbBlock*) dft->getOwner();
-  return dbSet<dbScanInst>(scan_list, block->_scan_list_scan_inst_itr);
+  return dbSet<dbScanInst>(scan_list, block->scan_list_scan_inst_itr_);
 }
 
 dbScanInst* dbScanList::add(dbInst* inst)

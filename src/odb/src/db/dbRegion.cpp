@@ -173,14 +173,14 @@ dbSet<dbInst> dbRegion::getRegionInsts()
 {
   _dbRegion* region = (_dbRegion*) this;
   _dbBlock* block = (_dbBlock*) region->getOwner();
-  return dbSet<dbInst>(region, block->_region_inst_itr);
+  return dbSet<dbInst>(region, block->region_inst_itr_);
 }
 
 dbSet<dbBox> dbRegion::getBoundaries()
 {
   _dbRegion* region = (_dbRegion*) this;
   _dbBlock* block = (_dbBlock*) region->getOwner();
-  return dbSet<dbBox>(region, block->_box_itr);
+  return dbSet<dbBox>(region, block->box_itr_);
 }
 
 void dbRegion::addInst(dbInst* inst_)
@@ -197,7 +197,7 @@ void dbRegion::addInst(dbInst* inst_)
   inst->_region = region->getOID();
 
   if (region->_insts != 0) {
-    _dbInst* tail = block->_inst_tbl->getPtr(region->_insts);
+    _dbInst* tail = block->inst_tbl_->getPtr(region->_insts);
     inst->_region_next = region->_insts;
     inst->_region_prev = 0;
     tail->_region_prev = inst->getOID();
@@ -221,17 +221,17 @@ void dbRegion::removeInst(dbInst* inst_)
     region->_insts = inst->_region_next;
 
     if (region->_insts != 0) {
-      _dbInst* t = block->_inst_tbl->getPtr(region->_insts);
+      _dbInst* t = block->inst_tbl_->getPtr(region->_insts);
       t->_region_prev = 0;
     }
   } else {
     if (inst->_region_next != 0) {
-      _dbInst* next = block->_inst_tbl->getPtr(inst->_region_next);
+      _dbInst* next = block->inst_tbl_->getPtr(inst->_region_next);
       next->_region_prev = inst->_region_prev;
     }
 
     if (inst->_region_prev != 0) {
-      _dbInst* prev = block->_inst_tbl->getPtr(inst->_region_prev);
+      _dbInst* prev = block->inst_tbl_->getPtr(inst->_region_prev);
       prev->_region_next = inst->_region_next;
     }
   }
@@ -253,17 +253,17 @@ void dbRegion::removeGroup(dbGroup* group)
     region->groups_ = _group->region_next_;
 
     if (region->groups_ != 0) {
-      _dbGroup* t = block->_group_tbl->getPtr(region->groups_);
+      _dbGroup* t = block->group_tbl_->getPtr(region->groups_);
       t->region_prev_ = 0;
     }
   } else {
     if (_group->region_next_ != 0) {
-      _dbGroup* next = block->_group_tbl->getPtr(_group->region_next_);
+      _dbGroup* next = block->group_tbl_->getPtr(_group->region_next_);
       next->region_prev_ = _group->region_prev_;
     }
 
     if (_group->region_prev_ != 0) {
-      _dbGroup* prev = block->_group_tbl->getPtr(_group->region_prev_);
+      _dbGroup* prev = block->group_tbl_->getPtr(_group->region_prev_);
       prev->region_next_ = _group->region_next_;
     }
   }
@@ -298,7 +298,7 @@ dbSet<dbGroup> dbRegion::getGroups()
   _dbRegion* _region = (_dbRegion*) this;
   _dbBlock* _block = (_dbBlock*) _region->getOwner();
 
-  dbSet<dbGroup> groups(_region, _block->_region_group_itr);
+  dbSet<dbGroup> groups(_region, _block->region_group_itr_);
   return groups;
 }
 
@@ -310,9 +310,9 @@ dbRegion* dbRegion::create(dbBlock* block_, const char* name)
     return nullptr;
   }
 
-  _dbRegion* region = block->_region_tbl->create();
+  _dbRegion* region = block->region_tbl_->create();
   region->name_ = safe_strdup(name);
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbRegionCreate((dbRegion*) region);
   }
   return (dbRegion*) region;
@@ -323,7 +323,7 @@ void dbRegion::destroy(dbRegion* region_)
   _dbRegion* region = (_dbRegion*) region_;
   _dbBlock* block = (_dbBlock*) region->getOwner();
 
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbRegionDestroy((dbRegion*) region);
   }
 
@@ -342,7 +342,7 @@ void dbRegion::destroy(dbRegion* region_)
     dbBox* box = *bitr;
     dbSet<dbBox>::iterator next = ++bitr;
     dbProperty::destroyProperties(box);
-    block->_box_tbl->destroy((_dbBox*) box);
+    block->box_tbl_->destroy((_dbBox*) box);
     bitr = next;
   }
 
@@ -355,7 +355,7 @@ void dbRegion::destroy(dbRegion* region_)
   }
 
   dbProperty::destroyProperties(region);
-  block->_region_tbl->destroy(region);
+  block->region_tbl_->destroy(region);
 }
 
 dbSet<dbRegion>::iterator dbRegion::destroy(dbSet<dbRegion>::iterator& itr)
@@ -369,7 +369,7 @@ dbSet<dbRegion>::iterator dbRegion::destroy(dbSet<dbRegion>::iterator& itr)
 dbRegion* dbRegion::getRegion(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbRegion*) block->_region_tbl->getPtr(dbid_);
+  return (dbRegion*) block->region_tbl_->getPtr(dbid_);
 }
 
 void _dbRegion::collectMemInfo(MemInfo& info)

@@ -38,7 +38,7 @@ void dbGroupItr::reverse(dbObject* parent)
   uint list = 0;
 
   while (id != 0) {
-    _dbGroup* _child = _group_tbl->getPtr(id);
+    _dbGroup* _child = group_tbl_->getPtr(id);
     uint n = _child->_group_next;
     _child->_group_next = list;
     list = id;
@@ -82,14 +82,14 @@ uint dbGroupItr::end(dbObject* /* unused: parent */) const
 uint dbGroupItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbGroup* _child = _group_tbl->getPtr(id);
+  _dbGroup* _child = group_tbl_->getPtr(id);
   return _child->_group_next;
   // User Code End next
 }
 
 dbObject* dbGroupItr::getObject(uint id, ...)
 {
-  return _group_tbl->getPtr(id);
+  return group_tbl_->getPtr(id);
 }
 }  // namespace odb
    // Generator Code End Cpp

@@ -326,7 +326,7 @@ dbTrackGrid* dbTrackGrid::create(dbBlock* block_, dbTechLayer* layer_)
     return nullptr;
   }
 
-  _dbTrackGrid* grid = block->_track_grid_tbl->create();
+  _dbTrackGrid* grid = block->track_grid_tbl_->create();
   grid->_layer = layer_->getImpl()->getOID();
   return (dbTrackGrid*) grid;
 }
@@ -334,14 +334,14 @@ dbTrackGrid* dbTrackGrid::create(dbBlock* block_, dbTechLayer* layer_)
 dbTrackGrid* dbTrackGrid::getTrackGrid(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbTrackGrid*) block->_track_grid_tbl->getPtr(dbid_);
+  return (dbTrackGrid*) block->track_grid_tbl_->getPtr(dbid_);
 }
 void dbTrackGrid::destroy(dbTrackGrid* grid_)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) grid_;
   _dbBlock* block = (_dbBlock*) grid->getOwner();
   dbProperty::destroyProperties(grid);
-  block->_track_grid_tbl->destroy(grid);
+  block->track_grid_tbl_->destroy(grid);
 }
 
 void _dbTrackGrid::collectMemInfo(MemInfo& info)

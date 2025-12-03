@@ -200,7 +200,7 @@ void ARuleRatio::setDiff(double ratio)
 }
 
 void ARuleRatio::setDiff(const vector<double>& diff_idx,
-                          const vector<double>& ratios)
+                         const vector<double>& ratios)
 {
   assert((_diff_idx.size() == 0) && (_diff_ratio.size() == 0));
   _diff_idx = diff_idx;

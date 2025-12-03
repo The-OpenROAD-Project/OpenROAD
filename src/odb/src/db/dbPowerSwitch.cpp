@@ -216,20 +216,20 @@ dbPowerDomain* dbPowerSwitch::getPowerDomain() const
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_power_domain);
+  return (dbPowerDomain*) par->powerdomain_tbl_->getPtr(obj->_power_domain);
 }
 
 // User Code Begin dbPowerSwitchPublicMethods
 dbPowerSwitch* dbPowerSwitch::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_powerswitch_hash.hasMember(name)) {
+  if (_block->powerswitch_hash_.hasMember(name)) {
     return nullptr;
   }
-  _dbPowerSwitch* ps = _block->_powerswitch_tbl->create();
+  _dbPowerSwitch* ps = _block->powerswitch_tbl_->create();
   ps->name_ = safe_strdup(name);
 
-  _block->_powerswitch_hash.insert(ps);
+  _block->powerswitch_hash_.insert(ps);
   return (dbPowerSwitch*) ps;
 }
 

@@ -143,7 +143,7 @@ dbGroup* dbPowerDomain::getGroup() const
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbGroup*) par->_group_tbl->getPtr(obj->_group);
+  return (dbGroup*) par->group_tbl_->getPtr(obj->_group);
 }
 
 void dbPowerDomain::setTop(bool top)
@@ -173,7 +173,7 @@ dbPowerDomain* dbPowerDomain::getParent() const
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_parent);
+  return (dbPowerDomain*) par->powerdomain_tbl_->getPtr(obj->_parent);
 }
 
 void dbPowerDomain::setVoltage(float voltage)
@@ -193,13 +193,13 @@ float dbPowerDomain::getVoltage() const
 dbPowerDomain* dbPowerDomain::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_powerdomain_hash.hasMember(name)) {
+  if (_block->powerdomain_hash_.hasMember(name)) {
     return nullptr;
   }
-  _dbPowerDomain* pd = _block->_powerdomain_tbl->create();
+  _dbPowerDomain* pd = _block->powerdomain_tbl_->create();
   pd->name_ = safe_strdup(name);
 
-  _block->_powerdomain_hash.insert(pd);
+  _block->powerdomain_hash_.insert(pd);
   return (dbPowerDomain*) pd;
 }
 
@@ -252,7 +252,7 @@ std::vector<dbPowerSwitch*> dbPowerDomain::getPowerSwitches()
   std::vector<dbPowerSwitch*> switches;
 
   for (const auto& ps : obj->_power_switch) {
-    switches.push_back((dbPowerSwitch*) par->_powerswitch_tbl->getPtr(ps));
+    switches.push_back((dbPowerSwitch*) par->powerswitch_tbl_->getPtr(ps));
   }
 
   return switches;
@@ -266,7 +266,7 @@ std::vector<dbIsolation*> dbPowerDomain::getIsolations()
   std::vector<dbIsolation*> isolations;
 
   for (const auto& iso : obj->_isolation) {
-    isolations.push_back((dbIsolation*) par->_isolation_tbl->getPtr(iso));
+    isolations.push_back((dbIsolation*) par->isolation_tbl_->getPtr(iso));
   }
 
   return isolations;
@@ -281,7 +281,7 @@ std::vector<dbLevelShifter*> dbPowerDomain::getLevelShifters()
 
   for (const auto& shifter : obj->_levelshifters) {
     levelshifters.push_back(
-        (dbLevelShifter*) par->_levelshifter_tbl->getPtr(shifter));
+        (dbLevelShifter*) par->levelshifter_tbl_->getPtr(shifter));
   }
 
   return levelshifters;
