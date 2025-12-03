@@ -100,6 +100,7 @@ class Grid
 
   odb::Point getMiddle();
   const odb::Rect& getGridArea() const;
+  odb::Point getPositionFromGridPoint(int x, int y);
 
  private:
   odb::Rect die_area_;

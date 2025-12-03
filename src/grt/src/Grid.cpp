@@ -192,4 +192,11 @@ const odb::Rect& Grid::getGridArea() const
   return die_area_;
 }
 
+odb::Point Grid::getPositionFromGridPoint(const int x, const int y)
+{
+  int x_loc = tile_size_ * (x + 0.5) + getXMin();
+  int y_loc = tile_size_ * (y + 0.5) + getYMin();
+  return odb::Point(x_loc, y_loc);
+}
+
 }  // namespace grt
