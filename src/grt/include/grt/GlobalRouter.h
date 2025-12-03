@@ -322,6 +322,13 @@ class GlobalRouter
   std::vector<std::pair<int, int>> calcLayerPitches(int max_layer);
   void initRoutingTracks(int max_routing_layer);
   void setCapacities(int min_routing_layer, int max_routing_layer);
+  int computeGCellCapacity(int x,
+                           int y,
+                           int track_init,
+                           int track_pitch,
+                           int track_count,
+                           bool horizontal);
+  odb::Rect getGCellRect(int x, int y);
   void initNetlist(std::vector<Net*>& nets);
   void makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net);

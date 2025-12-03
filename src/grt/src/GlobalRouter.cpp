@@ -176,7 +176,6 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
 void GlobalRouter::applyAdjustments(int min_routing_layer,
                                     int max_routing_layer)
 {
-  fastroute_->initEdges();
   computeGridAdjustments(min_routing_layer, max_routing_layer);
   computeTrackAdjustments(min_routing_layer, max_routing_layer);
   computeObstructionsAdjustments();
@@ -185,7 +184,7 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   // Save global resources before add adjustment by layer
   fastroute_->saveResourcesBeforeAdjustments();
   computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
-  computeUserLayerAdjustments(max_routing_layer);
+  computeUserLayerAdjustments(min_routing_layer, max_routing_layer);
 
   for (RegionAdjustment region_adjustment : region_adjustments_) {
     computeRegionAdjustments(region_adjustment.getRegion(),
@@ -623,8 +622,6 @@ std::vector<int> GlobalRouter::routeLayerLengths(odb::dbNet* db_net)
 void GlobalRouter::initCoreGrid(int max_routing_layer)
 {
   initGrid(max_routing_layer);
-
-  computeCapacities(max_routing_layer);
   findTrackPitches(max_routing_layer);
 
   fastroute_->setLowerLeft(grid_->getXMin(), grid_->getYMin());
@@ -697,26 +694,108 @@ void GlobalRouter::checkAdjacentLayersDirection(int min_routing_layer,
 
 void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
 {
-  for (int l = 1; l <= grid_->getNumLayers(); l++) {
-    if (l < min_routing_layer || l > max_routing_layer) {
-      fastroute_->addHCapacity(0, l);
-      fastroute_->addVCapacity(0, l);
+  fastroute_->initEdges();
+  int x_grids = grid_->getXGrids();
+  int y_grids = grid_->getYGrids();
 
-      horizontal_capacities_.push_back(0);
-      vertical_capacities_.push_back(0);
+  for (int layer = 1; layer <= grid_->getNumLayers(); layer++) {
+    odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(layer);
+    const bool inside_layer_range
+        = (layer >= min_routing_layer && layer <= max_routing_layer);
+
+    const RoutingTracks& tracks = getRoutingTracksByIndex(layer);
+    const int track_init = tracks.getLocation();
+    const int track_pitch = tracks.getTrackPitch();
+    const int track_count = tracks.getNumTracks();
+    const bool horizontal
+        = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+
+    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+      int min_cap = std::numeric_limits<int>::max();
+      for (int y = 1; y <= y_grids; y++) {
+        for (int x = 1; x < x_grids; x++) {
+          const int cap = inside_layer_range ? computeGCellCapacity(x - 1,
+                                                                    y - 1,
+                                                                    track_init,
+                                                                    track_pitch,
+                                                                    track_count,
+                                                                    horizontal)
+                                             : 0;
+          min_cap = std::min(min_cap, cap);
+          fastroute_->setEdgeCapacity(x - 1, y - 1, x, y - 1, layer, cap);
+        }
+      }
+      fastroute_->addHCapacity(min_cap, layer);
     } else {
-      const int h_cap = grid_->getHorizontalEdgesCapacities()[l - 1];
-      const int v_cap = grid_->getVerticalEdgesCapacities()[l - 1];
-      fastroute_->addHCapacity(h_cap, l);
-      fastroute_->addVCapacity(v_cap, l);
-
-      horizontal_capacities_.push_back(h_cap);
-      vertical_capacities_.push_back(v_cap);
-
-      grid_->setHorizontalCapacity(h_cap * 100, l - 1);
-      grid_->setVerticalCapacity(v_cap * 100, l - 1);
+      int min_cap = std::numeric_limits<int>::max();
+      for (int x = 1; x <= x_grids; x++) {
+        for (int y = 1; y < y_grids; y++) {
+          const int cap = inside_layer_range ? computeGCellCapacity(x - 1,
+                                                                    y - 1,
+                                                                    track_init,
+                                                                    track_pitch,
+                                                                    track_count,
+                                                                    horizontal)
+                                             : 0;
+          min_cap = std::min(min_cap, cap);
+          fastroute_->setEdgeCapacity(x - 1, y - 1, x - 1, y, layer, cap);
+        }
+      }
+      fastroute_->addVCapacity(min_cap, layer);
     }
   }
+}
+
+int GlobalRouter::computeGCellCapacity(const int x,
+                                       const int y,
+                                       const int track_init,
+                                       const int track_pitch,
+                                       const int track_count,
+                                       const bool horizontal)
+{
+  odb::Rect gcell_rect = getGCellRect(x, y);
+
+  const int min_bound = horizontal ? gcell_rect.yMin() : gcell_rect.xMin();
+  const int max_bound = horizontal ? gcell_rect.yMax() : gcell_rect.xMax();
+
+  // indices where tracks enter the interval
+  int first_track = (min_bound <= track_init)
+                        ? 0
+                        : ((min_bound - track_init + track_pitch - 1)
+                           / track_pitch);  // ceil
+  int last_track = (max_bound < track_init)
+                       ? -1
+                       : ((max_bound - track_init - 1) / track_pitch);  // floor
+
+  // clamp to valid track indices
+  first_track = std::max(0, first_track);
+  last_track = std::min(track_count - 1, last_track);
+
+  if (first_track > last_track) {
+    return 0;
+  }
+
+  return last_track - first_track + 1;
+}
+
+odb::Rect GlobalRouter::getGCellRect(const int x, const int y)
+{
+  const int tile_size = grid_->getTileSize();
+  const odb::Rect die_bounds = grid_->getGridArea();
+  const odb::Point gcell_center = grid_->getPositionFromGridPoint(x, y);
+
+  const int x_min = gcell_center.getX() - (tile_size / 2);
+  const int y_min = gcell_center.getY() - (tile_size / 2);
+  int x_max = gcell_center.getX() + (tile_size / 2);
+  int y_max = gcell_center.getY() + (tile_size / 2);
+  if ((die_bounds.xMax() - x_max) / grid_->getTileSize() < 1) {
+    x_max = die_bounds.xMax();
+  }
+  if ((die_bounds.yMax() - y_max) / grid_->getTileSize() < 1) {
+    y_max = die_bounds.yMax();
+  }
+
+  return odb::Rect(x_min, y_min, x_max, y_max);
 }
 
 void GlobalRouter::setPerturbationAmount(int perturbation)
