@@ -376,6 +376,36 @@ bool createHierarchicalConnection(dbITerm* load_pin,
     // We are connecting FROM the buffer (in target_module) TO the load (deep
     // down). So from the perspective of the hierarchical modules, these are
     // INPUT ports.
+
+    // Helper lambda to recursively check if all loads connected to a ModNet
+    // (directly or through child modules) are in load_pins
+    std::function<bool(dbModNet*)> allLoadsAreTargets
+        = [&](dbModNet* net) -> bool {
+      if (net == nullptr) {
+        return true;
+      }
+
+      // Check all directly connected ITerms
+      for (dbITerm* iterm : net->getITerms()) {
+        if (load_pins.find(iterm) == load_pins.end()) {
+          return false;
+        }
+      }
+
+      // Check all loads reachable through child modules (ModITerms)
+      for (dbModITerm* miterm : net->getModITerms()) {
+        if (dbModBTerm* child_bterm = miterm->getChildModBTerm()) {
+          if (dbModNet* child_net = child_bterm->getModNet()) {
+            if (allLoadsAreTargets(child_net) == false) {
+              return false;
+            }
+          }
+        }
+      }
+
+      return true;
+    };
+
     while (current_module != target_module && current_module != nullptr) {
       dbModInst* parent_mod_inst = current_module->getModInst();
       if (parent_mod_inst == nullptr) {  // current_module is top module
@@ -403,16 +433,16 @@ bool createHierarchicalConnection(dbITerm* load_pin,
 
       if (existing_mod_net) {
         // Check if we can safely reuse this net.
-        // We can reuse ONLY if all connected ITerms are in load_pins
-        // AND all connected ModITerms are the child_obj (the path we are
-        // tracing).
+        // We can reuse ONLY if:
+        //   1. All connected ITerms (and loads through child modules) are in
+        //   load_pins
+        //   2. All connected ModITerms are the child_obj (the path we are
+        //   tracing)
         bool safe_to_reuse = true;
 
-        for (dbITerm* iterm : existing_mod_net->getITerms()) {
-          if (load_pins.find(iterm) == load_pins.end()) {
-            safe_to_reuse = false;
-            break;
-          }
+        // Use recursive check for all loads (including through child modules)
+        if (allLoadsAreTargets(existing_mod_net) == false) {
+          safe_to_reuse = false;
         }
 
         if (safe_to_reuse) {
@@ -534,52 +564,41 @@ bool createHierarchicalConnection(dbITerm* load_pin,
             continue;
           }
 
-          // 2. Must NOT have any connection to ITerms that are NOT in load_pins
+          // 2. Must NOT have any connection to ITerms (or loads reachable
+          //    through child modules) that are NOT in load_pins
           //    (This ensures we don't accidentally merge with unrelated logic)
-          bool clean_net = true;
-          bool has_target_load = false;
-
-          for (dbITerm* iterm : mod_net->getITerms()) {
-            if (load_pins.find(iterm) == load_pins.end()) {
-              clean_net = false;
-              break;
-            }
-            has_target_load = true;
-          }
-          if (!clean_net) {
+          if (allLoadsAreTargets(mod_net) == false) {
             continue;
           }
 
-          if (has_target_load) {
-            // Found a candidate!
-            // Use the first ModBTerm to go up.
-            dbModBTerm* modbterm = nullptr;
-            for (dbModBTerm* bterm : mod_net->getModBTerms()) {
-              if (bterm->getIoType() == dbIoType::INPUT) {
-                modbterm = bterm;
-                break;
-              }
+          // Found a candidate!
+          // Use the first ModBTerm to go up.
+          dbModBTerm* modbterm = nullptr;
+          for (dbModBTerm* bterm : mod_net->getModBTerms()) {
+            if (bterm->getIoType() == dbIoType::INPUT) {
+              modbterm = bterm;
+              break;
             }
+          }
 
-            if (modbterm) {
-              dbModITerm* parent_moditerm = modbterm->getParentModITerm();
+          if (modbterm) {
+            dbModITerm* parent_moditerm = modbterm->getParentModITerm();
 
-              if (parent_moditerm) {
-                // Connect current child_obj to this reusable net
-                if (child_obj->getObjectType() == dbITermObj) {
-                  (static_cast<dbITerm*>(child_obj))->connect(mod_net);
-                } else if (child_obj->getObjectType() == dbModITermObj) {
-                  (static_cast<dbModITerm*>(child_obj))->connect(mod_net);
-                }
-
-                reused_path = true;
-
-                // Move up
-                child_obj = static_cast<dbObject*>(parent_moditerm);
-                current_module = parent_mod_inst->getParent();
-                top_mod_iterm = parent_moditerm;
-                break;
+            if (parent_moditerm) {
+              // Connect current child_obj to this reusable net
+              if (child_obj->getObjectType() == dbITermObj) {
+                (static_cast<dbITerm*>(child_obj))->connect(mod_net);
+              } else if (child_obj->getObjectType() == dbModITermObj) {
+                (static_cast<dbModITerm*>(child_obj))->connect(mod_net);
               }
+
+              reused_path = true;
+
+              // Move up
+              child_obj = static_cast<dbObject*>(parent_moditerm);
+              current_module = parent_mod_inst->getParent();
+              top_mod_iterm = parent_moditerm;
+              break;
             }
           }
         }
@@ -642,9 +661,11 @@ bool createHierarchicalConnection(dbITerm* load_pin,
   if (dbModNet* drvr_mod_net = drvr_term->getModNet()) {
     if (top_mod_iterm) {
       // Connect the top-most hierarchical pin to the buffer's output ModNet
+      top_mod_iterm->disconnect();  // jk: needed???
       top_mod_iterm->connect(drvr_mod_net);
     } else {
       // Load is in the same module as buffer, connect to ModNet if it exists
+      load_pin->disconnect();  // jk: needed???
       load_pin->connect(drvr_mod_net);
     }
   }
@@ -1137,10 +1158,19 @@ void dbNet::setDrivingITerm(int id)
   net->_drivingIterm = id;
 }
 
-int dbNet::getDrivingITerm() const
+int dbNet::getDrivingITermId() const
 {
   _dbNet* net = (_dbNet*) this;
   return net->_drivingIterm;
+}
+
+dbITerm* dbNet::getDrivingITerm() const
+{
+  _dbNet* net = (_dbNet*) this;
+  if (net->_drivingIterm <= 0) {
+    return nullptr;
+  }
+  return dbITerm::getITerm(getBlock(), net->_drivingIterm);
 }
 
 bool dbNet::hasFixedBump()
@@ -1792,11 +1822,45 @@ dbBTerm* dbNet::get1stBTerm()
   return bt;
 }
 
+dbObject* dbNet::getFirstDriverTerm() const
+{
+  for (dbITerm* iterm : getITerms()) {
+    if (iterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (iterm->isClocked()) {
+      continue;
+    }
+
+    if (iterm->getIoType() != dbIoType::OUTPUT) {
+      continue;
+    }
+
+    return iterm;
+  }
+
+  for (dbBTerm* bterm : getBTerms()) {
+    if (bterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (bterm->getIoType() == dbIoType::OUTPUT
+        || bterm->getIoType() == dbIoType::FEEDTHRU) {
+      continue;
+    }
+
+    return bterm;
+  }
+
+  return nullptr;
+}
+
 dbITerm* dbNet::getFirstOutput() const
 {
-  if (getDrivingITerm() > 0) {
+  if (getDrivingITermId() > 0) {
     return dbITerm::getITerm((dbBlock*) getImpl()->getOwner(),
-                             getDrivingITerm());
+                             getDrivingITermId());
   }
 
   for (dbITerm* tr : getITerms()) {
@@ -3650,12 +3714,39 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
     return nullptr;
   }
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "insert_buffer",
+             1,
+             "BeforeLoads: on dbNet={}, load_pins_size={}, "
+             "buffer_master={}, loc=({}, {}), base_name={}, uniquify={}, "
+             "loads_on_same_db_net={}",
+             getName(),
+             load_pins.size(),
+             buffer_master->getName(),
+             loc ? loc->getX() : -1,
+             loc ? loc->getY() : -1,
+             base_name ? base_name : "buf",
+             static_cast<int>(uniquify),
+             loads_on_same_db_net);
+
   // 1. Validate Load Pins & Find Lowest Common Ancestor (Hierarchy)
   //    Also check for DontTouch attributes.
   dbModule* target_module = nullptr;
   bool first = true;
 
   for (dbObject* load_obj : load_pins) {
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "insert_buffer",
+               1,
+               "BeforeLoads:   target load pin: {}",
+               load_obj->getName());
+
+    if (load_obj == nullptr) {
+      continue;
+    }
+
     dbModule* curr_mod = nullptr;
     if (load_obj->getObjectType() == dbITermObj) {
       dbITerm* load = static_cast<dbITerm*>(load_obj);
@@ -3664,7 +3755,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
       if (loads_on_same_db_net && load->getNet() != this) {
         getImpl()->getLogger()->error(utl::ODB,
                                       1020,
-                                      "insertBufferBeforeLoads: Load pin {} is "
+                                      "BeforeLoads: Load pin {} is "
                                       "not connected to net {}",
                                       load->getName(),
                                       getName());
@@ -3675,7 +3766,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
       if (checkDontTouch(this, nullptr, load)) {
         getImpl()->getLogger()->warn(utl::ODB,
                                      1017,
-                                     "insertBufferBeforeLoads: Load pin {} or "
+                                     "BeforeLoads: Load pin {} or "
                                      "net is dont_touch.",
                                      load->getName());
         return nullptr;
@@ -3688,7 +3779,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
       if (loads_on_same_db_net && load->getNet() != this) {
         getImpl()->getLogger()->error(utl::ODB,
                                       999,
-                                      "insertBufferBeforeLoads: Load pin {} is "
+                                      "BeforeLoads: Load pin {} is "
                                       "not connected to net {}",
                                       load->getName(),
                                       getName());
@@ -3699,7 +3790,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
       if (checkDontTouch(this, nullptr, nullptr)) {
         getImpl()->getLogger()->warn(utl::ODB,
                                      1021,
-                                     "insertBufferBeforeLoads: Load pin {} or "
+                                     "BeforeLoads: Load pin {} or "
                                      "net is dont_touch.",
                                      load->getName());
         return nullptr;
@@ -3707,9 +3798,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
       curr_mod = block->getTopModule();
     } else {
       getImpl()->getLogger()->error(
-          utl::ODB,
-          1019,
-          "insertBufferBeforeLoads: Load object is not an ITerm or BTerm.");
+          utl::ODB, 1019, "BeforeLoads: Load object is not an ITerm or BTerm.");
       return nullptr;
     }
 
@@ -3720,6 +3809,13 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
       target_module = findLCA(target_module, curr_mod);
     }
   }
+
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "insert_buffer",
+             1,
+             "BeforeLoads: LCA module: {}",
+             target_module ? target_module->getName() : "null");
 
   if (target_module == nullptr) {
     // Fallback to top module if something went wrong or loads are in top
@@ -3738,9 +3834,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
                                              buf_output_iterm);
   if (buffer_inst == nullptr) {
     getImpl()->getLogger()->error(
-        utl::ODB,
-        1018,
-        "insertBufferBeforeLoads: Failed to create buffer instance.");
+        utl::ODB, 1018, "BeforeLoads: Failed to create buffer instance.");
     return nullptr;
   }
 
@@ -3781,6 +3875,14 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
     // Create MOD net for logical connection in the target module only when
     // necessary
     const char* base_name = block->getBaseName(new_flat_net->getConstName());
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "insert_buffer",
+               1,
+               "BeforeLoads: Creating new hierarchical net "
+               "(dbModNet) with base name '{}' in module '{}'",
+               base_name,
+               target_module->getName());
     new_mod_net = dbModNet::create(target_module, base_name);
   }
 
@@ -3795,11 +3897,27 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
   //     If the buffer is inside a sub-module, we assume the original net
   //     already traverses there (since we picked LCA).
   buf_input_iterm->connect(this);
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "insert_buffer",
+             1,
+             "BeforeLoads: Connected buffer input '{}' to original "
+             "flat net '{}'",
+             buf_input_iterm->getName(),
+             this->getName());
 
   // Also connect to ModNet if it exists in this module
   if (dbModNet* orig_mod_net = target_module->getModNet(
           getBlock()->getBaseName(this->getConstName()))) {
     buf_input_iterm->connect(orig_mod_net);
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "insert_buffer",
+               1,
+               "BeforeLoads: Connected buffer input '{}' to "
+               "original hierarchical net '{}'",
+               buf_input_iterm->getName(),
+               orig_mod_net->getHierarchicalName());
   }
 
   // 4.2. Connect Buffer Output to the New Net (Flat & Hier)
@@ -3807,8 +3925,21 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
   if (new_mod_net) {
     buf_output_iterm->connect(new_mod_net);
   }
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "insert_buffer",
+             1,
+             "BeforeLoads: Connected buffer output '{}' to new "
+             "flat net '{}'{}",
+             buf_output_iterm->getName(),
+             new_flat_net->getName(),
+             new_mod_net ? fmt::format(" and new hierarchical net '{}'",
+                                       new_mod_net->getHierarchicalName())
+                         : "");
 
   // 4.3. Move Target Loads to the New Net
+  int num_loads = load_pins.size();
+  int load_idx = 0;
   for (dbObject* load_obj : load_pins) {
     if (load_obj->getObjectType() == dbITermObj) {
       dbITerm* load = static_cast<dbITerm*>(load_obj);
@@ -3817,13 +3948,39 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
       //   we create hierarchical pins/nets to maintain logical consistency.
       // - We do this BEFORE disconnect to allow reusing existing hierarchical
       //   ports/nets.
+      debugPrint(getImpl()->getLogger(),
+                 utl::ODB,
+                 "insert_buffer",
+                 1,
+                 "BeforeLoads: [load {}/{}] Creating hierarchical "
+                 "connection "
+                 "for load '{}'",
+                 load_idx + 1,
+                 num_loads,
+                 load->getName());
       createHierarchicalConnection(load, buf_output_iterm, load_pins);
     } else {  // load_obj is a BTerm
       assert(load_obj->getObjectType() == dbBTermObj);
       dbBTerm* load = static_cast<dbBTerm*>(load_obj);
       load->disconnect();
       load->connect(new_flat_net, new_mod_net);
+      debugPrint(getImpl()->getLogger(),
+                 utl::ODB,
+                 "insert_buffer",
+                 1,
+                 "BeforeLoads: [load {}/{}] Moved BTerm load '{}' "
+                 "to new flat net '{}'{}",
+                 load_idx + 1,
+                 num_loads,
+                 load->getName(),
+                 new_flat_net->getName(),
+                 new_mod_net ? fmt::format(" and new hierarchical net '{}'",
+                                           new_mod_net->getHierarchicalName())
+                             : "");
     }
+
+    // For next iteration
+    load_idx++;
   }
 
   // 5. Place the Buffer
@@ -3833,6 +3990,14 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
   } else {
     placement_loc = computeCentroid(load_pins);
   }
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "insert_buffer",
+             1,
+             "BeforeLoads: Placing buffer '{}' at ({}, {})",
+             buffer_inst->getName(),
+             placement_loc.getX(),
+             placement_loc.getY());
   placeNewBuffer(buffer_inst, &placement_loc, nullptr, nullptr);
 
   // 6. Propagate NDR if exists

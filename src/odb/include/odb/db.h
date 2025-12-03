@@ -1839,7 +1839,12 @@ class dbNet : public dbObject
   /// Returns driving term id assigned of this net. -1 if not set, 0 if non
   /// existent
   ///
-  int getDrivingITerm() const;
+  int getDrivingITermId() const;
+
+  ///
+  /// Returns the driving dbITerm* of this net.
+  ///
+  dbITerm* getDrivingITerm() const;
 
   ///
   /// Returns true if a fixed-bump flag has been set.
@@ -1994,6 +1999,11 @@ class dbNet : public dbObject
   /// Get the 1st inputSignal Iterm; can be
   ///
   dbITerm* get1stSignalInput(bool io);
+
+  ///
+  /// Get the 1st driver terminal (dbITerm or dbBTerm)
+  ///
+  dbObject* getFirstDriverTerm() const;
 
   ///
   /// Get the 1st output Iterm; can be
