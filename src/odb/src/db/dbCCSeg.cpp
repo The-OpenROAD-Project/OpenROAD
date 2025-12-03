@@ -82,10 +82,10 @@ void dbCCSeg::adjustCapacitance(float factor, int corner)
                seg->getId(),
                factor,
                corner);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbCCSegObj);
     block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbCCSeg::CAPACITANCE);
+    block->_journal->pushParam(_dbCCSeg::kCapacitance);
     block->_journal->pushParam(prev_value);
     block->_journal->pushParam(value);
     block->_journal->pushParam(0);
@@ -155,10 +155,10 @@ void dbCCSeg::setAllCcCap(double* ttcap)
                "ECO: dbCCSeg::setAllCcCap, ccseg: {}, caps: {}",
                seg->getId(),
                ttcap[0]);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbCCSegObj);
     block->_journal->pushParam(getId());
-    block->_journal->pushParam(_dbCCSeg::SETALLCCCAP);
+    block->_journal->pushParam(_dbCCSeg::kSetAllCcCap);
     for (uint ii = 0; ii < cornerCnt; ii++) {
       block->_journal->pushParam(ttcap[ii]);
     }
@@ -187,10 +187,10 @@ void dbCCSeg::setCapacitance(double cap, int corner)
                seg->getId(),
                value,
                corner);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbCCSegObj);
     block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbCCSeg::CAPACITANCE);
+    block->_journal->pushParam(_dbCCSeg::kCapacitance);
     block->_journal->pushParam(prev_value);
     block->_journal->pushParam(value);
     block->_journal->pushParam(corner);
@@ -219,10 +219,10 @@ void dbCCSeg::addCapacitance(double cap, int corner)
                seg->getId(),
                value,
                corner);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbCCSegObj);
     block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbCCSeg::CAPACITANCE);
+    block->_journal->pushParam(_dbCCSeg::kCapacitance);
     block->_journal->pushParam(prev_value);
     block->_journal->pushParam(value);
     block->_journal->pushParam(corner);
@@ -253,10 +253,10 @@ void dbCCSeg::addCcCapacitance(dbCCSeg* other)
                "ECO: dbCCSeg {}, other dbCCSeg {}, addCcCapacitance",
                seg->getOID(),
                oseg->getOID());
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbCCSegObj);
     block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbCCSeg::ADDCCCAPACITANCE);
+    block->_journal->pushParam(_dbCCSeg::kAddCcCapacitance);
     block->_journal->pushParam(oseg->getId());
     block->_journal->endAction();
   }
@@ -515,7 +515,7 @@ dbCCSeg* dbCCSeg::create(dbCapNode* src_, dbCapNode* tgt_, bool mergeParallel)
                tgt->getOID(),
                mergeParallel);
 
-    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->beginAction(dbJournal::kCreateObject);
     block->_journal->pushParam(dbCCSegObj);
     block->_journal->pushParam(src->getOID());
     block->_journal->pushParam(tgt->getOID());
@@ -594,10 +594,10 @@ void dbCCSeg::unLink_cc_seg(dbCapNode* capn)
                "ECO: dbCCSeg::unLink, ccseg: {}, capNode: {}",
                getId(),
                capn->getId());
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbCCSegObj);
     block->_journal->pushParam(getId());
-    block->_journal->pushParam(_dbCCSeg::UNLINKCCSEG);
+    block->_journal->pushParam(_dbCCSeg::kUnlinkCcSeg);
     block->_journal->pushParam(capn->getId());
     block->_journal->endAction();
   }
@@ -619,10 +619,10 @@ void dbCCSeg::Link_cc_seg(dbCapNode* capn, uint cseq)
                getId(),
                capn->getId(),
                cseq);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbCCSegObj);
     block->_journal->pushParam(getId());
-    block->_journal->pushParam(_dbCCSeg::LINKCCSEG);
+    block->_journal->pushParam(_dbCCSeg::kLinkCcSeg);
     block->_journal->pushParam(capn->getId());
     block->_journal->pushParam(cseq);
     block->_journal->endAction();
@@ -662,7 +662,7 @@ void dbCCSeg::destroy(dbCCSeg* seg_)
                1,
                "ECO: dbCCSeg::destroy, seg id: {}",
                seg->getId());
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->beginAction(dbJournal::kDeleteObject);
     block->_journal->pushParam(dbCCSegObj);
     block->_journal->pushParam(seg->getId());
     block->_journal->pushParam((uint) 1);  //  regular destroy
@@ -688,7 +688,7 @@ void dbCCSeg::destroyS(dbCCSeg* seg_)
                1,
                "ECO: dbCCSeg::destroy, seg id: {}",
                seg->getId());
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->beginAction(dbJournal::kDeleteObject);
     block->_journal->pushParam(dbCCSegObj);
     block->_journal->pushParam(seg->getId());
     block->_journal->pushParam((uint) 0);  //  simple destroy
@@ -741,10 +741,10 @@ void dbCCSeg::swapCapnode(dbCapNode* orig_, dbCapNode* new_)
                seg->getOID(),
                oid,
                nid);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbCCSegObj);
     block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbCCSeg::SWAPCAPNODE);
+    block->_journal->pushParam(_dbCCSeg::kSwapCapNode);
     block->_journal->pushParam(oid);
     block->_journal->pushParam(nid);
     block->_journal->endAction();

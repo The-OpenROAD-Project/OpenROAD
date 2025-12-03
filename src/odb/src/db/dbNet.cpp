@@ -404,7 +404,7 @@ bool dbNet::rename(const char* name)
                static_cast<void*>(this),
                getName(),
                name);
-    block->_journal->updateField(this, _dbNet::NAME, net->name_, name);
+    block->_journal->updateField(this, _dbNet::kName, net->name_, name);
   }
 
   block->_net_hash.remove(net);
@@ -435,7 +435,7 @@ void dbNet::swapNetNames(dbNet* source, bool ok_to_journal)
                source->getId(),
                getName(),
                getId());
-    block->_journal->beginAction(dbJournal::SWAP_OBJECT);
+    block->_journal->beginAction(dbJournal::kSwapObject);
     // a name
     block->_journal->pushParam(dbNameObj);
     // the type of name swap
@@ -571,7 +571,7 @@ void dbNet::setWireType(dbWireType wire_type)
                getId(),
                wire_type.getValue());
     block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
   }
 }
 
@@ -603,7 +603,7 @@ void dbNet::setSigType(dbSigType sig_type)
                getId(),
                sig_type.getValue());
     block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
   }
 }
 
@@ -890,7 +890,7 @@ void dbNet::setSpef(bool value)
                getId(),
                value);
     block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
   }
 }
 
@@ -916,7 +916,7 @@ void dbNet::setSelect(bool value)
                getId(),
                value);
     block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
   }
 }
 
@@ -976,7 +976,7 @@ void dbNet::setMark(bool value)
                getId(),
                value);
     block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
   }
 }
 
@@ -1002,7 +1002,7 @@ void dbNet::setMark_1(bool value)
                getId(),
                value);
     block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
   }
 }
 
@@ -1030,7 +1030,7 @@ void dbNet::setWireOrdered(bool value)
                getId(),
                value);
     block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
   }
 }
 
@@ -1058,7 +1058,7 @@ void dbNet::setDisconnected(bool value)
                getId(),
                value);
     block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
   }
 }
 
@@ -1083,7 +1083,7 @@ void dbNet::setWireAltered(bool value)
                getId(),
                value);
     block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
   }
 }
 
@@ -1111,7 +1111,7 @@ void dbNet::setExtracted(bool value)
                getId(),
                value);
     block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
   }
 }
 
@@ -1139,7 +1139,7 @@ void dbNet::setRCgraph(bool value)
                getId(),
                value);
     block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
   }
 }
 
@@ -1302,7 +1302,7 @@ bool dbNet::setIOflag()
                  "ECO: net {}, setIOFlag",
                  getId());
       block->_journal->updateField(
-          this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+          this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
     }
 
     return true;
@@ -1316,7 +1316,7 @@ bool dbNet::setIOflag()
                "ECO: net {}, setIOFlag",
                getId());
     block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
   }
 
   return false;
@@ -1367,7 +1367,7 @@ void dbNet::setSpecial()
                "ECO: net {}, setSpecial",
                getId());
     block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
   }
 }
 
@@ -1388,7 +1388,7 @@ void dbNet::clearSpecial()
                "ECO: net {}, clearSpecial",
                getId());
     block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
   }
 }
 
@@ -1475,7 +1475,7 @@ void dbNet::setWildConnected()
                "ECO: net {}, setWildConnected",
                getId());
     block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
   }
 }
 
@@ -1497,7 +1497,7 @@ void dbNet::clearWildConnected()
                "ECO: net {}, clearWildConnected",
                getId());
     block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
+        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
   }
 }
 
@@ -1520,10 +1520,10 @@ void dbNet::reverseRSegs()
                1,
                "ECO: dbNet {}, reverse rsegs sequence",
                getId());
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(getId());
-    block->_journal->pushParam(_dbNet::REVERSE_RSEG);
+    block->_journal->pushParam(_dbNet::kReverseRSeg);
     block->_journal->endAction();
   }
 }
@@ -1552,10 +1552,10 @@ void dbNet::set1stRSegId(uint rid)
                "ECO: dbNet {}, set 1stRSegNode {}",
                getId(),
                rid);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(getId());
-    block->_journal->pushParam(_dbNet::HEAD_RSEG);
+    block->_journal->pushParam(_dbNet::kHeadRSeg);
     block->_journal->pushParam(pid);
     block->_journal->pushParam(rid);
     block->_journal->endAction();
@@ -1618,10 +1618,10 @@ void dbNet::setTermExtIds(int capId)  // 1: capNodeId, 0: reset
                  "ECO: reset net {} term extId",
                  getId());
     }
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(getId());
-    block->_journal->pushParam(_dbNet::TERM_EXTID);
+    block->_journal->pushParam(_dbNet::kTermExtId);
     block->_journal->pushParam(capId);
     block->_journal->endAction();
   }
@@ -1658,10 +1658,10 @@ void dbNet::set1stCapNodeId(uint cid)
                "ECO: dbNet {}, set 1stCapNode {}",
                getId(),
                cid);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(getId());
-    block->_journal->pushParam(_dbNet::HEAD_CAPNODE);
+    block->_journal->pushParam(_dbNet::kHeadCapNode);
     block->_journal->pushParam(pid);
     block->_journal->pushParam(cid);
     block->_journal->endAction();
@@ -1959,10 +1959,10 @@ void dbNet::setNonDefaultRule(dbTechNonDefaultRule* rule)
                (rule) ? rule->getImpl()->getOID() : 0);
     // block->_journal->updateField(this, _dbNet::NON_DEFAULT_RULE, prev_rule,
     // net->_non_default_rule );
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(rule->getObjectType());
     block->_journal->pushParam(rule->getId());
-    block->_journal->pushParam(_dbNet::NON_DEFAULT_RULE);
+    block->_journal->pushParam(_dbNet::kNonDefaultRule);
     block->_journal->pushParam(prev_rule);
     block->_journal->pushParam((uint) net->_non_default_rule);
     block->_journal->pushParam(prev_block_rule);
@@ -2150,7 +2150,7 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
                net->getId(),
                static_cast<void*>(net),
                name_);
-    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->beginAction(dbJournal::kCreateObject);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(name_);
     block->_journal->pushParam(net->getOID());
@@ -2230,7 +2230,7 @@ void dbNet::destroy(dbNet* net_)
                net->getId(),
                static_cast<void*>(net),
                net->name_);
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->beginAction(dbJournal::kDeleteObject);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(net_->getName());
     block->_journal->pushParam(net->getOID());
