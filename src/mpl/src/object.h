@@ -403,8 +403,8 @@ class SoftMacro
   int getY() const { return y_; }
 
   // The position of pins relative to the lower left of the instance
-  int getPinX() const { return x_ + 0.5 * width_; }
-  int getPinY() const { return y_ + 0.5 * height_; }
+  int getPinX() const { return x_ + (0.5 * width_); }
+  int getPinY() const { return y_ + (0.5 * height_); }
 
   std::pair<int, int> getLocation() const
   {
