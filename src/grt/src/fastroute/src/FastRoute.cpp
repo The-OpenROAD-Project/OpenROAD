@@ -404,6 +404,24 @@ void FastRouteCore::init3DEdges()
   }
 }
 
+void FastRouteCore::setEdgeCapacity(int x1,
+                                    int y1,
+                                    int x2,
+                                    int y2,
+                                    int layer,
+                                    int capacity)
+{
+  const int k = layer - 1;
+
+  if (y1 == y2) {
+    graph2d_.addCapH(x1, y1, capacity);
+    h_edges_3D_[k][y1][x1].cap = capacity;
+  } else if (x1 == x2) {
+    graph2d_.addCapV(x1, y1, capacity);
+    v_edges_3D_[k][y1][x1].cap = capacity;
+  }
+}
+
 // Useful to prevent NDR nets to be assigned to 3D edges with insufficient
 // capacity. Need to be initialized after all the adjustments
 void FastRouteCore::initEdgesCapacityPerLayer()

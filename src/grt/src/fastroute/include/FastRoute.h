@@ -121,6 +121,7 @@ class FastRouteCore
   void clearNetsToRoute() { net_ids_.clear(); }
   void initEdges();
   void init3DEdges();
+  void setEdgeCapacity(int x1, int y1, int x2, int y2, int layer, int capacity);
   int getDbNetLayerEdgeCost(odb::dbNet* db_net, int layer);
   void initEdgesCapacityPerLayer();
   void setNumAdjustments(int nAdjustments);
