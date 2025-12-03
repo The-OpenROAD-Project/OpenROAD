@@ -46,7 +46,6 @@ target_include_directories(rmp
     # Unfortunate side-effect of swig include StaTcl.i
     ${OPENSTA_HOME}/include/sta
     ${OPENSTA_HOME}
-    ${Boost_INCLUDE_DIRS}
 )
 
 target_include_directories(rmp_lib
@@ -54,7 +53,6 @@ target_include_directories(rmp_lib
     ../include
   PRIVATE
     .
-  ${Boost_INCLUDE_DIRS}
 )
 
 target_link_libraries(rmp_lib
@@ -66,6 +64,7 @@ target_link_libraries(rmp_lib
     utl_lib
     cut
     ${ABC_LIBRARY}
+    absl_hash
 )
 
 target_link_libraries(rmp

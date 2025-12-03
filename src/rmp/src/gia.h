@@ -24,9 +24,19 @@ namespace rmp {
 
 struct GiaOp final
 {
+  using Type = utl::UniquePtrWithDeleter<abc::Gia_Man_t>;
+  using OpType = std::function<void(Type&)>;
+
   size_t id;
-  std::function<void(abc::Gia_Man_t*&)> op;
+  OpType op;
   bool operator==(const GiaOp& other) const { return id == other.id; }
+  bool operator!=(const GiaOp& other) const { return !(*this == other); }
+
+  template <typename H>
+  friend H AbslHashValue(H h, const GiaOp& gia_op)
+  {
+    return H::combine(std::move(h), gia_op.id);
+  }
 };
 
 std::vector<GiaOp> GiaOps(utl::Logger* logger);
@@ -38,5 +48,4 @@ void RunGia(sta::dbSta* sta,
             size_t resize_iters,
             utl::UniqueName& name_generator,
             utl::Logger* logger);
-
 }  // namespace rmp

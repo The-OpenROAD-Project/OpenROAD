@@ -53,12 +53,13 @@ cc_library(
         "//third-party/abc:abc-lib",
         "@boost.bind",
         "@boost.config",
-        "@boost.container_hash",
         "@boost.fusion",
         "@boost.lambda",
         "@boost.optional",
         "@boost.phoenix",
         "@boost.spirit",
+        "@com_google_absl//absl/hash",
+        "@com_google_absl//absl/random",
     ],
 )
 

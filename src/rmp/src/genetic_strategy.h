@@ -13,23 +13,8 @@
 #include "sta/Delay.hh"
 #include "utl/unique_name.h"
 
-namespace rsz {
-class Resizer;
-}  // namespace rsz
-
-namespace sta {
-class dbSta;
-class Corner;
-class Vertex;
-}  // namespace sta
-
-namespace utl {
-class Logger;
-}  // namespace utl
-
 namespace rmp {
 
-// TODO docs
 class GeneticStrategy final : public SlackTuningStrategy
 {
  public:
