@@ -37,7 +37,6 @@ struct SolutionSlack final
   std::optional<sta::Slack> worst_slack_ = std::nullopt;
 
   std::string toString() const;
-  bool operator<(const SolutionSlack& other) const;
   Type RandomNeighbor(const Type& all_ops,
                       utl::Logger* logger,
                       std::mt19937& random) const;
@@ -61,12 +60,11 @@ class SlackTuningStrategy : public ResynthesisStrategy
                                unsigned initial_ops)
       : corner_(corner),
         slack_threshold_(slack_threshold),
-        seed_(seed),
         iterations_(iterations),
         initial_ops_(initial_ops)
   {
-    if (seed_) {
-      random_.seed(*seed_);
+    if (seed) {
+      random_.seed(*seed);
     }
   }
 
@@ -88,7 +86,6 @@ class SlackTuningStrategy : public ResynthesisStrategy
  protected:
   sta::Corner* corner_;
   sta::Slack slack_threshold_;
-  std::optional<std::mt19937::result_type> seed_;
   unsigned iterations_;
   unsigned initial_ops_;
   std::mt19937 random_;
