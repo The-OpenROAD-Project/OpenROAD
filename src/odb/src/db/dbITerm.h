@@ -29,13 +29,13 @@ class _dbMPin;
 struct dbITermFlags
 {
   // note: number of bits must add up to 32 !!!
-  uint _mterm_idx : 20;  // index into inst-hdr-mterm-vector
-  uint _spare_bits : 7;
-  uint _clocked : 1;
-  uint _mark : 1;
-  uint _spef : 1;       // Spef flag
-  uint _special : 1;    // Special net connection.
-  uint _connected : 1;  // terminal is physically connected
+  uint mterm_idx : 20;  // index into inst-hdr-mterm-vector
+  uint spare_bits : 7;
+  uint clocked : 1;
+  uint mark : 1;
+  uint spef : 1;       // Spef flag
+  uint special : 1;    // Special net connection.
+  uint connected : 1;  // terminal is physically connected
 };
 
 class _dbITerm : public _dbObject
@@ -45,18 +45,6 @@ class _dbITerm : public _dbObject
   {
     kFlags
   };
-
-  dbITermFlags flags_;
-  uint _ext_id;
-  dbId<_dbNet> _net;
-  dbId<_dbModNet> _mnet;
-  dbId<_dbInst> _inst;
-  dbId<_dbITerm> _next_net_iterm;
-  dbId<_dbITerm> _prev_net_iterm;
-  dbId<_dbITerm> _next_modnet_iterm;
-  dbId<_dbITerm> _prev_modnet_iterm;
-  uint32_t _sta_vertex_id;  // not saved
-  boost::container::flat_map<dbId<_dbMPin>, dbId<_dbAccessPoint>> aps_;
 
   _dbITerm(_dbDatabase*);
   _dbITerm(_dbDatabase*, const _dbITerm& i);
@@ -68,33 +56,45 @@ class _dbITerm : public _dbObject
 
   _dbMTerm* getMTerm() const;
   _dbInst* getInst() const;
+
+  dbITermFlags flags_;
+  uint ext_id_;
+  dbId<_dbNet> net_;
+  dbId<_dbModNet> mnet_;
+  dbId<_dbInst> inst_;
+  dbId<_dbITerm> next_net_iterm_;
+  dbId<_dbITerm> prev_net_iterm_;
+  dbId<_dbITerm> next_modnet_iterm_;
+  dbId<_dbITerm> prev_modnet_iterm_;
+  uint32_t sta_vertex_id_;  // not saved
+  boost::container::flat_map<dbId<_dbMPin>, dbId<_dbAccessPoint>> aps_;
 };
 
 inline _dbITerm::_dbITerm(_dbDatabase*)
 {
   // For pointer tagging the bottom 3 bits.
   static_assert(alignof(_dbITerm) % 8 == 0);
-  flags_._mterm_idx = 0;
-  flags_._spare_bits = 0;
-  flags_._clocked = 0;
-  flags_._mark = 0;
-  flags_._spef = 0;
-  flags_._special = 0;
-  flags_._connected = 0;
-  _ext_id = 0;
-  _sta_vertex_id = 0;
+  flags_.mterm_idx = 0;
+  flags_.spare_bits = 0;
+  flags_.clocked = 0;
+  flags_.mark = 0;
+  flags_.spef = 0;
+  flags_.special = 0;
+  flags_.connected = 0;
+  ext_id_ = 0;
+  sta_vertex_id_ = 0;
 }
 
 inline _dbITerm::_dbITerm(_dbDatabase*, const _dbITerm& i)
     : flags_(i.flags_),
-      _ext_id(i._ext_id),
-      _net(i._net),
-      _inst(i._inst),
-      _next_net_iterm(i._next_net_iterm),
-      _prev_net_iterm(i._prev_net_iterm),
-      _next_modnet_iterm(i._next_modnet_iterm),
-      _prev_modnet_iterm(i._prev_modnet_iterm),
-      _sta_vertex_id(0)
+      ext_id_(i.ext_id_),
+      net_(i.net_),
+      inst_(i.inst_),
+      next_net_iterm_(i.next_net_iterm_),
+      prev_net_iterm_(i.prev_net_iterm_),
+      next_modnet_iterm_(i.next_modnet_iterm_),
+      prev_modnet_iterm_(i.prev_modnet_iterm_),
+      sta_vertex_id_(0)
 {
 }
 
@@ -102,14 +102,14 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbITerm& iterm)
 {
   uint* bit_field = (uint*) &iterm.flags_;
   stream << *bit_field;
-  stream << iterm._ext_id;
-  stream << iterm._net;
-  stream << iterm._inst;
-  stream << iterm._next_net_iterm;
-  stream << iterm._prev_net_iterm;
-  stream << iterm._mnet;
-  stream << iterm._next_modnet_iterm;
-  stream << iterm._prev_modnet_iterm;
+  stream << iterm.ext_id_;
+  stream << iterm.net_;
+  stream << iterm.inst_;
+  stream << iterm.next_net_iterm_;
+  stream << iterm.prev_net_iterm_;
+  stream << iterm.mnet_;
+  stream << iterm.next_modnet_iterm_;
+  stream << iterm.prev_modnet_iterm_;
   stream << iterm.aps_;
   return stream;
 }
@@ -120,15 +120,15 @@ inline dbIStream& operator>>(dbIStream& stream, _dbITerm& iterm)
   _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   uint* bit_field = (uint*) &iterm.flags_;
   stream >> *bit_field;
-  stream >> iterm._ext_id;
-  stream >> iterm._net;
-  stream >> iterm._inst;
-  stream >> iterm._next_net_iterm;
-  stream >> iterm._prev_net_iterm;
+  stream >> iterm.ext_id_;
+  stream >> iterm.net_;
+  stream >> iterm.inst_;
+  stream >> iterm.next_net_iterm_;
+  stream >> iterm.prev_net_iterm_;
   if (db->isSchema(db_schema_update_hierarchy)) {
-    stream >> iterm._mnet;
-    stream >> iterm._next_modnet_iterm;
-    stream >> iterm._prev_modnet_iterm;
+    stream >> iterm.mnet_;
+    stream >> iterm.next_modnet_iterm_;
+    stream >> iterm.prev_modnet_iterm_;
   }
   stream >> iterm.aps_;
   return stream;

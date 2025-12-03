@@ -36,10 +36,10 @@ bool _dbScanInst::operator==(const _dbScanInst& rhs) const
   if (clock_edge_ != rhs.clock_edge_) {
     return false;
   }
-  if (_next_list_scan_inst != rhs._next_list_scan_inst) {
+  if (next_list_scan_inst_ != rhs.next_list_scan_inst_) {
     return false;
   }
-  if (_prev_list_scan_inst != rhs._prev_list_scan_inst) {
+  if (prev_list_scan_inst_ != rhs.prev_list_scan_inst_) {
     return false;
   }
 
@@ -66,10 +66,10 @@ dbIStream& operator>>(dbIStream& stream, _dbScanInst& obj)
   stream >> obj.scan_clock_;
   stream >> obj.clock_edge_;
   if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
-    stream >> obj._next_list_scan_inst;
+    stream >> obj.next_list_scan_inst_;
   }
   if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
-    stream >> obj._prev_list_scan_inst;
+    stream >> obj.prev_list_scan_inst_;
   }
   return stream;
 }
@@ -82,8 +82,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanInst& obj)
   stream << obj.inst_;
   stream << obj.scan_clock_;
   stream << obj.clock_edge_;
-  stream << obj._next_list_scan_inst;
-  stream << obj._prev_list_scan_inst;
+  stream << obj.next_list_scan_inst_;
+  stream << obj.prev_list_scan_inst_;
   return stream;
 }
 
@@ -237,18 +237,18 @@ void dbScanInst::insertAtFront(dbScanList* scan_list_)
   _dbScanList* scan_list = (_dbScanList*) scan_list_;
   _dbBlock* block = (_dbBlock*) scan_inst->getOwner();
 
-  if (scan_list->_first_scan_inst != 0) {
+  if (scan_list->first_scan_inst_ != 0) {
     _dbScanInst* head
-        = block->scan_inst_tbl_->getPtr(scan_list->_first_scan_inst);
-    scan_inst->_next_list_scan_inst = scan_list->_first_scan_inst;
-    head->_prev_list_scan_inst = scan_inst->getOID();
+        = block->scan_inst_tbl_->getPtr(scan_list->first_scan_inst_);
+    scan_inst->next_list_scan_inst_ = scan_list->first_scan_inst_;
+    head->prev_list_scan_inst_ = scan_inst->getOID();
   } else {
     // Needed if an already listed scan inst is moved to an empty list.
-    scan_inst->_next_list_scan_inst = 0;
+    scan_inst->next_list_scan_inst_ = 0;
   }
 
-  scan_inst->_prev_list_scan_inst = 0;
-  scan_list->_first_scan_inst = scan_inst->getOID();
+  scan_inst->prev_list_scan_inst_ = 0;
+  scan_list->first_scan_inst_ = scan_inst->getOID();
 }
 
 dbScanInst* dbScanInst::create(dbScanList* scan_list, dbInst* inst)

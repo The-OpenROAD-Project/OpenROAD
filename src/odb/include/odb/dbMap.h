@@ -25,10 +25,6 @@ namespace odb {
 template <class T, class D>
 class dbMap
 {
-  dbSet<T> _set;
-  std::map<T*, D>* _map;    // map used if set is not sequential
-  std::vector<D>* _vector;  // vector used if set is sequential
-
  public:
   ///
   /// Create a new map from the set. The data-objects are initialized
@@ -81,6 +77,11 @@ class dbMap
   /// }
   ///
   const D& operator[](T* object) const;
+
+ private:
+  dbSet<T> set_;
+  std::map<T*, D>* map_;    // map used if set is not sequential
+  std::vector<D>* _vector;  // vector used if set is sequential
 };
 
 }  // namespace odb

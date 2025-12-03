@@ -302,7 +302,7 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     auto db_public = (dbDatabase*) &obj;
     for (auto lib : db_public->getLibs()) {
       _dbLib* lib_impl = (_dbLib*) lib;
-      lib_impl->_tech = old_db_tech;
+      lib_impl->tech_ = old_db_tech;
     }
   }
 
@@ -310,7 +310,7 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   const uint oid = obj.getId();
 
   for (_dbProperty* p : dbSet<_dbProperty>(&obj, obj._prop_tbl)) {
-    p->_owner = oid;
+    p->owner_ = oid;
   }
 
   // Set the revision of the database to the current revision

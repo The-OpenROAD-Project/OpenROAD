@@ -34,7 +34,7 @@ bool dbNetBTermItr::orderReversed() const
 void dbNetBTermItr::reverse(dbObject* parent)
 {
   _dbNet* net = (_dbNet*) parent;
-  uint id = net->_bterms;
+  uint id = net->bterms_;
   uint list = 0;
 
   while (id != 0) {
@@ -55,7 +55,7 @@ void dbNetBTermItr::reverse(dbObject* parent)
     id = bterm->next_bterm_;
   }
 
-  net->_bterms = list;
+  net->bterms_ = list;
 }
 
 uint dbNetBTermItr::sequential() const
@@ -79,7 +79,7 @@ uint dbNetBTermItr::size(dbObject* parent) const
 uint dbNetBTermItr::begin(dbObject* parent) const
 {
   _dbNet* net = (_dbNet*) parent;
-  return net->_bterms;
+  return net->bterms_;
 }
 
 uint dbNetBTermItr::end(dbObject* /* unused: parent */) const

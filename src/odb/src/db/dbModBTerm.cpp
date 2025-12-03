@@ -34,28 +34,28 @@ bool _dbModBTerm::operator==(const _dbModBTerm& rhs) const
   if (flags_ != rhs.flags_) {
     return false;
   }
-  if (_parent_moditerm != rhs._parent_moditerm) {
+  if (parent_moditerm_ != rhs.parent_moditerm_) {
     return false;
   }
-  if (_parent != rhs._parent) {
+  if (parent_ != rhs.parent_) {
     return false;
   }
-  if (_modnet != rhs._modnet) {
+  if (modnet_ != rhs.modnet_) {
     return false;
   }
-  if (_next_net_modbterm != rhs._next_net_modbterm) {
+  if (next_net_modbterm_ != rhs.next_net_modbterm_) {
     return false;
   }
-  if (_prev_net_modbterm != rhs._prev_net_modbterm) {
+  if (prev_net_modbterm_ != rhs.prev_net_modbterm_) {
     return false;
   }
-  if (_busPort != rhs._busPort) {
+  if (busPort_ != rhs.busPort_) {
     return false;
   }
   if (next_entry_ != rhs.next_entry_) {
     return false;
   }
-  if (_prev_entry != rhs._prev_entry) {
+  if (prev_entry_ != rhs.prev_entry_) {
     return false;
   }
 
@@ -82,36 +82,36 @@ dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
     stream >> obj.flags_;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._parent_moditerm;
+    stream >> obj.parent_moditerm_;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._parent;
+    stream >> obj.parent_;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._modnet;
+    stream >> obj.modnet_;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._next_net_modbterm;
+    stream >> obj.next_net_modbterm_;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._prev_net_modbterm;
+    stream >> obj.prev_net_modbterm_;
   }
   if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
-    stream >> obj._busPort;
+    stream >> obj.busPort_;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj.next_entry_;
   }
   if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
-    stream >> obj._prev_entry;
+    stream >> obj.prev_entry_;
   }
   // User Code Begin >>
   if (obj.getDatabase()->isSchema(db_schema_db_remove_hash)) {
     dbDatabase* db = (dbDatabase*) (obj.getDatabase());
     _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
-    _dbModule* module = block->module_tbl_->getPtr(obj._parent);
+    _dbModule* module = block->module_tbl_->getPtr(obj.parent_);
     if (obj.name_) {
-      module->_modbterm_hash[obj.name_] = obj.getId();
+      module->modbterm_hash_[obj.name_] = obj.getId();
     }
   }
   // User Code End >>
@@ -122,14 +122,14 @@ dbOStream& operator<<(dbOStream& stream, const _dbModBTerm& obj)
 {
   stream << obj.name_;
   stream << obj.flags_;
-  stream << obj._parent_moditerm;
-  stream << obj._parent;
-  stream << obj._modnet;
-  stream << obj._next_net_modbterm;
-  stream << obj._prev_net_modbterm;
-  stream << obj._busPort;
+  stream << obj.parent_moditerm_;
+  stream << obj.parent_;
+  stream << obj.modnet_;
+  stream << obj.next_net_modbterm_;
+  stream << obj.prev_net_modbterm_;
+  stream << obj.busPort_;
   stream << obj.next_entry_;
-  stream << obj._prev_entry;
+  stream << obj.prev_entry_;
   return stream;
 }
 
@@ -162,11 +162,11 @@ const char* dbModBTerm::getName() const
 dbModule* dbModBTerm::getParent() const
 {
   _dbModBTerm* obj = (_dbModBTerm*) this;
-  if (obj->_parent == 0) {
+  if (obj->parent_ == 0) {
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModule*) par->module_tbl_->getPtr(obj->_parent);
+  return (dbModule*) par->module_tbl_->getPtr(obj->parent_);
 }
 
 // User Code Begin dbModBTermPublicMethods
@@ -192,33 +192,33 @@ void dbModBTerm::setModNet(dbModNet* modNet)
 {
   _dbModBTerm* obj = (_dbModBTerm*) this;
 
-  obj->_modnet = modNet->getImpl()->getOID();
+  obj->modnet_ = modNet->getImpl()->getOID();
 }
 
 dbModNet* dbModBTerm::getModNet() const
 {
   _dbModBTerm* obj = (_dbModBTerm*) this;
-  if (obj->_modnet == 0) {
+  if (obj->modnet_ == 0) {
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModNet*) par->modnet_tbl_->getPtr(obj->_modnet);
+  return (dbModNet*) par->modnet_tbl_->getPtr(obj->modnet_);
 }
 
 void dbModBTerm::setParentModITerm(dbModITerm* parent_pin)
 {
   _dbModBTerm* obj = (_dbModBTerm*) this;
-  obj->_parent_moditerm = parent_pin->getImpl()->getOID();
+  obj->parent_moditerm_ = parent_pin->getImpl()->getOID();
 }
 
 dbModITerm* dbModBTerm::getParentModITerm() const
 {
   _dbModBTerm* obj = (_dbModBTerm*) this;
-  if (obj->_parent_moditerm == 0) {
+  if (obj->parent_moditerm_ == 0) {
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModITerm*) par->moditerm_tbl_->getPtr(obj->_parent_moditerm);
+  return (dbModITerm*) par->moditerm_tbl_->getPtr(obj->parent_moditerm_);
 }
 
 struct dbModBTermFlags_str
@@ -282,20 +282,20 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   modbterm->flags_ = 0U;
   ((dbModBTerm*) modbterm)->setIoType(dbIoType::INPUT);
   ((dbModBTerm*) modbterm)->setSigType(dbSigType::SIGNAL);
-  modbterm->_modnet = 0;
-  modbterm->_next_net_modbterm = 0;
-  modbterm->_prev_net_modbterm = 0;
-  modbterm->_busPort = 0;
+  modbterm->modnet_ = 0;
+  modbterm->next_net_modbterm_ = 0;
+  modbterm->prev_net_modbterm_ = 0;
+  modbterm->busPort_ = 0;
   modbterm->name_ = safe_strdup(name);
-  modbterm->_parent = module->getOID();
-  modbterm->next_entry_ = module->_modbterms;
-  modbterm->_prev_entry = 0;
-  if (module->_modbterms != 0) {
-    _dbModBTerm* new_next = block->modbterm_tbl_->getPtr(module->_modbterms);
-    new_next->_prev_entry = modbterm->getOID();
+  modbterm->parent_ = module->getOID();
+  modbterm->next_entry_ = module->modbterms_;
+  modbterm->prev_entry_ = 0;
+  if (module->modbterms_ != 0) {
+    _dbModBTerm* new_next = block->modbterm_tbl_->getPtr(module->modbterms_);
+    new_next->prev_entry_ = modbterm->getOID();
   }
-  module->_modbterms = modbterm->getOID();
-  module->_modbterm_hash[name] = dbId<_dbModBTerm>(modbterm->getOID());
+  module->modbterms_ = modbterm->getOID();
+  module->modbterm_hash_[name] = dbId<_dbModBTerm>(modbterm->getOID());
 
   if (block->journal_) {
     debugPrint(block->getImpl()->getLogger(),
@@ -327,32 +327,32 @@ void dbModBTerm::connect(dbModNet* net)
   _dbModNet* _modnet = (_dbModNet*) net;
   _dbModBTerm* _modbterm = (_dbModBTerm*) this;
   // already connected
-  if (_modbterm->_modnet == net->getId()) {
+  if (_modbterm->modnet_ == net->getId()) {
     return;
   }
 
   // If the modbterm is already connected to a different modnet, disconnect it
   // first.
-  if (_modbterm->_modnet != 0) {
+  if (_modbterm->modnet_ != 0) {
     disconnect();
   }
 
   for (auto callback : _block->callbacks_) {
     callback->inDbModBTermPreConnect(this, net);
   }
-  _modbterm->_modnet = net->getId();
+  _modbterm->modnet_ = net->getId();
   // append to net mod bterms. Do this by pushing onto head of list.
-  if (_modnet->_modbterms != 0) {
-    _dbModBTerm* head = _block->modbterm_tbl_->getPtr(_modnet->_modbterms);
+  if (_modnet->modbterms_ != 0) {
+    _dbModBTerm* head = _block->modbterm_tbl_->getPtr(_modnet->modbterms_);
     // next is old head
-    _modbterm->_next_net_modbterm = _modnet->_modbterms;
+    _modbterm->next_net_modbterm_ = _modnet->modbterms_;
     // previous for old head is this one
-    head->_prev_net_modbterm = getId();
+    head->prev_net_modbterm_ = getId();
   } else {
-    _modbterm->_next_net_modbterm = 0;  // only element
+    _modbterm->next_net_modbterm_ = 0;  // only element
   }
-  _modbterm->_prev_net_modbterm = 0;  // previous of head always zero
-  _modnet->_modbterms = getId();      // set new head
+  _modbterm->prev_net_modbterm_ = 0;  // previous of head always zero
+  _modnet->modbterms_ = getId();      // set new head
 
   if (_block->journal_) {
     debugPrint(_modbterm->getImpl()->getLogger(),
@@ -382,14 +382,14 @@ void dbModBTerm::disconnect()
   _dbModule* module = (_dbModule*) getParent();
   _dbBlock* block = (_dbBlock*) module->getOwner();
   _dbModBTerm* _modbterm = (_dbModBTerm*) this;
-  if (_modbterm->_modnet == 0) {
+  if (_modbterm->modnet_ == 0) {
     return;
   }
 
   for (auto callback : block->callbacks_) {
     callback->inDbModBTermPreDisconnect(this);
   }
-  _dbModNet* mod_net = block->modnet_tbl_->getPtr(_modbterm->_modnet);
+  _dbModNet* mod_net = block->modnet_tbl_->getPtr(_modbterm->modnet_);
 
   if (block->journal_) {
     debugPrint(
@@ -405,32 +405,32 @@ void dbModBTerm::disconnect()
     block->journal_->beginAction(dbJournal::kDisconnectObject);
     block->journal_->pushParam(dbModBTermObj);
     block->journal_->pushParam(_modbterm->getId());
-    block->journal_->pushParam(_modbterm->_modnet);
+    block->journal_->pushParam(_modbterm->modnet_);
     block->journal_->endAction();
   }
 
-  if (_modbterm->_prev_net_modbterm == 0) {
+  if (_modbterm->prev_net_modbterm_ == 0) {
     // degenerate case, head element, need to update net starting point
     // and if next is null then make generate empty list
-    mod_net->_modbterms = _modbterm->_next_net_modbterm;
+    mod_net->modbterms_ = _modbterm->next_net_modbterm_;
   } else {
     _dbModBTerm* prev_modbterm
-        = block->modbterm_tbl_->getPtr(_modbterm->_prev_net_modbterm);
-    prev_modbterm->_next_net_modbterm
-        = _modbterm->_next_net_modbterm;  // short out this element
+        = block->modbterm_tbl_->getPtr(_modbterm->prev_net_modbterm_);
+    prev_modbterm->next_net_modbterm_
+        = _modbterm->next_net_modbterm_;  // short out this element
   }
-  if (_modbterm->_next_net_modbterm != 0) {
+  if (_modbterm->next_net_modbterm_ != 0) {
     _dbModBTerm* next_modbterm
-        = block->modbterm_tbl_->getPtr(_modbterm->_next_net_modbterm);
-    next_modbterm->_prev_net_modbterm = _modbterm->_prev_net_modbterm;
+        = block->modbterm_tbl_->getPtr(_modbterm->next_net_modbterm_);
+    next_modbterm->prev_net_modbterm_ = _modbterm->prev_net_modbterm_;
   }
   //
   // zero out this element for garbage collection
   // Note we can never rely on sequential order of modbterms for offsets.
   //
-  _modbterm->_next_net_modbterm = 0;
-  _modbterm->_prev_net_modbterm = 0;
-  _modbterm->_modnet = 0;
+  _modbterm->next_net_modbterm_ = 0;
+  _modbterm->prev_net_modbterm_ = 0;
+  _modbterm->modnet_ = 0;
 
   for (auto callback : block->callbacks_) {
     callback->inDbModBTermPostDisConnect(this, (dbModNet*) mod_net);
@@ -440,15 +440,15 @@ void dbModBTerm::disconnect()
 bool dbModBTerm::isBusPort() const
 {
   _dbModBTerm* _modbterm = (_dbModBTerm*) this;
-  return (_modbterm->_busPort != 0);
+  return (_modbterm->busPort_ != 0);
 }
 
 dbBusPort* dbModBTerm::getBusPort() const
 {
   _dbModBTerm* _modbterm = (_dbModBTerm*) this;
-  if (_modbterm->_busPort != 0) {
+  if (_modbterm->busPort_ != 0) {
     _dbBlock* block = (_dbBlock*) _modbterm->getOwner();
-    return (dbBusPort*) block->busport_tbl_->getPtr(_modbterm->_busPort);
+    return (dbBusPort*) block->busport_tbl_->getPtr(_modbterm->busPort_);
   }
   return nullptr;
 }
@@ -456,7 +456,7 @@ dbBusPort* dbModBTerm::getBusPort() const
 void dbModBTerm::setBusPort(dbBusPort* bus_port)
 {
   _dbModBTerm* _modbterm = (_dbModBTerm*) this;
-  _modbterm->_busPort = bus_port->getId();
+  _modbterm->busPort_ = bus_port->getId();
 }
 
 dbModBTerm* dbModBTerm::getModBTerm(dbBlock* block, uint dbid)
@@ -470,7 +470,7 @@ void dbModBTerm::destroy(dbModBTerm* val)
   _dbModBTerm* _modbterm = (_dbModBTerm*) val;
   _dbBlock* block = (_dbBlock*) (_modbterm->getOwner());
 
-  _dbModule* module = block->module_tbl_->getPtr(_modbterm->_parent);
+  _dbModule* module = block->module_tbl_->getPtr(_modbterm->parent_);
 
   if (block->journal_) {
     debugPrint(block->getImpl()->getLogger(),
@@ -492,11 +492,11 @@ void dbModBTerm::destroy(dbModBTerm* val)
     callback->inDbModBTermDestroy(val);
   }
 
-  uint prev = _modbterm->_prev_entry;
+  uint prev = _modbterm->prev_entry_;
   uint next = _modbterm->next_entry_;
   if (prev == 0) {
     // head of list
-    module->_modbterms = next;
+    module->modbterms_ = next;
   } else {
     _dbModBTerm* prev_modbterm = block->modbterm_tbl_->getPtr(prev);
     prev_modbterm->next_entry_ = next;
@@ -504,12 +504,12 @@ void dbModBTerm::destroy(dbModBTerm* val)
 
   if (next != 0) {
     _dbModBTerm* next_modbterm = block->modbterm_tbl_->getPtr(next);
-    next_modbterm->_prev_entry = prev;
+    next_modbterm->prev_entry_ = prev;
   }
-  _modbterm->_prev_entry = 0;
+  _modbterm->prev_entry_ = 0;
   _modbterm->next_entry_ = 0;
 
-  module->_modbterm_hash.erase(val->getName());
+  module->modbterm_hash_.erase(val->getName());
   block->modbterm_tbl_->destroy(_modbterm);
 }
 

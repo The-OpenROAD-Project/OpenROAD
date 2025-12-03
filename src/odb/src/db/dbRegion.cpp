@@ -33,17 +33,17 @@ template class dbTable<_dbRegion>;
 
 _dbRegion::_dbRegion(_dbDatabase*)
 {
-  flags_._type = dbRegionType::INCLUSIVE;
-  flags_._invalid = false;
-  flags_._spare_bits = false;
+  flags_.type = dbRegionType::INCLUSIVE;
+  flags_.invalid = false;
+  flags_.spare_bits = false;
   name_ = nullptr;
 }
 
 _dbRegion::_dbRegion(_dbDatabase*, const _dbRegion& r)
     : flags_(r.flags_),
       name_(nullptr),
-      _insts(r._insts),
-      _boxes(r._boxes),
+      insts_(r.insts_),
+      boxes_(r.boxes_),
       groups_(r.groups_)
 {
   if (r.name_) {
@@ -60,11 +60,11 @@ _dbRegion::~_dbRegion()
 
 bool _dbRegion::operator==(const _dbRegion& rhs) const
 {
-  if (flags_._type != rhs.flags_._type) {
+  if (flags_.type != rhs.flags_.type) {
     return false;
   }
 
-  if (flags_._invalid != rhs.flags_._invalid) {
+  if (flags_.invalid != rhs.flags_.invalid) {
     return false;
   }
 
@@ -76,7 +76,7 @@ bool _dbRegion::operator==(const _dbRegion& rhs) const
     return false;
   }
 
-  if (_insts != rhs._insts) {
+  if (insts_ != rhs.insts_) {
     return false;
   }
 
@@ -89,30 +89,30 @@ bool _dbRegion::operator==(const _dbRegion& rhs) const
 
 bool _dbRegion::operator<(const _dbRegion& rhs) const
 {
-  if (flags_._type < rhs.flags_._type) {
+  if (flags_.type < rhs.flags_.type) {
     return false;
   }
 
-  if (flags_._type > rhs.flags_._type) {
+  if (flags_.type > rhs.flags_.type) {
     return true;
   }
 
-  if (flags_._invalid < rhs.flags_._invalid) {
+  if (flags_.invalid < rhs.flags_.invalid) {
     return false;
   }
 
-  if (flags_._invalid > rhs.flags_._invalid) {
+  if (flags_.invalid > rhs.flags_.invalid) {
     return true;
   }
 
-  if (_insts < rhs._insts) {
+  if (insts_ < rhs.insts_) {
     return true;
   }
 
   if (groups_ < rhs.groups_) {
     return true;
   }
-  return _boxes < rhs._boxes;
+  return boxes_ < rhs.boxes_;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbRegion& r)
@@ -120,8 +120,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbRegion& r)
   uint* bit_field = (uint*) &r.flags_;
   stream << *bit_field;
   stream << r.name_;
-  stream << r._insts;
-  stream << r._boxes;
+  stream << r.insts_;
+  stream << r.boxes_;
   stream << r.groups_;
   return stream;
 }
@@ -131,8 +131,8 @@ dbIStream& operator>>(dbIStream& stream, _dbRegion& r)
   uint* bit_field = (uint*) &r.flags_;
   stream >> *bit_field;
   stream >> r.name_;
-  stream >> r._insts;
-  stream >> r._boxes;
+  stream >> r.insts_;
+  stream >> r.boxes_;
   stream >> r.groups_;
 
   return stream;
@@ -147,26 +147,26 @@ std::string dbRegion::getName()
 dbRegionType dbRegion::getRegionType()
 {
   _dbRegion* region = (_dbRegion*) this;
-  dbRegionType t(region->flags_._type);
+  dbRegionType t(region->flags_.type);
   return t;
 }
 
 void dbRegion::setInvalid(bool v)
 {
   _dbRegion* region = (_dbRegion*) this;
-  region->flags_._invalid = v;
+  region->flags_.invalid = v;
 }
 
 bool dbRegion::isInvalid()
 {
   _dbRegion* region = (_dbRegion*) this;
-  return region->flags_._invalid == 1;
+  return region->flags_.invalid == 1;
 }
 
 void dbRegion::setRegionType(dbRegionType type)
 {
   _dbRegion* region = (_dbRegion*) this;
-  region->flags_._type = type;
+  region->flags_.type = type;
 }
 
 dbSet<dbInst> dbRegion::getRegionInsts()
@@ -189,24 +189,24 @@ void dbRegion::addInst(dbInst* inst_)
   _dbInst* inst = (_dbInst*) inst_;
   _dbBlock* block = (_dbBlock*) region->getOwner();
 
-  if (inst->_region != 0) {
-    dbRegion* r = dbRegion::getRegion((dbBlock*) block, inst->_region);
+  if (inst->region_ != 0) {
+    dbRegion* r = dbRegion::getRegion((dbBlock*) block, inst->region_);
     r->removeInst(inst_);
   }
 
-  inst->_region = region->getOID();
+  inst->region_ = region->getOID();
 
-  if (region->_insts != 0) {
-    _dbInst* tail = block->inst_tbl_->getPtr(region->_insts);
-    inst->_region_next = region->_insts;
-    inst->_region_prev = 0;
-    tail->_region_prev = inst->getOID();
+  if (region->insts_ != 0) {
+    _dbInst* tail = block->inst_tbl_->getPtr(region->insts_);
+    inst->region_next_ = region->insts_;
+    inst->region_prev_ = 0;
+    tail->region_prev_ = inst->getOID();
   } else {
-    inst->_region_next = 0;
-    inst->_region_prev = 0;
+    inst->region_next_ = 0;
+    inst->region_prev_ = 0;
   }
 
-  region->_insts = inst->getOID();
+  region->insts_ = inst->getOID();
 }
 
 void dbRegion::removeInst(dbInst* inst_)
@@ -217,26 +217,26 @@ void dbRegion::removeInst(dbInst* inst_)
 
   uint id = inst->getOID();
 
-  if (region->_insts == id) {
-    region->_insts = inst->_region_next;
+  if (region->insts_ == id) {
+    region->insts_ = inst->region_next_;
 
-    if (region->_insts != 0) {
-      _dbInst* t = block->inst_tbl_->getPtr(region->_insts);
-      t->_region_prev = 0;
+    if (region->insts_ != 0) {
+      _dbInst* t = block->inst_tbl_->getPtr(region->insts_);
+      t->region_prev_ = 0;
     }
   } else {
-    if (inst->_region_next != 0) {
-      _dbInst* next = block->inst_tbl_->getPtr(inst->_region_next);
-      next->_region_prev = inst->_region_prev;
+    if (inst->region_next_ != 0) {
+      _dbInst* next = block->inst_tbl_->getPtr(inst->region_next_);
+      next->region_prev_ = inst->region_prev_;
     }
 
-    if (inst->_region_prev != 0) {
-      _dbInst* prev = block->inst_tbl_->getPtr(inst->_region_prev);
-      prev->_region_next = inst->_region_next;
+    if (inst->region_prev_ != 0) {
+      _dbInst* prev = block->inst_tbl_->getPtr(inst->region_prev_);
+      prev->region_next_ = inst->region_next_;
     }
   }
 
-  inst->_region = 0;
+  inst->region_ = 0;
 }
 void dbRegion::removeGroup(dbGroup* group)
 {

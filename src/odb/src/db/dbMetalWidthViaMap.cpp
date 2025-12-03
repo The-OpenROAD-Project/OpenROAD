@@ -214,7 +214,7 @@ dbTechLayer* dbMetalWidthViaMap::getCutLayer() const
 dbMetalWidthViaMap* dbMetalWidthViaMap::create(dbTech* tech)
 {
   _dbTech* _tech = (_dbTech*) tech;
-  _dbMetalWidthViaMap* via_map = _tech->_metal_width_via_map_tbl->create();
+  _dbMetalWidthViaMap* via_map = _tech->metal_width_via_map_tbl_->create();
   return (dbMetalWidthViaMap*) via_map;
 }
 
@@ -222,14 +222,14 @@ void dbMetalWidthViaMap::destroy(dbMetalWidthViaMap* via_map)
 {
   _dbTech* tech = (_dbTech*) via_map->getImpl()->getOwner();
   dbProperty::destroyProperties(via_map);
-  tech->_metal_width_via_map_tbl->destroy((_dbMetalWidthViaMap*) via_map);
+  tech->metal_width_via_map_tbl_->destroy((_dbMetalWidthViaMap*) via_map);
 }
 
 dbMetalWidthViaMap* dbMetalWidthViaMap::getMetalWidthViaMap(dbTech* tech,
                                                             uint dbid)
 {
   _dbTech* _tech = (_dbTech*) tech;
-  return (dbMetalWidthViaMap*) _tech->_metal_width_via_map_tbl->getPtr(dbid);
+  return (dbMetalWidthViaMap*) _tech->metal_width_via_map_tbl_->getPtr(dbid);
 }
 
 // User Code End dbMetalWidthViaMapPublicMethods

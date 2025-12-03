@@ -16,9 +16,9 @@ class _dbDatabase;
 
 struct dbTechLayerEolKeepOutRuleFlags
 {
-  bool class_valid_ : 1;
-  bool corner_only_ : 1;
-  bool except_within_ : 1;
+  bool class_valid : 1;
+  bool corner_only : 1;
+  bool except_within : 1;
   uint spare_bits : 29;
 };
 

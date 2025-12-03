@@ -32,17 +32,17 @@ void dbGroupInstItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbGroup* _parent = (_dbGroup*) parent;
-  uint id = _parent->_insts;
+  uint id = _parent->insts_;
   uint list = 0;
 
   while (id != 0) {
     _dbInst* inst = inst_tbl_->getPtr(id);
-    uint n = inst->_group_next;
-    inst->_group_next = list;
+    uint n = inst->group_next_;
+    inst->group_next_ = list;
     list = id;
     id = n;
   }
-  _parent->_insts = list;
+  _parent->insts_ = list;
   // User Code End reverse
 }
 
@@ -68,7 +68,7 @@ uint dbGroupInstItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbGroup* _parent = (_dbGroup*) parent;
-  return _parent->_insts;
+  return _parent->insts_;
   // User Code End begin
 }
 
@@ -81,7 +81,7 @@ uint dbGroupInstItr::next(uint id, ...) const
 {
   // User Code Begin next
   _dbInst* inst = inst_tbl_->getPtr(id);
-  return inst->_group_next;
+  return inst->group_next_;
   // User Code End next
 }
 

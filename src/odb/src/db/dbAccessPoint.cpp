@@ -293,7 +293,7 @@ dbTechLayer* dbAccessPoint::getLayer() const
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
   dbDatabase* db = (dbDatabase*) obj->getDatabase();
   _dbTech* tech = (_dbTech*) db->getTech();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(obj->layer_);
+  return (dbTechLayer*) tech->layer_tbl_->getPtr(obj->layer_);
 }
 
 dbMPin* dbAccessPoint::getMPin() const
@@ -304,8 +304,8 @@ dbMPin* dbAccessPoint::getMPin() const
   }
   _dbDatabase* db = obj->getDatabase();
   auto lib = (_dbLib*) db->lib_tbl_->getPtr(obj->lib_);
-  auto master = (_dbMaster*) lib->_master_tbl->getPtr(obj->master_);
-  return (dbMPin*) master->_mpin_tbl->getPtr(obj->mpin_);
+  auto master = (_dbMaster*) lib->master_tbl_->getPtr(obj->master_);
+  return (dbMPin*) master->mpin_tbl_->getPtr(obj->mpin_);
 }
 
 dbBPin* dbAccessPoint::getBPin() const
@@ -332,7 +332,7 @@ std::vector<std::vector<dbObject*>> dbAccessPoint::getVias() const
             (dbObject*) block->via_tbl_->getPtr(dbId<_dbVia>(id)));
       } else {
         result.back().push_back(
-            (dbTechVia*) tech->_via_tbl->getPtr(dbId<_dbTechVia>(id)));
+            (dbTechVia*) tech->via_tbl_->getPtr(dbId<_dbTechVia>(id)));
       }
     }
   }

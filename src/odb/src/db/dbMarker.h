@@ -36,9 +36,9 @@ class _dbChip;
 
 struct dbMarkerFlags
 {
-  bool visited_ : 1;
-  bool visible_ : 1;
-  bool waived_ : 1;
+  bool visited : 1;
+  bool visible : 1;
+  bool waived : 1;
   uint spare_bits : 29;
 };
 

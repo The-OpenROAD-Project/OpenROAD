@@ -33,29 +33,29 @@ class dbModNet;
 
 struct _dbNetFlags
 {
-  dbSigType::Value _sig_type : 4;
-  dbWireType::Value _wire_type : 4;
-  uint _special : 1;
-  uint _wild_connect : 1;
-  uint _wire_ordered : 1;
-  uint _unused2 : 1;       // free to reuse
-  uint _disconnected : 1;  // this flag is only valid if wire_ordered == true
-  uint _spef : 1;
-  uint _select : 1;
-  uint _mark : 1;
-  uint _mark_1 : 1;
-  uint _wire_altered : 1;
-  uint _extracted : 1;
-  uint _rc_graph : 1;
-  uint _unused : 1;  // free to reuse
-  uint _set_io : 1;
-  uint _io : 1;
-  uint _dont_touch : 1;
-  uint _fixed_bump : 1;
-  dbSourceType::Value _source : 4;
-  uint _rc_disconnected : 1;
-  uint _block_rule : 1;
-  uint _has_jumpers : 1;
+  dbSigType::Value sig_type : 4;
+  dbWireType::Value wire_type : 4;
+  uint special : 1;
+  uint wild_connect : 1;
+  uint wire_ordered : 1;
+  uint unused2 : 1;       // free to reuse
+  uint disconnected : 1;  // this flag is only valid if wire_ordered == true
+  uint spef : 1;
+  uint select : 1;
+  uint mark : 1;
+  uint mark_1 : 1;
+  uint wire_altered : 1;
+  uint extracted : 1;
+  uint rc_graph : 1;
+  uint unused : 1;  // free to reuse
+  uint set_io : 1;
+  uint io : 1;
+  uint dont_touch : 1;
+  uint fixed_bump : 1;
+  dbSourceType::Value source : 4;
+  uint rc_disconnected : 1;
+  uint block_rule : 1;
+  uint has_jumpers : 1;
 };
 
 class _dbNet : public _dbObject
@@ -71,39 +71,6 @@ class _dbNet : public _dbObject
     kReverseRSeg,
     kName
   };
-
-  // PERSISTANT-MEMBERS
-  _dbNetFlags flags_;
-  char* name_;
-  union
-  {
-    float _gndc_calibration_factor;
-    float _refCC;
-  };
-  union
-  {
-    float _cc_calibration_factor;
-    float _dbCC;
-    float _CcMatchRatio;
-  };
-  dbId<_dbNet> next_entry_;
-  dbId<_dbITerm> _iterms;
-  dbId<_dbBTerm> _bterms;
-  dbId<_dbWire> _wire;
-  dbId<_dbWire> _global_wire;
-  dbId<_dbSWire> _swires;
-  dbId<_dbCapNode> _cap_nodes;
-  dbId<_dbRSeg> _r_segs;
-  dbId<_dbTechNonDefaultRule> _non_default_rule;
-  dbId<_dbGuide> guides_;
-  dbId<_dbNetTrack> tracks_;
-  dbVector<dbId<_dbGroup>> _groups;
-  int _weight;
-  int _xtalk;
-  float _ccAdjustFactor;
-  uint _ccAdjustOrder;
-  // NON PERSISTANT-MEMBERS
-  int _drivingIterm;
 
   _dbNet(_dbDatabase*);
   _dbNet(_dbDatabase*, const _dbNet& n);
@@ -129,6 +96,39 @@ class _dbNet : public _dbObject
                                      int level,
                                      std::set<const dbObject*>& visited,
                                      utl::Logger* logger);
+
+  // PERSISTANT-MEMBERS
+  _dbNetFlags flags_;
+  char* name_;
+  union
+  {
+    float gndc_calibration_factor_;
+    float ref_cc_;
+  };
+  union
+  {
+    float cc_calibration_factor_;
+    float db_cc_;
+    float cc_match_ratio_;
+  };
+  dbId<_dbNet> next_entry_;
+  dbId<_dbITerm> iterms_;
+  dbId<_dbBTerm> bterms_;
+  dbId<_dbWire> wire_;
+  dbId<_dbWire> global_wire_;
+  dbId<_dbSWire> swires_;
+  dbId<_dbCapNode> cap_nodes_;
+  dbId<_dbRSeg> r_segs_;
+  dbId<_dbTechNonDefaultRule> non_default_rule_;
+  dbId<_dbGuide> guides_;
+  dbId<_dbNetTrack> tracks_;
+  dbVector<dbId<_dbGroup>> groups_;
+  int weight_;
+  int xtalk_;
+  float cc_adjust_factor_;
+  uint cc_adjust_order_;
+  // NON PERSISTANT-MEMBERS
+  int driving_iterm_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbNet& net);

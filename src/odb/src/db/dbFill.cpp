@@ -80,7 +80,7 @@ _dbTechLayer* _dbFill::getTechLayer() const
 {
   _dbBlock* block = (_dbBlock*) getOwner();
   _dbTech* tech = block->getTech();
-  return tech->_layer_tbl->getPtr(flags_.layer_id);
+  return tech->layer_tbl_->getPtr(flags_.layer_id);
 }
 
 ////////////////////////////////////////////////////////////////////

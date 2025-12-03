@@ -19,21 +19,21 @@ void dbBlockCallBackObj::addOwner(dbBlock* new_owner)
     return;
   }
 
-  if (_owner) {
+  if (owner_) {
     removeOwner();
   }
 
   _dbBlock* block = (_dbBlock*) new_owner;
   block->callbacks_.insert(block->callbacks_.end(), this);
-  _owner = new_owner;
+  owner_ = new_owner;
 }
 
 void dbBlockCallBackObj::removeOwner()
 {
-  if (_owner) {
-    _dbBlock* block = (_dbBlock*) _owner;
+  if (owner_) {
+    _dbBlock* block = (_dbBlock*) owner_;
     block->callbacks_.remove(this);
-    _owner = nullptr;
+    owner_ = nullptr;
   }
 }
 

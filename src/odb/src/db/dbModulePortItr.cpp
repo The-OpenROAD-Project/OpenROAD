@@ -56,7 +56,7 @@ uint dbModulePortItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbModule* _module = (_dbModule*) parent;
-  return _module->_modbterms;
+  return _module->modbterms_;
   // User Code End begin
 }
 
@@ -69,9 +69,9 @@ uint dbModulePortItr::next(uint id, ...) const
 {
   // User Code Begin next
   _dbModBTerm* modbterm = modbterm_tbl_->getPtr(id);
-  if (modbterm->_busPort != 0) {
+  if (modbterm->busPort_ != 0) {
     _dbBlock* block = (_dbBlock*) modbterm->getOwner();
-    _dbBusPort* bus_port = block->busport_tbl_->getPtr(modbterm->_busPort);
+    _dbBusPort* bus_port = block->busport_tbl_->getPtr(modbterm->busPort_);
     if (bus_port) {
       modbterm = modbterm_tbl_->getPtr(bus_port->last_);
     }

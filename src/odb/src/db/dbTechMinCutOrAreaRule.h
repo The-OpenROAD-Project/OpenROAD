@@ -29,16 +29,10 @@ class _dbTechMinCutRule : public _dbObject
 
   struct Flags
   {
-    RuleType _rule : 3;
-    uint _cuts_length : 1;
-    uint _spare_bits : 28;
+    RuleType rule : 3;
+    uint cuts_length : 1;
+    uint spare_bits : 28;
   };
-  Flags flags_;
-  uint _num_cuts;
-  uint _width;
-  int _cut_distance;
-  uint _length;
-  uint _distance;
 
   _dbTechMinCutRule(_dbDatabase* db, const _dbTechMinCutRule& r);
   _dbTechMinCutRule(_dbDatabase* db);
@@ -50,29 +44,36 @@ class _dbTechMinCutRule : public _dbObject
     return !operator==(rhs);
   }
   void collectMemInfo(MemInfo& info);
+
+  Flags flags_;
+  uint num_cuts_;
+  uint width_;
+  int cut_distance_;
+  uint length_;
+  uint distance_;
 };
 
 inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */,
                                             const _dbTechMinCutRule& r)
     : flags_(r.flags_),
-      _num_cuts(r._num_cuts),
-      _width(r._width),
-      _cut_distance(r._cut_distance),
-      _length(r._length),
-      _distance(r._distance)
+      num_cuts_(r.num_cuts_),
+      width_(r.width_),
+      cut_distance_(r.cut_distance_),
+      length_(r.length_),
+      distance_(r.distance_)
 {
 }
 
 inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */)
 {
-  flags_._rule = _dbTechMinCutRule::kNone;
-  flags_._cuts_length = 0;
-  flags_._spare_bits = 0;
-  _num_cuts = 0;
-  _width = 0;
-  _cut_distance = -1;
-  _length = 0;
-  _distance = 0;
+  flags_.rule = _dbTechMinCutRule::kNone;
+  flags_.cuts_length = 0;
+  flags_.spare_bits = 0;
+  num_cuts_ = 0;
+  width_ = 0;
+  cut_distance_ = -1;
+  length_ = 0;
+  distance_ = 0;
 }
 
 inline _dbTechMinCutRule::~_dbTechMinCutRule()

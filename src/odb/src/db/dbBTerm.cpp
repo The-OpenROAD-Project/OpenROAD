@@ -409,7 +409,7 @@ void dbBTerm::connect(dbNet* net_)
     return;
   }
 
-  if (net->flags_._dont_touch) {
+  if (net->flags_.dont_touch) {
     net->getLogger()->error(utl::ODB,
                             377,
                             "Attempt to connect bterm to dont_touch net {}",
@@ -429,7 +429,7 @@ void dbBTerm::disconnect()
     _dbBlock* block = (_dbBlock*) bterm->getOwner();
 
     _dbNet* net = block->net_tbl_->getPtr(bterm->net_);
-    if (net->flags_._dont_touch) {
+    if (net->flags_.dont_touch) {
       net->getLogger()->error(
           utl::ODB,
           375,
@@ -457,7 +457,7 @@ void dbBTerm::disconnectDbNet()
     _dbBlock* block = (_dbBlock*) bterm->getOwner();
 
     _dbNet* net = block->net_tbl_->getPtr(bterm->net_);
-    if (net->flags_._dont_touch) {
+    if (net->flags_.dont_touch) {
       net->getLogger()->error(
           utl::ODB,
           1106,
@@ -608,7 +608,7 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
     return nullptr;
   }
 
-  if (net->flags_._dont_touch) {
+  if (net->flags_.dont_touch) {
     net->getLogger()->error(utl::ODB,
                             376,
                             "Attempt to create bterm on dont_touch net {}",
@@ -643,26 +643,26 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
     _dbBlock* parent_block = (_dbBlock*) inst->getBlock();
     dbMaster* master = inst->getMaster();
     _dbMaster* master_impl = (_dbMaster*) master;
-    _dbInstHdr* inst_hdr = parent_block->inst_hdr_hash_.find(master_impl->_id);
-    assert(inst_hdr->_inst_cnt == 1);
+    _dbInstHdr* inst_hdr = parent_block->inst_hdr_hash_.find(master_impl->id_);
+    assert(inst_hdr->inst_cnt_ == 1);
 
-    master_impl->flags_._frozen = 0;  // allow the mterm creation
+    master_impl->flags_.frozen = 0;  // allow the mterm creation
     auto mterm = (_dbMTerm*) dbMTerm::create(master, name, dbIoType::INOUT);
-    master_impl->flags_._frozen = 1;
-    mterm->_order_id = inst_hdr->_mterms.size();
-    inst_hdr->_mterms.push_back(mterm->getOID());
+    master_impl->flags_.frozen = 1;
+    mterm->order_id_ = inst_hdr->mterms_.size();
+    inst_hdr->mterms_.push_back(mterm->getOID());
 
     _dbInst* inst_impl = (_dbInst*) inst;
-    _dbHier* hier = parent_block->hier_tbl_->getPtr(inst_impl->_hierarchy);
-    hier->_child_bterms.push_back(bterm->getOID());
+    _dbHier* hier = parent_block->hier_tbl_->getPtr(inst_impl->hierarchy_);
+    hier->child_bterms_.push_back(bterm->getOID());
 
     _dbITerm* iterm = parent_block->iterm_tbl_->create();
-    inst_impl->_iterms.push_back(iterm->getOID());
-    iterm->flags_._mterm_idx = mterm->_order_id;
-    iterm->_inst = inst_impl->getOID();
+    inst_impl->iterms_.push_back(iterm->getOID());
+    iterm->flags_.mterm_idx = mterm->order_id_;
+    iterm->inst_ = inst_impl->getOID();
 
     bterm->parent_block_ = parent_block->getOID();
-    bterm->parent_iterm_ = inst_impl->_iterms[mterm->_order_id];
+    bterm->parent_iterm_ = inst_impl->iterms_[mterm->order_id_];
   }
 
   for (auto callback : block->callbacks_) {
@@ -702,15 +702,15 @@ void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
     block->journal_->endAction();
   }
 
-  if (mod_net->_bterms != 0) {
-    _dbBTerm* head = block->bterm_tbl_->getPtr(mod_net->_bterms);
-    next_modnet_bterm_ = mod_net->_bterms;
+  if (mod_net->bterms_ != 0) {
+    _dbBTerm* head = block->bterm_tbl_->getPtr(mod_net->bterms_);
+    next_modnet_bterm_ = mod_net->bterms_;
     head->prev_modnet_bterm_ = getOID();
   } else {
     next_modnet_bterm_ = 0;
   }
   prev_modnet_bterm_ = 0;
-  mod_net->_bterms = getOID();
+  mod_net->bterms_ = getOID();
 }
 
 void _dbBTerm::connectNet(_dbNet* net, _dbBlock* block)
@@ -742,15 +742,15 @@ void _dbBTerm::connectNet(_dbNet* net, _dbBlock* block)
     callback->inDbBTermPreConnect((dbBTerm*) this, (dbNet*) net);
   }
   net_ = net->getOID();
-  if (net->_bterms != 0) {
-    _dbBTerm* tail = block->bterm_tbl_->getPtr(net->_bterms);
-    next_bterm_ = net->_bterms;
+  if (net->bterms_ != 0) {
+    _dbBTerm* tail = block->bterm_tbl_->getPtr(net->bterms_);
+    next_bterm_ = net->bterms_;
     tail->prev_bterm_ = getOID();
   } else {
     next_bterm_ = 0;
   }
   prev_bterm_ = 0;
-  net->_bterms = getOID();
+  net->bterms_ = getOID();
   for (auto callback : block->callbacks_) {
     callback->inDbBTermPostConnect((dbBTerm*) this);
   }
@@ -763,7 +763,7 @@ void dbBTerm::destroy(dbBTerm* bterm_)
 
   if (bterm->net_) {
     _dbNet* net = block->net_tbl_->getPtr(bterm->net_);
-    if (net->flags_._dont_touch) {
+    if (net->flags_.dont_touch) {
       net->getLogger()->error(utl::ODB,
                               374,
                               "Attempt to destroy bterm on dont_touch net {}",
@@ -839,11 +839,11 @@ void _dbBTerm::disconnectNet(_dbBTerm* bterm, _dbBlock* block)
 
     uint id = bterm->getOID();
 
-    if (net->_bterms == id) {
-      net->_bterms = bterm->next_bterm_;
+    if (net->bterms_ == id) {
+      net->bterms_ = bterm->next_bterm_;
 
-      if (net->_bterms != 0) {
-        _dbBTerm* t = block->bterm_tbl_->getPtr(net->_bterms);
+      if (net->bterms_ != 0) {
+        _dbBTerm* t = block->bterm_tbl_->getPtr(net->bterms_);
         t->prev_bterm_ = 0;
       }
     } else {
@@ -892,10 +892,10 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
     }
 
     uint id = bterm->getOID();
-    if (mod_net->_bterms == id) {
-      mod_net->_bterms = bterm->next_modnet_bterm_;
-      if (mod_net->_bterms != 0) {
-        _dbBTerm* t = block->bterm_tbl_->getPtr(mod_net->_bterms);
+    if (mod_net->bterms_ == id) {
+      mod_net->bterms_ = bterm->next_modnet_bterm_;
+      if (mod_net->bterms_ != 0) {
+        _dbBTerm* t = block->bterm_tbl_->getPtr(mod_net->bterms_);
         t->prev_modnet_bterm_ = 0;
       }
     } else {

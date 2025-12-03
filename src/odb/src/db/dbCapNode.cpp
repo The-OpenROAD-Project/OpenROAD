@@ -944,8 +944,8 @@ dbCapNode* dbCapNode::create(dbNet* net_, uint node, bool foreign)
     }
   }
   seg->net_ = net->getOID();
-  seg->next_ = net->_cap_nodes;
-  net->_cap_nodes = seg->getOID();
+  seg->next_ = net->cap_nodes_;
+  net->cap_nodes_ = seg->getOID();
 
   return (dbCapNode*) seg;
 }
@@ -955,8 +955,8 @@ void dbCapNode::addToNet()
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   _dbNet* net = (_dbNet*) dbNet::getNet((dbBlock*) block, seg->net_);
 
-  seg->next_ = net->_cap_nodes;
-  net->_cap_nodes = seg->getOID();
+  seg->next_ = net->cap_nodes_;
+  net->cap_nodes_ = seg->getOID();
 }
 
 void dbCapNode::destroy(dbCapNode* seg_, bool destroyCC)
@@ -971,7 +971,7 @@ void dbCapNode::destroy(dbCapNode* seg_, bool destroyCC)
   }
 
   // unlink the cap-node from the net cap-node list
-  dbId<_dbCapNode> c = net->_cap_nodes;
+  dbId<_dbCapNode> c = net->cap_nodes_;
   _dbCapNode* p = nullptr;
 
   while (c != 0) {
@@ -979,7 +979,7 @@ void dbCapNode::destroy(dbCapNode* seg_, bool destroyCC)
 
     if (s == seg) {
       if (p == nullptr) {
-        net->_cap_nodes = s->next_;
+        net->cap_nodes_ = s->next_;
       } else {
         p->next_ = s->next_;
       }

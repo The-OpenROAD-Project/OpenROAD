@@ -31,7 +31,7 @@ bool dbCapNodeItr::orderReversed() const
 void dbCapNodeItr::reverse(dbObject* parent)
 {
   _dbNet* net = (_dbNet*) parent;
-  uint id = net->_cap_nodes;
+  uint id = net->cap_nodes_;
   uint list = 0;
 
   while (id != 0) {
@@ -42,7 +42,7 @@ void dbCapNodeItr::reverse(dbObject* parent)
     id = n;
   }
 
-  net->_cap_nodes = list;
+  net->cap_nodes_ = list;
 }
 
 uint dbCapNodeItr::sequential() const
@@ -66,7 +66,7 @@ uint dbCapNodeItr::size(dbObject* parent) const
 uint dbCapNodeItr::begin(dbObject* parent) const
 {
   _dbNet* net = (_dbNet*) parent;
-  return net->_cap_nodes;
+  return net->cap_nodes_;
 }
 
 uint dbCapNodeItr::end(dbObject* /* unused: parent */) const
