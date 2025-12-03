@@ -735,6 +735,141 @@ void dbSta::reportLogicDepthHistogram(int num_bins,
   histogram.report();
 }
 
+int dbSta::checkSanity()
+{
+  ensureGraph();
+  ensureLevelized();
+
+  int pre_warn_cnt = logger_->getWarningCount();
+
+  checkSanityDrvrVertexEdges();
+
+  int post_warn_cnt = logger_->getWarningCount();
+  return post_warn_cnt - pre_warn_cnt;
+}
+
+void dbSta::checkSanityDrvrVertexEdges(const odb::dbObject* term) const
+{
+  if (term == nullptr) {
+    logger_->error(
+        utl::STA, 2056, "checkSanityDrvrVertexEdges: input term is null");
+    return;
+  }
+
+  sta::Pin* pin = db_network_->dbToSta(const_cast<odb::dbObject*>(term));
+  if (pin == nullptr) {
+    logger_->error(utl::STA,
+                   2057,
+                   "checkSanityDrvrVertexEdges: failed to convert dbObject to "
+                   "sta::Pin for {}",
+                   term->getName());
+    return;
+  }
+
+  checkSanityDrvrVertexEdges(pin);
+}
+
+void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
+{
+  sta::Graph* graph = this->graph();
+  sta::Vertex* drvr_vertex = graph->pinDrvrVertex(pin);
+
+  if (drvr_vertex == nullptr) {
+    logger_->warn(utl::STA,
+                  2058,
+                  "checkSanityDrvrVertexEdges: could not find driver vertex "
+                  "for pin {}",
+                  db_network_->pathName(pin));
+    return;
+  }
+
+  std::set<sta::Vertex*> visited_to_vertices;
+  sta::VertexOutEdgeIterator edge_iter(drvr_vertex, graph);
+  while (edge_iter.hasNext()) {
+    sta::Edge* edge = edge_iter.next();
+    sta::Vertex* to_vertex = edge->to(graph);
+
+    if (visited_to_vertices.find(to_vertex) != visited_to_vertices.end()) {
+      logger_->error(utl::STA,
+                     2059,
+                     "Duplicate edge found from {} to {}",
+                     drvr_vertex->to_string(this).c_str(),
+                     to_vertex->to_string(this).c_str());
+    }
+    visited_to_vertices.insert(to_vertex);
+  }
+
+  // Compare with ODB connectivity
+  bool has_inconsistency = false;
+  odb::dbObject* drvr_obj = db_network_->staToDb(pin);
+  odb::dbNet* net = nullptr;
+  if (drvr_obj) {
+    if (drvr_obj->getObjectType() == odb::dbITermObj) {
+      net = static_cast<odb::dbITerm*>(drvr_obj)->getNet();
+    } else if (drvr_obj->getObjectType() == odb::dbBTermObj) {
+      net = static_cast<odb::dbBTerm*>(drvr_obj)->getNet();
+    }
+  }
+
+  if (net) {
+    std::set<sta::Pin*> odb_loads;
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      if (iterm != drvr_obj) {
+        odb_loads.insert(db_network_->dbToSta(iterm));
+      }
+    }
+    for (odb::dbBTerm* bterm : net->getBTerms()) {
+      if (bterm != drvr_obj) {
+        odb_loads.insert(db_network_->dbToSta(bterm));
+      }
+    }
+
+    std::set<sta::Pin*> sta_loads;
+    for (sta::Vertex* to_vertex : visited_to_vertices) {
+      sta_loads.insert(to_vertex->pin());
+    }
+
+    for (sta::Pin* sta_load : sta_loads) {
+      if (odb_loads.find(sta_load) == odb_loads.end()) {
+        logger_->warn(utl::STA,
+                      2062,
+                      "Inconsistent load: STA has load '{}', but ODB does not.",
+                      db_network_->pathName(sta_load));
+        has_inconsistency = true;
+      }
+    }
+
+    for (sta::Pin* odb_load : odb_loads) {
+      if (sta_loads.find(odb_load) == sta_loads.end()) {
+        logger_->warn(utl::STA,
+                      2063,
+                      "Inconsistent load: ODB has load '{}', but STA does not.",
+                      db_network_->pathName(odb_load));
+        has_inconsistency = true;
+      }
+    }
+  }
+
+  if (has_inconsistency) {
+    logger_->warn(utl::STA,
+                  2064,
+                  "Inconsistencies found in driver vertex edges for pin {}.",
+                  db_network_->pathName(pin));
+  }
+}
+
+void dbSta::checkSanityDrvrVertexEdges() const
+{
+  // Iterate over all driver vertices in the graph.
+  sta::VertexIterator vertex_iter(this->graph());
+  while (vertex_iter.hasNext()) {
+    sta::Vertex* vertex = vertex_iter.next();
+    if (vertex->isDriver(this->network())) {
+      checkSanityDrvrVertexEdges(db_network_->staToDb(vertex->pin()));
+    }
+  }
+}
+
 BufferUse dbSta::getBufferUse(sta::LibertyCell* buffer)
 {
   return buffer_use_analyser_->getBufferUse(buffer);
@@ -1000,18 +1135,95 @@ void dbStaCbk::inDbModNetDestroy(dbModNet* modnet)
   network_->deleteNetBefore(net);
 }
 
+// jk: dbg
+static void printDbgPin(utl::Logger* logger,
+                        dbObject* obj,
+                        dbNetwork* db_network,
+                        dbSta* sta)
+{
+  if (logger->debugCheck(utl::ODB, "dbg", 1) == false) {
+    return;
+  }
+
+  dbBlock* block = obj->getDb()->getChip()->getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  // odb::dbITerm* drvr_iterm =
+  // block->findITerm("be_mmu.dcache/load_slew3974/Z");
+  // odb::dbITerm* drvr_iterm =
+  // block->findITerm("e_mmu.dcache/lce/place5133/Z");
+  odb::dbITerm* drvr_iterm = block->findITerm("buf/Z");
+  if (drvr_iterm == nullptr) {
+    return;
+  }
+  Pin* drvr_pin = db_network->dbToSta(drvr_iterm);
+  if (drvr_pin == nullptr) {
+    return;
+  }
+  Graph* graph = sta->graph();
+  if (graph == nullptr) {
+    return;
+  }
+  Vertex* drvr_vertex = graph->pinDrvrVertex(drvr_pin);
+  if (drvr_vertex == nullptr) {
+    return;
+  }
+  VertexOutEdgeIterator edge_iter(drvr_vertex, sta->graph());
+  int num_edge = 0;
+  while (edge_iter.hasNext()) {
+    Edge* edge = edge_iter.next();
+    if (edge == nullptr) {
+      continue;
+    }
+    debugPrint(logger,
+               utl::ODB,
+               "dbg",
+               1,
+               "jk: edge[{}] = {}",
+               num_edge++,
+               edge->to_string(sta));
+  }
+
+  // Sanity check
+  sta->checkSanityDrvrVertexEdges(drvr_pin);
+}
+
 void dbStaCbk::inDbITermPostConnect(dbITerm* iterm)
 {
+  static int i = 0;  // jk: dbg
   Pin* pin = network_->dbToSta(iterm);
   network_->connectPinAfter(pin);
   sta_->connectPinAfter(pin);
+
+  // jk: dbg
+  debugPrint(logger_,
+             utl::ODB,
+             "dbg",
+             1,
+             "jk: [{}] inDbITermPostConnect({})",
+             i++,
+             iterm->getName());
+  printDbgPin(logger_, iterm, network_, sta_);
 }
 
 void dbStaCbk::inDbITermPreDisconnect(dbITerm* iterm)
 {
+  static int i = 0;  // jk: dbg
   Pin* pin = network_->dbToSta(iterm);
   sta_->disconnectPinBefore(pin);
   network_->disconnectPinBefore(pin);
+
+  // jk: dbg
+  debugPrint(logger_,
+             utl::ODB,
+             "dbg",
+             1,
+             "jk: [{}] inDbITermPreDisconnect({})",
+             i++,
+             iterm->getName());
+  printDbgPin(logger_, iterm, network_, sta_);
 }
 
 void dbStaCbk::inDbITermDestroy(dbITerm* iterm)
@@ -1021,16 +1233,39 @@ void dbStaCbk::inDbITermDestroy(dbITerm* iterm)
 
 void dbStaCbk::inDbModITermPostConnect(dbModITerm* moditerm)
 {
+  static int i = 0;  // jk: dbg
   Pin* pin = network_->dbToSta(moditerm);
-  network_->connectPinAfter(pin);
-  sta_->connectPinAfter(pin);
+  network_->connectPinAfter(pin);  // jk: fix. update net_drvr_pin_map_ cache
+  //   non-hierarchical pin.
+  //   pin sta_->connectPinAfter(pin);  // jk: fix??
+
+  // jk: dbg
+  debugPrint(logger_,
+             utl::ODB,
+             "dbg",
+             1,
+             "jk: [{}] inDbModITermPostConnect({})",
+             i++,
+             moditerm->getName());
+  printDbgPin(logger_, moditerm, network_, sta_);
 }
 
 void dbStaCbk::inDbModITermPreDisconnect(dbModITerm* moditerm)
 {
+  static int i = 0;  // jk: dbg
   Pin* pin = network_->dbToSta(moditerm);
-  sta_->disconnectPinBefore(pin);
+  // sta_->disconnectPinBefore(pin);   // jk: fix???
   network_->disconnectPinBefore(pin);
+
+  // jk: dbg
+  debugPrint(logger_,
+             utl::ODB,
+             "dbg",
+             1,
+             "jk: [{}] inDbModITermPreDisconnect({})",
+             i++,
+             moditerm->getName());
+  printDbgPin(logger_, moditerm, network_, sta_);
 }
 
 void dbStaCbk::inDbModITermDestroy(dbModITerm* moditerm)
