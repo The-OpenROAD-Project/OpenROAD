@@ -85,10 +85,10 @@ _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
   }
 
   // initialize the hier structure
-  _dbHier* hier = parent->_hier_tbl->create();
+  _dbHier* hier = parent->hier_tbl_->create();
   hier->_inst = inst->getOID();
   hier->_child_block = child->getOID();
-  hier->_child_bterms.resize(child->_bterm_tbl->size());
+  hier->_child_bterms.resize(child->bterm_tbl_->size());
 
   // create "down-hier" mapping to bterms
   for (dbBTerm* bterm : bterms) {
@@ -96,7 +96,7 @@ _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
 
     // bterms do not map 1-to-1 to mterms.
     if (mterm == nullptr) {
-      parent->_hier_tbl->destroy(hier);
+      parent->hier_tbl_->destroy(hier);
       return nullptr;
     }
 
@@ -107,16 +107,16 @@ _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
   for (dbBTerm* bterm : bterms) {
     _dbBTerm* bterm_impl = (_dbBTerm*) bterm;
     _dbMTerm* mterm = master->_mterm_hash.find(bterm_impl->name_);
-    bterm_impl->_parent_block = parent->getOID();
-    bterm_impl->_parent_iterm = inst->_iterms[mterm->_order_id];
+    bterm_impl->parent_block_ = parent->getOID();
+    bterm_impl->parent_iterm_ = inst->_iterms[mterm->_order_id];
   }
 
   // bind hier to inst
   inst->_hierarchy = hier->getOID();
 
   // point child-block to parent inst
-  child->_parent_block = parent->getOID();
-  child->_parent_inst = inst->getOID();
+  child->parent_block_ = parent->getOID();
+  child->parent_inst_ = inst->getOID();
 
   return hier;
 }
@@ -125,8 +125,8 @@ void _dbHier::destroy(_dbHier* hier)
 {
   _dbBlock* parent = (_dbBlock*) hier->getOwner();
   _dbChip* chip = (_dbChip*) parent->getOwner();
-  _dbBlock* child = chip->_block_tbl->getPtr(hier->_child_block);
-  _dbInst* inst = parent->_inst_tbl->getPtr(hier->_inst);
+  _dbBlock* child = chip->block_tbl_->getPtr(hier->_child_block);
+  _dbInst* inst = parent->inst_tbl_->getPtr(hier->_inst);
 
   // unbind inst from hier
   inst->_hierarchy = 0;
@@ -134,16 +134,16 @@ void _dbHier::destroy(_dbHier* hier)
   // unbind child bterms from hier
   for (dbBTerm* bterm : ((dbBlock*) child)->getBTerms()) {
     _dbBTerm* bterm_impl = (_dbBTerm*) bterm;
-    bterm_impl->_parent_block = 0;
-    bterm_impl->_parent_iterm = 0;
+    bterm_impl->parent_block_ = 0;
+    bterm_impl->parent_iterm_ = 0;
   }
 
   // unbind child block to inst
-  child->_parent_block = 0;
-  child->_parent_inst = 0;
+  child->parent_block_ = 0;
+  child->parent_inst_ = 0;
 
   // destroy the hier object...
-  parent->_hier_tbl->destroy(hier);
+  parent->hier_tbl_->destroy(hier);
 }
 
 void _dbHier::collectMemInfo(MemInfo& info)

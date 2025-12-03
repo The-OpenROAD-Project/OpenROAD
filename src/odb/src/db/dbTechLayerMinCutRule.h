@@ -26,7 +26,7 @@ struct dbTechLayerMinCutRuleFlags
   bool area_within_dist_valid_ : 1;
   bool same_metal_overlap : 1;
   bool fully_enclosed_ : 1;
-  uint spare_bits_ : 23;
+  uint spare_bits : 23;
 };
 
 class _dbTechLayerMinCutRule : public _dbObject

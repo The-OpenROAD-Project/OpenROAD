@@ -47,7 +47,7 @@ struct dbTechLayerCutSpacingTableDefRuleFlags
   bool prl_vertical_ : 1;
   bool non_opposite_enclosure_spacing_valid_ : 1;
   bool opposite_enclosure_resize_spacing_valid_ : 1;
-  uint spare_bits_ : 9;
+  uint spare_bits : 9;
 };
 
 class _dbTechLayerCutSpacingTableDefRule : public _dbObject

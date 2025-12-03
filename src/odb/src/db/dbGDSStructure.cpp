@@ -214,12 +214,12 @@ dbGDSStructure* dbGDSStructure::create(dbGDSLib* lib_, const char* name_)
   }
 
   _dbGDSLib* lib = (_dbGDSLib*) lib_;
-  _dbGDSStructure* structure = lib->_gdsstructure_tbl->create();
+  _dbGDSStructure* structure = lib->gdsstructure_tbl_->create();
   structure->name_ = safe_strdup(name_);
 
   // TODO: ID for structure
 
-  lib->_gdsstructure_hash.insert(structure);
+  lib->gdsstructure_hash_.insert(structure);
   return (dbGDSStructure*) structure;
 }
 
@@ -227,8 +227,8 @@ void dbGDSStructure::destroy(dbGDSStructure* structure)
 {
   _dbGDSStructure* str_impl = (_dbGDSStructure*) structure;
   _dbGDSLib* lib = (_dbGDSLib*) structure->getGDSLib();
-  lib->_gdsstructure_hash.remove(str_impl);
-  lib->_gdsstructure_tbl->destroy(str_impl);
+  lib->gdsstructure_hash_.remove(str_impl);
+  lib->gdsstructure_tbl_->destroy(str_impl);
 }
 
 dbGDSLib* dbGDSStructure::getGDSLib()

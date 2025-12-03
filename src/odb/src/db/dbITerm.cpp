@@ -90,8 +90,8 @@ bool _dbITerm::operator<(const _dbITerm& rhs) const
   _dbBlock* lhs_blk = (_dbBlock*) getOwner();
   _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
 
-  _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
-  _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
+  _dbInst* lhs_inst = lhs_blk->inst_tbl_->getPtr(_inst);
+  _dbInst* rhs_inst = rhs_blk->inst_tbl_->getPtr(rhs._inst);
   int r = strcmp(lhs_inst->name_, rhs_inst->name_);
 
   if (r < 0) {
@@ -110,10 +110,10 @@ bool _dbITerm::operator<(const _dbITerm& rhs) const
 _dbMTerm* _dbITerm::getMTerm() const
 {
   _dbBlock* block = (_dbBlock*) getOwner();
-  _dbInst* inst = block->_inst_tbl->getPtr(_inst);
-  _dbInstHdr* inst_hdr = block->_inst_hdr_tbl->getPtr(inst->_inst_hdr);
+  _dbInst* inst = block->inst_tbl_->getPtr(_inst);
+  _dbInstHdr* inst_hdr = block->inst_hdr_tbl_->getPtr(inst->_inst_hdr);
   _dbDatabase* db = getDatabase();
-  _dbLib* lib = db->_lib_tbl->getPtr(inst_hdr->_lib);
+  _dbLib* lib = db->lib_tbl_->getPtr(inst_hdr->_lib);
   _dbMaster* master = lib->_master_tbl->getPtr(inst_hdr->_master);
   dbId<_dbMTerm> mterm = inst_hdr->_mterms[flags_._mterm_idx];
   return master->_mterm_tbl->getPtr(mterm);
@@ -122,7 +122,7 @@ _dbMTerm* _dbITerm::getMTerm() const
 _dbInst* _dbITerm::getInst() const
 {
   _dbBlock* block = (_dbBlock*) getOwner();
-  _dbInst* inst = block->_inst_tbl->getPtr(_inst);
+  _dbInst* inst = block->inst_tbl_->getPtr(_inst);
   return inst;
 }
 
@@ -136,7 +136,7 @@ dbInst* dbITerm::getInst() const
 {
   _dbITerm* iterm = (_dbITerm*) this;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
-  _dbInst* inst = block->_inst_tbl->getPtr(iterm->_inst);
+  _dbInst* inst = block->inst_tbl_->getPtr(iterm->_inst);
   if (inst == nullptr) {
     iterm->getLogger()->critical(
         utl::ODB, 446, "dbITerm does not have dbInst.");
@@ -153,7 +153,7 @@ dbNet* dbITerm::getNet() const
     return nullptr;
   }
 
-  _dbNet* net = block->_net_tbl->getPtr(iterm->_net);
+  _dbNet* net = block->net_tbl_->getPtr(iterm->_net);
   return (dbNet*) net;
 }
 
@@ -161,10 +161,10 @@ dbMTerm* dbITerm::getMTerm() const
 {
   _dbITerm* iterm = (_dbITerm*) this;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
-  _dbInst* inst = block->_inst_tbl->getPtr(iterm->_inst);
-  _dbInstHdr* inst_hdr = block->_inst_hdr_tbl->getPtr(inst->_inst_hdr);
+  _dbInst* inst = block->inst_tbl_->getPtr(iterm->_inst);
+  _dbInstHdr* inst_hdr = block->inst_hdr_tbl_->getPtr(inst->_inst_hdr);
   _dbDatabase* db = iterm->getDatabase();
-  _dbLib* lib = db->_lib_tbl->getPtr(inst_hdr->_lib);
+  _dbLib* lib = db->lib_tbl_->getPtr(inst_hdr->_lib);
   _dbMaster* master = lib->_master_tbl->getPtr(inst_hdr->_master);
   dbId<_dbMTerm> mterm = inst_hdr->_mterms[iterm->flags_._mterm_idx];
   return (dbMTerm*) master->_mterm_tbl->getPtr(mterm);
@@ -174,18 +174,18 @@ dbBTerm* dbITerm::getBTerm()
 {
   _dbITerm* iterm = (_dbITerm*) this;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
-  _dbInst* inst = block->_inst_tbl->getPtr(iterm->_inst);
+  _dbInst* inst = block->inst_tbl_->getPtr(iterm->_inst);
 
   if (inst->_hierarchy == 0) {
     return nullptr;
   }
 
-  _dbHier* hier = block->_hier_tbl->getPtr(inst->_hierarchy);
+  _dbHier* hier = block->hier_tbl_->getPtr(inst->_hierarchy);
 
   _dbChip* chip = (_dbChip*) block->getOwner();
-  _dbBlock* child = chip->_block_tbl->getPtr(hier->_child_block);
+  _dbBlock* child = chip->block_tbl_->getPtr(hier->_child_block);
   dbId<_dbBTerm> bterm = hier->_child_bterms[iterm->flags_._mterm_idx];
-  return (dbBTerm*) child->_bterm_tbl->getPtr(bterm);
+  return (dbBTerm*) child->bterm_tbl_->getPtr(bterm);
 }
 
 std::string dbITerm::getName(const char separator) const
@@ -344,11 +344,11 @@ void dbITerm::connect(dbNet* net_)
     disconnectDbNet();
   }
 
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbITermPreConnect(this, net_);
   }
 
-  if (block->_journal) {
+  if (block->journal_) {
     debugPrint(getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -360,19 +360,19 @@ void dbITerm::connect(dbNet* net_)
                net->getId(),
                static_cast<void*>(net),
                net_->getName());
-    block->_journal->beginAction(dbJournal::kConnectObject);
-    block->_journal->pushParam(dbITermObj);
-    block->_journal->pushParam(getId());
-    block->_journal->pushParam(net_->getId());
+    block->journal_->beginAction(dbJournal::kConnectObject);
+    block->journal_->pushParam(dbITermObj);
+    block->journal_->pushParam(getId());
+    block->journal_->pushParam(net_->getId());
     // put in a fake modnet here
-    block->_journal->pushParam(0);
-    block->_journal->endAction();
+    block->journal_->pushParam(0);
+    block->journal_->endAction();
   }
 
   iterm->_net = net->getOID();
 
   if (net->_iterms != 0) {
-    _dbITerm* tail = block->_iterm_tbl->getPtr(net->_iterms);
+    _dbITerm* tail = block->iterm_tbl_->getPtr(net->_iterms);
     iterm->_next_net_iterm = net->_iterms;
     iterm->_prev_net_iterm = 0;
     tail->_prev_net_iterm = iterm->getOID();
@@ -383,7 +383,7 @@ void dbITerm::connect(dbNet* net_)
 
   net->_iterms = iterm->getOID();
 
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbITermPostConnect(this);
   }
 }
@@ -395,7 +395,7 @@ dbModNet* dbITerm::getModNet() const
   if (iterm->_mnet == 0) {
     return nullptr;
   }
-  _dbModNet* net = block->_modnet_tbl->getPtr(iterm->_mnet);
+  _dbModNet* net = block->modnet_tbl_->getPtr(iterm->_mnet);
   return ((dbModNet*) (net));
 }
 
@@ -427,7 +427,7 @@ void dbITerm::connect(dbModNet* mod_net)
         inst->name_);
   }
 
-  if (block->_journal) {
+  if (block->journal_) {
     debugPrint(iterm->getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -439,16 +439,16 @@ void dbITerm::connect(dbModNet* mod_net)
                _mod_net->getId(),
                static_cast<void*>(_mod_net),
                ((dbModNet*) _mod_net)->getHierarchicalName());
-    block->_journal->beginAction(dbJournal::kConnectObject);
-    block->_journal->pushParam(dbITermObj);
-    block->_journal->pushParam(getId());
-    block->_journal->pushParam(0);  // empty slot for dbNet, just dbModNet
-    block->_journal->pushParam(_mod_net->getId());
-    block->_journal->endAction();
+    block->journal_->beginAction(dbJournal::kConnectObject);
+    block->journal_->pushParam(dbITermObj);
+    block->journal_->pushParam(getId());
+    block->journal_->pushParam(0);  // empty slot for dbNet, just dbModNet
+    block->journal_->pushParam(_mod_net->getId());
+    block->journal_->endAction();
   }
 
   if (_mod_net->_iterms != 0) {
-    _dbITerm* head = block->_iterm_tbl->getPtr(_mod_net->_iterms);
+    _dbITerm* head = block->iterm_tbl_->getPtr(_mod_net->_iterms);
     iterm->_next_modnet_iterm = _mod_net->_iterms;
     // prev is this one
     head->_prev_modnet_iterm = iterm->getOID();
@@ -480,9 +480,9 @@ void dbITerm::disconnect()
 
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
   _dbNet* net
-      = iterm->_net == 0 ? nullptr : block->_net_tbl->getPtr(iterm->_net);
+      = iterm->_net == 0 ? nullptr : block->net_tbl_->getPtr(iterm->_net);
   _dbModNet* mod_net_impl
-      = iterm->_mnet == 0 ? nullptr : block->_modnet_tbl->getPtr(iterm->_mnet);
+      = iterm->_mnet == 0 ? nullptr : block->modnet_tbl_->getPtr(iterm->_mnet);
   dbModNet* mod_net = (dbModNet*) mod_net_impl;
 
   if (net && net->flags_._dont_touch) {
@@ -494,7 +494,7 @@ void dbITerm::disconnect()
         net->name_);
   }
 
-  if (block->_journal) {
+  if (block->journal_) {
     debugPrint(getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -510,15 +510,15 @@ void dbITerm::disconnect()
                (mod_net_impl) ? mod_net_impl->getId() : 0,
                static_cast<void*>(mod_net),
                (mod_net) ? mod_net->getHierarchicalName() : "NULL");
-    block->_journal->beginAction(dbJournal::kDisconnectObject);
-    block->_journal->pushParam(dbITermObj);
-    block->_journal->pushParam(getId());
-    block->_journal->pushParam(net ? net->getOID() : 0U);
-    block->_journal->pushParam(mod_net_impl ? mod_net_impl->getOID() : 0U);
-    block->_journal->endAction();
+    block->journal_->beginAction(dbJournal::kDisconnectObject);
+    block->journal_->pushParam(dbITermObj);
+    block->journal_->pushParam(getId());
+    block->journal_->pushParam(net ? net->getOID() : 0U);
+    block->journal_->pushParam(mod_net_impl ? mod_net_impl->getOID() : 0U);
+    block->journal_->endAction();
   }
 
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbITermPreDisconnect(this);
   }
 
@@ -528,21 +528,21 @@ void dbITerm::disconnect()
     if (net->_iterms == id) {
       net->_iterms = iterm->_next_net_iterm;
       if (net->_iterms != 0) {
-        _dbITerm* t = block->_iterm_tbl->getPtr(net->_iterms);
+        _dbITerm* t = block->iterm_tbl_->getPtr(net->_iterms);
         t->_prev_net_iterm = 0;
       }
     } else {
       if (iterm->_next_net_iterm != 0) {
-        _dbITerm* next = block->_iterm_tbl->getPtr(iterm->_next_net_iterm);
+        _dbITerm* next = block->iterm_tbl_->getPtr(iterm->_next_net_iterm);
         next->_prev_net_iterm = iterm->_prev_net_iterm;
       }
       if (iterm->_prev_net_iterm != 0) {
-        _dbITerm* prev = block->_iterm_tbl->getPtr(iterm->_prev_net_iterm);
+        _dbITerm* prev = block->iterm_tbl_->getPtr(iterm->_prev_net_iterm);
         prev->_next_net_iterm = iterm->_next_net_iterm;
       }
     }
     iterm->_net = 0;
-    for (auto callback : block->_callbacks) {
+    for (auto callback : block->callbacks_) {
       callback->inDbITermPostDisconnect(this, (dbNet*) net);
     }
   }
@@ -551,16 +551,16 @@ void dbITerm::disconnect()
     if (mod_net_impl->_iterms == id) {
       mod_net_impl->_iterms = iterm->_next_modnet_iterm;
       if (mod_net_impl->_iterms != 0) {
-        _dbITerm* t = block->_iterm_tbl->getPtr(mod_net_impl->_iterms);
+        _dbITerm* t = block->iterm_tbl_->getPtr(mod_net_impl->_iterms);
         t->_prev_modnet_iterm = 0;
       }
     } else {
       if (iterm->_next_modnet_iterm != 0) {
-        _dbITerm* next = block->_iterm_tbl->getPtr(iterm->_next_modnet_iterm);
+        _dbITerm* next = block->iterm_tbl_->getPtr(iterm->_next_modnet_iterm);
         next->_prev_modnet_iterm = iterm->_prev_modnet_iterm;
       }
       if (iterm->_prev_modnet_iterm != 0) {
-        _dbITerm* prev = block->_iterm_tbl->getPtr(iterm->_prev_modnet_iterm);
+        _dbITerm* prev = block->iterm_tbl_->getPtr(iterm->_prev_modnet_iterm);
         prev->_next_modnet_iterm = iterm->_next_modnet_iterm;
       }
     }
@@ -588,7 +588,7 @@ void dbITerm::disconnectDbNet()
         inst->name_);
   }
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
-  _dbNet* net = block->_net_tbl->getPtr(iterm->_net);
+  _dbNet* net = block->net_tbl_->getPtr(iterm->_net);
 
   if (net->flags_._dont_touch) {
     inst->getLogger()->error(
@@ -599,10 +599,10 @@ void dbITerm::disconnectDbNet()
         net->name_);
   }
 
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbITermPreDisconnect(this);
   }
-  if (block->_journal) {
+  if (block->journal_) {
     debugPrint(iterm->getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -614,14 +614,14 @@ void dbITerm::disconnectDbNet()
                net->getId(),
                static_cast<void*>(net),
                ((dbNet*) net)->getName());
-    block->_journal->beginAction(dbJournal::kDisconnectObject);
-    block->_journal->pushParam(dbITermObj);
-    block->_journal->pushParam(getId());
-    block->_journal->pushParam(net->getOID());
+    block->journal_->beginAction(dbJournal::kDisconnectObject);
+    block->journal_->pushParam(dbITermObj);
+    block->journal_->pushParam(getId());
+    block->journal_->pushParam(net->getOID());
     // Note we don't remove the mod net part here, just stub
     // out the modnet id.
-    block->_journal->pushParam(0);
-    block->_journal->endAction();
+    block->journal_->pushParam(0);
+    block->journal_->endAction();
   }
 
   uint id = iterm->getOID();
@@ -629,21 +629,21 @@ void dbITerm::disconnectDbNet()
   if (net->_iterms == id) {
     net->_iterms = iterm->_next_net_iterm;
     if (net->_iterms != 0) {
-      _dbITerm* t = block->_iterm_tbl->getPtr(net->_iterms);
+      _dbITerm* t = block->iterm_tbl_->getPtr(net->_iterms);
       t->_prev_net_iterm = 0;
     }
   } else {
     if (iterm->_next_net_iterm != 0) {
-      _dbITerm* next = block->_iterm_tbl->getPtr(iterm->_next_net_iterm);
+      _dbITerm* next = block->iterm_tbl_->getPtr(iterm->_next_net_iterm);
       next->_prev_net_iterm = iterm->_prev_net_iterm;
     }
     if (iterm->_prev_net_iterm != 0) {
-      _dbITerm* prev = block->_iterm_tbl->getPtr(iterm->_prev_net_iterm);
+      _dbITerm* prev = block->iterm_tbl_->getPtr(iterm->_prev_net_iterm);
       prev->_next_net_iterm = iterm->_next_net_iterm;
     }
   }
   iterm->_net = 0;
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbITermPostDisconnect(this, (dbNet*) net);
   }
 }
@@ -657,9 +657,9 @@ void dbITerm::disconnectDbModNet()
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
 
   if (iterm->_mnet != 0) {
-    _dbModNet* mod_net = block->_modnet_tbl->getPtr(iterm->_mnet);
+    _dbModNet* mod_net = block->modnet_tbl_->getPtr(iterm->_mnet);
 
-    if (block->_journal) {
+    if (block->journal_) {
       debugPrint(iterm->getImpl()->getLogger(),
                  utl::ODB,
                  "DB_ECO",
@@ -669,28 +669,28 @@ void dbITerm::disconnectDbModNet()
                  getName(),
                  iterm->_mnet,
                  mod_net->name_);
-      block->_journal->beginAction(dbJournal::kDisconnectObject);
-      block->_journal->pushParam(dbITermObj);
-      block->_journal->pushParam(getId());
+      block->journal_->beginAction(dbJournal::kDisconnectObject);
+      block->journal_->pushParam(dbITermObj);
+      block->journal_->pushParam(getId());
       // empty dbNet part, just the mod net being undone
-      block->_journal->pushParam(0);                  // no dbNet id
-      block->_journal->pushParam(mod_net->getOID());  // the modnet
-      block->_journal->endAction();
+      block->journal_->pushParam(0);                  // no dbNet id
+      block->journal_->pushParam(mod_net->getOID());  // the modnet
+      block->journal_->endAction();
     }
 
     if (mod_net->_iterms == getId()) {
       mod_net->_iterms = iterm->_next_modnet_iterm;
       if (mod_net->_iterms != 0) {
-        _dbITerm* t = block->_iterm_tbl->getPtr(mod_net->_iterms);
+        _dbITerm* t = block->iterm_tbl_->getPtr(mod_net->_iterms);
         t->_prev_modnet_iterm = 0;
       }
     } else {
       if (iterm->_next_modnet_iterm != 0) {
-        _dbITerm* next = block->_iterm_tbl->getPtr(iterm->_next_modnet_iterm);
+        _dbITerm* next = block->iterm_tbl_->getPtr(iterm->_next_modnet_iterm);
         next->_prev_modnet_iterm = iterm->_prev_modnet_iterm;
       }
       if (iterm->_prev_modnet_iterm != 0) {
-        _dbITerm* prev = block->_iterm_tbl->getPtr(iterm->_prev_modnet_iterm);
+        _dbITerm* prev = block->iterm_tbl_->getPtr(iterm->_prev_modnet_iterm);
         prev->_next_modnet_iterm = iterm->_next_modnet_iterm;
       }
     }
@@ -755,7 +755,7 @@ bool dbITerm::isInputSignal(bool io)
 dbITerm* dbITerm::getITerm(dbBlock* block_, uint dbid)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbITerm*) block->_iterm_tbl->getPtr(dbid);
+  return (dbITerm*) block->iterm_tbl_->getPtr(dbid);
 }
 
 Rect dbITerm::getBBox()
@@ -825,7 +825,7 @@ void dbITerm::setAccessPoint(dbMPin* pin, dbAccessPoint* ap)
   }
 
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbITermPostSetAccessPoints(this);
   }
 }

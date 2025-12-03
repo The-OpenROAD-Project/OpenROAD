@@ -16,7 +16,7 @@ class _dbDatabase;
 struct dbTechLayerEolExtensionRuleFlags
 {
   bool parallel_only_ : 1;
-  uint spare_bits_ : 31;
+  uint spare_bits : 31;
 };
 
 class _dbTechLayerEolExtensionRule : public _dbObject

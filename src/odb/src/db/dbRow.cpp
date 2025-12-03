@@ -163,7 +163,7 @@ dbSite* dbRow::getSite()
 {
   _dbRow* row = (_dbRow*) this;
   _dbDatabase* db = (_dbDatabase*) row->getDatabase();
-  _dbLib* lib = db->_lib_tbl->getPtr(row->_lib);
+  _dbLib* lib = db->lib_tbl_->getPtr(row->_lib);
   _dbSite* site = lib->_site_tbl->getPtr(row->_site);
   return (dbSite*) site;
 }
@@ -246,7 +246,7 @@ dbRow* dbRow::create(dbBlock* block_,
   _dbBlock* block = (_dbBlock*) block_;
   _dbSite* site = (_dbSite*) site_;
   _dbLib* lib = (_dbLib*) site->getOwner();
-  _dbRow* row = block->_row_tbl->create();
+  _dbRow* row = block->row_tbl_->create();
   row->name_ = safe_strdup(name);
   row->_lib = lib->getOID();
   row->_site = site->getOID();
@@ -256,7 +256,7 @@ dbRow* dbRow::create(dbBlock* block_,
   row->_y = origin_y;
   row->_site_cnt = num_sites;
   row->_spacing = spacing;
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbRowCreate((dbRow*) row);
   }
   return (dbRow*) row;
@@ -266,11 +266,11 @@ void dbRow::destroy(dbRow* row_)
 {
   _dbRow* row = (_dbRow*) row_;
   _dbBlock* block = (_dbBlock*) row->getOwner();
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbRowDestroy((dbRow*) row);
   }
   dbProperty::destroyProperties(row);
-  block->_row_tbl->destroy(row);
+  block->row_tbl_->destroy(row);
 }
 
 dbSet<dbRow>::iterator dbRow::destroy(dbSet<dbRow>::iterator& itr)
@@ -284,7 +284,7 @@ dbSet<dbRow>::iterator dbRow::destroy(dbSet<dbRow>::iterator& itr)
 dbRow* dbRow::getRow(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbRow*) block->_row_tbl->getPtr(dbid_);
+  return (dbRow*) block->row_tbl_->getPtr(dbid_);
 }
 
 void _dbRow::collectMemInfo(MemInfo& info)

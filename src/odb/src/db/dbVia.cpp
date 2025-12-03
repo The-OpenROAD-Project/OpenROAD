@@ -245,7 +245,7 @@ dbBox* dbVia::getBBox()
   }
 
   _dbBlock* block = (_dbBlock*) via->getOwner();
-  return (dbBox*) block->_box_tbl->getPtr(via->_bbox);
+  return (dbBox*) block->box_tbl_->getPtr(via->_bbox);
 }
 
 bool dbVia::isViaRotated()
@@ -283,7 +283,7 @@ dbVia* dbVia::getBlockVia()
   }
 
   _dbBlock* block = (_dbBlock*) via->getOwner();
-  _dbVia* v = block->_via_tbl->getPtr(via->_rotated_via_id);
+  _dbVia* v = block->via_tbl_->getPtr(via->_rotated_via_id);
   return (dbVia*) v;
 }
 
@@ -291,7 +291,7 @@ dbSet<dbBox> dbVia::getBoxes()
 {
   _dbVia* via = (_dbVia*) this;
   _dbBlock* block = (_dbBlock*) via->getOwner();
-  return dbSet<dbBox>(via, block->_box_itr);
+  return dbSet<dbBox>(via, block->box_itr_);
 }
 
 dbTechLayer* dbVia::getTopLayer()
@@ -357,7 +357,7 @@ void dbVia::setViaParams(const dbViaParams& params)
     dbSet<dbBox>::iterator cur = itr++;
     _dbBox* box = (_dbBox*) *cur;
     dbProperty::destroyProperties(box);
-    block->_box_tbl->destroy(box);
+    block->box_tbl_->destroy(box);
   }
 
   via->_boxes = 0U;
@@ -402,7 +402,7 @@ dbVia* dbVia::create(dbBlock* block_, const char* name_)
   }
 
   _dbBlock* block = (_dbBlock*) block_;
-  _dbVia* via = block->_via_tbl->create();
+  _dbVia* via = block->via_tbl_->create();
   via->name_ = safe_strdup(name_);
   return (dbVia*) via;
 }
@@ -467,7 +467,7 @@ static dbVia* copyVia(dbBlock* block_, dbVia* via_, bool copyRotatedVia)
   _dbBlock* block = (_dbBlock*) block_;
   _dbVia* via = (_dbVia*) via_;
 
-  _dbVia* cvia = block->_via_tbl->create();
+  _dbVia* cvia = block->via_tbl_->create();
 
   cvia->flags_ = via->flags_;
   cvia->name_ = safe_strdup(via->name_);
@@ -538,7 +538,7 @@ bool dbVia::copy(dbBlock* dst_, dbBlock* src_)
 dbVia* dbVia::getVia(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbVia*) block->_via_tbl->getPtr(dbid_);
+  return (dbVia*) block->via_tbl_->getPtr(dbid_);
 }
 
 void create_via_boxes(_dbVia* via, const dbViaParams& P)

@@ -323,7 +323,7 @@ _dbTechVia* _dbBox::getTechVia() const
       _dbMaster* master = (_dbMaster*) getOwner();
       _dbLib* lib = (_dbLib*) master->getOwner();
       _dbDatabase* db = (_dbDatabase*) master->getDatabase();
-      _dbTech* tech = db->_tech_tbl->getPtr(lib->_tech);
+      _dbTech* tech = db->tech_tbl_->getPtr(lib->_tech);
       return tech->_via_tbl->getPtr(flags_.via_id);
     }
 
@@ -357,7 +357,7 @@ _dbVia* _dbBox::getBlockVia() const
     case dbBoxOwner::BLOCKAGE:
     case dbBoxOwner::SWIRE: {
       _dbBlock* block = (_dbBlock*) getOwner();
-      return block->_via_tbl->getPtr(flags_.via_id);
+      return block->via_tbl_->getPtr(flags_.via_id);
     }
 
     // There are no block-vias on these objects
@@ -595,37 +595,37 @@ dbObject* dbBox::getBoxOwner() const
 
     case dbBoxOwner::INST: {
       _dbBlock* block = (_dbBlock*) owner;
-      return block->_inst_tbl->getPtr(box->owner_);
+      return block->inst_tbl_->getPtr(box->owner_);
     }
 
     case dbBoxOwner::BTERM: {
       _dbBlock* block = (_dbBlock*) owner;
-      return block->_bterm_tbl->getPtr(box->owner_);
+      return block->bterm_tbl_->getPtr(box->owner_);
     }
 
     case dbBoxOwner::BPIN: {
       _dbBlock* block = (_dbBlock*) owner;
-      return block->_bpin_tbl->getPtr(box->owner_);
+      return block->bpin_tbl_->getPtr(box->owner_);
     }
 
     case dbBoxOwner::VIA: {
       _dbBlock* block = (_dbBlock*) owner;
-      return block->_via_tbl->getPtr(box->owner_);
+      return block->via_tbl_->getPtr(box->owner_);
     }
 
     case dbBoxOwner::OBSTRUCTION: {
       _dbBlock* block = (_dbBlock*) owner;
-      return block->_obstruction_tbl->getPtr(box->owner_);
+      return block->obstruction_tbl_->getPtr(box->owner_);
     }
 
     case dbBoxOwner::BLOCKAGE: {
       _dbBlock* block = (_dbBlock*) owner;
-      return block->_blockage_tbl->getPtr(box->owner_);
+      return block->blockage_tbl_->getPtr(box->owner_);
     }
 
     case dbBoxOwner::SWIRE: {
       _dbBlock* block = (_dbBlock*) owner;
-      return block->_swire_tbl->getPtr(box->owner_);
+      return block->swire_tbl_->getPtr(box->owner_);
     }
 
     case dbBoxOwner::MASTER: {
@@ -648,7 +648,7 @@ dbObject* dbBox::getBoxOwner() const
 
     case dbBoxOwner::REGION: {
       _dbBlock* block = (_dbBlock*) owner;
-      return block->_swire_tbl->getPtr(box->owner_);
+      return block->swire_tbl_->getPtr(box->owner_);
     }
   }
 
@@ -698,7 +698,7 @@ dbBox* dbBox::create(dbBPin* bpin_,
   _dbBPin* bpin = (_dbBPin*) bpin_;
   _dbBlock* block = (_dbBlock*) bpin->getOwner();
 
-  _dbBox* box = block->_box_tbl->create();
+  _dbBox* box = block->box_tbl_->create();
   box->flags_.octilinear = false;
   const auto layer_id = layer_->getImpl()->getOID();
   if (layer_id >= (1 << 9)) {
@@ -722,7 +722,7 @@ dbBox* dbBox::create(dbBPin* bpin_,
 
   block->add_rect(box->shape_.rect);
 
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbBPinAddBox((dbBox*) box);
   }
 
@@ -738,7 +738,7 @@ dbBox* dbBox::create(dbVia* via_,
 {
   _dbVia* via = (_dbVia*) via_;
   _dbBlock* block = (_dbBlock*) via->getOwner();
-  _dbBox* box = block->_box_tbl->create();
+  _dbBox* box = block->box_tbl_->create();
   box->flags_.octilinear = false;
   box->flags_.layer_id = layer_->getImpl()->getOID();
   box->flags_.owner_type = dbBoxOwner::VIA;
@@ -747,13 +747,13 @@ dbBox* dbBox::create(dbVia* via_,
 
   // update via bbox
   if (via->_bbox == 0) {
-    _dbBox* vbbox = block->_box_tbl->create();
+    _dbBox* vbbox = block->box_tbl_->create();
     vbbox->flags_.owner_type = dbBoxOwner::VIA;
     vbbox->owner_ = via->getOID();
     vbbox->shape_.rect.init(x1, y1, x2, y2);
     via->_bbox = vbbox->getOID();
   } else {
-    _dbBox* vbbox = block->_box_tbl->getPtr(via->_bbox);
+    _dbBox* vbbox = block->box_tbl_->getPtr(via->_bbox);
     vbbox->shape_.rect.merge(box->shape_.rect);
   }
 
@@ -959,7 +959,7 @@ dbBox* dbBox::create(dbRegion* region_, int x1, int y1, int x2, int y2)
 {
   _dbRegion* region = (_dbRegion*) region_;
   _dbBlock* block = (_dbBlock*) region->getOwner();
-  _dbBox* box = block->_box_tbl->create();
+  _dbBox* box = block->box_tbl_->create();
   box->flags_.octilinear = false;
   box->flags_.owner_type = dbBoxOwner::REGION;
   box->owner_ = region->getOID();
@@ -968,7 +968,7 @@ dbBox* dbBox::create(dbRegion* region_, int x1, int y1, int x2, int y2)
   // link box to region
   box->next_box_ = region->_boxes;
   region->_boxes = box->getOID();
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbRegionAddBox(region_, (dbBox*) box);
   }
   return (dbBox*) box;
@@ -983,7 +983,7 @@ dbBox* dbBox::create(dbInst* inst_, int x1, int y1, int x2, int y2)
     return nullptr;
   }
 
-  _dbBox* box = block->_box_tbl->create();
+  _dbBox* box = block->box_tbl_->create();
   box->flags_.octilinear = false;
   box->flags_.owner_type = dbBoxOwner::INST;
   box->owner_ = inst->getOID();
@@ -1001,7 +1001,7 @@ void dbBox::destroy(dbBox* box)
       pin->removeBox(db_box);
       _dbBlock* block = (_dbBlock*) pin->getOwner();
       block->remove_rect(db_box->shape_.rect);
-      block->_box_tbl->destroy(db_box);
+      block->box_tbl_->destroy(db_box);
       break;
     }
     case dbBoxOwner::UNKNOWN:
@@ -1024,7 +1024,7 @@ void dbBox::destroy(dbBox* box)
 dbBox* dbBox::getBox(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbBox*) block->_box_tbl->getPtr(dbid_);
+  return (dbBox*) block->box_tbl_->getPtr(dbid_);
 }
 
 dbBox* dbBox::getBox(dbTech* tech_, uint dbid_)

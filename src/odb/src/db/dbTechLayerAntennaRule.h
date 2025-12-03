@@ -28,35 +28,35 @@ class lefout;
 // An antenna multiplier factor is applied to metal. A separate factor may
 // be used for diffusion connected metal.
 //
-class _ARuleFactor
+class ARuleFactor
 {
  public:
   double _factor;
   bool _explicit;
   bool _diff_use_only;
 
-  _ARuleFactor();
+  ARuleFactor();
   void setFactor(double factor, bool diffuse);
-  bool operator==(const _ARuleFactor& rhs) const;
-  bool operator!=(const _ARuleFactor& rhs) const { return !operator==(rhs); }
+  bool operator==(const ARuleFactor& rhs) const;
+  bool operator!=(const ARuleFactor& rhs) const { return !operator==(rhs); }
 };
 
-inline _ARuleFactor::_ARuleFactor()
+inline ARuleFactor::ARuleFactor()
 {
   _factor = 1.0;
   _explicit = false;
   _diff_use_only = false;
 }
 
-dbOStream& operator<<(dbOStream& stream, const _ARuleFactor& arf);
-dbIStream& operator>>(dbIStream& stream, _ARuleFactor& arf);
+dbOStream& operator<<(dbOStream& stream, const ARuleFactor& arf);
+dbIStream& operator>>(dbIStream& stream, ARuleFactor& arf);
 
 //
 // An antenna rule ratio is a single ratio for non-diffusion connected segments
 // or a piecewise linear function of diffusion area for diffusion connected
 // segments.
 //
-class _ARuleRatio
+class ARuleRatio
 {
  public:
   double _ratio{0.0};
@@ -68,12 +68,12 @@ class _ARuleRatio
                const std::vector<double>& ratios);
   void setDiff(double ratio);  // single value stored as PWL
 
-  bool operator==(const _ARuleRatio& rhs) const;
-  bool operator!=(const _ARuleRatio& rhs) const { return !operator==(rhs); }
+  bool operator==(const ARuleRatio& rhs) const;
+  bool operator!=(const ARuleRatio& rhs) const { return !operator==(rhs); }
 };
 
-dbOStream& operator<<(dbOStream& stream, const _ARuleRatio& arrt);
-dbIStream& operator>>(dbIStream& stream, _ARuleRatio& arrt);
+dbOStream& operator<<(dbOStream& stream, const ARuleRatio& arrt);
+dbIStream& operator>>(dbIStream& stream, ARuleRatio& arrt);
 
 ///  An antenna rule comprises a multiplier factor for area and sidearea
 ///  (perimeter), as well as ratios for the area and sidearea for both
@@ -83,13 +83,13 @@ class _dbTechLayerAntennaRule : public _dbObject
 {
  public:
   dbId<_dbTechLayer> _layer;
-  _ARuleFactor _area_mult;
-  _ARuleFactor _sidearea_mult;
-  _ARuleRatio _par_area_val;
-  _ARuleRatio _cum_area_val;
-  _ARuleRatio _par_sidearea_val;
-  _ARuleRatio _cum_sidearea_val;
-  _ARuleRatio _area_diff_reduce_val;
+  ARuleFactor _area_mult;
+  ARuleFactor _sidearea_mult;
+  ARuleRatio _par_area_val;
+  ARuleRatio _cum_area_val;
+  ARuleRatio _par_sidearea_val;
+  ARuleRatio _cum_sidearea_val;
+  ARuleRatio _area_diff_reduce_val;
   double _gate_plus_diff_factor;
   double _area_minus_diff_factor;
   bool _has_antenna_cumroutingpluscut;

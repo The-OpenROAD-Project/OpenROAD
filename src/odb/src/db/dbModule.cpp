@@ -160,7 +160,7 @@ dbModInst* dbModule::getModInst() const
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModInst*) par->_modinst_tbl->getPtr(obj->_mod_inst);
+  return (dbModInst*) par->modinst_tbl_->getPtr(obj->_mod_inst);
 }
 
 // User Code Begin dbModulePublicMethods
@@ -177,21 +177,21 @@ const dbModBTerm* dbModule::getHeadDbModBTerm() const
   // last object added. The application calling this routine
   // needs to be aware of this (and possibly skip to the end
   // of the list and then use prev to reconstruct creation order).
-  return (dbModBTerm*) (block_->_modbterm_tbl->getPtr(obj->_modbterms));
+  return (dbModBTerm*) (block_->modbterm_tbl_->getPtr(obj->_modbterms));
 }
 
 int dbModule::getModInstCount()
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return (int) ((dbSet<dbModInst>(module, block->_module_modinst_itr)).size());
+  return (int) ((dbSet<dbModInst>(module, block->module_modinst_itr_)).size());
 }
 
 int dbModule::getDbInstCount()
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return (int) (dbSet<dbInst>(module, block->_module_inst_itr).size());
+  return (int) (dbSet<dbInst>(module, block->module_inst_itr_).size());
 }
 
 void dbModule::addInst(dbInst* inst)
@@ -234,7 +234,7 @@ void dbModule::addInst(dbInst* inst)
     _inst->_module_prev = 0;
     module->_insts = _inst->getOID();
   } else {
-    _dbInst* cur_head = block->_inst_tbl->getPtr(module->_insts);
+    _dbInst* cur_head = block->inst_tbl_->getPtr(module->_insts);
     _inst->_module_next = module->_insts;
     module->_insts = _inst->getOID();
     cur_head->_module_prev = _inst->getOID();
@@ -265,17 +265,17 @@ void _dbModule::removeInst(dbInst* inst)
     module->_insts = _inst->_module_next;
 
     if (module->_insts != 0) {
-      _dbInst* t = block->_inst_tbl->getPtr(module->_insts);
+      _dbInst* t = block->inst_tbl_->getPtr(module->_insts);
       t->_module_prev = 0;
     }
   } else {
     if (_inst->_module_next != 0) {
-      _dbInst* next = block->_inst_tbl->getPtr(_inst->_module_next);
+      _dbInst* next = block->inst_tbl_->getPtr(_inst->_module_next);
       next->_module_prev = _inst->_module_prev;
     }
 
     if (_inst->_module_prev != 0) {
-      _dbInst* prev = block->_inst_tbl->getPtr(_inst->_module_prev);
+      _dbInst* prev = block->inst_tbl_->getPtr(_inst->_module_prev);
       prev->_module_next = _inst->_module_next;
     }
   }
@@ -288,14 +288,14 @@ dbSet<dbModInst> dbModule::getChildren() const
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return dbSet<dbModInst>(module, block->_module_modinst_itr);
+  return dbSet<dbModInst>(module, block->module_modinst_itr_);
 }
 
 dbSet<dbModNet> dbModule::getModNets()
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return dbSet<dbModNet>(module, block->_module_modnet_itr);
+  return dbSet<dbModNet>(module, block->module_modnet_itr_);
 }
 
 dbModNet* dbModule::getModNet(const char* net_name) const
@@ -305,7 +305,7 @@ dbModNet* dbModule::getModNet(const char* net_name) const
   auto it = module->_modnet_hash.find(net_name);
   if (it != module->_modnet_hash.end()) {
     uint db_id = (*it).second;
-    return (dbModNet*) block->_modnet_tbl->getPtr(db_id);
+    return (dbModNet*) block->modnet_tbl_->getPtr(db_id);
   }
   return nullptr;
 }
@@ -314,7 +314,7 @@ dbSet<dbModInst> dbModule::getModInsts() const
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return dbSet<dbModInst>(module, block->_module_modinst_itr);
+  return dbSet<dbModInst>(module, block->module_modinst_itr_);
 }
 
 //
@@ -328,7 +328,7 @@ dbSet<dbModBTerm> dbModule::getPorts()
   _dbModule* obj = (_dbModule*) this;
   if (obj->_port_iter == nullptr) {
     _dbBlock* block = (_dbBlock*) obj->getOwner();
-    obj->_port_iter = new dbModulePortItr(block->_modbterm_tbl);
+    obj->_port_iter = new dbModulePortItr(block->modbterm_tbl_);
   }
   return dbSet<dbModBTerm>(this, obj->_port_iter);
 }
@@ -341,34 +341,34 @@ dbSet<dbModBTerm> dbModule::getModBTerms() const
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return dbSet<dbModBTerm>(module, block->_module_modbterm_itr);
+  return dbSet<dbModBTerm>(module, block->module_modbterm_itr_);
 }
 
 dbModBTerm* dbModule::getModBTerm(uint id)
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return (dbModBTerm*) (block->_modbterm_tbl->getObject(id));
+  return (dbModBTerm*) (block->modbterm_tbl_->getObject(id));
 }
 
 dbSet<dbInst> dbModule::getInsts() const
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return dbSet<dbInst>(module, block->_module_inst_itr);
+  return dbSet<dbInst>(module, block->module_inst_itr_);
 }
 
 dbModule* dbModule::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_module_hash.hasMember(name)) {
+  if (_block->module_hash_.hasMember(name)) {
     return nullptr;
   }
-  _dbModule* module = _block->_module_tbl->create();
+  _dbModule* module = _block->module_tbl_->create();
   module->name_ = safe_strdup(name);
-  _block->_module_hash.insert(module);
+  _block->module_hash_.insert(module);
 
-  if (_block->_journal) {
+  if (_block->journal_) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -376,14 +376,14 @@ dbModule* dbModule::create(dbBlock* block, const char* name)
                "ECO: create dbModule {} at id {}",
                module->name_,
                module->getId());
-    _block->_journal->beginAction(dbJournal::kCreateObject);
-    _block->_journal->pushParam(dbModuleObj);
-    _block->_journal->pushParam(module->name_);
-    _block->_journal->pushParam(module->getId());
-    _block->_journal->endAction();
+    _block->journal_->beginAction(dbJournal::kCreateObject);
+    _block->journal_->pushParam(dbModuleObj);
+    _block->journal_->pushParam(module->name_);
+    _block->journal_->pushParam(module->getId());
+    _block->journal_->endAction();
   }
 
-  for (dbBlockCallBackObj* cb : _block->_callbacks) {
+  for (dbBlockCallBackObj* cb : _block->callbacks_) {
     cb->inDbModuleCreate((dbModule*) module);
   }
 
@@ -395,7 +395,7 @@ void dbModule::destroy(dbModule* module)
   _dbModule* _module = (_dbModule*) module;
   _dbBlock* block = (_dbBlock*) _module->getOwner();
 
-  if (block->_top_module == module->getId()) {
+  if (block->top_module_ == module->getId()) {
     _module->getLogger()->error(
         utl::ODB, 298, "The top module can't be destroyed.");
   }
@@ -451,7 +451,7 @@ void dbModule::destroy(dbModule* module)
     modnet_itr = dbModNet::destroy(modnet_itr);
   }
 
-  for (auto cb : block->_callbacks) {
+  for (auto cb : block->callbacks_) {
     cb->inDbModuleDestroy(module);
   }
 
@@ -460,7 +460,7 @@ void dbModule::destroy(dbModule* module)
   // Journal the deletion of the dbModule after its ports
   // and properties deleted, so that on restore we have
   // dbModule to hang objects on.
-  if (block->_journal) {
+  if (block->journal_) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -468,21 +468,21 @@ void dbModule::destroy(dbModule* module)
                "ECO: delete dbModule {} at id {}",
                module->getName(),
                module->getId());
-    block->_journal->beginAction(dbJournal::kDeleteObject);
-    block->_journal->pushParam(dbModuleObj);
-    block->_journal->pushParam(module->getName());
-    block->_journal->pushParam(module->getId());
-    block->_journal->endAction();
+    block->journal_->beginAction(dbJournal::kDeleteObject);
+    block->journal_->pushParam(dbModuleObj);
+    block->journal_->pushParam(module->getName());
+    block->journal_->pushParam(module->getId());
+    block->journal_->endAction();
   }
 
-  block->_module_hash.remove(_module);
-  block->_module_tbl->destroy(_module);
+  block->module_hash_.remove(_module);
+  block->module_tbl_->destroy(_module);
 }
 
 dbModule* dbModule::getModule(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbModule*) block->_module_tbl->getPtr(dbid_);
+  return (dbModule*) block->module_tbl_->getPtr(dbid_);
 }
 
 dbModInst* dbModule::findModInst(const char* name)
@@ -492,7 +492,7 @@ dbModInst* dbModule::findModInst(const char* name)
   auto it = obj->_modinst_hash.find(name);
   if (it != obj->_modinst_hash.end()) {
     auto db_id = (*it).second;
-    return (dbModInst*) par->_modinst_tbl->getPtr(db_id);
+    return (dbModInst*) par->modinst_tbl_->getPtr(db_id);
   }
   return nullptr;
 }
@@ -504,7 +504,7 @@ dbInst* dbModule::findDbInst(const char* name)
   auto it = obj->_dbinst_hash.find(name);
   if (it != obj->_dbinst_hash.end()) {
     auto db_id = (*it).second;
-    return (dbInst*) par->_inst_tbl->getPtr(db_id);
+    return (dbInst*) par->inst_tbl_->getPtr(db_id);
   }
   return nullptr;
 }
@@ -540,7 +540,7 @@ dbModBTerm* dbModule::findModBTerm(const char* name)
   auto it = obj->_modbterm_hash.find(modbterm_name);
   if (it != obj->_modbterm_hash.end()) {
     auto db_id = (*it).second;
-    return (dbModBTerm*) par->_modbterm_tbl->getPtr(db_id);
+    return (dbModBTerm*) par->modbterm_tbl_->getPtr(db_id);
   }
   return nullptr;
 }
@@ -572,7 +572,7 @@ dbModule* dbModule::makeUniqueDbModule(const char* cell_name,
   }
 
   std::unordered_map<std::string, int>& name_id_map
-      = ((_dbBlock*) block)->_module_name_id_map;
+      = ((_dbBlock*) block)->module_name_id_map_;
   std::string orig_cell_name(cell_name);
   std::string module_name = orig_cell_name + '_' + std::string(inst_name);
   do {

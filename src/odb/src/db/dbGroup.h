@@ -24,7 +24,7 @@ class _dbRegion;
 struct dbGroupFlags
 {
   uint _type : 2;
-  uint spare_bits_ : 30;
+  uint spare_bits : 30;
 };
 
 class _dbGroup : public _dbObject

@@ -93,7 +93,7 @@ dbNet* dbWire::getNet()
   }
 
   _dbBlock* block = (_dbBlock*) wire->getOwner();
-  return (dbNet*) block->_net_tbl->getPtr(wire->_net);
+  return (dbNet*) block->net_tbl_->getPtr(wire->_net);
 }
 
 bool dbWire::isGlobalWire()
@@ -1030,7 +1030,7 @@ void dbWire::append(dbWire* src_, bool singleSegmentWire)
       }
     }
   }
-  for (auto callback : ((_dbBlock*) getBlock())->_callbacks) {
+  for (auto callback : ((_dbBlock*) getBlock())->callbacks_) {
     callback->inDbWirePreAppend(src_, this);
   }
   uint sz = dst->_opcodes.size();
@@ -1048,7 +1048,7 @@ void dbWire::append(dbWire* src_, bool singleSegmentWire)
 
       if (opcode == WOP_VIA) {
         uint vid = dst->_data[i];
-        _dbVia* src_via = src_block->_via_tbl->getPtr(vid);
+        _dbVia* src_via = src_block->via_tbl_->getPtr(vid);
         dbVia* dst_via = ((dbBlock*) dst_block)->findVia(src_via->name_);
 
         // duplicate src-via in dst-block if needed
@@ -1072,7 +1072,7 @@ void dbWire::append(dbWire* src_, bool singleSegmentWire)
       dst->_data[i] += sz;
     }
   }
-  for (auto callback : ((_dbBlock*) getBlock())->_callbacks) {
+  for (auto callback : ((_dbBlock*) getBlock())->callbacks_) {
     callback->inDbWirePostAppend(src_, this);
   }
 }
@@ -1086,7 +1086,7 @@ void dbWire::attach(dbNet* net_)
   if (wire->_net == net->getOID() && net->_wire == wire->getOID()) {
     return;
   }
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbWirePreAttach(this, net_);
   }
 
@@ -1102,7 +1102,7 @@ void dbWire::attach(dbNet* net_)
 
   wire->_net = net->getOID();
   net->_wire = wire->getOID();
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbWirePostAttach(this);
   }
 }
@@ -1115,14 +1115,14 @@ void dbWire::detach()
   if (wire->_net == 0) {
     return;
   }
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbWirePreDetach(this);
   }
 
   _dbNet* net = (_dbNet*) getNet();
   net->_wire = 0;
   wire->_net = 0;
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbWirePostDetach(this, (dbNet*) net);
   }
 }
@@ -1142,7 +1142,7 @@ dbWire* dbWire::create(dbNet* net_, bool global_wire)
   }
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  _dbWire* wire = block->_wire_tbl->create();
+  _dbWire* wire = block->wire_tbl_->create();
   wire->_net = net->getOID();
 
   if (global_wire) {
@@ -1154,7 +1154,7 @@ dbWire* dbWire::create(dbNet* net_, bool global_wire)
 
   net->flags_._wire_ordered = 0;
   net->flags_._disconnected = 0;
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbWireCreate((dbWire*) wire);
   }
   return (dbWire*) wire;
@@ -1163,8 +1163,8 @@ dbWire* dbWire::create(dbNet* net_, bool global_wire)
 dbWire* dbWire::create(dbBlock* block_, bool /* unused: global_wire */)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  _dbWire* wire = block->_wire_tbl->create();
-  for (auto callback : block->_callbacks) {
+  _dbWire* wire = block->wire_tbl_->create();
+  for (auto callback : block->callbacks_) {
     callback->inDbWireCreate((dbWire*) wire);
   }
   return (dbWire*) wire;
@@ -1173,7 +1173,7 @@ dbWire* dbWire::create(dbBlock* block_, bool /* unused: global_wire */)
 dbWire* dbWire::getWire(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbWire*) block->_wire_tbl->getPtr(dbid_);
+  return (dbWire*) block->wire_tbl_->getPtr(dbid_);
 }
 
 void dbWire::destroy(dbWire* wire_)
@@ -1181,7 +1181,7 @@ void dbWire::destroy(dbWire* wire_)
   _dbWire* wire = (_dbWire*) wire_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
   _dbNet* net = (_dbNet*) wire_->getNet();
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbWireDestroy(wire_);
   }
   const auto opt_bbox = wire_->getBBox();
@@ -1202,7 +1202,7 @@ void dbWire::destroy(dbWire* wire_)
   }
 
   dbProperty::destroyProperties(wire);
-  block->_wire_tbl->destroy(wire);
+  block->wire_tbl_->destroy(wire);
 }
 
 void _dbWire::collectMemInfo(MemInfo& info)

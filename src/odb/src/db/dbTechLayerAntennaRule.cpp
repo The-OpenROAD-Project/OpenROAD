@@ -26,7 +26,7 @@ template class dbTable<_dbTechAntennaPinModel>;
 
 using std::vector;
 
-bool _ARuleFactor::operator==(const _ARuleFactor& rhs) const
+bool ARuleFactor::operator==(const ARuleFactor& rhs) const
 {
   if (_factor != rhs._factor) {
     return false;
@@ -43,7 +43,7 @@ bool _ARuleFactor::operator==(const _ARuleFactor& rhs) const
   return true;
 }
 
-bool _ARuleRatio::operator==(const _ARuleRatio& rhs) const
+bool ARuleRatio::operator==(const ARuleRatio& rhs) const
 {
   if (_ratio != rhs._ratio) {
     return false;
@@ -151,11 +151,11 @@ bool _dbTechAntennaPinModel::operator==(const _dbTechAntennaPinModel& rhs) const
 
 ////////////////////////////////////////////////////////////////////
 //
-// _ARuleFactor - Methods
+// ARuleFactor - Methods
 //
 ////////////////////////////////////////////////////////////////////
 
-void _ARuleFactor::setFactor(double factor, bool diffuse)
+void ARuleFactor::setFactor(double factor, bool diffuse)
 {
   assert(factor > 0.0);
   _factor = factor;
@@ -163,7 +163,7 @@ void _ARuleFactor::setFactor(double factor, bool diffuse)
   _explicit = true;
 }
 
-dbOStream& operator<<(dbOStream& stream, const _ARuleFactor& arf)
+dbOStream& operator<<(dbOStream& stream, const ARuleFactor& arf)
 {
   stream << arf._factor;
   stream << arf._explicit;
@@ -171,7 +171,7 @@ dbOStream& operator<<(dbOStream& stream, const _ARuleFactor& arf)
   return stream;
 }
 
-dbIStream& operator>>(dbIStream& stream, _ARuleFactor& arf)
+dbIStream& operator>>(dbIStream& stream, ARuleFactor& arf)
 {
   stream >> arf._factor;
   stream >> arf._explicit;
@@ -181,17 +181,17 @@ dbIStream& operator>>(dbIStream& stream, _ARuleFactor& arf)
 
 ////////////////////////////////////////////////////////////////////
 //
-// _ARuleRatio - Methods
+// ARuleRatio - Methods
 //
 ////////////////////////////////////////////////////////////////////
 
-void _ARuleRatio::setRatio(double ratio)
+void ARuleRatio::setRatio(double ratio)
 {
   assert(ratio > 0);
   _ratio = ratio;
 }
 
-void _ARuleRatio::setDiff(double ratio)
+void ARuleRatio::setDiff(double ratio)
 {
   assert(ratio > 0);
   assert((_diff_idx.size() == 0) && (_diff_ratio.size() == 0));
@@ -199,15 +199,15 @@ void _ARuleRatio::setDiff(double ratio)
   _diff_ratio.assign(1, ratio);
 }
 
-void _ARuleRatio::setDiff(const vector<double>& diff_idx,
-                          const vector<double>& ratios)
+void ARuleRatio::setDiff(const vector<double>& diff_idx,
+                         const vector<double>& ratios)
 {
   assert((_diff_idx.size() == 0) && (_diff_ratio.size() == 0));
   _diff_idx = diff_idx;
   _diff_ratio = ratios;
 }
 
-dbOStream& operator<<(dbOStream& stream, const _ARuleRatio& arrt)
+dbOStream& operator<<(dbOStream& stream, const ARuleRatio& arrt)
 {
   stream << arrt._ratio;
   stream << arrt._diff_idx;
@@ -215,7 +215,7 @@ dbOStream& operator<<(dbOStream& stream, const _ARuleRatio& arrt)
   return stream;
 }
 
-dbIStream& operator>>(dbIStream& stream, _ARuleRatio& arrt)
+dbIStream& operator>>(dbIStream& stream, ARuleRatio& arrt)
 {
   stream >> arrt._ratio;
   stream >> arrt._diff_idx;

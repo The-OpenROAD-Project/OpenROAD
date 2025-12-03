@@ -18,7 +18,7 @@ class dbOStream;
 class _dbTechLayerSpacingRule : public _dbObject
 {
  public:
-  enum _RuleType
+  enum RuleType
   {
     kDefault = 0,
     kRangeOnly,
@@ -35,9 +35,9 @@ class _dbTechLayerSpacingRule : public _dbObject
     kEndOfLineParallelTwoEdges
   };
 
-  struct _Flword
+  struct Flags
   {
-    _RuleType _rule : 4;
+    RuleType _rule : 4;
     bool _except_same_pgnet : 1;
     bool _cut_stacking : 1;
     bool _cut_center_to_center : 1;
@@ -49,7 +49,7 @@ class _dbTechLayerSpacingRule : public _dbObject
   };
 
   // PERSISTENT-MEMBERS
-  _Flword flags_;
+  Flags flags_;
   uint _spacing;
   uint _length_or_influence;
   uint _r1min;

@@ -38,7 +38,7 @@ void dbRegionGroupItr::reverse(dbObject* parent)
   uint list = 0;
 
   while (id != 0) {
-    _dbGroup* _child = _group_tbl->getPtr(id);
+    _dbGroup* _child = group_tbl_->getPtr(id);
     uint n = _child->region_next_;
     _child->region_next_ = list;
     list = id;
@@ -83,14 +83,14 @@ uint dbRegionGroupItr::end(dbObject* /* unused: parent */) const
 uint dbRegionGroupItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbGroup* _child = _group_tbl->getPtr(id);
+  _dbGroup* _child = group_tbl_->getPtr(id);
   return _child->region_next_;
   // User Code End next
 }
 
 dbObject* dbRegionGroupItr::getObject(uint id, ...)
 {
-  return _group_tbl->getPtr(id);
+  return group_tbl_->getPtr(id);
 }
 }  // namespace odb
    // Generator Code End Cpp

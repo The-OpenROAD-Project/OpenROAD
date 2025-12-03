@@ -119,14 +119,14 @@ dbLib* dbInstHdr::getLib()
 {
   _dbInstHdr* inst_hdr = (_dbInstHdr*) this;
   _dbDatabase* db = getDatabase();
-  return (dbLib*) db->_lib_tbl->getPtr(inst_hdr->_lib);
+  return (dbLib*) db->lib_tbl_->getPtr(inst_hdr->_lib);
 }
 
 dbMaster* dbInstHdr::getMaster()
 {
   _dbInstHdr* inst_hdr = (_dbInstHdr*) this;
   _dbDatabase* db = getDatabase();
-  _dbLib* lib = db->_lib_tbl->getPtr(inst_hdr->_lib);
+  _dbLib* lib = db->lib_tbl_->getPtr(inst_hdr->_lib);
   return (dbMaster*) lib->_master_tbl->getPtr(inst_hdr->_master);
 }
 
@@ -140,20 +140,20 @@ dbInstHdr* dbInstHdr::create(dbBlock* block_, dbMaster* master_)
     return nullptr;
   }
 
-  if (block->_inst_hdr_hash.hasMember(master->_id)) {
+  if (block->inst_hdr_hash_.hasMember(master->_id)) {
     return nullptr;
   }
 
   _dbInstHdr* inst_hdr;
   // initialize the inst_hdr structure
-  inst_hdr = block->_inst_hdr_tbl->create();
+  inst_hdr = block->inst_hdr_tbl_->create();
   inst_hdr->_mterm_cnt = master->_mterm_cnt;
   inst_hdr->_id = master->_id;
   inst_hdr->_lib = lib->getOID();
   inst_hdr->_master = master->getOID();
 
   // insert the inst_hdr into the block inst_hdr hash table.
-  block->_inst_hdr_hash.insert(inst_hdr);
+  block->inst_hdr_hash_.insert(inst_hdr);
 
   //
   // Each ITerm of and instances points back the MTerm the ITerm
@@ -185,8 +185,8 @@ void dbInstHdr::destroy(dbInstHdr* inst_hdr_)
   _dbBlock* block = (_dbBlock*) inst_hdr->getOwner();
 
   assert(inst_hdr->_inst_cnt == 0);
-  block->_inst_hdr_hash.remove(inst_hdr);
-  block->_inst_hdr_tbl->destroy(inst_hdr);
+  block->inst_hdr_hash_.remove(inst_hdr);
+  block->inst_hdr_tbl_->destroy(inst_hdr);
 }
 
 void _dbInstHdr::collectMemInfo(MemInfo& info)

@@ -230,7 +230,7 @@ dbTech* dbLib::getTech()
 _dbTech* _dbLib::getTech()
 {
   _dbDatabase* db = getDatabase();
-  return db->_tech_tbl->getPtr(_tech);
+  return db->tech_tbl_->getPtr(_tech);
 }
 
 int dbLib::getDbUnitsPerMicron()
@@ -308,7 +308,7 @@ dbLib* dbLib::create(dbDatabase* db_,
     return nullptr;
   }
   _dbDatabase* db = (_dbDatabase*) db_;
-  _dbLib* lib = db->_lib_tbl->create();
+  _dbLib* lib = db->lib_tbl_->create();
   lib->name_ = safe_strdup(name);
   lib->_hier_delimiter = hier_delimiter;
   lib->_dbu_per_micron = tech->getDbUnitsPerMicron();
@@ -319,7 +319,7 @@ dbLib* dbLib::create(dbDatabase* db_,
 dbLib* dbLib::getLib(dbDatabase* db_, uint dbid_)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
-  return (dbLib*) db->_lib_tbl->getPtr(dbid_);
+  return (dbLib*) db->lib_tbl_->getPtr(dbid_);
 }
 
 void dbLib::destroy(dbLib* lib_)
@@ -327,7 +327,7 @@ void dbLib::destroy(dbLib* lib_)
   _dbLib* lib = (_dbLib*) lib_;
   _dbDatabase* db = lib->getDatabase();
   dbProperty::destroyProperties(lib);
-  db->_lib_tbl->destroy(lib);
+  db->lib_tbl_->destroy(lib);
 }
 
 void _dbLib::collectMemInfo(MemInfo& info)

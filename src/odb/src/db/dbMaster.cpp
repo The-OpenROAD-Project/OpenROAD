@@ -556,7 +556,7 @@ dbSite* dbMaster::getSite()
   }
 
   _dbDatabase* db = (_dbDatabase*) getDb();
-  _dbLib* lib = (_dbLib*) db->_lib_tbl->getPtr(master->_lib_for_site);
+  _dbLib* lib = (_dbLib*) db->lib_tbl_->getPtr(master->_lib_for_site);
 
   return (dbSite*) lib->_site_tbl->getPtr(master->_site);
 }
@@ -689,7 +689,7 @@ dbMaster* dbMaster::create(dbLib* lib_, const char* name_)
   _dbDatabase* db = lib->getDatabase();
   _dbMaster* master = lib->_master_tbl->create();
   master->name_ = safe_strdup(name_);
-  master->_id = db->_master_id++;
+  master->_id = db->master_id_++;
   lib->_master_hash.insert(master);
   return (dbMaster*) master;
 }
@@ -700,7 +700,7 @@ void dbMaster::destroy(dbMaster* master)
   _dbMaster* master_impl = (_dbMaster*) master;
   if (db->getChip() && db->getChip()->getBlock()) {
     _dbBlock* block = (_dbBlock*) db->getChip()->getBlock();
-    _dbInstHdr* inst_hdr = block->_inst_hdr_hash.find(master_impl->_id);
+    _dbInstHdr* inst_hdr = block->inst_hdr_hash_.find(master_impl->_id);
     if (inst_hdr) {
       master->getImpl()->getLogger()->error(
           utl::ODB,

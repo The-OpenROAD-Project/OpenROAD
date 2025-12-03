@@ -219,7 +219,7 @@ T* dbTable<T, page_size>::create()
 
   _dbFreeObject* o = popQ(_free_list);
   const uint oid = o->oid_;
-  new (o) T(_db);
+  new (o) T(db_);
   T* t = (T*) o;
   t->oid_ = oid | DB_ALLOC_BIT;
 
@@ -509,7 +509,7 @@ void dbTable<T, page_size>::readPage(dbIStream& stream, dbTablePage* page)
       stream >> o->_next;
       stream >> o->_prev;
     } else {
-      new (t) T(_db);
+      new (t) T(db_);
       uint oid = uint((char*) t - page->_objects) | DB_ALLOC_BIT;
       t->oid_ = oid;  // Set the oid so the stream code can call the dbObject
                       // methods.
@@ -547,7 +547,7 @@ dbOStream& operator<<(dbOStream& stream, const dbTable<T, page_size>& table)
     table.writePage(stream, page);
   }
 
-  stream << table._prop_list;
+  stream << table.prop_list_;
 
   return stream;
 }
@@ -602,7 +602,7 @@ dbIStream& operator>>(dbIStream& stream, dbTable<T, page_size>& table)
     table._pages[i] = nullptr;
   }
 
-  stream >> table._prop_list;
+  stream >> table.prop_list_;
 
   return stream;
 }

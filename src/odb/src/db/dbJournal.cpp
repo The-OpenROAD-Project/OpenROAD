@@ -1498,7 +1498,7 @@ void dbJournal::redo_updateCapNodeField()
     case _dbCapNode::kNodeNum: {
       uint prev_num;
       _log.pop(prev_num);
-      _log.pop(node->_node_num);
+      _log.pop(node->node_num_);
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
@@ -1506,7 +1506,7 @@ void dbJournal::redo_updateCapNodeField()
                  "REDO ECO: dbCapNode {}, updateNodeNum: {} to {}",
                  node_id,
                  prev_num,
-                 node->_node_num);
+                 node->node_num_);
       break;
     }
 

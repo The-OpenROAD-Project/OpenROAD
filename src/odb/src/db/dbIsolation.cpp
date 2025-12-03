@@ -161,20 +161,20 @@ dbPowerDomain* dbIsolation::getPowerDomain() const
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_power_domain);
+  return (dbPowerDomain*) par->powerdomain_tbl_->getPtr(obj->_power_domain);
 }
 
 // User Code Begin dbIsolationPublicMethods
 dbIsolation* dbIsolation::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_isolation_hash.hasMember(name)) {
+  if (_block->isolation_hash_.hasMember(name)) {
     return nullptr;
   }
-  _dbIsolation* iso = _block->_isolation_tbl->create();
+  _dbIsolation* iso = _block->isolation_tbl_->create();
   iso->name_ = safe_strdup(name);
 
-  _block->_isolation_hash.insert(iso);
+  _block->isolation_hash_.insert(iso);
   return (dbIsolation*) iso;
 }
 

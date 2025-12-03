@@ -21,7 +21,7 @@ struct dbTechLayerKeepOutZoneRuleFlags
   bool diff_metal_ : 1;
   bool except_aligned_side_ : 1;
   bool except_aligned_end_ : 1;
-  uint spare_bits_ : 27;
+  uint spare_bits : 27;
 };
 
 class _dbTechLayerKeepOutZoneRule : public _dbObject

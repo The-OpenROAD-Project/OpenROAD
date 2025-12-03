@@ -19,7 +19,7 @@ class _dbTechMinCutRule : public _dbObject
 {
  public:
   // PERSISTENT-MEMBERS
-  enum _RuleType
+  enum RuleType
   {
     kNone,
     kMinimumCut,
@@ -27,13 +27,13 @@ class _dbTechMinCutRule : public _dbObject
     kMinimumCutBelow
   };
 
-  struct _Flword
+  struct Flags
   {
-    _RuleType _rule : 3;
+    RuleType _rule : 3;
     uint _cuts_length : 1;
     uint _spare_bits : 28;
   };
-  _Flword flags_;
+  Flags flags_;
   uint _num_cuts;
   uint _width;
   int _cut_distance;
@@ -87,12 +87,13 @@ class _dbTechMinEncRule : public _dbObject
  public:
   // PERSISTENT-MEMBERS
 
-  struct _Flword
+  struct Flags
   {
     uint _has_width : 1;
     uint _spare_bits : 31;
-  } flags_;
+  };
 
+  Flags flags_;
   uint _area;
   uint _width;
 

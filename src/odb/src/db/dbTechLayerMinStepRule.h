@@ -24,7 +24,7 @@ struct dbTechLayerMinStepRuleFlags
   bool concave_corner_ : 1;
   bool except_rectangle_ : 1;
   bool no_adjacent_eol_ : 1;
-  uint spare_bits_ : 22;
+  uint spare_bits : 22;
 };
 
 class _dbTechLayerMinStepRule : public _dbObject

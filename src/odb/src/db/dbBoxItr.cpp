@@ -46,7 +46,7 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
       uint list = 0;
 
       while (id != 0) {
-        _dbBox* b = _box_tbl->getPtr(id);
+        _dbBox* b = box_tbl_->getPtr(id);
         uint n = b->next_box_;
         b->next_box_ = list;
         list = id;
@@ -66,7 +66,7 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
       uint list = 0;
 
       while (id != 0) {
-        _dbBox* b = _box_tbl->getPtr(id);
+        _dbBox* b = box_tbl_->getPtr(id);
         uint n = b->next_box_;
         b->next_box_ = list;
         list = id;
@@ -83,7 +83,7 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
       uint list = 0;
 
       while (id != 0) {
-        _dbBox* b = _box_tbl->getPtr(id);
+        _dbBox* b = box_tbl_->getPtr(id);
         uint n = b->next_box_;
         b->next_box_ = list;
         list = id;
@@ -100,7 +100,7 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
       uint list = 0;
 
       while (id != 0) {
-        _dbBox* b = _box_tbl->getPtr(id);
+        _dbBox* b = box_tbl_->getPtr(id);
         uint n = b->next_box_;
         b->next_box_ = list;
         list = id;
@@ -117,7 +117,7 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
       uint list = 0;
 
       while (id != 0) {
-        _dbBox* b = _box_tbl->getPtr(id);
+        _dbBox* b = box_tbl_->getPtr(id);
         uint n = b->next_box_;
         b->next_box_ = list;
         list = id;
@@ -134,7 +134,7 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
       uint list = 0;
 
       while (id != 0) {
-        _dbBox* b = _box_tbl->getPtr(id);
+        _dbBox* b = box_tbl_->getPtr(id);
         uint n = b->next_box_;
         b->next_box_ = list;
         list = id;
@@ -151,7 +151,7 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
       uint list = 0;
 
       while (id != 0) {
-        _dbBox* b = _box_tbl->getPtr(id);
+        _dbBox* b = box_tbl_->getPtr(id);
         uint n = b->next_box_;
         b->next_box_ = list;
         list = id;
@@ -205,11 +205,11 @@ uint dbBoxItr<page_size>::begin(dbObject* parent) const
       _dbMaster* master = (_dbMaster*) parent;
       if (include_polygons_ && master->_poly_obstructions) {
         dbId<_dbPolygon> pid = master->_poly_obstructions;
-        _dbPolygon* pbox = _pbox_tbl->getPtr(pid);
+        _dbPolygon* pbox = pbox_tbl_->getPtr(pid);
         while (pbox != nullptr && pbox->boxes_ == 0) {
           // move to next pbox
           pid = pbox->next_pbox_;
-          pbox = _pbox_tbl->getPtr(pid);
+          pbox = pbox_tbl_->getPtr(pid);
         }
         if (pbox != nullptr) {
           return pbox->boxes_;
@@ -222,11 +222,11 @@ uint dbBoxItr<page_size>::begin(dbObject* parent) const
       _dbMPin* pin = (_dbMPin*) parent;
       if (include_polygons_ && pin->_poly_geoms) {
         dbId<_dbPolygon> pid = pin->_poly_geoms;
-        _dbPolygon* pbox = _pbox_tbl->getPtr(pid);
+        _dbPolygon* pbox = pbox_tbl_->getPtr(pid);
         while (pbox != nullptr && pbox->boxes_ == 0) {
           // move to next pbox
           pid = pbox->next_pbox_;
-          pbox = _pbox_tbl->getPtr(pid);
+          pbox = pbox_tbl_->getPtr(pid);
         }
         if (pbox != nullptr) {
           return pbox->boxes_;
@@ -266,7 +266,7 @@ uint dbBoxItr<page_size>::end(dbObject* /* unused: parent */) const
 template <uint page_size>
 uint dbBoxItr<page_size>::next(uint id, ...) const
 {
-  _dbBox* box = _box_tbl->getPtr(id);
+  _dbBox* box = box_tbl_->getPtr(id);
 
   if (!include_polygons_ || box->next_box_ != 0) {
     // return next box if available or when not considering polygons
@@ -276,16 +276,16 @@ uint dbBoxItr<page_size>::next(uint id, ...) const
   if (box->flags_.owner_type == dbBoxOwner::PBOX) {
     // if owner is dbPolygon need to check for next dbPolygon
     dbId<_dbPolygon> pid = box->owner_;
-    _dbPolygon* box_pbox = _pbox_tbl->getPtr(pid);
+    _dbPolygon* box_pbox = pbox_tbl_->getPtr(pid);
 
     _dbPolygon* pbox = box_pbox;
     if (pbox->next_pbox_ != 0) {
       // move to next pbox
-      pbox = _pbox_tbl->getPtr(pbox->next_pbox_);
+      pbox = pbox_tbl_->getPtr(pbox->next_pbox_);
       while (pbox != nullptr && pbox->boxes_ == 0) {
         // move to next pbox
         pid = pbox->next_pbox_;
-        pbox = _pbox_tbl->getPtr(pid);
+        pbox = pbox_tbl_->getPtr(pid);
       }
       if (pbox != nullptr) {
         return pbox->boxes_;
@@ -315,7 +315,7 @@ uint dbBoxItr<page_size>::next(uint id, ...) const
 template <uint page_size>
 dbObject* dbBoxItr<page_size>::getObject(uint id, ...)
 {
-  return _box_tbl->getPtr(id);
+  return box_tbl_->getPtr(id);
 }
 
 template class dbBoxItr<8>;

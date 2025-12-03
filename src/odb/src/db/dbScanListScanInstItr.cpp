@@ -36,7 +36,7 @@ void dbScanListScanInstItr::reverse(dbObject* parent)
   uint new_head = 0;
 
   while (current_id != 0) {
-    _dbScanInst* scan_inst = _scan_inst_tbl->getPtr(current_id);
+    _dbScanInst* scan_inst = scan_inst_tbl_->getPtr(current_id);
     uint new_next = scan_inst->_prev_list_scan_inst;
     scan_inst->_prev_list_scan_inst = scan_inst->_next_list_scan_inst;
     scan_inst->_next_list_scan_inst = new_next;
@@ -83,14 +83,14 @@ uint dbScanListScanInstItr::end(dbObject* /* unused: parent */) const
 uint dbScanListScanInstItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbScanInst* scan_inst = _scan_inst_tbl->getPtr(id);
+  _dbScanInst* scan_inst = scan_inst_tbl_->getPtr(id);
   return (uint) scan_inst->_next_list_scan_inst;
   // User Code End next
 }
 
 dbObject* dbScanListScanInstItr::getObject(uint id, ...)
 {
-  return _scan_inst_tbl->getPtr(id);
+  return scan_inst_tbl_->getPtr(id);
 }
 }  // namespace odb
 // Generator Code End Cpp

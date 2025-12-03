@@ -156,7 +156,7 @@ uint dbInstITermItr::next(uint id, ...) const
 {
   _dbITerm* iterm = _iterm_tbl->getPtr(id);
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
-  _dbInst* inst = block->_inst_tbl->getPtr(iterm->_inst);
+  _dbInst* inst = block->inst_tbl_->getPtr(iterm->_inst);
   uint cnt = inst->_iterms.size();
   uint idx = iterm->flags_._mterm_idx + 1;
 

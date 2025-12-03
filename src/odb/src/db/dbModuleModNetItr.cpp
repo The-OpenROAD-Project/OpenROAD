@@ -67,14 +67,14 @@ uint dbModuleModNetItr::end(dbObject* /* unused: parent */) const
 uint dbModuleModNetItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbModNet* modnet = _modnet_tbl->getPtr(id);
+  _dbModNet* modnet = modnet_tbl_->getPtr(id);
   return modnet->next_entry_;
   // User Code End next
 }
 
 dbObject* dbModuleModNetItr::getObject(uint id, ...)
 {
-  return _modnet_tbl->getPtr(id);
+  return modnet_tbl_->getPtr(id);
 }
 }  // namespace odb
    // Generator Code End Cpp
