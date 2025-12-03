@@ -4891,6 +4891,9 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
     return nullptr;
   }
 
+  // jk: dbg
+  sta_->checkSanityDrvrVertexEdges(buffer_inst->findITerm("Z"));
+
   return buffer_inst;
 }
 
