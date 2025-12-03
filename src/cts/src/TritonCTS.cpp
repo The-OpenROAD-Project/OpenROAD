@@ -1078,7 +1078,8 @@ void TritonCTS::findLongEdges(
     odb::Point driverPt,
     std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin)
 {
-  double maxWlMicrons = resizer_->findMaxWireLength(/* don't issue error */false) * 1e+6;
+  double maxWlMicrons
+      = resizer_->findMaxWireLength(/* don't issue error */ false) * 1e+6;
   int threshold = block_->micronsToDbu(maxWlMicrons);
   debugPrint(
       logger_, CTS, "clock gate cloning", 1, "Threshold = {}", threshold);
@@ -1177,10 +1178,11 @@ void TritonCTS::findLongEdges(
         sinksBbox.merge({sinkX, sinkY});
       }
     }
-    if(validCluster) {
+    if (validCluster) {
       validClusters += 1;
-      int64_t dist2Driver = odb::Point::manhattanDistance(sinksBbox.center(), driverPt);
-      if(dist2Driver < minDist2Driver) {
+      int64_t dist2Driver
+          = odb::Point::manhattanDistance(sinksBbox.center(), driverPt);
+      if (dist2Driver < minDist2Driver) {
         driverClusterID = n;
         minDist2Driver = dist2Driver;
       }
@@ -1194,7 +1196,8 @@ void TritonCTS::findLongEdges(
              "Found {} clusters",
              validClusters);
 
-  // Insert original ICG to its closest cluster, create a clone to drive the other clusters
+  // Insert original ICG to its closest cluster, create a clone to drive the
+  // other clusters
   int count = 0;
   // hierarchy fix, make the clone net in the right scope
   sta::Pin* driver = nullptr;
